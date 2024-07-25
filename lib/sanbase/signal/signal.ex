@@ -55,16 +55,16 @@ defmodule Sanbase.Signal do
   @doc ~s"""
   Checks if historical data is allowed for a given `signal`
   """
-  @spec is_historical_data_freely_available?(signal) :: boolean
-  def is_historical_data_freely_available?(signal) do
+  @spec historical_data_freely_available?(signal) :: boolean
+  def historical_data_freely_available?(signal) do
     get_in(access_map(), [signal, "historical"]) === :free
   end
 
   @doc ~s"""
   Checks if realtime data is allowed for a given `signal`
   """
-  @spec is_realtime_data_freely_available?(signal) :: boolean
-  def is_realtime_data_freely_available?(signal) do
+  @spec realtime_data_freely_available?(signal) :: boolean
+  def realtime_data_freely_available?(signal) do
     get_in(access_map(), [signal, "realtime"]) === :free
   end
 

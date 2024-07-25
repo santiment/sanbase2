@@ -14,71 +14,6 @@ defmodule Sanbase.StripeApi do
           items: list(subscription_item)
         }
 
-  def attach_payment_method_to_customer(user, payment_method_id) do
-    # Step 1: Attach payment method to the customer
-    {:ok, user} = Billing.create_or_update_stripe_customer(user)
-
-    params = %{
-      customer: user.stripe_customer_id,
-      payment_method: payment_method_id
-    }
-
-    Stripe.PaymentMethod.attach(params)
-
-    # Step 2: Set this payment method as default for the customer
-    update_params = %{
-      invoice_settings: %{default_payment_method: payment_method_id}
-    }
-
-    Stripe.Customer.update(user.stripe_customer_id, update_params)
-  end
-
-  # Stripe docs: https://stripe.com/docs/payments/setupintents/lifecycle
-  # Stripe API: https://stripe.com/docs/api/setup_intents
-  def create_setup_intent(%User{} = user) do
-    case Billing.create_or_update_stripe_customer(user) do
-      {:ok, user} ->
-        Stripe.SetupIntent.create(%{
-          customer: user.stripe_customer_id,
-          usage: "off_session",
-          automatic_payment_methods: %{
-            enabled: true
-          }
-        })
-
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
-  @spec create_customer(%User{}, nil | String.t()) ::
-          {:ok, Stripe.Customer.t()} | {:error, Stripe.Error.t()}
-  def create_customer(%User{} = user, nil) do
-    Stripe.Customer.create(%{
-      description: user.username,
-      email: user.email
-    })
-  end
-
-  def create_customer(%User{} = user, card_token) do
-    Stripe.Customer.create(%{
-      description: user.username,
-      email: user.email,
-      source: card_token
-    })
-  end
-
-  @spec update_customer(%User{stripe_customer_id: binary()}, String.t()) ::
-          {:ok, Stripe.Customer.t()} | {:error, Stripe.Error.t()}
-  def update_customer(%User{stripe_customer_id: stripe_customer_id}, card_token)
-      when is_binary(stripe_customer_id) do
-    Stripe.Customer.update(stripe_customer_id, %{source: card_token})
-  end
-
-  def retrieve_customer(%User{stripe_customer_id: stripe_customer_id}) do
-    Stripe.Customer.retrieve(stripe_customer_id)
-  end
-
   def create_product(%Product{name: name}) do
     Stripe.Product.create(%{name: name, type: "service"})
   end
@@ -99,14 +34,136 @@ defmodule Sanbase.StripeApi do
     })
   end
 
+  @spec create_customer_with_card(%User{}, nil | String.t()) ::
+          {:ok, Stripe.Customer.t()} | {:error, Stripe.Error.t()}
+  def create_customer_with_card(%User{} = user, nil) do
+    Stripe.Customer.create(%{
+      description: user.username,
+      email: user.email
+    })
+  end
+
+  def create_customer_with_card(%User{} = user, card_token) do
+    Stripe.Customer.create(%{
+      description: user.username,
+      email: user.email,
+      source: card_token
+    })
+  end
+
+  @spec update_customer_card(%User{stripe_customer_id: binary()}, String.t()) ::
+          {:ok, Stripe.Customer.t()} | {:error, Stripe.Error.t()}
+  def update_customer_card(%User{stripe_customer_id: stripe_customer_id}, card_token)
+      when is_binary(stripe_customer_id) do
+    Stripe.Customer.update(stripe_customer_id, %{source: card_token})
+  end
+
+  @spec update_customer(String.t(), map()) ::
+          {:ok, Stripe.Customer.t()} | {:error, Stripe.Error.t()}
+  def update_customer(stripe_customer_id, params) when is_binary(stripe_customer_id) do
+    Stripe.Customer.update(stripe_customer_id, params)
+  end
+
+  def fetch_default_card(%User{stripe_customer_id: stripe_customer_id})
+      when is_binary(stripe_customer_id) do
+    Stripe.Customer.retrieve(stripe_customer_id, expand: ["default_source"])
+  end
+
+  def fetch_default_card(_), do: {:error, "Customer has no default card"}
+
+  def delete_default_card(%User{stripe_customer_id: stripe_customer_id})
+      when is_binary(stripe_customer_id) do
+    with {:ok, customer} <- Stripe.Customer.retrieve(stripe_customer_id),
+         {:ok, _} <- delete_card(customer) do
+      :ok
+    end
+  end
+
+  def delete_default_card(_), do: {:error, "Customer has no default card"}
+
+  # This function is used to delete the default card of a customer
+  # First try to delete default_source, if it fails, try to delete default_payment_method
+  # Old customers have default_source, new customers have default_payment_method - that is due to changes in the way payments are handled.
+  def delete_card(customer) do
+    cond do
+      is_binary(customer.default_source) ->
+        Stripe.Card.delete(customer.default_source, %{customer: customer.id})
+
+      is_binary(customer.invoice_settings.default_payment_method) ->
+        Stripe.PaymentMethod.detach(%{
+          payment_method: customer.invoice_settings.default_payment_method
+        })
+
+      true ->
+        {:error, "Customer has no default card"}
+    end
+  end
+
+  def retrieve_payment_method(payment_method_id) do
+    Stripe.PaymentMethod.retrieve(payment_method_id)
+  end
+
+  def retrieve_customer(%User{stripe_customer_id: stripe_customer_id}) do
+    Stripe.Customer.retrieve(stripe_customer_id)
+  end
+
+  def attach_payment_method_to_customer(user, payment_method_id) do
+    # Step 1: Attach payment method to the customer
+    {:ok, user} = Billing.create_or_update_stripe_customer(user)
+
+    params = %{
+      customer: user.stripe_customer_id,
+      payment_method: payment_method_id
+    }
+
+    {:ok, pm} = Stripe.PaymentMethod.attach(params)
+
+    # Step 2: Set this payment method as default for the customer
+    update_params = %{
+      invoice_settings: %{default_payment_method: pm.id}
+    }
+
+    with {:ok, _} <- update_customer(user.stripe_customer_id, update_params) do
+      {:ok, user}
+    end
+  end
+
+  def detach_payment_method(stripe_customer_id) do
+    with {:ok, customer} <- Stripe.Customer.retrieve(stripe_customer_id),
+         {:ok, %Stripe.PaymentMethod{}} <-
+           Stripe.PaymentMethod.detach(%{
+             payment_method: customer.invoice_settings.default_payment_method
+           }) do
+      :ok
+    end
+  end
+
+  # Stripe docs: https://stripe.com/docs/payments/setupintents/lifecycle
+  # Stripe API: https://stripe.com/docs/api/setup_intents
+  def create_setup_intent(%User{} = user) do
+    case Billing.create_or_update_stripe_customer(user) do
+      {:ok, user} ->
+        Stripe.SetupIntent.create(%{
+          customer: user.stripe_customer_id,
+          usage: "off_session",
+          automatic_payment_methods: %{
+            enabled: true
+          }
+        })
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   @spec create_subscription(subscription) ::
           {:ok, %Stripe.Subscription{}} | {:error, %Stripe.Error{}}
   def create_subscription(%{customer: _customer, items: _items} = subscription) do
-    Stripe.Subscription.create(subscription)
+    Stripe.Subscription.create(subscription, expand: ["latest_invoice.payment_intent"])
   end
 
   def update_subscription(stripe_id, params) do
-    Stripe.Subscription.update(stripe_id, params)
+    Stripe.Subscription.update(stripe_id, params, expand: ["latest_invoice.payment_intent"])
   end
 
   def cancel_subscription(stripe_id) do
@@ -116,6 +173,14 @@ defmodule Sanbase.StripeApi do
 
   def delete_subscription(stripe_id) do
     Stripe.Subscription.delete(stripe_id)
+  end
+
+  def retrieve_subscription(stripe_id) do
+    Stripe.Subscription.retrieve(stripe_id, expand: ["latest_invoice.payment_intent"])
+  end
+
+  def list_subscriptions(params, kw_list \\ []) do
+    Stripe.Subscription.list(params, kw_list)
   end
 
   def upgrade_downgrade(db_subscription, plan) do
@@ -132,10 +197,6 @@ defmodule Sanbase.StripeApi do
       params = %{items: [%{id: item_id, plan: plan.stripe_id}]}
       {:ok, params}
     end
-  end
-
-  def retrieve_subscription(stripe_id) do
-    Stripe.Subscription.retrieve(stripe_id)
   end
 
   def create_coupon(%{percent_off: percent_off, duration: duration}) do
@@ -163,23 +224,13 @@ defmodule Sanbase.StripeApi do
     Stripe.Invoice.upcoming(%{subscription: stripe_id})
   end
 
-  def fetch_default_card(%User{stripe_customer_id: stripe_customer_id})
-      when is_binary(stripe_customer_id) do
-    Stripe.Customer.retrieve(stripe_customer_id, expand: ["default_source"])
+  def list_invoices(params, kw_list \\ []) do
+    Stripe.Invoice.list(params, kw_list)
   end
 
-  def fetch_default_card(_), do: {:error, "Customer has no default card"}
-
-  def delete_default_card(%User{stripe_customer_id: stripe_customer_id})
-      when is_binary(stripe_customer_id) do
-    with {:ok, customer} <- Stripe.Customer.retrieve(stripe_customer_id),
-         {:ok, %Stripe.Card{}} <-
-           Stripe.Card.delete(customer.default_source, %{customer: stripe_customer_id}) do
-      :ok
-    end
+  def list_charges(params, kw_list \\ []) do
+    Stripe.Charge.list(params, kw_list)
   end
-
-  def delete_default_card(_), do: {:error, "Customer has no default card"}
 
   def add_credit(customer_id, amount, trx_id) do
     Stripe.CustomerBalanceTransaction.create(customer_id, %{
@@ -227,5 +278,16 @@ defmodule Sanbase.StripeApi do
       {:error, reason} ->
         {:error, reason}
     end
+  end
+
+  def delete_customer(user) do
+    Stripe.Customer.delete(user.stripe_customer_id)
+    User.update_field(user, :stripe_customer_id, nil)
+  end
+end
+
+defmodule Sanbase.StripeApi.Webhook do
+  def construct_event(body, signature, webhook_secret) do
+    Stripe.Webhook.construct_event(body, signature, webhook_secret)
   end
 end

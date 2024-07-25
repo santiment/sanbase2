@@ -15,7 +15,7 @@ defmodule Sanbase.TemplateEngineTest do
       {{}} is an empty template.
       """
 
-      captures = Sanbase.TemplateEngine.Captures.get(template)
+      captures = Sanbase.TemplateEngine.Captures.extract_captures(template)
 
       assert captures ==
                {:ok,
@@ -71,7 +71,7 @@ defmodule Sanbase.TemplateEngineTest do
       Simple key: {{key}}
       """
 
-      captures = Sanbase.TemplateEngine.Captures.get(template)
+      captures = Sanbase.TemplateEngine.Captures.extract_captures(template)
 
       assert captures ==
                {:ok,
@@ -146,6 +146,37 @@ defmodule Sanbase.TemplateEngineTest do
              1 + @a = 2
              The value of @b is some string value
              """
+    end
+
+    test "Run generate positional params -- success" do
+      params = %{a: 1, b: 2}
+      opts = [params: params]
+
+      template = """
+      a is {{a}}, b is {{b}}
+      """
+
+      {:ok, {sql, args}} = Sanbase.TemplateEngine.run_generate_positional_params(template, opts)
+
+      assert sql == "a is ?1, b is ?2\n"
+      assert args == [1, 2]
+    end
+
+    test "Run generate positional params -- missing keys" do
+      params = %{a: 1, b: 2}
+      opts = [params: params]
+
+      template = """
+      a is {{a}}, b is {{b}}, c is {{c}}, d is {{d}}, a is again {{a}}
+      """
+
+      {:error, error_msg} = Sanbase.TemplateEngine.run_generate_positional_params(template, opts)
+
+      assert error_msg =~
+               "One or more of the {{<key>}} templates in the query text do not correspond to any of the parameters."
+
+      assert error_msg =~ "Template keys missing from the parameters: {{d}}, {{c}}"
+      assert error_msg =~ "Parameters' keys defined: a, b"
     end
   end
 end

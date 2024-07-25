@@ -90,15 +90,21 @@ defmodule Sanbase.Metric do
     end
   end
 
-  def is_not_deprecated?(metric) do
+  def hard_deprecated?(metric) do
     now = DateTime.utc_now()
     hard_deprecate_after = Map.get(@deprecated_metrics_map, metric)
 
-    # The metric is not deprecated if `hard_deprecate_after` is nil or if the the
-    # date is in the future
-    case is_nil(hard_deprecate_after) or DateTime.compare(now, hard_deprecate_after) == :lt do
-      true -> true
-      false -> {:error, "The metric #{metric} is deprecated since #{hard_deprecate_after}"}
+    # The metric is deprecated if `hard_deprecate_after` is nil
+    # or if the the date is in the future
+    case hard_deprecate_after do
+      nil ->
+        false
+
+      _ ->
+        case DateTime.compare(now, hard_deprecate_after) do
+          :lt -> false
+          _ -> {:error, "The metric #{metric} is deprecated since #{hard_deprecate_after}"}
+        end
     end
   end
 
@@ -163,6 +169,7 @@ defmodule Sanbase.Metric do
             interval,
             opts
           )
+          |> maybe_round_floats(:timeseries_data)
         end
 
         execute_if_aggregation_valid(fun, metric, aggregation)
@@ -202,6 +209,7 @@ defmodule Sanbase.Metric do
             interval,
             opts
           )
+          |> maybe_round_floats(:timeseries_data_per_slug)
         end
 
         execute_if_aggregation_valid(fun, metric, aggregation)
@@ -239,6 +247,7 @@ defmodule Sanbase.Metric do
             to,
             opts
           )
+          |> maybe_round_floats(:aggregated_timeseries_data)
         end
 
         execute_if_aggregation_valid(fun, metric, aggregation)
@@ -682,16 +691,16 @@ defmodule Sanbase.Metric do
   @doc ~s"""
   Checks if historical data is allowed for a given `metric`
   """
-  @spec is_historical_data_freely_available?(metric) :: boolean
-  def is_historical_data_freely_available?(metric) do
+  @spec historical_data_freely_available?(metric) :: boolean
+  def historical_data_freely_available?(metric) do
     get_in(@access_map, [metric, "historical"]) == :free
   end
 
   @doc ~s"""
   Checks if realtime data is allowed for a given `metric`
   """
-  @spec is_realtime_data_freely_available?(metric) :: boolean
-  def is_realtime_data_freely_available?(metric) do
+  @spec realtime_data_freely_available?(metric) :: boolean
+  def realtime_data_freely_available?(metric) do
     get_in(@access_map, [metric, "realtime"]) == :free
   end
 
@@ -891,4 +900,45 @@ defmodule Sanbase.Metric do
     |> Map.put(:is_deprecated, is_deprecated)
     |> Map.put(:hard_deprecate_after, hard_deprecate_after)
   end
+
+  defp maybe_round_floats({:error, error}, _), do: {:error, error}
+
+  defp maybe_round_floats({:ok, result}, :timeseries_data) do
+    result = Enum.map(result, fn m -> round_map_value(m) end)
+    {:ok, result}
+  end
+
+  defp maybe_round_floats({:ok, result}, :aggregated_timeseries_data) do
+    result = Map.new(result, fn {k, v} -> {k, round_value(v)} end)
+    {:ok, result}
+  end
+
+  defp maybe_round_floats({:ok, result}, :timeseries_data_per_slug) do
+    result =
+      Enum.map(result, fn %{data: data} = map ->
+        # Each element is %{datetime: dt, [%{slug: slug, value: value}]}
+        data = Enum.map(data, fn m -> round_map_value(m) end)
+
+        %{map | data: data}
+      end)
+
+    {:ok, result}
+  end
+
+  defp round_map_value(map) do
+    if Map.has_key?(map, :value_ohlc) do
+      Map.update!(map, :value_ohlc, &round_ohlc_values(&1))
+    else
+      Map.update!(map, :value, &round_value/1)
+    end
+  end
+
+  defp round_ohlc_values(ohlc) do
+    Enum.reduce(ohlc, %{}, fn {key, value}, acc ->
+      Map.put(acc, key, round_value(value))
+    end)
+  end
+
+  defp round_value(num) when is_float(num), do: Float.round(num, 12)
+  defp round_value(num), do: num
 end

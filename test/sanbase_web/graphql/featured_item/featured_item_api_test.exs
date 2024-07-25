@@ -360,4 +360,138 @@ defmodule Sanbase.FeaturedItemApiTest do
       |> json_response(200)
     end
   end
+
+  describe "dashboard featured items" do
+    test "no dashboards are featured", context do
+      assert fetch_dashboards(context.conn) == %{
+               "data" => %{"featuredDashboards" => []}
+             }
+    end
+
+    test "marking dashboards as featured", context do
+      dashboard = insert(:dashboard, is_public: true)
+      :ok = FeaturedItem.update_item(dashboard, true)
+
+      assert fetch_dashboards(context.conn) == %{
+               "data" => %{
+                 "featuredDashboards" => [
+                   %{
+                     "id" => dashboard.id,
+                     "name" => dashboard.name
+                   }
+                 ]
+               }
+             }
+    end
+
+    test "unmarking dashboards as featured", context do
+      dashboard = insert(:dashboard, is_public: true)
+      :ok = FeaturedItem.update_item(dashboard, true)
+      :ok = FeaturedItem.update_item(dashboard, false)
+
+      assert fetch_dashboards(context.conn) == %{
+               "data" => %{"featuredDashboards" => []}
+             }
+    end
+
+    test "marking dashboard as featured is idempotent", context do
+      dashboard = insert(:dashboard, is_public: true)
+      :ok = FeaturedItem.update_item(dashboard, true)
+      :ok = FeaturedItem.update_item(dashboard, true)
+      :ok = FeaturedItem.update_item(dashboard, true)
+
+      assert fetch_dashboards(context.conn) == %{
+               "data" => %{
+                 "featuredDashboards" => [
+                   %{
+                     "id" => dashboard.id,
+                     "name" => dashboard.name
+                   }
+                 ]
+               }
+             }
+    end
+
+    defp fetch_dashboards(conn) do
+      query = """
+      {
+        featuredDashboards{
+          id
+          name
+        }
+      }
+      """
+
+      conn
+      |> post("/graphql", query_skeleton(query))
+      |> json_response(200)
+    end
+  end
+
+  describe "query featured items" do
+    test "no queries are featured", context do
+      assert fetch_queries(context.conn) == %{
+               "data" => %{"featuredQueries" => []}
+             }
+    end
+
+    test "marking queries as featured", context do
+      query = insert(:query, is_public: true)
+      :ok = FeaturedItem.update_item(query, true)
+
+      assert fetch_queries(context.conn) == %{
+               "data" => %{
+                 "featuredQueries" => [
+                   %{
+                     "id" => query.id,
+                     "name" => query.name
+                   }
+                 ]
+               }
+             }
+    end
+
+    test "unmarking queries as featured", context do
+      query = insert(:query, is_public: true)
+      :ok = FeaturedItem.update_item(query, true)
+      :ok = FeaturedItem.update_item(query, false)
+
+      assert fetch_queries(context.conn) == %{
+               "data" => %{"featuredQueries" => []}
+             }
+    end
+
+    test "marking query as featured is idempotent", context do
+      query = insert(:query, is_public: true)
+      :ok = FeaturedItem.update_item(query, true)
+      :ok = FeaturedItem.update_item(query, true)
+      :ok = FeaturedItem.update_item(query, true)
+
+      assert fetch_queries(context.conn) == %{
+               "data" => %{
+                 "featuredQueries" => [
+                   %{
+                     "id" => query.id,
+                     "name" => query.name
+                   }
+                 ]
+               }
+             }
+    end
+
+    defp fetch_queries(conn) do
+      query = """
+      {
+        featuredQueries{
+          id
+          name
+        }
+      }
+      """
+
+      conn
+      |> post("/graphql", query_skeleton(query))
+      |> json_response(200)
+    end
+  end
 end

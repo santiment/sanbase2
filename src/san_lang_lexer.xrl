@@ -14,34 +14,34 @@ TRUE              = true
 FALSE             = false
 
 Rules.
-\+                : {token, {'+',  TokenLine}}.
-\-                : {token, {'-',  TokenLine}}.
-\*                : {token, {'*',  TokenLine}}.
-\/                : {token, {'/',  TokenLine}}.
-\>                : {token, {'>',  TokenLine}}.
-\<                : {token, {'<',  TokenLine}}.
-\>=               : {token, {'>=',  TokenLine}}.
-\<=               : {token, {'<=',  TokenLine}}.
-\==               : {token, {'==',  TokenLine}}.
-\!=               : {token, {'!=',  TokenLine}}.
-\(                : {token, {'(',  TokenLine}}.
-\)                : {token, {')',  TokenLine}}.
-\[                : {token, {'[',  TokenLine}}.
-\]                : {token, {']',  TokenLine}}.
-\-\>              : {token, {'->', TokenLine}}.
-\,                : {token, {',',  TokenLine}}.
-\"                : {token, {'"',  TokenLine}}.
-{TRUE}            : {token, {true, TokenLine}}.
-{FALSE}           : {token, {false, TokenLine}}.
-{KW_FN}           : {token, {'fn', TokenLine}}.
-{KW_END}          : {token, {'end', TokenLine}}.
-{KW_AND}          : {token, {'and', TokenLine}}.
-{KW_OR}           : {token, {'or', TokenLine}}.
-{ENV_VAR}         : {token, {env_var, TokenLine, to_binary(TokenChars)}}.
-{STRING}          : {token, {ascii_string, TokenLine, strip_quoted_ascii_string(TokenChars)}}.
-{IDENTIFIER}      : {token, {identifier, TokenLine, to_binary(TokenChars)}}.
-{FLOAT}           : {token, {float, TokenLine, to_float(TokenChars)}}.
-{INT}             : {token, {int, TokenLine, to_integer(TokenChars)}}.
+\+                : {token, {'+',  TokenLoc}}.
+\-                : {token, {'-',  TokenLoc}}.
+\*                : {token, {'*',  TokenLoc}}.
+\/                : {token, {'/',  TokenLoc}}.
+\>                : {token, {'>',  TokenLoc}}.
+\<                : {token, {'<',  TokenLoc}}.
+\>=               : {token, {'>=',  TokenLoc}}.
+\<=               : {token, {'<=',  TokenLoc}}.
+\==               : {token, {'==',  TokenLoc}}.
+\!=               : {token, {'!=',  TokenLoc}}.
+\(                : {token, {'(',  TokenLoc}}.
+\)                : {token, {')',  TokenLoc}}.
+\[                : {token, {'[',  TokenLoc}}.
+\]                : {token, {']',  TokenLoc}}.
+\-\>              : {token, {'->', TokenLoc}}.
+\,                : {token, {',',  TokenLoc}}.
+\"                : {token, {'"',  TokenLoc}}.
+{TRUE}            : {token, {true, TokenLoc}}.
+{FALSE}           : {token, {false, TokenLoc}}.
+{KW_FN}           : {token, {'fn', TokenLoc}}.
+{KW_END}          : {token, {'end', TokenLoc}}.
+{KW_AND}          : {token, {'and', TokenLoc}}.
+{KW_OR}           : {token, {'or', TokenLoc}}.
+{ENV_VAR}         : {token, {env_var, TokenLoc, to_binary(TokenChars)}}.
+{STRING}          : {token, {ascii_string, TokenLoc, strip_quoted_ascii_string(TokenChars)}}.
+{IDENTIFIER}      : {token, {identifier, TokenLoc, to_binary(TokenChars)}}.
+{FLOAT}           : {token, {float, TokenLoc, to_float(TokenChars)}}.
+{INT}             : {token, {int, TokenLoc, to_integer(TokenChars)}}.
 {WHITESPACE}+     : skip_token.
 
 Erlang code.

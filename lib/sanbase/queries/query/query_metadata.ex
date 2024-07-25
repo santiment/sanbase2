@@ -8,7 +8,7 @@ defmodule Sanbase.Queries.QueryMetadata do
   database.
   """
   @env Application.compile_env(:sanbase, :env)
-  @is_prod @env == :prod
+  @prod? @env == :prod
   @type t :: map()
 
   @doc ~s"""
@@ -16,11 +16,11 @@ defmodule Sanbase.Queries.QueryMetadata do
   """
   @spec from_resolution(Absinthe.Resolution.t()) ::
           Sanbase.Queries.QueryMetadata.t() | no_return()
-  def from_resolution(%{context: %{product_code: product_code, auth: %{current_user: user}}}) do
+  def from_resolution(%{context: %{requested_product: product_code, auth: %{current_user: user}}}) do
     %{
       sanbase_user_id: user.id,
       product: product_code |> to_string() |> String.downcase(),
-      query_ran_from_prod_marker: @is_prod
+      query_ran_from_prod_marker: @prod?
     }
   end
 
@@ -40,6 +40,14 @@ defmodule Sanbase.Queries.QueryMetadata do
       sanbase_user_id: user_id,
       product: "DEV",
       query_ran_from_prod_marker: false
+    }
+  end
+
+  def from_refresh_job(user_id) do
+    %{
+      sanbase_user_id: user_id,
+      product: "REFRESH_JOB",
+      query_ran_from_prod_marker: @prod?
     }
   end
 

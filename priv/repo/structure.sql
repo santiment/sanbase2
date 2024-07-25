@@ -451,6 +451,38 @@ ALTER SEQUENCE public.asset_exchange_pairs_id_seq OWNED BY public.asset_exchange
 
 
 --
+-- Name: available_metrics_data; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.available_metrics_data (
+    id bigint NOT NULL,
+    metric character varying(255) NOT NULL,
+    available_slugs character varying(255)[],
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: available_metrics_data_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.available_metrics_data_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: available_metrics_data_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.available_metrics_data_id_seq OWNED BY public.available_metrics_data.id;
+
+
+--
 -- Name: blockchain_address_comments_mapping; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1554,7 +1586,8 @@ CREATE TABLE public.featured_items (
     chart_configuration_id bigint,
     table_configuration_id bigint,
     dashboard_id bigint,
-    CONSTRAINT only_one_fk CHECK (((((((
+    query_id bigint,
+    CONSTRAINT only_one_fk CHECK ((((((((
 CASE
     WHEN (post_id IS NULL) THEN 0
     ELSE 1
@@ -1577,6 +1610,10 @@ CASE
 END) +
 CASE
     WHEN (dashboard_id IS NULL) THEN 0
+    ELSE 1
+END) +
+CASE
+    WHEN (query_id IS NULL) THEN 0
     ELSE 1
 END) = 1))
 );
@@ -1858,6 +1895,39 @@ CREATE SEQUENCE public.icos_id_seq
 --
 
 ALTER SEQUENCE public.icos_id_seq OWNED BY public.icos.id;
+
+
+--
+-- Name: images; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.images (
+    id bigint NOT NULL,
+    url text NOT NULL,
+    name character varying(255) NOT NULL,
+    notes text,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: images_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.images_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: images_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.images_id_seq OWNED BY public.images.id;
 
 
 --
@@ -2829,8 +2899,45 @@ CREATE TABLE public.project (
     telegram_chat_id integer,
     discord_link character varying(255),
     ecosystem character varying(255),
-    ecosystem_full_path character varying(255)
+    ecosystem_full_path character varying(255),
+    multichain_project_group_key character varying(255) DEFAULT NULL::character varying,
+    deployed_on_ecosystem_id bigint
 );
+
+
+--
+-- Name: project_ecosystem_labels_change_suggestions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.project_ecosystem_labels_change_suggestions (
+    id bigint NOT NULL,
+    project_id bigint,
+    added_ecosystems character varying(255)[],
+    removed_ecosystems character varying(255)[],
+    notes text,
+    status character varying(255) DEFAULT 'pending_approval'::character varying,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: project_ecosystem_labels_change_suggestions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.project_ecosystem_labels_change_suggestions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: project_ecosystem_labels_change_suggestions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.project_ecosystem_labels_change_suggestions_id_seq OWNED BY public.project_ecosystem_labels_change_suggestions.id;
 
 
 --
@@ -2895,6 +3002,41 @@ CREATE SEQUENCE public.project_eth_address_id_seq
 --
 
 ALTER SEQUENCE public.project_eth_address_id_seq OWNED BY public.project_eth_address.id;
+
+
+--
+-- Name: project_github_organizations_change_suggestions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.project_github_organizations_change_suggestions (
+    id bigint NOT NULL,
+    project_id bigint,
+    added_organizations character varying(255)[],
+    removed_organizations character varying(255)[],
+    notes text,
+    status character varying(255) DEFAULT 'pending_approval'::character varying,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: project_github_organizations_change_suggestions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.project_github_organizations_change_suggestions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: project_github_organizations_change_suggestions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.project_github_organizations_change_suggestions_id_seq OWNED BY public.project_github_organizations_change_suggestions.id;
 
 
 --
@@ -3129,6 +3271,40 @@ CREATE TABLE public.queries (
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );
+
+
+--
+-- Name: queries_cache; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.queries_cache (
+    id bigint NOT NULL,
+    query_id bigint,
+    user_id bigint,
+    data text,
+    query_hash text,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: queries_cache_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.queries_cache_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: queries_cache_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.queries_cache_id_seq OWNED BY public.queries_cache.id;
 
 
 --
@@ -4660,6 +4836,13 @@ ALTER TABLE ONLY public.asset_exchange_pairs ALTER COLUMN id SET DEFAULT nextval
 
 
 --
+-- Name: available_metrics_data id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.available_metrics_data ALTER COLUMN id SET DEFAULT nextval('public.available_metrics_data_id_seq'::regclass);
+
+
+--
 -- Name: blockchain_address_comments_mapping id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -4877,6 +5060,13 @@ ALTER TABLE ONLY public.icos ALTER COLUMN id SET DEFAULT nextval('public.icos_id
 
 
 --
+-- Name: images id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.images ALTER COLUMN id SET DEFAULT nextval('public.images_id_seq'::regclass);
+
+
+--
 -- Name: infrastructures id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -5073,6 +5263,13 @@ ALTER TABLE ONLY public.project ALTER COLUMN id SET DEFAULT nextval('public.proj
 
 
 --
+-- Name: project_ecosystem_labels_change_suggestions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_ecosystem_labels_change_suggestions ALTER COLUMN id SET DEFAULT nextval('public.project_ecosystem_labels_change_suggestions_id_seq'::regclass);
+
+
+--
 -- Name: project_ecosystem_mappings id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -5084,6 +5281,13 @@ ALTER TABLE ONLY public.project_ecosystem_mappings ALTER COLUMN id SET DEFAULT n
 --
 
 ALTER TABLE ONLY public.project_eth_address ALTER COLUMN id SET DEFAULT nextval('public.project_eth_address_id_seq'::regclass);
+
+
+--
+-- Name: project_github_organizations_change_suggestions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_github_organizations_change_suggestions ALTER COLUMN id SET DEFAULT nextval('public.project_github_organizations_change_suggestions_id_seq'::regclass);
 
 
 --
@@ -5133,6 +5337,13 @@ ALTER TABLE ONLY public.pumpkins ALTER COLUMN id SET DEFAULT nextval('public.pum
 --
 
 ALTER TABLE ONLY public.queries ALTER COLUMN id SET DEFAULT nextval('public.queries_id_seq'::regclass);
+
+
+--
+-- Name: queries_cache id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.queries_cache ALTER COLUMN id SET DEFAULT nextval('public.queries_cache_id_seq'::regclass);
 
 
 --
@@ -5464,6 +5675,14 @@ ALTER TABLE ONLY public.asset_exchange_pairs
 
 
 --
+-- Name: available_metrics_data available_metrics_data_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.available_metrics_data
+    ADD CONSTRAINT available_metrics_data_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: blockchain_address_comments_mapping blockchain_address_comments_mapping_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5736,6 +5955,14 @@ ALTER TABLE ONLY public.icos
 
 
 --
+-- Name: images images_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.images
+    ADD CONSTRAINT images_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: infrastructures infrastructures_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5960,6 +6187,14 @@ ALTER TABLE ONLY public.products
 
 
 --
+-- Name: project_ecosystem_labels_change_suggestions project_ecosystem_labels_change_suggestions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_ecosystem_labels_change_suggestions
+    ADD CONSTRAINT project_ecosystem_labels_change_suggestions_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: project_ecosystem_mappings project_ecosystem_mappings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5973,6 +6208,14 @@ ALTER TABLE ONLY public.project_ecosystem_mappings
 
 ALTER TABLE ONLY public.project_eth_address
     ADD CONSTRAINT project_eth_address_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: project_github_organizations_change_suggestions project_github_organizations_change_suggestions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_github_organizations_change_suggestions
+    ADD CONSTRAINT project_github_organizations_change_suggestions_pkey PRIMARY KEY (id);
 
 
 --
@@ -6029,6 +6272,14 @@ ALTER TABLE ONLY public.promo_trials
 
 ALTER TABLE ONLY public.pumpkins
     ADD CONSTRAINT pumpkins_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: queries_cache queries_cache_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.queries_cache
+    ADD CONSTRAINT queries_cache_pkey PRIMARY KEY (id);
 
 
 --
@@ -6474,6 +6725,13 @@ CREATE INDEX asset_exchange_pairs_exchange_index ON public.asset_exchange_pairs 
 
 
 --
+-- Name: available_metrics_data_metric_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX available_metrics_data_metric_index ON public.available_metrics_data USING btree (metric);
+
+
+--
 -- Name: blockchain_address_comments_mapping_blockchain_address_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6709,6 +6967,13 @@ CREATE UNIQUE INDEX featured_items_dashboard_id_index ON public.featured_items U
 --
 
 CREATE UNIQUE INDEX featured_items_post_id_index ON public.featured_items USING btree (post_id);
+
+
+--
+-- Name: featured_items_query_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX featured_items_query_id_index ON public.featured_items USING btree (query_id);
 
 
 --
@@ -7087,6 +7352,13 @@ CREATE UNIQUE INDEX promo_coupons_email_index ON public.promo_coupons USING btre
 --
 
 CREATE INDEX pumpkins_user_id_index ON public.pumpkins USING btree (user_id);
+
+
+--
+-- Name: queries_cache_query_id_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX queries_cache_query_id_user_id_index ON public.queries_cache USING btree (query_id, user_id);
 
 
 --
@@ -7868,6 +8140,14 @@ ALTER TABLE ONLY public.featured_items
 
 
 --
+-- Name: featured_items featured_items_query_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.featured_items
+    ADD CONSTRAINT featured_items_query_id_fkey FOREIGN KEY (query_id) REFERENCES public.queries(id);
+
+
+--
 -- Name: featured_items featured_items_table_configuration_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8188,6 +8468,22 @@ ALTER TABLE ONLY public.presigned_s3_urls
 
 
 --
+-- Name: project project_deployed_on_ecosystem_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project
+    ADD CONSTRAINT project_deployed_on_ecosystem_id_fkey FOREIGN KEY (deployed_on_ecosystem_id) REFERENCES public.ecosystems(id);
+
+
+--
+-- Name: project_ecosystem_labels_change_suggestions project_ecosystem_labels_change_suggestions_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_ecosystem_labels_change_suggestions
+    ADD CONSTRAINT project_ecosystem_labels_change_suggestions_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(id) ON DELETE CASCADE;
+
+
+--
 -- Name: project_ecosystem_mappings project_ecosystem_mappings_ecosystem_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8209,6 +8505,14 @@ ALTER TABLE ONLY public.project_ecosystem_mappings
 
 ALTER TABLE ONLY public.project_eth_address
     ADD CONSTRAINT project_eth_address_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(id) ON DELETE CASCADE;
+
+
+--
+-- Name: project_github_organizations_change_suggestions project_github_organizations_change_suggestions_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_github_organizations_change_suggestions
+    ADD CONSTRAINT project_github_organizations_change_suggestions_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(id) ON DELETE CASCADE;
 
 
 --
@@ -8273,6 +8577,22 @@ ALTER TABLE ONLY public.promo_trials
 
 ALTER TABLE ONLY public.pumpkins
     ADD CONSTRAINT pumpkins_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: queries_cache queries_cache_query_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.queries_cache
+    ADD CONSTRAINT queries_cache_query_id_fkey FOREIGN KEY (query_id) REFERENCES public.queries(id) ON DELETE CASCADE;
+
+
+--
+-- Name: queries_cache queries_cache_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.queries_cache
+    ADD CONSTRAINT queries_cache_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -9227,3 +9547,12 @@ INSERT INTO public."schema_migrations" (version) VALUES (20240125141406);
 INSERT INTO public."schema_migrations" (version) VALUES (20240126133441);
 INSERT INTO public."schema_migrations" (version) VALUES (20240131160724);
 INSERT INTO public."schema_migrations" (version) VALUES (20240201085929);
+INSERT INTO public."schema_migrations" (version) VALUES (20240212141517);
+INSERT INTO public."schema_migrations" (version) VALUES (20240311143940);
+INSERT INTO public."schema_migrations" (version) VALUES (20240315090002);
+INSERT INTO public."schema_migrations" (version) VALUES (20240320090413);
+INSERT INTO public."schema_migrations" (version) VALUES (20240325154734);
+INSERT INTO public."schema_migrations" (version) VALUES (20240415100155);
+INSERT INTO public."schema_migrations" (version) VALUES (20240424082842);
+INSERT INTO public."schema_migrations" (version) VALUES (20240531121027);
+INSERT INTO public."schema_migrations" (version) VALUES (20240723122118);

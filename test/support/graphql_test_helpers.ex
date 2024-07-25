@@ -8,9 +8,6 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
 
   # The default endpoint for testing
   @endpoint SanbaseWeb.Endpoint
-  @custom_access_metrics Sanbase.Billing.Plan.MVRVAccess.get()
-                         |> Enum.filter(&match?({{:metric, _}, _}, &1))
-                         |> Enum.map(fn {{_, name}, _} -> name end)
 
   def v2_restricted_metric_for_plan(position, product, plan_name) do
     fully_restricted_metrics_for_plan(product, plan_name)
@@ -21,7 +18,7 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
   def fully_restricted_metrics_for_plan(product, plan_name) do
     fully_restricted = Metric.restricted_metrics() -- restricted_metrics_with_free_realtime()
 
-    (fully_restricted -- @custom_access_metrics)
+    fully_restricted
     |> Enum.filter(&AccessChecker.plan_has_access?(plan_name, product, {:metric, &1}))
   end
 
@@ -123,6 +120,12 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
     |> put_req_header("authorization", "Basic " <> token)
   end
 
+  def execute_query(conn, query) do
+    conn
+    |> post("/graphql", query_skeleton(query, ""))
+    |> json_response(200)
+  end
+
   def execute_query(conn, query, query_name) do
     conn
     |> post("/graphql", query_skeleton(query, query_name))
@@ -130,7 +133,7 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
     |> get_in(["data", query_name])
   end
 
-  def execute_query_with_error(conn, query, query_name) do
+  def execute_query_with_error(conn, query, query_name \\ "") do
     conn
     |> post("/graphql", query_skeleton(query, query_name))
     |> json_response(200)
@@ -172,10 +175,9 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
   def map_to_args(%{} = map, opts \\ []) do
     map_as_input_object? = Keyword.get(opts, :map_as_input_object, false)
 
-    map = Map.delete(map, :map_as_input_object)
-    map = Map.new(map, fn {k, v} -> {Inflex.camelize(k, :lower), v} end)
-
     key = fn k -> Inflex.camelize(k, :lower) end
+    map = Map.delete(map, :map_as_input_object)
+    map = Map.new(map, fn {k, v} -> {key.(k), v} end)
 
     Enum.map(map, fn
       {k, [%{} | _] = l} ->
@@ -260,6 +262,22 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
         # to test the API behaviour in such cases
         selector
     end
+  end
+
+  defp add_missing_selector(:owner, selector) do
+    Map.put(
+      selector,
+      :owner,
+      "binance"
+    )
+  end
+
+  defp add_missing_selector(:label, selector) do
+    Map.put(
+      selector,
+      :label,
+      "centralized_exchange"
+    )
   end
 
   defp add_missing_selector(:contract_address, selector),

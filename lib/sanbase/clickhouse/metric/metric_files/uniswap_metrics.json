@@ -14,7 +14,9 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true,
+    "docs_links": ["https://academy.santiment.net/metrics/deprecated-metrics/uniswap-airdrop-metrics"]
   },
   {
     "human_readable_name": "Uniswap Total Claims Count",
@@ -31,7 +33,9 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true,
+    "docs_links": ["https://academy.santiment.net/metrics/deprecated-metrics/uniswap-airdrop-metrics"]
   },
   {
     "human_readable_name": "Uniswap Total Claimed Amount for Users",
@@ -48,7 +52,9 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true,
+    "docs_links": ["https://academy.santiment.net/metrics/deprecated-metrics/uniswap-airdrop-metrics"]
   },
   {
     "human_readable_name": "Uniswap Total Claims Count for Users",
@@ -65,7 +71,9 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true,
+    "docs_links": ["https://academy.santiment.net/metrics/deprecated-metrics/uniswap-airdrop-metrics"]
   },
   {
     "human_readable_name": "Uniswap Total Claimed Amount for Liquidity Providers",
@@ -82,7 +90,9 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true,
+    "docs_links": ["https://academy.santiment.net/metrics/deprecated-metrics/uniswap-airdrop-metrics"]
   },
   {
     "human_readable_name": "Uniswap Total Claims Count for Liquidity Providers",
@@ -99,7 +109,9 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true,
+    "docs_links": ["https://academy.santiment.net/metrics/deprecated-metrics/uniswap-airdrop-metrics"]
   },
   {
     "human_readable_name": "Uniswap Percent Claimed",
@@ -116,7 +128,9 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true,
+    "docs_links": ["https://academy.santiment.net/metrics/deprecated-metrics/uniswap-airdrop-metrics"]
   },
   {
     "human_readable_name": "Uniswap Claims Count",
@@ -133,7 +147,9 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true,
+    "docs_links": ["https://academy.santiment.net/metrics/deprecated-metrics/uniswap-airdrop-metrics"]
   },
   {
     "human_readable_name": "Uniswap Claims Count for Liquidity Providers",
@@ -150,7 +166,9 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true,
+    "docs_links": ["https://academy.santiment.net/metrics/deprecated-metrics/uniswap-airdrop-metrics"]
   },
   {
     "human_readable_name": "Uniswap Claims Count for Users",
@@ -167,7 +185,9 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true,
+    "docs_links": ["https://academy.santiment.net/metrics/deprecated-metrics/uniswap-airdrop-metrics"]
   },
   {
     "human_readable_name": "Uniswap Amount Claimed",
@@ -184,7 +204,9 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true,
+    "docs_links": ["https://academy.santiment.net/metrics/deprecated-metrics/uniswap-airdrop-metrics"]
   },
   {
     "human_readable_name": "Uniswap Amount Claimed for Liquidity Providers",
@@ -201,7 +223,9 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true,
+    "docs_links": ["https://academy.santiment.net/metrics/deprecated-metrics/uniswap-airdrop-metrics"]
   },
   {
     "human_readable_name": "Uniswap Amount Claimed for Users",
@@ -218,6 +242,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true,
+    "docs_links": ["https://academy.santiment.net/metrics/deprecated-metrics/uniswap-airdrop-metrics"]
   }
 ]

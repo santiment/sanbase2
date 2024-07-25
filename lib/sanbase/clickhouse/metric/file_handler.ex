@@ -49,24 +49,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
             [metric_map]
 
           parameters_list ->
-            %{"name" => name, "human_readable_name" => human_name, "metric" => metric} =
-              metric_map
-
-            aliases = Map.get(metric_map, "aliases", [])
-
-            Enum.map(parameters_list, fn parameters ->
-              metric_map
-              |> Map.put("name", TemplateEngine.run!(name, params: parameters))
-              |> Map.put("metric", TemplateEngine.run!(metric, params: parameters))
-              |> Map.put(
-                "human_readable_name",
-                TemplateEngine.run!(human_name, params: parameters)
-              )
-              |> Map.put(
-                "aliases",
-                Enum.map(aliases, &TemplateEngine.run!(&1, params: parameters))
-              )
-            end)
+            run_templates_on_parameters(parameters_list, metric_map)
         end
       end)
     end
@@ -85,6 +68,27 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
         %{"historical" => :free, "realtime" => :free} -> :free
         _ -> :restricted
       end
+    end
+
+    defp run_templates_on_parameters(parameters_list, metric_map) do
+      %{"name" => name, "human_readable_name" => human_name, "metric" => metric} =
+        metric_map
+
+      aliases = Map.get(metric_map, "aliases", [])
+
+      Enum.map(parameters_list, fn parameters ->
+        metric_map
+        |> Map.put("name", TemplateEngine.run!(name, params: parameters))
+        |> Map.put("metric", TemplateEngine.run!(metric, params: parameters))
+        |> Map.put(
+          "human_readable_name",
+          TemplateEngine.run!(human_name, params: parameters)
+        )
+        |> Map.put(
+          "aliases",
+          Enum.map(aliases, &TemplateEngine.run!(&1, params: parameters))
+        )
+      end)
     end
   end
 
@@ -110,7 +114,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   #  only the coins/tokens that moved in the past N days/years
 
   # @external_resource is registered with `accumulate: true`, so it holds all files
-  path_to = fn file -> Path.join(__DIR__, "metric_files/" <> file) end
+  path_to = fn file -> Path.join([__DIR__, "metric_files", file]) end
+  path_to_deprecated = fn file -> Path.join([__DIR__, "metric_files", "deprecated", file]) end
 
   @external_resource path_to.("available_v2_metrics.json")
   @external_resource path_to.("change_metrics.json")
@@ -124,8 +129,6 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   @external_resource path_to.("label_based_metric_metrics.json")
   @external_resource path_to.("labeled_balance_metrics.json")
   @external_resource path_to.("labeled_intraday_metrics.json")
-  @external_resource path_to.("labeled_between_labels_flow_metrics.json")
-  @external_resource path_to.("labeled_exchange_flow_metrics.json")
   @external_resource path_to.("makerdao_metrics.json")
   @external_resource path_to.("social_metrics.json")
   @external_resource path_to.("table_structured_metrics.json")
@@ -133,10 +136,21 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   @external_resource path_to.("labeled_holders_distribution_metrics.json")
   @external_resource path_to.("active_holders_metrics.json")
 
-  @metrics_json_pre_alias_expand Enum.reduce(@external_resource, [], fn file, acc ->
-                                   (File.read!(file) |> Jason.decode!()) ++ acc
-                                 end)
+  # Deprecated metrics
+  @external_resource path_to_deprecated.("deprecated_change_metrics.json")
+  @external_resource path_to_deprecated.("deprecated_labeled_between_labels_flow_metrics.json")
+  @external_resource path_to_deprecated.("deprecated_labeled_exchange_flow_metrics.json")
+  @external_resource path_to_deprecated.("deprecated_social_metrics.json")
 
+  @metrics_json_pre_alias_expand Enum.reduce(
+                                   @external_resource,
+                                   [],
+                                   fn file, acc ->
+                                     (File.read!(file) |> Jason.decode!()) ++ acc
+                                   end
+                                 )
+
+  def pre_alias(), do: @metrics_json_pre_alias_expand
   # Allow the same metric to be defined more than once if it differs in the `data_type`
   Enum.group_by(
     @metrics_json_pre_alias_expand,
@@ -181,6 +195,11 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
               )
 
   @table_map Helper.name_to_field_map(@metrics_json, "table")
+  @docs_links_map Helper.name_to_field_map(@metrics_json, "docs_links",
+                    required?: false,
+                    transform_fn: fn list -> Enum.map(list, fn l -> %{link: l} end) end
+                  )
+
   @aggregation_map Helper.name_to_field_map(@metrics_json, "aggregation",
                      transform_fn: &String.to_atom/1
                    )
@@ -264,6 +283,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   def min_interval_map(), do: @min_interval_map |> transform()
   def min_plan_map(), do: @min_plan_map |> transform()
   def name_to_metric_map(), do: @name_to_metric_map |> transform()
+  def docs_links_map(), do: @docs_links_map |> transform()
 
   def metric_to_names_map(),
     do: @metric_to_names_map |> transform(metric_name_in_map_value_list: true)
@@ -291,6 +311,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
     @metrics_data_type_map
     |> Enum.filter(fn {_metric, data_type} -> data_type == type end)
     |> Enum.map(&elem(&1, 0))
+    |> transform()
   end
 
   def name_to_metric(name), do: Map.get(@name_to_metric_map, name)
@@ -302,12 +323,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
     # hard deprecated metrics. The `deprecated_metrics_map` contains the metric
     # as a key and a datetime as a value. If the current time is after that value,
     # the metric is excluded
-    metrics
-    |> then(fn metrics ->
-      if Keyword.get(opts, :remove_hard_deprecated, true),
-        do: remove_hard_deprecated(metrics, opts),
-        else: metrics
-    end)
+    if Keyword.get(opts, :remove_hard_deprecated, true),
+      do: remove_hard_deprecated(metrics, opts),
+      else: metrics
   end
 
   defp remove_hard_deprecated(metrics, opts) when is_list(metrics) do
@@ -333,7 +351,6 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
 
   defp remove_hard_deprecated(metrics, _opts) when is_map(metrics) do
     now = DateTime.utc_now()
-
     Map.reject(metrics, fn {metric, _} -> is_hard_deprecated(metric, now) end)
   end
 
@@ -341,6 +358,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
     # Provide `now` as a parameter so it's not calling DateTime.utc_now/0 each time
     # when this is invoked over an enumerable
     hard_deprecate_after = Map.get(@deprecated_metrics_map, metric)
+
     not is_nil(hard_deprecate_after) and DateTime.compare(hard_deprecate_after, now) == :lt
   end
 end

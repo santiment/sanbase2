@@ -98,7 +98,7 @@ defmodule Sanbase.Billing do
   def create_or_update_stripe_customer(user, card_token \\ nil)
 
   def create_or_update_stripe_customer(%User{stripe_customer_id: nil} = user, card_token) do
-    with {:ok, stripe_customer} = result <- StripeApi.create_customer(user, card_token) do
+    with {:ok, stripe_customer} = result <- StripeApi.create_customer_with_card(user, card_token) do
       emit_event(result, :create_stripe_customer, %{user: user, card_token: card_token})
 
       User.update_field(user, :stripe_customer_id, stripe_customer.id)
@@ -112,7 +112,7 @@ defmodule Sanbase.Billing do
 
   def create_or_update_stripe_customer(%User{stripe_customer_id: stripe_id} = user, card_token)
       when is_binary(stripe_id) do
-    with {:ok, _} = result <- StripeApi.update_customer(user, card_token) do
+    with {:ok, _} = result <- StripeApi.update_customer_card(user, card_token) do
       emit_event(result, :update_stripe_customer, %{user: user, card_token: card_token})
 
       {:ok, user}

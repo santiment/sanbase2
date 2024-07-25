@@ -41,7 +41,8 @@ defmodule SanbaseWeb.DataController do
     "infrastructure": "ETH",
     "telegram_chat_id": null,
     "github_organizations": "ethereum",
-    "social_volume_query": "eth OR ether OR ethereum NOT cash NOT gold NOT classic"
+    "social_volume_query": "eth OR ether OR ethereum NOT cash NOT gold NOT classic",
+    "coinmarketcap_id": "ethereum"
   }
   """
   @spec projects_data(Plug.Conn.t(), map()) :: Plug.Conn.t()
@@ -61,6 +62,23 @@ defmodule SanbaseWeb.DataController do
     conn
     |> put_resp_header("content-type", "application/json; charset=utf-8")
     |> Plug.Conn.send_resp(200, data)
+  end
+
+  def monitored_twitter_handles(conn, %{"secret" => secret}) do
+    case santiment_team_members_secret() == secret do
+      true ->
+        cache_key = {__MODULE__, __ENV__.function} |> Sanbase.Cache.hash()
+        {:ok, data} = Sanbase.Cache.get_or_store(cache_key, &get_monitored_twitter_handles_list/0)
+
+        conn
+        |> put_resp_header("content-type", "application/json; charset=utf-8")
+        |> Plug.Conn.send_resp(200, data)
+
+      false ->
+        conn
+        |> send_resp(403, "Unauthorized")
+        |> halt()
+    end
   end
 
   @doc ~s"""
@@ -92,7 +110,28 @@ defmodule SanbaseWeb.DataController do
 
     {:ok, data} =
       Sanbase.Cache.get_or_store(cache_key, &get_ecosystem_github_organization_mapping/0)
-      |> IO.inspect(label: "HERE")
+
+    conn
+    |> put_resp_header("content-type", "application/json; charset=utf-8")
+    |> Plug.Conn.send_resp(200, data)
+  end
+
+  @doc ~s"""
+  Return a list of metadata about the Clickhouse metrics.
+
+  {
+    "name": "age_consumed",
+    "internal_name": "stack_age_consumed_5min",
+    "min_interval": "5m",
+    "min_interval_seconds": 300
+    "table":  "intraday_metrics"
+  }
+  """
+  @spec clickhouse_metrics_metadata(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def clickhouse_metrics_metadata(conn, _params) do
+    cache_key = {__MODULE__, __ENV__.function} |> Sanbase.Cache.hash()
+
+    {:ok, data} = Sanbase.Cache.get_or_store(cache_key, &get_clickhouse_metrics_metadata/0)
 
     conn
     |> put_resp_header("content-type", "application/json; charset=utf-8")
@@ -100,6 +139,28 @@ defmodule SanbaseWeb.DataController do
   end
 
   # Private functions
+
+  defp get_clickhouse_metrics_metadata() do
+    table_map = Sanbase.Clickhouse.MetricAdapter.FileHandler.table_map()
+
+    data =
+      for metric <- Sanbase.Clickhouse.MetricAdapter.available_metrics() do
+        {:ok, metadata} = Sanbase.Metric.metadata(metric)
+
+        %{
+          public_name: metric,
+          name: metadata.internal_metric,
+          min_interval: metadata.min_interval,
+          min_interval_seconds: Sanbase.DateTimeUtils.str_to_sec(metadata.min_interval),
+          table: Map.get(table_map, metric)
+        }
+        |> Jason.encode!()
+      end
+      |> Enum.intersperse("\n")
+
+    {:ok, data}
+  end
+
   defp get_santiment_team_members() do
     email_to_discord_id_map = get_email_to_discord_id_map()
 
@@ -178,6 +239,18 @@ defmodule SanbaseWeb.DataController do
     {:ok, result}
   end
 
+  defp get_monitored_twitter_handles_list() do
+    projects_handles = Project.List.projects_twitter_handles()
+    submitted_handles = Sanbase.MonitoredTwitterHandle.list_all_approved()
+
+    result =
+      Enum.uniq(projects_handles ++ submitted_handles)
+      |> Enum.map(fn handle -> %{twitter_handle: handle} |> Jason.encode!() end)
+      |> Enum.intersperse("\n")
+
+    {:ok, result}
+  end
+
   defp get_slug_to_asset_id_map() do
     query = "SELECT name AS slug, asset_id FROM asset_metadata FINAL"
 
@@ -222,7 +295,8 @@ defmodule SanbaseWeb.DataController do
             decimals: decimals,
             social_volume_query: social_volume_query,
             rank: rank,
-            telegram_chat_id: project.telegram_chat_id
+            telegram_chat_id: project.telegram_chat_id,
+            coinmarketcap_id: project.coinmarketcap_id
           }
           |> Jason.encode!()
 

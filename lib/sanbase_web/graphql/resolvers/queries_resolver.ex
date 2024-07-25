@@ -8,8 +8,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
 
   # Query CRUD operations
 
-  def get_query(_root, %{id: id}, %{context: %{auth: %{current_user: user}}}) do
-    Queries.get_query(id, user.id)
+  def get_query(_root, %{id: id}, resolution) do
+    querying_user_id = get_in(resolution.context.auth, [:current_user, Access.key(:id)])
+    Queries.get_query(id, querying_user_id)
   end
 
   def create_query(_root, %{} = args, %{context: %{auth: %{current_user: user}}}) do
@@ -35,16 +36,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     querying_user_id = get_in(resolution.context.auth, [:current_user, Access.key(:id)])
     queried_user_id = Map.get(args, :user_id, querying_user_id)
 
-    if not is_nil(queried_user_id) do
+    if is_nil(queried_user_id) do
+      {:error,
+       "Error getting user queries: neither userId is provided, nor the query is executed by a logged in user."}
+    else
       Queries.get_user_queries(
         queried_user_id,
         querying_user_id,
         page: page,
         page_size: page_size
       )
-    else
-      {:error,
-       "Error getting user queries: neither userId is provided, nor the query is executed by a logged in user."}
     end
   end
 
@@ -63,8 +64,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
         %{id: query_id},
         %{context: %{auth: %{current_user: user}} = context} = resolution
       ) do
-    with :ok <- Queries.user_can_execute_query(user, context.product_code, context.auth.plan),
+    with :ok <-
+           Queries.user_can_execute_query(user, context.subscription_product, context.auth.plan),
          {:ok, query} <- Queries.get_query(query_id, user.id) do
+      Process.put(
+        :queries_dynamic_repo,
+        Queries.user_plan_to_dynamic_repo(context.subscription_product, context.auth.plan)
+      )
+
       query_metadata = QueryMetadata.from_resolution(resolution)
       Queries.run_query(query, user, query_metadata)
     end
@@ -75,9 +82,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
         %{sql_query_text: query_text, sql_query_parameters: query_parameters},
         %{context: %{auth: %{current_user: user}} = context} = resolution
       ) do
-    with :ok <- Queries.user_can_execute_query(user, context.product_code, context.auth.plan),
-         query = Queries.get_ephemeral_query_struct(query_text, query_parameters, user) do
+    # There is some issue with setting `%{}` as default parameters, so we continue to use
+    # "{}" and parse it properly here, before passing it on.
+    query_parameters = if query_parameters == "{}", do: %{}, else: query_parameters
+
+    with :ok <-
+           Queries.user_can_execute_query(user, context.subscription_product, context.auth.plan) do
+      Process.put(
+        :queries_dynamic_repo,
+        Queries.user_plan_to_dynamic_repo(context.subscription_product, context.auth.plan)
+      )
+
       query_metadata = QueryMetadata.from_resolution(resolution)
+      query = Queries.get_ephemeral_query_struct(query_text, query_parameters, user)
       Queries.run_query(query, user, query_metadata)
     end
   end
@@ -89,8 +106,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
       ) do
     # get_dashboard_query/3 is a function that returns a query struct with the
     # query's local parameter being overriden by the dashboard global parameters
-    with :ok <- Queries.user_can_execute_query(user, context.product_code, context.auth.plan),
+    with :ok <-
+           Queries.user_can_execute_query(user, context.subscription_product, context.auth.plan),
          {:ok, query} <- Queries.get_dashboard_query(dashboard_id, mapping_id, user.id) do
+      Process.put(
+        :queries_dynamic_repo,
+        Queries.user_plan_to_dynamic_repo(context.subscription_product, context.auth.plan)
+      )
+
       query_metadata = QueryMetadata.from_resolution(resolution)
       Queries.run_query(query, user, query_metadata)
     end
@@ -100,7 +123,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
 
   def get_dashboard(_root, %{id: id}, resolution) do
     querying_user_id = get_in(resolution.context.auth, [:current_user, Access.key(:id)])
-    Dashboards.get_dashboard(id, querying_user_id)
+
+    with {:ok, dashboard} <- Dashboards.get_dashboard(id, querying_user_id) do
+      # For backwards compatibility, properly provide the panels.
+      # The Frontend will migrate to queries once they detect panels
+      dashboard = atomize_dashboard_panels_sql_keys(dashboard)
+      {:ok, dashboard}
+    end
   end
 
   def get_user_dashboards(
@@ -111,16 +140,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     querying_user_id = get_in(resolution.context.auth, [:current_user, Access.key(:id)])
     queried_user_id = Map.get(args, :user_id, querying_user_id)
 
-    if not is_nil(queried_user_id) do
+    if is_nil(queried_user_id) do
+      {:error,
+       "Error getting user dashboards: neither userId is provided, nor the query is executed by a logged in user."}
+    else
       Dashboards.user_dashboards(
         queried_user_id,
         querying_user_id,
         page: page,
         page_size: page_size
       )
-    else
-      {:error,
-       "Error getting user dashboards: neither userId is provided, nor the query is executed by a logged in user."}
     end
   end
 
@@ -180,7 +209,48 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     Dashboards.remove_query_from_dashboard(dashboard_id, mapping_id, user.id)
   end
 
-  def store_dashboard_query_execution(
+  defp transform_cache_input(data) do
+    # data is the gzip compressed and base64 encoded query JSON
+    with {:ok, result_string} <- Queries.Executor.Result.decode_and_decompress(data),
+         {:ok, %Result{} = result} <- Queries.Executor.Result.from_json_string(result_string),
+         true <- Result.all_fields_present?(result) do
+      {:ok, result}
+    end
+  end
+
+  def cache_query_execution(
+        _root,
+        %{
+          query_id: query_id,
+          compressed_query_execution_result: compressed_query_execution_result
+        },
+        %{context: %{auth: %{current_user: user}}}
+      ) do
+    with {:ok, result} <- transform_cache_input(compressed_query_execution_result),
+         {:ok, _} <- Queries.cache_query_execution(query_id, result, user.id) do
+      {:ok, true}
+    end
+  end
+
+  def get_cached_query_executions(_root, %{query_id: query_id}, resolution) do
+    querying_user_id = get_in(resolution.context.auth, [:current_user, Access.key(:id)])
+
+    with {:ok, caches} <- Sanbase.Queries.get_cached_query_executions(query_id, querying_user_id) do
+      result =
+        Enum.map(caches, fn cache ->
+          %{
+            result: Sanbase.Queries.Cache.decode_decompress_result(cache.data),
+            user: cache.user,
+            inserted_at: cache.inserted_at,
+            is_query_hash_matching: cache.is_query_hash_matching
+          }
+        end)
+
+      {:ok, result}
+    end
+  end
+
+  def cache_dashboard_query_execution(
         _root,
         %{
           dashboard_id: dashboard_id,
@@ -189,14 +259,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
         },
         %{context: %{auth: %{current_user: user}}}
       ) do
-    with {:ok, result_string} <- Result.decode_and_decompress(compressed_query_execution_result),
-         {:ok, query_execution_result} <- Result.from_json_string(result_string),
-         true <- Result.all_fields_present?(query_execution_result),
+    with {:ok, result} <- transform_cache_input(compressed_query_execution_result),
          {:ok, dashboard_cache} <-
-           Dashboards.store_dashboard_query_execution(
+           Dashboards.cache_dashboard_query_execution(
              dashboard_id,
              mapping_id,
-             query_execution_result,
+             result,
              user.id
            ) do
       queries = Map.values(dashboard_cache.queries)
@@ -306,9 +374,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
   def get_clickhouse_query_execution_stats(
         _root,
         %{clickhouse_query_id: clickhouse_query_id},
-        %{context: %{auth: %{current_user: user}}}
+        _resolution
       ) do
-    case Queries.QueryExecution.get_execution_stats(user.id, clickhouse_query_id) do
+    case Queries.QueryExecution.get_execution_stats(clickhouse_query_id) do
       {:ok, %{execution_details: details} = result} ->
         # For legacy reasons the API response is flat.
         result = Map.delete(result, :execution_details) |> Map.merge(details)
@@ -391,6 +459,38 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
         }
       ) do
     Dashboards.delete_image_widget(dashboard_id, text_widget_id, user.id)
+  end
+
+  def atomize_dashboard_panels_sql_keys(struct) do
+    panels = Enum.map(struct.panels, &atomize_panel_sql_keys/1)
+
+    struct
+    |> Map.put(:panels, panels)
+  end
+
+  def atomize_panel_sql_keys(panel) do
+    case panel do
+      %{sql: %{} = sql} ->
+        atomized_sql =
+          Map.new(sql, fn
+            {k, v} when is_binary(k) ->
+              # Ignore old, no longer existing keys like san_query_id
+              try do
+                {String.to_existing_atom(k), v}
+              rescue
+                _ -> {nil, nil}
+              end
+
+            {k, v} ->
+              {k, v}
+          end)
+          |> Map.delete(nil)
+
+        %{panel | sql: atomized_sql}
+
+      panel ->
+        panel
+    end
   end
 
   # Private functions

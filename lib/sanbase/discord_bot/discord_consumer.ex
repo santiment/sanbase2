@@ -15,6 +15,32 @@ defmodule Sanbase.DiscordConsumer do
       description: "Show help info and commands"
     },
     %{
+      name: "summary",
+      description: "Summarize a channel or thread",
+      options: [
+        %{
+          type: 7,
+          name: "channel_or_thread",
+          description: "channel or thread",
+          required: true
+        },
+        %{
+          type: 3,
+          name: "from_dt",
+          description: "From date",
+          required: true,
+          autocomplete: true
+        },
+        %{
+          type: 3,
+          name: "to_dt",
+          description: "To date",
+          required: true,
+          autocomplete: true
+        }
+      ]
+    },
+    %{
       name: "query",
       description: "Run new query"
     },
@@ -56,16 +82,12 @@ defmodule Sanbase.DiscordConsumer do
     }
   ]
 
+  def commands, do: @commands
+
   def handle_event({:MESSAGE_CREATE, msg, _ws_state}) do
     cond do
-      LegacyCommandHandler.is_command?(msg.content) ->
+      LegacyCommandHandler.command?(msg.content) ->
         do_handle_command(msg)
-
-      LegacyCommandHandler.is_test_command?(msg.content) ->
-        warm_up(msg)
-        result = LegacyCommandHandler.handle_command("test", msg)
-        log(msg, "test COMMAND RESULT #{inspect(result)}")
-        :ok
 
       msg_contains_bot_mention?(msg) ->
         warm_up(msg)
@@ -98,12 +120,13 @@ defmodule Sanbase.DiscordConsumer do
              "help",
              "list",
              "chart",
-             "code"
+             "code",
+             "summary"
            ] do
     warm_up(interaction)
 
     case command do
-      cmd when cmd in ["code"] ->
+      cmd when cmd in ["code", "summary"] ->
         case CodeHandler.discord_metadata(interaction) do
           %{user_is_team_member: true} = metadata ->
             CodeHandler.handle_interaction(command, interaction, metadata)

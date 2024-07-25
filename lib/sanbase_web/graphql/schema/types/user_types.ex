@@ -278,6 +278,10 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field :are_user_affiliate_datails_submitted, :boolean do
       resolve(&UserAffiliateDetailsResolver.are_user_affiliate_datails_submitted/3)
     end
+
+    field :signup_datetime, :datetime do
+      resolve(&UserResolver.signup_datetime/3)
+    end
   end
 
   object :relays_quota do
@@ -313,6 +317,10 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     value(:signal)
   end
 
+  object :docs_object do
+    field(:link, non_null(:string))
+  end
+
   object :access_restriction do
     field(:type, non_null(:string))
     field(:name, non_null(:string))
@@ -324,6 +332,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field(:restricted_to, :datetime)
     field(:is_deprecated, non_null(:boolean))
     field(:hard_deprecate_after, :datetime)
+    field(:docs, list_of(:docs_object))
   end
 
   object :api_call_data do
@@ -361,7 +370,6 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field(:api, non_null(:boolean))
     field(:sanbase, non_null(:boolean))
     field(:spreadsheet, non_null(:boolean))
-    field(:sandata, non_null(:boolean))
   end
 
   object :follower_data do

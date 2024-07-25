@@ -43,8 +43,8 @@ defmodule Sanbase.InternalServices.Ethauth do
   @doc ~s"""
   Verify that a user that claims to own a given Ethereum address acttually owns it.
   """
-  @spec is_valid_signature?(any(), any()) :: boolean() | {:error, String.t()}
-  def is_valid_signature?(address, signature) do
+  @spec valid_signature?(any(), any()) :: boolean() | {:error, String.t()}
+  def valid_signature?(address, signature) do
     Logger.info(["[Ethauth] Verify signature"])
 
     message = "Login in Santiment with address #{address}"

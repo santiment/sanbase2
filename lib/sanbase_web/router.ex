@@ -38,12 +38,11 @@ defmodule SanbaseWeb.Router do
   end
 
   pipeline :admin2 do
-    plug(SanbaseWeb.AssignRoutes)
+    plug(SanbaseWeb.GenericAdminAssignRoutes)
     plug(:put_layout, html: {SanbaseWeb.Layouts, :admin2})
   end
 
   use ExAdmin.Router
-  use Kaffy.Routes, scope: "/admin3", pipe_through: [:admin_pod_only, :basic_auth]
 
   scope "/auth", SanbaseWeb do
     pipe_through(:browser)
@@ -58,12 +57,24 @@ defmodule SanbaseWeb.Router do
     admin_routes()
   end
 
+  scope "/forms", SanbaseWeb do
+    pipe_through(:browser)
+    live("/", FormsLive)
+    live("/suggest_ecosystems", SuggestEcosystemLabelsChangeLive)
+    live("/suggest_github_organizations", SuggestGithubOrganizationsLive)
+  end
+
   scope "/admin2", SanbaseWeb do
     pipe_through([:admin_pod_only, :browser, :basic_auth, :admin2])
     import Phoenix.LiveDashboard.Router
 
     live_dashboard("/dashboard", metrics: SanbaseWeb.Telemetry, ecto_repos: [Sanbase.Repo])
+    live("/admin_forms", AdminFormsLive)
     live("/monitored_twitter_handle_live", MonitoredTwitterHandleLive)
+    live("/suggest_ecosystems_admin_live", SuggestEcosystemLabelsChangeAdminLive)
+    live("/suggest_github_organizations_admin_live", SuggestGithubOrganizationsAdminLive)
+    live("/upload_image_live", UploadImageLive)
+    live("/uploaded_images_live", UploadedImagesLive)
 
     get("/anonymize_comment/:id", CommentModerationController, :anonymize_comment)
     get("/delete_subcomment_tree/:id", CommentModerationController, :delete_subcomment_tree)
@@ -73,10 +84,10 @@ defmodule SanbaseWeb.Router do
     resources("/webinars", WebinarController)
     resources("/custom_plans", CustomPlanController)
 
-    get("/", GenericController, :home)
-    get("/generic/search", GenericController, :search)
-    get("/generic/show_action", GenericController, :show_action)
-    resources("/generic", GenericController)
+    get("/", GenericAdminController, :home)
+    get("/generic/search", GenericAdminController, :search)
+    get("/generic/show_action", GenericAdminController, :show_action)
+    resources("/generic", GenericAdminController)
   end
 
   scope "/" do
@@ -161,10 +172,21 @@ defmodule SanbaseWeb.Router do
   end
 
   scope "/", SanbaseWeb do
+    pipe_through([:browser])
+    # A LiveView for exploring the available metrics and a GET
+    # REST endpoint for downloading a CSV with the available metrics
+    live("/available_metrics", AvailableMetricsLive)
+    live("/available_metrics/:metric", MetricDetailsLive)
+    get("/export_available_metrics", AvailableMetricsController, :export)
+  end
+
+  scope "/", SanbaseWeb do
     get("/api_metric_name_mapping", MetricNameController, :api_metric_name_mapping)
     get("/projects_data", DataController, :projects_data)
     get("/projects_twitter_handles", DataController, :projects_twitter_handles)
+    get("/monitored_twitter_handles/:secret", DataController, :monitored_twitter_handles)
     get("/ecosystems_data", DataController, :ecosystems_data)
+    get("/clickhouse_metrics_metadata", DataController, :clickhouse_metrics_metadata)
 
     get(
       "/ecosystem_github_organization_mapping",

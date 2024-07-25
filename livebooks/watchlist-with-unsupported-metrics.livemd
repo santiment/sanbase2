@@ -1,0 +1,79 @@
+# Watchlists with unsupported metrics analysis
+
+## Section
+
+```elixir
+watchlists = Sanbase.Repo.all(Sanbase.UserList)
+```
+
+```elixir
+watchlists = watchlists |> Enum.reject(& &1.is_deleted)
+```
+
+```elixir
+metrics = Sanbase.Metric.available_metrics() |> MapSet.new()
+```
+
+```elixir
+list =
+  watchlists
+  |> Enum.map(&Map.take(&1, [:id, :function, :name, :user_id]))
+  |> Enum.filter(&(&1.function.name == "selector"))
+```
+
+```elixir
+list_with_metrics =
+  list
+  |> Enum.map(fn %{function: f, id: id, name: name, user_id: user_id} ->
+    filters_metrics =
+      Enum.map(f.args["filters"] || [], fn ff ->
+        ff["args"]["metric"]
+      end)
+      |> List.flatten()
+      |> Enum.reject(&is_nil/1)
+
+    order_metrics = []
+
+    metrics = (filters_metrics ++ order_metrics) |> Enum.uniq()
+    %{id: id, metrics: metrics, name: name, user_id: user_id}
+  end)
+```
+
+```elixir
+list_with_deprecated_metrics =
+  Enum.filter(list_with_metrics, fn l ->
+    Enum.any?(l.metrics, &(&1 not in metrics))
+  end)
+```
+
+```elixir
+length(list_with_deprecated_metrics)
+```
+
+```elixir
+group_by_user =
+  Enum.group_by(list_with_deprecated_metrics, & &1.user_id)
+  |> Enum.map(fn {k, v} -> {k, length(v)} end)
+  |> Enum.sort_by(&elem(&1, 1), :desc)
+```
+
+```elixir
+Enum.map(list_with_deprecated_metrics, & &1.metrics)
+|> List.flatten()
+|> Enum.uniq()
+|> Enum.filter(&(&1 not in metrics))
+```
+
+```elixir
+watchlists |> Enum.map(& &1.function.args) |> Enum.reject(&(&1 == []))
+```
+
+```elixir
+import Ecto.Query
+# Soft-deleted these watchlists
+ids = Enum.map(list_with_deprecated_metrics, & &1.id)
+# data =ids |> Enum.join("\n")
+# File.write!("/Users/ivanivanov/Downloads/updated_ids.csv", data)
+from(p in Sanbase.UserList, where: p.id in ^ids, update: [set: [is_deleted: true]])
+|> Sanbase.Repo.update_all([])
+```

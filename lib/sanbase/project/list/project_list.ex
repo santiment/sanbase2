@@ -259,6 +259,18 @@ defmodule Sanbase.Project.List do
   end
 
   @doc ~s"""
+  Return only the id, name, ticker, slug and logo_url fields.
+  Additionaly, add all the preloads defined in the opts.
+
+  Example: projects_base_info_only([preload?: true, preload: :github_organizations])
+  """
+  def projects_base_info_only(opts \\ []) do
+    projects_query(opts)
+    |> select([:id, :name, :ticker, :slug, :logo_url])
+    |> Repo.all()
+  end
+
+  @doc ~s"""
   Returns `page_size` number of all projects from the `page` pages.
   Filtering out projects based on some conditions can be controled by the options.
 

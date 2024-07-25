@@ -1,6 +1,6 @@
 defmodule Sanbase.Queries.Query do
   @moduledoc ~s"""
-  TODO
+  A query is a SQL query that can be run by the user.
   """
 
   @behaviour Sanbase.Entity.Behaviour
@@ -55,11 +55,19 @@ defmodule Sanbase.Queries.Query do
     belongs_to(:user, User)
 
     # Fields related to timeline hiding and reversible-deletion
-    field(:is_deleted, :boolean)
-    field(:is_hidden, :boolean)
+    field(:is_deleted, :boolean, default: false)
+    field(:is_hidden, :boolean, default: false)
 
-    # TODO: Add comment
+    # Queries can be added to Dashboards. One query can be added
+    # multiple times and the dashboard_query_mappings table has an id
+    # which can be used to uniquely identify between the different instances
+    # of the query. Each instance can have a different set of parameters overrides.
+    # Support a virutal field, so we can add this id to the query struct.
     field(:dashboard_query_mapping_id, :string, virtual: true)
+
+    # Virtual fields
+    field(:views, :integer, virtual: true, default: 0)
+    # field(:is_featured, :boolean, virtual: true)
 
     timestamps()
   end
@@ -84,6 +92,21 @@ defmodule Sanbase.Queries.Query do
     |> validate_length(:description, min: 1, max: 5_000)
     |> validate_length(:name, min: 1, max: 512)
     |> validate_length(:sql_query_text, min: 1, max: 20_000)
+  end
+
+  def hash(%__MODULE__{} = query) do
+    sql_query_text = normalize(query.sql_query_text)
+    binary = {sql_query_text, query.sql_query_parameters} |> :erlang.term_to_binary()
+    :crypto.hash(:sha256, binary) |> Base.encode64() |> binary_part(0, 32)
+  end
+
+  def public?(%__MODULE__{} = query), do: query.is_public
+
+  def normalize(text) do
+    text
+    |> String.replace(~r/\s+/, " ")
+    |> String.replace(~r/\n+/, "\n")
+    |> String.trim()
   end
 
   @doc ~s"""
@@ -213,6 +236,8 @@ defmodule Sanbase.Queries.Query do
     # |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :user_trigger_id)
     |> Sanbase.Entity.Query.maybe_filter_by_users(opts)
     |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
+    |> Sanbase.Entity.Query.maybe_filter_min_title_length(opts, :name)
+    |> Sanbase.Entity.Query.maybe_filter_min_description_length(opts, :description)
     |> select([ul], ul.id)
   end
 

@@ -204,9 +204,11 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
        default_aggregation: :sum,
        available_aggregations: @aggregations,
        available_selectors: [:slug],
+       required_selectors: @required_selectors[metric],
        data_type: :timeseries,
        is_timebound: false,
-       complexity_weight: @default_complexity_weight
+       complexity_weight: @default_complexity_weight,
+       docs: Enum.map(docs_links(metric), fn l -> %{link: l} end)
      }}
   end
 
@@ -224,6 +226,17 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
 
       "github_activity_contributors_count" ->
         {:ok, "Number of all Github contributors"}
+    end
+  end
+
+  def docs_links(metric) do
+    link = fn page -> "https://academy.santiment.net/metrics/development-activity/#{page}" end
+
+    case metric do
+      "dev_activity" -> [link.("development-activity")]
+      "dev_activity_contributors_count" -> [link.("development-activity-contributors-count")]
+      "github_activity" -> [link.("github-activity")]
+      "github_activity_contributors_count" -> [link.("github-activity-contributors-count")]
     end
   end
 

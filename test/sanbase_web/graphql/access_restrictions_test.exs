@@ -61,14 +61,22 @@ defmodule SanbaseWeb.Graphql.AccessRestrictionsTest do
     end
   end
 
-  # Premium API users don't have restrictions
-  test "premium api user", %{user: user} do
-    insert(:subscription_premium, user: user)
-    {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(user)
-    apikey_conn = setup_apikey_auth(build_conn(), apikey)
+  test "pro+ sanbase user", %{conn: conn, user: user} do
+    insert(:subscription_pro_plus_sanbase, user: user)
+    one_hour_ago = Timex.shift(Timex.now(), hours: -1)
+    over_five_years_ago = Timex.shift(Timex.now(), days: -(5 * 365 + 1))
 
-    for %{"isRestricted" => is_restrictred} <- get_access_restrictions(apikey_conn) do
-      assert is_restrictred == false
+    for %{"isRestricted" => true} = restriction <- get_access_restrictions(conn) do
+      from = restriction["restrictedFrom"]
+      to = restriction["restrictedTo"]
+
+      assert is_nil(from) ||
+               Sanbase.DateTimeUtils.from_iso8601!(from)
+               |> DateTime.compare(over_five_years_ago) == :gt
+
+      assert is_nil(to) ||
+               Sanbase.DateTimeUtils.from_iso8601!(to)
+               |> DateTime.compare(one_hour_ago) == :lt
     end
   end
 

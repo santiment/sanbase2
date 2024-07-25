@@ -27,6 +27,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   @free_metrics FileHandler.metrics_with_access(:free)
   @restricted_metrics FileHandler.metrics_with_access(:restricted)
   @aggregation_map FileHandler.aggregation_map()
+  @docs_links_map FileHandler.docs_links_map()
   @human_readable_name_map FileHandler.human_readable_name_map()
   @metrics_data_type_map FileHandler.metrics_data_type_map()
   @metrics_name_list (@histogram_metrics_name_list ++
@@ -182,7 +183,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
        required_selectors: Map.get(@required_selectors_map, metric, []),
        data_type: Map.get(@metrics_data_type_map, metric),
        is_timebound: Map.get(@timebound_flag_map, metric),
-       complexity_weight: @default_complexity_weight
+       complexity_weight: @default_complexity_weight,
+       docs: Map.get(@docs_links_map, metric)
      }}
   end
 

@@ -42,22 +42,43 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
         description: "Description"
       )
 
-    result = get_most_recent(conn, :screener, min_title_length: 3, min_description_length: 3)
+    dashboard =
+      insert(:dashboard,
+        is_public: true,
+        inserted_at: seconds_ago(30),
+        name: "Long Title",
+        description: "Enough description"
+      )
+
+    query =
+      insert(:query,
+        is_public: true,
+        inserted_at: seconds_ago(25),
+        name: "Long enough Title",
+        description: "Long enough description"
+      )
+
+    result =
+      get_most_recent(conn, [:screener, :dashboard, :query],
+        min_title_length: 3,
+        min_description_length: 3
+      )
 
     data = result["data"]
     stats = result["stats"]
 
     assert %{
-             "totalEntitiesCount" => 1,
+             "totalEntitiesCount" => 3,
              "currentPage" => 1,
              "totalPagesCount" => 1,
              "currentPageSize" => 10
            } = stats
 
-    assert length(data) == 1
+    assert length(data) == 3
 
-    assert Enum.at(data, 0)["screener"]["id"] |> String.to_integer() ==
-             screener.id
+    assert Enum.at(data, 0)["query"]["id"] == query.id
+    assert Enum.at(data, 1)["dashboard"]["id"] == dashboard.id
+    assert Enum.at(data, 2)["screener"]["id"] |> String.to_integer() == screener.id
   end
 
   test "get most recent insights", %{conn: conn} do
@@ -607,6 +628,7 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
     _ = insert(:published_post)
     _ = insert(:chart_configuration, is_public: true)
     _ = insert(:dashboard, is_public: true)
+    _ = insert(:query, is_public: true)
 
     user = insert(:user)
 
@@ -625,28 +647,12 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
       )
 
     s =
-      insert(:screener,
-        type: :project,
-        is_public: true,
-        user: user,
-        inserted_at: seconds_ago(25)
-      )
+      insert(:screener, type: :project, is_public: true, user: user, inserted_at: seconds_ago(25))
 
     i = insert(:published_post, user: user, published_at: seconds_ago(20))
-
-    c =
-      insert(:chart_configuration,
-        is_public: true,
-        user: user,
-        inserted_at: seconds_ago(15)
-      )
-
-    d =
-      insert(:dashboard,
-        is_public: true,
-        user: user,
-        inserted_at: seconds_ago(10)
-      )
+    c = insert(:chart_configuration, is_public: true, user: user, inserted_at: seconds_ago(15))
+    d = insert(:dashboard, is_public: true, user: user, inserted_at: seconds_ago(10))
+    q = insert(:query, is_public: true, user: user, inserted_at: seconds_ago(5))
 
     result =
       get_most_recent(
@@ -656,7 +662,8 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
           :insight,
           :chart_configuration,
           :project_watchlist,
-          :dashboard
+          :dashboard,
+          :query
         ],
         user_role_data_only: :san_family
       )
@@ -665,18 +672,19 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
     stats = result["stats"]
 
     assert %{
-             "totalEntitiesCount" => 5,
+             "totalEntitiesCount" => 6,
              "currentPage" => 1,
              "totalPagesCount" => 1,
              "currentPageSize" => 10
            } = stats
 
-    assert Enum.at(data, 0)["dashboard"]["id"] == d.id
-    assert Enum.at(data, 1)["chartConfiguration"]["id"] == c.id
-    assert Enum.at(data, 2)["insight"]["id"] == i.id
-    assert Enum.at(data, 3)["screener"]["id"] |> String.to_integer() == s.id
+    assert Enum.at(data, 0)["query"]["id"] == q.id
+    assert Enum.at(data, 1)["dashboard"]["id"] == d.id
+    assert Enum.at(data, 2)["chartConfiguration"]["id"] == c.id
+    assert Enum.at(data, 3)["insight"]["id"] == i.id
+    assert Enum.at(data, 4)["screener"]["id"] |> String.to_integer() == s.id
 
-    assert Enum.at(data, 4)["projectWatchlist"]["id"] |> String.to_integer() ==
+    assert Enum.at(data, 5)["projectWatchlist"]["id"] |> String.to_integer() ==
              w.id
   end
 
@@ -787,6 +795,7 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
           addressWatchlist{ id }
           chartConfiguration{ id }
           dashboard{ id }
+          query{ id }
           insight{ id }
           projectWatchlist{ id }
           screener{ id views }

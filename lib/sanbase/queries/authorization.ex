@@ -17,32 +17,127 @@ defmodule Sanbase.Queries.Authorization do
     end
   end
 
+  @doc ~s"""
+  Convert the user's plan to a dynamic Clickhouse repo.
+  """
+  @spec user_plan_to_dynamic_repo(String.t(), String.t()) :: module()
+  def user_plan_to_dynamic_repo(product_code, plan_name) do
+    case {product_code, plan_name} do
+      {_, "FREE"} ->
+        Sanbase.ClickhouseRepo.FreeUser
+
+      {"SANBASE", "PRO"} ->
+        Sanbase.ClickhouseRepo.SanbaseProUser
+
+      {"SANBASE", "PRO_PLUS"} ->
+        Sanbase.ClickhouseRepo.SanbaseMaxUser
+
+      {"SANBASE", "MAX"} ->
+        Sanbase.ClickhouseRepo.SanbaseMaxUser
+
+      {"SANAPI", "BASIC"} ->
+        Sanbase.ClickhouseRepo.SanbaseMaxUser
+
+      {"SANAPI", "PRO"} ->
+        Sanbase.ClickhouseRepo.BusinessProUser
+
+      {"SANAPI", "BUSINESS_PRO"} ->
+        Sanbase.ClickhouseRepo.BusinessProUser
+
+      {"SANAPI", "BUSINESS_MAX"} ->
+        Sanbase.ClickhouseRepo.BusinessMaxUser
+
+      {"SANAPI", "CUSTOM"} ->
+        Sanbase.ClickhouseRepo.ReadOnly
+
+      {"SANAPI", "CUSTOM_" <> _ = custom_plan} ->
+        user_plan_to_dynamic_repo("SANAPI", fetch_base_plan_for_custom(custom_plan))
+    end
+  end
+
   def query_executions_limit(product_code, plan_name) do
     case {product_code, plan_name} do
-      {_, "FREE"} -> %{minute: 20, hour: 200, day: 500}
-      {"SANBASE", "PRO"} -> %{minute: 50, hour: 1000, day: 5000}
-      {"SANBASE", "PRO_PLUS"} -> %{minute: 50, hour: 2000, day: 10000}
-      {"SANAPI", "BASIC"} -> %{minute: 50, hour: 2000, day: 10000}
-      {"SANAPI", "PRO"} -> %{minute: 100, hour: 3000, day: 15000}
-      {"SANAPI", "CUSTOM"} -> %{minute: 200, hour: 3000, day: 20000}
-      {"SANAPI", "CUSTOM_" <> _} -> %{minute: 200, hour: 3000, day: 20000}
+      {_, "FREE"} ->
+        %{minute: 20, hour: 200, day: 500}
+
+      {"SANBASE", "PRO"} ->
+        %{minute: 50, hour: 1000, day: 5000}
+
+      {"SANBASE", "PRO_PLUS"} ->
+        %{minute: 50, hour: 2000, day: 10_000}
+
+      {"SANBASE", "MAX"} ->
+        %{minute: 50, hour: 2000, day: 10_000}
+
+      {"SANAPI", "BASIC"} ->
+        %{minute: 50, hour: 2000, day: 10_000}
+
+      {"SANAPI", "PRO"} ->
+        %{minute: 100, hour: 3000, day: 15_000}
+
+      {"SANAPI", "BUSINESS_PRO"} ->
+        %{minute: 100, hour: 3000, day: 15_000}
+
+      {"SANAPI", "BUSINESS_MAX"} ->
+        %{minute: 100, hour: 3000, day: 15_000}
+
+      {"SANAPI", "CUSTOM"} ->
+        %{minute: 200, hour: 3000, day: 20_000}
+
+      {"SANAPI", "CUSTOM_" <> _ = custom_plan} ->
+        query_executions_limit("SANAPI", fetch_base_plan_for_custom(custom_plan))
     end
   end
 
   def credits_limit(product_code, plan_name) do
     case {product_code, plan_name} do
-      {_, "FREE"} -> 5_000
-      {"SANBASE", "PRO"} -> 1_000_000
-      {"SANBASE", "PRO_PLUS"} -> 2_000_000
-      {"SANAPI", "BASIC"} -> 2_000_000
-      {"SANAPI", "PRO"} -> 5_000_000
-      {"SANAPI", "CUSTOM"} -> 20_000_000
-      # This needs to be updated so its taken from the plan definition
-      {"SANAPI", "CUSTOM_" <> _} -> 20_000_000
+      {_, "FREE"} ->
+        500
+
+      {"SANBASE", "PRO"} ->
+        10_000
+
+      {"SANBASE", "PRO_PLUS"} ->
+        20_000
+
+      {"SANBASE", "MAX"} ->
+        20_000
+
+      {"SANAPI", "BASIC"} ->
+        20_000
+
+      {"SANAPI", "PRO"} ->
+        50_000
+
+      {"SANAPI", "BUSINESS_PRO"} ->
+        50_000
+
+      {"SANAPI", "BUSINESS_MAX"} ->
+        500_000
+
+      {"SANAPI", "CUSTOM"} ->
+        500_000
+
+      {"SANAPI", "CUSTOM_" <> _ = custom_plan} ->
+        credits_limit("SANAPI", fetch_base_plan_for_custom(custom_plan))
     end
   end
 
   # Private functions
+
+  def fetch_base_plan_for_custom(custom_plan) do
+    Sanbase.Billing.Plan.CustomPlan.Loader.get_data(custom_plan, "SANAPI")
+    |> case do
+      {:error, _} ->
+        "FREE"
+
+      custom_plan_access ->
+        get_in(custom_plan_access, [
+          Access.key!(:restrictions),
+          Access.key!(:restricted_access_as_plan)
+        ]) || "FREE"
+    end
+  end
 
   defp check_user_limits(user_id, product_code, plan_name) do
     query_executions_limit = query_executions_limit(product_code, plan_name)

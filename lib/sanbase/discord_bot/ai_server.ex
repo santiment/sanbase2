@@ -4,6 +4,33 @@ defmodule Sanbase.DiscordBot.AiServer do
   alias Sanbase.DiscordBot.AiContext
   alias Sanbase.DiscordBot.AiGenCode
 
+  def summarize_channel(channel, args) do
+    args = Map.merge(%{channel: channel, thread: nil}, args)
+    do_summarize(args)
+  end
+
+  def summarize_thread(thread, args) do
+    args = Map.merge(%{thread: thread, channel: nil}, args)
+    do_summarize(args)
+  end
+
+  def do_summarize(params) do
+    url = "#{ai_server_url()}/summarize"
+
+    do_request_ai_server(url, params)
+    |> case do
+      {:ok, result} ->
+        if result["error"] do
+          {:error, result["error"]}
+        else
+          {:ok, result["summary"]}
+        end
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
   # current version of bot
   def answer(question, discord_metadata \\ %{}) do
     url = "#{ai_server_url()}/question"
@@ -27,23 +54,7 @@ defmodule Sanbase.DiscordBot.AiServer do
     do_request_ai_server(url, ai_server_params)
     |> case do
       {:ok, result} ->
-        answer = result["answer"]
-
-        params =
-          discord_metadata
-          |> Map.put(:answer, answer["answer"])
-          |> Map.put(:question, question)
-          |> Map.put(:tokens_request, answer["tokens_request"])
-          |> Map.put(:tokens_response, answer["tokens_response"])
-          |> Map.put(:tokens_total, answer["tokens_total"])
-          |> Map.put(:total_cost, answer["total_cost"])
-          |> Map.put(:elapsed_time, result["elapsed_time"])
-          |> Map.put(:route, result["route"])
-          |> Map.put(:command, add_command(result["route"]["route"]))
-
-        params = maybe_add_prompt(params, answer["prompt"])
-
-        {:ok, ai_context} = AiContext.create(params)
+        {:ok, ai_context} = create_ai_context(result, question, discord_metadata)
         {:ok, ai_context, result}
 
       {:error, :elimit} ->
@@ -155,10 +166,10 @@ defmodule Sanbase.DiscordBot.AiServer do
     end
   end
 
-  # pinecone indexing
-  def manage_pinecone_index() do
-    if is_prod?() do
-      url = "#{ai_server_url()}/pinecone/index"
+  # postgres indexing
+  def manage_postgres_index() do
+    if prod?() do
+      url = "#{ai_server_url()}/postgres/index"
       HTTPoison.put(url, Jason.encode!(%{hours: 1}), [{"Content-Type", "application/json"}])
     end
 
@@ -212,11 +223,31 @@ defmodule Sanbase.DiscordBot.AiServer do
     end
   end
 
+  defp create_ai_context(result, question, discord_metadata) do
+    answer = result["answer"]
+
+    params =
+      discord_metadata
+      |> Map.put(:answer, answer["answer"])
+      |> Map.put(:question, question)
+      |> Map.put(:tokens_request, answer["tokens_request"])
+      |> Map.put(:tokens_response, answer["tokens_response"])
+      |> Map.put(:tokens_total, answer["tokens_total"])
+      |> Map.put(:total_cost, answer["total_cost"])
+      |> Map.put(:elapsed_time, result["elapsed_time"])
+      |> Map.put(:route, result["route"])
+      |> Map.put(:command, add_command(result["route"]["route"]))
+
+    params = maybe_add_prompt(params, answer["prompt"])
+
+    AiContext.create(params)
+  end
+
   defp ai_server_url() do
     System.get_env("AI_SERVER_URL")
   end
 
-  defp is_prod?(), do: Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) == "prod"
+  defp prod?(), do: Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) == "prod"
 
   @cryptos %{
     "eth" => ["eth", "ethereum"],

@@ -11,6 +11,3 @@ config :sanbase, Sanbase.Telegram,
   token: {:system, "TELEGRAM_SIGNALS_BOT_TOKEN"}
 
 config :sanbase, Sanbase.Alert, email_channel_enabled: {:system, "EMAIL_CHANNEL_ENABLED", "false"}
-
-config :sanbase, Sanbase.Notifications.Discord.Bot,
-  bot_secret: {:system, "DISCORD_BOT_SECRET", ""}

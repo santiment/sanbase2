@@ -15,14 +15,10 @@ defmodule Sanbase.Billing.Product do
   # Sanbase API product id. Ids for products are fixed.
   @product_api 1
   @product_sanbase 2
-  @product_sandata 4
-  @product_exchange_wallets 5
 
   @code_product_id_map %{
     "SANAPI" => 1,
-    "SANBASE" => 2,
-    "SANDATA" => 4,
-    "SAN_EXCHANGE_WALLETS" => 5
+    "SANBASE" => 2
   }
   @product_atom_names Enum.map(@code_product_id_map, fn {k, _v} ->
                         k |> String.downcase() |> String.to_atom()
@@ -40,8 +36,6 @@ defmodule Sanbase.Billing.Product do
 
   def product_api(), do: @product_api
   def product_sanbase(), do: @product_sanbase
-  def product_sandata(), do: @product_sandata
-  def product_exchange_wallets(), do: @product_exchange_wallets
 
   def product_atom_names(), do: @product_atom_names
 

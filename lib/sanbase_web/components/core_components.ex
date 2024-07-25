@@ -435,6 +435,7 @@ defmodule SanbaseWeb.CoreComponents do
 
   slot :col, required: true do
     attr(:label, :string)
+    attr(:col_class, :string)
   end
 
   slot(:action, doc: "the slot for showing user actions in the last table column")
@@ -463,7 +464,7 @@ defmodule SanbaseWeb.CoreComponents do
             <td
               :for={{col, i} <- Enum.with_index(@col)}
               phx-click={@row_click && @row_click.(row)}
-              class={["relative p-0", @row_click && "hover:cursor-pointer"]}
+              class={["relative p-0", col[:col_class], @row_click && "hover:cursor-pointer"]}
             >
               <div class="block py-4 pr-6">
                 <span class="absolute -inset-y-px right-0 -left-4 group-hover:bg-zinc-50 sm:rounded-l-xl" />

@@ -50,7 +50,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
     event_args = %{login_origin: :eth_login, origin_url: origin_url}
 
     with true <- address_message_hash(address) == message_hash,
-         true <- Ethauth.is_valid_signature?(address, signature),
+         true <- Ethauth.valid_signature?(address, signature),
          {:ok, user} <- fetch_user(args, EthAccount.by_address(address)),
          is_first_login <- User.RegistrationState.is_first_login(user, "eth_login"),
          {:ok, %{} = jwt_tokens_map} <- SanbaseWeb.Guardian.get_jwt_tokens(user, device_data),
@@ -99,6 +99,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
 
       {:ok, %{success: true}}
     else
+      {:error, :invalid_redirect_url, message} ->
+        Logger.error(
+          "Login failed: #{message}. Email: #{email}, IP Address: #{remote_ip}, Origin URL: #{origin_url}"
+        )
+
+        {:error, message: message}
+
       {:error, :too_many_login_attempts} ->
         Logger.info(
           "Login failed: too many login attempts. Email: #{email}, IP Address: #{remote_ip}, Origin URL: #{origin_url}"

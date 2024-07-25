@@ -149,16 +149,17 @@ defmodule Sanbase.Dashboards.DashboardCache do
         dashboard_id,
         dashboard_query_mapping_id,
         query_result,
-        querying_user_id,
+        user_id,
         opts \\ []
       ) do
+    query_cache =
+      QueryCache.from_query_result(query_result, dashboard_query_mapping_id, dashboard_id)
+
     # Do not transform the loaded queries cache. Transforming it would
     # convert `compressed_rows` to `rows`, which will be written back and break
-    with query_cache =
-           QueryCache.from_query_result(query_result, dashboard_query_mapping_id, dashboard_id),
-         true <- query_result_size_allowed?(query_cache),
+    with true <- query_result_size_allowed?(query_cache),
          {:ok, cache} <-
-           by_dashboard_id(dashboard_id, querying_user_id,
+           by_dashboard_id(dashboard_id, user_id,
              transform_loaded_queries: false,
              lock_for_update: true
            ) do

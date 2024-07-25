@@ -2,6 +2,7 @@ defmodule SanbaseWeb.MonitoredTwitterHandleLive do
   use SanbaseWeb, :live_view
 
   alias Sanbase.MonitoredTwitterHandle
+  alias SanbaseWeb.AdminFormsComponents
 
   @impl true
   def render(assigns) do
@@ -10,9 +11,7 @@ defmodule SanbaseWeb.MonitoredTwitterHandleLive do
       <div class="flex-1 p:2 sm:p-6 justify-evenly flex flex-col-reverse scrolling-auto">
         <.table id="monitored_twitter_handles" rows={@handles}>
           <:col :let={row} label="Status">
-            <p class={row.status_color}>
-              <%= row.status |> String.replace("_", " ") |> String.upcase() %>
-            </p>
+            <AdminFormsComponents.status status={row.status} />
           </:col>
           <:col :let={row} label="Twitter Handle (Clickable link)">
             <.link class="underline text-blue-600" href={"https://x.com/#{row.handle}"}>
@@ -28,13 +27,13 @@ defmodule SanbaseWeb.MonitoredTwitterHandleLive do
             <.form for={@form} phx-submit="update_status">
               <.input type="text" class="" field={@form[:comment]} placeholder="Comment..." />
               <input type="hidden" name="record_id" value={row.id} />
-              <SanbaseWeb.MonitoredTwitterHandleLive.update_status_button
+              <AdminFormsComponents.button
                 name="status"
                 value="approved"
                 class="bg-green-600 hover:bg-green-800"
                 display_text="Approve"
               />
-              <SanbaseWeb.MonitoredTwitterHandleLive.update_status_button
+              <AdminFormsComponents.button
                 name="status"
                 value="declined"
                 class="bg-red-600 hover:bg-red-800"
@@ -45,21 +44,6 @@ defmodule SanbaseWeb.MonitoredTwitterHandleLive do
         </.table>
       </div>
     </div>
-    """
-  end
-
-  def update_status_button(assigns) do
-    ~H"""
-    <button
-      name={@name}
-      value={@value}
-      class={[
-        "phx-submit-loading:opacity-75 rounded-lg my-1 py-2 px-3 text-sm font-semibold leading-6 text-white",
-        @class
-      ]}
-    >
-      <%= @display_text %>
-    </button>
     """
   end
 
@@ -95,7 +79,6 @@ defmodule SanbaseWeb.MonitoredTwitterHandleLive do
         record
         |> Map.put(:status, status)
         |> Map.put(:comment, comment)
-        |> Map.put(:status_color, status_to_color(status))
 
       record ->
         record
@@ -113,7 +96,6 @@ defmodule SanbaseWeb.MonitoredTwitterHandleLive do
         notes: struct.notes,
         comment: struct.comment,
         inserted_at: struct.inserted_at,
-        status_color: status_to_color(struct.status),
         user_id: struct.user.id,
         user_username: struct.user.username,
         user_email: struct.user.email
@@ -121,10 +103,6 @@ defmodule SanbaseWeb.MonitoredTwitterHandleLive do
     end)
     |> order_records()
   end
-
-  defp status_to_color("approved"), do: "text-green-600"
-  defp status_to_color("declined"), do: "text-red-600"
-  defp status_to_color("pending_approval"), do: "text-yellow-600"
 
   defp order_records(handles) do
     handles

@@ -23,7 +23,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   @max_heap_size_in_words div(500 * 1024 * 1024, @wordsize)
 
   def get_metric(_root, %{metric: metric} = args, _resolution) do
-    with true <- Metric.is_not_deprecated?(metric),
+    with false <- Metric.hard_deprecated?(metric),
          true <- Metric.has_metric?(metric) do
       maybe_enable_clickhouse_sql_storage(args)
       {:ok, %{metric: metric}}
@@ -54,7 +54,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
     metrics = maybe_filter_incomplete_metrics(metrics, args[:has_incomplete_data])
     metrics = maybe_apply_regex_filter(metrics, args[:name_regex_filter])
-    metrics = Enum.sort(metrics, :asc)
+    metrics = metrics |> Enum.uniq() |> Enum.sort(:asc)
     {:ok, metrics}
   end
 
@@ -62,7 +62,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     metrics = Metric.available_metrics()
     metrics = maybe_filter_incomplete_metrics(metrics, args[:has_incomplete_data])
     metrics = maybe_apply_regex_filter(metrics, args[:name_regex_filter])
-    metrics = Enum.sort(metrics, :asc)
+    metrics = metrics |> Enum.uniq() |> Enum.sort(:asc)
 
     {:ok, metrics}
   end
@@ -77,7 +77,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
       {:nocache, {:ok, metrics}} ->
         metrics = maybe_apply_regex_filter(metrics, args[:name_regex_filter])
-        metrics = Enum.sort(metrics, :asc)
+        metrics = metrics |> Enum.uniq() |> Enum.sort(:asc)
 
         {:nocache, {:ok, metrics}}
     end
@@ -97,13 +97,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     do: Metric.human_readable_name(metric)
 
   def get_metadata(%{}, _args, %{source: %{metric: metric}} = resolution) do
-    %{context: %{product_id: product_id, auth: %{plan: plan_name}}} = resolution
-
-    product_code = Sanbase.Billing.Product.code_by_id(product_id)
+    %{
+      context: %{
+        requested_product: requested_product,
+        subscription_product: subcription_product,
+        auth: %{plan: plan_name}
+      }
+    } = resolution
 
     case Metric.metadata(metric) do
       {:ok, metadata} ->
-        access_restrictions = Restrictions.get({:metric, metric}, plan_name, product_code)
+        access_restrictions =
+          Restrictions.get({:metric, metric}, requested_product, subcription_product, plan_name)
 
         {:ok, Map.merge(access_restrictions, metadata)}
 

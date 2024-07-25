@@ -19,7 +19,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/transaction-volume"]
   },
   {
     "human_readable_name": "Price in USD Change ({{interval}})",
@@ -41,7 +42,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/price"]
   },
   {
     "human_readable_name": "Active Addresses For The Last 24h Change ({{interval}})",
@@ -63,7 +65,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/active-addresses-24h"]
   },
   {
     "human_readable_name": "30 Days Moving Average Of Development Activity Change ({{interval}})",
@@ -81,7 +84,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/development-activity/development-activity"]
   },
   {
     "human_readable_name": "Development activity Change ({{interval}})",
@@ -103,9 +107,31 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/development-activity/development-activity"]
   },
 
+  {
+    "human_readable_name": "Github activity Change ({{interval}})",
+    "name": "github_activity_change_{{interval}}",
+    "metric": "github_activity_change_{{interval}}",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": ["slug"],
+    "parameters": [
+      { "interval": "30d" }
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/development-activity/github-activity"]
+  },
   {
     "human_readable_name": "Market Capitalization Change ({{interval}})",
     "name": "marketcap_usd_change_{{interval}}",
@@ -126,7 +152,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/marketcap"]
   },
   {
     "human_readable_name": "Network Growth Change ({{interval}})",
@@ -148,7 +175,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/network-growth"]
   },
   {
     "human_readable_name": "Exchange Inflow Change ({{interval}})",
@@ -170,7 +198,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/exchange-funds-flow"]
   },
   {
     "human_readable_name": "Exchange Outflow Change ({{interval}})",
@@ -192,7 +221,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/exchange-funds-flow"]
   },
   {
     "human_readable_name": "Exchange Balance (Inflow - Outflow) Change ({{interval}})",
@@ -214,7 +244,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/exchange-funds-flow"]
   },
   {
     "human_readable_name": "On-Chain Transaction Volume Change ({{interval}})",
@@ -236,7 +267,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/transaction-volume"]
   },
   {
     "human_readable_name": "On-Chain Transaction Volume in USD Change ({{interval}})",
@@ -258,7 +290,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/transaction-volume"]
   },
   {
     "human_readable_name": "Circulation for coins that have not moved in the past 1 year Change ({{interval}})",
@@ -280,7 +313,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/dormant-circulation"]
   },
 
   {
@@ -303,7 +337,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/circulation"]
   },
 
   {
@@ -326,7 +361,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/circulation"]
   },
 
   {
@@ -349,7 +385,8 @@
     "min_interval": "8h",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/bitmex-derivatives/perpetual-contract-funding-rate"]
   },
 
   {
@@ -372,7 +409,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/mvrv"]
   },
 
   {
@@ -395,7 +433,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/mvrv"]
   },
 
   {
@@ -418,7 +457,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/mvrv"]
   },
 
   {
@@ -441,7 +481,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/mvrv"]
   },
   {
     "human_readable_name": "MVRV for coins that moved in the past 180 days Change ({{interval}})",
@@ -463,7 +504,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/mvrv"]
   },
 
   {
@@ -486,7 +528,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/mvrv"]
   },
   {
     "human_readable_name": "MVRV Change ({{interval}})",
@@ -508,7 +551,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/mvrv"]
   },
   {
     "human_readable_name": "Mean Dollar Invested Age in days for coins that moved Change ({{interval}})",
@@ -530,7 +574,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/mean-coin-age"]
   },
   {
     "human_readable_name": "Age Consumed Change ({{interval}})",
@@ -553,7 +598,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/age-consumed"]
   },
   {
     "human_readable_name": "Percent Of Total Supply On Exchanges Change ({{interval}})",
@@ -575,7 +621,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/supply-on-or-outside-exchanges"]
   },
   {
     "human_readable_name": "Circulation for coins that moved in the past 180 days in USD",
@@ -592,7 +639,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/circulation"]
   },
   {
     "human_readable_name": "Circulation for coins that moved in the past 180 days in USD Change ({{interval}})",
@@ -614,7 +662,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/circulation"]
   },
   {
     "human_readable_name": "Circulation for coins that have not moved in the past 180 days in USD",
@@ -631,7 +680,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/dormant-circulation"]
   },
   {
     "human_readable_name": "Circulation for coins that have not moved in the past 180 days in USD Change ({{interval}})",
@@ -653,7 +703,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/dormant-circulation"]
   },
   {
     "human_readable_name": "Exchange Inflow in USD Change ({{interval}})",
@@ -675,7 +726,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/exchange-funds-flow"]
   },
   {
     "human_readable_name": "Exchange Outflow in USD Change ({{interval}})",
@@ -697,7 +749,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/exchange-funds-flow"]
   },
   {
     "human_readable_name": "Social Volume Change ({{interval}})",
@@ -719,789 +772,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "DEX Traders to DEXes Flow Change ({{interval}})",
-    "name": "dex_traders_to_dexes_flow_change_{{interval}}",
-    "metric": "dex_traders_to_dexes_flow_change_{{interval}}",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "parameters": [
-      { "interval": "1d" },
-      { "interval": "7d" },
-      { "interval": "30d" }
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
     "data_type": "timeseries",
-    "hard_deprecate_after": "2023-12-04T00:00:00Z"
-  },
-  {
-    "human_readable_name": "DEX Traders to CEXes Flow Change ({{interval}})",
-    "name": "dex_traders_to_cexes_flow_change_{{interval}}",
-    "metric": "dex_traders_to_cexes_flow_change_{{interval}}",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "parameters": [
-      { "interval": "1d" },
-      { "interval": "7d" },
-      { "interval": "30d" }
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hard_deprecate_after": "2023-12-04T00:00:00Z"
-  },
-  {
-    "human_readable_name": "DEX Traders to DeFi Flow Change ({{interval}})",
-    "name": "dex_traders_to_defi_flow_change_{{interval}}",
-    "metric": "dex_traders_to_defi_flow_change_{{interval}}",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "parameters": [
-      { "interval": "1d" },
-      { "interval": "7d" },
-      { "interval": "30d" }
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hard_deprecate_after": "2023-12-04T00:00:00Z"
-  },
-  {
-    "human_readable_name": "DEX Traders to Whale Flow Change ({{interval}})",
-    "name": "dex_traders_to_whale_flow_change_{{interval}}",
-    "metric": "dex_traders_to_whale_flow_change_{{interval}}",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "parameters": [
-      { "interval": "1d" },
-      { "interval": "7d" },
-      { "interval": "30d" }
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hard_deprecate_after": "2023-12-04T00:00:00Z"
-  },
-  {
-    "human_readable_name": "DEX Traders to Other Flow Change ({{interval}})",
-    "name": "dex_traders_to_other_flow_change_{{interval}}",
-    "metric": "dex_traders_to_other_flow_change_{{interval}}",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "parameters": [
-      { "interval": "1d" },
-      { "interval": "7d" },
-      { "interval": "30d" }
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hard_deprecate_after": "2023-12-04T00:00:00Z"
-  },
-  {
-    "human_readable_name": "DEXes to DEX Traders Flow Change ({{interval}})",
-    "name": "dexes_to_dex_traders_flow_change_{{interval}}",
-    "metric": "dexes_to_dex_traders_flow_change_{{interval}}",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "parameters": [
-      { "interval": "1d" },
-      { "interval": "7d" },
-      { "interval": "30d" }
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hard_deprecate_after": "2023-12-04T00:00:00Z"
-  },
-  {
-    "human_readable_name": "DEX to CEXes Flow Change ({{interval}})",
-    "name": "dex_to_cexes_flow_change_{{interval}}",
-    "metric": "dex_to_cexes_flow_change_{{interval}}",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "parameters": [
-      { "interval": "1d" },
-      { "interval": "7d" },
-      { "interval": "30d" }
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hard_deprecate_after": "2023-12-04T00:00:00Z"
-  },
-  {
-    "human_readable_name": "DEXes to DeFi Flow Change ({{interval}})",
-    "name": "dexes_to_defi_flow_change_{{interval}}",
-    "metric": "dexes_to_defi_flow_change_{{interval}}",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "parameters": [
-      { "interval": "1d" },
-      { "interval": "7d" },
-      { "interval": "30d" }
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hard_deprecate_after": "2023-12-04T00:00:00Z"
-  },
-  {
-    "human_readable_name": "DEXes to Whale Flow Change ({{interval}})",
-    "name": "dexes_to_whale_flow_change_{{interval}}",
-    "metric": "dexes_to_whale_flow_change_{{interval}}",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "parameters": [
-      { "interval": "1d" },
-      { "interval": "7d" },
-      { "interval": "30d" }
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hard_deprecate_after": "2023-12-04T00:00:00Z"
-  },
-  {
-    "human_readable_name": "DEXes to Other Flow Change ({{interval}})",
-    "name": "dexes_to_other_flow_change_{{interval}}",
-    "metric": "dexes_to_other_flow_change_{{interval}}",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "parameters": [
-      { "interval": "1d" },
-      { "interval": "7d" },
-      { "interval": "30d" }
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hard_deprecate_after": "2023-12-04T00:00:00Z"
-  },
-  {
-    "human_readable_name": "CEXes to DEX Traders Flow Change ({{interval}})",
-    "name": "cexes_to_dex_traders_flow_change_{{interval}}",
-    "metric": "cexes_to_dex_traders_flow_change_{{interval}}",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "parameters": [
-      { "interval": "1d" },
-      { "interval": "7d" },
-      { "interval": "30d" }
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hard_deprecate_after": "2023-12-04T00:00:00Z"
-  },
-  {
-    "human_readable_name": "CEXes to DEX Flow Change ({{interval}})",
-    "name": "cexes_to_dex_flow_change_{{interval}}",
-    "metric": "cexes_to_dex_flow_change_{{interval}}",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "parameters": [
-      { "interval": "1d" },
-      { "interval": "7d" },
-      { "interval": "30d" }
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hard_deprecate_after": "2023-12-04T00:00:00Z"
-  },
-  {
-    "human_readable_name": "CEXes to DeFi Flow Change ({{interval}})",
-    "name": "cexes_to_defi_flow_change_{{interval}}",
-    "metric": "cexes_to_defi_flow_change_{{interval}}",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "parameters": [
-      { "interval": "1d" },
-      { "interval": "7d" },
-      { "interval": "30d" }
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hard_deprecate_after": "2023-12-04T00:00:00Z"
-  },
-  {
-    "human_readable_name": "CEXes to Whale Flow Change ({{interval}})",
-    "name": "cexes_to_whale_flow_change_{{interval}}",
-    "metric": "cexes_to_whale_flow_change_{{interval}}",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "parameters": [
-      { "interval": "1d" },
-      { "interval": "7d" },
-      { "interval": "30d" }
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hard_deprecate_after": "2023-12-04T00:00:00Z"
-  },
-  {
-    "human_readable_name": "CEXes to Other Flow Change ({{interval}})",
-    "name": "cexes_to_other_flow_change_{{interval}}",
-    "metric": "cexes_to_other_flow_change_{{interval}}",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "parameters": [
-      { "interval": "1d" },
-      { "interval": "7d" },
-      { "interval": "30d" }
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hard_deprecate_after": "2023-12-04T00:00:00Z"
-  },
-  {
-    "human_readable_name": "DeFi to DEX Traders Flow Change ({{interval}})",
-    "name": "defi_to_dex_traders_flow_change_{{interval}}",
-    "metric": "defi_to_dex_traders_flow_change_{{interval}}",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "parameters": [
-      { "interval": "1d" },
-      { "interval": "7d" },
-      { "interval": "30d" }
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hard_deprecate_after": "2023-12-04T00:00:00Z"
-  },
-  {
-    "human_readable_name": "DeFi to DEXes Flow Change ({{interval}})",
-    "name": "defi_to_dexes_flow_change_{{interval}}",
-    "metric": "defi_to_dexes_flow_change_{{interval}}",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "parameters": [
-      { "interval": "1d" },
-      { "interval": "7d" },
-      { "interval": "30d" }
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hard_deprecate_after": "2023-12-04T00:00:00Z"
-  },
-  {
-    "human_readable_name": "DeFi to CEXes Flow Change ({{interval}})",
-    "name": "defi_to_cexes_flow_change_{{interval}}",
-    "metric": "defi_to_cexes_flow_change_{{interval}}",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "parameters": [
-      { "interval": "1d" },
-      { "interval": "7d" },
-      { "interval": "30d" }
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hard_deprecate_after": "2023-12-04T00:00:00Z"
-  },
-  {
-    "human_readable_name": "DeFi to Whale Flow Change ({{interval}})",
-    "name": "defi_to_whale_flow_change_{{interval}}",
-    "metric": "defi_to_whale_flow_change_{{interval}}",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "parameters": [
-      { "interval": "1d" },
-      { "interval": "7d" },
-      { "interval": "30d" }
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hard_deprecate_after": "2023-12-04T00:00:00Z"
-  },
-  {
-    "human_readable_name": "DeFi to Other Flow Change ({{interval}})",
-    "name": "defi_to_other_flow_change_{{interval}}",
-    "metric": "defi_to_other_flow_change_{{interval}}",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "parameters": [
-      { "interval": "1d" },
-      { "interval": "7d" },
-      { "interval": "30d" }
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hard_deprecate_after": "2023-12-04T00:00:00Z"
-  },
-  {
-    "human_readable_name": "Whale to DEX Traders Flow Change ({{interval}})",
-    "name": "whale_to_dex_traders_flow_change_{{interval}}",
-    "metric": "whale_to_dex_traders_flow_change_{{interval}}",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "parameters": [
-      { "interval": "1d" },
-      { "interval": "7d" },
-      { "interval": "30d" }
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hard_deprecate_after": "2023-12-04T00:00:00Z"
-  },
-  {
-    "human_readable_name": "Whale to DEXes Flow Change ({{interval}})",
-    "name": "whale_to_dexes_flow_change_{{interval}}",
-    "metric": "whale_to_dexes_flow_change_{{interval}}",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "parameters": [
-      { "interval": "1d" },
-      { "interval": "7d" },
-      { "interval": "30d" }
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hard_deprecate_after": "2023-12-04T00:00:00Z"
-  },
-  {
-    "human_readable_name": "Whale to CEXes Flow Change ({{interval}})",
-    "name": "whale_to_cexes_flow_change_{{interval}}",
-    "metric": "whale_to_cexes_flow_change_{{interval}}",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "parameters": [
-      { "interval": "1d" },
-      { "interval": "7d" },
-      { "interval": "30d" }
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hard_deprecate_after": "2023-12-04T00:00:00Z"
-  },
-  {
-    "human_readable_name": "Whale to DeFi Flow Change ({{interval}})",
-    "name": "whale_to_defi_flow_change_{{interval}}",
-    "metric": "whale_to_defi_flow_change_{{interval}}",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "parameters": [
-      { "interval": "1d" },
-      { "interval": "7d" },
-      { "interval": "30d" }
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hard_deprecate_after": "2023-12-04T00:00:00Z"
-  },
-  {
-    "human_readable_name": "Whale to Other Flow Change ({{interval}})",
-    "name": "whale_to_other_flow_change_{{interval}}",
-    "metric": "whale_to_other_flow_change_{{interval}}",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "parameters": [
-      { "interval": "1d" },
-      { "interval": "7d" },
-      { "interval": "30d" }
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hard_deprecate_after": "2023-12-04T00:00:00Z"
-  },
-  {
-    "human_readable_name": "Other to DEX Traders Flow Change ({{interval}})",
-    "name": "other_to_dex_traders_flow_change_{{interval}}",
-    "metric": "other_to_dex_traders_flow_change_{{interval}}",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "parameters": [
-      { "interval": "1d" },
-      { "interval": "7d" },
-      { "interval": "30d" }
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hard_deprecate_after": "2023-12-04T00:00:00Z"
-  },
-  {
-    "human_readable_name": "Other to DEXes Flow Change ({{interval}})",
-    "name": "other_to_dexes_flow_change_{{interval}}",
-    "metric": "other_to_dexes_flow_change_{{interval}}",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "parameters": [
-      { "interval": "1d" },
-      { "interval": "7d" },
-      { "interval": "30d" }
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hard_deprecate_after": "2023-12-04T00:00:00Z"
-  },
-  {
-    "human_readable_name": "Other to CEXes Flow Change ({{interval}})",
-    "name": "other_to_cexes_flow_change_{{interval}}",
-    "metric": "other_to_cexes_flow_change_{{interval}}",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "parameters": [
-      { "interval": "1d" },
-      { "interval": "7d" },
-      { "interval": "30d" }
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hard_deprecate_after": "2023-12-04T00:00:00Z"
-  },
-  {
-    "human_readable_name": "Other to DeFi Flow Change ({{interval}})",
-    "name": "other_to_defi_flow_change_{{interval}}",
-    "metric": "other_to_defi_flow_change_{{interval}}",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "parameters": [
-      { "interval": "1d" },
-      { "interval": "7d" },
-      { "interval": "30d" }
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hard_deprecate_after": "2023-12-04T00:00:00Z"
-  },
-  {
-    "human_readable_name": "Other to Whale Flow Change ({{interval}})",
-    "name": "other_to_whale_flow_change_{{interval}}",
-    "metric": "other_to_whale_flow_change_{{interval}}",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "parameters": [
-      { "interval": "1d" },
-      { "interval": "7d" },
-      { "interval": "30d" }
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hard_deprecate_after": "2023-12-04T00:00:00Z"
-  },
-  {
-    "human_readable_name": "Traders to Other Flow Change ({{interval}})",
-    "name": "traders_to_other_flow_change_{{interval}}",
-    "metric": "traders_to_other_flow_change_{{interval}}",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "parameters": [
-      { "interval": "1d" },
-      { "interval": "7d" },
-      { "interval": "30d" }
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hard_deprecate_after": "2023-12-04T00:00:00Z"
-  },
-  {
-    "human_readable_name": "Other to Traders Flow Change ({{interval}})",
-    "name": "other_to_traders_flow_change_{{interval}}",
-    "metric": "other_to_traders_flow_change_{{interval}}",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "parameters": [
-      { "interval": "1d" },
-      { "interval": "7d" },
-      { "interval": "30d" }
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hard_deprecate_after": "2023-12-04T00:00:00Z"
-  },
-  {
-    "human_readable_name": "Whale to Traders Flow Change ({{interval}})",
-    "name": "whale_to_traders_flow_change_{{interval}}",
-    "metric": "whale_to_traders_flow_change_{{interval}}",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "parameters": [
-      { "interval": "1d" },
-      { "interval": "7d" },
-      { "interval": "30d" }
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hard_deprecate_after": "2023-12-04T00:00:00Z"
-  },
-  {
-    "human_readable_name": "Traders to Whale Flow Change ({{interval}})",
-    "name": "traders_to_whale_flow_change_{{interval}}",
-    "metric": "traders_to_whale_flow_change_{{interval}}",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "parameters": [
-      { "interval": "1d" },
-      { "interval": "7d" },
-      { "interval": "30d" }
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hard_deprecate_after": "2023-12-04T00:00:00Z"
+    "docs_links": ["https://academy.santiment.net/metrics/social-volume"]
   },
   {
     "human_readable_name": "Social Dominance Change ({{interval}})",
@@ -1523,7 +795,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/social-dominance"]
   },
   {
     "human_readable_name": "Sentiment Balance Change ({{interval}})",
@@ -1567,7 +840,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/price"]
   },
   {
     "human_readable_name": "Price in USD Change (1h)",
@@ -1584,7 +858,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/price"]
   },
   {
     "human_readable_name": "Price in BTC Change ({{interval}})",
@@ -1606,7 +881,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/price"]
   },
   {
     "human_readable_name": "Network Realized Profit or Loss in USD Change ({{interval}})",
@@ -1628,7 +904,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/network-profit-loss"]
   },
   {
     "human_readable_name": "Number of Transactions Transferring More Than 100k USD Change ({{interval}})",
@@ -1650,7 +927,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/whale-transaction-count"]
   },
   {
     "human_readable_name": "Number of Transactions Transferring More Than 1 million USD Change ({{interval}})",
@@ -1672,7 +950,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/whale-transaction-count"]
   },
   {
     "human_readable_name": "1h Moving Average Of Social Dominance Change ({{interval}})",
@@ -1694,7 +973,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/social-dominance"]
   },
   {
     "human_readable_name": "24h Moving Average Of Social Dominance Change ({{interval}})",
@@ -1716,7 +996,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/social-dominance"]
   },
   {
     "human_readable_name": "Sentiment Volume Consumed Total Change ({{interval}})",

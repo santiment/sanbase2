@@ -199,4 +199,75 @@ defmodule Sanbase.FeaturedItemTest do
       assert FeaturedItem.user_triggers() == [user_trigger]
     end
   end
+
+  describe "dashboard featured items" do
+    test "no dashboards are featured" do
+      assert FeaturedItem.dashboards() == []
+    end
+
+    test "cannot make private dashboard featured" do
+      dashboard = insert(:dashboard, is_public: false)
+      {:error, error_msg} = FeaturedItem.update_item(dashboard, true)
+      assert error_msg =~ "cannot be made featured"
+    end
+
+    test "marking dashboards as featured" do
+      dashboard = insert(:dashboard, is_public: true)
+      :ok = FeaturedItem.update_item(dashboard, true)
+      assert FeaturedItem.dashboards() == [dashboard]
+    end
+
+    test "unmarking dashboards as featured" do
+      dashboard = insert(:dashboard, is_public: true)
+      :ok = FeaturedItem.update_item(dashboard, true)
+      :ok = FeaturedItem.update_item(dashboard, false)
+      assert FeaturedItem.dashboards() == []
+    end
+
+    test "marking dashboard as featured is idempotent" do
+      dashboard = insert(:dashboard, is_public: true)
+
+      :ok = FeaturedItem.update_item(dashboard, true)
+      :ok = FeaturedItem.update_item(dashboard, true)
+      :ok = FeaturedItem.update_item(dashboard, true)
+
+      assert FeaturedItem.dashboards() == [dashboard]
+    end
+  end
+
+  describe "query featured items" do
+    test "no queries are featured" do
+      assert FeaturedItem.queries() == []
+    end
+
+    test "cannot make private query featured" do
+      query = insert(:query, is_public: false)
+      {:error, error_msg} = FeaturedItem.update_item(query, true)
+
+      assert error_msg =~ "cannot be made featured"
+    end
+
+    test "marking queries as featured" do
+      query = insert(:query, is_public: true)
+      :ok = FeaturedItem.update_item(query, true)
+      assert FeaturedItem.queries() == [query]
+    end
+
+    test "unmarking queries as featured" do
+      query = insert(:query, is_public: true)
+      :ok = FeaturedItem.update_item(query, true)
+      :ok = FeaturedItem.update_item(query, false)
+      assert FeaturedItem.queries() == []
+    end
+
+    test "marking query as featured is idempotent" do
+      query = insert(:query, is_public: true)
+
+      :ok = FeaturedItem.update_item(query, true)
+      :ok = FeaturedItem.update_item(query, true)
+      :ok = FeaturedItem.update_item(query, true)
+
+      assert FeaturedItem.queries() == [query]
+    end
+  end
 end

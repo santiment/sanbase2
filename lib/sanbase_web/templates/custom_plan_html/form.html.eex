@@ -6,77 +6,69 @@
     </div>
   <% end %>
 
-  <div class="mb-4 relative"> <h2> General Plan fields </h2> </div>
+  <div class="mb-4 relative"> <h1 class="text-lg font-bold"> General Plan fields </h1> </div>
 
   <div class="mb-4 relative">
-    <%= text_input f, :name, id: "name", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600" %>
-    <label for="name" class="label absolute mb-0 -mt-2 pt-4 pl-3 leading-tighter text-gray-400 text-base mt-2 cursor-text">Name (Custom plans must start with `CUSTOM_`)</label>
+    <%= text_input f, :name, id: "name", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600", placeholder: "Name (Custom plans must start with CUSTOM_)" %>
     <%= error_tag f, :name %>
   </div>
 
   <div class="mb-4 relative">
-    <%= textarea f, :amount, id: "amount", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600" %>
-    <label for="amount" class="label absolute mb-0 -mt-2 pt-4 pl-3 leading-tighter text-gray-400 text-base mt-2 cursor-text">Amount (in cents; $49 is 4900) </label>
+    <%= textarea f, :amount, id: "amount", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600", placeholder: "Amount (in cents; $49 is 4900)" %>
     <%= error_tag f, :amount %>
   </div>
 
   <div class="mb-4 relative">
-    <%= textarea f, :currency, id: "currency", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600" %>
-    <label for="currency" class="label absolute mb-0 -mt-2 pt-4 pl-3 leading-tighter text-gray-400 text-base mt-2 cursor-text">Currency (Most of the times this is just USD)</label>
-    <%= error_tag f,:currency %>
+    <%= textarea f, :currency, id: "currency", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600", placeholder: "Currency (Most of the times this is just USD)" %>
     <%= error_tag f, :currency %>
   </div>
 
   <div class="mb-4 relative">
-    <%= textarea f, :interval, id: "interval", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600" %>
-    <label for="interval" class="label absolute mb-0 -mt-2 pt-4 pl-3 leading-tighter text-gray-400 text-base mt-2 cursor-text">Interval (`month` or `year`)</label>
+    <%= textarea f, :interval, id: "interval", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600", placeholder: "Interval (`month` or `year`)" %>
     <%= error_tag f,:interval %>
   </div>
 
-  <div class="mb-4 relative"> <h2> Custom Plan restrictions' fields </h2> </div>
+  <div class="mb-4 relative"> <h1 class="text-lg font-bold">Custom Plan restrictions fields</h1> </div>
  <%= inputs_for f, :restrictions, fn ff -> %>
 
     <div class="mb-4 relative">
-      <%= textarea ff, :metric_access, id: "metric_access", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600" %>
-      <label for="metric_access" class="label absolute mb-0 -mt-2 pt-4 pl-3 leading-tighter text-gray-400 text-base mt-2 cursor-text">Metric Access (JSON field like  {"accessible": "all", "not_accessible": ["daily_active_addresses"], "not_accessible_patterns": ["mvrv_usd"]} )</label>
+      <span> Example: {"accessible": "all", "not_accessible": [], "not_accessible_patterns": []]}
+      <%= textarea ff, :metric_access, id: "metric_access", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600", placeholder: "Metric Access (JSON field like  {\"accessible\": \"all\", \"not_accessible\": [\"daily_active_addresses\"], \"not_accessible_patterns\": [\"mvrv_usd\"]})" %>
       <%= error_tag ff, :metric_access %>
     </div>
 
 
-    <div class="mb-4 relative">
-      <%= textarea ff, :query_access, id: "query_access", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600" %>
-      <label for="query_access" class="label absolute mb-0 -mt-2 pt-4 pl-3 leading-tighter text-gray-400 text-base mt-2 cursor-text">Query Access (JSON field like  {"accessible": "all", "not_accessible": ["history_price"], "not_accessible_patterns": ["mvrv"]} )</label>
+    <div class="flex flex-col">
+      <span> Example: {"accessible": "all", "not_accessible": [], "not_accessible_patterns": []]}
+      <%= textarea ff, :query_access, id: "query_access", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600", placeholder: "Metric Access (JSON field like  {\"accessible\": \"all\", \"not_accessible\": [\"daily_active_addresses\"], \"not_accessible_patterns\": [\"mvrv_usd\"]})" %>
       <%= error_tag ff, :query_access %>
     </div>
 
     <div class="mb-4 relative">
-      <%= textarea ff, :signal_access, class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600" %>
-      <label for="signal_access" class="label absolute mb-0 -mt-2 pt-4 pl-3 leading-tighter text-gray-400 text-base mt-2 cursor-text">Signal Access (JSON field like  {"accessible": "all", "not_accessible": [], "not_accessible_patterns": []} )</label>
+      <span> Example: {"accessible": "all", "not_accessible": [], "not_accessible_patterns": []}
+      <%= textarea ff, :signal_access, class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600", placeholder: "Metric Access (JSON field like  {\"accessible\": \"all\", \"not_accessible\": [\"daily_active_addresses\"], \"not_accessible_patterns\": [\"mvrv_usd\"]})"   %>
       <%= error_tag ff, :signal_access %>
     </div>
 
     <div class="mb-4 relative">
-      <%= textarea ff, :api_call_limits, id: "api_call_limits", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600" %>
-      <label for="api_call_limits" class="label absolute mb-0 -mt-2 pt-4 pl-3 leading-tighter text-gray-400 text-base mt-2 cursor-text">Api Call Limits (JSON field like  {"month": 3000000, "hour": 100000, "minute": 3000} )</label>
+      <span>Example: {"month": 300000, "hour": 20000, "minute": 300}</span>
+      <%= textarea ff, :api_call_limits, id: "api_call_limits", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600", placeholder: "Api Call Limits (JSON field like  {\"month\": 3000000, \"hour\": 100000, \"minute\": 3000}" %>
       <%= error_tag ff, :api_call_limits %>
     </div>
 
 
     <div class="mb-4 relative">
-      <%= textarea ff, :historical_data_in_days, id: "historical_data_in_days", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600" %>
-      <label for="historical_data_in_days" class="label absolute mb-0 -mt-2 pt-4 pl-3 leading-tighter text-gray-400 text-base mt-2 cursor-text">Historical Data In Days (An non-negative integer or empty if no restrictions are applied)</label>
+      <%= textarea ff, :historical_data_in_days, id: "historical_data_in_days", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600", placeholder: "Historical Data In Days (An non-negative integer or empty if no restrictions are applied)" %>
       <%= error_tag ff, :historical_data_in_days %>
     </div>
 
     <div class="mb-4 relative">
-      <%= textarea ff, :realtime_data_cut_off_in_days, id: "realtime_data_cut_off_in_days", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600" %>
-      <label for="realtime_data_cut_off_in_days" class="label absolute mb-0 -mt-2 pt-4 pl-3 leading-tighter text-gray-400 text-base mt-2 cursor-text">Realtime Data Cut Off In Days (An non-negative integer or empty if no restrictions are applied)</label>
+      <%= textarea ff, :realtime_data_cut_off_in_days, id: "realtime_data_cut_off_in_days", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600", placeholder: "Realtime Data Cut Off In Days (An non-negative integer or empty if no restrictions are applied)" %>
       <%= error_tag ff, :realtime_data_cut_off_in_days %>
     </div>
 
     <div class="mb-4 relative">
-      <%= textarea ff, :restricted_access_as_plan, id: "restricted_access_as_plan", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600" %>
-      <label for="restricted_access_as_plan" class="label absolute mb-0 -mt-2 pt-4 pl-3 leading-tighter text-gray-400 text-base mt-2 cursor-text">Restricted Access As Plan (One of: FREE, BASIC, PRO, PREMIUM)</label>
+      <%= textarea ff, :restricted_access_as_plan, id: "restricted_access_as_plan", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600", placeholder: "Restricted Access As Plan (One of: FREE, BASIC, PRO). This controls how the min_plan field is applied." %>
       <%= error_tag ff, :restricted_access_as_plan %>
     </div>
 

@@ -42,7 +42,6 @@ defmodule Sanbase.Project.AvailableQueries do
       &historical_balance_queries/1,
       &holders_queries/1,
       &blockchain_metric_queries/1,
-      &social_queries/1,
       &wallets_queries/1,
       &get_metric_queries/1
     ]
@@ -67,8 +66,6 @@ defmodule Sanbase.Project.AvailableQueries do
         []
     end
   end
-
-  defp social_queries(%Project{}), do: ["socialGainersLosersStatus"]
 
   def historical_balance_queries(%Project{} = project) do
     case Project.infrastructure_real_code(project) do
@@ -99,7 +96,7 @@ defmodule Sanbase.Project.AvailableQueries do
   @bitcoin_specific_queries []
 
   defp blockchain_metric_queries(%Project{} = project) do
-    case {project, Project.is_erc20?(project)} do
+    case {project, Project.erc20?(project)} do
       {%Project{slug: "ethereum"}, _} ->
         @mineable_specific_queries ++
           @ethereum_specific_queries

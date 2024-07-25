@@ -1,7 +1,6 @@
 defmodule SanbaseWeb.GenericAdmin do
-  def admin_modules() do
-    :application.get_key(:sanbase, :modules)
-    |> case do
+  def custom_defined_modules() do
+    case :application.get_key(:sanbase, :modules) do
       {:ok, modules} ->
         modules
         |> Enum.filter(fn module ->
@@ -14,7 +13,7 @@ defmodule SanbaseWeb.GenericAdmin do
   end
 
   def resource_module_map do
-    Enum.reduce(admin_modules(), %{}, fn admin_module, acc ->
+    Enum.reduce(custom_defined_modules(), %{}, fn admin_module, acc ->
       Map.merge(acc, generate_resource(admin_module))
     end)
   end
@@ -43,11 +42,12 @@ defmodule SanbaseWeb.GenericAdmin do
           funcs: %{}
         }
         |> Map.merge(call_module_function_or_default(admin_module, :resource, [], %{}))
+        |> Map.update(:actions, [], fn actions -> ([:show] ++ actions) |> Enum.uniq() end)
     }
   end
 
   def resources do
-    admin_modules()
+    custom_defined_modules()
     |> Enum.map(&schema_to_resource_name/1)
   end
 

@@ -175,7 +175,7 @@ defmodule SanbaseWeb.RepoReaderControllerTest do
       end)
 
       project =
-        Project.by_slug("santiment", only_preload: [:github_organizations, :contract_addresses])
+        Project.by_slug("santiment", preload: [:github_organizations, :contract_addresses])
 
       assert project.twitter_link == "https://twitter.com/santimentfeed"
       assert project.discord_link == "https://discord.com/santiment"
@@ -208,7 +208,7 @@ defmodule SanbaseWeb.RepoReaderControllerTest do
         |> json_response(200)
       end)
 
-      project = Project.by_slug("santiment", only_preload: [:contract_addresses])
+      project = Project.by_slug("santiment", preload: [:contract_addresses])
 
       assert project.contract_addresses |> hd() |> Map.get(:address) ==
                "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098"

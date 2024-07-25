@@ -4,25 +4,13 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
   """
 
   @behaviour Sanbase.Clickhouse.HistoricalBalance.Behaviour
-  use Ecto.Schema
 
   import Sanbase.Clickhouse.HistoricalBalance.Utils
   import Sanbase.Metric.SqlQuery.Helper, only: [timerange_parameters: 3]
+
   alias Sanbase.ClickhouseRepo
 
   @table "xrp_balances"
-  schema @table do
-    field(:datetime, :utc_datetime, source: :dt)
-    field(:balance, :float)
-    field(:old_balance, :float, source: :oldBalance)
-    field(:address, :string)
-    field(:currency, :string)
-  end
-
-  @doc false
-  @spec changeset(any(), any()) :: no_return()
-  def changeset(_, _),
-    do: raise("Should not try to change xrp balances")
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
   def assets_held_by_address(address) do
@@ -52,17 +40,31 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
   def historical_balance([], _, _, _, _, _), do: {:ok, []}
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
-  def historical_balance(addresses, currency, decimals, from, to, interval)
+  def historical_balance(
+        addresses,
+        %{currency: _, issuer: _} = target_map,
+        decimals,
+        from,
+        to,
+        interval
+      )
       when is_list(addresses) do
     combine_historical_balances(addresses, fn address ->
-      historical_balance(address, currency, decimals, from, to, interval)
+      historical_balance(address, target_map, decimals, from, to, interval)
     end)
   end
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
-  def historical_balance(address, currency, _decimals, from, to, interval)
+  def historical_balance(
+        address,
+        %{currency: currency, issuer: issuer},
+        _decimals,
+        from,
+        to,
+        interval
+      )
       when is_binary(address) do
-    query_struct = historical_balance_query(address, currency, from, to, interval)
+    query_struct = historical_balance_query(address, currency, issuer, from, to, interval)
 
     ClickhouseRepo.query_transform(query_struct, fn [dt, balance, has_changed] ->
       %{
@@ -72,7 +74,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
       }
     end)
     |> maybe_update_first_balance(fn ->
-      last_balance_before(address, currency, 0, from)
+      last_balance_before(address, %{currency: currency, issuer: issuer}, 0, from)
     end)
     |> maybe_fill_gaps_last_seen_balance()
   end
@@ -81,9 +83,15 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
   def balance_change([], _, _, _, _), do: {:ok, []}
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
-  def balance_change(address_or_addresses, currency, _decimals, from, to)
+  def balance_change(
+        address_or_addresses,
+        %{currency: currency, issuer: issuer},
+        _decimals,
+        from,
+        to
+      )
       when is_binary(address_or_addresses) or is_list(address_or_addresses) do
-    query_struct = balance_change_query(address_or_addresses, currency, from, to)
+    query_struct = balance_change_query(address_or_addresses, currency, issuer, from, to)
 
     ClickhouseRepo.query_transform(query_struct, fn
       [address, balance_start, balance_end, balance_change] ->
@@ -102,7 +110,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
 
   def historical_balance_change(
         address_or_addresses,
-        currency,
+        %{currency: currency, issuer: issuer},
         _decimals,
         from,
         to,
@@ -113,6 +121,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
       historical_balance_change_query(
         address_or_addresses,
         currency,
+        issuer,
         from,
         to,
         interval
@@ -127,8 +136,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
   end
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
-  def last_balance_before(address, currency, _decimals, datetime) do
-    query_struct = last_balance_before_query(address, currency, datetime)
+  def last_balance_before(address, %{currency: currency, issuer: issuer}, _decimals, datetime) do
+    query_struct = last_balance_before_query(address, currency, issuer, datetime)
 
     case ClickhouseRepo.query_transform(query_struct, & &1) do
       {:ok, [[balance]]} -> {:ok, balance}
@@ -139,14 +148,15 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
 
   # Private functions
 
-  defp last_balance_before_query(address, currency, datetime) do
+  defp last_balance_before_query(address, currency, issuer, datetime) do
     sql = """
     SELECT balance
     FROM #{@table}
     PREWHERE
       address = {{address}} AND
       currency = {{currency}} AND
-      dt <=toDateTime({{datetime}})
+      assetRefId = cityHash64('XRP_' || {{issuer_currency}}) AND
+      dt <= toDateTime({{datetime}})
     ORDER BY dt DESC
     LIMIT 1
     """
@@ -154,7 +164,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
     params = %{
       address: address,
       currency: currency,
-      datetime: DateTime.to_unix(datetime)
+      datetime: DateTime.to_unix(datetime),
+      issuer_currency: get_issuer_currency(issuer, currency)
     }
 
     Sanbase.Clickhouse.Query.new(sql, params)
@@ -171,11 +182,15 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
     GROUP BY address
     """
 
-    params = %{address: address, currency: currency}
+    params = %{
+      address: address,
+      currency: currency
+    }
+
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  defp historical_balance_query(address, currency, from, to, interval)
+  defp historical_balance_query(address, currency, issuer, from, to, interval)
        when is_binary(address) do
     # The balances table is like a stack. For each balance change there is a record
     # with sign = -1 that is the old balance and with sign = 1 which is the new balance
@@ -199,7 +214,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
         address = {{address}} AND
         dt >= toDateTime({{from}}) AND
         dt < toDateTime({{to}}) AND
-        currency = {{currency}}
+        currency = {{currency}} AND
+        assetRefId = cityHash64('XRP_' || {{issuer_currency}})
       GROUP BY time
     )
     GROUP BY time
@@ -214,13 +230,14 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
       address: address,
       from: from,
       to: to,
-      currency: currency
+      currency: currency,
+      issuer_currency: get_issuer_currency(issuer, currency)
     }
 
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  defp balance_change_query(address_or_addresses, currency, from, to) do
+  defp balance_change_query(address_or_addresses, currency, issuer, from, to) do
     sql = """
     SELECT
       address,
@@ -230,13 +247,15 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
     FROM #{@table}
     PREWHERE
       address IN ({{addresses}}) AND
-      currency = {{currency}}
+      currency = {{currency}} AND
+      assetRefId = cityHash64('XRP_' || {{issuer_currency}})
     GROUP BY address
     """
 
     params = %{
       addresses: address_or_addresses |> List.wrap() |> List.flatten(),
       currency: currency,
+      issuer_currency: get_issuer_currency(issuer, currency),
       from: from,
       to: to
     }
@@ -247,6 +266,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
   defp historical_balance_change_query(
          address_or_addresses,
          currency,
+         issuer,
          from,
          to,
          interval
@@ -272,6 +292,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
         PREWHERE
           address IN ({addresses}) AND
           currency = {{currency}} AND
+          assetRefId = cityHash64('XRP_' || {{issuer_currency}}) AND
           dt >= toDateTime({{from}}) AND
           dt <= toDateTime({{to}})
       )
@@ -288,10 +309,14 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
       interval: interval,
       span: span,
       currency: currency,
+      issuer_currency: get_issuer_currency(issuer, currency),
       from: from,
       to: to
     }
 
     Sanbase.Clickhouse.Query.new(sql, params)
   end
+
+  defp get_issuer_currency("XRP", "XRP"), do: "XRP"
+  defp get_issuer_currency(issuer, currency), do: "#{issuer}/#{currency}}"
 end

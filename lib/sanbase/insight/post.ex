@@ -22,14 +22,30 @@ defmodule Sanbase.Insight.Post do
   alias Sanbase.Utils.Config
 
   @preloads [:user, :images, :tags, :chart_configuration_for_event]
-  # state
+
+  # state can be changed by moderators
   @awaiting_approval "awaiting_approval"
   @approved "approved"
   @declined "declined"
+  @states [@awaiting_approval, @approved, @declined]
+  def states(), do: @states
 
-  # ready_state
+  # ready_state indicates whether the user has published the post or not
   @draft "draft"
   @published "published"
+  @ready_states [@draft, @published]
+  def ready_states(), do: @ready_states
+
+  # predictions
+  @predictions [
+    "heavy_bullish",
+    "semi_bullish",
+    "semi_bearish",
+    "heavy_bearish",
+    "unspecified",
+    "none"
+  ]
+  def predictions(), do: @predictions
 
   @type option ::
           {:is_pulse, boolean() | nil}
@@ -245,7 +261,7 @@ defmodule Sanbase.Insight.Post do
   def draft(), do: @draft
   def preloads(), do: @preloads
 
-  def is_published?(%Post{ready_state: ready_state}),
+  def published?(%Post{ready_state: ready_state}),
     do: ready_state == @published
 
   @impl Sanbase.Entity.Behaviour
@@ -268,7 +284,7 @@ defmodule Sanbase.Insight.Post do
 
   @impl Sanbase.Entity.Behaviour
   def by_ids(post_ids, opts) when is_list(post_ids) do
-    preload = Keyword.get(opts, :preload, [:featured_item])
+    preload = Keyword.get(opts, :preload, [:featured_item, :tags])
 
     result =
       from(p in base_query(),
@@ -540,7 +556,18 @@ defmodule Sanbase.Insight.Post do
     |> Repo.all()
   end
 
-  def is_pulse?(%__MODULE__{is_pulse: is_pulse}), do: is_pulse
+  def pulse?(%__MODULE__{is_pulse: is_pulse}), do: is_pulse
+
+  def featured_posts_query() do
+    from(
+      p in Post,
+      left_join: featured_item in Sanbase.FeaturedItem,
+      on: p.id == featured_item.post_id,
+      where: not is_nil(featured_item.id),
+      preload: [:user]
+    )
+    |> distinct(true)
+  end
 
   # Helper functions
 
@@ -736,14 +763,6 @@ defmodule Sanbase.Insight.Post do
 
   defp maybe_drop_post_tags(_, _), do: :ok
 
-  @predictions [
-    "heavy_bullish",
-    "semi_bullish",
-    "semi_bearish",
-    "heavy_bearish",
-    "unspecified",
-    "none"
-  ]
   defp valid_prediction?(_, nil), do: []
   defp valid_prediction?(_, prediction) when prediction in @predictions, do: []
 

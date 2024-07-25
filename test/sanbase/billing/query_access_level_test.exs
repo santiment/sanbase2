@@ -44,7 +44,6 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :compute_raw_clickhouse_query,
           :currencies_market_segments,
           :current_user,
-          :daily_active_addresses,
           :dev_activity,
           :erc20_market_segments,
           :eth_fees_distribution,
@@ -52,13 +51,14 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :eth_spent_by_erc20_projects,
           :eth_spent_over_time_by_all_projects,
           :eth_spent_over_time_by_erc20_projects,
-          :exchange_wallets,
           :featured_chart_configurations,
           :featured_insights,
           :featured_screeners,
           :featured_table_configurations,
           :featured_user_triggers,
           :featured_watchlists,
+          :featured_dashboards,
+          :featured_queries,
           :fetch_all_public_user_lists,
           :fetch_all_public_watchlists,
           :fetch_default_payment_instrument,
@@ -110,17 +110,16 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :get_secondary_users,
           :get_sheets_templates,
           :get_signal,
+          :get_subscription_with_payment_intent,
           :get_telegram_deep_link,
           :get_trigger_by_id,
           :get_user_dashboards,
           :get_user,
           :get_webinars,
           :github_activity,
-          :github_availables_repos,
           :historical_balance,
           :historical_trigger_points,
           :history_price,
-          :history_twitter_data,
           :incoming_transfers_summary,
           :insight_comments,
           :insight,
@@ -153,7 +152,6 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :timeline_events,
           :top_transfers,
           :transaction_volume_per_address,
-          :twitter_data,
           :upcoming_invoice,
           :usd_value_address_change,
           :user_list,
@@ -168,11 +166,16 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :get_user_queries,
           :run_dashboard_sql_query,
           :run_raw_sql_query,
-          :run_sql_query
+          :run_sql_query,
+          :get_cached_query_executions
         ]
         |> Enum.sort()
 
-      assert free_queries == expected_free_queries
+      unexpected_free_queries = free_queries -- expected_free_queries
+      assert unexpected_free_queries == []
+
+      missing_free_queries = expected_free_queries -- free_queries
+      assert missing_free_queries == []
     end
 
     test "restricted queries defined in the schema" do
@@ -182,34 +185,17 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
 
       expected_restricted_queries =
         [
-          :average_token_age_consumed_in_days,
-          :burn_rate,
-          :daily_active_deposits,
-          :exchange_funds_flow,
           :get_latest_metric_data,
           :gas_used,
           :get_project_trending_history,
           :get_word_trending_history,
           :get_trending_words,
           :miners_balance,
-          :mvrv_ratio,
-          :network_growth,
-          :nvt_ratio,
           :percent_of_token_supply_on_exchanges,
-          :realized_value,
           :realtime_top_holders,
-          :social_dominance,
-          :social_gainers_losers_status,
-          :social_volume,
-          :token_age_consumed,
-          :token_circulation,
-          :token_velocity,
           :top_exchanges_by_balance,
           :top_holders_percent_of_total_supply,
           :top_holders,
-          :top_social_gainers_losers,
-          :topic_search,
-          :transaction_volume,
           :word_context,
           :word_trend_score,
           :words_context,
@@ -217,7 +203,11 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
         ]
         |> Enum.sort()
 
-      assert restricted_queries == expected_restricted_queries
+      unexpected_restricted_queries = restricted_queries -- expected_restricted_queries
+      assert unexpected_restricted_queries == []
+
+      missing_restricted_queries = expected_restricted_queries -- restricted_queries
+      assert missing_restricted_queries == []
     end
 
     test "forbidden queries from the schema" do

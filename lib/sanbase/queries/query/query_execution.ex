@@ -203,15 +203,13 @@ defmodule Sanbase.Queries.QueryExecution do
   The stats include information about how many rows and bytes have been
   read from the disk, how much CPU time was used, how big is the result, etc.
   """
-  @spec get_execution_stats(non_neg_integer(), String.t(), non_neg_integer()) ::
+  @spec get_execution_stats(String.t(), non_neg_integer()) ::
           {:ok, t()} | {:error, String.t()}
-  def get_execution_stats(user_id, clickhouse_query_id, attempts_left \\ 2) do
+  def get_execution_stats(clickhouse_query_id, attempts_left \\ 2) do
     query =
       from(
         qe in __MODULE__,
-        where:
-          qe.user_id == ^user_id and
-            qe.clickhouse_query_id == ^clickhouse_query_id
+        where: qe.clickhouse_query_id == ^clickhouse_query_id
       )
 
     case Sanbase.Repo.one(query) do
@@ -224,11 +222,11 @@ defmodule Sanbase.Queries.QueryExecution do
       nil ->
         case attempts_left do
           0 ->
-            {:error, "Query execution not found"}
+            {:error, "Query execution for clickhouse query id #{clickhouse_query_id} not found"}
 
           _ ->
             Process.sleep(5000)
-            get_execution_stats(user_id, clickhouse_query_id, attempts_left - 1)
+            get_execution_stats(clickhouse_query_id, attempts_left - 1)
         end
     end
   end

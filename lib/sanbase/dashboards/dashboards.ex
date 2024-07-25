@@ -36,7 +36,7 @@ defmodule Sanbase.Dashboards do
 
   The dashboard is returned if:
   - It exists and is public;
-    - In this case, the querying_user_id can be any user or nil (anonymous user).
+  - In this case, the querying_user_id can be any user or nil (anonymous user).
   - It is private and owned by the querying user.
 
   The queries are preloaded. If the queries should not be preloaded,
@@ -45,9 +45,12 @@ defmodule Sanbase.Dashboards do
   @spec get_dashboard(dashboard_id(), user_id() | nil, Keyword.t()) ::
           {:ok, Dashboard.t()} | {:error, String.t()}
   def get_dashboard(dashboard_id, querying_user_id, opts \\ []) do
-    # If empty, set the default options so the rest of the logic that depends on the defaults
-    # can still work
-    opts = if [] == opts, do: [preload?: true, preload: Dashboard.default_preload()], else: opts
+    # We put the preloads here, if they are missing, as the preload value
+    # is checked in this function, too.
+    opts =
+      opts
+      |> Keyword.put_new(:preload?, true)
+      |> Keyword.put_new(:preload, Dashboard.default_preload())
 
     Ecto.Multi.new()
     |> Ecto.Multi.run(:get_dashboard, fn _repo, _changes ->
@@ -74,7 +77,7 @@ defmodule Sanbase.Dashboards do
           false -> dashboard
         end
 
-      {:ok, mask_dashboard_not_viewable_parts(dashboard)}
+      {:ok, mask_dashboard_not_viewable_parts(dashboard, querying_user_id)}
     end)
     |> Repo.transaction()
     |> process_transaction_result(:maybe_load_queries)
@@ -817,7 +820,7 @@ defmodule Sanbase.Dashboards do
     end)
     |> Ecto.Multi.run(:add_preloads, fn _repo, %{add_query_to_dashboard: struct} ->
       # Do not preload the dashboard as it will be added in the next step
-      {:ok, Repo.preload(struct, [:query])}
+      {:ok, Repo.preload(struct, [:query, query: :user])}
     end)
     |> Ecto.Multi.run(:fetch_dashboard_queries, fn _repo, %{add_preloads: struct} ->
       # Refetch the dashboard so it has queries properly preloaded
@@ -857,7 +860,7 @@ defmodule Sanbase.Dashboards do
     end)
     |> Ecto.Multi.run(:add_preloads, fn _repo, %{remove_dashboard_query_mapping: struct} ->
       # Do not preload the dashboard as it will be added in the next step
-      {:ok, Repo.preload(struct, [:query])}
+      {:ok, Repo.preload(struct, [:query, query: :user])}
     end)
     |> Ecto.Multi.run(:fetch_dashboard_queries, fn _repo, %{add_preloads: struct} ->
       # Refetch the dashboard so it has queries properly preloaded
@@ -896,9 +899,9 @@ defmodule Sanbase.Dashboards do
       changeset = DashboardQueryMapping.changeset(struct, %{settings: settings})
       Repo.update(changeset)
     end)
-    |> Ecto.Multi.run(:add_preloads, fn _repo, %{add_query_to_dashboard: struct} ->
+    |> Ecto.Multi.run(:add_preloads, fn _repo, %{update_mapping: struct} ->
       # Do not preload the dashboard as it will be added in the next step
-      {:ok, Repo.preload(struct, [:query])}
+      {:ok, Repo.preload(struct, [:query, query: :user])}
     end)
     |> Ecto.Multi.run(:fetch_dashboard_queries, fn _repo, %{add_preloads: struct} ->
       # Refetch the dashboard so it has queries properly preloaded
@@ -915,25 +918,35 @@ defmodule Sanbase.Dashboards do
   @doc ~s"""
 
   """
-  @spec store_dashboard_query_execution(
+  @spec cache_dashboard_query_execution(
           dashboard_id(),
           dashboard_query_mapping_id(),
           map(),
           user_id()
         ) ::
           {:ok, DashboardQueryMappingCache.t()} | {:error, String.t()}
-  def store_dashboard_query_execution(
+  def cache_dashboard_query_execution(
         dashboard_id,
         dashboard_query_mapping_id,
         query_result,
         user_id
       ) do
-    Sanbase.Dashboards.DashboardCache.update_query_cache(
-      dashboard_id,
-      dashboard_query_mapping_id,
-      query_result,
-      user_id
-    )
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:get_dashboard_for_mutation, fn _repo, _changes ->
+      # Just to check that the user can mutate the dashboard. Creating a
+      # cache for a dashboard is doable only by the owner.
+      get_dashboard_for_mutation(dashboard_id, user_id, preload?: false)
+    end)
+    |> Ecto.Multi.run(:update_query_cache, fn _repo, %{get_dashboard_for_mutation: _struct} ->
+      Sanbase.Dashboards.DashboardCache.update_query_cache(
+        dashboard_id,
+        dashboard_query_mapping_id,
+        query_result,
+        user_id
+      )
+    end)
+    |> Repo.transaction()
+    |> process_transaction_result(:update_query_cache)
   end
 
   @doc ~s"""
@@ -1003,22 +1016,21 @@ defmodule Sanbase.Dashboards do
     """
   end
 
-  defp mask_dashboard_not_viewable_parts(%Dashboard{} = dashboard) do
-    # TODO: Make sure if this is the desired behavior.
+  defp mask_dashboard_not_viewable_parts(%Dashboard{} = dashboard, querying_user_id) do
     # When viewing a dashboard, hide the SQL query text and query parameters
     # if the query is private and the querying user is not the owner of the query
     masked_queries =
       dashboard.queries
-      |> Enum.map(&mask_query_not_viewable_parts(&1, dashboard.user_id))
+      |> Enum.map(&mask_query_not_viewable_parts(&1, querying_user_id))
 
     %Dashboard{dashboard | queries: masked_queries}
   end
 
   defp mask_query_not_viewable_parts(
          %Query{user_id: query_owner_user_id, is_public: false} = query,
-         dashboard_owner_user_id
+         querying_user_id
        )
-       when query_owner_user_id != dashboard_owner_user_id do
+       when query_owner_user_id != querying_user_id do
     %Query{
       query
       | sql_query_text: "<masked>",

@@ -4,8 +4,8 @@ defmodule Sanbase.SocialHelperTest do
 
   describe "split_by_source/1" do
     test "splits the slug accordingly" do
-      assert SocialHelper.split_by_source("volume_consumed_twitter") ==
-               {"volume_consumed", "twitter"}
+      assert SocialHelper.split_by_source("sentiment_weighted_twitter") ==
+               {"sentiment_weighted", "twitter"}
     end
   end
 

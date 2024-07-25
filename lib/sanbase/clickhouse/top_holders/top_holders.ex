@@ -11,7 +11,8 @@ defmodule Sanbase.Clickhouse.TopHolders do
   import Sanbase.Utils.Transform, only: [opts_to_limit_offset: 1]
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
 
-  @table "eth_top_holders_daily_union"
+  @eth_table "eth_top_holders_daily"
+  @erc20_table "erc20_top_holders_daily"
 
   @type percent_of_total_supply :: %{
           datetime: DateTime.t(),
@@ -250,6 +251,8 @@ defmodule Sanbase.Clickhouse.TopHolders do
 
     {labels_owners_filter, params} = maybe_add_labels_owners_filter(opts, params)
 
+    table = if slug == "ethereum", do: @eth_table, else: @erc20_table
+
     # Select the raw data and combine it with the partOfTotal by a UNION
     inner_sql = """
     SELECT
@@ -257,7 +260,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
       multiIf(valueTotal > 0, value / (valueTotal / pow(10, {{decimals}})), 0) AS partOfTotal
     FROM (
       SELECT *
-      FROM #{@table} FINAL
+      FROM #{table} FINAL
       WHERE
         contract = {{contract}}
         AND rank > 0
@@ -269,7 +272,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
       SELECT
         dt,
         sum(value) AS valueTotal
-      FROM #{@table} FINAL
+      FROM #{table} FINAL
       WHERE
         contract = {{contract}}
         AND address IN ('TOTAL','freeze') AND rank < 0
@@ -380,6 +383,8 @@ defmodule Sanbase.Clickhouse.TopHolders do
          to,
          interval
        ) do
+    table = if contract == "ETH", do: @eth_table, else: @erc20_table
+
     sql = """
     SELECT
       #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS time,
@@ -406,7 +411,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
             FROM
             (
               SELECT *
-              FROM #{@table}
+              FROM #{table}
               WHERE
                 contract = {{contract}} AND
                 rank > 0 AND
@@ -419,7 +424,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
               SELECT
                 dt,
                 sum(value) AS valueTotal
-              FROM #{@table}
+              FROM #{table}
               WHERE
                 contract = {{contract}} AND
                 address IN ('TOTAL', 'freeze') AND rank < 0 AND

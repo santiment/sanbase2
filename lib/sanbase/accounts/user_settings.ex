@@ -6,6 +6,8 @@ defmodule Sanbase.Accounts.UserSettings do
   alias Sanbase.Repo
   alias Sanbase.Billing.{Subscription, Product}
 
+  @self_reset_api_rate_limits_cooldown 90
+
   schema "user_settings" do
     belongs_to(:user, User)
     embeds_one(:settings, Settings, on_replace: :update)
@@ -23,30 +25,41 @@ defmodule Sanbase.Accounts.UserSettings do
 
   def settings_for(user, opts \\ [])
 
-  def settings_for(%User{user_settings: %{settings: %Settings{}}} = user, opts) do
-    user =
-      case Keyword.get(opts, :force, false) do
-        false -> user
-        true -> Repo.preload(user, [:user_settings], force: true)
-      end
-
-    user.user_settings
+  def settings_for(user, opts) do
+    user_settings_for(user, opts)
     |> modify_settings()
   end
 
-  def settings_for(%User{id: user_id}, _opts) do
-    user_settings =
-      Repo.get_by(__MODULE__, user_id: user_id)
-      |> case do
-        nil ->
-          changeset(%__MODULE__{}, %{user_id: user_id, settings: %{}})
-          |> Repo.insert!()
+  @doc ~s"""
+  Returns a boolean whether or not the user can self-reset their API calls limits.
+  The rate limits can be reset by the user once every #{@self_reset_api_rate_limits_cooldown} days.
+  Giving the ability of users to self reset their rate limits once in a while can help them resolve
+  the issue much quicker, instead of waiting for Santiment support.
+  Rate limits might need resetting due to development bugs, or the user just needing to upgrade to a
+  higher plan. Both things might take some to fix/upgrade, so having the option to unblock yourself
+  until the issues are resolved is required.k
+  """
 
-        %__MODULE__{} = us ->
-          us
-      end
+  def can_self_reset_api_rate_limits?(user) do
+    %{self_api_rate_limits_reset_at: last_self_reset_at} = settings_for(user)
 
-    user_settings |> modify_settings()
+    case do_can_self_reset_api_rate_limits?(last_self_reset_at) do
+      true ->
+        true
+
+      false ->
+        {:error,
+         """
+         Cannot self reset the API calls rate limits.
+         The last reset was less than #{@self_reset_api_rate_limits_cooldown} days ago on #{last_self_reset_at}.
+         """}
+    end
+  end
+
+  def update_self_reset_api_rate_limits_datetime(user, dt) do
+    user_settings_for(user, force: true)
+    |> changeset(%{user_id: user.id, settings: %{self_api_rate_limits_reset_at: dt}})
+    |> Sanbase.Repo.update()
   end
 
   @spec max_alerts_to_send(%User{}) :: {:ok, %{required(channel) => count}}
@@ -89,7 +102,7 @@ defmodule Sanbase.Accounts.UserSettings do
 
   def update_settings(user, %{is_subscribed_biweekly_report: true} = params) do
     case Subscription.current_subscription_plan(user.id, Product.product_sanbase()) do
-      pro when pro in ["PRO", "PRO_PLUS"] -> settings_update(user.id, params)
+      pro when pro in ["PRO", "PRO_PLUS", "MAX"] -> settings_update(user.id, params)
       _ -> {:error, "Only PRO users can subscribe to Biweekly Report"}
     end
   end
@@ -180,10 +193,8 @@ defmodule Sanbase.Accounts.UserSettings do
     # The default value of the alerts limit is an empty map.
     # Put the defaults here, after fetching from the DB, at runtime.
     # This is done so the default values can be changed without altering DB records.
-
     alerts_per_day_limit =
-      us.settings.alerts_per_day_limit
-      |> case do
+      case us.settings.alerts_per_day_limit do
         empty_map when map_size(empty_map) == 0 ->
           Sanbase.Accounts.Settings.default_alerts_limit_per_day()
 
@@ -191,8 +202,51 @@ defmodule Sanbase.Accounts.UserSettings do
           map
       end
 
+    can_self_reset_limits? =
+      do_can_self_reset_api_rate_limits?(us.settings.self_api_rate_limits_reset_at)
+
+    can_self_reset_limits_at =
+      next_self_reset_api_calls_rate_limits_dt(us.settings.self_api_rate_limits_reset_at)
+
     us.settings
     |> Map.put(:has_telegram_connected, us.settings.telegram_chat_id != nil)
     |> Map.put(:alerts_per_day_limit, alerts_per_day_limit)
+    |> Map.put(:can_self_reset_api_rate_limits, can_self_reset_limits?)
+    |> Map.put(:can_self_reset_api_rate_limits_at, can_self_reset_limits_at)
+  end
+
+  defp user_settings_for(%{user_settings: %{settings: _}} = user, opts) do
+    user =
+      case Keyword.get(opts, :force, false) do
+        false -> user
+        true -> Repo.preload(user, [:user_settings], force: true)
+      end
+
+    user.user_settings
+  end
+
+  defp user_settings_for(%User{id: user_id}, _opts) do
+    case Repo.get_by(__MODULE__, user_id: user_id) do
+      nil ->
+        changeset(%__MODULE__{}, %{user_id: user_id, settings: %{}})
+        |> Repo.insert!()
+
+      %__MODULE__{} = us ->
+        us
+    end
+  end
+
+  defp do_can_self_reset_api_rate_limits?(nil = _last_self_reset_at), do: true
+
+  defp do_can_self_reset_api_rate_limits?(%DateTime{} = last_self_reset_at) do
+    dt_threshold = DateTime.utc_now() |> DateTime.add(-@self_reset_api_rate_limits_cooldown, :day)
+
+    DateTime.compare(last_self_reset_at, dt_threshold) != :gt
+  end
+
+  defp next_self_reset_api_calls_rate_limits_dt(nil), do: DateTime.utc_now()
+
+  defp next_self_reset_api_calls_rate_limits_dt(%DateTime{} = last_self_reset_at) do
+    DateTime.add(last_self_reset_at, @self_reset_api_rate_limits_cooldown, :day)
   end
 end

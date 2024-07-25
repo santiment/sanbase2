@@ -285,8 +285,10 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
     s = insert(:screener, is_public: true)
     w = insert(:watchlist, type: :project, is_public: true)
     d = insert(:dashboard, is_public: true)
+    q = insert(:query, is_public: true)
 
     for i <- 1..20 do
+      if rem(i, 7) == 0, do: create_interaction_api(conn, :query, q.id)
       if rem(i, 6) == 0, do: create_interaction_api(conn, :dashboard, d.id)
       if rem(i, 5) == 0, do: create_interaction_api(conn, :user_trigger, ut.id)
       if rem(i, 4) == 0, do: create_interaction_api(conn, :chart_configuration, c.id)
@@ -303,20 +305,21 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
         :screener,
         :chart_configuration,
         :user_trigger,
-        :dashboard
+        :dashboard,
+        :query
       ])
 
     data = result["data"]
     stats = result["stats"]
 
     assert %{
-             "totalEntitiesCount" => 6,
+             "totalEntitiesCount" => 7,
              "currentPage" => 1,
              "totalPagesCount" => 1,
              "currentPageSize" => 10
            } = stats
 
-    assert length(data) == 6
+    assert length(data) == 7
 
     assert Enum.at(data, 0)["insight"]["id"] == p.id
     assert Enum.at(data, 1)["screener"]["id"] |> String.to_integer() == s.id
@@ -324,6 +327,7 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
     assert Enum.at(data, 3)["chartConfiguration"]["id"] == c.id
     assert Enum.at(data, 4)["userTrigger"]["trigger"]["id"] == ut.id
     assert Enum.at(data, 5)["dashboard"]["id"] == d.id
+    assert Enum.at(data, 6)["query"]["id"] == q.id
   end
 
   test "get most used with projects' slugs filter", context do
@@ -525,6 +529,7 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
           chartConfiguration{ id }
           userTrigger{ trigger{ id } }
           dashboard{ id }
+          query{ id }
         }
       }
     }

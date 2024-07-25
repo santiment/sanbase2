@@ -66,7 +66,6 @@ defmodule SanbaseWeb.Graphql.EcosystemDataloader do
       ordered: false
     )
     |> Enum.reduce(%{}, &Map.merge(&1, &2))
-    |> IO.inspect()
   end
 
   defp timeseries_transform_to_map(data, args) do
@@ -75,6 +74,7 @@ defmodule SanbaseWeb.Graphql.EcosystemDataloader do
       elem = %{datetime: dt, value: v}
       Map.update(acc, {ecosystem, args}, [elem], &[elem | &1])
     end)
+    |> Map.new(fn {k, v} -> {k, Enum.reverse(v)} end)
   end
 
   defp aggregated_transform_to_map(data, args) do

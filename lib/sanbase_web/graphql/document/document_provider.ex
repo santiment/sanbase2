@@ -82,8 +82,8 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Execution.CacheDocument do
 
         # Add keys that can affect the data the user can have access to
         additional_keys_hash =
-          {context.permissions, context.product_id, context.auth.subscription, context.auth.plan,
-           context.auth.auth_method}
+          {context.permissions, context.requested_product_id, context.auth.subscription,
+           context.auth.plan, context.auth.auth_method}
           |> Sanbase.Cache.hash()
 
         # The ttl/max_ttl_offset might be rewritten in case `caching_params`
@@ -238,10 +238,8 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Complexity.Preprocess do
     # name from the list both times - so it has to be there twice, while
     # `timeseries_data_complexity` won't go through that path.
     # `histogram_data` does not have complexity checks right now.
-
-    # This is equivalent to X -- (X -- Y) because the `--` operator
-    # has right to left associativity
-    common_parts = selections -- selections -- ["timeseries_data", "aggregated_timeseries_data"]
+    temp = selections -- ["timeseries_data", "aggregated_timeseries_data"]
+    common_parts = selections -- temp
 
     Enum.map(common_parts, fn _ -> metric end)
   end

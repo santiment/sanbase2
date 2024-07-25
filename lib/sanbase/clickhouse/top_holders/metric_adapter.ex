@@ -12,23 +12,15 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
 
   alias Sanbase.ClickhouseRepo
 
-  @supported_infrastructures ["ETH", "BNB", "BEP2"]
+  @supported_infrastructures ["ETH"]
 
   @default_complexity_weight 0.3
 
   def supported_infrastructures(), do: @supported_infrastructures
 
-  @infrastructure_to_table %{
-    "ETH" => "eth_top_holders_daily_union",
-    "BNB" => "bnb_top_holders",
-    "BEP2" => "bnb_top_holders"
-  }
+  @infrastructure_to_table %{"ETH" => "eth_top_holders_daily"}
 
-  @infrastructure_to_blockchain %{
-    "ETH" => "ethereum",
-    "BNB" => "binance-coin",
-    "BEP2" => "binance-coin"
-  }
+  @infrastructure_to_blockchain %{"ETH" => "ethereum"}
 
   @default_aggregation :last
   @aggregations [:last, :min, :max, :first]
@@ -113,7 +105,10 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
        required_selectors: [:slug],
        data_type: data_type,
        is_timebound: false,
-       complexity_weight: @default_complexity_weight
+       complexity_weight: @default_complexity_weight,
+       is_deprecated: false,
+       hard_deprecate_after: nil,
+       docs: []
      }}
   end
 
@@ -155,7 +150,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   end
 
   def available_metrics(%{slug: slug}) do
-    with %Project{} = project <- Project.by_slug(slug, only_preload: [:infrastructure]),
+    with %Project{} = project <- Project.by_slug(slug, preload: [:infrastructure]),
          {:ok, infr} <- Project.infrastructure_real_code(project) do
       if infr in @supported_infrastructures and Project.has_contract_address?(project) do
         # Until we have Binance exchange addresses remove exchange metrics for it.
@@ -176,7 +171,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   def first_datetime(metric, %{slug: slug}) do
     with {:ok, contract, _decimals, infr} <- Project.contract_info_infrastructure_by_slug(slug),
          true <- chain_supported?(infr, slug, metric) do
-      table = Map.get(@infrastructure_to_table, infr)
+      table = to_table(contract, infr)
       query_struct = first_datetime_query(table, contract)
 
       ClickhouseRepo.query_transform(query_struct, fn [timestamp] ->
@@ -190,7 +185,8 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   def last_datetime_computed_at(metric, %{slug: slug}) do
     with {:ok, contract, _decimals, infr} <- Project.contract_info_infrastructure_by_slug(slug),
          true <- chain_supported?(infr, slug, metric) do
-      table = Map.get(@infrastructure_to_table, infr)
+      table = to_table(contract, infr)
+      _query_struct = first_datetime_query(table, contract)
       query_struct = last_datetime_computed_at_query(table, contract)
 
       ClickhouseRepo.query_transform(query_struct, fn [timestamp] ->
@@ -209,7 +205,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
 
   defp projects_with_supported_infrastructure() do
     result =
-      Project.List.projects(preload: [:infrastructure])
+      Project.List.projects(preload: [:infrastructure, :contract_addresses])
       |> Enum.filter(fn project ->
         case Project.infrastructure_real_code(project) do
           {:ok, infr_code} ->
@@ -257,7 +253,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
     params = %{
       contract: contract,
       blockchain: Map.get(@infrastructure_to_blockchain, infr),
-      table: Map.get(@infrastructure_to_table, infr),
+      table: to_table(contract, infr),
       count: Map.get(selector, :holders_count, @default_holders_count),
       from: from,
       to: to,
@@ -268,5 +264,15 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
     }
 
     {:ok, params}
+  end
+
+  defp to_table(contract, infrastructure) do
+    table = Map.get(@infrastructure_to_table, infrastructure)
+
+    cond do
+      contract == "ETH" and infrastructure == "ETH" -> table
+      contract != "ETH" and infrastructure == "ETH" -> "erc20_top_holders_daily"
+      true -> table
+    end
   end
 end

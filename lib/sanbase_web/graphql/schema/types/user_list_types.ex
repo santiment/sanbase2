@@ -53,12 +53,14 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
     field(:time_window, :string)
     field(:page_size, :integer)
     field(:table_columns, :json)
+    field(:json_data, :json)
   end
 
   input_object :watchlist_settings_input_object do
     field(:time_window, :string)
     field(:page_size, :integer)
     field(:table_columns, :json)
+    field(:json_data, :json)
   end
 
   object :user_list do

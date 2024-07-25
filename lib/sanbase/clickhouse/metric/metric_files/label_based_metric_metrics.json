@@ -6,6 +6,7 @@
     "version": "2019-12-22",
     "access": "restricted",
     "selectors": ["slug", "owner", "label"],
+    "required_selectors": ["slug", "owner|label"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -14,7 +15,8 @@
     "min_interval": "1d",
     "table": "daily_label_based_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/labeled-exchange"]
   },
   {
     "human_readable_name": "Active Withdrawals per Exchange",
@@ -23,6 +25,7 @@
     "version": "2019-12-22",
     "access": "restricted",
     "selectors": ["slug", "owner", "label"],
+    "required_selectors": ["slug", "owner|label"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -31,7 +34,8 @@
     "min_interval": "1d",
     "table": "daily_label_based_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/labeled-exchange"]
   },
   {
     "human_readable_name": "Deposit Transactions per Exchange",
@@ -40,6 +44,7 @@
     "version": "2019-12-22",
     "access": "restricted",
     "selectors": ["slug", "owner", "label"],
+    "required_selectors": ["slug", "owner|label"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -48,7 +53,8 @@
     "min_interval": "1d",
     "table": "daily_label_based_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/labeled-exchange"]
   },
   {
     "human_readable_name": "Withdrawals Transactions per Exchange",
@@ -57,6 +63,7 @@
     "version": "2019-12-22",
     "access": "restricted",
     "selectors": ["slug", "owner", "label"],
+    "required_selectors": ["slug", "owner|label"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -65,7 +72,8 @@
     "min_interval": "1d",
     "table": "daily_label_based_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/labeled-exchange"]
   },
   {
     "human_readable_name": "Exchange Inflow per Exchange",
@@ -75,6 +83,7 @@
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": ["slug", "owner", "label"],
+    "required_selectors": ["slug", "owner|label"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -83,7 +92,8 @@
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/labeled-balance"]
   },
   {
     "human_readable_name": "Exchange Outflow per Exchange",
@@ -93,6 +103,7 @@
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": ["slug", "owner", "label"],
+    "required_selectors": ["slug", "owner|label"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -101,7 +112,8 @@
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/labeled-balance"]
   },
   {
     "human_readable_name": "Balance per Label and Owner (Inflow - Outflow) Delta",
@@ -111,6 +123,7 @@
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": ["slug", "owner", "label"],
+    "required_selectors": ["slug", "owner|label"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -119,7 +132,8 @@
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/labeled-balance"]
   },
   {
     "human_readable_name": "Balance per Owner (Inflow - Outflow)",
@@ -128,6 +142,7 @@
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": ["slug", "owner", "label"],
+    "required_selectors": ["slug", "owner|label"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -136,7 +151,8 @@
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/labeled-balance"]
   },
   {
     "human_readable_name": "Total Trade Volume by DEX",
@@ -153,7 +169,8 @@
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/decentralized-exchange-metrics"]
   },
   {
     "human_readable_name": "ETH-Based Tokens Trade Volume by DEX",
@@ -170,7 +187,8 @@
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/decentralized-exchange-metrics"]
   },
   {
     "human_readable_name": "Stablecoin Trade Volume by DEX",
@@ -187,7 +205,8 @@
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/decentralized-exchange-metrics"]
   },
   {
     "human_readable_name": "Other Token Trade Volume by DEX",
@@ -204,7 +223,8 @@
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/decentralized-exchange-metrics"]
   },
   {
     "human_readable_name": "Total Trade Amount by DEX",
@@ -221,7 +241,8 @@
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/decentralized-exchange-metrics"]
   },
   {
     "human_readable_name": "ETH-Based Tokens Trade Amount by DEX",
@@ -238,7 +259,8 @@
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/decentralized-exchange-metrics"]
   },
   {
     "human_readable_name": "Stablecoin Trade Amount by DEX",
@@ -255,7 +277,8 @@
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/decentralized-exchange-metrics"]
   },
   {
     "human_readable_name": "Other Token Trade Amount by DEX",
@@ -272,7 +295,8 @@
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/decentralized-exchange-metrics"]
   },
   {
     "human_readable_name": "ETH-Based Token Trade Volume by Token",
@@ -289,7 +313,8 @@
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/decentralized-exchange-metrics"]
   },
   {
     "human_readable_name": "Stablecoin Trade Volume by Token",
@@ -306,7 +331,8 @@
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/decentralized-exchange-metrics"]
   },
   {
     "human_readable_name": "Token ETH Price by DEX",
@@ -323,7 +349,8 @@
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/decentralized-exchange-metrics"]
   },
   {
     "human_readable_name": "Total NFT Trades Count",
@@ -340,7 +367,8 @@
     "min_interval": "1d",
     "table": "daily_label_based_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/nft-trades-count"]
   },
   {
     "human_readable_name": "Total NFT Trades Volume In USD",
@@ -357,7 +385,8 @@
     "min_interval": "1d",
     "table": "daily_label_based_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/nft-trade-volume-usd"]
   },
   {
     "human_readable_name": "Amount of Uniq Addresses Bought More Than 100k USD of NFTs",
@@ -374,7 +403,8 @@
     "min_interval": "1d",
     "table": "daily_label_based_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/nft-trades-count"]
   },
   {
     "human_readable_name": "Total Volume For NFT Worth More Than 100k USD",
@@ -391,7 +421,8 @@
     "min_interval": "1d",
     "table": "daily_label_based_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/nft-trade-volume-usd"]
   },
   {
     "human_readable_name": "Amount of Uniq Addresses Bought Less Than 1k USD of NFTs",
@@ -408,7 +439,8 @@
     "min_interval": "1d",
     "table": "daily_label_based_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/nft-trades-count"]
   },
   {
     "human_readable_name": "Total Volume For NFT Worth Less Than 1k USD",
@@ -425,6 +457,7 @@
     "min_interval": "1d",
     "table": "daily_label_based_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/nft-trade-volume-usd"]
   }
 ]

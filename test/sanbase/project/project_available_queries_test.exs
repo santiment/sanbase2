@@ -6,8 +6,6 @@ defmodule Sanbase.Project.AvailableQueriesTest do
 
   alias Sanbase.Project.AvailableQueries
 
-  @slug_metrics ["socialGainersLosersStatus"] |> Enum.sort()
-
   setup_all_with_mocks([
     {Sanbase.ClickhouseRepo, [:passthrough], [query: fn _, _ -> {:ok, %{rows: []}} end]}
   ]) do
@@ -53,12 +51,6 @@ defmodule Sanbase.Project.AvailableQueriesTest do
       })
 
     available_queries = AvailableQueries.get(project)
-
-    # some slug metrics
-    assert Enum.all?(
-             @slug_metrics,
-             &Enum.member?(available_queries, &1)
-           )
 
     # some eth addresses metrics
     assert Enum.all?(

@@ -27,6 +27,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   @name_to_metric_map FileHandler.name_to_metric_map()
   @table_map FileHandler.table_map()
   @min_interval_map FileHandler.min_interval_map()
+  @selectors_map FileHandler.selectors_map()
 
   schema @table do
     field(:datetime, :utc_datetime, source: :dt)
@@ -45,7 +46,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       selector: asset_filter_value(selector)
     }
 
-    {additional_filters, params} = additional_filters(filters, params, trailing_and: true)
+    {additional_filters, params} =
+      maybe_get_additional_filters(metric, filters, params, trailing_and: true)
 
     sql = """
     SELECT
@@ -139,7 +141,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       to: dt_to_unix(:to, to)
     }
 
-    {additional_filters, params} = additional_filters(filters, params, trailing_and: true)
+    {additional_filters, params} =
+      maybe_get_additional_filters(metric, filters, params, trailing_and: true)
 
     sql = """
     SELECT slug, SUM(value), toUInt32(SUM(has_changed))
@@ -227,7 +230,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       to: dt_to_unix(:to, to)
     }
 
-    {additional_filters, params} = additional_filters(filters, params, trailing_and: true)
+    {additional_filters, params} =
+      maybe_get_additional_filters(metric, filters, params, trailing_and: true)
 
     sql = """
     SELECT
@@ -385,23 +389,48 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   defp maybe_convert_to_date(:after, metric, dt_column, sql_dt_description) do
     table = Map.get(@table_map, metric)
     min_interval = Map.get(@min_interval_map, metric)
+    min_interval_seconds = Sanbase.DateTimeUtils.str_to_sec(min_interval)
 
     cond do
-      String.starts_with?(table, "daily") -> "#{dt_column} >= toDate(#{sql_dt_description})"
-      min_interval == "1d" -> "toDate(#{dt_column}) >= toDate(#{sql_dt_description})"
-      true -> "#{dt_column} >= #{sql_dt_description}"
+      String.starts_with?(table, "daily") ->
+        "#{dt_column} >= toDate(#{sql_dt_description})"
+
+      # There are daily metrics (with min_interval that is 1d, 7d, etc.) in intraday_metrics table
+      rem(min_interval_seconds, 86_400) == 0 ->
+        "toDate(#{dt_column}) >= toDate(#{sql_dt_description})"
+
+      true ->
+        "#{dt_column} >= #{sql_dt_description}"
     end
   end
 
   defp maybe_convert_to_date(:before, metric, dt_column, sql_dt_description) do
     table = Map.get(@table_map, metric)
     min_interval = Map.get(@min_interval_map, metric)
+    min_interval_seconds = Sanbase.DateTimeUtils.str_to_sec(min_interval)
 
     cond do
-      String.starts_with?(table, "daily") -> "#{dt_column} <= toDate(#{sql_dt_description})"
-      min_interval == "1d" -> "toDate(#{dt_column}) <= toDate(#{sql_dt_description})"
-      true -> "#{dt_column} < #{sql_dt_description}"
+      String.starts_with?(table, "daily") ->
+        "#{dt_column} <= toDate(#{sql_dt_description})"
+
+      rem(min_interval_seconds, 86_400) == 0 ->
+        "toDate(#{dt_column}) <= toDate(#{sql_dt_description})"
+
+      true ->
+        "#{dt_column} < #{sql_dt_description}"
     end
+  end
+
+  defp maybe_get_additional_filters(metric, filters, params, opts) do
+    # If the filters in `filters` are not specified in the available selectors
+    # it will cause an error or not expected behavior if we proceed with them.
+    relevant_filters = relevant_filters_for_metric(metric, filters)
+    additional_filters(relevant_filters, params, opts)
+  end
+
+  defp relevant_filters_for_metric(metric, filters) do
+    selectors = Map.get(@selectors_map, metric, [])
+    Enum.filter(filters, fn {filter, _} -> filter in selectors end)
   end
 
   defp asset_filter_value(%{slug: slug_or_slugs}), do: slug_or_slugs

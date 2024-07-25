@@ -12,14 +12,12 @@ defmodule SanbaseWeb.Graphql.Schema.ExchangeQueries do
 
       arg(:slug, :string)
       arg(:selector, :metric_target_selector_input_object)
-      arg(:label, list_of(:string))
-      arg(:owner, list_of(:string))
-      arg(:limit, :integer, default_value: 100)
+      arg(:limit, :integer, default_value: 10)
 
       middleware(AccessControl)
 
       cache_resolve(&ExchangeResolver.top_exchanges_by_balance/3,
-        ttl: 120,
+        ttl: 600,
         max_ttl_offset: 120
       )
     end

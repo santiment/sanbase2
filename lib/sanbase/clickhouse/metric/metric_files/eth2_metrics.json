@@ -14,7 +14,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/eth-2"]
   },
   {
     "human_readable_name": "ETH 2.0 ROI",
@@ -31,6 +32,7 @@
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/eth-2"]
   }
 ]

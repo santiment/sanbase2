@@ -19,7 +19,7 @@ defmodule Sanbase.Ecosystem do
 
   @type t :: %__MODULE__{
           ecosystem: String.t(),
-          projects: list(Project.t()),
+          projects: list(%Project{}),
           inserted_at: DateTime.t(),
           updated_at: DateTime.t()
         }
@@ -45,6 +45,16 @@ defmodule Sanbase.Ecosystem do
     |> cast(attrs, [:ecosystem])
     |> validate_required([:ecosystem])
     |> unique_constraint(:ecosystem)
+  end
+
+  @spec get_id_by_name(String.t()) :: {:ok, non_neg_integer()} | {:error, String.t(0)}
+  def get_id_by_name(ecosystem) do
+    query = from(e in __MODULE__, where: e.ecosystem == ^ecosystem, select: e.id)
+
+    case Sanbase.Repo.one(query) do
+      nil -> {:error, "Ecosystem with name #{ecosystem} not found"}
+      id -> {:ok, id}
+    end
   end
 
   @spec get_ecosystems(:all | list(String.t())) :: {:ok, list(String.t())}
@@ -124,7 +134,7 @@ defmodule Sanbase.Ecosystem do
 
   """
   @spec get_projects_by_ecosystem_names(list(String.t()), Keyword.t()) ::
-          {:ok, list(Project.t())}
+          {:ok, list(%Project{})}
   def get_projects_by_ecosystem_names(ecosystems, opts \\ []) do
     preloads = Project.preloads()
 
@@ -142,6 +152,8 @@ defmodule Sanbase.Ecosystem do
     projects = Sanbase.Repo.all(query) |> apply_combinator(ecosystems, opts)
     {:ok, projects}
   end
+
+  # Private functions
 
   defp apply_combinator(list, ecosystems, opts) do
     case Keyword.get(opts, :combinator, :all_of) do

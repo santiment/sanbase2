@@ -9,7 +9,13 @@ import Config
 config :sanbase, Sanbase, url: {:system, "SANBASE_URL", "https://app-stage.santiment.net"}
 
 config :sanbase, SanbaseWeb.Endpoint,
-  http: [port: 4000],
+  http: [
+    port: 4000,
+    protocol_options: [
+      # Bump up cowboy2's timeout to 100 seconds
+      idle_timeout: 100_000
+    ]
+  ],
   url: [host: "0.0.0.0"],
   debug_errors: true,
   code_reloader: true,
@@ -29,11 +35,17 @@ config :phoenix,
   stacktrace_depth: 20,
   plug_init_mode: :runtime
 
+# Disable the Oban.Web jobs in local env.
+# When testing Oban.Web jobs locally comment out these 2 lines
+config :sanbase, Oban.Web, queues: false
+
+# Disable the Oban.Scrapers jobs in local env.
+# When testing Oban.Scrapers jobs locally comment out these 2 lines
+config :sanbase, Oban.Scrapers, queues: false
+
 config :sanbase, Sanbase.Notifications.Insight, enabled: "false"
 
-config :sanbase, Sanbase.KafkaExporter,
-  supervisor: Sanbase.InMemoryKafka.Supervisor,
-  producer: Sanbase.InMemoryKafka.Producer
+config :sanbase, Sanbase.KafkaExporter, producer: Sanbase.InMemoryKafka.Producer
 
 # Configure the postgres database access. These values are default values that
 # are used locally when developing. These are not the values that are used in
@@ -68,7 +80,7 @@ config :sanbase, Sanbase.ClickhouseRepo,
   pool_size: {:system, "CLICKHOUSE_POOL_SIZE", "3"},
   show_sensitive_data_on_connection_error: true
 
-config :sanbase, Sanbase.ClickhouseRepo.ReadOnly,
+clickhouse_read_only_opts = [
   adapter: ClickhouseEcto,
   loggers: [Ecto.LogEntry, Sanbase.Prometheus.EctoInstrumenter],
   hostname: "clickhouse",
@@ -77,9 +89,18 @@ config :sanbase, Sanbase.ClickhouseRepo.ReadOnly,
   username: "sanbase",
   password: "",
   timeout: 600_000,
-  pool_size: {:system, "CLICKHOUSE_READONLY_POOL_SIZE", "3"},
-  pool_overflow: 10,
+  pool_size: {:system, "CLICKHOUSE_READONLY_POOL_SIZE", "1"},
+  pool_overflow: 3,
+  max_overflow: 5,
   show_sensitive_data_on_connection_error: true
+]
+
+config :sanbase, Sanbase.ClickhouseRepo.ReadOnly, clickhouse_read_only_opts
+config :sanbase, Sanbase.ClickhouseRepo.FreeUser, clickhouse_read_only_opts
+config :sanbase, Sanbase.ClickhouseRepo.SanbaseProUser, clickhouse_read_only_opts
+config :sanbase, Sanbase.ClickhouseRepo.SanbaseMaxUser, clickhouse_read_only_opts
+config :sanbase, Sanbase.ClickhouseRepo.BusinessProUser, clickhouse_read_only_opts
+config :sanbase, Sanbase.ClickhouseRepo.BusinessMaxUser, clickhouse_read_only_opts
 
 # These are not the values that are used in production. They are set to some
 # default values. When running the app locally these values are overridden by

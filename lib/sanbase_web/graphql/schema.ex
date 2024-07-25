@@ -11,7 +11,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     > free
     > basic
     > pro
-    > premium
     > custom
   """
   # Disable too many dependencies errors
@@ -44,7 +43,6 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.CommentTypes)
   import_types(Graphql.DashboardTypes)
   import_types(Graphql.EntityTypes)
-  import_types(Graphql.EtherbiTypes)
   import_types(Graphql.EcosystemTypes)
   import_types(Graphql.ExchangeTypes)
   import_types(Graphql.FreeFormJsonStorageTypes)
@@ -93,7 +91,6 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.Schema.ChartConfigurationQueries)
   import_types(Graphql.Schema.CommentQueries)
   import_types(Graphql.Schema.DashboardQueries)
-  import_types(Graphql.Schema.DiscordQueries)
   import_types(Graphql.Schema.EmailQueries)
   import_types(Graphql.Schema.EcosystemQueries)
   import_types(Graphql.Schema.EntityQueries)
@@ -164,7 +161,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:entity_queries)
     import_fields(:exchange_queries)
     import_fields(:free_form_json_storage_queries)
-    import_fields(:featured_queries)
+    import_fields(:featured_item_queries)
     import_fields(:github_queries)
     import_fields(:historical_balance_queries)
     import_fields(:insight_queries)
@@ -205,7 +202,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:dashboard_queries_interaction_mutations)
     import_fields(:old_dashboard_mutations)
     import_fields(:comment_mutations)
-    import_fields(:discord_mutations)
     import_fields(:email_mutations)
     import_fields(:entity_mutations)
     import_fields(:free_form_json_storage_mutations)

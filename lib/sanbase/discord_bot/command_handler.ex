@@ -184,7 +184,7 @@ defmodule Sanbase.DiscordBot.CommandHandler do
       Nostrum.Api.get_guild_member(santiment_guild_id(), msg.author.id)
       |> case do
         {:ok, member} ->
-          is_pro?(member.roles)
+          pro?(member.roles)
 
         other ->
           Logger.error("Failed to get guild member: #{inspect(other)}")
@@ -204,7 +204,7 @@ defmodule Sanbase.DiscordBot.CommandHandler do
     }
   end
 
-  def is_pro?(user_roles_in_santiment) do
+  def pro?(user_roles_in_santiment) do
     MapSet.intersection(MapSet.new(pro_roles()), MapSet.new(user_roles_in_santiment))
     |> Enum.any?()
   end

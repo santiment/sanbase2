@@ -12,21 +12,15 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
 
   enum :trending_words_source do
     value(:telegram)
-    value(:twitter_crypto)
+    value(:twitter)
     value(:reddit)
     value(:all)
   end
 
   enum :social_dominance_sources do
     value(:telegram)
+    value(:twitter)
     value(:reddit)
-    value(:all)
-  end
-
-  enum :social_gainers_losers_status_enum do
-    value(:gainer)
-    value(:loser)
-    value(:newcomer)
     value(:all)
   end
 
@@ -34,11 +28,6 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
     value(:reddit_comments_overview)
     value(:telegram_chats_overview)
     value(:telegram_discussion_overview)
-  end
-
-  enum :topic_search_sources do
-    value(:telegram)
-    value(:reddit)
   end
 
   object :popular_search_term do
@@ -54,10 +43,6 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
         {:ok, inserted_at}
       end)
     end
-  end
-
-  object :topic_search do
-    field(:chart_data, list_of(:chart_data))
   end
 
   object :messages do
@@ -142,28 +127,6 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
   object :words_social_dominance do
     field(:word, non_null(:string))
     field(:social_dominance, non_null(:float))
-  end
-
-  object :top_social_gainers_losers do
-    field(:datetime, non_null(:datetime))
-    field(:projects, list_of(:projects_change))
-  end
-
-  object :projects_change do
-    field(:slug, non_null(:string))
-
-    field :project, :project do
-      cache_resolve(&SocialDataResolver.project_from_slug/3)
-    end
-
-    field(:change, non_null(:float))
-    field(:status, :social_gainers_losers_status_enum)
-  end
-
-  object :social_gainers_losers_status do
-    field(:datetime, non_null(:datetime))
-    field(:change, non_null(:float))
-    field(:status, :social_gainers_losers_status_enum)
   end
 
   input_object :word_selector_input_object do

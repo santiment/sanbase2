@@ -131,7 +131,7 @@ defmodule Sanbase.Chart.Configuration do
     |> where([config], config.user_id == ^user_id)
   end
 
-  def is_public?(%__MODULE__{is_public: is_public}), do: is_public
+  def public?(%__MODULE__{is_public: is_public}), do: is_public
 
   def user_configurations(user_id, querying_user_id, project_id \\ nil) do
     user_chart_configurations_query(user_id, querying_user_id, project_id)

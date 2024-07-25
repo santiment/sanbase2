@@ -110,7 +110,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
 
         assert_receive({^ref, msg}, 1000)
 
-        assert msg =~ "🎉 New payment for $95 for Neuro by Santiment / ESSENTIAL by"
+        assert msg =~ "🎉 New payment for $95 for Sanapi by Santiment / ESSENTIAL by"
         assert msg =~ "@santiment.net"
         assert msg =~ "Coupon name: TestSanCoupon"
         assert msg =~ "Coupon id: CVXvPaMG"

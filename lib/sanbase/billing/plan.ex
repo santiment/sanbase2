@@ -13,7 +13,7 @@ defmodule Sanbase.Billing.Plan do
   alias Sanbase.Repo
   alias Sanbase.Billing.{Product, Subscription}
 
-  @plans_order [free: 0, basic: 1, pro: 2, premium: 3, custom: 4]
+  @plans_order [free: 0, basic: 1, pro: 2, business_pro: 3, max: 4, business_max: 5, custom: 6]
   @plans Keyword.keys(@plans_order)
 
   def plans(), do: @plans
@@ -93,6 +93,10 @@ defmodule Sanbase.Billing.Plan do
     |> Sanbase.Repo.insert()
   end
 
+  def upgrade_plan(base_plan, extends: upgrades) do
+    Sanbase.MapUtils.merge_deep(base_plan, upgrades)
+  end
+
   def update_plan(plan, params) do
     plan
     |> changeset(params)
@@ -116,20 +120,23 @@ defmodule Sanbase.Billing.Plan do
   end
 
   def free_plan() do
-    %__MODULE__{name: "FREE"}
+    %__MODULE__{name: "FREE", product_id: 1}
   end
 
-  @same_name_plans ["FREE", "BASIC", "PRO", "PRO_PLUS", "PREMIUM", "EXTENSION"]
-  @enterprise_plans [
-    "CUSTOM",
-    "ENTERPRISE",
-    "ENTERPRISE_BASIC",
-    "ENTERPRISE_PLUS"
+  @same_name_plans [
+    "FREE",
+    "BASIC",
+    "PRO",
+    "PRO_PLUS",
+    "MAX",
+    "BUSINESS_PRO",
+    "BUSINESS_MAX",
+    "CUSTOM"
   ]
+
   def plan_name(%__MODULE__{} = plan) do
     case plan.name do
       name when name in @same_name_plans -> name
-      name when name in @enterprise_plans -> "CUSTOM"
       "ESSENTIAL" -> "BASIC"
       "CUSTOM_" <> _ = name -> name
     end

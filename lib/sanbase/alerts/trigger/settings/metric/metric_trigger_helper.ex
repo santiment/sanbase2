@@ -39,40 +39,61 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
       {:error, {:disable_alert, _}} = error ->
         error
 
+      {:error, :target_empty_list} ->
+        # There's nothing to be triggered
+        {:ok, %{settings | triggered?: false}}
+
       _ ->
         {:ok, %{settings | triggered?: false}}
     end
   end
 
-  def get_data(%{} = settings) do
-    %{filtered_target: %{list: target_list, type: type}} = settings
+  def get_data(%{filtered_target: %{list: []}}) do
+    {:error, :target_empty_list}
+  end
 
-    data =
-      target_list
-      |> Enum.map(fn identifier ->
-        {identifier, fetch_metric(%{type => identifier}, settings)}
-      end)
-      |> Enum.reject(fn
-        {_, nil} -> true
-        _ -> false
-      end)
+  def get_data(%{filtered_target: %{list: target_list, type: type}} = settings) do
+    # When the target is :text, the target_list always contains 0 or 1 elements.
+    # But the social data functions don't know how to work with lists.
+    # Handle by rewriting the selector.
+    # An alternative would be to rewrite the remove_targets_on_cooldown function in the trigger.ex
+    # file, but then the argument `:list` will no longer be list.
+    selector =
+      if type == :text and length(target_list) == 1 do
+        %{text: hd(target_list)}
+      else
+        %{type => target_list}
+      end
 
-    disable_alert_error = Enum.find(data, &match?({_, {:error, {:disable_alert, _}}}, &1))
-    any_alert_error = Enum.find(data, &match?({_, {:error, _}}, &1))
+    case fetch_metric(selector, settings) do
+      {:error, {:disable_alert, _reason}} = error ->
+        error
 
-    # If any of the errors is a disable_alert error, return it directly.
-    # If there is no disable_alert error, return the first error.
-    # If there are no errors at all, return ok
-    case disable_alert_error do
-      {_, {:error, {:disable_alert, reason}}} ->
-        {:error, {:disable_alert, reason}}
+      {:error, _error} = error ->
+        error
 
-      nil ->
-        if any_alert_error, do: any_alert_error, else: {:ok, data}
+      {:ok, data} ->
+        # The target_list could be a list of many identifiers, i.e. slugs.
+        # This unfolding will map this map of slug => value pairs to
+        # one element per identifier
+        result = unfold_result(data)
+        {:ok, result}
     end
   end
 
   # Private functions
+
+  def unfold_result(data) do
+    [
+      %{datetime: dt1, value: data1},
+      %{datetime: dt2, value: data2}
+    ] = data
+
+    Enum.map(data1, fn {k, v} ->
+      {k, [%{datetime: dt1, value: v}, %{datetime: dt2, value: Map.get(data2, k)}]}
+    end)
+    |> Enum.reject(fn {_k, [%{value: v1}, %{value: v2}]} -> is_nil(v1) or is_nil(v2) end)
+  end
 
   # Return a list of the `settings.metric` values for the necessary time range
 
@@ -93,19 +114,12 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
       second_end: second_end
     } = timerange_params(settings)
 
-    to_value = fn %{} = map ->
-      [{_slug, value}] = Map.to_list(map)
-      value
-    end
-
     Cache.get_or_store(cache_key, fn ->
       with {:ok, data1} when is_proper_metric_data(data1) <-
              Metric.aggregated_timeseries_data(metric, selector, first_start, first_end),
            {:ok, data2} when is_proper_metric_data(data2) <-
-             Metric.aggregated_timeseries_data(metric, selector, second_start, second_end),
-           value1 when not is_nil(value1) <- to_value.(data1),
-           value2 when not is_nil(value2) <- to_value.(data2) do
-        [%{datetime: first_start, value: value1}, %{datetime: second_start, value: value2}]
+             Metric.aggregated_timeseries_data(metric, selector, second_start, second_end) do
+        {:ok, [%{datetime: first_start, value: data1}, %{datetime: second_start, value: data2}]}
       else
         {:error, error} when is_binary(error) ->
           handle_fetch_metric_error(error, metric, selector)

@@ -37,8 +37,6 @@ defmodule SanbaseWeb.Endpoint do
     only: SanbaseWeb.static_paths()
   )
 
-  plug(Plug.Static, at: "/kaffy", from: :kaffy, gzip: false, only: ~w(assets))
-
   # Prometheus /metrics endpoint
   plug(PromEx.Plug, prom_ex_module: SanbaseWeb.Prometheus)
 
@@ -72,34 +70,12 @@ defmodule SanbaseWeb.Endpoint do
 
   plug(SanbaseWeb.Router)
 
-  @doc """
-  Callback invoked for dynamically configuring the endpoint.
-
-  It receives the endpoint configuration and checks if
-  configuration should be loaded from the system environment.
-  """
-  def init(_key, config) do
-    if config[:load_from_system_env] do
-      port = System.get_env("PORT") || raise "expected the PORT environment variable to be set"
-
-      {:ok,
-       Keyword.put(config, :http, [
-         :inet6,
-         port: port,
-         protocol_options: [
-           max_header_name_length: 64,
-           max_header_value_length: 8192,
-           max_request_line_length: 16_384,
-           max_headers: 100
-         ]
-       ])}
-    else
-      {:ok, config}
-    end
-  end
-
   def website_url() do
     Config.module_get(__MODULE__, :website_url)
+  end
+
+  def project_url(slug) when is_binary(slug) do
+    Path.join([frontend_url(), "charts?slug=#{slug}"])
   end
 
   def sonar_url() do

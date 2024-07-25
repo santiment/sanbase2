@@ -17,6 +17,24 @@ defmodule Sanbase.Clickhouse.Label do
 
   @create_label_topic "label_changes"
 
+  def label_fqns_with_asset(slug) do
+    query_struct = label_fqns_with_asset_query(slug)
+
+    Sanbase.ClickhouseRepo.query_transform(query_struct, fn [fqn, owner, version] ->
+      display_name =
+        fqn
+        |> String.trim_leading("#{owner}/")
+        |> String.trim_trailing(":#{version}")
+
+      %{
+        owner: owner,
+        version: version,
+        display_name: display_name,
+        label_fqn: fqn
+      }
+    end)
+  end
+
   def addresses_by_labels(label_fqn_or_fqns, opts \\ [])
 
   def addresses_by_labels(label_fqn_or_fqns, opts) do
@@ -151,6 +169,19 @@ defmodule Sanbase.Clickhouse.Label do
     do: {:error, "Username is required for creating custom address labels"}
 
   # Private functions
+
+  defp label_fqns_with_asset_query(slug) do
+    sql = """
+    SELECT fqn, owner, version
+    FROM label_metadata FINAL
+    WHERE asset_name = {{slug}} AND deprecated = 0
+    """
+
+    params = %{slug: slug}
+
+    Sanbase.Clickhouse.Query.new(sql, params)
+  end
+
   # For backwards compatibility, if the slug is nil treat it as ethereum blockchain
   defp slug_to_blockchain(nil), do: "ethereum"
 

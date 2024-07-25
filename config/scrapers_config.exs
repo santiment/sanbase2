@@ -2,7 +2,7 @@ import Config
 
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap,
   update_interval: 5 * 1000 * 60,
-  api_url: "https://sandbox-api.coinmarketcap.com/",
+  api_url: {:system, "COINMARKETCAP_API_URL", "https://sandbox-api.coinmarketcap.com/"},
   api_key: {:system, "COINMARKETCAP_API_KEY", ""},
   sync_enabled: {:system, "COINMARKETCAP_SCRAPER_ENABLED", false}
 

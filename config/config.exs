@@ -77,8 +77,7 @@ config :sanbase, Sanbase.Kafka,
   kafka_port: {:system, "KAFKA_PORT", "9092"}
 
 config :sanbase, Sanbase.KafkaExporter,
-  supervisor: SanExporterEx.Producer.Supervisor,
-  producer: SanExporterEx.Producer,
+  producer: Sanbase.Kafka.Implementation.Producer,
   kafka_url: {:system, "KAFKA_URL", "blockchain-kafka-kafka"},
   kafka_port: {:system, "KAFKA_PORT", "9092"},
   prices_topic: {:system, "KAFKA_PRICES_TOPIC", "asset_prices"},
@@ -108,12 +107,20 @@ config :sanbase, Sanbase.ClickhouseRepo,
   max_overflow: 3,
   scheme: :http
 
-config :sanbase, Sanbase.ClickhouseRepo.ReadOnly,
+clickhouse_read_only_opts = [
   adapter: Ecto.Adapters.Postgres,
   queue_target: 60_000,
   queue_interval: 60_000,
   max_overflow: 3,
   scheme: :http
+]
+
+config :sanbase, Sanbase.ClickhouseRepo.ReadOnly, clickhouse_read_only_opts
+config :sanbase, Sanbase.ClickhouseRepo.FreeUser, clickhouse_read_only_opts
+config :sanbase, Sanbase.ClickhouseRepo.SanbaseProUser, clickhouse_read_only_opts
+config :sanbase, Sanbase.ClickhouseRepo.SanbaseMaxUser, clickhouse_read_only_opts
+config :sanbase, Sanbase.ClickhouseRepo.BusinessProUser, clickhouse_read_only_opts
+config :sanbase, Sanbase.ClickhouseRepo.BusinessMaxUser, clickhouse_read_only_opts
 
 config :sanbase, Sanbase.Repo,
   loggers: [Ecto.LogEntry],
@@ -133,15 +140,17 @@ config :sanbase, Sanbase.Accounts.Hmac, secret_key: {:system, "APIKEY_HMAC_SECRE
 config :sanbase, SanbaseWeb.Endpoint,
   http: [protocol_options: [max_request_line_length: 16_384, max_header_value_length: 8192]],
   url: [host: "localhost"],
-  secret_key_base: "not_secret_Vq7Rfo0T4EfiLX2/ryYal3O0l9ebBNhyh58cfWdTAUHxEJGu2p9u1WTQ31Ki4Phj",
+  secret_key_base:
+    "not_secret_please_do_not_report_Vq7Rfo0T4EfiLX2/ryYal3O0l9ebBNhyh58cfWdTAUHxEJGu2p9u1WTQ31Ki4Phj",
   render_errors: [view: SanbaseWeb.ErrorView, accepts: ~w(json)],
+  server: true,
   # should be removed after app.santiment.net migration
   website_url: {:system, "WEBSITE_URL", "http://localhost:4000"},
   backend_url: {:system, "BACKEND_URL", "http://localhost:4000"},
-  frontend_url: {:system, "FRONTEND_URL", "http://localhost:4000"},
+  frontend_url: {:system, "FRONTEND_URL", "https://app-stage.santiment.net"},
   insights_url: {:system, "INSIGHTS_URL", "https://insights.santiment.net"},
   pubsub_server: Sanbase.PubSub,
-  live_view: [signing_salt: "not_secret_FkOgrxfW5aw3HjLOoxCVMvB0py5+Uk5+"]
+  live_view: [signing_salt: "not_secret_please_do_not_report_FkOgrxfW5aw3HjLOoxCVMvB0py5+Uk5+"]
 
 # Do not log SASL crash reports
 config :sasl, sasl_error_logger: false
@@ -158,7 +167,15 @@ config :sentry,
   json_library: Jason,
   environment_name: Mix.env(),
   enable_source_code_context: true,
-  root_source_code_path: File.cwd!()
+  root_source_code_path: File.cwd!(),
+  integrations: [
+    oban: [
+      # Capture errors:
+      capture_errors: true,
+      # Monitor cron jobs:
+      cron: [enabled: true]
+    ]
+  ]
 
 config :earmark,
   # disable using parallel map die to timeout errors
@@ -248,11 +265,6 @@ config :sanbase, SanbaseWeb.Plug.SessionPlug,
 config :sanbase, SanbaseWeb.Plug.BotLoginPlug,
   bot_login_endpoint: {:system, "BOT_LOGIN_SECRET_ENDPOINT"}
 
-config :sanbase, Sanbase.GrafanaApi,
-  grafana_base_url: {:system, "GRAFANA_BASE_URL"},
-  grafana_user: {:system, "GRAFANA_USER"},
-  grafana_pass: {:system, "GRAFANA_PASS"}
-
 config :sanbase, Sanbase.Intercom, api_key: {:system, "INTERCOM_API_KEY"}
 
 config :sanbase, Sanbase.Affiliate.FirstPromoterApi,
@@ -261,26 +273,8 @@ config :sanbase, Sanbase.Affiliate.FirstPromoterApi,
 
 config :sanbase, Oban.Web,
   repo: Sanbase.Repo,
-  queues: [email_queue: 5],
+  queues: [email_queue: 5, refresh_queries: 1],
   name: :oban_web
-
-config :kaffy,
-  otp_app: :sanbase,
-  ecto_repo: Sanbase.Repo,
-  router: SanbaseWeb.Router
-
-config :sanbase, Sanbase.Kafka.Consumer,
-  enabled?: {:system, "KAFKA_CONSUMER_ENABLED", false},
-  metrics_stream_topic: {:system, "KAFKA_METRIC_STREAM_TOPIC", "sanbase_combined_metrics"},
-  consumer_group_basename: {:system, "KAFKA_CONSUMER_GROUP_BASENAME", "sanbase_kafka_consumer"}
-
-config :kaffe,
-  consumer: [
-    message_handler: Sanbase.Kafka.MessageProcessor,
-    async_message_ack: false,
-    start_with_earliest_message: false,
-    offset_reset_policy: :reset_to_latest
-  ]
 
 config :nostrum,
   token: {:system, "DISCORD_BOT_QUERY_TOKEN"},

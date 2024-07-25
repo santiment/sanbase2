@@ -25,7 +25,7 @@ defmodule Sanbase.Twitter.MetricAdapter do
   @restricted_metrics Enum.filter(@access_map, fn {_, level} -> level == :restricted end)
                       |> Enum.map(&elem(&1, 0))
 
-  @required_selectors Enum.into(@metrics, %{}, &{&1, []})
+  @required_selectors Enum.into(@metrics, %{}, &{&1, [[:slug]]})
 
   @default_complexity_weight 1
 
@@ -62,13 +62,8 @@ defmodule Sanbase.Twitter.MetricAdapter do
         interval,
         _opts
       ) do
-    with twitter_handles = Project.List.projects_twitter_handles_by_slugs(slugs),
-         {:ok, data} <-
-           Sanbase.Twitter.timeseries_data_per_handle(twitter_handles, from, to, interval) do
-      {:ok, data}
-    else
-      error -> error
-    end
+    twitter_handles = Project.List.projects_twitter_handles_by_slugs(slugs)
+    Sanbase.Twitter.timeseries_data_per_handle(twitter_handles, from, to, interval)
   end
 
   @impl Sanbase.Metric.Behaviour
@@ -113,10 +108,14 @@ defmodule Sanbase.Twitter.MetricAdapter do
        default_aggregation: :last,
        available_aggregations: @aggregations,
        available_selectors: [:slug],
-       required_selectors: [:slug],
+       required_selectors: @required_selectors[metric],
        data_type: :timeseries,
        is_timebound: false,
-       complexity_weight: @default_complexity_weight
+       complexity_weight: @default_complexity_weight,
+       is_deprecated: false,
+       hard_deprecate_after: nil,
+       docs: [],
+       is_label_fqn_metric: false
      }}
   end
 

@@ -18,9 +18,13 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     {StripeApi, [:passthrough],
      [create_plan: fn _ -> StripeApiTestResponse.create_plan_resp() end]},
     {StripeApi, [:passthrough],
-     [create_customer: fn _, _ -> StripeApiTestResponse.create_or_update_customer_resp() end]},
+     [
+       create_customer_with_card: fn _, _ ->
+         StripeApiTestResponse.create_or_update_customer_resp()
+       end
+     ]},
     {StripeApi, [:passthrough],
-     [update_customer: fn _, _ -> StripeApiTestResponse.create_or_update_customer_resp() end]},
+     [update_customer_card: fn _, _ -> StripeApiTestResponse.create_or_update_customer_resp() end]},
     {StripeApi, [:passthrough],
      [create_coupon: fn _ -> StripeApiTestResponse.create_coupon_resp() end]},
     {StripeApi, [:passthrough],
@@ -113,8 +117,8 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
         |> execute_query(query, "productsWithPlans")
         |> hd()
 
-      assert result["name"] == "Neuro by Santiment"
-      assert length(result["plans"]) == 9
+      assert result["name"] == "Sanapi by Santiment"
+      assert length(result["plans"]) == 11
     end)
   end
 
@@ -258,7 +262,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     test "when creating customer in Stripe fails - logs the error and returns generic error",
          context do
       with_mock StripeApi, [:passthrough],
-        create_customer: fn _, _ ->
+        create_customer_with_card: fn _, _ ->
           {:error, %Stripe.Error{message: "test error", source: "ala", code: "bala"}}
         end do
         query = subscribe_mutation(context.plans.plan_essential.id)
@@ -274,7 +278,11 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     test "when creating coupon fails - logs the error and returns generic error", context do
       with_mocks([
         {StripeApi, [:passthrough],
-         [create_customer: fn _, _ -> StripeApiTestResponse.create_or_update_customer_resp() end]},
+         [
+           create_customer_with_card: fn _, _ ->
+             StripeApiTestResponse.create_or_update_customer_resp()
+           end
+         ]},
         {StripeApi, [:passthrough],
          [
            create_coupon: fn _ ->
@@ -296,7 +304,11 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
          context do
       with_mocks([
         {StripeApi, [:passthrough],
-         [create_customer: fn _, _ -> StripeApiTestResponse.create_or_update_customer_resp() end]},
+         [
+           create_customer_with_card: fn _, _ ->
+             StripeApiTestResponse.create_or_update_customer_resp()
+           end
+         ]},
         {StripeApi, [:passthrough],
          [create_coupon: fn _ -> StripeApiTestResponse.create_coupon_resp() end]},
         {StripeApi, [:passthrough],
@@ -669,58 +681,6 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       end
     end
   end
-
-  # Removing annual discount eligibility temporally
-
-  # describe "annual discount eligibility" do
-  #   test "50% off", context do
-  #     insert(:subscription_pro_sanbase,
-  #       user: context.user,
-  #       status: "trialing",
-  #       trial_end: DateTime.add(Timex.now(), 10 * 24 * 3600)
-  #     )
-
-  #     res = Sanbase.Billing.Subscription.annual_discount_eligibility(context.user.id)
-  #     assert res.is_eligible
-  #     assert res.discount.percent_off == 50
-
-  #     query = check_annual_discount_eligibility()
-  #     res = execute_query(context.conn, query, "checkAnnualDiscountEligibility")
-  #     assert res["discount"]["percentOff"] == 50
-  #   end
-
-  #   test "35% off", context do
-  #     insert(:subscription_pro_sanbase,
-  #       user: context.user,
-  #       status: "trialing",
-  #       trial_end: DateTime.add(Timex.now(), -10 * 24 * 3600)
-  #     )
-
-  #     res = Sanbase.Billing.Subscription.annual_discount_eligibility(context.user.id)
-  #     assert res.is_eligible
-  #     assert res.discount.percent_off == 35
-
-  #     query = check_annual_discount_eligibility()
-  #     res = execute_query(context.conn, query, "checkAnnualDiscountEligibility")
-  #     assert res["isEligible"]
-  #     assert res["discount"]["percentOff"] == 35
-  #   end
-
-  #   test "not eligible", context do
-  #     insert(:subscription_pro_sanbase,
-  #       user: context.user,
-  #       status: "trialing",
-  #       trial_end: DateTime.add(Timex.now(), -20 * 24 * 3600)
-  #     )
-
-  #     res = Sanbase.Billing.Subscription.annual_discount_eligibility(context.user.id)
-  #     refute res.is_eligible
-
-  #     query = check_annual_discount_eligibility()
-  #     res = execute_query(context.conn, query, "checkAnnualDiscountEligibility")
-  #     refute res["isEligible"]
-  #   end
-  # end
 
   def ppp_settings_query() do
     """

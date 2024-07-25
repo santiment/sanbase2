@@ -119,6 +119,16 @@ defmodule Sanbase.Accounts.User do
     user.email || user.username || user.twitter_id || "id_#{user.id}"
   end
 
+  def get_signup_dt(%__MODULE__{registration_state: registration_state}) do
+    case registration_state do
+      %{"datetime" => datetime, "state" => "finished"} when is_binary(datetime) ->
+        Sanbase.DateTimeUtils.from_iso8601!(datetime)
+
+      _ ->
+        nil
+    end
+  end
+
   def describe(%__MODULE__{} = user) do
     cond do
       user.username != nil -> "User with username #{user.username}"
@@ -372,7 +382,7 @@ defmodule Sanbase.Accounts.User do
     )
     |> Repo.all()
     |> Enum.each(fn %{email: email, stripe_customer_id: stripe_customer_id} ->
-      Stripe.Customer.update(stripe_customer_id, %{email: email})
+      Sanbase.StripeApi.update_customer(stripe_customer_id, %{email: email})
     end)
   end
 

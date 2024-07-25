@@ -37,8 +37,12 @@ defmodule Sanbase.SocialData.SocialVolume do
 
   def social_volume(%{words: words} = selector, from, to, interval, source, opts)
       when is_list(words) do
+    transformed_words = Enum.reject(words, &(&1 == "***")) |> Enum.map(&String.downcase/1)
+    selector = %{selector | words: transformed_words}
+
     social_volume_list_request(selector, from, to, interval, source, opts)
     |> handle_words_social_volume_response(selector)
+    |> Sanbase.SocialData.SocialHelper.replace_words_with_original_casing(words)
   end
 
   def social_volume(selector, from, to, interval, source, opts) do

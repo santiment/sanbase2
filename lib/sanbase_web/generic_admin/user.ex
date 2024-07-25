@@ -1,6 +1,6 @@
 defmodule SanbaseWeb.GenericAdmin.User do
   alias Sanbase.Accounts.User
-  alias SanbaseWeb.GenericController
+  alias SanbaseWeb.GenericAdminController
 
   @schema_module User
 
@@ -8,9 +8,25 @@ defmodule SanbaseWeb.GenericAdmin.User do
 
   def resource do
     %{
-      actions: [:edit],
+      actions: [:edit, :delete],
       index_fields: [:id, :username, :email, :twitter_id, :is_superuser, :san_balance],
-      edit_fields: [:is_superuser, :test_san_balance, :email, :stripe_customer_id]
+      edit_fields: [:is_superuser, :test_san_balance, :email, :stripe_customer_id],
+      fields_override: %{
+        stripe_customer_id: %{
+          value_modifier: fn user ->
+            case user.stripe_customer_id do
+              nil ->
+                nil
+
+              stripe_customer_id ->
+                Phoenix.HTML.Link.link(stripe_customer_id,
+                  to: "https://dashboard.stripe.com/customers/#{stripe_customer_id}",
+                  class: "text-blue-600 hover:text-blue-800"
+                )
+            end
+          end
+        }
+      }
     }
   end
 
@@ -161,14 +177,14 @@ defmodule SanbaseWeb.GenericAdmin.User do
 
     Sanbase.ApiCallLimit.reset(user)
 
-    GenericController.show(conn, %{"resource" => "users", "id" => user.id})
+    GenericAdminController.show(conn, %{"resource" => "users", "id" => user.id})
   end
 
   def reset_queries_credits_spent(conn, %{id: user_id}) do
     Sanbase.Math.to_integer(user_id)
     |> Sanbase.ModeratorQueries.reset_user_monthly_credits()
 
-    GenericController.show(conn, %{"resource" => "users", "id" => user_id})
+    GenericAdminController.show(conn, %{"resource" => "users", "id" => user_id})
   end
 
   def user_link(row) do
@@ -197,10 +213,14 @@ defmodule SanbaseWeb.GenericAdmin.UserSettings do
   def resource do
     %{
       index_fields: [:id],
-      funcs: %{
-        settings: fn us ->
-          Map.from_struct(us.settings) |> Map.delete(:alerts_fired) |> Jason.encode!(pretty: true)
-        end
+      fields_override: %{
+        settings: %{
+          value_modifier: fn us ->
+            Map.from_struct(us.settings)
+            |> Map.delete(:alerts_fired)
+            |> Jason.encode!(pretty: true)
+          end
+        }
       }
     }
   end
@@ -216,27 +236,31 @@ defmodule SanbaseWeb.GenericAdmin.UserList do
       preloads: [:user],
       index_fields: [:id, :name, :slug, :type, :is_featured, :is_public, :user_id, :function],
       edit_fields: [:name, :slug, :description, :type, :is_public, :is_featured],
-      search_fields: %{
-        is_featured:
-          from(
-            ul in Sanbase.UserList,
-            left_join: featured_item in Sanbase.FeaturedItem,
-            on: ul.id == featured_item.user_list_id,
-            where: not is_nil(featured_item.id),
-            preload: [:user]
-          )
-          |> distinct(true)
-      },
-      extra_fields: [:is_featured],
-      field_types: %{
-        is_featured: :boolean
-      },
-      funcs: %{
-        user_id: &SanbaseWeb.GenericAdmin.User.user_link/1,
-        function: fn ul -> Map.from_struct(ul.function) |> Jason.encode!(pretty: true) end
-      },
-      collections: %{
-        type: ~w[project blockchain_address]
+      fields_override: %{
+        is_featured: %{
+          type: :boolean,
+          search_query:
+            from(
+              ul in Sanbase.UserList,
+              left_join: featured_item in Sanbase.FeaturedItem,
+              on: ul.id == featured_item.user_list_id,
+              where: not is_nil(featured_item.id),
+              preload: [:user]
+            )
+            |> distinct(true)
+        },
+        user_id: %{
+          value_modifier: &SanbaseWeb.GenericAdmin.User.user_link/1
+        },
+        function: %{
+          value_modifier: fn function ->
+            Map.from_struct(function) |> Jason.encode!(pretty: true)
+          end
+        },
+        type: %{
+          type: :select,
+          collection: ~w[project blockchain_address]
+        }
       }
     }
   end

@@ -6,7 +6,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
 
   alias Sanbase.SocialData
   alias SanbaseWeb.Graphql.SanbaseDataloader
-  alias SanbaseWeb.Graphql.Resolvers.MetricResolver
 
   @context_words_default_size 10
 
@@ -30,38 +29,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
     end)
   end
 
-  def social_volume(
-        _root,
-        %{slug: slug, from: from, to: to, interval: interval, social_volume_type: type},
-        _resolution
-      ) do
-    # The `*_discussion_overview` are counting the total number of messages in a given medium
-    # Deprecated. To be replaced with `getMetric(metric: "community_messages_count_*")` and
-    # `getMetric(metric: "social_volume_*")`
-    source = type |> Atom.to_string() |> String.split("_") |> hd
-
-    SocialData.social_volume(%{slug: slug}, from, to, interval, source)
-  end
-
   def social_volume_projects(_root, %{}, _resolution) do
     SocialData.social_volume_projects()
-  end
-
-  def topic_search(
-        _root,
-        %{source: source, search_text: search_text, from: from, to: to, interval: interval},
-        _resolution
-      ) do
-    case SocialData.social_volume(%{text: search_text}, from, to, interval, source) do
-      {:ok, data} -> {:ok, %{chart_data: data}}
-      {:error, error} -> {:error, error}
-    end
   end
 
   def get_trending_words(
         _root,
         %{from: from, to: to, interval: interval, size: size} = args,
-        _resolution
+        resolution
       ) do
     source = Map.get(args, :source, :all)
     filter = Map.get(args, :word_type_filter, :all)
@@ -73,7 +48,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
           |> Enum.map(fn {datetime, top_words} ->
             %{
               datetime: datetime,
-              top_words: Enum.sort_by(top_words, & &1.score, :desc)
+              top_words: sort_and_mask_trending_words(top_words, resolution.context.auth.plan)
             }
           end)
           |> Enum.sort_by(& &1.datetime, {:asc, DateTime})
@@ -160,30 +135,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
     SocialData.word_trend_score(word, source, from, to)
   end
 
-  def top_social_gainers_losers(_root, args, _resolution) do
-    SocialData.top_social_gainers_losers(args)
-  end
-
-  def social_gainers_losers_status(_root, args, _resolution) do
-    SocialData.social_gainers_losers_status(args)
-  end
-
-  def social_dominance(
-        root,
-        %{slug: _, from: _, to: _, interval: _, source: source} = args,
-        resolution
-      ) do
-    source = if source == :all, do: :total, else: source
-
-    MetricResolver.timeseries_data(
-      root,
-      args,
-      Map.put(resolution, :source, %{metric: "social_dominance_#{source}"})
-    )
-    |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :dominance)
-  end
-
   def social_dominance_trending_words(_, _, _) do
     Sanbase.SocialData.SocialDominance.social_dominance_trending_words()
+  end
+
+  # private
+
+  # FREE user doesn't see first 3 trending words
+  defp sort_and_mask_trending_words(top_words, subscription_plan) do
+    Enum.sort_by(top_words, & &1.score, :desc)
+    |> Enum.with_index()
+    |> Enum.map(fn {word, index} ->
+      # Add a feature flag to mask first 3 words for free users
+      if System.get_env("MASK_FIRST_3_WORDS_FREE_USER") in ["true", "1"] and
+           subscription_plan == "FREE" and index < 3 do
+        %{word | word: "***", summary: "***", bullish_summary: "***", bearish_summary: "***"}
+      else
+        word
+      end
+    end)
   end
 end

@@ -1,0 +1,57 @@
+# Stripe subscription flow test
+
+```elixir
+if not String.contains?(System.get_env("DATABASE_URL"), "rds-stage") do
+  raise("You need to be connected to stage RDS to run this test")
+end
+
+if not String.starts_with?(System.get_env("STRIPE_SECRET_KEY"), "sk_test") do
+  raise("You need to be connected to test Stripe to run this tests")
+end
+
+```
+
+## Setup: Aliases and Plans
+
+```elixir
+alias Sanbase.Repo
+alias Sanbase.Billing.{Subscription, Plan}
+alias Sanbase.Accounts.User
+
+sanbase_pro_monthly_plan_id = 201
+sanbase_pro_yearly_plan_id = 202
+sanbase_pro_monthly_plan = Plan.by_id(sanbase_pro_monthly_plan_id)
+sanbase_pro_yearly_plan = Plan.by_id(sanbase_pro_yearly_plan_id)
+```
+
+## Setup: Fetch test user and delete everything in Stripe for this user.
+
+```elixir
+{:ok, user} = User.by_email("tsvetozar.penov+stripetestuserstage@gmail.com")
+{:ok, user} = Sanbase.StripeApi.delete_customer(user)
+```
+
+## Subscribe user to Sanbase PRO
+
+```elixir
+{:ok, subscription} = Sanbase.Billing.Subscription.subscribe2(user, sanbase_pro_monthly_plan, "pm_card_visa")
+```
+
+## Upgrade user subscription to yearly
+
+```elixir
+{:ok, subscription} = Subscription.update_subscription(subscription, sanbase_pro_yearly_plan)
+```
+
+## Cancel user subscription (at the end of the billing period)
+
+```elixir
+Subscription.cancel_subscription(subscription)
+```
+
+## Teardown: Delete everything for this user in Stripe
+
+```elixir
+{:ok, user} = User.by_email("tsvetozar.penov+stripetestuserstage@gmail.com")
+Sanbase.StripeApi.delete_customer(user)
+```

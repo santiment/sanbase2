@@ -15,6 +15,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
   @refresh_time_delta 1800
   @refresh_time_max_offset 1800
 
+  def available_label_fqns(%Project{slug: slug}, _args, _resolution) do
+    Sanbase.Clickhouse.Label.label_fqns_with_asset(slug)
+  end
+
   def available_metrics(%Project{slug: slug}, _args, _resolution) do
     # TEMP 02.02.2023: Handle ripple -> xrp rename
     {:ok, %{slug: slug}} = Sanbase.Project.Selector.args_to_selector(%{slug: slug})
@@ -24,6 +28,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
     fun = fn -> Metric.available_metrics_for_selector(%{slug: slug}) end
 
     maybe_register_and_get(cache_key, fun, slug, query)
+  end
+
+  def available_metrics_extended(%Project{} = project, args, resolution) do
+    case available_metrics(project, args, resolution) do
+      {:ok, metrics} -> {:ok, add_metadata_to_metrics(metrics)}
+      {:nocache, {:ok, metrics}} -> {:ok, add_metadata_to_metrics(metrics)}
+      {:error, error} -> {:error, error}
+    end
   end
 
   def available_timeseries_metrics(%Project{slug: slug}, _args, _resolution) do
@@ -66,7 +78,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
     {:ok, %{slug: slug}} = Sanbase.Project.Selector.args_to_selector(%{slug: slug})
 
     with true <- Metric.has_metric?(metric),
-         true <- Metric.is_not_deprecated?(metric),
+         false <- Metric.hard_deprecated?(metric),
          include_incomplete_data = Map.get(args, :include_incomplete_data, false),
          {:ok, from, to} <-
            calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to) do
@@ -168,5 +180,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
         # as the graphql request will timeout at some point and stop the recursion
         maybe_register_and_get(cache_key, fun, slug, query, attempts - 1)
     end
+  end
+
+  defp add_metadata_to_metrics(metrics) do
+    Enum.map(metrics, fn m ->
+      {:ok, m} = Metric.metadata(m)
+
+      m
+    end)
   end
 end

@@ -19,6 +19,31 @@ config :sanbase, Sanbase.TemplateMailer,
   api_key: System.get_env("MAILJET_API_KEY"),
   secret: System.get_env("MAILJET_API_SECRET")
 
+kafka_url = System.get_env("KAFKA_URL", "blockchain-kafka-kafka")
+kafka_port = System.get_env("KAFKA_PORT", "9092")
+kafka_enabled = System.get_env("REAL_KAFKA_ENABLED", "true")
+
+kafka_endpoints =
+  if kafka_enabled == "true" do
+    # Locally KAFKA_PORT can be '30911, 30912, 30913'
+    kafka_port
+    |> String.split(",", trim: true)
+    |> Enum.map(&String.trim/1)
+    |> Enum.map(fn port ->
+      {kafka_url, String.to_integer(port)}
+    end)
+  else
+    []
+  end
+
+config :brod,
+  clients: [
+    kafka_client: [
+      endpoints: kafka_endpoints,
+      auto_start_producers: true
+    ]
+  ]
+
 if config_env() == :prod do
   # The secret key base is used to sign/encrypt cookies and other secrets.
   # A default value is used in config/dev.exs and config/test.exs but you
@@ -36,15 +61,17 @@ if config_env() == :prod do
   port = String.to_integer(System.get_env("PORT") || "4000")
   parity_url = System.get_env("PARITY_URL")
 
-  config :sanbase2, SanbaseWeb.Endpoint,
+  config :sanbase, SanbaseWeb.Endpoint,
     url: [host: host, port: port],
     http: [
+      :inet6,
       port: port,
       protocol_options: [
         max_header_name_length: 64,
         max_header_value_length: 8192,
         max_request_line_length: 16_384,
-        max_headers: 100
+        max_headers: 100,
+        idle_timeout: 100_000
       ]
     ],
     secret_key_base: secret_key_base,
@@ -75,5 +102,13 @@ if config_env() == :prod do
     root_source_code_path: File.cwd!(),
     tags: %{
       env: "production"
-    }
+    },
+    integrations: [
+      oban: [
+        # Capture errors:
+        capture_errors: true,
+        # Monitor cron jobs:
+        cron: [enabled: true]
+      ]
+    ]
 end

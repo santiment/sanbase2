@@ -13,7 +13,7 @@ defmodule Sanbase.SocialVolumeTest do
       insert(:project, %{
         slug: "santiment",
         ticker: "SAN",
-        main_contract_address: "0x123"
+        main_contract_address: "0x4efb548a2cb8f0af7c591cef21053f6875b5d38f"
       })
 
     [
@@ -133,12 +133,6 @@ defmodule Sanbase.SocialVolumeTest do
         |> Enum.map(fn
           source -> Atom.to_string(source)
         end)
-
-      # newsapi_crypto is added as a social volume metric for now.
-      # if we add it to the sources list, it will define the sentiment
-      # metrics and they are not supported. Fix when all newsapi_crypto
-      # metrics are introduced
-      expected_sources = expected_sources
 
       assert expected_sources |> Enum.sort() == sources |> Enum.sort()
     end

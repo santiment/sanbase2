@@ -87,9 +87,10 @@ defmodule Sanbase.Accounts.EthAccount do
   def san_staked_addresses(addresses, contract) when is_list(addresses) and is_binary(contract) do
     data_map = contract_data_map(contract)
 
+    # Batch size of 90 to fixe: "batch limit 100 exceeded (can increase by --rpc.batch.limit)
     result =
       addresses
-      |> Enum.chunk_every(250)
+      |> Enum.chunk_every(90)
       |> Enum.flat_map(&UniswapPair.balances_of(&1, contract))
 
     Enum.zip(addresses, result)

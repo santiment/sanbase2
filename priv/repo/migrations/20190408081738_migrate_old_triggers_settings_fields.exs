@@ -64,7 +64,7 @@ defmodule Sanbase.Repo.Migrations.MigrateOldTriggersSettingsFields do
   defp get_triggers_by_type(type) do
     from(
       ut in UserTrigger,
-      where: trigger_type_is(type),
+      where: trigger_type_equals?(type),
       preload: [:user]
     )
     |> Repo.all()

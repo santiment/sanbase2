@@ -28,4 +28,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.FeaturedItemResolver do
   def table_configurations(_root, _args, _context) do
     {:ok, FeaturedItem.table_configurations()}
   end
+
+  def dashboards(_root, _args, _context) do
+    {:ok, FeaturedItem.dashboards()}
+  end
+
+  def queries(_root, _args, _context) do
+    {:ok, FeaturedItem.queries()}
+  end
 end

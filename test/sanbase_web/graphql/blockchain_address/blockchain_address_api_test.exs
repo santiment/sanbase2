@@ -47,12 +47,12 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         blockchain_address(context.conn, %{
-          address: "0x123",
+          address: "0x4efb548a2cb8f0af7c591cef21053f6875b5d38f",
           infrastructure: "ETH"
         })
         |> get_in(["data", "blockchainAddress"])
 
-      assert result["address"] == "0x123"
+      assert result["address"] == "0x4efb548a2cb8f0af7c591cef21053f6875b5d38f"
       assert result["infrastructure"] == "ETH"
       assert result["labels"] == []
       assert result["notes"] == nil
@@ -64,7 +64,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
     |> Sanbase.Mock.run_with_mocks(fn ->
       address_id =
         blockchain_address(context.conn, %{
-          address: "0x123",
+          address: "0x4efb548a2cb8f0af7c591cef21053f6875b5d38f",
           infrastructure: "ETH"
         })
         |> get_in(["data", "blockchainAddress", "id"])
@@ -76,7 +76,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
       # The same address if fetched and a new one is not created
       assert result["id"] == address_id
 
-      assert result["address"] == "0x123"
+      assert result["address"] == "0x4efb548a2cb8f0af7c591cef21053f6875b5d38f"
       assert result["infrastructure"] == "ETH"
       assert result["labels"] == []
       assert result["notes"] == nil
@@ -87,7 +87,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
        context do
     blockchain_address =
       insert(:blockchain_address,
-        address: "0x123",
+        address: "0x4efb548a2cb8f0af7c591cef21053f6875b5d38f",
         infrastructure: context.eth_infrastructure
       )
 
@@ -95,14 +95,14 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         blockchain_address(context.conn, %{
-          address: "0x123",
+          address: "0x4efb548a2cb8f0af7c591cef21053f6875b5d38f",
           infrastructure: context.eth_infrastructure.code
         })
         |> get_in(["data", "blockchainAddress"])
 
       # The same address if fetched and a new one is not created
       assert result["id"] == blockchain_address.id
-      assert result["address"] == "0x123"
+      assert result["address"] == "0x4efb548a2cb8f0af7c591cef21053f6875b5d38f"
       assert result["infrastructure"] == "ETH"
       assert result["labels"] == []
       assert result["notes"] == nil
@@ -112,7 +112,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
   test "update a blockchain address user pair", context do
     blockchain_address =
       insert(:blockchain_address,
-        address: "0x123",
+        address: "0x4efb548a2cb8f0af7c591cef21053f6875b5d38f",
         infrastructure: context.eth_infrastructure
       )
 

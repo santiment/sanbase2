@@ -44,9 +44,7 @@ config :tesla, adapter: Tesla.Mock
 # The logger is causing issues with mocking otherwise. Not really sure why
 config :tesla, Tesla.Middleware.Logger, debug: false
 
-config :sanbase, Sanbase.KafkaExporter,
-  supervisor: Sanbase.InMemoryKafka.Supervisor,
-  producer: Sanbase.InMemoryKafka.Producer
+config :sanbase, Sanbase.KafkaExporter, producer: Sanbase.InMemoryKafka.Producer
 
 config :sanbase, Sanbase.EventBus.KafkaExporterSubscriber,
   buffering_max_messages: 0,
@@ -70,11 +68,19 @@ config :sanbase, Sanbase.ClickhouseRepo,
   database: "sanbase_test",
   pool_size: 1
 
-config :sanbase, Sanbase.ClickhouseRepo.ReadOnly,
+clickhouse_read_only_opts = [
   clickhouse_repo_enabled?: false,
   pool: Ecto.Adapters.SQL.Sandbox,
   database: "sanbase_test",
   pool_size: 1
+]
+
+config :sanbase, Sanbase.ClickhouseRepo.ReadOnly, clickhouse_read_only_opts
+config :sanbase, Sanbase.ClickhouseRepo.FreeUser, clickhouse_read_only_opts
+config :sanbase, Sanbase.ClickhouseRepo.SanbaseProUser, clickhouse_read_only_opts
+config :sanbase, Sanbase.ClickhouseRepo.SanbaseMaxUser, clickhouse_read_only_opts
+config :sanbase, Sanbase.ClickhouseRepo.BusinessProUser, clickhouse_read_only_opts
+config :sanbase, Sanbase.ClickhouseRepo.BusinessMaxUser, clickhouse_read_only_opts
 
 config :sanbase, Sanbase.Accounts.Hmac, secret_key: "Non_empty_key_used_in_tests_only"
 

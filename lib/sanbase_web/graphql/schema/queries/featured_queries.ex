@@ -8,7 +8,7 @@ defmodule SanbaseWeb.Graphql.Schema.FeaturedQueries do
 
   alias SanbaseWeb.Graphql.Resolvers.FeaturedItemResolver
 
-  object :featured_queries do
+  object :featured_item_queries do
     field :featured_insights, list_of(:post) do
       meta(access: :free)
 
@@ -42,6 +42,16 @@ defmodule SanbaseWeb.Graphql.Schema.FeaturedQueries do
     field :featured_table_configurations, list_of(:table_configuration) do
       meta(access: :free)
       cache_resolve(&FeaturedItemResolver.table_configurations/3)
+    end
+
+    field :featured_dashboards, list_of(:dashboard) do
+      meta(access: :free)
+      cache_resolve(&FeaturedItemResolver.dashboards/3)
+    end
+
+    field :featured_queries, list_of(:sql_query) do
+      meta(access: :free)
+      cache_resolve(&FeaturedItemResolver.queries/3)
     end
   end
 end

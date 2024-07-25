@@ -2,7 +2,7 @@
   {
     "human_readable_name": "Labelled Historical Balance",
     "name": "labelled_historical_balance",
-    "metric": "labeled_balance",
+    "metric": "combined_labeled_balance",
     "version": "2020-01-01",
     "access": "restricted",
     "selectors": [
@@ -21,14 +21,15 @@
     },
     "aggregation": "last",
     "min_interval": "15m",
-    "table": "labeled_intraday_metrics",
+    "table": "labeled_intraday_metrics_v2",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/labelled-historical-balance"]
   },
   {
     "human_readable_name": "Labelled Historical Balance Changes",
     "name": "labelled_historical_balance_changes",
-    "metric": "labeled_balance_delta",
+    "metric": "combined_labeled_balance_delta",
     "version": "2020-01-01",
     "access": "restricted",
     "selectors": [
@@ -47,8 +48,9 @@
     },
     "aggregation": "sum",
     "min_interval": "15m",
-    "table": "labeled_intraday_metrics",
+    "table": "labeled_intraday_metrics_v2",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/labelled-historical-balance"]
   }
 ]

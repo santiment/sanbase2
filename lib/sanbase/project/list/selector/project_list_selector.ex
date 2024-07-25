@@ -150,12 +150,20 @@ defmodule Sanbase.Project.ListSelector do
   defp watchlist_args_to_str(%{watchlist_slug: slug}), do: "watchlist with slug #{slug}"
 
   # TODO: Try reworking it to use an ETS table instead of the process dictionary
+  # Also try reworking it so it can also check if a seen watchlist has been resolved
+  # This can help working around the issue where one process resolves many watchlists.
+  # ---
+  # The cycle detection uses the process dictionary, so it can give false positivies
+  # in case multiple watchlists are being resolved in the same process/api call
+  # Because of this, the `args_seen_so_far` is a list and not a set, so we can allow
+  # for some repetitions before actually giving an error. If there is indeed a cycle,
+  # it is guaranteed that it will be detected, no matter what the threshold is.
   defp detect_cycles!(args) do
     case Process.get(@cycle_detection_key) do
       nil ->
         Process.put(@cycle_detection_key, %{
           iterations_left: 20,
-          args_seen_so_far: MapSet.new([args]),
+          args_seen_so_far: [args],
           original_args: args
         })
 
@@ -169,18 +177,20 @@ defmodule Sanbase.Project.ListSelector do
         args_seen_so_far: args_seen_so_far,
         original_args: original_args
       } ->
-        case MapSet.member?(args_seen_so_far, args) do
-          true ->
-            raise(
-              "There is a cycle in the base_projects of #{watchlist_args_to_str(original_args)}."
-            )
+        if Enum.count(args_seen_so_far, fn x -> x == args end) > 5 do
+          watchlists_seen =
+            Enum.map([args | args_seen_so_far], &Map.take(&1, [:watchlist_id, :watchlist_slug]))
 
-          false ->
-            Process.put(@cycle_detection_key, %{
-              iterations_left: iterations_left - 1,
-              args_seen_so_far: MapSet.put(args_seen_so_far, args),
-              original_args: original_args
-            })
+          raise("""
+          There is probably a cycle in the base_projects of #{watchlist_args_to_str(original_args)}."
+          The watchlists seen so far: #{inspect(watchlists_seen)}
+          """)
+        else
+          Process.put(@cycle_detection_key, %{
+            iterations_left: iterations_left - 1,
+            args_seen_so_far: [args | args_seen_so_far],
+            original_args: original_args
+          })
         end
     end
   end

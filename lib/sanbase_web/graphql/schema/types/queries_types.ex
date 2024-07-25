@@ -1,5 +1,6 @@
 defmodule SanbaseWeb.Graphql.QueriesTypes do
   use Absinthe.Schema.Notation
+
   alias SanbaseWeb.Graphql.Resolvers.UserResolver
   alias SanbaseWeb.Graphql.Resolvers.VoteResolver
   alias SanbaseWeb.Graphql.Resolvers.DashboardResolver
@@ -33,7 +34,7 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
     field(:sql_query_parameters, non_null(:json))
 
     # User
-    field(:user, :user)
+    field(:user, :public_user)
 
     # Cached value. Store the last run of the query along with
     # some metadata - when it was computed, how long it took, etc.
@@ -49,7 +50,7 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
     end
 
     # Timestamps
-    field(:created_at, non_null(:datetime))
+    field(:inserted_at, non_null(:datetime))
     field(:updated_at, non_null(:datetime))
   end
 
@@ -252,6 +253,22 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
 
   object :dashboard_cached_executions do
     field(:queries, list_of(:sql_query_execution_result))
+  end
+
+  object :query_cached_execution do
+    field(:result, :sql_query_execution_result)
+    field(:inserted_at, non_null(:datetime))
+    field(:user, non_null(:public_user))
+
+    @desc ~s"""
+    When storing a cache, the hash of the query at that moment is
+    computed and stored. If the stored hash and the hash of the current
+    query are different, this indicates that the cached value might
+    be obsolete. For example, if the query is cached, then the query
+    is extended to return one more column, the cache will no longer be
+    valid.
+    """
+    field(:is_query_hash_matching, non_null(:boolean))
   end
 
   input_object :sql_query_execution_result_input_object do

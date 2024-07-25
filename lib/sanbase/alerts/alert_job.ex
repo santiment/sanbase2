@@ -2,7 +2,7 @@ defmodule Sanbase.Alert.Job do
   @days 30
 
   import Ecto.Query
-  import Sanbase.Alert.TriggerQuery, only: [trigger_is_not_frozen: 0, trigger_is_frozen: 0]
+  import Sanbase.Alert.TriggerQuery, only: [trigger_is_not_frozen: 0, trigger_frozen?: 0]
 
   alias Sanbase.Alert.UserTrigger
 
@@ -47,7 +47,7 @@ defmodule Sanbase.Alert.Job do
     user_ids = Enum.uniq(user_ids1 ++ user_ids2)
 
     from(ut in UserTrigger,
-      where: trigger_is_frozen() and ut.user_id in ^user_ids
+      where: trigger_frozen?() and ut.user_id in ^user_ids
     )
     |> Sanbase.Repo.all()
   end

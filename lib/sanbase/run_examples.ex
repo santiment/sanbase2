@@ -32,6 +32,7 @@ defmodule Sanbase.RunExamples do
     :top_addresses,
     :ecosystem_metrics
   ]
+  def queries(), do: @queries
 
   @from ~U[2023-01-01 00:00:00Z]
   @closer_to ~U[2023-01-01 08:00:00Z]
@@ -93,10 +94,10 @@ defmodule Sanbase.RunExamples do
       do: raise("Do not run the examples against prod postgres!")
 
     if ch =~ "production",
-      do: raise("Do not run the examples against prod postgres!")
+      do: raise("Do not run the examples against prod clikhouse")
 
     if ch_ro =~ "production",
-      do: raise("Do not run the examples against prod readonly CH!")
+      do: raise("Do not run the examples against prod readonly clickhouse")
 
     :ok
   end
@@ -502,15 +503,18 @@ defmodule Sanbase.RunExamples do
   end
 
   defp do_run(:historical_balance) do
-    for {slug, address} <- [
-          {"ethereum", @null_address},
-          {"santiment", @null_address},
-          {"xrp", "rMQ98K56yXJbDGv49ZSmW51sLn94Xe1mu1"},
-          {"bitcoin", "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"}
+    xrp_addr = "r3LeQsVdYzeCrKVAh49pNpAX6vfph1vUSH"
+    btc_addr = "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
+
+    for {selector, address} <- [
+          {%{infrastrucutre: "ETH", slug: "ethereum"}, @null_address},
+          {%{infrastrucutre: "ETH", slug: "santiment"}, @null_address},
+          {%{infrastructure: "XRP", currency: "XRP", issuer: "XRP"}, xrp_addr},
+          {%{infrastructure: "BTC", slug: "bitcoin"}, btc_addr}
         ] do
       {:ok, [_ | _]} =
         Sanbase.Clickhouse.HistoricalBalance.historical_balance(
-          %{slug: slug},
+          selector,
           address,
           @from,
           @closer_to,
@@ -520,8 +524,24 @@ defmodule Sanbase.RunExamples do
 
     {:ok, [_ | _]} =
       Sanbase.Clickhouse.HistoricalBalance.balance_change(
-        %{slug: "ethereum"},
+        %{infrastructure: "ETH", slug: "ethereum"},
         @null_address,
+        @from,
+        @closer_to
+      )
+
+    {:ok, [_ | _]} =
+      Sanbase.Clickhouse.HistoricalBalance.balance_change(
+        %{infrastructure: "XRP", currency: "XRP", issuer: "XRP"},
+        xrp_addr,
+        @from,
+        @closer_to
+      )
+
+    {:ok, [_ | _]} =
+      Sanbase.Clickhouse.HistoricalBalance.balance_change(
+        %{infrastructure: "BTC", slug: "bitcoin"},
+        btc_addr,
         @from,
         @closer_to
       )
@@ -583,7 +603,6 @@ defmodule Sanbase.RunExamples do
           "age_distribution",
           "spent_coins_cost",
           "eth2_staked_amount_per_label",
-          "eth2_unlabeled_staker_inflow_sources",
           "eth2_staking_pools_usd",
           "eth2_staking_pools_validators_count_over_time",
           "eth2_top_stakers"
@@ -720,6 +739,7 @@ defmodule Sanbase.RunExamples do
 
   defp do_run(:santiment_queries) do
     user = Sanbase.Factory.insert(:user)
+    Process.put(:queries_dynamic_repo, Sanbase.ClickhouseRepo.FreeUser)
 
     {:ok, query} =
       Sanbase.Queries.create_query(
@@ -746,7 +766,7 @@ defmodule Sanbase.RunExamples do
       Sanbase.Queries.run_query(q, user, query_metadata, store_execution_details: false)
 
     {:ok, stored} =
-      Sanbase.Dashboards.store_dashboard_query_execution(
+      Sanbase.Dashboards.cache_dashboard_query_execution(
         dashboard.id,
         mapping.id,
         result,

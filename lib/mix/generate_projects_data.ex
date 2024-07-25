@@ -41,7 +41,8 @@ defmodule Sanbase.Mix.GenerateProjectsData do
         blog: p.blog_link,
         github_organizations: github,
         contract_addresses: contract,
-        latest_cmc: latest_cmc
+        latest_cmc: latest_cmc,
+        coinmarketcap_id: p.coinmarketcap_id
       }
     )
     |> Sanbase.Repo.all()
@@ -59,37 +60,21 @@ defmodule Sanbase.Mix.GenerateProjectsData do
     slug = map[:slug] || raise("Missing slug in map list #{inspect(map)}")
 
     general =
-      [
-        slug: slug,
-        name: map[:name],
-        ticker: map[:ticker],
-        description: map[:description],
-        website: map[:website]
-      ]
+      Map.take(map, [:slug, :name, :ticker, :description, :website])
       |> remove_nils()
       |> Jason.OrderedObject.new()
 
     social =
-      [
-        twitter: map[:twitter],
-        telegram: map[:telegram],
-        discord: map[:discord],
-        slack: map[:slack],
-        reddit: map[:reddit],
-        blog: map[:blog]
-      ]
+      Map.take(map, [:twitter, :telegram, :discord, :slack, :reddit, :blog])
       |> remove_nils()
       |> remove_wrong_social_values()
       |> Jason.OrderedObject.new()
 
     orgs =
-      (Map.get(map, :github_organizations) || []) |> List.wrap() |> Enum.map(& &1.organization)
+      (Map.get(map, :github_organizations) || [])
+      |> Enum.map(& &1.organization)
 
-    development =
-      [
-        github_organizations: orgs
-      ]
-      |> Map.new()
+    development = %{github_organizations: orgs}
 
     contracts =
       (Map.get(map, :contract_addresses) || [])

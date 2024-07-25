@@ -7,7 +7,7 @@ defmodule Sanbase.Alert.TriggerQuery do
     end
   end
 
-  defmacro trigger_is_frozen() do
+  defmacro trigger_frozen?() do
     quote do
       fragment("""
       trigger->'is_frozen' = 'true'
@@ -15,7 +15,7 @@ defmodule Sanbase.Alert.TriggerQuery do
     end
   end
 
-  defmacro trigger_type_is(type) do
+  defmacro trigger_type_equals?(type) do
     quote do
       fragment(
         """
@@ -37,7 +37,7 @@ defmodule Sanbase.Alert.TriggerQuery do
     end
   end
 
-  defmacro trigger_is_public() do
+  defmacro public_trigger?() do
     quote do
       fragment("""
       trigger->>'is_public' = 'true'
@@ -45,7 +45,7 @@ defmodule Sanbase.Alert.TriggerQuery do
     end
   end
 
-  defmacro trigger_target_is_slug(slugs) do
+  defmacro slug_trigger_target?(slugs) do
     quote do
       fragment(
         """
@@ -56,22 +56,11 @@ defmodule Sanbase.Alert.TriggerQuery do
     end
   end
 
-  defmacro trigger_is_active() do
+  defmacro trigger_active?() do
     quote do
       fragment("""
       trigger->>'is_active' = 'true'
       """)
-    end
-  end
-
-  defmacro trigger_id_one_of(ids) do
-    quote do
-      fragment(
-        """
-        trigger->>'id' = ANY(?)
-        """,
-        ^unquote(ids)
-      )
     end
   end
 end

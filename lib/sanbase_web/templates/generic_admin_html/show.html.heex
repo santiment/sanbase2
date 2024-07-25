@@ -1,0 +1,61 @@
+<div class="container mx-auto px-6 py-8">
+  <SanbaseWeb.AdminComponents.show_table
+    resource={@resource}
+    data={@data}
+    fields={@fields}
+    assocs={@assocs}
+    funcs={@funcs}
+    field_type_map={@field_type_map}
+  />
+
+  <div class="m-2">
+    <%= if :edit in @actions do %>
+      <SanbaseWeb.AdminComponents.btn
+        label="Edit"
+        href={Routes.generic_admin_path(@conn, :edit, @data, resource: @resource)}
+      />
+    <% end %>
+    <SanbaseWeb.AdminComponents.back_btn />
+  </div>
+
+  <%= for bt <- @belongs_to do %>
+    <div class="mt-4">
+      <h3 class="text-3xl font-medium text-gray-700"><%= bt.name %></h3>
+      <table class="table-auto border-collapse w-full mb-4">
+        <tbody>
+          <%= for field <- bt.fields do %>
+            <tr>
+              <td class="px-6 py-4 text-lg text-gray-700 border-b"><%= field.field_name %></td>
+              <td class="show"><pre><%= field.data %></pre></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+
+      <%= for action <- bt.actions do %>
+        <span>
+          <%= link(to_string(action),
+            to:
+              Routes.generic_admin_path(SanbaseWeb.Endpoint, :show_action,
+                action: action,
+                resource: @resource,
+                id: @data.id
+              ),
+            class: "flex-shrink-0 border-4 text-teal-500 hover:text-teal-800 py-1 px-2 rounded"
+          ) %>
+        </span>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%= for table <- @has_many do %>
+    <SanbaseWeb.AdminComponents.has_many_table
+      resource={table.resource}
+      resource_name={table.resource_name}
+      rows={table.rows}
+      fields={table.fields}
+      funcs={table.funcs}
+      create_link_kv={table.create_link_kv}
+    />
+  <% end %>
+</div>

@@ -38,7 +38,7 @@ defmodule Sanbase.Accounts.EventEmitter do
 
   def handle_event({:ok, user}, :update_email, %{old_email: _, new_email: new_email} = args) do
     if user.stripe_customer_id do
-      {:ok, _} = Stripe.Customer.update(user.stripe_customer_id, %{email: new_email})
+      {:ok, _} = Sanbase.StripeApi.update_customer(user.stripe_customer_id, %{email: new_email})
     end
 
     Map.merge(%{event_type: :update_email, user_id: user.id}, args)

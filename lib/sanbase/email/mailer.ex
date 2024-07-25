@@ -52,7 +52,7 @@ defmodule Sanbase.Mailer do
 
     case subscription do
       %Subscription{} = subscription ->
-        Subscription.is_trialing_sanbase_pro?(subscription)
+        Subscription.trialing_sanbase_pro?(subscription)
 
       _ ->
         false
@@ -64,11 +64,15 @@ defmodule Sanbase.Mailer do
 
     case subscription do
       %Subscription{cancel_at_period_end: false} = subscription ->
-        Subscription.is_trialing_sanbase_pro?(subscription) and has_card?(user)
+        Subscription.trialing_sanbase_pro?(subscription) and has_card?(user)
 
       _ ->
         false
     end
+  end
+
+  defp can_send?(user, template, _params) when template == :welcome_email do
+    not is_excluded_email?(user.email)
   end
 
   defp can_send?(user, template, _params)
@@ -90,5 +94,35 @@ defmodule Sanbase.Mailer do
       {:ok, customer} -> not is_nil(customer.default_source)
       _ -> false
     end
+  end
+
+  # don't send post-registration email to emails that contain these tokens
+  # or have digits in them by Maksim T.
+  def is_excluded_email?(email) do
+    tokens = [
+      "gmail",
+      "yahoo",
+      "hotmail",
+      "santiment",
+      "proton",
+      "icloud",
+      "yandex",
+      "qq.com",
+      "bk.ru",
+      "aol.com",
+      "msn.com",
+      "mail.ru",
+      "rocketmail",
+      "live.co",
+      "me.com",
+      "googlemail",
+      "comcast",
+      "gmx.com",
+      "pm.me",
+      "mailinator",
+      "mac.com"
+    ]
+
+    Enum.any?(tokens, &String.contains?(email, &1)) or Regex.match?(~r/\d/, email)
   end
 end

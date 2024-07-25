@@ -21,6 +21,8 @@ defmodule Sanbase.MonitoredTwitterHandle do
           updated_at: DateTime.t()
         }
 
+  @statuses ["approved", "declined", "pending_approval"]
+
   schema "monitored_twitter_handles" do
     field(:handle, :string)
     field(:notes, :string)
@@ -50,6 +52,7 @@ defmodule Sanbase.MonitoredTwitterHandle do
     %__MODULE__{}
     |> change(%{handle: normalize_handle(handle), user_id: user_id, origin: origin, notes: notes})
     |> validate_required([:handle, :user_id, :origin])
+    |> validate_inclusion(:status, @statuses)
     |> unique_constraint(:handle)
     |> Repo.insert()
     |> maybe_transform_error()
@@ -66,8 +69,7 @@ defmodule Sanbase.MonitoredTwitterHandle do
   end
 
   # @doc false
-  def update_status(record_id, status, comment \\ nil)
-      when status in ["approved", "declined", "pending_approval"] do
+  def update_status(record_id, status, comment \\ nil) when status in @statuses do
     # The status is updated from an admin panel
     result =
       Repo.get!(__MODULE__, record_id)
@@ -82,6 +84,20 @@ defmodule Sanbase.MonitoredTwitterHandle do
       result ->
         result
     end
+  end
+
+  def list_all_approved() do
+    # Requested by the social data team -- do not include handles that are approved, but with a
+    # comment. These could be handles that are sharing content not in english, not crypto, or
+    # crypto and english, but self-promotion. The only times comments are used are to provide
+    # info why the handle should not end up in our social data pipelines
+    query =
+      from(
+        m in __MODULE__,
+        where: m.status == "approved" and m.comment == ""
+      )
+
+    Repo.all(query)
   end
 
   def list_all_submissions() do

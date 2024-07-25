@@ -115,8 +115,16 @@ defmodule Sanbase.Dashboards.Dashboard do
   @create_fields [:name, :description, :is_public, :parameters, :settings, :user_id]
   @update_fields @create_fields -- [:user_id]
 
-  @preload [:queries, :user, :featured_item, queries: :user]
+  @preload [:queries, :user, :featured_item, [queries: :user]]
   def default_preload(), do: @preload
+
+  @doc false
+  def changeset(%__MODULE__{} = dashboard, attrs) do
+    # Used in admin panel
+    dashboard
+    |> cast(attrs, @update_fields)
+    |> validate_required([:name])
+  end
 
   def create_changeset(%__MODULE__{} = dashboard, attrs) do
     dashboard
@@ -269,6 +277,8 @@ defmodule Sanbase.Dashboards.Dashboard do
     |> where([ul], ul.user_id == ^user_id)
   end
 
+  def public?(dashboard), do: dashboard.is_public
+
   # Private functions
 
   defp base_query() do
@@ -304,7 +314,7 @@ defmodule Sanbase.Dashboards.Dashboard do
         query
 
       true ->
-        preload = Keyword.get(opts, :preload, @preload)
+        preload = opts |> Keyword.get(:preload, @preload)
         query |> preload(^preload)
     end
   end

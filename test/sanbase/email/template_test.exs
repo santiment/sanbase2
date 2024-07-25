@@ -9,7 +9,7 @@ defmodule Sanbase.Email.TemplateTest do
                "sheets-sign-up"
     end
 
-    test "when user comes from Neuro" do
+    test "when user comes from neuro.santiment.net" do
       assert Template.choose_login_template("https://neuro.santiment.net", first_login?: true) ==
                "neuro-sign-up"
     end
@@ -31,7 +31,7 @@ defmodule Sanbase.Email.TemplateTest do
                "sheets-sign-in"
     end
 
-    test "when user comes from Neuro" do
+    test "when user comes from neuro.santiment.net" do
       assert Template.choose_login_template("https://neuro.santiment.net", first_login?: false) ==
                "neuro-sign-in"
     end

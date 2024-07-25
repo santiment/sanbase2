@@ -21,16 +21,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ExchangeResolver do
         args,
         _resolution
       ) do
-    limit = Map.get(args, :limit, 100)
+    limit = Map.get(args, :limit, 10)
 
-    opts =
-      case Map.split(args, [:owner, :label]) do
-        {map, _rest} when map_size(map) > 0 -> [additional_filters: Keyword.new(map)]
-        _ -> []
-      end
-
-    with {:ok, selector} <- Sanbase.Project.Selector.args_to_selector(args),
-         {:ok, result} <- Exchanges.top_exchanges_by_balance(selector, limit, opts) do
+    with true <- validate_top_exchanges_slug(args),
+         {:ok, result} <- Exchanges.top_exchanges_by_balance(%{slug: args.slug}, limit) do
       {:ok, result}
     end
     |> maybe_handle_graphql_error(fn error ->
@@ -41,4 +35,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ExchangeResolver do
       )
     end)
   end
+
+  defp validate_top_exchanges_slug(%{selector: _}),
+    do: {:error, "The `selector` parameter has been deprecated. Please provide just `slug`"}
+
+  defp validate_top_exchanges_slug(%{slug: slug}) when is_binary(slug), do: true
+  defp validate_top_exchanges_slug(%{}), do: {:error, "Please provei the `slug` parameter"}
 end

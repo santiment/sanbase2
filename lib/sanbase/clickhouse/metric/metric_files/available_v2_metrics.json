@@ -6336,5 +6336,45 @@
     "has_incomplete_data": false,
     "data_type": "timeseries",
     "docs_links": ["https://academy.santiment.net/metrics/m2-money-supply"]
+  },
+  {
+    "human_readable_name": "XRPL DEX AMM Volume in XRP",
+    "name": "dex_amm_volume_in_xrp_5min",
+    "metric": "dex_amm_volume_in_xrp_5min",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/xrpl-metrics/dex-volume"]
+  },
+  {
+    "human_readable_name": "XRPL DEX AMM Volume in USD",
+    "name": "dex_amm_volume_in_usd_5min",
+    "metric": "dex_amm_volume_in_usd_5min",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/xrpl-metrics/dex-volume"]
   }
 ]

@@ -459,5 +459,41 @@
     "has_incomplete_data": true,
     "data_type": "timeseries",
     "docs_links": ["https://academy.santiment.net/metrics/nft-trade-volume-usd"]
+  },
+  {
+    "human_readable_name": "Liquidity in XRPL AMM Pool by Pair",
+    "name": "liquidity_in_amm_pools_by_pair",
+    "metric": "liquidity_in_amm_pools_by_pair",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_label_based_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/xrpl-metrics/liquidity-amm-pools"]
+  },
+  {
+    "human_readable_name": "Liquidity in XRPL AMM Pool by Asset",
+    "name": "liquidity_in_amm_pools_by_asset",
+    "metric": "liquidity_in_amm_pools_by_asset",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_label_based_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/xrpl-metrics/liquidity-amm-pools"]
   }
 ]

@@ -105,7 +105,7 @@ defmodule Sanbase.Mixfile do
       {:guardian_db, "~> 3.0"},
       # Guardian is pinned as in 2.3.2 the way they get times
       # internally is modified, so our mocked tests fail
-      {:guardian, "== 2.3.1"},
+      {:guardian, "~> 2.3.2"},
       {:gun, "~> 2.0", hex: :remedy_gun, override: true},
       {:hackney, "~> 1.17", override: true},
       {:hammer, "~> 6.0"},

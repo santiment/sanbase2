@@ -1,18 +1,31 @@
 defmodule Sanbase.Billing.ApiInfo do
-  @moduledoc ~s"""
-
-  """
-
-  # NOTE: In case of compile time error for reasons like wrong import_types and
-  # similar, the error will be not include the right place where it errored. In this
-  # case replace the @query_type with the commented one - it has high chances for the
-  # proper error location to be revealed
-  # @query_type %{fields: %{}}
-  @query_type Absinthe.Schema.lookup_type(SanbaseWeb.Graphql.Schema, :query)
-  @fields @query_type.fields |> Map.keys()
-
   @type query_or_argument_tuple ::
           {:query, Atom.t()} | {:metric, String.t()} | {:signal, String.t()}
+
+  def query_type() do
+    case :persistent_term.get(:sanbase_absinthe_schema_query_type, :not_stored) do
+      :not_stored ->
+        data = Absinthe.Schema.lookup_type(SanbaseWeb.Graphql.Schema, :query)
+        :persistent_term.put(:sanbase_absinthe_schema_query_type, data)
+        data
+
+      data ->
+        data
+    end
+  end
+
+  def query_type_fields() do
+    case :persistent_term.get(:sanbase_absinthe_schema_query_type_fields, :not_stored) do
+      :not_stored ->
+        query_type = query_type()
+        fields = query_type.fields |> Map.keys()
+        :persistent_term.put(:sanbase_absinthe_schema_query_type_fields, fields)
+        fields
+
+      fields ->
+        fields
+    end
+  end
 
   @typedoc """
   Key is one of "SANAPI" or "SANBASE". Value is one of "FREE", "PRO", etc.
@@ -25,15 +38,25 @@ defmodule Sanbase.Billing.ApiInfo do
   """
   @spec min_plan_map() :: %{query_or_argument_tuple => product_min_plan_map}
   def min_plan_map() do
-    # Metadata looks like this:
-    # meta(access: :restricted, min_plan: [sanapi: "PRO", sanbase: "FREE"])
-    query_min_plan_map = get_query_min_plan_map()
-    metric_min_plan_map = get_metric_min_plan_map()
-    signal_min_plan_map = get_signal_min_plan_map()
+    case :persistent_term.get(:absinthe_min_plan_map, :not_stored) do
+      :not_stored ->
+        # Metadata looks like this:
+        # meta(access: :restricted, min_plan: [sanapi: "PRO", sanbase: "FREE"])
+        query_min_plan_map = get_query_min_plan_map()
+        metric_min_plan_map = get_metric_min_plan_map()
+        signal_min_plan_map = get_signal_min_plan_map()
 
-    query_min_plan_map
-    |> Map.merge(metric_min_plan_map)
-    |> Map.merge(signal_min_plan_map)
+        data =
+          query_min_plan_map
+          |> Map.merge(metric_min_plan_map)
+          |> Map.merge(signal_min_plan_map)
+
+        :persistent_term.put(:absinthe_min_plan_map, data)
+        data
+
+      data ->
+        data
+    end
   end
 
   @doc ~s"""
@@ -45,34 +68,50 @@ defmodule Sanbase.Billing.ApiInfo do
       when is_list(fields) and is_list(values) and length(fields) == length(values) do
     field_value_pairs = Enum.zip(fields, values)
 
-    Enum.filter(@fields, fn f ->
+    Enum.filter(query_type_fields(), fn f ->
       Enum.all?(field_value_pairs, fn {field, value} ->
-        Map.get(@query_type.fields, f) |> Absinthe.Type.meta(field) == value
+        Map.get(query_type().fields, f) |> Absinthe.Type.meta(field) == value
       end)
     end)
   end
 
   def get_all_with_access_level(level) do
-    # List of {:query, atom()}
-    queries_with_access_level =
-      get_queries_with_access_level(level)
-      |> Enum.map(&{:query, &1})
+    case :persistent_term.get({:absinthe_get_all_with_access_level, level}, :not_stored) do
+      :not_stored ->
+        data = do_get_all_with_access_level(level) |> MapSet.new()
+        :persistent_term.put({:absinthe_get_all_with_access_level, level}, data)
+        data
 
-    # List of {:signal, String.t()}
-    signals_with_access_level =
-      Sanbase.Signal.access_map()
-      |> get_with_access_level(level)
-      |> Enum.map(&{:signal, &1})
+      data ->
+        data
+    end
+  end
 
-    # List of {:metric, String.t()}
-    metrics_with_access_level =
-      Sanbase.Metric.access_map()
-      |> get_with_access_level(level)
-      |> Enum.map(&{:metric, &1})
+  def get_all_with_any_access_level() do
+    case :persistent_term.get(:absinthe_get_all_with_any_access_level, :not_stored) do
+      :not_stored ->
+        free = do_get_all_with_access_level(:free)
+        restricted = do_get_all_with_access_level(:restricted)
+        data = free ++ restricted
 
-    queries_with_access_level ++
-      signals_with_access_level ++
-      metrics_with_access_level
+        :persistent_term.put(:absinthe_get_all_with_any_access_level, data)
+        data
+
+      data ->
+        data
+    end
+  end
+
+  def get_all_with_access_level_mapset(level) do
+    case :persistent_term.get({:absinthe_get_all_with_access_level_mapset, level}, :not_stored) do
+      :not_stored ->
+        data = do_get_all_with_access_level(level) |> MapSet.new()
+        :persistent_term.put({:absinthe_get_all_with_access_level_mapset, level}, data)
+        data
+
+      data ->
+        data
+    end
   end
 
   def get_with_access_level(access_map, level) do
@@ -95,9 +134,33 @@ defmodule Sanbase.Billing.ApiInfo do
   end
 
   # Private functions
+
+  defp do_get_all_with_access_level(level) do
+    # List of {:query, atom()}
+    queries_with_access_level =
+      get_queries_with_access_level(level)
+      |> Enum.map(&{:query, &1})
+
+    # List of {:signal, String.t()}
+    signals_with_access_level =
+      Sanbase.Signal.access_map()
+      |> get_with_access_level(level)
+      |> Enum.map(&{:signal, &1})
+
+    # List of {:metric, String.t()}
+    metrics_with_access_level =
+      Sanbase.Metric.access_map()
+      |> get_with_access_level(level)
+      |> Enum.map(&{:metric, &1})
+
+    queries_with_access_level ++
+      signals_with_access_level ++
+      metrics_with_access_level
+  end
+
   defp get_query_meta_field_list(field) do
-    Enum.map(@fields, fn f ->
-      {f, Map.get(@query_type.fields, f) |> Absinthe.Type.meta(field)}
+    Enum.map(query_type_fields(), fn f ->
+      {f, Map.get(query_type().fields, f) |> Absinthe.Type.meta(field)}
     end)
   end
 

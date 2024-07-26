@@ -99,8 +99,7 @@ defmodule SanbaseWeb.Router do
       json_codec: Jason,
       schema: SanbaseWeb.Graphql.Schema,
       document_providers: [
-        SanbaseWeb.Graphql.DocumentProvider,
-        Absinthe.Plug.DocumentProvider.Default
+        SanbaseWeb.Graphql.DocumentProvider
       ],
       analyze_complexity: true,
       max_complexity: 50_000,
@@ -116,8 +115,7 @@ defmodule SanbaseWeb.Router do
       schema: SanbaseWeb.Graphql.Schema,
       socket: SanbaseWeb.UserSocket,
       document_providers: [
-        SanbaseWeb.Graphql.DocumentProvider,
-        Absinthe.Plug.DocumentProvider.Default
+        SanbaseWeb.Graphql.DocumentProvider
       ],
       analyze_complexity: true,
       max_complexity: 50_000,

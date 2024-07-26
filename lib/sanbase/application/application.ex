@@ -161,6 +161,9 @@ defmodule Sanbase.Application do
   """
   def prepended_children(container_type) do
     [
+      # This child is required so the Absinthe uses
+      # the persistent_term backend
+      {Absinthe.Schema, SanbaseWeb.Graphql.Schema},
       start_in_and_if(
         fn ->
           %{

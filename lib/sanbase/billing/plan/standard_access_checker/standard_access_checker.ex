@@ -42,30 +42,23 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
 
   @doc documentation_ref: "# DOCS access-plans/index.md"
 
-  case ApiInfo.get_queries_without_access_level() do
-    [] ->
-      :ok
+  def check_queries_without_types() do
+    case ApiInfo.get_queries_without_access_level() do
+      [] ->
+        :ok
 
-    queries ->
-      require Sanbase.Break, as: Break
+      queries ->
+        require Sanbase.Break, as: Break
 
-      Break.break("""
-      There are GraphQL queries defined without specifying their access level.
-      The access level could be either `free` or `restricted`.
-      To define an access level, put `meta(access: <level>)` in the field definition.
+        Break.break("""
+        There are GraphQL queries defined without specifying their access level.
+        The access level could be either `free` or `restricted`.
+        To define an access level, put `meta(access: <level>)` in the field definition.
 
-      Queries without access level: #{inspect(queries)}
-      """)
+        Queries without access level: #{inspect(queries)}
+        """)
+    end
   end
-
-  @free_query_or_argument ApiInfo.get_all_with_access_level(:free)
-  @free_query_or_argument_mapset MapSet.new(@free_query_or_argument)
-
-  @restricted_query_or_argument ApiInfo.get_all_with_access_level(:restricted)
-
-  @all_query_or_argument @free_query_or_argument ++ @restricted_query_or_argument
-
-  @min_plan_map ApiInfo.min_plan_map()
 
   @doc ~s"""
   Check if a query full access is given only to users with a plan higher than free.
@@ -74,7 +67,7 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
   """
   @spec restricted?(query_or_argument) :: boolean()
   def restricted?(query_or_argument),
-    do: query_or_argument not in @free_query_or_argument_mapset
+    do: query_or_argument not in ApiInfo.get_all_with_access_level_mapset(:free)
 
   @spec plan_has_access?(query_or_argument, requested_product, plan_name) :: boolean()
   def plan_has_access?(query_or_argument, requested_product, plan_name) do
@@ -89,7 +82,7 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
 
   @spec min_plan(product_code, query_or_argument) :: plan_name
   def min_plan(product_code, query_or_argument) do
-    @min_plan_map[query_or_argument][product_code] || "FREE"
+    ApiInfo.min_plan_map()[query_or_argument][product_code] || "FREE"
   end
 
   @spec get_available_metrics_for_plan(plan_name, product_code, Atom.t()) ::
@@ -98,9 +91,9 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
 
   def get_available_metrics_for_plan(plan_name, product_code, restriction_type) do
     case restriction_type do
-      :free -> @free_query_or_argument
-      :restricted -> @restricted_query_or_argument
-      :all -> @all_query_or_argument
+      :free -> ApiInfo.get_all_with_access_level(:free)
+      :restricted -> ApiInfo.get_all_with_access_level(:restricted)
+      :all -> ApiInfo.get_all_with_any_access_level()
     end
     |> Stream.filter(&match?({:metric, _}, &1))
     |> Stream.filter(&plan_has_access?(&1, product_code, plan_name))

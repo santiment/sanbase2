@@ -14,7 +14,7 @@ defmodule Sanbase.Clickhouse.ClickhouseRepoTest do
           {:error, error} = ClickhouseRepo.query_transform("SELECT NOW()", [], & &1)
 
           assert error =~
-                   "Cannot execute database query. If issue persists please contact Santiment Support"
+                   "Cannot execute ClickHouse database query. If issue persists please contact Santiment Support"
 
           # assert returned error message does not contain internal details
           refute error =~ error_msg
@@ -38,7 +38,7 @@ defmodule Sanbase.Clickhouse.ClickhouseRepoTest do
           {:error, error} = ClickhouseRepo.query_transform("SELECT NOW()", [], & &1)
 
           assert error =~
-                   "Cannot execute database query. If issue persists please contact Santiment Support"
+                   "Cannot execute ClickHouse database query. If issue persists please contact Santiment Support"
 
           # assert returned error message does not contain internal details
           refute error =~ error_msg

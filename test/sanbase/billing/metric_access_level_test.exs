@@ -188,7 +188,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "compound_total_protocol_cumulative_revenue_usd",
         "compound_v3_active_addresses",
         "makerdao_active_addresses",
-        "liquity_active_addresses",
         "fraxlend_active_addresses",
         "ethena_staking_deposits",
         "ethena_staking_withdrawals",
@@ -515,7 +514,11 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "unique_social_volume_farcaster_1d",
         "unique_social_volume_reddit_1d",
         "unique_social_volume_telegram_1d",
-        "unique_social_volume_twitter_1d"
+        "unique_social_volume_twitter_1d",
+        # Liquity metrics
+        "liquity_active_addresses",
+        "liquidity_in_amm_pools_by_asset",
+        "liquidity_in_amm_pools_by_pair"
       ]
       |> Enum.sort()
 
@@ -1159,8 +1162,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "nft_whale_trade_volume_usd",
         "nft_retail_trades_count",
         "nft_retail_trade_volume_usd",
-        "liquidity_in_amm_pools_by_pair",
-        "liquidity_in_amm_pools_by_asset",
         # nft collection metrics
         "nft_collection_min_price",
         "nft_collection_max_price",
@@ -1538,6 +1539,8 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "liquity_total_borrowed_usd",
         "liquity_borrow_fee",
         "liquity_active_addresses",
+        "liquidity_in_amm_pools_by_asset",
+        "liquidity_in_amm_pools_by_pair",
         # Fraxlend metrics
         "fraxlend_action_deposits",
         "fraxlend_action_liquidations",

@@ -476,7 +476,7 @@
     "table": "daily_label_based_metrics",
     "has_incomplete_data": true,
     "data_type": "timeseries",
-    "docs_links": ["https://academy.santiment.net/metrics/nft-trade-volume-usd"]
+    "docs_links": ["https://academy.santiment.net/metrics/xrpl-metrics/liquidity-amm-pools"]
   },
   {
     "human_readable_name": "Liquidity in XRPL AMM Pool by Asset",
@@ -494,6 +494,6 @@
     "table": "daily_label_based_metrics",
     "has_incomplete_data": true,
     "data_type": "timeseries",
-    "docs_links": ["https://academy.santiment.net/metrics/nft-trade-volume-usd"]
+    "docs_links": ["https://academy.santiment.net/metrics/xrpl-metrics/liquidity-amm-pools"]
   }
 ]

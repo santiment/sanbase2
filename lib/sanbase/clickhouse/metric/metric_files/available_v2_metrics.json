@@ -6281,7 +6281,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "docs_links": ["https://academy.santiment.net/metrics/bitcoin-etf-volume"]
+    "docs_links": ["https://academy.santiment.net/metrics/xrpl-metrics/dex-volume"]
   },
   {
     "human_readable_name": "XRPL DEX AMM Volume in USD",
@@ -6301,6 +6301,6 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "docs_links": ["https://academy.santiment.net/metrics/bitcoin-etf-volume"]
+    "docs_links": ["https://academy.santiment.net/metrics/xrpl-metrics/dex-volume"]
   }
 ]

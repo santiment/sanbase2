@@ -23,7 +23,9 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
     [
       project_with_contract: project_with_contract,
       project_without_contract: project_without_contract,
-      address: "0x321321321",
+      eth_address: "0x4efb548a2cb8f0af7c591cef21053f6875b5d38f",
+      btc_address: "1H9NmjBiMfbNNayVsXshJF8NyQ4FA9TWDT",
+      xrp_address: "rwq9nH3qKM3QqFoo6GZSEVCjczSE75v5rc",
       from: ~U[2017-05-11T00:00:00Z],
       to: ~U[2017-05-20T00:00:00Z],
       interval: "1d"
@@ -40,8 +42,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
       %{infrastructure: "BCH"},
       %{infrastructure: "BNB"},
       %{infrastructure: "BNB", slug: "binance-coin"},
-      %{infrastructure: "XRP"},
-      %{infrastructure: "XRP", currency: "BTC"}
+      %{infrastructure: "XRP", currency: "XRP", issuer: "XRP"}
     ]
 
     dt1 = ~U[2019-01-01 00:00:00Z]
@@ -62,7 +63,14 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
       to = dt4
 
       for selector <- selectors do
-        query = historical_balances_query(selector, context.address, from, to, "1d")
+        address =
+          case selector.infrastructure do
+            "BTC" -> context.btc_address
+            "XRP" -> context.xrp_address
+            _ -> context.eth_address
+          end
+
+        query = historical_balances_query(selector, address, from, to, "1d")
 
         result =
           context.conn
@@ -103,7 +111,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
       query =
         historical_balances_query(
           selector,
-          context.address,
+          context.eth_address,
           context.from,
           context.to,
           context.interval
@@ -146,7 +154,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
       from = ~U[2017-05-13T00:00:00Z]
       to = ~U[2017-05-18T00:00:00Z]
       selector = %{infrastructure: "ETH", slug: "ethereum"}
-      query = historical_balances_query(selector, context.address, from, to, "2d")
+      query = historical_balances_query(selector, context.eth_address, from, to, "2d")
 
       result =
         context.conn
@@ -173,7 +181,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
       query =
         historical_balances_query(
           selector,
-          context.address,
+          context.eth_address,
           context.from,
           context.to,
           context.interval
@@ -205,7 +213,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
       query =
         historical_balances_query(
           selector,
-          context.address,
+          context.eth_address,
           context.from,
           context.to,
           context.interval
@@ -245,7 +253,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
       query =
         historical_balances_query(
           selector,
-          context.address,
+          context.eth_address,
           context.from,
           context.to,
           context.interval
@@ -279,7 +287,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
     query =
       historical_balances_query(
         selector,
-        context.address,
+        context.eth_address,
         context.from,
         context.to,
         context.interval
@@ -314,7 +322,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
       query =
         historical_balances_query(
           selector,
-          context.address,
+          context.eth_address,
           context.from,
           context.to,
           context.interval

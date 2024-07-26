@@ -111,7 +111,15 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
        required_selectors: [:slug],
        data_type: :timeseries,
        is_timebound: false,
-       complexity_weight: @default_complexity_weight
+       complexity_weight: @default_complexity_weight,
+       is_deprecated: true,
+       hard_deprecate_after: nil,
+       docs: [
+         %{
+           link:
+             "https://academy.santiment.net/metrics/deprecated-metrics/deprecated-uniswap-metrics"
+         }
+       ]
      }}
   end
 

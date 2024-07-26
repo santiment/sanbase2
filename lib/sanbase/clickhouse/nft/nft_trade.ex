@@ -29,7 +29,8 @@ defmodule Sanbase.Clickhouse.NftTrade do
           nft_contract_address,
           nft_contract_name,
           platform,
-          type
+          type,
+          price_usd
         ] = list
 
         quantities =
@@ -57,7 +58,8 @@ defmodule Sanbase.Clickhouse.NftTrade do
           quantities: quantities,
           trx_hash: trx_hash,
           marketplace: platform,
-          nft: %{contract_address: nft_contract_address, name: nft_contract_name}
+          nft: %{contract_address: nft_contract_address, name: nft_contract_name},
+          price_usd: price_usd
         }
       end
     )
@@ -127,7 +129,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
   defp get_trades_query(label_key, from, to, opts) do
     order_key =
       case Keyword.fetch!(opts, :order_by) do
-        :datetime -> "dt"
+        :datetime -> "trades.dt"
         :amount -> "amount"
       end
 
@@ -137,7 +139,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
         :desc -> "DESC"
       end
 
-    inner_sql = """
+    trades_sql = """
     SELECT dt,
            log_index,
            argMax(buyer_address, computed_at) AS buyer_address,
@@ -151,7 +153,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
            argMax(asset_ref_id, computed_at) AS asset_ref_id,
            argMax(tx_hash, computed_at) as tx_hash,
            groupArray(type) AS type
-    FROM (#{label_key_dt_filtered_subquery()})
+    FROM ( #{label_key_dt_filtered_subquery()} )
     GROUP BY dt, log_index
     """
 
@@ -161,7 +163,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
     # right record in assets table exists. If it doesn't exists - replace the decimals with `18`.
     sql = """
     SELECT
-      dt,
+      toUnixTimestamp(trades.dt),
       amount / pow(10, if(isNull(name), 18, decimals)) AS amount,
       amount_tokens,
       token_ids,
@@ -172,14 +174,38 @@ defmodule Sanbase.Clickhouse.NftTrade do
       nft_contract_address,
       nft_contract_name,
       platform,
-      type
+      type,
+      if(
+        prices.price_usd != 0,
+        prices.price_usd * toFloat64(amount) / pow(10, decimals),
+        current_prices.price_usd * toFloat64(amount) / pow(10, decimals)
+      ) AS price_usd
 
-    FROM (#{inner_sql})
+    FROM ( #{trades_sql} ) AS trades
 
     LEFT JOIN (
-      SELECT asset_ref_id, name, decimals
+      SELECT asset_ref_id, asset_id, name, decimals
       FROM asset_metadata FINAL
-    ) USING (asset_ref_id)
+    ) AS assets ON trades.asset_ref_id = assets.asset_ref_id
+
+    LEFT JOIN (
+      SELECT dt, asset_id, value AS price_usd
+      FROM intraday_metrics
+      WHERE
+        metric_id = (SELECT metric_id FROM metric_metadata WHERE name = 'price_usd')
+        AND dt >= toDateTime({{from}}) and dt < toDateTime({{to}})
+    ) AS prices
+    ON toStartOfFiveMinute(trades.dt) = prices.dt AND assets.asset_id = prices.asset_id
+
+    LEFT JOIN (
+      SELECT slug, price_usd, dt
+      FROM asset_prices_v3
+      WHERE
+        dt >= toDateTime(?2) - INTERVAL '4' HOUR AND
+        dt < toDateTime(?2)
+      ORDER BY dt desc, source desc
+    ) AS current_prices
+    ON prices.price_usd = 0 AND toStartOfFiveMinute(trades.dt) = toStartOfFiveMinute(current_prices.dt) AND assets.name = current_prices.slug
 
     ORDER BY #{order_key} #{direction}
     LIMIT {{limit}} OFFSET {{offset}}
@@ -208,7 +234,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
     """
 
     combined_buyer_seller = """
-    SELECT toUnixTimestamp(dt) AS dt, log_index, amount_tokens, token_ids, toFloat64(amount) AS amount, tx_hash, buyer_address, seller_address, nft_contract_address, asset_ref_id, platform, 'buy' AS type, computed_at
+    SELECT dt, log_index, amount_tokens, token_ids, toFloat64(amount) AS amount, tx_hash, buyer_address, seller_address, nft_contract_address, asset_ref_id, platform, 'buy' AS type, computed_at
     FROM nft_trades nft
     JOIN #{nft_influences_subquery} lbl
     ON buyer_address = lbl.address
@@ -216,7 +242,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
 
     UNION ALL
 
-    SELECT toUnixTimestamp(dt) AS dt, log_index, amount_tokens, token_ids, toFloat64(amount) AS amount, tx_hash, buyer_address, seller_address, nft_contract_address, asset_ref_id, platform, 'sell' AS type, computed_at
+    SELECT dt, log_index, amount_tokens, token_ids, toFloat64(amount) AS amount, tx_hash, buyer_address, seller_address, nft_contract_address, asset_ref_id, platform, 'sell' AS type, computed_at
     FROM nft_trades nft
     JOIN #{nft_influences_subquery} lbl
     ON seller_address = lbl.address

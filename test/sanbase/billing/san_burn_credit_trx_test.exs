@@ -13,7 +13,7 @@ defmodule Sanbase.Billing.SanBurnCreditTransactionTest do
       )
 
     timestamp = ~U[2022-05-23 05:43:40Z] |> DateTime.to_unix()
-    rows = [[timestamp, "0x1", 1000, "0x123"]]
+    rows = [[timestamp, "0x1", 1000, "0x4efb548a2cb8f0af7c591cef21053f6875b5d38f"]]
 
     data = %{price_usd: 4, price_btc: 0.03, marketcap: 100, volume: 100}
 
@@ -42,7 +42,7 @@ defmodule Sanbase.Billing.SanBurnCreditTransactionTest do
                san_amount: 1000,
                san_price: 4,
                trx_datetime: ~U[2022-05-23 05:43:40Z],
-               trx_hash: "0x123",
+               trx_hash: "0x4efb548a2cb8f0af7c591cef21053f6875b5d38f",
                user_id: user.id
              }
     end)

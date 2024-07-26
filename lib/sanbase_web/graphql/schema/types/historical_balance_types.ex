@@ -57,6 +57,7 @@ defmodule SanbaseWeb.Graphql.HistoricalBalanceTypes do
   input_object :historical_balance_selector do
     field(:infrastructure, :string)
     field(:currency, :string)
+    field(:issuer, :string)
     field(:contract, :string)
     field(:decimals, :integer)
     field(:slug, :string)

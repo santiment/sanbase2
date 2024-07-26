@@ -4,6 +4,9 @@ defmodule Sanbase.Project.TwitterData do
   def link_to_handle("https://twitter.com/" <> twitter_name),
     do: String.split(twitter_name, "/") |> hd()
 
+  def link_to_handle("https://x.com/" <> twitter_name),
+    do: String.split(twitter_name, "/") |> hd()
+
   def link_to_handle(_), do: nil
 
   def twitter_handle(%Project{twitter_link: nil} = project),

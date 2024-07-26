@@ -1,7 +1,8 @@
 defmodule SanbaseWeb.AvailableMetricsLive do
   use SanbaseWeb, :live_view
 
-  import SanbaseWeb.AvailableMetricsComponents
+  import SanbaseWeb.AvailableMetricsDescription
+  alias SanbaseWeb.AvailableMetricsComponents
 
   @impl true
   def mount(_params, _session, socket) do
@@ -19,7 +20,8 @@ defmodule SanbaseWeb.AvailableMetricsLive do
      |> assign(
        visible_metrics: visible_metrics,
        metrics_map: metrics_map,
-       filter: default_filter
+       filter: default_filter,
+       rand_suffix: :crypto.strong_rand_bytes(5) |> Base.encode32()
      )}
   end
 
@@ -56,30 +58,86 @@ defmodule SanbaseWeb.AvailableMetricsLive do
           In total <%= to_string(@assets_count) %> assets are supported by at least one of the visible filtered metrics
         </div>
       </div>
-      <.table id="available_metrics" rows={@ordered_visible_metrics}>
-        <:col :let={row} label="Name">
+      <AvailableMetricsComponents.table_with_popover_th
+        id="available_metrics"
+        rows={@ordered_visible_metrics}
+      >
+        <:col
+          :let={row}
+          label="Name"
+          popover_target="popover-name"
+          popover_target_text={get_popover_text(%{key: "Name"})}
+          col_class="max-w-[320px] break-all"
+        >
           <%= row.metric %>
         </:col>
-        <:col :let={row} :if={@filter["show_internal_name"] == "on"} label="Internal Name">
+        <:col
+          :let={row}
+          label="Internal Name"
+          popover_target="popover-internal-name"
+          popover_target_text={get_popover_text(%{key: "Internal Name"})}
+          col_class="max-w-[320px] break-all"
+        >
           <%= row.internal_name %>
         </:col>
-        <:col :let={row} label="Frequency"><%= row.frequency %></:col>
-        <:col :let={row} label="Selectors">
+        <:col
+          :let={row}
+          label="Frequency"
+          popover_target="popover-frequency"
+          popover_target_text={get_popover_text(%{key: "Frequency"})}
+        >
+          <%= row.frequency %>
+        </:col>
+        <:col
+          :let={row}
+          label="Selectors"
+          popover_target="popover-selectors"
+          popover_target_text={get_popover_text(%{key: "Available Selectors"})}
+        >
           <.available_selectors selectors={row.available_selectors} />
         </:col>
-        <:col :let={row} label="Default Aggregation">
+        <:col
+          :let={row}
+          label="Default Aggregation"
+          popover_target="popover-default-aggregation"
+          popover_target_text={get_popover_text(%{key: "Default Aggregation"})}
+        >
           <%= row.default_aggregation |> to_string() |> String.upcase() %>
         </:col>
-        <:col :let={row} label="Available Assets" col_class="max-w-[200px]">
+        <:col
+          :let={row}
+          label="Access"
+          popover_target="popover-access"
+          popover_target_text={get_popover_text(%{key: "Access"})}
+        >
+          <.metric_access access={row.access} />
+        </:col>
+        <:col
+          :let={row}
+          label="Available Assets"
+          col_class="max-w-[200px]"
+          popover_target="popover-available-assets"
+          popover_target_text={get_popover_text(%{key: "Available Assets"})}
+        >
           <.available_assets assets={row.available_assets} />
         </:col>
-        <:col :let={row} label="Docs">
+        <:col
+          :let={row}
+          label="Docs"
+          popover_target="popover-docs"
+          popover_target_text={get_popover_text(%{key: "Docs"})}
+        >
           <.docs_links docs={row.docs} />
         </:col>
-        <:col :let={row} label="Metric Details">
+        <:col
+          :let={row}
+          label="Metric Details"
+          popover_target="popover-metric-details"
+          popover_target_text={get_popover_text(%{key: "Metric Details"})}
+        >
           <.metric_details_button metric={row.metric} />
         </:col>
-      </.table>
+      </AvailableMetricsComponents.table_with_popover_th>
     </div>
     """
   end
@@ -95,10 +153,14 @@ defmodule SanbaseWeb.AvailableMetricsLive do
      socket
      |> assign(
        visible_metrics: visible_metrics,
-       filter: params
+       filter: params,
+       rand_suffix: :crypto.strong_rand_bytes(5) |> Base.encode32()
      )}
   end
 
+  @doc ~s"""
+  Checkbox that display description on hover.
+  """
   attr :popover_text, :string, required: true
   attr :popover_target, :string, required: true
   attr :input_id, :string, required: true
@@ -162,14 +224,6 @@ defmodule SanbaseWeb.AvailableMetricsLive do
           input_checked={@filter["only_with_docs"] == "on"}
           input_label="Only with docs"
         />
-        <.checkbox_with_popover
-          popover_text="The internal name is the name of the metric used in the databse tables. This is of interest only for Santiment Queries"
-          popover_target="popover-show-internal-name"
-          input_id="show-internal-name"
-          input_name="show_internal_name"
-          input_checked={@filter["show_internal_name"] == "on"}
-          input_label="Show internal name"
-        />
 
         <div>
           <input
@@ -194,7 +248,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
             phx-debounce="200"
           />
         </div>
-        <.available_metrics_button
+        <AvailableMetricsComponents.available_metrics_button
           text="Download as CSV"
           icon="hero-arrow-down-tray"
           href={~p"/export_available_metrics?#{%{filter: Jason.encode!(@filter)}}"}
@@ -225,7 +279,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
   defp docs_links(assigns) do
     ~H"""
     <div class="flex flex-row">
-      <.available_metrics_button
+      <AvailableMetricsComponents.available_metrics_button
         :for={doc <- assigns.docs}
         href={doc.link}
         text="Docs"
@@ -237,7 +291,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
 
   defp metric_details_button(assigns) do
     ~H"""
-    <.available_metrics_button
+    <AvailableMetricsComponents.available_metrics_button
       text="Details"
       href={~p"/available_metrics/#{@metric}"}
       icon="hero-arrow-top-right-on-square"
@@ -253,6 +307,21 @@ defmodule SanbaseWeb.AvailableMetricsLive do
     |> Enum.map(fn x -> x |> to_string() |> String.upcase() end)
     |> Enum.join("\n") %>
     </pre>
+    """
+  end
+
+  defp metric_access(assigns) do
+    access_string =
+      case assigns.access do
+        %{"historical" => :free, "realtime" => :free} -> "FREE"
+        _ -> "RESTRICTED"
+      end
+
+    assigns =
+      assigns |> assign(:access_string, access_string)
+
+    ~H"""
+    <span><%= @access_string %></span>
     """
   end
 end

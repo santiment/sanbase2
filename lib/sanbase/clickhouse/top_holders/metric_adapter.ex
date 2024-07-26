@@ -105,7 +105,10 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
        required_selectors: [:slug],
        data_type: data_type,
        is_timebound: false,
-       complexity_weight: @default_complexity_weight
+       complexity_weight: @default_complexity_weight,
+       is_deprecated: false,
+       hard_deprecate_after: nil,
+       docs: []
      }}
   end
 
@@ -147,7 +150,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   end
 
   def available_metrics(%{slug: slug}) do
-    with %Project{} = project <- Project.by_slug(slug, only_preload: [:infrastructure]),
+    with %Project{} = project <- Project.by_slug(slug, preload: [:infrastructure]),
          {:ok, infr} <- Project.infrastructure_real_code(project) do
       if infr in @supported_infrastructures and Project.has_contract_address?(project) do
         # Until we have Binance exchange addresses remove exchange metrics for it.
@@ -202,7 +205,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
 
   defp projects_with_supported_infrastructure() do
     result =
-      Project.List.projects(preload: [:infrastructure])
+      Project.List.projects(preload: [:infrastructure, :contract_addresses])
       |> Enum.filter(fn project ->
         case Project.infrastructure_real_code(project) do
           {:ok, infr_code} ->

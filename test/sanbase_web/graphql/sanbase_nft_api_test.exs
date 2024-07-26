@@ -9,7 +9,12 @@ defmodule SanbaseWeb.Graphql.SanbaseNFTApiTest do
 
   setup do
     user =
-      insert(:user, eth_accounts: [%EthAccount{address: "0x123"}, %EthAccount{address: "0x234"}])
+      insert(:user,
+        eth_accounts: [
+          %EthAccount{address: "0x4efb548a2cb8f0af7c591cef21053f6875b5d38f"},
+          %EthAccount{address: "0x234"}
+        ]
+      )
 
     conn = setup_jwt_auth(build_conn(), user)
 

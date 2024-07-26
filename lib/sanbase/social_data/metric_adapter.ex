@@ -14,20 +14,11 @@ defmodule Sanbase.SocialData.MetricAdapter do
   alias Sanbase.Project
 
   @aggregations [:sum]
-
-  @social_volume_timeseries_metrics [
-    # Social volume counts the mentions of a given word or words describing as subject
-    # A project can be addressed by different words.
-    # Example: `btc` and `bitcoin` refer to bitcoin
-    "social_volume_4chan",
-    "social_volume_telegram",
-    "social_volume_reddit",
-    "social_volume_twitter",
-    "social_volume_bitcointalk",
-    "social_volume_youtube_videos",
-    "social_volume_total",
-    "nft_social_volume"
-  ]
+  @sources ["total"] ++ SocialHelper.sources()
+  @social_volume_timeseries_metrics ["nft_social_volume"] ++
+                                      Enum.map(@sources, fn source ->
+                                        "social_volume_#{source}"
+                                      end)
 
   @community_messages_count_timeseries_metrics [
     ## Community messages count counts the total amount of messages in a project's
@@ -36,20 +27,20 @@ defmodule Sanbase.SocialData.MetricAdapter do
     "community_messages_count_total"
   ]
 
-  @social_dominance_timeseries_metrics [
-    "social_dominance_4chan",
-    "social_dominance_telegram",
-    "social_dominance_reddit",
-    "social_dominance_youtube_videos",
-    "social_dominance_total",
-    "social_dominance_ai_total"
-  ]
-
-  sources = ["total"] ++ SocialHelper.sources()
+  @social_dominance_timeseries_metrics ["social_dominance_ai_total"] ++
+                                         Enum.map(@sources, fn source ->
+                                           "social_dominance_#{source}"
+                                         end)
 
   @sentiment_timeseries_metrics for name <- ["sentiment"],
-                                    source <- sources,
-                                    type <- ["positive", "negative", "balance", "volume_consumed"],
+                                    source <- @sources,
+                                    type <- [
+                                      "positive",
+                                      "negative",
+                                      "balance",
+                                      "volume_consumed",
+                                      "weighted"
+                                    ],
                                     do: "#{name}_#{type}_#{source}"
 
   @active_users_timeseries_metrics ["social_active_users"]
@@ -296,8 +287,8 @@ defmodule Sanbase.SocialData.MetricAdapter do
           false -> @metrics -- @community_messages_count_timeseries_metrics
         end
 
-      # The metric is available only for `source`, not for `slug`
-      {:ok, metrics -- ["social_active_users"]}
+      # These two metrics are not available for `slug` but for other selectors
+      {:ok, metrics -- ["social_active_users", "nft_social_volume"]}
     end
   end
 
@@ -340,7 +331,8 @@ defmodule Sanbase.SocialData.MetricAdapter do
        complexity_weight: @default_complexity_weight,
        hard_deprecate_after: nil,
        is_deprecated: false,
-       is_timebound: false
+       is_timebound: false,
+       docs: Enum.map(docs_links(metric), fn link -> %{link: link} end)
      }}
   end
 
@@ -366,4 +358,29 @@ defmodule Sanbase.SocialData.MetricAdapter do
   defp source_first_datetime("bitcointalk"), do: {:ok, ~U[2011-06-01 00:00:00Z]}
   defp source_first_datetime("youtube_videos"), do: {:ok, ~U[2018-02-13 00:00:00Z]}
   defp source_first_datetime("4chan"), do: {:ok, ~U[2018-02-13 00:00:00Z]}
+
+  defp docs_links(metric) do
+    list =
+      cond do
+        "nft_social_volume" == metric ->
+          ["/metrics/nft-social-volume"]
+
+        String.contains?(metric, ["sentiment_weighted", "sentiment_volume_consumed"]) ->
+          ["/metrics/sentiment-metrics/weighted-sentiment-metrics"]
+
+        String.contains?(metric, ["sentiment_positive", "sentiment_negative", "sentiment_balance"]) ->
+          ["/metrics/sentiment-metrics/positive-negative-sentiment-metrics"]
+
+        String.contains?(metric, "social_dominance") ->
+          ["/metrics/social-dominance"]
+
+        String.contains?(metric, "social_volume") ->
+          ["/metrics/social-volume"]
+
+        true ->
+          []
+      end
+
+    Enum.map(list, &Path.join(["https://academy.santiment.net", &1]))
+  end
 end

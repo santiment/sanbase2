@@ -39,9 +39,17 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
       {:error, {:disable_alert, _}} = error ->
         error
 
+      {:error, :target_empty_list} ->
+        # There's nothing to be triggered
+        {:ok, %{settings | triggered?: false}}
+
       _ ->
         {:ok, %{settings | triggered?: false}}
     end
+  end
+
+  def get_data(%{filtered_target: %{list: []}}) do
+    {:error, :target_empty_list}
   end
 
   def get_data(%{filtered_target: %{list: target_list, type: type}} = settings) do
@@ -51,9 +59,10 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
     # An alternative would be to rewrite the remove_targets_on_cooldown function in the trigger.ex
     # file, but then the argument `:list` will no longer be list.
     selector =
-      cond do
-        type == :text and length(target_list) == 1 -> %{text: hd(target_list)}
-        true -> %{type => target_list}
+      if type == :text and length(target_list) == 1 do
+        %{text: hd(target_list)}
+      else
+        %{type => target_list}
       end
 
     case fetch_metric(selector, settings) do

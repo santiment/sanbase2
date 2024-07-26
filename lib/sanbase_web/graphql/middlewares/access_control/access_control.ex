@@ -263,7 +263,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
          } = resolution,
          middleware_args
        ) do
-    if Plan.AccessChecker.is_restricted?(query_or_argument) do
+    if Plan.AccessChecker.restricted?(query_or_argument) do
       restricted_query(resolution, middleware_args, query_or_argument)
     else
       not_restricted_query(resolution, middleware_args)
@@ -374,8 +374,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
       {_, _} ->
         middleware_args = %{
           allow_historical_data:
-            AccessChecker.is_historical_data_freely_available?(query_or_argument),
-          allow_realtime_data: AccessChecker.is_realtime_data_freely_available?(query_or_argument)
+            AccessChecker.historical_data_freely_available?(query_or_argument),
+          allow_realtime_data: AccessChecker.realtime_data_freely_available?(query_or_argument)
         }
 
         %{

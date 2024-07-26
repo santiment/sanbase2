@@ -49,24 +49,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
             [metric_map]
 
           parameters_list ->
-            %{"name" => name, "human_readable_name" => human_name, "metric" => metric} =
-              metric_map
-
-            aliases = Map.get(metric_map, "aliases", [])
-
-            Enum.map(parameters_list, fn parameters ->
-              metric_map
-              |> Map.put("name", TemplateEngine.run!(name, params: parameters))
-              |> Map.put("metric", TemplateEngine.run!(metric, params: parameters))
-              |> Map.put(
-                "human_readable_name",
-                TemplateEngine.run!(human_name, params: parameters)
-              )
-              |> Map.put(
-                "aliases",
-                Enum.map(aliases, &TemplateEngine.run!(&1, params: parameters))
-              )
-            end)
+            run_templates_on_parameters(parameters_list, metric_map)
         end
       end)
     end
@@ -85,6 +68,27 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
         %{"historical" => :free, "realtime" => :free} -> :free
         _ -> :restricted
       end
+    end
+
+    defp run_templates_on_parameters(parameters_list, metric_map) do
+      %{"name" => name, "human_readable_name" => human_name, "metric" => metric} =
+        metric_map
+
+      aliases = Map.get(metric_map, "aliases", [])
+
+      Enum.map(parameters_list, fn parameters ->
+        metric_map
+        |> Map.put("name", TemplateEngine.run!(name, params: parameters))
+        |> Map.put("metric", TemplateEngine.run!(metric, params: parameters))
+        |> Map.put(
+          "human_readable_name",
+          TemplateEngine.run!(human_name, params: parameters)
+        )
+        |> Map.put(
+          "aliases",
+          Enum.map(aliases, &TemplateEngine.run!(&1, params: parameters))
+        )
+      end)
     end
   end
 

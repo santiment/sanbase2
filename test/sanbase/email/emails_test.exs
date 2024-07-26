@@ -17,7 +17,11 @@ defmodule Sanbase.EmailsTest do
 
   setup_with_mocks([
     {StripeApi, [:passthrough],
-     [create_customer: fn _, _ -> StripeApiTestResponse.create_or_update_customer_resp() end]},
+     [
+       create_customer_with_card: fn _, _ ->
+         StripeApiTestResponse.create_or_update_customer_resp()
+       end
+     ]},
     {StripeApi, [:passthrough],
      [create_subscription: fn _ -> StripeApiTestResponse.create_subscription_resp() end]},
     {StripeApi, [:passthrough],

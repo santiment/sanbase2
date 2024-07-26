@@ -28,32 +28,32 @@ defmodule Sanbase.Queries.RefreshWorker do
   defp maybe_remove_scheduled_job(result, nil), do: result
 
   defp maybe_remove_scheduled_job({:error, error_str}, scheduled_job) do
-    case is_not_retryable_error?(error_str) do
+    case retryable_error?(error_str) do
       true ->
-        Oban.cancel_job(@oban_conf_name, scheduled_job)
         {:error, error_str}
 
       false ->
+        Oban.cancel_job(@oban_conf_name, scheduled_job)
         {:error, error_str}
     end
   end
 
   defp maybe_remove_scheduled_job(result, _), do: result
 
-  defp is_not_retryable_error?(error_str) do
-    # retryable_errors = [
-    #   "Transport Error: :timeout",
-    # ]
-
+  defp retryable_error?(error_str) do
     non_retryable_errors = [
       "(SYNTAX_ERROR)",
       "(ILLEGAL_TYPE_OF_ARGUMENT)",
       "(UNKNOWN_IDENTIFIER)",
       "(ACCESS_DENIED)",
       "(UNKNOWN_TABLE)",
-      "(MEMORY_LIMIT_EXCEEDED)"
+      "(MEMORY_LIMIT_EXCEEDED)",
+      "(AMBIGUOUS_COLUMN_NAME)"
     ]
 
-    Enum.any?(non_retryable_errors, fn error -> String.contains?(error_str, error) end)
+    has_non_retryable_error? =
+      Enum.any?(non_retryable_errors, fn error -> String.contains?(error_str, error) end)
+
+    not has_non_retryable_error?
   end
 end

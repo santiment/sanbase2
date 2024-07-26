@@ -15,9 +15,9 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   If a metric is not restricted, then the `from` and `to` parameters do not need to be
   checked and modified. A restriction might be "only the last 2 years of data are available".
   """
-  @spec is_restricted?(query_or_argument) :: boolean()
-  def is_restricted?(query_or_argument) do
-    StandardAccessChecker.is_restricted?(query_or_argument)
+  @spec restricted?(query_or_argument) :: boolean()
+  def restricted?(query_or_argument) do
+    StandardAccessChecker.restricted?(query_or_argument)
   end
 
   @doc ~s"""
@@ -63,12 +63,12 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
     end
   end
 
-  def is_historical_data_freely_available?(query_or_argument) do
-    StandardAccessChecker.is_historical_data_freely_available?(query_or_argument)
+  def historical_data_freely_available?(query_or_argument) do
+    StandardAccessChecker.historical_data_freely_available?(query_or_argument)
   end
 
-  def is_realtime_data_freely_available?(query_or_argument) do
-    StandardAccessChecker.is_realtime_data_freely_available?(query_or_argument)
+  def realtime_data_freely_available?(query_or_argument) do
+    StandardAccessChecker.realtime_data_freely_available?(query_or_argument)
   end
 
   @doc """

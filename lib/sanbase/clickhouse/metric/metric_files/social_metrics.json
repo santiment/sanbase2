@@ -130,7 +130,7 @@
   {
     "human_readable_name": "Sentiment Weighted Total Daily V2",
     "name": "sentiment_weighted_total_1d_v2",
-    "metric": "sentiment_weighted_v2_1d",
+    "metric": "sentiment_volume_consumed_v2_1d",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug"],
@@ -380,6 +380,147 @@
     "human_readable_name": "Sentiment Balance 4chan V2",
     "name": "sentiment_balance_4chan_v2",
     "metric": "sentiment_balance_4chan_v2",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/positive-negative-sentiment-metrics"]
+  },
+  {
+    "human_readable_name": "Social Volume Farcaster",
+    "name": "social_volume_farcaster",
+    "metric": "social_volume_farcaster",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/social-volume"]
+  },
+  {
+    "human_readable_name": "Social Dominance Farcaster",
+    "name": "social_dominance_farcaster",
+    "metric": "social_dominance_farcaster_v2",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/social-dominance"]
+  },
+  {
+    "human_readable_name": "Sentiment Weighted Farcaster",
+    "name": "sentiment_weighted_farcaster",
+    "metric": "sentiment_volume_consumed_farcaster_v2",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Weighted Farcaster Hourly",
+    "name": "sentiment_weighted_farcaster_1h",
+    "metric": "sentiment_volume_consumed_farcaster_v2_1h",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1h",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Weighted Farcaster Daily",
+    "name": "sentiment_weighted_farcaster_1d",
+    "metric": "sentiment_volume_consumed_farcaster_v2_1d",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Positive Farcaster",
+    "name": "sentiment_positive_farcaster",
+    "metric": "sentiment_positive_farcaster",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/positive-negative-sentiment-metrics"]
+  },
+  {
+    "human_readable_name": "Sentiment Negative Farcaster",
+    "name": "sentiment_negative_farcaster",
+    "metric": "sentiment_negative_farcaster",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/positive-negative-sentiment-metrics"]
+  },
+  {
+    "human_readable_name": "Sentiment Balance Farcaster",
+    "name": "sentiment_balance_farcaster",
+    "metric": "sentiment_balance_farcaster_v2",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug"],
@@ -1482,6 +1623,42 @@
     "docs_links": ["https://academy.santiment.net/metrics/social-dominance"]
   },
   {
+    "human_readable_name": "1h Moving Average Of Social Dominance Farcaster",
+    "name": "social_dominance_farcaster_1h_moving_average",
+    "metric": "social_dominance_farcaster_1h",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/social-dominance"]
+  },
+  {
+    "human_readable_name": "24h Moving Average Of Social Dominance Farcaster",
+    "name": "social_dominance_farcaster_24h_moving_average",
+    "metric": "social_dominance_farcaster_24h",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/social-dominance"]
+  },
+  {
     "human_readable_name": "1h Moving Average Of Social Dominance Reddit",
     "name": "social_dominance_reddit_1h_moving_average",
     "metric": "social_dominance_reddit_1h",
@@ -1642,5 +1819,329 @@
     "has_incomplete_data": true,
     "data_type": "timeseries",
     "docs_links": ["https://academy.santiment.net/metrics/trending-words-rank"]
+  },
+  {
+    "human_readable_name": "Unique Social Volume Telegram (5m)",
+    "name": "unique_social_volume_telegram_5m",
+    "metric": "unique_social_volume_telegram_5m",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/unique-social-volume"]
+  },
+  {
+    "human_readable_name": "Unique Social Volume Telegram (1h)",
+    "name": "unique_social_volume_telegram_1h",
+    "metric": "unique_social_telegram_1h",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1h",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/unique-social-volume"]
+  },
+  {
+    "human_readable_name": "Unique Social Volume Telegram (1d)",
+    "name": "unique_social_volume_telegram_1d",
+    "metric": "unique_social_volume_telegram_1d",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/unique-social-volume"]
+  },
+  {
+    "human_readable_name": "Unique Social Volume Reddit (5m)",
+    "name": "unique_social_volume_reddit_5m",
+    "metric": "unique_social_volume_reddit_5m",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/unique-social-volume"]
+  },
+  {
+    "human_readable_name": "Unique Social Volume Reddit (1h)",
+    "name": "unique_social_volume_reddit_1h",
+    "metric": "unique_social_reddit_1h",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1h",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/unique-social-volume"]
+  },
+  {
+    "human_readable_name": "Unique Social Volume Reddit (1d)",
+    "name": "unique_social_volume_reddit_1d",
+    "metric": "unique_social_volume_reddit_1d",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/unique-social-volume"]
+  },
+  {
+    "human_readable_name": "Unique Social Volume Twitter (5m)",
+    "name": "unique_social_volume_twitter_5m",
+    "metric": "unique_social_volume_twitter_5m",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/unique-social-volume"]
+  },
+  {
+    "human_readable_name": "Unique Social Volume Twitter (1h)",
+    "name": "unique_social_volume_twitter_1h",
+    "metric": "unique_social_twitter_1h",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1h",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/unique-social-volume"]
+  },
+  {
+    "human_readable_name": "Unique Social Volume Twitter (1d)",
+    "name": "unique_social_volume_twitter_1d",
+    "metric": "unique_social_volume_twitter_1d",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/unique-social-volume"]
+  },
+  {
+    "human_readable_name": "Unique Social Volume Bitcointalk (5m)",
+    "name": "unique_social_volume_bitcointalk_5m",
+    "metric": "unique_social_volume_bitcointalk_5m",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/unique-social-volume"]
+  },
+  {
+    "human_readable_name": "Unique Social Volume Bitcointalk (1h)",
+    "name": "unique_social_volume_bitcointalk_1h",
+    "metric": "unique_social_bitcointalk_1h",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1h",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/unique-social-volume"]
+  },
+  {
+    "human_readable_name": "Unique Social Volume Bitcointalk (1d)",
+    "name": "unique_social_volume_bitcointalk_1d",
+    "metric": "unique_social_volume_bitcointalk_1d",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/unique-social-volume"]
+  },
+  {
+    "human_readable_name": "Unique Social Volume 4chan (5m)",
+    "name": "unique_social_volume_4chan_5m",
+    "metric": "unique_social_volume_4chan_5m",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/unique-social-volume"]
+  },
+  {
+    "human_readable_name": "Unique Social Volume 4chan (1h)",
+    "name": "unique_social_volume_4chan_1h",
+    "metric": "unique_social_4chan_1h",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1h",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/unique-social-volume"]
+  },
+  {
+    "human_readable_name": "Unique Social Volume 4chan (1d)",
+    "name": "unique_social_volume_4chan_1d",
+    "metric": "unique_social_volume_4chan_1d",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/unique-social-volume"]
+  },
+  {
+    "human_readable_name": "Unique Social Volume Farcaster (5m)",
+    "name": "unique_social_volume_farcaster_5m",
+    "metric": "unique_social_volume_farcaster_5m",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/unique-social-volume"]
+  },
+  {
+    "human_readable_name": "Unique Social Volume Farcaster (1h)",
+    "name": "unique_social_volume_farcaster_1h",
+    "metric": "unique_social_farcaster_1h",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1h",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/unique-social-volume"]
+  },
+  {
+    "human_readable_name": "Unique Social Volume Farcaster (1d)",
+    "name": "unique_social_volume_farcaster_1d",
+    "metric": "unique_social_volume_farcaster_1d",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/unique-social-volume"]
   }
 ]

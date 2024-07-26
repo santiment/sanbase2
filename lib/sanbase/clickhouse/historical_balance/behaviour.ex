@@ -20,10 +20,9 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Behaviour do
   @type decimals :: non_neg_integer()
   @type datetime :: DateTime.t()
 
-  @type currency :: String.t()
   @type contract :: String.t()
-
-  @type target :: contract | currency
+  @type xrp_target :: %{currency: String.t(), issuer: String.t()}
+  @type target :: contract | xrp_target
 
   @type slug_balance_map :: %{
           slug: slug,

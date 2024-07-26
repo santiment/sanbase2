@@ -64,25 +64,25 @@ defmodule Sanbase.Queries.Authorization do
         %{minute: 50, hour: 1000, day: 5000}
 
       {"SANBASE", "PRO_PLUS"} ->
-        %{minute: 50, hour: 2000, day: 10000}
+        %{minute: 50, hour: 2000, day: 10_000}
 
       {"SANBASE", "MAX"} ->
-        %{minute: 50, hour: 2000, day: 10000}
+        %{minute: 50, hour: 2000, day: 10_000}
 
       {"SANAPI", "BASIC"} ->
-        %{minute: 50, hour: 2000, day: 10000}
+        %{minute: 50, hour: 2000, day: 10_000}
 
       {"SANAPI", "PRO"} ->
-        %{minute: 100, hour: 3000, day: 15000}
+        %{minute: 100, hour: 3000, day: 15_000}
 
       {"SANAPI", "BUSINESS_PRO"} ->
-        %{minute: 100, hour: 3000, day: 15000}
+        %{minute: 100, hour: 3000, day: 15_000}
 
       {"SANAPI", "BUSINESS_MAX"} ->
-        %{minute: 100, hour: 3000, day: 15000}
+        %{minute: 100, hour: 3000, day: 15_000}
 
       {"SANAPI", "CUSTOM"} ->
-        %{minute: 200, hour: 3000, day: 20000}
+        %{minute: 200, hour: 3000, day: 20_000}
 
       {"SANAPI", "CUSTOM_" <> _ = custom_plan} ->
         query_executions_limit("SANAPI", fetch_base_plan_for_custom(custom_plan))

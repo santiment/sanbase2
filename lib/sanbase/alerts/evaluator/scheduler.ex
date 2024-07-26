@@ -195,10 +195,10 @@ defmodule Sanbase.Alert.Scheduler do
       alerts_count: alerts_count
     } = info_map
 
-    # TODO: Fix logging. It can print:  Batch 1/4, with size 63. Alerts 339-402 out of 221.
     Logger.info("""
     [#{run_uuid}] Run batch of alerts of type #{type}. Batch #{index}/#{batches_count}, \
-    with size #{batch_map.batch_size}. Alerts #{batch_map.alerts_from}-#{batch_map.alerts_to} \
+    with size #{batch_map.batch_size}. \
+    Alerts #{batch_map.alerts_from}-#{Enum.min([batch_map.alerts_to, alerts_count])} \
     out of #{alerts_count}.
     """)
   end
@@ -379,7 +379,7 @@ defmodule Sanbase.Alert.Scheduler do
       send_results_list
       |> Enum.reduce({last_triggered, _total = 0, _failed = 0}, fn
         {identifier_or_list, _result = :ok}, {acc, total, failed} ->
-          # Example: {["elem1", "elem2"], :ok} or {"0x123", :ok}
+          # Example: {["elem1", "elem2"], :ok} or {"0x4efb548a2cb8f0af7c591cef21053f6875b5d38f", :ok}
           # This case happens when multiple identifiers (for example emerging words)
           # are handled in one notification.
           list = identifier_or_list |> List.wrap()

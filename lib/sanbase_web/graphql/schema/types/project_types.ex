@@ -210,6 +210,12 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       cache_resolve(&ProjectMetricsResolver.available_metrics/3, ttl: 600)
     end
 
+    @desc ~s"""
+    Returns the same data as availableMetrics, but instead of just the metric name,
+    some extra fields are provided like documentation links.
+    This allows to show the list of all metrics of a project, alongside the links to
+    documentation without the need to call getMetric's metadata to get the docs links.
+    """
     field :available_metrics_extended, list_of(:metric_metadata_subset) do
       cache_resolve(&ProjectMetricsResolver.available_metrics_extended/3, ttl: 600)
     end
@@ -242,7 +248,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
     @desc ~s"""
     Returns a subset of the availableMetrics that are fetchable by getMetric's
-    histogramDAta
+    histogramData
     ```
     {
       getMetric(metric: "<metric>"){
@@ -265,14 +271,6 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
     field :available_table_metrics, list_of(:string) do
       cache_resolve(&ProjectMetricsResolver.available_table_metrics/3, ttl: 300)
-    end
-
-    field :traded_on_exchanges, list_of(:string) do
-      cache_resolve(&ProjectResolver.traded_on_exchanges/3)
-    end
-
-    field :traded_on_exchanges_count, :integer do
-      cache_resolve(&ProjectResolver.traded_on_exchanges_count/3)
     end
 
     @desc ~s"""
@@ -304,6 +302,19 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       cache_resolve(&ProjectResolver.available_queries/3, ttl: 120)
     end
 
+    @desc ~s"""
+    `aggregatedTimeseriesData` returns a single float value.
+    The single values is computed by aggregating all of the timeseries
+    values in the specified from-to range with the `aggregation` aggregation.
+    If no `aggregation` parameter is provided, the default aggregation is used.
+
+    {
+      allProjects{
+        slug
+        aggregatedTimeseriesData(metric: "price_usd" from: "utc_now-1d" to: "utc_now" aggregation: MAX)
+      }
+    }
+    """
     field :aggregated_timeseries_data, :float do
       arg(:selector, :aggregated_timeseries_data_selector_input_object)
       arg(:metric, non_null(:string))
@@ -347,6 +358,45 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:description, :string)
     field(:long_description, :string)
     field(:token_decimals, :integer)
+
+    @desc ~s"""
+    A full list of all the ecosystem this project contributes to
+    in one or more ways:
+    - Deployed on that ecosystem
+    - Provides data and analytics tool for that ecosystem
+    - Provides interoperability between different ecosystems
+    - Provides liqudity and DeFi integrations
+    - etc.
+    """
+    field(:ecosystems, list_of(:ecosystem))
+
+    @desc ~s"""
+    Projects with the same slug but different prefix like a-tether, arb-tether,
+    o-tether, etc. refer to the same project's versions on different blockchains.
+    These are considered multichain projects. This grouping can be used so we can
+    visually show these assets together, use them to show connected assets in a dropdown
+    on a charts page, or use the information internally so we can compute some statistics
+    without duplicating the data (like computing the total marketcap of a watchlist that has
+    a-tether, o-tether and arb-tether in it).
+
+    Assets like bitcoin and the the Ethereum token wrapped-bitcoin are not considered
+    the same project/asset.
+    """
+    field(:multichain_project_group_key, :string)
+
+    @desc ~s"""
+    If the project has a multichain_project_group_key, this field will return the ecosystem
+    on which this project is deployed
+    """
+    field(:deployed_on_ecosystem, :ecosystem)
+
+    field :traded_on_exchanges, list_of(:string) do
+      cache_resolve(&ProjectResolver.traded_on_exchanges/3)
+    end
+
+    field :traded_on_exchanges_count, :integer do
+      cache_resolve(&ProjectResolver.traded_on_exchanges_count/3)
+    end
 
     field :main_contract_address, :string do
       cache_resolve(

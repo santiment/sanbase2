@@ -170,7 +170,7 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
           false ->
             template_kv =
               Enum.reduce(projects, %{}, fn project, acc ->
-                case Project.is_trending?(project, trending_words_mapset) do
+                case Project.trending?(project, trending_words_mapset) do
                   true -> Map.put(acc, project.slug, template_kv(settings, project))
                   false -> acc
                 end

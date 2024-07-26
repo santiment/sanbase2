@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 14.10 (Homebrew)
--- Dumped by pg_dump version 14.10 (Homebrew)
+-- Dumped from database version 15.1 (Homebrew)
+-- Dumped by pg_dump version 15.1 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -973,7 +973,7 @@ CREATE TABLE public.dashboard_query_mappings (
 CREATE TABLE public.dashboards (
     id bigint NOT NULL,
     name character varying(255) NOT NULL,
-    description character varying(255),
+    description text,
     is_public boolean DEFAULT false NOT NULL,
     panels jsonb,
     user_id bigint,
@@ -2899,7 +2899,9 @@ CREATE TABLE public.project (
     telegram_chat_id integer,
     discord_link character varying(255),
     ecosystem character varying(255),
-    ecosystem_full_path character varying(255)
+    ecosystem_full_path character varying(255),
+    multichain_project_group_key character varying(255) DEFAULT NULL::character varying,
+    deployed_on_ecosystem_id bigint
 );
 
 
@@ -8466,6 +8468,14 @@ ALTER TABLE ONLY public.presigned_s3_urls
 
 
 --
+-- Name: project project_deployed_on_ecosystem_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project
+    ADD CONSTRAINT project_deployed_on_ecosystem_id_fkey FOREIGN KEY (deployed_on_ecosystem_id) REFERENCES public.ecosystems(id);
+
+
+--
 -- Name: project_ecosystem_labels_change_suggestions project_ecosystem_labels_change_suggestions_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -9544,3 +9554,6 @@ INSERT INTO public."schema_migrations" (version) VALUES (20240320090413);
 INSERT INTO public."schema_migrations" (version) VALUES (20240325154734);
 INSERT INTO public."schema_migrations" (version) VALUES (20240415100155);
 INSERT INTO public."schema_migrations" (version) VALUES (20240424082842);
+INSERT INTO public."schema_migrations" (version) VALUES (20240531121027);
+INSERT INTO public."schema_migrations" (version) VALUES (20240723122118);
+INSERT INTO public."schema_migrations" (version) VALUES (20240725122924);

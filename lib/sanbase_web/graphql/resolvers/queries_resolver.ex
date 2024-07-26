@@ -36,16 +36,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     querying_user_id = get_in(resolution.context.auth, [:current_user, Access.key(:id)])
     queried_user_id = Map.get(args, :user_id, querying_user_id)
 
-    if not is_nil(queried_user_id) do
+    if is_nil(queried_user_id) do
+      {:error,
+       "Error getting user queries: neither userId is provided, nor the query is executed by a logged in user."}
+    else
       Queries.get_user_queries(
         queried_user_id,
         querying_user_id,
         page: page,
         page_size: page_size
       )
-    else
-      {:error,
-       "Error getting user queries: neither userId is provided, nor the query is executed by a logged in user."}
     end
   end
 
@@ -87,14 +87,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     query_parameters = if query_parameters == "{}", do: %{}, else: query_parameters
 
     with :ok <-
-           Queries.user_can_execute_query(user, context.subscription_product, context.auth.plan),
-         query = Queries.get_ephemeral_query_struct(query_text, query_parameters, user) do
+           Queries.user_can_execute_query(user, context.subscription_product, context.auth.plan) do
       Process.put(
         :queries_dynamic_repo,
         Queries.user_plan_to_dynamic_repo(context.subscription_product, context.auth.plan)
       )
 
       query_metadata = QueryMetadata.from_resolution(resolution)
+      query = Queries.get_ephemeral_query_struct(query_text, query_parameters, user)
       Queries.run_query(query, user, query_metadata)
     end
   end
@@ -124,10 +124,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
   def get_dashboard(_root, %{id: id}, resolution) do
     querying_user_id = get_in(resolution.context.auth, [:current_user, Access.key(:id)])
 
-    with {:ok, dashboard} <- Dashboards.get_dashboard(id, querying_user_id),
-         # For backwards compatibility, properly provide the panels.
-         # The Frontend will migrate to queries once they detect panels
-         dashboard = atomize_dashboard_panels_sql_keys(dashboard) do
+    with {:ok, dashboard} <- Dashboards.get_dashboard(id, querying_user_id) do
+      # For backwards compatibility, properly provide the panels.
+      # The Frontend will migrate to queries once they detect panels
+      dashboard = atomize_dashboard_panels_sql_keys(dashboard)
       {:ok, dashboard}
     end
   end
@@ -140,16 +140,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     querying_user_id = get_in(resolution.context.auth, [:current_user, Access.key(:id)])
     queried_user_id = Map.get(args, :user_id, querying_user_id)
 
-    if not is_nil(queried_user_id) do
+    if is_nil(queried_user_id) do
+      {:error,
+       "Error getting user dashboards: neither userId is provided, nor the query is executed by a logged in user."}
+    else
       Dashboards.user_dashboards(
         queried_user_id,
         querying_user_id,
         page: page,
         page_size: page_size
       )
-    else
-      {:error,
-       "Error getting user dashboards: neither userId is provided, nor the query is executed by a logged in user."}
     end
   end
 
@@ -374,9 +374,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
   def get_clickhouse_query_execution_stats(
         _root,
         %{clickhouse_query_id: clickhouse_query_id},
-        %{context: %{auth: %{current_user: user}}}
+        _resolution
       ) do
-    case Queries.QueryExecution.get_execution_stats(user.id, clickhouse_query_id) do
+    case Queries.QueryExecution.get_execution_stats(clickhouse_query_id) do
       {:ok, %{execution_details: details} = result} ->
         # For legacy reasons the API response is flat.
         result = Map.delete(result, :execution_details) |> Map.merge(details)
@@ -461,26 +461,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     Dashboards.delete_image_widget(dashboard_id, text_widget_id, user.id)
   end
 
-  # Private functions
-
-  defp get_global_param_one_value(value_map) do
-    if map_size(value_map) == 1 do
-      value = Map.values(value_map) |> List.first()
-      {:ok, value}
-    else
-      {:error,
-       "Error adding dashboard global parameter: the `value` input object must set only a single field"}
-    end
-  end
-
-  defp atomize_dashboard_panels_sql_keys(struct) do
+  def atomize_dashboard_panels_sql_keys(struct) do
     panels = Enum.map(struct.panels, &atomize_panel_sql_keys/1)
 
     struct
     |> Map.put(:panels, panels)
   end
 
-  defp atomize_panel_sql_keys(panel) do
+  def atomize_panel_sql_keys(panel) do
     case panel do
       %{sql: %{} = sql} ->
         atomized_sql =
@@ -502,6 +490,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
 
       panel ->
         panel
+    end
+  end
+
+  # Private functions
+
+  defp get_global_param_one_value(value_map) do
+    if map_size(value_map) == 1 do
+      value = Map.values(value_map) |> List.first()
+      {:ok, value}
+    else
+      {:error,
+       "Error adding dashboard global parameter: the `value` input object must set only a single field"}
     end
   end
 end

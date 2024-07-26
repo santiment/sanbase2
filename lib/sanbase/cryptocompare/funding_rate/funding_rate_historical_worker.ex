@@ -27,13 +27,13 @@ defmodule Sanbase.Cryptocompare.FundingRate.HistoricalWorker do
   require Logger
 
   @url "https://data-api.cryptocompare.com/futures/v1/historical/funding-rate/minutes"
-  @limit 2000
+  @default_limit 2000
   @oban_conf_name :oban_scrapers
   @topic :funding_rate_topic
 
   def queue(), do: @queue
   def conf_name(), do: @oban_conf_name
-  def default_limit(), do: @limit
+  def default_limit(), do: @default_limit
 
   def pause_resume_worker(),
     do: Sanbase.Cryptocompare.FundingRate.PauseResumeWorker
@@ -45,26 +45,20 @@ defmodule Sanbase.Cryptocompare.FundingRate.HistoricalWorker do
   def perform(%Oban.Job{args: args}) do
     %{"market" => market, "instrument" => instrument, "timestamp" => timestamp} = args
 
-    limit = Map.get(args, "limit", @limit)
+    opts = [
+      market: market,
+      instrument: instrument,
+      limit: Map.get(args, "limit", @default_limit),
+      timestamp: timestamp,
+      queue: @queue
+    ]
 
-    case get_data(market, instrument, limit, timestamp) do
+    case Handler.get_data(@url, &process_json_response/1, opts) do
       {:ok, _, []} ->
         :ok
 
       {:ok, min_timestamp, data} ->
-        :ok = export_data(data)
-
-        {min, max} = Enum.min_max_by(data, & &1.timestamp)
-        :ok = maybe_schedule_next_job(min_timestamp, args)
-
-        {:ok, _} =
-          ExporterProgress.create_or_update(
-            "#{market}_#{instrument}",
-            to_string(@queue),
-            min.timestamp,
-            max.timestamp
-          )
-
+        {:ok, _} = export_data_and_update_progress(data, min_timestamp, args)
         :ok
 
       {:error, :first_timestamp_reached} ->
@@ -80,33 +74,19 @@ defmodule Sanbase.Cryptocompare.FundingRate.HistoricalWorker do
   def timeout(_job), do: :timer.minutes(5)
 
   # Private functions
+  defp export_data_and_update_progress(data, min_timestamp, args) do
+    :ok = export_data(data)
 
-  @spec get_data(String.t(), String.t(), non_neg_integer(), non_neg_integer()) ::
-          {:error, HTTPoison.Error.t()} | {:ok, any}
-  def get_data(market, instrument, limit, timestamp) do
-    query_params = [
-      market: market,
-      instrument: instrument,
-      to_ts: timestamp,
-      limit: limit
-    ]
+    {min, max} = Enum.min_max_by(data, & &1.timestamp)
+    :ok = maybe_schedule_next_job(min_timestamp, args)
 
-    case Handler.execute_http_request(@url, query_params) do
-      {:ok, %{status_code: 200} = http_response} ->
-        Sanbase.Cryptocompare.Handler.handle_http_response(http_response,
-          module: __MODULE__,
-          timestamps_key: "#{market}_#{instrument}",
-          process_function: &process_json_response/1,
-          remove_known_timestamps: true
-        )
-
-      {:ok, %{status_code: 404}} ->
-        # The error is No HOUR entries available on or before <timestamp>
-        {:error, :first_timestamp_reached}
-
-      {:error, error} ->
-        {:error, error}
-    end
+    {:ok, _} =
+      ExporterProgress.create_or_update(
+        "#{args["market"]}_#{args["instrument"]}",
+        to_string(@queue),
+        min.timestamp,
+        max.timestamp
+      )
   end
 
   defp process_json_response(http_response_body) do
@@ -150,7 +130,7 @@ defmodule Sanbase.Cryptocompare.FundingRate.HistoricalWorker do
         "instrument" => args["instrument"],
         "schedule_next_job" => true,
         "timestamp" => min_timestamp,
-        "limit" => @limit
+        "limit" => @default_limit
       }
       |> Sanbase.Cryptocompare.FundingRate.HistoricalWorker.new()
 

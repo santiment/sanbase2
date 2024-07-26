@@ -261,7 +261,7 @@ defmodule Sanbase.Insight.Post do
   def draft(), do: @draft
   def preloads(), do: @preloads
 
-  def is_published?(%Post{ready_state: ready_state}),
+  def published?(%Post{ready_state: ready_state}),
     do: ready_state == @published
 
   @impl Sanbase.Entity.Behaviour
@@ -556,7 +556,7 @@ defmodule Sanbase.Insight.Post do
     |> Repo.all()
   end
 
-  def is_pulse?(%__MODULE__{is_pulse: is_pulse}), do: is_pulse
+  def pulse?(%__MODULE__{is_pulse: is_pulse}), do: is_pulse
 
   def featured_posts_query() do
     from(

@@ -35,7 +35,7 @@ defmodule Sanbase.Queries.Refresh do
     # Refresh by using the ReadOnly dynamic clickhouse repo
     Process.put(:queries_dynamic_repo, Sanbase.ClickhouseRepo.ReadOnly)
 
-    query_metadata = QueryMetadata.from_refresh_job()
+    query_metadata = QueryMetadata.from_refresh_job(user.id)
 
     # Don't store the execution details in the database. Also don't deduct credits from users for refreshing queries
     with {:ok, result} <-

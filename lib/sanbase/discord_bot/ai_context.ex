@@ -109,22 +109,8 @@ defmodule Sanbase.DiscordBot.AiContext do
     start_of_day = DateTime.to_date(now)
     start_of_next_day = Date.add(start_of_day, 1)
 
-    query_for_server =
-      from(c in __MODULE__,
-        where:
-          c.command == "!ai" and c.guild_id == ^args.guild_id and
-            c.user_is_pro != true and fragment("?::date = ?", c.inserted_at, ^start_of_day),
-        select: count(c.id)
-      )
-
-    query_for_pro_user =
-      from(c in __MODULE__,
-        where:
-          c.command == "!ai" and c.discord_user == ^args.discord_user and
-            c.user_is_pro == true and fragment("?::date = ?", c.inserted_at, ^start_of_day),
-        select: count(c.id)
-      )
-
+    query_for_server = query_for_server(args, start_of_day)
+    query_for_pro_user = query_for_pro_user(args, start_of_day)
     server_query_count = Repo.one(query_for_server)
     pro_user_query_count = Repo.one(query_for_pro_user)
 
@@ -146,6 +132,24 @@ defmodule Sanbase.DiscordBot.AiContext do
       true ->
         :ok
     end
+  end
+
+  defp query_for_server(args, start_of_day) do
+    from(c in __MODULE__,
+      where:
+        c.command == "!ai" and c.guild_id == ^args.guild_id and
+          c.user_is_pro != true and fragment("?::date = ?", c.inserted_at, ^start_of_day),
+      select: count(c.id)
+    )
+  end
+
+  defp query_for_pro_user(args, start_of_day) do
+    from(c in __MODULE__,
+      where:
+        c.command == "!ai" and c.guild_id == ^args.guild_id and
+          c.user_is_pro == true and fragment("?::date = ?", c.inserted_at, ^start_of_day),
+      select: count(c.id)
+    )
   end
 
   defp convert_to_h_m(seconds) do

@@ -55,57 +55,54 @@ defmodule SanbaseWeb.Graphql.ExchangeMetricsApiTest do
   describe "top exchanges api" do
     test "get top exchanges by balance", context do
       query = top_exchanges_by_balance(context.project.slug, 10)
+      dt = ~U[2024-05-01 00:00:00Z]
+      now = DateTime.utc_now()
 
-      data = [
-        %{
-          owner: "Binance",
-          label: "centralized_exchange",
-          balance: 10_000,
-          balance_change_1d: 100,
-          balance_change_7d: -300,
-          balance_change_30d: 1000,
-          datetime_of_first_transfers: ~U[2020-01-01 00:00:00Z],
-          days: 20
-        },
-        %{
-          owner: "Bitfinex",
-          label: "centralized_exchange",
-          balance: 20_000,
-          balance_change_1d: 20,
-          balance_change_7d: -600,
-          balance_change_30d: 12_000,
-          datetime_of_first_transfers: ~U[2020-01-05 00:00:00Z],
-          days: 15
-        }
+      rows = [
+        [
+          "binance",
+          "santiment/centralized_exchange:v1",
+          10_000.0,
+          100.0,
+          -300.0,
+          1000.0,
+          dt |> DateTime.to_unix()
+        ],
+        [
+          "bitfinex",
+          "santiment/centralized_exchange:v1",
+          20_000.0,
+          20.0,
+          -600.0,
+          12_000.0,
+          dt |> DateTime.to_unix()
+        ]
       ]
 
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.Clickhouse.Exchanges.top_exchanges_by_balance/3,
-        {:ok, data}
-      )
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
       |> Sanbase.Mock.run_with_mocks(fn ->
         result = execute_query(context.conn, query, "topExchangesByBalance")
 
         assert %{
-                 "balance" => 1.0e4,
-                 "balanceChange1d" => nil,
-                 "balanceChange30d" => nil,
-                 "balanceChange7d" => nil,
-                 "datetimeOfFirstTransfer" => nil,
-                 "daysSinceFirstTransfer" => nil,
-                 "label" => "centralized_exchange",
-                 "owner" => "Binance"
+                 "label" => "santiment/centralized_exchange:v1",
+                 "owner" => "binance",
+                 "balance" => 10_000.0,
+                 "balanceChange1d" => 100.0,
+                 "balanceChange7d" => -300.0,
+                 "balanceChange30d" => 1000.0,
+                 "datetimeOfFirstTransfer" => DateTime.to_iso8601(dt),
+                 "daysSinceFirstTransfer" => DateTime.diff(dt, now, :day) |> abs()
                } in result
 
         assert %{
-                 "balance" => 2.0e4,
-                 "balanceChange1d" => nil,
-                 "balanceChange30d" => nil,
-                 "balanceChange7d" => nil,
-                 "datetimeOfFirstTransfer" => nil,
-                 "daysSinceFirstTransfer" => nil,
-                 "label" => "centralized_exchange",
-                 "owner" => "Bitfinex"
+                 "balance" => 20_000.0,
+                 "balanceChange1d" => 20.0,
+                 "balanceChange7d" => -600.0,
+                 "balanceChange30d" => 12_000.0,
+                 "datetimeOfFirstTransfer" => DateTime.to_iso8601(dt),
+                 "daysSinceFirstTransfer" => DateTime.diff(dt, now, :day) |> abs(),
+                 "label" => "santiment/centralized_exchange:v1",
+                 "owner" => "bitfinex"
                } in result
       end)
     end
@@ -114,7 +111,7 @@ defmodule SanbaseWeb.Graphql.ExchangeMetricsApiTest do
   defp top_exchanges_by_balance(slug, limit) do
     """
     {
-      topExchangesByBalance(slug: "#{slug}", limit: #{limit}) {
+      topExchangesByBalance(slug: "#{slug}" limit: #{limit}) {
         owner
         label
         balance

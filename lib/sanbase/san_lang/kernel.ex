@@ -55,10 +55,15 @@ defmodule Sanbase.SanLang.Kernel do
   defp flat_reverse([], acc), do: acc
 
   defp reduce(enumerable, lambda_fn, env) do
+    # This is because at the moment we support only 1-arity anonymous
+    # functions. This next line is basically getting the function argument
     {:lambda_fn, [{:identifier, _, local_binding}], _body} = lambda_fn
 
     enumerable
     |> Enum.reduce({[], env}, fn elem, {acc, env} ->
+      # Add to the environment the value of the current element that is being
+      # reduced, using the argument name, so when the body refers to it, its
+      # value is retrieved
       env = Environment.add_local_binding(env, local_binding, elem)
 
       computed_item = Interpreter.eval(lambda_fn, env)

@@ -5306,6 +5306,60 @@
     "docs_links": ["https://academy.santiment.net/metrics/makerdao-dai-savings-rate"]
   },
   {
+    "human_readable_name": "Ethena staking deposits",
+    "name": "ethena_staking_deposits",
+    "metric": "ethena_staking_deposits",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/ethena-staking"]
+  },
+  {
+    "human_readable_name": "Ethena staking withdrawals",
+    "name": "ethena_staking_withdrawals",
+    "metric": "ethena_staking_withdrawals",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/ethena-staking"]
+  },
+  {
+    "human_readable_name": "Ethena staking APY",
+    "name": "ethena_staking_apy",
+    "metric": "ethena_staking_apy",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/ethena-staking"]
+  },
+  {
     "human_readable_name": "Price volatility for the last {{sliding_window:human_readable}}",
     "name": "price_volatility_{{sliding_window}}",
     "metric": "price_volatility_{{sliding_window}}",
@@ -6262,6 +6316,26 @@
     "has_incomplete_data": false,
     "data_type": "timeseries",
     "docs_links": ["https://academy.santiment.net/metrics/bitcoin-etf-volume"]
+  },
+  {
+    "human_readable_name": "Money Supply",
+    "name": "money_supply",
+    "metric": "money_supply",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "7d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/m2-money-supply"]
   },
   {
     "human_readable_name": "XRPL DEX AMM Volume in XRP",

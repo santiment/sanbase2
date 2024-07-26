@@ -134,6 +134,7 @@ defmodule Sanbase.Accounts.LinkedUser do
       nil -> {:error, "The user does not have a Sanbase plan."}
       "PRO" -> {:ok, @pro_max_secondary_users}
       "PRO_PLUS" -> {:ok, @pro_plus_max_secondary_users}
+      "MAX" -> {:ok, @pro_plus_max_secondary_users}
     end
   end
 

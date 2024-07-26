@@ -161,27 +161,19 @@ defmodule Sanbase.Application do
   """
   def prepended_children(container_type) do
     [
-      start_in(
-        %{
-          id: :sanbase_brod_sup_id,
-          start: {:brod_sup, :start_link, []},
-          type: :supervisor
-        },
-        # Start manually in dev and prod. SanExporterEx won't start its
-        # brod supervisor because of the `start_brod_supervisor: false` option
-        [:dev, :prod]
+      start_in_and_if(
+        fn ->
+          %{
+            id: :sanbase_brod_sup_id,
+            start: {:brod_sup, :start_link, []},
+            type: :supervisor
+          }
+        end,
+        [:dev, :prod],
+        fn ->
+          System.get_env("REAL_KAFKA_ENABLED", "true") == "true"
+        end
       ),
-
-      # SanExporterEx is the module that handles the data pushing to Kafka. As other
-      # parts can be started that also require :brod_sup, :brod_sup will be started
-      # separately and `start_brod_supervisor: false` is provided to
-      # SanExporterEx
-      {SanExporterEx,
-       [
-         kafka_producer_module: Config.module_get!(Sanbase.KafkaExporter, :supervisor),
-         kafka_endpoint: kafka_endpoint(),
-         start_brod_supervisor: false
-       ]},
 
       # API Calls exporter is started only in `web` and `all` pods.
       start_if(
@@ -192,7 +184,9 @@ defmodule Sanbase.Application do
             topic: Config.module_get!(Sanbase.KafkaExporter, :api_call_data_topic)
           )
         end,
-        fn -> container_type in ["all", "web"] end
+        fn ->
+          container_type in ["all", "web"]
+        end
       ),
 
       # sanbase_user_intercom_attributes exporter is started only in `scrapers` and `all` pods.
@@ -245,9 +239,9 @@ defmodule Sanbase.Application do
   """
   @spec common_children() :: [:supervisor.child_spec() | {module(), term()} | module()]
   def common_children() do
-    clickhouse_repos = [
-      Sanbase.ClickhouseRepo,
-      Sanbase.ClickhouseRepo.ReadOnly,
+    clickhouse_readonly = [Sanbase.ClickhouseRepo.ReadOnly]
+
+    clickhouse_readonly_per_plan = [
       Sanbase.ClickhouseRepo.FreeUser,
       Sanbase.ClickhouseRepo.SanbaseProUser,
       Sanbase.ClickhouseRepo.SanbaseMaxUser,
@@ -255,14 +249,23 @@ defmodule Sanbase.Application do
       Sanbase.ClickhouseRepo.BusinessMaxUser
     ]
 
-    clickhouse_children =
-      for repo <- clickhouse_repos do
-        start_if(
+    clickhouse_readonly_children =
+      for repo <- clickhouse_readonly do
+        start_in_and_if(
           fn -> repo end,
+          [:dev, :prod],
           fn ->
-            Application.get_env(:sanbase, :env) in [:dev, :prod] and
-              Sanbase.ClickhouseRepo.enabled?()
+            container_type() in ["web", "queries", "all"] and Sanbase.ClickhouseRepo.enabled?()
           end
+        )
+      end
+
+    clickhouse_readonly_per_plan_children =
+      for repo <- clickhouse_readonly_per_plan do
+        start_in_and_if(
+          fn -> repo end,
+          [:dev, :prod],
+          fn -> container_type() in ["web", "all"] and Sanbase.ClickhouseRepo.enabled?() end
         )
       end
 
@@ -285,8 +288,19 @@ defmodule Sanbase.Application do
       # Telemetry metrics
       SanbaseWeb.Telemetry,
 
-      # Start the Clickhouse Repos
-      clickhouse_children,
+      # Start the main ClickhouseRepo. This is started in all
+      # pods as each pod will need it.
+      start_in_and_if(
+        fn -> Sanbase.ClickhouseRepo end,
+        [:dev, :prod],
+        fn -> Sanbase.ClickhouseRepo.enabled?() end
+      ),
+
+      # Start the main clickhouse read-only repos
+      clickhouse_readonly_children,
+
+      # Start the clickhouse read-only repos for different plans
+      clickhouse_readonly_per_plan_children,
 
       # Star the API call service
       Sanbase.ApiCallLimit.ETS,
@@ -327,12 +341,5 @@ defmodule Sanbase.Application do
   def config_change(changed, _new, removed) do
     SanbaseWeb.Endpoint.config_change(changed, removed)
     :ok
-  end
-
-  defp kafka_endpoint() do
-    url = Config.module_get!(Sanbase.Kafka, :kafka_url) |> to_charlist()
-    port = Config.module_get_integer!(Sanbase.Kafka, :kafka_port)
-
-    [{url, port}]
   end
 end

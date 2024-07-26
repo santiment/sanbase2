@@ -156,7 +156,7 @@ defmodule Sanbase.Billing.Subscription do
   """
   def subscribe2(user, plan, payment_method_id, coupon \\ nil) do
     with :ok <- has_active_subscriptions(user, plan),
-         {:ok, _} <- StripeApi.attach_payment_method_to_customer(user, payment_method_id),
+         {:ok, user} <- StripeApi.attach_payment_method_to_customer(user, payment_method_id),
          {:ok, stripe_subscription} <- create_stripe_subscription(user, plan, coupon),
          {:ok, db_subscription} <- create_subscription_db(stripe_subscription, user, plan) do
       if db_subscription.status == :active do
@@ -278,10 +278,8 @@ defmodule Sanbase.Billing.Subscription do
   end
 
   def end_trial(subscription) do
-    trial_end_unix = Timex.now() |> DateTime.to_unix()
-
     with {:ok, stripe_subscription} <-
-           StripeApi.update_subscription(subscription.stripe_id, %{trial_end: trial_end_unix}),
+           StripeApi.update_subscription(subscription.stripe_id, %{trial_end: "now"}),
          {:ok, db_subscription} <-
            sync_subscription_with_stripe(stripe_subscription, subscription) do
       {:ok, db_subscription}
@@ -402,7 +400,7 @@ defmodule Sanbase.Billing.Subscription do
 
   def user_sanbase_plan(user_id) do
     case get_user_subscription(user_id, @product_sanbase) do
-      {:ok, %__MODULE__{plan: %{name: name}}} when name in ["PRO", "PRO_PLUS"] -> name
+      {:ok, %__MODULE__{plan: %{name: name}}} when name in ["PRO", "PRO_PLUS", "MAX"] -> name
       _ -> nil
     end
   end
@@ -424,23 +422,23 @@ defmodule Sanbase.Billing.Subscription do
     |> Sanbase.Repo.all()
   end
 
-  def is_trialing_sanbase_pro?(subscription) do
+  def trialing_sanbase_pro?(subscription) do
     subscription = Repo.preload(subscription, :plan)
 
     subscription.plan.product_id == @product_sanbase and subscription.status == :trialing and
-      subscription.plan.name in ["PRO", "PRO_PLUS"]
+      subscription.plan.name in ["PRO", "PRO_PLUS", "MAX"]
   end
 
-  def is_active_sanbase_pro?(subscription) do
+  def active_sanbase_pro?(subscription) do
     subscription = Repo.preload(subscription, :plan)
 
     subscription.plan.product_id == @product_sanbase and subscription.status == :active and
-      subscription.plan.name in ["PRO", "PRO_PLUS"]
+      subscription.plan.name in ["PRO", "PRO_PLUS", "MAX"]
   end
 
   def user_has_sanbase_pro?(user_id) do
     case get_user_subscription(user_id, @product_sanbase) do
-      {:ok, %__MODULE__{plan: %{name: name}}} when name in ["PRO", "PRO_PLUS"] -> true
+      {:ok, %__MODULE__{plan: %{name: name}}} when name in ["PRO", "PRO_PLUS", "MAX"] -> true
       _ -> false
     end
   end

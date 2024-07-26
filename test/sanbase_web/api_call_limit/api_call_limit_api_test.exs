@@ -494,7 +494,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
 
     test "subscribe while rate limited", context do
       Sanbase.Mock.prepare_mocks2([
-        {&StripeApi.create_customer/2, SATR.create_or_update_customer_resp()},
+        {&StripeApi.create_customer_with_card/2, SATR.create_or_update_customer_resp()},
         {&StripeApi.create_subscription/1, SATR.create_subscription_resp()}
       ])
       |> Sanbase.Mock.run_with_mocks(fn ->

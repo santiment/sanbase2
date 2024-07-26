@@ -145,7 +145,7 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
   def fetch_subs(_, _, 5), do: :error
 
   def fetch_subs(opts, kw_list, attempt) do
-    case Stripe.Subscription.list(opts, kw_list) do
+    case Sanbase.StripeApi.list_subscriptions(opts, kw_list) do
       {:ok, subscriptions} -> {:ok, subscriptions}
       {:error, _} -> fetch_subs(opts, kw_list, attempt + 1)
     end
@@ -186,7 +186,7 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
     unix |> DateTime.from_unix!() |> Timex.end_of_day()
   end
 
-  def is_between?(date, start_date, end_date) do
+  def between?(date, start_date, end_date) do
     DateTime.compare(date, start_date) in [:gt, :eq] and
       DateTime.compare(date, end_date) in [:lt, :eq]
   end
@@ -252,7 +252,7 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
       if is_nil(subscription.end_date) do
         DateTime.compare(date, subscription.start_date) in [:gt, :eq]
       else
-        is_between?(date, subscription.start_date, subscription.end_date)
+        between?(date, subscription.start_date, subscription.end_date)
       end
     end)
   end
@@ -262,13 +262,13 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
       :filter ->
         Enum.filter(subscriptions, fn subscription ->
           not is_nil(subscription.trial_start) and not is_nil(subscription.trial_end) and
-            is_between?(date, subscription.trial_start, subscription.trial_end)
+            between?(date, subscription.trial_start, subscription.trial_end)
         end)
 
       :reject ->
         Enum.reject(subscriptions, fn subscription ->
           not is_nil(subscription.trial_start) and not is_nil(subscription.trial_end) and
-            is_between?(date, subscription.trial_start, subscription.trial_end)
+            between?(date, subscription.trial_start, subscription.trial_end)
         end)
     end
   end

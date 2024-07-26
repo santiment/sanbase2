@@ -6,18 +6,13 @@ defmodule Sanbase.Mixfile do
       app: :sanbase,
       name: "Sanbase",
       version: "0.0.1",
-      elixir: "~> 1.12",
+      elixir: "~> 1.17",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:yecc, :leex] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
-      test_coverage: [tool: ExCoveralls],
-      preferred_cli_env: [
-        coveralls: :test,
-        "coveralls.html": :test
-      ],
-      source_url: "https://github.com/santiment/sanbase2/",
+      # source_url: "https://github.com/santiment/sanbase2/",
       homepage_url: "https://app.santiment.net/projects",
       # Supress errors that should not be shown
       xref: [exclude: [Oban, ExAdmin]],
@@ -38,7 +33,7 @@ defmodule Sanbase.Mixfile do
         :os_mon,
         :event_bus
       ],
-      included_applications: [:kaffe, :ueberauth_twitter, :nostrum]
+      included_applications: [:brod, :ueberauth_twitter, :nostrum]
     ]
   end
 
@@ -63,7 +58,7 @@ defmodule Sanbase.Mixfile do
       {:absinthe_phoenix, "~> 2.0"},
       {:absinthe_plug, "~> 1.5"},
       {:absinthe, "~> 1.5"},
-      {:brod, "== 3.8.1", manager: :rebar3, override: true, runtime: false},
+      {:brod, "~> 4.0"},
       {:browser, "~> 0.5"},
       {:cachex, "~> 3.4"},
       {:cidr, "~> 1.1"},
@@ -95,11 +90,10 @@ defmodule Sanbase.Mixfile do
       {:ex_admin, github: "santiment/ex_admin"},
       {:ex_aws_s3, "~> 2.0"},
       {:ex_aws, "~> 2.0"},
-      {:ex_json_schema, "~> 0.9.2"},
+      {:ex_json_schema, "~> 0.10.2"},
       {:ex_keccak, "~> 0.7"},
       {:ex_machina, "~> 2.2", only: [:dev, :test]},
       {:ex_unit_notifier, "~> 1.0", only: :test},
-      {:excoveralls, "~> 0.8", optional: true, only: [:test]},
       {:expletive, "~> 0.1.0"},
       {:exprof, "~> 0.2.0"},
       {:extwitter, "~> 0.12"},
@@ -108,8 +102,10 @@ defmodule Sanbase.Mixfile do
       {:floki, "~> 0.20"},
       {:fuzzy_compare, "~> 1.0"},
       {:gettext, "~> 0.11"},
-      {:guardian_db, "~> 2.0"},
-      {:guardian, "~> 2.0"},
+      {:guardian_db, "~> 3.0"},
+      # Guardian is pinned as in 2.3.2 the way they get times
+      # internally is modified, so our mocked tests fail
+      {:guardian, "== 2.3.1"},
       {:gun, "~> 2.0", hex: :remedy_gun, override: true},
       {:hackney, "~> 1.17", override: true},
       {:hammer, "~> 6.0"},
@@ -118,20 +114,15 @@ defmodule Sanbase.Mixfile do
       {:inflex, "~> 2.0", override: true},
       {:jason, "~> 1.2"},
       {:jose, "~> 1.11"},
-      {:kaffy, github: "santiment/kaffy"},
-      {:kaffe, github: "santiment/kaffe", override: true},
-      {:kafka_protocol,
-       github: "santiment/kafka_protocol", branch: "working-version", override: true},
       {:kino_db, "~> 0.2.2"},
       {:kino_vega_lite, "~> 0.1.9"},
       {:libcluster, "~> 3.0"},
-      {:lz4b, github: "kafka4beam/lz4b"},
       {:mint, "~> 1.0"},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
       {:mock, "~> 0.3"},
       {:mockery, "~> 2.2"},
       {:mogrify, "~> 0.8"},
-      {:mutex, "~> 1.1"},
+      {:mutex, "~> 2.0"},
       {:neuron, "~> 5.0", only: :dev},
       {:nimble_csv, "~> 1.1"},
       {:nimble_parsec, "~> 1.4"},
@@ -156,15 +147,13 @@ defmodule Sanbase.Mixfile do
       {:remote_ip, "~> 1.0"},
       {:rexbug, ">= 1.0.0"},
       {:rustler, "~> 0.24"},
-      {:san_exporter_ex, github: "santiment/san-exporter-ex"},
       {:sentry, "~> 10.0"},
-      {:snappyer, github: "zmstone/snappyer", override: true},
-      {:stream_data, "~> 0.5", only: :test},
+      {:stream_data, "~> 1.1", only: :test, override: true},
       {:stripity_stripe, "~> 2.9"},
       {:supervisor3, "~> 1.1", manager: :rebar3, override: true},
       {:sweet_xml, "~> 0.6"},
       {:swoosh, "~> 1.7"},
-      {:table_rex, "~> 3.1"},
+      {:table_rex, "~> 4.0"},
       {:telemetry, "~> 1.1", override: true},
       {:temp, "~> 0.4"},
       {:tesla, "~> 1.0"},
@@ -175,8 +164,7 @@ defmodule Sanbase.Mixfile do
       {:uuid, "~> 1.1"},
       {:vex, "~> 0.9", override: true},
       {:waffle, "~> 1.1"},
-      {:websockex, "~> 0.4.3"},
-      {:poison, "~> 5.0"}
+      {:websockex, "~> 0.4.3"}
     ]
   end
 

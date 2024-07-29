@@ -68,8 +68,7 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
 
       new_now = DateTime.utc_now() |> DateTime.to_unix() |> Kernel.+(3600)
 
-      # Guardian uses System.system_time(:second) in the expiry checks
-      Sanbase.Mock.prepare_mock2(&System.system_time/1, new_now)
+      Sanbase.Mock.prepare_mock2(&Guardian.timestamp/0, new_now)
       |> Sanbase.Mock.run_with_mocks(fn ->
         new_conn =
           conn

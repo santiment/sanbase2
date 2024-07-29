@@ -62,6 +62,13 @@ defmodule Sanbase.PresignedS3Url do
     |> replace_with_error_if_expired()
   end
 
+  @doc false
+  def utc_now() do
+    # Wraps DateTime.utc_now/0 so we can mock exactly this call in the tests where the
+    # behavior of expired URLs is tested
+    DateTime.utc_now()
+  end
+
   # Private functions
 
   defp store(user_id, bucket, object, presigned_url, expires_in) do
@@ -81,7 +88,9 @@ defmodule Sanbase.PresignedS3Url do
   defp replace_with_error_if_expired({:error, error}), do: {:error, error}
 
   defp replace_with_error_if_expired({:ok, struct}) do
-    case DateTime.compare(DateTime.utc_now(), struct.expires_at) do
+    utc_now = Sanbase.PresignedS3Url.S3.utc_now()
+
+    case DateTime.compare(utc_now, struct.expires_at) do
       :gt ->
         {:error,
          "A presigned S3 URL has been generated and has already expired at #{struct.expires_at}."}

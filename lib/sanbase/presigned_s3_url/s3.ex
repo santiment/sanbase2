@@ -15,4 +15,11 @@ defmodule Sanbase.PresignedS3Url.S3 do
     options = [expires_in: expires_in, virtual_host: false]
     ExAws.S3.presigned_url(config, :get, bucket, object, options)
   end
+
+  def utc_now() do
+    # Have a separate function so it can be mocked in the test without
+    # explicitly mocking DateTime.utc_now/0, which will conflict with other
+    # parts of the code like authentication
+    DateTime.utc_now()
+  end
 end

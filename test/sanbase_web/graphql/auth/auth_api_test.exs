@@ -34,8 +34,7 @@ defmodule SanbaseWeb.Graphql.AuthApiTest do
   test "the refresh token silently updates the access token", context do
     new_now = DateTime.utc_now() |> DateTime.to_unix() |> Kernel.+(3600)
 
-    # Guardian uses System.system_time(:second) in the expiry checks
-    Sanbase.Mock.prepare_mock2(&System.system_time/1, new_now)
+    Sanbase.Mock.prepare_mock2(&Guardian.timestamp/0, new_now)
     |> Sanbase.Mock.run_with_mocks(fn ->
       new_conn =
         context.conn
@@ -61,8 +60,7 @@ defmodule SanbaseWeb.Graphql.AuthApiTest do
 
     new_now = DateTime.utc_now() |> DateTime.to_unix() |> Kernel.+(320)
 
-    # Guardian uses System.system_time(:second) in the expiry checks
-    Sanbase.Mock.prepare_mock2(&System.system_time/1, new_now)
+    Sanbase.Mock.prepare_mock2(&Guardian.timestamp/0, new_now)
     |> Sanbase.Mock.run_with_mocks(fn ->
       conn_same_tokens = Plug.Test.init_test_session(build_conn(), context.jwt_tokens)
 
@@ -82,7 +80,7 @@ defmodule SanbaseWeb.Graphql.AuthApiTest do
     # The refresh token TTL is 4 weeks (28 days)
     new_now = DateTime.utc_now() |> DateTime.to_unix() |> Kernel.+(30 * 86_400)
 
-    Sanbase.Mock.prepare_mock2(&System.system_time/1, new_now)
+    Sanbase.Mock.prepare_mock2(&Guardian.timestamp/0, new_now)
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         context.conn

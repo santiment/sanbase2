@@ -28,12 +28,6 @@ defmodule SanbaseWeb.GenericAdmin.ScheduleRescrapePrice do
         }
       },
       fields_override: %{
-        from: %{
-          type: :datetime
-        },
-        to: %{
-          type: :datetime
-        },
         project_id: %{
           value_modifier: &SanbaseWeb.GenericAdmin.Project.project_link/1
         }

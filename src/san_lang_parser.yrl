@@ -23,7 +23,7 @@ Terminals
   %% comparison operators
   '==' '!=' '<' '<=' '>' '>='
   %% other
-  '(' ')' '[' ']' ',' 
+  '(' ')' '[' ']' ','
   %% lambda tokens
   'fn' '->' 'end'
   %% boolean operators
@@ -44,10 +44,17 @@ Left 400 mult_arithmetic_op. %% * /
 
 grammar -> expr : '$1'.
 
+%% Handle parentheses
+expr -> '(' expr ')' : '$2'.
+expr -> '(' value ')' : '$2'.
+
+%% Handle arithmetic operations
 expr -> expr dual_arithmetic_op expr : {'$2', '$1', '$3'}.
 expr -> expr mult_arithmetic_op expr : {'$2', '$1', '$3'}.
 expr -> expr and_op expr : {'$2', '$1', '$3'}.
 expr -> expr or_op expr : {'$2', '$1', '$3'}.
+
+%% Handle comparison operators
 expr -> expr comparison_comp_op expr : {'$2', '$1', '$3'}.
 expr -> expr comparison_rel_op expr : {'$2', '$1', '$3'}.
 
@@ -114,5 +121,5 @@ function_call_args_list -> function_call_arg : ['$1'].
 
 function_call_arg -> value : '$1'.
 function_call_arg -> lambda_fn : '$1'.
- 
+
 Erlang code.

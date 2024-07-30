@@ -123,6 +123,7 @@ defmodule Sanbase.Mixfile do
       {:mockery, "~> 2.2"},
       {:mogrify, "~> 0.8"},
       {:mutex, "~> 2.0"},
+      {:mochiweb, "~> 3.2", override: true},
       {:neuron, "~> 5.0", only: :dev},
       {:nimble_csv, "~> 1.1"},
       {:nimble_parsec, "~> 1.4"},

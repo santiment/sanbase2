@@ -351,7 +351,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
          {:ok, result} <-
            apply(Metric, function, [metric, selector, from, to, interval, opts]),
          {:ok, result} <- MetricTransform.apply_transform(transform, result),
-         {:ok, result} <- fit_from_datetime(result, args) do
+         {:ok, result} <- fit_from_datetime(result, %{args | interval: interval}) do
       {:ok, result |> Enum.reject(&is_nil/1)}
     end
     |> maybe_handle_graphql_error(fn error ->

@@ -253,8 +253,8 @@ defmodule SanbaseWeb.GenericAdmin.UserList do
           value_modifier: &SanbaseWeb.GenericAdmin.User.user_link/1
         },
         function: %{
-          value_modifier: fn function ->
-            Map.from_struct(function) |> Jason.encode!(pretty: true)
+          value_modifier: fn ul ->
+            Map.from_struct(ul.function) |> Jason.encode!(pretty: true)
           end
         },
         type: %{

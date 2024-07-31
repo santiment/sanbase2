@@ -47,22 +47,21 @@ defmodule Sanbase.Alert.Validation.Operation do
   end
 
   def valid_absolute_value_operation?(operation) do
-    case Map.keys(operation) do
-      [op] when op in @absolute_value_operations or op in @channel_operations ->
+    case Map.keys(operation) |> List.first() do
+      op when op in @absolute_value_operations or op in @channel_operations ->
         valid_operation?(operation)
 
-      [op] when op in @absolute_change_operations ->
-        {:error,
-         "#{inspect(operation)} is an absolute change operation, not an absolute value one."}
+      op when op in @absolute_change_operations ->
+        {:error, "#{operation} is an absolute change operation, not an absolute value one."}
 
-      [op] when op in @percent_operations ->
-        {:error, "#{inspect(operation)} is a percent, not an absolute value one."}
+      op when op in @percent_operations ->
+        {:error, "#{operation} is a percent, not an absolute value one."}
 
-      [op] when op in @combinator_operations ->
+      op when op in @combinator_operations ->
         combinator_operation_valid?(operation, @absolute_value_operations)
 
       _ ->
-        {:error, "#{inspect(operation)} is not a valid absolute value operation"}
+        {:error, "#{operation} is not a valid absolute value operation"}
     end
   end
 

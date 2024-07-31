@@ -115,7 +115,19 @@ defmodule Sanbase.Alert.Trigger.EthWalletTriggerSettings do
       |> balance_change(settings.asset.slug, from, to)
 
     {balance_start, balance_end, balance_change} =
-      project_balance_data
+      aggregate_balance_changes(project_balance_data)
+
+    {project, from,
+     %{
+       balance_start: balance_start,
+       balance_end: balance_end,
+       balance_change: balance_change
+     }}
+  end
+
+  defp aggregate_balance_changes(balance_data) do
+    {_balance_start, _balance_end, _balance_change} =
+      balance_data
       |> Enum.reduce({0, 0, 0}, fn
         %{} = map, {start_acc, end_acc, change_acc} ->
           {
@@ -124,13 +136,6 @@ defmodule Sanbase.Alert.Trigger.EthWalletTriggerSettings do
             change_acc + map.balance_change_amount
           }
       end)
-
-    {project, from,
-     %{
-       balance_start: balance_start,
-       balance_end: balance_end,
-       balance_change: balance_change
-     }}
   end
 
   defp balance_change(addresses, slug, from, to) do

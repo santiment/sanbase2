@@ -25,7 +25,10 @@ config :sanbase, SanbaseWeb.Endpoint,
     tailwind: {Tailwind, :install_and_run, [:default, ~w(--watch)]}
   ]
 
-config :logger, level: :debug
+config :logger,
+  level: :debug,
+  truncate: :infinity
+
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$time][$level][$metadata] $message\n"
 

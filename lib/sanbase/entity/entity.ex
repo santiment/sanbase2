@@ -659,7 +659,7 @@ defmodule Sanbase.Entity do
         # Screeners are watchlists so in the votes table their votes are stored
         # in the watchlist_id column
         [{:watchlist, watchlist}] ->
-          case {UserList.is_screener?(watchlist), UserList.type(watchlist)} do
+          case {UserList.screener?(watchlist), UserList.type(watchlist)} do
             {true, _type} ->
               %{screener: watchlist}
 

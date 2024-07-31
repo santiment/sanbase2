@@ -461,7 +461,7 @@ defmodule Sanbase.Comments.Notification do
   end
 
   defp deduce_entity_link(watchlist, :watchlist) do
-    case {UserList.is_screener?(watchlist), UserList.type(watchlist)} do
+    case {UserList.screener?(watchlist), UserList.type(watchlist)} do
       {true, _type} ->
         SanbaseWeb.Endpoint.frontend_url() <> "/screener/#{watchlist.id}"
 

@@ -1,9 +1,11 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
+  use Tesla
+
   defstruct [:market_cap_by_available_supply, :price_usd, :volume_usd, :price_btc]
 
   require Logger
 
-  use Tesla
+  import Sanbase.ExternalServices.Coinmarketcap.Utils, only: [wait_rate_limit: 2]
 
   alias Sanbase.Model.LatestCoinmarketcapData
   alias Sanbase.ExternalServices.Coinmarketcap.{PricePoint, PriceScrapingProgress}
@@ -44,7 +46,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
     |> get()
     |> case do
       {:ok, %Tesla.Env{status: 429} = resp} ->
-        wait_rate_limit(resp)
+        wait_rate_limit(resp, @rate_limiting_server)
         get_first_datetime(id)
 
       {:ok, %Tesla.Env{status: 200, body: body}} ->
@@ -236,7 +238,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
     |> get()
     |> case do
       {:ok, %Tesla.Env{status: 429} = resp} ->
-        wait_rate_limit(resp)
+        wait_rate_limit(resp, @rate_limiting_server)
         extract_price_points_for_interval(total_market, interval)
 
       {:ok, %Tesla.Env{status: 200, body: body}} ->
@@ -267,7 +269,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
     |> get()
     |> case do
       {:ok, %Tesla.Env{status: 429} = resp} ->
-        wait_rate_limit(resp)
+        wait_rate_limit(resp, @rate_limiting_server)
         extract_price_points_for_interval(id, interval)
 
       {:ok, %Tesla.Env{status: 200, body: body}} ->

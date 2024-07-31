@@ -1,5 +1,6 @@
 defmodule Sanbase.Project.ListSelector.Transform do
   import Sanbase.DateTimeUtils
+  import Sanbase.Utils.ListSelector.Transform, only: [atomize_values: 1]
 
   def args_to_filters_combinator(args) do
     (get_in(args, [:selector, :filters_combinator]) || "and")
@@ -31,25 +32,6 @@ defmodule Sanbase.Project.ListSelector.Transform do
   def args_to_pagination(args) do
     get_in(args, [:selector, :pagination])
   end
-
-  def atomize_values(nil), do: nil
-
-  def atomize_values(%{args: args} = map) do
-    %{map | args: atomize_values(args)}
-  end
-
-  def atomize_values(map) when is_map(map) do
-    {to_atomize, rest} = Map.split(map, [:operator, :aggregation, :direction])
-
-    to_atomize
-    |> Enum.into(%{}, fn {k, v} ->
-      v = if is_binary(v), do: String.to_existing_atom(v), else: v
-      {k, v}
-    end)
-    |> Map.merge(rest)
-  end
-
-  def atomize_values(data), do: data
 
   def transform_from_to(%{from: from, to: to} = map) do
     %{

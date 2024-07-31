@@ -137,7 +137,7 @@ defmodule Sanbase.Mixfile do
       {:phoenix_html, "~> 3.0", override: true},
       {:phoenix_live_dashboard, "~> 0.3"},
       {:phoenix_live_reload, "~> 1.1", only: :dev},
-      {:phoenix_live_view, "~> 0.20"},
+      {:phoenix_live_view, "~> 1.0.0-rc.6", override: true},
       {:phoenix_pubsub, "~> 2.0"},
       {:phoenix_view, "~> 2.0"},
       {:phoenix, "~> 1.7.0"},

@@ -5491,7 +5491,7 @@
     "data_type": "timeseries",
     "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/spark"]
   },
-    {
+  {
     "human_readable_name": "Spark supply APY",
     "name": "spark_supply_apy",
     "metric": "spark_supply_apy",
@@ -5550,6 +5550,266 @@
     "has_incomplete_data": true,
     "data_type": "timeseries",
     "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/spark"]
+  },
+  {
+    "human_readable_name": "Morpho deposits",
+    "name": "morpho_action_deposits",
+    "metric": "morpho_action_deposits",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/morpho"]
+  },
+  {
+    "human_readable_name": "Morpho liquidations",
+    "name": "morpho_action_liquidations",
+    "metric": "morpho_action_liquidations",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/morpho"]
+  },
+  {
+    "human_readable_name": "Morpho new debt",
+    "name": "morpho_action_new_debt",
+    "metric": "morpho_action_new_debt",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/morpho"]
+  },
+  {
+    "human_readable_name": "Morpho repayments",
+    "name": "morpho_action_repayments",
+    "metric": "morpho_action_repayments",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/morpho"]
+  },
+  {
+    "human_readable_name": "Morpho deposits in USD",
+    "name": "morpho_action_deposits_usd",
+    "metric": "morpho_action_deposits_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/morpho"]
+  },
+  {
+    "human_readable_name": "Morpho liquidations in USD",
+    "name": "morpho_action_liquidations_usd",
+    "metric": "morpho_action_liquidations_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/morpho"]
+  },
+  {
+    "human_readable_name": "Morpho new debt in USD",
+    "name": "morpho_action_new_debt_usd",
+    "metric": "morpho_action_new_debt_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/morpho"]
+  },
+  {
+    "human_readable_name": "Morpho repayments in USD",
+    "name": "morpho_action_repayments_usd",
+    "metric": "morpho_action_repayments_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/morpho"]
+  },
+  {
+    "human_readable_name": "Morpho total deposits in USD",
+    "name": "morpho_total_deposits_usd",
+    "metric": "morpho_total_deposits_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/morpho"]
+  },
+  {
+    "human_readable_name": "Morpho total liquidations in USD",
+    "name": "morpho_total_liquidations_usd",
+    "metric": "morpho_total_liquidations_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/morpho"]
+  },
+  {
+    "human_readable_name": "Morpho total new debt in USD",
+    "name": "morpho_total_new_debt_usd",
+    "metric": "morpho_total_new_debt_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/morpho"]
+  },
+  {
+    "human_readable_name": "Morpho total repayments in USD",
+    "name": "morpho_total_repayments_usd",
+    "metric": "morpho_total_repayments_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/morpho"]
+  },
+  {
+    "human_readable_name": "Daily Active Addresses on Morpho",
+    "name": "morpho_active_addresses",
+    "metric": "morpho_active_addresses",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/morpho"]
   },
   {
     "human_readable_name": "MakerDAO DSR (DAI Savings Rate) deposits",

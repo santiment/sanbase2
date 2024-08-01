@@ -454,7 +454,7 @@ defmodule Sanbase.Intercom do
   end
 
   def signed_up_at(user) do
-    case User.RegistrationState.is_registered(user) do
+    case User.RegistrationState.registration_finished?(user) do
       true -> DateTime.from_naive!(user.inserted_at, "Etc/UTC") |> DateTime.to_unix()
       false -> 0
     end

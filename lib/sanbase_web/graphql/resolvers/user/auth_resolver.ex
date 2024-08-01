@@ -52,27 +52,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
     with true <- address_message_hash(address) == message_hash,
          true <- Ethauth.valid_signature?(address, signature),
          {:ok, user} <- fetch_user(args, EthAccount.by_address(address)),
-         is_first_login <- User.RegistrationState.is_first_login(user, "eth_login"),
-         {:ok, %{} = jwt_tokens_map} <- SanbaseWeb.Guardian.get_jwt_tokens(user, device_data),
+         first_login? <- User.RegistrationState.first_login?(user, "eth_login"),
+         {:ok, jwt_tokens} <- SanbaseWeb.Guardian.get_jwt_tokens(user, device_data),
          {:ok, _, user} <- Sanbase.Accounts.forward_registration(user, "eth_login", event_args) do
-      user = %{user | first_login: is_first_login}
+      user = %{user | first_login: first_login?}
       emit_event({:ok, user}, :login_user, event_args)
 
-      {:ok,
-       %{
-         user: user,
-         token: jwt_tokens_map.access_token,
-         access_token: jwt_tokens_map.access_token,
-         refresh_token: jwt_tokens_map.refresh_token
-       }}
+      result = Map.take(jwt_tokens, [:access_token, :refresh_token]) |> Map.put(:user, user)
+
+      {:ok, result}
     else
       {:error, reason} ->
         Logger.warning("Login failed: #{reason}")
-        {:error, message: "Login failed"}
+        {:error, message: "Email Login verification failed"}
 
       _ ->
         Logger.warning("Login failed: invalid signature")
-        {:error, message: "Login failed"}
+        {:error, message: "Email Login verification failed"}
     end
   end
 
@@ -128,23 +124,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
     args = %{login_origin: :email, origin_url: origin_url}
 
     with {:ok, user} <- User.find_or_insert_by(:email, email),
-         is_first_login <- User.RegistrationState.is_first_login(user, "email_login_verify"),
+         first_login? <- User.RegistrationState.first_login?(user, "email_login_verify"),
          true <- User.Email.email_token_valid?(user, token),
-         {:ok, %{} = jwt_tokens_map} <- SanbaseWeb.Guardian.get_jwt_tokens(user, device_data),
+         {:ok, jwt_tokens_map} <- SanbaseWeb.Guardian.get_jwt_tokens(user, device_data),
          {:ok, user} <- User.Email.mark_email_token_as_validated(user),
          {:ok, _, user} <- Accounts.forward_registration(user, "email_login_verify", args) do
-      user = %{user | first_login: is_first_login}
+      user = %{user | first_login: first_login?}
       emit_event({:ok, user}, :login_user, args)
 
-      {:ok,
-       %{
-         user: user,
-         token: jwt_tokens_map.access_token,
-         access_token: jwt_tokens_map.access_token,
-         refresh_token: jwt_tokens_map.refresh_token
-       }}
+      result = Map.take(jwt_tokens_map, [:access_token, :refresh_token]) |> Map.put(:user, user)
+
+      {:ok, result}
     else
-      _ -> {:error, message: "Login failed"}
+      _ -> {:error, message: "Email Login verification failed"}
     end
   end
 
@@ -180,13 +172,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
          true <- User.Email.email_candidate_token_valid?(user, email_candidate_token),
          {:ok, jwt_tokens} <- SanbaseWeb.Guardian.get_jwt_tokens(user, device_data),
          {:ok, user} <- User.Email.update_email_from_email_candidate(user) do
-      {:ok,
-       %{
-         user: user,
-         token: jwt_tokens.access_token,
-         access_token: jwt_tokens.access_token,
-         refresh_token: jwt_tokens.refresh_token
-       }}
+      result = Map.take(jwt_tokens, [:access_token, :refresh_token]) |> Map.put(:user, user)
+
+      {:ok, result}
     else
       _ -> {:error, message: "Email change verify failed"}
     end

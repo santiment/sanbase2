@@ -120,7 +120,7 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       mutation = email_login_verify_mutation(user)
 
       error_msg = execute_mutation_with_error(conn, mutation)
-      assert error_msg == "Login failed"
+      assert error_msg == "Email Login verification failed"
     end
 
     test "with a valid email token after one validation, fail to login again", %{conn: conn} do
@@ -141,7 +141,7 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       mutation = email_login_verify_mutation(user)
       error_msg = execute_mutation_with_error(conn, mutation)
 
-      assert error_msg == "Login failed"
+      assert error_msg == "Email Login verification failed"
     end
 
     test "with a valid email token after it has been validated 20 min ago, fail to login",
@@ -164,7 +164,7 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       mutation = email_login_verify_mutation(user)
       error_msg = execute_mutation_with_error(conn, mutation)
 
-      assert error_msg == "Login failed"
+      assert error_msg == "Email Login verification failed"
     end
   end
 

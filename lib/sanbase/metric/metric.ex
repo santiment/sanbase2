@@ -733,54 +733,56 @@ defmodule Sanbase.Metric do
     }
   end
 
-  # Find the metric from the mapset which is clostest to the original metric.
+  # Find the metric name from the mapset which is closest to the given metric.
   # The found metric must have a jaro distance bigger than 0.8
   defp find_closest(mapset, metric) do
-    Enum.reduce(mapset, {nil, -1}, fn m, {max_m, max_dist} ->
-      dist = String.jaro_distance(metric, m)
+    closest = Enum.max_by(mapset, &String.jaro_distance(metric, &1))
 
-      case dist > max_dist do
-        true -> {m, dist}
-        false -> {max_m, max_dist}
-      end
-    end)
-    |> case do
-      {metric, dist} when dist > 0.8 -> metric
-      _ -> nil
+    if String.jaro_distance(metric, closest) > 0.8 do
+      closest
     end
   end
 
   # Returns {closest_metric_type, closest_metric}
   # The metrics of the same type are with highest priority.
   # If a metric of type timeseries is mistyped, then if there is a metric of
-  # the same type with a jaro distance > 0.8 it is returned.
+  # the same type with a jaro distance > 0.8 it is returned. If multiple
+  # metrics have jaro distance > 0.8, the one with the highest one is returned
   defp maybe_get_close_metric(metric, type) do
     timeseries = find_closest(@timeseries_metrics_mapset, metric)
     histogram = find_closest(@histogram_metrics_mapset, metric)
     table = find_closest(@table_metrics_mapset, metric)
 
-    case timeseries || histogram || table do
-      nil ->
-        nil
+    choose_closest_metric_by_type(type, timeseries, histogram, table)
+  end
 
-      _ ->
-        case type do
-          :all ->
-            {"", timeseries || histogram || table}
+  defp choose_closest_metric_by_type(_type, nil, nil, nil), do: nil
 
-          :timeseries ->
-            (timeseries && {:timeseries, timeseries}) || (histogram && {:histogram, histogram}) ||
-              (table && {:table, table})
+  defp choose_closest_metric_by_type(:all, timeseries, histogram, table),
+    do: {"", timeseries || histogram || table}
 
-          :histogram ->
-            (histogram && {:histogram, histogram}) || (timeseries && {:timeseries, timeseries}) ||
-              (table && {:table, table})
+  defp choose_closest_metric_by_type(:timeseries, timeseries, histogram, table) do
+    # The queried metric is of type :timeseries. Return with highest priority the closest
+    # timeseries metric, if any
+    (timeseries && {:timeseries, timeseries}) ||
+      (histogram && {:histogram, histogram}) ||
+      (table && {:table, table})
+  end
 
-          :table ->
-            (table && {:table, table}) || (timeseries && {:timeseries, timeseries}) ||
-              (histogram && {:histogram, histogram})
-        end
-    end
+  defp choose_closest_metric_by_type(:histogram, timeseries, histogram, table) do
+    # The queried metric is of type :histogram. Return with highest priority the closest
+    # histogram metric, if any
+    (histogram && {:histogram, histogram}) ||
+      (timeseries && {:timeseries, timeseries}) ||
+      (table && {:table, table})
+  end
+
+  defp choose_closest_metric_by_type(:table, timeseries, histogram, table) do
+    # The queried metric is of type :table. Return with highest priority the closest
+    # table metric, if any
+    (table && {:table, table}) ||
+      (timeseries && {:timeseries, timeseries}) ||
+      (histogram && {:histogram, histogram})
   end
 
   defp execute_if_aggregation_valid(fun, metric, aggregation) do

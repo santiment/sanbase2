@@ -224,31 +224,15 @@ defmodule Sanbase.Entity do
   end
 
   def extend_with_views_count(type_entity_list) do
-    entity_type_id_conditions =
-      Enum.reduce(type_entity_list, false, fn type_entity, dynamic_query ->
-        [{type, %{id: entity_id}}] = Map.to_list(type_entity)
-        type = Interaction.deduce_entity_column_name(type)
-
-        dynamic(
-          [row],
-          ^dynamic_query or (row.entity_type == ^type and row.entity_id == ^entity_id)
-        )
-      end)
-
-    entity_type_id_conditions =
-      dynamic([row], row.interaction_type == "view" and ^entity_type_id_conditions)
-
-    query =
-      from(row in Interaction,
-        where: ^entity_type_id_conditions,
-        select: [row.entity_id, row.entity_type, fragment("COUNT(*)")],
-        group_by: [row.entity_id, row.entity_type]
-      )
+    # The type_entity_list is a list of maps like %{screener: %UserList{id: 1}}
+    # The function returns the same list of entities, with each
+    # entity now having the virtual ecto field :views populated
+    entity_views_query = entity_views_query(type_entity_list)
 
     entity_count_map =
-      Sanbase.Repo.all(query)
-      |> Enum.into(%{}, fn [entity_id, entity_type, count] ->
-        {{entity_type, entity_id}, count}
+      Sanbase.Repo.all(entity_views_query)
+      |> Enum.into(%{}, fn {entity_type, entity_id, views_count} ->
+        {{entity_type, entity_id}, views_count}
       end)
 
     Enum.map(type_entity_list, fn type_entity ->
@@ -260,6 +244,35 @@ defmodule Sanbase.Entity do
   end
 
   # Private functions
+
+  defp entity_views_query(type_entity_list) do
+    entity_type_id_conditions = views_count_entity_type_id_conditions(type_entity_list)
+    # When executed, the query returns a list of 3-element tuples
+    # {entity_type, entity_id, views_count}
+
+    from(row in Interaction,
+      where: ^entity_type_id_conditions,
+      select: {row.entity_type, row.entity_id, fragment("COUNT(*)")},
+      group_by: [row.entity_type, row.entity_id]
+    )
+  end
+
+  defp views_count_entity_type_id_conditions(type_entity_list) do
+    # Build the ecto where clause that gets the rows for each of the entities.
+    # It will look like: (row.entity_type == "screener" and row.entity_id = 1) or ( ... )
+    dynamic_query =
+      Enum.reduce(type_entity_list, false, fn type_entity, dynamic_query ->
+        [{type, %{id: entity_id}}] = Map.to_list(type_entity)
+        type = Interaction.deduce_entity_column_name(type)
+
+        dynamic(
+          [row],
+          ^dynamic_query or (row.entity_type == ^type and row.entity_id == ^entity_id)
+        )
+      end)
+
+    dynamic([row], row.interaction_type == "view" and ^dynamic_query)
+  end
 
   defp do_get_most_recent_total_count(entities, opts) when is_list(entities) and entities != [] do
     opts = update_opts(opts)

@@ -43,6 +43,19 @@ defmodule SanbaseWeb.Endpoint.ErrorHandler do
         status_code = get_status_code(reason)
         user_agent = Plug.Conn.get_req_header(conn, "user-agent") |> List.first()
 
+        api_call_map(status_code, remote_ip, user_agent)
+        |> Sanbase.Kafka.ApiCall.json_kv_tuple()
+        |> Sanbase.KafkaExporter.persist_async(:api_call_exporter)
+      end
+
+      defp get_status_code(reason) do
+        case reason do
+          %{} -> Map.get(reason, :status_code) || Map.get(reason, :plug_status, 500)
+          _ -> 500
+        end
+      end
+
+      defp api_call_map(status_code, remote_ip, user_agent) do
         id =
           Logger.metadata() |> Keyword.get(:request_id) ||
             "gen_" <> (:crypto.strong_rand_bytes(16) |> Base.encode64())
@@ -61,15 +74,6 @@ defmodule SanbaseWeb.Endpoint.ErrorHandler do
           duration_ms: nil,
           san_tokens: nil
         }
-        |> Sanbase.Kafka.ApiCall.json_kv_tuple()
-        |> Sanbase.KafkaExporter.persist_async(:api_call_exporter)
-      end
-
-      defp get_status_code(reason) do
-        case reason do
-          %{} -> Map.get(reason, :status_code) || Map.get(reason, :plug_status, 500)
-          _ -> 500
-        end
       end
     end
   end

@@ -164,8 +164,8 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
         emailChangeVerify(email_candidate: "#{user.email_candidate}", token: "#{user.email_candidate_token}") {
           user {
             email
-          },
-          token
+          }
+          accessToken
         }
       }
       """
@@ -173,7 +173,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
       result = execute_mutation(conn, mutation, "emailChangeVerify")
       user = Repo.get_by(User, email: user.email_candidate)
 
-      assert result["token"] != nil
+      assert result["accessToken"] != nil
       assert result["user"]["email"] == user.email
       assert user.email_candidate == nil
       # Assert that now() and validated_at do not differ by more than 2 seconds

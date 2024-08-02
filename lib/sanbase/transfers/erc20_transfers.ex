@@ -4,6 +4,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
   """
 
   import Sanbase.Utils.Transform
+  import Sanbase.Transfers.Utils, only: [top_wallet_transfers_address_clause: 2]
 
   alias Sanbase.ClickhouseRepo
   alias Sanbase.Project
@@ -209,36 +210,6 @@ defmodule Sanbase.Transfers.Erc20Transfers do
     }
 
     Sanbase.Clickhouse.Query.new(sql, params)
-  end
-
-  defp top_wallet_transfers_address_clause(:in, opts) do
-    arg_name = Keyword.fetch!(opts, :argument_name)
-    trailing_and = Keyword.fetch!(opts, :trailing_and)
-
-    str = "from NOT IN ({{#{arg_name}}}) AND to IN ({{#{arg_name}}})"
-    if trailing_and, do: str <> " AND", else: str
-  end
-
-  defp top_wallet_transfers_address_clause(:out, opts) do
-    arg_name = Keyword.fetch!(opts, :argument_name)
-    trailing_and = Keyword.fetch!(opts, :trailing_and)
-
-    str = "from IN ({{#{arg_name}}}) AND to NOT IN ({{#{arg_name}}})"
-    if trailing_and, do: str <> " AND", else: str
-  end
-
-  defp top_wallet_transfers_address_clause(:all, opts) do
-    arg_name = Keyword.fetch!(opts, :argument_name)
-    trailing_and = Keyword.fetch!(opts, :trailing_and)
-
-    str = """
-    (
-      (from IN ({{#{arg_name}}}) AND NOT to IN ({{#{arg_name}}})) OR
-      (NOT from IN ({{#{arg_name}}}) AND to IN ({{#{arg_name}}}))
-    )
-    """
-
-    if trailing_and, do: str <> " AND", else: str
   end
 
   defp top_transfers_query(contract, from, to, decimals, excluded_addresses, opts) do

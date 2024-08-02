@@ -1,6 +1,7 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
   use Tesla
 
+  import Sanbase.ExternalServices.Coinmarketcap.Utils, only: [wait_rate_limit: 2]
   require Logger
 
   alias Sanbase.ExternalServices.{RateLimiting, ProjectInfo, ErrorCatcher}
@@ -20,7 +21,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
         {:ok, body}
 
       {:ok, %Tesla.Env{status: 429} = resp} ->
-        wait_rate_limit(resp)
+        wait_rate_limit(resp, @rate_limiting_server)
         fetch_project_page(coinmarketcap_id)
 
       {:ok, %Tesla.Env{status: status}} ->
@@ -109,16 +110,5 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
       nil -> nil
       list -> List.last(list)
     end
-  end
-
-  defp wait_rate_limit(%Tesla.Env{status: 429, headers: headers}) do
-    wait_period =
-      case Enum.find(headers, &match?({"retry-after", _}, &1)) do
-        {_, wait_period} -> wait_period |> String.to_integer()
-        _ -> 1
-      end
-
-    wait_until = Timex.shift(Timex.now(), seconds: wait_period)
-    Sanbase.ExternalServices.RateLimiting.Server.wait_until(@rate_limiting_server, wait_until)
   end
 end

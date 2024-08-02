@@ -1,9 +1,11 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
+  use Tesla
+
   defstruct [:market_cap_by_available_supply, :price_usd, :volume_usd, :price_btc]
 
   require Logger
 
-  use Tesla
+  import Sanbase.ExternalServices.Coinmarketcap.Utils, only: [wait_rate_limit: 2]
 
   alias Sanbase.Model.LatestCoinmarketcapData
   alias Sanbase.ExternalServices.Coinmarketcap.{PricePoint, PriceScrapingProgress}
@@ -44,7 +46,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
     |> get()
     |> case do
       {:ok, %Tesla.Env{status: 429} = resp} ->
-        wait_rate_limit(resp)
+        wait_rate_limit(resp, @rate_limiting_server)
         get_first_datetime(id)
 
       {:ok, %Tesla.Env{status: 200, body: body}} ->
@@ -236,7 +238,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
     |> get()
     |> case do
       {:ok, %Tesla.Env{status: 429} = resp} ->
-        wait_rate_limit(resp)
+        wait_rate_limit(resp, @rate_limiting_server)
         extract_price_points_for_interval(total_market, interval)
 
       {:ok, %Tesla.Env{status: 200, body: body}} ->
@@ -267,7 +269,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
     |> get()
     |> case do
       {:ok, %Tesla.Env{status: 429} = resp} ->
-        wait_rate_limit(resp)
+        wait_rate_limit(resp, @rate_limiting_server)
         extract_price_points_for_interval(id, interval)
 
       {:ok, %Tesla.Env{status: 200, body: body}} ->
@@ -312,21 +314,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
         nil
       end
     end)
-  end
-
-  # After invocation of this function the process should execute `Process.exit(self(), :normal)`
-  # There is no meaningful result to be returned here. If it does not exit
-  # this case should return a special case and it should be handeled so the
-  # `last_updated` is not updated when no points are written
-  defp wait_rate_limit(%Tesla.Env{status: 429, headers: headers}) do
-    wait_period =
-      case Enum.find(headers, &match?({"retry-after", _}, &1)) do
-        {_, wait_period} -> wait_period |> String.to_integer()
-        _ -> 1
-      end
-
-    wait_until = Timex.shift(Timex.now(), seconds: wait_period)
-    Sanbase.ExternalServices.RateLimiting.Server.wait_until(@rate_limiting_server, wait_until)
   end
 
   defp max_dt_or_now(%DateTime{} = dt) do

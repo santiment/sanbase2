@@ -50,14 +50,20 @@ defmodule Sanbase.Billing.Plan.CustomPlan.Restrictions do
     end
   end
 
+  # Gets the number of API calls per month, hour and minute
+  # Checks that month is bigger than hour, which is bigger
+  # than minute, which is bigger than 0
+  defguardp is_valid_limits_order(month, hour, minute)
+            when month > hour and hour > minute and minute > 0
+
   defp validate_api_calls(:api_call_limits, %{} = api_calls) do
     case api_calls do
       %{"has_limits" => false} ->
         []
 
       %{"minute" => minute, "hour" => hour, "month" => month}
-      when is_integer(minute) and minute > 0 and is_integer(hour) and hour > 0 and
-             is_integer(month) and month > 0 and month > hour and month > minute and hour > minute ->
+      when is_integer(minute) and is_integer(hour) and is_integer(month) and
+             is_valid_limits_order(month, hour, minute) ->
         []
 
       _ ->

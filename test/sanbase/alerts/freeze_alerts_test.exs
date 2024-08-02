@@ -58,7 +58,7 @@ defmodule Sanbase.Alerts.FreezeAlertsTest do
     Sanbase.Alert.Job.freeze_alerts()
 
     assert {:ok, trigger} = UserTrigger.by_user_and_id(trigger.user_id, trigger.id)
-    assert UserTrigger.is_frozen?(trigger) == false
+    assert UserTrigger.frozen?(trigger) == false
   end
 
   test "freeze alerts created more than 30 days ago", context do
@@ -69,7 +69,7 @@ defmodule Sanbase.Alerts.FreezeAlertsTest do
     Sanbase.Alert.Job.freeze_alerts()
 
     assert {:ok, trigger} = UserTrigger.by_user_and_id(trigger.user_id, trigger.id)
-    assert {:error, error_msg} = UserTrigger.is_frozen?(trigger)
+    assert {:error, error_msg} = UserTrigger.frozen?(trigger)
     assert error_msg =~ "is frozen"
   end
 
@@ -82,7 +82,7 @@ defmodule Sanbase.Alerts.FreezeAlertsTest do
     Sanbase.Alert.Job.freeze_alerts()
 
     assert {:ok, trigger} = UserTrigger.by_user_and_id(trigger.user_id, trigger.id)
-    assert UserTrigger.is_frozen?(trigger) == false
+    assert UserTrigger.frozen?(trigger) == false
   end
 
   test "does not freeze @santiment.net user's alerts", context do
@@ -93,7 +93,7 @@ defmodule Sanbase.Alerts.FreezeAlertsTest do
     Sanbase.Alert.Job.freeze_alerts()
 
     assert {:ok, trigger} = UserTrigger.by_user_and_id(trigger.user_id, trigger.id)
-    assert UserTrigger.is_frozen?(trigger) == false
+    assert UserTrigger.frozen?(trigger) == false
   end
 
   # import ExUnit.CaptureLog
@@ -103,7 +103,7 @@ defmodule Sanbase.Alerts.FreezeAlertsTest do
   #   Sanbase.Alert.Job.freeze_alerts()
 
   #   assert {:ok, trigger} = UserTrigger.by_user_and_id(trigger.user_id, trigger.id)
-  #   assert {:error, error_msg} = UserTrigger.is_frozen?(trigger)
+  #   assert {:error, error_msg} = UserTrigger.frozen?(trigger)
   #   assert error_msg =~ "is frozen"
 
   #   # When a subscription is created/updated/renewed, a billing event is emitted
@@ -125,7 +125,7 @@ defmodule Sanbase.Alerts.FreezeAlertsTest do
 
   #     assert log =~ "[BillingEventSubscriber] Unfreezing alerts for user with id #{user.id}"
   #     assert {:ok, trigger} = UserTrigger.by_user_and_id(trigger.user_id, trigger.id)
-  #     assert UserTrigger.is_frozen?(trigger) == false
+  #     assert UserTrigger.frozen?(trigger) == false
   #   end)
   # end
 
@@ -138,7 +138,7 @@ defmodule Sanbase.Alerts.FreezeAlertsTest do
     Sanbase.Alert.Job.freeze_alerts()
 
     assert {:ok, trigger} = UserTrigger.by_user_and_id(trigger.user_id, trigger.id)
-    assert UserTrigger.is_frozen?(trigger) == false
+    assert UserTrigger.frozen?(trigger) == false
 
     # Rever the is_frozen back to true. This simulates the case when the event
     # is emitted but is not handled. This can happen if the pod restarts after
@@ -149,6 +149,6 @@ defmodule Sanbase.Alerts.FreezeAlertsTest do
     Sanbase.Alert.Job.unfreeze_alerts()
 
     assert {:ok, trigger} = UserTrigger.by_user_and_id(trigger.user_id, trigger.id)
-    assert UserTrigger.is_frozen?(trigger) == false
+    assert UserTrigger.frozen?(trigger) == false
   end
 end

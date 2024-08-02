@@ -176,7 +176,7 @@ defmodule Sanbase.UserList do
   end
 
   def public?(%__MODULE__{is_public: is_public}), do: is_public
-  def is_screener?(%__MODULE__{is_screener: is_screener}), do: is_screener
+  def screener?(%__MODULE__{is_screener: is_screener}), do: is_screener
   def type(%__MODULE__{type: type}), do: type
 
   @doc ~s"""

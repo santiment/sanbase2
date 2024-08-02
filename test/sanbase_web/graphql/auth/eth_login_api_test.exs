@@ -118,7 +118,7 @@ defmodule SanbaseWeb.Graphql.EthLoginApiTest do
             eth_login(context.conn, address, signature, message_hash)
             |> get_in(["errors", Access.at(0), "message"])
 
-          assert error_msg == "Login failed"
+          assert error_msg == "Email Login verification failed"
         end)
 
       assert log =~ "Login failed: invalid signature"

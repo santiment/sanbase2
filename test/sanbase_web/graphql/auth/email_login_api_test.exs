@@ -29,11 +29,11 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       login_data = result |> json_response(200) |> get_in(["data", "emailLoginVerify"])
       {:ok, user} = User.by_email(user.email)
 
-      assert login_data["token"] != nil
+      assert login_data["accessToken"] != nil
       assert login_data["user"]["firstLogin"] == true
       assert login_data["user"]["email"] == user.email
 
-      assert login_data["token"] == result.private.plug_session["access_token"]
+      assert login_data["accessToken"] == result.private.plug_session["access_token"]
 
       # Assert that now() and validated_at do not differ by more than 2 seconds
       assert Sanbase.TestUtils.datetime_close_to(
@@ -120,7 +120,7 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       mutation = email_login_verify_mutation(user)
 
       error_msg = execute_mutation_with_error(conn, mutation)
-      assert error_msg == "Login failed"
+      assert error_msg == "Email Login verification failed"
     end
 
     test "with a valid email token after one validation, fail to login again", %{conn: conn} do
@@ -141,7 +141,7 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       mutation = email_login_verify_mutation(user)
       error_msg = execute_mutation_with_error(conn, mutation)
 
-      assert error_msg == "Login failed"
+      assert error_msg == "Email Login verification failed"
     end
 
     test "with a valid email token after it has been validated 20 min ago, fail to login",
@@ -164,7 +164,7 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       mutation = email_login_verify_mutation(user)
       error_msg = execute_mutation_with_error(conn, mutation)
 
-      assert error_msg == "Login failed"
+      assert error_msg == "Email Login verification failed"
     end
   end
 
@@ -361,8 +361,7 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
             newsletterSubscription
           }
         }
-        token
-
+        accessToken
       }
     }
     """

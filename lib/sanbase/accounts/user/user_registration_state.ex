@@ -39,11 +39,11 @@ defmodule Sanbase.Accounts.User.RegistrationState do
     |> emit_event(user)
   end
 
-  def is_registered(%User{registration_state: registration_state}) do
+  def registration_finished?(%User{registration_state: registration_state}) do
     registration_state["state"] == "finished"
   end
 
-  def is_first_login(%User{registration_state: registration_state}, action)
+  def first_login?(%User{registration_state: registration_state}, action)
       when action in ["eth_login", "email_login_verify"] do
     %{"state" => current_state} = registration_state
 

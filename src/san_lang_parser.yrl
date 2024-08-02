@@ -46,7 +46,6 @@ grammar -> expr : '$1'.
 
 %% Handle parentheses
 expr -> '(' expr ')' : '$2'.
-expr -> '(' value ')' : '$2'.
 
 %% Handle arithmetic operations
 expr -> expr dual_arithmetic_op expr : {'$2', '$1', '$3'}.

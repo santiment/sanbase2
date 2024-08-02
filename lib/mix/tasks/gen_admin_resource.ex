@@ -126,8 +126,10 @@ defmodule Mix.Tasks.Gen.Admin.Resource do
 
   def form_fields(schema_module, preloads) do
     schema_module.__schema__(:fields)
-    |> Enum.reject(fn field -> field in [:id, :inserted_at, :updated_at] end)
-    |> Enum.reject(fn field -> maybe_replace_foreign_key(field) in preloads end)
+    |> Enum.reject(fn field ->
+      field in [:id, :inserted_at, :updated_at] or
+        maybe_replace_foreign_key(field) in preloads
+    end)
     |> Enum.concat(preloads)
     |> Enum.uniq()
   end

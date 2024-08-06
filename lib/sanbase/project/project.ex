@@ -24,6 +24,7 @@ defmodule Sanbase.Project do
     :ecosystems,
     :deployed_on_ecosystem
   ]
+
   def preloads(), do: @preloads
 
   schema "project" do

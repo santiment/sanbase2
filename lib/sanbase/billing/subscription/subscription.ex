@@ -11,7 +11,8 @@ defmodule Sanbase.Billing.Subscription do
   import Sanbase.Billing.EventEmitter, only: [emit_event: 3]
 
   alias Sanbase.Billing
-  alias Sanbase.Billing.{Plan, Product}
+  alias Sanbase.Billing.Plan
+  alias Sanbase.Billing.Product
   alias Sanbase.Billing.Subscription.Query
   alias Sanbase.Accounts.User
   alias Sanbase.Repo
@@ -53,7 +54,7 @@ defmodule Sanbase.Billing.Subscription do
     timestamps()
   end
 
-  def generic_error_message, do: @generic_error_message
+  def generic_error_message(), do: @generic_error_message
 
   def changeset(%__MODULE__{} = subscription, attrs \\ %{}) do
     subscription
@@ -98,6 +99,19 @@ defmodule Sanbase.Billing.Subscription do
   @spec by_stripe_id(String.t()) :: %__MODULE__{} | nil
   def by_stripe_id(stripe_id) do
     Repo.get_by(__MODULE__, stripe_id: stripe_id) |> default_preload()
+  end
+
+  @doc """
+  User has any active subscriptions.
+  Active here is `active` and `past_due` statuses, but not `trialing`
+  """
+  @spec user_has_active_sanbase_subscriptions?(non_neg_integer()) :: boolean()
+  def user_has_active_sanbase_subscriptions?(user_id) do
+    __MODULE__
+    |> Query.all_active_subscriptions_for_product(Product.product_sanbase())
+    |> Query.filter_user(user_id)
+    |> Repo.all()
+    |> Enum.any?()
   end
 
   @spec free_subscription() :: %__MODULE__{}

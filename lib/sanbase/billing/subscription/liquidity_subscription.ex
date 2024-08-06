@@ -4,7 +4,7 @@ defmodule Sanbase.Billing.Subscription.LiquiditySubscription do
   Uniswap liquidity pools. They are present only in Sanbase but not synced in Stripe.
   """
 
-  alias Sanbase.Billing.{Subscription, Product}
+  alias Sanbase.Billing.Subscription
   alias Sanbase.Accounts.User
   alias Sanbase.Repo
 
@@ -48,24 +48,11 @@ defmodule Sanbase.Billing.Subscription.LiquiditySubscription do
   end
 
   @doc """
-  User has any active subscriptions.
-  Active here is `active` and `past_due` statuses, but not `trialing`
-  """
-  @spec user_has_active_sanbase_subscriptions?(non_neg_integer()) :: boolean()
-  def user_has_active_sanbase_subscriptions?(user_id) do
-    Subscription
-    |> Subscription.Query.all_active_subscriptions_for_product(Product.product_sanbase())
-    |> Subscription.Query.filter_user(user_id)
-    |> Repo.all()
-    |> Enum.any?()
-  end
-
-  @doc """
   User doesn't have active Sanbase subscriptions and have enough SAN staked
   """
   @spec eligible_for_liquidity_subscription?(non_neg_integer()) :: boolean()
   def eligible_for_liquidity_subscription?(user_id) do
-    !user_has_active_sanbase_subscriptions?(user_id) and
+    not Subscription.user_has_active_sanbase_subscriptions?(user_id) and
       (user_staked_in_uniswap_v2(user_id) or user_staked_in_uniswap_v3(user_id))
   end
 
@@ -99,7 +86,7 @@ defmodule Sanbase.Billing.Subscription.LiquiditySubscription do
   def maybe_create_liquidity_subscriptions_staked_users() do
     user_ids_with_enough_staked()
     |> Enum.each(fn user_id ->
-      if not user_has_active_sanbase_subscriptions?(user_id) do
+      if not Subscription.user_has_active_sanbase_subscriptions?(user_id) do
         create_liquidity_subscription(user_id)
       end
     end)

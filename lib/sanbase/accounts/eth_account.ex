@@ -28,6 +28,10 @@ defmodule Sanbase.Accounts.EthAccount do
     |> unique_constraint(:address)
   end
 
+  def all() do
+    Repo.all(__MODULE__)
+  end
+
   def create(user_id, address) do
     %__MODULE__{}
     |> changeset(%{user_id: user_id, address: address})
@@ -60,6 +64,16 @@ defmodule Sanbase.Accounts.EthAccount do
   def all_by_user(user_id) do
     from(ea in __MODULE__, where: ea.user_id == ^user_id)
     |> Repo.all()
+  end
+
+  def address_to_user_id_map(addresses) when is_list(addresses) do
+    from(
+      ea in __MODULE__,
+      where: ea.address in ^addresses,
+      select: {ea.address, ea.user_id}
+    )
+    |> Repo.all()
+    |> Map.new()
   end
 
   @spec san_balance(%__MODULE__{}) :: float | :error

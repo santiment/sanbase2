@@ -18,6 +18,7 @@ defmodule Sanbase.Billing do
   defdelegate update_subscription(subscription, plan), to: Subscription
   defdelegate cancel_subscription(subscription), to: Subscription
   defdelegate renew_cancelled_subscription(subscription), to: Subscription
+  defdelegate user_has_active_sanbase_subscriptions?(user_id), to: Subscription
 
   defdelegate sync_stripe_subscriptions, to: Subscription
   defdelegate remove_duplicate_subscriptions, to: Subscription
@@ -27,7 +28,6 @@ defmodule Sanbase.Billing do
   defdelegate remove_liquidity_subscription(liquidity_subscription), to: LiquiditySubscription
   defdelegate list_liquidity_subscriptions, to: LiquiditySubscription
   defdelegate eligible_for_liquidity_subscription?(user_id), to: LiquiditySubscription
-  defdelegate user_has_active_sanbase_subscriptions?(user_id), to: LiquiditySubscription
   defdelegate sync_liquidity_subscriptions_staked_users, to: LiquiditySubscription
   defdelegate maybe_create_liquidity_subscriptions_staked_users, to: LiquiditySubscription
   defdelegate maybe_remove_liquidity_subscriptions_staked_users, to: LiquiditySubscription

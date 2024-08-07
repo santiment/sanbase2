@@ -46,11 +46,13 @@ defmodule Sanbase.SmartContracts.SanrNFT do
   until its end date.
   """
   def get_all_nft_expiration_dates() do
-    #
-    result =
-      Req.get(
-        "https://sanrnew-api.production.internal.santiment.net/api/v1/SanbaseSubscriptionNFTCollection/all"
+    req =
+      Req.new(
+        base_url:
+          "https://sanrnew-api.production.internal.santiment.net/api/v1/SanbaseSubscriptionNFTCollection/all"
       )
+
+    result = Req.get(req, [])
 
     case result do
       {:ok, %{status: 200, body: body}} ->

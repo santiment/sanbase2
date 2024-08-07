@@ -52,18 +52,14 @@ defmodule Sanbase.SmartContracts.SanrNFT do
         "https://sanrnew-api.production.internal.santiment.net/api/v1/SanbaseSubscriptionNFTCollection/all"
       )
 
-    iso8601_to_naive = fn binary ->
-      Sanbase.DateTimeUtils.from_iso8601!(binary) |> DateTime.to_naive()
-    end
-
     case result do
       {:ok, %{status: 200, body: body}} ->
         map =
           Map.new(body, fn m ->
             {m["id"],
              %{
-               start_date: iso8601_to_naive.(m["subscription_start_date"]),
-               end_date: iso8601_to_naive.(m["subscription_end_date"])
+               start_date: Sanbase.DateTimeUtils.from_iso8601!(m["subscription_start_date"]),
+               end_date: Sanbase.DateTimeUtils.from_iso8601!(m["subscription_end_date"])
              }}
           end)
 

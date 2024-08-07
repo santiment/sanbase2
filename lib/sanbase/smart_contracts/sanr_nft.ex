@@ -11,6 +11,8 @@ defmodule Sanbase.SmartContracts.SanrNFT do
       {"withTokenBalances", "true"}
     ]
 
+    {:ok, nft_metadata} = get_all_nft_expiration_dates()
+
     result =
       Req.get(req, url: "/nft/v3/#{alchemy_api_key()}/getOwnersForContract", params: params)
 
@@ -18,15 +20,17 @@ defmodule Sanbase.SmartContracts.SanrNFT do
       {:ok, %{status: 200, body: body}} ->
         %{"owners" => owners, "pageKey" => nil} = body
 
-        # TODO: Handle the case of more tokens
+        # In case the address holds multiple NFTs, the one with the latest `end_date` is
+        # returned.
         map =
           Map.new(owners, fn
             %{
               "ownerAddress" => address,
-              "tokenBalances" => [%{"balance" => "1", "tokenId" => token_id}]
+              "tokenBalances" => token_balances
             } ->
+              token_id = extract_latest_token_id(token_balances, nft_metadata)
               address = Sanbase.BlockchainAddress.to_internal_format(address)
-              {address, %{token_id: String.to_integer(token_id)}}
+              {address, %{token_id: token_id}}
 
             _ ->
               {nil, nil}
@@ -70,6 +74,14 @@ defmodule Sanbase.SmartContracts.SanrNFT do
       {:error, error} ->
         {:error, error}
     end
+  end
+
+  def extract_latest_token_id(token_balances, nft_metadata) do
+    token_balances
+    |> Enum.filter(fn %{"balance" => balance} -> balance == "1" end)
+    |> Enum.map(fn map -> Map.update!(map, "tokenId", &String.to_integer/1) end)
+    |> Enum.max_by(fn %{"tokenId" => token_id} -> nft_metadata[token_id].end_date end, DateTime)
+    |> Map.get("tokenId")
   end
 
   defp alchemy_api_key() do

@@ -22,6 +22,7 @@ defmodule Sanbase.Billing.Subscription do
 
   @percent_discount_1000_san 20
   @generic_error_message """
+
   Current subscription attempt failed.
   Please, contact administrator of the site for more information.
   """

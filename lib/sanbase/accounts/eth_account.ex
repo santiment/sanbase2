@@ -73,7 +73,9 @@ defmodule Sanbase.Accounts.EthAccount do
       select: {ea.address, ea.user_id}
     )
     |> Repo.all()
-    |> Map.new()
+    |> Map.new(fn {address, user_id} ->
+      {Sanbase.BlockchainAddress.to_internal_format(address), user_id}
+    end)
   end
 
   @spec san_balance(%__MODULE__{}) :: float | :error

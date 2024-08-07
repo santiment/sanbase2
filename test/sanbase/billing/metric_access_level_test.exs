@@ -944,6 +944,11 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "social_active_users",
         "trending_words_rank",
         # histogram metrics
+        "mentions_percentage_twitter",
+        "mentions_percentage_total",
+        "mentions_count_twitter",
+        "social_volume_all_accounts",
+        # social metrics for all accounts
         "age_distribution",
         "price_histogram",
         "spent_coins_cost",

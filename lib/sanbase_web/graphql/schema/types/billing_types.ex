@@ -19,6 +19,14 @@ defmodule SanbaseWeb.Graphql.BillingTypes do
     value(:unpaid)
   end
 
+  enum :subscription_type do
+    value(:fiat)
+    value(:liquidity)
+    value(:burning_regular)
+    value(:burning_nft)
+    value(:sanr_points_nft)
+  end
+
   enum :promo_email_lang_enum do
     value(:en)
     value(:jp)
@@ -44,6 +52,7 @@ defmodule SanbaseWeb.Graphql.BillingTypes do
     field(:id, :id)
     field(:user, :user)
     field(:plan, :plan)
+    field(:type, :subscription_type)
     field(:current_period_end, :datetime)
     field(:cancel_at_period_end, :boolean)
     field(:status, :billing_status)

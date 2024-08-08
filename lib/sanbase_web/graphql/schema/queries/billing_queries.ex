@@ -90,9 +90,33 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
 
       resolve(&BillingResolver.get_subscription_with_payment_intent/3)
     end
+
+    field :check_sanr_nft_subscription_eligibility, :boolean do
+      meta(access: :free)
+
+      middleware(JWTAuth)
+
+      resolve(&BillingResolver.check_sanr_nft_subscription_eligibility/3)
+    end
   end
 
   object :billing_mutations do
+    @desc ~s"""
+    Try to obtain a Sanbase Pro subscription for holding SanR NFT tokens.
+    When executed, the mutation checks that the user:
+    - has a blockchain address connected
+    - has no sanbase subscripotion
+    If any of these preconditions is not met, an appropriate error is returned.
+    If these conditions are met, the mutation checks whether the user holds a valid SanR NFT token
+    on ZK mainnet.
+    """
+    field :obtain_sanr_nft_subscription, :subscription_plan do
+      meta(access: :free)
+      middleware(JWTAuth)
+
+      resolve(&BillingResolver.obtain_sanr_nft_subscription/3)
+    end
+
     @desc ~s"""
     Subscribe logged in user to a chosen plan.
     Some plans have free trial and doesn't need credit card.

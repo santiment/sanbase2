@@ -33,10 +33,10 @@ defmodule Sanbase.Billing.SanrNFTSubscriptionTest do
       fn req, _params ->
         case req.options.base_url do
           "https://zksync-mainnet.g.alchemy.com" ->
-            get_owners_for_contract_mock(address)
+            Sanbase.SanrNFTMocks.get_owners_for_contract_mock(address)
 
           "https://sanrnew-api.production.internal.santiment.net/api/v1/SanbaseSubscriptionNFTCollection/all" ->
-            sanr_nft_collections_mock(start_date, end_date)
+            Sanbase.SanrNFTMocks.sanr_nft_collections_mock(start_date, end_date)
         end
       end
     )
@@ -75,54 +75,5 @@ defmodule Sanbase.Billing.SanrNFTSubscriptionTest do
 
       assert Subscription.user_has_active_sanbase_subscriptions?(user.id) == false
     end)
-  end
-
-  defp get_owners_for_contract_mock(address) do
-    {:ok,
-     %Req.Response{
-       status: 200,
-       headers: %{},
-       body: %{
-         "owners" => [
-           %{
-             "ownerAddress" => address,
-             "tokenBalances" => [
-               %{"balance" => "1", "tokenId" => "1"},
-               %{"balance" => "1", "tokenId" => "2"}
-             ]
-           }
-         ],
-         "pageKey" => nil
-       },
-       trailers: %{},
-       private: %{}
-     }}
-  end
-
-  defp sanr_nft_collections_mock(start_date, end_date) do
-    {:ok,
-     %Req.Response{
-       status: 200,
-       headers: %{},
-       body: [
-         %{
-           "id" => 1,
-           "sanr_points_amount" => 10000,
-           "subscription_end_date" => end_date,
-           "subscription_start_date" => start_date
-         },
-
-         # This one is expired. Added here so we can test what happens when
-         # one address holds multiple NFTs
-         %{
-           "id" => 2,
-           "sanr_points_amount" => 10000,
-           "subscription_end_date" => ~U[2024-05-05 00:00:00Z],
-           "subscription_start_date" => ~U[2023-05-05 00:00:00Z]
-         }
-       ],
-       trailers: %{},
-       private: %{}
-     }}
   end
 end

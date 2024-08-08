@@ -18,9 +18,13 @@ defmodule Sanbase.Billing.Subscription.NFTSubscription do
   end
 
   @doc ~s"""
-
+  Create a subscription of NFT type for a user.
+  Before invoking this function, the caller must have made sure
+  that the user is eligible for the subscription.
   """
-  def create_nft_subscription(user_id, type, current_period_end) do
+  @spec create_nft_subscription(non_neg_integer, atom, DateTime.t()) :: %Subscription{}
+  def create_nft_subscription(user_id, type, current_period_end)
+      when type in [:sanr_points_nft, :burning_nft] do
     Subscription.create(
       %{
         user_id: user_id,
@@ -34,9 +38,14 @@ defmodule Sanbase.Billing.Subscription.NFTSubscription do
   end
 
   @doc ~s"""
-
+  Remove an NFT subscription.
+  This is done when the user no longer holds an NFT token that grants
+  a subscription.
+  Before invoking this function, the caller must have made sure that the user
+  is no longer eligible for the subscription
   """
-  def remove_nft_subscription(nft_subscription) do
+  def remove_nft_subscription(%Subscription{} = nft_subscription)
+      when nft_subscription.type in [:sanr_points_nft, :burning_nft] do
     Subscription.delete(
       nft_subscription,
       event_args: %{type: :nft_subscription}

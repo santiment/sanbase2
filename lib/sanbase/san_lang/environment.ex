@@ -1,6 +1,11 @@
 defmodule Sanbase.SanLang.Environment do
   defstruct env_bindings: %{}, local_bindings: %{}
 
+  @type t :: %__MODULE__{
+          env_bindings: map(),
+          local_bindings: map()
+        }
+
   def new() do
     %__MODULE__{}
   end

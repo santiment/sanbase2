@@ -245,6 +245,63 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     end
   end
 
+  def obtain_sanr_nft_subscription(_root, _args, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    has_active_subscription? =
+      if Subscription.user_has_active_sanbase_subscriptions?(current_user.id) do
+        {:error, "The user already has an active Sanbase subscription"}
+      else
+        false
+      end
+
+    addresses = Sanbase.Accounts.EthAccount.all_by_user(current_user.id) |> Enum.map(& &1.address)
+
+    has_accounts_linked? =
+      if [] == addresses do
+        {:error, "The user does not have any blockchain addresses connected"}
+      else
+        true
+      end
+
+    token_data = Sanbase.SmartContracts.SanrNFT.get_latest_valid_nft_token(addresses)
+
+    has_sanr_nft_token? =
+      case token_data do
+        {:ok, _} ->
+          true
+
+        {:error, _} ->
+          {:error,
+           "The user is not eligible for the SanR NFT subscription. None of user addresses has a valid SanR NFT token."}
+      end
+
+    with false <- has_active_subscription?,
+         true <- has_accounts_linked?,
+         true <- has_sanr_nft_token? do
+      {:ok, %{end_date: end_date}} = token_data
+
+      Subscription.NFTSubscription.create_nft_subscription(
+        current_user.id,
+        :sanr_points_nft,
+        end_date
+      )
+    end
+  end
+
+  def check_sanr_nft_subscription_eligibility(_root, _args, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    addresses = Sanbase.Accounts.EthAccount.all_by_user(current_user.id) |> Enum.map(& &1.address)
+
+    case Sanbase.SmartContracts.SanrNFT.get_latest_valid_nft_token(addresses) do
+      {:ok, _} -> {:ok, true}
+      {:error, _} -> {:ok, false}
+    end
+  end
+
+  # Private functions
+
   # default card can be either a card token or a payment method
   # they are stored in different places in the customer object
   defp choose_default_card(customer) do

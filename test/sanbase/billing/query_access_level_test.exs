@@ -167,7 +167,8 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :run_dashboard_sql_query,
           :run_raw_sql_query,
           :run_sql_query,
-          :get_cached_query_executions
+          :get_cached_query_executions,
+          :check_sanr_nft_subscription_eligibility
         ]
         |> Enum.sort()
 

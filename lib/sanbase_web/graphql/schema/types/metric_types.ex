@@ -338,6 +338,19 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:has_incomplete_data, non_null(:boolean))
 
     @desc ~s"""
+    The metrics that have this flag set to true are considered as label_fqn metrics.
+    The label_fqn metrics are computed on the set of addresses that have a specific
+    label associated with them. These labels can identify that an address is a
+    centralized or decentralized exchange, belongs to a fund, is a whale of a
+    given coin/token, etc.
+
+    Find more information about labels and label fqn structure:
+    - https://academy.santiment.net/labels
+    - https://academy.santiment.net/labels/label-fqn
+    """
+    field(:is_label_fqn_metric, non_null(:boolean))
+
+    @desc ~s"""
     A human readable name of the metric.
     For example the human readable name of `mvrv_usd_5y` is `MVRV for coins that moved in the past 5 years`
     """
@@ -355,6 +368,11 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
 
     field :available_projects, list_of(:project) do
       cache_resolve(&MetricResolver.get_available_projects/3, ttl: 300)
+    end
+
+    field :available_label_fqns, list_of(:string) do
+      arg(:slug, :string)
+      cache_resolve(&MetricResolver.get_available_label_fqns/3, ttl: 300)
     end
 
     @desc ~s"""

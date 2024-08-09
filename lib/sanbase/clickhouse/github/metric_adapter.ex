@@ -208,7 +208,10 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
        data_type: :timeseries,
        is_timebound: false,
        complexity_weight: @default_complexity_weight,
-       docs: Enum.map(docs_links(metric), fn l -> %{link: l} end)
+       docs: Enum.map(docs_links(metric), fn l -> %{link: l} end),
+       is_label_fqn_metric: false,
+       is_deprecated: false,
+       hard_deprecate_after: nil
      }}
   end
 

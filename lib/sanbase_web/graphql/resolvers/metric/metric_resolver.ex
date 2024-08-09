@@ -93,6 +93,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end
   end
 
+  def get_available_label_fqns(_root, args, %{source: %{metric: metric}}) do
+    case args[:slug] do
+      nil -> Metric.available_label_fqns(metric)
+      slug when is_binary(slug) -> Metric.available_label_fqns(metric, %{slug: slug})
+    end
+  end
+
   def get_human_readable_name(_root, _args, %{source: %{metric: metric}}),
     do: Metric.human_readable_name(metric)
 
@@ -177,6 +184,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   def timeseries_data(_root, args, %{source: %{metric: metric}} = resolution) do
     requested_fields = requested_fields(resolution)
     fetch_timeseries_data(metric, args, requested_fields, :timeseries_data)
+  rescue
+    e in [Sanbase.Metric.CatchableError] -> {:error, Exception.message(e)}
+    e -> reraise(e, __STACKTRACE__)
   end
 
   def timeseries_data_per_slug(
@@ -193,6 +203,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
       requested_fields,
       :timeseries_data_per_slug
     )
+  rescue
+    e in [Sanbase.Metric.CatchableError] -> {:error, Exception.message(e)}
+    e -> reraise(e, __STACKTRACE__)
   end
 
   def aggregated_timeseries_data(
@@ -222,6 +235,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     |> maybe_handle_graphql_error(fn error ->
       handle_graphql_error(metric, args_to_raw_selector(args), error)
     end)
+  rescue
+    e in [Sanbase.Metric.CatchableError] -> {:error, Exception.message(e)}
+    e -> reraise(e, __STACKTRACE__)
   end
 
   def histogram_data(

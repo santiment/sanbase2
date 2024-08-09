@@ -35,6 +35,7 @@ defmodule Sanbase.Metric.Behaviour do
           data_type: available_data_types(),
           complexity_weight: number(),
           has_incomplete_data: boolean(),
+          is_label_fqn_metric: boolean(),
           is_timebound: boolean(),
           # A metric can be deprecated, which means that it is marked
           # as deprecated, but it is still accsessible. If hard_deprecate_after
@@ -117,6 +118,8 @@ defmodule Sanbase.Metric.Behaviour do
   @type available_slugs_result :: {:ok, list(slug)} | {:error, String.t()}
 
   @type available_metrics_result :: {:ok, list(metric)} | {:error, String.t()}
+
+  @type available_label_fqns_result :: {:ok, list(String.t())} | {:error, String.t()}
 
   @type has_incomplete_data_result :: boolean()
 
@@ -234,11 +237,17 @@ defmodule Sanbase.Metric.Behaviour do
 
   @callback available_metrics(selector) :: available_metrics_result()
 
+  @callback available_label_fqns(metric) :: available_label_fqns_result()
+
+  @callback available_label_fqns(metric, selector) :: available_label_fqns_result()
+
   @callback available_timeseries_metrics() :: list(metric)
 
   @callback available_histogram_metrics() :: list(metric)
 
   @callback available_table_metrics() :: list(metric)
+
+  @callback fixed_labels_parameters_metrics() :: list(metric)
 
   @callback incomplete_metrics() :: list(metric)
 
@@ -258,12 +267,17 @@ defmodule Sanbase.Metric.Behaviour do
     histogram_data: 6,
     table_data: 5,
     deprecated_metrics_map: 0,
+    fixed_labels_parameters_metrics: 0,
     soft_deprecated_metrics_map: 0,
     # If the adapter is working with assets, the following 2 callbacks are implemented
     slugs_by_filter: 6,
     slugs_order: 5,
     # If the adapter is working with addresses, the following 2 callbacks are implemented
     addresses_by_filter: 5,
-    addresses_order: 4
+    addresses_order: 4,
+    # If the adapter exposes metrics that accept label_fqn as a metric
+    # the following 2 callbacks are implemented
+    available_label_fqns: 1,
+    available_label_fqns: 2
   ]
 end

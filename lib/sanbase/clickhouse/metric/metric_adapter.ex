@@ -42,6 +42,11 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   @deprecated_metrics_map FileHandler.deprecated_metrics_map()
   @soft_deprecated_metrics_map FileHandler.soft_deprecated_metrics_map()
   @timebound_flag_map FileHandler.timebound_flag_map()
+
+  @fixed_labels_parameters_metrics_mapset FileHandler.fixed_labels_parameters_metrics_mapset()
+  @fixed_labels_parameters_metrics Enum.to_list(@fixed_labels_parameters_metrics_mapset)
+  @fixed_parameteres_map FileHandler.fixed_parameters_map()
+
   @default_complexity_weight 0.3
 
   @incomplete_metrics Enum.filter(@incomplete_data_map, &(elem(&1, 1) == true))
@@ -64,6 +69,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def restricted_metrics(), do: @restricted_metrics
+
+  @impl Sanbase.Metric.Behaviour
+  def fixed_labels_parameters_metrics(), do: @fixed_labels_parameters_metrics
 
   @impl Sanbase.Metric.Behaviour
   def deprecated_metrics_map(), do: @deprecated_metrics_map
@@ -98,10 +106,17 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   def timeseries_data(metric, selector, from, to, interval, opts)
       when is_supported_selector(selector) do
     aggregation = Keyword.get(opts, :aggregation, nil) || Map.get(@aggregation_map, metric)
-
+    opts = resolve_fixed_parameters(opts, metric)
     filters = get_filters(metric, opts)
 
-    timeseries_data_query(metric, selector, from, to, interval, aggregation, filters)
+    [
+      metric,
+      selector,
+      filters,
+      opts
+    ]
+
+    timeseries_data_query(metric, selector, from, to, interval, aggregation, filters, opts)
     |> exec_timeseries_data_query()
   end
 
@@ -170,6 +185,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   def metadata(metric) do
     min_interval = min_interval(metric)
     default_aggregation = Map.get(@aggregation_map, metric)
+    is_label_fqn_metric = :label_fqn in Map.get(@selectors_map, metric, [])
 
     {:ok,
      %{
@@ -184,7 +200,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
        data_type: Map.get(@metrics_data_type_map, metric),
        is_timebound: Map.get(@timebound_flag_map, metric),
        complexity_weight: @default_complexity_weight,
-       docs: Map.get(@docs_links_map, metric)
+       docs: Map.get(@docs_links_map, metric),
+       is_deprecated: false,
+       hard_deprecate_after: nil,
+       is_label_fqn_metric: is_label_fqn_metric
      }}
   end
 
@@ -225,12 +244,38 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
+  def available_label_fqns(metric) do
+    if metric in @fixed_labels_parameters_metrics_mapset do
+      fixed_parameters = Map.get(@fixed_parameteres_map, metric)
+      query_struct = available_label_fqns_query(metric, fixed_parameters)
+
+      Sanbase.ClickhouseRepo.query_transform(query_struct, & &1)
+      |> maybe_apply_function(&List.flatten/1)
+    else
+      {:ok, []}
+    end
+  end
+
+  @impl Sanbase.Metric.Behaviour
+  def available_label_fqns(metric, %{slug: slug}) when is_binary(slug) do
+    if metric in @fixed_labels_parameters_metrics_mapset do
+      fixed_parameters = Map.get(@fixed_parameteres_map, metric)
+      query_struct = available_label_fqns_query(metric, slug, fixed_parameters)
+
+      Sanbase.ClickhouseRepo.query_transform(query_struct, & &1)
+      |> maybe_apply_function(&List.flatten/1)
+    else
+      {:ok, []}
+    end
+  end
+
+  @impl Sanbase.Metric.Behaviour
   def available_slugs(), do: get_available_slugs()
 
   @impl Sanbase.Metric.Behaviour
   def available_slugs(metric)
       # otherwise age_distribution causes an infinite loop
-      when metric in @histogram_metrics_name_list and metric not in ["age_distribution"],
+      when metric in @histogram_metrics_name_list,
       do: HistogramMetric.available_slugs(metric)
 
   def available_slugs(metric), do: get_available_slugs(metric)
@@ -310,6 +355,16 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     case String.starts_with?(metric, "nft_") and "owner" in Map.get(@selectors_map, metric) do
       true -> [owner: "opensea"]
       false -> Keyword.get(opts, :additional_filters, [])
+    end
+  end
+
+  defp resolve_fixed_parameters(opts, metric) do
+    case metric in @fixed_labels_parameters_metrics_mapset do
+      true ->
+        opts ++ [fixed_parameters: @fixed_parameteres_map[metric]]
+
+      false ->
+        opts
     end
   end
 end

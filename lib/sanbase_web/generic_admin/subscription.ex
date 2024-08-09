@@ -40,7 +40,10 @@ defmodule SanbaseWeb.GenericAdmin.Subscription do
         resource: resource
       )
 
-    Phoenix.HTML.Link.link(label, to: relative_url, class: "text-blue-600 hover:text-blue-800")
+    PhoenixHTMLHelpers.Link.link(label,
+      to: relative_url,
+      class: "text-blue-600 hover:text-blue-800"
+    )
   end
 end
 

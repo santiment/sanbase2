@@ -19,7 +19,7 @@ defmodule SanbaseWeb.GenericAdmin.User do
                 nil
 
               stripe_customer_id ->
-                Phoenix.HTML.Link.link(stripe_customer_id,
+                PhoenixHTMLHelpers.Link.link(stripe_customer_id,
                   to: "https://dashboard.stripe.com/customers/#{stripe_customer_id}",
                   class: "text-blue-600 hover:text-blue-800"
                 )

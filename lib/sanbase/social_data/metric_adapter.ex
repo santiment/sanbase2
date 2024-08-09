@@ -329,7 +329,6 @@ defmodule Sanbase.SocialData.MetricAdapter do
        required_selectors: [],
        data_type: :timeseries,
        complexity_weight: @default_complexity_weight,
-       docs: [],
        hard_deprecate_after: nil,
        is_deprecated: false,
        is_timebound: false,

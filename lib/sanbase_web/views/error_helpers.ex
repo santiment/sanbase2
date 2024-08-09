@@ -4,7 +4,7 @@ defmodule SanbaseWeb.ErrorHelpers do
   """
   def error_tag(form, field) do
     if error = form.source.errors[field] do
-      Phoenix.HTML.Tag.content_tag(:div, translate_error(error),
+      PhoenixHTMLHelpers.Tag.content_tag(:div, translate_error(error),
         class: "text-red-500 text-xs italic"
       )
     end

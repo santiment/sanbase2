@@ -91,6 +91,7 @@ defmodule Sanbase.Project.ListSelector do
     order_by = Transform.args_to_order_by(args)
     pagination = Transform.args_to_pagination(args)
     filters_combinator = Transform.args_to_filters_combinator(args)
+    include_hidden = Map.get(args, :include_hidden, false)
 
     base_slugs = base_slugs(base_projects_selector)
 
@@ -105,7 +106,8 @@ defmodule Sanbase.Project.ListSelector do
         pagination: pagination,
         min_volume: Map.get(args, :min_volume),
         included_slugs: included_slugs,
-        ordered_slugs: ordered_slugs
+        ordered_slugs: ordered_slugs,
+        include_hidden: include_hidden
       ]
 
       {:ok, opts}

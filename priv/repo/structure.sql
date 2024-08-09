@@ -2902,7 +2902,9 @@ CREATE TABLE public.project (
     ecosystem character varying(255),
     ecosystem_full_path character varying(255),
     multichain_project_group_key character varying(255) DEFAULT NULL::character varying,
-    deployed_on_ecosystem_id bigint
+    deployed_on_ecosystem_id bigint,
+    hidden_since timestamp(0) without time zone,
+    hidden_reason text
 );
 
 
@@ -9559,3 +9561,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20240531121027);
 INSERT INTO public."schema_migrations" (version) VALUES (20240723122118);
 INSERT INTO public."schema_migrations" (version) VALUES (20240725122924);
 INSERT INTO public."schema_migrations" (version) VALUES (20240805115620);
+INSERT INTO public."schema_migrations" (version) VALUES (20240809122904);

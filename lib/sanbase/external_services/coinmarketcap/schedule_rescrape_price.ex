@@ -32,7 +32,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePrice do
           original_last_updated: %{day: _, hour: _, min: _, month: _, year: _} = olu
         } = attrs
       ) do
-    {:ok, olu} = DateTimeUtils.ExAdmin.to_naive(olu)
+    {:ok, olu} = to_naive(olu)
 
     attrs = attrs |> Map.put(:original_last_updated, olu)
     changeset(srp, attrs)
@@ -45,8 +45,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePrice do
           to: %{day: _, hour: _, min: _, month: _, year: _} = to
         } = attrs
       ) do
-    {:ok, from} = DateTimeUtils.ExAdmin.to_naive(from)
-    {:ok, to} = DateTimeUtils.ExAdmin.to_naive(to)
+    {:ok, from} = to_naive(from)
+    {:ok, to} = to_naive(to)
 
     attrs = attrs |> Map.put(:from, from) |> Map.put(:to, to)
     changeset(srp, attrs)
@@ -103,5 +103,20 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePrice do
       order_by: latest_cmc.rank,
       preload: :project
     )
+  end
+
+  def to_naive(%{
+        day: day,
+        hour: hour,
+        min: min,
+        month: month,
+        year: year
+      })
+      when is_binary(day) and is_binary(hour) and is_binary(min) and is_binary(month) and
+             is_binary(year) do
+    [day, hour, min, month, year] =
+      [day, hour, min, month, year] |> Enum.map(&String.to_integer/1)
+
+    NaiveDateTime.from_erl({{year, month, day}, {hour, min, 0}})
   end
 end

@@ -51,7 +51,6 @@ RUN mkdir config
 # to be re-compiled.
 COPY config/config.exs \
 	config/ueberauth_config.exs \
-	config/ex_admin_config.exs \
 	config/notifications_config.exs \
 	config/scheduler_config.exs \
 	config/scrapers_config.exs \

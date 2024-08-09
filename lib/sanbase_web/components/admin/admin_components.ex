@@ -1,6 +1,7 @@
 defmodule SanbaseWeb.AdminComponents do
   use Phoenix.Component
-  use Phoenix.HTML
+
+  use PhoenixHTMLHelpers
 
   import SanbaseWeb.CoreComponents
 

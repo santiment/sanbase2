@@ -618,7 +618,10 @@ defmodule SanbaseWeb.GenericAdminController.LinkBuilder do
         resource: resource
       )
 
-    Phoenix.HTML.Link.link(label, to: relative_url, class: "text-blue-600 hover:text-blue-800")
+    PhoenixHTMLHelpers.Link.link(label,
+      to: relative_url,
+      class: "text-blue-600 hover:text-blue-800"
+    )
   end
 
   defp module_to_resource_name(module) do

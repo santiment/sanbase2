@@ -182,11 +182,6 @@ defmodule Sanbase.Insight.Post do
     )
   end
 
-  # Needed by ex_admin
-  def changeset(%Post{} = post, attrs \\ %{}) do
-    post |> cast(attrs, [])
-  end
-
   def create_changeset(%Post{} = post, attrs) do
     attrs = Sanbase.DateTimeUtils.truncate_datetimes(attrs)
 

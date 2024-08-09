@@ -90,7 +90,9 @@ defmodule SanbaseWeb do
       # Import convenience functions from controllers
       import Phoenix.Controller, only: [view_module: 1]
 
-      use Phoenix.HTML
+      import Phoenix.HTML
+      import Phoenix.HTML.Form
+      use PhoenixHTMLHelpers
       import Phoenix.View
 
       unquote(view_helpers())
@@ -100,7 +102,10 @@ defmodule SanbaseWeb do
   defp view_helpers do
     quote do
       # Use all HTML functionality (forms, tags, etc)
-      use Phoenix.HTML
+
+      import Phoenix.HTML
+      import Phoenix.HTML.Form
+      use PhoenixHTMLHelpers
 
       # Import basic rendering functionality (render, render_layout, etc)
       import Phoenix.View

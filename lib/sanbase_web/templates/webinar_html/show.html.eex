@@ -27,13 +27,4 @@
       <th class="px-4 py-2">Username</th>
     </tr>
   </thead>
-  <tbody class="text-sm font-normal text-gray-700">
-    <%= for user <- @webinar_users do %>
-      <tr class="hover:bg-gray-100 border-b border-gray-200 py-4">
-        <td class="border px-4 py-2"><%= link user.id, to: Routes.admin_resource_path(@conn, :show, :users, user.id), class: "flex-shrink-0 border-4 text-teal-500 hover:text-teal-800 py-1 px-2 rounded"%></td>
-        <td class="border px-4 py-2"><%= user.email %></td>
-        <td class="border px-4 py-2"><%= user.username %></td>
-      </tr>
-    <% end %>
-  </tbody>
 </table>

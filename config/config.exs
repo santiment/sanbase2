@@ -191,8 +191,6 @@ config :hammer,
     ]
   }
 
-config :xain, :after_callback, {Phoenix.HTML, :raw}
-
 config :tesla,
   adapter: {Tesla.Adapter.Hackney, recv_timeout: 30_000}
 
@@ -288,7 +286,6 @@ config :nostrum,
 
 # Import configs
 import_config "ueberauth_config.exs"
-import_config "ex_admin_config.exs"
 import_config "scrapers_config.exs"
 import_config "notifications_config.exs"
 import_config "stripe_config.exs"

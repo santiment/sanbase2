@@ -61,11 +61,6 @@ defmodule Sanbase.UserList do
     timestamps()
   end
 
-  # ex_admin needs changeset function
-  def changeset(user_list, attrs \\ %{}) do
-    update_changeset(user_list, attrs)
-  end
-
   @create_fields [:color, :description, :function, :is_monitored, :is_public, :is_screener] ++
                    [:name, :slug, :table_configuration_id, :type, :user_id]
   def create_changeset(%__MODULE__{} = user_list, attrs \\ %{}) do

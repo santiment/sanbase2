@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.LiveSelect do
   use SanbaseWeb, :live_view
-  use Phoenix.HTML
 
+  use PhoenixHTMLHelpers
   import SanbaseWeb.CoreComponents
   import Ecto.Query
 

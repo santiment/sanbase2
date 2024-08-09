@@ -42,19 +42,12 @@ defmodule SanbaseWeb.Router do
     plug(:put_layout, html: {SanbaseWeb.Layouts, :admin2})
   end
 
-  use ExAdmin.Router
-
   scope "/auth", SanbaseWeb do
     pipe_through(:browser)
 
     get("/delete", AuthController, :delete)
     get("/:provider", AuthController, :request)
     get("/:provider/callback", AuthController, :callback)
-  end
-
-  scope "/admin", ExAdmin do
-    pipe_through([:admin_pod_only, :browser, :basic_auth])
-    admin_routes()
   end
 
   scope "/forms", SanbaseWeb do
@@ -75,9 +68,6 @@ defmodule SanbaseWeb.Router do
     live("/suggest_github_organizations_admin_live", SuggestGithubOrganizationsAdminLive)
     live("/upload_image_live", UploadImageLive)
     live("/uploaded_images_live", UploadedImagesLive)
-
-    get("/anonymize_comment/:id", CommentModerationController, :anonymize_comment)
-    get("/delete_subcomment_tree/:id", CommentModerationController, :delete_subcomment_tree)
 
     resources("/reports", ReportController)
     resources("/sheets_templates", SheetsTemplateController)

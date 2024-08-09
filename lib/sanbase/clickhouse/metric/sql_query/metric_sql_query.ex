@@ -120,7 +120,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
           WHERE
             fqn = (
               SELECT DISTINCT(fqn)
-              FROM test_anatolii_labeled_balances_filtered_2
+              FROM labeled_balances_filtered
               WHERE
                 #{asset_name_filter}
                 group = {{group}} AND
@@ -332,7 +332,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
     sql = """
     SELECT DISTINCT(fqn)
-    FROM test_anatolii_labeled_balances_filtered_2
+    FROM labeled_balances_filtered
     WHERE
       #{metric_id_filter(metric, argument_name: "metric")} AND
       #{where_clause}
@@ -356,7 +356,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
     sql = """
     SELECT DISTINCT(fqn)
-    FROM test_anatolii_labeled_balances_filtered_2
+    FROM labeled_balances_filtered
     WHERE
       #{metric_id_filter(metric, argument_name: "metric")} AND
       #{where_clause} AND

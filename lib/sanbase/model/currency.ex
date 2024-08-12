@@ -48,7 +48,6 @@ defmodule Sanbase.Model.Currency do
   end
 end
 
-# used by ex_admin
 defimpl String.Chars, for: Sanbase.Model.Currency do
   def to_string(term) do
     term.code

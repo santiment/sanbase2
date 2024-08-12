@@ -9,7 +9,6 @@ defmodule Sanbase.Model.IcoCurrency do
     belongs_to(:ico, Ico)
     belongs_to(:currency, Currency, on_replace: :nilify)
     field(:amount, :decimal)
-    # used by ex_admin
     field(:_destroy, :boolean, virtual: true)
   end
 
@@ -21,21 +20,7 @@ defmodule Sanbase.Model.IcoCurrency do
     |> unique_constraint(:ico_currency, name: :ico_currencies_uk)
   end
 
-  @doc false
-  def changeset_ex_admin(%IcoCurrency{} = ico_currencies, attrs \\ %{}) do
-    attrs =
-      set_currency_id(attrs)
-      |> Sanbase.Utils.Transform.remove_separator(:amount, ",")
-
-    ico_currencies
-    |> cast(attrs, [:ico_id, :currency_id, :amount, :_destroy])
-    |> validate_required([:currency_id])
-    |> unique_constraint(:ico_currency, name: :ico_currencies_uk)
-    |> mark_for_deletion()
-  end
-
-  # ex_admin stores the currency only by its code
-  defp set_currency_id(attrs) do
+  def set_currency_id(attrs) do
     {currency_code, attrs} = Map.pop(attrs, :currency)
 
     currency_id =
@@ -51,7 +36,7 @@ defmodule Sanbase.Model.IcoCurrency do
     Map.put(attrs, :currency_id, currency_id)
   end
 
-  defp mark_for_deletion(changeset) do
+  def mark_for_deletion(changeset) do
     if get_change(changeset, :_destroy) do
       %{changeset | action: :delete}
     else

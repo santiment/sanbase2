@@ -105,18 +105,6 @@ config :sanbase, Sanbase.ClickhouseRepo.SanbaseMaxUser, clickhouse_read_only_opt
 config :sanbase, Sanbase.ClickhouseRepo.BusinessProUser, clickhouse_read_only_opts
 config :sanbase, Sanbase.ClickhouseRepo.BusinessMaxUser, clickhouse_read_only_opts
 
-# These are not the values that are used in production. They are set to some
-# default values. When running the app locally these values are overridden by
-# the values in the .env.dev or dev.secret.exs files, which are ignored by git
-# and not published in the repository. Please do not report these as security
-# issues.
-config :ex_admin,
-  basic_auth: [
-    username: "admin",
-    password: "admin",
-    realm: "Admin Area"
-  ]
-
 config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
   scale: 1000,
   limit: 5,

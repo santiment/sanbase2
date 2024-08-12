@@ -15,9 +15,9 @@ defmodule Sanbase.Mixfile do
       # source_url: "https://github.com/santiment/sanbase2/",
       homepage_url: "https://app.santiment.net/projects",
       # Supress errors that should not be shown
-      xref: [exclude: [Oban, ExAdmin]],
+      xref: [exclude: [Oban]],
       dialyzer: [
-        plt_ignore_apps: [:ex_admin, :stripity_stripe]
+        plt_ignore_apps: [:stripity_stripe]
       ]
     ]
   end
@@ -87,7 +87,6 @@ defmodule Sanbase.Mixfile do
       {:tailwind, "~> 0.2", runtime: Mix.env() == :dev},
       {:event_bus, "~> 1.7.0"},
       {:ex_abi, "~> 0.6"},
-      {:ex_admin, github: "santiment/ex_admin"},
       {:ex_aws_s3, "~> 2.0"},
       {:ex_aws, "~> 2.0"},
       {:ex_json_schema, "~> 0.10.2"},
@@ -110,6 +109,7 @@ defmodule Sanbase.Mixfile do
       {:hackney, "~> 1.17", override: true},
       {:hammer, "~> 6.0"},
       {:httpoison, "~> 2.0", override: true},
+      {:html_sanitize_ex, "~> 1.4"},
       {:inch_ex, github: "rrrene/inch_ex", only: [:dev, :test]},
       {:inflex, "~> 2.0", override: true},
       {:jason, "~> 1.2"},
@@ -123,7 +123,7 @@ defmodule Sanbase.Mixfile do
       {:mockery, "~> 2.2"},
       {:mogrify, "~> 0.8"},
       {:mutex, "~> 2.0"},
-      {:mochiweb, "~> 3.2", override: true},
+      {:mochiweb, "~> 3.2"},
       {:neuron, "~> 5.0", only: :dev},
       {:nimble_csv, "~> 1.1"},
       {:nimble_parsec, "~> 1.4"},
@@ -134,7 +134,8 @@ defmodule Sanbase.Mixfile do
       {:oban, "~> 2.7"},
       {:observer_cli, "~> 1.3"},
       {:phoenix_ecto, "~> 4.1"},
-      {:phoenix_html, "~> 3.0", override: true},
+      {:phoenix_html, "~> 4.0"},
+      {:phoenix_html_helpers, "~> 1.0"},
       {:phoenix_live_dashboard, "~> 0.3"},
       {:phoenix_live_reload, "~> 1.1", only: :dev},
       {:phoenix_live_view, "~> 1.0.0-rc.6", override: true},

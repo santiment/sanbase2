@@ -1,6 +1,5 @@
 defmodule Sanbase.Repo do
   use Ecto.Repo, otp_app: :sanbase, adapter: Ecto.Adapters.Postgres
-  use Scrivener, page_size: 10
 
   alias Sanbase.Utils.Config
 

@@ -50,26 +50,6 @@ defmodule Sanbase.Model.Ico do
     |> validate_required([:project_id])
   end
 
-  @doc false
-  def changeset_ex_admin(%Ico{} = ico, attrs \\ %{}) do
-    attrs =
-      attrs
-      |> Sanbase.Utils.Transform.remove_separator(:token_usd_ico_price, ",")
-      |> Sanbase.Utils.Transform.remove_separator(:token_eth_ico_price, ",")
-      |> Sanbase.Utils.Transform.remove_separator(:token_btc_ico_price, ",")
-      |> Sanbase.Utils.Transform.remove_separator(:tokens_issued_at_ico, ",")
-      |> Sanbase.Utils.Transform.remove_separator(:tokens_sold_at_ico, ",")
-      |> Sanbase.Utils.Transform.remove_separator(:minimal_cap_amount, ",")
-      |> Sanbase.Utils.Transform.remove_separator(:maximal_cap_amount, ",")
-
-    ico
-    |> changeset(attrs)
-    |> cast_assoc(:ico_currencies,
-      required: false,
-      with: &IcoCurrency.changeset_ex_admin/2
-    )
-  end
-
   def funds_raised_by_icos(ico_ids) when is_list(ico_ids) do
     from(
       i in __MODULE__,

@@ -13,8 +13,7 @@ defmodule Sanbase.Repo.Migrations.RestoreLostProjectData do
     backup_records =
       Path.expand("project_backup.csv", __DIR__)
       |> File.stream!()
-      |> CSV.decode!(headers: true)
-      |> Enum.reject(&(&1["coinmarketcap_id"] == nil))
+      |> NimbleCSV.RFC4180.parse_string(skip_headers: false)
 
     query =
       from(

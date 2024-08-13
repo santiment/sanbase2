@@ -25,6 +25,8 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
       arg(:page_size, :integer)
       arg(:min_volume, :integer)
 
+      arg(:include_hidden, :boolean, default_value: false)
+
       middleware(ProjectPermissions)
       cache_resolve(&ProjectListResolver.all_projects/3)
     end

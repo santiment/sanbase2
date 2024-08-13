@@ -280,7 +280,7 @@ defmodule Sanbase.Queries do
     end
   end
 
-  def generate_uuid(), do: "query_" <> Uniq.UUID.uuid7()
+  def generate_uuid(), do: "query_" <> UUID.uuid4()
 
   @doc ~s"""
   Update a query.

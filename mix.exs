@@ -38,18 +38,7 @@ defmodule Sanbase.Mixfile do
   end
 
   defp elixirc_paths(:test), do: ["lib", "test/support"]
-
-  defp elixirc_paths(mix_env) when mix_env in [:dev, :test] do
-    case System.get_env("ENABLE_EXADMIN_DASHBOARDS", "false") do
-      "true" ->
-        ["lib", "test/support"]
-
-      "false" ->
-        web_without_admin = Path.wildcard("lib/sanbase_web/*") -- ["lib/sanbase_web/admin"]
-
-        ["lib/sanbase", "test/support", "lib/mix", "lib/sheets_templates"] ++ web_without_admin
-    end
-  end
+  defp elixirc_paths(:dev), do: ["lib", "test/support"]
 
   defp elixirc_paths(_), do: ["lib"]
 
@@ -67,21 +56,19 @@ defmodule Sanbase.Mixfile do
       {:con_cache, "~> 1.0"},
       {:cowboy, "~> 2.0"},
       {:cowlib, "~> 2.11", hex: :remedy_cowlib, override: true},
-      {:crc32cer, github: "santiment/crc32cer", override: true},
+      {:crc32cer, github: "zmstone/crc32cer", override: true},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:csv, "~> 3.0"},
-      {:csvlixir, "~> 2.0", override: true},
       {:dataloader, "~> 2.0.0"},
       {:db_connection, "~> 2.2", override: true},
-      {:decimal, "~> 2.0", override: true},
+      {:decimal, "~> 2.1"},
       {:dialyxir, "~> 1.1", only: [:dev], runtime: false},
       {:earmark, "~> 1.2"},
       {:ecto_enum, "~> 1.4"},
       {:ecto_psql_extras, "~> 0.3"},
-      {:ecto_sql, "~> 3.11.1"},
-      {:ecto, "~> 3.11.2"},
+      {:ecto_sql, "~> 3.12"},
+      {:ecto, "~> 3.12"},
       {:envy, "~> 1.1.1", only: [:dev, :test]},
-      {:erlex, "~> 0.2.6", override: true},
+      {:erlex, "~> 0.2.6"},
       {:ethereumex, "~> 0.9"},
       {:esbuild, "~> 0.7", runtime: Mix.env() == :dev},
       {:tailwind, "~> 0.2", runtime: Mix.env() == :dev},
@@ -97,28 +84,24 @@ defmodule Sanbase.Mixfile do
       {:exprof, "~> 0.2.0"},
       {:extwitter, "~> 0.12"},
       {:faker, "~> 0.17", only: [:dev, :test]},
-      {:finch, "~> 0.12", override: true},
+      {:finch, "~> 0.18"},
       {:floki, "~> 0.20"},
       {:fuzzy_compare, "~> 1.0"},
       {:gettext, "~> 0.11"},
       {:guardian_db, "~> 3.0"},
-      # Guardian is pinned as in 2.3.2 the way they get times
-      # internally is modified, so our mocked tests fail
       {:guardian, "~> 2.3.2"},
       {:gun, "~> 2.0", hex: :remedy_gun, override: true},
       {:hackney, "~> 1.17", override: true},
       {:hammer, "~> 6.0"},
       {:httpoison, "~> 2.0", override: true},
       {:html_sanitize_ex, "~> 1.4"},
-      {:inch_ex, github: "rrrene/inch_ex", only: [:dev, :test]},
-      {:inflex, "~> 2.0", override: true},
-      {:jason, "~> 1.2"},
+      {:inflex, "~> 2.0"},
+      {:jason, "~> 1.4"},
       {:jose, "~> 1.11"},
       {:kino_db, "~> 0.2.2"},
       {:kino_vega_lite, "~> 0.1.9"},
       {:libcluster, "~> 3.0"},
       {:mint, "~> 1.0"},
-      {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
       {:mock, "~> 0.3"},
       {:mockery, "~> 2.2"},
       {:mogrify, "~> 0.8"},
@@ -143,7 +126,7 @@ defmodule Sanbase.Mixfile do
       {:phoenix_view, "~> 2.0"},
       {:phoenix, "~> 1.7.0"},
       {:plug_cowboy, "~> 2.5"},
-      {:postgrex, "~> 0.16", override: true},
+      {:postgrex, "~> 0.19"},
       {:prom_ex, "~> 1.8"},
       {:quantum, "~> 3.0"},
       {:remote_ip, "~> 1.0"},
@@ -152,7 +135,6 @@ defmodule Sanbase.Mixfile do
       {:sentry, "~> 10.0"},
       {:stream_data, "~> 1.1", only: :test, override: true},
       {:stripity_stripe, "~> 2.9"},
-      {:supervisor3, "~> 1.1", manager: :rebar3, override: true},
       {:sweet_xml, "~> 0.6"},
       {:swoosh, "~> 1.7"},
       {:table_rex, "~> 4.0"},
@@ -162,7 +144,6 @@ defmodule Sanbase.Mixfile do
       {:timex, "~> 3.7"},
       {:ueberauth_google, "~> 0.10"},
       {:ueberauth_twitter, "~> 0.4"},
-      {:uniq, "~> 0.5"},
       {:uuid, "~> 1.1"},
       {:vex, "~> 0.9", override: true},
       {:waffle, "~> 1.1"},

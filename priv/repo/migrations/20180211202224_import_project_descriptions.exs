@@ -7,10 +7,9 @@ defmodule Sanbase.Repo.Migrations.ImportProjectDescriptions do
 
   def up do
     Path.expand("cmc_name_list.csv", __DIR__)
-    |> File.stream!()
-    |> CSV.decode()
-    |> Stream.drop(1)
-    |> Enum.each(fn {:ok, description_line} ->
+    |> File.read!()
+    |> NimbleCSV.RFC4180.parse_string()
+    |> Enum.each(fn description_line ->
       [project, description] =
         description_line
         |> Enum.map(&String.trim/1)

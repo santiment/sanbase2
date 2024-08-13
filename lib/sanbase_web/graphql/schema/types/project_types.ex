@@ -366,7 +366,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     like allProjects and screeners that are filtered by a condition.
 
     Hidden projects can be accessed when directly queried via project or projectBySlug,
-    or by passing the `includeHiddenProjects: true` flag to `allProjects`.
+    or by passing the `includeHidden: true` flag to `allProjects`.
     """
     field(:is_hidden, non_null(:boolean))
 

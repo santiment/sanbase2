@@ -28,7 +28,12 @@ sanbase_pro_yearly_plan = Plan.by_id(sanbase_pro_yearly_plan_id)
 
 ```elixir
 {:ok, user} = User.by_email("tsvetozar.penov+stripetestuserstage@gmail.com")
-{:ok, user} = Sanbase.StripeApi.delete_customer(user)
+
+if user.stripe_customer_id do
+  Sanbase.StripeApi.delete_customer(user)
+else
+  {:ok, user}
+end
 ```
 
 ## Subscribe user to Sanbase PRO
@@ -53,5 +58,7 @@ Subscription.cancel_subscription(subscription)
 
 ```elixir
 {:ok, user} = User.by_email("tsvetozar.penov+stripetestuserstage@gmail.com")
-Sanbase.StripeApi.delete_customer(user)
+if user.stripe_customer_id do
+  Sanbase.StripeApi.delete_customer(user)
+end
 ```

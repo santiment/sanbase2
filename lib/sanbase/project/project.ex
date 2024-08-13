@@ -33,6 +33,8 @@ defmodule Sanbase.Project do
     field(:slug, :string)
     field(:coinmarketcap_id, :string)
     field(:is_hidden, :boolean, default: false)
+    field(:hidden_since, :utc_datetime)
+    field(:hidden_reason, :string)
 
     field(:description, :string)
     field(:long_description, :string)
@@ -123,6 +125,8 @@ defmodule Sanbase.Project do
       :github_link,
       :infrastructure_id,
       :is_hidden,
+      :hidden_since,
+      :hidden_reason,
       :linkedin_link,
       :logo_url,
       :long_description,
@@ -149,6 +153,22 @@ defmodule Sanbase.Project do
     |> cast_assoc(:market_segments)
     |> cast_assoc(:ecosystems)
     |> unique_constraint(:slug)
+    |> maybe_add_hidden_since()
+  end
+
+  defp maybe_add_hidden_since(changeset) do
+    case changeset.changes do
+      %{is_hidden: true} ->
+        changeset
+        |> put_change(:hidden_since, DateTime.utc_now() |> DateTime.truncate(:second))
+
+      %{is_hiden: false} ->
+        changeset
+        |> put_change(:hidden_since, nil)
+
+      _ ->
+        changeset
+    end
   end
 
   defdelegate roi_usd(project), to: Project.Roi

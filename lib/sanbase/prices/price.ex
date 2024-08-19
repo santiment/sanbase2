@@ -305,14 +305,14 @@ defmodule Sanbase.Price do
   def aggregated_metric_timeseries_data([], _, _, _, _), do: {:ok, %{}}
 
   def aggregated_metric_timeseries_data(slugs, metric, from, to, opts)
-      when is_list(slugs) and length(slugs) > 50 do
+      when is_list(slugs) and length(slugs) > 1000 do
     # Break here otherwise the Enum.filter/2 will remove all errors and report a wrong result
     with {:ok, _source} <- opts_to_source(opts) do
       result =
-        Enum.chunk_every(slugs, 50)
+        Enum.chunk_every(slugs, 1000)
         |> Sanbase.Parallel.map(
           &aggregated_metric_timeseries_data(&1, metric, from, to, opts),
-          timeout: 25_000,
+          timeout: 55_000,
           max_concurrency: 8,
           ordered: false
         )

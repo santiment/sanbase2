@@ -322,12 +322,12 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   end
 
   defp get_aggregated_timeseries_data(metric, slugs, from, to, aggregation, filters)
-       when is_list(slugs) and length(slugs) > 50 do
+       when is_list(slugs) and length(slugs) > 1000 do
     result =
-      Enum.chunk_every(slugs, 50)
+      Enum.chunk_every(slugs, 1000)
       |> Sanbase.Parallel.map(
         &get_aggregated_timeseries_data(metric, &1, from, to, aggregation, filters),
-        timeout: 25_000,
+        timeout: 55_000,
         max_concurrency: 8,
         ordered: false,
         on_timeout: :kill_task

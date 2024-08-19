@@ -103,12 +103,12 @@ defmodule Sanbase.PricePair do
   def aggregated_timeseries_data([], _, _, _, _), do: {:ok, []}
 
   def aggregated_timeseries_data(slugs, quote_asset, from, to, opts)
-      when is_list(slugs) and length(slugs) > 50 do
+      when is_list(slugs) and length(slugs) > 1000 do
     result =
-      Enum.chunk_every(slugs, 50)
+      Enum.chunk_every(slugs, 1000)
       |> Sanbase.Parallel.map(
         &aggregated_timeseries_data(&1, quote_asset, from, to, opts),
-        timeout: 25_000,
+        timeout: 55_000,
         max_concurrency: 8,
         ordered: false
       )

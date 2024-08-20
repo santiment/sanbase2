@@ -323,6 +323,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       arg(:aggregation, :aggregation, default_value: nil)
       arg(:include_incomplete_data, :boolean, default_value: false)
       arg(:caching_params, :caching_params_input_object)
+      arg(:error_on_failed_fetch, :boolean, default_value: false)
 
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)

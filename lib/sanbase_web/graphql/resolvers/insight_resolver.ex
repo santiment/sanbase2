@@ -209,9 +209,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, :insights_count_per_user, id)
     |> on_load(fn loader ->
-      {:ok,
-       Dataloader.get(loader, SanbaseDataloader, :insights_count_per_user, id) ||
-         %{total_count: 0, draft_count: 0, pulse_count: 0, paywall_count: 0}}
+      case Dataloader.get(loader, SanbaseDataloader, :insights_count_per_user, id) do
+        {:ok, val} ->
+          val = val || %{total_count: 0, draft_count: 0, pulse_count: 0, paywall_count: 0}
+          {:ok, val}
+
+        {:error, error} ->
+          {:error, error}
+      end
     end)
   end
 
@@ -228,7 +233,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, :insights_comments_count, id)
     |> on_load(fn loader ->
-      {:ok, Dataloader.get(loader, SanbaseDataloader, :insights_comments_count, id) || 0}
+      case Dataloader.get(loader, SanbaseDataloader, :insights_comments_count, id) do
+        {:ok, val} -> {:ok, val || 0}
+        {:error, error} -> {:error, error}
+      end
     end)
   end
 

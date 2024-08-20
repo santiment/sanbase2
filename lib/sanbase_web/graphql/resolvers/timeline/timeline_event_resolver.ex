@@ -68,7 +68,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.TimelineEventResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, :timeline_events_comments_count, id)
     |> on_load(fn loader ->
-      {:ok, Dataloader.get(loader, SanbaseDataloader, :timeline_events_comments_count, id) || 0}
+      case Dataloader.get(loader, SanbaseDataloader, :timeline_events_comments_count, id) do
+        {:ok, val} -> {:ok, val || 0}
+        {:error, error} -> {:error, error}
+      end
     end)
   end
 end

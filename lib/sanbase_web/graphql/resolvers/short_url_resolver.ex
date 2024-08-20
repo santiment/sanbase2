@@ -42,8 +42,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ShortUrlResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, :short_urls_comments_count, id)
     |> on_load(fn loader ->
-      {:ok, Dataloader.get(loader, SanbaseDataloader, :short_urls_comments_count, id) || 0}
+      Dataloader.get(loader, SanbaseDataloader, :short_urls_comments_count, id) || 0
     end)
+    |> dbg()
   end
 
   # Private functions

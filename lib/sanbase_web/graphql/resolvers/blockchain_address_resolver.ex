@@ -269,28 +269,29 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
         loader
         |> Dataloader.load(SanbaseDataloader, :address_labels, address)
         |> on_load(fn loader ->
-          santiment_labels =
-            Dataloader.get(loader, SanbaseDataloader, :address_labels, address) ||
-              []
+          with {:ok, santiment_labels} <-
+                 Dataloader.get(loader, SanbaseDataloader, :address_labels, address) do
+            santiment_labels = santiment_labels || []
 
-          # The root can be built either from a BlockchainAddress in case the
-          # `blockchain_address` query is used, or from a BlockchainAddressUserPair
-          # in casethe address is part of a watchlist. In the second case, the root
-          # has an additional `labels` key which holds the list of user-defined labels
-          # for that address. The santiment defined labels from CH are provided with a
-          # `origin: "santiment"` key-value pair so they could be distinguished from
-          # the user-defined labels.
-          user_labels =
-            Map.get(root, :labels, [])
-            |> Enum.map(fn label ->
-              label |> Map.put(:origin, "user")
-            end)
+            # The root can be built either from a BlockchainAddress in case the
+            # `blockchain_address` query is used, or from a BlockchainAddressUserPair
+            # in casethe address is part of a watchlist. In the second case, the root
+            # has an additional `labels` key which holds the list of user-defined labels
+            # for that address. The santiment defined labels from CH are provided with a
+            # `origin: "santiment"` key-value pair so they could be distinguished from
+            # the user-defined labels.
+            user_labels =
+              Map.get(root, :labels, [])
+              |> Enum.map(fn label ->
+                label |> Map.put(:origin, "user")
+              end)
 
-          labels =
-            (user_labels ++ santiment_labels)
-            |> Enum.sort_by(& &1.name)
+            labels =
+              (user_labels ++ santiment_labels)
+              |> Enum.sort_by(& &1.name)
 
-          {:ok, labels}
+            {:ok, labels}
+          end
         end)
     end
   end

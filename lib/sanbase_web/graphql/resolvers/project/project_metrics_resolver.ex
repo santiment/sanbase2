@@ -93,25 +93,28 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
         selector: {metric, from, to, opts}
       }
 
+      error_on_failed_fetch = Map.get(args, :error_on_failed_fetch, false)
+
       loader
       |> Dataloader.load(SanbaseDataloader, :aggregated_metric, data)
-      |> on_load(&aggregated_metric_from_loader(&1, data))
+      |> on_load(&aggregated_metric_from_loader(&1, data, error_on_failed_fetch))
     end
   end
 
   # Private functions
 
-  defp aggregated_metric_from_loader(loader, data) do
+  defp aggregated_metric_from_loader(loader, data, error_on_failed_fetch) do
     %{selector: selector, slug: slug, metric: metric} = data
 
-    loader
-    |> Dataloader.get(SanbaseDataloader, :aggregated_metric, selector)
-    |> case do
-      map when is_map(map) ->
+    case Dataloader.get(loader, SanbaseDataloader, :aggregated_metric, selector) do
+      {:ok, map} when is_list(map) ->
         aggregated_metric_from_loader_map(map, slug, metric, data[:opts])
 
-      _ ->
+      _ignored when error_on_failed_fetch == false ->
         {:nocache, {:ok, nil}}
+
+      _ignored when error_on_failed_fetch == true ->
+        {:error, "Failed to fetch #{metric} for #{slug} while executing aggregatedTimeseriesData"}
     end
   end
 

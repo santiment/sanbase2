@@ -17,7 +17,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, :project_by_slug, slug)
     |> on_load(fn loader ->
-      {:ok, Dataloader.get(loader, SanbaseDataloader, :project_by_slug, slug)}
+      Dataloader.get(loader, SanbaseDataloader, :project_by_slug, slug)
     end)
   end
 

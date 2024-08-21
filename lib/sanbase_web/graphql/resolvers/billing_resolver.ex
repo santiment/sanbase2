@@ -317,6 +317,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
   def update_default_payment_instrument(_root, %{card_token: card_token}, %{
         context: %{auth: %{current_user: current_user}}
       }) do
+    if current_user.stripe_customer_id do
+      StripeApi.detach_payment_method(current_user.stripe_customer_id)
+    end
+
     Billing.create_or_update_stripe_customer(current_user, card_token)
     |> case do
       {:ok, _} ->

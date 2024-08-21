@@ -333,6 +333,8 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field(:is_deprecated, non_null(:boolean))
     field(:hard_deprecate_after, :datetime)
     field(:docs, list_of(:docs_object))
+    field(:available_selectors, list_of(:selector_name))
+    field(:required_selectors, list_of(list_of(:selector_name)))
   end
 
   object :api_call_data do

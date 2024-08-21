@@ -17,7 +17,9 @@ defmodule Sanbase.Billing.Plan.Restrictions do
           restricted_to: DateTime.t() | nil,
           is_deprecated: boolean(),
           hard_deprecate_after: DateTime.t() | nil,
-          docs: list(String.t())
+          docs: list(String.t()),
+          available_selectors: list(atom()),
+          required_selectors: list(list(atom()))
         }
 
   @type query_or_argument :: {:metric, String.t()} | {:signal, String.t()} | {:query, atom()}
@@ -174,7 +176,9 @@ defmodule Sanbase.Billing.Plan.Restrictions do
           internal_name: metadata.internal_metric,
           is_deprecated: metadata.is_deprecated,
           hard_deprecate_after: metadata.hard_deprecate_after,
-          docs: metadata.docs
+          docs: metadata.docs,
+          available_selectors: metadata.available_selectors,
+          required_selectors: metadata.required_selectors
         }
 
       {:error, error} ->
@@ -187,7 +191,9 @@ defmodule Sanbase.Billing.Plan.Restrictions do
       {:ok, metadata} ->
         %{
           min_interval: metadata.min_interval,
-          internal_name: metadata.internal_signal
+          internal_name: metadata.internal_signal,
+          available_selectors: [],
+          required_selectors: []
         }
 
       {:error, error} ->
@@ -219,7 +225,13 @@ defmodule Sanbase.Billing.Plan.Restrictions do
             ],
        do: %{min_interval: "5m", internal_name: query}
 
-  defp additional_data("query", query), do: %{min_interval: nil, internal_name: query}
+  defp additional_data("query", query),
+    do: %{
+      min_interval: nil,
+      internal_name: query,
+      available_selectors: [],
+      required_selectors: []
+    }
 
   defp get_extra_queries(_plan_name, _product_code) do
     [not_restricted_access_map("query", "ethSpentOverTime")]

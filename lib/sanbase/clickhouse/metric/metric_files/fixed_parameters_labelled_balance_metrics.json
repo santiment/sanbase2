@@ -64,8 +64,8 @@
     },
     "version": "2020-05-27",
     "access": "restricted",
-    "selectors": ["slug"],
-    "required_selectors": ["slug"],
+    "selectors": ["slug", "label_fqn", "label_fqns"],
+    "required_selectors": ["slug", "label_fqn|label_fqns"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"

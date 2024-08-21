@@ -323,6 +323,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       arg(:aggregation, :aggregation, default_value: nil)
       arg(:include_incomplete_data, :boolean, default_value: false)
       arg(:caching_params, :caching_params_input_object)
+      arg(:error_on_data_fetch_fail, :boolean, default_value: false)
 
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)
@@ -358,6 +359,32 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:description, :string)
     field(:long_description, :string)
     field(:token_decimals, :integer)
+
+    @desc ~s"""
+    Shows if a project is marked as hidden.
+
+    Hidden projects are excluded from lists of projects
+    like allProjects and screeners that are filtered by a condition.
+
+    Hidden projects can be accessed when directly queried via project or projectBySlug,
+    or by passing the `includeHidden: true` flag to `allProjects`.
+    """
+    field(:is_hidden, non_null(:boolean))
+
+    @desc ~s"""
+    If the project is hidden, this field shows the datetime since which the project
+    is hidden.
+
+    Not all hidden projects have a hidden_since field. The projects that are hidden
+    before August 2024 don't have their hidden_since stored.
+    """
+    field(:hidden_since, :datetime)
+
+    @desc ~s"""
+    If the project is hidden, this field can contain the reason why the project is
+    hidden.
+    """
+    field(:hidden_reason, :string)
 
     @desc ~s"""
     A full list of all the ecosystem this project contributes to

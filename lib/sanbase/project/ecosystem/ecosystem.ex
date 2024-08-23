@@ -57,6 +57,11 @@ defmodule Sanbase.Ecosystem do
     end
   end
 
+  @spec all() :: list(t())
+  def all() do
+    Sanbase.Repo.all(__MODULE__)
+  end
+
   @spec get_ecosystems(:all | list(String.t())) :: {:ok, list(String.t())}
   def get_ecosystems(ecosystems_filter \\ :all) do
     query = from(e in __MODULE__, select: e.ecosystem)

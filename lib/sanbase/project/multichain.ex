@@ -10,11 +10,11 @@ defmodule Sanbase.Project.Multichain do
   alias Sanbase.Project
 
   @prefix_mapping %{
-    "arb-" => %{ecosystem: "arbitrum"},
-    "o-" => %{ecosystem: "optimism"},
-    "a-" => %{ecosystem: "avalanche"},
-    "p-" => %{ecosystem: "polygon"},
-    "bnb-" => %{ecosystem: "binance-smart-chain"}
+    "arb-" => %{ecosystem: "Arbitrum"},
+    "o-" => %{ecosystem: "Optimism"},
+    "a-" => %{ecosystem: "Avalanche"},
+    "p-" => %{ecosystem: "Polygon"},
+    "bnb-" => %{ecosystem: "BNB Chain"}
   }
 
   @doc """
@@ -39,11 +39,13 @@ defmodule Sanbase.Project.Multichain do
   end
 
   def fill_missing_data_by_prefix() do
-    ecosystems_map = Sanbase.Ecosystem.get_ecosystems() |> Map.new(fn e -> {e.name, e.id} end)
+    # The project slug is always lowercased, the ecosystem might be not
+    ecosystems_map =
+      Sanbase.Ecosystem.all() |> Map.new(fn e -> {e.ecosystem, e.id} end)
 
     Project.List.projects()
-    |> Enum.filter(& &1.multichain_project_group_key)
-    |> Enum.each(fn project ->
+    |> Enum.filter(&is_nil(&1.multichain_project_group_key))
+    |> Enum.map(fn project ->
       maybe_mark_as_multichain(project, ecosystems_map)
     end)
   end
@@ -60,7 +62,7 @@ defmodule Sanbase.Project.Multichain do
       {:error, :nomatch} ->
         :ok
 
-      {:ok, {prefix, ecosystem}} ->
+      {:ok, {prefix, %{ecosystem: ecosystem}}} ->
         if not Map.has_key?(ecosystems_map, ecosystem) do
           raise("""
           Ecosystem #{ecosystem} should exist but it does not.

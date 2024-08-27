@@ -137,6 +137,11 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   @external_resource path_to.("active_holders_metrics.json")
   @external_resource path_to.("fixed_parameters_labelled_balance_metrics.json")
 
+  # Hidden metrics
+  # These metrics are available for fetching, but they do not appear in any
+  # available metrics API calls
+  @external_resource path_to.("hidden_social_metrics.json")
+
   # Deprecated metrics
   @external_resource path_to_deprecated.("deprecated_change_metrics.json")
   @external_resource path_to_deprecated.("deprecated_labeled_between_labels_flow_metrics.json")
@@ -278,6 +283,15 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
                                |> Enum.reject(fn {_k, v} -> v == nil end)
                                |> Map.new()
 
+  @hidden_metrics_mapset Helper.name_to_field_map(
+                           @metrics_json_including_deprecated,
+                           "is_hidden",
+                           required?: false
+                         )
+                         |> Enum.filter(fn {_k, v} -> v == true end)
+                         |> Enum.map(fn {k, _v} -> k end)
+                         |> MapSet.new()
+
   @metrics_list @metrics_json |> Enum.map(fn %{"name" => name} -> name end)
   @metrics_mapset MapSet.new(@metrics_list)
 
@@ -319,6 +333,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   def metrics_label_map(), do: @metrics_label_map |> transform()
   def deprecated_metrics_map(), do: @deprecated_metrics_map
   def soft_deprecated_metrics_map(), do: @soft_deprecated_metrics_map
+  def hidden_metrics_mapset(), do: @hidden_metrics_mapset |> transform()
   def timebound_flag_map(), do: @timebound_flag_map |> transform()
 
   def metrics_with_access(level) when level in [:free, :restricted] do

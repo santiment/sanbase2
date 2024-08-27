@@ -110,6 +110,16 @@ defmodule Sanbase.Metric do
   end
 
   @doc ~s"""
+  Some of the metrics need to be hidden from the API queries
+  that return list of available metrics. These metrics will still be fetchable
+  if the name is known.
+  """
+  @spec hidden_metrics() :: MapSet.t()
+  def hidden_metrics() do
+    Sanbase.Clickhouse.MetricAdapter.FileHandler.hidden_metrics_mapset()
+  end
+
+  @doc ~s"""
   Check if a metric has incomplete data.
 
   Incomplete data applies to daily metrics, whose value for the current day
@@ -560,18 +570,24 @@ defmodule Sanbase.Metric do
   def available_metrics([]), do: @metrics
 
   def available_metrics(opts) do
-    case Keyword.get(opts, :filter) do
-      nil ->
-        @metrics
+    metrics =
+      case Keyword.get(opts, :filter) do
+        nil ->
+          @metrics
 
-      :min_interval_less_or_equal ->
-        filter_interval = Keyword.fetch!(opts, :filter_interval)
-        filter_metrics_by_min_interval(@metrics, filter_interval, &<=/2)
+        :min_interval_less_or_equal ->
+          filter_interval = Keyword.fetch!(opts, :filter_interval)
+          filter_metrics_by_min_interval(@metrics, filter_interval, &<=/2)
 
-      :min_interval_greater_or_equal ->
-        filter_interval = Keyword.fetch!(opts, :filter_interval)
-        filter_metrics_by_min_interval(@metrics, filter_interval, &>=/2)
-    end
+        :min_interval_greater_or_equal ->
+          filter_interval = Keyword.fetch!(opts, :filter_interval)
+          filter_metrics_by_min_interval(@metrics, filter_interval, &>=/2)
+      end
+
+    hidden = hidden_metrics()
+
+    metrics
+    |> Enum.reject(&(&1 in hidden))
   end
 
   @doc ~s"""
@@ -582,10 +598,13 @@ defmodule Sanbase.Metric do
   @spec available_metrics_for_selector(any) :: available_metrics_with_nocache_result
 
   def available_metrics_for_selector(%{address: _address}) do
+    hidden = hidden_metrics()
+
     metrics =
       FileHandler.selectors_map()
       |> Enum.filter(fn {_k, v} -> :address in v end)
       |> Enum.map(fn {k, _v} -> k end)
+      |> Enum.reject(&(&1 in hidden))
 
     {:ok, metrics}
   end
@@ -901,6 +920,8 @@ defmodule Sanbase.Metric do
     # metric modules returned an :error tuple, wrap the result in a :nocache
     # tuple so the next attempt to fetch the data will try to fetch the metrics
     # again.
+    hidden = hidden_metrics()
+
     available_metrics =
       Enum.flat_map(metrics_in_modules, fn
         {:ok, metrics} -> metrics
@@ -908,6 +929,7 @@ defmodule Sanbase.Metric do
       end)
       |> maybe_replace_metrics(selector)
       |> Enum.uniq()
+      |> Enum.reject(&(&1 in hidden))
       |> Enum.sort()
 
     has_errors? =

@@ -50,19 +50,26 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   def get_available_metrics(_root, %{plan: plan, product: product} = args, _resolution) do
     product_code = product |> Atom.to_string() |> String.upcase()
     plan_name = plan |> to_string() |> String.upcase()
-    metrics = AccessChecker.get_available_metrics_for_plan(plan_name, product_code)
 
-    metrics = maybe_filter_incomplete_metrics(metrics, args[:has_incomplete_data])
-    metrics = maybe_apply_regex_filter(metrics, args[:name_regex_filter])
-    metrics = metrics |> Enum.uniq() |> Enum.sort(:asc)
+    metrics =
+      AccessChecker.get_available_metrics_for_plan(plan_name, product_code)
+      |> maybe_filter_incomplete_metrics(args[:has_incomplete_data])
+      |> maybe_apply_regex_filter(args[:name_regex_filter])
+      |> remove_hidden_metrics()
+      |> Enum.uniq()
+      |> Enum.sort(:asc)
+
     {:ok, metrics}
   end
 
   def get_available_metrics(_root, args, _resolution) do
-    metrics = Metric.available_metrics()
-    metrics = maybe_filter_incomplete_metrics(metrics, args[:has_incomplete_data])
-    metrics = maybe_apply_regex_filter(metrics, args[:name_regex_filter])
-    metrics = metrics |> Enum.uniq() |> Enum.sort(:asc)
+    metrics =
+      Metric.available_metrics()
+      |> maybe_filter_incomplete_metrics(args[:has_incomplete_data])
+      |> maybe_apply_regex_filter(args[:name_regex_filter])
+      |> remove_hidden_metrics()
+      |> Enum.uniq()
+      |> Enum.sort(:asc)
 
     {:ok, metrics}
   end
@@ -507,5 +514,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   defp maybe_apply_regex_filter(metrics, regex) do
     {:ok, regex} = Regex.compile(regex)
     Enum.filter(metrics, fn metric -> Regex.match?(regex, metric) end)
+  end
+
+  defp remove_hidden_metrics(metrics) do
+    hidden_metrics = Sanbase.Metric.hidden_metrics()
+
+    metrics
+    |> Enum.reject(&(&1 in hidden_metrics))
   end
 end

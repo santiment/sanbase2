@@ -6936,5 +6936,25 @@
     "has_incomplete_data": false,
     "data_type": "timeseries",
     "docs_links": ["https://academy.santiment.net/metrics/xrpl-metrics/dex-volume"]
+  },
+  {
+    "human_readable_name": "Fully Diluted Valuation",
+    "name": "fully_diluted_valuation_usd",
+    "metric": "fully_diluted_valuation_usd",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/fully-diluted-valuation"]
   }
 ]

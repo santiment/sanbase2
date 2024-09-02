@@ -176,6 +176,15 @@ defmodule Sanbase.DiscordBot.AiServer do
     :ok
   end
 
+  def manage_postgres_index2() do
+    if prod?() do
+      url = "#{ai_server_url()}/postgres/index2"
+      HTTPoison.put(url, Jason.encode!(%{hours: 1}), [{"Content-Type", "application/json"}])
+    end
+
+    :ok
+  end
+
   # testing
   def search_insights(query) do
     url = "#{ai_server_url()}/question/insights"

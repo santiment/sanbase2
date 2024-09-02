@@ -175,6 +175,10 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       schedule: "15 * * * *",
       task: {Sanbase.DiscordBot.AiServer, :manage_postgres_index, []}
     ],
+    manage_postgres_index2: [
+      schedule: "10 * * * *",
+      task: {Sanbase.DiscordBot.AiServer, :manage_postgres_index2, []}
+    ],
     renew_available_metrics_slugs: [
       schedule: "@daily",
       task: {Sanbase.AvailableMetrics, :update_all, []}

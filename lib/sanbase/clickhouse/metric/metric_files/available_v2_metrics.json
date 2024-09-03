@@ -4498,6 +4498,46 @@
     "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound-v3"]
   },
   {
+    "human_readable_name": "Compound v3 collateral total supplied",
+    "name": "compound_v3_collateral_total_supplied",
+    "metric": "compoundv3_collateral_total_supplied",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound-v3"]
+  },
+  {
+    "human_readable_name": "Compound v3 collateral total supplied in USD",
+    "name": "compound_v3_collateral_total_supplied_usd",
+    "metric": "compoundv3_collateral_total_supplied_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound-v3"]
+  },
+  {
     "human_readable_name": "Compound v3 total supplied",
     "name": "compound_v3_total_supplied",
     "metric": "compoundv3_total_supplied",
@@ -4618,9 +4658,9 @@
     "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound-v3"]
   },
   {
-    "human_readable_name": "Compound v3 ETH market supply APY",
-    "name": "compound_v3_eth_market_supply_apy",
-    "metric": "compoundv3_eth_market_supply_rate",
+    "human_readable_name": "Compound v3 supply APY",
+    "name": "compound_v3_supply_apy",
+    "metric": "compoundv3_supply_apy",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -4638,49 +4678,9 @@
     "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound-v3"]
   },
   {
-    "human_readable_name": "Compound v3 ETH market borrow APY",
-    "name": "compound_v3_eth_market_borrow_apy",
-    "metric": "compoundv3_eth_market_borrow_rate",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound-v3"]
-  },
-  {
-    "human_readable_name": "Compound v3 USDC market supply APY",
-    "name": "compound_v3_usdc_market_supply_apy",
-    "metric": "compoundv3_usdc_market_supply_rate",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound-v3"]
-  },
-  {
-    "human_readable_name": "Compound v3 USDC market borrow APY",
-    "name": "compound_v3_usdc_market_borrow_apy",
-    "metric": "compoundv3_usdc_market_borrow_rate",
+    "human_readable_name": "Compound v3 borrow APY",
+    "name": "compound_v3_borrow_apy",
+    "metric": "compoundv3_borrow_apy",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [

@@ -1,5 +1,5 @@
 defmodule Sanbase.QueriesMocks do
-  def mocked_clickhouse_result() do
+  def mocked_clickhouse_result(slug \\ "bitcoin") do
     %Clickhousex.Result{
       columns: ["asset_id", "metric_id", "dt", "value", "computed_at"],
       column_types: ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
@@ -7,8 +7,8 @@ defmodule Sanbase.QueriesMocks do
       num_rows: 2,
       query_id: "177a5a3d-072b-48ac-8cf5-d8375c8314ef",
       rows: [
-        [2503, 250, ~N[2008-12-10 00:00:00], +0.0, ~N[2020-02-28 15:18:42]],
-        [2503, 250, ~N[2008-12-10 00:05:00], +0.0, ~N[2020-02-28 15:18:42]]
+        [slug, 250, ~N[2008-12-10 00:00:00], +0.0, ~N[2020-02-28 15:18:42]],
+        [slug, 250, ~N[2008-12-10 00:05:00], +0.0, ~N[2020-02-28 15:18:42]]
       ],
       summary: %{
         "read_bytes" => "0",

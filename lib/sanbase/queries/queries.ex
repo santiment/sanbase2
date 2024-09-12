@@ -125,6 +125,12 @@ defmodule Sanbase.Queries do
     Queries.Authorization.user_plan_to_dynamic_repo(product_code, plan_name)
   end
 
+  def process_put_dynamic_repo(product_code, plan_name) do
+    Process.put(:queries_dynamic_repo, user_plan_to_dynamic_repo(product_code, plan_name))
+
+    :ok
+  end
+
   @doc ~s"""
   Get a query in order to read or run it.
   This can be done by owner or by anyone if the query is public.
@@ -145,21 +151,32 @@ defmodule Sanbase.Queries do
   The query is identified by the dashboard_query_mapping_id. This can be
   done by owner or by anyone if the dashboard is public.
   """
-  @spec get_dashboard_query(dashboard_id, dashboard_query_mapping_id, user_id) ::
+  @spec get_dashboard_query(
+          dashboard_id,
+          dashboard_query_mapping_id,
+          user_id,
+          parameters_override :: map()
+        ) ::
           {:ok, Query.t()} | {:error, String.t()}
-  def get_dashboard_query(dashboard_id, mapping_id, querying_user_id) do
+  def get_dashboard_query(dashboard_id, mapping_id, querying_user_id, parameters_override \\ %{}) do
     query = DashboardQueryMapping.by_id(mapping_id)
 
     with %DashboardQueryMapping{dashboard: dashboard, query: query} <- Repo.one(query),
          %Dashboard{id: ^dashboard_id} <- dashboard,
          true <- dashboard.is_public or dashboard.user_id == querying_user_id,
-         {:ok, query} <- Sanbase.Dashboards.apply_global_parameters(query, dashboard, mapping_id) do
+         {:ok, query} <-
+           Sanbase.Dashboards.apply_global_parameters(
+             query,
+             dashboard,
+             mapping_id,
+             parameters_override
+           ) do
       {:ok, query}
     else
       _ ->
         {:error,
          """
-         Dashboard query mapping with id #{mapping_id} does not exist,
+         Dashboard query mapping with id #{mapping_id} does not exist, \
          it is not part of dashboard #{dashboard_id}, or the dashboard is not public.
          """}
     end

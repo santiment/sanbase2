@@ -176,7 +176,7 @@ defmodule Sanbase.Queries do
       _ ->
         {:error,
          """
-         Dashboard query mapping with id #{mapping_id} does not exist,
+         Dashboard query mapping with id #{mapping_id} does not exist, \
          it is not part of dashboard #{dashboard_id}, or the dashboard is not public.
          """}
     end

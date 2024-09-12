@@ -1044,7 +1044,7 @@ defmodule Sanbase.Dashboards do
 
   defp mapping_error(dashboard_query_mapping_id, dashboard_id, querying_user_id) do
     """
-    Dashboard query mapping with id #{dashboard_query_mapping_id} does not exist,
+    Dashboard query mapping with id #{dashboard_query_mapping_id} does not exist, \
     it is not part of dashboard #{dashboard_id}, or the dashboard is not owned by user #{querying_user_id}.
     """
   end

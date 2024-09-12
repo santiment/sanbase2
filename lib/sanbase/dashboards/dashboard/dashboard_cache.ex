@@ -167,8 +167,8 @@ defmodule Sanbase.Dashboards.DashboardCache do
         |> maybe_transform_error()
 
       _ ->
-        {:error, "Dashboard with id #{dashboard_id} does not exist or the dashboard\
-         is private and the user with id #{querying_user_id} is not the owner of it."}
+        {:error,
+         "Dashboard with id #{dashboard_id} does not exist or the dashboard is private and the user with id #{querying_user_id} is not the owner of it."}
     end
   end
 

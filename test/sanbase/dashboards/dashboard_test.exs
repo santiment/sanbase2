@@ -56,7 +56,7 @@ defmodule Sanbase.DashboardsTest do
 
       # Cannot get other user private dashboard
       {:error, error_msg} = Dashboards.get_dashboard(dashboard.id, user2.id)
-      assert error_msg =~ "does not exist, or it is owned by another user"
+      assert error_msg =~ "does not exist, or it is private and owned by another user"
 
       # Can get other user public dashboard
       {:ok, dashboard} =

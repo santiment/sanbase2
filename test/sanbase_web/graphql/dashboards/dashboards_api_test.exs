@@ -10,9 +10,11 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
 
   setup do
     user = insert(:user)
+    user2 = insert(:user)
     conn = setup_jwt_auth(build_conn(), user)
+    conn2 = setup_jwt_auth(build_conn(), user2)
 
-    %{conn: conn, user: user}
+    %{conn: conn, conn2: conn2, user: user, user2: user2}
   end
 
   describe "voting" do
@@ -746,6 +748,102 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
 
         assert datetime_close_to_now?(Sanbase.DateTimeUtils.from_iso8601!(query_start_time))
         assert datetime_close_to_now?(Sanbase.DateTimeUtils.from_iso8601!(query_end_time))
+      end)
+    end
+
+    test "other users can store dashboards cache", context do
+      # In test env the storing runs not async and there's a 7500ms sleep
+      Application.put_env(:__sanbase_queries__, :__store_execution_details__, false)
+
+      on_exit(fn ->
+        Application.delete_env(:__sanbase_queries__, :__store_execution_details__)
+      end)
+
+      {:ok, query} = create_query(context.user.id)
+
+      {:ok, dashboard} =
+        Sanbase.Dashboards.create_dashboard(%{name: "Dash", is_public: true}, context.user.id)
+
+      {:ok, dashboard2} =
+        Sanbase.Dashboards.create_dashboard(%{name: "Dash", is_public: false}, context.user.id)
+
+      {:ok, mapping} = create_dashboard_query(context.conn, dashboard, query)
+      {:ok, mapping2} = create_dashboard_query(context.conn, dashboard2, query)
+
+      mock_fun =
+        Sanbase.Mock.wrap_consecutives(
+          [
+            fn -> {:ok, mocked_clickhouse_result()} end,
+            fn -> {:ok, mocked_execution_details_result()} end
+          ],
+          arity: 2
+        )
+
+      Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        # Users can run and cache other users public dashboards
+        result =
+          run_sql_query(context.conn2, :run_dashboard_sql_query, %{
+            dashboard_id: dashboard.id,
+            dashboard_query_mapping_id: mapping["id"],
+            store_execution: true
+          })
+
+        assert "errors" not in Map.keys(result)
+
+        assert %{} = get_in(result, ["data", "runDashboardSqlQuery"])
+
+        cache =
+          get_cached_dashboard_queries_executions(context.conn, %{
+            dashboard_id: dashboard.id
+          })
+          |> get_in(["data", "getCachedDashboardQueriesExecutions"])
+
+        # A cache record has been created
+        assert %{"queries" => [_]} = cache
+
+        # Users cannot run and cache other users private dashboards
+        result =
+          run_sql_query(context.conn2, :run_dashboard_sql_query, %{
+            dashboard_id: dashboard2.id,
+            dashboard_query_mapping_id: mapping2["id"],
+            store_execution: true
+          })
+
+        assert "errors" in Map.keys(result)
+
+        assert get_in(result, ["errors", Access.at(0), "message"]) =~
+                 "does not exist, it is not part of dashboard #{dashboard2.id}, or the dashboard is not public"
+
+        error_msg =
+          get_cached_dashboard_queries_executions(context.conn2, %{
+            dashboard_id: dashboard2.id
+          })
+          |> get_in(["errors", Access.at(0), "message"])
+
+        assert error_msg =~
+                 "does not exist or the dashboard is private and the user with id #{context.user2.id} is not the owner of it."
+
+        # Users can run and cache their own private dashboards
+        result2 =
+          run_sql_query(context.conn, :run_dashboard_sql_query, %{
+            dashboard_id: dashboard2.id,
+            dashboard_query_mapping_id: mapping2["id"],
+            store_execution: true
+          })
+
+        assert "errors" not in Map.keys(result2)
+
+        assert %{} = get_in(result2, ["data", "runDashboardSqlQuery"])
+
+        cache2 =
+          get_cached_dashboard_queries_executions(context.conn, %{
+            dashboard_id: dashboard2.id
+          })
+          |> get_in(["data", "getCachedDashboardQueriesExecutions"])
+
+        # A cache record has been created
+        assert %{"queries" => [_]} = cache2
       end)
     end
 

@@ -42,7 +42,8 @@ defmodule SanbaseWeb.DataController do
     "telegram_chat_id": null,
     "github_organizations": "ethereum",
     "social_volume_query": "eth OR ether OR ethereum NOT cash NOT gold NOT classic",
-    "coinmarketcap_id": "ethereum"
+    "coinmarketcap_id": "ethereum",
+    "twitter_handle": "ethereum"
   }
   """
   @spec projects_data(Plug.Conn.t(), map()) :: Plug.Conn.t()
@@ -284,6 +285,12 @@ defmodule SanbaseWeb.DataController do
         rank = project_to_rank(project)
         social_volume_query = project_to_social_volume_query(project)
 
+        twitter_handle =
+          case Project.twitter_handle(project) do
+            {:ok, twitter_handle} -> twitter_handle
+            _ -> nil
+          end
+
         project_json =
           %{
             slug: project.slug,
@@ -296,7 +303,8 @@ defmodule SanbaseWeb.DataController do
             social_volume_query: social_volume_query,
             rank: rank,
             telegram_chat_id: project.telegram_chat_id,
-            coinmarketcap_id: project.coinmarketcap_id
+            coinmarketcap_id: project.coinmarketcap_id,
+            twitter_handle: twitter_handle
           }
           |> Jason.encode!()
 

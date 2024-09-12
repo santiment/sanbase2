@@ -14,7 +14,8 @@ defmodule SanbaseWeb.DataControllerTest do
           build(:github_organization),
           build(:github_organization),
           build(:github_organization)
-        ]
+        ],
+        twitter_link: "https://twitter.com/some_twitter_handle"
       )
       |> update_latest_coinmarketcap_data(%{rank: 20})
 
@@ -43,6 +44,12 @@ defmodule SanbaseWeb.DataControllerTest do
     {:ok, contract, decimals} = Project.contract_info(project)
     {:ok, github_organizations} = Project.github_organizations(project)
 
+    twitter_handle =
+      case Project.twitter_handle(project) do
+        {:ok, handle} -> handle
+        {:error, _} -> nil
+      end
+
     new_fields =
       cond do
         project.id == context.p1.id ->
@@ -63,7 +70,8 @@ defmodule SanbaseWeb.DataControllerTest do
       "name" => project.name,
       "infrastructure" => infrastructure.code,
       "github_organizations" => github_organizations |> Enum.sort() |> Enum.join(","),
-      "coinmarketcap_id" => project.coinmarketcap_id
+      "coinmarketcap_id" => project.coinmarketcap_id,
+      "twitter_handle" => twitter_handle
     }
     |> Map.merge(new_fields)
   end

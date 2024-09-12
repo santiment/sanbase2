@@ -92,7 +92,7 @@ If you are reading this then most probably you have followed the [Getting Starte
 ) and specifically the VPN part. All you need to do in order to connect to the stage clickhouse is connect to the stage VPN and add the following line to the `.env.dev` file:
 
 ```bash
-CLICKHOUSE_DATABASE_URL="ecto://default@clickhouse.stage.san:30901/default"
+CLICKHOUSE_DATABASE_URL="ecto://sanbase@clickhouse.stage.san:30901/default"
 ```
 
 All the ENV vars for connecting to the stage/prod services with VPN can be found in the `.env.example` file. When some env var is needed, it can be copied from the `.env.example` to the `.env.dev` file and remove the comment (`#`) in order to enable it.

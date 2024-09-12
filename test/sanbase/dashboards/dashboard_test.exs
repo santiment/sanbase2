@@ -56,7 +56,7 @@ defmodule Sanbase.DashboardsTest do
 
       # Cannot get other user private dashboard
       {:error, error_msg} = Dashboards.get_dashboard(dashboard.id, user2.id)
-      assert error_msg =~ "does not exist, or it is private and owned by another user"
+      assert error_msg =~ "does not exist, or it is owned by another user"
 
       # Can get other user public dashboard
       {:ok, dashboard} =
@@ -123,7 +123,7 @@ defmodule Sanbase.DashboardsTest do
       {:error, error_msg} =
         Dashboards.update_dashboard(dashboard.id, update_args, user2.id)
 
-      assert error_msg =~ "does not exist, or it is owner by another user"
+      assert error_msg =~ "does not exist, or it is owned by another user"
     end
 
     test "delete dashboard", context do
@@ -131,7 +131,7 @@ defmodule Sanbase.DashboardsTest do
 
       # Cannot delete other users dashboards
       {:error, error_msg} = Dashboards.delete_dashboard(dashboard.id, user2.id)
-      assert error_msg =~ "does not exist, or it is owner by another user"
+      assert error_msg =~ "does not exist, or it is owned by another user"
 
       # Can delete own dashboard
       assert {:ok, _} = Dashboards.delete_dashboard(dashboard.id, user.id)
@@ -159,6 +159,7 @@ defmodule Sanbase.DashboardsTest do
         {:ok, dashboard_cache} =
           Dashboards.cache_dashboard_query_execution(
             dashboard.id,
+            _parameters_override = %{},
             dashboard_query_mapping.id,
             result,
             user.id
@@ -173,7 +174,11 @@ defmodule Sanbase.DashboardsTest do
 
       # Test outside of the mock to make sure no database queries are made
       {:ok, dashboard_cache} =
-        Dashboards.get_cached_dashboard_queries_executions(dashboard.id, user.id)
+        Dashboards.get_cached_dashboard_queries_executions(
+          dashboard.id,
+          _parameters_override = %{},
+          user.id
+        )
 
       assert %Dashboards.DashboardCache{
                queries: %{},
@@ -219,7 +224,7 @@ defmodule Sanbase.DashboardsTest do
              } = dashboard_cache.queries[dashboard_query_mapping.id]
     end
 
-    test "cannot update other people dashboard cache", context do
+    test "cannot update other people dashboard cache via cacheDashboardQueryExection", context do
       %{
         query: query,
         dashboard_query_mapping: dashboard_query_mapping,
@@ -238,12 +243,14 @@ defmodule Sanbase.DashboardsTest do
         assert {:error, error_msg} =
                  Sanbase.Dashboards.cache_dashboard_query_execution(
                    dashboard.id,
+                   _parameters_override = %{},
                    dashboard_query_mapping.id,
                    result,
                    user2.id
                  )
 
-        assert error_msg =~ "Dashboard does not exist, or it is owner by another user."
+        assert error_msg =~
+                 "Dashboard does not exist, or it is private and owned by another user."
       end)
     end
   end

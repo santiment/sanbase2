@@ -45,6 +45,7 @@ defmodule Sanbase.Dashboards.DashboardQueryMapping do
     from(d in __MODULE__,
       where: d.id == ^id
     )
+    |> maybe_lock(opts)
     |> maybe_preload(opts)
   end
 
@@ -83,6 +84,16 @@ defmodule Sanbase.Dashboards.DashboardQueryMapping do
         preload = Keyword.get(opts, :preload, @preload)
 
         query |> preload(^preload)
+
+      false ->
+        query
+    end
+  end
+
+  defp maybe_lock(query, opts) do
+    case Keyword.get(opts, :lock_for_update, false) do
+      true ->
+        query |> lock("FOR UPDATE")
 
       false ->
         query

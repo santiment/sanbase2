@@ -101,21 +101,49 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
 
   def run_dashboard_sql_query(
         _root,
-        %{dashboard_id: dashboard_id, dashboard_query_mapping_id: mapping_id},
-        %{context: %{auth: %{current_user: user}} = context} = resolution
+        %{dashboard_id: dashboard_id, dashboard_query_mapping_id: mapping_id} = args,
+        %{context: %{auth: %{current_user: user, plan: plan}, subscription_product: product}} =
+          resolution
       ) do
+    parameters_override = Map.get(args, :parameters_override, %{})
+    query_metadata = QueryMetadata.from_resolution(resolution)
+    cache? = Map.get(args, :store_execution, false)
+
     # get_dashboard_query/3 is a function that returns a query struct with the
     # query's local parameter being overriden by the dashboard global parameters
-    with :ok <-
-           Queries.user_can_execute_query(user, context.subscription_product, context.auth.plan),
-         {:ok, query} <- Queries.get_dashboard_query(dashboard_id, mapping_id, user.id) do
-      Process.put(
-        :queries_dynamic_repo,
-        Queries.user_plan_to_dynamic_repo(context.subscription_product, context.auth.plan)
+    with :ok <- Queries.user_can_execute_query(user, product, plan),
+         {:ok, query} <-
+           Queries.get_dashboard_query(dashboard_id, mapping_id, user.id, parameters_override),
+         :ok <- Queries.process_put_dynamic_repo(product, plan),
+         {:ok, result} <- Queries.run_query(query, user, query_metadata),
+         :ok <-
+           maybe_cache_execution(
+             cache?,
+             result,
+             dashboard_id,
+             mapping_id,
+             parameters_override,
+             user
+           ) do
+      {:ok, result}
+    end
+  end
+
+  defp maybe_cache_execution(_cache? = false, _, _, _, _, _), do: :ok
+
+  defp maybe_cache_execution(true, result, dashboard_id, mapping_id, parameters_override, user) do
+    result =
+      Dashboards.cache_dashboard_query_execution(
+        dashboard_id,
+        parameters_override,
+        mapping_id,
+        result,
+        user.id
       )
 
-      query_metadata = QueryMetadata.from_resolution(resolution)
-      Queries.run_query(query, user, query_metadata)
+    case result do
+      {:ok, _} -> :ok
+      error -> error
     end
   end
 
@@ -263,6 +291,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
          {:ok, dashboard_cache} <-
            Dashboards.cache_dashboard_query_execution(
              dashboard_id,
+             _parameters_override = %{},
              mapping_id,
              result,
              user.id
@@ -273,11 +302,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     end
   end
 
-  def get_cached_dashboard_queries_executions(_root, %{dashboard_id: dashboard_id}, resolution) do
+  def get_cached_dashboard_queries_executions(
+        _root,
+        %{dashboard_id: dashboard_id} = args,
+        resolution
+      ) do
     querying_user_id = get_in(resolution.context.auth, [:current_user, Access.key(:id)])
 
+    parameters_override = Map.get(args, :parameters_override, %{})
+
     with {:ok, dashboard_cache} <-
-           Dashboards.get_cached_dashboard_queries_executions(dashboard_id, querying_user_id) do
+           Dashboards.get_cached_dashboard_queries_executions(
+             dashboard_id,
+             parameters_override,
+             querying_user_id
+           ) do
       queries = Map.values(dashboard_cache.queries)
       {:ok, %{queries: queries}}
     end

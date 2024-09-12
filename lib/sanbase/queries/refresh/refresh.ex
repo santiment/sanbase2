@@ -61,6 +61,7 @@ defmodule Sanbase.Queries.Refresh do
     |> Enum.each(fn mapping ->
       Sanbase.Dashboards.cache_dashboard_query_execution(
         mapping.dashboard_id,
+        _parameters_override_hash = nil,
         mapping.id,
         query_result,
         user_id

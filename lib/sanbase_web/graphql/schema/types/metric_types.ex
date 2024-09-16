@@ -396,7 +396,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:available_aggregations, list_of(:aggregation))
 
     @desc ~s"""
-    The supported selector types for the metric. It is used to choose the
+    The list of supported selector types for the metric. It is used to choose the
     target for which the metric is computed. Available selectors are:
       - slug - Identifies an asset/project
       - text - Provides random text/search term for the social metrics
@@ -406,6 +406,35 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     which of the selectors can be used.
     """
     field(:available_selectors, list_of(:selector_name))
+
+    @desc ~s"""
+    The list of required selectors for the metric. It is used to show the list
+    of selectors that is required in order to fetch the metric.
+
+    The result is a list of lists of selectors, like this:
+      {
+        "data": {
+          "getMetric": {
+            "metadata": {
+              "requiredSelectors": [
+                [
+                  "SLUG"
+                ],
+                [
+                  "LABEL_FQN",
+                  "LABEL_FQNS"
+                ]
+              ]
+            }
+          }
+        }
+      }
+    When the element is a list of more than 1 selectors, only one of those selectors
+    is required. In the example above, the required selectors are:
+    - SLUG and LABEL_FQN
+    - or SLUG and LABEL_FQNS
+    """
+    field(:required_selectors, list_of(list_of(:selector_name)))
 
     @desc ~s"""
     A metric can be marked as deprecated. If this is the case, the metric

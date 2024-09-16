@@ -638,7 +638,8 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "ecosystem_github_activity_contributors_count_7d",
         "gini_index",
         "annual_inflation_rate",
-        "money_supply"
+        "money_supply",
+        "fully_diluted_valuation_usd"
       ]
       |> Enum.sort()
 
@@ -944,6 +945,11 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "social_active_users",
         "trending_words_rank",
         # histogram metrics
+        "mentions_count_total",
+        "mentions_percentage_twitter",
+        "mentions_percentage_total",
+        "mentions_count_twitter",
+        # social metrics for all accounts
         "age_distribution",
         "price_histogram",
         "spent_coins_cost",
@@ -1515,16 +1521,16 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "compound_v3_total_liquidations_usd",
         "compound_v3_total_new_debt_usd",
         "compound_v3_total_repayments_usd",
+        "compound_v3_collateral_total_supplied",
+        "compound_v3_collateral_total_supplied_usd",
         "compound_v3_total_supplied",
         "compound_v3_total_supplied_usd",
         "compound_v3_total_borrowed",
         "compound_v3_total_borrowed_usd",
         "compound_v3_protocol_total_supplied_usd",
         "compound_v3_protocol_total_borrowed_usd",
-        "compound_v3_eth_market_supply_apy",
-        "compound_v3_eth_market_borrow_apy",
-        "compound_v3_usdc_market_supply_apy",
-        "compound_v3_usdc_market_borrow_apy",
+        "compound_v3_supply_apy",
+        "compound_v3_borrow_apy",
         "compound_v3_active_addresses",
         # Liquity metrics
         "liquity_action_deposits",

@@ -744,7 +744,8 @@ defmodule Sanbase.RunExamples do
     {:ok, query} =
       Sanbase.Queries.create_query(
         %{
-          sql_query_text: "SELECT {{big_num:human_readable}} AS big_num, {{big_num}} AS num",
+          sql_query_text:
+            "SELECT {{big_num:human_readable}} AS big_num, {{big_num}} AS num, {{slug}} AS slug",
           sql_query_parameters: %{slug: "bitcoin", big_num: 2_123_801_239_123}
         },
         user.id
@@ -768,6 +769,7 @@ defmodule Sanbase.RunExamples do
     {:ok, stored} =
       Sanbase.Dashboards.cache_dashboard_query_execution(
         dashboard.id,
+        _hash = nil,
         mapping.id,
         result,
         user.id
@@ -807,7 +809,11 @@ defmodule Sanbase.RunExamples do
     } = stored
 
     {:ok, dashboard_cache} =
-      Sanbase.Dashboards.get_cached_dashboard_queries_executions(dashboard.id, user.id)
+      Sanbase.Dashboards.get_cached_dashboard_queries_executions(
+        dashboard.id,
+        _parameters_override = %{},
+        user.id
+      )
 
     for r <- [dashboard_cache, mapping, dashboard, query],
         do: Sanbase.Repo.delete(r)

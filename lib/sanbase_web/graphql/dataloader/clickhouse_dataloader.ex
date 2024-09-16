@@ -10,18 +10,22 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
 
     args_list
     |> Enum.group_by(fn %{selector: selector} -> selector end)
-    |> Sanbase.Parallel.map(fn {selector, group} ->
-      {metric, from, to, opts} = selector
-      slugs = Enum.map(group, & &1.slug)
+    |> Sanbase.Parallel.map(
+      fn {selector, group} ->
+        {metric, from, to, opts} = selector
+        slugs = Enum.map(group, & &1.slug)
 
-      data =
-        case Metric.aggregated_timeseries_data(metric, %{slug: slugs}, from, to, opts) do
-          {:ok, result} -> result
-          {:error, error} -> {:error, error}
-        end
+        data =
+          case Metric.aggregated_timeseries_data(metric, %{slug: slugs}, from, to, opts) do
+            {:ok, result} -> result
+            {:error, error} -> {:error, error}
+          end
 
-      {selector, data}
-    end)
+        {selector, data}
+      end,
+      timeout: 60_000,
+      ordered: false
+    )
     |> Map.new()
   end
 
@@ -29,9 +33,13 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
     args
     |> Enum.to_list()
     |> Enum.group_by(fn %{from: from, to: to} -> {from, to} end)
-    |> Sanbase.Parallel.map(fn {{from, to}, group} ->
-      {{from, to}, average_daily_active_addresses(group, from, to)}
-    end)
+    |> Sanbase.Parallel.map(
+      fn {{from, to}, group} ->
+        {{from, to}, average_daily_active_addresses(group, from, to)}
+      end,
+      timeout: 60_000,
+      ordered: false
+    )
     |> Map.new()
   end
 

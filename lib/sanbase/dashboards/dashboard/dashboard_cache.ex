@@ -21,6 +21,7 @@ defmodule Sanbase.Dashboards.DashboardCache do
 
   @type user_id :: Sanbase.Accounts.User.user_id()
   @type dashboard_id :: Dashboard.dashboard_id()
+  @type parameters_override :: map()
   @type dashboard_query_mapping_id :: Dashboard.dashboard_query_mapping_id()
 
   @type query_cache :: %{
@@ -38,6 +39,7 @@ defmodule Sanbase.Dashboards.DashboardCache do
 
   schema "dashboards_cache" do
     field(:dashboard_id, :integer)
+    field(:parameters_override_hash, :string, default: "none")
     field(:queries, :map, default: %{})
 
     timestamps()
@@ -55,6 +57,23 @@ defmodule Sanbase.Dashboards.DashboardCache do
   # end
 
   @doc ~s"""
+  Hash the parameters map to a string.
+  The hash will be stored in the database.
+  """
+  @spec hash_parameters(map()) :: String.t()
+  def hash_parameters(%{} = params) when map_size(params) == 0, do: "none"
+
+  def hash_parameters(%{} = params) do
+    binary = :erlang.term_to_binary(params)
+
+    # Base64 encodes 6 bits of information per character, so 16 characters is 96 bits
+    # 1.3x10^13 attempts are needed (13 trillion) to have 0.1% chance of collisions
+    :crypto.hash(:sha256, binary)
+    |> Base.encode64(padding: false)
+    |> :erlang.binary_part(0, 16)
+  end
+
+  @doc ~s"""
   Fetch the latest cache values for the given dashboard.
 
   The second `opts` argument can contain the following options:
@@ -62,7 +81,7 @@ defmodule Sanbase.Dashboards.DashboardCache do
   - transform_loaded_queries - If set to true, the loaded query caches are
   transformed from having `compressed_rows` to `rows`. Defaults to true.
   """
-  @spec by_dashboard_id(dashboard_id(), user_id, Keyword.t()) :: {:ok, t()} | {:error, String.t()}
+
   # def by_dashboard_id(dashboard_id, querying_user_id, opts) do
   #   Ecto.Multi.new()
   #   |> Ecto.Multi.run(:get_dashboard_cache, fn _ ->
@@ -70,8 +89,15 @@ defmodule Sanbase.Dashboards.DashboardCache do
   #   end)
   # end
 
-  def by_dashboard_id(dashboard_id, querying_user_id, opts \\ []) do
-    query = from(d in __MODULE__, where: d.dashboard_id == ^dashboard_id)
+  @spec by_dashboard_id(dashboard_id, parameters_override, user_id, Keyword.t()) ::
+          {:ok, t()} | {:error, String.t()}
+  def by_dashboard_id(dashboard_id, parameters_override, querying_user_id, opts \\ []) do
+    hash = hash_parameters(parameters_override)
+
+    query =
+      from(d in __MODULE__,
+        where: d.dashboard_id == ^dashboard_id and d.parameters_override_hash == ^hash
+      )
 
     query =
       case Keyword.get(opts, :lock_for_update, false) do
@@ -80,7 +106,7 @@ defmodule Sanbase.Dashboards.DashboardCache do
       end
 
     case Repo.one(query) do
-      nil -> new(dashboard_id, querying_user_id)
+      nil -> new(dashboard_id, parameters_override, querying_user_id)
       %__MODULE__{} = cache -> {:ok, cache}
     end
     |> maybe_apply_function(&transform_loaded_dashboard_cache(&1, opts))
@@ -125,32 +151,46 @@ defmodule Sanbase.Dashboards.DashboardCache do
   @doc ~s"""
   Create a new empty record for the given dashboard_id.
   """
-  @spec new(non_neg_integer(), user_id) :: {:ok, t()} | {:error, any()}
-  def new(dashboard_id, querying_user_id) do
+  @spec new(dashboard_id, parameters_override, user_id) :: {:ok, t()} | {:error, any()}
+  def new(dashboard_id, parameters_override, querying_user_id) do
+    hash = hash_parameters(parameters_override)
+
     case Sanbase.Dashboards.get_visibility_data(dashboard_id) do
-      {:ok, %{user_id: ^querying_user_id}} ->
+      {:ok, %{user_id: user_id, is_public: is_public}}
+      when user_id == querying_user_id or is_public == true ->
         %__MODULE__{}
-        |> change(%{dashboard_id: dashboard_id})
+        |> change(%{
+          dashboard_id: dashboard_id,
+          parameters_override_hash: hash
+        })
         |> Repo.insert()
         |> maybe_transform_error()
 
       _ ->
         {:error,
-         "Dashboard with id #{dashboard_id} does not exist or the user with id #{querying_user_id} is not the owner of it."}
+         "Dashboard with id #{dashboard_id} does not exist or the dashboard is private and the user with id #{querying_user_id} is not the owner of it."}
     end
   end
 
   @doc ~s"""
   Update the dashboard's query cache with the provided result.
   """
-  @spec update_query_cache(non_neg_integer(), String.t(), Result.t(), user_id(), Keyword.t()) ::
+  @spec update_query_cache(
+          dashboard_id(),
+          parameters_override,
+          dashboard_query_mapping_id,
+          Result.t(),
+          user_id,
+          Keyword.t()
+        ) ::
           {:ok, t()} | {:error, any()}
   def update_query_cache(
         dashboard_id,
+        parameters_override,
         dashboard_query_mapping_id,
         query_result,
         user_id,
-        opts \\ []
+        opts
       ) do
     query_cache =
       QueryCache.from_query_result(query_result, dashboard_query_mapping_id, dashboard_id)
@@ -159,14 +199,11 @@ defmodule Sanbase.Dashboards.DashboardCache do
     # convert `compressed_rows` to `rows`, which will be written back and break
     with true <- query_result_size_allowed?(query_cache),
          {:ok, cache} <-
-           by_dashboard_id(dashboard_id, user_id,
+           by_dashboard_id(dashboard_id, parameters_override, user_id,
              transform_loaded_queries: false,
              lock_for_update: true
            ) do
-      query_cache =
-        query_cache
-        |> Map.from_struct()
-        |> Map.delete(:rows)
+      query_cache = query_cache |> Map.from_struct() |> Map.delete(:rows)
 
       queries =
         Map.update(cache.queries, dashboard_query_mapping_id, query_cache, fn _ -> query_cache end)

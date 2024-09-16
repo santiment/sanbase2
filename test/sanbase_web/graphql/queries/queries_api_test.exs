@@ -192,8 +192,8 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
                  "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
                  "columnTypes" => ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
                  "rows" => [
-                   [2503, 250, "2008-12-10T00:00:00Z", +0.0, "2020-02-28T15:18:42Z"],
-                   [2503, 250, "2008-12-10T00:05:00Z", +0.0, "2020-02-28T15:18:42Z"]
+                   ["bitcoin", 250, "2008-12-10T00:00:00Z", +0.0, "2020-02-28T15:18:42Z"],
+                   ["bitcoin", 250, "2008-12-10T00:05:00Z", +0.0, "2020-02-28T15:18:42Z"]
                  ],
                  "summary" => %{
                    "read_bytes" => +0.0,
@@ -235,8 +235,8 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
                  "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
                  "columnTypes" => ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
                  "rows" => [
-                   [2503, 250, "2008-12-10T00:00:00Z", +0.0, "2020-02-28T15:18:42Z"],
-                   [2503, 250, "2008-12-10T00:05:00Z", +0.0, "2020-02-28T15:18:42Z"]
+                   ["bitcoin", 250, "2008-12-10T00:00:00Z", +0.0, "2020-02-28T15:18:42Z"],
+                   ["bitcoin", 250, "2008-12-10T00:05:00Z", +0.0, "2020-02-28T15:18:42Z"]
                  ],
                  "summary" => %{
                    "read_bytes" => +0.0,
@@ -434,8 +434,8 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
                    "columnTypes" => ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
                    "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
                    "rows" => [
-                     [2503, 250, "2008-12-10T00:00:00Z", +0.0, "2020-02-28T15:18:42Z"],
-                     [2503, 250, "2008-12-10T00:05:00Z", +0.0, "2020-02-28T15:18:42Z"]
+                     ["bitcoin", 250, "2008-12-10T00:00:00Z", +0.0, "2020-02-28T15:18:42Z"],
+                     ["bitcoin", 250, "2008-12-10T00:05:00Z", +0.0, "2020-02-28T15:18:42Z"]
                    ]
                  },
                  "user" => %{"id" => ^owner_user_id}
@@ -449,8 +449,8 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
                    "columnTypes" => ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
                    "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
                    "rows" => [
-                     [2503, 250, "2008-12-10T00:00:00Z", +0.0, "2020-02-28T15:18:42Z"],
-                     [2503, 250, "2008-12-10T00:05:00Z", +0.0, "2020-02-28T15:18:42Z"]
+                     ["bitcoin", 250, "2008-12-10T00:00:00Z", +0.0, "2020-02-28T15:18:42Z"],
+                     ["bitcoin", 250, "2008-12-10T00:05:00Z", +0.0, "2020-02-28T15:18:42Z"]
                    ]
                  },
                  "user" => %{"id" => ^own_user_id}

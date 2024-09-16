@@ -1,0 +1,74 @@
+[
+  {
+    "human_readable_name": "Mentions Count Total",
+    "name": "mentions_count_total",
+    "metric": "social_volume_all_accounts",
+    "is_hidden": true,
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/social-volume"]
+  },
+  {
+    "human_readable_name": "Mentions Count Twitter",
+    "name": "mentions_count_twitter",
+    "metric": "social_volume_twitter_all_accounts",
+    "is_hidden": true,
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/social-volume"]
+  },
+  {
+    "human_readable_name": "Mentions Percentage Total",
+    "name": "mentions_percentage_total",
+    "metric": "social_dominance_all_accounts",
+    "is_hidden": true,
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/social-dominance"]
+  },
+  {
+    "human_readable_name": "Mentions Percentage Twitter",
+    "name": "mentions_percentage_twitter",
+    "metric": "social_dominance_twitter_all_accounts",
+    "is_hidden": true,
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/social-dominance"]
+  }
+]

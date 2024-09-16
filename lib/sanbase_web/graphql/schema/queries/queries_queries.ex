@@ -201,6 +201,24 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
       arg(:dashboard_id, non_null(:integer))
       arg(:dashboard_query_mapping_id, non_null(:string))
 
+      @desc ~s"""
+      A map that contains dashboard global keys as keys and
+      a new value as the value.
+      When the query is executed, the parameters here override the
+      dashboard parameters, allowing anyone to execute the dashboard query
+      with modified set of parameters.
+      """
+      arg(:parameters_override, :json)
+
+      @desc ~s"""
+      If set to true, the execution result is stored in the database.
+      The result can be later fetched by the getDashboardCachedQueriesExecutions
+
+      Alongside the cached value, the hash of the SQL query text and the hash
+      of the query parameters are also stored.
+      """
+      arg(:store_execution, :boolean, default_value: false)
+
       middleware(UserAuth)
 
       resolve(&QueriesResolver.run_dashboard_sql_query/3)
@@ -430,6 +448,7 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
     field :get_cached_dashboard_queries_executions, :dashboard_cached_executions do
       meta(access: :free)
       arg(:dashboard_id, non_null(:integer))
+      arg(:parameters_override, :json)
 
       resolve(&QueriesResolver.get_cached_dashboard_queries_executions/3)
     end

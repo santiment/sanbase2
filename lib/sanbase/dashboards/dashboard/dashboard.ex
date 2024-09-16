@@ -175,6 +175,22 @@ defmodule Sanbase.Dashboards.Dashboard do
     |> maybe_preload(opts)
   end
 
+  @doc ~s"""
+  Get a query in order to update its cache.
+  Only the owner of the query can do that when the dashboard is private.
+  Public dashboard's cache can be refreshed by anyone.
+  """
+  @spec get_for_cache_update(dashboard_id, user_id, opts) :: Ecto.Query.t()
+  def get_for_cache_update(dashboard_id, querying_user_id, opts)
+      when not is_nil(querying_user_id) do
+    from(
+      d in base_query(),
+      where: d.id == ^dashboard_id and (d.user_id == ^querying_user_id or d.is_public == true),
+      lock: "FOR UPDATE"
+    )
+    |> maybe_preload(opts)
+  end
+
   @spec get_user_dashboards(dashboard_id, user_id | nil, opts) :: Ecto.Query.t()
   def get_user_dashboards(user_id, querying_user_id, opts) do
     where =

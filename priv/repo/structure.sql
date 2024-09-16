@@ -999,7 +999,8 @@ CREATE TABLE public.dashboards_cache (
     panels jsonb DEFAULT '{}'::jsonb,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    queries jsonb DEFAULT '{}'::jsonb
+    queries jsonb DEFAULT '{}'::jsonb,
+    parameters_override_hash character varying(255) DEFAULT 'none'::character varying NOT NULL
 );
 
 
@@ -6861,10 +6862,10 @@ CREATE INDEX dashboard_query_mappings_query_id_index ON public.dashboard_query_m
 
 
 --
--- Name: dashboards_cache_dashboard_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: dashboards_cache_dashboard_id_parameters_override_hash_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX dashboards_cache_dashboard_id_index ON public.dashboards_cache USING btree (dashboard_id);
+CREATE UNIQUE INDEX dashboards_cache_dashboard_id_parameters_override_hash_index ON public.dashboards_cache USING btree (dashboard_id, parameters_override_hash);
 
 
 --
@@ -9562,3 +9563,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20240723122118);
 INSERT INTO public."schema_migrations" (version) VALUES (20240725122924);
 INSERT INTO public."schema_migrations" (version) VALUES (20240805115620);
 INSERT INTO public."schema_migrations" (version) VALUES (20240809122904);
+INSERT INTO public."schema_migrations" (version) VALUES (20240904135651);

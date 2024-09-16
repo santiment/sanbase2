@@ -236,9 +236,10 @@ defmodule SanbaseWeb.StripeWebhookTest do
       {:ok,
        %Stripe.Subscription{
          id: _stripe_id,
-         customer: stripe_customer_id,
-         plan: %Stripe.Plan{id: stripe_plan_id}
-       }} = StripeApiTestResponse.retrieve_subscription_resp()
+         customer: stripe_customer_id
+       } = stripe_sub} = StripeApiTestResponse.retrieve_subscription_resp()
+
+      stripe_plan_id = stripe_sub.items.data |> hd() |> Map.get(:plan) |> Map.get(:id)
 
       Plan.by_stripe_id(stripe_plan_id)
       |> Plan.changeset(%{stripe_id: "non_existing"})
@@ -409,28 +410,6 @@ defmodule SanbaseWeb.StripeWebhookTest do
           "metadata": {
           },
           "pending_setup_intent": null,
-          "plan": {
-            "id": "plan_FJVlH8O0qGs1TM",
-            "object": "plan",
-            "active": true,
-            "aggregate_usage": null,
-            "amount": 11900,
-            "billing_scheme": "per_unit",
-            "created": 1561384894,
-            "currency": "usd",
-            "interval": "month",
-            "interval_count": 1,
-            "livemode": false,
-            "metadata": {
-            },
-            "nickname": "ESSENTIAL",
-            "product": "prod_FJVky7lugU5m6C",
-            "tiers": null,
-            "tiers_mode": null,
-            "transform_usage": null,
-            "trial_period_days": null,
-            "usage_type": "licensed"
-          },
           "quantity": 1,
           "schedule": null,
           "start": 1563889630,

@@ -149,7 +149,8 @@ defmodule Sanbase.Billing.StripeEvent do
     with {:ok, stripe_sub} <-
            StripeApi.retrieve_subscription(subscription_id),
          {_, {:ok, %User{} = user}} <- {:user?, User.by_stripe_customer_id(stripe_sub.customer)},
-         {_, %Plan{} = plan} <- {:plan?, Plan.by_stripe_id(stripe_sub.plan.id)},
+         stripe_plan_id <- stripe_sub.items.data |> hd() |> Map.get(:plan) |> Map.get(:id),
+         {_, %Plan{} = plan} <- {:plan?, Plan.by_stripe_id(stripe_plan_id)},
          {:ok, _sub} <- Subscription.create_subscription_db(stripe_sub, user, plan) do
       update(id, %{is_processed: true})
     else

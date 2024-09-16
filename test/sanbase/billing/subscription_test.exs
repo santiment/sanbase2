@@ -42,7 +42,8 @@ defmodule Sanbase.Billing.SubscriptionTest do
       assert subscription.trial_end ==
                context.stripe_subscription.trial_end |> DateTime.from_unix!()
 
-      assert subscription.plan_id == Plan.by_stripe_id(context.stripe_subscription.plan.id).id
+      stripe_plan_id = (context.stripe_subscription.items.data |> hd).plan.id
+      assert subscription.plan_id == Plan.by_stripe_id(stripe_plan_id).id
       assert subscription.cancel_at_period_end == context.stripe_subscription.cancel_at_period_end
 
       assert subscription.current_period_end ==
@@ -61,7 +62,8 @@ defmodule Sanbase.Billing.SubscriptionTest do
         assert subscription.trial_end ==
                  context.stripe_subscription.trial_end |> DateTime.from_unix!()
 
-        assert subscription.plan_id == Plan.by_stripe_id(context.stripe_subscription.plan.id).id
+        stripe_plan_id = (context.stripe_subscription.items.data |> hd).plan.id
+        assert subscription.plan_id == Plan.by_stripe_id(stripe_plan_id).id
 
         assert subscription.cancel_at_period_end ==
                  context.stripe_subscription.cancel_at_period_end

@@ -647,7 +647,9 @@ defmodule Sanbase.Billing.Subscription do
   def add_payment_intent(result, _), do: result
 
   defp fetch_plan_id(db_subscription, stripe_subscription) do
-    case Plan.by_stripe_id(stripe_subscription.plan.id) do
+    stripe_plan_id = (stripe_subscription.items.data |> hd).plan.id
+
+    case Plan.by_stripe_id(stripe_plan_id) do
       %Plan{id: plan_id} -> plan_id
       nil -> db_subscription.plan_id
     end

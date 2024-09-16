@@ -134,7 +134,7 @@ defmodule Sanbase.Mixfile do
       {:rustler, "~> 0.24"},
       {:sentry, "~> 10.0"},
       {:stream_data, "~> 1.1", only: :test, override: true},
-      {:stripity_stripe, "~> 2.9"},
+      {:stripity_stripe, "~> 3.2"},
       {:sweet_xml, "~> 0.6"},
       {:swoosh, "~> 1.7"},
       {:table_rex, "~> 4.0"},

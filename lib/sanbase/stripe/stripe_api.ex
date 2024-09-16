@@ -111,12 +111,8 @@ defmodule Sanbase.StripeApi do
     # Step 1: Attach payment method to the customer
     {:ok, user} = Billing.create_or_update_stripe_customer(user)
 
-    params = %{
-      customer: user.stripe_customer_id,
-      payment_method: payment_method_id
-    }
-
-    {:ok, pm} = Stripe.PaymentMethod.attach(params)
+    {:ok, pm} =
+      Stripe.PaymentMethod.attach(payment_method_id, %{customer: user.stripe_customer_id})
 
     # Step 2: Set this payment method as default for the customer
     update_params = %{
@@ -172,7 +168,7 @@ defmodule Sanbase.StripeApi do
   end
 
   def delete_subscription(stripe_id) do
-    Stripe.Subscription.delete(stripe_id)
+    Stripe.Subscription.cancel(stripe_id)
   end
 
   def retrieve_subscription(stripe_id) do

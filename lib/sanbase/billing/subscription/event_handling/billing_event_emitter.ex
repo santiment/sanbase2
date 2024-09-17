@@ -75,9 +75,9 @@ defmodule Sanbase.Billing.EventEmitter do
       when event_type in [
              :create_subscription,
              :update_subscription,
-             :delete_subscription,
+             :cancel_subscription_immediately,
              :renew_subscription,
-             :cancel_subscription
+             :cancel_subscription_at_period_end
            ] do
     %{
       event_type: event_type,

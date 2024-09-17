@@ -163,7 +163,7 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
 
       middleware(JWTAuth)
 
-      resolve(&BillingResolver.cancel_subscription/3)
+      resolve(&BillingResolver.cancel_subscription_at_period_end/3)
     end
 
     @desc ~s"""

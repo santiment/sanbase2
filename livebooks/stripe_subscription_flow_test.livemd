@@ -22,6 +22,7 @@ sanbase_pro_monthly_plan_id = 201
 sanbase_pro_yearly_plan_id = 202
 sanbase_pro_monthly_plan = Plan.by_id(sanbase_pro_monthly_plan_id)
 sanbase_pro_yearly_plan = Plan.by_id(sanbase_pro_yearly_plan_id)
+bussiness_max_yearly_plan = Plan.by_id(110)
 ```
 
 ## Setup: Fetch test user and delete everything in Stripe for this user.
@@ -39,6 +40,21 @@ end
 ## Subscribe user to Sanbase PRO
 
 ```elixir
+{:ok, user} = User.by_email("tsvetozar.penov+stripetestuserstage@gmail.com")
+{:ok, subscription} = Sanbase.Billing.Subscription.subscribe2(user, sanbase_pro_monthly_plan, "pm_card_visa")
+```
+
+## Upgrade to Bussiness MAX
+
+```elixir
+{:ok, user} = User.by_email("tsvetozar.penov+stripetestuserstage@gmail.com")
+{:ok, subscription} = Sanbase.Billing.Subscription.subscribe2(user, bussiness_max_yearly_plan, "pm_card_visa")
+```
+
+## Downgrade to Sanbase PRO
+
+```elixir
+{:ok, user} = User.by_email("tsvetozar.penov+stripetestuserstage@gmail.com")
 {:ok, subscription} = Sanbase.Billing.Subscription.subscribe2(user, sanbase_pro_monthly_plan, "pm_card_visa")
 ```
 
@@ -51,7 +67,7 @@ end
 ## Cancel user subscription (at the end of the billing period)
 
 ```elixir
-Subscription.cancel_subscription(subscription)
+Subscription.cancel_subscription_at_period_end(subscription)
 ```
 
 ## Teardown: Delete everything for this user in Stripe

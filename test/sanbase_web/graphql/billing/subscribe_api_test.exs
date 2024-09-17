@@ -46,11 +46,12 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
      ]},
     {Sanbase.StripeApi, [:passthrough],
      [
-       cancel_subscription: fn _ ->
+       cancel_subscription_at_period_end: fn _ ->
          StripeApiTestResponse.update_subscription_resp()
        end
      ]},
-    {Sanbase.StripeApi, [:passthrough], [delete_subscription: fn _ -> {:ok, %{}} end]},
+    {Sanbase.StripeApi, [:passthrough],
+     [cancel_subscription_immediately: fn _ -> {:ok, %{}} end]},
     {Sanbase.Notifications.Discord, [:passthrough],
      [
        send_notification: fn _, _, _ -> :ok end
@@ -461,7 +462,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     end
   end
 
-  describe "cancel_subscription mutation" do
+  describe "cancel_subscription_at_period_end mutation" do
     test "successfully cancel subscription", context do
       period_end = Timex.shift(Timex.now(), days: 3) |> DateTime.truncate(:second)
 
@@ -484,7 +485,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
         end
       )
       |> Sanbase.Mock.run_with_mocks(fn ->
-        query = cancel_subscription_mutation(subscription.id)
+        query = cancel_subscription_at_period_end_mutation(subscription.id)
         response = execute_mutation(context.conn, query, "cancelSubscription")
 
         assert response["isScheduledForCancellation"]
@@ -512,7 +513,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
           current_period_end: Timex.now()
         )
 
-      query = cancel_subscription_mutation(subscription.id)
+      query = cancel_subscription_at_period_end_mutation(subscription.id)
 
       assert capture_log(fn ->
                error_msg = execute_mutation_with_error(context.conn, query)
@@ -527,7 +528,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
 
       subscription = insert(:subscription_essential, user: user2, stripe_id: "stripe_id")
 
-      query = cancel_subscription_mutation(subscription.id)
+      query = cancel_subscription_at_period_end_mutation(subscription.id)
 
       assert capture_log(fn ->
                error_msg = execute_mutation_with_error(context.conn, query)
@@ -538,7 +539,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     end
 
     test "when not existing subscription provided - returns proper error", context do
-      query = cancel_subscription_mutation(-1)
+      query = cancel_subscription_at_period_end_mutation(-1)
 
       assert capture_log(fn ->
                error_msg = execute_mutation_with_error(context.conn, query)
@@ -551,13 +552,13 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       with_mocks([
         {StripeApi, [:passthrough],
          [
-           cancel_subscription: fn _ ->
+           cancel_subscription_at_period_end: fn _ ->
              {:error, %Stripe.Error{message: "test error", source: "ala", code: "bala"}}
            end
          ]}
       ]) do
         subscription = insert(:subscription_essential, user: context.user, stripe_id: "stripe_id")
-        query = cancel_subscription_mutation(subscription.id)
+        query = cancel_subscription_at_period_end_mutation(subscription.id)
 
         assert capture_log(fn ->
                  error_msg = execute_mutation_with_error(context.conn, query)
@@ -829,7 +830,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     """
   end
 
-  defp cancel_subscription_mutation(subscription_id) do
+  defp cancel_subscription_at_period_end_mutation(subscription_id) do
     """
     mutation {
       cancelSubscription(subscriptionId: #{subscription_id}) {

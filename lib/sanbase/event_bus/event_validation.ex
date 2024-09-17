@@ -128,9 +128,9 @@ defmodule Sanbase.EventBus.EventValidation do
       when event_type in [
              :create_subscription,
              :update_subscription,
-             :delete_subscription,
+             :cancel_subscription_immediately,
              :renew_subscription,
-             :cancel_subscription
+             :cancel_subscription_at_period_end
            ],
       do:
         valid_integer_id?(subscription_id) and valid_integer_id?(user_id) and
@@ -156,7 +156,7 @@ defmodule Sanbase.EventBus.EventValidation do
   end
 
   def valid?(%{
-        event_type: :cancel_subscription,
+        event_type: :cancel_subscription_at_period_end,
         user_id: user_id,
         stripe_id: stripe_id,
         plan: plan,

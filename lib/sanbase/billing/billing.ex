@@ -16,7 +16,7 @@ defmodule Sanbase.Billing do
   # Subscription API
   defdelegate subscribe(user, plan, card, coupon), to: Subscription
   defdelegate update_subscription(subscription, plan), to: Subscription
-  defdelegate cancel_subscription(subscription), to: Subscription
+  defdelegate cancel_subscription_at_period_end(subscription), to: Subscription
   defdelegate renew_cancelled_subscription(subscription), to: Subscription
   defdelegate user_has_active_sanbase_subscriptions?(user_id), to: Subscription
 

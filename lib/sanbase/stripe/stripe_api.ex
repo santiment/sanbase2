@@ -162,12 +162,12 @@ defmodule Sanbase.StripeApi do
     Stripe.Subscription.update(stripe_id, params, expand: ["latest_invoice.payment_intent"])
   end
 
-  def cancel_subscription(stripe_id) do
+  def cancel_subscription_at_period_end(stripe_id) do
     stripe_id
     |> update_subscription(%{cancel_at_period_end: true})
   end
 
-  def delete_subscription(stripe_id) do
+  def cancel_subscription_immediately(stripe_id) do
     Stripe.Subscription.cancel(stripe_id)
   end
 

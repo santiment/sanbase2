@@ -30,8 +30,8 @@ defmodule Sanbase.EventBus.BillingEventSubscriber do
   @subscription_events [
     :create_subscription,
     :update_subscription,
-    :delete_subscription,
-    :cancel_subscription,
+    :cancel_subscription_immediately,
+    :cancel_subscription_at_period_end,
     :renew_subscription
   ]
 

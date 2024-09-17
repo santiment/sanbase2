@@ -159,8 +159,7 @@ defmodule Sanbase.Billing.Subscription do
          {:ok, stripe_subscription} <- create_stripe_subscription(user, plan, coupon),
          {:ok, db_subscription} <- create_subscription_db(stripe_subscription, user, plan) do
       if db_subscription.status == :active do
-        maybe_cancel_subscriptions(user.id, plan)
-        maybe_cancel_trialing_subscriptions(user.id, plan)
+        maybe_cancel_async(user.id, plan)
       end
 
       {:ok, default_preload(db_subscription, force: true)}
@@ -176,12 +175,29 @@ defmodule Sanbase.Billing.Subscription do
          {:ok, stripe_subscription} <- create_stripe_subscription(user, plan, coupon),
          {:ok, db_subscription} <- create_subscription_db(stripe_subscription, user, plan) do
       if db_subscription.status == :active do
-        maybe_cancel_subscriptions(user.id, plan)
-        maybe_cancel_trialing_subscriptions(user.id, plan)
+        maybe_cancel_async(user.id, plan)
       end
 
       {:ok, default_preload(db_subscription, force: true)}
     end
+  end
+
+  # Cancel asynchronously to avoid blocking the request. If it fails it is ok but capture the error in sentry
+  def maybe_cancel_async(user_id, plan) do
+    Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+      try do
+        maybe_cancel_subscriptions(user_id, plan)
+        maybe_cancel_trialing_subscriptions(user_id, plan)
+      rescue
+        e ->
+          Logger.error("Error cancelling subscriptions: #{inspect(e)}")
+
+          Sentry.capture_exception(e,
+            stacktrace: __STACKTRACE__,
+            extra: %{user_id: user_id, plan: plan}
+          )
+      end
+    end)
   end
 
   # We are upgrading. Cancel all active and trialing subscriptions for Sanbase plans

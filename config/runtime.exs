@@ -114,4 +114,10 @@ if config_env() == :prod do
         cron: [enabled: true]
       ]
     ]
+
+  config :waffle,
+    storage: Waffle.Storage.S3,
+    # To support AWS regions other than US Standard
+    virtual_host: true,
+    bucket: System.get_env("POSTS_IMAGE_BUCKET")
 end

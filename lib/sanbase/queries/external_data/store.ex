@@ -1,8 +1,9 @@
-defmodule Sanbase.Queries.External.S3 do
+defmodule Sanbase.Queries.ExternalData.Store do
   use Waffle.Definition
 
   @cache_max_age 0
-  @max_file_size 10 * 1024 * 1024
+  # 1Mb
+  @max_file_size 1 * 1024 * 1024
 
   require Sanbase.Utils.Config, as: Config
 
@@ -25,7 +26,13 @@ defmodule Sanbase.Queries.External.S3 do
     end
   end
 
-  def storage_dir(_version, _) do
-    "/external/queries/"
+  def get(file_name) do
+    case Application.get_env(:waffle, :storage) do
+      Waffle.Storage.S3 ->
+        :ok
+
+      Waffle.Storage.Local ->
+        :ok
+    end
   end
 end

@@ -1,14 +1,9 @@
 defmodule Sanbase.SanLang.Interpreter do
   alias Sanbase.SanLang
   alias Sanbase.SanLang.Environment
-
-  defmodule UnboundError do
-    defexception [:message]
-  end
-
-  defmodule UndefinedFunctionError do
-    defexception [:message]
-  end
+  alias Sanbase.SanLang.UnboundError
+  alias Sanbase.SanLang.UndefinedFunctionError
+  alias Sanbase.SanLang.OperatorArgumentError
 
   # Terminal values
   def eval({:int, _, value}, _env), do: value
@@ -64,10 +59,10 @@ defmodule Sanbase.SanLang.Interpreter do
 
     cond do
       not is_boolean(lhs) ->
-        raise ArgumentError, message: "Left hand side of #{op} must be a boolean"
+        raise OperatorArgumentError, message: "Left hand side of #{op} must be a boolean"
 
       not is_boolean(rhs) ->
-        raise ArgumentError, message: "Right hand side of #{op} must be a boolean"
+        raise OperatorArgumentError, message: "Right hand side of #{op} must be a boolean"
 
       true ->
         apply(:erlang, op, [lhs, rhs])

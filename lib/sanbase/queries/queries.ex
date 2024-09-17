@@ -458,12 +458,16 @@ defmodule Sanbase.Queries do
         fn
           {key, value} ->
             if code_parameter?(value) do
-              value =
-                value
-                |> String.trim()
-                |> eval_code_parameter()
+              case eval_code_parameter(value) do
+                {:ok, value} ->
+                  IO.inspect(value)
+                  {key, value}
 
-              {key, value}
+                {:error, _error} = error_tuple ->
+                  IO.inspect("THROWING")
+                  throw(error_tuple)
+              end
+              |> dbg()
             else
               {key, value}
             end
@@ -472,6 +476,10 @@ defmodule Sanbase.Queries do
 
     query = %{query | sql_query_parameters: parameters}
     {:ok, query}
+  catch
+    {:error, _} = error_tuple ->
+      IO.inspect("CAUGHT")
+      error_tuple
   end
 
   # Private functions

@@ -616,6 +616,42 @@ defmodule Sanbase.QueriesTest do
     end
   end
 
+  describe "Code Parameters" do
+    test "resolve code parameters", context do
+      {:ok, query} =
+        Queries.create_query(
+          %{
+            sql_query_text:
+              "SELECT address FROM balances WHERE address IN ({{addresses}}) LIMIT {{limit}}",
+            sql_query_parameters: %{
+              "addresses" => ~s|{% load("/users/32/my_addresses") %}|,
+              "threshold" => ~s|{% pow(10, 5) %}|,
+              "limit" => 20
+            }
+          },
+          context.user.id
+        )
+
+      addresses =
+        [
+          "0xe2f2a5C287993345a840db3B0845fbc70f5935a5",
+          "0x5AEDA56215b167893e80B4fE645BA6d5Bab767DE",
+          "0x2f0b23f53734252bda2277357e97e1517d6b042a"
+        ]
+
+      Sanbase.Mock.prepare_mock2(&Sanbase.Queries.ExternalFiles.get/1, {:ok, addresses})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        {:ok, query} = Queries.resolve_code_parameters(query, context.user.id)
+
+        assert query.sql_query_parameters == %{
+                 "addresses" => addresses,
+                 "threshold" => 100_000,
+                 "limit" => 20
+               }
+      end)
+    end
+  end
+
   # MOCKS
 
   defp query_result_mock() do

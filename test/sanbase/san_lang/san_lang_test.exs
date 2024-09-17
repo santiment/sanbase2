@@ -145,4 +145,16 @@ defmodule Sanbase.SanLangTest do
     assert SanLang.eval!("@pi * 1000", env) == 3140.0
     assert SanLang.eval!(~s|@vals["pi"] * 1000|, env) == 3140.0
   end
+
+  test "include external file in the environment and use it" do
+    env = SanLang.Environment.new()
+
+    """
+    {% addresses = load_external_csv("user/32/my_labels.csv") %}
+
+    SELECT *
+    FROM balances
+    WHERE address in {% addresses %}
+    """
+  end
 end

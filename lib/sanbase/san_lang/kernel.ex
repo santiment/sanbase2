@@ -12,6 +12,12 @@ defmodule Sanbase.SanLang.Kernel do
 
   def length(list, _env) when is_list(list), do: length(list)
 
+  def load(path) do
+    with {:ok, struct} <- Sanbase.Queries.ExternalFiles.resolve_path(path) do
+      Sanbase.Queries.ExternalFiles.get(struct)
+    end
+  end
+
   def map_keys(map, _env) when is_map(map) do
     Map.keys(map)
   end

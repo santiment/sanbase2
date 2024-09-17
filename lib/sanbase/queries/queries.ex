@@ -96,6 +96,7 @@ defmodule Sanbase.Queries do
     query_metadata = Map.put_new(query_metadata, :sanbase_user_id, user.id)
 
     with {:ok, environment} <- Environment.new(query, user),
+         {:ok, query} <- resolve_code_parameters(query, user),
          {:ok, result} <- Queries.Executor.run(query, query_metadata, environment) do
       maybe_store_execution_data_async(result, user.id, opts)
 
@@ -450,7 +451,42 @@ defmodule Sanbase.Queries do
     |> process_transaction_result(:add_hash_match_field)
   end
 
+  def resolve_code_parameters(query, _user) do
+    parameters =
+      Enum.map(
+        query.sql_query_parameters,
+        fn
+          {key, value} ->
+            if code_parameter?(value) do
+              value =
+                value
+                |> String.trim()
+                |> eval_code_parameter()
+
+              {key, value}
+            else
+              {key, value}
+            end
+        end
+      )
+
+    query = %{query | sql_query_parameters: parameters}
+    {:ok, query}
+  end
+
   # Private functions
+
+  defp code_parameter?(value) when is_binary(value) do
+    String.starts_with?(value, "{%") and String.ends_with?(value, "%}")
+  end
+
+  defp code_parameter?(_value), do: false
+
+  defp eval_code_parameter(code) do
+    code = code |> String.trim_leading("{%") |> String.trim_trailing("%}")
+
+    Sanbase.SanLang.eval(code)
+  end
 
   defp get_for_mutation(query_id, querying_user_id) do
     query = Query.get_for_mutation(query_id, querying_user_id)

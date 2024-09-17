@@ -90,7 +90,7 @@ defmodule Sanbase.Billing.Subscription do
 
   def delete(%__MODULE__{} = subscription, opts \\ []) do
     Repo.delete(subscription)
-    |> emit_event(:delete_subscription, Keyword.get(opts, :event_args, %{}))
+    |> emit_event(:cancel_subscription_immediately, Keyword.get(opts, :event_args, %{}))
   end
 
   def by_id(id) do
@@ -159,7 +159,8 @@ defmodule Sanbase.Billing.Subscription do
          {:ok, stripe_subscription} <- create_stripe_subscription(user, plan, coupon),
          {:ok, db_subscription} <- create_subscription_db(stripe_subscription, user, plan) do
       if db_subscription.status == :active do
-        maybe_delete_trialing_subscriptions(user.id, plan)
+        maybe_cancel_subscriptions(user.id, plan)
+        maybe_cancel_trialing_subscriptions(user.id, plan)
       end
 
       {:ok, default_preload(db_subscription, force: true)}
@@ -175,29 +176,81 @@ defmodule Sanbase.Billing.Subscription do
          {:ok, stripe_subscription} <- create_stripe_subscription(user, plan, coupon),
          {:ok, db_subscription} <- create_subscription_db(stripe_subscription, user, plan) do
       if db_subscription.status == :active do
-        maybe_delete_trialing_subscriptions(user.id, plan)
+        maybe_cancel_subscriptions(user.id, plan)
+        maybe_cancel_trialing_subscriptions(user.id, plan)
       end
 
       {:ok, default_preload(db_subscription, force: true)}
     end
   end
 
-  def maybe_delete_trialing_subscriptions(user_id, %Plan{product_id: product_id})
+  # We are upgrading. Cancel all active and trialing subscriptions for Sanbase plans
+  def maybe_cancel_subscriptions(user_id, %Plan{product_id: product_id, name: name})
+      when product_id == @product_api and name in ["BUSINESS_PRO", "BUSINESS_MAX"] do
+    __MODULE__
+    |> __MODULE__.Query.user_has_any_subscriptions_for_product(user_id, @product_sanbase)
+    |> Repo.all()
+    |> Enum.filter(fn subscription ->
+      subscription.status in [
+        :active,
+        :trialing,
+        :past_due,
+        :incomplete,
+        :incomplete_expired,
+        :unpaid
+      ]
+    end)
+    |> Enum.each(fn subscription ->
+      StripeApi.cancel_subscription_immediately(subscription.stripe_id)
+    end)
+  end
+
+  # We are downgrading. Cancel all active and trialing subscriptions for API plans
+  def maybe_cancel_subscriptions(user_id, %Plan{product_id: product_id, name: name})
+      when product_id == @product_sanbase and name in ["PRO", "PRO_PLUS", "MAX"] do
+    __MODULE__
+    |> __MODULE__.Query.user_has_any_subscriptions_for_product(user_id, @product_api)
+    |> Repo.all()
+    # Preload the plan association
+    |> Repo.preload(:plan)
+    |> Enum.filter(fn subscription ->
+      subscription.plan.name in ["BUSINESS_PRO", "BUSINESS_MAX"] and
+        subscription.status in [
+          :active,
+          :trialing,
+          :past_due,
+          :incomplete,
+          :incomplete_expired,
+          :unpaid
+        ]
+    end)
+    |> Enum.each(fn subscription ->
+      StripeApi.cancel_subscription_immediately(subscription.stripe_id)
+    end)
+  end
+
+  def maybe_cancel_subscriptions(_user_id, _plan), do: :ok
+
+  def maybe_cancel_trialing_subscriptions(user_id, %Plan{product_id: product_id})
       when product_id == @product_sanbase do
     __MODULE__
     |> __MODULE__.Query.user_has_any_subscriptions_for_product(user_id, @product_sanbase)
     |> Repo.all()
     |> Enum.filter(fn subscription -> subscription.status == :trialing end)
-    |> Enum.each(fn subscription -> StripeApi.delete_subscription(subscription.stripe_id) end)
+    |> Enum.each(fn subscription ->
+      StripeApi.cancel_subscription_immediately(subscription.stripe_id)
+    end)
   end
 
-  def maybe_delete_trialing_subscriptions(user_id, %Plan{product_id: product_id})
+  def maybe_cancel_trialing_subscriptions(user_id, %Plan{product_id: product_id})
       when product_id == @product_api do
     __MODULE__
     |> __MODULE__.Query.user_has_any_subscriptions_for_product(user_id, @product_api)
     |> Repo.all()
     |> Enum.filter(fn subscription -> subscription.status == :trialing end)
-    |> Enum.each(fn subscription -> StripeApi.delete_subscription(subscription.stripe_id) end)
+    |> Enum.each(fn subscription ->
+      StripeApi.cancel_subscription_immediately(subscription.stripe_id)
+    end)
   end
 
   @doc """
@@ -226,13 +279,13 @@ defmodule Sanbase.Billing.Subscription do
   left that he has already paid for.
   https://stripe.com/docs/billing/subscriptions/canceling-pausing#canceling
   """
-  def cancel_subscription(%__MODULE__{stripe_id: stripe_id} = db_subscription)
+  def cancel_subscription_at_period_end(%__MODULE__{stripe_id: stripe_id} = db_subscription)
       when is_binary(stripe_id) do
-    with {:ok, stripe_subscription} <- StripeApi.cancel_subscription(stripe_id),
+    with {:ok, stripe_subscription} <- StripeApi.cancel_subscription_at_period_end(stripe_id),
          {:ok, _canceled_sub} <-
            sync_subscription_with_stripe(stripe_subscription, db_subscription),
          db_subscription <- default_preload(db_subscription, force: true) do
-      emit_event({:ok, db_subscription}, :cancel_subscription, %{})
+      emit_event({:ok, db_subscription}, :cancel_subscription_at_period_end, %{})
 
       {:ok,
        %{
@@ -242,7 +295,7 @@ defmodule Sanbase.Billing.Subscription do
     end
   end
 
-  def cancel_subscription(_),
+  def cancel_subscription_at_period_end(_),
     do: {:error, "This type of automatically created subscription can't be cancelled"}
 
   @doc """
@@ -362,7 +415,7 @@ defmodule Sanbase.Billing.Subscription do
     |> Enum.each(fn [_ | rest] ->
       Enum.each(rest, fn {_, stripe_id, _, _, _} ->
         Logger.info("Delete duplicate subscription: #{stripe_id}")
-        StripeApi.delete_subscription(stripe_id)
+        StripeApi.cancel_subscription_immediately(stripe_id)
       end)
     end)
   end

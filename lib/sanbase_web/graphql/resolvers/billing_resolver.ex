@@ -114,7 +114,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     end
   end
 
-  def cancel_subscription(_root, %{subscription_id: subscription_id}, %{
+  def cancel_subscription_at_period_end(_root, %{subscription_id: subscription_id}, %{
         context: %{auth: %{current_user: current_user}}
       }) do
     user_id = current_user.id
@@ -123,9 +123,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
            {:subscription?, Subscription.by_id(subscription_id)},
          {_, %Subscription{cancel_at_period_end: false}} <-
            {:not_cancelled?, subscription},
-         {:ok, cancel_subscription} <-
-           Billing.cancel_subscription(subscription) do
-      {:ok, cancel_subscription}
+         {:ok, cancel_subscription_at_period_end} <-
+           Billing.cancel_subscription_at_period_end(subscription) do
+      {:ok, cancel_subscription_at_period_end}
     else
       result ->
         handle_subscription_error_result(

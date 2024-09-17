@@ -67,7 +67,7 @@ defmodule Sanbase.Billing.DiscordNotification do
     do_send_to_discord(message, "Stripe Payment", webhook: "payment-action-required")
   end
 
-  def handle_event(:cancel_subscription, %{
+  def handle_event(:cancel_subscription_at_period_end, %{
         data: %{extra_in_memory_data: %{subscription: subscription}}
       }) do
     period_end = DateTime.truncate(subscription.current_period_end, :second)

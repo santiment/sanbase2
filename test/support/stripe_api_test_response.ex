@@ -202,7 +202,7 @@ defmodule Sanbase.StripeApiTestResponse do
     create_subscription_resp(opts)
   end
 
-  def delete_subscription_resp(opts \\ []) do
+  def cancel_subscription_immediately_resp(opts \\ []) do
     create_subscription_resp(opts)
   end
 end

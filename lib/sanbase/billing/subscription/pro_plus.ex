@@ -24,7 +24,7 @@ defmodule Sanbase.Billing.Subscription.ProPlus do
     all_free_basic_api_subs()
     |> Enum.each(fn sub ->
       if not user_has_pro_plus?(all_pro_plus_users, sub.user_id) do
-        StripeApi.delete_subscription(sub.stripe_id)
+        StripeApi.cancel_subscription_immediately(sub.stripe_id)
       end
     end)
   end

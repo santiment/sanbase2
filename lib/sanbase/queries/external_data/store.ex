@@ -26,13 +26,19 @@ defmodule Sanbase.Queries.ExternalData.Store do
     end
   end
 
-  def get(file_name) do
-    case Application.get_env(:waffle, :storage) do
-      Waffle.Storage.S3 ->
-        :ok
+  def get_s3("s3://" <> _ = location) do
+    req = Req.new() |> ReqS3.attach()
 
-      Waffle.Storage.Local ->
-        :ok
+    # fetch from S3
+
+    case Req.get(req, url: location) do
+      {:ok, %{status: 200, body: body}} -> {:ok, body}
+      {:ok, %{status: status}} -> {:error, "Returned status code #{status}"}
+      {:error, error} -> {:error, error}
     end
+  end
+
+  def get_local(location) do
+    File.read(location)
   end
 end

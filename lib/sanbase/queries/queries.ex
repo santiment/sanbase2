@@ -451,23 +451,25 @@ defmodule Sanbase.Queries do
     |> process_transaction_result(:add_hash_match_field)
   end
 
+  @doc ~s"""
+  Resolve the code parameters in the query.
+  Parameters which value is in the format: `%{ <code here> %}` have their
+  value replaced with the result of evaluation of the code.
+  For example: {% load("/user/32/my_addresses") %} will be replaced with
+  something like: ["addr1", "addr2", "addr3"]
+  """
+  @spec resolve_code_parameters(Query.t(), User.t()) :: {:ok, Query.t()} | {:error, String.t()}
   def resolve_code_parameters(query, _user) do
     parameters =
-      Enum.map(
+      Map.new(
         query.sql_query_parameters,
         fn
           {key, value} ->
             if code_parameter?(value) do
               case eval_code_parameter(value) do
-                {:ok, value} ->
-                  IO.inspect(value)
-                  {key, value}
-
-                {:error, _error} = error_tuple ->
-                  IO.inspect("THROWING")
-                  throw(error_tuple)
+                {:ok, value} -> {key, value}
+                {:error, _error} = error_tuple -> throw(error_tuple)
               end
-              |> dbg()
             else
               {key, value}
             end
@@ -478,7 +480,6 @@ defmodule Sanbase.Queries do
     {:ok, query}
   catch
     {:error, _} = error_tuple ->
-      IO.inspect("CAUGHT")
       error_tuple
   end
 

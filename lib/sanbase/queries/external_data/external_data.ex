@@ -26,11 +26,14 @@ defmodule Sanbase.Queries.ExternalData do
     |> unique_constraint(:uuid)
   end
 
+  def get_path(%__MODULE__{user_id: user_id, name: name}), do: "/user/#{user_id}/#{name}"
+
   def resolve_path(path) do
     case String.split(path, "/", trim: true) do
       ["user", user_id, file_name] ->
         get_file_data(user_id, file_name)
 
+      # If we want to have some global?
       # ["global", file_name] ->
       #   get_file_data(file_name)
 
@@ -51,32 +54,47 @@ defmodule Sanbase.Queries.ExternalData do
     end
   end
 
-  def store(name, user_id, data) do
+  def store(name, user_id, data) when is_map(data) or is_list(data) do
     uuid = UUID.uuid4()
     filename = "#{uuid}-#{name}"
-    data = data |> :zlib.gzip() |> Base.encode64()
+    data_json = Jason.encode!(data)
 
-    IO.inspect({data, filename})
-
-    with {:ok, file} <- Sanbase.Queries.ExternalData.S3.store(%{binary: data, filename: filename}) do
-      url =
-        file
-        |> Sanbase.Queries.ExternalData.S3.url()
-        |> dbg
+    with {:ok, file} <-
+           Sanbase.Queries.ExternalData.Store.store(%{binary: data_json, filename: filename}) do
+      url = Sanbase.Queries.ExternalData.Store.url(file)
 
       %__MODULE__{}
-      |> changeset(%{name: name, uuid: uuid, user_id: user_id, storage: "s3", location: url})
+      |> changeset(%{
+        name: name,
+        uuid: uuid,
+        user_id: user_id,
+        storage: get_storage(),
+        location: url
+      })
       |> Sanbase.Repo.insert()
     end
   end
 
   def get(%__MODULE__{} = struct) do
-    case struct do
-      %{storage: "s3"} ->
-        __MODULE__.Store.get_s3(struct.location)
+    result =
+      case struct do
+        %{storage: "s3"} ->
+          __MODULE__.Store.get_s3(struct.location)
 
-      %{storage: "local"} ->
-        __MODULE__.Store.get_local(struct.location)
+        %{storage: "local"} ->
+          __MODULE__.Store.get_local(struct.location)
+      end
+
+    case result do
+      {:ok, json} -> {:ok, Jason.decode!(json)}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  defp get_storage() do
+    case Application.get_env(:waffle, :storage) do
+      Waffle.Storage.Local -> "local"
+      Waffle.Storage.S3 -> "s3"
     end
   end
 end

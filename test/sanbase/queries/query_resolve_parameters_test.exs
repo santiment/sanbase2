@@ -160,9 +160,12 @@ defmodule Sanbase.Queries.ResolveParametersTest do
         "0x2f0b23f53734252bda2277357e97e1517d6b042a"
       ]
 
-    path = "/user/#{context.user.id}/my_addresses"
+    name = "my_addresses"
 
-    {:ok, struct} = Sanbase.Queries.ExternalData.store("my_addresses", context.user.id, addresses)
+    {:ok, struct} =
+      Sanbase.Queries.ExternalData.store(name, context.user.id, addresses)
+
+    path = Sanbase.Queries.ExternalData.get_path(struct)
 
     {:ok, query} =
       Sanbase.Queries.create_query(

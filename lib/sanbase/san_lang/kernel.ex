@@ -19,7 +19,7 @@ defmodule Sanbase.SanLang.Kernel do
       data
     else
       {:error, error} ->
-        error_msg = "Failed evaluation load(#{path}). Reason: #{error}"
+        error_msg = "Failed evaluation: load(#{inspect(path)}). Reason: #{error}"
         raise(FunctionArgumentError, error_msg)
     end
   end

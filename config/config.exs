@@ -233,10 +233,10 @@ config :sanbase, Sanbase.SocialData,
 
 config :waffle,
   storage: Waffle.Storage.Local,
-  storage_dir: "sanbase/filestore/",
+  storage_dir: "/tmp/sanbase/",
   # Note: without using storage_dir_prefix: "/", a local "tmp/..." dir
   # is used instead of "/tmp/..."
-  storage_dir_prefix: "/tmp/"
+  storage_dir_prefix: "/"
 
 config :sanbase, SanbaseWeb.Graphql.Middlewares.AccessControl,
   restrict_to_in_days: {:system, "RESTRICT_TO_IN_DAYS", "1"},

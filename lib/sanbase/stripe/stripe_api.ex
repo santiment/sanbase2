@@ -120,7 +120,28 @@ defmodule Sanbase.StripeApi do
     }
 
     with {:ok, _} <- update_customer(user.stripe_customer_id, update_params) do
+      remove_duplicate_payment_methods(pm.id, user.stripe_customer_id)
+
       {:ok, user}
+    end
+  end
+
+  @doc """
+  Remove duplicate payment methods with the same fingerprint.
+  """
+  @spec remove_duplicate_payment_methods(String.t(), String.t()) :: :ok | any()
+  def remove_duplicate_payment_methods(payment_method_id, customer_id) do
+    with {:ok, payment_method} <- Stripe.PaymentMethod.retrieve(payment_method_id),
+         {:ok, %Stripe.List{data: payment_methods}} <-
+           Stripe.PaymentMethod.list(customer: customer_id),
+         fingerprint <- payment_method.card.fingerprint do
+      payment_methods
+      |> Enum.filter(fn pm ->
+        pm.card.fingerprint == fingerprint && pm.id != payment_method_id
+      end)
+      |> Enum.each(fn pm ->
+        Stripe.PaymentMethod.detach(pm.id)
+      end)
     end
   end
 

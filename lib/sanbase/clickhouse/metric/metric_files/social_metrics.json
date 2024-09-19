@@ -2143,5 +2143,41 @@
     "has_incomplete_data": true,
     "data_type": "timeseries",
     "docs_links": ["https://academy.santiment.net/metrics/unique-social-volume"]
+  },
+  {
+    "human_readable_name": "Community Social Volume Telegram",
+    "name": "community_social_volume_telegram",
+    "metric": "community_social_volume_telegram",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/social-volume"]
+  },
+  {
+    "human_readable_name": "Community Social Volume Reddit",
+    "name": "community_social_volume_reddit",
+    "metric": "community_social_volume_reddit",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/social-volume"]
   }
 ]

@@ -1,5 +1,5 @@
 defmodule Sanbase.SanLang.Kernel do
-  alias Sanbase.SanLang.Environment
+  alias Sanbase.Environment
   alias Sanbase.SanLang.Interpreter
   alias Sanbase.SanLang.FunctionArgumentError
 

@@ -9,13 +9,13 @@ defmodule Sanbase.TemplateEngine do
   alias Sanbase.TemplateEngine
   alias Sanbase.TemplateEngine.CodeEvaluation
 
-  @type option :: {:params, map()} | {:env, Sanbase.SanLang.Environment.t()}
+  @type option :: {:params, map()} | {:env, Sanbase.Environment.t()}
 
   @typedoc ~s"""
   The TemplateEngine function can accept the following options:
     - params: A map of key-value pairs that will be used to replace the simple keys in the template.
       The simple keys are the onces that are in the format {{<param_name}}.
-    - env: A SanLang environment that will be used to evaluate the code templates in the template.
+    - env: A Environment that will be used to evaluate the code templates in the template.
   """
   @type opts :: [option()]
 
@@ -68,7 +68,7 @@ defmodule Sanbase.TemplateEngine do
   @spec run(String.t(), opts) :: {:ok, String.t()} | {:error, String.t()}
   def run(template, opts \\ []) do
     params = Keyword.get(opts, :params, %{}) |> Map.new(fn {k, v} -> {to_string(k), v} end)
-    env = Keyword.get(opts, :env, Sanbase.SanLang.Environment.new())
+    env = Keyword.get(opts, :env, Sanbase.Environment.new())
 
     with {:ok, captures} <- TemplateEngine.Captures.extract_captures(template) do
       template =
@@ -113,7 +113,7 @@ defmodule Sanbase.TemplateEngine do
   @spec run_generate_positional_params(String.t(), opts) :: {String.t(), list(any())}
   def run_generate_positional_params(template, opts) do
     params = Keyword.get(opts, :params, %{}) |> Map.new(fn {k, v} -> {to_string(k), v} end)
-    env = Keyword.get(opts, :env, Sanbase.SanLang.Environment.new())
+    env = Keyword.get(opts, :env, Sanbase.Environment.new())
 
     with {:ok, captures} <- TemplateEngine.Captures.extract_captures(template),
          {:ok, result} <- do_run_generate_positional_params(template, captures, params, env) do

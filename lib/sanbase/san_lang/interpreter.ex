@@ -1,6 +1,6 @@
 defmodule Sanbase.SanLang.Interpreter do
   alias Sanbase.SanLang
-  alias Sanbase.SanLang.Environment
+  alias Sanbase.Environment
   alias Sanbase.SanLang.UnboundError
   alias Sanbase.SanLang.UndefinedFunctionError
   alias Sanbase.SanLang.OperatorArgumentError

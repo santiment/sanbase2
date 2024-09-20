@@ -11,7 +11,7 @@ defmodule Sanbase.TemplateEngine.CodeEvaluation do
   The inner_content of the capture map is evaluated, using the lang and lang_version
   specified.
   """
-  @spec eval(CaptureMap.t(), SanLang.Environment.t()) :: {:ok, any()} | {:error, String.t()}
+  @spec eval(CaptureMap.t(), Environment.t()) :: {:ok, any()} | {:error, String.t()}
   def eval(capture, env) do
     with true <- lang_supported?(capture),
          {:ok, result} <- do_eval(capture.inner_content, capture.lang, env) do

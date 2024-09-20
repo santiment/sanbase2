@@ -132,10 +132,10 @@ defmodule Sanbase.TemplateEngineTest do
     end
 
     test "Run code accessing the env" do
-      env = Sanbase.SanLang.Environment.new()
+      env = Sanbase.Environment.new()
 
       env =
-        Sanbase.SanLang.Environment.put_env_bindings(env, %{"a" => 1, "b" => "some string value"})
+        Sanbase.Environment.put_env_bindings(env, %{"a" => 1, "b" => "some string value"})
 
       template = """
       1 + @a = {% 1 + @a %}

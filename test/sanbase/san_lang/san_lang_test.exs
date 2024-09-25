@@ -2,6 +2,7 @@ defmodule Sanbase.SanLangTest do
   use Sanbase.DataCase, async: true
 
   alias Sanbase.SanLang
+  alias Sanbase.Environment
 
   test "literal values are evaluated to themselves" do
     assert SanLang.eval!("1") == 1

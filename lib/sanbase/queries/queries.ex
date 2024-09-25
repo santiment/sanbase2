@@ -12,7 +12,7 @@ defmodule Sanbase.Queries do
   alias Sanbase.Dashboards.Dashboard
   alias Sanbase.Dashboards.DashboardQueryMapping
   alias Sanbase.Accounts.User
-  alias Sanbase.Clickhouse.Query.Environment
+  alias Sanbase.Environment
 
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
 
@@ -96,11 +96,36 @@ defmodule Sanbase.Queries do
     query_metadata = Map.put_new(query_metadata, :sanbase_user_id, user.id)
 
     with {:ok, query} <- resolve_code_parameters(query, user),
-         {:ok, environment} <- Environment.new(query, user),
+         {:ok, environment} <- create_queries_environment(query, user),
          {:ok, result} <- Queries.Executor.run(query, query_metadata, environment) do
       maybe_store_execution_data_async(result, user.id, opts)
 
       {:ok, result}
+    end
+  end
+
+  defp get_assets() do
+    Sanbase.Cache.get_or_store({{__MODULE__, :get_assets}}, fn ->
+      list = Sanbase.Project.List.projects_data_for_queries()
+      {:ok, list}
+    end)
+  end
+
+  defp create_queries_environment(query, user) do
+    owner_subset = query.user |> Map.from_struct() |> Map.take([:id, :username, :email, :name])
+    querying_subset = user |> Map.from_struct() |> Map.take([:id, :username, :email, :name])
+    environment = Environment.new()
+
+    with {:ok, assets} <- get_assets() do
+      env =
+        environment
+        |> Environment.put_env_bindings(%{
+          owner: owner_subset,
+          querying_user: querying_subset,
+          assets: assets
+        })
+
+      {:ok, env}
     end
   end
 

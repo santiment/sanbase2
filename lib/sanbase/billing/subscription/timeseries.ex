@@ -2,6 +2,7 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias Sanbase.Utils.Config
   alias Sanbase.Repo
 
   schema "subscription_timeseries" do
@@ -19,15 +20,21 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
   end
 
   def run do
-    subscriptions = list_active_subs()
-    stats = stats(subscriptions)
+    # don't run on stage
+    if Config.module_get(Sanbase, :deployment_env) == "stage" do
+      :ok
+    else
+      subscriptions = list_active_subs()
+      stats = stats(subscriptions)
 
-    create(subscriptions, stats)
+      create(subscriptions, stats)
+    end
   end
 
-  def run_fill_history do
-    subscriptions = list_canceled_subs() ++ list_active_subs()
-    fill_history(subscriptions)
+  def run_fill_history(start_date, end_date) do
+    start_dt = DateTime.new!(start_date, ~T[00:00:00])
+    subscriptions = list_canceled_subs(start_dt) ++ list_active_subs()
+    fill_history(subscriptions, start_date, end_date)
   end
 
   def create(subscriptions, stats) do
@@ -63,8 +70,8 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
     |> stats()
   end
 
-  def fill_history(subscriptions) do
-    Sanbase.DateTimeUtils.generate_dates_inclusive(~D[2019-07-19], ~D[2023-01-24])
+  def fill_history(subscriptions, start_date, end_date) do
+    Sanbase.DateTimeUtils.generate_dates_inclusive(start_date, end_date)
     |> Enum.each(fn date ->
       dt = DateTime.new!(date, ~T[00:00:00])
       stats = stats(subscriptions, dt)
@@ -116,15 +123,19 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
     list_all_subscriptions(
       [],
       %{limit: 50},
-      expand: ["customer", "plan.product", "latest_invoice"]
+      expand: ["data.customer", "data.items.data.price", "data.latest_invoice"]
     )
   end
 
-  def list_canceled_subs() do
+  def list_canceled_subs(start_date) do
     list_all_subscriptions(
       [],
-      %{status: "canceled", limit: 50},
-      expand: ["customer", "plan.product", "latest_invoice"]
+      %{
+        status: "canceled",
+        limit: 50,
+        current_period_end: %{gte: DateTime.to_unix(start_date)}
+      },
+      expand: ["data.customer", "data.items.data.price", "data.latest_invoice"]
     )
   end
 
@@ -142,29 +153,32 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
     end
   end
 
-  def fetch_subs(_, _, 5), do: :error
+  def fetch_subs(_, _, 5), do: {:error, "Cannot fetch subscriptions"}
 
   def fetch_subs(opts, kw_list, attempt) do
     case Sanbase.StripeApi.list_subscriptions(opts, kw_list) do
-      {:ok, subscriptions} -> {:ok, subscriptions}
-      {:error, _} -> fetch_subs(opts, kw_list, attempt + 1)
+      {:ok, subscriptions} ->
+        {:ok, subscriptions}
+
+      {:error, %Stripe.Error{message: _reason}} ->
+        fetch_subs(opts, kw_list, attempt + 1)
     end
   end
 
   def extract_fields(subscriptions) do
     subscriptions
-    |> Enum.reject(fn subscription -> is_nil(subscription.plan) end)
+    |> Enum.reject(fn subscription -> is_nil(plan(subscription)) end)
     |> Enum.map(fn subscription ->
       %{
         id: subscription.id,
         customer_id: subscription.customer.id,
         email: subscription.customer.email,
         status: subscription.status,
-        plan_nickname: subscription.plan.nickname,
-        product_name: subscription.plan.product.name,
-        amount: subscription.plan.amount,
-        latest_invoice_amount_due: subscription.latest_invoice.amount_due,
-        latest_invoice_amount_paid: subscription.latest_invoice.amount_paid,
+        plan_nickname: plan(subscription).nickname,
+        product_name: plan(subscription).product |> product_name(),
+        amount: plan(subscription).unit_amount,
+        latest_invoice_amount_due: latest_invoice_amount(subscription, :amount_due),
+        latest_invoice_amount_paid: latest_invoice_amount(subscription, :amount_paid),
         metadata: subscription.metadata,
         start_date: subscription.start_date |> format_dt(:start),
         end_date: subscription.ended_at |> format_dt(:end),
@@ -172,6 +186,25 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
         trial_end: subscription.trial_end |> format_dt(:end)
       }
     end)
+  end
+
+  defp plan(subscription) do
+    (subscription.items.data |> hd).price
+  end
+
+  def product_name(stripe_product_id) do
+    %{
+      "prod_FJtAemBs4HJ1P3" => "SanAPI by Santiment",
+      "prod_FVVljrXENI3MFQ" => "Sanbase by Santiment"
+    }
+    |> Map.get(stripe_product_id, stripe_product_id)
+  end
+
+  defp latest_invoice_amount(subscription, field) do
+    case subscription.latest_invoice do
+      %Stripe.Invoice{} = invoice -> Map.get(invoice, field)
+      _ -> nil
+    end
   end
 
   def format_dt(nil, _) do

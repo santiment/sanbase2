@@ -216,18 +216,24 @@ defmodule Sanbase.Dashboards.Dashboard do
     |> maybe_preload(opts)
   end
 
-  def get_visibility_data(dashboard_id) do
-    from(d in base_query(),
-      where: d.id == ^dashboard_id,
-      select: %{
-        user_id: d.user_id,
-        is_public: d.is_public,
-        is_hidden: d.is_hidden
-      }
-    )
-  end
-
   # Entity Behaviour functions
+
+  @impl Sanbase.Entity.Behaviour
+  def get_visibility_data(id) do
+    query =
+      from(entity in __MODULE__,
+        where: entity.id == ^id,
+        select: %{
+          is_public: not entity.is_deleted and entity.is_public,
+          user_id: entity.user_id
+        }
+      )
+
+    case Repo.one(query) do
+      %{} = map -> {:ok, map}
+      nil -> {:error, "The dashboard with id #{id} does not exist"}
+    end
+  end
 
   @impl Sanbase.Entity.Behaviour
   @spec by_id(non_neg_integer(), opts) :: {:ok, t()} | {:error, String.t()}

@@ -74,6 +74,24 @@ defmodule Sanbase.Dashboard.Schema do
   @update_fields @create_fields -- [:user_id]
 
   @impl Sanbase.Entity.Behaviour
+  def get_visibility_data(id) do
+    query =
+      from(entity in base_query(),
+        where: entity.id == ^id,
+        select: %{
+          is_public: entity.is_public,
+          is_hidden: entity.is_hidden,
+          user_id: entity.user_id
+        }
+      )
+
+    case Repo.one(query) do
+      %{} = map -> {:ok, map}
+      nil -> {:error, "The dashboard with id #{id} does not exist"}
+    end
+  end
+
+  @impl Sanbase.Entity.Behaviour
   @spec by_id(non_neg_integer(), Keyword.t()) ::
           {:ok, t()} | {:error, String.t()}
   def by_id(dashboard_id, opts \\ []) do

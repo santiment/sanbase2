@@ -16,7 +16,6 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
     unpublished_insight = insert(:post, user: user)
     insight = insert(:published_post, user: user)
     insight2 = insert(:published_post, user: user)
-    short_url = insert(:short_url)
     chart_configuration = insert(:chart_configuration, user: user, is_public: true)
     chart_configuration2 = insert(:chart_configuration, user: user, is_public: false)
 
@@ -36,7 +35,6 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
       insight2: insight2,
       unpublished_insight: unpublished_insight,
       blockchain_address: blockchain_address,
-      short_url: short_url,
       chart_configuration: chart_configuration,
       chart_configuration2: chart_configuration2,
       timeline_event: timeline_event
@@ -84,15 +82,6 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
         "some comment2"
       )
 
-    {:ok, short_url_comment} =
-      EntityComment.create_and_link(
-        :short_url,
-        context.short_url.id,
-        context.user.id,
-        nil,
-        "some comment3"
-      )
-
     {:ok, timeline_event_comment} =
       EntityComment.create_and_link(
         :timeline_event,
@@ -137,7 +126,6 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
                  |> DateTime.from_naive!("Etc/UTC")
                  |> DateTime.to_iso8601(),
                "insight" => nil,
-               "shortUrl" => nil,
                "timelineEvent" => nil,
                "chartConfiguration" => %{"id" => context.chart_configuration.id}
              },
@@ -150,21 +138,7 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
                  |> DateTime.from_naive!("Etc/UTC")
                  |> DateTime.to_iso8601(),
                "insight" => nil,
-               "shortUrl" => nil,
                "timelineEvent" => %{"id" => context.timeline_event.id},
-               "chartConfiguration" => nil
-             },
-             %{
-               "blockchainAddress" => nil,
-               "content" => short_url_comment.content,
-               "id" => short_url_comment.id,
-               "insertedAt" =>
-                 short_url_comment.inserted_at
-                 |> DateTime.from_naive!("Etc/UTC")
-                 |> DateTime.to_iso8601(),
-               "insight" => nil,
-               "shortUrl" => %{"shortUrl" => context.short_url.short_url},
-               "timelineEvent" => nil,
                "chartConfiguration" => nil
              },
              %{
@@ -179,7 +153,6 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
                  |> DateTime.from_naive!("Etc/UTC")
                  |> DateTime.to_iso8601(),
                "insight" => nil,
-               "shortUrl" => nil,
                "timelineEvent" => nil,
                "chartConfiguration" => nil
              },
@@ -192,7 +165,6 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
                  |> DateTime.from_naive!("Etc/UTC")
                  |> DateTime.to_iso8601(),
                "insight" => %{"id" => context.insight.id},
-               "shortUrl" => nil,
                "timelineEvent" => nil,
                "chartConfiguration" => nil
              }
@@ -208,7 +180,6 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
         insertedAt
         insight { id }
         timelineEvent { id }
-        shortUrl { shortUrl }
         blockchainAddress { id address }
         chartConfiguration { id }
       }

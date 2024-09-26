@@ -95,6 +95,24 @@ defmodule Sanbase.UserList do
   end
 
   @impl Sanbase.Entity.Behaviour
+  def get_visibility_data(id) do
+    query =
+      from(entity in base_query(),
+        where: entity.id == ^id,
+        select: %{
+          is_public: entity.is_public,
+          is_hidden: entity.is_hidden,
+          user_id: entity.user_id
+        }
+      )
+
+    case Repo.one(query) do
+      %{} = map -> {:ok, map}
+      nil -> {:error, "The user list with id #{id} does not exist"}
+    end
+  end
+
+  @impl Sanbase.Entity.Behaviour
   def by_id!(id, opts), do: by_id(id, opts) |> to_bang()
 
   @impl Sanbase.Entity.Behaviour

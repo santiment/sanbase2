@@ -177,7 +177,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   end
 
   def create_post(_root, args, %{context: %{auth: %{current_user: user}}}) do
-    case Post.can_create?(user.id) do
+    case Post.has_not_reached_rate_limits?(user.id) do
       {:ok, _} -> Post.create(user, args)
       {:error, error} -> {:error, error}
     end

@@ -108,10 +108,6 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
     get_comment_entity_id(ids_mapset, Comment.BlockchainAddressComment, :blockchain_address_id)
   end
 
-  def query(:comment_short_url_id, ids_mapset) do
-    get_comment_entity_id(ids_mapset, Comment.ShortUrlComment, :short_url_id)
-  end
-
   # End comments entity id
 
   # Comments count functions
@@ -125,10 +121,6 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
 
   def query(:blockchain_addresses_comments_count, ids_mapset) do
     get_comments_count(ids_mapset, Comment.BlockchainAddressComment, :blockchain_address_id)
-  end
-
-  def query(:short_urls_comments_count, ids_mapset) do
-    get_comments_count(ids_mapset, Comment.ShortUrlComment, :short_url_id)
   end
 
   def query(:watchlist_comments_count, ids_mapset) do

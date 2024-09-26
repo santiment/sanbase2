@@ -13,7 +13,6 @@ defmodule Sanbase.Comments.EntityComment do
     ChartConfigurationComment,
     DashboardComment,
     PostComment,
-    ShortUrlComment,
     TimelineEventComment,
     WatchlistComment
   }
@@ -23,16 +22,15 @@ defmodule Sanbase.Comments.EntityComment do
           | %ChartConfigurationComment{}
           | %DashboardComment{}
           | %PostComment{}
-          | %ShortUrlComment{}
           | %TimelineEventComment{}
           | %WatchlistComment{}
 
-  @type entity ::
+  @type entity_id :: non_neg_integer()
+  @type entity_type ::
           :blockchain_address
           | :chart_configuration
           | :dashboard
           | :insight
-          | :short_url
           | :timeline_event
           | :watchlist
 
@@ -41,23 +39,22 @@ defmodule Sanbase.Comments.EntityComment do
     :chart_configurations,
     :dashboards,
     :insights,
-    :short_urls,
     :timeline_events
   ]
 
   @spec create_and_link(
-          entity,
-          non_neg_integer(),
-          non_neg_integer(),
-          non_neg_integer() | nil,
-          String.t()
+          entity_type,
+          entity_id,
+          user_id :: non_neg_integer(),
+          parent_id :: non_neg_integer() | nil,
+          content :: String.t()
         ) ::
           {:ok, %Comment{}} | {:error, any()}
-  def create_and_link(entity, entity_id, user_id, parent_id, content) do
+  def create_and_link(entity_type, entity_id, user_id, parent_id, content) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(
       :check_can_create_comment,
-      fn _repo, _changes -> Comment.can_create?(user_id) end
+      fn _repo, _changes -> Comment.user_can_comment_entity?(entity_type, entity_id, user_id) end
     )
     |> Ecto.Multi.run(
       :create_comment,
@@ -65,17 +62,17 @@ defmodule Sanbase.Comments.EntityComment do
     )
     |> Ecto.Multi.run(:link_comment_and_entity, fn
       _repo, %{create_comment: comment} ->
-        link(entity, entity_id, comment.id)
+        link(entity_type, entity_id, comment.id)
     end)
     |> Repo.transaction()
     |> case do
       {:ok, %{create_comment: comment}} -> {:ok, comment}
       {:error, _name, error, _} -> {:error, error}
     end
-    |> emit_event(:create_comment, %{entity: entity})
+    |> emit_event(:create_comment, %{entity: entity_type})
   end
 
-  @spec link(entity, non_neg_integer(), non_neg_integer()) ::
+  @spec link(entity_type, entity_id, comment_id :: non_neg_integer()) ::
           {:ok, comment_struct} | {:error, Ecto.Changeset.t()}
   def link(entity_type, entity_id, comment_id)
 
@@ -112,15 +109,6 @@ defmodule Sanbase.Comments.EntityComment do
     |> Repo.insert()
   end
 
-  def link(:short_url, entity_id, comment_id) do
-    %ShortUrlComment{}
-    |> ShortUrlComment.changeset(%{
-      comment_id: comment_id,
-      short_url_id: entity_id
-    })
-    |> Repo.insert()
-  end
-
   def link(:watchlist, entity_id, comment_id) do
     %WatchlistComment{}
     |> WatchlistComment.changeset(%{
@@ -139,17 +127,17 @@ defmodule Sanbase.Comments.EntityComment do
     |> Repo.insert()
   end
 
-  def delete_all_by_entity_id(entity, entity_id) when is_number(entity_id) do
-    entity_comments_query(entity, entity_id)
+  def delete_all_by_entity_id(entity_type, entity_id) when is_number(entity_id) do
+    entity_comments_query(entity_type, entity_id)
     |> Repo.delete_all()
   end
 
-  @spec get_comments(entity, non_neg_integer() | nil, map()) :: [%Comment{}]
-  def get_comments(entity, entity_id, %{limit: limit} = args) do
+  @spec get_comments(entity_type, entity_id | nil, map()) :: [%Comment{}]
+  def get_comments(entity_type, entity_id, %{limit: limit} = args) do
     cursor = Map.get(args, :cursor) || %{}
     order = Map.get(cursor, :order, :asc)
 
-    entity_comments_query(entity, entity_id)
+    entity_comments_query(entity_type, entity_id)
     |> apply_cursor(cursor)
     |> order_by([c], [{^order, c.inserted_at}])
     |> limit(^limit)
@@ -192,7 +180,6 @@ defmodule Sanbase.Comments.EntityComment do
       from(pc in PostComment, select: pc.comment_id)
       |> union_all(^from(pc in TimelineEventComment, select: pc.comment_id))
       |> union_all(^from(pc in BlockchainAddressComment, select: pc.comment_id))
-      |> union_all(^from(pc in ShortUrlComment, select: pc.comment_id))
       |> union_all(^from(pc in ChartConfigurationComment, select: pc.comment_id))
 
     # Exclude deleted comments
@@ -260,13 +247,13 @@ defmodule Sanbase.Comments.EntityComment do
     comments
     |> Enum.map(fn comment ->
       @comments_feed_entities
-      |> Enum.reduce(comment, fn entity, acc ->
-        value = Map.get(acc, entity) |> List.first()
+      |> Enum.reduce(comment, fn entity_type, acc ->
+        value = Map.get(acc, entity_type) |> List.first()
 
-        singular_entity = Inflex.singularize(entity) |> String.to_existing_atom()
+        singular_entity = Inflex.singularize(entity_type) |> String.to_existing_atom()
 
         acc
-        |> Map.delete(entity)
+        |> Map.delete(entity_type)
         |> Map.put(singular_entity, value)
       end)
     end)
@@ -316,13 +303,6 @@ defmodule Sanbase.Comments.EntityComment do
       preload: [:comment, comment: :user]
     )
     |> maybe_add_entity_id_clause(:blockchain_address_id, entity_id)
-  end
-
-  defp entity_comments_query(:short_url, entity_id) do
-    from(comment in ShortUrlComment,
-      preload: [:comment, comment: :user]
-    )
-    |> maybe_add_entity_id_clause(:short_url_id, entity_id)
   end
 
   defp apply_cursor(query, %{type: :before, datetime: datetime}) do

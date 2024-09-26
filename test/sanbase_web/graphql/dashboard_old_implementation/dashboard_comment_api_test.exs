@@ -9,7 +9,7 @@ defmodule SanbaseWeb.Graphql.DashboardCommentApiTest do
     clean_task_supervisor_children()
 
     user = insert(:user)
-    dashboard = insert(:dashboard)
+    dashboard = insert(:dashboard, is_public: true)
     conn = setup_jwt_auth(build_conn(), user)
 
     %{conn: conn, user: user, dashboard: dashboard}

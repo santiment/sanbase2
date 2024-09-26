@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.1 (Homebrew)
--- Dumped by pg_dump version 15.1 (Homebrew)
+-- Dumped from database version 14.12 (Homebrew)
+-- Dumped by pg_dump version 14.12 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -3313,6 +3313,42 @@ ALTER SEQUENCE public.queries_cache_id_seq OWNED BY public.queries_cache.id;
 
 
 --
+-- Name: queries_external_data; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.queries_external_data (
+    id bigint NOT NULL,
+    uuid character varying(255) NOT NULL,
+    user_id bigint NOT NULL,
+    name character varying(255) NOT NULL,
+    description character varying(255),
+    storage character varying(255) NOT NULL,
+    location character varying(255) NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: queries_external_data_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.queries_external_data_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: queries_external_data_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.queries_external_data_id_seq OWNED BY public.queries_external_data.id;
+
+
+--
 -- Name: queries_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -3654,38 +3690,6 @@ CREATE SEQUENCE public.sheets_templates_id_seq
 --
 
 ALTER SEQUENCE public.sheets_templates_id_seq OWNED BY public.sheets_templates.id;
-
-
---
--- Name: short_url_comments_mapping; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.short_url_comments_mapping (
-    id bigint NOT NULL,
-    comment_id bigint,
-    short_url_id bigint,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
-);
-
-
---
--- Name: short_url_comments_mapping_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.short_url_comments_mapping_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: short_url_comments_mapping_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.short_url_comments_mapping_id_seq OWNED BY public.short_url_comments_mapping.id;
 
 
 --
@@ -5352,6 +5356,13 @@ ALTER TABLE ONLY public.queries_cache ALTER COLUMN id SET DEFAULT nextval('publi
 
 
 --
+-- Name: queries_external_data id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.queries_external_data ALTER COLUMN id SET DEFAULT nextval('public.queries_external_data_id_seq'::regclass);
+
+
+--
 -- Name: reports id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -5405,13 +5416,6 @@ ALTER TABLE ONLY public.shared_access_tokens ALTER COLUMN id SET DEFAULT nextval
 --
 
 ALTER TABLE ONLY public.sheets_templates ALTER COLUMN id SET DEFAULT nextval('public.sheets_templates_id_seq'::regclass);
-
-
---
--- Name: short_url_comments_mapping id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.short_url_comments_mapping ALTER COLUMN id SET DEFAULT nextval('public.short_url_comments_mapping_id_seq'::regclass);
 
 
 --
@@ -6288,6 +6292,14 @@ ALTER TABLE ONLY public.queries_cache
 
 
 --
+-- Name: queries_external_data queries_external_data_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.queries_external_data
+    ADD CONSTRAINT queries_external_data_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: queries queries_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6389,14 +6401,6 @@ ALTER TABLE ONLY public.shared_access_tokens
 
 ALTER TABLE ONLY public.sheets_templates
     ADD CONSTRAINT sheets_templates_pkey PRIMARY KEY (id);
-
-
---
--- Name: short_url_comments_mapping short_url_comments_mapping_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.short_url_comments_mapping
-    ADD CONSTRAINT short_url_comments_mapping_pkey PRIMARY KEY (id);
 
 
 --
@@ -7367,6 +7371,20 @@ CREATE UNIQUE INDEX queries_cache_query_id_user_id_index ON public.queries_cache
 
 
 --
+-- Name: queries_external_data_user_id_name_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX queries_external_data_user_id_name_index ON public.queries_external_data USING btree (user_id, name);
+
+
+--
+-- Name: queries_external_data_uuid_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX queries_external_data_uuid_index ON public.queries_external_data USING btree (uuid);
+
+
+--
 -- Name: queries_user_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7420,20 +7438,6 @@ CREATE UNIQUE INDEX shared_access_tokens_chart_configuration_id_index ON public.
 --
 
 CREATE UNIQUE INDEX shared_access_tokens_uuid_index ON public.shared_access_tokens USING btree (uuid);
-
-
---
--- Name: short_url_comments_mapping_comment_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX short_url_comments_mapping_comment_id_index ON public.short_url_comments_mapping USING btree (comment_id);
-
-
---
--- Name: short_url_comments_mapping_short_url_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX short_url_comments_mapping_short_url_id_index ON public.short_url_comments_mapping USING btree (short_url_id);
 
 
 --
@@ -8601,6 +8605,14 @@ ALTER TABLE ONLY public.queries_cache
 
 
 --
+-- Name: queries_external_data queries_external_data_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.queries_external_data
+    ADD CONSTRAINT queries_external_data_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: queries queries_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8678,22 +8690,6 @@ ALTER TABLE ONLY public.shared_access_tokens
 
 ALTER TABLE ONLY public.shared_access_tokens
     ADD CONSTRAINT shared_access_tokens_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
-
-
---
--- Name: short_url_comments_mapping short_url_comments_mapping_comment_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.short_url_comments_mapping
-    ADD CONSTRAINT short_url_comments_mapping_comment_id_fkey FOREIGN KEY (comment_id) REFERENCES public.comments(id);
-
-
---
--- Name: short_url_comments_mapping short_url_comments_mapping_short_url_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.short_url_comments_mapping
-    ADD CONSTRAINT short_url_comments_mapping_short_url_id_fkey FOREIGN KEY (short_url_id) REFERENCES public.short_urls(id);
 
 
 --
@@ -9566,3 +9562,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20240805115620);
 INSERT INTO public."schema_migrations" (version) VALUES (20240809122904);
 INSERT INTO public."schema_migrations" (version) VALUES (20240904135651);
 INSERT INTO public."schema_migrations" (version) VALUES (20240926130910);
+INSERT INTO public."schema_migrations" (version) VALUES (20240926135951);

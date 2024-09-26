@@ -33,7 +33,6 @@ defmodule Sanbase.Comment do
   alias Sanbase.Repo
   alias Sanbase.Accounts.User
   alias Sanbase.Insight.Post
-  alias Sanbase.ShortUrl
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.BlockchainAddress
   alias Sanbase.Dashboard
@@ -45,7 +44,6 @@ defmodule Sanbase.Comment do
   @max_comment_length 15_000
 
   @insights_table "post_comments_mapping"
-  @short_urls_table "short_url_comments_mapping"
   @timeline_events_table "timeline_event_comments_mapping"
   @blockchain_addrs_table "blockchain_address_comments_mapping"
   @dashboard_table "dashboard_comments_mapping"
@@ -77,7 +75,6 @@ defmodule Sanbase.Comment do
     # the existing code, manipulate the DB schema, etc.
     many_to_many(:insights, Post, join_through: @insights_table)
     many_to_many(:watchlists, UserList, join_through: @watchlists_table)
-    many_to_many(:short_urls, ShortUrl, join_through: @short_urls_table)
     many_to_many(:timeline_events, TimelineEvent, join_through: @timeline_events_table)
     many_to_many(:blockchain_addresses, BlockchainAddress, join_through: @blockchain_addrs_table)
 
@@ -109,14 +106,31 @@ defmodule Sanbase.Comment do
     |> foreign_key_constraint(:root_parent_id)
   end
 
-  def can_create?(user_id) do
+  # TODO: These are not implementing the entity behaviour, so they are specially handled here
+  def user_can_comment_entity?(entity_type, _, _)
+      when entity_type in [:timeline_event, :blockchain_address],
+      do: {:ok, true}
+
+  def user_can_comment_entity?(entity_type, entity_id, user_id) do
+    with {:ok, map} <- Sanbase.Entity.get_visibility_data(entity_type, entity_id),
+         {:ok, true} <- has_not_reached_rate_limits?(user_id) do
+      if map.user_id == user_id or map.is_public == true do
+        {:ok, true}
+      else
+        {:error,
+         "The entity of type #{entity_type} with id #{entity_id} is private and not owned by you."}
+      end
+    end
+  end
+
+  def has_not_reached_rate_limits?(user_id) do
     limits = %{
       day: Config.module_get(__MODULE__, :creation_limit_day, 50),
       hour: Config.module_get(__MODULE__, :creation_limit_hour, 20),
       minute: Config.module_get(__MODULE__, :creation_limit_minute, 3)
     }
 
-    Sanbase.Ecto.Common.can_create?(__MODULE__, user_id,
+    Sanbase.Ecto.Common.has_not_reached_rate_limits?(__MODULE__, user_id,
       limits: limits,
       entity_singular: "comment",
       entity_plural: "comments"

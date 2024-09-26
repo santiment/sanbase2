@@ -11,6 +11,7 @@ defmodule Sanbase.Queries.Query do
   import Ecto.Changeset
   import Sanbase.Utils.Transform, only: [to_bang: 1]
 
+  alias Sanbase.Repo
   alias Sanbase.Accounts.User
 
   @type query_id :: non_neg_integer()
@@ -201,13 +202,31 @@ defmodule Sanbase.Queries.Query do
   # Entity-based queries
 
   @impl Sanbase.Entity.Behaviour
+  def get_visibility_data(id) do
+    query =
+      from(entity in base_query(),
+        where: entity.id == ^id,
+        select: %{
+          is_public: entity.is_public,
+          is_hidden: entity.is_hidden,
+          user_id: entity.user_id
+        }
+      )
+
+    case Repo.one(query) do
+      %{} = map -> {:ok, map}
+      nil -> {:error, "The query with id #{id} does not exist"}
+    end
+  end
+
+  @impl Sanbase.Entity.Behaviour
   def by_id!(id, opts) when is_integer(id), do: by_id(id, opts) |> to_bang()
 
   @impl Sanbase.Entity.Behaviour
   def by_id(id, _opts) when is_integer(id) do
     query = from(ut in base_query(), where: ut.id == ^id)
 
-    case Sanbase.Repo.one(query) do
+    case Repo.one(query) do
       %__MODULE__{} = struct -> {:ok, struct}
       nil -> {:error, "Query with id #{id} does not exist"}
     end
@@ -224,7 +243,7 @@ defmodule Sanbase.Queries.Query do
         order_by: fragment("array_position(?, ?::int)", ^ids, ul.id)
       )
       |> maybe_preload(opts)
-      |> Sanbase.Repo.all()
+      |> Repo.all()
 
     {:ok, result}
   end

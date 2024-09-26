@@ -245,6 +245,7 @@ defmodule Sanbase.DiscordBot.AiServer do
       |> Map.put(:total_cost, answer["total_cost"])
       |> Map.put(:elapsed_time, result["elapsed_time"])
       |> Map.put(:route, result["route"])
+      |> Map.put(:function_called, result["function_called"])
       |> Map.put(:command, add_command(result["route"]["route"]))
 
     params = maybe_add_prompt(params, answer["prompt"])

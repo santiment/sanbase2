@@ -284,7 +284,8 @@ CREATE TABLE public.ai_context (
     thread_id character varying(255),
     thread_name character varying(255),
     votes jsonb DEFAULT '{}'::jsonb,
-    route jsonb DEFAULT '{}'::jsonb
+    route jsonb DEFAULT '{}'::jsonb,
+    function_called character varying(255)
 );
 
 
@@ -9564,3 +9565,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20240725122924);
 INSERT INTO public."schema_migrations" (version) VALUES (20240805115620);
 INSERT INTO public."schema_migrations" (version) VALUES (20240809122904);
 INSERT INTO public."schema_migrations" (version) VALUES (20240904135651);
+INSERT INTO public."schema_migrations" (version) VALUES (20240926130910);

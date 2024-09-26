@@ -6040,6 +6040,60 @@
     "docs_links": ["https://academy.santiment.net/metrics/ethena-staking"]
   },
   {
+    "human_readable_name": "Sky savings deposits",
+    "name": "sky_savings_deposits",
+    "metric": "sky_savings_deposits",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/sky-savings"]
+  },
+  {
+    "human_readable_name": "Sky savings withdrawals",
+    "name": "sky_savings_withdrawals",
+    "metric": "sky_savings_withdrawals",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/sky-savings"]
+  },
+  {
+    "human_readable_name": "Sky savings total supplied",
+    "name": "sky_savings_total_supplied",
+    "metric": "sky_savings_total_supplied",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/sky-savings"]
+  },
+  {
     "human_readable_name": "Price volatility for the last {{sliding_window:human_readable}}",
     "name": "price_volatility_{{sliding_window}}",
     "metric": "price_volatility_{{sliding_window}}",

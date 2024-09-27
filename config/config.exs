@@ -158,6 +158,7 @@ config :sasl, sasl_error_logger: false
 # Configures Elixir's Logger
 config :logger, :console,
   format: {Sanbase.Utils.JsonLogger, :format},
+  backends: [:console, Sentry.LoggerBackend],
   metadata: [:request_id, :api_token, :user_id, :remote_ip, :complexity, :query, :san_balance],
   handle_otp_reports: true,
   handle_sasl_reports: true

@@ -46,6 +46,10 @@ defmodule Sanbase.Application do
     # Note: Sentry.LoggerBackend now allows to send non-exception errors to sentry, too.
     # This is not enabled yet.
     {:ok, _} = Logger.add_backend(Sentry.LoggerBackend)
+
+    # Glitchtip handler: This library comes with a :logger handler to capture error messages coming from process crashes. To enable this, add the handler when your application starts:
+    :logger.add_handler(:sentry_handler, Sentry.LoggerHandler, %{})
+
     Supervisor.start_link(children, opts)
   end
 

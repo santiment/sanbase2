@@ -57,6 +57,8 @@ defmodule SanbaseWeb do
         layout: {SanbaseWeb.Layouts, :app}
 
       unquote(html_helpers())
+
+      on_mount Sentry.LiveViewHook
     end
   end
 

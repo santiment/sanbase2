@@ -72,6 +72,11 @@ defmodule Sanbase.Chart.Configuration do
   end
 
   @impl Sanbase.Entity.Behaviour
+  def get_visibility_data(id) do
+    Sanbase.Entity.Query.default_get_visibility_data(__MODULE__, :chart_configration, id)
+  end
+
+  @impl Sanbase.Entity.Behaviour
   def by_id!(id, opts), do: by_id(id, opts) |> to_bang()
 
   @impl Sanbase.Entity.Behaviour

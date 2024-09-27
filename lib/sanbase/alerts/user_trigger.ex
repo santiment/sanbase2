@@ -90,6 +90,11 @@ defmodule Sanbase.Alert.UserTrigger do
   end
 
   @impl Sanbase.Entity.Behaviour
+  def get_visibility_data(id) do
+    Sanbase.Entity.Query.default_get_visibility_data(__MODULE__, :user_trigger, id)
+  end
+
+  @impl Sanbase.Entity.Behaviour
   def by_id!(id, opts) when is_integer(id), do: by_id(id, opts) |> to_bang()
 
   @impl Sanbase.Entity.Behaviour

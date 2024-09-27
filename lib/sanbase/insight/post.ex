@@ -126,7 +126,7 @@ defmodule Sanbase.Insight.Post do
       from(entity in base_query(),
         where: entity.id == ^id,
         select: %{
-          is_public: entity.ready_state == ^@published and entity.state == ^@approved,
+          is_public: entity.state == ^@approved and entity.ready_state == ^@published,
           is_hidden: entity.is_hidden,
           user_id: entity.user_id
         }
@@ -134,7 +134,7 @@ defmodule Sanbase.Insight.Post do
 
     case Repo.one(query) do
       %{} = map -> {:ok, map}
-      nil -> {:error, "The post with id #{id} does not exist"}
+      nil -> {:error, "The dashboard with id #{id} does not exist"}
     end
   end
 

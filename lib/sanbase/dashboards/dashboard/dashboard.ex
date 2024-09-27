@@ -220,19 +220,7 @@ defmodule Sanbase.Dashboards.Dashboard do
 
   @impl Sanbase.Entity.Behaviour
   def get_visibility_data(id) do
-    query =
-      from(entity in __MODULE__,
-        where: entity.id == ^id,
-        select: %{
-          is_public: not entity.is_deleted and entity.is_public,
-          user_id: entity.user_id
-        }
-      )
-
-    case Repo.one(query) do
-      %{} = map -> {:ok, map}
-      nil -> {:error, "The dashboard with id #{id} does not exist"}
-    end
+    Sanbase.Entity.Query.default_get_visibility_data(__MODULE__, :dashboard, id)
   end
 
   @impl Sanbase.Entity.Behaviour

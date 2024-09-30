@@ -16,17 +16,12 @@ defmodule Sanbase.SocialData.SocialHelper do
 
   def sources_total_string(), do: @sources |> Enum.join(",")
 
-  def replace_words_with_original_casing({:error, error}, _words), do: {:error, error}
+  def replace_words_with_original_casing(result, words) do
+    Enum.map(result, fn %{word: lowercase_word} = map ->
+      original_word = Enum.find(words, fn w -> String.downcase(w) == lowercase_word end)
 
-  def replace_words_with_original_casing({:ok, result}, words) do
-    result =
-      Enum.map(result, fn %{word: lowercase_word} = map ->
-        original_word = Enum.find(words, fn w -> String.downcase(w) == lowercase_word end)
-
-        Map.put(map, :word, original_word)
-      end)
-
-    {:ok, result}
+      Map.put(map, :word, original_word)
+    end)
   end
 
   def social_metrics_selector_handler(%{slug: slugs}) when is_list(slugs) do

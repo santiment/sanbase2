@@ -78,10 +78,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
 
   def words_social_volume(
         _root,
-        %{selector: %{words: _words} = selector, from: from, to: to, interval: interval},
+        %{selector: %{words: _words} = selector, from: from, to: to, interval: interval} = args,
         _resolution
       ) do
-    SocialData.social_volume(selector, from, to, interval, :total)
+    treat_as_lucene = Map.get(args, :treat_word_as_lucene_query, false)
+
+    SocialData.social_volume(selector, from, to, interval, :total,
+      treat_word_as_lucene_query: treat_as_lucene
+    )
   end
 
   def words_social_dominance(

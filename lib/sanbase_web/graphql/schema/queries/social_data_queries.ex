@@ -170,6 +170,13 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:to, non_null(:datetime))
       arg(:interval, :interval, default_value: "1d")
 
+      @desc ~s"""
+      If true, the word will be treated as a Lucene query. Default is false.
+      Lucene queries allows the word to be not a single word, but a query like: eth AND nft.
+      If false, the words are all lowercased and the AND/NOT/OR keywords meaning is lost.
+      """
+      arg(:treat_word_as_lucene_query, :boolean, default_value: false)
+
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl, %{allow_realtime_data: true})
       cache_resolve(&SocialDataResolver.words_social_volume/3, ttl: 600, max_ttl_offset: 240)

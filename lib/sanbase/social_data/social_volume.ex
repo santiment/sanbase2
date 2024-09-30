@@ -9,6 +9,8 @@ defmodule Sanbase.SocialData.SocialVolume do
   alias Sanbase.Project
   alias Sanbase.Clickhouse.NftTrade
 
+  import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
+
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 
   @recv_timeout 25_000
@@ -37,12 +39,30 @@ defmodule Sanbase.SocialData.SocialVolume do
 
   def social_volume(%{words: words} = selector, from, to, interval, source, opts)
       when is_list(words) do
-    transformed_words = Enum.reject(words, &(&1 == "***")) |> Enum.map(&String.downcase/1)
+    transformed_words = Enum.reject(words, &(&1 == "***"))
+    treat_word_as_lucene_query = Keyword.get(opts, :treat_word_as_lucene_query, false)
+
+    transformed_words =
+      case Keyword.get(opts, :treat_word_as_lucene_query, false) do
+        false -> transformed_words |> Enum.map(&String.downcase/1)
+        true -> transformed_words
+      end
+
     selector = %{selector | words: transformed_words}
 
     social_volume_list_request(selector, from, to, interval, source, opts)
     |> handle_words_social_volume_response(selector)
-    |> Sanbase.SocialData.SocialHelper.replace_words_with_original_casing(words)
+    |> maybe_apply_function(fn result ->
+      if treat_word_as_lucene_query do
+        result
+      else
+        # If the words are **not** treated as lucene syntax (the default behaviour)
+        # they are lowercased before they are sent to metricshub. Because of that
+        # we need to properly map the result of metricshub back to the original casing
+        # of the word that came from the API call
+        SocialHelper.replace_words_with_original_casing(result, words)
+      end
+    end)
   end
 
   def social_volume(selector, from, to, interval, source, opts) do

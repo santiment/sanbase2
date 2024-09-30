@@ -71,8 +71,7 @@ defmodule Sanbase.SocialData.SocialVolume do
   end
 
   defp handle_response(response, selector) do
-    response
-    |> case do
+    case response do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         body
         |> Jason.decode!()

@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 14.12 (Homebrew)
--- Dumped by pg_dump version 14.12 (Homebrew)
+-- Dumped from database version 15.1 (Homebrew)
+-- Dumped by pg_dump version 15.1 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -5317,7 +5317,6 @@ ALTER TABLE ONLY public.queries ALTER COLUMN id SET DEFAULT nextval('public.quer
 --
 
 ALTER TABLE ONLY public.queries_cache ALTER COLUMN id SET DEFAULT nextval('public.queries_cache_id_seq'::regclass);
-
 
 
 --

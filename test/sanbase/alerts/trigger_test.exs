@@ -385,4 +385,29 @@ defmodule Sanbase.Alert.TriggersTest do
     assert trigger.trigger.is_public == true
     assert trigger.trigger.cooldown == "1h"
   end
+
+  @tag capture_log: true
+  test "too big time_window is not valid" do
+    user = insert(:user)
+
+    trigger_settings = %{
+      type: "metric_signal",
+      metric: "active_addresses_24h",
+      target: %{slug: "santiment"},
+      channel: "telegram",
+      time_window: "250000000000m",
+      operation: %{percent_up: 200.0}
+    }
+
+    assert {:error, error_msg} =
+             UserTrigger.create_user_trigger(user, %{
+               title: "Generic title",
+               is_public: true,
+               cooldown: "1d",
+               settings: trigger_settings
+             })
+
+    assert error_msg =~ "The time_window parameter must not be bigger than 1 year"
+    assert error_msg =~ "Provided value: #{trigger_settings.time_window}"
+  end
 end

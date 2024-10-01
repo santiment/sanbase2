@@ -9,7 +9,8 @@ defmodule Sanbase.Alert.Evaluator do
   """
 
   alias Sanbase.Cache
-  alias Sanbase.Alert.{UserTrigger, Trigger}
+  alias Sanbase.Alert.UserTrigger
+  alias Sanbase.Alert.Trigger
 
   require Logger
 
@@ -36,6 +37,33 @@ defmodule Sanbase.Alert.Evaluator do
   end
 
   defp evaluate(%UserTrigger{trigger: trigger} = user_trigger) do
+    case Vex.validate(trigger.settings) do
+      {:ok, _} ->
+        do_evaluate(user_trigger)
+
+      {:error, [{:error, _field, _, error_msg}]} ->
+        # Do not evaluate invalid triggers but directly disactivate them
+        Logger.info("Auto disable alert with id #{user_trigger.id}. Reason: #{error_msg}")
+        _ = UserTrigger.update_is_active(user_trigger.id, user_trigger.user_id, false)
+
+        user_trigger
+        |> put_in(
+          [Access.key!(:trigger), Access.key!(:settings), Access.key!(:triggered?)],
+          false
+        )
+
+      error ->
+        Logger.error("Unknown and unexpected error during evaluation: #{inspect(error)}")
+
+        user_trigger
+        |> put_in(
+          [Access.key!(:trigger), Access.key!(:settings), Access.key!(:triggered?)],
+          false
+        )
+    end
+  end
+
+  defp do_evaluate(%UserTrigger{trigger: trigger} = user_trigger) do
     %{cooldown: cooldown, last_triggered: last_triggered} = trigger
 
     # Along with the trigger settings (the `cache_key`) take into account also

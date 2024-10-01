@@ -138,7 +138,8 @@ defmodule Sanbase.Validation do
   defp time_window_sanity_check(time_window) do
     case str_to_sec(time_window) do
       seconds when seconds >= @year_in_seconds ->
-        {:error, "The time_window parameter must not be bigger than 1 year"}
+        {:error,
+         "The time_window parameter must not be bigger than 1 year. Provided value: #{time_window}"}
 
       _ ->
         :ok

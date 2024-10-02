@@ -333,7 +333,7 @@ defimpl Sanbase.Alert, for: Any do
     slugs = Map.keys(template_kv)
 
     Logger.info(
-      "[maybe_extend_payload_telegram_channel_#{user_trigger.id}] [user_trigger: #{inspect(user_trigger)}] [payload: #{inspect(payload)}] [slugs: #{inspect(slugs)}]]"
+      "[maybe_extend_payload_telegram_channel_#{user_trigger.id}] [user_trigger: #{inspect(user_trigger.id)}]]"
     )
 
     if length(slugs) > 0 do

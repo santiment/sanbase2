@@ -277,13 +277,16 @@ defmodule Sanbase.DiscordBot.AiServer do
     |> Enum.uniq()
   end
 
+  # prompt is a list of maps, each with 'role' and 'content' keys.
+  # Role can be 'system', 'user', or 'assistant'. Content is a string.
   defp maybe_add_prompt(params, prompt) do
     if prompt do
-      prompt =
-        "System:\n" <>
-          prompt["system"] <> "\n\n" <> "User:\n" <> prompt["user"]
+      formatted_prompt =
+        Enum.map_join(prompt, "\n\n", fn %{"role" => role, "content" => content} ->
+          "#{String.capitalize(role)}:\n#{content}"
+        end)
 
-      Map.put(params, :prompt, prompt)
+      Map.put(params, :prompt, formatted_prompt)
     else
       params
     end

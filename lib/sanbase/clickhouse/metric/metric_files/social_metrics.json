@@ -74,7 +74,7 @@
   {
     "human_readable_name": "Sentiment Weighted Total",
     "name": "sentiment_weighted_total",
-    "metric": "sentiment_volume_consumed_1d",
+    "metric": "sentiment_volume_consumed_v2_1d",
     "aliases": ["sentiment_volume_consumed_total"],
     "version": "2020-07-31",
     "access": "restricted",
@@ -184,7 +184,7 @@
   {
     "human_readable_name": "Sentiment Balance Total",
     "name": "sentiment_balance_total",
-    "metric": "sentiment_balance",
+    "metric": "sentiment_balance_v2",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -256,7 +256,7 @@
   {
     "human_readable_name": "Sentiment Volume Consumed 4chan",
     "name": "sentiment_volume_consumed_4chan",
-    "metric": "sentiment_volume_consumed_4chan",
+    "metric": "sentiment_volume_consumed_4chan_v2_1d",
     "aliases": ["sentiment_weighted_4chan"],
     "version": "2020-07-31",
     "access": "restricted",
@@ -361,7 +361,7 @@
   {
     "human_readable_name": "Sentiment Balance 4chan",
     "name": "sentiment_balance_4chan",
-    "metric": "sentiment_balance_4chan",
+    "metric": "sentiment_balance_4chan_v2",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -574,7 +574,7 @@
   {
     "human_readable_name": "Sentiment Volume Consumed Telegram",
     "name": "sentiment_volume_consumed_telegram",
-    "metric": "sentiment_volume_consumed_telegram",
+    "metric": "sentiment_volume_consumed_telegram_v2_1d",
     "aliases": ["sentiment_weighted_telegram"],
     "version": "2020-07-31",
     "access": "restricted",
@@ -679,7 +679,7 @@
   {
     "human_readable_name": "Sentiment Balance Telegram",
     "name": "sentiment_balance_telegram",
-    "metric": "sentiment_balance_telegram",
+    "metric": "sentiment_balance_telegram_v2",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -751,7 +751,7 @@
   {
     "human_readable_name": "Sentiment Weighted Reddit",
     "name": "sentiment_weighted_reddit",
-    "metric": "sentiment_volume_consumed_reddit",
+    "metric": "sentiment_volume_consumed_reddit_v2_1d",
     "aliases": ["sentiment_volume_consumed_reddit"],
     "version": "2020-07-31",
     "access": "restricted",
@@ -856,7 +856,7 @@
   {
     "human_readable_name": "Sentiment Balance Reddit",
     "name": "sentiment_balance_reddit",
-    "metric": "sentiment_balance_reddit",
+    "metric": "sentiment_balance_reddit_v2",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -928,7 +928,7 @@
   {
     "human_readable_name": "Sentiment Weighted Twitter",
     "name": "sentiment_weighted_twitter",
-    "metric": "sentiment_volume_consumed_twitter",
+    "metric": "sentiment_volume_consumed_twitter_v2_1d",
     "aliases": ["sentiment_volume_consumed_twitter"],
     "version": "2020-07-31",
     "access": "restricted",
@@ -1037,7 +1037,7 @@
   {
     "human_readable_name": "Sentiment Balance Twitter",
     "name": "sentiment_balance_twitter",
-    "metric": "sentiment_balance_twitter",
+    "metric": "sentiment_balance_twitter_v2",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -1109,7 +1109,7 @@
   {
     "human_readable_name": "Sentiment Weighted Youtube",
     "name": "sentiment_weighted_youtube_videos",
-    "metric": "sentiment_volume_consumed_youtube_videos",
+    "metric": "sentiment_volume_consumed_youtube_videos_v2_1d",
     "aliases": ["sentiment_volume_consumed_youtube_videos"],
     "version": "2020-07-31",
     "access": "restricted",
@@ -1214,7 +1214,7 @@
   {
     "human_readable_name": "Sentiment Balance Youtube",
     "name": "sentiment_balance_youtube_videos",
-    "metric": "sentiment_balance_youtube_videos",
+    "metric": "sentiment_balance_youtube_videos_v2",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -1286,7 +1286,7 @@
   {
     "human_readable_name": "Sentiment Weighted Bitcointalk",
     "name": "sentiment_weighted_bitcointalk",
-    "metric": "sentiment_volume_consumed_bitcointalk",
+    "metric": "sentiment_volume_consumed_bitcointalk_v2_1d",
     "aliases": ["sentiment_volume_consumed_bitcointalk"],
     "version": "2020-07-31",
     "access": "restricted",
@@ -1391,7 +1391,7 @@
   {
     "human_readable_name": "Sentiment Balance Bitcointalk",
     "name": "sentiment_balance_bitcointalk",
-    "metric": "sentiment_balance_bitcointalk",
+    "metric": "sentiment_balance_bitcointalk_v2",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],

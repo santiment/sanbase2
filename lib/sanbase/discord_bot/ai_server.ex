@@ -42,7 +42,7 @@ defmodule Sanbase.DiscordBot.AiServer do
         {:error, _, _} -> ["twitter"]
       end
 
-    messages = AiContext.fetch_history_context(discord_metadata, 5)
+    messages = AiContext.fetch_history_context(discord_metadata, 10)
 
     ai_server_params = %{
       question: question,

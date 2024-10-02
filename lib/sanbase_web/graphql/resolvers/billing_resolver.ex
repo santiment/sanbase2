@@ -318,7 +318,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
         context: %{auth: %{current_user: current_user}}
       }) do
     if current_user.stripe_customer_id do
-      StripeApi.detach_payment_method(current_user.stripe_customer_id)
+      StripeApi.maybe_detach_payment_method(current_user.stripe_customer_id)
     end
 
     Billing.create_or_update_stripe_customer(current_user, card_token)

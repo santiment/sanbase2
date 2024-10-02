@@ -145,11 +145,14 @@ defmodule Sanbase.StripeApi do
     end
   end
 
-  def detach_payment_method(stripe_customer_id) do
+  # Detach payment method if it exists
+  def maybe_detach_payment_method(stripe_customer_id) do
     with {:ok, customer} <- Stripe.Customer.retrieve(stripe_customer_id),
+         default_payment_method when is_binary(default_payment_method) <-
+           customer.invoice_settings.default_payment_method,
          {:ok, %Stripe.PaymentMethod{}} <-
            Stripe.PaymentMethod.detach(%{
-             payment_method: customer.invoice_settings.default_payment_method
+             payment_method: default_payment_method
            }) do
       :ok
     end

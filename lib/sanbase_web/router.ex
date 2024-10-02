@@ -1,6 +1,7 @@
 defmodule SanbaseWeb.Router do
   # credo:disable-for-this-file Credo.Check.Refactor.ModuleDependencies
   use SanbaseWeb, :router
+  use Sentry.PlugCapture
 
   pipeline :admin_pod_only do
     plug(SanbaseWeb.Plug.AdminPodOnly)

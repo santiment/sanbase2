@@ -158,6 +158,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :watchlist,
           :watchlist_by_slug,
           :words_social_dominance,
+          :words_social_dominance_old,
           # Queries 2.0
           :get_dashboard,
           :get_sql_query,

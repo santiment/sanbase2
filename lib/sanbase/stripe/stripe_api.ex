@@ -87,7 +87,7 @@ defmodule Sanbase.StripeApi do
   def delete_card(customer) do
     cond do
       is_binary(customer.default_source) ->
-        Stripe.Card.delete(customer.default_source, %{customer: customer.id})
+        Stripe.Card.delete(customer.id, customer.default_source)
 
       is_binary(customer.invoice_settings.default_payment_method) ->
         Stripe.PaymentMethod.detach(%{

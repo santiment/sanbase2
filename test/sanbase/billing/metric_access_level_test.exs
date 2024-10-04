@@ -876,6 +876,8 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "unique_social_volume_farcaster_5m",
         "unique_social_volume_farcaster_1h",
         "unique_social_volume_farcaster_1d",
+        "community_social_volume_telegram",
+        "community_social_volume_reddit",
         "sentiment_positive_4chan",
         "sentiment_positive_telegram",
         "sentiment_positive_reddit",

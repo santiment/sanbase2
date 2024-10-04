@@ -399,4 +399,36 @@ defmodule Sanbase.Alert.MetricTriggerSettingsTest do
       end)
     end
   end
+
+  test "alert with invalid time_window does not run and is disabled" do
+    user = insert(:user)
+
+    trigger_settings = %{
+      type: "metric_signal",
+      metric: "active_addresses_24h",
+      target: %{slug: "santiment"},
+      channel: "telegram",
+      time_window: "11111111d",
+      operation: %{percent_up: 200.0}
+    }
+
+    # To bypass the validation check on insertion use the Factory directly
+    user_trigger =
+      insert(:user_trigger,
+        user: user,
+        trigger: %{title: "Generic title", is_public: false, settings: trigger_settings}
+      )
+
+    assert user_trigger.trigger.is_active == true
+
+    triggered =
+      MetricTriggerSettings.type()
+      |> UserTrigger.get_active_triggers_by_type()
+      |> Evaluator.run()
+
+    assert triggered == []
+
+    {:ok, user_trigger} = UserTrigger.by_user_and_id(user_trigger.user_id, user_trigger.id)
+    assert user_trigger.trigger.is_active == false
+  end
 end

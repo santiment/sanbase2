@@ -194,6 +194,9 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "ethena_staking_deposits",
         "ethena_staking_withdrawals",
         "ethena_staking_apy",
+        "sky_savings_deposits",
+        "sky_savings_withdrawals",
+        "sky_savings_total_supplied",
         "holders_distribution_total",
         "holders_distribution_over_100",
         "nft_collection_avg_price_usd",
@@ -351,8 +354,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "mean_realized_price_usd_60d",
         "realized_value_usd_365d",
         "holders_distribution_combined_balance_over_100",
-        "sentiment_volume_consumed_total",
-        "sentiment_weighted_total",
         "holders_labeled_negative_distribution_combined_balance_10k_to_100k",
         "nft_market_volume",
         "nft_market_count",
@@ -508,9 +509,15 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "sentiment_weighted_telegram_1d_v2",
         "sentiment_weighted_total_1d_v2",
         "sentiment_weighted_twitter_1d_v2",
-        "sentiment_weighted_youtube_videos_1d_v2",
-        "sentiment_weighted_youtube_videos_1h_v2",
         "sentiment_weighted_farcaster_1d",
+        "sentiment_weighted_4chan_1d",
+        "sentiment_weighted_bitcointalk_1d",
+        "sentiment_weighted_reddit_1d",
+        "sentiment_weighted_telegram_1d",
+        "sentiment_weighted_total_1d",
+        "sentiment_weighted_twitter_1d",
+        "sentiment_weighted_youtube_videos_1d",
+        "sentiment_weighted_youtube_videos_1d_v2",
         "unique_social_volume_4chan_1d",
         "unique_social_volume_bitcointalk_1d",
         "unique_social_volume_farcaster_1d",
@@ -1411,6 +1418,20 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "sentiment_balance_total_change_1d",
         "sentiment_balance_total_change_7d",
         "sentiment_balance_total_change_30d",
+        "sentiment_weighted_4chan_1d",
+        "sentiment_weighted_4chan_1h",
+        "sentiment_weighted_bitcointalk_1d",
+        "sentiment_weighted_bitcointalk_1h",
+        "sentiment_weighted_reddit_1d",
+        "sentiment_weighted_reddit_1h",
+        "sentiment_weighted_telegram_1d",
+        "sentiment_weighted_telegram_1h",
+        "sentiment_weighted_total_1d",
+        "sentiment_weighted_total_1h",
+        "sentiment_weighted_twitter_1d",
+        "sentiment_weighted_twitter_1h",
+        "sentiment_weighted_youtube_videos_1d",
+        "sentiment_weighted_youtube_videos_1h",
         "network_profit_loss_change_1d",
         "network_profit_loss_change_7d",
         "network_profit_loss_change_30d",
@@ -1579,6 +1600,12 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "spark_total_liquidations_usd",
         "spark_total_new_debt_usd",
         "spark_total_repayments_usd",
+        "spark_total_supplied",
+        "spark_total_supplied_usd",
+        "spark_total_borrowed",
+        "spark_total_borrowed_usd",
+        "spark_protocol_total_supplied_usd",
+        "spark_protocol_total_borrowed_usd",
         "spark_supply_apy",
         "spark_borrow_apy",
         "spark_active_addresses",
@@ -1624,6 +1651,9 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "ethena_staking_deposits",
         "ethena_staking_withdrawals",
         "ethena_staking_apy",
+        "sky_savings_deposits",
+        "sky_savings_withdrawals",
+        "sky_savings_total_supplied",
         # ETH 2.0 stakers MVRV metrics
         "eth2_stakers_realized_value_usd_365d",
         "eth2_stakers_realized_value_usd_2y",
@@ -1710,5 +1740,24 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
       |> Enum.sort()
 
     assert result == []
+  end
+
+  test "human readable name suggest min interval" do
+    metrics = Sanbase.Metric.available_metrics()
+
+    for m <- metrics do
+      {:ok, metadata} = Sanbase.Metric.metadata(m)
+      {:ok, human_readable_name} = Sanbase.Metric.human_readable_name(m)
+      human_readable_name = String.downcase(human_readable_name)
+
+      if human_readable_name =~ "hourly" do
+        assert metadata.min_interval == "1h"
+        assert metadata.internal_metric =~ "1h"
+      end
+
+      if human_readable_name =~ "daily" do
+        assert metadata.min_interval == "1d"
+      end
+    end
   end
 end

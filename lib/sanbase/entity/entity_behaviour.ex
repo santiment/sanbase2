@@ -4,6 +4,14 @@ defmodule Sanbase.Entity.Behaviour do
   @type ids :: list(id) | list(ids)
   @type error :: binary()
   @type opts :: Keyword.t()
+  @type visibility_map :: %{
+          is_public: boolean(),
+          is_hidden: boolean(),
+          user_id: non_neg_integer()
+        }
+
+  @callback get_visibility_data(id) ::
+              {:ok, visibility_map()} | {:error, String.t()}
 
   @callback by_id!(id, opts) :: entity | no_return
   @callback by_id(id, opts) :: {:ok, entity} | {:error, error}

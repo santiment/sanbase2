@@ -30,6 +30,7 @@ defmodule Sanbase.DiscordBot.AiContext do
     field(:thread_name, :string)
     field(:votes, :map, default: %{})
     field(:route, :map, default: %{})
+    field(:function_called, :string)
     timestamps()
   end
 
@@ -56,7 +57,8 @@ defmodule Sanbase.DiscordBot.AiContext do
       :thread_id,
       :thread_name,
       :votes,
-      :route
+      :route,
+      :function_called
     ])
     |> validate_required([:discord_user, :guild_id, :channel_id, :question])
   end

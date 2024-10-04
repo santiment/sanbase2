@@ -90,6 +90,11 @@ defmodule Sanbase.Alert.UserTrigger do
   end
 
   @impl Sanbase.Entity.Behaviour
+  def get_visibility_data(id) do
+    Sanbase.Entity.Query.default_get_visibility_data(__MODULE__, :user_trigger, id)
+  end
+
+  @impl Sanbase.Entity.Behaviour
   def by_id!(id, opts) when is_integer(id), do: by_id(id, opts) |> to_bang()
 
   @impl Sanbase.Entity.Behaviour
@@ -210,7 +215,7 @@ defmodule Sanbase.Alert.UserTrigger do
     end
   end
 
-  def get_trigger_by_if_owner(user_id, trigger_id) do
+  def get_trigger_if_owner(user_id, trigger_id) do
     case by_user_and_id(user_id, trigger_id) do
       {:ok, %UserTrigger{user_id: ^user_id} = user_trigger} ->
         {:ok, user_trigger}
@@ -284,7 +289,7 @@ defmodule Sanbase.Alert.UserTrigger do
           {:ok, %__MODULE__{}} | {:error, String.t()} | {:error, %Ecto.Changeset{}}
   def create_user_trigger(%User{id: user_id} = _user, %{settings: settings} = params) do
     with {_, false} <- {:nil?, is_nil(settings)},
-         :ok <- valid?(settings) do
+         :ok <- validate_settings(settings) do
       changeset = %UserTrigger{} |> create_changeset(%{user_id: user_id, trigger: params})
 
       case Repo.insert(changeset) do
@@ -320,9 +325,9 @@ defmodule Sanbase.Alert.UserTrigger do
       when is_integer(user_id) and user_id > 0 do
     settings = Map.get(params, :settings)
 
-    with {_, :ok} <- {:valid?, valid_or_nil?(settings)},
+    with {_, :ok} <- {:validate_settings, validate_settings_or_nil(settings)},
          {_, {:ok, %__MODULE__{} = struct}} <-
-           {:get_trigger, get_trigger_by_if_owner(user_id, trigger_id)} do
+           {:get_trigger, get_trigger_if_owner(user_id, trigger_id)} do
       update_result =
         struct
         |> update_changeset(%{trigger: clean_params(params)})
@@ -341,7 +346,7 @@ defmodule Sanbase.Alert.UserTrigger do
         {:error,
          "Trigger with id #{trigger_id} does not exist or is not owned by the current user"}
 
-      {:valid?, {:error, error}} ->
+      {:validate_settings, {:error, error}} ->
         {:error,
          "Trigger structure is invalid. Key `settings` is not valid. Reason: #{inspect(error)}"}
     end
@@ -356,7 +361,7 @@ defmodule Sanbase.Alert.UserTrigger do
   @spec remove_user_trigger(%User{}, trigger_id) ::
           {:ok, %__MODULE__{}} | {:error, String.t()} | {:error, Ecto.Changeset.t()}
   def remove_user_trigger(%User{} = user, trigger_id) do
-    case get_trigger_by_if_owner(user.id, trigger_id) do
+    case get_trigger_if_owner(user.id, trigger_id) do
       {:ok, %__MODULE__{} = user_trigger} ->
         Repo.delete(user_trigger)
         |> emit_event(:delete_alert, %{})
@@ -452,12 +457,9 @@ defmodule Sanbase.Alert.UserTrigger do
     |> Enum.map(&trigger_in_struct/1)
   end
 
-  defp valid_or_nil?(nil), do: :ok
-  defp valid_or_nil?(trigger), do: valid?(trigger)
-
-  defp valid?(trigger) do
-    with {_, {:ok, trigger_struct}} <- {:load_in_struct?, load_in_struct_if_valid(trigger)},
-         {_, true} <- {:valid?, Vex.valid?(trigger_struct)},
+  defp validate_settings(settings) do
+    with {_, {:ok, trigger_struct}} <- {:load_in_struct?, load_in_struct_if_valid(settings)},
+         {_, true} <- {:validate_settings, Vex.valid?(trigger_struct)},
          {_, {:ok, _trigger_map}} <- {:map_from_struct, map_from_struct(trigger_struct)} do
       :ok
     else
@@ -465,8 +467,8 @@ defmodule Sanbase.Alert.UserTrigger do
         Logger.warning("UserTrigger struct is not valid. Reason: #{inspect(error)}")
         {:error, error}
 
-      {:valid?, false} ->
-        {:ok, trigger_struct} = load_in_struct(trigger)
+      {:validate_settings, false} ->
+        {:ok, trigger_struct} = load_in_struct(settings)
         errors = Vex.errors(trigger_struct)
 
         errors_text =
@@ -484,6 +486,9 @@ defmodule Sanbase.Alert.UserTrigger do
         {:error, error}
     end
   end
+
+  defp validate_settings_or_nil(nil), do: :ok
+  defp validate_settings_or_nil(settings), do: validate_settings(settings)
 
   defp create_event(user_trigger, changeset, event_type) do
     TimelineEvent.maybe_create_event_async(event_type, user_trigger, changeset)

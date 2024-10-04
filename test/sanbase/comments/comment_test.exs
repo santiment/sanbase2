@@ -8,7 +8,7 @@ defmodule Sanbase.CommentTest do
   @insight_entity_type :insight
 
   test "add a comment to a post" do
-    post = insert(:post)
+    post = insert(:published_post)
     user = insert(:user)
 
     {:ok, comment} =
@@ -69,21 +69,6 @@ defmodule Sanbase.CommentTest do
     assert comment.id == chart_configuration_id
   end
 
-  test "add a comment to a short url" do
-    short_url = insert(:short_url)
-    user = insert(:user)
-
-    {:ok, comment} =
-      EntityComment.create_and_link(:short_url, short_url.id, user.id, nil, "some comment")
-
-    short_url_comments =
-      EntityComment.get_comments(:short_url, short_url.id, %{cursor: nil, limit: 100})
-
-    assert length(short_url_comments) == 1
-    [%{comment: %{id: short_url_comment_id}}] = short_url_comments
-    assert comment.id == short_url_comment_id
-  end
-
   test "add a comment to a timeline event" do
     watchlist = insert(:watchlist)
     user = insert(:user)
@@ -137,7 +122,7 @@ defmodule Sanbase.CommentTest do
   end
 
   test "add a sub comment" do
-    post = insert(:post)
+    post = insert(:published_post)
     user = insert(:user)
 
     {:ok, comment1} =
@@ -157,7 +142,7 @@ defmodule Sanbase.CommentTest do
   end
 
   test "update a comment" do
-    post = insert(:post)
+    post = insert(:published_post)
 
     content = "some comment"
     updated_content = "updated content"
@@ -181,7 +166,7 @@ defmodule Sanbase.CommentTest do
   end
 
   test "delete a comment" do
-    post = insert(:post)
+    post = insert(:published_post)
     fallback_user = insert(:insights_fallback_user)
 
     {:ok, comment} =
@@ -203,7 +188,7 @@ defmodule Sanbase.CommentTest do
   end
 
   test "root_parent_id is properly inherited" do
-    post = insert(:post)
+    post = insert(:published_post)
     user = insert(:user)
 
     {:ok, comment1} =

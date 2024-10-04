@@ -216,18 +216,12 @@ defmodule Sanbase.Dashboards.Dashboard do
     |> maybe_preload(opts)
   end
 
-  def get_visibility_data(dashboard_id) do
-    from(d in base_query(),
-      where: d.id == ^dashboard_id,
-      select: %{
-        user_id: d.user_id,
-        is_public: d.is_public,
-        is_hidden: d.is_hidden
-      }
-    )
-  end
-
   # Entity Behaviour functions
+
+  @impl Sanbase.Entity.Behaviour
+  def get_visibility_data(id) do
+    Sanbase.Entity.Query.default_get_visibility_data(__MODULE__, :dashboard, id)
+  end
 
   @impl Sanbase.Entity.Behaviour
   @spec by_id(non_neg_integer(), opts) :: {:ok, t()} | {:error, String.t()}

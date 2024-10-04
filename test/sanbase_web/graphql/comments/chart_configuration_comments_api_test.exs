@@ -34,6 +34,23 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationCommentsApiTest do
     assert comments_count(conn, chart_configuration.id) == 5
   end
 
+  test "cannot comment other people private chart_configuration", context do
+    user2 = insert(:user)
+    chart_configuration = insert(:chart_configuration, user: user2, is_public: false)
+    conn2 = setup_jwt_auth(build_conn(), user2)
+
+    # Owners can comment their private charts
+    result = create_comment(conn2, chart_configuration.id, "some content", @opts)
+    assert %{"content" => "some content"} = result
+
+    # Other users cannot comment private charts
+    error_msg =
+      create_comment_with_error(context.conn, chart_configuration.id, "some content", @opts)
+
+    assert error_msg =~
+             "The entity of type chart_configuration with id #{chart_configuration.id} is private and not owned by you"
+  end
+
   test "comment a chart_configuration", context do
     %{chart_configuration: chart_configuration, conn: conn, user: user} = context
     other_user_conn = setup_jwt_auth(build_conn(), insert(:user))

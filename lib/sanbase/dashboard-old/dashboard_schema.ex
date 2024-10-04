@@ -74,6 +74,11 @@ defmodule Sanbase.Dashboard.Schema do
   @update_fields @create_fields -- [:user_id]
 
   @impl Sanbase.Entity.Behaviour
+  def get_visibility_data(id) do
+    Sanbase.Entity.Query.default_get_visibility_data(__MODULE__, :dashboard, id)
+  end
+
+  @impl Sanbase.Entity.Behaviour
   @spec by_id(non_neg_integer(), Keyword.t()) ::
           {:ok, t()} | {:error, String.t()}
   def by_id(dashboard_id, opts \\ []) do

@@ -262,19 +262,29 @@ defimpl Sanbase.Alert, for: Any do
       image_url = "#{preview_url()}/chart/#{short_url_id}"
 
       HTTPoison.get(image_url, [basic_auth_header()], timeout: 15_000, recv_timeout: 15_000)
-      |> handle_chart_preview_response(channel, reply_to_message_id)
+      |> handle_chart_preview_response(channel, reply_to_message_id, image_url)
     end)
   end
 
-  defp handle_chart_preview_response({:ok, response}, channel, reply_to_message_id) do
-    image? = response.headers |> Enum.into(%{}) |> Map.get("Content-Type") == "image/jpeg"
+  defp handle_chart_preview_response({:error, error}, _channel, _reply_to_message_id, image_url) do
+    Logger.error("Failed to fetch chart preview image for #{image_url}: #{inspect(error)}")
+  end
 
-    if image? do
-      Sanbase.Telegram.send_photo_by_file_content(
-        channel,
-        response.body,
-        reply_to_message_id
-      )
+  defp handle_chart_preview_response({:ok, response}, channel, reply_to_message_id, image_url) do
+    content_type = response.headers |> Enum.into(%{}) |> Map.get("Content-Type")
+
+    case content_type do
+      "image/jpeg" ->
+        Sanbase.Telegram.send_photo_by_file_content(
+          channel,
+          response.body,
+          reply_to_message_id
+        )
+
+      content_type ->
+        Logger.error(
+          "Response of #{image_url} was expected to be with content type image/jpg, got #{content_type} instead"
+        )
     end
   end
 
@@ -333,7 +343,7 @@ defimpl Sanbase.Alert, for: Any do
     slugs = Map.keys(template_kv)
 
     Logger.info(
-      "[maybe_extend_payload_telegram_channel_#{user_trigger.id}] [user_trigger: #{inspect(user_trigger)}] [payload: #{inspect(payload)}] [slugs: #{inspect(slugs)}]]"
+      "[maybe_extend_payload_telegram_channel_#{user_trigger.id}] [user_trigger: #{inspect(user_trigger.id)}]]"
     )
 
     if length(slugs) > 0 do
@@ -520,7 +530,7 @@ defimpl Sanbase.Alert, for: Any do
 
   defp prod?(), do: Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) == "prod"
 
-  defp preview_url do
+  defp preview_url() do
     case prod?() do
       true -> "https://preview.santiment.net"
       false -> "https://preview-stage.santiment.net"

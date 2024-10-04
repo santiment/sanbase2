@@ -288,15 +288,18 @@ defmodule Sanbase.Alert.Scheduler do
     # without using any synchronization technique.
     grouped_by_user = Enum.group_by(triggers, fn %{user: user} -> user.id end)
 
+    # On timeout, the map returns {:error, :timeout} tuple, so instead of using map_type: :flat_map,
+    # we need to use map_type: :map and flatten the result with List.flatten/1, otherwise
+    # a matching error is raised
     grouped_by_user
     |> Sanbase.Parallel.map(
       fn {_user_id, triggers} -> send_triggers_sequentially(triggers) end,
       max_concurrency: 15,
       ordered: false,
-      map_type: :flat_map,
-      timeout: 60_000,
+      map_type: :map,
       on_timeout: :kill_task
     )
+    |> List.flatten()
     |> Enum.reject(&match?({:exit, :timeout}, &1))
     |> report_sending_alert_timeout(triggers, info_map)
     |> Enum.unzip()

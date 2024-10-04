@@ -16,10 +16,9 @@ defmodule Sanbase.Validation do
     do: {:error, "#{inspect(percent)} is not a valid percent"}
 
   def valid_time_window?(time_window) when is_binary(time_window) do
-    Regex.match?(~r/^\d+[smhdw]$/, time_window)
-    |> case do
-      true -> :ok
-      false -> {:error, "#{inspect(time_window)} is not a valid time window"}
+    with :ok <- time_window_format_check(time_window),
+         :ok <- time_window_sanity_check(time_window) do
+      :ok
     end
   end
 
@@ -122,6 +121,27 @@ defmodule Sanbase.Validation do
         end
 
       true ->
+        :ok
+    end
+  end
+
+  # Private functions
+
+  defp time_window_format_check(time_window) do
+    case Regex.match?(~r/^\d+[smhdw]$/, time_window) do
+      true -> :ok
+      false -> {:error, "#{inspect(time_window)} is not a valid time window"}
+    end
+  end
+
+  @year_in_seconds 365 * 24 * 60 * 60
+  defp time_window_sanity_check(time_window) do
+    case str_to_sec(time_window) do
+      seconds when seconds >= @year_in_seconds ->
+        {:error,
+         "The time_window parameter must not be bigger than 1 year. Provided value: #{time_window}"}
+
+      _ ->
         :ok
     end
   end

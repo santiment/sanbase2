@@ -1744,4 +1744,23 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
 
     assert result == []
   end
+
+  test "human readable name suggest min interval" do
+    metrics = Sanbase.Metric.available_metrics()
+
+    for m <- metrics do
+      {:ok, metadata} = Sanbase.Metric.metadata(m)
+      {:ok, human_readable_name} = Sanbase.Metric.human_readable_name(m)
+      human_readable_name = String.downcase(human_readable_name)
+
+      if human_readable_name =~ "hourly" do
+        assert metadata.min_interval == "1h"
+        assert metadata.internal_metric =~ "1h"
+      end
+
+      if human_readable_name =~ "daily" do
+        assert metadata.min_interval == "1d"
+      end
+    end
+  end
 end

@@ -174,6 +174,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   |> Map.values()
   |> Enum.filter(fn grouped_metrics -> Enum.count(grouped_metrics) > 1 end)
   |> Enum.each(fn duplicate_metrics ->
+    duplicate_metrics =
+      Enum.map(duplicate_metrics, fn map -> Map.take(map, ["name", "metric"]) end)
+
     Break.break("""
       Duplicate metrics found, consider using the aliases field:
       `aliases: ["name1", "name2", ...]`

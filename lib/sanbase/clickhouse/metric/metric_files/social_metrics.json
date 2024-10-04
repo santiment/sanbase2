@@ -74,8 +74,8 @@
   {
     "human_readable_name": "Sentiment Weighted Total",
     "name": "sentiment_weighted_total",
-    "metric": "sentiment_volume_consumed_v2_1d",
-    "aliases": ["sentiment_volume_consumed_total"],
+    "metric": "sentiment_volume_consumed_v2",
+    "aliases": ["sentiment_weighted_total_v2", "sentiment_volume_consumed_total"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug"],
@@ -91,9 +91,10 @@
     "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/weighted-sentiment-metrics"]
   },
   {
-    "human_readable_name": "Sentiment Weighted Total V2",
-    "name": "sentiment_weighted_total_v2",
-    "metric": "sentiment_volume_consumed_v2",
+    "human_readable_name": "Sentiment Weighted Total Daily",
+    "name": "sentiment_weighted_total_1d",
+    "metric": "sentiment_volume_consumed_v2_1d",
+    "aliases": ["sentiment_weighted_total_1d_v2"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug"],
@@ -102,15 +103,15 @@
       "SANBASE": "free"
     },
     "aggregation": "avg",
-    "min_interval": "5m",
+    "min_interval": "1d",
     "table": "intraday_metrics",
-    "has_incomplete_data": false,
+    "has_incomplete_data": true,
     "data_type": "timeseries",
     "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/weighted-sentiment-metrics"]
   },
   {
-    "human_readable_name": "Sentiment Weighted Total Hourly V2",
-    "name": "sentiment_weighted_total_1h_v2",
+    "human_readable_name": "Sentiment Weighted Total Hourly",
+    "name": "sentiment_weighted_total_1h",
     "metric": "sentiment_volume_consumed_v2_1h",
     "aliases": ["sentiment_weighted_total_1h_v2"],
     "version": "2020-07-31",
@@ -124,24 +125,6 @@
     "min_interval": "1h",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/weighted-sentiment-metrics"]
-  },
-  {
-    "human_readable_name": "Sentiment Weighted Total Daily V2",
-    "name": "sentiment_weighted_total_1d_v2",
-    "metric": "sentiment_volume_consumed_v2_1d",
-    "version": "2020-07-31",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "intraday_metrics",
-    "has_incomplete_data": true,
     "data_type": "timeseries",
     "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/weighted-sentiment-metrics"]
   },
@@ -185,27 +168,10 @@
     "human_readable_name": "Sentiment Balance Total",
     "name": "sentiment_balance_total",
     "metric": "sentiment_balance_v2",
+    "aliases": ["sentiment_balance_total_v2"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/positive-negative-sentiment-metrics"]
-  },
-  {
-    "human_readable_name": "Sentiment Balance Total V2",
-    "name": "sentiment_balance_total_v2",
-    "metric": "sentiment_balance_v2",
-    "version": "2020-07-31",
-    "access": "restricted",
-    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -254,27 +220,10 @@
     "docs_links": ["https://academy.santiment.net/metrics/social-dominance"]
   },
   {
-    "human_readable_name": "Sentiment Volume Consumed 4chan",
-    "name": "sentiment_volume_consumed_4chan",
-    "metric": "sentiment_volume_consumed_4chan_v2_1d",
-    "aliases": ["sentiment_weighted_4chan"],
-    "version": "2020-07-31",
-    "access": "restricted",
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Weighted 4chan V2",
-    "name": "sentiment_weighted_4chan_v2",
+    "human_readable_name": "Sentiment Weighted 4chan",
+    "name": "sentiment_weighted_4chan",
     "metric": "sentiment_volume_consumed_4chan_v2",
+    "aliases": ["sentiment_weighted_4chan_v2"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug"],
@@ -289,9 +238,10 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Weighted 4chan Hourly V2",
-    "name": "sentiment_weighted_4chan_1h_v2",
+    "human_readable_name": "Sentiment Weighted 4chan Hourly",
+    "name": "sentiment_weighted_4chan_1h",
     "metric": "sentiment_volume_consumed_4chan_v2_1h",
+    "aliases": ["sentiment_weighted_4chan_1h_v2"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug"],
@@ -306,9 +256,10 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Weighted 4chan Daily V2",
-    "name": "sentiment_weighted_4chan_1d_v2",
+    "human_readable_name": "Sentiment Weighted 4chan Daily",
+    "name": "sentiment_weighted_4chan_1d",
     "metric": "sentiment_volume_consumed_4chan_v2_1d",
+    "aliases": ["sentiment_weighted_4chan_1d_v2"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug"],
@@ -362,27 +313,10 @@
     "human_readable_name": "Sentiment Balance 4chan",
     "name": "sentiment_balance_4chan",
     "metric": "sentiment_balance_4chan_v2",
+    "aliases": ["sentiment_balance_4chan_v2"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/positive-negative-sentiment-metrics"]
-  },
-  {
-    "human_readable_name": "Sentiment Balance 4chan V2",
-    "name": "sentiment_balance_4chan_v2",
-    "metric": "sentiment_balance_4chan_v2",
-    "version": "2020-07-31",
-    "access": "restricted",
-    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -572,27 +506,10 @@
     "docs_links": ["https://academy.santiment.net/metrics/social-dominance"]
   },
   {
-    "human_readable_name": "Sentiment Volume Consumed Telegram",
-    "name": "sentiment_volume_consumed_telegram",
-    "metric": "sentiment_volume_consumed_telegram_v2_1d",
-    "aliases": ["sentiment_weighted_telegram"],
-    "version": "2020-07-31",
-    "access": "restricted",
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Weighted Telegram V2",
-    "name": "sentiment_weighted_telegram_v2",
+    "human_readable_name": "Sentiment Weighted Telegram",
+    "name": "sentiment_weighted_telegram",
     "metric": "sentiment_volume_consumed_telegram_v2",
+    "aliases": ["sentiment_volume_consumed_telegram", "sentiment_weighted_telegram_v2"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug"],
@@ -607,9 +524,10 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Weighted Telegram Hourly V2",
-    "name": "sentiment_weighted_telegram_1h_v2",
+    "human_readable_name": "Sentiment Weighted Telegram Hourly",
+    "name": "sentiment_weighted_telegram_1h",
     "metric": "sentiment_volume_consumed_telegram_v2_1h",
+    "aliases": ["sentiment_weighted_telegram_1h_v2"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug"],
@@ -624,9 +542,10 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Weighted Telegram Daily V2",
-    "name": "sentiment_weighted_telegram_1d_v2",
+    "human_readable_name": "Sentiment Weighted Telegram Daily",
+    "name": "sentiment_weighted_telegram_1d",
     "metric": "sentiment_volume_consumed_telegram_v2_1d",
+    "aliases": ["sentiment_weighted_telegram_1d_v2"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug"],
@@ -680,27 +599,10 @@
     "human_readable_name": "Sentiment Balance Telegram",
     "name": "sentiment_balance_telegram",
     "metric": "sentiment_balance_telegram_v2",
+    "aliases": ["sentiment_balance_telegram_v2"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/positive-negative-sentiment-metrics"]
-  },
-  {
-    "human_readable_name": "Sentiment Balance Telegram V2",
-    "name": "sentiment_balance_telegram_v2",
-    "metric": "sentiment_balance_telegram_v2",
-    "version": "2020-07-31",
-    "access": "restricted",
-    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -751,8 +653,8 @@
   {
     "human_readable_name": "Sentiment Weighted Reddit",
     "name": "sentiment_weighted_reddit",
-    "metric": "sentiment_volume_consumed_reddit_v2_1d",
-    "aliases": ["sentiment_volume_consumed_reddit"],
+    "metric": "sentiment_volume_consumed_reddit_v2",
+    "aliases": ["sentiment_volume_consumed_reddit", "sentiment_weighted_reddit_v2"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -767,26 +669,10 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Weighted Reddit V2",
-    "name": "sentiment_weighted_reddit_v2",
-    "metric": "sentiment_volume_consumed_reddit_v2",
-    "version": "2020-07-31",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Weighted Reddit Hourly V2",
-    "name": "sentiment_weighted_reddit_1h_v2",
+    "human_readable_name": "Sentiment Weighted Reddit Hourly",
+    "name": "sentiment_weighted_reddit_1h",
     "metric": "sentiment_volume_consumed_reddit_v2_1h",
+    "aliases": ["sentiment_weighted_reddit_1h_v2"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug"],
@@ -801,9 +687,10 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Weighted Reddit Daily V2",
-    "name": "sentiment_weighted_reddit_1d_v2",
+    "human_readable_name": "Sentiment Weighted Reddit Daily",
+    "name": "sentiment_weighted_reddit_1d",
     "metric": "sentiment_volume_consumed_reddit_v2_1d",
+    "aliases": ["sentiment_weighted_reddit_1d_v2"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug"],
@@ -857,27 +744,10 @@
     "human_readable_name": "Sentiment Balance Reddit",
     "name": "sentiment_balance_reddit",
     "metric": "sentiment_balance_reddit_v2",
+    "aliases": ["sentiment_balance_reddit_v2"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/positive-negative-sentiment-metrics"]
-  },
-  {
-    "human_readable_name": "Sentiment Balance Reddit V2",
-    "name": "sentiment_balance_reddit_v2",
-    "metric": "sentiment_balance_reddit_v2",
-    "version": "2020-07-31",
-    "access": "restricted",
-    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -928,8 +798,8 @@
   {
     "human_readable_name": "Sentiment Weighted Twitter",
     "name": "sentiment_weighted_twitter",
-    "metric": "sentiment_volume_consumed_twitter_v2_1d",
-    "aliases": ["sentiment_volume_consumed_twitter"],
+    "metric": "sentiment_volume_consumed_twitter_v2",
+    "aliases": ["sentiment_volume_consumed_twitter","sentiment_weighted_twitter_v2"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -945,27 +815,10 @@
     "docs_links": ["https://academy.santiment.net/metrics/deprecated-metrics"]
   },
   {
-    "human_readable_name": "Sentiment Weighted Twitter V2",
-    "name": "sentiment_weighted_twitter_v2",
-    "metric": "sentiment_volume_consumed_twitter_v2",
-    "version": "2020-07-31",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "docs_links": ["https://academy.santiment.net/metrics/deprecated-metrics"]
-  },
-  {
-    "human_readable_name": "Sentiment Weighted Twitter Hourly V2",
-    "name": "sentiment_weighted_twitter_1h_v2",
+    "human_readable_name": "Sentiment Weighted Twitter Hourly",
+    "name": "sentiment_weighted_twitter_1h",
     "metric": "sentiment_volume_consumed_twitter_v2_1h",
+    "aliases": ["sentiment_weighted_twitter_1h_v2"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug"],
@@ -981,9 +834,10 @@
     "docs_links": ["https://academy.santiment.net/metrics/deprecated-metrics"]
   },
   {
-    "human_readable_name": "Sentiment Weighted Twitter Daily V2",
-    "name": "sentiment_weighted_twitter_1d_v2",
+    "human_readable_name": "Sentiment Weighted Twitter Daily",
+    "name": "sentiment_weighted_twitter_1d",
     "metric": "sentiment_volume_consumed_twitter_v2_1d",
+    "aliases": ["sentiment_weighted_twitter_1d_v2"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug"],
@@ -1038,27 +892,10 @@
     "human_readable_name": "Sentiment Balance Twitter",
     "name": "sentiment_balance_twitter",
     "metric": "sentiment_balance_twitter_v2",
+    "aliases": ["sentiment_balance_twitter_v2"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/positive-negative-sentiment-metrics"]
-  },
-  {
-    "human_readable_name": "Sentiment Balance Twitter V2",
-    "name": "sentiment_balance_twitter_v2",
-    "metric": "sentiment_balance_twitter_v2",
-    "version": "2020-07-31",
-    "access": "restricted",
-    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1109,8 +946,8 @@
   {
     "human_readable_name": "Sentiment Weighted Youtube",
     "name": "sentiment_weighted_youtube_videos",
-    "metric": "sentiment_volume_consumed_youtube_videos_v2_1d",
-    "aliases": ["sentiment_volume_consumed_youtube_videos"],
+    "metric": "sentiment_volume_consumed_youtube_videos_v2",
+    "aliases": ["sentiment_volume_consumed_youtube_videos", "sentiment_weighted_youtube_videos_v2"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -1125,26 +962,10 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Weighted Youtube V2",
-    "name": "sentiment_weighted_youtube_videos_v2",
-    "metric": "sentiment_volume_consumed_youtube_videos_v2",
-    "version": "2020-07-31",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Weighted Youtube Hourly V2",
-    "name": "sentiment_weighted_youtube_videos_1h_v2",
+    "human_readable_name": "Sentiment Weighted Youtube Hourly",
+    "name": "sentiment_weighted_youtube_videos_1h",
     "metric": "sentiment_volume_consumed_youtube_videos_v2_1h",
+    "aliases": ["sentiment_weighted_youtube_videos_1h_v2"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug"],
@@ -1159,9 +980,10 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Weighted Youtube Daily V2",
-    "name": "sentiment_weighted_youtube_videos_1d_v2",
+    "human_readable_name": "Sentiment Weighted Youtube Daily",
+    "name": "sentiment_weighted_youtube_videos_1d",
     "metric": "sentiment_volume_consumed_youtube_videos_v2_1d",
+    "aliases": ["sentiment_weighted_youtube_videos_1d_v2"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug"],
@@ -1215,27 +1037,10 @@
     "human_readable_name": "Sentiment Balance Youtube",
     "name": "sentiment_balance_youtube_videos",
     "metric": "sentiment_balance_youtube_videos_v2",
+    "aliases": ["sentiment_balance_youtube_videos_v2"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/positive-negative-sentiment-metrics"]
-  },
-  {
-    "human_readable_name": "Sentiment Balance Youtube V2",
-    "name": "sentiment_balance_youtube_videos_v2",
-    "metric": "sentiment_balance_youtube_videos_v2",
-    "version": "2020-07-31",
-    "access": "restricted",
-    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1286,8 +1091,8 @@
   {
     "human_readable_name": "Sentiment Weighted Bitcointalk",
     "name": "sentiment_weighted_bitcointalk",
-    "metric": "sentiment_volume_consumed_bitcointalk_v2_1d",
-    "aliases": ["sentiment_volume_consumed_bitcointalk"],
+    "metric": "sentiment_volume_consumed_bitcointalk_v2",
+    "aliases": ["sentiment_volume_consumed_bitcointalk", "sentiment_weighted_bitcointalk_v2"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -1302,26 +1107,10 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Weighted Bitcointalk V2",
-    "name": "sentiment_weighted_bitcointalk_v2",
-    "metric": "sentiment_volume_consumed_bitcointalk_v2",
-    "version": "2020-07-31",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Weighted Bitcointalk Hourly V2",
-    "name": "sentiment_weighted_bitcointalk_1h_v2",
+    "human_readable_name": "Sentiment Weighted Bitcointalk Hourly",
+    "name": "sentiment_weighted_bitcointalk_1h",
     "metric": "sentiment_volume_consumed_bitcointalk_v2_1h",
+    "aliases": ["sentiment_weighted_bitcointalk_1h_v2"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug"],
@@ -1336,9 +1125,10 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Weighted Bitcointalk Daily V2",
-    "name": "sentiment_weighted_bitcointalk_1d_v2",
+    "human_readable_name": "Sentiment Weighted Bitcointalk Daily",
+    "name": "sentiment_weighted_bitcointalk_1d",
     "metric": "sentiment_volume_consumed_bitcointalk_v2_1d",
+    "aliases": ["sentiment_weighted_bitcointalk_1d_v2"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug"],
@@ -1392,27 +1182,10 @@
     "human_readable_name": "Sentiment Balance Bitcointalk",
     "name": "sentiment_balance_bitcointalk",
     "metric": "sentiment_balance_bitcointalk_v2",
+    "aliases": ["sentiment_balance_bitcointalk_v2"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/positive-negative-sentiment-metrics"]
-  },
-  {
-    "human_readable_name": "Sentiment Balance Bitcointalk V2",
-    "name": "sentiment_balance_bitcointalk_v2",
-    "metric": "sentiment_balance_bitcointalk_v2",
-    "version": "2020-07-31",
-    "access": "restricted",
-    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"

@@ -197,6 +197,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "sky_savings_deposits",
         "sky_savings_withdrawals",
         "sky_savings_total_supplied",
+        "sky_savings_apy",
         "holders_distribution_total",
         "holders_distribution_over_100",
         "nft_collection_avg_price_usd",
@@ -1654,6 +1655,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "sky_savings_deposits",
         "sky_savings_withdrawals",
         "sky_savings_total_supplied",
+        "sky_savings_apy",
         # ETH 2.0 stakers MVRV metrics
         "eth2_stakers_realized_value_usd_365d",
         "eth2_stakers_realized_value_usd_2y",

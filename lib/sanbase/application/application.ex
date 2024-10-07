@@ -42,10 +42,10 @@ defmodule Sanbase.Application do
       |> Sanbase.ApplicationUtils.normalize_children()
       |> Enum.uniq()
 
-    # Add error tracking through sentry.
-    # Note: Sentry.LoggerBackend now allows to send non-exception errors to sentry, too.
-    # This is not enabled yet.
-    {:ok, _} = Logger.add_backend(Sentry.LoggerBackend)
+    :logger.add_handler(:sanbase_sentry_handler, Sentry.LoggerHandler, %{
+      config: %{metadata: [:file, :line]}
+    })
+
     Supervisor.start_link(children, opts)
   end
 

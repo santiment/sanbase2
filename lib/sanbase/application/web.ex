@@ -20,9 +20,6 @@ defmodule Sanbase.Application.Web do
         id: Sanbase.ApiCallLimitMutex
       ),
 
-      # Start GraphQL subscriptions
-      {Absinthe.Subscription, SanbaseWeb.Endpoint},
-
       # Start the graphQL in-memory cache
       SanbaseWeb.Graphql.Cache.child_spec(
         id: :graphql_api_cache,

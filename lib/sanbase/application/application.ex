@@ -161,6 +161,9 @@ defmodule Sanbase.Application do
   """
   def prepended_children(container_type) do
     [
+      # This child is required so the Absinthe uses
+      # the persistent_term backend
+      {Absinthe.Schema, SanbaseWeb.Graphql.Schema},
       start_in_and_if(
         fn ->
           %{
@@ -333,6 +336,8 @@ defmodule Sanbase.Application do
 
       # Process that starts test-only deps
       start_in(Sanbase.TestSetupService, [:test]),
+
+      # Start the Event Bus
       Sanbase.EventBus.children()
     ]
     |> List.flatten()

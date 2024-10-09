@@ -131,6 +131,8 @@ defmodule Sanbase.Mixfile do
       {:quantum, "~> 3.0"},
       {:remote_ip, "~> 1.0"},
       {:rexbug, ">= 1.0.0"},
+      {:req, "~> 0.5"},
+      {:req_s3, "~> 0.2"},
       {:rustler, "~> 0.24"},
       {:sentry, "~> 10.0"},
       {:stream_data, "~> 1.1", only: :test, override: true},

@@ -151,4 +151,42 @@ defmodule Sanbase.Queries.ResolveParametersTest do
              "limit" => 20
            }
   end
+
+  test "resolve code parameters", context do
+    addresses =
+      [
+        "0xe2f2a5C287993345a840db3B0845fbc70f5935a5",
+        "0x5AEDA56215b167893e80B4fE645BA6d5Bab767DE",
+        "0x2f0b23f53734252bda2277357e97e1517d6b042a"
+      ]
+
+    name = "my_addresses"
+
+    {:ok, struct} =
+      Sanbase.Queries.ExternalData.store(name, context.user.id, addresses)
+
+    path = Sanbase.Queries.ExternalData.get_path(struct)
+
+    {:ok, query} =
+      Sanbase.Queries.create_query(
+        %{
+          sql_query_text:
+            "SELECT address FROM balances WHERE address IN ({{addresses}}) LIMIT {{limit}}",
+          sql_query_parameters: %{
+            "addresses" => ~s|{% load("#{path}") %}|,
+            "threshold" => ~s|{% pow(10, 5) %}|,
+            "limit" => 20
+          }
+        },
+        context.user.id
+      )
+
+    {:ok, query} = Sanbase.Queries.resolve_code_parameters(query, context.user.id)
+
+    assert query.sql_query_parameters == %{
+             "addresses" => addresses,
+             "threshold" => 100_000,
+             "limit" => 20
+           }
+  end
 end

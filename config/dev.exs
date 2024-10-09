@@ -119,13 +119,6 @@ config :sanbase, SanbaseWeb.Graphql.AuthPlug,
   basic_auth_username: "user",
   basic_auth_password: "pass"
 
-config :waffle,
-  storage: Waffle.Storage.Local,
-  storage_dir: "sanbase/filestore/",
-  # Note: without using storage_dir_prefix: "/", a local "tmp/..." dir
-  # is used instead of "/tmp/..."
-  storage_dir_prefix: "/tmp/"
-
 if File.exists?("config/dev.secret.exs") do
   import_config "dev.secret.exs"
 end

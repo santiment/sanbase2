@@ -30,6 +30,7 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
   @default_limit 2000
   @oban_conf_name :oban_scrapers
   @topic :open_interest_topic
+  @topic_v2 :open_interest_topic_v2
 
   def queue(), do: @queue
   def conf_name(), do: @oban_conf_name
@@ -43,14 +44,29 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: args}) do
-    %{"market" => market, "instrument" => instrument, "timestamp" => timestamp} = args
+    args = Map.put_new(args, "version", "v1")
+
+    %{
+      "market" => market,
+      "instrument" => instrument,
+      "timestamp" => timestamp,
+      "version" => version
+    } = args
+
+    exporter_progress_key =
+      case version do
+        "v1" -> "#{market}_#{instrument}"
+        "v2" -> "#{market}_#{instrument}_v2"
+      end
 
     opts = [
       market: market,
       instrument: instrument,
       limit: Map.get(args, "limit", @default_limit),
       timestamp: timestamp,
-      queue: @queue
+      queue: @queue,
+      exporter_progress_key: exporter_progress_key,
+      version: version
     ]
 
     case Handler.get_data(@url, &process_json_response/1, opts) do
@@ -79,14 +95,20 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
   # Private functions
 
   defp export_data_and_update_progress(data, min_timestamp, args) do
-    :ok = export_data(data)
+    :ok = export_data(data, args)
 
     {min, max} = Enum.min_max_by(data, & &1.timestamp)
     :ok = maybe_schedule_next_job(min_timestamp, args)
 
+    exporter_progress_key =
+      case args["version"] do
+        "v1" -> "#{args["market"]}_#{args["instrument"]}"
+        "v2" -> "#{args["market"]}_#{args["instrument"]}_v2"
+      end
+
     {:ok, _} =
       ExporterProgress.create_or_update(
-        "#{args["market"]}_#{args["instrument"]}",
+        exporter_progress_key,
         to_string(@queue),
         min.timestamp,
         max.timestamp
@@ -136,7 +158,8 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
         "instrument" => args["instrument"],
         "schedule_next_job" => true,
         "timestamp" => min_timestamp,
-        "limit" => @default_limit
+        "limit" => args["limit"],
+        "version" => args["version"]
       }
       |> Sanbase.Cryptocompare.OpenInterest.HistoricalWorker.new()
 
@@ -148,9 +171,14 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
 
   defp maybe_schedule_next_job(_min_timestamp, _args), do: :ok
 
-  defp export_data(data) do
+  defp export_data(data, args) do
     data = Enum.map(data, &to_json_kv_tuple/1)
-    topic = Config.module_get!(Sanbase.KafkaExporter, @topic)
+
+    topic =
+      case args["version"] do
+        "v1" -> Config.module_get!(Sanbase.KafkaExporter, @topic)
+        "v2" -> Config.module_get!(Sanbase.KafkaExporter, @topic_v2)
+      end
 
     Sanbase.KafkaExporter.send_data_to_topic_from_current_process(data, topic)
   end

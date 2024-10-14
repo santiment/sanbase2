@@ -57,8 +57,10 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler do
 
     {:ok, markets_and_instruments} = Handler.get_markets_and_instruments()
 
-    for {market, instruments} <- markets_and_instruments, instrument <- instruments do
-      new_job(market, instrument, beginning_of_day, schedule_next_job, limit)
+    for {market, instruments} <- markets_and_instruments,
+        instrument <- instruments,
+        version <- ["v1", "v2"] do
+      new_job(market, instrument, beginning_of_day, schedule_next_job, limit, version)
     end
     |> Enum.chunk_every(200)
     |> Enum.each(&Oban.insert_all(@oban_conf_name, &1))
@@ -70,28 +72,29 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler do
     schedule_next_job = Keyword.get(opts, :schedule_next_job, false)
     to_datetime = Keyword.get(opts, :to_datetime, DateTime.utc_now())
     to_timestamp = to_datetime |> DateTime.to_unix()
-
+    version = Keyword.get(opts, :version, "v1")
     {:ok, markets_and_instruments} = Handler.get_markets_and_instruments()
 
     for {market, instruments} <- markets_and_instruments, instrument <- instruments do
-      new_job(market, instrument, to_timestamp, schedule_next_job, limit)
+      new_job(market, instrument, to_timestamp, schedule_next_job, limit, version)
     end
     |> Enum.chunk_every(200)
     |> Enum.each(&Oban.insert_all(@oban_conf_name, &1))
   end
 
-  def add_job(market, instrument, timestamp, schedule_next_job, limit) do
-    job = new_job(market, instrument, timestamp, schedule_next_job, limit)
+  def add_job(market, instrument, timestamp, schedule_next_job, limit, version \\ "v1") do
+    job = new_job(market, instrument, timestamp, schedule_next_job, limit, version)
     Oban.insert(@oban_conf_name, job)
   end
 
-  defp new_job(market, instrument, timestamp, schedule_next_job, limit) do
+  defp new_job(market, instrument, timestamp, schedule_next_job, limit, version \\ "v1") do
     Sanbase.Cryptocompare.OpenInterest.HistoricalWorker.new(%{
       market: market,
       instrument: instrument,
       timestamp: timestamp,
       schedule_next_job: schedule_next_job,
-      limit: limit
+      limit: limit,
+      version: version
     })
   end
 end

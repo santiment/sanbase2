@@ -90,9 +90,7 @@ defmodule Sanbase.StripeApi do
         Stripe.Card.delete(customer.id, customer.default_source)
 
       is_binary(customer.invoice_settings.default_payment_method) ->
-        Stripe.PaymentMethod.detach(%{
-          payment_method: customer.invoice_settings.default_payment_method
-        })
+        Stripe.PaymentMethod.detach(customer.invoice_settings.default_payment_method)
 
       true ->
         {:error, "Customer has no default card"}
@@ -150,10 +148,7 @@ defmodule Sanbase.StripeApi do
     with {:ok, customer} <- Stripe.Customer.retrieve(stripe_customer_id),
          default_payment_method when is_binary(default_payment_method) <-
            customer.invoice_settings.default_payment_method,
-         {:ok, %Stripe.PaymentMethod{}} <-
-           Stripe.PaymentMethod.detach(%{
-             payment_method: default_payment_method
-           }) do
+         {:ok, %Stripe.PaymentMethod{}} <- Stripe.PaymentMethod.detach(default_payment_method) do
       :ok
     end
   end

@@ -87,7 +87,7 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler do
     Oban.insert(@oban_conf_name, job)
   end
 
-  defp new_job(market, instrument, timestamp, schedule_next_job, limit, version \\ "v1") do
+  defp new_job(market, instrument, timestamp, schedule_next_job, limit, version) do
     Sanbase.Cryptocompare.OpenInterest.HistoricalWorker.new(%{
       market: market,
       instrument: instrument,

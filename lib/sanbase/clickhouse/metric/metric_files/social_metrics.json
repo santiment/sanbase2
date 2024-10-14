@@ -223,7 +223,7 @@
     "human_readable_name": "Sentiment Weighted 4chan",
     "name": "sentiment_weighted_4chan",
     "metric": "sentiment_volume_consumed_4chan_v2",
-    "aliases": ["sentiment_weighted_4chan_v2"],
+    "aliases": ["sentiment_weighted_4chan_v2", "sentiment_volume_consumed_4chan"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug"],

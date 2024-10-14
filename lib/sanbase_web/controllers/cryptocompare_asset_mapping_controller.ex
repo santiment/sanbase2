@@ -15,6 +15,10 @@ defmodule SanbaseWeb.CryptocompareAssetMappingController do
 
   defp get_data() do
     Project.SourceSlugMapping.get_source_slug_mappings("cryptocompare")
+    |> Enum.reject(fn {cpc_slug, san_slug} ->
+      # Sometimes the san_slug can be nil if the project is marked as deleted/duplicated
+      is_nil(cpc_slug) or is_nil(san_slug)
+    end)
     |> sort_assets()
     |> Enum.map(fn {cpc_slug, san_slug} ->
       %{"base_asset" => cpc_slug, "slug" => san_slug} |> Jason.encode!()

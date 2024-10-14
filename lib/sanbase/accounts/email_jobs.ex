@@ -1,5 +1,5 @@
 defmodule Sanbase.Accounts.EmailJobs do
-  import Sanbase.DateTimeUtils, only: [days_after: 1]
+  import Sanbase.DateTimeUtils, only: [days_after: 1, seconds_after: 1]
   import Sanbase.Email.Template
 
   @oban_conf_name :oban_web
@@ -129,6 +129,12 @@ defmodule Sanbase.Accounts.EmailJobs do
     }
 
     add_email_job(subscription.user_id, template, vars)
+  end
+
+  def schedule_post_cancellation_email2(subscription) do
+    template = Sanbase.Email.Template.post_cancellation_template2()
+
+    add_email_job(subscription.user_id, template, %{}, scheduled_at: seconds_after(300))
   end
 
   def add_email_job(user_id, email_template, email_vars, opts \\ []) do

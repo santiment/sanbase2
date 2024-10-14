@@ -26,7 +26,9 @@ defmodule Sanbase.Cryptocompare.Handler do
           | {:ok, min_timestamp :: non_neg_integer(), data_list :: list()}
   def get_data(url, process_json_response_function, opts)
       when is_function(process_json_response_function, 1) do
-    timestamps_key = "#{opts[:market]}_#{opts[:instrument]}"
+    # For open_interest we support versioning, so the key might differ by having _v2 suffix
+    timestamps_key =
+      Keyword.get(opts, :exporter_progress_key, "#{opts[:market]}_#{opts[:instrument]}")
 
     case execute_http_request(url, opts) do
       {:ok, %{status_code: 200} = http_response} ->

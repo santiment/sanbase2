@@ -47,11 +47,14 @@ defmodule Sanbase.Price.Validator do
   @spec valid_price?(String.t(), String.t(), float()) :: true | {:error, String.t()}
   def valid_price?(slug, quote_asset, price) when quote_asset in ["BTC", "USD"] do
     GenServer.call(node_name(slug), {:valid_price?, slug, quote_asset, price}, 1000)
+
+    # The price validation is nice but not necessary. In case it times out,
+    # just ingest the price so it's not lost.
   rescue
-    _ ->
-      # The price validation is nice but not necessary. In case it times out,
-      # just ingest the price so it's not lost.
-      true
+    _ -> true
+  catch
+    :exit, _ -> true
+    _ -> true
   end
 
   def slug_to_number(slug) do

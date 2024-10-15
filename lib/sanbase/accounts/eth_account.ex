@@ -58,7 +58,12 @@ defmodule Sanbase.Accounts.EthAccount do
   end
 
   def by_address(address) do
-    Repo.get_by(__MODULE__, address: address)
+    lowercase_address = String.downcase(address)
+
+    from(ea in __MODULE__,
+      where: fragment("LOWER(?)", ea.address) == ^lowercase_address
+    )
+    |> Repo.one()
   end
 
   def all_by_user(user_id) do
@@ -67,9 +72,11 @@ defmodule Sanbase.Accounts.EthAccount do
   end
 
   def address_to_user_id_map(addresses) when is_list(addresses) do
+    lowercase_addresses = Enum.map(addresses, &String.downcase/1)
+
     from(
       ea in __MODULE__,
-      where: ea.address in ^addresses,
+      where: fragment("LOWER(?)", ea.address) in ^lowercase_addresses,
       select: {ea.address, ea.user_id}
     )
     |> Repo.all()

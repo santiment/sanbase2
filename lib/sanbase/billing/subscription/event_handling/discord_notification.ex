@@ -86,6 +86,7 @@ defmodule Sanbase.Billing.DiscordNotification do
 
       if subscription.plan.product_id == Product.product_sanbase() do
         Sanbase.Accounts.EmailJobs.send_post_cancellation_email(subscription)
+        Sanbase.Accounts.EmailJobs.schedule_post_cancellation_email2(subscription)
       end
     end
   end

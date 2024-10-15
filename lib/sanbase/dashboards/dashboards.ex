@@ -797,12 +797,7 @@ defmodule Sanbase.Dashboards do
   """
   @spec get_visibility_data(dashboard_id()) :: {:ok, visibility_data()} | {:error, String.t()}
   def get_visibility_data(dashboard_id) do
-    query = Dashboard.get_visibility_data(dashboard_id)
-
-    case Repo.one(query) do
-      %{} = data -> {:ok, data}
-      nil -> {:error, "Dashboard does not exist."}
-    end
+    Dashboard.get_visibility_data(dashboard_id)
   end
 
   @doc ~s"""

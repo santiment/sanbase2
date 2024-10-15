@@ -17,6 +17,8 @@ defmodule Sanbase.DiscordBot.CommandHandler do
   @stage_bot_id 1_039_177_602_197_372_989
   @prod_bot_id 1_039_814_526_708_764_742
 
+  @max_message_length 1950
+
   def bot_id() do
     case Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) do
       "dev" -> @local_bot_id
@@ -98,12 +100,18 @@ defmodule Sanbase.DiscordBot.CommandHandler do
 
     case result do
       {:ok, ai_context, ai_server_response} ->
-        kw_list = process_ai_server_response(ai_server_response)
+        %{content: content, components: components} =
+          process_ai_server_response(ai_server_response)
 
-        kw_list =
-          Keyword.put(kw_list, :content, Utils.trim_message(Keyword.get(kw_list, :content)))
+        msgs = content |> Utils.split_message(@max_message_length)
 
-        Nostrum.Api.create_message(thread.id, kw_list)
+        msgs
+        |> Enum.with_index()
+        |> Enum.each(fn {msg, index} ->
+          last_message? = index == length(msgs) - 1
+          message_components = if last_message?, do: components, else: []
+          Nostrum.Api.create_message(thread.id, content: msg, components: message_components)
+        end)
 
         feedback_row_message(msg, thread, ai_context)
 
@@ -300,10 +308,10 @@ defmodule Sanbase.DiscordBot.CommandHandler do
       %{"answer" => "DK"} ->
         content = "Couldn't fetch information to answer your question"
 
-        [
+        %{
           content: content,
           components: []
-        ]
+        }
 
       %{"type" => "search"} = answer ->
         content = """
@@ -311,10 +319,10 @@ defmodule Sanbase.DiscordBot.CommandHandler do
         #{answer["sources"] |> format_search_sources()}
         """
 
-        [
+        %{
           content: content,
           components: []
-        ]
+        }
 
       answer ->
         content = """
@@ -324,10 +332,10 @@ defmodule Sanbase.DiscordBot.CommandHandler do
 
         components = maybe_add_run_component(content)
 
-        [
+        %{
           content: content,
           components: components
-        ]
+        }
     end
   end
 

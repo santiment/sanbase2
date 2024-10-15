@@ -60,6 +60,11 @@ defmodule Sanbase.Email.Template do
       subject: "You’ve cancelled your subscription",
       required_vars: [:subscription_type, :subscription_enddate]
     },
+    "post-cancellation-email2" => %{
+      id: 6_375_587,
+      subject: "Subscription Cancellation Feedback Request",
+      required_vars: []
+    },
     "free-trial-started" => %{
       id: 4_127_573,
       subject: "Enjoy your free Sanbase trial!",
@@ -151,6 +156,8 @@ defmodule Sanbase.Email.Template do
   # Send on subscription cancellation
   @post_cancellation_template "cancelled-subscription-mail"
 
+  @post_cancellation_template2 "post-cancellation-email2"
+
   # Send on free trial start
   @trial_started_template "free-trial-started"
 
@@ -180,6 +187,7 @@ defmodule Sanbase.Email.Template do
   def sign_up_templates, do: @sign_up_templates
   def pro_subscription_stared_template, do: @pro_subscription_stared_template
   def post_cancellation_template, do: @post_cancellation_template
+  def post_cancellation_template2, do: @post_cancellation_template2
   def end_of_trial_template, do: @end_of_trial_template
   def trial_started_template, do: @trial_started_template
   def during_trial_annual_discount_template, do: @during_trial_annual_discount_template

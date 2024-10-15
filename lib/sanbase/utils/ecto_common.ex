@@ -12,8 +12,9 @@ defmodule Sanbase.Ecto.Common do
   Additionally, for the error message formatting the `:entity_singular` and
   `:entity_plural` keys must be present in the opts, too.
   """
-  @spec can_create?(module, non_neg_integer, Keyword.t()) :: {:ok, true} | {:error, String.t()}
-  def can_create?(module, user_id, opts) do
+  @spec has_not_reached_rate_limits?(module, non_neg_integer, Keyword.t()) ::
+          {:ok, true} | {:error, String.t()}
+  def has_not_reached_rate_limits?(module, user_id, opts) do
     now = NaiveDateTime.utc_now()
 
     map =

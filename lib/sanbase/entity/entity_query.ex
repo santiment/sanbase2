@@ -98,6 +98,27 @@ defmodule Sanbase.Entity.Query do
     end
   end
 
+  def default_get_visibility_data(base_query, entity_type, entity_id) do
+    query =
+      from(entity in base_query,
+        where: entity.id == ^entity_id,
+        select: %{
+          is_public: entity.is_public,
+          is_hidden: entity.is_hidden,
+          user_id: entity.user_id
+        }
+      )
+
+    case Sanbase.Repo.one(query) do
+      %{} = map ->
+        {:ok, map}
+
+      nil ->
+        entity_type_str = entity_type |> to_string() |> String.replace("_", " ")
+        {:error, "The #{entity_type_str} with id #{entity_id} does not exist"}
+    end
+  end
+
   defmacro entity_id_selection() do
     quote do
       fragment("""

@@ -121,6 +121,57 @@ defmodule Sanbase.Insight.Post do
   end
 
   @impl Sanbase.Entity.Behaviour
+  def get_visibility_data(id) do
+    query =
+      from(entity in base_query(),
+        where: entity.id == ^id,
+        select: %{
+          is_public: entity.state == ^@approved and entity.ready_state == ^@published,
+          is_hidden: entity.is_hidden,
+          user_id: entity.user_id
+        }
+      )
+
+    case Repo.one(query) do
+      %{} = map -> {:ok, map}
+      nil -> {:error, "The dashboard with id #{id} does not exist"}
+    end
+  end
+
+  @impl Sanbase.Entity.Behaviour
+  def by_id!(id, opts), do: by_id(id, opts) |> to_bang()
+
+  @impl Sanbase.Entity.Behaviour
+  def by_id(id, opts) do
+    result =
+      base_insights_query(opts)
+      |> Repo.get(id)
+
+    case result do
+      nil -> {:error, "There is no insight with id #{id}"}
+      post -> {:ok, post}
+    end
+  end
+
+  @impl Sanbase.Entity.Behaviour
+  def by_ids!(ids, opts) when is_list(ids), do: by_ids(ids, opts) |> to_bang()
+
+  @impl Sanbase.Entity.Behaviour
+  def by_ids(post_ids, opts) when is_list(post_ids) do
+    preload = Keyword.get(opts, :preload, [:featured_item, :tags])
+
+    result =
+      from(p in base_query(),
+        where: p.id in ^post_ids,
+        preload: ^preload,
+        order_by: fragment("array_position(?, ?::int)", ^post_ids, p.id)
+      )
+      |> Repo.all()
+
+    {:ok, result}
+  end
+
+  @impl Sanbase.Entity.Behaviour
   def public_and_user_entity_ids_query(user_id, opts) do
     base_entity_ids_query(opts)
     |> where(
@@ -168,14 +219,14 @@ defmodule Sanbase.Insight.Post do
     {:ok, map}
   end
 
-  def can_create?(user_id) do
+  def has_not_reached_rate_limits?(user_id) do
     limits = %{
       day: Config.module_get(__MODULE__, :creation_limit_day, 20),
       hour: Config.module_get(__MODULE__, :creation_limit_hour, 10),
       minute: Config.module_get(__MODULE__, :creation_limit_minute, 3)
     }
 
-    Sanbase.Ecto.Common.can_create?(__MODULE__, user_id,
+    Sanbase.Ecto.Common.has_not_reached_rate_limits?(__MODULE__, user_id,
       limits: limits,
       entity_singular: "insight",
       entity_plural: "insights"
@@ -258,39 +309,6 @@ defmodule Sanbase.Insight.Post do
 
   def published?(%Post{ready_state: ready_state}),
     do: ready_state == @published
-
-  @impl Sanbase.Entity.Behaviour
-  def by_id!(id, opts), do: by_id(id, opts) |> to_bang()
-
-  @impl Sanbase.Entity.Behaviour
-  def by_id(id, opts) do
-    result =
-      base_insights_query(opts)
-      |> Repo.get(id)
-
-    case result do
-      nil -> {:error, "There is no insight with id #{id}"}
-      post -> {:ok, post}
-    end
-  end
-
-  @impl Sanbase.Entity.Behaviour
-  def by_ids!(ids, opts) when is_list(ids), do: by_ids(ids, opts) |> to_bang()
-
-  @impl Sanbase.Entity.Behaviour
-  def by_ids(post_ids, opts) when is_list(post_ids) do
-    preload = Keyword.get(opts, :preload, [:featured_item, :tags])
-
-    result =
-      from(p in base_query(),
-        where: p.id in ^post_ids,
-        preload: ^preload,
-        order_by: fragment("array_position(?, ?::int)", ^post_ids, p.id)
-      )
-      |> Repo.all()
-
-    {:ok, result}
-  end
 
   @spec create(%User{}, map()) :: {:ok, %__MODULE__{}} | {:error, Keyword.t()}
   def create(%User{id: user_id}, args) do

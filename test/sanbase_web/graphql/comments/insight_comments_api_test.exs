@@ -12,7 +12,7 @@ defmodule SanbaseWeb.Graphql.InsightCommentApiTest do
     clean_task_supervisor_children()
 
     user = insert(:user)
-    post = insert(:post)
+    post = insert(:published_post)
     conn = setup_jwt_auth(build_conn(), user)
 
     %{conn: conn, user: user, post: post}

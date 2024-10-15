@@ -58,6 +58,8 @@ defmodule Sanbase.Entity do
     :query
   ]
 
+  @type entity_id :: non_neg_integer() | String.t()
+
   @type entity_type ::
           :insight
           | :watchlist
@@ -84,6 +86,13 @@ defmodule Sanbase.Entity do
           optional(:dashboard) => %Dashboard{},
           optional(:query) => %Query{}
         }
+
+  @spec get_visibility_data(entity_type, entity_id) :: {:ok, map()} | {:error, String.t()}
+  def get_visibility_data(entity_type, entity_id) do
+    module = deduce_entity_module(entity_type)
+
+    apply(module, :get_visibility_data, [entity_id])
+  end
 
   @doc ~s"""
   Get a list of the most voted entities of a given type or types.

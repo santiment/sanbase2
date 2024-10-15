@@ -6094,6 +6094,24 @@
     "docs_links": ["https://academy.santiment.net/metrics/sky-savings"]
   },
   {
+    "human_readable_name": "Sky savings APY",
+    "name": "sky_savings_apy",
+    "metric": "sky_savings_apy",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/sky-savings"]
+  },
+  {
     "human_readable_name": "Price volatility for the last {{sliding_window:human_readable}}",
     "name": "price_volatility_{{sliding_window}}",
     "metric": "price_volatility_{{sliding_window}}",

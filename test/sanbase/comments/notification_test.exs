@@ -8,7 +8,7 @@ defmodule Sanbase.Comments.NotificationTest do
 
   setup do
     author = insert(:user)
-    post = insert(:post, user: author)
+    post = insert(:published_post, user: author)
     user = insert(:user)
 
     timeline_event =
@@ -18,9 +18,9 @@ defmodule Sanbase.Comments.NotificationTest do
         event_type: Sanbase.Timeline.TimelineEvent.publish_insight_type()
       )
 
-    chart_configuration = insert(:chart_configuration, user: author)
-    watchlist = insert(:watchlist, user: author)
-    screener = insert(:watchlist, user: author, is_screener: true)
+    chart_configuration = insert(:chart_configuration, user: author, is_public: true)
+    watchlist = insert(:watchlist, user: author, is_public: true)
+    screener = insert(:watchlist, user: author, is_screener: true, is_public: true)
 
     {:ok,
      user: user,
@@ -35,43 +35,52 @@ defmodule Sanbase.Comments.NotificationTest do
   test "comments and likes", context do
     [user2, user3] = [insert(:user), insert(:user)]
 
-    {:ok, comment1} =
-      EntityComment.create_and_link(:insight, context.post.id, context.user.id, nil, "comment1")
+    assert {:ok, comment1} =
+             EntityComment.create_and_link(
+               :insight,
+               context.post.id,
+               context.user.id,
+               nil,
+               "comment1"
+             )
 
     EntityComment.create_and_link(:insight, context.post.id, user2.id, nil, "comment2")
 
-    {:ok, comment3} =
-      EntityComment.create_and_link(
-        :insight,
-        context.post.id,
-        user3.id,
-        comment1.id,
-        "subcomment"
-      )
+    assert {:ok, comment3} =
+             EntityComment.create_and_link(
+               :insight,
+               context.post.id,
+               user3.id,
+               comment1.id,
+               "subcomment"
+             )
 
-    EntityComment.create_and_link(
-      :chart_configuration,
-      context.chart_configuration.id,
-      user2.id,
-      nil,
-      "chart layout comment"
-    )
+    assert {:ok, _} =
+             EntityComment.create_and_link(
+               :chart_configuration,
+               context.chart_configuration.id,
+               user2.id,
+               nil,
+               "chart layout comment"
+             )
 
-    EntityComment.create_and_link(
-      :watchlist,
-      context.watchlist.id,
-      user2.id,
-      nil,
-      "watchlist comment"
-    )
+    assert {:ok, _} =
+             EntityComment.create_and_link(
+               :watchlist,
+               context.watchlist.id,
+               user2.id,
+               nil,
+               "watchlist comment"
+             )
 
-    EntityComment.create_and_link(
-      :watchlist,
-      context.screener.id,
-      user2.id,
-      nil,
-      "screener comment"
-    )
+    assert {:ok, _} =
+             EntityComment.create_and_link(
+               :watchlist,
+               context.screener.id,
+               user2.id,
+               nil,
+               "screener comment"
+             )
 
     insight2 = insert(:post)
     user5 = insert(:user)

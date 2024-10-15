@@ -64,7 +64,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
         context: %{auth: %{current_user: current_user}}
       }) do
     with {:ok, %UserTrigger{} = user_trigger} <-
-           UserTrigger.get_trigger_by_if_owner(current_user.id, args.id),
+           UserTrigger.get_trigger_if_owner(current_user.id, args.id),
          false <- UserTrigger.frozen?(user_trigger) do
       UserTrigger.update_user_trigger(current_user.id, args)
       |> handle_result("update")

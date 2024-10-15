@@ -60,7 +60,9 @@ config :sanbase, Sanbase.Repo,
   username: "postgres",
   password: "postgres",
   database: "sanbase_test",
-  pool_size: 5
+  pool_size: 5,
+  ssl: false,
+  ssl_opts: []
 
 config :sanbase, Sanbase.ClickhouseRepo,
   clickhouse_repo_enabled?: false,

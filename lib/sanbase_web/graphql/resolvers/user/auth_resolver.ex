@@ -62,13 +62,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
 
       {:ok, result}
     else
+      {:error, %Ecto.Changeset{} = changeset} ->
+        Logger.warning("Login failed: #{inspect(changeset)}")
+        {:error, message: "Wallet Login verification failed"}
+
       {:error, reason} ->
-        Logger.warning("Login failed: #{reason}")
-        {:error, message: "Email Login verification failed"}
+        Logger.warning("Login failed: #{inspect(reason)}")
+        {:error, message: "Wallet Login verification failed"}
 
       _ ->
         Logger.warning("Login failed: invalid signature")
-        {:error, message: "Email Login verification failed"}
+        {:error, message: "Wallet Login verification failed"}
     end
   end
 

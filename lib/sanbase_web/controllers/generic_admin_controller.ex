@@ -11,10 +11,6 @@ defmodule SanbaseWeb.GenericAdminController do
     SanbaseWeb.GenericAdmin.resource_module_map()
   end
 
-  def home(conn, _params) do
-    render(conn, :home, search_value: "")
-  end
-
   def all_routes do
     (resources_to_routes() ++ custom_routes()) |> Enum.sort()
   end
@@ -42,6 +38,10 @@ defmodule SanbaseWeb.GenericAdminController do
 
       {resource_name, ~p"/admin2/generic?resource=#{resource}"}
     end)
+  end
+
+  def home(conn, _params) do
+    render(conn, :home, search_value: "")
   end
 
   def index(conn, %{"resource" => resource} = params) do

@@ -8,6 +8,7 @@ defmodule Sanbase.TemplateMailer do
   @sender_email "support@santiment.net"
   @sender_name "Santiment"
   @post_sign_up_from {"Maksim from Santiment", "maksim.t@santiment.net"}
+  @post_cancellation_email_from {"Santiment Team", "feedback@santiment.net"}
 
   def send(rcpt_email, template_slug, vars) when is_binary(rcpt_email) and rcpt_email != "" do
     template = Sanbase.Email.Template.templates()[template_slug]
@@ -43,6 +44,7 @@ defmodule Sanbase.TemplateMailer do
   def generate_from(template_slug) do
     case template_slug do
       "sanbase-post-registration-mail" -> @post_sign_up_from
+      "post-cancellation-email2" -> @post_cancellation_email_from
       _ -> {@sender_name, @sender_email}
     end
   end

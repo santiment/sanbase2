@@ -134,6 +134,8 @@ config :sanbase, Sanbase.Repo,
   timeout: 30_000,
   # because of pgbouncer
   prepare: :unnamed,
+  ssl: true,
+  ssl_opts: [verify: :verify_none],
   migration_timestamps: [type: :naive_datetime_usec]
 
 config :sanbase, Sanbase.Accounts.Hmac, secret_key: {:system, "APIKEY_HMAC_SECRET_KEY", nil}

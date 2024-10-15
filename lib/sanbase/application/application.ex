@@ -46,7 +46,14 @@ defmodule Sanbase.Application do
       config: %{metadata: [:file, :line]}
     })
 
-    Supervisor.start_link(children, opts)
+    case Supervisor.start_link(children, opts) do
+      {:ok, _} = ok ->
+        ok
+
+      {:error, reason} ->
+        Logger.error(Exception.format_exit(reason))
+        {:error, reason}
+    end
   end
 
   def init(container_type) do

@@ -54,7 +54,7 @@ defmodule Sanbase.Billing.StripeSync do
     params = %{limit: 10} |> Map.merge(params)
 
     {:ok, res} =
-      Stripe.Charge.list(params, expand: ["invoice.subscription.plan"], timeout: 30_000)
+      Stripe.Charge.list(params, expand: ["data.invoice.subscription.plan"], timeout: 30_000)
 
     transactions =
       res.data
@@ -62,7 +62,13 @@ defmodule Sanbase.Billing.StripeSync do
         subscription = if charge.invoice, do: charge.invoice.subscription, else: nil
 
         {plan, product} =
-          if subscription, do: {subscription.plan.id, subscription.plan.product}, else: {nil, nil}
+          if subscription do
+            subscription_item = subscription.items.data |> List.first()
+            plan = subscription_item.plan
+            {plan.id, plan.product}
+          else
+            {nil, nil}
+          end
 
         %{
           id: charge.id,

@@ -2236,6 +2236,7 @@ CREATE TABLE public.metric_registry (
     metric character varying(255) NOT NULL,
     internal_metric character varying(255) NOT NULL,
     human_readable_name character varying(255) NOT NULL,
+    aliases character varying(255)[] DEFAULT ARRAY[]::character varying[] NOT NULL,
     "table" character varying(255) NOT NULL,
     is_template_metric boolean DEFAULT false NOT NULL,
     parameters jsonb DEFAULT '{}'::jsonb NOT NULL,
@@ -2250,6 +2251,8 @@ CREATE TABLE public.metric_registry (
     has_incomplete_data boolean NOT NULL,
     data_type character varying(255) DEFAULT 'timeseries'::character varying NOT NULL,
     docs_links character varying(255)[] DEFAULT ARRAY[]::character varying[] NOT NULL,
+    is_deprecated boolean DEFAULT false NOT NULL,
+    hard_deprecate_after timestamp(0) without time zone DEFAULT NULL::timestamp without time zone,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );
@@ -8987,6 +8990,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
+<<<<<<< HEAD
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008204451);

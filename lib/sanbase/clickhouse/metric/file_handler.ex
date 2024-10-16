@@ -314,6 +314,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
       """)
   end
 
+  def metrics_json(), do: @metrics_json
   def aggregations(), do: @aggregations
   def access_map(), do: @access_map |> transform()
   def table_map(), do: @table_map |> transform()

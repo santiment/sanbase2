@@ -63,6 +63,7 @@ defmodule Sanbase.Repo.Migrations.CreateMetricRegistry do
       add(:metric, :string, null: false)
       add(:internal_metric, :string, null: false)
       add(:human_readable_name, :string, null: false)
+      add(:aliases, {:array, :string}, null: false, default: [])
       add(:table, :string, null: false)
 
       add(:is_template_metric, :boolean, null: false, default: false)
@@ -83,6 +84,9 @@ defmodule Sanbase.Repo.Migrations.CreateMetricRegistry do
 
       add(:data_type, :string, null: false, default: "timeseries")
       add(:docs_links, {:array, :string}, null: false, default: [])
+
+      add(:is_deprecated, :boolean, null: false, default: false)
+      add(:hard_deprecate_after, :utc_datetime, null: true, default: nil)
 
       timestamps()
     end

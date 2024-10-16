@@ -90,6 +90,10 @@ if config_env() == :prod do
       "//*.sanbase-admin.production.san"
     ]
 
+  config :sanbase, Sanbase.Repo,
+    ssl: true,
+    ssl_opts: [verify: :verify_none]
+
   config :ethereumex,
     url: parity_url,
     http_options: [timeout: 25_000, recv_timeout: 25_000],

@@ -17,6 +17,7 @@ defmodule Sanbase.Cryptocompare.FundingRate.HistoricalWorker do
   @queue :cryptocompare_funding_rate_historical_jobs_queue
   use Oban.Worker,
     queue: @queue,
+    max_attempts: 20,
     unique: [period: 60 * 86_400]
 
   alias Sanbase.Utils.Config

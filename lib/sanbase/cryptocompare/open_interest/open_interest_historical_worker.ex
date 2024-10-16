@@ -17,6 +17,7 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
   @queue :cryptocompare_open_interest_historical_jobs_queue
   use Oban.Worker,
     queue: @queue,
+    max_attempts: 20,
     unique: [period: 60 * 86_400]
 
   alias Sanbase.Utils.Config

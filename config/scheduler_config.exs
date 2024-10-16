@@ -171,10 +171,6 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       schedule: "9-59/10 * * * *",
       task: {Sanbase.Billing.Subscription.NFTSubscription, :run, []}
     ],
-    manage_postgres_index: [
-      schedule: "15 * * * *",
-      task: {Sanbase.DiscordBot.AiServer, :manage_postgres_index, []}
-    ],
     manage_postgres_index2: [
       schedule: "10 * * * *",
       task: {Sanbase.DiscordBot.AiServer, :manage_postgres_index2, []}

@@ -1,6 +1,7 @@
 defmodule Sanbase.SanLang.Kernel do
-  alias Sanbase.SanLang.Environment
+  alias Sanbase.Environment
   alias Sanbase.SanLang.Interpreter
+  alias Sanbase.SanLang.FunctionArgumentError
 
   def pow(base, pow, _env) when is_number(base) and is_number(pow) do
     base ** pow
@@ -11,6 +12,17 @@ defmodule Sanbase.SanLang.Kernel do
   end
 
   def length(list, _env) when is_list(list), do: length(list)
+
+  def load(path, _env) do
+    with {:ok, struct} <- Sanbase.Queries.ExternalData.resolve_path(path),
+         {:ok, data} <- Sanbase.Queries.ExternalData.get(struct) do
+      data
+    else
+      {:error, error} ->
+        error_msg = "Failed evaluation: load(#{inspect(path)}). Reason: #{error}"
+        raise(FunctionArgumentError, error_msg)
+    end
+  end
 
   def map_keys(map, _env) when is_map(map) do
     Map.keys(map)

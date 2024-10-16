@@ -232,10 +232,11 @@ config :sanbase, Sanbase.SocialData,
   metricshub_url: {:system, "METRICS_HUB_URL", "http://metrics-hub-server"}
 
 config :waffle,
-  storage: Waffle.Storage.S3,
-  # To support AWS regions other than US Standard
-  virtual_host: true,
-  bucket: {:system, "POSTS_IMAGE_BUCKET"}
+  storage: Waffle.Storage.Local,
+  storage_dir: "/tmp/sanbase/",
+  # Note: without using storage_dir_prefix: "/", a local "tmp/..." dir
+  # is used instead of "/tmp/..."
+  storage_dir_prefix: "/"
 
 config :sanbase, SanbaseWeb.Graphql.Middlewares.AccessControl,
   restrict_to_in_days: {:system, "RESTRICT_TO_IN_DAYS", "1"},

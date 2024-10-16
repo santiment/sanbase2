@@ -12,7 +12,7 @@ defmodule Sanbase.Queries do
   alias Sanbase.Dashboards.Dashboard
   alias Sanbase.Dashboards.DashboardQueryMapping
   alias Sanbase.Accounts.User
-  alias Sanbase.Clickhouse.Query.Environment
+  alias Sanbase.Environment
 
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
 
@@ -95,11 +95,37 @@ defmodule Sanbase.Queries do
   def run_query(%Query{} = query, user, query_metadata, opts \\ []) do
     query_metadata = Map.put_new(query_metadata, :sanbase_user_id, user.id)
 
-    with {:ok, environment} <- Environment.new(query, user),
+    with {:ok, query} <- resolve_code_parameters(query, user),
+         {:ok, environment} <- create_queries_environment(query, user),
          {:ok, result} <- Queries.Executor.run(query, query_metadata, environment) do
       maybe_store_execution_data_async(result, user.id, opts)
 
       {:ok, result}
+    end
+  end
+
+  defp get_assets() do
+    Sanbase.Cache.get_or_store({{__MODULE__, :get_assets}}, fn ->
+      list = Sanbase.Project.List.projects_data_for_queries()
+      {:ok, list}
+    end)
+  end
+
+  defp create_queries_environment(query, user) do
+    owner_subset = query.user |> Map.from_struct() |> Map.take([:id, :username, :email, :name])
+    querying_subset = user |> Map.from_struct() |> Map.take([:id, :username, :email, :name])
+    environment = Environment.new()
+
+    with {:ok, assets} <- get_assets() do
+      env =
+        environment
+        |> Environment.put_env_bindings(%{
+          owner: owner_subset,
+          querying_user: querying_subset,
+          assets: assets
+        })
+
+      {:ok, env}
     end
   end
 
@@ -450,7 +476,51 @@ defmodule Sanbase.Queries do
     |> process_transaction_result(:add_hash_match_field)
   end
 
+  @doc ~s"""
+  Resolve the code parameters in the query.
+  Parameters which value is in the format: `%{ <code here> %}` have their
+  value replaced with the result of evaluation of the code.
+  For example: {% load("/user/32/my_addresses") %} will be replaced with
+  something like: ["addr1", "addr2", "addr3"]
+  """
+  @spec resolve_code_parameters(Query.t(), User.t()) :: {:ok, Query.t()} | {:error, String.t()}
+  def resolve_code_parameters(query, _user) do
+    parameters =
+      Map.new(
+        query.sql_query_parameters,
+        fn
+          {key, value} ->
+            if code_parameter?(value) do
+              case eval_code_parameter(value) do
+                {:ok, value} -> {key, value}
+                {:error, _error} = error_tuple -> throw(error_tuple)
+              end
+            else
+              {key, value}
+            end
+        end
+      )
+
+    query = %{query | sql_query_parameters: parameters}
+    {:ok, query}
+  catch
+    {:error, _} = error_tuple ->
+      error_tuple
+  end
+
   # Private functions
+
+  defp code_parameter?(value) when is_binary(value) do
+    String.starts_with?(value, "{%") and String.ends_with?(value, "%}")
+  end
+
+  defp code_parameter?(_value), do: false
+
+  defp eval_code_parameter(code) do
+    code = code |> String.trim_leading("{%") |> String.trim_trailing("%}")
+
+    Sanbase.SanLang.eval(code)
+  end
 
   defp get_for_mutation(query_id, querying_user_id) do
     query = Query.get_for_mutation(query_id, querying_user_id)

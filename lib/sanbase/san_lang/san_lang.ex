@@ -21,7 +21,7 @@ defmodule Sanbase.SanLang do
     - Comparisons and boolean expressions: ==, !=, >, <, >=, <=, and, or
       - 1 + 2 * 3 + 10 > 10 => true
   """
-  alias Sanbase.SanLang.Environment
+  alias Sanbase.Environment
   alias Sanbase.SanLang.Interpreter
 
   import Sanbase.Utils.Transform, only: [to_bang: 1]

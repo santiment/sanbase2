@@ -1,4 +1,4 @@
-defmodule Sanbase.SanLang.Environment do
+defmodule Sanbase.Environment do
   defstruct env_bindings: %{}, local_bindings: %{}
 
   @type t :: %__MODULE__{

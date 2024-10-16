@@ -2,6 +2,7 @@ defmodule Sanbase.SanLangTest do
   use Sanbase.DataCase, async: true
 
   alias Sanbase.SanLang
+  alias Sanbase.Environment
 
   test "literal values are evaluated to themselves" do
     assert SanLang.eval!("1") == 1
@@ -18,18 +19,18 @@ defmodule Sanbase.SanLangTest do
   end
 
   test "env vars are pulled from the environment" do
-    env = SanLang.Environment.new()
-    env = SanLang.Environment.put_env_bindings(env, %{"a" => 1, "b" => "some string value"})
+    env = Environment.new()
+    env = Environment.put_env_bindings(env, %{"a" => 1, "b" => "some string value"})
 
     assert SanLang.eval!("@a", env) == 1
     assert SanLang.eval!("@b", env) == "some string value"
   end
 
   test "access operator" do
-    env = SanLang.Environment.new()
+    env = Environment.new()
 
     env =
-      SanLang.Environment.put_env_bindings(env, %{
+      Environment.put_env_bindings(env, %{
         "slugs" => %{"bitcoin" => %{"github_orgs" => ["bitcoin-core-dev", "bitcoin"]}}
       })
 
@@ -90,10 +91,10 @@ defmodule Sanbase.SanLangTest do
   end
 
   test "map/2" do
-    env = SanLang.Environment.new()
+    env = Environment.new()
 
     env =
-      SanLang.Environment.put_env_bindings(env, %{
+      Environment.put_env_bindings(env, %{
         "data" => [1, 2, 3]
       })
 
@@ -102,10 +103,10 @@ defmodule Sanbase.SanLangTest do
   end
 
   test "filter/2" do
-    env = SanLang.Environment.new()
+    env = Environment.new()
 
     env =
-      SanLang.Environment.put_env_bindings(env, %{
+      Environment.put_env_bindings(env, %{
         "data" => [%{"key" => 1}, %{"key" => 2}, %{"key" => 3}],
         "data2" => [1, 2, 3.14, 4, 5, 6.15]
       })
@@ -116,10 +117,10 @@ defmodule Sanbase.SanLangTest do
   end
 
   test "map/2 + flat_map/2 + map_keys/1" do
-    env = SanLang.Environment.new()
+    env = Environment.new()
 
     env =
-      SanLang.Environment.put_env_bindings(env, %{
+      Environment.put_env_bindings(env, %{
         "projects" => %{
           "bitcoin" => %{"github_organizations" => ["bitcoin", "bitcoin-core-dev"]},
           "santiment" => %{"github_organizations" => ["santiment"]}
@@ -138,9 +139,9 @@ defmodule Sanbase.SanLangTest do
   end
 
   test "arithmetic, env vars and access operator" do
-    env = SanLang.Environment.new()
-
-    env = SanLang.Environment.put_env_bindings(env, %{"pi" => 3.14, "vals" => %{"pi" => 3.14}})
+    env =
+      Environment.new()
+      |> Environment.put_env_bindings(%{"pi" => 3.14, "vals" => %{"pi" => 3.14}})
 
     assert SanLang.eval!("@pi * 1000", env) == 3140.0
     assert SanLang.eval!(~s|@vals["pi"] * 1000|, env) == 3140.0

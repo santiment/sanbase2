@@ -2,7 +2,7 @@ defmodule Sanbase.Queries.Executor do
   alias Sanbase.Queries.Query
   alias Sanbase.Queries.QueryMetadata
   alias Sanbase.Queries.Executor.Result
-  alias Sanbase.Clickhouse.Query.Environment
+  alias Sanbase.Environment
 
   @doc ~s"""
   Compute the SQL defined in the panel by executing it against ClickHouse.

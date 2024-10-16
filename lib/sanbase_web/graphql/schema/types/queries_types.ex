@@ -187,6 +187,7 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
     field(:float_list, list_of(:float))
     field(:string, :string)
     field(:string_list, list_of(:string))
+    field(:string_list_external, :string)
   end
 
   @desc ~s"""

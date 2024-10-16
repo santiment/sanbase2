@@ -31,16 +31,25 @@ defmodule Sanbase.Cryptocompare.Price.HistoricalWorker do
   def conf_name(), do: @oban_conf_name
 
   @impl Oban.Worker
-  def perform(%Oban.Job{args: args}) do
+  def perform(%Oban.Job{args: args, attempt: attempt}) do
     %{"base_asset" => base_asset, "quote_asset" => quote_asset, "date" => date} = args
     t1 = System.monotonic_time(:millisecond)
     should_snooze? = base_asset not in available_base_assets()
 
-    case should_snooze? do
-      true ->
+    cond do
+      attempt > 30 ->
+        Logger.info(
+          "[Cryptocompare Historical] The job for #{base_asset}/#{quote_asset} and date #{date} has been snoozed too many times. \
+          Marking it as complete so it's no longer scheduled."
+        )
+
+        {:canceled,
+         "Snoozed too many times because the base asset is not in the list of available assets on Santiment."}
+
+      should_snooze? ->
         {:snooze, 86_400}
 
-      false ->
+      true ->
         case get_data(base_asset, quote_asset, date) do
           {:ok, data} ->
             t2 = System.monotonic_time(:millisecond)
@@ -50,7 +59,16 @@ defmodule Sanbase.Cryptocompare.Price.HistoricalWorker do
             result
 
           :snooze ->
-            {:snooze, 86_400}
+            if attempt > 30 do
+              Logger.info(
+                "[Cryptocompare Historical] The job for #{base_asset}/#{quote_asset} and date #{date} has been snoozed too many times due to errors in the response format. \
+          Marking it as complete so it's no longer scheduled."
+              )
+
+              {:canceled, "Snoozed too many times because the response format is malformed."}
+            else
+              {:snooze, 86_400}
+            end
 
           {:error, error} ->
             {:error, error}

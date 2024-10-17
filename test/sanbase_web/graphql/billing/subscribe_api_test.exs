@@ -52,7 +52,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
      ]},
     {Sanbase.StripeApi, [:passthrough],
      [cancel_subscription_immediately: fn _ -> {:ok, %{}} end]},
-    {Sanbase.Notifications.Discord, [:passthrough],
+    {Sanbase.Messaging.Discord, [:passthrough],
      [
        send_notification: fn _, _, _ -> :ok end
      ]},
@@ -477,7 +477,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       ref = make_ref()
 
       Sanbase.Mock.prepare_mock(
-        Sanbase.Notifications.Discord,
+        Sanbase.Messaging.Discord,
         :send_notification,
         fn _, _, payload ->
           send(self, {ref, payload})

@@ -936,7 +936,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       user: user,
       conn: conn
     } do
-      Sanbase.Mock.prepare_mock2(&Sanbase.Notifications.Insight.publish_in_discord/1, :ok)
+      Sanbase.Mock.prepare_mock2(&Sanbase.Messaging.Insight.publish_in_discord/1, :ok)
       |> Sanbase.Mock.run_with_mocks(fn ->
         post =
           insert(:post,
@@ -971,7 +971,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
     test "still returns post when discord publish fails", %{user: user, conn: conn} do
       with_mocks([
-        {Sanbase.Notifications.Insight, [],
+        {Sanbase.Messaging.Insight, [],
          [publish_in_discord: fn _ -> {:error, "Error publishing in discord"} end]}
       ]) do
         post =
@@ -1143,7 +1143,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
       query = create_chart_event(args)
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.Notifications.Insight.publish_in_discord/1, :ok)
+      Sanbase.Mock.prepare_mock2(&Sanbase.Messaging.Insight.publish_in_discord/1, :ok)
       |> Sanbase.Mock.run_with_mocks(fn ->
         res = execute_mutation_with_success(query, "createChartEvent", context.conn)
 

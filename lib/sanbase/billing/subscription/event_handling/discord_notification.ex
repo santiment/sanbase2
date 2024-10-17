@@ -1,6 +1,6 @@
 defmodule Sanbase.Billing.DiscordNotification do
   alias Sanbase.Accounts.User
-  alias Sanbase.Notifications.Discord
+  alias Sanbase.Messaging.Discord
   alias Sanbase.Billing.{Subscription, Plan, Product}
 
   alias Sanbase.Utils.Config

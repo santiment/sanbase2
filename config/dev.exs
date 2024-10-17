@@ -46,7 +46,7 @@ config :sanbase, Oban.Web, queues: false
 # When testing Oban.Scrapers jobs locally comment out these 2 lines
 config :sanbase, Oban.Scrapers, queues: false
 
-config :sanbase, Sanbase.Notifications.Insight, enabled: "false"
+config :sanbase, Sanbase.Messaging.Insight, enabled: "false"
 
 config :sanbase, Sanbase.KafkaExporter, producer: Sanbase.InMemoryKafka.Producer
 

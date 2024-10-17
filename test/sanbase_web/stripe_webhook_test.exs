@@ -21,7 +21,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
          StripeApiTestResponse.retrieve_subscription_resp(stripe_id: stripe_id)
        end
      ]},
-    {Sanbase.Notifications.Discord, [],
+    {Sanbase.Messaging.Discord, [],
      [
        send_notification: fn _, _, _ -> :ok end,
        encode!: fn _, _ -> "{}" end
@@ -46,7 +46,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
       ref = make_ref()
 
       Sanbase.Mock.prepare_mock(
-        Sanbase.Notifications.Discord,
+        Sanbase.Messaging.Discord,
         :send_notification,
         fn _, _, payload ->
           send(self, {ref, payload})
@@ -91,7 +91,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
       ref = make_ref()
 
       Sanbase.Mock.prepare_mock(
-        Sanbase.Notifications.Discord,
+        Sanbase.Messaging.Discord,
         :send_notification,
         fn _, _, payload ->
           send(self, {ref, payload})

@@ -1,4 +1,4 @@
-defmodule Sanbase.Notifications.Insight do
+defmodule Sanbase.Messaging.Insight do
   require Mockery.Macro
   alias Sanbase.Utils.Config
   require Logger

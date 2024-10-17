@@ -2329,103 +2329,6 @@ ALTER SEQUENCE public.newsletter_tokens_id_seq OWNED BY public.newsletter_tokens
 
 
 --
--- Name: notification; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.notification (
-    id bigint NOT NULL,
-    project_id bigint NOT NULL,
-    type_id bigint NOT NULL,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
-    data text
-);
-
-
---
--- Name: notification_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.notification_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: notification_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.notification_id_seq OWNED BY public.notification.id;
-
-
---
--- Name: notification_type; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.notification_type (
-    id bigint NOT NULL,
-    name character varying(255) NOT NULL,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
-);
-
-
---
--- Name: notification_type_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.notification_type_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: notification_type_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.notification_type_id_seq OWNED BY public.notification_type.id;
-
-
---
--- Name: notifications; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.notifications (
-    id bigint NOT NULL,
-    project_id bigint NOT NULL,
-    type_id bigint NOT NULL,
-    data character varying(255),
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
-);
-
-
---
--- Name: notifications_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.notifications_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: notifications_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.notifications_id_seq OWNED BY public.notifications.id;
-
-
---
 -- Name: oban_jobs; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -5117,27 +5020,6 @@ ALTER TABLE ONLY public.newsletter_tokens ALTER COLUMN id SET DEFAULT nextval('p
 
 
 --
--- Name: notification id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.notification ALTER COLUMN id SET DEFAULT nextval('public.notification_id_seq'::regclass);
-
-
---
--- Name: notification_type id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.notification_type ALTER COLUMN id SET DEFAULT nextval('public.notification_type_id_seq'::regclass);
-
-
---
--- Name: notifications id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.notifications ALTER COLUMN id SET DEFAULT nextval('public.notifications_id_seq'::regclass);
-
-
---
 -- Name: oban_jobs id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6014,30 +5896,6 @@ ALTER TABLE ONLY public.monitored_twitter_handles
 
 ALTER TABLE ONLY public.newsletter_tokens
     ADD CONSTRAINT newsletter_tokens_pkey PRIMARY KEY (id);
-
-
---
--- Name: notification notification_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.notification
-    ADD CONSTRAINT notification_pkey PRIMARY KEY (id);
-
-
---
--- Name: notification_type notification_type_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.notification_type
-    ADD CONSTRAINT notification_type_pkey PRIMARY KEY (id);
-
-
---
--- Name: notifications notifications_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.notifications
-    ADD CONSTRAINT notifications_pkey PRIMARY KEY (id);
 
 
 --
@@ -7086,27 +6944,6 @@ CREATE UNIQUE INDEX metrics_name_index ON public.metrics USING btree (name);
 --
 
 CREATE UNIQUE INDEX monitored_twitter_handles_handle_index ON public.monitored_twitter_handles USING btree (handle);
-
-
---
--- Name: notification_project_id_type_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX notification_project_id_type_id_index ON public.notification USING btree (project_id, type_id);
-
-
---
--- Name: notification_type_name_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX notification_type_name_index ON public.notification_type USING btree (name);
-
-
---
--- Name: notifications_project_id_type_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX notifications_project_id_type_id_index ON public.notifications USING btree (project_id, type_id);
 
 
 --
@@ -8265,38 +8102,6 @@ ALTER TABLE ONLY public.menus
 
 ALTER TABLE ONLY public.monitored_twitter_handles
     ADD CONSTRAINT monitored_twitter_handles_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
-
-
---
--- Name: notification notification_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.notification
-    ADD CONSTRAINT notification_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(id) ON DELETE CASCADE;
-
-
---
--- Name: notification notification_type_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.notification
-    ADD CONSTRAINT notification_type_id_fkey FOREIGN KEY (type_id) REFERENCES public.notification_type(id);
-
-
---
--- Name: notifications notifications_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.notifications
-    ADD CONSTRAINT notifications_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(id);
-
-
---
--- Name: notifications notifications_type_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.notifications
-    ADD CONSTRAINT notifications_type_id_fkey FOREIGN KEY (type_id) REFERENCES public.notification_type(id);
 
 
 --
@@ -9490,3 +9295,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20240809122904);
 INSERT INTO public."schema_migrations" (version) VALUES (20240904135651);
 INSERT INTO public."schema_migrations" (version) VALUES (20240926130910);
 INSERT INTO public."schema_migrations" (version) VALUES (20240926135951);
+INSERT INTO public."schema_migrations" (version) VALUES (20241017092520);

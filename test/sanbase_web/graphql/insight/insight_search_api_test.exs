@@ -11,7 +11,7 @@ defmodule SanbaseWeb.Graphql.InsightSearchApiTest do
   alias Sanbase.Insight.Post
 
   setup_all_with_mocks([
-    {Sanbase.Notifications.Insight, [], [publish_in_discord: fn _ -> :ok end]}
+    {Sanbase.Messaging.Insight, [], [publish_in_discord: fn _ -> :ok end]}
   ]) do
     :ok
   end

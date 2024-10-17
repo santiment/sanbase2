@@ -71,9 +71,8 @@ alias Sanbase.ExternalServices.ProjectInfo
 alias Sanbase.Discourse.Api, as: DiscourseApi
 alias Sanbase.Discourse.Config, as: DiscourseConfig
 
-alias Sanbase.Notifications.Insight, as: NotificationsInsight
-alias Sanbase.Notifications.Type, as: NotificationsType
-alias Sanbase.Notifications.Discord
+alias Sanbase.Messaging.Insight, as: NotificationsInsight
+alias Sanbase.Messaging.Discord
 
 alias Sanbase.Utils.{
   JsonLogger,

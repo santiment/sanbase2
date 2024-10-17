@@ -1,4 +1,4 @@
-defmodule Sanbase.Notifications.Discord do
+defmodule Sanbase.Messaging.Discord do
   @moduledoc ~s"""
   Send notification to Discord and handle the response
   """

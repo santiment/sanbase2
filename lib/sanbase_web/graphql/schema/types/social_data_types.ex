@@ -30,6 +30,12 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
     value(:telegram_discussion_overview)
   end
 
+  object :metric_spike_explanation do
+    field(:spike_start_datetime, non_null(:datetime))
+    field(:spike_end_datetime, non_null(:datetime))
+    field(:explanation, non_null(:string))
+  end
+
   object :popular_search_term do
     field(:title, non_null(:string))
     field(:options, :json)

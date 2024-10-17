@@ -214,14 +214,16 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
 
   def metric_id_filter(metric, opts) when is_binary(metric) do
     arg_name = Keyword.fetch!(opts, :argument_name)
+    metric_id_column = Keyword.get(opts, :metric_id_column, "metric_id")
 
-    "metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = {{#{arg_name}}} LIMIT 1 )"
+    "#{metric_id_column} = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = {{#{arg_name}}} LIMIT 1 )"
   end
 
   def metric_id_filter(metrics, opts) when is_list(metrics) do
     arg_name = Keyword.fetch!(opts, :argument_name)
+    metric_id_column = Keyword.get(opts, :metric_id_column, "metric_id")
 
-    "metric_id IN ( SELECT DISTINCT(metric_id) FROM metric_metadata FINAL PREWHERE name IN ({{#{arg_name}}}) )"
+    "#{metric_id_column} IN ( SELECT DISTINCT(metric_id) FROM metric_metadata FINAL PREWHERE name IN ({{#{arg_name}}}) )"
   end
 
   def signal_id_filter(%{signal: signal}, opts) when is_binary(signal) do

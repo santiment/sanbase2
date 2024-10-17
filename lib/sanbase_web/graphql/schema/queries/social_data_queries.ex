@@ -8,6 +8,17 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
   alias SanbaseWeb.Graphql.Resolvers.SocialDataResolver
 
   object :social_data_queries do
+    field :get_metric_spike_explanations, list_of(:metric_spike_explanation) do
+      meta(access: :free)
+
+      arg(:metric, non_null(:string))
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      cache_resolve(&SocialDataResolver.get_metric_spike_explanations/3)
+    end
+
     field :popular_search_terms, list_of(:popular_search_term) do
       meta(access: :free)
 

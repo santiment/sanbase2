@@ -9,7 +9,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
 
   @context_words_default_size 10
 
-  def popular_search_terms(_root, %{from: from, to: to}, _) do
+  def get_metric_spike_explanations(
+        _root,
+        %{metric: metric, slug: slug, from: from, to: to},
+        _resolution
+      ) do
+    with false <- Sanbase.Metric.hard_deprecated?(metric),
+         true <- Sanbase.Metric.has_metric?(metric) do
+      SocialData.Spikes.get_metric_spike_explanations(metric, %{slug: slug}, from, to)
+    end
+  end
+
+  def popular_search_terms(_root, %{from: from, to: to}, _resolution) do
     Sanbase.SocialData.PopularSearchTerm.get(from, to)
   end
 

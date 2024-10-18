@@ -2286,9 +2286,10 @@ CREATE TABLE public.metric_registry (
     internal_metric character varying(255) NOT NULL,
     human_readable_name character varying(255) NOT NULL,
     aliases character varying(255)[] DEFAULT ARRAY[]::character varying[] NOT NULL,
-    "table" character varying(255) NOT NULL,
+    "table" character varying(255)[] NOT NULL,
     is_template_metric boolean DEFAULT false NOT NULL,
-    parameters jsonb DEFAULT '{}'::jsonb NOT NULL,
+    parameters jsonb[] DEFAULT ARRAY[]::jsonb[] NOT NULL,
+    fixed_parameters jsonb DEFAULT '{}'::jsonb,
     is_timebound boolean NOT NULL,
     is_exposed boolean DEFAULT true NOT NULL,
     exposed_environments character varying(255) DEFAULT 'all'::character varying NOT NULL,
@@ -2302,8 +2303,8 @@ CREATE TABLE public.metric_registry (
     docs_links character varying(255)[] DEFAULT ARRAY[]::character varying[] NOT NULL,
     is_deprecated boolean DEFAULT false NOT NULL,
     hard_deprecate_after timestamp(0) without time zone DEFAULT NULL::timestamp without time zone,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    inserted_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL
 );
 
 
@@ -7250,17 +7251,10 @@ CREATE INDEX menus_user_id_index ON public.menus USING btree (user_id);
 
 
 --
--- Name: metric_registry_metric_data_type_parameters_index; Type: INDEX; Schema: public; Owner: -
+-- Name: metric_registry_composite_unique_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX metric_registry_metric_data_type_parameters_index ON public.metric_registry USING btree (metric, data_type, parameters);
-
-
---
--- Name: metric_registry_metric_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX metric_registry_metric_index ON public.metric_registry USING btree (metric);
+CREATE UNIQUE INDEX metric_registry_composite_unique_index ON public.metric_registry USING btree (metric, data_type, fixed_parameters);
 
 
 --
@@ -9681,6 +9675,7 @@ INSERT INTO public."schema_migrations" (version) VALUES (20241017092520);
 INSERT INTO public."schema_migrations" (version) VALUES (20241018073651);
 INSERT INTO public."schema_migrations" (version) VALUES (20241018075640);
 INSERT INTO public."schema_migrations" (version) VALUES (20241014115340);
+INSERT INTO public."schema_migrations" (version) VALUES (20241018115340);
 INSERT INTO public."schema_migrations" (version) VALUES (20241029080754);
 INSERT INTO public."schema_migrations" (version) VALUES (20241029082533);
 INSERT INTO public."schema_migrations" (version) VALUES (20241029151959);

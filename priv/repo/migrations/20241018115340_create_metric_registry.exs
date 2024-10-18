@@ -64,10 +64,11 @@ defmodule Sanbase.Repo.Migrations.CreateMetricRegistry do
       add(:internal_metric, :string, null: false)
       add(:human_readable_name, :string, null: false)
       add(:aliases, {:array, :string}, null: false, default: [])
-      add(:table, :string, null: false)
+      add(:table, {:array, :string}, null: false)
 
       add(:is_template_metric, :boolean, null: false, default: false)
-      add(:parameters, :jsonb, null: false, default: "{}")
+      add(:parameters, {:array, :jsonb}, null: false, default: [])
+      add(:fixed_parameters, :jsonb, null: "false", default: "{}")
 
       add(:is_timebound, :boolean, null: false, null: false)
       add(:is_exposed, :boolean, null: false, default: true)
@@ -88,10 +89,13 @@ defmodule Sanbase.Repo.Migrations.CreateMetricRegistry do
       add(:is_deprecated, :boolean, null: false, default: false)
       add(:hard_deprecate_after, :utc_datetime, null: true, default: nil)
 
-      timestamps()
+      timestamps(type: :timestamptz)
     end
 
-    create(unique_index(:metric_registry, [:metric, :data_type, :parameters]))
-    create(index(:metric_registry, [:metric]))
+    create(
+      unique_index(:metric_registry, [:metric, :data_type, :fixed_parameters],
+        name: :metric_registry_composite_unique_index
+      )
+    )
   end
 end

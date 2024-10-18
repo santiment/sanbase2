@@ -148,27 +148,27 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   @external_resource path_to_deprecated.("deprecated_labeled_exchange_flow_metrics.json")
   @external_resource path_to_deprecated.("deprecated_social_metrics.json")
 
-  @metrics_json_pre_alias_expand Enum.reduce(
-                                   @external_resource,
-                                   [],
-                                   fn file, acc ->
-                                     try do
-                                       (File.read!(file) |> Jason.decode!()) ++ acc
-                                     rescue
-                                       e in [Jason.DecodeError] ->
-                                         IO.warn("Jason decoding error in file #{file}")
-                                         reraise e, __STACKTRACE__
-                                     end
-                                   end
-                                 )
+  @raw_metrics_json Enum.reduce(
+                      @external_resource,
+                      [],
+                      fn file, acc ->
+                        try do
+                          (File.read!(file) |> Jason.decode!()) ++ acc
+                        rescue
+                          e in [Jason.DecodeError] ->
+                            IO.warn("Jason decoding error in file #{file}")
+                            reraise e, __STACKTRACE__
+                        end
+                      end
+                    )
 
-  def pre_alias(), do: @metrics_json_pre_alias_expand
+  def pre_alias(), do: @raw_metrics_json
   # Allow the same metric to be defined more than once if it differs in the `data_type`.
   # Also allow the same metric to be used if different `fixed_parameters` are provided.
   # In this case the metric is exposed with some of the parameters (like labels) already fixed,
   # like: balance of funds, balance of whales, etc.
   Enum.group_by(
-    @metrics_json_pre_alias_expand,
+    @raw_metrics_json,
     fn metric -> {metric["metric"], metric["data_type"], metric["fixed_parameters"]} end
   )
   |> Map.values()
@@ -185,7 +185,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   end)
 
   @metrics_json_pre_expand_patterns Enum.flat_map(
-                                      @metrics_json_pre_alias_expand,
+                                      @raw_metrics_json,
                                       fn metric ->
                                         Map.get(metric, "aliases", [])
                                         |> Helper.resolve_metric_aliases(metric)
@@ -315,6 +315,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   end
 
   def metrics_json(), do: @metrics_json
+  def raw_metrics_json(), do: @raw_metrics_json
   def aggregations(), do: @aggregations
   def access_map(), do: @access_map |> transform()
   def table_map(), do: @table_map |> transform()

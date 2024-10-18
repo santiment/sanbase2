@@ -5932,6 +5932,30 @@
     "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/morpho"]
   },
   {
+    "human_readable_name": "Morpho Vaults Total Supplied in USD",
+    "name": "morpho_vaults_total_supplied_usd",
+    "metric": "morpho_vaults_total_supplied",
+    "fixed_parameters": {
+      "labels": {
+        "label_key": "morpho_vault"
+      }
+    },
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "label_fqn"],
+    "required_selectors": ["slug", "label_fqn"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "labeled_intraday_metrics_v2",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/morpho"]
+  },
+  {
     "human_readable_name": "MakerDAO DSR (DAI Savings Rate) deposits",
     "name": "makerdao_dsr_deposits",
     "metric": "makerdao_dsr_deposits",

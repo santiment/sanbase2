@@ -3266,42 +3266,6 @@ ALTER SEQUENCE public.queries_cache_id_seq OWNED BY public.queries_cache.id;
 
 
 --
--- Name: queries_external_data; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.queries_external_data (
-    id bigint NOT NULL,
-    uuid character varying(255) NOT NULL,
-    user_id bigint NOT NULL,
-    name character varying(255) NOT NULL,
-    description character varying(255),
-    storage character varying(255) NOT NULL,
-    location character varying(255) NOT NULL,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
-);
-
-
---
--- Name: queries_external_data_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.queries_external_data_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: queries_external_data_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.queries_external_data_id_seq OWNED BY public.queries_external_data.id;
-
-
---
 -- Name: queries_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -5295,13 +5259,6 @@ ALTER TABLE ONLY public.queries_cache ALTER COLUMN id SET DEFAULT nextval('publi
 
 
 --
--- Name: queries_external_data id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.queries_external_data ALTER COLUMN id SET DEFAULT nextval('public.queries_external_data_id_seq'::regclass);
-
-
---
 -- Name: reports id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6215,14 +6172,6 @@ ALTER TABLE ONLY public.queries_cache
 
 
 --
--- Name: queries_external_data queries_external_data_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.queries_external_data
-    ADD CONSTRAINT queries_external_data_pkey PRIMARY KEY (id);
-
-
---
 -- Name: queries queries_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7049,6 +6998,20 @@ CREATE INDEX menus_user_id_index ON public.menus USING btree (user_id);
 
 
 --
+-- Name: metric_registry_metric_data_type_parameters_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX metric_registry_metric_data_type_parameters_index ON public.metric_registry USING btree (metric, data_type, parameters);
+
+
+--
+-- Name: metric_registry_metric_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX metric_registry_metric_index ON public.metric_registry USING btree (metric);
+
+
+--
 -- Name: metrics_name_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7270,20 +7233,6 @@ CREATE INDEX pumpkins_user_id_index ON public.pumpkins USING btree (user_id);
 --
 
 CREATE UNIQUE INDEX queries_cache_query_id_user_id_index ON public.queries_cache USING btree (query_id, user_id);
-
-
---
--- Name: queries_external_data_user_id_name_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX queries_external_data_user_id_name_index ON public.queries_external_data USING btree (user_id, name);
-
-
---
--- Name: queries_external_data_uuid_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX queries_external_data_uuid_index ON public.queries_external_data USING btree (uuid);
 
 
 --
@@ -8475,14 +8424,6 @@ ALTER TABLE ONLY public.queries_cache
 
 
 --
--- Name: queries_external_data queries_external_data_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.queries_external_data
-    ADD CONSTRAINT queries_external_data_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
-
-
---
 -- Name: queries queries_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8990,7 +8931,6 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-<<<<<<< HEAD
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008204451);
@@ -9432,8 +9372,7 @@ INSERT INTO public."schema_migrations" (version) VALUES (20240725122924);
 INSERT INTO public."schema_migrations" (version) VALUES (20240805115620);
 INSERT INTO public."schema_migrations" (version) VALUES (20240809122904);
 INSERT INTO public."schema_migrations" (version) VALUES (20240904135651);
-INSERT INTO public."schema_migrations" (version) VALUES (20240917083648);
 INSERT INTO public."schema_migrations" (version) VALUES (20240926130910);
 INSERT INTO public."schema_migrations" (version) VALUES (20240926135951);
-INSERT INTO public."schema_migrations" (version) VALUES (20241017092520);
 INSERT INTO public."schema_migrations" (version) VALUES (20241014115340);
+INSERT INTO public."schema_migrations" (version) VALUES (20241017092520);

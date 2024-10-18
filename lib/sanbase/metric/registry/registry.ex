@@ -26,6 +26,9 @@ defmodule Sanbase.Metric.Registry do
     field(:is_deprecated, :boolean, default: false)
     field(:hard_deprecate_after, :utc_datetime, default: nil)
 
+    field(:data_type, :string)
+    field(:docs_links, {:array, :string}, default: [])
+
     timestamps()
   end
 
@@ -42,7 +45,9 @@ defmodule Sanbase.Metric.Registry do
       :aggregation,
       :min_interval,
       :is_deprecated,
-      :hard_deprecate_after
+      :hard_deprecate_after,
+      :data_type,
+      :docs_links
     ])
     |> validate_required([
       :metric,
@@ -60,7 +65,26 @@ defmodule Sanbase.Metric.Registry do
   def populate() do
     Sanbase.Clickhouse.MetricAdapter.FileHandler.metrics_json()
     |> Enum.map(fn map ->
-      nil
+      {:ok, captures} = Sanbase.TemplateEngine.Captures.extract_captures(map["metric"])
+      is_template_metric = captures != []
+
+      %__MODULE__{}
+      |> changeset(%{
+        metric: map["metric"],
+        internal_metric: map["internal_metric"],
+        human_readable_name: map["human_readable_name"],
+        aliases: map["aliases"],
+        table: map["table"],
+        aggregation: map["aggregation"],
+        min_interval: map["min_interval"],
+        is_template_metric: is_template_metric,
+        parameters: Map.get(map, "parameters", %{}),
+        is_deprecated: Map.get(map, "is_deprecated", false),
+        hard_deprecate_after: map["hard_deprecate_after"],
+        has_incomplete_data: Map.get(map, "has__incomplete_data", false),
+        data_type: map["data_type"],
+        docs_links: Map.get(map, "docs_links", [])
+      })
     end)
   end
 end

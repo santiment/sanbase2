@@ -69,6 +69,20 @@ defmodule SanbaseWeb.Router do
     live("/upload_image_live", UploadImageLive)
     live("/uploaded_images_live", UploadedImagesLive)
 
+    live "/notification_actions", NotificationActionLive.Index, :index
+    live "/notification_actions/new", NotificationActionLive.Index, :new
+    live "/notification_actions/:id/edit", NotificationActionLive.Index, :edit
+
+    live "/notification_actions/:id", NotificationActionLive.Show, :show
+    live "/notification_actions/:id/show/edit", NotificationActionLive.Show, :edit
+
+    live "/notifications", NotificationLive.Index, :index
+    live "/notifications/new", NotificationLive.Index, :new
+    live "/notifications/:id/edit", NotificationLive.Index, :edit
+
+    live "/notifications/:id", NotificationLive.Show, :show
+    live "/notifications/:id/show/edit", NotificationLive.Show, :edit
+
     resources("/reports", ReportController)
     resources("/sheets_templates", SheetsTemplateController)
     resources("/webinars", WebinarController)

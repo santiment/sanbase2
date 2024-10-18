@@ -56,6 +56,54 @@ CREATE TYPE public.lang AS ENUM (
 
 
 --
+-- Name: notification_action_type; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.notification_action_type AS ENUM (
+    'create',
+    'update',
+    'delete',
+    'alert'
+);
+
+
+--
+-- Name: notification_channel; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.notification_channel AS ENUM (
+    'discord',
+    'email',
+    'telegram'
+);
+
+
+--
+-- Name: notification_status; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.notification_status AS ENUM (
+    'pending',
+    'completed',
+    'failed'
+);
+
+
+--
+-- Name: notification_step; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.notification_step AS ENUM (
+    'once',
+    'before',
+    'after',
+    'reminder',
+    'detected',
+    'resolved'
+);
+
+
+--
 -- Name: oban_job_state; Type: TYPE; Schema: public; Owner: -
 --
 
@@ -2326,6 +2374,80 @@ CREATE SEQUENCE public.newsletter_tokens_id_seq
 --
 
 ALTER SEQUENCE public.newsletter_tokens_id_seq OWNED BY public.newsletter_tokens.id;
+
+
+--
+-- Name: notification_actions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.notification_actions (
+    id bigint NOT NULL,
+    action_type public.notification_action_type NOT NULL,
+    scheduled_at timestamp(0) without time zone NOT NULL,
+    status public.notification_status DEFAULT 'pending'::public.notification_status NOT NULL,
+    requires_verification boolean DEFAULT false NOT NULL,
+    verified boolean DEFAULT false NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: notification_actions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.notification_actions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: notification_actions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.notification_actions_id_seq OWNED BY public.notification_actions.id;
+
+
+--
+-- Name: notifications; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.notifications (
+    id bigint NOT NULL,
+    step public.notification_step NOT NULL,
+    status public.notification_status DEFAULT 'pending'::public.notification_status NOT NULL,
+    scheduled_at timestamp(0) without time zone NOT NULL,
+    sent_at timestamp(0) without time zone,
+    channels public.notification_channel[] NOT NULL,
+    content text NOT NULL,
+    display_in_ui boolean DEFAULT false NOT NULL,
+    template_params jsonb NOT NULL,
+    notification_action_id bigint NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: notifications_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.notifications_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: notifications_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.notifications_id_seq OWNED BY public.notifications.id;
 
 
 --
@@ -5020,6 +5142,20 @@ ALTER TABLE ONLY public.newsletter_tokens ALTER COLUMN id SET DEFAULT nextval('p
 
 
 --
+-- Name: notification_actions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notification_actions ALTER COLUMN id SET DEFAULT nextval('public.notification_actions_id_seq'::regclass);
+
+
+--
+-- Name: notifications id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notifications ALTER COLUMN id SET DEFAULT nextval('public.notifications_id_seq'::regclass);
+
+
+--
 -- Name: oban_jobs id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -5896,6 +6032,22 @@ ALTER TABLE ONLY public.monitored_twitter_handles
 
 ALTER TABLE ONLY public.newsletter_tokens
     ADD CONSTRAINT newsletter_tokens_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: notification_actions notification_actions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notification_actions
+    ADD CONSTRAINT notification_actions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: notifications notifications_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notifications
+    ADD CONSTRAINT notifications_pkey PRIMARY KEY (id);
 
 
 --
@@ -6944,6 +7096,13 @@ CREATE UNIQUE INDEX metrics_name_index ON public.metrics USING btree (name);
 --
 
 CREATE UNIQUE INDEX monitored_twitter_handles_handle_index ON public.monitored_twitter_handles USING btree (handle);
+
+
+--
+-- Name: notifications_notification_action_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX notifications_notification_action_id_index ON public.notifications USING btree (notification_action_id);
 
 
 --
@@ -8102,6 +8261,14 @@ ALTER TABLE ONLY public.menus
 
 ALTER TABLE ONLY public.monitored_twitter_handles
     ADD CONSTRAINT monitored_twitter_handles_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: notifications notifications_notification_action_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notifications
+    ADD CONSTRAINT notifications_notification_action_id_fkey FOREIGN KEY (notification_action_id) REFERENCES public.notification_actions(id) ON DELETE CASCADE;
 
 
 --
@@ -9296,3 +9463,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20240904135651);
 INSERT INTO public."schema_migrations" (version) VALUES (20240926130910);
 INSERT INTO public."schema_migrations" (version) VALUES (20240926135951);
 INSERT INTO public."schema_migrations" (version) VALUES (20241017092520);
+INSERT INTO public."schema_migrations" (version) VALUES (20241018073651);
+INSERT INTO public."schema_migrations" (version) VALUES (20241018075640);

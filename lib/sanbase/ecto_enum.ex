@@ -34,3 +34,17 @@ defenum(SubscriptionStatusEnum, :status, [
 ])
 
 defenum(LangEnum, :lang, ["en", "jp"])
+
+defenum(NotificationActionTypeEnum, :notification_action_type, [:create, :update, :delete, :alert])
+
+defenum(NotificationChannelEnum, :notification_channel, [:discord, :email, :telegram])
+defenum(NotificationStatusEnum, :notification_status, [:pending, :completed, :failed])
+
+defenum(NotificationStepEnum, :notification_step, [
+  :once,
+  :before,
+  :after,
+  :reminder,
+  :detected,
+  :resolved
+])

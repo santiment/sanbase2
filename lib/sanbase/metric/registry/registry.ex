@@ -4,6 +4,7 @@ defmodule Sanbase.Metric.Registry do
   import Ecto.Changeset
 
   alias __MODULE__.Validation
+  alias Sanbase.TemplateEngine
 
   @timestamps_opts [type: :utc_datetime]
   schema "metric_registry" do
@@ -80,4 +81,45 @@ defmodule Sanbase.Metric.Registry do
       name: :metric_registry_composite_unique_index
     )
   end
+
+  def all(), do: Sanbase.Repo.all(__MODULE__)
+
+  def resolve(list) when is_list(list) do
+    Enum.map(list, &resolve/1)
+  end
+
+  def resolve(%__MODULE__{} = registry) do
+    registry
+    |> resolve_aliases()
+    |> Enum.flat_map(&apply_template_parameters/1)
+  end
+
+  defp resolve_aliases(%__MODULE__{} = registry) do
+    [registry] ++
+      Enum.map(registry.aliases, fn metric_alias ->
+        %{registry | metric: metric_alias}
+      end)
+  end
+
+  defp apply_template_parameters(%__MODULE__{} = registry)
+       when registry.is_template_metric == true do
+    %{
+      metric: metric,
+      internal_metric: internal_metric,
+      human_readable_name: human_readable_name,
+      parameters: parameters_list
+    } = registry
+
+    for parameters <- parameters_list do
+      %{
+        registry
+        | metric: TemplateEngine.run!(metric, params: parameters),
+          internal_metric: TemplateEngine.run!(internal_metric, params: parameters),
+          human_readable_name: TemplateEngine.run!(human_readable_name, params: parameters)
+      }
+    end
+  end
+
+  defp apply_template_parameters(registry) when registry.is_template_metric == false,
+    do: [registry]
 end

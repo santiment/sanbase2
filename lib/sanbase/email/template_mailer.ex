@@ -32,8 +32,8 @@ defmodule Sanbase.TemplateMailer do
       |> put_provider_option(:variables, vars)
       |> deliver()
     else
-      Logger.info("Missing email template: #{template_slug}")
-      :ok
+      Logger.error("Missing email template: #{template_slug}")
+      {:error, "Could not send email: Missing template."}
     end
   end
 

@@ -27,19 +27,43 @@ defmodule SanbaseWeb.Graphql.DocumentProvider do
   @doc false
   @impl true
   def pipeline(%Absinthe.Plug.Request.Query{pipeline: pipeline}) do
+    IO.inspect("RUNNING OWN DOCUMENT PROVIDER")
+
+    pipeline =
+      Enum.map(pipeline, fn
+        Absinthe.Phase.Schema.InlineFunctions ->
+          IO.puts("Overriding InlineFunctions")
+          {Absinthe.Phase.Schema.InlineFunctions, inline_always: true}
+
+        {Absinthe.Phase.Schema.Compile, options} ->
+          IO.puts("Overriding Absinthe.Phase.Schema.Compile")
+          {Absinthe.Phase.Schema.PopulatePersistentTerm, options}
+
+        {phase, options} ->
+          IO.inspect("Phase #{phase}")
+          {phase, options}
+
+        phase ->
+          IO.inspect("Phase #{phase}")
+          phase
+      end)
+
+    pipeline =
+      pipeline
+      |> Absinthe.Pipeline.insert_before(
+        Absinthe.Phase.Document.Complexity.Analysis,
+        SanbaseWeb.Graphql.Phase.Document.Complexity.Preprocess
+      )
+      |> Absinthe.Pipeline.insert_before(
+        Absinthe.Phase.Document.Execution.Resolution,
+        SanbaseWeb.Graphql.Phase.Document.Execution.CacheDocument
+      )
+      |> Absinthe.Pipeline.insert_after(
+        Absinthe.Phase.Document.Result,
+        SanbaseWeb.Graphql.Phase.Document.Execution.Idempotent
+      )
+
     pipeline
-    |> Absinthe.Pipeline.insert_before(
-      Absinthe.Phase.Document.Complexity.Analysis,
-      SanbaseWeb.Graphql.Phase.Document.Complexity.Preprocess
-    )
-    |> Absinthe.Pipeline.insert_before(
-      Absinthe.Phase.Document.Execution.Resolution,
-      SanbaseWeb.Graphql.Phase.Document.Execution.CacheDocument
-    )
-    |> Absinthe.Pipeline.insert_after(
-      Absinthe.Phase.Document.Result,
-      SanbaseWeb.Graphql.Phase.Document.Execution.Idempotent
-    )
   end
 
   @doc false

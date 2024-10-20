@@ -16,6 +16,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   # Disable too many dependencies errors
   # credo:disable-for-this-file
   use Absinthe.Schema
+  @schema_provider Absinthe.Schema.PersistentTerm
 
   alias SanbaseWeb.Graphql
   alias SanbaseWeb.Graphql.{SanbaseRepo, SanbaseDataloader}

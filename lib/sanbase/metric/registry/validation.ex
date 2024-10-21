@@ -12,6 +12,31 @@ defmodule Sanbase.Metric.Registry.Validation do
     end
   end
 
+  def validate_min_plan(:min_plan, min_plan) do
+    map_keys = Map.keys(min_plan) |> Enum.sort()
+    map_values = Map.values(min_plan) |> Enum.uniq() |> Enum.sort()
+
+    cond do
+      map_size(min_plan) == 0 ->
+        []
+
+      map_keys != ["SANAPI", "SANBASE"] ->
+        [
+          min_plan:
+            "The keys for min_plan must be 'SANBASE' and 'SANAPI'. Got #{Enum.join(map_keys, ", ")} instead"
+        ]
+
+      Enum.any?(map_values, &(&1 not in ["free", "pro"])) ->
+        [
+          min_plan:
+            "The values for the min_plan elements must be 'free' or 'restricted'. Got #{Enum.join(map_values, ", ")} instead"
+        ]
+
+      true ->
+        []
+    end
+  end
+
   def validate_template_fields(%Ecto.Changeset{} = changeset) do
     is_template_metric = get_field(changeset, :is_template_metric)
     parameters = get_field(changeset, :parameters)

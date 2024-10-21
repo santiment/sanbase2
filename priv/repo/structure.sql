@@ -2247,6 +2247,8 @@ CREATE TABLE public.metric_registry (
     version character varying(255),
     selectors character varying(255)[] DEFAULT ARRAY[]::character varying[] NOT NULL,
     required_selectors character varying(255)[] DEFAULT ARRAY[]::character varying[] NOT NULL,
+    access character varying(255) NOT NULL,
+    min_plan jsonb DEFAULT '{}'::jsonb NOT NULL,
     aggregation character varying(255) NOT NULL,
     min_interval character varying(255) NOT NULL,
     has_incomplete_data boolean NOT NULL,

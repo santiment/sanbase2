@@ -1624,6 +1624,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "morpho_total_new_debt_usd",
         "morpho_total_repayments_usd",
         "morpho_active_addresses",
+        "morpho_vaults_total_supplied_usd",
         # Makerdao metrics
         "makerdao_action_deposits",
         "makerdao_action_liquidations",

@@ -769,7 +769,7 @@ defmodule Sanbase.RunExamples do
     {:ok, stored} =
       Sanbase.Dashboards.cache_dashboard_query_execution(
         dashboard.id,
-        _hash = nil,
+        _hash = %{},
         mapping.id,
         result,
         user.id

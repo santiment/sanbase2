@@ -3,6 +3,7 @@ import Config
 config :sanbase, Sanbase.Messaging.Insight,
   enabled: {:system, "INSIGHTS_DISCORD_NOTIFICATION_ENABLED", "true"},
   webhook_url: {:system, "INSIGHTS_DISCORD_WEBHOOK_URL"},
+  pulse_webhook_url: {:system, "PULSE_INSIGHTS_DISCORD_WEBHOOK_URL"},
   insights_discord_publish_user: {:system, "INSIGHTS_DISCORD_PUBLISH_USER", "New Insight"}
 
 config :sanbase, Sanbase.Telegram,

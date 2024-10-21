@@ -15,7 +15,7 @@ defmodule Sanbase.Messaging.Insight do
   def do_publish_in_discord(post) do
     post
     |> create_discord_payload()
-    |> publish()
+    |> publish(%{is_pulse: post.is_pulse})
     |> case do
       {:ok, %HTTPoison.Response{status_code: 204}} ->
         :ok
@@ -46,12 +46,23 @@ defmodule Sanbase.Messaging.Insight do
     Jason.encode!(%{content: content, username: insights_discord_publish_user()})
   end
 
-  defp publish(payload) do
+  defp publish(payload, %{is_pulse: true}) do
+    http_client().post(pulse_discord_webhook_url(), payload, [
+      {"Content-Type", "application/json"}
+    ])
+  end
+
+  defp publish(payload, %{is_pulse: false}) do
     http_client().post(discord_webhook_url(), payload, [{"Content-Type", "application/json"}])
   end
 
   defp discord_webhook_url do
     Config.module_get(__MODULE__, :webhook_url)
+  end
+
+  # default to the regular discord webhook url if the pulse webhook url is not set
+  def pulse_discord_webhook_url do
+    Config.module_get(__MODULE__, :pulse_webhook_url) || discord_webhook_url()
   end
 
   defp insights_discord_publish_user do

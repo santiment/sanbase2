@@ -28,7 +28,7 @@ defmodule Sanbase.TemplateMailer do
       |> subject(subject)
       |> put_provider_option(:template_id, template[:id])
       |> put_provider_option(:template_error_deliver, false)
-      |> put_provider_option(:template_error_reporting, "tsvetozar.p@santiment.net")
+      |> put_provider_option(:template_error_reporting, "team.backend@santiment.net")
       |> put_provider_option(:variables, vars)
       |> deliver()
     else

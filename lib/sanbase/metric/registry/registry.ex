@@ -19,6 +19,10 @@ defmodule Sanbase.Metric.Registry do
 
     field(:aggregation, :string)
     field(:min_interval, :string)
+    field(:access, :string)
+    field(:min_plan, :map)
+    field(:selectors, {:array, :string})
+    field(:required_selectors, {:array, :string})
 
     # If the metric is a template metric, then the parameters need to be used
     # to define the full set of metrics
@@ -32,8 +36,10 @@ defmodule Sanbase.Metric.Registry do
     field(:is_exposed, :boolean, default: true)
     field(:exposed_environments, :string, default: "all")
 
+    field(:is_hidden, :boolean, default: false)
     field(:is_deprecated, :boolean, default: false)
     field(:hard_deprecate_after, :utc_datetime, default: nil)
+    field(:deprecation_note, :string, default: nil)
 
     field(:data_type, :string, default: "timeseries")
     field(:docs_links, {:array, :string}, default: [])
@@ -44,38 +50,47 @@ defmodule Sanbase.Metric.Registry do
   def changeset(%__MODULE__{} = metric_description, attrs) do
     metric_description
     |> cast(attrs, [
-      :metric,
-      :human_readable_name,
-      :aliases,
-      :internal_metric,
-      :table,
+      :access,
       :aggregation,
-      :min_interval,
-      :is_template_metric,
-      :parameters,
-      :fixed_parameters,
-      :is_deprecated,
-      :hard_deprecate_after,
-      :is_timebound,
-      :has_incomplete_data,
-      :is_exposed,
-      :exposed_environments,
+      :aliases,
       :data_type,
-      :docs_links
+      :deprecation_note,
+      :docs_links,
+      :exposed_environments,
+      :fixed_parameters,
+      :hard_deprecate_after,
+      :has_incomplete_data,
+      :human_readable_name,
+      :internal_metric,
+      :is_deprecated,
+      :is_exposed,
+      :is_hidden,
+      :is_template_metric,
+      :is_timebound,
+      :metric,
+      :min_interval,
+      :min_plan,
+      :parameters,
+      :required_selectors,
+      :selectors,
+      :table
     ])
     |> validate_required([
-      :metric,
+      :access,
+      :aggregation,
+      :has_incomplete_data,
       :human_readable_name,
       :internal_metric,
-      :table,
-      :has_incomplete_data,
-      :aggregation,
-      :min_interval
+      :metric,
+      :min_interval,
+      :table
     ])
     |> validate_inclusion(:aggregation, ["sum", "last", "count", "avg", "max", "min", "first"])
     |> validate_inclusion(:data_type, ["timeseries", "histogram", "table"])
     |> validate_inclusion(:exposed_environments, ["all", "stage", "prod"])
+    |> validate_inclusion(:access, ["free", "restricted"])
     |> validate_change(:min_interval, &Validation.validate_min_interval/2)
+    |> validate_change(:min_plan, &Validation.validate_min_plan/2)
     |> Validation.validate_template_fields()
     |> unique_constraint([:metric, :data_type, :fixed_parameters],
       name: :metric_registry_composite_unique_index
@@ -85,7 +100,7 @@ defmodule Sanbase.Metric.Registry do
   def all(), do: Sanbase.Repo.all(__MODULE__)
 
   def resolve(list) when is_list(list) do
-    Enum.map(list, &resolve/1)
+    Enum.flat_map(list, &resolve/1)
   end
 
   def resolve(%__MODULE__{} = registry) do

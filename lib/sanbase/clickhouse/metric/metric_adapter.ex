@@ -15,15 +15,13 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   alias __MODULE__.{HistogramMetric, FileHandler, TableMetric}
 
   alias Sanbase.ClickhouseRepo
+  alias __MODULE__.Registry
 
   @plain_aggregations FileHandler.aggregations()
   @aggregations [nil] ++ @plain_aggregations
   @timeseries_metrics_name_list FileHandler.metrics_with_data_type(:timeseries)
   @histogram_metrics_name_list FileHandler.metrics_with_data_type(:histogram)
   @table_structured_metrics_name_list FileHandler.metrics_with_data_type(:table)
-  @access_map FileHandler.access_map()
-  @min_plan_map FileHandler.min_plan_map()
-  @min_interval_map FileHandler.min_interval_map()
   @free_metrics FileHandler.metrics_with_access(:free)
   @restricted_metrics FileHandler.metrics_with_access(:restricted)
   @aggregation_map FileHandler.aggregation_map()
@@ -39,8 +37,6 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   @required_selectors_map FileHandler.required_selectors_map()
   @metric_to_names_map FileHandler.metric_to_names_map()
   @name_to_metric_map FileHandler.name_to_metric_map()
-  @deprecated_metrics_map FileHandler.deprecated_metrics_map()
-  @soft_deprecated_metrics_map FileHandler.soft_deprecated_metrics_map()
   @timebound_flag_map FileHandler.timebound_flag_map()
   @table_map FileHandler.table_map()
 
@@ -49,9 +45,6 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   @fixed_parameteres_map FileHandler.fixed_parameters_map()
 
   @default_complexity_weight 0.3
-
-  @incomplete_metrics Enum.filter(@incomplete_data_map, &(elem(&1, 1) == true))
-                      |> Enum.map(&elem(&1, 0))
 
   @type slug :: String.t()
   @type metric :: String.t()
@@ -63,31 +56,31 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
                      is_map_key(s, :contract_address))
 
   @impl Sanbase.Metric.Behaviour
-  def incomplete_metrics(), do: @incomplete_metrics
+  def incomplete_metrics(), do: Registry.incomplete_metrics()
 
   @impl Sanbase.Metric.Behaviour
-  def free_metrics(), do: @free_metrics
+  def free_metrics(), do: Registry.metrics_with_access(:free)
 
   @impl Sanbase.Metric.Behaviour
-  def restricted_metrics(), do: @restricted_metrics
+  def restricted_metrics(), do: Registry.metrics_with_access(:restricted)
 
   @impl Sanbase.Metric.Behaviour
-  def fixed_labels_parameters_metrics(), do: @fixed_labels_parameters_metrics
+  def fixed_labels_parameters_metrics(), do: Registry.fixed_labels_parameters_metrics_list()
 
   @impl Sanbase.Metric.Behaviour
-  def deprecated_metrics_map(), do: @deprecated_metrics_map
+  def deprecated_metrics_map(), do: Registry.deprecated_metrics_map()
 
   @impl Sanbase.Metric.Behaviour
-  def soft_deprecated_metrics_map(), do: @soft_deprecated_metrics_map
+  def soft_deprecated_metrics_map(), do: Registry.soft_deprecated_metrics_map()
 
   @impl Sanbase.Metric.Behaviour
-  def access_map(), do: @access_map
+  def access_map(), do: Registry.access_map()
 
   @impl Sanbase.Metric.Behaviour
-  def min_plan_map(), do: @min_plan_map
+  def min_plan_map(), do: Registry.min_plan_map()
 
   @impl Sanbase.Metric.Behaviour
-  def has_incomplete_data?(metric), do: Map.get(@incomplete_data_map, metric)
+  def has_incomplete_data?(metric), do: Map.get(Registry.incomplete_data_map(), metric)
 
   @impl Sanbase.Metric.Behaviour
   def complexity_weight(_), do: @default_complexity_weight
@@ -98,7 +91,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   @doc ~s"""
   Get a given metric for a slug and time range. The metric's aggregation
   function can be changed by the last optional parameter. The available
-  aggregations are #{inspect(@plain_aggregations)}
+  aggregations are #{inspect(Registry.aggregations())}
   """
   @impl Sanbase.Metric.Behaviour
 
@@ -296,7 +289,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   def available_slugs(metric), do: get_available_slugs(metric)
 
   @impl Sanbase.Metric.Behaviour
-  def available_aggregations(), do: @aggregations
+  def available_aggregations(), do: Registry.aggregations_with_nil()
 
   @impl Sanbase.Metric.Behaviour
   def first_datetime(metric, selector) when metric in @histogram_metrics_name_list,
@@ -324,7 +317,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
   # Private functions
 
-  defp min_interval(metric), do: Map.get(@min_interval_map, metric)
+  defp min_interval(metric), do: Map.get(Registry.min_interval_map(), metric)
 
   defp get_available_slugs() do
     available_slugs_query()

@@ -79,6 +79,8 @@ defmodule Sanbase.Repo.Migrations.CreateMetricRegistry do
       add(:selectors, {:array, :string}, null: false, default: [])
       add(:required_selectors, {:array, :string}, null: false, default: [])
 
+      add(:access, :string, null: false)
+      add(:min_plan, :jsonb, null: false, default: "{}")
       add(:aggregation, :string, null: false)
       add(:min_interval, :string, null: false)
       add(:has_incomplete_data, :boolean, null: false)
@@ -86,8 +88,10 @@ defmodule Sanbase.Repo.Migrations.CreateMetricRegistry do
       add(:data_type, :string, null: false, default: "timeseries")
       add(:docs_links, {:array, :string}, null: false, default: [])
 
+      add(:is_hidden, :boolean, null: false, default: false)
       add(:is_deprecated, :boolean, null: false, default: false)
       add(:hard_deprecate_after, :utc_datetime, null: true, default: nil)
+      add(:deprecation_note, :text, null: true, default: nil)
 
       timestamps(type: :timestamptz)
     end

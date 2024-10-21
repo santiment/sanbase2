@@ -230,8 +230,6 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
                 )
 
   @human_readable_name_map Helper.name_to_field_map(@metrics_json, "human_readable_name")
-  @metric_version_map Helper.name_to_field_map(@metrics_json, "version")
-  @metrics_label_map Helper.name_to_field_map(@metrics_json, "label", required?: false)
   @incomplete_data_map Helper.name_to_field_map(@metrics_json, "has_incomplete_data")
   @selectors_map Helper.name_to_field_map(
                    @metrics_json,
@@ -330,12 +328,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
     do: @metric_to_names_map |> transform(metric_name_in_map_value_list: true)
 
   def human_readable_name_map(), do: @human_readable_name_map |> transform()
-  def metric_version_map(), do: @metric_version_map |> transform()
   def metrics_data_type_map(), do: @metrics_data_type_map |> transform()
   def incomplete_data_map(), do: @incomplete_data_map |> transform()
   def selectors_map(), do: @selectors_map |> transform()
   def required_selectors_map(), do: @required_selectors_map |> transform()
-  def metrics_label_map(), do: @metrics_label_map |> transform()
   def deprecated_metrics_map(), do: @deprecated_metrics_map
   def soft_deprecated_metrics_map(), do: @soft_deprecated_metrics_map
   def hidden_metrics_mapset(), do: @hidden_metrics_mapset |> transform()

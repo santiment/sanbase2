@@ -2296,13 +2296,17 @@ CREATE TABLE public.metric_registry (
     version character varying(255),
     selectors character varying(255)[] DEFAULT ARRAY[]::character varying[] NOT NULL,
     required_selectors character varying(255)[] DEFAULT ARRAY[]::character varying[] NOT NULL,
+    access character varying(255) NOT NULL,
+    min_plan jsonb DEFAULT '{}'::jsonb NOT NULL,
     aggregation character varying(255) NOT NULL,
     min_interval character varying(255) NOT NULL,
     has_incomplete_data boolean NOT NULL,
     data_type character varying(255) DEFAULT 'timeseries'::character varying NOT NULL,
     docs_links character varying(255)[] DEFAULT ARRAY[]::character varying[] NOT NULL,
+    is_hidden boolean DEFAULT false NOT NULL,
     is_deprecated boolean DEFAULT false NOT NULL,
     hard_deprecate_after timestamp(0) without time zone DEFAULT NULL::timestamp without time zone,
+    deprecation_note text,
     inserted_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL
 );

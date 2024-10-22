@@ -147,7 +147,8 @@ defmodule Sanbase.Mixfile do
       {:uuid, "~> 1.1"},
       {:vex, "~> 0.9", override: true},
       {:waffle, "~> 1.1"},
-      {:websockex, "~> 0.4.3"}
+      {:websockex, "~> 0.4.3"},
+      {:mox, "~> 1.2"}
     ]
   end
 

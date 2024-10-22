@@ -4,42 +4,45 @@ defmodule Sanbase.NotificationsFixtures do
   entities via the `Sanbase.Notifications` context.
   """
 
+  alias Sanbase.Notifications
+
   @doc """
   Generate a notification_action.
   """
   def notification_action_fixture(attrs \\ %{}) do
-    {:ok, notification_action} =
-      attrs
-      |> Enum.into(%{
-        action_type: "some action_type",
-        requires_verification: true,
-        scheduled_at: ~U[2024-10-17 07:48:00Z],
-        status: "some status",
-        verified: true
-      })
-      |> Sanbase.Notifications.create_notification_action()
-
-    notification_action
+    attrs
+    |> Enum.into(%{
+      status: :pending,
+      action_type: :create,
+      scheduled_at: ~U[2024-10-17 07:48:00Z],
+      requires_verification: true,
+      verified: true
+    })
+    |> Notifications.create_notification_action()
   end
 
   @doc """
   Generate a notification.
   """
   def notification_fixture(attrs \\ %{}) do
-    {:ok, notification} =
-      attrs
-      |> Enum.into(%{
-        channels: ["option1", "option2"],
-        content: "some content",
-        display_in_ui: true,
-        scheduled_at: ~U[2024-10-17 07:56:00Z],
-        sent_at: ~U[2024-10-17 07:56:00Z],
-        status: "some status",
-        step: "some step",
-        template_params: %{}
-      })
-      |> Sanbase.Notifications.create_notification()
+    # Create the notification action first
+    {:ok, notification_action} = notification_action_fixture()
 
-    notification
+    # Merge the provided attrs with default attrs, ensuring notification_action_id is set
+    attrs
+    |> Enum.into(%{
+      status: :pending,
+      step: :once,
+      # Changed to use only valid channel
+      channels: [:discord],
+      # Make sure this is set
+      notification_action_id: notification_action.id,
+      scheduled_at: ~U[2024-10-17 07:56:00Z],
+      sent_at: ~U[2024-10-17 07:56:00Z],
+      content: "some content",
+      display_in_ui: true,
+      template_params: %{}
+    })
+    |> Notifications.create_notification()
   end
 end

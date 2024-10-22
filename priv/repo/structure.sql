@@ -2422,7 +2422,7 @@ CREATE TABLE public.notifications (
     scheduled_at timestamp(0) without time zone NOT NULL,
     sent_at timestamp(0) without time zone,
     channels public.notification_channel[] NOT NULL,
-    content text NOT NULL,
+    content text,
     display_in_ui boolean DEFAULT false NOT NULL,
     template_params jsonb NOT NULL,
     notification_action_id bigint NOT NULL,

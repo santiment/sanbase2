@@ -11,7 +11,7 @@ defmodule Sanbase.Repo.Migrations.CreateNotifications do
       add(:scheduled_at, :utc_datetime, null: false)
       add(:sent_at, :utc_datetime)
       add(:channels, {:array, NotificationChannelEnum.type()}, null: false)
-      add(:content, :text, null: false)
+      add(:content, :text)
       add(:display_in_ui, :boolean, default: false, null: false)
       add(:template_params, :map, null: false)
 

@@ -3,7 +3,7 @@
   <:subtitle>This is a notification_action record from your database.</:subtitle>
   <:actions>
     <.link
-      patch={~p"/admin2/notification_actions/#{@notification_action}/show/edit"}
+      patch={~p"/notification_actions/#{@notification_action}/show/edit"}
       phx-click={JS.push_focus()}
     >
       <.button>Edit notification_action</.button>
@@ -19,13 +19,13 @@
   <:item title="Verified"><%= @notification_action.verified %></:item>
 </.list>
 
-<.back navigate={~p"/admin2/notification_actions"}>Back to notification_actions</.back>
+<.back navigate={~p"/notification_actions"}>Back to notification_actions</.back>
 
 <.modal
   :if={@live_action == :edit}
   id="notification_action-modal"
   show
-  on_cancel={JS.patch(~p"/admin2/notification_actions/#{@notification_action}")}
+  on_cancel={JS.patch(~p"/notification_actions/#{@notification_action}")}
 >
   <.live_component
     module={SanbaseWeb.NotificationActionLive.FormComponent}
@@ -33,6 +33,6 @@
     title={@page_title}
     action={@live_action}
     notification_action={@notification_action}
-    patch={~p"/admin2/notification_actions/#{@notification_action}"}
+    patch={~p"/notification_actions/#{@notification_action}"}
   />
 </.modal>

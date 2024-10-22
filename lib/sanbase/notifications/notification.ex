@@ -5,14 +5,14 @@ defmodule Sanbase.Notifications.Notification do
   alias Sanbase.Notifications.NotificationAction
 
   schema "notifications" do
-    field(:status, NotificationStatusEnum)
-    field(:step, NotificationStepEnum)
-    field(:channels, {:array, NotificationChannelEnum})
+    field(:status, NotificationStatusEnum, default: :pending)
+    field(:step, NotificationStepEnum, default: :once)
+    field(:channels, {:array, NotificationChannelEnum}, default: [])
     field(:scheduled_at, :utc_datetime)
     field(:sent_at, :utc_datetime)
     field(:content, :string)
     field(:display_in_ui, :boolean, default: false)
-    field(:template_params, :map)
+    field(:template_params, :map, default: %{})
 
     belongs_to(:notification_action, NotificationAction)
 
@@ -30,49 +30,38 @@ defmodule Sanbase.Notifications.Notification do
       :channels,
       :content,
       :display_in_ui,
-      :template_params
+      :template_params,
+      :notification_action_id
     ])
     |> validate_required([
-      :step,
-      :status,
       :scheduled_at,
-      :sent_at,
-      :channels,
-      :content,
-      :display_in_ui
+      :display_in_ui,
+      :notification_action_id
     ])
-    |> validate_status()
-    |> validate_step()
+    |> validate_inclusion(:status, NotificationStatusEnum.__enum_map__())
+    |> validate_inclusion(:step, NotificationStepEnum.__enum_map__())
     |> validate_channels()
   end
 
-  defp validate_status(changeset) do
-    validate_change(changeset, :status, fn _, status ->
-      if NotificationStatusEnum.valid_value?(status) do
-        []
-      else
-        [status: "is invalid"]
-      end
-    end)
-  end
-
   defp validate_step(changeset) do
-    validate_change(changeset, :step, fn _, step ->
-      if NotificationStepEnum.valid_value?(step) do
-        []
-      else
-        [step: "is invalid"]
-      end
-    end)
+    if get_change(changeset, :step) do
+      validate_inclusion(changeset, :step, Ecto.Enum.values(NotificationStepEnum))
+    else
+      changeset
+    end
   end
 
   defp validate_channels(changeset) do
-    validate_change(changeset, :channels, fn _, channels ->
-      if is_list(channels) and Enum.all?(channels, &NotificationChannelEnum.valid_value?/1) do
-        []
-      else
-        [channels: "contains invalid values"]
-      end
-    end)
+    if get_change(changeset, :channels) do
+      validate_change(changeset, :channels, fn _, channels ->
+        if is_list(channels) and Enum.all?(channels, &NotificationChannelEnum.valid_value?/1) do
+          []
+        else
+          [channels: "contains invalid values"]
+        end
+      end)
+    else
+      changeset
+    end
   end
 end

@@ -42,6 +42,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   @deprecated_metrics_map FileHandler.deprecated_metrics_map()
   @soft_deprecated_metrics_map FileHandler.soft_deprecated_metrics_map()
   @timebound_flag_map FileHandler.timebound_flag_map()
+  @table_map FileHandler.table_map()
 
   @fixed_labels_parameters_metrics_mapset FileHandler.fixed_labels_parameters_metrics_mapset()
   @fixed_labels_parameters_metrics Enum.to_list(@fixed_labels_parameters_metrics_mapset)
@@ -245,27 +246,41 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def available_label_fqns(metric) do
-    if metric in @fixed_labels_parameters_metrics_mapset do
-      fixed_parameters = Map.get(@fixed_parameteres_map, metric)
-      query_struct = available_label_fqns_query(metric, fixed_parameters)
+    cond do
+      metric in @fixed_labels_parameters_metrics_mapset ->
+        fixed_parameters = Map.get(@fixed_parameteres_map, metric)
+        query_struct = available_label_fqns_for_fixed_parameters_query(metric, fixed_parameters)
 
-      Sanbase.ClickhouseRepo.query_transform(query_struct, & &1)
-      |> maybe_apply_function(&List.flatten/1)
-    else
-      {:ok, []}
+        Sanbase.ClickhouseRepo.query_transform(query_struct, & &1)
+        |> maybe_apply_function(&List.flatten/1)
+
+      Map.get(@table_map, metric) == "labeled_intraday_metrics_v2" ->
+        query_struct = available_label_fqns_for_labeled_intraday_metrics_query(metric)
+        Sanbase.ClickhouseRepo.query_transform(query_struct, & &1)
+
+      true ->
+        {:ok, []}
     end
   end
 
   @impl Sanbase.Metric.Behaviour
   def available_label_fqns(metric, %{slug: slug}) when is_binary(slug) do
-    if metric in @fixed_labels_parameters_metrics_mapset do
-      fixed_parameters = Map.get(@fixed_parameteres_map, metric)
-      query_struct = available_label_fqns_query(metric, slug, fixed_parameters)
+    cond do
+      metric in @fixed_labels_parameters_metrics_mapset ->
+        fixed_parameters = Map.get(@fixed_parameteres_map, metric)
 
-      Sanbase.ClickhouseRepo.query_transform(query_struct, & &1)
-      |> maybe_apply_function(&List.flatten/1)
-    else
-      {:ok, []}
+        query_struct =
+          available_label_fqns_for_fixed_parameters_query(metric, slug, fixed_parameters)
+
+        Sanbase.ClickhouseRepo.query_transform(query_struct, & &1)
+        |> maybe_apply_function(&List.flatten/1)
+
+      Map.get(@table_map, metric) == "labeled_intraday_metrics_v2" ->
+        query_struct = available_label_fqns_for_labeled_intraday_metrics_query(metric, slug)
+        Sanbase.ClickhouseRepo.query_transform(query_struct, & &1)
+
+      true ->
+        {:ok, []}
     end
   end
 

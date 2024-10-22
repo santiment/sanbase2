@@ -44,8 +44,19 @@ defmodule Sanbase.SocialData.SocialVolume do
 
     transformed_words =
       case Keyword.get(opts, :treat_word_as_lucene_query, false) do
-        false -> transformed_words |> Enum.map(&String.downcase/1)
-        true -> transformed_words
+        false ->
+          transformed_words
+          |> Enum.map(fn word ->
+            word
+            |> String.downcase()
+            |> URI.encode_www_form()
+          end)
+
+        true ->
+          Enum.map(transformed_words, fn word ->
+            word
+            |> URI.encode_www_form()
+          end)
       end
 
     selector = %{selector | words: transformed_words}
@@ -98,7 +109,7 @@ defmodule Sanbase.SocialData.SocialVolume do
         |> maybe_format_response(words)
         |> Enum.map(fn {word, %{} = timeseries} ->
           %{
-            word: word,
+            word: URI.decode_www_form(word),
             timeseries_data: social_volume_result(timeseries)
           }
         end)

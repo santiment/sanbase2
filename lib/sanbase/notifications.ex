@@ -149,6 +149,13 @@ defmodule Sanbase.Notifications do
     %Notification{}
     |> Notification.changeset(attrs)
     |> Repo.insert()
+    |> case do
+      {:ok, notification} ->
+        {:ok, Repo.preload(notification, :notification_action)}
+
+      error ->
+        error
+    end
   end
 
   @doc """

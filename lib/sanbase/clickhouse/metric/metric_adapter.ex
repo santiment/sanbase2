@@ -17,33 +17,6 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   alias Sanbase.ClickhouseRepo
   alias __MODULE__.Registry
 
-  @plain_aggregations FileHandler.aggregations()
-  @aggregations [nil] ++ @plain_aggregations
-  @timeseries_metrics_name_list FileHandler.metrics_with_data_type(:timeseries)
-  @histogram_metrics_name_list FileHandler.metrics_with_data_type(:histogram)
-  @table_structured_metrics_name_list FileHandler.metrics_with_data_type(:table)
-  @free_metrics FileHandler.metrics_with_access(:free)
-  @restricted_metrics FileHandler.metrics_with_access(:restricted)
-  @aggregation_map FileHandler.aggregation_map()
-  @docs_links_map FileHandler.docs_links_map()
-  @human_readable_name_map FileHandler.human_readable_name_map()
-  @metrics_data_type_map FileHandler.metrics_data_type_map()
-  @metrics_name_list (@histogram_metrics_name_list ++
-                        @timeseries_metrics_name_list ++ @table_structured_metrics_name_list)
-                     |> Enum.uniq()
-  @metrics_mapset @metrics_name_list |> MapSet.new()
-  @incomplete_data_map FileHandler.incomplete_data_map()
-  @selectors_map FileHandler.selectors_map()
-  @required_selectors_map FileHandler.required_selectors_map()
-  @metric_to_names_map FileHandler.metric_to_names_map()
-  @name_to_metric_map FileHandler.name_to_metric_map()
-  @timebound_flag_map FileHandler.timebound_flag_map()
-  @table_map FileHandler.table_map()
-
-  @fixed_labels_parameters_metrics_mapset FileHandler.fixed_labels_parameters_metrics_mapset()
-  @fixed_labels_parameters_metrics Enum.to_list(@fixed_labels_parameters_metrics_mapset)
-  @fixed_parameteres_map FileHandler.fixed_parameters_map()
-
   @default_complexity_weight 0.3
 
   @type slug :: String.t()
@@ -59,10 +32,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   def incomplete_metrics(), do: Registry.incomplete_metrics()
 
   @impl Sanbase.Metric.Behaviour
-  def free_metrics(), do: Registry.metrics_with_access(:free)
+  def free_metrics(), do: Registry.metrics_list_with_access(:free)
 
   @impl Sanbase.Metric.Behaviour
-  def restricted_metrics(), do: Registry.metrics_with_access(:restricted)
+  def restricted_metrics(), do: Registry.metrics_list_with_access(:restricted)
 
   @impl Sanbase.Metric.Behaviour
   def fixed_labels_parameters_metrics(), do: Registry.fixed_labels_parameters_metrics_list()
@@ -90,16 +63,16 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
   @doc ~s"""
   Get a given metric for a slug and time range. The metric's aggregation
-  function can be changed by the last optional parameter. The available
-  aggregations are #{inspect(Registry.aggregations())}
+  function can be changed by the last optional parameter
   """
   @impl Sanbase.Metric.Behaviour
-
   def timeseries_data(_metric, %{slug: []}, _from, _to, _interval, _opts), do: {:ok, []}
 
   def timeseries_data(metric, selector, from, to, interval, opts)
       when is_supported_selector(selector) do
-    aggregation = Keyword.get(opts, :aggregation, nil) || Map.get(@aggregation_map, metric)
+    aggregation =
+      Keyword.get(opts, :aggregation, nil) || Map.get(Registry.aggregation_map(), metric)
+
     opts = resolve_fixed_parameters(opts, metric)
     filters = get_filters(metric, opts)
 
@@ -116,7 +89,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def timeseries_data_per_slug(metric, %{slug: slug}, from, to, interval, opts) do
-    aggregation = Keyword.get(opts, :aggregation, nil) || Map.get(@aggregation_map, metric)
+    aggregation =
+      Keyword.get(opts, :aggregation, nil) || Map.get(Registry.aggregation_map(), metric)
+
     filters = get_filters(metric, opts)
 
     timeseries_data_per_slug_query(metric, slug, from, to, interval, aggregation, filters)
@@ -148,7 +123,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
   def aggregated_timeseries_data(metric, %{slug: slug_or_slugs}, from, to, opts)
       when is_binary(slug_or_slugs) or is_list(slug_or_slugs) do
-    aggregation = Keyword.get(opts, :aggregation, nil) || Map.get(@aggregation_map, metric)
+    aggregation =
+      Keyword.get(opts, :aggregation, nil) || Map.get(Registry.aggregation_map(), metric)
+
     filters = Keyword.get(opts, :additional_filters, [])
     slugs = List.wrap(slug_or_slugs)
     get_aggregated_timeseries_data(metric, slugs, from, to, aggregation, filters)
@@ -156,7 +133,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def slugs_by_filter(metric, from, to, operator, threshold, opts) do
-    aggregation = Keyword.get(opts, :aggregation, nil) || Map.get(@aggregation_map, metric)
+    aggregation =
+      Keyword.get(opts, :aggregation, nil) || Map.get(Registry.aggregation_map(), metric)
+
     filters = Keyword.get(opts, :additional_filters, [])
 
     slugs_by_filter_query(metric, from, to, operator, threshold, aggregation, filters)
@@ -165,7 +144,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def slugs_order(metric, from, to, direction, opts) do
-    aggregation = Keyword.get(opts, :aggregation, nil) || Map.get(@aggregation_map, metric)
+    aggregation =
+      Keyword.get(opts, :aggregation, nil) || Map.get(Registry.aggregation_map(), metric)
+
     filters = Keyword.get(opts, :additional_filters, [])
 
     slugs_order_query(metric, from, to, direction, aggregation, filters)
@@ -178,23 +159,23 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   @impl Sanbase.Metric.Behaviour
   def metadata(metric) do
     min_interval = min_interval(metric)
-    default_aggregation = Map.get(@aggregation_map, metric)
-    is_label_fqn_metric = :label_fqn in Map.get(@selectors_map, metric, [])
+    default_aggregation = Map.get(Registry.aggregation_map(), metric)
+    is_label_fqn_metric = :label_fqn in Map.get(Registry.selectors_map(), metric, [])
 
     {:ok,
      %{
        metric: metric,
-       internal_metric: Map.get(@name_to_metric_map, metric, metric),
+       internal_metric: Map.get(Registry.name_to_metric_map(), metric, metric),
        has_incomplete_data: has_incomplete_data?(metric),
        min_interval: min_interval,
        default_aggregation: default_aggregation,
-       available_aggregations: @plain_aggregations,
-       available_selectors: Map.get(@selectors_map, metric),
-       required_selectors: Map.get(@required_selectors_map, metric, []),
-       data_type: Map.get(@metrics_data_type_map, metric),
-       is_timebound: Map.get(@timebound_flag_map, metric),
+       available_aggregations: Registry.aggregations(),
+       available_selectors: Map.get(Registry.selectors_map(), metric),
+       required_selectors: Map.get(Registry.required_selectors_map(), metric, []),
+       data_type: Map.get(Registry.metrics_data_type_map(), metric),
+       is_timebound: Map.get(Registry.timebound_flag_map(), metric),
        complexity_weight: @default_complexity_weight,
-       docs: Map.get(@docs_links_map, metric),
+       docs: Map.get(Registry.docs_links_map(), metric),
        is_deprecated: false,
        hard_deprecate_after: nil,
        is_label_fqn_metric: is_label_fqn_metric
@@ -203,7 +184,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def human_readable_name(metric) do
-    {:ok, Map.get(@human_readable_name_map, metric)}
+    {:ok, Map.get(Registry.human_readable_name_map(), metric)}
   end
 
   @doc ~s"""
@@ -211,28 +192,27 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   """
 
   @impl Sanbase.Metric.Behaviour
-  def available_histogram_metrics(), do: @histogram_metrics_name_list
+  def available_histogram_metrics(), do: Registry.metrics_list_with_data_type(:histogram)
+  @impl Sanbase.Metric.Behaviour
+  def available_timeseries_metrics(), do: Registry.metrics_list_with_data_type(:timeseries)
 
   @impl Sanbase.Metric.Behaviour
-  def available_timeseries_metrics(), do: @timeseries_metrics_name_list
+  def available_table_metrics(), do: Registry.metrics_list_with_data_type(:table)
 
   @impl Sanbase.Metric.Behaviour
-  def available_table_metrics(), do: @table_structured_metrics_name_list
-
-  @impl Sanbase.Metric.Behaviour
-  def available_metrics(), do: @metrics_name_list
+  def available_metrics(), do: Registry.metrics_list()
 
   @impl Sanbase.Metric.Behaviour
   def available_metrics(selector) do
     available_metrics_for_selector_query(selector)
     |> ClickhouseRepo.query_transform(fn [metric] ->
-      Map.get(@metric_to_names_map, metric)
+      Map.get(Registry.metric_to_names_map(), metric)
     end)
     |> maybe_apply_function(fn metrics ->
       metrics
       |> List.flatten()
       |> MapSet.new()
-      |> MapSet.intersection(@metrics_mapset)
+      |> MapSet.intersection(Registry.metrics_mapset())
       |> Enum.to_list()
     end)
   end
@@ -240,14 +220,14 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   @impl Sanbase.Metric.Behaviour
   def available_label_fqns(metric) do
     cond do
-      metric in @fixed_labels_parameters_metrics_mapset ->
-        fixed_parameters = Map.get(@fixed_parameteres_map, metric)
+      metric in Registry.fixed_labels_parameters_metrics_mapset() ->
+        fixed_parameters = Map.get(Registry.fixed_parameters_map(), metric)
         query_struct = available_label_fqns_for_fixed_parameters_query(metric, fixed_parameters)
 
         Sanbase.ClickhouseRepo.query_transform(query_struct, & &1)
         |> maybe_apply_function(&List.flatten/1)
 
-      Map.get(@table_map, metric) == "labeled_intraday_metrics_v2" ->
+      Map.get(Registry.table_map(), metric) == "labeled_intraday_metrics_v2" ->
         query_struct = available_label_fqns_for_labeled_intraday_metrics_query(metric)
         Sanbase.ClickhouseRepo.query_transform(query_struct, & &1)
 
@@ -259,8 +239,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   @impl Sanbase.Metric.Behaviour
   def available_label_fqns(metric, %{slug: slug}) when is_binary(slug) do
     cond do
-      metric in @fixed_labels_parameters_metrics_mapset ->
-        fixed_parameters = Map.get(@fixed_parameteres_map, metric)
+      metric in Registry.fixed_labels_parameters_metrics_mapset() ->
+        fixed_parameters = Map.get(Registry.fixed_parameters_map(), metric)
 
         query_struct =
           available_label_fqns_for_fixed_parameters_query(metric, slug, fixed_parameters)
@@ -268,7 +248,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
         Sanbase.ClickhouseRepo.query_transform(query_struct, & &1)
         |> maybe_apply_function(&List.flatten/1)
 
-      Map.get(@table_map, metric) == "labeled_intraday_metrics_v2" ->
+      Map.get(Registry.table_map(), metric) == "labeled_intraday_metrics_v2" ->
         query_struct = available_label_fqns_for_labeled_intraday_metrics_query(metric, slug)
         Sanbase.ClickhouseRepo.query_transform(query_struct, & &1)
 
@@ -281,38 +261,44 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   def available_slugs(), do: get_available_slugs()
 
   @impl Sanbase.Metric.Behaviour
-  def available_slugs(metric)
-      # otherwise age_distribution causes an infinite loop
-      when metric in @histogram_metrics_name_list,
-      do: HistogramMetric.available_slugs(metric)
+  def available_slugs(metric) do
+    cond do
+      metric in Registry.metrics_mapset_with_data_type(:histogram) ->
+        # otherwise age_distribution causes an infinite loop
+        HistogramMetric.available_slugs(metric)
 
-  def available_slugs(metric), do: get_available_slugs(metric)
+      true ->
+        get_available_slugs(metric)
+    end
+  end
 
   @impl Sanbase.Metric.Behaviour
   def available_aggregations(), do: Registry.aggregations_with_nil()
 
   @impl Sanbase.Metric.Behaviour
-  def first_datetime(metric, selector) when metric in @histogram_metrics_name_list,
-    do: HistogramMetric.first_datetime(metric, selector)
-
   def first_datetime(metric, selector) do
-    first_datetime_query(metric, selector)
-    |> ClickhouseRepo.query_transform(fn [datetime] ->
-      DateTime.from_unix!(datetime)
-    end)
-    |> maybe_unwrap_ok_value()
+    cond do
+      metric in Registry.metrics_mapset_with_data_type(:histogram) ->
+        HistogramMetric.first_datetime(metric, selector)
+
+      true ->
+        first_datetime_query(metric, selector)
+        |> ClickhouseRepo.query_transform(fn [datetime] -> DateTime.from_unix!(datetime) end)
+        |> maybe_unwrap_ok_value()
+    end
   end
 
   @impl Sanbase.Metric.Behaviour
-  def last_datetime_computed_at(metric, selector) when metric in @histogram_metrics_name_list,
-    do: HistogramMetric.last_datetime_computed_at(metric, selector)
-
   def last_datetime_computed_at(metric, selector) do
-    last_datetime_computed_at_query(metric, selector)
-    |> ClickhouseRepo.query_transform(fn [datetime] ->
-      DateTime.from_unix!(datetime)
-    end)
-    |> maybe_unwrap_ok_value()
+    cond do
+      metric in Registry.metrics_mapset_with_data_type(:histogram) ->
+        HistogramMetric.last_datetime_computed_at(metric, selector)
+
+      true ->
+        last_datetime_computed_at_query(metric, selector)
+        |> ClickhouseRepo.query_transform(fn [datetime] -> DateTime.from_unix!(datetime) end)
+        |> maybe_unwrap_ok_value()
+    end
   end
 
   # Private functions
@@ -360,18 +346,19 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   defp get_filters(metric, opts) do
     # FIXME: Some of the `nft` metrics need additional filter for `owner=opensea`
     # to show correct values. Remove after fixed by bigdata.
-    case String.starts_with?(metric, "nft_") and "owner" in Map.get(@selectors_map, metric) do
+    case String.starts_with?(metric, "nft_") and
+           "owner" in Map.get(Registry.selectors_map(), metric) do
       true -> [owner: "opensea"]
       false -> Keyword.get(opts, :additional_filters, [])
     end
   end
 
   defp resolve_fixed_parameters(opts, metric) do
-    case metric in @fixed_labels_parameters_metrics_mapset do
-      true ->
-        opts ++ [fixed_parameters: @fixed_parameteres_map[metric]]
+    cond do
+      metric in Registry.fixed_labels_parameters_metrics_mapset() ->
+        opts ++ [fixed_parameters: Map.get(Registry.fixed_parameters_map(), metric)]
 
-      false ->
+      true ->
         opts
     end
   end

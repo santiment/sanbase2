@@ -20,11 +20,10 @@ defmodule Sanbase.Metric.Helper do
   # It's important that the Price module goes before the PricePair module.
   # This way the default data shown is for the metrics from the Price module
   # This way the behavior is backward compatible
-  @metric_modules [
+  @compile_time_ready_metric_modules [
     Sanbase.Price.MetricAdapter,
     Sanbase.PricePair.MetricAdapter,
     Sanbase.Clickhouse.Github.MetricAdapter,
-    Sanbase.Clickhouse.MetricAdapter,
     Sanbase.SocialData.MetricAdapter,
     Sanbase.Twitter.MetricAdapter,
     Sanbase.Clickhouse.TopHolders.MetricAdapter,
@@ -32,6 +31,11 @@ defmodule Sanbase.Metric.Helper do
     Sanbase.BlockchainAddress.MetricAdapter,
     Sanbase.Contract.MetricAdapter
   ]
+
+  @runtime_ready_modules [
+    Sanbase.Clickhouse.MetricAdapter
+  ]
+
   Module.register_attribute(__MODULE__, :implemented_optional_functions_acc, accumulate: true)
   Module.register_attribute(__MODULE__, :aggregations_acc, accumulate: true)
   Module.register_attribute(__MODULE__, :aggregations_per_metric_acc, accumulate: true)
@@ -48,7 +52,7 @@ defmodule Sanbase.Metric.Helper do
   Module.register_attribute(__MODULE__, :soft_deprecated_metrics_acc, accumulate: true)
   Module.register_attribute(__MODULE__, :fixed_labels_parameters_metrics_acc, accumulate: true)
 
-  for module <- @metric_modules do
+  for module <- @compile_time_ready_metric_modules do
     @required_selectors_map_acc module.required_selectors()
     @aggregations_acc module.available_aggregations()
     @incomplete_metrics_acc module.incomplete_metrics()
@@ -197,7 +201,7 @@ defmodule Sanbase.Metric.Helper do
   def histogram_metrics_mapset(), do: @histogram_metrics_mapset |> transform()
   def histogram_metrics(), do: @histogram_metrics |> transform()
   def metric_module_mapping(), do: @metric_module_mapping |> transform()
-  def metric_modules(), do: @metric_modules |> transform()
+  def metric_modules(), do: @compile_time_ready_metric_modules |> transform()
   def metric_to_module_map(), do: @metric_to_module_map |> transform()
   def metrics_mapset(), do: @metrics_mapset |> transform()
   def metrics(), do: @metrics |> transform()

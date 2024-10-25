@@ -90,6 +90,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
 
   def access_map(), do: get_metrics() |> Map.new(&{&1.metric, String.to_existing_atom(&1.access)})
   def table_map(), do: get_metrics() |> Map.new(&{&1.metric, &1.table})
+  def metrics_list(), do: get_metrics() |> Enum.map(& &1.metric)
   def metrics_mapset(), do: get_metrics() |> MapSet.new(& &1.metric)
 
   def aggregation_map(),
@@ -105,6 +106,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   def docs_links_map(),
     do: get_metrics() |> Map.new(&{&1.metric, &1.docs_links})
 
+  def name_to_metric_map(), do: get_metrics() |> Map.new(&{&1.metric, &1.internal_metric})
+
   def metric_to_names_map() do
     get_metrics()
     |> Enum.group_by(& &1.internal_metric, & &1.metric)
@@ -117,7 +120,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
     do: get_metrics() |> Map.new(&{&1.metric, String.to_existing_atom(&1.data_type)})
 
   def incomplete_data_map(),
-    do: get_metrics() |> Map.new(&{&1.metric, &1.incomplete_data})
+    do: get_metrics() |> Map.new(&{&1.metric, &1.has_incomplete_data})
 
   def incomplete_metrics(),
     do: get_metrics() |> Enum.filter(& &1.has_incomplete_data) |> Enum.map(& &1.metric)
@@ -125,7 +128,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   def selectors_map() do
     get_metrics()
     |> Map.new(fn m ->
-      selectors = Enum.map(m.selectors, &String.to_existing_atom/1)
+      selectors = Enum.map(m.selectors, &String.to_atom/1)
       {m.metric, selectors}
     end)
   end
@@ -136,7 +139,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
     |> Map.new(fn m ->
       required_selectors =
         Enum.map(m.required_selectors, fn l ->
-          l |> String.split("|") |> Enum.map(&String.to_existing_atom/1)
+          l |> String.split("|") |> Enum.map(&String.to_atom/1)
         end)
 
       {m.metric, required_selectors}
@@ -167,11 +170,20 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
     |> Map.new(&{&1.metric, &1.is_timebound})
   end
 
-  def metrics_with_access(level) when level in [:free, :restricted] do
+  def metrics_list_with_access(level) when level in [:free, :restricted] do
     access_map()
     |> Enum.reduce([], fn {metric, restrictions}, acc ->
       if resolve_access_level(restrictions) === level,
         do: [metric | acc],
+        else: acc
+    end)
+  end
+
+  def metrics_mapset_with_access(level) when level in [:free, :restricted] do
+    access_map()
+    |> Enum.reduce(MapSet.new(), fn {metric, restrictions}, acc ->
+      if resolve_access_level(restrictions) === level,
+        do: MapSet.put(acc, metric),
         else: acc
     end)
   end
@@ -189,16 +201,30 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
     Enum.to_list(fixed_labels_parameters_metrics_mapset())
   end
 
-  # def fixed_parameters_map(), do: @fixed_parameters_map |> transform()
+  def fixed_parameters_map() do
+    get_metrics()
+    |> Map.new(&{&1.metric, &1.fixed_parameters})
+  end
 
-  # def metrics_with_data_type(type) do
-  #   @metrics_data_type_map
-  #   |> transform()
-  #   |> Enum.filter(fn {_metric, data_type} -> data_type == type end)
-  #   |> Enum.map(&elem(&1, 0))
-  # end
+  def metrics_list_with_data_type(type) do
+    get_metrics()
+    |> Enum.reduce([], fn m, acc ->
+      if m.data_type == type,
+        do: [m.metric | acc],
+        else: acc
+    end)
+  end
 
-  # def name_to_metric(name), do: Map.get(@name_to_metric_map, name)
+  def metrics_mapset_with_data_type(type) do
+    get_metrics()
+    |> Enum.reduce(MapSet.new(), fn m, acc ->
+      if m.data_type == type,
+        do: MapSet.put(acc, m.metric),
+        else: acc
+    end)
+  end
+
+  # Private functions
 
   defp remove_hard_deprecated(metrics) when is_list(metrics) do
     now = DateTime.utc_now()

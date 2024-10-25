@@ -10,7 +10,7 @@ defmodule Sanbase.SocialData.ActiveUsers do
   @recv_timeout 25_000
 
   def social_active_users(%{source: source}, from, to, interval)
-      when source in ["telegram", "twitter_crypto"] do
+      when source in ["telegram", "twitter_crypto", "twitter", "reddit", "bitcointalk"] do
     case active_users_request(from, to, interval, source) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         {:ok, result} = Jason.decode(body)

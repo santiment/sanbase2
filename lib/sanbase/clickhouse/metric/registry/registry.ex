@@ -98,8 +98,18 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
 
   def min_interval_map(), do: get_metrics() |> Map.new(&{&1.metric, &1.min_interval})
 
-  def min_plan_map(),
-    do: get_metrics() |> Map.new(&{&1.metric, String.to_existing_atom(&1.min_plan)})
+  def min_plan_map() do
+    get_metrics()
+    |> Map.new(fn metric_map ->
+      min_plan =
+        case metric_map.min_plan do
+          %{} = map -> Map.new(map, fn {k, v} -> {String.upcase(k), String.upcase(v)} end)
+          plan when is_binary(plan) -> String.upcase(plan)
+        end
+
+      {metric_map.metric, min_plan}
+    end)
+  end
 
   def names_map(), do: get_metrics() |> Map.new(&{&1.metric, &1.internal_metric})
 

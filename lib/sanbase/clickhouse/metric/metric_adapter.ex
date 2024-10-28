@@ -190,9 +190,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   @doc ~s"""
   Return a list of available metrics.
   """
-
   @impl Sanbase.Metric.Behaviour
   def available_histogram_metrics(), do: Registry.metrics_list_with_data_type(:histogram)
+
   @impl Sanbase.Metric.Behaviour
   def available_timeseries_metrics(), do: Registry.metrics_list_with_data_type(:timeseries)
 

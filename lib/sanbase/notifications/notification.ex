@@ -43,14 +43,6 @@ defmodule Sanbase.Notifications.Notification do
     |> validate_channels()
   end
 
-  defp validate_step(changeset) do
-    if get_change(changeset, :step) do
-      validate_inclusion(changeset, :step, Ecto.Enum.values(NotificationStepEnum))
-    else
-      changeset
-    end
-  end
-
   defp validate_channels(changeset) do
     if get_change(changeset, :channels) do
       validate_change(changeset, :channels, fn _, channels ->

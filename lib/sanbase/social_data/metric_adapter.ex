@@ -317,12 +317,18 @@ defmodule Sanbase.SocialData.MetricAdapter do
         _ -> [:slug, :text]
       end
 
+    min_interval =
+      case metric do
+        "social_active_users" -> "1d"
+        _ -> "5m"
+      end
+
     {:ok,
      %{
        metric: metric,
        internal_metric: metric,
        has_incomplete_data: has_incomplete_data?(metric),
-       min_interval: "5m",
+       min_interval: min_interval,
        default_aggregation: :sum,
        available_aggregations: @aggregations,
        available_selectors: selectors,

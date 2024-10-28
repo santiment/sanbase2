@@ -323,7 +323,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  def available_label_fqns_query(metric, %{"labels" => labels}) do
+  def available_label_fqns_for_fixed_parameters_query(metric, %{"labels" => labels}) do
     columns_map = Map.take(labels, ["label_key", "parent_label_key", "group"])
 
     where_clause =
@@ -345,7 +345,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  def available_label_fqns_query(metric, slug, %{
+  def available_label_fqns_for_fixed_parameters_query(metric, slug, %{
         "labels" => labels
       }) do
     columns_map = Map.take(labels, ["label_key", "parent_label_key", "group"])
@@ -369,6 +369,42 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         slug: slug
       }
       |> Map.merge(columns_map)
+
+    Sanbase.Clickhouse.Query.new(sql, params)
+  end
+
+  def available_label_fqns_for_labeled_intraday_metrics_query(metric) do
+    sql = """
+    SELECT DISTINCT dictGet('labels_dict', 'fqn', label_id) AS fqn
+    FROM labeled_intraday_metrics_v2
+    WHERE
+      dt >= now() - INTERVAL 365 DAY AND
+      #{metric_id_filter(metric, argument_name: "metric")}
+    """
+
+    params =
+      %{
+        metric: Map.get(@name_to_metric_map, metric)
+      }
+
+    Sanbase.Clickhouse.Query.new(sql, params)
+  end
+
+  def available_label_fqns_for_labeled_intraday_metrics_query(metric, slug) do
+    sql = """
+    SELECT DISTINCT dictGet('labels_dict', 'fqn', label_id) AS fqn
+    FROM labeled_intraday_metrics_v2
+    WHERE
+      dt >= now() - INTERVAL 365 DAY AND
+      #{metric_id_filter(metric, argument_name: "metric")} AND
+      #{asset_id_filter(%{slug: slug}, argument_name: "slug")}
+    """
+
+    params =
+      %{
+        metric: Map.get(@name_to_metric_map, metric),
+        slug: slug
+      }
 
     Sanbase.Clickhouse.Query.new(sql, params)
   end

@@ -387,13 +387,25 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
     include_incomplete_data = Map.get(args, :include_incomplete_data, false)
 
-    with {:ok, from, to, interval} <-
+    with {:ok, interval} <- interval_no_smaller_than_min_interval(metric, interval),
+         {:ok, from, to, interval} <-
            calibrate(Metric, metric, selector, from, to, interval, 86_400, @datapoints),
          {:ok, from, to} <-
            calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to),
          {:ok, from} <-
            MetricTransform.calibrate_transform_params(transform, from, to, interval) do
       {:ok, from, to, interval}
+    end
+  end
+
+  defp interval_no_smaller_than_min_interval(metric, interval) do
+    {:ok, metadata} = Metric.metadata(metric)
+
+    if Sanbase.DateTimeUtils.str_to_sec(interval) <
+         Sanbase.DateTimeUtils.str_to_sec(metadata.min_interval) do
+      {:ok, metadata.min_interval}
+    else
+      {:ok, interval}
     end
   end
 

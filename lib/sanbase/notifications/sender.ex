@@ -1,5 +1,5 @@
 defmodule Sanbase.Notifications.Sender do
-  alias Sanbase.Notifications.{TemplateRenderer, DiscordClient, Notification}
+  alias Sanbase.Notifications.{DiscordClient, Notification}
   alias Sanbase.Notifications
   alias Sanbase.Utils.Config
 
@@ -8,7 +8,7 @@ defmodule Sanbase.Notifications.Sender do
 
     if :discord in notification.channels do
       content = notification.content
-      webhook = Config.module_get(Sanbase.Notifications.DiscordClient, :webhook)
+      webhook = Config.module_get(DiscordClient, :webhook)
 
       discord_client().send_message(webhook, content, username: "Sanbase")
     end
@@ -26,7 +26,7 @@ defmodule Sanbase.Notifications.Sender do
   end
 
   def discord_client do
-    Application.get_env(:sanbase, :discord_client, Sanbase.Notifications.DiscordClient)
+    Application.get_env(:sanbase, :discord_client, DiscordClient)
   end
 
   def email_client do

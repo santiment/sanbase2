@@ -1,7 +1,7 @@
 <.header>
   Listing Notification actions
   <:actions>
-    <.link patch={~p"/notification_actions/new"}>
+    <.link patch={~p"/admin2/notification_actions/new"}>
       <.button>New Notification action</.button>
     </.link>
   </:actions>
@@ -12,7 +12,7 @@
   rows={@streams.notification_actions}
   row_click={
     fn {_id, notification_action} ->
-      JS.navigate(~p"/notification_actions/#{notification_action}")
+      JS.navigate(~p"/admin2/notification_actions/#{notification_action}")
     end
   }
 >
@@ -31,9 +31,9 @@
   </:col>
   <:action :let={{_id, notification_action}}>
     <div class="sr-only">
-      <.link navigate={~p"/notification_actions/#{notification_action}"}>Show</.link>
+      <.link navigate={~p"/admin2/notification_actions/#{notification_action}"}>Show</.link>
     </div>
-    <.link patch={~p"/notification_actions/#{notification_action}/edit"}>Edit</.link>
+    <.link patch={~p"/admin2/notification_actions/#{notification_action}/edit"}>Edit</.link>
   </:action>
   <:action :let={{id, notification_action}}>
     <.link
@@ -49,7 +49,7 @@
   :if={@live_action in [:new, :edit]}
   id="notification_action-modal"
   show
-  on_cancel={JS.patch(~p"/notification_actions")}
+  on_cancel={JS.patch(~p"/admin2/notification_actions")}
 >
   <.live_component
     module={SanbaseWeb.NotificationActionLive.FormComponent}
@@ -57,6 +57,6 @@
     title={@page_title}
     action={@live_action}
     notification_action={@notification_action}
-    patch={~p"/notification_actions"}
+    patch={~p"/admin2/notification_actions"}
   />
 </.modal>

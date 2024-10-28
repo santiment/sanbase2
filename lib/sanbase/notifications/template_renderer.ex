@@ -14,7 +14,7 @@ defmodule Sanbase.Notifications.TemplateRenderer do
   end
 
   def render_content(%Notification{
-        notification_action: %NotificationAction{action_type: :update} = action,
+        notification_action: %NotificationAction{action_type: :update} = _action,
         step: :before,
         template_params: %{
           "scheduled_at" => scheduled_at,
@@ -33,7 +33,7 @@ defmodule Sanbase.Notifications.TemplateRenderer do
   end
 
   def render_content(%Notification{
-        notification_action: %NotificationAction{action_type: :update} = action,
+        notification_action: %NotificationAction{action_type: :update} = _action,
         template_params: %{"metrics_list" => metrics_list},
         step: :after
       }) do
@@ -47,7 +47,7 @@ defmodule Sanbase.Notifications.TemplateRenderer do
   end
 
   def render_content(%Notification{
-        notification_action: %NotificationAction{action_type: :delete} = action,
+        notification_action: %NotificationAction{action_type: :delete} = _action,
         step: :before,
         template_params: %{"scheduled_at" => scheduled_at, "metrics_list" => metrics_list}
       }) do
@@ -62,7 +62,7 @@ defmodule Sanbase.Notifications.TemplateRenderer do
   end
 
   def render_content(%Notification{
-        notification_action: %NotificationAction{action_type: :delete} = action,
+        notification_action: %NotificationAction{action_type: :delete} = _action,
         step: :reminder,
         template_params: %{"scheduled_at" => scheduled_at, "metrics_list" => metrics_list}
       }) do
@@ -77,7 +77,7 @@ defmodule Sanbase.Notifications.TemplateRenderer do
   end
 
   def render_content(%Notification{
-        notification_action: %NotificationAction{action_type: :delete} = action,
+        notification_action: %NotificationAction{action_type: :delete} = _action,
         step: :after,
         template_params: %{"metrics_list" => metrics_list}
       }) do
@@ -91,7 +91,7 @@ defmodule Sanbase.Notifications.TemplateRenderer do
   end
 
   def render_content(%Notification{
-        notification_action: %NotificationAction{action_type: :alert} = action,
+        notification_action: %NotificationAction{action_type: :alert} = _action,
         step: :detected,
         template_params: %{"metric_name" => metric_name, "asset_categories" => asset_categories}
       }) do
@@ -102,7 +102,7 @@ defmodule Sanbase.Notifications.TemplateRenderer do
   end
 
   def render_content(%Notification{
-        notification_action: %NotificationAction{action_type: :alert} = action,
+        notification_action: %NotificationAction{action_type: :alert} = _action,
         step: :resolved,
         template_params: %{"metric_name" => metric_name}
       }) do

@@ -1,0 +1,55 @@
+<.header>
+  Listing Notifications
+  <:actions>
+    <.link patch={~p"/admin2/notifications/new"}>
+      <.button>New Notification</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table
+  id="notifications"
+  rows={@streams.notifications}
+  row_click={fn {_id, notification} -> JS.navigate(~p"/admin2/notifications/#{notification}") end}
+>
+  <:col :let={{_id, notification}} label="Step"><%= notification.step %></:col>
+  <:col :let={{_id, notification}} label="Status"><%= notification.status %></:col>
+  <:col :let={{_id, notification}} label="Scheduled at"><%= notification.scheduled_at %></:col>
+  <:col :let={{_id, notification}} label="Sent at"><%= notification.sent_at %></:col>
+  <:col :let={{_id, notification}} label="Channels"><%= notification.channels %></:col>
+  <:col :let={{_id, notification}} label="Content"><%= notification.content %></:col>
+  <:col :let={{_id, notification}} label="Display in ui"><%= notification.display_in_ui %></:col>
+  <:col :let={{_id, notification}} label="Template params">
+    <%= notification.template_params %>
+  </:col>
+  <:action :let={{_id, notification}}>
+    <div class="sr-only">
+      <.link navigate={~p"/admin2/notifications/#{notification}"}>Show</.link>
+    </div>
+    <.link patch={~p"/admin2/notifications/#{notification}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={{id, notification}}>
+    <.link
+      phx-click={JS.push("delete", value: %{id: notification.id}) |> hide("##{id}")}
+      data-confirm="Are you sure?"
+    >
+      Delete
+    </.link>
+  </:action>
+</.table>
+
+<.modal
+  :if={@live_action in [:new, :edit]}
+  id="notification-modal"
+  show
+  on_cancel={JS.patch(~p"/admin2/notifications")}
+>
+  <.live_component
+    module={SanbaseWeb.NotificationLive.FormComponent}
+    id={@notification.id || :new}
+    title={@page_title}
+    action={@live_action}
+    notification={@notification}
+    patch={~p"/admin2/notifications"}
+  />
+</.modal>

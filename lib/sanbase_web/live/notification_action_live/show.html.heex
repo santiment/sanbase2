@@ -1,0 +1,38 @@
+<.header>
+  Notification action <%= @notification_action.id %>
+  <:subtitle>This is a notification_action record from your database.</:subtitle>
+  <:actions>
+    <.link
+      patch={~p"/admin2/notification_actions/#{@notification_action}/show/edit"}
+      phx-click={JS.push_focus()}
+    >
+      <.button>Edit notification_action</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Action type"><%= @notification_action.action_type %></:item>
+  <:item title="Scheduled at"><%= @notification_action.scheduled_at %></:item>
+  <:item title="Status"><%= @notification_action.status %></:item>
+  <:item title="Requires verification"><%= @notification_action.requires_verification %></:item>
+  <:item title="Verified"><%= @notification_action.verified %></:item>
+</.list>
+
+<.back navigate={~p"/admin2/notification_actions"}>Back to notification_actions</.back>
+
+<.modal
+  :if={@live_action == :edit}
+  id="notification_action-modal"
+  show
+  on_cancel={JS.patch(~p"/admin2/notification_actions/#{@notification_action}")}
+>
+  <.live_component
+    module={SanbaseWeb.NotificationActionLive.FormComponent}
+    id={@notification_action.id}
+    title={@page_title}
+    action={@live_action}
+    notification_action={@notification_action}
+    patch={~p"/admin2/notification_actions/#{@notification_action}"}
+  />
+</.modal>

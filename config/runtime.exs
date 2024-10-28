@@ -1,18 +1,5 @@
 import Config
 
-if config_env() == :dev do
-  {ssl, ssl_opts} =
-    if System.get_env("DATABASE_URL") do
-      {true, [verify: :verify_none]}
-    else
-      {false, []}
-    end
-
-  config :sanbase, Sanbase.Repo,
-    ssl: ssl,
-    ssl_opts: ssl_opts
-end
-
 if config_env() in [:dev, :test] do
   # In order to properly work while developing locally,
   # load the .env file before doing the configuration

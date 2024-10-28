@@ -15,6 +15,17 @@ defmodule Sanbase.Repo do
       |> Keyword.put(:pool_size, pool_size)
       |> Keyword.put(:url, System.get_env("DATABASE_URL"))
 
+    test_env? = Application.get_env(:sanbase, :env) == :test
+
+    opts =
+      if is_nil(System.get_env("DATABASE_URL")) or test_env? do
+        opts
+      else
+        opts
+        |> Keyword.put(:ssl, true)
+        |> Keyword.put(:ssl_opts, verify: :verify_none)
+      end
+
     {:ok, opts}
   end
 end

@@ -345,9 +345,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  def available_label_fqns_for_fixed_parameters_query(metric, slug, %{
-        "labels" => labels
-      }) do
+  def available_label_fqns_for_fixed_parameters_query(metric, slug, %{"labels" => labels}) do
     columns_map = Map.take(labels, ["label_key", "parent_label_key", "group"])
 
     where_clause =

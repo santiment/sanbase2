@@ -40,7 +40,6 @@ defmodule Sanbase.Metric.Helper do
   def histogram_metric_to_module_map(), do: get(:histogram_metric_to_module_map)
   def histogram_metrics(), do: get(:histogram_metrics)
   def histogram_metrics_mapset(), do: get(:histogram_metrics_mapset)
-  # TODO: REWORK SO IT EXPOSES FUNCTION AND ARRITY, NOT JUST NAME
   def implemented_optional_functions(), do: get(:implemented_optional_functions)
   def incomplete_metrics(), do: get(:incomplete_metrics)
   def metric_modules(), do: @modules
@@ -50,6 +49,7 @@ defmodule Sanbase.Metric.Helper do
   def min_plan_map(), do: get(:min_plan_map)
   def required_selectors_map(), do: get(:required_selectors_map)
   def restricted_metrics(), do: get(:restricted_metrics)
+  def deprecated_metrics_map(), do: get(:deprecated_metrics_map)
   def soft_deprecated_metrics_map(), do: get(:soft_deprecated_metrics_map)
   def table_metric_to_module_map(), do: get(:table_metric_to_module_map)
   def table_metrics(), do: get(:table_metrics)
@@ -73,8 +73,22 @@ defmodule Sanbase.Metric.Helper do
 
   defp compute(:access_map) do
     Enum.reduce(@modules, %{}, fn module, acc ->
-      module_access_map = module.access_map()
-      Map.merge(acc, module_access_map)
+      metric_to_access_map =
+        module.access_map()
+        |> Map.new(fn {metric, restrictions} ->
+          access_map =
+            case restrictions do
+              restrictions when is_map(restrictions) ->
+                restrictions
+
+              restriction when restriction in [:free, :restricted] ->
+                %{"historical" => restriction, "realtime" => restriction}
+            end
+
+          {metric, access_map}
+        end)
+
+      Map.merge(acc, metric_to_access_map)
     end)
   end
 
@@ -101,7 +115,8 @@ defmodule Sanbase.Metric.Helper do
   defp compute(:implemented_optional_functions) do
     Enum.reduce(@modules, %{}, fn module, acc ->
       acc
-      |> put_if_implemented(module, :available_label_fqns, [1, 2])
+      |> put_if_implemented(module, :available_label_fqns, 1)
+      |> put_if_implemented(module, :available_label_fqns, 2)
       |> put_if_implemented(module, :deprecated_metrics_map, 0)
       |> put_if_implemented(module, :soft_deprecated_metrics_map, 0)
       |> put_if_implemented(module, :fixed_labels_parameters_metrics, 0)
@@ -219,6 +234,16 @@ defmodule Sanbase.Metric.Helper do
     end)
   end
 
+  defp compute(:deprecated_metrics_map) do
+    Enum.reduce(@modules, %{}, fn module, acc ->
+      if function_exported?(module, :deprecated_metrics_map, 0) do
+        Map.merge(acc, module.deprecated_metrics_map())
+      else
+        acc
+      end
+    end)
+  end
+
   defp compute(:soft_deprecated_metrics_map) do
     Enum.reduce(@modules, %{}, fn module, acc ->
       if function_exported?(module, :soft_deprecated_metrics_map, 0) do
@@ -238,15 +263,9 @@ defmodule Sanbase.Metric.Helper do
   defp compute(_), do: :not_implemented
 
   # Helper for :implemented_optional_functions
-  defp put_if_implemented(acc, module, fun, arrity) when is_integer(arrity) do
-    bool = function_exported?(module, fun, arrity)
-    Map.put(acc, fun, bool)
-  end
-
-  defp put_if_implemented(acc, module, fun, arrities) when is_list(arrities) do
-    # The function is implemented if it is implemented for all arrities
-    bool = Enum.all?(arrities, fn arrity -> function_exported?(module, fun, arrity) end)
-    Map.put(acc, fun, bool)
+  defp put_if_implemented(acc, module, fun, arity) when is_integer(arity) do
+    bool = function_exported?(module, fun, arity)
+    Map.put(acc, {module, fun, arity}, bool)
   end
 
   @functions [

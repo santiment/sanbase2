@@ -201,9 +201,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   def fixed_labels_parameters_metrics_mapset() do
     get_metrics()
     |> Enum.reduce(MapSet.new(), fn m, acc ->
-      if m.fixed_parameters == [],
-        do: acc,
-        else: MapSet.put(acc, m.metric)
+      case m.fixed_parameters do
+        %{} = map when map_size(map) == 0 -> acc
+        %{} = map when map_size(map) > 0 -> MapSet.put(acc, m.metric)
+      end
     end)
   end
 

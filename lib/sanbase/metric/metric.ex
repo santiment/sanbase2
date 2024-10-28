@@ -499,7 +499,7 @@ defmodule Sanbase.Metric do
       module when is_atom(module) ->
         # Only one module implements this function
         # For all the rest return empty list
-        if Map.fetch!(Helper.implemented_optional_functions(), {:available_label_fqns, module}) do
+        if Map.fetch!(Helper.implemented_optional_functions(), {module, :available_label_fqns, 1}) do
           module.available_label_fqns(metric)
         else
           {:ok, []}
@@ -516,7 +516,7 @@ defmodule Sanbase.Metric do
       module when is_atom(module) ->
         # Only one module implements this function
         # For all the rest return empty list
-        if Map.fetch!(Helper.implemented_optional_functions(), {:available_label_fqns, module}) do
+        if Map.fetch!(Helper.implemented_optional_functions(), {module, :available_label_fqns, 2}) do
           module.available_label_fqns(metric, selector)
         else
           {:ok, []}

@@ -918,7 +918,7 @@ defmodule Sanbase.Metric do
     hard_deprecate_after = Map.get(Helper.deprecated_metrics_map(), metric)
     is_soft_deprecated = Map.get(Helper.soft_deprecated_metrics_map(), metric)
 
-    is_deprecated = not is_nil(hard_deprecate_after) or not is_nil(is_soft_deprecated)
+    is_deprecated = is_struct(hard_deprecate_after, DateTime) or is_soft_deprecated
 
     metadata
     |> Map.put(:is_deprecated, is_deprecated)

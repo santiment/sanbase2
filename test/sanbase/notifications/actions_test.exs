@@ -1,9 +1,16 @@
 defmodule Sanbase.Notifications.ActionsTest do
   use Sanbase.DataCase, async: false
   import Mox
+  import Sanbase.NotificationsFixtures
   alias Sanbase.Notifications
 
   setup :verify_on_exit!
+
+  setup do
+    # Create all required templates before each test
+    create_default_templates()
+    :ok
+  end
 
   test "sends create notification once on Discord" do
     metrics_list = ["Metric A", "Metric B"]
@@ -115,7 +122,7 @@ defmodule Sanbase.Notifications.ActionsTest do
     |> expect(:send_message, 2, fn _webhook, message, _opts ->
       if String.contains?(message, "In order to make our data more precise") do
         expected_before_content = """
-        In order to make our data more precise, we’re going to run a recalculation of the following metrics:
+        In order to make our data more precise, we're going to run a recalculation of the following metrics:
         Metric X, Metric Y
         This will be done on #{scheduled_at_str} and will take approximately #{duration_str}
         """

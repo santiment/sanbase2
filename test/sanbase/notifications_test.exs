@@ -3,6 +3,7 @@ defmodule Sanbase.NotificationsTest do
 
   alias Sanbase.Notifications.NotificationAction
   alias Sanbase.Repo
+  alias Sanbase.Notifications.NotificationTemplate
 
   describe "notification_actions" do
     import Sanbase.NotificationsFixtures
@@ -237,14 +238,14 @@ defmodule Sanbase.NotificationsTest do
     @invalid_attrs %{template: nil, step: nil, channel: nil, action_type: nil}
 
     test "list_notification_templates/0 returns all notification_templates" do
-      notification_template = notification_template_fixture()
-      assert Notifications.list_notification_templates() == [notification_template]
+      {:ok, notification_template} = notification_template_fixture()
+      assert Sanbase.Notifications.list_notification_templates() == [notification_template]
     end
 
     test "get_notification_template!/1 returns the notification_template with given id" do
-      notification_template = notification_template_fixture()
+      {:ok, notification_template} = notification_template_fixture()
 
-      assert Notifications.get_notification_template!(notification_template.id) ==
+      assert Sanbase.Notifications.get_notification_template!(notification_template.id) ==
                notification_template
     end
 
@@ -252,67 +253,75 @@ defmodule Sanbase.NotificationsTest do
       valid_attrs = %{
         template: "some template",
         step: "some step",
-        channel: "some channel",
+        channel: "all",
         action_type: "some action_type"
       }
 
       assert {:ok, %NotificationTemplate{} = notification_template} =
-               Notifications.create_notification_template(valid_attrs)
+               Sanbase.Notifications.create_notification_template(valid_attrs)
 
       assert notification_template.template == "some template"
       assert notification_template.step == "some step"
-      assert notification_template.channel == "some channel"
+      assert notification_template.channel == "all"
       assert notification_template.action_type == "some action_type"
     end
 
     test "create_notification_template/1 with invalid data returns error changeset" do
       assert {:error, %Ecto.Changeset{}} =
-               Notifications.create_notification_template(@invalid_attrs)
+               Sanbase.Notifications.create_notification_template(@invalid_attrs)
     end
 
     test "update_notification_template/2 with valid data updates the notification_template" do
-      notification_template = notification_template_fixture()
+      {:ok, notification_template} = notification_template_fixture()
 
       update_attrs = %{
         template: "some updated template",
         step: "some updated step",
-        channel: "some updated channel",
+        channel: "all",
         action_type: "some updated action_type"
       }
 
       assert {:ok, %NotificationTemplate{} = notification_template} =
-               Notifications.update_notification_template(notification_template, update_attrs)
+               Sanbase.Notifications.update_notification_template(
+                 notification_template,
+                 update_attrs
+               )
 
       assert notification_template.template == "some updated template"
       assert notification_template.step == "some updated step"
-      assert notification_template.channel == "some updated channel"
+      assert notification_template.channel == "all"
       assert notification_template.action_type == "some updated action_type"
     end
 
     test "update_notification_template/2 with invalid data returns error changeset" do
-      notification_template = notification_template_fixture()
+      {:ok, notification_template} = notification_template_fixture()
 
       assert {:error, %Ecto.Changeset{}} =
-               Notifications.update_notification_template(notification_template, @invalid_attrs)
+               Sanbase.Notifications.update_notification_template(
+                 notification_template,
+                 @invalid_attrs
+               )
 
       assert notification_template ==
-               Notifications.get_notification_template!(notification_template.id)
+               Sanbase.Notifications.get_notification_template!(notification_template.id)
     end
 
     test "delete_notification_template/1 deletes the notification_template" do
-      notification_template = notification_template_fixture()
+      {:ok, notification_template} = notification_template_fixture()
 
       assert {:ok, %NotificationTemplate{}} =
-               Notifications.delete_notification_template(notification_template)
+               Sanbase.Notifications.delete_notification_template(notification_template)
 
       assert_raise Ecto.NoResultsError, fn ->
-        Notifications.get_notification_template!(notification_template.id)
+        Sanbase.Notifications.get_notification_template!(notification_template.id)
       end
     end
 
     test "change_notification_template/1 returns a notification_template changeset" do
-      notification_template = notification_template_fixture()
-      assert %Ecto.Changeset{} = Notifications.change_notification_template(notification_template)
+      {:ok, notification_template} = notification_template_fixture()
+
+      assert %Ecto.Changeset{} =
+               Sanbase.Notifications.change_notification_template(notification_template)
     end
   end
 end

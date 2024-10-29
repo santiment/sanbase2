@@ -81,7 +81,7 @@ defmodule SanbaseWeb.GenericAdmin.Project do
       ],
       fields_override: %{
         long_description: %{
-          type: :textarea
+          type: :text
         },
         infrastructure_id: %{
           value_modifier: &__MODULE__.link/1
@@ -469,10 +469,10 @@ defmodule SanbaseWeb.GenericAdmin.Ico do
       },
       fields_override: %{
         comments: %{
-          type: :textarea
+          type: :text
         },
         contract_abi: %{
-          type: :textarea
+          type: :text
         },
         project_id: %{
           value_modifier: &SanbaseWeb.GenericAdmin.Project.project_link/1

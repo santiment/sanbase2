@@ -83,6 +83,8 @@ defmodule SanbaseWeb.Router do
     live "/notifications/:id", NotificationLive.Show, :show
     live "/notifications/:id/show/edit", NotificationLive.Show, :edit
 
+    live "/notifications/manual/new", ManualNotificationLive, :new
+
     resources("/reports", ReportController)
     resources("/sheets_templates", SheetsTemplateController)
     resources("/webinars", WebinarController)

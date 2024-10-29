@@ -3,6 +3,14 @@ defmodule Sanbase.Notifications.TemplateRenderer do
   alias Sanbase.TemplateEngine
 
   def render_content(%Notification{
+        notification_action: %NotificationAction{action_type: :manual},
+        content: content
+      })
+      when is_binary(content) do
+    String.trim(content)
+  end
+
+  def render_content(%Notification{
         notification_action: %NotificationAction{action_type: action_type},
         step: step,
         template_params: template_params

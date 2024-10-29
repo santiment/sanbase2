@@ -63,7 +63,8 @@ CREATE TYPE public.notification_action_type AS ENUM (
     'create',
     'update',
     'delete',
-    'alert'
+    'alert',
+    'manual'
 );
 
 
@@ -9537,3 +9538,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20241018073651);
 INSERT INTO public."schema_migrations" (version) VALUES (20241018075640);
 INSERT INTO public."schema_migrations" (version) VALUES (20241029080754);
 INSERT INTO public."schema_migrations" (version) VALUES (20241029082533);
+INSERT INTO public."schema_migrations" (version) VALUES (20241029151959);

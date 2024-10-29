@@ -282,6 +282,41 @@ defmodule Sanbase.Notifications.ActionsTest do
     Sanbase.Notifications.Sender.send_notification(resolved_notification)
   end
 
+  test "sends manual notification with custom text on Discord" do
+    custom_text = "Important announcement: System maintenance scheduled for tomorrow"
+
+    {:ok, notification_action} =
+      Notifications.create_notification_action(%{
+        action_type: :manual,
+        scheduled_at: DateTime.utc_now(),
+        status: :pending,
+        requires_verification: false,
+        verified: true
+      })
+
+    {:ok, notification} =
+      Notifications.create_notification(%{
+        notification_action_id: notification_action.id,
+        step: :once,
+        status: :pending,
+        scheduled_at: DateTime.utc_now(),
+        channels: [:discord],
+        display_in_ui: true,
+        content: custom_text
+      })
+
+    Sanbase.Notifications.MockDiscordClient
+    |> expect(:send_message, fn _webhook, message, _opts ->
+      assert String.trim(message) == custom_text
+      :ok
+    end)
+
+    Sanbase.Notifications.Sender.send_notification(notification)
+
+    notification = Notifications.get_notification!(notification.id)
+    assert notification.status == :completed
+  end
+
   defp get_scheduled_at(:before), do: DateTime.utc_now()
   defp get_scheduled_at(:reminder), do: DateTime.add(DateTime.utc_now(), 3600 * 24 * 27, :second)
   defp get_scheduled_at(:after), do: DateTime.add(DateTime.utc_now(), 3600 * 24 * 30, :second)

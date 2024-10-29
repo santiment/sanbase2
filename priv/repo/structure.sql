@@ -2412,6 +2412,40 @@ ALTER SEQUENCE public.notification_actions_id_seq OWNED BY public.notification_a
 
 
 --
+-- Name: notification_templates; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.notification_templates (
+    id bigint NOT NULL,
+    channel character varying(255),
+    action_type character varying(255),
+    step character varying(255),
+    template text,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: notification_templates_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.notification_templates_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: notification_templates_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.notification_templates_id_seq OWNED BY public.notification_templates.id;
+
+
+--
 -- Name: notifications; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -5149,6 +5183,13 @@ ALTER TABLE ONLY public.notification_actions ALTER COLUMN id SET DEFAULT nextval
 
 
 --
+-- Name: notification_templates id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notification_templates ALTER COLUMN id SET DEFAULT nextval('public.notification_templates_id_seq'::regclass);
+
+
+--
 -- Name: notifications id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6040,6 +6081,14 @@ ALTER TABLE ONLY public.newsletter_tokens
 
 ALTER TABLE ONLY public.notification_actions
     ADD CONSTRAINT notification_actions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: notification_templates notification_templates_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notification_templates
+    ADD CONSTRAINT notification_templates_pkey PRIMARY KEY (id);
 
 
 --
@@ -7096,6 +7145,27 @@ CREATE UNIQUE INDEX metrics_name_index ON public.metrics USING btree (name);
 --
 
 CREATE UNIQUE INDEX monitored_twitter_handles_handle_index ON public.monitored_twitter_handles USING btree (handle);
+
+
+--
+-- Name: notification_templates_action_type_step_channel_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX notification_templates_action_type_step_channel_index ON public.notification_templates USING btree (action_type, step, channel);
+
+
+--
+-- Name: notification_templates_action_type_step_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX notification_templates_action_type_step_index ON public.notification_templates USING btree (action_type, step);
+
+
+--
+-- Name: notification_templates_channel_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX notification_templates_channel_index ON public.notification_templates USING btree (channel);
 
 
 --
@@ -9465,3 +9535,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20240926135951);
 INSERT INTO public."schema_migrations" (version) VALUES (20241017092520);
 INSERT INTO public."schema_migrations" (version) VALUES (20241018073651);
 INSERT INTO public."schema_migrations" (version) VALUES (20241018075640);
+INSERT INTO public."schema_migrations" (version) VALUES (20241029080754);
+INSERT INTO public."schema_migrations" (version) VALUES (20241029082533);

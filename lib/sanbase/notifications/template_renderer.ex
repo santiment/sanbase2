@@ -1,118 +1,32 @@
 defmodule Sanbase.Notifications.TemplateRenderer do
   alias Sanbase.Notifications.{Notification, NotificationAction}
+  alias Sanbase.TemplateEngine
 
   def render_content(%Notification{
-        notification_action: %NotificationAction{action_type: :create},
-        template_params: %{"metrics_list" => metrics_list}
+        notification_action: %NotificationAction{action_type: action_type},
+        step: step,
+        template_params: template_params
       }) do
-    """
-    In the latest update the following metrics have been added:
-    #{format_metrics(metrics_list)}
-    For more information, please visit #changelog
-    """
-    |> String.trim()
-  end
+    channel = "all"
+    # Convert template params keys to strings and handle list parameters
+    params =
+      Map.new(template_params, fn
+        {key, value}
+        when is_list(value) and
+               key in ["metrics_list", "asset_categories", :metrics_list, :asset_categories] ->
+          {to_string(key), Enum.join(value, ", ")}
 
-  def render_content(%Notification{
-        notification_action: %NotificationAction{action_type: :update} = _action,
-        step: :before,
-        template_params: %{
-          "scheduled_at" => scheduled_at,
-          "duration" => duration,
-          "metrics_list" => metrics_list
-        }
-      }) do
-    metrics_list = format_metrics(metrics_list)
+        {k, v} ->
+          {to_string(k), v}
+      end)
 
-    """
-    In order to make our data more precise, we’re going to run a recalculation of the following metrics:
-    #{metrics_list}
-    This will be done on #{scheduled_at} and will take approximately #{duration}
-    """
-    |> String.trim()
-  end
+    case Sanbase.Notifications.get_template(to_string(action_type), to_string(step), channel) do
+      nil ->
+        raise "Template not found for #{action_type}/#{step}/#{channel}"
 
-  def render_content(%Notification{
-        notification_action: %NotificationAction{action_type: :update} = _action,
-        template_params: %{"metrics_list" => metrics_list},
-        step: :after
-      }) do
-    metrics_list = format_metrics(metrics_list)
-
-    """
-    Recalculation of the following metrics has been completed successfully:
-    #{metrics_list}
-    """
-    |> String.trim()
-  end
-
-  def render_content(%Notification{
-        notification_action: %NotificationAction{action_type: :delete} = _action,
-        step: :before,
-        template_params: %{"scheduled_at" => scheduled_at, "metrics_list" => metrics_list}
-      }) do
-    metrics_list = format_metrics(metrics_list)
-
-    """
-    Due to lack of usage, we made a decision to deprecate the following metrics:
-    #{metrics_list}
-    This is planned to take place on #{scheduled_at}. Please make sure that you adjust your data consumption accordingly. If you have strong objections, please contact us.
-    """
-    |> String.trim()
-  end
-
-  def render_content(%Notification{
-        notification_action: %NotificationAction{action_type: :delete} = _action,
-        step: :reminder,
-        template_params: %{"scheduled_at" => scheduled_at, "metrics_list" => metrics_list}
-      }) do
-    metrics_list = format_metrics(metrics_list)
-
-    """
-    This is a reminder about the scheduled deprecation of the following metrics:
-    #{metrics_list}
-    It will happen on #{scheduled_at}. Please make sure to adjust accordingly.
-    """
-    |> String.trim()
-  end
-
-  def render_content(%Notification{
-        notification_action: %NotificationAction{action_type: :delete} = _action,
-        step: :after,
-        template_params: %{"metrics_list" => metrics_list}
-      }) do
-    metrics_list = format_metrics(metrics_list)
-
-    """
-    Deprecation of the following metrics has been completed successfully:
-    #{metrics_list}
-    """
-    |> String.trim()
-  end
-
-  def render_content(%Notification{
-        notification_action: %NotificationAction{action_type: :alert} = _action,
-        step: :detected,
-        template_params: %{"metric_name" => metric_name, "asset_categories" => asset_categories}
-      }) do
-    """
-    Metric delay alert: #{metric_name} is experiencing a delay due to technical issues. Affected assets: #{Enum.join(asset_categories, ", ")}
-    """
-    |> String.trim()
-  end
-
-  def render_content(%Notification{
-        notification_action: %NotificationAction{action_type: :alert} = _action,
-        step: :resolved,
-        template_params: %{"metric_name" => metric_name}
-      }) do
-    """
-    Metric delay resolved: #{metric_name} is back to normal
-    """
-    |> String.trim()
-  end
-
-  defp format_metrics(metrics_list) do
-    Enum.join(metrics_list, ", ")
+      template ->
+        {:ok, content} = TemplateEngine.run(template.template, params: params)
+        String.trim(content)
+    end
   end
 end

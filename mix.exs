@@ -198,6 +198,7 @@ defmodule Sanbase.Mixfile do
         "database_safety",
         "ecto.create -r Sanbase.Repo --quiet",
         "ecto.load -r Sanbase.Repo --skip-if-loaded",
+        "run test/test_seeds.exs",
         "test"
       ]
     ] ++

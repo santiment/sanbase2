@@ -10,10 +10,6 @@ defmodule Sanbase.Alert.DailyMetricTriggerSettingsTest do
   alias Sanbase.Metric
   alias Sanbase.Alert.Trigger.DailyMetricTriggerSettings
 
-  @metrics_1d_min_interval Metric.available_metrics(
-                             filter: :min_interval_greater_or_equal,
-                             filter_interval: "1d"
-                           )
   setup_all_with_mocks([
     {
       Sanbase.Timeline.TimelineEvent,
@@ -126,7 +122,10 @@ defmodule Sanbase.Alert.DailyMetricTriggerSettingsTest do
        context do
     %{project: project, user: user} = context
 
-    @metrics_1d_min_interval
+    Metric.available_metrics(
+      filter: :min_interval_greater_or_equal,
+      filter_interval: "1d"
+    )
     |> Enum.shuffle()
     |> Enum.take(100)
     |> Enum.each(fn metric ->

@@ -69,7 +69,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
     end)
   end
 
-  defp get_metrics(opts \\ [], attempt \\ 1) do
+  defp get_metrics(opts, attempt \\ 1) do
     case get_metrics_from_registry(opts) do
       {:ok, data} ->
         data
@@ -85,21 +85,80 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
     end
   end
 
-  def aggregations(), do: Sanbase.Metric.SqlQuery.Helper.aggregations()
-  def aggregations_with_nil(), do: [nil] ++ aggregations()
+  def aggregations(), do: get(:aggregations)
+  def aggregations_with_nil(), do: get(:aggregations_with_nil)
+  def access_map(), do: get(:access_map)
+  def table_(), do: get(:table_map)
+  def metrics_list(), do: get(:metrics_list)
+  def metrics_mapset(), do: get(:metrics_mapset)
+  def aggregation_map(), do: get(:aggregation_map)
+  def min_interval_map(), do: get(:min_interval_map)
+  def min_plan_map(), do: get(:min_plan_map)
+  def names_map(), do: get(:names_map)
+  def docs_links_map(), do: get(:docs_links_map)
+  def name_to_metric_map(), do: get(:name_to_metric_map)
+  def metric_to_names_map(), do: get(:metric_to_names_map)
+  def human_readable_name_map(), do: get(:human_readable_name_map)
+  def metrics_data_type_map(), do: get(:metrics_data_type_map)
+  def incomplete_data_map(), do: get(:incomplete_data_map)
+  def incomplete_metrics(), do: get(:incomplete_metrics)
+  def selectors_map(), do: get(:selectors_map)
+  def table_map(), do: get(:table_map)
+  def required_selectors_map(), do: get(:required_selectors_map)
+  def deprecated_metrics_map(), do: get(:deprecated_metrics_map)
+  def soft_deprecated_metrics_map(), do: get(:soft_deprecated_metrics_map)
+  def hidden_metrics_mapset(), do: get(:hidden_metrics_mapset)
+  def timebound_flag_map(), do: get(:timebound_flag_map)
+  def metrics_list_with_access(level), do: get({:metrics_list_with_access, level})
+  def metrics_mapset_with_access(level), do: get({:metrics_mapset_with_access, level})
+  def fixed_labels_parameters_metrics_mapset(), do: get(:fixed_labels_parameters_metrics_mapset)
+  def fixed_labels_parameters_metrics_list(), do: get(:fixed_labels_parameters_metrics_list)
+  def fixed_parameters_map(), do: get(:fixed_parameters_map)
+  def metrics_list_with_data_type(type), do: get({:metrics_list_with_data_type, type})
+  def metrics_mapset_with_data_type(type), do: get({:metrics_mapset_with_data_type, type})
 
-  def access_map(), do: get_metrics() |> Map.new(&{&1.metric, String.to_existing_atom(&1.access)})
-  def table_map(), do: get_metrics() |> Map.new(&{&1.metric, &1.table})
-  def metrics_list(), do: get_metrics() |> Enum.map(& &1.metric)
-  def metrics_mapset(), do: get_metrics() |> MapSet.new(& &1.metric)
+  # Private functions
 
-  def aggregation_map(),
-    do: get_metrics() |> Map.new(&{&1.metric, String.to_existing_atom(&1.aggregation)})
+  defp get(key) do
+    case :persistent_term.get({__MODULE__, key}, :undefined) do
+      :undefined ->
+        data = compute(key)
+        :persistent_term.put({__MODULE__, key}, data)
+        data
 
-  def min_interval_map(), do: get_metrics() |> Map.new(&{&1.metric, &1.min_interval})
+      data ->
+        data
+    end
+  end
 
-  def min_plan_map() do
-    get_metrics()
+  defp compute(:aggregations), do: Sanbase.Metric.SqlQuery.Helper.aggregations()
+
+  defp compute(:aggregations_with_nil), do: [nil] ++ aggregations()
+
+  defp compute(:access_map) do
+    get_metrics(from: __ENV__.function)
+    |> Map.new(&{&1.metric, String.to_existing_atom(&1.access)})
+  end
+
+  defp compute(:table_map),
+    do: get_metrics(from: __ENV__.function) |> Map.new(&{&1.metric, &1.table})
+
+  defp compute(:metrics_list), do: get_metrics(from: __ENV__.function) |> Enum.map(& &1.metric)
+
+  defp compute(:metrics_mapset),
+    do: get_metrics(from: __ENV__.function) |> MapSet.new(& &1.metric)
+
+  defp compute(:aggregation_map) do
+    get_metrics(from: __ENV__.function)
+    |> Map.new(&{&1.metric, String.to_existing_atom(&1.aggregation)})
+  end
+
+  defp compute(:min_interval_map) do
+    get_metrics(from: __ENV__.function) |> Map.new(&{&1.metric, &1.min_interval})
+  end
+
+  defp compute(:min_plan_map) do
+    get_metrics(from: __ENV__.function)
     |> Map.new(fn metric_map ->
       min_plan =
         case metric_map.min_plan do
@@ -111,40 +170,52 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
     end)
   end
 
-  def names_map(), do: get_metrics() |> Map.new(&{&1.metric, &1.internal_metric})
+  defp compute(:names_map) do
+    get_metrics(from: :names_map) |> Map.new(&{&1.metric, &1.internal_metric})
+  end
 
-  def docs_links_map(),
-    do: get_metrics() |> Map.new(&{&1.metric, &1.docs_links})
+  defp compute(:docs_links_map) do
+    get_metrics(from: :docs_links_map) |> Map.new(&{&1.metric, &1.docs_links})
+  end
 
-  def name_to_metric_map(), do: get_metrics() |> Map.new(&{&1.metric, &1.internal_metric})
+  defp compute(:name_to_metric_map) do
+    get_metrics(from: :name_to_metric_map) |> Map.new(&{&1.metric, &1.internal_metric})
+  end
 
-  def metric_to_names_map() do
-    get_metrics()
+  defp compute(:metric_to_names_map) do
+    get_metrics(from: :metric_to_names_map)
     |> Enum.group_by(& &1.internal_metric, & &1.metric)
   end
 
-  def human_readable_name_map(),
-    do: get_metrics() |> Map.new(&{&1.metric, &1.human_readable_name})
+  defp compute(:human_readable_name_map) do
+    get_metrics(from: :human_readable_name_map) |> Map.new(&{&1.metric, &1.human_readable_name})
+  end
 
-  def metrics_data_type_map(),
-    do: get_metrics() |> Map.new(&{&1.metric, String.to_existing_atom(&1.data_type)})
+  defp compute(:metrics_data_type_map) do
+    get_metrics(from: :metrics_data_type_map)
+    |> Map.new(&{&1.metric, String.to_atom(&1.data_type)})
+  end
 
-  def incomplete_data_map(),
-    do: get_metrics() |> Map.new(&{&1.metric, &1.has_incomplete_data})
+  defp compute(:incomplete_data_map) do
+    get_metrics(from: :incomplete_data_map) |> Map.new(&{&1.metric, &1.has_incomplete_data})
+  end
 
-  def incomplete_metrics(),
-    do: get_metrics() |> Enum.filter(& &1.has_incomplete_data) |> Enum.map(& &1.metric)
+  defp compute(:incomplete_metrics) do
+    get_metrics(from: :incomplete_metrics)
+    |> Enum.filter(& &1.has_incomplete_data)
+    |> Enum.map(& &1.metric)
+  end
 
-  def selectors_map() do
-    get_metrics()
+  defp compute(:selectors_map) do
+    get_metrics(from: :selectors_map)
     |> Map.new(fn m ->
       selectors = Enum.map(m.selectors, &String.to_atom/1)
       {m.metric, selectors}
     end)
   end
 
-  def required_selectors_map() do
-    get_metrics()
+  defp compute(:required_selectors_map) do
+    get_metrics(from: :required_selectors_map)
     |> Enum.reject(&(&1.required_selectors == []))
     |> Map.new(fn m ->
       required_selectors =
@@ -156,31 +227,31 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
     end)
   end
 
-  def deprecated_metrics_map() do
-    get_metrics(remove_hard_deprecated: false)
+  defp compute(:deprecated_metrics_map) do
+    get_metrics(from: :deprecated_metrics_map, remove_hard_deprecated: false)
     |> Enum.filter(& &1.hard_deprecate_after)
     |> Map.new(&{&1.metric, &1.hard_deprecate_after})
   end
 
-  def soft_deprecated_metrics_map() do
+  defp compute(:soft_deprecated_metrics_map) do
     # TODO: Rework places where only true are filtered. Include all metrics.
-    get_metrics()
+    get_metrics(from: :soft_deprecated_metrics_map)
     |> Enum.filter(& &1.is_deprecated)
     |> Map.new(&{&1.metric, &1.is_deprecated})
   end
 
-  def hidden_metrics_mapset() do
-    get_metrics()
+  defp compute(:hidden_metrics_mapset) do
+    get_metrics(from: :hidden_metrics_mapset)
     |> Enum.filter(& &1.is_hidden)
     |> MapSet.new(& &1.metric)
   end
 
-  def timebound_flag_map() do
-    get_metrics()
+  defp compute(:timebound_flag_map) do
+    get_metrics(from: :timebound_flag_map)
     |> Map.new(&{&1.metric, &1.is_timebound})
   end
 
-  def metrics_list_with_access(level) when level in [:free, :restricted] do
+  defp compute({:metrics_list_with_access, level}) when level in [:free, :restricted] do
     access_map()
     |> Enum.reduce([], fn {metric, restrictions}, acc ->
       if resolve_access_level(restrictions) === level,
@@ -189,7 +260,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
     end)
   end
 
-  def metrics_mapset_with_access(level) when level in [:free, :restricted] do
+  defp compute({:metrics_mapset_with_access, level}) when level in [:free, :restricted] do
     access_map()
     |> Enum.reduce(MapSet.new(), fn {metric, restrictions}, acc ->
       if resolve_access_level(restrictions) === level,
@@ -198,8 +269,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
     end)
   end
 
-  def fixed_labels_parameters_metrics_mapset() do
-    get_metrics()
+  defp compute(:fixed_labels_parameters_metrics_mapset) do
+    get_metrics(from: :fixed_labels_parameters_metrics_mapset)
     |> Enum.reduce(MapSet.new(), fn m, acc ->
       case m.fixed_parameters do
         %{} = map when map_size(map) == 0 -> acc
@@ -208,28 +279,28 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
     end)
   end
 
-  def fixed_labels_parameters_metrics_list() do
+  defp compute(:fixed_labels_parameters_metrics_list) do
     Enum.to_list(fixed_labels_parameters_metrics_mapset())
   end
 
-  def fixed_parameters_map() do
-    get_metrics()
+  defp compute(:fixed_parameters_map) do
+    get_metrics(from: :fixed_parameters_map)
     |> Map.new(&{&1.metric, &1.fixed_parameters})
   end
 
-  def metrics_list_with_data_type(type) do
-    get_metrics()
+  defp compute({:metrics_list_with_data_type, type}) do
+    get_metrics(from: {:metrics_list_with_data_type, type})
     |> Enum.reduce([], fn m, acc ->
-      if m.data_type == type,
+      if String.to_atom(m.data_type) == type,
         do: [m.metric | acc],
         else: acc
     end)
   end
 
-  def metrics_mapset_with_data_type(type) do
-    get_metrics()
+  defp compute({:metrics_mapset_with_data_type, type}) do
+    get_metrics(from: {:metrics_mapset_with_data_type, type})
     |> Enum.reduce(MapSet.new(), fn m, acc ->
-      if m.data_type == type,
+      if String.to_atom(m.data_type) == type,
         do: MapSet.put(acc, m.metric),
         else: acc
     end)

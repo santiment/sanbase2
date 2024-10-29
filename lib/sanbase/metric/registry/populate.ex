@@ -6,6 +6,10 @@ defmodule Sanbase.Metric.Registry.Populate do
     Sanbase.Repo.transaction(fn ->
       populate()
     end)
+    |> case do
+      {:ok, {:ok, result}} -> {:ok, result}
+      data -> data
+    end
   end
 
   def json_map_to_registry_changeset(%{} = map) do

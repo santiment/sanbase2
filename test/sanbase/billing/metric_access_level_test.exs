@@ -1,5 +1,7 @@
 defmodule Sanbase.Billing.MetricAccessLevelTest do
-  use ExUnit.Case, async: true
+  use Sanbase.DataCase, async: true
+
+  # @moduletag skip_suite: true
 
   setup do
     metric_access_map = Sanbase.Metric.access_map()

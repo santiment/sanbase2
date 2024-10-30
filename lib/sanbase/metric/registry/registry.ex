@@ -2,9 +2,43 @@ defmodule Sanbase.Metric.Registry do
   use Ecto.Schema
 
   import Ecto.Changeset
+  import Sanbase.Metric.Registry.EventEmitter, only: [emit_event: 3]
 
   alias __MODULE__.Validation
   alias Sanbase.TemplateEngine
+
+  @typedoc """
+
+  """
+  @type t :: %__MODULE__{
+          id: integer(),
+          metric: String.t(),
+          human_readable_name: String.t(),
+          aliases: [String.t()],
+          internal_metric: String.t(),
+          table: [String.t()],
+          aggregation: String.t(),
+          min_interval: String.t(),
+          access: String.t(),
+          min_plan: map(),
+          selectors: [String.t()],
+          required_selectors: [String.t()],
+          is_template_metric: boolean(),
+          parameters: [map()],
+          fixed_parameters: map(),
+          is_timebound: boolean(),
+          has_incomplete_data: boolean(),
+          is_exposed: boolean(),
+          exposed_environments: String.t(),
+          is_hidden: boolean(),
+          is_deprecated: boolean(),
+          hard_deprecate_after: DateTime.t(),
+          deprecation_note: String.t(),
+          data_type: String.t(),
+          docs_links: [String.t()],
+          inserted_at: DateTime.t(),
+          updated_at: DateTime.t()
+        }
 
   @timestamps_opts [type: :utc_datetime]
   schema "metric_registry" do
@@ -97,8 +131,22 @@ defmodule Sanbase.Metric.Registry do
     )
   end
 
+  def update(%__MODULE__{} = metric_description, attrs) do
+    metric_description
+    |> changeset(attrs)
+    |> Repo.update()
+    |> emit_event(:update_metric_registry)
+  end
+
+  @doc ~s"""
+
+  """
   def all(), do: Sanbase.Repo.all(__MODULE__)
 
+  @doc ~s"""
+
+  """
+  @spec resolve([t()]) :: [t()]
   def resolve(list) when is_list(list) do
     Enum.flat_map(list, &resolve/1)
   end

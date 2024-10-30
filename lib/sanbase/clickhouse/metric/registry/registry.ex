@@ -22,7 +22,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   }
   @max_attempts 10
 
-  import __MODULE__.EventEmitter, only: [emit_event: 3]
+  import Sanbase.Metric.Registry.EventEmitter, only: [emit_event: 3]
 
   @functions [
     {:access_map, []},

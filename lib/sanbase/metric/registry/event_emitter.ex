@@ -1,7 +1,7 @@
 defmodule Sanbase.Metric.Registry.EventEmitter do
   use Sanbase.EventBus.EventEmitter
 
-  @topic :metric_registry
+  @topic :metric_registry_events
   def topic(), do: @topic
 
   def handle_event(_, event_type, _args) when event_type in [:metrics_failed_to_load] do

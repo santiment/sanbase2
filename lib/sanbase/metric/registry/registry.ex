@@ -135,7 +135,7 @@ defmodule Sanbase.Metric.Registry do
     metric_description
     |> changeset(attrs)
     |> Repo.update()
-    |> emit_event(:update_metric_registry)
+    |> emit_event(:update_metric_registry, %{})
   end
 
   @doc ~s"""

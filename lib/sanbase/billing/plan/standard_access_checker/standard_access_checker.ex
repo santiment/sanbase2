@@ -180,6 +180,11 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
     end
   end
 
+  def refresh_stored_terms() do
+    # TODO: Implement
+    :ok
+  end
+
   # Private functions
   @functions ~w[free_query_or_argument free_query_or_argument_mapset restricted_query_or_argument all_query_or_argument min_plan_map]a
 

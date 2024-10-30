@@ -1,5 +1,4 @@
 defmodule SanbaseWeb.GenericAdmin.Version do
-  import Ecto.Query
   def schema_module, do: Sanbase.Version
 
   def resource() do
@@ -23,25 +22,36 @@ defmodule SanbaseWeb.GenericAdmin.Version do
   end
 
   defp format_patch(%{patch: patch}) when is_map(patch) do
-    patch
-    |> Enum.map_join("\n", fn {field, change} ->
-      format_change(field, change)
-    end)
+    changes =
+      patch
+      |> Enum.map(fn {field, change} ->
+        safe_field = Phoenix.HTML.html_escape(to_string(field))
+        safe_change = Phoenix.HTML.html_escape(format_change_value(change))
+
+        content = PhoenixHTMLHelpers.Tag.content_tag(:strong, safe_field)
+        PhoenixHTMLHelpers.Tag.content_tag(:li, [content, ": ", safe_change])
+      end)
+
+    PhoenixHTMLHelpers.Tag.content_tag(:ul, changes, class: "list-disc list-inside")
   end
 
-  defp format_patch(_), do: ""
+  defp format_patch(_), do: Phoenix.HTML.raw("")
 
-  defp format_change(field, {:changed, {:primitive_change, old_val, new_val}}) do
-    "#{field}: #{inspect(old_val)} → #{inspect(new_val)}"
+  defp format_change_value({:changed, {:primitive_change, old_val, new_val}}) do
+    old = inspect(old_val)
+    new = inspect(new_val)
+    "#{old} → #{new}"
   end
 
-  defp format_change(field, {:changed, nested}) when is_map(nested) do
+  defp format_change_value({:changed, nested}) when is_map(nested) do
     nested_changes =
       nested
-      |> Enum.map_join(", ", fn {k, v} -> format_change(k, v) end)
+      |> Enum.map_join(", ", fn {k, v} ->
+        "#{to_string(k)}: #{format_change_value(v)}"
+      end)
 
-    "#{field}: {#{nested_changes}}"
+    "{#{nested_changes}}"
   end
 
-  defp format_change(field, other), do: "#{field}: #{inspect(other)}"
+  defp format_change_value(other), do: inspect(other)
 end

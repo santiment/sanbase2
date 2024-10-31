@@ -4,6 +4,8 @@ defmodule Sanbase.EventBus.MetricRegistrySubscriber do
   """
   use GenServer
 
+  require Logger
+
   def topics(), do: ["metric_registry_events"]
 
   def start_link(opts \\ []) do
@@ -47,7 +49,7 @@ defmodule Sanbase.EventBus.MetricRegistrySubscriber do
          event_shadow,
          state
        ) do
-    Logger.info("Metrics Registry failed to load")
+    Logger.info("Metrics Registry failed to load. Will load data from the static files instead.")
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end

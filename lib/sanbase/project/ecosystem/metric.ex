@@ -8,12 +8,12 @@ defmodule Sanbase.Ecosystem.Metric do
       dt_to_unix: 2
     ]
 
-  alias Sanbase.Clickhouse.MetricAdapter.FileHandler
-  @name_to_metric_map FileHandler.name_to_metric_map()
-  @aggregation_map FileHandler.aggregation_map()
+  alias Sanbase.Clickhouse.MetricAdapter.Registry
 
   def aggregated_timeseries_data(ecosystems, metric, from, to, opts) do
-    aggregation = Keyword.get(opts, :aggregation, nil) || Map.get(@aggregation_map, metric)
+    aggregation =
+      Keyword.get(opts, :aggregation, nil) || Map.get(Registry.aggregation_map(), metric)
+
     query = aggregated_timeseries_data_query(ecosystems, metric, from, to, aggregation)
 
     case Sanbase.ClickhouseRepo.query_transform(query, & &1) do
@@ -29,7 +29,9 @@ defmodule Sanbase.Ecosystem.Metric do
   end
 
   def timeseries_data(ecosystems, metric, from, to, interval, opts) do
-    aggregation = Keyword.get(opts, :aggregation, nil) || Map.get(@aggregation_map, metric)
+    aggregation =
+      Keyword.get(opts, :aggregation, nil) || Map.get(Registry.aggregation_map(), metric)
+
     query = timeseries_data_query(ecosystems, metric, from, to, interval, aggregation)
 
     case Sanbase.ClickhouseRepo.query_transform(query, & &1) do
@@ -51,7 +53,7 @@ defmodule Sanbase.Ecosystem.Metric do
   defp aggregated_timeseries_data_query(ecosystems, metric, from, to, aggregation) do
     params = %{
       ecosystems: ecosystems,
-      metric: Map.get(@name_to_metric_map, metric),
+      metric: Map.get(Registry.name_to_metric_map(), metric),
       from: dt_to_unix(:from, from),
       to: dt_to_unix(:to, to)
     }
@@ -81,7 +83,7 @@ defmodule Sanbase.Ecosystem.Metric do
   defp timeseries_data_query(ecosystems, metric, from, to, interval, aggregation) do
     params = %{
       interval: maybe_str_to_sec(interval),
-      metric: Map.get(@name_to_metric_map, metric),
+      metric: Map.get(Registry.name_to_metric_map(), metric),
       from: dt_to_unix(:from, from),
       to: dt_to_unix(:to, to),
       ecosystems: ecosystems

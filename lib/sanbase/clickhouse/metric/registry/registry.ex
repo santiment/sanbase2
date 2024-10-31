@@ -4,25 +4,42 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   """
   require Logger
 
-  # When trying to fetch the metrics from the DB, several attempts are made
-  # After the second attempt, if it still fails, it will start sleeping between
-  # 5 milliseconds and 2 seconds. If at the end it still fails, it will get the metrics
-  # from the local files.
-  @sleep_time_ms %{
-    1 => 0,
-    2 => 5,
-    3 => 10,
-    4 => 20,
-    5 => 100,
-    6 => 500,
-    7 => 2000,
-    8 => 2000,
-    9 => 3000,
-    10 => 5000
-  }
-  @max_attempts 10
-
   import Sanbase.Metric.Registry.EventEmitter, only: [emit_event: 3]
+
+  def access_map(), do: get(:access_map)
+  def aggregation_map(), do: get(:aggregation_map)
+  def aggregations(), do: get(:aggregations)
+  def aggregations_with_nil(), do: get(:aggregations_with_nil)
+  def deprecated_metrics_map(), do: get(:deprecated_metrics_map)
+  def docs_links_map(), do: get(:docs_links_map)
+  def fixed_labels_parameters_metrics_list(), do: get(:fixed_labels_parameters_metrics_list)
+  def fixed_labels_parameters_metrics_mapset(), do: get(:fixed_labels_parameters_metrics_mapset)
+  def fixed_parameters_map(), do: get(:fixed_parameters_map)
+  def hidden_metrics_mapset(), do: get(:hidden_metrics_mapset)
+  def human_readable_name_map(), do: get(:human_readable_name_map)
+  def incomplete_data_map(), do: get(:incomplete_data_map)
+  def incomplete_metrics(), do: get(:incomplete_metrics)
+  def metric_to_names_map(), do: get(:metric_to_names_map)
+  def metrics_data_type_map(), do: get(:metrics_data_type_map)
+  def metrics_list(), do: get(:metrics_list)
+  def metrics_list_with_access(level), do: get(:metrics_list_with_access, [level])
+  def metrics_list_with_data_type(type), do: get(:metrics_list_with_data_type, [type])
+  def metrics_mapset(), do: get(:metrics_mapset)
+  def metrics_mapset_with_access(level), do: get(:metrics_mapset_with_access, [level])
+  def metrics_mapset_with_data_type(type), do: get(:metrics_mapset_with_data_type, [type])
+  def min_interval_map(), do: get(:min_interval_map)
+  def min_plan_map(), do: get(:min_plan_map)
+  def names_map(), do: get(:names_map)
+  def name_to_metric_map(), do: get(:name_to_metric_map)
+  def required_selectors_map(), do: get(:required_selectors_map)
+  def selectors_map(), do: get(:selectors_map)
+  def soft_deprecated_metrics_map(), do: get(:soft_deprecated_metrics_map)
+  def table_(), do: get(:table_map)
+  def table_map(), do: get(:table_map)
+  def timebound_flag_map(), do: get(:timebound_flag_map)
+
+  # Internals below. Some of the functions are public as they are called from
+  # other modules, for example when refreshing the stored data in the persistent_term
 
   @functions [
     {:access_map, []},
@@ -82,41 +99,14 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   def refresh_stored_terms() do
     for {fun, args} <- @functions do
       data = compute(fun, args)
-      {{fun, args}, :persistent_term.put(key(fun, args), data)}
+
+      if :not_implemented == data,
+        do: raise("Function #{fun} is not implemented in module #{__MODULE__}")
+
+      :ok = :persistent_term.put(key(fun, args), data)
+      {{fun, args}, :ok}
     end
   end
-
-  def access_map(), do: get(:access_map)
-  def aggregation_map(), do: get(:aggregation_map)
-  def aggregations(), do: get(:aggregations)
-  def aggregations_with_nil(), do: get(:aggregations_with_nil)
-  def deprecated_metrics_map(), do: get(:deprecated_metrics_map)
-  def docs_links_map(), do: get(:docs_links_map)
-  def fixed_labels_parameters_metrics_list(), do: get(:fixed_labels_parameters_metrics_list)
-  def fixed_labels_parameters_metrics_mapset(), do: get(:fixed_labels_parameters_metrics_mapset)
-  def fixed_parameters_map(), do: get(:fixed_parameters_map)
-  def hidden_metrics_mapset(), do: get(:hidden_metrics_mapset)
-  def human_readable_name_map(), do: get(:human_readable_name_map)
-  def incomplete_data_map(), do: get(:incomplete_data_map)
-  def incomplete_metrics(), do: get(:incomplete_metrics)
-  def metric_to_names_map(), do: get(:metric_to_names_map)
-  def metrics_data_type_map(), do: get(:metrics_data_type_map)
-  def metrics_list(), do: get(:metrics_list)
-  def metrics_list_with_access(level), do: get(:metrics_list_with_access, [level])
-  def metrics_list_with_data_type(type), do: get(:metrics_list_with_data_type, [type])
-  def metrics_mapset(), do: get(:metrics_mapset)
-  def metrics_mapset_with_access(level), do: get(:metrics_mapset_with_access, [level])
-  def metrics_mapset_with_data_type(type), do: get(:metrics_mapset_with_data_type, [type])
-  def min_interval_map(), do: get(:min_interval_map)
-  def min_plan_map(), do: get(:min_plan_map)
-  def names_map(), do: get(:names_map)
-  def name_to_metric_map(), do: get(:name_to_metric_map)
-  def required_selectors_map(), do: get(:required_selectors_map)
-  def selectors_map(), do: get(:selectors_map)
-  def soft_deprecated_metrics_map(), do: get(:soft_deprecated_metrics_map)
-  def table_(), do: get(:table_map)
-  def table_map(), do: get(:table_map)
-  def timebound_flag_map(), do: get(:timebound_flag_map)
 
   # Private functions
 
@@ -166,6 +156,24 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
       {:ok, data}
     end)
   end
+
+  # When trying to fetch the metrics from the DB, several attempts are made
+  # After the second attempt, if it still fails, it will start sleeping between
+  # 5 milliseconds and 2 seconds. If at the end it still fails, it will get the metrics
+  # from the local files.
+  @sleep_time_ms %{
+    1 => 0,
+    2 => 5,
+    3 => 10,
+    4 => 20,
+    5 => 100,
+    6 => 500,
+    7 => 1000,
+    8 => 2000,
+    9 => 3000,
+    10 => 5000
+  }
+  @max_attempts 10
 
   # Try to fetch the metrics from the database table
   # The following options can be passed:

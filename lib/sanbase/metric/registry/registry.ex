@@ -4,12 +4,10 @@ defmodule Sanbase.Metric.Registry do
   import Ecto.Changeset
   import Sanbase.Metric.Registry.EventEmitter, only: [emit_event: 3]
 
+  alias Sanbase.Repo
   alias __MODULE__.Validation
   alias Sanbase.TemplateEngine
 
-  @typedoc """
-
-  """
   @type t :: %__MODULE__{
           id: integer(),
           metric: String.t(),
@@ -81,8 +79,8 @@ defmodule Sanbase.Metric.Registry do
     timestamps()
   end
 
-  def changeset(%__MODULE__{} = metric_description, attrs) do
-    metric_description
+  def changeset(%__MODULE__{} = nmetric_registry, attrs) do
+    nmetric_registry
     |> cast(attrs, [
       :access,
       :aggregation,
@@ -131,20 +129,38 @@ defmodule Sanbase.Metric.Registry do
     )
   end
 
-  def update(%__MODULE__{} = metric_description, attrs) do
-    metric_description
+  def create(attrs) do
+    %__MODULE__{}
+    |> changeset(attrs)
+    |> Repo.insert()
+    |> emit_event(:create_metric_registry, %{})
+  end
+
+  def update(%__MODULE__{} = metric_registry, attrs) do
+    metric_registry
     |> changeset(attrs)
     |> Repo.update()
     |> emit_event(:update_metric_registry, %{})
   end
 
-  @doc ~s"""
+  def delete(%__MODULE__{} = metric_registry) do
+    metric_registry
+    |> Repo.delete()
+    |> emit_event(:delete_metric_registry, %{})
+  end
 
+  @doc ~s"""
+  Get all the metric registry records. The records are not immedietaly
+  ready for usage, as some of the records might be template metrics which
+  need to be resolved, or aliases need to be applied.
   """
+  @spec all() :: [t()]
   def all(), do: Sanbase.Repo.all(__MODULE__)
 
   @doc ~s"""
-
+  Resolve all the metric registry records.
+  This operation will increase the number of metrics by producing many metrics
+  from template records and aliases.
   """
   @spec resolve([t()]) :: [t()]
   def resolve(list) when is_list(list) do

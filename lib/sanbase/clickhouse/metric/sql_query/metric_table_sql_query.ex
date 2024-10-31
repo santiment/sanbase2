@@ -1,8 +1,5 @@
 defmodule Sanbase.Clickhouse.MetricAdapter.TableSqlQuery do
-  alias Sanbase.Clickhouse.MetricAdapter.FileHandler
-
-  @table_map FileHandler.table_map()
-  @name_to_metric_map FileHandler.name_to_metric_map()
+  alias Sanbase.Clickhouse.MetricAdapter.Registry
 
   def table_data_query("labelled_exchange_balance_sum" = metric, slug_or_slugs, from, to) do
     slugs = List.wrap(slug_or_slugs)
@@ -18,7 +15,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.TableSqlQuery do
       SELECT label, owner, name, value
       FROM (
         SELECT dt, label, owner, asset_id, value
-        FROM #{Map.get(@table_map, metric)} FINAL
+        FROM #{Map.get(Registry.table_map(), metric)} FINAL
         PREWHERE
           dt >= toDateTime({{from}}) AND
           dt < toDateTime({{to}}) AND
@@ -34,7 +31,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.TableSqlQuery do
 
     params =
       %{
-        metric: Map.get(@name_to_metric_map, metric),
+        metric: Map.get(Registry.name_to_metric_map(), metric),
         from: from |> DateTime.to_unix(),
         to: to |> DateTime.to_unix(),
         slugs: slugs

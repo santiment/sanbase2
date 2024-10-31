@@ -23,12 +23,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       dt_to_unix: 2
     ]
 
-  alias Sanbase.Clickhouse.MetricAdapter.FileHandler
-
-  @name_to_metric_map FileHandler.name_to_metric_map()
-  @table_map FileHandler.table_map()
-  @min_interval_map FileHandler.min_interval_map()
-  @selectors_map FileHandler.selectors_map()
+  alias Sanbase.Clickhouse.MetricAdapter.Registry
 
   schema @table do
     field(:datetime, :utc_datetime, source: :dt)
@@ -41,7 +36,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   def timeseries_data_query(metric, selector, from, to, interval, aggregation, filters, opts) do
     params = %{
       interval: maybe_str_to_sec(interval),
-      metric: Map.get(@name_to_metric_map, metric),
+      metric: Map.get(Registry.name_to_metric_map(), metric),
       from: dt_to_unix(:from, from),
       to: dt_to_unix(:to, to),
       selector: asset_filter_value(selector)
@@ -62,7 +57,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         SELECT
           dt,
           argMax(value, computed_at) AS value
-        FROM #{Map.get(@table_map, metric)}
+        FROM #{Map.get(Registry.table_map(), metric)}
         PREWHERE
           #{fixed_parameters_str}
           #{additional_filters}
@@ -151,7 +146,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       ) do
     params = [
       interval: maybe_str_to_sec(interval),
-      metric: Map.get(@name_to_metric_map, metric),
+      metric: Map.get(Registry.name_to_metric_map(), metric),
       from: dt_to_unix(:from, from),
       to: dt_to_unix(:to, to),
       selector: slug_or_slugs
@@ -169,7 +164,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         asset_id,
         dt,
         argMax(value, computed_at) AS value2
-      FROM #{Map.get(@table_map, metric)}
+      FROM #{Map.get(Registry.table_map(), metric)}
       PREWHERE
         #{additional_filters}
         #{maybe_convert_to_date(:after, metric, "dt", "toDateTime({{from}})")} AND
@@ -202,7 +197,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     params = %{
       slugs: slugs,
       # Fetch internal metric name used. Fallback to the same name if missing.
-      metric: Map.get(@name_to_metric_map, metric),
+      metric: Map.get(Registry.name_to_metric_map(), metric),
       from: dt_to_unix(:from, from),
       to: dt_to_unix(:to, to)
     }
@@ -228,7 +223,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         SELECT dt, asset_id, argMax(value, computed_at) AS value
         FROM (
           SELECT dt, asset_id, metric_id, value, computed_at
-          FROM #{Map.get(@table_map, metric)}
+          FROM #{Map.get(Registry.table_map(), metric)}
           PREWHERE
             #{additional_filters}
             #{asset_id_filter(%{slug: slugs}, argument_name: "slugs")} AND
@@ -291,7 +286,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
     params = %{
       # Fetch internal metric name used. Fallback to the same name if missing.
-      metric: Map.get(@name_to_metric_map, metric),
+      metric: Map.get(Registry.name_to_metric_map(), metric),
       from: dt_to_unix(:from, from),
       to: dt_to_unix(:to, to)
     }
@@ -307,7 +302,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       SELECT asset_id, #{aggregation(aggregation, "value2", "dt")} AS value3
       FROM (
         SELECT asset_id, dt, argMax(value, computed_at) AS value2
-        FROM #{Map.get(@table_map, metric)}
+        FROM #{Map.get(Registry.table_map(), metric)}
         PREWHERE
           #{additional_filters}
           #{metric_id_filter(metric, argument_name: "metric")} AND
@@ -339,7 +334,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     """
 
     params =
-      %{metric: Map.get(@name_to_metric_map, metric)}
+      %{metric: Map.get(Registry.name_to_metric_map(), metric)}
       |> Map.merge(columns_map)
 
     Sanbase.Clickhouse.Query.new(sql, params)
@@ -363,7 +358,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
     params =
       %{
-        metric: Map.get(@name_to_metric_map, metric),
+        metric: Map.get(Registry.name_to_metric_map(), metric),
         slug: slug
       }
       |> Map.merge(columns_map)
@@ -382,7 +377,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
     params =
       %{
-        metric: Map.get(@name_to_metric_map, metric)
+        metric: Map.get(Registry.name_to_metric_map(), metric)
       }
 
     Sanbase.Clickhouse.Query.new(sql, params)
@@ -400,7 +395,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
     params =
       %{
-        metric: Map.get(@name_to_metric_map, metric),
+        metric: Map.get(Registry.name_to_metric_map(), metric),
         slug: slug
       }
 
@@ -436,7 +431,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     )
     """
 
-    params = %{metric: Map.get(@name_to_metric_map, metric)}
+    params = %{metric: Map.get(Registry.name_to_metric_map(), metric)}
 
     Sanbase.Clickhouse.Query.new(sql, params)
   end
@@ -444,14 +439,14 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   def last_datetime_computed_at_query(metric, selector) do
     sql = """
     SELECT toUnixTimestamp(argMax(computed_at, dt))
-    FROM #{Map.get(@table_map, metric)} FINAL
+    FROM #{Map.get(Registry.table_map(), metric)} FINAL
     PREWHERE
       #{metric_id_filter(metric, argument_name: "metric")} AND
       #{asset_id_filter(selector, argument_name: "selector")}
     """
 
     params = %{
-      metric: Map.get(@name_to_metric_map, metric),
+      metric: Map.get(Registry.name_to_metric_map(), metric),
       selector: asset_filter_value(selector)
     }
 
@@ -467,7 +462,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       #{metric_id_filter(metric, argument_name: "metric")}
     """
 
-    params = %{metric: Map.get(@name_to_metric_map, metric)}
+    params = %{metric: Map.get(Registry.name_to_metric_map(), metric)}
 
     Sanbase.Clickhouse.Query.new(sql, params)
   end
@@ -483,7 +478,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     """
 
     params = %{
-      metric: Map.get(@name_to_metric_map, metric),
+      metric: Map.get(Registry.name_to_metric_map(), metric),
       selector: asset_filter_value(selector)
     }
 
@@ -537,8 +532,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   # Private functions
 
   defp maybe_convert_to_date(:after, metric, dt_column, sql_dt_description) do
-    table = Map.get(@table_map, metric)
-    min_interval = Map.get(@min_interval_map, metric)
+    table = Map.get(Registry.table_map(), metric)
+    min_interval = Map.get(Registry.min_interval_map(), metric)
     min_interval_seconds = Sanbase.DateTimeUtils.str_to_sec(min_interval)
 
     cond do
@@ -555,8 +550,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   end
 
   defp maybe_convert_to_date(:before, metric, dt_column, sql_dt_description) do
-    table = Map.get(@table_map, metric)
-    min_interval = Map.get(@min_interval_map, metric)
+    table = Map.get(Registry.table_map(), metric)
+    min_interval = Map.get(Registry.min_interval_map(), metric)
     min_interval_seconds = Sanbase.DateTimeUtils.str_to_sec(min_interval)
 
     cond do
@@ -579,7 +574,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   end
 
   defp relevant_filters_for_metric(metric, filters) do
-    selectors = Map.get(@selectors_map, metric, [])
+    selectors = Map.get(Registry.selectors_map(), metric, [])
     Enum.filter(filters, fn {filter, _} -> filter in selectors end)
   end
 

@@ -22,7 +22,7 @@ defmodule Sanbase.Metric do
   alias Sanbase.Metric.Behaviour, as: Type
   alias Sanbase.Metric.Helper
 
-  alias Sanbase.Clickhouse.MetricAdapter.FileHandler
+  alias Sanbase.Clickhouse.MetricAdapter.Registry
 
   @compile inline: [
              execute_if_aggregation_valid: 3,
@@ -92,7 +92,7 @@ defmodule Sanbase.Metric do
   """
   @spec hidden_metrics() :: MapSet.t()
   def hidden_metrics() do
-    Sanbase.Clickhouse.MetricAdapter.FileHandler.hidden_metrics_mapset()
+    Registry.hidden_metrics_mapset()
   end
 
   @doc ~s"""
@@ -574,7 +574,7 @@ defmodule Sanbase.Metric do
     hidden = hidden_metrics()
 
     metrics =
-      FileHandler.selectors_map()
+      Registry.selectors_map()
       |> Enum.filter(fn {_k, v} -> :address in v end)
       |> Enum.map(fn {k, _v} -> k end)
       |> Enum.reject(&(&1 in hidden))

@@ -12,10 +12,11 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
   import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2]
 
-  alias __MODULE__.{HistogramMetric, FileHandler, TableMetric}
+  alias __MODULE__.HistogramMetric
+  alias __MODULE__.TableMetric
+  alias __MODULE__.Registry
 
   alias Sanbase.ClickhouseRepo
-  alias __MODULE__.Registry
 
   @default_complexity_weight 0.3
 
@@ -154,7 +155,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def required_selectors(), do: FileHandler.required_selectors_map()
+  def required_selectors(), do: Registry.required_selectors_map()
 
   @impl Sanbase.Metric.Behaviour
   def metadata(metric) do

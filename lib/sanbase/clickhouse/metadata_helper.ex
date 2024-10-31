@@ -5,14 +5,11 @@ defmodule Sanbase.Clickhouse.MetadataHelper do
   """
 
   alias Sanbase.ClickhouseRepo
+  alias Sanbase.Clickhouse.MetricAdapter.Registry
   import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
 
   # Map from the names used in ClickHouse to the publicly exposed ones.
   # Example: stack_circulation_20y -> circulation
-  @original_name_to_metric_name Sanbase.Clickhouse.MetricAdapter.FileHandler.name_to_metric_map()
-                                |> Enum.reduce(%{}, fn {k, v}, acc ->
-                                  Map.update(acc, v, [k], fn list -> [k | list] end)
-                                end)
 
   def slug_to_asset_id_map() do
     cache_key = {__MODULE__, __ENV__.function} |> Sanbase.Cache.hash()
@@ -58,7 +55,7 @@ defmodule Sanbase.Clickhouse.MetadataHelper do
       Sanbase.Clickhouse.Query.new("SELECT toUInt32(metric_id), name FROM metric_metadata", %{})
 
     ClickhouseRepo.query_reduce(query_struct, %{}, fn [metric_id, name], acc ->
-      names = Map.get(@original_name_to_metric_name, name, [name])
+      names = Map.get(Registry.metric_to_names_map(), name, [name])
 
       names
       |> Enum.reduce(acc, fn inner_name, inner_acc ->

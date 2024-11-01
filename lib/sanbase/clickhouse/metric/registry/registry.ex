@@ -232,8 +232,22 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
     |> Map.new(&{&1.metric, String.to_existing_atom(&1.access)})
   end
 
-  defp compute(:table_map, []),
-    do: get_metrics(from: __ENV__.function) |> Map.new(&{&1.metric, &1.table})
+  defp compute(:table_map, []) do
+    get_metrics(from: __ENV__.function)
+    |> Map.new(fn map ->
+      # Almost all metrics have a single source table.
+      # The exceptions are custom metrics that are handled in a custom way,
+      # so for them there will be no "FROM #{Map.get(Registry.table_map(), metric)}" code
+      # so it is safe to unpack the list in case of single table
+      table_or_tables =
+        case map.table do
+          [table] -> table
+          [_ | _] = tables -> tables
+        end
+
+      {map.metric, table_or_tables}
+    end)
+  end
 
   defp compute(:metrics_list, []),
     do: get_metrics(from: __ENV__.function) |> Enum.map(& &1.metric)

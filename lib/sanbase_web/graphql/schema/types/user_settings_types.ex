@@ -21,6 +21,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTypes do
     field(:is_subscribed_marketing_emails, :boolean)
     field(:is_subscribed_comments_emails, :boolean)
     field(:is_subscribed_likes_emails, :boolean)
+    field(:is_subscribed_metric_updates, :boolean)
     # Fixme: backwards compatibility, should be removed when removed from frontend.
     # option is not used
     field(:newsletter_subscription, :string, default_value: "OFF")
@@ -66,6 +67,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTypes do
     field(:is_subscribed_marketing_emails, :boolean)
     field(:is_subscribed_comments_emails, :boolean)
     field(:is_subscribed_likes_emails, :boolean)
+    field(:is_subscribed_metric_updates, :boolean)
     field(:sanbase_version, :string)
 
     # Deprecated fields

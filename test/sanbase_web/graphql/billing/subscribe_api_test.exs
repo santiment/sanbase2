@@ -59,7 +59,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     {Sanbase.TemplateMailer, [:passthrough], send: fn _, _, _ -> {:ok, %{"status" => "sent"}} end}
   ]) do
     # Needs to be staked to apply the discount
-    user = insert(:staked_user)
+    user = insert(:staked_user, email: "test@example.com")
     conn = setup_jwt_auth(build_conn(), user)
 
     {:ok, conn: conn, user: user}
@@ -233,6 +233,29 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       response = execute_mutation(context.conn, query, "subscribe")
 
       assert response["plan"]["name"] == context.plans.plan_essential.name
+    end
+
+    test "when subscribing to Sanbase/API, the user is subscribed to metric updates", context do
+      query = subscribe_mutation(context.plans.plan_pro_sanbase.id)
+      execute_mutation(context.conn, query, "subscribe")
+
+      updated_settings = Sanbase.Accounts.UserSettings.settings_for(context.user, force: true)
+      assert updated_settings.is_subscribed_metric_updates
+    end
+
+    test "when cancelling subscription, the user is unsubscribed from metric updates", context do
+      subscription =
+        insert(:subscription_pro_sanbase,
+          user: context.user,
+          stripe_id: "stripe_id",
+          current_period_end: Timex.shift(Timex.now(), days: 3) |> DateTime.truncate(:second)
+        )
+
+      query = cancel_subscription_at_period_end_mutation(subscription.id)
+      execute_mutation(context.conn, query, "cancelSubscriptionAtPeriodEnd")
+
+      updated_settings = Sanbase.Accounts.UserSettings.settings_for(context.user, force: true)
+      refute updated_settings.is_subscribed_metric_updates
     end
 
     test "annual subscription gets discounted", context do

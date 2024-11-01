@@ -20,8 +20,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
      |> assign(
        visible_metrics: visible_metrics,
        metrics_map: metrics_map,
-       filter: default_filter,
-       rand_suffix: :crypto.strong_rand_bytes(5) |> Base.encode32()
+       filter: default_filter
      )}
   end
 
@@ -153,8 +152,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
      socket
      |> assign(
        visible_metrics: visible_metrics,
-       filter: params,
-       rand_suffix: :crypto.strong_rand_bytes(5) |> Base.encode32()
+       filter: params
      )}
   end
 

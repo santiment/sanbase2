@@ -186,6 +186,11 @@ defmodule SanbaseWeb.Router do
     get("/export_available_metrics", AvailableMetricsController, :export)
   end
 
+  scope "/metric_registry", SanbaseWeb do
+    pipe_through([:browser])
+    live("/", MetricRegistryIndexLive)
+  end
+
   scope "/", SanbaseWeb do
     get("/api_metric_name_mapping", MetricNameController, :api_metric_name_mapping)
     get("/projects_data", DataController, :projects_data)

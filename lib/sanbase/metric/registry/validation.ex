@@ -3,7 +3,14 @@ defmodule Sanbase.Metric.Registry.Validation do
 
   def validate_min_interval(:min_interval, min_interval) do
     if Sanbase.DateTimeUtils.valid_compound_duration?(min_interval) do
-      []
+      if Sanbase.DateTimeUtils.str_to_days(min_interval) > 30 do
+        [
+          min_interval:
+            "The provided min_interval #{min_interval} is too big - more than 30 days."
+        ]
+      else
+        []
+      end
     else
       [
         min_interval:

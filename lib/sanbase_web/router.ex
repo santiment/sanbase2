@@ -189,8 +189,8 @@ defmodule SanbaseWeb.Router do
   scope "/metric_registry", SanbaseWeb do
     pipe_through([:browser])
     live("/", MetricRegistryIndexLive)
-    live("/show/:metric", MetricRegistryShowLive)
-    live("/edit/:metric", MetricRegistryEditLive)
+    live("/show/:id", MetricRegistryShowLive)
+    live("/edit/:id", MetricRegistryEditLive)
   end
 
   scope "/", SanbaseWeb do

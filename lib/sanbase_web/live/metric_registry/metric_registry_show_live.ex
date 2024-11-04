@@ -7,8 +7,8 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
   alias SanbaseWeb.AvailableMetricsComponents
 
   @impl true
-  def mount(%{"metric" => metric}, _session, socket) do
-    {:ok, metric_registry} = Sanbase.Metric.Registry.by_metric(metric)
+  def mount(%{"id" => id}, _session, socket) do
+    {:ok, metric_registry} = Sanbase.Metric.Registry.by_id(id)
     rows = get_rows(metric_registry)
 
     {:ok,

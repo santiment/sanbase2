@@ -28,31 +28,31 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
         </div>
       </div>
       <AvailableMetricsComponents.table_with_popover_th id="metrics_registry" rows={@visible_metrics}>
-        <:col
-          :let={row}
-          label="Metric"
-          popover_target="popover-metric"
-          popover_target_text={get_popover_text(%{key: "Name"})}
-          col_class="max-w-[320px] break-all"
-        >
-          <%= row.metric %>
+        <:col :let={row} label="ID">
+          <%= row.id %>
+        </:col>
+        <:col :let={row} label="Metric Names" col_class="max-w-[480px] break-all">
+          <.metric_names
+            metric={row.metric}
+            internal_metric={row.internal_metric}
+            human_readable_name={row.human_readable_name}
+          />
         </:col>
         <:col
           :let={row}
-          label="Internal Metric"
-          popover_target="popover-internal-name"
-          popover_target_text={get_popover_text(%{key: "Internal Name"})}
-          col_class="max-w-[320px] break-all"
+          label="Min Interval"
+          popover_target="popover-min-interval"
+          popover_target_text={get_popover_text(%{key: "Frequency"})}
         >
-          <%= row.internal_metric %>
+          <%= row.min_interval %>
         </:col>
         <:col
           :let={row}
-          label="Selectors"
-          popover_target="popover-selectors"
-          popover_target_text={get_popover_text(%{key: "Available Selectors"})}
+          label="Table"
+          popover_target="popover-table"
+          popover_target_text={get_popover_text(%{key: "Clickhouse Table"})}
         >
-          <.available_selectors selectors={row.selectors} />
+          <%= row.table %>
         </:col>
         <:col
           :let={row}
@@ -60,7 +60,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           popover_target="popover-default-aggregation"
           popover_target_text={get_popover_text(%{key: "Default Aggregation"})}
         >
-          <%= row.aggregation |> to_string() |> String.upcase() %>
+          <%= row.aggregation %>
         </:col>
         <:col
           :let={row}
@@ -68,23 +68,15 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           popover_target="popover-access"
           popover_target_text={get_popover_text(%{key: "Access"})}
         >
-          <.metric_access access={row.access} />
+          <%= if is_map(row.access), do: Jason.encode!(row.access), else: row.access %>
         </:col>
         <:col
           :let={row}
           popover_target="popover-metric-details"
           popover_target_text={get_popover_text(%{key: "Metric Details"})}
         >
-          <.action_button
-            metric={row.metric}
-            text="Show"
-            href={~p"/metric_registry/show/#{row.metric}"}
-          />
-          <.action_button
-            metric={row.metric}
-            text="Edit"
-            href={~p"/metric_registry/edit/#{row.metric}"}
-          />
+          <.action_button metric={row.metric} text="Show" href={~p"/metric_registry/show/#{row.id}"} />
+          <.action_button metric={row.metric} text="Edit" href={~p"/metric_registry/edit/#{row.id}"} />
         </:col>
       </AvailableMetricsComponents.table_with_popover_th>
     </div>
@@ -95,7 +87,8 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
   def handle_event("apply_filters", params, socket) do
     visible_metrics =
       socket.assigns.metrics
-      |> Sanbase.AvailableMetrics.apply_filters(params)
+      |> maybe_apply_filter(:match_metric, params)
+      |> maybe_apply_filter(:match_table, params)
 
     {:noreply,
      socket
@@ -103,48 +96,6 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
        visible_metrics: visible_metrics,
        filter: params
      )}
-  end
-
-  @doc ~s"""
-  Checkbox that display description on hover.
-  """
-  attr :popover_text, :string, required: true
-  attr :popover_target, :string, required: true
-  attr :input_id, :string, required: true
-  attr :input_name, :string, required: true
-  attr :input_checked, :boolean, required: true
-  attr :input_label, :string, required: true
-
-  def checkbox_with_popover(assigns) do
-    ~H"""
-    <div class="relative flex items-center">
-      <input
-        id={@input_id}
-        type="checkbox"
-        name={@input_name}
-        checked={@input_checked}
-        class="w-4 h-4 border-gray-300 rounded hover:cursor-pointer"
-        data-popover-target={@popover_target}
-        data-popover-style="light"
-      />
-      <label
-        for={@input_id}
-        class="ms-2 text-sm font-medium text-gray-900 border-b border-dotted hover:cursor-pointer"
-        data-popover-target={@popover_target}
-        data-popover-style="light"
-      >
-        <%= @input_label %>
-      </label>
-      <div
-        id={@popover_target}
-        role="tooltip"
-        class="absolute top-4 right-10 z-10 w-80 text-justify invisible inline-block px-8 py-6 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg shadow-sm opacity-0 popover sans"
-      >
-        <span><%= @popover_text %></span>
-        <div class="popover-arrow" data-popper-arrow></div>
-      </div>
-    </div>
-    """
   end
 
   defp filters(assigns) do
@@ -157,15 +108,15 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
         <div>
           <.filter_input
             id="metric-name-search"
-            value={@filter["match_metric_name"]}
-            name="match_metric_name"
+            value={@filter["match_metric"]}
+            name="match_metric"
             placeholder="Filter by metric name"
           />
 
           <.filter_input
             id="table-search"
             value={@filter["match_table"]}
-            name="match_metric_name"
+            name="match_table"
             placeholder="Filter by table"
           />
         </div>
@@ -199,29 +150,35 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     """
   end
 
-  defp available_selectors(assigns) do
+  defp metric_names(assigns) do
     ~H"""
-    <pre>
-    <%= @selectors
-    |> List.wrap()
-    |> Enum.map(fn x -> x |> to_string() |> String.upcase() end)
-    |> Enum.join("\n") %>
-    </pre>
+    <div class="flex flex-col">
+      <div class="text-black text-base"><%= @human_readable_name %></div>
+      <div class="text-gray-900 text-sm"><%= @metric %> (API)</div>
+      <div class="text-gray-900 text-sm"><%= @internal_metric %> (DB)</div>
+    </div>
     """
   end
 
-  defp metric_access(assigns) do
-    access_string =
-      case assigns.access do
-        %{"historical" => :free, "realtime" => :free} -> "FREE"
-        _ -> "RESTRICTED"
-      end
+  defp maybe_apply_filter(metrics, :match_metric, %{"match_metric" => query})
+       when query != "" do
+    query = String.downcase(query)
 
-    assigns =
-      assigns |> assign(:access_string, access_string)
-
-    ~H"""
-    <span><%= @access_string %></span>
-    """
+    metrics
+    |> Enum.filter(fn m ->
+      String.contains?(m.metric, query) or
+        String.contains?(m.internal_metric, query) or
+        String.contains?(String.downcase(m.human_readable_name), query)
+    end)
   end
+
+  defp maybe_apply_filter(metrics, :match_table, %{"match_table" => query})
+       when query != "" do
+    metrics
+    |> Enum.filter(fn m ->
+      Enum.any?(m.table, &String.contains?(&1, query))
+    end)
+  end
+
+  defp maybe_apply_filter(metrics, _, _), do: metrics
 end

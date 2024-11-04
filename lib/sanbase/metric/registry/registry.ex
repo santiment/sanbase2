@@ -8,6 +8,9 @@ defmodule Sanbase.Metric.Registry do
   alias __MODULE__.Validation
   alias Sanbase.TemplateEngine
 
+  # Matches letters, digits, _, -, :, {, }, (, ), \, /  and space
+  # Careful not to delete the space at the end
+  @human_readable_name_regex ~r|^[a-zA-Z0-9_-{}():/\\ ]+$|
   @aggregations ["sum", "last", "count", "avg", "max", "min", "first"]
   def aggregations(), do: @aggregations
 
@@ -82,8 +85,8 @@ defmodule Sanbase.Metric.Registry do
     timestamps()
   end
 
-  def changeset(%__MODULE__{} = nmetric_registry, attrs) do
-    nmetric_registry
+  def changeset(%__MODULE__{} = metric_registry, attrs) do
+    metric_registry
     |> cast(attrs, [
       :access,
       :aggregation,
@@ -120,6 +123,13 @@ defmodule Sanbase.Metric.Registry do
       :min_interval,
       :table
     ])
+    |> validate_format(:metric, ~r/^[a-z0-9_]+$/)
+    |> validate_format(:internal_metric, ~r/^[a-z0-9_]+$/)
+    # Careful not to delete the space symbol at the end
+    |> validate_format(:human_readable_name, @human_readable_name_regex)
+    |> validate_length(:metric, min: 3, max: 100)
+    |> validate_length(:internal_metric, min: 3, max: 100)
+    |> validate_length(:human_readable_name, min: 3, max: 100)
     |> validate_inclusion(:aggregation, @aggregations)
     |> validate_inclusion(:data_type, ["timeseries", "histogram", "table"])
     |> validate_inclusion(:exposed_environments, ["all", "stage", "prod"])
@@ -152,9 +162,9 @@ defmodule Sanbase.Metric.Registry do
     |> emit_event(:delete_metric_registry, %{})
   end
 
-  def by_metric(metric) do
-    case Sanbase.Repo.get_by(__MODULE__, metric: metric) do
-      nil -> {:error, "No metric with name #{metric} found in the registry"}
+  def by_id(id) do
+    case Sanbase.Repo.get_by(__MODULE__, id: id) do
+      nil -> {:error, "No metric with id #{id} found in the registry"}
       %__MODULE__{} = struct -> {:ok, struct}
     end
   end

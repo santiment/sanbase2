@@ -31,6 +31,7 @@ defmodule Sanbase.Metric.Registry.Populate do
       min_interval: map["min_interval"],
       is_template_metric: is_template_metric,
       parameters: Map.get(map, "parameters", []),
+      fixed_parameters: Map.get(map, "fixed_parameters", %{}),
       is_deprecated: Map.get(map, "is_deprecated", false),
       hard_deprecate_after: map["hard_deprecate_after"],
       deprecation_note: map["deprecation_note"],
@@ -47,7 +48,10 @@ defmodule Sanbase.Metric.Registry.Populate do
     |> Enum.reduce_while([], fn map, acc ->
       changeset = json_map_to_registry_changeset(map)
 
-      case Sanbase.Repo.insert(changeset, on_conflict: :nothing) do
+      case Sanbase.Repo.insert(changeset,
+             on_conflict: :replace_all,
+             conflict_target: [:metric, :fixed_parameters, :data_type]
+           ) do
         {:ok, result} -> {:cont, [result | acc]}
         {:error, error} -> {:halt, {:error, error}}
       end

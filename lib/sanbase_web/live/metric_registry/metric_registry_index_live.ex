@@ -152,7 +152,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     <div>
       <form
         phx-change="apply_filters"
-        class="flex flex-row flex-wrap space-y-2 items-start md:flex-row md:items-center md:gap-x-8"
+        class="flex flex-col flex-wrap space-y-2 items-start md:flex-row md:items-center md:gap-x-8"
       >
         <div>
           <.filter_input

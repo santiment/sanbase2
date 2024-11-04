@@ -8,6 +8,9 @@ defmodule Sanbase.Metric.Registry do
   alias __MODULE__.Validation
   alias Sanbase.TemplateEngine
 
+  @aggregations ["sum", "last", "count", "avg", "max", "min", "first"]
+  def aggregations(), do: @aggregations
+
   @type t :: %__MODULE__{
           id: integer(),
           metric: String.t(),
@@ -117,7 +120,7 @@ defmodule Sanbase.Metric.Registry do
       :min_interval,
       :table
     ])
-    |> validate_inclusion(:aggregation, ["sum", "last", "count", "avg", "max", "min", "first"])
+    |> validate_inclusion(:aggregation, @aggregations)
     |> validate_inclusion(:data_type, ["timeseries", "histogram", "table"])
     |> validate_inclusion(:exposed_environments, ["all", "stage", "prod"])
     |> validate_inclusion(:access, ["free", "restricted"])
@@ -147,6 +150,13 @@ defmodule Sanbase.Metric.Registry do
     metric_registry
     |> Repo.delete()
     |> emit_event(:delete_metric_registry, %{})
+  end
+
+  def by_metric(metric) do
+    case Sanbase.Repo.get_by(__MODULE__, metric: metric) do
+      nil -> {:error, "No metric with name #{metric} found in the registry"}
+      %__MODULE__{} = struct -> {:ok, struct}
+    end
   end
 
   @doc ~s"""

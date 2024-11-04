@@ -100,9 +100,6 @@ defmodule Sanbase.Accounts.UserTest do
         user_id: user.id
       })
 
-      # User settings
-      insert(:user_settings, user: user)
-
       # Chart configuration
       chart_config = insert(:chart_configuration, user: user, is_public: true)
       :ok = Sanbase.FeaturedItem.update_item(chart_config, true)

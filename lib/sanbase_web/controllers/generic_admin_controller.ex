@@ -214,7 +214,7 @@ defmodule SanbaseWeb.GenericAdminController do
     # Fetch the record
     data = Repo.get(module, id) |> Repo.preload(resource_config[:preloads] || [])
 
-    # Call the handler in the admin module and handle the response
+    # Call the handler in the admin module
     case apply(admin_module, String.to_existing_atom(action), [data]) do
       {:ok, message} ->
         conn

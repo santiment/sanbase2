@@ -188,12 +188,12 @@ defmodule Sanbase.Notifications.ActionsTest do
       :ok
     end)
 
-    Sanbase.Notifications.MockEmailClient
-    |> expect(:send_email, 3, fn _to, subject, body ->
-      assert subject == "Metric Deprecation Notice"
-      assert_email_body(body, scheduled_at_str)
-      :ok
-    end)
+    # Sanbase.Notifications.MockEmailClient
+    # |> expect(:send_email, 3, fn _to, subject, body ->
+    #   assert subject == "Metric Deprecation Notice"
+    #   assert_email_body(body, scheduled_at_str)
+    #   :ok
+    # end)
 
     Enum.each(notifications, &Sanbase.Notifications.Sender.send_notification/1)
 

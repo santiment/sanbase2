@@ -2,6 +2,7 @@ defmodule SanbaseWeb.AdminComponents do
   use Phoenix.Component
 
   use PhoenixHTMLHelpers
+  use SanbaseWeb, :verified_routes
 
   import SanbaseWeb.CoreComponents
 
@@ -264,28 +265,6 @@ defmodule SanbaseWeb.AdminComponents do
     ~H"""
     <div class="mt-6">
       <h3 class="text-3xl font-medium text-gray-700">Show <%= Inflex.singularize(@resource) %></h3>
-
-      <div class="mb-4">
-        <%= for action <- @custom_actions do %>
-          <%= if action.type == :show do %>
-            <.form
-              :let={f}
-              for={%{}}
-              action={~p"/admin2/generic/#{@data.id}/action/#{action.name}?resource=#{@resource}"}
-              method="post"
-              class="inline"
-            >
-              <button
-                type="submit"
-                class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2"
-                data-confirm={action[:confirm]}
-              >
-                <%= action.label %>
-              </button>
-            </.form>
-          <% end %>
-        <% end %>
-      </div>
 
       <div class="table-responsive">
         <div class="relative overflow-x-auto shadow-md sm:rounded-lg">

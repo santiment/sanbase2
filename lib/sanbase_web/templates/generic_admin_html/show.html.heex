@@ -15,6 +15,26 @@
         href={Routes.generic_admin_path(@conn, :edit, @data, resource: @resource)}
       />
     <% end %>
+    <%= if @custom_actions != [] do %>
+      <%= for action <- @custom_actions do %>
+        <%= if action.type == :show do %>
+          <.form
+            for={%{}}
+            action={~p"/admin2/generic/#{@resource}/#{@data.id}/action/#{action.name}"}
+            method="post"
+            class="inline"
+          >
+            <button
+              type="submit"
+              class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2"
+              data-confirm={action[:confirm]}
+            >
+              <%= action.label %>
+            </button>
+          </.form>
+        <% end %>
+      <% end %>
+    <% end %>
     <SanbaseWeb.AdminComponents.back_btn />
   </div>
 

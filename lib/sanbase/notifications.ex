@@ -346,6 +346,12 @@ defmodule Sanbase.Notifications do
     |> Repo.update()
   end
 
+  def update_email_notification(email_notification_id, attrs) do
+    get_email_notification!(email_notification_id)
+    |> EmailNotification.changeset(attrs)
+    |> Repo.update()
+  end
+
   def reject_email_notification(email_notification_id) do
     get_email_notification!(email_notification_id)
     |> EmailNotification.changeset(%{status: "rejected"})

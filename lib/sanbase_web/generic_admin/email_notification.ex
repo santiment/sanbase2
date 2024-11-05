@@ -4,7 +4,7 @@ defmodule SanbaseWeb.GenericAdmin.EmailNotification do
 
   def resource() do
     %{
-      actions: [:show, :edit],
+      actions: [:show],
       preloads: [:notification],
       index_fields: [
         :id,
@@ -14,16 +14,12 @@ defmodule SanbaseWeb.GenericAdmin.EmailNotification do
         :sent_at,
         :inserted_at
       ],
-      edit_fields: [
-        :status,
-        :approved_at
-      ],
       fields_override: %{
         content: %{
           type: :text
         },
         to_addresses: %{
-          type: :array
+          type: :list
         },
         status: %{
           collection: ["pending", "approved", "rejected"],
@@ -42,7 +38,7 @@ defmodule SanbaseWeb.GenericAdmin.EmailNotification do
         %{
           # This action appears on show page
           type: :show,
-          # Action identifier
+          # Action identifier, we need same name function defined in this module
           name: "send_email",
           # Button label
           label: "Send Email",
@@ -56,6 +52,11 @@ defmodule SanbaseWeb.GenericAdmin.EmailNotification do
   end
 
   def send_email(email_notification) do
+    dbg(email_notification)
+    # update approved_at to now
+    # send email
+    # update sent_at to now and status to "sent"
+    # return ok
     {:ok, "Email sent successfully"}
   end
 end

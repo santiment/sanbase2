@@ -199,7 +199,9 @@ defmodule Sanbase.EventBus.EventValidation do
              :subscribe_biweekly_report,
              :unsubscribe_biweekly_report,
              :subscribe_monthly_newsletter,
-             :unsubscribe_monthly_newsletter
+             :unsubscribe_monthly_newsletter,
+             :subscribe_metric_updates,
+             :unsubscribe_metric_updates
            ] do
     valid_integer_id?(user_id)
   end

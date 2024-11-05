@@ -89,6 +89,29 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
     state
   end
 
+  defp handle_event(
+         %{data: %{event_type: :subscribe_metric_updates, user_id: user_id}},
+         event_shadow,
+         state
+       ) do
+    email = Sanbase.Accounts.get_user!(user_id).email
+
+    Sanbase.Email.MailjetApi.subscribe(:metric_updates, email)
+    EventBus.mark_as_completed({__MODULE__, event_shadow})
+    state
+  end
+
+  defp handle_event(
+         %{data: %{event_type: :unsubscribe_metric_updates, user_id: user_id}},
+         event_shadow,
+         state
+       ) do
+    email = Sanbase.Accounts.get_user!(user_id).email
+    Sanbase.Email.MailjetApi.unsubscribe(:metric_updates, email)
+    EventBus.mark_as_completed({__MODULE__, event_shadow})
+    state
+  end
+
   defp handle_event(_event, event_shadow, state) do
     # The unhandled events are marked as completed
     EventBus.mark_as_completed({__MODULE__, event_shadow})

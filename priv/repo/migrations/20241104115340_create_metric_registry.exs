@@ -63,30 +63,28 @@ defmodule Sanbase.Repo.Migrations.CreateMetricRegistry do
       add(:metric, :string, null: false)
       add(:internal_metric, :string, null: false)
       add(:human_readable_name, :string, null: false)
-      add(:aliases, {:array, :string}, null: false, default: [])
-      add(:table, {:array, :string}, null: false)
+      add(:aliases, :string, null: false, default: [])
+      add(:tables, :string, null: false)
 
-      add(:is_template_metric, :boolean, null: false, default: false)
-      add(:parameters, {:array, :jsonb}, null: false, default: [])
-      add(:fixed_parameters, :jsonb, null: "false", default: "{}")
+      add(:is_template, :boolean, null: false, default: false)
+      add(:parameters, :map, null: false, default: [])
+      add(:fixed_parameters, :map, null: "false", default: "{}")
 
       add(:is_timebound, :boolean, null: false, null: false)
       add(:is_exposed, :boolean, null: false, default: true)
       add(:exposed_environments, :string, null: false, default: "all")
 
       add(:version, :string)
-
-      add(:selectors, {:array, :string}, null: false, default: [])
-      add(:required_selectors, {:array, :string}, null: false, default: [])
+      add(:selectors, :map, null: false, default: [])
+      add(:required_selectors, :map, null: false, default: "{}")
 
       add(:access, :string, null: false)
       add(:min_plan, :jsonb, null: false, default: "{}")
-      add(:aggregation, :string, null: false)
+      add(:default_aggregation, :string, null: false)
       add(:min_interval, :string, null: false)
       add(:has_incomplete_data, :boolean, null: false)
-
       add(:data_type, :string, null: false, default: "timeseries")
-      add(:docs_links, {:array, :string}, null: false, default: [])
+      add(:docs_links, :map, null: false, default: "{}")
 
       add(:is_hidden, :boolean, null: false, default: false)
       add(:is_deprecated, :boolean, null: false, default: false)

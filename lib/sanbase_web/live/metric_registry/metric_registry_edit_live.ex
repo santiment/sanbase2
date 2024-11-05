@@ -51,7 +51,6 @@ defmodule SanbaseWeb.MetricRegistryEditLive do
           label="Human Readable Name"
         />
         <!-- <.input type="text" id="input-table" field={@form[:table]} label="Table" /> -->
-        <.array_input id="input-table" field={@field[:table]} label="Table" />
         <.input type="text" id="input-min-interval" field={@form[:min_interval]} label="Min Interval" />
         <.input
           type="select"
@@ -78,6 +77,20 @@ defmodule SanbaseWeb.MetricRegistryEditLive do
         />
 
         <.input type="textarea" id="input-parameters" field={@form[:parameters]} label="Parameters" />
+
+        <h3>Tables</h3>
+        <.inputs_for :let={fp} field={@form[:tables]}>
+          <.input field={fp[:name]} type="text" label="Table" />
+
+          <label class="cursor-pointer">
+            <input type="checkbox" name="registry[tables_drop][]" value={fp.index} class="hidden" />
+            <.icon name="hero-x-mark" class="w-6 h-6 relative bg-red-800" /> Remove table
+          </label>
+        </.inputs_for>
+
+        <label class="block cursor-pointer">
+          <input type="checkbox" name="registry[tables_add][]" class="hidden" /> Add new table
+        </label>
       </.simple_form>
     </div>
     """
@@ -125,5 +138,6 @@ defmodule SanbaseWeb.MetricRegistryEditLive do
     {:ok, %{params | "table" => List.wrap(params["table"])}}
   end
 
+  defp maybe_update_if_present({:ok, params}, _), do: {:ok, params}
   defp maybe_update_if_present({:error, error}, _), do: {:error, error}
 end

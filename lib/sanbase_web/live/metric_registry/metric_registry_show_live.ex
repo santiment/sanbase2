@@ -32,6 +32,12 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
           href={~p"/metric_registry"}
           icon="hero-arrow-uturn-left"
         />
+
+        <AvailableMetricsComponents.available_metrics_button
+          text="Edit Metric"
+          href={~p"/metric_registry/edit/#{@metric_registry}"}
+          icon="hero-pencil-square"
+        />
       </div>
       <.table id="metric_registry" rows={@rows}>
         <:col :let={row} col_class="w-40">
@@ -88,7 +94,7 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
       },
       %{
         key: "Table",
-        value: Enum.join(List.wrap(metric_registry.table), ", "),
+        value: metric_registry.tables |> Enum.map(& &1.name) |> Enum.join(", "),
         popover_target: "popover-clickhouse-table",
         popover_target_text: get_popover_text(%{key: "Clickhouse Table"})
       },
@@ -106,7 +112,7 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
       },
       %{
         key: "Docs",
-        value: metric_registry.docs_links,
+        value: metric_registry.docs |> Enum.map(& &1.link) |> Enum.join(", "),
         popover_target: "popover-docs",
         popover_target_text: get_popover_text(%{key: "Docs"})
       },
@@ -118,7 +124,7 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
       },
       %{
         key: "Default Aggregation",
-        value: stringify(metric_registry.aggregation),
+        value: stringify(metric_registry.default_aggregation),
         popover_target: "popover-default-aggregation",
         popover_target_text: get_popover_text(%{key: "Default Aggregation"})
       },
@@ -136,7 +142,7 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
       },
       %{
         key: "Is Template Metric",
-        value: metric_registry.is_template_metric,
+        value: metric_registry.is_template,
         popover_target: "popover-template-metric",
         popover_target_text: get_popover_text(%{key: "Is Template Metric"})
       },
@@ -160,13 +166,14 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
       },
       %{
         key: "Selectors",
-        value: Jason.encode!(metric_registry.selectors),
+        value: metric_registry.selectors |> Enum.map(&Map.from_struct/1) |> Jason.encode!(),
         popover_target: "popover-selectors",
         popover_target_text: get_popover_text(%{key: "Available Selectors"})
       },
       %{
         key: "Required Selectors",
-        value: Jason.encode!(metric_registry.required_selectors),
+        value:
+          metric_registry.required_selectors |> Enum.map(&Map.from_struct/1) |> Jason.encode!(),
         popover_target: "popover-required-selectors",
         popover_target_text: get_popover_text(%{key: "Required Selectors"})
       },

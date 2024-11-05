@@ -2285,24 +2285,24 @@ CREATE TABLE public.metric_registry (
     metric character varying(255) NOT NULL,
     internal_metric character varying(255) NOT NULL,
     human_readable_name character varying(255) NOT NULL,
-    aliases character varying(255)[] DEFAULT ARRAY[]::character varying[] NOT NULL,
-    "table" character varying(255)[] NOT NULL,
-    is_template_metric boolean DEFAULT false NOT NULL,
-    parameters jsonb[] DEFAULT ARRAY[]::jsonb[] NOT NULL,
+    aliases jsonb,
+    tables jsonb NOT NULL,
+    is_template boolean DEFAULT false NOT NULL,
+    parameters jsonb DEFAULT '{}'::jsonb NOT NULL,
     fixed_parameters jsonb DEFAULT '{}'::jsonb,
     is_timebound boolean NOT NULL,
     is_exposed boolean DEFAULT true NOT NULL,
     exposed_environments character varying(255) DEFAULT 'all'::character varying NOT NULL,
     version character varying(255),
-    selectors character varying(255)[] DEFAULT ARRAY[]::character varying[] NOT NULL,
-    required_selectors character varying(255)[] DEFAULT ARRAY[]::character varying[] NOT NULL,
+    selectors jsonb,
+    required_selectors jsonb,
     access character varying(255) NOT NULL,
     min_plan jsonb DEFAULT '{}'::jsonb NOT NULL,
-    aggregation character varying(255) NOT NULL,
+    default_aggregation character varying(255) NOT NULL,
     min_interval character varying(255) NOT NULL,
     has_incomplete_data boolean NOT NULL,
     data_type character varying(255) DEFAULT 'timeseries'::character varying NOT NULL,
-    docs_links character varying(255)[] DEFAULT ARRAY[]::character varying[] NOT NULL,
+    docs jsonb,
     is_hidden boolean DEFAULT false NOT NULL,
     is_deprecated boolean DEFAULT false NOT NULL,
     hard_deprecate_after timestamp(0) without time zone DEFAULT NULL::timestamp without time zone,
@@ -9675,13 +9675,11 @@ INSERT INTO public."schema_migrations" (version) VALUES (20240809122904);
 INSERT INTO public."schema_migrations" (version) VALUES (20240904135651);
 INSERT INTO public."schema_migrations" (version) VALUES (20240926130910);
 INSERT INTO public."schema_migrations" (version) VALUES (20240926135951);
-INSERT INTO public."schema_migrations" (version) VALUES (20241014115340);
 INSERT INTO public."schema_migrations" (version) VALUES (20241017092520);
 INSERT INTO public."schema_migrations" (version) VALUES (20241018073651);
 INSERT INTO public."schema_migrations" (version) VALUES (20241018075640);
-INSERT INTO public."schema_migrations" (version) VALUES (20241018115340);
 INSERT INTO public."schema_migrations" (version) VALUES (20241029080754);
 INSERT INTO public."schema_migrations" (version) VALUES (20241029082533);
 INSERT INTO public."schema_migrations" (version) VALUES (20241029151959);
 INSERT INTO public."schema_migrations" (version) VALUES (20241030141825);
-INSERT INTO public."schema_migrations" (version) VALUES (20241101123601);
+INSERT INTO public."schema_migrations" (version) VALUES (20241104115340);

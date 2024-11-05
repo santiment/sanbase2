@@ -8,9 +8,9 @@ defmodule Sanbase.Metric.Registry do
   alias __MODULE__.Validation
   alias Sanbase.TemplateEngine
 
-  # Matches letters, digits, _, -, :, {, }, (, ), \, /  and space
+  # Matches letters, digits, _, -, :, ., {, }, (, ), \, /  and space
   # Careful not to delete the space at the end
-  @human_readable_name_regex ~r|^[a-zA-Z0-9_-{}():/\\ ]+$|
+  @human_readable_name_regex ~r|^[a-zA-Z0-9_\.\-{}():/\\ ]+$|
   @aggregations ["sum", "last", "count", "avg", "max", "min", "first"]
   def aggregations(), do: @aggregations
 
@@ -20,14 +20,14 @@ defmodule Sanbase.Metric.Registry do
           human_readable_name: String.t(),
           aliases: [String.t()],
           internal_metric: String.t(),
-          table: [String.t()],
-          aggregation: String.t(),
+          tables: [String.t()],
+          default_aggregation: String.t(),
           min_interval: String.t(),
           access: String.t(),
           min_plan: map(),
           selectors: [String.t()],
           required_selectors: [String.t()],
-          is_template_metric: boolean(),
+          is_template: boolean(),
           parameters: [map()],
           fixed_parameters: map(),
           is_timebound: boolean(),
@@ -39,32 +39,96 @@ defmodule Sanbase.Metric.Registry do
           hard_deprecate_after: DateTime.t(),
           deprecation_note: String.t(),
           data_type: String.t(),
-          docs_links: [String.t()],
+          docs: [String.t()],
           inserted_at: DateTime.t(),
           updated_at: DateTime.t()
         }
+
+  defmodule Selector do
+    use Ecto.Schema
+    import Ecto.Changeset
+
+    @primary_key false
+    embedded_schema do
+      field(:type, :string)
+    end
+
+    def changeset(%__MODULE__{} = struct, attrs) do
+      struct
+      |> cast(attrs, [:type])
+      |> validate_required([:type])
+    end
+  end
+
+  defmodule Table do
+    use Ecto.Schema
+    import Ecto.Changeset
+
+    @primary_key false
+    embedded_schema do
+      field(:name, :string)
+    end
+
+    def changeset(%__MODULE__{} = struct, attrs) do
+      struct
+      |> cast(attrs, [:name])
+      |> validate_required([:name])
+    end
+  end
+
+  defmodule Alias do
+    use Ecto.Schema
+    import Ecto.Changeset
+
+    @primary_key false
+    embedded_schema do
+      field(:name, :string)
+    end
+
+    def changeset(%__MODULE__{} = struct, attrs) do
+      struct
+      |> cast(attrs, [:name])
+      |> validate_required([:name])
+    end
+  end
+
+  defmodule Doc do
+    use Ecto.Schema
+    import Ecto.Changeset
+
+    @primary_key false
+    embedded_schema do
+      field(:link, :string)
+    end
+
+    def changeset(%__MODULE__{} = struct, attrs) do
+      struct
+      |> cast(attrs, [:link])
+      |> validate_required([:link])
+    end
+  end
 
   @timestamps_opts [type: :utc_datetime]
   schema "metric_registry" do
     # How the metric is exposed to external users
     field(:metric, :string)
     field(:human_readable_name, :string)
-    field(:aliases, {:array, :string}, default: [])
+    embeds_many(:aliases, Alias)
 
     # What is the name of the metric in the DB and where to find it
     field(:internal_metric, :string)
-    field(:table, {:array, :string})
+    embeds_many(:tables, Table)
 
-    field(:aggregation, :string)
+    field(:default_aggregation, :string)
     field(:min_interval, :string)
     field(:access, :string)
     field(:min_plan, :map)
-    field(:selectors, {:array, :string})
-    field(:required_selectors, {:array, :string})
+    embeds_many(:selectors, Selector)
+    embeds_many(:required_selectors, Selector)
 
     # If the metric is a template metric, then the parameters need to be used
     # to define the full set of metrics
-    field(:is_template_metric, :boolean, default: false)
+    field(:is_template, :boolean, default: false)
     field(:parameters, {:array, :map}, default: [])
     field(:fixed_parameters, :map, default: %{})
 
@@ -80,7 +144,7 @@ defmodule Sanbase.Metric.Registry do
     field(:deprecation_note, :string, default: nil)
 
     field(:data_type, :string, default: "timeseries")
-    field(:docs_links, {:array, :string}, default: [])
+    embeds_many(:docs, Doc)
 
     timestamps()
   end
@@ -89,11 +153,9 @@ defmodule Sanbase.Metric.Registry do
     metric_registry
     |> cast(attrs, [
       :access,
-      :aggregation,
-      :aliases,
+      :default_aggregation,
       :data_type,
       :deprecation_note,
-      :docs_links,
       :exposed_environments,
       :fixed_parameters,
       :hard_deprecate_after,
@@ -103,34 +165,34 @@ defmodule Sanbase.Metric.Registry do
       :is_deprecated,
       :is_exposed,
       :is_hidden,
-      :is_template_metric,
+      :is_template,
       :is_timebound,
       :metric,
       :min_interval,
       :min_plan,
-      :parameters,
-      :required_selectors,
-      :selectors,
-      :table
+      :parameters
     ])
+    |> cast_embed(:selectors, required: false, with: &Selector.changeset/2)
+    |> cast_embed(:required_selectors, required: false, with: &Selector.changeset/2)
+    |> cast_embed(:tables, required: false, with: &Table.changeset/2)
+    |> cast_embed(:aliases, required: false, with: &Alias.changeset/2)
     |> validate_required([
       :access,
-      :aggregation,
+      :default_aggregation,
       :has_incomplete_data,
       :human_readable_name,
       :internal_metric,
       :metric,
-      :min_interval,
-      :table
+      :min_interval
     ])
-    |> validate_format(:metric, ~r/^[a-z0-9_]+$/)
-    |> validate_format(:internal_metric, ~r/^[a-z0-9_]+$/)
+    |> validate_format(:metric, ~r/^[a-z0-9_{}:]+$/)
+    |> validate_format(:internal_metric, ~r/^[a-z0-9_{}:]+$/)
     # Careful not to delete the space symbol at the end
     |> validate_format(:human_readable_name, @human_readable_name_regex)
     |> validate_length(:metric, min: 3, max: 100)
     |> validate_length(:internal_metric, min: 3, max: 100)
-    |> validate_length(:human_readable_name, min: 3, max: 100)
-    |> validate_inclusion(:aggregation, @aggregations)
+    |> validate_length(:human_readable_name, min: 3, max: 120)
+    |> validate_inclusion(:default_aggregation, @aggregations)
     |> validate_inclusion(:data_type, ["timeseries", "histogram", "table"])
     |> validate_inclusion(:exposed_environments, ["all", "stage", "prod"])
     |> validate_inclusion(:access, ["free", "restricted"])
@@ -201,7 +263,7 @@ defmodule Sanbase.Metric.Registry do
   end
 
   defp apply_template_parameters(%__MODULE__{} = registry)
-       when registry.is_template_metric == true do
+       when registry.is_template == true do
     %{
       metric: metric,
       internal_metric: internal_metric,
@@ -219,6 +281,6 @@ defmodule Sanbase.Metric.Registry do
     end
   end
 
-  defp apply_template_parameters(registry) when registry.is_template_metric == false,
+  defp apply_template_parameters(registry) when registry.is_template == false,
     do: [registry]
 end

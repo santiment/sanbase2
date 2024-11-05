@@ -45,25 +45,25 @@ defmodule Sanbase.Metric.Registry.Validation do
   end
 
   def validate_template_fields(%Ecto.Changeset{} = changeset) do
-    is_template_metric = get_field(changeset, :is_template_metric)
+    is_template = get_field(changeset, :is_template)
     parameters = get_field(changeset, :parameters)
 
     cond do
-      is_template_metric and parameters == [] ->
+      is_template and parameters == [] ->
         add_error(
           changeset,
           :parameters,
           "When the metric is labeled as template metric, parameters cannot be empty"
         )
 
-      not is_template_metric and parameters != [] ->
+      not is_template and parameters != [] ->
         add_error(
           changeset,
           :parameters,
           "When the metric is not labeled as template metric, the parameters must be empty"
         )
 
-      is_template_metric and parameters != [] ->
+      is_template and parameters != [] ->
         validate_parameters_match_captures(changeset)
 
       true ->

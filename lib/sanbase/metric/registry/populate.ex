@@ -14,32 +14,32 @@ defmodule Sanbase.Metric.Registry.Populate do
 
   def json_map_to_registry_changeset(%{} = map) do
     {:ok, captures} = Sanbase.TemplateEngine.Captures.extract_captures(map["name"])
-    is_template_metric = captures != []
+    is_template = captures != []
 
     %Sanbase.Metric.Registry{}
     |> Sanbase.Metric.Registry.changeset(%{
-      metric: map["name"],
-      internal_metric: map["metric"],
-      human_readable_name: map["human_readable_name"],
-      aliases: Map.get(map, "aliases", []),
       access: map["access"],
-      min_plan: Map.get(map, "min_plan", %{}),
-      table: map["table"] |> List.wrap(),
-      aggregation: map["aggregation"],
-      selectors: map["selectors"],
-      required_selectors: map["required_selectors"],
-      min_interval: map["min_interval"],
-      is_template_metric: is_template_metric,
-      parameters: Map.get(map, "parameters", []),
-      fixed_parameters: Map.get(map, "fixed_parameters", %{}),
-      is_deprecated: Map.get(map, "is_deprecated", false),
-      hard_deprecate_after: map["hard_deprecate_after"],
-      deprecation_note: map["deprecation_note"],
-      has_incomplete_data: Map.get(map, "has_incomplete_data", false),
+      default_aggregation: map["aggregation"],
+      aliases: Map.get(map, "aliases", []) |> Enum.map(&%{name: &1}),
       data_type: map["data_type"],
-      docs_links: Map.get(map, "docs_links", []),
+      deprecation_note: map["deprecation_note"],
+      docs: Map.get(map, "docs_links", []) |> Enum.map(&%{link: &1}),
+      fixed_parameters: Map.get(map, "fixed_parameters", %{}),
+      hard_deprecate_after: map["hard_deprecate_after"],
+      has_incomplete_data: Map.get(map, "has_incomplete_data", false),
+      human_readable_name: map["human_readable_name"],
+      internal_metric: map["metric"],
+      is_deprecated: Map.get(map, "is_deprecated", false),
+      is_hidden: Map.get(map, "is_hidden", false),
+      is_template: is_template,
       is_timebound: Map.get(map, "is_timebound", false),
-      is_hidden: Map.get(map, "is_hidden", false)
+      metric: map["name"],
+      min_interval: map["min_interval"],
+      min_plan: Map.get(map, "min_plan", %{}),
+      parameters: Map.get(map, "parameters", []),
+      required_selectors: Map.get(map, "required_selectors", []) |> Enum.map(&%{type: &1}),
+      selectors: Map.get(map, "selectors", []) |> Enum.map(&%{type: &1}),
+      tables: map["table"] |> List.wrap() |> Enum.map(&%{name: &1})
     })
   end
 

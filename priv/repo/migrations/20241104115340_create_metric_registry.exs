@@ -63,11 +63,11 @@ defmodule Sanbase.Repo.Migrations.CreateMetricRegistry do
       add(:metric, :string, null: false)
       add(:internal_metric, :string, null: false)
       add(:human_readable_name, :string, null: false)
-      add(:aliases, :string, null: false, default: [])
-      add(:tables, :string, null: false)
+      add(:aliases, :map)
+      add(:tables, :map, null: false)
 
       add(:is_template, :boolean, null: false, default: false)
-      add(:parameters, :map, null: false, default: [])
+      add(:parameters, :map, null: false, default: "{}")
       add(:fixed_parameters, :map, null: "false", default: "{}")
 
       add(:is_timebound, :boolean, null: false, null: false)
@@ -75,8 +75,8 @@ defmodule Sanbase.Repo.Migrations.CreateMetricRegistry do
       add(:exposed_environments, :string, null: false, default: "all")
 
       add(:version, :string)
-      add(:selectors, :map, null: false, default: [])
-      add(:required_selectors, :map, null: false, default: "{}")
+      add(:selectors, :map)
+      add(:required_selectors, :map)
 
       add(:access, :string, null: false)
       add(:min_plan, :jsonb, null: false, default: "{}")
@@ -84,7 +84,7 @@ defmodule Sanbase.Repo.Migrations.CreateMetricRegistry do
       add(:min_interval, :string, null: false)
       add(:has_incomplete_data, :boolean, null: false)
       add(:data_type, :string, null: false, default: "timeseries")
-      add(:docs_links, :map, null: false, default: "{}")
+      add(:docs, :map)
 
       add(:is_hidden, :boolean, null: false, default: false)
       add(:is_deprecated, :boolean, null: false, default: false)

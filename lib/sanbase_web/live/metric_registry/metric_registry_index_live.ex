@@ -52,7 +52,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           popover_target="popover-table"
           popover_target_text={get_popover_text(%{key: "Clickhouse Table"})}
         >
-          <%= row.table %>
+          <.embeded_schema_show list={row.tables} key={:name} />
         </:col>
         <:col
           :let={row}
@@ -60,7 +60,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           popover_target="popover-default-aggregation"
           popover_target_text={get_popover_text(%{key: "Default Aggregation"})}
         >
-          <%= row.aggregation %>
+          <%= row.default_aggregation %>
         </:col>
         <:col
           :let={row}
@@ -79,6 +79,16 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           <.action_button metric={row.metric} text="Edit" href={~p"/metric_registry/edit/#{row.id}"} />
         </:col>
       </AvailableMetricsComponents.table_with_popover_th>
+    </div>
+    """
+  end
+
+  def embeded_schema_show(assigns) do
+    ~H"""
+    <div>
+      <div :for={item <- @list}>
+        <%= Map.get(item, @key) %>
+      </div>
     </div>
     """
   end

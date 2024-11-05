@@ -206,6 +206,28 @@ defmodule SanbaseWeb.GenericAdminController do
     apply(admin_module, String.to_existing_atom(action), [conn, %{resource: resource, id: id}])
   end
 
+  def custom_action(conn, %{"resource" => resource, "id" => id, "action" => action}) do
+    resource_config = resource_module_map()[resource]
+    module = resource_config[:module]
+    admin_module = resource_config[:admin_module]
+
+    # Fetch the record
+    data = Repo.get(module, id) |> Repo.preload(resource_config[:preloads] || [])
+
+    # Call the handler in the admin module and handle the response
+    case apply(admin_module, String.to_existing_atom(action), [data]) do
+      {:ok, message} ->
+        conn
+        |> put_flash(:info, message)
+        |> redirect(to: Routes.generic_admin_path(conn, :show, id, resource: resource))
+
+      {:error, message} ->
+        conn
+        |> put_flash(:error, message)
+        |> redirect(to: Routes.generic_admin_path(conn, :show, id, resource: resource))
+    end
+  end
+
   # private
 
   defp create_and_redirect(conn, changeset, params, changes, resource, admin_module) do
@@ -375,6 +397,7 @@ defmodule SanbaseWeb.GenericAdminController do
     collections = field_key_map(fields_override, :collection)
     belongs_to_fields = resource_config[:belongs_to_fields] || %{}
     belongs_to_fields = transform_belongs_to(belongs_to_fields, params)
+    custom_actions = resource_config[:custom_actions] || []
 
     fields = determine_fields(action, resource_config, module, extra_fields)
 
@@ -387,7 +410,8 @@ defmodule SanbaseWeb.GenericAdminController do
       field_type_map: field_type_map,
       search_fields: fields(module, extra_fields),
       collections: collections,
-      belongs_to_fields: belongs_to_fields
+      belongs_to_fields: belongs_to_fields,
+      custom_actions: custom_actions
     }
   end
 

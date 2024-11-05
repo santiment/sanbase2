@@ -14,8 +14,14 @@ defmodule Sanbase.Notifications.Sender do
     end
 
     if :email in notification.channels do
-      content = notification.content
-      email_client().send_email("test@example.com", "Metric Deprecation Notice", content)
+      # Create email notification with multiple addresses
+      Notifications.create_email_notification(%{
+        notification_id: notification.id,
+        # TODO: get actual addresses from user settings
+        to_addresses: ["test@example.com", "other@example.com"],
+        subject: "Metric Deprecation Notice",
+        content: notification.content
+      })
     end
 
     # Update notification status, e.g., to :sent
@@ -23,6 +29,16 @@ defmodule Sanbase.Notifications.Sender do
       status: :completed,
       sent_at: DateTime.utc_now()
     })
+  end
+
+  def send_approved_email(%Notifications.EmailNotification{} = email_notification) do
+    Sanbase.Email.MailjetApi.send_to_list(
+      :metric_updates,
+      email_notification.subject,
+      email_notification.content
+    )
+
+    Notifications.update_email_notification(email_notification, %{sent_at: DateTime.utc_now()})
   end
 
   def discord_client do

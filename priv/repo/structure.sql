@@ -1237,6 +1237,43 @@ ALTER SEQUENCE public.email_login_attempts_id_seq OWNED BY public.email_login_at
 
 
 --
+-- Name: email_notifications; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.email_notifications (
+    id bigint NOT NULL,
+    notification_id bigint,
+    to_addresses character varying(255)[] NOT NULL,
+    subject character varying(255) NOT NULL,
+    content text NOT NULL,
+    status character varying(255) DEFAULT 'pending'::character varying,
+    approved_at timestamp(0) without time zone,
+    sent_at timestamp(0) without time zone,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: email_notifications_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.email_notifications_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: email_notifications_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.email_notifications_id_seq OWNED BY public.email_notifications.id;
+
+
+--
 -- Name: post_comments_mapping; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -4529,6 +4566,41 @@ ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
 
 
 --
+-- Name: versions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.versions (
+    id bigint NOT NULL,
+    patch bytea,
+    entity_id integer,
+    entity_schema character varying(255),
+    action character varying(255),
+    recorded_at timestamp(0) without time zone,
+    rollback boolean DEFAULT false,
+    user_id bigint
+);
+
+
+--
+-- Name: versions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.versions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: versions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.versions_id_seq OWNED BY public.versions.id;
+
+
+--
 -- Name: votes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -5013,6 +5085,13 @@ ALTER TABLE ONLY public.ecosystems ALTER COLUMN id SET DEFAULT nextval('public.e
 --
 
 ALTER TABLE ONLY public.email_login_attempts ALTER COLUMN id SET DEFAULT nextval('public.email_login_attempts_id_seq'::regclass);
+
+
+--
+-- Name: email_notifications id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.email_notifications ALTER COLUMN id SET DEFAULT nextval('public.email_notifications_id_seq'::regclass);
 
 
 --
@@ -5590,6 +5669,13 @@ ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_
 
 
 --
+-- Name: versions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.versions ALTER COLUMN id SET DEFAULT nextval('public.versions_id_seq'::regclass);
+
+
+--
 -- Name: votes id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -5874,6 +5960,14 @@ ALTER TABLE ONLY public.ecosystems
 
 ALTER TABLE ONLY public.email_login_attempts
     ADD CONSTRAINT email_login_attempts_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: email_notifications email_notifications_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.email_notifications
+    ADD CONSTRAINT email_notifications_pkey PRIMARY KEY (id);
 
 
 --
@@ -6621,6 +6715,14 @@ ALTER TABLE ONLY public.users
 
 
 --
+-- Name: versions versions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.versions
+    ADD CONSTRAINT versions_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: votes votes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6936,6 +7038,20 @@ CREATE INDEX email_login_attempts_ip_address_index ON public.email_login_attempt
 --
 
 CREATE INDEX email_login_attempts_user_id_index ON public.email_login_attempts USING btree (user_id);
+
+
+--
+-- Name: email_notifications_notification_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX email_notifications_notification_id_index ON public.email_notifications USING btree (notification_id);
+
+
+--
+-- Name: email_notifications_status_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX email_notifications_status_index ON public.email_notifications USING btree (status);
 
 
 --
@@ -7709,6 +7825,13 @@ CREATE UNIQUE INDEX users_username_index ON public.users USING btree (username);
 
 
 --
+-- Name: versions_entity_schema_entity_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX versions_entity_schema_entity_id_index ON public.versions USING btree (entity_schema, entity_id);
+
+
+--
 -- Name: votes_chart_configuration_id_user_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8108,6 +8231,14 @@ ALTER TABLE ONLY public.discord_dashboards
 
 ALTER TABLE ONLY public.email_login_attempts
     ADD CONSTRAINT email_login_attempts_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: email_notifications email_notifications_notification_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.email_notifications
+    ADD CONSTRAINT email_notifications_notification_id_fkey FOREIGN KEY (notification_id) REFERENCES public.notifications(id) ON DELETE SET NULL;
 
 
 --
@@ -8919,6 +9050,14 @@ ALTER TABLE ONLY public.user_uniswap_staking
 
 
 --
+-- Name: versions versions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.versions
+    ADD CONSTRAINT versions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
 -- Name: votes votes_chart_configuration_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -9539,3 +9678,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20241018075640);
 INSERT INTO public."schema_migrations" (version) VALUES (20241029080754);
 INSERT INTO public."schema_migrations" (version) VALUES (20241029082533);
 INSERT INTO public."schema_migrations" (version) VALUES (20241029151959);
+INSERT INTO public."schema_migrations" (version) VALUES (20241030141825);
+INSERT INTO public."schema_migrations" (version) VALUES (20241104061632);

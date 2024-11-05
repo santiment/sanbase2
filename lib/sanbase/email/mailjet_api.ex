@@ -4,11 +4,15 @@ defmodule Sanbase.Email.MailjetApi do
 
   def subscribe(list_atom, email_or_emails), do: @module.subscribe(list_atom, email_or_emails)
   def unsubscribe(list_atom, email_or_emails), do: @module.unsubscribe(list_atom, email_or_emails)
+
+  def send_to_list(list_atom, subject, content),
+    do: @module.send_to_list(list_atom, subject, content)
 end
 
 defmodule Sanbase.Email.MailjetApiTest do
   def subscribe(_, _), do: :ok
   def unsubscribe(_, _), do: :ok
+  def send_to_list(_, _, _), do: :ok
 end
 
 defmodule Sanbase.Email.MailjetApiImpl do
@@ -30,12 +34,52 @@ defmodule Sanbase.Email.MailjetApiImpl do
     metric_updates: @metric_updates_list_id
   }
 
+  @send_api_url "https://api.mailjet.com/v3.1/send"
+
   def subscribe(list_atom, email_or_emails) do
     subscribe_unsubscribe(list_atom, email_or_emails, :subscribe)
   end
 
   def unsubscribe(list_atom, email_or_emails) do
     subscribe_unsubscribe(list_atom, email_or_emails, :unsubscribe)
+  end
+
+  def send_to_list(list_atom, subject, content) do
+    payload = %{
+      "Messages" => [
+        %{
+          "From" => %{
+            "Email" => "support@santiment.net",
+            "Name" => "Santiment"
+          },
+          "Subject" => subject,
+          "HTMLPart" => content,
+          "To" => [],
+          "ContactsList" => %{
+            "ListID" => @mailjet_lists[list_atom]
+          }
+        }
+      ]
+    }
+
+    Req.post!(
+      @send_api_url,
+      json: payload,
+      headers: headers()
+    )
+    |> case do
+      %{status: code} when code in [200, 201] ->
+        Logger.info("Email sent to Mailjet list #{list_atom}")
+        :ok
+
+      %{status: _code} = response ->
+        Logger.error("Error sending email to Mailjet list: #{inspect(response)}")
+        {:error, response.body}
+    end
+  rescue
+    error ->
+      Logger.error("Error sending email to Mailjet list. Reason: #{inspect(error)}")
+      {:error, error}
   end
 
   # private

@@ -94,6 +94,8 @@ defmodule SanbaseWeb.Router do
     get("/generic/search", GenericAdminController, :search)
     get("/generic/show_action", GenericAdminController, :show_action)
     resources("/generic", GenericAdminController)
+
+    post "/generic/:resource/:id/action/:action", GenericAdminController, :custom_action
   end
 
   scope "/" do

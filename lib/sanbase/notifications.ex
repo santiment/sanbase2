@@ -7,6 +7,7 @@ defmodule Sanbase.Notifications do
   alias Sanbase.Repo
 
   alias Sanbase.Notifications.NotificationAction
+  alias Sanbase.Notifications.EmailNotification
 
   @doc """
   Returns the list of notification_actions.
@@ -323,4 +324,33 @@ defmodule Sanbase.Notifications do
         template
     end
   end
+
+  def create_email_notification(attrs \\ %{}) do
+    %EmailNotification{}
+    |> EmailNotification.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def list_pending_email_notifications do
+    EmailNotification
+    |> where([e], e.status == "pending")
+    |> Repo.all()
+  end
+
+  def approve_email_notification(email_notification_id) do
+    get_email_notification!(email_notification_id)
+    |> EmailNotification.changeset(%{
+      status: "approved",
+      approved_at: DateTime.utc_now()
+    })
+    |> Repo.update()
+  end
+
+  def reject_email_notification(email_notification_id) do
+    get_email_notification!(email_notification_id)
+    |> EmailNotification.changeset(%{status: "rejected"})
+    |> Repo.update()
+  end
+
+  def get_email_notification!(id), do: Repo.get!(EmailNotification, id)
 end

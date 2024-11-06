@@ -21,11 +21,14 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col items-start justify-evenly">
-      <.filters filter={@filter} />
       <div class="text-gray-400 text-sm py-2">
         <div>
           Showing <%= length(@visible_metrics) %> metrics
         </div>
+      </div>
+      <.filters filter={@filter} />
+      <div class="my-2">
+        <.action_button text="Create New Metric" href={~p"/metric_registry/new"} />
       </div>
       <AvailableMetricsComponents.table_with_popover_th id="metrics_registry" rows={@visible_metrics}>
         <:col :let={row} label="ID">
@@ -75,8 +78,8 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           popover_target="popover-metric-details"
           popover_target_text={get_popover_text(%{key: "Metric Details"})}
         >
-          <.action_button metric={row.metric} text="Show" href={~p"/metric_registry/show/#{row.id}"} />
-          <.action_button metric={row.metric} text="Edit" href={~p"/metric_registry/edit/#{row.id}"} />
+          <.action_button text="Show" href={~p"/metric_registry/show/#{row.id}"} />
+          <.action_button text="Edit" href={~p"/metric_registry/edit/#{row.id}"} />
         </:col>
       </AvailableMetricsComponents.table_with_popover_th>
     </div>
@@ -113,23 +116,21 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     <div>
       <form
         phx-change="apply_filters"
-        class="flex flex-col flex-wrap space-y-2 items-start md:flex-row md:items-center md:gap-x-8"
+        class="flex flex-col flex-wrap space-y-2 items-start md:flex-row md:items-center md:gap-x-2 md:space-y-0"
       >
-        <div>
-          <.filter_input
-            id="metric-name-search"
-            value={@filter["match_metric"]}
-            name="match_metric"
-            placeholder="Filter by metric name"
-          />
+        <.filter_input
+          id="metric-name-search"
+          value={@filter["match_metric"]}
+          name="match_metric"
+          placeholder="Filter by metric name"
+        />
 
-          <.filter_input
-            id="table-search"
-            value={@filter["match_table"]}
-            name="match_table"
-            placeholder="Filter by table"
-          />
-        </div>
+        <.filter_input
+          id="table-search"
+          value={@filter["match_table"]}
+          name="match_table"
+          placeholder="Filter by table"
+        />
       </form>
     </div>
     """

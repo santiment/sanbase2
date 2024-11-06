@@ -41,7 +41,8 @@ defmodule Sanbase.EventBus do
     :insight_events,
     :invalid_events,
     :user_events,
-    :watchlist_events
+    :watchlist_events,
+    :metric_registry_events
   ]
 
   @subscribers [

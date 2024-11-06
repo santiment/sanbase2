@@ -48,7 +48,6 @@ defmodule Sanbase.Metric.Registry do
     use Ecto.Schema
     import Ecto.Changeset
 
-    @primary_key false
     embedded_schema do
       field(:type, :string)
     end
@@ -64,7 +63,6 @@ defmodule Sanbase.Metric.Registry do
     use Ecto.Schema
     import Ecto.Changeset
 
-    @primary_key false
     embedded_schema do
       field(:name, :string)
     end
@@ -80,7 +78,6 @@ defmodule Sanbase.Metric.Registry do
     use Ecto.Schema
     import Ecto.Changeset
 
-    @primary_key false
     embedded_schema do
       field(:name, :string)
     end
@@ -96,7 +93,6 @@ defmodule Sanbase.Metric.Registry do
     use Ecto.Schema
     import Ecto.Changeset
 
-    @primary_key false
     embedded_schema do
       field(:link, :string)
     end
@@ -113,18 +109,18 @@ defmodule Sanbase.Metric.Registry do
     # How the metric is exposed to external users
     field(:metric, :string)
     field(:human_readable_name, :string)
-    embeds_many(:aliases, Alias)
+    embeds_many(:aliases, Alias, on_replace: :delete)
 
     # What is the name of the metric in the DB and where to find it
     field(:internal_metric, :string)
-    embeds_many(:tables, Table)
+    embeds_many(:tables, Table, on_replace: :delete)
 
     field(:default_aggregation, :string)
     field(:min_interval, :string)
     field(:access, :string)
     field(:min_plan, :map)
-    embeds_many(:selectors, Selector)
-    embeds_many(:required_selectors, Selector)
+    embeds_many(:selectors, Selector, on_replace: :delete)
+    embeds_many(:required_selectors, Selector, on_replace: :delete)
 
     # If the metric is a template metric, then the parameters need to be used
     # to define the full set of metrics
@@ -172,10 +168,30 @@ defmodule Sanbase.Metric.Registry do
       :min_plan,
       :parameters
     ])
-    |> cast_embed(:selectors, required: false, with: &Selector.changeset/2)
-    |> cast_embed(:required_selectors, required: false, with: &Selector.changeset/2)
-    |> cast_embed(:tables, required: false, with: &Table.changeset/2)
-    |> cast_embed(:aliases, required: false, with: &Alias.changeset/2)
+    |> cast_embed(:selectors,
+      required: false,
+      with: &Selector.changeset/2,
+      sort_param: :selectors_sort,
+      drop_param: :selectors_drop
+    )
+    |> cast_embed(:required_selectors,
+      required: false,
+      with: &Selector.changeset/2,
+      sort_param: :required_selectors_sort,
+      drop_param: :required_selectors_drop
+    )
+    |> cast_embed(:tables,
+      required: false,
+      with: &Table.changeset/2,
+      sort_param: :tables_sort,
+      drop_param: :tables_drop
+    )
+    |> cast_embed(:aliases,
+      required: false,
+      with: &Alias.changeset/2,
+      sort_param: :aliases_sort,
+      drop_param: :aliases_drop
+    )
     |> validate_required([
       :access,
       :default_aggregation,
@@ -187,7 +203,6 @@ defmodule Sanbase.Metric.Registry do
     ])
     |> validate_format(:metric, ~r/^[a-z0-9_{}:]+$/)
     |> validate_format(:internal_metric, ~r/^[a-z0-9_{}:]+$/)
-    # Careful not to delete the space symbol at the end
     |> validate_format(:human_readable_name, @human_readable_name_regex)
     |> validate_length(:metric, min: 3, max: 100)
     |> validate_length(:internal_metric, min: 3, max: 100)

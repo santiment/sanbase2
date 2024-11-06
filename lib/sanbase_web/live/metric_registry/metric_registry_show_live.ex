@@ -93,6 +93,12 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
         popover_target_text: get_popover_text(%{key: "Internal Name"})
       },
       %{
+        key: "Aliases",
+        value: metric_registry.aliases |> Enum.map(& &1.name) |> Enum.join(", "),
+        popover_target: "popover-aliases",
+        popover_target_text: get_popover_text(%{key: "Alias"})
+      },
+      %{
         key: "Table",
         value: metric_registry.tables |> Enum.map(& &1.name) |> Enum.join(", "),
         popover_target: "popover-clickhouse-table",
@@ -166,14 +172,19 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
       },
       %{
         key: "Selectors",
-        value: metric_registry.selectors |> Enum.map(&Map.from_struct/1) |> Jason.encode!(),
+        value:
+          metric_registry.selectors
+          |> Enum.map(&Map.delete(Map.from_struct(&1), :id))
+          |> Jason.encode!(),
         popover_target: "popover-selectors",
         popover_target_text: get_popover_text(%{key: "Available Selectors"})
       },
       %{
         key: "Required Selectors",
         value:
-          metric_registry.required_selectors |> Enum.map(&Map.from_struct/1) |> Jason.encode!(),
+          metric_registry.required_selectors
+          |> Enum.map(&Map.delete(Map.from_struct(&1), :id))
+          |> Jason.encode!(),
         popover_target: "popover-required-selectors",
         popover_target_text: get_popover_text(%{key: "Required Selectors"})
       },

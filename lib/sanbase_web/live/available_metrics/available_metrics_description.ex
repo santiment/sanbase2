@@ -21,6 +21,23 @@ defmodule SanbaseWeb.AvailableMetricsDescription do
     """
   end
 
+  def get_popover_text(%{key: "Alias"} = assigns) do
+    ~H"""
+    <pre>
+    The aliases are used to provide alternative names for the metric.
+    Example:
+      {
+        getMetric(<b>metric: "age_consumed"</b>){
+          timeseriesData(asset: "ethereum" from: "utc_now-90d" to: "utc_now" interval: "1d"){
+            datetime
+            value
+          }
+        }
+      }
+    </pre>
+    """
+  end
+
   def get_popover_text(%{key: "Internal Name"} = assigns) do
     ~H"""
     <pre>

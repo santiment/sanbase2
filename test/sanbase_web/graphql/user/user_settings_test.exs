@@ -182,7 +182,8 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
              "isSubscribedBiweeklyReport" => false,
              "isSubscribedEduEmails" => true,
              "isSubscribedMonthlyNewsletter" => true,
-             "isSubscribedMarketingEmails" => false
+             "isSubscribedMarketingEmails" => false,
+             "isSubscribedMetricUpdates" => false
            }
   end
 
@@ -201,7 +202,8 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
              "isSubscribedBiweeklyReport" => false,
              "isSubscribedEduEmails" => true,
              "isSubscribedMonthlyNewsletter" => true,
-             "isSubscribedMarketingEmails" => false
+             "isSubscribedMarketingEmails" => false,
+             "isSubscribedMetricUpdates" => false
            }
   end
 
@@ -231,6 +233,16 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
       result = execute_mutation(context.conn, query)
       assert result["isSubscribedBiweeklyReport"]
     end
+
+    test "toggle metric updates email setting", context do
+      query = change_email_settings("isSubscribedMetricUpdates: true")
+      result = execute_mutation(context.conn, query)
+      assert result["isSubscribedMetricUpdates"]
+
+      query = change_email_settings("isSubscribedMetricUpdates: false")
+      result = execute_mutation(context.conn, query)
+      refute result["isSubscribedMetricUpdates"]
+    end
   end
 
   defp current_user_query() do
@@ -250,6 +262,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
           isSubscribedMonthlyNewsletter
           isSubscribedBiweeklyReport
           isSubscribedMarketingEmails
+          isSubscribedMetricUpdates
         }
       }
     }
@@ -328,6 +341,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
         isSubscribedEduEmails
         isSubscribedMonthlyNewsletter
         isSubscribedBiweeklyReport
+        isSubscribedMetricUpdates
       }
     }
     """

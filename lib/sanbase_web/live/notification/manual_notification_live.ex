@@ -5,7 +5,6 @@ defmodule SanbaseWeb.ManualNotificationLive do
 
   @channel_discord :discord
   @channel_email :email
-  @valid_channels [@channel_discord, @channel_email]
 
   @impl true
   def mount(_params, _session, socket) do

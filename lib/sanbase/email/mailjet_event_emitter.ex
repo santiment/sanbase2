@@ -34,6 +34,20 @@ defmodule Sanbase.Email.MailjetEventEmitter do
     |> notify()
   end
 
+  def handle_event({:ok, user_id}, :is_subscribed_metric_updates, data) do
+    event_type =
+      case data[:is_subscribed_metric_updates] do
+        true -> :subscribe_metric_updates
+        false -> :unsubscribe_metric_updates
+      end
+
+    %{
+      event_type: event_type,
+      user_id: user_id
+    }
+    |> notify()
+  end
+
   defp notify(data) do
     Sanbase.EventBus.notify(%{topic: @topic, data: data})
     :ok

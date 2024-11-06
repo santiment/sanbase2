@@ -75,6 +75,13 @@ defmodule Sanbase.EventBus.BillingEventSubscriber do
        when event_type == :create_subscription do
     subscription = Sanbase.Billing.Subscription.by_id(event.data.subscription_id)
 
+    user = Sanbase.Accounts.get_user!(subscription.user_id)
+
+    {:ok, _settings} =
+      Sanbase.Accounts.UserSettings.update_settings(user, %{
+        is_subscribed_metric_updates: true
+      })
+
     cond do
       Subscription.trialing_sanbase_pro?(subscription) ->
         EmailJobs.send_trial_started_email(subscription)
@@ -96,6 +103,17 @@ defmodule Sanbase.EventBus.BillingEventSubscriber do
       true ->
         :ok
     end
+  end
+
+  defp do_handle(:cancel_subscription_at_period_end, event_type, event)
+       when event_type == :cancel_subscription_at_period_end do
+    subscription = Sanbase.Billing.Subscription.by_id(event.data.subscription_id)
+    user = Sanbase.Accounts.get_user!(subscription.user_id)
+
+    {:ok, _settings} =
+      Sanbase.Accounts.UserSettings.update_settings(user, %{
+        is_subscribed_metric_updates: false
+      })
   end
 
   defp do_handle(:send_discord_notification, event_type, event)

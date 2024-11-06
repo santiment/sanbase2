@@ -174,7 +174,12 @@ defmodule Sanbase.Accounts.UserSettings do
 
   defp maybe_emit_event_on_changes(user_id, %{settings: settings}) do
     settings_changes = settings.changes
-    email_lists_keys = [:is_subscribed_biweekly_report, :is_subscribed_monthly_newsletter]
+
+    email_lists_keys = [
+      :is_subscribed_biweekly_report,
+      :is_subscribed_monthly_newsletter,
+      :is_subscribed_metric_updates
+    ]
 
     for key <- Map.keys(settings_changes) do
       if key in email_lists_keys do

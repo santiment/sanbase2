@@ -209,7 +209,7 @@ defmodule Sanbase.Metric.Registry do
     |> validate_length(:human_readable_name, min: 3, max: 120)
     |> validate_inclusion(:default_aggregation, @aggregations)
     |> validate_inclusion(:data_type, ["timeseries", "histogram", "table"])
-    |> validate_inclusion(:exposed_environments, ["all", "stage", "prod"])
+    |> validate_inclusion(:exposed_environments, ["all", "none", "stage", "prod"])
     |> validate_inclusion(:access, ["free", "restricted"])
     |> validate_change(:min_interval, &Validation.validate_min_interval/2)
     |> validate_change(:min_plan, &Validation.validate_min_plan/2)

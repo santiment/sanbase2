@@ -117,14 +117,33 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
       data =
         Sanbase.Metric.Registry.all()
         |> Sanbase.Metric.Registry.resolve()
-        |> then(fn list ->
-          if Keyword.get(opts, :remove_hard_deprecated, true),
-            do: remove_hard_deprecated(list),
-            else: list
-        end)
+        |> filter_exposed_environments(opts)
+        |> filter_hard_deprecated(opts)
 
       {:ok, data}
     end)
+  end
+
+  defp filter_exposed_environments(metrics, _opts) do
+    deploy_env = Sanbase.Utils.Config.module_get(Sanbase, :deployment_env)
+
+    # the value of exposed_environments can be one of: all, none, stage, prod.
+    # the metric is visible if it is "all" or if the env
+    # matches the current deploy env of stage or prod.
+    # also, in dev mode all metrics are visible, for dev purposes
+    Enum.filter(
+      metrics,
+      fn m ->
+        m.exposed_environments in [deploy_env, "all"] or
+          deploy_env == "dev"
+      end
+    )
+  end
+
+  defp filter_hard_deprecated(metrics, opts) do
+    if Keyword.get(opts, :remove_hard_deprecated, true),
+      do: remove_hard_deprecated(metrics),
+      else: metrics
   end
 
   defp get_metrics_from_json(opts) do

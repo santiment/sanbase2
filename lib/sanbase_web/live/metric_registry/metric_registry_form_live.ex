@@ -107,6 +107,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
           label="Access"
           options={["timeseries", "histogram", "table"]}
         />
+        <.docs_input form={@form} />
         <.selectors_input form={@form} />
         <.required_selectors_input form={@form} />
 
@@ -206,6 +207,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
   attr :embeded_schema_field, :atom, required: true
   attr :sort_param, :atom, required: true
   attr :drop_param, :atom, required: true
+  attr :placeholder, :string, required: false, default: nil
 
   def embeds_input(assigns) do
     ~H"""
@@ -215,7 +217,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
       </span>
       <.inputs_for :let={ef} field={@form[@form_field]}>
         <input type="hidden" name={"registry[#{@sort_param}][]"} value={ef.index} />
-        <.input type="text" field={ef[@embeded_schema_field]} placeholder={@singular} />
+        <.input type="text" field={ef[@embeded_schema_field]} placeholder={@placeholder || @singular} />
 
         <.inputs_for_drop_button
           ef={ef}
@@ -255,6 +257,21 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
       embeded_schema_field={:name}
       sort_param={:tables_sort}
       drop_param={:tables_drop}
+    />
+    """
+  end
+
+  def docs_input(assigns) do
+    ~H"""
+    <.embeds_input
+      form={@form}
+      plural="docs"
+      singular="doc"
+      placeholder="https://academy.santiment.net/..."
+      form_field={:docs}
+      embeded_schema_field={:link}
+      sort_param={:docs_sort}
+      drop_param={:docs_drop}
     />
     """
   end

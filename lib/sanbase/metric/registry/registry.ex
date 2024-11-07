@@ -16,36 +16,6 @@ defmodule Sanbase.Metric.Registry do
   @metric_regex ~r/^[a-z0-9_{}:]+$/
   def metric_regex(), do: @metric_regex
 
-  @type t :: %__MODULE__{
-          id: integer(),
-          metric: String.t(),
-          human_readable_name: String.t(),
-          aliases: [String.t()],
-          internal_metric: String.t(),
-          tables: [String.t()],
-          default_aggregation: String.t(),
-          min_interval: String.t(),
-          access: String.t(),
-          sanbase_min_plan: String.t(),
-          sanapi_min_plan: String.t(),
-          selectors: [String.t()],
-          required_selectors: [String.t()],
-          is_template: boolean(),
-          parameters: [map()],
-          fixed_parameters: map(),
-          is_timebound: boolean(),
-          has_incomplete_data: boolean(),
-          exposed_environments: String.t(),
-          is_hidden: boolean(),
-          is_deprecated: boolean(),
-          hard_deprecate_after: DateTime.t(),
-          deprecation_note: String.t(),
-          data_type: String.t(),
-          docs: [String.t()],
-          inserted_at: DateTime.t(),
-          updated_at: DateTime.t()
-        }
-
   defmodule Selector do
     use Ecto.Schema
     import Ecto.Changeset
@@ -106,9 +76,39 @@ defmodule Sanbase.Metric.Registry do
       struct
       |> cast(attrs, [:link])
       |> validate_required([:link])
+      |> validate_format(:link, ~r|https://academy.santiment.net|)
     end
   end
 
+  @type t :: %__MODULE__{
+          id: integer(),
+          metric: String.t(),
+          human_readable_name: String.t(),
+          aliases: [%Alias{}],
+          internal_metric: String.t(),
+          tables: [%Table{}],
+          default_aggregation: String.t(),
+          min_interval: String.t(),
+          access: String.t(),
+          sanbase_min_plan: String.t(),
+          sanapi_min_plan: String.t(),
+          selectors: [%Selector{}],
+          required_selectors: [%Selector{}],
+          is_template: boolean(),
+          parameters: [map()],
+          fixed_parameters: map(),
+          is_timebound: boolean(),
+          has_incomplete_data: boolean(),
+          exposed_environments: String.t(),
+          is_hidden: boolean(),
+          is_deprecated: boolean(),
+          hard_deprecate_after: DateTime.t(),
+          deprecation_note: String.t(),
+          data_type: String.t(),
+          docs: [%Doc{}],
+          inserted_at: DateTime.t(),
+          updated_at: DateTime.t()
+        }
   @timestamps_opts [type: :utc_datetime]
   schema "metric_registry" do
     # How the metric is exposed to external users
@@ -118,15 +118,12 @@ defmodule Sanbase.Metric.Registry do
 
     # What is the name of the metric in the DB and where to find it
     field(:internal_metric, :string)
-    embeds_many(:tables, Table, on_replace: :delete)
 
     field(:default_aggregation, :string)
     field(:min_interval, :string)
     field(:access, :string)
     field(:sanbase_min_plan, :string)
     field(:sanapi_min_plan, :string)
-    embeds_many(:selectors, Selector, on_replace: :delete)
-    embeds_many(:required_selectors, Selector, on_replace: :delete)
 
     # If the metric is a template metric, then the parameters need to be used
     # to define the full set of metrics
@@ -145,7 +142,11 @@ defmodule Sanbase.Metric.Registry do
     field(:deprecation_note, :string, default: nil)
 
     field(:data_type, :string, default: "timeseries")
-    embeds_many(:docs, Doc)
+
+    embeds_many(:tables, Table, on_replace: :delete)
+    embeds_many(:selectors, Selector, on_replace: :delete)
+    embeds_many(:required_selectors, Selector, on_replace: :delete)
+    embeds_many(:docs, Doc, on_replace: :delete)
 
     timestamps()
   end
@@ -196,6 +197,12 @@ defmodule Sanbase.Metric.Registry do
       with: &Alias.changeset/2,
       sort_param: :aliases_sort,
       drop_param: :aliases_drop
+    )
+    |> cast_embed(:docs,
+      required: false,
+      with: &Doc.changeset/2,
+      sort_param: :docs_sort,
+      drop_param: :docs_drop
     )
     |> validate_required([
       :access,

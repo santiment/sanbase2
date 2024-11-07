@@ -2,7 +2,7 @@ defmodule Sanbase.Notifications.Notification do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Sanbase.Notifications.NotificationAction
+  alias Sanbase.Notifications.{NotificationAction, EmailNotification}
 
   schema "notifications" do
     field(:status, NotificationStatusEnum, default: :pending)
@@ -15,6 +15,7 @@ defmodule Sanbase.Notifications.Notification do
     field(:template_params, :map, default: %{})
 
     belongs_to(:notification_action, NotificationAction)
+    has_one(:email_notification, EmailNotification)
 
     timestamps()
   end

@@ -57,4 +57,21 @@ defmodule SanbaseWeb.GenericAdmin.Notification do
       filters: [:status, :step, :display_in_ui, :notification_action_id]
     }
   end
+
+  def has_many(notification) do
+    notification =
+      notification
+      |> Sanbase.Repo.preload([:email_notification])
+
+    [
+      %{
+        resource: "email_notifications",
+        resource_name: "Email Notifications",
+        rows: [notification.email_notification],
+        fields: [:id, :status, :subject, :body, :inserted_at],
+        funcs: %{},
+        create_link_kv: []
+      }
+    ]
+  end
 end

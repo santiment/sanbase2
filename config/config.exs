@@ -284,6 +284,14 @@ config :nostrum,
     :message_content
   ]
 
+config :ex_audit,
+  ecto_repos: [Sanbase.Repo],
+  version_schema: Sanbase.Version,
+  tracked_schemas: [
+    Sanbase.Project
+  ],
+  primitive_structs: [DateTime, NaiveDateTime, Date]
+
 # Import configs
 import_config "ueberauth_config.exs"
 import_config "scrapers_config.exs"

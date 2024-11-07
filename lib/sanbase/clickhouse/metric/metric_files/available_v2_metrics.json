@@ -5212,6 +5212,106 @@
     "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/fraxlend"]
   },
   {
+    "human_readable_name": "Fraxlend total supplied",
+    "name": "fraxlend_total_supplied",
+    "metric": "fraxlend_total_supplied",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/fraxlend"]
+  },
+  {
+    "human_readable_name": "Fraxlend total supplied in USD",
+    "name": "fraxlend_total_supplied_usd",
+    "metric": "fraxlend_total_supplied_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/fraxlend"]
+  },
+  {
+    "human_readable_name": "Fraxlend total borrowed against collateral",
+    "name": "fraxlend_total_borrowed_against_collateral",
+    "metric": "fraxlend_total_borrowed_against_collateral",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/fraxlend"]
+  },
+  {
+    "human_readable_name": "Fraxlend protocol total supplied in USD",
+    "name": "fraxlend_protocol_total_supplied_usd",
+    "metric": "fraxlend_total_protocol_supplied_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/fraxlend"]
+  },
+  {
+    "human_readable_name": "Fraxlend protocol total borrowed in USD",
+    "name": "fraxlend_protocol_total_borrowed_usd",
+    "metric": "fraxlend_total_protocol_borrowed_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/fraxlend"]
+  },
+  {
     "human_readable_name": "Fraxlend borrow APY",
     "name": "fraxlend_borrow_apy",
     "metric": "fraxlend_borrow_apy",

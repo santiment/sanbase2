@@ -1,5 +1,6 @@
 defmodule Sanbase.Repo do
   use Ecto.Repo, otp_app: :sanbase, adapter: Ecto.Adapters.Postgres
+  use ExAudit.Repo
 
   alias Sanbase.Utils.Config
 

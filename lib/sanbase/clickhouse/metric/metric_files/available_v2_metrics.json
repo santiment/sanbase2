@@ -5292,9 +5292,9 @@
     "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/fraxlend"]
   },
   {
-    "human_readable_name": "Fraxlend protocol total borrowed",
-    "name": "fraxlend_protocol_total_borrowed",
-    "metric": "fraxlend_total_protocol_borrowed",
+    "human_readable_name": "Fraxlend protocol total borrowed in USD",
+    "name": "fraxlend_protocol_total_borrowed_usd",
+    "metric": "fraxlend_total_protocol_borrowed_usd",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [

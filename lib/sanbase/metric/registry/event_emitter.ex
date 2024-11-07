@@ -21,6 +21,10 @@ defmodule Sanbase.Metric.Registry.EventEmitter do
     |> notify()
   end
 
+  def handle_event({:error, _changeset}, _event_type, _args) do
+    :ok
+  end
+
   defp notify(data) do
     Sanbase.EventBus.notify(%{topic: @topic, data: data})
     :ok

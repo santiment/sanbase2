@@ -111,9 +111,15 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
         popover_target_text: get_popover_text(%{key: "Frequency"})
       },
       %{
-        key: "Min Plan",
-        value: Jason.encode!(metric_registry.min_plan),
-        popover_target: "popover-frequency",
+        key: "SANBASE Min Plan",
+        value: metric_registry.sanbase_min_plan,
+        popover_target: "popover-sanbase-min-plan",
+        popover_target_text: get_popover_text(%{key: "Min Plan"})
+      },
+      %{
+        key: "SANAPI Min Plan",
+        value: metric_registry.sanapi_min_plan,
+        popover_target: "popover-sanapi-min-plan",
         popover_target_text: get_popover_text(%{key: "Min Plan"})
       },
       %{

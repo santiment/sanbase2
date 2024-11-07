@@ -71,7 +71,6 @@ defmodule Sanbase.Repo.Migrations.CreateMetricRegistry do
       add(:fixed_parameters, :map, null: "false", default: "{}")
 
       add(:is_timebound, :boolean, null: false, null: false)
-      add(:is_exposed, :boolean, null: false, default: true)
       add(:exposed_environments, :string, null: false, default: "all")
 
       add(:version, :string)
@@ -79,7 +78,9 @@ defmodule Sanbase.Repo.Migrations.CreateMetricRegistry do
       add(:required_selectors, :map)
 
       add(:access, :string, null: false)
-      add(:min_plan, :jsonb, null: false, default: "{}")
+      add(:sanbase_min_plan, :string, null: false, default: "free")
+      add(:sanapi_min_plan, :string, null: false, default: "free")
+
       add(:default_aggregation, :string, null: false)
       add(:min_interval, :string, null: false)
       add(:has_incomplete_data, :boolean, null: false)

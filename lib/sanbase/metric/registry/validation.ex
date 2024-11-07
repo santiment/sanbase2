@@ -88,7 +88,7 @@ defmodule Sanbase.Metric.Registry.Validation do
         :parameters,
         """
         The provided parameters do not match the captures in the metric #{metric}.
-        Captures: #{Enum.join(captures, ", ")}
+        Captures: #{Enum.join(captures, ", ")},
         Parameters: #{Enum.join(parameter_keys, ", ")}
         """
       )

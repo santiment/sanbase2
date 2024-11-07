@@ -13,6 +13,8 @@ defmodule Sanbase.Metric.Registry do
   @human_readable_name_regex ~r|^[a-zA-Z0-9_\.\-{}():/\\ ]+$|
   @aggregations ["sum", "last", "count", "avg", "max", "min", "first"]
   def aggregations(), do: @aggregations
+  @metric_regex ~r/^[a-z0-9_{}:]+$/
+  def metric_regex(), do: @metric_regex
 
   @type t :: %__MODULE__{
           id: integer(),
@@ -24,7 +26,8 @@ defmodule Sanbase.Metric.Registry do
           default_aggregation: String.t(),
           min_interval: String.t(),
           access: String.t(),
-          min_plan: map(),
+          sanbase_min_plan: String.t(),
+          sanapi_min_plan: String.t(),
           selectors: [String.t()],
           required_selectors: [String.t()],
           is_template: boolean(),
@@ -32,7 +35,6 @@ defmodule Sanbase.Metric.Registry do
           fixed_parameters: map(),
           is_timebound: boolean(),
           has_incomplete_data: boolean(),
-          is_exposed: boolean(),
           exposed_environments: String.t(),
           is_hidden: boolean(),
           is_deprecated: boolean(),
@@ -71,6 +73,7 @@ defmodule Sanbase.Metric.Registry do
       struct
       |> cast(attrs, [:name])
       |> validate_required([:name])
+      |> validate_format(:name, ~r/[a-z0-9_\-]/)
     end
   end
 
@@ -85,7 +88,9 @@ defmodule Sanbase.Metric.Registry do
     def changeset(%__MODULE__{} = struct, attrs) do
       struct
       |> cast(attrs, [:name])
-      |> validate_required([:name])
+      |> validate_required(:name)
+      |> validate_format(:name, Sanbase.Metric.Registry.metric_regex())
+      |> validate_length(:name, min: 3, max: 100)
     end
   end
 
@@ -118,7 +123,8 @@ defmodule Sanbase.Metric.Registry do
     field(:default_aggregation, :string)
     field(:min_interval, :string)
     field(:access, :string)
-    field(:min_plan, :map)
+    field(:sanbase_min_plan, :string)
+    field(:sanapi_min_plan, :string)
     embeds_many(:selectors, Selector, on_replace: :delete)
     embeds_many(:required_selectors, Selector, on_replace: :delete)
 
@@ -131,7 +137,6 @@ defmodule Sanbase.Metric.Registry do
     field(:is_timebound, :boolean, default: false)
     field(:has_incomplete_data, :boolean, default: false)
 
-    field(:is_exposed, :boolean, default: true)
     field(:exposed_environments, :string, default: "all")
 
     field(:is_hidden, :boolean, default: false)
@@ -159,13 +164,13 @@ defmodule Sanbase.Metric.Registry do
       :human_readable_name,
       :internal_metric,
       :is_deprecated,
-      :is_exposed,
       :is_hidden,
       :is_template,
       :is_timebound,
       :metric,
       :min_interval,
-      :min_plan,
+      :sanbase_min_plan,
+      :sanapi_min_plan,
       :parameters
     ])
     |> cast_embed(:selectors,
@@ -201,8 +206,8 @@ defmodule Sanbase.Metric.Registry do
       :metric,
       :min_interval
     ])
-    |> validate_format(:metric, ~r/^[a-z0-9_{}:]+$/)
-    |> validate_format(:internal_metric, ~r/^[a-z0-9_{}:]+$/)
+    |> validate_format(:metric, @metric_regex)
+    |> validate_format(:internal_metric, @metric_regex)
     |> validate_format(:human_readable_name, @human_readable_name_regex)
     |> validate_length(:metric, min: 3, max: 100)
     |> validate_length(:internal_metric, min: 3, max: 100)
@@ -212,7 +217,8 @@ defmodule Sanbase.Metric.Registry do
     |> validate_inclusion(:exposed_environments, ["all", "none", "stage", "prod"])
     |> validate_inclusion(:access, ["free", "restricted"])
     |> validate_change(:min_interval, &Validation.validate_min_interval/2)
-    |> validate_change(:min_plan, &Validation.validate_min_plan/2)
+    |> validate_inclusion(:sanbase_min_plan, ["free", "pro", "max"])
+    |> validate_inclusion(:sanapi_min_plan, ["free", "pro", "max"])
     |> Validation.validate_template_fields()
     |> unique_constraint([:metric, :data_type, :fixed_parameters],
       name: :metric_registry_composite_unique_index

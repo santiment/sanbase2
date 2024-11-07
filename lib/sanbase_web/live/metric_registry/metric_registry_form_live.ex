@@ -21,7 +21,8 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
      |> assign(
        metric_registry: metric_registry,
        age_title: page_title(socket.assigns.live_action),
-       form: form
+       form: form,
+       save_errors: []
      )}
   end
 
@@ -66,17 +67,8 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
           label="Human Readable Name"
         />
         <.aliases_input form={@form} />
-
         <.tables_input form={@form} />
-        <.input type="text" id="input-min-interval" field={@form[:min_interval]} label="Min Interval" />
-        <.input
-          type="select"
-          id="input-aggregation"
-          field={@form[:aggregation]}
-          label="Default Aggregation"
-          options={Registry.aggregations()}
-        />
-
+        <.min_plan_input form={@form} />
         <.input
           type="select"
           id="input-access"
@@ -84,12 +76,28 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
           label="Access"
           options={["free", "restricted"]}
         />
+        <.input type="text" id="input-min-interval" field={@form[:min_interval]} label="Min Interval" />
+        <.input
+          type="select"
+          id="input-default-aggregation"
+          field={@form[:default_aggregation]}
+          label="Default Aggregation"
+          options={Registry.aggregations()}
+        />
+
+        <.input
+          type="select"
+          id="input-has-incomplete-data"
+          field={@form[:has_incomplete_data]}
+          label="Has Incomplete Data"
+          options={[true, false]}
+        />
         <.input
           type="select"
           id="input-exposed-environments"
           field={@form[:exposed_environments]}
           label="Exposed on Environments"
-          options={["all", "stage", "prod"]}
+          options={["all", "none", "stage", "prod"]}
         />
 
         <.input
@@ -99,117 +107,183 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
           label="Access"
           options={["timeseries", "histogram", "table"]}
         />
-
-        <.input type="textarea" id="input-parameters" field={@form[:parameters]} label="Parameters" />
         <.selectors_input form={@form} />
         <.required_selectors_input form={@form} />
+
+        <.input
+          type="select"
+          id="input-is-hidden"
+          field={@form[:is_hidden]}
+          label="Is Hidden"
+          options={[true, false]}
+        />
+        <.input
+          type="select"
+          id="input-is-timebound"
+          field={@form[:is_timebound]}
+          label="Is Timebound"
+          options={[true, false]}
+        />
+        <.input
+          type="textarea"
+          id="input-parameters"
+          field={@form[:parameters]}
+          value={Jason.encode!(@metric_registry.parameters)}
+          label="Parameters"
+        />
         <.button phx-disable-with="Saving...">Save</.button>
+
+        <.error :for={{field, [msg]} <- @save_errors}><%= to_string(field) <> ": " <> msg %></.error>
       </.simple_form>
+    </div>
+    """
+  end
+
+  def min_plan_input(assigns) do
+    ~H"""
+    <div class="border border-gray-200 rounded-lg px-3 py-6">
+      <span class="text-sm font-semibold leading-6 text-zinc-800 mb-3">Min Plan per product</span>
+      <.input
+        type="select"
+        id="input-sanbase-min-plan"
+        field={@form[:sanbase_min_plan]}
+        label="Sanbase"
+        options={["free", "pro", "max"]}
+      />
+
+      <.input
+        type="select"
+        id="input-sanapi-min-plan"
+        field={@form[:sanapi_min_plan]}
+        label="Sanapi"
+        options={["free", "pro", "max"]}
+      />
     </div>
     """
   end
 
   attr :name, :string, required: true
   attr :text, :string, required: true
-  attr :icon, :string, required: false, default: nil
-  attr :fp, :map, required: false, default: nil
-
-  def inputs_for_button(assigns) do
-    ~H"""
-    <label class="block cursor-pointer">
-      <input :if={@fp} type="checkbox" name={@name} value={@fp.index} class="hidden" />
-      <input :if={!@fp} type="checkbox" name={@name} class="hidden" />
-
-      <div class="text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center">
-        <.icon :if={@icon} name={@icon} class="w-6 h-6 relative bg-red-800" />
-        <%= @text %>
-      </div>
-    </label>
-    """
-  end
+  attr :ef, :map, required: false, default: nil
 
   def inputs_for_drop_button(assigns) do
     ~H"""
-    <label class="cursor-pointer">
-      <input type="checkbox" name={@name} value={@fp.index} class="hidden" />
+    <button
+      type="button"
+      class="text-gray-900 my-1 bg-white hover:bg-red-100 border border-gray-200 font-medium rounded-lg text-sm px-4 py-2 text-center inline-flex items-center"
+      name={@name}
+      value={@ef.index}
+      phx-click={JS.dispatch("change")}
+    >
+      <.icon name="hero-x-mark" class="w-6 h-6 relative bg-red-700" />
+      <%= @text %>
+    </button>
+    """
+  end
 
-      <div class="text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center">
-        <.icon name="hero-x-mark" class="w-6 h-6 relative bg-red-800" /> <%= @text %>
-      </div>
-    </label>
+  attr :name, :string, required: true
+  attr :text, :string, required: true
+
+  def inputs_for_add_button(assigns) do
+    ~H"""
+    <hr class="h-px my-8 bg-gray-200 border-0 dark:bg-gray-700" />
+    <button
+      type="button"
+      name={@name}
+      value="new"
+      phx-click={JS.dispatch("change")}
+      class="text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center"
+    >
+      <%= @text %>
+    </button>
+    """
+  end
+
+  attr :form, :map, required: true
+  attr :singular, :string, required: true
+  attr :plural, :string, required: true
+  attr :form_field, :atom, required: true
+  attr :embeded_schema_field, :atom, required: true
+  attr :sort_param, :atom, required: true
+  attr :drop_param, :atom, required: true
+
+  def embeds_input(assigns) do
+    ~H"""
+    <div class="border border-gray-200 rounded-lg px-3 py-6">
+      <span class="text-sm font-semibold leading-6 text-zinc-800">
+        <%= Inflex.camelize(@plural) %>
+      </span>
+      <.inputs_for :let={ef} field={@form[@form_field]}>
+        <input type="hidden" name={"registry[#{@sort_param}][]"} value={ef.index} />
+        <.input type="text" field={ef[@embeded_schema_field]} placeholder={@singular} />
+
+        <.inputs_for_drop_button
+          ef={ef}
+          name={"registry[#{@drop_param}][]"}
+          text={"Remove #{@singular}"}
+        />
+      </.inputs_for>
+
+      <input type="hidden" name={"registry[#{@drop_param}][]"} />
+
+      <.inputs_for_add_button name={"registry[#{@sort_param}][]"} text={"Add new #{@singular}"} />
+    </div>
     """
   end
 
   def aliases_input(assigns) do
     ~H"""
-    <h3>Aliases</h3>
-    <.inputs_for :let={fp} field={@form[:aliases]}>
-      <.input field={fp[:name]} type="text" label="Alias" />
-
-      <.inputs_for_drop_button fp={fp} name="registry[aliases_drop][]" text="Remove alias" />
-    </.inputs_for>
-
-    <label class="block cursor-pointer">
-      <div class="text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center">
-        <input type="checkbox" name="registry[aliases_sort][]" class="hidden" /> Add new alias
-      </div>
-    </label>
+    <.embeds_input
+      form={@form}
+      plural="aliases"
+      singular="alias"
+      form_field={:aliases}
+      embeded_schema_field={:name}
+      sort_param={:aliases_sort}
+      drop_param={:aliases_drop}
+    />
     """
   end
 
   def tables_input(assigns) do
     ~H"""
-    <h3>Tables</h3>
-    <.inputs_for :let={fp} field={@form[:tables]}>
-      <.input field={fp[:name]} type="text" label="Table" />
-
-      <.inputs_for_drop_button fp={fp} name="registry[tables_drop][]" text="Remove table" />
-    </.inputs_for>
-
-    <label class="block cursor-pointer">
-      <div class="text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center">
-        <input type="checkbox" name="registry[tables_sort][]" class="hidden" /> Add new table
-      </div>
-    </label>
+    <.embeds_input
+      form={@form}
+      plural="tables"
+      singular="table"
+      form_field={:tables}
+      embeded_schema_field={:name}
+      sort_param={:tables_sort}
+      drop_param={:tables_drop}
+    />
     """
   end
 
   def selectors_input(assigns) do
     ~H"""
-    <h3>Selectors</h3>
-    <.inputs_for :let={fp} field={@form[:selectors]}>
-      <.input field={fp[:type]} type="text" label="Selector" />
-
-      <.inputs_for_drop_button fp={fp} name="registry[selectors_drop][]" text="Remove selector" />
-    </.inputs_for>
-
-    <label class="block cursor-pointer">
-      <div class="text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center">
-        <input type="checkbox" name="registry[selectors_sort][]" class="hidden" /> Add new selector
-      </div>
-    </label>
+    <.embeds_input
+      form={@form}
+      plural="selectors"
+      singular="selector"
+      form_field={:selectors}
+      embeded_schema_field={:type}
+      sort_param={:selectors_sort}
+      drop_param={:selectors_drop}
+    />
     """
   end
 
   def required_selectors_input(assigns) do
     ~H"""
-    <h3>Required Selectors</h3>
-    <.inputs_for :let={fp} field={@form[:required_selectors]}>
-      <.input field={fp[:type]} type="text" label="Required Selector" />
-
-      <.inputs_for_drop_button
-        fp={fp}
-        name="registry[required_selectors_drop][]"
-        text="Remove required_selector"
-      />
-    </.inputs_for>
-
-    <label class="block cursor-pointer">
-      <div class="text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center">
-        <input type="checkbox" name="registry[required_selectors_sort][]" class="hidden" />
-        Add new required selector
-      </div>
-    </label>
+    <.embeds_input
+      form={@form}
+      plural="required selectors"
+      singular="required selector"
+      form_field={:required_selectors}
+      embeded_schema_field={:type}
+      sort_param={:required_selectors_sort}
+      drop_param={:required_selectors_drop}
+    />
     """
   end
 
@@ -217,10 +291,29 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
       when socket.assigns.live_action == :new do
     case socket.assigns.form.errors do
       [] ->
-        :ok
+        params = process_params(params)
 
-      [_ | _] ->
-        :ok
+        case Sanbase.Metric.Registry.create(params) do
+          {:ok, struct} ->
+            {:noreply,
+             socket
+             |> assign(save_errors: [])
+             |> put_flash(:info, "Metric registry created")
+             |> push_navigate(to: ~p"/metric_registry/show/#{struct}")}
+
+          {:error, error} ->
+            errors = Sanbase.Utils.ErrorHandling.changeset_errors(error)
+
+            {:noreply,
+             socket
+             |> assign(:save_errors, errors)
+             |> put_flash(:error, "Address field validation errors before saving")}
+        end
+
+      [_ | _] = errors ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Address field validation errors before saving: #{inspect(errors)}")}
     end
   end
 
@@ -229,17 +322,22 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
       when socket.assigns.live_action == :edit do
     case socket.assigns.form.errors do
       [] ->
+        params = process_params(params)
+
         case Registry.update(socket.assigns.metric_registry, params) do
           {:ok, metric_registry} ->
             {:noreply,
              socket
-             |> assign(metric_registry: metric_registry)
+             |> assign(metric_registry: metric_registry, save_errors: [])
              |> put_flash(:info, "Metric registry updated")
              |> push_navigate(to: ~p"/metric_registry/show/#{metric_registry.id}")}
 
-          {:error, _} ->
+          {:error, changeset} ->
+            errors = Sanbase.Utils.ErrorHandling.changeset_errors(changeset)
+
             {:noreply,
              socket
+             |> assign(:save_errors, errors)
              |> put_flash(:error, "Failed to update metric registry")}
         end
 
@@ -252,39 +350,33 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
 
   @impl true
   def handle_event("validate", %{"registry" => params}, socket) do
-    # with {:ok, params} <- process_params(params) do
-    IO.inspect(params)
+    params = process_params(params)
 
     form =
       socket.assigns.metric_registry
       |> Registry.changeset(params)
       |> to_form(action: :validate)
 
-    {:noreply, socket |> assign(form: form)}
-    # else
-    #   _ -> {:noreply, socket}
-    # end
+    {:noreply, socket |> assign(form: form, save_errors: [])}
   end
 
   defp process_params(params) do
-    {:ok, params}
+    params
     |> maybe_update_if_present("parameters")
-    |> maybe_update_if_present("table")
   end
 
-  defp maybe_update_if_present({:ok, %{"parameters" => _} = params}, "parameters") do
-    case Jason.decode(params["parameters"]) do
-      {:ok, decoded} -> {:ok, %{params | "parameters" => decoded}}
-      {:error, _} -> {:ok, params}
+  defp maybe_update_if_present(%{"parameters" => json} = params, "parameters") do
+    # If the parameters are not valid JSON, we will keep the old parameters.
+    # It will fail from the changeset validation with `invalid format`. If it is
+    # valid JSON, replace the string with the decoded JSON and let the Ecto changeset
+    # validate it further
+    case Jason.decode(json) do
+      {:ok, decoded} -> %{params | "parameters" => decoded}
+      {:error, _} -> params
     end
   end
 
-  defp maybe_update_if_present({:ok, %{"table" => _} = params}, "table") do
-    {:ok, %{params | "table" => List.wrap(params["table"])}}
-  end
-
-  defp maybe_update_if_present({:ok, params}, _), do: {:ok, params}
-  defp maybe_update_if_present({:error, error}, _), do: {:error, error}
+  defp maybe_update_if_present(params, _), do: params
 
   defp page_title(:new), do: "Create new metric"
   defp page_title(:edit), do: "Edit a metric"

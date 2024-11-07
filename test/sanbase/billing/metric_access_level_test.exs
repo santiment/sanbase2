@@ -1586,6 +1586,11 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "fraxlend_total_liquidations_usd",
         "fraxlend_total_new_debt_usd",
         "fraxlend_total_repayments_usd",
+        "fraxlend_total_supplied",
+        "fraxlend_total_supplied_usd",
+        "fraxlend_total_borrowed_against_collateral",
+        "fraxlend_protocol_total_supplied_usd",
+        "fraxlend_protocol_total_borrowed_usd",
         "fraxlend_borrow_apy",
         "fraxlend_active_addresses",
         # Spark metrics

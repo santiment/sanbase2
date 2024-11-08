@@ -136,7 +136,9 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
         <.deprecation_input form={@form} />
         <.button phx-disable-with="Saving...">Save</.button>
 
-        <.error :for={{field, [msg]} <- @save_errors}><%= to_string(field) <> ": " <> msg %></.error>
+        <.error :for={{field, [reason]} <- @save_errors} ha>
+          <%= to_string(field) <> ": " <> inspect(reason) %>
+        </.error>
       </.simple_form>
     </div>
     """

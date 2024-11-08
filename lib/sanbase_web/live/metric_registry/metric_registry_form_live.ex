@@ -104,7 +104,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
           type="select"
           id="input-data-type"
           field={@form[:data_type]}
-          label="Access"
+          label="Data Type"
           options={["timeseries", "histogram", "table"]}
         />
         <.docs_input form={@form} />
@@ -132,6 +132,8 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
           value={Jason.encode!(@metric_registry.parameters)}
           label="Parameters"
         />
+
+        <.deprecation_input form={@form} />
         <.button phx-disable-with="Saving...">Save</.button>
 
         <.error :for={{field, [msg]} <- @save_errors}><%= to_string(field) <> ": " <> msg %></.error>
@@ -140,26 +142,60 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
     """
   end
 
-  def min_plan_input(assigns) do
+  def deprecation_input(assigns) do
+    assigns = assign(assigns, disabled: assigns.form[:is_deprecated].value in [false, "false"])
+
     ~H"""
     <div class="border border-gray-200 rounded-lg px-3 py-6">
-      <span class="text-sm font-semibold leading-6 text-zinc-800 mb-3">Min Plan per product</span>
       <.input
         type="select"
-        id="input-sanbase-min-plan"
-        field={@form[:sanbase_min_plan]}
-        label="Sanbase"
-        options={["free", "pro", "max"]}
+        id="input-is-deprecated"
+        label="Is Deprecated"
+        field={@form[:is_deprecated]}
+        options={[true, false]}
       />
+      <div class={["rounded-b-lg px-3 py-6", if(@disabled, do: "bg-gray-100")]}>
+        <.input
+          type="datetime-local"
+          id="input-hard-deprecate-after"
+          label="Hard Deprecate After"
+          field={@form[:hard_deprecate_after]}
+          disabled={@disabled}
+          title={if @disabled, do: "Disabled until `Is Deprecated` is set to true"}
+        />
 
-      <.input
-        type="select"
-        id="input-sanapi-min-plan"
-        field={@form[:sanapi_min_plan]}
-        label="Sanapi"
-        options={["free", "pro", "max"]}
-      />
+        <.input
+          type="textarea"
+          id="input-deprecation-note"
+          label="Deprecation Note"
+          field={@form[:deprecation_note]}
+          disabled={@disabled}
+          placeholder={if @disabled, do: "Disabled until `Is Deprecated` is set to true"}
+        />
+      </div>
     </div>
+    """
+  end
+
+  attr :form, :map, required: true
+
+  def min_plan_input(assigns) do
+    ~H"""
+    <.input
+      type="select"
+      id="input-sanbase-min-plan"
+      field={@form[:sanbase_min_plan]}
+      label="Sanbase Min Plan"
+      options={["free", "pro", "max"]}
+    />
+
+    <.input
+      type="select"
+      id="input-sanapi-min-plan"
+      field={@form[:sanapi_min_plan]}
+      label="Sanapi Min Plan"
+      options={["free", "pro", "max"]}
+    />
     """
   end
 
@@ -380,6 +416,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
   defp process_params(params) do
     params
     |> maybe_update_if_present("parameters")
+    |> maybe_update_if_present("fixed_parameters")
   end
 
   defp maybe_update_if_present(%{"parameters" => json} = params, "parameters") do
@@ -388,7 +425,18 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
     # valid JSON, replace the string with the decoded JSON and let the Ecto changeset
     # validate it further
     case Jason.decode(json) do
-      {:ok, decoded} -> %{params | "parameters" => decoded}
+      {:ok, decoded} when is_list(decoded) -> %{params | "parameters" => decoded}
+      {:error, _} -> params
+    end
+  end
+
+  defp maybe_update_if_present(%{"fixed_parameters" => json} = params, "fixed_parameters") do
+    # If the fixed_parameters are not valid JSON, we will keep the old fixed_parameters.
+    # It will fail from the changeset validation with `invalid format`. If it is
+    # valid JSON, replace the string with the decoded JSON and let the Ecto changeset
+    # validate it further
+    case Jason.decode(json) do
+      {:ok, decoded} when is_map(decoded) -> %{params | "fixed_parameters" => decoded}
       {:error, _} -> params
     end
   end

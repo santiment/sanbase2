@@ -199,6 +199,24 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
         value: metric_registry.data_type,
         popover_target: "popover-data-type",
         popover_target_text: get_popover_text(%{key: "Data Type"})
+      },
+      %{
+        key: "Is Deprecated",
+        value: metric_registry.is_deprecated,
+        popover_target: "popover-is-deprecated",
+        popover_target_text: get_popover_text(%{key: "Is Deprecated"})
+      },
+      %{
+        key: "Hard Deprecate After",
+        value: metric_registry.hard_deprecate_after,
+        popover_target: "popover-hard-deprecate-after",
+        popover_target_text: get_popover_text(%{key: "Hard Deprecate After"})
+      },
+      %{
+        key: "Deprecation Note",
+        value: metric_registry.deprecation_note,
+        popover_target: "popover-deprecation-note",
+        popover_target_text: get_popover_text(%{key: "Deprecation Note"})
       }
     ]
   end

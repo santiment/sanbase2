@@ -347,4 +347,35 @@ defmodule SanbaseWeb.AvailableMetricsDescription do
     </pre>
     """
   end
+
+  def get_popover_text(%{key: "Is Deprecated"} = assigns) do
+    ~H"""
+    <pre>
+    A boolean that indicates whether the metric is deprecated.
+    Deprecated metrics are discouraged to be used as they could be
+    removed in the near future.
+    </pre>
+    """
+  end
+
+  def get_popover_text(%{key: "Hard Deprecate After"} = assigns) do
+    ~H"""
+    <pre>
+    Specifies a datetime after which the metric will no longer be
+    accessible.
+    After the date passes, the metric is not shown in lists of available
+    metrics and querying it will return an error that the metric is
+    deprecated since the specified date.
+    </pre>
+    """
+  end
+
+  def get_popover_text(%{key: "Deprecation Note"} = assigns) do
+    ~H"""
+    <pre>
+    Freeform text explaining why the metric is deprecated.
+    This can include suggestion what other metric can be used instead and how.
+    </pre>
+    """
+  end
 end

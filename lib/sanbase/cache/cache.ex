@@ -38,6 +38,10 @@ defmodule Sanbase.Cache do
     :ets.info(ConCache.ets(cache), :size)
   end
 
+  def clear(cache \\ @cache_name, key) do
+    ConCache.delete(cache, key)
+  end
+
   @impl Sanbase.Cache.Behaviour
   def clear_all(cache \\ @cache_name)
 

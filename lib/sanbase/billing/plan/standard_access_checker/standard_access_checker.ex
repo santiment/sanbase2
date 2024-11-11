@@ -40,6 +40,8 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
     SanbaseAccessChecker
   }
 
+  require Logger
+
   @doc documentation_ref: "# DOCS access-plans/index.md"
 
   case ApiInfo.get_queries_without_access_level() do
@@ -58,15 +60,6 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
       """)
   end
 
-  @free_query_or_argument ApiInfo.get_all_with_access_level(:free)
-  @free_query_or_argument_mapset MapSet.new(@free_query_or_argument)
-
-  @restricted_query_or_argument ApiInfo.get_all_with_access_level(:restricted)
-
-  @all_query_or_argument @free_query_or_argument ++ @restricted_query_or_argument
-
-  @min_plan_map ApiInfo.min_plan_map()
-
   @doc ~s"""
   Check if a query full access is given only to users with a plan higher than free.
   A query can be restricted but still accessible by not-paid users or users with
@@ -74,7 +67,7 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
   """
   @spec restricted?(query_or_argument) :: boolean()
   def restricted?(query_or_argument),
-    do: query_or_argument not in @free_query_or_argument_mapset
+    do: query_or_argument not in free_query_or_argument_mapset()
 
   @spec plan_has_access?(query_or_argument, requested_product, plan_name) :: boolean()
   def plan_has_access?(query_or_argument, requested_product, plan_name) do
@@ -89,7 +82,7 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
 
   @spec min_plan(product_code, query_or_argument) :: plan_name
   def min_plan(product_code, query_or_argument) do
-    @min_plan_map[query_or_argument][product_code] || "FREE"
+    min_plan_map()[query_or_argument][product_code] || "FREE"
   end
 
   @spec get_available_metrics_for_plan(plan_name, product_code, Atom.t()) ::
@@ -98,9 +91,9 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
 
   def get_available_metrics_for_plan(plan_name, product_code, restriction_type) do
     case restriction_type do
-      :free -> @free_query_or_argument
-      :restricted -> @restricted_query_or_argument
-      :all -> @all_query_or_argument
+      :free -> free_query_or_argument()
+      :restricted -> restricted_query_or_argument()
+      :all -> all_query_or_argument()
     end
     |> Stream.filter(&match?({:metric, _}, &1))
     |> Stream.filter(&plan_has_access?(&1, product_code, plan_name))
@@ -133,10 +126,10 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
     end
   end
 
-  @product_to_access_module [
-    {"SANAPI", ApiAccessChecker},
-    {"SANBASE", SanbaseAccessChecker}
-  ]
+  @product_to_access_module %{
+    "SANAPI" => ApiAccessChecker,
+    "SANBASE" => SanbaseAccessChecker
+  }
 
   @doc """
   If the result from this function is nil, then no restrictions are applied.
@@ -149,17 +142,18 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
           plan_name
         ) ::
           non_neg_integer() | nil
-  for {requested_product, module} <- @product_to_access_module do
-    def historical_data_in_days(
-          query_or_argument,
-          unquote(requested_product),
-          subscription_product,
-          plan_name
-        ) do
-      if not historical_data_freely_available?(query_or_argument) do
-        # product_code is not needed as these modules are named Api* and Sanbase*
-        unquote(module).historical_data_in_days(subscription_product, plan_name)
-      end
+  def historical_data_in_days(
+        query_or_argument,
+        requested_product,
+        subscription_product,
+        plan_name
+      ) do
+    if historical_data_freely_available?(query_or_argument) do
+      # nil represents no restrictions
+      nil
+    else
+      module = @product_to_access_module[requested_product]
+      apply(module, :historical_data_in_days, [subscription_product, plan_name])
     end
   end
 
@@ -175,17 +169,81 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
         ) ::
           non_neg_integer() | nil
 
-  for {requested_product, module} <- @product_to_access_module do
-    def realtime_data_cut_off_in_days(
-          query_or_argument,
-          unquote(requested_product),
-          subscription_product,
-          plan_name
-        ) do
-      if not realtime_data_freely_available?(query_or_argument) do
-        # product_code is not needed as these modules are named Api* and Sanbase*
-        unquote(module).realtime_data_cut_off_in_days(subscription_product, plan_name)
-      end
+  def realtime_data_cut_off_in_days(
+        query_or_argument,
+        requested_product,
+        subscription_product,
+        plan_name
+      ) do
+    if realtime_data_freely_available?(query_or_argument) do
+      # nil represents no restrictions
+      nil
+    else
+      module = @product_to_access_module[requested_product]
+      apply(module, :realtime_data_cut_off_in_days, [subscription_product, plan_name])
     end
+  end
+
+  @functions [
+    {:query_or_argument, [:free]},
+    {:query_or_argument_mapset, [:free]},
+    {:query_or_argument, [:restricted]},
+    {:query_or_argument, [:all]},
+    {:min_plan_map, []}
+  ]
+
+  def refresh_stored_terms() do
+    Logger.info("Refreshing stored terms in the #{__MODULE__}")
+
+    for {fun, args} <- @functions do
+      data = compute(fun, args)
+
+      if :not_implemented == data,
+        do: raise("Function #{fun} is not implemented in module #{__MODULE__}")
+
+      :ok = :persistent_term.put(key(fun, args), data)
+      {{fun, args}, :ok}
+    end
+  end
+
+  # Private functions
+
+  defp free_query_or_argument(), do: get(:query_or_argument, [:free])
+  defp free_query_or_argument_mapset(), do: get(:query_or_argument_mapset, [:free])
+  defp restricted_query_or_argument(), do: get(:query_or_argument, [:restricted])
+  defp all_query_or_argument(), do: get(:query_or_argument, [:all])
+  defp min_plan_map(), do: get(:min_plan_map)
+
+  defp get(fun, args \\ []) do
+    key = key(fun, args)
+
+    case :persistent_term.get(key, :undefined) do
+      :undefined ->
+        data = compute(fun, args)
+        :persistent_term.put(key, data)
+        data
+
+      data ->
+        data
+    end
+  end
+
+  defp key(fun, args), do: {__MODULE__, fun, args}
+
+  defp compute(:query_or_argument, [:all]) do
+    ApiInfo.get_all_with_access_level(:free) ++ ApiInfo.get_all_with_access_level(:restricted)
+  end
+
+  defp compute(:query_or_argument, [level]) when level in [:free, :restricted] do
+    ApiInfo.get_all_with_access_level(level)
+  end
+
+  defp compute(:query_or_argument_mapset, [level]) when level in [:free, :restricted, :all] do
+    compute(:query_or_argument, [level])
+    |> MapSet.new()
+  end
+
+  defp compute(:min_plan_map, []) do
+    ApiInfo.min_plan_map()
   end
 end

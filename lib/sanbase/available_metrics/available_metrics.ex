@@ -82,9 +82,14 @@ defmodule Sanbase.AvailableMetrics do
     end
   end
 
-  def apply_filters(metrics_map, filters) do
+  def apply_filters(metrics_map, filters) when is_map(metrics_map) do
     metrics_map
     |> Map.values()
+    |> apply_filters(filters)
+  end
+
+  def apply_filters(metrics_list, filters) when is_list(metrics_list) do
+    metrics_list
     |> maybe_apply_filter(:only_with_docs, filters)
     |> maybe_apply_filter(:only_intraday_metrics, filters)
     |> maybe_apply_filter(:match_metric_name, filters)

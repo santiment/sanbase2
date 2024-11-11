@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.1 (Homebrew)
--- Dumped by pg_dump version 15.1 (Homebrew)
+-- Dumped from database version 14.12 (Homebrew)
+-- Dumped by pg_dump version 14.12 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -2274,6 +2274,61 @@ CREATE SEQUENCE public.menus_id_seq
 --
 
 ALTER SEQUENCE public.menus_id_seq OWNED BY public.menus.id;
+
+
+--
+-- Name: metric_registry; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.metric_registry (
+    id bigint NOT NULL,
+    metric character varying(255) NOT NULL,
+    internal_metric character varying(255) NOT NULL,
+    human_readable_name character varying(255) NOT NULL,
+    aliases jsonb,
+    tables jsonb NOT NULL,
+    is_template boolean DEFAULT false NOT NULL,
+    parameters jsonb DEFAULT '{}'::jsonb NOT NULL,
+    fixed_parameters jsonb DEFAULT '{}'::jsonb,
+    is_timebound boolean NOT NULL,
+    exposed_environments character varying(255) DEFAULT 'all'::character varying NOT NULL,
+    version character varying(255),
+    selectors jsonb,
+    required_selectors jsonb,
+    access character varying(255) NOT NULL,
+    sanbase_min_plan character varying(255) DEFAULT 'free'::character varying NOT NULL,
+    sanapi_min_plan character varying(255) DEFAULT 'free'::character varying NOT NULL,
+    default_aggregation character varying(255) NOT NULL,
+    min_interval character varying(255) NOT NULL,
+    has_incomplete_data boolean NOT NULL,
+    data_type character varying(255) DEFAULT 'timeseries'::character varying NOT NULL,
+    docs jsonb,
+    is_hidden boolean DEFAULT false NOT NULL,
+    is_deprecated boolean DEFAULT false NOT NULL,
+    hard_deprecate_after timestamp(0) without time zone DEFAULT NULL::timestamp without time zone,
+    deprecation_note text,
+    inserted_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL
+);
+
+
+--
+-- Name: metric_registry_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.metric_registry_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: metric_registry_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.metric_registry_id_seq OWNED BY public.metric_registry.id;
 
 
 --
@@ -5191,6 +5246,13 @@ ALTER TABLE ONLY public.menus ALTER COLUMN id SET DEFAULT nextval('public.menus_
 
 
 --
+-- Name: metric_registry id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metric_registry ALTER COLUMN id SET DEFAULT nextval('public.metric_registry_id_seq'::regclass);
+
+
+--
 -- Name: metrics id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6092,6 +6154,14 @@ ALTER TABLE ONLY public.menu_items
 
 ALTER TABLE ONLY public.menus
     ADD CONSTRAINT menus_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: metric_registry metric_registry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metric_registry
+    ADD CONSTRAINT metric_registry_pkey PRIMARY KEY (id);
 
 
 --
@@ -7182,6 +7252,13 @@ CREATE UNIQUE INDEX market_segments_name_index ON public.market_segments USING b
 --
 
 CREATE INDEX menus_user_id_index ON public.menus USING btree (user_id);
+
+
+--
+-- Name: metric_registry_composite_unique_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX metric_registry_composite_unique_index ON public.metric_registry USING btree (metric, data_type, fixed_parameters);
 
 
 --
@@ -9605,3 +9682,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20241029080754);
 INSERT INTO public."schema_migrations" (version) VALUES (20241029082533);
 INSERT INTO public."schema_migrations" (version) VALUES (20241029151959);
 INSERT INTO public."schema_migrations" (version) VALUES (20241030141825);
+INSERT INTO public."schema_migrations" (version) VALUES (20241104115340);
+INSERT INTO public."schema_migrations" (version) VALUES (20241108112754);

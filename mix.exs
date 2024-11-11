@@ -101,6 +101,7 @@ defmodule Sanbase.Mixfile do
       {:kino_db, "~> 0.2.2"},
       {:kino_vega_lite, "~> 0.1.9"},
       {:libcluster, "~> 3.0"},
+      {:map_diff, "~> 1.3"},
       {:mint, "~> 1.0"},
       {:mock, "~> 0.3"},
       {:mockery, "~> 2.2"},
@@ -197,6 +198,7 @@ defmodule Sanbase.Mixfile do
         "database_safety",
         "ecto.create -r Sanbase.Repo --quiet",
         "ecto.load -r Sanbase.Repo --skip-if-loaded",
+        "run test/test_seeds.exs",
         "test"
       ]
     ] ++

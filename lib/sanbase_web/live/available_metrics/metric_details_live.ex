@@ -49,21 +49,6 @@ defmodule SanbaseWeb.MetricDetailsLive do
     """
   end
 
-  @impl true
-  def handle_event("apply_filters", params, socket) do
-    visible_metrics =
-      socket.assigns.metrics_map
-      |> Sanbase.AvailableMetrics.apply_filters(params)
-      |> Enum.map(& &1.metric)
-
-    {:noreply,
-     socket
-     |> assign(
-       visible_metrics: visible_metrics,
-       filter: params
-     )}
-  end
-
   defp formatted_value(%{key: "Available Assets"} = assigns) do
     last_asset = Enum.at(assigns.value, -1)
     assigns = assign(assigns, :last_asset, last_asset)

@@ -4,10 +4,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
   import Sanbase.Metric.SqlQuery.Helper,
     only: [to_unix_timestamp: 3, asset_id_filter: 2, metric_id_filter: 2]
 
-  alias Sanbase.Clickhouse.MetricAdapter.FileHandler
-
-  @table_map FileHandler.table_map()
-  @name_to_metric_map FileHandler.name_to_metric_map()
+  alias Sanbase.Clickhouse.MetricAdapter.Registry
 
   def histogram_data_query("all_spent_coins_cost", slug, _from, to, interval, _limit) do
     interval_sec = interval |> str_to_sec()
@@ -703,7 +700,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
       -sum(measure) AS sum_measure
     FROM (
       SELECT value, argMax(measure, computed_at) AS measure
-      FROM #{Map.get(@table_map, metric)}
+      FROM #{Map.get(Registry.table_map(), metric)}
       PREWHERE
         #{metric_id_filter(metric, argument_name: "metric")} AND
         #{asset_id_filter(%{slug: slug}, argument_name: "slug")} AND
@@ -720,7 +717,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
 
     params = %{
       slug: slug,
-      metric: Map.get(@name_to_metric_map, metric),
+      metric: Map.get(Registry.name_to_metric_map(), metric),
       interval: str_to_sec(interval),
       from: from |> DateTime.to_unix(),
       to: to |> DateTime.to_unix(),

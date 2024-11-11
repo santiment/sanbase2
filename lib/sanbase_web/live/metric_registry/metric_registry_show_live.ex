@@ -29,13 +29,13 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
       <div class="my-4">
         <AvailableMetricsComponents.available_metrics_button
           text="Back to Metric Registry"
-          href={~p"/metric_registry"}
+          href={~p"/admin2/metric_registry"}
           icon="hero-arrow-uturn-left"
         />
 
         <AvailableMetricsComponents.available_metrics_button
           text="Edit Metric"
-          href={~p"/metric_registry/edit/#{@metric_registry}"}
+          href={~p"/admin2/metric_registry/edit/#{@metric_registry}"}
           icon="hero-pencil-square"
         />
       </div>

@@ -284,10 +284,14 @@ defmodule Sanbase.Metric.Registry do
   end
 
   defp resolve_aliases(%__MODULE__{} = registry) do
-    [registry] ++
-      Enum.map(registry.aliases, fn metric_alias ->
+    aliases =
+      registry.aliases
+      |> Enum.map(& &1.name)
+      |> Enum.map(fn metric_alias ->
         %{registry | metric: metric_alias}
       end)
+
+    [registry] ++ aliases
   end
 
   defp apply_template_parameters(%__MODULE__{} = registry)

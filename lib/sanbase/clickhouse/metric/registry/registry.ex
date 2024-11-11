@@ -34,7 +34,6 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   def required_selectors_map(), do: get(:required_selectors_map)
   def selectors_map(), do: get(:selectors_map)
   def soft_deprecated_metrics_map(), do: get(:soft_deprecated_metrics_map)
-  def table_(), do: get(:table_map)
   def table_map(), do: get(:table_map)
   def timebound_flag_map(), do: get(:timebound_flag_map)
 
@@ -259,9 +258,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
       # so for them there will be no "FROM #{Map.get(Registry.table_map(), metric)}" code
       # so it is safe to unpack the list in case of single table
       table_or_tables =
-        case map.table do
-          [table] -> table
-          [_ | _] = tables -> tables
+        case map.tables do
+          [table] -> table.name
+          [_ | _] = tables -> Enum.map(tables, & &1.name)
         end
 
       {map.metric, table_or_tables}
@@ -276,7 +275,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
 
   defp compute(:aggregation_map, []) do
     get_metrics(from: __ENV__.function)
-    |> Map.new(&{&1.metric, String.to_existing_atom(&1.aggregation)})
+    |> Map.new(&{&1.metric, String.to_existing_atom(&1.default_aggregation)})
   end
 
   defp compute(:min_interval_map, []) do
@@ -286,13 +285,12 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   defp compute(:min_plan_map, []) do
     get_metrics(from: __ENV__.function)
     |> Map.new(fn metric_map ->
-      min_plan =
-        case metric_map.min_plan do
-          %{} = map -> Map.new(map, fn {k, v} -> {String.upcase(k), String.upcase(v)} end)
-          plan when is_binary(plan) -> String.upcase(plan)
-        end
+      min_plan_map = %{
+        "SANBASE" => String.upcase(metric_map.sanbase_min_plan),
+        "SANAPI" => String.upcase(metric_map.sanapi_min_plan)
+      }
 
-      {metric_map.metric, min_plan}
+      {metric_map.metric, min_plan_map}
     end)
   end
 
@@ -301,7 +299,11 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   end
 
   defp compute(:docs_links_map, []) do
-    get_metrics(from: :docs_links_map) |> Map.new(&{&1.metric, &1.docs_links})
+    get_metrics(from: :docs_links_map)
+    |> Map.new(fn m ->
+      docs_links = m.docs |> Enum.map(& &1.link)
+      {m.metric, docs_links}
+    end)
   end
 
   defp compute(:name_to_metric_map, []) do
@@ -335,7 +337,11 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   defp compute(:selectors_map, []) do
     get_metrics(from: :selectors_map)
     |> Map.new(fn m ->
-      selectors = Enum.map(m.selectors, &String.to_atom/1)
+      selectors =
+        m.selectors
+        |> Enum.map(& &1.type)
+        |> Enum.map(&String.to_atom/1)
+
       {m.metric, selectors}
     end)
   end
@@ -349,7 +355,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
       # In the above example, when querying the metric the user must provide slug and label_fqn or
       # slug and label_fqns
       required_selectors =
-        Enum.map(m.required_selectors, fn binary_selectors ->
+        m.required_selectors
+        |> Enum.map(& &1.type)
+        |> Enum.map(fn binary_selectors ->
           binary_selectors |> String.split("|") |> Enum.map(&String.to_atom/1)
         end)
 

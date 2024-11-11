@@ -94,6 +94,11 @@ defmodule SanbaseWeb.Router do
     get("/generic/search", GenericAdminController, :search)
     get("/generic/show_action", GenericAdminController, :show_action)
     resources("/generic", GenericAdminController)
+
+    live("/metric_registry", MetricRegistryIndexLive)
+    live("/metric_registry/show/:id", MetricRegistryShowLive)
+    live("/metric_registry/edit/:id", MetricRegistryFormLive, :edit)
+    live("/metric_registry/new", MetricRegistryFormLive, :new)
   end
 
   scope "/" do
@@ -184,14 +189,6 @@ defmodule SanbaseWeb.Router do
     live("/available_metrics", AvailableMetricsLive)
     live("/available_metrics/:metric", MetricDetailsLive)
     get("/export_available_metrics", AvailableMetricsController, :export)
-  end
-
-  scope "/metric_registry", SanbaseWeb do
-    pipe_through([:browser])
-    live("/", MetricRegistryIndexLive)
-    live("/show/:id", MetricRegistryShowLive)
-    live("/edit/:id", MetricRegistryFormLive, :edit)
-    live("/new", MetricRegistryFormLive, :new)
   end
 
   scope "/", SanbaseWeb do

@@ -126,13 +126,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
     # refreshign the stored terms
     Keyword.validate!(opts, [:remove_hard_deprecated])
 
-    IO.inspect(
-      "GET OR STORE? =================================================================================================== "
-    )
-
     Sanbase.Cache.get_or_store(registry_cache_key(opts), fn ->
-      IO.inspect("FETCHING NEW NOT CACHED!!!!!!!!!")
-
       data =
         Sanbase.Metric.Registry.all()
         |> Sanbase.Metric.Registry.resolve()

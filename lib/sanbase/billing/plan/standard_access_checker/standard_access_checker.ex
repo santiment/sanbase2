@@ -40,6 +40,8 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
     SanbaseAccessChecker
   }
 
+  require Logger
+
   @doc documentation_ref: "# DOCS access-plans/index.md"
 
   case ApiInfo.get_queries_without_access_level() do
@@ -191,6 +193,8 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
   ]
 
   def refresh_stored_terms() do
+    Logger.info("Refreshing stored terms in the #{__MODULE__}")
+
     for {fun, args} <- @functions do
       data = compute(fun, args)
 

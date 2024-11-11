@@ -1,10 +1,9 @@
 defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   @moduledoc ~s"""
-
+  TODO
   """
-  require Logger
-
   import Sanbase.Metric.Registry.EventEmitter, only: [emit_event: 3]
+  require Logger
 
   def access_map(), do: get(:access_map)
   def aggregation_map(), do: get(:aggregation_map)
@@ -96,6 +95,14 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   end
 
   def refresh_stored_terms() do
+    Logger.info("Refreshing stored terms in the #{__MODULE__}")
+    # First clear the registry cache so the new data can be fetched
+    # from the DB, otherwise the changes that triggered this refresh won't
+    # be reflected here
+    Sanbase.Cache.clear(registry_cache_key([]))
+    Sanbase.Cache.clear(registry_cache_key(remove_hard_deprecated: true))
+    Sanbase.Cache.clear(registry_cache_key(remove_hard_deprecated: false))
+
     for {fun, args} <- @functions do
       data = compute(fun, args)
 
@@ -109,10 +116,23 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
 
   # Private functions
 
-  defp get_metrics_from_registry(opts) do
-    key = {__MODULE__, :get_metrics, opts} |> Sanbase.Cache.hash()
+  defp registry_cache_key(opts) do
+    {__MODULE__, :get_metrics_from_registry, opts} |> Sanbase.Cache.hash()
+  end
 
-    Sanbase.Cache.get_or_store(key, fn ->
+  defp get_metrics_from_registry(opts) do
+    # Do not allow any other keys to be passed.
+    # This is important as we need to invalidate all possible caches when
+    # refreshign the stored terms
+    Keyword.validate!(opts, [:remove_hard_deprecated])
+
+    IO.inspect(
+      "GET OR STORE? =================================================================================================== "
+    )
+
+    Sanbase.Cache.get_or_store(registry_cache_key(opts), fn ->
+      IO.inspect("FETCHING NEW NOT CACHED!!!!!!!!!")
+
       data =
         Sanbase.Metric.Registry.all()
         |> Sanbase.Metric.Registry.resolve()
@@ -241,17 +261,21 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   defp key(fun, args) when is_atom(fun) and is_list(args),
     do: {__MODULE__, fun, args}
 
+  # NOTE: The compute/2 function should NEVER call one of the public functions that get
+  # their data from the persistent_term. Doing this will interfer with how the refresh
+  # works and it will essentially not refresh the data with the newest data from the
+  # database.
   defp compute(:aggregations, []), do: Sanbase.Metric.SqlQuery.Helper.aggregations()
 
   defp compute(:aggregations_with_nil, []), do: [nil] ++ aggregations()
 
   defp compute(:access_map, []) do
-    get_metrics(from: __ENV__.function)
+    get_metrics([])
     |> Map.new(&{&1.metric, String.to_existing_atom(&1.access)})
   end
 
   defp compute(:table_map, []) do
-    get_metrics(from: __ENV__.function)
+    get_metrics([])
     |> Map.new(fn map ->
       # Almost all metrics have a single source table.
       # The exceptions are custom metrics that are handled in a custom way,
@@ -268,22 +292,22 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   end
 
   defp compute(:metrics_list, []),
-    do: get_metrics(from: __ENV__.function) |> Enum.map(& &1.metric)
+    do: get_metrics([]) |> Enum.map(& &1.metric)
 
   defp compute(:metrics_mapset, []),
-    do: get_metrics(from: __ENV__.function) |> MapSet.new(& &1.metric)
+    do: get_metrics([]) |> MapSet.new(& &1.metric)
 
   defp compute(:aggregation_map, []) do
-    get_metrics(from: __ENV__.function)
+    get_metrics([])
     |> Map.new(&{&1.metric, String.to_existing_atom(&1.default_aggregation)})
   end
 
   defp compute(:min_interval_map, []) do
-    get_metrics(from: __ENV__.function) |> Map.new(&{&1.metric, &1.min_interval})
+    get_metrics([]) |> Map.new(&{&1.metric, &1.min_interval})
   end
 
   defp compute(:min_plan_map, []) do
-    get_metrics(from: __ENV__.function)
+    get_metrics([])
     |> Map.new(fn metric_map ->
       min_plan_map = %{
         "SANBASE" => String.upcase(metric_map.sanbase_min_plan),
@@ -295,11 +319,11 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   end
 
   defp compute(:names_map, []) do
-    get_metrics(from: :names_map) |> Map.new(&{&1.metric, &1.internal_metric})
+    get_metrics([]) |> Map.new(&{&1.metric, &1.internal_metric})
   end
 
   defp compute(:docs_links_map, []) do
-    get_metrics(from: :docs_links_map)
+    get_metrics([])
     |> Map.new(fn m ->
       docs_links = m.docs |> Enum.map(& &1.link)
       {m.metric, docs_links}
@@ -307,35 +331,35 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   end
 
   defp compute(:name_to_metric_map, []) do
-    get_metrics(from: :name_to_metric_map) |> Map.new(&{&1.metric, &1.internal_metric})
+    get_metrics([]) |> Map.new(&{&1.metric, &1.internal_metric})
   end
 
   defp compute(:metric_to_names_map, []) do
-    get_metrics(from: :metric_to_names_map)
+    get_metrics([])
     |> Enum.group_by(& &1.internal_metric, & &1.metric)
   end
 
   defp compute(:human_readable_name_map, []) do
-    get_metrics(from: :human_readable_name_map) |> Map.new(&{&1.metric, &1.human_readable_name})
+    get_metrics([]) |> Map.new(&{&1.metric, &1.human_readable_name})
   end
 
   defp compute(:metrics_data_type_map, []) do
-    get_metrics(from: :metrics_data_type_map)
+    get_metrics([])
     |> Map.new(&{&1.metric, String.to_atom(&1.data_type)})
   end
 
   defp compute(:incomplete_data_map, []) do
-    get_metrics(from: :incomplete_data_map) |> Map.new(&{&1.metric, &1.has_incomplete_data})
+    get_metrics([]) |> Map.new(&{&1.metric, &1.has_incomplete_data})
   end
 
   defp compute(:incomplete_metrics, []) do
-    get_metrics(from: :incomplete_metrics)
+    get_metrics([])
     |> Enum.filter(& &1.has_incomplete_data)
     |> Enum.map(& &1.metric)
   end
 
   defp compute(:selectors_map, []) do
-    get_metrics(from: :selectors_map)
+    get_metrics([])
     |> Map.new(fn m ->
       selectors =
         m.selectors
@@ -347,7 +371,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   end
 
   defp compute(:required_selectors_map, []) do
-    get_metrics(from: :required_selectors_map)
+    get_metrics([])
     |> Enum.reject(&(&1.required_selectors == []))
     |> Map.new(fn m ->
       # ["slug", "label_fqn|label_fqns"] should be parsed as [:slug, [:label_fqn, :label_fqns]]
@@ -366,29 +390,29 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   end
 
   defp compute(:deprecated_metrics_map, []) do
-    get_metrics(from: :deprecated_metrics_map, remove_hard_deprecated: false)
+    get_metrics(remove_hard_deprecated: false)
     |> Enum.filter(& &1.hard_deprecate_after)
     |> Map.new(&{&1.metric, &1.hard_deprecate_after})
   end
 
   defp compute(:soft_deprecated_metrics_map, []) do
-    get_metrics(from: :soft_deprecated_metrics_map)
+    get_metrics([])
     |> Map.new(&{&1.metric, &1.is_deprecated})
   end
 
   defp compute(:hidden_metrics_mapset, []) do
-    get_metrics(from: :hidden_metrics_mapset)
+    get_metrics([])
     |> Enum.filter(& &1.is_hidden)
     |> MapSet.new(& &1.metric)
   end
 
   defp compute(:timebound_flag_map, []) do
-    get_metrics(from: :timebound_flag_map)
+    get_metrics([])
     |> Map.new(&{&1.metric, &1.is_timebound})
   end
 
   defp compute(:metrics_list_with_access, [level]) when level in [:free, :restricted] do
-    access_map()
+    compute(:access_map, [])
     |> Enum.reduce([], fn {metric, restrictions}, acc ->
       if resolve_access_level(restrictions) === level,
         do: [metric | acc],
@@ -406,7 +430,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   end
 
   defp compute(:fixed_labels_parameters_metrics_mapset, []) do
-    get_metrics(from: :fixed_labels_parameters_metrics_mapset)
+    get_metrics([])
     |> Enum.reduce(MapSet.new(), fn m, acc ->
       case m.fixed_parameters do
         %{} = map when map_size(map) == 0 -> acc
@@ -416,16 +440,17 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   end
 
   defp compute(:fixed_labels_parameters_metrics_list, []) do
-    Enum.to_list(fixed_labels_parameters_metrics_mapset())
+    compute(:fixed_labels_parameters_metrics_mapset, [])
+    |> Enum.to_list()
   end
 
   defp compute(:fixed_parameters_map, []) do
-    get_metrics(from: :fixed_parameters_map)
+    get_metrics([])
     |> Map.new(&{&1.metric, &1.fixed_parameters})
   end
 
   defp compute(:metrics_list_with_data_type, [type]) do
-    get_metrics(from: {:metrics_list_with_data_type, type})
+    get_metrics([])
     |> Enum.reduce([], fn m, acc ->
       if String.to_atom(m.data_type) == type,
         do: [m.metric | acc],
@@ -434,7 +459,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   end
 
   defp compute(:metrics_mapset_with_data_type, [type]) do
-    get_metrics(from: {:metrics_mapset_with_data_type, type})
+    get_metrics([])
     |> Enum.reduce(MapSet.new(), fn m, acc ->
       if String.to_atom(m.data_type) == type,
         do: MapSet.put(acc, m.metric),

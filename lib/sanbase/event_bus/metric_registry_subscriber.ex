@@ -37,7 +37,13 @@ defmodule Sanbase.EventBus.MetricRegistrySubscriber do
               :create_metric_registry,
               :delete_metric_registry
             ] do
+    IO.inspect("HEREJHRKEAJHRKEJH")
+    Process.sleep(5000)
+    Logger.info("Start refreshing stored terms from #{__MODULE__}")
+    # Do not change the order here
     Sanbase.Clickhouse.MetricAdapter.Registry.refresh_stored_terms()
+
+    Sanbase.Metric.Helper.refresh_stored_terms()
     Sanbase.Billing.Plan.StandardAccessChecker.refresh_stored_terms()
 
     EventBus.mark_as_completed({__MODULE__, event_shadow})

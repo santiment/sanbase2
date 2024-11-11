@@ -70,10 +70,7 @@ defmodule Sanbase.SmartContracts.SanrNFT do
 
   defp do_get_all_nft_expiration_dates() do
     req =
-      Req.new(
-        base_url:
-          "https://sanrnew-api.production.internal.santiment.net/api/v1/SanbaseSubscriptionNFTCollection/all"
-      )
+      Req.new(base_url: "https://api.sanr.app/v1/SanbaseSubscriptionNFTCollection/all")
 
     result = Req.get(req, [])
 

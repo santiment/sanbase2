@@ -20,7 +20,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
      socket
      |> assign(
        metric_registry: metric_registry,
-       age_title: page_title(socket.assigns.live_action),
+       page_title: page_title(socket.assigns.live_action),
        form: form,
        save_errors: []
      )}
@@ -136,7 +136,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
         <.deprecation_input form={@form} />
         <.button phx-disable-with="Saving...">Save</.button>
 
-        <.error :for={{field, [reason]} <- @save_errors} ha>
+        <.error :for={{field, [reason]} <- @save_errors}>
           <%= to_string(field) <> ": " <> inspect(reason) %>
         </.error>
       </.simple_form>

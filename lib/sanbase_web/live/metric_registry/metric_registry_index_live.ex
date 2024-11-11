@@ -28,7 +28,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
       </div>
       <.filters filter={@filter} />
       <div class="my-2">
-        <.action_button text="Create New Metric" href={~p"/metric_registry/new"} />
+        <.action_button text="Create New Metric" href={~p"/admin2/metric_registry/new"} />
       </div>
       <AvailableMetricsComponents.table_with_popover_th id="metrics_registry" rows={@visible_metrics}>
         <:col :let={row} label="ID">
@@ -78,8 +78,8 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           popover_target="popover-metric-details"
           popover_target_text={get_popover_text(%{key: "Metric Details"})}
         >
-          <.action_button text="Show" href={~p"/metric_registry/show/#{row.id}"} />
-          <.action_button text="Edit" href={~p"/metric_registry/edit/#{row.id}"} />
+          <.action_button text="Show" href={~p"/admin2/metric_registry/show/#{row.id}"} />
+          <.action_button text="Edit" href={~p"/admin2/metric_registry/edit/#{row.id}"} />
         </:col>
       </AvailableMetricsComponents.table_with_popover_th>
     </div>

@@ -41,14 +41,14 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
       <div class="my-4">
         <AvailableMetricsComponents.available_metrics_button
           text="Back to Metric Registry"
-          href={~p"/metric_registry"}
+          href={~p"/admin2/metric_registry"}
           icon="hero-arrow-uturn-left"
         />
 
         <AvailableMetricsComponents.available_metrics_button
           :if={@live_action == :edit}
           text="See Metric"
-          href={~p"/metric_registry/show/#{@metric_registry}"}
+          href={~p"/admin2/metric_registry/show/#{@metric_registry}"}
           icon="hero-arrow-right-circle"
         />
       </div>
@@ -354,7 +354,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
              socket
              |> assign(save_errors: [])
              |> put_flash(:info, "Metric registry created")
-             |> push_navigate(to: ~p"/metric_registry/show/#{struct}")}
+             |> push_navigate(to: ~p"/admin2/metric_registry/show/#{struct}")}
 
           {:error, error} ->
             errors = Sanbase.Utils.ErrorHandling.changeset_errors(error)
@@ -385,7 +385,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
              socket
              |> assign(metric_registry: metric_registry, save_errors: [])
              |> put_flash(:info, "Metric registry updated")
-             |> push_navigate(to: ~p"/metric_registry/show/#{metric_registry.id}")}
+             |> push_navigate(to: ~p"/admin2/metric_registry/show/#{metric_registry.id}")}
 
           {:error, changeset} ->
             errors = Sanbase.Utils.ErrorHandling.changeset_errors(changeset)

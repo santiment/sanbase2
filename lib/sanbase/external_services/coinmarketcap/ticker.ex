@@ -105,22 +105,25 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
   end
 
   # Fetch quotes for single project
-  @spec fetch_data_by_slug(String.t()) :: {:error, String.t()} | {:ok, [%__MODULE__{}]}
-  def fetch_data_by_slug(slug) do
-    "v1/cryptocurrency/quotes/latest?slug=#{slug}&convert=USD,BTC"
+  @spec fetch_data_by_slug([String.t()]) :: {:error, String.t()} | {:ok, [%__MODULE__{}]}
+  def fetch_data_by_slug(slugs) when is_list(slugs) do
+    slug_str = Enum.join(slugs, ",")
+
+    "v1/cryptocurrency/quotes/latest?slug=#{slug_str}&convert=USD,BTC"
     |> get()
     |> case do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         {:ok, parse_json(body)}
 
       {:ok, %Tesla.Env{status: status}} ->
-        error = "Failed fetching #{slug} information. Status: #{status}"
+        error = "Failed fetching data for #{length(slugs)} slugs. Status: #{status}"
 
         Logger.warning(error)
         {:error, error}
 
       {:error, error} ->
-        error_msg = "Error fetching #{slug} information. Error message #{inspect(error)}"
+        error_msg =
+          "Error fetching data for #{length(slugs)} information. Error message #{inspect(error)}"
 
         Logger.error(error_msg)
 

@@ -39,14 +39,68 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     end
   end
 
+  @custom_cmc_slugs ~w[
+    bemo-staked-ton
+    benqi-liquid-staked-avax
+    blazestake-staked-sol
+    chain-key-bitcoin
+    coinbase-wrapped-staked-eth
+    ethena-staked-usde
+    ether-fi
+    frax-staked-ether
+    haedal-staked-sui
+    jito-staked-sol
+    kelp-dao-restaked-eth
+    lido-finance-wsteth
+    lido-for-solana
+    lido-staked-matic
+    liquid-staked-eth
+    mantle-staked-ether
+    nxm
+    renzo-restaked-eth
+    restaked-swell-ethereum
+    rocket-pool-eth
+    santiment
+    stader-ethx
+    staked-eth
+    staked-trx
+    staked-wemix
+    steth
+    volo-staked-su
+    weth
+    wmatic
+    wrapped-ampleforth
+    wrapped-astar
+    wrapped-bitcoin
+    wrapped-cardano
+    wrapped-centrifuge
+    wrapped-cro
+    wrapped-dog
+    wrapped-eeth
+    wrapped-everscale
+    wrapped-fantom
+    wrapped-iotex
+    wrapped-islamic-coin
+    wrapped-mantle
+    wrapped-ncg
+    wrapped-pulse
+    wrapped-tao
+    wrapped-tron
+    wrapped-xdc-network
+  ]
   def work(opts \\ []) do
     Logger.info("[CMC] Fetching realtime data from coinmarketcap")
     # Fetch current coinmarketcap data for many tickers
+    # It fetches data for the the first N projects, where N is specified in
+    # the COINMARKETCAP_API_PROJECTS_NUMBER env var
     {:ok, tickers} = Ticker.fetch_data(opts)
-    # Add a special case for SAN token since it might be out of top 5K projects
-    {:ok, san_tickers} = Ticker.fetch_data_by_slug("santiment")
+    fetched_slugs = MapSet.new(tickers, & &1.slug)
 
-    tickers = tickers ++ san_tickers
+    # Handle separately tokens that might be out of top N.
+    custom_cmc_slugs = @custom_cmc_slugs |> Enum.reject(&(&1 in fetched_slugs))
+    {:ok, custom_tickers} = Ticker.fetch_data_by_slug(custom_cmc_slugs)
+
+    tickers = tickers ++ custom_tickers
 
     # Create a map where the coinmarketcap_id is key and the values is the list of
     # santiment slugs that have that coinmarketcap_id
@@ -96,7 +150,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
                 t
 
               {:error, error} ->
-                Logger.info("[CMC] Price validation failed: #{error}")
+                Logger.info("[CMC] Price validation failed: #{inspect(error)}")
                 Map.put(t, :price_usd, nil)
             end
           end)
@@ -106,7 +160,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
                 t
 
               {:error, error} ->
-                Logger.info("[CMC] Price validation failed: #{error}")
+                Logger.info("[CMC] Price validation failed: #{inspect(error)}")
                 Map.put(t, :price_usd, nil)
             end
           end)

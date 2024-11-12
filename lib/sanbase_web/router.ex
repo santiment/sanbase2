@@ -82,6 +82,7 @@ defmodule SanbaseWeb.Router do
     resources("/generic", GenericAdminController)
 
     live("/metric_registry", MetricRegistryIndexLive)
+    live("/metric_registry/change_suggestions", MetricRegistryChangeSuggestionsLive)
     live("/metric_registry/show/:id", MetricRegistryShowLive)
     live("/metric_registry/edit/:id", MetricRegistryFormLive, :edit)
     live("/metric_registry/new", MetricRegistryFormLive, :new)

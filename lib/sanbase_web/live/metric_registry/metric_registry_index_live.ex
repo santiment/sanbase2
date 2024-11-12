@@ -26,10 +26,8 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           Showing <%= length(@visible_metrics) %> metrics
         </div>
       </div>
+      <.navigation />
       <.filters filter={@filter} />
-      <div class="my-2">
-        <.action_button text="Create New Metric" href={~p"/admin2/metric_registry/new"} />
-      </div>
       <AvailableMetricsComponents.table_with_popover_th id="metrics_registry" rows={@visible_metrics}>
         <:col :let={row} label="ID">
           <%= row.id %>
@@ -111,9 +109,29 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
      )}
   end
 
+  defp navigation(assigns) do
+    ~H"""
+    <div class="my-2">
+      <div>
+        <.action_button
+          icon="hero-plus"
+          text="Create New Metric"
+          href={~p"/admin2/metric_registry/new"}
+        />
+        <.action_button
+          icon="hero-list-bullet"
+          text="See Change Suggestions"
+          href={~p"/admin2/metric_registry/change_suggestions"}
+        />
+      </div>
+    </div>
+    """
+  end
+
   defp filters(assigns) do
     ~H"""
     <div>
+      <span class="text-sm font-semibold leading-6 text-zinc-800">Filters</span>
       <form
         phx-change="apply_filters"
         class="flex flex-col flex-wrap space-y-2 items-start md:flex-row md:items-center md:gap-x-2 md:space-y-0"
@@ -150,12 +168,17 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     """
   end
 
+  attr :href, :string, required: true
+  attr :text, :string, required: true
+  attr :icon, :string, required: false, default: nil
+
   defp action_button(assigns) do
     ~H"""
     <.link
       href={@href}
       class="text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center gap-x-2"
     >
+      <.icon :if={@icon} name={@icon} />
       <%= @text %>
     </.link>
     """

@@ -7,7 +7,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
   alias SanbaseWeb.AvailableMetricsComponents
 
   @impl true
-  def mount(params, _session, socket) do
+  def mount(params, session, socket) do
     {:ok, metric_registry} =
       case socket.assigns.live_action do
         :new -> {:ok, %Registry{}}
@@ -20,7 +20,8 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
      socket
      |> assign(
        metric_registry: metric_registry,
-       page_title: page_title(socket.assigns.live_action),
+       email: get_email(session),
+       page_title: page_title(socket.assigns.live_action, metric_registry.metric),
        form: form,
        save_errors: []
      )}
@@ -51,6 +52,19 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
           href={~p"/admin2/metric_registry/show/#{@metric_registry}"}
           icon="hero-arrow-right-circle"
         />
+      </div>
+      <div>
+        <span :if={!!@email}>Submit channges as: <span class="font-bold"><%= @email %></span></span>
+        <span :if={!@email}>
+          If you want to label your change submission with your email,
+          <.link
+            class="text-blue-500 underline"
+            href={SanbaseWeb.Endpoint.frontend_url()}
+            target="_blank"
+          >
+            login to Sanbase!
+          </.link>
+        </span>
       </div>
       <.simple_form id="metric_registry_form" for={@form} phx-change="validate" phx-submit="save">
         <.input type="text" id="input-metric" field={@form[:metric]} label="Metric" />
@@ -134,8 +148,26 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
         />
 
         <.deprecation_input form={@form} />
-        <.button phx-disable-with="Saving...">Save</.button>
+        <div class="border border-gray-200 rounded-lg px-3 py-6 flex-row space-y-5">
+          <span class="text-sm font-semibold leading-6 text-zinc-800">
+            Extra Change Suggestion details
+          </span>
 
+          <.input
+            type="textarea"
+            name="notes"
+            value=""
+            label="Notes"
+            placeholder="Explanation why the changes are submitted"
+          />
+          <.input
+            type="text"
+            label="Submitted by (prefilled if logged into Sanbase)"
+            name="submitted_by"
+            value={@email}
+          />
+          <.button phx-disable-with="Saving...">Save</.button>
+        </div>
         <.error :for={{field, [reason]} <- @save_errors}>
           <%= to_string(field) <> ": " <> inspect(reason) %>
         </.error>
@@ -372,23 +404,31 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
     end
   end
 
-  @impl true
-  def handle_event("save", %{"registry" => params}, socket)
+  def handle_event(
+        "save",
+        %{"registry" => params, "notes" => notes, "submitted_by" => submitted_by},
+        socket
+      )
       when socket.assigns.live_action == :edit do
     case socket.assigns.form.errors do
       [] ->
         params = process_params(params)
 
-        case Registry.update(socket.assigns.metric_registry, params) do
-          {:ok, metric_registry} ->
+        case Registry.ChangeSuggestion.create_change_suggestion(
+               socket.assigns.metric_registry,
+               params,
+               notes,
+               submitted_by
+             ) do
+          {:ok, _change_suggestion} ->
             {:noreply,
              socket
-             |> assign(metric_registry: metric_registry, save_errors: [])
-             |> put_flash(:info, "Metric registry updated")
-             |> push_navigate(to: ~p"/admin2/metric_registry/show/#{metric_registry.id}")}
+             |> put_flash(:info, "Metric registry change suggestion submitted")
+             |> push_navigate(to: ~p"/admin2/metric_registry/change_suggestions/")}
 
           {:error, changeset} ->
             errors = Sanbase.Utils.ErrorHandling.changeset_errors(changeset)
+            require(IEx).pry
 
             {:noreply,
              socket
@@ -404,7 +444,11 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
   end
 
   @impl true
-  def handle_event("validate", %{"registry" => params}, socket) do
+  def handle_event(
+        "validate",
+        %{"registry" => params},
+        socket
+      ) do
     params = process_params(params)
 
     form =
@@ -412,7 +456,12 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
       |> Registry.changeset(params)
       |> to_form(action: :validate)
 
-    {:noreply, socket |> assign(form: form, save_errors: [])}
+    {:noreply,
+     socket
+     |> assign(
+       form: form,
+       save_errors: []
+     )}
   end
 
   defp process_params(params) do
@@ -445,6 +494,19 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
 
   defp maybe_update_if_present(params, _), do: params
 
-  defp page_title(:new), do: "Create new metric"
-  defp page_title(:edit), do: "Edit a metric"
+  defp page_title(:new, _), do: "Creating a new metric"
+  defp page_title(:edit, metric), do: "#{metric} | Edit metric"
+
+  # Get the email from the refresh token. The access token expires more quick
+  # and we don't need to refresh it from here. We only need to get the email
+  # of the santiment user in order to prefill some column showing who submits the
+  # suggestion
+  defp get_email(%{"refresh_token" => token}) when is_binary(token) do
+    case SanbaseWeb.Guardian.resource_from_token(token) do
+      {:ok, %{email: email}, _token_claims} when is_binary(email) -> email
+      _ -> nil
+    end
+  end
+
+  defp get_email(_), do: nil
 end

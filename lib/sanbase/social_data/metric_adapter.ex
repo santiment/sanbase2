@@ -13,7 +13,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
   alias Sanbase.SocialData.SocialHelper
   alias Sanbase.Project
 
-  @aggregations [:sum]
+  @aggregations [:sum, :avg]
   @sources ["total"] ++ SocialHelper.sources()
   @social_volume_timeseries_metrics ["nft_social_volume"] ++
                                       Enum.map(@sources, fn source ->
@@ -323,13 +323,20 @@ defmodule Sanbase.SocialData.MetricAdapter do
         _ -> "5m"
       end
 
+    default_aggregation =
+      cond do
+        String.contains?(metric, "social_dominance") -> :avg
+        String.contains?(metric, "volume_consumed") -> :avg
+        true -> :sum
+      end
+
     {:ok,
      %{
        metric: metric,
        internal_metric: metric,
        has_incomplete_data: has_incomplete_data?(metric),
        min_interval: min_interval,
-       default_aggregation: :sum,
+       default_aggregation: default_aggregation,
        available_aggregations: @aggregations,
        available_selectors: selectors,
        required_selectors: [],

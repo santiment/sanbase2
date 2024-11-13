@@ -21,8 +21,8 @@ defmodule Sanbase.Metric.Helper do
   # This way the default data shown is for the metrics from the Price module
   # This way the behavior is backward compatible
   @modules [
-    Sanbase.Price.MetricAdapter,
     Sanbase.PricePair.MetricAdapter,
+    Sanbase.Price.MetricAdapter,
     Sanbase.Clickhouse.Github.MetricAdapter,
     Sanbase.SocialData.MetricAdapter,
     Sanbase.Twitter.MetricAdapter,
@@ -156,7 +156,7 @@ defmodule Sanbase.Metric.Helper do
         # If there is a metric that has a different set of aggregations compared to
         # the other metrics in the module, this needs to be reworked to call
         # module.metadata(metric)
-        Map.put_new(acc, metric, [nil] ++ module.available_aggregations())
+        Map.put(acc, metric, [nil] ++ module.available_aggregations())
     end
   end
 
@@ -199,7 +199,7 @@ defmodule Sanbase.Metric.Helper do
         metric <- module.available_metrics(),
         reduce: %{} do
       acc ->
-        Map.put_new(acc, metric, module)
+        Map.put(acc, metric, module)
     end
   end
 
@@ -218,7 +218,7 @@ defmodule Sanbase.Metric.Helper do
         metric <- module.available_timeseries_metrics(),
         reduce: %{} do
       acc ->
-        Map.put_new(acc, metric, module)
+        Map.put(acc, metric, module)
     end
   end
 
@@ -237,7 +237,7 @@ defmodule Sanbase.Metric.Helper do
         metric <- module.available_histogram_metrics(),
         reduce: %{} do
       acc ->
-        Map.put_new(acc, metric, module)
+        Map.put(acc, metric, module)
     end
   end
 
@@ -256,7 +256,7 @@ defmodule Sanbase.Metric.Helper do
         metric <- module.available_table_metrics(),
         reduce: %{} do
       acc ->
-        Map.put_new(acc, metric, module)
+        Map.put(acc, metric, module)
     end
   end
 

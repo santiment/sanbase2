@@ -115,8 +115,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         {:ok, parse_json(body)}
 
-      {:ok, %Tesla.Env{status: status}} ->
-        error = "Failed fetching data for #{length(slugs)} slugs. Status: #{status}"
+      {:ok, %Tesla.Env{status: status, body: body}} ->
+        error =
+          "Failed fetching data for #{length(slugs)} slugs. Status: #{status}. Body: #{inspect(body)}"
 
         Logger.warning(error)
         {:error, error}

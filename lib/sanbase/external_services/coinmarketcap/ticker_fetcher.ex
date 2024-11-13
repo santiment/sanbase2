@@ -66,7 +66,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     staked-trx
     staked-wemix
     steth
-    volo-staked-su
+    volo-staked-sui
     weth
     wmatic
     wrapped-ampleforth

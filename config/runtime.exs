@@ -86,6 +86,7 @@ if config_env() == :prod do
     check_origin: [
       "//*.santiment.net",
       "//*.sanr.app",
+      "//*.sanitize.page",
       "//*.sanbase-admin.stage.san",
       "//*.sanbase-admin.production.san"
     ]

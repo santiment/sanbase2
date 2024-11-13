@@ -319,8 +319,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   defp compute(:docs_links_map, []) do
     get_metrics([])
     |> Map.new(fn m ->
-      docs_links = m.docs |> Enum.map(& &1.link)
-      {m.metric, docs_links}
+      {m.metric, m.docs}
     end)
   end
 

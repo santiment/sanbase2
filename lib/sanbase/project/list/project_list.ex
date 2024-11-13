@@ -199,7 +199,9 @@ defmodule Sanbase.Project.List do
     projects_query(opts)
     |> preload([:source_slug_mappings])
     |> Repo.all()
-    |> Enum.filter(fn project -> source in Enum.map(project.source_slug_mappings, & &1.source) end)
+    |> Enum.filter(fn project ->
+      source in Enum.map(project.source_slug_mappings, & &1.source)
+    end)
   end
 
   @doc ~s"""

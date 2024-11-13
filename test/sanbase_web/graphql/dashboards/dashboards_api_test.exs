@@ -306,7 +306,9 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
       # In test env the storing runs not async and there's a 7500ms sleep
       Application.put_env(:__sanbase_queries__, :__store_execution_details__, false)
 
-      on_exit(fn -> Application.delete_env(:__sanbase_queries__, :__store_execution_details__) end)
+      on_exit(fn ->
+        Application.delete_env(:__sanbase_queries__, :__store_execution_details__)
+      end)
 
       {:ok, query} = create_query(context.user.id)
 
@@ -377,7 +379,9 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
       # In test env the storing runs not async and there's a 7500ms sleep
       Application.put_env(:__sanbase_queries__, :__store_execution_details__, false)
 
-      on_exit(fn -> Application.delete_env(:__sanbase_queries__, :__store_execution_details__) end)
+      on_exit(fn ->
+        Application.delete_env(:__sanbase_queries__, :__store_execution_details__)
+      end)
 
       {:ok, query} = create_query(context.user.id)
 
@@ -480,7 +484,9 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
       # In test env the storing runs not async and there's a 7500ms sleep
       Application.put_env(:__sanbase_queries__, :__store_execution_details__, false)
 
-      on_exit(fn -> Application.delete_env(:__sanbase_queries__, :__store_execution_details__) end)
+      on_exit(fn ->
+        Application.delete_env(:__sanbase_queries__, :__store_execution_details__)
+      end)
 
       {:ok, query} = create_query(context.user.id)
 
@@ -658,7 +664,9 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
       # In test env the storing runs not async and there's a 7500ms sleep
       Application.put_env(:__sanbase_queries__, :__store_execution_details__, false)
 
-      on_exit(fn -> Application.delete_env(:__sanbase_queries__, :__store_execution_details__) end)
+      on_exit(fn ->
+        Application.delete_env(:__sanbase_queries__, :__store_execution_details__)
+      end)
 
       {:ok, query} = Sanbase.Queries.create_query(%{name: "Query"}, context.user.id)
 

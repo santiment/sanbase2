@@ -34,7 +34,10 @@ defmodule Sanbase.Project.Multichain do
       multichain_project_group_key: opts[:multichain_project_group_key],
       deployed_on_ecosystem_id: opts[:ecosystem_id]
     })
-    |> Ecto.Changeset.validate_required([:deployed_on_ecosystem_id, :multichain_project_group_key])
+    |> Ecto.Changeset.validate_required([
+      :deployed_on_ecosystem_id,
+      :multichain_project_group_key
+    ])
     |> Sanbase.Repo.update()
   end
 

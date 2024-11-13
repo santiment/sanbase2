@@ -108,7 +108,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
               # updated the state, so this is the true first login
               {:ok, :evolve_state, user} -> {:ok, %{user | first_login: true}}
               {:ok, :keep_state, user} -> {:ok, user}
-              {:eror, error} -> {:error, error}
             end
         end
     end

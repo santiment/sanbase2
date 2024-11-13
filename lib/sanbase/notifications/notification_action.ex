@@ -18,7 +18,13 @@ defmodule Sanbase.Notifications.NotificationAction do
   def changeset(notification_action, attrs) do
     notification_action
     |> cast(attrs, [:action_type, :scheduled_at, :status, :requires_verification, :verified])
-    |> validate_required([:action_type, :scheduled_at, :status, :requires_verification, :verified])
+    |> validate_required([
+      :action_type,
+      :scheduled_at,
+      :status,
+      :requires_verification,
+      :verified
+    ])
     |> validate_status()
     |> validate_action_type()
   end

@@ -79,7 +79,7 @@ defmodule Sanbase.Price.MetricAdapter do
        metric: metric,
        internal_metric: metric,
        has_incomplete_data: has_incomplete_data?(metric),
-       min_interval: "5m",
+       min_interval: "1s",
        default_aggregation: @default_aggregation,
        available_aggregations: @aggregations,
        available_selectors: [:slug],

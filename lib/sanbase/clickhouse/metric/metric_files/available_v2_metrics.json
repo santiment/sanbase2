@@ -13,7 +13,7 @@
       "SANBASE": "free"
     },
     "aggregation": "last",
-    "min_interval": "5m",
+    "min_interval": "1s",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",

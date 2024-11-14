@@ -105,16 +105,19 @@ defmodule Sanbase.Metric do
   """
   @spec has_incomplete_data?(Sanbase.Metric.Behaviour.metric()) :: boolean()
   def has_incomplete_data?(metric) do
-    module = get_module(metric)
+    case get_module(metric) do
+      nil ->
+        metric_not_available_error(metric)
 
-    module.has_incomplete_data?(metric)
+      module when is_atom(module) ->
+        module.has_incomplete_data?(metric)
+    end
   end
 
   def broken_data(metric, selector, from, to) do
-    module = get_module(metric, selector: selector)
     metric = maybe_replace_metric(metric, selector)
 
-    case module do
+    case get_module(metric, selector: selector) do
       nil ->
         metric_not_available_error(metric)
 
@@ -250,6 +253,10 @@ defmodule Sanbase.Metric do
   def slugs_by_filter(metric, from, to, operation, threshold, opts \\ [])
 
   def slugs_by_filter(metric, from, to, operation, threshold, opts) do
+    # In case of metrics like social_dominance_total that can be fetched
+    # from 2 modules, make sure that the module that supports slug is preferred
+    opts = Keyword.put(opts, :prefers, :slug)
+
     case get_module(metric, opts: opts) do
       nil ->
         metric_not_available_error(metric, type: :timeseries)
@@ -286,6 +293,10 @@ defmodule Sanbase.Metric do
   def slugs_order(metric, from, to, direction, opts \\ [])
 
   def slugs_order(metric, from, to, direction, opts) do
+    # In case of metrics like social_dominance_total that can be fetched
+    # from 2 modules, make sure that the module that supports slug is preferred
+    opts = Keyword.put(opts, :prefers, :slug)
+
     case get_module(metric, opts: opts) do
       nil ->
         metric_not_available_error(metric, type: :timeseries)
@@ -850,10 +861,11 @@ defmodule Sanbase.Metric do
     cond do
       metric in Sanbase.SocialData.MetricAdapter.available_metrics() and
           (match?(%{text: _}, selector) or match?(%{contract_address: _}, selector)) ->
-        # When using slug, the social metrics are fetched from clickhouse
-        # But when text selector is used, the metric should be fetched from Elasticsearch
-        # as it cannot be precomputed due to the vast number of possible text arguments
         Sanbase.SocialData.MetricAdapter
+
+      metric in Sanbase.Clickhouse.Github.MetricAdapter.available_metrics() and
+          (match?(%{organization: _}, selector) or match?(%{organizations: _}, selector)) ->
+        Sanbase.Clickhouse.Github.MetricAdapter
 
       metric in Sanbase.PricePair.MetricAdapter.available_metrics() ->
         metric_opts = Keyword.get(opts, :opts, [])
@@ -862,11 +874,42 @@ defmodule Sanbase.Metric do
         cond do
           source == "cryptocompare" -> Sanbase.PricePair.MetricAdapter
           metric == "price_eth" and source != "cryptocompare" -> Sanbase.Clickhouse.MetricAdapter
-          true -> Map.get(Helper.metric_to_module_map(), metric)
+          true -> metric_to_single_module(metric, opts)
         end
 
       true ->
-        Map.get(Helper.metric_to_module_map(), metric)
+        metric_to_single_module(metric, opts)
+    end
+  end
+
+  defp metric_to_single_module(metric, opts) do
+    case Map.get(Helper.metric_to_modules_map(), metric) do
+      nil ->
+        nil
+
+      [module] ->
+        module
+
+      [module1 | _] = modules ->
+        prefers = Keyword.get(opts, :prefers)
+
+        cond do
+          prefers == :slug and Sanbase.Clickhouse.MetricAdapter in modules ->
+            Sanbase.Clickhouse.MetricAdapter
+
+          prefers == :slug and Sanbase.Price.MetricAdapter in modules ->
+            Sanbase.Price.MetricAdapter
+
+          prefers == :slug and Sanbase.PricePair.MetricAdapter in modules ->
+            Sanbase.PricePair.MetricAdapter
+
+          true ->
+            # The modules are not arbitrarily ordered. The first module is the one that appears last
+            # in the @modules module attribute in the Helper module. They are ordered in such a way
+            # that when multiple modules expose the same function, the one listed later should
+            # be preferred if the metric can be fetched from two places.
+            module1
+        end
     end
   end
 

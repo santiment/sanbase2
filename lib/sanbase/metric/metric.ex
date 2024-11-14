@@ -105,20 +105,20 @@ defmodule Sanbase.Metric do
   """
   @spec has_incomplete_data?(Sanbase.Metric.Behaviour.metric()) :: boolean()
   def has_incomplete_data?(metric) do
-    module = Map.get(Helper.metric_to_module_map(), metric)
+    module = get_module(metric)
 
     module.has_incomplete_data?(metric)
   end
 
   def broken_data(metric, selector, from, to) do
+    module = get_module(metric, selector: selector)
     metric = maybe_replace_metric(metric, selector)
 
-    case Map.get(Helper.metric_to_module_map(), metric) do
+    case module do
       nil ->
         metric_not_available_error(metric)
 
       module when is_atom(module) ->
-        module = maybe_change_module(module, metric, selector, [])
         module.broken_data(metric, selector, from, to)
     end
   end
@@ -138,12 +138,11 @@ defmodule Sanbase.Metric do
   def timeseries_data(metric, selector, from, to, interval, opts) do
     metric = maybe_replace_metric(metric, selector)
 
-    case Map.get(Helper.timeseries_metric_to_module_map(), metric) do
+    case get_module(metric, selector: selector, opts: opts) do
       nil ->
         metric_not_available_error(metric, type: :timeseries)
 
       module when is_atom(module) ->
-        module = maybe_change_module(module, metric, selector, opts)
         aggregation = Keyword.get(opts, :aggregation, nil)
 
         fun = fn ->
@@ -177,12 +176,11 @@ defmodule Sanbase.Metric do
   def timeseries_data_per_slug(metric, selector, from, to, interval, opts) do
     metric = maybe_replace_metric(metric, selector)
 
-    case Map.get(Helper.timeseries_metric_to_module_map(), metric) do
+    case get_module(metric, selector: selector, opts: opts) do
       nil ->
         metric_not_available_error(metric, type: :timeseries)
 
       module when is_atom(module) ->
-        module = maybe_change_module(module, metric, selector, opts)
         aggregation = Keyword.get(opts, :aggregation, nil)
 
         fun = fn ->
@@ -215,12 +213,11 @@ defmodule Sanbase.Metric do
   def aggregated_timeseries_data(metric, selector, from, to, opts) do
     metric = maybe_replace_metric(metric, selector)
 
-    case Map.get(Helper.timeseries_metric_to_module_map(), metric) do
+    case get_module(metric, selector: selector, opts: opts) do
       nil ->
         metric_not_available_error(metric, type: :timeseries)
 
       module when is_atom(module) ->
-        module = maybe_change_module(module, metric, selector, opts)
         aggregation = Keyword.get(opts, :aggregation, nil)
 
         fun = fn ->
@@ -253,7 +250,7 @@ defmodule Sanbase.Metric do
   def slugs_by_filter(metric, from, to, operation, threshold, opts \\ [])
 
   def slugs_by_filter(metric, from, to, operation, threshold, opts) do
-    case Map.get(Helper.timeseries_metric_to_module_map(), metric) do
+    case get_module(metric, opts: opts) do
       nil ->
         metric_not_available_error(metric, type: :timeseries)
 
@@ -289,7 +286,7 @@ defmodule Sanbase.Metric do
   def slugs_order(metric, from, to, direction, opts \\ [])
 
   def slugs_order(metric, from, to, direction, opts) do
-    case Map.get(Helper.metric_to_module_map(), metric) do
+    case get_module(metric, opts: opts) do
       nil ->
         metric_not_available_error(metric, type: :timeseries)
 
@@ -320,13 +317,11 @@ defmodule Sanbase.Metric do
   def histogram_data(metric, selector, from, to, interval, limit) do
     metric = maybe_replace_metric(metric, selector)
 
-    case Map.get(Helper.histogram_metric_to_module_map(), metric) do
+    case get_module(metric, selector: selector) do
       nil ->
         metric_not_available_error(metric, type: :histogram)
 
       module when is_atom(module) ->
-        module = maybe_change_module(module, metric, selector, [])
-
         module.histogram_data(
           metric,
           selector,
@@ -350,12 +345,11 @@ defmodule Sanbase.Metric do
   def table_data(metric, selector, from, to, opts) do
     metric = maybe_replace_metric(metric, selector)
 
-    case Map.get(Helper.table_metric_to_module_map(), metric) do
+    case get_module(metric, selector: selector, opts: opts) do
       nil ->
         metric_not_available_error(metric, type: :table)
 
       module when is_atom(module) ->
-        module = maybe_change_module(module, metric, selector, opts)
         aggregation = Keyword.get(opts, :aggregation, nil)
 
         fun = fn ->
@@ -377,7 +371,7 @@ defmodule Sanbase.Metric do
   """
   @spec human_readable_name(metric) :: Type.human_readable_name_result()
   def human_readable_name(metric) do
-    case Map.get(Helper.metric_to_module_map(), metric) do
+    case get_module(metric) do
       nil ->
         metric_not_available_error(metric)
 
@@ -393,7 +387,7 @@ defmodule Sanbase.Metric do
   """
   @spec complexity_weight(metric) :: Type.complexity_weight()
   def complexity_weight(metric) do
-    case Map.get(Helper.metric_to_module_map(), metric) do
+    case get_module(metric) do
       nil ->
         metric_not_available_error(metric, type: :timeseries)
 
@@ -412,7 +406,7 @@ defmodule Sanbase.Metric do
   """
   @spec metadata(metric) :: Type.metadata_result()
   def metadata(metric) do
-    case Map.get(Helper.metric_to_module_map(), metric) do
+    case get_module(metric) do
       nil ->
         metric_not_available_error(metric, type: :timeseries)
 
@@ -431,12 +425,11 @@ defmodule Sanbase.Metric do
   def first_datetime(metric, selector, opts) do
     metric = maybe_replace_metric(metric, selector)
 
-    case Map.get(Helper.metric_to_module_map(), metric) do
+    case get_module(metric, selector: selector, opts: opts) do
       nil ->
         metric_not_available_error(metric, type: :timeseries)
 
       module when is_atom(module) ->
-        module = maybe_change_module(module, metric, selector, opts)
         module.first_datetime(metric, selector)
     end
   end
@@ -450,12 +443,11 @@ defmodule Sanbase.Metric do
   def last_datetime_computed_at(metric, selector, opts) do
     metric = maybe_replace_metric(metric, selector)
 
-    case Map.get(Helper.metric_to_module_map(), metric) do
+    case get_module(metric, selector: selector, opts: opts) do
       nil ->
         metric_not_available_error(metric, type: :timeseries)
 
       module when is_atom(module) ->
-        module = maybe_change_module(module, metric, selector, opts)
         module.last_datetime_computed_at(metric, selector)
     end
   end
@@ -467,7 +459,7 @@ defmodule Sanbase.Metric do
   def available_slugs(metric, opts \\ [])
 
   def available_slugs(metric, opts) do
-    case Map.get(Helper.metric_to_module_map(), metric) do
+    case get_module(metric, opts: opts) do
       nil ->
         metric_not_available_error(metric, type: :timeseries)
 
@@ -492,7 +484,7 @@ defmodule Sanbase.Metric do
 
   @spec available_label_fqns(metric) :: Type.available_label_fqns_result()
   def available_label_fqns(metric) do
-    case Map.get(Helper.metric_to_module_map(), metric) do
+    case get_module(metric) do
       nil ->
         metric_not_available_error(metric, type: :timeseries)
 
@@ -509,7 +501,7 @@ defmodule Sanbase.Metric do
 
   @spec available_label_fqns(metric, selector) :: Type.available_label_fqns_result()
   def available_label_fqns(metric, selector) do
-    case Map.get(Helper.metric_to_module_map(), metric) do
+    case get_module(metric, selector: selector) do
       nil ->
         metric_not_available_error(metric, type: :timeseries)
 
@@ -849,6 +841,32 @@ defmodule Sanbase.Metric do
 
       true ->
         module
+    end
+  end
+
+  defp get_module(metric, opts \\ []) do
+    selector = Keyword.get(opts, :selector, %{})
+
+    cond do
+      metric in Sanbase.SocialData.MetricAdapter.available_metrics() and
+          (match?(%{text: _}, selector) or match?(%{contract_address: _}, selector)) ->
+        # When using slug, the social metrics are fetched from clickhouse
+        # But when text selector is used, the metric should be fetched from Elasticsearch
+        # as it cannot be precomputed due to the vast number of possible text arguments
+        Sanbase.SocialData.MetricAdapter
+
+      metric in Sanbase.PricePair.MetricAdapter.available_metrics() ->
+        metric_opts = Keyword.get(opts, :opts, [])
+        source = Keyword.get(metric_opts, :source) || Map.get(selector, :source)
+
+        cond do
+          source == "cryptocompare" -> Sanbase.PricePair.MetricAdapter
+          metric == "price_eth" and source != "cryptocompare" -> Sanbase.Clickhouse.MetricAdapter
+          true -> Map.get(Helper.metric_to_module_map(), metric)
+        end
+
+      true ->
+        Map.get(Helper.metric_to_module_map(), metric)
     end
   end
 

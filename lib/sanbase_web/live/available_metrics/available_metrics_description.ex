@@ -21,6 +21,23 @@ defmodule SanbaseWeb.AvailableMetricsDescription do
     """
   end
 
+  def get_popover_text(%{key: "Alias"} = assigns) do
+    ~H"""
+    <pre>
+    The aliases are used to provide alternative names for the metric.
+    Example:
+      {
+        getMetric(<b>metric: "age_consumed"</b>){
+          timeseriesData(asset: "ethereum" from: "utc_now-90d" to: "utc_now" interval: "1d"){
+            datetime
+            value
+          }
+        }
+      }
+    </pre>
+    """
+  end
+
   def get_popover_text(%{key: "Internal Name"} = assigns) do
     ~H"""
     <pre>
@@ -33,12 +50,29 @@ defmodule SanbaseWeb.AvailableMetricsDescription do
     """
   end
 
+  def get_popover_text(%{key: "Clickhouse Table"} = assigns) do
+    ~H"""
+    <pre>
+    Specify the name of the clickhouse table in which the metric is stored
+    </pre>
+    """
+  end
+
   def get_popover_text(%{key: "Frequency"} = assigns) do
     ~H"""
     <pre>
     The minimum interval at which the metric is updated.
 
     For more details check <.link href="https://academy.santiment.net/metrics/details/frequency" class="underline text-blue-600">this link</.link>
+    </pre>
+    """
+  end
+
+  def get_popover_text(%{key: "Min Plan"} = assigns) do
+    ~H"""
+    <pre>
+    Controls what is the lowest subscription plan per product
+    that this metric is accessible.
     </pre>
     """
   end
@@ -84,6 +118,37 @@ defmodule SanbaseWeb.AvailableMetricsDescription do
     ~H"""
     <pre>
     A boolean that indicates whether the metric is timebound.
+    </pre>
+    """
+  end
+
+  def get_popover_text(%{key: "Is Template Metric"} = assigns) do
+    ~H"""
+    <pre>
+    A boolean that indicates whether the metric registry record is a template metric.
+    A template metric is one that is used to generate multiple metrics. The template
+    metric's names have {{key}} templates in them that are replaced with the values
+    provided in the parameters field.
+    </pre>
+    """
+  end
+
+  def get_popover_text(%{key: "Parameters"} = assigns) do
+    ~H"""
+    <pre>
+    The parameters used if the metric is a template metric.
+    </pre>
+    """
+  end
+
+  def get_popover_text(%{key: "Fixed Parameters"} = assigns) do
+    ~H"""
+    <pre>
+    The fixed parameters is used to define multiple different API public metrics
+    on top of a single internal metric.
+
+    For example, the 'historical_balance_centralized_exchanges' and 'historical_balance_whales_usd'
+    are defined on top of the internal 'combined_labeled_balance' metric.
     </pre>
     """
   end
@@ -279,6 +344,37 @@ defmodule SanbaseWeb.AvailableMetricsDescription do
     ~H"""
     <pre>
     See more details about the metric.
+    </pre>
+    """
+  end
+
+  def get_popover_text(%{key: "Is Deprecated"} = assigns) do
+    ~H"""
+    <pre>
+    A boolean that indicates whether the metric is deprecated.
+    Deprecated metrics are discouraged to be used as they could be
+    removed in the near future.
+    </pre>
+    """
+  end
+
+  def get_popover_text(%{key: "Hard Deprecate After"} = assigns) do
+    ~H"""
+    <pre>
+    Specifies a datetime after which the metric will no longer be
+    accessible.
+    After the date passes, the metric is not shown in lists of available
+    metrics and querying it will return an error that the metric is
+    deprecated since the specified date.
+    </pre>
+    """
+  end
+
+  def get_popover_text(%{key: "Deprecation Note"} = assigns) do
+    ~H"""
+    <pre>
+    Freeform text explaining why the metric is deprecated.
+    This can include suggestion what other metric can be used instead and how.
     </pre>
     """
   end

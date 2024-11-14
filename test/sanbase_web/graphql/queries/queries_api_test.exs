@@ -164,7 +164,9 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
       # In test env the storing runs not async and there's a 7500ms sleep
       Application.put_env(:__sanbase_queries__, :__store_execution_details__, false)
 
-      on_exit(fn -> Application.delete_env(:__sanbase_queries__, :__store_execution_details__) end)
+      on_exit(fn ->
+        Application.delete_env(:__sanbase_queries__, :__store_execution_details__)
+      end)
 
       mock_fun =
         Sanbase.Mock.wrap_consecutives(
@@ -210,7 +212,9 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
       # In test env the storing runs not async and there's a 7500ms sleep
       Application.put_env(:__sanbase_queries__, :__store_execution_details__, false)
 
-      on_exit(fn -> Application.delete_env(:__sanbase_queries__, :__store_execution_details__) end)
+      on_exit(fn ->
+        Application.delete_env(:__sanbase_queries__, :__store_execution_details__)
+      end)
 
       {:ok, query} = create_query(context.user.id)
 
@@ -254,7 +258,9 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
       # we need to store it here so we can later retrieve the executions info
       Application.put_env(:__sanbase_queries__, :__wait_fetching_details_ms_, 0)
 
-      on_exit(fn -> Application.delete_env(:__sanbase_queries__, :__wait_fetching_details_ms_) end)
+      on_exit(fn ->
+        Application.delete_env(:__sanbase_queries__, :__wait_fetching_details_ms_)
+      end)
 
       mock_fun =
         Sanbase.Mock.wrap_consecutives(
@@ -299,7 +305,9 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
       # we need to store it here so we can later retrieve the executions info
       Application.put_env(:__sanbase_queries__, :__wait_fetching_details_ms_, 0)
 
-      on_exit(fn -> Application.delete_env(:__sanbase_queries__, :__wait_fetching_details_ms_) end)
+      on_exit(fn ->
+        Application.delete_env(:__sanbase_queries__, :__wait_fetching_details_ms_)
+      end)
 
       mock_fun =
         Sanbase.Mock.wrap_consecutives(
@@ -374,7 +382,9 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
     test "cache query executions", context do
       Application.put_env(:__sanbase_queries__, :__store_execution_details__, false)
 
-      on_exit(fn -> Application.delete_env(:__sanbase_queries__, :__store_execution_details__) end)
+      on_exit(fn ->
+        Application.delete_env(:__sanbase_queries__, :__store_execution_details__)
+      end)
 
       {:ok, query} = create_query(context.user.id)
 

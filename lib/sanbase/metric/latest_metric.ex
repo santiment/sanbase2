@@ -6,7 +6,7 @@ defmodule Sanbase.Metric.LatestMetric do
   import Sanbase.Metric.SqlQuery.Helper,
     only: [asset_id_filter: 2, metric_id_filter: 2, aggregation: 3]
 
-  alias Sanbase.Clickhouse.MetricAdapter.FileHandler
+  alias Sanbase.Clickhouse.MetricAdapter.Registry
 
   def latest_metrics_data(metrics, %{slug: slug_or_slugs}) do
     slugs = List.wrap(slug_or_slugs)
@@ -46,7 +46,7 @@ defmodule Sanbase.Metric.LatestMetric do
         {metric, Sanbase.Price.table()}
 
       [metric] ->
-        {metric, Map.get(FileHandler.table_map(), metric)}
+        {metric, Map.get(Registry.table_map(), metric)}
 
       [metric, "cryptocompare"] ->
         {metric, "asset_price_pairs_only"}
@@ -75,7 +75,7 @@ defmodule Sanbase.Metric.LatestMetric do
   end
 
   defp get_metric_name(table, metric) when table in ["intraday_metrics", "daily_metrics_v2"] do
-    name = Map.get(FileHandler.metric_to_names_map(), metric, []) |> List.first()
+    name = Map.get(Registry.metric_to_names_map(), metric, []) |> List.first()
     name || metric
   end
 
@@ -83,7 +83,7 @@ defmodule Sanbase.Metric.LatestMetric do
 
   defp get_data_query(table, metrics, slugs, _opts)
        when table in ["intraday_metrics", "daily_metrics_v2"] do
-    metrics = Enum.map(metrics, &Map.get(FileHandler.name_to_metric_map(), &1))
+    metrics = Enum.map(metrics, &Map.get(Registry.name_to_metric_map(), &1))
 
     sql = """
     SELECT

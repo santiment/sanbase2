@@ -142,7 +142,7 @@ defmodule SanbaseWeb.DataController do
   # Private functions
 
   defp get_clickhouse_metrics_metadata() do
-    table_map = Sanbase.Clickhouse.MetricAdapter.FileHandler.table_map()
+    table_map = Sanbase.Clickhouse.MetricAdapter.Registry.table_map()
 
     data =
       for metric <- Sanbase.Clickhouse.MetricAdapter.available_metrics() do

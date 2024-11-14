@@ -2,7 +2,6 @@ defmodule Sanbase.Metric.Helper do
   @moduledoc """
   A helper module that uses the separate metric modules and  builds maps and
   mappings that combine the data from all modules into a single place.
-
   This module is hiding the metric modules from the user-facing `Sanbase.Metric`
   module and makes adding new modules transparent.
 
@@ -16,244 +15,337 @@ defmodule Sanbase.Metric.Helper do
   will override the ones in Sanbase.SocialData.MetricAdapter.
   """
 
-  #
+  require Logger
+
   # It's important that the Price module goes before the PricePair module.
   # This way the default data shown is for the metrics from the Price module
   # This way the behavior is backward compatible
-  @metric_modules [
-    Sanbase.Price.MetricAdapter,
+  @modules [
     Sanbase.PricePair.MetricAdapter,
+    Sanbase.Price.MetricAdapter,
     Sanbase.Clickhouse.Github.MetricAdapter,
-    Sanbase.Clickhouse.MetricAdapter,
     Sanbase.SocialData.MetricAdapter,
     Sanbase.Twitter.MetricAdapter,
     Sanbase.Clickhouse.TopHolders.MetricAdapter,
     Sanbase.Clickhouse.Uniswap.MetricAdapter,
     Sanbase.BlockchainAddress.MetricAdapter,
-    Sanbase.Contract.MetricAdapter
+    Sanbase.Contract.MetricAdapter,
+    Sanbase.Clickhouse.MetricAdapter
   ]
-  Module.register_attribute(__MODULE__, :implemented_optional_functions_acc, accumulate: true)
-  Module.register_attribute(__MODULE__, :aggregations_acc, accumulate: true)
-  Module.register_attribute(__MODULE__, :aggregations_per_metric_acc, accumulate: true)
-  Module.register_attribute(__MODULE__, :incomplete_metrics_acc, accumulate: true)
-  Module.register_attribute(__MODULE__, :free_metrics_acc, accumulate: true)
-  Module.register_attribute(__MODULE__, :restricted_metrics_acc, accumulate: true)
-  Module.register_attribute(__MODULE__, :access_map_acc, accumulate: true)
-  Module.register_attribute(__MODULE__, :min_plan_map_acc, accumulate: true)
-  Module.register_attribute(__MODULE__, :timeseries_metric_module_mapping_acc, accumulate: true)
-  Module.register_attribute(__MODULE__, :histogram_metric_module_mapping_acc, accumulate: true)
-  Module.register_attribute(__MODULE__, :table_metric_module_mapping_acc, accumulate: true)
-  Module.register_attribute(__MODULE__, :required_selectors_map_acc, accumulate: true)
-  Module.register_attribute(__MODULE__, :deprecated_metrics_acc, accumulate: true)
-  Module.register_attribute(__MODULE__, :soft_deprecated_metrics_acc, accumulate: true)
-  Module.register_attribute(__MODULE__, :fixed_labels_parameters_metrics_acc, accumulate: true)
 
-  for module <- @metric_modules do
-    @required_selectors_map_acc module.required_selectors()
-    @aggregations_acc module.available_aggregations()
-    @incomplete_metrics_acc module.incomplete_metrics()
-    @free_metrics_acc module.free_metrics()
-    @restricted_metrics_acc module.restricted_metrics()
-    @access_map_acc module.access_map()
-    @min_plan_map_acc module.min_plan_map()
+  def access_map(), do: get(:access_map)
+  def aggregations(), do: get(:aggregations)
+  def aggregations_per_metric(), do: get(:aggregations_per_metric)
+  def fixed_labels_parameters_metrics(), do: get(:fixed_labels_parameters_metrics)
+  def free_metrics(), do: get(:free_metrics)
+  def histogram_metric_to_module_map(), do: get(:histogram_metric_to_module_map)
+  def histogram_metrics(), do: get(:histogram_metrics)
+  def histogram_metrics_mapset(), do: get(:histogram_metrics_mapset)
+  def implemented_optional_functions(), do: get(:implemented_optional_functions)
+  def incomplete_metrics(), do: get(:incomplete_metrics)
+  def metric_modules(), do: @modules
+  def metric_to_module_map(), do: get(:metric_to_module_map)
+  def metrics(), do: get(:metrics)
+  def metrics_mapset(), do: get(:metrics_mapset)
+  def min_plan_map(), do: get(:min_plan_map)
+  def required_selectors_map(), do: get(:required_selectors_map)
+  def restricted_metrics(), do: get(:restricted_metrics)
+  def deprecated_metrics_map(), do: get(:deprecated_metrics_map)
+  def soft_deprecated_metrics_map(), do: get(:soft_deprecated_metrics_map)
+  def table_metric_to_module_map(), do: get(:table_metric_to_module_map)
+  def table_metrics(), do: get(:table_metrics)
+  def table_metrics_mapset(), do: get(:table_metrics_mapset)
+  def timeseries_metric_to_module_map(), do: get(:timeseries_metric_to_module_map)
+  def timeseries_metrics(), do: get(:timeseries_metrics)
+  def timeseries_metrics_mapset(), do: get(:timeseries_metrics_mapset)
 
-    aggregations_fn = fn metric ->
-      {:ok, %{available_aggregations: aggr}} = module.metadata(metric)
-      {metric, [nil] ++ aggr}
-    end
+  @functions [
+    {:access_map, []},
+    {:aggregations, []},
+    {:aggregations_per_metric, []},
+    {:fixed_labels_parameters_metrics, []},
+    {:free_metrics, []},
+    {:histogram_metric_to_module_map, []},
+    {:histogram_metrics, []},
+    {:histogram_metrics_mapset, []},
+    {:implemented_optional_functions, []},
+    {:incomplete_metrics, []},
+    {:metric_to_module_map, []},
+    {:metrics, []},
+    {:metrics_mapset, []},
+    {:min_plan_map, []},
+    {:required_selectors_map, []},
+    {:restricted_metrics, []},
+    {:deprecated_metrics_map, []},
+    {:soft_deprecated_metrics_map, []},
+    {:table_metric_to_module_map, []},
+    {:table_metrics, []},
+    {:table_metrics_mapset, []},
+    {:timeseries_metric_to_module_map, []},
+    {:timeseries_metrics, []},
+    {:timeseries_metrics_mapset, []}
+    # Not stored in persistent term
+    # {:metric_modules, []},
+  ]
 
-    @aggregations_per_metric_acc Enum.into(module.available_metrics(), %{}, aggregations_fn)
+  def refresh_stored_terms() do
+    Logger.info("Refreshing stored terms in the #{__MODULE__}")
 
-    @timeseries_metric_module_mapping_acc Enum.map(
-                                            module.available_timeseries_metrics(),
-                                            fn metric -> %{metric: metric, module: module} end
-                                          )
+    for {fun, args} <- @functions do
+      data = compute(fun, args)
 
-    @histogram_metric_module_mapping_acc Enum.map(
-                                           module.available_histogram_metrics(),
-                                           fn metric -> %{metric: metric, module: module} end
-                                         )
+      if :not_implemented == data,
+        do: raise("Function #{fun} is not implemented in module #{__MODULE__}")
 
-    @table_metric_module_mapping_acc Enum.map(
-                                       module.available_table_metrics(),
-                                       fn metric -> %{metric: metric, module: module} end
-                                     )
-
-    if function_exported?(module, :available_label_fqns, 1) and
-         function_exported?(module, :available_label_fqns, 2) do
-      @implemented_optional_functions_acc {:available_label_fqns, module, true}
-    else
-      @implemented_optional_functions_acc {:available_label_fqns, module, false}
-    end
-
-    if function_exported?(module, :deprecated_metrics_map, 0) do
-      @deprecated_metrics_acc module.deprecated_metrics_map()
-      @implemented_optional_functions_acc {:deprecated_metrics_map, module, true}
-    else
-      @implemented_optional_functions_acc {:deprecated_metrics_map, module, false}
-    end
-
-    if function_exported?(module, :soft_deprecated_metrics_map, 0) do
-      @soft_deprecated_metrics_acc module.soft_deprecated_metrics_map()
-      @implemented_optional_functions_acc {:soft_deprecated_metrics_map, module, true}
-    else
-      @implemented_optional_functions_acc {:soft_deprecated_metrics_map, module, false}
-    end
-
-    if function_exported?(module, :fixed_labels_parameters_metrics, 0) do
-      @fixed_labels_parameters_metrics_acc module.fixed_labels_parameters_metrics()
-      @implemented_optional_functions_acc {:fixed_labels_parameters_metrics, module, true}
-    else
-      @implemented_optional_functions_acc {:fixed_labels_parameters_metrics, module, false}
+      :ok = :persistent_term.put(key(fun, args), data)
+      {{fun, args}, :ok}
     end
   end
-
-  flat_unique = fn list -> list |> List.flatten() |> Enum.uniq() end
-  @aggregations @aggregations_acc |> then(flat_unique)
-  @incomplete_metrics @incomplete_metrics_acc |> then(flat_unique)
-  @free_metrics @free_metrics_acc |> then(flat_unique)
-  @restricted_metrics @restricted_metrics_acc |> then(flat_unique)
-  @fixed_labels_parameters_metrics @fixed_labels_parameters_metrics_acc |> then(flat_unique)
-
-  @timeseries_metric_module_mapping @timeseries_metric_module_mapping_acc |> then(flat_unique)
-  @table_metric_module_mapping @table_metric_module_mapping_acc |> then(flat_unique)
-  @histogram_metric_module_mapping @histogram_metric_module_mapping_acc |> then(flat_unique)
-
-  # Convert a list of maps to a single map with metric-module key-value pairs
-  metric_module_map = fn list -> Enum.into(list, %{}, &{&1.metric, &1.module}) end
-  @histogram_metric_to_module_map @histogram_metric_module_mapping |> then(metric_module_map)
-  @table_metric_to_module_map @table_metric_module_mapping |> then(metric_module_map)
-  @timeseries_metric_to_module_map @timeseries_metric_module_mapping
-                                   |> then(metric_module_map)
-
-  @metric_module_mapping (@histogram_metric_module_mapping ++
-                            @timeseries_metric_module_mapping ++ @table_metric_module_mapping)
-                         |> Enum.uniq()
-
-  @metric_to_module_map @metric_module_mapping |> Enum.into(%{}, &{&1.metric, &1.module})
-
-  # Convert a list of maps to one single map by merging all the elements
-  reduce_merge = fn list -> Enum.reduce(list, %{}, &Map.merge(&2, &1)) end
-  @aggregations_per_metric @aggregations_per_metric_acc |> then(reduce_merge)
-  @min_plan_map @min_plan_map_acc |> then(reduce_merge)
-  @access_map @access_map_acc |> then(reduce_merge)
-  @required_selectors_map @required_selectors_map_acc
-                          |> then(reduce_merge)
-
-  @implemented_optional_functions Enum.reduce(
-                                    @implemented_optional_functions_acc,
-                                    %{},
-                                    fn {module, fun, bool}, acc ->
-                                      Map.put(acc, {module, fun}, bool)
-                                    end
-                                  )
-  # the JSON files can define `"access": "free"`
-  # or `"access": {"historical": "free", "realtime": "restricted"}`
-  # both are resolved to a map where the realtime and historical restrictions
-  # are explicitly stated
-  resolve_restrictions = fn
-    restrictions when is_map(restrictions) ->
-      restrictions
-
-    restriction when restriction in [:free, :restricted] ->
-      %{"historical" => restriction, "realtime" => restriction}
-  end
-
-  @access_map Enum.into(@access_map, %{}, fn {metric, restrictions} ->
-                {metric, resolve_restrictions.(restrictions)}
-              end)
-  @metrics Enum.map(@metric_module_mapping, & &1.metric)
-  @timeseries_metrics Enum.map(@timeseries_metric_module_mapping, & &1.metric)
-  @histogram_metrics Enum.map(@histogram_metric_module_mapping, & &1.metric)
-
-  @metrics_mapset MapSet.new(@metrics)
-  @timeseries_metrics_mapset MapSet.new(@timeseries_metrics)
-  @histogram_metrics_mapset MapSet.new(@histogram_metrics)
-
-  @table_metrics Enum.map(@table_metric_module_mapping, & &1.metric)
-  @table_metrics_mapset MapSet.new(@table_metrics)
-
-  @deprecated_metrics_map Enum.reduce(@deprecated_metrics_acc, %{}, &Map.merge(&1, &2))
-                          |> Enum.reject(&match?({_, nil}, &1))
-                          |> Map.new()
-
-  @soft_deprecated_metrics_map Enum.reduce(@soft_deprecated_metrics_acc, %{}, &Map.merge(&1, &2))
-                               |> Enum.reject(&match?({_, nil}, &1))
-                               |> Map.new()
-
-  # Do not remove deprecated metrics from the deprecated_metrics_map, as it
-  # will just become empty and unusable
-  def deprecated_metrics_map(),
-    do: @deprecated_metrics_map |> transform(remove_hard_deprecated: false)
-
-  def soft_deprecated_metrics_map(), do: @soft_deprecated_metrics_map |> transform()
-  def access_map(), do: @access_map |> transform()
-  def aggregations_per_metric(), do: @aggregations_per_metric |> transform()
-  def aggregations(), do: @aggregations |> transform()
-  def incomplete_metrics(), do: @incomplete_metrics |> transform()
-  def free_metrics(), do: @free_metrics |> transform()
-  def histogram_metric_module_mapping(), do: @histogram_metric_module_mapping |> transform()
-  def histogram_metric_to_module_map(), do: @histogram_metric_to_module_map |> transform()
-  def histogram_metrics_mapset(), do: @histogram_metrics_mapset |> transform()
-  def histogram_metrics(), do: @histogram_metrics |> transform()
-  def metric_module_mapping(), do: @metric_module_mapping |> transform()
-  def metric_modules(), do: @metric_modules |> transform()
-  def metric_to_module_map(), do: @metric_to_module_map |> transform()
-  def metrics_mapset(), do: @metrics_mapset |> transform()
-  def metrics(), do: @metrics |> transform()
-  def min_plan_map(), do: @min_plan_map |> transform()
-  def restricted_metrics(), do: @restricted_metrics |> transform()
-  def table_metrics(), do: @table_metrics |> transform()
-  def fixed_labels_parameters_metrics(), do: @fixed_labels_parameters_metrics |> transform()
-  def table_metrics_mapset(), do: @table_metrics_mapset |> transform()
-  def table_metric_module_mapping(), do: @table_metric_module_mapping |> transform()
-  def table_metric_to_module_map(), do: @table_metric_to_module_map |> transform()
-  def timeseries_metric_module_mapping(), do: @timeseries_metric_module_mapping |> transform()
-  def timeseries_metric_to_module_map(), do: @timeseries_metric_to_module_map |> transform()
-  def timeseries_metrics_mapset(), do: @timeseries_metrics_mapset |> transform()
-  def timeseries_metrics(), do: @timeseries_metrics |> transform()
-  def required_selectors_map(), do: @required_selectors_map |> transform()
-  def implemented_optional_functions(), do: @implemented_optional_functions
 
   # Private functions
+  defp key(fun, args), do: {__MODULE__, fun, args} |> Sanbase.Cache.hash()
 
-  defp transform(metrics, opts \\ []) do
-    # The `remove_hard_deprecated/1` function is used to completely remove
-    # hard deprecated metrics. The `deprecated_metrics_map` contains the metric
-    # as a key and a datetime as a value. If the current time is after that value,
-    # the metric is excluded
-    metrics
-    |> then(fn metrics ->
-      if Keyword.get(opts, :remove_hard_deprecated, true),
-        do: remove_hard_deprecated(metrics),
-        else: metrics
+  defp get(fun, args \\ []) do
+    key = key(fun, args)
+
+    case :persistent_term.get(key, :undefined) do
+      :undefined ->
+        data = compute(fun, args)
+        :persistent_term.put(key, data)
+        data
+
+      data ->
+        data
+    end
+  end
+
+  defp compute(:access_map, []) do
+    Enum.reduce(@modules, %{}, fn module, acc ->
+      metric_to_access_map =
+        module.access_map()
+        |> Map.new(fn {metric, restrictions} ->
+          access_map =
+            case restrictions do
+              restrictions when is_map(restrictions) ->
+                restrictions
+
+              restriction when restriction in [:free, :restricted] ->
+                %{"historical" => restriction, "realtime" => restriction}
+            end
+
+          {metric, access_map}
+        end)
+
+      Map.merge(acc, metric_to_access_map)
     end)
   end
 
-  defp remove_hard_deprecated(metrics) when is_list(metrics) do
-    now = DateTime.utc_now()
+  defp compute(:aggregations, []) do
+    Enum.reduce(@modules, [], fn module, acc ->
+      aggregations = module.available_aggregations()
+      aggregations ++ acc
+    end)
+    |> Enum.uniq()
+  end
 
-    Enum.reject(metrics, fn metric ->
-      hard_deprecate_after = Map.get(@deprecated_metrics_map, metric)
-      not is_nil(hard_deprecate_after) and DateTime.compare(hard_deprecate_after, now) == :lt
+  defp compute(:aggregations_per_metric, []) do
+    for module <- @modules,
+        metric <- module.available_metrics(),
+        reduce: %{} do
+      acc ->
+        # If there is a metric that has a different set of aggregations compared to
+        # the other metrics in the module, this needs to be reworked to call
+        # module.metadata(metric)
+        Map.put(acc, metric, [nil] ++ module.available_aggregations())
+    end
+  end
+
+  defp compute(:implemented_optional_functions, []) do
+    Enum.reduce(@modules, %{}, fn module, acc ->
+      acc
+      |> put_if_implemented(module, :available_label_fqns, 1)
+      |> put_if_implemented(module, :available_label_fqns, 2)
+      |> put_if_implemented(module, :deprecated_metrics_map, 0)
+      |> put_if_implemented(module, :soft_deprecated_metrics_map, 0)
+      |> put_if_implemented(module, :fixed_labels_parameters_metrics, 0)
     end)
   end
 
-  defp remove_hard_deprecated(%MapSet{} = metrics) do
-    now = DateTime.utc_now()
-
-    MapSet.reject(metrics, fn metric ->
-      hard_deprecate_after = Map.get(@deprecated_metrics_map, metric)
-      not is_nil(hard_deprecate_after) and DateTime.compare(hard_deprecate_after, now) == :lt
+  defp compute(:fixed_labels_parameters_metrics, []) do
+    Enum.reduce(@modules, MapSet.new(), fn module, acc ->
+      if function_exported?(module, :fixed_labels_parameters_metrics, 0) do
+        fixed_labels_parameters_metrics = module.fixed_labels_parameters_metrics()
+        MapSet.put(acc, fixed_labels_parameters_metrics)
+      else
+        acc
+      end
     end)
   end
 
-  defp remove_hard_deprecated(metrics) when is_map(metrics) do
-    now = DateTime.utc_now()
+  defp compute(:free_metrics, []) do
+    Enum.map(@modules, & &1.free_metrics())
+    |> List.flatten()
+    |> Enum.uniq()
+  end
 
-    Map.reject(metrics, fn {metric, _} ->
-      hard_deprecate_after = Map.get(@deprecated_metrics_map, metric)
-      not is_nil(hard_deprecate_after) and DateTime.compare(hard_deprecate_after, now) == :lt
+  defp compute(:restricted_metrics, []) do
+    Enum.map(@modules, & &1.restricted_metrics())
+    |> List.flatten()
+    |> Enum.uniq()
+  end
+
+  defp compute(:metric_to_module_map, []) do
+    for module <- @modules,
+        metric <- module.available_metrics(),
+        reduce: %{} do
+      acc ->
+        Map.put(acc, metric, module)
+    end
+  end
+
+  defp compute(:metrics, []) do
+    Enum.map(@modules, & &1.available_metrics())
+    |> List.flatten()
+    |> Enum.uniq()
+  end
+
+  defp compute(:metrics_mapset, []) do
+    compute(:metrics, []) |> MapSet.new()
+  end
+
+  defp compute(:timeseries_metric_to_module_map, []) do
+    for module <- @modules,
+        metric <- module.available_timeseries_metrics(),
+        reduce: %{} do
+      acc ->
+        Map.put(acc, metric, module)
+    end
+  end
+
+  defp compute(:timeseries_metrics, []) do
+    Enum.map(@modules, & &1.available_timeseries_metrics())
+    |> List.flatten()
+    |> Enum.uniq()
+  end
+
+  defp compute(:timeseries_metrics_mapset, []) do
+    compute(:timeseries_metrics, []) |> MapSet.new()
+  end
+
+  defp compute(:histogram_metric_to_module_map, []) do
+    for module <- @modules,
+        metric <- module.available_histogram_metrics(),
+        reduce: %{} do
+      acc ->
+        Map.put(acc, metric, module)
+    end
+  end
+
+  defp compute(:histogram_metrics, []) do
+    Enum.map(@modules, & &1.available_histogram_metrics())
+    |> List.flatten()
+    |> Enum.uniq()
+  end
+
+  defp compute(:histogram_metrics_mapset, []) do
+    compute(:histogram_metrics, []) |> MapSet.new()
+  end
+
+  defp compute(:table_metric_to_module_map, []) do
+    for module <- @modules,
+        metric <- module.available_table_metrics(),
+        reduce: %{} do
+      acc ->
+        Map.put(acc, metric, module)
+    end
+  end
+
+  defp compute(:table_metrics, []) do
+    Enum.map(@modules, & &1.available_table_metrics())
+    |> List.flatten()
+    |> Enum.uniq()
+  end
+
+  defp compute(:table_metrics_mapset, []) do
+    compute(:table_metrics, []) |> MapSet.new()
+  end
+
+  defp compute(:incomplete_metrics, []) do
+    Enum.map(@modules, & &1.incomplete_metrics())
+    |> List.flatten()
+    |> Enum.uniq()
+  end
+
+  defp compute(:min_plan_map, []) do
+    Enum.reduce(@modules, %{}, fn module, acc ->
+      Map.merge(acc, module.min_plan_map())
     end)
+  end
+
+  defp compute(:deprecated_metrics_map, []) do
+    Enum.reduce(@modules, %{}, fn module, acc ->
+      if function_exported?(module, :deprecated_metrics_map, 0) do
+        Map.merge(acc, module.deprecated_metrics_map())
+      else
+        acc
+      end
+    end)
+  end
+
+  defp compute(:soft_deprecated_metrics_map, []) do
+    Enum.reduce(@modules, %{}, fn module, acc ->
+      if function_exported?(module, :soft_deprecated_metrics_map, 0) do
+        Map.merge(acc, module.soft_deprecated_metrics_map())
+      else
+        acc
+      end
+    end)
+  end
+
+  defp compute(:required_selectors_map, []) do
+    Enum.reduce(@modules, %{}, fn module, acc ->
+      Map.merge(acc, module.required_selectors())
+    end)
+  end
+
+  defp compute(_function, _arguments), do: :not_implemented
+
+  # Helper for :implemented_optional_functions
+  defp put_if_implemented(acc, module, fun, arity) when is_integer(arity) do
+    bool = function_exported?(module, fun, arity)
+    Map.put(acc, {module, fun, arity}, bool)
+  end
+
+  @functions [
+    :access_map,
+    :aggregations,
+    :aggregations_per_metric,
+    :fixed_labels_parameters_metrics,
+    :free_metrics,
+    :histogram_metric_to_module_map,
+    :histogram_metrics,
+    :histogram_metrics_mapset,
+    :implemented_optional_functions,
+    :incomplete_metrics,
+    :metric_to_module_map,
+    :metrics,
+    :metrics_mapset,
+    :min_plan_map,
+    :required_selectors_map,
+    :restricted_metrics,
+    :soft_deprecated_metrics_map,
+    :table_metric_to_module_map,
+    :table_metrics,
+    :table_metrics_mapset,
+    :timeseries_metric_to_module_map,
+    :timeseries_metrics
+  ]
+
+  def not_implemented() do
+    Enum.filter(@functions, fn {fun, args} -> compute(fun, args) == :not_implemented end)
+  end
+
+  def implemented() do
+    Enum.filter(@functions, fn {fun, args} -> compute(fun, args) != :not_implemented end)
   end
 end

@@ -29,6 +29,15 @@ defmodule SanbaseWeb.AdminFormsLive do
   defp get_forms_info() do
     [
       %{
+        title: "Metric registry",
+        description: """
+        Manage the Clickhouse metrics exposed through the API
+        """,
+        buttons: [
+          %{url: ~p"/admin2/metric_registry", text: "Open"}
+        ]
+      },
+      %{
         title: "Monitored Twitter Handle Submissions",
         description: """
         Approve or decline submissions for new Twitter handles to be monitored, suggested by users.

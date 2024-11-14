@@ -8,7 +8,8 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANBASE": "free"
+      "SANBASE": "free",
+      "SANAPI": "free"
     },
     "aggregation": "sum",
     "min_interval": "5m",
@@ -26,7 +27,8 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANBASE": "free"
+      "SANBASE": "free",
+      "SANAPI": "free"
     },
     "aggregation": "sum",
     "min_interval": "5m",
@@ -44,7 +46,8 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANBASE": "free"
+      "SANBASE": "free",
+      "SANAPI": "free"
     },
     "aggregation": "avg",
     "min_interval": "5m",
@@ -62,7 +65,8 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANBASE": "free"
+      "SANBASE": "free",
+      "SANAPI": "free"
     },
     "aggregation": "avg",
     "min_interval": "5m",

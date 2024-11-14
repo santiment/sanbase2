@@ -37,7 +37,7 @@ defmodule Sanbase.Billing.SanrNftSubscriptionsApiTest do
           "https://zksync-mainnet.g.alchemy.com" ->
             Sanbase.SanrNFTMocks.get_owners_for_contract_mock(context.address)
 
-          "https://sanrnew-api.production.internal.santiment.net/api/v1/SanbaseSubscriptionNFTCollection/all" ->
+          "https://api.sanr.app/v1/SanbaseSubscriptionNFTCollection/all" ->
             Sanbase.SanrNFTMocks.sanr_nft_collections_mock(context.start_date, context.end_date)
         end
       end
@@ -99,7 +99,7 @@ defmodule Sanbase.Billing.SanrNftSubscriptionsApiTest do
           "https://zksync-mainnet.g.alchemy.com" ->
             Sanbase.SanrNFTMocks.get_owners_for_contract_mock(context.address)
 
-          "https://sanrnew-api.production.internal.santiment.net/api/v1/SanbaseSubscriptionNFTCollection/all" ->
+          "https://api.sanr.app/v1/SanbaseSubscriptionNFTCollection/all" ->
             Sanbase.SanrNFTMocks.sanr_nft_collections_mock(context.start_date, context.end_date)
         end
       end

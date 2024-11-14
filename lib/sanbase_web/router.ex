@@ -96,6 +96,11 @@ defmodule SanbaseWeb.Router do
     resources("/generic", GenericAdminController)
 
     post "/generic/:resource/:id/action/:action", GenericAdminController, :custom_action
+
+    live("/metric_registry", MetricRegistryIndexLive)
+    live("/metric_registry/show/:id", MetricRegistryShowLive)
+    live("/metric_registry/edit/:id", MetricRegistryFormLive, :edit)
+    live("/metric_registry/new", MetricRegistryFormLive, :new)
   end
 
   scope "/" do

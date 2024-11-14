@@ -39,7 +39,9 @@ defmodule Sanbase.TestHelpers do
     quote do
       on_exit(fn ->
         Task.Supervisor.children(Sanbase.TaskSupervisor)
-        |> Enum.map(fn child -> Task.Supervisor.terminate_child(Sanbase.TaskSupervisor, child) end)
+        |> Enum.map(fn child ->
+          Task.Supervisor.terminate_child(Sanbase.TaskSupervisor, child)
+        end)
       end)
     end
   end

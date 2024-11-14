@@ -1,12 +1,9 @@
 defmodule Sanbase.Clickhouse.Exchanges do
-  alias Sanbase.Clickhouse.MetricAdapter.FileHandler
+  alias Sanbase.Clickhouse.MetricAdapter.Registry
 
   import Sanbase.Metric.SqlQuery.Helper, only: [asset_id_filter: 2]
 
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
-
-  @name_to_metric_map FileHandler.name_to_metric_map()
-  @table_map FileHandler.table_map()
 
   def top_exchanges_by_balance(%{slug: slug}, limit, _opts \\ []) when is_binary(slug) do
     query_struct = top_exchanges_by_balance_query(slug, limit)
@@ -32,7 +29,7 @@ defmodule Sanbase.Clickhouse.Exchanges do
   end
 
   def owners_by_slug_and_metric(metric, slug) do
-    table = Map.get(@table_map, metric)
+    table = Map.get(Registry.table_map(), metric)
 
     case not is_nil(table) && table =~ "label" do
       true ->
@@ -49,13 +46,13 @@ defmodule Sanbase.Clickhouse.Exchanges do
 
   defp owners_by_slug_and_metric_query(metric, slug) do
     params = %{
-      metric: Map.get(@name_to_metric_map, metric),
+      metric: Map.get(Registry.name_to_metric_map(), metric),
       slug: slug
     }
 
     sql = """
     SELECT DISTINCT owner
-    FROM #{Map.get(@table_map, metric)}
+    FROM #{Map.get(Registry.table_map(), metric)}
     WHERE
       metric_id = get_metric_id({{metric}})
       #{if slug, do: "AND asset_id = get_asset_id({{slug}})"}

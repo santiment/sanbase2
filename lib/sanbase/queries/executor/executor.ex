@@ -81,13 +81,10 @@ defmodule Sanbase.Queries.Executor do
     Sanbase.Clickhouse.Query.put_sql(clickhouse_query, extended_sql)
   end
 
-  @prod? Application.compile_env(:sanbase, :env) == :prod
-  def prod?(), do: @prod?
-
   defp extend_query_with_prod_marker(query) do
-    case @prod? do
-      true -> "-- __query_ran_from_prod_marker__ \n" <> query
-      false -> query
+    case Application.get_env(:sanbase, :env) do
+      :prod -> "-- __query_ran_from_prod_marker__ \n" <> query
+      _ -> query
     end
   end
 

@@ -4,7 +4,7 @@ defmodule SanbaseWeb.MetricNameController do
   require Logger
 
   def api_metric_name_mapping(conn, _params) do
-    map = Sanbase.Clickhouse.MetricAdapter.FileHandler.name_to_metric_map()
+    map = Sanbase.Clickhouse.MetricAdapter.Registry.name_to_metric_map()
 
     data =
       Enum.map(map, fn {k, v} ->

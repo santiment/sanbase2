@@ -207,6 +207,22 @@ defmodule Sanbase.EventBus.EventValidation do
   end
 
   #############################################################################
+  ## Metric Registry Events
+  #############################################################################
+
+  #############################################################################
+
+  def valid?(%{
+        event_type: event_type
+      })
+      when event_type in [
+             :create_metric_registry,
+             :update_metric_registry,
+             :delete_metric_registry
+           ] do
+    true
+  end
+
   ## Invalid Events
   #############################################################################
 

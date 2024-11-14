@@ -16,8 +16,6 @@ defmodule Sanbase.Queries do
 
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
 
-  @compile_env Application.compile_env(:sanbase, :env)
-
   @type user_id :: non_neg_integer()
   @type query_id :: Query.query_id()
   @type dashboard_id :: Dashboard.dashboard_id()
@@ -350,7 +348,7 @@ defmodule Sanbase.Queries do
     # In test env allow the configuration to be provided as application env
     # so that we can disable the storing of details even when the function is called through
     # the API where  we cannot provide the opts arg.
-    case @compile_env do
+    case Application.get_env(:sanbase, :env) do
       :test ->
         [
           store_execution_details:
@@ -391,7 +389,7 @@ defmodule Sanbase.Queries do
       # In test do not do it in an async way as this can lead to mocking issues.
       # It also helps find issues where neither store_execution_details is set to false
       # nor wait_fetching_details_ms is set to 0.
-      case @compile_env do
+      case Application.get_env(:sanbase, :env) do
         :test ->
           store.()
 

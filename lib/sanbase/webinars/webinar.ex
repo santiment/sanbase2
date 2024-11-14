@@ -26,7 +26,15 @@ defmodule Sanbase.Webinar do
   def changeset(webinar, attrs) do
     webinar
     |> cast(attrs, [:title, :description, :url, :image_url, :start_time, :end_time, :is_pro])
-    |> validate_required([:title, :description, :url, :image_url, :start_time, :end_time, :is_pro])
+    |> validate_required([
+      :title,
+      :description,
+      :url,
+      :image_url,
+      :start_time,
+      :end_time,
+      :is_pro
+    ])
   end
 
   def by_id(id) do

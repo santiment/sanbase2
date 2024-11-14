@@ -35,7 +35,7 @@ defmodule Sanbase.Billing.SanrNFTSubscriptionTest do
           "https://zksync-mainnet.g.alchemy.com" ->
             Sanbase.SanrNFTMocks.get_owners_for_contract_mock(address)
 
-          "https://sanrnew-api.production.internal.santiment.net/api/v1/SanbaseSubscriptionNFTCollection/all" ->
+          "https://api.sanr.app/v1/SanbaseSubscriptionNFTCollection/all" ->
             Sanbase.SanrNFTMocks.sanr_nft_collections_mock(start_date, end_date)
         end
       end

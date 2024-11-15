@@ -101,32 +101,6 @@
         "primaryKey": "UInt64"
     },
     {
-        "table": "eth_transfers_to",
-        "description": "Provide the on-chain transfers for Ethereum itself with a different `order_by`",
-        "engine": "Distributed",
-        "partition_by": "toStartOfMonth(dt)",
-        "order_by": [
-            "from",
-            "type",
-            "to",
-            "dt",
-            "transactionHash",
-            "primaryKey"
-        ],
-        "columns": {
-            "dt": "DateTime",
-            "from": "String",
-            "to": "String",
-            "value": "Float64",
-            "valueExactBase36": "String",
-            "blockNumber": "UInt32",
-            "transactionHash": "String",
-            "transactionPosition": "UInt32",
-            "type": "Enum8('call' = 0, 'fee' = 1, 'genesis' = 2, 'suicide' = 3, 'reward' = 4, 'create' = 5, 'dao_hack' = 6, 'fee_burnt' = 7)"
-        },
-        "primaryKey": "UInt64"
-    },
-    {
         "table": "erc20_transfers",
         "description": "Provide the on-chain transfers for Ethereum itself",
         "engine": "Distributed",

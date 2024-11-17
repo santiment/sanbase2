@@ -1,17 +1,14 @@
+defmodule Sanbase.Email.MailjetApiBehaviour do
+  @callback subscribe(atom(), String.t() | [String.t()]) :: :ok | {:error, term()}
+  @callback unsubscribe(atom(), String.t() | [String.t()]) :: :ok | {:error, term()}
+  @callback send_to_list(atom(), String.t(), String.t(), keyword()) :: :ok | {:error, term()}
+  @callback list_subscribed_emails(atom()) :: {:ok, [String.t()]} | {:error, term()}
+  @callback send_email(String.t(), String.t(), String.t(), keyword()) :: :ok | {:error, term()}
+end
+
 defmodule Sanbase.Email.MailjetApi do
-  env = Application.compile_env(:sanbase, :env)
-  @module if env == :test, do: Sanbase.Email.MailjetApiTest, else: Sanbase.Email.MailjetApiImpl
+  @behaviour Sanbase.Email.MailjetApiBehaviour
 
-  def subscribe(list_atom, email_or_emails), do: @module.subscribe(list_atom, email_or_emails)
-  def unsubscribe(list_atom, email_or_emails), do: @module.unsubscribe(list_atom, email_or_emails)
-end
-
-defmodule Sanbase.Email.MailjetApiTest do
-  def subscribe(_, _), do: :ok
-  def unsubscribe(_, _), do: :ok
-end
-
-defmodule Sanbase.Email.MailjetApiImpl do
   require Sanbase.Utils.Config, as: Config
   require Logger
 
@@ -20,15 +17,17 @@ defmodule Sanbase.Email.MailjetApiImpl do
   @monthly_newsletter_list_id 61_085
   @mailjet_sanr_list_id 10_321_582
   @alpha_naratives_list_id 10_321_590
-  @metric_updates_list_id 10_326_520
+  # @metric_updates_list_id 10_326_520
+  @test_metric_updates_list_id 10_326_671
 
   @mailjet_lists %{
     bi_weekly: @bi_weekly_list_id,
     monthly_newsletter: @monthly_newsletter_list_id,
     sanr_network_emails: @mailjet_sanr_list_id,
     alpha_naratives_emails: @alpha_naratives_list_id,
-    metric_updates: @metric_updates_list_id
+    metric_updates: @test_metric_updates_list_id
   }
+  @send_api_url "https://api.mailjet.com/v3.1/send"
 
   def subscribe(list_atom, email_or_emails) do
     subscribe_unsubscribe(list_atom, email_or_emails, :subscribe)
@@ -36,6 +35,110 @@ defmodule Sanbase.Email.MailjetApiImpl do
 
   def unsubscribe(list_atom, email_or_emails) do
     subscribe_unsubscribe(list_atom, email_or_emails, :unsubscribe)
+  end
+
+  def send_to_list(list_id, subject, content, opts \\ []) do
+    with {:ok, emails} <- list_subscribed_emails(list_id),
+         :ok <- Enum.each(emails, &send_email(&1, subject, content, opts)) do
+      :ok
+    end
+  end
+
+  def send_email(email, subject, content, opts \\ []) do
+    html_content = if Keyword.get(opts, :html, false), do: content, else: nil
+    text_content = if html_content, do: nil, else: content
+
+    payload = %{
+      "Messages" => [
+        %{
+          "From" => %{
+            "Email" => "support@santiment.net",
+            "Name" => "Santiment"
+          },
+          "Subject" => subject,
+          "HTMLPart" => html_content,
+          "TextPart" => text_content,
+          "To" => [
+            %{
+              "Email" => email
+            }
+          ]
+        }
+      ]
+    }
+
+    case Req.post!(@send_api_url, json: payload, headers: headers()) do
+      %{status: status} when status in 200..299 ->
+        Logger.info("Email sent successfully to #{email}")
+        :ok
+
+      response ->
+        Logger.error("Failed to send email to #{email}. Response: #{inspect(response)}")
+        {:error, response}
+    end
+  rescue
+    error ->
+      Logger.error("Error sending email to #{email}. Reason: #{inspect(error)}")
+      {:error, error}
+  end
+
+  # list subscribed emails for list
+  def list_subscribed_emails(list_atom) do
+    with {:ok, contact_ids} <- get_contact_ids(list_atom),
+         {:ok, emails} <- get_emails_for_contacts(contact_ids) do
+      {:ok, emails}
+    end
+  end
+
+  defp get_contact_ids(list_atom) do
+    Req.get!(
+      @base_url <> "listrecipient?ContactsList=#{@mailjet_lists[list_atom]}&Limit=1000",
+      headers: headers()
+    )
+    |> case do
+      %{status: 200, body: %{"Data" => recipients}} ->
+        contact_ids = Enum.map(recipients, & &1["ContactID"])
+        {:ok, contact_ids}
+
+      %{status: _code} = response ->
+        Logger.error("Error fetching contact IDs from Mailjet list: #{inspect(response)}")
+        {:error, response.body}
+    end
+  rescue
+    error ->
+      Logger.error("Error fetching contact IDs from Mailjet list. Reason: #{inspect(error)}")
+      {:error, error}
+  end
+
+  defp get_emails_for_contacts(contact_ids) do
+    emails_with_results = Enum.map(contact_ids, &get_email_for_contact/1)
+
+    # Filter out any errors and just collect successful emails
+    emails =
+      emails_with_results
+      |> Enum.filter(&match?({:ok, _}, &1))
+      |> Enum.map(fn {:ok, email} -> email end)
+
+    {:ok, emails}
+  end
+
+  defp get_email_for_contact(contact_id) do
+    Req.get!(
+      @base_url <> "contact/#{contact_id}",
+      headers: headers()
+    )
+    |> case do
+      %{status: 200, body: %{"Data" => [contact | _]}} ->
+        {:ok, contact["Email"]}
+
+      %{status: _code} = response ->
+        Logger.error("Error fetching email for contact #{contact_id}: #{inspect(response)}")
+        {:error, response.body}
+    end
+  rescue
+    error ->
+      Logger.error("Error fetching email for contact #{contact_id}. Reason: #{inspect(error)}")
+      {:error, error}
   end
 
   # private

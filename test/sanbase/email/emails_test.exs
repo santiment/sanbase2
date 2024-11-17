@@ -11,7 +11,6 @@ defmodule Sanbase.EmailsTest do
 
   alias Sanbase.Accounts.User
   alias Sanbase.Billing.Subscription
-  # alias Sanbase.Accounts.EmailJobs
   alias Sanbase.StripeApi
   alias Sanbase.StripeApiTestResponse
 
@@ -270,40 +269,6 @@ defmodule Sanbase.EmailsTest do
 
       refute called(Sanbase.TemplateMailer.send(context.user.email, :_, :_))
     end
-
-    # Removing annual discount eligibility temporally
-
-    # test "send discount 50% email", context do
-    #   insert(:subscription_pro_sanbase,
-    #     user: context.user,
-    #     status: "trialing",
-    #     trial_end: days_after(10)
-    #   )
-
-    #   assert {:ok, :email_sent} =
-    #            perform_job(Sanbase.Mailer, %{
-    #              "user_id" => context.user.id,
-    #              "template" => during_trial_annual_discount_template()
-    #            })
-
-    #   assert_called(Sanbase.TemplateMailer.send(context.user.email, :_, :_))
-    # end
-
-    # test "send discount 35% email", context do
-    #   insert(:subscription_pro_sanbase,
-    #     user: context.user,
-    #     status: "trialing",
-    #     trial_end: days_after(-10)
-    #   )
-
-    #   assert {:ok, :email_sent} =
-    #            perform_job(Sanbase.Mailer, %{
-    #              "user_id" => context.user.id,
-    #              "template" => after_trial_annual_discount_template()
-    #            })
-
-    #   assert_called(Sanbase.TemplateMailer.send(context.user.email, :_, :_))
-    # end
 
     test "do not send discount 50% email", context do
       assert :ok =

@@ -3,7 +3,6 @@ defmodule Sanbase.LandingEmails.SanrEmail do
   import Ecto.Changeset
 
   alias Sanbase.Repo
-  alias Sanbase.Email.MailjetApi
 
   @mailjet_sanr_list :sanr_network_emails
   @sanr_network_welcome_template "sanr-network-welcome"
@@ -29,12 +28,16 @@ defmodule Sanbase.LandingEmails.SanrEmail do
     |> Repo.insert()
     |> case do
       {:ok, result} ->
-        MailjetApi.subscribe(@mailjet_sanr_list, email)
+        mailjet_api().subscribe(@mailjet_sanr_list, email)
         Sanbase.TemplateMailer.send(email, @sanr_network_welcome_template, %{})
         {:ok, result}
 
       {:error, reason} ->
         {:error, reason}
     end
+  end
+
+  def mailjet_api do
+    Application.get_env(:sanbase, :mailjet_api, Sanbase.Email.MailjetApi)
   end
 end

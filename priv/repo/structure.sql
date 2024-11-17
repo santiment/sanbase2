@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 14.12 (Homebrew)
--- Dumped by pg_dump version 14.12 (Homebrew)
+-- Dumped from database version 15.1 (Homebrew)
+-- Dumped by pg_dump version 15.1 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -2433,41 +2433,6 @@ ALTER SEQUENCE public.newsletter_tokens_id_seq OWNED BY public.newsletter_tokens
 
 
 --
--- Name: notification_actions; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.notification_actions (
-    id bigint NOT NULL,
-    action_type public.notification_action_type NOT NULL,
-    scheduled_at timestamp(0) without time zone NOT NULL,
-    status public.notification_status DEFAULT 'pending'::public.notification_status NOT NULL,
-    requires_verification boolean DEFAULT false NOT NULL,
-    verified boolean DEFAULT false NOT NULL,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
-);
-
-
---
--- Name: notification_actions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.notification_actions_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: notification_actions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.notification_actions_id_seq OWNED BY public.notification_actions.id;
-
-
---
 -- Name: notification_templates; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2507,15 +2472,14 @@ ALTER SEQUENCE public.notification_templates_id_seq OWNED BY public.notification
 
 CREATE TABLE public.notifications (
     id bigint NOT NULL,
-    step public.notification_step NOT NULL,
-    status public.notification_status DEFAULT 'pending'::public.notification_status NOT NULL,
-    scheduled_at timestamp(0) without time zone NOT NULL,
-    sent_at timestamp(0) without time zone,
-    channels public.notification_channel[] NOT NULL,
-    content text,
-    display_in_ui boolean DEFAULT false NOT NULL,
-    template_params jsonb NOT NULL,
-    notification_action_id bigint NOT NULL,
+    action character varying(255),
+    params jsonb,
+    channels character varying(255)[],
+    step character varying(255),
+    processed_for_discord boolean DEFAULT false,
+    processed_for_discord_at timestamp(0) without time zone,
+    processed_for_email boolean DEFAULT false,
+    processed_for_email_at timestamp(0) without time zone,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );
@@ -5274,13 +5238,6 @@ ALTER TABLE ONLY public.newsletter_tokens ALTER COLUMN id SET DEFAULT nextval('p
 
 
 --
--- Name: notification_actions id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.notification_actions ALTER COLUMN id SET DEFAULT nextval('public.notification_actions_id_seq'::regclass);
-
-
---
 -- Name: notification_templates id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6186,14 +6143,6 @@ ALTER TABLE ONLY public.monitored_twitter_handles
 
 ALTER TABLE ONLY public.newsletter_tokens
     ADD CONSTRAINT newsletter_tokens_pkey PRIMARY KEY (id);
-
-
---
--- Name: notification_actions notification_actions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.notification_actions
-    ADD CONSTRAINT notification_actions_pkey PRIMARY KEY (id);
 
 
 --
@@ -7294,13 +7243,6 @@ CREATE INDEX notification_templates_action_type_step_index ON public.notificatio
 --
 
 CREATE INDEX notification_templates_channel_index ON public.notification_templates USING btree (channel);
-
-
---
--- Name: notifications_notification_action_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX notifications_notification_action_id_index ON public.notifications USING btree (notification_action_id);
 
 
 --
@@ -8466,14 +8408,6 @@ ALTER TABLE ONLY public.menus
 
 ALTER TABLE ONLY public.monitored_twitter_handles
     ADD CONSTRAINT monitored_twitter_handles_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
-
-
---
--- Name: notifications notifications_notification_action_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.notifications
-    ADD CONSTRAINT notifications_notification_action_id_fkey FOREIGN KEY (notification_action_id) REFERENCES public.notification_actions(id) ON DELETE CASCADE;
 
 
 --
@@ -9682,5 +9616,9 @@ INSERT INTO public."schema_migrations" (version) VALUES (20241029080754);
 INSERT INTO public."schema_migrations" (version) VALUES (20241029082533);
 INSERT INTO public."schema_migrations" (version) VALUES (20241029151959);
 INSERT INTO public."schema_migrations" (version) VALUES (20241030141825);
+INSERT INTO public."schema_migrations" (version) VALUES (20241104061632);
 INSERT INTO public."schema_migrations" (version) VALUES (20241104115340);
 INSERT INTO public."schema_migrations" (version) VALUES (20241108112754);
+INSERT INTO public."schema_migrations" (version) VALUES (20241114140339);
+INSERT INTO public."schema_migrations" (version) VALUES (20241114141110);
+INSERT INTO public."schema_migrations" (version) VALUES (20241116104556);

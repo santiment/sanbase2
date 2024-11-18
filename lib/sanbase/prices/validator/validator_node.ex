@@ -60,7 +60,7 @@ defmodule Sanbase.Price.Validator.Node do
           end)
           |> Enum.filter(&(Price.Validator.slug_to_number(&1) == number))
 
-        {:ok, latest_prices} = Price.latest_prices_per_slug(slugs, @max_prices)
+        {:ok, latest_prices} = Price.latest_prices_per_slug(slugs, "coinmarketcap", @max_prices)
 
         state = latest_prices |> Map.put(:number, number)
 
@@ -106,10 +106,22 @@ defmodule Sanbase.Price.Validator.Node do
 
   # A price is an outlier if it is a given amount of times bigger or smaller
   # than the average of the in memory stored prices.
+
+  # If there are no prices to compare against it means that we are just starting
+  # to export this asset. Consider the price valid.
   defp price_outlier?(_slug, _quote_asset, _price, [], _opts), do: false
+
+  defp price_outlier?(slug, quote_asset, nil, _prices, _opts) do
+    {:error, "The #{slug} #{quote_asset} price is nil and so it must not be considered"}
+  end
+
+  defp price_outlier?(slug, quote_asset, price, _prices, _opts) when price < 1.0e-15 do
+    {:error, "The #{slug} #{quote_asset} price is zero and must not be considered"}
+  end
 
   defp price_outlier?(slug, quote_asset, price, prices, opts) do
     allowed_times_diff = Keyword.fetch!(opts, :allowed_times_diff)
+    prices = Enum.filter(prices, &is_number/1)
 
     count = Enum.count(prices)
     avg_price = Enum.sum(prices) / count

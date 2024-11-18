@@ -505,7 +505,7 @@ defmodule Sanbase.Price.SqlQuery do
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  def latest_prices_per_slug_query(slugs, limit_per_slug) do
+  def latest_prices_per_slug_query(slugs, source, limit_per_slug) do
     sql = """
     SELECT
       slug,
@@ -516,6 +516,7 @@ defmodule Sanbase.Price.SqlQuery do
       FROM #{@table}
       WHERE
         dt >= now() - INTERVAL 7 DAY AND
+        source = {{source}} AND
         slug IN ({{slugs}})
       ORDER BY dt desc
       LIMIT {{limit_per_slug}} BY slug
@@ -524,7 +525,7 @@ defmodule Sanbase.Price.SqlQuery do
 
     """
 
-    params = %{slugs: slugs, limit_per_slug: limit_per_slug}
+    params = %{slugs: slugs, source: source, limit_per_slug: limit_per_slug}
 
     Sanbase.Clickhouse.Query.new(sql, params)
   end

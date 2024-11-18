@@ -7,9 +7,6 @@ defmodule Sanbase.Billing.Subscription.NFTSubscription do
   def run() do
     # Runs every 10 minutes, configured in scheduler_config.exs
     if prod?() do
-      Subscription.SanbaseNFT.maybe_create()
-      Subscription.SanbaseNFT.maybe_remove()
-
       Subscription.SanrNFT.maybe_create()
       Subscription.SanrNFT.maybe_remove()
     else

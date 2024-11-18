@@ -1,6 +1,7 @@
 defmodule Sanbase.Notifications.Handler do
+  import Ecto.Query
+
   alias Sanbase.{Repo, Notifications.Notification}
-  alias Sanbase.Notifications.DiscordClient
   alias Sanbase.Notifications.TemplateRenderer
   alias Sanbase.Utils.Config
 
@@ -12,6 +13,53 @@ defmodule Sanbase.Notifications.Handler do
     "metric_deleted" => ["discord", "email"],
     "alert" => ["discord"]
   }
+
+  def handle_metric_registry_event(event) do
+    event_type = event.data.event_type
+
+    case event_type do
+      :create_metric_registry ->
+        handle_metric_registry_created_event(event)
+
+      :update_metric_registry ->
+        handle_metric_registry_updated_event(event)
+    end
+
+    :ok
+  end
+
+  def handle_metric_registry_created_event(event) do
+    metric = event.data.metric
+    handle_notification(%{action: "metric_created", params: %{metrics_list: [metric]}})
+  end
+
+  def handle_metric_registry_updated_event(event) do
+    id = event.data.id
+
+    last_version =
+      Repo.one(
+        from(v in Sanbase.Version,
+          where: v.entity_id == ^id,
+          where: v.entity_schema == ^Sanbase.Metric.Registry,
+          order_by: [desc: v.recorded_at],
+          limit: 1
+        )
+      )
+
+    case last_version.patch do
+      %{hard_deprecate_after: {:changed, {:primitive_change, _old, new_date}}} ->
+        handle_notification(%{
+          action: "metric_deleted",
+          params: %{
+            metrics_list: [event.data.metric],
+            scheduled_at: new_date
+          }
+        })
+
+      _ ->
+        :ok
+    end
+  end
 
   def handle_notification(%{action: "alert", params: params, step: step}) do
     {:ok, notification} = create_notification("alert", params, step)
@@ -134,10 +182,12 @@ defmodule Sanbase.Notifications.Handler do
           })
         end
 
-      webhook = Config.module_get(DiscordClient, :webhook)
-
-      Task.async(fn ->
-        case discord_client().send_message(webhook, content, []) do
+      Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+        case Sanbase.Notifications.DiscordClient.client().send_message(
+               discord_webhook(),
+               content,
+               []
+             ) do
           :ok -> mark_processed(notification, :discord)
           error -> error
         end
@@ -159,8 +209,13 @@ defmodule Sanbase.Notifications.Handler do
           })
         end
 
-      Task.async(fn ->
-        mailjet_api().send_to_list(:metric_updates, params.email_subject, content, [])
+      Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+        Sanbase.Email.MailjetApi.client().send_to_list(
+          metric_updates_list(),
+          params.email_subject,
+          content,
+          []
+        )
         |> case do
           :ok -> mark_processed(notification, :email)
           error -> error
@@ -174,11 +229,12 @@ defmodule Sanbase.Notifications.Handler do
   defp maybe_add_channel(channels, "", _channel), do: channels
   defp maybe_add_channel(channels, _text, channel), do: [channel | channels]
 
-  def discord_client do
-    Application.get_env(:sanbase, :discord_client, DiscordClient)
+  defp discord_webhook do
+    Config.module_get(Sanbase.Notifications, :discord_webhook)
   end
 
-  def mailjet_api do
-    Application.get_env(:sanbase, :mailjet_api, Sanbase.Email.MailjetApi)
+  defp metric_updates_list do
+    Config.module_get(Sanbase.Notifications, :mailjet_metric_updates_list)
+    |> String.to_existing_atom()
   end
 end

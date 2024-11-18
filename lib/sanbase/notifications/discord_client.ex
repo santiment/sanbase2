@@ -6,6 +6,10 @@ end
 defmodule Sanbase.Notifications.DiscordClient do
   @behaviour Sanbase.Notifications.DiscordBehaviour
 
+  def client do
+    Application.get_env(:sanbase, :discord_client, __MODULE__)
+  end
+
   @impl Sanbase.Notifications.DiscordBehaviour
   def send_message(webhook, content, opts \\ []) do
     username = Keyword.get(opts, :username, "Sanbase")

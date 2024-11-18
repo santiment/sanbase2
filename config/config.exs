@@ -288,7 +288,8 @@ config :ex_audit,
   ecto_repos: [Sanbase.Repo],
   version_schema: Sanbase.Version,
   tracked_schemas: [
-    Sanbase.Project
+    Sanbase.Project,
+    Sanbase.Metric.Registry
   ],
   primitive_structs: [DateTime, NaiveDateTime, Date]
 

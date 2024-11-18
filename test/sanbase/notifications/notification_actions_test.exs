@@ -73,8 +73,8 @@ defmodule Sanbase.Notifications.NotificationActionsTest do
       end)
 
       Sanbase.Email.MockMailjetApi
-      |> expect(:list_subscribed_emails, fn :metric_updates -> {:ok, ["test@example.com"]} end)
-      |> expect(:send_to_list, fn :metric_updates, "Sanbase Metric Updates", content, _opts ->
+      |> expect(:list_subscribed_emails, fn :metric_updates_dev -> {:ok, ["test@example.com"]} end)
+      |> expect(:send_to_list, fn :metric_updates_dev, "Sanbase Metric Updates", content, _opts ->
         assert content =~ "metric A"
         assert content =~ "metric B"
         :ok
@@ -110,8 +110,8 @@ defmodule Sanbase.Notifications.NotificationActionsTest do
       end)
 
       Sanbase.Email.MockMailjetApi
-      |> expect(:list_subscribed_emails, fn :metric_updates -> {:ok, ["test@example.com"]} end)
-      |> expect(:send_to_list, fn :metric_updates, "Sanbase Metric Updates", content, _opts ->
+      |> expect(:list_subscribed_emails, fn :metric_updates_dev -> {:ok, ["test@example.com"]} end)
+      |> expect(:send_to_list, fn :metric_updates_dev, "Sanbase Metric Updates", content, _opts ->
         assert content =~ "metric A"
         {:error, "Failed to send email"}
       end)
@@ -186,8 +186,8 @@ defmodule Sanbase.Notifications.NotificationActionsTest do
       end)
 
       Sanbase.Email.MockMailjetApi
-      |> expect(:list_subscribed_emails, fn :metric_updates -> {:ok, ["test@example.com"]} end)
-      |> expect(:send_to_list, fn :metric_updates, "Sanbase Metric Updates", content, _opts ->
+      |> expect(:list_subscribed_emails, fn :metric_updates_dev -> {:ok, ["test@example.com"]} end)
+      |> expect(:send_to_list, fn :metric_updates_dev, "Sanbase Metric Updates", content, _opts ->
         assert content =~ "metric A"
         assert content =~ "metric B"
         :ok
@@ -228,7 +228,7 @@ defmodule Sanbase.Notifications.NotificationActionsTest do
       end)
 
       Sanbase.Email.MockMailjetApi
-      |> expect(:send_to_list, fn :metric_updates, subject, content, _opts ->
+      |> expect(:send_to_list, fn :metric_updates_dev, subject, content, _opts ->
         assert subject == "Test Subject"
         assert content == "Email message"
         :ok

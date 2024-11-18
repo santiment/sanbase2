@@ -27,8 +27,22 @@ defmodule Sanbase.EventBus.MetricRegistrySubscriber do
     {:noreply, state}
   end
 
+  # Needed to handle the async tasks
+  def handle_info({ref, :ok}, state) when is_reference(ref) do
+    {:noreply, state}
+  end
+
+  def handle_info({:DOWN, ref, :process, _pid, :normal}, state) when is_reference(ref) do
+    {:noreply, state}
+  end
+
+  def handle_info({:DOWN, ref, :process, _pid, reason}, state) when is_reference(ref) do
+    Logger.error("Metric registry notification task failed with reason: #{inspect(reason)}")
+    {:noreply, state}
+  end
+
   defp handle_event(
-         %{data: %{event_type: event_type}},
+         %{data: %{event_type: event_type}} = event,
          event_shadow,
          state
        )
@@ -42,6 +56,10 @@ defmodule Sanbase.EventBus.MetricRegistrySubscriber do
     Sanbase.Clickhouse.MetricAdapter.Registry.refresh_stored_terms()
     Sanbase.Metric.Helper.refresh_stored_terms()
     Sanbase.Billing.Plan.StandardAccessChecker.refresh_stored_terms()
+
+    Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+      Sanbase.Notifications.Handler.handle_metric_registry_event(event)
+    end)
 
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state

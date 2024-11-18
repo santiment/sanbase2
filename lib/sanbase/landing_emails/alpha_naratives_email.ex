@@ -3,7 +3,6 @@ defmodule Sanbase.LandingEmails.AlphaNaratives do
   import Ecto.Changeset
 
   alias Sanbase.Repo
-  alias Sanbase.Email.MailjetApi
 
   @mailjet_alpha_naratives :alpha_naratives_emails
   @alpha_naratives_welcome_template "alpha-naratives-welcome"
@@ -29,12 +28,16 @@ defmodule Sanbase.LandingEmails.AlphaNaratives do
     |> Repo.insert()
     |> case do
       {:ok, result} ->
-        MailjetApi.subscribe(@mailjet_alpha_naratives, email)
+        mailjet_api().subscribe(@mailjet_alpha_naratives, email)
         Sanbase.TemplateMailer.send(email, @alpha_naratives_welcome_template, %{})
         {:ok, result}
 
       {:error, reason} ->
         {:error, reason}
     end
+  end
+
+  def mailjet_api do
+    Application.get_env(:sanbase, :mailjet_api, Sanbase.Email.MailjetApi)
   end
 end

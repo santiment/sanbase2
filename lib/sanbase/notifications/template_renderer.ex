@@ -1,24 +1,17 @@
 defmodule Sanbase.Notifications.TemplateRenderer do
-  alias Sanbase.Notifications.{Notification, NotificationAction}
   alias Sanbase.TemplateEngine
 
-  def render_content(%Notification{
-        notification_action: %NotificationAction{action_type: :manual},
-        content: content
-      })
-      when is_binary(content) do
-    String.trim(content)
-  end
-
-  def render_content(%Notification{
-        notification_action: %NotificationAction{action_type: action_type},
-        step: step,
-        template_params: template_params
-      }) do
-    channel = "all"
+  def render_content(
+        %{
+          action: action,
+          params: params,
+          step: step,
+          channel: channel
+        } = _data
+      ) do
     # Convert template params keys to strings and handle list parameters
     params =
-      Map.new(template_params, fn
+      Map.new(params, fn
         {key, value}
         when is_list(value) and
                key in ["metrics_list", "asset_categories", :metrics_list, :asset_categories] ->
@@ -28,9 +21,9 @@ defmodule Sanbase.Notifications.TemplateRenderer do
           {to_string(k), v}
       end)
 
-    case Sanbase.Notifications.get_template(to_string(action_type), to_string(step), channel) do
+    case Sanbase.Notifications.get_template(to_string(action), step, channel) do
       nil ->
-        raise "Template not found for #{action_type}/#{step}/#{channel}"
+        raise "Template not found for #{action}/#{step}/#{channel}"
 
       template ->
         {:ok, content} = TemplateEngine.run(template.template, params: params)

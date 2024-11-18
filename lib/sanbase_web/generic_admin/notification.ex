@@ -31,18 +31,12 @@ defmodule SanbaseWeb.GenericAdmin.Notification do
         channels: %{
           collection: Sanbase.Notifications.Notification.supported_channels(),
           type: :multiselect,
-          value_modifier: &format_channels/1
+          value_modifier: fn ntf ->
+            Jason.encode!(ntf.channels)
+          end
         }
       }
     }
-  end
-
-  defp format_params(%{params: params}) do
-    Jason.encode!(params)
-  end
-
-  defp format_channels(%{channels: channels}) do
-    Jason.encode!(channels)
   end
 
   def after_filter(notification, _params) do

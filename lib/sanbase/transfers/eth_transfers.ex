@@ -249,7 +249,7 @@ defmodule Sanbase.Transfers.EthTransfers do
       UNION ALL
 
       SELECT dt, any(value) AS incoming, 0 AS outgoing
-      FROM eth_transfers_to
+      FROM eth_transfers
       PREWHERE
         to in ({{addresses}}) AND
         dt >= toDateTime({{from}}) AND
@@ -276,10 +276,10 @@ defmodule Sanbase.Transfers.EthTransfers do
         :transfers_count -> "transfers_count"
       end
 
-    {select_column, filter_column, table} =
+    {select_column, filter_column} =
       case type do
-        :incoming -> {"from", "to", "eth_transfers_to"}
-        :outgoing -> {"to", "from", "eth_transfers"}
+        :incoming -> {"from", "to"}
+        :outgoing -> {"to", "from"}
       end
 
     sql = """
@@ -290,7 +290,7 @@ defmodule Sanbase.Transfers.EthTransfers do
       COUNT(*) AS transfers_count
     FROM (
       SELECT dt, type, from, to, anyLast(value) AS value
-      FROM #{table}
+      FROM eth_transfers
       WHERE
         #{filter_column} = {{address}} AND
         type != 'fee' AND

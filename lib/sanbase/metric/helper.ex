@@ -45,6 +45,7 @@ defmodule Sanbase.Metric.Helper do
   def incomplete_metrics(), do: get(:incomplete_metrics)
   def metric_modules(), do: @modules
   def metric_to_module_map(), do: get(:metric_to_module_map)
+  def metric_to_modules_map(), do: get(:metric_to_modules_map)
   def metrics(), do: get(:metrics)
   def metrics_mapset(), do: get(:metrics_mapset)
   def min_plan_map(), do: get(:min_plan_map)
@@ -71,6 +72,7 @@ defmodule Sanbase.Metric.Helper do
     {:implemented_optional_functions, []},
     {:incomplete_metrics, []},
     {:metric_to_module_map, []},
+    {:metric_to_modules_map, []},
     {:metrics, []},
     {:metrics_mapset, []},
     {:min_plan_map, []},
@@ -200,6 +202,15 @@ defmodule Sanbase.Metric.Helper do
         reduce: %{} do
       acc ->
         Map.put(acc, metric, module)
+    end
+  end
+
+  defp compute(:metric_to_modules_map, []) do
+    for module <- @modules,
+        metric <- module.available_metrics(),
+        reduce: %{} do
+      acc ->
+        Map.update(acc, metric, [module], &[module | &1])
     end
   end
 

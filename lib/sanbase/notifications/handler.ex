@@ -85,6 +85,24 @@ defmodule Sanbase.Notifications.Handler do
     {:ok, notification}
   end
 
+  def handle_notification(%Notification{} = notification) do
+    send_discord_notification(
+      notification,
+      notification.action,
+      notification.params,
+      notification.step
+    )
+
+    maybe_send_email_notification(
+      notification,
+      notification.action,
+      notification.params,
+      notification.step
+    )
+
+    {:ok, notification}
+  end
+
   def create_notification(action, params, step, channels \\ nil) do
     %Notification{}
     |> Notification.changeset(%{

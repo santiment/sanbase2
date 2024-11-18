@@ -69,6 +69,8 @@ defmodule SanbaseWeb.Router do
     live("/upload_image_live", UploadImageLive)
     live("/uploaded_images_live", UploadedImagesLive)
 
+    live "/notifications/manual", NotificationsLive.ManualFormLive
+
     resources("/reports", ReportController)
     resources("/sheets_templates", SheetsTemplateController)
     resources("/webinars", WebinarController)

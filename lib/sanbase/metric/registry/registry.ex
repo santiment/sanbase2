@@ -1,6 +1,7 @@
 defmodule Sanbase.Metric.Registry do
   use Ecto.Schema
 
+  import Ecto.Query
   import Ecto.Changeset
   import Sanbase.Metric.Registry.EventEmitter, only: [emit_event: 3]
 
@@ -20,6 +21,7 @@ defmodule Sanbase.Metric.Registry do
     use Ecto.Schema
     import Ecto.Changeset
 
+    @primary_key false
     embedded_schema do
       field(:type, :string)
     end
@@ -35,6 +37,7 @@ defmodule Sanbase.Metric.Registry do
     use Ecto.Schema
     import Ecto.Changeset
 
+    @primary_key false
     embedded_schema do
       field(:name, :string)
     end
@@ -51,6 +54,7 @@ defmodule Sanbase.Metric.Registry do
     use Ecto.Schema
     import Ecto.Changeset
 
+    @primary_key false
     embedded_schema do
       field(:name, :string)
     end
@@ -68,6 +72,7 @@ defmodule Sanbase.Metric.Registry do
     use Ecto.Schema
     import Ecto.Changeset
 
+    @primary_key false
     embedded_schema do
       field(:link, :string)
     end
@@ -256,6 +261,27 @@ defmodule Sanbase.Metric.Registry do
     case Sanbase.Repo.get_by(__MODULE__, id: id) do
       nil -> {:error, "No metric with id #{id} found in the registry"}
       %__MODULE__{} = struct -> {:ok, struct}
+    end
+  end
+
+  def by_name(metric, data_type, fixed_parameters \\ %{}) do
+    query =
+      from(mr in __MODULE__,
+        where:
+          mr.metric == ^metric and mr.data_type == "timeseries" and
+            mr.fixed_parameters == ^fixed_parameters
+      )
+
+    case Sanbase.Repo.one(query) do
+      %__MODULE__{} = struct ->
+        {:ok, struct}
+
+      nil ->
+        {:error,
+         """
+         No metric with name #{metric}, data type #{data_type} and \
+         fixed parameters #{inspect(fixed_parameters)} found in the registry
+         """}
     end
   end
 

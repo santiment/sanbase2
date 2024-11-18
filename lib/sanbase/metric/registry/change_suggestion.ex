@@ -44,27 +44,11 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
   end
 
   def apply(%__MODULE__{} = suggestion) do
-    {:ok, metric_registry} = Registry.by_id(suggestion.metric_registry_id)
+    with {:ok, metric_registry} <- Registry.by_id(suggestion.metric_registry_id) do
+      changes = decode_changes(suggestion.changes)
 
-    # The changes is a JSON map like {"1": "g3QAAAADdwNuZXdtAAAAAjFodwNvbGRtAAAAAjVtdwVmaWVsZHcMbWluX2ludGVydmFs"}
-    # where the value is a base64 encoded binary produced by :erlang.term_to_binary
-    # after decoding, the value is something like:
-    # %{field: :min_interval, old: "5m", new: "1h"}
-    changes =
-      Map.new(
-        suggestion.changes,
-        fn {_k, encoded} ->
-          %{key: key, old: _, new: new} =
-            encoded
-            |> Base.decode64!()
-            |> :erlang.binary_to_term()
-
-          %{key => new}
-        end
-      )
-
-    metric_registry
-    |> Registry.update(changes)
+      updated = ExAudit.Patch.patch(metric_registry, changes)
+    end
   end
 
   def create_change_suggestion(%Registry{} = registry, params, notes, submitted_by) do
@@ -100,4 +84,22 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
     |> Base.decode64!()
     |> :erlang.binary_to_term()
   end
+
+  # Private
+
+  # defp changes_to_changeset_params(metric_registry, changes) do
+  #   Enum.reduce(changes, %{}, fn %{key => change}, acc ->
+  #     cond do
+  #       {:changed, {:primitive_change, _old, new}} -> %{key: new}
+  #       {:changed, [_ | _] = list} -> list_change(metric_registry, key, list)
+  #     end
+  #   end)
+  # end
+
+  # defp list_change(%{key => old_value}, key, list) do
+  #   Enum.reduce(list, old_value, fn
+  #     {:changed_in_list, pos, %{} = map}, acc ->
+  #       nil
+  #   end)
+  # end
 end

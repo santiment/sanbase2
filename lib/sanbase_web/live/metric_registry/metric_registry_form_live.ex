@@ -166,7 +166,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
             name="submitted_by"
             value={@email}
           />
-          <.button phx-disable-with="Saving...">Save</.button>
+          <.button phx-disable-with="Submitting...">Submit Change Suggestion</.button>
         </div>
         <.error :for={{field, [reason]} <- @save_errors}>
           <%= to_string(field) <> ": " <> inspect(reason) %>

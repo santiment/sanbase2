@@ -33,51 +33,58 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
             <%= Sanbase.ExAudit.Patch.format_patch(%{patch: row.changes}) %>
           </:col>
           <:col :let={row} label="Notes"><%= row.notes %></:col>
+          <:col :let={row} label="Submitted By"><%= row.submitted_by %></:col>
           <:action :let={row}>
-            <.form
-              for={@form}
-              phx-submit="update_status"
-              class="flex flex-col lg:flex-row space-y-2 lg:space-y-0 md:space-x-2"
-            >
-              <input type="hidden" name="record_id" value={row.id} />
-              <AdminFormsComponents.button
-                name="status"
-                value="approved"
-                class={
-                  if row.status == "pending_approval",
-                    do: "bg-green-600 hover:bg-green-800",
-                    else: "bg-gray-300"
-                }
-                disabled={row.status != "pending_approval"}
-                display_text="Approve"
-              />
-              <AdminFormsComponents.button
-                name="status"
-                value="declined"
-                class={
-                  if row.status == "pending_approval",
-                    do: "bg-red-600 hover:bg-red-800",
-                    else: "bg-gray-300"
-                }
-                disabled={row.status != "pending_approval"}
-                display_text="Decline"
-              />
-              <AdminFormsComponents.button
-                name="status"
-                value="undo"
-                class={
-                  if row.status != "pending_approval",
-                    do: "bg-yellow-400 hover:bg-yellow-800",
-                    else: "bg-gray-300"
-                }
-                disabled={row.status == "pending_approval"}
-                display_text="Undo"
-              />
-            </.form>
+            <.action_buttons form={@form} row={row} />
           </:action>
         </.table>
       </div>
     </div>
+    """
+  end
+
+  def action_buttons(assigns) do
+    ~H"""
+    <.form
+      for={@form}
+      phx-submit="update_status"
+      class="flex flex-col lg:flex-row space-y-2 lg:space-y-0 md:space-x-2"
+    >
+      <input type="hidden" name="record_id" value={@row.id} />
+
+      <.action_button
+        value="aproved"
+        text="Approve"
+        disabled={@row.status != "pending_approval"}
+        color="green"
+      />
+      <.action_button
+        value="declined"
+        text="Decline"
+        disabled={@row.status != "pending_approval"}
+        color="red"
+      />
+      <.action_button
+        value="undo"
+        text="Undo"
+        disabled={@row.status == "pending_approval"}
+        color="yellow"
+      />
+    </.form>
+    """
+  end
+
+  def action_button(assigns) do
+    assigns = assign(assigns, colors: "bg-#{assigns.color}-600 hover:bg-#{assigns.color}-800")
+
+    ~H"""
+    <AdminFormsComponents.button
+      name="status"
+      value={@value}
+      class={if @disabled, do: "bg-gray-300", else: @colors}
+      disabled={@disabled}
+      display_text="Undo"
+    />
     """
   end
 

@@ -378,8 +378,12 @@ defmodule Sanbase.Price do
     end
   end
 
-  def latest_prices_per_slug(slugs, limit_per_slug) do
-    query_struct = latest_prices_per_slug_query(slugs, limit_per_slug)
+  def latest_prices_per_slug([], _, _) do
+    {:ok, %{}}
+  end
+
+  def latest_prices_per_slug(slugs, source, limit_per_slug) when is_list(slugs) do
+    query_struct = latest_prices_per_slug_query(slugs, source, limit_per_slug)
 
     ClickhouseRepo.query_reduce(query_struct, %{}, fn [slug, prices_usd, prices_btc], acc ->
       acc

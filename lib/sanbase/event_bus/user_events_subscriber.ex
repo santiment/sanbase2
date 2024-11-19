@@ -34,7 +34,7 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
     {:ok, _} = Sanbase.Accounts.EmailJobs.schedule_emails_after_sign_up(user_id)
 
     email = Sanbase.Accounts.get_user!(user_id).email
-    mailjet_api().subscribe(:monthly_newsletter, email)
+    Sanbase.Email.MailjetApi.client().subscribe(:monthly_newsletter, email)
 
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
@@ -53,7 +53,7 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
          state
        ) do
     email = Sanbase.Accounts.get_user!(user_id).email
-    mailjet_api().subscribe(:monthly_newsletter, email)
+    Sanbase.Email.MailjetApi.client().subscribe(:monthly_newsletter, email)
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end
@@ -64,7 +64,7 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
          state
        ) do
     email = Sanbase.Accounts.get_user!(user_id).email
-    mailjet_api().unsubscribe(:monthly_newsletter, email)
+    Sanbase.Email.MailjetApi.client().unsubscribe(:monthly_newsletter, email)
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end
@@ -96,7 +96,7 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
        ) do
     email = Sanbase.Accounts.get_user!(user_id).email
 
-    mailjet_api().subscribe(:metric_updates, email)
+    Sanbase.Email.MailjetApi.client().subscribe(:metric_updates, email)
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end
@@ -107,7 +107,7 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
          state
        ) do
     email = Sanbase.Accounts.get_user!(user_id).email
-    mailjet_api().unsubscribe(:metric_updates, email)
+    Sanbase.Email.MailjetApi.client().unsubscribe(:metric_updates, email)
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end
@@ -116,9 +116,5 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
     # The unhandled events are marked as completed
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
-  end
-
-  def mailjet_api do
-    Application.get_env(:sanbase, :mailjet_api, mailjet_api())
   end
 end

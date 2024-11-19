@@ -151,10 +151,6 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       schedule: "0 */6 * * *",
       task: {Sanbase.Cryptocompare.Jobs, :move_finished_jobs, []}
     ],
-    export_metrics_csv: [
-      schedule: "0 5 * * *",
-      task: {Sanbase.MetricExporter.CSV, :export, []}
-    ],
     comments_notification: [
       schedule: "0 18 * * *",
       task: {Sanbase.Comments.Notification, :notify_users, []}

@@ -31,23 +31,30 @@ defmodule Sanbase.SmartContracts.UniswapPair do
     "0x" <> Base.encode16(address, case: :lower)
   end
 
-  @spec reserves(address) :: {float(), float()}
+  @spec reserves(address) :: {float(), float()} | {:error, any()}
   def reserves(contract) do
-    [token0_reserves, token1_reserves, _] =
-      call_contract(
-        contract,
-        "getReserves()",
-        [],
-        [{:uint, 112}, {:uint, 112}, {:uint, 32}]
-      )
+    call_contract(
+      contract,
+      "getReserves()",
+      [],
+      [{:uint, 112}, {:uint, 112}, {:uint, 32}]
+    )
+    |> case do
+      [token0_reserves, token1_reserves, _] ->
+        {format_number(token0_reserves, @decimals), format_number(token1_reserves, @decimals)}
 
-    {format_number(token0_reserves, @decimals), format_number(token1_reserves, @decimals)}
+      {:error, _} = error ->
+        error
+    end
   end
 
   @spec total_supply(address) :: float()
   def total_supply(contract) do
-    [total_supply] = call_contract(contract, "totalSupply()", [], [{:uint, 256}])
-    format_number(total_supply, @decimals)
+    call_contract(contract, "totalSupply()", [], [{:uint, 256}])
+    |> case do
+      [total_supply] -> format_number(total_supply, @decimals)
+      {:error, _} -> +0.0
+    end
   end
 
   @spec balance_of(address, address) :: float()

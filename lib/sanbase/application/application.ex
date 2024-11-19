@@ -277,23 +277,14 @@ defmodule Sanbase.Application do
       end
 
     [
-      # Start the PubSub
-      {Phoenix.PubSub, name: Sanbase.PubSub},
-
-      # Start the Presence
-      SanbaseWeb.Presence,
-
-      # Start the endpoint when the application starts
-      SanbaseWeb.Endpoint,
+      # Telemetry metrics
+      SanbaseWeb.Telemetry,
 
       # Prometheus metrics
       SanbaseWeb.Prometheus,
 
       # Start the Postgres Ecto repository
       Sanbase.Repo,
-
-      # Telemetry metrics
-      SanbaseWeb.Telemetry,
 
       # Start the main ClickhouseRepo. This is started in all
       # pods as each pod will need it.
@@ -308,6 +299,15 @@ defmodule Sanbase.Application do
 
       # Start the clickhouse read-only repos for different plans
       clickhouse_readonly_per_plan_children,
+
+      # Start the PubSub
+      {Phoenix.PubSub, name: Sanbase.PubSub},
+
+      # Start the Presence
+      SanbaseWeb.Presence,
+
+      # Start the endpoint when the application starts
+      SanbaseWeb.Endpoint,
 
       # Star the API call service
       Sanbase.ApiCallLimit.ETS,

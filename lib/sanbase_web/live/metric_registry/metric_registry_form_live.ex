@@ -161,8 +161,8 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
             placeholder="Explanation why the changes are submitted"
           />
           <.input
-            type="text"
-            label="Submitted by (prefilled if logged into Sanbase)"
+            type="email"
+            label="Submitted by (enter your email address)"
             name="submitted_by"
             value={@email}
           />

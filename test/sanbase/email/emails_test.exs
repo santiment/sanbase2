@@ -24,7 +24,7 @@ defmodule Sanbase.EmailsTest do
     {StripeApi, [:passthrough],
      [create_subscription: fn _ -> StripeApiTestResponse.create_subscription_resp() end]},
     {StripeApi, [:passthrough],
-     [fetch_default_card: fn _ -> {:ok, %{default_source: "123"}} end]},
+     [fetch_stripe_customer: fn _ -> {:ok, %{default_source: "123"}} end]},
     {Sanbase.TemplateMailer, [], [send: fn _, _, _ -> {:ok, :email_sent} end]}
   ]) do
     not_registered_user = insert(:user_registration_not_finished, email: "example@santiment.net")

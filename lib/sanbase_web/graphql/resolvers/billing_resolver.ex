@@ -220,7 +220,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
   def fetch_default_payment_instrument(_root, _args, %{
         context: %{auth: %{current_user: current_user}}
       }) do
-    with {:ok, customer} <- StripeApi.fetch_default_card(current_user),
+    with {:ok, customer} <- StripeApi.fetch_stripe_customer(current_user),
          {:card?, card} when not is_nil(card) <- {:card?, choose_default_card(customer)} do
       {:ok,
        %{
@@ -305,12 +305,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
   # default card can be either a card token or a payment method
   # they are stored in different places in the customer object
   defp choose_default_card(customer) do
-    if is_map(customer.invoice_settings) and customer.invoice_settings.default_payment_method do
-      pm_id = customer.invoice_settings.default_payment_method
-      {:ok, pm} = StripeApi.retrieve_payment_method(pm_id)
-      pm.card
-    else
-      customer.default_source && Map.from_struct(customer.default_source)
+    cond do
+      # Check for default payment method first
+      is_map(customer.invoice_settings) and customer.invoice_settings.default_payment_method ->
+        pm_id = customer.invoice_settings.default_payment_method
+        {:ok, pm} = StripeApi.retrieve_payment_method(pm_id)
+        pm.card
+
+      # Fall back to default source if it exists and is a card
+      customer.default_source && is_struct(customer.default_source, Stripe.Card) ->
+        Map.from_struct(customer.default_source)
+
+      # Handle card source type
+      customer.default_source && is_map(customer.default_source) &&
+          Map.get(customer.default_source, :type) == "card" ->
+        get_in(customer.default_source, [:card]) || customer.default_source
+
+      true ->
+        nil
     end
   end
 

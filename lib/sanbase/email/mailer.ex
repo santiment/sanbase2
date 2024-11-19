@@ -90,7 +90,7 @@ defmodule Sanbase.Mailer do
   defp can_send?(_user, _template, _params), do: true
 
   defp has_card?(user) do
-    case Sanbase.StripeApi.fetch_default_card(user) do
+    case Sanbase.StripeApi.fetch_stripe_customer(user) do
       {:ok, customer} -> not is_nil(customer.default_source)
       _ -> false
     end

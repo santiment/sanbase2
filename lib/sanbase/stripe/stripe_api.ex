@@ -64,12 +64,12 @@ defmodule Sanbase.StripeApi do
     Stripe.Customer.update(stripe_customer_id, params)
   end
 
-  def fetch_default_card(%User{stripe_customer_id: stripe_customer_id})
+  def fetch_stripe_customer(%User{stripe_customer_id: stripe_customer_id})
       when is_binary(stripe_customer_id) do
     Stripe.Customer.retrieve(stripe_customer_id, expand: ["default_source"])
   end
 
-  def fetch_default_card(_), do: {:error, "Customer has no default card"}
+  def fetch_stripe_customer(_), do: {:error, "Customer has no default card"}
 
   def delete_default_card(%User{stripe_customer_id: stripe_customer_id})
       when is_binary(stripe_customer_id) do

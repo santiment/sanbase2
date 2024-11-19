@@ -13,4 +13,6 @@ config :sanbase, Sanbase.Telegram,
 
 config :sanbase, Sanbase.Alert, email_channel_enabled: {:system, "EMAIL_CHANNEL_ENABLED", "false"}
 
-config :sanbase, Sanbase.Notifications.DiscordClient, webhook: {:system, "DISCORD_WEBHOOK_URL"}
+config :sanbase, Sanbase.Notifications,
+  discord_webhook: {:system, "DISCORD_NOTIFICATIONS_WEBHOOK_URL"},
+  mailjet_metric_updates_list: {:system, "MAILJET_METRIC_UPDATES_LIST", "metric_updates_dev"}

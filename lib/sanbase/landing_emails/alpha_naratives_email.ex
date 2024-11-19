@@ -28,16 +28,12 @@ defmodule Sanbase.LandingEmails.AlphaNaratives do
     |> Repo.insert()
     |> case do
       {:ok, result} ->
-        mailjet_api().subscribe(@mailjet_alpha_naratives, email)
+        Sanbase.Email.MailjetApi.client().subscribe(@mailjet_alpha_naratives, email)
         Sanbase.TemplateMailer.send(email, @alpha_naratives_welcome_template, %{})
         {:ok, result}
 
       {:error, reason} ->
         {:error, reason}
     end
-  end
-
-  def mailjet_api do
-    Application.get_env(:sanbase, :mailjet_api, Sanbase.Email.MailjetApi)
   end
 end

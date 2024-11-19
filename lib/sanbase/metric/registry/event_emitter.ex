@@ -17,7 +17,7 @@ defmodule Sanbase.Metric.Registry.EventEmitter do
              :update_metric_registry,
              :delete_metric_registry
            ] do
-    %{event_type: event_type, metric: struct.metric}
+    %{event_type: event_type, id: struct.id, metric: struct.metric}
     |> notify()
   end
 

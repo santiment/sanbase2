@@ -17,17 +17,24 @@ defmodule Sanbase.Email.MailjetApi do
   @monthly_newsletter_list_id 61_085
   @mailjet_sanr_list_id 10_321_582
   @alpha_naratives_list_id 10_321_590
-  # @metric_updates_list_id 10_326_520
-  @test_metric_updates_list_id 10_326_671
+  @metric_updates_list_id 10_326_520
+  @dev_metric_updates_list_id 10_326_671
+  @stage_metric_updates_list_id 10_326_676
 
   @mailjet_lists %{
     bi_weekly: @bi_weekly_list_id,
     monthly_newsletter: @monthly_newsletter_list_id,
     sanr_network_emails: @mailjet_sanr_list_id,
     alpha_naratives_emails: @alpha_naratives_list_id,
-    metric_updates: @test_metric_updates_list_id
+    metric_updates: @metric_updates_list_id,
+    metric_updates_dev: @dev_metric_updates_list_id,
+    metric_updates_stage: @stage_metric_updates_list_id
   }
   @send_api_url "https://api.mailjet.com/v3.1/send"
+
+  def client do
+    Application.get_env(:sanbase, :mailjet_api, __MODULE__)
+  end
 
   def subscribe(list_atom, email_or_emails) do
     subscribe_unsubscribe(list_atom, email_or_emails, :subscribe)

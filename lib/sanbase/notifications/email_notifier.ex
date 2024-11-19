@@ -2,8 +2,8 @@ defmodule Sanbase.Notifications.EmailNotifier do
   import Ecto.Query
   alias Sanbase.{Repo, Notifications.Notification}
   alias Sanbase.Notifications.TemplateRenderer
+  alias Sanbase.Utils.Config
 
-  @metric_updates_list :metric_updates
   @subject "Sanbase Metric Updates"
 
   def send_daily_digest(action) do
@@ -28,7 +28,12 @@ defmodule Sanbase.Notifications.EmailNotifier do
           channel: "email"
         })
 
-      case mailjet_api().send_to_list(@metric_updates_list, @subject, content, []) do
+      case Sanbase.Email.MailjetApi.client().send_to_list(
+             metric_updates_list(),
+             @subject,
+             content,
+             []
+           ) do
         :ok -> Enum.each(group_notifications, &mark_processed(&1, :email))
         {:error, _reason} -> :error
       end
@@ -76,7 +81,8 @@ defmodule Sanbase.Notifications.EmailNotifier do
     |> Repo.update()
   end
 
-  def mailjet_api do
-    Application.get_env(:sanbase, :mailjet_api, Sanbase.Email.MailjetApi)
+  defp metric_updates_list do
+    Config.module_get(Sanbase.Notifications, :mailjet_metric_updates_list)
+    |> String.to_atom()
   end
 end

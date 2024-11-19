@@ -28,16 +28,12 @@ defmodule Sanbase.LandingEmails.SanrEmail do
     |> Repo.insert()
     |> case do
       {:ok, result} ->
-        mailjet_api().subscribe(@mailjet_sanr_list, email)
+        Sanbase.Email.MailjetApi.client().subscribe(@mailjet_sanr_list, email)
         Sanbase.TemplateMailer.send(email, @sanr_network_welcome_template, %{})
         {:ok, result}
 
       {:error, reason} ->
         {:error, reason}
     end
-  end
-
-  def mailjet_api do
-    Application.get_env(:sanbase, :mailjet_api, Sanbase.Email.MailjetApi)
   end
 end

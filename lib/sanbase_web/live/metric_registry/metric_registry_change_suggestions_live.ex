@@ -2,6 +2,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
   use SanbaseWeb, :live_view
 
   alias SanbaseWeb.AdminFormsComponents
+  alias Sanbase.Metric.Registry.ChangeSuggestion
 
   @impl true
   def mount(_params, _session, socket) do
@@ -29,9 +30,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
               <%= row.metric_registry.metric %>
             </.link>
           </:col>
-          <:col :let={row} label="Changes">
-            <%= Sanbase.ExAudit.Patch.format_patch(%{patch: row.changes}) %>
-          </:col>
+          <:col :let={row} label="Changes"><.formatted_changes row={row} /></:col>
           <:col :let={row} label="Notes"><%= row.notes %></:col>
           <:col :let={row} label="Submitted By"><%= row.submitted_by %></:col>
           <:action :let={row}>
@@ -40,6 +39,12 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
         </.table>
       </div>
     </div>
+    """
+  end
+
+  def formatted_changes(assigns) do
+    ~H"""
+    <%= Sanbase.ExAudit.Patch.format_patch(%{patch: @row.changes}) %>
     """
   end
 
@@ -53,7 +58,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
       <input type="hidden" name="record_id" value={@row.id} />
 
       <.action_button
-        value="aproved"
+        value="approved"
         text="Approve"
         disabled={@row.status != "pending_approval"}
         color="green"
@@ -64,12 +69,12 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
         disabled={@row.status != "pending_approval"}
         color="red"
       />
-      <.action_button
-        value="undo"
-        text="Undo"
-        disabled={@row.status == "pending_approval"}
-        color="yellow"
-      />
+      <!-- <.action_button -->
+      <!--   value="undo" -->
+      <!--   text="Undo" -->
+      <!--   disabled={@row.status == "pending_approval"} -->
+      <!--   color="yellow" -->
+      <!-- /> -->
     </.form>
     """
   end
@@ -83,31 +88,31 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
       value={@value}
       class={if @disabled, do: "bg-gray-300", else: @colors}
       disabled={@disabled}
-      display_text="Undo"
+      display_text={@text}
     />
     """
   end
 
-  @impl true
-  def handle_event("update_status", %{"status" => "undo", "record_id" => record_id}, socket) do
-    record_id = String.to_integer(record_id)
+  # @impl true
+  # def handle_event("update_status", %{"status" => "undo", "record_id" => record_id}, socket) do
+  #   record_id = String.to_integer(record_id)
 
-    case Sanbase.Ecosystem.ChangeSuggestion.undo_suggestion(record_id) do
-      {:ok, record} ->
-        rows =
-          update_assigns_row(socket.assigns.rows, record_id, record.status)
+  #   case Sanbase.Ecosystem.ChangeSuggestion.undo_suggestion(record_id) do
+  #     {:ok, record} ->
+  #       rows =
+  #         update_assigns_row(socket.assigns.rows, record_id, record.status)
 
-        socket =
-          socket
-          |> assign(:rows, rows)
-          |> put_flash(:info, "Successfully reverted the approved suggested changes!")
+  #       socket =
+  #         socket
+  #         |> assign(:rows, rows)
+  #         |> put_flash(:info, "Successfully reverted the approved suggested changes!")
 
-        {:noreply, socket}
+  #       {:noreply, socket}
 
-      {:error, changeset} ->
-        {:noreply, add_changeset_error_flash(socket, changeset)}
-    end
-  end
+  #     {:error, changeset} ->
+  #       {:noreply, add_changeset_error_flash(socket, changeset)}
+  #   end
+  # end
 
   @impl true
   def handle_event(
@@ -118,7 +123,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
       when status in ["approved", "declined"] do
     record_id = String.to_integer(record_id)
 
-    case Sanbase.Ecosystem.ChangeSuggestion.update_status(record_id, status) do
+    case Sanbase.Metric.Registry.ChangeSuggestion.update_status(record_id, status) do
       {:ok, _} ->
         rows = update_assigns_row(socket.assigns.rows, record_id, status)
 
@@ -160,6 +165,9 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
   defp list_all_submissions() do
     Sanbase.Metric.Registry.ChangeSuggestion.list_all_submissions()
     |> Enum.map(&Map.from_struct/1)
+    |> Enum.map(
+      &Map.update!(&1, :changes, fn encoded -> ChangeSuggestion.decode_changes(encoded) end)
+    )
     |> order_records()
   end
 

@@ -7,6 +7,7 @@ defmodule Sanbase.Metric.Registry do
 
   alias Sanbase.Repo
   alias __MODULE__.Validation
+  alias __MODULE__.ChangeSuggestion
   alias Sanbase.TemplateEngine
 
   # Matches letters, digits, _, -, :, ., {, }, (, ), \, /  and space
@@ -152,6 +153,11 @@ defmodule Sanbase.Metric.Registry do
     embeds_many(:selectors, Selector, on_replace: :delete)
     embeds_many(:required_selectors, Selector, on_replace: :delete)
     embeds_many(:docs, Doc, on_replace: :delete)
+
+    has_many(:change_suggestions, ChangeSuggestion,
+      foreign_key: :metric_registry_id,
+      on_delete: :delete_all
+    )
 
     timestamps()
   end

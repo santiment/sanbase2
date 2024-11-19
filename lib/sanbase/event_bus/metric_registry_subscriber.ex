@@ -53,7 +53,6 @@ defmodule Sanbase.EventBus.MetricRegistrySubscriber do
 
   defp handle_event(
          %{data: %{event_type: event_type, metric: metric}} = event,
-
          event_shadow,
          state
        )

@@ -2,12 +2,14 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
   use Ecto.Schema
 
   alias Sanbase.Metric.Registry
+  alias Sanbase.Utils.Config
 
   import Ecto.Query
   import Ecto.Changeset
 
+  @statuses ["approved", "declined", "pending_approval"]
   schema "metric_registry_change_suggestions" do
-    belongs_to(:metric_registry, Registry)
+    belongs_to(:metric_registry, Registry, foreign_key: :metric_registry_id)
 
     field(:notes, :string)
     field(:status, :string)
@@ -28,7 +30,7 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
       :submitted_by
     ])
     |> validate_required([:metric_registry_id, :changes])
-    |> validate_inclusion(:status, ["pending_approval", "approved", "rejected"])
+    |> validate_inclusion(:status, @statuses)
   end
 
   def create(attrs) do
@@ -37,17 +39,52 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
     |> Sanbase.Repo.insert()
   end
 
+  def by_id(id) do
+    case Sanbase.Repo.get(__MODULE__, id) do
+      %__MODULE__{} = record -> {:ok, record}
+      nil -> {:error, "Metric Registry Change Suggestion with id #{id} not found"}
+    end
+  end
+
   def list_all_submissions() do
     from(cs in __MODULE__, preload: [:metric_registry])
     |> Sanbase.Repo.all()
-    |> Enum.map(fn struct -> %{struct | changes: decode_changes(struct.changes)} end)
+  end
+
+  def update_status(id, new_status) when is_integer(id) and new_status in @statuses do
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:get_suggestion, fn _, _ -> by_id(id) end)
+    |> Ecto.Multi.run(:maybe_apply_suggestions, fn _, %{get_suggestion: struct} ->
+      if new_status == "approved" and struct.status == "pending_approval",
+        do: apply(struct),
+        else: {:ok, :noop}
+    end)
+    |> Ecto.Multi.run(:update_status, fn _, %{get_suggestion: struct} ->
+      do_update_status(struct, new_status)
+    end)
+    |> Sanbase.Repo.transaction()
+    |> case do
+      {:ok, %{update_status: record}} -> {:ok, record}
+      {:error, _name, error, _changes_so_far} -> {:error, error}
+    end
   end
 
   def apply(%__MODULE__{} = suggestion) do
     with {:ok, metric_registry} <- Registry.by_id(suggestion.metric_registry_id) do
       changes = decode_changes(suggestion.changes)
+      params = changes_to_changeset_params(metric_registry, changes)
+      changeset = Registry.changeset(metric_registry, params)
 
-      updated = ExAudit.Patch.patch(metric_registry, changes)
+      if Config.module_get(__MODULE__, :debug_applying_changes, false) do
+        same_as_applying_patch? =
+          Ecto.Changeset.apply_changes(changeset) == ExAudit.Patch.patch(metric_registry, changes)
+
+        if !same_as_applying_patch? do
+          raise("Applying patch failed for suggestion #{suggestion.id}")
+        end
+      end
+
+      Sanbase.Repo.update(changeset)
     end
   end
 
@@ -87,19 +124,40 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
 
   # Private
 
-  # defp changes_to_changeset_params(metric_registry, changes) do
-  #   Enum.reduce(changes, %{}, fn %{key => change}, acc ->
-  #     cond do
-  #       {:changed, {:primitive_change, _old, new}} -> %{key: new}
-  #       {:changed, [_ | _] = list} -> list_change(metric_registry, key, list)
-  #     end
-  #   end)
-  # end
+  defp do_update_status(%__MODULE__{} = record, new_status) do
+    record
+    |> changeset(%{status: new_status})
+    |> Sanbase.Repo.update()
+  end
 
-  # defp list_change(%{key => old_value}, key, list) do
-  #   Enum.reduce(list, old_value, fn
-  #     {:changed_in_list, pos, %{} = map}, acc ->
-  #       nil
-  #   end)
-  # end
+  defp changes_to_changeset_params(metric_registry, changes) do
+    Enum.reduce(changes, %{}, fn {key, change}, acc ->
+      case change do
+        {:changed, {:primitive_change, _old, new}} ->
+          Map.put(acc, key, new)
+
+        {:changed, [_ | _] = list} ->
+          Map.put(acc, key, list_change(Map.fetch!(metric_registry, key), list))
+      end
+    end)
+  end
+
+  defp list_change(current_value_list, changes_list) when is_list(changes_list) do
+    Enum.reduce(changes_list, current_value_list, fn
+      {:added_to_list, pos, value}, acc ->
+        List.insert_at(acc, pos, value)
+
+      {:removed_from_list, pos, _value}, acc ->
+        List.delete_at(acc, pos)
+
+      {:changed_in_list, pos, map}, acc ->
+        [{embedded_schema_key, {:changed, {:primitive_change, _old, new}}}] = Keyword.new(map)
+
+        List.update_at(acc, pos, fn embed ->
+          Map.put(embed, embedded_schema_key, new)
+        end)
+    end)
+    # In changesets the embeds must be maps, not structs
+    |> Enum.map(&Map.from_struct/1)
+  end
 end

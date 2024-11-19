@@ -1,6 +1,5 @@
 defmodule Sanbase.MetricRegisty.ChangeSuggestionTest do
   use Sanbase.DataCase
-  import ExUnit.CaptureLog
 
   alias Sanbase.Metric.Registry
   alias Sanbase.Metric.Registry.ChangeSuggestion
@@ -27,10 +26,10 @@ defmodule Sanbase.MetricRegisty.ChangeSuggestionTest do
     assert metric.access == "free"
     assert metric.sanbase_min_plan == "free"
     assert metric.is_deprecated == false
-    assert deprecation_note == nil
+    assert metric.deprecation_note == nil
   end
 
-  test "applying a change suggestion" do
+  test "accepting a change suggestion updates the metric" do
     assert {:ok, metric} = Registry.by_name("price_usd_5m", "timeseries")
 
     assert {:ok, struct} =
@@ -41,7 +40,38 @@ defmodule Sanbase.MetricRegisty.ChangeSuggestionTest do
                _submitted_by = "ivan@santiment.net"
              )
 
-    ChangeSuggestion.apply(struct)
+    assert {:ok, _} = ChangeSuggestion.update_status(struct.id, "approved")
+
+    assert {:ok, metric} = Registry.by_name("price_usd_5m", "timeseries")
+
+    assert metric.access == "restricted"
+    assert metric.sanbase_min_plan == "max"
+    assert metric.is_deprecated == true
+    assert metric.deprecation_note == "Because reasons."
+    assert metric.selectors |> Enum.map(&Map.get(&1, :type)) == ["slug", "slugs", "quote_asset"]
+    assert metric.required_selectors |> hd() |> Map.get(:type) == "slug|slugs|quote_asset"
+    assert metric.tables |> hd() |> Map.get(:name) == "new_intraday_table"
+  end
+
+  test "declining a change suggestion does not update the metric" do
+    assert {:ok, metric} = Registry.by_name("price_usd_5m", "timeseries")
+
+    assert {:ok, struct} =
+             ChangeSuggestion.create_change_suggestion(
+               metric,
+               changes(),
+               _note = "Testing purposes",
+               _submitted_by = "ivan@santiment.net"
+             )
+
+    assert {:ok, _} = ChangeSuggestion.update_status(struct.id, "declined")
+
+    assert {:ok, metric} = Registry.by_name("price_usd_5m", "timeseries")
+
+    assert metric.access == "free"
+    assert metric.sanbase_min_plan == "free"
+    assert metric.is_deprecated == false
+    assert metric.deprecation_note == nil
   end
 
   defp changes() do

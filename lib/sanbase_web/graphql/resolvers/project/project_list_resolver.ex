@@ -51,6 +51,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectListResolver do
     end
   end
 
+  def all_projects_by_function(_root, _args, _resolution) do
+    {:error, "Invalid arguments provided to all_projects_by_function"}
+  end
+
   def all_projects_by_ticker(_root, %{ticker: ticker}, _resolution) do
     projects = Project.List.projects_by_ticker(ticker) |> Enum.uniq_by(& &1.id)
 

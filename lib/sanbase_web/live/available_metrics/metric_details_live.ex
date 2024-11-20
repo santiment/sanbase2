@@ -8,14 +8,25 @@ defmodule SanbaseWeb.MetricDetailsLive do
 
   @impl true
   def mount(%{"metric" => metric}, _session, socket) do
-    rows = get_rows(metric)
+    case get_rows(metric) do
+      {:ok, rows} ->
+        {:ok,
+         socket
+         |> assign(
+           metric: metric,
+           rows: rows,
+           error: nil
+         )}
 
-    {:ok,
-     socket
-     |> assign(
-       metric: metric,
-       rows: rows
-     )}
+      {:error, error} ->
+        {:ok,
+         socket
+         |> assign(
+           metric: metric,
+           rows: [],
+           error: error
+         )}
+    end
   end
 
   @impl true
@@ -32,19 +43,25 @@ defmodule SanbaseWeb.MetricDetailsLive do
           icon="hero-arrow-uturn-left"
         />
       </div>
-      <.table id="available_metrics" rows={@rows}>
-        <:col :let={row} col_class="w-40">
-          <AvailableMetricsComponents.popover
-            display_text={row.key}
-            popover_target={Map.get(row, :popover_target)}
-            popover_target_text={Map.get(row, :popover_target_text)}
-          />
-        </:col>
+      <%= if @error do %>
+        <div class="text-red-600">
+          Error: <%= @error %>
+        </div>
+      <% else %>
+        <.table id="available_metrics" rows={@rows}>
+          <:col :let={row} col_class="w-40">
+            <AvailableMetricsComponents.popover
+              display_text={row.key}
+              popover_target={Map.get(row, :popover_target)}
+              popover_target_text={Map.get(row, :popover_target_text)}
+            />
+          </:col>
 
-        <:col :let={row}>
-          <.formatted_value key={row.key} value={row.value} />
-        </:col>
-      </.table>
+          <:col :let={row}>
+            <.formatted_value key={row.key} value={row.value} />
+          </:col>
+        </.table>
+      <% end %>
     </div>
     """
   end
@@ -104,98 +121,100 @@ defmodule SanbaseWeb.MetricDetailsLive do
   end
 
   defp get_rows(metric) do
-    {:ok, metadata} = Sanbase.Metric.metadata(metric)
-    {:ok, assets} = Sanbase.AvailableMetrics.get_metric_available_slugs(metric)
-    access_map = Sanbase.Metric.access_map()
+    with {:ok, metadata} <- Sanbase.Metric.metadata(metric),
+         {:ok, assets} <- Sanbase.AvailableMetrics.get_metric_available_slugs(metric) do
+      access_map = Sanbase.Metric.access_map()
 
-    rows = [
-      %{
-        key: "Name",
-        value: metric,
-        popover_target: "popover-name",
-        popover_target_text: get_popover_text(%{key: "Name"})
-      },
-      %{
-        key: "Internal Name",
-        value: metadata.internal_metric,
-        popover_target: "popover-internal-name",
-        popover_target_text: get_popover_text(%{key: "Internal Name"})
-      },
-      %{
-        key: "Frequency",
-        value: metadata.min_interval,
-        popover_target: "popover-frequency",
-        popover_target_text: get_popover_text(%{key: "Frequency"})
-      },
-      %{
-        key: "Docs",
-        value: metadata.docs || [],
-        popover_target: "popover-docs",
-        popover_target_text: get_popover_text(%{key: "Docs"})
-      },
-      %{
-        key: "Has Incomplete Data",
-        value: metadata.has_incomplete_data,
-        popover_target: "popover-incomplete-data",
-        popover_target_text: get_popover_text(%{key: "Has Incomplete Data"})
-      },
-      %{
-        key: "Default Aggregation",
-        value: stringify(metadata.default_aggregation),
-        popover_target: "popover-default-aggregation",
-        popover_target_text: get_popover_text(%{key: "Default Aggregation"})
-      },
-      %{
-        key: "Access",
-        value: simplify_access(Map.get(access_map, metric)),
-        popover_target: "popover-access",
-        popover_target_text: get_popover_text(%{key: "Access"})
-      },
-      %{
-        key: "Is Timebound",
-        value: metadata.is_timebound,
-        popover_target: "popover-timebound",
-        popover_target_text: get_popover_text(%{key: "Is Timebound"})
-      },
-      %{
-        key: "Available Aggregations",
-        value: stringify(metadata.available_aggregations),
-        popover_target: "popover-available-aggregations",
-        popover_target_text: get_popover_text(%{key: "Available Aggregations"})
-      },
-      %{
-        key: "Available Selectors",
-        value: stringify(metadata.available_selectors),
-        popover_target: "popover-available-selectors",
-        popover_target_text: get_popover_text(%{key: "Available Selectors"})
-      },
-      %{
-        key: "Required Selectors",
-        value: stringify_required_selectors(metadata.required_selectors),
-        popover_target: "popover-required-selectors",
-        popover_target_text: get_popover_text(%{key: "Required Selectors"})
-      },
-      %{
-        key: "Data Type",
-        value: metadata.data_type,
-        popover_target: "popover-data-type",
-        popover_target_text: get_popover_text(%{key: "Data Type"})
-      },
-      %{
-        key: "Available Assets",
-        value: assets,
-        popover_target: "popover-available-assets",
-        popover_target_text: get_popover_text(%{key: "Available Assets"})
-      }
-    ]
+      rows = [
+        %{
+          key: "Name",
+          value: metric,
+          popover_target: "popover-name",
+          popover_target_text: get_popover_text(%{key: "Name"})
+        },
+        %{
+          key: "Internal Name",
+          value: metadata.internal_metric,
+          popover_target: "popover-internal-name",
+          popover_target_text: get_popover_text(%{key: "Internal Name"})
+        },
+        %{
+          key: "Frequency",
+          value: metadata.min_interval,
+          popover_target: "popover-frequency",
+          popover_target_text: get_popover_text(%{key: "Frequency"})
+        },
+        %{
+          key: "Docs",
+          value: metadata.docs || [],
+          popover_target: "popover-docs",
+          popover_target_text: get_popover_text(%{key: "Docs"})
+        },
+        %{
+          key: "Has Incomplete Data",
+          value: metadata.has_incomplete_data,
+          popover_target: "popover-incomplete-data",
+          popover_target_text: get_popover_text(%{key: "Has Incomplete Data"})
+        },
+        %{
+          key: "Default Aggregation",
+          value: stringify(metadata.default_aggregation),
+          popover_target: "popover-default-aggregation",
+          popover_target_text: get_popover_text(%{key: "Default Aggregation"})
+        },
+        %{
+          key: "Access",
+          value: simplify_access(Map.get(access_map, metric)),
+          popover_target: "popover-access",
+          popover_target_text: get_popover_text(%{key: "Access"})
+        },
+        %{
+          key: "Is Timebound",
+          value: metadata.is_timebound,
+          popover_target: "popover-timebound",
+          popover_target_text: get_popover_text(%{key: "Is Timebound"})
+        },
+        %{
+          key: "Available Aggregations",
+          value: stringify(metadata.available_aggregations),
+          popover_target: "popover-available-aggregations",
+          popover_target_text: get_popover_text(%{key: "Available Aggregations"})
+        },
+        %{
+          key: "Available Selectors",
+          value: stringify(metadata.available_selectors),
+          popover_target: "popover-available-selectors",
+          popover_target_text: get_popover_text(%{key: "Available Selectors"})
+        },
+        %{
+          key: "Required Selectors",
+          value: stringify_required_selectors(metadata.required_selectors),
+          popover_target: "popover-required-selectors",
+          popover_target_text: get_popover_text(%{key: "Required Selectors"})
+        },
+        %{
+          key: "Data Type",
+          value: metadata.data_type,
+          popover_target: "popover-data-type",
+          popover_target_text: get_popover_text(%{key: "Data Type"})
+        },
+        %{
+          key: "Available Assets",
+          value: assets,
+          popover_target: "popover-available-assets",
+          popover_target_text: get_popover_text(%{key: "Available Assets"})
+        }
+      ]
 
-    # If there are no required selectors, do not include this row
-    rows =
-      if metadata.required_selectors == [],
-        do: Enum.reject(rows, &(&1.key == "Required Selectors")),
-        else: rows
+      rows =
+        if metadata.required_selectors == [],
+          do: Enum.reject(rows, &(&1.key == "Required Selectors")),
+          else: rows
 
-    rows
+      {:ok, rows}
+    else
+      {:error, error} -> {:error, error}
+    end
   end
 
   defp simplify_access(%{"historical" => :free, "realtime" => :free}), do: "FREE"

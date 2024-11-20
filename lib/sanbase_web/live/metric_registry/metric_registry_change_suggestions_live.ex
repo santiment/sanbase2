@@ -169,9 +169,9 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
     |> order_records()
   end
 
-  @status_order %{"pending_approval" => 1, "approved" => 2, "declined" => 3}
+  @status_order %{"pending_approval" => 3, "approved" => 2, "declined" => 1}
   defp order_records(handles) do
     handles
-    |> Enum.sort_by(&@status_order[&1.status], :asc)
+    |> Enum.sort_by(&{@status_order[&1.status], &1.id}, :desc)
   end
 end

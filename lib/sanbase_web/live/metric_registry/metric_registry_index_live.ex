@@ -197,20 +197,24 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
   defp maybe_apply_filter(metrics, :match_metric, %{"match_metric" => query})
        when query != "" do
     query = String.downcase(query)
+    query_parts = String.split(query)
 
     metrics
     |> Enum.filter(fn m ->
-      String.contains?(m.metric, query) or
-        String.contains?(m.internal_metric, query) or
-        String.contains?(String.downcase(m.human_readable_name), query)
+      Enum.all?(query_parts, fn part -> String.contains?(m.metric, part) end) or
+        Enum.all?(query_parts, fn part -> String.contains?(m.internal_metric, part) end) or
+        Enum.all?(query_parts, fn part ->
+          String.contains?(String.downcase(m.human_readable_name), part)
+        end)
     end)
+    |> Enum.sort_by(&String.jaro_distance(query, &1.metric), :desc)
   end
 
   defp maybe_apply_filter(metrics, :match_table, %{"match_table" => query})
        when query != "" do
     metrics
     |> Enum.filter(fn m ->
-      Enum.any?(m.table, &String.contains?(&1, query))
+      Enum.any?(m.tables, &String.contains?(&1.name, query))
     end)
   end
 

@@ -51,13 +51,35 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
     |> Sanbase.Repo.all()
   end
 
+  def undo(id) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:get_suggestion, fn _, _ -> by_id(id) end)
+    |> Ecto.Multi.run(:maybe_apply_suggestions, fn _, %{get_suggestion: struct} ->
+      if struct.status == "approved" do
+        undo_suggestion(struct)
+      else
+        {:ok, :noop}
+      end
+    end)
+    |> Ecto.Multi.run(:update_status, fn _, %{get_suggestion: struct} ->
+      do_update_status(struct, "pending_approval")
+    end)
+    |> Sanbase.Repo.transaction()
+    |> case do
+      {:ok, %{update_status: record}} -> {:ok, record}
+      {:error, _name, error, _changes_so_far} -> {:error, error}
+    end
+  end
+
   def update_status(id, new_status) when is_integer(id) and new_status in @statuses do
     Ecto.Multi.new()
     |> Ecto.Multi.run(:get_suggestion, fn _, _ -> by_id(id) end)
     |> Ecto.Multi.run(:maybe_apply_suggestions, fn _, %{get_suggestion: struct} ->
-      if new_status == "approved" and struct.status == "pending_approval",
-        do: apply(struct),
-        else: {:ok, :noop}
+      if new_status == "approved" and struct.status == "pending_approval" do
+        apply_suggestion(struct)
+      else
+        {:ok, :noop}
+      end
     end)
     |> Ecto.Multi.run(:update_status, fn _, %{get_suggestion: struct} ->
       do_update_status(struct, new_status)
@@ -69,23 +91,34 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
     end
   end
 
-  def apply(%__MODULE__{} = suggestion) do
+  defp apply_suggestion(%__MODULE__{status: "pending_approval"} = suggestion) do
     with {:ok, metric_registry} <- Registry.by_id(suggestion.metric_registry_id) do
       changes = decode_changes(suggestion.changes)
-      params = changes_to_changeset_params(metric_registry, changes)
-      changeset = Registry.changeset(metric_registry, params)
-
-      if Config.module_get(__MODULE__, :debug_applying_changes, false) do
-        same_as_applying_patch? =
-          Ecto.Changeset.apply_changes(changeset) == ExAudit.Patch.patch(metric_registry, changes)
-
-        if !same_as_applying_patch? do
-          raise("Applying patch failed for suggestion #{suggestion.id}")
-        end
-      end
-
-      Sanbase.Repo.update(changeset)
+      apply_changes(suggestion, metric_registry, changes)
     end
+  end
+
+  defp undo_suggestion(%__MODULE__{status: "approved"} = suggestion) do
+    with {:ok, metric_registry} <- Registry.by_id(suggestion.metric_registry_id) do
+      changes = decode_changes(suggestion.changes) |> ExAudit.Diff.reverse()
+      apply_changes(suggestion, metric_registry, changes)
+    end
+  end
+
+  defp apply_changes(%__MODULE__{} = suggestion, %Registry{} = metric_registry, changes) do
+    params = changes_to_changeset_params(metric_registry, changes)
+    changeset = Registry.changeset(metric_registry, params)
+
+    if Config.module_get(__MODULE__, :debug_applying_changes, false) do
+      same_as_applying_patch? =
+        Ecto.Changeset.apply_changes(changeset) == ExAudit.Patch.patch(metric_registry, changes)
+
+      if !same_as_applying_patch? do
+        raise("Applying patch failed for suggestion #{suggestion.id}")
+      end
+    end
+
+    Sanbase.Repo.update(changeset)
   end
 
   def create_change_suggestion(%Registry{} = registry, params, notes, submitted_by) do

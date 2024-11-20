@@ -61,27 +61,25 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
         value="approved"
         text="Approve"
         disabled={@row.status != "pending_approval"}
-        color="green"
+        colors="bg-green-600 hover:bg-green-800"
       />
       <.action_button
         value="declined"
         text="Decline"
         disabled={@row.status != "pending_approval"}
-        color="red"
+        colors="bg-red-600 hover:bg-red-800"
       />
-      <!-- <.action_button -->
-      <!--   value="undo" -->
-      <!--   text="Undo" -->
-      <!--   disabled={@row.status == "pending_approval"} -->
-      <!--   color="yellow" -->
-      <!-- /> -->
+      <.action_button
+        value="undo"
+        text="Undo"
+        disabled={@row.status != "approved"}
+        colors="bg-amber-600 hover:bg-amber-800"
+      />
     </.form>
     """
   end
 
   def action_button(assigns) do
-    assigns = assign(assigns, colors: "bg-#{assigns.color}-600 hover:bg-#{assigns.color}-800")
-
     ~H"""
     <AdminFormsComponents.button
       name="status"
@@ -93,26 +91,26 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
     """
   end
 
-  # @impl true
-  # def handle_event("update_status", %{"status" => "undo", "record_id" => record_id}, socket) do
-  #   record_id = String.to_integer(record_id)
+  @impl true
+  def handle_event("update_status", %{"status" => "undo", "record_id" => record_id}, socket) do
+    record_id = String.to_integer(record_id)
 
-  #   case Sanbase.Ecosystem.ChangeSuggestion.undo_suggestion(record_id) do
-  #     {:ok, record} ->
-  #       rows =
-  #         update_assigns_row(socket.assigns.rows, record_id, record.status)
+    case Sanbase.Metric.Registry.ChangeSuggestion.undo(record_id) do
+      {:ok, record} ->
+        rows =
+          update_assigns_row(socket.assigns.rows, record_id, record.status)
 
-  #       socket =
-  #         socket
-  #         |> assign(:rows, rows)
-  #         |> put_flash(:info, "Successfully reverted the approved suggested changes!")
+        socket =
+          socket
+          |> assign(:rows, rows)
+          |> put_flash(:info, "Successfully reverted the approved suggested changes!")
 
-  #       {:noreply, socket}
+        {:noreply, socket}
 
-  #     {:error, changeset} ->
-  #       {:noreply, add_changeset_error_flash(socket, changeset)}
-  #   end
-  # end
+      {:error, changeset} ->
+        {:noreply, add_changeset_error_flash(socket, changeset)}
+    end
+  end
 
   @impl true
   def handle_event(

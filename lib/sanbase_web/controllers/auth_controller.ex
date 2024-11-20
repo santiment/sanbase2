@@ -47,67 +47,73 @@ defmodule SanbaseWeb.AuthController do
     |> redirect(to: "/")
   end
 
-  def callback(%{assigns: %{ueberauth_failure: _fails}} = conn, _params) do
-    conn
-    |> redirect(to: "/")
-  end
-
   def callback(conn, %{"provider" => "google"}) do
-    %{assigns: %{ueberauth_auth: auth}} =
-      conn
-      |> Ueberauth.run_callback("google", @providers["google"])
+    # We provide a custom `request/2` function, so in the callback we manually
+    # invoke Ueberauth.run_callback/2. Because of this when we enter the
+    # function, the assigns field of the conn is not yet filled, so we don't
+    # know if it is a failure or not. Because of this we cannot handle failure
+    # with callback(%{assigns: %{ueberauth_failure: _}}) but we need to do it
+    # after invoking Ueberauth.run_callback
+    case Ueberauth.run_callback(conn, "google", @providers["google"]) do
+      %{assigns: %{ueberauth_failure: _}} = conn ->
+        conn |> redirect(to: ~p"/")
 
-    email = auth.info.email
-    device_data = SanbaseWeb.Guardian.device_data(conn)
-    origin_url = get_session(conn, :__san_origin_url)
-    args = %{login_origin: :google, origin_url: origin_url}
+      %{assigns: %{ueberauth_auth: auth}} = conn ->
+        email = auth.info.email
+        device_data = SanbaseWeb.Guardian.device_data(conn)
+        origin_url = get_session(conn, :__san_origin_url)
+        args = %{login_origin: :google, origin_url: origin_url}
 
-    with true <- is_binary(email) and byte_size(email) > 0,
-         {:ok, %{first_login: first_login} = user} <- User.find_or_insert_by(:email, email, args),
-         {:ok, _, user} <-
-           Accounts.forward_registration(user, "google_oauth", args),
-         {:ok, %{} = jwt_tokens_map} <-
-           SanbaseWeb.Guardian.get_jwt_tokens(user, device_data) do
-      emit_event({:ok, user}, :login_user, args)
+        with true <- is_binary(email) and byte_size(email) > 0,
+             {:ok, %{first_login: first_login} = user} <-
+               User.find_or_insert_by(:email, email, args),
+             {:ok, _, user} <-
+               Accounts.forward_registration(user, "google_oauth", args),
+             {:ok, %{} = jwt_tokens_map} <-
+               SanbaseWeb.Guardian.get_jwt_tokens(user, device_data) do
+          emit_event({:ok, user}, :login_user, args)
 
-      redirect_url = get_session(conn, :__san_success_redirect_url)
-      redirect_url = extend_if_first_login(redirect_url, first_login)
+          redirect_url = get_session(conn, :__san_success_redirect_url)
+          redirect_url = extend_if_first_login(redirect_url, first_login)
 
-      conn
-      |> SanbaseWeb.Guardian.add_jwt_tokens_to_conn_session(jwt_tokens_map)
-      |> redirect(external: redirect_url)
-    else
-      _ ->
-        conn
-        |> redirect(external: get_session(conn, :__san_fail_redirect_url))
+          conn
+          |> SanbaseWeb.Guardian.add_jwt_tokens_to_conn_session(jwt_tokens_map)
+          |> redirect(external: redirect_url)
+        else
+          _ ->
+            conn
+            |> redirect(external: get_session(conn, :__san_fail_redirect_url))
+        end
     end
   end
 
   def callback(conn, %{"provider" => "twitter"}) do
-    %{assigns: %{ueberauth_auth: auth}} =
-      conn
-      |> Ueberauth.run_callback("twitter", @providers["twitter"])
+    case Ueberauth.run_callback(conn, "twitter", @providers["twitter"]) do
+      %{assigns: %{ueberauth_failure: _}} = conn ->
+        conn |> redirect(to: ~p"/")
 
-    %{uid: twitter_id, info: %{email: email}} = auth
-    device_data = SanbaseWeb.Guardian.device_data(conn)
-    origin_url = get_session(conn, :__san_origin_url)
-    args = %{login_origin: :twitter, origin_url: origin_url}
+      %{assigns: %{ueberauth_auth: auth}} = conn ->
+        %{uid: twitter_id, info: %{email: email}} = auth
+        device_data = SanbaseWeb.Guardian.device_data(conn)
+        origin_url = get_session(conn, :__san_origin_url)
+        args = %{login_origin: :twitter, origin_url: origin_url}
 
-    with {:ok, user, first_login} <- twitter_login(email, twitter_id),
-         {:ok, _, user} <- Accounts.forward_registration(user, "twitter_oauth", args),
-         {:ok, %{} = jwt_tokens_map} <- SanbaseWeb.Guardian.get_jwt_tokens(user, device_data) do
-      emit_event({:ok, user}, :login_user, args)
+        with {:ok, user, first_login} <- twitter_login(email, twitter_id),
+             {:ok, _, user} <- Accounts.forward_registration(user, "twitter_oauth", args),
+             {:ok, %{} = jwt_tokens_map} <- SanbaseWeb.Guardian.get_jwt_tokens(user, device_data) do
+          emit_event({:ok, user}, :login_user, args)
 
-      redirect_url = get_session(conn, :__san_success_redirect_url)
-      redirect_url = extend_if_first_login(redirect_url, first_login)
+          redirect_url = get_session(conn, :__san_success_redirect_url)
+          redirect_url = extend_if_first_login(redirect_url, first_login)
 
-      conn
-      |> SanbaseWeb.Guardian.add_jwt_tokens_to_conn_session(jwt_tokens_map)
-      |> redirect(external: redirect_url)
-    else
-      _ ->
-        conn
-        |> redirect(external: get_session(conn, :__san_fail_redirect_url))
+          conn
+          |> SanbaseWeb.Guardian.add_jwt_tokens_to_conn_session(jwt_tokens_map)
+          |> redirect(external: redirect_url)
+        else
+          _ ->
+            conn
+            |> redirect(external: get_session(conn, :__san_fail_redirect_url))
+        end
     end
   end
 

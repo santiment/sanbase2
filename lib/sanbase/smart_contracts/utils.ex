@@ -51,10 +51,8 @@ defmodule Sanbase.SmartContracts.Utils do
   )
   ```
   """
-  @spec call_contract(address, contract_function, list(), list()) :: any()
+  @spec call_contract(address, contract_function, list(), list()) :: list() | {:error, any()}
   def call_contract(contract, contract_function, args, return_types) do
-    # https://docs.soliditylang.org/en/latest/abi-spec.html#function-selector-and-argument-encoding
-
     Logger.info(
       "[EthNode] Eth call contract with function #{get_function_name(contract_function)}."
     )
@@ -65,14 +63,11 @@ defmodule Sanbase.SmartContracts.Utils do
 
     with {:ok, hex_encoded_binary_response} <-
            Ethereumex.HttpClient.eth_call(%{data: "0x" <> function_signature, to: contract}) do
-      hex_encoded_binary_response
-      # Strip `0x` prefix
-      |> String.trim_leading("0x")
-      |> Base.decode16!(case: :lower)
-      |> case do
-        "" -> :error
-        response -> ABI.TypeDecoder.decode_raw(response, return_types)
-      end
+      decode_contract_response(hex_encoded_binary_response, return_types)
+    else
+      {:error, reason} = error ->
+        Logger.warning("Contract call failed: #{inspect(reason)}")
+        error
     end
   end
 
@@ -92,12 +87,13 @@ defmodule Sanbase.SmartContracts.Utils do
       end)
 
     with {:ok, result} <- Ethereumex.HttpClient.batch_request(requests) do
-      Enum.map(result, fn {:ok, hex_encoded_binary_response} ->
-        hex_encoded_binary_response
-        # Strip `0x` prefix
-        |> String.slice(2..-1//1)
-        |> Base.decode16!(case: :lower)
-        |> ABI.TypeDecoder.decode_raw(return_types)
+      Enum.map(result, fn
+        {:ok, hex_encoded_binary_response} ->
+          decode_contract_response(hex_encoded_binary_response, return_types)
+
+        {:error, reason} = error ->
+          Logger.warning("Contract call failed: #{inspect(reason)}")
+          error
       end)
     end
   end
@@ -136,4 +132,24 @@ defmodule Sanbase.SmartContracts.Utils do
   defp get_function_name(function) when is_binary(function), do: function
   defp get_function_name(%{function: function}), do: function
   defp get_function_name(function), do: inspect(function) <> "Unexpected"
+
+  defp decode_contract_response(hex_encoded_binary_response, return_types) do
+    hex_encoded_binary_response
+    # Strip `0x` prefix
+    |> String.trim_leading("0x")
+    |> Base.decode16!(case: :lower)
+    |> case do
+      "" ->
+        {:error, :empty_response}
+
+      response ->
+        try do
+          ABI.TypeDecoder.decode_raw(response, return_types)
+        rescue
+          e ->
+            Logger.warning("Failed to decode contract response: #{inspect(e)}")
+            {:error, :decode_error}
+        end
+    end
+  end
 end

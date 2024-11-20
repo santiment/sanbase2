@@ -32,17 +32,23 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
           socket
 
         slug ->
-          project = Enum.find(socket.assigns.projects, &(&1.slug == slug))
-          stored_organizations = project.github_organizations |> Enum.map(& &1.organization)
+          case Enum.find(socket.assigns.projects, &(&1.slug == slug)) do
+            nil ->
+              socket
+              |> put_flash(:error, "Project not found")
 
-          socket
-          |> assign(
-            selected_project: project,
-            stored_organizations: stored_organizations,
-            seen_organizations: stored_organizations,
-            new_organizations: [],
-            removed_organizations: []
-          )
+            project ->
+              stored_organizations = project.github_organizations |> Enum.map(& &1.organization)
+
+              socket
+              |> assign(
+                selected_project: project,
+                stored_organizations: stored_organizations,
+                seen_organizations: stored_organizations,
+                new_organizations: [],
+                removed_organizations: []
+              )
+          end
       end
 
     {:noreply, socket}

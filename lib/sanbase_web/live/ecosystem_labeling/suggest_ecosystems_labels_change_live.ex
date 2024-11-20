@@ -33,17 +33,23 @@ defmodule SanbaseWeb.SuggestEcosystemLabelsChangeLive do
           socket
 
         slug ->
-          project = Enum.find(socket.assigns.projects, &(&1.slug == slug))
-          stored_ecosystems = project.ecosystems
+          case Enum.find(socket.assigns.projects, &(&1.slug == slug)) do
+            nil ->
+              socket
+              |> put_flash(:error, "Project not found")
 
-          socket
-          |> assign(
-            selected_project: project,
-            stored_project_ecosystems: stored_ecosystems,
-            new_project_ecosystems: [],
-            removed_project_ecosystems: [],
-            ecosystems: order_ecosystems(socket.assigns.ecosystems, stored_ecosystems)
-          )
+            project ->
+              stored_ecosystems = project.ecosystems
+
+              socket
+              |> assign(
+                selected_project: project,
+                stored_project_ecosystems: stored_ecosystems,
+                new_project_ecosystems: [],
+                removed_project_ecosystems: [],
+                ecosystems: order_ecosystems(socket.assigns.ecosystems, stored_ecosystems)
+              )
+          end
       end
 
     {:noreply, socket}

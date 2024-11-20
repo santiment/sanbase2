@@ -125,13 +125,24 @@ defmodule Sanbase.Accounts.EthAccount do
   # Helpers
 
   defp contract_data_map(contract) do
-    %{
-      total_supply: UniswapPair.total_supply(contract),
-      reserves: UniswapPair.reserves(contract) |> elem(UniswapPair.get_san_position(contract))
-    }
+    with total_supply when is_float(total_supply) <- UniswapPair.total_supply(contract),
+         {reserves, _} when is_float(reserves) <- UniswapPair.reserves(contract) do
+      %{
+        total_supply: total_supply,
+        reserves: reserves |> elem(UniswapPair.get_san_position(contract))
+      }
+    else
+      {:error, _} -> %{total_supply: 0.0, reserves: 0.0}
+      _ -> %{total_supply: 0.0, reserves: 0.0}
+    end
   end
 
   defp calculate_san_staked(address_staked_tokens, _data_map) when address_staked_tokens == 0.0 do
+    +0.0
+  end
+
+  defp calculate_san_staked(_address_staked_tokens, %{total_supply: total_supply})
+       when total_supply == 0.0 do
     +0.0
   end
 

@@ -173,7 +173,7 @@ defmodule Sanbase.Intercom do
     {:ok, users_used_api} = ApiCallData.users_used_api()
     {:ok, users_used_sansheets} = ApiCallData.users_used_sansheets()
     {:ok, api_calls_count_per_user} = ApiCallData.api_calls_count_per_user()
-    {:ok, all_user_subscriptions_map} = Subscription.Stats.all_user_subscriptions_map()
+    all_user_subscriptions_map = Subscription.Stats.all_user_subscriptions_map()
 
     %{
       paid_users: paid_users(),

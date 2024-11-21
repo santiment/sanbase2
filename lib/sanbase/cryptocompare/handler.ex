@@ -43,6 +43,10 @@ defmodule Sanbase.Cryptocompare.Handler do
         # The error is No HOUR entries available on or before <timestamp>
         {:error, :first_timestamp_reached}
 
+      {:ok, %{status_code: 503}} ->
+        # Service temporarily unavailable
+        {:error, :service_unavailable}
+
       {:error, error} ->
         {:error, error}
     end

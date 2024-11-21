@@ -18,10 +18,20 @@ defmodule Sanbase.AvailableSlugs do
   use GenServer
 
   @impl Sanbase.AvailableSlugs.Behaviour
-  def valid_slug?(slug) do
-    case :ets.lookup(@ets_table, slug) do
-      [] -> slug in @non_project_slugs or slug in @group_of_slugs
-      _ -> true
+  def valid_slug?(slug, retries \\ 5) do
+    if :ets.whereis(@ets_table) == :undefined do
+      if retries > 0 do
+        Process.sleep(200 * round(:math.pow(2, 5 - retries)))
+        valid_slug?(slug, retries - 1)
+      else
+        # Fallback to static lists if table still isn't available after retries
+        slug in @non_project_slugs or slug in @group_of_slugs
+      end
+    else
+      case :ets.lookup(@ets_table, slug) do
+        [] -> slug in @non_project_slugs or slug in @group_of_slugs
+        _ -> true
+      end
     end
   end
 

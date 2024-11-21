@@ -67,7 +67,6 @@ defmodule Sanbase.Clickhouse.ApiCallData do
     query_struct = users_used_sansheets_query(until)
 
     ClickhouseRepo.query_transform(query_struct, fn [value] -> value end)
-    |> maybe_unwrap_ok_value()
   end
 
   @spec api_calls_count_per_user(Keyword.t()) ::
@@ -79,7 +78,6 @@ defmodule Sanbase.Clickhouse.ApiCallData do
     ClickhouseRepo.query_reduce(query_struct, %{}, fn [user_id, count], acc ->
       Map.put(acc, user_id, count)
     end)
-    |> maybe_unwrap_ok_value()
   end
 
   @spec api_metric_distribution() ::

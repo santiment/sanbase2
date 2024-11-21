@@ -7,7 +7,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
   alias SanbaseWeb.AvailableMetricsComponents
 
   @impl true
-  def mount(params, _session, socket) do
+  def mount(params, session, socket) do
     {:ok, metric_registry} =
       case socket.assigns.live_action do
         :new -> {:ok, %Registry{}}

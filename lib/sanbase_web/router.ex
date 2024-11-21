@@ -8,7 +8,6 @@ defmodule SanbaseWeb.Router do
 
   pipeline :santiment_user_access do
     plug(SanbaseWeb.Graphql.AuthPlug)
-    plug(SanbaseWeb.Graphql.ContextPlug)
     plug(SanbaseWeb.Plug.SantimentTeamMemberOnly)
   end
 

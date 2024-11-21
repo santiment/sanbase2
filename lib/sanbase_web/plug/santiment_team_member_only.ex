@@ -17,27 +17,34 @@ defmodule SanbaseWeb.Plug.SantimentTeamMemberOnly do
           conn
         else
           conn
-          |> send_resp(403, "Unauthorized")
+          |> send_resp(403, "Forbidden")
           |> halt()
         end
 
       _ ->
         conn
-        |> send_resp(403, "Unauthorized")
+        |> send_resp(403, "Forbidden")
         |> halt()
     end
   end
 
   defp santiment_member?(%Sanbase.Accounts.User{} = user) do
     cond do
-      has_san_team_role?(user) -> true
+      user_has_access_by_role?(user) -> true
       is_binary(user.email) and String.ends_with?(user.email, "@santiment.net") -> true
       true -> false
     end
   end
 
-  defp has_san_team_role?(user) do
-    user = Sanbase.Repo.preload(user, [:roles, roles: :role])
-    Enum.any?(user.roles, &(&1.role.name in ["Santiment Team Member"]))
+  defp user_has_access_by_role?(user) do
+    Enum.any?(
+      user.roles,
+      &(&1.role.name in [
+          "Santiment Team Member",
+          "Santiment WebPanel Viewer",
+          "Santiment WebPanel Editor",
+          "Santiment WebPanel Admin"
+        ])
+    )
   end
 end

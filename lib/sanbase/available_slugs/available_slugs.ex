@@ -21,7 +21,7 @@ defmodule Sanbase.AvailableSlugs do
   def valid_slug?(slug, retries \\ 5) do
     if :ets.whereis(@ets_table) == :undefined do
       if retries > 0 do
-        Process.sleep(500)
+        Process.sleep(200 * round(:math.pow(2, 5 - retries)))
         valid_slug?(slug, retries - 1)
       else
         # Fallback to static lists if table still isn't available after retries

@@ -30,6 +30,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.PromoterResolver do
         "paid_balance",
         "promotions"
       ])
+      |> Map.update("earnings_balance", nil, fn
+        %{"cash" => value} -> value
+        other -> other
+      end)
+      |> Map.update("current_balance", nil, fn
+        %{"cash" => value} -> value
+        other -> other
+      end)
+      |> Map.update("paid_balance", nil, fn
+        %{"cash" => value} -> value
+        other -> other
+      end)
       |> Map.update("promotions", [], fn promotions ->
         Enum.map(promotions, fn promotion ->
           Map.take(promotion, [

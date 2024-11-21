@@ -300,20 +300,11 @@ defmodule Sanbase.Application do
       # Start the clickhouse read-only repos for different plans
       clickhouse_readonly_per_plan_children,
 
-      # Start the PubSub
-      {Phoenix.PubSub, name: Sanbase.PubSub},
-
-      # Start the Presence
-      SanbaseWeb.Presence,
-
-      # Start the endpoint when the application starts
-      SanbaseWeb.Endpoint,
+      # Start the Task Supervisor
+      {Task.Supervisor, [name: Sanbase.TaskSupervisor]},
 
       # Star the API call service
       Sanbase.ApiCallLimit.ETS,
-
-      # Start the Task Supervisor
-      {Task.Supervisor, [name: Sanbase.TaskSupervisor]},
 
       # Start telegram rate limiter. Used both in web and alerts
       Sanbase.ExternalServices.RateLimiting.Server.child_spec(
@@ -337,6 +328,15 @@ defmodule Sanbase.Application do
       # `:available_slugs_module` option changes the module
       # used in test env to another one, this one is unused
       start_in(Sanbase.AvailableSlugs, [:dev, :prod]),
+
+      # Start the PubSub
+      {Phoenix.PubSub, name: Sanbase.PubSub},
+
+      # Start the Presence
+      SanbaseWeb.Presence,
+
+      # Start the endpoint when the application starts
+      SanbaseWeb.Endpoint,
 
       # Process that starts test-only deps
       start_in(Sanbase.TestSetupService, [:test]),

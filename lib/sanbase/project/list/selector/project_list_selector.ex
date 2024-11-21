@@ -93,9 +93,8 @@ defmodule Sanbase.Project.ListSelector do
     filters_combinator = Transform.args_to_filters_combinator(args)
     include_hidden = Map.get(args, :include_hidden, false)
 
-    base_slugs = base_slugs(base_projects_selector)
-
-    with {:ok, included_slugs} <- included_slugs_by_filters(filters, filters_combinator),
+    with {:ok, base_slugs} <- base_slugs(base_projects_selector),
+         {:ok, included_slugs} <- included_slugs_by_filters(filters, filters_combinator),
          included_slugs = intersect_with_base_slugs(included_slugs, base_slugs),
          included_slugs = remove_hidden_slugs(included_slugs),
          {:ok, ordered_slugs} <- ordered_slugs_by_order_by(order_by, included_slugs) do
@@ -197,13 +196,13 @@ defmodule Sanbase.Project.ListSelector do
     end
   end
 
-  defp base_slugs(:all), do: :all
+  defp base_slugs(:all), do: {:ok, :all}
 
-  defp base_slugs(args_list) do
-    Enum.flat_map(args_list, fn args ->
+  defp base_slugs(args_list) when is_list(args_list) do
+    Enum.reduce_while(args_list, {:ok, []}, fn args, {:ok, acc} ->
       case get_base_slugs(args) do
-        {:ok, slugs} -> slugs
-        {:error, error} -> raise(error)
+        {:ok, slugs} -> {:cont, {:ok, slugs ++ acc}}
+        {:error, error} -> {:halt, {:error, error}}
       end
     end)
   end
@@ -211,7 +210,10 @@ defmodule Sanbase.Project.ListSelector do
   defp get_base_slugs(%{watchlist_id: id} = map) do
     detect_cycles!(map)
 
-    id |> Sanbase.UserList.by_id!([]) |> Sanbase.UserList.get_slugs()
+    case Sanbase.UserList.by_id(id, []) do
+      {:ok, watchlist} -> Sanbase.UserList.get_slugs(watchlist)
+      {:error, error} -> {:error, error}
+    end
   end
 
   defp get_base_slugs(%{watchlist_slug: slug} = map) do

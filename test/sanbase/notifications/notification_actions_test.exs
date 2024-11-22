@@ -8,6 +8,8 @@ defmodule Sanbase.Notifications.NotificationActionsTest do
   alias Sanbase.Repo
 
   setup do
+    Application.put_env(:sanbase, :mailjet_mocked, true)
+    on_exit(fn -> Application.put_env(:sanbase, :mailjet_mocked, false) end)
     create_default_templates()
     :ok
   end

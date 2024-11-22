@@ -50,8 +50,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
 
       assert Enum.all?(
                metadata["availableSelectors"],
-               &Enum.member?(
-                 [
+               &(&1 in [
                    "ADDRESS",
                    "BLOCKCHAIN_ADDRESS",
                    "BLOCKCHAIN",
@@ -68,9 +67,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
                    "SOURCE",
                    "TEXT",
                    "TOKEN_ID"
-                 ],
-                 &1
-               )
+                 ])
              )
 
       assert Enum.all?(

@@ -2,33 +2,7 @@ defmodule Sanbase.MetricRegistyTest do
   use Sanbase.DataCase
   import ExUnit.CaptureLog
 
-  defmodule Handler do
-    require Logger
-
-    def on_metric_registry_change(event_type, metric) do
-      Logger.info("Metric Registry Change - Event Type: #{event_type}, Metric: #{metric}")
-      :ok
-    end
-  end
-
-  setup do
-    env = Application.get_env(:sanbase, Sanbase.EventBus.MetricRegistrySubscriber, [])
-
-    new_env =
-      Keyword.put(env, :metric_registry_change_handler, {Handler, :on_metric_registry_change})
-
-    Application.put_env(:sanbase, Sanbase.EventBus.MetricRegistrySubscriber, new_env)
-
-    on_exit(fn ->
-      Application.put_env(:sanbase, Sanbase.EventBus.MetricRegistrySubscriber, env)
-    end)
-
-    %{}
-  end
-
   test "creating a new metric" do
-    Logger.configure(level: :info)
-
     log =
       capture_log(fn ->
         assert {:ok, result} =
@@ -55,15 +29,11 @@ defmodule Sanbase.MetricRegistyTest do
         Process.sleep(50)
       end)
 
-    Logger.configure(level: :warning)
-
     assert log =~ "Metric Registry Change - Event Type: create_metric_registry, Metric: my_metric"
   end
 
   test "updating a metric" do
     assert {:ok, metric} = Sanbase.Metric.Registry.by_name("price_usd_5m", "timeseries")
-
-    Logger.configure(level: :info)
 
     log =
       capture_log(fn ->
@@ -81,8 +51,6 @@ defmodule Sanbase.MetricRegistyTest do
         # Give it some time so the EventBus subscriber can process the event and produce the logs
         Process.sleep(50)
       end)
-
-    Logger.configure(level: :warning)
 
     assert log =~
              "Metric Registry Change - Event Type: update_metric_registry, Metric: price_usd_5m"

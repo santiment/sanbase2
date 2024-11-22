@@ -98,7 +98,6 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
        ) do
     email = Sanbase.Accounts.get_user!(user_id).email
     if email, do: Sanbase.Email.MailjetApi.client().subscribe(:metric_updates, email)
-
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end

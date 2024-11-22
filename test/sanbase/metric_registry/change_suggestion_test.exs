@@ -4,6 +4,8 @@ defmodule Sanbase.MetricRegisty.ChangeSuggestionTest do
   alias Sanbase.Metric.Registry
   alias Sanbase.Metric.Registry.ChangeSuggestion
 
+  @moduletag capture_log: true
+
   test "creating a change suggestion" do
     assert {:ok, metric} = Sanbase.Metric.Registry.by_name("price_usd_5m", "timeseries")
 

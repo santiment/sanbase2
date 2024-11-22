@@ -126,9 +126,12 @@ defmodule Sanbase.Alert.TriggerTrendingWordsSendAtPredefiendTimeTest do
       get_currently_trending_words: fn _, _ ->
         {:ok, top_words()}
       end do
-      assert capture_log(fn ->
-               Sanbase.Alert.Scheduler.run_alert(TrendingWordsTriggerSettings)
-             end) =~
+      log =
+        capture_log(fn ->
+          Sanbase.Alert.Scheduler.run_alert(TrendingWordsTriggerSettings)
+        end)
+
+      assert log =~
                "In total 1/1 trending_words alerts were sent successfully"
 
       {:ok, ut} = UserTrigger.by_user_and_id(context.user.id, context.trigger_trending_words.id)

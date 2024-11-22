@@ -82,13 +82,6 @@ defmodule Sanbase.Dashboards.DashboardCache do
   transformed from having `compressed_rows` to `rows`. Defaults to true.
   """
 
-  # def by_dashboard_id(dashboard_id, querying_user_id, opts) do
-  #   Ecto.Multi.new()
-  #   |> Ecto.Multi.run(:get_dashboard_cache, fn _ ->
-  #     get_for_read(dashboard_id, querying_user_id)
-  #   end)
-  # end
-
   @spec by_dashboard_id(dashboard_id, parameters_override, user_id, Keyword.t()) ::
           {:ok, t()} | {:error, String.t()}
   def by_dashboard_id(dashboard_id, parameters_override, querying_user_id, opts \\ []) do

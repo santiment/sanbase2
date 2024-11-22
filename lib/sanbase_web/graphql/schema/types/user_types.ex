@@ -9,7 +9,6 @@ defmodule SanbaseWeb.Graphql.UserTypes do
   alias SanbaseWeb.Graphql.Resolvers.{
     ApikeyResolver,
     BillingResolver,
-    DashboardResolver,
     EthAccountResolver,
     InsightResolver,
     LinkedUserResolver,
@@ -19,7 +18,8 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     UserSettingsResolver,
     UserTriggerResolver,
     SanbaseNFTResolver,
-    UserAffiliateDetailsResolver
+    UserAffiliateDetailsResolver,
+    QueriesResolver
   }
 
   enum :user_role do
@@ -88,8 +88,8 @@ defmodule SanbaseWeb.Graphql.UserTypes do
       cache_resolve(&UserListResolver.public_watchlists/3, ttl: 60)
     end
 
-    field :dashboards, list_of(:dashboard_schema) do
-      cache_resolve(&DashboardResolver.user_public_dashboards/3, ttl: 60)
+    field :dashboards, list_of(:dashboard) do
+      cache_resolve(&QueriesResolver.get_user_public_dashboards/3, ttl: 60)
     end
   end
 
@@ -228,8 +228,8 @@ defmodule SanbaseWeb.Graphql.UserTypes do
       cache_resolve(&UserListResolver.watchlists/3, ttl: 60)
     end
 
-    field :dashboards, list_of(:dashboard_schema) do
-      cache_resolve(&DashboardResolver.user_dashboards/3, ttl: 60)
+    field :dashboards, list_of(:dashboard) do
+      cache_resolve(&QueriesResolver.get_user_dashboards/3, ttl: 60)
     end
 
     field :subscriptions, list_of(:subscription_plan) do

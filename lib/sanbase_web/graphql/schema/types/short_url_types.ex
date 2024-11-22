@@ -8,9 +8,5 @@ defmodule SanbaseWeb.Graphql.ShortUrlTypes do
     field(:short_url, :string)
     field(:full_url, :string)
     field(:data, :string)
-
-    field :comments_count, :integer do
-      resolve(&ShortUrlResolver.comments_count/3)
-    end
   end
 end

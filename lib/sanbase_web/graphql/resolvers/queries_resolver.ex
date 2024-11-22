@@ -3,6 +3,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
   alias Sanbase.Dashboards
   alias Sanbase.Queries.QueryMetadata
   alias Sanbase.Queries.Executor.Result
+  alias SanbaseWeb.Graphql.SanbaseDataloader
+
+  import Absinthe.Resolution.Helpers, except: [async: 1]
 
   require Logger
 
@@ -182,6 +185,29 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
       Dashboards.user_dashboards(
         queried_user_id,
         querying_user_id,
+        page: page,
+        page_size: page_size
+      )
+    end
+  end
+
+  def get_user_public_dashboards(
+        _root,
+        %{page: page, page_size: page_size} = args,
+        resolution
+      ) do
+    querying_user_id = get_in(resolution.context.auth, [:current_user, Access.key(:id)])
+    queried_user_id = Map.get(args, :user_id, querying_user_id)
+
+    if is_nil(queried_user_id) do
+      {:error,
+       "Error getting user dashboards: neither userId is provided, nor the query is executed by a logged in user."}
+    else
+      Dashboards.user_dashboards(
+        queried_user_id,
+        # The public dashboards are those seen by anonymous users
+        # TODO: Maybe rework
+        _querying_user_id = nil,
         page: page,
         page_size: page_size
       )
@@ -505,6 +531,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
         }
       ) do
     Dashboards.delete_image_widget(dashboard_id, text_widget_id, user.id)
+  end
+
+  def dashboard_comments_count(%{id: id}, _args, %{context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(SanbaseDataloader, :dashboard_comments_count, id)
+    |> on_load(fn loader ->
+      count = Dataloader.get(loader, SanbaseDataloader, :dashboard_comments_count, id)
+      {:ok, count || 0}
+    end)
+  end
+
+  def get_clickhouse_database_metadata(_root, args, _resolution) do
+    opts = [functions_filter: args[:functions_filter]]
+    Sanbase.Clickhouse.Autocomplete.get_data(opts)
+  end
+
+  def generate_title_by_query(_root, %{sql_query_text: sql_query_text}, _resolution) do
+    Sanbase.OpenAI.generate_from_sql(sql_query_text)
   end
 
   def atomize_dashboard_panels_sql_keys(struct) do

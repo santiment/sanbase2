@@ -385,14 +385,19 @@ defimpl Sanbase.Alert, for: Any do
     payload_html = Earmark.as_html!(payload, breaks: true, timeout: nil, mapper: &Enum.map/2)
     name = Sanbase.Accounts.User.get_name(user)
 
-    Sanbase.TemplateMailer.send(user.email, Sanbase.Email.Template.alerts_template(), %{
-      name: name,
-      username: name,
-      payload: payload_html
-    })
-    |> case do
-      {:ok, _} -> :ok
-      {:error, reason} -> {:error, reason}
+    try do
+      case Sanbase.TemplateMailer.send(user.email, Sanbase.Email.Template.alerts_template(), %{
+             name: name,
+             username: name,
+             payload: payload_html
+           }) do
+        {:ok, _} -> :ok
+        {:error, reason} -> {:error, %{reason: :email_send_fail, error: reason}}
+      end
+    rescue
+      e in Jason.DecodeError ->
+        Logger.error("Failed to decode Mailjet response: #{inspect(e)}")
+        {:error, "Invalid response from email provider"}
     end
   end
 

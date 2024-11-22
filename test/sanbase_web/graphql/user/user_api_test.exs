@@ -2,12 +2,16 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Mock
+  import Mox
   import SanbaseWeb.Graphql.TestHelpers
   import ExUnit.CaptureLog
   import Sanbase.Factory
 
   alias Sanbase.Accounts.User
   alias Sanbase.Repo
+
+  setup :set_mox_from_context
+  setup :verify_on_exit!
 
   setup_with_mocks([
     {Sanbase.TemplateMailer, [], [send: fn _, _, _ -> {:ok, :email_sent} end]}
@@ -21,6 +25,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
 
   describe "firstLogin" do
     test "firstLogin when state is waiting for login to finish registration" do
+      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
       user = insert(:user_registration_not_finished)
       conn = setup_jwt_auth(build_conn(), user)
 

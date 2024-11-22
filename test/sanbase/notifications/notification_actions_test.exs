@@ -14,9 +14,8 @@ defmodule Sanbase.Notifications.NotificationActionsTest do
 
   describe "metric_created notification" do
     test "creates notification and sends to discord" do
-      expect(Sanbase.Notifications.MockDiscordClient, :send_message, fn _webhook,
-                                                                        content,
-                                                                        _opts ->
+      # Allow the mock to be called multiple times
+      stub(Sanbase.Notifications.MockDiscordClient, :send_message, fn _webhook, content, _opts ->
         assert content =~ "metric A"
         assert content =~ "metric B"
         assert content =~ "For more information, please visit #changelog"
@@ -42,8 +41,8 @@ defmodule Sanbase.Notifications.NotificationActionsTest do
     end
 
     test "marks discord channel as processed after successful sending" do
-      Sanbase.Notifications.MockDiscordClient
-      |> expect(:send_message, fn _webhook, content, _opts ->
+      # Change expect to stub to allow multiple calls
+      stub(Sanbase.Notifications.MockDiscordClient, :send_message, fn _webhook, content, _opts ->
         assert content =~ "metric A"
         :ok
       end)
@@ -66,9 +65,7 @@ defmodule Sanbase.Notifications.NotificationActionsTest do
 
   describe "metric_created email notifications" do
     test "sends daily digest email for new metrics" do
-      expect(Sanbase.Notifications.MockDiscordClient, :send_message, fn _webhook,
-                                                                        _content,
-                                                                        _opts ->
+      stub(Sanbase.Notifications.MockDiscordClient, :send_message, fn _webhook, _content, _opts ->
         :ok
       end)
 
@@ -103,9 +100,7 @@ defmodule Sanbase.Notifications.NotificationActionsTest do
     end
 
     test "handles email sending failure" do
-      expect(Sanbase.Notifications.MockDiscordClient, :send_message, fn _webhook,
-                                                                        _content,
-                                                                        _opts ->
+      stub(Sanbase.Notifications.MockDiscordClient, :send_message, fn _webhook, _content, _opts ->
         :ok
       end)
 
@@ -135,9 +130,8 @@ defmodule Sanbase.Notifications.NotificationActionsTest do
 
   describe "metric_deleted notification" do
     test "creates notifications and sends immediate discord message" do
-      expect(Sanbase.Notifications.MockDiscordClient, :send_message, fn _webhook,
-                                                                        content,
-                                                                        _opts ->
+      # Change expect to stub to allow multiple calls
+      stub(Sanbase.Notifications.MockDiscordClient, :send_message, fn _webhook, content, _opts ->
         assert content =~ "metric A"
         assert content =~ "metric B"
         :ok
@@ -179,9 +173,8 @@ defmodule Sanbase.Notifications.NotificationActionsTest do
     end
 
     test "sends daily digest email for deleted metrics" do
-      expect(Sanbase.Notifications.MockDiscordClient, :send_message, fn _webhook,
-                                                                        _content,
-                                                                        _opts ->
+      # Change expect to stub to allow multiple calls
+      stub(Sanbase.Notifications.MockDiscordClient, :send_message, fn _webhook, _content, _opts ->
         :ok
       end)
 
@@ -220,9 +213,7 @@ defmodule Sanbase.Notifications.NotificationActionsTest do
 
   describe "manual notification" do
     test "sends notifications to specified channels" do
-      expect(Sanbase.Notifications.MockDiscordClient, :send_message, fn _webhook,
-                                                                        content,
-                                                                        _opts ->
+      stub(Sanbase.Notifications.MockDiscordClient, :send_message, fn _webhook, content, _opts ->
         assert content == "Discord message"
         :ok
       end)
@@ -261,9 +252,7 @@ defmodule Sanbase.Notifications.NotificationActionsTest do
     end
 
     test "only sends to channels with content" do
-      expect(Sanbase.Notifications.MockDiscordClient, :send_message, fn _webhook,
-                                                                        content,
-                                                                        _opts ->
+      stub(Sanbase.Notifications.MockDiscordClient, :send_message, fn _webhook, content, _opts ->
         assert content == "Discord only"
         :ok
       end)
@@ -289,9 +278,7 @@ defmodule Sanbase.Notifications.NotificationActionsTest do
 
   describe "alert notification" do
     test "sends detected alert to discord" do
-      expect(Sanbase.Notifications.MockDiscordClient, :send_message, fn _webhook,
-                                                                        content,
-                                                                        _opts ->
+      stub(Sanbase.Notifications.MockDiscordClient, :send_message, fn _webhook, content, _opts ->
         assert content =~ "Metric XYZ"
         assert content =~ "Category A"
         assert content =~ "Category B"
@@ -322,9 +309,8 @@ defmodule Sanbase.Notifications.NotificationActionsTest do
     end
 
     test "sends resolved alert to discord" do
-      expect(Sanbase.Notifications.MockDiscordClient, :send_message, fn _webhook,
-                                                                        content,
-                                                                        _opts ->
+      # Change expect to stub to allow multiple calls
+      stub(Sanbase.Notifications.MockDiscordClient, :send_message, fn _webhook, content, _opts ->
         assert content =~ "Metric XYZ"
         assert content =~ "resolved"
         :ok

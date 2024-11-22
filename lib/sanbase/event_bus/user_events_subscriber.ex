@@ -34,7 +34,7 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
     {:ok, _} = Sanbase.Accounts.EmailJobs.schedule_emails_after_sign_up(user_id)
 
     email = Sanbase.Accounts.get_user!(user_id).email
-    Sanbase.Email.MailjetApi.client().subscribe(:monthly_newsletter, email)
+    if email, do: Sanbase.Email.MailjetApi.client().subscribe(:monthly_newsletter, email)
 
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
@@ -53,7 +53,7 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
          state
        ) do
     email = Sanbase.Accounts.get_user!(user_id).email
-    Sanbase.Email.MailjetApi.client().subscribe(:monthly_newsletter, email)
+    if email, do: Sanbase.Email.MailjetApi.client().subscribe(:monthly_newsletter, email)
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end

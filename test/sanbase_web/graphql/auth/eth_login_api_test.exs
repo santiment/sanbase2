@@ -1,9 +1,13 @@
 defmodule SanbaseWeb.Graphql.EthLoginApiTest do
   use SanbaseWeb.ConnCase
 
+  import Mox
   alias Sanbase.Billing.Subscription.LiquiditySubscription
   import ExUnit.CaptureLog
   import SanbaseWeb.Graphql.TestHelpers
+
+  setup :set_mox_from_context
+  setup :verify_on_exit!
 
   test "first eth login success - create user and eth account", context do
     # This address is an unused address on the Ropsten testnet. It is not a mainnet

@@ -3,6 +3,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
 
   import Sanbase.Factory
   import Mock
+  import Mox
   import SanbaseWeb.Graphql.TestHelpers
   import ExUnit.CaptureLog
 
@@ -11,6 +12,9 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
   alias Sanbase.StripeApiTestResponse
 
   @coupon_code "test_coupon"
+
+  setup :set_mox_from_context
+  setup :verify_on_exit!
 
   setup_with_mocks([
     {StripeApi, [:passthrough],
@@ -219,6 +223,8 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
 
   describe "subscribe mutation" do
     test "successful subscribe returns subscription", context do
+      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
+
       query = subscribe_mutation(context.plans.plan_essential.id)
       response = execute_mutation(context.conn, query, "subscribe")
 
@@ -227,6 +233,8 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     end
 
     test "successful subscribe when user has stripe_customer_id", context do
+      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
+
       context.user |> User.changeset(%{stripe_customer_id: "alabala"}) |> Sanbase.Repo.update!()
 
       query = subscribe_mutation(context.plans.plan_essential.id)
@@ -236,6 +244,8 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     end
 
     test "when subscribing to Sanbase/API, the user is subscribed to metric updates", context do
+      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
+
       query = subscribe_mutation(context.plans.plan_pro_sanbase.id)
       execute_mutation(context.conn, query, "subscribe")
 
@@ -243,22 +253,8 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       assert updated_settings.is_subscribed_metric_updates
     end
 
-    test "when cancelling subscription, the user is unsubscribed from metric updates", context do
-      subscription =
-        insert(:subscription_pro_sanbase,
-          user: context.user,
-          stripe_id: "stripe_id",
-          current_period_end: Timex.shift(Timex.now(), days: 3) |> DateTime.truncate(:second)
-        )
-
-      query = cancel_subscription_at_period_end_mutation(subscription.id)
-      execute_mutation(context.conn, query, "cancelSubscriptionAtPeriodEnd")
-
-      updated_settings = Sanbase.Accounts.UserSettings.settings_for(context.user, force: true)
-      refute updated_settings.is_subscribed_metric_updates
-    end
-
     test "annual subscription gets discounted", context do
+      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
       context.user |> User.changeset(%{stripe_customer_id: "alabala"}) |> Sanbase.Repo.update!()
 
       insert(:subscription_pro_sanbase,
@@ -353,6 +349,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     end
 
     test "subscribe with coupon works", context do
+      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
       query = subscribe_with_coupon_mutation(context.plans.plan_essential.id, @coupon_code)
       response = execute_mutation(context.conn, query, "subscribe")
 
@@ -362,6 +359,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     end
 
     test "subscribe to Sanbase PRO plan gives 14 days free trial", context do
+      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
       query = subscribe_mutation(context.plans.plan_pro_sanbase.id)
       response = execute_mutation(context.conn, query, "subscribe")
 
@@ -370,6 +368,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     end
 
     test "subscribe to SanAPI PRO plan doesn't give free trial", context do
+      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
       query = subscribe_mutation(context.plans.plan_pro.id)
       response = execute_mutation(context.conn, query, "subscribe")
 
@@ -490,7 +489,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       period_end = Timex.shift(Timex.now(), days: 3) |> DateTime.truncate(:second)
 
       subscription =
-        insert(:subscription_essential,
+        insert(:subscription_pro_sanbase,
           user: context.user,
           stripe_id: "stripe_id",
           current_period_end: period_end

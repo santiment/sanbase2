@@ -212,7 +212,7 @@ defmodule Sanbase.Comments.EntityComment do
     subquery =
       from(
         dashboard_comment in DashboardComment,
-        left_join: dashboard in Sanbase.Dashboard.Schema,
+        left_join: dashboard in Sanbase.Dashboards.Dashboard,
         on: dashboard_comment.dashboard_id == dashboard.id,
         where: dashboard.is_public != true,
         select: dashboard_comment.comment_id

@@ -2,6 +2,7 @@ defmodule Sanbase.Accounts.UserTest do
   use Sanbase.DataCase, async: false
 
   import Mock
+  import Mox
   import Mockery
   import Sanbase.Factory
   import ExUnit.CaptureLog
@@ -12,6 +13,9 @@ defmodule Sanbase.Accounts.UserTest do
   alias Sanbase.StripeApi
   alias Sanbase.StripeApiTestResponse
   alias Sanbase.Accounts.User.UniswapStaking
+
+  setup :set_mox_from_context
+  setup :verify_on_exit!
 
   test "Delete user and associations" do
     with_mocks([
@@ -26,6 +30,7 @@ defmodule Sanbase.Accounts.UserTest do
       {StripeApi, [:passthrough],
        [create_subscription: fn _ -> StripeApiTestResponse.create_subscription_resp() end]}
     ]) do
+      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
       user = insert(:user, stripe_customer_id: "test")
 
       # UserToken

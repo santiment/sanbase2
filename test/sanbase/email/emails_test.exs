@@ -3,6 +3,7 @@ defmodule Sanbase.EmailsTest do
   use Oban.Testing, repo: Sanbase.Repo
 
   import Mock
+  import Mox
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
   import Sanbase.Email.Template
@@ -13,6 +14,9 @@ defmodule Sanbase.EmailsTest do
   alias Sanbase.Billing.Subscription
   alias Sanbase.StripeApi
   alias Sanbase.StripeApiTestResponse
+
+  setup :set_mox_from_context
+  setup :verify_on_exit!
 
   setup_with_mocks([
     {StripeApi, [:passthrough],
@@ -38,47 +42,51 @@ defmodule Sanbase.EmailsTest do
 
   describe "schedule emails" do
     test "on user registration", context do
+      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
+
       {:ok, user} = context.not_registered_user |> User.Email.update_email_token()
 
       execute_mutation(build_conn(), email_login_verify_mutation(user))
       # FIXME: it works in isolation but jobs are not enqueued when running all tests
 
-      # args = %{
-      #   user_id: context.not_registered_user.id,
-      #   vars: %{
-      #     name: context.not_registered_user.username,
-      #     username: context.not_registered_user.username
-      #   }
-      # }
+      args = %{
+        user_id: context.not_registered_user.id,
+        vars: %{
+          name: context.not_registered_user.username,
+          username: context.not_registered_user.username
+        }
+      }
 
-      # assert_enqueued(
-      #   [
-      #     worker: Sanbase.Mailer,
-      #     args: Map.put(args, :template, sign_up_templates()[:welcome_email])
-      #   ],
-      #   500
-      # )
+      assert_enqueued(
+        [
+          worker: Sanbase.Mailer,
+          args: Map.put(args, :template, sign_up_templates()[:welcome_email])
+        ],
+        500
+      )
 
-      # assert_enqueued(
-      #   [
-      #     worker: Sanbase.Mailer,
-      #     args: Map.put(args, :template, sign_up_templates()[:first_education_email]),
-      #     scheduled_at: {days_after(4), delta: 10}
-      #   ],
-      #   500
-      # )
+      assert_enqueued(
+        [
+          worker: Sanbase.Mailer,
+          args: Map.put(args, :template, sign_up_templates()[:first_education_email]),
+          scheduled_at: {days_after(4), delta: 10}
+        ],
+        500
+      )
 
-      # assert_enqueued(
-      #   [
-      #     worker: Sanbase.Mailer,
-      #     args: Map.put(args, :template, sign_up_templates()[:second_education_email]),
-      #     scheduled_at: {days_after(7), delta: 10}
-      #   ],
-      #   500
-      # )
+      assert_enqueued(
+        [
+          worker: Sanbase.Mailer,
+          args: Map.put(args, :template, sign_up_templates()[:second_education_email]),
+          scheduled_at: {days_after(7), delta: 10}
+        ],
+        500
+      )
     end
 
     test "on Sanbase PRO trial started", context do
+      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
+
       Subscription.create(%{
         stripe_id: "123",
         user_id: context.user.id,
@@ -114,6 +122,7 @@ defmodule Sanbase.EmailsTest do
     end
 
     test "on Sanbase PRO subscription started", context do
+      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
       query = subscribe_mutation(context.plans.plan_pro_sanbase.id)
 
       execute_mutation(context.conn, query)
@@ -133,6 +142,7 @@ defmodule Sanbase.EmailsTest do
     end
 
     test "on API PRO subscription started", context do
+      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
       query = subscribe_mutation(context.plans.plan_pro.id)
 
       execute_mutation(context.conn, query)

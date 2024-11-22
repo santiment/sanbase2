@@ -5,6 +5,10 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
 
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
+  import Mox
+
+  setup :set_mox_from_context
+  setup :verify_on_exit!
 
   setup do
     user = insert(:user, email: "test@example.com")
@@ -217,6 +221,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     end
 
     test "update email settings", context do
+      expect(Sanbase.Email.MockMailjetApi, :unsubscribe, fn _, _ -> :ok end)
       query = change_email_settings("isSubscribedMonthlyNewsletter: false")
       result = execute_mutation(context.conn, query)
       refute result["isSubscribedMonthlyNewsletter"]
@@ -235,6 +240,8 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     end
 
     test "toggle metric updates email setting", context do
+      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
+      expect(Sanbase.Email.MockMailjetApi, :unsubscribe, fn _, _ -> :ok end)
       query = change_email_settings("isSubscribedMetricUpdates: true")
       result = execute_mutation(context.conn, query)
       assert result["isSubscribedMetricUpdates"]

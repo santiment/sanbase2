@@ -2,6 +2,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Mock
+  import Mox
   import Sanbase.Factory
   import Sanbase.TestHelpers
   import ExUnit.CaptureLog
@@ -13,6 +14,9 @@ defmodule SanbaseWeb.StripeWebhookTest do
   alias Sanbase.StripeApi
 
   @stripe_id "sub_1234567891"
+
+  setup :set_mox_from_context
+  setup :verify_on_exit!
 
   setup_with_mocks([
     {StripeApi, [],
@@ -177,6 +181,8 @@ defmodule SanbaseWeb.StripeWebhookTest do
 
   describe "customer.subscription.created event" do
     test "successfully create subscription" do
+      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
+
       {:ok, %Stripe.Subscription{customer: stripe_customer_id}} =
         StripeApiTestResponse.retrieve_subscription_resp()
 

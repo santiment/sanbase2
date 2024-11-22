@@ -2,11 +2,15 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
   use SanbaseWeb.ConnCase
 
   import Mock
+  import Mox
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
 
   alias Sanbase.Accounts.User
   alias Sanbase.Repo
+
+  setup :set_mox_from_context
+  setup :verify_on_exit!
 
   setup do
     user = insert(:user)
@@ -18,6 +22,8 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
 
   describe "Email login verify" do
     test "with a valid email token, succeeds login", %{conn: conn} do
+      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
+
       {:ok, user} =
         insert(:user_registration_not_finished, email: "example@santiment.net")
         |> User.Email.update_email_token()

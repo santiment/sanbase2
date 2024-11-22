@@ -2,8 +2,11 @@ defmodule Sanbase.Billing.SanrNftSubscriptionsApiTest do
   use SanbaseWeb.ConnCase, async: false
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
-
+  import Mox
   alias Sanbase.Billing.Subscription
+
+  setup :set_mox_from_context
+  setup :verify_on_exit!
 
   setup do
     user = insert(:user)
@@ -83,6 +86,8 @@ defmodule Sanbase.Billing.SanrNftSubscriptionsApiTest do
   end
 
   test "obtainSanrNftSubscription", context do
+    expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
+
     mutation = """
     mutation{
       obtainSanrNftSubscription {

@@ -54,6 +54,7 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
        ) do
     email = Sanbase.Accounts.get_user!(user_id).email
     if email, do: Sanbase.Email.MailjetApi.client().subscribe(:monthly_newsletter, email)
+
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end
@@ -64,7 +65,8 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
          state
        ) do
     email = Sanbase.Accounts.get_user!(user_id).email
-    Sanbase.Email.MailjetApi.client().unsubscribe(:monthly_newsletter, email)
+    if email, do: Sanbase.Email.MailjetApi.client().unsubscribe(:monthly_newsletter, email)
+
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end
@@ -95,8 +97,7 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
          state
        ) do
     email = Sanbase.Accounts.get_user!(user_id).email
-
-    Sanbase.Email.MailjetApi.client().subscribe(:metric_updates, email)
+    if email, do: Sanbase.Email.MailjetApi.client().subscribe(:metric_updates, email)
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end
@@ -107,7 +108,8 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
          state
        ) do
     email = Sanbase.Accounts.get_user!(user_id).email
-    Sanbase.Email.MailjetApi.client().unsubscribe(:metric_updates, email)
+    if email, do: Sanbase.Email.MailjetApi.client().unsubscribe(:metric_updates, email)
+
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end

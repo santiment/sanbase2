@@ -103,15 +103,18 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
     Sanbase.Cache.clear(registry_cache_key(remove_hard_deprecated: true))
     Sanbase.Cache.clear(registry_cache_key(remove_hard_deprecated: false))
 
-    for {fun, args} <- @functions do
-      data = compute(fun, args)
+    result =
+      for {fun, args} <- @functions do
+        data = compute(fun, args)
 
-      if :not_implemented == data,
-        do: raise("Function #{fun} is not implemented in module #{__MODULE__}")
+        if :not_implemented == data,
+          do: raise("Function #{fun} is not implemented in module #{__MODULE__}")
 
-      :ok = :persistent_term.put(key(fun, args), data)
-      {{fun, args}, :ok}
-    end
+        result = :persistent_term.put(key(fun, args), data)
+        {{fun, args}, result}
+      end
+
+    Enum.all?(result, &match?({_, :ok}, &1))
   end
 
   # Private functions

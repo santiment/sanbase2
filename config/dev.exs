@@ -6,6 +6,7 @@ import Config
 # The watchers configuration can be used to run external
 # watchers to your application. For example, we use it
 # with brunch.io to recompile .js and .css sources.
+config :phoenix_live_view, debug_heex_annotations: true
 config :sanbase, Sanbase, url: {:system, "SANBASE_URL", "https://app-stage.santiment.net"}
 
 config :sanbase, SanbaseWeb.Endpoint,

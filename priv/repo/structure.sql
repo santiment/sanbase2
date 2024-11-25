@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.1 (Homebrew)
--- Dumped by pg_dump version 15.1 (Homebrew)
+-- Dumped from database version 14.12 (Homebrew)
+-- Dumped by pg_dump version 14.12 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -2310,6 +2310,41 @@ CREATE TABLE public.metric_registry (
     inserted_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL
 );
+
+
+--
+-- Name: metric_registry_change_suggestions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.metric_registry_change_suggestions (
+    id bigint NOT NULL,
+    metric_registry_id bigint,
+    status character varying(255) DEFAULT 'pending_approval'::character varying NOT NULL,
+    changes text NOT NULL,
+    notes text,
+    submitted_by character varying(255),
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: metric_registry_change_suggestions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.metric_registry_change_suggestions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: metric_registry_change_suggestions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.metric_registry_change_suggestions_id_seq OWNED BY public.metric_registry_change_suggestions.id;
 
 
 --
@@ -5217,6 +5252,13 @@ ALTER TABLE ONLY public.metric_registry ALTER COLUMN id SET DEFAULT nextval('pub
 
 
 --
+-- Name: metric_registry_change_suggestions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metric_registry_change_suggestions ALTER COLUMN id SET DEFAULT nextval('public.metric_registry_change_suggestions_id_seq'::regclass);
+
+
+--
 -- Name: metrics id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6111,6 +6153,14 @@ ALTER TABLE ONLY public.menu_items
 
 ALTER TABLE ONLY public.menus
     ADD CONSTRAINT menus_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: metric_registry_change_suggestions metric_registry_change_suggestions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metric_registry_change_suggestions
+    ADD CONSTRAINT metric_registry_change_suggestions_pkey PRIMARY KEY (id);
 
 
 --
@@ -8403,6 +8453,14 @@ ALTER TABLE ONLY public.menus
 
 
 --
+-- Name: metric_registry_change_suggestions metric_registry_change_suggestions_metric_registry_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metric_registry_change_suggestions
+    ADD CONSTRAINT metric_registry_change_suggestions_metric_registry_id_fkey FOREIGN KEY (metric_registry_id) REFERENCES public.metric_registry(id) ON DELETE CASCADE;
+
+
+--
 -- Name: monitored_twitter_handles monitored_twitter_handles_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -9616,9 +9674,9 @@ INSERT INTO public."schema_migrations" (version) VALUES (20241029080754);
 INSERT INTO public."schema_migrations" (version) VALUES (20241029082533);
 INSERT INTO public."schema_migrations" (version) VALUES (20241029151959);
 INSERT INTO public."schema_migrations" (version) VALUES (20241030141825);
-INSERT INTO public."schema_migrations" (version) VALUES (20241104061632);
 INSERT INTO public."schema_migrations" (version) VALUES (20241104115340);
 INSERT INTO public."schema_migrations" (version) VALUES (20241108112754);
+INSERT INTO public."schema_migrations" (version) VALUES (20241112094924);
 INSERT INTO public."schema_migrations" (version) VALUES (20241114140339);
 INSERT INTO public."schema_migrations" (version) VALUES (20241114141110);
 INSERT INTO public."schema_migrations" (version) VALUES (20241116104556);

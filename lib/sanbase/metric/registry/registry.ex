@@ -1,11 +1,13 @@
 defmodule Sanbase.Metric.Registry do
   use Ecto.Schema
 
+  import Ecto.Query
   import Ecto.Changeset
   import Sanbase.Metric.Registry.EventEmitter, only: [emit_event: 3]
 
   alias Sanbase.Repo
   alias __MODULE__.Validation
+  alias __MODULE__.ChangeSuggestion
   alias Sanbase.TemplateEngine
 
   # Matches letters, digits, _, -, :, ., {, }, (, ), \, /  and space
@@ -20,6 +22,7 @@ defmodule Sanbase.Metric.Registry do
     use Ecto.Schema
     import Ecto.Changeset
 
+    @primary_key false
     embedded_schema do
       field(:type, :string)
     end
@@ -35,6 +38,7 @@ defmodule Sanbase.Metric.Registry do
     use Ecto.Schema
     import Ecto.Changeset
 
+    @primary_key false
     embedded_schema do
       field(:name, :string)
     end
@@ -51,6 +55,7 @@ defmodule Sanbase.Metric.Registry do
     use Ecto.Schema
     import Ecto.Changeset
 
+    @primary_key false
     embedded_schema do
       field(:name, :string)
     end
@@ -68,6 +73,7 @@ defmodule Sanbase.Metric.Registry do
     use Ecto.Schema
     import Ecto.Changeset
 
+    @primary_key false
     embedded_schema do
       field(:link, :string)
     end
@@ -147,6 +153,11 @@ defmodule Sanbase.Metric.Registry do
     embeds_many(:selectors, Selector, on_replace: :delete)
     embeds_many(:required_selectors, Selector, on_replace: :delete)
     embeds_many(:docs, Doc, on_replace: :delete)
+
+    has_many(:change_suggestions, ChangeSuggestion,
+      foreign_key: :metric_registry_id,
+      on_delete: :delete_all
+    )
 
     timestamps()
   end
@@ -232,30 +243,51 @@ defmodule Sanbase.Metric.Registry do
     )
   end
 
-  def create(attrs) do
+  def create(attrs, opts \\ []) do
     %__MODULE__{}
     |> changeset(attrs)
     |> Repo.insert()
-    |> emit_event(:create_metric_registry, %{})
+    |> maybe_emit_event(:create_metric_registry, opts)
   end
 
-  def update(%__MODULE__{} = metric_registry, attrs) do
+  def update(%__MODULE__{} = metric_registry, attrs, opts \\ []) do
     metric_registry
     |> changeset(attrs)
     |> Repo.update()
-    |> emit_event(:update_metric_registry, %{})
+    |> maybe_emit_event(:update_metric_registry, opts)
   end
 
-  def delete(%__MODULE__{} = metric_registry) do
+  def delete(%__MODULE__{} = metric_registry, opts \\ []) do
     metric_registry
     |> Repo.delete()
-    |> emit_event(:delete_metric_registry, %{})
+    |> maybe_emit_event(:delete_metric_registry, opts)
   end
 
   def by_id(id) do
     case Sanbase.Repo.get_by(__MODULE__, id: id) do
       nil -> {:error, "No metric with id #{id} found in the registry"}
       %__MODULE__{} = struct -> {:ok, struct}
+    end
+  end
+
+  def by_name(metric, data_type, fixed_parameters \\ %{}) do
+    query =
+      from(mr in __MODULE__,
+        where:
+          mr.metric == ^metric and mr.data_type == "timeseries" and
+            mr.fixed_parameters == ^fixed_parameters
+      )
+
+    case Sanbase.Repo.one(query) do
+      %__MODULE__{} = struct ->
+        {:ok, struct}
+
+      nil ->
+        {:error,
+         """
+         No metric with name #{metric}, data type #{data_type} and \
+         fixed parameters #{inspect(fixed_parameters)} found in the registry
+         """}
     end
   end
 
@@ -281,6 +313,22 @@ defmodule Sanbase.Metric.Registry do
     registry
     |> resolve_aliases()
     |> Enum.flat_map(&apply_template_parameters/1)
+  end
+
+  # Private
+
+  defp maybe_emit_event(result, event_type, opts)
+       when is_tuple(result) and
+              event_type in [
+                :create_metric_registry,
+                :update_metric_registry,
+                :delete_metric_registry
+              ] do
+    if Keyword.get(opts, :emit_event?, true) do
+      emit_event(result, event_type, %{})
+    else
+      result
+    end
   end
 
   defp resolve_aliases(%__MODULE__{} = registry) do

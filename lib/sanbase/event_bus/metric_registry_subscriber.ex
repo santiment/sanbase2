@@ -4,6 +4,8 @@ defmodule Sanbase.EventBus.MetricRegistrySubscriber do
   """
   use GenServer
 
+  alias Sanbase.Utils.Config
+
   require Logger
 
   def topics(), do: ["metric_registry_events"]
@@ -41,8 +43,24 @@ defmodule Sanbase.EventBus.MetricRegistrySubscriber do
     {:noreply, state}
   end
 
+  def on_metric_registry_change(_event_type, _metric) do
+    # Do not change the order here
+    true = Sanbase.Clickhouse.MetricAdapter.Registry.refresh_stored_terms()
+    true = Sanbase.Metric.Helper.refresh_stored_terms()
+    true = Sanbase.Billing.Plan.StandardAccessChecker.refresh_stored_terms()
+
+    :ok
+  end
+
+  def on_metric_registry_change_test_env(event_type, metric) do
+    # In test env this is the handler in order to avoid Ecto DBConnection
+    # ownership errors
+    Logger.warning("Metric Registry Change - Event Type: #{event_type}, Metric: #{metric}")
+    :ok
+  end
+
   defp handle_event(
-         %{data: %{event_type: event_type}} = event,
+         %{data: %{event_type: event_type, metric: metric}} = event,
          event_shadow,
          state
        )
@@ -52,10 +70,15 @@ defmodule Sanbase.EventBus.MetricRegistrySubscriber do
               :delete_metric_registry
             ] do
     Logger.info("Start refreshing stored terms from #{__MODULE__}")
-    # Do not change the order here
-    Sanbase.Clickhouse.MetricAdapter.Registry.refresh_stored_terms()
-    Sanbase.Metric.Helper.refresh_stored_terms()
-    Sanbase.Billing.Plan.StandardAccessChecker.refresh_stored_terms()
+
+    {mod, fun} =
+      Config.module_get(
+        __MODULE__,
+        :metric_registry_change_handler,
+        {__MODULE__, :on_metric_registry_change}
+      )
+
+    :ok = apply(mod, fun, [event_type, metric])
 
     Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
       Sanbase.Notifications.Handler.handle_metric_registry_event(event)

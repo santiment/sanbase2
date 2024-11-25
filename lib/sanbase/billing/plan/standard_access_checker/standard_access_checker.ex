@@ -195,15 +195,18 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
   def refresh_stored_terms() do
     Logger.info("Refreshing stored terms in the #{__MODULE__}")
 
-    for {fun, args} <- @functions do
-      data = compute(fun, args)
+    result =
+      for {fun, args} <- @functions do
+        data = compute(fun, args)
 
-      if :not_implemented == data,
-        do: raise("Function #{fun} is not implemented in module #{__MODULE__}")
+        if :not_implemented == data,
+          do: raise("Function #{fun} is not implemented in module #{__MODULE__}")
 
-      :ok = :persistent_term.put(key(fun, args), data)
-      {{fun, args}, :ok}
-    end
+        result = :persistent_term.put(key(fun, args), data)
+        {{fun, args}, result}
+      end
+
+    Enum.all?(result, &match?({_, :ok}, &1))
   end
 
   # Private functions

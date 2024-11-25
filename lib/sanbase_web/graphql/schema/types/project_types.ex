@@ -360,6 +360,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:long_description, :string)
     field(:token_decimals, :integer)
 
+    field :info, :project_info do
+      cache_resolve(&ProjectResolver.project_info/3)
+    end
+
     @desc ~s"""
     Shows if a project is marked as hidden.
 
@@ -786,6 +790,11 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :funds_raised, list_of(:currency_amount) do
       resolve(&IcoResolver.funds_raised/3)
     end
+  end
+
+  object :project_info do
+    field(:full, :string)
+    field(:summary, :string)
   end
 
   object :ico_with_eth_contract_info do

@@ -5,6 +5,16 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
 
   def data(), do: Dataloader.KV.new(&query/2)
 
+  def query(:project_info, args) do
+    args
+    |> Enum.to_list()
+    |> Clickhouse.Project.projects_info()
+    |> case do
+      {:ok, map} -> map
+      {:error, _} = error -> error
+    end
+  end
+
   def query(:aggregated_metric, args) do
     args_list = args |> Enum.to_list()
 

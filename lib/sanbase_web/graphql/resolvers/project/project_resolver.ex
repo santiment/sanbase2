@@ -93,6 +93,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     end)
   end
 
+  def project_info(%Project{slug: slug}, _args, %{context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(SanbaseDataloader, :project_info, slug)
+    |> on_load(fn loader ->
+      description = Dataloader.get(loader, SanbaseDataloader, :project_info, slug)
+
+      {:ok, description}
+    end)
+  end
+
   def roi_usd(%Project{} = project, _args, _resolution) do
     roi = Project.roi_usd(project)
 

@@ -43,6 +43,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     value(:watchlist_id)
     # social related
     value(:text)
+    value(:founders)
     value(:source)
     # label related
     value(:owner)

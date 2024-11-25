@@ -17,7 +17,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
     ~H"""
     <div>
       <div class="flex-1 p:2 sm:p-6 justify-evenly">
-        <.table id="meric_registry_changes_suggestions" rows={@rows}>
+        <.table id="metric_registry_changes_suggestions" rows={@rows}>
           <:col :let={row} label="Status">
             <AdminFormsComponents.status status={row.status} />
           </:col>

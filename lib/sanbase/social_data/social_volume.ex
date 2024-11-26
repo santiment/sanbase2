@@ -65,10 +65,6 @@ defmodule Sanbase.SocialData.SocialVolume do
     end)
   end
 
-  def social_volume(%{founders: founders}, from, to, interval, source, opts)
-      when is_list(founders) do
-  end
-
   def social_volume(selector, from, to, interval, source, opts) do
     social_volume_request(selector, from, to, interval, source, opts)
     |> handle_response(selector)

@@ -87,6 +87,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     # social related
     field(:text, :string)
     field(:source, :string)
+    field(:founders, list_of(:string))
     # dev activity related
     field(:organization, :string)
     field(:organizations, list_of(:string))

@@ -26,7 +26,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
   defguard is_supported_selector(s)
            when is_map(s) and
-                  (is_map_key(s, :slug) or is_map_key(s, :address) or
+                  (is_map_key(s, :slug) or
+                     is_map_key(s, :address) or
                      is_map_key(s, :contract_address))
 
   @impl Sanbase.Metric.Behaviour

@@ -14,12 +14,17 @@ defmodule Sanbase.SocialHelperTest do
       Sanbase.Factory.insert(:project, %{ticker: "SAN", name: "Santiment", slug: "santiment"})
 
       assert SocialHelper.social_metrics_selector_handler(%{slug: "santiment"}) ==
-               {:ok, ~s/"san" OR "santiment"/}
+               {:ok, "search_text", ~s/"san" OR "santiment"/}
     end
 
     test "with text: success" do
       assert SocialHelper.social_metrics_selector_handler(%{text: "santiment"}) ==
-               {:ok, "santiment"}
+               {:ok, "search_text", "santiment"}
+    end
+
+    test "with founders: success" do
+      assert SocialHelper.social_metrics_selector_handler(%{founders: ["vitalik", "satoshi"]}) ==
+               {:ok, "founders", "vitalik,satoshi"}
     end
 
     test "with false argument" do

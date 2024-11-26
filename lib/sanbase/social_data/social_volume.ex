@@ -175,14 +175,15 @@ defmodule Sanbase.SocialData.SocialVolume do
   end
 
   defp social_volume_request(selector, from, to, interval, source, opts) do
-    with {:ok, search_text} <- SocialHelper.social_metrics_selector_handler(selector) do
+    with {:ok, selector_name, selector_value} when selector_name in ["search_text", "founders"] <-
+           SocialHelper.social_metrics_selector_handler(selector) do
       url = Path.join([metrics_hub_url(), opts_to_metric(opts)])
 
       options =
         [
           recv_timeout: @recv_timeout,
           params: [
-            {"search_text", search_text},
+            {selector_name, selector_value},
             {"from_timestamp", from |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
             {"to_timestamp", to |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
             {"interval", interval},

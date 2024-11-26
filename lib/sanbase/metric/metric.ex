@@ -26,7 +26,8 @@ defmodule Sanbase.Metric do
 
   @compile inline: [
              execute_if_aggregation_valid: 3,
-             maybe_change_module: 4,
+             get_module: 1,
+             get_module: 2,
              combine_metrics_in_modules: 2
            ]
 
@@ -475,8 +476,6 @@ defmodule Sanbase.Metric do
         metric_not_available_error(metric, type: :timeseries)
 
       module when is_atom(module) ->
-        module = maybe_change_module(module, metric, %{}, opts)
-
         case module.available_slugs(metric) do
           {:ok, slugs} ->
             supported_slugs = Sanbase.Project.List.projects_slugs()
@@ -828,39 +827,13 @@ defmodule Sanbase.Metric do
     end
   end
 
-  defp maybe_change_module(module, metric, selector, opts) do
-    cond do
-      metric in Sanbase.SocialData.MetricAdapter.available_metrics() and
-          match?(%{text: _}, selector) ->
-        # When using slug, the social metrics are fetched from clickhouse
-        # But when text selector is used, the metric should be fetched from Elasticsearch
-        # as it cannot be precomputed due to the vast number of possible text arguments
-        Sanbase.SocialData.MetricAdapter
-
-      metric in Sanbase.SocialData.MetricAdapter.available_metrics() and
-          match?(%{contract_address: _}, selector) ->
-        Sanbase.SocialData.MetricAdapter
-
-      metric in Sanbase.PricePair.MetricAdapter.available_metrics() ->
-        source = Keyword.get(opts, :source) || Map.get(selector, :source)
-
-        cond do
-          source == "cryptocompare" -> Sanbase.PricePair.MetricAdapter
-          metric == "price_eth" and source != "cryptocompare" -> Sanbase.Clickhouse.MetricAdapter
-          true -> module
-        end
-
-      true ->
-        module
-    end
-  end
-
   defp get_module(metric, opts \\ []) do
     selector = Keyword.get(opts, :selector, %{})
 
     cond do
       metric in Sanbase.SocialData.MetricAdapter.available_metrics() and
-          (match?(%{text: _}, selector) or match?(%{contract_address: _}, selector)) ->
+          (match?(%{text: _}, selector) or match?(%{contract_address: _}, selector) or
+             match?(%{founders: _}, selector)) ->
         Sanbase.SocialData.MetricAdapter
 
       metric in Sanbase.Clickhouse.Github.MetricAdapter.available_metrics() and

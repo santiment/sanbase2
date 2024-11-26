@@ -314,7 +314,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
         "community_messages_count" <> _ -> [:slug]
         "social_active_users" -> [:source]
         "nft_social_volume" -> [:contract_address]
-        _ -> [:slug, :text]
+        _ -> [:slug, :text, :founders]
       end
 
     min_interval =

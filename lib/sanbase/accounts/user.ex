@@ -83,6 +83,10 @@ defmodule Sanbase.Accounts.User do
     field(:is_superuser, :boolean, default: false)
     field(:twitter_id, :string)
 
+    field(:description, :string)
+    field(:website_link, :string)
+    field(:twitter_link, :string)
+
     # GDPR related fields
     field(:privacy_policy_accepted, :boolean, default: false)
     field(:marketing_accepted, :boolean, default: false)
@@ -168,7 +172,10 @@ defmodule Sanbase.Accounts.User do
       :twitter_id,
       :username,
       :name,
-      :registration_state
+      :registration_state,
+      :description,
+      :website_link,
+      :twitter_link
     ])
     |> normalize_user_identificator(:username, attrs[:username])
     |> normalize_user_identificator(:email, attrs[:email])
@@ -177,6 +184,8 @@ defmodule Sanbase.Accounts.User do
     |> validate_change(:username, &validate_username_change/2)
     |> validate_change(:email_candidate, &validate_email_candidate_change/2)
     |> validate_change(:avatar_url, &validate_url_change/2)
+    |> validate_change(:website_link, &validate_url_simple/2)
+    |> validate_change(:twitter_link, &validate_url_simple/2)
     |> unique_constraint(:email)
     |> unique_constraint(:username)
     |> unique_constraint(:stripe_customer_id)
@@ -394,5 +403,13 @@ defmodule Sanbase.Accounts.User do
       distinct: true
     )
     |> Repo.all()
+  end
+
+  def update_profile(%__MODULE__{} = user, attrs) do
+    user
+    |> changeset(attrs)
+    |> Repo.update()
+
+    # |> emit_event(:update_profile, %{})
   end
 end

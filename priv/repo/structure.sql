@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 14.12 (Homebrew)
--- Dumped by pg_dump version 14.12 (Homebrew)
+-- Dumped from database version 15.1 (Homebrew)
+-- Dumped by pg_dump version 15.1 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -4559,7 +4559,11 @@ CREATE TABLE public.users (
     is_superuser boolean DEFAULT false,
     twitter_id character varying(255) DEFAULT NULL::character varying,
     name character varying(255),
-    registration_state jsonb DEFAULT '{"state": "init"}'::jsonb
+    registration_state jsonb DEFAULT '{"state": "init"}'::jsonb,
+    description text,
+    is_santiment_team boolean DEFAULT false,
+    twitter_link character varying(255),
+    website_link character varying(255)
 );
 
 
@@ -7807,6 +7811,13 @@ CREATE UNIQUE INDEX users_email_token_index ON public.users USING btree (email_t
 
 
 --
+-- Name: users_is_santiment_team_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX users_is_santiment_team_index ON public.users USING btree (is_santiment_team);
+
+
+--
 -- Name: users_stripe_customer_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9674,9 +9685,11 @@ INSERT INTO public."schema_migrations" (version) VALUES (20241029080754);
 INSERT INTO public."schema_migrations" (version) VALUES (20241029082533);
 INSERT INTO public."schema_migrations" (version) VALUES (20241029151959);
 INSERT INTO public."schema_migrations" (version) VALUES (20241030141825);
+INSERT INTO public."schema_migrations" (version) VALUES (20241104061632);
 INSERT INTO public."schema_migrations" (version) VALUES (20241104115340);
 INSERT INTO public."schema_migrations" (version) VALUES (20241108112754);
 INSERT INTO public."schema_migrations" (version) VALUES (20241112094924);
 INSERT INTO public."schema_migrations" (version) VALUES (20241114140339);
 INSERT INTO public."schema_migrations" (version) VALUES (20241114141110);
 INSERT INTO public."schema_migrations" (version) VALUES (20241116104556);
+INSERT INTO public."schema_migrations" (version) VALUES (20241126110304);

@@ -21,7 +21,8 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     :average_daily_active_addresses,
     :average_dev_activity,
     :eth_spent,
-    :aggregated_metric
+    :aggregated_metric,
+    :project_info
   ]
 
   @balance_dataloader [

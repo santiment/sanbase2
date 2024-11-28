@@ -153,10 +153,15 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
     # only after the DB changes are commited and not from insite the transaction. If the event
     # is emitted from inside the transaction, the event handler can be invoked before the DB
     # changes are commited and this handler will have no effect.
-    Sanbase.Metric.Registry.update(metric_registry, params, emit_event?: false)
+    Sanbase.Metric.Registry.update(metric_registry, params, emit_event: true)
   end
 
   def create_change_suggestion(%Registry{} = registry, params, notes, submitted_by) do
+    # After change suggestion is applied, put the metric in a unverified state and mark
+    # is as not synced. Someone needs to manually verify the metric after it is tested.
+    # When the data is synced between stage and prod, the sync status will be updated.
+    params = Map.merge(params, %{is_verified: false, sync_status: "not_synced"})
+
     case Registry.changeset(registry, params) do
       %{valid?: false} = changeset ->
         {:error, changeset}

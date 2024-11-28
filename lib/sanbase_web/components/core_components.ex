@@ -39,6 +39,7 @@ defmodule SanbaseWeb.CoreComponents do
   attr(:id, :string, required: true)
   attr(:show, :boolean, default: false)
   attr(:on_cancel, JS, default: %JS{})
+  attr(:max_modal_width, :string, default: "max-w-3xl")
   slot(:inner_block, required: true)
 
   def modal(assigns) do
@@ -60,7 +61,7 @@ defmodule SanbaseWeb.CoreComponents do
         tabindex="0"
       >
         <div class="flex min-h-full items-center justify-center">
-          <div class="w-full max-w-3xl p-4 sm:p-6 lg:py-8">
+          <div class={["w-full p-4 sm:p-6 lg:py-8", @max_modal_width]}>
             <.focus_wrap
               id={"#{@id}-container"}
               phx-window-keydown={JS.exec("data-cancel", to: "##{@id}")}

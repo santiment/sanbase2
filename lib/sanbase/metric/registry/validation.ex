@@ -1,6 +1,17 @@
 defmodule Sanbase.Metric.Registry.Validation do
   import Ecto.Changeset
 
+  @sync_statuses ["synced", "not_synced"]
+  def validate_sync_status(:sync_status, status) do
+    if status in @sync_statuses do
+      []
+    else
+      [
+        sync_status: "The provided sync_status #{status} is not supported."
+      ]
+    end
+  end
+
   def validate_min_interval(:min_interval, min_interval) do
     if Sanbase.DateTimeUtils.valid_compound_duration?(min_interval) do
       if Sanbase.DateTimeUtils.str_to_days(min_interval) > 30 do
@@ -16,31 +27,6 @@ defmodule Sanbase.Metric.Registry.Validation do
         min_interval:
           "The provided min_interval #{min_interval} is not a valid duration - a number followed by one of: s (second), m (minute), h (hour) or d (day)"
       ]
-    end
-  end
-
-  def validate_min_plan(:min_plan, min_plan) do
-    map_keys = Map.keys(min_plan) |> Enum.sort()
-    map_values = Map.values(min_plan) |> Enum.uniq() |> Enum.sort()
-
-    cond do
-      map_size(min_plan) == 0 ->
-        []
-
-      map_keys != ["SANAPI", "SANBASE"] ->
-        [
-          min_plan:
-            "The keys for min_plan must be 'SANBASE' and 'SANAPI'. Got #{Enum.join(map_keys, ", ")} instead"
-        ]
-
-      Enum.any?(map_values, &(&1 not in ["free", "pro"])) ->
-        [
-          min_plan:
-            "The values for the min_plan elements must be 'free' or 'restricted'. Got #{Enum.join(map_values, ", ")} instead"
-        ]
-
-      true ->
-        []
     end
   end
 

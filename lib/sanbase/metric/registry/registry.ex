@@ -112,6 +112,8 @@ defmodule Sanbase.Metric.Registry do
           deprecation_note: String.t(),
           data_type: String.t(),
           docs: [%Doc{}],
+          is_verified: boolean(),
+          sync_status: String.t(),
           inserted_at: DateTime.t(),
           updated_at: DateTime.t()
         }
@@ -146,8 +148,11 @@ defmodule Sanbase.Metric.Registry do
     field(:is_deprecated, :boolean, default: false)
     field(:hard_deprecate_after, :utc_datetime, default: nil)
     field(:deprecation_note, :string, default: nil)
-
     field(:data_type, :string, default: "timeseries")
+
+    # Sync-related fields
+    field(:is_verified, :boolean)
+    field(:sync_status, :string)
 
     embeds_many(:tables, Table, on_replace: :delete)
     embeds_many(:selectors, Selector, on_replace: :delete)
@@ -179,10 +184,12 @@ defmodule Sanbase.Metric.Registry do
       :is_hidden,
       :is_template,
       :is_timebound,
+      :is_verified,
       :metric,
       :min_interval,
       :sanbase_min_plan,
       :sanapi_min_plan,
+      :sync_status,
       :parameters
     ])
     |> cast_embed(:selectors,
@@ -235,6 +242,7 @@ defmodule Sanbase.Metric.Registry do
     |> validate_inclusion(:exposed_environments, ["all", "none", "stage", "prod"])
     |> validate_inclusion(:access, ["free", "restricted"])
     |> validate_change(:min_interval, &Validation.validate_min_interval/2)
+    |> validate_change(:sync_status, &Validation.validate_sync_status/2)
     |> validate_inclusion(:sanbase_min_plan, ["free", "pro", "max"])
     |> validate_inclusion(:sanapi_min_plan, ["free", "pro", "max"])
     |> Validation.validate_template_fields()
@@ -313,7 +321,14 @@ defmodule Sanbase.Metric.Registry do
   need to be resolved, or aliases need to be applied.
   """
   @spec all() :: [t()]
-  def all(), do: Sanbase.Repo.all(__MODULE__)
+  def all() do
+    query =
+      from(m in __MODULE__,
+        order_by: [asc: m.id]
+      )
+
+    Sanbase.Repo.all(query)
+  end
 
   @doc ~s"""
   Resolve all the metric registry records.
@@ -340,7 +355,7 @@ defmodule Sanbase.Metric.Registry do
                 :update_metric_registry,
                 :delete_metric_registry
               ] do
-    if Keyword.get(opts, :emit_event?, true) do
+    if Keyword.get(opts, :emit_event, true) do
       emit_event(result, event_type, %{})
     else
       result

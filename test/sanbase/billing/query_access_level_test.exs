@@ -96,6 +96,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :get_metric,
           :get_metric_spike_explanations,
           :get_most_recent,
+          :get_most_tweets,
           :get_most_used,
           :get_most_voted,
           :get_nft_collection_by_contract,
@@ -188,17 +189,17 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
 
       expected_restricted_queries =
         [
-          :get_latest_metric_data,
           :gas_used,
+          :get_latest_metric_data,
           :get_project_trending_history,
-          :get_word_trending_history,
           :get_trending_words,
+          :get_word_trending_history,
           :miners_balance,
           :percent_of_token_supply_on_exchanges,
           :realtime_top_holders,
           :top_exchanges_by_balance,
-          :top_holders_percent_of_total_supply,
           :top_holders,
+          :top_holders_percent_of_total_supply,
           :word_context,
           :word_trend_score,
           :words_context,

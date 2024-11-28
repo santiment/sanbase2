@@ -9,6 +9,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
 
   @context_words_default_size 10
 
+  def get_most_tweets(
+        _root,
+        %{selector: selector, from: from, to: to, size: size, tweet_type: type},
+        _resolution
+      ) do
+    SocialData.Tweet.get_most_tweets(selector, type, from, to, size)
+  end
+
   def get_metric_spike_explanations(
         _root,
         %{metric: metric, slug: slug, from: from, to: to},

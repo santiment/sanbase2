@@ -2308,7 +2308,9 @@ CREATE TABLE public.metric_registry (
     hard_deprecate_after timestamp(0) without time zone DEFAULT NULL::timestamp without time zone,
     deprecation_note text,
     inserted_at timestamp with time zone NOT NULL,
-    updated_at timestamp with time zone NOT NULL
+    updated_at timestamp with time zone NOT NULL,
+    is_verified boolean DEFAULT true NOT NULL,
+    sync_status character varying(255) DEFAULT 'synced'::character varying NOT NULL
 );
 
 
@@ -9680,3 +9682,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20241112094924);
 INSERT INTO public."schema_migrations" (version) VALUES (20241114140339);
 INSERT INTO public."schema_migrations" (version) VALUES (20241114141110);
 INSERT INTO public."schema_migrations" (version) VALUES (20241116104556);
+INSERT INTO public."schema_migrations" (version) VALUES (20241121133719);
+INSERT INTO public."schema_migrations" (version) VALUES (20241128113958);

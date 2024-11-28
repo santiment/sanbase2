@@ -4,6 +4,13 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
   alias SanbaseWeb.Graphql.Resolvers.SocialDataResolver
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
 
+  enum :most_tweet_type do
+    value(:most_positive)
+    value(:most_negative)
+    value(:most_retweets)
+    value(:most_replies)
+  end
+
   enum :trending_word_type_filter do
     value(:project)
     value(:non_project)
@@ -28,6 +35,26 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
     value(:reddit_comments_overview)
     value(:telegram_chats_overview)
     value(:telegram_discussion_overview)
+  end
+
+  input_object :selector_slug_or_slug_input_object do
+    field(:slug, :string)
+    field(:slugs, list_of(:string))
+  end
+
+  object :slug_tweets_object do
+    field(:slug, non_null(:string))
+    field(:tweets, list_of(:tweet))
+  end
+
+  object :tweet do
+    field(:datetime, non_null(:datetime))
+    field(:text, non_null(:string))
+    field(:screen_name, non_null(:string))
+    field(:sentiment_positive, :float)
+    field(:sentiment_negative, :float)
+    field(:replies_count, :integer)
+    field(:retweets_count, :integer)
   end
 
   object :metric_spike_explanation do

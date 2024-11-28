@@ -8,6 +8,18 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
   alias SanbaseWeb.Graphql.Resolvers.SocialDataResolver
 
   object :social_data_queries do
+    field :get_most_tweets, list_of(:slug_tweets_object) do
+      meta(access: :free)
+
+      arg(:selector, non_null(:selector_slug_or_slug_input_object))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:size, non_null(:integer))
+      arg(:tweet_type, non_null(:most_tweet_type))
+
+      cache_resolve(&SocialDataResolver.get_most_tweets/3)
+    end
+
     field :get_metric_spike_explanations, list_of(:metric_spike_explanation) do
       meta(access: :free)
 

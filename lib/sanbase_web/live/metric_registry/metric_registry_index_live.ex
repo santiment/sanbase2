@@ -50,7 +50,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
         <:col :let={row} label="ID">
           {row.id}
         </:col>
-        <:col :let={row} label="Metric Names" col_class="max-w-[480px] break-all">
+        <:col :let={row} label="Metric Names" col_class="max-w-[720px] break-all">
           <.metric_names
             metric={row.metric}
             internal_metric={row.internal_metric}

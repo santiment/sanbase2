@@ -50,6 +50,17 @@ defmodule SanbaseWeb.AvailableMetricsDescription do
     """
   end
 
+  def get_popover_text(%{key: "Human Readable Name"} = assigns) do
+    ~H"""
+    <pre>
+    The name of the metric formatted in a way that is suitable for showing
+    in Web UI and in texts shown to end clients. The name is capitalized, underscores
+    are replaced with spaces and other formatting is applied.
+    Example: The human readable name of 'price_usd' is 'USD Price'
+    </pre>
+    """
+  end
+
   def get_popover_text(%{key: "Clickhouse Table"} = assigns) do
     ~H"""
     <pre>
@@ -375,6 +386,37 @@ defmodule SanbaseWeb.AvailableMetricsDescription do
     <pre>
     Freeform text explaining why the metric is deprecated.
     This can include suggestion what other metric can be used instead and how.
+    </pre>
+    """
+  end
+
+  def get_popover_text(%{key: "Verified Status"} = assigns) do
+    ~H"""
+    <pre>
+    After a change request is approved and its changes are applied to the databse
+    record, the metric is moved into a Unverified state. Someone will need to manually
+    verify the metric via the UI (after testing the changes).
+    Only verified metrics can be deployed from stage to prod.
+    </pre>
+    """
+  end
+
+  def get_popover_text(%{key: "Exposed Environments"} = assigns) do
+    ~H"""
+    <pre>
+    One of: none, all, stage, prod.
+    Controls on which deployment environment the metric is visible.
+    </pre>
+    """
+  end
+
+  def get_popover_text(%{key: "Sync Status"} = assigns) do
+    ~H"""
+    <pre>
+    Controls the deployment process of metrics. When a change request is approved
+    and applied, the metric is moved to 'not_synced' state indicating that the change
+    is not synced with the other environment.
+    Only metrics in not_synced state are deployed from stage to prod.
     </pre>
     """
   end

@@ -11,7 +11,7 @@ defmodule Sanbase.NotificationsFixtures do
     # Create template
     notification_template_fixture(%{
       channel: "all",
-      action_type: "create",
+      action: "create",
       step: "once",
       template: """
       In the latest update the following metrics have been added:
@@ -23,7 +23,7 @@ defmodule Sanbase.NotificationsFixtures do
     # Update templates
     notification_template_fixture(%{
       channel: "all",
-      action_type: "update",
+      action: "update",
       step: "before",
       template: """
       In order to make our data more precise, we're going to run a recalculation of the following metrics:
@@ -34,7 +34,7 @@ defmodule Sanbase.NotificationsFixtures do
 
     notification_template_fixture(%{
       channel: "all",
-      action_type: "update",
+      action: "update",
       step: "after",
       template: """
       Recalculation of the following metrics has been completed successfully:
@@ -45,7 +45,7 @@ defmodule Sanbase.NotificationsFixtures do
     # Delete templates
     notification_template_fixture(%{
       channel: "all",
-      action_type: "delete",
+      action: "delete",
       step: "before",
       template: """
       Due to lack of usage, we made a decision to deprecate the following metrics:
@@ -56,7 +56,7 @@ defmodule Sanbase.NotificationsFixtures do
 
     notification_template_fixture(%{
       channel: "all",
-      action_type: "delete",
+      action: "delete",
       step: "reminder",
       template: """
       This is a reminder about the scheduled deprecation of the following metrics:
@@ -67,7 +67,7 @@ defmodule Sanbase.NotificationsFixtures do
 
     notification_template_fixture(%{
       channel: "all",
-      action_type: "delete",
+      action: "delete",
       step: "after",
       template: """
       Deprecation of the following metrics has been completed successfully:
@@ -78,7 +78,7 @@ defmodule Sanbase.NotificationsFixtures do
     # Metric Created templates for Discord
     notification_template_fixture(%{
       channel: "discord",
-      action_type: "metric_created",
+      action: "metric_created",
       step: "all",
       template: """
       In the latest update the following metrics have been added:
@@ -90,7 +90,7 @@ defmodule Sanbase.NotificationsFixtures do
     # Metric Deleted templates for Discord
     notification_template_fixture(%{
       channel: "discord",
-      action_type: "metric_deleted",
+      action: "metric_deleted",
       step: "before",
       template: """
       Due to lack of usage, we made a decision to deprecate the following metrics:
@@ -101,7 +101,7 @@ defmodule Sanbase.NotificationsFixtures do
 
     notification_template_fixture(%{
       channel: "discord",
-      action_type: "metric_deleted",
+      action: "metric_deleted",
       step: "reminder",
       template: """
       This is a reminder about the scheduled deprecation of the following metrics:
@@ -112,7 +112,7 @@ defmodule Sanbase.NotificationsFixtures do
 
     notification_template_fixture(%{
       channel: "discord",
-      action_type: "metric_deleted",
+      action: "metric_deleted",
       step: "after",
       template: """
       Deprecation of the following metrics has been completed successfully:
@@ -123,7 +123,7 @@ defmodule Sanbase.NotificationsFixtures do
     # Email templates
     notification_template_fixture(%{
       channel: "email",
-      action_type: "metric_created",
+      action: "metric_created",
       step: "all",
       template: """
       In the latest update the following metrics have been added:
@@ -134,7 +134,7 @@ defmodule Sanbase.NotificationsFixtures do
 
     notification_template_fixture(%{
       channel: "email",
-      action_type: "metric_deleted",
+      action: "metric_deleted",
       step: "before",
       template: """
       Due to lack of usage, we made a decision to deprecate the following metrics:
@@ -145,7 +145,7 @@ defmodule Sanbase.NotificationsFixtures do
 
     notification_template_fixture(%{
       channel: "email",
-      action_type: "metric_deleted",
+      action: "metric_deleted",
       step: "all",
       template: """
       The following metrics have been scheduled for deprecation:
@@ -157,7 +157,7 @@ defmodule Sanbase.NotificationsFixtures do
     # Alert templates
     notification_template_fixture(%{
       channel: "discord",
-      action_type: "alert",
+      action: "alert",
       step: "detected",
       template: """
       Metric delay alert: {{metric_name}} is experiencing a delay due to technical issues. Affected assets: {{asset_categories}}
@@ -166,7 +166,7 @@ defmodule Sanbase.NotificationsFixtures do
 
     notification_template_fixture(%{
       channel: "discord",
-      action_type: "alert",
+      action: "alert",
       step: "resolved",
       template: """
       Metric delay resolved: {{metric_name}} is back to normal
@@ -180,7 +180,7 @@ defmodule Sanbase.NotificationsFixtures do
   def notification_template_fixture(attrs \\ %{}) do
     attrs
     |> Enum.into(%{
-      action_type: "some action_type",
+      action: "some action",
       channel: "all",
       step: "some step",
       template: "some template"

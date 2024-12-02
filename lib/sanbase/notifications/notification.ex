@@ -3,24 +3,30 @@ defmodule Sanbase.Notifications.Notification do
   import Ecto.Changeset
 
   alias Sanbase.Repo
+  alias Sanbase.Metric.Registry
+  alias Sanbase.Notifications.NotificationTemplate
 
-  @supported_actions ["metric_created", "metric_updated", "metric_deleted", "manual", "alert"]
+  @supported_actions ["metric_created", "metric_updated", "metric_deleted", "message", "alert"]
   @supported_channels ["discord", "email"]
   @supported_steps ["all", "before", "reminder", "after", "detected", "resolved"]
+  @supported_statuses ["available", "completed", "failed", "discarded", "cancelled"]
 
   def supported_channels, do: @supported_channels
   def supported_actions, do: @supported_actions
   def supported_steps, do: @supported_steps
+  def supported_statuses, do: @supported_statuses
 
   schema "notifications" do
     field(:action, :string)
     field(:params, :map)
-    field(:channels, {:array, :string})
-    field(:step, :string)
-    field(:processed_for_discord, :boolean, default: false)
-    field(:processed_for_discord_at, :utc_datetime)
-    field(:processed_for_email, :boolean, default: false)
-    field(:processed_for_email_at, :utc_datetime)
+    field(:channel, :string)
+    field(:step, :string, default: "all")
+    field(:status, :string, default: "available")
+    field(:job_id, :integer)
+    field(:is_manual, :boolean, default: false)
+
+    belongs_to(:metric_registry, Registry)
+    belongs_to(:notification_template, NotificationTemplate)
 
     timestamps()
   end
@@ -30,44 +36,24 @@ defmodule Sanbase.Notifications.Notification do
     |> cast(attrs, [
       :action,
       :params,
-      :channels,
+      :channel,
       :step,
-      :processed_for_discord,
-      :processed_for_discord_at,
-      :processed_for_email,
-      :processed_for_email_at
+      :status,
+      :job_id,
+      :is_manual,
+      :metric_registry_id,
+      :notification_template_id
     ])
-    |> validate_required([:action, :params, :channels])
+    |> validate_required([:action, :params, :channel])
     |> validate_inclusion(:action, @supported_actions)
     |> validate_inclusion(:step, @supported_steps)
-    |> validate_channels()
+    |> validate_inclusion(:channel, @supported_channels)
+    |> validate_inclusion(:status, @supported_statuses)
+    |> foreign_key_constraint(:metric_registry_id)
+    |> foreign_key_constraint(:notification_template_id)
   end
 
   def by_id(id), do: Repo.get(__MODULE__, id)
   def create(attrs), do: %__MODULE__{} |> changeset(attrs) |> Repo.insert()
   def update(notification, attrs), do: notification |> changeset(attrs) |> Repo.update()
-
-  defp validate_channels(changeset) do
-    validate_change(changeset, :channels, fn :channels, channels ->
-      if Enum.all?(channels, &(&1 in @supported_channels)) do
-        []
-      else
-        [channels: "contains unsupported channels"]
-      end
-    end)
-  end
-
-  def mark_channel_processed(notification, channel) do
-    attrs = %{
-      String.to_existing_atom("processed_for_#{channel}") => true,
-      String.to_existing_atom("processed_for_#{channel}_at") =>
-        DateTime.utc_now() |> DateTime.truncate(:second)
-    }
-
-    change(notification, attrs)
-  end
-
-  def processed_for_channel?(notification, channel) do
-    Map.get(notification, :"processed_for_#{channel}")
-  end
 end

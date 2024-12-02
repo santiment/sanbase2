@@ -1,6 +1,12 @@
 defmodule Sanbase.Notifications.TemplateRenderer do
   alias Sanbase.TemplateEngine
 
+  def render(template_id, params) do
+    template = Sanbase.Notifications.get_notification_template!(template_id)
+    {:ok, content} = TemplateEngine.run(template.template, params: params)
+    String.trim(content)
+  end
+
   def render_content(
         %{
           action: action,

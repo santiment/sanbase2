@@ -11,7 +11,7 @@ defmodule Sanbase.NotificationsFixtures do
     # Create template
     notification_template_fixture(%{
       channel: "all",
-      action: "create",
+      action: "metric_created",
       step: "once",
       template: """
       In the latest update the following metrics have been added:
@@ -23,7 +23,7 @@ defmodule Sanbase.NotificationsFixtures do
     # Update templates
     notification_template_fixture(%{
       channel: "all",
-      action: "update",
+      action: "metric_updated",
       step: "before",
       template: """
       In order to make our data more precise, we're going to run a recalculation of the following metrics:
@@ -34,7 +34,7 @@ defmodule Sanbase.NotificationsFixtures do
 
     notification_template_fixture(%{
       channel: "all",
-      action: "update",
+      action: "metric_updated",
       step: "after",
       template: """
       Recalculation of the following metrics has been completed successfully:
@@ -45,7 +45,7 @@ defmodule Sanbase.NotificationsFixtures do
     # Delete templates
     notification_template_fixture(%{
       channel: "all",
-      action: "delete",
+      action: "metric_deleted",
       step: "before",
       template: """
       Due to lack of usage, we made a decision to deprecate the following metrics:
@@ -56,7 +56,7 @@ defmodule Sanbase.NotificationsFixtures do
 
     notification_template_fixture(%{
       channel: "all",
-      action: "delete",
+      action: "metric_deleted",
       step: "reminder",
       template: """
       This is a reminder about the scheduled deprecation of the following metrics:
@@ -67,7 +67,7 @@ defmodule Sanbase.NotificationsFixtures do
 
     notification_template_fixture(%{
       channel: "all",
-      action: "delete",
+      action: "metric_deleted",
       step: "after",
       template: """
       Deprecation of the following metrics has been completed successfully:

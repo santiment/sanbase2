@@ -32,6 +32,7 @@ defmodule Sanbase.Notifications.Handler do
 
     handle_notification(%{
       action: "metric_created",
+      step: "all",
       params: %{metrics_list: [metric]},
       metric_registry_id: event.data.id
     })
@@ -58,6 +59,7 @@ defmodule Sanbase.Notifications.Handler do
             metrics_list: [event.data.metric],
             scheduled_at: new_date
           },
+          step: "before",
           metric_registry_id: id
         })
 
@@ -72,15 +74,15 @@ defmodule Sanbase.Notifications.Handler do
 
     Enum.map(channels, fn channel ->
       case channel do
-        "discord" -> handle_discord_notification(action, params, attrs, step)
-        "email" -> handle_email_notification(action, params, attrs, step)
+        "discord" -> handle_discord_notification(action, step, params, attrs)
+        "email" -> handle_email_notification(action, step, params, attrs)
         _ -> :ok
       end
     end)
   end
 
-  defp handle_discord_notification(action, params, attrs, step) do
-    template = Sanbase.Notifications.get_template(action, step, "discord")
+  defp handle_discord_notification(action, step, params, attrs) do
+    template = Sanbase.Notifications.get_template(action, step, "discord") |> dbg()
 
     notification_attrs = %{
       action: action,
@@ -131,7 +133,7 @@ defmodule Sanbase.Notifications.Handler do
     end
   end
 
-  defp handle_email_notification(action, params, attrs, step) do
+  defp handle_email_notification(action, step, params, attrs) do
     template = Sanbase.Notifications.get_template(action, step, "email")
 
     notification_attrs = %{

@@ -65,7 +65,7 @@ defmodule SanbaseWeb.NotificationsLive.ManualDiscordFormLive do
 
   def handle_event(
         "send_discord",
-        %{"action" => action, "channel" => channel, "content" => content},
+        %{"action" => action, "content" => content},
         socket
       ) do
     case Handler.handle_manual_notification(%{

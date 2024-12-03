@@ -7,6 +7,39 @@ defmodule Sanbase.Notifications.Workers.ProcessNotification do
   @subject "Sanbase Metric Updates"
 
   @impl Oban.Worker
+  def perform(%Oban.Job{args: %{"is_manual" => true, "channel" => "discord"} = args}) do
+    params = args["params"]
+    notification_id = args["notification_id"]
+    notification = Notification.by_id(notification_id)
+
+    case Sanbase.Notifications.DiscordClient.client().send_message(
+           discord_webhook(),
+           params["content"],
+           []
+         ) do
+      :ok -> mark_processed(notification)
+      error -> error
+    end
+  end
+
+  @impl Oban.Worker
+  def perform(%Oban.Job{args: %{"is_manual" => true, "channel" => "email"} = args}) do
+    params = args["params"]
+    notification_id = args["notification_id"]
+    notification = Notification.by_id(notification_id)
+
+    case Sanbase.Email.MailjetApi.client().send_to_list(
+           metric_updates_list(),
+           params["subject"],
+           params["content"],
+           []
+         ) do
+      :ok -> mark_processed(notification)
+      error -> error
+    end
+  end
+
+  @impl Oban.Worker
   def perform(%Oban.Job{args: %{"channel" => "discord"} = args}) do
     template_id = args["template_id"]
     params = args["params"]
@@ -46,12 +79,6 @@ defmodule Sanbase.Notifications.Workers.ProcessNotification do
       error ->
         error
     end
-  end
-
-  # For other channels (like email), we'll implement batching later
-  @impl Oban.Worker
-  def perform(%Oban.Job{args: %{"channel" => _other_channel}}) do
-    :ok
   end
 
   defp discord_webhook do

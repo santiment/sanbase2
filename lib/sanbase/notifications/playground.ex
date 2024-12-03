@@ -30,13 +30,23 @@ defmodule Sanbase.Notifications.Playground do
     })
   end
 
-  def test_manual_notification do
-    Handler.handle_notification(%{
-      action: "manual",
+  def test_manual_discord_notification do
+    Handler.handle_manual_notification(%{
+      action: "message",
+      channel: "discord",
       params: %{
-        discord_text: "Hello, world!",
-        email_text: "Hello, world!",
-        email_subject: "Test email"
+        content: "Hello, world!"
+      }
+    })
+  end
+
+  def test_manual_email_notification do
+    Handler.handle_manual_notification(%{
+      action: "message",
+      channel: "email",
+      params: %{
+        content: "Hello, world!",
+        subject: "Test email"
       }
     })
   end

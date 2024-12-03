@@ -158,4 +158,64 @@ defmodule Sanbase.Notifications.Handler do
       {:error, _step, reason, _changes} -> {:error, reason}
     end
   end
+
+  def handle_manual_notification(attrs) do
+    channel = attrs.channel
+    params = attrs.params
+
+    if channel == "email" do
+      if not Map.has_key?(params, :content) or not Map.has_key?(params, :subject) do
+        raise "Email notification requires content and subject"
+      end
+    end
+
+    if channel == "discord" and not Map.has_key?(params, :content) do
+      raise "Discord notification requires content"
+    end
+
+    notification_attrs = %{
+      action: "message",
+      params: params,
+      channel: channel,
+      step: "all",
+      status: "available",
+      is_manual: true
+    }
+
+    multi =
+      Ecto.Multi.new()
+      |> Ecto.Multi.run(:notification, fn _repo, _changes ->
+        Notification.create(notification_attrs)
+      end)
+      |> Ecto.Multi.run(:oban_job, fn _repo, %{notification: notification} ->
+        job_args = %{
+          notification_id: notification.id,
+          action: notification.action,
+          params: notification.params,
+          channel: notification.channel,
+          step: notification.step,
+          is_manual: true
+        }
+
+        job =
+          Sanbase.Notifications.Workers.ProcessNotification.new(job_args,
+            scheduled_at: seconds_after(20)
+          )
+
+        {:ok, %{id: job_id}} = Oban.insert(@oban_conf_name, job)
+
+        {:ok, job_id}
+      end)
+      |> Ecto.Multi.run(:update_notification, fn _repo,
+                                                 %{notification: notification, oban_job: job_id} ->
+        Notification.update(notification, %{job_id: job_id})
+      end)
+
+    multi
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{update_notification: notification}} -> {:ok, notification}
+      {:error, _step, reason, _changes} -> {:error, reason}
+    end
+  end
 end

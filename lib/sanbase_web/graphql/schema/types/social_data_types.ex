@@ -48,6 +48,7 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
   end
 
   object :tweet do
+    field(:tweet_id, non_null(:string))
     field(:datetime, non_null(:datetime))
     field(:text, non_null(:string))
     field(:screen_name, non_null(:string))

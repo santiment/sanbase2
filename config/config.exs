@@ -271,7 +271,12 @@ config :sanbase, Sanbase.Affiliate.FirstPromoterApi,
 
 config :sanbase, Oban.Web,
   repo: Sanbase.Repo,
-  queues: [email_queue: 5, refresh_queries: 1, email_notifications_queue: 1],
+  queues: [
+    email_queue: 5,
+    refresh_queries: 1,
+    notifications_queue: 1,
+    reminder_notifications_queue: 1
+  ],
   name: :oban_web
 
 config :nostrum,

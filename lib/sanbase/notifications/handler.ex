@@ -53,19 +53,42 @@ defmodule Sanbase.Notifications.Handler do
 
     case last_version.patch do
       %{hard_deprecate_after: {:changed, {:primitive_change, _old, new_date}}} ->
-        handle_notification(%{
+        base_notification = %{
           action: "metric_deleted",
           params: %{
             metrics_list: [event.data.metric],
             scheduled_at: new_date
           },
-          step: "before",
           metric_registry_id: id
-        })
+        }
+
+        handle_metric_deleted_notification(base_notification)
 
       _ ->
         :ok
     end
+  end
+
+  def handle_metric_deleted_notification(base_notification) do
+    # Immediate notification for "before" step
+    response = handle_notification(Map.put(base_notification, :step, "before"))
+
+    scheduled_at = base_notification.params.scheduled_at
+    reminder_date = DateTime.add(new_date, -3 * 24 * 60 * 60, :second)
+    schedule_handle_notification(Map.put(base_notification, :step, "reminder"), reminder_date)
+
+    schedule_handle_notification(Map.put(base_notification, :step, "after"), scheduled_at)
+
+    response
+  end
+
+  def schedule_handle_notification(attrs, scheduled_at) do
+    Oban.insert(
+      @oban_conf_name,
+      Sanbase.Notifications.Workers.HandleNotificationWorker.new(attrs,
+        scheduled_at: scheduled_at
+      )
+    )
   end
 
   def handle_notification(%{action: action, params: params} = attrs) do
@@ -112,7 +135,7 @@ defmodule Sanbase.Notifications.Handler do
 
         job =
           Sanbase.Notifications.Workers.ProcessNotification.new(job_args,
-            scheduled_at: seconds_after(20)
+            scheduled_at: seconds_after(5)
           )
 
         {:ok, %{id: job_id}} = Oban.insert(@oban_conf_name, job)
@@ -171,8 +194,14 @@ defmodule Sanbase.Notifications.Handler do
       end
     end
 
-    if channel == "discord" and not Map.has_key?(params, :content) do
-      raise "Discord notification requires content"
+    if channel == "discord" do
+      if not Map.has_key?(params, :content) do
+        raise "Discord notification requires content"
+      end
+
+      if not Map.has_key?(params, :discord_channel) do
+        raise "Discord notification requires discord_channel"
+      end
     end
 
     notification_attrs = %{
@@ -201,7 +230,7 @@ defmodule Sanbase.Notifications.Handler do
 
         job =
           Sanbase.Notifications.Workers.ProcessNotification.new(job_args,
-            scheduled_at: seconds_after(20)
+            scheduled_at: seconds_after(5)
           )
 
         {:ok, %{id: job_id}} = Oban.insert(@oban_conf_name, job)

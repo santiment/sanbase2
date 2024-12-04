@@ -1,5 +1,5 @@
 defmodule Sanbase.Notifications.Workers.ProcessNotification do
-  use Oban.Worker, queue: :email_notifications_queue
+  use Oban.Worker, queue: :notifications_queue
 
   alias Sanbase.Notifications.{Notification, TemplateRenderer}
   alias Sanbase.Utils.Config
@@ -13,7 +13,7 @@ defmodule Sanbase.Notifications.Workers.ProcessNotification do
     notification = Notification.by_id(notification_id)
 
     case Sanbase.Notifications.DiscordClient.client().send_message(
-           discord_webhook(),
+           discord_channel_webhook_map()[params["discord_channel"]] || discord_webhook(),
            params["content"],
            []
          ) do
@@ -92,5 +92,11 @@ defmodule Sanbase.Notifications.Workers.ProcessNotification do
 
   defp mark_processed(notification) do
     Notification.update(notification, %{status: "completed"})
+  end
+
+  defp discord_channel_webhook_map do
+    %{
+      "metric_updates" => discord_webhook()
+    }
   end
 end

@@ -8,7 +8,7 @@ defmodule SanbaseWeb.NotificationsLive.ManualDiscordFormLive do
        form:
          to_form(%{
            "action" => "message",
-           "channel" => "general",
+           "discord_channel" => "metric_updates",
            "content" => ""
          })
      )}
@@ -37,9 +37,9 @@ defmodule SanbaseWeb.NotificationsLive.ManualDiscordFormLive do
           <div>
             <.input
               type="select"
-              field={@form[:channel]}
+              field={@form[:discord_channel]}
               label="Discord Channel"
-              options={[{"General", "general"}, {"Updates", "updates"}]}
+              options={[{"Metric Updates", "metric_updates"}]}
             />
           </div>
 
@@ -65,14 +65,15 @@ defmodule SanbaseWeb.NotificationsLive.ManualDiscordFormLive do
 
   def handle_event(
         "send_discord",
-        %{"action" => action, "content" => content},
+        %{"action" => action, "content" => content, "discord_channel" => discord_channel},
         socket
       ) do
     case Handler.handle_manual_notification(%{
            action: action,
            channel: "discord",
            params: %{
-             content: content
+             content: content,
+             discord_channel: discord_channel
            }
          }) do
       {:ok, _notification} ->
@@ -80,7 +81,8 @@ defmodule SanbaseWeb.NotificationsLive.ManualDiscordFormLive do
          socket
          |> put_flash(:info, "Discord notification sent successfully!")
          |> assign(
-           form: to_form(%{"action" => "message", "channel" => "general", "content" => ""})
+           form:
+             to_form(%{"action" => "message", "discord_channel" => "general", "content" => ""})
          )}
 
       {:error, _reason} ->

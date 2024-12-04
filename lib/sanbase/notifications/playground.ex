@@ -10,23 +10,13 @@ defmodule Sanbase.Notifications.Playground do
   end
 
   def test_metric_deleted_notification do
-    Handler.handle_notification(%{
+    Handler.handle_metric_deleted_notification(%{
       action: "metric_deleted",
-      params: %{metrics_list: ["metric A"], scheduled_at: ~U[2024-11-29 12:00:00Z]}
-    })
-  end
-
-  def test_metric_deleted_notification2 do
-    Handler.handle_notification(%{
-      action: "metric_deleted",
-      params: %{metrics_list: ["metric A"], scheduled_at: ~U[2024-11-30 12:00:00Z]}
-    })
-  end
-
-  def test_metric_deleted_notification3 do
-    Handler.handle_notification(%{
-      action: "metric_deleted",
-      params: %{metrics_list: ["metric C"], scheduled_at: ~U[2024-11-30 12:00:00Z]}
+      params: %{
+        metrics_list: ["metric A"],
+        scheduled_at: ~U[2024-12-30 12:00:00Z]
+      },
+      metric_registry_id: nil
     })
   end
 

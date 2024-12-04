@@ -29,7 +29,7 @@ defmodule Sanbase.Notifications.EmailNotifier do
           params: all_params,
           step: List.first(group_notifications).step
         }
-        |> Sanbase.Notifications.Workers.ProcessNotification.new(scheduled_at: seconds_after(20))
+        |> Sanbase.Notifications.Workers.ProcessNotification.new(scheduled_at: seconds_after(5))
 
       {:ok, %{id: job_id}} = Oban.insert(@oban_conf_name, job)
 

@@ -292,6 +292,12 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           text="See Change Suggestions"
           href={~p"/admin2/metric_registry/change_suggestions"}
         />
+
+        <.action_button
+          icon="hero-arrow-path-rounded-square"
+          text="Sync Metrics"
+          href={~p"/admin2/metric_registry/sync"}
+        />
       </div>
     </div>
     """

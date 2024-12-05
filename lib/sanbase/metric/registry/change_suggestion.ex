@@ -160,7 +160,8 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
     # After change suggestion is applied, put the metric in a unverified state and mark
     # is as not synced. Someone needs to manually verify the metric after it is tested.
     # When the data is synced between stage and prod, the sync status will be updated.
-    params = Map.merge(params, %{is_verified: false, sync_status: "not_synced"})
+    # Note: Keep the keys as strings, not atoms, so the map is not mixed
+    params = Map.merge(params, %{"is_verified" => false, "sync_status" => "not_synced"})
 
     case Registry.changeset(registry, params) do
       %{valid?: false} = changeset ->

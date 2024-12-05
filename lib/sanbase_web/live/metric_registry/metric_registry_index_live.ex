@@ -45,7 +45,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
       <.filters filter={@filter} changed_metrics_ids={@changed_metrics_ids} />
       <AvailableMetricsComponents.table_with_popover_th
         id="metrics_registry"
-        rows={Enum.filter(@metrics, &(&1.id in @visible_metrics_ids))}
+        rows={take_ordered(@metrics, @visible_metrics_ids)}
       >
         <:col :let={row} label="ID">
           {row.id}
@@ -324,7 +324,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           />
         </div>
         <div class="flex flex-col flex-wrap mt-4 space-y-2 items-start">
-          <.filter_not_verified />
+          <.filter_unverified />
         </div>
       </form>
       <.phx_click_button
@@ -337,17 +337,17 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     """
   end
 
-  defp filter_not_verified(assigns) do
+  defp filter_unverified(assigns) do
     ~H"""
     <div class="flex items-center mb-4 ">
       <input
-        id="not-verified-only"
-        name="not_verified_only"
+        id="unverified-only"
+        name="unverified_only"
         type="checkbox"
         class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded "
       />
       <label for="default-checkbox" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-        Show Not Verified Only
+        Show Unverified Only
       </label>
     </div>
     """
@@ -448,7 +448,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     end)
   end
 
-  defp maybe_apply_filter(metrics, :match_table, %{"not_verified_only" => "on"}) do
+  defp maybe_apply_filter(metrics, :match_table, %{"unverified_only" => "on"}) do
     metrics
     |> Enum.filter(fn m ->
       m.is_verified == false
@@ -456,4 +456,9 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
   end
 
   defp maybe_apply_filter(metrics, _, _), do: metrics
+
+  defp take_ordered(metrics, ids) do
+    metrics_map = Map.new(metrics, &{&1.id, &1})
+    Enum.map(ids, &Map.get(metrics_map, &1))
+  end
 end

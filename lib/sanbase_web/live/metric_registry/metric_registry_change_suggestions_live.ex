@@ -3,6 +3,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
 
   alias SanbaseWeb.AdminFormsComponents
   alias Sanbase.Metric.Registry.ChangeSuggestion
+  alias SanbaseWeb.AvailableMetricsComponents
 
   @impl true
   def mount(_params, _session, socket) do
@@ -16,12 +17,17 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
   def render(assigns) do
     ~H"""
     <div>
+      <AvailableMetricsComponents.available_metrics_button
+        text="Back to Metric Registry"
+        href={~p"/admin2/metric_registry"}
+        icon="hero-arrow-uturn-left"
+      />
       <div class="flex-1 p:2 sm:p-6 justify-evenly">
         <.table id="metric_registry_changes_suggestions" rows={@rows}>
           <:col :let={row} label="Status">
             <AdminFormsComponents.status status={row.status} />
           </:col>
-          <:col :let={row} label="Metric">
+          <:col :let={row} label="Metric" col_class="max-w-[320px] break-words">
             <.link
               class="underline text-blue-600"
               href={~p"/admin2/metric_registry/show/#{row.metric_registry_id}"}

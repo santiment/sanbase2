@@ -5,9 +5,14 @@ defmodule Sanbase.Metric.Registry do
   import Ecto.Changeset
   import Sanbase.Metric.Registry.EventEmitter, only: [emit_event: 3]
 
-  alias Sanbase.Repo
   alias __MODULE__.Validation
   alias __MODULE__.ChangeSuggestion
+  alias __MODULE__.Doc
+  alias __MODULE__.Alias
+  alias __MODULE__.Selector
+  alias __MODULE__.Table
+
+  alias Sanbase.Repo
   alias Sanbase.TemplateEngine
 
   # Matches letters, digits, _, -, :, ., {, }, (, ), \, /  and space
@@ -17,74 +22,6 @@ defmodule Sanbase.Metric.Registry do
   def aggregations(), do: @aggregations
   @metric_regex ~r/^[a-z0-9_{}:]+$/
   def metric_regex(), do: @metric_regex
-
-  defmodule Selector do
-    use Ecto.Schema
-    import Ecto.Changeset
-
-    @primary_key false
-    embedded_schema do
-      field(:type, :string)
-    end
-
-    def changeset(%__MODULE__{} = struct, attrs) do
-      struct
-      |> cast(attrs, [:type])
-      |> validate_required([:type])
-    end
-  end
-
-  defmodule Table do
-    use Ecto.Schema
-    import Ecto.Changeset
-
-    @primary_key false
-    embedded_schema do
-      field(:name, :string)
-    end
-
-    def changeset(%__MODULE__{} = struct, attrs) do
-      struct
-      |> cast(attrs, [:name])
-      |> validate_required([:name])
-      |> validate_format(:name, ~r/[a-z0-9_\-]/)
-    end
-  end
-
-  defmodule Alias do
-    use Ecto.Schema
-    import Ecto.Changeset
-
-    @primary_key false
-    embedded_schema do
-      field(:name, :string)
-    end
-
-    def changeset(%__MODULE__{} = struct, attrs) do
-      struct
-      |> cast(attrs, [:name])
-      |> validate_required(:name)
-      |> validate_format(:name, Sanbase.Metric.Registry.metric_regex())
-      |> validate_length(:name, min: 3, max: 100)
-    end
-  end
-
-  defmodule Doc do
-    use Ecto.Schema
-    import Ecto.Changeset
-
-    @primary_key false
-    embedded_schema do
-      field(:link, :string)
-    end
-
-    def changeset(%__MODULE__{} = struct, attrs) do
-      struct
-      |> cast(attrs, [:link])
-      |> validate_required([:link])
-      |> validate_format(:link, ~r|https://academy.santiment.net|)
-    end
-  end
 
   @type t :: %__MODULE__{
           id: integer(),
@@ -117,6 +54,10 @@ defmodule Sanbase.Metric.Registry do
           inserted_at: DateTime.t(),
           updated_at: DateTime.t()
         }
+
+  @derive {Jason.Encoder,
+           except: [:__struct__, :__meta__, :id, :inserted_at, :updated_at, :change_suggestions]}
+
   @timestamps_opts [type: :utc_datetime]
   schema "metric_registry" do
     # How the metric is exposed to external users

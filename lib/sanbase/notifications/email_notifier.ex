@@ -1,10 +1,10 @@
 defmodule Sanbase.Notifications.EmailNotifier do
   import Ecto.Query
-  alias Sanbase.{Repo, Notifications.Notification}
-  alias Sanbase.Notifications.TemplateRenderer
-  alias Sanbase.Utils.Config
+  import Sanbase.DateTimeUtils, only: [seconds_after: 1]
 
-  @subject "Sanbase Metric Updates"
+  alias Sanbase.{Repo, Notifications.Notification}
+
+  @oban_conf_name :oban_web
 
   def send_daily_digest(action) do
     notifications = get_unprocessed_notifications(action)
@@ -19,24 +19,22 @@ defmodule Sanbase.Notifications.EmailNotifier do
 
     Enum.each(notifications_groups, fn {_key, group_notifications} ->
       all_params = combine_notification_params(group_notifications)
+      notification_ids = Enum.map(group_notifications, & &1.id)
 
-      content =
-        TemplateRenderer.render_content(%{
+      job =
+        %{
+          channel: "email",
           action: action,
+          notification_ids: notification_ids,
           params: all_params,
-          step: List.first(group_notifications).step,
-          channel: "email"
-        })
+          step: List.first(group_notifications).step
+        }
+        |> Sanbase.Notifications.Workers.ProcessNotification.new(scheduled_at: seconds_after(5))
 
-      case Sanbase.Email.MailjetApi.client().send_to_list(
-             metric_updates_list(),
-             @subject,
-             content,
-             []
-           ) do
-        :ok -> Enum.each(group_notifications, &mark_processed(&1, :email))
-        {:error, _reason} -> :error
-      end
+      {:ok, %{id: job_id}} = Oban.insert(@oban_conf_name, job)
+
+      # update all notifications with the job_id
+      Enum.each(group_notifications, &Notification.update(&1, %{job_id: job_id}))
     end)
   end
 
@@ -55,8 +53,8 @@ defmodule Sanbase.Notifications.EmailNotifier do
     yesterday = DateTime.utc_now() |> DateTime.add(-24, :hour)
 
     Notification
-    |> where([n], "email" in n.channels)
-    |> where([n], n.processed_for_email == false)
+    |> where([n], n.channel == "email")
+    |> where([n], n.status == "available")
     |> where([n], n.inserted_at >= ^yesterday)
     |> where([n], n.action == ^action)
     |> Repo.all()
@@ -73,16 +71,5 @@ defmodule Sanbase.Notifications.EmailNotifier do
         scheduled_at -> Map.put(acc, "scheduled_at", scheduled_at)
       end
     end)
-  end
-
-  defp mark_processed(notification, channel) do
-    notification
-    |> Notification.mark_channel_processed(channel)
-    |> Repo.update()
-  end
-
-  defp metric_updates_list do
-    Config.module_get(Sanbase.Notifications, :mailjet_metric_updates_list)
-    |> String.to_atom()
   end
 end

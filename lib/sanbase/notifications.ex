@@ -103,14 +103,14 @@ defmodule Sanbase.Notifications do
   end
 
   @doc """
-  Gets a template for specific action_type, step, and channel.
+  Gets a template for specific action, step, and channel.
   If no channel-specific template is found, falls back to "all" channel template.
   """
-  def get_template(action_type, step, channel \\ "all") do
+  def get_template(action, step, channel \\ "all") do
     query =
       from(nt in NotificationTemplate,
         where:
-          nt.action_type == ^action_type and
+          nt.action == ^action and
             nt.step == ^step and
             nt.channel == ^channel,
         limit: 1
@@ -122,7 +122,7 @@ defmodule Sanbase.Notifications do
         fallback_query =
           from(nt in NotificationTemplate,
             where:
-              nt.action_type == ^action_type and
+              nt.action == ^action and
                 nt.step == ^step and
                 nt.channel == "all",
             limit: 1

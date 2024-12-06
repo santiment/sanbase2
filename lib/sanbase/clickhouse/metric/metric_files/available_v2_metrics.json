@@ -1604,7 +1604,47 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "docs_links": ["https://academy.santiment.net/metrics/whale-transaction-count"]
+    "docs_links": ["https://academy.santiment.net/metrics/whale-transaction-volume"]
+  },
+  {
+    "human_readable_name": "Total USD volume of Transactions Transferring More Than 100k USD",
+    "name": "whale_transaction_volume_100k_usd_to_inf",
+    "metric": "whale_transaction_volume_more_than_100k_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/whale-transaction-volume"]
+  },
+  {
+    "human_readable_name": "Total USD volume of Transactions Transferring More Than 1 million USD",
+    "name": "whale_transaction_volume_1m_usd_to_inf",
+    "metric": "whale_transaction_volume_more_than_1m_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/whale-transaction-volume"]
   },
   {
     "human_readable_name": "Price in ETH",

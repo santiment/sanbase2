@@ -125,6 +125,11 @@ defmodule Sanbase.Validation do
     end
   end
 
+  def valid_url_simple?(url) do
+    uri = URI.parse(url)
+    uri.scheme != nil and uri.host != nil
+  end
+
   # Private functions
 
   defp time_window_format_check(time_window) do

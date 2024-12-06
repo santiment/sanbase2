@@ -804,6 +804,8 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "median_transfer_5m",
         "whale_transaction_count_100k_usd_to_inf",
         "whale_transaction_count_1m_usd_to_inf",
+        "whale_transaction_volume_100k_usd_to_inf",
+        "whale_transaction_volume_1m_usd_to_inf",
         "mvrv_usd_z_score",
         "stock_to_flow",
         "miners_total_supply",

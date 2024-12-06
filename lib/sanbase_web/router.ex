@@ -6,6 +6,11 @@ defmodule SanbaseWeb.Router do
     plug(SanbaseWeb.Plug.AdminPodOnly)
   end
 
+  pipeline :santiment_user_access do
+    plug(SanbaseWeb.Graphql.AuthPlug)
+    plug(SanbaseWeb.Plug.SantimentTeamMemberOnly)
+  end
+
   pipeline :browser do
     plug(:accepts, ["html"])
     plug(:fetch_session)
@@ -48,6 +53,16 @@ defmodule SanbaseWeb.Router do
     get("/delete", AuthController, :delete)
     get("/:provider", AuthController, :request)
     get("/:provider/callback", AuthController, :callback)
+  end
+
+  scope "/metric_registry", SanbaseWeb do
+    pipe_through([:browser, :santiment_user_access])
+
+    live("/", MetricRegistryIndexLive)
+    live("/change_suggestions", MetricRegistryChangeSuggestionsLive)
+    live("/show/:id", MetricRegistryShowLive)
+    live("/edit/:id", MetricRegistryFormLive, :edit)
+    live("/new", MetricRegistryFormLive, :new)
   end
 
   scope "/forms", SanbaseWeb do

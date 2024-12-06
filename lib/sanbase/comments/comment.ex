@@ -35,7 +35,7 @@ defmodule Sanbase.Comment do
   alias Sanbase.Insight.Post
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.BlockchainAddress
-  alias Sanbase.Dashboard
+  alias Sanbase.Dashboards.Dashboard
   alias Sanbase.UserList
   alias Sanbase.Chart.Configuration, as: ChartConfiguration
 
@@ -78,7 +78,7 @@ defmodule Sanbase.Comment do
     many_to_many(:timeline_events, TimelineEvent, join_through: @timeline_events_table)
     many_to_many(:blockchain_addresses, BlockchainAddress, join_through: @blockchain_addrs_table)
 
-    many_to_many(:dashboards, Dashboard.Schema,
+    many_to_many(:dashboards, Dashboard,
       join_keys: [comment_id: :id, dashboard_id: :id],
       join_through: @dashboard_table
     )

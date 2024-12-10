@@ -29,12 +29,22 @@ defmodule SanbaseWeb.GenericAdmin.Notification do
           value_modifier: fn ntf ->
             Jason.encode!(ntf.params)
           end
+        },
+        metric_registry_id: %{
+          value_modifier: fn ntf ->
+            case ntf.metric_registry_id do
+              nil ->
+                nil
+
+              metric_registry_id ->
+                PhoenixHTMLHelpers.Link.link(metric_registry_id,
+                  to: "/admin2/metric_registry/show/#{metric_registry_id}",
+                  class: "text-blue-600 hover:text-blue-800"
+                )
+            end
+          end
         }
       }
     }
-  end
-
-  def after_filter(notification, _params) do
-    Sanbase.Notifications.Handler.handle_notification(notification)
   end
 end

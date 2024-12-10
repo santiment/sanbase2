@@ -74,9 +74,17 @@ defmodule Sanbase.Notifications.Handler do
     response = handle_notification(Map.put(base_notification, :step, "before"))
 
     scheduled_at = base_notification.params.scheduled_at
-    reminder_date = DateTime.add(new_date, -3 * 24 * 60 * 60, :second)
-    schedule_handle_notification(Map.put(base_notification, :step, "reminder"), reminder_date)
 
+    # Get all reminder dates from the scheduler
+    reminder_dates =
+      Sanbase.Notifications.ReminderScheduler.calculate_reminder_dates(scheduled_at)
+
+    # Schedule reminder notifications for each date
+    Enum.each(reminder_dates, fn date ->
+      schedule_handle_notification(Map.put(base_notification, :step, "reminder"), date)
+    end)
+
+    # Schedule the final "after" notification for the deletion date
     schedule_handle_notification(Map.put(base_notification, :step, "after"), scheduled_at)
 
     response
@@ -105,7 +113,7 @@ defmodule Sanbase.Notifications.Handler do
   end
 
   defp handle_discord_notification(action, step, params, attrs) do
-    template = Sanbase.Notifications.get_template(action, step, "discord") |> dbg()
+    template = Sanbase.Notifications.get_template(action, step, "discord")
 
     notification_attrs = %{
       action: action,

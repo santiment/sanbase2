@@ -153,10 +153,17 @@ defmodule Sanbase.Queries do
           dashboard_id,
           dashboard_query_mapping_id,
           user_id,
-          parameters_override :: map()
+          parameters_override :: map(),
+          force_parameters_override_to_all_queries :: boolean()
         ) ::
           {:ok, Query.t()} | {:error, String.t()}
-  def get_dashboard_query(dashboard_id, mapping_id, querying_user_id, parameters_override \\ %{}) do
+  def get_dashboard_query(
+        dashboard_id,
+        mapping_id,
+        querying_user_id,
+        parameters_override \\ %{},
+        force_parameters_override_to_all_queries \\ false
+      ) do
     query = DashboardQueryMapping.by_id(mapping_id)
 
     with %DashboardQueryMapping{dashboard: dashboard, query: query} <- Repo.one(query),
@@ -167,7 +174,8 @@ defmodule Sanbase.Queries do
              query,
              dashboard,
              mapping_id,
-             parameters_override
+             parameters_override,
+             force_parameters_override_to_all_queries
            ) do
       {:ok, query}
     else

@@ -209,6 +209,7 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
       with modified set of parameters.
       """
       arg(:parameters_override, :json)
+      arg(:force_parameters_override, :boolean, default_value: false)
 
       @desc ~s"""
       If set to true, the execution result is stored in the database.

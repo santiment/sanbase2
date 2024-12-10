@@ -106,6 +106,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
           resolution
       ) do
     parameters_override = Map.get(args, :parameters_override, %{})
+    force_parameters_override = Map.get(args, :force_parameters_override, false)
     query_metadata = QueryMetadata.from_resolution(resolution)
     cache? = Map.get(args, :store_execution, false)
 
@@ -113,7 +114,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     # query's local parameter being overriden by the dashboard global parameters
     with :ok <- Queries.user_can_execute_query(user, product, plan),
          {:ok, query} <-
-           Queries.get_dashboard_query(dashboard_id, mapping_id, user.id, parameters_override),
+           Queries.get_dashboard_query(
+             dashboard_id,
+             mapping_id,
+             user.id,
+             parameters_override,
+             force_parameters_override
+           ),
          :ok <- Queries.process_put_dynamic_repo(product, plan),
          {:ok, result} <- Queries.run_query(query, user, query_metadata),
          :ok <-

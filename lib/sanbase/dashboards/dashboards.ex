@@ -194,14 +194,16 @@ defmodule Sanbase.Dashboards do
           Query.t(),
           Dashboard.t(),
           dashboard_query_mapping_id(),
-          parameters_override :: map()
+          parameters_override :: map(),
+          force_parameters_override_to_all_queries :: boolean()
         ) ::
           {:ok, Query.t()}
   def apply_global_parameters(
         %Query{} = query,
         %Dashboard{} = dashboard,
         mapping_id,
-        parameters_override
+        parameters_override,
+        force_parameters_override_to_all_queries
       ) do
     # Walk over the dashboard global parameters and extract a map, where the keys
     # are parameters of the query and the values are the global values that will
@@ -227,6 +229,22 @@ defmodule Sanbase.Dashboards do
           end
         end
       )
+
+    # If true, the parameters overrides must be applied to the query without
+    # requiring the dashboard parameters being explicilty defined
+    overrides =
+      if force_parameters_override_to_all_queries do
+        query.sql_query_parameters
+        |> Map.new(fn {key, value} ->
+          if Map.has_key?(parameters_override, key) do
+            {key, Map.get(parameters_override, key)}
+          else
+            {key, value}
+          end
+        end)
+      else
+        overrides
+      end
 
     new_sql_query_parameters = Map.merge(query.sql_query_parameters, overrides)
 

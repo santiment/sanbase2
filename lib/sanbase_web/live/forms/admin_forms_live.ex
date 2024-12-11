@@ -73,6 +73,16 @@ defmodule SanbaseWeb.AdminFormsLive do
           %{url: ~p"/admin2/upload_image_live", text: "Upload an image"},
           %{url: ~p"/admin2/uploaded_images_live", text: "List uploads"}
         ]
+      },
+      %{
+        title: "Manual Notifications",
+        description: """
+        Send a manual notification to Discord or email
+        """,
+        buttons: [
+          %{url: ~p"/admin2/notifications/manual/discord", text: "Discord"},
+          %{url: ~p"/admin2/notifications/manual/email", text: "Email"}
+        ]
       }
     ]
   end

@@ -3,23 +3,16 @@ defmodule SanbaseWeb.GenericAdmin.Notification do
 
   def resource() do
     %{
-      actions: [:new],
-      new_fields: [:action, :params, :channels, :step],
       index_fields: [
         :id,
         :action,
         :step,
         :params,
-        :channels,
-        :processed_for_discord,
-        :processed_for_email
+        :channel,
+        :status,
+        :is_manual
       ],
       fields_override: %{
-        params: %{
-          value_modifier: fn ntf ->
-            Jason.encode!(ntf.params)
-          end
-        },
         action: %{
           collection: Sanbase.Notifications.Notification.supported_actions(),
           type: :select
@@ -28,18 +21,30 @@ defmodule SanbaseWeb.GenericAdmin.Notification do
           collection: Sanbase.Notifications.Notification.supported_steps(),
           type: :select
         },
-        channels: %{
+        channel: %{
           collection: Sanbase.Notifications.Notification.supported_channels(),
-          type: :multiselect,
+          type: :select
+        },
+        params: %{
           value_modifier: fn ntf ->
-            Jason.encode!(ntf.channels)
+            Jason.encode!(ntf.params)
+          end
+        },
+        metric_registry_id: %{
+          value_modifier: fn ntf ->
+            case ntf.metric_registry_id do
+              nil ->
+                nil
+
+              metric_registry_id ->
+                PhoenixHTMLHelpers.Link.link(metric_registry_id,
+                  to: "/admin2/metric_registry/show/#{metric_registry_id}",
+                  class: "text-blue-600 hover:text-blue-800"
+                )
+            end
           end
         }
       }
     }
-  end
-
-  def after_filter(notification, _params) do
-    Sanbase.Notifications.Handler.handle_notification(notification)
   end
 end

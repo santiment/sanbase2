@@ -34,6 +34,9 @@ defmodule Sanbase.MetricRegisty.ChangeSuggestionTest do
   test "accepting a change suggestion updates the metric" do
     assert {:ok, metric} = Registry.by_name("price_usd_5m", "timeseries")
 
+    assert metric.is_verified == true
+    assert metric.sync_status == "synced"
+
     assert {:ok, struct} =
              ChangeSuggestion.create_change_suggestion(
                metric,
@@ -42,6 +45,10 @@ defmodule Sanbase.MetricRegisty.ChangeSuggestionTest do
                _submitted_by = "ivan@santiment.net"
              )
 
+    # Creating a change suggestion does not change the metric is_verified and sync_status
+    assert {:ok, metric} = Registry.by_name("price_usd_5m", "timeseries")
+    assert metric.is_verified == true
+    assert metric.sync_status == "synced"
     assert {:ok, _} = ChangeSuggestion.update_status(struct.id, "approved")
 
     assert {:ok, metric} = Registry.by_name("price_usd_5m", "timeseries")
@@ -53,6 +60,10 @@ defmodule Sanbase.MetricRegisty.ChangeSuggestionTest do
     assert metric.selectors |> Enum.map(&Map.get(&1, :type)) == ["slug", "slugs", "quote_asset"]
     assert metric.required_selectors |> hd() |> Map.get(:type) == "slug|slugs|quote_asset"
     assert metric.tables |> hd() |> Map.get(:name) == "new_intraday_table"
+
+    # Approving a change puts the metric in a unverified and unsynced state
+    assert metric.is_verified == false
+    assert metric.sync_status == "not_synced"
   end
 
   test "declining a change suggestion does not update the metric" do

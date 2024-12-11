@@ -41,15 +41,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
     get_votes(loader, :chart_configuration_vote_stats, selector)
   end
 
-  def votes(%Sanbase.Dashboard.Schema{} = dashboard, _args, %{
-        context: %{loader: loader} = context
-      }) do
-    user = get_in(context, [:auth, :current_user]) || %User{id: nil}
-    selector = %{dashboard_id: dashboard.id, user_id: user.id}
-
-    get_votes(loader, :dashboard_vote_stats, selector)
-  end
-
   def votes(%Sanbase.Dashboards.Dashboard{} = dashboard, _args, %{
         context: %{loader: loader} = context
       }) do
@@ -172,13 +163,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
       }) do
     selector = %{chart_configuration_id: config.id, user_id: user.id}
     get_voted_at(loader, :chart_configuration_voted_at, selector)
-  end
-
-  def voted_at(%Sanbase.Dashboard.Schema{} = config, _args, %{
-        context: %{loader: loader, auth: %{current_user: user}}
-      }) do
-    selector = %{dashboard_id: config.id, user_id: user.id}
-    get_voted_at(loader, :dashboard_voted_at, selector)
   end
 
   def voted_at(%Sanbase.Dashboards.Dashboard{} = config, _args, %{

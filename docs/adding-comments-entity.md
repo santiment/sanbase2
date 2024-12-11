@@ -58,7 +58,7 @@ end
 1. Update the EntityComment module:
 - Extend the defined types with the new module
 - Extend the defined module attributes with the new module
-- Add a `link/3` function 
+- Add a `link/3` function
 - Add a `entity_comments_query/2` function
 - Extend the `all_feed_comments_query/0` function
 - If necessary, add a function like `exclude_not_public_chart_configurations/1`
@@ -71,7 +71,7 @@ end
 - Extend the entity's main GraphQL object type with a resolver like:
 ```elixir
 field :comments_count, :integer do
-    resolve(&DashboardResolver.comments_count/3)
+    resolve(&InsightResolver.comments_count/3)
 end
 ```
 - The APIs for fetching comments will automatically start supporting the new entity

@@ -148,13 +148,22 @@ defmodule Sanbase.Queries do
 
   The query is identified by the dashboard_query_mapping_id. This can be
   done by owner or by anyone if the dashboard is public.
+
+  The function also applies the global parameters to the query.
+  The global parameters are the dashboard parameters that explicitly override the
+  query parameters.
+  The `parameters_override` argument is a map of parameters that will override the
+  dashboard parameter values.
+  If `force_parameters_override_to_query` is set to true, the parameters_override will be
+  applied even to the query parameters that are not explicitly overriden by a dashboard
+  global parameter.
   """
   @spec get_dashboard_query(
           dashboard_id,
           dashboard_query_mapping_id,
           user_id,
           parameters_override :: map(),
-          force_parameters_override_to_all_queries :: boolean()
+          force_parameters_override_to_query :: boolean()
         ) ::
           {:ok, Query.t()} | {:error, String.t()}
   def get_dashboard_query(
@@ -162,7 +171,7 @@ defmodule Sanbase.Queries do
         mapping_id,
         querying_user_id,
         parameters_override \\ %{},
-        force_parameters_override_to_all_queries \\ false
+        force_parameters_override_to_query \\ false
       ) do
     query = DashboardQueryMapping.by_id(mapping_id)
 
@@ -175,7 +184,7 @@ defmodule Sanbase.Queries do
              dashboard,
              mapping_id,
              parameters_override,
-             force_parameters_override_to_all_queries
+             force_parameters_override_to_query
            ) do
       {:ok, query}
     else

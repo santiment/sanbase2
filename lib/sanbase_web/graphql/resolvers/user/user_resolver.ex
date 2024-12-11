@@ -174,6 +174,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
     end
   end
 
+  def disconnect_telegram_bot(_root, _args, %{context: %{auth: %{current_user: user}}}) do
+    case UserSettings.disconnect_telegram_bot(user) do
+      {:ok, _user_settings} ->
+        # Refresh the data in the user
+        Sanbase.Accounts.get_user(user.id)
+
+      {:error, changeset} ->
+        {
+          :error,
+          message: "Cannot disconnect current user's telegram bot",
+          details: changeset_errors(changeset)
+        }
+    end
+  end
+
   def change_name(_root, %{name: new_name}, %{context: %{auth: %{current_user: user}}}) do
     case User.change_name(user, new_name) do
       {:ok, user} ->

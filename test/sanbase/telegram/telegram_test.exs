@@ -50,6 +50,36 @@ defmodule Sanbase.TelegramTest do
     assert chat_id == @telegram_chat_id
   end
 
+  test "disconnect telegram bot after it is connected", context do
+    get_telegram_deep_link(context)
+
+    %Telegram.UserToken{token: user_token} = Telegram.UserToken.by_user_id(context.user.id)
+
+    simulate_telegram_deep_link_follow(context, user_token)
+    %Settings{telegram_chat_id: chat_id} = UserSettings.settings_for(context.user, force: true)
+    assert chat_id == @telegram_chat_id
+
+    self_pid = self()
+
+    Sanbase.Mock.prepare_mock(Sanbase.Telegram, :send_message_to_chat_id, fn _chat_id, text ->
+      send(self_pid, {:telegram_to_self, text})
+      {:ok, text}
+    end)
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      assert %{"settings" => %{"hasTelegramConnected" => false}} =
+               disconnect_telegram_bot(context)
+
+      %Settings{telegram_chat_id: chat_id} = UserSettings.settings_for(context.user, force: true)
+      assert chat_id == nil
+
+      assert_receive(
+        {:telegram_to_self,
+         "You have successfully disconnected your Telegram bot from your Sanbase profile."},
+        200
+      )
+    end)
+  end
+
   test "revoke telegram deep link removes the token", context do
     get_telegram_deep_link(context)
 
@@ -111,6 +141,24 @@ defmodule Sanbase.TelegramTest do
       |> post("/graphql", mutation_skeleton(mutation))
 
     json_response(result, 200)["data"]["revokeTelegramDeepLink"]
+  end
+
+  defp disconnect_telegram_bot(context) do
+    mutation = """
+    mutation{
+      disconnectTelegramBot{
+        settings{
+          hasTelegramConnected
+        }
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", mutation_skeleton(mutation))
+
+    json_response(result, 200)["data"]["disconnectTelegramBot"]
   end
 
   defp simulate_telegram_deep_link_follow(context, user_token) do

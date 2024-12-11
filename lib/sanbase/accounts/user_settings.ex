@@ -39,7 +39,6 @@ defmodule Sanbase.Accounts.UserSettings do
   higher plan. Both things might take some to fix/upgrade, so having the option to unblock yourself
   until the issues are resolved is required.k
   """
-
   def can_self_reset_api_rate_limits?(user) do
     %{self_api_rate_limits_reset_at: last_self_reset_at} = settings_for(user)
 
@@ -53,6 +52,32 @@ defmodule Sanbase.Accounts.UserSettings do
          Cannot self reset the API calls rate limits.
          The last reset was less than #{@self_reset_api_rate_limits_cooldown} days ago on #{last_self_reset_at}.
          """}
+    end
+  end
+
+  def disconnect_telegram_bot(user) do
+    # First get the existing chat id so we can send it with the event
+    # so the user events subscriber can send a message to that chat id
+    # informing that the bot is disconnected.
+    user_settings =
+      %{settings: %{telegram_chat_id: telegram_chat_id}} =
+      user_settings_for(user, force: true)
+
+    user_settings
+    |> changeset(%{settings: %{telegram_chat_id: nil}})
+    |> Sanbase.Repo.update()
+    |> case do
+      {:ok, user_settings} ->
+        Sanbase.Accounts.EventEmitter.emit_event(
+          {:ok, user},
+          :disconnect_telegram_bot,
+          %{telegram_chat_id: telegram_chat_id}
+        )
+
+        {:ok, user_settings}
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 

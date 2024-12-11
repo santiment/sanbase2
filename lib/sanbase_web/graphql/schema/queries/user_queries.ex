@@ -66,6 +66,12 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
   end
 
   object :user_mutations do
+    field :disconnect_telegram_bot, :user do
+      middleware(JWTAuth)
+
+      resolve(&UserResolver.disconnect_telegram_bot/3)
+    end
+
     field :change_username, :user do
       arg(:username, non_null(:string))
 

@@ -20,6 +20,13 @@ defmodule Sanbase.EventBus.EventValidation do
   def valid?(%{event_type: :update_email_candidate, user_id: id, email_candidate: email}),
     do: valid_integer_id?(id) and is_binary(email)
 
+  def valid?(%{
+        event_type: :disconnect_telegram_bot,
+        user_id: id,
+        telegram_chat_id: telegram_chat_id
+      }),
+      do: valid_integer_id?(id) and is_integer(telegram_chat_id)
+
   def valid?(%{event_type: :register_user, user_id: id, login_origin: login_origin}),
     do: valid_integer_id?(id) and (is_atom(login_origin) or is_binary(login_origin))
 

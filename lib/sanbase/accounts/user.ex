@@ -210,7 +210,12 @@ defmodule Sanbase.Accounts.User do
   def by_id(user_id, opts \\ [])
 
   def by_id(user_id, opts) when is_integer(user_id) do
-    query = from(u in __MODULE__, where: u.id == ^user_id)
+    # TODO: Make preload configurable via the opts
+    query =
+      from(u in __MODULE__,
+        where: u.id == ^user_id,
+        preload: [:eth_accounts, :user_settings, [roles: :role]]
+      )
 
     query =
       case Keyword.get(opts, :lock_for_update, false) do
@@ -230,7 +235,7 @@ defmodule Sanbase.Accounts.User do
         u in __MODULE__,
         where: u.id in ^user_ids,
         order_by: fragment("array_position(?, ?::int)", ^user_ids, u.id),
-        preload: [:eth_accounts, :user_settings]
+        preload: [:eth_accounts, :user_settings, [roles: :role]]
       )
       |> Repo.all()
 
@@ -322,6 +327,10 @@ defmodule Sanbase.Accounts.User do
       user ->
         {:ok, user}
     end
+  end
+
+  def has_role?(%__MODULE__{roles: roles}, role) when is_list(roles) do
+    Enum.any?(roles, &(&1.role.name == role))
   end
 
   def change_name(%__MODULE__{name: name} = user, name), do: {:ok, user}

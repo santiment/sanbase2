@@ -302,6 +302,64 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
   end
 
   describe "Run Dashboard Queries" do
+    test "run dashboard query (override params via run query AND forcing them)", context do
+      # In test env the storing runs not async and there's a 7500ms sleep
+      Application.put_env(:__sanbase_queries__, :__store_execution_details__, false)
+
+      on_exit(fn ->
+        Application.delete_env(:__sanbase_queries__, :__store_execution_details__)
+      end)
+
+      {:ok, query} = create_query(context.user.id)
+
+      {:ok, dashboard} =
+        Sanbase.Dashboards.create_dashboard(%{name: "My Dashboard"}, context.user.id)
+
+      {:ok, mapping} = create_dashboard_query(context.conn, dashboard, query)
+
+      mock_fun =
+        Sanbase.Mock.wrap_consecutives(
+          [
+            fn -> {:ok, mocked_clickhouse_result()} end,
+            fn -> {:ok, mocked_execution_details_result()} end
+          ],
+          arity: 2
+        )
+
+      # Run a dashboard query. Expect the dashboard parameter to override
+      # the query local parameter
+      Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          run_sql_query(context.conn, :run_dashboard_sql_query, %{
+            dashboard_id: dashboard.id,
+            dashboard_query_mapping_id: mapping["id"],
+            parameters_override: %{slug: "new_value_from_query_bitcoin"}
+          })
+
+        assert "errors" not in Map.keys(result)
+        assert is_map(get_in(result, ["data", "runDashboardSqlQuery"]))
+
+        # Check that the used argument is the one provided in the API
+        refute called(Sanbase.ClickhouseRepo.query(:_, ["new_value_from_query_bitcoin", 10]))
+        assert_called(Sanbase.ClickhouseRepo.query(:_, ["bitcoin", 10]))
+
+        result =
+          run_sql_query(context.conn, :run_dashboard_sql_query, %{
+            dashboard_id: dashboard.id,
+            dashboard_query_mapping_id: mapping["id"],
+            parameters_override: %{slug: "new_value_from_query_bitcoin"},
+            force_parameters_override: true
+          })
+
+        assert "errors" not in Map.keys(result)
+        assert is_map(get_in(result, ["data", "runDashboardSqlQuery"]))
+
+        # Check that the used argument is the one provided in the API
+        assert_called(Sanbase.ClickhouseRepo.query(:_, ["new_value_from_query_bitcoin", 10]))
+      end)
+    end
+
     test "run dashboard query (override params via the run query)", context do
       # In test env the storing runs not async and there's a 7500ms sleep
       Application.put_env(:__sanbase_queries__, :__store_execution_details__, false)

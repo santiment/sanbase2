@@ -64,7 +64,7 @@ defmodule Sanbase.Accounts.UserSettings do
       user_settings_for(user, force: true)
 
     user_settings
-    |> changeset(%{settings: %{telegram_chat_id: nil}})
+    |> changeset(%{settings: %{telegram_chat_id: nil, alert_notify_telegram: false}})
     |> Sanbase.Repo.update()
     |> case do
       {:ok, user_settings} ->

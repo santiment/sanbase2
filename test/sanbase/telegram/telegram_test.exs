@@ -2,10 +2,11 @@ defmodule Sanbase.TelegramTest do
   use SanbaseWeb.ConnCase, async: false
 
   import SanbaseWeb.Graphql.TestHelpers
+  import Sanbase.Factory
 
-  alias Sanbase.Repo
-  alias Sanbase.Accounts.{User, Settings, UserSettings}
   alias Sanbase.Telegram
+  alias Sanbase.Accounts.Settings
+  alias Sanbase.Accounts.UserSettings
 
   @bot_username Application.compile_env(:sanbase, [Sanbase.Telegram, :bot_username])
   @telegram_endpoint Application.compile_env(:sanbase, [Sanbase.Telegram, :telegram_endpoint])
@@ -18,9 +19,7 @@ defmodule Sanbase.TelegramTest do
         %Tesla.Env{status: 200, body: "ok"}
     end)
 
-    user =
-      %User{salt: User.generate_salt(), privacy_policy_accepted: true}
-      |> Repo.insert!()
+    user = insert(:user, user_settings: %{settings: %{alert_notify_telegram: true}})
 
     conn = setup_jwt_auth(build_conn(), user)
 
@@ -56,8 +55,9 @@ defmodule Sanbase.TelegramTest do
     %Telegram.UserToken{token: user_token} = Telegram.UserToken.by_user_id(context.user.id)
 
     simulate_telegram_deep_link_follow(context, user_token)
-    %Settings{telegram_chat_id: chat_id} = UserSettings.settings_for(context.user, force: true)
-    assert chat_id == @telegram_chat_id
+
+    assert %Settings{telegram_chat_id: @telegram_chat_id, alert_notify_telegram: true} =
+             UserSettings.settings_for(context.user, force: true)
 
     self_pid = self()
 
@@ -69,8 +69,8 @@ defmodule Sanbase.TelegramTest do
       assert %{"settings" => %{"hasTelegramConnected" => false}} =
                disconnect_telegram_bot(context)
 
-      %Settings{telegram_chat_id: chat_id} = UserSettings.settings_for(context.user, force: true)
-      assert chat_id == nil
+      assert %Settings{telegram_chat_id: nil, alert_notify_telegram: false} =
+               UserSettings.settings_for(context.user, force: true)
 
       assert_receive(
         {:telegram_to_self,

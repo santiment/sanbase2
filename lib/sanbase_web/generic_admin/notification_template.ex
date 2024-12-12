@@ -4,9 +4,6 @@ defmodule SanbaseWeb.GenericAdmin.NotificationTemplate do
 
   def resource() do
     %{
-      # actions: [:new, :edit, :delete],
-      # new_fields: [:channel, :action, :step, :required_params, :template],
-      # edit_fields: [:channel, :action, :step, :required_params, :template],
       fields_override: %{
         required_params: %{
           value_modifier: fn template ->

@@ -10,7 +10,8 @@ defmodule SanbaseWeb.GenericAdmin.Notification do
         :params,
         :channel,
         :status,
-        :is_manual
+        :is_manual,
+        :scheduled_at
       ],
       fields_override: %{
         action: %{
@@ -28,6 +29,20 @@ defmodule SanbaseWeb.GenericAdmin.Notification do
         params: %{
           value_modifier: fn ntf ->
             Jason.encode!(ntf.params)
+          end
+        },
+        job_id: %{
+          value_modifier: fn ntf ->
+            case ntf.job_id do
+              nil ->
+                nil
+
+              job_id ->
+                PhoenixHTMLHelpers.Link.link(job_id,
+                  to: "/admin2/generic/#{job_id}?resource=oban_jobs",
+                  class: "text-blue-600 hover:text-blue-800"
+                )
+            end
           end
         },
         metric_registry_id: %{

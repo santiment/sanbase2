@@ -285,10 +285,10 @@ defmodule SanbaseWeb.AdminComponents do
 
                       case Map.get(@field_type_map, field) do
                         :map ->
-                          Jason.encode!(result)
+                          if is_binary(result), do: result, else: Jason.encode!(result)
 
                         :list ->
-                          Jason.encode!(result)
+                          if is_binary(result), do: result, else: Jason.encode!(result)
 
                         :boolean ->
                           if result == true,

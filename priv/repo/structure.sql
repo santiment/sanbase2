@@ -2519,7 +2519,8 @@ CREATE TABLE public.notifications (
     job_id bigint,
     is_manual boolean DEFAULT false NOT NULL,
     metric_registry_id bigint,
-    notification_template_id bigint
+    notification_template_id bigint,
+    scheduled_at timestamp(0) without time zone
 );
 
 
@@ -9730,3 +9731,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20241114141110);
 INSERT INTO public."schema_migrations" (version) VALUES (20241116104556);
 INSERT INTO public."schema_migrations" (version) VALUES (20241128161315);
 INSERT INTO public."schema_migrations" (version) VALUES (20241202104812);
+INSERT INTO public."schema_migrations" (version) VALUES (20241212054904);

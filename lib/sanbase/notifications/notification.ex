@@ -9,7 +9,7 @@ defmodule Sanbase.Notifications.Notification do
   @supported_actions ["metric_created", "metric_updated", "metric_deleted", "message", "alert"]
   @supported_channels ["discord", "email"]
   @supported_steps ["all", "before", "reminder", "after", "detected", "resolved"]
-  @supported_statuses ["available", "completed", "failed", "discarded", "cancelled"]
+  @supported_statuses ["scheduled", "available", "completed", "failed", "discarded", "cancelled"]
 
   def supported_channels, do: @supported_channels
   def supported_actions, do: @supported_actions
@@ -24,6 +24,7 @@ defmodule Sanbase.Notifications.Notification do
     field(:status, :string, default: "available")
     field(:job_id, :integer)
     field(:is_manual, :boolean, default: false)
+    field(:scheduled_at, :utc_datetime)
 
     belongs_to(:metric_registry, Registry)
     belongs_to(:notification_template, NotificationTemplate)
@@ -42,7 +43,8 @@ defmodule Sanbase.Notifications.Notification do
       :job_id,
       :is_manual,
       :metric_registry_id,
-      :notification_template_id
+      :notification_template_id,
+      :scheduled_at
     ])
     |> validate_required([:action, :params, :channel])
     |> validate_inclusion(:action, @supported_actions)

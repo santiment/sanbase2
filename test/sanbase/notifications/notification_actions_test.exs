@@ -3,9 +3,7 @@ defmodule Sanbase.Notifications.NotificationActionsTest do
   import Sanbase.NotificationsFixtures
   import Mox
 
-  alias Sanbase.Notifications.{Handler, EmailNotifier}
-  alias Sanbase.Notifications.Notification
-  alias Sanbase.Repo
+  alias Sanbase.Notifications.Handler
 
   setup do
     Application.put_env(:sanbase, :mailjet_mocked, true)

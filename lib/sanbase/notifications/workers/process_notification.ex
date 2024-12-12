@@ -81,6 +81,15 @@ defmodule Sanbase.Notifications.Workers.ProcessNotification do
     end
   end
 
+  @impl Oban.Worker
+  def perform(%Oban.Job{args: %{"type" => "change_status"} = args}) do
+    notification_id = args["notification_id"]
+    new_status = args["new_status"]
+
+    notification = Notification.by_id(notification_id)
+    Notification.update(notification, %{status: new_status})
+  end
+
   defp discord_webhook do
     Config.module_get(Sanbase.Notifications, :discord_webhook)
   end

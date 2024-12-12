@@ -40,10 +40,17 @@ defmodule Sanbase.Accounts.User.Validation do
     end
   end
 
-  def validate_url_change(:avatar_url, url) do
+  def validate_url_change(field, url) do
     case Sanbase.Validation.valid_url?(url) do
       :ok -> []
-      {:error, msg} -> [avatar_url: msg]
+      {:error, msg} -> [{field, msg}]
+    end
+  end
+
+  def validate_url_simple(field, url) do
+    case Sanbase.Validation.valid_url_simple?(url) do
+      true -> []
+      false -> [{field, "Invalid URL"}]
     end
   end
 end

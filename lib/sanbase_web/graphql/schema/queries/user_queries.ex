@@ -214,5 +214,14 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
       middleware(UserAuth)
       resolve(&UserResolver.self_reset_api_rate_limits/3)
     end
+
+    field :update_user_profile, :user do
+      arg(:description, :string)
+      arg(:website_link, :string)
+      arg(:twitter_link, :string)
+
+      middleware(JWTAuth)
+      resolve(&UserResolver.update_profile/3)
+    end
   end
 end

@@ -50,6 +50,9 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field(:name, :string)
     field(:username, :string)
     field(:avatar_url, :string)
+    field(:description, :string)
+    field(:website_link, :string)
+    field(:twitter_link, :string)
 
     field :triggers, list_of(:trigger) do
       cache_resolve(&UserTriggerResolver.public_triggers/3, ttl: 60)
@@ -129,6 +132,9 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field(:stripe_customer_id, :string)
     field(:inserted_at, non_null(:datetime))
     field(:updated_at, non_null(:datetime))
+    field(:description, :string)
+    field(:website_link, :string)
+    field(:twitter_link, :string)
 
     field :queries_executions_info, :queries_executions_info do
       resolve(&UserResolver.queries_executions_info/3)

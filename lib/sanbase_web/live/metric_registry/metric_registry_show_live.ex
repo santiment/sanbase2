@@ -38,6 +38,14 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
           href={~p"/admin2/metric_registry/edit/#{@metric_registry}"}
           icon="hero-pencil-square"
         />
+
+        <AvailableMetricsComponents.available_metrics_button
+          text="Notifications"
+          href={
+            ~p"/admin2/generic/search?search[field]=metric_registry_id&resource=notifications&search[value]=#{@metric_registry.id}"
+          }
+          icon="hero-envelope"
+        />
       </div>
       <.table id="metric_registry" rows={@rows}>
         <:col :let={row} col_class="w-40">

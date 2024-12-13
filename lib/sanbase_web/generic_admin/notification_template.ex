@@ -1,26 +1,29 @@
 defmodule SanbaseWeb.GenericAdmin.NotificationTemplate do
+  alias Sanbase.Notifications.Notification
   def schema_module, do: Sanbase.Notifications.NotificationTemplate
 
   def resource() do
     %{
-      actions: [:new, :edit, :delete],
-      new_fields: [:channel, :action_type, :step, :template],
-      edit_fields: [:channel, :action_type, :step, :template],
       fields_override: %{
+        required_params: %{
+          value_modifier: fn template ->
+            Jason.encode!(template.required_params)
+          end
+        },
         template: %{
           type: :text
         },
         channel: %{
           type: :select,
-          collection: ["email", "telegram", "discord", "all"]
+          collection: Notification.supported_channels() ++ ["all"]
         },
-        action_type: %{
+        action: %{
           type: :select,
-          collection: NotificationActionTypeEnum.__enum_map__() |> Enum.map(&to_string(&1))
+          collection: Notification.supported_actions()
         },
         step: %{
           type: :select,
-          collection: NotificationStepEnum.__enum_map__() |> Enum.map(&to_string(&1))
+          collection: Notification.supported_steps()
         }
       }
     }

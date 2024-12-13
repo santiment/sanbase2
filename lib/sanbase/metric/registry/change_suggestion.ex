@@ -138,7 +138,7 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
     # only after the DB changes are commited and not from insite the transaction. If the event
     # is emitted from inside the transaction, the event handler can be invoked before the DB
     # changes are commited and this handler will have no effect.
-    Sanbase.Metric.Registry.update(metric_registry, params, emit_event?: true)
+    Sanbase.Metric.Registry.update(metric_registry, params, emit_event?: false)
   end
 
   def create_change_suggestion(%Registry{} = registry, params, notes, submitted_by) do

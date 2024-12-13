@@ -3,9 +3,7 @@ defmodule Sanbase.Notifications.NotificationActionsTest do
   import Sanbase.NotificationsFixtures
   import Mox
 
-  alias Sanbase.Notifications.{Handler, EmailNotifier}
-  alias Sanbase.Notifications.Notification
-  alias Sanbase.Repo
+  alias Sanbase.Notifications.Handler
 
   setup do
     Application.put_env(:sanbase, :mailjet_mocked, true)
@@ -15,7 +13,7 @@ defmodule Sanbase.Notifications.NotificationActionsTest do
   end
 
   describe "metric_created notification" do
-    test "creates notification and sends to discord" do
+    test "creates notifications for both discord and email channels" do
       # Allow the mock to be called multiple times
       stub(Sanbase.Notifications.MockDiscordClient, :send_message, fn _webhook, content, _opts ->
         assert content =~ "metric A"
@@ -26,317 +24,85 @@ defmodule Sanbase.Notifications.NotificationActionsTest do
 
       params = %{metrics_list: ["metric A", "metric B"]}
 
-      assert {:ok, notification} =
-               Handler.handle_notification(%{
-                 action: "metric_created",
-                 params: params
-               })
-
-      # Add delay to wait for async task
-      Process.sleep(100)
-
-      # Verify notification was created correctly
-      assert notification.action == "metric_created"
-      assert notification.params == params
-      assert notification.step == "all"
-      assert notification.channels == ["discord", "email"]
-    end
-
-    test "marks discord channel as processed after successful sending" do
-      # Change expect to stub to allow multiple calls
-      stub(Sanbase.Notifications.MockDiscordClient, :send_message, fn _webhook, content, _opts ->
-        assert content =~ "metric A"
-        :ok
-      end)
-
-      {:ok, notification} =
+      notifications =
         Handler.handle_notification(%{
           action: "metric_created",
-          params: %{metrics_list: ["metric A"]}
+          params: params
         })
 
-      # Wait for async task to complete
-      Process.sleep(100)
+      # Ensure notifications are returned as a list
+      assert length(notifications) == 2
 
-      # Reload notification from DB
-      updated_notification = Notification.by_id(notification.id)
-      assert updated_notification.processed_for_discord == true
-      assert not is_nil(updated_notification.processed_for_discord_at)
-    end
-  end
+      # Find both notifications
+      discord_notification = Enum.find(notifications, &(&1.channel == "discord"))
+      email_notification = Enum.find(notifications, &(&1.channel == "email"))
 
-  describe "metric_created email notifications" do
-    test "sends daily digest email for new metrics" do
-      stub(Sanbase.Notifications.MockDiscordClient, :send_message, fn _webhook, _content, _opts ->
-        :ok
-      end)
+      # Verify discord notification
+      assert discord_notification.action == "metric_created"
+      assert discord_notification.params == params
+      assert discord_notification.step == "all"
+      assert discord_notification.channel == "discord"
+      assert discord_notification.status == "available"
+      assert discord_notification.is_manual == false
+      assert not is_nil(discord_notification.job_id)
+      assert not is_nil(discord_notification.notification_template_id)
 
-      Sanbase.Email.MockMailjetApi
-      |> expect(:list_subscribed_emails, fn :metric_updates_dev -> {:ok, ["test@example.com"]} end)
-      |> expect(:send_to_list, fn :metric_updates_dev, "Sanbase Metric Updates", content, _opts ->
-        assert content =~ "metric A"
-        assert content =~ "metric B"
-        :ok
-      end)
-
-      # Create notifications
-      {:ok, _notification1} =
-        Handler.handle_notification(%{
-          action: "metric_created",
-          params: %{metrics_list: ["metric A"]}
-        })
-
-      {:ok, _notification2} =
-        Handler.handle_notification(%{
-          action: "metric_created",
-          params: %{metrics_list: ["metric B"]}
-        })
-
-      # Trigger daily digest
-      EmailNotifier.send_daily_digest("metric_created")
-
-      # Verify notifications were marked as processed
-      notifications = Repo.all(Notification)
-      assert Enum.all?(notifications, & &1.processed_for_email)
-      assert Enum.all?(notifications, &(not is_nil(&1.processed_for_email_at)))
-    end
-
-    test "handles email sending failure" do
-      stub(Sanbase.Notifications.MockDiscordClient, :send_message, fn _webhook, _content, _opts ->
-        :ok
-      end)
-
-      Sanbase.Email.MockMailjetApi
-      |> expect(:list_subscribed_emails, fn :metric_updates_dev -> {:ok, ["test@example.com"]} end)
-      |> expect(:send_to_list, fn :metric_updates_dev, "Sanbase Metric Updates", content, _opts ->
-        assert content =~ "metric A"
-        {:error, "Failed to send email"}
-      end)
-
-      # Create a notification
-      {:ok, notification} =
-        Handler.handle_notification(%{
-          action: "metric_created",
-          params: %{metrics_list: ["metric A"]}
-        })
-
-      # Trigger daily digest
-      EmailNotifier.send_daily_digest("metric_created")
-
-      # Verify notification wasn't marked as processed
-      updated_notification = Repo.get(Notification, notification.id)
-      refute updated_notification.processed_for_email
-      assert is_nil(updated_notification.processed_for_email_at)
+      # Verify email notification
+      assert email_notification.action == "metric_created"
+      assert email_notification.params == params
+      assert email_notification.step == "all"
+      assert email_notification.channel == "email"
+      assert email_notification.status == "available"
+      assert email_notification.is_manual == false
+      # Email notifications don't get immediate jobs
+      assert is_nil(email_notification.job_id)
+      assert not is_nil(email_notification.notification_template_id)
     end
   end
 
   describe "metric_deleted notification" do
-    test "creates notifications and sends immediate discord message" do
-      # Change expect to stub to allow multiple calls
+    test "creates notifications for both discord and email channels" do
       stub(Sanbase.Notifications.MockDiscordClient, :send_message, fn _webhook, content, _opts ->
-        assert content =~ "metric A"
-        assert content =~ "metric B"
+        assert content =~ "metric X"
+        assert content =~ "scheduled to be deprecated"
+        assert content =~ "2024-12-31"
         :ok
       end)
 
-      scheduled_at = ~U[2024-11-29 12:00:00Z]
-      params = %{metrics_list: ["metric A", "metric B"], scheduled_at: scheduled_at}
+      scheduled_at = ~N[2024-12-31 00:00:00]
+      params = %{metrics_list: ["metric X"], scheduled_at: scheduled_at}
 
-      assert {:ok, notification} =
-               Handler.handle_notification(%{
-                 action: "metric_deleted",
-                 params: params
-               })
-
-      # Add delay to wait for async task
-      Process.sleep(100)
-
-      # Verify immediate notification was created correctly
-      assert notification.action == "metric_deleted"
-      assert notification.params == params
-      assert notification.step == "before"
-      assert notification.channels == ["discord", "email"]
-
-      # Verify scheduled jobs were created
-      jobs = Oban.Job |> Repo.all()
-      assert length(jobs) == 2
-
-      # Verify reminder job (3 days before)
-      reminder_job = Enum.find(jobs, &(&1.args["step"] == "reminder"))
-      assert reminder_job.args["action"] == "metric_deleted"
-
-      assert DateTime.truncate(reminder_job.scheduled_at, :second) ==
-               DateTime.add(scheduled_at, -3, :day)
-
-      # Verify after job
-      after_job = Enum.find(jobs, &(&1.args["step"] == "after"))
-      assert after_job.args["action"] == "metric_deleted"
-      assert DateTime.truncate(after_job.scheduled_at, :second) == scheduled_at
-    end
-
-    test "sends daily digest email for deleted metrics" do
-      # Change expect to stub to allow multiple calls
-      stub(Sanbase.Notifications.MockDiscordClient, :send_message, fn _webhook, _content, _opts ->
-        :ok
-      end)
-
-      Sanbase.Email.MockMailjetApi
-      |> expect(:list_subscribed_emails, fn :metric_updates_dev -> {:ok, ["test@example.com"]} end)
-      |> expect(:send_to_list, fn :metric_updates_dev, "Sanbase Metric Updates", content, _opts ->
-        assert content =~ "metric A"
-        assert content =~ "metric B"
-        :ok
-      end)
-
-      scheduled_at = ~U[2024-11-29 12:00:00Z]
-
-      # Create notifications with same scheduled_at
-      {:ok, _notification1} =
+      notifications =
         Handler.handle_notification(%{
           action: "metric_deleted",
-          params: %{metrics_list: ["metric A"], scheduled_at: scheduled_at}
+          params: params,
+          step: "before"
         })
 
-      {:ok, _notification2} =
-        Handler.handle_notification(%{
-          action: "metric_deleted",
-          params: %{metrics_list: ["metric B"], scheduled_at: scheduled_at}
-        })
+      assert length(notifications) == 2
 
-      # Trigger daily digest
-      EmailNotifier.send_daily_digest("metric_deleted")
+      discord_notification = Enum.find(notifications, &(&1.channel == "discord"))
+      email_notification = Enum.find(notifications, &(&1.channel == "email"))
 
-      # Verify notifications were marked as processed
-      notifications = Repo.all(Notification)
-      assert Enum.all?(notifications, & &1.processed_for_email)
-      assert Enum.all?(notifications, &(not is_nil(&1.processed_for_email_at)))
-    end
-  end
+      # Verify discord notification
+      assert discord_notification.action == "metric_deleted"
+      assert discord_notification.params == params
+      assert discord_notification.step == "before"
+      assert discord_notification.channel == "discord"
+      assert discord_notification.status == "available"
+      assert discord_notification.is_manual == false
+      assert not is_nil(discord_notification.job_id)
+      assert not is_nil(discord_notification.notification_template_id)
 
-  describe "manual notification" do
-    test "sends notifications to specified channels" do
-      stub(Sanbase.Notifications.MockDiscordClient, :send_message, fn _webhook, content, _opts ->
-        assert content == "Discord message"
-        :ok
-      end)
-
-      Sanbase.Email.MockMailjetApi
-      |> expect(:send_to_list, fn :metric_updates_dev, subject, content, _opts ->
-        assert subject == "Test Subject"
-        assert content == "Email message"
-        :ok
-      end)
-
-      params = %{
-        discord_text: "Discord message",
-        email_text: "Email message",
-        email_subject: "Test Subject"
-      }
-
-      assert {:ok, notification} =
-               Handler.handle_notification(%{
-                 action: "manual",
-                 params: params
-               })
-
-      Process.sleep(100)
-
-      # Verify notification was created correctly
-      assert notification.action == "manual"
-      assert notification.params == params
-      assert notification.step == "all"
-      assert Enum.sort(notification.channels) == ["discord", "email"]
-
-      # Verify channels were marked as processed
-      updated_notification = Notification.by_id(notification.id)
-      assert updated_notification.processed_for_discord
-      assert updated_notification.processed_for_email
-    end
-
-    test "only sends to channels with content" do
-      stub(Sanbase.Notifications.MockDiscordClient, :send_message, fn _webhook, content, _opts ->
-        assert content == "Discord only"
-        :ok
-      end)
-
-      params = %{
-        discord_text: "Discord only",
-        email_text: "",
-        email_subject: "Test Subject"
-      }
-
-      assert {:ok, notification} =
-               Handler.handle_notification(%{
-                 action: "manual",
-                 params: params
-               })
-
-      Process.sleep(100)
-
-      assert notification.channels == ["discord"]
-      refute notification.processed_for_email
-    end
-  end
-
-  describe "alert notification" do
-    test "sends detected alert to discord" do
-      stub(Sanbase.Notifications.MockDiscordClient, :send_message, fn _webhook, content, _opts ->
-        assert content =~ "Metric XYZ"
-        assert content =~ "Category A"
-        assert content =~ "Category B"
-        :ok
-      end)
-
-      params = %{
-        metric_name: "Metric XYZ",
-        asset_categories: ["Category A", "Category B"]
-      }
-
-      assert {:ok, notification} =
-               Handler.handle_notification(%{
-                 action: "alert",
-                 params: params,
-                 step: "detected"
-               })
-
-      Process.sleep(100)
-
-      assert notification.action == "alert"
-      assert notification.params == params
-      assert notification.step == "detected"
-      assert notification.channels == ["discord"]
-
-      updated_notification = Notification.by_id(notification.id)
-      assert updated_notification.processed_for_discord
-    end
-
-    test "sends resolved alert to discord" do
-      # Change expect to stub to allow multiple calls
-      stub(Sanbase.Notifications.MockDiscordClient, :send_message, fn _webhook, content, _opts ->
-        assert content =~ "Metric XYZ"
-        assert content =~ "resolved"
-        :ok
-      end)
-
-      params = %{
-        metric_name: "Metric XYZ",
-        asset_categories: ["Category A"]
-      }
-
-      assert {:ok, notification} =
-               Handler.handle_notification(%{
-                 action: "alert",
-                 params: params,
-                 step: "resolved"
-               })
-
-      Process.sleep(100)
-
-      assert notification.step == "resolved"
-      assert notification.channels == ["discord"]
-
-      updated_notification = Notification.by_id(notification.id)
-      assert updated_notification.processed_for_discord
+      # Verify email notification
+      assert email_notification.action == "metric_deleted"
+      assert email_notification.params == params
+      assert email_notification.step == "before"
+      assert email_notification.channel == "email"
+      assert email_notification.status == "available"
+      assert email_notification.is_manual == false
+      assert is_nil(email_notification.job_id)
+      assert not is_nil(email_notification.notification_template_id)
     end
   end
 end

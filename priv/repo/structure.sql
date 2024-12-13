@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 14.12 (Homebrew)
--- Dumped by pg_dump version 14.12 (Homebrew)
+-- Dumped from database version 15.1 (Homebrew)
+-- Dumped by pg_dump version 15.1 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -2474,11 +2474,13 @@ ALTER SEQUENCE public.newsletter_tokens_id_seq OWNED BY public.newsletter_tokens
 CREATE TABLE public.notification_templates (
     id bigint NOT NULL,
     channel character varying(255),
-    action_type character varying(255),
+    action character varying(255),
     step character varying(255),
     template text,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    mime_type character varying(255) DEFAULT 'text/plain'::character varying,
+    required_params character varying(255)[] DEFAULT ARRAY[]::character varying[]
 );
 
 
@@ -2509,14 +2511,16 @@ CREATE TABLE public.notifications (
     id bigint NOT NULL,
     action character varying(255),
     params jsonb,
-    channels character varying(255)[],
     step character varying(255),
-    processed_for_discord boolean DEFAULT false,
-    processed_for_discord_at timestamp(0) without time zone,
-    processed_for_email boolean DEFAULT false,
-    processed_for_email_at timestamp(0) without time zone,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    channel character varying(255) NOT NULL,
+    status character varying(255) DEFAULT 'available'::character varying NOT NULL,
+    job_id bigint,
+    is_manual boolean DEFAULT false NOT NULL,
+    metric_registry_id bigint,
+    notification_template_id bigint,
+    scheduled_at timestamp(0) without time zone
 );
 
 
@@ -7278,14 +7282,14 @@ CREATE UNIQUE INDEX monitored_twitter_handles_handle_index ON public.monitored_t
 -- Name: notification_templates_action_type_step_channel_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX notification_templates_action_type_step_channel_index ON public.notification_templates USING btree (action_type, step, channel);
+CREATE UNIQUE INDEX notification_templates_action_type_step_channel_index ON public.notification_templates USING btree (action, step, channel);
 
 
 --
 -- Name: notification_templates_action_type_step_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX notification_templates_action_type_step_index ON public.notification_templates USING btree (action_type, step);
+CREATE INDEX notification_templates_action_type_step_index ON public.notification_templates USING btree (action, step);
 
 
 --
@@ -7293,6 +7297,34 @@ CREATE INDEX notification_templates_action_type_step_index ON public.notificatio
 --
 
 CREATE INDEX notification_templates_channel_index ON public.notification_templates USING btree (channel);
+
+
+--
+-- Name: notifications_job_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX notifications_job_id_index ON public.notifications USING btree (job_id);
+
+
+--
+-- Name: notifications_metric_registry_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX notifications_metric_registry_id_index ON public.notifications USING btree (metric_registry_id);
+
+
+--
+-- Name: notifications_notification_template_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX notifications_notification_template_id_index ON public.notifications USING btree (notification_template_id);
+
+
+--
+-- Name: notifications_status_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX notifications_status_index ON public.notifications USING btree (status);
 
 
 --
@@ -8466,6 +8498,22 @@ ALTER TABLE ONLY public.metric_registry_change_suggestions
 
 ALTER TABLE ONLY public.monitored_twitter_handles
     ADD CONSTRAINT monitored_twitter_handles_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: notifications notifications_metric_registry_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notifications
+    ADD CONSTRAINT notifications_metric_registry_id_fkey FOREIGN KEY (metric_registry_id) REFERENCES public.metric_registry(id);
+
+
+--
+-- Name: notifications notifications_notification_template_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notifications
+    ADD CONSTRAINT notifications_notification_template_id_fkey FOREIGN KEY (notification_template_id) REFERENCES public.notification_templates(id);
 
 
 --
@@ -9674,9 +9722,13 @@ INSERT INTO public."schema_migrations" (version) VALUES (20241029080754);
 INSERT INTO public."schema_migrations" (version) VALUES (20241029082533);
 INSERT INTO public."schema_migrations" (version) VALUES (20241029151959);
 INSERT INTO public."schema_migrations" (version) VALUES (20241030141825);
+INSERT INTO public."schema_migrations" (version) VALUES (20241104061632);
 INSERT INTO public."schema_migrations" (version) VALUES (20241104115340);
 INSERT INTO public."schema_migrations" (version) VALUES (20241108112754);
 INSERT INTO public."schema_migrations" (version) VALUES (20241112094924);
 INSERT INTO public."schema_migrations" (version) VALUES (20241114140339);
 INSERT INTO public."schema_migrations" (version) VALUES (20241114141110);
 INSERT INTO public."schema_migrations" (version) VALUES (20241116104556);
+INSERT INTO public."schema_migrations" (version) VALUES (20241128161315);
+INSERT INTO public."schema_migrations" (version) VALUES (20241202104812);
+INSERT INTO public."schema_migrations" (version) VALUES (20241212054904);

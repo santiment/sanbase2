@@ -1,9 +1,8 @@
 defmodule Sanbase.Notifications.Handler do
   import Ecto.Query
+  import Sanbase.DateTimeUtils, only: [seconds_after: 1]
 
   alias Sanbase.{Repo, Notifications.Notification}
-  alias Sanbase.Notifications.TemplateRenderer
-  alias Sanbase.Utils.Config
 
   @oban_conf_name :oban_web
 
@@ -30,211 +29,328 @@ defmodule Sanbase.Notifications.Handler do
 
   def handle_metric_registry_created_event(event) do
     metric = event.data.metric
-    handle_notification(%{action: "metric_created", params: %{metrics_list: [metric]}})
+
+    if should_notify_metric_event?(event.data.id) do
+      handle_notification(%{
+        action: "metric_created",
+        step: "all",
+        params: %{metrics_list: [metric]},
+        metric_registry_id: event.data.id
+      })
+    end
   end
 
   def handle_metric_registry_updated_event(event) do
-    id = event.data.id
-
-    last_version =
-      Repo.one(
-        from(v in Sanbase.Version,
-          where: v.entity_id == ^id,
-          where: v.entity_schema == ^Sanbase.Metric.Registry,
-          order_by: [desc: v.recorded_at],
-          limit: 1
-        )
-      )
+    metric_registry_id = event.data.id
+    last_version = fetch_last_version(Sanbase.Metric.Registry, metric_registry_id)
 
     case last_version.patch do
+      # if deprecation was undone, cancel all scheduled notifications
+      %{is_deprecated: {:changed, {:primitive_change, true, false}}} ->
+        cancel_scheduled_notifications(metric_registry_id)
+
       %{hard_deprecate_after: {:changed, {:primitive_change, _old, new_date}}} ->
-        handle_notification(%{
+        base_notification = %{
           action: "metric_deleted",
           params: %{
             metrics_list: [event.data.metric],
             scheduled_at: new_date
-          }
-        })
+          },
+          metric_registry_id: metric_registry_id
+        }
+
+        handle_metric_deleted_notification(base_notification)
 
       _ ->
         :ok
     end
   end
 
-  def handle_notification(%{action: "alert", params: params, step: step}) do
-    {:ok, notification} = create_notification("alert", params, step)
+  def handle_metric_deleted_notification(base_notification) do
+    # Immediate notification for "before" step
+    response = handle_notification(Map.put(base_notification, :step, "before"))
 
-    send_discord_notification(notification, "alert", params, step)
+    scheduled_at = base_notification.params.scheduled_at
 
-    {:ok, notification}
+    # Get all reminder dates from the scheduler
+    reminder_dates =
+      Sanbase.Notifications.ReminderScheduler.calculate_reminder_dates(scheduled_at)
+
+    # Schedule reminder notifications for each date
+    Enum.each(reminder_dates, fn date ->
+      schedule_handle_notification(Map.put(base_notification, :step, "reminder"), date, "discord")
+      schedule_handle_notification(Map.put(base_notification, :step, "reminder"), date, "email")
+    end)
+
+    # Schedule the final "after" notification for the deletion date
+    schedule_handle_notification(
+      Map.put(base_notification, :step, "after"),
+      scheduled_at,
+      "discord"
+    )
+
+    schedule_handle_notification(
+      Map.put(base_notification, :step, "after"),
+      scheduled_at,
+      "email"
+    )
+
+    response
   end
 
-  def handle_notification(%{action: "metric_created" = action, params: params}) do
-    {:ok, notification} = create_notification(action, params, "all")
+  def schedule_handle_notification(attrs, scheduled_at, channel) do
+    template = Sanbase.Notifications.get_template(attrs.action, attrs.step, channel)
 
-    send_discord_notification(notification, action, params, "all")
+    notification_attrs = %{
+      action: attrs.action,
+      params: attrs.params,
+      channel: channel,
+      step: attrs.step,
+      status: "scheduled",
+      scheduled_at: scheduled_at,
+      metric_registry_id: attrs.metric_registry_id,
+      notification_template_id: template.id,
+      is_manual: Map.get(attrs, :is_manual, false)
+    }
 
-    {:ok, notification}
+    multi =
+      Ecto.Multi.new()
+      |> Ecto.Multi.run(:notification, fn _repo, _changes ->
+        Notification.create(notification_attrs)
+      end)
+      |> Ecto.Multi.run(:oban_job, fn _repo, %{notification: notification} ->
+        job_args =
+          case channel do
+            "discord" ->
+              %{
+                notification_id: notification.id,
+                action: notification.action,
+                params: notification.params,
+                channel: notification.channel,
+                step: notification.step,
+                template_id: notification.notification_template_id
+              }
+
+            "email" ->
+              %{
+                type: "change_status",
+                notification_id: notification.id,
+                new_status: "available"
+              }
+          end
+
+        job =
+          Sanbase.Notifications.Workers.ProcessNotification.new(job_args,
+            scheduled_at: scheduled_at
+          )
+
+        {:ok, %{id: job_id}} = Oban.insert(@oban_conf_name, job)
+        {:ok, job_id}
+      end)
+      |> Ecto.Multi.run(:update_notification, fn _repo,
+                                                 %{notification: notification, oban_job: job_id} ->
+        Notification.update(notification, %{job_id: job_id})
+      end)
+
+    case Repo.transaction(multi) do
+      {:ok, %{update_notification: notification}} -> notification
+      {:error, _step, reason, _changes} -> {:error, reason}
+    end
   end
 
-  def handle_notification(%{action: "metric_deleted", params: params}) do
-    # Handle "before" step immediately
-    {:ok, notification} = create_notification("metric_deleted", params, "before")
-    send_discord_notification(notification, "metric_deleted", params, "before")
+  def handle_notification(%{action: action, params: params} = attrs) do
+    channels = @default_channels[action]
+    step = Map.get(attrs, :step, "all")
 
-    # Get scheduled_at datetime, handling both string and DateTime inputs
-    scheduled_at =
-      case params[:scheduled_at] do
-        %DateTime{} = dt ->
-          dt
-
-        string when is_binary(string) ->
-          {:ok, dt, _} = DateTime.from_iso8601(string)
-          dt
+    Enum.map(channels, fn channel ->
+      case channel do
+        "discord" -> handle_discord_notification(action, step, params, attrs)
+        "email" -> handle_email_notification(action, step, params, attrs)
+        _ -> :ok
       end
-
-    reminder_at = DateTime.add(scheduled_at, -3, :day)
-
-    # Schedule reminder notification (3 days before)
-    job_args =
-      %{
-        action: "metric_deleted",
-        params: params,
-        step: "reminder"
-      }
-      |> Sanbase.Notifications.Workers.CreateNotification.new(scheduled_at: reminder_at)
-
-    Oban.insert(@oban_conf_name, job_args)
-
-    # Schedule after notification (on scheduled_at)
-    job_args =
-      %{
-        action: "metric_deleted",
-        params: params,
-        step: "after"
-      }
-      |> Sanbase.Notifications.Workers.CreateNotification.new(scheduled_at: scheduled_at)
-
-    Oban.insert(@oban_conf_name, job_args)
-
-    {:ok, notification}
+    end)
   end
 
-  def handle_notification(%{action: "manual", params: params}) do
-    channels =
-      []
-      |> maybe_add_channel(params[:email_text], "email")
-      |> maybe_add_channel(params[:discord_text], "discord")
+  defp handle_discord_notification(action, step, params, attrs) do
+    template = Sanbase.Notifications.get_template(action, step, "discord")
 
-    {:ok, notification} = create_notification("manual", params, "all", channels)
-    send_discord_notification(notification, "manual", params, "all")
-    maybe_send_email_notification(notification, "manual", params, "all")
-
-    {:ok, notification}
-  end
-
-  def handle_notification(%Notification{} = notification) do
-    send_discord_notification(
-      notification,
-      notification.action,
-      notification.params,
-      notification.step
-    )
-
-    maybe_send_email_notification(
-      notification,
-      notification.action,
-      notification.params,
-      notification.step
-    )
-
-    {:ok, notification}
-  end
-
-  def create_notification(action, params, step, channels \\ nil) do
-    %Notification{}
-    |> Notification.changeset(%{
+    notification_attrs = %{
       action: action,
       params: params,
-      channels: channels || @default_channels[action],
-      step: step
-    })
-    |> Repo.insert()
-  end
+      channel: "discord",
+      step: step,
+      status: "available",
+      metric_registry_id: attrs[:metric_registry_id],
+      notification_template_id: template.id,
+      is_manual: Map.get(attrs, :is_manual, false)
+    }
 
-  defp mark_processed(notification, channel) do
-    notification
-    |> Notification.mark_channel_processed(channel)
-    |> Repo.update()
-  end
-
-  def send_discord_notification(notification, action, params, step) do
-    if "discord" in notification.channels do
-      content =
-        if action == "manual" do
-          params.discord_text
-        else
-          TemplateRenderer.render_content(%{
-            action: action,
-            params: params,
-            step: step,
-            channel: "discord"
-          })
-        end
-
-      Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
-        case Sanbase.Notifications.DiscordClient.client().send_message(
-               discord_webhook(),
-               content,
-               []
-             ) do
-          :ok -> mark_processed(notification, :discord)
-          error -> error
-        end
+    multi =
+      Ecto.Multi.new()
+      |> Ecto.Multi.run(:notification, fn _repo, _changes ->
+        Notification.create(notification_attrs)
       end)
+      |> Ecto.Multi.run(:oban_job, fn _repo, %{notification: notification} ->
+        job_args = %{
+          notification_id: notification.id,
+          action: notification.action,
+          params: notification.params,
+          channel: notification.channel,
+          step: notification.step,
+          template_id: notification.notification_template_id
+        }
+
+        job =
+          Sanbase.Notifications.Workers.ProcessNotification.new(job_args,
+            scheduled_at: seconds_after(5)
+          )
+
+        {:ok, %{id: job_id}} = Oban.insert(@oban_conf_name, job)
+
+        {:ok, job_id}
+      end)
+      |> Ecto.Multi.run(:update_notification, fn _repo,
+                                                 %{notification: notification, oban_job: job_id} ->
+        Notification.update(notification, %{job_id: job_id})
+      end)
+
+    multi
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{update_notification: notification}} -> notification
+      {:ok, %{notification: notification}} -> notification
+      {:error, _step, reason, _changes} -> {:error, reason}
     end
   end
 
-  def maybe_send_email_notification(notification, action, params, step) do
-    if "email" in notification.channels do
-      content =
-        if action == "manual" do
-          params.email_text
-        else
-          TemplateRenderer.render_content(%{
-            action: action,
-            params: params,
-            step: step,
-            channel: "email"
-          })
-        end
+  defp handle_email_notification(action, step, params, attrs) do
+    template = Sanbase.Notifications.get_template(action, step, "email")
 
-      Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
-        Sanbase.Email.MailjetApi.client().send_to_list(
-          metric_updates_list(),
-          params.email_subject,
-          content,
-          []
-        )
-        |> case do
-          :ok -> mark_processed(notification, :email)
-          error -> error
-        end
+    notification_attrs = %{
+      action: action,
+      params: params,
+      channel: "email",
+      step: step,
+      status: "available",
+      metric_registry_id: attrs[:metric_registry_id],
+      notification_template_id: template.id,
+      is_manual: Map.get(attrs, :is_manual, false)
+    }
+
+    multi =
+      Ecto.Multi.new()
+      |> Ecto.Multi.run(:notification, fn _repo, _changes ->
+        Notification.create(notification_attrs)
       end)
+
+    multi
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{notification: notification}} -> notification
+      {:error, _step, reason, _changes} -> {:error, reason}
     end
   end
 
-  # Helper function to conditionally add channels
-  defp maybe_add_channel(channels, nil, _channel), do: channels
-  defp maybe_add_channel(channels, "", _channel), do: channels
-  defp maybe_add_channel(channels, _text, channel), do: [channel | channels]
+  def handle_manual_notification(attrs) do
+    channel = attrs.channel
+    params = attrs.params
 
-  defp discord_webhook do
-    Config.module_get(Sanbase.Notifications, :discord_webhook)
+    if channel == "email" do
+      if not Map.has_key?(params, :content) or not Map.has_key?(params, :subject) do
+        raise "Email notification requires content and subject"
+      end
+    end
+
+    if channel == "discord" do
+      if not Map.has_key?(params, :content) do
+        raise "Discord notification requires content"
+      end
+
+      if not Map.has_key?(params, :discord_channel) do
+        raise "Discord notification requires discord_channel"
+      end
+    end
+
+    notification_attrs = %{
+      action: "message",
+      params: params,
+      channel: channel,
+      step: "all",
+      status: "available",
+      is_manual: true
+    }
+
+    multi =
+      Ecto.Multi.new()
+      |> Ecto.Multi.run(:notification, fn _repo, _changes ->
+        Notification.create(notification_attrs)
+      end)
+      |> Ecto.Multi.run(:oban_job, fn _repo, %{notification: notification} ->
+        job_args = %{
+          notification_id: notification.id,
+          action: notification.action,
+          params: notification.params,
+          channel: notification.channel,
+          step: notification.step,
+          is_manual: true
+        }
+
+        job =
+          Sanbase.Notifications.Workers.ProcessNotification.new(job_args,
+            scheduled_at: seconds_after(5)
+          )
+
+        {:ok, %{id: job_id}} = Oban.insert(@oban_conf_name, job)
+
+        {:ok, job_id}
+      end)
+      |> Ecto.Multi.run(:update_notification, fn _repo,
+                                                 %{notification: notification, oban_job: job_id} ->
+        Notification.update(notification, %{job_id: job_id})
+      end)
+
+    multi
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{update_notification: notification}} -> {:ok, notification}
+      {:error, _step, reason, _changes} -> {:error, reason}
+    end
   end
 
-  defp metric_updates_list do
-    Config.module_get(Sanbase.Notifications, :mailjet_metric_updates_list)
-    |> String.to_existing_atom()
+  def should_notify_metric_event?(metric_registry_id) do
+    {:ok, metric_registry} = Sanbase.Metric.Registry.by_id(metric_registry_id)
+    deploy_env = Sanbase.Utils.Config.module_get(Sanbase, :deployment_env)
+    metric_registry.exposed_environments in [deploy_env, "all"] or deploy_env in ["dev", "test"]
+  end
+
+  def fetch_last_version(schema, id) do
+    Repo.one(
+      from(v in Sanbase.Version,
+        where: v.entity_id == ^id,
+        where: v.entity_schema == ^schema,
+        order_by: [desc: v.recorded_at],
+        limit: 1
+      )
+    )
+  end
+
+  defp cancel_scheduled_notifications(metric_registry_id) do
+    all_scheduled_notifications =
+      from(n in Notification,
+        where: n.metric_registry_id == ^metric_registry_id and n.status == "scheduled"
+      )
+
+    all_job_ids = from(n in all_scheduled_notifications, select: n.job_id) |> Repo.all()
+
+    # Cancel all Oban jobs
+    if all_job_ids != [] do
+      query = Oban.Job |> where([j], j.id in ^all_job_ids)
+      Oban.cancel_all_jobs(:oban_web, query)
+    end
+
+    # Update notification statuses to cancelled
+    Sanbase.Repo.update_all(all_scheduled_notifications, set: [status: "cancelled"])
+
+    :ok
   end
 end

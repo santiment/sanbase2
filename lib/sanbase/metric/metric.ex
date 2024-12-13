@@ -431,6 +431,33 @@ defmodule Sanbase.Metric do
   end
 
   @doc ~s"""
+  Get the list of available selectors for a metric.
+  This is a separate function as it combines the available selectors from multiple
+  modules that implement the metric.
+  Most notably, social metrics from CH are precomptued only for slugs, while the
+  SocialData.MetricAdapter implements it for text, founders, etc.
+  """
+  @spec available_selectors(metric) :: Type.available_selectors_result()
+  def available_selectors(metric) do
+    case get_module(metric, return_all_modules: true) do
+      nil ->
+        metric_not_available_error(metric)
+
+      module_or_modules ->
+        available_selectors =
+          module_or_modules
+          |> List.wrap()
+          |> Enum.flat_map(fn module ->
+            {:ok, metadata} = apply(module, :metadata, [metric])
+            metadata.available_selectors
+          end)
+          |> Enum.uniq()
+
+        {:ok, available_selectors}
+    end
+  end
+
+  @doc ~s"""
   Get the first datetime for which a given metric is available for a given slug
   """
   @spec first_datetime(metric, selector, opts) :: Type.first_datetime_result()
@@ -851,7 +878,10 @@ defmodule Sanbase.Metric do
         end
 
       true ->
-        metric_to_single_module(metric, opts)
+        case Keyword.get(opts, :return_all_modules, false) do
+          false -> metric_to_single_module(metric, opts)
+          true -> Map.get(Helper.metric_to_modules_map(), metric)
+        end
     end
   end
 

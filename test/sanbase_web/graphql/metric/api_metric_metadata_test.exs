@@ -1,10 +1,63 @@
 defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import Sanbase.Factory, only: [rand_str: 0]
+  import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
   alias Sanbase.Metric
+
+  test "returns data for availableFounders", %{conn: conn} do
+    metrics_with_founders =
+      Metric.available_metrics()
+      |> Enum.filter(fn m ->
+        {:ok, selectors} = Metric.available_selectors(m)
+
+        :founders in selectors
+      end)
+
+    insert(:project, %{name: "Ethereum", ticker: "ETH", slug: "ethereum"})
+    insert(:project, %{name: "Bitcoin", ticker: "BTC", slug: "bitcoin"})
+
+    rows = [
+      ["Vitalik Buterin", "ethereum"],
+      ["Satoshi Nakamoto", "bitcoin"]
+    ]
+
+    query = fn metric ->
+      """
+      {
+        getMetric(metric: "#{metric}"){
+          metadata{
+            availableFounders{ name project{ name } }
+          }
+        }
+      }
+      """
+    end
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      for metric <- metrics_with_founders do
+        result =
+          conn
+          |> post("/graphql", query_skeleton(query.(metric)))
+          |> json_response(200)
+          |> get_in(["data", "getMetric", "metadata", "availableFounders"])
+
+        assert %{"name" => "Vitalik Buterin", "project" => %{"name" => "Ethereum"}} in result
+        assert %{"name" => "Satoshi Nakamoto", "project" => %{"name" => "Bitcoin"}} in result
+      end
+    end)
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query.("price_usd")))
+      |> json_response(200)
+      |> get_in(["data", "getMetric", "metadata", "availableFounders"])
+
+    # No founders for metrics without founders in their selectors
+    assert result == []
+  end
 
   test "returns data for all available metric", %{conn: conn} do
     metrics = Metric.available_metrics() |> Enum.shuffle()

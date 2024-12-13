@@ -23,15 +23,30 @@ defmodule Sanbase.AvailableMetrics do
     |> validate_required([:metric])
   end
 
+  def get_not_updated() do
+    from(
+      av in __MODULE__,
+      where: av.updated_at < ^DateTime.add(DateTime.utc_now(), -86400),
+      order_by: [asc: av.updated_at],
+      select: av.metric
+    )
+    |> Sanbase.Repo.all()
+  end
+
   def update_all() do
     metrics = Sanbase.Metric.available_metrics()
+    metrics_not_updated_recently = get_not_updated()
 
-    for metric <- metrics do
+    # First update the metrics that were not updated for the longest time
+    ordered_metrics = metrics_not_updated_recently ++ (metrics -- metrics_not_updated_recently)
+
+    for metric <- ordered_metrics do
       try do
         {:ok, slugs} = Sanbase.Metric.available_slugs(metric)
         {:ok, _} = create_or_update(%{metric: metric, available_slugs: slugs})
       rescue
-        e -> Logger.error("Error updating available slugs for #{metric}: #{Exception.message(e)}")
+        e ->
+          Logger.error("Error updating available slugs for #{metric}: #{Exception.message(e)}")
       end
     end
   end
@@ -41,7 +56,7 @@ defmodule Sanbase.AvailableMetrics do
     |> changeset(attrs)
     |> Sanbase.Repo.insert(
       conflict_target: :metric,
-      on_conflict: {:replace, [:available_slugs]}
+      on_conflict: {:replace, [:available_slugs, :updated_at]}
     )
   end
 

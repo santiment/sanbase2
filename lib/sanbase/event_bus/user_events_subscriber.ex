@@ -114,6 +114,26 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
     state
   end
 
+  defp handle_event(
+         %{
+           data: %{
+             event_type: :disconnect_telegram_bot,
+             user_id: _,
+             telegram_chat_id: chat_id
+           }
+         },
+         event_shadow,
+         state
+       ) do
+    Sanbase.Telegram.send_message_to_chat_id(
+      chat_id,
+      "You have successfully disconnected your Telegram bot from your Sanbase profile."
+    )
+
+    EventBus.mark_as_completed({__MODULE__, event_shadow})
+    state
+  end
+
   defp handle_event(_event, event_shadow, state) do
     # The unhandled events are marked as completed
     EventBus.mark_as_completed({__MODULE__, event_shadow})

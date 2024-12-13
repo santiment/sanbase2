@@ -28,6 +28,7 @@ defmodule SanbaseWeb.Graphql.MostTweetsSocialDataTest do
           size: 2){
             slug
             tweets{
+              tweetId
               datetime
               text
               screenName
@@ -50,6 +51,17 @@ defmodule SanbaseWeb.Graphql.MostTweetsSocialDataTest do
                "slug" => "bitcoin",
                "tweets" => [
                  %{
+                   "datetime" => "2024-11-27T21:19:50Z",
+                   "repliesCount" => 0,
+                   "retweetsCount" => 0,
+                   "screenName" => "CryptoLifer33",
+                   "sentimentNegative" => 0.0044069796,
+                   "sentimentPositive" => 0.9955930204,
+                   "text" =>
+                     "Life is good. I made thousands trading today and life is good. Thank God, thanks to Bitcoin, my family and #Florida What do you do to celebrate your wins? https://t.co/gY5c5Eb8Dh",
+                   "tweetId" => "1861882647930085536"
+                 },
+                 %{
                    "datetime" => "2024-11-26T18:21:30Z",
                    "repliesCount" => 0,
                    "retweetsCount" => 0,
@@ -57,17 +69,8 @@ defmodule SanbaseWeb.Graphql.MostTweetsSocialDataTest do
                    "sentimentNegative" => 0.0171372827,
                    "sentimentPositive" => 0.9828627173,
                    "text" =>
-                     "Whipsaw wick completed, lets continue. \n\n$BTC https://t.co/e8mH8RUKjO"
-                 },
-                 %{
-                   "datetime" => "2024-11-26T19:07:51Z",
-                   "repliesCount" => 0,
-                   "retweetsCount" => 0,
-                   "screenName" => "IIICapital",
-                   "sentimentNegative" => 0.0222001588,
-                   "sentimentPositive" => 0.9777998412,
-                   "text" =>
-                     "Incredible podcast with two of the sharpest minds in bitcoin.\n\nThank you both for the time @Excellion and @dhruvbansal.\n\nTune in and comment whether you think bitcoin was an invention or discovery!"
+                     "Whipsaw wick completed, lets continue. \n\n$BTC https://t.co/e8mH8RUKjO",
+                   "tweetId" => "1861475381548851381"
                  }
                ]
              } in result
@@ -83,7 +86,8 @@ defmodule SanbaseWeb.Graphql.MostTweetsSocialDataTest do
                    "sentimentNegative" => 0.0269591219,
                    "sentimentPositive" => 0.9730408781,
                    "text" =>
-                     "Thanks for hosting this debate @laurashin! While I think Justin and I share a similar vision of what Ethereum should ideally become in a couple of years, he thinks we are on track for it - I believe decisive action is needed now to achieve that vision."
+                     "Thanks for hosting this debate @laurashin! While I think Justin and I share a similar vision of what Ethereum should ideally become in a couple of years, he thinks we are on track for it - I believe decisive action is needed now to achieve that vision.",
+                   "tweetId" => "1861456784457654773"
                  },
                  %{
                    "datetime" => "2024-11-27T14:00:12Z",
@@ -93,7 +97,8 @@ defmodule SanbaseWeb.Graphql.MostTweetsSocialDataTest do
                    "sentimentNegative" => 0.0277438289,
                    "sentimentPositive" => 0.9722561711,
                    "text" =>
-                     "New Launch Alert ✈️\n\nA big welcome to @doge_eth_gov who have launched an $DOGE - $WETH pool on Aerodrome.\n\nBridge $DOGE from Ethereum mainnet to @base, powered by @axelar: https://t.co/wejMHuq62H\n\nLiquidity has been added and LP rewards incoming. https://t.co/A5lpoDZakD"
+                     "New Launch Alert ✈️\n\nA big welcome to @doge_eth_gov who have launched an $DOGE - $WETH pool on Aerodrome.\n\nBridge $DOGE from Ethereum mainnet to @base, powered by @axelar: https://t.co/wejMHuq62H\n\nLiquidity has been added and LP rewards incoming. https://t.co/A5lpoDZakD",
+                   "tweetId" => "1861772012814991729"
                  }
                ]
              } in result
@@ -104,9 +109,9 @@ defmodule SanbaseWeb.Graphql.MostTweetsSocialDataTest do
     %{
       "data" => %{
         "bitcoin" =>
-          "[{\"screen_name\":\"take_gains\",\"text\":\"Whipsaw wick completed, lets continue. \\n\\n$BTC https:\\/\\/t.co\\/e8mH8RUKjO\",\"reply\":0,\"retweet\":0,\"timestamp\":\"2024-11-26T18:21:30\",\"sentiment_neg\":0.0171372827,\"sentiment_pos\":0.9828627173},{\"screen_name\":\"IIICapital\",\"text\":\"Incredible podcast with two of the sharpest minds in bitcoin.\\n\\nThank you both for the time @Excellion and @dhruvbansal.\\n\\nTune in and comment whether you think bitcoin was an invention or discovery!\",\"reply\":0,\"retweet\":0,\"timestamp\":\"2024-11-26T19:07:51\",\"sentiment_neg\":0.0222001588,\"sentiment_pos\":0.9777998412}]",
+          "[{\"tweet_id\":1861882647930085536,\"screen_name\":\"CryptoLifer33\",\"text\":\"Life is good. I made thousands trading today and life is good. Thank God, thanks to Bitcoin, my family and #Florida What do you do to celebrate your wins? https:\\/\\/t.co\\/gY5c5Eb8Dh\",\"reply\":0,\"retweet\":0,\"timestamp\":\"2024-11-27T21:19:50\",\"sentiment_neg\":0.0044069796,\"sentiment_pos\":0.9955930204},{\"tweet_id\":1861475381548851381,\"screen_name\":\"take_gains\",\"text\":\"Whipsaw wick completed, lets continue. \\n\\n$BTC https:\\/\\/t.co\\/e8mH8RUKjO\",\"reply\":0,\"retweet\":0,\"timestamp\":\"2024-11-26T18:21:30\",\"sentiment_neg\":0.0171372827,\"sentiment_pos\":0.9828627173}]",
         "ethereum" =>
-          "[{\"screen_name\":\"koeppelmann\",\"text\":\"Thanks for hosting this debate @laurashin! While I think Justin and I share a similar vision of what Ethereum should ideally become in a couple of years, he thinks we are on track for it - I believe decisive action is needed now to achieve that vision.\",\"reply\":0,\"retweet\":0,\"timestamp\":\"2024-11-26T17:07:36\",\"sentiment_neg\":0.0269591219,\"sentiment_pos\":0.9730408781},{\"screen_name\":\"AerodromeFi\",\"text\":\"New Launch Alert \\u2708\\ufe0f\\n\\nA big welcome to @doge_eth_gov who have launched an $DOGE - $WETH pool on Aerodrome.\\n\\nBridge $DOGE from Ethereum mainnet to @base, powered by @axelar: https:\\/\\/t.co\\/wejMHuq62H\\n\\nLiquidity has been added and LP rewards incoming. https:\\/\\/t.co\\/A5lpoDZakD\",\"reply\":0,\"retweet\":1,\"timestamp\":\"2024-11-27T14:00:12\",\"sentiment_neg\":0.0277438289,\"sentiment_pos\":0.9722561711}]"
+          "[{\"tweet_id\":1861456784457654773,\"screen_name\":\"koeppelmann\",\"text\":\"Thanks for hosting this debate @laurashin! While I think Justin and I share a similar vision of what Ethereum should ideally become in a couple of years, he thinks we are on track for it - I believe decisive action is needed now to achieve that vision.\",\"reply\":0,\"retweet\":0,\"timestamp\":\"2024-11-26T17:07:36\",\"sentiment_neg\":0.0269591219,\"sentiment_pos\":0.9730408781},{\"tweet_id\":1861772012814991729,\"screen_name\":\"AerodromeFi\",\"text\":\"New Launch Alert \\u2708\\ufe0f\\n\\nA big welcome to @doge_eth_gov who have launched an $DOGE - $WETH pool on Aerodrome.\\n\\nBridge $DOGE from Ethereum mainnet to @base, powered by @axelar: https:\\/\\/t.co\\/wejMHuq62H\\n\\nLiquidity has been added and LP rewards incoming. https:\\/\\/t.co\\/A5lpoDZakD\",\"reply\":0,\"retweet\":1,\"timestamp\":\"2024-11-27T14:00:12\",\"sentiment_neg\":0.0277438289,\"sentiment_pos\":0.9722561711}]"
       }
     }
   end

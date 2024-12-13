@@ -45,6 +45,22 @@ defmodule Sanbase.Accounts.EventEmitter do
     |> notify()
   end
 
+  def handle_event(
+        {:ok, user},
+        :disconnect_telegram_bot,
+        %{telegram_chat_id: telegram_chat_id} = args
+      ) do
+    Map.merge(
+      %{
+        event_type: :disconnect_telegram_bot,
+        user_id: user.id,
+        telegram_chat_id: telegram_chat_id
+      },
+      args
+    )
+    |> notify()
+  end
+
   def handle_event({:ok, user}, :update_email_candidate, %{email_candidate: _} = args) do
     Map.merge(%{event_type: :update_email_candidate, user_id: user.id}, args)
     |> notify()

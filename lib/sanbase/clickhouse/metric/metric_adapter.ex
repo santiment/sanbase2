@@ -261,12 +261,14 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def available_slugs(), do: get_available_slugs()
-
   @impl Sanbase.Metric.Behaviour
   def available_slugs(metric) do
     cond do
+      "age_distribution" ->
+        # avoid infinite loop if it goes into HistogramMetric
+        get_available_slugs(metric)
+
       metric in Registry.metrics_mapset_with_data_type(:histogram) ->
-        # otherwise age_distribution causes an infinite loop
         HistogramMetric.available_slugs(metric)
 
       true ->

@@ -37,6 +37,7 @@ defmodule Sanbase.SocialData.Tweet do
       tweets =
         Enum.map(list, fn map ->
           %{
+            tweet_id: Map.fetch!(map, "tweet_id") |> to_string(),
             text: Map.fetch!(map, "text"),
             screen_name: Map.fetch!(map, "screen_name"),
             datetime:

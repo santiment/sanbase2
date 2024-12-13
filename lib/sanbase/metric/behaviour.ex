@@ -121,6 +121,8 @@ defmodule Sanbase.Metric.Behaviour do
 
   @type available_label_fqns_result :: {:ok, list(String.t())} | {:error, String.t()}
 
+  @type available_selectors_result :: {:ok, list(atom())} | {:error, String.t()}
+
   @type has_incomplete_data_result :: boolean()
 
   @type complexity_weight_result :: number()

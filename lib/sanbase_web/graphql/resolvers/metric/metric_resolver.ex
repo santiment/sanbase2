@@ -131,6 +131,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end
   end
 
+  def get_available_selectors(_root, _args, %{source: %{metric: metric}}) do
+    case Metric.available_selectors(metric) do
+      {:ok, selectors} ->
+        {:ok, selectors}
+
+      {:error, error} ->
+        {:error, handle_graphql_error("available_selectors", %{metric: metric}, error)}
+    end
+  end
+
   def timeseries_data_complexity(_root, args, resolution) do
     # Explicitly set `child_complexity` to 2 as this would be the
     # value if both `datetime` and `value` fields are queried.

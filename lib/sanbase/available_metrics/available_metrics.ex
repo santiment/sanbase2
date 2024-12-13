@@ -68,6 +68,7 @@ defmodule Sanbase.AvailableMetrics do
     metrics
     |> Enum.map(fn metric ->
       {:ok, m} = Sanbase.Metric.metadata(metric)
+      {:ok, available_selectors} = Sanbase.Metric.available_selectors(metric)
 
       %{
         metric: m.metric,
@@ -79,7 +80,7 @@ defmodule Sanbase.AvailableMetrics do
         frequency_seconds: Sanbase.DateTimeUtils.str_to_sec(m.min_interval),
         sanbase_access: "free",
         sanapi_access: "free",
-        available_selectors: m.available_selectors,
+        available_selectors: available_selectors,
         required_selectors: m.required_selectors,
         access: Map.get(access_map, metric)
       }

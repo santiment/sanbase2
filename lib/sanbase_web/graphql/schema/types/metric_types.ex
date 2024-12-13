@@ -407,7 +407,9 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     Every metric has `availableSelectors` in its metadata, showing exactly
     which of the selectors can be used.
     """
-    field(:available_selectors, list_of(:selector_name))
+    field :available_selectors, list_of(:selector_name) do
+      resolve(&MetricResolver.get_available_selectors/3)
+    end
 
     @desc ~s"""
     The list of required selectors for the metric. It is used to show the list

@@ -17,7 +17,9 @@ defmodule Sanbase.Application.Admin do
   """
   def children() do
     # Define workers and child supervisors to be supervised
-    children = []
+    children = [
+      {Oban, Sanbase.Application.Web.oban_web_config()}
+    ]
 
     opts = [
       name: Sanbase.WebSupervisor,

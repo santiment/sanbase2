@@ -91,8 +91,21 @@ defmodule Sanbase.Mailer do
 
   defp has_card?(user) do
     case Sanbase.StripeApi.fetch_stripe_customer(user) do
-      {:ok, customer} -> not is_nil(customer.default_source)
-      _ -> false
+      {:ok, customer} ->
+        has_default_source = not is_nil(customer.default_source)
+
+        has_default_payment_method =
+          not is_nil(
+            get_in(customer, [
+              Access.key!(:invoice_settings),
+              Access.key!(:default_payment_method)
+            ])
+          )
+
+        has_default_source or has_default_payment_method
+
+      _ ->
+        false
     end
   end
 

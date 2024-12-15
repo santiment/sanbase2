@@ -59,7 +59,7 @@ defmodule Sanbase.Application.Web do
     {children, opts}
   end
 
-  def oban_web_config() do
+  defp oban_web_config() do
     config = Application.fetch_env!(:sanbase, Oban.Web)
 
     # In case the DB config or URL is pointing to production, put the proper

@@ -1,6 +1,7 @@
 defmodule Sanbase.Billing.Subscription.Timeseries do
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query
 
   alias Sanbase.Utils.Config
   alias Sanbase.Repo
@@ -102,7 +103,10 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
   end
 
   def stats(subscriptions) do
-    %{
+    stats = %{
+      liquidity: get_active_liquidity_subscriptions_count(),
+      sanr_nft: get_active_sanr_nft_subscriptions_count(),
+      burning_nft: get_active_burning_nft_subscriptions_count(),
       team_members: team_members(subscriptions) |> Enum.count(),
       active_and_paid: active_subscriptions(subscriptions) |> paid() |> Enum.count(),
       trialing: trialing_subscriptions(subscriptions) |> Enum.count(),
@@ -117,6 +121,33 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
         |> paid()
         |> Enum.count()
     }
+
+    stats
+    |> Map.put(
+      :total_sanbase_active_and_paid,
+      stats.sanbase_active_and_paid + stats.liquidity + stats.sanr_nft + stats.burning_nft
+    )
+  end
+
+  def get_active_liquidity_subscriptions_count do
+    from(s in Sanbase.Billing.Subscription,
+      where: s.type == :liquidity and s.status == :active
+    )
+    |> Sanbase.Repo.aggregate(:count)
+  end
+
+  def get_active_sanr_nft_subscriptions_count do
+    from(s in Sanbase.Billing.Subscription,
+      where: s.type == :sanr_points_nft and s.status == :active
+    )
+    |> Sanbase.Repo.aggregate(:count)
+  end
+
+  def get_active_burning_nft_subscriptions_count do
+    from(s in Sanbase.Billing.Subscription,
+      where: s.type == :burning_nft and s.status == :active
+    )
+    |> Sanbase.Repo.aggregate(:count)
   end
 
   def list_active_subs do

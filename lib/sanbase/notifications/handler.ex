@@ -4,7 +4,8 @@ defmodule Sanbase.Notifications.Handler do
 
   alias Sanbase.{Repo, Notifications.Notification}
 
-  @oban_conf_name :oban_web
+  # The metric registry events and manual notifications come from admin pod, so we use the admin Oban config
+  @oban_conf_name :oban_admin
 
   @default_channels %{
     "metric_created" => ["discord", "email"],

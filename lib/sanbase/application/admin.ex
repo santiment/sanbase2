@@ -17,7 +17,9 @@ defmodule Sanbase.Application.Admin do
   """
   def children() do
     # Define workers and child supervisors to be supervised
-    children = []
+    children = [
+      {Oban, oban_admin_config()}
+    ]
 
     opts = [
       name: Sanbase.WebSupervisor,
@@ -27,5 +29,18 @@ defmodule Sanbase.Application.Admin do
     ]
 
     {children, opts}
+  end
+
+  def oban_admin_config() do
+    config = Application.fetch_env!(:sanbase, Oban.Admin)
+
+    # In case the DB config or URL is pointing to production, put the proper
+    # schema in the config. This will be used both on prod and locally when
+    # connecting to the stage DB. This is automated so when the stage DB is
+    # used, the config should not be changed manually to include the schema
+    case Sanbase.Utils.prod_db?() do
+      true -> Keyword.put(config, :prefix, "sanbase2")
+      false -> config
+    end
   end
 end

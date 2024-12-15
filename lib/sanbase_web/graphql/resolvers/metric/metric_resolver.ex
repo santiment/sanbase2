@@ -107,6 +107,29 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end
   end
 
+  def get_available_founders(_root, _args, %{source: %{metric: metric}}) do
+    with {:ok, selectors} <- Metric.available_selectors(metric) do
+      case :founders in selectors do
+        true ->
+          with {:ok, data} <- Sanbase.Clickhouse.Founders.get_founders() do
+            slugs = Enum.map(data, & &1.slug)
+            projects = Sanbase.Project.List.by_slugs(slugs)
+            slug_to_project_map = Map.new(projects, &{&1.slug, &1})
+
+            result =
+              Enum.map(data, fn map ->
+                Map.put(map, :project, slug_to_project_map[map.slug])
+              end)
+
+            {:ok, result}
+          end
+
+        false ->
+          {:ok, []}
+      end
+    end
+  end
+
   def get_human_readable_name(_root, _args, %{source: %{metric: metric}}),
     do: Metric.human_readable_name(metric)
 
@@ -128,6 +151,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
       {:error, error} ->
         {:error, handle_graphql_error("metadata", %{metric: metric}, error)}
+    end
+  end
+
+  def get_available_selectors(_root, _args, %{source: %{metric: metric}}) do
+    case Metric.available_selectors(metric) do
+      {:ok, selectors} ->
+        {:ok, selectors}
+
+      {:error, error} ->
+        {:error, handle_graphql_error("available_selectors", %{metric: metric}, error)}
     end
   end
 

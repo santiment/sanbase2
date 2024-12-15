@@ -117,6 +117,11 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     value(:table)
   end
 
+  object :founder do
+    field(:name, non_null(:string))
+    field(:project, :project)
+  end
+
   object :broken_data do
     field(:from, non_null(:datetime))
     field(:to, non_null(:datetime))
@@ -407,7 +412,13 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     Every metric has `availableSelectors` in its metadata, showing exactly
     which of the selectors can be used.
     """
-    field(:available_selectors, list_of(:selector_name))
+    field :available_selectors, list_of(:selector_name) do
+      resolve(&MetricResolver.get_available_selectors/3)
+    end
+
+    field :available_founders, list_of(:founder) do
+      cache_resolve(&MetricResolver.get_available_founders/3)
+    end
 
     @desc ~s"""
     The list of required selectors for the metric. It is used to show the list

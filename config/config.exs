@@ -279,6 +279,11 @@ config :sanbase, Oban.Web,
   ],
   name: :oban_web
 
+config :sanbase, Oban.Admin,
+  repo: Sanbase.Repo,
+  queues: [],
+  name: :oban_admin
+
 config :nostrum,
   token: {:system, "DISCORD_BOT_QUERY_TOKEN"},
   gateway_intents: [

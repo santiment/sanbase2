@@ -121,6 +121,10 @@ config :sanbase, Oban.Web,
   name: :oban_web,
   testing: :manual
 
+config :sanbase, Oban.Admin,
+  name: :oban_admin,
+  testing: :manual
+
 config :sanbase, Sanbase.Cryptocompare.Price.HistoricalScheduler,
   enabled?: {:system, "CRYPTOCOMPARE_HISTORICAL_OHLCV_PRICES_SCHEDULER_ENABLED", "true"}
 

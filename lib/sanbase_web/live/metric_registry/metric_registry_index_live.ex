@@ -38,7 +38,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     <div class="flex flex-col items-start justify-evenly">
       <div class="text-gray-400 text-sm py-2">
         <div>
-          Showing <%= length(@visible_metrics_ids) %> metrics
+          Showing {length(@visible_metrics_ids)} metrics
         </div>
       </div>
       <.navigation />
@@ -50,7 +50,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
         <:col :let={row} label="ID">
           {row.id}
         </:col>
-        <:col :let={row} label="Metric Names" col_class="max-w-[720px] break-all">
+        <:col :let={row} label="Metric Names" col_class="max-w-[420px]">
           <.metric_names
             metric={row.metric}
             internal_metric={row.internal_metric}
@@ -67,7 +67,6 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
         </:col>
         <:col
           :let={row}
-<<<<<<< HEAD
           label="Table"
           popover_target="popover-table"
           popover_target_text={get_popover_text(%{key: "Clickhouse Table"})}
@@ -84,25 +83,6 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
         </:col>
         <:col
           :let={row}
-||||||| parent of e83704e2d (Add is_verified toggle to Metric Registry LiveView)
-          label="Table"
-          popover_target="popover-table"
-          popover_target_text={get_popover_text(%{key: "Clickhouse Table"})}
-        >
-          <.embeded_schema_show list={row.tables} key={:name} />
-        </:col>
-        <:col
-          :let={row}
-          label="Default Aggregation"
-          popover_target="popover-default-aggregation"
-          popover_target_text={get_popover_text(%{key: "Default Aggregation"})}
-        >
-          <%= row.default_aggregation %>
-        </:col>
-        <:col
-          :let={row}
-=======
->>>>>>> e83704e2d (Add is_verified toggle to Metric Registry LiveView)
           label="Access"
           popover_target="popover-access"
           popover_target_text={get_popover_text(%{key: "Access"})}
@@ -212,46 +192,48 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
      )}
   end
 
-  defp list_metrics_verified_status_changed(assigns) do
+  defp embeded_schema_show(assigns) do
     ~H"""
-<<<<<<< HEAD
     <div>
       <div :for={item <- @list}>
         {Map.get(item, @key)}
-||||||| parent of e83704e2d (Add is_verified toggle to Metric Registry LiveView)
-    <div>
-      <div :for={item <- @list}>
-        <%= Map.get(item, @key) %>
-=======
-    <div :if={@changed_metrics_ids == []}>
-      No changes
+      </div>
     </div>
-    <div :if={@changed_metrics_ids != []}>
-      <.table id="uploaded_images" rows={Enum.filter(@metrics, &(&1.id in @changed_metrics_ids))}>
-        <:col :let={row} label="Metric">
-          <.metric_names
-            metric={row.metric}
-            internal_metric={row.internal_metric}
-            human_readable_name={row.human_readable_name}
+    """
+  end
+
+  defp list_metrics_verified_status_changed(assigns) do
+    ~H"""
+    <div>
+      <div :if={@changed_metrics_ids == []}>
+        No changes
+      </div>
+      <div :if={@changed_metrics_ids != []}>
+        <.table id="uploaded_images" rows={Enum.filter(@metrics, &(&1.id in @changed_metrics_ids))}>
+          <:col :let={row} label="Metric" col_class="max-w-[420px]">
+            <.metric_names
+              metric={row.metric}
+              internal_metric={row.internal_metric}
+              human_readable_name={row.human_readable_name}
+            />
+          </:col>
+          <:col :let={row} label="New Status">
+            <span :if={row.is_verified} class="ms-3 text-sm font-bold text-green-900">VERIFIED</span>
+            <span :if={!row.is_verified} class="ms-3 text-sm font-bold text-red-700">UNVERIFIED</span>
+          </:col>
+        </.table>
+        <div class="mt-4">
+          <.phx_click_button
+            phx_click="confirm_verified_changes_update"
+            class="bg-green-500 hover:bg-green-900 text-white"
+            text="Confirm Changes"
           />
-        </:col>
-        <:col :let={row} label="New Status">
-          <span :if={row.is_verified} class="ms-3 text-sm font-bold text-green-900">VERIFIED</span>
-          <span :if={!row.is_verified} class="ms-3 text-sm font-bold text-red-700">UNVERIFIED</span>
-        </:col>
-      </.table>
-      <div class="mt-4">
-        <.phx_click_button
-          phx_click="confirm_verified_changes_update"
-          class="bg-green-500 hover:bg-green-900 text-white"
-          text="Confirm Changes"
-        />
-        <.phx_click_button
-          phx_click="hide_show_verified_changes_modal"
-          class="bg-white hover:bg-gray-100 text-gray-800"
-          text="Close"
-        />
->>>>>>> e83704e2d (Add is_verified toggle to Metric Registry LiveView)
+          <.phx_click_button
+            phx_click="hide_show_verified_changes_modal"
+            class="bg-white hover:bg-gray-100 text-gray-800"
+            text="Close"
+          />
+        </div>
       </div>
     </div>
     """
@@ -398,15 +380,15 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
         @class
       ]}
     >
-      <%= @text %>
-      <span :if={@count} class="text-gray-400">(<%= @count %>)</span>
+      {@text}
+      <span :if={@count} class="text-gray-400">({@count})</span>
     </button>
     """
   end
 
   defp metric_names(assigns) do
     ~H"""
-    <div class="flex flex-col">
+    <div class="flex flex-col break-normal">
       <div class="text-black text-base">{@human_readable_name}</div>
       <div class="text-gray-900 text-sm">{@metric} (API)</div>
       <div class="text-gray-900 text-sm">{@internal_metric} (DB)</div>

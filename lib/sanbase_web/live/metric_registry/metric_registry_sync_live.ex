@@ -4,13 +4,23 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
   alias SanbaseWeb.AvailableMetricsComponents
   @impl true
   def mount(_params, _session, socket) do
-    metrics = Sanbase.Metric.Registry.all() |> Enum.filter(&(&1.sync_status == "not_synced"))
+    metrics = Sanbase.Metric.Registry.all()
+
+    syncable_metrics =
+      metrics
+      |> Enum.filter(&(&1.sync_status == "not_synced" and &1.is_verified == true))
+
+    not_syncable_metrics =
+      metrics
+      |> Enum.filter(&(&1.sync_status == "not_synced" and &1.is_verified == false))
 
     {:ok,
      socket
      |> assign(
-       metrics: metrics,
-       sync_metric_ids: Enum.map(metrics, & &1.id) |> MapSet.new()
+       syncable_metrics: syncable_metrics,
+       non_syncable_metrics: not_syncable_metrics,
+       metric_ids_to_sync: Enum.map(syncable_metrics, & &1.id) |> MapSet.new(),
+       page_title: "Syncing Metrics"
      )}
   end
 
@@ -20,7 +30,10 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
     <div class="flex flex-col items-start justify-evenly">
       <div class="text-gray-400 text-sm py-2">
         <div>
-          Showing <%= length(@metrics) %> metrics that are not synced
+          {length(@syncable_metrics)} metric(s) available to be synced from stage to prod}
+        </div>
+        <div :if={@non_syncable_metrics != []}>
+          {length(@non_syncable_metrics)} metric(s) not synced but need(s) to be verified first}
         </div>
       </div>
       <div class="my-4">
@@ -42,12 +55,12 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
           class="bg-white hover:bg-gray-100 text-zync-900"
         />
       </div>
-      <.table id="metrics_registry" rows={@metrics}>
+      <.table id="metrics_registry" rows={@syncable_metrics}>
         <:col :let={row} label="Should Sync">
-          <.checkbox row={row} sync_metric_ids={@sync_metric_ids} />
+          <.checkbox row={row} metric_ids_to_sync={@metric_ids_to_sync} />
         </:col>
         <:col :let={row} label="ID">
-          <%= row.id %>
+          {row.id}
         </:col>
         <:col :let={row} label="Metric Names" col_class="max-w-[720px] break-all">
           <.metric_names
@@ -61,7 +74,7 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
         text="Sync Metrics"
         phx_click="sync"
         class="bg-blue-700 hover:bg-blue-800 text-white"
-        count={MapSet.size(@sync_metric_ids)}
+        count={MapSet.size(@metric_ids_to_sync)}
         phx_disable_with="Syncing..."
       />
     </div>
@@ -85,46 +98,52 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
       ]}
       phx-disable-with={@phx_disable_with}
     >
-      <%= @text %>
-      <span :if={@count} class="text-gray-400">(<%= @count %>)</span>
+      {@text}
+      <span :if={@count} class="text-gray-400">({@count})</span>
     </button>
     """
   end
 
   @impl true
   def handle_event("sync", _params, socket) do
-    Process.sleep(5000)
+    ids = socket.assigns.metric_ids_to_sync |> Enum.to_list()
+
+    case Sanbase.Metric.Registry.Sync.sync(ids) do
+      {:ok, data} -> {:ok, data}
+      {:error, error} -> {:error, error}
+    end
+
     {:noreply, socket}
   end
 
   def handle_event("update_should_sync", %{"metric_registry_id" => id} = params, socket) do
     checked = Map.get(params, "value") == "on"
 
-    sync_metric_ids =
+    metric_ids_to_sync =
       if checked do
-        MapSet.put(socket.assigns.sync_metric_ids, id)
+        MapSet.put(socket.assigns.metric_ids_to_sync, id)
       else
-        MapSet.delete(socket.assigns.sync_metric_ids, id)
+        MapSet.delete(socket.assigns.metric_ids_to_sync, id)
       end
 
-    {:noreply, assign(socket, sync_metric_ids: sync_metric_ids)}
+    {:noreply, assign(socket, metric_ids_to_sync: metric_ids_to_sync)}
   end
 
   def handle_event("select_all", _params, socket) do
     {:noreply,
-     assign(socket, sync_metric_ids: Enum.map(socket.assigns.metrics, & &1.id) |> MapSet.new())}
+     assign(socket, metric_ids_to_sync: Enum.map(socket.assigns.metrics, & &1.id) |> MapSet.new())}
   end
 
   def handle_event("deselect_all", _params, socket) do
-    {:noreply, assign(socket, sync_metric_ids: MapSet.new())}
+    {:noreply, assign(socket, metric_ids_to_sync: MapSet.new())}
   end
 
   defp metric_names(assigns) do
     ~H"""
     <div class="flex flex-col">
-      <div class="text-black text-base"><%= @human_readable_name %></div>
-      <div class="text-gray-900 text-sm"><%= @metric %> (API)</div>
-      <div class="text-gray-900 text-sm"><%= @internal_metric %> (DB)</div>
+      <div class="text-black text-base">{@human_readable_name}</div>
+      <div class="text-gray-900 text-sm">{@metric} (API)</div>
+      <div class="text-gray-900 text-sm">{@internal_metric} (DB)</div>
     </div>
     """
   end
@@ -136,7 +155,7 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
         id="not-verified-only"
         name={"sync-status-#{@row.id}"}
         type="checkbox"
-        checked={@row.id in @sync_metric_ids}
+        checked={@row.id in @metric_ids_to_sync}
         class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded"
         phx-click={JS.push("update_should_sync", value: %{metric_registry_id: @row.id})}
         }

@@ -60,6 +60,9 @@ config :sanbase, Sanbase.KafkaExporter, producer: Sanbase.InMemoryKafka.Producer
 # with. When running the app locally these values are overridden by the values
 # in the .env.dev or dev.secret.exs files, which are ignored by git and not
 # published in the repository. Please do not report these as security issues.
+# To create the user for your local env:
+# In psql: CREATE ROLE postgres WITH LOGIN SUPERUSER PASSWORD 'postgres';
+# In the terminal: mix ecto.setup
 config :sanbase, Sanbase.Repo,
   username: "postgres",
   password: "postgres",

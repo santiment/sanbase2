@@ -3,9 +3,12 @@ defmodule Sanbase.Utils.Config do
   Module for reading configuration values from the application environment.
   """
 
-  def module_get(module, key) do
+  def module_get(module, key_or_keys)
+      when is_atom(key_or_keys) or is_list(key_or_keys) do
+    keys = List.wrap(key_or_keys)
+
     Application.fetch_env!(:sanbase, module)
-    |> Keyword.get(key)
+    |> get_in(keys)
     |> parse_config_value()
   end
 
@@ -15,9 +18,12 @@ defmodule Sanbase.Utils.Config do
     |> parse_config_value()
   end
 
-  def module_get(module, key, default) do
+  def module_get(module, key_or_keys, default)
+      when is_atom(key_or_keys) or is_list(key_or_keys) do
+    keys = List.wrap(key_or_keys)
+
     case Application.fetch_env(:sanbase, module) do
-      {:ok, env} -> env |> Keyword.get(key, default)
+      {:ok, env} -> get_in(env, keys)
       _ -> default
     end
     |> parse_config_value()

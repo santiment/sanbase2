@@ -12,7 +12,9 @@ config :sanbase, Sanbase, url: {:system, "SANBASE_URL", ""}
 
 config :sanbase, SanbaseWeb.Endpoint,
   http: [port: 4001],
-  server: true
+  server: true,
+  website_url: {:system, "WEBSITE_URL", "http://localhost:4001"},
+  backend_url: {:system, "BACKEND_URL", "http://localhost:4001"}
 
 config :ex_aws,
   access_key_id: "test_id",

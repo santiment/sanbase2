@@ -142,4 +142,7 @@ if config_env() == :prod do
         cron: [enabled: true]
       ]
     ]
+
+  config :sanbase, Sanbase.Metric.Registry.Sync,
+    sync_secret: System.get_env("METRIC_REGISTRY_SYNC_SECRET")
 end

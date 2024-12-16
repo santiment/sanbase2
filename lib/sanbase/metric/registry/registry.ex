@@ -219,7 +219,7 @@ defmodule Sanbase.Metric.Registry do
     end
   end
 
-  def by_name(metric, data_type, fixed_parameters \\ %{}) do
+  def by_name(metric, data_type \\ "timeseries", fixed_parameters \\ %{}) do
     query =
       from(mr in __MODULE__,
         where:
@@ -263,10 +263,13 @@ defmodule Sanbase.Metric.Registry do
   """
   @spec all() :: [t()]
   def all() do
-    query =
-      from(m in __MODULE__,
-        order_by: [asc: m.id]
-      )
+    query = from(m in __MODULE__, order_by: [asc: m.id])
+
+    Sanbase.Repo.all(query)
+  end
+
+  def by_ids(ids) do
+    query = from(m in __MODULE__, where: m.id in ^ids)
 
     Sanbase.Repo.all(query)
   end

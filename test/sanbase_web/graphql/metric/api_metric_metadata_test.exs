@@ -44,8 +44,9 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
           |> json_response(200)
           |> get_in(["data", "getMetric", "metadata", "availableFounders"])
 
-        assert %{"name" => "Vitalik Buterin", "project" => %{"name" => "Ethereum"}} in result
+        assert length(result) == 2
         assert %{"name" => "Satoshi Nakamoto", "project" => %{"name" => "Bitcoin"}} in result
+        assert %{"name" => "Vitalik Buterin", "project" => %{"name" => "Ethereum"}} in result
       end
     end)
 
@@ -57,6 +58,47 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
 
     # No founders for metrics without founders in their selectors
     assert result == []
+  end
+
+  test "returns data for availableFounders with slug filter", %{conn: conn} do
+    metric_with_founders =
+      Metric.available_metrics()
+      |> Enum.filter(fn m ->
+        {:ok, selectors} = Metric.available_selectors(m)
+
+        :founders in selectors
+      end)
+      |> hd()
+
+    insert(:project, %{name: "Ethereum", ticker: "ETH", slug: "ethereum"})
+    insert(:project, %{name: "Bitcoin", ticker: "BTC", slug: "bitcoin"})
+
+    rows = [
+      ["Satoshi Nakamoto", "bitcoin"]
+    ]
+
+    query =
+      """
+      {
+        getMetric(metric: "#{metric_with_founders}"){
+          metadata{
+            availableFounders(slug: "bitcoin"){ name project{ name } }
+          }
+        }
+      }
+      """
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      result =
+        conn
+        |> post("/graphql", query_skeleton(query))
+        |> json_response(200)
+        |> get_in(["data", "getMetric", "metadata", "availableFounders"])
+
+      assert length(result) == 1
+      assert %{"name" => "Satoshi Nakamoto", "project" => %{"name" => "Bitcoin"}} in result
+    end)
   end
 
   test "returns data for all available metric", %{conn: conn} do

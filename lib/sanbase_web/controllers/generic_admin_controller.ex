@@ -91,15 +91,46 @@ defmodule SanbaseWeb.GenericAdminController do
 
   def search(
         conn,
-        %{"resource" => resource, "search" => %{"field" => field, "value" => value}} = params
+        %{"resource" => resource, "search" => %{"filters" => filters}} = params
       ) do
     module = module_from_resource(resource)
     preloads = resource_module_map()[resource][:preloads] || []
     page = to_integer(params["page"] || 0)
     page_size = to_integer(params["page_size"] || 10)
 
-    {total_rows, paginated_rows} =
-      search_by_field_value(module, resource, field, value, preloads, page, page_size)
+    base_query = from(m in module)
+
+    # Convert map of filters to list and sort by keys to maintain order
+    filters_list =
+      filters
+      |> Map.to_list()
+      |> Enum.sort_by(&elem(&1, 0))
+      |> Enum.map(&elem(&1, 1))
+
+    query =
+      Enum.reduce(filters_list, base_query, fn %{"field" => field, "value" => value}, query ->
+        case field do
+          "id" ->
+            {id, ""} = Integer.parse(value)
+            where(query, [m], m.id == ^id)
+
+          field ->
+            condition = build_field_condition(field, value, module)
+            where(query, ^condition)
+        end
+      end)
+
+    sort_field = sort_field(module)
+    query = order_by(query, [m], desc: field(m, ^sort_field))
+
+    total_rows = Repo.aggregate(query, :count, :id)
+
+    paginated_rows =
+      query
+      |> preload(^preloads)
+      |> limit(^page_size)
+      |> offset(^(page_size * page))
+      |> Repo.all()
 
     render(conn, "index.html",
       table:
@@ -475,90 +506,40 @@ defmodule SanbaseWeb.GenericAdminController do
     |> Enum.into(%{})
   end
 
-  # searching & sorting
-
-  defp search_by_field_value(module, resource, field, value, preloads, page, page_size) do
-    search_fields_map = resource_module_map()[resource][:search_fields] || %{}
-    search_fields = Map.keys(search_fields_map) |> Enum.map(&Atom.to_string/1)
-
-    case field do
-      "id" ->
-        {id, ""} = Integer.parse(value)
-        {1, search_by_id(module, id, preloads)}
-
-      field ->
-        search_by_field(
-          field,
-          value,
-          module,
-          search_fields,
-          search_fields_map,
-          preloads,
-          page,
-          page_size
-        )
-    end
-  end
-
-  defp search_by_id(module, id, preloads) do
-    case Repo.get(module, id) do
-      nil ->
-        []
-
-      result ->
-        result = Repo.preload(result, preloads)
-        [result]
-    end
-  end
-
-  defp search_by_field(
-         field,
-         value,
-         module,
-         search_fields,
-         search_fields_map,
-         preloads,
-         page,
-         page_size
-       ) do
-    query =
-      if field in search_fields do
-        search_fields_map[String.to_existing_atom(field)]
-      else
-        build_search_query(field, value, module, preloads)
-      end
-
-    total_rows = Repo.aggregate(query, :count, :id)
-
-    paginated_rows =
-      query
-      |> limit(^page_size)
-      |> offset(^(page_size * page))
-      |> Repo.all()
-
-    {total_rows, paginated_rows}
-  end
-
-  defp build_search_query(field, value, module, preloads) do
+  defp build_field_condition(field, value, module) do
     field = String.to_existing_atom(field)
     value = String.trim(value)
     field_type = module.__schema__(:type, field)
-    sort_field = sort_field(module)
 
-    if field_type == :string do
-      value = "%" <> value <> "%"
+    # Get the source field definition from the schema
+    field_source = module.__schema__(:field_source, field)
+    table = module.__schema__(:source)
 
-      from(m in module,
-        where: ilike(field(m, ^field), ^value),
-        preload: ^preloads,
-        order_by: [desc: field(m, ^sort_field)]
+    # Query to get the column type from PostgreSQL's information schema
+    [data_type, _udt_name] =
+      Sanbase.Repo.query!(
+        """
+        SELECT data_type, udt_name
+        FROM information_schema.columns
+        WHERE table_name = $1 AND column_name = $2
+        """,
+        [table, to_string(field_source || field)]
       )
-    else
-      from(m in module,
-        where: field(m, ^field) == ^value,
-        preload: ^preloads,
-        order_by: [desc: field(m, ^sort_field)]
-      )
+      |> Map.get(:rows)
+      |> List.first()
+
+    cond do
+      # Check if it's a custom enum type
+      # Oban jobs' state return :string ecto type but underneath is a custom enum type
+      data_type == "USER-DEFINED" ->
+        dynamic([m], field(m, ^field) == ^value)
+
+      field_type == :string ->
+        value = "%" <> value <> "%"
+        dynamic([m], ilike(field(m, ^field), ^value))
+
+      true ->
+        dynamic([m], field(m, ^field) == ^value)
     end
   end
 

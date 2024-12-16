@@ -830,71 +830,126 @@ defmodule SanbaseWeb.AdminComponents do
 
   def search(assigns) do
     ~H"""
-    <div x-data={Jason.encode!(%{open: false, selectedField: @search["field"] || "Fields"})}>
-      <.form
-        for={%{}}
-        as={:search}
-        method="get"
-        action={Routes.generic_admin_path(SanbaseWeb.Endpoint, :search, resource: @resource)}
-        class="max-w-lg md:w-96"
-      >
-        <input type="hidden" name="search[field]" x-bind:value="selectedField" />
-        <input type="hidden" name="resource" value={@resource} />
-        <div class="flex">
-          <button
-            @click="open = !open"
-            id="dropdown-button"
-            class="flex-shrink-0 z-10 inline-flex items-center py-2.5 px-4 text-sm font-medium text-center text-gray-900 bg-gray-100 border border-gray-300 rounded-s-lg hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 dark:focus:ring-gray-700 dark:text-white dark:border-gray-600"
-            type="button"
-          >
-            <div class="flex items-center">
-              <span x-text="selectedField"></span>
-              <.icon name="hero-chevron-down" class="w-2.5 h-2.5 ms-2.5" />
-            </div>
-          </button>
-          <div
-            x-show="open"
-            @click.away="open = false"
-            id="dropdown"
-            class="mt-12 absolute z-20 bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700"
-          >
-            <ul
-              class="py-2 text-sm text-gray-700 dark:text-gray-200"
-              aria-labelledby="dropdown-button"
-            >
-              <%= for field <- @fields do %>
-                <li>
+    <div x-data={
+      Jason.encode!(%{
+        open: false,
+        filters: Map.get(assigns.search || %{}, "filters") || [%{"field" => "Fields", "value" => ""}],
+        showError: false
+      })
+    }>
+      <div class="flex flex-col gap-2">
+        <.form
+          for={%{}}
+          as={:search}
+          method="get"
+          action={Routes.generic_admin_path(SanbaseWeb.Endpoint, :search, resource: @resource)}
+          class="max-w-lg md:w-96"
+          x-on:submit.prevent="if (filters.some(f => f.field === 'Fields')) { showError = true; return false; } $el.submit();"
+        >
+          <input type="hidden" name="resource" value={@resource} />
+
+          <div x-bind:id="'filters-container'">
+            <template x-for="(filter, index) in filters">
+              <div class="flex flex-col gap-2 mb-4">
+                <div class="flex">
+                  <div class="relative">
+                    <button
+                      @click="open = index; showError = false"
+                      type="button"
+                      class="flex-shrink-0 z-10 inline-flex items-center py-2.5 px-4 text-sm font-medium text-center text-gray-900 bg-gray-100 border border-gray-300 rounded-s-lg hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 dark:focus:ring-gray-700 dark:text-white dark:border-gray-600"
+                      x-bind:class="{'border-red-500': showError && filter.field === 'Fields'}"
+                    >
+                      <div class="flex items-center">
+                        <span x-text="filter.field"></span>
+                        <.icon name="hero-chevron-down" class="w-2.5 h-2.5 ms-2.5" />
+                      </div>
+                    </button>
+
+                    <div
+                      x-show="open === index"
+                      @click.away="open = false"
+                      class="mt-12 absolute z-20 bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700"
+                    >
+                      <ul class="py-2 text-sm text-gray-700 dark:text-gray-200">
+                        <%= for field <- @fields do %>
+                          <li>
+                            <button
+                              @click="filter.field = $event.target.innerText; open = false; showError = false"
+                              type="button"
+                              class="inline-flex w-full px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
+                            >
+                              <%= field %>
+                            </button>
+                          </li>
+                        <% end %>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div class="relative w-full">
+                    <input
+                      x-bind:name="`search[filters][${index}][field]`"
+                      type="hidden"
+                      x-bind:value="filter.field"
+                    />
+                    <input
+                      x-bind:name="`search[filters][${index}][value]`"
+                      type="search"
+                      class="block p-2.5 w-full z-20 text-sm text-gray-900 bg-gray-50 rounded-e-lg border-s-gray-50 border-s-2 border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-s-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:border-blue-500"
+                      placeholder="Search..."
+                      required
+                      x-model="filter.value"
+                    />
+                  </div>
+
                   <button
-                    @click="selectedField = $event.target.innerText; open = false"
                     type="button"
-                    class="inline-flex w-full px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
+                    class="ml-2 text-red-600 hover:text-red-800"
+                    @click="filters = filters.filter((_, i) => i !== index)"
+                    x-show="filters.length > 1"
                   >
-                    <%= field %>
+                    <.icon name="hero-x-mark" class="w-5 h-5" />
                   </button>
-                </li>
-              <% end %>
-            </ul>
+                </div>
+              </div>
+            </template>
           </div>
-          <div class="relative w-full">
-            <input
-              name="search[value]"
-              type="search"
-              id="search-dropdown"
-              class="block p-2.5 w-full z-20 text-sm text-gray-900 bg-gray-50 rounded-e-lg border-s-gray-50 border-s-2 border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-s-gray-700  dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:border-blue-500"
-              placeholder="Search ..."
-              required
-              value={@search["value"] || ""}
-            />
+
+          <div class="flex justify-between items-center">
+            <button
+              type="button"
+              @click="filters.push({field: 'Fields', value: ''})"
+              class="text-sm text-blue-600 hover:text-blue-800"
+            >
+              <div class="flex items-center">
+                <.icon name="hero-plus" class="w-4 h-4 mr-1" /> Add filter
+              </div>
+            </button>
+
             <button
               type="submit"
-              class="absolute top-0 end-0 p-2.5 text-sm font-medium h-full text-white bg-blue-700 rounded-e-lg border border-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+              class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
             >
-              <.icon name="hero-magnifying-glass" class="w-4 h-4" />
-              <span class="sr-only">Search</span>
+              <div class="flex items-center">
+                <.icon name="hero-magnifying-glass" class="w-4 h-4 mr-2" /> Search
+              </div>
             </button>
           </div>
-        </div>
-      </.form>
+
+          <div x-show="showError" x-cloak class="text-red-500 text-sm mt-1">
+            Please select a field for all filters
+          </div>
+        </.form>
+
+        <%= if @search["filters"] do %>
+          <.link
+            href={Routes.generic_admin_path(SanbaseWeb.Endpoint, :index, resource: @resource)}
+            class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:outline-none focus:ring-gray-100 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-gray-700"
+          >
+            <.icon name="hero-x-mark" class="w-4 h-4 mr-2" /> Reset Filters
+          </.link>
+        <% end %>
+      </div>
     </div>
     """
   end

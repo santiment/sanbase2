@@ -107,11 +107,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end
   end
 
-  def get_available_founders(_root, _args, %{source: %{metric: metric}}) do
+  def get_available_founders(_root, args, %{source: %{metric: metric}}) do
     with {:ok, selectors} <- Metric.available_selectors(metric) do
       case :founders in selectors do
         true ->
-          with {:ok, data} <- Sanbase.Clickhouse.Founders.get_founders() do
+          slug = Map.get(args, :slug, nil)
+
+          with {:ok, data} <- Sanbase.Clickhouse.Founders.get_founders(slug) do
             slugs = Enum.map(data, & &1.slug)
             projects = Sanbase.Project.List.by_slugs(slugs)
             slug_to_project_map = Map.new(projects, &{&1.slug, &1})

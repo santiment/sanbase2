@@ -417,6 +417,10 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     end
 
     field :available_founders, list_of(:founder) do
+      @desc ~s"""
+      Filter the founders for which slug should be returned
+      """
+      arg(:slug, :string, default_value: nil)
       cache_resolve(&MetricResolver.get_available_founders/3)
     end
 

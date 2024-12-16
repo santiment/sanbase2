@@ -161,17 +161,8 @@ defmodule Sanbase.Metric.Registry.Populate do
     if inserts > 0 or updates > 0 do
       map = %{inserts_count: inserts, updates_count: updates}
 
-      {inserted_metrics, updated_metrics} =
-        Enum.reduce(list, {[], []}, fn {type, record}, {insert_acc, update_acc} ->
-          case type do
-            :insert -> {[record.metric | insert_acc], update_acc}
-            :update -> {insert_acc, [record.metric | update_acc]}
-            _ -> {insert_acc, update_acc}
-          end
-        end)
-
-      # Emit locally event with more data. The distributed events are used only to refresh the
-      # persistent term, the local node event will also trigger notifications
+      {inserted_metrics, updated_metrics} = extract_inserted_updated_metrics(list)
+      # Emit locally event with more data
       local_event_map =
         Map.merge(map, %{inserted_metrics: inserted_metrics, updated_metrics: updated_metrics})
 
@@ -181,22 +172,80 @@ defmodule Sanbase.Metric.Registry.Populate do
         %{}
       )
 
-      # Emit distributed event only to the MetricRegistrySubscriber so it refreshed the stored data
-      # in persistent term
-      Node.list()
-      |> Enum.each(fn node ->
-        IO.puts("Emitting event :bulk_metric_registry_change to #{node}")
-
-        Node.spawn(node, fn ->
-          Sanbase.Metric.Registry.EventEmitter.emit_event(
-            {:ok, map},
-            :bulk_metric_registry_change,
-            %{__only_process_by__: [Sanbase.EventBus.MetricRegistrySubscriber]}
-          )
-        end)
-      end)
+      # Emit distributed event
+      emit_distributed_event(map)
     else
       :ok
     end
+  end
+
+  defp extract_inserted_updated_metrics(list) do
+    {_inserted_metrics, _updated_metrics} =
+      Enum.reduce(list, {[], []}, fn {type, record}, {insert_acc, update_acc} ->
+        case type do
+          :insert -> {[record.metric | insert_acc], update_acc}
+          :update -> {insert_acc, [record.metric | update_acc]}
+          _ -> {insert_acc, update_acc}
+        end
+      end)
+  end
+
+  defp emit_distributed_event(map) do
+    Node.list()
+    |> Enum.each(fn node ->
+      IO.puts("Emitting event :bulk_metric_registry_change to #{node}")
+
+      Node.spawn(node, fn ->
+        Sanbase.Metric.Registry.EventEmitter.emit_event(
+          {:ok, map},
+          :bulk_metric_registry_change,
+          %{__only_process_by__: [Sanbase.EventBus.MetricRegistrySubscriber]}
+        )
+      end)
+    end)
+  end
+end
+
+defmodule Stack do
+  use GenServer
+
+  def start_link(initial_stack \\ []) do
+    GenServer.start_link(__MODULE__, initial_stack, name: __MODULE__)
+  end
+
+  def push(element) do
+    GenServer.call(__MODULE__, {:push, element})
+  end
+
+  def pop do
+    GenServer.call(__MODULE__, :pop)
+  end
+
+  def peek do
+    GenServer.call(__MODULE__, :peek)
+  end
+
+  def init(initial_stack) do
+    {:ok, initial_stack}
+  end
+
+  def handle_call({:push, element}, _from, stack) do
+    {:reply, :ok, [element | stack]}
+  end
+
+  def handle_call(:pop, _from, [h | t]) do
+    {:reply, h, t}
+  end
+
+  def handle_call(:pop, _from, []) do
+    {:reply, nil, []}
+  end
+
+  def handle_call(:peek, _from, [h | _] = stack) do
+    {:reply, h, stack}
+  end
+
+  def handle_call(:peek, _from, []) do
+    {:reply, nil, []}
   end
 end

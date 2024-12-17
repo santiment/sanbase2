@@ -67,9 +67,7 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
     |> Sanbase.Repo.transaction()
     |> case do
       {:ok, %{update_status: record, maybe_apply_suggestions: maybe_struct}} ->
-        if match?(%Registry{}, maybe_struct) do
-          Registry.EventEmitter.emit_event({:ok, maybe_struct}, :update_metric_registry, %{})
-        end
+        handle_metric_regisry_update(maybe_struct)
 
         {:ok, record}
 
@@ -94,14 +92,31 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
     |> Sanbase.Repo.transaction()
     |> case do
       {:ok, %{update_status: record, maybe_apply_suggestions: maybe_struct}} ->
-        if match?(%Registry{}, maybe_struct) do
-          Registry.EventEmitter.emit_event({:ok, maybe_struct}, :update_metric_registry, %{})
-        end
+        handle_metric_regisry_update(maybe_struct)
 
         {:ok, record}
 
       {:error, _name, error, _changes_so_far} ->
         {:error, error}
+    end
+  end
+
+  defp handle_metric_regisry_update(maybe_struct) do
+    if match?(%Registry{}, maybe_struct) do
+      Registry.EventEmitter.emit_event({:ok, maybe_struct}, :update_metric_registry, %{})
+
+      Node.list()
+      |> Enum.each(fn node ->
+        Node.spawn(node, fn ->
+          # The caller is sanbase-admin pod. Emit the event to every of the sanbase-web pods
+          # in the cluster.
+          # Do not record these events to Kafka, as we'll have the same event duplicated
+          # 4 times.
+          Registry.EventEmitter.emit_event({:ok, maybe_struct}, :update_metric_registry, %{
+            __send_to_kafka__: false
+          })
+        end)
+      end)
     end
   end
 

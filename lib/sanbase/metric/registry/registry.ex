@@ -292,6 +292,22 @@ defmodule Sanbase.Metric.Registry do
   end
 
   @doc ~s"""
+  Invoke all the necessary refresh functions to ensure the data stored
+  in persistent_term is refreshed.
+  """
+  @spec refresh_stored_terms() :: :ok
+  def refresh_stored_terms() do
+    # Do not change the order of these calls
+    # It is important as some of the modules later refreshed later
+    # depend on the modules refreshed earlier
+    true = Sanbase.Clickhouse.MetricAdapter.Registry.refresh_stored_terms()
+    true = Sanbase.Metric.Helper.refresh_stored_terms()
+    true = Sanbase.Billing.Plan.StandardAccessChecker.refresh_stored_terms()
+
+    :ok
+  end
+
+  @doc ~s"""
   Get all the metric registry records. The records are not immedietaly
   ready for usage, as some of the records might be template metrics which
   need to be resolved, or aliases need to be applied.

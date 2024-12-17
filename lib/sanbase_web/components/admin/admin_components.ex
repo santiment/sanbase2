@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.AdminComponents do
-  use Phoenix.Component
+  use Phoenix.Component, global_prefixes: ~w(x-)
 
   use PhoenixHTMLHelpers
 

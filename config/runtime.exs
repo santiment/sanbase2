@@ -95,6 +95,24 @@ if config_env() == :prod do
     ssl: true,
     ssl_opts: [verify: :verify_none]
 
+  config :libcluster,
+    topologies: [
+      postgres_topology: [
+        strategy: LibclusterPostgres.Strategy,
+        config: [
+          hostname: "localhost",
+          username: "postgres",
+          password: "postgres",
+          database: "santiment",
+          port: 5432,
+          parameters: [],
+          ssl: true,
+          ssl_opts: [verify: :verify_none],
+          channel_name: "sanbase_cluster"
+        ]
+      ]
+    ]
+
   config :ethereumex,
     url: parity_url,
     http_options: [timeout: 25_000, recv_timeout: 25_000],

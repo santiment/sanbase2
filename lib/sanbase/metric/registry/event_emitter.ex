@@ -11,13 +11,14 @@ defmodule Sanbase.Metric.Registry.EventEmitter do
     |> notify()
   end
 
-  def handle_event({:ok, struct}, event_type, _args)
+  def handle_event({:ok, struct}, event_type, args)
       when event_type in [
              :create_metric_registry,
              :update_metric_registry,
              :delete_metric_registry
            ] do
     %{event_type: event_type, id: struct.id, metric: struct.metric}
+    |> Map.merge(args)
     |> notify()
   end
 

@@ -9,9 +9,11 @@ import Config
 config :phoenix_live_view, debug_heex_annotations: true
 config :sanbase, Sanbase, url: {:system, "SANBASE_URL", "https://app-stage.santiment.net"}
 
+port = String.to_integer(System.get_env("PORT") || "4000")
+
 config :sanbase, SanbaseWeb.Endpoint,
   http: [
-    port: 4000,
+    port: port,
     protocol_options: [
       # Bump up cowboy2's timeout to 100 seconds
       idle_timeout: 100_000

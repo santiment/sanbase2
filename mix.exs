@@ -101,6 +101,7 @@ defmodule Sanbase.Mixfile do
       {:kino_db, "~> 0.2.2"},
       {:kino_vega_lite, "~> 0.1.9"},
       {:libcluster, "~> 3.0"},
+      {:libcluster_postgres, "~> 0.1"},
       {:map_diff, "~> 1.3"},
       {:mint, "~> 1.0"},
       {:mock, "~> 0.3"},

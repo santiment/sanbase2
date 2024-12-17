@@ -4,6 +4,7 @@ defmodule Sanbase.Application.Admin do
   A separate pod is required so the access to it can be better secured compared
   to when the admin dashboard was part of the web pod
   """
+  import Sanbase.ApplicationUtils
   require Logger
 
   def init() do
@@ -18,7 +19,18 @@ defmodule Sanbase.Application.Admin do
   def children() do
     # Define workers and child supervisors to be supervised
     children = [
-      {Oban, oban_admin_config()}
+      {Oban, oban_admin_config()},
+
+      # Start the libcluster in admin, so we can send messages to the web pods when some
+      # important tables changes.
+      start_in(
+        {Cluster.Supervisor,
+         [
+           Application.get_env(:libcluster, :topologies),
+           [name: Sanbase.ClusterSupervisor]
+         ]},
+        [:dev, :prod]
+      )
     ]
 
     opts = [

@@ -45,7 +45,7 @@ defmodule Sanbase.Application.Web do
            Application.get_env(:libcluster, :topologies),
            [name: Sanbase.ClusterSupervisor]
          ]},
-        [:prod]
+        [:dev, :prod]
       )
     ]
 

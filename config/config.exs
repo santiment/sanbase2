@@ -245,13 +245,18 @@ config :sanbase, Sanbase.MetricExporter.S3, bucket: {:system, "METRICS_EXPORTER_
 
 config :libcluster,
   topologies: [
-    k8s: [
-      strategy: Elixir.Cluster.Strategy.Kubernetes,
+    postgres_topology: [
+      strategy: LibclusterPostgres.Strategy,
       config: [
-        mode: :dns,
-        kubernetes_node_basename: "sanbase",
-        kubernetes_selector: "app=sanbase",
-        polling_interval: 10_000
+        hostname: "localhost",
+        username: "postgres",
+        password: "postgres",
+        database: "sanbase_dev",
+        port: 5432,
+        parameters: [],
+        ssl: false,
+        ssl_opts: nil,
+        channel_name: "sanbase_cluster"
       ]
     ]
   ]

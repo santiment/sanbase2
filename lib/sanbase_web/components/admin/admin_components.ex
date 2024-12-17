@@ -261,19 +261,21 @@ defmodule SanbaseWeb.AdminComponents do
 
   def show_table(assigns) do
     ~H"""
-    <div class="mt-6">
-      <h3 class="text-3xl font-medium text-gray-700">Show <%= Inflex.singularize(@resource) %></h3>
-      <div class="table-responsive">
-        <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
-          <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+    <div class="mt-4">
+      <h3 class="text-2xl font-medium text-gray-700 mb-2">
+        Show <%= Inflex.singularize(@resource) %>
+      </h3>
+      <div class="relative shadow-md sm:rounded-lg">
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left rtl:text-right text-gray-500 dark:text-gray-400 min-w-full table-fixed">
             <tbody>
               <%= for field <- @fields do %>
                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-600">
-                  <th class="text-xs pl-2 text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 border-b border-gray-200">
+                  <th class="text-xs px-2 py-1 text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 border-b border-gray-200 whitespace-nowrap w-1/4">
                     <%= to_string(field) %>
                   </th>
                   <.td_show
-                    class="px-6 py-4 border-b border-gray-200"
+                    class="px-3 py-2 border-b border-gray-200 whitespace-pre-wrap break-words"
                     value={
                       result =
                         if @assocs[@data.id][field],
@@ -430,19 +432,21 @@ defmodule SanbaseWeb.AdminComponents do
         <% end %>
         <.search fields={@search_fields} resource={@resource} search={@search} />
       </div>
-      <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
-        <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-          <.thead fields={@fields} actions={@actions} />
-          <.tbody
-            resource={@resource}
-            rows={@rows}
-            fields={@fields}
-            assocs={@assocs}
-            field_type_map={@field_type_map}
-            actions={@actions}
-            funcs={@funcs}
-          />
-        </table>
+      <div class="relative shadow-md sm:rounded-lg">
+        <div class="overflow-x-auto pr-4" style="max-height: calc(85vh - 180px);">
+          <table class="w-full text-xs text-left rtl:text-right text-gray-500 dark:text-gray-400 min-w-full table-fixed">
+            <.thead fields={@fields} actions={@actions} />
+            <.tbody
+              resource={@resource}
+              rows={@rows}
+              fields={@fields}
+              assocs={@assocs}
+              field_type_map={@field_type_map}
+              actions={@actions}
+              funcs={@funcs}
+            />
+          </table>
+        </div>
 
         <.pagination
           resource={@resource}
@@ -459,13 +463,13 @@ defmodule SanbaseWeb.AdminComponents do
 
   def thead(assigns) do
     ~H"""
-    <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+    <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 sticky top-0">
       <tr>
         <%= for field <- @fields do %>
-          <th scope="col" class="px-6 py-3"><%= field %></th>
+          <th scope="col" class="px-2 py-1 whitespace-nowrap min-w-[120px]"><%= field %></th>
         <% end %>
         <%= if @actions do %>
-          <th scope="col" class="px-6 py-3">Actions</th>
+          <th scope="col" class="px-2 py-1 whitespace-nowrap w-[140px] min-w-[140px]">Actions</th>
         <% end %>
       </tr>
     </thead>
@@ -479,7 +483,7 @@ defmodule SanbaseWeb.AdminComponents do
         <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
           <%= for field <- @fields do %>
             <%= if field == :id do %>
-              <td class="px-6 py-4">
+              <td class="px-3 py-2 min-w-[120px]">
                 <.a resource={@resource} action={:show} row={row} label={Map.get(row, field)} />
               </td>
             <% else %>
@@ -505,11 +509,13 @@ defmodule SanbaseWeb.AdminComponents do
             <% end %>
           <% end %>
           <%= if @actions do %>
-            <td class="px-6 py-4">
-              <% index_actions = @actions -- [:new] %>
-              <%= for action <- index_actions do %>
-                <.index_action_btn resource={@resource} action={action} label={action} row={row} />
-              <% end %>
+            <td class="px-3 py-2 w-[140px] min-w-[140px]">
+              <div class="flex flex-row flex-nowrap gap-1 items-center">
+                <% index_actions = @actions -- [:new] %>
+                <%= for action <- index_actions do %>
+                  <.index_action_btn resource={@resource} action={action} label={action} row={row} />
+                <% end %>
+              </div>
             </td>
           <% end %>
         </tr>
@@ -676,7 +682,7 @@ defmodule SanbaseWeb.AdminComponents do
 
   def td_index(assigns) do
     ~H"""
-    <td class="px-6 py-4">
+    <td class="px-3 py-2 whitespace-nowrap overflow-hidden text-ellipsis min-w-[120px]">
       <%= @value %>
     </td>
     """
@@ -742,7 +748,7 @@ defmodule SanbaseWeb.AdminComponents do
 
   def pagination(assigns) do
     ~H"""
-    <div class="flex justify-between items-center p-4">
+    <div class="flex justify-between items-center p-2 text-xs border-t">
       <.pagination_buttons
         resource={@resource}
         rows_count={@rows_count}
@@ -751,7 +757,7 @@ defmodule SanbaseWeb.AdminComponents do
         action={@action}
         search={@search}
       />
-      <span class="text-sm text-gray-700">
+      <span class="text-xs text-gray-700">
         Showing <%= @current_page * @page_size + 1 %> to <%= Enum.min([
           (@current_page + 1) * @page_size,
           @rows_count

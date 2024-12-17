@@ -95,15 +95,20 @@ if config_env() == :prod do
     ssl: true,
     ssl_opts: [verify: :verify_none]
 
+  db_url = System.get_env("DATABASE_URL")
+  uri = URI.parse(db_url)
+  [username, password] = String.split(uri.userinfo, ":")
+  database = String.split(db_url, "/") |> List.last()
+
   config :libcluster,
     topologies: [
       postgres_topology: [
         strategy: LibclusterPostgres.Strategy,
         config: [
-          hostname: "localhost",
-          username: "postgres",
-          password: "postgres",
-          database: "santiment",
+          hostname: uri.host,
+          username: username,
+          password: password,
+          database: database,
           port: 5432,
           parameters: [],
           ssl: true,

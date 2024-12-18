@@ -21,7 +21,15 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
 
   def handle_cast({_topic, _id} = event_shadow, state) do
     event = EventBus.fetch_event(event_shadow)
-    new_state = handle_event(event, event_shadow, state)
+
+    new_state =
+      Sanbase.EventBus.handle_event(
+        __MODULE__,
+        event,
+        event_shadow,
+        state,
+        fn -> handle_event(event, event_shadow, state) end
+      )
 
     {:noreply, new_state}
   end

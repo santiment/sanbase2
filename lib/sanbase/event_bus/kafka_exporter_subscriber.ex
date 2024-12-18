@@ -20,24 +20,38 @@ defmodule Sanbase.EventBus.KafkaExporterSubscriber do
   end
 
   def handle_call(event_shadow, state) do
-    maybe_send_to_kafka(event_shadow, :persist_sync)
+    event = EventBus.fetch_event(event_shadow)
 
-    {:reply, :ok, state}
+    new_state =
+      Sanbase.EventBus.handle_event(
+        __MODULE__,
+        event,
+        event_shadow,
+        state,
+        fn -> handle_event(event, event_shadow, :persist_sync, state) end
+      )
+
+    {:reply, :ok, new_state}
   end
 
   def handle_cast(event_shadow, state) do
-    maybe_send_to_kafka(event_shadow, :persist_async)
+    event = EventBus.fetch_event(event_shadow)
 
-    {:noreply, state}
+    new_state =
+      Sanbase.EventBus.handle_event(
+        __MODULE__,
+        event,
+        event_shadow,
+        state,
+        fn -> handle_event(event, event_shadow, :persist_async, state) end
+      )
+
+    {:noreply, new_state}
   end
 
-  defp maybe_send_to_kafka({topic, id} = event_shadow, function)
+  defp handle_event(event, {_topic, _id} = event_shadow, function, state)
        when function in [:persist_sync, :persist_async] do
-    case EventBus.fetch_event(event_shadow) do
-      %{data: %{__send_to_kafka__: false}} ->
-        # This event should not be sent to kafka
-        :ok
-
+    case event do
       %{} = event ->
         event = restructure_event(event)
         kv_tuple = {event.id, Jason.encode!(event)}
@@ -53,7 +67,8 @@ defmodule Sanbase.EventBus.KafkaExporterSubscriber do
         :ok
     end
 
-    :ok = EventBus.mark_as_completed({__MODULE__, topic, id})
+    EventBus.mark_as_completed({__MODULE__, event_shadow})
+    state
   end
 
   defp restructure_event(event) do

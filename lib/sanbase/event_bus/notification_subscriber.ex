@@ -19,12 +19,21 @@ defmodule Sanbase.EventBus.NotificationSubscriber do
 
   def handle_cast({_topic, _id} = event_shadow, state) do
     event = EventBus.fetch_event(event_shadow)
-    state = handle_event(event, event_shadow, state)
-    {:noreply, state}
+
+    new_state =
+      Sanbase.EventBus.handle_event(
+        __MODULE__,
+        event,
+        event_shadow,
+        state,
+        fn -> handle_event(event, event_shadow, state) end
+      )
+
+    {:noreply, new_state}
   end
 
   defp handle_event(_event, event_shadow, state) do
-    :ok = EventBus.mark_as_completed({__MODULE__, event_shadow})
+    EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end
 end

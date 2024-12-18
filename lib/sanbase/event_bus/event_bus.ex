@@ -88,6 +88,28 @@ defmodule Sanbase.EventBus do
     end
   end
 
+  @doc ~s"""
+  Invoke this function from the subscriber module instead of direclty handling the event.
+  The handle_fun/0 is the function that does the actual handling of the event.
+  The purpose of this function is to wrap the actual handling in logic that decides
+  if the handler should be called, or skipped and direclty marked as completed.
+
+  In cases where the skip is required is when we distribute the same event to each node
+  in the cluster. In some cases the event need to be handled on all the other nodes
+  just by one of the subscribers, not all, as this can lead to duplicated notifications send,
+  duplicated records in kafka, etc.
+
+  To mark that the event needs to be processed by only some of the subscribers, emit the event
+  in the following way
+
+    Registry.EventEmitter.emit_event({:ok, maybe_struct}, :update_metric_registry, %{
+      __only_process_by__: [Sanbase.EventBus.MetricRegistrySubscriber]
+    })
+
+  Note that in order for this to work, the emitter must propagate the args, usually by building some
+  event map from the arguments and then piping it into `|>Map.merge(args)`
+  """
+  @spec handle_event(module(), map(), map(), state, (-> state)) :: state when state: any()
   def handle_event(module, event, event_shadow, state, handle_fun)
       when is_function(handle_fun, 0) do
     case event do

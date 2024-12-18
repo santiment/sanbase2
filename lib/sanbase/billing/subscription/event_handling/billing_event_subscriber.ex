@@ -55,7 +55,7 @@ defmodule Sanbase.EventBus.BillingEventSubscriber do
       end
     end)
 
-    :ok = EventBus.mark_as_completed({__MODULE__, event_shadow})
+    EventBus.mark_as_completed({__MODULE__, event_shadow})
   end
 
   defp do_handle(:update_api_call_limit_table, event_type, event)

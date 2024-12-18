@@ -110,10 +110,10 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
         Node.spawn(node, fn ->
           # The caller is sanbase-admin pod. Emit the event to every of the sanbase-web pods
           # in the cluster.
-          # Do not record these events to Kafka, as we'll have the same event duplicated
-          # 4 times.
+          # Process the event only by the metric registry subscriber, otherwise the event
+          # will be recorded multiple in kafka and trigger multiple notifications
           Registry.EventEmitter.emit_event({:ok, maybe_struct}, :update_metric_registry, %{
-            __send_to_kafka__: false
+            __only_process_by__: [Sanbase.EventBus.MetricRegistrySubscriber]
           })
         end)
       end)

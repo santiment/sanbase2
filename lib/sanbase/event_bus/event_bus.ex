@@ -88,6 +88,26 @@ defmodule Sanbase.EventBus do
     end
   end
 
+  def handle_event(module, event, event_shadow, state, handle_fun)
+      when is_function(handle_fun, 0) do
+    case event do
+      %{data: %{__only_process_by__: list}} ->
+        if module in list do
+          handle_fun.()
+        else
+          # If __only_process_by__ is set and the module is not part of it,
+          # do not process this event, but direclty mark it as processed and
+          # return the state unchanged
+          EventBus.mark_as_completed({module, event_shadow})
+
+          state
+        end
+
+      _ ->
+        handle_fun.()
+    end
+  end
+
   case Application.compile_env(:sanbase, :env) do
     :prod ->
       defp handle_invalid_event(params) do

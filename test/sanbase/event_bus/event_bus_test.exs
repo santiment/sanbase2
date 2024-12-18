@@ -9,7 +9,7 @@ defmodule Sanbase.EventBusTest do
       event = EventBus.fetch_event(event_shadow)
 
       Process.send(@receiver_name, event.data.message, [])
-      EventBus.mark_as_completed(event)
+      EventBus.mark_as_completed({__MODULE__, event_shadow})
 
       :ok
     end

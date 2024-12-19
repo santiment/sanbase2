@@ -7,7 +7,7 @@ defmodule Sanbase.Metric.Registry.Populate do
       populate()
     end)
     |> case do
-      {:ok, {:ok, result}} -> {:ok, result}
+      {:ok, {:ok, list, summary}} -> {:ok, list, summary}
       data -> data
     end
   end
@@ -53,7 +53,9 @@ defmodule Sanbase.Metric.Registry.Populate do
   def populate() do
     case process_metrics() do
       list when is_list(list) ->
-        summarize_results(list)
+        {:ok, list, summary} = summarize_results(list)
+        emit_events(list, summary)
+        {:ok, list, summary}
 
       {:error, %Ecto.Changeset{} = error} ->
         log_and_return_changeset_error(error)
@@ -143,5 +145,49 @@ defmodule Sanbase.Metric.Registry.Populate do
     Error updating existing metric: #{inspect(map)}
     Reason: #{inspect(error)}
     """)
+  end
+
+  defp emit_events(list, summary) do
+    inserts = Map.get(summary, :insert, [])
+    updates = Map.get(summary, :update, [])
+
+    if inserts != [] or updates != [] do
+      map = %{inserts_count: inserts, updates_count: updates}
+
+      {inserted_metrics, updated_metrics} =
+        Enum.reduce(list, {[], []}, fn {type, record}, {insert_acc, update_acc} ->
+          case type do
+            :insert -> {[record.metric | insert_acc], update_acc}
+            :update -> {insert_acc, [record.metric | update_acc]}
+            _ -> {insert_acc, update_acc}
+          end
+        end)
+
+      # Emit locally event with more data. The distributed events are used only to refresh the
+      # persistent term, the local node event will also trigger notifications
+      local_event_map =
+        Map.merge(map, %{inserted_metrics: inserted_metrics, updated_metrics: updated_metrics})
+
+      Sanbase.Metric.Registry.EventEmitter.emit_event(
+        {:ok, local_event_map},
+        :bulk_metric_registry_change,
+        %{}
+      )
+
+      # Emit distributed event only to the MetricRegistrySubscriber so it refreshed the stored data
+      # in persistent term
+      Node.list()
+      |> Enum.each(fn node ->
+        Node.spawn(node, fn ->
+          Sanbase.Metric.Registry.EventEmitter.emit_event(
+            {:ok, map},
+            :bulk_update_metric_registry,
+            %{__only_process_by__: [Sanbase.EventBus.MetricRegistrySubscriber]}
+          )
+        end)
+      end)
+    else
+      :ok
+    end
   end
 end

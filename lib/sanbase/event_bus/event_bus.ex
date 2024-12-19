@@ -49,7 +49,8 @@ defmodule Sanbase.EventBus do
     __MODULE__.KafkaExporterSubscriber,
     __MODULE__.UserEventsSubscriber,
     __MODULE__.BillingEventSubscriber,
-    __MODULE__.MetricRegistrySubscriber
+    __MODULE__.MetricRegistrySubscriber,
+    __MODULE__.NotificationsSubscriber
   ]
 
   def children(), do: @subscribers

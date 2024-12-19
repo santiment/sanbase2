@@ -959,4 +959,25 @@ defmodule SanbaseWeb.AdminComponents do
     </div>
     """
   end
+
+  @doc """
+  Renders a resource title.
+
+  ## Attributes
+
+    - `:resource` - The name of the resource.
+
+  ## Example
+
+      <.resource_title resource="users" />
+  """
+  attr(:resource, :string, required: true)
+
+  def resource_title(assigns) do
+    ~H"""
+    <h1 class="text-3xl font-bold mb-6">
+      <%= Inflex.camelize(@resource) %>
+    </h1>
+    """
+  end
 end

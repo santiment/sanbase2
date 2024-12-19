@@ -1,9 +1,8 @@
-defmodule Sanbase.EventBus.MetricRegistrySubscriber do
+defmodule Sanbase.EventBus.NotificationsSubscriber do
   @moduledoc """
+  Subscribe to different topics and generate notifications
   """
   use GenServer
-
-  alias Sanbase.Utils.Config
 
   require Logger
 
@@ -51,21 +50,8 @@ defmodule Sanbase.EventBus.MetricRegistrySubscriber do
     {:noreply, state}
   end
 
-  def on_metric_registry_change(_event_type, _metric) do
-    :ok = Sanbase.Metric.Registry.refresh_stored_terms()
-
-    :ok
-  end
-
-  def on_metric_registry_change_test_env(event_type, metric) do
-    # In test env this is the handler in order to avoid Ecto DBConnection
-    # ownership errors
-    Logger.warning("Metric Registry Change - Event Type: #{event_type}, Metric: #{metric}")
-    :ok
-  end
-
   defp handle_event(
-         %{data: %{event_type: event_type, metric: metric}},
+         %{data: %{event_type: event_type, metric: _metric}} = event,
          event_shadow,
          state
        )
@@ -74,27 +60,10 @@ defmodule Sanbase.EventBus.MetricRegistrySubscriber do
               :create_metric_registry,
               :delete_metric_registry
             ] do
-    Logger.info("Start refreshing stored terms from #{__MODULE__}")
+    Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+      Sanbase.Notifications.Handler.handle_metric_registry_event(event)
+    end)
 
-    {mod, fun} =
-      Config.module_get(
-        __MODULE__,
-        :metric_registry_change_handler,
-        {__MODULE__, :on_metric_registry_change}
-      )
-
-    :ok = apply(mod, fun, [event_type, metric])
-
-    EventBus.mark_as_completed({__MODULE__, event_shadow})
-    state
-  end
-
-  defp handle_event(
-         %{data: %{event_type: :metrics_failed_to_load}},
-         event_shadow,
-         state
-       ) do
-    Logger.info("Metrics Registry failed to load. Will load data from the static files instead.")
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end

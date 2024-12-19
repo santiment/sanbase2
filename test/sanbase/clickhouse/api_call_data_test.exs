@@ -71,7 +71,7 @@ defmodule Sanbase.Clickhouse.ApiCallDataTest do
                {:error, error} =
                  ApiCallData.api_call_history(context.user.id, dt1, dt3, "1d", :all)
 
-               assert error =~ "Cannot execute database query."
+               assert error =~ "Cannot execute ClickHouse database query."
              end) =~ error_msg
     end)
   end

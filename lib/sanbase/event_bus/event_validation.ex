@@ -223,6 +223,7 @@ defmodule Sanbase.EventBus.EventValidation do
         event_type: event_type
       })
       when event_type in [
+             :bulk_metric_registry_change,
              :create_metric_registry,
              :update_metric_registry,
              :delete_metric_registry

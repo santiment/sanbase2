@@ -51,6 +51,12 @@ defmodule Sanbase.EventBus.MetricRegistrySubscriber do
     {:noreply, state}
   end
 
+  def on_metric_registry_bulk_change(_event_type, _count) do
+    :ok = Sanbase.Metric.Registry.refresh_stored_terms()
+
+    :ok
+  end
+
   def on_metric_registry_change(_event_type, _metric) do
     :ok = Sanbase.Metric.Registry.refresh_stored_terms()
 
@@ -62,6 +68,27 @@ defmodule Sanbase.EventBus.MetricRegistrySubscriber do
     # ownership errors
     Logger.warning("Metric Registry Change - Event Type: #{event_type}, Metric: #{metric}")
     :ok
+  end
+
+  defp handle_event(
+         %{data: %{event_type: event_type, inserts_count: i_count, updates_count: u_count}},
+         event_shadow,
+         state
+       )
+       when event_type in [:bulk_metric_registry_change] do
+    Logger.info("Start refreshing stored terms from #{__MODULE__}")
+
+    {mod, fun} =
+      Config.module_get(
+        __MODULE__,
+        :metric_registry_bulk_change_handler,
+        {__MODULE__, :on_metric_registry_bulk_change}
+      )
+
+    :ok = apply(mod, fun, [event_type, _count = i_count + u_count])
+
+    EventBus.mark_as_completed({__MODULE__, event_shadow})
+    state
   end
 
   defp handle_event(

@@ -274,7 +274,7 @@ defmodule Sanbase.Metric.Registry do
     query =
       from(mr in __MODULE__,
         where:
-          mr.metric == ^metric and mr.data_type == "timeseries" and
+          mr.metric == ^metric and mr.data_type == ^data_type and
             mr.fixed_parameters == ^fixed_parameters
       )
 

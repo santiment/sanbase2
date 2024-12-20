@@ -17,12 +17,12 @@ defmodule SanbaseWeb.Graphql.WordsSocialVolumeApiTest do
     body =
       %{
         "data" => %{
-          "btc" => %{
+          URI.encode_www_form("btc") => %{
             "2024-09-28T00:00:00Z" => 373,
             "2024-09-29T00:00:00Z" => 487,
             "2024-09-30T00:00:00Z" => 323
           },
-          "eth or nft" => %{
+          URI.encode_www_form("eth or nft") => %{
             "2024-09-28T00:00:00Z" => 1681,
             "2024-09-29T00:00:00Z" => 3246,
             "2024-09-30T00:00:00Z" => 1577
@@ -38,8 +38,9 @@ defmodule SanbaseWeb.Graphql.WordsSocialVolumeApiTest do
         Map.new(options[:params])
         |> Map.get("search_texts")
 
-      # Assert that the words are lowercased before they are sent
-      assert search_texts == "eth or nft,btc"
+      # Assert that the words are lowercased and www form encoded
+      assert search_texts ==
+               URI.encode_www_form("eth or nft") <> "," <> URI.encode_www_form("btc")
 
       {:ok, resp}
     end)
@@ -97,12 +98,12 @@ defmodule SanbaseWeb.Graphql.WordsSocialVolumeApiTest do
     body =
       %{
         "data" => %{
-          "BTC" => %{
+          URI.encode_www_form("BTC") => %{
             "2024-09-28T00:00:00Z" => 373,
             "2024-09-29T00:00:00Z" => 487,
             "2024-09-30T00:00:00Z" => 323
           },
-          "eth OR nft" => %{
+          URI.encode_www_form("eth OR nft") => %{
             "2024-09-28T00:00:00Z" => 1681,
             "2024-09-29T00:00:00Z" => 3246,
             "2024-09-30T00:00:00Z" => 1577
@@ -119,7 +120,8 @@ defmodule SanbaseWeb.Graphql.WordsSocialVolumeApiTest do
         |> Map.get("search_texts")
 
       # Assert that the words are **not** lowercased before they are sent
-      assert search_texts == "eth OR nft,BTC"
+      assert search_texts ==
+               URI.encode_www_form("eth OR nft") <> "," <> URI.encode_www_form("BTC")
 
       {:ok, resp}
     end)

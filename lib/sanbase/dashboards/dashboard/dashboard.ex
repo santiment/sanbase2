@@ -92,9 +92,6 @@ defmodule Sanbase.Dashboards.Dashboard do
     embeds_many(:text_widgets, TextWidget, on_replace: :delete)
     embeds_many(:image_widgets, ImageWidget, on_replace: :delete)
 
-    # Keep for backwards compatibility reasons
-    embeds_many(:panels, Sanbase.Dashboard.Panel, on_replace: :delete)
-
     # Fields related to timeline hiding and reversible-deletion
     field(:is_hidden, :boolean, default: false)
     field(:is_deleted, :boolean, default: false)

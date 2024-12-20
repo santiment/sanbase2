@@ -126,7 +126,8 @@ defmodule Sanbase.EventBus.MetricRegistrySubscriber do
     state
   end
 
-  defp handle_event(_event, event_shadow, state) do
+  defp handle_event(event, event_shadow, state) do
+    Logger.warning("Unrecognized event #{inspect(event)} received in #{__MODULE__}")
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end

@@ -4,11 +4,18 @@ defmodule Sanbase.Metric.Registry.Populate do
   """
   def run() do
     Sanbase.Repo.transaction(fn ->
-      populate()
+      populate(emit_events: false)
     end)
     |> case do
-      {:ok, {:ok, list, summary}} -> {:ok, list, summary}
-      data -> data
+      {:ok, {:ok, list, summary}} ->
+        # In case of populate/0 running inside a transaction do not emit the event
+        # from within the transaction. If the event finishes before the transaction
+        # is commited, the event won't see the new data
+        emit_events(list, summary)
+        {:ok, list, summary}
+
+      data ->
+        data
     end
   end
 
@@ -50,11 +57,11 @@ defmodule Sanbase.Metric.Registry.Populate do
     |> Sanbase.Metric.Registry.changeset(params)
   end
 
-  def populate() do
+  def populate(opts \\ []) do
     case process_metrics() do
       list when is_list(list) ->
         {:ok, list, summary} = summarize_results(list)
-        emit_events(list, summary)
+        if Keyword.get(opts, :emit_events, true), do: emit_events(list, summary)
         {:ok, list, summary}
 
       {:error, %Ecto.Changeset{} = error} ->
@@ -148,10 +155,10 @@ defmodule Sanbase.Metric.Registry.Populate do
   end
 
   defp emit_events(list, summary) do
-    inserts = Map.get(summary, :insert, [])
-    updates = Map.get(summary, :update, [])
+    inserts = Map.get(summary, :insert, 0)
+    updates = Map.get(summary, :update, 0)
 
-    if inserts != [] or updates != [] do
+    if inserts > 0 or updates > 0 do
       map = %{inserts_count: inserts, updates_count: updates}
 
       {inserted_metrics, updated_metrics} =
@@ -178,10 +185,12 @@ defmodule Sanbase.Metric.Registry.Populate do
       # in persistent term
       Node.list()
       |> Enum.each(fn node ->
+        IO.puts("Emitting event :bulk_metric_registry_change to #{node}")
+
         Node.spawn(node, fn ->
           Sanbase.Metric.Registry.EventEmitter.emit_event(
             {:ok, map},
-            :bulk_update_metric_registry,
+            :bulk_metric_registry_change,
             %{__only_process_by__: [Sanbase.EventBus.MetricRegistrySubscriber]}
           )
         end)

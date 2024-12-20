@@ -5,13 +5,12 @@ defmodule Sanbase.Metric.Registry.EventEmitter do
   def topic(), do: @topic
 
   def handle_event(_, event_type, _args) when event_type in [:metrics_failed_to_load] do
-    %{
-      event_type: event_type
-    }
+    %{event_type: event_type}
     |> notify()
   end
 
-  def handle_event({:ok, map}, event_type = :bulk_metric_registry_change, args) do
+  def handle_event({:ok, map}, event_type, args)
+      when event_type in [:bulk_metric_registry_change] do
     %{event_type: event_type}
     |> Map.merge(map)
     |> Map.merge(args)

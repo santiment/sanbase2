@@ -264,7 +264,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   @impl Sanbase.Metric.Behaviour
   def available_slugs(metric) do
     cond do
-      "age_distribution" ->
+      metric == "age_distribution" ->
         # avoid infinite loop if it goes into HistogramMetric
         get_available_slugs(metric)
 

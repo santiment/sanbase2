@@ -90,9 +90,10 @@ defmodule Sanbase.Alert.StructMapTransformation do
           [{:erlang, :binary_to_existing_atom, [str, _], _} | _] = __STACKTRACE__
 
           errors = Process.get(@unsupported_fields_error, [])
+          field = if is_binary(str), do: str, else: inspect(str)
 
           Process.put(@unsupported_fields_error, [
-            ~s/The trigger contains unsupported or mistyped field "#{str}"/ | errors
+            ~s/The trigger contains unsupported or mistyped field "#{field}"/ | errors
           ])
 
           acc

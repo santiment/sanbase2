@@ -20,7 +20,7 @@ defmodule SanbaseWeb.LiveSelect do
       />
       <datalist id={"matches_" <> to_string(@session["field"])}>
         <%= for {id, match} <- @matches do %>
-          <option value={id}><%= match %></option>
+          <option value={id}>{match}</option>
         <% end %>
       </datalist>
     </div>

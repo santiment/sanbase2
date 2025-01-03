@@ -44,7 +44,7 @@
       x-transition:leave-start="translate-x-0"
       x-transition:leave-end="-translate-x-full"
     >
-      <%= live_render(@conn, SanbaseWeb.LiveSearch) %>
+      {live_render(@conn, SanbaseWeb.LiveSearch)}
       <div class="h-full p-3 overflow-y-auto bg-gray-50 dark:bg-gray-800">
         <ul class="space-y-2 font-medium">
           <li :for={{name, path} <- @routes}>
@@ -52,7 +52,7 @@
               href={path}
               class="flex items-center p-1 text-sm text-gray-900 rounded-lg dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 group"
             >
-              <span class="ms-3"><%= name %></span>
+              <span class="ms-3">{name}</span>
             </a>
           </li>
         </ul>
@@ -60,7 +60,7 @@
     </aside>
     <div class="flex-1 overflow-y-auto">
       <.flash_group flash={@flash} />
-      <%= @inner_content %>
+      {@inner_content}
     </div>
   </div>
 </div>

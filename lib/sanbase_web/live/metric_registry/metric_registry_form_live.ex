@@ -33,7 +33,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
     <div class="flex flex-col justify-center w-7/8">
       <h1 class="text-gray-800 text-2xl">
         <span :if={@live_action == :edit}>
-          Showing details for <span class="text-blue-700"><%= @metric_registry.metric %></span>
+          Showing details for <span class="text-blue-700">{@metric_registry.metric}</span>
         </span>
         <span :if={@live_action == :new} class="text-blue-700">
           Creating a new metric
@@ -54,7 +54,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
         />
       </div>
       <div>
-        <span :if={!!@email}>Submit channges as: <span class="font-bold"><%= @email %></span></span>
+        <span :if={!!@email}>Submit channges as: <span class="font-bold">{@email}</span></span>
         <span :if={!@email}>
           If you want to label your change submission with your email,
           <.link
@@ -169,7 +169,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
           <.button phx-disable-with="Submitting...">Submit Change Suggestion</.button>
         </div>
         <.error :for={{field, [reason]} <- @save_errors}>
-          <%= to_string(field) <> ": " <> inspect(reason) %>
+          {to_string(field) <> ": " <> inspect(reason)}
         </.error>
       </.simple_form>
     </div>
@@ -247,7 +247,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
       phx-click={JS.dispatch("change")}
     >
       <.icon name="hero-x-mark" class="w-6 h-6 relative bg-red-700" />
-      <%= @text %>
+      {@text}
     </button>
     """
   end
@@ -265,7 +265,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
       phx-click={JS.dispatch("change")}
       class="text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center"
     >
-      <%= @text %>
+      {@text}
     </button>
     """
   end
@@ -283,7 +283,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
     ~H"""
     <div class="border border-gray-200 rounded-lg px-3 py-6">
       <span class="text-sm font-semibold leading-6 text-zinc-800">
-        <%= Inflex.camelize(@plural) %>
+        {Inflex.camelize(@plural)}
       </span>
       <.inputs_for :let={ef} field={@form[@form_field]}>
         <input type="hidden" name={"registry[#{@sort_param}][]"} value={ef.index} />

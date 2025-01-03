@@ -36,7 +36,7 @@ defmodule SanbaseWeb.UploadImageLive do
         />
 
         <div class="my-4 text-slate-600 text-sm">
-          Add one file max <%= trunc(@uploads.images.max_file_size / 1_000_000) %> MB in size
+          Add one file max {trunc(@uploads.images.max_file_size / 1_000_000)} MB in size
         </div>
         <div
           class="flex items-baseline justify-center space-x-1 my-2 p-4 border-2 border-dashed border-slate-300 rounded-md text-center text-slate-600"
@@ -55,14 +55,14 @@ defmodule SanbaseWeb.UploadImageLive do
               <span>or drag and drop here</span>
             </div>
             <p class="text-sm text-slate-500">
-              <%= @uploads.images.max_entries %> images max,
-              up to <%= trunc(@uploads.images.max_file_size / 1_000_000) %> MB each
+              {@uploads.images.max_entries} images max,
+              up to {trunc(@uploads.images.max_file_size / 1_000_000)} MB each
             </p>
           </div>
         </div>
 
         <.error :for={error <- upload_errors(@uploads.images)}>
-          <%= error_to_string(error) %>
+          {error_to_string(error)}
         </.error>
 
         <div
@@ -73,14 +73,14 @@ defmodule SanbaseWeb.UploadImageLive do
           <.live_img_preview entry={entry} class="w-32" />
           <div class="w-full">
             <div class="text-left mb-2 text-xs font-semibold inline-block text-indigo-600">
-              <%= entry.progress %>
+              {entry.progress}
             </div>
             <div class="flex h-2 overflow-hidden text-base bg-indigo-200 rounded-lg mb-4">
               <span class={"width: #{entry.progress}%"}></span>
             </div>
 
             <.error :for={error <- upload_errors(@uploads.images, entry)}>
-              <%= error_to_string(error) %>
+              {error_to_string(error)}
             </.error>
           </div>
 
@@ -106,7 +106,7 @@ defmodule SanbaseWeb.UploadImageLive do
 
       <div :if={@uploaded_file_url} class="break-words mt-6 text-sm text-gray-600">
         S3 URL of the uploaded file:
-        <p class="underline text-blue-700"><%= @uploaded_file_url %></p>
+        <p class="underline text-blue-700">{@uploaded_file_url}</p>
       </div>
     </div>
     """

@@ -107,7 +107,7 @@ defmodule Sanbase.Mixfile do
       {:mock, "~> 0.3"},
       {:mockery, "~> 2.2"},
       {:mogrify, "~> 0.8"},
-      {:mutex, "~> 2.0"},
+      {:mutex, "~> 3.0"},
       {:mochiweb, "~> 3.2"},
       {:neuron, "~> 5.0", only: :dev},
       {:nimble_csv, "~> 1.1"},
@@ -123,7 +123,7 @@ defmodule Sanbase.Mixfile do
       {:phoenix_html_helpers, "~> 1.0"},
       {:phoenix_live_dashboard, "~> 0.3"},
       {:phoenix_live_reload, "~> 1.1", only: :dev},
-      {:phoenix_live_view, "~> 1.0.0-rc.6", override: true},
+      {:phoenix_live_view, "~> 1.0.1", override: true},
       {:phoenix_pubsub, "~> 2.0"},
       {:phoenix_view, "~> 2.0"},
       {:phoenix, "~> 1.7.0"},
@@ -193,6 +193,9 @@ defmodule Sanbase.Mixfile do
         "database_safety",
         "ecto.rollback -r Sanbase.Repo",
         "ecto.dump -r Sanbase.Repo"
+      ],
+      "hex.outdated": [
+        "hex.outdated --sort status"
       ],
       test: [
         "load_dotenv",

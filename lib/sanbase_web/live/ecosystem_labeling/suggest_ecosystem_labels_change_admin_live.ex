@@ -27,7 +27,7 @@ defmodule SanbaseWeb.SuggestEcosystemLabelsChangeAdminLive do
               href={~p"/admin2/generic/#{row.project_id}?resource=projects"}
               target="_blank"
             >
-              <%= row.project_name %>
+              {row.project_name}
             </.link>
           </:col>
           <:col :let={row} label="Added Ecosystems">
@@ -42,7 +42,7 @@ defmodule SanbaseWeb.SuggestEcosystemLabelsChangeAdminLive do
               ecosystem_colors_class="bg-red-100 text-red-800"
             />
           </:col>
-          <:col :let={row} label="Notes"><%= row.notes %></:col>
+          <:col :let={row} label="Notes">{row.notes}</:col>
           <:action :let={row}>
             <.form
               for={@form}

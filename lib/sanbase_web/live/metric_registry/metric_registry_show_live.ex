@@ -24,7 +24,7 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
     ~H"""
     <div class="flex flex-col justify-center w-7/8">
       <h1 class="text-gray-800 text-2xl">
-        Showing details for <span class="text-blue-700"><%= @metric_registry.metric %></span>
+        Showing details for <span class="text-blue-700">{@metric_registry.metric}</span>
       </h1>
       <div class="my-4">
         <AvailableMetricsComponents.available_metrics_button
@@ -74,7 +74,7 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
 
     ~H"""
     <div>
-      <%= to_string(@value) %>
+      {to_string(@value)}
     </div>
     """
   end

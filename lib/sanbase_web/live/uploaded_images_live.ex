@@ -14,14 +14,14 @@ defmodule SanbaseWeb.UploadedImagesLive do
     <div>
       <div class="flex-1 p:2 sm:p-6 justify-evenly">
         <.table id="uploaded_images" rows={@rows}>
-          <:col :let={row} label="Name"><%= row.name %></:col>
+          <:col :let={row} label="Name">{row.name}</:col>
           <:col :let={row} label="URL">
             <.link class="underline text-blue-600" href={row.url} target="_blank">
-              <%= row.url %>
+              {row.url}
             </.link>
           </:col>
-          <:col :let={row} label="Notes"><%= row.notes %></:col>
-          <:col :let={row} label="Uploaded at"><%= row.inserted_at %></:col>
+          <:col :let={row} label="Notes">{row.notes}</:col>
+          <:col :let={row} label="Uploaded at">{row.inserted_at}</:col>
         </.table>
       </div>
     </div>

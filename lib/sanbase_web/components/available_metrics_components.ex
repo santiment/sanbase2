@@ -18,7 +18,7 @@ defmodule SanbaseWeb.AvailableMetricsComponents do
       class="text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center gap-x-2"
     >
       <CoreComponents.icon :if={@icon} name={@icon} class="text-gray-500" />
-      <%= @text %>
+      {@text}
     </.link>
     """
   end
@@ -41,7 +41,7 @@ defmodule SanbaseWeb.AvailableMetricsComponents do
         data-popover-placement={@popover_placement}
       >
         <span class="border-b border-dotted border-gray-500 hover:cursor-help hover:text-blue-500 hover:border-blue-500">
-          <%= @display_text %>
+          {@display_text}
         </span>
       </div>
 
@@ -53,7 +53,7 @@ defmodule SanbaseWeb.AvailableMetricsComponents do
           @popover_class
         ]}
       >
-        <span class="[&>pre]:font-sans"><%= @popover_target_text %></span>
+        <span class="[&>pre]:font-sans">{@popover_target_text}</span>
       </div>
     </div>
     """
@@ -125,7 +125,7 @@ defmodule SanbaseWeb.AvailableMetricsComponents do
               <div class="block py-4 pr-6">
                 <span class="absolute -inset-y-px right-0 -left-4 group-hover:bg-zinc-50 sm:rounded-l-xl" />
                 <span class={["relative", i == 0 && "text-zinc-900"]}>
-                  <%= render_slot(col, @row_item.(row)) %>
+                  {render_slot(col, @row_item.(row))}
                 </span>
               </div>
             </td>
@@ -136,7 +136,7 @@ defmodule SanbaseWeb.AvailableMetricsComponents do
                   :for={action <- @action}
                   class="relative ml-4 font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
                 >
-                  <%= render_slot(action, @row_item.(row)) %>
+                  {render_slot(action, @row_item.(row))}
                 </span>
               </div>
             </td>
@@ -150,14 +150,14 @@ defmodule SanbaseWeb.AvailableMetricsComponents do
   def th(assigns) do
     ~H"""
     <th class="px-5 py-3 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">
-      <%= @field %>
+      {@field}
     </th>
     """
   end
 
   def td(assigns) do
     ~H"""
-    <td class="px-5 py-5 text-sm bg-white border-b border-gray-200"><%= @value %></td>
+    <td class="px-5 py-5 text-sm bg-white border-b border-gray-200">{@value}</td>
     """
   end
 end

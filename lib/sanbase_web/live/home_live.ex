@@ -26,19 +26,19 @@ defmodule SanbaseWeb.HomeLive do
           <%= for {title, stats} <- stats do %>
             <div class="bg-white shadow-md rounded-lg p-6">
               <h2 class="text-xl font-semibold mb-4">
-                <%= String.capitalize(String.replace(title, "_", " ")) %>
+                {String.capitalize(String.replace(title, "_", " "))}
               </h2>
               <ul>
                 <%= for {key, value} <- stats do %>
                   <li class="flex justify-between items-center mb-2">
                     <span class="text-gray-600">
-                      <%= String.replace(key, "_", " ") |> String.capitalize() %>:
+                      {String.replace(key, "_", " ") |> String.capitalize()}:
                     </span>
                     <span class="font-medium">
                       <%= if is_float(value) do %>
-                        <%= :erlang.float_to_binary(value, decimals: 2) %>
+                        {:erlang.float_to_binary(value, decimals: 2)}
                       <% else %>
-                        <%= value %>
+                        {value}
                       <% end %>
                     </span>
                   </li>

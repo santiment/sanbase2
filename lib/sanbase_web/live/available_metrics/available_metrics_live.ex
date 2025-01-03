@@ -51,10 +51,10 @@ defmodule SanbaseWeb.AvailableMetricsLive do
       <.filters filter={@filter} />
       <div class="text-gray-400 text-sm py-2">
         <div>
-          Showing <%= length(@visible_metrics) %> metrics
+          Showing {length(@visible_metrics)} metrics
         </div>
         <div>
-          In total <%= to_string(@assets_count) %> assets are supported by at least one of the visible filtered metrics
+          In total {to_string(@assets_count)} assets are supported by at least one of the visible filtered metrics
         </div>
       </div>
       <AvailableMetricsComponents.table_with_popover_th
@@ -68,7 +68,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
           popover_target_text={get_popover_text(%{key: "Name"})}
           col_class="max-w-[320px] break-all"
         >
-          <%= row.metric %>
+          {row.metric}
         </:col>
         <:col
           :let={row}
@@ -77,7 +77,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
           popover_target_text={get_popover_text(%{key: "Internal Name"})}
           col_class="max-w-[320px] break-all"
         >
-          <%= row.internal_name %>
+          {row.internal_name}
         </:col>
         <:col
           :let={row}
@@ -85,7 +85,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
           popover_target="popover-frequency"
           popover_target_text={get_popover_text(%{key: "Frequency"})}
         >
-          <%= row.frequency %>
+          {row.frequency}
         </:col>
         <:col
           :let={row}
@@ -101,7 +101,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
           popover_target="popover-default-aggregation"
           popover_target_text={get_popover_text(%{key: "Default Aggregation"})}
         >
-          <%= row.default_aggregation |> to_string() |> String.upcase() %>
+          {row.default_aggregation |> to_string() |> String.upcase()}
         </:col>
         <:col
           :let={row}
@@ -184,14 +184,14 @@ defmodule SanbaseWeb.AvailableMetricsLive do
         data-popover-target={@popover_target}
         data-popover-style="light"
       >
-        <%= @input_label %>
+        {@input_label}
       </label>
       <div
         id={@popover_target}
         role="tooltip"
         class="absolute top-4 right-10 z-10 w-80 text-justify invisible inline-block px-8 py-6 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg shadow-sm opacity-0 popover sans"
       >
-        <span><%= @popover_text %></span>
+        <span>{@popover_text}</span>
         <div class="popover-arrow" data-popper-arrow></div>
       </div>
     </div>
@@ -268,8 +268,8 @@ defmodule SanbaseWeb.AvailableMetricsLive do
 
     ~H"""
     <span>
-      <%= @first_2_str %>
-      <span class="text-gray-400"><%= @rest_str %></span>
+      {@first_2_str}
+      <span class="text-gray-400">{@rest_str}</span>
     </span>
     """
   end
@@ -319,7 +319,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
       assigns |> assign(:access_string, access_string)
 
     ~H"""
-    <span><%= @access_string %></span>
+    <span>{@access_string}</span>
     """
   end
 end

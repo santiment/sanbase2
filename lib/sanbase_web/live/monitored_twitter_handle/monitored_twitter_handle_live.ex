@@ -15,14 +15,14 @@ defmodule SanbaseWeb.MonitoredTwitterHandleLive do
           </:col>
           <:col :let={row} label="Twitter Handle (Clickable link)">
             <.link class="underline text-blue-600" href={"https://x.com/#{row.handle}"}>
-              <%= row.handle %>
+              {row.handle}
             </.link>
           </:col>
-          <:col :let={row} label="Notes"><%= row.notes %></:col>
-          <:col :let={row} label="User ID"><%= row.user_id %></:col>
-          <:col :let={row} label="Username"><%= row.user_username %></:col>
-          <:col :let={row} label="Email"><%= row.user_email %></:col>
-          <:col :let={row} label="Moderator comment"><%= row.comment %></:col>
+          <:col :let={row} label="Notes">{row.notes}</:col>
+          <:col :let={row} label="User ID">{row.user_id}</:col>
+          <:col :let={row} label="Username">{row.user_username}</:col>
+          <:col :let={row} label="Email">{row.user_email}</:col>
+          <:col :let={row} label="Moderator comment">{row.comment}</:col>
           <:action :let={row}>
             <.form for={@form} phx-submit="update_status">
               <.input type="text" class="" field={@form[:comment]} placeholder="Comment..." />

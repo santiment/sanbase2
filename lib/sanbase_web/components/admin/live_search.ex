@@ -42,7 +42,7 @@ defmodule SanbaseWeb.LiveSearch do
       >
         <li :for={{name, path} <- @routes}>
           <a href={path} class="block p-4 hover:bg-gray-100 text-sm font-semibold">
-            <%= name %>
+            {name}
           </a>
         </li>
       </ul>

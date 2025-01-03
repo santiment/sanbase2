@@ -59,7 +59,7 @@ defmodule SanbaseWeb.AdminComponents do
         <%= for {attr, message} <- Ecto.Changeset.traverse_errors(@changeset, &translate_error/1) do %>
           <li class="text-red-500">
             <.icon name="hero-exclamation-circle-mini" class="mr-2" />
-            <%= humanize(attr) %>: <%= Enum.join(message, ", ") %>
+            {humanize(attr)}: {Enum.join(message, ", ")}
           </li>
         <% end %>
       </ul>
@@ -263,7 +263,7 @@ defmodule SanbaseWeb.AdminComponents do
     ~H"""
     <div class="mt-4">
       <h3 class="text-2xl font-medium text-gray-700 mb-2">
-        Show <%= Inflex.singularize(@resource) %>
+        Show {Inflex.singularize(@resource)}
       </h3>
       <div class="relative shadow-md sm:rounded-lg">
         <div class="overflow-x-auto">
@@ -272,7 +272,7 @@ defmodule SanbaseWeb.AdminComponents do
               <%= for field <- @fields do %>
                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-600">
                   <th class="text-xs px-2 py-1 text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 border-b border-gray-200 whitespace-nowrap w-1/4">
-                    <%= to_string(field) %>
+                    {to_string(field)}
                   </th>
                   <.td_show
                     class="px-3 py-2 border-b border-gray-200 whitespace-pre-wrap break-words"
@@ -348,7 +348,7 @@ defmodule SanbaseWeb.AdminComponents do
     ~H"""
     <div class="table-responsive">
       <div class="m-4 flex flex-col gap-x-10">
-        <h3 class="text-3xl font-medium text-gray-700 mb-2"><%= @resource_name %></h3>
+        <h3 class="text-3xl font-medium text-gray-700 mb-2">{@resource_name}</h3>
         <%= if @create_link_kv != [] do %>
           <.new_resource_button resource={@resource} create_link_kv={@create_link_kv} />
         <% end %>
@@ -466,7 +466,7 @@ defmodule SanbaseWeb.AdminComponents do
     <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 sticky top-0">
       <tr>
         <%= for field <- @fields do %>
-          <th scope="col" class="px-2 py-1 whitespace-nowrap min-w-[120px]"><%= field %></th>
+          <th scope="col" class="px-2 py-1 whitespace-nowrap min-w-[120px]">{field}</th>
         <% end %>
         <%= if @actions do %>
           <th scope="col" class="px-2 py-1 whitespace-nowrap w-[140px] min-w-[140px]">Actions</th>
@@ -564,7 +564,7 @@ defmodule SanbaseWeb.AdminComponents do
           classes[@color][@size]
         }
       >
-        <%= @label %>
+        {@label}
       </button>
     </.link>
     """
@@ -599,7 +599,7 @@ defmodule SanbaseWeb.AdminComponents do
           Keyword.merge([resource: @resource], @create_link_kv)
         )
       }>
-        <.icon name="hero-plus-circle" /> Add new <%= Inflex.singularize(@resource) %>
+        <.icon name="hero-plus-circle" /> Add new {Inflex.singularize(@resource)}
       </.link>
     </button>
     """
@@ -683,7 +683,7 @@ defmodule SanbaseWeb.AdminComponents do
   def td_index(assigns) do
     ~H"""
     <td class="px-3 py-2 whitespace-nowrap overflow-hidden text-ellipsis min-w-[120px]">
-      <%= @value %>
+      {@value}
     </td>
     """
   end
@@ -694,7 +694,7 @@ defmodule SanbaseWeb.AdminComponents do
   def td_show(assigns) do
     ~H"""
     <td class={@class}>
-      <%= @value %>
+      {@value}
     </td>
     """
   end
@@ -710,7 +710,7 @@ defmodule SanbaseWeb.AdminComponents do
       href={Routes.generic_admin_path(SanbaseWeb.Endpoint, @action, @row, resource: @resource)}
       class="underline"
     >
-      <%= @label %>
+      {@label}
     </.link>
     """
   end
@@ -758,10 +758,10 @@ defmodule SanbaseWeb.AdminComponents do
         search={@search}
       />
       <span class="text-xs text-gray-700">
-        Showing <%= @current_page * @page_size + 1 %> to <%= Enum.min([
+        Showing {@current_page * @page_size + 1} to {Enum.min([
           (@current_page + 1) * @page_size,
           @rows_count
-        ]) %> of <%= @rows_count %> entries
+        ])} of {@rows_count} entries
       </span>
     </div>
     """
@@ -884,7 +884,7 @@ defmodule SanbaseWeb.AdminComponents do
                               type="button"
                               class="inline-flex w-full px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
                             >
-                              <%= field %>
+                              {field}
                             </button>
                           </li>
                         <% end %>
@@ -976,7 +976,7 @@ defmodule SanbaseWeb.AdminComponents do
   def resource_title(assigns) do
     ~H"""
     <h1 class="text-3xl font-bold mb-6">
-      <%= Inflex.camelize(@resource) %>
+      {Inflex.camelize(@resource)}
     </h1>
     """
   end

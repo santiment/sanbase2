@@ -34,7 +34,7 @@ defmodule SanbaseWeb.MetricDetailsLive do
     ~H"""
     <div class="flex flex-col justify-center w-7/8">
       <h1 class="text-gray-800 text-2xl">
-        Showing details for <span class="text-blue-700"><%= @metric %></span>
+        Showing details for <span class="text-blue-700">{@metric}</span>
       </h1>
       <div class="my-4">
         <AvailableMetricsComponents.available_metrics_button
@@ -45,7 +45,7 @@ defmodule SanbaseWeb.MetricDetailsLive do
       </div>
       <%= if @error do %>
         <div class="text-red-600">
-          Error: <%= @error %>
+          Error: {@error}
         </div>
       <% else %>
         <.table id="available_metrics" rows={@rows}>
@@ -74,7 +74,7 @@ defmodule SanbaseWeb.MetricDetailsLive do
     <div class="w-3/4">
       <a :for={asset <- @value} href={SanbaseWeb.Endpoint.project_url(asset)}>
         <!-- Keep the template and span glued, otherwise there will be a white space -->
-        <%= asset %><span :if={asset != @last_asset}>,</span>
+        {asset}<span :if={asset != @last_asset}>,</span>
       </a>
     </div>
     """
@@ -96,7 +96,7 @@ defmodule SanbaseWeb.MetricDetailsLive do
   defp formatted_value(assigns) do
     ~H"""
     <div>
-      <%= to_string(@value) %>
+      {to_string(@value)}
     </div>
     """
   end

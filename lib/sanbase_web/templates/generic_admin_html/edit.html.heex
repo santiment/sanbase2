@@ -1,7 +1,7 @@
 <div class="mt-6 p-4">
   <h3 class="text-3xl font-medium text-gray-700">
     <% type = "edit" %>
-    <%= "#{String.capitalize(type)} #{@resource}" %>
+    {"#{String.capitalize(type)} #{@resource}"}
   </h3>
   <.form
     method={if type == "new", do: "post", else: "patch"}
@@ -21,7 +21,7 @@
             <% initial_value =
               Map.get(@changeset.changes, field_id) || Map.get(@changeset.data, field_id) ||
                 Map.get(@data, field_id) %>
-            <%= live_render(@conn, SanbaseWeb.LiveSelect,
+            {live_render(@conn, SanbaseWeb.LiveSelect,
               session: %{
                 "initial_value" => initial_value,
                 "parent_resource" => @resource,
@@ -29,7 +29,7 @@
                 "resource" => @belongs_to_fields[field][:resource],
                 "search_fields" => @belongs_to_fields[field][:search_fields]
               }
-            ) %>
+            )}
           <% else %>
             <SanbaseWeb.AdminComponents.form_select
               type={type}

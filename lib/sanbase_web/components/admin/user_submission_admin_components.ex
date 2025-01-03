@@ -14,7 +14,7 @@ defmodule SanbaseWeb.AdminFormsComponents do
   def status(assigns) do
     ~H"""
     <p class={status_to_color(@status)}>
-      <%= @status |> String.replace("_", " ") |> String.upcase() %>
+      {@status |> String.replace("_", " ") |> String.upcase()}
     </p>
     """
   end
@@ -36,7 +36,7 @@ defmodule SanbaseWeb.AdminFormsComponents do
       ]}
       disabled={@disabled}
     >
-      <%= @display_text %>
+      {@display_text}
     </button>
     """
   end
@@ -46,7 +46,7 @@ defmodule SanbaseWeb.AdminFormsComponents do
   def forms_list_container(assigns) do
     ~H"""
     <div class="flex flex-col border border-gray-100 mx-auto max-w-3xl p-6 rounded-xl shadow-sm divide-y divide-solid">
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
     </div>
     """
   end
@@ -56,7 +56,7 @@ defmodule SanbaseWeb.AdminFormsComponents do
   def forms_list_title(assigns) do
     ~H"""
     <h1 class="py-6 text-3xl font-extrabold leading-none tracking-tight text-gray-900">
-      <%= @title %>
+      {@title}
     </h1>
     """
   end
@@ -70,14 +70,14 @@ defmodule SanbaseWeb.AdminFormsComponents do
     <div class="flex flex-col md:flex-row py-8 items-center justify-between">
       <!-- Title and description -->
       <div class="w-3/4">
-        <span class="text-2xl mb-6"><%= @title %></span>
-        <p class="text-sm text-gray-500"><%= @description %></p>
+        <span class="text-2xl mb-6">{@title}</span>
+        <p class="text-sm text-gray-500">{@description}</p>
       </div>
       <!-- Link to form -->
       <div class="flex flex-col space-y-2 ">
         <.link :for={button <- @buttons} href={button.url} target="_blank">
           <button class="bg-blue-600 w-full px-6 hover:bg-blue-900 rounded-xl text-white py-2">
-            <%= button.text %>
+            {button.text}
           </button>
         </.link>
       </div>

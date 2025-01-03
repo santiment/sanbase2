@@ -65,6 +65,21 @@ defmodule Sanbase.Cryptocompare.FundingRate.HistoricalScheduler do
     |> Enum.each(&Oban.insert_all(@oban_conf_name, &1))
   end
 
+  def schedule_jobs(opts \\ []) do
+    # Scrape the last `limit` number of data points before `to_datetime`
+    limit = Keyword.fetch!(opts, :limit)
+    schedule_next_job = Keyword.get(opts, :schedule_next_job, false)
+    to_datetime = Keyword.get(opts, :to_datetime, DateTime.utc_now())
+    to_timestamp = to_datetime |> DateTime.to_unix()
+    {:ok, markets_and_instruments} = Handler.get_markets_and_instruments()
+
+    for {market, instruments} <- markets_and_instruments, instrument <- instruments do
+      new_job(market, instrument, to_timestamp, schedule_next_job, limit)
+    end
+    |> Enum.chunk_every(200)
+    |> Enum.each(&Oban.insert_all(@oban_conf_name, &1))
+  end
+
   def add_job(market, instrument, timestamp, schedule_next_job, limit) do
     job = new_job(market, instrument, timestamp, schedule_next_job, limit)
     Oban.insert(@oban_conf_name, job)

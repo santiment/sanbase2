@@ -25,7 +25,7 @@ defmodule SanbaseWeb.UserFormsComponents do
       "text-md font-medium me-2 px-2.5 py-1 rounded",
       @class
     ]}>
-      <%= @ecosystem %>
+      {@ecosystem}
     </span>
     """
   end
@@ -54,7 +54,7 @@ defmodule SanbaseWeb.UserFormsComponents do
       "text-md font-medium me-2 px-2.5 py-1 rounded",
       @class
     ]}>
-      <%= @github_organization %>
+      {@github_organization}
     </span>
     """
   end

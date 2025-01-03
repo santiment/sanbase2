@@ -339,7 +339,7 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
             class="text-blue-800 underline"
             target="_blank"
           >
-            <%= @selected_project.name %> (#<%= @selected_project.ticker %>)
+            {@selected_project.name} (#{@selected_project.ticker})
           </.link>
         </span>
         <div class="flex flex-col mt-2">
@@ -401,7 +401,7 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
               for={"checkbox-item-#{organization}"}
               class="w-full ms-2 text-sm font-medium text-gray-900 rounded"
             >
-              <%= organization %>
+              {organization}
             </label>
           </li>
         </div>
@@ -432,10 +432,10 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
     ~H"""
     <div class="flex flex-row items-start justify-between">
       <div>
-        <span><%= @project.name %></span>
-        <span class="ml-4 text-gray-500"><%= @project.ticker %></span>
+        <span>{@project.name}</span>
+        <span class="ml-4 text-gray-500">{@project.ticker}</span>
       </div>
-      <span class="text-gray-500"><%= @organizations_string %></span>
+      <span class="text-gray-500">{@organizations_string}</span>
     </div>
     """
   end
@@ -466,7 +466,7 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
       }
       {@rest}
     >
-      <%= @text %>
+      {@text}
     </button>
     """
   end

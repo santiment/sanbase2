@@ -27,12 +27,12 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
               href={~p"/admin2/metric_registry/show/#{row.metric_registry_id}"}
               target="_blank"
             >
-              <%= row.metric_registry.metric %>
+              {row.metric_registry.metric}
             </.link>
           </:col>
           <:col :let={row} label="Changes"><.formatted_changes row={row} /></:col>
-          <:col :let={row} label="Notes"><%= row.notes %></:col>
-          <:col :let={row} label="Submitted By"><%= row.submitted_by %></:col>
+          <:col :let={row} label="Notes">{row.notes}</:col>
+          <:col :let={row} label="Submitted By">{row.submitted_by}</:col>
           <:action :let={row}>
             <.action_buttons form={@form} row={row} />
           </:action>
@@ -44,7 +44,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
 
   def formatted_changes(assigns) do
     ~H"""
-    <%= Sanbase.ExAudit.Patch.format_patch(%{patch: @row.changes}) %>
+    {Sanbase.ExAudit.Patch.format_patch(%{patch: @row.changes})}
     """
   end
 

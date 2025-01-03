@@ -9,14 +9,14 @@ defmodule SanbaseWeb.AvailableMetricsDescription do
 
     Example:
 
-      {
-        getMetric(<b>metric: "price_usd"</b>){
-          timeseriesData(asset: "ethereum" from: "utc_now-90d" to: "utc_now" interval: "1d"){
+      &lbrace;
+        getMetric(<b>metric: "price_usd"</b>)&lbrace;
+          timeseriesData(asset: "ethereum" from: "utc_now-90d" to: "utc_now" interval: "1d")&lbrace;
             datetime
             value
-          }
-        }
-      }
+          &rbrace;
+        &rbrace;
+      &rbrace;
     </pre>
     """
   end
@@ -26,14 +26,14 @@ defmodule SanbaseWeb.AvailableMetricsDescription do
     <pre>
     The aliases are used to provide alternative names for the metric.
     Example:
-      {
-        getMetric(<b>metric: "age_consumed"</b>){
-          timeseriesData(asset: "ethereum" from: "utc_now-90d" to: "utc_now" interval: "1d"){
+      &lbrace;
+        getMetric(<b>metric: "age_consumed"</b>)&lbrace;
+          timeseriesData(asset: "ethereum" from: "utc_now-90d" to: "utc_now" interval: "1d")&lbrace;
             datetime
             value
-          }
-        }
-      }
+          $&rbrace;
+        $&rbrace;
+      &rbrace;
     </pre>
     """
   end
@@ -98,18 +98,18 @@ defmodule SanbaseWeb.AvailableMetricsDescription do
     By default the incomplete data is not returned by the API.
     To obtain this last incomplete data point, provide the `includeIncompleteData` flag
     Example:
-      {
-        getMetric(metric: "daily_active_addresses"){
+      &lbrace;
+        getMetric(metric: "daily_active_addresses")&lbrace;
           timeseriesData(
             slug: "bitcoin"
             from: "utc_now-3d"
             to: "utc_now"
-            <b>includeIncompleteData: true</b>){
+            <b>includeIncompleteData: true</b>)&lbrace;
               datetime
               value
-            }
-        }
-      }
+            &rbrace;
+        &rbrace;
+      &rbrace;
     </pre>
     """
   end
@@ -127,7 +127,7 @@ defmodule SanbaseWeb.AvailableMetricsDescription do
     <pre>
     A boolean that indicates whether the metric registry record is a template metric.
     A template metric is one that is used to generate multiple metrics. The template
-    metric's names have {{key}} templates in them that are replaced with the values
+    metric's names have <%= "{{key}}" %> templates in them that are replaced with the values
     provided in the parameters field.
     </pre>
     """
@@ -168,37 +168,37 @@ defmodule SanbaseWeb.AvailableMetricsDescription do
     All aggregations except `OHLC` are queried the same way:
 
     Example:
-      {
-        getMetric(metric: "price_usd"){
+      &lbrace;
+        getMetric(metric: "price_usd")&lbrace;
           timeseriesData(
           slug: "bitcoin"
           from: "utc_now-90d"
           to: "utc_now"
-          <b>aggregation: MAX</b>){
+          <b>aggregation: MAX</b>)&lbrace;
             datetime
             value
-          }
-        }
-      }
+          &rbrace;
+        &rbrace;
+      &rbrace;
 
     When `OHLC` aggregation is used, the result is fetched in a different way -
     use `valueOhlc` instead of `value`:
 
     Example:
-      {
-        getMetric(metric: "price_usd"){
+      &lbrace;
+        getMetric(metric: "price_usd")&lbrace;
           timeseriesData(
           slug: "bitcoin"
           from: "utc_now-90d"
           to: "utc_now"
-          <b>aggregation: OHLC</b>){
+          <b>aggregation: OHLC</b>)&lbrace;
             datetime
-            <b>valueOhlc {
+            <b>valueOhlc &lbrace;
               open high close low
-            }</b>
-          }
-        }
-      }
+            &rbrace;</b>
+          &rbrace;
+        &rbrace;
+      &rbrace;
     </pre>
     """
   end
@@ -216,18 +216,18 @@ defmodule SanbaseWeb.AvailableMetricsDescription do
     To override the default aggregation, provide the `aggregation` parameter.
 
     Example:
-      {
-        getMetric(metric: "price_usd"){
+      &lbrace;
+        getMetric(metric: "price_usd")&lbrace;
           timeseriesData(
           slug: "bitcoin"
           from: "utc_now-90d"
           to: "utc_now"
-          <b>aggregation: MAX</b>){
+          <b>aggregation: MAX</b>)&lbrace;
             datetime
             value
-          }
-        }
-      }
+          &rbrace;
+        &rbrace;
+      &rbrace;
     </pre>
     """
   end
@@ -244,17 +244,17 @@ defmodule SanbaseWeb.AvailableMetricsDescription do
     To provide any selector other than `slug`, use the `selector` input parameter.
 
     Example:
-      {
-        getMetric(metric: "active_withdrawals_per_exchange"){
+      &lbrace;
+        getMetric(metric: "active_withdrawals_per_exchange")&lbrace;
           timeseriesData(
-          <b>selector: { slug: "bitcoin" owner: "binance" }</b>
+          <b>selector: &lbrace; slug: "bitcoin" owner: "binance" &rbrace;</b>
           from: "utc_now-90d"
-          to: "utc_now"){
+          to: "utc_now")&lbrace;
             datetime
             value
-          }
-        }
-      }
+          &rbrace;
+        &rbrace;
+      &rbrace;
     </pre>
     """
   end
@@ -281,17 +281,17 @@ defmodule SanbaseWeb.AvailableMetricsDescription do
     All metrics with `timeseries` data type are fetched in a generic way using `timeseriesData` field.
 
     Example:
-      {
-        getMetric(metric: "price_usd"){
+      &lbrace;
+        getMetric(metric: "price_usd")&lbrace;
           <b>timeseriesData</b>(
             slug: "bitcoin"
             from: "utc_now-90d"
-            to: "utc_now"){
+            to: "utc_now")&lbrace;
               datetime
               value
-            }
-        }
-      }
+            &rbra
+        &rbra
+      &rbrace;
 
     The metrics with `histogram` data type are fetched in different ways as their result format
     could differ. Check the documentation of each such metric to see an example.
@@ -308,17 +308,17 @@ defmodule SanbaseWeb.AvailableMetricsDescription do
     Each asset is uniquely identified by its `slug`:
 
     Example:
-      {
-        getMetric(metric: "daily_active_addresses"){
+      &lbrace;
+        getMetric(metric: "daily_active_addresses")&lbrace;
           timeseriesData(
             <b>slug: "bitcoin"</b>
             from: "utc_now-90d"
-            to: "utc_now"){
+            to: "utc_now")&lbrace;
               datetime
               value
-            }
-        }
-      }
+            &rbrace;
+        &rbrace;
+      &rbrace;
     </pre>
     """
   end

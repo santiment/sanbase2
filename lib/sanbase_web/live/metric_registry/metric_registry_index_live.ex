@@ -23,14 +23,14 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     <div class="flex flex-col items-start justify-evenly">
       <div class="text-gray-400 text-sm py-2">
         <div>
-          Showing <%= length(@visible_metrics) %> metrics
+          Showing {length(@visible_metrics)} metrics
         </div>
       </div>
       <.navigation />
       <.filters filter={@filter} />
       <AvailableMetricsComponents.table_with_popover_th id="metrics_registry" rows={@visible_metrics}>
         <:col :let={row} label="ID">
-          <%= row.id %>
+          {row.id}
         </:col>
         <:col :let={row} label="Metric Names" col_class="max-w-[480px] break-all">
           <.metric_names
@@ -45,7 +45,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           popover_target="popover-min-interval"
           popover_target_text={get_popover_text(%{key: "Frequency"})}
         >
-          <%= row.min_interval %>
+          {row.min_interval}
         </:col>
         <:col
           :let={row}
@@ -61,7 +61,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           popover_target="popover-default-aggregation"
           popover_target_text={get_popover_text(%{key: "Default Aggregation"})}
         >
-          <%= row.default_aggregation %>
+          {row.default_aggregation}
         </:col>
         <:col
           :let={row}
@@ -69,7 +69,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           popover_target="popover-access"
           popover_target_text={get_popover_text(%{key: "Access"})}
         >
-          <%= if is_map(row.access), do: Jason.encode!(row.access), else: row.access %>
+          {if is_map(row.access), do: Jason.encode!(row.access), else: row.access}
         </:col>
         <:col
           :let={row}
@@ -88,7 +88,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     ~H"""
     <div>
       <div :for={item <- @list}>
-        <%= Map.get(item, @key) %>
+        {Map.get(item, @key)}
       </div>
     </div>
     """
@@ -179,7 +179,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
       class="text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center gap-x-2"
     >
       <.icon :if={@icon} name={@icon} />
-      <%= @text %>
+      {@text}
     </.link>
     """
   end
@@ -187,9 +187,9 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
   defp metric_names(assigns) do
     ~H"""
     <div class="flex flex-col">
-      <div class="text-black text-base"><%= @human_readable_name %></div>
-      <div class="text-gray-900 text-sm"><%= @metric %> (API)</div>
-      <div class="text-gray-900 text-sm"><%= @internal_metric %> (DB)</div>
+      <div class="text-black text-base">{@human_readable_name}</div>
+      <div class="text-gray-900 text-sm">{@metric} (API)</div>
+      <div class="text-gray-900 text-sm">{@internal_metric} (DB)</div>
     </div>
     """
   end

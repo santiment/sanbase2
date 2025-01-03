@@ -87,6 +87,7 @@ defmodule SanbaseWeb.Router do
     live("/metric_registry/show/:id", MetricRegistryShowLive)
     live("/metric_registry/edit/:id", MetricRegistryFormLive, :edit)
     live("/metric_registry/new", MetricRegistryFormLive, :new)
+    live("/metric_registry/sync", MetricRegistrySyncLive, :new)
   end
 
   scope "/" do
@@ -180,6 +181,7 @@ defmodule SanbaseWeb.Router do
   end
 
   scope "/", SanbaseWeb do
+    get("/metric_registry_export", MetricRegistryController, :export_json)
     get("/api_metric_name_mapping", MetricNameController, :api_metric_name_mapping)
     get("/projects_data", DataController, :projects_data)
     get("/projects_twitter_handles", DataController, :projects_twitter_handles)

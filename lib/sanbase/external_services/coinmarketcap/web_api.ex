@@ -12,11 +12,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
   alias Sanbase.Project
 
   @rate_limiting_server :graph_coinmarketcap_rate_limiter
+  plug(Tesla.Middleware.Logger)
   plug(Sanbase.ExternalServices.RateLimiting.Middleware, name: @rate_limiting_server)
   plug(Sanbase.ExternalServices.ErrorCatcher.Middleware)
   plug(Tesla.Middleware.BaseUrl, "https://web-api.coinmarketcap.com")
   plug(Tesla.Middleware.Compression)
-  plug(Tesla.Middleware.Logger)
 
   @source "coinmarketcap"
   @prices_exporter :prices_exporter
@@ -211,18 +211,27 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
         Enum.map(
           data["points"] || [],
           fn
-            {dt_unix, point} ->
-              v = point["v"]
+            {dt_unix_str, %{"v" => [price_usd, volume_usd, marketcap_usd, price_btc | _]}} ->
+              dt_unix = String.to_integer(dt_unix_str)
 
               %PricePoint{
-                price_usd: Enum.at(v, 0) |> Sanbase.Math.to_float(),
-                price_btc: Enum.at(v, 3) |> Sanbase.Math.to_float(),
-                marketcap_usd: Enum.at(v, 2) |> Sanbase.Math.to_integer(),
-                volume_usd: Enum.at(v, 1) |> Sanbase.Math.to_integer(),
-                datetime: DateTime.from_unix!(String.to_integer(dt_unix))
+                price_usd: Sanbase.Math.to_float(price_usd),
+                price_btc: Sanbase.Math.to_float(price_btc),
+                marketcap_usd: Sanbase.Math.to_integer(marketcap_usd),
+                volume_usd: Sanbase.Math.to_integer(volume_usd),
+                datetime: DateTime.from_unix!(dt_unix)
               }
+
+            data ->
+              Logger.info("""
+              [#{__MODULE__}] No price points found when getting prices for #{identifier} and interval #{inspect(interval)}.
+              Instead got: #{inspect(data)}
+              """)
+
+              nil
           end
         )
+        |> Enum.reject(&is_nil/1)
 
       {:ok, result, interval}
     else

@@ -87,7 +87,7 @@ defmodule Sanbase.Alert.StructMapTransformation do
         Map.put(acc, atomize(key), atomize_keys(val))
       rescue
         ArgumentError ->
-          [{:erlang, :binary_to_existing_atom, [str, _], _} | _] = __STACKTRACE__
+          [{:erlang, :binary_to_existing_atom, [str | _], _} | _] = __STACKTRACE__
 
           errors = Process.get(@unsupported_fields_error, [])
           field = if is_binary(str), do: str, else: inspect(str)

@@ -167,6 +167,7 @@ defmodule SanbaseWeb.Plans.BusinessPlansTest do
       getAccessRestrictions{
         type
         name
+        humanReadableName
         minInterval
         internalName
         isRestricted

@@ -324,6 +324,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
   object :access_restriction do
     field(:type, non_null(:string))
     field(:name, non_null(:string))
+    field(:human_readable_name, non_null(:string))
     field(:internal_name, non_null(:string))
     field(:min_interval, :string)
     field(:is_restricted, non_null(:boolean))

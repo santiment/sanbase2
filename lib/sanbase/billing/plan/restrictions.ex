@@ -9,6 +9,7 @@ defmodule Sanbase.Billing.Plan.Restrictions do
   @type restriction :: %{
           type: String.t(),
           name: String.t(),
+          human_readable_name: String.t(),
           internal_name: String.t(),
           min_interval: String.t(),
           is_accessible: boolean(),
@@ -96,6 +97,7 @@ defmodule Sanbase.Billing.Plan.Restrictions do
     %{
       type: type_str,
       name: name_str,
+      human_readable_name: name_str,
       is_accessible: false,
       is_restricted: true,
       restricted_from: nil,
@@ -171,7 +173,10 @@ defmodule Sanbase.Billing.Plan.Restrictions do
   defp additional_data("metric", metric) do
     case Sanbase.Metric.metadata(metric) do
       {:ok, metadata} ->
+        {:ok, human_readable_name} = Sanbase.Metric.human_readable_name(metric)
+
         %{
+          human_readable_name: human_readable_name,
           min_interval: metadata.min_interval,
           internal_name: metadata.internal_metric,
           is_deprecated: metadata.is_deprecated,
@@ -189,7 +194,10 @@ defmodule Sanbase.Billing.Plan.Restrictions do
   defp additional_data("signal", signal) do
     case Sanbase.Signal.metadata(signal) do
       {:ok, metadata} ->
+        {:ok, human_readable_name} = Sanbase.Signal.human_readable_name(signal)
+
         %{
+          human_readable_name: human_readable_name,
           min_interval: metadata.min_interval,
           internal_name: metadata.internal_signal,
           available_selectors: [],

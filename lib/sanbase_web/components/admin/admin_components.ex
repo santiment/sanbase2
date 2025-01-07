@@ -433,8 +433,8 @@ defmodule SanbaseWeb.AdminComponents do
         <.search fields={@search_fields} resource={@resource} search={@search} />
       </div>
       <div class="relative shadow-md sm:rounded-lg">
-        <div class="overflow-x-auto pr-4" style="max-height: calc(85vh - 180px);">
-          <table class="w-full text-xs text-left rtl:text-right text-gray-500 dark:text-gray-400 min-w-full table-fixed">
+        <div class="overflow-x-auto" style="max-height: calc(85vh - 180px);">
+          <table class="w-full text-xs text-left rtl:text-right text-gray-500 dark:text-gray-400">
             <.thead fields={@fields} actions={@actions} />
             <.tbody
               resource={@resource}
@@ -466,10 +466,21 @@ defmodule SanbaseWeb.AdminComponents do
     <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 sticky top-0">
       <tr>
         <%= for field <- @fields do %>
-          <th scope="col" class="px-2 py-1 whitespace-nowrap min-w-[120px]">{field}</th>
+          <th
+            scope="col"
+            class={
+              [
+                "px-2 py-1 whitespace-nowrap",
+                # Make ID and boolean columns narrower
+                if(field in [:id, :is_superuser, :is_admin, :is_active], do: "w-[80px]")
+              ]
+            }
+          >
+            {field}
+          </th>
         <% end %>
         <%= if @actions do %>
-          <th scope="col" class="px-2 py-1 whitespace-nowrap w-[140px] min-w-[140px]">Actions</th>
+          <th scope="col" class="px-2 py-1 whitespace-nowrap w-[160px]">Actions</th>
         <% end %>
       </tr>
     </thead>
@@ -631,29 +642,38 @@ defmodule SanbaseWeb.AdminComponents do
       for={%{}}
       action={Routes.generic_admin_path(SanbaseWeb.Endpoint, @action, @row, resource: @resource)}
       method="post"
-      class="inline"
+      class="inline-block"
       data-confirm="Are you sure you want to delete this?"
     >
       <input type="hidden" name="_method" value="delete" />
-      <.btn color={:red} size={:small} type="submit" href="#" label={@label} />
+      <button type="submit" class="text-red-600 hover:text-red-800 px-2 py-1 rounded">
+        <.icon name="hero-trash" class="w-4 h-4" />
+      </button>
     </.form>
     """
   end
 
   def index_action_btn(assigns) do
     ~H"""
-    <.btn
-      color={
-        case @action do
-          :edit -> :yellow
-          :show -> :blue
-          :delete -> :red
-        end
-      }
-      size={:small}
-      href={Routes.generic_admin_path(SanbaseWeb.Endpoint, @action, @row, resource: @resource)}
-      label={@label}
-    />
+    <button class={[
+      "px-2 py-1 rounded inline-flex items-center",
+      case @action do
+        :edit -> "text-yellow-600 hover:text-yellow-800"
+        :show -> "text-blue-600 hover:text-blue-800"
+      end
+    ]}>
+      <.link href={Routes.generic_admin_path(SanbaseWeb.Endpoint, @action, @row, resource: @resource)}>
+        <.icon
+          name={
+            case @action do
+              :edit -> "hero-pencil"
+              :show -> "hero-eye"
+            end
+          }
+          class="w-4 h-4"
+        />
+      </.link>
+    </button>
     """
   end
 
@@ -682,7 +702,7 @@ defmodule SanbaseWeb.AdminComponents do
 
   def td_index(assigns) do
     ~H"""
-    <td class="px-3 py-2 whitespace-nowrap overflow-hidden text-ellipsis min-w-[120px]">
+    <td class="px-3 py-2 whitespace-nowrap overflow-hidden text-ellipsis" style="max-width: 200px;">
       {@value}
     </td>
     """

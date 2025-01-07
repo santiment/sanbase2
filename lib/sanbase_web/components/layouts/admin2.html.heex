@@ -1,4 +1,7 @@
 <div x-data="{ isOpen: true }" class="min-h-screen flex flex-col">
+  <head>
+    <title>Sanbase Admin Dashboard</title>
+  </head>
   <nav class="bg-blue-500 p-4">
     <.link href={~p"/admin2"} class="text-white hover:text-gray-300">
       <.icon name="hero-home" class="mr-2" /> Admin Home
@@ -43,6 +46,7 @@
       x-transition:leave="transition ease-in duration-300"
       x-transition:leave-start="translate-x-0"
       x-transition:leave-end="-translate-x-full"
+      class="flex-shrink-0 w-64 min-w-[250px]"
     >
       {live_render(@conn, SanbaseWeb.LiveSearch)}
       <div class="h-full p-3 overflow-y-auto bg-gray-50 dark:bg-gray-800">
@@ -50,7 +54,7 @@
           <li :for={{name, path} <- @routes}>
             <a
               href={path}
-              class="flex items-center p-1 text-sm text-gray-900 rounded-lg dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 group"
+              class="flex items-center p-1 text-sm text-gray-900 rounded-lg dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 group truncate"
             >
               <span class="ms-3">{name}</span>
             </a>
@@ -58,7 +62,8 @@
         </ul>
       </div>
     </aside>
-    <div class="flex-1 overflow-y-auto">
+
+    <div class="flex-1 flex flex-col min-h-0 overflow-hidden pl-0">
       <.flash_group flash={@flash} />
       {@inner_content}
     </div>

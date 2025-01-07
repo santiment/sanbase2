@@ -355,7 +355,7 @@ defmodule SanbaseWeb.AdminComponents do
       </div>
       <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
         <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-          <.thead fields={@fields} actions={[]} />
+          <.thead fields={@fields} field_type_map={%{}} actions={[]} />
           <.tbody
             resource={@resource}
             rows={@rows}
@@ -425,17 +425,16 @@ defmodule SanbaseWeb.AdminComponents do
 
   def table(assigns) do
     ~H"""
-    <div class="table-responsive">
-      <div class="m-4 flex flex-col md:flex-row md:items-center gap-y-2 md:gap-x-10">
+    <div class="table-responsive flex-1 flex flex-col min-h-0">
+      <div class="m-4">
         <%= if :new in @actions do %>
           <.new_resource_button resource={@resource} />
         <% end %>
-        <.search fields={@search_fields} resource={@resource} search={@search} />
       </div>
-      <div class="relative shadow-md sm:rounded-lg">
-        <div class="overflow-x-auto" style="max-height: calc(85vh - 180px);">
+      <div class="relative shadow-md sm:rounded-lg flex-1 flex flex-col min-h-0">
+        <div class="overflow-y-auto flex-1">
           <table class="w-full text-xs text-left rtl:text-right text-gray-500 dark:text-gray-400">
-            <.thead fields={@fields} actions={@actions} />
+            <.thead fields={@fields} field_type_map={@field_type_map} actions={@actions} />
             <.tbody
               resource={@resource}
               rows={@rows}
@@ -472,7 +471,7 @@ defmodule SanbaseWeb.AdminComponents do
               [
                 "px-2 py-1 whitespace-nowrap",
                 # Make ID and boolean columns narrower
-                if(field in [:id, :is_superuser, :is_admin, :is_active], do: "w-[80px]")
+                if(field == :id or Map.get(@field_type_map, field) == :boolean, do: "w-[80px]")
               ]
             }
           >
@@ -995,7 +994,7 @@ defmodule SanbaseWeb.AdminComponents do
 
   def resource_title(assigns) do
     ~H"""
-    <h1 class="text-3xl font-bold mb-6">
+    <h1 class="text-2xl font-bold">
       {Inflex.camelize(@resource)}
     </h1>
     """

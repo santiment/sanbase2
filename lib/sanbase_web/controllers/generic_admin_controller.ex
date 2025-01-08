@@ -24,7 +24,8 @@ defmodule SanbaseWeb.GenericAdminController do
       {"Monitored Twitter Handles", ~p"/admin2/monitored_twitter_handle_live"},
       {"Ecosystem Project Labels Suggestions", ~p"/forms/suggest_ecosystems"},
       {"User Forms", ~p"/forms"},
-      {"Admin Forms", ~p"/admin2/admin_forms"}
+      {"Admin Forms", ~p"/admin2/admin_forms"},
+      {"Metric Registry", ~p"/admin2/metric_registry"}
     ]
   end
 
@@ -418,7 +419,8 @@ defmodule SanbaseWeb.GenericAdminController do
       field_type_map: field_type_map,
       search_fields: fields(module, extra_fields),
       collections: collections,
-      belongs_to_fields: belongs_to_fields
+      belongs_to_fields: belongs_to_fields,
+      custom_index_actions: resource_config[:custom_index_actions]
     }
   end
 

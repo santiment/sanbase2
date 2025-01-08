@@ -12,6 +12,8 @@ defmodule SanbaseWeb.GenericAdmin.Notification do
         :params,
         :channel,
         :status,
+        :job_id,
+        :metric_registry_id,
         :is_manual,
         :scheduled_at
       ],

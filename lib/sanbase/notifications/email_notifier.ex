@@ -4,7 +4,7 @@ defmodule Sanbase.Notifications.EmailNotifier do
 
   alias Sanbase.{Repo, Notifications.Notification}
 
-  @oban_conf_name :oban_web
+  @oban_conf_name :oban_scrapers
 
   def send_daily_digest(action) do
     notifications = get_unprocessed_notifications(action)

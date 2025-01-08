@@ -174,5 +174,13 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     renew_available_metrics_slugs: [
       schedule: "@daily",
       task: {Sanbase.AvailableMetrics, :update_all, []}
+    ],
+    send_daily_digest_metric_created: [
+      schedule: "0 18 * * *",
+      task: {Sanbase.Notifications.EmailNotifier, :send_daily_digest, ["metric_created"]}
+    ],
+    send_daily_digest_metric_deleted: [
+      schedule: "0 18 * * *",
+      task: {Sanbase.Notifications.EmailNotifier, :send_daily_digest, ["metric_deleted"]}
     ]
   ]

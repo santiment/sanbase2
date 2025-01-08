@@ -865,7 +865,7 @@ defmodule SanbaseWeb.AdminComponents do
     <div x-data={
       Jason.encode!(%{
         open: false,
-        filters: Map.get(assigns.search || %{}, "filters") || [%{"field" => "Fields", "value" => ""}],
+        filters: normalize_filters(assigns.search),
         showError: false
       })
     }>
@@ -1026,5 +1026,23 @@ defmodule SanbaseWeb.AdminComponents do
       <.btn href={action.path} label={action.name} color={:blue} />
     <% end %>
     """
+  end
+
+  # private
+
+  defp normalize_filters(search) do
+    (Map.get(search || %{}, "filters") || [])
+    |> case do
+      filters when is_map(filters) and map_size(filters) > 0 ->
+        filters
+        |> Map.to_list()
+        |> Enum.map(fn {_key, filter} -> filter end)
+
+      filters when is_list(filters) and length(filters) > 0 ->
+        filters
+
+      _ ->
+        [%{"field" => "Fields", "value" => ""}]
+    end
   end
 end

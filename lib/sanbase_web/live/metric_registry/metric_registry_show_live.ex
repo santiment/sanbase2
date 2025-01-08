@@ -42,7 +42,7 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
         <AvailableMetricsComponents.available_metrics_button
           text="Notifications"
           href={
-            ~p"/admin2/generic/search?search[field]=metric_registry_id&resource=notifications&search[value]=#{@metric_registry.id}"
+            ~p"/admin2/generic/search?resource=notifications&search[filters][0][field]=metric_registry_id&search[filters][0][value]=#{@metric_registry.id}"
           }
           icon="hero-envelope"
         />

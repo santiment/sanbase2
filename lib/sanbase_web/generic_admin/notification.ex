@@ -1,4 +1,6 @@
 defmodule SanbaseWeb.GenericAdmin.Notification do
+  use SanbaseWeb, :live_component
+
   def schema_module, do: Sanbase.Notifications.Notification
 
   def resource() do
@@ -12,6 +14,16 @@ defmodule SanbaseWeb.GenericAdmin.Notification do
         :status,
         :is_manual,
         :scheduled_at
+      ],
+      custom_index_actions: [
+        %{
+          name: "Manual Discord Notification",
+          path: ~p"/admin2/notifications/manual/discord"
+        },
+        %{
+          name: "Manual Email Notification",
+          path: ~p"/admin2/notifications/manual/email"
+        }
       ],
       fields_override: %{
         action: %{

@@ -422,13 +422,20 @@ defmodule SanbaseWeb.AdminComponents do
   attr(:page_size, :integer, required: false, default: 0)
   attr(:current_page, :integer, required: false, default: 1)
   attr(:action, :atom, required: false, default: :index)
+  attr(:custom_index_actions, :list, required: false, default: nil)
 
   def table(assigns) do
     ~H"""
     <div class="table-responsive flex-1 flex flex-col min-h-0">
-      <div class="m-4">
+      <div class="m-4 flex flex-row items-center">
         <%= if :new in @actions do %>
           <.new_resource_button resource={@resource} />
+        <% end %>
+
+        <div class="flex-1"></div>
+
+        <%= if @custom_index_actions do %>
+          <.custom_index_actions actions={@custom_index_actions} />
         <% end %>
       </div>
       <div class="relative shadow-md sm:rounded-lg flex-1 flex flex-col min-h-0">
@@ -997,6 +1004,27 @@ defmodule SanbaseWeb.AdminComponents do
     <h1 class="text-2xl font-bold">
       {Inflex.camelize(@resource)}
     </h1>
+    """
+  end
+
+  @doc """
+  Renders custom index action buttons.
+
+  ## Attributes
+  - `:actions` - List of maps containing custom action definitions with :name and :path keys
+
+  ## Example
+  ```elixir
+  <.custom_index_actions actions={[%{name: "Export", path: "/export"}]} />
+  ```
+  """
+  attr(:actions, :list, required: true)
+
+  def custom_index_actions(assigns) do
+    ~H"""
+    <%= for action <- @actions do %>
+      <.btn href={action.path} label={action.name} color={:blue} />
+    <% end %>
     """
   end
 end

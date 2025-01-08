@@ -18,8 +18,11 @@ defmodule SanbaseWeb.NotificationsLive.ManualEmailFormLive do
     ~H"""
     <div class="max-w-2xl mx-auto">
       <div class="flex items-center justify-between mb-4">
-        <.link navigate={~p"/admin2/admin_forms"} class="text-sm text-gray-600 hover:text-gray-900">
-          ← Back to Admin Forms
+        <.link
+          navigate={~p"/admin2/generic?resource=notifications"}
+          class="text-sm text-gray-600 hover:text-gray-900"
+        >
+          ← Back to Notifications
         </.link>
         <h2 class="text-xl font-bold">Email Notification</h2>
       </div>

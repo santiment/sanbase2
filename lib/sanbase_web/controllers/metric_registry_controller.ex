@@ -7,7 +7,7 @@ defmodule SanbaseWeb.MetricRegistryController do
         case Sanbase.Metric.Registry.Sync.apply_sync(
                Map.take(params, ["content", "confirmation_endpoint"])
              ) do
-          {:ok, _sync} ->
+          :ok ->
             conn
             |> resp(200, "OK")
             |> send_resp()

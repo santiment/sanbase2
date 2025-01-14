@@ -22,8 +22,8 @@ defmodule Sanbase.Metric.Registry.Sync do
          :ok <- check_initiate_env(),
          {:ok, content} <- get_sync_content(metric_registry_ids),
          {:ok, sync} <- store_sync_in_db(content),
-         :ok <- start_sync(sync),
-         {:ok, sync} <- Registry.SyncSchema.update_status(sync, "executing") do
+         {:ok, sync} <- Registry.SyncSchema.update_status(sync, "executing"),
+         :ok <- start_sync(sync) do
       {:ok, sync}
     end
   end
@@ -50,7 +50,7 @@ defmodule Sanbase.Metric.Registry.Sync do
     with :ok <- check_apply_env(),
          {:ok, list} when is_list(list) <- Jason.decode(params["content"]),
          :ok <- do_apply_sync_content(list),
-         :ok <- send_sync_completed_confirmation(params["confirmation_endpoint"]) do
+         {:ok, _} <- send_sync_completed_confirmation(params["confirmation_endpoint"]) do
       :ok
     end
   end
@@ -106,10 +106,6 @@ defmodule Sanbase.Metric.Registry.Sync do
 
     case Req.post(url, json: json) do
       {:ok, %Req.Response{status: 200}} ->
-        # The status is set to executing and it will be set to completed
-        # once the other side responds to the /mark_metric_registry_sync_as_finished
-        # endpoint
-        {:ok, _} = Registry.SyncSchema.update_status(sync, "executing")
         :ok
 
       {:ok, %Req.Response{status: status, body: body}} ->

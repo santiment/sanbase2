@@ -17,7 +17,7 @@ defmodule Sanbase.SocialData.SocialVolume do
   def social_volume(selector, from, to, interval, source, opts \\ [])
 
   def social_volume(selector, from, to, interval, source, opts)
-      when source in [:all, "all", :total, "total"] do
+      when source in [:all, "all", :total] do
     social_volume(selector, from, to, interval, SocialHelper.sources_total_string(), opts)
   end
 

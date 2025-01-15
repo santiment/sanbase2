@@ -16,7 +16,12 @@ defmodule Sanbase.Metric.Registry.SyncSchema do
   def changeset(%__MODULE__{} = sync, attrs) do
     sync
     |> cast(attrs, [:uuid, :content, :status, :errors])
-    |> validate_inclusion(:status, ["scheduled", "executing", "completed", "failed"])
+    |> validate_inclusion(:status, ["scheduled", "executing", "completed", "failed", "cancelled"])
+  end
+
+  def last_syncs(limit) do
+    from(sync in __MODULE__, order_by: [desc: sync.id], limit: ^limit)
+    |> Sanbase.Repo.all()
   end
 
   def create(content) do

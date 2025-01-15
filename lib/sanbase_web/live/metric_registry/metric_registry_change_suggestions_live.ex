@@ -2,6 +2,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
   use SanbaseWeb, :live_view
 
   alias SanbaseWeb.AdminFormsComponents
+  alias Sanbase.Metric.Registry.Permissions
   alias Sanbase.Metric.Registry.ChangeSuggestion
   alias SanbaseWeb.AvailableMetricsComponents
 
@@ -9,8 +10,11 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(:rows, list_all_submissions())
-     |> assign(:form, to_form(%{}))}
+     |> assign(
+       page_title: "Metric Registry Change Requests",
+       rows: list_all_submissions(),
+       form: to_form(%{})
+     )}
   end
 
   @impl true
@@ -40,7 +44,11 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
           <:col :let={row} label="Notes">{row.notes}</:col>
           <:col :let={row} label="Submitted By">{row.submitted_by}</:col>
           <:action :let={row}>
-            <.action_buttons form={@form} row={row} />
+            <.action_buttons
+              :if={Permissions.can?(:apply_change_suggestions, [])}
+              form={@form}
+              row={row}
+            />
           </:action>
         </.table>
       </div>
@@ -62,7 +70,6 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
       class="flex flex-col lg:flex-row space-y-2 lg:space-y-0 md:space-x-2"
     >
       <input type="hidden" name="record_id" value={@row.id} />
-
       <.action_button
         value="approved"
         text="Approve"

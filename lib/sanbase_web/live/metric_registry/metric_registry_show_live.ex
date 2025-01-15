@@ -4,6 +4,7 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
   import SanbaseWeb.CoreComponents
   import SanbaseWeb.AvailableMetricsDescription
 
+  alias Sanbase.Metric.Registry.Permissions
   alias SanbaseWeb.AvailableMetricsComponents
 
   @impl true
@@ -34,6 +35,7 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
         />
 
         <AvailableMetricsComponents.available_metrics_button
+          :if={Permissions.can?(:edit, [])}
           text="Edit Metric"
           href={~p"/admin2/metric_registry/edit/#{@metric_registry}"}
           icon="hero-pencil-square"

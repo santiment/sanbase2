@@ -4,15 +4,33 @@ defmodule Sanbase.Metric.Registry.Sync do
   source of truth.
   """
 
+  alias Hex.Solver.Registry
   alias Sanbase.Metric.Registry
   alias Sanbase.Utils.Config
 
+  import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
   require Logger
 
   def by_uuid(uuid), do: Registry.SyncSchema.by_uuid(uuid)
 
+  def cancel_run(uuid) do
+    case Registry.SyncSchema.by_uuid(uuid) do
+      {:ok, sync} ->
+        case Registry.SyncSchema.update_status(sync, "cancelled", "Manually canceled") do
+          {:ok, sync} ->
+            {:ok, sync}
+
+          {:error, %Ecto.Changeset{} = changeset} ->
+            {:error, "Failed to cancel the sync. Error: #{changeset_errors_string(changeset)}"}
+        end
+
+      {:error, _} ->
+        {:error, "Sync not found"}
+    end
+  end
+
   @doc ~s"""
-  TODO
+  Start a sync that will sync the not synced metrics from stage to prod
   """
   @spec sync(list(non_neg_integer())) :: :ok
   def sync(metric_registry_ids) when is_list(metric_registry_ids) do
@@ -55,6 +73,10 @@ defmodule Sanbase.Metric.Registry.Sync do
     end
   end
 
+  def last_syncs(limit) do
+    Registry.SyncSchema.last_syncs(limit)
+  end
+
   # Private functions
 
   defp send_sync_completed_confirmation(url) do
@@ -95,7 +117,7 @@ defmodule Sanbase.Metric.Registry.Sync do
   end
 
   defp start_sync(sync) do
-    url = get_sync_target_url() |> IO.inspect()
+    url = get_sync_target_url()
 
     json = %{
       "sync_uuid" => sync.uuid,

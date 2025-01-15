@@ -15,7 +15,7 @@ defmodule Sanbase.SocialData.SocialDominance do
   @trending_words_size 10
 
   def social_dominance(selector, from, to, interval, source)
-      when source in [:all, "all", :total, "total"] do
+      when source in [:all, "all", :total] do
     social_dominance(selector, from, to, interval, SocialHelper.sources_total_string())
   end
 

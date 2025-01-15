@@ -13,8 +13,7 @@ defmodule Sanbase.SocialData.SocialHelper do
   ]
 
   def sources(), do: @sources
-
-  def sources_total_string(), do: @sources |> Enum.join(",")
+  def sources_total_string(), do: "total"
 
   def replace_words_with_original_casing(result, words) do
     Enum.map(result, fn %{word: lowercase_word} = map ->

@@ -12,7 +12,7 @@ defmodule Sanbase.SocialData.Sentiment do
   @recv_timeout 25_000
 
   def sentiment(selector, from, to, interval, source, type)
-      when source in [:all, "all", :total, "total"] do
+      when source in [:all, "all", :total] do
     sentiment(selector, from, to, interval, SocialHelper.sources_total_string(), type)
   end
 

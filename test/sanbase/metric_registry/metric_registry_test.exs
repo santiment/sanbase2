@@ -1,4 +1,4 @@
-dsefmodule Sanbase.MetricRegistyTest do
+defmodule Sanbase.MetricRegistyTest do
   use Sanbase.DataCase
   import ExUnit.CaptureLog
 

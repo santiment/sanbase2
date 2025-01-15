@@ -1,8 +1,10 @@
 defmodule SanbaseWeb.MetricRegistryIndexLive do
   use SanbaseWeb, :live_view
 
-  import SanbaseWeb.AvailableMetricsDescription
+  alias Sanbase.Metric.Registry.Permissions
   alias SanbaseWeb.AvailableMetricsComponents
+
+  import SanbaseWeb.AvailableMetricsDescription
 
   @impl true
   def mount(_params, _session, socket) do
@@ -11,6 +13,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     {:ok,
      socket
      |> assign(
+       page_title: "Metric Registry",
        show_verified_changes_modal: false,
        visible_metrics_ids: Enum.map(metrics, & &1.id),
        metrics: metrics,
@@ -36,6 +39,9 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
       />
     </.modal>
     <div class="flex flex-col items-start justify-evenly">
+      <h1 class="text-blue-700 text-2xl mb-4">
+        Metric Registry Index
+      </h1>
       <div class="text-gray-400 text-sm py-2">
         <div>
           Showing {length(@visible_metrics_ids)} metrics
@@ -97,8 +103,21 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           popover_target="popover-metric-details"
           popover_target_text={get_popover_text(%{key: "Metric Details"})}
         >
-          <.action_button text="Show" href={~p"/admin2/metric_registry/show/#{row.id}"} />
-          <.action_button text="Edit" href={~p"/admin2/metric_registry/edit/#{row.id}"} />
+          <AvailableMetricsComponents.link_button
+            text="Show"
+            href={~p"/admin2/metric_registry/show/#{row.id}"}
+          />
+          <AvailableMetricsComponents.link_button
+            :if={Permissions.can?(:edit, [])}
+            text="Edit"
+            href={~p"/admin2/metric_registry/edit/#{row.id}"}
+          />
+
+          <AvailableMetricsComponents.link_button
+            :if={Permissions.can?(:edit, [])}
+            text="Duplicate"
+            href={~p"/admin2/metric_registry/new?#{%{duplicate_metric_registry_id: row.id}}"}
+          />
         </:col>
       </AvailableMetricsComponents.table_with_popover_th>
     </div>
@@ -264,18 +283,20 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     ~H"""
     <div class="my-2">
       <div>
-        <.action_button
+        <AvailableMetricsComponents.link_button
+          :if={Permissions.can?(:create, [])}
           icon="hero-plus"
           text="Create New Metric"
           href={~p"/admin2/metric_registry/new"}
         />
-        <.action_button
+        <AvailableMetricsComponents.link_button
           icon="hero-list-bullet"
           text="See Change Suggestions"
           href={~p"/admin2/metric_registry/change_suggestions"}
         />
 
-        <.action_button
+        <AvailableMetricsComponents.link_button
+          :if={Permissions.can?(:start_sync, [])}
           icon="hero-arrow-path-rounded-square"
           text="Sync Metrics"
           href={~p"/admin2/metric_registry/sync"}
@@ -346,22 +367,6 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
       placeholder={@placeholder}
       phx-debounce="200"
     />
-    """
-  end
-
-  attr :href, :string, required: true
-  attr :text, :string, required: true
-  attr :icon, :string, required: false, default: nil
-
-  defp action_button(assigns) do
-    ~H"""
-    <.link
-      href={@href}
-      class="text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center gap-x-2"
-    >
-      <.icon :if={@icon} name={@icon} />
-      {@text}
-    </.link>
     """
   end
 

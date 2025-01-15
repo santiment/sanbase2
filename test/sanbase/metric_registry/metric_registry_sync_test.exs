@@ -2,9 +2,9 @@ defmodule Sanbase.MetricRegistrySyncTest do
   use SanbaseWeb.ConnCase
   alias Sanbase.Metric.Registry
 
-  test "syncing", context do
-    Req.post("http://localhost:4000/sync_metric_registry?secret=secret_only_on_prod")
+  @moduletag capture_log: true
 
+  test "syncing", _context do
     [m1_id, m2_id] = create_sync_requirements()
 
     {:ok, m1} = Registry.by_id(m1_id)
@@ -15,7 +15,7 @@ defmodule Sanbase.MetricRegistrySyncTest do
 
     assert {:ok, %{status: "executing", uuid: uuid}} = Registry.Sync.sync([m1_id, m2_id])
 
-    Process.sleep(1000)
+    Process.sleep(100)
 
     assert {:ok, %{status: "completed", uuid: ^uuid}} = Registry.Sync.by_uuid(uuid)
     {:ok, m1} = Registry.by_id(m1_id)

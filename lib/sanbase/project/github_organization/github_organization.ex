@@ -86,7 +86,7 @@ defmodule Sanbase.Project.GithubOrganization do
           github_path
           |> String.downcase()
           |> String.split("/")
-          |> hd
+          |> hd()
 
         {:ok, org}
 

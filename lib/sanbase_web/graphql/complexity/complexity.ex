@@ -57,7 +57,7 @@ defmodule SanbaseWeb.Graphql.Complexity do
   # Private functions
 
   defp calculate_complexity(%{from: from, to: to} = args, child_complexity, struct) do
-    seconds_difference = Timex.diff(from, to, :seconds) |> abs
+    seconds_difference = Timex.diff(from, to, :seconds) |> abs()
     years_difference_weighted = years_difference_weighted(from, to)
     interval_seconds = interval_seconds(args) |> max(1)
     metric = get_metric_name(struct)
@@ -106,6 +106,6 @@ defmodule SanbaseWeb.Graphql.Complexity do
   end
 
   defp years_difference_weighted(from, to) do
-    Timex.diff(from, to, :years) |> abs |> max(2) |> div(2)
+    Timex.diff(from, to, :years) |> abs() |> max(2) |> div(2)
   end
 end

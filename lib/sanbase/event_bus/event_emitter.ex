@@ -8,7 +8,7 @@ defmodule Sanbase.EventBus.EventEmitter do
   """
 
   defmacro __before_compile__(env) do
-    unless Module.defines?(env.module, {:handle_event, 3}) do
+    if !Module.defines?(env.module, {:handle_event, 3}) do
       message = """
       function emit_event/3 required by behaviour Sanbase.EventBus.EventEmitter.Behaviour \
       is not implemented (in module #{inspect(env.module)}).

@@ -200,7 +200,7 @@ defmodule Sanbase.MetricExporter.CSV do
 
   def export_dicts_history(from, to) do
     Sanbase.DateTimeUtils.generate_dates_inclusive(from, to)
-    |> Enum.each(fn date -> upload_dictionaries_s3(date |> to_string) end)
+    |> Enum.each(fn date -> upload_dictionaries_s3(date |> to_string()) end)
   end
 
   def export do
@@ -212,7 +212,7 @@ defmodule Sanbase.MetricExporter.CSV do
     Logger.info("Start metrics csv exporter #{date}")
 
     slugs = slugs()
-    date_str = date |> to_string
+    date_str = date |> to_string()
     from = date |> DateTime.new!(~T[00:00:00])
     to = date |> DateTime.new!(~T[23:59:59])
 
@@ -386,7 +386,9 @@ defmodule Sanbase.MetricExporter.CSV do
 
   defp generate_empty_data(from, to, interval) do
     from = Timex.beginning_of_day(from)
-    count = (Timex.diff(to, from, :seconds) / Sanbase.DateTimeUtils.str_to_sec(interval)) |> round
+
+    count =
+      (Timex.diff(to, from, :seconds) / Sanbase.DateTimeUtils.str_to_sec(interval)) |> round()
 
     interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
 

@@ -23,13 +23,15 @@ defmodule SanbaseWeb.Graphql.PromoterApiTest do
       Sanbase.Mock.prepare_mock2(&HTTPoison.post/3, {:ok, http_resp})
       |> Sanbase.Mock.run_with_mocks(fn ->
         promoter = execute_mutation(context.conn, mutation, "createPromoter")
-        promotion = promoter["promotions"] |> hd
+        promotion = promoter["promotions"] |> hd()
 
         assert promoter["email"] == resp["email"]
         assert promoter["earningsBalance"] == resp["earnings_balance"]["cash"]
         assert promoter["currentBalance"] == resp["current_balance"]["cash"]
         assert promoter["paidBalance"] == resp["paid_balance"]
-        assert promotion["visitorsCount"] == resp["promotions"] |> hd |> Map.get("visitors_count")
+
+        assert promotion["visitorsCount"] ==
+                 resp["promotions"] |> hd() |> Map.get("visitors_count")
       end)
     end
 
@@ -58,7 +60,7 @@ defmodule SanbaseWeb.Graphql.PromoterApiTest do
       Sanbase.Mock.prepare_mock2(&HTTPoison.get/2, {:ok, http_resp})
       |> Sanbase.Mock.run_with_mocks(fn ->
         promoter = execute_query(context.conn, query, "showPromoter")
-        promotion = promoter["promotions"] |> hd
+        promotion = promoter["promotions"] |> hd()
 
         assert promoter["email"] == resp["email"]
         assert promoter["earningsBalance"] == resp["earnings_balance"]["cash"]
@@ -68,7 +70,8 @@ defmodule SanbaseWeb.Graphql.PromoterApiTest do
         assert promoter["dashboardUrl"] ==
                  "https://santiment.firstpromoter.com/view_dashboard_as?at=#{resp["auth_token"]}"
 
-        assert promotion["visitorsCount"] == resp["promotions"] |> hd |> Map.get("visitors_count")
+        assert promotion["visitorsCount"] ==
+                 resp["promotions"] |> hd() |> Map.get("visitors_count")
       end)
     end
 

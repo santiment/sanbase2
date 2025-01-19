@@ -69,7 +69,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiMinVolumeTest do
         |> post("/graphql", query_skeleton(query, "allProjects"))
         |> json_response(200)
 
-      assert result["data"]["allProjects"] |> length == context.projects_count
+      assert result["data"]["allProjects"] |> length() == context.projects_count
 
       #  Assert that there are projects with known and with unknown volumes
       volumes =
@@ -98,7 +98,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiMinVolumeTest do
         |> post("/graphql", query_skeleton(query, "allProjects"))
         |> json_response(200)
 
-      assert result["data"]["allProjects"] |> length == context.projects_with_volume_count
+      assert result["data"]["allProjects"] |> length() == context.projects_with_volume_count
 
       assert result["data"]["allProjects"] == [
                %{"name" => context.project4.name},
@@ -122,7 +122,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiMinVolumeTest do
         |> post("/graphql", query_skeleton(query, "allProjects"))
         |> json_response(200)
 
-      assert result["data"]["allProjects"] |> length == 2
+      assert result["data"]["allProjects"] |> length() == 2
 
       assert result["data"]["allProjects"] == [
                %{"name" => context.project4.name},
@@ -144,7 +144,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiMinVolumeTest do
         |> post("/graphql", query_skeleton(query, "allProjects"))
         |> json_response(200)
 
-      assert result["data"]["allProjects"] |> length == 2
+      assert result["data"]["allProjects"] |> length() == 2
 
       assert result["data"]["allProjects"] == [
                %{"name" => context.project2.name},
@@ -169,7 +169,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiMinVolumeTest do
         |> post("/graphql", query_skeleton(query, "allErc20Projects"))
         |> json_response(200)
 
-      assert result["data"]["allErc20Projects"] |> length == context.erc20_projects_count
+      assert result["data"]["allErc20Projects"] |> length() == context.erc20_projects_count
 
       assert result["data"]["allErc20Projects"] |> Enum.sort_by(& &1["rank"]) == [
                %{"rank" => 9, "name" => context.project2.name},
@@ -192,7 +192,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiMinVolumeTest do
         |> post("/graphql", query_skeleton(query, "allErc20Projects"))
         |> json_response(200)
 
-      assert result["data"]["allErc20Projects"] |> length ==
+      assert result["data"]["allErc20Projects"] |> length() ==
                context.erc20_projects_with_volume_count
     end
 
@@ -210,7 +210,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiMinVolumeTest do
         |> post("/graphql", query_skeleton(query, "allErc20Projects"))
         |> json_response(200)
 
-      assert result["data"]["allErc20Projects"] |> length == 1
+      assert result["data"]["allErc20Projects"] |> length() == 1
       assert result["data"]["allErc20Projects"] == [%{"name" => context.project2.name}]
     end
 
@@ -228,7 +228,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiMinVolumeTest do
         |> post("/graphql", query_skeleton(query, "allErc20Projects"))
         |> json_response(200)
 
-      assert result["data"]["allErc20Projects"] |> length == 1
+      assert result["data"]["allErc20Projects"] |> length() == 1
       assert result["data"]["allErc20Projects"] == [%{"name" => context.project1.name}]
     end
   end
@@ -249,7 +249,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiMinVolumeTest do
         |> post("/graphql", query_skeleton(query, "allCurrencyProjects"))
         |> json_response(200)
 
-      assert result["data"]["allCurrencyProjects"] |> length == context.currency_projects_count
+      assert result["data"]["allCurrencyProjects"] |> length() == context.currency_projects_count
 
       assert result["data"]["allCurrencyProjects"] |> Enum.sort_by(& &1["rank"]) == [
                %{"rank" => 3, "name" => context.project4.name},
@@ -273,7 +273,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiMinVolumeTest do
         |> post("/graphql", query_skeleton(query, "allCurrencyProjects"))
         |> json_response(200)
 
-      assert result["data"]["allCurrencyProjects"] |> length ==
+      assert result["data"]["allCurrencyProjects"] |> length() ==
                context.currency_projects_with_volume_count
 
       volumes = result["data"]["allCurrencyProjects"] |> Enum.map(& &1["volumeUsd"])
@@ -295,7 +295,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiMinVolumeTest do
         |> post("/graphql", query_skeleton(query, "allCurrencyProjects"))
         |> json_response(200)
 
-      assert result["data"]["allCurrencyProjects"] |> length == 1
+      assert result["data"]["allCurrencyProjects"] |> length() == 1
       assert result["data"]["allCurrencyProjects"] == [%{"name" => context.project4.name}]
     end
 
@@ -313,7 +313,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiMinVolumeTest do
         |> post("/graphql", query_skeleton(query, "allCurrencyProjects"))
         |> json_response(200)
 
-      assert result["data"]["allCurrencyProjects"] |> length == 1
+      assert result["data"]["allCurrencyProjects"] |> length() == 1
       assert result["data"]["allCurrencyProjects"] == [%{"name" => context.project3.name}]
     end
   end

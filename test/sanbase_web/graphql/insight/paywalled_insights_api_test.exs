@@ -187,7 +187,7 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
         )
 
       events = execute_query(context.conn, timeline_events_query(), "timelineEvents")
-      event = events |> hd |> Map.get("events") |> hd
+      event = events |> hd() |> Map.get("events") |> hd()
       assert event["post"]["text"] != insight.text
       assert event["post"]["text"] =~ "alabala"
 

@@ -89,7 +89,7 @@ defmodule Sanbase.TemplateEngine do
   """
   @spec run!(String.t(), opts) :: String.t() | no_return
   def run!(template, opts \\ []) do
-    run(template, opts) |> to_bang
+    run(template, opts) |> to_bang()
   end
 
   @doc ~s"""

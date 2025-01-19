@@ -393,7 +393,7 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
 
     table =
       if max_rows == 0 and length(response.columns) == 1 do
-        String.slice(response.rows |> hd |> hd, 0, 1900)
+        String.slice(response.rows |> hd() |> hd(), 0, 1900)
       else
         rows = response.rows |> Enum.take(max_rows)
         TableRex.quick_render!(rows, response.columns)

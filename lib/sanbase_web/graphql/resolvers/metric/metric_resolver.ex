@@ -465,7 +465,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   defp transform_interval("all_spent_coins_cost", interval) do
     Enum.max([Sanbase.DateTimeUtils.str_to_days(interval), 1])
-    |> to_string
+    |> to_string()
     |> Kernel.<>("d")
   end
 

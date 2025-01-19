@@ -9,7 +9,7 @@ defmodule Sanbase.Clickhouse.FeesTest do
 
     data = [
       [p1.slug, 600],
-      [p1.contract_addresses |> hd |> Map.get(:address), 100],
+      [p1.contract_addresses |> hd() |> Map.get(:address), 100],
       [p2.slug, 500],
       [p2.slug, 500]
     ]

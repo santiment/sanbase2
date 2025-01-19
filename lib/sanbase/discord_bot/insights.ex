@@ -15,7 +15,7 @@ defmodule Sanbase.DiscordBot.Insights do
     Title: #{insight.title}
     Author: @#{insight.user.username}
     Text: #{insight.text |> Floki.parse_document!() |> Floki.text()}
-    Published At: #{NaiveDateTime.to_date(insight.published_at) |> to_string}
+    Published At: #{NaiveDateTime.to_date(insight.published_at) |> to_string()}
     Tags: #{insight.tags |> Enum.map(& &1.name) |> Enum.join(", ")}
     """
 

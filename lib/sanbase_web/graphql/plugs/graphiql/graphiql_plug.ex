@@ -184,7 +184,7 @@ defmodule SanbaseWeb.Graphql.GraphiqlPlug do
     |> Map.put(:socket, Keyword.get(opts, :socket))
     |> Map.put(:socket_url, Keyword.get(opts, :socket_url))
     |> Map.put(:default_query, Keyword.get(opts, :default_query, ""))
-    |> set_pipeline
+    |> set_pipeline()
   end
 
   @doc false
@@ -240,17 +240,17 @@ defmodule SanbaseWeb.Graphql.GraphiqlPlug do
     end
     |> case do
       {:ok, conn, result, variables, query} ->
-        query = query |> js_escape
+        query = query |> js_escape()
 
         var_string =
           variables
           |> config.json_codec.module.encode!(pretty: true)
-          |> js_escape
+          |> js_escape()
 
         result =
           result
           |> config.json_codec.module.encode!(pretty: true)
-          |> js_escape
+          |> js_escape()
 
         config =
           %{
@@ -272,12 +272,12 @@ defmodule SanbaseWeb.Graphql.GraphiqlPlug do
         |> render_interface(interface, config)
 
       {:http_method_error, variables, query} ->
-        query = query |> js_escape
+        query = query |> js_escape()
 
         var_string =
           variables
           |> config.json_codec.module.encode!(pretty: true)
-          |> js_escape
+          |> js_escape()
 
         config =
           %{

@@ -20,7 +20,7 @@ defmodule Sanbase.HTML do
     text
     |> String.split(" ", trim: true)
     |> Enum.reject(&(&1 == "\n"))
-    |> length
+    |> length()
   end
 
   @doc """

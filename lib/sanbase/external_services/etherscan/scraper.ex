@@ -130,7 +130,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
 
       match ->
         Floki.text(match)
-        |> parse_total_supply
+        |> parse_total_supply()
         |> D.round()
         |> D.to_integer()
     end
@@ -150,7 +150,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
     |> List.first()
     |> case do
       nil -> nil
-      match -> Floki.text(match) |> parse_token_decimals
+      match -> Floki.text(match) |> parse_token_decimals()
     end
   end
 

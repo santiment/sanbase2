@@ -319,7 +319,7 @@ defmodule Sanbase.Alert.TriggersTest do
       trigger: %{title: "Generic title2", is_public: true, settings: trigger_settings2}
     )
 
-    trigger_id = UserTrigger.triggers_for(user.id) |> hd |> Map.get(:id)
+    trigger_id = UserTrigger.triggers_for(user.id) |> hd() |> Map.get(:id)
 
     updated_trigger = %{
       type: "metric_signal",
@@ -376,7 +376,7 @@ defmodule Sanbase.Alert.TriggersTest do
     )
 
     ut = UserTrigger.triggers_for(user.id)
-    trigger_id = ut |> hd |> Map.get(:id)
+    trigger_id = ut |> hd() |> Map.get(:id)
 
     UserTrigger.update_user_trigger(user.id, %{id: trigger_id, is_public: true, cooldown: "1h"})
     user_triggers = UserTrigger.triggers_for(user.id)

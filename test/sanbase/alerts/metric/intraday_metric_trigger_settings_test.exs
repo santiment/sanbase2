@@ -135,7 +135,7 @@ defmodule Sanbase.Alert.MetricTriggerSettingsTest do
 
         assert triggered.id == trigger.id
 
-        payload = triggered.trigger.settings.payload |> Map.values() |> hd
+        payload = triggered.trigger.settings.payload |> Map.values() |> hd()
 
         assert payload =~ "The total market's Marketcap in USD is above 300.00 Billion* 💥\n\n"
         assert payload =~ "Was: 400.00 Billion\nNow: 401.00 Billion\n\n"
@@ -184,7 +184,7 @@ defmodule Sanbase.Alert.MetricTriggerSettingsTest do
 
         assert triggered.id == trigger.id
 
-        payload = triggered.trigger.settings.payload |> Map.values() |> hd
+        payload = triggered.trigger.settings.payload |> Map.values() |> hd()
 
         first_line =
           "[##{project.ticker}](https://app.santiment.net/charts?slug=#{project.slug}) | *#{project.name}'s Active Addresses for the last 24 hours is above 300* 💥\n\n"
@@ -237,7 +237,7 @@ defmodule Sanbase.Alert.MetricTriggerSettingsTest do
           |> Evaluator.run()
 
         assert triggered.id == trigger.id
-        payload = triggered.trigger.settings.payload |> Map.values() |> hd
+        payload = triggered.trigger.settings.payload |> Map.values() |> hd()
 
         first_line =
           "[##{project.ticker}](https://app.santiment.net/charts?slug=#{project.slug}) | *#{project.name}'s Active Addresses for the last 24 hours is above 300* 💥\n\n"

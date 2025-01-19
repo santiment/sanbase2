@@ -728,7 +728,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
         |> post("/graphql", mutation_skeleton(mutation))
 
       [error] = json_response(result2, 200)["errors"]
-      assert String.contains?(error["details"]["images"] |> hd, "already used")
+      assert String.contains?(error["details"]["images"] |> hd(), "already used")
     end
   end
 

@@ -45,7 +45,7 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
     cache
     |> ConCache.ets()
     |> :ets.tab2list()
-    |> length
+    |> length()
   end
 
   @impl SanbaseWeb.Graphql.CacheProvider

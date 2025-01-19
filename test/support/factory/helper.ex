@@ -132,7 +132,7 @@ defmodule Sanbase.Factory.Helper do
   end
 
   def rand_interval() do
-    (Enum.random([1, 3, 5, 10, 12, 60]) |> to_string) <>
+    (Enum.random([1, 3, 5, 10, 12, 60]) |> to_string()) <>
       Enum.random(["m", "h", "d", "w"])
   end
 

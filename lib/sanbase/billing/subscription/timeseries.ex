@@ -220,7 +220,7 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
   end
 
   defp plan(subscription) do
-    (subscription.items.data |> hd).price
+    (subscription.items.data |> hd()).price
   end
 
   def product_name(stripe_product_id) do

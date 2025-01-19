@@ -136,15 +136,15 @@ defmodule Sanbase.ProjectListTest do
     end
 
     test "all projects", context do
-      assert Project.List.projects() |> length == context.total_count
+      assert Project.List.projects() |> length() == context.total_count
     end
 
     test "all erc20 projects", context do
-      assert Project.List.erc20_projects() |> length == context.total_erc20_count
+      assert Project.List.erc20_projects() |> length() == context.total_erc20_count
     end
 
     test "all currency projects", context do
-      assert Project.List.currency_projects() |> length == context.total_currency_count
+      assert Project.List.currency_projects() |> length() == context.total_currency_count
     end
 
     test "all projects by ticker", context do
@@ -222,7 +222,7 @@ defmodule Sanbase.ProjectListTest do
         currently_trending_projects = Project.List.currently_trending_projects()
 
         assert currently_trending_projects |> length() == 1
-        assert currently_trending_projects |> hd |> Map.get(:slug) == project.slug
+        assert currently_trending_projects |> hd() |> Map.get(:slug) == project.slug
       end)
     end
   end

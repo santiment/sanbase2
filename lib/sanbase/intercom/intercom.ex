@@ -267,7 +267,7 @@ defmodule Sanbase.Intercom do
     ORDER BY user_id ASC
     """
 
-    today = DateTime.to_date(DateTime.utc_now()) |> to_string
+    today = DateTime.to_date(DateTime.utc_now()) |> to_string()
     params = %{date: today}
 
     query_struct = Sanbase.Clickhouse.Query.new(sql, params)

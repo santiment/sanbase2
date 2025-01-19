@@ -102,7 +102,7 @@ defmodule Sanbase.Billing.Plan.CustomPlanTest do
 
   test "custom plan access is cut to some queries", context do
     %{conn: conn, user: user} = context
-    user_id = user.id |> to_string
+    user_id = user.id |> to_string()
 
     assert %{"errors" => [error]} = get_history_price(conn)
 

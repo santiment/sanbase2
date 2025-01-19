@@ -18,7 +18,7 @@ defmodule Sanbase.Mock do
       ets_table = Sanbase.TestSetupService.get_ets_table_name()
 
       key = {:wrap_consecutive_key, :rand.uniform(1_000_000_000)}
-      list_length = list |> length
+      list_length = list |> length()
 
       fn unquote_splicing(Macro.generate_arguments(@arity, __MODULE__)) ->
         # Start from -1 as the returned position is the one after the applied counter

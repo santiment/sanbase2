@@ -33,9 +33,10 @@ defmodule SanbaseWeb.Graphql.WordsSocialVolumeApiTest do
 
     resp = %HTTPoison.Response{status_code: 200, body: body}
 
-    Sanbase.Mock.prepare_mock(HTTPoison, :get, fn _url, _headers, options ->
+    Sanbase.Mock.prepare_mock(HTTPoison, :post, fn _url, body, _headers, _options ->
       search_texts =
-        Map.new(options[:params])
+        body
+        |> Jason.decode!()
         |> Map.get("search_texts")
 
       # Assert that the words are lowercased before they are sent
@@ -113,9 +114,10 @@ defmodule SanbaseWeb.Graphql.WordsSocialVolumeApiTest do
 
     resp = %HTTPoison.Response{status_code: 200, body: body}
 
-    Sanbase.Mock.prepare_mock(HTTPoison, :get, fn _url, _headers, options ->
+    Sanbase.Mock.prepare_mock(HTTPoison, :post, fn _url, body, _headers, _options ->
       search_texts =
-        Map.new(options[:params])
+        body
+        |> Jason.decode!()
         |> Map.get("search_texts")
 
       # Assert that the words are **not** lowercased before they are sent

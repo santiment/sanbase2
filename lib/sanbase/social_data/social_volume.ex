@@ -160,18 +160,27 @@ defmodule Sanbase.SocialData.SocialVolume do
   defp social_volume_list_request(%{words: words}, from, to, interval, source, opts) do
     url = Path.join([metrics_hub_url(), opts_to_metric(opts)])
 
+    body =
+      %{
+        "search_texts" => Enum.join(words, ","),
+        "from_timestamp" => from |> DateTime.truncate(:second) |> DateTime.to_iso8601(),
+        "to_timestamp" => to |> DateTime.truncate(:second) |> DateTime.to_iso8601(),
+        "interval" => interval,
+        "source" => source
+      }
+      |> Jason.encode_to_iodata!()
+
     options = [
-      recv_timeout: @recv_timeout,
-      params: [
-        {"search_texts", Enum.join(words, ",")},
-        {"from_timestamp", from |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
-        {"to_timestamp", to |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
-        {"interval", interval},
-        {"source", source}
-      ]
+      recv_timeout: @recv_timeout
     ]
 
-    http_client().get(url, [], options)
+    # metricshub reads data from request.query_string and request.form
+    # Put this header so the data is read from the body properly
+    headers = [
+      {"Content-Type", "application/x-www-form-urlencoded"}
+    ]
+
+    http_client().post(url, body, headers, options)
   end
 
   defp social_volume_request(selector, from, to, interval, source, opts) do

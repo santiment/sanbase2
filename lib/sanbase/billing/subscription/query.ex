@@ -32,7 +32,7 @@ defmodule Sanbase.Billing.Subscription.Query do
 
   def all_active_and_trialing_incomplete_subscriptions(query) do
     from(q in query,
-      where: q.status in ["active", "past_due", "trialing", "incomplete"]
+      where: q.status in ["active", "past_due", "trialing", "incomplete", "incomplete_expired"]
     )
   end
 

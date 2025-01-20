@@ -10,7 +10,6 @@ defmodule Sanbase.Transfers.Erc20Transfers do
   alias Sanbase.Project
 
   alias Sanbase.Utils.Config
-  defp dt_ordered_table(), do: Config.module_get(__MODULE__, :dt_ordered_table)
 
   defguard is_non_neg_integer(int) when is_integer(int) and int > 0
 
@@ -220,7 +219,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
       to,
       transactionHash,
       (any(value) / {{decimals}}) AS value
-    FROM #{dt_ordered_table()}
+    FROM erc20_transfers
     WHERE
       assetRefId = cityHash64('ETH_' || {{contract}}) AND
       dt >= toDateTime({{from}}) AND

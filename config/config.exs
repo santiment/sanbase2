@@ -64,10 +64,6 @@ config :sanbase, SanbaseWeb.Plug.BasicAuth,
 config :sanbase, Sanbase.RepoReader,
   projects_data_endpoint_secret: {:system, "PROJECTS_DATA_ENDPOINT_SECRET"}
 
-config :sanbase, Sanbase.Transfers.Erc20Transfers,
-  dt_ordered_table: {:system, "DT_ORDERED_ERC20_TRANFERS_TABLE", "erc20_transfers_dt_order"},
-  address_ordered_table: {:system, "ADDRESS_ORDERED_ERC20_TRANSFERS_TABLE", "erc20_transfers"}
-
 config :sanbase, Sanbase.Price.Validator, enabled: {:system, "PRICE_VALIDATOR_ENABLED", true}
 
 config :sanbase, Sanbase.Cryptocompare, api_key: {:system, "CRYPTOCOMPARE_API_KEY"}

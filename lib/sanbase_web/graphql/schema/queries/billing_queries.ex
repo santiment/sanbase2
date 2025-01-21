@@ -42,6 +42,7 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
       meta(access: :free)
 
       arg(:coupon, non_null(:string))
+      middleware(JWTAuth)
 
       resolve(&BillingResolver.get_coupon/3)
     end

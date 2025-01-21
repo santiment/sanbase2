@@ -81,27 +81,6 @@ defmodule Sanbase.Accounts.EmailJobs do
     add_email_job(user.id, end_of_trial_template(), vars, scheduled_at: days_after(11))
   end
 
-  def schedule_annual_discount_emails(subscription) do
-    user = Sanbase.Accounts.User.by_id!(subscription.user_id)
-    name = Sanbase.Accounts.User.get_name(user)
-
-    common_vars = %{
-      name: name,
-      username: name
-    }
-
-    vars_50 = Map.put(common_vars, :end_subscription_date, days_after(14) |> format_date())
-    vars_35 = Map.put(common_vars, :date, days_after(30) |> format_date())
-
-    add_email_job(subscription.user_id, during_trial_annual_discount_template(), vars_50,
-      scheduled_at: days_after(12)
-    )
-
-    add_email_job(subscription.user_id, after_trial_annual_discount_template(), vars_35,
-      scheduled_at: days_after(24)
-    )
-  end
-
   def send_pro_started_email(subscription) do
     user = Sanbase.Accounts.User.by_id!(subscription.user_id)
     name = Sanbase.Accounts.User.get_name(user)

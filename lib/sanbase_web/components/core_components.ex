@@ -17,7 +17,7 @@ defmodule SanbaseWeb.CoreComponents do
   use Phoenix.Component
 
   alias Phoenix.LiveView.JS
-  import SanbaseWeb.Gettext
+  use Gettext, backend: SanbaseWeb.Gettext
 
   @doc """
   Renders a modal.

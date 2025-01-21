@@ -9,8 +9,6 @@ defmodule Sanbase.Mailer do
   alias Sanbase.Billing.{Subscription, Product}
 
   @edu_templates ~w(first-edu-email second-edu-email)
-  @during_trial_annual_discount_template during_trial_annual_discount_template()
-  @after_trial_annual_discount_template after_trial_annual_discount_template()
   @end_of_trial_template end_of_trial_template()
   @trial_started_template trial_started_template()
 
@@ -73,18 +71,6 @@ defmodule Sanbase.Mailer do
 
   defp can_send?(user, template, _params) when template == :welcome_email do
     not is_excluded_email?(user.email)
-  end
-
-  defp can_send?(user, template, _params)
-       when template == @during_trial_annual_discount_template do
-    res = Sanbase.Billing.Subscription.annual_discount_eligibility(user.id)
-    res.is_eligible and res.discount.percent_off == 50
-  end
-
-  defp can_send?(user, template, _params)
-       when template == @after_trial_annual_discount_template do
-    res = Sanbase.Billing.Subscription.annual_discount_eligibility(user.id)
-    res.is_eligible and res.discount.percent_off == 35
   end
 
   defp can_send?(_user, _template, _params), do: true

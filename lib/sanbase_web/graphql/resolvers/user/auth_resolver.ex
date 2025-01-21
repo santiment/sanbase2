@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
 
   alias Sanbase.InternalServices.Ethauth
   alias Sanbase.Accounts
-  alias Sanbase.Accounts.{User, EthAccount, EmailLoginAttempt}
+  alias Sanbase.Accounts.{User, EthAccount, EmailLoginAttempt, AccessAttempt}
 
   require Logger
 
@@ -89,10 +89,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
          true <- allowed_origin?(origin_host_parts, origin_url),
          {:ok, %{first_login: first_login} = user} <-
            User.find_or_insert_by(:email, email, %{username: args[:username]}),
-         :ok <- EmailLoginAttempt.has_allowed_login_attempts(user, remote_ip),
+         :ok <- EmailLoginAttempt.has_allowed_attempts?(user, remote_ip),
          {:ok, user} <- User.Email.update_email_token(user, args[:consent]),
          {:ok, _res} <- User.Email.send_login_email(user, first_login, origin_host_parts, args),
-         {:ok, %EmailLoginAttempt{}} <- EmailLoginAttempt.create(user, remote_ip),
+         {:ok, %AccessAttempt{}} <- AccessAttempt.create("email_login", user, remote_ip),
          {:ok, _, user} <-
            Accounts.forward_registration(user, "send_login_email", %{"origin_url" => origin_url}) do
       emit_event({:ok, user}, :send_email_login_link, %{origin_url: origin_url})
@@ -106,7 +106,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
 
         {:error, message: message}
 
-      {:error, :too_many_login_attempts} ->
+      {:error, :too_many_attempts} ->
         Logger.info(
           "Login failed: too many login attempts. Email: #{email}, IP Address: #{remote_ip}, Origin URL: #{origin_url}"
         )
@@ -154,10 +154,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
       }) do
     remote_ip = Sanbase.Utils.IP.ip_tuple_to_string(remote_ip)
 
-    with :ok <- EmailLoginAttempt.has_allowed_login_attempts(user, remote_ip),
+    with :ok <- EmailLoginAttempt.has_allowed_attempts?(user, remote_ip),
          {:ok, user} <- User.Email.update_email_candidate(user, email_candidate),
          {:ok, _user} <- User.Email.send_verify_email(user),
-         {:ok, %EmailLoginAttempt{}} <- EmailLoginAttempt.create(user, remote_ip) do
+         {:ok, %AccessAttempt{}} <- EmailLoginAttempt.create(user, remote_ip) do
       {:ok, %{success: true}}
     else
       {:error, error} ->

@@ -272,6 +272,39 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
+-- Name: access_attempts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.access_attempts (
+    id bigint NOT NULL,
+    user_id bigint,
+    ip_address character varying(255) NOT NULL,
+    type character varying(255) NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: access_attempts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.access_attempts_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: access_attempts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.access_attempts_id_seq OWNED BY public.access_attempts.id;
+
+
+--
 -- Name: active_widgets; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -4920,6 +4953,13 @@ ALTER SEQUENCE public.webinars_id_seq OWNED BY public.webinars.id;
 
 
 --
+-- Name: access_attempts id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.access_attempts ALTER COLUMN id SET DEFAULT nextval('public.access_attempts_id_seq'::regclass);
+
+
+--
 -- Name: active_widgets id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -5757,6 +5797,14 @@ ALTER TABLE ONLY public.webinar_registrations ALTER COLUMN id SET DEFAULT nextva
 --
 
 ALTER TABLE ONLY public.webinars ALTER COLUMN id SET DEFAULT nextval('public.webinars_id_seq'::regclass);
+
+
+--
+-- Name: access_attempts access_attempts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.access_attempts
+    ADD CONSTRAINT access_attempts_pkey PRIMARY KEY (id);
 
 
 --
@@ -6821,6 +6869,34 @@ ALTER TABLE ONLY public.webinar_registrations
 
 ALTER TABLE ONLY public.webinars
     ADD CONSTRAINT webinars_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: access_attempts_inserted_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX access_attempts_inserted_at_index ON public.access_attempts USING btree (inserted_at);
+
+
+--
+-- Name: access_attempts_ip_address_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX access_attempts_ip_address_index ON public.access_attempts USING btree (ip_address);
+
+
+--
+-- Name: access_attempts_type_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX access_attempts_type_index ON public.access_attempts USING btree (type);
+
+
+--
+-- Name: access_attempts_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX access_attempts_user_id_index ON public.access_attempts USING btree (user_id);
 
 
 --
@@ -8018,6 +8094,14 @@ CREATE INDEX webinar_registrations_webinar_id_index ON public.webinar_registrati
 --
 
 CREATE TRIGGER oban_notify AFTER INSERT ON public.oban_jobs FOR EACH ROW EXECUTE FUNCTION public.oban_jobs_notify();
+
+
+--
+-- Name: access_attempts access_attempts_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.access_attempts
+    ADD CONSTRAINT access_attempts_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
 
 
 --
@@ -9732,3 +9816,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20241116104556);
 INSERT INTO public."schema_migrations" (version) VALUES (20241128161315);
 INSERT INTO public."schema_migrations" (version) VALUES (20241202104812);
 INSERT INTO public."schema_migrations" (version) VALUES (20241212054904);
+INSERT INTO public."schema_migrations" (version) VALUES (20250121155544);

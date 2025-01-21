@@ -104,7 +104,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
   end
 
   object :queries_executions_info do
-    field(:credits_availalbe_month, non_null(:integer))
+    field(:credits_available_month, non_null(:integer))
     field(:credits_spent_month, non_null(:integer))
     field(:credits_remaining_month, non_null(:integer))
     field(:queries_executed_month, non_null(:integer))

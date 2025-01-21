@@ -170,15 +170,8 @@ defmodule Sanbase.SocialData.SocialVolume do
       }
       |> Jason.encode_to_iodata!()
 
-    options = [
-      recv_timeout: @recv_timeout
-    ]
-
-    # metricshub reads data from request.query_string and request.form
-    # Put this header so the data is read from the body properly
-    headers = [
-      {"Content-Type", "application/x-www-form-urlencoded"}
-    ]
+    options = [recv_timeout: @recv_timeout]
+    headers = [{"Content-Type", "application/json"}]
 
     http_client().post(url, body, headers, options)
   end

@@ -164,12 +164,6 @@ defmodule Sanbase.Email.Template do
   # Send 3 days before trial ends
   @end_of_trial_template "trial-end-mail"
 
-  # Send 2 days before trial ends
-  @during_trial_annual_discount_template "50-percent-discount-offer"
-
-  # Send once - 1 week before monthly Sanbase Pro ends
-  @after_trial_annual_discount_template "35-percent-discount-offer"
-
   @automatic_renewal_template "automatic_renewal"
 
   # Send after 2 weeks of inactivity.
@@ -190,8 +184,6 @@ defmodule Sanbase.Email.Template do
   def post_cancellation_template2, do: @post_cancellation_template2
   def end_of_trial_template, do: @end_of_trial_template
   def trial_started_template, do: @trial_started_template
-  def during_trial_annual_discount_template, do: @during_trial_annual_discount_template
-  def after_trial_annual_discount_template, do: @after_trial_annual_discount_template
   def automatic_renewal_template, do: @automatic_renewal_template
 
   def comment_notification_template, do: @comment_notification_template

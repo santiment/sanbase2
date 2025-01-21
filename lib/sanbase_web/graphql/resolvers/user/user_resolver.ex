@@ -158,7 +158,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
         Sanbase.Queries.Authorization.query_executions_limit(subscription_product, plan_name)
 
       result = %{
-        credits_availalbe_month: credits_limit,
+        credits_available_month: credits_limit,
         credits_spent_month: details.monthly_credits_spent,
         credits_remaining_month: credits_limit - details.monthly_credits_spent,
         queries_executed_month: details.queries_executed_month,

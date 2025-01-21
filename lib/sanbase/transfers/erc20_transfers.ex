@@ -9,8 +9,6 @@ defmodule Sanbase.Transfers.Erc20Transfers do
   alias Sanbase.ClickhouseRepo
   alias Sanbase.Project
 
-  alias Sanbase.Utils.Config
-
   defguard is_non_neg_integer(int) when is_integer(int) and int > 0
 
   @spec top_wallet_transfers(

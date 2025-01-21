@@ -75,32 +75,16 @@ defmodule Sanbase.EventBus.BillingEventSubscriber do
        when event_type == :create_subscription do
     subscription = Sanbase.Billing.Subscription.by_id(event.data.subscription_id)
 
-    Sanbase.Accounts.get_user(subscription.user_id)
-    |> case do
-      {:ok, user} ->
-        {:ok, _settings} =
-          Sanbase.Accounts.UserSettings.update_settings(user, %{
-            is_subscribed_metric_updates: true
-          })
-
-      _ ->
-        :ok
-    end
+    toggle_settings(subscription.user_id, %{
+      is_subscribed_metric_updates: true
+    })
 
     cond do
       Subscription.trialing_sanbase_pro?(subscription) ->
         EmailJobs.send_trial_started_email(subscription)
         EmailJobs.schedule_trial_will_end_email(subscription)
 
-        case subscription.plan.interval do
-          "month" ->
-            # comment temporarily until we decide to bring back the annual discounts
-            # Sanbase.Accounts.EmailJobs.schedule_annual_discount_emails(subscription)
-            :ok
-
-          _ ->
-            :ok
-        end
+        :ok
 
       Subscription.active_sanbase_pro?(subscription) ->
         Sanbase.Accounts.EmailJobs.send_pro_started_email(subscription)
@@ -114,17 +98,9 @@ defmodule Sanbase.EventBus.BillingEventSubscriber do
        when event_type == :cancel_subscription_at_period_end do
     subscription = Sanbase.Billing.Subscription.by_id(event.data.subscription_id)
 
-    Sanbase.Accounts.get_user(subscription.user_id)
-    |> case do
-      {:ok, user} ->
-        {:ok, _settings} =
-          Sanbase.Accounts.UserSettings.update_settings(user, %{
-            is_subscribed_metric_updates: false
-          })
-
-      _ ->
-        :ok
-    end
+    toggle_settings(subscription.user_id, %{
+      is_subscribed_metric_updates: false
+    })
   end
 
   defp do_handle(:send_discord_notification, event_type, event)
@@ -149,5 +125,16 @@ defmodule Sanbase.EventBus.BillingEventSubscriber do
 
   defp do_handle(_type, _event_type, _event) do
     :ok
+  end
+
+  defp toggle_settings(user_id, settings) do
+    Sanbase.Accounts.get_user(user_id)
+    |> case do
+      {:ok, user} ->
+        Sanbase.Accounts.UserSettings.update_settings(user, settings)
+
+      _ ->
+        :ok
+    end
   end
 end

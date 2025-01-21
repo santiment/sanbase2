@@ -33,7 +33,7 @@ defmodule SanbaseWeb do
   def channel do
     quote do
       use Phoenix.Channel
-      import SanbaseWeb.Gettext
+      use Gettext, backend: SanbaseWeb.Gettext
 
       unquote(verified_routes())
     end
@@ -46,7 +46,7 @@ defmodule SanbaseWeb do
         layouts: [html: SanbaseWeb.Layouts]
 
       import Plug.Conn
-      import SanbaseWeb.Gettext
+      use Gettext, backend: SanbaseWeb.Gettext
       unquote(verified_routes())
     end
   end
@@ -111,7 +111,7 @@ defmodule SanbaseWeb do
       import Phoenix.View
 
       import SanbaseWeb.ErrorHelpers
-      import SanbaseWeb.Gettext
+      use Gettext, backend: SanbaseWeb.Gettext
       alias SanbaseWeb.Router.Helpers, as: Routes
 
       unquote(verified_routes())
@@ -124,7 +124,7 @@ defmodule SanbaseWeb do
       import Phoenix.HTML
       # Core UI components and translation
       import SanbaseWeb.CoreComponents
-      import SanbaseWeb.Gettext
+      use Gettext, backend: SanbaseWeb.Gettext
 
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS

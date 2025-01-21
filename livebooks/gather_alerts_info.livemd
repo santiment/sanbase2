@@ -1,0 +1,34 @@
+# Untitled notebook
+
+## Section
+
+```elixir
+type = "metric_signal"
+alerts = Sanbase.Alert.UserTrigger.get_all_triggers_by_type(type)
+
+IO.puts("Got #{length(alerts)} alerts")
+```
+
+```elixir
+data =
+  alerts
+  |> Enum.take(2)
+  |> Enum.map(fn alert ->
+    %{
+      alert_id: alert.id,
+      user_id: alert.user_id,
+      inserted_at: alert.inserted_at,
+      updated_at: alert.updated_at,
+      metric: alert.trigger.settings.metric,
+      target: alert.trigger.settings.target,
+      channels: alert.trigger.settings.channel |> List.wrap()
+    }
+  end)
+```
+
+```elixir
+json = Jason.encode!(data)
+
+Path.expand("~/alerts_data.json")
+|> File.write!(json)
+```

@@ -257,42 +257,6 @@ defmodule Sanbase.EmailsTest do
 
       refute called(Sanbase.TemplateMailer.send(context.user.email, :_, :_))
     end
-
-    test "do not send discount 50% email", context do
-      assert :ok =
-               perform_job(Sanbase.Mailer, %{
-                 "user_id" => context.user.id,
-                 "template" => during_trial_annual_discount_template()
-               })
-
-      refute called(Sanbase.TemplateMailer.send(context.user.email, :_, :_))
-    end
-
-    test "do not send discount 35% email", context do
-      assert :ok =
-               perform_job(Sanbase.Mailer, %{
-                 "user_id" => context.user.id,
-                 "template" => after_trial_annual_discount_template()
-               })
-
-      refute called(Sanbase.TemplateMailer.send(context.user.email, :_, :_))
-    end
-
-    test "do not send discount 35% email if more than 30 days passed", context do
-      insert(:subscription_pro_sanbase,
-        user: context.user,
-        status: "trialing",
-        trial_end: days_after(-20)
-      )
-
-      assert :ok =
-               perform_job(Sanbase.Mailer, %{
-                 "user_id" => context.user.id,
-                 "template" => after_trial_annual_discount_template()
-               })
-
-      refute called(Sanbase.TemplateMailer.send(context.user.email, :_, :_))
-    end
   end
 
   defp email_login_verify_mutation(user) do

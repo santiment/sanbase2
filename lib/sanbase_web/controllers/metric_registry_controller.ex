@@ -4,17 +4,24 @@ defmodule SanbaseWeb.MetricRegistryController do
   def sync(conn, %{"secret" => secret} = params) do
     case secret == get_sync_secret() do
       true ->
-        case Sanbase.Metric.Registry.Sync.apply_sync(
-               Map.take(params, ["content", "confirmation_endpoint"])
-             ) do
-          :ok ->
-            conn
-            |> resp(200, "OK")
-            |> send_resp()
+        try do
+          case Sanbase.Metric.Registry.Sync.apply_sync(
+                 Map.take(params, ["content", "confirmation_endpoint"])
+               ) do
+            :ok ->
+              conn
+              |> resp(200, "OK")
+              |> send_resp()
 
-          {:error, error} ->
+            {:error, error} ->
+              conn
+              |> resp(500, "Error Syncing: #{inspect(error)}")
+              |> send_resp()
+          end
+        rescue
+          e ->
             conn
-            |> resp(500, "Error Syncing: #{inspect(error)}")
+            |> resp(500, "Error syncing: #{Exception.message(e)}")
             |> send_resp()
         end
 

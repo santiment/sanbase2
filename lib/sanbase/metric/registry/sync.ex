@@ -11,6 +11,8 @@ defmodule Sanbase.Metric.Registry.Sync do
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
   require Logger
 
+  @pubsub_topic "sanbase_metric_registry_sync"
+
   def by_uuid(uuid), do: Registry.SyncSchema.by_uuid(uuid)
 
   def cancel_run(uuid) do
@@ -42,6 +44,7 @@ defmodule Sanbase.Metric.Registry.Sync do
          {:ok, sync} <- store_sync_in_db(content),
          {:ok, sync} <- Registry.SyncSchema.update_status(sync, "executing"),
          :ok <- start_sync(sync) do
+      SanbaseWeb.Endpoint.broadcast_from(self(), @pubsub_topic, "sync_started", %{})
       {:ok, sync}
     end
   end
@@ -58,6 +61,7 @@ defmodule Sanbase.Metric.Registry.Sync do
          {:ok, list} <- extract_metric_registry_list(sync),
          :ok <- mark_metric_registries_as_synced(list),
          {:ok, sync} <- Registry.SyncSchema.update_status(sync, "completed") do
+      SanbaseWeb.Endpoint.broadcast_from(self(), @pubsub_topic, "sync_completed", %{})
       {:ok, sync}
     end
   end
@@ -67,7 +71,7 @@ defmodule Sanbase.Metric.Registry.Sync do
 
     with :ok <- check_apply_env(),
          {:ok, list} when is_list(list) <- Jason.decode(params["content"]),
-         :ok <- do_apply_sync_content(list),
+         {:ok, _actual_change} <- do_apply_sync_content(list),
          {:ok, _} <- send_sync_completed_confirmation(params["confirmation_endpoint"]) do
       :ok
     end

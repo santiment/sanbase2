@@ -4,6 +4,8 @@ defmodule Sanbase.Metric.Registry.SyncSchema do
   import Ecto.Query
   import Ecto.Changeset
 
+  @pubsub_topic "sanbase_metric_registry_sync"
+
   schema "metric_registry_syncs" do
     field(:uuid, :string)
     field(:status, :string)
@@ -34,6 +36,14 @@ defmodule Sanbase.Metric.Registry.SyncSchema do
     struct
     |> changeset(%{status: status, errors: errors})
     |> Sanbase.Repo.update()
+    |> case do
+      {:ok, struct} ->
+        SanbaseWeb.Endpoint.broadcast_from(self(), @pubsub_topic, "update_status", %{})
+        {:ok, struct}
+
+      {:error, error} ->
+        {:error, error}
+    end
   end
 
   def by_uuid(uuid) do

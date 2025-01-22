@@ -4,14 +4,24 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
   import SanbaseWeb.CoreComponents
 
   alias Sanbase.Metric.Registry
+  alias Sanbase.Metric.Registry.Permissions
   alias SanbaseWeb.AvailableMetricsComponents
 
   @impl true
   def mount(params, session, socket) do
+    duplicate_metric_registry_id = params["duplicate_metric_registry_id"]
+    live_action = socket.assigns.live_action
+
     {:ok, metric_registry} =
-      case socket.assigns.live_action do
-        :new -> {:ok, %Registry{}}
-        :edit -> Registry.by_id(Map.fetch!(params, "id"))
+      cond do
+        not is_nil(duplicate_metric_registry_id) and live_action == :new ->
+          Registry.by_id(duplicate_metric_registry_id)
+
+        live_action == :new ->
+          {:ok, %Registry{}}
+
+        live_action == :edit ->
+          Registry.by_id(Map.fetch!(params, "id"))
       end
 
     form = metric_registry |> Registry.changeset(%{}) |> to_form()
@@ -19,9 +29,10 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
     {:ok,
      socket
      |> assign(
+       is_duplicate_creation: not is_nil(duplicate_metric_registry_id) and live_action == :new,
+       page_title: page_title(socket.assigns.live_action, metric_registry),
        metric_registry: metric_registry,
        email: get_email(session),
-       page_title: page_title(socket.assigns.live_action, metric_registry.metric),
        form: form,
        save_errors: []
      )}
@@ -31,19 +42,27 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col justify-center w-7/8">
-      <h1 class="text-gray-800 text-2xl">
-        <span :if={@live_action == :edit}>
-          Showing details for <span class="text-blue-700">{@metric_registry.metric}</span>
-        </span>
-        <span :if={@live_action == :new} class="text-blue-700">
+      <div class="text-gray-800 text-2xl">
+        <div :if={@live_action == :edit}>
+          Edit <span class="text-blue-700">{@metric_registry.metric}</span>
+        </div>
+        <div :if={@live_action == :new and @is_duplicate_creation == false} class="text-blue-700">
           Creating a new metric
-        </span>
-      </h1>
+        </div>
+
+        <div :if={@live_action == :new and @is_duplicate_creation == true} class="text-blue-700">
+          Duplicating the metric {@metric_registry.metric}
+        </div>
+        <div :if={@live_action == :new and @is_duplicate_creation == true} class="text-sm">
+          Some of the pre-filled values must be changed
+          so the new metric differs a little bit from the old one.
+        </div>
+      </div>
       <div class="my-4">
         <AvailableMetricsComponents.available_metrics_button
           text="Back to Metric Registry"
           href={~p"/admin2/metric_registry"}
-          icon="hero-arrow-uturn-left"
+          icon="hero-home"
         />
 
         <AvailableMetricsComponents.available_metrics_button
@@ -51,6 +70,15 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
           text="See Metric"
           href={~p"/admin2/metric_registry/show/#{@metric_registry}"}
           icon="hero-arrow-right-circle"
+        />
+
+        <AvailableMetricsComponents.available_metrics_button
+          :if={Permissions.can?(:edit, []) and @live_action == :edit}
+          text="Duplicate Metric"
+          href={
+            ~p"/admin2/metric_registry/new?#{%{duplicate_metric_registry_id: @metric_registry.id}}"
+          }
+          icon="hero-document-duplicate"
         />
       </div>
       <div>
@@ -494,8 +522,8 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
 
   defp maybe_update_if_present(params, _), do: params
 
-  defp page_title(:new, _), do: "Creating a new metric"
-  defp page_title(:edit, metric), do: "#{metric} | Edit metric"
+  defp page_title(:new, _metric_registry), do: "Metric Registry | Create New Record"
+  defp page_title(:edit, metric_registry), do: "Metric Registry | Edit #{metric_registry.metric}"
 
   # Get the email from the refresh token. The access token expires more quick
   # and we don't need to refresh it from here. We only need to get the email

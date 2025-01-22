@@ -15,6 +15,7 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
     {:ok,
      socket
      |> assign(
+       page_title: "Metric Registry | Show #{metric_registry.metric}",
        metric_registry: metric_registry,
        rows: rows
      )}
@@ -39,6 +40,15 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
           text="Edit Metric"
           href={~p"/admin2/metric_registry/edit/#{@metric_registry}"}
           icon="hero-pencil-square"
+        />
+
+        <AvailableMetricsComponents.available_metrics_button
+          :if={Permissions.can?(:edit, [])}
+          text="Duplicate Metric"
+          href={
+            ~p"/admin2/metric_registry/new?#{%{duplicate_metric_registry_id: @metric_registry.id}}"
+          }
+          icon="hero-document-duplicate"
         />
 
         <AvailableMetricsComponents.available_metrics_button

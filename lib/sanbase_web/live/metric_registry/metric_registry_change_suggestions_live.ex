@@ -11,7 +11,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
     {:ok,
      socket
      |> assign(
-       page_title: "Metric Registry Change Requests",
+       page_title: "Metric Registry | Change Requests",
        rows: list_all_submissions(),
        form: to_form(%{})
      )}
@@ -21,10 +21,13 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
   def render(assigns) do
     ~H"""
     <div>
+      <h1 class="text-blue-700 text-2xl mb-4">
+        Metric Registry Change Requests
+      </h1>
       <AvailableMetricsComponents.available_metrics_button
         text="Back to Metric Registry"
         href={~p"/admin2/metric_registry"}
-        icon="hero-arrow-uturn-left"
+        icon="hero-home"
       />
       <div class="flex-1 p:2 sm:p-6 justify-evenly">
         <.table id="metric_registry_changes_suggestions" rows={@rows}>

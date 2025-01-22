@@ -3,21 +3,25 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
 
   alias SanbaseWeb.AvailableMetricsComponents
 
+  @pubsub_topic "sanbase_metric_registry_sync"
   @impl true
   def mount(_params, _session, socket) do
-    syncs =
-      Sanbase.Metric.Registry.Sync.last_syncs(20)
-      |> Enum.map(fn sync -> Map.update!(sync, :content, &Jason.decode!/1) end)
+    SanbaseWeb.Endpoint.subscribe(@pubsub_topic)
+
+    syncs = get_syncs()
 
     {:ok,
      socket
-     |> assign(syncs: syncs, page_title: "Past Metric Registry Sync Runs")}
+     |> assign(syncs: syncs, page_title: "Metric Registry | Past Sync Runs")}
   end
 
   @impl true
   def render(assigns) do
     ~H"""
     <div class="flex flex-col items-start justify-evenly">
+      <h1 class="text-blue-700 text-2xl mb-4">
+        Metric Registry Sync Runs
+      </h1>
       <div class="text-gray-400 text-sm py-2">
         <div>
           Showing the last {length(@syncs)} syncs
@@ -27,6 +31,12 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
         <AvailableMetricsComponents.available_metrics_button
           text="Back to Metric Registry"
           href={~p"/admin2/metric_registry"}
+          icon="hero-home"
+        />
+
+        <AvailableMetricsComponents.available_metrics_button
+          text="Back to Sync View"
+          href={~p"/admin2/metric_registry/sync"}
           icon="hero-arrow-uturn-left"
         />
       </div>
@@ -35,6 +45,9 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
           {row.inserted_at}
         </:col>
 
+        <:col :let={row} label="UUID">
+          {row.uuid}
+        </:col>
         <:col :let={row} label="Status">
           <div class="flex flex-col">
             <span>{row.status}</span>
@@ -97,6 +110,14 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
     end
   end
 
+  @impl true
+  def handle_info(%{topic: @pubsub_topic}, socket) do
+    {:noreply,
+     socket
+     |> assign(syncs: get_syncs())
+     |> put_flash(:info, "Sync data updated due to action of another.")}
+  end
+
   defp execution_too_long?(status, inserted_at) do
     status == "executing" and
       NaiveDateTime.diff(NaiveDateTime.utc_now(), inserted_at, :second) > 60
@@ -148,5 +169,10 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
       {Enum.map(@content, & &1["metric"]) |> Enum.join(", ")}
     </div>
     """
+  end
+
+  defp get_syncs() do
+    Sanbase.Metric.Registry.Sync.last_syncs(20)
+    |> Enum.map(fn sync -> Map.update!(sync, :content, &Jason.decode!/1) end)
   end
 end

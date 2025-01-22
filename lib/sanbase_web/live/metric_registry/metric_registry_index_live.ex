@@ -39,6 +39,9 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
       />
     </.modal>
     <div class="flex flex-col items-start justify-evenly">
+      <h1 class="text-blue-700 text-2xl mb-4">
+        Metric Registry Index
+      </h1>
       <div class="text-gray-400 text-sm py-2">
         <div>
           Showing {length(@visible_metrics_ids)} metrics
@@ -108,6 +111,12 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
             :if={Permissions.can?(:edit, [])}
             text="Edit"
             href={~p"/admin2/metric_registry/edit/#{row.id}"}
+          />
+
+          <AvailableMetricsComponents.link_button
+            :if={Permissions.can?(:edit, [])}
+            text="Duplicate"
+            href={~p"/admin2/metric_registry/new?#{%{duplicate_metric_registry_id: row.id}}"}
           />
         </:col>
       </AvailableMetricsComponents.table_with_popover_th>

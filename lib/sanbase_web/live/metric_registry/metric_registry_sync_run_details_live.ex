@@ -10,13 +10,19 @@ defmodule SanbaseWeb.MetricRegistrySyncRunDetailsLive do
 
     {:ok,
      socket
-     |> assign(sync: sync)}
+     |> assign(
+       page_title: "Metric Registry | Sync Details",
+       sync: sync
+     )}
   end
 
   @impl true
   def render(assigns) do
     ~H"""
     <div class="flex flex-col space-y-8 ">
+      <h1 class="text-blue-700 text-2xl mb-4">
+        Metric Registry Sync Details | {@sync.uuid}
+      </h1>
       <div :for={metric <- @sync.content}>
         {Jason.encode!(metric, pretty: true)}
       </div>

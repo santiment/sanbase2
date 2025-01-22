@@ -12,13 +12,13 @@ defmodule Sanbase.Accounts.AccessAttemptTest do
     {:ok, user: user, ip: ip, type: type, config: config}
   end
 
-  describe "has_allowed_attempts?/3" do
+  describe "check_attempt_limit/3" do
     test "allows attempts within user limits", %{user: user, ip: ip, type: type, config: config} do
       for _i <- 1..(config.allowed_user_attempts + 1) do
         {:ok, _} = AccessAttempt.create(type, user, ip)
       end
 
-      assert {:error, :too_many_attempts} = AccessAttempt.has_allowed_attempts?(type, user, ip)
+      assert {:error, :too_many_attempts} = AccessAttempt.check_attempt_limit(type, user, ip)
     end
 
     test "allows attempts within IP limits", %{ip: ip, type: type, config: config} do
@@ -30,7 +30,7 @@ defmodule Sanbase.Accounts.AccessAttemptTest do
       new_user = insert(:user)
 
       assert {:error, :too_many_attempts} =
-               AccessAttempt.has_allowed_attempts?(type, new_user, ip)
+               AccessAttempt.check_attempt_limit(type, new_user, ip)
     end
 
     test "resets attempts count after interval", %{user: user, ip: ip, type: type, config: config} do
@@ -39,7 +39,7 @@ defmodule Sanbase.Accounts.AccessAttemptTest do
         {:ok, _} = AccessAttempt.create(type, user, ip)
       end
 
-      assert {:error, :too_many_attempts} = AccessAttempt.has_allowed_attempts?(type, user, ip)
+      assert {:error, :too_many_attempts} = AccessAttempt.check_attempt_limit(type, user, ip)
 
       # Time travel past the interval by updating timestamps
       past_time = DateTime.utc_now() |> DateTime.add(-(config.interval_in_minutes + 1), :minute)
@@ -50,7 +50,7 @@ defmodule Sanbase.Accounts.AccessAttemptTest do
       )
 
       # Should allow new attempts
-      assert :ok = AccessAttempt.has_allowed_attempts?(type, user, ip)
+      assert :ok = AccessAttempt.check_attempt_limit(type, user, ip)
     end
   end
 
@@ -76,15 +76,15 @@ defmodule Sanbase.Accounts.AccessAttemptTest do
       end
 
       assert {:error, :too_many_attempts} =
-               AccessAttempt.has_allowed_attempts?("email_login", user, ip)
+               AccessAttempt.check_attempt_limit("email_login", user, ip)
 
       # Coupon attempts should still work (different type)
-      assert :ok = AccessAttempt.has_allowed_attempts?("coupon", user, ip)
+      assert :ok = AccessAttempt.check_attempt_limit("coupon", user, ip)
     end
 
     test "raises for unknown attempt type", %{user: user, ip: ip} do
       assert_raise RuntimeError, "Unknown access attempt type: unknown", fn ->
-        AccessAttempt.has_allowed_attempts?("unknown", user, ip)
+        AccessAttempt.check_attempt_limit("unknown", user, ip)
       end
     end
   end
@@ -98,7 +98,7 @@ defmodule Sanbase.Accounts.AccessAttemptTest do
       end
 
       assert {:error, :too_many_attempts} =
-               AccessAttempt.has_allowed_attempts?("coupon", user, ip)
+               AccessAttempt.check_attempt_limit("coupon", user, ip)
     end
 
     test "allows attempts within coupon-specific IP limits", %{ip: ip} do
@@ -112,7 +112,7 @@ defmodule Sanbase.Accounts.AccessAttemptTest do
       new_user = insert(:user)
 
       assert {:error, :too_many_attempts} =
-               AccessAttempt.has_allowed_attempts?("coupon", new_user, ip)
+               AccessAttempt.check_attempt_limit("coupon", new_user, ip)
     end
 
     test "resets coupon attempts after interval", %{user: user, ip: ip} do
@@ -124,7 +124,7 @@ defmodule Sanbase.Accounts.AccessAttemptTest do
       end
 
       assert {:error, :too_many_attempts} =
-               AccessAttempt.has_allowed_attempts?("coupon", user, ip)
+               AccessAttempt.check_attempt_limit("coupon", user, ip)
 
       # Time travel past the interval
       past_time = DateTime.utc_now() |> DateTime.add(-(config.interval_in_minutes + 1), :minute)
@@ -135,7 +135,7 @@ defmodule Sanbase.Accounts.AccessAttemptTest do
       )
 
       # Should allow new attempts
-      assert :ok = AccessAttempt.has_allowed_attempts?("coupon", user, ip)
+      assert :ok = AccessAttempt.check_attempt_limit("coupon", user, ip)
     end
   end
 end

@@ -90,6 +90,20 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     end
   end
 
+  test "check coupon returns error on too many attempts", context do
+    with_mocks([
+      {Sanbase.Accounts.CouponAttempt, [],
+       [
+         check_attempt_limit: fn _, _ -> {:error, :too_many_attempts} end
+       ]}
+    ]) do
+      query = check_coupon(@coupon_code)
+
+      error_msg = execute_mutation_with_error(context.conn, query)
+      assert error_msg =~ "Too many coupon attempts. Please try again later."
+    end
+  end
+
   test "update customer card", context do
     query = update_customer_card()
     response = execute_mutation(context.conn, query)

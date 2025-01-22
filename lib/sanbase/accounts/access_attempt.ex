@@ -11,7 +11,7 @@ defmodule Sanbase.Accounts.AccessAttempt do
     timestamps()
   end
 
-  def has_allowed_attempts?(type, user, remote_ip) do
+  def check_attempt_limit(type, user, remote_ip) do
     config = get_config(type)
     too_many_user_attempts? = attempts_count(type, user) > config.allowed_user_attempts
     too_many_ip_attempts? = attempts_count(type, remote_ip) > config.allowed_ip_attempts

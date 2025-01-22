@@ -9,8 +9,8 @@ defmodule Sanbase.Accounts.EmailLoginAttempt do
     }
   end
 
-  def has_allowed_attempts?(user, remote_ip) do
-    AccessAttempt.has_allowed_attempts?("email_login", user, remote_ip)
+  def check_attempt_limit(user, remote_ip) do
+    AccessAttempt.check_attempt_limit("email_login", user, remote_ip)
   end
 
   def create(user, remote_ip) do

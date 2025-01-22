@@ -89,7 +89,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
          true <- allowed_origin?(origin_host_parts, origin_url),
          {:ok, %{first_login: first_login} = user} <-
            User.find_or_insert_by(:email, email, %{username: args[:username]}),
-         :ok <- EmailLoginAttempt.has_allowed_attempts?(user, remote_ip),
+         :ok <- EmailLoginAttempt.check_attempt_limit(user, remote_ip),
          {:ok, user} <- User.Email.update_email_token(user, args[:consent]),
          {:ok, _res} <- User.Email.send_login_email(user, first_login, origin_host_parts, args),
          {:ok, %AccessAttempt{}} <- AccessAttempt.create("email_login", user, remote_ip),
@@ -154,7 +154,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
       }) do
     remote_ip = Sanbase.Utils.IP.ip_tuple_to_string(remote_ip)
 
-    with :ok <- EmailLoginAttempt.has_allowed_attempts?(user, remote_ip),
+    with :ok <- EmailLoginAttempt.check_attempt_limit(user, remote_ip),
          {:ok, user} <- User.Email.update_email_candidate(user, email_candidate),
          {:ok, _user} <- User.Email.send_verify_email(user),
          {:ok, %AccessAttempt{}} <- EmailLoginAttempt.create(user, remote_ip) do

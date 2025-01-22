@@ -1,6 +1,11 @@
 defmodule Sanbase.Accounts.EmailLoginAttempt do
+  @behaviour Sanbase.Accounts.AccessAttemptBehaviour
   alias Sanbase.Accounts.AccessAttempt
 
+  @impl true
+  def type, do: "email_login"
+
+  @impl true
   def config do
     %{
       interval_in_minutes: 5,
@@ -9,11 +14,13 @@ defmodule Sanbase.Accounts.EmailLoginAttempt do
     }
   end
 
+  @impl true
   def check_attempt_limit(user, remote_ip) do
-    AccessAttempt.check_attempt_limit("email_login", user, remote_ip)
+    AccessAttempt.check_attempt_limit(type(), user, remote_ip)
   end
 
+  @impl true
   def create(user, remote_ip) do
-    AccessAttempt.create("email_login", user, remote_ip)
+    AccessAttempt.create(type(), user, remote_ip)
   end
 end

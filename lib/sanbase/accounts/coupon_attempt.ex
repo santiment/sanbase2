@@ -1,6 +1,11 @@
 defmodule Sanbase.Accounts.CouponAttempt do
+  @behaviour Sanbase.Accounts.AccessAttemptBehaviour
   alias Sanbase.Accounts.AccessAttempt
 
+  @impl true
+  def type, do: "coupon"
+
+  @impl true
   def config do
     %{
       interval_in_minutes: 10,
@@ -9,11 +14,13 @@ defmodule Sanbase.Accounts.CouponAttempt do
     }
   end
 
+  @impl true
   def check_attempt_limit(user, remote_ip) do
-    AccessAttempt.check_attempt_limit("coupon", user, remote_ip)
+    AccessAttempt.check_attempt_limit(type(), user, remote_ip)
   end
 
+  @impl true
   def create(user, remote_ip) do
-    AccessAttempt.create("coupon", user, remote_ip)
+    AccessAttempt.create(type(), user, remote_ip)
   end
 end

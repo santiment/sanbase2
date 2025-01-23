@@ -5,7 +5,10 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   @behaviour Sanbase.Metric.Behaviour
 
   import Sanbase.Clickhouse.TopHolders.SqlQuery
-  import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1]
+
+  import Sanbase.Utils.Transform,
+    only: [maybe_fill_gaps_last_seen: 2, maybe_apply_function: 2, maybe_unwrap_ok_value: 1]
+
   import Sanbase.Utils.ErrorHandling, only: [not_implemented_function_for_metric_error: 2]
 
   alias Sanbase.Project
@@ -62,11 +65,25 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
          true <- chain_supported?(infr, slug, metric),
          {:ok, params} <-
            timeseries_data_params(selector, contract, infr, from, to, interval, decimals, opts) do
-      timeseries_data_query(metric, params)
-      |> ClickhouseRepo.query_transform(fn [timestamp, value] ->
-        %{datetime: DateTime.from_unix!(timestamp), value: value}
-      end)
+      result =
+        timeseries_data_query(metric, params)
+        |> ClickhouseRepo.query_transform(fn [timestamp, value, has_changed] ->
+          %{datetime: DateTime.from_unix!(timestamp), value: value, has_changed: has_changed}
+        end)
+
+      case result do
+        {:ok, list} -> {:ok, gap_fill_last_known(list)}
+        {:error, error} -> {:error, error}
+      end
     end
+  end
+
+  defp gap_fill_last_known(list) do
+    # Do not gap fill the leading missing values
+    list = Enum.drop_while(list, &(&1.has_changed == 0))
+
+    {:ok, list} = maybe_fill_gaps_last_seen({:ok, list}, :value)
+    list
   end
 
   @impl Sanbase.Metric.Behaviour

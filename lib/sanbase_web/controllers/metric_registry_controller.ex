@@ -32,10 +32,14 @@ defmodule SanbaseWeb.MetricRegistryController do
     end
   end
 
-  def mark_sync_as_completed(conn, %{"sync_uuid" => sync_uuid, "secret" => secret}) do
+  def mark_sync_as_completed(conn, %{
+        "sync_uuid" => sync_uuid,
+        "actual_changes" => actual_changes,
+        "secret" => secret
+      }) do
     case secret == get_sync_secret() do
       true ->
-        case Sanbase.Metric.Registry.Sync.mark_sync_as_completed(sync_uuid) do
+        case Sanbase.Metric.Registry.Sync.mark_sync_as_completed(sync_uuid, actual_changes) do
           {:ok, _} ->
             conn
             |> resp(200, "OK")

@@ -153,7 +153,6 @@ defmodule Sanbase.Dashboard.QueryExecution do
             {:error, "Query execution not found"}
 
           _ ->
-            Process.sleep(5000)
             get_execution_stats(clickhouse_query_id, attempts_left - 1)
         end
     end

@@ -54,25 +54,29 @@ defmodule Sanbase.Metric.Registry.Sync do
   back to the initiator that the sync is finished. The initiator calls this function
   to mark the sync as completed.
   """
-  def mark_sync_as_completed(sync_uuid) when is_binary(sync_uuid) do
+  def mark_sync_as_completed(sync_uuid, actual_changes) when is_binary(sync_uuid) do
     Logger.info("Marking Metric Registry sync as finished for UUID #{sync_uuid}")
 
-    with {:ok, sync} <- Registry.SyncSchema.by_uuid(sync_uuid),
-         {:ok, list} <- extract_metric_registry_list(sync),
+    with {:ok, decoded_changes} <- decode_changes(actual_changes),
+         {:ok, sync} <- Registry.SyncSchema.by_uuid(sync_uuid),
+         {:ok, list} <- extract_metric_registry_identifiers_list(decoded_changes),
          :ok <- mark_metric_registries_as_synced(list),
-         {:ok, sync} <- Registry.SyncSchema.update_status(sync, "completed") do
+         {:ok, sync} <-
+           Registry.SyncSchema.update(sync, %{status: "completed", actual_changes: actual_changes}) do
       SanbaseWeb.Endpoint.broadcast_from(self(), @pubsub_topic, "sync_completed", %{})
+
       {:ok, sync}
     end
   end
 
-  def apply_sync(params) do
+  def apply_sync(%{"content" => content, "confirmation_endpoint" => confirmation_endpoint}) do
     Logger.info("Applying Metric Registry sync")
 
     with :ok <- check_apply_env(),
-         {:ok, list} when is_list(list) <- Jason.decode(params["content"]),
-         {:ok, _actual_change} <- do_apply_sync_content(list),
-         {:ok, _} <- send_sync_completed_confirmation(params["confirmation_endpoint"]) do
+         {:ok, list} when is_list(list) <- Jason.decode(content),
+         {:ok, changesets} <- do_apply_sync_content(list),
+         {:ok, actual_changes} <- generate_actual_changes_applied(changesets),
+         {:ok, _} <- send_sync_completed_confirmation(confirmation_endpoint, actual_changes) do
       :ok
     end
   end
@@ -81,22 +85,69 @@ defmodule Sanbase.Metric.Registry.Sync do
     Registry.SyncSchema.last_syncs(limit)
   end
 
-  # Private functions
+  def actual_changes_formatted(%Registry.SyncSchema{actual_changes: nil}), do: ""
 
-  defp send_sync_completed_confirmation(url) do
+  def actual_changes_formatted(%Registry.SyncSchema{actual_changes: actual_changes}) do
+    with {:ok, decoded} <- decode_changes(actual_changes) do
+      decoded
+      # Has the form {key, change}
+      |> Enum.map(fn {key, changes} ->
+        formatted_patch = Sanbase.ExAudit.Patch.format_patch(%{patch: changes})
+
+        ["Metric ", key.metric, " ", formatted_patch]
+      end)
+    end
+  end
+
+  # Private functions
+  defp generate_actual_changes_applied(changesets) when is_list(changesets) do
+    changes =
+      Enum.map(changesets, fn changeset ->
+        old = changeset.data
+        new = changeset |> Ecto.Changeset.apply_changes()
+
+        key = Map.take(changeset.data, [:metric, :data_type, :fixed_parameters])
+        {key, ExAudit.Diff.diff(old, new)}
+      end)
+
+    {:ok, changes}
+  end
+
+  defp encode_changes(changes) do
+    changes
+    |> :erlang.term_to_binary()
+    |> :zlib.gzip()
+    |> Base.encode64()
+  end
+
+  defp decode_changes(bin) do
+    with {:ok, decoded} <- bin |> Base.decode64() do
+      result =
+        decoded
+        |> :zlib.gunzip()
+        |> :erlang.binary_to_term()
+
+      {:ok, result}
+    end
+  end
+
+  defp send_sync_completed_confirmation(url, changes) do
     Logger.info("Confirming that a Metric Registry sync was completed to url #{url}")
 
-    Req.post(url)
+    Req.post(url, json: %{actual_changes: encode_changes(changes)})
   end
 
   defp do_apply_sync_content(list) do
-    list
-    |> Enum.reduce(Ecto.Multi.new(), fn params, multi ->
-      multi_metric_registry_update(multi, params)
-    end)
-    |> Sanbase.Repo.transaction()
-    |> case do
-      {:ok, %{} = _map} -> :ok
+    {multi, changesets} =
+      list
+      |> Enum.reduce({Ecto.Multi.new(), []}, fn params, {multi, changesets} ->
+        {updated_multi, changeset} = multi_metric_registry_update(multi, params)
+
+        {updated_multi, [changeset | changesets]}
+      end)
+
+    case Sanbase.Repo.transaction(multi) do
+      {:ok, _map} -> {:ok, changesets}
       {:error, _name, error, _changes_so_far} -> {:error, error}
     end
   end
@@ -109,7 +160,8 @@ defmodule Sanbase.Metric.Registry.Sync do
 
     with {:ok, metric_registry} <- Registry.by_name(metric, data_type, fixed_parameters) do
       changeset = Registry.changeset(metric_registry, params)
-      Ecto.Multi.update(multi, metric_registry.id, changeset)
+      multi = Ecto.Multi.update(multi, metric_registry.id, changeset)
+      {multi, changeset}
     end
   end
 
@@ -150,9 +202,9 @@ defmodule Sanbase.Metric.Registry.Sync do
     Enum.reduce_while(list, :ok, fn map, _acc ->
       with {:ok, metric} <-
              Registry.by_name(
-               Map.fetch!(map, "metric"),
-               Map.fetch!(map, "data_type"),
-               Map.fetch!(map, "fixed_parameters")
+               map.metric,
+               map.data_type,
+               map.fixed_parameters
              ),
            {:ok, _metric} <- Registry.update(metric, %{"sync_status" => "synced"}) do
         {:cont, :ok}
@@ -219,9 +271,12 @@ defmodule Sanbase.Metric.Registry.Sync do
     end
   end
 
-  defp extract_metric_registry_list(sync) do
-    sync.content
-    |> Jason.decode()
+  defp extract_metric_registry_identifiers_list(actual_changes) do
+    keys =
+      actual_changes
+      |> Enum.map(fn {%{metric: _, data_type: _, fixed_parameters: _} = key, _changes} -> key end)
+
+    {:ok, keys}
   end
 
   defp get_confirmation_endpoint(sync) do

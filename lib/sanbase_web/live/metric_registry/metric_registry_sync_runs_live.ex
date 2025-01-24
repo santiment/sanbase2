@@ -94,6 +94,8 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
   def handle_event("cancel_run", %{"sync-uuid" => sync_uuid}, socket) do
     case Sanbase.Metric.Registry.Sync.cancel_run(sync_uuid) do
       {:ok, sync} ->
+        sync = Map.update!(sync, :content, &Jason.decode!/1)
+
         syncs =
           socket.assigns.syncs
           |> Enum.map(&if &1.uuid == sync.uuid, do: sync, else: &1)

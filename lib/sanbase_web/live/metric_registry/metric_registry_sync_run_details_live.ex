@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.MetricRegistrySyncRunDetailsLive do
   use SanbaseWeb, :live_view
 
+  alias SanbaseWeb.AvailableMetricsComponents
+  alias Sanbase.Metric.Registry.Sync
   @impl true
   def mount(%{"uuid" => sync_uuid}, _session, socket) do
     {:ok, sync} =
@@ -23,6 +25,25 @@ defmodule SanbaseWeb.MetricRegistrySyncRunDetailsLive do
       <h1 class="text-blue-700 text-2xl mb-4">
         Metric Registry Sync Details | {@sync.uuid}
       </h1>
+
+      <div class="my-4">
+        <AvailableMetricsComponents.available_metrics_button
+          text="Back to Metric Registry"
+          href={~p"/admin2/metric_registry"}
+          icon="hero-home"
+        />
+
+        <AvailableMetricsComponents.available_metrics_button
+          text="List Sync Runs"
+          href={~p"/admin2/metric_registry/sync_runs"}
+          icon="hero-list-bullet"
+        />
+      </div>
+      <h2>Actual Changes Applied</h2>
+      <div>
+        {Sync.actual_changes_formatted(@sync)}
+      </div>
+      <h2>Content</h2>
       <div :for={metric <- @sync.content}>
         {Jason.encode!(metric, pretty: true)}
       </div>

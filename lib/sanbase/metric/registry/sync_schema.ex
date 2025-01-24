@@ -10,6 +10,7 @@ defmodule Sanbase.Metric.Registry.SyncSchema do
     field(:uuid, :string)
     field(:status, :string)
     field(:content, :string)
+    field(:actual_changes, :string)
     field(:errors, :string)
 
     timestamps()
@@ -17,7 +18,7 @@ defmodule Sanbase.Metric.Registry.SyncSchema do
 
   def changeset(%__MODULE__{} = sync, attrs) do
     sync
-    |> cast(attrs, [:uuid, :content, :status, :errors])
+    |> cast(attrs, [:uuid, :content, :actual_changes, :status, :errors])
     |> validate_inclusion(:status, ["scheduled", "executing", "completed", "failed", "cancelled"])
   end
 
@@ -32,8 +33,14 @@ defmodule Sanbase.Metric.Registry.SyncSchema do
     |> Sanbase.Repo.insert()
   end
 
-  def update_status(%__MODULE__{} = struct, status, errors \\ nil) do
-    struct
+  def update(%__MODULE__{} = sync, attrs) do
+    sync
+    |> changeset(attrs)
+    |> Sanbase.Repo.update()
+  end
+
+  def update_status(%__MODULE__{} = sync, status, errors \\ nil) do
+    sync
     |> changeset(%{status: status, errors: errors})
     |> Sanbase.Repo.update()
     |> case do

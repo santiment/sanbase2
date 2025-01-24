@@ -119,7 +119,6 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
       {:ok, _data} ->
         # Add some artificial wait period so there's some time for the sync
         # to finish.
-        Process.sleep(5000)
         {syncable_metrics, not_syncable_metrics} = get_syncs_data()
 
         {:noreply,

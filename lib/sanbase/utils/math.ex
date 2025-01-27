@@ -71,31 +71,6 @@ defmodule Sanbase.Math do
   def percent_of(_, _, _), do: nil
 
   @doc ~S"""
-  Integer power function. Erlang's :math is using floating point numbers.
-  Sometimes the result is needed as Integer and not as Float (ex. for using in Decimal.div/1)
-  and it's inconvenient to polute the code with `round() |> trunc()`
-
-  ## Examples
-
-      iex> Sanbase.Math.ipow(2,2)
-      4
-      iex> Sanbase.Math.ipow(-2,2)
-      4
-      iex> Sanbase.Math.ipow(-2,3)
-      -8
-      iex> Sanbase.Math.ipow(1231232,0)
-      1
-      iex> Sanbase.Math.ipow(2,500)
-      3273390607896141870013189696827599152216642046043064789483291368096133796404674554883270092325904157150886684127560071009217256545885393053328527589376
-      iex> Sanbase.Math.ipow(10,18)
-      1_000_000_000_000_000_000
-  """
-  def ipow(base, exp) when is_integer(base) and is_integer(exp) and exp >= 0 do
-    # Since Elixir 1.12.0 Integer.pow/2 is available
-    Integer.pow(base, exp)
-  end
-
-  @doc ~S"""
   Convert strings, floats, decimals or integers to integers
 
   ## Examples

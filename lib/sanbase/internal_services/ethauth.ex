@@ -30,7 +30,7 @@ defmodule Sanbase.InternalServices.Ethauth do
            get(client(), "total_supply", query: [contract: contract], opts: @tesla_opts),
          {:ok, total_supply} <- Jason.decode(body),
          {:ok, decimals} when is_integer(decimals) <- token_decimals(contract) do
-      {:ok, div(total_supply, Sanbase.Math.ipow(10, decimals))}
+      {:ok, div(total_supply, Integer.pow(10, decimals))}
     else
       {:ok, %Tesla.Env{status: status}} ->
         {:error, "Error fetching total supply for #{contract}. Status: #{status}"}

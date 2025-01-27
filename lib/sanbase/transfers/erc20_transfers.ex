@@ -203,7 +203,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
       to: DateTime.to_unix(to),
       limit: limit,
       offset: offset,
-      decimals: Sanbase.Math.ipow(10, decimals)
+      decimals: Integer.pow(10, decimals)
     }
 
     Sanbase.Clickhouse.Query.new(sql, params)
@@ -231,7 +231,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
     {limit, offset} = opts_to_limit_offset(opts)
 
     params = %{
-      decimals: Sanbase.Math.ipow(10, decimals),
+      decimals: Integer.pow(10, decimals),
       contract: contract,
       from: DateTime.to_unix(from),
       to: DateTime.to_unix(to),
@@ -303,7 +303,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
   end
 
   defp decimals(decimals) when is_integer(decimals) and decimals >= 0 do
-    Sanbase.Math.ipow(10, decimals)
+    Integer.pow(10, decimals)
   end
 
   defp maybe_transform({:ok, data}) do
@@ -368,7 +368,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
     params = %{
       addresses: addresses,
       contract: contract,
-      decimals: Sanbase.Math.ipow(10, decimals),
+      decimals: Integer.pow(10, decimals),
       from: DateTime.to_unix(from),
       to: DateTime.to_unix(to)
     }
@@ -425,7 +425,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
       to: DateTime.to_unix(to),
       addresses: addresses,
       contract: contract,
-      decimals: Sanbase.Math.ipow(10, decimals)
+      decimals: Integer.pow(10, decimals)
     }
 
     Sanbase.Clickhouse.Query.new(sql, params)
@@ -468,7 +468,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
     {limit, offset} = opts_to_limit_offset(opts)
 
     params = %{
-      decimals: Sanbase.Math.ipow(10, decimals),
+      decimals: Integer.pow(10, decimals),
       contract: contract,
       address: address,
       from: DateTime.to_unix(from),

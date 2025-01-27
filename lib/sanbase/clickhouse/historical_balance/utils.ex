@@ -78,6 +78,29 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Utils do
 
   def maybe_fill_gaps_last_seen_balance({:error, error}), do: {:error, error}
 
+  def maybe_fill_gaps_last_seen_balance_ohlc({:ok, values}) do
+    init = %{open: 0, high: 0, close: 0, low: 0}
+
+    result =
+      values
+      |> Enum.reduce({[], init}, fn
+        %{has_changed: 0, datetime: dt}, {acc, %{} = last_seen} ->
+          elem = Map.merge(%{datetime: dt}, last_seen)
+          {[elem | acc], last_seen}
+
+        %{has_changed: 1} = map, {acc, _last_seen} ->
+          last_seen = Map.take(map, [:open, :high, :low, :close])
+          elem = Map.delete(map, :has_changed)
+          {[elem | acc], last_seen}
+      end)
+      |> elem(0)
+      |> Enum.reverse()
+
+    {:ok, result}
+  end
+
+  def maybe_fill_gaps_last_seen_balance_ohlc({:error, error}), do: {:error, error}
+
   def maybe_update_first_balance({:ok, [%{has_changed: 0} | _] = data}, fun)
       when is_function(fun, 0) do
     case fun.() do

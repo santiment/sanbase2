@@ -101,7 +101,7 @@ defmodule Sanbase.SmartContracts.Utils do
   def format_number(number, decimals \\ 18)
 
   def format_number(number, decimals) do
-    number / Sanbase.Math.ipow(10, decimals)
+    number / Integer.pow(10, decimals)
   end
 
   def format_address(address) do

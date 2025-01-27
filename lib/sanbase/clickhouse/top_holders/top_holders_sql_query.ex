@@ -73,7 +73,7 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
         to: to,
         span: span,
         blockchain: params.blockchain,
-        decimals: Sanbase.Math.ipow(10, params.decimals)
+        decimals: Integer.pow(10, params.decimals)
       }
       |> Map.merge(included_labels_params)
       |> Map.merge(excluded_labels_params)
@@ -82,7 +82,7 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
   end
 
   def timeseries_data_query("amount_in_top_holders", params) do
-    decimals = Sanbase.Math.ipow(10, params.decimals)
+    decimals = Integer.pow(10, params.decimals)
 
     {from, to, interval_sec, span} = timerange_parameters(params.from, params.to, params.interval)
 

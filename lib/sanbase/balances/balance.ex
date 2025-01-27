@@ -1,11 +1,15 @@
 defmodule Sanbase.Balance do
-  import __MODULE__.SqlQuery
+  import __MODULE__.SqlQuery2
 
   import Sanbase.Utils.Transform,
     only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2, maybe_sort: 3]
 
   import Sanbase.Clickhouse.HistoricalBalance.Utils,
-    only: [maybe_update_first_balance: 2, maybe_fill_gaps_last_seen_balance: 1]
+    only: [
+      maybe_update_first_balance: 2,
+      maybe_fill_gaps_last_seen_balance: 1,
+      maybe_fill_gaps_last_seen_balance_ohlc: 1
+    ]
 
   alias Sanbase.ClickhouseRepo
   alias Sanbase.Project
@@ -478,13 +482,14 @@ defmodule Sanbase.Balance do
         }
       end
     )
-    |> maybe_update_first_balance(fn ->
-      case do_last_balance_before(address, slug, decimals, blockchain, from) do
-        {:ok, %{^address => balance}} -> {:ok, balance}
-        {:error, error} -> {:error, error}
-      end
-    end)
-    |> maybe_fill_gaps_last_seen_balance()
+    # TODO: Implement somehow for OHLC
+    # |> maybe_update_first_balance(fn ->
+    #   case do_last_balance_before(address, slug, decimals, blockchain, from) do
+    #     {:ok, %{^address => balance}} -> {:ok, balance}
+    #     {:error, error} -> {:error, error}
+    #   end
+    # end)
+    |> maybe_fill_gaps_last_seen_balance_ohlc()
   end
 
   defp info_by_slug(slug) do

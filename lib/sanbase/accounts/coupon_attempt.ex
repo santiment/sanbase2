@@ -1,14 +1,14 @@
-defmodule Sanbase.Accounts.EmailLoginAttempt do
+defmodule Sanbase.Accounts.CouponAttempt do
   @behaviour Sanbase.Accounts.AccessAttemptBehaviour
   alias Sanbase.Accounts.AccessAttempt
 
   @impl true
-  def type, do: "email_login"
+  def type, do: "coupon"
 
   @impl true
   def config do
     %{
-      interval_in_minutes: 5,
+      interval_in_minutes: 10,
       allowed_user_attempts: 5,
       allowed_ip_attempts: 20
     }

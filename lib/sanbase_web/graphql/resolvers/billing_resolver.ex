@@ -173,18 +173,33 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     end
   end
 
-  def get_coupon(_root, %{coupon: coupon}, _resolution) do
-    case Sanbase.StripeApi.retrieve_coupon(coupon) do
+  def get_coupon(_root, %{coupon: coupon}, %{
+        context: %{remote_ip: remote_ip, auth: %{current_user: current_user}}
+      }) do
+    remote_ip = Sanbase.Utils.IP.ip_tuple_to_string(remote_ip)
+
+    with :ok <- Sanbase.Accounts.CouponAttempt.check_attempt_limit(current_user, remote_ip),
+         {:ok,
+          %Stripe.Coupon{
+            valid: valid,
+            id: id,
+            name: name,
+            percent_off: percent_off,
+            amount_off: amount_off
+          }} <- Sanbase.StripeApi.retrieve_coupon(coupon) do
+      Sanbase.Accounts.CouponAttempt.create(current_user, remote_ip)
+
       {:ok,
-       %Stripe.Coupon{
-         valid: valid,
+       %{
+         is_valid: valid,
          id: id,
          name: name,
          percent_off: percent_off,
          amount_off: amount_off
-       }} ->
-        {:ok,
-         %{is_valid: valid, id: id, name: name, percent_off: percent_off, amount_off: amount_off}}
+       }}
+    else
+      {:error, :too_many_attempts} ->
+        {:error, "Too many coupon attempts. Please try again later."}
 
       {:error, %Stripe.Error{message: message} = reason} ->
         log_error("Error checking coupon", reason)

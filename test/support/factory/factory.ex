@@ -3,7 +3,7 @@ defmodule Sanbase.Factory do
 
   alias Sanbase.Tag
   alias Sanbase.UserList
-  alias Sanbase.Accounts.{User, UserSettings, Role, UserRole, EmailLoginAttempt}
+  alias Sanbase.Accounts.{User, UserSettings, Role, UserRole, AccessAttempt}
   alias Sanbase.Insight.Post
   alias Sanbase.Comment
   alias Sanbase.{Project, ProjectEthAddress}
@@ -830,9 +830,10 @@ defmodule Sanbase.Factory do
   def email_login_attempt_factory() do
     rand_octet = fn -> :rand.uniform(255) end
 
-    %EmailLoginAttempt{
+    %AccessAttempt{
       user: build(:user),
-      ip_address: "#{rand_octet.()}.#{rand_octet.()}.#{rand_octet.()}.#{rand_octet.()}"
+      ip_address: "#{rand_octet.()}.#{rand_octet.()}.#{rand_octet.()}.#{rand_octet.()}",
+      type: "email_login"
     }
   end
 

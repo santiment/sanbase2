@@ -141,15 +141,26 @@ defmodule Sanbase.Balance do
         |> List.wrap()
         |> Sanbase.BlockchainAddress.to_internal_format()
 
-      do_historical_balance_changes(
-        addresses,
-        slug,
-        decimals,
-        blockchain,
-        from,
-        to,
-        interval
-      )
+      # Shift `from` with one interval back, as the computation of balance change
+      # for `from` datetime requires knowing the balance at `from` minus `interval`
+      # datetime. Furthermore, the consecutive differences computation reduces the
+      # number of elements by 1, so the extension by 1 interval also addresses this.
+      from = DateTime.add(from, -Sanbase.DateTimeUtils.str_to_sec(interval))
+
+      case do_historical_balance(addresses, slug, decimals, blockchain, from, to, interval) do
+        {:ok, balances} ->
+          changes =
+            balances
+            |> Enum.chunk_every(2, 1, :discard)
+            |> Enum.map(fn [%{balance: previous}, %{balance: current, datetime: dt}] ->
+              %{datetime: dt, balance: current - previous}
+            end)
+
+          {:ok, changes}
+
+        {:error, error} ->
+          {:error, error}
+      end
     end
   end
 
@@ -370,34 +381,6 @@ defmodule Sanbase.Balance do
           balance_change_amount: balance_change,
           balance_change_percent: Sanbase.Math.percent_change(balance_start, balance_end)
         }
-    end)
-  end
-
-  defp do_historical_balance_changes(
-         addresses,
-         slug,
-         decimals,
-         blockchain,
-         from,
-         to,
-         interval
-       ) do
-    query_struct =
-      historical_balance_changes_query(
-        addresses,
-        slug,
-        decimals,
-        blockchain,
-        from,
-        to,
-        interval
-      )
-
-    ClickhouseRepo.query_transform(query_struct, fn [unix, balance_change] ->
-      %{
-        datetime: DateTime.from_unix!(unix),
-        balance_change_amount: balance_change
-      }
     end)
   end
 

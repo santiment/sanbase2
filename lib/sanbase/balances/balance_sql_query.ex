@@ -26,60 +26,6 @@ defmodule Sanbase.Balance.SqlQuery do
   def decimals("dogecoin", _), do: 1
   def decimals(_, decimals), do: Integer.pow(10, decimals)
 
-  def historical_balance_changes_query(
-        addresses,
-        slug,
-        decimals,
-        blockchain,
-        from,
-        to,
-        interval
-      ) do
-    sql = """
-    SELECT time, SUM(change) / {{decimals}}
-      FROM (
-        SELECT
-          toUnixTimestamp(intDiv(toUInt32({{from}} + number * {{interval}}), {{interval}}) * {{interval}}) AS time,
-          toFloat64(0) AS change
-        FROM numbers({{span}})
-
-      UNION ALL
-
-      SELECT
-        toUnixTimestamp(intDiv(toUInt32(dt), {{interval}}) * {{interval}}) AS time,
-        SUM(change) AS change
-      FROM (
-        SELECT dt, address, (argMax(balance, (dt, txID, computedAt)) - argMax(oldBalance, (dt, txID, computedAt))) AS change
-        FROM {{table}}
-        WHERE
-          #{maybe_selector_clause(blockchain, slug, "slug")}
-          #{address_clause(addresses, argument_name: "addresses")} AND
-          dt >= toDateTime({{from}}) AND
-          dt <= toDateTime({{to}})
-        GROUP BY address, dt
-      )
-      GROUP BY address, dt
-    )
-    GROUP BY time
-    ORDER BY time
-    """
-
-    {from, to, interval, span} = timerange_parameters(from, to, interval)
-
-    params = %{
-      addresses: addresses,
-      slug: slug,
-      decimals: decimals(blockchain, decimals),
-      from: from,
-      to: to,
-      interval: interval,
-      span: span,
-      table: blockchain_to_table(blockchain, slug)
-    }
-
-    Sanbase.Clickhouse.Query.new(sql, params)
-  end
-
   def balance_change_query(addresses, slug, decimals, blockchain, from, to) do
     sql = """
     SELECT

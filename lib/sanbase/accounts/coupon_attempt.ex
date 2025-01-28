@@ -5,12 +5,13 @@ defmodule Sanbase.Accounts.CouponAttempt do
   @impl true
   def type, do: "coupon"
 
+  # high limits due to frontend checking for coupon on keypress
   @impl true
   def config do
     %{
       interval_in_minutes: 10,
-      allowed_user_attempts: 5,
-      allowed_ip_attempts: 20
+      allowed_user_attempts: 30,
+      allowed_ip_attempts: 60
     }
   end
 

@@ -123,16 +123,19 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
   end
 
   test "eth spent over time by erc20 projects", context do
-    [dt1, dt2, dt3, dt4, dt5] =
-      generate_datetimes(Timex.shift(Timex.now(), days: -4), "1d", 5)
+    [dt0, dt1, dt2, dt3, dt4, dt5] =
+      generate_datetimes(Timex.shift(Timex.now(), days: -5), "1d", 6)
       |> Enum.map(&DateTime.to_unix/1)
 
+    # Historical Balances Changes uses internally the historical balances query,
+    # so that's what needs to be mocked
     rows = [
-      [dt1, -16_500],
-      [dt2, -5500],
-      [dt3, -3500],
-      [dt4, -2500],
-      [dt5, -500]
+      [dt0, 50_000, 1],
+      [dt1, 33_500, 1],
+      [dt2, 28_000, 1],
+      [dt3, 24_500, 1],
+      [dt4, 22_000, 1],
+      [dt5, 21_500, 1]
     ]
 
     Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})

@@ -153,7 +153,11 @@ defmodule Sanbase.Balance do
             balances
             |> Enum.chunk_every(2, 1, :discard)
             |> Enum.map(fn [%{balance: previous}, %{balance: current, datetime: dt}] ->
-              %{datetime: dt, balance: current - previous}
+              %{
+                datetime: dt,
+                balance_change_amount: current - previous,
+                balance_change_percent: Sanbase.Math.percent_change(previous, current)
+              }
             end)
 
           {:ok, changes}

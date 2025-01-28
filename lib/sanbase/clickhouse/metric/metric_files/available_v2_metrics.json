@@ -6271,6 +6271,78 @@
     "docs_links": ["https://academy.santiment.net/metrics/sky-savings"]
   },
   {
+    "human_readable_name": "Pendle Total Markets TVL",
+    "name": "pendle_total_markets_tvl",
+    "metric": "pendle_total_markets_tvl",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/pendle-markets"]
+  },
+  {
+    "human_readable_name": "Pendle Underlying APY",
+    "name": "pendle_underlying_apy",
+    "metric": "pendle_underlying_apy",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/pendle-markets"]
+  },
+  {
+    "human_readable_name": "Pendle Implied APY",
+    "name": "pendle_implied_apy",
+    "metric": "pendle_implied_apy",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/pendle-markets"]
+  },
+  {
+    "human_readable_name": "Pendle Yield Spread",
+    "name": "pendle_yield_spread",
+    "metric": "pendle_yield_spread",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/pendle-markets"]
+  },
+  {
     "human_readable_name": "Price volatility for the last {{sliding_window:human_readable}}",
     "name": "price_volatility_{{sliding_window}}",
     "metric": "price_volatility_{{sliding_window}}",

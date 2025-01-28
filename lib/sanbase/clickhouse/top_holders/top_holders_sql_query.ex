@@ -1,8 +1,13 @@
 defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
   @moduledoc false
 
-  import Sanbase.DateTimeUtils
-  import Sanbase.Metric.SqlQuery.Helper, only: [to_unix_timestamp: 3, aggregation: 3]
+  import Sanbase.Metric.SqlQuery.Helper,
+    only: [
+      timerange_parameters: 3,
+      to_unix_timestamp_from_number: 2,
+      to_unix_timestamp: 3,
+      aggregation: 3
+    ]
 
   defguard has_labels(map)
            when (is_map_key(map, :include_labels) and
@@ -19,26 +24,41 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
     {exclude_labels_str, excluded_labels_params} =
       exclude_labels_str_args(params, trailing_and: true)
 
+    {from, to, interval_sec, span} = timerange_parameters(params.from, params.to, params.interval)
+
     sql = """
-    SELECT dt, SUM(value) AS value
+    SELECT dt, SUM(value), toUInt32(SUM(has_changed))
     FROM (
-      SELECT * FROM (
-        SELECT
-          #{aggregation(params.aggregation, "value", "dt")} / {{decimals}} AS value,
-          #{to_unix_timestamp(params.interval, "dt", argument_name: "interval")} AS dt,
-          address
-        FROM #{params.table} FINAL
-        WHERE
-          #{exclude_labels_str}
-          contract = {{contract}} AND
-          dt >= toDateTime({{from}}) AND
-          dt < toDateTime({{to}}) AND
-          rank IS NOT NULL AND rank > 0
-        GROUP BY dt, address
-        ORDER BY dt, value DESC
+      SELECT
+        #{to_unix_timestamp_from_number(params.interval, from_argument_name: "from")} AS dt,
+        toFloat64(0) AS value,
+        toUInt32(0) AS has_changed
+      FROM numbers({{span}})
+
+      UNION ALL
+
+      SELECT dt, SUM(value) AS value, 1 AS has_changed
+      FROM (
+        SELECT * FROM (
+          SELECT
+            #{aggregation(params.aggregation, "value", "dt")} / {{decimals}} AS value,
+            #{to_unix_timestamp(params.interval, "dt", argument_name: "interval")} AS dt,
+            address
+          FROM #{params.table} FINAL
+          WHERE
+            #{exclude_labels_str}
+            contract = {{contract}} AND
+            dt >= toDateTime({{from}}) AND
+            dt < toDateTime({{to}}) AND
+            rank IS NOT NULL AND rank > 0
+          GROUP BY dt, address
+          ORDER BY dt, value DESC
+        )
+        #{include_labels_str}
+        LIMIT {{limit}} BY dt
       )
-      #{include_labels_str}
-      LIMIT {{limit}} BY dt
+      GROUP BY dt
+      ORDER BY dt
     )
     GROUP BY dt
     ORDER BY dt
@@ -46,11 +66,12 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
 
     params =
       %{
-        interval: params.interval |> str_to_sec(),
+        interval: interval_sec,
         contract: params.contract,
         limit: params.count,
-        from: params.from |> DateTime.to_unix(),
-        to: params.to |> DateTime.to_unix(),
+        from: from,
+        to: to,
+        span: span,
         blockchain: params.blockchain,
         decimals: Sanbase.Math.ipow(10, params.decimals)
       }
@@ -63,35 +84,51 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
   def timeseries_data_query("amount_in_top_holders", params) do
     decimals = Sanbase.Math.ipow(10, params.decimals)
 
+    {from, to, interval_sec, span} = timerange_parameters(params.from, params.to, params.interval)
+
     sql = """
-    SELECT dt, SUM(value)
+    SELECT dt, SUM(value), toUInt32(SUM(has_changed))
     FROM (
-      SELECT * FROM (
-        SELECT
-          #{to_unix_timestamp(params.interval, "dt", argument_name: "interval")} AS dt,
-          #{aggregation(params.aggregation, "value", "dt")} / #{decimals} AS value
-        FROM #{params.table} FINAL
-        WHERE
-          contract = {{contract}} AND
-          rank <= {{limit}} AND
-          dt >= toDateTime({{from}}) AND
-          dt < toDateTime({{to}}) AND
-          rank IS NOT NULL AND rank > 0
-        GROUP BY dt, address
-        ORDER BY dt, value desc
+      SELECT
+        #{to_unix_timestamp_from_number(params.interval, from_argument_name: "from")} AS dt,
+        toFloat64(0) AS value,
+        toUInt32(0) AS has_changed
+      FROM numbers({{span}})
+
+      UNION ALL
+
+      SELECT dt, SUM(value) AS value, 1 AS has_changed
+      FROM (
+        SELECT * FROM (
+          SELECT
+            #{to_unix_timestamp(params.interval, "dt", argument_name: "interval")} AS dt,
+            #{aggregation(params.aggregation, "value", "dt")} / #{decimals} AS value
+          FROM #{params.table} FINAL
+          WHERE
+            contract = {{contract}} AND
+            rank <= {{limit}} AND
+            dt >= toDateTime({{from}}) AND
+            dt < toDateTime({{to}}) AND
+            rank IS NOT NULL AND rank > 0
+          GROUP BY dt, address
+          ORDER BY dt, value desc
+        )
+        LIMIT {{limit}} BY dt
       )
-      LIMIT {{limit}} BY dt
+      GROUP BY dt
+      ORDER BY dt
     )
     GROUP BY dt
     ORDER BY dt
     """
 
     params = %{
-      interval: params.interval |> str_to_sec(),
+      interval: interval_sec,
       contract: params.contract,
       limit: params.count,
-      from: params.from |> DateTime.to_unix(),
-      to: params.to |> DateTime.to_unix()
+      from: from,
+      to: to,
+      span: span
     }
 
     Sanbase.Clickhouse.Query.new(sql, params)

@@ -10,6 +10,8 @@ defmodule Sanbase.Balance.SqlQuery do
       "bitcoin" -> "btc_balances"
       "litecoin" -> "ltc_balances"
       "dogecoin" -> "doge_balances"
+      "bitcoin-cash" -> "bch_balances"
+      "binance" -> "bep20_balances"
     end
   end
 

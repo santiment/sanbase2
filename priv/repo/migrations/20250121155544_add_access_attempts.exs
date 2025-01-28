@@ -10,9 +10,7 @@ defmodule Sanbase.Repo.Migrations.AddAccessAttempts do
       timestamps()
     end
 
-    create(index(:access_attempts, [:user_id]))
-    create(index(:access_attempts, [:ip_address]))
-    create(index(:access_attempts, [:type]))
-    create(index(:access_attempts, [:inserted_at]))
+    create(index(:access_attempts, [:type, :ip_address, :inserted_at]))
+    create(index(:access_attempts, [:type, :user_id, :inserted_at]))
   end
 end

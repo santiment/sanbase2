@@ -6872,31 +6872,17 @@ ALTER TABLE ONLY public.webinars
 
 
 --
--- Name: access_attempts_inserted_at_index; Type: INDEX; Schema: public; Owner: -
+-- Name: access_attempts_type_ip_address_inserted_at_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX access_attempts_inserted_at_index ON public.access_attempts USING btree (inserted_at);
-
-
---
--- Name: access_attempts_ip_address_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX access_attempts_ip_address_index ON public.access_attempts USING btree (ip_address);
+CREATE INDEX access_attempts_type_ip_address_inserted_at_index ON public.access_attempts USING btree (type, ip_address, inserted_at);
 
 
 --
--- Name: access_attempts_type_index; Type: INDEX; Schema: public; Owner: -
+-- Name: access_attempts_type_user_id_inserted_at_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX access_attempts_type_index ON public.access_attempts USING btree (type);
-
-
---
--- Name: access_attempts_user_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX access_attempts_user_id_index ON public.access_attempts USING btree (user_id);
+CREATE INDEX access_attempts_type_user_id_inserted_at_index ON public.access_attempts USING btree (type, user_id, inserted_at);
 
 
 --

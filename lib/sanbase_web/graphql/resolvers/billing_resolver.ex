@@ -179,6 +179,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     remote_ip = Sanbase.Utils.IP.ip_tuple_to_string(remote_ip)
 
     with :ok <- Sanbase.Accounts.CouponAttempt.check_attempt_limit(current_user, remote_ip),
+         {:ok, _} <- Sanbase.Accounts.CouponAttempt.create(current_user, remote_ip),
          {:ok,
           %Stripe.Coupon{
             valid: valid,
@@ -187,8 +188,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
             percent_off: percent_off,
             amount_off: amount_off
           }} <- Sanbase.StripeApi.retrieve_coupon(coupon) do
-      Sanbase.Accounts.CouponAttempt.create(current_user, remote_ip)
-
       {:ok,
        %{
          is_valid: valid,

@@ -15,6 +15,16 @@ defmodule Sanbase.Balance.SqlQuery do
     end
   end
 
+  def table_to_slug(table) do
+    case table do
+      "eth_balances" -> "ethereum"
+      "btc_balances" -> "bitcoin"
+      "ltc_balances" -> "litecoin"
+      "doge_balances" -> "dogecoin"
+      "bch_balances" -> "bitcoin-cash"
+    end
+  end
+
   def maybe_selector_clause("ethereum", "ethereum", _slug_key), do: ""
 
   def maybe_selector_clause("ethereum", _, slug_key) do
@@ -24,6 +34,7 @@ defmodule Sanbase.Balance.SqlQuery do
   def maybe_selector_clause(_, _, _), do: ""
 
   def decimals("bitcoin", _), do: 1
+  def decimals("bitcoin-cash", _), do: 1
   def decimals("litecoin", _), do: 1
   def decimals("dogecoin", _), do: 1
   def decimals(_, decimals), do: Integer.pow(10, decimals)
@@ -48,7 +59,7 @@ defmodule Sanbase.Balance.SqlQuery do
       slug: slug,
       from: DateTime.to_unix(from),
       to: DateTime.to_unix(to),
-      decimals: Integer.pow(10, decimals),
+      decimals: decimals(blockchain, decimals),
       table: blockchain_to_table(blockchain, slug)
     }
 
@@ -207,7 +218,7 @@ defmodule Sanbase.Balance.SqlQuery do
     params = %{
       addresses: addresses,
       slug: slug,
-      decimals: Integer.pow(10, decimals),
+      decimals: decimals(blockchain, decimals),
       table: blockchain_to_table(blockchain, slug)
     }
 
@@ -338,7 +349,7 @@ defmodule Sanbase.Balance.SqlQuery do
     sql = """
     SELECT address, balance
     FROM (
-      SELECT address, argMax(balance, dt) / {{decimals}}AS balance
+      SELECT address, argMax(balance, dt) / {{decimals}} AS balance
       FROM #{table}
       PREWHERE
         assetRefId = (SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = {{slug}} LIMIT 1) AND
@@ -378,54 +389,32 @@ defmodule Sanbase.Balance.SqlQuery do
     {join_str, params}
   end
 
-  def assets_held_by_address_changes_query(address, datetime) do
+  def assets_held_by_address_changes_query(address, datetime, table, opts \\ [])
+
+  def assets_held_by_address_changes_query(address, datetime, "erc20_balances" <> _ = table, opts) do
     sql = """
     SELECT
       name,
-      greatest(argMaxIf(value, dt, dt <= toDateTime({{datetime}})) / pow(10, decimals), 0) AS previous_balance,
-      greatest(argMax(value, dt) / pow(10, decimals), 0) AS current_balance,
+      greatest(
+        argMaxIf(balance, (dt, txID, computedAt), dt <= toDateTime({{datetime}})) / pow(10, decimals),
+        0
+      ) AS previous_balance,
+      greatest(
+        argMax(balance, (dt, txID, computedAt)) / pow(10, decimals),
+        0
+      ) AS current_balance,
       current_balance - previous_balance AS balance_change
     FROM (
       SELECT
+        dt,
         address,
-        asset_ref_id,
-        arrayJoin(groupArrayMerge(values)) AS values_merged,
-        values_merged.1 AS dt,
-        values_merged.2 AS value
-      FROM balances_aggregated
+        assetRefId AS asset_ref_id,
+        balance,
+        txID,
+        computedAt
+      FROM {{table}}
       WHERE
         #{address_clause(address, argument_name: "address")}
-      GROUP BY address, blockchain, asset_ref_id
-    )
-    INNER JOIN (
-      SELECT asset_ref_id, name, decimals
-      FROM asset_metadata FINAL
-    ) USING (asset_ref_id)
-    GROUP BY address, asset_ref_id, name, decimals
-    HAVING previous_balance > 0 AND current_balance > 0
-    """
-
-    params = %{address: address, datetime: DateTime.to_unix(datetime)}
-
-    Sanbase.Clickhouse.Query.new(sql, params)
-  end
-
-  def assets_held_by_address_query(address, opts \\ []) do
-    sql = """
-    SELECT
-      name,
-      argMax(value, dt) / pow(10, decimals) AS balance
-    FROM (
-      SELECT
-        address,
-        asset_ref_id,
-        arrayJoin(groupArrayMerge(values)) AS values_merged,
-        values_merged.1 AS dt,
-        values_merged.2 AS value
-      FROM balances_aggregated
-      WHERE
-        #{address_clause(address, argument_name: "address")}
-      GROUP BY address, blockchain, asset_ref_id
     )
     INNER JOIN (
       SELECT asset_ref_id, name, decimals
@@ -435,13 +424,117 @@ defmodule Sanbase.Balance.SqlQuery do
     #{if Keyword.get(opts, :show_assets_with_zero_balance, false), do: "", else: "HAVING balance > 0"}
     """
 
-    params = %{address: address}
+    params = %{
+      address: address,
+      table: table,
+      datetime: DateTime.to_unix(datetime)
+    }
 
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  def usd_value_address_change_query(address, datetime) do
-    query_struct = assets_held_by_address_changes_query(address, datetime)
+  def assets_held_by_address_changes_query(address, datetime, table, opts)
+      when table in [
+             "eth_balances",
+             "btc_balances",
+             "bch_balances",
+             "ltc_balances",
+             "doge_balances"
+           ] do
+    sql = """
+    SELECT
+      {{slug}} AS name,
+      greatest(
+        argMaxIf(balance, (dt, txID, computedAt), dt <= toDateTime({{datetime}})) / {{decimals}},
+        0
+      ) AS previous_balance,
+      greatest(
+        argMax(balance, (dt, txID, computedAt)) / {{decimals}},
+        0
+      ) AS current_balance,
+      current_balance - previous_balance AS balance_change
+    FROM {{table}}
+    WHERE
+      #{address_clause(address, argument_name: "address")}
+    #{if Keyword.get(opts, :show_assets_with_zero_balance, false), do: "", else: "HAVING balance > 0"}
+    """
+
+    params = %{
+      decimals: decimals(table_to_slug(table), 18),
+      slug: table_to_slug(table),
+      address: address,
+      table: table,
+      datetime: DateTime.to_unix(datetime)
+    }
+
+    Sanbase.Clickhouse.Query.new(sql, params)
+  end
+
+  def assets_held_by_address_query(address, table, opts \\ [])
+
+  def assets_held_by_address_query(address, "erc20_balances_" <> _ = table, opts) do
+    sql = """
+    SELECT
+      name,
+      argMax(balance, (dt, txID, computedAt)) / pow(10, decimals) AS balance
+    FROM (
+      SELECT
+        dt,
+        address,
+        assetRefId AS asset_ref_id,
+        balance,
+        txID,
+        computedAt
+      FROM {{table}}
+      WHERE
+        #{address_clause(address, argument_name: "address")}
+    )
+    INNER JOIN (
+      SELECT asset_ref_id, name, decimals
+      FROM asset_metadata FINAL
+    ) USING (asset_ref_id)
+    GROUP BY address, asset_ref_id, name, decimals
+    #{if Keyword.get(opts, :show_assets_with_zero_balance, false), do: "", else: "HAVING balance > 0"}
+    """
+
+    params = %{address: address, table: table}
+
+    Sanbase.Clickhouse.Query.new(sql, params)
+  end
+
+  def assets_held_by_address_query(address, table, opts)
+      when table in [
+             "eth_balances",
+             "btc_balances",
+             "bch_balances",
+             "ltc_balances",
+             "doge_balances"
+           ] do
+    # These tables hold info for only 1 asset
+    sql = """
+    SELECT
+      {{slug}} AS name,
+      argMax(balance, (dt, txID, computedAt)) / {{decimals}} AS balance
+    FROM {{table}}
+    WHERE
+      #{address_clause(address, argument_name: "address")}
+    #{if Keyword.get(opts, :show_assets_with_zero_balance, false), do: "", else: "HAVING balance > 0"}
+    """
+
+    params = %{
+      decimals: decimals(table_to_slug(table), 18),
+      slug: table_to_slug(table),
+      table: table,
+      address: address
+    }
+
+    Sanbase.Clickhouse.Query.new(sql, params)
+  end
+
+  def usd_value_address_change_query(address, datetime, table, opts \\ [])
+
+  def usd_value_address_change_query(address, datetime, table, opts) do
+    query_struct = assets_held_by_address_changes_query(address, datetime, table, opts)
 
     sql = """
     SELECT
@@ -471,11 +564,14 @@ defmodule Sanbase.Balance.SqlQuery do
     ) USING (name)
     """
 
+    # The params are already in the query_struct
     Sanbase.Clickhouse.Query.put_sql(query_struct, sql)
   end
 
-  def usd_value_held_by_address_query(address) do
-    query_struct = assets_held_by_address_query(address)
+  def usd_value_held_by_address_query(address, table, opts \\ [])
+
+  def usd_value_held_by_address_query(address, table, opts) do
+    query_struct = assets_held_by_address_query(address, table, opts)
 
     sql = """
     SELECT
@@ -516,7 +612,7 @@ defmodule Sanbase.Balance.SqlQuery do
     params = %{
       addresses: addresses,
       slug: slug,
-      decimals: Integer.pow(10, decimals),
+      decimals: decimals(blockchain, decimals),
       datetime: DateTime.to_unix(datetime),
       table: blockchain_to_table(blockchain, slug)
     }

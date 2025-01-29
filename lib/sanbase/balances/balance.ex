@@ -191,28 +191,30 @@ defmodule Sanbase.Balance do
   in Santiment's database it is not shown.
   """
   @spec assets_held_by_address(address, Keyword.t()) ::
-          {:ok, list(%{slug: slug, balance: number()})} | {:error, String.t()}
+          {:ok, list(%{slug: slug, balance: number()})}
+          | {:error, String.t()}
   def assets_held_by_address(address, opts \\ []) do
     address = Sanbase.BlockchainAddress.to_internal_format(address)
+    tables = address_supported_tables(address)
 
-    hidden_projects_slugs = hidden_projects_slugs()
+    transform_fn = fn [slug, balance] -> %{slug: slug, balance: balance} end
 
-    assets_held_by_address_query(address, opts)
-    |> ClickhouseRepo.query_transform(fn [slug, balance] ->
-      %{
-        slug: slug,
-        balance: balance
-      }
+    Enum.reduce_while(tables, {:ok, []}, fn table, {:ok, acc} ->
+      query = assets_held_by_address_query(address, table, opts)
+
+      case ClickhouseRepo.query_transform(query, transform_fn) do
+        {:ok, data} -> {:cont, {:ok, acc ++ data}}
+        {:error, error} -> {:halt, {:error, error}}
+      end
     end)
-    |> maybe_apply_function(fn data -> Enum.reject(data, &(&1.slug in hidden_projects_slugs)) end)
+    |> maybe_apply_function(&remove_hidden_projects/1)
   end
 
   def usd_value_address_change(address, datetime) do
     address = Sanbase.BlockchainAddress.to_internal_format(address)
-    query_struct = usd_value_address_change_query(address, datetime)
+    tables = address_supported_tables(address)
 
-    ClickhouseRepo.query_transform(
-      query_struct,
+    transform_fn =
       fn [
            slug,
            previous_balance,
@@ -234,33 +236,41 @@ defmodule Sanbase.Balance do
           usd_value_change: previous_usd_value - current_usd_value
         }
       end
-    )
-    |> maybe_apply_function(fn data ->
-      hidden_projects_slugs = hidden_projects_slugs()
-      Enum.reject(data, &(&1.slug in hidden_projects_slugs))
+
+    Enum.reduce_while(tables, {:ok, []}, fn table, {:ok, acc} ->
+      query_struct = usd_value_address_change_query(address, datetime, table)
+
+      case ClickhouseRepo.query_transform(query_struct, transform_fn) do
+        {:ok, data} -> {:cont, {:ok, acc ++ data}}
+        {:error, error} -> {:halt, {:error, error}}
+      end
     end)
-    |> maybe_apply_function(fn data ->
-      Enum.sort_by(data, & &1.usd_value_change, :desc)
-    end)
+    |> maybe_apply_function(&remove_hidden_projects/1)
+    |> maybe_apply_function(fn data -> Enum.sort_by(data, & &1.usd_value_change, :desc) end)
   end
 
   def usd_value_held_by_address(address) do
     address = Sanbase.BlockchainAddress.to_internal_format(address)
-    query_struct = usd_value_held_by_address_query(address)
-    hidden_projects_slugs = hidden_projects_slugs()
+    tables = address_supported_tables(address)
 
-    ClickhouseRepo.query_transform(
-      query_struct,
-      fn [slug, current_balance, current_price_usd, current_usd_value] ->
-        %{
-          slug: slug,
-          current_balance: current_balance,
-          current_price_usd: current_price_usd,
-          current_usd_value: current_usd_value
-        }
+    transform_fn = fn [slug, current_balance, current_price_usd, current_usd_value] ->
+      %{
+        slug: slug,
+        current_balance: current_balance,
+        current_price_usd: current_price_usd,
+        current_usd_value: current_usd_value
+      }
+    end
+
+    Enum.reduce_while(tables, {:ok, []}, fn table, {:ok, acc} ->
+      query_struct = usd_value_held_by_address_query(address, table)
+
+      case ClickhouseRepo.query_transform(query_struct, transform_fn) do
+        {:ok, data} -> {:cont, {:ok, acc ++ data}}
+        {:error, error} -> {:halt, {:error, error}}
       end
-    )
-    |> maybe_apply_function(fn data -> Enum.reject(data, &(&1.slug in hidden_projects_slugs)) end)
+    end)
+    |> maybe_apply_function(&remove_hidden_projects/1)
     |> maybe_sort(:current_usd_value, :desc)
   end
 
@@ -515,5 +525,19 @@ defmodule Sanbase.Balance do
       end)
 
     hidden_projects_slugs
+  end
+
+  defp remove_hidden_projects(list) do
+    hidden_projects_slugs = hidden_projects_slugs()
+    Enum.reject(list, &(&1.slug in hidden_projects_slugs))
+  end
+
+  defp address_supported_tables(address) do
+    case Sanbase.BlockchainAddress.to_infrastructure(address) do
+      "ETH" -> ["erc20_balances_yearly_test", "eth_balances"]
+      "BTC" -> ["btc_balances", "ltc_balances", "doge_balances"]
+      "XRP" -> ["xrp_balances"]
+      _ -> []
+    end
   end
 end

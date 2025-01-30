@@ -31,6 +31,24 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       cache_resolve(&SocialDataResolver.get_metric_spike_explanations/3)
     end
 
+    field :get_metric_spike_explanations_count, list_of(:metric_spike_explanations_count) do
+      meta(access: :free)
+
+      arg(:metric, non_null(:string))
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, non_null(:interval))
+
+      cache_resolve(&SocialDataResolver.get_metric_spike_explanations_count/3)
+    end
+
+    field :get_metric_spike_explanations_metadata, list_of(:metric_spike_explanations_metadata) do
+      meta(access: :free)
+
+      resolve(&SocialDataResolver.get_metric_spike_explanations_metadata/3)
+    end
+
     field :popular_search_terms, list_of(:popular_search_term) do
       meta(access: :free)
 

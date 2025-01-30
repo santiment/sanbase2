@@ -64,6 +64,25 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
     field(:explanation, non_null(:string))
   end
 
+  object :metric_spike_explanations_count do
+    field(:datetime, non_null(:datetime))
+    field(:count, non_null(:integer))
+  end
+
+  object :metric_spike_explanations_metadata do
+    field :available_metrics, non_null(list_of(:string)) do
+      arg(:slug, :string, default_value: nil)
+      resolve(&SocialDataResolver.get_metric_spikes_available_metrics/3)
+    end
+
+    field :available_slugs, non_null(list_of(:string)) do
+      arg(:metric, :string, default_value: nil)
+      resolve(&SocialDataResolver.get_metric_spikes_available_slugs/3)
+    end
+
+    field(:count, non_null(:integer))
+  end
+
   object :popular_search_term do
     field(:title, non_null(:string))
     field(:options, :json)

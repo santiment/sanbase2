@@ -28,6 +28,51 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
     end
   end
 
+  def get_metric_spike_explanations_count(
+        _root,
+        %{metric: metric, slug: slug, from: from, to: to, interval: interval},
+        _resolution
+      ) do
+    with false <- Sanbase.Metric.hard_deprecated?(metric),
+         true <- Sanbase.Metric.has_metric?(metric) do
+      SocialData.Spikes.get_metric_spike_explanations_count(
+        metric,
+        %{slug: slug},
+        from,
+        to,
+        interval
+      )
+    end
+  end
+
+  def get_metric_spike_explanations_metadata(_root, _args, _resolution) do
+    {:ok, %{}}
+  end
+
+  def get_metric_spikes_available_slugs(_root, %{metric: metric}, _resolution)
+      when is_binary(metric) do
+    with false <- Sanbase.Metric.hard_deprecated?(metric),
+         true <- Sanbase.Metric.has_metric?(metric) do
+      SocialData.Spikes.available_assets(metric)
+    end
+  end
+
+  def get_metric_spikes_available_slugs(_root, _args, _resolution) do
+    SocialData.Spikes.available_assets()
+  end
+
+  def get_metric_spikes_available_metrics(_root, args, _resolution) do
+    if slug = Map.get(args, :slug) do
+      SocialData.Spikes.available_metrics(%{slug: slug})
+    else
+      SocialData.Spikes.available_metrics()
+    end
+  end
+
+  def get_metric_spikes_available_slugs(_root, _args, _resolution) do
+    SocialData.Spikes.available_slugs()
+  end
+
   def popular_search_terms(_root, %{from: from, to: to}, _resolution) do
     Sanbase.SocialData.PopularSearchTerm.get(from, to)
   end

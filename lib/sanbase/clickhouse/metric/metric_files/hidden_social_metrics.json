@@ -56,6 +56,26 @@
     "data_type": "timeseries",
     "docs_links": ["https://academy.santiment.net/metrics/social-dominance"]
   },
+
+  {
+    "human_readable_name": "Mentions Percentage Total (1h)",
+    "name": "mentions_percentage_1h_total",
+    "metric": "social_dominance_all_accounts_1h",
+    "is_hidden": true,
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANBASE": "free",
+      "SANAPI": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/social-dominance"]
+  },
   {
     "human_readable_name": "Mentions Percentage Twitter",
     "name": "mentions_percentage_twitter",

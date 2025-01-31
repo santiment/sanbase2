@@ -95,6 +95,8 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :get_menu,
           :get_metric,
           :get_metric_spike_explanations,
+          :get_metric_spike_explanations_count,
+          :get_metric_spike_explanations_metadata,
           :get_most_recent,
           :get_most_tweets,
           :get_most_used,

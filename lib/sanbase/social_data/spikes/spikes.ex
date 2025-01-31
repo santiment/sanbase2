@@ -21,11 +21,10 @@ defmodule Sanbase.SocialData.Spikes do
     query =
       get_metric_spikes_explanations_count_query(metric, selector, from, to, interval)
 
-    Sanbase.ClickhouseRepo.query_transform(query, fn [from, to, summary] ->
+    Sanbase.ClickhouseRepo.query_transform(query, fn [dt, count] ->
       %{
-        spike_start_datetime: DateTime.from_unix!(from),
-        spike_end_datetime: DateTime.from_unix!(to),
-        explanation: summary
+        datetime: DateTime.from_unix!(dt),
+        count: count
       }
     end)
   end
@@ -98,7 +97,7 @@ defmodule Sanbase.SocialData.Spikes do
        ) do
     sql = """
     SELECT
-      #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS t,
+      #{to_unix_timestamp(interval, "from_dt", argument_name: "interval")} AS t,
       count(*) AS summaries_count
     FROM spikes
     WHERE

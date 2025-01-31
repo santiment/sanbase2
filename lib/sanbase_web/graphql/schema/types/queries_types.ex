@@ -3,7 +3,6 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
 
   alias SanbaseWeb.Graphql.Resolvers.UserResolver
   alias SanbaseWeb.Graphql.Resolvers.VoteResolver
-  alias SanbaseWeb.Graphql.Resolvers.DashboardResolver
 
   @desc ~s"""
   A GraphQL type that represents an SQL Query.
@@ -96,7 +95,6 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
   the query's own parameters. The interaction with the global parameter happens through the
   putDashboardGlobalParameter and putDashboardGlobalParameterOverride mutations.
   """
-
   object :dashboard do
     field(:id, non_null(:integer))
     field(:name, non_null(:string))
@@ -107,15 +105,6 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
 
     # Virtual view field
     field(:views, :integer)
-
-    # Old: Panels. This is going to be deprecated
-    # in Queries 2.0 in favor of the new :queries field.
-    # This is kept for backwards compatibility.
-    field :panels, list_of(:panel_schema) do
-      resolve(fn root, _, _ ->
-        {:ok, root.panels || []}
-      end)
-    end
 
     # New: Queries. This is replacing the :panels
     # list from Queries 1.0
@@ -130,7 +119,7 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
     end
 
     field :comments_count, :integer do
-      resolve(&DashboardResolver.comments_count/3)
+      resolve(&QueriesResolver.dashboard_comments_count/3)
     end
 
     field :voted_at, :datetime do
@@ -164,7 +153,7 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
     end
 
     field :comments_count, :integer do
-      resolve(&DashboardResolver.comments_count/3)
+      resolve(&QueriesResolver.comments_count/3)
     end
 
     field :voted_at, :datetime do
@@ -296,5 +285,57 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
   object :dashboard_image_widget_tuple do
     field(:image_widget, non_null(:image_widget))
     field(:dashboard, non_null(:dashboard))
+  end
+
+  enum :clickhouse_metadata_function_filter_enum do
+    value(:system)
+    value(:user_defined)
+  end
+
+  @desc ~s"""
+  Information about the columns in the Clickhouse database
+  """
+  object :clickhouse_database_column_metadata do
+    field(:name, non_null(:string))
+    field(:table, non_null(:string))
+    field(:type, non_null(:string))
+    field(:is_in_partition_key, non_null(:boolean))
+    field(:is_in_sorting_key, non_null(:boolean))
+    field(:is_in_primary_key, non_null(:boolean))
+  end
+
+  @desc ~s"""
+  Information about the tables in the Clickhouse database
+  """
+  object :clickhouse_database_table_metadata do
+    field(:name, non_null(:string))
+    field(:engine, non_null(:string))
+    field(:partition_key, non_null(:string))
+    field(:sorting_key, non_null(:string))
+    field(:primary_key, non_null(:string))
+  end
+
+  @desc ~s"""
+  Information about the functions in the Clickhouse database
+  """
+  object :clickhouse_database_function_metadata do
+    field(:name, non_null(:string))
+    field(:origin, non_null(:string))
+  end
+
+  @desc ~s"""
+  Information about the Clickhouse database. It includes information
+  about the columns, tables and functions. This information can be used
+  for displaying info to user and also in the autocomplete implementation
+  """
+  object :clickhouse_database_metadata do
+    field(:columns, list_of(:clickhouse_database_column_metadata))
+    field(:tables, list_of(:clickhouse_database_table_metadata))
+    field(:functions, list_of(:clickhouse_database_function_metadata))
+  end
+
+  object :query_human_description do
+    field(:title, non_null(:string))
+    field(:description, non_null(:string))
   end
 end

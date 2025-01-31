@@ -4,6 +4,7 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
   import SanbaseWeb.CoreComponents
   import SanbaseWeb.AvailableMetricsDescription
 
+  alias Sanbase.Metric.Registry.Permissions
   alias SanbaseWeb.AvailableMetricsComponents
 
   @impl true
@@ -14,6 +15,7 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
     {:ok,
      socket
      |> assign(
+       page_title: "Metric Registry | Show #{metric_registry.metric}",
        metric_registry: metric_registry,
        rows: rows
      )}
@@ -34,9 +36,19 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
         />
 
         <AvailableMetricsComponents.available_metrics_button
+          :if={Permissions.can?(:edit, [])}
           text="Edit Metric"
           href={~p"/admin2/metric_registry/edit/#{@metric_registry}"}
           icon="hero-pencil-square"
+        />
+
+        <AvailableMetricsComponents.available_metrics_button
+          :if={Permissions.can?(:edit, [])}
+          text="Duplicate Metric"
+          href={
+            ~p"/admin2/metric_registry/new?#{%{duplicate_metric_registry_id: @metric_registry.id}}"
+          }
+          icon="hero-document-duplicate"
         />
 
         <AvailableMetricsComponents.available_metrics_button
@@ -101,6 +113,24 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
         popover_target_text: get_popover_text(%{key: "Internal Name"})
       },
       %{
+        key: "Human Readable Name",
+        value: metric_registry.human_readable_name,
+        popover_target: "popover-human-readable-name",
+        popover_target_text: get_popover_text(%{key: "Human Readable Name"})
+      },
+      %{
+        key: "Verified Status",
+        value: to_verified_status(metric_registry.is_verified),
+        popover_target: "popover-verified-status",
+        popover_target_text: get_popover_text(%{key: "Verified Status"})
+      },
+      %{
+        key: "Sync Status",
+        value: metric_registry.sync_status,
+        popover_target: "popover-sync-status",
+        popover_target_text: get_popover_text(%{key: "Sync Status"})
+      },
+      %{
         key: "Aliases",
         value: metric_registry.aliases |> Enum.map(& &1.name) |> Enum.join(", "),
         popover_target: "popover-aliases",
@@ -111,6 +141,12 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
         value: metric_registry.tables |> Enum.map(& &1.name) |> Enum.join(", "),
         popover_target: "popover-clickhouse-table",
         popover_target_text: get_popover_text(%{key: "Clickhouse Table"})
+      },
+      %{
+        key: "Exposed Environments",
+        value: metric_registry.exposed_environments,
+        popover_target: "popover-exposed-environments",
+        popover_target_text: get_popover_text(%{key: "Exposed Environments"})
       },
       %{
         key: "Min Interval",
@@ -227,5 +263,9 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
         popover_target_text: get_popover_text(%{key: "Deprecation Note"})
       }
     ]
+  end
+
+  defp to_verified_status(is_verified) do
+    if is_verified, do: "VERIFIED", else: "UNVERIFIED"
   end
 end

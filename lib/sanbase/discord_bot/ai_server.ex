@@ -32,7 +32,7 @@ defmodule Sanbase.DiscordBot.AiServer do
   end
 
   # current version of bot
-  def answer(question, discord_metadata \\ %{}) do
+  def answer(question, discord_metadata) when is_map(discord_metadata) do
     url = "#{ai_server_url()}/question"
 
     route_blacklist =

@@ -134,6 +134,7 @@ defmodule Sanbase.Mixfile do
       {:remote_ip, "~> 1.0"},
       {:rexbug, ">= 1.0.0"},
       {:rustler, "~> 0.24"},
+      {:scribe, "~> 0.11"},
       {:sentry, "~> 10.0"},
       {:stream_data, "~> 1.1", only: :test, override: true},
       {:stripity_stripe, "~> 3.2"},

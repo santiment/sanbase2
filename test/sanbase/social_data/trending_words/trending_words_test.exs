@@ -178,7 +178,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
       |> Sanbase.Mock.run_with_mocks(fn ->
         {:error, error} = TrendingWords.get_trending_words(dt1, dt3, "1d", 2, :all)
 
-        assert error =~ "Cannot execute database query."
+        assert error =~ "Cannot execute ClickHouse database query."
       end)
     end
   end
@@ -250,7 +250,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
       |> Sanbase.Mock.run_with_mocks(fn ->
         {:error, error} = TrendingWords.get_currently_trending_words(10, :all)
 
-        assert error =~ "Cannot execute database query."
+        assert error =~ "Cannot execute ClickHouse database query."
       end)
     end
   end
@@ -281,7 +281,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
         {:error, error} =
           TrendingWords.get_word_trending_history("word", dt1, dt2, "1h", 10, :all)
 
-        assert error =~ "Cannot execute database query."
+        assert error =~ "Cannot execute ClickHouse database query."
       end)
     end
   end
@@ -316,7 +316,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
         {:error, error} =
           TrendingWords.get_project_trending_history(project.slug, dt1, dt2, "1h", 10, :all)
 
-        assert error =~ "Cannot execute database query."
+        assert error =~ "Cannot execute ClickHouse database query."
       end)
     end
   end

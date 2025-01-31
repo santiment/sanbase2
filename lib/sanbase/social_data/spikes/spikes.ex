@@ -163,6 +163,5 @@ defmodule Sanbase.SocialData.Spikes do
     params = %{selector: slug}
 
     Sanbase.Clickhouse.Query.new(sql, params)
-    |> dbg()
   end
 end

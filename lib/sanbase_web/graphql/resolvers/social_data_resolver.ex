@@ -49,16 +49,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
     {:ok, %{}}
   end
 
-  def get_metric_spikes_available_slugs(_root, %{metric: metric}, _resolution)
+  def get_metric_spikes_available_projects(_root, %{metric: metric}, _resolution)
       when is_binary(metric) do
     with false <- Sanbase.Metric.hard_deprecated?(metric),
-         true <- Sanbase.Metric.has_metric?(metric) do
-      SocialData.Spikes.available_assets(metric)
+         true <- Sanbase.Metric.has_metric?(metric),
+         {:ok, slugs} <- SocialData.Spikes.available_assets() do
+      slugs = Enum.sort(slugs, :asc)
+      {:ok, Sanbase.Project.List.by_slugs(slugs)}
     end
   end
 
-  def get_metric_spikes_available_slugs(_root, _args, _resolution) do
-    SocialData.Spikes.available_assets()
+  def get_metric_spikes_available_projects(_root, _args, _resolution) do
+    with {:ok, slugs} <- SocialData.Spikes.available_assets() do
+      slugs = Enum.sort(slugs, :asc)
+      {:ok, Sanbase.Project.List.by_slugs(slugs)}
+    end
   end
 
   def get_metric_spikes_available_metrics(_root, args, _resolution) do
@@ -67,10 +72,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
     else
       SocialData.Spikes.available_metrics()
     end
-  end
-
-  def get_metric_spikes_available_slugs(_root, _args, _resolution) do
-    SocialData.Spikes.available_slugs()
   end
 
   def popular_search_terms(_root, %{from: from, to: to}, _resolution) do

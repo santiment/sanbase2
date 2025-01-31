@@ -966,6 +966,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "mentions_count_total",
         "mentions_percentage_twitter",
         "mentions_percentage_total",
+        "mentions_percentage_1h_total",
         "mentions_count_twitter",
         # social metrics for all accounts
         "age_distribution",

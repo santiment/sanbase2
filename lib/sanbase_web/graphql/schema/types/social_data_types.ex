@@ -75,9 +75,9 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
       resolve(&SocialDataResolver.get_metric_spikes_available_metrics/3)
     end
 
-    field :available_slugs, non_null(list_of(:string)) do
+    field :available_projects, non_null(list_of(:project)) do
       arg(:metric, :string, default_value: nil)
-      resolve(&SocialDataResolver.get_metric_spikes_available_slugs/3)
+      resolve(&SocialDataResolver.get_metric_spikes_available_projects/3)
     end
 
     field(:count, non_null(:integer))

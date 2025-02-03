@@ -534,7 +534,7 @@ defmodule Sanbase.Balance do
 
   defp address_supported_tables(address) do
     case Sanbase.BlockchainAddress.to_infrastructure(address) do
-      "ETH" -> ["erc20_balances_yearly_test", "eth_balances"]
+      "ETH" -> ["erc20_balances_address", "eth_balances"]
       "BTC" -> ["btc_balances", "ltc_balances", "doge_balances"]
       "XRP" -> ["xrp_balances"]
       _ -> []

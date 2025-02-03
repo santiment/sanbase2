@@ -6,7 +6,7 @@ defmodule Sanbase.Balance.SqlQuery do
 
   def blockchain_to_table(blockchain, slug) do
     case blockchain do
-      "ethereum" -> if slug == "ethereum", do: "eth_balances", else: "erc20_balances"
+      "ethereum" -> if slug == "ethereum", do: "eth_balances", else: "erc20_balances_address"
       "bitcoin" -> "btc_balances"
       "litecoin" -> "ltc_balances"
       "dogecoin" -> "doge_balances"

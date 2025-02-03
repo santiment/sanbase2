@@ -447,8 +447,12 @@ defmodule Sanbase.Balance do
     end)
     |> maybe_update_first_balance(fn ->
       case do_last_balance_before(address, slug, decimals, blockchain, from) do
-        {:ok, %{^address => balance}} -> {:ok, balance}
-        {:error, error} -> {:error, error}
+        {:ok, %{} = address_balance_maps} ->
+          balance = Map.values(address_balance_maps) |> Enum.sum()
+          {:ok, balance}
+
+        {:error, error} ->
+          {:error, error}
       end
     end)
     |> maybe_fill_gaps_last_seen_balance()

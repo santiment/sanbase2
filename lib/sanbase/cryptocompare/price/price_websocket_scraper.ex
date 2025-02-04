@@ -26,7 +26,6 @@ defmodule Sanbase.Cryptocompare.Price.WebsocketScraper do
   # giving it a name makes sure only one instance of the scraper is alive at a time
   @name :cryptocompare_websocket_scraper
 
-  @asset_price_pairs_exporter :asset_price_pairs_exporter
   @asset_price_pairs_only_exporter :asset_price_pairs_only_exporter
   @asset_prices_exporter :prices_exporter
 
@@ -237,7 +236,6 @@ defmodule Sanbase.Cryptocompare.Price.WebsocketScraper do
 
   defp export_data_point(point, last_points) do
     export_asset_prices_topic(point, last_points)
-    export_asset_price_pairs_topic(point)
     export_asset_price_pairs_only_topic(point)
   rescue
     e ->
@@ -278,15 +276,6 @@ defmodule Sanbase.Cryptocompare.Price.WebsocketScraper do
   end
 
   defp export_asset_prices_topic(_point, _last_points), do: :ok
-
-  defp export_asset_price_pairs_topic(point) do
-    tuple =
-      point
-      |> CryptocompareAssetPricesPoint.new()
-      |> CryptocompareAssetPricesPoint.json_kv_tuple()
-
-    :ok = Sanbase.KafkaExporter.persist_async(tuple, @asset_price_pairs_exporter)
-  end
 
   defp export_asset_price_pairs_only_topic(point) do
     tuple =

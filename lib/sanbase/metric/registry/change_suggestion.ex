@@ -138,7 +138,8 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
     params = changes_to_changeset_params(metric_registry, changes)
 
     if Config.module_get(__MODULE__, :debug_applying_changes, false) do
-      changeset = Registry.changeset(metric_registry, params)
+      changeset =
+        Registry.changeset(metric_registry, params)
 
       same_as_applying_patch? =
         Ecto.Changeset.apply_changes(changeset) == ExAudit.Patch.patch(metric_registry, changes)
@@ -163,7 +164,6 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
 
     # Convert all keys to strings so we don't get error if atom keys come from some caller
     params = Map.new(params, fn {k, v} -> {to_string(k), v} end)
-    params = Map.merge(params, %{"is_verified" => false, "sync_status" => "not_synced"})
 
     case Registry.changeset(registry, params) do
       %{valid?: false} = changeset ->

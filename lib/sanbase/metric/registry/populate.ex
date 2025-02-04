@@ -57,7 +57,7 @@ defmodule Sanbase.Metric.Registry.Populate do
     |> Sanbase.Metric.Registry.changeset(params)
   end
 
-  defp populate(opts \\ []) do
+  defp populate(opts) do
     case process_metrics() do
       list when is_list(list) ->
         {:ok, list, summary} = summarize_results(list)

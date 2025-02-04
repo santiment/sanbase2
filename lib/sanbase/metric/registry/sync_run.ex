@@ -1,4 +1,4 @@
-defmodule Sanbase.Metric.Registry.SyncSchema do
+defmodule Sanbase.Metric.Registry.SyncRun do
   use Ecto.Schema
 
   import Ecto.Query
@@ -6,8 +6,9 @@ defmodule Sanbase.Metric.Registry.SyncSchema do
 
   @pubsub_topic "sanbase_metric_registry_sync"
 
-  schema "metric_registry_syncs" do
+  schema "metric_registry_sync_runs" do
     field(:uuid, :string)
+    field(:sync_type, :string)
     field(:status, :string)
     field(:content, :string)
     field(:actual_changes, :string)
@@ -18,8 +19,9 @@ defmodule Sanbase.Metric.Registry.SyncSchema do
 
   def changeset(%__MODULE__{} = sync, attrs) do
     sync
-    |> cast(attrs, [:uuid, :content, :actual_changes, :status, :errors])
+    |> cast(attrs, [:uuid, :content, :actual_changes, :status, :errors, :sync_type])
     |> validate_inclusion(:status, ["scheduled", "executing", "completed", "failed", "cancelled"])
+    |> validate_inclusion(:sync_type, ["outgoing", "incoming"])
   end
 
   def last_syncs(limit) do
@@ -27,9 +29,9 @@ defmodule Sanbase.Metric.Registry.SyncSchema do
     |> Sanbase.Repo.all()
   end
 
-  def create(content) do
+  def create(attrs) do
     %__MODULE__{}
-    |> changeset(%{content: content, status: "scheduled", uuid: Ecto.UUID.generate()})
+    |> changeset(attrs)
     |> Sanbase.Repo.insert()
   end
 
@@ -53,8 +55,8 @@ defmodule Sanbase.Metric.Registry.SyncSchema do
     end
   end
 
-  def by_uuid(uuid) do
-    query = from(sync in __MODULE__, where: sync.uuid == ^uuid)
+  def by_uuid(uuid, sync_type \\ "outgoing") do
+    query = from(sync in __MODULE__, where: sync.uuid == ^uuid and sync.sync_type == ^sync_type)
 
     case Sanbase.Repo.one(query) do
       nil -> {:error, "Sync with uuid #{uuid} not found"}

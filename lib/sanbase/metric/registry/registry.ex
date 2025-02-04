@@ -55,8 +55,19 @@ defmodule Sanbase.Metric.Registry do
           updated_at: DateTime.t()
         }
 
+  # The struct is encoded to JSON when it is being synced to prod
+  # The fields specified in the :except are the ones that should
+  # not be synced.
   @derive {Jason.Encoder,
-           except: [:__struct__, :__meta__, :id, :inserted_at, :updated_at, :change_suggestions]}
+           except: [
+             :__struct__,
+             :__meta__,
+             :id,
+             :inserted_at,
+             :updated_at,
+             :sync_status,
+             :change_suggestions
+           ]}
 
   @timestamps_opts [type: :utc_datetime]
   schema "metric_registry" do
@@ -202,6 +213,16 @@ defmodule Sanbase.Metric.Registry do
   def update(%__MODULE__{} = metric_registry, attrs, opts \\ []) do
     metric_registry
     |> changeset(attrs)
+    |> then(fn changeset ->
+      if changeset.changes != %{},
+        do: changeset |> put_change(:sync_status, "not_synced"),
+        else: changeset
+    end)
+    |> then(fn changeset ->
+      if changeset.changes != %{} and attrs[:is_verified] != true,
+        do: changeset |> put_change(:is_verified, false),
+        else: changeset
+    end)
     |> Repo.update()
     |> maybe_emit_event(:update_metric_registry, opts)
   end

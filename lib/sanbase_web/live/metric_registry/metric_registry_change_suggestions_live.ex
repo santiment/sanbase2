@@ -87,8 +87,8 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
       />
       <.action_button
         value="undo"
-        text="Undo"
-        disabled={@row.status != "approved"}
+        text={if @row.status == "approved", do: "Undo Approval", else: "Undo Refusal"}
+        disabled={@row.status == "pending_approval"}
         colors="bg-amber-600 hover:bg-amber-800"
       />
     </.form>

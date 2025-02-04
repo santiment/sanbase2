@@ -6,7 +6,7 @@ defmodule SanbaseWeb.MetricRegistryController do
       true ->
         try do
           case Sanbase.Metric.Registry.Sync.apply_sync(
-                 Map.take(params, ["content", "confirmation_endpoint"])
+                 Map.take(params, ["content", "confirmation_endpoint", "sync_uuid"])
                ) do
             :ok ->
               conn

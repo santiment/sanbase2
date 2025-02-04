@@ -48,6 +48,18 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
         <:col :let={row} label="UUID">
           {row.uuid}
         </:col>
+
+        <:col :let={row} label="Type">
+          <span :if={row.sync_type == "outgoing"} class="font-bold text-blue-500">
+            <.icon name="hero-phone-arrow-up-right" />
+            {String.upcase(row.sync_type)}
+          </span>
+
+          <span :if={row.sync_type == "incoming"} class="font-bold text-amber-500">
+            <.icon name="hero-phone-arrow-down-left" />
+            {String.upcase(row.sync_type)}
+          </span>
+        </:col>
         <:col :let={row} label="Status">
           <div class="flex flex-col">
             <span>{row.status}</span>

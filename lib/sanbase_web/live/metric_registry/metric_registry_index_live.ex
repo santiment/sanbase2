@@ -95,8 +95,12 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
         >
           {if is_map(row.access), do: Jason.encode!(row.access), else: row.access}
         </:col>
-        <:col :let={row} label="Status">
+        <:col :let={row} label="Is Verified">
           <.verified_toggle row={row} />
+        </:col>
+
+        <:col :let={row} label="Sync Status">
+          <.sync_status row={row} />
         </:col>
         <:col
           :let={row}
@@ -276,6 +280,20 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
       <span :if={@row.is_verified} class="ms-3 text-sm font-bold text-green-900">VERIFIED</span>
       <span :if={!@row.is_verified} class="ms-3 text-sm font-bold text-red-700">UNVERIFIED</span>
     </label>
+    """
+  end
+
+  def sync_status(assigns) do
+    ~H"""
+    <span class="ms-3 text-sm font-bold">
+      <span :if={@row.sync_status == "synced"} class="text-green-900">
+        SYNCED
+      </span>
+
+      <span :if={@row.sync_status == "not_synced"} class="text-red-700">
+        NOT SYNCED
+      </span>
+    </span>
     """
   end
 

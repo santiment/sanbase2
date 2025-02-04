@@ -84,7 +84,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
       <div>
         <span :if={!!@email}>Submit channges as: <span class="font-bold">{@email}</span></span>
         <span :if={!@email}>
-          If you want to label your change submission with your email,
+          If you want to label your change request with your email,
           <.link
             class="text-blue-500 underline"
             href={SanbaseWeb.Endpoint.frontend_url()}
@@ -178,7 +178,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
         <.deprecation_input form={@form} />
         <div class="border border-gray-200 rounded-lg px-3 py-6 flex-row space-y-5">
           <span class="text-sm font-semibold leading-6 text-zinc-800">
-            Extra Change Suggestion details
+            Extra Change Request details
           </span>
 
           <.input
@@ -194,7 +194,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
             name="submitted_by"
             value={@email}
           />
-          <.button phx-disable-with="Submitting...">Submit Change Suggestion</.button>
+          <.button phx-disable-with="Submitting...">Submit Change Request</.button>
         </div>
         <.error :for={{field, [reason]} <- @save_errors}>
           {to_string(field) <> ": " <> inspect(reason)}

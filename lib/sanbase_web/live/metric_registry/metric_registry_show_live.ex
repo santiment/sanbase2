@@ -44,6 +44,13 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
 
         <AvailableMetricsComponents.available_metrics_button
           :if={Permissions.can?(:edit, [])}
+          text="History"
+          href={~p"/admin2/metric_registry/history/#{@metric_registry}"}
+          icon="hero-calendar-days"
+        />
+
+        <AvailableMetricsComponents.available_metrics_button
+          :if={Permissions.can?(:edit, [])}
           text="Duplicate Metric"
           href={
             ~p"/admin2/metric_registry/new?#{%{duplicate_metric_registry_id: @metric_registry.id}}"

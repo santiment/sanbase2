@@ -46,20 +46,6 @@ defmodule Sanbase.Cryptocompare.Supervisor do
             Price.WebsocketScraper.enabled?() or Price.HistoricalScheduler.enabled?()
           end
         ),
-        # Kafka exporter for the websocket price exporter
-        start_if(
-          fn ->
-            Sanbase.KafkaExporter.child_spec(
-              id: :asset_price_pairs_exporter,
-              name: :asset_price_pairs_exporter,
-              topic: Config.module_get!(Sanbase.KafkaExporter, :asset_price_pairs_topic),
-              buffering_max_messages: 1000,
-              can_send_after_interval: 250,
-              kafka_flush_timeout: 1000
-            )
-          end,
-          fn -> Price.WebsocketScraper.enabled?() end
-        ),
         # Kafka exporter for the open interest scraper
         start_if(
           fn ->

@@ -309,7 +309,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
         />
         <AvailableMetricsComponents.link_button
           icon="hero-list-bullet"
-          text="See Change Suggestions"
+          text="See Change Requests"
           href={~p"/admin2/metric_registry/change_suggestions"}
         />
 

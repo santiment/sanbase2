@@ -36,7 +36,8 @@ defmodule SanbaseWeb.MetricRegistryHistoryLive do
           icon="hero-list-bullet"
         />
       </div>
-      <h2>List goes here...</h2>
+
+      <hr class="h-px my-8 bg-gray-200 border-0 dark:bg-gray-700" />
       <.table id="metrics_registry_sync_runs" rows={@history_list}>
         <:col :let={row} label="Datetime">
           {row.inserted_at}

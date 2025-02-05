@@ -151,20 +151,39 @@ defmodule Sanbase.Metric.Registry.Sync do
         %{"metric" => metric, "data_type" => data_type, "fixed_parameters" => fixed_parameters} =
           params
 
-        with {:ok, metric_registry} <- Registry.by_name(metric, data_type, fixed_parameters) do
-          params = Map.put(params, "sync_status", "synced")
-          registry_changeset = Registry.changeset(metric_registry, params)
-          changelog_changeset = Registry.Changelog.create_changest(registry_changeset)
+        case Registry.by_name(metric, data_type, fixed_parameters) do
+          # Update existing metric
+          {:ok, metric_registry} ->
+            params = Map.put(params, "sync_status", "synced")
+            registry_changeset = Registry.changeset(metric_registry, params)
+            changelog_changeset = Registry.Changelog.create_changest(registry_changeset)
 
-          # Update the Registry Record with the changed
-          # Insert a record in the Registry.Changelog
-          updated_multi =
-            Ecto.Multi.update(multi, metric_registry.id, registry_changeset)
-            |> Ecto.Multi.insert({:change_track, metric_registry.id}, changelog_changeset)
+            # Update the Registry Record with the changed
+            # Insert a record in the Registry.Changelog
+            updated_multi =
+              Ecto.Multi.update(multi, metric_registry.id, registry_changeset)
+              |> Ecto.Multi.insert(
+                {:metric_registry_changelog, metric_registry.id},
+                changelog_changeset
+              )
 
-          # Insert a record in the Registry Changelong, recording the state before and after
+            # Insert a record in the Registry Changelong, recording the state before and after
 
-          {updated_multi, [registry_changeset | changesets]}
+            {updated_multi, [registry_changeset | changesets]}
+
+          # Insert new metric
+          {:error, _} ->
+            params = Map.put(params, "sync_status", "synced")
+            registry_changeset = Registry.changeset(%Registry{}, params)
+
+            updated_multi =
+              Ecto.Multi.insert(
+                multi,
+                {:metric_registry_insert, metric, data_type, fixed_parameters},
+                registry_changeset
+              )
+
+            {updated_multi, [registry_changeset | changesets]}
         end
       end)
 

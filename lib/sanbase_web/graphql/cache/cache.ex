@@ -144,9 +144,20 @@ defmodule SanbaseWeb.Graphql.Cache do
         # when the result depends on the subscription of the user. This includes
         # getting restrictions for metrics and other such things.
         args_from_subscription = generate_subscription_args(resolution.context, opts)
+        args_from_user_details = generate_user_details_args(resolution.context, opts)
 
         cache_key =
-          cache_key({name, additional_args, args_from_source, args_from_subscription}, args, opts)
+          cache_key(
+            {
+              name,
+              additional_args,
+              args_from_source,
+              args_from_subscription,
+              args_from_user_details
+            },
+            args,
+            opts
+          )
 
         # In some edge-cases the caching can be disabled for some reason. In one
         # particular case for all_projects_by_function the caching is disabled
@@ -174,6 +185,20 @@ defmodule SanbaseWeb.Graphql.Cache do
         [plan: get_in(context, [:auth, :plan]), product_id: get_in(context, [:product_id])]
     end
   end
+
+  defp generate_user_details_args(%{auth: %{current_user: _user}}, opts) do
+    case Keyword.get(opts, :include_user_details_in_key, false) do
+      false ->
+        []
+
+      true ->
+        [
+          access_to_experiemental_metrics: %{accessible_list: []}
+        ]
+    end
+  end
+
+  defp generate_user_details_args(_context, _opts), do: []
 
   defp generate_source_args(source) do
     case source do

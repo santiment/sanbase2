@@ -42,7 +42,7 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
   def by_id(id) do
     case Sanbase.Repo.get(__MODULE__, id) do
       %__MODULE__{} = record -> {:ok, record}
-      nil -> {:error, "Metric Registry Change Suggestion with id #{id} not found"}
+      nil -> {:error, "Metric Registry Change Request with id #{id} not found"}
     end
   end
 
@@ -164,6 +164,8 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
 
     # Convert all keys to strings so we don't get error if atom keys come from some caller
     params = Map.new(params, fn {k, v} -> {to_string(k), v} end)
+
+    IO.inspect(params)
 
     case Registry.changeset(registry, params) do
       %{valid?: false} = changeset ->

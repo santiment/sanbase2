@@ -105,8 +105,10 @@ defmodule Sanbase.Accounts.User.Email do
 
     # same token, not used and still valid
     user.email_token == token and
-      user.email_token_validated_at == nil and
-      Timex.diff(naive_now, user.email_token_generated_at, :minutes) < @token_valid_window_minutes
+      (user.email_token_validated_at == nil or
+         abs(Timex.diff(user.email_token_validated_at, naive_now, :minutes)) <= 5) and
+      abs(Timex.diff(user.email_token_generated_at, naive_now, :minutes)) <
+        @token_valid_window_minutes
   end
 
   def email_candidate_token_valid?(user, email_candidate_token) do

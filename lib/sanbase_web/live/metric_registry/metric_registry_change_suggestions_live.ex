@@ -36,12 +36,16 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
           </:col>
           <:col :let={row} label="Metric" col_class="max-w-[320px] break-words">
             <.link
+              :if={row.metric_registry_id}
               class="underline text-blue-600"
               href={~p"/admin2/metric_registry/show/#{row.metric_registry_id}"}
               target="_blank"
             >
               {row.metric_registry.metric}
             </.link>
+            <span :if={!row.metric_registry_id} class="text-sm font-bold text-green-800">
+              NEW METRIC
+            </span>
           </:col>
           <:col :let={row} label="Changes"><.formatted_changes row={row} /></:col>
           <:col :let={row} label="Notes">{row.notes}</:col>
@@ -87,13 +91,23 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
       />
       <.action_button
         value="undo"
-        text={if @row.status == "approved", do: "Undo Approval", else: "Undo Refusal"}
-        disabled={@row.status == "pending_approval"}
+        text={undo_text(@row.status)}
+        disabled={
+          # Undo is disabled if it's still in pending state or
+          # if the change request is for adding a new metric and it is approved
+          # metrics cannot be deleted by undoing the change here
+          @row.status == "pending_approval" or
+            (@row.status == "approved" and @row.metric_registry_id == nil)
+        }
         colors="bg-amber-600 hover:bg-amber-800"
       />
     </.form>
     """
   end
+
+  defp undo_text("approved"), do: "Undo Approval"
+  defp undo_text("declined"), do: "Undo Refusal"
+  defp undo_text("pending_approval"), do: "Undo"
 
   def action_button(assigns) do
     ~H"""

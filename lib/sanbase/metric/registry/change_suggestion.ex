@@ -29,7 +29,7 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
       :status,
       :submitted_by
     ])
-    |> validate_required([:metric_registry_id, :changes])
+    |> validate_required([:changes])
     |> validate_inclusion(:status, @statuses)
   end
 
@@ -120,6 +120,15 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
     end
   end
 
+  defp apply_suggestion(
+         %__MODULE__{status: "pending_approval", metric_registry_id: nil} = suggestion
+       ) do
+    changes = decode_changes(suggestion.changes)
+    params = changes_to_changeset_params(%Registry{}, changes)
+
+    Registry.create(params, emit_event: false)
+  end
+
   defp apply_suggestion(%__MODULE__{status: "pending_approval"} = suggestion) do
     with {:ok, metric_registry} <- Registry.by_id(suggestion.metric_registry_id) do
       changes = decode_changes(suggestion.changes)
@@ -154,7 +163,7 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
     # only after the DB changes are commited and not from insite the transaction. If the event
     # is emitted from inside the transaction, the event handler can be invoked before the DB
     # changes are commited and this handler will have no effect.
-    Sanbase.Metric.Registry.update(metric_registry, params, emit_event: true)
+    Sanbase.Metric.Registry.update(metric_registry, params, emit_event: false)
   end
 
   def create_change_suggestion(%Registry{} = registry, params, notes, submitted_by) do
@@ -164,8 +173,6 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
 
     # Convert all keys to strings so we don't get error if atom keys come from some caller
     params = Map.new(params, fn {k, v} -> {to_string(k), v} end)
-
-    IO.inspect(params)
 
     case Registry.changeset(registry, params) do
       %{valid?: false} = changeset ->

@@ -126,13 +126,41 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
         context: %{device_data: device_data, origin_url: origin_url}
       }) do
     args = %{login_origin: :email, origin_url: origin_url}
+    rand_id = :crypto.strong_rand_bytes(8) |> Base.encode32(case: :lower) |> binary_part(0, 10)
 
-    with {:ok, user} <- User.find_or_insert_by(:email, email),
+    with _ <-
+           Logger.info(
+             "[EmailLoginVerify][#{rand_id}] Start verification for #{email} with token #{String.slice(token, 0..5)}"
+           ),
+         {:ok, user} <- User.find_or_insert_by(:email, email),
+         _ <- Logger.info("[EmailLoginVerify][#{rand_id}] Found user with email #{email}"),
          first_login? <- User.RegistrationState.first_login?(user, "email_login_verify"),
+         _ <-
+           Logger.info(
+             "[EmailLoginVerify][#{rand_id}] Start verification for #{email} with token #{String.slice(token, 0..5)}"
+           ),
          true <- User.Email.email_token_valid?(user, token),
+         _ <-
+           Logger.info(
+             "[EmailLoginVerify][#{rand_id}] Verified token #{String.slice(token, 0..5)} for email #{email}"
+           ),
          {:ok, jwt_tokens_map} <- SanbaseWeb.Guardian.get_jwt_tokens(user, device_data),
+         _ <-
+           Logger.info("[EmailLoginVerify][#{rand_id}] Created JWT tokens map for #{email}"),
          {:ok, user} <- User.Email.mark_email_token_as_validated(user),
-         {:ok, _, user} <- Accounts.forward_registration(user, "email_login_verify", args) do
+         _ <-
+           Logger.info(
+             "[EmailLoginVerify][#{rand_id}] Marked login token for email #{email} as validated"
+           ),
+         {:ok, _, user} <- Accounts.forward_registration(user, "email_login_verify", args),
+         _ <-
+           Logger.info(
+             "[EmailLoginVerify][#{rand_id}] Updated the registration state for email #{email}"
+           ) do
+      Logger.info(
+        "[EmailLoginVerify][#{rand_id} Successfully logged in user with email #{email}]"
+      )
+
       user = %{user | first_login: first_login?}
       emit_event({:ok, user}, :login_user, args)
 

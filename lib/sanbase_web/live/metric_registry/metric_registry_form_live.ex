@@ -402,19 +402,28 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
     """
   end
 
-  def handle_event("save", %{"registry" => params}, socket)
+  def handle_event(
+        "save",
+        %{"registry" => params, "notes" => notes, "submitted_by" => submitted_by},
+        socket
+      )
       when socket.assigns.live_action == :new do
     case socket.assigns.form.errors do
       [] ->
         params = process_params(params)
 
-        case Sanbase.Metric.Registry.create(params) do
-          {:ok, struct} ->
+        case Registry.ChangeSuggestion.create_change_suggestion(
+               %Registry{id: nil},
+               params,
+               notes,
+               submitted_by
+             ) do
+          {:ok, _change_suggestion} ->
             {:noreply,
              socket
              |> assign(save_errors: [])
-             |> put_flash(:info, "Metric registry created")
-             |> push_navigate(to: ~p"/admin2/metric_registry/show/#{struct}")}
+             |> put_flash(:info, "Metric registry change request created")
+             |> push_navigate(to: ~p"/admin2/metric_registry/change_suggestions/")}
 
           {:error, error} ->
             errors = Sanbase.Utils.ErrorHandling.changeset_errors(error)

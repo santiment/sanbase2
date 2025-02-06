@@ -204,7 +204,7 @@ defmodule Sanbase.Metric.Registry do
   end
 
   def create(attrs, opts \\ []) do
-    attrr = Map.merge(attrs, %{sync_status: "not_synced", is_verified: false})
+    attrs = Map.merge(attrs, %{sync_status: "not_synced", is_verified: false})
 
     %__MODULE__{}
     |> changeset(attrs)

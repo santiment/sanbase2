@@ -106,13 +106,14 @@ defmodule Sanbase.Notifications do
   Gets a template for specific action, step, and channel.
   If no channel-specific template is found, falls back to "all" channel template.
   """
-  def get_template(action, step, channel \\ "all") do
+  def get_template(action, step, channel \\ "all", mime_type \\ "text/plain") do
     query =
       from(nt in NotificationTemplate,
         where:
           nt.action == ^action and
             nt.step == ^step and
-            nt.channel == ^channel,
+            nt.channel == ^channel and
+            nt.mime_type == ^mime_type,
         limit: 1
       )
 
@@ -124,7 +125,8 @@ defmodule Sanbase.Notifications do
             where:
               nt.action == ^action and
                 nt.step == ^step and
-                nt.channel == "all",
+                nt.channel == "all" and
+                nt.mime_type == ^mime_type,
             limit: 1
           )
 

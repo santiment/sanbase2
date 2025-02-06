@@ -320,9 +320,13 @@ defmodule SanbaseWeb.GenericAdminController do
   end
 
   defp transform_changes(changes, field_type_map) do
+    IO.inspect(changes)
+    IO.inspect(field_type_map)
+
     Enum.map(changes, fn {field, value} ->
       case Map.get(field_type_map, String.to_existing_atom(field)) do
         :map -> {field, Jason.decode!(value)}
+        {:array, :string} -> {field, Jason.decode!(value)}
         _ -> {field, value}
       end
     end)

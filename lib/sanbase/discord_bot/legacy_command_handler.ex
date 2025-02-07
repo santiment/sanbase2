@@ -7,7 +7,6 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
   alias Nostrum.Api
   alias Nostrum.Struct.Embed
   alias Sanbase.Accounts.User
-  alias Sanbase.Dashboard.DiscordDashboard
   alias Nostrum.Struct.Component.Button
   alias Nostrum.Struct.Component.{ActionRow, TextInput}
   alias Sanbase.Utils.Config
@@ -121,55 +120,6 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
     end
   end
 
-  def handle_interaction("run", interaction) do
-    interaction_ack_visible(interaction)
-
-    {name, sql} = parse_modal_component(interaction)
-    args = get_additional_info(interaction)
-
-    with {:ok, exec_result, dashboard, panel_id} <- compute_and_save(name, sql, [], args) do
-      components = [action_row(panel_id)]
-      embeds = create_chart_embed(exec_result, dashboard, panel_id)
-
-      edit_response_with_data(exec_result, interaction, %{
-        embeds: embeds,
-        components: components,
-        name: name
-      })
-    else
-      {:execution_error, reason} ->
-        content = sql_execution_error(reason, interaction.user.id, name)
-        edit_interaction_response(interaction, content)
-    end
-  end
-
-  def handle_interaction("list", interaction) do
-    with pinned when is_list(pinned) and pinned != [] <-
-           DiscordDashboard.list_pinned_channel(
-             to_string(interaction.channel_id),
-             to_string(interaction.guild_id)
-           ) do
-      Nostrum.Api.create_interaction_response(
-        interaction,
-        interaction_message_response("List of pinned queries")
-      )
-
-      pinned
-      |> Enum.with_index()
-      |> Enum.each(fn {dd, idx} ->
-        text = "#{idx + 1}. #{dd.name}"
-
-        Api.create_message(interaction.channel_id,
-          content: text,
-          components: [action_row(dd.panel_id, dd)]
-        )
-      end)
-    else
-      _ ->
-        interaction_msg(interaction, "There are no pinned queries for this channel.")
-    end
-  end
-
   def handle_interaction("help", interaction) do
     embed =
       %Embed{}
@@ -189,98 +139,6 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
     }
 
     Nostrum.Api.create_interaction_response(interaction, data)
-  end
-
-  def handle_interaction("rerun", interaction, panel_id) do
-    interaction_ack(interaction)
-    args = get_additional_info(interaction)
-
-    with {:ok, exec_result, dashboard, _dashboard_id} <-
-           DiscordDashboard.execute(sanbase_bot_id(), panel_id, args) do
-      panel = List.first(dashboard.panels)
-      components = [action_row(panel_id)]
-      embeds = create_chart_embed(exec_result, dashboard, panel_id)
-
-      edit_response_with_data(exec_result, interaction, %{
-        embeds: embeds,
-        components: components,
-        name: panel.name
-      })
-    else
-      {:execution_error, reason} ->
-        content =
-          sql_execution_error(
-            reason,
-            interaction.user.id,
-            DiscordDashboard.by_panel_id(panel_id).name
-          )
-
-        edit_interaction_response(interaction, content)
-    end
-  end
-
-  def handle_interaction("pin", interaction, panel_id) do
-    with true <- can_manage_channel?(interaction),
-         {:ok, dd} <- DiscordDashboard.pin(panel_id) do
-      interaction_msg(interaction, "<@#{interaction.user.id}> pinned #{dd.name}")
-    end
-    |> handle_pin_unpin_error("pin", interaction)
-  end
-
-  def handle_interaction("unpin", interaction, panel_id) do
-    with true <- can_manage_channel?(interaction),
-         {:ok, dd} <- DiscordDashboard.unpin(panel_id) do
-      interaction_msg(interaction, "<@#{interaction.user.id}> unpinned #{dd.name}")
-    end
-    |> handle_pin_unpin_error("unpin", interaction)
-  end
-
-  def handle_interaction("show", interaction, panel_id) do
-    with %DiscordDashboard{} = dd <- DiscordDashboard.by_panel_id(panel_id) do
-      panel = List.first(dd.dashboard.panels)
-
-      content = """
-      #{panel.name}
-      ```sql
-
-      #{panel.sql["query"]}
-      ```
-      """
-
-      interaction_msg(interaction, content, %{flags: @ephemeral_message_flags})
-    else
-      _ ->
-        interaction_msg(interaction, "Query is removed from our database", %{
-          flags: @ephemeral_message_flags
-        })
-    end
-  end
-
-  def handle_command("run", name, sql, msg) do
-    {:ok, loading_msg} =
-      Api.create_message(
-        msg.channel_id,
-        content: "Your query is running ...",
-        message_reference: %{message_id: msg.id}
-      )
-
-    args = get_additional_info_msg(msg)
-
-    with {:ok, exec_result, dd, panel_id} <- compute_and_save(name, sql, [], args) do
-      components = [action_row(panel_id)]
-      embeds = create_chart_embed(exec_result, dd, panel_id)
-
-      edit_response_with_data(exec_result, msg, %{
-        old_msg_id: loading_msg.id,
-        embeds: embeds,
-        components: components,
-        name: name
-      })
-    else
-      {:execution_error, reason} ->
-        content = sql_execution_error(reason, msg.author.id, name)
-        Api.edit_message(msg.channel_id, loading_msg.id, content: content)
-    end
   end
 
   def handle_command("invalid_command", msg) do
@@ -423,15 +281,6 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
     Processed #{Number.Human.number_to_human(ed["read_rows"])} rows, #{ed["read_gb"]} GB
     ```
     """
-  end
-
-  defp compute_and_save(name, query, _query_params, params) do
-    params = Map.put(params, :name, name)
-
-    case DiscordDashboard.create(sanbase_bot_id(), query, params) do
-      {:ok, result, dd, panel_id} -> {:ok, result, dd, panel_id}
-      {:error, reason} -> {:execution_error, reason}
-    end
   end
 
   # Private
@@ -653,23 +502,6 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
     #{String.slice(reason, 0, @max_size)}
     ```
     """
-  end
-
-  defp action_row(panel_id, dd \\ nil) do
-    dd = dd || DiscordDashboard.by_panel_id(panel_id)
-    run_button = Button.button(label: "Run 🚀", custom_id: "rerun" <> "_" <> panel_id, style: 3)
-    show_button = Button.button(label: "Show 📜", custom_id: "show" <> "_" <> panel_id, style: 2)
-
-    pin_unpin_button =
-      case dd.pinned do
-        true -> Button.button(label: "Unpin X", custom_id: "unpin" <> "_" <> panel_id, style: 4)
-        false -> Button.button(label: "Pin 📌", custom_id: "pin" <> "_" <> panel_id, style: 1)
-      end
-
-    ActionRow.action_row()
-    |> ActionRow.append(run_button)
-    |> ActionRow.append(show_button)
-    |> ActionRow.append(pin_unpin_button)
   end
 
   defp create_chart_embed(exec_result, dd, panel_id) do

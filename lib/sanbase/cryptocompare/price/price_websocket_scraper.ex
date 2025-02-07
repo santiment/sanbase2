@@ -17,7 +17,6 @@ defmodule Sanbase.Cryptocompare.Price.WebsocketScraper do
   use WebSockex
 
   alias Sanbase.ExternalServices.Coinmarketcap.PricePoint, as: AssetPricesPoint
-  alias Sanbase.Cryptocompare.PricePoint, as: CryptocompareAssetPricesPoint
   alias Sanbase.Cryptocompare.PriceOnlyPoint, as: CryptocompareAssetPricesOnlyPoint
 
   require Logger

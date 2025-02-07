@@ -17,6 +17,8 @@ defmodule Sanbase.Metric.Registry do
   def aggregations(), do: @aggregations
   @metric_regex ~r/^[a-z0-9_{}:]+$/
   def metric_regex(), do: @metric_regex
+  @allowed_statuses ["alpha", "beta", "released"]
+  def allowed_statuses(), do: @allowed_statuses
 
   defmodule Selector do
     use Ecto.Schema
@@ -112,6 +114,7 @@ defmodule Sanbase.Metric.Registry do
           deprecation_note: String.t(),
           data_type: String.t(),
           docs: [%Doc{}],
+          status: String.t(),
           inserted_at: DateTime.t(),
           updated_at: DateTime.t()
         }
@@ -149,6 +152,8 @@ defmodule Sanbase.Metric.Registry do
 
     field(:data_type, :string, default: "timeseries")
 
+    field(:status, :string, default: "released")
+
     embeds_many(:tables, Table, on_replace: :delete)
     embeds_many(:selectors, Selector, on_replace: :delete)
     embeds_many(:required_selectors, Selector, on_replace: :delete)
@@ -183,7 +188,8 @@ defmodule Sanbase.Metric.Registry do
       :min_interval,
       :sanbase_min_plan,
       :sanapi_min_plan,
-      :parameters
+      :parameters,
+      :status
     ])
     |> cast_embed(:selectors,
       required: false,
@@ -237,6 +243,7 @@ defmodule Sanbase.Metric.Registry do
     |> validate_change(:min_interval, &Validation.validate_min_interval/2)
     |> validate_inclusion(:sanbase_min_plan, ["free", "pro", "max"])
     |> validate_inclusion(:sanapi_min_plan, ["free", "pro", "max"])
+    |> validate_inclusion(:status, @allowed_statuses)
     |> Validation.validate_template_fields()
     |> unique_constraint([:metric, :data_type, :fixed_parameters],
       name: :metric_registry_composite_unique_index

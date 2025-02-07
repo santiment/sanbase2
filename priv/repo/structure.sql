@@ -2341,7 +2341,8 @@ CREATE TABLE public.metric_registry (
     hard_deprecate_after timestamp(0) without time zone DEFAULT NULL::timestamp without time zone,
     deprecation_note text,
     inserted_at timestamp with time zone NOT NULL,
-    updated_at timestamp with time zone NOT NULL
+    updated_at timestamp with time zone NOT NULL,
+    status character varying(255) DEFAULT 'released'::character varying NOT NULL
 );
 
 
@@ -4596,7 +4597,8 @@ CREATE TABLE public.users (
     is_superuser boolean DEFAULT false,
     twitter_id character varying(255) DEFAULT NULL::character varying,
     name character varying(255),
-    registration_state jsonb DEFAULT '{"state": "init"}'::jsonb
+    registration_state jsonb DEFAULT '{"state": "init"}'::jsonb,
+    status character varying(255) DEFAULT 'regular'::character varying NOT NULL
 );
 
 
@@ -9797,3 +9799,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20241202104812);
 INSERT INTO public."schema_migrations" (version) VALUES (20241212054904);
 INSERT INTO public."schema_migrations" (version) VALUES (20250121155544);
 INSERT INTO public."schema_migrations" (version) VALUES (20250207100755);
+INSERT INTO public."schema_migrations" (version) VALUES (20250207134446);
+INSERT INTO public."schema_migrations" (version) VALUES (20250207134654);

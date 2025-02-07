@@ -129,18 +129,21 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       assert error_msg == "Email Login verification failed"
     end
 
-    test "with a valid email token after one validation, fail to login again", %{conn: conn} do
+    test "with a valid email token after one validation more than 5 minutes ago, fail to login again",
+         %{conn: conn} do
       {:ok, user} =
         insert(:user, email: "example@santiment.net")
         |> User.Email.update_email_token()
 
-      naive_now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+      naive_now = NaiveDateTime.utc_now()
 
       user =
         user
         |> Ecto.Changeset.change(
-          email_token_generated_at: naive_now,
-          email_token_validated_at: naive_now
+          email_token_generated_at:
+            Timex.shift(naive_now, minutes: -10) |> NaiveDateTime.truncate(:second),
+          email_token_validated_at:
+            Timex.shift(naive_now, minutes: -6) |> NaiveDateTime.truncate(:second)
         )
         |> Repo.update!()
 
@@ -148,6 +151,30 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       error_msg = execute_mutation_with_error(conn, mutation)
 
       assert error_msg == "Email Login verification failed"
+    end
+
+    test "with a valid email token after one validation less than 5 minutes ago, succeeds to login again",
+         %{conn: conn} do
+      {:ok, user} =
+        insert(:user, email: "example@santiment.net")
+        |> User.Email.update_email_token()
+
+      naive_now = NaiveDateTime.utc_now()
+
+      user =
+        user
+        |> Ecto.Changeset.change(
+          email_token_generated_at:
+            Timex.shift(naive_now, minutes: -10) |> NaiveDateTime.truncate(:second),
+          email_token_validated_at:
+            Timex.shift(naive_now, minutes: -2) |> NaiveDateTime.truncate(:second)
+        )
+        |> Repo.update!()
+
+      mutation = email_login_verify_mutation(user)
+      result = execute_mutation(conn, mutation)
+
+      assert %{"accessToken" => _, "user" => _} = result
     end
 
     test "with a valid email token after it has been validated 20 min ago, fail to login",

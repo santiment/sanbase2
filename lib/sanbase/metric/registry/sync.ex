@@ -13,7 +13,9 @@ defmodule Sanbase.Metric.Registry.Sync do
 
   @pubsub_topic "sanbase_metric_registry_sync"
 
-  def by_uuid(uuid), do: Registry.SyncRun.by_uuid(uuid)
+  def by_uuid(uuid) do
+    Registry.SyncRun.by_uuid(uuid)
+  end
 
   def cancel_run(uuid) do
     case Registry.SyncRun.by_uuid(uuid) do
@@ -84,7 +86,6 @@ defmodule Sanbase.Metric.Registry.Sync do
          {:ok, _sync} <- store_applied_sync_in_db(content, sync_uuid) do
       :ok
     end
-    |> dbg()
   end
 
   def last_syncs(limit) do
@@ -105,6 +106,24 @@ defmodule Sanbase.Metric.Registry.Sync do
     end
   end
 
+  def encode_changes(changes) do
+    changes
+    |> :erlang.term_to_binary()
+    |> :zlib.gzip()
+    |> Base.encode64()
+  end
+
+  def decode_changes(bin) do
+    with {:ok, decoded} <- bin |> Base.decode64() do
+      result =
+        decoded
+        |> :zlib.gunzip()
+        |> :erlang.binary_to_term()
+
+      {:ok, result}
+    end
+  end
+
   # Private functions
   defp generate_actual_changes_applied(changesets) when is_list(changesets) do
     changes =
@@ -117,24 +136,6 @@ defmodule Sanbase.Metric.Registry.Sync do
       end)
 
     {:ok, changes}
-  end
-
-  defp encode_changes(changes) do
-    changes
-    |> :erlang.term_to_binary()
-    |> :zlib.gzip()
-    |> Base.encode64()
-  end
-
-  defp decode_changes(bin) do
-    with {:ok, decoded} <- bin |> Base.decode64() do
-      result =
-        decoded
-        |> :zlib.gunzip()
-        |> :erlang.binary_to_term()
-
-      {:ok, result}
-    end
   end
 
   defp send_sync_completed_confirmation(url, changes) do

@@ -8,31 +8,6 @@ defmodule Sanbase.NotificationsFixtures do
   Creates all the default notification templates needed for testing.
   """
   def create_default_templates do
-    # Create template
-    notification_template_fixture(%{
-      channel: "email",
-      action: "metric_created",
-      step: "once",
-      template: """
-      In the latest update the following metrics have been added:
-      {{metrics_list}}
-      For more information, please visit #changelog
-      """,
-      mime_type: "text/html"
-    })
-
-    notification_template_fixture(%{
-      channel: "all",
-      action: "metric_created",
-      step: "once",
-      template: """
-      In the latest update the following metrics have been added:
-      {{metrics_list}}
-      For more information, please visit #changelog
-      """,
-      mime_type: "text/plain"
-    })
-
     # Update templates
     notification_template_fixture(%{
       channel: "all",
@@ -136,7 +111,20 @@ defmodule Sanbase.NotificationsFixtures do
       In the latest update the following metrics have been added:
       {{metrics_list}}
       For more information, please visit #changelog
-      """
+      """,
+      mime_type: "text/plain"
+    })
+
+    notification_template_fixture(%{
+      channel: "email",
+      action: "metric_created",
+      step: "all",
+      template: """
+      In the latest update the following metrics have been added:
+      {{metrics_list}}
+      For more information, please visit #changelog
+      """,
+      mime_type: "text/html"
     })
 
     # Metric Deleted templates for Discord

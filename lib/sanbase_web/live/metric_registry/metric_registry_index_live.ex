@@ -8,7 +8,11 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    metrics = Sanbase.Metric.Registry.all()
+    # Load the metrics only when connected
+    # We don't care about SEO here. Loadin on non-connected makes it so
+    # if someone is fast to click on Verified Status toggle, the action
+    # gets discarded on the connection
+    metrics = if connected?(socket), do: Sanbase.Metric.Registry.all(), else: []
 
     {:ok,
      socket

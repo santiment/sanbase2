@@ -95,11 +95,21 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
         >
           {if is_map(row.access), do: Jason.encode!(row.access), else: row.access}
         </:col>
-        <:col :let={row} label="Is Verified">
+        <:col
+          :let={row}
+          label="Verified Status"
+          popover_target="popover-verified-status"
+          popover_target_text={get_popover_text(%{key: "Verified Status"})}
+        >
           <.verified_toggle row={row} />
         </:col>
 
-        <:col :let={row} label="Sync Status">
+        <:col
+          :let={row}
+          label="Sync Status"
+          popover_target="popover-sync-status"
+          popover_target_text={get_popover_text(%{key: "Sync Status"})}
+        >
           <.sync_status row={row} />
         </:col>
         <:col
@@ -229,7 +239,8 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     ~H"""
     <div>
       <div :if={@changed_metrics_ids == []}>
-        No changes
+        No changes.
+        Change the verified status of one or more metrics.
       </div>
       <div :if={@changed_metrics_ids != []}>
         <.table id="uploaded_images" rows={Enum.filter(@metrics, &(&1.id in @changed_metrics_ids))}>
@@ -350,7 +361,12 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
       </form>
       <.phx_click_button
         phx_click="show_verified_changes_modal"
-        class="text-gray-900 bg-white hover:bg-gray-100"
+        class={
+          if(@changed_metrics_ids == [],
+            do: "text-gray-900 bg-white hover:bg-gray-100",
+            else: "border border-green-700 text-white bg-green-500 hover:bg-green-600"
+          )
+        }
         text="Apply Verified Status Changes"
         count={length(@changed_metrics_ids)}
       />
@@ -404,7 +420,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
       ]}
     >
       {@text}
-      <span :if={@count} class="text-gray-400">({@count})</span>
+      <span :if={@count > 0} class="text-white">({@count})</span>
     </button>
     """
   end

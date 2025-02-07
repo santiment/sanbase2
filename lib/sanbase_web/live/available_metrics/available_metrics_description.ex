@@ -393,10 +393,14 @@ defmodule SanbaseWeb.AvailableMetricsDescription do
   def get_popover_text(%{key: "Verified Status"} = assigns) do
     ~H"""
     <pre>
-    After a change request is approved and its changes are applied to the databse
-    record, the metric is moved into a Unverified state. Someone will need to manually
-    verify the metric via the UI (after testing the changes).
-    Only verified metrics can be deployed from stage to prod.
+    After a metric is created or updated, it is directly put in an <b>UNVERIFIED</b> state.
+
+    The unverified status requires the changes to be tested. When the changes have been
+    manually tested, someone needs to manually change the status of the metric from
+    <b>UNVERIFIED</b> to <b>VERIFIED</b>, which states that the metric is ready to be deployed from
+    staging to production.
+
+    Only verified metrics can be synced from stage to prod.
     </pre>
     """
   end
@@ -413,10 +417,14 @@ defmodule SanbaseWeb.AvailableMetricsDescription do
   def get_popover_text(%{key: "Sync Status"} = assigns) do
     ~H"""
     <pre>
-    Controls the deployment process of metrics. When a change request is approved
-    and applied, the metric is moved to 'not_synced' state indicating that the change
-    is not synced with the other environment.
-    Only metrics in not_synced state are deployed from stage to prod.
+    Shows whether the current version fo the metric has been deployed to production.
+
+    After a metric is created or updated, it is directly put in a <b>NOT SYNCED</b> state.
+
+    The not synced metrics are put into <b>SYNCED</b> state only after they have been synced
+    to production.
+
+    Only metrics in <b>NOT SYNCED</b> state are deployed from stage to prod.
     </pre>
     """
   end

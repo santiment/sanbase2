@@ -18,7 +18,18 @@ defmodule SanbaseWeb.GenericAdmin.ObanJob do
       fields_override: %{
         args: %{
           value_modifier: fn job ->
-            Jason.encode!(job.args)
+            case Jason.encode(job.args) do
+              {:ok, encoded} -> encoded
+              {:error, _} -> inspect(job.args)
+            end
+          end
+        },
+        errors: %{
+          value_modifier: fn job ->
+            case job.errors do
+              nil -> nil
+              errors -> inspect(errors)
+            end
           end
         },
         state: %{

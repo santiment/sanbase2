@@ -43,8 +43,8 @@ config :phoenix,
 
 # Disable the Oban.Web jobs in local env.
 # When testing Oban.Web jobs locally comment out these 2 lines
-# config :sanbase, Oban.Web, queues: false
-# config :sanbase, Oban.Admin, queues: false
+config :sanbase, Oban.Web, queues: false
+config :sanbase, Oban.Admin, queues: false
 
 # Disable the Oban.Scrapers jobs in local env.
 # When testing Oban.Scrapers jobs locally comment out this line

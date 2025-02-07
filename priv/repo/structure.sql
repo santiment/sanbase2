@@ -7341,17 +7341,10 @@ CREATE UNIQUE INDEX monitored_twitter_handles_handle_index ON public.monitored_t
 
 
 --
--- Name: notification_templates_action_type_step_channel_index; Type: INDEX; Schema: public; Owner: -
+-- Name: notification_templates_action_step_channel_mime_type_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX notification_templates_action_type_step_channel_index ON public.notification_templates USING btree (action, step, channel);
-
-
---
--- Name: notification_templates_action_type_step_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX notification_templates_action_type_step_index ON public.notification_templates USING btree (action, step);
+CREATE UNIQUE INDEX notification_templates_action_step_channel_mime_type_index ON public.notification_templates USING btree (action, step, channel, mime_type);
 
 
 --
@@ -9803,3 +9796,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20241128161315);
 INSERT INTO public."schema_migrations" (version) VALUES (20241202104812);
 INSERT INTO public."schema_migrations" (version) VALUES (20241212054904);
 INSERT INTO public."schema_migrations" (version) VALUES (20250121155544);
+INSERT INTO public."schema_migrations" (version) VALUES (20250207100755);

@@ -62,14 +62,15 @@ defmodule Sanbase.Notifications.Workers.ProcessNotification do
         action: args["action"],
         params: args["params"],
         step: args["step"],
-        channel: "email"
+        channel: "email",
+        mime_type: "text/html"
       })
 
     case Sanbase.Email.MailjetApi.client().send_to_list(
            metric_updates_list(),
            @subject,
            content,
-           []
+           html: true
          ) do
       :ok ->
         args["notification_ids"]

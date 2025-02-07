@@ -10,11 +10,12 @@ defmodule Sanbase.Notifications.Notification do
   @supported_channels ["discord", "email"]
   @supported_steps ["all", "before", "reminder", "after", "detected", "resolved"]
   @supported_statuses ["scheduled", "available", "completed", "failed", "discarded", "cancelled"]
-
+  @supported_mime_types ["text/plain", "text/html"]
   def supported_channels, do: @supported_channels
   def supported_actions, do: @supported_actions
   def supported_steps, do: @supported_steps
   def supported_statuses, do: @supported_statuses
+  def supported_mime_types, do: @supported_mime_types
 
   schema "notifications" do
     field(:action, :string)

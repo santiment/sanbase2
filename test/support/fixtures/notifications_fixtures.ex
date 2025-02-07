@@ -8,18 +8,6 @@ defmodule Sanbase.NotificationsFixtures do
   Creates all the default notification templates needed for testing.
   """
   def create_default_templates do
-    # Create template
-    notification_template_fixture(%{
-      channel: "all",
-      action: "metric_created",
-      step: "once",
-      template: """
-      In the latest update the following metrics have been added:
-      {{metrics_list}}
-      For more information, please visit #changelog
-      """
-    })
-
     # Update templates
     notification_template_fixture(%{
       channel: "all",
@@ -43,6 +31,7 @@ defmodule Sanbase.NotificationsFixtures do
     })
 
     # Delete templates
+
     notification_template_fixture(%{
       channel: "all",
       action: "metric_deleted",
@@ -51,7 +40,20 @@ defmodule Sanbase.NotificationsFixtures do
       Due to lack of usage, we made a decision to deprecate the following metrics:
       {{metrics_list}}
       This is planned to take place on {{scheduled_at}}. Please make sure that you adjust your data consumption accordingly. If you have strong objections, please contact us.
-      """
+      """,
+      mime_type: "text/plain"
+    })
+
+    notification_template_fixture(%{
+      channel: "email",
+      action: "metric_deleted",
+      step: "before",
+      template: """
+      Due to lack of usage, we made a decision to deprecate the following metrics:
+      {{metrics_list}}
+      This is planned to take place on {{scheduled_at}}. Please make sure that you adjust your data consumption accordingly. If you have strong objections, please contact us.
+      """,
+      mime_type: "text/html"
     })
 
     notification_template_fixture(%{
@@ -62,7 +64,20 @@ defmodule Sanbase.NotificationsFixtures do
       This is a reminder about the scheduled deprecation of the following metrics:
       {{metrics_list}}
       It will happen on {{scheduled_at}}. Please make sure to adjust accordingly.
-      """
+      """,
+      mime_type: "text/plain"
+    })
+
+    notification_template_fixture(%{
+      channel: "email",
+      action: "metric_deleted",
+      step: "reminder",
+      template: """
+      This is a reminder about the scheduled deprecation of the following metrics:
+      {{metrics_list}}
+      It will happen on {{scheduled_at}}. Please make sure to adjust accordingly.
+      """,
+      mime_type: "text/html"
     })
 
     notification_template_fixture(%{
@@ -72,7 +87,19 @@ defmodule Sanbase.NotificationsFixtures do
       template: """
       Deprecation of the following metrics has been completed successfully:
       {{metrics_list}}
-      """
+      """,
+      mime_type: "text/plain"
+    })
+
+    notification_template_fixture(%{
+      channel: "email",
+      action: "metric_deleted",
+      step: "after",
+      template: """
+      Deprecation of the following metrics has been completed successfully:
+      {{metrics_list}}
+      """,
+      mime_type: "text/html"
     })
 
     # Metric Created templates for Discord
@@ -84,7 +111,20 @@ defmodule Sanbase.NotificationsFixtures do
       In the latest update the following metrics have been added:
       {{metrics_list}}
       For more information, please visit #changelog
-      """
+      """,
+      mime_type: "text/plain"
+    })
+
+    notification_template_fixture(%{
+      channel: "email",
+      action: "metric_created",
+      step: "all",
+      template: """
+      In the latest update the following metrics have been added:
+      {{metrics_list}}
+      For more information, please visit #changelog
+      """,
+      mime_type: "text/html"
     })
 
     # Metric Deleted templates for Discord

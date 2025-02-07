@@ -225,7 +225,7 @@ defmodule Sanbase.Notifications.Handler do
   end
 
   defp handle_email_notification(action, step, params, attrs) do
-    template = Sanbase.Notifications.get_template(action, step, "email")
+    template = Sanbase.Notifications.get_template(action, step, "email", "text/html")
 
     notification_attrs = %{
       action: action,

@@ -69,22 +69,7 @@ defmodule Sanbase.SocialData.SocialDominance do
     with {:ok, words_volume} <-
            SocialData.social_volume(%{words: words}, from, to, interval, source, opts),
          {:ok, total_volume} <- SocialData.social_volume(%{text: "*"}, from, to, interval, source) do
-      words_volume_map =
-        words_volume
-        |> Enum.into(%{}, fn w -> {w.word, List.last(w.timeseries_data).mentions_count} end)
-
-      total_mentions = List.last(total_volume).mentions_count
-
-      words_dominance =
-        words_volume_map
-        |> Enum.map(fn {word, mentions} ->
-          %{
-            word: word,
-            social_dominance: Sanbase.Math.percent_of(mentions, total_mentions) || +0.0
-          }
-        end)
-
-      {:ok, words_dominance}
+      compute_dominance_per_word_value(words_volume, total_volume)
     else
       {:ok, []} -> {:ok, nil}
       _error -> {:ok, nil}
@@ -94,25 +79,56 @@ defmodule Sanbase.SocialData.SocialDominance do
   def social_dominance_trending_words() do
     %{from: from, to: to, interval: interval, source: source} = social_dominance_args()
 
-    with {:ok, trending_words} when trending_words != [] <-
-           SocialData.TrendingWords.get_currently_trending_words(@trending_words_size, :all),
-         words <- Enum.map(trending_words, & &1.word),
+    with {:ok, words} when words != [] <- get_currently_trending_words_list(),
          {:ok, words_volume} <-
            SocialData.social_volume(%{words: words}, from, to, interval, source),
          {:ok, total_volume} <- SocialData.social_volume(%{text: "*"}, from, to, interval, source) do
-      words_mentions_sum =
-        Enum.map(words_volume, &List.last(&1.timeseries_data).mentions_count)
-        |> Enum.sum()
-
-      total_mentions = List.last(total_volume).mentions_count
-
-      dominance = Sanbase.Math.percent_of(words_mentions_sum, total_mentions) || +0.0
-
-      {:ok, dominance}
+      compute_combined_dominance_value(words_volume, total_volume)
     else
       {:ok, []} -> {:ok, nil}
       _error -> {:ok, nil}
     end
+  end
+
+  defp get_currently_trending_words_list() do
+    with {:ok, trending_words} <-
+           SocialData.TrendingWords.get_currently_trending_words(@trending_words_size, :all) do
+      words = Enum.map(trending_words, & &1.word)
+      {:ok, words}
+    end
+  end
+
+  defp compute_combined_dominance_value(words_volume, total_volume) do
+    # The volumes are fetched as lists. Take the last value in each list and use it
+    # to compute the dominance
+    words_mentions_sum =
+      Enum.map(words_volume, &List.last(&1.timeseries_data).mentions_count)
+      |> Enum.sum()
+
+    total_mentions = List.last(total_volume).mentions_count
+
+    dominance = Sanbase.Math.percent_of(words_mentions_sum, total_mentions) || +0.0
+
+    {:ok, dominance}
+  end
+
+  defp compute_dominance_per_word_value(words_volume, total_volume) do
+    words_volume_map =
+      words_volume
+      |> Enum.into(%{}, fn w -> {w.word, List.last(w.timeseries_data).mentions_count} end)
+
+    total_mentions = List.last(total_volume).mentions_count
+
+    words_dominance =
+      words_volume_map
+      |> Enum.map(fn {word, mentions} ->
+        %{
+          word: word,
+          social_dominance: Sanbase.Math.percent_of(mentions, total_mentions) || +0.0
+        }
+      end)
+
+    {:ok, words_dominance}
   end
 
   defp social_dominance_request(%{slug: slug}, from, to, interval, source) do

@@ -91,12 +91,13 @@ defmodule Sanbase.Notifications.Workers.ProcessNotification do
     Notification.update(notification, %{status: new_status})
   end
 
-  defp discord_webhook do
+  defp discord_webhook() do
     Config.module_get(Sanbase.Notifications, :discord_webhook)
   end
 
-  defp metric_updates_list do
+  defp metric_updates_list() do
     Config.module_get(Sanbase.Notifications, :mailjet_metric_updates_list)
+    # credo:disable-for-next-line
     |> String.to_atom()
   end
 
@@ -104,7 +105,7 @@ defmodule Sanbase.Notifications.Workers.ProcessNotification do
     Notification.update(notification, %{status: "completed"})
   end
 
-  defp discord_channel_webhook_map do
+  defp discord_channel_webhook_map() do
     %{
       "metric_updates" => discord_webhook()
     }

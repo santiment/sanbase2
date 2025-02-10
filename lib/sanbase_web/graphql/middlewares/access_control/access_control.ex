@@ -189,13 +189,13 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
         "alpha" ->
           Resolution.put_result(
             resolution,
-            {:error, "This metric is in alpha and is only available to alpha users."}
+            {:error, "The metric #{metric.metric} is currently in alpha phase and is exclusively available to alpha users."}
           )
 
         "beta" ->
           Resolution.put_result(
             resolution,
-            {:error, "This metric is in beta and is only available to alpha or beta users."}
+            {:error, "The metric #{metric.metric} is currently in beta phase and is exclusively available to alpha and beta users."}
           )
       end
     end

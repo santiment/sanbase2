@@ -225,6 +225,12 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
         value: metric_registry.deprecation_note,
         popover_target: "popover-deprecation-note",
         popover_target_text: get_popover_text(%{key: "Deprecation Note"})
+      },
+      %{
+        key: "Status",
+        value: metric_registry.status,
+        popover_target: "popover-status",
+        popover_target_text: get_popover_text(%{key: "Status"})
       }
     ]
   end

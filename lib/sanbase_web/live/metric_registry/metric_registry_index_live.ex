@@ -100,6 +100,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
       socket.assigns.metrics
       |> maybe_apply_filter(:match_metric, params)
       |> maybe_apply_filter(:match_table, params)
+      |> maybe_apply_filter(:status, params)
 
     {:noreply,
      socket
@@ -149,6 +150,17 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           name="match_table"
           placeholder="Filter by table"
         />
+
+        <select
+          name="status"
+          class="block w-48 ps-4 text-sm text-gray-900 border border-gray-300 rounded-lg bg-white"
+          phx-debounce="200"
+        >
+          <option value="">All statuses</option>
+          <option :for={status <- Sanbase.Metric.Registry.allowed_statuses()} value={status}>
+            {String.capitalize(status)}
+          </option>
+        </select>
       </form>
     </div>
     """
@@ -216,6 +228,10 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     |> Enum.filter(fn m ->
       Enum.any?(m.tables, &String.contains?(&1.name, query))
     end)
+  end
+
+  defp maybe_apply_filter(metrics, :status, %{"status" => status}) when status != "" do
+    Enum.filter(metrics, fn m -> m.status == status end)
   end
 
   defp maybe_apply_filter(metrics, _, _), do: metrics

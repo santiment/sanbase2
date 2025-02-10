@@ -294,14 +294,18 @@ defmodule Sanbase.Metric.Registry.Sync do
     database_url = System.get_env("DATABASE_URL")
 
     # If local, the DATABASE_URL should not be set pointing to stage/prod.
-    # Only work if the local postgres is used
-    local? = deployment_env in ["dev", "test"] and is_nil(database_url)
+    # The URL can be nil or when running in CI it points to a URL that is not amazon RDS
+    local? =
+      deployment_env in ["dev", "test"] and
+        (is_nil(database_url) or not String.contains?(database_url, ["amazon", "aws"]))
+
     stage? = deployment_env == "stage"
 
     if local? or stage? do
       :ok
     else
-      {:error, "Can only deploy sync from STAGE to PROD"}
+      {:error,
+       "Can only deploy sync from STAGE to PROD. Attempted to deploy from #{deployment_env}"}
     end
   end
 
@@ -310,8 +314,11 @@ defmodule Sanbase.Metric.Registry.Sync do
     database_url = System.get_env("DATABASE_URL")
 
     # If local, the DATABASE_URL should not be set pointing to stage/prod.
-    # Only work if the local postgres is used
-    local? = deployment_env in ["dev", "test"] and is_nil(database_url)
+    # The URL can be nil or when running in CI it points to a URL that is not amazon RDS
+    local? =
+      deployment_env in ["dev", "test"] and
+        (is_nil(database_url) or not String.contains?(database_url, ["amazon", "aws"]))
+
     prod? = deployment_env == "prod"
 
     if local? or prod? do

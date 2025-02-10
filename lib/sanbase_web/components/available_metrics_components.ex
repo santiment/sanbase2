@@ -26,12 +26,15 @@ defmodule SanbaseWeb.AvailableMetricsComponents do
   attr :href, :string, required: true
   attr :text, :string, required: true
   attr :icon, :string, required: false, default: nil
+  attr :target, :string, default: "_self"
 
   def link_button(assigns) do
     ~H"""
     <.link
       href={@href}
       class="text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center gap-x-2"
+      target={@target}
+      rel="noreferrer noopener"
     >
       <CoreComponents.icon :if={@icon} name={@icon} />
       {@text}

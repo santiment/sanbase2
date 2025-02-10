@@ -78,6 +78,11 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
     {:timebound_flag_map, []}
   ]
 
+  def by_name(name) do
+    get_metrics([])
+    |> Enum.find(fn metric -> metric.metric == name end)
+  end
+
   def all_implemented?() do
     not_implemented =
       Enum.filter(@functions, fn {fun, args} ->

@@ -169,9 +169,11 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
          %Resolution{
            context: %{__metric__: metric_name, auth: %{current_user: current_user}}
          } = resolution
-       ) do
+       )
+       when is_binary(metric_name) do
     # Have to get from cache
-    with {:ok, metric} <- Sanbase.Metric.Registry.by_name(metric_name, "timeseries"),
+    with %Sanbase.Metric.Registry{} = metric <-
+           Sanbase.Clickhouse.MetricAdapter.Registry.by_name(metric_name),
          true <- metric.status in ["alpha", "beta"] do
       do_check_experimental_metric(current_user, metric, resolution)
     else

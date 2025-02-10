@@ -138,6 +138,7 @@ defmodule Sanbase.Mixfile do
       {:sentry, "~> 10.0"},
       {:stream_data, "~> 1.1", only: :test, override: true},
       {:stripity_stripe, "~> 3.2"},
+      {:styler, "~> 1.2", only: [:dev, :test], runtime: false},
       {:sweet_xml, "~> 0.6"},
       {:swoosh, "~> 1.7"},
       {:table_rex, "~> 4.0"},

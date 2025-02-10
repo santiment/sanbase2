@@ -32,7 +32,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
        is_duplicate_creation: not is_nil(duplicate_metric_registry_id) and live_action == :new,
        page_title: page_title(socket.assigns.live_action, metric_registry),
        metric_registry: metric_registry,
-       email: get_email(session),
+       email: nil,
        form: form,
        save_errors: []
      )}
@@ -82,17 +82,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
         />
       </div>
       <div>
-        <span :if={!!@email}>Submit channges as: <span class="font-bold">{@email}</span></span>
-        <span :if={!@email}>
-          If you want to label your change request with your email,
-          <.link
-            class="text-blue-500 underline"
-            href={SanbaseWeb.Endpoint.frontend_url()}
-            target="_blank"
-          >
-            login to Sanbase!
-          </.link>
-        </span>
+        <span :if={@email}>Submit channges as: <span class="font-bold">{@email}</span></span>
       </div>
       <.simple_form id="metric_registry_form" for={@form} phx-change="validate" phx-submit="save">
         <.input type="text" id="input-metric" field={@form[:metric]} label="Metric" />
@@ -533,17 +523,4 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
 
   defp page_title(:new, _metric_registry), do: "Metric Registry | Create New Record"
   defp page_title(:edit, metric_registry), do: "Metric Registry | Edit #{metric_registry.metric}"
-
-  # Get the email from the refresh token. The access token expires more quick
-  # and we don't need to refresh it from here. We only need to get the email
-  # of the santiment user in order to prefill some column showing who submits the
-  # suggestion
-  defp get_email(%{"refresh_token" => token}) when is_binary(token) do
-    case SanbaseWeb.Guardian.resource_from_token(token) do
-      {:ok, %{email: email}, _token_claims} when is_binary(email) -> email
-      _ -> nil
-    end
-  end
-
-  defp get_email(_), do: nil
 end

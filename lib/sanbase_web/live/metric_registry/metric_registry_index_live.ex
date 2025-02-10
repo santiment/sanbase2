@@ -334,6 +334,13 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           text="Sync Metrics"
           href={~p"/admin2/metric_registry/sync"}
         />
+
+        <AvailableMetricsComponents.link_button
+          icon="hero-document-text"
+          text="Docs"
+          href="https://github.com/santiment/sanbase2/blob/master/docs/metric_registry/index.md"
+          target="_blank"
+        />
       </div>
     </div>
     """

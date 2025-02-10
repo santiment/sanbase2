@@ -26,13 +26,14 @@ defmodule Sanbase.EventBus.EventEmitter do
     quote location: :keep do
       @behaviour Sanbase.EventBus.EventEmitter.Behaviour
 
+      require Application
+
       @before_compile Sanbase.EventBus.EventEmitter
 
       @callback handle_event(first_arg :: term, event_type :: atom, args :: map) :: term
 
-      require Application
-
       defmodule ReturnResultError do
+        @moduledoc false
         defexception [:message]
       end
 
@@ -45,10 +46,10 @@ defmodule Sanbase.EventBus.EventEmitter do
       """
       @spec emit_event(arg :: term, event_type :: atom, args :: map) :: term | no_return
       def emit_event(arg, event_type, %{changeset: changeset} = args) do
-        if changeset.changes != %{} do
-          emit_event(arg, event_type, Map.delete(args, :changeset))
-        else
+        if changeset.changes == %{} do
           arg
+        else
+          emit_event(arg, event_type, Map.delete(args, :changeset))
         end
       end
 

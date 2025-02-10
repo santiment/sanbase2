@@ -1,13 +1,13 @@
 defmodule SanbaseWeb.Graphql.ProjectApiTest do
   use SanbaseWeb.ConnCase, async: false
 
-  alias Sanbase.Utils.Config
-
   import Plug.Conn
-  import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
+  import SanbaseWeb.Graphql.TestHelpers
 
   alias Sanbase.Project
+  alias Sanbase.Utils.Config
+  alias SanbaseWeb.Graphql.AuthPlug
 
   test "projects by function for traded on exchanges", context do
     [p1, p2, p3, p4] = projects = for _ <- 1..4, do: insert(:random_project)
@@ -271,7 +271,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiTest do
       |> Enum.map(&Project.GithubOrganization.organization_to_link/1)
       |> Enum.sort()
 
-    github_links = result["data"]["projectBySlug"]["githubLinks"] |> Enum.sort()
+    github_links = Enum.sort(result["data"]["projectBySlug"]["githubLinks"])
     assert github_links == expected_github_links
   end
 
@@ -375,16 +375,14 @@ defmodule SanbaseWeb.Graphql.ProjectApiTest do
     }
     """
 
-    result =
-      context.conn
-      |> post("/graphql", query_skeleton(query, "projectBySlug"))
+    result = post(context.conn, "/graphql", query_skeleton(query, "projectBySlug"))
 
     json_response(result, 200)["data"]["projectBySlug"]
   end
 
   defp get_authorization_header do
-    username = Config.module_get(SanbaseWeb.Graphql.AuthPlug, :basic_auth_username)
-    password = Config.module_get(SanbaseWeb.Graphql.AuthPlug, :basic_auth_password)
+    username = Config.module_get(AuthPlug, :basic_auth_username)
+    password = Config.module_get(AuthPlug, :basic_auth_password)
 
     "Basic " <> Base.encode64(username <> ":" <> password)
   end

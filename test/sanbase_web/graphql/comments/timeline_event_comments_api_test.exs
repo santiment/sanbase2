@@ -3,8 +3,8 @@ defmodule SanbaseWeb.GraphqlTimelineEventCommentsApiTest do
 
   import Sanbase.Factory
   import Sanbase.TestHelpers
-  import SanbaseWeb.Graphql.TestHelpers
   import SanbaseWeb.CommentsApiHelper
+  import SanbaseWeb.Graphql.TestHelpers
 
   @opts [entity_type: :timeline_event, extra_fields: ["timelineEventId"]]
   setup do
@@ -50,7 +50,7 @@ defmodule SanbaseWeb.GraphqlTimelineEventCommentsApiTest do
     comment = create_comment(conn, timeline_event.id, content, @opts)
     comments = get_comments(other_user_conn, timeline_event.id, @opts)
 
-    assert comment["timelineEventId"] |> Sanbase.Math.to_integer() == timeline_event.id
+    assert Sanbase.Math.to_integer(comment["timelineEventId"]) == timeline_event.id
     assert comment["content"] == content
     assert comment["insertedAt"] != nil
     assert comment["editedAt"] == nil
@@ -74,7 +74,7 @@ defmodule SanbaseWeb.GraphqlTimelineEventCommentsApiTest do
     assert updated_comment["editedAt"] != nil
 
     edited_at = NaiveDateTime.from_iso8601!(updated_comment["editedAt"])
-    assert Sanbase.TestUtils.datetime_close_to(edited_at, Timex.now(), 1, :seconds) == true
+    assert Sanbase.TestUtils.datetime_close_to(edited_at, DateTime.utc_now(), 1, :seconds) == true
 
     assert comment["content"] == content
     assert updated_comment["content"] == new_content
@@ -91,10 +91,10 @@ defmodule SanbaseWeb.GraphqlTimelineEventCommentsApiTest do
     delete_comment(conn, comment["id"], @opts)
 
     comments = get_comments(conn, timeline_event.id, @opts)
-    timeline_event_comment = comments |> List.first()
+    timeline_event_comment = List.first(comments)
 
     assert timeline_event_comment["user"]["id"] != comment["user"]["id"]
-    assert timeline_event_comment["user"]["id"] |> Sanbase.Math.to_integer() == fallback_user.id
+    assert Sanbase.Math.to_integer(timeline_event_comment["user"]["id"]) == fallback_user.id
 
     assert timeline_event_comment["content"] != comment["content"]
     assert timeline_event_comment["content"] =~ "deleted"
@@ -111,7 +111,8 @@ defmodule SanbaseWeb.GraphqlTimelineEventCommentsApiTest do
     create_comment(conn, timeline_event.id, "other content2", opts)
 
     [comment, subcomment1, subcomment2] =
-      get_comments(conn, timeline_event.id, @opts)
+      conn
+      |> get_comments(timeline_event.id, @opts)
       |> Enum.sort_by(& &1["id"])
 
     assert comment["parentId"] == nil

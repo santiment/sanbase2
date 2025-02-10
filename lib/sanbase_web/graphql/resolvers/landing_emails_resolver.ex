@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.Resolvers.LandingEmailsResolver do
+  @moduledoc false
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1]
 
   def add_sanr_email(_root, %{email: email}, _resolution) do

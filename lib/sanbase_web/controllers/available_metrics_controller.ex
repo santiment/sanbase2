@@ -23,13 +23,12 @@ defmodule SanbaseWeb.AvailableMetricsController do
       Sanbase.AvailableMetrics.apply_filters(metrics_map, filter)
 
     csv_content =
-      metrics
-      |> Enum.map(fn map ->
+      Enum.map(metrics, fn map ->
         [
           map.metric,
           map.internal_name,
           map.frequency_seconds,
-          map.docs |> Enum.map(& &1.link),
+          Enum.map(map.docs, & &1.link),
           map.available_assets
         ]
       end)
@@ -37,7 +36,6 @@ defmodule SanbaseWeb.AvailableMetricsController do
     csv_content =
       [["Metric", "Internal Name", "Frequency", "Docs", "Available Assets"]] ++ csv_content
 
-    csv_content
-    |> NimbleCSV.RFC4180.dump_to_iodata()
+    NimbleCSV.RFC4180.dump_to_iodata(csv_content)
   end
 end

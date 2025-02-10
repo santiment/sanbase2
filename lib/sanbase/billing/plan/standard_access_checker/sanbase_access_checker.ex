@@ -3,9 +3,9 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
   Implement the restrictions for the Sanbase product
   """
 
-  @doc documentation_ref: "# DOCS access-plans/index.md"
-
   alias Sanbase.Billing.Plan
+
+  @doc documentation_ref: "# DOCS access-plans/index.md"
 
   @free_plan_stats %{
     historical_data_in_days: 2 * 365,
@@ -36,17 +36,20 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
   @custom_plan_stats Plan.upgrade_plan(@business_max_plan_stats, extends: %{})
 
   def historical_data_in_days(_subscription_product, plan) do
-    plan_stats(plan)
+    plan
+    |> plan_stats()
     |> Map.get(:historical_data_in_days)
   end
 
   def realtime_data_cut_off_in_days(_subscription_product, plan) do
-    plan_stats(plan)
+    plan
+    |> plan_stats()
     |> Map.get(:realtime_data_cut_off_in_days)
   end
 
   def alerts_limit(plan) do
-    plan_stats(plan)
+    plan
+    |> plan_stats()
     |> get_in([:alerts, :limit])
   end
 

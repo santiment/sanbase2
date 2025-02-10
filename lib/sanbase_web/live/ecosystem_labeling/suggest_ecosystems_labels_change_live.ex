@@ -1,5 +1,7 @@
 defmodule SanbaseWeb.SuggestEcosystemLabelsChangeLive do
+  @moduledoc false
   use SanbaseWeb, :live_view
+
   alias SanbaseWeb.UserFormsComponents
 
   @impl true
@@ -11,8 +13,7 @@ defmodule SanbaseWeb.SuggestEcosystemLabelsChangeLive do
     ecosystems = Sanbase.Repo.all(Sanbase.Ecosystem)
 
     {:ok,
-     socket
-     |> assign(
+     assign(socket,
        page_title: "Suggest asset ecosystems changes",
        projects: projects,
        selected_project: nil,
@@ -35,14 +36,12 @@ defmodule SanbaseWeb.SuggestEcosystemLabelsChangeLive do
         slug ->
           case Enum.find(socket.assigns.projects, &(&1.slug == slug)) do
             nil ->
-              socket
-              |> put_flash(:error, "Project not found")
+              put_flash(socket, :error, "Project not found")
 
             project ->
               stored_ecosystems = project.ecosystems
 
-              socket
-              |> assign(
+              assign(socket,
                 selected_project: project,
                 stored_project_ecosystems: stored_ecosystems,
                 new_project_ecosystems: [],
@@ -104,7 +103,8 @@ defmodule SanbaseWeb.SuggestEcosystemLabelsChangeLive do
           socket.assigns.projects
 
         _ ->
-          Enum.filter(socket.assigns.projects, fn p ->
+          socket.assigns.projects
+          |> Enum.filter(fn p ->
             String.downcase(p.name) =~ search or String.downcase(p.ticker) =~ search or
               String.downcase(p.slug) =~ search
           end)
@@ -118,18 +118,19 @@ defmodule SanbaseWeb.SuggestEcosystemLabelsChangeLive do
   end
 
   def handle_event("update_selected_ecosystems", params, socket) do
-    stored = socket.assigns.stored_project_ecosystems |> Enum.map(& &1.ecosystem)
+    stored = Enum.map(socket.assigns.stored_project_ecosystems, & &1.ecosystem)
     new = socket.assigns.new_project_ecosystems
     removed = socket.assigns.removed_project_ecosystems
 
     {new, removed} =
       case params do
         %{"value" => "on", "ecosystem" => e} ->
+          # Append to the back so it looks better in the UI
           new =
-            case e in stored do
-              # Append to the back so it looks better in the UI
-              false -> (new ++ [e]) |> Enum.uniq()
-              true -> new
+            if e in stored do
+              new
+            else
+              Enum.uniq(new ++ [e])
             end
 
           removed = removed -- [e]
@@ -139,9 +140,10 @@ defmodule SanbaseWeb.SuggestEcosystemLabelsChangeLive do
           new = new -- [e]
 
           removed =
-            case e in stored do
-              true -> (removed ++ [e]) |> Enum.uniq()
-              false -> removed
+            if e in stored do
+              Enum.uniq(removed ++ [e])
+            else
+              removed
             end
 
           {new, removed}
@@ -183,9 +185,7 @@ defmodule SanbaseWeb.SuggestEcosystemLabelsChangeLive do
       {:error, changeset} ->
         errors = Sanbase.Utils.ErrorHandling.changeset_errors_string(changeset)
 
-        socket =
-          socket
-          |> put_flash(:error, "Error submitting suggestions. Reason: #{errors}")
+        socket = put_flash(socket, :error, "Error submitting suggestions. Reason: #{errors}")
 
         {:noreply, socket}
     end

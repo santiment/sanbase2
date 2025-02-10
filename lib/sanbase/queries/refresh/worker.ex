@@ -1,4 +1,5 @@
 defmodule Sanbase.Queries.RefreshWorker do
+  @moduledoc false
   use Oban.Worker,
     queue: :refresh_queries,
     max_attempts: 3
@@ -11,9 +12,10 @@ defmodule Sanbase.Queries.RefreshWorker do
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"user_id" => user_id, "query_id" => query_id}} = job) do
     # Schedule a new job to refresh the query on the first attempt
-    scheduled_job = if job.attempt == 1, do: schedule_next_refresh(job), else: nil
+    scheduled_job = if job.attempt == 1, do: schedule_next_refresh(job)
 
-    Refresh.refresh_query(query_id, user_id)
+    query_id
+    |> Refresh.refresh_query(user_id)
     |> maybe_remove_scheduled_job(scheduled_job)
   end
 
@@ -28,13 +30,11 @@ defmodule Sanbase.Queries.RefreshWorker do
   defp maybe_remove_scheduled_job(result, nil), do: result
 
   defp maybe_remove_scheduled_job({:error, error_str}, scheduled_job) do
-    case retryable_error?(error_str) do
-      true ->
-        {:error, error_str}
-
-      false ->
-        Oban.cancel_job(@oban_conf_name, scheduled_job)
-        {:error, error_str}
+    if retryable_error?(error_str) do
+      {:error, error_str}
+    else
+      Oban.cancel_job(@oban_conf_name, scheduled_job)
+      {:error, error_str}
     end
   end
 

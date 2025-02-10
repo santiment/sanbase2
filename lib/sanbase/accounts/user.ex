@@ -1,27 +1,25 @@
 defmodule Sanbase.Accounts.User do
+  @moduledoc false
   use Ecto.Schema
 
+  import __MODULE__.Validation
   import Ecto.Changeset
   import Ecto.Query
   import Sanbase.Accounts.EventEmitter, only: [emit_event: 3]
-  import __MODULE__.Validation
 
-  alias Sanbase.Accounts.{
-    User,
-    EthAccount,
-    UserApikeyToken,
-    UserSettings,
-    UserFollower,
-    UserRole
-  }
-
-  alias Sanbase.Vote
-  alias Sanbase.Insight.Post
-  alias Sanbase.UserList
-  alias Sanbase.Repo
-  alias Sanbase.Telegram
+  alias Sanbase.Accounts.EthAccount
+  alias Sanbase.Accounts.User
+  alias Sanbase.Accounts.UserApikeyToken
+  alias Sanbase.Accounts.UserFollower
+  alias Sanbase.Accounts.UserRole
+  alias Sanbase.Accounts.UserSettings
   alias Sanbase.Alert.HistoricalActivity
   alias Sanbase.Billing.Subscription
+  alias Sanbase.Insight.Post
+  alias Sanbase.Repo
+  alias Sanbase.Telegram
+  alias Sanbase.UserList
+  alias Sanbase.Vote
 
   @salt_length 64
 
@@ -138,8 +136,8 @@ defmodule Sanbase.Accounts.User do
     end
   end
 
-  def generate_salt() do
-    :crypto.strong_rand_bytes(@salt_length) |> Base.url_encode64() |> binary_part(0, @salt_length)
+  def generate_salt do
+    @salt_length |> :crypto.strong_rand_bytes() |> Base.url_encode64() |> binary_part(0, @salt_length)
   end
 
   def changeset(%User{} = user, attrs \\ %{}) do
@@ -213,9 +211,10 @@ defmodule Sanbase.Accounts.User do
     query = from(u in __MODULE__, where: u.id == ^user_id)
 
     query =
-      case Keyword.get(opts, :lock_for_update, false) do
-        false -> query
-        true -> query |> lock("FOR UPDATE")
+      if Keyword.get(opts, :lock_for_update, false) do
+        lock(query, "FOR UPDATE")
+      else
+        query
       end
 
     case Sanbase.Repo.one(query) do
@@ -226,13 +225,13 @@ defmodule Sanbase.Accounts.User do
 
   def by_id(user_ids, _opts) when is_list(user_ids) do
     users =
-      from(
-        u in __MODULE__,
-        where: u.id in ^user_ids,
-        order_by: fragment("array_position(?, ?::int)", ^user_ids, u.id),
-        preload: [:eth_accounts, :user_settings]
+      Repo.all(
+        from(u in __MODULE__,
+          where: u.id in ^user_ids,
+          order_by: fragment("array_position(?, ?::int)", ^user_ids, u.id),
+          preload: [:eth_accounts, :user_settings]
+        )
       )
-      |> Repo.all()
 
     {:ok, users}
   end
@@ -240,23 +239,19 @@ defmodule Sanbase.Accounts.User do
   def by_search_text(search_text) do
     search_text = "%" <> search_text <> "%"
 
-    from(u in __MODULE__,
-      where: like(u.email, ^search_text),
-      or_where: like(u.username, ^search_text),
-      or_where: like(u.name, ^search_text)
+    Repo.all(
+      from(u in __MODULE__,
+        where: like(u.email, ^search_text),
+        or_where: like(u.username, ^search_text),
+        or_where: like(u.name, ^search_text)
+      )
     )
-    |> Repo.all()
   end
 
   @doc false
-  def all_users() do
+  def all_users do
     # Apparantly, it does not fetch all users.
-    from(
-      u in __MODULE__,
-      order_by: [desc: u.updated_at],
-      limit: 2000
-    )
-    |> Repo.all()
+    Repo.all(from(u in __MODULE__, order_by: [desc: u.updated_at], limit: 2000))
   end
 
   def by_email(email) when is_binary(email) do
@@ -293,17 +288,14 @@ defmodule Sanbase.Accounts.User do
   def by_selector(%{twitter_id: twitter_id}), do: by_twitter_id(twitter_id)
 
   def update_field(%__MODULE__{} = user, field, value) do
-    case Map.fetch!(user, field) == value do
-      true ->
-        {:ok, user}
-
-      false ->
-        user |> changeset(%{field => value}) |> Repo.update()
+    if Map.fetch!(user, field) == value do
+      {:ok, user}
+    else
+      user |> changeset(%{field => value}) |> Repo.update()
     end
   end
 
-  def find_or_insert_by(field, value, attrs \\ %{})
-      when field in [:email, :username, :twitter_id] do
+  def find_or_insert_by(field, value, attrs \\ %{}) when field in [:email, :username, :twitter_id] do
     # When this function is used to create a new user during login/singup process
     # it **must** be followed by calling `Sanbase.Accounts.forward_registration/2`
     # so the registration progress can evolve in the proper direction
@@ -345,8 +337,9 @@ defmodule Sanbase.Accounts.User do
   def anonymous_user_username, do: @anonymous_user_username
   def anonymous_user_email, do: @anonymous_user_email
 
-  def anonymous_user_id() do
-    Repo.get_by(__MODULE__, email: @anonymous_user_email, username: @anonymous_user_username)
+  def anonymous_user_id do
+    __MODULE__
+    |> Repo.get_by(email: @anonymous_user_email, username: @anonymous_user_username)
     |> Map.get(:id)
   end
 
@@ -372,7 +365,7 @@ defmodule Sanbase.Accounts.User do
   Sync users' emails in Stripe.
   User might change his email in Sanbase, so we want keep Sanbase in sync with Stripe.
   """
-  def sync_subscribed_users_with_changed_email() do
+  def sync_subscribed_users_with_changed_email do
     from(u in __MODULE__,
       where:
         not is_nil(u.email) and
@@ -386,13 +379,7 @@ defmodule Sanbase.Accounts.User do
     end)
   end
 
-  def fetch_all_users_with_eth_account() do
-    from(
-      u in __MODULE__,
-      inner_join: ea in assoc(u, :eth_accounts),
-      preload: :eth_accounts,
-      distinct: true
-    )
-    |> Repo.all()
+  def fetch_all_users_with_eth_account do
+    Repo.all(from(u in __MODULE__, inner_join: ea in assoc(u, :eth_accounts), preload: :eth_accounts, distinct: true))
   end
 end

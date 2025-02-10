@@ -4,7 +4,7 @@ defmodule Sanbase.EventBus.KafkaExporterSubscriber do
   """
   use GenServer
 
-  def topics(), do: [".*"]
+  def topics, do: [".*"]
 
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name, __MODULE__))
@@ -72,7 +72,7 @@ defmodule Sanbase.EventBus.KafkaExporterSubscriber do
   end
 
   defp restructure_event(event) do
-    event = event |> Map.from_struct()
+    event = Map.from_struct(event)
 
     # Remove the extra_in_memory_data when storing the events in Kafka.
     # This key will contain values that are needed only in-memory when the
@@ -81,8 +81,7 @@ defmodule Sanbase.EventBus.KafkaExporterSubscriber do
 
     # Copy the event_type and user_id (if exists) to the top level for
     # easier filtering on these 2 fields when the kafka topic is consumed in CH
-    event
-    |> Map.merge(%{
+    Map.merge(event, %{
       event_type: Map.fetch!(event.data, :event_type),
       user_id: Map.get(event.data, :user_id),
       data: data

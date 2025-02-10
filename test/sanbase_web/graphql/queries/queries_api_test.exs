@@ -18,7 +18,8 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
   describe "voting" do
     test "queries ", context do
       query_id =
-        execute_sql_query_mutation(context.conn, :create_sql_query)
+        context.conn
+        |> execute_sql_query_mutation(:create_sql_query)
         |> get_in(["data", "createSqlQuery", "id"])
 
       vote = fn ->
@@ -26,9 +27,7 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
           context.conn
           |> post(
             "/graphql",
-            mutation_skeleton(
-              "mutation{ vote(queryId: #{query_id}) { votedAt votes { totalVotes } } }"
-            )
+            mutation_skeleton("mutation{ vote(queryId: #{query_id}) { votedAt votes { totalVotes } } }")
           )
           |> json_response(200)
           |> get_in(["data", "vote"])
@@ -42,7 +41,8 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
       end
 
       total_votes =
-        get_sql_query(context.conn, query_id)
+        context.conn
+        |> get_sql_query(query_id)
         |> get_in(["data", "getSqlQuery", "votes", "totalVotes"])
 
       assert total_votes == 10
@@ -52,18 +52,18 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
   describe "CRUD Queries APIs" do
     test "create query", context do
       sql_query =
-        execute_sql_query_mutation(context.conn, :create_sql_query, %{
+        context.conn
+        |> execute_sql_query_mutation(:create_sql_query, %{
           name: "My Query",
           description: "some desc",
           is_public: true,
-          sql_query_text:
-            "SELECT * FROM intraday_metrics WHERE asset_id = get_asset_id({{slug}})",
+          sql_query_text: "SELECT * FROM intraday_metrics WHERE asset_id = get_asset_id({{slug}})",
           sql_query_parameters: %{slug: "bitcoin"},
           settings: %{"some_var" => [0, 1, 2, 3]}
         })
         |> get_in(["data", "createSqlQuery"])
 
-      user_id = context.user.id |> to_string()
+      user_id = to_string(context.user.id)
 
       assert assert %{
                       "description" => "some desc",
@@ -72,21 +72,22 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
                       "id" => _,
                       "settings" => %{"some_var" => [0, 1, 2, 3]},
                       "sqlQueryParameters" => %{"slug" => "bitcoin"},
-                      "sqlQueryText" =>
-                        "SELECT * FROM intraday_metrics WHERE asset_id = get_asset_id({{slug}})"
+                      "sqlQueryText" => "SELECT * FROM intraday_metrics WHERE asset_id = get_asset_id({{slug}})"
                     } = sql_query
     end
 
     test "get query", context do
       sql_query_id =
-        execute_sql_query_mutation(context.conn, :create_sql_query)
+        context.conn
+        |> execute_sql_query_mutation(:create_sql_query)
         |> get_in(["data", "createSqlQuery", "id"])
 
       sql_query =
-        get_sql_query(context.conn, sql_query_id)
+        context.conn
+        |> get_sql_query(sql_query_id)
         |> get_in(["data", "getSqlQuery"])
 
-      user_id = context.user.id |> to_string()
+      user_id = to_string(context.user.id)
 
       assert %{
                "description" => "some desc",
@@ -95,19 +96,20 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
                "name" => "MyQuery",
                "settings" => %{"some_key" => [0, 1, 2, 3]},
                "sqlQueryParameters" => %{"slug" => "bitcoin"},
-               "sqlQueryText" =>
-                 "SELECT * FROM intraday_metrics WHERE asset_id = get_asset_id({{slug}})",
+               "sqlQueryText" => "SELECT * FROM intraday_metrics WHERE asset_id = get_asset_id({{slug}})",
                "user" => %{"id" => ^user_id}
              } = sql_query
     end
 
     test "update query", context do
       sql_query_id =
-        execute_sql_query_mutation(context.conn, :create_sql_query)
+        context.conn
+        |> execute_sql_query_mutation(:create_sql_query)
         |> get_in(["data", "createSqlQuery", "id"])
 
       sql_query =
-        execute_sql_query_mutation(context.conn, :update_sql_query, %{
+        context.conn
+        |> execute_sql_query_mutation(:update_sql_query, %{
           id: sql_query_id,
           name: "New Query Name",
           description: "some desc - update",
@@ -117,7 +119,7 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
         })
         |> get_in(["data", "updateSqlQuery"])
 
-      user_id = context.user.id |> to_string()
+      user_id = to_string(context.user.id)
 
       # The API returns the updated version
       assert assert %{
@@ -126,8 +128,7 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
                       "name" => "New Query Name",
                       "settings" => %{"some_key" => [0, 1, 2, 3]},
                       "sqlQueryParameters" => %{"limit" => 10},
-                      "sqlQueryText" =>
-                        "SELECT * FROM intraday_metrics WHERE asset_id = 123 LIMIT {{limit}}",
+                      "sqlQueryText" => "SELECT * FROM intraday_metrics WHERE asset_id = 123 LIMIT {{limit}}",
                       "user" => %{"id" => ^user_id}
                     } = sql_query
 
@@ -145,7 +146,8 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
 
     test "delete query", context do
       sql_query_id =
-        execute_sql_query_mutation(context.conn, :create_sql_query)
+        context.conn
+        |> execute_sql_query_mutation(:create_sql_query)
         |> get_in(["data", "createSqlQuery", "id"])
 
       # query exists
@@ -177,16 +179,17 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
           arity: 2
         )
 
-      Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
+      Sanbase.ClickhouseRepo
+      |> Sanbase.Mock.prepare_mock(:query, mock_fun)
       |> Sanbase.Mock.run_with_mocks(fn ->
         args = %{
-          sql_query_text:
-            "SELECT * FROM intraday_metrics WHERE asset_id = get_asset_id({{slug}}) LIMIT {{limit}}",
+          sql_query_text: "SELECT * FROM intraday_metrics WHERE asset_id = get_asset_id({{slug}}) LIMIT {{limit}}",
           sql_query_parameters: %{slug: "bitcoin", limit: 2}
         }
 
         result =
-          run_sql_query(context.conn, :run_raw_sql_query, args)
+          context.conn
+          |> run_sql_query(:run_raw_sql_query, args)
           |> get_in(["data", "runRawSqlQuery"])
 
         assert %{
@@ -227,10 +230,12 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
           arity: 2
         )
 
-      Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
+      Sanbase.ClickhouseRepo
+      |> Sanbase.Mock.prepare_mock(:query, mock_fun)
       |> Sanbase.Mock.run_with_mocks(fn ->
         result =
-          run_sql_query(context.conn, :run_sql_query, %{id: query.id})
+          context.conn
+          |> run_sql_query(:run_sql_query, %{id: query.id})
           |> get_in(["data", "runSqlQuery"])
 
         # Use match `=` operator to avoid checking the queryStartTime and queryEndTime
@@ -271,7 +276,8 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
           arity: 2
         )
 
-      Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
+      Sanbase.ClickhouseRepo
+      |> Sanbase.Mock.prepare_mock(:query, mock_fun)
       |> Sanbase.Mock.run_with_mocks(fn ->
         args = %{
           sql_query_text: "SELECT * FROM intraday_metrics LIMIT {{limit}}",
@@ -281,7 +287,8 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
         run_sql_query(context.conn, :run_raw_sql_query, args)
 
         stats =
-          get_current_user_credits_stats(context.conn)
+          context.conn
+          |> get_current_user_credits_stats()
           |> get_in(["data", "currentUser", "queriesExecutionsInfo"])
 
         assert stats == %{
@@ -318,7 +325,8 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
           arity: 2
         )
 
-      Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
+      Sanbase.ClickhouseRepo
+      |> Sanbase.Mock.prepare_mock(:query, mock_fun)
       |> Sanbase.Mock.run_with_mocks(fn ->
         args = %{
           sql_query_text: "SELECT * FROM intraday_metrics LIMIT {{limit}}",
@@ -328,7 +336,8 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
         run_sql_query(context.conn, :run_raw_sql_query, args)
 
         stats =
-          get_current_user_credits_stats(context.conn)
+          context.conn
+          |> get_current_user_credits_stats()
           |> get_in(["data", "currentUser", "queriesExecutionsInfo"])
 
         assert Process.get(:queries_dynamic_repo) == Sanbase.ClickhouseRepo.BusinessMaxUser
@@ -338,7 +347,7 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
                  "creditsRemainingMonth" => 499_999,
                  "creditsSpentMonth" => 1,
                  "queriesExecutedDay" => 1,
-                 "queriesExecutedDayLimit" => 15000,
+                 "queriesExecutedDayLimit" => 15_000,
                  "queriesExecutedHour" => 1,
                  "queriesExecutedHourLimit" => 3000,
                  "queriesExecutedMinute" => 1,
@@ -388,13 +397,12 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
 
       {:ok, query} = create_query(context.user.id)
 
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.ClickhouseRepo.query/2,
-        {:ok, mocked_clickhouse_result()}
-      )
+      (&Sanbase.ClickhouseRepo.query/2)
+      |> Sanbase.Mock.prepare_mock2({:ok, mocked_clickhouse_result()})
       |> Sanbase.Mock.run_with_mocks(fn ->
         result =
-          run_sql_query(context.conn, :run_sql_query, %{id: query.id})
+          context.conn
+          |> run_sql_query(:run_sql_query, %{id: query.id})
           |> get_in(["data", "runSqlQuery"])
 
         compressed_and_encoded_result =
@@ -403,7 +411,8 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
         # The owner cache
 
         cache_result =
-          execute_cache_query_execution_mutation(context.conn, %{
+          context.conn
+          |> execute_cache_query_execution_mutation(%{
             query_id: query.id,
             compressed_query_execution_result: compressed_and_encoded_result
           })
@@ -414,7 +423,8 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
         # The user cache
 
         cache_result =
-          execute_cache_query_execution_mutation(context.conn2, %{
+          context.conn2
+          |> execute_cache_query_execution_mutation(%{
             query_id: query.id,
             compressed_query_execution_result: compressed_and_encoded_result
           })
@@ -424,17 +434,18 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
 
         # Get the user own cache the owner of the query cache
         caches =
-          execute_get_cached_query_executions_query(context.conn2, %{query_id: query.id})
+          context.conn2
+          |> execute_get_cached_query_executions_query(%{query_id: query.id})
           |> get_in(["data", "getCachedQueryExecutions"])
 
         # Only we cached
         assert length(caches) == 2
 
-        owner_user_id = context.user.id |> to_string()
-        own_user_id = context.user.id |> to_string()
+        owner_user_id = to_string(context.user.id)
+        own_user_id = to_string(context.user.id)
 
-        owner_cache = caches |> Enum.find(&(&1["user"]["id"] == owner_user_id))
-        own_cache = caches |> Enum.find(&(&1["user"]["id"] == own_user_id))
+        owner_cache = Enum.find(caches, &(&1["user"]["id"] == owner_user_id))
+        own_cache = Enum.find(caches, &(&1["user"]["id"] == own_user_id))
 
         # Check the owner's cache of the query
         assert %{
@@ -473,7 +484,8 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
 
       # Not a valid base64 encoded string
       error_msg =
-        execute_cache_query_execution_mutation(context.conn, %{
+        context.conn
+        |> execute_cache_query_execution_mutation(%{
           query_id: query.id,
           compressed_query_execution_result: "xxxxasd12309uaksdl!@876@#_тест_Тест"
         })
@@ -483,9 +495,10 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
 
       # Not a valid GZIP
       error_msg =
-        execute_cache_query_execution_mutation(context.conn, %{
+        context.conn
+        |> execute_cache_query_execution_mutation(%{
           query_id: query.id,
-          compressed_query_execution_result: "hehe" |> Base.encode64()
+          compressed_query_execution_result: Base.encode64("hehe")
         })
         |> get_in(["errors", Access.at(0), "message"])
 
@@ -496,7 +509,8 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
         %{columns: ["a"], rows: [2, 3]} |> Jason.encode!() |> :zlib.gzip() |> Base.encode64()
 
       error_msg =
-        execute_cache_query_execution_mutation(context.conn, %{
+        context.conn
+        |> execute_cache_query_execution_mutation(%{
           query_id: query.id,
           compressed_query_execution_result: result
         })
@@ -536,8 +550,7 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
                  "quote_asset" => "LowCardinality(String)",
                  "source" => "LowCardinality(String)"
                },
-               "description" =>
-                 "Provide price_usd, price_btc, volume_usd and marketcap_usd metrics for assets",
+               "description" => "Provide price_usd, price_btc, volume_usd and marketcap_usd metrics for assets",
                "engine" => "ReplicatedReplacingMergeTree",
                "orderBy" => ["base_asset", "quote_asset", "source", "dt"],
                "partitionBy" => "toYYYYMM(dt)",
@@ -578,42 +591,46 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
       """
 
       mock_fun =
-        [
-          # mock columns response
-          fn ->
-            {:ok,
-             %{
-               rows: [
-                 ["asset_metadata", "asset_id", "UInt64", 0, 1, 1],
-                 ["asset_metadata", "computed_at", "DateTime", 0, 0, 0]
-               ]
-             }}
-          end,
-          # mock functions response
-          fn -> {:ok, %{rows: [["logTrace", "System"], ["get_asset_id", "SQLUserDefined"]]}} end,
-          # mock tables response
-          fn ->
-            {:ok,
-             %{
-               rows: [
-                 ["asset_metadata", "ReplicatedReplacingMergeTree", "", "asset_id", "asset_id"],
-                 [
-                   "asset_price_pairs_only",
-                   "ReplicatedReplacingMergeTree",
-                   "toYYYYMM(dt)",
-                   "base_asset, quote_asset, source, dt",
-                   "base_asset, quote_asset, source, dt"
+        Sanbase.Mock.wrap_consecutives(
+          [
+            fn ->
+              {:ok,
+               %{
+                 rows: [
+                   ["asset_metadata", "asset_id", "UInt64", 0, 1, 1],
+                   ["asset_metadata", "computed_at", "DateTime", 0, 0, 0]
                  ]
-               ]
-             }}
-          end
-        ]
-        |> Sanbase.Mock.wrap_consecutives(arity: 2)
+               }}
+            end,
+            fn -> {:ok, %{rows: [["logTrace", "System"], ["get_asset_id", "SQLUserDefined"]]}} end,
+            fn ->
+              {:ok,
+               %{
+                 rows: [
+                   ["asset_metadata", "ReplicatedReplacingMergeTree", "", "asset_id", "asset_id"],
+                   [
+                     "asset_price_pairs_only",
+                     "ReplicatedReplacingMergeTree",
+                     "toYYYYMM(dt)",
+                     "base_asset, quote_asset, source, dt",
+                     "base_asset, quote_asset, source, dt"
+                   ]
+                 ]
+               }}
+            end
+          ],
+          arity: 2
+        )
 
-      Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
+      # mock columns response
+      # mock functions response
+      # mock tables response
+      Sanbase.ClickhouseRepo
+      |> Sanbase.Mock.prepare_mock(:query, mock_fun)
       |> Sanbase.Mock.run_with_mocks(fn ->
         metadata =
-          post(context.conn, "/graphql", query_skeleton(query))
+          context.conn
+          |> post("/graphql", query_skeleton(query))
           |> json_response(200)
           |> get_in(["data", "getClickhouseDatabaseMetadata"])
 
@@ -652,8 +669,7 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
   defp create_query(user_id) do
     Sanbase.Queries.create_query(
       %{
-        sql_query_text:
-          "SELECT * FROM intraday_metrics WHERE asset_id = get_asset_id({{slug}}) LIMIT {{limit}}",
+        sql_query_text: "SELECT * FROM intraday_metrics WHERE asset_id = get_asset_id({{slug}}) LIMIT {{limit}}",
         sql_query_parameters: %{slug: "bitcoin", limit: 10}
       },
       user_id

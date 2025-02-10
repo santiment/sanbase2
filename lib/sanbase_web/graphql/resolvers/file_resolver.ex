@@ -1,9 +1,10 @@
 defmodule SanbaseWeb.Graphql.Resolvers.FileResolver do
-  require Logger
-
+  @moduledoc false
   alias Sanbase.FileStore
   alias Sanbase.Insight.PostImage
   alias Sanbase.Utils.FileHash
+
+  require Logger
 
   @doc ~s"""
     Receives a list of `%Plug.Upload{}` representing the images and uploads them.
@@ -16,8 +17,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.FileResolver do
     # they are located in a folder called `scope`
 
     image_data =
-      images
-      |> Enum.map(fn %{filename: file_name} = arg ->
+      Enum.map(images, fn %{filename: file_name} = arg ->
         # Prepend the timestamp in milliseconds to the name to avoid name collision
         # when uploading images with the same hash and name
         arg = %{arg | filename: milliseconds_str() <> "_" <> file_name}
@@ -40,7 +40,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.FileResolver do
         file_name: file_name,
         image_url: image_url,
         content_hash: content_hash,
-        hash_algorithm: FileHash.algorithm() |> Atom.to_string()
+        hash_algorithm: Atom.to_string(FileHash.algorithm())
       }
     else
       {:error, error} ->
@@ -63,7 +63,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.FileResolver do
   defp image_upload_error?(%{error: error}) when not is_nil(error), do: true
   defp image_upload_error?(_), do: false
 
-  defp milliseconds_str() do
+  defp milliseconds_str do
     DateTime.utc_now()
     |> DateTime.to_unix(:millisecond)
     |> Integer.to_string()

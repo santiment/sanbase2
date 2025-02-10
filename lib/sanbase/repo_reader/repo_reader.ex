@@ -7,9 +7,6 @@ defmodule Sanbase.RepoReader do
   action.
   """
 
-  alias Sanbase.Project
-  alias __MODULE__.{Repository, Validator}
-
   import __MODULE__.Utils,
     only: [
       clone_repo: 2,
@@ -19,7 +16,12 @@ defmodule Sanbase.RepoReader do
       repository_url: 0
     ]
 
+  alias __MODULE__.Repository
+  alias __MODULE__.Validator
+  alias Sanbase.Project
+
   require Logger
+
   @repository repository()
   @repository_url repository_url()
 
@@ -90,9 +92,8 @@ defmodule Sanbase.RepoReader do
 
   defp do_validate_changes(path, fork_repo, branch, changed_directories) do
     with {:ok, %Repository{} = repo} <- clone_repo(path, fork_repo: fork_repo, branch: branch),
-         {:ok, projects_map} <- read_files(repo, directories_to_read: changed_directories),
-         :ok <- Validator.validate(projects_map) do
-      :ok
+         {:ok, projects_map} <- read_files(repo, directories_to_read: changed_directories) do
+      Validator.validate(projects_map)
     end
   end
 
@@ -115,16 +116,14 @@ defmodule Sanbase.RepoReader do
     general = data["general"]
 
     result =
-      Project.changeset(
-        project,
-        %{
-          name: general["name"],
-          ticker: general["ticker"],
-          description: general["description"],
-          ecosystem: general["ecosystem"],
-          website: general["website"]
-        }
-      )
+      project
+      |> Project.changeset(%{
+        name: general["name"],
+        ticker: general["ticker"],
+        description: general["description"],
+        ecosystem: general["ecosystem"],
+        website: general["website"]
+      })
       |> Sanbase.Repo.update()
 
     case result do
@@ -137,18 +136,16 @@ defmodule Sanbase.RepoReader do
     social = data["social"]
 
     result =
-      Project.changeset(
-        project,
-        %{
-          twitter_link: social["twitter"],
-          discord_link: social["discord"],
-          slack_link: social["slack"],
-          facebook_link: social["facebook"],
-          btt_link: social["bitcointalk"],
-          reddit_link: social["reddit"],
-          blog_link: social["blog"]
-        }
-      )
+      project
+      |> Project.changeset(%{
+        twitter_link: social["twitter"],
+        discord_link: social["discord"],
+        slack_link: social["slack"],
+        facebook_link: social["facebook"],
+        btt_link: social["bitcointalk"],
+        reddit_link: social["reddit"],
+        blog_link: social["blog"]
+      })
       |> Sanbase.Repo.update()
 
     case result do
@@ -161,8 +158,7 @@ defmodule Sanbase.RepoReader do
     organizations = data["development"]["github_organizations"] || []
     existing_organizations = Enum.map(project.github_organizations, & &1.organization)
 
-    (organizations -- existing_organizations)
-    |> Enum.reduce_while(:ok, fn org, _acc ->
+    Enum.reduce_while(organizations -- existing_organizations, :ok, fn org, _acc ->
       case Project.GithubOrganization.add_github_organization(project, org) do
         {:ok, _} -> {:cont, :ok}
         {:error, _} = error_tuple -> {:halt, error_tuple}
@@ -173,10 +169,9 @@ defmodule Sanbase.RepoReader do
   defp update_contracts_data(project, data) do
     contracts = data["blockchain"]["contracts"] || []
 
-    contracts
-    |> Enum.reduce_while(:ok, fn contract_map, _acc ->
+    Enum.reduce_while(contracts, :ok, fn contract_map, _acc ->
       args = %{
-        address: contract_map["address"] |> Sanbase.BlockchainAddress.to_internal_format(),
+        address: Sanbase.BlockchainAddress.to_internal_format(contract_map["address"]),
         decimals: contract_map["decimals"],
         label: contract_map["label"],
         description: contract_map["description"]

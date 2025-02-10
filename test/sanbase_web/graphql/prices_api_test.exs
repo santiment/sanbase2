@@ -5,6 +5,8 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
+  alias SanbaseWeb.Graphql.AuthPlug
+
   require Sanbase.Utils.Config, as: Config
 
   setup do
@@ -30,22 +32,23 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
       %{datetime: to, price_usd: 25, price_btc: 0.4, marketcap_usd: 500, volume_usd: 100}
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Price.timeseries_data/4, {:ok, data})
+    (&Sanbase.Price.timeseries_data/4)
+    |> Sanbase.Mock.prepare_mock2({:ok, data})
     |> Sanbase.Mock.prepare_mock2(&Sanbase.Price.first_datetime/1, {:ok, from})
     |> Sanbase.Mock.run_with_mocks(fn ->
       history_price =
-        get_history_price(conn, slug, from, to, nil) |> get_in(["data", "historyPrice"])
+        conn |> get_history_price(slug, from, to, nil) |> get_in(["data", "historyPrice"])
 
       expected_history_price = [
         %{
-          "datetime" => "#{from |> DateTime.to_iso8601()}",
+          "datetime" => "#{DateTime.to_iso8601(from)}",
           "priceUsd" => 22,
           "priceBtc" => 0.2,
           "marketcapUsd" => 800,
           "volumeUsd" => 300
         },
         %{
-          "datetime" => "#{to |> DateTime.to_iso8601()}",
+          "datetime" => "#{DateTime.to_iso8601(to)}",
           "priceUsd" => 25,
           "priceBtc" => 0.4,
           "marketcapUsd" => 500,
@@ -65,23 +68,25 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
       %{datetime: to, price_usd: 25, price_btc: 0.4, marketcap_usd: 500, volume_usd: 100}
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Price.timeseries_data/4, {:ok, data})
+    (&Sanbase.Price.timeseries_data/4)
+    |> Sanbase.Mock.prepare_mock2({:ok, data})
     |> Sanbase.Mock.prepare_mock2(&Sanbase.Price.first_datetime/1, {:ok, from})
     |> Sanbase.Mock.run_with_mocks(fn ->
       history_price =
-        get_history_price(conn, slug, from, to, "2d")
+        conn
+        |> get_history_price(slug, from, to, "2d")
         |> get_in(["data", "historyPrice"])
 
       expected_history_price = [
         %{
-          "datetime" => "#{from |> DateTime.to_iso8601()}",
+          "datetime" => "#{DateTime.to_iso8601(from)}",
           "priceUsd" => 22,
           "priceBtc" => 0.2,
           "marketcapUsd" => 800,
           "volumeUsd" => 300
         },
         %{
-          "datetime" => "#{to |> DateTime.to_iso8601()}",
+          "datetime" => "#{DateTime.to_iso8601(to)}",
           "priceUsd" => 25,
           "priceBtc" => 0.4,
           "marketcapUsd" => 500,
@@ -99,7 +104,7 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     result = get_history_price(conn, slug, from, to, "1000d")
 
     assert result["errors"] != nil
-    error = result["errors"] |> List.first()
+    error = List.first(result["errors"])
     assert error["message"] =~ "Cryptocurrencies didn't exist before 2009-01-01 00:00:00Z"
   end
 
@@ -107,7 +112,7 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     %{conn: conn, slug1: slug, years_ago: from, datetime3: to} = context
 
     result = get_history_price(conn, slug, from, to, "5m")
-    error = result["errors"] |> List.first()
+    error = List.first(result["errors"])
     assert String.contains?(error["message"], "too complex")
   end
 
@@ -119,7 +124,8 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
       %{datetime: to, price_usd: 25, price_btc: 0.4, marketcap_usd: 500, volume_usd: 100}
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Price.timeseries_data/4, {:ok, data})
+    (&Sanbase.Price.timeseries_data/4)
+    |> Sanbase.Mock.prepare_mock2({:ok, data})
     |> Sanbase.Mock.prepare_mock2(&Sanbase.Price.first_datetime/1, {:ok, from})
     |> Sanbase.Mock.run_with_mocks(fn ->
       query = history_price_query(slug, from, to, "5m")
@@ -143,25 +149,24 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
       %{datetime: to, marketcap_usd: 500, volume_usd: 100}
     ]
 
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.Price.timeseries_data/4,
-      {:ok, data}
-    )
+    (&Sanbase.Price.timeseries_data/4)
+    |> Sanbase.Mock.prepare_mock2({:ok, data})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
-        get_history_price(conn, "TOTAL_ERC20", from, to, "1d")
+        conn
+        |> get_history_price("TOTAL_ERC20", from, to, "1d")
         |> get_in(["data", "historyPrice"])
 
       expected_result = [
         %{
-          "datetime" => "#{from |> DateTime.to_iso8601()}",
+          "datetime" => "#{DateTime.to_iso8601(from)}",
           "marketcapUsd" => 800,
           "priceBtc" => nil,
           "priceUsd" => nil,
           "volumeUsd" => 300
         },
         %{
-          "datetime" => "#{to |> DateTime.to_iso8601()}",
+          "datetime" => "#{DateTime.to_iso8601(to)}",
           "marketcapUsd" => 500,
           "priceBtc" => nil,
           "priceUsd" => nil,
@@ -181,13 +186,12 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
       %{slug: slug2, marketcap_usd: 200, volume_usd: 700, marketcap_percent: 0.2}
     ]
 
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.Price.aggregated_marketcap_and_volume/3,
-      {:ok, data}
-    )
+    (&Sanbase.Price.aggregated_marketcap_and_volume/3)
+    |> Sanbase.Mock.prepare_mock2({:ok, data})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
-        get_project_group_stats(conn, [slug1, slug2], from, to)
+        conn
+        |> get_project_group_stats([slug1, slug2], from, to)
         |> get_in(["data", "projectsListStats"])
 
       expected_result = [
@@ -210,7 +214,7 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   end
 
   defp get_project_group_stats(conn, slugs, from, to) do
-    slugs_str = slugs |> Enum.map(fn slug -> ~s|"#{slug}"| end) |> Enum.join(",")
+    slugs_str = Enum.map_join(slugs, ",", fn slug -> ~s|"#{slug}"| end)
 
     query = """
     {
@@ -275,9 +279,9 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     |> json_response(200)
   end
 
-  defp basic_auth() do
-    username = Config.module_get(SanbaseWeb.Graphql.AuthPlug, :basic_auth_username)
-    password = Config.module_get(SanbaseWeb.Graphql.AuthPlug, :basic_auth_password)
+  defp basic_auth do
+    username = Config.module_get(AuthPlug, :basic_auth_username)
+    password = Config.module_get(AuthPlug, :basic_auth_password)
     Base.encode64(username <> ":" <> password)
   end
 end

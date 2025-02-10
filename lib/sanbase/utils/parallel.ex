@@ -1,4 +1,5 @@
 defmodule Sanbase.Parallel do
+  @moduledoc false
   @doc ~s"""
   Module implementing concurrent map and filter functions on enumerable under Sanbase.TaskSupervisor
   """
@@ -31,15 +32,13 @@ defmodule Sanbase.Parallel do
 
     case map_type do
       :map ->
-        stream
-        |> Enum.map(fn
+        Enum.map(stream, fn
           {:ok, elem} -> elem
           data -> data
         end)
 
       :flat_map ->
-        stream
-        |> Enum.flat_map(fn
+        Enum.flat_map(stream, fn
           {:ok, elem} -> elem
           data -> data
         end)
@@ -49,7 +48,8 @@ defmodule Sanbase.Parallel do
   def filter(collection, func, opts \\ []) when is_function(func, 1) do
     filter_func = fn x -> {func.(x), x} end
 
-    map(collection, filter_func, opts)
+    collection
+    |> map(filter_func, opts)
     |> Enum.filter(fn {bool, _item} -> bool === true end)
     |> Enum.map(fn {_bool, item} -> item end)
   end

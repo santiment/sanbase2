@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.MarketSegmentTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   object :market_segment do

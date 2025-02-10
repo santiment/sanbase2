@@ -7,11 +7,9 @@ defmodule SanbaseWeb.MetricNameController do
     map = Sanbase.Clickhouse.MetricAdapter.Registry.name_to_metric_map()
 
     data =
-      Enum.map(map, fn {k, v} ->
-        %{public_name: k, internal_name: v}
-        |> Jason.encode!()
+      Enum.map_join(map, "\n", fn {k, v} ->
+        Jason.encode!(%{public_name: k, internal_name: v})
       end)
-      |> Enum.join("\n")
 
     conn
     |> put_resp_header("content-type", "application/json; charset=utf-8")

@@ -1,11 +1,13 @@
 defmodule SanbaseWeb.Graphql.UserListTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   import Absinthe.Resolution.Helpers
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 2]
 
+  alias SanbaseWeb.Graphql.Resolvers.UserListResolver
+  alias SanbaseWeb.Graphql.Resolvers.VoteResolver
   alias SanbaseWeb.Graphql.SanbaseRepo
-  alias SanbaseWeb.Graphql.Resolvers.{UserListResolver, VoteResolver}
 
   enum :color_enum do
     value(:none)

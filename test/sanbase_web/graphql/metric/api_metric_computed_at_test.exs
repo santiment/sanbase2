@@ -14,14 +14,12 @@ defmodule SanbaseWeb.Graphql.ApiMetricComputedAtTest do
   test "returns last datetime computed at for all available metric", context do
     %{conn: conn, project: project} = context
 
-    metrics = Metric.available_metrics() |> Enum.shuffle()
+    metrics = Enum.shuffle(Metric.available_metrics())
     datetime = ~U[2020-01-01 12:45:40Z]
-    clickhouse_response = {:ok, %{rows: [[datetime |> DateTime.to_unix()]]}}
+    clickhouse_response = {:ok, %{rows: [[DateTime.to_unix(datetime)]]}}
 
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.ClickhouseRepo.query/2,
-      clickhouse_response
-    )
+    (&Sanbase.ClickhouseRepo.query/2)
+    |> Sanbase.Mock.prepare_mock2(clickhouse_response)
     |> Sanbase.Mock.prepare_mock2(
       &Sanbase.Twitter.MetricAdapter.last_datetime_computed_at/2,
       {:ok, datetime}

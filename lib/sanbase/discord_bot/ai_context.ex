@@ -1,4 +1,5 @@
 defmodule Sanbase.DiscordBot.AiContext do
+  @moduledoc false
   use Ecto.Schema
 
   import Ecto.Changeset
@@ -73,7 +74,8 @@ defmodule Sanbase.DiscordBot.AiContext do
   end
 
   def create(params) do
-    changeset(%__MODULE__{}, params)
+    %__MODULE__{}
+    |> changeset(params)
     |> Repo.insert()
   end
 
@@ -89,7 +91,8 @@ defmodule Sanbase.DiscordBot.AiContext do
   end
 
   def fetch_history_context(params, limit) do
-    fetch_recent_history(params.thread_id, limit)
+    params.thread_id
+    |> fetch_recent_history(limit)
     |> Enum.reverse()
     |> Enum.map(fn history ->
       [%{role: "user", content: history.question}, %{role: "assistant", content: history.answer}]
@@ -102,12 +105,13 @@ defmodule Sanbase.DiscordBot.AiContext do
 
     updated_votes = Map.merge(context.votes, new_vote)
 
-    changeset(context, %{votes: updated_votes})
+    context
+    |> changeset(%{votes: updated_votes})
     |> Repo.update()
   end
 
   def check_limits(args) do
-    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    now = DateTime.truncate(DateTime.utc_now(), :second)
     start_of_day = DateTime.to_date(now)
     start_of_next_day = Date.add(start_of_day, 1)
 
@@ -117,8 +121,10 @@ defmodule Sanbase.DiscordBot.AiContext do
     pro_user_query_count = Repo.one(query_for_pro_user)
 
     time_left =
-      DateTime.diff(
-        DateTime.from_naive!(NaiveDateTime.new!(start_of_next_day, ~T[00:00:00]), "Etc/UTC"),
+      start_of_next_day
+      |> NaiveDateTime.new!(~T[00:00:00])
+      |> DateTime.from_naive!("Etc/UTC")
+      |> DateTime.diff(
         now,
         :second
       )

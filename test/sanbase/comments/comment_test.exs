@@ -2,8 +2,9 @@ defmodule Sanbase.CommentTest do
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
-  alias Sanbase.Comments.EntityComment
+
   alias Sanbase.Comment
+  alias Sanbase.Comments.EntityComment
 
   @insight_entity_type :insight
 
@@ -160,8 +161,8 @@ defmodule Sanbase.CommentTest do
     assert comment.content == content
 
     assert updated_comment.edited_at != nil
-    assert NaiveDateTime.compare(updated_comment.edited_at, naive_dt_before_update) == :gt
-    assert NaiveDateTime.compare(naive_dt_after_update, updated_comment.edited_at) == :gt
+    assert NaiveDateTime.after?(updated_comment.edited_at, naive_dt_before_update)
+    assert NaiveDateTime.after?(naive_dt_after_update, updated_comment.edited_at)
     assert updated_comment.content == updated_content
   end
 

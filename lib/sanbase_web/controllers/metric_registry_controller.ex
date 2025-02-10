@@ -1,60 +1,52 @@
 defmodule SanbaseWeb.MetricRegistryController do
   use SanbaseWeb, :controller
 
+  alias Sanbase.Metric.Registry.Sync
+
   def sync(conn, %{"secret" => secret} = params) do
-    case secret == get_sync_secret() do
-      true ->
-        try do
-          case Sanbase.Metric.Registry.Sync.apply_sync(
-                 Map.take(params, ["content", "confirmation_endpoint", "sync_uuid"])
-               ) do
-            :ok ->
-              conn
-              |> resp(200, "OK")
-              |> send_resp()
-
-            {:error, error} ->
-              conn
-              |> resp(500, "Error Syncing: #{inspect(error)}")
-              |> send_resp()
-          end
-        rescue
-          e ->
-            conn
-            |> resp(500, "Error syncing: #{Exception.message(e)}")
-            |> send_resp()
-        end
-
-      false ->
-        conn
-        |> resp(403, "Unauthorized")
-        |> send_resp()
-    end
-  end
-
-  def mark_sync_as_completed(conn, %{
-        "sync_uuid" => sync_uuid,
-        "actual_changes" => actual_changes,
-        "secret" => secret
-      }) do
-    case secret == get_sync_secret() do
-      true ->
-        case Sanbase.Metric.Registry.Sync.mark_sync_as_completed(sync_uuid, actual_changes) do
-          {:ok, _} ->
+    if secret == get_sync_secret() do
+      try do
+        case Sync.apply_sync(Map.take(params, ["content", "confirmation_endpoint", "sync_uuid"])) do
+          :ok ->
             conn
             |> resp(200, "OK")
             |> send_resp()
 
-          {:error, reason} ->
+          {:error, error} ->
             conn
-            |> resp(500, "Error marking sync as finished. Reason: #{reason}")
+            |> resp(500, "Error Syncing: #{inspect(error)}")
             |> send_resp()
         end
+      rescue
+        e ->
+          conn
+          |> resp(500, "Error syncing: #{Exception.message(e)}")
+          |> send_resp()
+      end
+    else
+      conn
+      |> resp(403, "Unauthorized")
+      |> send_resp()
+    end
+  end
 
-      false ->
-        conn
-        |> resp(403, "Unauthorized")
-        |> send_resp()
+  def mark_sync_as_completed(conn, %{"sync_uuid" => sync_uuid, "actual_changes" => actual_changes, "secret" => secret}) do
+    if secret == get_sync_secret() do
+      case Sync.mark_sync_as_completed(sync_uuid, actual_changes) do
+        {:ok, _} ->
+          conn
+          |> resp(200, "OK")
+          |> send_resp()
+
+        {:error, reason} ->
+          conn
+          |> resp(500, "Error marking sync as finished. Reason: #{reason}")
+          |> send_resp()
+      end
+    else
+      conn
+      |> resp(403, "Unauthorized")
+      |> send_resp()
     end
   end
 
@@ -64,7 +56,7 @@ defmodule SanbaseWeb.MetricRegistryController do
     |> send_resp()
   end
 
-  defp get_metric_registry_json() do
+  defp get_metric_registry_json do
     Sanbase.Metric.Registry.all()
     |> Enum.take(1)
     |> Enum.map(&transform/1)
@@ -91,7 +83,7 @@ defmodule SanbaseWeb.MetricRegistryController do
 
   defp transform(data), do: data
 
-  defp get_sync_secret() do
-    Sanbase.Utils.Config.module_get(Sanbase.Metric.Registry.Sync, :sync_secret)
+  defp get_sync_secret do
+    Sanbase.Utils.Config.module_get(Sync, :sync_secret)
   end
 end

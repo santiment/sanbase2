@@ -1,15 +1,17 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
+  @moduledoc false
   use Tesla
-
-  defstruct [:market_cap_by_available_supply, :price_usd, :volume_usd, :price_btc]
-
-  require Logger
 
   import Sanbase.ExternalServices.Coinmarketcap.Utils, only: [wait_rate_limit: 2]
 
+  alias Sanbase.ExternalServices.Coinmarketcap.PricePoint
+  alias Sanbase.ExternalServices.Coinmarketcap.PriceScrapingProgress
   alias Sanbase.Model.LatestCoinmarketcapData
-  alias Sanbase.ExternalServices.Coinmarketcap.{PricePoint, PriceScrapingProgress}
   alias Sanbase.Project
+
+  require Logger
+
+  defstruct [:market_cap_by_available_supply, :price_usd, :volume_usd, :price_btc]
 
   @rate_limiting_server :graph_coinmarketcap_rate_limiter
   plug(Tesla.Middleware.Logger)
@@ -29,8 +31,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
   def first_datetime(%Project{} = project) do
     case LatestCoinmarketcapData.coinmarketcap_integer_id(project) do
       nil ->
-        {:error,
-         "Cannot fetch first datetime for #{Project.describe(project)}. Reason: Missing coinmarketcap integer id"}
+        {:error, "Cannot fetch first datetime for #{Project.describe(project)}. Reason: Missing coinmarketcap integer id"}
 
       coinmarketcap_integer_id ->
         get_first_datetime(coinmarketcap_integer_id)
@@ -50,7 +51,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
         get_first_datetime(id)
 
       {:ok, %Tesla.Env{status: 200, body: body}} ->
-        json_decoded_body = body |> Jason.decode!()
+        json_decoded_body = Jason.decode!(body)
 
         json_decoded_body
         |> get_in(["data", "points"])
@@ -89,7 +90,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
         # Consume 10 price point intervals. Break early in case of errors.
         # Errors should not be ignored as this can cause a gap in the prices
         # in case the next fetch succeeds and we store a later progress datetime
-        price_stream(coinmarketcap_integer_id, last_fetched_datetime, DateTime.utc_now())
+        coinmarketcap_integer_id
+        |> price_stream(last_fetched_datetime, DateTime.utc_now())
         |> Stream.take(10)
         |> Enum.reduce_while(:ok, fn
           {:ok, result, interval}, acc ->
@@ -103,14 +105,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
   end
 
   def fetch_and_store_prices("TOTAL_MARKET", last_fetched_datetime) do
-    Logger.info(
-      "[CMC] Fetching prices for TOTAL_MARKET with last fetched datetime #{last_fetched_datetime}"
-    )
+    Logger.info("[CMC] Fetching prices for TOTAL_MARKET with last fetched datetime #{last_fetched_datetime}")
 
     # Consume 10 price point intervals. Break early in case of errors.
     # Errors should not be ignored as this can cause a gap in the prices
     # in case the next fetch succeeds and we store a later progress datetime
-    price_stream("TOTAL_MARKET", last_fetched_datetime, DateTime.utc_now())
+    "TOTAL_MARKET"
+    |> price_stream(last_fetched_datetime, DateTime.utc_now())
     |> Stream.take(10)
     |> Enum.reduce_while(:ok, fn
       {:ok, result, interval}, acc ->
@@ -155,17 +156,20 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
   end
 
   defp export_prices_to_kafka(%Project{slug: slug}, price_points) do
-    Enum.map(price_points, fn point -> PricePoint.json_kv_tuple(point, slug) end)
+    price_points
+    |> Enum.map(fn point -> PricePoint.json_kv_tuple(point, slug) end)
     |> Sanbase.KafkaExporter.persist_sync(@prices_exporter)
   end
 
   defp export_prices_to_kafka("TOTAL_MARKET", price_points) do
-    Enum.map(price_points, fn point -> PricePoint.json_kv_tuple(point, "TOTAL_MARKET") end)
+    price_points
+    |> Enum.map(fn point -> PricePoint.json_kv_tuple(point, "TOTAL_MARKET") end)
     |> Sanbase.KafkaExporter.persist_sync(@prices_exporter)
   end
 
   def price_stream(identifier, from_datetime, to_datetime) do
-    intervals_stream(from_datetime, to_datetime, days_step: 1)
+    from_datetime
+    |> intervals_stream(to_datetime, days_step: 1)
     |> Stream.map(&extract_price_points_for_interval(identifier, &1))
   end
 
@@ -188,8 +192,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
                ]
              } ->
             %PricePoint{
-              marketcap_usd: marketcap_usd |> Sanbase.Math.to_integer(),
-              volume_usd: volume_usd |> Sanbase.Math.to_integer(),
+              marketcap_usd: Sanbase.Math.to_integer(marketcap_usd),
+              volume_usd: Sanbase.Math.to_integer(volume_usd),
               datetime: Sanbase.DateTimeUtils.from_iso8601!(datetime_iso8601)
             }
           end
@@ -208,29 +212,27 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
            "status" => %{"error_code" => "0", "error_message" => "SUCCESS"}
          } <- decoded do
       result =
-        Enum.map(
-          data["points"] || [],
-          fn
-            {dt_unix_str, %{"v" => [price_usd, volume_usd, marketcap_usd, price_btc | _]}} ->
-              dt_unix = String.to_integer(dt_unix_str)
+        (data["points"] || [])
+        |> Enum.map(fn
+          {dt_unix_str, %{"v" => [price_usd, volume_usd, marketcap_usd, price_btc | _]}} ->
+            dt_unix = String.to_integer(dt_unix_str)
 
-              %PricePoint{
-                price_usd: Sanbase.Math.to_float(price_usd),
-                price_btc: Sanbase.Math.to_float(price_btc),
-                marketcap_usd: Sanbase.Math.to_integer(marketcap_usd),
-                volume_usd: Sanbase.Math.to_integer(volume_usd),
-                datetime: DateTime.from_unix!(dt_unix)
-              }
+            %PricePoint{
+              price_usd: Sanbase.Math.to_float(price_usd),
+              price_btc: Sanbase.Math.to_float(price_btc),
+              marketcap_usd: Sanbase.Math.to_integer(marketcap_usd),
+              volume_usd: Sanbase.Math.to_integer(volume_usd),
+              datetime: DateTime.from_unix!(dt_unix)
+            }
 
-            data ->
-              Logger.info("""
-              [#{__MODULE__}] No price points found when getting prices for #{identifier} and interval #{inspect(interval)}.
-              Instead got: #{inspect(data)}
-              """)
+          data ->
+            Logger.info("""
+            [#{__MODULE__}] No price points found when getting prices for #{identifier} and interval #{inspect(interval)}.
+            Instead got: #{inspect(data)}
+            """)
 
-              nil
-          end
-        )
+            nil
+        end)
         |> Enum.reject(&is_nil/1)
 
       {:ok, result, interval}
@@ -239,10 +241,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
     end
   end
 
-  defp extract_price_points_for_interval(
-         "TOTAL_MARKET" = total_market,
-         {from_unix, to_unix} = interval
-       ) do
+  defp extract_price_points_for_interval("TOTAL_MARKET" = total_market, {from_unix, to_unix} = interval) do
     "https://api.coinmarketcap.com/data-api/v3/global-metrics/quotes/historical?format=chart&interval=5m&timeEnd=#{to_unix}&timeStart=#{from_unix}"
     |> get()
     |> case do
@@ -268,8 +267,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
   # 26 July 2023: CMC API v1 doesn't work anymore. We need to use v3
   # Check format here: https://api.coinmarketcap.com/data-api/v3/cryptocurrency/detail/chart?id=1807&range=1689724800~1689984000
 
-  defp extract_price_points_for_interval(id, {from_unix, to_unix} = interval)
-       when is_integer(id) do
+  defp extract_price_points_for_interval(id, {from_unix, to_unix} = interval) when is_integer(id) do
     Logger.info("""
       [CMC] Extracting price points for coinmarketcap integer id #{id} and interval [#{DateTime.from_unix!(from_unix)} - #{DateTime.from_unix!(to_unix)}]
     """)
@@ -311,7 +309,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
 
     from_unix = DateTime.to_unix(from)
     to_unix = DateTime.to_unix(to)
-    now_unix = DateTime.utc_now() |> DateTime.to_unix()
+    now_unix = DateTime.to_unix(DateTime.utc_now())
     to_unix = Enum.min([to_unix, now_unix])
 
     Stream.unfold(from_unix, fn start_unix ->
@@ -319,8 +317,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
         end_unix = start_unix + 86_400 * days_step
         end_unix = Enum.min([end_unix, now_unix])
         {{start_unix, end_unix}, end_unix}
-      else
-        nil
       end
     end)
   end
@@ -330,7 +326,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
   end
 
   defp max_dt_or_now(seconds) when is_integer(seconds) do
-    now_unix = DateTime.utc_now() |> DateTime.to_unix()
+    now_unix = DateTime.to_unix(DateTime.utc_now())
     Enum.max([seconds, now_unix])
   end
 end

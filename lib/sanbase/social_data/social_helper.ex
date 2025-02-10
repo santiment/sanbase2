@@ -1,4 +1,5 @@
 defmodule Sanbase.SocialData.SocialHelper do
+  @moduledoc false
   alias Sanbase.Project
   alias Sanbase.Project.SocialVolumeQuery
 
@@ -12,8 +13,8 @@ defmodule Sanbase.SocialData.SocialHelper do
     :farcaster
   ]
 
-  def sources(), do: @sources
-  def sources_total_string(), do: "total"
+  def sources, do: @sources
+  def sources_total_string, do: "total"
 
   def replace_words_with_original_casing(result, words) do
     Enum.map(result, fn %{word: lowercase_word} = map ->

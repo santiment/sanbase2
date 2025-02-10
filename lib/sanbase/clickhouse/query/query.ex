@@ -6,9 +6,9 @@ defmodule Sanbase.Clickhouse.Query do
   using named parameters and a template. It also provides options for adding
   the Clickhous specific SETTINGS and FORMAT fragments to the query.
   """
-  defstruct [:sql, :parameters, :settings, :format, :environment]
-
   alias Sanbase.Clickhouse.Query.Environment
+
+  defstruct [:sql, :parameters, :settings, :format, :environment]
 
   @type sql :: String.t()
   @type parameters :: Map.t()
@@ -70,7 +70,7 @@ defmodule Sanbase.Clickhouse.Query do
 
   @spec add_parameter(t(), any(), any()) :: t()
   def add_parameter(struct, key, value) do
-    parameters = struct.parameters |> Map.put(key, value)
+    parameters = Map.put(struct.parameters, key, value)
 
     %{struct | parameters: parameters}
   end

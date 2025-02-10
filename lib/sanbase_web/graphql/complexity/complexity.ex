@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.Complexity do
+  @moduledoc false
   require Logger
 
   @compile inline: [
@@ -28,11 +29,7 @@ defmodule SanbaseWeb.Graphql.Complexity do
     0
   end
 
-  def from_to_interval(
-        args,
-        child_complexity,
-        %{context: %{auth: %{subscription: subscription}}} = struct
-      )
+  def from_to_interval(args, child_complexity, %{context: %{auth: %{subscription: subscription}}} = struct)
       when not is_nil(subscription) do
     complexity = calculate_complexity(args, child_complexity, struct)
 
@@ -57,9 +54,9 @@ defmodule SanbaseWeb.Graphql.Complexity do
   # Private functions
 
   defp calculate_complexity(%{from: from, to: to} = args, child_complexity, struct) do
-    seconds_difference = Timex.diff(from, to, :seconds) |> abs()
+    seconds_difference = from |> Timex.diff(to, :seconds) |> abs()
     years_difference_weighted = years_difference_weighted(from, to)
-    interval_seconds = interval_seconds(args) |> max(1)
+    interval_seconds = args |> interval_seconds() |> max(1)
     metric = get_metric_name(struct)
 
     complexity_weight =
@@ -70,9 +67,9 @@ defmodule SanbaseWeb.Graphql.Complexity do
         _ -> 1
       end
 
-    (child_complexity * (seconds_difference / interval_seconds) * years_difference_weighted *
-       complexity_weight)
-    |> Sanbase.Math.to_integer()
+    Sanbase.Math.to_integer(
+      child_complexity * (seconds_difference / interval_seconds) * years_difference_weighted * complexity_weight
+    )
   end
 
   # This case is important as here the flow comes from `timeseries_data_complexity`
@@ -98,14 +95,16 @@ defmodule SanbaseWeb.Graphql.Complexity do
   end
 
   defp interval_seconds(args) do
-    case Map.get(args, :interval, "") do
-      "" -> "1d"
-      interval -> interval
-    end
-    |> Sanbase.DateTimeUtils.str_to_sec()
+    case_result =
+      case Map.get(args, :interval, "") do
+        "" -> "1d"
+        interval -> interval
+      end
+
+    Sanbase.DateTimeUtils.str_to_sec(case_result)
   end
 
   defp years_difference_weighted(from, to) do
-    Timex.diff(from, to, :years) |> abs() |> max(2) |> div(2)
+    from |> Timex.diff(to, :years) |> abs() |> max(2) |> div(2)
   end
 end

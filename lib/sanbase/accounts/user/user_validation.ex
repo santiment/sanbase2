@@ -1,4 +1,5 @@
 defmodule Sanbase.Accounts.User.Validation do
+  @moduledoc false
   alias Sanbase.Accounts.User
 
   def normalize_user_identificator(changeset, _field, nil), do: changeset
@@ -8,8 +9,7 @@ defmodule Sanbase.Accounts.User.Validation do
   end
 
   def normalize_user_identificator(:username, value) do
-    value
-    |> String.trim()
+    String.trim(value)
   end
 
   def normalize_user_identificator(_field, value) do

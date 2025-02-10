@@ -1,9 +1,11 @@
 defmodule Sanbase.Repo.Migrations.PopulateNotificationTemplates do
+  @moduledoc false
   use Ecto.Migration
-  alias Sanbase.Notifications.NotificationTemplate
-  alias Sanbase.Repo
 
   import Ecto.Query
+
+  alias Sanbase.Notifications.NotificationTemplate
+  alias Sanbase.Repo
 
   def up do
     setup()
@@ -85,8 +87,7 @@ defmodule Sanbase.Repo.Migrations.PopulateNotificationTemplates do
       }
     ]
 
-    templates
-    |> Enum.each(fn template_attrs ->
+    Enum.each(templates, fn template_attrs ->
       %NotificationTemplate{}
       |> NotificationTemplate.changeset(template_attrs)
       |> Repo.insert!()
@@ -96,12 +97,11 @@ defmodule Sanbase.Repo.Migrations.PopulateNotificationTemplates do
   def down do
     setup()
 
-    from(t in NotificationTemplate,
-      where:
-        t.channel == "all" and
-          t.action_type in ["create", "update", "delete", "alert"]
+    Repo.delete_all(
+      from(t in NotificationTemplate,
+        where: t.channel == "all" and t.action_type in ["create", "update", "delete", "alert"]
+      )
     )
-    |> Repo.delete_all()
   end
 
   defp setup do

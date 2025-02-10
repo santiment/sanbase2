@@ -1,14 +1,16 @@
 defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
-  @doc ~s"""
-  Module for working with historical XRP balances.
-  """
-
+  @moduledoc false
   @behaviour Sanbase.Clickhouse.HistoricalBalance.Behaviour
 
   import Sanbase.Clickhouse.HistoricalBalance.Utils
   import Sanbase.Metric.SqlQuery.Helper, only: [timerange_parameters: 3]
 
+  alias Sanbase.Clickhouse.Query
   alias Sanbase.ClickhouseRepo
+
+  @doc ~s"""
+  Module for working with historical XRP balances.
+  """
 
   @table "xrp_balances"
 
@@ -40,14 +42,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
   def historical_balance([], _, _, _, _, _), do: {:ok, []}
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
-  def historical_balance(
-        addresses,
-        %{currency: _, issuer: _} = target_map,
-        decimals,
-        from,
-        to,
-        interval
-      )
+  def historical_balance(addresses, %{currency: _, issuer: _} = target_map, decimals, from, to, interval)
       when is_list(addresses) do
     combine_historical_balances(addresses, fn address ->
       historical_balance(address, target_map, decimals, from, to, interval)
@@ -55,18 +50,12 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
   end
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
-  def historical_balance(
-        address,
-        %{currency: currency, issuer: issuer},
-        _decimals,
-        from,
-        to,
-        interval
-      )
+  def historical_balance(address, %{currency: currency, issuer: issuer}, _decimals, from, to, interval)
       when is_binary(address) do
     query_struct = historical_balance_query(address, currency, issuer, from, to, interval)
 
-    ClickhouseRepo.query_transform(query_struct, fn [dt, balance, has_changed] ->
+    query_struct
+    |> ClickhouseRepo.query_transform(fn [dt, balance, has_changed] ->
       %{
         datetime: DateTime.from_unix!(dt),
         balance: balance,
@@ -83,13 +72,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
   def balance_change([], _, _, _, _), do: {:ok, []}
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
-  def balance_change(
-        address_or_addresses,
-        %{currency: currency, issuer: issuer},
-        _decimals,
-        from,
-        to
-      )
+  def balance_change(address_or_addresses, %{currency: currency, issuer: issuer}, _decimals, from, to)
       when is_binary(address_or_addresses) or is_list(address_or_addresses) do
     query_struct = balance_change_query(address_or_addresses, currency, issuer, from, to)
 
@@ -168,7 +151,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
       issuer_currency: get_issuer_currency(issuer, currency)
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp current_balances_query(address, currency) do
@@ -187,11 +170,10 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
       currency: currency
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
-  defp historical_balance_query(address, currency, issuer, from, to, interval)
-       when is_binary(address) do
+  defp historical_balance_query(address, currency, issuer, from, to, interval) when is_binary(address) do
     # The balances table is like a stack. For each balance change there is a record
     # with sign = -1 that is the old balance and with sign = 1 which is the new balance
     sql = """
@@ -234,7 +216,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
       issuer_currency: get_issuer_currency(issuer, currency)
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp balance_change_query(address_or_addresses, currency, issuer, from, to) do
@@ -260,17 +242,10 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
       to: to
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
-  defp historical_balance_change_query(
-         address_or_addresses,
-         currency,
-         issuer,
-         from,
-         to,
-         interval
-       ) do
+  defp historical_balance_change_query(address_or_addresses, currency, issuer, from, to, interval) do
     # The balances table is like a stack. For each balance change there is a record
     # with sign = -1 that is the old balance and with sign = 1 which is the new balance
     sql = """
@@ -314,7 +289,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
       to: to
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp get_issuer_currency("XRP", "XRP"), do: "XRP"

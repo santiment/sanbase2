@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.MonitoredTwitterHandleLive do
+  @moduledoc false
   use SanbaseWeb, :live_view
 
   alias Sanbase.MonitoredTwitterHandle
@@ -56,11 +57,7 @@ defmodule SanbaseWeb.MonitoredTwitterHandleLive do
   end
 
   @impl true
-  def handle_event(
-        "update_status",
-        %{"status" => status, "record_id" => record_id} = params,
-        socket
-      )
+  def handle_event("update_status", %{"status" => status, "record_id" => record_id} = params, socket)
       when status in ["approved", "declined"] do
     record_id = String.to_integer(record_id)
     comment = if params["comment"] == "", do: nil, else: params["comment"]
@@ -86,7 +83,7 @@ defmodule SanbaseWeb.MonitoredTwitterHandleLive do
     |> order_records()
   end
 
-  defp list_handles() do
+  defp list_handles do
     Sanbase.MonitoredTwitterHandle.list_all_submissions()
     |> Enum.map(fn struct ->
       %{
@@ -105,8 +102,8 @@ defmodule SanbaseWeb.MonitoredTwitterHandleLive do
   end
 
   defp order_records(handles) do
-    handles
-    |> Enum.sort_by(
+    Enum.sort_by(
+      handles,
       fn record ->
         case record.status do
           "pending_approval" -> 1

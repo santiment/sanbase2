@@ -29,12 +29,13 @@ defmodule SanbaseWeb.Graphql.LinkedUserApiTest do
 
     assert confirm_linked_user_token(context.conn, token) == true
 
-    assert current_user(context.conn) |> get_in(["primaryUser", "id"]) ==
+    assert context.conn |> current_user() |> get_in(["primaryUser", "id"]) ==
              "#{context.pro_user.id}"
 
-    assert current_user(context.pro_conn) |> get_in(["secondaryUsers"]) |> length() == 1
+    assert context.pro_conn |> current_user() |> get_in(["secondaryUsers"]) |> length() == 1
 
-    assert current_user(context.pro_conn)
+    assert context.pro_conn
+           |> current_user()
            |> get_in(["secondaryUsers", Access.at(0), "id"]) ==
              "#{context.user.id}"
   end
@@ -81,8 +82,8 @@ defmodule SanbaseWeb.Graphql.LinkedUserApiTest do
     true = confirm_linked_user_token(context.conn, token)
     true = remove_secondary_user(context.pro_conn, context.user.id)
 
-    assert current_user(context.conn) |> get_in(["primaryUser", "id"]) == nil
-    assert current_user(context.pro_conn) |> get_in(["secondaryUsers"]) == []
+    assert context.conn |> current_user() |> get_in(["primaryUser", "id"]) == nil
+    assert context.pro_conn |> current_user() |> get_in(["secondaryUsers"]) == []
   end
 
   test "unlink two users - secondary removes primary", context do
@@ -90,8 +91,8 @@ defmodule SanbaseWeb.Graphql.LinkedUserApiTest do
     true = confirm_linked_user_token(context.conn, token)
     true = remove_primary_user(context.conn, context.pro_user.id)
 
-    assert current_user(context.conn) |> get_in(["primaryUser", "id"]) == nil
-    assert current_user(context.pro_conn) |> get_in(["secondaryUsers"]) == []
+    assert context.conn |> current_user() |> get_in(["primaryUser", "id"]) == nil
+    assert context.pro_conn |> current_user() |> get_in(["secondaryUsers"]) == []
   end
 
   test "secondary user gets access to metrics", context do
@@ -210,7 +211,8 @@ defmodule SanbaseWeb.Graphql.LinkedUserApiTest do
   defp get_pro_metric(conn) do
     map = %{datetime: DateTime.utc_now(), value: 5}
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Metric.timeseries_data/6, {:ok, [map]})
+    (&Sanbase.Metric.timeseries_data/6)
+    |> Sanbase.Mock.prepare_mock2({:ok, [map]})
     |> Sanbase.Mock.run_with_mocks(fn ->
       query = """
       {

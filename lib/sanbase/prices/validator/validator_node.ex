@@ -4,12 +4,13 @@ defmodule Sanbase.Price.Validator.Node do
   """
 
   use GenServer
-  @max_prices 6
 
-  alias Sanbase.Project
   alias Sanbase.Price
+  alias Sanbase.Project
 
   require Sanbase.Utils.Config, as: Config
+
+  @max_prices 6
 
   def child_spec(opts) do
     name = Keyword.fetch!(opts, :name)
@@ -25,7 +26,7 @@ defmodule Sanbase.Price.Validator.Node do
     GenServer.start_link(__MODULE__, opts, name: name)
   end
 
-  def enabled?() do
+  def enabled? do
     with true <- Sanbase.ClickhouseRepo.enabled?(),
          true <- Config.module_get_boolean(Sanbase.Price.Validator, :enabled) do
       true
@@ -44,27 +45,26 @@ defmodule Sanbase.Price.Validator.Node do
     # because the scrapers push to Kafka, not Clickhouse directly.
     number = Keyword.fetch!(opts, :number)
 
-    case enabled?() do
-      false ->
-        # If the ClickhouseRepo is disabled do not initialize anything. This is the
-        # flow only in dev/test environment. In case of empty state, the price is
-        # considered valid.
-        {:noreply, %{}}
+    if enabled?() do
+      Process.sleep(1000)
 
-      true ->
-        Process.sleep(1000)
+      slugs =
+        :all_project_slugs_include_hidden_no_preload
+        |> Sanbase.Cache.get_or_store(fn ->
+          Project.List.projects_slugs(include_hidden: true, preload?: false)
+        end)
+        |> Enum.filter(&(Price.Validator.slug_to_number(&1) == number))
 
-        slugs =
-          Sanbase.Cache.get_or_store(:all_project_slugs_include_hidden_no_preload, fn ->
-            Project.List.projects_slugs(include_hidden: true, preload?: false)
-          end)
-          |> Enum.filter(&(Price.Validator.slug_to_number(&1) == number))
+      {:ok, latest_prices} = Price.latest_prices_per_slug(slugs, "coinmarketcap", @max_prices)
 
-        {:ok, latest_prices} = Price.latest_prices_per_slug(slugs, "coinmarketcap", @max_prices)
+      state = Map.put(latest_prices, :number, number)
 
-        state = latest_prices |> Map.put(:number, number)
-
-        {:noreply, state}
+      {:noreply, state}
+    else
+      # If the ClickhouseRepo is disabled do not initialize anything. This is the
+      # flow only in dev/test environment. In case of empty state, the price is
+      # considered valid.
+      {:noreply, %{}}
     end
   end
 
@@ -84,13 +84,14 @@ defmodule Sanbase.Price.Validator.Node do
         {:reply, true, Map.put(state, key, [price])}
 
       prices ->
-        with false <- price_outlier?(slug, quote_asset, price, prices, allowed_times_diff: 30) do
-          # Keep the in memory prices to a maximum of @max_prices
-          prices = maybe_drop_oldest_price(prices) ++ [price]
-          state = Map.put(state, key, prices)
+        case price_outlier?(slug, quote_asset, price, prices, allowed_times_diff: 30) do
+          false ->
+            # Keep the in memory prices to a maximum of @max_prices
+            prices = maybe_drop_oldest_price(prices) ++ [price]
+            state = Map.put(state, key, prices)
 
-          {:reply, true, state}
-        else
+            {:reply, true, state}
+
           {:error, _} = error ->
             {:reply, error, state}
         end

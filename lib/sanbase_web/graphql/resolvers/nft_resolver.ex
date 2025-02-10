@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.Resolvers.NftResolver do
+  @moduledoc false
   alias Sanbase.Clickhouse.NftTrade
 
   def get_nft_trades(

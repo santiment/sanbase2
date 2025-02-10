@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.RenameUserSettingsSignals do
+  @moduledoc false
   use Ecto.Migration
 
   @mapping_up %{
@@ -60,7 +61,7 @@ defmodule Sanbase.Repo.Migrations.RenameUserSettingsSignals do
 
   defp mapping_to_array(map) do
     values =
-      Enum.flat_map(map, fn {k, v} -> [k, v] end) |> Enum.map(&"'#{&1}'") |> Enum.join(", ")
+      map |> Enum.flat_map(fn {k, v} -> [k, v] end) |> Enum.map_join(", ", &"'#{&1}'")
 
     "ARRAY[" <> values <> "]"
   end

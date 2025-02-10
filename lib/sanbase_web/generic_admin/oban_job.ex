@@ -1,8 +1,9 @@
 defmodule SanbaseWeb.GenericAdmin.ObanJob do
+  @moduledoc false
   def schema_module, do: Oban.Job
   def resource_name, do: "oban_jobs"
 
-  def resource() do
+  def resource do
     %{
       index_fields: [
         :id,

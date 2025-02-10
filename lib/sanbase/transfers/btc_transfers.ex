@@ -1,5 +1,8 @@
 defmodule Sanbase.Transfers.BtcTransfers do
+  @moduledoc false
+  alias Sanbase.Clickhouse.Query
   alias Sanbase.ClickhouseRepo
+  alias Sanbase.Utils.Transform
 
   @type transaction :: %{
           from_address: String.t(),
@@ -43,8 +46,7 @@ defmodule Sanbase.Transfers.BtcTransfers do
           :in | :out | :all
         ) ::
           {:ok, nil} | {:ok, list(map())} | {:error, String.t()}
-  def top_wallet_transfers([], _from, _to, _page, _page_size, _type),
-    do: {:ok, []}
+  def top_wallet_transfers([], _from, _to, _page, _page_size, _type), do: {:ok, []}
 
   def top_wallet_transfers(wallets, from, to, page, page_size, type) do
     query_struct = top_wallet_transfers_query(wallets, from, to, page, page_size, type)
@@ -53,9 +55,10 @@ defmodule Sanbase.Transfers.BtcTransfers do
       [timestamp, address, trx_hash, balance, old_balance, abs_value] ->
         # if the new balance is bigger then the address is the receiver
         {from_address, to_address} =
-          case balance > old_balance do
-            true -> {nil, address}
-            false -> {address, nil}
+          if balance > old_balance do
+            {nil, address}
+          else
+            {address, nil}
           end
 
         %{
@@ -93,7 +96,7 @@ defmodule Sanbase.Transfers.BtcTransfers do
     """
 
     {limit, offset} =
-      Sanbase.Utils.Transform.opts_to_limit_offset(page: page, page_size: page_size)
+      Transform.opts_to_limit_offset(page: page, page_size: page_size)
 
     params = %{
       wallets: wallets,
@@ -103,7 +106,7 @@ defmodule Sanbase.Transfers.BtcTransfers do
       offset: offset
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp top_wallet_transfers_address_clause(:in, opts) do
@@ -155,7 +158,7 @@ defmodule Sanbase.Transfers.BtcTransfers do
     """
 
     {limit, offset} =
-      Sanbase.Utils.Transform.opts_to_limit_offset(page: page, page_size: page_size)
+      Transform.opts_to_limit_offset(page: page, page_size: page_size)
 
     # only > 100 BTC transfers if range is > 1 week, otherwise only bigger than 20
     amount_filter = if Timex.diff(to, from, :days) > 7, do: 100, else: 20
@@ -169,7 +172,7 @@ defmodule Sanbase.Transfers.BtcTransfers do
       excluded_addresses: excluded_addresses
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp maybe_exclude_addresses([], _opts), do: ""

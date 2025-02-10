@@ -127,6 +127,12 @@ defmodule SanbaseWeb.Graphql.GraphiqlPlug do
       end
   """
 
+  @behaviour Plug
+
+  import Plug.Conn
+
+  alias Absinthe.Plug.Request
+
   require EEx
 
   @graphiql_template_path Path.join(__DIR__, "templates")
@@ -151,10 +157,6 @@ defmodule SanbaseWeb.Graphql.GraphiqlPlug do
     Path.join(@graphiql_template_path, "graphiql_playground.html.eex"),
     [:default_url, :socket_url, :assets]
   )
-
-  @behaviour Plug
-
-  import Plug.Conn
 
   @type opts :: [
           schema: atom,
@@ -189,14 +191,16 @@ defmodule SanbaseWeb.Graphql.GraphiqlPlug do
 
   @doc false
   def call(conn, config) do
-    case html?(conn) do
-      true -> do_call(conn, config)
-      _ -> Absinthe.Plug.call(conn, config)
+    if html?(conn) do
+      do_call(conn, config)
+    else
+      Absinthe.Plug.call(conn, config)
     end
   end
 
   defp html?(conn) do
-    Plug.Conn.get_req_header(conn, "accept")
+    conn
+    |> Plug.Conn.get_req_header("accept")
     |> List.first()
     |> case do
       string when is_binary(string) ->
@@ -214,84 +218,61 @@ defmodule SanbaseWeb.Graphql.GraphiqlPlug do
       |> put_config_value(:default_url, conn)
       |> handle_socket_url(conn)
 
-    with {:ok, conn, request} <- Absinthe.Plug.Request.parse(conn, config),
-         {:process, request} <- select_mode(request),
-         {:ok, request} <- Absinthe.Plug.ensure_processable(request, config),
-         :ok <- Absinthe.Plug.Request.log(request, config.log_level) do
-      conn_info = %{
-        conn_private: (conn.private[:absinthe] || %{}) |> Map.put(:http_method, conn.method)
-      }
+    with_result =
+      with {:ok, conn, request} <- Request.parse(conn, config),
+           {:process, request} <- select_mode(request),
+           {:ok, request} <- Absinthe.Plug.ensure_processable(request, config),
+           :ok <- Request.log(request, config.log_level) do
+        conn_info = %{
+          conn_private: Map.put(conn.private[:absinthe] || %{}, :http_method, conn.method)
+        }
 
-      {conn, result} = Absinthe.Plug.run_request(request, conn, conn_info, config)
+        {conn, result} = Absinthe.Plug.run_request(request, conn, conn_info, config)
 
-      case result do
-        {:ok, result} ->
-          # GraphiQL doesn't batch requests, so the first query is the only one
-          query = hd(request.queries)
-          {:ok, conn, result, query.variables, query.document || ""}
+        case result do
+          {:ok, result} ->
+            # GraphiQL doesn't batch requests, so the first query is the only one
+            query = hd(request.queries)
+            {:ok, conn, result, query.variables, query.document || ""}
 
-        {:error, {:http_method, _}, _} ->
-          query = hd(request.queries)
-          {:http_method_error, query.variables, query.document || ""}
+          {:error, {:http_method, _}, _} ->
+            query = hd(request.queries)
+            {:http_method_error, query.variables, query.document || ""}
 
-        other ->
-          other
+          other ->
+            other
+        end
       end
-    end
-    |> case do
+
+    case with_result do
       {:ok, conn, result, variables, query} ->
-        query = query |> js_escape()
+        query = js_escape(query)
 
-        var_string =
-          variables
-          |> config.json_codec.module.encode!(pretty: true)
-          |> js_escape()
+        var_string = variables |> config.json_codec.module.encode!(pretty: true) |> js_escape()
 
-        result =
-          result
-          |> config.json_codec.module.encode!(pretty: true)
-          |> js_escape()
+        result = result |> config.json_codec.module.encode!(pretty: true) |> js_escape()
 
-        config =
-          %{
-            query: query,
-            var_string: var_string,
-            result: result
-          }
-          |> Map.merge(config)
+        config = Map.merge(%{query: query, var_string: var_string, result: result}, config)
 
-        conn
-        |> render_interface(interface, config)
+        render_interface(conn, interface, config)
 
       {:input_error, msg} ->
-        conn
-        |> send_resp(400, msg)
+        send_resp(conn, 400, msg)
 
       :start_interface ->
-        conn
-        |> render_interface(interface, config)
+        render_interface(conn, interface, config)
 
       {:http_method_error, variables, query} ->
-        query = query |> js_escape()
+        query = js_escape(query)
 
-        var_string =
-          variables
-          |> config.json_codec.module.encode!(pretty: true)
-          |> js_escape()
+        var_string = variables |> config.json_codec.module.encode!(pretty: true) |> js_escape()
 
-        config =
-          %{
-            query: query,
-            var_string: var_string
-          }
-          |> Map.merge(config)
+        config = Map.merge(%{query: query, var_string: var_string}, config)
 
-        conn
-        |> render_interface(interface, config)
+        render_interface(conn, interface, config)
 
       {:error, error, _} when is_binary(error) ->
-        conn
-        |> send_resp(500, error)
+        send_resp(conn, 500, error)
     end
   end
 
@@ -305,7 +286,8 @@ defmodule SanbaseWeb.Graphql.GraphiqlPlug do
   def pipeline(config, opts) do
     {module, fun} = config.additional_pipeline
 
-    apply(module, fun, [config, opts])
+    module
+    |> apply(fun, [config, opts])
     |> Absinthe.Pipeline.insert_after(
       Absinthe.Phase.Document.CurrentOperation,
       [
@@ -314,10 +296,9 @@ defmodule SanbaseWeb.Graphql.GraphiqlPlug do
     )
   end
 
-  @spec select_mode(request :: Absinthe.Plug.Request.t()) ::
-          :start_interface | {:process, Absinthe.Plug.Request.t()}
-  defp select_mode(%{queries: [%Absinthe.Plug.Request.Query{document: nil}]}),
-    do: :start_interface
+  @spec select_mode(request :: Request.t()) ::
+          :start_interface | {:process, Request.t()}
+  defp select_mode(%{queries: [%Absinthe.Plug.Request.Query{document: nil}]}), do: :start_interface
 
   defp select_mode(request), do: {:process, request}
 
@@ -344,8 +325,8 @@ defmodule SanbaseWeb.Graphql.GraphiqlPlug do
   defp render_interface(conn, :simple, opts) do
     opts = opts_with_default(opts)
 
-    graphiql_html(
-      opts[:query],
+    opts[:query]
+    |> graphiql_html(
       opts[:var_string],
       opts[:result],
       opts[:socket_url],
@@ -357,8 +338,8 @@ defmodule SanbaseWeb.Graphql.GraphiqlPlug do
   defp render_interface(conn, :advanced, opts) do
     opts = opts_with_default(opts)
 
-    graphiql_workspace_html(
-      opts[:query],
+    opts[:query]
+    |> graphiql_workspace_html(
       opts[:var_string],
       opts[:default_headers],
       default_url(opts[:default_url]),
@@ -371,8 +352,9 @@ defmodule SanbaseWeb.Graphql.GraphiqlPlug do
   defp render_interface(conn, :playground, opts) do
     opts = opts_with_default(opts)
 
-    graphiql_playground_html(
-      default_url(opts[:default_url]),
+    opts[:default_url]
+    |> default_url()
+    |> graphiql_playground_html(
       opts[:socket_url],
       opts[:assets]
     )
@@ -465,9 +447,8 @@ defmodule SanbaseWeb.Graphql.GraphiqlPlug do
 
   defp normalize_socket_url(%{socket_url: nil, socket: socket} = config, conn) do
     url =
-      with {:ok, socket_path} <- find_socket_path(conn, socket) do
-        "`${protocol}//${window.location.host}#{socket_path}`"
-      else
+      case find_socket_path(conn, socket) do
+        {:ok, socket_path} -> "`${protocol}//${window.location.host}#{socket_path}`"
         _ -> "''"
       end
 

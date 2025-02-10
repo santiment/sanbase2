@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddUserEntityInteractionUniqueIndex do
+  @moduledoc false
   use Ecto.Migration
 
   # Do not store the same interaction again multiple times. The code that stores

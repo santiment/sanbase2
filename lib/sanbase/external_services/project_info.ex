@@ -9,6 +9,18 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
     There is also a function, which allows to update the project with the
     collected information.
   """
+  alias Sanbase.ExternalServices.Coinmarketcap
+  alias Sanbase.ExternalServices.Etherscan
+  alias Sanbase.ExternalServices.ProjectInfo
+  alias Sanbase.InternalServices.Ethauth
+  alias Sanbase.InternalServices.EthNode
+  alias Sanbase.Model.Ico
+  alias Sanbase.Project
+  alias Sanbase.Repo
+  alias Sanbase.Tag
+
+  require Logger
+
   defstruct [
     :slug,
     :name,
@@ -34,20 +46,10 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
     :total_supply
   ]
 
-  alias Sanbase.ExternalServices.Coinmarketcap
-  alias Sanbase.ExternalServices.Etherscan
-  alias Sanbase.ExternalServices.ProjectInfo
-  alias Sanbase.InternalServices.{EthNode, Ethauth}
-  alias Sanbase.Repo
-  alias Sanbase.Project
-  alias Sanbase.Model.Ico
-  alias Sanbase.Tag
-
-  require Logger
-
   def project_info_missing?(%Project{} = project) do
     missing_values =
-      Map.from_struct(project)
+      project
+      |> Map.from_struct()
       |> Map.take([
         :website_link,
         :email,
@@ -72,7 +74,8 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
 
   def from_project(project) do
     project_info =
-      struct(__MODULE__, Map.to_list(project))
+      __MODULE__
+      |> struct(Map.to_list(project))
       |> struct(Map.to_list(find_or_create_initial_ico(project)))
 
     case Project.coinmarketcap_id(project) do
@@ -81,8 +84,7 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
     end
   end
 
-  def fetch_coinmarketcap_info(%ProjectInfo{coinmarketcap_id: nil} = project_info),
-    do: project_info
+  def fetch_coinmarketcap_info(%ProjectInfo{coinmarketcap_id: nil} = project_info), do: project_info
 
   def fetch_coinmarketcap_info(%ProjectInfo{coinmarketcap_id: cmc_id} = project_info) do
     case Coinmarketcap.Scraper.fetch_project_page(cmc_id) do
@@ -100,30 +102,26 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
     |> fetch_total_supply()
   end
 
-  def fetch_contract_info(%ProjectInfo{main_contract_address: nil} = project_info),
-    do: project_info
+  def fetch_contract_info(%ProjectInfo{main_contract_address: nil} = project_info), do: project_info
 
-  def fetch_contract_info(
-        %ProjectInfo{main_contract_address: main_contract_address} = project_info
-      ) do
-    Etherscan.Scraper.fetch_address_page(main_contract_address)
+  def fetch_contract_info(%ProjectInfo{main_contract_address: main_contract_address} = project_info) do
+    main_contract_address
+    |> Etherscan.Scraper.fetch_address_page()
     |> Etherscan.Scraper.parse_address_page!(project_info)
     |> fetch_block_number()
     |> fetch_abi()
   end
 
-  def fetch_etherscan_token_summary(%ProjectInfo{etherscan_token_name: nil} = project_info),
-    do: project_info
+  def fetch_etherscan_token_summary(%ProjectInfo{etherscan_token_name: nil} = project_info), do: project_info
 
-  def fetch_etherscan_token_summary(
-        %ProjectInfo{etherscan_token_name: etherscan_token_name} = project_info
-      ) do
-    Etherscan.Scraper.fetch_token_page(etherscan_token_name)
+  def fetch_etherscan_token_summary(%ProjectInfo{etherscan_token_name: etherscan_token_name} = project_info) do
+    etherscan_token_name
+    |> Etherscan.Scraper.fetch_token_page()
     |> Etherscan.Scraper.parse_token_page!(project_info)
   end
 
   def update_project(project_info, project) do
-    Repo.transaction(fn ->
+    fn ->
       project_info_map = Map.from_struct(project_info)
 
       project
@@ -135,14 +133,12 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
       |> maybe_add_contract_address(project_info_map)
       |> Project.changeset(project_info_map)
       |> Repo.update!()
-    end)
+    end
+    |> Repo.transaction()
     |> insert_tag(project_info)
   end
 
-  defp maybe_add_contract_address(
-         project,
-         %{main_contract_address: contract_address} = project_info_map
-       )
+  defp maybe_add_contract_address(project, %{main_contract_address: contract_address} = project_info_map)
        when is_binary(contract_address) do
     label = if not Project.has_main_contract_addresses?(project), do: "main"
 
@@ -170,8 +166,7 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
 
   defp insert_tag({:error, reason}, _), do: {:error, reason}
 
-  defp do_insert_tag(%Project{slug: slug}, %ProjectInfo{ticker: ticker})
-       when not is_nil(ticker) and not is_nil(slug) do
+  defp do_insert_tag(%Project{slug: slug}, %ProjectInfo{ticker: ticker}) when not is_nil(ticker) and not is_nil(slug) do
     %Tag{name: ticker}
     |> Tag.changeset()
     |> Repo.insert()
@@ -180,9 +175,7 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
         :ok
 
       {:error, changeset} ->
-        Logger.warning(
-          "Cannot insert tag on project creation. Reason: #{inspect(changeset.errors)}"
-        )
+        Logger.warning("Cannot insert tag on project creation. Reason: #{inspect(changeset.errors)}")
     end
   end
 
@@ -195,9 +188,7 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
     end
   end
 
-  defp fetch_total_supply(
-         %ProjectInfo{main_contract_address: contract, total_supply: nil} = project_info
-       )
+  defp fetch_total_supply(%ProjectInfo{main_contract_address: contract, total_supply: nil} = project_info)
        when is_binary(contract) do
     case Ethauth.total_supply(contract) do
       {:ok, total_supply} -> %ProjectInfo{project_info | total_supply: total_supply}
@@ -207,9 +198,7 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
 
   defp fetch_total_supply(%ProjectInfo{} = project_info), do: project_info
 
-  defp fetch_token_decimals(
-         %ProjectInfo{main_contract_address: contract, token_decimals: nil} = project_info
-       )
+  defp fetch_token_decimals(%ProjectInfo{main_contract_address: contract, token_decimals: nil} = project_info)
        when is_binary(contract) do
     case Ethauth.token_decimals(contract) do
       {:ok, token_decimals} -> %ProjectInfo{project_info | token_decimals: token_decimals}
@@ -219,8 +208,7 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
 
   defp fetch_token_decimals(%ProjectInfo{} = project_info), do: project_info
 
-  defp fetch_block_number(%ProjectInfo{creation_transaction: nil} = project_info),
-    do: project_info
+  defp fetch_block_number(%ProjectInfo{creation_transaction: nil} = project_info), do: project_info
 
   defp fetch_block_number(%ProjectInfo{creation_transaction: creation_transaction} = project_info) do
     Logger.info(["[ProjectInfo] Making a parity call to fetch transaction by hash."])
@@ -239,9 +227,7 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
         %ProjectInfo{project_info | contract_abi: abi}
 
       {:error, error} ->
-        Logger.warning(
-          "Can't get the ABI for address #{main_contract_address}: #{inspect(error)}"
-        )
+        Logger.warning("Can't get the ABI for address #{main_contract_address}: #{inspect(error)}")
 
         project_info
     end

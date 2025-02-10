@@ -31,6 +31,7 @@ defmodule Sanbase.EventBus do
   require Application
 
   defmodule InvalidEventError do
+    @moduledoc false
     defexception [:message]
   end
 
@@ -53,9 +54,9 @@ defmodule Sanbase.EventBus do
     __MODULE__.NotificationsSubscriber
   ]
 
-  def children(), do: @subscribers
+  def children, do: @subscribers
 
-  def init() do
+  def init do
     for topic <- @topics, do: EventBus.register_topic(topic)
     for subscriber <- @subscribers, do: EventBus.subscribe({subscriber, subscriber.topics()})
   end
@@ -67,17 +68,14 @@ defmodule Sanbase.EventBus do
     # should not be emitted at all but they can slip in without good testing
     # and in this case prod should not break
     params =
-      case Sanbase.EventBus.EventValidation.valid?(params.data) do
-        true ->
-          params
-
-        false ->
-          handle_invalid_event(params)
+      if Sanbase.EventBus.EventValidation.valid?(params.data) do
+        params
+      else
+        handle_invalid_event(params)
       end
 
     params =
-      params
-      |> Map.merge(%{
+      Map.merge(params, %{
         id: Map.get(params, :id, UUID.uuid4()),
         topic: Map.fetch!(params, :topic),
         transaction_id: Map.get(params, :transaction_id),
@@ -111,8 +109,7 @@ defmodule Sanbase.EventBus do
   event map from the arguments and then piping it into `|>Map.merge(args)`
   """
   @spec handle_event(module(), map(), map(), state, (-> state)) :: state when state: any()
-  def handle_event(module, event, event_shadow, state, handle_fun)
-      when is_function(handle_fun, 0) do
+  def handle_event(module, event, event_shadow, state, handle_fun) when is_function(handle_fun, 0) do
     case event do
       %{data: %{__only_process_by__: list}} ->
         if module in list do

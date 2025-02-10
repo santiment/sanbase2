@@ -4,11 +4,13 @@ defmodule Sanbase.Telegram.UserToken do
   It is used for deep linking sanbase and telegram accounts.
   """
   use Ecto.Schema
+
   import Ecto.Changeset
   import Ecto.Query
+
   alias __MODULE__
-  alias Sanbase.Repo
   alias Sanbase.Accounts.User
+  alias Sanbase.Repo
 
   @rand_bytes_length 64
   @telegram_authorization_length 18
@@ -47,11 +49,7 @@ defmodule Sanbase.Telegram.UserToken do
   """
   @spec revoke(String.t(), non_neg_integer()) :: {integer(), nil | [term()]}
   def revoke(token, user_id) do
-    from(
-      ut in UserToken,
-      where: ut.token == ^token and ut.user_id == ^user_id
-    )
-    |> Repo.delete_all()
+    Repo.delete_all(from(ut in UserToken, where: ut.token == ^token and ut.user_id == ^user_id))
   end
 
   @doc ~s"""
@@ -59,8 +57,7 @@ defmodule Sanbase.Telegram.UserToken do
   """
   @spec by_token(String.t()) :: %UserToken{} | nil
   def by_token(token) do
-    from(ut in UserToken, where: ut.token == ^token)
-    |> Repo.one()
+    Repo.one(from(ut in UserToken, where: ut.token == ^token))
   end
 
   @doc ~s"""
@@ -73,8 +70,9 @@ defmodule Sanbase.Telegram.UserToken do
 
   # Private functions
 
-  defp random_string() do
-    :crypto.strong_rand_bytes(@rand_bytes_length)
+  defp random_string do
+    @rand_bytes_length
+    |> :crypto.strong_rand_bytes()
     |> Base.encode32()
     |> binary_part(0, @telegram_authorization_length)
   end

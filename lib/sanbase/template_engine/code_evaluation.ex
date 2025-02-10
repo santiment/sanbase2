@@ -3,8 +3,8 @@ defmodule Sanbase.TemplateEngine.CodeEvaluation do
   Evaluate the code inside a template capture {% %}
   """
 
-  alias Sanbase.TemplateEngine.Captures.CaptureMap
   alias Sanbase.SanLang
+  alias Sanbase.TemplateEngine.Captures.CaptureMap
 
   @doc ~s"""
   Given the capture map produced by the template engine, evaluate the code inside the capture.
@@ -30,8 +30,7 @@ defmodule Sanbase.TemplateEngine.CodeEvaluation do
         true
 
       _ ->
-        {:error,
-         "Unsupported version for the lang 'san': #{ver}. The supported versions are: 1.0"}
+        {:error, "Unsupported version for the lang 'san': #{ver}. The supported versions are: 1.0"}
     end
   end
 

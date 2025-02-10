@@ -1,9 +1,10 @@
 defmodule Sanbase.SocialDominanceTest do
   use SanbaseWeb.ConnCase, async: false
+
   import ExUnit.CaptureLog
+  import Sanbase.Factory
 
   alias Sanbase.SocialData.SocialDominance
-  import Sanbase.Factory
 
   setup do
     Sanbase.Cache.clear_all()
@@ -17,11 +18,11 @@ defmodule Sanbase.SocialDominanceTest do
       from = ~U[2018-04-16 11:00:00Z]
       to = ~U[2018-04-16 12:00:00Z]
 
-      Sanbase.Mock.prepare_mock2(
-        &HTTPoison.get/3,
+      (&HTTPoison.get/3)
+      |> Sanbase.Mock.prepare_mock2(
         {:ok,
          %HTTPoison.Response{
-           body: "{\"data\": {\"2018-04-16T11:00:00Z\": 0.5, \"2018-04-16T12:00:00Z\": 1}}",
+           body: ~s({"data": {"2018-04-16T11:00:00Z": 0.5, "2018-04-16T12:00:00Z": 1}}),
            status_code: 200
          }}
       )
@@ -38,10 +39,8 @@ defmodule Sanbase.SocialDominanceTest do
     end
 
     test "response with slug: 404" do
-      Sanbase.Mock.prepare_mock2(
-        &HTTPoison.get/3,
-        {:ok, %HTTPoison.Response{body: "Some message", status_code: 404}}
-      )
+      (&HTTPoison.get/3)
+      |> Sanbase.Mock.prepare_mock2({:ok, %HTTPoison.Response{body: "Some message", status_code: 404}})
       |> Sanbase.Mock.run_with_mocks(fn ->
         result = fn ->
           SocialDominance.social_dominance(
@@ -59,10 +58,8 @@ defmodule Sanbase.SocialDominanceTest do
     end
 
     test "response with slug: error" do
-      Sanbase.Mock.prepare_mock2(
-        &HTTPoison.get/3,
-        {:error, %HTTPoison.Error{reason: :econnrefused}}
-      )
+      (&HTTPoison.get/3)
+      |> Sanbase.Mock.prepare_mock2({:error, %HTTPoison.Error{reason: :econnrefused}})
       |> Sanbase.Mock.run_with_mocks(fn ->
         result = fn ->
           SocialDominance.social_dominance(

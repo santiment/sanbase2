@@ -1,12 +1,15 @@
 defmodule Sanbase.Accounts.User.UniswapStaking do
+  @moduledoc false
   use Ecto.Schema
+
   import Ecto.Changeset
 
-  require Logger
-
+  alias Sanbase.Accounts.EthAccount
+  alias Sanbase.Accounts.User
   alias Sanbase.Repo
-  alias Sanbase.Accounts.{User, EthAccount}
   alias Sanbase.SmartContracts.UniswapPair
+
+  require Logger
 
   schema "user_uniswap_staking" do
     field(:san_staked, :float)
@@ -25,8 +28,8 @@ defmodule Sanbase.Accounts.User.UniswapStaking do
   @doc """
   Fetch all staked users over certain amount
   """
-  def fetch_all_uniswap_staked_users() do
-    __MODULE__ |> Repo.all()
+  def fetch_all_uniswap_staked_users do
+    Repo.all(__MODULE__)
   end
 
   @doc """
@@ -35,9 +38,9 @@ defmodule Sanbase.Accounts.User.UniswapStaking do
   """
   @spec update_all_uniswap_san_staked_users() ::
           {:ok, {integer(), nil | [term()]}} | {:error, any()}
-  def update_all_uniswap_san_staked_users() do
+  def update_all_uniswap_san_staked_users do
     Logger.info("Start update_all_uniswap_san_staked_users")
-    naive_now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+    naive_now = NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)
 
     users = User.fetch_all_users_with_eth_account()
     users_staked_map = fetch_uniswap_san_staked(users)
@@ -56,7 +59,7 @@ defmodule Sanbase.Accounts.User.UniswapStaking do
       end)
       |> Enum.filter(&(&1.san_staked > 0.0))
 
-    Repo.transaction(fn ->
+    fn ->
       Repo.delete_all(__MODULE__)
 
       Repo.insert_all(
@@ -65,7 +68,8 @@ defmodule Sanbase.Accounts.User.UniswapStaking do
         on_conflict: :replace_all,
         conflict_target: [:user_id]
       )
-    end)
+    end
+    |> Repo.transaction()
     |> case do
       {:ok, result} ->
         Logger.info("Finished update_all_uniswap_san_staked_users ok: #{inspect(result)}")
@@ -83,13 +87,13 @@ defmodule Sanbase.Accounts.User.UniswapStaking do
   """
   @spec fetch_uniswap_san_staked_user(%User{} | non_neg_integer()) :: float()
   def fetch_uniswap_san_staked_user(%User{} = user) do
-    user = user |> Repo.preload(:eth_accounts)
+    user = Repo.preload(user, :eth_accounts)
     calc_uniswap_san_staked_user(user)
   end
 
   def fetch_uniswap_san_staked_user(user_id) do
     {:ok, user} = User.by_id(user_id)
-    user = user |> Repo.preload(:eth_accounts)
+    user = Repo.preload(user, :eth_accounts)
 
     calc_uniswap_san_staked_user(user)
   end

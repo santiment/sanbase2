@@ -27,17 +27,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.JWTAuth do
   is not accepted - they provide a special configuration to achieve this
   behaviour
   """
-  def call(
-        %Resolution{
-          context: %{
-            auth: %{
-              auth_method: :user_token,
-              current_user: current_user
-            }
-          }
-        } = resolution,
-        opts
-      ) do
+  def call(%Resolution{context: %{auth: %{auth_method: :user_token, current_user: current_user}}} = resolution, opts) do
     Helpers.handle_user_access(resolution, current_user, opts)
   end
 

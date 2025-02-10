@@ -1,4 +1,5 @@
 defmodule Sanbase.Price.Utils do
+  @moduledoc false
   import Sanbase.DateTimeUtils, only: [round_datetime: 1]
 
   defguard is_zero(price)
@@ -7,8 +8,7 @@ defmodule Sanbase.Price.Utils do
   @spec fetch_last_prices_before(String.t(), DateTime.t()) ::
           {number() | nil, number() | nil}
   def fetch_last_prices_before(slug, datetime) do
-    cache_key =
-      {__MODULE__, :last_record_before, slug, round_datetime(datetime)} |> Sanbase.Cache.hash()
+    cache_key = Sanbase.Cache.hash({__MODULE__, :last_record_before, slug, round_datetime(datetime)})
 
     last_record =
       Sanbase.Cache.get_or_store(cache_key, fn ->
@@ -30,20 +30,17 @@ defmodule Sanbase.Price.Utils do
   """
   def fetch_last_price_before(slug, slug, _timestamp), do: 1.0
 
-  def fetch_last_price_before(currency, "USD", timestamp)
-      when currency in ["BTC", "bitcoin"] do
+  def fetch_last_price_before(currency, "USD", timestamp) when currency in ["BTC", "bitcoin"] do
     {price_usd, _price_btc} = fetch_last_prices_before("bitcoin", timestamp)
     price_usd
   end
 
-  def fetch_last_price_before(currency, "USD", timestamp)
-      when currency in ["ETH", "ethereum"] do
+  def fetch_last_price_before(currency, "USD", timestamp) when currency in ["ETH", "ethereum"] do
     {price_usd, _price_btc} = fetch_last_prices_before("ethereum", timestamp)
     price_usd
   end
 
-  def fetch_last_price_before(currency, "BTC", timestamp)
-      when currency in ["ETH", "ethereum"] do
+  def fetch_last_price_before(currency, "BTC", timestamp) when currency in ["ETH", "ethereum"] do
     {_price_usd, price_btc} = fetch_last_prices_before("ethereum", timestamp)
     price_btc
   end
@@ -89,16 +86,12 @@ defmodule Sanbase.Price.Utils do
 
   # Private functions
 
-  defp fetch_last_price_before_convert_via_intermediate(
-         slug_from,
-         slug_to,
-         slug_interm,
-         timestamp
-       ) do
-    with price_from_interm <-
-           fetch_last_price_before(slug_from, slug_interm, timestamp),
-         false <- is_nil(price_from_interm) or is_zero(price_from_interm),
-         price_to_interm <-
+  defp fetch_last_price_before_convert_via_intermediate(slug_from, slug_to, slug_interm, timestamp) do
+    price_from_interm =
+      fetch_last_price_before(slug_from, slug_interm, timestamp)
+
+    with false <- is_nil(price_from_interm) or is_zero(price_from_interm),
+         price_to_interm =
            fetch_last_price_before(slug_to, slug_interm, timestamp),
          false <- is_nil(price_to_interm) or is_zero(price_to_interm) do
       price_from_interm / price_to_interm

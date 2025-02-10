@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.AuthPlug.AuthStruct do
+  @moduledoc false
   defstruct permissions: nil,
             auth: nil,
             product_id: nil,
@@ -23,6 +24,18 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
 
   @behaviour Plug
 
+  import Plug.Conn
+
+  alias Sanbase.Accounts.User
+  alias Sanbase.Billing.Product
+  alias Sanbase.Billing.Subscription
+  alias Sanbase.Chart.Configuration.SharedAccessToken
+  alias SanbaseWeb.Graphql.AuthPlug
+  alias SanbaseWeb.Graphql.AuthPlug.AuthStruct
+
+  require Logger
+  require Sanbase.Utils.Config, as: Config
+
   @compile {:inline,
             authenticate: 2,
             build_error_msg: 1,
@@ -34,17 +47,6 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
             apikey_authenticate: 1,
             get_no_auth_product_id: 1,
             get_apikey_product_id: 1}
-
-  import Plug.Conn
-
-  alias SanbaseWeb.Graphql.AuthPlug
-  alias SanbaseWeb.Graphql.AuthPlug.AuthStruct
-  alias Sanbase.Accounts.User
-  alias Sanbase.Billing.{Subscription, Product}
-  alias Sanbase.Chart.Configuration.SharedAccessToken
-
-  require Logger
-  require Sanbase.Utils.Config, as: Config
 
   defguard no_auth_header(header) when header in [[], ["null"], [""], nil]
 
@@ -77,7 +79,7 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
   def init(opts), do: opts
 
   def call(conn, _) do
-    conn = conn |> put_private(:origin_url_map, get_origin(conn))
+    conn = put_private(conn, :origin_url_map, get_origin(conn))
 
     case authenticate(conn, @authentication_methods) do
       {:ok, %AuthStruct{} = auth_struct} ->
@@ -100,8 +102,7 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
   # For example, the auth struct can be extended with a `shared access token`
   # which gives access to the metrics on a chart layout
   defp augment_auth(%AuthStruct{} = auth_struct, %Plug.Conn{} = conn) do
-    @augmenting_auth_methods
-    |> Enum.reduce(auth_struct, fn augment_auth_method, auth_struct_acc ->
+    Enum.reduce(@augmenting_auth_methods, auth_struct, fn augment_auth_method, auth_struct_acc ->
       %AuthStruct{} = augment_auth_method.(auth_struct_acc, conn)
     end)
   end
@@ -128,13 +129,12 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
         conn
 
       access_token ->
-        conn
-        |> put_session(:access_token, access_token)
+        put_session(conn, :access_token, access_token)
     end
   end
 
   defp build_error_msg(msg) do
-    %{errors: %{details: msg}} |> Jason.encode!()
+    Jason.encode!(%{errors: %{details: msg}})
   end
 
   defp authenticate(conn, [auth_method | rest]) do
@@ -180,25 +180,27 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
         # If there is no primary user linked it will return the subscription of the
         # current user
         subscription = get_user_subscription_for_sanbase(current_user.id)
-        subscription_product_id = if subscription, do: subscription.plan.product_id, else: nil
+        subscription_product_id = if subscription, do: subscription.plan.product_id
 
         subscription_product =
-          if subscription, do: Product.code_by_id(subscription.plan.product_id), else: nil
+          if subscription, do: Product.code_by_id(subscription.plan.product_id)
 
-        %AuthStruct{
-          permissions: User.Permissions.permissions(current_user),
-          auth: %{
-            auth_method: :user_token,
-            current_user: current_user,
-            subscription: subscription,
-            plan: Subscription.plan_name(subscription)
+        Map.merge(
+          %AuthStruct{
+            permissions: User.Permissions.permissions(current_user),
+            auth: %{
+              auth_method: :user_token,
+              current_user: current_user,
+              subscription: subscription,
+              plan: Subscription.plan_name(subscription)
+            },
+            requested_product_id: @product_id_sanbase,
+            requested_product: "SANBASE",
+            subscription_product_id: subscription_product_id,
+            subscription_product: subscription_product
           },
-          requested_product_id: @product_id_sanbase,
-          requested_product: "SANBASE",
-          subscription_product_id: subscription_product_id,
-          subscription_product: subscription_product
-        }
-        |> Map.merge(Map.take(map, [:new_access_token]))
+          Map.take(map, [:new_access_token])
+        )
 
       {:error, error} ->
         {:error, error}
@@ -214,26 +216,28 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
       requested_product_id = @product_id_sanbase
       requested_product = "SANBASE"
       subscription = find_best_subscription(requested_product_id, current_user.id)
-      subscription_product_id = if subscription, do: subscription.plan.product_id, else: nil
+      subscription_product_id = if subscription, do: subscription.plan.product_id
 
       subscription_product =
-        if subscription, do: Product.code_by_id(subscription.plan.product_id), else: nil
+        if subscription, do: Product.code_by_id(subscription.plan.product_id)
 
-      %AuthStruct{
-        permissions: User.Permissions.permissions(current_user),
-        auth: %{
-          auth_method: :user_token,
-          current_user: current_user,
-          subscription: subscription,
-          plan: Subscription.plan_name(subscription)
+      Map.merge(
+        %AuthStruct{
+          permissions: User.Permissions.permissions(current_user),
+          auth: %{
+            auth_method: :user_token,
+            current_user: current_user,
+            subscription: subscription,
+            plan: Subscription.plan_name(subscription)
+          },
+          requested_product_id: requested_product_id,
+          requested_product: requested_product,
+          product_code: requested_product,
+          subscription_product_id: subscription_product_id,
+          subscription_product: subscription_product
         },
-        requested_product_id: requested_product_id,
-        requested_product: requested_product,
-        product_code: requested_product,
-        subscription_product_id: subscription_product_id,
-        subscription_product: subscription_product
-      }
-      |> Map.merge(Map.take(map, [:new_access_token]))
+        Map.take(map, [:new_access_token])
+      )
     else
       {:has_header?, _} ->
         # There is authentication header, but it does not start with Bearer
@@ -276,14 +280,15 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
          {:ok, current_user} <- apikey_authenticate(apikey),
          {:ok, {token, _apikey}} <- Sanbase.Accounts.Hmac.split_apikey(apikey) do
       requested_product_id =
-        get_req_header(conn, "user-agent")
+        conn
+        |> get_req_header("user-agent")
         |> get_apikey_product_id()
 
       subscription = find_best_subscription(requested_product_id, current_user.id)
-      subscription_product_id = if subscription, do: subscription.plan.product_id, else: nil
+      subscription_product_id = if subscription, do: subscription.plan.product_id
 
       subscription_product =
-        if subscription, do: Product.code_by_id(subscription.plan.product_id), else: nil
+        if subscription, do: Product.code_by_id(subscription.plan.product_id)
 
       %AuthStruct{
         permissions: User.Permissions.permissions(current_user),
@@ -340,8 +345,7 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
       |> Map.get(:origin_host)
       |> get_no_auth_product_id()
 
-    @anon_user_auth_struct
-    |> Map.merge(%{
+    Map.merge(@anon_user_auth_struct, %{
       requested_product_id: product_id,
       requested_product: Product.code_by_id(product_id),
       product_code: Product.code_by_id(product_id)
@@ -422,31 +426,34 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
   defp get_no_auth_product_id(nil), do: @product_id_api
 
   defp get_no_auth_product_id(origin) do
-    case String.ends_with?(origin, "santiment.net") or
-           String.ends_with?(origin, "sanr.app") or
-           String.ends_with?(origin, "sanitize.page") do
-      true -> @product_id_sanbase
-      false -> @product_id_api
+    if String.ends_with?(origin, "santiment.net") or
+         String.ends_with?(origin, "sanr.app") or
+         String.ends_with?(origin, "sanitize.page") do
+      @product_id_sanbase
+    else
+      @product_id_api
     end
   end
 
   # FIXME - maybe treat sansheets as still API
   defp get_apikey_product_id([user_agent]) do
-    case String.contains?(user_agent, "Google-Apps-Script") do
-      true -> @product_id_sanbase
-      false -> @product_id_api
+    if String.contains?(user_agent, "Google-Apps-Script") do
+      @product_id_sanbase
+    else
+      @product_id_api
     end
   end
 
   defp get_apikey_product_id(_), do: @product_id_api
 
   defp get_origin(conn) do
-    Plug.Conn.get_req_header(conn, "origin")
+    conn
+    |> Plug.Conn.get_req_header("origin")
     |> List.first()
     |> case do
       origin_url when is_binary(origin_url) ->
         # Strip trailing backslashes, ports, etc.
-        %URI{host: origin_host} = origin_url |> URI.parse()
+        %URI{host: origin_host} = URI.parse(origin_url)
         origin_host_parts = String.split(origin_host || "", ".")
 
         %{

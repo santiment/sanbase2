@@ -1,5 +1,7 @@
 defmodule SanbaseWeb.LiveSearch do
+  @moduledoc false
   use SanbaseWeb, :live_view
+
   import SanbaseWeb.CoreComponents
 
   @impl true

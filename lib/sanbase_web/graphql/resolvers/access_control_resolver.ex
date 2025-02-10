@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.Resolvers.AccessControlResolver do
+  @moduledoc false
   alias Sanbase.Billing.Product
   alias SanbaseWeb.Graphql.Cache
 

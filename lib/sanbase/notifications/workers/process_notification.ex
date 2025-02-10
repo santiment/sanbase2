@@ -1,7 +1,11 @@
 defmodule Sanbase.Notifications.Workers.ProcessNotification do
+  @moduledoc false
   use Oban.Worker, queue: :notifications_queue
 
-  alias Sanbase.Notifications.{Notification, TemplateRenderer}
+  alias Sanbase.Email.MailjetApi
+  alias Sanbase.Notifications.DiscordClient
+  alias Sanbase.Notifications.Notification
+  alias Sanbase.Notifications.TemplateRenderer
   alias Sanbase.Utils.Config
 
   @subject "Sanbase Metric Updates"
@@ -12,7 +16,7 @@ defmodule Sanbase.Notifications.Workers.ProcessNotification do
     notification_id = args["notification_id"]
     notification = Notification.by_id(notification_id)
 
-    case Sanbase.Notifications.DiscordClient.client().send_message(
+    case DiscordClient.client().send_message(
            discord_channel_webhook_map()[params["discord_channel"]] || discord_webhook(),
            params["content"],
            []
@@ -28,7 +32,7 @@ defmodule Sanbase.Notifications.Workers.ProcessNotification do
     notification_id = args["notification_id"]
     notification = Notification.by_id(notification_id)
 
-    case Sanbase.Email.MailjetApi.client().send_to_list(
+    case MailjetApi.client().send_to_list(
            metric_updates_list(),
            params["subject"],
            params["content"],
@@ -49,7 +53,7 @@ defmodule Sanbase.Notifications.Workers.ProcessNotification do
 
     notification = Notification.by_id(notification_id)
 
-    case Sanbase.Notifications.DiscordClient.client().send_message(discord_webhook(), content, []) do
+    case DiscordClient.client().send_message(discord_webhook(), content, []) do
       :ok -> mark_processed(notification)
       error -> error
     end
@@ -66,7 +70,7 @@ defmodule Sanbase.Notifications.Workers.ProcessNotification do
         mime_type: "text/html"
       })
 
-    case Sanbase.Email.MailjetApi.client().send_to_list(
+    case MailjetApi.client().send_to_list(
            metric_updates_list(),
            @subject,
            content,
@@ -91,12 +95,13 @@ defmodule Sanbase.Notifications.Workers.ProcessNotification do
     Notification.update(notification, %{status: new_status})
   end
 
-  defp discord_webhook() do
+  defp discord_webhook do
     Config.module_get(Sanbase.Notifications, :discord_webhook)
   end
 
-  defp metric_updates_list() do
-    Config.module_get(Sanbase.Notifications, :mailjet_metric_updates_list)
+  defp metric_updates_list do
+    Sanbase.Notifications
+    |> Config.module_get(:mailjet_metric_updates_list)
     # credo:disable-for-next-line
     |> String.to_atom()
   end
@@ -105,7 +110,7 @@ defmodule Sanbase.Notifications.Workers.ProcessNotification do
     Notification.update(notification, %{status: "completed"})
   end
 
-  defp discord_channel_webhook_map() do
+  defp discord_channel_webhook_map do
     %{
       "metric_updates" => discord_webhook()
     }

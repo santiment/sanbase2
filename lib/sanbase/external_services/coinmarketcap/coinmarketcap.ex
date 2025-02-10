@@ -6,19 +6,15 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   """
   use GenServer, restart: :permanent, shutdown: 5_000
 
-  alias Sanbase.Utils.Config
-  require Logger
-
+  alias Sanbase.ExternalServices.Coinmarketcap.PriceScrapingProgress
+  alias Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePrice
+  alias Sanbase.ExternalServices.Coinmarketcap.WebApi
+  alias Sanbase.ExternalServices.ProjectInfo
   alias Sanbase.Model.LatestCoinmarketcapData
   alias Sanbase.Project
+  alias Sanbase.Utils.Config
 
-  alias Sanbase.ExternalServices.Coinmarketcap.{
-    WebApi,
-    ScheduleRescrapePrice,
-    PriceScrapingProgress
-  }
-
-  alias Sanbase.ExternalServices.ProjectInfo
+  require Logger
 
   @request_timeout 600_000
   @source "coinmarketcap"
@@ -59,8 +55,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   def handle_info(:fetch_missing_info, %{missing_info_update_interval: update_interval} = state) do
     Logger.info("[CMC] Fetching missing info for projects.")
 
-    Task.Supervisor.async_stream_nolink(
-      Sanbase.TaskSupervisor,
+    Sanbase.TaskSupervisor
+    |> Task.Supervisor.async_stream_nolink(
       Project.List.projects_with_source("coinmarketcap",
         include_hidden: true,
         order_by_rank: true
@@ -78,10 +74,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
 
   def handle_info(
         :fetch_total_market,
-        %{
-          total_market_update_interval: update_interval,
-          total_market_task_pid: total_market_task_pid
-        } = state
+        %{total_market_update_interval: update_interval, total_market_task_pid: total_market_task_pid} = state
       ) do
     Logger.info("[CMC] Fetching TOTAL_MARKET data.")
 
@@ -108,8 +101,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
 
     # Run the tasks in a stream concurrently so `max_concurrency` can be used.
     # Otherwise risking to start too many tasks to a service that's rate limited
-    Task.Supervisor.async_stream_nolink(
-      Sanbase.TaskSupervisor,
+    Sanbase.TaskSupervisor
+    |> Task.Supervisor.async_stream_nolink(
       Project.List.projects(include_hidden: true, order_by_rank: true),
       &fetch_prices/1,
       ordered: false,
@@ -141,7 +134,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   # 1. If there is a running task for scraping that project it will be killed
   # 2. The `last_updated` time will be fetched and recorded in the database so it can be later restored
   # 3. Set the `last_updated` time to the scheduled `from`
-  defp schedule_rescrapes() do
+  defp schedule_rescrapes do
     rescrapes = ScheduleRescrapePrice.all_not_started()
     Logger.info("[CMC] Check if project price rescraping need to be scheduled.")
 
@@ -173,7 +166,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     end
   end
 
-  defp finish_rescrapes() do
+  defp finish_rescrapes do
     Logger.info(
       "[CMC] Check if project price rescraping is done and the original `last_updated` timestamp will be returned."
     )
@@ -193,7 +186,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     to = DateTime.from_naive!(to, "Etc/UTC")
     last_updated = PriceScrapingProgress.last_scraped(project.slug, @source)
 
-    if last_updated && DateTime.compare(last_updated, to) == :gt do
+    if last_updated && DateTime.after?(last_updated, to) do
       mark_rescrape_as_finished(srp)
     end
   end
@@ -203,7 +196,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
 
     kill_scheduled_scraping(project)
 
-    {:ok, original_last_update} = srp.original_last_updated |> DateTime.from_naive("Etc/UTC")
+    {:ok, original_last_update} = DateTime.from_naive(srp.original_last_updated, "Etc/UTC")
 
     PriceScrapingProgress.store_progress(project.slug, @source, original_last_update)
 
@@ -240,11 +233,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   # and does not override existing info.
   defp fetch_project_info(%Project{} = project) do
     if ProjectInfo.project_info_missing?(project) do
-      Logger.info(
-        "[CMC] There is missing info for #{Project.describe(project)}. Will try to fetch it."
-      )
+      Logger.info("[CMC] There is missing info for #{Project.describe(project)}. Will try to fetch it.")
 
-      ProjectInfo.from_project(project)
+      project
+      |> ProjectInfo.from_project()
       |> ProjectInfo.fetch_from_ethereum_node()
       |> ProjectInfo.fetch_coinmarketcap_info()
       |> ProjectInfo.update_project(project)
@@ -273,13 +265,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
       with {:ok, datetime} <- last_price_datetime(project),
            :ok <- WebApi.fetch_and_store_prices(project, datetime) do
         :ok = Registry.unregister(Sanbase.Registry, key)
-      else
-        error -> error
       end
     else
-      Logger.info(
-        "[CMC] Fetch and process job for project #{project.slug} is already running. Won't start it again"
-      )
+      Logger.info("[CMC] Fetch and process job for project #{project.slug} is already running. Won't start it again")
     end
   end
 
@@ -304,9 +292,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   defp last_price_datetime("TOTAL_MARKET") do
     case PriceScrapingProgress.last_scraped("TOTAL_MARKET", @source) do
       nil ->
-        Logger.info(
-          "[CMC] Last CMC history datetime scraped for TOTAL_MARKET not found in the database."
-        )
+        Logger.info("[CMC] Last CMC history datetime scraped for TOTAL_MARKET not found in the database.")
 
         WebApi.first_datetime("TOTAL_MARKET")
 
@@ -315,12 +301,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     end
   end
 
-  defp fetch_total_market_data() do
-    with {:ok, %DateTime{} = datetime} <- last_price_datetime("TOTAL_MARKET"),
-         :ok <- WebApi.fetch_and_store_prices("TOTAL_MARKET", datetime) do
-      :ok
-    else
-      error -> error
+  defp fetch_total_market_data do
+    with {:ok, %DateTime{} = datetime} <- last_price_datetime("TOTAL_MARKET") do
+      WebApi.fetch_and_store_prices("TOTAL_MARKET", datetime)
     end
   end
 

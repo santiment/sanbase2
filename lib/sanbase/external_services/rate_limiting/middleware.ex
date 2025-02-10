@@ -1,4 +1,5 @@
 defmodule Sanbase.ExternalServices.RateLimiting.Middleware do
+  @moduledoc false
   @behaviour Tesla.Middleware
 
   alias Sanbase.ExternalServices.RateLimiting.Server

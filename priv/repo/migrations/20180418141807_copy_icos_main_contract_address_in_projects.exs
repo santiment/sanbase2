@@ -1,10 +1,11 @@
 defmodule Sanbase.Repo.Migrations.CopyIcosMainContractAddressInProjects do
+  @moduledoc false
   use Ecto.Migration
 
   import Ecto.Query
 
-  alias Sanbase.Project
   alias Sanbase.Model.Ico
+  alias Sanbase.Project
   alias Sanbase.Repo
 
   def change do
@@ -16,9 +17,11 @@ defmodule Sanbase.Repo.Migrations.CopyIcosMainContractAddressInProjects do
         order_by: [desc: :id]
       )
 
-    Repo.all(query)
+    query
+    |> Repo.all()
     |> Enum.map(fn [project_id, main_contract_address] ->
-      Repo.get!(Project, project_id)
+      Project
+      |> Repo.get!(project_id)
       |> Project.changeset(%{main_contract_address: main_contract_address})
       |> Repo.update!()
     end)

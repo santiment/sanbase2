@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.BillingTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   enum :restriction_types_enum do

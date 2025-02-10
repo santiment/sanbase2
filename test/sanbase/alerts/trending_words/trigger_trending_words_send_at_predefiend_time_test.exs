@@ -1,14 +1,16 @@
 defmodule Sanbase.Alert.TriggerTrendingWordsSendAtPredefiendTimeTest do
   use Sanbase.DataCase, async: false
 
+  import ExUnit.CaptureLog
   import Mock
   import Sanbase.Factory
-  import ExUnit.CaptureLog
 
-  alias Sanbase.Alert.{UserTrigger, HistoricalActivity}
   alias Sanbase.Alert.Evaluator
-
+  alias Sanbase.Alert.HistoricalActivity
+  alias Sanbase.Alert.Scheduler
   alias Sanbase.Alert.Trigger.TrendingWordsTriggerSettings
+  alias Sanbase.Alert.UserTrigger
+  alias Sanbase.SocialData.TrendingWords
 
   @moduletag capture_log: true
 
@@ -77,12 +79,12 @@ defmodule Sanbase.Alert.TriggerTrendingWordsSendAtPredefiendTimeTest do
         %Tesla.Env{status: 200, body: "ok"}
     end)
 
-    with_mock Sanbase.SocialData.TrendingWords, [],
+    with_mock TrendingWords, [],
       get_currently_trending_words: fn _, _ ->
         {:ok, top_words()}
       end do
       assert capture_log(fn ->
-               Sanbase.Alert.Scheduler.run_alert(TrendingWordsTriggerSettings)
+               Scheduler.run_alert(TrendingWordsTriggerSettings)
              end) =~
                "In total 1/1 trending_words alerts were sent successfully"
 
@@ -95,7 +97,7 @@ defmodule Sanbase.Alert.TriggerTrendingWordsSendAtPredefiendTimeTest do
       Sanbase.Cache.clear_all(:alerts_evaluator_cache)
 
       assert capture_log(fn ->
-               Sanbase.Alert.Scheduler.run_alert(TrendingWordsTriggerSettings)
+               Scheduler.run_alert(TrendingWordsTriggerSettings)
              end) =~ "There were no trending_words alerts triggered"
     end
   end
@@ -107,7 +109,7 @@ defmodule Sanbase.Alert.TriggerTrendingWordsSendAtPredefiendTimeTest do
     })
 
     assert capture_log(fn ->
-             Sanbase.Alert.Scheduler.run_alert(TrendingWordsTriggerSettings)
+             Scheduler.run_alert(TrendingWordsTriggerSettings)
            end) =~ "There are no active alerts of type trending_words to be run"
   end
 
@@ -122,13 +124,13 @@ defmodule Sanbase.Alert.TriggerTrendingWordsSendAtPredefiendTimeTest do
       is_repeating: false
     })
 
-    with_mock Sanbase.SocialData.TrendingWords, [],
+    with_mock TrendingWords, [],
       get_currently_trending_words: fn _, _ ->
         {:ok, top_words()}
       end do
       log =
         capture_log(fn ->
-          Sanbase.Alert.Scheduler.run_alert(TrendingWordsTriggerSettings)
+          Scheduler.run_alert(TrendingWordsTriggerSettings)
         end)
 
       assert log =~
@@ -140,7 +142,7 @@ defmodule Sanbase.Alert.TriggerTrendingWordsSendAtPredefiendTimeTest do
     end
   end
 
-  defp top_words() do
+  defp top_words do
     [
       %{score: 1740.2647984845628, word: "bat"},
       %{score: 792.9209638684719, word: "coinbase"},

@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.CreateNotifications do
+  @moduledoc false
   use Ecto.Migration
 
   def up do
@@ -15,9 +16,7 @@ defmodule Sanbase.Repo.Migrations.CreateNotifications do
       add(:display_in_ui, :boolean, default: false, null: false)
       add(:template_params, :map, null: false)
 
-      add(:notification_action_id, references(:notification_actions, on_delete: :delete_all),
-        null: false
-      )
+      add(:notification_action_id, references(:notification_actions, on_delete: :delete_all), null: false)
 
       timestamps()
     end

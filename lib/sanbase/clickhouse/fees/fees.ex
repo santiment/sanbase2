@@ -1,13 +1,15 @@
 defmodule Sanbase.Clickhouse.Fees do
+  @moduledoc false
   import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
 
-  alias Sanbase.Project
   alias Sanbase.ClickhouseRepo
+  alias Sanbase.Project
 
   def eth_fees_distribution(from, to, limit) do
     query_struct = eth_fees_distribution_query(from, to, limit)
 
-    ClickhouseRepo.query_transform(query_struct, & &1)
+    query_struct
+    |> ClickhouseRepo.query_transform(& &1)
     |> maybe_apply_function(&value_fees_list_to_result/1)
   end
 
@@ -17,7 +19,8 @@ defmodule Sanbase.Clickhouse.Fees do
     # Get the list of projects. Returns a non-empty list when at least one of the
     # first elements in the sublists is a slug and not an address
     projects =
-      Enum.map(data, &Enum.at(&1, 0))
+      data
+      |> Enum.map(&Enum.at(&1, 0))
       |> Project.List.by_field(:slug, preload?: true, preload: [:contract_addresses])
 
     projects_map = contract_address_to_project_map(projects)
@@ -51,7 +54,7 @@ defmodule Sanbase.Clickhouse.Fees do
     |> Enum.group_by(fn %{slug: slug, address: address} -> slug || address end)
     |> Enum.map(fn {_key, list} ->
       [elem | _] = list
-      fees = Enum.map(list, & &1.fees) |> Enum.sum()
+      fees = list |> Enum.map(& &1.fees) |> Enum.sum()
       %{elem | fees: fees}
     end)
   end
@@ -61,7 +64,7 @@ defmodule Sanbase.Clickhouse.Fees do
     |> Enum.flat_map(fn %Project{} = project ->
       [{project.slug, project}] ++
         Enum.map(project.contract_addresses, fn %{address: address} ->
-          {address |> String.downcase(), project}
+          {String.downcase(address), project}
         end)
     end)
     |> Map.new()

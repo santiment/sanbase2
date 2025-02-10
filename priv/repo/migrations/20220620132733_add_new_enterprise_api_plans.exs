@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddNewEnterpriseApiPlans do
+  @moduledoc false
   use Ecto.Migration
 
   def up do

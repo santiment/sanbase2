@@ -1,16 +1,18 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
-  import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3]
+  @moduledoc false
   import Absinthe.Resolution.Helpers
-
-  import SanbaseWeb.Graphql.Helpers.Utils
+  import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3]
   import SanbaseWeb.Graphql.Helpers.CalibrateInterval
+  import SanbaseWeb.Graphql.Helpers.Utils
 
-  alias Sanbase.Project
-  alias Sanbase.Metric
   alias Sanbase.Cache.RehydratingCache
+  alias Sanbase.Metric
+  alias Sanbase.Project
+  alias Sanbase.Project.Selector
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
   require Logger
+
   @ttl 7200
   @refresh_time_delta 1800
   @refresh_time_max_offset 1800
@@ -21,10 +23,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
 
   def available_metrics(%Project{slug: slug}, _args, _resolution) do
     # TEMP 02.02.2023: Handle ripple -> xrp rename
-    {:ok, %{slug: slug}} = Sanbase.Project.Selector.args_to_selector(%{slug: slug})
+    {:ok, %{slug: slug}} = Selector.args_to_selector(%{slug: slug})
 
     query = :available_metrics
-    cache_key = {__MODULE__, query, slug} |> Sanbase.Cache.hash()
+    cache_key = Sanbase.Cache.hash({__MODULE__, query, slug})
     fun = fn -> Metric.available_metrics_for_selector(%{slug: slug}) end
 
     maybe_register_and_get(cache_key, fun, slug, query)
@@ -40,10 +42,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
 
   def available_timeseries_metrics(%Project{slug: slug}, _args, _resolution) do
     # TEMP 02.02.2023: Handle ripple -> xrp rename
-    {:ok, %{slug: slug}} = Sanbase.Project.Selector.args_to_selector(%{slug: slug})
+    {:ok, %{slug: slug}} = Selector.args_to_selector(%{slug: slug})
 
     query = :available_timeseries_metrics
-    cache_key = {__MODULE__, query, slug} |> Sanbase.Cache.hash()
+    cache_key = Sanbase.Cache.hash({__MODULE__, query, slug})
     fun = fn -> Metric.available_timeseries_metrics_for_slug(%{slug: slug}) end
 
     maybe_register_and_get(cache_key, fun, slug, query)
@@ -51,39 +53,37 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
 
   def available_histogram_metrics(%Project{slug: slug}, _args, _resolution) do
     # TEMP 02.02.2023: Handle ripple -> xrp rename
-    {:ok, %{slug: slug}} = Sanbase.Project.Selector.args_to_selector(%{slug: slug})
+    {:ok, %{slug: slug}} = Selector.args_to_selector(%{slug: slug})
 
     query = :available_histogram_metrics
-    cache_key = {__MODULE__, query, slug} |> Sanbase.Cache.hash()
+    cache_key = Sanbase.Cache.hash({__MODULE__, query, slug})
     fun = fn -> Metric.available_histogram_metrics_for_slug(%{slug: slug}) end
     maybe_register_and_get(cache_key, fun, slug, query)
   end
 
   def available_table_metrics(%Project{slug: slug}, _args, _resolution) do
     # TEMP 02.02.2023: Handle ripple -> xrp rename
-    {:ok, %{slug: slug}} = Sanbase.Project.Selector.args_to_selector(%{slug: slug})
+    {:ok, %{slug: slug}} = Selector.args_to_selector(%{slug: slug})
 
     query = :available_table_metrics
-    cache_key = {__MODULE__, query, slug} |> Sanbase.Cache.hash()
+    cache_key = Sanbase.Cache.hash({__MODULE__, query, slug})
     fun = fn -> Metric.available_table_metrics_for_slug(%{slug: slug}) end
     maybe_register_and_get(cache_key, fun, slug, query)
   end
 
-  def aggregated_timeseries_data(
-        %Project{slug: slug},
-        %{from: from, to: to, metric: metric} = args,
-        %{context: %{loader: loader}}
-      ) do
+  def aggregated_timeseries_data(%Project{slug: slug}, %{from: from, to: to, metric: metric} = args, %{
+        context: %{loader: loader}
+      }) do
     # TEMP 02.02.2023: Handle ripple -> xrp rename
-    {:ok, %{slug: slug}} = Sanbase.Project.Selector.args_to_selector(%{slug: slug})
+    {:ok, %{slug: slug}} = Selector.args_to_selector(%{slug: slug})
 
     with true <- Metric.has_metric?(metric),
          false <- Metric.hard_deprecated?(metric),
          include_incomplete_data = Map.get(args, :include_incomplete_data, false),
          {:ok, from, to} <-
            calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to) do
-      from = from |> DateTime.truncate(:second)
-      to = to |> DateTime.truncate(:second)
+      from = DateTime.truncate(from, :second)
+      to = DateTime.truncate(to, :second)
       {:ok, opts} = selector_args_to_opts(args)
 
       data = %{
@@ -116,8 +116,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
         {:nocache, {:ok, nil}}
 
       _ignored when error_on_data_fetch_fail == true ->
-        {:error,
-         "Failed to fetch aggregatedTimeseriesData for metric #{metric} and asset #{slug}"}
+        {:error, "Failed to fetch aggregatedTimeseriesData for metric #{metric} and asset #{slug}"}
     end
   end
 
@@ -132,17 +131,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
         # Determine whether the value is missing because it failed to compute or
         # because the metric is not available for the given slug. In the first case
         # return a :nocache tuple so an attempt to compute it is made on the next call
-        case slug in slugs_for_metric do
-          true -> {:nocache, {:ok, nil}}
-          false -> {:ok, nil}
+        if slug in slugs_for_metric do
+          {:nocache, {:ok, nil}}
+        else
+          {:ok, nil}
         end
     end
   end
 
   defp available_slugs_for_metric(metric, opts) do
-    cache_key =
-      {__MODULE__, :available_slugs_for_metric, metric, opts}
-      |> Sanbase.Cache.hash()
+    cache_key = Sanbase.Cache.hash({__MODULE__, :available_slugs_for_metric, metric, opts})
 
     Sanbase.Cache.get_or_store({cache_key, 600}, fn ->
       Metric.available_slugs(metric, opts)

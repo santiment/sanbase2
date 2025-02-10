@@ -1,25 +1,22 @@
 defmodule SanbaseWeb.Graphql.ProjectTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   import Absinthe.Resolution.Helpers
-
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve: 2]
 
-  alias SanbaseWeb.Graphql.Resolvers.{
-    ClickhouseResolver,
-    ProjectResolver,
-    ProjectSignalsResolver,
-    ProjectMetricsResolver,
-    ProjectBalanceResolver,
-    ProjectTransfersResolver,
-    IcoResolver,
-    TwitterResolver
-  }
-
   alias Sanbase.Project
-  alias SanbaseWeb.Graphql.SanbaseRepo
   alias SanbaseWeb.Graphql.Complexity
   alias SanbaseWeb.Graphql.Middlewares.AccessControl
+  alias SanbaseWeb.Graphql.Resolvers.ClickhouseResolver
+  alias SanbaseWeb.Graphql.Resolvers.IcoResolver
+  alias SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver
+  alias SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver
+  alias SanbaseWeb.Graphql.Resolvers.ProjectResolver
+  alias SanbaseWeb.Graphql.Resolvers.ProjectSignalsResolver
+  alias SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver
+  alias SanbaseWeb.Graphql.Resolvers.TwitterResolver
+  alias SanbaseWeb.Graphql.SanbaseRepo
 
   enum :operator_name do
     value(:less_than)
@@ -481,9 +478,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
     field :source_slug_mappings, list_of(:source_slug_mapping) do
       cache_resolve(
-        dataloader(SanbaseRepo, :source_slug_mappings,
-          callback: fn query, _project, _args -> {:ok, query} end
-        ),
+        dataloader(SanbaseRepo, :source_slug_mappings, callback: fn query, _project, _args -> {:ok, query} end),
         fun_name: :source_slug_mappings
       )
     end
@@ -505,7 +500,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       cache_resolve(
         dataloader(SanbaseRepo, :market_segments,
           callback: fn query, _project, _args ->
-            {:ok, query |> Enum.map(& &1.name)}
+            {:ok, Enum.map(query, & &1.name)}
           end
         ),
         fun_name: :market_segments

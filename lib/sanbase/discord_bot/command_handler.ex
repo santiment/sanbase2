@@ -1,12 +1,14 @@
 defmodule Sanbase.DiscordBot.CommandHandler do
-  require Logger
-
+  @moduledoc false
+  alias Nostrum.Struct.Component.ActionRow
+  alias Nostrum.Struct.Component.Button
   alias Nostrum.Struct.Embed
-  alias Nostrum.Struct.Component.{Button, ActionRow}
-
-  alias Sanbase.DiscordBot.AiServer
   alias Sanbase.DiscordBot.AiContext
+  alias Sanbase.DiscordBot.AiServer
   alias Sanbase.DiscordBot.Utils
+  alias Sanbase.Utils.Config
+
+  require Logger
 
   @prod_pro_roles [532_833_809_947_951_105, 409_637_386_012_721_155]
   @local_pro_roles [854_304_500_402_880_532]
@@ -19,23 +21,23 @@ defmodule Sanbase.DiscordBot.CommandHandler do
 
   @max_message_length 1950
 
-  def bot_id() do
-    case Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) do
+  def bot_id do
+    case Config.module_get(Sanbase, :deployment_env) do
       "dev" -> @local_bot_id
       "stage" -> @stage_bot_id
       _ -> @prod_bot_id
     end
   end
 
-  def santiment_guild_id() do
-    case Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) do
+  def santiment_guild_id do
+    case Config.module_get(Sanbase, :deployment_env) do
       "dev" -> @local_guild_id
       _ -> @santiment_guild_id
     end
   end
 
-  def pro_roles() do
-    case Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) do
+  def pro_roles do
+    case Config.module_get(Sanbase, :deployment_env) do
       "dev" -> @local_pro_roles
       _ -> @prod_pro_roles
     end
@@ -44,7 +46,8 @@ defmodule Sanbase.DiscordBot.CommandHandler do
   # command handlers
 
   def handle_command("mention", msg) do
-    Nostrum.Api.get_channel(msg.channel_id)
+    msg.channel_id
+    |> Nostrum.Api.get_channel()
     |> case do
       {:ok, channel} ->
         channel_or_thread = maybe_create_thread(msg, channel)
@@ -70,13 +73,11 @@ defmodule Sanbase.DiscordBot.CommandHandler do
   # helpers
   defp maybe_create_thread(msg, channel) do
     # already in channel type thread
-    case channel.type in [10, 11, 12] do
-      true ->
-        channel
-
-      false ->
-        {:ok, thread_channel} = create_new_thread(msg)
-        thread_channel
+    if channel.type in [10, 11, 12] do
+      channel
+    else
+      {:ok, thread_channel} = create_new_thread(msg)
+      thread_channel
     end
   end
 
@@ -103,7 +104,7 @@ defmodule Sanbase.DiscordBot.CommandHandler do
         %{content: content, components: components} =
           process_ai_server_response(ai_server_response)
 
-        msgs = content |> Utils.split_message(@max_message_length)
+        msgs = Utils.split_message(content, @max_message_length)
 
         msgs
         |> Enum.with_index()
@@ -132,7 +133,7 @@ defmodule Sanbase.DiscordBot.CommandHandler do
   end
 
   defp format_search_sources(sources) do
-    sources = sources |> Enum.map(fn link -> "<#{link}>" end) |> Enum.join("\n")
+    sources = Enum.map_join(sources, "\n", fn link -> "<#{link}>" end)
     "Sources: \n#{sources}"
   end
 
@@ -142,7 +143,7 @@ defmodule Sanbase.DiscordBot.CommandHandler do
     sources =
       sources
       |> extract_filenames_or_links_from_string()
-      |> Enum.map(fn link ->
+      |> Enum.map_join("\n", fn link ->
         link =
           link
           |> String.replace("src/docs/", "https://academy.santiment.net/")
@@ -154,7 +155,6 @@ defmodule Sanbase.DiscordBot.CommandHandler do
 
         "<#{link}>"
       end)
-      |> Enum.join("\n")
 
     "Sources: \n#{sources}"
   end
@@ -189,7 +189,8 @@ defmodule Sanbase.DiscordBot.CommandHandler do
     {guild_name, _channel_name} = get_guild_channel(msg.guild_id, msg.channel_id)
 
     user_is_pro =
-      Nostrum.Api.get_guild_member(santiment_guild_id(), msg.author.id)
+      santiment_guild_id()
+      |> Nostrum.Api.get_guild_member(msg.author.id)
       |> case do
         {:ok, member} ->
           pro?(member.roles)
@@ -213,7 +214,9 @@ defmodule Sanbase.DiscordBot.CommandHandler do
   end
 
   def pro?(user_roles_in_santiment) do
-    MapSet.intersection(MapSet.new(pro_roles()), MapSet.new(user_roles_in_santiment))
+    pro_roles()
+    |> MapSet.new()
+    |> MapSet.intersection(MapSet.new(user_roles_in_santiment))
     |> Enum.any?()
   end
 
@@ -229,8 +232,8 @@ defmodule Sanbase.DiscordBot.CommandHandler do
 
   def ai_context_action_row(%AiContext{} = context) do
     ar = ActionRow.action_row()
-    votes_pos = context.votes |> Enum.count(fn {_k, v} -> v == 1 end)
-    votes_neg = context.votes |> Enum.count(fn {_k, v} -> v == -1 end)
+    votes_pos = Enum.count(context.votes, fn {_k, v} -> v == 1 end)
+    votes_neg = Enum.count(context.votes, fn {_k, v} -> v == -1 end)
 
     thumbs_up_button =
       Button.button(
@@ -262,8 +265,7 @@ defmodule Sanbase.DiscordBot.CommandHandler do
   defp run_command_action_row do
     run_button = Button.button(label: "Run 🚀", custom_id: "run", style: 3)
 
-    ActionRow.action_row()
-    |> ActionRow.append(run_button)
+    ActionRow.append(ActionRow.action_row(), run_button)
   end
 
   defp get_guild_channel(nil, _), do: {nil, nil}
@@ -316,7 +318,7 @@ defmodule Sanbase.DiscordBot.CommandHandler do
       %{"type" => "search"} = answer ->
         content = """
         #{answer["answer"]}
-        #{answer["sources"] |> format_search_sources()}
+        #{format_search_sources(answer["sources"])}
         """
 
         %{
@@ -327,7 +329,7 @@ defmodule Sanbase.DiscordBot.CommandHandler do
       answer ->
         content = """
         #{answer["answer"]}
-        #{answer["sources"] |> format_academy_sources()}
+        #{format_academy_sources(answer["sources"])}
         """
 
         components = maybe_add_run_component(content)
@@ -371,8 +373,7 @@ defmodule Sanbase.DiscordBot.CommandHandler do
   end
 
   defp extract_query(msg) do
-    msg.content
-    |> String.replace("<@#{bot_id()}>", "")
+    String.replace(msg.content, "<@#{bot_id()}>", "")
   end
 
   defp keep_typing(thread_id) do

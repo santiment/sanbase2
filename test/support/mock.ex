@@ -1,4 +1,5 @@
 defmodule Sanbase.Mock do
+  @moduledoc false
   import Mock
 
   @doc ~s"""
@@ -18,7 +19,7 @@ defmodule Sanbase.Mock do
       ets_table = Sanbase.TestSetupService.get_ets_table_name()
 
       key = {:wrap_consecutive_key, :rand.uniform(1_000_000_000)}
-      list_length = list |> length()
+      list_length = length(list)
 
       fn unquote_splicing(Macro.generate_arguments(@arity, __MODULE__)) ->
         # Start from -1 as the returned position is the one after the applied counter
@@ -26,18 +27,14 @@ defmodule Sanbase.Mock do
         position = :ets.update_counter(ets_table, key, {2, 1}, {key, -1})
 
         fun =
-          case cycle? do
-            true ->
-              list |> Stream.cycle() |> Enum.at(position)
-
-            false ->
-              if(position >= list_length) do
-                raise(
-                  "Mocked function with wrap_consecutive is called more than #{list_length} times with `cycle?: false`"
-                )
-              else
-                list |> Enum.at(position)
-              end
+          if cycle? do
+            list |> Stream.cycle() |> Enum.at(position)
+          else
+            if(position >= list_length) do
+              raise("Mocked function with wrap_consecutive is called more than #{list_length} times with `cycle?: false`")
+            else
+              Enum.at(list, position)
+            end
           end
 
         fun.()
@@ -45,7 +42,7 @@ defmodule Sanbase.Mock do
     end
   end
 
-  def init(), do: MapSet.new()
+  def init, do: MapSet.new()
 
   def prepare_mock(state \\ MapSet.new(), module, fun_name, fun_body, opts \\ [])
 
@@ -60,8 +57,7 @@ defmodule Sanbase.Mock do
   for arity <- 0..16 do
     @arity arity
 
-    def prepare_mock2(state, captured_fun, data, opts)
-        when is_function(captured_fun, unquote(arity)) do
+    def prepare_mock2(state, captured_fun, data, opts) when is_function(captured_fun, unquote(arity)) do
       {:name, name} = Function.info(captured_fun, :name)
       {:module, module} = Function.info(captured_fun, :module)
       passthrough = if Keyword.get(opts, :passthrough, true), do: [:passthrough], else: []

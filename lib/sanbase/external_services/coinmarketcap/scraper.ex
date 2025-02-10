@@ -1,10 +1,14 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
+  @moduledoc false
   use Tesla
 
   import Sanbase.ExternalServices.Coinmarketcap.Utils, only: [wait_rate_limit: 2]
-  require Logger
 
-  alias Sanbase.ExternalServices.{RateLimiting, ProjectInfo, ErrorCatcher}
+  alias Sanbase.ExternalServices.ErrorCatcher
+  alias Sanbase.ExternalServices.ProjectInfo
+  alias Sanbase.ExternalServices.RateLimiting
+
+  require Logger
 
   @rate_limiting_server :http_coinmarketcap_rate_limiter
 
@@ -33,9 +37,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
       {:error, error} ->
         error_msg = inspect(error)
 
-        Logger.error(
-          "Error fetching project page for #{coinmarketcap_id}. Error message: #{error_msg}"
-        )
+        Logger.error("Error fetching project page for #{coinmarketcap_id}. Error message: #{error_msg}")
 
         {:error, error_msg}
     end
@@ -58,15 +60,15 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
   # Private functions
 
   defp name(html) do
-    Floki.attribute(html, ".logo-32x32", "alt")
+    html
+    |> Floki.attribute(".logo-32x32", "alt")
     |> List.first()
   end
 
   defp ticker(html) do
     case Floki.find(html, "h1 > .text-bold.h3.text-gray.text-large") do
       [{_, _, [str]}] when is_binary(str) ->
-        str
-        |> String.replace(~r/[\(\)]/, "")
+        String.replace(str, ~r/[\(\)]/, "")
 
       _ ->
         nil
@@ -74,13 +76,15 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
   end
 
   defp website_link(html) do
-    Floki.attribute(html, ".bottom-margin-2x a:fl-contains('Website')", "href")
+    html
+    |> Floki.attribute(".bottom-margin-2x a:fl-contains('Website')", "href")
     |> List.first()
   end
 
   defp github_link(html) do
     github_link =
-      Floki.attribute(html, "a:fl-contains('Source Code')", "href")
+      html
+      |> Floki.attribute("a:fl-contains('Source Code')", "href")
       |> List.first()
 
     if github_link && String.contains?(github_link, "https://github.com/") do
@@ -89,7 +93,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
   end
 
   defp etherscan_token_name(html) do
-    Floki.attribute(html, "a:fl-contains('Explorer')", "href")
+    html
+    |> Floki.attribute("a:fl-contains('Explorer')", "href")
     |> Enum.map(fn link ->
       Regex.run(~r{https://etherscan.io/token/(.+)}, link)
     end)
@@ -101,7 +106,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
   end
 
   defp main_contract_address(html) do
-    Floki.attribute(html, "a:fl-contains('Explorer')", "href")
+    html
+    |> Floki.attribute("a:fl-contains('Explorer')", "href")
     |> Enum.map(fn link ->
       Regex.run(~r{https://ethplorer.io/address/(.+)}, link)
     end)

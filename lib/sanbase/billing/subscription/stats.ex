@@ -1,4 +1,5 @@
 defmodule Sanbase.Billing.Subscription.Stats do
+  @moduledoc false
   import Ecto.Query
 
   alias Sanbase.Billing.Plan
@@ -6,7 +7,7 @@ defmodule Sanbase.Billing.Subscription.Stats do
   alias Sanbase.Billing.Subscription.Query
   alias Sanbase.Repo
 
-  def user_active_subscriptions_map() do
+  def user_active_subscriptions_map do
     Subscription
     |> Query.all_active_subscriptions()
     |> Query.preload(plan: [:product])
@@ -18,16 +19,17 @@ defmodule Sanbase.Billing.Subscription.Stats do
       }
     end)
     |> Enum.group_by(& &1.user_id)
-    |> Enum.into(%{}, fn {user_id, products} ->
+    |> Map.new(fn {user_id, products} ->
       {
         user_id,
-        Enum.map(products, & &1.product) |> Enum.join(", ")
+        Enum.map_join(products, ", ", & &1.product)
       }
     end)
   end
 
   def all_user_subscriptions_map do
-    Repo.all(Subscription)
+    Subscription
+    |> Repo.all()
     |> Repo.preload(:plan)
     |> Enum.map(fn s ->
       %{
@@ -42,7 +44,7 @@ defmodule Sanbase.Billing.Subscription.Stats do
     |> Enum.group_by(& &1.user_id)
   end
 
-  def duplicate_sanbase_subscriptions() do
+  def duplicate_sanbase_subscriptions do
     from(
       s in Subscription,
       join: p in Plan,
@@ -56,16 +58,17 @@ defmodule Sanbase.Billing.Subscription.Stats do
     )
     |> Repo.all()
     |> Enum.map(fn {user_id, _} ->
-      from(s in Subscription,
-        join: p in Plan,
-        on: s.plan_id == p.id,
-        where:
-          s.user_id == ^user_id and p.product_id == 2 and
-            s.status in ["active", "trialing", "past_due"] and not is_nil(s.stripe_id),
-        select: {s.id, s.stripe_id, s.plan_id, s.status, s.inserted_at},
-        order_by: [desc: s.inserted_at]
+      Repo.all(
+        from(s in Subscription,
+          join: p in Plan,
+          on: s.plan_id == p.id,
+          where:
+            s.user_id == ^user_id and p.product_id == 2 and s.status in ["active", "trialing", "past_due"] and
+              not is_nil(s.stripe_id),
+          select: {s.id, s.stripe_id, s.plan_id, s.status, s.inserted_at},
+          order_by: [desc: s.inserted_at]
+        )
       )
-      |> Repo.all()
     end)
   end
 end

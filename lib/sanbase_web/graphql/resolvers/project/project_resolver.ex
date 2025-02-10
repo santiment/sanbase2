@@ -1,16 +1,16 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
-  require Logger
-
-  import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3]
+  @moduledoc false
   import Absinthe.Resolution.Helpers, except: [async: 1]
+  import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3]
   import SanbaseWeb.Graphql.Helpers.Async
 
-  alias Sanbase.Project
-  alias Sanbase.Model.LatestCoinmarketcapData
-
   alias Sanbase.Insight.Post
+  alias Sanbase.Model.LatestCoinmarketcapData
+  alias Sanbase.Project
   alias SanbaseWeb.Graphql.Cache
   alias SanbaseWeb.Graphql.SanbaseDataloader
+
+  require Logger
 
   def available_queries(%Project{} = project, _args, _resolution) do
     {:ok, Project.AvailableQueries.get(project)}
@@ -28,8 +28,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   def nft_project_by_slug(_parent, %{slug: slug}, _resolution), do: get_nft_project_by_slug(slug)
 
-  def nft_project_by_slug(_parent, _args, %{source: %{slug: slug}}),
-    do: get_nft_project_by_slug(slug)
+  def nft_project_by_slug(_parent, _args, %{source: %{slug: slug}}), do: get_nft_project_by_slug(slug)
 
   def project_by_slug(_parent, %{slug: slug}, _resolution), do: get_project_by_slug(slug)
   def project_by_slug(_parent, _args, %{source: %{slug: slug}}), do: get_project_by_slug(slug)
@@ -61,9 +60,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   def infrastructure(%Project{infrastructure_id: nil}, _args, _resolution), do: {:ok, nil}
 
-  def infrastructure(%Project{infrastructure_id: infrastructure_id}, _args, %{
-        context: %{loader: loader}
-      }) do
+  def infrastructure(%Project{infrastructure_id: infrastructure_id}, _args, %{context: %{loader: loader}}) do
     loader
     |> Dataloader.load(SanbaseDataloader, :infrastructure, infrastructure_id)
     |> on_load(fn loader ->
@@ -109,56 +106,35 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, roi}
   end
 
-  def symbol(
-        %Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{symbol: symbol}},
-        _args,
-        _resolution
-      ) do
+  def symbol(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{symbol: symbol}}, _args, _resolution) do
     {:ok, symbol}
   end
 
   def symbol(_parent, _args, _resolution), do: {:ok, nil}
 
-  def rank(
-        %Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{rank: rank}},
-        _args,
-        _resolution
-      ) do
+  def rank(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{rank: rank}}, _args, _resolution) do
     {:ok, rank}
   end
 
   def rank(_parent, _args, _resolution), do: {:ok, nil}
 
-  def price_usd(
-        %Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{price_usd: price_usd}},
-        _args,
-        _resolution
-      ) do
-    {:ok, price_usd |> Sanbase.Math.to_float()}
+  def price_usd(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{price_usd: price_usd}}, _args, _resolution) do
+    {:ok, Sanbase.Math.to_float(price_usd)}
   end
 
   def price_usd(_parent, _args, _resolution), do: {:ok, nil}
 
-  def price_btc(
-        %Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{price_btc: price_btc}},
-        _args,
-        _resolution
-      ) do
-    {:ok, price_btc |> Sanbase.Math.to_float()}
+  def price_btc(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{price_btc: price_btc}}, _args, _resolution) do
+    {:ok, Sanbase.Math.to_float(price_btc)}
   end
 
   def price_btc(_parent, _args, _resolution), do: {:ok, nil}
 
-  def price_eth(
-        %Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{price_usd: price_usd}},
-        _args,
-        _resolution
-      ) do
+  def price_eth(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{price_usd: price_usd}}, _args, _resolution) do
     project_ethereum =
-      Sanbase.Cache.get_or_store(
-        {__MODULE__, :project_by_slug, "ethereum"} |> Sanbase.Cache.hash(),
-        fn -> Project.by_slug("ethereum") end
-      )
+      {__MODULE__, :project_by_slug, "ethereum"}
+      |> Sanbase.Cache.hash()
+      |> Sanbase.Cache.get_or_store(fn -> Project.by_slug("ethereum") end)
 
     case project_ethereum do
       %Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{price_usd: price_eth_in_usd}} ->
@@ -182,7 +158,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         _args,
         _resolution
       ) do
-    {:ok, volume_usd |> Sanbase.Math.to_float()}
+    {:ok, Sanbase.Math.to_float(volume_usd)}
   end
 
   def volume_usd(_parent, _args, _resolution), do: {:ok, nil}
@@ -194,16 +170,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   defp volume_change_24h_from_loader(loader, project) do
-    volume_change_24h =
-      loader
-      |> Dataloader.get(SanbaseDataloader, :volume_change_24h, project.slug)
+    volume_change_24h = Dataloader.get(loader, SanbaseDataloader, :volume_change_24h, project.slug)
 
     {:ok, volume_change_24h}
   end
 
   def github_links(%Project{} = project, _args, _resolution) do
     {:ok, orgs} = Project.github_organizations(project)
-    links = orgs |> Enum.map(&Project.GithubOrganization.organization_to_link/1)
+    links = Enum.map(orgs, &Project.GithubOrganization.organization_to_link/1)
     {:ok, links}
   end
 
@@ -218,7 +192,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   # Private functions
 
-  defp trending_projects() do
+  defp trending_projects do
     Cache.wrap(
       fn ->
         case Sanbase.SocialData.TrendingWords.get_currently_trending_projects(10, :all) do
@@ -233,12 +207,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   defp calculate_average_github_activity(%Project{} = project, %{days: days}) do
     case Project.github_organizations(project) do
       {:ok, organizations} ->
-        month_ago = Timex.shift(Timex.now(), days: -days)
+        month_ago = Timex.shift(DateTime.utc_now(), days: -days)
 
         case Sanbase.Clickhouse.Github.total_github_activity(
                organizations,
                month_ago,
-               Timex.now()
+               DateTime.utc_now()
              ) do
           {:ok, organizations_activity_map} ->
             total_activity = organizations_activity_map |> Map.values() |> Enum.sum()
@@ -253,9 +227,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     end
   rescue
     e ->
-      Logger.error(
-        "Exception raised while calculating average github activity. Reason: #{inspect(e)}"
-      )
+      Logger.error("Exception raised while calculating average github activity. Reason: #{inspect(e)}")
 
       {:ok, nil}
   end
@@ -293,12 +265,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   defp average_dev_activity_per_org(loader, organizations, days) do
     dev_activity_map =
-      loader
-      |> Dataloader.get(SanbaseDataloader, :average_dev_activity, days) ||
+      Dataloader.get(loader, SanbaseDataloader, :average_dev_activity, days) ||
         %{}
 
-    organizations
-    |> Enum.map(fn org ->
+    Enum.map(organizations, fn org ->
       dev_activity_map
       |> Map.get(org)
       |> case do
@@ -309,21 +279,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   def marketcap_usd(
-        %Project{
-          latest_coinmarketcap_data: %LatestCoinmarketcapData{market_cap_usd: market_cap_usd}
-        },
+        %Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{market_cap_usd: market_cap_usd}},
         _args,
         _resolution
       ) do
-    {:ok, market_cap_usd |> Sanbase.Math.to_float()}
+    {:ok, Sanbase.Math.to_float(market_cap_usd)}
   end
 
   def marketcap_usd(_parent, _args, _resolution), do: {:ok, nil}
 
   def available_supply(
-        %Project{
-          latest_coinmarketcap_data: %LatestCoinmarketcapData{available_supply: available_supply}
-        },
+        %Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{available_supply: available_supply}},
         _args,
         _resolution
       ) do
@@ -346,11 +312,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   def total_supply(_parent, _args, _resolution), do: {:ok, nil}
 
   def percent_change_1h(
-        %Project{
-          latest_coinmarketcap_data: %LatestCoinmarketcapData{
-            percent_change_1h: percent_change_1h
-          }
-        },
+        %Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{percent_change_1h: percent_change_1h}},
         _args,
         _resolution
       ) do
@@ -360,11 +322,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   def percent_change_1h(_parent, _args, _resolution), do: {:ok, nil}
 
   def percent_change_24h(
-        %Project{
-          latest_coinmarketcap_data: %LatestCoinmarketcapData{
-            percent_change_24h: percent_change_24h
-          }
-        },
+        %Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{percent_change_24h: percent_change_24h}},
         _args,
         _resolution
       ) do
@@ -374,11 +332,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   def percent_change_24h(_parent, _args, _resolution), do: {:ok, nil}
 
   def percent_change_7d(
-        %Project{
-          latest_coinmarketcap_data: %LatestCoinmarketcapData{
-            percent_change_7d: percent_change_7d
-          }
-        },
+        %Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{percent_change_7d: percent_change_7d}},
         _args,
         _resolution
       ) do
@@ -426,11 +380,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   The result is a list of data points with a datetime. For each datetime the marketcap
   and volume are the sum of all marketcaps and volumes of the projects for that date
   """
-  def combined_history_stats(
-        _,
-        %{slugs: slugs, from: from, to: to, interval: interval},
-        _resolution
-      ) do
+  def combined_history_stats(_, %{slugs: slugs, from: from, to: to, interval: interval}, _resolution) do
     case Sanbase.Price.combined_marketcap_and_volume(slugs, from, to, interval) do
       {:ok, result} ->
         {:ok, result}
@@ -443,8 +393,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   @spec related_posts(Sanbase.Project.t(), any, any) :: any
-  def related_posts(%Project{ticker: ticker} = _project, _args, _resolution) when is_nil(ticker),
-    do: {:ok, []}
+  def related_posts(%Project{ticker: ticker} = _project, _args, _resolution) when is_nil(ticker), do: {:ok, []}
 
   def related_posts(%Project{ticker: ticker} = _project, _args, _resolution) do
     Cache.wrap(fn -> fetch_posts_by_ticker(ticker) end, {:related_posts, ticker}).()

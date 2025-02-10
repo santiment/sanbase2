@@ -1,9 +1,11 @@
 defmodule Sanbase.Notifications.NotificationActionsTest do
   use Sanbase.DataCase, async: false
-  import Sanbase.NotificationsFixtures
+
   import Mox
+  import Sanbase.NotificationsFixtures
 
   alias Sanbase.Notifications.Handler
+  alias Sanbase.Notifications.MockDiscordClient
 
   setup do
     Application.put_env(:sanbase, :mailjet_mocked, true)
@@ -15,7 +17,7 @@ defmodule Sanbase.Notifications.NotificationActionsTest do
   describe "metric_created notification" do
     test "creates notifications for both discord and email channels" do
       # Allow the mock to be called multiple times
-      stub(Sanbase.Notifications.MockDiscordClient, :send_message, fn _webhook, content, _opts ->
+      stub(MockDiscordClient, :send_message, fn _webhook, content, _opts ->
         assert content =~ "metric A"
         assert content =~ "metric B"
         assert content =~ "For more information, please visit #changelog"
@@ -62,7 +64,7 @@ defmodule Sanbase.Notifications.NotificationActionsTest do
 
   describe "metric_deleted notification" do
     test "creates notifications for both discord and email channels" do
-      stub(Sanbase.Notifications.MockDiscordClient, :send_message, fn _webhook, content, _opts ->
+      stub(MockDiscordClient, :send_message, fn _webhook, content, _opts ->
         assert content =~ "metric X"
         assert content =~ "scheduled to be deprecated"
         assert content =~ "2024-12-31"

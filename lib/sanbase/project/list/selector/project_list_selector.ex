@@ -15,7 +15,7 @@ defmodule Sanbase.Project.ListSelector do
   # data between calls. For this purposes the process dictionary is used. This can
   # lead to issues if more than 1 watchlist is resolved.
   @cycle_detection_key :__get_base_projects__
-  def clear_detect_cycles(), do: Process.delete(@cycle_detection_key)
+  def clear_detect_cycles, do: Process.delete(@cycle_detection_key)
 
   defdelegate valid_selector?(args), to: __MODULE__.Validator
 
@@ -119,7 +119,9 @@ defmodule Sanbase.Project.ListSelector do
   defp intersect_with_base_slugs(:all, base_slugs), do: base_slugs
 
   defp intersect_with_base_slugs(slugs, base_slugs) do
-    MapSet.intersection(MapSet.new(slugs), MapSet.new(base_slugs))
+    slugs
+    |> MapSet.new()
+    |> MapSet.intersection(MapSet.new(base_slugs))
     |> Enum.to_list()
   end
 
@@ -169,9 +171,7 @@ defmodule Sanbase.Project.ListSelector do
         })
 
       %{iterations_left: 0, original_args: original_args} ->
-        raise(
-          "The base projects nesting of a #{watchlist_args_to_str(original_args)} is too deep."
-        )
+        raise("The base projects nesting of a #{watchlist_args_to_str(original_args)} is too deep.")
 
       %{
         iterations_left: iterations_left,
@@ -234,10 +234,10 @@ defmodule Sanbase.Project.ListSelector do
 
   defp included_slugs_by_filters(filters, filters_combinator) when is_list(filters) do
     result =
-      filters
-      |> Sanbase.Parallel.map(
+      Sanbase.Parallel.map(
+        filters,
         fn filter ->
-          cache_key = {__MODULE__, :included_slugs_by_filter, filter} |> Sanbase.Cache.hash()
+          cache_key = Sanbase.Cache.hash({__MODULE__, :included_slugs_by_filter, filter})
           fun = fn -> slugs_by_filter(filter) end
 
           case Sanbase.Cache.get_or_store(cache_key, fun) do
@@ -327,12 +327,12 @@ defmodule Sanbase.Project.ListSelector do
           {:ok, ordered_slugs}
 
         :erc20 ->
-          slugs_mapset = Project.List.erc20_projects_slugs() |> MapSet.new()
+          slugs_mapset = MapSet.new(Project.List.erc20_projects_slugs())
           slugs = Enum.filter(ordered_slugs, &(&1 in slugs_mapset))
           {:ok, slugs}
 
         ^slugs when is_list(slugs) ->
-          slugs_mapset = slugs |> MapSet.new()
+          slugs_mapset = MapSet.new(slugs)
           slugs = Enum.filter(ordered_slugs, &(&1 in slugs_mapset))
           {:ok, slugs}
       end

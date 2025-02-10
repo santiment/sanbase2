@@ -20,7 +20,8 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
       %{dt1: dt1, dt2: dt2, dt3: dt3} = context
       rows = trending_words_rows(dt1, dt2, dt3)
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+      (&Sanbase.ClickhouseRepo.query/2)
+      |> Sanbase.Mock.prepare_mock2({:ok, %{rows: rows}})
       |> Sanbase.Mock.run_with_mocks(fn ->
         result = TrendingWords.get_trending_words(dt1, dt3, "1d", 2, :all)
 
@@ -174,7 +175,8 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
     test "clickhouse returns error", context do
       %{dt1: dt1, dt3: dt3} = context
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, "error"})
+      (&Sanbase.ClickhouseRepo.query/2)
+      |> Sanbase.Mock.prepare_mock2({:error, "error"})
       |> Sanbase.Mock.run_with_mocks(fn ->
         {:error, error} = TrendingWords.get_trending_words(dt1, dt3, "1d", 2, :all)
 
@@ -188,7 +190,8 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
       %{dt1: dt1, dt2: dt2, dt3: dt3} = context
       rows = trending_words_rows(dt1, dt2, dt3)
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+      (&Sanbase.ClickhouseRepo.query/2)
+      |> Sanbase.Mock.prepare_mock2({:ok, %{rows: rows}})
       |> Sanbase.Mock.run_with_mocks(fn ->
         result = TrendingWords.get_currently_trending_words(10, :all)
 
@@ -246,7 +249,8 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
     end
 
     test "clickhouse returns error", _context do
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, "error"})
+      (&Sanbase.ClickhouseRepo.query/2)
+      |> Sanbase.Mock.prepare_mock2({:error, "error"})
       |> Sanbase.Mock.run_with_mocks(fn ->
         {:error, error} = TrendingWords.get_currently_trending_words(10, :all)
 
@@ -260,7 +264,8 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
       %{dt1: dt1, dt2: dt2, dt3: dt3} = context
       rows = word_trending_history_rows(dt1, dt2, dt3)
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+      (&Sanbase.ClickhouseRepo.query/2)
+      |> Sanbase.Mock.prepare_mock2({:ok, %{rows: rows}})
       |> Sanbase.Mock.run_with_mocks(fn ->
         result = TrendingWords.get_word_trending_history("word", dt1, dt3, "1d", 10, :all)
 
@@ -276,7 +281,8 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
     test "clickhouse returns error", context do
       %{dt1: dt1, dt2: dt2} = context
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, "error"})
+      (&Sanbase.ClickhouseRepo.query/2)
+      |> Sanbase.Mock.prepare_mock2({:error, "error"})
       |> Sanbase.Mock.run_with_mocks(fn ->
         {:error, error} =
           TrendingWords.get_word_trending_history("word", dt1, dt2, "1h", 10, :all)
@@ -293,7 +299,8 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
       project = insert(:random_project)
       rows = project_trending_history_rows(dt1, dt2, dt3)
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+      (&Sanbase.ClickhouseRepo.query/2)
+      |> Sanbase.Mock.prepare_mock2({:ok, %{rows: rows}})
       |> Sanbase.Mock.run_with_mocks(fn ->
         result =
           TrendingWords.get_project_trending_history(project.slug, dt1, dt3, "1d", 10, :all)
@@ -311,7 +318,8 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
       %{dt1: dt1, dt2: dt2} = context
       project = insert(:random_project)
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, "error"})
+      (&Sanbase.ClickhouseRepo.query/2)
+      |> Sanbase.Mock.prepare_mock2({:error, "error"})
       |> Sanbase.Mock.run_with_mocks(fn ->
         {:error, error} =
           TrendingWords.get_project_trending_history(project.slug, dt1, dt2, "1h", 10, :all)

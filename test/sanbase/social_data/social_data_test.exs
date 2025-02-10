@@ -7,12 +7,11 @@ defmodule Sanbase.SocialDataTest do
 
   test "successfully fetch word context" do
     body =
-      %{
+      Jason.encode!(%{
         "christ" => %{"score" => 0.7688603531300161},
         "christmas" => %{"score" => 0.7592295345104334},
         "mas" => %{"score" => 1.0}
-      }
-      |> Jason.encode!()
+      })
 
     mock(
       HTTPoison,
@@ -46,15 +45,14 @@ defmodule Sanbase.SocialDataTest do
 
   test "successfully fetch word trend score" do
     body =
-      [
+      Jason.encode!([
         %{
           "hour" => 8.0,
           "score" => 3725.6617392595313,
           "source" => "telegram",
           "timestamp" => DateTime.to_unix(~U[2019-01-10 00:00:00Z])
         }
-      ]
-      |> Jason.encode!()
+      ])
 
     mock(
       HTTPoison,

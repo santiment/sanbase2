@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddTimelineEventCommentsMapping do
+  @moduledoc false
   use Ecto.Migration
 
   @table :timeline_event_comments_mapping

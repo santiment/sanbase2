@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.Middlewares.ProjectPermissions do
+  @moduledoc false
   @behaviour Absinthe.Middleware
 
   alias Absinthe.Resolution
@@ -10,8 +11,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.ProjectPermissions do
         resolution
 
       fields ->
-        resolution
-        |> Resolution.put_result(
+        Resolution.put_result(
+          resolution,
           {:error, "Cannot query #{inspect(fields)} on a query that returns more than 1 project."}
         )
     end
@@ -39,9 +40,10 @@ defmodule SanbaseWeb.Graphql.Middlewares.ProjectPermissions do
     requested_fields = Utils.requested_fields(resolution)
 
     Enum.reduce(requested_fields, [], fn key, acc ->
-      case Enum.member?(not_allowed_fields, key) do
-        true -> [key | acc]
-        false -> acc
+      if Enum.member?(not_allowed_fields, key) do
+        [key | acc]
+      else
+        acc
       end
     end)
   end

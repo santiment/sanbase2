@@ -1,7 +1,9 @@
 defmodule Sanbase.Insight.PopularAuthor do
-  alias Sanbase.Vote
+  @moduledoc false
+  alias Sanbase.Accounts.User
+  alias Sanbase.Accounts.UserFollower
   alias Sanbase.Insight.Post
-  alias Sanbase.Accounts.{User, UserFollower}
+  alias Sanbase.Vote
 
   @doc ~s"""
   Returns a list of `size` number of users, ranked by how popular insights
@@ -22,7 +24,8 @@ defmodule Sanbase.Insight.PopularAuthor do
     # Map over the user to votes map as this is the list of only those users
     # who have created an insight. A small
     user_ids =
-      Enum.map(user_id_stats_map.to_total_votes_map, fn {user_id, _total_votes} ->
+      user_id_stats_map.to_total_votes_map
+      |> Enum.map(fn {user_id, _total_votes} ->
         popularity_score = compute_author_popularity_score(user_id, user_id_stats_map)
 
         {user_id, popularity_score}
@@ -40,7 +43,7 @@ defmodule Sanbase.Insight.PopularAuthor do
 
   defp compute_author_popularity_score(user_id, %{} = user_id_stats_map) do
     followers_count = Map.get(user_id_stats_map.to_followers_count_map, user_id, 0)
-    insights_count = Map.get(user_id_stats_map.to_post_ids_map, user_id, []) |> length()
+    insights_count = user_id_stats_map.to_post_ids_map |> Map.get(user_id, []) |> length()
     comments_count = Map.get(user_id_stats_map.to_total_comments_map, user_id, 0)
     total_votes = Map.get(user_id_stats_map.to_total_votes_map, user_id, 0)
 
@@ -53,12 +56,11 @@ defmodule Sanbase.Insight.PopularAuthor do
   defp user_id_to_total_votes_map(user_id_to_post_ids_map) do
     post_id_to_votes_map = Vote.post_id_to_votes()
 
-    Enum.into(
+    Map.new(
       user_id_to_post_ids_map,
-      %{},
       fn {user_id, post_ids} ->
         total_votes_for_user =
-          Enum.map(post_ids, &Map.get(post_id_to_votes_map, &1, 0)) |> Enum.sum()
+          post_ids |> Enum.map(&Map.get(post_id_to_votes_map, &1, 0)) |> Enum.sum()
 
         {user_id, total_votes_for_user}
       end
@@ -68,12 +70,11 @@ defmodule Sanbase.Insight.PopularAuthor do
   defp user_id_to_total_comments_map(user_id_to_post_ids_map) do
     post_id_to_comments_count_map = Post.Stats.post_id_to_comments_count()
 
-    Enum.into(
+    Map.new(
       user_id_to_post_ids_map,
-      %{},
       fn {user_id, post_ids} ->
         total_comments_for_user =
-          Enum.map(post_ids, &Map.get(post_id_to_comments_count_map, &1, 0)) |> Enum.sum()
+          post_ids |> Enum.map(&Map.get(post_id_to_comments_count_map, &1, 0)) |> Enum.sum()
 
         {user_id, total_comments_for_user}
       end

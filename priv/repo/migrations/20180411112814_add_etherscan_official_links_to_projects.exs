@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddEtherscanOfficialLinksToProjects do
+  @moduledoc false
   use Ecto.Migration
 
   def change do

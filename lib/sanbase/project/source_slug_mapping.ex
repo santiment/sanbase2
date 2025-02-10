@@ -1,11 +1,12 @@
 defmodule Sanbase.Project.SourceSlugMapping do
+  @moduledoc false
   use Ecto.Schema
 
-  import Ecto.Query
   import Ecto.Changeset
+  import Ecto.Query
 
-  alias Sanbase.Repo
   alias Sanbase.Project
+  alias Sanbase.Repo
 
   @table "source_slug_mappings"
 
@@ -23,33 +24,20 @@ defmodule Sanbase.Project.SourceSlugMapping do
   end
 
   def create(attrs) do
-    changeset(%__MODULE__{}, attrs) |> Repo.insert()
+    %__MODULE__{} |> changeset(attrs) |> Repo.insert()
   end
 
   def remove(project_id, source) do
-    from(
-      ssm in __MODULE__,
-      where: ssm.project_id == ^project_id and ssm.source == ^source
-    )
-    |> Repo.delete_all()
+    Repo.delete_all(from(ssm in __MODULE__, where: ssm.project_id == ^project_id and ssm.source == ^source))
   end
 
   def get_source_slug_mappings(source) do
-    from(
-      ssm in __MODULE__,
-      join: p in assoc(ssm, :project),
-      where: ssm.source == ^source,
-      select: {ssm.slug, p.slug}
+    Repo.all(
+      from(ssm in __MODULE__, join: p in assoc(ssm, :project), where: ssm.source == ^source, select: {ssm.slug, p.slug})
     )
-    |> Repo.all()
   end
 
   def get_slug(%Project{id: project_id}, source) do
-    from(
-      ssm in __MODULE__,
-      where: ssm.project_id == ^project_id and ssm.source == ^source,
-      select: ssm.slug
-    )
-    |> Repo.one()
+    Repo.one(from(ssm in __MODULE__, where: ssm.project_id == ^project_id and ssm.source == ^source, select: ssm.slug))
   end
 end

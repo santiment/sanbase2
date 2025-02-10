@@ -85,13 +85,11 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthSpent do
   """
   @spec eth_spent_over_time(address | list(address), DateTime.t(), DateTime.t(), interval) ::
           eth_spent_over_time_result()
-  def eth_spent_over_time(addresses, from, to, interval)
-      when is_binary(addresses) or is_list(addresses) do
+  def eth_spent_over_time(addresses, from, to, interval) when is_binary(addresses) or is_list(addresses) do
     case eth_balance_change(addresses, from, to, interval) do
       {:ok, balance_changes} ->
         eth_spent_over_time =
-          balance_changes
-          |> Enum.map(fn
+          Enum.map(balance_changes, fn
             %{balance_change_amount: change, datetime: dt} when change < 0 ->
               %{datetime: dt, eth_spent: abs(change)}
 

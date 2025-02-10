@@ -1,9 +1,12 @@
 defmodule Sanbase.Model.IcoCurrency do
+  @moduledoc false
   use Ecto.Schema
+
   import Ecto.Changeset
-  alias Sanbase.Model.IcoCurrency
-  alias Sanbase.Model.Ico
+
   alias Sanbase.Model.Currency
+  alias Sanbase.Model.Ico
+  alias Sanbase.Model.IcoCurrency
 
   schema "ico_currencies" do
     belongs_to(:ico, Ico)

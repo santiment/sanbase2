@@ -22,10 +22,12 @@ defmodule SanbaseWeb do
     quote do
       use Phoenix.Router
 
-      # Import common connection and controller functions to use in pipelines
-      import Plug.Conn
       import Phoenix.Controller
       import Phoenix.LiveView.Router
+
+      # Import common connection and controller functions to use in pipelines
+      import Plug.Conn
+
       unquote(verified_routes())
     end
   end
@@ -45,8 +47,10 @@ defmodule SanbaseWeb do
         formats: [:html, :json],
         layouts: [html: SanbaseWeb.Layouts]
 
-      import Plug.Conn
       use Gettext, backend: SanbaseWeb.Gettext
+
+      import Plug.Conn
+
       unquote(verified_routes())
     end
   end
@@ -87,12 +91,12 @@ defmodule SanbaseWeb do
         root: "lib/sanbase_web/templates",
         namespace: SanbaseWeb
 
+      use PhoenixHTMLHelpers
+
       # Import convenience functions from controllers
       import Phoenix.Controller, only: [view_module: 1]
-
       import Phoenix.HTML
       import Phoenix.HTML.Form
-      use PhoenixHTMLHelpers
       import Phoenix.View
 
       unquote(view_helpers())
@@ -102,16 +106,16 @@ defmodule SanbaseWeb do
   defp view_helpers do
     quote do
       # Use all HTML functionality (forms, tags, etc)
+      use PhoenixHTMLHelpers
+      use Gettext, backend: SanbaseWeb.Gettext
 
       import Phoenix.HTML
       import Phoenix.HTML.Form
-      use PhoenixHTMLHelpers
 
       # Import basic rendering functionality (render, render_layout, etc)
       import Phoenix.View
-
       import SanbaseWeb.ErrorHelpers
-      use Gettext, backend: SanbaseWeb.Gettext
+
       alias SanbaseWeb.Router.Helpers, as: Routes
 
       unquote(verified_routes())
@@ -120,11 +124,11 @@ defmodule SanbaseWeb do
 
   defp html_helpers do
     quote do
+      use Gettext, backend: SanbaseWeb.Gettext
       # HTML escaping functionality
       import Phoenix.HTML
       # Core UI components and translation
       import SanbaseWeb.CoreComponents
-      use Gettext, backend: SanbaseWeb.Gettext
 
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS

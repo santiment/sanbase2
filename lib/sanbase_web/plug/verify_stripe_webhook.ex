@@ -13,10 +13,10 @@ defmodule SanbaseWeb.Plug.VerifyStripeWebhook do
 
   import Plug.Conn
 
-  require Logger
   alias Sanbase.Utils.Config
-
   alias SanbaseWeb.Router.Helpers, as: Routes
+
+  require Logger
 
   def init(opts), do: opts
 
@@ -40,8 +40,7 @@ defmodule SanbaseWeb.Plug.VerifyStripeWebhook do
 
     case Sanbase.StripeApi.Webhook.construct_event(body, signature, webhook_secret()) do
       {:ok, %Stripe.Event{}} ->
-        conn
-        |> assign(:stripe_event, Jason.decode!(body))
+        assign(conn, :stripe_event, Jason.decode!(body))
 
       {:error, error} ->
         halt_and_log_error(conn, error)
@@ -56,5 +55,5 @@ defmodule SanbaseWeb.Plug.VerifyStripeWebhook do
     |> halt()
   end
 
-  defp webhook_secret(), do: Config.module_get(__MODULE__, :webhook_secret)
+  defp webhook_secret, do: Config.module_get(__MODULE__, :webhook_secret)
 end

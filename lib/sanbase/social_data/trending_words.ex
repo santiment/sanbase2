@@ -20,9 +20,10 @@ defmodule Sanbase.SocialData.TrendingWords do
   """
 
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
-  import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
   import Sanbase.Metric.SqlQuery.Helper, only: [to_unix_timestamp: 3, dt_to_unix: 2]
+  import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
 
+  alias Sanbase.Clickhouse.Query
   alias Sanbase.ClickhouseRepo
 
   @type word :: String.t()
@@ -85,7 +86,7 @@ defmodule Sanbase.SocialData.TrendingWords do
         bb_sentiment_ratios
       ],
       acc ->
-        slug = if project, do: String.split(project, "_", parts: 2) |> List.last()
+        slug = if project, do: project |> String.split("_", parts: 2) |> List.last()
         datetime = DateTime.from_unix!(dt)
         # The percentage of the documents that mention the word that have
         # postive, negative or netural sentiment. The values are in the range [0, 1]
@@ -167,7 +168,7 @@ defmodule Sanbase.SocialData.TrendingWords do
           {:ok, list(trending_word)} | {:error, String.t()}
   def get_currently_trending_words(size, source) do
     source = if source == :all, do: default_source(), else: to_string(source)
-    now = Timex.now()
+    now = DateTime.utc_now()
     from = Timex.shift(now, hours: -@hours_back_ensure_has_data)
 
     case get_trending_words(from, now, "1h", size, source) do
@@ -175,7 +176,7 @@ defmodule Sanbase.SocialData.TrendingWords do
         {:ok, []}
 
       {:ok, stats} ->
-        {_, words} = stats |> Enum.max_by(fn {dt, _} -> DateTime.to_unix(dt) end)
+        {_, words} = Enum.max_by(stats, fn {dt, _} -> DateTime.to_unix(dt) end)
         {:ok, words}
 
       {:error, error} ->
@@ -190,12 +191,12 @@ defmodule Sanbase.SocialData.TrendingWords do
           {:ok, list(trending_slug)} | {:error, String.t()}
   def get_currently_trending_projects(size, source) do
     source = if source == :all, do: default_source(), else: to_string(source)
-    now = Timex.now()
+    now = DateTime.utc_now()
     from = Timex.shift(now, hours: -@hours_back_ensure_has_data)
 
     case get_trending_projects(from, now, "1h", size, source) do
       {:ok, stats} ->
-        {_, projects} = stats |> Enum.max_by(fn {dt, _} -> DateTime.to_unix(dt) end)
+        {_, projects} = Enum.max_by(stats, fn {dt, _} -> DateTime.to_unix(dt) end)
         {:ok, projects}
 
       {:error, error} ->
@@ -216,7 +217,8 @@ defmodule Sanbase.SocialData.TrendingWords do
     source = if source == :all, do: default_source(), else: to_string(source)
     query_struct = word_trending_history_query(word, from, to, interval, size, source)
 
-    ClickhouseRepo.query_transform(query_struct, fn [dt, position] ->
+    query_struct
+    |> ClickhouseRepo.query_transform(fn [dt, position] ->
       position = if position > 0, do: position
 
       %{
@@ -240,7 +242,8 @@ defmodule Sanbase.SocialData.TrendingWords do
     source = if source == :all, do: default_source(), else: to_string(source)
     query_struct = project_trending_history_query(slug, from, to, interval, size, source)
 
-    ClickhouseRepo.query_transform(query_struct, fn [dt, position] ->
+    query_struct
+    |> ClickhouseRepo.query_transform(fn [dt, position] ->
       position = if position > 0, do: position
 
       %{
@@ -304,7 +307,7 @@ defmodule Sanbase.SocialData.TrendingWords do
       score_equalizer: length(String.split(source, ","))
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp word_type_filter_str(word_type_filter) do
@@ -319,7 +322,7 @@ defmodule Sanbase.SocialData.TrendingWords do
     query_struct = get_trending_words_query(from, to, interval, size, source, :all)
 
     sql =
-      [
+      to_string([
         """
         SELECT
           t,
@@ -332,12 +335,11 @@ defmodule Sanbase.SocialData.TrendingWords do
         GROUP BY t
         ORDER BY t
         """
-      ]
-      |> to_string()
+      ])
 
     query_struct
-    |> Sanbase.Clickhouse.Query.put_sql(sql)
-    |> Sanbase.Clickhouse.Query.add_parameter(:word, word)
+    |> Query.put_sql(sql)
+    |> Query.add_parameter(:word, word)
   end
 
   defp project_trending_history_query(slug, from, to, interval, size, source) do
@@ -355,8 +357,8 @@ defmodule Sanbase.SocialData.TrendingWords do
     ticker_slug = Sanbase.Project.ticker_by_slug(slug) <> "_" <> slug
 
     query_struct
-    |> Sanbase.Clickhouse.Query.put_sql(sql)
-    |> Sanbase.Clickhouse.Query.add_parameter(:ticker_slug, ticker_slug)
+    |> Query.put_sql(sql)
+    |> Query.add_parameter(:ticker_slug, ticker_slug)
   end
 
   defp default_source do

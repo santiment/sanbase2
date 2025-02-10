@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.CreatePromoCoupons do
+  @moduledoc false
   use Ecto.Migration
 
   def change do

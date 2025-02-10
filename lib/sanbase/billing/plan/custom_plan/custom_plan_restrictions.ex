@@ -1,4 +1,5 @@
 defmodule Sanbase.Billing.Plan.CustomPlan.Restrictions do
+  @moduledoc false
   use Ecto.Schema
 
   import Ecto.Changeset
@@ -87,6 +88,5 @@ defmodule Sanbase.Billing.Plan.CustomPlan.Restrictions do
   defp valid_not_accessible(%{"not_accessible" => "all"}), do: true
   defp valid_not_accessible(%{"not_accessible" => list}), do: Enum.all?(list, &is_binary/1)
 
-  defp valid_not_accessible_patterns(%{"not_accessible_patterns" => list}),
-    do: Enum.all?(list, &is_binary/1)
+  defp valid_not_accessible_patterns(%{"not_accessible_patterns" => list}), do: Enum.all?(list, &is_binary/1)
 end

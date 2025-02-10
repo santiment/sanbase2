@@ -1,14 +1,15 @@
 defmodule Sanbase.Alert.DailyMetricTriggerSettingsTest do
   use Sanbase.DataCase, async: false
 
+  import ExUnit.CaptureLog
   import Sanbase.Factory
   import Sanbase.TestHelpers
-  import ExUnit.CaptureLog
 
-  alias Sanbase.Alert.UserTrigger
   alias Sanbase.Alert.Evaluator
-  alias Sanbase.Metric
   alias Sanbase.Alert.Trigger.DailyMetricTriggerSettings
+  alias Sanbase.Alert.UserTrigger
+  alias Sanbase.Clickhouse.MetricAdapter
+  alias Sanbase.Metric
 
   setup_all_with_mocks([
     {
@@ -56,14 +57,12 @@ defmodule Sanbase.Alert.DailyMetricTriggerSettingsTest do
     # Return a fun with arity 5 that will return different results
     # for consecutive calls
     mock_fun =
-      [
-        fn -> {:ok, %{project.slug => 100}} end,
-        fn -> {:ok, %{project.slug => 5000}} end
-      ]
-      |> Sanbase.Mock.wrap_consecutives(arity: 5)
+      Sanbase.Mock.wrap_consecutives([fn -> {:ok, %{project.slug => 100}} end, fn -> {:ok, %{project.slug => 5000}} end],
+        arity: 5
+      )
 
-    Sanbase.Mock.prepare_mock(
-      Sanbase.Clickhouse.MetricAdapter,
+    MetricAdapter
+    |> Sanbase.Mock.prepare_mock(
       :aggregated_timeseries_data,
       mock_fun
     )
@@ -97,14 +96,12 @@ defmodule Sanbase.Alert.DailyMetricTriggerSettingsTest do
       })
 
     mock_fun =
-      [
-        fn -> {:ok, %{project.slug => 100}} end,
-        fn -> {:ok, %{project.slug => 500}} end
-      ]
-      |> Sanbase.Mock.wrap_consecutives(arity: 5)
+      Sanbase.Mock.wrap_consecutives([fn -> {:ok, %{project.slug => 100}} end, fn -> {:ok, %{project.slug => 500}} end],
+        arity: 5
+      )
 
-    Sanbase.Mock.prepare_mock(
-      Sanbase.Clickhouse.MetricAdapter,
+    MetricAdapter
+    |> Sanbase.Mock.prepare_mock(
       :aggregated_timeseries_data,
       mock_fun
     )
@@ -122,10 +119,8 @@ defmodule Sanbase.Alert.DailyMetricTriggerSettingsTest do
        context do
     %{project: project, user: user} = context
 
-    Metric.available_metrics(
-      filter: :min_interval_greater_or_equal,
-      filter_interval: "1d"
-    )
+    [filter: :min_interval_greater_or_equal, filter_interval: "1d"]
+    |> Metric.available_metrics()
     |> Enum.shuffle()
     |> Enum.take(100)
     |> Enum.each(fn metric ->

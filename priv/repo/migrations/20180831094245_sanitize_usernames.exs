@@ -1,11 +1,12 @@
 defmodule Sanbase.Repo.Migrations.SanitizeUsernames do
+  @moduledoc false
   use Ecto.Migration
 
-  require Logger
   alias Sanbase.Accounts.User
   alias Sanbase.Repo
-
   alias SanbaseWeb.Graphql.Helpers.Utils
+
+  require Logger
 
   def up do
     Application.ensure_all_started(:tzdata)
@@ -17,12 +18,10 @@ defmodule Sanbase.Repo.Migrations.SanitizeUsernames do
     :ok
   end
 
-  def work() do
+  def work do
     Logger.warning("trim_whitespace")
 
-    all_users_non_nil_username()
-    |> Enum.each(&trim_whitespace/1)
-
+    Enum.each(all_users_non_nil_username(), &trim_whitespace/1)
     Logger.warning("find_users_with_non_ascii")
 
     all_users_non_nil_username()
@@ -30,22 +29,18 @@ defmodule Sanbase.Repo.Migrations.SanitizeUsernames do
     |> Enum.each(&update_to_nil/1)
   end
 
-  def all_users() do
-    User
-    |> Repo.all()
+  def all_users do
+    Repo.all(User)
   end
 
-  def all_users_non_nil_username() do
-    all_users()
-    |> Enum.reject(&(&1.username == nil))
+  def all_users_non_nil_username do
+    Enum.reject(all_users(), &(&1.username == nil))
   end
 
   defp trim_whitespace(%User{id: id, username: username}) do
     new_username = String.trim(username)
 
-    Logger.warning(
-      "Sanitize Usersnames: Trying to trim: from: [#{username}] -> [#{new_username}]"
-    )
+    Logger.warning("Sanitize Usersnames: Trying to trim: from: [#{username}] -> [#{new_username}]")
 
     update_with_new_username(id, username, new_username)
   end
@@ -56,7 +51,7 @@ defmodule Sanbase.Repo.Migrations.SanitizeUsernames do
 
   def update_with_new_username(id, username, new_username) when username != new_username do
     user = Repo.get(User, id)
-    changeset = user |> User.changeset(%{username: new_username})
+    changeset = User.changeset(user, %{username: new_username})
 
     case Repo.get_by(User, username: new_username) do
       nil ->
@@ -69,10 +64,8 @@ defmodule Sanbase.Repo.Migrations.SanitizeUsernames do
   end
 
   defp find_users_with_non_ascii(usernames) do
-    usernames
-    |> Enum.reject(fn user ->
-      user.username
-      |> User.ascii_username?()
+    Enum.reject(usernames, fn user ->
+      User.ascii_username?(user.username)
     end)
   end
 

@@ -3,12 +3,13 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
 
   import Mock
   import Sanbase.Factory
-  import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.TestHelpers
+  import SanbaseWeb.Graphql.TestHelpers
 
+  alias Sanbase.Alert.UserTrigger
+  alias Sanbase.Clickhouse.TopHolders
   alias Sanbase.Metric
   alias Sanbase.Signal
-  alias Sanbase.Clickhouse.TopHolders
 
   @triggers_free_limit_count 3
   @triggers_pro_limit_count 20
@@ -21,8 +22,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     {Sanbase.Metric, [:passthrough], [timeseries_data: fn _, _, _, _, _, _ -> metric_resp() end]},
     {Sanbase.Signal, [:passthrough], [timeseries_data: fn _, _, _, _, _, _ -> signal_resp() end]},
     {TopHolders, [], [top_holders: fn _, _, _, _ -> top_holders_resp() end]},
-    {Sanbase.Alert.UserTrigger, [:passthrough],
-     [triggers_count_for: fn _ -> @triggers_free_limit_count end]}
+    {UserTrigger, [:passthrough], [triggers_count_for: fn _ -> @triggers_free_limit_count end]}
   ]) do
     []
   end
@@ -421,10 +421,8 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
 
   describe "Triggers limits for FREE plan" do
     test "When limit not reached - user can create new trigger", _context do
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.Alert.UserTrigger.triggers_count_for/1,
-        @triggers_free_limit_count - 1
-      )
+      (&UserTrigger.triggers_count_for/1)
+      |> Sanbase.Mock.prepare_mock2(@triggers_free_limit_count - 1)
       |> Sanbase.Mock.run_with_mocks(fn ->
         data = setup_subscription("FREE")
         assert create_trigger_mutation(data.jwt_conn)["trigger"]["id"] != nil
@@ -432,10 +430,8 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     end
 
     test "When limit reached - user cannot create new trigger", _context do
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.Alert.UserTrigger.triggers_count_for/1,
-        @triggers_free_limit_count
-      )
+      (&UserTrigger.triggers_count_for/1)
+      |> Sanbase.Mock.prepare_mock2(@triggers_free_limit_count)
       |> Sanbase.Mock.run_with_mocks(fn ->
         data = setup_subscription("FREE")
         assert create_trigger_mutation(data.jwt_conn)["trigger"]["id"] == nil
@@ -445,10 +441,8 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
 
   describe "Triggers limits for PRO plan" do
     test "When limit not reached - user can create new trigger", _context do
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.Alert.UserTrigger.triggers_count_for/1,
-        @triggers_pro_limit_count - 1
-      )
+      (&UserTrigger.triggers_count_for/1)
+      |> Sanbase.Mock.prepare_mock2(@triggers_pro_limit_count - 1)
       |> Sanbase.Mock.run_with_mocks(fn ->
         data = setup_subscription("SANBASE_PRO")
         assert create_trigger_mutation(data.jwt_conn)["trigger"]["id"] != nil
@@ -456,10 +450,8 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     end
 
     test "When limit reached - user cannot create new trigger", _context do
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.Alert.UserTrigger.triggers_count_for/1,
-        @triggers_pro_limit_count
-      )
+      (&UserTrigger.triggers_count_for/1)
+      |> Sanbase.Mock.prepare_mock2(@triggers_pro_limit_count)
       |> Sanbase.Mock.run_with_mocks(fn ->
         data = setup_subscription("SANBASE_PRO")
         assert create_trigger_mutation(data.jwt_conn)["trigger"]["id"] == nil
@@ -469,10 +461,8 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
 
   describe "Triggers limits for Sanbase MAX plan" do
     test "When limit not reached - user can create new trigger", _context do
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.Alert.UserTrigger.triggers_count_for/1,
-        @triggers_max_business_limit_count - 1
-      )
+      (&UserTrigger.triggers_count_for/1)
+      |> Sanbase.Mock.prepare_mock2(@triggers_max_business_limit_count - 1)
       |> Sanbase.Mock.run_with_mocks(fn ->
         data = setup_subscription("SANBASE_MAX")
         assert create_trigger_mutation(data.jwt_conn)["trigger"]["id"] != nil
@@ -480,10 +470,8 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     end
 
     test "When limit reached - user cannot create new trigger", _context do
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.Alert.UserTrigger.triggers_count_for/1,
-        @triggers_max_business_limit_count
-      )
+      (&UserTrigger.triggers_count_for/1)
+      |> Sanbase.Mock.prepare_mock2(@triggers_max_business_limit_count)
       |> Sanbase.Mock.run_with_mocks(fn ->
         data = setup_subscription("SANBASE_MAX")
         assert create_trigger_mutation(data.jwt_conn)["trigger"]["id"] == nil
@@ -493,10 +481,8 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
 
   describe "Triggers limits for BUSINESS PRO plan" do
     test "When limit not reached - user can create new trigger", _context do
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.Alert.UserTrigger.triggers_count_for/1,
-        @triggers_max_business_limit_count - 1
-      )
+      (&UserTrigger.triggers_count_for/1)
+      |> Sanbase.Mock.prepare_mock2(@triggers_max_business_limit_count - 1)
       |> Sanbase.Mock.run_with_mocks(fn ->
         data = setup_subscription("BUSINESS_PRO")
         assert create_trigger_mutation(data.jwt_conn)["trigger"]["id"] != nil
@@ -504,10 +490,8 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     end
 
     test "When limit reached - user cannot create new trigger", _context do
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.Alert.UserTrigger.triggers_count_for/1,
-        @triggers_max_business_limit_count
-      )
+      (&UserTrigger.triggers_count_for/1)
+      |> Sanbase.Mock.prepare_mock2(@triggers_max_business_limit_count)
       |> Sanbase.Mock.run_with_mocks(fn ->
         data = setup_subscription("BUSINESS_PRO")
         assert create_trigger_mutation(data.jwt_conn)["trigger"]["id"] == nil
@@ -517,10 +501,8 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
 
   describe "Triggers limits for BUSINESS MAX plan" do
     test "When limit not reached - user can create new trigger", _context do
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.Alert.UserTrigger.triggers_count_for/1,
-        @triggers_max_business_limit_count - 1
-      )
+      (&UserTrigger.triggers_count_for/1)
+      |> Sanbase.Mock.prepare_mock2(@triggers_max_business_limit_count - 1)
       |> Sanbase.Mock.run_with_mocks(fn ->
         data = setup_subscription("BUSINESS_MAX")
         assert create_trigger_mutation(data.jwt_conn)["trigger"]["id"] != nil
@@ -528,10 +510,8 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     end
 
     test "When limit reached - user cannot create new trigger", _context do
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.Alert.UserTrigger.triggers_count_for/1,
-        @triggers_max_business_limit_count
-      )
+      (&UserTrigger.triggers_count_for/1)
+      |> Sanbase.Mock.prepare_mock2(@triggers_max_business_limit_count)
       |> Sanbase.Mock.run_with_mocks(fn ->
         data = setup_subscription("BUSINESS_MAX")
         assert create_trigger_mutation(data.jwt_conn)["trigger"]["id"] == nil
@@ -605,7 +585,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     """
   end
 
-  defp metric_resp() do
+  defp metric_resp do
     {:ok,
      [
        %{value: 10.0, datetime: ~U[2019-01-01 00:00:00Z]},
@@ -613,7 +593,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
      ]}
   end
 
-  defp signal_resp() do
+  defp signal_resp do
     {:ok,
      [
        %{value: 5.0, datetime: ~U[2020-01-01 00:00:00Z]},
@@ -621,7 +601,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
      ]}
   end
 
-  defp price_resp() do
+  defp price_resp do
     {:ok,
      [
        %{
@@ -645,7 +625,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
      ]}
   end
 
-  defp top_holders_resp() do
+  defp top_holders_resp do
     {:ok,
      [
        %{
@@ -665,7 +645,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
      ]}
   end
 
-  defp create_trigger_mutation() do
+  defp create_trigger_mutation do
     trigger_settings = %{
       type: "metric_signal",
       metric: "active_addresses_24h",
@@ -675,9 +655,9 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       operation: %{percent_up: 200.0}
     }
 
-    trigger_settings_json = trigger_settings |> Jason.encode!()
+    trigger_settings_json = Jason.encode!(trigger_settings)
 
-    ~s"""
+    format_interpolated_json(~s"""
      mutation {
        createTrigger(
          settings: '#{trigger_settings_json}'
@@ -691,8 +671,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
          }
        }
      }
-    """
-    |> format_interpolated_json()
+    """)
   end
 
   defp format_interpolated_json(string) do

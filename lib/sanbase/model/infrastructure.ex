@@ -1,12 +1,13 @@
 defmodule Sanbase.Model.Infrastructure do
+  @moduledoc false
   use Ecto.Schema
+
   import Ecto.Changeset
   import Ecto.Query, warn: false
 
-  alias Sanbase.Repo
-
-  alias Sanbase.Project
   alias Sanbase.Model.Infrastructure
+  alias Sanbase.Project
+  alias Sanbase.Repo
 
   schema "infrastructures" do
     field(:code, :string)
@@ -34,7 +35,8 @@ defmodule Sanbase.Model.Infrastructure do
   def get_or_insert(infrastructure_real_code) do
     {:ok, infrastructure} =
       Repo.transaction(fn ->
-        get(infrastructure_real_code)
+        infrastructure_real_code
+        |> get()
         |> case do
           nil -> insert!(infrastructure_real_code)
           infrastructure -> infrastructure
@@ -52,14 +54,10 @@ defmodule Sanbase.Model.Infrastructure do
   end
 
   def by_codes(codes) when is_list(codes) do
-    from(infr in __MODULE__, where: infr.code in ^codes)
-    |> Repo.all()
+    Repo.all(from(infr in __MODULE__, where: infr.code in ^codes))
   end
 
   def by_ids(ids) when is_list(ids) do
-    from(inf in __MODULE__,
-      where: inf.id in ^ids
-    )
-    |> Repo.all()
+    Repo.all(from(inf in __MODULE__, where: inf.id in ^ids))
   end
 end

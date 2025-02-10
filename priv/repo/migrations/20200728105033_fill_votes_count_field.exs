@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.FillVotesCountField do
+  @moduledoc false
   use Ecto.Migration
 
   def change do
@@ -6,6 +7,7 @@ defmodule Sanbase.Repo.Migrations.FillVotesCountField do
 end
 
 defmodule Sanbase.Repo.Migrations.FillVotesCountField do
+  @moduledoc false
   use Ecto.Migration
 
   def up do
@@ -17,11 +19,11 @@ defmodule Sanbase.Repo.Migrations.FillVotesCountField do
     :ok
   end
 
-  defp fill_count() do
+  defp fill_count do
     Sanbase.Repo.update_all(Sanbase.Vote, set: [count: 1])
   end
 
-  defp setup() do
+  defp setup do
     Application.ensure_all_started(:tzdata)
   end
 end

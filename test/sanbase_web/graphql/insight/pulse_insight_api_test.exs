@@ -1,15 +1,15 @@
 defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
   import Sanbase.TestHelpers
+  import SanbaseWeb.Graphql.TestHelpers
 
-  alias Sanbase.Tag
-  alias Sanbase.Vote
   alias Sanbase.Insight.Post
   alias Sanbase.Project
   alias Sanbase.Repo
+  alias Sanbase.Tag
+  alias Sanbase.Vote
 
   setup do
     clean_task_supervisor_children()
@@ -61,23 +61,25 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
       |> json_response(200)
 
     expected_insights =
-      [
-        %{
-          "id" => published.id,
-          "readyState" => "#{published.ready_state}",
-          "text" => "#{published.text}",
-          "pulseText" => "#{published.text}"
-        },
-        %{
-          "id" => draft.id,
-          "readyState" => "#{draft.ready_state}",
-          "text" => "#{draft.text}",
-          "pulseText" => "#{draft.text}"
-        }
-      ]
-      |> Enum.sort_by(& &1["id"])
+      Enum.sort_by(
+        [
+          %{
+            "id" => published.id,
+            "readyState" => "#{published.ready_state}",
+            "text" => "#{published.text}",
+            "pulseText" => "#{published.text}"
+          },
+          %{
+            "id" => draft.id,
+            "readyState" => "#{draft.ready_state}",
+            "text" => "#{draft.text}",
+            "pulseText" => "#{draft.text}"
+          }
+        ],
+        & &1["id"]
+      )
 
-    insights = result["data"]["currentUser"]["insights"] |> Enum.sort_by(& &1["id"])
+    insights = Enum.sort_by(result["data"]["currentUser"]["insights"], & &1["id"])
 
     assert insights == expected_insights
   end
@@ -101,8 +103,8 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
       |> json_response(200)
       |> get_in(["data", "insight"])
 
-    assert insight |> Map.get("text") == post.text
-    assert insight |> Map.get("pulseText") == post.text
+    assert Map.get(insight, "text") == post.text
+    assert Map.get(insight, "pulseText") == post.text
   end
 
   test "getting pulse insight by id for anon user", %{user: user} do
@@ -119,9 +121,7 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
     }
     """
 
-    result =
-      build_conn()
-      |> post("/graphql", query_skeleton(query, "insight"))
+    result = post(build_conn(), "/graphql", query_skeleton(query, "insight"))
 
     fetched_insight = json_response(result, 200)["data"]["insight"]
     assert fetched_insight["state"] == post.state
@@ -129,7 +129,7 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
     created_at = Sanbase.DateTimeUtils.from_iso8601!(fetched_insight["createdAt"])
 
     assert Sanbase.TestUtils.datetime_close_to(
-             Timex.now(),
+             DateTime.utc_now(),
              created_at,
              2,
              :seconds
@@ -138,7 +138,7 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
     updated_at = Sanbase.DateTimeUtils.from_iso8601!(fetched_insight["updatedAt"])
 
     assert Sanbase.TestUtils.datetime_close_to(
-             Timex.now(),
+             DateTime.utc_now(),
              updated_at,
              2,
              :seconds
@@ -166,9 +166,7 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
     }
     """
 
-    result =
-      build_conn()
-      |> post("/graphql", query_skeleton(query, "allInsights"))
+    result = post(build_conn(), "/graphql", query_skeleton(query, "allInsights"))
 
     assert [
              %{
@@ -219,9 +217,9 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
     }
     """
 
-    result = conn |> post("/graphql", query_skeleton(query, "allInsights"))
+    result = post(conn, "/graphql", query_skeleton(query, "allInsights"))
 
-    assert json_response(result, 200)["data"]["allInsights"] |> length() == 2
+    assert length(json_response(result, 200)["data"]["allInsights"]) == 2
   end
 
   test "getting all pulse insight for given user", context do
@@ -256,7 +254,7 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
       |> json_response(200)
       |> get_in(["data", "allInsightsForUser"])
 
-    assert all_insights_for_user |> length() == 1
+    assert length(all_insights_for_user) == 1
     assert all_insights_for_user |> hd() |> Map.get("title") == post.title
   end
 
@@ -298,7 +296,7 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
       |> json_response(200)
       |> get_in(["data", "allInsightsUserVoted"])
 
-    assert result |> Enum.count() == 1
+    assert Enum.count(result) == 1
     assert result |> hd() |> Map.get("text") == post.text
     assert result |> hd() |> Map.get("pulseText") == post.text
   end
@@ -332,10 +330,10 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
       )
 
     query = insights_by_tags_query([tag1.name, tag2.name])
-    result = execute_query(build_conn(), query, "allInsights") |> Enum.sort_by(& &1["id"])
+    result = build_conn() |> execute_query(query, "allInsights") |> Enum.sort_by(& &1["id"])
 
     assert result ==
-             [%{"id" => post.id}, %{"id" => post3.id}] |> Enum.sort_by(& &1["id"])
+             Enum.sort_by([%{"id" => post.id}, %{"id" => post3.id}], & &1["id"])
   end
 
   describe "create pulse insight" do
@@ -356,23 +354,21 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
       }
       """
 
-      result =
-        conn
-        |> post("/graphql", mutation_skeleton(query))
+      result = post(conn, "/graphql", mutation_skeleton(query))
 
       insight = json_response(result, 200)["data"]["createInsight"]
 
       assert insight["id"] != nil
       assert insight["title"] == "Awesome post"
       assert insight["state"] == Post.approved_state()
-      assert insight["user"]["id"] == user.id |> Integer.to_string()
+      assert insight["user"]["id"] == Integer.to_string(user.id)
       assert insight["votes"]["totalVotes"] == 0
       assert insight["publishedAt"] == nil
 
       created_at = Timex.parse!(insight["createdAt"], "{ISO:Extended}")
 
       # Assert that now() and created_at do not differ by more than 2 seconds.
-      assert Sanbase.TestUtils.datetime_close_to(Timex.now(), created_at, 2, :seconds)
+      assert Sanbase.TestUtils.datetime_close_to(DateTime.utc_now(), created_at, 2, :seconds)
     end
 
     test "create pulse insight with tags", %{conn: conn} do
@@ -389,9 +385,7 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
       }
       """
 
-      result =
-        conn
-        |> post("/graphql", mutation_skeleton(mutation))
+      result = post(conn, "/graphql", mutation_skeleton(mutation))
 
       [tag] = json_response(result, 200)["data"]["createInsight"]["tags"]
       [related_projects] = json_response(result, 200)["data"]["createInsight"]["relatedProjects"]
@@ -405,8 +399,8 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
 
   describe "update pulse insight" do
     test "update pulse insight", %{conn: conn, user: user} do
-      tag1 = %Tag{name: "PRJ1"} |> Repo.insert!()
-      tag2 = %Tag{name: "PRJ2"} |> Repo.insert!()
+      tag1 = Repo.insert!(%Tag{name: "PRJ1"})
+      tag2 = Repo.insert!(%Tag{name: "PRJ2"})
 
       post =
         insert(:post,
@@ -432,17 +426,15 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
         }
       """
 
-      result =
-        conn
-        |> post("/graphql", mutation_skeleton(mutation))
+      result = post(conn, "/graphql", mutation_skeleton(mutation))
 
       new_post = json_response(result, 200)["data"]["updateInsight"]
       assert new_post["title"] == "Awesome post2"
     end
 
     test "cannot update not owned pulse insight", %{conn: conn, staked_user: staked_user} do
-      tag1 = %Tag{name: "PRJ1"} |> Repo.insert!()
-      tag2 = %Tag{name: "PRJ2"} |> Repo.insert!()
+      tag1 = Repo.insert!(%Tag{name: "PRJ1"})
+      tag2 = Repo.insert!(%Tag{name: "PRJ2"})
 
       post =
         insert(:post,
@@ -468,9 +460,7 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
         }
       """
 
-      result =
-        conn
-        |> post("/graphql", mutation_skeleton(mutation))
+      result = post(conn, "/graphql", mutation_skeleton(mutation))
 
       [error] = json_response(result, 200)["errors"]
       assert String.contains?(error["message"], "Cannot update not owned insight")

@@ -1,5 +1,7 @@
 defmodule Sanbase.Repo.Migrations.FillSocialVolumeQueryTable do
+  @moduledoc false
   use Ecto.Migration
+
   alias Sanbase.Project
 
   def up do
@@ -9,7 +11,8 @@ defmodule Sanbase.Repo.Migrations.FillSocialVolumeQueryTable do
     data_map = data()
 
     data =
-      Enum.map(data_map, fn {slug, query} ->
+      data_map
+      |> Enum.map(fn {slug, query} ->
         case Map.get(projects_map, slug) do
           nil -> nil
           %Project{} = project -> %{project_id: project.id, query: query}
@@ -24,23 +27,21 @@ defmodule Sanbase.Repo.Migrations.FillSocialVolumeQueryTable do
     :ok
   end
 
-  defp setup() do
+  defp setup do
     Application.ensure_all_started(:tzdata)
   end
 
-  defp projects() do
-    Project.List.projects()
-    |> Enum.map(fn %Project{coinmarketcap_id: slug} = project ->
+  defp projects do
+    Map.new(Project.List.projects(), fn %Project{coinmarketcap_id: slug} = project ->
       {slug, project}
     end)
-    |> Map.new()
   end
 
-  defp data() do
-    [
+  defp data do
+    Map.new([
       {"dragonchain", "DRGN OR dragon OR dragonchain OR dbc OR snov OR nebl OR sphtx"},
       {"wax", "wax OR \"Worldwide Asset eXchange\""},
-      {"wrapped-bitcoin", "\"wrapped bitcoin\" OR \"wrapped btc\" OR wbtc"},
+      {"wrapped-bitcoin", ~s("wrapped bitcoin" OR "wrapped btc" OR wbtc)},
       {"rate3", "rte OR rate3 OR \"rate 3\""},
       {"odem", "odem OR ode"},
       {"xriba", "xriba OR xra"},
@@ -66,8 +67,7 @@ defmodule Sanbase.Repo.Migrations.FillSocialVolumeQueryTable do
       {"dash",
        "dash OR dashdash OR dashzcash OR dashxmr OR zdash OR drkdash OR dashorzec OR dashmonero OR dashdarkcoin OR dashcoin OR zcashdash"},
       {"nem", "nem OR xem OR nemxem OR xemnem OR nemcoin OR pacnem OR xemusd OR nemt OR nemio"},
-      {"origintrail",
-       "origintrail OR (origin AND trail) OR trac OR (origin AND trac) OR rorigintrail OR originalchain"},
+      {"origintrail", "origintrail OR (origin AND trail) OR trac OR (origin AND trac) OR rorigintrail OR originalchain"},
       {"factom", "fct OR factom OR factum"},
       {"aurora", "aoa OR aurora OR avrora) "},
       {"neo", "neo OR neoomg OR neorpx OR gasneo OR neoiota"},
@@ -113,8 +113,7 @@ defmodule Sanbase.Repo.Migrations.FillSocialVolumeQueryTable do
       {"bnktothefuture", "bnktothefuture OR bft"},
       {"rif-token", "rif"},
       {"aragon", "aragon OR ant"},
-      {"tezos",
-       "tezos OR xtz OR xtzxtz OR tezo OR tezoshub OR tezosch OR tezosfound OR tezoz OR tezoseo"},
+      {"tezos", "tezos OR xtz OR xtzxtz OR tezo OR tezoshub OR tezosch OR tezosfound OR tezoz OR tezoseo"},
       {"golem-network-tokens", "golem OR gnt"},
       {"stellar",
        "stellar OR lumen OR xlmstellar OR xrpstellar OR stellarterm OR lumensxlm OR xlm OR xlmxrp OR reqxlm OR reqvenxlm"},
@@ -173,11 +172,10 @@ defmodule Sanbase.Repo.Migrations.FillSocialVolumeQueryTable do
       {"auctus", "auctus OR auc"},
       {"metaverse", "metaverse OR etp"},
       {"aventus", "aventus OR avt"},
-      {"digix-gold-token", "\"digix gold token\" OR dgx OR \"digix gold\""},
+      {"digix-gold-token", ~s("digix gold token" OR dgx OR "digix gold")},
       {"usd-coin", "usdcoin OR usdc OR (usd AND coin)"},
       {"poa-network", "poa"},
-      {"monero",
-       "monero OR xmr OR moneroxmr OR xmrmonero OR monerocoin OR monerox OR monerocash"},
+      {"monero", "monero OR xmr OR moneroxmr OR xmrmonero OR monerocoin OR monerox OR monerocash"},
       {"pundi-x", "npxs OR pundi OR pundy NOT nem"},
       {"stasis-eurs", "stasis OR eurs"},
       {"bitcoin-cash-abc", "\"bitcoin cash abc\" OR bchabc"},
@@ -205,7 +203,6 @@ defmodule Sanbase.Repo.Migrations.FillSocialVolumeQueryTable do
       {"bitcoin",
        "btc OR btcsome OR btcan OR btcl OR xyzbtc OR bitcoin OR bitcon OR bicoin OR bitoin OR bitcion OR bitcoincurr NOT gold NOT cash NOT classic"},
       {"lympo", "limpo OR lympo OR lym"}
-    ]
-    |> Map.new()
+    ])
   end
 end

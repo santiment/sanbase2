@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.CreateAnonymousUserInsights do
+  @moduledoc false
   use Ecto.Migration
 
   alias Sanbase.Accounts.User
@@ -7,12 +8,11 @@ defmodule Sanbase.Repo.Migrations.CreateAnonymousUserInsights do
   def up do
     Application.ensure_all_started(:tzdata)
 
-    %User{
+    Repo.insert(%User{
       salt: User.generate_salt(),
       username: User.anonymous_user_username(),
       email: User.anonymous_user_email()
-    }
-    |> Repo.insert()
+    })
   end
 
   def down do

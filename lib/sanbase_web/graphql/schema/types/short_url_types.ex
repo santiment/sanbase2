@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.ShortUrlTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   alias SanbaseWeb.Graphql.Resolvers.ShortUrlResolver

@@ -1,5 +1,7 @@
 defmodule Sanbase.SocialData.Tweet do
+  @moduledoc false
   require Mockery.Macro
+
   @tweet_types [:most_positive, :most_negative, :most_retweets, :most_replies]
   @tweet_type_mapping %{
     most_positive: :sentiment_pos,
@@ -9,9 +11,10 @@ defmodule Sanbase.SocialData.Tweet do
   }
   @recv_timeout 25_000
   def get_most_tweets(%{} = selector, type, from, to, size) do
-    slugs = (Map.get(selector, :slug) || Map.get(selector, :slugs)) |> List.wrap()
+    slugs = List.wrap(Map.get(selector, :slug) || Map.get(selector, :slugs))
 
-    tweets_request(slugs, type, from, to, size)
+    slugs
+    |> tweets_request(type, from, to, size)
     |> handle_tweets_response()
   end
 
@@ -30,18 +33,18 @@ defmodule Sanbase.SocialData.Tweet do
   end
 
   defp decode_tweets_data(data_map) when is_map(data_map) do
-    data_map
-    |> Enum.map(fn {slug, json_list} ->
+    Enum.map(data_map, fn {slug, json_list} ->
       list = Jason.decode!(json_list)
 
       tweets =
         Enum.map(list, fn map ->
           %{
-            tweet_id: Map.fetch!(map, "tweet_id") |> to_string(),
+            tweet_id: map |> Map.fetch!("tweet_id") |> to_string(),
             text: Map.fetch!(map, "text"),
             screen_name: Map.fetch!(map, "screen_name"),
             datetime:
-              Map.fetch!(map, "timestamp")
+              map
+              |> Map.fetch!("timestamp")
               |> NaiveDateTime.from_iso8601!()
               |> DateTime.from_naive!("Etc/UTC"),
             replies_count: Map.fetch!(map, "reply"),
@@ -55,8 +58,7 @@ defmodule Sanbase.SocialData.Tweet do
     end)
   end
 
-  defp tweets_request(slugs, type, from, to, size)
-       when type in @tweet_types and is_list(slugs) do
+  defp tweets_request(slugs, type, from, to, size) when type in @tweet_types and is_list(slugs) do
     url = Path.join([metrics_hub_url(), "fetch_documents"])
 
     options = [
@@ -76,7 +78,7 @@ defmodule Sanbase.SocialData.Tweet do
 
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 
-  defp metrics_hub_url() do
+  defp metrics_hub_url do
     Sanbase.Utils.Config.module_get(Sanbase.SocialData, :metricshub_url)
   end
 end

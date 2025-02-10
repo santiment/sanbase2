@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.Middlewares.DeleteSession do
+  @moduledoc false
   @behaviour Absinthe.Middleware
 
   alias Absinthe.Resolution

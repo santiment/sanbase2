@@ -4,9 +4,9 @@ defmodule Sanbase.Notifications do
   """
 
   import Ecto.Query, warn: false
-  alias Sanbase.Repo
 
   alias Sanbase.Notifications.NotificationTemplate
+  alias Sanbase.Repo
 
   @doc """
   Returns the list of notification_templates.

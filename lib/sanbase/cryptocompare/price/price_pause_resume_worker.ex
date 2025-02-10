@@ -1,13 +1,16 @@
 defmodule Sanbase.Cryptocompare.Price.PauseResumeWorker do
+  @moduledoc false
   use Oban.Worker,
     queue: :cryptocompare_historical_jobs_pause_resume_queue,
     unique: [period: 60]
 
+  alias Sanbase.Cryptocompare.Price.HistoricalScheduler
+
   def perform(%{"action" => "resume"}) do
-    Sanbase.Cryptocompare.Price.HistoricalScheduler.resume()
+    HistoricalScheduler.resume()
   end
 
   def perform(%{"action" => "pause"}) do
-    Sanbase.Cryptocompare.Price.HistoricalScheduler.pause()
+    HistoricalScheduler.pause()
   end
 end

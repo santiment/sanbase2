@@ -4,18 +4,19 @@ defmodule Sanbase.Twitter.Worker do
     a time series database.
   """
 
-  @rate_limiter_name :twitter_api_rate_limiter
-
   use GenServer, restart: :permanent, shutdown: 5_000
+
+  import Ecto.Query
+
+  alias Sanbase.ExternalServices.RateLimiting.Server
+  alias Sanbase.Project
+  alias Sanbase.Repo
+  alias Sanbase.Twitter.TimeseriesPoint
+  alias Sanbase.Utils.Config
 
   require Logger
 
-  import Ecto.Query
-  alias Sanbase.Utils.Config
-
-  alias Sanbase.Repo
-  alias Sanbase.Project
-  alias Sanbase.ExternalServices.RateLimiting.Server
+  @rate_limiter_name :twitter_api_rate_limiter
 
   @default_update_interval 1000 * 60 * 60 * 6
 
@@ -49,8 +50,8 @@ defmodule Sanbase.Twitter.Worker do
         where: not is_nil(p.twitter_link)
       )
 
-    Task.Supervisor.async_stream_nolink(
-      Sanbase.TaskSupervisor,
+    Sanbase.TaskSupervisor
+    |> Task.Supervisor.async_stream_nolink(
       Repo.all(query),
       &fetch_and_store(&1),
       ordered: false,
@@ -90,9 +91,7 @@ defmodule Sanbase.Twitter.Worker do
         nil
 
       e in ExTwitter.Error ->
-        Logger.warning(
-          "Error trying to fetch twitter user data for #{twitter_name}: #{e.message}"
-        )
+        Logger.warning("Error trying to fetch twitter user data for #{twitter_name}: #{e.message}")
 
         nil
 
@@ -105,7 +104,7 @@ defmodule Sanbase.Twitter.Worker do
 
   defp fetch_and_store("https://twitter.com/" <> twitter_name) do
     # Ignore trailing slash and everything after it
-    twitter_name = String.split(twitter_name, "/") |> hd()
+    twitter_name = twitter_name |> String.split("/") |> hd()
 
     twitter_data_user_data = fetch_twitter_user_data(twitter_name)
 
@@ -119,12 +118,13 @@ defmodule Sanbase.Twitter.Worker do
   defp export_to_kafka(twitter_handle, %ExTwitter.Model.User{followers_count: followers_count}) do
     topic = Config.module_get!(Sanbase.KafkaExporter, :twitter_followers_topic)
 
-    Sanbase.Twitter.TimeseriesPoint.new(%{
+    %{
       datetime: DateTime.utc_now(),
       twitter_handle: twitter_handle,
       followers_count: followers_count
-    })
-    |> Sanbase.Twitter.TimeseriesPoint.json_kv_tuple()
+    }
+    |> TimeseriesPoint.new()
+    |> TimeseriesPoint.json_kv_tuple()
     |> List.wrap()
     |> Sanbase.KafkaExporter.send_data_to_topic_from_current_process(topic)
   end

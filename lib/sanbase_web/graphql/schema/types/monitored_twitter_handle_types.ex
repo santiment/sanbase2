@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.MonitoredTwitterHandleTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   object :monitored_twitter_handle do

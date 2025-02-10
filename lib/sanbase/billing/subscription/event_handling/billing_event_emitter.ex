@@ -1,39 +1,34 @@
 defmodule Sanbase.Billing.EventEmitter do
+  @moduledoc false
   use Sanbase.EventBus.EventEmitter
 
   alias Sanbase.Accounts.User
 
   @topic :billing_events
-  def topic(), do: @topic
+  def topic, do: @topic
 
   def handle_event({:error, _}, _event_type, _args), do: :ok
 
   def handle_event({:ok, stripe_customer}, event_type, %{user: user} = params)
       when event_type in [:create_stripe_customer, :update_stripe_customer] do
-    %{
+    notify(%{
       event_type: event_type,
       user_id: user.id,
       stripe_customer_id: stripe_customer.id,
       card_token: params[:card_token]
-    }
-    |> notify()
+    })
   end
 
-  def handle_event({:ok, stripe_subscription}, :create_stripe_subscription, %{
-        user: user,
-        card_token: card_token
-      }) do
-    %{
+  def handle_event({:ok, stripe_subscription}, :create_stripe_subscription, %{user: user, card_token: card_token}) do
+    notify(%{
       event_type: :create_stripe_subscription,
       user_id: user.id,
       card_token: card_token,
       stripe_subscription_id: stripe_subscription.id
-    }
-    |> notify()
+    })
   end
 
-  def handle_event({:ok, stripe_event}, event_type, %{} = args)
-      when event_type in [:payment_success, :payment_fail] do
+  def handle_event({:ok, stripe_event}, event_type, %{} = args) when event_type in [:payment_success, :payment_fail] do
     object = stripe_event["data"]["object"]
 
     %{

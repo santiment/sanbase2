@@ -1,11 +1,12 @@
 defmodule Sanbase.ProjectEcosystemMapping do
+  @moduledoc false
   use Ecto.Schema
 
   import Ecto.Changeset
   import Ecto.Query
 
-  alias Sanbase.Project
   alias Sanbase.Ecosystem
+  alias Sanbase.Project
 
   @type project_id :: non_neg_integer()
   @type ecosystem_id :: non_neg_integer()
@@ -78,9 +79,7 @@ defmodule Sanbase.ProjectEcosystemMapping do
 
   # Private functions
 
-  defp process_transaction_result({:ok, map}, ok_field),
-    do: {:ok, map[ok_field]}
+  defp process_transaction_result({:ok, map}, ok_field), do: {:ok, map[ok_field]}
 
-  defp process_transaction_result({:error, _, error, _}, _ok_field),
-    do: {:error, error}
+  defp process_transaction_result({:error, _, error, _}, _ok_field), do: {:error, error}
 end

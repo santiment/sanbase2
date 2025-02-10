@@ -6,9 +6,9 @@ defmodule Sanbase.Alert.History.EthWalletTriggerHistory do
 
   import Sanbase.Alert.OperationEvaluation
 
-  alias Sanbase.Project
-  alias Sanbase.Clickhouse.HistoricalBalance
   alias Sanbase.Alert.Trigger.EthWalletTriggerSettings
+  alias Sanbase.Clickhouse.HistoricalBalance
+  alias Sanbase.Project
 
   require Logger
 
@@ -46,7 +46,7 @@ defmodule Sanbase.Alert.History.EthWalletTriggerHistory do
           |> Enum.zip()
           |> Stream.map(&Tuple.to_list/1)
           |> Enum.map(fn [%{datetime: dt} | _] = balances ->
-            balance = Enum.map(balances, & &1.balance) |> Enum.sum()
+            balance = balances |> Enum.map(& &1.balance) |> Enum.sum()
             %{datetime: dt, balance: balance}
           end)
 
@@ -63,36 +63,29 @@ defmodule Sanbase.Alert.History.EthWalletTriggerHistory do
     eth_addresses
   end
 
-  defp addresses_from_target(%{eth_address: eth_address}) when is_binary(eth_address),
-    do: eth_address |> List.wrap()
+  defp addresses_from_target(%{eth_address: eth_address}) when is_binary(eth_address), do: List.wrap(eth_address)
 
-  defp get_timeseries_params() do
-    now = Timex.now()
+  defp get_timeseries_params do
+    now = DateTime.utc_now()
     from = Timex.shift(now, days: -@historical_days_from)
 
     {from, now, @historical_interval}
   end
 
   defimpl Sanbase.Alert.History, for: EthWalletTriggerSettings do
-    alias Sanbase.Alert.Operation
     alias Sanbase.Alert.History.EthWalletTriggerHistory
+    alias Sanbase.Alert.Operation
 
     @spec historical_trigger_points(%EthWalletTriggerSettings{}, String.t()) ::
             {:ok, []}
             | {:ok, list(EthWalletTriggerHistory.historical_trigger_points_type())}
             | {:error, String.t()}
-    def historical_trigger_points(
-          %EthWalletTriggerSettings{target: %{slug: slug}} = settings,
-          cooldown
-        )
+    def historical_trigger_points(%EthWalletTriggerSettings{target: %{slug: slug}} = settings, cooldown)
         when is_binary(slug) do
       do_historical_trigger_points(settings, cooldown)
     end
 
-    def historical_trigger_points(
-          %EthWalletTriggerSettings{target: %{eth_address: eth_address}} = settings,
-          cooldown
-        )
+    def historical_trigger_points(%EthWalletTriggerSettings{target: %{eth_address: eth_address}} = settings, cooldown)
         when is_binary(eth_address) do
       do_historical_trigger_points(settings, cooldown)
     end
@@ -131,8 +124,7 @@ defmodule Sanbase.Alert.History.EthWalletTriggerHistory do
       cooldown_in_hours = Sanbase.DateTimeUtils.str_to_hours(cooldown)
 
       {acc, _, _} =
-        data
-        |> Enum.reduce({[], first_balance, 0}, fn
+        Enum.reduce(data, {[], first_balance, 0}, fn
           %{balance: balance} = elem, {acc, previous_balance, 0} ->
             if operation_triggered?(balance - previous_balance, operation) do
               {
@@ -156,7 +148,7 @@ defmodule Sanbase.Alert.History.EthWalletTriggerHistory do
             }
         end)
 
-      result = acc |> Enum.reverse()
+      result = Enum.reverse(acc)
       {:ok, result}
     end
   end

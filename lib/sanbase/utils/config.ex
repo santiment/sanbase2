@@ -3,34 +3,36 @@ defmodule Sanbase.Utils.Config do
   Module for reading configuration values from the application environment.
   """
 
-  def module_get(module, key_or_keys)
-      when is_atom(key_or_keys) or is_list(key_or_keys) do
+  def module_get(module, key_or_keys) when is_atom(key_or_keys) or is_list(key_or_keys) do
     keys = List.wrap(key_or_keys)
 
-    Application.fetch_env!(:sanbase, module)
+    :sanbase
+    |> Application.fetch_env!(module)
     |> get_in(keys)
     |> parse_config_value()
   end
 
   def module_get!(module, key) do
-    Application.fetch_env!(:sanbase, module)
+    :sanbase
+    |> Application.fetch_env!(module)
     |> Keyword.fetch!(key)
     |> parse_config_value()
   end
 
-  def module_get(module, key_or_keys, default)
-      when is_atom(key_or_keys) or is_list(key_or_keys) do
+  def module_get(module, key_or_keys, default) when is_atom(key_or_keys) or is_list(key_or_keys) do
     keys = List.wrap(key_or_keys)
 
-    case Application.fetch_env(:sanbase, module) do
-      {:ok, env} -> get_in(env, keys)
-      _ -> default
-    end
-    |> parse_config_value()
+    case_result =
+      case Application.fetch_env(:sanbase, module) do
+        {:ok, env} -> get_in(env, keys)
+        _ -> default
+      end
+
+    parse_config_value(case_result)
   end
 
   def module_get_integer!(module, key) do
-    module_get!(module, key) |> Sanbase.Math.to_integer()
+    module |> module_get!(key) |> Sanbase.Math.to_integer()
   end
 
   def mogule_get_boolean(module, key, default) do
@@ -41,7 +43,8 @@ defmodule Sanbase.Utils.Config do
   end
 
   def module_get_boolean(module, key) do
-    module_get(module, key)
+    module
+    |> module_get(key)
     |> parse_boolean_value()
   end
 

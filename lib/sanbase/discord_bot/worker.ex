@@ -1,5 +1,7 @@
 defmodule Sanbase.DiscordBot.Worker do
+  @moduledoc false
   use GenServer
+
   require Logger
 
   # Schedule work every 2 minutes
@@ -23,7 +25,7 @@ defmodule Sanbase.DiscordBot.Worker do
     {:noreply, state}
   end
 
-  defp schedule_work() do
+  defp schedule_work do
     Process.send_after(self(), :work, @schedule_after)
   end
 end

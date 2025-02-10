@@ -3,6 +3,9 @@ defmodule Sanbase.HTML do
   Module for html/text utility functions
   """
 
+  alias Floki.HTMLTree.HTMLNode
+  alias Floki.HTMLTree.Text
+
   @doc """
   Truncates html text to max_words by keeping the result html valid.
   """
@@ -58,7 +61,7 @@ defmodule Sanbase.HTML do
     |> Enum.sort_by(fn {k, _v} -> k end)
     |> Enum.reduce_while({0, []}, fn {idx, node}, {words_acc, nodes_acc} ->
       case node do
-        %Floki.HTMLTree.Text{content: _content} ->
+        %Text{content: _content} ->
           maybe_halt_if_max_words_reached(idx, node, words_acc, nodes_acc, max_words)
 
         _ ->
@@ -67,27 +70,27 @@ defmodule Sanbase.HTML do
     end)
     |> elem(1)
     |> Enum.reverse()
-    |> Enum.into(%{})
+    |> Map.new()
   end
 
   def update_tree(nodes) do
-    node_ids = Map.keys(nodes) |> Enum.reverse()
+    node_ids = nodes |> Map.keys() |> Enum.reverse()
 
     root_nodes_ids =
-      Enum.filter(nodes, fn {_id, node} -> is_nil(node.parent_node_id) end)
+      nodes
+      |> Enum.filter(fn {_id, node} -> is_nil(node.parent_node_id) end)
       |> Enum.map(fn {k, _v} -> k end)
       |> Enum.sort()
 
     nodes =
-      nodes
-      |> Enum.into(%{}, fn {idx, node} ->
+      Map.new(nodes, fn {idx, node} ->
         node =
           case node do
-            %Floki.HTMLTree.HTMLNode{children_nodes_ids: children_nodes_ids} ->
+            %HTMLNode{children_nodes_ids: children_nodes_ids} ->
               new_children_nodes_ids =
-                intersection(children_nodes_ids, node_ids) |> Enum.reverse()
+                children_nodes_ids |> intersection(node_ids) |> Enum.reverse()
 
-              %Floki.HTMLTree.HTMLNode{
+              %HTMLNode{
                 node
                 | children_nodes_ids: new_children_nodes_ids
               }
@@ -114,17 +117,11 @@ defmodule Sanbase.HTML do
     |> Floki.raw_html(encode: false)
   end
 
-  defp maybe_halt_if_max_words_reached(
-         idx,
-         %Floki.HTMLTree.Text{content: content} = node,
-         words_acc,
-         nodes_acc,
-         max_words
-       ) do
+  defp maybe_halt_if_max_words_reached(idx, %Text{content: content} = node, words_acc, nodes_acc, max_words) do
     node_words_count = calc_words(content)
 
     if words_acc + node_words_count >= max_words do
-      updated_node = %Floki.HTMLTree.Text{
+      updated_node = %Text{
         node
         | content:
             truncate_text(
@@ -140,7 +137,9 @@ defmodule Sanbase.HTML do
   end
 
   defp intersection(list1, list2) do
-    MapSet.intersection(MapSet.new(list1), MapSet.new(list2))
+    list1
+    |> MapSet.new()
+    |> MapSet.intersection(MapSet.new(list2))
     |> MapSet.to_list()
   end
 

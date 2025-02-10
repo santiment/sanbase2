@@ -1,22 +1,21 @@
 defmodule Sanbase.Repo.Migrations.MigrateDaaAlertOperationsField do
+  @moduledoc false
   use Ecto.Migration
 
   import Ecto.Query
   import Sanbase.Alert.TriggerQuery
 
-  alias Sanbase.Alert.UserTrigger
-
   alias Sanbase.Alert.Trigger.DailyActiveAddressesSettings
-
+  alias Sanbase.Alert.UserTrigger
   alias Sanbase.Repo
 
   def up do
     run()
   end
 
-  def down(), do: :ok
+  def down, do: :ok
 
-  defp run() do
+  defp run do
     DailyActiveAddressesSettings.type()
     |> get_triggers_by_type()
     |> Enum.map(fn ut -> {ut.user, ut.id, ut.trigger.settings} end)
@@ -27,37 +26,26 @@ defmodule Sanbase.Repo.Migrations.MigrateDaaAlertOperationsField do
   end
 
   defp update_triggers(triggers) do
-    triggers
-    |> Enum.map(fn {user, id, settings} ->
+    Enum.map(triggers, fn {user, id, settings} ->
       UserTrigger.update_user_trigger(user.id, %{id: id, settings: settings})
     end)
   end
 
   defp merge_operation(%{"percent_threshold" => percent_threshold} = settings) do
     settings
-    |> Map.merge(%{
-      "operation" => %{"percent_up" => percent_threshold}
-    })
-    |> Map.drop(["percent_threshold"])
+    |> Map.put("operation", %{"percent_up" => percent_threshold})
+    |> Map.delete("percent_threshold")
   end
 
   defp merge_operation(operation), do: operation
 
   defp merge_target(%{"target" => target} = settings) when is_binary(target) do
-    settings
-    |> Map.merge(%{
-      "target" => %{"slug" => target}
-    })
+    Map.put(settings, "target", %{"slug" => target})
   end
 
   defp merge_target(target), do: target
 
   defp get_triggers_by_type(type) do
-    from(
-      ut in UserTrigger,
-      where: trigger_type_equals?(type),
-      preload: [:user]
-    )
-    |> Repo.all()
+    Repo.all(from(ut in UserTrigger, where: trigger_type_equals?(type), preload: [:user]))
   end
 end

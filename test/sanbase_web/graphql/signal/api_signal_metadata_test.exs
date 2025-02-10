@@ -11,7 +11,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalMetadataTest do
     aggregations = Signal.available_aggregations()
 
     aggregations =
-      aggregations |> Enum.map(fn aggr -> aggr |> Atom.to_string() |> String.upcase() end)
+      Enum.map(aggregations, fn aggr -> aggr |> Atom.to_string() |> String.upcase() end)
 
     for signal <- signals do
       %{"data" => %{"getSignal" => %{"metadata" => metadata}}} = get_signal_metadata(conn, signal)

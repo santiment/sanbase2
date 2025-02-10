@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddUserFollowedProjectTable do
+  @moduledoc false
   use Ecto.Migration
 
   def change do
@@ -7,8 +8,6 @@ defmodule Sanbase.Repo.Migrations.AddUserFollowedProjectTable do
       add(:user_id, references(:users, on_delete: :delete_all), null: false)
     end
 
-    create(
-      unique_index(:user_followed_project, [:project_id, :user_id], name: :projet_user_constraint)
-    )
+    create(unique_index(:user_followed_project, [:project_id, :user_id], name: :projet_user_constraint))
   end
 end

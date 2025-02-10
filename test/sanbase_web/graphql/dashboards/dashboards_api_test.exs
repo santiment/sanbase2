@@ -4,9 +4,11 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
   import Mock
   import Sanbase.Factory
   import Sanbase.QueriesMocks
+  import SanbaseWeb.DashboardsApiHelpers
   import SanbaseWeb.Graphql.TestHelpers
   import SanbaseWeb.QueriesApiHelpers
-  import SanbaseWeb.DashboardsApiHelpers
+
+  alias Sanbase.Dashboards.DashboardCache
 
   setup do
     user = insert(:user)
@@ -20,7 +22,8 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
   describe "voting" do
     test "dashboards ", context do
       dashboard_id =
-        execute_dashboard_mutation(context.conn, :create_dashboard)
+        context.conn
+        |> execute_dashboard_mutation(:create_dashboard)
         |> get_in(["data", "createDashboard", "id"])
 
       vote = fn ->
@@ -28,9 +31,7 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
           context.conn
           |> post(
             "/graphql",
-            mutation_skeleton(
-              "mutation{ vote(dashboardId: #{dashboard_id}) { votedAt votes { totalVotes } } }"
-            )
+            mutation_skeleton("mutation{ vote(dashboardId: #{dashboard_id}) { votedAt votes { totalVotes } } }")
           )
           |> json_response(200)
           |> get_in(["data", "vote"])
@@ -44,7 +45,8 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
       end
 
       total_votes =
-        get_dashboard(context.conn, dashboard_id)
+        context.conn
+        |> get_dashboard(dashboard_id)
         |> get_in(["data", "getDashboard", "votes", "totalVotes"])
 
       assert total_votes == 10
@@ -54,7 +56,8 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
   describe "CRUD Dashboards APIs" do
     test "create dashboard", context do
       result =
-        execute_dashboard_mutation(context.conn, :create_dashboard, %{
+        context.conn
+        |> execute_dashboard_mutation(:create_dashboard, %{
           name: "MyDashboard",
           description: "some text",
           is_public: true,
@@ -62,7 +65,7 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
         })
         |> get_in(["data", "createDashboard"])
 
-      user_id = context.user.id |> to_string()
+      user_id = to_string(context.user.id)
 
       assert %{
                "name" => "MyDashboard",
@@ -74,11 +77,13 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
 
     test "get dashboard", context do
       dashboard_id =
-        execute_dashboard_mutation(context.conn, :create_dashboard)
+        context.conn
+        |> execute_dashboard_mutation(:create_dashboard)
         |> get_in(["data", "createDashboard", "id"])
 
       dashboard =
-        get_dashboard(context.conn, dashboard_id)
+        context.conn
+        |> get_dashboard(dashboard_id)
         |> get_in(["data", "getDashboard"])
 
       assert %{
@@ -94,11 +99,13 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
 
     test "update dashboard", context do
       dashboard_id =
-        execute_dashboard_mutation(context.conn, :create_dashboard)
+        context.conn
+        |> execute_dashboard_mutation(:create_dashboard)
         |> get_in(["data", "createDashboard", "id"])
 
       result =
-        execute_dashboard_mutation(context.conn, :update_dashboard, %{
+        context.conn
+        |> execute_dashboard_mutation(:update_dashboard, %{
           id: dashboard_id,
           name: "MyDashboard - update",
           description: "some text - update",
@@ -106,7 +113,7 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
         })
         |> get_in(["data", "updateDashboard"])
 
-      user_id = context.user.id |> to_string()
+      user_id = to_string(context.user.id)
 
       assert %{
                "id" => ^dashboard_id,
@@ -119,7 +126,8 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
 
     test "delete dashboard", context do
       dashboard_id =
-        execute_dashboard_mutation(context.conn, :create_dashboard)
+        context.conn
+        |> execute_dashboard_mutation(:create_dashboard)
         |> get_in(["data", "createDashboard", "id"])
 
       execute_dashboard_mutation(context.conn, :delete_dashboard, %{id: dashboard_id})
@@ -134,8 +142,8 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
 
       # Add global parameters and override the query's local parameters
       dashboard_with_params =
-        execute_global_parameter_mutation(
-          context.conn,
+        context.conn
+        |> execute_global_parameter_mutation(
           :add_dashboard_global_parameter,
           %{
             dashboard_id: dashboard.id,
@@ -151,8 +159,8 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
 
       # Add another param
       dashboard_with_params =
-        execute_global_parameter_mutation(
-          context.conn,
+        context.conn
+        |> execute_global_parameter_mutation(
           :add_dashboard_global_parameter,
           %{
             dashboard_id: dashboard.id,
@@ -171,8 +179,8 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
 
       # Update parameter
       dashboard_with_params =
-        execute_global_parameter_mutation(
-          context.conn,
+        context.conn
+        |> execute_global_parameter_mutation(
           :update_dashboard_global_parameter,
           %{
             dashboard_id: dashboard.id,
@@ -200,14 +208,16 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
       {:ok, %{id: query_id} = query} = create_query(context.user.id)
 
       _mapping =
-        execute_dashboard_query_mutation(context.conn, :create_dashboard_query, %{
+        context.conn
+        |> execute_dashboard_query_mutation(:create_dashboard_query, %{
           dashboard_id: dashboard.id,
           query_id: query.id
         })
         |> get_in(["data", "createDashboardQuery"])
 
       dashboard =
-        get_dashboard(context.conn, dashboard.id)
+        context.conn
+        |> get_dashboard(dashboard.id)
         |> get_in(["data", "getDashboard"])
 
       assert [%{"id" => ^query_id}] = dashboard["queries"]
@@ -220,14 +230,16 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
       {:ok, %{id: query_id} = query} = create_query(context.user.id)
 
       mapping =
-        execute_dashboard_query_mutation(context.conn, :create_dashboard_query, %{
+        context.conn
+        |> execute_dashboard_query_mutation(:create_dashboard_query, %{
           dashboard_id: dashboard.id,
           query_id: query.id
         })
         |> get_in(["data", "createDashboardQuery"])
 
       mapping =
-        execute_dashboard_query_mutation(context.conn, :update_dashboard_query, %{
+        context.conn
+        |> execute_dashboard_query_mutation(:update_dashboard_query, %{
           dashboard_id: dashboard.id,
           dashboard_query_mapping_id: mapping["id"],
           settings: %{layout: [1, 2, 1, 0]}
@@ -251,7 +263,8 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
 
       # Add a query to a dashboard
       mapping =
-        execute_dashboard_query_mutation(context.conn, :create_dashboard_query, %{
+        context.conn
+        |> execute_dashboard_query_mutation(:create_dashboard_query, %{
           dashboard_id: dashboard.id,
           query_id: query.id,
           settings: %{layout: [0, 1, 2, 3, 4]}
@@ -267,7 +280,8 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
                Sanbase.Dashboards.get_dashboard(dashboard.id, context.user.id)
 
       result =
-        execute_dashboard_query_mutation(context.conn, :delete_dashboard_query, %{
+        context.conn
+        |> execute_dashboard_query_mutation(:delete_dashboard_query, %{
           dashboard_id: dashboard.id,
           dashboard_query_mapping_id: mapping["id"]
         })
@@ -328,7 +342,8 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
 
       # Run a dashboard query. Expect the dashboard parameter to override
       # the query local parameter
-      Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
+      Sanbase.ClickhouseRepo
+      |> Sanbase.Mock.prepare_mock(:query, mock_fun)
       |> Sanbase.Mock.run_with_mocks(fn ->
         result =
           run_sql_query(context.conn, :run_dashboard_sql_query, %{
@@ -415,7 +430,8 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
 
       # Run a dashboard query. Expect the dashboard parameter to override
       # the query local parameter
-      Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
+      Sanbase.ClickhouseRepo
+      |> Sanbase.Mock.prepare_mock(:query, mock_fun)
       |> Sanbase.Mock.run_with_mocks(fn ->
         result =
           run_sql_query(context.conn, :run_dashboard_sql_query, %{
@@ -479,10 +495,10 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
 
       # Delete global parameter override for a query local parameter
       override =
-        execute_global_parameter_mutation(
-          context.conn,
+        context.conn
+        |> execute_global_parameter_mutation(
           :delete_dashboard_global_parameter_override,
-          param_override_args |> Map.delete(:query_parameter_key)
+          Map.delete(param_override_args, :query_parameter_key)
         )
         |> get_in(["data", "deleteDashboardGlobalParameterOverride"])
 
@@ -510,10 +526,12 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
 
       # Run a dashboard query. Expect the dashboard parameter to override
       # the query local parameter
-      Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
+      Sanbase.ClickhouseRepo
+      |> Sanbase.Mock.prepare_mock(:query, mock_fun)
       |> Sanbase.Mock.run_with_mocks(fn ->
         result =
-          run_sql_query(context.conn, :run_dashboard_sql_query, %{
+          context.conn
+          |> run_sql_query(:run_dashboard_sql_query, %{
             dashboard_id: dashboard.id,
             dashboard_query_mapping_id: mapping["id"]
           })
@@ -584,10 +602,10 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
 
       # Delete global parameter override for a query local parameter
       override =
-        execute_global_parameter_mutation(
-          context.conn,
+        context.conn
+        |> execute_global_parameter_mutation(
           :delete_dashboard_global_parameter_override,
-          param_override_args |> Map.delete(:query_parameter_key)
+          Map.delete(param_override_args, :query_parameter_key)
         )
         |> get_in(["data", "deleteDashboardGlobalParameterOverride"])
 
@@ -615,10 +633,12 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
 
       # Run a dashboard query. Expect the dashboard parameter to override
       # the query local parameter
-      Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
+      Sanbase.ClickhouseRepo
+      |> Sanbase.Mock.prepare_mock(:query, mock_fun)
       |> Sanbase.Mock.run_with_mocks(fn ->
         result =
-          run_sql_query(context.conn, :run_dashboard_sql_query, %{
+          context.conn
+          |> run_sql_query(:run_dashboard_sql_query, %{
             dashboard_id: dashboard.id,
             dashboard_query_mapping_id: mapping["id"]
           })
@@ -649,7 +669,8 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
 
       # Add a query to a dashboard
       mapping =
-        execute_dashboard_query_mutation(conn, :create_dashboard_query, %{
+        conn
+        |> execute_dashboard_query_mutation(:create_dashboard_query, %{
           dashboard_id: dashboard.id,
           query_id: query.id,
           settings: %{layout: [0, 1, 2, 3, 4]}
@@ -668,8 +689,8 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
 
     defp add_dashboard_global_parameter(conn, dashboard, key, type, value) do
       dashboard_with_params =
-        execute_global_parameter_mutation(
-          conn,
+        conn
+        |> execute_global_parameter_mutation(
           :add_dashboard_global_parameter,
           %{
             dashboard_id: dashboard.id,
@@ -685,14 +706,10 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
       {:ok, dashboard_with_params}
     end
 
-    defp add_dashboard_global_parameter_override(
-           conn,
-           param_override_args,
-           parameter_value
-         ) do
+    defp add_dashboard_global_parameter_override(conn, param_override_args, parameter_value) do
       override =
-        execute_global_parameter_mutation(
-          conn,
+        conn
+        |> execute_global_parameter_mutation(
           :add_dashboard_global_parameter_override,
           param_override_args
         )
@@ -703,8 +720,7 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
                  param_override_args[:dashboard_parameter_key] => %{
                    "overrides" => [
                      %{
-                       "dashboard_query_mapping_id" =>
-                         param_override_args[:dashboard_query_mapping_id],
+                       "dashboard_query_mapping_id" => param_override_args[:dashboard_query_mapping_id],
                        "parameter" => param_override_args[:query_parameter_key]
                      }
                    ],
@@ -749,22 +765,25 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
 
       # Run a dashboard query. Expect the dashboard parameter to override
       # the query local parameter
-      Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
+      Sanbase.ClickhouseRepo
+      |> Sanbase.Mock.prepare_mock(:query, mock_fun)
       |> Sanbase.Mock.run_with_mocks(fn ->
         dashboard_query_mapping_id = dashboard_query_mapping.id
         query_id = query.id
 
         result =
-          run_sql_query(context.conn, :run_dashboard_sql_query, %{
+          context.conn
+          |> run_sql_query(:run_dashboard_sql_query, %{
             dashboard_id: dashboard.id,
             dashboard_query_mapping_id: dashboard_query_mapping.id
           })
           |> get_in(["data", "runDashboardSqlQuery"])
 
-        compressed_result = Jason.encode!(result) |> :zlib.gzip() |> Base.encode64()
+        compressed_result = result |> Jason.encode!() |> :zlib.gzip() |> Base.encode64()
 
         stored =
-          cache_dashboard_query_execution(context.conn, %{
+          context.conn
+          |> cache_dashboard_query_execution(%{
             dashboard_id: dashboard.id,
             dashboard_query_mapping_id: dashboard_query_mapping.id,
             compressed_query_execution_result: compressed_result
@@ -793,7 +812,8 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
         assert datetime_close_to_now?(Sanbase.DateTimeUtils.from_iso8601!(query_end_time))
 
         cache =
-          get_cached_dashboard_queries_executions(context.conn, %{dashboard_id: dashboard.id})
+          context.conn
+          |> get_cached_dashboard_queries_executions(%{dashboard_id: dashboard.id})
           |> get_in(["data", "getCachedDashboardQueriesExecutions", "queries"])
 
         assert [
@@ -845,7 +865,8 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
           arity: 2
         )
 
-      Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
+      Sanbase.ClickhouseRepo
+      |> Sanbase.Mock.prepare_mock(:query, mock_fun)
       |> Sanbase.Mock.run_with_mocks(fn ->
         # Users can run and cache other users public dashboards
         result =
@@ -860,7 +881,8 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
         assert %{} = get_in(result, ["data", "runDashboardSqlQuery"])
 
         cache =
-          get_cached_dashboard_queries_executions(context.conn, %{
+          context.conn
+          |> get_cached_dashboard_queries_executions(%{
             dashboard_id: dashboard.id
           })
           |> get_in(["data", "getCachedDashboardQueriesExecutions"])
@@ -882,7 +904,8 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
                  "does not exist, it is not part of dashboard #{dashboard2.id}, or the dashboard is not public"
 
         error_msg =
-          get_cached_dashboard_queries_executions(context.conn2, %{
+          context.conn2
+          |> get_cached_dashboard_queries_executions(%{
             dashboard_id: dashboard2.id
           })
           |> get_in(["errors", Access.at(0), "message"])
@@ -903,7 +926,8 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
         assert %{} = get_in(result2, ["data", "runDashboardSqlQuery"])
 
         cache2 =
-          get_cached_dashboard_queries_executions(context.conn, %{
+          context.conn
+          |> get_cached_dashboard_queries_executions(%{
             dashboard_id: dashboard2.id
           })
           |> get_in(["data", "getCachedDashboardQueriesExecutions"])
@@ -967,7 +991,8 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
 
       # Run a dashboard query. Expect the dashboard parameter to override
       # the query local parameter
-      Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
+      Sanbase.ClickhouseRepo
+      |> Sanbase.Mock.prepare_mock(:query, mock_fun)
       |> Sanbase.Mock.run_with_mocks(fn ->
         # Check that the used argument is the one provided in the API
         parameters_override = %{slug: "bitcoin"}
@@ -981,7 +1006,7 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
           })
 
         # Only one cache record
-        assert [_] = Sanbase.Repo.all(Sanbase.Dashboards.DashboardCache)
+        assert [_] = Sanbase.Repo.all(DashboardCache)
 
         assert "errors" not in Map.keys(result1)
         assert is_map(get_in(result1, ["data", "runDashboardSqlQuery"]))
@@ -997,7 +1022,7 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
           })
 
         # Now a second cache record appears.
-        assert [_, _] = Sanbase.Repo.all(Sanbase.Dashboards.DashboardCache)
+        assert [_, _] = Sanbase.Repo.all(DashboardCache)
 
         # No parameters_override, so the original param is used
         assert_called(Sanbase.ClickhouseRepo.query(:_, ["santiment", 10]))
@@ -1006,7 +1031,8 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
         assert is_map(get_in(result2, ["data", "runDashboardSqlQuery"]))
 
         cache1 =
-          get_cached_dashboard_queries_executions(context.conn, %{
+          context.conn
+          |> get_cached_dashboard_queries_executions(%{
             dashboard_id: dashboard.id,
             parameters_override: parameters_override
           })
@@ -1031,7 +1057,8 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
 
         # Fetched without the parameters override
         cache2 =
-          get_cached_dashboard_queries_executions(context.conn, %{
+          context.conn
+          |> get_cached_dashboard_queries_executions(%{
             dashboard_id: dashboard.id
           })
           |> get_in(["data", "getCachedDashboardQueriesExecutions", "queries"])
@@ -1057,7 +1084,7 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
 
     defp datetime_close_to_now?(dt) do
       Sanbase.TestUtils.datetime_close_to(
-        Timex.now(),
+        DateTime.utc_now(),
         dt,
         2,
         :seconds
@@ -1068,8 +1095,7 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
   defp create_query(user_id) do
     Sanbase.Queries.create_query(
       %{
-        sql_query_text:
-          "SELECT * FROM intraday_metrics WHERE asset_id = get_asset_id({{slug}}) LIMIT {{limit}}",
+        sql_query_text: "SELECT * FROM intraday_metrics WHERE asset_id = get_asset_id({{slug}}) LIMIT {{limit}}",
         sql_query_parameters: %{slug: "bitcoin", limit: 10}
       },
       user_id

@@ -3,10 +3,10 @@ defmodule Sanbase.Affiliate.FirstPromoterApi do
   Wrapper for First Promoter promoters API: https://firstpromoter.com/api/v1/promoters/
   """
 
-  require Logger
+  alias Sanbase.Accounts.User
   alias Sanbase.Utils.Config
 
-  alias Sanbase.Accounts.User
+  require Logger
 
   @promoters_api_base_url "https://firstpromoter.com/api/v1/promoters/"
 
@@ -17,7 +17,7 @@ defmodule Sanbase.Affiliate.FirstPromoterApi do
   @type promoter :: map()
 
   @spec list() :: {:ok, list(promoter)} | {:error, String.t()}
-  def list() do
+  def list do
     do_list(promoters: [], page: 1)
   end
 
@@ -25,9 +25,10 @@ defmodule Sanbase.Affiliate.FirstPromoterApi do
   def create(user, args \\ %{})
 
   def create(%User{id: id, email: email}, args) when is_binary(email) do
-    data = Map.merge(%{email: email, cust_id: id}, args) |> URI.encode_query()
+    data = %{email: email, cust_id: id} |> Map.merge(args) |> URI.encode_query()
 
-    Path.join(@promoters_api_base_url, "create")
+    @promoters_api_base_url
+    |> Path.join("create")
     |> http_client().post(
       data,
       headers() ++ [{"Content-Type", "application/x-www-form-urlencoded"}]
@@ -35,21 +36,22 @@ defmodule Sanbase.Affiliate.FirstPromoterApi do
     |> handle_response()
   end
 
-  def create(_user, _),
-    do: {:error, "Can't create promoter account. User doesn't have an email address."}
+  def create(_user, _), do: {:error, "Can't create promoter account. User doesn't have an email address."}
 
   @spec show(String.t()) :: {:ok, promoter} | {:error, String.t()}
   def show(user_id) do
-    Path.join(@promoters_api_base_url, "show?cust_id=#{user_id}")
+    @promoters_api_base_url
+    |> Path.join("show?cust_id=#{user_id}")
     |> http_client().get(headers())
     |> handle_response()
   end
 
   @spec update(String.t(), promoter_args) :: {:ok, promoter} | {:error, String.t()}
   def update(user_id, args) do
-    data = Map.merge(%{cust_id: user_id}, args) |> URI.encode_query()
+    data = %{cust_id: user_id} |> Map.merge(args) |> URI.encode_query()
 
-    Path.join(@promoters_api_base_url, "update")
+    @promoters_api_base_url
+    |> Path.join("update")
     |> http_client().put(
       data,
       [{"Content-Type", "application/x-www-form-urlencoded"} | headers()]
@@ -59,14 +61,16 @@ defmodule Sanbase.Affiliate.FirstPromoterApi do
 
   @spec delete(String.t()) :: {:ok, promoter} | {:error, String.t()}
   def delete(user_id) do
-    Path.join(@promoters_api_base_url, "delete?cust_id=#{user_id}")
+    @promoters_api_base_url
+    |> Path.join("delete?cust_id=#{user_id}")
     |> http_client().delete(headers())
     |> handle_response()
   end
 
   # helpers
   defp do_list(promoters: promoters, page: page) do
-    Path.join(@promoters_api_base_url, "list?page=#{page}")
+    @promoters_api_base_url
+    |> Path.join("list?page=#{page}")
     |> http_client().get(headers())
     |> handle_response()
     |> case do
@@ -84,14 +88,13 @@ defmodule Sanbase.Affiliate.FirstPromoterApi do
   defp handle_response(response) do
     default_error_msg = "Error response from first promoter API"
 
-    response
-    |> case do
+    case response do
       {:ok, %HTTPoison.Response{status_code: code, body: body}} when code in 200..299 ->
         {:ok, Jason.decode!(body)}
 
       {:ok, %HTTPoison.Response{status_code: _code, body: body}} = response ->
         Logger.error("#{default_error_msg}: #{inspect(filter_response(response))}")
-        {:error, Jason.decode!(body) |> Map.get("error", default_error_msg)}
+        {:error, body |> Jason.decode!() |> Map.get("error", default_error_msg)}
 
       response ->
         Logger.error("#{default_error_msg}: #{inspect(filter_response(response))}")
@@ -99,19 +102,16 @@ defmodule Sanbase.Affiliate.FirstPromoterApi do
     end
   end
 
-  defp http_client(), do: HTTPoison
+  defp http_client, do: HTTPoison
 
-  defp headers() do
+  defp headers do
     [
       {"x-api-key", "#{Config.module_get(__MODULE__, :api_key)}"}
     ]
   end
 
-  defp filter_response(
-         {:ok, %HTTPoison.Response{request: %HTTPoison.Request{headers: _}} = response}
-       ) do
-    response
-    |> Map.put(:request, Map.put(Map.from_struct(response.request), :headers, "***filtered***"))
+  defp filter_response({:ok, %HTTPoison.Response{request: %HTTPoison.Request{headers: _}} = response}) do
+    Map.put(response, :request, Map.put(Map.from_struct(response.request), :headers, "***filtered***"))
   end
 
   defp filter_response(other), do: other

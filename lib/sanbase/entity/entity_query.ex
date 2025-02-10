@@ -1,4 +1,5 @@
 defmodule Sanbase.Entity.Query do
+  @moduledoc false
   import Ecto.Query
 
   @doc ~s"""
@@ -34,23 +35,17 @@ defmodule Sanbase.Entity.Query do
         query
 
       user_ids ->
-        query
-        |> where([ul], ul.user_id in ^user_ids)
+        where(query, [ul], ul.user_id in ^user_ids)
     end
   end
 
   @spec maybe_filter_is_featured_query(Ecto.Query.t(), Sanbase.Entity.opts(), Atom.t()) ::
           Ecto.Query.t()
   def maybe_filter_is_featured_query(query, opts, featured_item_field) do
-    case Keyword.get(opts, :is_featured_data_only) do
-      true ->
-        query
-        |> join(:inner, [elem], fi in Sanbase.FeaturedItem,
-          on: elem.id == field(fi, ^featured_item_field)
-        )
-
-      _ ->
-        query
+    if Keyword.get(opts, :is_featured_data_only) do
+      join(query, :inner, [elem], fi in Sanbase.FeaturedItem, on: elem.id == field(fi, ^featured_item_field))
+    else
+      query
     end
   end
 
@@ -64,12 +59,10 @@ defmodule Sanbase.Entity.Query do
 
     case Keyword.get(opts, :show_hidden_entities, default_value) do
       :only_not_hidden ->
-        query
-        |> where([elem], elem.is_hidden != true)
+        where(query, [elem], elem.is_hidden != true)
 
       :only_hidden ->
-        query
-        |> where([elem], elem.is_hidden == true)
+        where(query, [elem], elem.is_hidden == true)
 
       :hidden_and_not_hidden ->
         query
@@ -79,8 +72,7 @@ defmodule Sanbase.Entity.Query do
   def maybe_filter_min_title_length(query, opts, column) do
     case Keyword.get(opts, :min_title_length) do
       len when is_integer(len) and len > 0 ->
-        query
-        |> where([elem], fragment("LENGTH(?)", field(elem, ^column)) >= ^len)
+        where(query, [elem], fragment("LENGTH(?)", field(elem, ^column)) >= ^len)
 
       _ ->
         query
@@ -90,8 +82,7 @@ defmodule Sanbase.Entity.Query do
   def maybe_filter_min_description_length(query, opts, column) do
     case Keyword.get(opts, :min_description_length) do
       len when is_integer(len) and len > 0 ->
-        query
-        |> where([elem], fragment("LENGTH(?)", field(elem, ^column)) >= ^len)
+        where(query, [elem], fragment("LENGTH(?)", field(elem, ^column)) >= ^len)
 
       _ ->
         query

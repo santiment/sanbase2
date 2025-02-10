@@ -1,14 +1,18 @@
 defmodule Sanbase.Accounts.EmailJobs do
+  @moduledoc false
   import Sanbase.DateTimeUtils, only: [days_after: 1, seconds_after: 1]
   import Sanbase.Email.Template
+
+  alias Sanbase.Accounts.User
+  alias Sanbase.Email.Template
 
   @oban_conf_name :oban_web
 
   def schedule_emails_after_sign_up(user_id) do
-    user = Sanbase.Accounts.User.by_id!(user_id)
-    templates = Sanbase.Email.Template.sign_up_templates()
+    user = User.by_id!(user_id)
+    templates = Template.sign_up_templates()
 
-    name = Sanbase.Accounts.User.get_name(user)
+    name = User.get_name(user)
     vars = %{name: name, username: name}
 
     multi = Ecto.Multi.new()
@@ -41,22 +45,22 @@ defmodule Sanbase.Accounts.EmailJobs do
   end
 
   def send_automatic_renewal_email(subscription, charge_date_unix) do
-    user = Sanbase.Accounts.User.by_id!(subscription.user_id)
-    name = Sanbase.Accounts.User.get_name(user)
+    user = User.by_id!(subscription.user_id)
+    name = User.get_name(user)
 
     vars = %{
       name: name,
       username: name,
       subscription_type: subscription_type(subscription),
-      charge_date: DateTime.from_unix!(charge_date_unix) |> format_date()
+      charge_date: charge_date_unix |> DateTime.from_unix!() |> format_date()
     }
 
     add_email_job(subscription.user_id, automatic_renewal_template(), vars)
   end
 
   def send_trial_started_email(subscription) do
-    user = Sanbase.Accounts.User.by_id!(subscription.user_id)
-    name = Sanbase.Accounts.User.get_name(user)
+    user = User.by_id!(subscription.user_id)
+    name = User.get_name(user)
 
     vars = %{
       name: name,
@@ -68,8 +72,8 @@ defmodule Sanbase.Accounts.EmailJobs do
   end
 
   def schedule_trial_will_end_email(subscription) do
-    user = Sanbase.Accounts.User.by_id!(subscription.user_id)
-    name = Sanbase.Accounts.User.get_name(user)
+    user = User.by_id!(subscription.user_id)
+    name = User.get_name(user)
 
     vars = %{
       name: name,
@@ -82,8 +86,8 @@ defmodule Sanbase.Accounts.EmailJobs do
   end
 
   def send_pro_started_email(subscription) do
-    user = Sanbase.Accounts.User.by_id!(subscription.user_id)
-    name = Sanbase.Accounts.User.get_name(user)
+    user = User.by_id!(subscription.user_id)
+    name = User.get_name(user)
 
     vars = %{
       name: name,
@@ -94,13 +98,13 @@ defmodule Sanbase.Accounts.EmailJobs do
 
     add_email_job(
       subscription.user_id,
-      Sanbase.Email.Template.pro_subscription_stared_template(),
+      Template.pro_subscription_stared_template(),
       vars
     )
   end
 
   def send_post_cancellation_email(subscription) do
-    template = Sanbase.Email.Template.post_cancellation_template()
+    template = Template.post_cancellation_template()
 
     vars = %{
       subscription_type: subscription_type(subscription),
@@ -111,7 +115,7 @@ defmodule Sanbase.Accounts.EmailJobs do
   end
 
   def schedule_post_cancellation_email2(subscription) do
-    template = Sanbase.Email.Template.post_cancellation_template2()
+    template = Template.post_cancellation_template2()
 
     add_email_job(subscription.user_id, template, %{}, scheduled_at: seconds_after(300))
   end

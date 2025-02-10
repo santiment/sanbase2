@@ -20,21 +20,18 @@ defmodule Sanbase.Metric.MetricPostgresData do
   end
 
   def changeset(%__MODULE__{} = metric, attrs \\ %{}) do
-    metric
-    |> cast(attrs, [:name])
+    cast(metric, attrs, [:name])
   end
 
   def put_metrics(%Ecto.Changeset{} = changeset, %{metrics: metrics}) when is_list(metrics) do
-    metrics = metrics |> by_names()
+    metrics = by_names(metrics)
 
-    changeset
-    |> put_assoc(:metrics, metrics)
+    put_assoc(changeset, :metrics, metrics)
   end
 
   def put_metrics(%Ecto.Changeset{} = changeset, _), do: changeset
 
   defp by_names(names) when is_list(names) do
-    from(t in __MODULE__, where: t.name in ^names)
-    |> Repo.all()
+    Repo.all(from(t in __MODULE__, where: t.name in ^names))
   end
 end

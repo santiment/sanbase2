@@ -3,15 +3,15 @@ defmodule Sanbase.Dashboards do
   Dashboard is a collection of SQL queries and static widgets.
   """
 
-  alias Sanbase.Repo
-  alias Sanbase.Queries.Query
-  alias Sanbase.Dashboards.Dashboard
-  alias Sanbase.Dashboards.DashboardQueryMapping
-
-  alias Sanbase.Dashboards.TextWidget
-  alias Sanbase.Dashboards.ImageWidget
-
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
+
+  alias Sanbase.Dashboards.Dashboard
+  alias Sanbase.Dashboards.DashboardCache
+  alias Sanbase.Dashboards.DashboardQueryMapping
+  alias Sanbase.Dashboards.ImageWidget
+  alias Sanbase.Dashboards.TextWidget
+  alias Sanbase.Queries.Query
+  alias Sanbase.Repo
 
   # Type aliases
   @type dashboard_id :: Dashboard.dashboard_id()
@@ -67,15 +67,15 @@ defmodule Sanbase.Dashboards do
           {:ok, dashboard}
 
         _ ->
-          {:error,
-           "Dashboard with id #{dashboard_id} does not exist, or it is private and owned by another user"}
+          {:error, "Dashboard with id #{dashboard_id} does not exist, or it is private and owned by another user"}
       end
     end)
     |> Ecto.Multi.run(:maybe_load_queries, fn _repo, %{get_dashboard: dashboard} ->
       dashboard =
-        case :queries in Keyword.get(opts, :preload, []) do
-          true -> %{dashboard | queries: get_dashboard_queries_with_mapping_id(dashboard.id)}
-          false -> dashboard
+        if :queries in Keyword.get(opts, :preload, []) do
+          %{dashboard | queries: get_dashboard_queries_with_mapping_id(dashboard.id)}
+        else
+          dashboard
         end
 
       {:ok, mask_dashboard_not_viewable_parts(dashboard, querying_user_id)}
@@ -87,7 +87,8 @@ defmodule Sanbase.Dashboards do
   defp get_dashboard_queries_with_mapping_id(dashboard_id) do
     # Get the queries for the dashboard and add the the mapping id
     # as dashboard_query_mapping_id Query virutal field
-    DashboardQueryMapping.dashboard_id_rows(dashboard_id)
+    dashboard_id
+    |> DashboardQueryMapping.dashboard_id_rows()
     |> Repo.all()
     |> Enum.map(fn row ->
       %{row.query | dashboard_query_mapping_id: row.id}
@@ -115,7 +116,7 @@ defmodule Sanbase.Dashboards do
   @spec create_dashboard(create_dashboard_args(), user_id()) ::
           {:ok, Dashboard.t()} | {:error, String.t()}
   def create_dashboard(args, user_id) do
-    args = args |> Map.merge(%{user_id: user_id})
+    args = Map.put(args, :user_id, user_id)
 
     changeset = Dashboard.create_changeset(%Dashboard{}, args)
 
@@ -211,8 +212,8 @@ defmodule Sanbase.Dashboards do
     # The name of the global parameter is not needed, only the value and the list
     # of overrides.
     overrides =
-      dashboard.parameters
-      |> Enum.reduce(
+      Enum.reduce(
+        dashboard.parameters,
         %{},
         fn {key, %{"value" => value, "overrides" => overrides}}, acc ->
           # When executing a dashboard query via runDashboardSqlQuery,the user can
@@ -234,8 +235,7 @@ defmodule Sanbase.Dashboards do
     # requiring the dashboard parameters being explicilty defined
     overrides =
       if force_parameters_override_to_query do
-        query.sql_query_parameters
-        |> Map.new(fn {key, value} ->
+        Map.new(query.sql_query_parameters, fn {key, value} ->
           if Map.has_key?(parameters_override, key) do
             {key, Map.get(parameters_override, key)}
           else
@@ -404,12 +404,7 @@ defmodule Sanbase.Dashboards do
           user_id(),
           Keyword.t()
         ) :: {:ok, Dashboard.t()} | {:error, String.t()}
-  def add_global_parameter_override(
-        dashboard_id,
-        dashboard_query_mapping_id,
-        querying_user_id,
-        opts
-      ) do
+  def add_global_parameter_override(dashboard_id, dashboard_query_mapping_id, querying_user_id, opts) do
     query_key = Keyword.fetch!(opts, :query_parameter_key)
     dashboard_key = Keyword.fetch!(opts, :dashboard_parameter_key)
 
@@ -426,8 +421,7 @@ defmodule Sanbase.Dashboards do
       fn _repo, %{get_dashboard_for_mutation: struct} ->
         case Map.get(struct.parameters, dashboard_key) do
           nil ->
-            {:error,
-             "Parameter #{dashboard_key} does not exist in dashboard with id #{dashboard_id}."}
+            {:error, "Parameter #{dashboard_key} does not exist in dashboard with id #{dashboard_id}."}
 
           %{} = map ->
             elem = %{
@@ -485,12 +479,7 @@ defmodule Sanbase.Dashboards do
           user_id(),
           Keyword.t()
         ) :: {:ok, Dashboard.t()} | {:error, String.t()}
-  def delete_global_parameter_override(
-        dashboard_id,
-        dashboard_query_mapping_id,
-        querying_user_id,
-        opts
-      ) do
+  def delete_global_parameter_override(dashboard_id, dashboard_query_mapping_id, querying_user_id, opts) do
     dashboard_key = Keyword.fetch!(opts, :dashboard_parameter_key)
 
     Ecto.Multi.new()
@@ -506,8 +495,7 @@ defmodule Sanbase.Dashboards do
       fn _repo, %{get_dashboard_for_mutation: struct} ->
         case Map.get(struct.parameters, dashboard_key) do
           nil ->
-            {:error,
-             "Parameter #{dashboard_key} does not exist in dashboard with id #{dashboard_id}."}
+            {:error, "Parameter #{dashboard_key} does not exist in dashboard with id #{dashboard_id}."}
 
           %{} = map ->
             updated_overrides =
@@ -555,7 +543,8 @@ defmodule Sanbase.Dashboards do
     end)
     |> Ecto.Multi.run(:add_text_widget, fn _, %{get_dashboard_for_mutation: dashboard} ->
       changeset =
-        TextWidget.changeset(%TextWidget{}, args)
+        %TextWidget{}
+        |> TextWidget.changeset(args)
         |> Ecto.Changeset.put_change(:id, text_widget_id)
 
       dashboard
@@ -682,7 +671,8 @@ defmodule Sanbase.Dashboards do
     end)
     |> Ecto.Multi.run(:add_image_widget, fn _, %{get_dashboard_for_mutation: dashboard} ->
       changeset =
-        ImageWidget.changeset(%ImageWidget{}, args)
+        %ImageWidget{}
+        |> ImageWidget.changeset(args)
         |> Ecto.Changeset.put_change(:id, image_widget_id)
 
       dashboard
@@ -905,12 +895,7 @@ defmodule Sanbase.Dashboards do
   """
   @spec update_dashboard_query(dashboard_id(), dashboard_query_mapping_id(), user_id(), Map.t()) ::
           {:ok, DashboardQueryMapping.t()} | {:error, String.t()}
-  def update_dashboard_query(
-        dashboard_id,
-        dashboard_query_mapping_id,
-        querying_user_id,
-        settings
-      ) do
+  def update_dashboard_query(dashboard_id, dashboard_query_mapping_id, querying_user_id, settings) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(:get_mapping, fn _repo, _changes ->
       query = DashboardQueryMapping.by_id(dashboard_query_mapping_id)
@@ -968,7 +953,7 @@ defmodule Sanbase.Dashboards do
       get_dashboard_for_cache_update(dashboard_id, user_id, preload?: false)
     end)
     |> Ecto.Multi.run(:update_query_cache, fn _repo, %{get_dashboard_for_cache_update: _struct} ->
-      Sanbase.Dashboards.DashboardCache.update_query_cache(
+      DashboardCache.update_query_cache(
         dashboard_id,
         parameters_override,
         dashboard_query_mapping_id,
@@ -989,12 +974,8 @@ defmodule Sanbase.Dashboards do
           user_id()
         ) ::
           {:ok, DashboardQueryMappingCache.t()} | {:error, String.t()}
-  def get_cached_dashboard_queries_executions(
-        dashboard_id,
-        parameters_override,
-        user_id
-      ) do
-    Sanbase.Dashboards.DashboardCache.by_dashboard_id(
+  def get_cached_dashboard_queries_executions(dashboard_id, parameters_override, user_id) do
+    DashboardCache.by_dashboard_id(
       dashboard_id,
       parameters_override,
       user_id
@@ -1003,11 +984,7 @@ defmodule Sanbase.Dashboards do
 
   # Private functions
 
-  defp get_dashboard_by_mapping_id_for_mutation(
-         dashboard_id,
-         dashboard_query_mapping_id,
-         querying_user_id
-       ) do
+  defp get_dashboard_by_mapping_id_for_mutation(dashboard_id, dashboard_query_mapping_id, querying_user_id) do
     query = DashboardQueryMapping.by_id(dashboard_query_mapping_id, lock_for_update: true)
 
     case Repo.one(query) do
@@ -1046,14 +1023,12 @@ defmodule Sanbase.Dashboards do
     end
   end
 
-  defp process_transaction_result({:ok, map}, ok_field),
-    do: {:ok, map[ok_field]}
+  defp process_transaction_result({:ok, map}, ok_field), do: {:ok, map[ok_field]}
 
   defp process_transaction_result({:error, _, %Ecto.Changeset{} = changeset, _}, _ok_field),
     do: {:error, changeset_errors_string(changeset)}
 
-  defp process_transaction_result({:error, _, error, _}, _ok_field),
-    do: {:error, error}
+  defp process_transaction_result({:error, _, error, _}, _ok_field), do: {:error, error}
 
   defp mapping_error(dashboard_query_mapping_id, dashboard_id, querying_user_id) do
     """
@@ -1065,17 +1040,12 @@ defmodule Sanbase.Dashboards do
   defp mask_dashboard_not_viewable_parts(%Dashboard{} = dashboard, querying_user_id) do
     # When viewing a dashboard, hide the SQL query text and query parameters
     # if the query is private and the querying user is not the owner of the query
-    masked_queries =
-      dashboard.queries
-      |> Enum.map(&mask_query_not_viewable_parts(&1, querying_user_id))
+    masked_queries = Enum.map(dashboard.queries, &mask_query_not_viewable_parts(&1, querying_user_id))
 
     %Dashboard{dashboard | queries: masked_queries}
   end
 
-  defp mask_query_not_viewable_parts(
-         %Query{user_id: query_owner_user_id, is_public: false} = query,
-         querying_user_id
-       )
+  defp mask_query_not_viewable_parts(%Query{user_id: query_owner_user_id, is_public: false} = query, querying_user_id)
        when query_owner_user_id != querying_user_id do
     %Query{
       query

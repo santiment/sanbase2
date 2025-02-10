@@ -1,12 +1,15 @@
 defmodule Sanbase.SanLang.Interpreter do
+  @moduledoc false
   alias Sanbase.SanLang
   alias Sanbase.SanLang.Environment
 
   defmodule UnboundError do
+    @moduledoc false
     defexception [:message]
   end
 
   defmodule UndefinedFunctionError do
+    @moduledoc false
     defexception [:message]
   end
 
@@ -74,7 +77,8 @@ defmodule Sanbase.SanLang.Interpreter do
     end
   end
 
-  @supported_functions SanLang.Kernel.__info__(:functions)
+  @supported_functions :functions
+                       |> SanLang.Kernel.__info__()
                        |> Enum.map(fn {name, _arity} -> to_string(name) end)
   defp eval_function_call(function_name, args, env)
        when is_binary(function_name) and function_name in @supported_functions do

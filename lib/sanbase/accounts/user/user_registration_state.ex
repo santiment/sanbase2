@@ -7,9 +7,9 @@ defmodule Sanbase.Accounts.User.RegistrationState do
   action, the state can either evolve to a new state or be kept the same.
   """
 
+  alias __MODULE__.StateMachine
   alias Sanbase.Accounts.EventEmitter
   alias Sanbase.Accounts.User
-  alias __MODULE__.StateMachine
 
   @doc ~s"""
   Take a step forward in the registration progress by executing the given `action`.
@@ -24,19 +24,22 @@ defmodule Sanbase.Accounts.User.RegistrationState do
     current_state = Map.fetch!(registration_state, "state")
 
     old_data =
-      Map.get(registration_state, "data", %{})
+      registration_state
+      |> Map.get("data", %{})
       |> Map.new(fn {k, v} -> {String.to_existing_atom(k), v} end)
 
     merged_data = Map.merge(old_data, data)
 
-    case StateMachine.forward(current_state, action) do
-      :keep_state ->
-        :keep_state
+    case_result =
+      case StateMachine.forward(current_state, action) do
+        :keep_state ->
+          :keep_state
 
-      {:next_state, next_state} ->
-        {:next_state, next_state, merged_data}
-    end
-    |> emit_event(user)
+        {:next_state, next_state} ->
+          {:next_state, next_state, merged_data}
+      end
+
+    emit_event(case_result, user)
   end
 
   def registration_finished?(%User{registration_state: registration_state}) do
@@ -77,6 +80,7 @@ defmodule Sanbase.Accounts.User.RegistrationState do
 
   defmodule StateMachine do
     # In case the user is already registered, do nothing.
+    @moduledoc false
     def forward("finished", _), do: :keep_state
 
     def forward(_, "send_login_email"), do: {:next_state, "login_email_sent"}

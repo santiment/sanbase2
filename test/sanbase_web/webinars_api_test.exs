@@ -4,6 +4,8 @@ defmodule SanbaseWeb.Graphql.WebinarsApiTest do
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
+  alias Sanbase.Webinars.Registration
+
   setup do
     user = insert(:user)
 
@@ -14,7 +16,7 @@ defmodule SanbaseWeb.Graphql.WebinarsApiTest do
 
   describe "get webinars" do
     setup do
-      now = Timex.now()
+      now = DateTime.utc_now()
       one_min_ago = Timex.shift(now, minutes: -1)
       free_webinar = insert(:webinar, is_pro: false, inserted_at: now)
       pro_webinar = insert(:webinar, is_pro: true, inserted_at: one_min_ago)
@@ -95,7 +97,7 @@ defmodule SanbaseWeb.Graphql.WebinarsApiTest do
       mutation = register_mutation(free_webinar.id)
       assert execute_mutation(context.conn, mutation, "registerForWebinar")
 
-      registered_users = Sanbase.Webinars.Registration.list_users_in_webinar(free_webinar.id)
+      registered_users = Registration.list_users_in_webinar(free_webinar.id)
       assert context.user.id in Enum.map(registered_users, & &1.id)
     end
 
@@ -105,7 +107,7 @@ defmodule SanbaseWeb.Graphql.WebinarsApiTest do
       assert execute_mutation(context.conn, mutation, "registerForWebinar")
       assert execute_mutation(context.conn, mutation, "registerForWebinar")
 
-      registered_users = Sanbase.Webinars.Registration.list_users_in_webinar(free_webinar.id)
+      registered_users = Registration.list_users_in_webinar(free_webinar.id)
       assert context.user.id in Enum.map(registered_users, & &1.id)
       assert Enum.count(registered_users, fn user -> user.id == context.user.id end) == 1
     end

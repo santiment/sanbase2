@@ -1,14 +1,14 @@
 defmodule SanbaseWeb.Graphql.Clickhouse.TopHoldersTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import SanbaseWeb.Graphql.TestHelpers
-  import Mock
   import ExUnit.CaptureLog
+  import Mock
   import Sanbase.Factory
-
-  @moduletag capture_log: true
+  import SanbaseWeb.Graphql.TestHelpers
 
   alias Sanbase.Clickhouse.TopHolders
+
+  @moduletag capture_log: true
 
   setup do
     %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
@@ -140,8 +140,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.TopHoldersTest do
         context.interval
       )
 
-    context.conn
-    |> post("/graphql", query_skeleton(query, "topHoldersPercentOfTotalSupply"))
+    post(context.conn, "/graphql", query_skeleton(query, "topHoldersPercentOfTotalSupply"))
   end
 
   defp top_holders_percent_supply_query(slug, number_of_holders, from, to, interval) do

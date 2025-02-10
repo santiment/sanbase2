@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.GenericAdmin.User do
+  @moduledoc false
   alias Sanbase.Accounts.User
   alias SanbaseWeb.GenericAdminController
 
@@ -31,14 +32,7 @@ defmodule SanbaseWeb.GenericAdmin.User do
   end
 
   def has_many(user) do
-    user =
-      user
-      |> Sanbase.Repo.preload([
-        :eth_accounts,
-        :user_settings,
-        :posts,
-        subscriptions: [plan: [:product]]
-      ])
+    user = Sanbase.Repo.preload(user, [:eth_accounts, :user_settings, :posts, subscriptions: [plan: [:product]]])
 
     [
       %{
@@ -88,7 +82,7 @@ defmodule SanbaseWeb.GenericAdmin.User do
       %{
         resource: "user_apikey_tokens",
         resource_name: "Apikey tokens",
-        rows: Sanbase.Accounts.UserApikeyToken.user_tokens_structs(user) |> elem(1),
+        rows: user |> Sanbase.Accounts.UserApikeyToken.user_tokens_structs() |> elem(1),
         fields: [:id, :token],
         funcs: %{},
         create_link_kv: []
@@ -110,8 +104,8 @@ defmodule SanbaseWeb.GenericAdmin.User do
     api_calls_count =
       case Sanbase.Clickhouse.ApiCallData.api_call_count(
              user.id,
-             Timex.beginning_of_month(Timex.now()),
-             Timex.now(),
+             Timex.beginning_of_month(DateTime.utc_now()),
+             DateTime.utc_now(),
              :apikey
            ) do
         {:ok, api_calls_count} -> api_calls_count
@@ -165,15 +159,13 @@ defmodule SanbaseWeb.GenericAdmin.User do
   end
 
   def fetch_san_staked(user) do
-    try do
-      Sanbase.Accounts.User.UniswapStaking.fetch_uniswap_san_staked_user(user.id)
-    rescue
-      _error -> 0.0
-    end
+    Sanbase.Accounts.User.UniswapStaking.fetch_uniswap_san_staked_user(user.id)
+  rescue
+    _error -> 0.0
   end
 
   def reset_api_call_limits(conn, %{id: id}) do
-    {:ok, user} = Sanbase.Math.to_integer(id) |> User.by_id()
+    {:ok, user} = id |> Sanbase.Math.to_integer() |> User.by_id()
 
     Sanbase.ApiCallLimit.reset(user)
 
@@ -181,7 +173,8 @@ defmodule SanbaseWeb.GenericAdmin.User do
   end
 
   def reset_queries_credits_spent(conn, %{id: user_id}) do
-    Sanbase.Math.to_integer(user_id)
+    user_id
+    |> Sanbase.Math.to_integer()
     |> Sanbase.ModeratorQueries.reset_user_monthly_credits()
 
     GenericAdminController.show(conn, %{"resource" => "users", "id" => user_id})
@@ -207,8 +200,9 @@ defmodule SanbaseWeb.GenericAdmin.User do
 end
 
 defmodule SanbaseWeb.GenericAdmin.UserSettings do
+  @moduledoc false
   @schema_module Sanbase.Accounts.UserSettings
-  def schema_module(), do: @schema_module
+  def schema_module, do: @schema_module
 
   def resource do
     %{
@@ -216,7 +210,8 @@ defmodule SanbaseWeb.GenericAdmin.UserSettings do
       fields_override: %{
         settings: %{
           value_modifier: fn us ->
-            Map.from_struct(us.settings)
+            us.settings
+            |> Map.from_struct()
             |> Map.delete(:alerts_fired)
             |> Jason.encode!(pretty: true)
           end
@@ -227,8 +222,10 @@ defmodule SanbaseWeb.GenericAdmin.UserSettings do
 end
 
 defmodule SanbaseWeb.GenericAdmin.UserList do
+  @moduledoc false
   import Ecto.Query
-  def schema_module(), do: Sanbase.UserList
+
+  def schema_module, do: Sanbase.UserList
 
   def resource do
     %{
@@ -240,21 +237,22 @@ defmodule SanbaseWeb.GenericAdmin.UserList do
         is_featured: %{
           type: :boolean,
           search_query:
-            from(
-              ul in Sanbase.UserList,
-              left_join: featured_item in Sanbase.FeaturedItem,
-              on: ul.id == featured_item.user_list_id,
-              where: not is_nil(featured_item.id),
-              preload: [:user]
+            distinct(
+              from(ul in Sanbase.UserList,
+                left_join: featured_item in Sanbase.FeaturedItem,
+                on: ul.id == featured_item.user_list_id,
+                where: not is_nil(featured_item.id),
+                preload: [:user]
+              ),
+              true
             )
-            |> distinct(true)
         },
         user_id: %{
           value_modifier: &SanbaseWeb.GenericAdmin.User.user_link/1
         },
         function: %{
           value_modifier: fn ul ->
-            Map.from_struct(ul.function) |> Jason.encode!(pretty: true)
+            ul.function |> Map.from_struct() |> Jason.encode!(pretty: true)
           end
         },
         type: %{
@@ -273,7 +271,7 @@ defmodule SanbaseWeb.GenericAdmin.UserList do
   end
 
   def after_filter(user_list, params) do
-    is_featured = params["is_featured"] |> String.to_existing_atom()
+    is_featured = String.to_existing_atom(params["is_featured"])
     Sanbase.FeaturedItem.update_item(user_list, is_featured)
   end
 

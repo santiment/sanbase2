@@ -1,7 +1,9 @@
 defmodule Sanbase.Mix.GenerateProjectsData do
-  alias Sanbase.Project
+  @moduledoc false
   import Ecto.Query
   import Sanbase.BlockchainAddress, only: [ethereum_regex: 0, bitcoin_regex: 0]
+
+  alias Sanbase.Project
 
   require Jason.Helpers
 
@@ -19,33 +21,34 @@ defmodule Sanbase.Mix.GenerateProjectsData do
     |> tap(fn :ok -> IO.puts("Finished exporting projects to #{path}") end)
   end
 
-  def get_projects_data() do
-    from(p in Project,
-      where: not is_nil(p.slug) and p.is_hidden == false,
-      left_join: contract in assoc(p, :contract_addresses),
-      left_join: github in assoc(p, :github_organizations),
-      left_join: infrastructure in assoc(p, :infrastructure),
-      left_join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
-      select: %{
-        slug: p.slug,
-        name: p.name,
-        ticker: p.ticker,
-        infrastructure: infrastructure.code,
-        description: p.description,
-        website: p.website_link,
-        twitter: p.twitter_link,
-        discord: p.discord_link,
-        slack: p.slack_link,
-        telegram: p.telegram_link,
-        reddit: p.reddit_link,
-        blog: p.blog_link,
-        github_organizations: github,
-        contract_addresses: contract,
-        latest_cmc: latest_cmc,
-        coinmarketcap_id: p.coinmarketcap_id
-      }
+  def get_projects_data do
+    Sanbase.Repo.all(
+      from(p in Project,
+        where: not is_nil(p.slug) and p.is_hidden == false,
+        left_join: contract in assoc(p, :contract_addresses),
+        left_join: github in assoc(p, :github_organizations),
+        left_join: infrastructure in assoc(p, :infrastructure),
+        left_join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
+        select: %{
+          slug: p.slug,
+          name: p.name,
+          ticker: p.ticker,
+          infrastructure: infrastructure.code,
+          description: p.description,
+          website: p.website_link,
+          twitter: p.twitter_link,
+          discord: p.discord_link,
+          slack: p.slack_link,
+          telegram: p.telegram_link,
+          reddit: p.reddit_link,
+          blog: p.blog_link,
+          github_organizations: github,
+          contract_addresses: contract,
+          latest_cmc: latest_cmc,
+          coinmarketcap_id: p.coinmarketcap_id
+        }
+      )
     )
-    |> Sanbase.Repo.all()
   end
 
   def export_json(list, path) do
@@ -60,19 +63,19 @@ defmodule Sanbase.Mix.GenerateProjectsData do
     slug = map[:slug] || raise("Missing slug in map list #{inspect(map)}")
 
     general =
-      Map.take(map, [:slug, :name, :ticker, :description, :website])
+      map
+      |> Map.take([:slug, :name, :ticker, :description, :website])
       |> remove_nils()
       |> Jason.OrderedObject.new()
 
     social =
-      Map.take(map, [:twitter, :telegram, :discord, :slack, :reddit, :blog])
+      map
+      |> Map.take([:twitter, :telegram, :discord, :slack, :reddit, :blog])
       |> remove_nils()
       |> remove_wrong_social_values()
       |> Jason.OrderedObject.new()
 
-    orgs =
-      (Map.get(map, :github_organizations) || [])
-      |> Enum.map(& &1.organization)
+    orgs = Enum.map(Map.get(map, :github_organizations) || [], & &1.organization)
 
     development = %{github_organizations: orgs}
 
@@ -85,14 +88,13 @@ defmodule Sanbase.Mix.GenerateProjectsData do
           Project.infrastructure_to_blockchain(map[:infrastructure]) ||
             get_blockchain_from_address(contract.address)
 
-        [
+        remove_nils(
           address: contract.address,
           blockchain: blockchain,
           decimals: contract.decimals,
           label: contract.label,
           description: contract.description
-        ]
-        |> remove_nils()
+        )
       end)
       |> Enum.reject(&contract_missing_or_invalid_data/1)
       |> Enum.map(&Jason.OrderedObject.new/1)
@@ -169,9 +171,9 @@ defmodule Sanbase.Mix.GenerateProjectsData do
       case map.latest_cmc do
         %{update_time: %NaiveDateTime{} = update_time, market_cap_usd: marketcap_usd} ->
           # Do not check projects that have not been updated in long time
-          dt = NaiveDateTime.utc_now() |> Timex.shift(days: -7)
+          dt = Timex.shift(NaiveDateTime.utc_now(), days: -7)
 
-          NaiveDateTime.compare(update_time, dt) == :gt and
+          NaiveDateTime.after?(update_time, dt) and
             Decimal.to_float(marketcap_usd) >= @min_marketcap
 
         _ ->

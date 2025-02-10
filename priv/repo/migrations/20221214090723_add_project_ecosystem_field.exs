@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddProjectEcosystemField do
+  @moduledoc false
   use Ecto.Migration
 
   import Ecto.Query
@@ -10,13 +11,12 @@ defmodule Sanbase.Repo.Migrations.AddProjectEcosystemField do
     end
   end
 
-  defp fill_ecosystem() do
+  defp fill_ecosystem do
     projects = projects()
 
     ticker_to_name_map = Map.new(projects, &{&1.ticker, &1.name})
 
-    projects
-    |> Enum.map(fn project ->
+    Enum.map(projects, fn project ->
       cond do
         String.downcase(project.infrastructure.code) == "own" ->
           {project.slug, project.name}
@@ -30,14 +30,12 @@ defmodule Sanbase.Repo.Migrations.AddProjectEcosystemField do
     end)
   end
 
-  defp projects() do
+  defp projects do
     Sanbase.Project.Job.compute_ecosystem_full_path()
     |> Enum.reduce(
       Ecto.Multi.new(),
       fn {project, ecosystem_full_path}, multi ->
-        changeset =
-          project
-          |> Sanbase.Project.changeset(%{ecosystem_full_path: ecosystem_full_path})
+        changeset = Sanbase.Project.changeset(project, %{ecosystem_full_path: ecosystem_full_path})
 
         Ecto.Multi.update(multi, project.slug, changeset, on_conflict: :nothing)
       end

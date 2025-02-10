@@ -1,16 +1,15 @@
 defmodule Sanbase.Timeline.Filter do
+  @moduledoc false
   import Ecto.Query
 
-  alias Sanbase.Timeline.Query
-
-  alias Sanbase.UserList
   alias Sanbase.Alert.UserTrigger
   alias Sanbase.Insight.Post
   alias Sanbase.Repo
+  alias Sanbase.Timeline.Query
+  alias Sanbase.UserList
 
   def filter_by_query(query, filter_by) do
-    query
-    |> filter_by_type_query(filter_by)
+    filter_by_type_query(query, filter_by)
   end
 
   def filter_by_query(query, filter_by, user_id) do
@@ -29,8 +28,7 @@ defmodule Sanbase.Timeline.Filter do
 
   defp filter_by_not_seen(query, _, _), do: query
 
-  defp filter_by_last_seen_event(query, %{last_seen_event_id: last_seen_event_id})
-       when last_seen_event_id != nil do
+  defp filter_by_last_seen_event(query, %{last_seen_event_id: last_seen_event_id}) when last_seen_event_id != nil do
     from(event in query, where: event.id > ^last_seen_event_id)
   end
 
@@ -70,8 +68,7 @@ defmodule Sanbase.Timeline.Filter do
     Query.events_by_sanfamily_or_followed_users_or_own_query(query, user_id)
   end
 
-  defp filter_by_watchlists_query(query, %{watchlists: watchlists})
-       when is_list(watchlists) and length(watchlists) > 0 do
+  defp filter_by_watchlists_query(query, %{watchlists: watchlists}) when is_list(watchlists) and length(watchlists) > 0 do
     from(event in query, where: event.user_list_id in ^watchlists)
   end
 
@@ -106,12 +103,10 @@ defmodule Sanbase.Timeline.Filter do
   end
 
   defp get_slugs_and_tickers_by_asset_list(assets) do
-    project_slugs_and_tickers =
-      from(p in Sanbase.Project, where: p.id in ^assets, select: [p.slug, p.ticker])
-      |> Repo.all()
+    project_slugs_and_tickers = Repo.all(from(p in Sanbase.Project, where: p.id in ^assets, select: [p.slug, p.ticker]))
 
-    slugs = project_slugs_and_tickers |> Enum.map(fn [slug, _] -> slug end)
-    tickers = project_slugs_and_tickers |> Enum.map(fn [_, ticker] -> ticker end)
+    slugs = Enum.map(project_slugs_and_tickers, fn [slug, _] -> slug end)
+    tickers = Enum.map(project_slugs_and_tickers, fn [_, ticker] -> ticker end)
 
     {slugs, tickers}
   end
@@ -141,11 +136,9 @@ defmodule Sanbase.Timeline.Filter do
     |> Enum.map(fn [id, _] -> id end)
   end
 
-  defp filter_by_trigger_target(%{"slug" => slug}, {slugs, _tickers}) when is_binary(slug),
-    do: slug in slugs
+  defp filter_by_trigger_target(%{"slug" => slug}, {slugs, _tickers}) when is_binary(slug), do: slug in slugs
 
-  defp filter_by_trigger_target(%{"slug" => target_slugs}, {slugs, _tickers})
-       when is_binary(target_slugs) do
+  defp filter_by_trigger_target(%{"slug" => target_slugs}, {slugs, _tickers}) when is_binary(target_slugs) do
     has_intersection?(target_slugs, slugs)
   end
 
@@ -164,6 +157,6 @@ defmodule Sanbase.Timeline.Filter do
   defp filter_by_trigger_target(_, _), do: false
 
   defp has_intersection?(list1, list2) do
-    MapSet.intersection(MapSet.new(list1), MapSet.new(list2)) |> MapSet.size() > 0
+    list1 |> MapSet.new() |> MapSet.intersection(MapSet.new(list2)) |> MapSet.size() > 0
   end
 end

@@ -1,4 +1,5 @@
 defmodule Sanbase.Billing.Subscription.Query do
+  @moduledoc false
   import Ecto.Query
 
   @preload_fields [:user, plan: [:product]]

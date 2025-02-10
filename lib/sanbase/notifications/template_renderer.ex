@@ -1,4 +1,5 @@
 defmodule Sanbase.Notifications.TemplateRenderer do
+  @moduledoc false
   alias Sanbase.TemplateEngine
 
   def render(template_id, params) do
@@ -7,14 +8,7 @@ defmodule Sanbase.Notifications.TemplateRenderer do
     String.trim(content)
   end
 
-  def render_content(
-        %{
-          action: action,
-          params: params,
-          step: step,
-          channel: channel
-        } = data
-      ) do
+  def render_content(%{action: action, params: params, step: step, channel: channel} = data) do
     mime_type = data[:mime_type] || "text/plain"
     # Convert template params keys to strings and handle list parameters
     params =

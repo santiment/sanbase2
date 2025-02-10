@@ -4,8 +4,8 @@ defmodule SanbaseWeb.Graphql.Schema.FreeFormJsonStorageQueries do
   """
   use Absinthe.Schema.Notation
 
-  alias SanbaseWeb.Graphql.Resolvers.FreeFormJsonStorageResolver
   alias SanbaseWeb.Graphql.Middlewares.UserAuth
+  alias SanbaseWeb.Graphql.Resolvers.FreeFormJsonStorageResolver
 
   object :free_form_json_storage_queries do
     field :get_free_form_json, :free_form_json_storage do

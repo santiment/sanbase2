@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.GithubTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   input_object :github_organizations_selector do

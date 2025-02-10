@@ -1,11 +1,12 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ExchangeResolver do
-  require Logger
-
+  @moduledoc false
   import Sanbase.Utils.ErrorHandling,
     only: [maybe_handle_graphql_error: 2, handle_graphql_error: 3]
 
   alias Sanbase.Clickhouse.ExchangeAddress
   alias Sanbase.Clickhouse.Exchanges
+
+  require Logger
 
   @doc ~s"List all exchanges"
   def all_exchanges(_root, %{slug: slug} = args, _resolution) do
@@ -16,18 +17,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.ExchangeResolver do
     Exchanges.owners_by_slug_and_metric(metric, args[:slug])
   end
 
-  def top_exchanges_by_balance(
-        _root,
-        args,
-        _resolution
-      ) do
+  def top_exchanges_by_balance(_root, args, _resolution) do
     limit = Map.get(args, :limit, 10)
 
-    with true <- validate_top_exchanges_slug(args),
-         {:ok, result} <- Exchanges.top_exchanges_by_balance(%{slug: args.slug}, limit) do
-      {:ok, result}
-    end
-    |> maybe_handle_graphql_error(fn error ->
+    with_result =
+      if validate_top_exchanges_slug(args) do
+        Exchanges.top_exchanges_by_balance(%{slug: args.slug}, limit)
+      end
+
+    maybe_handle_graphql_error(with_result, fn error ->
       handle_graphql_error(
         "Top Exchanges By Balance",
         Sanbase.Project.Selector.args_to_raw_selector(args),

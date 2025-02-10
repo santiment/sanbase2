@@ -11,20 +11,20 @@ defmodule Sanbase.Alert.TriggerHistoryUtilsTest do
     percent_change_calculations =
       Utils.percent_change_calculations_with_cooldown(percent_changes, percent_threshold, 2)
 
-    assert percent_change_calculations |> length() == 8
-    assert filter_with_bigger_threshold(percent_change_calculations) |> length() == 3
+    assert length(percent_change_calculations) == 8
+    assert percent_change_calculations |> filter_with_bigger_threshold() |> length() == 3
 
     # no cooldown
     percent_change_calculations =
       Utils.percent_change_calculations_with_cooldown(percent_changes, percent_threshold, 0)
 
-    assert filter_with_bigger_threshold(percent_change_calculations) |> length() == 6
+    assert percent_change_calculations |> filter_with_bigger_threshold() |> length() == 6
 
     percent_change_calculations =
       Utils.percent_change_calculations_with_cooldown(percent_changes, %{percent_up: 5.0}, 2)
 
-    assert percent_change_calculations |> length() == 8
-    assert filter_with_bigger_threshold(percent_change_calculations) |> length() == 3
+    assert length(percent_change_calculations) == 8
+    assert percent_change_calculations |> filter_with_bigger_threshold() |> length() == 3
   end
 
   defp filter_with_bigger_threshold(percent_change_calculations) do

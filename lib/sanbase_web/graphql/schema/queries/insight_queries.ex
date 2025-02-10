@@ -6,13 +6,10 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve: 2]
 
-  alias SanbaseWeb.Graphql.Resolvers.{
-    InsightResolver,
-    FileResolver
-  }
-
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
   alias SanbaseWeb.Graphql.Middlewares.PostPaywallFilter
+  alias SanbaseWeb.Graphql.Resolvers.FileResolver
+  alias SanbaseWeb.Graphql.Resolvers.InsightResolver
 
   object :insight_queries do
     field :popular_insight_authors, list_of(:public_user) do

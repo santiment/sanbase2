@@ -1,11 +1,15 @@
 defmodule Sanbase.Alert.SchedulerTest do
   use Sanbase.DataCase, async: false
 
-  import Sanbase.Factory
   import ExUnit.CaptureLog
+  import Sanbase.Factory
 
-  alias Sanbase.Alert.{UserTrigger, HistoricalActivity}
+  alias Sanbase.Alert.HistoricalActivity
+  alias Sanbase.Alert.Scheduler
   alias Sanbase.Alert.Trigger.MetricTriggerSettings
+  alias Sanbase.Alert.UserTrigger
+  alias Sanbase.Clickhouse.MetricAdapter
+  alias Sanbase.Timeline.TimelineEvent
 
   setup do
     Sanbase.Cache.clear_all(:alerts_evaluator_cache)
@@ -35,11 +39,9 @@ defmodule Sanbase.Alert.SchedulerTest do
       })
 
     mock_fun =
-      [
-        fn -> {:ok, %{project.slug => 100}} end,
-        fn -> {:ok, %{project.slug => 5000}} end
-      ]
-      |> Sanbase.Mock.wrap_consecutives(arity: 5)
+      Sanbase.Mock.wrap_consecutives([fn -> {:ok, %{project.slug => 100}} end, fn -> {:ok, %{project.slug => 5000}} end],
+        arity: 5
+      )
 
     [
       trigger: trigger,
@@ -63,7 +65,7 @@ defmodule Sanbase.Alert.SchedulerTest do
 
     log =
       capture_log(fn ->
-        Sanbase.Alert.Scheduler.run_alert(MetricTriggerSettings)
+        Scheduler.run_alert(MetricTriggerSettings)
       end)
 
     assert log =~
@@ -81,17 +83,15 @@ defmodule Sanbase.Alert.SchedulerTest do
       is_repeating: false
     })
 
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.MetricAdapter.aggregated_timeseries_data/5,
-      {:ok, %{project.slug => 5000}}
-    )
+    (&MetricAdapter.aggregated_timeseries_data/5)
+    |> Sanbase.Mock.prepare_mock2({:ok, %{project.slug => 5000}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       ut = Sanbase.Repo.get(UserTrigger, trigger.id)
       assert ut.trigger.is_repeating == false
       assert ut.trigger.is_active == true
 
       assert capture_log(fn ->
-               Sanbase.Alert.Scheduler.run_alert(MetricTriggerSettings)
+               Scheduler.run_alert(MetricTriggerSettings)
              end) =~
                "In total 1/1 metric_signal alerts were sent successfully"
 
@@ -111,7 +111,7 @@ defmodule Sanbase.Alert.SchedulerTest do
       assert ut.trigger.is_active == true
 
       assert capture_log(fn ->
-               Sanbase.Alert.Scheduler.run_alert(MetricTriggerSettings)
+               Scheduler.run_alert(MetricTriggerSettings)
              end) =~
                "In total 1/1 metric_signal alerts were sent successfully"
 
@@ -124,13 +124,13 @@ defmodule Sanbase.Alert.SchedulerTest do
   test "successful signal is written in signals_historical_activity", context do
     %{mock_fun: mock_fun, user: user, project: project} = context
 
-    Sanbase.Mock.prepare_mock(
-      Sanbase.Clickhouse.MetricAdapter,
+    MetricAdapter
+    |> Sanbase.Mock.prepare_mock(
       :aggregated_timeseries_data,
       mock_fun
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
-      Sanbase.Alert.Scheduler.run_alert(MetricTriggerSettings)
+      Scheduler.run_alert(MetricTriggerSettings)
 
       activity = HistoricalActivity |> Sanbase.Repo.all() |> List.first()
 
@@ -159,21 +159,18 @@ defmodule Sanbase.Alert.SchedulerTest do
       project: project
     } = context
 
-    Sanbase.Mock.prepare_mock(
-      Sanbase.Clickhouse.MetricAdapter,
+    MetricAdapter
+    |> Sanbase.Mock.prepare_mock(
       :aggregated_timeseries_data,
       mock_fun
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
-      Sanbase.Alert.Scheduler.run_alert(MetricTriggerSettings)
+      Scheduler.run_alert(MetricTriggerSettings)
 
       Process.sleep(100)
 
-      Sanbase.Timeline.TimelineEvent |> Sanbase.Repo.all()
-
-      [_create_trigger_event, fired_trigger_event] =
-        Sanbase.Timeline.TimelineEvent
-        |> Sanbase.Repo.all()
+      Sanbase.Repo.all(TimelineEvent)
+      [_create_trigger_event, fired_trigger_event] = Sanbase.Repo.all(TimelineEvent)
 
       assert fired_trigger_event.id != nil
       assert fired_trigger_event.event_type == "trigger_fired"
@@ -216,15 +213,15 @@ defmodule Sanbase.Alert.SchedulerTest do
         settings: trigger_settings
       })
 
-    Sanbase.Mock.prepare_mock(
-      Sanbase.Clickhouse.MetricAdapter,
+    MetricAdapter
+    |> Sanbase.Mock.prepare_mock(
       :aggregated_timeseries_data,
       mock_fun
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
       log =
         capture_log(fn ->
-          Sanbase.Alert.Scheduler.run_alert(MetricTriggerSettings)
+          Scheduler.run_alert(MetricTriggerSettings)
         end)
 
       # 1/2 because there is one alert with telegram channel created in the setup

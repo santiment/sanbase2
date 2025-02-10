@@ -1,4 +1,5 @@
 defmodule Sanbase.Timeline.Order do
+  @moduledoc false
   import Ecto.Query
 
   alias Sanbase.EctoHelper

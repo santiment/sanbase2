@@ -1,5 +1,8 @@
 defmodule Sanbase.Queries.Authorization do
+  @moduledoc false
   alias Sanbase.Accounts.User
+  alias Sanbase.ClickhouseRepo.BusinessProUser
+  alias Sanbase.ClickhouseRepo.SanbaseMaxUser
 
   @doc ~s"""
   Check if the user has credits left to run a computation.
@@ -30,19 +33,19 @@ defmodule Sanbase.Queries.Authorization do
         Sanbase.ClickhouseRepo.SanbaseProUser
 
       {"SANBASE", "PRO_PLUS"} ->
-        Sanbase.ClickhouseRepo.SanbaseMaxUser
+        SanbaseMaxUser
 
       {"SANBASE", "MAX"} ->
-        Sanbase.ClickhouseRepo.SanbaseMaxUser
+        SanbaseMaxUser
 
       {"SANAPI", "BASIC"} ->
-        Sanbase.ClickhouseRepo.SanbaseMaxUser
+        SanbaseMaxUser
 
       {"SANAPI", "PRO"} ->
-        Sanbase.ClickhouseRepo.BusinessProUser
+        BusinessProUser
 
       {"SANAPI", "BUSINESS_PRO"} ->
-        Sanbase.ClickhouseRepo.BusinessProUser
+        BusinessProUser
 
       {"SANAPI", "BUSINESS_MAX"} ->
         Sanbase.ClickhouseRepo.BusinessMaxUser
@@ -126,7 +129,8 @@ defmodule Sanbase.Queries.Authorization do
   # Private functions
 
   def fetch_base_plan_for_custom(custom_plan) do
-    Sanbase.Billing.Plan.CustomPlan.Loader.get_data(custom_plan, "SANAPI")
+    custom_plan
+    |> Sanbase.Billing.Plan.CustomPlan.Loader.get_data("SANAPI")
     |> case do
       {:error, _} ->
         "FREE"
@@ -153,8 +157,7 @@ defmodule Sanbase.Queries.Authorization do
 
       %{queries_executed_minute: count}
       when count >= query_executions_limit.minute ->
-        {:error,
-         "The user with id #{user_id} has executed more queries than allowed in a minute."}
+        {:error, "The user with id #{user_id} has executed more queries than allowed in a minute."}
 
       %{queries_executed_hour: count}
       when count >= query_executions_limit.hour ->

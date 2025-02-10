@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddPostCommentsMapping do
+  @moduledoc false
   use Ecto.Migration
 
   @table :post_comments_mapping

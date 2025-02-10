@@ -1,13 +1,14 @@
 defmodule Sanbase.Repo.Migrations.FillTagsFromProjects do
+  @moduledoc false
   use Ecto.Migration
 
   import Ecto.Query
 
-  @crypto_market_tag "Crypto Market"
-
-  alias Sanbase.Repo
-  alias Sanbase.Project
   alias Sanbase.Insight.Tag
+  alias Sanbase.Project
+  alias Sanbase.Repo
+
+  @crypto_market_tag "Crypto Market"
 
   def up do
     Repo.insert!(%Tag{name: @crypto_market_tag})

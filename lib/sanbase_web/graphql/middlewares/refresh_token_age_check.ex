@@ -25,22 +25,18 @@ defmodule SanbaseWeb.Graphql.Middlewares.RefreshTokenAgeCheck do
   only after the user authenticates.
   """
 
-  def call(
-        %Resolution{
-          context: %{jwt_tokens: %{refresh_token: refresh_token}}
-        } = resolution,
-        opts
-      ) do
+  def call(%Resolution{context: %{jwt_tokens: %{refresh_token: refresh_token}}} = resolution, opts) do
     age_less_than = Keyword.fetch!(opts, :less_than)
 
     case SanbaseWeb.Guardian.decode_and_verify(refresh_token) do
       {:ok, %{"iat" => issued_at_unix}} ->
-        seconds = age_less_than |> Sanbase.DateTimeUtils.str_to_sec()
-        unix_now = DateTime.utc_now() |> DateTime.to_unix()
+        seconds = Sanbase.DateTimeUtils.str_to_sec(age_less_than)
+        unix_now = DateTime.to_unix(DateTime.utc_now())
 
-        case unix_now - issued_at_unix < seconds do
-          true -> resolution
-          false -> Resolution.put_result(resolution, {:error, error_msg(age_less_than)})
+        if unix_now - issued_at_unix < seconds do
+          resolution
+        else
+          Resolution.put_result(resolution, {:error, error_msg(age_less_than)})
         end
 
       _ ->

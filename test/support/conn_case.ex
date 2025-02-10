@@ -19,9 +19,10 @@ defmodule SanbaseWeb.ConnCase do
     quote do
       use SanbaseWeb, :verified_routes
 
+      import Phoenix.ConnTest
+
       # Import conveniences for testing with connections
       import Plug.Conn
-      import Phoenix.ConnTest
       import SanbaseWeb.Router.Helpers
 
       # The default endpoint for testing

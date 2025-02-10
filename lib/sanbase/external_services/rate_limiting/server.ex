@@ -1,4 +1,5 @@
 defmodule Sanbase.ExternalServices.RateLimiting.Server do
+  @moduledoc false
   @module Application.compile_env(:sanbase, [__MODULE__, :implementation_module])
 
   defdelegate child_spec(name, options), to: @module

@@ -18,7 +18,8 @@ defmodule Sanbase.DashboardsWidgetsApiTest do
 
       # The dashboard mutation can run any mutation that returns a dashboard as a result
       result =
-        execute_dashboard_text_widget_mutation(context.conn, :add_dashboard_text_widget, %{
+        context.conn
+        |> execute_dashboard_text_widget_mutation(:add_dashboard_text_widget, %{
           dashboard_id: dashboard_id,
           name: "My First Text Widget",
           description: "desc",
@@ -61,7 +62,8 @@ defmodule Sanbase.DashboardsWidgetsApiTest do
 
       # The dashboard mutation can run any mutation that returns a dashboard as a result
       result =
-        execute_dashboard_text_widget_mutation(context.conn, :update_dashboard_text_widget, %{
+        context.conn
+        |> execute_dashboard_text_widget_mutation(:update_dashboard_text_widget, %{
           dashboard_id: dashboard_id,
           text_widget_id: text_widget_id,
           name: "Updated name",
@@ -109,7 +111,8 @@ defmodule Sanbase.DashboardsWidgetsApiTest do
         })
 
       result =
-        execute_dashboard_text_widget_mutation(context.conn, :delete_dashboard_text_widget, %{
+        context.conn
+        |> execute_dashboard_text_widget_mutation(:delete_dashboard_text_widget, %{
           dashboard_id: dashboard_id,
           text_widget_id: text_widget_id
         })
@@ -135,7 +138,7 @@ defmodule Sanbase.DashboardsWidgetsApiTest do
     end
 
     defp execute_dashboard_text_widget_mutation(conn, mutation, args) do
-      mutation_name = mutation |> Inflex.camelize(:lower)
+      mutation_name = Inflex.camelize(mutation, :lower)
 
       mutation = """
       mutation {
@@ -171,7 +174,8 @@ defmodule Sanbase.DashboardsWidgetsApiTest do
 
       # The dashboard mutation can run any mutation that returns a dashboard as a result
       result =
-        execute_dashboard_image_widget_mutation(context.conn, :add_dashboard_image_widget, %{
+        context.conn
+        |> execute_dashboard_image_widget_mutation(:add_dashboard_image_widget, %{
           dashboard_id: dashboard_id,
           url: "https://example.com/image.png",
           alt: "some image"
@@ -211,7 +215,8 @@ defmodule Sanbase.DashboardsWidgetsApiTest do
 
       # The dashboard mutation can run any mutation that returns a dashboard as a result
       result =
-        execute_dashboard_image_widget_mutation(context.conn, :update_dashboard_image_widget, %{
+        context.conn
+        |> execute_dashboard_image_widget_mutation(:update_dashboard_image_widget, %{
           dashboard_id: dashboard_id,
           image_widget_id: image_widget_id,
           alt: "Updated alt text"
@@ -255,7 +260,8 @@ defmodule Sanbase.DashboardsWidgetsApiTest do
         })
 
       result =
-        execute_dashboard_image_widget_mutation(context.conn, :delete_dashboard_image_widget, %{
+        context.conn
+        |> execute_dashboard_image_widget_mutation(:delete_dashboard_image_widget, %{
           dashboard_id: dashboard_id,
           image_widget_id: image_widget_id
         })
@@ -280,7 +286,7 @@ defmodule Sanbase.DashboardsWidgetsApiTest do
     end
 
     defp execute_dashboard_image_widget_mutation(conn, mutation, args) do
-      mutation_name = mutation |> Inflex.camelize(:lower)
+      mutation_name = Inflex.camelize(mutation, :lower)
 
       mutation = """
       mutation {

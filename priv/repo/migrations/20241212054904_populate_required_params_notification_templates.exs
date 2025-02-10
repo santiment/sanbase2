@@ -1,9 +1,11 @@
 defmodule Sanbase.Repo.Migrations.PopulateRequiredParamsNotificationTemplates do
+  @moduledoc false
   use Ecto.Migration
-  alias Sanbase.Notifications.NotificationTemplate
-  alias Sanbase.Repo
 
   import Ecto.Query
+
+  alias Sanbase.Notifications.NotificationTemplate
+  alias Sanbase.Repo
 
   def up do
     setup()
@@ -27,25 +29,20 @@ defmodule Sanbase.Repo.Migrations.PopulateRequiredParamsNotificationTemplates do
     ]
 
     Enum.each(updates, fn {[action, step, channel], required_params} ->
-      from(t in NotificationTemplate,
-        where:
-          t.action == ^action and
-            t.step == ^step and
-            t.channel == ^channel
+      Repo.update_all(
+        from(t in NotificationTemplate, where: t.action == ^action and t.step == ^step and t.channel == ^channel),
+        set: [required_params: required_params]
       )
-      |> Repo.update_all(set: [required_params: required_params])
     end)
   end
 
   def down do
     setup()
 
-    from(t in NotificationTemplate,
-      where:
-        t.channel == "all" and
-          t.action in ["create", "update", "delete", "alert"]
+    Repo.update_all(
+      from(t in NotificationTemplate, where: t.channel == "all" and t.action in ["create", "update", "delete", "alert"]),
+      set: [required_params: nil]
     )
-    |> Repo.update_all(set: [required_params: nil])
   end
 
   defp setup do

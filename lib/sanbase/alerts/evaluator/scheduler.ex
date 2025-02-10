@@ -11,9 +11,10 @@ defmodule Sanbase.Alert.Scheduler do
   """
 
   alias Sanbase.Accounts.User
-  alias Sanbase.Alert.{UserTrigger, HistoricalActivity}
-  alias Sanbase.Alert.Evaluator
   alias Sanbase.Alert
+  alias Sanbase.Alert.Evaluator
+  alias Sanbase.Alert.HistoricalActivity
+  alias Sanbase.Alert.UserTrigger
 
   require Logger
 
@@ -33,14 +34,10 @@ defmodule Sanbase.Alert.Scheduler do
   """
 
   def run_alert(module) do
-    case module in Alert.List.get() do
-      true ->
-        run(module.type())
-
-      false ->
-        raise(
-          "Module #{inspect(module)} is not in the modules list defined in Sanbase.Alert.List"
-        )
+    if module in Alert.List.get() do
+      run(module.type())
+    else
+      raise("Module #{inspect(module)} is not in the modules list defined in Sanbase.Alert.List")
     end
   end
 
@@ -64,7 +61,8 @@ defmodule Sanbase.Alert.Scheduler do
     # the batches creation becomes more complicated - all the alerts of a user
     # must end up in a single batch so no race conditions updating the DB can occur.
     batches =
-      split_into_batches(alerts)
+      alerts
+      |> split_into_batches()
       |> batches_to_maps()
 
     alerts_count = length(alerts)
@@ -95,14 +93,13 @@ defmodule Sanbase.Alert.Scheduler do
     # through Enum.reject(&Enum.empty?)
     init_state = [MapSet.new()]
 
-    Enum.group_by(alerts, & &1.user_id)
+    alerts
+    |> Enum.group_by(& &1.user_id)
     |> Enum.reduce(init_state, fn {_user_id, list}, [mapset | rest] = acc ->
-      case MapSet.size(mapset) < @batch_size do
-        true ->
-          [MapSet.union(MapSet.new(list), mapset) | rest]
-
-        false ->
-          [MapSet.new(list) | acc]
+      if MapSet.size(mapset) < @batch_size do
+        [MapSet.union(MapSet.new(list), mapset) | rest]
+      else
+        [MapSet.new(list) | acc]
       end
     end)
     |> Enum.reject(&Enum.empty?/1)
@@ -172,14 +169,11 @@ defmodule Sanbase.Alert.Scheduler do
       |> Evaluator.run(type)
       |> send_and_mark_as_sent(info_map)
 
-    fired_alerts =
-      updated_user_triggers
-      |> get_fired_alerts_data()
+    fired_alerts = get_fired_alerts_data(updated_user_triggers)
 
-    fired_alerts |> persist_historical_activity()
-    fired_alerts |> persist_timeline_events()
-
-    updated_user_triggers |> deactivate_non_repeating()
+    persist_historical_activity(fired_alerts)
+    persist_timeline_events(fired_alerts)
+    deactivate_non_repeating(updated_user_triggers)
 
     sent_list_results
     |> List.flatten()
@@ -306,8 +300,7 @@ defmodule Sanbase.Alert.Scheduler do
   end
 
   def send_triggers_sequentially(triggers) do
-    triggers
-    |> Enum.map(fn %UserTrigger{} = user_trigger ->
+    Enum.map(triggers, fn %UserTrigger{} = user_trigger ->
       case Alert.send(user_trigger) do
         [] ->
           {user_trigger, []}
@@ -359,15 +352,12 @@ defmodule Sanbase.Alert.Scheduler do
     )
   end
 
-  defp handle_send_results_list(
-         %{trigger: %{last_triggered: last_triggered}},
-         send_results_list
-       ) do
+  defp handle_send_results_list(%{trigger: %{last_triggered: last_triggered}}, send_results_list) do
     # Round the datetimes 30 seconds because the `last_triggered` is used as
     # part of a cache key. If `now` is left as is the last triggered time of
     # all alerts will be different, sometimes only by a second
     now =
-      Timex.now()
+      DateTime.utc_now()
       |> Sanbase.DateTimeUtils.round_datetime(second: 30)
       |> Timex.set(microsecond: {0, 0})
 
@@ -379,13 +369,12 @@ defmodule Sanbase.Alert.Scheduler do
     # - webhook failed to be sent;
     # - daily alerts limit is reached;
     {last_triggered, total_triggered, total_failed} =
-      send_results_list
-      |> Enum.reduce({last_triggered, _total = 0, _failed = 0}, fn
-        {identifier_or_list, _result = :ok}, {acc, total, failed} ->
+      Enum.reduce(send_results_list, {last_triggered, _total = 0, _failed = 0}, fn
+        {identifier_or_list, :ok = _result}, {acc, total, failed} ->
           # Example: {["elem1", "elem2"], :ok} or {"0x4efb548a2cb8f0af7c591cef21053f6875b5d38f", :ok}
           # This case happens when multiple identifiers (for example emerging words)
           # are handled in one notification.
-          list = identifier_or_list |> List.wrap()
+          list = List.wrap(identifier_or_list)
           acc = Enum.reduce(list, acc, &Map.put(&2, &1, now))
 
           {acc, total + 1, failed}
@@ -414,14 +403,13 @@ defmodule Sanbase.Alert.Scheduler do
       } = ut
       when is_non_empty_map(last_triggered) ->
         identifier_kv_map =
-          settings.template_kv
-          |> Enum.into(%{}, fn {identifier, {_, kv}} -> {identifier, kv} end)
+          Map.new(settings.template_kv, fn {identifier, {_, kv}} -> {identifier, kv} end)
 
         %{
           user_trigger_id: ut.id,
           user_id: ut.user_id,
           payload: settings.payload,
-          triggered_at: max_last_triggered(last_triggered) |> DateTime.to_naive(),
+          triggered_at: last_triggered |> max_last_triggered() |> DateTime.to_naive(),
           data: %{user_trigger_data: identifier_kv_map}
         }
 
@@ -441,8 +429,7 @@ defmodule Sanbase.Alert.Scheduler do
   end
 
   defp persist_timeline_events(fired_triggers) do
-    fired_triggers
-    |> Sanbase.Timeline.TimelineEvent.create_trigger_fired_events()
+    Sanbase.Timeline.TimelineEvent.create_trigger_fired_events(fired_triggers)
   end
 
   defp log_sent_messages_stats([], type, info_map) do
@@ -452,7 +439,7 @@ defmodule Sanbase.Alert.Scheduler do
   defp log_sent_messages_stats(list, type, info_map) do
     list_length = length(list)
 
-    successful_messages_count = list |> Enum.count(fn {_elem, status} -> status == :ok end)
+    successful_messages_count = Enum.count(list, fn {_elem, status} -> status == :ok end)
 
     errors = for {_, {:error, error}} <- list, do: error
 
@@ -464,9 +451,7 @@ defmodule Sanbase.Alert.Scheduler do
     end
 
     Enum.each(errors, fn error ->
-      Logger.warning(
-        "[#{info_map.run_uuid}] Cannot send a #{type} alert. Reason: #{inspect(error)}"
-      )
+      Logger.warning("[#{info_map.run_uuid}] Cannot send a #{type} alert. Reason: #{inspect(error)}")
     end)
 
     errors_to_count_map =
@@ -491,8 +476,7 @@ defmodule Sanbase.Alert.Scheduler do
     """)
   end
 
-  defp max_last_triggered(last_triggered)
-       when is_non_empty_map(last_triggered) do
+  defp max_last_triggered(last_triggered) when is_non_empty_map(last_triggered) do
     last_triggered
     |> Map.values()
     |> Enum.map(fn

@@ -1,23 +1,21 @@
 defmodule SanbaseWeb.Graphql.Resolvers.UserSettingsResolver do
-  require Logger
-
+  @moduledoc false
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1, changeset_errors_string: 1]
 
-  alias Sanbase.Accounts.{User, UserSettings}
+  alias Sanbase.Accounts.User
+  alias Sanbase.Accounts.UserSettings
+
+  require Logger
 
   def settings(%User{} = user, _args, _resolution) do
     {:ok, UserSettings.settings_for(user)}
   end
 
-  def alerts_per_dy_limit_left(_settings, _args, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
+  def alerts_per_dy_limit_left(_settings, _args, %{context: %{auth: %{current_user: current_user}}}) do
     UserSettings.max_alerts_to_send(current_user)
   end
 
-  def update_user_settings(_root, %{settings: settings}, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
+  def update_user_settings(_root, %{settings: settings}, %{context: %{auth: %{current_user: current_user}}}) do
     settings = maybe_update_settings_args(settings)
 
     case UserSettings.update_settings(current_user, settings) do
@@ -32,12 +30,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserSettingsResolver do
     end
   end
 
-  def settings_toggle_channel(_root, args, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
+  def settings_toggle_channel(_root, args, %{context: %{auth: %{current_user: current_user}}}) do
     args = maybe_update_settings_args(args)
 
-    UserSettings.toggle_notification_channel(current_user, args)
+    current_user
+    |> UserSettings.toggle_notification_channel(args)
     |> handle_toggle_result()
   end
 
@@ -57,9 +54,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserSettingsResolver do
   end
 
   defp maybe_update_field(%{} = settings, old_key, new_key) do
-    case Map.has_key?(settings, old_key) do
-      true -> Map.put(settings, new_key, settings[old_key])
-      false -> settings
+    if Map.has_key?(settings, old_key) do
+      Map.put(settings, new_key, settings[old_key])
+    else
+      settings
     end
   end
 

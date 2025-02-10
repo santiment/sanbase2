@@ -18,32 +18,27 @@ defmodule Sanbase.Questionnaire.Validation do
   """
   @spec validate_question_answers_options(Atom.t(), Map.t()) ::
           true | {:error, String.t()}
-  def validate_question_answers_options(type, answers_map)
-      when type in [:single_select, :multiple_select] do
+  def validate_question_answers_options(type, answers_map) when type in [:single_select, :multiple_select] do
     with true <- answers_are_map?(answers_map),
          true <- has_more_than_one_answer?(answers_map),
          true <- all_keys_are_integers?(answers_map),
          true <- all_keys_are_sequential?(answers_map),
-         true <- all_values_are_not_empty?(answers_map),
-         true <- all_values_are_different?(answers_map) do
-      true
+         true <- all_values_are_not_empty?(answers_map) do
+      all_values_are_different?(answers_map)
     end
   end
 
-  def validate_question_answers_options(type, _answers_map)
-      when type in [:open_text, :open_number] do
+  def validate_question_answers_options(type, _answers_map) when type in [:open_text, :open_number] do
     true
   end
 
   def validate_question_answers_options(:boolean, answers_map) do
     # Enforce that the boolean question answers option always have the same format
     # This will allow for easy
-    case %{"1" => "true", "2" => "false"} == answers_map do
-      true ->
-        true
-
-      false ->
-        {:error, ~s|The boolean answers option must be a map: {"1": "true", "2" => "false"|}
+    if %{"1" => "true", "2" => "false"} == answers_map do
+      true
+    else
+      {:error, ~s|The boolean answers option must be a map: {"1": "true", "2" => "false"|}
     end
   end
 
@@ -53,17 +48,14 @@ defmodule Sanbase.Questionnaire.Validation do
   @spec validate_question_text(Atom.t(), String.t()) ::
           true | {:error, String.t()}
   def validate_question_text(_type, question) do
-    case is_binary(question) and String.length(String.trim(question)) >= 4 do
-      true ->
-        true
-
-      false ->
-        {:error, "The question must be a string with at least 4 characters"}
+    if is_binary(question) and String.length(String.trim(question)) >= 4 do
+      true
+    else
+      {:error, "The question must be a string with at least 4 characters"}
     end
   end
 
-  def validate_user_provided_answer(answer, type)
-      when type in [:single_select, :multiple_select] do
+  def validate_user_provided_answer(answer, type) when type in [:single_select, :multiple_select] do
     cond do
       Map.has_key?(answer, "open_text_answer") and
           is_binary(answer["open_text_answer"]) ->
@@ -74,25 +66,22 @@ defmodule Sanbase.Questionnaire.Validation do
         true
 
       Map.has_key?(answer, "answer_selection") and type == :single_select ->
-        case answer["answer_selection"] |> Integer.parse() do
+        case Integer.parse(answer["answer_selection"]) do
           {_, ""} ->
             true
 
           _ ->
-            {:error,
-             "If the answer is a single selection of given options, it must be a number represented as string"}
+            {:error, "If the answer is a single selection of given options, it must be a number represented as string"}
         end
 
       Map.has_key?(answer, "answer_selection") and type == :multiple_select ->
         is_integer = fn val -> match?({_, ""}, Integer.parse(val)) end
 
-        case Enum.all?(answer["answer_selection"], is_integer) do
-          true ->
-            true
-
-          false ->
-            {:error,
-             "If the answer is a multi selection of given options, it must be a list of numbers represented as strings"}
+        if Enum.all?(answer["answer_selection"], is_integer) do
+          true
+        else
+          {:error,
+           "If the answer is a multi selection of given options, it must be a list of numbers represented as strings"}
         end
 
       true ->
@@ -105,38 +94,29 @@ defmodule Sanbase.Questionnaire.Validation do
   end
 
   def validate_user_provided_answer(answer, :open_text) do
-    case Map.has_key?(answer, "open_text_answer") and
-           is_binary(answer["open_text_answer"]) do
-      true ->
-        true
-
-      false ->
-        {:error,
-         "The 'open_text' question type answer must be a map with key 'open_text_answer' and string value."}
+    if Map.has_key?(answer, "open_text_answer") and
+         is_binary(answer["open_text_answer"]) do
+      true
+    else
+      {:error, "The 'open_text' question type answer must be a map with key 'open_text_answer' and string value."}
     end
   end
 
   def validate_user_provided_answer(answer, :open_number) do
-    case Map.has_key?(answer, "open_number_answer") and
-           is_binary(answer["open_number_answer"]) do
-      true ->
-        true
-
-      false ->
-        {:error,
-         "The 'open_number' question type answer must be a map with key 'open_number_answer' and number value."}
+    if Map.has_key?(answer, "open_number_answer") and
+         is_binary(answer["open_number_answer"]) do
+      true
+    else
+      {:error, "The 'open_number' question type answer must be a map with key 'open_number_answer' and number value."}
     end
   end
 
   def validate_user_provided_answer(answer, :boolean) do
-    case Map.has_key?(answer, "answer_selection") and
-           answer["answer_selection"] in ["1", "2"] do
-      true ->
-        true
-
-      false ->
-        {:error,
-         "The 'boolean' question type answer must be a map with key 'answer_selection' and string value."}
+    if Map.has_key?(answer, "answer_selection") and
+         answer["answer_selection"] in ["1", "2"] do
+      true
+    else
+      {:error, "The 'boolean' question type answer must be a map with key 'answer_selection' and string value."}
     end
   end
 
@@ -148,8 +128,7 @@ defmodule Sanbase.Questionnaire.Validation do
         true
 
       _ ->
-        {:error,
-         "The answers must be a map with sequential integers as keys and strings as values"}
+        {:error, "The answers must be a map with sequential integers as keys and strings as values"}
     end
   end
 
@@ -181,9 +160,10 @@ defmodule Sanbase.Questionnaire.Validation do
     keys = answers_map |> Map.keys() |> Enum.map(&String.to_integer/1)
 
     # Break if the answer options are not integers from 1 to N
-    case Enum.sort(keys) == Enum.to_list(1..length(keys)) do
-      true -> true
-      false -> {:error, "The answers keys are not numbers from 1 to N"}
+    if Enum.sort(keys) == Enum.to_list(1..length(keys)) do
+      true
+    else
+      {:error, "The answers keys are not numbers from 1 to N"}
     end
   end
 
@@ -205,9 +185,10 @@ defmodule Sanbase.Questionnaire.Validation do
   defp all_values_are_different?(answers_map) do
     values = Map.values(answers_map)
 
-    case values == Enum.uniq(values) do
-      true -> true
-      false -> {:error, "All of the question's answers must be different"}
+    if values == Enum.uniq(values) do
+      true
+    else
+      {:error, "All of the question's answers must be different"}
     end
   end
 end

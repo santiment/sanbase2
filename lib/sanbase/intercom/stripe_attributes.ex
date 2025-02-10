@@ -1,22 +1,20 @@
 defmodule Sanbase.Intercom.StripeAttributes do
-  require Logger
-
+  @moduledoc false
   import Ecto.Query
 
-  alias Sanbase.Billing.Subscription
-  alias Sanbase.Repo
-  alias Sanbase.Billing.Subscription.Timeseries
   alias Sanbase.Accounts.User
+  alias Sanbase.Billing.Subscription
+  alias Sanbase.Billing.Subscription.Timeseries
   alias Sanbase.Intercom
+  alias Sanbase.Repo
+
+  require Logger
 
   def run do
     if prod?() do
       all_stats = all_stats()
 
-      user_ids =
-        (get_distinct_user_ids_updated_in_last_5_months() ++
-           get_all_user_ids_from_stats(all_stats))
-        |> Enum.uniq()
+      user_ids = Enum.uniq(get_distinct_user_ids_updated_in_last_5_months() ++ get_all_user_ids_from_stats(all_stats))
 
       run(user_ids, all_stats)
     else
@@ -27,7 +25,8 @@ defmodule Sanbase.Intercom.StripeAttributes do
   def run(user_ids, all_stats) do
     total = length(user_ids)
 
-    Enum.with_index(user_ids)
+    user_ids
+    |> Enum.with_index()
     |> Enum.each(fn {user_id, index} ->
       try do
         stats = stats(all_stats, user_id)
@@ -69,27 +68,19 @@ defmodule Sanbase.Intercom.StripeAttributes do
 
   def stats(all_stats, user_id) do
     %{
-      "paid_active_subscription" =>
-        Enum.member?(all_stats[:users_with_paid_active_subscriptions], user_id),
-      "trialing_subscription" =>
-        Enum.member?(all_stats[:users_with_trialing_subscriptions], user_id),
+      "paid_active_subscription" => Enum.member?(all_stats[:users_with_paid_active_subscriptions], user_id),
+      "trialing_subscription" => Enum.member?(all_stats[:users_with_trialing_subscriptions], user_id),
       "renewal_upcoming_at" => Map.get(all_stats[:users_renewal_upcoming_at], user_id),
-      "subscription_set_to_cancel" =>
-        Enum.member?(all_stats[:users_subscription_set_to_cancel], user_id)
+      "subscription_set_to_cancel" => Enum.member?(all_stats[:users_subscription_set_to_cancel], user_id)
     }
   end
 
   def users_with_trialing_subscriptions do
-    from(
-      s in Subscription,
-      where: s.status == "trialing",
-      select: s.user_id
-    )
-    |> Repo.all()
+    Repo.all(from(s in Subscription, where: s.status == "trialing", select: s.user_id))
   end
 
-  def users_with_paid_active_subscriptions() do
-    stripe_customer_ids = current_active_paid_subs() |> Enum.map(& &1.customer_id)
+  def users_with_paid_active_subscriptions do
+    stripe_customer_ids = Enum.map(current_active_paid_subs(), & &1.customer_id)
 
     stripe_customer_sanbase_user_map = stripe_customer_sanbase_user_map()
 
@@ -98,8 +89,8 @@ defmodule Sanbase.Intercom.StripeAttributes do
     end)
   end
 
-  def users_renewal_upcoming_at() do
-    sub_ids = current_active_subs() |> Enum.map(& &1.id)
+  def users_renewal_upcoming_at do
+    sub_ids = Enum.map(current_active_subs(), & &1.id)
 
     from(
       s in Subscription,
@@ -107,31 +98,21 @@ defmodule Sanbase.Intercom.StripeAttributes do
       select: {s.user_id, s.current_period_end}
     )
     |> Repo.all()
-    |> Enum.map(fn {user_id, current_period_end} ->
+    |> Map.new(fn {user_id, current_period_end} ->
       {user_id, DateTime.to_unix(current_period_end)}
     end)
-    |> Enum.into(%{})
   end
 
-  def users_subscription_set_to_cancel() do
-    sub_ids = current_active_subs() |> Enum.map(& &1.id)
+  def users_subscription_set_to_cancel do
+    sub_ids = Enum.map(current_active_subs(), & &1.id)
 
-    from(
-      s in Subscription,
-      where: s.stripe_id in ^sub_ids and s.cancel_at_period_end == true,
-      select: s.user_id
+    Repo.all(
+      from(s in Subscription, where: s.stripe_id in ^sub_ids and s.cancel_at_period_end == true, select: s.user_id)
     )
-    |> Repo.all()
   end
 
-  def get_distinct_user_ids_updated_in_last_5_months() do
-    from(
-      s in Subscription,
-      where: s.updated_at >= ago(5, "month"),
-      select: s.user_id,
-      distinct: s.user_id
-    )
-    |> Repo.all()
+  def get_distinct_user_ids_updated_in_last_5_months do
+    Repo.all(from(s in Subscription, where: s.updated_at >= ago(5, "month"), select: s.user_id, distinct: s.user_id))
   end
 
   def stripe_customer_sanbase_user_map do
@@ -141,21 +122,20 @@ defmodule Sanbase.Intercom.StripeAttributes do
       select: {u.stripe_customer_id, u.id}
     )
     |> Repo.all()
-    |> Enum.into(%{})
+    |> Map.new()
   end
 
-  defp current_active_subs() do
-    current_subs()
-    |> Timeseries.active_subscriptions()
+  defp current_active_subs do
+    Timeseries.active_subscriptions(current_subs())
   end
 
-  defp current_active_paid_subs() do
+  defp current_active_paid_subs do
     current_subs()
     |> Timeseries.active_subscriptions()
     |> Timeseries.paid()
   end
 
-  defp current_subs() do
+  defp current_subs do
     query = from(s in Timeseries, order_by: [desc: s.id], limit: 1)
 
     case Repo.one(query) do
@@ -170,7 +150,8 @@ defmodule Sanbase.Intercom.StripeAttributes do
   def get_all_user_ids_from_stats(all_stats) do
     keys = Map.keys(all_stats)
 
-    Enum.reduce(keys, [], fn key, acc ->
+    keys
+    |> Enum.reduce([], fn key, acc ->
       case Map.get(all_stats, key) do
         %{} ->
           Enum.concat(acc, Map.keys(Map.get(all_stats, key)))
@@ -183,14 +164,13 @@ defmodule Sanbase.Intercom.StripeAttributes do
   end
 
   defp transform_maps_to_atom_keys(subscriptions) do
-    subscriptions
     # Transform the keys of each map from the list from string to atom.
-    |> Enum.map(fn map_with_string_keys ->
+    Enum.map(subscriptions, fn map_with_string_keys ->
       Map.new(map_with_string_keys, fn {key, value} ->
         {String.to_existing_atom(key), value}
       end)
     end)
   end
 
-  defp prod?(), do: Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) == "prod"
+  defp prod?, do: Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) == "prod"
 end

@@ -108,8 +108,8 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
         args = %{
           word: "merry",
           source: "TELEGRAM",
-          from: "#{Timex.shift(Timex.now(), days: -20)}",
-          to: "#{Timex.now()}"
+          from: "#{Timex.shift(DateTime.utc_now(), days: -20)}",
+          to: "#{DateTime.utc_now()}"
         }
 
         query = word_trend_score_query(args)

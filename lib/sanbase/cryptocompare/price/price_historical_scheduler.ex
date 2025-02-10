@@ -15,8 +15,9 @@ defmodule Sanbase.Cryptocompare.Price.HistoricalScheduler do
 
   import Sanbase.DateTimeUtils, only: [generate_dates_inclusive: 2]
 
-  require Logger
   alias Sanbase.Utils.Config
+
+  require Logger
 
   @oban_conf_name :oban_scrapers
   @unique_peroid 60 * 86_400
@@ -26,10 +27,10 @@ defmodule Sanbase.Cryptocompare.Price.HistoricalScheduler do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
-  def queue(), do: @oban_queue
-  def resume(), do: Oban.resume_queue(@oban_conf_name, queue: @oban_queue)
-  def pause(), do: Oban.pause_queue(@oban_conf_name, queue: @oban_queue)
-  def conf_name(), do: @oban_conf_name
+  def queue, do: @oban_queue
+  def resume, do: Oban.resume_queue(@oban_conf_name, queue: @oban_queue)
+  def pause, do: Oban.pause_queue(@oban_conf_name, queue: @oban_queue)
+  def conf_name, do: @oban_conf_name
 
   def init(_opts) do
     # In order to be able to stop the historical scraper via env variables
@@ -42,11 +43,11 @@ defmodule Sanbase.Cryptocompare.Price.HistoricalScheduler do
     {:ok, %{}}
   end
 
-  def enabled?(), do: Config.module_get(__MODULE__, :enabled?) |> String.to_existing_atom()
+  def enabled?, do: __MODULE__ |> Config.module_get(:enabled?) |> String.to_existing_atom()
 
   def add_jobs(base_asset, quote_asset, from, to) do
     start_time = DateTime.utc_now()
-    recorded_dates = get_pair_dates(base_asset, quote_asset, from, to) |> MapSet.new()
+    recorded_dates = base_asset |> get_pair_dates(quote_asset, from, to) |> MapSet.new()
     dates = generate_dates_inclusive(from, to)
     dates_to_insert = Enum.reject(dates, &(&1 in recorded_dates))
 
@@ -97,8 +98,7 @@ defmodule Sanbase.Cryptocompare.Price.HistoricalScheduler do
 
   defp do_add_jobs_no_uniqueness_check(base_asset, quote_asset, dates) do
     data =
-      dates
-      |> Enum.map(fn date ->
+      Enum.map(dates, fn date ->
         Sanbase.Cryptocompare.Price.HistoricalWorker.new(%{
           base_asset: base_asset,
           quote_asset: quote_asset,

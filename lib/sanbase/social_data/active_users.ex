@@ -1,10 +1,12 @@
 defmodule Sanbase.SocialData.ActiveUsers do
+  @moduledoc false
   import Sanbase.Utils.ErrorHandling
 
-  require Logger
   alias Sanbase.Utils.Config
 
+  require Logger
   require Mockery.Macro
+
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 
   @recv_timeout 25_000
@@ -24,8 +26,7 @@ defmodule Sanbase.SocialData.ActiveUsers do
     end
   end
 
-  def social_active_users(%{source: source}, _from, _to, _interval)
-      when source not in ["telegram", "twitter_crypto"] do
+  def social_active_users(%{source: source}, _from, _to, _interval) when source not in ["telegram", "twitter_crypto"] do
     error_result("Invalid source argument. Source should be one of telegram or twitter_crypto")
   end
 
@@ -51,7 +52,8 @@ defmodule Sanbase.SocialData.ActiveUsers do
 
   defp active_users_result(%{"data" => map}) do
     map =
-      Enum.map(map, fn {datetime, value} ->
+      map
+      |> Enum.map(fn {datetime, value} ->
         %{
           datetime: Sanbase.DateTimeUtils.from_iso8601!(datetime),
           value: value
@@ -62,7 +64,7 @@ defmodule Sanbase.SocialData.ActiveUsers do
     {:ok, map}
   end
 
-  defp metrics_hub_url() do
+  defp metrics_hub_url do
     Config.module_get(Sanbase.SocialData, :metricshub_url)
   end
 end

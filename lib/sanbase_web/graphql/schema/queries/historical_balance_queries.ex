@@ -1,11 +1,12 @@
 defmodule SanbaseWeb.Graphql.Schema.HistoricalBalanceQueries do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
 
-  alias SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver
   alias SanbaseWeb.Graphql.Complexity
   alias SanbaseWeb.Graphql.Middlewares.AccessControl
+  alias SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver
 
   object :historical_balance_queries do
     @desc ~s"""

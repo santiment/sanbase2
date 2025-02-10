@@ -5,19 +5,23 @@ defmodule Sanbase.Timeline.TimelineEvent do
 
   use Ecto.Schema
 
-  import Ecto.Query
   import Ecto.Changeset
+  import Ecto.Query
   import Sanbase.Utils.Transform, only: [to_bang: 1]
 
-  alias Sanbase.Repo
-  alias Sanbase.Accounts.User
-  alias Sanbase.Insight.Post
-  alias Sanbase.UserList
-  alias Sanbase.Alert.UserTrigger
-  alias Sanbase.Vote
-  alias Sanbase.Timeline.{Query, Filter, Order, Cursor, Type, PostProcess}
-
   alias __MODULE__
+  alias Sanbase.Accounts.User
+  alias Sanbase.Alert.UserTrigger
+  alias Sanbase.Insight.Post
+  alias Sanbase.Repo
+  alias Sanbase.Timeline.Cursor
+  alias Sanbase.Timeline.Filter
+  alias Sanbase.Timeline.Order
+  alias Sanbase.Timeline.PostProcess
+  alias Sanbase.Timeline.Query
+  alias Sanbase.Timeline.Type
+  alias Sanbase.UserList
+  alias Sanbase.Vote
 
   @doc """
   Currently supported events are:
@@ -55,10 +59,10 @@ defmodule Sanbase.Timeline.TimelineEvent do
     timestamps()
   end
 
-  def publish_insight_type(), do: @publish_insight_type
-  def update_watchlist_type(), do: @update_watchlist_type
-  def create_public_trigger_type(), do: @create_public_trigger_type
-  def trigger_fired(), do: @trigger_fired
+  def publish_insight_type, do: @publish_insight_type
+  def update_watchlist_type, do: @update_watchlist_type
+  def create_public_trigger_type, do: @create_public_trigger_type
+  def trigger_fired, do: @trigger_fired
 
   def create_changeset(%__MODULE__{} = timeline_events, attrs \\ %{}) do
     attrs = Sanbase.DateTimeUtils.truncate_datetimes(attrs)
@@ -79,7 +83,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
 
   @by_id_preloads [:user_trigger, [post: :tags], :user_list, :user, :votes]
 
-  def by_id!(id, opts), do: by_id(id, opts) |> to_bang()
+  def by_id!(id, opts), do: id |> by_id(opts) |> to_bang()
 
   def by_id(id, _opts) when is_integer(id) do
     from(te in TimelineEvent,
@@ -93,16 +97,17 @@ defmodule Sanbase.Timeline.TimelineEvent do
     end
   end
 
-  def by_ids!(ids, opts) when is_list(ids), do: by_ids(ids, opts) |> to_bang()
+  def by_ids!(ids, opts) when is_list(ids), do: ids |> by_ids(opts) |> to_bang()
 
   def by_ids(ids, _opts) when is_list(ids) do
     result =
-      from(te in TimelineEvent,
-        where: te.id in ^ids,
-        preload: ^@by_id_preloads,
-        order_by: fragment("array_position(?, ?::int)", ^ids, te.id)
+      Repo.all(
+        from(te in TimelineEvent,
+          where: te.id in ^ids,
+          preload: ^@by_id_preloads,
+          order_by: fragment("array_position(?, ?::int)", ^ids, te.id)
+        )
       )
-      |> Repo.all()
 
     {:ok, result}
   end
@@ -154,15 +159,12 @@ defmodule Sanbase.Timeline.TimelineEvent do
   """
   @spec events(%User{}, Type.timeline_event_args()) ::
           {:ok, Type.events_with_cursor()} | {:error, String.t()}
-  def events(
-        %User{id: user_id},
-        %{
-          order_by: order_by,
-          filter_by: filter_by,
-          limit: limit,
-          cursor: %{type: cursor_type, datetime: cursor_datetime}
-        }
-      ) do
+  def events(%User{id: user_id}, %{
+        order_by: order_by,
+        filter_by: filter_by,
+        limit: limit,
+        cursor: %{type: cursor_type, datetime: cursor_datetime}
+      }) do
     TimelineEvent
     |> Cursor.filter_by_cursor(cursor_type, cursor_datetime)
     |> Filter.filter_by_query(filter_by, user_id)
@@ -177,11 +179,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
     |> Cursor.wrap_events_with_cursor()
   end
 
-  def events(%User{id: user_id}, %{
-        order_by: order_by,
-        filter_by: filter_by,
-        limit: limit
-      }) do
+  def events(%User{id: user_id}, %{order_by: order_by, filter_by: filter_by, limit: limit}) do
     TimelineEvent
     |> Cursor.filter_by_min_dt()
     |> Filter.filter_by_query(filter_by, user_id)
@@ -211,11 +209,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
           %Post{} | %UserList{} | %UserTrigger{},
           Ecto.Changeset.t()
         ) :: Task.t()
-  def maybe_create_event_async(
-        event_type,
-        resource,
-        %Ecto.Changeset{} = changeset
-      ) do
+  def maybe_create_event_async(event_type, resource, %Ecto.Changeset{} = changeset) do
     Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
       maybe_create_event(resource, changeset.changes, %{
         event_type: event_type,

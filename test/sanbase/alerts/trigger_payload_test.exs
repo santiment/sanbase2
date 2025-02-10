@@ -3,8 +3,10 @@ defmodule Sanbase.Alert.TriggerPayloadTest do
 
   import Sanbase.Factory
 
-  alias Sanbase.Alert.{UserTrigger, Scheduler}
+  alias Sanbase.Accounts.UserSettings
+  alias Sanbase.Alert.Scheduler
   alias Sanbase.Alert.Trigger.MetricTriggerSettings
+  alias Sanbase.Alert.UserTrigger
 
   setup do
     Sanbase.Cache.clear_all(:alerts_evaluator_cache)
@@ -15,8 +17,8 @@ defmodule Sanbase.Alert.TriggerPayloadTest do
         user_settings: %{settings: %{alert_notify_telegram: true}}
       )
 
-    Sanbase.Accounts.UserSettings.update_settings(user, %{alert_notify_email: true})
-    Sanbase.Accounts.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
+    UserSettings.update_settings(user, %{alert_notify_email: true})
+    UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
     project = insert(:random_project)
 
@@ -31,13 +33,13 @@ defmodule Sanbase.Alert.TriggerPayloadTest do
     self_pid = self()
 
     mock_fun =
-      [
-        fn -> {:ok, %{project.slug => 100}} end,
-        fn -> {:ok, %{project.slug => 10_456}} end
-      ]
-      |> Sanbase.Mock.wrap_consecutives(arity: 4)
+      Sanbase.Mock.wrap_consecutives(
+        [fn -> {:ok, %{project.slug => 100}} end, fn -> {:ok, %{project.slug => 10_456}} end],
+        arity: 4
+      )
 
-    Sanbase.Mock.prepare_mock(Sanbase.Metric, :aggregated_timeseries_data, mock_fun)
+    Sanbase.Metric
+    |> Sanbase.Mock.prepare_mock(:aggregated_timeseries_data, mock_fun)
     |> Sanbase.Mock.prepare_mock(Sanbase.Telegram, :send_message, fn _user, text ->
       send(self_pid, {:telegram_to_self, text})
       {:ok, "OK"}
@@ -58,13 +60,13 @@ defmodule Sanbase.Alert.TriggerPayloadTest do
     self_pid = self()
 
     mock_fun =
-      [
-        fn -> {:ok, %{project.slug => 10}} end,
-        fn -> {:ok, %{project.slug => 9_231_100_456}} end
-      ]
-      |> Sanbase.Mock.wrap_consecutives(arity: 4)
+      Sanbase.Mock.wrap_consecutives(
+        [fn -> {:ok, %{project.slug => 10}} end, fn -> {:ok, %{project.slug => 9_231_100_456}} end],
+        arity: 4
+      )
 
-    Sanbase.Mock.prepare_mock(Sanbase.Metric, :aggregated_timeseries_data, mock_fun)
+    Sanbase.Metric
+    |> Sanbase.Mock.prepare_mock(:aggregated_timeseries_data, mock_fun)
     |> Sanbase.Mock.prepare_mock(Sanbase.Telegram, :send_message, fn _user, text ->
       send(self_pid, {:telegram_to_self, text})
       {:ok, "OK"}
@@ -85,13 +87,12 @@ defmodule Sanbase.Alert.TriggerPayloadTest do
     self_pid = self()
 
     mock_fun =
-      [
-        fn -> {:ok, %{project.slug => 10}} end,
-        fn -> {:ok, %{project.slug => 5}} end
-      ]
-      |> Sanbase.Mock.wrap_consecutives(arity: 4)
+      Sanbase.Mock.wrap_consecutives([fn -> {:ok, %{project.slug => 10}} end, fn -> {:ok, %{project.slug => 5}} end],
+        arity: 4
+      )
 
-    Sanbase.Mock.prepare_mock(Sanbase.Metric, :aggregated_timeseries_data, mock_fun)
+    Sanbase.Metric
+    |> Sanbase.Mock.prepare_mock(:aggregated_timeseries_data, mock_fun)
     |> Sanbase.Mock.prepare_mock(Sanbase.Telegram, :send_message, fn _user, text ->
       send(self_pid, {:telegram_to_self, text})
       {:ok, "OK"}
@@ -112,13 +113,12 @@ defmodule Sanbase.Alert.TriggerPayloadTest do
     self_pid = self()
 
     mock_fun =
-      [
-        fn -> {:ok, %{project.slug => 10}} end,
-        fn -> {:ok, %{project.slug => 5}} end
-      ]
-      |> Sanbase.Mock.wrap_consecutives(arity: 4)
+      Sanbase.Mock.wrap_consecutives([fn -> {:ok, %{project.slug => 10}} end, fn -> {:ok, %{project.slug => 5}} end],
+        arity: 4
+      )
 
-    Sanbase.Mock.prepare_mock(Sanbase.Metric, :aggregated_timeseries_data, mock_fun)
+    Sanbase.Metric
+    |> Sanbase.Mock.prepare_mock(:aggregated_timeseries_data, mock_fun)
     |> Sanbase.Mock.prepare_mock(Sanbase.Telegram, :send_message, fn _user, text ->
       send(self_pid, {:telegram_to_self, text})
       {:ok, "OK"}
@@ -139,18 +139,15 @@ defmodule Sanbase.Alert.TriggerPayloadTest do
     %{user: user, project: project} = context
 
     {:ok, trigger} =
-      create_trigger(user, project.slug,
-        channel: [%{"webhook" => "https://example.com/webhook_url"}]
-      )
+      create_trigger(user, project.slug, channel: [%{"webhook" => "https://example.com/webhook_url"}])
 
     mock_fun =
-      [
-        fn -> {:ok, %{project.slug => 10}} end,
-        fn -> {:ok, %{project.slug => 15}} end
-      ]
-      |> Sanbase.Mock.wrap_consecutives(arity: 4)
+      Sanbase.Mock.wrap_consecutives([fn -> {:ok, %{project.slug => 10}} end, fn -> {:ok, %{project.slug => 15}} end],
+        arity: 4
+      )
 
-    Sanbase.Mock.prepare_mock(Sanbase.Metric, :aggregated_timeseries_data, mock_fun)
+    Sanbase.Metric
+    |> Sanbase.Mock.prepare_mock(:aggregated_timeseries_data, mock_fun)
     |> Sanbase.Mock.prepare_mock2(
       &HTTPoison.post/3,
       {:ok, %HTTPoison.Response{status_code: 200, body: "OK"}}
@@ -158,7 +155,7 @@ defmodule Sanbase.Alert.TriggerPayloadTest do
     |> Sanbase.Mock.run_with_mocks(fn ->
       Scheduler.run_alert(MetricTriggerSettings)
 
-      trigger = trigger |> Sanbase.Repo.preload([:user])
+      trigger = Sanbase.Repo.preload(trigger, [:user])
 
       {:ok, user_trigger} = Sanbase.Alert.UserTrigger.by_user_and_id(trigger.user.id, trigger.id)
 
@@ -168,7 +165,7 @@ defmodule Sanbase.Alert.TriggerPayloadTest do
         |> Sanbase.DateTimeUtils.from_iso8601!()
 
       # Last triggered is rounded to minutes
-      assert Sanbase.TestUtils.datetime_close_to(Timex.now(), last_triggered_dt, 60, :seconds)
+      assert Sanbase.TestUtils.datetime_close_to(DateTime.utc_now(), last_triggered_dt, 60, :seconds)
     end)
   end
 

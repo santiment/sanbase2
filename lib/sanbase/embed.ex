@@ -1,12 +1,15 @@
 defmodule Sanbase.Embed do
+  @moduledoc false
   def create_charts_link(metric, slug) do
     now =
-      Timex.shift(Timex.now(), minutes: 10)
+      DateTime.utc_now()
+      |> Timex.shift(minutes: 10)
       |> Sanbase.DateTimeUtils.round_datetime(second: 600)
       |> Timex.set(microsecond: {0, 0})
 
     six_months_ago =
-      Timex.shift(now, months: -6)
+      now
+      |> Timex.shift(months: -6)
       |> Timex.set(microsecond: {0, 0})
 
     now_iso = DateTime.to_iso8601(now)
@@ -15,7 +18,7 @@ defmodule Sanbase.Embed do
     settings_json = Jason.encode!(%{slug: slug, from: six_months_ago_iso, to: now_iso})
 
     metrics = if metric == "price_usd", do: [metric], else: ["price_usd", metric]
-    wax = Enum.with_index(metrics) |> Enum.into(%{}) |> Map.values()
+    wax = metrics |> Enum.with_index() |> Map.new() |> Map.values()
 
     widgets_json =
       Jason.encode!([

@@ -4,11 +4,13 @@ defmodule Sanbase.Metric.Registry.Sync do
   source of truth.
   """
 
+  import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
+
   alias Hex.Solver.Registry
   alias Sanbase.Metric.Registry
+  alias Sanbase.Metric.Registry.Sync
   alias Sanbase.Utils.Config
 
-  import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
   require Logger
 
   @pubsub_topic "sanbase_metric_registry_sync"
@@ -71,11 +73,7 @@ defmodule Sanbase.Metric.Registry.Sync do
     end
   end
 
-  def apply_sync(%{
-        "content" => content,
-        "confirmation_endpoint" => confirmation_endpoint,
-        "sync_uuid" => sync_uuid
-      }) do
+  def apply_sync(%{"content" => content, "confirmation_endpoint" => confirmation_endpoint, "sync_uuid" => sync_uuid}) do
     Logger.info("Applying Metric Registry sync")
 
     with :ok <- check_apply_env(),
@@ -96,9 +94,8 @@ defmodule Sanbase.Metric.Registry.Sync do
 
   def actual_changes_formatted(%Registry.SyncRun{actual_changes: actual_changes}) do
     with {:ok, decoded} <- decode_changes(actual_changes) do
-      decoded
       # Has the form {key, change}
-      |> Enum.map(fn {key, changes} ->
+      Enum.map(decoded, fn {key, changes} ->
         formatted_patch = Sanbase.ExAudit.Patch.format_patch(%{patch: changes})
 
         ["Metric ", key.metric, " ", formatted_patch]
@@ -114,7 +111,7 @@ defmodule Sanbase.Metric.Registry.Sync do
   end
 
   def decode_changes(bin) do
-    with {:ok, decoded} <- bin |> Base.decode64() do
+    with {:ok, decoded} <- Base.decode64(bin) do
       result =
         decoded
         |> :zlib.gunzip()
@@ -129,7 +126,7 @@ defmodule Sanbase.Metric.Registry.Sync do
     changes =
       Enum.map(changesets, fn changeset ->
         old = changeset.data
-        new = changeset |> Ecto.Changeset.apply_changes()
+        new = Ecto.Changeset.apply_changes(changeset)
 
         key = Map.take(changeset.data, [:metric, :data_type, :fixed_parameters])
         {key, ExAudit.Diff.diff(old, new)}
@@ -147,8 +144,7 @@ defmodule Sanbase.Metric.Registry.Sync do
 
   defp do_apply_sync_content(list) do
     {multi, changesets} =
-      list
-      |> Enum.reduce({Ecto.Multi.new(), []}, fn params, {multi, changesets} ->
+      Enum.reduce(list, {Ecto.Multi.new(), []}, fn params, {multi, changesets} ->
         %{"metric" => metric, "data_type" => data_type, "fixed_parameters" => fixed_parameters} =
           params
 
@@ -162,7 +158,8 @@ defmodule Sanbase.Metric.Registry.Sync do
             # Update the Registry Record with the changed
             # Insert a record in the Registry.Changelog
             updated_multi =
-              Ecto.Multi.update(multi, metric_registry.id, registry_changeset)
+              multi
+              |> Ecto.Multi.update(metric_registry.id, registry_changeset)
               |> Ecto.Multi.insert(
                 {:metric_registry_changelog, metric_registry.id},
                 changelog_changeset
@@ -194,7 +191,7 @@ defmodule Sanbase.Metric.Registry.Sync do
     end
   end
 
-  defp no_running_syncs() do
+  defp no_running_syncs do
     case Registry.SyncRun.all_with_status("executing") do
       [] -> :ok
       [_ | _] -> {:error, "Sync process is already running"}
@@ -265,8 +262,8 @@ defmodule Sanbase.Metric.Registry.Sync do
     Registry.SyncRun.create(attrs)
   end
 
-  defp get_sync_target_url() do
-    secret = Config.module_get(Sanbase.Metric.Registry.Sync, :sync_secret)
+  defp get_sync_target_url do
+    secret = Config.module_get(Sync, :sync_secret)
     deployment_env = Config.module_get(Sanbase, :deployment_env)
     port = Config.module_get(SanbaseWeb.Endpoint, [:http, :port])
 
@@ -289,7 +286,7 @@ defmodule Sanbase.Metric.Registry.Sync do
     end
   end
 
-  defp check_initiate_env() do
+  defp check_initiate_env do
     deployment_env = Sanbase.Utils.Config.module_get(Sanbase, :deployment_env)
     database_url = System.get_env("DATABASE_URL")
 
@@ -304,12 +301,11 @@ defmodule Sanbase.Metric.Registry.Sync do
     if local? or stage? do
       :ok
     else
-      {:error,
-       "Can only deploy sync from STAGE to PROD. Attempted to deploy from #{deployment_env}"}
+      {:error, "Can only deploy sync from STAGE to PROD. Attempted to deploy from #{deployment_env}"}
     end
   end
 
-  defp check_apply_env() do
+  defp check_apply_env do
     deployment_env = Sanbase.Utils.Config.module_get(Sanbase, :deployment_env)
     database_url = System.get_env("DATABASE_URL")
 
@@ -330,14 +326,13 @@ defmodule Sanbase.Metric.Registry.Sync do
 
   defp extract_metric_registry_identifiers_list(actual_changes) do
     keys =
-      actual_changes
-      |> Enum.map(fn {%{metric: _, data_type: _, fixed_parameters: _} = key, _changes} -> key end)
+      Enum.map(actual_changes, fn {%{metric: _, data_type: _, fixed_parameters: _} = key, _changes} -> key end)
 
     {:ok, keys}
   end
 
   defp get_confirmation_endpoint(sync) do
-    secret = Sanbase.Utils.Config.module_get(Sanbase.Metric.Registry.Sync, :sync_secret)
+    secret = Sanbase.Utils.Config.module_get(Sync, :sync_secret)
 
     SanbaseWeb.Endpoint.backend_url()
     |> URI.parse()

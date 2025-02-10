@@ -3,16 +3,17 @@ defmodule SanbaseWeb.GenericAdminController do
 
   import Ecto.Query
 
-  alias SanbaseWeb.Router.Helpers, as: Routes
   alias Sanbase.Repo
   alias SanbaseWeb.GenericAdmin
+  alias SanbaseWeb.GenericAdminController.LinkBuilder
+  alias SanbaseWeb.Router.Helpers, as: Routes
 
-  def resource_module_map() do
+  def resource_module_map do
     SanbaseWeb.GenericAdmin.resource_module_map()
   end
 
   def all_routes do
-    (resources_to_routes() ++ custom_routes()) |> Enum.sort()
+    Enum.sort(resources_to_routes() ++ custom_routes())
   end
 
   def custom_routes do
@@ -30,12 +31,11 @@ defmodule SanbaseWeb.GenericAdminController do
   end
 
   def resources_to_routes do
-    SanbaseWeb.GenericAdmin.resources()
-    |> Enum.map(fn resource ->
+    Enum.map(SanbaseWeb.GenericAdmin.resources(), fn resource ->
       resource_name =
-        String.split(resource, [" ", "_", "-"])
-        |> Enum.map(&String.capitalize/1)
-        |> Enum.join(" ")
+        resource
+        |> String.split([" ", "_", "-"])
+        |> Enum.map_join(" ", &String.capitalize/1)
 
       {resource_name, ~p"/admin2/generic?resource=#{resource}"}
     end)
@@ -49,9 +49,7 @@ defmodule SanbaseWeb.GenericAdminController do
     page = params["page"] || 0
     page_size = params["page_size"] || 10
 
-    render(conn, "index.html",
-      table: resource_to_table_params(resource, %{page: page, page_size: page_size})
-    )
+    render(conn, "index.html", table: resource_to_table_params(resource, %{page: page, page_size: page_size}))
   end
 
   def index(conn, _) do
@@ -90,10 +88,7 @@ defmodule SanbaseWeb.GenericAdminController do
     create_and_redirect(conn, changeset, params, changes, resource, admin_module)
   end
 
-  def search(
-        conn,
-        %{"resource" => resource, "search" => %{"filters" => filters}} = params
-      ) do
+  def search(conn, %{"resource" => resource, "search" => %{"filters" => filters}} = params) do
     module = module_from_resource(resource)
     preloads = resource_module_map()[resource][:preloads] || []
     page = to_integer(params["page"] || 0)
@@ -149,13 +144,12 @@ defmodule SanbaseWeb.GenericAdminController do
     resource_config = resource_module_map()[resource]
     module = module_from_resource(resource)
     admin_module = resource_config[:admin_module]
-    data = Repo.get(module, id) |> Repo.preload(resource_config[:preloads] || [])
+    data = module |> Repo.get(id) |> Repo.preload(resource_config[:preloads] || [])
 
     assocs =
-      Enum.map([data], fn row ->
-        {row.id, SanbaseWeb.GenericAdminController.LinkBuilder.build_link(module, row)}
+      Map.new([data], fn row ->
+        {row.id, LinkBuilder.build_link(module, row)}
       end)
-      |> Map.new()
 
     data =
       GenericAdmin.call_module_function_or_default(admin_module, :before_filter, [data], data)
@@ -164,10 +158,8 @@ defmodule SanbaseWeb.GenericAdminController do
       %{
         data: data,
         assocs: assocs,
-        belongs_to:
-          GenericAdmin.call_module_function_or_default(admin_module, :belongs_to, [data], []),
-        has_many:
-          GenericAdmin.call_module_function_or_default(admin_module, :has_many, [data], [])
+        belongs_to: GenericAdmin.call_module_function_or_default(admin_module, :belongs_to, [data], []),
+        has_many: GenericAdmin.call_module_function_or_default(admin_module, :has_many, [data], [])
       }
       |> Map.merge(resource_params(resource, :show))
       |> Keyword.new()
@@ -217,7 +209,8 @@ defmodule SanbaseWeb.GenericAdminController do
     module = module_from_resource(resource)
 
     if :delete in resource_config[:actions] do
-      Repo.get(module, id)
+      module
+      |> Repo.get(id)
       |> Repo.delete()
       |> case do
         {:ok, _} ->
@@ -243,8 +236,8 @@ defmodule SanbaseWeb.GenericAdminController do
   defp create_and_redirect(conn, changeset, params, changes, resource, admin_module) do
     case Sanbase.Repo.insert(changeset) do
       {:ok, response_resource} ->
-        GenericAdmin.call_module_function_or_default(
-          admin_module,
+        admin_module
+        |> GenericAdmin.call_module_function_or_default(
           :after_filter,
           [response_resource, changes],
           :ok
@@ -256,16 +249,12 @@ defmodule SanbaseWeb.GenericAdminController do
               :error,
               "#{resource} created successfully. There was some error after creation: #{error}"
             )
-            |> redirect(
-              to: Routes.generic_admin_path(conn, :show, response_resource, resource: resource)
-            )
+            |> redirect(to: Routes.generic_admin_path(conn, :show, response_resource, resource: resource))
 
           _ ->
             conn
             |> put_flash(:info, "#{resource} created successfully.")
-            |> redirect(
-              to: Routes.generic_admin_path(conn, :show, response_resource, resource: resource)
-            )
+            |> redirect(to: Routes.generic_admin_path(conn, :show, response_resource, resource: resource))
         end
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -284,8 +273,8 @@ defmodule SanbaseWeb.GenericAdminController do
   defp update_and_redirect(conn, changeset, data, params, changes, resource, admin_module) do
     case Sanbase.Repo.update(changeset) do
       {:ok, response_resource} ->
-        GenericAdmin.call_module_function_or_default(
-          admin_module,
+        admin_module
+        |> GenericAdmin.call_module_function_or_default(
           :after_filter,
           [response_resource, changes],
           :ok
@@ -294,16 +283,12 @@ defmodule SanbaseWeb.GenericAdminController do
           {:error, error} ->
             conn
             |> put_flash(:error, "Some of the fields were not updated: #{error}")
-            |> redirect(
-              to: Routes.generic_admin_path(conn, :show, response_resource, resource: resource)
-            )
+            |> redirect(to: Routes.generic_admin_path(conn, :show, response_resource, resource: resource))
 
           _ ->
             conn
             |> put_flash(:info, "#{resource} updated successfully.")
-            |> redirect(
-              to: Routes.generic_admin_path(conn, :show, response_resource, resource: resource)
-            )
+            |> redirect(to: Routes.generic_admin_path(conn, :show, response_resource, resource: resource))
         end
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -320,14 +305,13 @@ defmodule SanbaseWeb.GenericAdminController do
   end
 
   defp transform_changes(changes, field_type_map) do
-    Enum.map(changes, fn {field, value} ->
+    Map.new(changes, fn {field, value} ->
       case Map.get(field_type_map, String.to_existing_atom(field)) do
         :map -> {field, Jason.decode!(value)}
         {:array, :string} -> {field, Jason.decode!(value)}
         _ -> {field, value}
       end
     end)
-    |> Enum.into(%{})
   end
 
   defp module_from_resource(resource), do: resource_module_map()[resource][:module]
@@ -358,21 +342,22 @@ defmodule SanbaseWeb.GenericAdminController do
       )
 
     assocs =
-      Enum.map(fetched_rows, fn row ->
-        {row.id, SanbaseWeb.GenericAdminController.LinkBuilder.build_link(module, row)}
+      Map.new(fetched_rows, fn row ->
+        {row.id, LinkBuilder.build_link(module, row)}
       end)
-      |> Map.new()
 
-    %{
-      rows: fetched_rows,
-      rows_count: total_count,
-      current_page: page,
-      page_size: page_size,
-      action: action,
-      assocs: assocs,
-      search: params[:search]
-    }
-    |> Map.merge(resource_params(resource, action))
+    Map.merge(
+      %{
+        rows: fetched_rows,
+        rows_count: total_count,
+        current_page: page,
+        page_size: page_size,
+        action: action,
+        assocs: assocs,
+        search: params[:search]
+      },
+      resource_params(resource, action)
+    )
   end
 
   defp maybe_fetch_rows(rows, module, preloads, page, page_size) do
@@ -455,12 +440,11 @@ defmodule SanbaseWeb.GenericAdminController do
   defp field_key_map(fields_override, key) do
     fields_override
     |> Map.filter(fn {_field, data} -> Map.has_key?(data, key) end)
-    |> Enum.map(fn {field, data} -> {field, Map.get(data, key)} end)
-    |> Enum.into(%{})
+    |> Map.new(fn {field, data} -> {field, Map.get(data, key)} end)
   end
 
   defp fields(module, extra_fields \\ []) do
-    (module.__schema__(:fields) ++ extra_fields) |> Enum.uniq()
+    Enum.uniq(module.__schema__(:fields) ++ extra_fields)
   end
 
   defp field_type_map(module, fields_override) do
@@ -469,25 +453,24 @@ defmodule SanbaseWeb.GenericAdminController do
     fields_override =
       fields_override
       |> Enum.filter(fn {_field, data} -> Map.has_key?(data, :type) end)
-      |> Enum.map(fn {field, data} -> {field, data.type} end)
-      |> Enum.into(%{})
+      |> Map.new(fn {field, data} -> {field, data.type} end)
 
     Map.merge(field_type_map, fields_override)
   end
 
   defp field_type_map(module) do
-    fields(module)
-    |> Enum.map(&{&1, module.__schema__(:type, &1)})
-    |> Enum.into(%{})
+    module
+    |> fields()
+    |> Map.new(&{&1, module.__schema__(:type, &1)})
   end
 
   defp transform_belongs_to(belongs_to_fields, params) do
-    Enum.map(belongs_to_fields, fn
+    Map.new(belongs_to_fields, fn
       {field, %{query: query, transform: transform} = metadata} ->
         if params["linked_resource"] && params["linked_resource_id"] &&
              params["linked_resource"] == to_string(field) do
-          query = query |> where([p], p.id == ^params["linked_resource_id"])
-          data = Repo.all(query) |> transform.()
+          query = where(query, [p], p.id == ^params["linked_resource_id"])
+          data = query |> Repo.all() |> transform.()
           {field, %{data: data, type: :select}}
         else
           {field,
@@ -506,7 +489,6 @@ defmodule SanbaseWeb.GenericAdminController do
            search_fields: metadata[:search_fields]
          }}
     end)
-    |> Enum.into(%{})
   end
 
   defp build_field_condition(field, value, module) do
@@ -520,14 +502,12 @@ defmodule SanbaseWeb.GenericAdminController do
 
     # Query to get the column type from PostgreSQL's information schema
     [data_type, _udt_name] =
-      Sanbase.Repo.query!(
-        """
-        SELECT data_type, udt_name
-        FROM information_schema.columns
-        WHERE table_name = $1 AND column_name = $2
-        """,
-        [table, to_string(field_source || field)]
-      )
+      """
+      SELECT data_type, udt_name
+      FROM information_schema.columns
+      WHERE table_name = $1 AND column_name = $2
+      """
+      |> Sanbase.Repo.query!([table, to_string(field_source || field)])
       |> Map.get(:rows)
       |> List.first()
 
@@ -566,8 +546,10 @@ defmodule SanbaseWeb.GenericAdminController do
 end
 
 defmodule SanbaseWeb.GenericAdminController.LinkBuilder do
+  @moduledoc false
   def build_link(module, record) do
-    module.__schema__(:associations)
+    :associations
+    |> module.__schema__()
     |> Enum.reduce(%{}, fn assoc_name, acc ->
       assoc_info = module.__schema__(:association, assoc_name)
 
@@ -598,9 +580,7 @@ defmodule SanbaseWeb.GenericAdminController.LinkBuilder do
 
   defp href(resource, id, label) do
     relative_url =
-      SanbaseWeb.Router.Helpers.generic_admin_path(SanbaseWeb.Endpoint, :show, id,
-        resource: resource
-      )
+      SanbaseWeb.Router.Helpers.generic_admin_path(SanbaseWeb.Endpoint, :show, id, resource: resource)
 
     PhoenixHTMLHelpers.Link.link(label,
       to: relative_url,

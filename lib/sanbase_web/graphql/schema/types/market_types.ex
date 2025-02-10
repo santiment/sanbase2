@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.MarketTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   object :market_exchange do

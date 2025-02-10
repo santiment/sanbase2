@@ -1,12 +1,13 @@
 defmodule Sanbase.Clickhouse.Github.MetricAdapter do
+  @moduledoc false
   @behaviour Sanbase.Metric.Behaviour
 
   import Sanbase.Metric.Transform
   import Sanbase.Metric.Utils
   import Sanbase.Utils.ErrorHandling, only: [not_implemented_function_for_metric_error: 2]
 
-  alias Sanbase.Project
   alias Sanbase.Clickhouse.Github
+  alias Sanbase.Project
 
   @aggregations [:sum]
 
@@ -31,15 +32,15 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   @metrics @histogram_metrics ++ @timeseries_metrics ++ @table_metrics
 
   # plan related - the plan is upcase string
-  @min_plan_map Enum.into(@metrics, %{}, fn metric -> {metric, "FREE"} end)
+  @min_plan_map Map.new(@metrics, fn metric -> {metric, "FREE"} end)
 
   # restriction related - the restriction is atom :free or :restricted
-  @access_map Enum.into(@metrics, %{}, fn metric -> {metric, :free} end)
+  @access_map Map.new(@metrics, fn metric -> {metric, :free} end)
 
   @free_metrics @metrics
   @restricted_metrics []
 
-  @required_selectors Enum.into(@metrics, %{}, &{&1, []})
+  @required_selectors Map.new(@metrics, &{&1, []})
   @default_complexity_weight 0.3
 
   @impl Sanbase.Metric.Behaviour
@@ -49,7 +50,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   def complexity_weight(_), do: @default_complexity_weight
 
   @impl Sanbase.Metric.Behaviour
-  def required_selectors(), do: @required_selectors
+  def required_selectors, do: @required_selectors
 
   @impl Sanbase.Metric.Behaviour
   def broken_data(metric, selector, from, to) do
@@ -62,8 +63,8 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   end
 
   def timeseries_data(metric, %{organizations: organizations}, from, to, interval, _opts) do
-    apply(
-      Github,
+    Github
+    |> apply(
       Map.get(@timeseries_metrics_function_mapping, metric),
       [organizations, from, to, interval, "None", nil]
     )
@@ -76,10 +77,10 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
         {:ok, []}
 
       %{} = organizations_map ->
-        organizations = Map.values(organizations_map) |> List.flatten()
+        organizations = organizations_map |> Map.values() |> List.flatten()
 
-        apply(
-          Github,
+        Github
+        |> apply(
           Map.get(@timeseries_metrics_function_mapping, metric),
           [organizations, from, to, interval, "None", nil]
         )
@@ -114,7 +115,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   end
 
   def aggregated_timeseries_data(metric, %{slug: slug_or_slugs}, from, to, opts) do
-    slugs = slug_or_slugs |> List.wrap()
+    slugs = List.wrap(slug_or_slugs)
     projects = Project.List.by_slugs(slugs, preload?: true, preload: [:github_organizations])
 
     org_to_slug_map = github_organization_to_slug_map(projects)
@@ -146,8 +147,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   defp github_organization_to_slug_map(projects) do
     projects
     |> Enum.flat_map(fn project ->
-      project.github_organizations
-      |> Enum.map(fn org -> {String.downcase(org.organization), project.slug} end)
+      Enum.map(project.github_organizations, fn org -> {String.downcase(org.organization), project.slug} end)
     end)
     |> Map.new()
   end
@@ -178,8 +178,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def last_datetime_computed_at(_metric, %{organization: organization})
-      when is_binary(organization) do
+  def last_datetime_computed_at(_metric, %{organization: organization}) when is_binary(organization) do
     last_datetime_computed_at_for_organizations([organization])
   end
 
@@ -244,19 +243,19 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def available_aggregations(), do: @aggregations
+  def available_aggregations, do: @aggregations
 
   @impl Sanbase.Metric.Behaviour
-  def available_timeseries_metrics(), do: @timeseries_metrics
+  def available_timeseries_metrics, do: @timeseries_metrics
 
   @impl Sanbase.Metric.Behaviour
-  def available_histogram_metrics(), do: @histogram_metrics
+  def available_histogram_metrics, do: @histogram_metrics
 
   @impl Sanbase.Metric.Behaviour
-  def available_table_metrics(), do: @table_metrics
+  def available_table_metrics, do: @table_metrics
 
   @impl Sanbase.Metric.Behaviour
-  def available_metrics(), do: @metrics
+  def available_metrics, do: @metrics
 
   @impl Sanbase.Metric.Behaviour
   def available_metrics(%{address: _address}), do: []
@@ -279,7 +278,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def available_slugs() do
+  def available_slugs do
     # Providing a 2 element tuple `{any, integer}` will use that second element
     # as TTL for the cache key
     cache_key = {__MODULE__, :slugs_with_github_org}
@@ -295,25 +294,24 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def incomplete_metrics(), do: []
+  def incomplete_metrics, do: []
 
   @impl Sanbase.Metric.Behaviour
-  def free_metrics(), do: @free_metrics
+  def free_metrics, do: @free_metrics
 
   @impl Sanbase.Metric.Behaviour
-  def restricted_metrics(), do: @restricted_metrics
+  def restricted_metrics, do: @restricted_metrics
 
   @impl Sanbase.Metric.Behaviour
-  def access_map(), do: @access_map
+  def access_map, do: @access_map
 
   @impl Sanbase.Metric.Behaviour
-  def min_plan_map(), do: @min_plan_map
+  def min_plan_map, do: @min_plan_map
 
   defp first_datetime_for_organizations([]), do: {:ok, nil}
   defp first_datetime_for_organizations(organizations), do: Github.first_datetime(organizations)
 
   defp last_datetime_computed_at_for_organizations([]), do: {:ok, nil}
 
-  defp last_datetime_computed_at_for_organizations(organizations),
-    do: Github.last_datetime_computed_at(organizations)
+  defp last_datetime_computed_at_for_organizations(organizations), do: Github.last_datetime_computed_at(organizations)
 end

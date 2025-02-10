@@ -11,8 +11,8 @@ defmodule Sanbase.Accounts.LinkedUser do
 
   use Ecto.Schema
 
-  import Ecto.Query
   import Ecto.Changeset
+  import Ecto.Query
 
   alias Sanbase.Accounts.User
 
@@ -42,13 +42,10 @@ defmodule Sanbase.Accounts.LinkedUser do
       get_max_secondary_users(primary_user_id)
     end)
     |> Ecto.Multi.run(:add_linked_users, fn _repo, changes ->
-      case changes.secondary_users_count < changes.max_secondary_users_count do
-        true ->
-          create_link(primary_user_id, user_id)
-
-        false ->
-          {:error,
-           "The maximum number of linked secondary users of #{changes.max_secondary_users_count} has been reached."}
+      if changes.secondary_users_count < changes.max_secondary_users_count do
+        create_link(primary_user_id, user_id)
+      else
+        {:error, "The maximum number of linked secondary users of #{changes.max_secondary_users_count} has been reached."}
       end
     end)
     |> Sanbase.Repo.transaction()
@@ -73,22 +70,18 @@ defmodule Sanbase.Accounts.LinkedUser do
 
   def get_primary_user(secondary_user_id) do
     lu =
-      from(lu in __MODULE__,
-        where: lu.secondary_user_id == ^secondary_user_id,
-        preload: [:primary_user]
+      Sanbase.Repo.one(
+        from(lu in __MODULE__, where: lu.secondary_user_id == ^secondary_user_id, preload: [:primary_user])
       )
-      |> Sanbase.Repo.one()
 
     {:ok, lu && lu.primary_user}
   end
 
   def get_primary_user_id(secondary_user_id) do
     result =
-      from(lu in __MODULE__,
-        where: lu.secondary_user_id == ^secondary_user_id,
-        select: lu.primary_user_id
+      Sanbase.Repo.one(
+        from(lu in __MODULE__, where: lu.secondary_user_id == ^secondary_user_id, select: lu.primary_user_id)
       )
-      |> Sanbase.Repo.one()
 
     case result do
       primary_user_id when is_integer(primary_user_id) -> {:ok, primary_user_id}
@@ -108,21 +101,17 @@ defmodule Sanbase.Accounts.LinkedUser do
     {:ok, result}
   end
 
-  def get_all_user_id_pairs() do
-    from(
-      lu in __MODULE__,
-      select: {lu.primary_user_id, lu.secondary_user_id}
-    )
-    |> Sanbase.Repo.all()
+  def get_all_user_id_pairs do
+    Sanbase.Repo.all(from(lu in __MODULE__, select: {lu.primary_user_id, lu.secondary_user_id}))
   end
 
   def remove_linked_user_pair(primary_user_id, secondary_user_id) do
     {_num, nil} =
-      from(lu in __MODULE__,
-        where:
-          lu.primary_user_id == ^primary_user_id and lu.secondary_user_id == ^secondary_user_id
+      Sanbase.Repo.delete_all(
+        from(lu in __MODULE__,
+          where: lu.primary_user_id == ^primary_user_id and lu.secondary_user_id == ^secondary_user_id
+        )
       )
-      |> Sanbase.Repo.delete_all()
 
     :ok
   end
@@ -139,11 +128,9 @@ defmodule Sanbase.Accounts.LinkedUser do
   end
 
   defp count_secondaries(primary_user_id) do
-    from(lu in __MODULE__,
-      where: lu.primary_user_id == ^primary_user_id,
-      select: count(lu.secondary_user_id)
+    Sanbase.Repo.one(
+      from(lu in __MODULE__, where: lu.primary_user_id == ^primary_user_id, select: count(lu.secondary_user_id))
     )
-    |> Sanbase.Repo.one()
   end
 
   defp create_link(primary_user_id, secondary_user_id) do

@@ -1,8 +1,10 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ReportResolver do
-  require Logger
-
+  @moduledoc false
+  alias Sanbase.Billing.Product
+  alias Sanbase.Billing.Subscription
   alias Sanbase.Report
-  alias Sanbase.Billing.{Subscription, Product}
+
+  require Logger
 
   def upload_report(_root, %{report: report} = args, _resolution) do
     {params, _} = Map.split(args, [:name, :description])

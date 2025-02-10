@@ -15,20 +15,17 @@ defmodule SanbaseWeb.Graphql.FoundersSocialDataTest do
     # This test does not include treatWordAsLuceneQuery: true, so the
     # words are lowercased before being send and in the response
     body =
-      %{
-        "data" => %{
-          "2024-09-28T00:00:00Z" => 373,
-          "2024-09-29T00:00:00Z" => 487,
-          "2024-09-30T00:00:00Z" => 323
-        }
-      }
-      |> Jason.encode!()
+      Jason.encode!(%{
+        "data" => %{"2024-09-28T00:00:00Z" => 373, "2024-09-29T00:00:00Z" => 487, "2024-09-30T00:00:00Z" => 323}
+      })
 
     resp = %HTTPoison.Response{status_code: 200, body: body}
 
-    Sanbase.Mock.prepare_mock(HTTPoison, :get, fn _url, _headers, options ->
+    HTTPoison
+    |> Sanbase.Mock.prepare_mock(:get, fn _url, _headers, options ->
       search_texts =
-        Map.new(options[:params])
+        options[:params]
+        |> Map.new()
         |> Map.get("founders")
 
       # Assert that the words are lowercased before they are sent

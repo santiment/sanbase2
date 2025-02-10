@@ -3,13 +3,14 @@ defmodule Sanbase.Clickhouse.TopHolders do
   Uses ClickHouse to calculate the percent supply in exchanges, non exchanges and combined
   """
 
-  alias Sanbase.ClickhouseRepo
-  alias Sanbase.Clickhouse.Label
-  alias Sanbase.Project
-
+  import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
   import Sanbase.Metric.SqlQuery.Helper
   import Sanbase.Utils.Transform, only: [opts_to_limit_offset: 1]
-  import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
+
+  alias Sanbase.Clickhouse.Label
+  alias Sanbase.Clickhouse.Query
+  alias Sanbase.ClickhouseRepo
+  alias Sanbase.Project
 
   @eth_table "eth_top_holders_daily"
   @erc20_table "erc20_top_holders_daily"
@@ -42,14 +43,14 @@ defmodule Sanbase.Clickhouse.TopHolders do
 
     with {:ok, contract, decimals} <-
            Project.contract_info_by_slug(slug, contract_opts),
-         query_struct <-
+         query_struct =
            top_holders_query(slug, contract, decimals, from, to, opts),
          {:ok, result} <-
            ClickhouseRepo.query_transform(
              query_struct,
              &holder_transform_func/1
            ),
-         addresses = Enum.map(result, & &1.address) |> Enum.uniq(),
+         addresses = result |> Enum.map(& &1.address) |> Enum.uniq(),
          {:ok, address_labels_map} <- Label.get_address_labels(slug, addresses) do
       labelled_top_holders =
         Enum.map(result, fn top_holder ->
@@ -105,14 +106,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
           to :: DateTime.t(),
           interval :: String.t()
         ) :: {:ok, list(percent_of_total_supply)} | {:error, String.t()}
-  def percent_of_total_supply(
-        contract,
-        decimals,
-        number_of_holders,
-        from,
-        to,
-        interval
-      ) do
+  def percent_of_total_supply(contract, decimals, number_of_holders, from, to, interval) do
     query_struct =
       percent_of_total_supply_query(
         contract,
@@ -181,7 +175,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
       offset: offset
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp realtime_top_holders_query(slug, opts) do
@@ -232,7 +226,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
 
     params = %{slug: slug, metric: "price_usd", limit: limit, offset: offset}
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp top_holders_query(slug, contract, decimals, from, to, opts) do
@@ -317,33 +311,31 @@ defmodule Sanbase.Clickhouse.TopHolders do
     ) USING (dt)
     """
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp maybe_add_labels_owners_filter(opts, params) do
     {owners_str, params} = filter_str(:owners, opts, params)
     {labels_str, params} = filter_str(:labels, opts, params)
 
-    case labels_str == nil and owners_str == nil do
-      true ->
-        {"", params}
+    if labels_str == nil and owners_str == nil do
+      {"", params}
+    else
+      clause =
+        [labels_str, owners_str]
+        |> Enum.reject(&is_nil/1)
+        |> Enum.join(" AND ")
 
-      false ->
-        clause =
-          [labels_str, owners_str]
-          |> Enum.reject(&is_nil/1)
-          |> Enum.join(" AND ")
+      str = """
+      GLOBAL ANY INNER JOIN
+      (
+        SELECT address
+        FROM current_label_addresses
+        WHERE blockchain = 'ethereum' AND label_id IN (SELECT label_id FROM label_metadata WHERE #{clause})
+      ) USING (address)
+      """
 
-        str = """
-        GLOBAL ANY INNER JOIN
-        (
-          SELECT address
-          FROM current_label_addresses
-          WHERE blockchain = 'ethereum' AND label_id IN (SELECT label_id FROM label_metadata WHERE #{clause})
-        ) USING (address)
-        """
-
-        {str, params}
+      {str, params}
     end
   end
 
@@ -375,14 +367,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
     end
   end
 
-  defp percent_of_total_supply_query(
-         contract,
-         decimals,
-         number_of_holders,
-         from,
-         to,
-         interval
-       ) do
+  defp percent_of_total_supply_query(contract, decimals, number_of_holders, from, to, interval) do
     table = if contract == "ETH", do: @eth_table, else: @erc20_table
 
     sql = """
@@ -457,6 +442,6 @@ defmodule Sanbase.Clickhouse.TopHolders do
       interval: str_to_sec(interval)
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 end

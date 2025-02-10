@@ -3,6 +3,7 @@ defmodule SanbaseWeb.DataController do
 
   alias Sanbase.Project
   alias Sanbase.Project.SocialVolumeQuery
+
   require Logger
 
   @doc ~s"""
@@ -11,18 +12,16 @@ defmodule SanbaseWeb.DataController do
   This contains information about santiment team users, so it cannot be publicly freely available
   """
   def santiment_team_members(conn, %{"secret" => secret}) do
-    case santiment_team_members_secret() == secret do
-      true ->
-        {:ok, data} = get_santiment_team_members()
+    if santiment_team_members_secret() == secret do
+      {:ok, data} = get_santiment_team_members()
 
-        conn
-        |> put_resp_header("content-type", "application/json; charset=utf-8")
-        |> Plug.Conn.send_resp(200, data)
-
-      false ->
-        conn
-        |> send_resp(403, "Unauthorized")
-        |> halt()
+      conn
+      |> put_resp_header("content-type", "application/json; charset=utf-8")
+      |> Plug.Conn.send_resp(200, data)
+    else
+      conn
+      |> send_resp(403, "Unauthorized")
+      |> halt()
     end
   end
 
@@ -48,7 +47,7 @@ defmodule SanbaseWeb.DataController do
   """
   @spec projects_data(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def projects_data(conn, _params) do
-    cache_key = {__MODULE__, __ENV__.function} |> Sanbase.Cache.hash()
+    cache_key = Sanbase.Cache.hash({__MODULE__, __ENV__.function})
     {:ok, data} = Sanbase.Cache.get_or_store(cache_key, &get_projects_data/0)
 
     conn
@@ -57,7 +56,7 @@ defmodule SanbaseWeb.DataController do
   end
 
   def projects_twitter_handles(conn, _params) do
-    cache_key = {__MODULE__, __ENV__.function} |> Sanbase.Cache.hash()
+    cache_key = Sanbase.Cache.hash({__MODULE__, __ENV__.function})
     {:ok, data} = Sanbase.Cache.get_or_store(cache_key, &get_twitter_handles_list/0)
 
     conn
@@ -66,19 +65,17 @@ defmodule SanbaseWeb.DataController do
   end
 
   def monitored_twitter_handles(conn, %{"secret" => secret}) do
-    case santiment_team_members_secret() == secret do
-      true ->
-        cache_key = {__MODULE__, __ENV__.function} |> Sanbase.Cache.hash()
-        {:ok, data} = Sanbase.Cache.get_or_store(cache_key, &get_monitored_twitter_handles_list/0)
+    if santiment_team_members_secret() == secret do
+      cache_key = Sanbase.Cache.hash({__MODULE__, __ENV__.function})
+      {:ok, data} = Sanbase.Cache.get_or_store(cache_key, &get_monitored_twitter_handles_list/0)
 
-        conn
-        |> put_resp_header("content-type", "application/json; charset=utf-8")
-        |> Plug.Conn.send_resp(200, data)
-
-      false ->
-        conn
-        |> send_resp(403, "Unauthorized")
-        |> halt()
+      conn
+      |> put_resp_header("content-type", "application/json; charset=utf-8")
+      |> Plug.Conn.send_resp(200, data)
+    else
+      conn
+      |> send_resp(403, "Unauthorized")
+      |> halt()
     end
   end
 
@@ -97,7 +94,7 @@ defmodule SanbaseWeb.DataController do
   """
   @spec ecosystems_data(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def ecosystems_data(conn, _params) do
-    cache_key = {__MODULE__, __ENV__.function} |> Sanbase.Cache.hash()
+    cache_key = Sanbase.Cache.hash({__MODULE__, __ENV__.function})
 
     {:ok, ecosystems_data} = Sanbase.Cache.get_or_store(cache_key, &get_ecosystems_data/0)
 
@@ -107,7 +104,7 @@ defmodule SanbaseWeb.DataController do
   end
 
   def ecosystem_github_organization_mapping(conn, _params) do
-    cache_key = {__MODULE__, __ENV__.function} |> Sanbase.Cache.hash()
+    cache_key = Sanbase.Cache.hash({__MODULE__, __ENV__.function})
 
     {:ok, data} =
       Sanbase.Cache.get_or_store(cache_key, &get_ecosystem_github_organization_mapping/0)
@@ -130,7 +127,7 @@ defmodule SanbaseWeb.DataController do
   """
   @spec clickhouse_metrics_metadata(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def clickhouse_metrics_metadata(conn, _params) do
-    cache_key = {__MODULE__, __ENV__.function} |> Sanbase.Cache.hash()
+    cache_key = Sanbase.Cache.hash({__MODULE__, __ENV__.function})
 
     {:ok, data} = Sanbase.Cache.get_or_store(cache_key, &get_clickhouse_metrics_metadata/0)
 
@@ -141,28 +138,28 @@ defmodule SanbaseWeb.DataController do
 
   # Private functions
 
-  defp get_clickhouse_metrics_metadata() do
+  defp get_clickhouse_metrics_metadata do
     table_map = Sanbase.Clickhouse.MetricAdapter.Registry.table_map()
 
-    data =
+    for_result =
       for metric <- Sanbase.Clickhouse.MetricAdapter.available_metrics() do
         {:ok, metadata} = Sanbase.Metric.metadata(metric)
 
-        %{
+        Jason.encode!(%{
           public_name: metric,
           name: metadata.internal_metric,
           min_interval: metadata.min_interval,
           min_interval_seconds: Sanbase.DateTimeUtils.str_to_sec(metadata.min_interval),
           table: Map.get(table_map, metric)
-        }
-        |> Jason.encode!()
+        })
       end
-      |> Enum.intersperse("\n")
+
+    data = Enum.intersperse(for_result, "\n")
 
     {:ok, data}
   end
 
-  defp get_santiment_team_members() do
+  defp get_santiment_team_members do
     email_to_discord_id_map = get_email_to_discord_id_map()
 
     data =
@@ -170,43 +167,44 @@ defmodule SanbaseWeb.DataController do
       |> Enum.map(fn user ->
         discord_id = Map.get(email_to_discord_id_map, user.email)
 
-        %{
+        Jason.encode!(%{
           id: user.id,
           email: user.email || "",
           username: user.username || "",
           discord_id: discord_id || ""
-        }
-        |> Jason.encode!()
+        })
       end)
       |> Enum.intersperse("\n")
 
     {:ok, data}
   end
 
-  defp get_ecosystems_data() do
+  defp get_ecosystems_data do
     with {:ok, slug_to_asset_id_map} <- get_slug_to_asset_id_map(),
          {:ok, data} <- Sanbase.Ecosystem.get_ecosystems_with_projects() do
       result =
-        Enum.map(data, fn %{name: ecosystem, projects: projects} ->
+        data
+        |> Enum.map(fn %{name: ecosystem, projects: projects} ->
           slugs = Enum.map(projects, & &1.slug)
 
           asset_ids =
-            Enum.map(slugs, &Map.get(slug_to_asset_id_map, &1))
+            slugs
+            |> Enum.map(&Map.get(slug_to_asset_id_map, &1))
             |> Enum.reject(&is_nil/1)
             |> Enum.uniq()
 
           github_organizations =
-            Enum.flat_map(projects, & &1.github_organizations)
+            projects
+            |> Enum.flat_map(& &1.github_organizations)
             |> Enum.map(& &1.organization)
             |> Enum.uniq()
 
-          %{
+          Jason.encode!(%{
             ecosystem: ecosystem,
             slugs: slugs,
             asset_ids: asset_ids,
             github_organizations: github_organizations
-          }
-          |> Jason.encode!()
+          })
         end)
         |> Enum.intersperse("\n")
 
@@ -214,15 +212,13 @@ defmodule SanbaseWeb.DataController do
     end
   end
 
-  defp get_ecosystem_github_organization_mapping() do
+  defp get_ecosystem_github_organization_mapping do
     with {:ok, data} <- Sanbase.Ecosystem.get_ecosystems_with_projects() do
       result =
         for %{name: ecosystem, projects: projects} <- data,
             %{github_organizations: github_organizations} <- projects,
             %{organization: organization} <- github_organizations,
-            do:
-              %{ecosystem: ecosystem, github_organization: String.downcase(organization)}
-              |> Jason.encode!()
+            do: Jason.encode!(%{ecosystem: ecosystem, github_organization: String.downcase(organization)})
 
       result = result |> Enum.uniq() |> Enum.intersperse("\n")
 
@@ -230,29 +226,30 @@ defmodule SanbaseWeb.DataController do
     end
   end
 
-  defp get_twitter_handles_list() do
+  defp get_twitter_handles_list do
     result =
       Project.List.projects_twitter_handles()
       |> Enum.uniq()
-      |> Enum.map(fn handle -> %{twitter_handle: handle} |> Jason.encode!() end)
+      |> Enum.map(fn handle -> Jason.encode!(%{twitter_handle: handle}) end)
       |> Enum.intersperse("\n")
 
     {:ok, result}
   end
 
-  defp get_monitored_twitter_handles_list() do
+  defp get_monitored_twitter_handles_list do
     projects_handles = Project.List.projects_twitter_handles()
     submitted_handles = Sanbase.MonitoredTwitterHandle.list_all_approved()
 
     result =
-      Enum.uniq(projects_handles ++ submitted_handles)
-      |> Enum.map(fn handle -> %{twitter_handle: handle} |> Jason.encode!() end)
+      (projects_handles ++ submitted_handles)
+      |> Enum.uniq()
+      |> Enum.map(fn handle -> Jason.encode!(%{twitter_handle: handle}) end)
       |> Enum.intersperse("\n")
 
     {:ok, result}
   end
 
-  defp get_slug_to_asset_id_map() do
+  defp get_slug_to_asset_id_map do
     query = "SELECT name AS slug, asset_id FROM asset_metadata FINAL"
 
     case Sanbase.ClickhouseRepo.query_transform(query, [], & &1) do
@@ -266,9 +263,9 @@ defmodule SanbaseWeb.DataController do
     end
   end
 
-  defp get_projects_data() do
+  defp get_projects_data do
     data =
-      Project.List.projects(
+      [
         preload?: true,
         preload: [
           :infrastructure,
@@ -277,7 +274,8 @@ defmodule SanbaseWeb.DataController do
           :social_volume_query,
           :latest_coinmarketcap_data
         ]
-      )
+      ]
+      |> Project.List.projects()
       |> Enum.map(fn project ->
         {:ok, github_organizations} = Project.github_organizations(project)
         infrastructure_code = project_to_infrastructure_code(project)
@@ -292,7 +290,7 @@ defmodule SanbaseWeb.DataController do
           end
 
         project_json =
-          %{
+          Jason.encode!(%{
             slug: project.slug,
             ticker: project.ticker,
             name: project.name,
@@ -305,8 +303,7 @@ defmodule SanbaseWeb.DataController do
             telegram_chat_id: project.telegram_chat_id,
             coinmarketcap_id: project.coinmarketcap_id,
             twitter_handle: twitter_handle
-          }
-          |> Jason.encode!()
+          })
 
         [project_json, "\n"]
       end)
@@ -342,7 +339,7 @@ defmodule SanbaseWeb.DataController do
     end
   end
 
-  defp get_email_to_discord_id_map() do
+  defp get_email_to_discord_id_map do
     # Mounted as ConfigMap during deployment of the web pods
     path = "/mnt/santiment_team_members_discord_data.json"
 
@@ -360,8 +357,5 @@ defmodule SanbaseWeb.DataController do
   end
 
   # On stage/prod the env var is set and is different from the default one.
-  defp santiment_team_members_secret(),
-    do:
-      System.get_env("SANTIMENT_TEAM_MEMBERS_ENDPOINT_SECRET") ||
-        "random_secret"
+  defp santiment_team_members_secret, do: System.get_env("SANTIMENT_TEAM_MEMBERS_ENDPOINT_SECRET") || "random_secret"
 end

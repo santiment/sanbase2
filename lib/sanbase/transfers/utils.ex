@@ -1,4 +1,5 @@
 defmodule Sanbase.Transfers.Utils do
+  @moduledoc false
   def top_wallet_transfers_address_clause(:in, opts) do
     arg_name = Keyword.fetch!(opts, :argument_name)
     trailing_and = Keyword.fetch!(opts, :trailing_and)

@@ -4,15 +4,11 @@ defmodule Sanbase.Alert.EthWalletTriggerTest do
   import Mock
   import Sanbase.Factory
 
-  alias Sanbase.Project
-
-  alias Sanbase.Alert.{
-    UserTrigger,
-    Trigger.EthWalletTriggerSettings,
-    Scheduler
-  }
-
+  alias Sanbase.Alert.Scheduler
+  alias Sanbase.Alert.Trigger.EthWalletTriggerSettings
+  alias Sanbase.Alert.UserTrigger
   alias Sanbase.Clickhouse.HistoricalBalance
+  alias Sanbase.Project
 
   setup do
     Sanbase.Cache.clear_all(:alerts_evaluator_cache)

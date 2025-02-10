@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.CreateUserListTable do
+  @moduledoc false
   use Ecto.Migration
 
   @table_name :user_lists

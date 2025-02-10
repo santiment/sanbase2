@@ -1,5 +1,7 @@
 defmodule Sanbase.Accounts.CouponAttempt do
+  @moduledoc false
   @behaviour Sanbase.Accounts.AccessAttemptBehaviour
+
   alias Sanbase.Accounts.AccessAttempt
 
   @impl true

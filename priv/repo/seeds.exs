@@ -8,11 +8,12 @@
 #     Sanbase.Repo.insert(%Sanbase.SomeSchema{})
 #
 
+alias Sanbase.Accounts.EthAccount
+alias Sanbase.Accounts.User
+alias Sanbase.Model.Infrastructure
 alias Sanbase.Project
 alias Sanbase.ProjectEthAddress
-alias Sanbase.Model.Infrastructure
 alias Sanbase.Repo
-alias Sanbase.Accounts.{User, EthAccount}
 
 infrastructure_eth = Infrastructure.get_or_insert("ETH")
 
@@ -43,11 +44,7 @@ make_eth_address = fn {name, address} ->
   project = Repo.get_by(Project, name: name)
 
   [
-    %ProjectEthAddress{}
-    |> ProjectEthAddress.changeset(%{
-      address: address,
-      project_id: project.id
-    })
+    ProjectEthAddress.changeset(%ProjectEthAddress{}, %{address: address, project_id: project.id})
   ]
 end
 
@@ -61,8 +58,7 @@ end
   {"Gnosis", "GNO", "gnosis.png", "gnosis-gno", "ETH", nil, 18},
   {"Status", "SNT", "status.png", "status", "ETH", nil, 18},
   {"TenX", "PAY", "tenx.png", "tenx", "ETH", nil, 18},
-  {"Basic Attention Token", "BAT", "basic-attention-token.png", "basic-attention-token", "ETH",
-   nil, 18},
+  {"Basic Attention Token", "BAT", "basic-attention-token.png", "basic-attention-token", "ETH", nil, 18},
   {"Populous", "PPT", "populous.png", "populous", "ETH", nil, 18},
   {"DigixDAO", "DGD", "digixdao.png", "digixdao", "ETH", nil, 18},
   {"Bancor", "BNT", "bancor.png", "bancor", "ETH", nil, 18},
@@ -78,8 +74,7 @@ end
   {"Stox", "STX", "stox.png", "stox", "ETH", nil, 18},
   {"Humaniq", "HMQ", "humaniq.png", "humaniq", "ETH", nil, 18},
   {"Polybius", "PLBT", "polybius.png", "polybius", "ETH", nil, 18},
-  {"Santiment", "SAN", "santiment.png", "santiment", "ETH",
-   "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098", 18},
+  {"Santiment", "SAN", "santiment.png", "santiment", "ETH", "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098", 18},
   {"district0x", "DNT", "district0x.png", "district0x", "ETH", nil, 18},
   {"DAO.Casino", "BET", "dao-casino.png", "dao-casino", "ETH", nil, 18},
   {"Centra", "CTR", "centra.png", "centra", "ETH", nil, 18},
@@ -156,19 +151,15 @@ end
 |> Enum.each(insert_on_conflict_nothing)
 
 defmodule InsertUser do
+  @moduledoc false
   def run({email, username, eth_address}) do
     {:ok, user} =
-      %User{
-        email: email,
-        username: username,
-        salt:
-          :crypto.strong_rand_bytes(64)
-          |> Base.encode32(case: :lower)
-      }
-      |> Sanbase.Repo.insert(on_conflict: :nothing)
+      Sanbase.Repo.insert(
+        %User{email: email, username: username, salt: 64 |> :crypto.strong_rand_bytes() |> Base.encode32(case: :lower)},
+        on_conflict: :nothing
+      )
 
-    %EthAccount{address: eth_address, user_id: user.id}
-    |> Sanbase.Repo.insert(on_conflict: :nothing)
+    Sanbase.Repo.insert(%EthAccount{address: eth_address, user_id: user.id}, on_conflict: :nothing)
   end
 end
 

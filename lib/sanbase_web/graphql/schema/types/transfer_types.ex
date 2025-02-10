@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.TransferTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   object :address_watchlist_subtype do

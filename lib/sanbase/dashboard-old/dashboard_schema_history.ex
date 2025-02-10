@@ -9,13 +9,12 @@ defmodule Sanbase.Dashboard.History do
 
   use Ecto.Schema
 
-  import Ecto.Query
   import Ecto.Changeset
-
+  import Ecto.Query
   import Sanbase.Utils.Transform, only: [opts_to_limit_offset: 1]
 
-  alias Sanbase.Repo
   alias Sanbase.Dashboard
+  alias Sanbase.Repo
 
   @type t :: %__MODULE__{
           # Inherited from Dashboard.Schmea
@@ -106,9 +105,10 @@ defmodule Sanbase.Dashboard.History do
   end
 
   defp generate_hash(dashboard, message) do
-    binary_data = {dashboard, message, DateTime.utc_now()} |> :erlang.term_to_binary()
+    binary_data = :erlang.term_to_binary({dashboard, message, DateTime.utc_now()})
 
-    :crypto.hash(:sha256, binary_data)
+    :sha256
+    |> :crypto.hash(binary_data)
     |> Base.encode16(case: :lower)
     |> :erlang.binary_part(0, 40)
   end

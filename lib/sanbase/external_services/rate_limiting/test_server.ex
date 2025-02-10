@@ -1,6 +1,8 @@
 defmodule Sanbase.ExternalServices.RateLimiting.TestServer do
-  use GenServer, restart: :permanent, shutdown: 5_000
+  @moduledoc false
   @behaviour Sanbase.ExternalServices.RateLimiting.Behavior
+
+  use GenServer, restart: :permanent, shutdown: 5_000
 
   require Logger
 

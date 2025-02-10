@@ -1,5 +1,7 @@
 defmodule Sanbase.Alert.Trigger.Settings.Behaviour do
+  @moduledoc false
   alias Sanbase.Alert.Trigger
+
   @type type :: String.t()
 
   @callback type() :: type()

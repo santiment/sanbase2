@@ -8,7 +8,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ScraperTest do
 
   test "parsing the project page" do
     project_info =
-      File.read!(Path.join(__DIR__, "data/project_page.html"))
+      __DIR__
+      |> Path.join("data/project_page.html")
+      |> File.read!()
       |> Scraper.parse_project_page(%ProjectInfo{slug: "santiment"})
 
     assert project_info == %ProjectInfo{
@@ -37,7 +39,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ScraperTest do
     }
 
     project_info =
-      File.read!(Path.join(__DIR__, "data/project_page.html"))
+      __DIR__
+      |> Path.join("data/project_page.html")
+      |> File.read!()
       |> Scraper.parse_project_page(project_info_map)
 
     {:ok, project} =

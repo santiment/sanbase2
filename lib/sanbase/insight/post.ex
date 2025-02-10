@@ -1,25 +1,29 @@
 defmodule Sanbase.Insight.Post do
+  @moduledoc false
   @behaviour Sanbase.Entity.Behaviour
 
   use Ecto.Schema
 
-  import Ecto.Query
   import Ecto.Changeset
+  import Ecto.Query
   import Sanbase.Insight.EventEmitter, only: [emit_event: 3]
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1]
   import Sanbase.Utils.Transform, only: [to_bang: 1]
 
-  alias Sanbase.Tag
-  alias Sanbase.Repo
   alias Sanbase.Accounts.User
-  alias Sanbase.Project
-  alias Sanbase.Insight.{Post, PostImage}
-  alias Sanbase.Timeline.TimelineEvent
-  alias Sanbase.Metric.MetricPostgresData
   alias Sanbase.Chart.Configuration
+  alias Sanbase.Entity.Query
+  alias Sanbase.Insight.Post
+  alias Sanbase.Insight.PostImage
+  alias Sanbase.Insight.Search
+  alias Sanbase.Metric.MetricPostgresData
+  alias Sanbase.Project
+  alias Sanbase.Repo
+  alias Sanbase.Tag
+  alias Sanbase.Timeline.TimelineEvent
+  alias Sanbase.Utils.Config
 
   require Logger
-  alias Sanbase.Utils.Config
 
   @preloads [:user, :images, :tags, :chart_configuration_for_event]
 
@@ -28,13 +32,13 @@ defmodule Sanbase.Insight.Post do
   @approved "approved"
   @declined "declined"
   @states [@awaiting_approval, @approved, @declined]
-  def states(), do: @states
+  def states, do: @states
 
   # ready_state indicates whether the user has published the post or not
   @draft "draft"
   @published "published"
   @ready_states [@draft, @published]
-  def ready_states(), do: @ready_states
+  def ready_states, do: @ready_states
 
   # predictions
   @predictions [
@@ -45,7 +49,7 @@ defmodule Sanbase.Insight.Post do
     "unspecified",
     "none"
   ]
-  def predictions(), do: @predictions
+  def predictions, do: @predictions
 
   @type option ::
           {:is_pulse, boolean() | nil}
@@ -111,12 +115,13 @@ defmodule Sanbase.Insight.Post do
 
   # The base of all the entity queries
   defp base_entity_ids_query(opts) do
-    base_insights_query(opts)
+    opts
+    |> base_insights_query()
     |> maybe_apply_projects_filter_query(opts)
-    |> Sanbase.Entity.Query.maybe_filter_is_hidden(opts)
-    |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :post_id)
-    |> Sanbase.Entity.Query.maybe_filter_by_users(opts)
-    |> Sanbase.Entity.Query.maybe_filter_by_cursor(:published_at, opts)
+    |> Query.maybe_filter_is_hidden(opts)
+    |> Query.maybe_filter_is_featured_query(opts, :post_id)
+    |> Query.maybe_filter_by_users(opts)
+    |> Query.maybe_filter_by_cursor(:published_at, opts)
     |> select([p], p.id)
   end
 
@@ -139,12 +144,13 @@ defmodule Sanbase.Insight.Post do
   end
 
   @impl Sanbase.Entity.Behaviour
-  def by_id!(id, opts), do: by_id(id, opts) |> to_bang()
+  def by_id!(id, opts), do: id |> by_id(opts) |> to_bang()
 
   @impl Sanbase.Entity.Behaviour
   def by_id(id, opts) do
     result =
-      base_insights_query(opts)
+      opts
+      |> base_insights_query()
       |> Repo.get(id)
 
     case result do
@@ -154,26 +160,28 @@ defmodule Sanbase.Insight.Post do
   end
 
   @impl Sanbase.Entity.Behaviour
-  def by_ids!(ids, opts) when is_list(ids), do: by_ids(ids, opts) |> to_bang()
+  def by_ids!(ids, opts) when is_list(ids), do: ids |> by_ids(opts) |> to_bang()
 
   @impl Sanbase.Entity.Behaviour
   def by_ids(post_ids, opts) when is_list(post_ids) do
     preload = Keyword.get(opts, :preload, [:featured_item, :tags])
 
     result =
-      from(p in base_query(),
-        where: p.id in ^post_ids,
-        preload: ^preload,
-        order_by: fragment("array_position(?, ?::int)", ^post_ids, p.id)
+      Repo.all(
+        from(p in base_query(),
+          where: p.id in ^post_ids,
+          preload: ^preload,
+          order_by: fragment("array_position(?, ?::int)", ^post_ids, p.id)
+        )
       )
-      |> Repo.all()
 
     {:ok, result}
   end
 
   @impl Sanbase.Entity.Behaviour
   def public_and_user_entity_ids_query(user_id, opts) do
-    base_entity_ids_query(opts)
+    opts
+    |> base_entity_ids_query()
     |> where(
       [p],
       (p.ready_state == ^@published and p.state == ^@approved) or p.user_id == ^user_id
@@ -182,17 +190,19 @@ defmodule Sanbase.Insight.Post do
 
   @impl Sanbase.Entity.Behaviour
   def public_entity_ids_query(opts) do
-    base_entity_ids_query(opts)
+    opts
+    |> base_entity_ids_query()
     |> filter_published_and_approved()
   end
 
   @impl Sanbase.Entity.Behaviour
   def user_entity_ids_query(user_id, opts) do
-    base_entity_ids_query(opts)
+    opts
+    |> base_entity_ids_query()
     |> by_user(user_id)
   end
 
-  def insights_count_map() do
+  def insights_count_map do
     map =
       from(
         p in __MODULE__,
@@ -293,22 +303,21 @@ defmodule Sanbase.Insight.Post do
 
   def publish_changeset(%Post{} = post, attrs) do
     attrs = Sanbase.DateTimeUtils.truncate_datetimes(attrs)
-    naive_now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+    naive_now = NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)
 
     post
     |> cast(attrs, [:ready_state, :published_at])
     |> change(published_at: naive_now)
   end
 
-  def awaiting_approval_state(), do: @awaiting_approval
-  def approved_state(), do: @approved
-  def declined_state(), do: @declined
-  def published(), do: @published
-  def draft(), do: @draft
-  def preloads(), do: @preloads
+  def awaiting_approval_state, do: @awaiting_approval
+  def approved_state, do: @approved
+  def declined_state, do: @declined
+  def published, do: @published
+  def draft, do: @draft
+  def preloads, do: @preloads
 
-  def published?(%Post{ready_state: ready_state}),
-    do: ready_state == @published
+  def published?(%Post{ready_state: ready_state}), do: ready_state == @published
 
   @spec create(%User{}, map()) :: {:ok, %__MODULE__{}} | {:error, Keyword.t()}
   def create(%User{id: user_id}, args) do
@@ -318,7 +327,7 @@ defmodule Sanbase.Insight.Post do
     |> case do
       {:ok, post} ->
         emit_event({:ok, post}, :create_insight, %{})
-        :ok = Sanbase.Insight.Search.update_document_tokens(post.id)
+        :ok = Search.update_document_tokens(post.id)
         {:ok, post}
 
       {:error, changeset} ->
@@ -345,7 +354,7 @@ defmodule Sanbase.Insight.Post do
         |> case do
           {:ok, post} ->
             emit_event({:ok, post}, :update_insight, %{})
-            :ok = Sanbase.Insight.Search.update_document_tokens(post.id)
+            :ok = Search.update_document_tokens(post.id)
             {:ok, post}
 
           {:error, error} ->
@@ -376,9 +385,7 @@ defmodule Sanbase.Insight.Post do
             {:ok, post}
 
           {:error, changeset} ->
-            {:error,
-             message: "Cannot delete post with id #{post_id}",
-             details: changeset_errors(changeset)}
+            {:error, message: "Cannot delete post with id #{post_id}", details: changeset_errors(changeset)}
         end
 
       _post ->
@@ -394,7 +401,7 @@ defmodule Sanbase.Insight.Post do
          %Post{ready_state: @draft} <- post,
          {:ok, post} <- publish_post(post) do
       emit_event({:ok, post}, :publish_insight, %{})
-      post = post |> Repo.preload(@preloads)
+      post = Repo.preload(post, @preloads)
 
       {:ok, post}
     else
@@ -418,7 +425,7 @@ defmodule Sanbase.Insight.Post do
          %Post{ready_state: @published} <- post,
          {:ok, post} <- unpublish_post(post) do
       emit_event({:ok, post}, :unpublish_insight, %{})
-      post = post |> Repo.preload(@preloads)
+      post = Repo.preload(post, @preloads)
 
       {:ok, post}
     else
@@ -434,14 +441,15 @@ defmodule Sanbase.Insight.Post do
 
   @spec search_published_insights(String.t(), opts) :: [%__MODULE__{}]
   def search_published_insights(search_term, opts) do
-    public_insights_query(opts)
-    |> Sanbase.Insight.Search.run(search_term, opts)
+    opts
+    |> public_insights_query()
+    |> Search.run(search_term, opts)
     |> Enum.map(& &1.post)
   end
 
   @spec search_published_insights_highglight(String.t(), opts) :: [%{}]
   def search_published_insights_highglight(search_term, opts) do
-    public_insights_query(opts) |> Sanbase.Insight.Search.run(search_term, opts)
+    opts |> public_insights_query() |> Search.run(search_term, opts)
   end
 
   def related_projects(%Post{} = post) do
@@ -476,7 +484,8 @@ defmodule Sanbase.Insight.Post do
   user fetches their own insights list.
   """
   def user_insights(user_id, opts \\ []) do
-    base_insights_query(opts)
+    opts
+    |> base_insights_query()
     |> by_user(user_id)
     |> Repo.all()
   end
@@ -486,7 +495,8 @@ defmodule Sanbase.Insight.Post do
   is fetching data for another user.
   """
   def user_public_insights(user_id, opts \\ []) do
-    base_insights_query(opts)
+    opts
+    |> base_insights_query()
     |> by_user(user_id)
     |> filter_published_and_approved()
     |> Repo.all()
@@ -496,7 +506,8 @@ defmodule Sanbase.Insight.Post do
   Fetch public (published and approved) insights.
   """
   def public_insights(opts \\ []) do
-    public_insights_query(opts)
+    opts
+    |> public_insights_query()
     |> Repo.all()
   end
 
@@ -504,13 +515,15 @@ defmodule Sanbase.Insight.Post do
   All public insights published after datetime
   """
   def public_insights_after(datetime, opts \\ []) do
-    public_insights_query(opts)
+    opts
+    |> public_insights_query()
     |> after_datetime(datetime)
     |> Repo.all()
   end
 
   def public_insights_by_tags(tags, opts \\ []) when is_list(tags) do
-    public_insights_query(opts)
+    opts
+    |> public_insights_query()
     |> by_tags(tags)
     |> Repo.all()
   end
@@ -519,7 +532,8 @@ defmodule Sanbase.Insight.Post do
   All published and approved insights that given user has voted for
   """
   def all_insights_user_voted_for(user_id, opts \\ []) do
-    public_insights_query(opts)
+    opts
+    |> public_insights_query()
     |> user_has_voted_for(user_id)
     |> Repo.all()
   end
@@ -531,14 +545,10 @@ defmodule Sanbase.Insight.Post do
     anon_user_id = User.anonymous_user_id()
 
     # This should also be applied to posts with is_deleted == true
-    from(p in Post, where: p.user_id == ^user_id)
-    |> Repo.update_all(set: [user_id: anon_user_id])
+    Repo.update_all(from(p in Post, where: p.user_id == ^user_id), set: [user_id: anon_user_id])
   end
 
-  def create_chart_event(
-        user_id,
-        %{chart_configuration_id: chart_configuration_id} = args
-      ) do
+  def create_chart_event(user_id, %{chart_configuration_id: chart_configuration_id} = args) do
     case Configuration.by_id(chart_configuration_id, querying_user_id: user_id) do
       {:ok, conf} ->
         args =
@@ -560,32 +570,29 @@ defmodule Sanbase.Insight.Post do
     end
   end
 
-  def user_id_to_post_ids_list() do
-    from(
-      p in base_query(),
-      select: {p.user_id, fragment("array_agg(?)", p.id)},
-      group_by: p.user_id
-    )
-    |> Repo.all()
+  def user_id_to_post_ids_list do
+    Repo.all(from(p in base_query(), select: {p.user_id, fragment("array_agg(?)", p.id)}, group_by: p.user_id))
   end
 
   def pulse?(%__MODULE__{is_pulse: is_pulse}), do: is_pulse
 
-  def featured_posts_query() do
-    from(
-      p in Post,
-      left_join: featured_item in Sanbase.FeaturedItem,
-      on: p.id == featured_item.post_id,
-      where: not is_nil(featured_item.id),
-      preload: [:user]
+  def featured_posts_query do
+    distinct(
+      from(p in Post,
+        left_join: featured_item in Sanbase.FeaturedItem,
+        on: p.id == featured_item.post_id,
+        where: not is_nil(featured_item.id),
+        preload: [:user]
+      ),
+      true
     )
-    |> distinct(true)
   end
 
   # Helper functions
 
   defp public_insights_query(opts) do
-    base_insights_query(opts)
+    opts
+    |> base_insights_query()
     |> filter_published_and_approved()
   end
 
@@ -615,7 +622,8 @@ defmodule Sanbase.Insight.Post do
   end
 
   defp unpublish_post(post) do
-    publish_changeset(post, %{ready_state: Post.draft()})
+    post
+    |> publish_changeset(%{ready_state: Post.draft()})
     |> Repo.update()
   end
 
@@ -664,8 +672,7 @@ defmodule Sanbase.Insight.Post do
   end
 
   defp filter_published_and_approved(query) do
-    query
-    |> where([p], p.ready_state == ^@published and p.state == ^@approved)
+    where(query, [p], p.ready_state == ^@published and p.state == ^@approved)
   end
 
   defp user_has_voted_for(query, user_id) do
@@ -675,15 +682,13 @@ defmodule Sanbase.Insight.Post do
   end
 
   defp maybe_order_by_published_at(query, opts) do
-    case Keyword.get(opts, :ordered?, true) do
-      true ->
-        from(
-          p in query,
-          order_by: [desc: p.published_at]
-        )
-
-      false ->
-        query
+    if Keyword.get(opts, :ordered?, true) do
+      from(
+        p in query,
+        order_by: [desc: p.published_at]
+      )
+    else
+      query
     end
   end
 
@@ -717,28 +722,24 @@ defmodule Sanbase.Insight.Post do
         changeset
 
       _ ->
-        changeset
-        |> change(%{
-          updated_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
-        })
+        change(changeset, %{updated_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)})
     end
   end
 
   defp maybe_preload(query, opts) do
-    case Keyword.get(opts, :preload?, true) do
-      true ->
-        preloads = Keyword.get(opts, :preload, @preloads)
-        query |> preload(^preloads)
-
-      false ->
-        query
+    if Keyword.get(opts, :preload?, true) do
+      preloads = Keyword.get(opts, :preload, @preloads)
+      preload(query, ^preloads)
+    else
+      query
     end
   end
 
   defp maybe_distinct(query, opts) do
-    case Keyword.get(opts, :distinct?, true) do
-      true -> from(p in query, distinct: true)
-      false -> query
+    if Keyword.get(opts, :distinct?, true) do
+      from(p in query, distinct: true)
+    else
+      query
     end
   end
 
@@ -746,14 +747,9 @@ defmodule Sanbase.Insight.Post do
     images = PostImage |> where([i], i.image_url in ^image_urls) |> Repo.all()
 
     if Enum.any?(images, fn %{post_id: post_id} -> not is_nil(post_id) end) do
-      changeset
-      |> Ecto.Changeset.add_error(
-        :images,
-        "The images you are trying to use are already used in another insight"
-      )
+      Ecto.Changeset.add_error(changeset, :images, "The images you are trying to use are already used in another insight")
     else
-      changeset
-      |> put_assoc(:images, images)
+      put_assoc(changeset, :images, images)
     end
   end
 
@@ -767,12 +763,12 @@ defmodule Sanbase.Insight.Post do
   end
 
   def delete_post_images(%Post{} = post) do
-    extract_image_url_from_post(post)
+    post
+    |> extract_image_url_from_post()
     |> Enum.map(&Sanbase.FileStore.delete/1)
   end
 
-  defp maybe_drop_post_tags(post, %{tags: tags}) when is_list(tags),
-    do: Tag.drop_tags(post)
+  defp maybe_drop_post_tags(post, %{tags: tags}) when is_list(tags), do: Tag.drop_tags(post)
 
   defp maybe_drop_post_tags(_, _), do: :ok
 
@@ -783,7 +779,7 @@ defmodule Sanbase.Insight.Post do
     [
       prediction: """
       The prediction #{inspect(prediction)} is not supported.
-      Supported predictions are: #{@predictions |> Enum.join(", ")}
+      Supported predictions are: #{Enum.join(@predictions, ", ")}
       """
     ]
   end
@@ -791,7 +787,7 @@ defmodule Sanbase.Insight.Post do
   defp maybe_apply_projects_filter_query(query, opts) do
     case Keyword.get(opts, :filter) do
       %{project_ids: project_ids} ->
-        query |> where([p], p.price_chart_project_id in ^project_ids)
+        where(query, [p], p.price_chart_project_id in ^project_ids)
 
       _ ->
         query

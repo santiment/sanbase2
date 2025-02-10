@@ -7,12 +7,13 @@ defmodule Sanbase.Queries.Query do
 
   use Ecto.Schema
 
-  import Ecto.Query
   import Ecto.Changeset
+  import Ecto.Query
   import Sanbase.Utils.Transform, only: [to_bang: 1]
 
-  alias Sanbase.Repo
   alias Sanbase.Accounts.User
+  alias Sanbase.Entity.Query
+  alias Sanbase.Repo
 
   @type query_id :: non_neg_integer()
   @type user_id :: non_neg_integer()
@@ -97,8 +98,8 @@ defmodule Sanbase.Queries.Query do
 
   def hash(%__MODULE__{} = query) do
     sql_query_text = normalize(query.sql_query_text)
-    binary = {sql_query_text, query.sql_query_parameters} |> :erlang.term_to_binary()
-    :crypto.hash(:sha256, binary) |> Base.encode64() |> binary_part(0, 32)
+    binary = :erlang.term_to_binary({sql_query_text, query.sql_query_parameters})
+    :sha256 |> :crypto.hash(binary) |> Base.encode64() |> binary_part(0, 32)
   end
 
   def public?(%__MODULE__{} = query), do: query.is_public
@@ -130,19 +131,14 @@ defmodule Sanbase.Queries.Query do
   def get_for_read(query_id, querying_user_id, opts \\ [])
 
   def get_for_read(query_id, nil, opts) do
-    from(
-      q in base_query(),
-      where: q.id == ^query_id and q.is_public == true
-    )
-    |> maybe_preload(opts)
+    maybe_preload(from(q in base_query(), where: q.id == ^query_id and q.is_public == true), opts)
   end
 
   def get_for_read(query_id, querying_user_id, opts) do
-    from(
-      q in base_query(),
-      where: q.id == ^query_id and (q.is_public == true or q.user_id == ^querying_user_id)
+    maybe_preload(
+      from(q in base_query(), where: q.id == ^query_id and (q.is_public == true or q.user_id == ^querying_user_id)),
+      opts
     )
-    |> maybe_preload(opts)
   end
 
   @doc ~s"""
@@ -153,12 +149,10 @@ defmodule Sanbase.Queries.Query do
   def get_for_mutation(query_id, querying_user_id, opts \\ [])
 
   def get_for_mutation(query_id, querying_user_id, opts) when not is_nil(querying_user_id) do
-    from(
-      q in base_query(),
-      where: q.id == ^query_id and q.user_id == ^querying_user_id,
-      lock: "FOR UPDATE"
+    maybe_preload(
+      from(q in base_query(), where: q.id == ^query_id and q.user_id == ^querying_user_id, lock: "FOR UPDATE"),
+      opts
     )
-    |> maybe_preload(opts)
   end
 
   @doc ~s"""
@@ -203,11 +197,11 @@ defmodule Sanbase.Queries.Query do
 
   @impl Sanbase.Entity.Behaviour
   def get_visibility_data(id) do
-    Sanbase.Entity.Query.default_get_visibility_data(__MODULE__, :query, id)
+    Query.default_get_visibility_data(__MODULE__, :query, id)
   end
 
   @impl Sanbase.Entity.Behaviour
-  def by_id!(id, opts) when is_integer(id), do: by_id(id, opts) |> to_bang()
+  def by_id!(id, opts) when is_integer(id), do: id |> by_id(opts) |> to_bang()
 
   @impl Sanbase.Entity.Behaviour
   def by_id(id, _opts) when is_integer(id) do
@@ -220,7 +214,7 @@ defmodule Sanbase.Queries.Query do
   end
 
   @impl Sanbase.Entity.Behaviour
-  def by_ids!(ids, opts) when is_list(ids), do: by_ids(ids, opts) |> to_bang()
+  def by_ids!(ids, opts) when is_list(ids), do: ids |> by_ids(opts) |> to_bang()
 
   @impl Sanbase.Entity.Behaviour
   def by_ids(ids, opts) when is_list(ids) do
@@ -238,24 +232,26 @@ defmodule Sanbase.Queries.Query do
   # The base of all the entity queries
   defp base_entity_ids_query(opts) do
     base_query()
-    |> Sanbase.Entity.Query.maybe_filter_is_hidden(opts)
+    |> Query.maybe_filter_is_hidden(opts)
     # |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :user_trigger_id)
-    |> Sanbase.Entity.Query.maybe_filter_by_users(opts)
-    |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
-    |> Sanbase.Entity.Query.maybe_filter_min_title_length(opts, :name)
-    |> Sanbase.Entity.Query.maybe_filter_min_description_length(opts, :description)
+    |> Query.maybe_filter_by_users(opts)
+    |> Query.maybe_filter_by_cursor(:inserted_at, opts)
+    |> Query.maybe_filter_min_title_length(opts, :name)
+    |> Query.maybe_filter_min_description_length(opts, :description)
     |> select([ul], ul.id)
   end
 
   @impl Sanbase.Entity.Behaviour
   def public_and_user_entity_ids_query(user_id, opts) do
-    base_entity_ids_query(opts)
+    opts
+    |> base_entity_ids_query()
     |> where([ul], ul.is_public == true or ul.user_id == ^user_id)
   end
 
   @impl Sanbase.Entity.Behaviour
   def public_entity_ids_query(opts) do
-    base_entity_ids_query(opts)
+    opts
+    |> base_entity_ids_query()
     |> where([ul], ul.is_public == true)
   end
 
@@ -264,13 +260,14 @@ defmodule Sanbase.Queries.Query do
     # Disable the filter by users
     opts = Keyword.put(opts, :user_ids, nil)
 
-    base_entity_ids_query(opts)
+    opts
+    |> base_entity_ids_query()
     |> where([ul], ul.user_id == ^user_id)
   end
 
   # Private functions
 
-  defp base_query() do
+  defp base_query do
     from(q in __MODULE__, where: q.is_deleted != true)
   end
 
@@ -283,13 +280,11 @@ defmodule Sanbase.Queries.Query do
   end
 
   defp maybe_preload(query, opts) do
-    case Keyword.get(opts, :preload?, true) do
-      false ->
-        query
-
-      true ->
-        preload = Keyword.get(opts, :preload, @preload)
-        query |> preload(^preload)
+    if Keyword.get(opts, :preload?, true) do
+      preload = Keyword.get(opts, :preload, @preload)
+      preload(query, ^preload)
+    else
+      query
     end
   end
 end

@@ -1,12 +1,13 @@
 defmodule Sanbase.Billing.UserPromoCode do
+  @moduledoc false
   use Ecto.Schema
 
-  alias Sanbase.Repo
+  import Ecto.Changeset
+  import Ecto.Query
+
   alias Sanbase.Accounts.User
   alias Sanbase.Billing.Plan
-
-  import Ecto.Query
-  import Ecto.Changeset
+  alias Sanbase.Repo
 
   @timestamps_opts [type: :utc_datetime]
   schema "user_promo_codes" do
@@ -43,7 +44,8 @@ defmodule Sanbase.Billing.UserPromoCode do
   end
 
   def create(args) do
-    changeset(%__MODULE__{}, args)
+    %__MODULE__{}
+    |> changeset(args)
     |> Sanbase.Repo.insert()
   end
 
@@ -53,15 +55,15 @@ defmodule Sanbase.Billing.UserPromoCode do
   showing used codes in the list of the available user promo codes
   """
   def use_coupon(coupon) do
-    from(p in __MODULE__, where: p.coupon == ^coupon)
-    |> Repo.update_all(inc: [times_redeemed: +1])
+    Repo.update_all(from(p in __MODULE__, where: p.coupon == ^coupon), inc: [times_redeemed: +1])
   end
 
   @doc ~s"""
   Get all currently valid promo codes for a user
   """
   def get_user_promo_codes(user_id) do
-    user_promo_codes_base_query(user_id)
+    user_id
+    |> user_promo_codes_base_query()
     |> Repo.all()
   end
 
@@ -96,7 +98,7 @@ defmodule Sanbase.Billing.UserPromoCode do
           # The rest of the checks are not really needed as Stripe API will
           # check them anyway, but we do them here to avoid unnecessary API
           # calls and to have more unified coupon validation failed messages
-          DateTime.compare(DateTime.utc_now(), coupon.redeem_by) == :gt ->
+          DateTime.after?(DateTime.utc_now(), coupon.redeem_by) ->
             {:error, "The coupon has expired."}
 
           promo.times_redeemed >= promo.max_redemptions ->

@@ -4,8 +4,8 @@ defmodule Sanbase.Billing.Subscription.LiquiditySubscription do
   Uniswap liquidity pools. They are present only in Sanbase but not synced in Stripe.
   """
 
-  alias Sanbase.Billing.Subscription
   alias Sanbase.Accounts.User
+  alias Sanbase.Billing.Subscription
   alias Sanbase.Repo
 
   # SAN stake required for free subscription. We advertise 3000 SAN
@@ -22,7 +22,7 @@ defmodule Sanbase.Billing.Subscription.LiquiditySubscription do
         user_id: user_id,
         plan_id: @san_stake_free_plan,
         status: "active",
-        current_period_end: Timex.shift(Timex.now(), days: 30),
+        current_period_end: Timex.shift(DateTime.utc_now(), days: 30),
         type: :liquidity
       },
       event_args: %{type: :liquidity_subscription}
@@ -40,7 +40,7 @@ defmodule Sanbase.Billing.Subscription.LiquiditySubscription do
   Subscriptions present only in Sanbase but not in Stripe
   """
   @spec list_liquidity_subscriptions() :: list(%Subscription{})
-  def list_liquidity_subscriptions() do
+  def list_liquidity_subscriptions do
     Subscription
     |> Subscription.Query.all_active_subscriptions_for_plan(@san_stake_free_plan)
     |> Subscription.Query.liquidity_subscriptions()
@@ -62,10 +62,9 @@ defmodule Sanbase.Billing.Subscription.LiquiditySubscription do
   end
 
   def user_staked_in_uniswap_v3(user_id) do
-    addresses = Sanbase.Accounts.EthAccount.all_by_user(user_id) |> Enum.map(& &1.address)
+    addresses = user_id |> Sanbase.Accounts.EthAccount.all_by_user() |> Enum.map(& &1.address)
 
-    addresses
-    |> Enum.any?(fn address ->
+    Enum.any?(addresses, fn address ->
       Sanbase.SmartContracts.UniswapV3.get_deposited_san_tokens(address) >=
         @san_stake_required_liquidity_sub_v3
     end)
@@ -83,9 +82,8 @@ defmodule Sanbase.Billing.Subscription.LiquiditySubscription do
   @doc """
   Create free liquidity subscription for those that don't have one and with enough SAN staked
   """
-  def maybe_create_liquidity_subscriptions_staked_users() do
-    user_ids_with_enough_staked()
-    |> Enum.each(fn user_id ->
+  def maybe_create_liquidity_subscriptions_staked_users do
+    Enum.each(user_ids_with_enough_staked(), fn user_id ->
       if not Subscription.user_has_active_sanbase_subscriptions?(user_id) do
         create_liquidity_subscription(user_id)
       end
@@ -95,12 +93,11 @@ defmodule Sanbase.Billing.Subscription.LiquiditySubscription do
   @doc """
   Remove free liquidity subscription of those who have one and don't have enough SAN staked
   """
-  def maybe_remove_liquidity_subscriptions_staked_users() do
+  def maybe_remove_liquidity_subscriptions_staked_users do
     liquidity_subscriptions = list_liquidity_subscriptions()
     user_ids_with_enough_staked = user_ids_with_enough_staked()
 
-    liquidity_subscriptions
-    |> Enum.each(fn %{user_id: user_id} = liquidity_subscription ->
+    Enum.each(liquidity_subscriptions, fn %{user_id: user_id} = liquidity_subscription ->
       if user_id not in user_ids_with_enough_staked do
         remove_liquidity_subscription(liquidity_subscription)
       end
@@ -109,7 +106,7 @@ defmodule Sanbase.Billing.Subscription.LiquiditySubscription do
 
   # Helpers
 
-  defp user_ids_with_enough_staked() do
+  defp user_ids_with_enough_staked do
     User.UniswapStaking.fetch_all_uniswap_staked_users()
     |> Enum.filter(&(&1.san_staked >= @san_stake_required_liquidity_sub))
     |> Enum.map(& &1.user_id)

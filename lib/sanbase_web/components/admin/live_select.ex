@@ -1,9 +1,10 @@
 defmodule SanbaseWeb.LiveSelect do
+  @moduledoc false
   use SanbaseWeb, :live_view
-
   use PhoenixHTMLHelpers
-  import SanbaseWeb.CoreComponents
+
   import Ecto.Query
+  import SanbaseWeb.CoreComponents
 
   def render(assigns) do
     ~H"""
@@ -48,18 +49,19 @@ defmodule SanbaseWeb.LiveSelect do
   def handle_event("suggest", %{"value" => query}, socket) when byte_size(query) < 2 do
     session = socket.assigns[:session]
 
-    Integer.parse(query)
+    query
+    |> Integer.parse()
     |> case do
       {id, ""} -> {:noreply, assign(socket, matches: search_matches_by_id(id, session))}
       _ -> {:noreply, assign(socket, matches: [])}
     end
   end
 
-  def handle_event("suggest", %{"value" => query}, socket)
-      when byte_size(query) >= 2 and byte_size(query) <= 100 do
+  def handle_event("suggest", %{"value" => query}, socket) when byte_size(query) >= 2 and byte_size(query) <= 100 do
     session = socket.assigns[:session]
 
-    Integer.parse(query)
+    query
+    |> Integer.parse()
     |> case do
       {id, ""} -> {:noreply, assign(socket, matches: search_matches_by_id(id, session))}
       _ -> {:noreply, assign(socket, matches: search_matches(query, session))}
@@ -101,7 +103,8 @@ defmodule SanbaseWeb.LiveSelect do
   end
 
   defp build_full_match_query(search_fields, base_query, value) do
-    Enum.reduce(search_fields, base_query, fn field, acc ->
+    search_fields
+    |> Enum.reduce(base_query, fn field, acc ->
       or_where(acc, [p], field(p, ^field) == ^value)
     end)
     |> select_merge([p], map(p, [:id]))
@@ -110,7 +113,8 @@ defmodule SanbaseWeb.LiveSelect do
   end
 
   defp build_partial_match_query(search_fields, base_query, value) do
-    Enum.reduce(search_fields, base_query, fn field, acc ->
+    search_fields
+    |> Enum.reduce(base_query, fn field, acc ->
       or_where(acc, [p], ilike(field(p, ^field), ^value))
     end)
     |> select_merge([p], map(p, [:id]))
@@ -123,7 +127,7 @@ defmodule SanbaseWeb.LiveSelect do
     |> Enum.uniq_by(& &1.id)
     |> Enum.take(10)
     |> Enum.map(fn result ->
-      formatted = Enum.map(result, fn {key, value} -> "#{key}: #{value}" end) |> Enum.join(", ")
+      formatted = Enum.map_join(result, ", ", fn {key, value} -> "#{key}: #{value}" end)
       {result.id, formatted}
     end)
   end

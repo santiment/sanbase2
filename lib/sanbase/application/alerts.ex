@@ -1,14 +1,17 @@
 defmodule Sanbase.Application.Alerts do
+  @moduledoc false
   import Sanbase.ApplicationUtils
 
-  def init(), do: :ok
+  alias Sanbase.Alerts.Scheduler
+
+  def init, do: :ok
 
   @doc ~s"""
   Return the children and options that will be started in the scrapers container.
   Along with these children all children from `Sanbase.Application.common_children/0`
   will be started, too.
   """
-  def children() do
+  def children do
     children = [
       # Mutex used when sending notifications for triggered alerts
       # Guards agains concurrently sending notifications to a single user
@@ -30,8 +33,8 @@ defmodule Sanbase.Application.Alerts do
 
       # Quantum Scheduler
       start_if(
-        fn -> {Sanbase.Alerts.Scheduler, []} end,
-        fn -> Sanbase.Alerts.Scheduler.enabled?() end
+        fn -> {Scheduler, []} end,
+        fn -> Scheduler.enabled?() end
       )
     ]
 

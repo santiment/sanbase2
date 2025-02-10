@@ -1,17 +1,18 @@
 defmodule Sanbase.Project.Jobs do
+  @moduledoc false
   alias Sanbase.Project
 
   require Logger
 
-  def fill_coinmarketcap_id() do
+  def fill_coinmarketcap_id do
     Logger.info("Run Sanbase.Project.Jobs fill_coinmarketcap_id job")
 
     projects = Project.List.projects()
 
     coinmarketcap_mapping =
-      Project.SourceSlugMapping.get_source_slug_mappings("coinmarketcap")
-      |> Enum.map(fn {source, san} -> {san, source} end)
-      |> Map.new()
+      "coinmarketcap"
+      |> Project.SourceSlugMapping.get_source_slug_mappings()
+      |> Map.new(fn {source, san} -> {san, source} end)
 
     multi =
       Enum.reduce(projects, Ecto.Multi.new(), fn project, multi ->

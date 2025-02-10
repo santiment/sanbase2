@@ -1,6 +1,6 @@
 defmodule Sanbase.Repo.Migrations.RestoreLostProjectData do
+  @moduledoc false
   use Ecto.Migration
-  @disable_ddl_transaction true
 
   import Ecto.Query
 
@@ -9,9 +9,12 @@ defmodule Sanbase.Repo.Migrations.RestoreLostProjectData do
 
   require Logger
 
+  @disable_ddl_transaction true
+
   def up do
     backup_records =
-      Path.expand("project_backup.csv", __DIR__)
+      "project_backup.csv"
+      |> Path.expand(__DIR__)
       |> File.stream!()
       |> NimbleCSV.RFC4180.parse_string(skip_headers: false)
 
@@ -21,20 +24,21 @@ defmodule Sanbase.Repo.Migrations.RestoreLostProjectData do
         order_by: [asc: :id]
       )
 
-    Repo.all(query)
+    query
+    |> Repo.all()
     |> Enum.map(fn project ->
       Logger.debug("Updating project #{inspect(project)}")
 
       backup_record =
-        backup_records
-        |> Enum.find(fn row ->
+        Enum.find(backup_records, fn row ->
           row["coinmarketcap_id"] == project.slug and project.slug != nil
         end)
 
       if backup_record do
         Logger.debug("Found record to recover data: #{inspect(backup_record)}")
 
-        Project.changeset(project, %{
+        project
+        |> Project.changeset(%{
           token_decimals: project.token_decimals || backup_record["token_decimals"],
           website_link: project.website_link || backup_record["website_link"],
           reddit_link: project.reddit_link || backup_record["reddit_link"],

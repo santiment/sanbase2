@@ -1,6 +1,7 @@
 defmodule Sanbase.Statistics do
-  alias Sanbase.Clickhouse.ApiCallData
+  @moduledoc false
   alias Sanbase.Accounts.Statistics, as: UserStatistics
+  alias Sanbase.Clickhouse.ApiCallData
   alias Sanbase.UserLists.Statistics, as: WatchlistStatistics
 
   @statistics [
@@ -12,9 +13,9 @@ defmodule Sanbase.Statistics do
     "active_users"
   ]
 
-  @epoch_datetime 0 |> DateTime.from_unix!()
+  @epoch_datetime DateTime.from_unix!(0)
 
-  def available_stats() do
+  def available_stats do
     @statistics
   end
 
@@ -22,12 +23,12 @@ defmodule Sanbase.Statistics do
   Returns a map with statistics for sanbase.
   Each key is the name of the statistic and value is its value
   """
-  def get_all() do
+  def get_all do
     Enum.map(@statistics, fn stat -> {stat, get(stat)} end)
   end
 
   def get("registered_users") do
-    now = Timex.now()
+    now = DateTime.utc_now()
     last_7d = UserStatistics.registered_users(Timex.shift(now, days: -7), now)
     last_30d = UserStatistics.registered_users(Timex.shift(now, days: -30), now)
     last_180d = UserStatistics.registered_users(Timex.shift(now, days: -180), now)
@@ -42,7 +43,7 @@ defmodule Sanbase.Statistics do
   end
 
   def get("registered_staking_users") do
-    now = Timex.now()
+    now = DateTime.utc_now()
     last_7d = UserStatistics.registered_staking_users(Timex.shift(now, days: -7), now)
     last_30d = UserStatistics.registered_staking_users(Timex.shift(now, days: -30), now)
     last_180d = UserStatistics.registered_staking_users(Timex.shift(now, days: -180), now)
@@ -68,7 +69,7 @@ defmodule Sanbase.Statistics do
   end
 
   def get("watchlists") do
-    now = Timex.now()
+    now = DateTime.utc_now()
     last_7d = WatchlistStatistics.watchlists_created(Timex.shift(now, days: -7), now)
     last_30d = WatchlistStatistics.watchlists_created(Timex.shift(now, days: -30), now)
     last_180d = WatchlistStatistics.watchlists_created(Timex.shift(now, days: -180), now)
@@ -85,13 +86,14 @@ defmodule Sanbase.Statistics do
         Timex.shift(now, days: -14)
       )
 
-    average_watchlists_per_user =
+    if_result =
       if users_with_watchlist_count > 0 do
         overall / users_with_watchlist_count
       else
         +0.0
       end
-      |> Float.round(2)
+
+    average_watchlists_per_user = Float.round(if_result, 2)
 
     %{
       "watchlist_created_last_7d" => last_7d,
@@ -106,7 +108,7 @@ defmodule Sanbase.Statistics do
   end
 
   def get("active_users") do
-    now = Timex.now()
+    now = DateTime.utc_now()
 
     {:ok, active_users_in_last_12h} =
       ApiCallData.active_users_count(Timex.shift(now, hours: -12), now)

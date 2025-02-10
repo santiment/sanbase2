@@ -23,11 +23,11 @@ defmodule Sanbase.FeaturedInsihgtVotingTest do
     assert featured_insight["votedAt"] == nil
 
     %{"data" => %{"vote" => voted_insight}} = vote_for(context.conn, context.insight)
-    voted_at = voted_insight["votedAt"] |> Sanbase.DateTimeUtils.from_iso8601!()
+    voted_at = Sanbase.DateTimeUtils.from_iso8601!(voted_insight["votedAt"])
 
     assert Sanbase.TestUtils.datetime_close_to(
              voted_at,
-             Timex.now(),
+             DateTime.utc_now(),
              seconds: 2
            )
   end

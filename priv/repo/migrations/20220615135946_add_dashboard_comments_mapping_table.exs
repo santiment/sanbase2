@@ -1,5 +1,7 @@
 defmodule Sanbase.Repo.Migrations.AddDashboardCommentsMappingTable do
+  @moduledoc false
   use Ecto.Migration
+
   @table :dashboard_comments_mapping
   def change do
     create(table(@table)) do

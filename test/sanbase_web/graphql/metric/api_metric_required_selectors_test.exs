@@ -26,8 +26,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricRequiredSelectorsTest do
 
     for metric <- metrics do
       error_msg =
-        get_timeseries_metric(
-          conn,
+        conn
+        |> get_timeseries_metric(
           metric,
           %{slug: slug},
           from,
@@ -45,8 +45,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricRequiredSelectorsTest do
     %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
 
     error_msg =
-      get_timeseries_metric(
-        conn,
+      conn
+      |> get_timeseries_metric(
         "social_active_users",
         %{slug: slug},
         from,
@@ -59,14 +59,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricRequiredSelectorsTest do
              "metric 'social_active_users' must have at least one of the following fields in the selector: source"
   end
 
-  defp get_timeseries_metric(
-         conn,
-         metric,
-         selector,
-         from,
-         to,
-         interval
-       ) do
+  defp get_timeseries_metric(conn, metric, selector, from, to, interval) do
     query = get_timeseries_query(metric, selector, from, to, interval)
 
     conn

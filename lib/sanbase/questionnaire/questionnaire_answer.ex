@@ -7,8 +7,8 @@ defmodule Sanbase.Questionnaire.Answer do
 
   use Ecto.Schema
 
-  import Ecto.Query
   import Ecto.Changeset
+  import Ecto.Query
 
   alias Sanbase.Accounts.User
   alias Sanbase.Questionnaire.Question
@@ -54,7 +54,7 @@ defmodule Sanbase.Questionnaire.Answer do
   def create(question_uuid, user_id, params) do
     {:ok, type} = Question.get_type(question_uuid)
 
-    params = params |> Map.merge(%{question_uuid: question_uuid, user_id: user_id})
+    params = Map.merge(params, %{question_uuid: question_uuid, user_id: user_id})
 
     %__MODULE__{}
     |> cast(params, @fields)

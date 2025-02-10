@@ -1,12 +1,10 @@
 defmodule Sanbase.Repo.Migrations.MigratePricePercentChangeToMetricAlerts do
+  @moduledoc false
   use Ecto.Migration
 
-  alias Sanbase.Alert.Trigger.{
-    PricePercentChangeSettings,
-    PriceAbsoluteChangeSettings,
-    MetricTriggerSettings
-  }
-
+  alias Sanbase.Alert.Trigger.MetricTriggerSettings
+  alias Sanbase.Alert.Trigger.PriceAbsoluteChangeSettings
+  alias Sanbase.Alert.Trigger.PricePercentChangeSettings
   alias Sanbase.Alert.UserTrigger
 
   def up do
@@ -18,7 +16,7 @@ defmodule Sanbase.Repo.Migrations.MigratePricePercentChangeToMetricAlerts do
     :ok
   end
 
-  defp migrate_price_percent_change_signals() do
+  defp migrate_price_percent_change_signals do
     PricePercentChangeSettings.type()
     |> UserTrigger.get_all_triggers_by_type()
     |> Enum.each(fn user_trigger ->
@@ -39,7 +37,7 @@ defmodule Sanbase.Repo.Migrations.MigratePricePercentChangeToMetricAlerts do
     end)
   end
 
-  defp setup() do
+  defp setup do
     Application.ensure_all_started(:tzdata)
   end
 end

@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.TimelineEventTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   alias SanbaseWeb.Graphql.Resolvers.TimelineEventResolver

@@ -9,6 +9,7 @@ defmodule Sanbase.Project.GithubOrganization.ChangeSuggestion do
   import Ecto.Query
 
   alias Sanbase.Project
+  alias Sanbase.Project.GithubOrganization
 
   @statuses ["pending_approval", "approved", "declined"]
 
@@ -31,8 +32,8 @@ defmodule Sanbase.Project.GithubOrganization.ChangeSuggestion do
     |> validate_inclusion(:status, @statuses)
   end
 
-  def list_all_submissions() do
-    from(s in __MODULE__, preload: [:project]) |> Sanbase.Repo.all()
+  def list_all_submissions do
+    Sanbase.Repo.all(from(s in __MODULE__, preload: [:project]))
   end
 
   @doc ~s"""
@@ -128,17 +129,18 @@ defmodule Sanbase.Project.GithubOrganization.ChangeSuggestion do
   defp apply_suggestions(suggestion) do
     added =
       for org <- suggestion.added_organizations do
-        Sanbase.Project.GithubOrganization.add_github_organization(suggestion.project_id, org)
+        GithubOrganization.add_github_organization(suggestion.project_id, org)
       end
 
     removed =
       for org <- suggestion.removed_organizations do
-        Sanbase.Project.GithubOrganization.remove_github_organization(suggestion.project_id, org)
+        GithubOrganization.remove_github_organization(suggestion.project_id, org)
       end
 
-    case Enum.any?(added ++ removed, &match?({:error, _}, &1)) do
-      false -> {:ok, suggestion}
-      true -> {:error, "Failed to apply changes"}
+    if Enum.any?(added ++ removed, &match?({:error, _}, &1)) do
+      {:error, "Failed to apply changes"}
+    else
+      {:ok, suggestion}
     end
   end
 end

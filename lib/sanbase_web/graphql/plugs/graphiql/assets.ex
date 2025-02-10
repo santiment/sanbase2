@@ -30,8 +30,7 @@ defmodule SanbaseWeb.Graphql.GraphiQL.Assets do
      [
        {"dist/fonts/glyphicons-halflings-regular.eot", "fonts/glyphicons-halflings-regular.eot"},
        {"dist/fonts/glyphicons-halflings-regular.ttf", "fonts/glyphicons-halflings-regular.ttf"},
-       {"dist/fonts/glyphicons-halflings-regular.woff2",
-        "fonts/glyphicons-halflings-regular.woff2"},
+       {"dist/fonts/glyphicons-halflings-regular.woff2", "fonts/glyphicons-halflings-regular.woff2"},
        {"dist/fonts/glyphicons-halflings-regular.svg", "fonts/glyphicons-halflings-regular.svg"},
        {"dist/css/bootstrap.min.css", "css/bootstrap.css"}
      ]},

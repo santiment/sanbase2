@@ -1,8 +1,9 @@
 defmodule Sanbase.FileStore.Image do
+  @moduledoc false
   use Ecto.Schema
 
-  import Ecto.Query
   import Ecto.Changeset
+  import Ecto.Query
 
   require Logger
 
@@ -20,9 +21,8 @@ defmodule Sanbase.FileStore.Image do
     |> validate_required([:url, :name])
   end
 
-  def all() do
-    from(i in __MODULE__, order_by: [desc: :id])
-    |> Sanbase.Repo.all()
+  def all do
+    Sanbase.Repo.all(from(i in __MODULE__, order_by: [desc: :id]))
   end
 
   def create(attrs) do
@@ -34,7 +34,8 @@ defmodule Sanbase.FileStore.Image do
   def resize_image(source_path, dest_path, filename, size) do
     dest_filepath = Path.join(dest_path, filename)
 
-    Mogrify.open(source_path)
+    source_path
+    |> Mogrify.open()
     |> Mogrify.resize("#{size}x#{size}")
     |> Mogrify.custom("type", "PaletteAlpha")
     |> Mogrify.save(path: dest_filepath)

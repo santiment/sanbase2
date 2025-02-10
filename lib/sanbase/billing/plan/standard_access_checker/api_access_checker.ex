@@ -7,9 +7,9 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
   # available in a given plan. Each next plan contains all the metrics from theh
   # lower plans plus some additional metrics
 
-  @doc documentation_ref: "# DOCS access-plans/index.md"
-
   alias Sanbase.Billing.Plan
+
+  @doc documentation_ref: "# DOCS access-plans/index.md"
 
   @free_plan_stats %{
     historical_data_in_days: 1 * 365,

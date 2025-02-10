@@ -1,16 +1,22 @@
 defmodule Sanbase.DiscordBot.LegacyCommandHandler do
-  import Nostrum.Struct.Embed
+  @moduledoc false
   import Ecto.Query
-
-  require Logger
+  import Nostrum.Struct.Embed
 
   alias Nostrum.Api
+  alias Nostrum.Cache.GuildCache
+  alias Nostrum.Struct.Component.ActionRow
+  alias Nostrum.Struct.Component.Button
+  alias Nostrum.Struct.Component.TextInput
   alias Nostrum.Struct.Embed
+  alias Nostrum.Struct.Interaction
+  alias Nostrum.Struct.Message
   alias Sanbase.Accounts.User
   alias Sanbase.Dashboard.DiscordDashboard
-  alias Nostrum.Struct.Component.Button
-  alias Nostrum.Struct.Component.{ActionRow, TextInput}
+  alias Sanbase.Dashboard.QueryExecution
   alias Sanbase.Utils.Config
+
+  require Logger
 
   @prefix "!q "
   @ai_prefix "!ai "
@@ -26,7 +32,7 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
   @local_guild_id 852_836_083_381_174_282
   @santiment_guild_id 334_289_660_698_427_392
 
-  def bot_id() do
+  def bot_id do
     case Config.module_get(Sanbase, :deployment_env) do
       "dev" -> @local_bot_id
       "stage" -> @stage_bot_id
@@ -34,14 +40,14 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
     end
   end
 
-  def pro_roles() do
+  def pro_roles do
     case Config.module_get(Sanbase, :deployment_env) do
       "dev" -> @local_pro_roles
       _ -> @prod_pro_roles
     end
   end
 
-  def santiment_guild_id() do
+  def santiment_guild_id do
     case Config.module_get(Sanbase, :deployment_env) do
       "dev" -> @local_guild_id
       _ -> @santiment_guild_id
@@ -70,8 +76,8 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
         required: true
       )
 
-    ar1 = ActionRow.action_row() |> ActionRow.put(name_input)
-    ar2 = ActionRow.action_row() |> ActionRow.put(sql_input)
+    ar1 = ActionRow.put(ActionRow.action_row(), name_input)
+    ar2 = ActionRow.put(ActionRow.action_row(), sql_input)
 
     response = %{
       type: 9,
@@ -96,7 +102,7 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
       |> List.first()
 
     options_map =
-      interaction.data.options |> Enum.into(%{}, fn option -> {option.name, option.value} end)
+      Map.new(interaction.data.options, fn option -> {option.name, option.value} end)
 
     if focused_option do
       case focused_option.name do
@@ -109,14 +115,14 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
     else
       files = fetch_chart_files(options_map["metric"], options_map["project"])
 
-      if files != [] do
+      if files == [] do
+        content = "Can't create chart for #{options_map["project"]}'s #{options_map["metric"]}"
+        edit_interaction_response(interaction, content, [], [])
+      else
         Nostrum.Api.edit_interaction_response(interaction, %{
           content: "",
           files: files
         })
-      else
-        content = "Can't create chart for #{options_map["project"]}'s #{options_map["metric"]}"
-        edit_interaction_response(interaction, content, [], [])
       end
     end
   end
@@ -127,16 +133,17 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
     {name, sql} = parse_modal_component(interaction)
     args = get_additional_info(interaction)
 
-    with {:ok, exec_result, dashboard, panel_id} <- compute_and_save(name, sql, [], args) do
-      components = [action_row(panel_id)]
-      embeds = create_chart_embed(exec_result, dashboard, panel_id)
+    case compute_and_save(name, sql, [], args) do
+      {:ok, exec_result, dashboard, panel_id} ->
+        components = [action_row(panel_id)]
+        embeds = create_chart_embed(exec_result, dashboard, panel_id)
 
-      edit_response_with_data(exec_result, interaction, %{
-        embeds: embeds,
-        components: components,
-        name: name
-      })
-    else
+        edit_response_with_data(exec_result, interaction, %{
+          embeds: embeds,
+          components: components,
+          name: name
+        })
+
       {:execution_error, reason} ->
         content = sql_execution_error(reason, interaction.user.id, name)
         edit_interaction_response(interaction, content)
@@ -144,27 +151,27 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
   end
 
   def handle_interaction("list", interaction) do
-    with pinned when is_list(pinned) and pinned != [] <-
-           DiscordDashboard.list_pinned_channel(
-             to_string(interaction.channel_id),
-             to_string(interaction.guild_id)
-           ) do
-      Nostrum.Api.create_interaction_response(
-        interaction,
-        interaction_message_response("List of pinned queries")
-      )
-
-      pinned
-      |> Enum.with_index()
-      |> Enum.each(fn {dd, idx} ->
-        text = "#{idx + 1}. #{dd.name}"
-
-        Api.create_message(interaction.channel_id,
-          content: text,
-          components: [action_row(dd.panel_id, dd)]
+    case DiscordDashboard.list_pinned_channel(
+           to_string(interaction.channel_id),
+           to_string(interaction.guild_id)
+         ) do
+      pinned when is_list(pinned) and pinned != [] ->
+        Nostrum.Api.create_interaction_response(
+          interaction,
+          interaction_message_response("List of pinned queries")
         )
-      end)
-    else
+
+        pinned
+        |> Enum.with_index()
+        |> Enum.each(fn {dd, idx} ->
+          text = "#{idx + 1}. #{dd.name}"
+
+          Api.create_message(interaction.channel_id,
+            content: text,
+            components: [action_row(dd.panel_id, dd)]
+          )
+        end)
+
       _ ->
         interaction_msg(interaction, "There are no pinned queries for this channel.")
     end
@@ -195,18 +202,18 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
     interaction_ack(interaction)
     args = get_additional_info(interaction)
 
-    with {:ok, exec_result, dashboard, _dashboard_id} <-
-           DiscordDashboard.execute(sanbase_bot_id(), panel_id, args) do
-      panel = List.first(dashboard.panels)
-      components = [action_row(panel_id)]
-      embeds = create_chart_embed(exec_result, dashboard, panel_id)
+    case DiscordDashboard.execute(sanbase_bot_id(), panel_id, args) do
+      {:ok, exec_result, dashboard, _dashboard_id} ->
+        panel = List.first(dashboard.panels)
+        components = [action_row(panel_id)]
+        embeds = create_chart_embed(exec_result, dashboard, panel_id)
 
-      edit_response_with_data(exec_result, interaction, %{
-        embeds: embeds,
-        components: components,
-        name: panel.name
-      })
-    else
+        edit_response_with_data(exec_result, interaction, %{
+          embeds: embeds,
+          components: components,
+          name: panel.name
+        })
+
       {:execution_error, reason} ->
         content =
           sql_execution_error(
@@ -220,35 +227,40 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
   end
 
   def handle_interaction("pin", interaction, panel_id) do
-    with true <- can_manage_channel?(interaction),
-         {:ok, dd} <- DiscordDashboard.pin(panel_id) do
-      interaction_msg(interaction, "<@#{interaction.user.id}> pinned #{dd.name}")
-    end
-    |> handle_pin_unpin_error("pin", interaction)
+    with_result =
+      with true <- can_manage_channel?(interaction),
+           {:ok, dd} <- DiscordDashboard.pin(panel_id) do
+        interaction_msg(interaction, "<@#{interaction.user.id}> pinned #{dd.name}")
+      end
+
+    handle_pin_unpin_error(with_result, "pin", interaction)
   end
 
   def handle_interaction("unpin", interaction, panel_id) do
-    with true <- can_manage_channel?(interaction),
-         {:ok, dd} <- DiscordDashboard.unpin(panel_id) do
-      interaction_msg(interaction, "<@#{interaction.user.id}> unpinned #{dd.name}")
-    end
-    |> handle_pin_unpin_error("unpin", interaction)
+    with_result =
+      with true <- can_manage_channel?(interaction),
+           {:ok, dd} <- DiscordDashboard.unpin(panel_id) do
+        interaction_msg(interaction, "<@#{interaction.user.id}> unpinned #{dd.name}")
+      end
+
+    handle_pin_unpin_error(with_result, "unpin", interaction)
   end
 
   def handle_interaction("show", interaction, panel_id) do
-    with %DiscordDashboard{} = dd <- DiscordDashboard.by_panel_id(panel_id) do
-      panel = List.first(dd.dashboard.panels)
+    case DiscordDashboard.by_panel_id(panel_id) do
+      %DiscordDashboard{} = dd ->
+        panel = List.first(dd.dashboard.panels)
 
-      content = """
-      #{panel.name}
-      ```sql
+        content = """
+        #{panel.name}
+        ```sql
 
-      #{panel.sql["query"]}
-      ```
-      """
+        #{panel.sql["query"]}
+        ```
+        """
 
-      interaction_msg(interaction, content, %{flags: @ephemeral_message_flags})
-    else
+        interaction_msg(interaction, content, %{flags: @ephemeral_message_flags})
+
       _ ->
         interaction_msg(interaction, "Query is removed from our database", %{
           flags: @ephemeral_message_flags
@@ -266,17 +278,18 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
 
     args = get_additional_info_msg(msg)
 
-    with {:ok, exec_result, dd, panel_id} <- compute_and_save(name, sql, [], args) do
-      components = [action_row(panel_id)]
-      embeds = create_chart_embed(exec_result, dd, panel_id)
+    case compute_and_save(name, sql, [], args) do
+      {:ok, exec_result, dd, panel_id} ->
+        components = [action_row(panel_id)]
+        embeds = create_chart_embed(exec_result, dd, panel_id)
 
-      edit_response_with_data(exec_result, msg, %{
-        old_msg_id: loading_msg.id,
-        embeds: embeds,
-        components: components,
-        name: name
-      })
-    else
+        edit_response_with_data(exec_result, msg, %{
+          old_msg_id: loading_msg.id,
+          embeds: embeds,
+          components: components,
+          name: name
+        })
+
       {:execution_error, reason} ->
         content = sql_execution_error(reason, msg.author.id, name)
         Api.edit_message(msg.channel_id, loading_msg.id, content: content)
@@ -322,7 +335,7 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
 
   def get_guild_channel(guild_id, channel_id) do
     guild_name =
-      case Nostrum.Cache.GuildCache.get(guild_id) do
+      case GuildCache.get(guild_id) do
         {:ok, guild} ->
           guild.name
 
@@ -361,7 +374,8 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
       ~r/!q([^`]*)```([^`]*)```$/ms
     ]
 
-    Enum.find(regexes, &match?([_, _name, _sql], Regex.run(&1, content)))
+    regexes
+    |> Enum.find(&match?([_, _name, _sql], Regex.run(&1, content)))
     |> case do
       nil ->
         {:error, :invalid_command}
@@ -393,9 +407,9 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
 
     table =
       if max_rows == 0 and length(response.columns) == 1 do
-        String.slice(response.rows |> hd() |> hd(), 0, 1900)
+        response.rows |> hd() |> hd() |> String.slice(0, 1900)
       else
-        rows = response.rows |> Enum.take(max_rows)
+        rows = Enum.take(response.rows, max_rows)
         TableRex.quick_render!(rows, response.columns)
       end
 
@@ -436,22 +450,25 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
 
   # Private
 
-  defp edit_response_with_data(
-         exec_result,
-         %Nostrum.Struct.Message{} = msg,
-         %{old_msg_id: old_msg_id, embeds: [], components: components, name: name}
-       ) do
+  defp edit_response_with_data(exec_result, %Message{} = msg, %{
+         old_msg_id: old_msg_id,
+         embeds: [],
+         components: components,
+         name: name
+       }) do
     content = format_table(name, exec_result, to_string(msg.author.id))
 
-    Api.edit_message(msg.channel_id, old_msg_id, content: content, components: components)
+    msg.channel_id
+    |> Api.edit_message(old_msg_id, content: content, components: components)
     |> maybe_add_stats?(msg, exec_result, content, components, [])
   end
 
-  defp edit_response_with_data(
-         exec_result,
-         %Nostrum.Struct.Message{} = msg,
-         %{old_msg_id: old_msg_id, embeds: embeds, components: components, name: name}
-       ) do
+  defp edit_response_with_data(exec_result, %Message{} = msg, %{
+         old_msg_id: old_msg_id,
+         embeds: embeds,
+         components: components,
+         name: name
+       }) do
     file = %{
       name: "#{name}.csv",
       body: to_csv(exec_result)
@@ -467,22 +484,23 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
     )
   end
 
-  defp edit_response_with_data(
-         exec_result,
-         %Nostrum.Struct.Interaction{} = interaction,
-         %{embeds: [], components: components, name: name}
-       ) do
+  defp edit_response_with_data(exec_result, %Interaction{} = interaction, %{
+         embeds: [],
+         components: components,
+         name: name
+       }) do
     content = format_table(name, exec_result, to_string(interaction.user.id))
 
-    edit_interaction_response(interaction, content, components, [])
+    interaction
+    |> edit_interaction_response(content, components, [])
     |> maybe_add_stats?(interaction, exec_result, content, components, [])
   end
 
-  defp edit_response_with_data(
-         exec_result,
-         %Nostrum.Struct.Interaction{} = interaction,
-         %{embeds: embeds, components: components, name: name}
-       ) do
+  defp edit_response_with_data(exec_result, %Interaction{} = interaction, %{
+         embeds: embeds,
+         components: components,
+         name: name
+       }) do
     file = %{
       name: "#{name}.csv",
       body: to_csv(exec_result)
@@ -498,13 +516,14 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
     })
   end
 
-  defp gen_query_name() do
+  defp gen_query_name do
     "anon_query_" <> (UUID.uuid4() |> String.split("-") |> Enum.at(0))
   end
 
   defp max_rows(rows) do
     row_length =
-      TableRex.quick_render!(rows)
+      rows
+      |> TableRex.quick_render!()
       |> String.length()
 
     div(@max_size, row_length)
@@ -529,7 +548,7 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
   end
 
   defp interaction_message_response(content, opts \\ %{}) do
-    data = %{content: content} |> Map.merge(opts)
+    data = Map.merge(%{content: content}, opts)
     %{type: 4, data: data}
   end
 
@@ -555,8 +574,7 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
       components = interaction.data.components
 
       text_input_map =
-        components
-        |> Enum.into(%{}, fn c ->
+        Map.new(components, fn c ->
           text_input_comp = List.first(c.components)
           {text_input_comp.custom_id, text_input_comp.value}
         end)
@@ -568,7 +586,7 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
           name -> name
         end
 
-      sql = text_input_map["sqlquery"] |> String.trim(";")
+      sql = String.trim(text_input_map["sqlquery"], ";")
 
       {name, sql}
     end
@@ -604,15 +622,8 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
     }
   end
 
-  defp maybe_add_stats?(
-         prev_response,
-         %Nostrum.Struct.Interaction{} = interaction,
-         exec_result,
-         content,
-         components,
-         embeds
-       ) do
-    case Sanbase.Dashboard.QueryExecution.get_execution_stats(exec_result.clickhouse_query_id) do
+  defp maybe_add_stats?(prev_response, %Interaction{} = interaction, exec_result, content, components, embeds) do
+    case QueryExecution.get_execution_stats(exec_result.clickhouse_query_id) do
       {:ok, qe} ->
         stats = get_execution_summary(qe)
 
@@ -623,15 +634,8 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
     end
   end
 
-  defp maybe_add_stats?(
-         {:ok, prev_message} = prev_response,
-         %Nostrum.Struct.Message{},
-         exec_result,
-         content,
-         components,
-         embeds
-       ) do
-    case Sanbase.Dashboard.QueryExecution.get_execution_stats(exec_result.clickhouse_query_id) do
+  defp maybe_add_stats?({:ok, prev_message} = prev_response, %Message{}, exec_result, content, components, embeds) do
+    case QueryExecution.get_execution_stats(exec_result.clickhouse_query_id) do
       {:ok, qe} ->
         stats = get_execution_summary(qe)
 
@@ -661,9 +665,10 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
     show_button = Button.button(label: "Show 📜", custom_id: "show" <> "_" <> panel_id, style: 2)
 
     pin_unpin_button =
-      case dd.pinned do
-        true -> Button.button(label: "Unpin X", custom_id: "unpin" <> "_" <> panel_id, style: 4)
-        false -> Button.button(label: "Pin 📌", custom_id: "pin" <> "_" <> panel_id, style: 1)
+      if dd.pinned do
+        Button.button(label: "Unpin X", custom_id: "unpin" <> "_" <> panel_id, style: 4)
+      else
+        Button.button(label: "Pin 📌", custom_id: "pin" <> "_" <> panel_id, style: 1)
       end
 
     ActionRow.action_row()
@@ -688,7 +693,7 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
       map =
         data_columns
         |> Enum.with_index()
-        |> Enum.into(%{}, fn {name, idx} -> {to_string(idx), %{node: chart_type(name)}} end)
+        |> Map.new(fn {name, idx} -> {to_string(idx), %{node: chart_type(name)}} end)
 
       settings =
         %{wm: data_columns, ws: map}
@@ -721,7 +726,8 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
   end
 
   defp maybe_create_embed(chart, name) do
-    HTTPoison.get(chart)
+    chart
+    |> HTTPoison.get()
     |> case do
       {:ok, response} ->
         if image?(response) do
@@ -743,7 +749,7 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
     NimbleCSV.RFC4180.dump_to_iodata([exec_result.columns | exec_result.rows])
   end
 
-  defp img_prefix_url() do
+  defp img_prefix_url do
     case Config.module_get(Sanbase, :deployment_env) do
       "stage" -> "preview-stage.santiment.net"
       "dev" -> "preview-stage.santiment.net"
@@ -754,22 +760,18 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
   defp image?(response) do
     content_type =
       response.headers
-      |> Enum.into(%{})
+      |> Map.new()
       |> Map.get("Content-Type")
 
     content_type == "image/jpeg"
   end
 
-  defp sanbase_bot_id() do
+  defp sanbase_bot_id do
     Sanbase.Repo.get_by(User, email: User.sanbase_bot_email()).id
   end
 
-  defp can_manage_channel?(%Nostrum.Struct.Interaction{
-         user: %{id: discord_user_id},
-         guild_id: guild_id,
-         channel_id: channel_id
-       }) do
-    with {:ok, guild} <- Nostrum.Cache.GuildCache.get(guild_id),
+  defp can_manage_channel?(%Interaction{user: %{id: discord_user_id}, guild_id: guild_id, channel_id: channel_id}) do
+    with {:ok, guild} <- GuildCache.get(guild_id),
          {:ok, member} <- Nostrum.Api.get_guild_member(guild_id, discord_user_id) do
       :manage_channels in Nostrum.Struct.Guild.Member.guild_channel_permissions(
         member,
@@ -792,22 +794,23 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
   end
 
   defp projects do
-    from(
-      p in Sanbase.Project,
-      left_join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
-      order_by: latest_cmc.rank,
-      select: %{slug: p.slug, name: p.name, ticker: p.ticker}
+    Sanbase.Repo.all(
+      from(p in Sanbase.Project,
+        left_join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
+        order_by: latest_cmc.rank,
+        select: %{slug: p.slug, name: p.name, ticker: p.ticker}
+      )
     )
-    |> Sanbase.Repo.all()
   end
 
   defp fetch_chart_files(metric, slug) do
     now =
-      Timex.shift(Timex.now(), minutes: 10)
+      DateTime.utc_now()
+      |> Timex.shift(minutes: 10)
       |> Sanbase.DateTimeUtils.round_datetime(second: 600)
       |> Timex.set(microsecond: {0, 0})
 
-    year_ago = Timex.shift(now, years: -1) |> Timex.set(microsecond: {0, 0})
+    year_ago = now |> Timex.shift(years: -1) |> Timex.set(microsecond: {0, 0})
 
     now_iso = DateTime.to_iso8601(now)
     year_ago_iso = DateTime.to_iso8601(year_ago)
@@ -815,7 +818,7 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
     settings_json = Jason.encode!(%{slug: slug, from: year_ago_iso, to: now_iso})
 
     metrics = if metric == "price_usd", do: [metric], else: ["price_usd", metric]
-    wax = Enum.with_index(metrics) |> Enum.into(%{}) |> Map.values()
+    wax = metrics |> Enum.with_index() |> Map.new() |> Map.values()
 
     widgets_json =
       Jason.encode!([
@@ -827,7 +830,8 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
     {:ok, short_url} = Sanbase.ShortUrl.create(%{full_url: url})
     chart = "https://#{img_prefix_url()}/chart/#{short_url.short_url}"
 
-    HTTPoison.get(chart, [basic_auth_header()])
+    chart
+    |> HTTPoison.get([basic_auth_header()])
     |> case do
       {:ok, response} ->
         if image?(response) do
@@ -841,9 +845,10 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
     end
   end
 
-  defp slugs() do
+  defp slugs do
     Sanbase.Cache.get_or_store(:discord_slugs, fn ->
-      Sanbase.Cache.get_or_store(:discord_assets, fn -> projects() end)
+      :discord_assets
+      |> Sanbase.Cache.get_or_store(fn -> projects() end)
       |> Enum.map(& &1.slug)
     end)
   end
@@ -880,7 +885,7 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
     metrics =
       if slug && slug in slugs() do
         Sanbase.Cache.get_or_store("discord_metrics_" <> slug, fn ->
-          Sanbase.Metric.available_metrics_for_selector(%{slug: slug}) |> elem(1)
+          %{slug: slug} |> Sanbase.Metric.available_metrics_for_selector() |> elem(1)
         end)
       else
         Sanbase.Cache.get_or_store(:discord_metrics, fn -> Sanbase.Metric.available_metrics() end)
@@ -911,11 +916,9 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
     Nostrum.Api.create_interaction_response(interaction, response)
   end
 
-  defp basic_auth_header() do
+  defp basic_auth_header do
     credentials =
-      (System.get_env("GRAPHQL_BASIC_AUTH_USERNAME") <>
-         ":" <> System.get_env("GRAPHQL_BASIC_AUTH_PASSWORD"))
-      |> Base.encode64()
+      Base.encode64(System.get_env("GRAPHQL_BASIC_AUTH_USERNAME") <> ":" <> System.get_env("GRAPHQL_BASIC_AUTH_PASSWORD"))
 
     {"Authorization", "Basic #{credentials}"}
   end

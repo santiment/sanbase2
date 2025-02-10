@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.WebinarTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   object :webinar do

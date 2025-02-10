@@ -27,13 +27,14 @@ defmodule Sanbase.Entity do
   import Ecto.Query
   import Sanbase.Entity.Query, only: [entity_id_selection: 0, entity_type_selection: 0]
 
-  alias Sanbase.Chart
-  alias Sanbase.Insight.Post
-  alias Sanbase.UserList
-  alias Sanbase.Queries.Query
-  alias Sanbase.Dashboards.Dashboard
-  alias Sanbase.Alert.UserTrigger
   alias Sanbase.Accounts.Interaction
+  alias Sanbase.Accounts.Role
+  alias Sanbase.Alert.UserTrigger
+  alias Sanbase.Chart
+  alias Sanbase.Dashboards.Dashboard
+  alias Sanbase.Insight.Post
+  alias Sanbase.Queries.Query
+  alias Sanbase.UserList
 
   # The list of supported entitiy types. In order to add a new entity type, the
   # following steps must be taken:
@@ -105,8 +106,7 @@ defmodule Sanbase.Entity do
   documentation for more options.
   """
   @spec get_most_voted(entity_type | [entity_type], opts) :: {:ok, list(result_map)} | no_return()
-  def get_most_voted(type_or_types, opts),
-    do: do_get_most_voted(List.wrap(type_or_types), opts)
+  def get_most_voted(type_or_types, opts), do: do_get_most_voted(List.wrap(type_or_types), opts)
 
   @doc ~s"""
   Get a list of the most recent entities of a given type or types.
@@ -120,8 +120,7 @@ defmodule Sanbase.Entity do
   """
   @spec get_most_recent(entity_type | [entity_type], opts) ::
           {:ok, list(result_map)} | no_return()
-  def get_most_recent(type_or_types, opts),
-    do: do_get_most_recent(List.wrap(type_or_types), opts)
+  def get_most_recent(type_or_types, opts), do: do_get_most_recent(List.wrap(type_or_types), opts)
 
   @doc ~s"""
   Get a list of the most used entities of a given type or types.
@@ -135,8 +134,7 @@ defmodule Sanbase.Entity do
   """
   @spec get_most_used(entity_type | [entity_type], opts) ::
           {:ok, list(result_map)} | no_return()
-  def get_most_used(type_or_types, opts),
-    do: do_get_most_used(List.wrap(type_or_types), opts)
+  def get_most_used(type_or_types, opts), do: do_get_most_used(List.wrap(type_or_types), opts)
 
   @doc ~s"""
   Get the total count of voted entities of a given type or types.
@@ -148,8 +146,7 @@ defmodule Sanbase.Entity do
   """
   @spec get_most_voted_total_count(entity_type | [entity_type], opts) ::
           {:ok, non_neg_integer()} | no_return()
-  def get_most_voted_total_count(type_or_types, opts),
-    do: do_get_most_voted_total_count(List.wrap(type_or_types), opts)
+  def get_most_voted_total_count(type_or_types, opts), do: do_get_most_voted_total_count(List.wrap(type_or_types), opts)
 
   @doc ~s"""
   Get the total count of entities of a given type or types.
@@ -162,8 +159,7 @@ defmodule Sanbase.Entity do
   """
   @spec get_most_recent_total_count(entity_type | [entity_type], opts) ::
           {:ok, non_neg_integer()} | no_return()
-  def get_most_recent_total_count(type_or_types, opts),
-    do: do_get_most_recent_total_count(List.wrap(type_or_types), opts)
+  def get_most_recent_total_count(type_or_types, opts), do: do_get_most_recent_total_count(List.wrap(type_or_types), opts)
 
   @doc ~s"""
   Get the total count of used entities of a given type or types for a user.
@@ -176,8 +172,7 @@ defmodule Sanbase.Entity do
   """
   @spec get_most_used_total_count(entity_type | [entity_type], opts) ::
           {:ok, non_neg_integer()} | no_return()
-  def get_most_used_total_count(type_or_types, opts),
-    do: do_get_most_used_total_count(List.wrap(type_or_types), opts)
+  def get_most_used_total_count(type_or_types, opts), do: do_get_most_used_total_count(List.wrap(type_or_types), opts)
 
   @doc ~s"""
   Map the entity type to the corresponding field in the votes table
@@ -239,8 +234,9 @@ defmodule Sanbase.Entity do
     entity_views_query = entity_views_query(type_entity_list)
 
     entity_count_map =
-      Sanbase.Repo.all(entity_views_query)
-      |> Enum.into(%{}, fn {entity_type, entity_id, views_count} ->
+      entity_views_query
+      |> Sanbase.Repo.all()
+      |> Map.new(fn {entity_type, entity_id, views_count} ->
         {{entity_type, entity_id}, views_count}
       end)
 
@@ -288,10 +284,9 @@ defmodule Sanbase.Entity do
     {:ok, query} = most_recent_base_query(entities, opts)
 
     total_count =
-      from(entity in subquery(query),
-        select: fragment("COUNT(DISTINCT(?, ?))", entity.entity_id, entity.entity_type)
+      Sanbase.Repo.one(
+        from(entity in subquery(query), select: fragment("COUNT(DISTINCT(?, ?))", entity.entity_id, entity.entity_type))
       )
-      |> Sanbase.Repo.one()
 
     {:ok, total_count}
   end
@@ -311,10 +306,9 @@ defmodule Sanbase.Entity do
       )
 
     total_count =
-      from(entity in subquery(query),
-        select: fragment("COUNT(DISTINCT(?, ?))", entity.entity_id, entity.entity_type)
+      Sanbase.Repo.one(
+        from(entity in subquery(query), select: fragment("COUNT(DISTINCT(?, ?))", entity.entity_id, entity.entity_type))
       )
-      |> Sanbase.Repo.one()
 
     {:ok, total_count}
   end
@@ -328,11 +322,7 @@ defmodule Sanbase.Entity do
     # same name, so we can properly sort the results before applying limit and
     # offset.
     query =
-      from(
-        entity in subquery(query),
-        order_by: [desc: entity.creation_time, desc: entity.entity_id]
-      )
-      |> paginate(opts)
+      paginate(from(entity in subquery(query), order_by: [desc: entity.creation_time, desc: entity.entity_id]), opts)
 
     db_result = Sanbase.Repo.all(query)
 
@@ -357,7 +347,7 @@ defmodule Sanbase.Entity do
             Map.get(entity, creation_time_field) || Map.get(entity, creation_time_field_backup)
 
           creation_time_unix =
-            DateTime.from_naive!(creation_time, "Etc/UTC") |> DateTime.to_unix()
+            creation_time |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
 
           # Transform to unix timestamp so we can compare the tuples. Add the id as the secon
           # element so in case of conflicts, we put the entity with higher id first (created later)
@@ -377,30 +367,20 @@ defmodule Sanbase.Entity do
     # the votes for each entity. There is exactly one non-null entity id per
     # row, so the chosen group by expression is working as expected.
     query =
-      from(
-        v in query,
-        group_by: [
-          v.post_id,
-          v.watchlist_id,
-          v.chart_configuration_id,
-          v.user_trigger_id,
-          v.dashboard_id,
-          v.query_id
-        ]
+      paginate(
+        from(v in query,
+          group_by: [v.post_id, v.watchlist_id, v.chart_configuration_id, v.user_trigger_id, v.dashboard_id, v.query_id]
+        ),
+        opts
       )
-      |> paginate(opts)
 
     query =
       case Keyword.get(opts, :current_user_voted_for_only) do
         user_id when is_integer(user_id) ->
-          query
-          |> order_by([_v],
-            desc: fragment("MAX(updated_at) FILTER (WHERE user_id = ?)", ^user_id)
-          )
+          order_by(query, [_v], desc: fragment("MAX(updated_at) FILTER (WHERE user_id = ?)", ^user_id))
 
         _ ->
-          query
-          |> order_by([v], desc: coalesce(sum(v.count), 0))
+          order_by(query, [v], desc: coalesce(sum(v.count), 0))
       end
 
     # For simplicity include all the known in the query here. The ones that are
@@ -447,8 +427,7 @@ defmodule Sanbase.Entity do
 
     # Sort in ascending order according to the ordering map
     result =
-      result
-      |> Enum.sort_by(fn map ->
+      Enum.sort_by(result, fn map ->
         [{key, value}] = Map.to_list(map)
         Map.get(ordering, {key, value.id})
       end)
@@ -470,7 +449,8 @@ defmodule Sanbase.Entity do
     query = most_used_base_query(entities, opts)
 
     result =
-      Sanbase.Repo.all(query)
+      query
+      |> Sanbase.Repo.all()
       |> fetch_entities_by_ids_preserve_order_rewrite_keys()
 
     {:ok, result}
@@ -480,16 +460,12 @@ defmodule Sanbase.Entity do
     opts = update_opts(opts)
     query = most_used_base_query(entities, opts)
 
-    from(entity in subquery(query),
-      select: {entity.entity_id, entity.entity_type}
-    )
-    |> Sanbase.Repo.all()
+    Sanbase.Repo.all(from(entity in subquery(query), select: {entity.entity_id, entity.entity_type}))
 
     total_count =
-      from(entity in subquery(query),
-        select: fragment("COUNT(DISTINCT(?, ?))", entity.entity_id, entity.entity_type)
+      Sanbase.Repo.one(
+        from(entity in subquery(query), select: fragment("COUNT(DISTINCT(?, ?))", entity.entity_id, entity.entity_type))
       )
-      |> Sanbase.Repo.one()
 
     {:ok, total_count}
   end
@@ -501,7 +477,8 @@ defmodule Sanbase.Entity do
       |> Keyword.put(:include_current_user_entities, true)
 
     query =
-      Keyword.fetch!(opts, :current_user_id)
+      opts
+      |> Keyword.fetch!(:current_user_id)
       |> Sanbase.Accounts.Interaction.get_user_most_used_query(entities, opts)
 
     where_clause_query =
@@ -525,7 +502,7 @@ defmodule Sanbase.Entity do
         end
       end)
 
-    query |> where(^where_clause_query)
+    where(query, ^where_clause_query)
   end
 
   defp most_recent_base_query(entities, opts) when is_list(entities) and entities != [] do
@@ -559,8 +536,7 @@ defmodule Sanbase.Entity do
             # fetching user own insights, some of them might be drafts so they
             # won't have :published_at field and then :inserted_at shall be
             # used.
-            creation_time:
-              coalesce(field(e, ^creation_time_field), field(e, ^creation_time_field_backup))
+            creation_time: coalesce(field(e, ^creation_time_field), field(e, ^creation_time_field_backup))
           })
 
         case query_acc do
@@ -568,7 +544,7 @@ defmodule Sanbase.Entity do
             entity_query
 
           query_acc ->
-            query_acc |> union(^entity_query)
+            union(query_acc, ^entity_query)
         end
       end)
 
@@ -597,8 +573,7 @@ defmodule Sanbase.Entity do
         entity_ids_query = entity_ids_query(entity, opts)
         field = deduce_entity_vote_field(entity)
 
-        query_acc
-        |> or_where([v], field(v, ^field) in subquery(entity_ids_query))
+        or_where(query_acc, [v], field(v, ^field) in subquery(entity_ids_query))
       end)
 
     query =
@@ -855,15 +830,13 @@ defmodule Sanbase.Entity do
   defp deduce_entity_creation_time_field(_), do: {:inserted_at, :inserted_at}
 
   defp get_entity_votes_for_user(user_id) do
-    from(v in Sanbase.Vote,
-      where: v.user_id == ^user_id,
-      distinct: true,
-      select: %{
-        entity_id: entity_id_selection(),
-        entity_type: entity_type_selection()
-      }
+    Sanbase.Repo.all(
+      from(v in Sanbase.Vote,
+        where: v.user_id == ^user_id,
+        distinct: true,
+        select: %{entity_id: entity_id_selection(), entity_type: entity_type_selection()}
+      )
     )
-    |> Sanbase.Repo.all()
   end
 
   defp update_opts(opts) do
@@ -889,11 +862,11 @@ defmodule Sanbase.Entity do
     opts =
       case Keyword.get(opts, :user_role_data_only) do
         :san_family ->
-          user_ids = Sanbase.Accounts.Role.san_family_ids()
+          user_ids = Role.san_family_ids()
           Keyword.put(opts, :user_ids, user_ids)
 
         :san_team ->
-          user_ids = Sanbase.Accounts.Role.san_team_ids()
+          user_ids = Role.san_team_ids()
           Keyword.put(opts, :user_ids, user_ids)
 
         _ ->

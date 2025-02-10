@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.ClickhouseTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   object :fees_distribution do

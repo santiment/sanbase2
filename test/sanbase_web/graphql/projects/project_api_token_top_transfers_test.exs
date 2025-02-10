@@ -14,17 +14,13 @@ defmodule SanbaseWeb.Graphql.ProjectApiTokenTopTransactionsTest do
   end
 
   test "top token transactons for a project", %{conn: conn, project: project} do
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.Transfers.Erc20Transfers.top_transfers/7,
-      transfers()
-    )
+    (&Sanbase.Transfers.Erc20Transfers.top_transfers/7)
+    |> Sanbase.Mock.prepare_mock2(transfers())
     |> Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: labels_rows()}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       query = project_by_slug_query(project)
 
-      result =
-        conn
-        |> post("/graphql", query_skeleton(query, "projectBySlug"))
+      result = post(conn, "/graphql", query_skeleton(query, "projectBySlug"))
 
       assert json_response(result, 200)["data"]["projectBySlug"] == transactons_map()
     end)
@@ -51,9 +47,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiTokenTopTransactionsTest do
     }
     """
 
-    result =
-      conn
-      |> post("/graphql", query_skeleton(query, "projectBySlug"))
+    result = post(conn, "/graphql", query_skeleton(query, "projectBySlug"))
 
     assert json_response(result, 200)["data"]["projectBySlug"] == %{"tokenTopTransactions" => []}
   end
@@ -86,8 +80,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiTokenTopTransactionsTest do
              "errors" => [
                %{
                  "locations" => [%{"column" => 3, "line" => 2}],
-                 "message" =>
-                   "Cannot query [\"tokenTopTransactions\"] on a query that returns more than 1 project.",
+                 "message" => "Cannot query [\"tokenTopTransactions\"] on a query that returns more than 1 project.",
                  "path" => ["allErc20Projects"]
                }
              ]
@@ -128,7 +121,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiTokenTopTransactionsTest do
     """
   end
 
-  defp transfers() do
+  defp transfers do
     {:ok,
      [
        %{
@@ -244,7 +237,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiTokenTopTransactionsTest do
      ]}
   end
 
-  defp labels_rows() do
+  defp labels_rows do
     [
       [
         "0xf4b51b14b9ee30dc37ec970b50a486f37686e2a8",
@@ -269,8 +262,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiTokenTopTransactionsTest do
             "labels" => [
               %{
                 "name" => "centralized_exchange",
-                "metadata" =>
-                  ~s|{"comment":"Poloniex GNT","is_dex":false,"owner":"Poloniex","source":""}|
+                "metadata" => ~s|{"comment":"Poloniex GNT","is_dex":false,"owner":"Poloniex","source":""}|
               },
               %{
                 "name" => "whale",

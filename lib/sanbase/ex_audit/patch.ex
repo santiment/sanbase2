@@ -1,8 +1,8 @@
 defmodule Sanbase.ExAudit.Patch do
+  @moduledoc false
   def format_patch(%{patch: patch}) when is_map(patch) do
     changes =
-      patch
-      |> Enum.map(fn {field, change} ->
+      Enum.map(patch, fn {field, change} ->
         safe_field = Phoenix.HTML.html_escape(to_string(field))
         safe_change = Phoenix.HTML.html_escape(format_change_value(change))
 
@@ -23,8 +23,7 @@ defmodule Sanbase.ExAudit.Patch do
 
   defp format_change_value({:changed, nested}) when is_map(nested) do
     nested_changes =
-      nested
-      |> Enum.map_join(", ", fn {k, v} ->
+      Enum.map_join(nested, ", ", fn {k, v} ->
         "#{to_string(k)}: #{format_change_value(v)}"
       end)
 

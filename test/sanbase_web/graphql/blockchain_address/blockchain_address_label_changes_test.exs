@@ -42,11 +42,12 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressLabelChangesApiTest do
         arity: 2
       )
 
-    Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
+    Sanbase.ClickhouseRepo
+    |> Sanbase.Mock.prepare_mock(:query, mock_fun)
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
-        blockchain_address_label_changes(
-          context.conn,
+        context.conn
+        |> blockchain_address_label_changes(
           %{address: "0x4efb548a2cb8f0af7c591cef21053f6875b5d38f", infrastructure: "ETH"},
           ~U[2015-01-01 00:00:00Z],
           ~U[2021-05-01 00:00:00Z]

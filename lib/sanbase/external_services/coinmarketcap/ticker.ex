@@ -1,14 +1,27 @@
+projects_number = 5_000
+
 defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
-  @projects_number 5_000
   @moduledoc ~s"""
   Fetches the ticker data from coinmarketcap API `https://api.coinmarketcap.com/v2/ticker`
 
-  A single request fetchest all top #{@projects_number} tickers information. The coinmarketcap API
+  A single request fetchest all top N tickers information. The coinmarketcap API
   has somewhat misleading name for this api - `ticker` is _NOT_ unique - there
   duplicated tickers. The `id` field (called coinmarketcap_id everywhere in sanbase)
   is unique. Sanbase uses names in the format `TICKER_coinmarketcap_id` to construct
   informative and unique names.
   """
+
+  use Tesla
+
+  import Sanbase.Math, only: [to_integer: 1, to_float: 1]
+
+  alias Sanbase.DateTimeUtils
+  alias Sanbase.ExternalServices.Coinmarketcap
+  alias Sanbase.ExternalServices.Coinmarketcap.PricePoint
+  alias Sanbase.ExternalServices.Coinmarketcap.TickerFetcher
+  alias Sanbase.Utils.Config
+
+  require Logger
 
   defstruct [
     :id,
@@ -32,17 +45,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
     :percent_change_24h,
     :percent_change_7d
   ]
-
-  use Tesla
-
-  import Sanbase.Math, only: [to_integer: 1, to_float: 1]
-
-  alias Sanbase.DateTimeUtils
-  alias Sanbase.ExternalServices.Coinmarketcap
-  alias Sanbase.ExternalServices.Coinmarketcap.{PricePoint, TickerFetcher}
-
-  require Logger
-  alias Sanbase.Utils.Config
 
   plug(Sanbase.ExternalServices.RateLimiting.Middleware,
     name: :api_coinmarketcap_rate_limiter
@@ -72,7 +74,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
           count
 
         _ ->
-          Config.module_get(TickerFetcher, :projects_number)
+          TickerFetcher
+          |> Config.module_get(:projects_number)
           |> String.to_integer()
       end
 
@@ -82,9 +85,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
     |> get()
     |> case do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
-        Logger.info(
-          "[CMC] Successfully fetched the realtime data for top #{projects_number} projects."
-        )
+        Logger.info("[CMC] Successfully fetched the realtime data for top #{projects_number} projects.")
 
         {:ok, parse_json(body)}
 
@@ -134,9 +135,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
 
   @spec parse_json(String.t()) :: [%__MODULE__{}] | no_return
   defp parse_json(json) do
-    %{"data" => data} =
-      json
-      |> Jason.decode!()
+    %{"data" => data} = Jason.decode!(json)
 
     data =
       data
@@ -232,10 +231,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
 
     %PricePoint{
       datetime: DateTimeUtils.from_iso8601!(last_updated),
-      price_usd: (price_usd || 0) |> to_float(),
-      price_btc: (price_btc || 0) |> to_float(),
-      marketcap_usd: (marketcap_usd || 0) |> to_integer(),
-      volume_usd: (volume_usd || 0) |> to_integer()
+      price_usd: to_float(price_usd || 0),
+      price_btc: to_float(price_btc || 0),
+      marketcap_usd: to_integer(marketcap_usd || 0),
+      volume_usd: to_integer(volume_usd || 0)
     }
   end
 end

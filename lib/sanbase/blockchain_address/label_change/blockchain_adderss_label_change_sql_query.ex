@@ -1,11 +1,14 @@
 defmodule Sanbase.BlockchainAddress.BlockchainAddressLabelChange.SqlQuery do
-  def labels_list_query() do
+  @moduledoc false
+  alias Sanbase.Clickhouse.Query
+
+  def labels_list_query do
     sql = """
     SELECT fqn, display_name
     FROM label_metadata FINAL
     """
 
-    Sanbase.Clickhouse.Query.new(sql, %{})
+    Query.new(sql, %{})
   end
 
   def label_changes_query(address, blockchain, from, to) do
@@ -30,6 +33,6 @@ defmodule Sanbase.BlockchainAddress.BlockchainAddressLabelChange.SqlQuery do
       to: DateTime.to_unix(to)
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 end

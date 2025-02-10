@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.Schema.LandingEmailsQueries do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   alias SanbaseWeb.Graphql.Resolvers.LandingEmailsResolver

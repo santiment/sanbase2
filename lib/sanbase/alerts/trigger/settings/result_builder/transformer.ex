@@ -1,5 +1,9 @@
 defmodule Sanbase.Alert.ResultBuilder.Transformer do
+  @moduledoc false
+  import Sanbase.Math, only: [percent_change: 2]
+
   defmodule Data do
+    @moduledoc false
     @derive Jason.Encoder
     defstruct [
       :identifier,
@@ -15,11 +19,9 @@ defmodule Sanbase.Alert.ResultBuilder.Transformer do
     end
 
     def new(args) do
-      %__MODULE__{} |> Map.merge(args)
+      Map.merge(%__MODULE__{}, args)
     end
   end
-
-  import Sanbase.Math, only: [percent_change: 2]
 
   @doc ~s"""
   ## Examples
@@ -62,8 +64,8 @@ defmodule Sanbase.Alert.ResultBuilder.Transformer do
   end
 
   defp decompose_list(values, value_key) do
-    [previous, current] = Enum.take(values, -2) |> Enum.map(&Map.get(&1, value_key))
-    previous_list = Enum.drop(values, -1) |> Enum.map(&Map.get(&1, value_key))
+    [previous, current] = values |> Enum.take(-2) |> Enum.map(&Map.get(&1, value_key))
+    previous_list = values |> Enum.drop(-1) |> Enum.map(&Map.get(&1, value_key))
 
     %{
       previous: previous,

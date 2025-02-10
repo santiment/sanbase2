@@ -7,9 +7,8 @@ defmodule SanbaseWeb.Graphql.Schema.UserListQueries do
   """
   use Absinthe.Schema.Notation
 
-  alias SanbaseWeb.Graphql.Resolvers.UserListResolver
-
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
+  alias SanbaseWeb.Graphql.Resolvers.UserListResolver
 
   object :user_list_queries do
     @desc "Fetch all favourites lists for current_user."

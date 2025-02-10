@@ -3,12 +3,13 @@ defmodule Sanbase.Webinars.Registration do
   Mapping between users and webinars
   """
   use Ecto.Schema
+
   import Ecto.Changeset
   import Ecto.Query
 
   alias Sanbase.Accounts.User
-  alias Sanbase.Webinar
   alias Sanbase.Repo
+  alias Sanbase.Webinar
 
   schema "webinar_registrations" do
     belongs_to(:user, User)

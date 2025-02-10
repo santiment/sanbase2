@@ -20,9 +20,8 @@ defmodule Sanbase.Project.List do
   """
   import Ecto.Query
 
-  alias Sanbase.Repo
-
   alias Sanbase.Project
+  alias Sanbase.Repo
 
   defguard is_valid_volume(volume) when is_number(volume) and volume >= 0
 
@@ -36,7 +35,8 @@ defmodule Sanbase.Project.List do
   def projects(opts \\ [])
 
   def projects(opts) do
-    projects_query(opts)
+    opts
+    |> projects_query()
     |> Repo.all()
   end
 
@@ -45,7 +45,8 @@ defmodule Sanbase.Project.List do
   def projects_slugs(opts) do
     opts = Keyword.put(opts, :preload?, false)
 
-    projects_query(opts)
+    opts
+    |> projects_query()
     |> select([p], p.slug)
     |> Repo.all()
   end
@@ -53,7 +54,8 @@ defmodule Sanbase.Project.List do
   def projects_twitter_handles(opts \\ []) do
     opts = Keyword.put(opts, :preload?, false)
 
-    projects_query(opts)
+    opts
+    |> projects_query()
     |> select([p], p.twitter_link)
     |> Repo.all()
     |> twitter_links_to_handles()
@@ -62,7 +64,8 @@ defmodule Sanbase.Project.List do
   def projects_twitter_handles_by_slugs(slugs, opts \\ []) do
     opts = Keyword.put(opts, :preload?, false)
 
-    projects_query(opts)
+    opts
+    |> projects_query()
     |> where([p], p.slug in ^slugs)
     |> select([p], p.twitter_link)
     |> Repo.all()
@@ -76,12 +79,8 @@ defmodule Sanbase.Project.List do
   (all projects, all slugs from a filter, etc.), but direct calls that use it
   will still succeed.
   """
-  def hidden_projects_slugs() do
-    from(p in Project,
-      where: p.is_hidden == true,
-      select: p.slug
-    )
-    |> Repo.all()
+  def hidden_projects_slugs do
+    Repo.all(from(p in Project, where: p.is_hidden == true, select: p.slug))
   end
 
   @doc ~s"""
@@ -93,7 +92,8 @@ defmodule Sanbase.Project.List do
   def erc20_projects(opts \\ [])
 
   def erc20_projects(opts) do
-    erc20_projects_query(opts)
+    opts
+    |> erc20_projects_query()
     |> Repo.all()
   end
 
@@ -102,7 +102,8 @@ defmodule Sanbase.Project.List do
   def erc20_projects_slugs(opts) do
     opts = Keyword.put(opts, :preload?, false)
 
-    erc20_projects_query(opts)
+    opts
+    |> erc20_projects_query()
     |> select([p], p.slug)
     |> Repo.all()
   end
@@ -118,7 +119,8 @@ defmodule Sanbase.Project.List do
   def erc20_projects_count(opts) do
     opts = Keyword.put(opts, :preload?, false)
 
-    erc20_projects_query(opts)
+    opts
+    |> erc20_projects_query()
     |> select([p], fragment("count(*)"))
     |> Repo.one()
   end
@@ -132,7 +134,8 @@ defmodule Sanbase.Project.List do
   def erc20_projects_page(page, page_size, opts \\ [])
 
   def erc20_projects_page(page, page_size, opts) do
-    erc20_projects_page_query(page, page_size, opts)
+    page
+    |> erc20_projects_page_query(page_size, opts)
     |> Repo.all()
   end
 
@@ -145,12 +148,14 @@ defmodule Sanbase.Project.List do
   def currency_projects(opts \\ [])
 
   def currency_projects(opts) do
-    currency_projects_query(opts)
+    opts
+    |> currency_projects_query()
     |> Repo.all()
   end
 
   def currency_projects_slugs(opts) do
-    currency_projects_query(opts)
+    opts
+    |> currency_projects_query()
     |> select([p], p.slug)
     |> Repo.all()
   end
@@ -166,7 +171,8 @@ defmodule Sanbase.Project.List do
   def currency_projects_count(opts) do
     opts = Keyword.put(opts, :preload?, false)
 
-    currency_projects_query(opts)
+    opts
+    |> currency_projects_query()
     |> select([p], fragment("count(*)"))
     |> Repo.one()
   end
@@ -181,7 +187,8 @@ defmodule Sanbase.Project.List do
   def currency_projects_page(page, page_size, opts \\ [])
 
   def currency_projects_page(page, page_size, opts) do
-    currency_projects_page_query(page, page_size, opts)
+    page
+    |> currency_projects_page_query(page_size, opts)
     |> Repo.all()
   end
 
@@ -196,7 +203,8 @@ defmodule Sanbase.Project.List do
   def projects_with_source(source, opts \\ [])
 
   def projects_with_source(source, opts) do
-    projects_query(opts)
+    opts
+    |> projects_query()
     |> preload([:source_slug_mappings])
     |> Repo.all()
     |> Enum.filter(fn project ->
@@ -213,7 +221,8 @@ defmodule Sanbase.Project.List do
   is `/Ethereum/Arbitrum/`
   """
   def projects_by_ecosystem_full_path_pattern(pattern, opts \\ []) do
-    projects_query(opts)
+    opts
+    |> projects_query()
     |> filter_ecosystem_full_path_pattern(pattern)
     |> Repo.all()
   end
@@ -223,7 +232,8 @@ defmodule Sanbase.Project.List do
   def projects_count(opts) do
     opts = Keyword.put(opts, :preload?, false)
 
-    projects_query(opts)
+    opts
+    |> projects_query()
     |> select([p], fragment("count(*)"))
     |> Repo.one()
   end
@@ -231,7 +241,8 @@ defmodule Sanbase.Project.List do
   def projects_data_for_queries(opts \\ []) do
     opts = Keyword.put(opts, :preload?, false)
 
-    projects_query(opts)
+    opts
+    |> projects_query()
     |> preload([:github_organizations, :contract_addresses])
     |> join(:left, [p], orgs in assoc(p, :github_organizations), as: :orgs)
     |> join(:left, [p], addresses in assoc(p, :contract_addresses), as: :addresses)
@@ -267,7 +278,8 @@ defmodule Sanbase.Project.List do
   Example: projects_base_info_only([preload?: true, preload: :github_organizations])
   """
   def projects_base_info_only(opts \\ []) do
-    projects_query(opts)
+    opts
+    |> projects_query()
     |> select([:id, :name, :ticker, :slug, :logo_url])
     |> Repo.all()
   end
@@ -281,12 +293,14 @@ defmodule Sanbase.Project.List do
   def projects_page(page, page_size, opts \\ [])
 
   def projects_page(page, page_size, opts) do
-    projects_page_query(page, page_size, opts)
+    page
+    |> projects_page_query(page_size, opts)
     |> Repo.all()
   end
 
   def projects_by_ticker(ticker, opts \\ []) do
-    projects_query(opts)
+    opts
+    |> projects_query()
     |> where([p], p.ticker == ^ticker)
     |> Repo.all()
   end
@@ -296,15 +310,14 @@ defmodule Sanbase.Project.List do
     opts = Keyword.put(opts, :preload?, false)
 
     # If the infrastructure is `own` then use the ticker as infrastructure
-    from(
-      p in projects_query(opts),
-      left_join: infr in assoc(p, :infrastructure),
-      where:
-        infr.code in ^infrastructures or
-          (fragment("lower(?)", infr.code) == "own" and p.ticker in ^infrastructures),
-      select: p.slug
+    Repo.all(
+      from(p in projects_query(opts),
+        left_join: infr in assoc(p, :infrastructure),
+        where:
+          infr.code in ^infrastructures or (fragment("lower(?)", infr.code) == "own" and p.ticker in ^infrastructures),
+        select: p.slug
+      )
     )
-    |> Repo.all()
   end
 
   @doc ~s"""
@@ -319,7 +332,8 @@ defmodule Sanbase.Project.List do
     # explicitly remove preloads as they are not going to be used
     opts = Keyword.put(opts, :preload?, false)
 
-    projects_query(opts)
+    opts
+    |> projects_query()
     |> join(:inner, [p], gl in Project.GithubOrganization, on: p.id == gl.project_id)
     |> select([p], p.slug)
     |> distinct(true)
@@ -332,7 +346,8 @@ defmodule Sanbase.Project.List do
     slugs = List.wrap(slug_or_slugs)
     opts = Keyword.put(opts, :preload?, false)
 
-    projects_query(opts)
+    opts
+    |> projects_query()
     |> where([p], p.slug in ^slugs)
     |> join(:left, [p], gl in Project.GithubOrganization, on: p.id == gl.project_id)
     |> select([p, gl], {p.slug, gl.organization})
@@ -357,7 +372,8 @@ defmodule Sanbase.Project.List do
     # explicitly remove preloads as they are not going to be used
     opts = Keyword.put(opts, :preload?, false)
 
-    projects_query(opts)
+    opts
+    |> projects_query()
     |> where([p], field(p, ^field) in ^values)
     |> select([p], p.slug)
     |> Repo.all()
@@ -375,7 +391,8 @@ defmodule Sanbase.Project.List do
     # explicitly remove preloads as they are not going to be used
     opts = Keyword.put(opts, :preload?, false)
 
-    projects_query(opts)
+    opts
+    |> projects_query()
     |> where([p], field(p, ^field) in ^values)
     |> select([p], {field(p, ^field), p.slug})
     |> Repo.all()
@@ -388,7 +405,8 @@ defmodule Sanbase.Project.List do
     # explicitly remove preloads as they are not going to be used
     opts = Keyword.put(opts, :preload?, false)
 
-    projects_query(opts)
+    opts
+    |> projects_query()
     |> where([p], not is_nil(field(p, ^field)))
     |> Repo.all()
   end
@@ -405,7 +423,8 @@ defmodule Sanbase.Project.List do
     # explicitly remove preloads as they are not going to be used
     opts = Keyword.put(opts, :preload?, false)
 
-    projects_query(opts)
+    opts
+    |> projects_query()
     |> where([p], not is_nil(field(p, ^field)))
     |> select([p], field(p, ^field))
     |> Repo.all()
@@ -442,18 +461,17 @@ defmodule Sanbase.Project.List do
   """
   def by_market_segment_any_of(segments, opts \\ [])
 
-  def by_market_segment_any_of(segments, opts)
-      when is_binary(segments) or is_list(segments) do
+  def by_market_segment_any_of(segments, opts) when is_binary(segments) or is_list(segments) do
     segments = List.wrap(segments)
 
-    from(
-      p in projects_query(opts),
-      preload: [:market_segments],
-      left_join: ms in assoc(p, :market_segments),
-      where: ms.name in ^segments,
-      distinct: true
+    Repo.all(
+      from(p in projects_query(opts),
+        preload: [:market_segments],
+        left_join: ms in assoc(p, :market_segments),
+        where: ms.name in ^segments,
+        distinct: true
+      )
     )
-    |> Repo.all()
   end
 
   @doc ~s"""
@@ -495,7 +513,8 @@ defmodule Sanbase.Project.List do
   def by_slugs(slugs, opts \\ [])
 
   def by_slugs(slugs, opts) when is_list(slugs) do
-    projects_query(opts)
+    opts
+    |> projects_query()
     |> where([p], p.slug in ^slugs)
     |> maybe_order_by_slugs_list(ordered_slugs: slugs)
     |> Repo.all()
@@ -510,7 +529,8 @@ defmodule Sanbase.Project.List do
   def ids_by_slugs(slugs, opts \\ []) do
     opts = Keyword.put(opts, :preload?, false)
 
-    projects_query(opts)
+    opts
+    |> projects_query()
     |> where([p], p.slug in ^slugs)
     |> select([p], p.id)
     |> Repo.all()
@@ -530,13 +550,15 @@ defmodule Sanbase.Project.List do
   def by_field(values, field, opts) when is_list(values) and field in @case_insensitive_fields do
     values = Enum.map(values, &String.downcase/1)
 
-    projects_query(opts)
+    opts
+    |> projects_query()
     |> where([p], fragment("LOWER(?)", field(p, ^field)) in ^values)
     |> Repo.all()
   end
 
   def by_field(values, field, opts) when is_list(values) do
-    projects_query(opts)
+    opts
+    |> projects_query()
     |> where([p], field(p, ^field) in ^values)
     |> Repo.all()
   end
@@ -546,12 +568,12 @@ defmodule Sanbase.Project.List do
   def by_contracts(contracts, opts) when is_list(contracts) do
     contracts = Enum.map(contracts, &String.downcase/1)
 
-    from(
-      p in projects_query(opts),
-      inner_join: contract in assoc(p, :contract_addresses),
-      where: contract.address in ^contracts
+    Repo.all(
+      from(p in projects_query(opts),
+        inner_join: contract in assoc(p, :contract_addresses),
+        where: contract.address in ^contracts
+      )
     )
-    |> Repo.all()
   end
 
   @doc ~s"""
@@ -568,14 +590,13 @@ defmodule Sanbase.Project.List do
   def by_name_ticker_slug(values, opts) do
     values = List.wrap(values)
 
-    from(
-      p in projects_query(opts),
-      where:
-        fragment("lower(?)", p.name) in ^values or
-          fragment("lower(?)", p.ticker) in ^values or
-          fragment("lower(?)", p.slug) in ^values
+    Repo.all(
+      from(p in projects_query(opts),
+        where:
+          fragment("lower(?)", p.name) in ^values or fragment("lower(?)", p.ticker) in ^values or
+            fragment("lower(?)", p.slug) in ^values
+      )
     )
-    |> Repo.all()
   end
 
   @doc ~s"""
@@ -623,7 +644,8 @@ defmodule Sanbase.Project.List do
         do: Keyword.delete(opts, :included_slugs),
         else: opts
 
-    projects_query(opts)
+    opts
+    |> projects_query()
     |> filter_erc20_projects()
   end
 
@@ -648,19 +670,22 @@ defmodule Sanbase.Project.List do
   ## Pagination queries
 
   defp projects_page_query(page, page_size, opts) do
-    projects_query(opts)
+    opts
+    |> projects_query()
     |> order_by_rank(opts)
     |> page(page: page, page_size: page_size)
   end
 
   defp erc20_projects_page_query(page, page_size, opts) do
-    erc20_projects_query(opts)
+    opts
+    |> erc20_projects_query()
     |> order_by_rank(opts)
     |> page(page: page, page_size: page_size)
   end
 
   defp currency_projects_page_query(page, page_size, opts) do
-    currency_projects_query(opts)
+    opts
+    |> currency_projects_query()
     |> order_by_rank(opts)
     |> page(page: page, page_size: page_size)
   end
@@ -683,16 +708,14 @@ defmodule Sanbase.Project.List do
   # is not excluded but is put at the end of the list. The order of projects
   # with no known rank is not defined
   defp maybe_order_by_rank_optional(query, opts) do
-    case Keyword.get(opts, :order_by_rank, false) do
-      true ->
-        from(
-          p in query,
-          left_join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
-          order_by: latest_cmc.rank
-        )
-
-      false ->
-        query
+    if Keyword.get(opts, :order_by_rank, false) do
+      from(
+        p in query,
+        left_join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
+        order_by: latest_cmc.rank
+      )
+    else
+      query
     end
   end
 
@@ -739,24 +762,19 @@ defmodule Sanbase.Project.List do
   end
 
   defp maybe_include_hidden_projects(query, opts) do
-    case Keyword.get(opts, :include_hidden, false) do
-      false ->
-        query
-        |> where([p], p.is_hidden == false)
-
-      true ->
-        query
+    if Keyword.get(opts, :include_hidden, false) do
+      query
+    else
+      where(query, [p], p.is_hidden == false)
     end
   end
 
   defp maybe_preload(query, opts) do
-    case Keyword.get(opts, :preload?, true) do
-      true ->
-        preloads = Keyword.get(opts, :preload, Project.preloads())
-        query |> preload(^preloads)
-
-      false ->
-        query
+    if Keyword.get(opts, :preload?, true) do
+      preloads = Keyword.get(opts, :preload, Project.preloads())
+      preload(query, ^preloads)
+    else
+      query
     end
   end
 
@@ -767,12 +785,10 @@ defmodule Sanbase.Project.List do
         query
 
       :erc20 ->
-        query
-        |> filter_erc20_projects()
+        filter_erc20_projects(query)
 
       slugs when is_list(slugs) ->
-        query
-        |> where([p], p.slug in ^slugs)
+        where(query, [p], p.slug in ^slugs)
     end
   end
 
@@ -780,29 +796,23 @@ defmodule Sanbase.Project.List do
     case Keyword.get(opts, :ordered_slugs) do
       # Do not exclude any projects
       slugs when is_list(slugs) ->
-        query
-        |> order_by([p], fragment("array_position(?, ?)", ^slugs, p.slug))
+        order_by(query, [p], fragment("array_position(?, ?)", ^slugs, p.slug))
 
       _ ->
-        case Keyword.get(opts, :order_by_name?, false) do
-          true ->
-            query
-            |> order_by([p], p.name)
-
-          false ->
-            query
+        if Keyword.get(opts, :order_by_name?, false) do
+          order_by(query, [p], p.name)
+        else
+          query
         end
     end
   end
 
   defp maybe_paginate(query, opts) do
-    case Keyword.get(opts, :has_pagination?) do
-      true ->
-        %{page: page, page_size: page_size} = opts[:pagination]
-        page(query, page: page, page_size: page_size)
-
-      _ ->
-        query
+    if Keyword.get(opts, :has_pagination?) do
+      %{page: page, page_size: page_size} = opts[:pagination]
+      page(query, page: page, page_size: page_size)
+    else
+      query
     end
   end
 end

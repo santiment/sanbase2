@@ -1,5 +1,7 @@
 defmodule Sanbase.Insight.PostTag do
+  @moduledoc false
   use Ecto.Schema
+
   import Ecto.Changeset
 
   schema "posts_tags" do

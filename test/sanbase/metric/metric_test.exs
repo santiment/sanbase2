@@ -16,24 +16,16 @@ defmodule Sanbase.MetricTest do
   ]
 
   setup_all_with_mocks([
-    {Sanbase.Clickhouse.MetricAdapter, [:passthrough],
-     timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
-    {Sanbase.Clickhouse.Github.MetricAdapter, [:passthrough],
-     timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
-    {Sanbase.Twitter.MetricAdapter, [:passthrough],
-     timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
-    {Sanbase.SocialData.MetricAdapter, [:passthrough],
-     timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
-    {Sanbase.Price.MetricAdapter, [:passthrough],
-     timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
-    {Sanbase.PricePair.MetricAdapter, [:passthrough],
-     timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
+    {Sanbase.Clickhouse.MetricAdapter, [:passthrough], timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
+    {Sanbase.Clickhouse.Github.MetricAdapter, [:passthrough], timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
+    {Sanbase.Twitter.MetricAdapter, [:passthrough], timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
+    {Sanbase.SocialData.MetricAdapter, [:passthrough], timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
+    {Sanbase.Price.MetricAdapter, [:passthrough], timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
+    {Sanbase.PricePair.MetricAdapter, [:passthrough], timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
     {Sanbase.Clickhouse.TopHolders.MetricAdapter, [:passthrough],
      timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
-    {Sanbase.BlockchainAddress.MetricAdapter, [:passthrough],
-     timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
-    {Sanbase.Contract.MetricAdapter, [:passthrough],
-     timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end}
+    {Sanbase.BlockchainAddress.MetricAdapter, [:passthrough], timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
+    {Sanbase.Contract.MetricAdapter, [:passthrough], timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end}
   ]) do
     []
   end
@@ -72,7 +64,7 @@ defmodule Sanbase.MetricTest do
       metrics = Metric.available_timeseries_metrics()
 
       for _ <- 1..10 do
-        metric = metrics |> Enum.random()
+        metric = Enum.random(metrics)
         selector = extend_selector_with_required_fields(metric, %{slug: project.slug})
         {:ok, %{available_aggregations: aggregations}} = Metric.metadata(metric)
 
@@ -87,11 +79,11 @@ defmodule Sanbase.MetricTest do
 
     test "cannot use aggregation that is not available", %{project: project} do
       # Fetch some available metric
-      metric = Metric.available_timeseries_metrics() |> Enum.random()
+      metric = Enum.random(Metric.available_timeseries_metrics())
       selector = extend_selector_with_required_fields(metric, %{slug: project.slug})
 
       aggregations = Metric.available_aggregations()
-      rand_aggregations = Enum.map(1..10, fn _ -> rand_str() |> String.to_atom() end)
+      rand_aggregations = Enum.map(1..10, fn _ -> String.to_atom(rand_str()) end)
       rand_aggregations = rand_aggregations -- aggregations
 
       results =
@@ -103,7 +95,7 @@ defmodule Sanbase.MetricTest do
     end
 
     test "fetch a single metric", %{project: project} do
-      metric = Metric.available_timeseries_metrics() |> Enum.random()
+      metric = Enum.random(Metric.available_timeseries_metrics())
       selector = extend_selector_with_required_fields(metric, %{slug: project.slug})
       result = Metric.timeseries_data(metric, selector, @from, @to, "1d")
 

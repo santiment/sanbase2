@@ -4,6 +4,8 @@ defmodule Sanbase.Billing.Plan.CustomPlanTest do
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
+  alias Sanbase.Billing.Product
+
   setup context do
     # The rest of the plans are inserted with hardcoded ids. Because of this
     # the plans_id_seq will generate id 1, which will cause a constraint error
@@ -32,7 +34,7 @@ defmodule Sanbase.Billing.Plan.CustomPlanTest do
     } =
       Sanbase.Billing.Plan.CustomPlan.Loader.get_data(
         plan.name,
-        Sanbase.Billing.Product.code_by_id(plan.product_id)
+        Product.code_by_id(plan.product_id)
       )
 
     assert "price_usd" in resolved_metrics
@@ -64,7 +66,7 @@ defmodule Sanbase.Billing.Plan.CustomPlanTest do
            } ==
              Sanbase.Billing.Plan.CustomPlan.Access.api_call_limits(
                plan.name,
-               Sanbase.Billing.Product.code_by_id(plan.product_id)
+               Product.code_by_id(plan.product_id)
              )
   end
 
@@ -73,7 +75,8 @@ defmodule Sanbase.Billing.Plan.CustomPlanTest do
 
     project = insert(:random_project)
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: []}})
+    (&Sanbase.ClickhouseRepo.query/2)
+    |> Sanbase.Mock.prepare_mock2({:ok, %{rows: []}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       # mvrv_usd metrics are not accessible because of the pattern
       assert %{"errors" => [error]} = get_metric(conn, "mvrv_usd")
@@ -102,7 +105,7 @@ defmodule Sanbase.Billing.Plan.CustomPlanTest do
 
   test "custom plan access is cut to some queries", context do
     %{conn: conn, user: user} = context
-    user_id = user.id |> to_string()
+    user_id = to_string(user.id)
 
     assert %{"errors" => [error]} = get_history_price(conn)
 

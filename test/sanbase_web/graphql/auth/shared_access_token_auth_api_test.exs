@@ -48,10 +48,8 @@ defmodule SanbaseWeb.Graphql.SharedAccessTokenAuthApiTest do
   test "multiple get of token are idempotent", context do
     [uuid1, uuid2, uuid3] =
       for _ <- 1..3 do
-        get_chart_configuration_shared_access_token(
-          context.pro_conn,
-          context.chart_configuration.id
-        )
+        context.pro_conn
+        |> get_chart_configuration_shared_access_token(context.chart_configuration.id)
         |> get_in(["data", "getChartConfigurationSharedAccessToken", "uuid"])
       end
 
@@ -62,17 +60,16 @@ defmodule SanbaseWeb.Graphql.SharedAccessTokenAuthApiTest do
 
   test "check access to metrics", context do
     token_uuid =
-      get_chart_configuration_shared_access_token(
-        context.pro_conn,
-        context.chart_configuration.id
-      )
+      context.pro_conn
+      |> get_chart_configuration_shared_access_token(context.chart_configuration.id)
       |> get_in(["data", "getChartConfigurationSharedAccessToken", "uuid"])
 
     from = ~U[2015-01-01 00:00:00Z]
     to = ~U[2016-10-01 00:00:00Z]
     result = {:ok, [%{datetime: from, value: 5}, %{datetime: to, value: 10}]}
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Metric.timeseries_data/6, result)
+    (&Sanbase.Metric.timeseries_data/6)
+    |> Sanbase.Mock.prepare_mock2(result)
     |> Sanbase.Mock.run_with_mocks(fn ->
       expected_metric_result = %{
         "data" => %{
@@ -100,12 +97,7 @@ defmodule SanbaseWeb.Graphql.SharedAccessTokenAuthApiTest do
 
       # Add the shared access token to the connection. The calls that use the
       # metrics and slugs in the chart layout will suceed.
-      conn =
-        context.conn
-        |> Plug.Conn.put_req_header(
-          "x-sharedaccess-authorization",
-          "SharedAccessToken #{token_uuid}"
-        )
+      conn = Plug.Conn.put_req_header(context.conn, "x-sharedaccess-authorization", "SharedAccessToken #{token_uuid}")
 
       # success calls
       assert get_metric(conn, "defi_total_value_locked_usd", slug, from, to, "1d") ==
@@ -133,7 +125,8 @@ defmodule SanbaseWeb.Graphql.SharedAccessTokenAuthApiTest do
     chart_config = insert(:chart_configuration, user: context.pro_user, is_public: false)
 
     error =
-      get_chart_configuration_shared_access_token(context.pro_conn, chart_config.id)
+      context.pro_conn
+      |> get_chart_configuration_shared_access_token(chart_config.id)
       |> get_in(["errors", Access.at(0), "message"])
 
     assert error == "Shared Access Token can be created only for a public chart configuration."
@@ -143,7 +136,8 @@ defmodule SanbaseWeb.Graphql.SharedAccessTokenAuthApiTest do
     chart_config = insert(:chart_configuration, user: context.user, is_public: false)
 
     error =
-      get_chart_configuration_shared_access_token(context.pro_conn, chart_config.id)
+      context.pro_conn
+      |> get_chart_configuration_shared_access_token(chart_config.id)
       |> get_in(["errors", Access.at(0), "message"])
 
     assert error == "Chart configuration with id #{chart_config.id} does not exist or is private."

@@ -5,6 +5,7 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
   import SanbaseWeb.Graphql.TestHelpers
 
   alias Sanbase.Comments.EntityComment
+  alias Sanbase.Insight.Post
 
   setup do
     insert(:insights_fallback_user)
@@ -109,8 +110,8 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
         "some comment on private chart layout - must not be seen"
       )
 
-    assert {:ok, _} = Sanbase.Insight.Post.delete(context.insight2.id, context.user)
-    assert {:error, _} = Sanbase.Insight.Post.by_id(context.insight2.id, [])
+    assert {:ok, _} = Post.delete(context.insight2.id, context.user)
+    assert {:error, _} = Post.by_id(context.insight2.id, [])
 
     query = comments_feed_query()
 

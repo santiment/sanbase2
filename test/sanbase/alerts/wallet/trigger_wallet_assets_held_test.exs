@@ -1,15 +1,12 @@
 defmodule Sanbase.Alert.WalletAssetsHeldTriggerSettingsTest do
   use Sanbase.DataCase, async: false
 
-  import Sanbase.Factory
   import ExUnit.CaptureLog
+  import Sanbase.Factory
 
-  alias Sanbase.Alert.{
-    UserTrigger,
-    Trigger.WalletAssetsHeldTriggerSettings,
-    Scheduler
-  }
-
+  alias Sanbase.Alert.Scheduler
+  alias Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings
+  alias Sanbase.Alert.UserTrigger
   alias Sanbase.Clickhouse.HistoricalBalance
 
   setup do
@@ -43,16 +40,12 @@ defmodule Sanbase.Alert.WalletAssetsHeldTriggerSettingsTest do
   end
 
   test "cooldown works for wallet_assets_held", context do
-    mock_fun =
-      [
-        # The first call is setting up the state after creation
-        fn -> {:ok, []} end,
-        # The second call is returning some different data so the alert fires
-        fn -> {:ok, data()} end
-      ]
-      |> Sanbase.Mock.wrap_consecutives(arity: 1)
+    mock_fun = Sanbase.Mock.wrap_consecutives([fn -> {:ok, []} end, fn -> {:ok, data()} end], arity: 1)
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Telegram.send_message/2, {:ok, "OK"})
+    # The first call is setting up the state after creation
+    # The second call is returning some different data so the alert fires
+    (&Sanbase.Telegram.send_message/2)
+    |> Sanbase.Mock.prepare_mock2({:ok, "OK"})
     |> Sanbase.Mock.prepare_mock(HistoricalBalance, :assets_held_by_address, mock_fun)
     |> Sanbase.Mock.run_with_mocks(fn ->
       for _ <- 1..2 do
@@ -81,15 +74,10 @@ defmodule Sanbase.Alert.WalletAssetsHeldTriggerSettingsTest do
   end
 
   test "some alerts trigger", context do
-    mock_fun =
-      [
-        # The first call is setting up the state after creation
-        fn -> {:ok, []} end,
-        # The second call is returning some different data so the alert fires
-        fn -> {:ok, data()} end
-      ]
-      |> Sanbase.Mock.wrap_consecutives(arity: 1)
+    mock_fun = Sanbase.Mock.wrap_consecutives([fn -> {:ok, []} end, fn -> {:ok, data()} end], arity: 1)
 
+    # The first call is setting up the state after creation
+    # The second call is returning some different data so the alert fires
     test_pid = self()
 
     telegram_mock_fun = fn _user, text ->
@@ -97,7 +85,8 @@ defmodule Sanbase.Alert.WalletAssetsHeldTriggerSettingsTest do
       {:ok, "OK"}
     end
 
-    Sanbase.Mock.prepare_mock(Sanbase.Telegram, :send_message, telegram_mock_fun)
+    Sanbase.Telegram
+    |> Sanbase.Mock.prepare_mock(:send_message, telegram_mock_fun)
     |> Sanbase.Mock.prepare_mock(HistoricalBalance, :assets_held_by_address, mock_fun)
     |> Sanbase.Mock.run_with_mocks(fn ->
       for _ <- 1..2 do
@@ -131,7 +120,7 @@ defmodule Sanbase.Alert.WalletAssetsHeldTriggerSettingsTest do
     end)
   end
 
-  defp projects(),
+  defp projects,
     do: [
       %{slug: "ethereum", name: "Ethereum", ticker: "ETH"},
       %{slug: "bitcoin", name: "Bitcoin", ticker: "BTC"},
@@ -140,7 +129,7 @@ defmodule Sanbase.Alert.WalletAssetsHeldTriggerSettingsTest do
       %{slug: "uniswap", name: "Uniswap", ticker: "UNI"}
     ]
 
-  defp data() do
+  defp data do
     [
       %{
         current_balance: 1_924_082.265599849,

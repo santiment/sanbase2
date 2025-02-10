@@ -1,4 +1,5 @@
 defmodule Sanbase.Insight.Search.Macro do
+  @moduledoc false
   defmacro websearch_to_tsquery_highlight_fragment(field, search_term) do
     quote do
       fragment(

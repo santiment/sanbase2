@@ -28,7 +28,8 @@ defmodule SanbaseWeb.Graphql.EcosystemsApiTest do
 
   test "get the projects in an ecosystem", context do
     data =
-      get_ecosystems_projects(context.conn, [
+      context.conn
+      |> get_ecosystems_projects([
         "ethereum",
         "bitcoin"
       ])
@@ -42,7 +43,8 @@ defmodule SanbaseWeb.Graphql.EcosystemsApiTest do
     {:ok, _} = Sanbase.ProjectEcosystemMapping.create(context.p1.id, context.btc_ecosystem.id)
 
     data =
-      get_ecosystems_projects(context.conn, ["ethereum", "bitcoin"])
+      context.conn
+      |> get_ecosystems_projects(["ethereum", "bitcoin"])
       |> get_in(["data", "getEcosystems"])
 
     eth_ecosystem = Enum.find(data, &(&1["name"] == "ethereum"))
@@ -66,10 +68,12 @@ defmodule SanbaseWeb.Graphql.EcosystemsApiTest do
       ["ethereum", 1_712_793_600, 1126.0]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    (&Sanbase.ClickhouseRepo.query/2)
+    |> Sanbase.Mock.prepare_mock2({:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       data =
-        get_ecosystems_timeseries_data(context.conn, ["ethereum"], %{
+        context.conn
+        |> get_ecosystems_timeseries_data(["ethereum"], %{
           from: ~U[2024-04-08 00:00:00Z],
           to: ~U[2024-04-11 00:00:00Z],
           interval: "1d",
@@ -104,10 +108,12 @@ defmodule SanbaseWeb.Graphql.EcosystemsApiTest do
       ["ethereum", 1_712_793_600, 1126.0]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    (&Sanbase.ClickhouseRepo.query/2)
+    |> Sanbase.Mock.prepare_mock2({:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       data =
-        get_ecosystems_timeseries_data(context.conn, ["ethereum"], %{
+        context.conn
+        |> get_ecosystems_timeseries_data(["ethereum"], %{
           from: ~U[2024-04-08 00:00:00Z],
           to: ~U[2024-04-11 00:00:00Z],
           interval: "1d",
@@ -139,11 +145,12 @@ defmodule SanbaseWeb.Graphql.EcosystemsApiTest do
       ["bitcoin", 1212.4]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    (&Sanbase.ClickhouseRepo.query/2)
+    |> Sanbase.Mock.prepare_mock2({:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       data =
-        get_ecosystems_aggregated_timeseries_data(
-          context.conn,
+        context.conn
+        |> get_ecosystems_aggregated_timeseries_data(
           ["ethereum", "bitcoin"],
           %{
             from: ~U[2024-04-08 00:00:00Z],

@@ -1,8 +1,9 @@
 defmodule SanbaseWeb.MetricDetailsLive do
+  @moduledoc false
   use SanbaseWeb, :live_view
 
-  import SanbaseWeb.CoreComponents
   import SanbaseWeb.AvailableMetricsDescription
+  import SanbaseWeb.CoreComponents
 
   alias SanbaseWeb.AvailableMetricsComponents
 
@@ -10,22 +11,10 @@ defmodule SanbaseWeb.MetricDetailsLive do
   def mount(%{"metric" => metric}, _session, socket) do
     case get_rows(metric) do
       {:ok, rows} ->
-        {:ok,
-         socket
-         |> assign(
-           metric: metric,
-           rows: rows,
-           error: nil
-         )}
+        {:ok, assign(socket, metric: metric, rows: rows, error: nil)}
 
       {:error, error} ->
-        {:ok,
-         socket
-         |> assign(
-           metric: metric,
-           rows: [],
-           error: error
-         )}
+        {:ok, assign(socket, metric: metric, rows: [], error: error)}
     end
   end
 
@@ -104,20 +93,18 @@ defmodule SanbaseWeb.MetricDetailsLive do
   defp stringify(ll) do
     ll
     |> List.wrap()
-    |> Enum.map(fn x -> x |> to_string() |> String.upcase() end)
-    |> Enum.join(", ")
+    |> Enum.map_join(", ", fn x -> x |> to_string() |> String.upcase() end)
   end
 
   defp stringify_required_selectors(l) when is_list(l) do
-    Enum.map(l, fn
+    Enum.map_join(l, " and ", fn
       ll when is_list(ll) ->
-        str = Enum.map(ll, fn x -> x |> to_string() |> String.upcase() end) |> Enum.join(" or ")
+        str = Enum.map_join(ll, " or ", fn x -> x |> to_string() |> String.upcase() end)
         if length(ll) > 1, do: "(#{str})", else: str
 
       x ->
         x |> to_string() |> String.upcase()
     end)
-    |> Enum.join(" and ")
   end
 
   defp get_rows(metric) do
@@ -212,13 +199,10 @@ defmodule SanbaseWeb.MetricDetailsLive do
           else: rows
 
       {:ok, rows}
-    else
-      {:error, error} -> {:error, error}
     end
   end
 
   defp simplify_access(%{"historical" => :free, "realtime" => :free}), do: "FREE"
 
-  defp simplify_access(%{"historical" => :restricted, "realtime" => :restricted}),
-    do: "RESTRICTED"
+  defp simplify_access(%{"historical" => :restricted, "realtime" => :restricted}), do: "RESTRICTED"
 end

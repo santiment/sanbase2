@@ -1,7 +1,9 @@
 defmodule SanbaseWeb.AvailableMetricsLive do
+  @moduledoc false
   use SanbaseWeb, :live_view
 
   import SanbaseWeb.AvailableMetricsDescription
+
   alias SanbaseWeb.AvailableMetricsComponents
 
   @impl true
@@ -15,36 +17,26 @@ defmodule SanbaseWeb.AvailableMetricsLive do
       |> Sanbase.AvailableMetrics.apply_filters(default_filter)
       |> Enum.map(& &1.metric)
 
-    {:ok,
-     socket
-     |> assign(
-       visible_metrics: visible_metrics,
-       metrics_map: metrics_map,
-       filter: default_filter
-     )}
+    {:ok, assign(socket, visible_metrics: visible_metrics, metrics_map: metrics_map, filter: default_filter)}
   end
 
   @impl true
   def render(assigns) do
     ordered_visible_metrics =
-      Map.take(assigns.metrics_map, assigns.visible_metrics)
+      assigns.metrics_map
+      |> Map.take(assigns.visible_metrics)
       |> Map.values()
       |> Enum.sort_by(& &1.metric, :asc)
 
     total_assets_with_metrics =
-      Enum.reduce(
-        ordered_visible_metrics,
+      ordered_visible_metrics
+      |> Enum.reduce(
         MapSet.new(),
         &MapSet.union(MapSet.new(&1.available_assets), &2)
       )
       |> MapSet.size()
 
-    assigns =
-      assigns
-      |> assign(
-        ordered_visible_metrics: ordered_visible_metrics,
-        assets_count: total_assets_with_metrics
-      )
+    assigns = assign(assigns, ordered_visible_metrics: ordered_visible_metrics, assets_count: total_assets_with_metrics)
 
     ~H"""
     <div class="flex flex-col items-start justify-evenly">
@@ -148,12 +140,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
       |> Sanbase.AvailableMetrics.apply_filters(params)
       |> Enum.map(& &1.metric)
 
-    {:noreply,
-     socket
-     |> assign(
-       visible_metrics: visible_metrics,
-       filter: params
-     )}
+    {:noreply, assign(socket, visible_metrics: visible_metrics, filter: params)}
   end
 
   @doc ~s"""
@@ -260,11 +247,9 @@ defmodule SanbaseWeb.AvailableMetricsLive do
     {first_2, rest} = Enum.split(assigns.assets, 2)
     first_2_str = Enum.join(first_2, ", ")
 
-    rest_str = if rest != [], do: " and #{length(rest)} more", else: ""
+    rest_str = if rest == [], do: "", else: " and #{length(rest)} more"
 
-    assigns =
-      assigns
-      |> assign(first_2_str: first_2_str, rest_str: rest_str)
+    assigns = assign(assigns, first_2_str: first_2_str, rest_str: rest_str)
 
     ~H"""
     <span>
@@ -315,8 +300,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
         _ -> "RESTRICTED"
       end
 
-    assigns =
-      assigns |> assign(:access_string, access_string)
+    assigns = assign(assigns, :access_string, access_string)
 
     ~H"""
     <span>{@access_string}</span>

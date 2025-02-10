@@ -14,9 +14,9 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
 
   use Vex.Struct
 
-  import Sanbase.Math, only: [to_integer: 1]
-  import Sanbase.Alert.Validation
   import Sanbase.Alert.Utils
+  import Sanbase.Alert.Validation
+  import Sanbase.Math, only: [to_integer: 1]
 
   alias __MODULE__
   alias Sanbase.Alert.Type
@@ -59,7 +59,7 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
   validates(:target, &valid_target?/1)
 
   @spec type() :: String.t()
-  def type(), do: @trigger_type
+  def type, do: @trigger_type
 
   def post_create_process(_trigger), do: :nochange
   def post_update_process(_trigger), do: :nochange
@@ -72,9 +72,9 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
   # private functions
 
   defimpl Sanbase.Alert.Settings, for: TrendingWordsTriggerSettings do
-    @default_explanation "A coin's appearance in trending words may suggest an increased risk of local tops and short-term price correction."
-
     alias Sanbase.Project
+
+    @default_explanation "A coin's appearance in trending words may suggest an increased risk of local tops and short-term price correction."
 
     def triggered?(%TrendingWordsTriggerSettings{triggered?: triggered}), do: triggered
 
@@ -98,35 +98,29 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
       construct_cache_key([settings.operation, settings.target])
     end
 
-    defp build_result(
-           top_words,
-           %{operation: %{send_at_predefined_time: true, trigger_time: trigger_time}} = settings
-         ) do
+    defp build_result(top_words, %{operation: %{send_at_predefined_time: true, trigger_time: trigger_time}} = settings) do
       trigger_time = Sanbase.DateTimeUtils.time_from_iso8601!(trigger_time)
       now = Time.utc_now()
       after_15_mins = Time.add(now, 15 * 60, :second)
 
       settings =
-        case Sanbase.DateTimeUtils.time_in_range?(trigger_time, now, after_15_mins) do
-          true ->
-            template_kv = %{settings.target => template_kv(settings, top_words)}
-            %TrendingWordsTriggerSettings{settings | triggered?: true, template_kv: template_kv}
-
-          false ->
-            %TrendingWordsTriggerSettings{settings | triggered?: false}
+        if Sanbase.DateTimeUtils.time_in_range?(trigger_time, now, after_15_mins) do
+          template_kv = %{settings.target => template_kv(settings, top_words)}
+          %TrendingWordsTriggerSettings{settings | triggered?: true, template_kv: template_kv}
+        else
+          %TrendingWordsTriggerSettings{settings | triggered?: false}
         end
 
       {:ok, settings}
     end
 
-    defp build_result(
-           top_words,
-           %{operation: %{trending_word: true}, filtered_target: %{list: words}} = settings
-         ) do
-      top_words = top_words |> Enum.map(&String.downcase(&1.word))
+    defp build_result(top_words, %{operation: %{trending_word: true}, filtered_target: %{list: words}} = settings) do
+      top_words = Enum.map(top_words, &String.downcase(&1.word))
 
       trending_words =
-        MapSet.intersection(MapSet.new(top_words), MapSet.new(words))
+        top_words
+        |> MapSet.new()
+        |> MapSet.intersection(MapSet.new(words))
         |> Enum.to_list()
 
       settings =
@@ -142,18 +136,14 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
       {:ok, settings}
     end
 
-    defp build_result(
-           top_words,
-           %{operation: %{trending_project: true}, filtered_target: %{list: slugs}} = settings
-         ) do
+    defp build_result(top_words, %{operation: %{trending_project: true}, filtered_target: %{list: slugs}} = settings) do
       projects = Project.List.by_slugs(slugs)
 
-      top_words =
-        top_words
-        |> Enum.map(&String.downcase(&1.word))
+      top_words = Enum.map(top_words, &String.downcase(&1.word))
 
       project_words =
-        Enum.flat_map(projects, &[&1.name, &1.ticker, &1.slug])
+        projects
+        |> Enum.flat_map(&[&1.name, &1.ticker, &1.slug])
         |> MapSet.new()
         |> Enum.map(&String.downcase/1)
 
@@ -161,35 +151,31 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
         MapSet.intersection(MapSet.new(top_words), MapSet.new(project_words))
 
       settings =
-        case Enum.empty?(trending_words_mapset) do
-          true ->
-            # If there are no trending words in the intersection there is no
-            # point of checking the projects separately
-            %TrendingWordsTriggerSettings{settings | triggered?: false}
+        if Enum.empty?(trending_words_mapset) do
+          # If there are no trending words in the intersection there is no
+          # point of checking the projects separately
+          %TrendingWordsTriggerSettings{settings | triggered?: false}
+        else
+          template_kv =
+            Enum.reduce(projects, %{}, fn project, acc ->
+              if Project.trending?(project, trending_words_mapset) do
+                Map.put(acc, project.slug, template_kv(settings, project))
+              else
+                acc
+              end
+            end)
 
-          false ->
-            template_kv =
-              Enum.reduce(projects, %{}, fn project, acc ->
-                case Project.trending?(project, trending_words_mapset) do
-                  true -> Map.put(acc, project.slug, template_kv(settings, project))
-                  false -> acc
-                end
-              end)
-
-            %TrendingWordsTriggerSettings{
-              settings
-              | triggered?: template_kv != %{},
-                template_kv: template_kv
-            }
+          %TrendingWordsTriggerSettings{
+            settings
+            | triggered?: template_kv != %{},
+              template_kv: template_kv
+          }
         end
 
       {:ok, settings}
     end
 
-    defp template_kv(
-           %{operation: %{send_at_predefined_time: true, trigger_time: trigger_time}} = settings,
-           top_words
-         ) do
+    defp template_kv(%{operation: %{send_at_predefined_time: true, trigger_time: trigger_time}} = settings, top_words) do
       max_len = get_max_len(top_words)
 
       top_words_strings =
@@ -245,7 +231,7 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
 
     defp template_kv(%{operation: %{trending_word: true}} = settings, [_, _ | _] = words) do
       {last, previous} = List.pop_at(words, -1)
-      words_str = (Enum.map(previous, &"**#{&1}**") |> Enum.join(",")) <> " and **#{last}**"
+      words_str = Enum.map_join(previous, ",", &"**#{&1}**") <> " and **#{last}**"
 
       kv = %{
         type: TrendingWordsTriggerSettings.type(),
@@ -289,9 +275,9 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
     end
 
     defp extend_with_datetime_link({template, kv}) do
-      now = DateTime.utc_now() |> DateTime.truncate(:second)
-      datetime_iso = now |> DateTime.to_iso8601()
-      datetime_human_readable = now |> Sanbase.DateTimeUtils.to_human_readable()
+      now = DateTime.truncate(DateTime.utc_now(), :second)
+      datetime_iso = DateTime.to_iso8601(now)
+      datetime_human_readable = Sanbase.DateTimeUtils.to_human_readable(now)
 
       template =
         template <> "[Trending words at {{datetime_human_readable}}]({{trending_words_url}})\n"
@@ -310,9 +296,8 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
 
     defp maybe_extend_with_explanation({template, kv}, settings) do
       default_explanation =
-        case settings.include_default_explanation do
-          true -> @default_explanation
-          false -> nil
+        if settings.include_default_explanation do
+          @default_explanation
         end
 
       explanation = settings.extra_explanation || default_explanation

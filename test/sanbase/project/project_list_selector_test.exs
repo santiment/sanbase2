@@ -3,6 +3,7 @@ defmodule Sanbase.ProjectListSelectorTest do
 
   import Sanbase.Factory
 
+  alias Sanbase.Clickhouse.MetricAdapter
   alias Sanbase.Project.ListSelector
 
   describe "validation caughts errors" do
@@ -126,10 +127,8 @@ defmodule Sanbase.ProjectListSelectorTest do
         ]
       }
 
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.Clickhouse.MetricAdapter.slugs_by_filter/6,
-        {:ok, [p1.slug, p3.slug, p4.slug]}
-      )
+      (&MetricAdapter.slugs_by_filter/6)
+      |> Sanbase.Mock.prepare_mock2({:ok, [p1.slug, p3.slug, p4.slug]})
       |> Sanbase.Mock.run_with_mocks(fn ->
         {:ok, %{slugs: slugs, total_projects_count: total_projects_count}} =
           ListSelector.slugs(%{selector: selector})
@@ -225,10 +224,8 @@ defmodule Sanbase.ProjectListSelectorTest do
         ]
       }
 
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.Clickhouse.MetricAdapter.slugs_by_filter/6,
-        {:ok, [p1.slug, p2.slug, p3.slug]}
-      )
+      (&MetricAdapter.slugs_by_filter/6)
+      |> Sanbase.Mock.prepare_mock2({:ok, [p1.slug, p2.slug, p3.slug]})
       |> Sanbase.Mock.run_with_mocks(fn ->
         {:ok, %{slugs: slugs, total_projects_count: total_projects_count}} =
           ListSelector.slugs(%{selector: selector})
@@ -261,10 +258,8 @@ defmodule Sanbase.ProjectListSelectorTest do
         ]
       }
 
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.Clickhouse.MetricAdapter.slugs_by_filter/6,
-        {:ok, [p1.slug, p3.slug, p4.slug]}
-      )
+      (&MetricAdapter.slugs_by_filter/6)
+      |> Sanbase.Mock.prepare_mock2({:ok, [p1.slug, p3.slug, p4.slug]})
       |> Sanbase.Mock.run_with_mocks(fn ->
         {:ok, %{slugs: slugs, total_projects_count: total_projects_count}} =
           ListSelector.slugs(%{selector: selector})
@@ -299,10 +294,8 @@ defmodule Sanbase.ProjectListSelectorTest do
         ]
       }
 
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.Clickhouse.MetricAdapter.slugs_by_filter/6,
-        {:ok, [p1.slug, p3.slug, p4.slug]}
-      )
+      (&MetricAdapter.slugs_by_filter/6)
+      |> Sanbase.Mock.prepare_mock2({:ok, [p1.slug, p3.slug, p4.slug]})
       |> Sanbase.Mock.run_with_mocks(fn ->
         {:ok, %{slugs: slugs, total_projects_count: total_projects_count}} =
           ListSelector.slugs(%{selector: selector})
@@ -347,10 +340,8 @@ defmodule Sanbase.ProjectListSelectorTest do
         ]
       }
 
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.Clickhouse.MetricAdapter.slugs_by_filter/6,
-        {:ok, [p1.slug, p3.slug, p4.slug]}
-      )
+      (&MetricAdapter.slugs_by_filter/6)
+      |> Sanbase.Mock.prepare_mock2({:ok, [p1.slug, p3.slug, p4.slug]})
       |> Sanbase.Mock.run_with_mocks(fn ->
         {:ok, %{slugs: slugs, total_projects_count: total_projects_count}} =
           ListSelector.slugs(%{selector: selector})
@@ -395,10 +386,8 @@ defmodule Sanbase.ProjectListSelectorTest do
         ]
       }
 
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.Clickhouse.MetricAdapter.slugs_by_filter/6,
-        {:ok, [p1.slug, p3.slug, p4.slug]}
-      )
+      (&MetricAdapter.slugs_by_filter/6)
+      |> Sanbase.Mock.prepare_mock2({:ok, [p1.slug, p3.slug, p4.slug]})
       |> Sanbase.Mock.run_with_mocks(fn ->
         {:ok, %{slugs: slugs, total_projects_count: total_projects_count}} =
           ListSelector.slugs(%{selector: selector})

@@ -1,4 +1,7 @@
 defmodule Sanbase.Cryptocompare.HTTPHeaderUtils do
+  @moduledoc false
+  require Logger
+
   defmodule Parser do
     @moduledoc ~s"""
     Parse for the X-RateLimit-Remaining-All and X-RateLimit-Reset-All headers
@@ -9,20 +12,22 @@ defmodule Sanbase.Cryptocompare.HTTPHeaderUtils do
     import NimbleParsec
 
     pair =
-      ignore(string(" "))
+      " "
+      |> string()
+      |> ignore()
       |> integer(min: 1, max: 30)
       |> ignore(string(";window="))
       |> integer(min: 1, max: 30)
       |> optional(ignore(string(",")))
 
     leading_integer =
-      ignore(integer(min: 1, max: 30))
+      [min: 1, max: 30]
+      |> integer()
+      |> ignore()
       |> ignore(string(","))
 
-    defparsec(:list_of_values, leading_integer |> repeat(pair))
+    defparsec(:list_of_values, repeat(leading_integer, pair))
   end
-
-  require Logger
 
   @doc ~s"""
   Parse the X-RateLimit-Reset-All header value returned by cryptocompare.
@@ -66,7 +71,8 @@ defmodule Sanbase.Cryptocompare.HTTPHeaderUtils do
   end
 
   def get_biggest_ratelimited_window(resp) do
-    get_header(resp, "X-RateLimit-Reset-All")
+    resp
+    |> get_header("X-RateLimit-Reset-All")
     |> elem(1)
     |> parse_value_list()
     |> Enum.max_by(& &1.value)
@@ -77,7 +83,8 @@ defmodule Sanbase.Cryptocompare.HTTPHeaderUtils do
     # If any of the rate limit periods has 0 remaining requests
     # it means that the rate limit is reached
     zero_remainings =
-      get_header(resp, "X-RateLimit-Remaining-All")
+      resp
+      |> get_header("X-RateLimit-Remaining-All")
       |> elem(1)
       |> parse_value_list()
       |> Enum.filter(&(&1.value == 0))

@@ -37,8 +37,8 @@ defmodule Sanbase.InsihgtVotingApiTest do
     assert total_votes_20 == 20
 
     assert Sanbase.TestUtils.datetime_close_to(
-             Timex.now(),
-             voted_at |> Sanbase.DateTimeUtils.from_iso8601!(),
+             DateTime.utc_now(),
+             Sanbase.DateTimeUtils.from_iso8601!(voted_at),
              5,
              :seconds
            )

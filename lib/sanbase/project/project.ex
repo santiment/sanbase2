@@ -1,20 +1,18 @@
 defmodule Sanbase.Project do
+  @moduledoc false
   use Ecto.Schema
 
-  import Ecto.Query
   import Ecto.Changeset
+  import Ecto.Query
 
   alias __MODULE__
-  alias Sanbase.Repo
+  alias Sanbase.Model.Currency
+  alias Sanbase.Model.Ico
+  alias Sanbase.Model.Infrastructure
+  alias Sanbase.Model.LatestCoinmarketcapData
+  alias Sanbase.Model.MarketSegment
   alias Sanbase.ProjectEthAddress
-
-  alias Sanbase.Model.{
-    Ico,
-    Currency,
-    MarketSegment,
-    Infrastructure,
-    LatestCoinmarketcapData
-  }
+  alias Sanbase.Repo
 
   @preloads [
     :eth_addresses,
@@ -25,7 +23,7 @@ defmodule Sanbase.Project do
     :deployed_on_ecosystem
   ]
 
-  def preloads(), do: @preloads
+  def preloads, do: @preloads
 
   schema "project" do
     field(:name, :string)
@@ -159,12 +157,10 @@ defmodule Sanbase.Project do
   defp maybe_add_hidden_since(changeset) do
     case changeset.changes do
       %{is_hidden: true} ->
-        changeset
-        |> put_change(:hidden_since, DateTime.utc_now() |> DateTime.truncate(:second))
+        put_change(changeset, :hidden_since, DateTime.truncate(DateTime.utc_now(), :second))
 
       %{is_hiden: false} ->
-        changeset
-        |> put_change(:hidden_since, nil)
+        put_change(changeset, :hidden_since, nil)
 
       _ ->
         changeset
@@ -249,15 +245,11 @@ defmodule Sanbase.Project do
   """
   @spec by_currency(%Currency{}) :: %Project{} | nil
   def by_currency(%Currency{code: code}) do
-    from(
-      p in Project,
-      where: p.ticker == ^code and not is_nil(p.slug)
-    )
-    |> Repo.one()
+    Repo.one(from(p in Project, where: p.ticker == ^code and not is_nil(p.slug)))
   end
 
   def id_by_slug(slug) do
-    from(p in __MODULE__, where: p.slug == ^slug, select: p.id) |> Repo.one()
+    Repo.one(from(p in __MODULE__, where: p.slug == ^slug, select: p.id))
   end
 
   def by_slug(slug, opts \\ [])
@@ -287,12 +279,7 @@ defmodule Sanbase.Project do
   def ticker_by_slug("TOTAL_MARKET"), do: "TOTAL_MARKET"
 
   def ticker_by_slug(slug) when is_binary(slug) do
-    from(
-      p in Sanbase.Project,
-      where: p.slug == ^slug and not is_nil(p.ticker),
-      select: p.ticker
-    )
-    |> Sanbase.Repo.one()
+    Sanbase.Repo.one(from(p in Sanbase.Project, where: p.slug == ^slug and not is_nil(p.ticker), select: p.ticker))
   end
 
   def slug_by_ticker(nil), do: nil
@@ -309,22 +296,16 @@ defmodule Sanbase.Project do
   end
 
   def tickers_by_slug_list(slugs_list) when is_list(slugs_list) do
-    from(
-      p in Sanbase.Project,
-      where: p.slug in ^slugs_list and not is_nil(p.ticker),
-      select: {p.ticker, p.slug}
+    Sanbase.Repo.all(
+      from(p in Sanbase.Project, where: p.slug in ^slugs_list and not is_nil(p.ticker), select: {p.ticker, p.slug})
     )
-    |> Sanbase.Repo.all()
   end
 
   def eth_addresses(%Project{} = project) do
-    project =
-      project
-      |> Repo.preload([:eth_addresses])
+    project = Repo.preload(project, [:eth_addresses])
 
     addresses =
-      project.eth_addresses
-      |> Enum.map(fn %{address: address} ->
+      Enum.map(project.eth_addresses, fn %{address: address} ->
         Sanbase.BlockchainAddress.to_internal_format(address)
       end)
 
@@ -342,8 +323,7 @@ defmodule Sanbase.Project do
       )
       |> Repo.all()
       |> Enum.map(fn %Project{eth_addresses: project_eth_addresses} ->
-        project_eth_addresses
-        |> Enum.map(fn %ProjectEthAddress{address: address} ->
+        Enum.map(project_eth_addresses, fn %ProjectEthAddress{address: address} ->
           Sanbase.BlockchainAddress.to_internal_format(address)
         end)
       end)
@@ -358,11 +338,9 @@ defmodule Sanbase.Project do
   def projects_over_volume_threshold(projects, volume_threshold) do
     case Sanbase.Price.slugs_with_volume_over(volume_threshold) do
       {:ok, slugs_with_volume_over} ->
-        slugs_with_volume_over_mapset =
-          slugs_with_volume_over
-          |> MapSet.new()
+        slugs_with_volume_over_mapset = MapSet.new(slugs_with_volume_over)
 
-        projects |> Enum.filter(fn %{slug: slug} -> slug in slugs_with_volume_over_mapset end)
+        Enum.filter(projects, fn %{slug: slug} -> slug in slugs_with_volume_over_mapset end)
 
       _ ->
         {:error, "Cannot filter projects with volume over threshold"}
@@ -372,8 +350,7 @@ defmodule Sanbase.Project do
   def github_organizations(slug) when is_binary(slug) do
     case id_by_slug(slug) do
       nil ->
-        {:error,
-         "Cannot fetch github organizations for #{slug}. Reason: There is no project with that slug."}
+        {:error, "Cannot fetch github organizations for #{slug}. Reason: There is no project with that slug."}
 
       id ->
         {:ok, Project.GithubOrganization.organizations_of(id)}
@@ -381,7 +358,7 @@ defmodule Sanbase.Project do
   end
 
   def github_organizations(%Project{} = project) do
-    {:ok, project |> Project.GithubOrganization.organizations_of()}
+    {:ok, Project.GithubOrganization.organizations_of(project)}
   end
 
   @doc ~s"""
@@ -406,7 +383,7 @@ defmodule Sanbase.Project do
   end
 
   def infrastructure(%Project{} = project) do
-    %Project{infrastructure: infrastructure} = project |> Repo.preload(:infrastructure)
+    %Project{infrastructure: infrastructure} = Repo.preload(project, :infrastructure)
     infrastructure
   end
 
@@ -431,8 +408,7 @@ defmodule Sanbase.Project do
     # and the trending words is not empty
     [project.ticker, project.name, project.slug]
     |> Enum.reject(&is_nil/1)
-    |> Enum.map(&String.downcase/1)
-    |> MapSet.new()
+    |> MapSet.new(&String.downcase/1)
     |> MapSet.intersection(trending_words_mapset)
     |> Enum.any?()
   end
@@ -459,20 +435,16 @@ defmodule Sanbase.Project do
   end
 
   defp preload_query(query, opts) do
-    case Keyword.get(opts, :preload?, true) do
-      false ->
-        query
+    if Keyword.get(opts, :preload?, true) do
+      case Keyword.get(opts, :preload) do
+        preloads when is_list(preloads) ->
+          preload(query, ^preloads)
 
-      true ->
-        case Keyword.get(opts, :preload) do
-          preloads when is_list(preloads) ->
-            query
-            |> preload(^preloads)
-
-          nil ->
-            query
-            |> preload(^@preloads)
-        end
+        nil ->
+          preload(query, ^@preloads)
+      end
+    else
+      query
     end
   end
 end

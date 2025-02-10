@@ -4,8 +4,8 @@ defmodule SanbaseWeb.Graphql.SanbaseNFTApiTest do
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
-  alias Sanbase.SmartContracts.SanbaseNFT
   alias Sanbase.Accounts.EthAccount
+  alias Sanbase.SmartContracts.SanbaseNFT
 
   setup do
     user =
@@ -23,13 +23,13 @@ defmodule SanbaseWeb.Graphql.SanbaseNFTApiTest do
 
   test "when there are nfts - return true", context do
     mock_fun =
-      [
-        fn -> %{valid: [], non_valid: []} end,
-        fn -> %{valid: [1, 3, 5], non_valid: [2]} end
-      ]
-      |> Sanbase.Mock.wrap_consecutives(arity: 1)
+      Sanbase.Mock.wrap_consecutives(
+        [fn -> %{valid: [], non_valid: []} end, fn -> %{valid: [1, 3, 5], non_valid: [2]} end],
+        arity: 1
+      )
 
-    Sanbase.Mock.prepare_mock(SanbaseNFT, :nft_subscriptions_data, mock_fun)
+    SanbaseNFT
+    |> Sanbase.Mock.prepare_mock(:nft_subscriptions_data, mock_fun)
     |> Sanbase.Mock.run_with_mocks(fn ->
       result = sanbase_nft(context.conn)
       assert result["sanbaseNft"]["hasValidNft"]
@@ -44,13 +44,10 @@ defmodule SanbaseWeb.Graphql.SanbaseNFTApiTest do
   end
 
   test "when there are no nfts - return false", context do
-    mock_fun =
-      [
-        fn -> %{valid: [], non_valid: []} end
-      ]
-      |> Sanbase.Mock.wrap_consecutives(arity: 1)
+    mock_fun = Sanbase.Mock.wrap_consecutives([fn -> %{valid: [], non_valid: []} end], arity: 1)
 
-    Sanbase.Mock.prepare_mock(SanbaseNFT, :nft_subscriptions_data, mock_fun)
+    SanbaseNFT
+    |> Sanbase.Mock.prepare_mock(:nft_subscriptions_data, mock_fun)
     |> Sanbase.Mock.run_with_mocks(fn ->
       result = sanbase_nft(context.conn)
       refute result["sanbaseNft"]["hasValidNft"]

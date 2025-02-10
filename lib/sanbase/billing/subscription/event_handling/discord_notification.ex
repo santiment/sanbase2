@@ -1,34 +1,26 @@
 defmodule Sanbase.Billing.DiscordNotification do
+  @moduledoc false
+  alias Sanbase.Accounts.EmailJobs
   alias Sanbase.Accounts.User
+  alias Sanbase.Billing.Plan
+  alias Sanbase.Billing.Product
+  alias Sanbase.Billing.Subscription
   alias Sanbase.Messaging.Discord
-  alias Sanbase.Billing.{Subscription, Plan, Product}
-
   alias Sanbase.Utils.Config
 
   def handle_event(
         :payment_success,
-        %{
-          data: %{
-            total: total,
-            extra_in_memory_data: %{stripe_event: stripe_event}
-          }
-        } = event
+        %{data: %{total: total, extra_in_memory_data: %{stripe_event: stripe_event}}} = event
       )
       when total > 1 do
-    build_payload(stripe_event, event)
+    stripe_event
+    |> build_payload(event)
     |> do_send_to_discord("Stripe Payment", webhook: "payments")
   end
 
-  def handle_event(
-        :charge_fail,
-        %{
-          data: %{
-            amount: amount,
-            stripe_event_id: stripe_event_id,
-            extra_in_memory_data: %{stripe_event: stripe_event}
-          }
-        }
-      )
+  def handle_event(:charge_fail, %{
+        data: %{amount: amount, stripe_event_id: stripe_event_id, extra_in_memory_data: %{stripe_event: stripe_event}}
+      })
       when amount > 1 do
     seller_message = stripe_event["data"]["object"]["outcome"]["seller_message"]
     failure_message = stripe_event["data"]["object"]["failure_message"]
@@ -43,16 +35,9 @@ defmodule Sanbase.Billing.DiscordNotification do
     do_send_to_discord(message, "Stripe Charge", webhook: "failed_payments")
   end
 
-  def handle_event(
-        :payment_action_required,
-        %{
-          data: %{
-            amount: amount,
-            stripe_event_id: stripe_event_id,
-            extra_in_memory_data: %{stripe_event: stripe_event}
-          }
-        }
-      )
+  def handle_event(:payment_action_required, %{
+        data: %{amount: amount, stripe_event_id: stripe_event_id, extra_in_memory_data: %{stripe_event: stripe_event}}
+      })
       when amount > 1 do
     formatted_amount = format_cents_amount(amount)
     customer = stripe_event["data"]["object"]["customer"]
@@ -67,9 +52,7 @@ defmodule Sanbase.Billing.DiscordNotification do
     do_send_to_discord(message, "Stripe Payment", webhook: "payment-action-required")
   end
 
-  def handle_event(:cancel_subscription_at_period_end, %{
-        data: %{extra_in_memory_data: %{subscription: subscription}}
-      }) do
+  def handle_event(:cancel_subscription_at_period_end, %{data: %{extra_in_memory_data: %{subscription: subscription}}}) do
     period_end = DateTime.truncate(subscription.current_period_end, :second)
 
     message = """
@@ -85,8 +68,8 @@ defmodule Sanbase.Billing.DiscordNotification do
       do_send_to_discord(message, "Stripe Cancellation", webhook: "failed_payments")
 
       if subscription.plan.product_id == Product.product_sanbase() do
-        Sanbase.Accounts.EmailJobs.send_post_cancellation_email(subscription)
-        Sanbase.Accounts.EmailJobs.schedule_post_cancellation_email2(subscription)
+        EmailJobs.send_post_cancellation_email(subscription)
+        EmailJobs.schedule_post_cancellation_email2(subscription)
       end
     end
   end
@@ -96,8 +79,8 @@ defmodule Sanbase.Billing.DiscordNotification do
   end
 
   defp subscription_time_left_str(subscription) do
-    days_left = abs(Timex.diff(subscription.current_period_end, Timex.now(), :days))
-    hours_left = abs(Timex.diff(subscription.current_period_end, Timex.now(), :hours))
+    days_left = abs(Timex.diff(subscription.current_period_end, DateTime.utc_now(), :days))
+    hours_left = abs(Timex.diff(subscription.current_period_end, DateTime.utc_now(), :hours))
 
     cond do
       days_left == 0 and hours_left == 1 -> "1 hour"
@@ -108,17 +91,17 @@ defmodule Sanbase.Billing.DiscordNotification do
   end
 
   defp subscription_duration_lasted_str(subscription) do
-    created_months_ago = Timex.diff(Timex.now(), subscription.inserted_at, :months)
+    created_months_ago = Timex.diff(DateTime.utc_now(), subscription.inserted_at, :months)
 
     case created_months_ago do
-      0 -> "#{Timex.diff(Timex.now(), subscription.inserted_at, :days)} days"
+      0 -> "#{Timex.diff(DateTime.utc_now(), subscription.inserted_at, :days)} days"
       1 -> "#{created_months_ago} month"
       _ -> "#{created_months_ago} months"
     end
   end
 
   defp do_send_to_discord(message, title, opts) do
-    payload = [message] |> Discord.encode!(publish_user())
+    payload = Discord.encode!([message], publish_user())
 
     webhook_url =
       case Keyword.get(opts, :webhook, "payments") do
@@ -143,20 +126,13 @@ defmodule Sanbase.Billing.DiscordNotification do
          event
        )
        when is_binary(stripe_subscription_id) do
-    Subscription.by_stripe_id(stripe_subscription_id)
+    stripe_subscription_id
+    |> Subscription.by_stripe_id()
     |> payload_for_subscription(total, starting_balance, event)
   end
 
   defp build_payload(
-         %{
-           "id" => id,
-           "data" => %{
-             "object" => %{
-               "total" => total,
-               "starting_balance" => starting_balance
-             }
-           }
-         },
+         %{"id" => id, "data" => %{"object" => %{"total" => total, "starting_balance" => starting_balance}}},
          event
        )
        when total == abs(starting_balance) do
@@ -166,25 +142,14 @@ defmodule Sanbase.Billing.DiscordNotification do
     """ <> payment_details(event)
   end
 
-  defp build_payload(
-         %{
-           "id" => id,
-           "data" => %{"object" => %{"total" => total}}
-         },
-         event
-       ) do
+  defp build_payload(%{"id" => id, "data" => %{"object" => %{"total" => total}}}, event) do
     """
     🎉 New payment for #{format_cents_amount(total)} received.
     Details: https://dashboard.stripe.com/events/#{id}
     """ <> payment_details(event)
   end
 
-  defp payload_for_subscription(
-         %Subscription{plan: plan, user: user},
-         total,
-         starting_balance,
-         event
-       )
+  defp payload_for_subscription(%Subscription{plan: plan, user: user}, total, starting_balance, event)
        when total == abs(starting_balance) do
     """
     New 🔥 for #{format_cents_amount(total)} for #{Plan.plan_full_name(plan)} \
@@ -213,8 +178,7 @@ defmodule Sanbase.Billing.DiscordNotification do
     end
   end
 
-  defp payload_for_subscription(_subscription, total, starting_balance, event)
-       when total == abs(starting_balance) do
+  defp payload_for_subscription(_subscription, total, starting_balance, event) when total == abs(starting_balance) do
     """
     🎉 New 🔥 for #{format_cents_amount(total)} received.
     """ <> payment_details(event)
@@ -237,10 +201,11 @@ defmodule Sanbase.Billing.DiscordNotification do
   end
 
   defp mask_user(%User{email: email}) when is_binary(email) do
-    [username, domain] = email |> String.split("@")
+    [username, domain] = String.split(email, "@")
 
     masked_username =
-      String.duplicate("*", String.length(username))
+      "*"
+      |> String.duplicate(String.length(username))
       |> String.replace_prefix("*", String.at(username, 0))
       |> String.replace_suffix("*", String.at(username, -1))
 
@@ -253,25 +218,20 @@ defmodule Sanbase.Billing.DiscordNotification do
 
   # checks which month of recurring subscription it is by the subscription creation date
   defp calculate_recurring_month(inserted_at) do
-    created_at_dt = inserted_at |> DateTime.from_naive!("Etc/UTC")
-    Timex.diff(Timex.now(), created_at_dt, :months) + 1
+    created_at_dt = DateTime.from_naive!(inserted_at, "Etc/UTC")
+    Timex.diff(DateTime.utc_now(), created_at_dt, :months) + 1
   end
 
   defp format_cents_amount(amount) do
     "$" <> Number.Delimit.number_to_delimited(amount / 100, precision: 0)
   end
 
-  defp payments_webhook_url(),
-    do: Config.module_get(__MODULE__, :payments_webhook_url)
+  defp payments_webhook_url, do: Config.module_get(__MODULE__, :payments_webhook_url)
 
-  defp failed_payments_webhook_url(),
-    do: Config.module_get(__MODULE__, :failed_payments_webhook_url)
+  defp failed_payments_webhook_url, do: Config.module_get(__MODULE__, :failed_payments_webhook_url)
 
-  defp payment_action_required_webhook_url(),
-    do:
-      Config.module_get(__MODULE__, :payment_action_required_webhook_url) ||
-        failed_payments_webhook_url()
+  defp payment_action_required_webhook_url,
+    do: Config.module_get(__MODULE__, :payment_action_required_webhook_url) || failed_payments_webhook_url()
 
-  defp publish_user(),
-    do: Config.module_get(__MODULE__, :publish_user)
+  defp publish_user, do: Config.module_get(__MODULE__, :publish_user)
 end

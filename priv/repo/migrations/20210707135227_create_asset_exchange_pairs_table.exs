@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.CreateAssetExchangeTable do
+  @moduledoc false
   use Ecto.Migration
 
   @table :asset_exchange_pairs

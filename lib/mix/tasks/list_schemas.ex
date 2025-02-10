@@ -1,6 +1,4 @@
 defmodule Mix.Tasks.List.Schema.Modules.Without.Admin do
-  use Mix.Task
-
   @moduledoc """
   Lists all Ecto schema modules without an admin module.
   Usage:
@@ -8,12 +6,13 @@ defmodule Mix.Tasks.List.Schema.Modules.Without.Admin do
   mix list.schema.modules.without.admin
   """
 
+  use Mix.Task
+
   def run(_) do
     {:ok, modules} = :application.get_key(:sanbase, :modules)
 
     modules =
-      modules
-      |> Enum.filter(fn module ->
+      Enum.filter(modules, fn module ->
         sanbase_module? = String.starts_with?(to_string(module), "Elixir.Sanbase")
 
         schema_module? =
@@ -24,8 +23,7 @@ defmodule Mix.Tasks.List.Schema.Modules.Without.Admin do
       end)
 
     schema_modules_with_admin =
-      SanbaseWeb.GenericAdmin.resource_module_map()
-      |> Enum.map(fn {_, %{module: module}} -> module end)
+      Enum.map(SanbaseWeb.GenericAdmin.resource_module_map(), fn {_, %{module: module}} -> module end)
 
     IO.puts("Schema modules without admin:")
 

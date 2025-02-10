@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
+  @moduledoc false
   def available_blockchains_metadata(_root, _argsargs, _resolution) do
     data =
       Sanbase.BlockchainAddress.available_blockchains()
@@ -9,7 +10,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
   end
 
   defp blockchain_data("ethereum") do
-    %{
+    add_complex_fields(%{
       blockchain: "ethereum",
       name: "Ethereum",
       slug: "ethereum",
@@ -22,12 +23,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
       has_onchain_financial_metrics: true,
       has_pure_onchain_metrics: true,
       has_balance_metrics: true
-    }
-    |> add_complex_fields()
+    })
   end
 
   defp blockchain_data("bitcoin") do
-    %{
+    add_complex_fields(%{
       blockchain: "bitcoin",
       name: "Bitcoin",
       slug: "bitcoin",
@@ -40,12 +40,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
       has_onchain_financial_metrics: true,
       has_pure_onchain_metrics: true,
       has_balance_metrics: true
-    }
-    |> add_complex_fields()
+    })
   end
 
   defp blockchain_data("bitcoin-cash") do
-    %{
+    add_complex_fields(%{
       blockchain: "bitcoin-cash",
       name: "Bitcoin Cash",
       slug: "bitcoin-cash",
@@ -58,12 +57,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
       has_onchain_financial_metrics: true,
       has_pure_onchain_metrics: true,
       has_balance_metrics: true
-    }
-    |> add_complex_fields()
+    })
   end
 
   defp blockchain_data("litecoin") do
-    %{
+    add_complex_fields(%{
       blockchain: "litecoin",
       name: "Litecoin",
       slug: "litecoin",
@@ -76,12 +74,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
       has_onchain_financial_metrics: true,
       has_pure_onchain_metrics: true,
       has_balance_metrics: true
-    }
-    |> add_complex_fields()
+    })
   end
 
   defp blockchain_data("xrp") do
-    %{
+    add_complex_fields(%{
       blockchain: "xrp",
       name: "XRP Ledger",
       slug: "xrp",
@@ -94,12 +91,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
       has_onchain_financial_metrics: true,
       has_pure_onchain_metrics: true,
       has_balance_metrics: true
-    }
-    |> add_complex_fields()
+    })
   end
 
   defp blockchain_data("binance-coin") do
-    %{
+    add_complex_fields(%{
       blockchain: "binance-coin",
       name: "Binance Coin",
       slug: "binance-coin",
@@ -112,12 +108,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
       has_onchain_financial_metrics: true,
       has_pure_onchain_metrics: true,
       has_balance_metrics: true
-    }
-    |> add_complex_fields()
+    })
   end
 
   defp blockchain_data("dogecoin") do
-    %{
+    add_complex_fields(%{
       blockchain: "dogecoin",
       name: "Dogecoin",
       slug: "dogecoin",
@@ -130,12 +125,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
       has_onchain_financial_metrics: true,
       has_pure_onchain_metrics: true,
       has_balance_metrics: true
-    }
-    |> add_complex_fields()
+    })
   end
 
   defp blockchain_data("matic-network") do
-    %{
+    add_complex_fields(%{
       blockchain: "matic-network",
       name: "Matic Network",
       slug: "matic-network",
@@ -148,12 +142,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
       has_onchain_financial_metrics: true,
       has_pure_onchain_metrics: true,
       has_balance_metrics: true
-    }
-    |> add_complex_fields()
+    })
   end
 
   defp blockchain_data("cardano") do
-    %{
+    add_complex_fields(%{
       blockchain: "cardano",
       name: "Cardano",
       slug: "cardano",
@@ -166,12 +159,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
       has_onchain_financial_metrics: true,
       has_pure_onchain_metrics: true,
       has_balance_metrics: true
-    }
-    |> add_complex_fields()
+    })
   end
 
   defp blockchain_data("avalanche") do
-    %{
+    add_complex_fields(%{
       blockchain: "avalanche",
       name: "Avalanche",
       slug: "avalanche",
@@ -184,12 +176,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
       has_onchain_financial_metrics: true,
       has_pure_onchain_metrics: true,
       has_balance_metrics: true
-    }
-    |> add_complex_fields()
+    })
   end
 
   defp blockchain_data("optimism") do
-    %{
+    add_complex_fields(%{
       blockchain: "optimism",
       name: "Optimism",
       slug: "optimism",
@@ -202,12 +193,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
       has_onchain_financial_metrics: true,
       has_pure_onchain_metrics: true,
       has_balance_metrics: true
-    }
-    |> add_complex_fields()
+    })
   end
 
   defp blockchain_data("arbitrum") do
-    %{
+    add_complex_fields(%{
       blockchain: "arbitrum",
       name: "Arbitrum",
       slug: "arbitrum",
@@ -220,17 +210,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
       has_onchain_financial_metrics: true,
       has_pure_onchain_metrics: true,
       has_balance_metrics: true
-    }
-    |> add_complex_fields()
+    })
   end
 
   defp blockchain_data(_), do: nil
 
   defp add_complex_fields(%{} = map) do
-    map
-    |> Map.put(
-      :has_exchange_top_holders_metrics,
-      map.has_exchange_metrics and map.has_top_holders_metrics
-    )
+    Map.put(map, :has_exchange_top_holders_metrics, map.has_exchange_metrics and map.has_top_holders_metrics)
   end
 end

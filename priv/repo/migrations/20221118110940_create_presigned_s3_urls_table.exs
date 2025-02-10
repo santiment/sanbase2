@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.CreatePresignedS3UrlsTable do
+  @moduledoc false
   use Ecto.Migration
 
   @table :presigned_s3_urls

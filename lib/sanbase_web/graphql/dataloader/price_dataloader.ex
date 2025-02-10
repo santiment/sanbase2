@@ -1,18 +1,19 @@
 defmodule SanbaseWeb.Graphql.PriceDataloader do
+  @moduledoc false
   alias SanbaseWeb.Graphql.Cache
 
   require Logger
 
   @max_concurrency 30
 
-  def data() do
+  def data do
     Dataloader.KV.new(&query/2)
   end
 
   def query(:volume_change_24h, args) do
-    slugs = args |> Enum.map(& &1.slug)
+    slugs = Enum.map(args, & &1.slug)
 
-    now = Timex.now()
+    now = DateTime.utc_now()
     day_ago = Timex.shift(now, days: -1)
     two_days_ago = Timex.shift(now, days: -2)
 
@@ -43,8 +44,8 @@ defmodule SanbaseWeb.Graphql.PriceDataloader do
   end
 
   def query(:last_price_usd, slugs) do
-    now = Timex.now()
-    yesterday = Timex.shift(Timex.now(), days: -1)
+    now = DateTime.utc_now()
+    yesterday = Timex.shift(DateTime.utc_now(), days: -1)
     slugs = Enum.to_list(slugs)
 
     # Returns result like: {:ok, %{"bitcoin" => 31886.7990282547, "santiment" => 0.07190104}}
@@ -85,8 +86,7 @@ defmodule SanbaseWeb.Graphql.PriceDataloader do
   end
 
   defp calculate_volume_percent_change(previous_map, current_map) do
-    current_map
-    |> Enum.map(fn {slug, volume} ->
+    Enum.map(current_map, fn {slug, volume} ->
       previous_volume = Map.get(previous_map, slug, 0)
 
       if is_number(previous_volume) and previous_volume > 1 and is_number(volume) and volume > 1 do
@@ -101,7 +101,7 @@ defmodule SanbaseWeb.Graphql.PriceDataloader do
     {:ok, tuple} =
       Cache.wrap(
         fn ->
-          now = Timex.now()
+          now = DateTime.utc_now()
           yesterday = Timex.shift(now, days: -1)
 
           case Sanbase.Price.aggregated_timeseries_data(slug, yesterday, now) do

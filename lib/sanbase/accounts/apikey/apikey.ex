@@ -11,11 +11,9 @@ defmodule Sanbase.Accounts.Apikey do
   """
   import Sanbase.Accounts.EventEmitter, only: [emit_event: 3]
 
-  alias Sanbase.Accounts.{
-    Hmac,
-    UserApikeyToken,
-    User
-  }
+  alias Sanbase.Accounts.Hmac
+  alias Sanbase.Accounts.User
+  alias Sanbase.Accounts.UserApikeyToken
 
   require Logger
 
@@ -66,8 +64,7 @@ defmodule Sanbase.Accounts.Apikey do
       {:ok, apikey}
     else
       error ->
-        {:error,
-         "Error generating new apikey for user with id #{user_id}. Inspecting error: #{inspect(error)}"}
+        {:error, "Error generating new apikey for user with id #{user_id}. Inspecting error: #{inspect(error)}"}
     end
   end
 

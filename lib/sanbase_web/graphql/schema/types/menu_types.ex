@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.MenuTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   @desc ~s"""

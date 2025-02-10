@@ -1,12 +1,12 @@
 defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import Sanbase.TestHelpers
-
-  alias Sanbase.UserList
-
-  import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
+  import Sanbase.TestHelpers
+  import SanbaseWeb.Graphql.TestHelpers
+
+  alias Sanbase.Clickhouse.HistoricalBalance
+  alias Sanbase.UserList
 
   setup do
     clean_task_supervisor_children()
@@ -65,7 +65,8 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
       ]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: labels_rows}})
+    (&Sanbase.ClickhouseRepo.query/2)
+    |> Sanbase.Mock.prepare_mock2({:ok, %{rows: labels_rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         conn
@@ -78,7 +79,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
       assert watchlist["description"] == "Description"
       assert watchlist["color"] == "BLACK"
       assert watchlist["isPublic"] == false
-      assert watchlist["user"]["id"] == user.id |> to_string()
+      assert watchlist["user"]["id"] == to_string(user.id)
 
       assert %{
                "blockchainAddress" => %{
@@ -105,7 +106,8 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
   end
 
   test "update blockchain address watchlist", %{user: user, conn: conn} do
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: []}})
+    (&Sanbase.ClickhouseRepo.query/2)
+    |> Sanbase.Mock.prepare_mock2({:ok, %{rows: []}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       {:ok, watchlist} =
         UserList.create_user_list(user, %{name: "My Test List", type: :blockchain_address})
@@ -206,7 +208,8 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
   end
 
   test "update blockchain address watchlist - remove list items", %{user: user, conn: conn} do
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: []}})
+    (&Sanbase.ClickhouseRepo.query/2)
+    |> Sanbase.Mock.prepare_mock2({:ok, %{rows: []}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       {:ok, watchlist} =
         UserList.create_user_list(user, %{name: "My Test List", type: :blockchain_address})
@@ -258,9 +261,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
       }
       """
 
-      result =
-        conn
-        |> post("/graphql", mutation_skeleton(second_update))
+      result = post(conn, "/graphql", mutation_skeleton(second_update))
 
       updated_watchlist2 = json_response(result, 200)["data"]["updateWatchlist"]
       assert updated_watchlist2["listItems"] == []
@@ -268,7 +269,8 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
   end
 
   test "update blockchain address watchlist - without list items", %{user: user, conn: conn} do
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: []}})
+    (&Sanbase.ClickhouseRepo.query/2)
+    |> Sanbase.Mock.prepare_mock2({:ok, %{rows: []}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       {:ok, watchlist} =
         UserList.create_user_list(user, %{name: "My Test List", type: :blockchain_address})
@@ -297,9 +299,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
       }
       """
 
-      result =
-        conn
-        |> post("/graphql", mutation_skeleton(query))
+      result = post(conn, "/graphql", mutation_skeleton(query))
 
       updated_watchlist = json_response(result, 200)["data"]["updateWatchlist"]
       assert updated_watchlist["name"] == update_name
@@ -368,13 +368,13 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
       |> json_response(200)
 
     watchlists = result["data"]["fetchWatchlists"]
-    watchlist = watchlists |> List.first()
+    watchlist = List.first(watchlists)
 
     assert length(watchlists) == 1
     assert watchlist["name"] == "My Test List"
     assert watchlist["color"] == "NONE"
     assert watchlist["is_public"] == false
-    assert watchlist["user"]["id"] == user.id |> to_string()
+    assert watchlist["user"]["id"] == to_string(user.id)
   end
 
   test "fetch public watchlists", %{user: user, conn: conn} do
@@ -392,11 +392,11 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
       |> post("/graphql", query_skeleton(query, "fetchPublicWatchlists"))
       |> json_response(200)
 
-    user_lists = result["data"]["fetchPublicWatchlists"] |> List.first()
+    user_lists = List.first(result["data"]["fetchPublicWatchlists"])
     assert user_lists["name"] == "My Test List"
     assert user_lists["color"] == "NONE"
     assert user_lists["is_public"] == true
-    assert user_lists["user"]["id"] == user.id |> to_string()
+    assert user_lists["user"]["id"] == to_string(user.id)
   end
 
   test "fetch all public watchlists", %{user: user, conn: conn} do
@@ -441,7 +441,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
       |> post("/graphql", query_skeleton(query))
       |> json_response(200)
 
-    assert result["data"]["watchlistBySlug"]["id"] |> Sanbase.Math.to_integer() == ws.id
+    assert Sanbase.Math.to_integer(result["data"]["watchlistBySlug"]["id"]) == ws.id
     assert result["data"]["watchlistBySlug"]["name"] == ws.name
     assert result["data"]["watchlistBySlug"]["slug"] == ws.slug
     assert result["data"]["watchlistBySlug"]["isScreener"]
@@ -458,7 +458,8 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
     query = query("watchlist(id: #{watchlist.id})")
 
     result =
-      post(build_conn(), "/graphql", query_skeleton(query, "watchlist"))
+      build_conn()
+      |> post("/graphql", query_skeleton(query, "watchlist"))
       |> json_response(200)
 
     assert result["data"]["watchlist"] == %{
@@ -613,12 +614,10 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
       }
     ]
 
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.HistoricalBalance.current_balance/2,
-      {:ok, current_balance_data}
-    )
+    (&HistoricalBalance.current_balance/2)
+    |> Sanbase.Mock.prepare_mock2({:ok, current_balance_data})
     |> Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.HistoricalBalance.balance_change/4,
+      &HistoricalBalance.balance_change/4,
       {:ok, balance_change_data}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->

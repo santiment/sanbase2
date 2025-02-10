@@ -1,5 +1,6 @@
 defmodule Sanbase.MetricRegistrySyncTest do
   use SanbaseWeb.ConnCase
+
   alias Sanbase.Metric.Registry
 
   @moduletag capture_log: true
@@ -24,7 +25,7 @@ defmodule Sanbase.MetricRegistrySyncTest do
     assert m2.sync_status == "synced"
   end
 
-  defp create_sync_requirements() do
+  defp create_sync_requirements do
     # Get 3 records
     {:ok, m1} = Registry.by_name("price_usd_5m")
     {:ok, m2} = Registry.by_name("mvrv_usd")
@@ -110,7 +111,8 @@ defmodule Sanbase.MetricRegistrySyncTest do
         aliases: [%Registry.Alias{name: "new_alias"}]
     }
 
-    Sanbase.Mock.prepare_mock2(&Registry.by_ids/1, [changed_m])
+    (&Registry.by_ids/1)
+    |> Sanbase.Mock.prepare_mock2([changed_m])
     |> Sanbase.Mock.run_with_mocks(fn ->
       # Check some fields before sync
       {:ok, m} = Registry.by_id(m.id)
@@ -134,9 +136,7 @@ defmodule Sanbase.MetricRegistrySyncTest do
                %{data_type: "timeseries", metric: "price_usd_5m", fixed_parameters: %{}}
 
       assert changes_value == %{
-               aliases:
-                 {:changed,
-                  [{:added_to_list, 0, %Sanbase.Metric.Registry.Alias{name: "new_alias"}}]},
+               aliases: {:changed, [{:added_to_list, 0, %Sanbase.Metric.Registry.Alias{name: "new_alias"}}]},
                min_interval: {:changed, {:primitive_change, "1s", "1d"}},
                exposed_environments: {:changed, {:primitive_change, "all", "stage"}},
                # TODO: Mayber exclude?

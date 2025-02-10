@@ -1,4 +1,6 @@
 defmodule Sanbase.BlockchainAddress.ListSelector do
+  @moduledoc false
+  alias Sanbase.Clickhouse.Label
   alias Sanbase.Utils.ListSelector.Transform
 
   defdelegate valid_selector?(args), to: __MODULE__.Validator
@@ -16,8 +18,7 @@ defmodule Sanbase.BlockchainAddress.ListSelector do
   end
 
   defp get_blockchain_addresses(opts) do
-    opts[:included_blockchain_addresses]
-    |> Sanbase.Utils.Transform.combine_mapsets(combinator: opts[:filters_combinator])
+    Sanbase.Utils.Transform.combine_mapsets(opts[:included_blockchain_addresses], combinator: opts[:filters_combinator])
   end
 
   def args_to_opts(args) do
@@ -26,9 +27,7 @@ defmodule Sanbase.BlockchainAddress.ListSelector do
     filters = Transform.args_to_filters(args)
     filters_combinator = Transform.args_to_filters_combinator(args)
 
-    included_blockchain_addresses =
-      filters
-      |> included_blockchain_addresses_by_filters()
+    included_blockchain_addresses = included_blockchain_addresses_by_filters(filters)
 
     [
       included_blockchain_addresses: included_blockchain_addresses,
@@ -38,18 +37,16 @@ defmodule Sanbase.BlockchainAddress.ListSelector do
 
   defp included_blockchain_addresses_by_filters([]), do: []
 
-  defp included_blockchain_addresses_by_filters([_ | _] = filters)
-       when is_list(filters) do
-    filters
-    |> Sanbase.Parallel.map(
+  defp included_blockchain_addresses_by_filters([_ | _] = filters) when is_list(filters) do
+    Sanbase.Parallel.map(
+      filters,
       fn filter ->
-        cache_key =
-          {__MODULE__, :included_blockchain_addresses_by_filter, filter} |> Sanbase.Cache.hash()
+        cache_key = Sanbase.Cache.hash({__MODULE__, :included_blockchain_addresses_by_filter, filter})
 
         {:ok, blockchain_addresses} =
           Sanbase.Cache.get_or_store(cache_key, fn -> blockchain_addresses_by_filter(filter) end)
 
-        blockchain_addresses |> MapSet.new()
+        MapSet.new(blockchain_addresses)
       end,
       timeout: 40_000,
       ordered: false,
@@ -66,7 +63,7 @@ defmodule Sanbase.BlockchainAddress.ListSelector do
 
     opts = [labels_combinator: combinator, blockchain: blockchain]
 
-    Sanbase.Clickhouse.Label.addresses_by_labels(label_fqns, opts)
+    Label.addresses_by_labels(label_fqns, opts)
   end
 
   defp blockchain_addresses_by_filter(%{name: "addresses_by_label_keys", args: args}) do
@@ -75,7 +72,7 @@ defmodule Sanbase.BlockchainAddress.ListSelector do
 
     opts = [blockchain: blockchain]
 
-    Sanbase.Clickhouse.Label.addresses_by_label_keys(label_keys, opts)
+    Label.addresses_by_label_keys(label_keys, opts)
   end
 
   # Fetch the top addresses ordered by their balance in descendig order. If the

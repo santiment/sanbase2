@@ -1,5 +1,7 @@
 defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
+  @moduledoc false
   use SanbaseWeb, :live_view
+
   alias SanbaseWeb.UserFormsComponents
 
   @impl true
@@ -9,8 +11,7 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
     projects = Sanbase.Project.List.projects_base_info_only(opts)
 
     {:ok,
-     socket
-     |> assign(
+     assign(socket,
        page_title: "Suggest asset Github Organizations changes",
        projects: projects,
        selected_project: nil,
@@ -34,14 +35,12 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
         slug ->
           case Enum.find(socket.assigns.projects, &(&1.slug == slug)) do
             nil ->
-              socket
-              |> put_flash(:error, "Project not found")
+              put_flash(socket, :error, "Project not found")
 
             project ->
-              stored_organizations = project.github_organizations |> Enum.map(& &1.organization)
+              stored_organizations = Enum.map(project.github_organizations, & &1.organization)
 
-              socket
-              |> assign(
+              assign(socket,
                 selected_project: project,
                 stored_organizations: stored_organizations,
                 seen_organizations: stored_organizations,
@@ -109,7 +108,8 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
           socket.assigns.projects
 
         _ ->
-          Enum.filter(socket.assigns.projects, fn p ->
+          socket.assigns.projects
+          |> Enum.filter(fn p ->
             String.downcase(p.name) =~ search or String.downcase(p.ticker) =~ search or
               String.downcase(p.slug) =~ search
           end)
@@ -131,23 +131,25 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
     {new, removed, seen} =
       case params do
         %{"value" => "on", "organization" => org} ->
+          # Append to the back so it looks better in the UI
           new =
-            case org in stored do
-              # Append to the back so it looks better in the UI
-              false -> (new ++ [org]) |> Enum.uniq()
-              true -> new
+            if org in stored do
+              new
+            else
+              Enum.uniq(new ++ [org])
             end
 
           removed = removed -- [org]
-          {new, removed, (seen ++ [org]) |> Enum.uniq()}
+          {new, removed, Enum.uniq(seen ++ [org])}
 
         %{"organization" => org} ->
           new = new -- [org]
 
           removed =
-            case org in stored do
-              true -> (removed ++ [org]) |> Enum.uniq()
-              false -> removed
+            if org in stored do
+              Enum.uniq(removed ++ [org])
+            else
+              removed
             end
 
           {new, removed, seen}
@@ -177,12 +179,7 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
       end
 
     socket =
-      socket
-      |> assign(
-        new_organizations: new,
-        removed_organizations: removed,
-        seen_organizations: (seen ++ [org]) |> Enum.uniq()
-      )
+      assign(socket, new_organizations: new, removed_organizations: removed, seen_organizations: Enum.uniq(seen ++ [org]))
 
     {:noreply, socket}
   end
@@ -217,9 +214,7 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
       {:error, changeset} ->
         errors = Sanbase.Utils.ErrorHandling.changeset_errors_string(changeset)
 
-        socket =
-          socket
-          |> put_flash(:error, "Error submitting suggestions. Reason: #{errors}")
+        socket = put_flash(socket, :error, "Error submitting suggestions. Reason: #{errors}")
 
         {:noreply, socket}
     end

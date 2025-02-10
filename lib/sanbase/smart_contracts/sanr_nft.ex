@@ -1,4 +1,5 @@
 defmodule Sanbase.SmartContracts.SanrNFT do
+  @moduledoc false
   @doc ~s"""
   Checks if some of the given addresses have a valid NFT token.
   A user can have one or more connected addresses. The user has
@@ -12,10 +13,10 @@ defmodule Sanbase.SmartContracts.SanrNFT do
     {:ok, nft_metadata} = get_all_nft_expiration_dates()
 
     addresses_with_token =
-      MapSet.intersection(
-        MapSet.new(Map.keys(nft_owners)),
-        MapSet.new(addresses)
-      )
+      nft_owners
+      |> Map.keys()
+      |> MapSet.new()
+      |> MapSet.intersection(MapSet.new(addresses))
       |> Enum.to_list()
 
     case addresses_with_token do
@@ -47,8 +48,8 @@ defmodule Sanbase.SmartContracts.SanrNFT do
   Returns a map where the address is the key, and a map with token_id is the value
   """
   @spec get_all_nft_owners() :: {:ok, map()} | {:error, any()}
-  def get_all_nft_owners() do
-    key = {__MODULE__, :get_all_nft_owners} |> Sanbase.Cache.hash()
+  def get_all_nft_owners do
+    key = Sanbase.Cache.hash({__MODULE__, :get_all_nft_owners})
     # 10 seconds cache
     key = {key, 10}
     Sanbase.Cache.get_or_store(key, &do_get_all_nft_owners/0)
@@ -61,14 +62,14 @@ defmodule Sanbase.SmartContracts.SanrNFT do
   until its end date.
   """
   @spec get_all_nft_owners() :: {:ok, map()} | {:error, any()}
-  def get_all_nft_expiration_dates() do
-    key = {__MODULE__, :get_all_nft_expiration_dates} |> Sanbase.Cache.hash()
+  def get_all_nft_expiration_dates do
+    key = Sanbase.Cache.hash({__MODULE__, :get_all_nft_expiration_dates})
     # 10 seconds cache
     key = {key, 10}
     Sanbase.Cache.get_or_store(key, &do_get_all_nft_expiration_dates/0)
   end
 
-  defp do_get_all_nft_expiration_dates() do
+  defp do_get_all_nft_expiration_dates do
     req =
       Req.new(base_url: "https://api.sanr.app/v1/SanbaseSubscriptionNFTCollection/all")
 
@@ -92,7 +93,7 @@ defmodule Sanbase.SmartContracts.SanrNFT do
     end
   end
 
-  defp do_get_all_nft_owners() do
+  defp do_get_all_nft_owners do
     req = Req.new(base_url: "https://zksync-mainnet.g.alchemy.com")
 
     params = [
@@ -140,7 +141,7 @@ defmodule Sanbase.SmartContracts.SanrNFT do
     |> Map.get("tokenId")
   end
 
-  defp alchemy_api_key() do
+  defp alchemy_api_key do
     Sanbase.Utils.Config.module_get(__MODULE__, :alchemy_api_key)
   end
 end

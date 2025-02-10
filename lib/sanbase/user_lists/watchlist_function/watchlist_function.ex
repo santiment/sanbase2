@@ -1,5 +1,10 @@
 defmodule Sanbase.WatchlistFunction do
+  @moduledoc false
   use Ecto.Type
+
+  alias Sanbase.BlockchainAddress
+  alias Sanbase.Project
+
   @derive Jason.Encoder
   defstruct name: "empty", args: []
 
@@ -12,9 +17,6 @@ defmodule Sanbase.WatchlistFunction do
           optional(:all_included_slugs) => list(String.t()),
           optional(:all_included_blockchain_addresses) => list(String.t())
         }
-
-  alias Sanbase.Project
-  alias Sanbase.BlockchainAddress
 
   @impl Ecto.Type
   def type, do: :map
@@ -45,8 +47,7 @@ defmodule Sanbase.WatchlistFunction do
       maybe_check_evaluates(fun, opts)
     else
       {_, %{} = unsupported_keys} when map_size(unsupported_keys) > 0 ->
-        {:error,
-         "Dynamic watchlist 'address_selector' has unsupported fields: #{inspect(Map.keys(unsupported_keys))}"}
+        {:error, "Dynamic watchlist 'address_selector' has unsupported fields: #{inspect(Map.keys(unsupported_keys))}"}
 
       {:error, error} ->
         {:error, error}
@@ -61,7 +62,7 @@ defmodule Sanbase.WatchlistFunction do
     "base_projects"
   ]
   def valid_function?(%__MODULE__{name: "selector", args: args} = fun, opts) do
-    args = Enum.into(args, %{}, fn {k, v} -> {Inflex.underscore(k), v} end)
+    args = Map.new(args, fn {k, v} -> {Inflex.underscore(k), v} end)
 
     with {selector, empty_map} when map_size(empty_map) == 0 <-
            Map.split(args, @project_selector_fields),
@@ -71,8 +72,7 @@ defmodule Sanbase.WatchlistFunction do
       maybe_check_evaluates(fun, opts)
     else
       {%{}, %{} = unsupported_keys_map} when map_size(unsupported_keys_map) > 0 ->
-        {:error,
-         "Dynamic watchlist 'selector' has unsupported fields: #{inspect(Map.keys(unsupported_keys_map))}"}
+        {:error, "Dynamic watchlist 'selector' has unsupported fields: #{inspect(Map.keys(unsupported_keys_map))}"}
 
       {:error, error} ->
         {:error, error}
@@ -82,27 +82,30 @@ defmodule Sanbase.WatchlistFunction do
   def valid_function?(%__MODULE__{name: "market_segment", args: args} = fun, opts) do
     market_segment = Map.get(args, "market_segment") || Map.fetch!(args, :market_segment)
 
-    case is_binary(market_segment) do
-      true -> maybe_check_evaluates(fun, opts)
-      false -> {:error, "The market_segment argument must be a string."}
+    if is_binary(market_segment) do
+      maybe_check_evaluates(fun, opts)
+    else
+      {:error, "The market_segment argument must be a string."}
     end
   end
 
   def valid_function?(%__MODULE__{name: "market_segments", args: args} = fun, opts) do
     market_segment = Map.get(args, "market_segments") || Map.fetch!(args, :market_segments)
 
-    case is_list(market_segment) and market_segment != [] do
-      true -> maybe_check_evaluates(fun, opts)
-      false -> {:error, "The market_segments argument must be a non-empty list."}
+    if is_list(market_segment) and market_segment != [] do
+      maybe_check_evaluates(fun, opts)
+    else
+      {:error, "The market_segments argument must be a non-empty list."}
     end
   end
 
   def valid_function?(%__MODULE__{name: "ecosystems", args: args} = fun, opts) do
     ecosystems = Map.get(args, "ecosystems") || Map.fetch!(args, :ecosystems)
 
-    case is_list(ecosystems) and ecosystems != [] do
-      true -> maybe_check_evaluates(fun, opts)
-      false -> {:error, "The ecosystems argument must be a non-empty list."}
+    if is_list(ecosystems) and ecosystems != [] do
+      maybe_check_evaluates(fun, opts)
+    else
+      {:error, "The ecosystems argument must be a non-empty list."}
     end
   end
 
@@ -111,33 +114,34 @@ defmodule Sanbase.WatchlistFunction do
     size = Map.get(args, "size") || Map.fetch!(args, :size)
     ignored_projects = Map.get(args, "ignored_projects") || Map.get(args, :ignored_projects) || []
 
-    case is_integer(size) and size > 0 do
-      false ->
-        {:error, "The size argument must be a positive integer."}
-
-      true ->
-        case is_list(ignored_projects) do
-          true -> maybe_check_evaluates(fun, opts)
-          false -> {:error, "The ignored projects argument must be a list."}
-        end
+    if is_integer(size) and size > 0 do
+      if is_list(ignored_projects) do
+        maybe_check_evaluates(fun, opts)
+      else
+        {:error, "The ignored projects argument must be a list."}
+      end
+    else
+      {:error, "The size argument must be a positive integer."}
     end
   end
 
   def valid_function?(%__MODULE__{name: "min_volume", args: args} = fun, opts) do
     min_volume = Map.get(args, "min_volume") || Map.fetch!(args, :min_volume)
 
-    case is_number(min_volume) and min_volume >= 0 do
-      true -> maybe_check_evaluates(fun, opts)
-      false -> {:error, "The min volume argument must be a non-negative number."}
+    if is_number(min_volume) and min_volume >= 0 do
+      maybe_check_evaluates(fun, opts)
+    else
+      {:error, "The min volume argument must be a non-negative number."}
     end
   end
 
   def valid_function?(%__MODULE__{name: "slugs", args: args} = fun, opts) do
     slugs = Map.get(args, "slugs") || Map.fetch!(args, :slugs)
 
-    case is_list(slugs) and slugs != [] do
-      true -> maybe_check_evaluates(fun, opts)
-      false -> {:error, "The slugs argument must be a non-empty list."}
+    if is_list(slugs) and slugs != [] do
+      maybe_check_evaluates(fun, opts)
+    else
+      {:error, "The slugs argument must be a non-empty list."}
     end
   end
 
@@ -152,20 +156,16 @@ defmodule Sanbase.WatchlistFunction do
   """
   @spec evaluates?(%__MODULE__{}) :: boolean()
   def evaluates?(%__MODULE__{} = fun) do
-    try do
-      case evaluate(fun) do
-        {:ok, _} ->
-          true
+    case evaluate(fun) do
+      {:ok, _} ->
+        true
 
-        {:error, error} ->
-          {:error,
-           "Watchlist function is not valid because it returns error when evaluating. Reason: #{inspect(error)}"}
-      end
-    rescue
-      e ->
-        {:error,
-         "Watchlist function is not valid because it raises when evaluating. Reason: #{Exception.message(e)}"}
+      {:error, error} ->
+        {:error, "Watchlist function is not valid because it returns error when evaluating. Reason: #{inspect(error)}"}
     end
+  rescue
+    e ->
+      {:error, "Watchlist function is not valid because it raises when evaluating. Reason: #{Exception.message(e)}"}
   end
 
   @spec evaluate(%__MODULE__{}) ::
@@ -173,7 +173,7 @@ defmodule Sanbase.WatchlistFunction do
   def evaluate(watchlist_function)
 
   def evaluate(%__MODULE__{name: "address_selector", args: args}) do
-    args = Enum.into(args, %{}, fn {k, v} -> {Inflex.underscore(k), v} end)
+    args = Map.new(args, fn {k, v} -> {Inflex.underscore(k), v} end)
 
     case Map.split(args, @address_selector_fields) do
       {selector, empty_map} when map_size(empty_map) == 0 ->
@@ -186,15 +186,14 @@ defmodule Sanbase.WatchlistFunction do
   end
 
   def evaluate(%__MODULE__{name: "selector", args: args}) do
-    args = Enum.into(args, %{}, fn {k, v} -> {Inflex.underscore(k), v} end)
+    args = Map.new(args, fn {k, v} -> {Inflex.underscore(k), v} end)
 
     case Map.split(args, @project_selector_fields) do
       {selector, empty_map} when map_size(empty_map) == 0 ->
         Project.ListSelector.projects(%{selector: selector})
 
       {_selector, unsupported_keys_map} ->
-        {:error,
-         "Dynamic watchlist 'selector' has unsupported fields: #{inspect(Map.keys(unsupported_keys_map))}"}
+        {:error, "Dynamic watchlist 'selector' has unsupported fields: #{inspect(Map.keys(unsupported_keys_map))}"}
     end
   end
 
@@ -239,7 +238,8 @@ defmodule Sanbase.WatchlistFunction do
     ignored_projects_mapset = MapSet.new(ignored_projects)
 
     projects =
-      Project.List.erc20_projects_page(1, size + length(ignored_projects))
+      1
+      |> Project.List.erc20_projects_page(size + length(ignored_projects))
       |> Enum.reject(fn %Project{slug: slug} -> slug in ignored_projects_mapset end)
       |> Enum.take(size)
 
@@ -256,7 +256,8 @@ defmodule Sanbase.WatchlistFunction do
     ignored_projects_mapset = MapSet.new(ignored_projects)
 
     projects =
-      Project.List.projects_page(1, size + length(ignored_projects))
+      1
+      |> Project.List.projects_page(size + length(ignored_projects))
       |> Enum.reject(fn %Project{slug: slug} -> slug in ignored_projects_mapset end)
       |> Enum.take(size)
 
@@ -309,7 +310,7 @@ defmodule Sanbase.WatchlistFunction do
      }}
   end
 
-  def empty(), do: %__MODULE__{name: "empty", args: []}
+  def empty, do: %__MODULE__{name: "empty", args: []}
 
   @impl Ecto.Type
   def cast(function) when is_binary(function), do: parse(function)
@@ -360,9 +361,10 @@ defmodule Sanbase.WatchlistFunction do
   end
 
   defp maybe_check_evaluates(fun, opts) do
-    case Keyword.get(opts, :check_function_evaluates, true) do
-      true -> evaluates?(fun)
-      false -> true
+    if Keyword.get(opts, :check_function_evaluates, true) do
+      evaluates?(fun)
+    else
+      true
     end
   end
 end

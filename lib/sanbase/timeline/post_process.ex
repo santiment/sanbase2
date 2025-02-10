@@ -11,8 +11,7 @@ defmodule Sanbase.Timeline.PostProcess do
   def tag(events, current_user_id \\ nil) do
     sanfamily_ids = Sanbase.Accounts.Role.san_family_ids()
 
-    events
-    |> Enum.map(fn event ->
+    Enum.map(events, fn event ->
       []
       |> add_tag(:own, current_user_id == event.user.id)
       |> add_tag(:sanfam, event.user.id in sanfamily_ids)
@@ -27,7 +26,8 @@ defmodule Sanbase.Timeline.PostProcess do
   defp followed_users_ids(nil = _follower_user_id), do: []
 
   defp followed_users_ids(follower_user_id) do
-    Sanbase.Accounts.UserFollower.followed_by(follower_user_id)
+    follower_user_id
+    |> Sanbase.Accounts.UserFollower.followed_by()
     |> Enum.map(& &1.id)
   end
 

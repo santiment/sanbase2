@@ -22,8 +22,8 @@ defmodule Sanbase.Clickhouse.Query.Environment do
   """
 
   alias Sanbase.Accounts.User
-  alias Sanbase.Queries.Query
   alias Sanbase.Dashboards.Dashboard
+  alias Sanbase.Queries.Query
 
   defstruct owner: nil,
             executor: nil,
@@ -57,15 +57,15 @@ defmodule Sanbase.Clickhouse.Query.Environment do
         }
 
   @spec empty() :: t()
-  def empty(), do: %__MODULE__{}
+  def empty, do: %__MODULE__{}
 
   @spec new(Dashboard.t(), User.t()) :: {:ok, t()} | {:error, String.t()}
   @spec new(Query.t(), User.t()) :: {:ok, t()} | {:error, String.t()}
   def new(%Dashboard{} = dashboard, %User{} = querying_user) do
     with {:ok, assets} <- get_assets() do
       env = %__MODULE__{
-        owner: dashboard.user |> user_subset(),
-        executor: querying_user |> user_subset(),
+        owner: user_subset(dashboard.user),
+        executor: user_subset(querying_user),
         assets: assets
       }
 
@@ -74,15 +74,16 @@ defmodule Sanbase.Clickhouse.Query.Environment do
   end
 
   def new(%Query{} = query, %User{} = querying_user) do
-    with {:ok, assets} <- get_assets() do
-      env = %__MODULE__{
-        owner: query.user |> user_subset(),
-        executor: querying_user |> user_subset(),
-        assets: assets
-      }
+    case get_assets() do
+      {:ok, assets} ->
+        env = %__MODULE__{
+          owner: user_subset(query.user),
+          executor: user_subset(querying_user),
+          assets: assets
+        }
 
-      {:ok, env}
-    else
+        {:ok, env}
+
       {:error, reason} ->
         {:error, "Error loading the Execution Enviornment. Reason: #{inspect(reason)}"}
     end
@@ -93,8 +94,8 @@ defmodule Sanbase.Clickhouse.Query.Environment do
   def queries_env(%Dashboard{} = dashboard, %User{} = querying_user) do
     with {:ok, assets} <- get_assets() do
       env = %__MODULE__{
-        owner: dashboard.user |> user_subset(),
-        executor: querying_user |> user_subset(),
+        owner: user_subset(dashboard.user),
+        executor: user_subset(querying_user),
         assets: assets
       }
 
@@ -103,15 +104,16 @@ defmodule Sanbase.Clickhouse.Query.Environment do
   end
 
   def queries_env(%Query{} = query, %User{} = querying_user) do
-    with {:ok, assets} <- get_assets() do
-      env = %__MODULE__{
-        owner: query.user |> user_subset(),
-        executor: querying_user |> user_subset(),
-        assets: assets
-      }
+    case get_assets() do
+      {:ok, assets} ->
+        env = %__MODULE__{
+          owner: user_subset(query.user),
+          executor: user_subset(querying_user),
+          assets: assets
+        }
 
-      {:ok, env}
-    else
+        {:ok, env}
+
       {:error, reason} ->
         {:error, "Error loading the Execution Enviornment. Reason: #{inspect(reason)}"}
     end
@@ -119,7 +121,7 @@ defmodule Sanbase.Clickhouse.Query.Environment do
 
   # Private functions
 
-  defp get_assets() do
+  defp get_assets do
     Sanbase.Cache.get_or_store({{__MODULE__, :get_assets}}, fn ->
       list = Sanbase.Project.List.projects_data_for_queries()
       {:ok, list}

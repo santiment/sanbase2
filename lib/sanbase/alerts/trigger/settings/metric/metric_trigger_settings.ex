@@ -9,9 +9,11 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerSettings do
 
   use Vex.Struct
 
-  import Sanbase.{Validation, Alert.Validation}
+  import Sanbase.Alert.Validation
+  import Sanbase.Validation
 
   alias __MODULE__
+  alias Sanbase.Alert.Trigger.MetricTriggerSettings
   alias Sanbase.Alert.Type
 
   @trigger_type "metric_signal"
@@ -55,23 +57,18 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerSettings do
         }
 
   @spec type() :: Type.trigger_type()
-  def type(), do: @trigger_type
+  def type, do: @trigger_type
 
   def post_create_process(_trigger), do: :nochange
   def post_update_process(_trigger), do: :nochange
 
-  alias Sanbase.Alert.Trigger.MetricTriggerSettings
-
   defimpl Sanbase.Alert.Settings, for: MetricTriggerSettings do
     alias Sanbase.Alert.Trigger.MetricTriggerHelper
 
-    def triggered?(%MetricTriggerSettings{} = settings),
-      do: MetricTriggerHelper.triggered?(settings)
+    def triggered?(%MetricTriggerSettings{} = settings), do: MetricTriggerHelper.triggered?(settings)
 
-    def cache_key(%MetricTriggerSettings{} = settings),
-      do: MetricTriggerHelper.cache_key(settings)
+    def cache_key(%MetricTriggerSettings{} = settings), do: MetricTriggerHelper.cache_key(settings)
 
-    def evaluate(%MetricTriggerSettings{} = settings, trigger),
-      do: MetricTriggerHelper.evaluate(settings, trigger)
+    def evaluate(%MetricTriggerSettings{} = settings, trigger), do: MetricTriggerHelper.evaluate(settings, trigger)
   end
 end

@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.FillDocumentTokensPostsColumn do
+  @moduledoc false
   use Ecto.Migration
 
   def up do
@@ -10,7 +11,7 @@ defmodule Sanbase.Repo.Migrations.FillDocumentTokensPostsColumn do
     :ok
   end
 
-  defp setup() do
+  defp setup do
     Application.ensure_all_started(:tzdata)
   end
 end

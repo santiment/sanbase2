@@ -1,13 +1,12 @@
 defmodule Sanbase.Repo.Migrations.RemoveDuplicates do
+  @moduledoc false
   use Ecto.Migration
 
   import Ecto.Query
-  alias Sanbase.Repo
 
-  alias Sanbase.Model.{
-    LatestEthWalletData,
-    LatestBtcWalletData
-  }
+  alias Sanbase.Model.LatestBtcWalletData
+  alias Sanbase.Model.LatestEthWalletData
+  alias Sanbase.Repo
 
   def up do
     # Leaving this `execute` as a note that the migrations do not have permission
@@ -24,7 +23,7 @@ defmodule Sanbase.Repo.Migrations.RemoveDuplicates do
     # We delete duplicated data - that cannot be rollbacked
   end
 
-  defp migrate_eth() do
+  defp migrate_eth do
     alter table(:project_eth_address) do
       modify(:address, :citext, null: false)
     end
@@ -37,7 +36,7 @@ defmodule Sanbase.Repo.Migrations.RemoveDuplicates do
         count_address(latest_eth_data, wallet_data) > 1 && address != String.downcase(address)
       end)
       |> Enum.map(&Map.from_struct/1)
-      |> Enum.map(&Map.drop(&1, [:__meta__]))
+      |> Enum.map(&Map.delete(&1, :__meta__))
 
     Repo.delete_all(LatestEthWalletData)
 
@@ -48,7 +47,7 @@ defmodule Sanbase.Repo.Migrations.RemoveDuplicates do
     Repo.insert_all(LatestEthWalletData, filtered_eth_data)
   end
 
-  defp migrate_btc() do
+  defp migrate_btc do
     alter table(:project_btc_address) do
       modify(:address, :citext, null: false)
     end
@@ -61,7 +60,7 @@ defmodule Sanbase.Repo.Migrations.RemoveDuplicates do
         count_address(latest_btc_data, wallet_data) > 1 && address != String.downcase(address)
       end)
       |> Enum.map(&Map.from_struct/1)
-      |> Enum.map(&Map.drop(&1, [:__meta__]))
+      |> Enum.map(&Map.delete(&1, :__meta__))
 
     Repo.delete_all(LatestBtcWalletData)
 

@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddQueriesToFeaturedItems do
+  @moduledoc false
   use Ecto.Migration
 
   def up do

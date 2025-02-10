@@ -8,19 +8,20 @@ defmodule Sanbase.ClickhouseRepo do
   `Sanbase.ClickhouseRepo.put_dynamic_repo(Sanbase.ClickhouseRepo.ReadOnly)`
   """
 
-  env = Application.compile_env(:sanbase, :env)
-  @adapter if env == :test, do: Ecto.Adapters.Postgres, else: ClickhouseEcto
+  use Ecto.Repo,
+    otp_app: :sanbase,
+    adapter: if(Mix.env() == :test, do: Ecto.Adapters.Postgres, else: ClickhouseEcto)
 
-  use Ecto.Repo, otp_app: :sanbase, adapter: @adapter
-
+  alias Sanbase.Clickhouse.Query
   alias Sanbase.Utils.Config
+
   require Logger
 
-  def enabled?() do
+  def enabled? do
     case Config.module_get(__MODULE__, :clickhouse_repo_enabled?) do
       true -> true
       false -> false
-      nil -> System.get_env("CLICKHOUSE_REPO_ENABLED", "true") |> String.to_existing_atom()
+      nil -> "CLICKHOUSE_REPO_ENABLED" |> System.get_env("true") |> String.to_existing_atom()
     end
   end
 
@@ -29,7 +30,7 @@ defmodule Sanbase.ClickhouseRepo do
   CLICKHOUSE_DATABASE_URL environment variable.
   """
   def init(_, opts) do
-    pool_size = Config.module_get(__MODULE__, :pool_size) |> Sanbase.Math.to_integer()
+    pool_size = __MODULE__ |> Config.module_get(:pool_size) |> Sanbase.Math.to_integer()
 
     opts =
       opts
@@ -42,12 +43,12 @@ defmodule Sanbase.ClickhouseRepo do
   @doc ~s"""
   Execute a query and apply `transform_fn/1` on each row of the result.
   """
-  @spec query_transform(Sanbase.Clickhouse.Query.t(), (list() -> any())) ::
+  @spec query_transform(Query.t(), (list() -> any())) ::
           {:ok, any()} | {:error, String.t()}
   @spec query_transform(String.t(), list(), (list() -> any())) ::
           {:ok, any()} | {:error, String.t()}
-  def query_transform(%Sanbase.Clickhouse.Query{} = query, transform_fn) do
-    with {:ok, %{sql: sql, args: args}} <- Sanbase.Clickhouse.Query.get_sql_args(query) do
+  def query_transform(%Query{} = query, transform_fn) do
+    with {:ok, %{sql: sql, args: args}} <- Query.get_sql_args(query) do
       query_transform(sql, args, transform_fn)
     end
   end
@@ -70,12 +71,12 @@ defmodule Sanbase.ClickhouseRepo do
   Return a map with the transformed rows alongside some metadata -
   the query id, column names and a short summary of the used resources
   """
-  @spec query_transform_with_metadata(Sanbase.Clickhouse.Query.t(), (list() -> list())) ::
+  @spec query_transform_with_metadata(Query.t(), (list() -> list())) ::
           {:ok, Map.t()} | {:error, String.t()}
   @spec query_transform_with_metadata(String.t(), list(), (list() -> list())) ::
           {:ok, Map.t()} | {:error, String.t()}
-  def query_transform_with_metadata(%Sanbase.Clickhouse.Query{} = query, transform_fn) do
-    with {:ok, %{sql: sql, args: args}} <- Sanbase.Clickhouse.Query.get_sql_args(query) do
+  def query_transform_with_metadata(%Query{} = query, transform_fn) do
+    with {:ok, %{sql: sql, args: args}} <- Query.get_sql_args(query) do
       query_transform_with_metadata(sql, args, transform_fn)
     end
   end
@@ -97,23 +98,21 @@ defmodule Sanbase.ClickhouseRepo do
     end
   rescue
     e ->
-      log_and_return_error_from_exception(e, "query_transform_with_metadata/3", __STACKTRACE__,
-        propagate_error: true
-      )
+      log_and_return_error_from_exception(e, "query_transform_with_metadata/3", __STACKTRACE__, propagate_error: true)
   end
 
   @doc ~s"""
   Execute a query and reduce all the rows, starting with `init` as initial accumulator
   and using `reduce` for every row
   """
-  @spec query_reduce(Sanbase.Clickhouse.Query.t(), acc, (list(), acc -> acc)) ::
+  @spec query_reduce(Query.t(), acc, (list(), acc -> acc)) ::
           {:ok, Map.t()} | {:error, String.t()}
         when acc: any
   @spec query_reduce(String.t(), list(), acc, (list(), acc -> acc)) ::
           {:ok, Map.t()} | {:error, String.t()}
         when acc: any
-  def query_reduce(%Sanbase.Clickhouse.Query{} = query, init, reducer) do
-    with {:ok, %{sql: sql, args: args}} <- Sanbase.Clickhouse.Query.get_sql_args(query) do
+  def query_reduce(%Query{} = query, init, reducer) do
+    with {:ok, %{sql: sql, args: args}} <- Query.get_sql_args(query) do
       query_reduce(sql, args, init, reducer)
     end
   end
@@ -154,12 +153,7 @@ defmodule Sanbase.ClickhouseRepo do
   end
 
   @masked_error_message "Cannot execute database query. If issue persists please contact Santiment Support."
-  defp log_and_return_error_from_exception(
-         %{} = exception,
-         function_executed,
-         stacktrace,
-         opts \\ []
-       ) do
+  defp log_and_return_error_from_exception(%{} = exception, function_executed, stacktrace, opts \\ []) do
     propagate_error = Keyword.get(opts, :propagate_error, false)
 
     log_id = UUID.uuid4()
@@ -181,9 +175,7 @@ defmodule Sanbase.ClickhouseRepo do
 
     error_message = extract_error_from_error(error)
 
-    Logger.warning(
-      "[#{log_id}] Cannot execute ClickHouse #{function_executed}. Reason: #{error_message}"
-    )
+    Logger.warning("[#{log_id}] Cannot execute ClickHouse #{function_executed}. Reason: #{error_message}")
 
     {:error, "[#{log_id}] #{if propagate_error, do: error_message, else: @masked_error_message}"}
   end
@@ -209,7 +201,8 @@ defmodule Sanbase.ClickhouseRepo do
       Regex.replace(~r/(([^\\]|^))["'].*?[^\\]['"]/, IO.iodata_to_binary(query), "\\g{1}")
 
     ordering =
-      Regex.scan(~r/\?([0-9]+)/, sanitised)
+      ~r/\?([0-9]+)/
+      |> Regex.scan(sanitised)
       |> Enum.map(fn [_, x] -> String.to_integer(x) end)
 
     ordering_count = Enum.max_by(ordering, fn x -> x end, fn -> 0 end)
@@ -276,7 +269,7 @@ defmodule Sanbase.ClickhouseRepo do
               stripped_error_msg
           end
 
-        "#{error_code} #{error_msg}" |> String.trim()
+        String.trim("#{error_code} #{error_msg}")
     end
   end
 
@@ -323,8 +316,8 @@ defmodule Sanbase.ClickhouseRepo do
   defp get_interpolated_query(query, []), do: query
 
   defp get_interpolated_query(query, params) do
-    Clickhousex.Codec.Values.encode(
-      %Clickhousex.Query{param_count: length(params)},
+    %Clickhousex.Query{param_count: length(params)}
+    |> Clickhousex.Codec.Values.encode(
       query,
       params
     )

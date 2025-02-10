@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.ModifyOnDeleteComments do
+  @moduledoc false
   use Ecto.Migration
 
   @table "comments"

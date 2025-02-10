@@ -18,12 +18,13 @@ defmodule SanbaseWeb.Graphql.PromoterApiTest do
 
       resp_json = promoter_response()
       http_resp = %HTTPoison.Response{body: resp_json, status_code: 200}
-      resp = resp_json |> Jason.decode!()
+      resp = Jason.decode!(resp_json)
 
-      Sanbase.Mock.prepare_mock2(&HTTPoison.post/3, {:ok, http_resp})
+      (&HTTPoison.post/3)
+      |> Sanbase.Mock.prepare_mock2({:ok, http_resp})
       |> Sanbase.Mock.run_with_mocks(fn ->
         promoter = execute_mutation(context.conn, mutation, "createPromoter")
-        promotion = promoter["promotions"] |> hd()
+        promotion = hd(promoter["promotions"])
 
         assert promoter["email"] == resp["email"]
         assert promoter["earningsBalance"] == resp["earnings_balance"]["cash"]
@@ -41,7 +42,8 @@ defmodule SanbaseWeb.Graphql.PromoterApiTest do
       error_resp = ~s|{"error":"something wrong"}|
       http_resp = %HTTPoison.Response{body: error_resp, status_code: 404}
 
-      Sanbase.Mock.prepare_mock2(&HTTPoison.post/3, {:ok, http_resp})
+      (&HTTPoison.post/3)
+      |> Sanbase.Mock.prepare_mock2({:ok, http_resp})
       |> Sanbase.Mock.run_with_mocks(fn ->
         error = execute_mutation_with_error(context.conn, mutation)
         assert error == "something wrong"
@@ -55,12 +57,13 @@ defmodule SanbaseWeb.Graphql.PromoterApiTest do
 
       resp_json = promoter_response()
       http_resp = %HTTPoison.Response{body: resp_json, status_code: 200}
-      resp = resp_json |> Jason.decode!()
+      resp = Jason.decode!(resp_json)
 
-      Sanbase.Mock.prepare_mock2(&HTTPoison.get/2, {:ok, http_resp})
+      (&HTTPoison.get/2)
+      |> Sanbase.Mock.prepare_mock2({:ok, http_resp})
       |> Sanbase.Mock.run_with_mocks(fn ->
         promoter = execute_query(context.conn, query, "showPromoter")
-        promotion = promoter["promotions"] |> hd()
+        promotion = hd(promoter["promotions"])
 
         assert promoter["email"] == resp["email"]
         assert promoter["earningsBalance"] == resp["earnings_balance"]["cash"]
@@ -81,7 +84,8 @@ defmodule SanbaseWeb.Graphql.PromoterApiTest do
       error_resp = ~s|{"error":"something wrong"}|
       http_resp = %HTTPoison.Response{body: error_resp, status_code: 404}
 
-      Sanbase.Mock.prepare_mock2(&HTTPoison.get/2, {:ok, http_resp})
+      (&HTTPoison.get/2)
+      |> Sanbase.Mock.prepare_mock2({:ok, http_resp})
       |> Sanbase.Mock.run_with_mocks(fn ->
         error = execute_query_with_error(context.conn, query, "showPromoter")
         assert error == "something wrong"
@@ -89,7 +93,7 @@ defmodule SanbaseWeb.Graphql.PromoterApiTest do
     end
   end
 
-  def create_promoter_query() do
+  def create_promoter_query do
     """
     mutation {
       createPromoter(
@@ -118,7 +122,7 @@ defmodule SanbaseWeb.Graphql.PromoterApiTest do
     """
   end
 
-  def show_promoter_query() do
+  def show_promoter_query do
     """
      {
       showPromoter {
@@ -145,7 +149,7 @@ defmodule SanbaseWeb.Graphql.PromoterApiTest do
     """
   end
 
-  def promoter_response() do
+  def promoter_response do
     """
     {
       "id": 8798847,

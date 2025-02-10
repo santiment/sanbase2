@@ -1,5 +1,7 @@
 defmodule SanbaseWeb.NotificationsLive.ManualDiscordFormLive do
+  @moduledoc false
   use SanbaseWeb, :live_view
+
   alias Sanbase.Notifications.Handler
 
   def mount(_params, _session, socket) do
@@ -83,10 +85,7 @@ defmodule SanbaseWeb.NotificationsLive.ManualDiscordFormLive do
         {:noreply,
          socket
          |> put_flash(:info, "Discord notification sent successfully!")
-         |> assign(
-           form:
-             to_form(%{"action" => "message", "discord_channel" => "general", "content" => ""})
-         )}
+         |> assign(form: to_form(%{"action" => "message", "discord_channel" => "general", "content" => ""}))}
 
       {:error, _reason} ->
         {:noreply, put_flash(socket, :error, "Failed to send Discord notification")}

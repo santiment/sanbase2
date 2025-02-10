@@ -1,12 +1,14 @@
 defmodule Sanbase.Accounts.Statistics do
+  @moduledoc false
   import Ecto.Query
   import Sanbase.Accounts.User.Ecto, only: [is_registered: 0]
-  alias Sanbase.Repo
-  alias Sanbase.Math
+
   alias Sanbase.Accounts.User
+  alias Sanbase.Math
+  alias Sanbase.Repo
   alias Sanbase.UserList
 
-  def tokens_staked() do
+  def tokens_staked do
     san_balances =
       from(u in User)
       |> positive_san_balance()
@@ -19,7 +21,7 @@ defmodule Sanbase.Accounts.Statistics do
     %{
       "average_tokens_staked" => Math.mean(san_balances),
       "median_tokens_staked" => Math.median(san_balances),
-      "tokens_staked" => Enum.sum(san_balances) |> Kernel.*(1.0) |> Float.round(2),
+      "tokens_staked" => san_balances |> Enum.sum() |> Kernel.*(1.0) |> Float.round(2),
       "biggest_stake" => max_stake |> Kernel.*(1.0) |> Float.round(2),
       "smallest_stake" => min_stake |> Kernel.*(1.0) |> Float.round(2),
       "users_with_over_1000_san" => Enum.count(san_balances, fn balance -> balance >= 1000 end),
@@ -28,24 +30,21 @@ defmodule Sanbase.Accounts.Statistics do
   end
 
   @spec santiment_team_users() :: list(%User{})
-  def santiment_team_users() do
+  def santiment_team_users do
     santiment_role_user_ids = Sanbase.Accounts.Role.san_team_ids()
 
     # Get all users whose email ends with @santiment.net or they have the santiment role.
     # There are cases where santiment members use accounts with other email domains
-    from(u in User,
-      where:
-        (like(u.email, "%@santiment.net") or u.id in ^santiment_role_user_ids) and
-          is_registered()
+    Repo.all(
+      from(u in User, where: (like(u.email, "%@santiment.net") or u.id in ^santiment_role_user_ids) and is_registered())
     )
-    |> Repo.all()
   end
 
   @doc ~s"""
   Return the number of all users that are staking tokens
   """
   @spec staking_users() :: non_neg_integer()
-  def staking_users() do
+  def staking_users do
     from(u in User)
     |> positive_san_balance()
     |> count()
@@ -57,7 +56,8 @@ defmodule Sanbase.Accounts.Statistics do
   """
   @spec registered_users(DateTime.t(), DateTime.t()) :: non_neg_integer()
   def registered_users(%DateTime{} = from, %DateTime{} = to) do
-    registered_users_query(from, to)
+    from
+    |> registered_users_query(to)
     |> count()
     |> Repo.one()
   end
@@ -68,7 +68,8 @@ defmodule Sanbase.Accounts.Statistics do
   """
   @spec registered_staking_users(DateTime.t(), DateTime.t()) :: non_neg_integer()
   def registered_staking_users(%DateTime{} = from, %DateTime{} = to) do
-    registered_users_query(from, to)
+    from
+    |> registered_users_query(to)
     |> positive_san_balance()
     |> count()
     |> Repo.one()
@@ -93,7 +94,7 @@ defmodule Sanbase.Accounts.Statistics do
 
     query
     |> Repo.all()
-    |> Enum.into(%{})
+    |> Map.new()
   end
 
   def user_screeners_count_map do
@@ -114,19 +115,21 @@ defmodule Sanbase.Accounts.Statistics do
     GROUP BY user_id, type
     """
 
-    Repo.query!(query)
+    query
+    |> Repo.query!()
     |> Map.fetch!(:rows)
     |> Enum.group_by(fn [user_id, _type, _count] -> user_id end)
   end
 
-  def users_with_monitored_watchlist_and_email() do
-    from(u in User,
-      join: ul in UserList,
-      on: ul.user_id == u.id,
-      where: not is_nil(u.email) and ul.is_monitored == true,
-      distinct: true
+  def users_with_monitored_watchlist_and_email do
+    Repo.all(
+      from(u in User,
+        join: ul in UserList,
+        on: ul.user_id == u.id,
+        where: not is_nil(u.email) and ul.is_monitored == true,
+        distinct: true
+      )
     )
-    |> Repo.all()
   end
 
   # Private functions
@@ -149,7 +152,6 @@ defmodule Sanbase.Accounts.Statistics do
   end
 
   defp count(query) do
-    query
-    |> select(fragment("count(*)"))
+    select(query, fragment("count(*)"))
   end
 end

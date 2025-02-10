@@ -10,18 +10,15 @@ defmodule SanbaseWeb.Graphql.RequestHaltPlug do
 
   @behaviour Plug
 
-  @compile {:inline,
-            should_halt?: 3,
-            halt_sansheets_request?: 2,
-            halt_api_call_limit_reached?: 2,
-            build_error_msg: 1}
-
   import Plug.Conn
 
   alias Sanbase.ApiCallLimit
+  alias Sanbase.Utils.Conn
   alias SanbaseWeb.Graphql.RequestHaltPlug
 
   require Logger
+
+  @compile {:inline, should_halt?: 3, halt_sansheets_request?: 2, halt_api_call_limit_reached?: 2, build_error_msg: 1}
 
   @should_halt_methods [
     &RequestHaltPlug.halt_sansheets_request?/2,
@@ -57,26 +54,22 @@ defmodule SanbaseWeb.Graphql.RequestHaltPlug do
   end
 
   def halt_sansheets_request?(conn, %{auth: %{plan: plan_name} = auth}) do
-    case sansheets_request?(conn) and plan_name == "FREE" do
-      true ->
-        user_id = get_in(auth, [:current_user, Access.key(:id)])
+    if sansheets_request?(conn) and plan_name == "FREE" do
+      user_id = get_in(auth, [:current_user, Access.key(:id)])
 
-        Logger.info(
-          "[RequestHaltPlug] Halt sansheets request with FREE plan. User id: #{user_id}"
-        )
+      Logger.info("[RequestHaltPlug] Halt sansheets request with FREE plan. User id: #{user_id}")
 
-        error_map = %{
-          error_msg: """
-          You need to upgrade Sanbase Pro in order to use SanSheets.
-          If you already have Sanbase Pro, please make sure that a correct API key is provided.
-          """,
-          error_code: 401
-        }
+      error_map = %{
+        error_msg: """
+        You need to upgrade Sanbase Pro in order to use SanSheets.
+        If you already have Sanbase Pro, please make sure that a correct API key is provided.
+        """,
+        error_code: 401
+      }
 
-        {true, conn, error_map}
-
-      false ->
-        {false, conn}
+      {true, conn, error_map}
+    else
+      {false, conn}
     end
   end
 
@@ -90,7 +83,7 @@ defmodule SanbaseWeb.Graphql.RequestHaltPlug do
     case ApiCallLimit.get_quota(:user, user, auth_method) do
       {:error, %{blocked_for_seconds: _} = rate_limit_map} ->
         conn =
-          Sanbase.Utils.Conn.put_extra_resp_headers(
+          Conn.put_extra_resp_headers(
             conn,
             rate_limit_headers(rate_limit_map)
           )
@@ -104,7 +97,7 @@ defmodule SanbaseWeb.Graphql.RequestHaltPlug do
 
       {:ok, %{quota: _} = quota_map} ->
         conn =
-          Sanbase.Utils.Conn.put_extra_resp_headers(
+          Conn.put_extra_resp_headers(
             conn,
             rate_limit_headers(quota_map)
           )
@@ -115,11 +108,7 @@ defmodule SanbaseWeb.Graphql.RequestHaltPlug do
 
   def halt_api_call_limit_reached?(
         conn,
-        %{
-          rate_limiting_enabled: true,
-          requested_product: "SANAPI",
-          remote_ip: remote_ip
-        } = context
+        %{rate_limiting_enabled: true, requested_product: "SANAPI", remote_ip: remote_ip} = context
       ) do
     remote_ip = Sanbase.Utils.IP.ip_tuple_to_string(remote_ip)
     auth_method = context[:auth][:auth_method] || :unauthorized
@@ -127,7 +116,7 @@ defmodule SanbaseWeb.Graphql.RequestHaltPlug do
     case ApiCallLimit.get_quota(:remote_ip, remote_ip, auth_method) do
       {:error, %{blocked_for_seconds: _} = rate_limit_map} ->
         conn =
-          Sanbase.Utils.Conn.put_extra_resp_headers(
+          Conn.put_extra_resp_headers(
             conn,
             rate_limit_headers(rate_limit_map)
           )
@@ -141,7 +130,7 @@ defmodule SanbaseWeb.Graphql.RequestHaltPlug do
 
       {:ok, %{quota: _} = quota_map} ->
         conn =
-          Sanbase.Utils.Conn.put_extra_resp_headers(
+          Conn.put_extra_resp_headers(
             conn,
             rate_limit_headers(quota_map)
           )
@@ -179,7 +168,7 @@ defmodule SanbaseWeb.Graphql.RequestHaltPlug do
   end
 
   defp build_error_msg(msg) do
-    %{errors: %{details: msg}} |> Jason.encode!()
+    Jason.encode!(%{errors: %{details: msg}})
   end
 
   defguard no_auth_header(header) when header in [[], ["null"], [""], nil]

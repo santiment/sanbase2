@@ -1,8 +1,11 @@
 defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
+  import SanbaseWeb.Graphql.TestHelpers
+
+  alias Sanbase.Clickhouse.MetricAdapter
+  alias Sanbase.InMemoryKafka.Producer
 
   setup do
     user = insert(:user)
@@ -18,16 +21,17 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
   test "export get_metric api calls with the metric and slug as arguments", context do
     %{conn: conn, project: %{slug: slug}, project2: %{slug: slug2}} = context
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.MetricAdapter.timeseries_data/6, {:ok, []})
+    (&MetricAdapter.timeseries_data/6)
+    |> Sanbase.Mock.prepare_mock2({:ok, []})
     |> Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.MetricAdapter.timeseries_data_per_slug/6,
+      &MetricAdapter.timeseries_data_per_slug/6,
       {:ok, []}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
       from = ~U[2019-01-05 00:00:00Z]
       to = ~U[2019-01-06 00:00:00Z]
 
-      Sanbase.InMemoryKafka.Producer.clear_state()
+      Producer.clear_state()
       get_metric(conn, "mvrv_usd", slug, from, to, "1d")
       get_metric(conn, "nvt", slug, from, to, "1d")
       get_metric(conn, "daily_active_addresses", slug, from, to, "1d")
@@ -38,7 +42,7 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
       # force the sending
       Sanbase.KafkaExporter.flush(:api_call_exporter)
 
-      %{"sanbase_api_call_data" => api_calls} = Sanbase.InMemoryKafka.Producer.get_state()
+      %{"sanbase_api_call_data" => api_calls} = Producer.get_state()
 
       api_calls =
         Enum.map(api_calls, fn {_, data} ->
@@ -49,8 +53,8 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
       # There could be some test that exported api calls data and that happens async
       # so something could happend even after the `clear_state` is called
       assert length(api_calls) >= 5
-      slug_selector = [%{slug: slug}] |> Jason.encode!()
-      slugs_selector = [%{slugs: [slug, slug2]}] |> Jason.encode!()
+      slug_selector = Jason.encode!([%{slug: slug}])
+      slugs_selector = Jason.encode!([%{slugs: [slug, slug2]}])
 
       assert %{
                query: "getMetric|daily_active_addresses",
@@ -97,7 +101,7 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
   end
 
   defp get_metric_timeseries_data_per_slug(conn, metric, slugs, from, to, interval) do
-    slugs_str = Enum.map(slugs, &~s|"#{&1}"|) |> Enum.join(", ")
+    slugs_str = Enum.map_join(slugs, ", ", &~s|"#{&1}"|)
 
     query = """
     {

@@ -1,19 +1,19 @@
 defmodule Sanbase.MapUtils do
+  @moduledoc false
   def rename_key(map, old_key, new_key) do
-    case Map.has_key?(map, old_key) do
-      true ->
-        value = Map.get(map, old_key)
-        map |> Map.delete(old_key) |> Map.put(new_key, value)
-
-      false ->
-        {:error, "The key '#{old_key}' does not exist in the map"}
+    if Map.has_key?(map, old_key) do
+      value = Map.get(map, old_key)
+      map |> Map.delete(old_key) |> Map.put(new_key, value)
+    else
+      {:error, "The key '#{old_key}' does not exist in the map"}
     end
   end
 
   def replace_lazy(map, key, value_fun) do
-    case Map.has_key?(map, key) do
-      true -> Map.put(map, key, value_fun.())
-      false -> map
+    if Map.has_key?(map, key) do
+      Map.put(map, key, value_fun.())
+    else
+      map
     end
   end
 
@@ -67,7 +67,8 @@ defmodule Sanbase.MapUtils do
     []
   """
   def find_pair_path(map, key, value) when is_map(map) do
-    do_find_pair_path(map, key, value, [])
+    map
+    |> do_find_pair_path(key, value, [])
     |> Enum.map(&(&1 |> List.flatten() |> Enum.reverse()))
     |> Enum.reject(&(&1 == nil || &1 == []))
   end
@@ -177,8 +178,7 @@ defmodule Sanbase.MapUtils do
     }
   """
   def merge_deep(map1, map2) do
-    map2
-    |> Enum.reduce(map1, fn {key, val}, acc ->
+    Enum.reduce(map2, map1, fn {key, val}, acc ->
       if Map.has_key?(acc, key) and is_map(val) and is_map(Map.get(acc, key)) do
         Map.put(acc, key, merge_deep(Map.get(acc, key), val))
       else
@@ -190,18 +190,16 @@ defmodule Sanbase.MapUtils do
   # Private functions
 
   @compile {:inline, atomize: 1}
-  case Mix.env() == :test do
-    true ->
-      defp atomize(value) when is_atom(value) or is_binary(value) do
-        # In :test env we can safely ignore this error
-        # credo:disable-for-next-line
-        value |> Inflex.underscore() |> String.to_atom()
-      end
-
-    false ->
-      defp atomize(value) when is_atom(value) or is_binary(value) do
-        value |> Inflex.underscore() |> String.to_existing_atom()
-      end
+  if Mix.env() == :test do
+    defp atomize(value) when is_atom(value) or is_binary(value) do
+      # In :test env we can safely ignore this error
+      # credo:disable-for-next-line
+      value |> Inflex.underscore() |> String.to_atom()
+    end
+  else
+    defp atomize(value) when is_atom(value) or is_binary(value) do
+      value |> Inflex.underscore() |> String.to_existing_atom()
+    end
   end
 
   defp do_find_pair_path(map, key, value, path) when is_map(map) do
@@ -211,14 +209,16 @@ defmodule Sanbase.MapUtils do
       [key | path]
     else
       Enum.map(keys, fn subkey ->
-        Map.get(map, subkey)
+        map
+        |> Map.get(subkey)
         |> do_find_pair_path(key, value, [subkey | path])
       end)
     end
   end
 
   defp do_find_pair_path(list, key, value, path) when is_list(list) do
-    Enum.with_index(list)
+    list
+    |> Enum.with_index()
     |> Enum.map(fn {elem, index} ->
       do_find_pair_path(elem, key, value, [{:at, index} | path])
     end)

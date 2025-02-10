@@ -13,14 +13,12 @@ defmodule SanbaseWeb.Plug.BotLoginPlug do
   def init(opts), do: opts
 
   def call(%{params: %{"path" => path}} = conn, _) do
-    case path === bot_login_endpoint() do
-      true ->
-        conn
-
-      false ->
-        conn
-        |> send_resp(403, "Unauthorized")
-        |> halt()
+    if path === bot_login_endpoint() do
+      conn
+    else
+      conn
+      |> send_resp(403, "Unauthorized")
+      |> halt()
     end
   end
 
@@ -30,5 +28,5 @@ defmodule SanbaseWeb.Plug.BotLoginPlug do
     |> halt()
   end
 
-  defp bot_login_endpoint(), do: Config.module_get(__MODULE__, :bot_login_endpoint)
+  defp bot_login_endpoint, do: Config.module_get(__MODULE__, :bot_login_endpoint)
 end

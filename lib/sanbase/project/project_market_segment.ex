@@ -1,10 +1,11 @@
 defmodule Sanbase.Project.ProjectMarketSegment do
+  @moduledoc false
   use Ecto.Schema
 
   import Ecto.Changeset
 
-  alias Sanbase.Project
   alias Sanbase.Model.MarketSegment
+  alias Sanbase.Project
 
   schema "project_market_segments" do
     belongs_to(:project, Project)

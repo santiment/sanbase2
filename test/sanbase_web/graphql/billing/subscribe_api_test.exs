@@ -1,13 +1,15 @@
 defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
   use SanbaseWeb.ConnCase
 
-  import Sanbase.Factory
+  import ExUnit.CaptureLog
   import Mock
   import Mox
+  import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
-  import ExUnit.CaptureLog
 
   alias Sanbase.Accounts.User
+  alias Sanbase.Email.MockMailjetApi
+  alias Sanbase.Messaging.Discord
   alias Sanbase.StripeApi
   alias Sanbase.StripeApiTestResponse
 
@@ -17,10 +19,8 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
   setup :verify_on_exit!
 
   setup_with_mocks([
-    {StripeApi, [:passthrough],
-     [create_product: fn _ -> StripeApiTestResponse.create_product_resp() end]},
-    {StripeApi, [:passthrough],
-     [create_plan: fn _ -> StripeApiTestResponse.create_plan_resp() end]},
+    {StripeApi, [:passthrough], [create_product: fn _ -> StripeApiTestResponse.create_product_resp() end]},
+    {StripeApi, [:passthrough], [create_plan: fn _ -> StripeApiTestResponse.create_plan_resp() end]},
     {StripeApi, [:passthrough],
      [
        create_customer_with_card: fn _, _ ->
@@ -29,12 +29,9 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
      ]},
     {StripeApi, [:passthrough],
      [update_customer_card: fn _, _ -> StripeApiTestResponse.create_or_update_customer_resp() end]},
-    {StripeApi, [:passthrough],
-     [create_coupon: fn _ -> StripeApiTestResponse.create_coupon_resp() end]},
-    {StripeApi, [:passthrough],
-     [create_subscription: fn _ -> StripeApiTestResponse.create_subscription_resp() end]},
-    {StripeApi, [:passthrough],
-     [retrieve_coupon: fn _ -> {:ok, %Stripe.Coupon{id: @coupon_code}} end]},
+    {StripeApi, [:passthrough], [create_coupon: fn _ -> StripeApiTestResponse.create_coupon_resp() end]},
+    {StripeApi, [:passthrough], [create_subscription: fn _ -> StripeApiTestResponse.create_subscription_resp() end]},
+    {StripeApi, [:passthrough], [retrieve_coupon: fn _ -> {:ok, %Stripe.Coupon{id: @coupon_code}} end]},
     {StripeApi, [:passthrough], [delete_default_card: fn _ -> :ok end]},
     {Sanbase.StripeApi, [:passthrough],
      [
@@ -54,9 +51,8 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
          StripeApiTestResponse.update_subscription_resp()
        end
      ]},
-    {Sanbase.StripeApi, [:passthrough],
-     [cancel_subscription_immediately: fn _ -> {:ok, %{}} end]},
-    {Sanbase.Messaging.Discord, [:passthrough],
+    {Sanbase.StripeApi, [:passthrough], [cancel_subscription_immediately: fn _ -> {:ok, %{}} end]},
+    {Discord, [:passthrough],
      [
        send_notification: fn _, _, _ -> :ok end
      ]},
@@ -119,8 +115,8 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
   end
 
   test "list products with plans", context do
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.Geoip.fetch_geo_data/1,
+    (&Sanbase.Geoip.fetch_geo_data/1)
+    |> Sanbase.Mock.prepare_mock2(
       {:ok,
        %{
          "country_name" => "Test Country",
@@ -143,8 +139,8 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
 
   describe "ppp settings" do
     test "when eligible", context do
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.Geoip.fetch_geo_data/1,
+      (&Sanbase.Geoip.fetch_geo_data/1)
+      |> Sanbase.Mock.prepare_mock2(
         {:ok,
          %{
            "country_name" => "Turkey",
@@ -155,9 +151,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       |> Sanbase.Mock.run_with_mocks(fn ->
         query = ppp_settings_query()
 
-        result =
-          context.conn
-          |> execute_query(query, "pppSettings")
+        result = execute_query(context.conn, query, "pppSettings")
 
         assert result["isEligibleForPPP"] == true
         assert result["country"] == "Turkey"
@@ -167,8 +161,8 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     end
 
     test "when not eligible", context do
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.Geoip.fetch_geo_data/1,
+      (&Sanbase.Geoip.fetch_geo_data/1)
+      |> Sanbase.Mock.prepare_mock2(
         {:ok,
          %{
            "country_name" => "Test Country",
@@ -179,17 +173,15 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       |> Sanbase.Mock.run_with_mocks(fn ->
         query = ppp_settings_query()
 
-        result =
-          context.conn
-          |> execute_query(query, "pppSettings")
+        result = execute_query(context.conn, query, "pppSettings")
 
         assert result["isEligibleForPPP"] == false
       end)
     end
 
     test "when not eligible due to VPN", context do
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.Geoip.fetch_geo_data/1,
+      (&Sanbase.Geoip.fetch_geo_data/1)
+      |> Sanbase.Mock.prepare_mock2(
         {:ok,
          %{
            "country_name" => "Turkey",
@@ -200,9 +192,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       |> Sanbase.Mock.run_with_mocks(fn ->
         query = ppp_settings_query()
 
-        result =
-          context.conn
-          |> execute_query(query, "pppSettings")
+        result = execute_query(context.conn, query, "pppSettings")
 
         assert result["isEligibleForPPP"] == false
       end)
@@ -214,7 +204,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       insert(:subscription_essential, user: context.user)
 
       current_user = execute_query(context.conn, current_user_query(), "currentUser")
-      subscription = current_user["subscriptions"] |> hd()
+      subscription = hd(current_user["subscriptions"])
 
       assert subscription["plan"]["name"] == "ESSENTIAL"
     end
@@ -237,7 +227,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
 
   describe "subscribe mutation" do
     test "successful subscribe returns subscription", context do
-      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
+      expect(MockMailjetApi, :subscribe, fn _, _ -> :ok end)
 
       query = subscribe_mutation(context.plans.plan_essential.id)
       response = execute_mutation(context.conn, query, "subscribe")
@@ -247,7 +237,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     end
 
     test "successful subscribe when user has stripe_customer_id", context do
-      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
+      expect(MockMailjetApi, :subscribe, fn _, _ -> :ok end)
 
       context.user |> User.changeset(%{stripe_customer_id: "alabala"}) |> Sanbase.Repo.update!()
 
@@ -258,7 +248,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     end
 
     test "when subscribing to Sanbase/API, the user is subscribed to metric updates", context do
-      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
+      expect(MockMailjetApi, :subscribe, fn _, _ -> :ok end)
 
       query = subscribe_mutation(context.plans.plan_pro_sanbase.id)
       execute_mutation(context.conn, query, "subscribe")
@@ -268,13 +258,13 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     end
 
     test "annual subscription gets discounted", context do
-      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
+      expect(MockMailjetApi, :subscribe, fn _, _ -> :ok end)
       context.user |> User.changeset(%{stripe_customer_id: "alabala"}) |> Sanbase.Repo.update!()
 
       insert(:subscription_pro_sanbase,
         user: context.user,
         status: "trialing",
-        trial_end: DateTime.add(Timex.now(), 10 * 24 * 3600)
+        trial_end: DateTime.add(DateTime.utc_now(), 10 * 24 * 3600)
       )
 
       query = subscribe_without_card_mutation(context.plans.plan_pro_sanbase_yearly.id)
@@ -343,8 +333,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
              StripeApiTestResponse.create_or_update_customer_resp()
            end
          ]},
-        {StripeApi, [:passthrough],
-         [create_coupon: fn _ -> StripeApiTestResponse.create_coupon_resp() end]},
+        {StripeApi, [:passthrough], [create_coupon: fn _ -> StripeApiTestResponse.create_coupon_resp() end]},
         {StripeApi, [:passthrough],
          [
            create_subscription: fn _ ->
@@ -363,7 +352,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     end
 
     test "subscribe with coupon works", context do
-      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
+      expect(MockMailjetApi, :subscribe, fn _, _ -> :ok end)
       query = subscribe_with_coupon_mutation(context.plans.plan_essential.id, @coupon_code)
       response = execute_mutation(context.conn, query, "subscribe")
 
@@ -373,7 +362,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     end
 
     test "subscribe to Sanbase PRO plan gives 14 days free trial", context do
-      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
+      expect(MockMailjetApi, :subscribe, fn _, _ -> :ok end)
       query = subscribe_mutation(context.plans.plan_pro_sanbase.id)
       response = execute_mutation(context.conn, query, "subscribe")
 
@@ -382,7 +371,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     end
 
     test "subscribe to SanAPI PRO plan doesn't give free trial", context do
-      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
+      expect(MockMailjetApi, :subscribe, fn _, _ -> :ok end)
       query = subscribe_mutation(context.plans.plan_pro.id)
       response = execute_mutation(context.conn, query, "subscribe")
 
@@ -415,7 +404,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
           user: context.user,
           stripe_id: "stripe_id",
           cancel_at_period_end: true,
-          current_period_end: Timex.now()
+          current_period_end: DateTime.utc_now()
         )
 
       query = update_subscription_mutation(subscription.id, context.plans.plan_pro.id)
@@ -500,7 +489,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
 
   describe "cancel_subscription_at_period_end mutation" do
     test "successfully cancel subscription", context do
-      period_end = Timex.shift(Timex.now(), days: 3) |> DateTime.truncate(:second)
+      period_end = DateTime.utc_now() |> Timex.shift(days: 3) |> DateTime.truncate(:second)
 
       subscription =
         insert(:subscription_pro_sanbase,
@@ -512,8 +501,8 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       self = self()
       ref = make_ref()
 
-      Sanbase.Mock.prepare_mock(
-        Sanbase.Messaging.Discord,
+      Discord
+      |> Sanbase.Mock.prepare_mock(
         :send_notification,
         fn _, _, payload ->
           send(self, {ref, payload})
@@ -546,7 +535,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
           user: context.user,
           stripe_id: "stripe_id",
           cancel_at_period_end: true,
-          current_period_end: Timex.now()
+          current_period_end: DateTime.utc_now()
         )
 
       query = cancel_subscription_at_period_end_mutation(subscription.id)
@@ -612,7 +601,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
           user: context.user,
           stripe_id: "stripe_id",
           cancel_at_period_end: true,
-          current_period_end: Timex.shift(Timex.now(), days: 10)
+          current_period_end: Timex.shift(DateTime.utc_now(), days: 10)
         )
 
       query = renew_cancelled_subscription_mutation(subscription.id)
@@ -627,7 +616,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
           user: context.user,
           stripe_id: "stripe_id",
           cancel_at_period_end: false,
-          current_period_end: Timex.shift(Timex.now(), days: -1)
+          current_period_end: Timex.shift(DateTime.utc_now(), days: -1)
         )
 
       query = renew_cancelled_subscription_mutation(subscription.id)
@@ -659,7 +648,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
           user: user2,
           stripe_id: "stripe_id",
           cancel_at_period_end: true,
-          current_period_end: Timex.shift(Timex.now(), days: -1)
+          current_period_end: Timex.shift(DateTime.utc_now(), days: -1)
         )
 
       query = renew_cancelled_subscription_mutation(subscription.id)
@@ -678,7 +667,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
           user: context.user,
           stripe_id: "stripe_id",
           cancel_at_period_end: true,
-          current_period_end: Timex.shift(Timex.now(), days: -1)
+          current_period_end: Timex.shift(DateTime.utc_now(), days: -1)
         )
 
       query = renew_cancelled_subscription_mutation(subscription.id)
@@ -705,7 +694,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
             user: context.user,
             stripe_id: "stripe_id",
             cancel_at_period_end: true,
-            current_period_end: Timex.shift(Timex.now(), days: 10)
+            current_period_end: Timex.shift(DateTime.utc_now(), days: 10)
           )
 
         query = renew_cancelled_subscription_mutation(subscription.id)
@@ -719,7 +708,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     end
   end
 
-  def ppp_settings_query() do
+  def ppp_settings_query do
     """
     {
       pppSettings {
@@ -772,7 +761,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     """
   end
 
-  defp products_with_plans_query() do
+  defp products_with_plans_query do
     """
     {
       productsWithPlans {
@@ -877,7 +866,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     """
   end
 
-  defp update_customer_card() do
+  defp update_customer_card do
     """
     mutation {
       updateDefaultPaymentInstrument(cardToken: "token")
@@ -885,7 +874,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     """
   end
 
-  defp delete_customer_card() do
+  defp delete_customer_card do
     """
     mutation {
       deleteDefaultPaymentInstrument

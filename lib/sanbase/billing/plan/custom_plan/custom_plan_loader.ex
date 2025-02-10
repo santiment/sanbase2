@@ -5,8 +5,10 @@ defmodule Sanbase.Billing.Plan.CustomPlan.Loader do
 
   import Ecto.Query
 
-  alias Sanbase.Billing.{Plan, Plan.CustomPlan}
   alias Sanbase.Billing.ApiInfo
+  alias Sanbase.Billing.Plan
+  alias Sanbase.Billing.Plan.CustomPlan
+  alias Sanbase.Billing.Product
 
   @doc ~s"""
   The plans restrictions are chcked on every request, so they need to have
@@ -34,7 +36,7 @@ defmodule Sanbase.Billing.Plan.CustomPlan.Loader do
     end
   end
 
-  def put_plans_in_persistent_term() do
+  def put_plans_in_persistent_term do
     plans =
       from(p in Plan,
         where: p.has_custom_restrictions == true
@@ -51,25 +53,24 @@ defmodule Sanbase.Billing.Plan.CustomPlan.Loader do
         resolved_signals: resolve_signals(restrictions)
       }
 
-      product_code = Sanbase.Billing.Product.code_by_id(product_id)
+      product_code = Product.code_by_id(product_id)
 
       put_data(plan_name, product_code, data)
     end
   end
 
   defp get_plan("CUSTOM_" <> _ = plan_name, product_code) do
-    product_id = Sanbase.Billing.Product.id_by_code(product_code)
+    product_id = Product.id_by_code(product_code)
 
     plan =
-      from(p in Plan,
-        where:
-          p.name == ^plan_name and p.product_id == ^product_id and
-            p.has_custom_restrictions == true,
-        # There are montly and yearly plans, both should have the same plan
-        limit: 1
+      Sanbase.Repo.one(
+        from(p in Plan,
+          where: p.name == ^plan_name and p.product_id == ^product_id and p.has_custom_restrictions == true,
+          limit: 1
+        )
       )
-      |> Sanbase.Repo.one()
 
+    # There are montly and yearly plans, both should have the same plan
     case plan do
       nil -> {:error, "Missing plan #{plan_name}"}
       plan -> {:ok, plan}
@@ -94,9 +95,10 @@ defmodule Sanbase.Billing.Plan.CustomPlan.Loader do
     %{query_access: access_map} = restrictions
 
     get_all_function = fn ->
-      (ApiInfo.get_queries_with_access_level(:free) ++
-         ApiInfo.get_queries_with_access_level(:restricted))
-      |> Enum.map(&Atom.to_string/1)
+      Enum.map(
+        ApiInfo.get_queries_with_access_level(:free) ++ ApiInfo.get_queries_with_access_level(:restricted),
+        &Atom.to_string/1
+      )
     end
 
     resolve_accessible_list(access_map, get_all_function)

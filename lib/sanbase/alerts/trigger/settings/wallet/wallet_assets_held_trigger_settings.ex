@@ -56,7 +56,7 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
   validates(:selector, &valid_infrastructure_selector?/1)
 
   @spec type() :: String.t()
-  def type(), do: @trigger_type
+  def type, do: @trigger_type
 
   def post_create_process(trigger), do: fill_current_state(trigger)
   def post_update_process(trigger), do: fill_current_state(trigger)
@@ -80,10 +80,7 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
   @doc ~s"""
   Return a list of the `settings.metric` values for the necessary time range
   """
-  def get_data(%__MODULE__{
-        filtered_target: %{list: target_list},
-        selector: selector
-      }) do
+  def get_data(%__MODULE__{filtered_target: %{list: target_list}, selector: selector}) do
     data =
       target_list
       |> Enum.map(fn address ->
@@ -91,11 +88,12 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
 
         selector = %{address: address, infrastructure: selector.infrastructure}
 
-        with {:ok, result} when is_list(result) <- assets_held(selector) do
-          slugs_list = Enum.map(result, & &1.slug)
+        case assets_held(selector) do
+          {:ok, result} when is_list(result) ->
+            slugs_list = Enum.map(result, & &1.slug)
 
-          {address, slugs_list}
-        else
+            {address, slugs_list}
+
           result ->
             raise("""
             The result returned from assets_held in WalletAssetsHeldTriggerSettings has \
@@ -110,9 +108,7 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
   end
 
   defp assets_held(selector) do
-    cache_key =
-      {__MODULE__, :assets_held, selector, round_datetime(DateTime.utc_now())}
-      |> Sanbase.Cache.hash()
+    cache_key = Sanbase.Cache.hash({__MODULE__, :assets_held, selector, round_datetime(DateTime.utc_now())})
 
     Sanbase.Cache.get_or_store(cache_key, fn ->
       {:ok, _} = HistoricalBalance.assets_held_by_address(selector)
@@ -124,8 +120,7 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
 
     alias Sanbase.Alert.ResultBuilder
 
-    def triggered?(%WalletAssetsHeldTriggerSettings{triggered?: triggered}),
-      do: triggered
+    def triggered?(%WalletAssetsHeldTriggerSettings{triggered?: triggered}), do: triggered
 
     def evaluate(%WalletAssetsHeldTriggerSettings{} = settings, _trigger) do
       case WalletAssetsHeldTriggerSettings.get_data(settings) do
@@ -152,11 +147,7 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
 
     def cache_key(%WalletAssetsHeldTriggerSettings{} = settings) do
       target =
-        settings.target
-        |> Map.replace(
-          :address,
-          Sanbase.BlockchainAddress.to_internal_format(settings.target.address)
-        )
+        Map.replace(settings.target, :address, Sanbase.BlockchainAddress.to_internal_format(settings.target.address))
 
       construct_cache_key([
         settings.type,

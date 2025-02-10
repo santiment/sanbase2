@@ -6,11 +6,10 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 2]
 
+  alias SanbaseWeb.Graphql.Middlewares.JWTAuth
+  alias SanbaseWeb.Graphql.Middlewares.UserAuth
   alias SanbaseWeb.Graphql.Resolvers.QueriesResolver
   # alias SanbaseWeb.Graphql.Resolvers.DashboardResolver
-  alias SanbaseWeb.Graphql.Middlewares.UserAuth
-  alias SanbaseWeb.Graphql.Middlewares.JWTAuth
-
   object :queries_queries do
     @desc ~s"""
     Fetch a query by its id.

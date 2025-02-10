@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddSlugSourceMapTable do
+  @moduledoc false
   use Ecto.Migration
 
   @table "source_slug_mappings"

@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.CommentsApiHelper do
+  @moduledoc false
   import SanbaseWeb.Graphql.TestHelpers
 
   def create_comment(conn, entity_id, content, opts \\ []) do
@@ -13,7 +14,8 @@ defmodule SanbaseWeb.CommentsApiHelper do
 
   def update_comment(conn, comment_id, content, opts \\ []) do
     extra_fields_str =
-      Keyword.get(opts, :extra_fields, [])
+      opts
+      |> Keyword.get(:extra_fields, [])
       |> Enum.join("\n")
 
     mutation = """
@@ -37,7 +39,8 @@ defmodule SanbaseWeb.CommentsApiHelper do
 
   def delete_comment(conn, comment_id, opts \\ []) do
     extra_fields_str =
-      Keyword.get(opts, :extra_fields, [])
+      opts
+      |> Keyword.get(:extra_fields, [])
       |> Enum.join("\n")
 
     mutation = """
@@ -62,7 +65,8 @@ defmodule SanbaseWeb.CommentsApiHelper do
     entity_type = entity_type |> to_string() |> String.upcase()
 
     extra_fields_str =
-      Keyword.get(opts, :extra_fields, [])
+      opts
+      |> Keyword.get(:extra_fields, [])
       |> Enum.join("\n")
 
     query = """
@@ -70,7 +74,7 @@ defmodule SanbaseWeb.CommentsApiHelper do
       comments(
         entityType: #{entity_type}
         id: #{entity_id}
-        cursor: {type: BEFORE, datetime: "#{Timex.now()}"}) {
+        cursor: {type: BEFORE, datetime: "#{DateTime.utc_now()}"}) {
           id
           content
           parentId
@@ -91,7 +95,8 @@ defmodule SanbaseWeb.CommentsApiHelper do
     parent_id = Keyword.get(opts, :parent_id, nil)
 
     extra_fields_str =
-      Keyword.get(opts, :extra_fields, [])
+      opts
+      |> Keyword.get(:extra_fields, [])
       |> Enum.join("\n")
 
     """

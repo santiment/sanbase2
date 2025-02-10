@@ -2,8 +2,10 @@ defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Mock
-  import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
+  import SanbaseWeb.Graphql.TestHelpers
+
+  alias Sanbase.Clickhouse.MetricAdapter
 
   setup do
     user = insert(:user)
@@ -71,8 +73,8 @@ defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
             "name" => "metric",
             "args" => %{
               "metric" => "daily_active_addresses",
-              "from" => "#{Timex.shift(Timex.now(), days: -7)}",
-              "to" => "#{Timex.now()}",
+              "from" => "#{Timex.shift(DateTime.utc_now(), days: -7)}",
+              "to" => "#{DateTime.utc_now()}",
               "aggregation" => "#{:last}",
               "operator" => "#{:greater_than_or_equal_to}",
               "threshold" => 10
@@ -83,7 +85,8 @@ defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
     }
 
     error =
-      do_execute_mutation(conn, create_watchlist_query(function: function))
+      conn
+      |> do_execute_mutation(create_watchlist_query(function: function))
       |> Map.get("errors")
       |> hd()
 
@@ -109,8 +112,8 @@ defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
             "name" => "metric",
             "args" => %{
               "metric" => "daily_active_addresses",
-              "from" => "#{Timex.shift(Timex.now(), days: -7)}",
-              "to" => "#{Timex.now()}",
+              "from" => "#{Timex.shift(DateTime.utc_now(), days: -7)}",
+              "to" => "#{DateTime.utc_now()}",
               "aggregation" => "#{:last}",
               "operator" => "#{:greater_than_or_equal_to}",
               "threshold" => 10
@@ -121,7 +124,8 @@ defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
     }
 
     error =
-      do_execute_mutation(conn, update_watchlist_query(id: watchlist.id, function: function))
+      conn
+      |> do_execute_mutation(update_watchlist_query(id: watchlist.id, function: function))
       |> Map.get("errors")
       |> hd()
 
@@ -147,8 +151,8 @@ defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
             "name" => "metric",
             "args" => %{
               "metric" => "daily_active_addresses",
-              "from" => "#{Timex.shift(Timex.now(), days: -7)}",
-              "to" => "#{Timex.now()}",
+              "from" => "#{Timex.shift(DateTime.utc_now(), days: -7)}",
+              "to" => "#{DateTime.utc_now()}",
               "aggregation" => "#{:last}",
               "operator" => "#{:greater_than_or_equal_to}",
               "threshold" => 10
@@ -158,17 +162,15 @@ defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
       }
     }
 
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.MetricAdapter.slugs_by_filter/6,
-      {:ok, ["ethereum", "dai", "bitcoin"]}
-    )
+    (&MetricAdapter.slugs_by_filter/6)
+    |> Sanbase.Mock.prepare_mock2({:ok, ["ethereum", "dai", "bitcoin"]})
     |> Sanbase.Mock.run_with_mocks(fn ->
       user_list = execute_mutation(conn, create_watchlist_query(function: function))
 
       assert user_list["name"] == "My list"
       assert user_list["color"] == "BLACK"
       assert user_list["isPublic"] == false
-      assert user_list["user"]["id"] == user.id |> to_string()
+      assert user_list["user"]["id"] == to_string(user.id)
 
       assert length(user_list["listItems"]) == 3
       assert %{"project" => %{"slug" => "dai"}} in user_list["listItems"]
@@ -191,8 +193,8 @@ defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
             "name" => "metric",
             "args" => %{
               "metric" => "daily_active_addresses",
-              "from" => "#{Timex.shift(Timex.now(), days: -7)}",
-              "to" => "#{Timex.now()}",
+              "from" => "#{Timex.shift(DateTime.utc_now(), days: -7)}",
+              "to" => "#{DateTime.utc_now()}",
               "aggregation" => "#{:last}",
               "operator" => "#{:greater_than_or_equal_to}",
               "threshold" => 100
@@ -202,8 +204,8 @@ defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
             "name" => "metric",
             "args" => %{
               "metric" => "nvt",
-              "from" => "#{Timex.shift(Timex.now(), days: -7)}",
-              "to" => "#{Timex.now()}",
+              "from" => "#{Timex.shift(DateTime.utc_now(), days: -7)}",
+              "to" => "#{DateTime.utc_now()}",
               "aggregation" => "#{:last}",
               "operator" => "#{:less_than}",
               "threshold" => 10
@@ -213,7 +215,8 @@ defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
       }
     }
 
-    Sanbase.Mock.prepare_mock(Sanbase.Clickhouse.MetricAdapter, :slugs_by_filter, fn
+    MetricAdapter
+    |> Sanbase.Mock.prepare_mock(:slugs_by_filter, fn
       "daily_active_addresses", _, _, _, _, _ -> {:ok, [p1.slug, p2.slug, p3.slug]}
       "nvt", _, _, _, _, _ -> {:ok, [p3.slug, p4.slug, p5.slug]}
     end)
@@ -254,10 +257,8 @@ defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
       }
     }
 
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.MetricAdapter.slugs_by_filter/6,
-      {:ok, ["ethereum", "dai", "bitcoin"]}
-    )
+    (&MetricAdapter.slugs_by_filter/6)
+    |> Sanbase.Mock.prepare_mock2({:ok, ["ethereum", "dai", "bitcoin"]})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         do_execute_mutation(conn, create_watchlist_query(function: function, is_screener: true))
@@ -268,7 +269,7 @@ defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
       assert user_list["color"] == "BLACK"
       assert user_list["isPublic"] == false
       assert user_list["isScreener"]
-      assert user_list["user"]["id"] == user.id |> to_string()
+      assert user_list["user"]["id"] == to_string(user.id)
 
       assert length(user_list["listItems"]) == 3
       assert %{"project" => %{"slug" => "dai"}} in user_list["listItems"]
@@ -286,7 +287,7 @@ defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
     assert user_list["name"] == "My list"
     assert user_list["color"] == "BLACK"
     assert user_list["isPublic"] == false
-    assert user_list["user"]["id"] == user.id |> to_string()
+    assert user_list["user"]["id"] == to_string(user.id)
 
     assert %{"project" => %{"slug" => "dai"}} in user_list["listItems"]
     assert %{"project" => %{"slug" => "tether"}} in user_list["listItems"]
@@ -369,16 +370,16 @@ defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
       function = %{"name" => "trending_projects"}
       result = do_execute_mutation(conn, create_watchlist_query(function: function))
       user_list = result["data"]["createWatchlist"]
-      slugs = user_list["listItems"] |> Enum.map(fn %{"project" => %{"slug" => slug}} -> slug end)
+      slugs = Enum.map(user_list["listItems"], fn %{"project" => %{"slug" => slug}} -> slug end)
 
-      assert slugs |> Enum.sort() == ["santiment", "bitcoin", "xrp"] |> Enum.sort()
+      assert Enum.sort(slugs) == Enum.sort(["santiment", "bitcoin", "xrp"])
     end
   end
 
   defp create_watchlist_query(opts) do
     name = Keyword.get(opts, :name, "My list")
     color = Keyword.get(opts, :color, "BLACK")
-    function = Keyword.get(opts, :function) |> Jason.encode!()
+    function = opts |> Keyword.get(:function) |> Jason.encode!()
     is_screener = Keyword.get(opts, :is_screener, false)
 
     ~s|
@@ -408,7 +409,7 @@ defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
 
   defp update_watchlist_query(opts) do
     id = Keyword.fetch!(opts, :id)
-    function = Keyword.fetch!(opts, :function) |> Jason.encode!()
+    function = opts |> Keyword.fetch!(:function) |> Jason.encode!()
 
     ~s|
     mutation {

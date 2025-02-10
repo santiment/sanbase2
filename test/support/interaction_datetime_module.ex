@@ -1,7 +1,8 @@
 defmodule Sanbase.Interaction.DateTime do
+  @moduledoc false
   @ets_table :unique_interaction_datetime_counter
 
-  def start_ets() do
+  def start_ets do
     spawn(fn ->
       :ets.new(@ets_table, [
         :set,
@@ -18,7 +19,7 @@ defmodule Sanbase.Interaction.DateTime do
     for _ <- 1..5, do: if(:ets.whereis(@ets_table) == :undefined, do: Process.sleep(100))
   end
 
-  def utc_now() do
+  def utc_now do
     if :ets.whereis(@ets_table) == :undefined, do: start_ets()
 
     counter = :ets.update_counter(@ets_table, :counter, {2, 1}, {:counter, 1})

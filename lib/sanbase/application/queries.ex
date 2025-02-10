@@ -1,12 +1,13 @@
 defmodule Sanbase.Application.Queries do
+  @moduledoc false
   import Sanbase.ApplicationUtils
 
-  def init() do
+  def init do
     Sanbase.Nostrum.init()
     :ok
   end
 
-  def children() do
+  def children do
     children = [
       # put :nostrum in included_applications and start the app manually here only if it has picked up
       # credentials from env var

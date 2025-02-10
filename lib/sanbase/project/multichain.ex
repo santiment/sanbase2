@@ -41,10 +41,10 @@ defmodule Sanbase.Project.Multichain do
     |> Sanbase.Repo.update()
   end
 
-  def fill_missing_data_by_prefix() do
+  def fill_missing_data_by_prefix do
     # The project slug is always lowercased, the ecosystem might be not
     ecosystems_map =
-      Sanbase.Ecosystem.all() |> Map.new(fn e -> {e.ecosystem, e.id} end)
+      Map.new(Sanbase.Ecosystem.all(), fn e -> {e.ecosystem, e.id} end)
 
     Project.List.projects()
     |> Enum.filter(&is_nil(&1.multichain_project_group_key))

@@ -1,21 +1,20 @@
 defmodule SanbaseWeb.Graphql.FileUploadTest do
   use SanbaseWeb.ConnCase, async: false
 
-  alias Sanbase.Accounts.User
-  alias Sanbase.Repo
-  alias Sanbase.Insight.PostImage
-
   import SanbaseWeb.Graphql.TestHelpers
+
+  alias Sanbase.Accounts.User
+  alias Sanbase.Insight.PostImage
+  alias Sanbase.Repo
 
   setup do
     user =
-      %User{
+      Repo.insert!(%User{
         salt: User.generate_salt(),
         san_balance: Decimal.mult(Decimal.new(10), Sanbase.SantimentContract.decimals_expanded()),
-        san_balance_updated_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second),
+        san_balance_updated_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second),
         privacy_policy_accepted: true
-      }
-      |> Repo.insert!()
+      })
 
     conn = setup_jwt_auth(build_conn(), user)
 
@@ -46,9 +45,7 @@ defmodule SanbaseWeb.Graphql.FileUploadTest do
       path: @test_file_path
     }
 
-    result =
-      conn
-      |> post("/graphql", %{"query" => mutation, "img" => upload})
+    result = post(conn, "/graphql", %{"query" => mutation, "img" => upload})
 
     [image_data] = json_response(result, 200)["data"]["uploadImage"]
 
@@ -79,9 +76,7 @@ defmodule SanbaseWeb.Graphql.FileUploadTest do
       path: @invalid_test_file_path
     }
 
-    result =
-      conn
-      |> post("/graphql", %{"query" => mutation, "img" => upload})
+    result = post(conn, "/graphql", %{"query" => mutation, "img" => upload})
 
     [image_data] = json_response(result, 200)["data"]["uploadImage"]
 
@@ -115,9 +110,7 @@ defmodule SanbaseWeb.Graphql.FileUploadTest do
       path: @test_file_path
     }
 
-    result =
-      conn
-      |> post("/graphql", %{"query" => mutation, "img1" => upload1, "img2" => upload2})
+    result = post(conn, "/graphql", %{"query" => mutation, "img1" => upload1, "img2" => upload2})
 
     [image1, image2] = json_response(result, 200)["data"]["uploadImage"]
 
@@ -152,9 +145,7 @@ defmodule SanbaseWeb.Graphql.FileUploadTest do
       path: @test_file_path
     }
 
-    result =
-      conn
-      |> post("/graphql", %{"query" => mutation, "img" => upload})
+    result = post(conn, "/graphql", %{"query" => mutation, "img" => upload})
 
     [image_data] = json_response(result, 200)["data"]["uploadImage"]
     image_url = image_data["imageUrl"]

@@ -10,6 +10,7 @@ defmodule Mix.Tasks.DatabaseSafety do
   """
 
   use Mix.Task
+
   alias Sanbase.Utils.Config
 
   @impl Mix.Task
@@ -22,22 +23,20 @@ defmodule Mix.Tasks.DatabaseSafety do
 
     env = Config.module_get(Sanbase, :env)
 
-    case env != :prod and Sanbase.Utils.prod_db?() do
-      true ->
-        raise(Mix.Error, """
-        Migration execution was stopped due to safety concerns!
+    if env != :prod and Sanbase.Utils.prod_db?() do
+      raise(Mix.Error, """
+      Migration execution was stopped due to safety concerns!
 
-        Trying to execute a migration against a production database while not in
-        production environment is prohibited. Either the DATABASE_URL or the
-        Sanbase.Repo config value for :hostname is pointing to a production database.
+      Trying to execute a migration against a production database while not in
+      production environment is prohibited. Either the DATABASE_URL or the
+      Sanbase.Repo config value for :hostname is pointing to a production database.
 
-        DATABASE_URL takes precedence over the config file but even if the config
-        file points to production and the DATABASE_URL env var does not, this would
-        still raise an error
-        """)
-
-      false ->
-        :ok
+      DATABASE_URL takes precedence over the config file but even if the config
+      file points to production and the DATABASE_URL env var does not, this would
+      still raise an error
+      """)
+    else
+      :ok
     end
   end
 end

@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddBlockchainAddressesTable do
+  @moduledoc false
   use Ecto.Migration
 
   @table :blockchain_addresses

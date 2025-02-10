@@ -1,4 +1,5 @@
 defmodule Sanbase.Cryptocompare.AddHistoricalJobsWorker do
+  @moduledoc false
   use Oban.Worker, queue: :cryptocompare_historical_add_jobs_queue
 
   require Logger
@@ -15,12 +16,8 @@ defmodule Sanbase.Cryptocompare.AddHistoricalJobsWorker do
   end
 
   @impl Oban.Worker
-  def perform(%Oban.Job{
-        args: %{"type" => "schedule_historical_open_interest_jobs"}
-      }) do
-    Logger.info(
-      "[Cryptocompare.AddHistoricalJobsWorker] Start adding historical open interest jobs."
-    )
+  def perform(%Oban.Job{args: %{"type" => "schedule_historical_open_interest_jobs"}}) do
+    Logger.info("[Cryptocompare.AddHistoricalJobsWorker] Start adding historical open interest jobs.")
 
     prod_env? = deployment_env() == "prod"
     hour = DateTime.utc_now().hour
@@ -33,20 +30,14 @@ defmodule Sanbase.Cryptocompare.AddHistoricalJobsWorker do
       Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler.schedule_jobs(limit: 500)
     end
 
-    Logger.info(
-      "[Cryptocompare.AddHistoricalJobsWorker] Finished adding historical open interest jobs."
-    )
+    Logger.info("[Cryptocompare.AddHistoricalJobsWorker] Finished adding historical open interest jobs.")
 
     :ok
   end
 
   @impl Oban.Worker
-  def perform(%Oban.Job{
-        args: %{"type" => "schedule_historical_funding_rate_jobs"}
-      }) do
-    Logger.info(
-      "[Cryptocompare.AddHistoricalJobsWorker] Start adding historical funding rate jobs."
-    )
+  def perform(%Oban.Job{args: %{"type" => "schedule_historical_funding_rate_jobs"}}) do
+    Logger.info("[Cryptocompare.AddHistoricalJobsWorker] Start adding historical funding rate jobs.")
 
     prod_env? = deployment_env() == "prod"
     hour = DateTime.utc_now().hour
@@ -59,9 +50,7 @@ defmodule Sanbase.Cryptocompare.AddHistoricalJobsWorker do
       Sanbase.Cryptocompare.FundingRate.HistoricalScheduler.schedule_jobs(limit: 500)
     end
 
-    Logger.info(
-      "[Cryptocompare.AddHistoricalJobsWorker] Finished adding historical funding rate jobs."
-    )
+    Logger.info("[Cryptocompare.AddHistoricalJobsWorker] Finished adding historical funding rate jobs.")
 
     :ok
   end
@@ -77,7 +66,7 @@ defmodule Sanbase.Cryptocompare.AddHistoricalJobsWorker do
     300 * attempt
   end
 
-  def deployment_env() do
+  def deployment_env do
     Sanbase.Utils.Config.module_get(Sanbase, :deployment_env)
   end
 end

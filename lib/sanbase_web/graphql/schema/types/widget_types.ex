@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.WidgetTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   object :active_widget do

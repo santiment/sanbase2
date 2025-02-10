@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.Schema.EmailQueries do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   alias SanbaseWeb.Graphql.Resolvers.EmailResolver

@@ -1,10 +1,13 @@
 defmodule SanbaseWeb.Graphql.EthLoginApiTest do
   use SanbaseWeb.ConnCase
 
-  import Mox
-  alias Sanbase.Billing.Subscription.LiquiditySubscription
   import ExUnit.CaptureLog
+  import Mox
   import SanbaseWeb.Graphql.TestHelpers
+
+  alias Sanbase.Billing.Subscription.LiquiditySubscription
+  alias Sanbase.InternalServices.Ethauth
+  alias Sanbase.SmartContracts.UniswapPair
 
   setup :set_mox_from_context
   setup :verify_on_exit!
@@ -18,14 +21,16 @@ defmodule SanbaseWeb.Graphql.EthLoginApiTest do
     signature = "0xeba4d1a091ca6e7cb0_signature_check_will_be_mocked"
 
     # Mock the external call to Ethauth. Mock the call to trial subscription creation.
-    Sanbase.Mock.prepare_mock2(&Sanbase.InternalServices.Ethauth.valid_signature?/2, true)
+    (&Ethauth.valid_signature?/2)
+    |> Sanbase.Mock.prepare_mock2(true)
     |> Sanbase.Mock.prepare_mock2(&LiquiditySubscription.user_staked_in_uniswap_v2/1, false)
     |> Sanbase.Mock.prepare_mock2(&LiquiditySubscription.user_staked_in_uniswap_v3/1, false)
-    |> Sanbase.Mock.prepare_mock2(&Sanbase.SmartContracts.UniswapPair.total_supply/1, 10.00)
-    |> Sanbase.Mock.prepare_mock2(&Sanbase.SmartContracts.UniswapPair.get_san_position/1, 1)
+    |> Sanbase.Mock.prepare_mock2(&UniswapPair.total_supply/1, 10.00)
+    |> Sanbase.Mock.prepare_mock2(&UniswapPair.get_san_position/1, 1)
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
-        eth_login(context.conn, address, signature, message_hash)
+        context.conn
+        |> eth_login(address, signature, message_hash)
         |> get_in(["data", "ethLogin"])
 
       assert result["user"]["firstLogin"] == true
@@ -46,7 +51,8 @@ defmodule SanbaseWeb.Graphql.EthLoginApiTest do
     signature = "0xeba4d1a091ca6e7cb0_signature_check_will_be_mocked"
 
     # Mock the external call to Ethauth. Mock the call to trial subscription creation.
-    Sanbase.Mock.prepare_mock2(&Sanbase.InternalServices.Ethauth.valid_signature?/2, true)
+    (&Ethauth.valid_signature?/2)
+    |> Sanbase.Mock.prepare_mock2(true)
     |> Sanbase.Mock.prepare_mock2(
       &LiquiditySubscription.user_staked_in_uniswap_v2/1,
       false
@@ -59,7 +65,8 @@ defmodule SanbaseWeb.Graphql.EthLoginApiTest do
       _ = eth_login(context.conn, address, signature, message_hash)
 
       result =
-        eth_login(context.conn, address, signature, message_hash)
+        context.conn
+        |> eth_login(address, signature, message_hash)
         |> get_in(["data", "ethLogin"])
 
       assert result["user"]["firstLogin"] == false
@@ -80,7 +87,8 @@ defmodule SanbaseWeb.Graphql.EthLoginApiTest do
     signature = "0xeba4d1a091ca6e7cb0_signature_check_will_be_mocked"
 
     # Mock the external call to Ethauth. Mock the call to trial subscription creation.
-    Sanbase.Mock.prepare_mock2(&Sanbase.InternalServices.Ethauth.valid_signature?/2, true)
+    (&Ethauth.valid_signature?/2)
+    |> Sanbase.Mock.prepare_mock2(true)
     |> Sanbase.Mock.prepare_mock2(
       &LiquiditySubscription.user_staked_in_uniswap_v2/1,
       false
@@ -91,16 +99,19 @@ defmodule SanbaseWeb.Graphql.EthLoginApiTest do
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
       user_id =
-        eth_login(context.conn, address, signature, message_hash)
+        context.conn
+        |> eth_login(address, signature, message_hash)
         |> get_in(["data", "ethLogin", "user", "id"])
         |> String.to_integer()
 
       {:ok, _} =
-        Sanbase.Accounts.get_user!(user_id)
+        user_id
+        |> Sanbase.Accounts.get_user!()
         |> Sanbase.Accounts.User.change_username("some_new_username")
 
       user_id2 =
-        eth_login(context.conn, address, signature, message_hash)
+        context.conn
+        |> eth_login(address, signature, message_hash)
         |> get_in(["data", "ethLogin", "user", "id"])
         |> String.to_integer()
 
@@ -114,12 +125,14 @@ defmodule SanbaseWeb.Graphql.EthLoginApiTest do
     signature = "0xeba4d1a091ca6e7cb0_signature_check_will_be_mocked"
 
     # Mock the external call to Ethauth
-    Sanbase.Mock.prepare_mock2(&Sanbase.InternalServices.Ethauth.valid_signature?/2, true)
+    (&Ethauth.valid_signature?/2)
+    |> Sanbase.Mock.prepare_mock2(true)
     |> Sanbase.Mock.run_with_mocks(fn ->
       log =
         capture_log(fn ->
           error_msg =
-            eth_login(context.conn, address, signature, message_hash)
+            context.conn
+            |> eth_login(address, signature, message_hash)
             |> get_in(["errors", Access.at(0), "message"])
 
           assert error_msg == "Wallet Login verification failed"

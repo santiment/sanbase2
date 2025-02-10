@@ -1,5 +1,7 @@
 defmodule SanbaseWeb.Graphql.Resolvers.CommentEntityIdResolver do
+  @moduledoc false
   import Absinthe.Resolution.Helpers, except: [async: 1]
+
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
   def insight_id(%Sanbase.Comment{id: id}, _args, %{context: %{loader: loader}}) do

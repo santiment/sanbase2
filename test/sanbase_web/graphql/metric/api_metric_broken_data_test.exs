@@ -15,8 +15,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricBrokenDataTest do
 
       assert broken_data == [
                %{
-                 "actionsToFix" =>
-                   "The github events are not possible to be refetched so the gap cannot be filled.",
+                 "actionsToFix" => "The github events are not possible to be refetched so the gap cannot be filled.",
                  "from" => "2021-10-07T00:00:00Z",
                  "notes" =>
                    "Due to missing github data the development activity related metrics are lower than they should be.",

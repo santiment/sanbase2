@@ -8,11 +8,11 @@ defmodule Sanbase.Report do
   import Ecto.Changeset
   import Ecto.Query
 
-  require Logger
-
-  alias Sanbase.Repo
   alias Sanbase.FileStore
+  alias Sanbase.Repo
   alias Sanbase.Utils.FileHash
+
+  require Logger
 
   @type get_reports_opts :: %{
           required(:is_logged_in) => boolean(),
@@ -34,8 +34,7 @@ defmodule Sanbase.Report do
   def new_changeset(report, attrs \\ %{}) do
     attrs = normalize_tags(attrs)
 
-    report
-    |> cast(attrs, [:name, :description, :url, :is_published, :is_pro, :tags])
+    cast(report, attrs, [:name, :description, :url, :is_published, :is_pro, :tags])
   end
 
   def changeset(report, attrs) do
@@ -50,7 +49,7 @@ defmodule Sanbase.Report do
     Repo.get(__MODULE__, id)
   end
 
-  def list_reports() do
+  def list_reports do
     Repo.all(__MODULE__)
   end
 
@@ -67,7 +66,7 @@ defmodule Sanbase.Report do
   end
 
   def delete(report) do
-    report |> Repo.delete()
+    Repo.delete(report)
   end
 
   @spec get_published_reports(get_reports_opts()) :: list(%__MODULE__{})
@@ -88,14 +87,13 @@ defmodule Sanbase.Report do
   end
 
   def save_report(%Plug.Upload{filename: filename} = report, params) do
-    %{report | filename: milliseconds_str() <> "_" <> filename}
-    |> do_save_report(params)
+    do_save_report(%{report | filename: milliseconds_str() <> "_" <> filename}, params)
   end
 
   # Helpers
 
   defp normalize_tags(%{"tags" => tags} = attrs) when is_binary(tags) do
-    Map.put(attrs, "tags", String.split(tags, ~r{\s*,\s*}) |> Enum.map(&String.downcase/1))
+    Map.put(attrs, "tags", tags |> String.split(~r{\s*,\s*}) |> Enum.map(&String.downcase/1))
   end
 
   defp normalize_tags(%{"tags" => tags} = attrs) when is_list(tags) do
@@ -103,7 +101,7 @@ defmodule Sanbase.Report do
   end
 
   defp normalize_tags(%{tags: tags} = attrs) when is_binary(tags) do
-    Map.put(attrs, :tags, String.split(tags, ~r{\s*,\s*}) |> Enum.map(&String.downcase/1))
+    Map.put(attrs, :tags, tags |> String.split(~r{\s*,\s*}) |> Enum.map(&String.downcase/1))
   end
 
   defp normalize_tags(%{tags: tags} = attrs) when is_list(tags) do
@@ -128,8 +126,7 @@ defmodule Sanbase.Report do
   end
 
   defp show_only_preview_fields?(reports, %{is_logged_in: true, plan_name: "FREE"}) do
-    reports
-    |> Enum.map(fn
+    Enum.map(reports, fn
       %__MODULE__{is_pro: true} = report ->
         %{report | url: nil}
 
@@ -145,8 +142,8 @@ defmodule Sanbase.Report do
   defp do_save_report(%{filename: filename, path: filepath} = report, params) do
     with {:ok, content_hash} <- FileHash.calculate(filepath),
          {:ok, local_filepath} <- FileStore.store({report, content_hash}),
-         file_url <- FileStore.url({local_filepath, content_hash}),
-         {:ok, report} <- Map.merge(params, %{url: file_url}) |> create() do
+         file_url = FileStore.url({local_filepath, content_hash}),
+         {:ok, report} <- params |> Map.put(:url, file_url) |> create() do
       {:ok, report}
     else
       {:error, reason} ->
@@ -155,7 +152,7 @@ defmodule Sanbase.Report do
     end
   end
 
-  defp milliseconds_str() do
+  defp milliseconds_str do
     DateTime.utc_now()
     |> DateTime.to_unix(:millisecond)
     |> Integer.to_string()

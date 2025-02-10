@@ -8,8 +8,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
 
   test "returns data for availableFounders", %{conn: conn} do
     metrics_with_founders =
-      Metric.available_metrics()
-      |> Enum.filter(fn m ->
+      Enum.filter(Metric.available_metrics(), fn m ->
         {:ok, selectors} = Metric.available_selectors(m)
 
         :founders in selectors
@@ -35,7 +34,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
       """
     end
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    (&Sanbase.ClickhouseRepo.query/2)
+    |> Sanbase.Mock.prepare_mock2({:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       for metric <- metrics_with_founders do
         result =
@@ -88,7 +88,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
       }
       """
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    (&Sanbase.ClickhouseRepo.query/2)
+    |> Sanbase.Mock.prepare_mock2({:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         conn
@@ -102,13 +103,12 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
   end
 
   test "returns data for all available metric", %{conn: conn} do
-    metrics = Metric.available_metrics() |> Enum.shuffle()
+    metrics = Enum.shuffle(Metric.available_metrics())
 
     aggregations = Metric.available_aggregations()
 
     aggregations =
-      aggregations
-      |> Enum.map(fn aggr -> aggr |> Atom.to_string() |> String.upcase() end)
+      Enum.map(aggregations, fn aggr -> aggr |> Atom.to_string() |> String.upcase() end)
 
     for metric <- metrics do
       %{"data" => %{"getMetric" => %{"metadata" => metadata}}} = get_metric_metadata(conn, metric)
@@ -125,7 +125,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
                metadata
              )
 
-      assert metadata["humanReadableName"] |> is_binary()
+      assert is_binary(metadata["humanReadableName"])
       assert metadata["defaultAggregation"] in aggregations
 
       assert metadata["minInterval"] in [
@@ -174,15 +174,13 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
       assert is_nil(metadata["restrictedFrom"]) or
                match?(
                  %DateTime{},
-                 metadata["restrictedFrom"]
-                 |> Sanbase.DateTimeUtils.from_iso8601!()
+                 Sanbase.DateTimeUtils.from_iso8601!(metadata["restrictedFrom"])
                )
 
       assert is_nil(metadata["restrictedTo"]) or
                match?(
                  %DateTime{},
-                 metadata["restrictedTo"]
-                 |> Sanbase.DateTimeUtils.from_iso8601!()
+                 Sanbase.DateTimeUtils.from_iso8601!(metadata["restrictedTo"])
                )
     end
   end
@@ -206,19 +204,22 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
 
   test "get internal_metric for clickhouse metrics", %{conn: conn} do
     internal_metric =
-      get_metric_metadata(conn, "age_consumed")
+      conn
+      |> get_metric_metadata("age_consumed")
       |> get_in(["data", "getMetric", "metadata", "internalMetric"])
 
     assert internal_metric == "stack_age_consumed_5min"
 
     internal_metric =
-      get_metric_metadata(conn, "dev_activity_1d")
+      conn
+      |> get_metric_metadata("dev_activity_1d")
       |> get_in(["data", "getMetric", "metadata", "internalMetric"])
 
     assert internal_metric == "dev_activity"
 
     internal_metric =
-      get_metric_metadata(conn, "daily_active_addresses")
+      conn
+      |> get_metric_metadata("daily_active_addresses")
       |> get_in(["data", "getMetric", "metadata", "internalMetric"])
 
     assert internal_metric == "daily_active_addresses"

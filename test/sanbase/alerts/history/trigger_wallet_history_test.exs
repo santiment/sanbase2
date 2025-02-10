@@ -4,7 +4,6 @@ defmodule Sanbase.Alert.WalletTriggerHistoryTest do
   import Mock
 
   alias Sanbase.Alert.UserTrigger
-
   alias Sanbase.Clickhouse.HistoricalBalance
 
   setup do
@@ -57,8 +56,8 @@ defmodule Sanbase.Alert.WalletTriggerHistoryTest do
           settings: context.trigger_settings_down
         })
 
-      assert Enum.filter(points, & &1.triggered?) |> length() == 3
-      assert Enum.filter(points, &(not &1.triggered?)) |> length() == 5
+      assert points |> Enum.filter(& &1.triggered?) |> length() == 3
+      assert points |> Enum.filter(&(not &1.triggered?)) |> length() == 5
 
       assert length(points) == 8
 
@@ -104,8 +103,8 @@ defmodule Sanbase.Alert.WalletTriggerHistoryTest do
           settings: context.trigger_settings_down
         })
 
-      assert Enum.filter(points, & &1.triggered?) |> length() == 1
-      assert Enum.filter(points, &(not &1.triggered?)) |> length() == 7
+      assert points |> Enum.filter(& &1.triggered?) |> length() == 1
+      assert points |> Enum.filter(&(not &1.triggered?)) |> length() == 7
 
       assert length(points) == 8
 
@@ -139,8 +138,8 @@ defmodule Sanbase.Alert.WalletTriggerHistoryTest do
           settings: context.trigger_settings_up
         })
 
-      assert Enum.filter(points, & &1.triggered?) |> length() == 3
-      assert Enum.filter(points, &(not &1.triggered?)) |> length() == 5
+      assert points |> Enum.filter(& &1.triggered?) |> length() == 3
+      assert points |> Enum.filter(&(not &1.triggered?)) |> length() == 5
 
       assert length(points) == 8
 
@@ -186,8 +185,8 @@ defmodule Sanbase.Alert.WalletTriggerHistoryTest do
           settings: context.trigger_settings_up
         })
 
-      assert Enum.filter(points, & &1.triggered?) |> length() == 1
-      assert Enum.filter(points, &(not &1.triggered?)) |> length() == 7
+      assert points |> Enum.filter(& &1.triggered?) |> length() == 1
+      assert points |> Enum.filter(&(not &1.triggered?)) |> length() == 7
 
       assert length(points) == 8
 

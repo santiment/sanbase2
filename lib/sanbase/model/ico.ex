@@ -1,14 +1,15 @@
 defmodule Sanbase.Model.Ico do
+  @moduledoc false
   use Ecto.Schema
 
-  import Ecto.Query
   import Ecto.Changeset
+  import Ecto.Query
 
-  alias Sanbase.Repo
-  alias Sanbase.Model.Ico
-  alias Sanbase.Project
   alias Sanbase.Model.Currency
+  alias Sanbase.Model.Ico
   alias Sanbase.Model.IcoCurrency
+  alias Sanbase.Project
+  alias Sanbase.Repo
 
   schema "icos" do
     belongs_to(:project, Project)
@@ -51,18 +52,17 @@ defmodule Sanbase.Model.Ico do
   end
 
   def funds_raised_by_icos(ico_ids) when is_list(ico_ids) do
-    from(
-      i in __MODULE__,
-      left_join: ic in assoc(i, :ico_currencies),
-      inner_join: c in assoc(ic, :currency),
-      where: i.id in ^ico_ids,
-      select: %{ico_id: i.id, currency_code: c.code, amount: ic.amount}
+    Repo.all(
+      from(i in __MODULE__,
+        left_join: ic in assoc(i, :ico_currencies),
+        inner_join: c in assoc(ic, :currency),
+        where: i.id in ^ico_ids,
+        select: %{ico_id: i.id, currency_code: c.code, amount: ic.amount}
+      )
     )
-    |> Repo.all()
   end
 
-  def funds_raised_usd_ico_end_price(%Ico{end_date: end_date, project_id: project_id} = ico)
-      when not is_nil(end_date) do
+  def funds_raised_usd_ico_end_price(%Ico{end_date: end_date, project_id: project_id} = ico) when not is_nil(end_date) do
     project = Project.by_id(project_id)
 
     funds_raised_ico_end_price_from_currencies(project, ico, "USD", end_date)
@@ -70,16 +70,14 @@ defmodule Sanbase.Model.Ico do
 
   def funds_raised_usd_ico_end_price(_), do: nil
 
-  def funds_raised_eth_ico_end_price(%Ico{end_date: end_date, project_id: project_id} = ico)
-      when not is_nil(end_date) do
+  def funds_raised_eth_ico_end_price(%Ico{end_date: end_date, project_id: project_id} = ico) when not is_nil(end_date) do
     project = Project.by_id(project_id)
     funds_raised_ico_end_price_from_currencies(project, ico, "ETH", end_date)
   end
 
   def funds_raised_eth_ico_end_price(_), do: nil
 
-  def funds_raised_btc_ico_end_price(%Ico{end_date: end_date, project_id: project_id} = ico)
-      when not is_nil(end_date) do
+  def funds_raised_btc_ico_end_price(%Ico{end_date: end_date, project_id: project_id} = ico) when not is_nil(end_date) do
     project = Project.by_id(project_id)
     funds_raised_ico_end_price_from_currencies(project, ico, "BTC", end_date)
   end
@@ -91,7 +89,8 @@ defmodule Sanbase.Model.Ico do
   defp funds_raised_ico_end_price_from_currencies(_project, ico, target_currency, date) do
     datetime = Sanbase.DateTimeUtils.date_to_datetime(date)
 
-    Repo.preload(ico, ico_currencies: [:currency])
+    ico
+    |> Repo.preload(ico_currencies: [:currency])
     |> Map.get(:ico_currencies, [])
     |> Enum.map(&get_funds_raised(&1, target_currency, datetime))
     |> Enum.reject(&is_nil/1)

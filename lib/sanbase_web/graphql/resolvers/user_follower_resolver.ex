@@ -1,28 +1,31 @@
 defmodule SanbaseWeb.Graphql.Resolvers.UserFollowerResolver do
-  require Logger
-
-  alias Sanbase.Accounts.UserFollower
+  @moduledoc false
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1]
 
-  def follow(_root, args, %{
-        context: %{auth: %{auth_method: :user_token, current_user: current_user}}
-      }) do
-    UserFollower.follow(to_string(args.user_id), to_string(current_user.id))
+  alias Sanbase.Accounts.UserFollower
+
+  require Logger
+
+  def follow(_root, args, %{context: %{auth: %{auth_method: :user_token, current_user: current_user}}}) do
+    args.user_id
+    |> to_string()
+    |> UserFollower.follow(to_string(current_user.id))
     |> handle_result("follow", current_user)
   end
 
-  def unfollow(_root, args, %{
-        context: %{auth: %{auth_method: :user_token, current_user: current_user}}
-      }) do
-    UserFollower.unfollow(to_string(args.user_id), to_string(current_user.id))
+  def unfollow(_root, args, %{context: %{auth: %{auth_method: :user_token, current_user: current_user}}}) do
+    args.user_id
+    |> to_string()
+    |> UserFollower.unfollow(to_string(current_user.id))
     |> handle_result("unfollow", current_user)
   end
 
   def following_toggle_notification(_root, args, %{
         context: %{auth: %{auth_method: :user_token, current_user: current_user}}
       }) do
-    UserFollower.following_toggle_notification(
-      to_string(args.user_id),
+    args.user_id
+    |> to_string()
+    |> UserFollower.following_toggle_notification(
       to_string(current_user.id),
       args.disable_notifications
     )

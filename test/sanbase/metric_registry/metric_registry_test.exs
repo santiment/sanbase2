@@ -1,5 +1,6 @@
 defmodule Sanbase.MetricRegistyTest do
   use Sanbase.DataCase
+
   import ExUnit.CaptureLog
 
   test "creating a new metric" do

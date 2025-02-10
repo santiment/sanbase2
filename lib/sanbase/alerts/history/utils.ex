@@ -1,4 +1,5 @@
 defmodule Sanbase.Alert.History.Utils do
+  @moduledoc false
   import Sanbase.Alert.OperationEvaluation, only: [operation_triggered?: 2]
   import Sanbase.Math, only: [percent_change: 2]
 
@@ -33,6 +34,6 @@ defmodule Sanbase.Alert.History.Utils do
           {[{percent_change, false} | accumulated_calculations], cooldown_left - 1}
       end)
 
-    percent_change_calculations |> Enum.reverse()
+    Enum.reverse(percent_change_calculations)
   end
 end

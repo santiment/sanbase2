@@ -1,11 +1,10 @@
 defmodule SanbaseWeb.UploadedImagesLive do
+  @moduledoc false
   use SanbaseWeb, :live_view
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok,
-     socket
-     |> assign(:rows, Sanbase.FileStore.Image.all())}
+    {:ok, assign(socket, :rows, Sanbase.FileStore.Image.all())}
   end
 
   @impl true

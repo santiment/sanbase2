@@ -1,12 +1,15 @@
 defmodule Sanbase.Repo.Migrations.ImportProjectDescriptions do
+  @moduledoc false
   use Ecto.Migration
 
   import Ecto.Query
-  alias Sanbase.Repo
+
   alias Sanbase.Project
+  alias Sanbase.Repo
 
   def up do
-    Path.expand("cmc_name_list.csv", __DIR__)
+    "cmc_name_list.csv"
+    |> Path.expand(__DIR__)
     |> File.read!()
     |> NimbleCSV.RFC4180.parse_string()
     |> Enum.each(fn description_line ->

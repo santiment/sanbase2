@@ -1,5 +1,7 @@
 defmodule Sanbase.PricePair.MetricAdapter do
+  @moduledoc false
   @behaviour Sanbase.Metric.Behaviour
+
   alias Sanbase.PricePair
 
   @aggregations [:any, :sum, :avg, :min, :max, :last, :first, :median, :ohlc, :count]
@@ -12,17 +14,19 @@ defmodule Sanbase.PricePair.MetricAdapter do
   @metrics @histogram_metrics ++ @timeseries_metrics ++ @table_metrics
 
   # plan related - the plan is upcase string
-  @min_plan_map Enum.into(@metrics, %{}, fn metric -> {metric, "FREE"} end)
+  @min_plan_map Map.new(@metrics, fn metric -> {metric, "FREE"} end)
 
   # restriction related - the restriction is atom :free or :restricted
-  @access_map Enum.into(@metrics, %{}, fn metric -> {metric, :free} end)
+  @access_map Map.new(@metrics, fn metric -> {metric, :free} end)
 
-  @free_metrics Enum.filter(@access_map, fn {_, level} -> level == :free end)
+  @free_metrics @access_map
+                |> Enum.filter(fn {_, level} -> level == :free end)
                 |> Enum.map(&elem(&1, 0))
-  @restricted_metrics Enum.filter(@access_map, fn {_, level} -> level == :restricted end)
+  @restricted_metrics @access_map
+                      |> Enum.filter(fn {_, level} -> level == :restricted end)
                       |> Enum.map(&elem(&1, 0))
 
-  @required_selectors Enum.into(@metrics, %{}, &{&1, []})
+  @required_selectors Map.new(@metrics, &{&1, []})
   @default_complexity_weight 0.3
 
   @impl Sanbase.Metric.Behaviour
@@ -31,7 +35,7 @@ defmodule Sanbase.PricePair.MetricAdapter do
   @impl Sanbase.Metric.Behaviour
   def complexity_weight(_), do: @default_complexity_weight
   @impl Sanbase.Metric.Behaviour
-  def required_selectors(), do: @required_selectors
+  def required_selectors, do: @required_selectors
 
   @impl Sanbase.Metric.Behaviour
   def broken_data(_metric, _selector, _from, _to), do: {:ok, []}
@@ -119,19 +123,19 @@ defmodule Sanbase.PricePair.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def available_aggregations(), do: @aggregations
+  def available_aggregations, do: @aggregations
 
   @impl Sanbase.Metric.Behaviour
-  def available_timeseries_metrics(), do: @timeseries_metrics
+  def available_timeseries_metrics, do: @timeseries_metrics
 
   @impl Sanbase.Metric.Behaviour
-  def available_histogram_metrics(), do: @histogram_metrics
+  def available_histogram_metrics, do: @histogram_metrics
 
   @impl Sanbase.Metric.Behaviour
-  def available_table_metrics(), do: @table_metrics
+  def available_table_metrics, do: @table_metrics
 
   @impl Sanbase.Metric.Behaviour
-  def available_metrics(), do: @metrics
+  def available_metrics, do: @metrics
 
   @impl Sanbase.Metric.Behaviour
   def available_metrics(%{address: _address}), do: []
@@ -141,7 +145,7 @@ defmodule Sanbase.PricePair.MetricAdapter do
   end
 
   def available_metrics(%{slug: slug}) do
-    cache_key = {__MODULE__, :has_price_data?, slug} |> Sanbase.Cache.hash()
+    cache_key = Sanbase.Cache.hash({__MODULE__, :has_price_data?, slug})
     cache_key_with_ttl = {cache_key, 900}
 
     case Sanbase.Cache.get_or_store(cache_key_with_ttl, fn ->
@@ -162,8 +166,8 @@ defmodule Sanbase.PricePair.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def available_slugs() do
-    cache_key = {__MODULE__, :slugs_with_prices} |> Sanbase.Cache.hash()
+  def available_slugs do
+    cache_key = Sanbase.Cache.hash({__MODULE__, :slugs_with_prices})
     Sanbase.Cache.get_or_store({cache_key, 600}, fn -> PricePair.available_slugs() end)
   end
 
@@ -178,19 +182,19 @@ defmodule Sanbase.PricePair.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def incomplete_metrics(), do: []
+  def incomplete_metrics, do: []
 
   @impl Sanbase.Metric.Behaviour
-  def free_metrics(), do: @free_metrics
+  def free_metrics, do: @free_metrics
 
   @impl Sanbase.Metric.Behaviour
-  def restricted_metrics(), do: @restricted_metrics
+  def restricted_metrics, do: @restricted_metrics
 
   @impl Sanbase.Metric.Behaviour
-  def access_map(), do: @access_map
+  def access_map, do: @access_map
 
   @impl Sanbase.Metric.Behaviour
-  def min_plan_map(), do: @min_plan_map
+  def min_plan_map, do: @min_plan_map
 
   # Private functions
   defp update_opts(opts) do

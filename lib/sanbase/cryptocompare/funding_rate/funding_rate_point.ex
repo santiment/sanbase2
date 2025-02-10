@@ -1,4 +1,5 @@
 defmodule Sanbase.Cryptocompare.FundingRatePoint do
+  @moduledoc false
   @fields [
     :market,
     :instrument,
@@ -16,11 +17,9 @@ defmodule Sanbase.Cryptocompare.FundingRatePoint do
   end
 
   def json_kv_tuple(%__MODULE__{} = point) do
-    point = point |> Map.from_struct()
+    point = Map.from_struct(point)
 
-    key =
-      [point.market, point.mapped_instrument, point.timestamp]
-      |> Enum.join("_")
+    key = Enum.join([point.market, point.mapped_instrument, point.timestamp], "_")
 
     {key, Jason.encode!(point)}
   end

@@ -2,12 +2,10 @@ defmodule Sanbase.Signal.AvailableSignalsTest do
   use ExUnit.Case, async: true
 
   test "available signals" do
-    available_signals =
-      Sanbase.Signal.available_signals()
-      |> Enum.sort()
+    available_signals = Enum.sort(Sanbase.Signal.available_signals())
 
     expected_available_signals =
-      [
+      Enum.sort([
         "anomaly_active_deposits",
         "anomaly_active_withdrawals",
         "anomaly_age_consumed",
@@ -48,8 +46,7 @@ defmodule Sanbase.Signal.AvailableSignalsTest do
         "mvrv_usd_60d_lower_zone",
         "mvrv_usd_180d_lower_zone",
         "mvrv_usd_365d_lower_zone"
-      ]
-      |> Enum.sort()
+      ])
 
     assert available_signals == expected_available_signals
   end

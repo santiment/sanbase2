@@ -13,11 +13,11 @@ defmodule Sanbase.Menus do
   translated to JSON. This menu representation contains only the type, id, name and
   description of each menu item, as well as the position in the menu.
   """
+  import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
+
   alias Sanbase.Menus.Menu
   alias Sanbase.Menus.MenuItem
   alias Sanbase.Repo
-
-  import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
 
   @type parent_menu_id :: non_neg_integer()
   @type user_id :: Sanbase.Accounts.User.user_id()
@@ -77,18 +77,18 @@ defmodule Sanbase.Menus do
   }
   """
   def menu_to_simple_map(%Menu{} = menu) do
-    %{
-      # If this menu is a sub-menu, then the caller from get_menu_items/1 will
-      # additionally set the menu_item_id. If this is the top-level menu, then
-      # this is not a sub-menu and it does not have a menu_item_id
+    recursively_order_menu_items(%{
       "menuItemId" => nil,
       "entityType" => :menu,
       "entityId" => menu.id,
       "name" => menu.name,
       "description" => menu.description,
       "menuItems" => get_menu_items(menu)
-    }
-    |> recursively_order_menu_items()
+    })
+
+    # If this menu is a sub-menu, then the caller from get_menu_items/1 will
+    # additionally set the menu_item_id. If this is the top-level menu, then
+    # this is not a sub-menu and it does not have a menu_item_id
   end
 
   @doc ~s"""
@@ -100,9 +100,7 @@ defmodule Sanbase.Menus do
   """
   @spec create_menu(create_menu_params, user_id) :: {:ok, Menu.t()} | {:error, String.t()}
   def create_menu(params, user_id) do
-    params =
-      params
-      |> Map.merge(%{user_id: user_id})
+    params = Map.put(params, :user_id, user_id)
 
     Ecto.Multi.new()
     |> Ecto.Multi.run(:create_menu, fn _repo, _changes ->
@@ -229,7 +227,7 @@ defmodule Sanbase.Menus do
     |> Ecto.Multi.run(
       :create_menu_item,
       fn _repo, %{get_and_adjust_position: position} ->
-        params = params |> Map.merge(%{position: position, parent_id: params.parent_id})
+        params = Map.merge(params, %{position: position, parent_id: params.parent_id})
         query = MenuItem.create(params)
         Repo.insert(query)
       end
@@ -267,13 +265,10 @@ defmodule Sanbase.Menus do
             parent_id = Map.get(params, :parent_id)
 
             # We cannot change the parent_id without also specifying the position
-            case is_nil(parent_id) or parent_id == menu_item.parent_id do
-              true ->
-                {:ok, nil}
-
-              false ->
-                {:error,
-                 "If the parent_id for a menu item is updated, the position in the new menu must also be specified"}
+            if is_nil(parent_id) or parent_id == menu_item.parent_id do
+              {:ok, nil}
+            else
+              {:error, "If the parent_id for a menu item is updated, the position in the new menu must also be specified"}
             end
 
           position when is_integer(position) ->
@@ -336,8 +331,7 @@ defmodule Sanbase.Menus do
 
     case Repo.one(query) do
       nil ->
-        {:error,
-         "Menu item with id #{menu_item_id} not found or it is part of a menu owned by another user"}
+        {:error, "Menu item with id #{menu_item_id} not found or it is part of a menu owned by another user"}
 
       menu ->
         {:ok, menu}
@@ -355,19 +349,18 @@ defmodule Sanbase.Menus do
     {:ok, Repo.update_all(query, [])}
   end
 
-  defp process_transaction_result({:ok, map}, ok_field),
-    do: {:ok, map[ok_field]}
+  defp process_transaction_result({:ok, map}, ok_field), do: {:ok, map[ok_field]}
 
   defp process_transaction_result({:error, _, %Ecto.Changeset{} = changeset, _}, _ok_field),
     do: {:error, changeset_errors_string(changeset)}
 
-  defp process_transaction_result({:error, _, error, _}, _ok_field),
-    do: {:error, error}
+  defp process_transaction_result({:error, _, error, _}, _ok_field), do: {:error, error}
 
   # Helpers for transforming a menu struct to a simple map
   defp recursively_order_menu_items(%{"menuItems" => menu_items} = map) do
     sorted_menu_items =
-      Enum.sort_by(menu_items, & &1["position"], :asc)
+      menu_items
+      |> Enum.sort_by(& &1["position"], :asc)
       |> Enum.map(fn
         %{"menuItems" => [_ | _]} = elem -> recursively_order_menu_items(elem)
         x -> x
@@ -381,8 +374,7 @@ defmodule Sanbase.Menus do
   defp get_menu_items(%Menu{menu_items: []}), do: []
 
   defp get_menu_items(%Menu{menu_items: list}) when is_list(list) do
-    list
-    |> Enum.map(fn
+    Enum.map(list, fn
       %{id: menu_item_id, query: %{} = map, position: position} ->
         %{
           "name" => map.name,
@@ -406,7 +398,8 @@ defmodule Sanbase.Menus do
         }
 
       %{id: menu_item_id, menu: %{} = map, position: position} ->
-        menu_to_simple_map(map)
+        map
+        |> menu_to_simple_map()
         |> Map.merge(%{
           "name" => map.name,
           "description" => map.description,

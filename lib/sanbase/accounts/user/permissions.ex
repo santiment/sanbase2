@@ -1,6 +1,8 @@
 defmodule Sanbase.Accounts.User.Permissions do
+  @moduledoc false
   alias Sanbase.Accounts.User
-  alias Sanbase.Billing.{Subscription, Product}
+  alias Sanbase.Billing.Product
+  alias Sanbase.Billing.Subscription
 
   def permissions(%User{} = user) do
     user_subscriptions_product_ids = Subscription.user_subscriptions_product_ids(user)
@@ -17,7 +19,7 @@ defmodule Sanbase.Accounts.User.Permissions do
     }
   end
 
-  def no_permissions() do
+  def no_permissions do
     %{
       api: false,
       sanbase: false,
@@ -25,7 +27,7 @@ defmodule Sanbase.Accounts.User.Permissions do
     }
   end
 
-  def full_permissions() do
+  def full_permissions do
     %{
       api: true,
       sanbase: true,

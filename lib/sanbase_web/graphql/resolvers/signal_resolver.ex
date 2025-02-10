@@ -1,16 +1,18 @@
 defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
-  import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
-
-  import SanbaseWeb.Graphql.Helpers.{Utils, CalibrateInterval}
+  @moduledoc false
   import Absinthe.Resolution.Helpers, only: [on_load: 2]
   import Sanbase.Project.Selector, only: [args_to_selector: 1, args_to_raw_selector: 1]
 
   import Sanbase.Utils.ErrorHandling,
     only: [handle_graphql_error: 3, maybe_handle_graphql_error: 2]
 
+  import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
+  import SanbaseWeb.Graphql.Helpers.CalibrateInterval
+  import SanbaseWeb.Graphql.Helpers.Utils
+
+  alias Sanbase.Billing.Plan.Restrictions
   alias Sanbase.Signal
   alias SanbaseWeb.Graphql.SanbaseDataloader
-  alias Sanbase.Billing.Plan.Restrictions
 
   require Logger
 
@@ -35,23 +37,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
     signals = Map.get(args, :signals, :all)
 
     selector =
-      case Map.has_key?(args, :selector) do
-        false ->
-          :all
-
-        true ->
-          {:ok, selector} = args_to_selector(args)
-          selector
+      if Map.has_key?(args, :selector) do
+        {:ok, selector} = args_to_selector(args)
+        selector
+      else
+        :all
       end
 
-    Signal.raw_data(signals, selector, from, to)
+    signals
+    |> Signal.raw_data(selector, from, to)
     |> maybe_apply_function(&overwrite_not_accessible_signals(&1, resolution))
   end
 
   def get_available_signals(_root, _args, _resolution), do: {:ok, Signal.available_signals()}
 
-  def get_available_slugs(_root, _args, %{source: %{signal: signal}}),
-    do: Signal.available_slugs(signal)
+  def get_available_slugs(_root, _args, %{source: %{signal: signal}}), do: Signal.available_slugs(signal)
 
   def get_metadata(_root, _args, resolution) do
     %{source: %{signal: signal}} = resolution
@@ -67,11 +67,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
   end
 
   def available_since(_root, args, %{source: %{signal: signal}}) do
-    with {:ok, selector} <- args_to_selector(args),
-         {:ok, first_datetime} <- Signal.first_datetime(signal, selector) do
-      {:ok, first_datetime}
-    end
-    |> maybe_handle_graphql_error(fn error ->
+    with_result =
+      with {:ok, selector} <- args_to_selector(args) do
+        Signal.first_datetime(signal, selector)
+      end
+
+    maybe_handle_graphql_error(with_result, fn error ->
       handle_graphql_error(
         "Available Since",
         %{signal: signal, selector: args_to_raw_selector(args)},
@@ -80,47 +81,41 @@ defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
     end)
   end
 
-  def timeseries_data(
-        _root,
-        %{from: from, to: to, interval: interval} = args,
-        %{source: %{signal: signal}}
-      ) do
+  def timeseries_data(_root, %{from: from, to: to, interval: interval} = args, %{source: %{signal: signal}}) do
     with {:ok, selector} <- args_to_selector(args),
          {:ok, opts} = selector_args_to_opts(args),
          {:ok, from, to, interval} <-
            calibrate(Signal, signal, selector, from, to, interval, 86_400, @datapoints),
          {:ok, result} <- Signal.timeseries_data(signal, selector, from, to, interval, opts) do
-      {:ok, result |> Enum.reject(&is_nil/1)}
+      {:ok, Enum.reject(result, &is_nil/1)}
     else
       {:error, error} ->
         {:error, handle_graphql_error(signal, args_to_raw_selector(args), error)}
     end
   end
 
-  def aggregated_timeseries_data(
-        _root,
-        %{from: from, to: to} = args,
-        %{source: %{signal: signal}}
-      ) do
-    with {:ok, selector} <- args_to_selector(args),
-         {:ok, opts} = selector_args_to_opts(args),
-         {:ok, result} <- Signal.aggregated_timeseries_data(signal, selector, from, to, opts) do
-      {:ok, Map.values(result) |> List.first()}
-    end
-    |> maybe_handle_graphql_error(fn error ->
+  def aggregated_timeseries_data(_root, %{from: from, to: to} = args, %{source: %{signal: signal}}) do
+    with_result =
+      with {:ok, selector} <- args_to_selector(args),
+           {:ok, opts} = selector_args_to_opts(args),
+           {:ok, result} <- Signal.aggregated_timeseries_data(signal, selector, from, to, opts) do
+        {:ok, result |> Map.values() |> List.first()}
+      end
+
+    maybe_handle_graphql_error(with_result, fn error ->
       handle_graphql_error(signal, args_to_raw_selector(args), error)
     end)
   end
 
   defp overwrite_not_accessible_signals(list, resolution) do
     restrictions_map =
-      resolution_to_all_signals_restrictions(resolution) |> Map.new(&{&1.name, &1})
+      resolution |> resolution_to_all_signals_restrictions() |> Map.new(&{&1.name, &1})
 
-    list
-    |> Enum.map(fn signal ->
-      case should_hide_signal?(signal, restrictions_map) do
-        true -> hide_signal_details(signal)
-        false -> Map.put(signal, :is_hidden, false)
+    Enum.map(list, fn signal ->
+      if should_hide_signal?(signal, restrictions_map) do
+        hide_signal_details(signal)
+      else
+        Map.put(signal, :is_hidden, false)
       end
     end)
   end
@@ -136,25 +131,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
       %{restricted_from: restricted_from, restricted_to: restricted_to} ->
         before_from? =
           match?(%DateTime{}, restricted_from) and
-            DateTime.compare(signal_map.datetime, restricted_from) == :lt
+            DateTime.before?(signal_map.datetime, restricted_from)
 
         after_to? =
           match?(%DateTime{}, restricted_to) and
-            DateTime.compare(signal_map.datetime, restricted_to) == :gt
+            DateTime.after?(signal_map.datetime, restricted_to)
 
         before_from? or after_to?
     end
   end
 
   defp hide_signal_details(signal) do
-    signal
-    |> Map.merge(%{
-      is_hidden: true,
-      datetime: nil,
-      value: nil,
-      slug: nil,
-      metadata: nil
-    })
+    Map.merge(signal, %{is_hidden: true, datetime: nil, value: nil, slug: nil, metadata: nil})
   end
 
   defp resolution_to_signal_restrictions(resolution) do
@@ -167,7 +155,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
   defp resolution_to_all_signals_restrictions(resolution) do
     %{context: %{requested_product: requested_product, auth: %{plan: plan_name}}} = resolution
 
-    Restrictions.get_all(plan_name, requested_product)
+    plan_name
+    |> Restrictions.get_all(requested_product)
     |> Enum.filter(&(&1.type == "signal"))
   end
 end

@@ -1,6 +1,7 @@
 defmodule Sanbase.Accounts.User.Twitter do
-  alias Sanbase.Repo
+  @moduledoc false
   alias Sanbase.Accounts.User
+  alias Sanbase.Repo
 
   def find_or_insert_by_twitter_id(twitter_id, attrs \\ %{}) do
     case Repo.get_by(User, twitter_id: twitter_id) do

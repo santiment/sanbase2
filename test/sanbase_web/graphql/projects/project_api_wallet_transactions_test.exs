@@ -1,13 +1,14 @@
 defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
   use SanbaseWeb.ConnCase, async: false
 
-  alias Sanbase.Project
-
-  import Mock
-  import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.Factory
   import ExUnit.CaptureLog
+  import Mock
+  import Sanbase.Factory
   import Sanbase.TestHelpers
+  import SanbaseWeb.Graphql.TestHelpers
+
+  alias Sanbase.Project
+  alias Sanbase.Transfers.EthTransfers
 
   @datetime1 ~U[2017-05-13 15:00:00Z]
   @datetime2 ~U[2017-05-14 16:00:00Z]
@@ -21,7 +22,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
     {Sanbase.ClickhouseRepo, [:passthrough],
      [
        query: fn _, _ ->
-         {:ok, %{rows: [[@exchange_wallet, "CEX", "{\"owner\": \"binance\"}"]]}}
+         {:ok, %{rows: [[@exchange_wallet, "CEX", ~s({"owner": "binance"})]]}}
        end
      ]}
   ]) do
@@ -44,7 +45,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
   end
 
   test "project in transactions for the whole interval", context do
-    with_mock Sanbase.Transfers.EthTransfers,
+    with_mock EthTransfers,
       top_wallet_transfers: fn _, _, _, _, _, _ ->
         {:ok, eth_transfers_in()}
       end do
@@ -102,7 +103,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
   end
 
   test "project out transactions for the whole interval", context do
-    with_mock Sanbase.Transfers.EthTransfers,
+    with_mock EthTransfers,
       top_wallet_transfers: fn _, _, _, _, _, _ ->
         {:ok, eth_transfers_out()}
       end do
@@ -122,9 +123,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
       }
       """
 
-      result =
-        context.conn
-        |> post("/graphql", query_skeleton(query, "projectBySlug"))
+      result = post(context.conn, "/graphql", query_skeleton(query, "projectBySlug"))
 
       trx_out = json_response(result, 200)["data"]["projectBySlug"]["ethTopTransactions"]
 
@@ -155,7 +154,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
                "toAddress" => %{
                  "address" => @exchange_wallet,
                  "isExchange" => true,
-                 "labels" => [%{"metadata" => "{\"owner\": \"binance\"}", "name" => "CEX"}]
+                 "labels" => [%{"metadata" => ~s({"owner": "binance"}), "name" => "CEX"}]
                },
                "trxValue" => 5500.0
              } in trx_out
@@ -166,7 +165,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
                "toAddress" => %{
                  "address" => @exchange_wallet,
                  "isExchange" => true,
-                 "labels" => [%{"metadata" => "{\"owner\": \"binance\"}", "name" => "CEX"}]
+                 "labels" => [%{"metadata" => ~s({"owner": "binance"}), "name" => "CEX"}]
                },
                "trxValue" => 6500.0
              } in trx_out
@@ -174,7 +173,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
   end
 
   test "project all wallet transactions in interval", context do
-    with_mock Sanbase.Transfers.EthTransfers,
+    with_mock EthTransfers,
       top_wallet_transfers: fn _, _, _, _, _, _ ->
         {:ok, eth_transfers_in() ++ eth_transfers_out()}
       end do
@@ -234,7 +233,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
                "toAddress" => %{
                  "address" => @exchange_wallet,
                  "isExchange" => true,
-                 "labels" => [%{"metadata" => "{\"owner\": \"binance\"}", "name" => "CEX"}]
+                 "labels" => [%{"metadata" => ~s({"owner": "binance"}), "name" => "CEX"}]
                },
                "trxValue" => 5500.0
              } in trx_all
@@ -245,7 +244,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
                "toAddress" => %{
                  "address" => @exchange_wallet,
                  "isExchange" => true,
-                 "labels" => [%{"metadata" => "{\"owner\": \"binance\"}", "name" => "CEX"}]
+                 "labels" => [%{"metadata" => ~s({"owner": "binance"}), "name" => "CEX"}]
                },
                "trxValue" => 6500.0
              } in trx_all
@@ -291,8 +290,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
 
     log =
       capture_log(fn ->
-        context.conn
-        |> post("/graphql", query_skeleton(query, "projectBySlug"))
+        post(context.conn, "/graphql", query_skeleton(query, "projectBySlug"))
       end)
 
     assert {:ok, []} == Project.eth_addresses(project)
@@ -301,7 +299,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
 
   # Private functions
 
-  defp eth_transfers_in() do
+  defp eth_transfers_in do
     [
       %{
         block_number: 5_527_472,
@@ -324,7 +322,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
     ]
   end
 
-  defp eth_transfers_out() do
+  defp eth_transfers_out do
     [
       %{
         block_number: 5_619_729,

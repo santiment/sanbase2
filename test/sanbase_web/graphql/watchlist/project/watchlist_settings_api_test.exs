@@ -1,10 +1,9 @@
 defmodule SanbaseWeb.Graphql.WatchlistSettingsApiTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import Sanbase.TestHelpers
-
-  import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
+  import Sanbase.TestHelpers
+  import SanbaseWeb.Graphql.TestHelpers
 
   setup do
     clean_task_supervisor_children()
@@ -288,7 +287,7 @@ defmodule SanbaseWeb.Graphql.WatchlistSettingsApiTest do
   end
 
   defp update_watchlist_settings(conn, watchlist_id, opts) do
-    map = opts |> Map.new()
+    map = Map.new(opts)
 
     mutation =
       ~s"""

@@ -4,11 +4,11 @@ defmodule Sanbase.Timeline.TimelineEventTest do
   import Sanbase.Factory
   import Sanbase.TestHelpers
 
-  alias Sanbase.Insight.Post
   alias Sanbase.Alert.UserTrigger
-  alias Sanbase.UserList
-  alias Sanbase.Timeline.TimelineEvent
+  alias Sanbase.Insight.Post
   alias Sanbase.Repo
+  alias Sanbase.Timeline.TimelineEvent
+  alias Sanbase.UserList
 
   setup do
     clean_task_supervisor_children()
@@ -138,7 +138,7 @@ defmodule Sanbase.Timeline.TimelineEventTest do
     TimelineEvent.maybe_create_event_async(event_type, post, publish_changeset)
   end
 
-  defp default_trigger_settings_string_keys() do
+  defp default_trigger_settings_string_keys do
     %{
       "type" => "metric_signal",
       "metric" => "active_addresses_24h",

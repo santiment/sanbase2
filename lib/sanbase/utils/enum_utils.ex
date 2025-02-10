@@ -1,4 +1,5 @@
 defmodule Sanbase.EnumUtils do
+  @moduledoc false
   @doc ~s"""
   Execute Enum.reduce/3 over the enumerable, choosing which function to execute
   based on `limit`. Execute `success_fun` at most `limit` number of times. In the
@@ -8,8 +9,7 @@ defmodule Sanbase.EnumUtils do
     acc = Keyword.get(opts, :accumulator, [])
 
     {result, remaining_limit} =
-      enumerable
-      |> Enum.reduce({acc, limit}, fn elem, {acc, remaining} ->
+      Enum.reduce(enumerable, {acc, limit}, fn elem, {acc, remaining} ->
         case remaining do
           0 ->
             acc = limit_fun.(elem, acc)

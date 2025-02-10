@@ -1,8 +1,10 @@
 defmodule SanbaseWeb.GenericAdmin.NotificationTemplate do
+  @moduledoc false
   alias Sanbase.Notifications.Notification
+
   def schema_module, do: Sanbase.Notifications.NotificationTemplate
 
-  def resource() do
+  def resource do
     %{
       actions: [:new, :edit],
       new_fields: [:action, :step, :channel, :mime_type, :required_params, :template],

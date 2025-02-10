@@ -1,18 +1,18 @@
 defmodule Sanbase.SocialData.Sentiment do
+  @moduledoc false
   import Sanbase.Utils.ErrorHandling
 
-  require Logger
+  alias Sanbase.SocialData.SocialHelper
   alias Sanbase.Utils.Config
 
-  alias Sanbase.SocialData.SocialHelper
-
+  require Logger
   require Mockery.Macro
+
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 
   @recv_timeout 25_000
 
-  def sentiment(selector, from, to, interval, source, type)
-      when source in [:all, "all", :total] do
+  def sentiment(selector, from, to, interval, source, type) when source in [:all, "all", :total] do
     sentiment(selector, from, to, interval, SocialHelper.sources_total_string(), type)
   end
 
@@ -26,9 +26,7 @@ defmodule Sanbase.SocialData.Sentiment do
         warn_result("Error status #{status} fetching sentiment #{type} for #{inspect(selector)}")
 
       {:error, %HTTPoison.Error{} = error} ->
-        error_result(
-          "Cannot fetch sentiment #{type} data for #{inspect(selector)}: #{HTTPoison.Error.message(error)}"
-        )
+        error_result("Cannot fetch sentiment #{type} data for #{inspect(selector)}: #{HTTPoison.Error.message(error)}")
 
       {:error, error} ->
         {:error, error}
@@ -57,7 +55,8 @@ defmodule Sanbase.SocialData.Sentiment do
 
   defp sentiment_result(%{"data" => map}) do
     map =
-      Enum.map(map, fn {datetime, value} ->
+      map
+      |> Enum.map(fn {datetime, value} ->
         %{
           datetime: Sanbase.DateTimeUtils.from_iso8601!(datetime),
           value: value
@@ -68,7 +67,7 @@ defmodule Sanbase.SocialData.Sentiment do
     {:ok, map}
   end
 
-  defp metrics_hub_url() do
+  defp metrics_hub_url do
     Config.module_get(Sanbase.SocialData, :metricshub_url)
   end
 end

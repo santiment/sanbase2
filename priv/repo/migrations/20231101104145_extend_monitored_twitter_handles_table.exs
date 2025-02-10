@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.ExtendMonitoredTwitterHandlesTable do
+  @moduledoc false
   use Ecto.Migration
 
   def change do

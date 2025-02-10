@@ -1,5 +1,7 @@
 defmodule Sanbase.Repo.Migrations.AddContractAddressesTable do
+  @moduledoc false
   use Ecto.Migration
+
   @table "contract_addresses"
   def change do
     create table(@table) do

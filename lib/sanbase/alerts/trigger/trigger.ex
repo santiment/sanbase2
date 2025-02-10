@@ -41,6 +41,7 @@ defmodule Sanbase.Alert.Trigger do
   import Ecto.Changeset
 
   alias __MODULE__
+  alias Sanbase.Alert.Settings
   alias Sanbase.DateTimeUtils
 
   embedded_schema do
@@ -124,7 +125,7 @@ defmodule Sanbase.Alert.Trigger do
         {:ok, %{trigger | settings: settings}}
 
       _ ->
-        case Sanbase.Alert.Settings.evaluate(trigger_settings, trigger) do
+        case Settings.evaluate(trigger_settings, trigger) do
           {:ok, trigger_settings} ->
             trigger = %Trigger{trigger | settings: trigger_settings}
             {:ok, trigger}
@@ -141,11 +142,11 @@ defmodule Sanbase.Alert.Trigger do
   end
 
   def triggered?(%Trigger{settings: trigger_settings}) do
-    Sanbase.Alert.Settings.triggered?(trigger_settings)
+    Settings.triggered?(trigger_settings)
   end
 
   def cache_key(%Trigger{settings: trigger_settings}) do
-    Sanbase.Alert.Settings.cache_key(trigger_settings)
+    Settings.cache_key(trigger_settings)
   end
 
   def last_triggered(%Trigger{last_triggered: lt}, _target) when map_size(lt) == 0, do: nil
@@ -153,7 +154,7 @@ defmodule Sanbase.Alert.Trigger do
   def last_triggered(%Trigger{last_triggered: lt}, target) do
     case Map.get(lt, target) do
       nil -> nil
-      last_triggered -> last_triggered |> DateTimeUtils.from_iso8601!()
+      last_triggered -> DateTimeUtils.from_iso8601!(last_triggered)
     end
   end
 
@@ -163,10 +164,10 @@ defmodule Sanbase.Alert.Trigger do
         false
 
       %DateTime{} = target_last_triggered ->
-        DateTime.compare(
+        DateTime.after?(
           DateTimeUtils.after_interval(trigger.cooldown, target_last_triggered),
-          Timex.now()
-        ) == :gt
+          DateTime.utc_now()
+        )
     end
   end
 
@@ -174,8 +175,7 @@ defmodule Sanbase.Alert.Trigger do
     type
     |> String.replace("_", " ")
     |> String.split()
-    |> Enum.map(&String.capitalize/1)
-    |> Enum.join(" ")
+    |> Enum.map_join(" ", &String.capitalize/1)
   end
 
   defp remove_targets_on_cooldown(%{user_list: user_list_id}, trigger) do
@@ -209,41 +209,37 @@ defmodule Sanbase.Alert.Trigger do
         "or" -> Sanbase.Project.List.by_market_segment_any_of(market_segments)
       end
 
-    Enum.map(projects, & &1.slug)
+    projects
+    |> Enum.map(& &1.slug)
     |> remove_targets_on_cooldown(trigger, :slug)
   end
 
-  defp remove_targets_on_cooldown(%{slug: slug}, trigger)
-       when is_binary(slug) or is_list(slug) do
+  defp remove_targets_on_cooldown(%{slug: slug}, trigger) when is_binary(slug) or is_list(slug) do
     slug
     |> List.wrap()
     |> remove_targets_on_cooldown(trigger, :slug)
   end
 
-  defp remove_targets_on_cooldown(%{word: slug}, trigger)
-       when is_binary(slug) or is_list(slug) do
+  defp remove_targets_on_cooldown(%{word: slug}, trigger) when is_binary(slug) or is_list(slug) do
     slug
     |> List.wrap()
     |> remove_targets_on_cooldown(trigger, :word)
   end
 
-  defp remove_targets_on_cooldown(%{text: text}, trigger)
-       when is_binary(text) do
+  defp remove_targets_on_cooldown(%{text: text}, trigger) when is_binary(text) do
     text
     |> List.wrap()
     |> remove_targets_on_cooldown(trigger, :text)
   end
 
-  defp remove_targets_on_cooldown(%{eth_address: address}, trigger)
-       when is_binary(address) or is_list(address) do
+  defp remove_targets_on_cooldown(%{eth_address: address}, trigger) when is_binary(address) or is_list(address) do
     address
     |> List.wrap()
     |> Enum.map(&Sanbase.BlockchainAddress.to_internal_format/1)
     |> remove_targets_on_cooldown(trigger, :eth_address)
   end
 
-  defp remove_targets_on_cooldown(%{address: address}, trigger)
-       when is_binary(address) or is_list(address) do
+  defp remove_targets_on_cooldown(%{address: address}, trigger) when is_binary(address) or is_list(address) do
     address
     |> List.wrap()
     |> Enum.map(&Sanbase.BlockchainAddress.to_internal_format/1)
@@ -257,9 +253,7 @@ defmodule Sanbase.Alert.Trigger do
   end
 
   defp remove_targets_on_cooldown(target_list, trigger, type) when is_list(target_list) do
-    target_list =
-      target_list
-      |> Enum.reject(&Sanbase.Alert.Trigger.has_cooldown?(trigger, &1))
+    target_list = Enum.reject(target_list, &Sanbase.Alert.Trigger.has_cooldown?(trigger, &1))
 
     %{list: target_list, type: type}
   end

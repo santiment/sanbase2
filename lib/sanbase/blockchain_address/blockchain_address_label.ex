@@ -1,4 +1,5 @@
 defmodule Sanbase.BlockchainAddress.BlockchainAddressLabel do
+  @moduledoc false
   use Ecto.Schema
 
   import Ecto.Changeset
@@ -21,8 +22,7 @@ defmodule Sanbase.BlockchainAddress.BlockchainAddressLabel do
     |> Enum.reduce(
       Ecto.Multi.new(),
       fn {changeset, offset}, multi ->
-        multi
-        |> Ecto.Multi.insert(offset, changeset,
+        Ecto.Multi.insert(multi, offset, changeset,
           on_conflict: {:replace, [:name]},
           conflict_target: [:name],
           returning: true

@@ -5,8 +5,10 @@ defmodule SanbaseWeb.Graphql.ExchangeMetricsApiTest do
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
+  alias Sanbase.Clickhouse.ExchangeAddress
+
   setup_with_mocks([
-    {Sanbase.Clickhouse.ExchangeAddress, [:passthrough],
+    {ExchangeAddress, [:passthrough],
      exchange_addresses: fn _ ->
        {:ok,
         [
@@ -16,7 +18,7 @@ defmodule SanbaseWeb.Graphql.ExchangeMetricsApiTest do
         ]}
      end},
     {
-      Sanbase.Clickhouse.ExchangeAddress,
+      ExchangeAddress,
       [:passthrough],
       exchange_names: fn _, _ -> {:ok, ["Binance", "Bitfinex"]} end
     }
@@ -33,20 +35,19 @@ defmodule SanbaseWeb.Graphql.ExchangeMetricsApiTest do
       exchange: "Binance",
       project: project,
       conn: conn,
-      from: Timex.shift(Timex.now(), days: -10),
-      to: Timex.now()
+      from: Timex.shift(DateTime.utc_now(), days: -10),
+      to: DateTime.utc_now()
     ]
   end
 
   test "test all exchanges", context do
     query = ~s/{ allExchanges(slug: "ethereum") }/
 
-    response =
-      context.conn
-      |> post("/graphql", query_skeleton(query, "allExchanges"))
+    response = post(context.conn, "/graphql", query_skeleton(query, "allExchanges"))
 
     exchanges =
-      json_response(response, 200)
+      response
+      |> json_response(200)
       |> get_in(["data", "allExchanges"])
 
     assert Enum.sort(exchanges) == Enum.sort(["Binance", "Bitfinex"])
@@ -66,7 +67,7 @@ defmodule SanbaseWeb.Graphql.ExchangeMetricsApiTest do
           100.0,
           -300.0,
           1000.0,
-          dt |> DateTime.to_unix()
+          DateTime.to_unix(dt)
         ],
         [
           "bitfinex",
@@ -75,11 +76,12 @@ defmodule SanbaseWeb.Graphql.ExchangeMetricsApiTest do
           20.0,
           -600.0,
           12_000.0,
-          dt |> DateTime.to_unix()
+          DateTime.to_unix(dt)
         ]
       ]
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+      (&Sanbase.ClickhouseRepo.query/2)
+      |> Sanbase.Mock.prepare_mock2({:ok, %{rows: rows}})
       |> Sanbase.Mock.run_with_mocks(fn ->
         result = execute_query(context.conn, query, "topExchangesByBalance")
 
@@ -91,7 +93,7 @@ defmodule SanbaseWeb.Graphql.ExchangeMetricsApiTest do
                  "balanceChange7d" => -300.0,
                  "balanceChange30d" => 1000.0,
                  "datetimeOfFirstTransfer" => DateTime.to_iso8601(dt),
-                 "daysSinceFirstTransfer" => DateTime.diff(dt, now, :day) |> abs()
+                 "daysSinceFirstTransfer" => dt |> DateTime.diff(now, :day) |> abs()
                } in result
 
         assert %{
@@ -100,7 +102,7 @@ defmodule SanbaseWeb.Graphql.ExchangeMetricsApiTest do
                  "balanceChange7d" => -600.0,
                  "balanceChange30d" => 12_000.0,
                  "datetimeOfFirstTransfer" => DateTime.to_iso8601(dt),
-                 "daysSinceFirstTransfer" => DateTime.diff(dt, now, :day) |> abs(),
+                 "daysSinceFirstTransfer" => dt |> DateTime.diff(now, :day) |> abs(),
                  "label" => "santiment/centralized_exchange:v1",
                  "owner" => "bitfinex"
                } in result

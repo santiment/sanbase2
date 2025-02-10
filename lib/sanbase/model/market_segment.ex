@@ -1,6 +1,9 @@
 defmodule Sanbase.Model.MarketSegment do
+  @moduledoc false
   use Ecto.Schema
+
   import Ecto.Changeset
+
   alias Sanbase.Model.MarketSegment
   alias Sanbase.Project
 
@@ -25,5 +28,5 @@ defmodule Sanbase.Model.MarketSegment do
     |> unique_constraint(:name)
   end
 
-  def all(), do: Sanbase.Repo.all(__MODULE__)
+  def all, do: Sanbase.Repo.all(__MODULE__)
 end

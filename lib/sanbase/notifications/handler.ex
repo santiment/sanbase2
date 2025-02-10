@@ -1,8 +1,11 @@
 defmodule Sanbase.Notifications.Handler do
+  @moduledoc false
   import Ecto.Query
   import Sanbase.DateTimeUtils, only: [seconds_after: 1]
 
-  alias Sanbase.{Repo, Notifications.Notification}
+  alias Sanbase.Notifications.Notification
+  alias Sanbase.Notifications.Workers.ProcessNotification
+  alias Sanbase.Repo
 
   # The metric registry events and manual notifications come from admin pod, so we use the admin Oban config
   @oban_conf_name :oban_admin
@@ -141,15 +144,14 @@ defmodule Sanbase.Notifications.Handler do
           end
 
         job =
-          Sanbase.Notifications.Workers.ProcessNotification.new(job_args,
+          ProcessNotification.new(job_args,
             scheduled_at: scheduled_at
           )
 
         {:ok, %{id: job_id}} = Oban.insert(@oban_conf_name, job)
         {:ok, job_id}
       end)
-      |> Ecto.Multi.run(:update_notification, fn _repo,
-                                                 %{notification: notification, oban_job: job_id} ->
+      |> Ecto.Multi.run(:update_notification, fn _repo, %{notification: notification, oban_job: job_id} ->
         Notification.update(notification, %{job_id: job_id})
       end)
 
@@ -202,7 +204,7 @@ defmodule Sanbase.Notifications.Handler do
         }
 
         job =
-          Sanbase.Notifications.Workers.ProcessNotification.new(job_args,
+          ProcessNotification.new(job_args,
             scheduled_at: seconds_after(5)
           )
 
@@ -210,8 +212,7 @@ defmodule Sanbase.Notifications.Handler do
 
         {:ok, job_id}
       end)
-      |> Ecto.Multi.run(:update_notification, fn _repo,
-                                                 %{notification: notification, oban_job: job_id} ->
+      |> Ecto.Multi.run(:update_notification, fn _repo, %{notification: notification, oban_job: job_id} ->
         Notification.update(notification, %{job_id: job_id})
       end)
 
@@ -239,8 +240,7 @@ defmodule Sanbase.Notifications.Handler do
     }
 
     multi =
-      Ecto.Multi.new()
-      |> Ecto.Multi.run(:notification, fn _repo, _changes ->
+      Ecto.Multi.run(Ecto.Multi.new(), :notification, fn _repo, _changes ->
         Notification.create(notification_attrs)
       end)
 
@@ -297,7 +297,7 @@ defmodule Sanbase.Notifications.Handler do
         }
 
         job =
-          Sanbase.Notifications.Workers.ProcessNotification.new(job_args,
+          ProcessNotification.new(job_args,
             scheduled_at: seconds_after(5)
           )
 
@@ -305,8 +305,7 @@ defmodule Sanbase.Notifications.Handler do
 
         {:ok, job_id}
       end)
-      |> Ecto.Multi.run(:update_notification, fn _repo,
-                                                 %{notification: notification, oban_job: job_id} ->
+      |> Ecto.Multi.run(:update_notification, fn _repo, %{notification: notification, oban_job: job_id} ->
         Notification.update(notification, %{job_id: job_id})
       end)
 
@@ -341,11 +340,11 @@ defmodule Sanbase.Notifications.Handler do
         where: n.metric_registry_id == ^metric_registry_id and n.status == "scheduled"
       )
 
-    all_job_ids = from(n in all_scheduled_notifications, select: n.job_id) |> Repo.all()
+    all_job_ids = Repo.all(from(n in all_scheduled_notifications, select: n.job_id))
 
     # Cancel all Oban jobs
     if all_job_ids != [] do
-      query = Oban.Job |> where([j], j.id in ^all_job_ids)
+      query = where(Oban.Job, [j], j.id in ^all_job_ids)
       Oban.cancel_all_jobs(:oban_web, query)
     end
 

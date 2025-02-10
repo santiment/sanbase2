@@ -1,4 +1,5 @@
 defmodule Sanbase.SanLang.Kernel do
+  @moduledoc false
   alias Sanbase.SanLang.Environment
   alias Sanbase.SanLang.Interpreter
 
@@ -21,7 +22,8 @@ defmodule Sanbase.SanLang.Kernel do
   end
 
   def map(enumerable, {:lambda_fn, _args, _body} = lambda_fn, %Environment{} = env) do
-    reduce(enumerable, lambda_fn, env)
+    enumerable
+    |> reduce(lambda_fn, env)
     |> Enum.reverse()
   end
 
@@ -45,7 +47,8 @@ defmodule Sanbase.SanLang.Kernel do
   end
 
   def flat_map(enumerable, {:lambda_fn, _args, _body} = lambda_fn, %Environment{} = env) do
-    reduce(enumerable, lambda_fn, env)
+    enumerable
+    |> reduce(lambda_fn, env)
     |> flat_reverse([])
   end
 

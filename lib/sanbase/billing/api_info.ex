@@ -9,7 +9,7 @@ defmodule Sanbase.Billing.ApiInfo do
   # proper error location to be revealed
   # @query_type %{fields: %{}}
   @query_type Absinthe.Schema.lookup_type(SanbaseWeb.Graphql.Schema, :query)
-  @fields @query_type.fields |> Map.keys()
+  @fields Map.keys(@query_type.fields)
 
   @type query_or_argument_tuple ::
           {:query, Atom.t()} | {:metric, String.t()} | {:signal, String.t()}
@@ -24,7 +24,7 @@ defmodule Sanbase.Billing.ApiInfo do
   is the min plan in which the metric is available.
   """
   @spec min_plan_map() :: %{query_or_argument_tuple => product_min_plan_map}
-  def min_plan_map() do
+  def min_plan_map do
     # Metadata looks like this:
     # meta(access: :restricted, min_plan: [sanapi: "PRO", sanbase: "FREE"])
     query_min_plan_map = get_query_min_plan_map()
@@ -47,7 +47,7 @@ defmodule Sanbase.Billing.ApiInfo do
 
     Enum.filter(@fields, fn f ->
       Enum.all?(field_value_pairs, fn {field, value} ->
-        Map.get(@query_type.fields, f) |> Absinthe.Type.meta(field) == value
+        @query_type.fields |> Map.get(f) |> Absinthe.Type.meta(field) == value
       end)
     end)
   end
@@ -55,7 +55,8 @@ defmodule Sanbase.Billing.ApiInfo do
   def get_all_with_access_level(level) do
     # List of {:query, atom()}
     queries_with_access_level =
-      get_queries_with_access_level(level)
+      level
+      |> get_queries_with_access_level()
       |> Enum.map(&{:query, &1})
 
     # List of {:signal, String.t()}
@@ -86,7 +87,7 @@ defmodule Sanbase.Billing.ApiInfo do
     end)
   end
 
-  def get_queries_without_access_level() do
+  def get_queries_without_access_level do
     get_queries_with_access_level(nil) -- [:__typename, :__type, :__schema]
   end
 
@@ -97,13 +98,14 @@ defmodule Sanbase.Billing.ApiInfo do
   # Private functions
   defp get_query_meta_field_list(field) do
     Enum.map(@fields, fn f ->
-      {f, Map.get(@query_type.fields, f) |> Absinthe.Type.meta(field)}
+      {f, @query_type.fields |> Map.get(f) |> Absinthe.Type.meta(field)}
     end)
   end
 
-  defp get_query_min_plan_map() do
-    get_query_meta_field_list(:min_plan)
-    |> Enum.into(%{}, fn
+  defp get_query_min_plan_map do
+    :min_plan
+    |> get_query_meta_field_list()
+    |> Map.new(fn
       {query, kw_list} when is_list(kw_list) ->
         {{:query, query},
          %{
@@ -116,9 +118,8 @@ defmodule Sanbase.Billing.ApiInfo do
     end)
   end
 
-  defp get_metric_min_plan_map() do
-    Sanbase.Metric.min_plan_map()
-    |> Enum.into(%{}, fn
+  defp get_metric_min_plan_map do
+    Map.new(Sanbase.Metric.min_plan_map(), fn
       {metric, product_plan_map} when is_map(product_plan_map) ->
         {{:metric, metric}, product_plan_map}
 
@@ -127,9 +128,8 @@ defmodule Sanbase.Billing.ApiInfo do
     end)
   end
 
-  defp get_signal_min_plan_map() do
-    Sanbase.Signal.min_plan_map()
-    |> Enum.into(%{}, fn
+  defp get_signal_min_plan_map do
+    Map.new(Sanbase.Signal.min_plan_map(), fn
       {signal, product_plan_map} when is_map(product_plan_map) ->
         {{:signal, signal}, product_plan_map}
 

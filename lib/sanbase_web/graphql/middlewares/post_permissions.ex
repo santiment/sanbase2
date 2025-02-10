@@ -1,8 +1,8 @@
 defmodule SanbaseWeb.Graphql.Middlewares.PostPermissions do
+  @moduledoc false
   @behaviour Absinthe.Middleware
 
   alias Absinthe.Resolution
-
   alias SanbaseWeb.Graphql.Helpers.Utils
 
   @allowed_fields_for_anon_users [
@@ -26,8 +26,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.PostPermissions do
 
   def call(resolution, _) do
     if has_not_allowed_fields?(resolution) do
-      resolution
-      |> Resolution.put_result({:error, :unauthorized})
+      Resolution.put_result(resolution, {:error, :unauthorized})
     else
       resolution
     end

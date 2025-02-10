@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.Middlewares.BasicAuth do
+  @moduledoc false
   @behaviour Absinthe.Middleware
 
   alias Absinthe.Resolution
@@ -8,7 +9,6 @@ defmodule SanbaseWeb.Graphql.Middlewares.BasicAuth do
   end
 
   def call(resolution, _) do
-    resolution
-    |> Resolution.put_result({:error, :unauthorized})
+    Resolution.put_result(resolution, {:error, :unauthorized})
   end
 end

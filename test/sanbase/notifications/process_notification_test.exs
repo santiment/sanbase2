@@ -1,9 +1,11 @@
 defmodule Sanbase.Notifications.ProcessNotificationTest do
   use Sanbase.DataCase, async: false
+
   import Mox
   import Sanbase.NotificationsFixtures
 
-  alias Sanbase.Notifications.{Notification, Workers.ProcessNotification}
+  alias Sanbase.Notifications.Notification
+  alias Sanbase.Notifications.Workers.ProcessNotification
 
   setup do
     # Set up any necessary mocks or test data

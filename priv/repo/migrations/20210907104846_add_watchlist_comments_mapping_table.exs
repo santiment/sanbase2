@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddWatchlistCommentsMappingTable do
+  @moduledoc false
   use Ecto.Migration
 
   @table :watchlist_comments_mapping

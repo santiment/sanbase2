@@ -10,8 +10,8 @@ defmodule Sanbase.SocialData.MetricAdapter do
   import Sanbase.Metric.Transform
   import Sanbase.Utils.ErrorHandling, only: [not_implemented_function_for_metric_error: 2]
 
-  alias Sanbase.SocialData.SocialHelper
   alias Sanbase.Project
+  alias Sanbase.SocialData.SocialHelper
 
   @aggregations [:sum, :avg]
   @sources ["total"] ++ SocialHelper.sources()
@@ -58,12 +58,12 @@ defmodule Sanbase.SocialData.MetricAdapter do
   # plan related - the plan is upcase string
   @min_plan_map Enum.reduce(@metrics, %{}, fn metric, acc -> Map.put(acc, metric, "FREE") end)
 
-  @access_map @metrics
-              |> Enum.reduce(%{}, fn metric, acc ->
+  @access_map Enum.reduce(@metrics, %{}, fn metric, acc ->
                 Map.put(acc, metric, :restricted)
               end)
 
-  @required_selectors Enum.into(@metrics, %{}, &{&1, []})
+  @required_selectors @metrics
+                      |> Map.new(&{&1, []})
                       |> Map.put("social_active_users", [[:source]])
 
   @default_complexity_weight 1
@@ -75,7 +75,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
   def complexity_weight(_), do: @default_complexity_weight
 
   @impl Sanbase.Metric.Behaviour
-  def required_selectors(), do: @required_selectors
+  def required_selectors, do: @required_selectors
 
   @impl Sanbase.Metric.Behaviour
   def broken_data(_metric, _selector, _from, _to), do: {:ok, []}
@@ -86,9 +86,8 @@ defmodule Sanbase.SocialData.MetricAdapter do
   @impl Sanbase.Metric.Behaviour
   def timeseries_data("nft_social_volume", selector, from, to, interval, _opts)
       when is_supported_nft_sv_selector(selector) do
-    Sanbase.SocialData.social_volume(selector, from, to, interval, "total",
-      metric: "nft_social_volume"
-    )
+    selector
+    |> Sanbase.SocialData.social_volume(from, to, interval, "total", metric: "nft_social_volume")
     |> transform_to_value_pairs(:mentions_count)
   end
 
@@ -102,27 +101,19 @@ defmodule Sanbase.SocialData.MetricAdapter do
      """}
   end
 
-  def timeseries_data(
-        "nft_social_volume",
-        %{contract_address: contract} = selector,
-        from,
-        to,
-        interval,
-        _opts
-      )
+  def timeseries_data("nft_social_volume", %{contract_address: contract} = selector, from, to, interval, _opts)
       when is_binary(contract) do
-    Sanbase.SocialData.social_volume(selector, from, to, interval, "total",
-      metric: "nft_social_volume"
-    )
+    selector
+    |> Sanbase.SocialData.social_volume(from, to, interval, "total", metric: "nft_social_volume")
     |> transform_to_value_pairs(:mentions_count)
   end
 
   @impl Sanbase.Metric.Behaviour
-  def timeseries_data(metric, selector, from, to, interval, _opts)
-      when metric in @social_volume_timeseries_metrics do
+  def timeseries_data(metric, selector, from, to, interval, _opts) when metric in @social_volume_timeseries_metrics do
     "social_volume_" <> source = metric
 
-    Sanbase.SocialData.social_volume(selector, from, to, interval, source)
+    selector
+    |> Sanbase.SocialData.social_volume(from, to, interval, source)
     |> transform_to_value_pairs(:mentions_count)
   end
 
@@ -130,7 +121,8 @@ defmodule Sanbase.SocialData.MetricAdapter do
       when metric in @social_dominance_timeseries_metrics do
     "social_dominance_" <> source = metric
 
-    Sanbase.SocialData.social_dominance(selector, from, to, interval, source)
+    selector
+    |> Sanbase.SocialData.social_dominance(from, to, interval, source)
     |> transform_to_value_pairs(:dominance)
   end
 
@@ -138,16 +130,17 @@ defmodule Sanbase.SocialData.MetricAdapter do
       when metric in @community_messages_count_timeseries_metrics do
     "community_messages_count_" <> source = metric
 
-    Sanbase.SocialData.community_messages_count(selector, from, to, interval, source)
+    selector
+    |> Sanbase.SocialData.community_messages_count(from, to, interval, source)
     |> transform_to_value_pairs(:mentions_count)
   end
 
-  def timeseries_data(metric, %{} = selector, from, to, interval, _opts)
-      when metric in @sentiment_timeseries_metrics do
+  def timeseries_data(metric, %{} = selector, from, to, interval, _opts) when metric in @sentiment_timeseries_metrics do
     "sentiment_" <> type_source = metric
     {type, source} = SocialHelper.split_by_source(type_source)
 
-    Sanbase.SocialData.sentiment(selector, from, to, interval, source, type)
+    selector
+    |> Sanbase.SocialData.sentiment(from, to, interval, source, type)
     |> transform_to_value_pairs(:value)
   end
 
@@ -165,25 +158,24 @@ defmodule Sanbase.SocialData.MetricAdapter do
   def aggregated_timeseries_data(metric, selector, from, to, opts) do
     slug = Map.get(selector, :slug)
 
-    case is_nil(slug) or is_binary(slug) do
-      false ->
-        {:error, "Aggregated timeseries data is not supported for lists of slugs."}
+    if is_nil(slug) or is_binary(slug) do
+      case timeseries_data(metric, selector, from, to, "1h", opts) do
+        {:ok, result} ->
+          {:ok, metadata} = metadata(metric)
+          aggregation = Keyword.get(opts, :aggregation) || metadata.default_aggregation
 
-      true ->
-        case timeseries_data(metric, selector, from, to, "1h", opts) do
-          {:ok, result} ->
-            {:ok, metadata} = metadata(metric)
-            aggregation = Keyword.get(opts, :aggregation) || metadata.default_aggregation
+          value =
+            result
+            |> Sanbase.MathAggregation.compute(aggregation, & &1.value)
+            |> Sanbase.Math.round_float()
 
-            value =
-              Sanbase.MathAggregation.compute(result, aggregation, & &1.value)
-              |> Sanbase.Math.round_float()
+          {:ok, %{value: value}}
 
-            {:ok, %{value: value}}
-
-          {:error, error} ->
-            {:error, error}
-        end
+        {:error, error} ->
+          {:error, error}
+      end
+    else
+      {:error, "Aggregated timeseries data is not supported for lists of slugs."}
     end
   end
 
@@ -200,19 +192,18 @@ defmodule Sanbase.SocialData.MetricAdapter do
   @impl Sanbase.Metric.Behaviour
   def human_readable_name(metric) when metric in @metrics do
     human_readable_name =
-      String.split(metric, "_")
-      |> Enum.map(&String.capitalize/1)
-      |> Enum.join(" ")
+      metric
+      |> String.split("_")
+      |> Enum.map_join(" ", &String.capitalize/1)
 
     {:ok, human_readable_name}
   end
 
   @impl Sanbase.Metric.Behaviour
-  def available_aggregations(), do: @aggregations
+  def available_aggregations, do: @aggregations
 
   @impl Sanbase.Metric.Behaviour
-  def available_slugs(),
-    do: {:ok, Project.List.projects_slugs(preload?: false)}
+  def available_slugs, do: {:ok, Project.List.projects_slugs(preload?: false)}
 
   @impl Sanbase.Metric.Behaviour
   def available_slugs(metric) do
@@ -225,7 +216,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
           Project.List.projects_slugs(preload?: false)
 
         "community_messages_count_" <> _source ->
-          Project.List.projects_by_non_null_field(:telegram_link) |> Enum.map(& &1.slug)
+          :telegram_link |> Project.List.projects_by_non_null_field() |> Enum.map(& &1.slug)
 
         metric ->
           {:ok, %{available_selectors: selectors}} = metadata(metric)
@@ -239,16 +230,16 @@ defmodule Sanbase.SocialData.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def available_timeseries_metrics(), do: @timeseries_metrics
+  def available_timeseries_metrics, do: @timeseries_metrics
 
   @impl Sanbase.Metric.Behaviour
-  def available_histogram_metrics(), do: @histogram_metrics
+  def available_histogram_metrics, do: @histogram_metrics
 
   @impl Sanbase.Metric.Behaviour
-  def available_table_metrics(), do: @table_metrics
+  def available_table_metrics, do: @table_metrics
 
   @impl Sanbase.Metric.Behaviour
-  def available_metrics(), do: @metrics
+  def available_metrics, do: @metrics
 
   @impl Sanbase.Metric.Behaviour
   def available_metrics(%{address: _address}), do: []
@@ -263,9 +254,10 @@ defmodule Sanbase.SocialData.MetricAdapter do
   def available_metrics(%{slug: slug}) do
     with %Project{telegram_link: telegram_link} <- Project.by_slug(slug, preload?: false) do
       metrics =
-        case is_binary(telegram_link) do
-          true -> @metrics
-          false -> @metrics -- @community_messages_count_timeseries_metrics
+        if is_binary(telegram_link) do
+          @metrics
+        else
+          @metrics -- @community_messages_count_timeseries_metrics
         end
 
       # These two metrics are not available for `slug` but for other selectors
@@ -274,19 +266,19 @@ defmodule Sanbase.SocialData.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def incomplete_metrics(), do: []
+  def incomplete_metrics, do: []
 
   @impl Sanbase.Metric.Behaviour
-  def free_metrics(), do: []
+  def free_metrics, do: []
 
   @impl Sanbase.Metric.Behaviour
-  def restricted_metrics(), do: @metrics
+  def restricted_metrics, do: @metrics
 
   @impl Sanbase.Metric.Behaviour
-  def access_map(), do: @access_map
+  def access_map, do: @access_map
 
   @impl Sanbase.Metric.Behaviour
-  def min_plan_map(), do: @min_plan_map
+  def min_plan_map, do: @min_plan_map
 
   @impl Sanbase.Metric.Behaviour
   def metadata(metric) do
@@ -338,11 +330,11 @@ defmodule Sanbase.SocialData.MetricAdapter do
 
   def first_datetime(metric, _selector) do
     {_metric, source} = SocialHelper.split_by_source(metric)
-    source |> source_first_datetime()
+    source_first_datetime(source)
   end
 
   @impl Sanbase.Metric.Behaviour
-  def last_datetime_computed_at(_metric, _selector), do: {:ok, Timex.now()}
+  def last_datetime_computed_at(_metric, _selector), do: {:ok, DateTime.utc_now()}
 
   # Private functions
   # total has the datetime of the earliest of all - bitcointalk

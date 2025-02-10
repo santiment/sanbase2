@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.UserFormsComponents do
+  @moduledoc false
   use Phoenix.Component
 
   attr(:ecosystems, :list, required: true)

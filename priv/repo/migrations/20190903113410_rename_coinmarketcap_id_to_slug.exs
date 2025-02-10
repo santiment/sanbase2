@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.RenameCoinmarketcapIdToSlug do
+  @moduledoc false
   use Ecto.Migration
 
   @table "project"

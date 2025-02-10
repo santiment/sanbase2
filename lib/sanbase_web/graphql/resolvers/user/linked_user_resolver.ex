@@ -1,7 +1,10 @@
 defmodule SanbaseWeb.Graphql.Resolvers.LinkedUserResolver do
+  @moduledoc false
+  alias Sanbase.Accounts.LinkedUser
+  alias Sanbase.Accounts.LinkedUserCandidate
   alias Sanbase.Accounts.User
-  alias Sanbase.Billing.{Product, Subscription}
-  alias Sanbase.Accounts.{LinkedUser, LinkedUserCandidate}
+  alias Sanbase.Billing.Product
+  alias Sanbase.Billing.Subscription
 
   def generate_linked_users_token(_root, args, %{context: %{auth: %{current_user: user}}}) do
     with {:ok, %{token: token}} <- LinkedUserCandidate.create(user.id, args.secondary_user_id) do

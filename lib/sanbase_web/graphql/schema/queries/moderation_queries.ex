@@ -4,8 +4,8 @@ defmodule SanbaseWeb.Graphql.Schema.ModerationQueries do
   """
   use Absinthe.Schema.Notation
 
-  alias SanbaseWeb.Graphql.Resolvers.ModerationResolver
   alias SanbaseWeb.Graphql.Middlewares.JWTModeratorAuth
+  alias SanbaseWeb.Graphql.Resolvers.ModerationResolver
 
   object :moderation_mutations do
     field :moderate_featured, :boolean do

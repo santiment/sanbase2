@@ -4,17 +4,14 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
   """
   use Absinthe.Schema.Notation
 
-  alias SanbaseWeb.Graphql.Resolvers.{
-    AccessControlResolver,
-    ApikeyResolver,
-    TelegramResolver,
-    UserFollowerResolver,
-    UserResolver,
-    UserSettingsResolver
-  }
-
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
   alias SanbaseWeb.Graphql.Middlewares.UserAuth
+  alias SanbaseWeb.Graphql.Resolvers.AccessControlResolver
+  alias SanbaseWeb.Graphql.Resolvers.ApikeyResolver
+  alias SanbaseWeb.Graphql.Resolvers.TelegramResolver
+  alias SanbaseWeb.Graphql.Resolvers.UserFollowerResolver
+  alias SanbaseWeb.Graphql.Resolvers.UserResolver
+  alias SanbaseWeb.Graphql.Resolvers.UserSettingsResolver
 
   object :user_queries do
     @desc "Returns the user currently logged in."

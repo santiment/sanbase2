@@ -1,6 +1,9 @@
 defmodule SanbaseWeb.GenericAdmin.Post do
+  @moduledoc false
   import Ecto.Query
+
   alias Sanbase.Insight.Post
+
   def schema_module, do: Post
 
   @index_fields ~w(id title is_featured is_pulse state ready_state moderation_comment user_id)a
@@ -36,9 +39,7 @@ defmodule SanbaseWeb.GenericAdmin.Post do
   end
 
   def has_many(post) do
-    post =
-      post
-      |> Sanbase.Repo.preload([:tags, :votes, :comments])
+    post = Sanbase.Repo.preload(post, [:tags, :votes, :comments])
 
     [
       %{
@@ -68,7 +69,7 @@ defmodule SanbaseWeb.GenericAdmin.Post do
   end
 
   def after_filter(post, params) do
-    is_featured = params["is_featured"] |> String.to_existing_atom()
+    is_featured = String.to_existing_atom(params["is_featured"])
     Sanbase.FeaturedItem.update_item(post, is_featured)
   end
 
@@ -86,7 +87,9 @@ defmodule SanbaseWeb.GenericAdmin.Post do
 end
 
 defmodule SanbaseWeb.GenericAdmin.PostTags do
+  @moduledoc false
   import Ecto.Query
+
   def schema_module, do: Sanbase.Insight.PostTag
 
   def resource do
@@ -115,7 +118,9 @@ defmodule SanbaseWeb.GenericAdmin.PostTags do
 end
 
 defmodule SanbaseWeb.GenericAdmin.Tag do
+  @moduledoc false
   alias Sanbase.Tag
+
   def schema_module, do: Tag
 
   def resource do
@@ -130,7 +135,9 @@ defmodule SanbaseWeb.GenericAdmin.Tag do
 end
 
 defmodule SanbaseWeb.GenericAdmin.PostComment do
+  @moduledoc false
   import Ecto.Query
+
   def schema_module, do: Sanbase.Comment.PostComment
 
   def resource do
@@ -167,7 +174,9 @@ defmodule SanbaseWeb.GenericAdmin.PostComment do
 end
 
 defmodule SanbaseWeb.GenericAdmin.Comment do
+  @moduledoc false
   import Ecto.Query
+
   def schema_module, do: Sanbase.Comment
 
   def resource do
@@ -222,9 +231,12 @@ defmodule SanbaseWeb.GenericAdmin.Comment do
 end
 
 defmodule SanbaseWeb.GenericAdmin.UserTrigger do
+  @moduledoc false
   import Ecto.Query
 
-  def schema_module, do: Sanbase.Alert.UserTrigger
+  alias Sanbase.Alert.UserTrigger
+
+  def schema_module, do: UserTrigger
 
   def resource do
     %{
@@ -246,20 +258,21 @@ defmodule SanbaseWeb.GenericAdmin.UserTrigger do
         },
         trigger: %{
           value_modifier: fn trigger ->
-            Map.from_struct(trigger) |> Jason.encode!(pretty: true)
+            trigger |> Map.from_struct() |> Jason.encode!(pretty: true)
           end
         },
         is_featured: %{
           type: :boolean,
           search_query:
-            from(
-              ut in Sanbase.Alert.UserTrigger,
-              left_join: featured_item in Sanbase.FeaturedItem,
-              on: ut.id == featured_item.user_trigger_id,
-              where: not is_nil(featured_item.id),
-              preload: [:user]
+            distinct(
+              from(ut in UserTrigger,
+                left_join: featured_item in Sanbase.FeaturedItem,
+                on: ut.id == featured_item.user_trigger_id,
+                where: not is_nil(featured_item.id),
+                preload: [:user]
+              ),
+              true
             )
-            |> distinct(true)
         }
       }
     }
@@ -272,24 +285,26 @@ defmodule SanbaseWeb.GenericAdmin.UserTrigger do
     %{
       trigger
       | is_featured: is_featured,
-        is_public: Sanbase.Alert.UserTrigger.public?(trigger)
+        is_public: UserTrigger.public?(trigger)
     }
   end
 
   # TODO propagate errors from before/after filters to users
   def after_filter(trigger, params) do
     trigger =
-      Sanbase.Alert.UserTrigger.update_changeset(trigger, %{
-        trigger: %{is_public: params["is_public"] |> String.to_existing_atom()}
+      trigger
+      |> UserTrigger.update_changeset(%{
+        trigger: %{is_public: String.to_existing_atom(params["is_public"])}
       })
       |> Sanbase.Repo.update!()
 
-    is_featured = params["is_featured"] |> String.to_existing_atom()
+    is_featured = String.to_existing_atom(params["is_featured"])
     Sanbase.FeaturedItem.update_item(trigger, is_featured)
   end
 end
 
 defmodule SanbaseWeb.GenericAdmin.ChartConfiguration do
+  @moduledoc false
   def schema_module, do: Sanbase.Chart.Configuration
   def resource_name, do: "chart_configurations"
 
@@ -313,6 +328,7 @@ defmodule SanbaseWeb.GenericAdmin.ChartConfiguration do
 end
 
 defmodule SanbaseWeb.GenericAdmin.TableConfiguration do
+  @moduledoc false
   def schema_module, do: Sanbase.TableConfiguration
 
   def resource do

@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.AvailableMetricsDescription do
+  @moduledoc false
   import Phoenix.Component
 
   def get_popover_text(%{key: "Name"} = assigns) do

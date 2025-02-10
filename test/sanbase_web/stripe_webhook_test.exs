@@ -1,17 +1,20 @@
 defmodule SanbaseWeb.StripeWebhookTest do
   use SanbaseWeb.ConnCase, async: false
 
+  import Ecto.Query
+  import ExUnit.CaptureLog
   import Mock
   import Mox
   import Sanbase.Factory
   import Sanbase.TestHelpers
-  import ExUnit.CaptureLog
-  import Ecto.Query
 
-  alias Sanbase.Billing.{StripeEvent, Plan, Subscription}
+  alias Sanbase.Billing.Plan
+  alias Sanbase.Billing.StripeEvent
+  alias Sanbase.Billing.Subscription
+  alias Sanbase.Messaging.Discord
   alias Sanbase.Repo
-  alias Sanbase.StripeApiTestResponse
   alias Sanbase.StripeApi
+  alias Sanbase.StripeApiTestResponse
 
   @stripe_id "sub_1234567891"
 
@@ -25,7 +28,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
          StripeApiTestResponse.retrieve_subscription_resp(stripe_id: stripe_id)
        end
      ]},
-    {Sanbase.Messaging.Discord, [],
+    {Discord, [],
      [
        send_notification: fn _, _, _ -> :ok end,
        encode!: fn _, _ -> "{}" end
@@ -49,8 +52,8 @@ defmodule SanbaseWeb.StripeWebhookTest do
       self = self()
       ref = make_ref()
 
-      Sanbase.Mock.prepare_mock(
-        Sanbase.Messaging.Discord,
+      Discord
+      |> Sanbase.Mock.prepare_mock(
         :send_notification,
         fn _, _, payload ->
           send(self, {ref, payload})
@@ -63,7 +66,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
         assert_receive({_, {:ok, %StripeEvent{is_processed: true}}}, 1000)
 
         assert StripeEvent |> Repo.all() |> hd() |> Map.get(:event_id) ==
-                 Jason.decode!(payload) |> Map.get("id")
+                 payload |> Jason.decode!() |> Map.get("id")
 
         assert response.status == 200
 
@@ -94,8 +97,8 @@ defmodule SanbaseWeb.StripeWebhookTest do
       self = self()
       ref = make_ref()
 
-      Sanbase.Mock.prepare_mock(
-        Sanbase.Messaging.Discord,
+      Discord
+      |> Sanbase.Mock.prepare_mock(
         :send_notification,
         fn _, _, payload ->
           send(self, {ref, payload})
@@ -108,7 +111,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
         assert_receive({_, {:ok, %StripeEvent{is_processed: true}}}, 1000)
 
         assert StripeEvent |> Repo.all() |> hd() |> Map.get(:event_id) ==
-                 Jason.decode!(payload) |> Map.get("id")
+                 payload |> Jason.decode!() |> Map.get("id")
 
         assert response.status == 200
 
@@ -247,7 +250,8 @@ defmodule SanbaseWeb.StripeWebhookTest do
 
       stripe_plan_id = stripe_sub.items.data |> hd() |> Map.get(:plan) |> Map.get(:id)
 
-      Plan.by_stripe_id(stripe_plan_id)
+      stripe_plan_id
+      |> Plan.by_stripe_id()
       |> Plan.changeset(%{stripe_id: "non_existing"})
       |> Repo.update!()
 
@@ -292,7 +296,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
   end
 
   defp signature_header(payload, secret) do
-    timestamp = Timex.now() |> DateTime.to_unix()
+    timestamp = DateTime.to_unix(DateTime.utc_now())
     signed_payload = "#{timestamp}.#{payload}"
     signature = compute_signature(signed_payload, secret)
 
@@ -304,7 +308,8 @@ defmodule SanbaseWeb.StripeWebhookTest do
   end
 
   defp compute_signature(payload, secret) do
-    :crypto.mac(:hmac, :sha256, secret, payload)
+    :hmac
+    |> :crypto.mac(:sha256, secret, payload)
     |> Base.encode16(case: :lower)
   end
 

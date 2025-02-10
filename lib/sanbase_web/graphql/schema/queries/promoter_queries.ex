@@ -1,8 +1,9 @@
 defmodule SanbaseWeb.Graphql.Schema.PromoterQueries do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
-  alias SanbaseWeb.Graphql.Resolvers.PromoterResolver
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
+  alias SanbaseWeb.Graphql.Resolvers.PromoterResolver
 
   object :promoter_queries do
     @desc ~s"""

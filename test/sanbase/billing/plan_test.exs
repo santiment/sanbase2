@@ -3,7 +3,8 @@ defmodule Sanbase.Billing.PlanTest do
 
   import Mock
 
-  alias Sanbase.Billing.{Plan, Product}
+  alias Sanbase.Billing.Plan
+  alias Sanbase.Billing.Product
   alias Sanbase.Billing.TestSeed
   alias Sanbase.Repo
   alias Sanbase.StripeApi

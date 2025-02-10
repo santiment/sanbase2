@@ -1,17 +1,20 @@
 defmodule Sanbase.Repo.Migrations.ImportProjectLongDescriptionsFromCSV2 do
+  @moduledoc false
   use Ecto.Migration
 
   import Ecto.Query
-  alias Sanbase.Repo
-  alias Sanbase.Project
 
-  def up() do
+  alias Sanbase.Project
+  alias Sanbase.Repo
+
+  def up do
     result =
-      Path.expand("project_long_desc.csv", __DIR__)
+      "project_long_desc.csv"
+      |> Path.expand(__DIR__)
       |> File.read!()
       |> NimbleCSV.RFC4180.parse_string()
       |> Enum.map(fn line ->
-        [_, _, _, slug, long_desc] = line |> Enum.map(&String.trim/1)
+        [_, _, _, slug, long_desc] = Enum.map(line, &String.trim/1)
 
         {rows, _} =
           Project
@@ -26,8 +29,8 @@ defmodule Sanbase.Repo.Migrations.ImportProjectLongDescriptionsFromCSV2 do
       end)
 
     result |> Enum.filter(fn x -> is_number(x) end) |> Enum.sum()
-    result |> Enum.filter(fn x -> is_binary(x) end)
+    Enum.filter(result, fn x -> is_binary(x) end)
   end
 
-  def down(), do: :ok
+  def down, do: :ok
 end

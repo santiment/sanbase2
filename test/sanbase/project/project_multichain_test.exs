@@ -1,8 +1,10 @@
 defmodule Sanbase.ProjectMultichainTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
+  import SanbaseWeb.Graphql.TestHelpers
+
+  alias Sanbase.Project.Multichain
 
   setup do
     p = insert(:random_erc20_project)
@@ -36,14 +38,14 @@ defmodule Sanbase.ProjectMultichainTest do
 
   test "mark as multichain", context do
     {:ok, _} =
-      Sanbase.Project.Multichain.mark_multichain(
+      Multichain.mark_multichain(
         context.arbitrum_tether,
         multichain_project_group_key: "tether",
         ecosystem_id: context.arbitrum_ecosystem.id
       )
 
     {:ok, _} =
-      Sanbase.Project.Multichain.mark_multichain(
+      Multichain.mark_multichain(
         context.optimism_tether,
         multichain_project_group_key: "tether",
         ecosystem_id: context.optimism_ecosystem.id
@@ -52,7 +54,8 @@ defmodule Sanbase.ProjectMultichainTest do
     projects = Sanbase.Project.List.projects()
 
     groups =
-      Enum.group_by(projects, & &1.multichain_project_group_key, & &1.slug)
+      projects
+      |> Enum.group_by(& &1.multichain_project_group_key, & &1.slug)
       |> Map.new(fn {k, v} -> {k, Enum.sort(v)} end)
 
     assert %{
@@ -74,7 +77,8 @@ defmodule Sanbase.ProjectMultichainTest do
         ]
       })
 
-    Sanbase.Mock.prepare_mock(Sanbase.Price, :combined_marketcap_and_volume, fn slugs, _, _, _ ->
+    Sanbase.Price
+    |> Sanbase.Mock.prepare_mock(:combined_marketcap_and_volume, fn slugs, _, _, _ ->
       assert length(slugs) == 3
       assert context.project.slug in slugs
       assert "arb-tether" in slugs
@@ -107,20 +111,21 @@ defmodule Sanbase.ProjectMultichainTest do
     # Now mark the projects as multichain and expect that only one of them appears in the query
 
     {:ok, _} =
-      Sanbase.Project.Multichain.mark_multichain(
+      Multichain.mark_multichain(
         context.arbitrum_tether,
         multichain_project_group_key: "tether",
         ecosystem_id: context.arbitrum_ecosystem.id
       )
 
     {:ok, _} =
-      Sanbase.Project.Multichain.mark_multichain(
+      Multichain.mark_multichain(
         context.optimism_tether,
         multichain_project_group_key: "tether",
         ecosystem_id: context.optimism_ecosystem.id
       )
 
-    Sanbase.Mock.prepare_mock(Sanbase.Price, :combined_marketcap_and_volume, fn slugs, _, _, _ ->
+    Sanbase.Price
+    |> Sanbase.Mock.prepare_mock(:combined_marketcap_and_volume, fn slugs, _, _, _ ->
       assert length(slugs) == 2
       assert context.project.slug in slugs
       assert "arb-tether" in slugs or "o-tether" in slugs

@@ -27,7 +27,7 @@ defmodule SanbaseWeb.Graphql.CustomTypes.IntervalTypeTest do
              "errors" => [
                %{
                  "locations" => [%{"column" => 5, "line" => 6}],
-                 "message" => "Argument \"interval\" has invalid value \"10hour\"."
+                 "message" => ~s(Argument "interval" has invalid value "10hour".)
                }
              ]
            }

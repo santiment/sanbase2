@@ -1,10 +1,10 @@
 defmodule Sanbase.Alert.TriggersTest do
   use Sanbase.DataCase, async: false
 
-  import Sanbase.Factory
   import ExUnit.CaptureLog
-  import Sanbase.TestHelpers
+  import Sanbase.Factory
   import Sanbase.MapUtils
+  import Sanbase.TestHelpers
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1]
 
   alias Sanbase.Alert.UserTrigger
@@ -43,7 +43,7 @@ defmodule Sanbase.Alert.TriggersTest do
 
     {:ok, %UserTrigger{trigger: trigger}} = UserTrigger.by_user_and_id(user.id, trigger_id)
 
-    settings = trigger.settings |> Map.from_struct()
+    settings = Map.from_struct(trigger.settings)
     assert drop_diff_keys(settings, trigger_settings) == trigger_settings
   end
 
@@ -126,7 +126,7 @@ defmodule Sanbase.Alert.TriggersTest do
       assert error_msg =~ "Trigger structure is invalid. Key `settings` is not valid. "
 
       assert error_msg =~
-               "Reason: [\"%{webhook_url: \\\"not_a_url\\\"} is not a valid notification channel. The available notification channels are [telegram_channel, telegram, email, web_push, webhook]\\n\"]"
+               ~s(Reason: ["%{webhook_url: \\"not_a_url\\"} is not a valid notification channel. The available notification channels are [telegram_channel, telegram, email, web_push, webhook]\\n"])
     end)
   end
 
@@ -213,7 +213,7 @@ defmodule Sanbase.Alert.TriggersTest do
         settings: trigger_settings
       })
 
-    assert trigger_settings.target == created_trigger.trigger.settings |> Map.get(:target)
+    assert trigger_settings.target == Map.get(created_trigger.trigger.settings, :target)
     assert title == created_trigger.trigger.title
   end
 
@@ -244,7 +244,7 @@ defmodule Sanbase.Alert.TriggersTest do
         settings: trigger_settings
       })
 
-    assert trigger_settings.target == created_trigger.trigger.settings |> Map.get(:target)
+    assert trigger_settings.target == Map.get(created_trigger.trigger.settings, :target)
     assert title == created_trigger.trigger.title
     assert description == created_trigger.trigger.description
     assert icon_url == created_trigger.trigger.icon_url
@@ -319,7 +319,7 @@ defmodule Sanbase.Alert.TriggersTest do
       trigger: %{title: "Generic title2", is_public: true, settings: trigger_settings2}
     )
 
-    trigger_id = UserTrigger.triggers_for(user.id) |> hd() |> Map.get(:id)
+    trigger_id = user.id |> UserTrigger.triggers_for() |> hd() |> Map.get(:id)
 
     updated_trigger = %{
       type: "metric_signal",
@@ -381,7 +381,7 @@ defmodule Sanbase.Alert.TriggersTest do
     UserTrigger.update_user_trigger(user.id, %{id: trigger_id, is_public: true, cooldown: "1h"})
     user_triggers = UserTrigger.triggers_for(user.id)
     assert length(user_triggers) == 1
-    trigger = user_triggers |> hd()
+    trigger = hd(user_triggers)
     assert trigger.trigger.is_public == true
     assert trigger.trigger.cooldown == "1h"
   end

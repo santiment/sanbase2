@@ -11,8 +11,9 @@ defmodule Sanbase.Alert.Trigger.WalletUsdValuationTriggerSettings do
 
   use Vex.Struct
 
-  import Sanbase.{Validation, Alert.Validation}
+  import Sanbase.Alert.Validation
   import Sanbase.DateTimeUtils, only: [round_datetime: 1, str_to_sec: 1]
+  import Sanbase.Validation
 
   alias __MODULE__
   alias Sanbase.Alert.Type
@@ -55,7 +56,7 @@ defmodule Sanbase.Alert.Trigger.WalletUsdValuationTriggerSettings do
   validates(:time_window, &valid_time_window?/1)
 
   @spec type() :: String.t()
-  def type(), do: @trigger_type
+  def type, do: @trigger_type
 
   def post_create_process(_trigger), do: :nochange
   def post_update_process(_trigger), do: :nochange
@@ -63,12 +64,7 @@ defmodule Sanbase.Alert.Trigger.WalletUsdValuationTriggerSettings do
   @doc ~s"""
   Return a list of the `settings.metric` values for the necessary time range
   """
-  def get_data(
-        %__MODULE__{
-          filtered_target: %{list: target_list},
-          selector: selector
-        } = settings
-      ) do
+  def get_data(%__MODULE__{filtered_target: %{list: target_list}, selector: selector} = settings) do
     {from, to} = get_timeseries_params(settings)
 
     target_list
@@ -80,13 +76,14 @@ defmodule Sanbase.Alert.Trigger.WalletUsdValuationTriggerSettings do
         infrastructure: selector.infrastructure
       }
 
-      with {:ok, %{} = result} <- usd_value_change(selector, from, to) do
-        {address,
-         [
-           %{datetime: from, usd_value: result.previous_usd_value},
-           %{datetime: to, usd_value: result.current_usd_value}
-         ]}
-      else
+      case usd_value_change(selector, from, to) do
+        {:ok, %{} = result} ->
+          {address,
+           [
+             %{datetime: from, usd_value: result.previous_usd_value},
+             %{datetime: to, usd_value: result.current_usd_value}
+           ]}
+
         result ->
           raise("""
           The result returned from usd_value_change in WalletUsdValuationTriggerSettings has \
@@ -99,16 +96,14 @@ defmodule Sanbase.Alert.Trigger.WalletUsdValuationTriggerSettings do
   end
 
   defp get_timeseries_params(%{time_window: time_window}) do
-    to = Timex.now()
+    to = DateTime.utc_now()
     from = Timex.shift(to, seconds: -str_to_sec(time_window))
 
     {from, to}
   end
 
   defp usd_value_change(selector, from, to) do
-    cache_key =
-      {__MODULE__, :usd_value_change, selector, round_datetime(from), round_datetime(to)}
-      |> Sanbase.Cache.hash()
+    cache_key = Sanbase.Cache.hash({__MODULE__, :usd_value_change, selector, round_datetime(from), round_datetime(to)})
 
     Sanbase.Cache.get_or_store(:alerts_evaluator_cache, cache_key, fn ->
       # `to` is defined as Timex.now(). The function accepts only `from`
@@ -132,10 +127,10 @@ defmodule Sanbase.Alert.Trigger.WalletUsdValuationTriggerSettings do
   defimpl Sanbase.Alert.Settings, for: WalletUsdValuationTriggerSettings do
     import Sanbase.Alert.Utils
 
-    alias Sanbase.Alert.{OperationText, ResultBuilder}
+    alias Sanbase.Alert.OperationText
+    alias Sanbase.Alert.ResultBuilder
 
-    def triggered?(%WalletUsdValuationTriggerSettings{triggered?: triggered}),
-      do: triggered
+    def triggered?(%WalletUsdValuationTriggerSettings{triggered?: triggered}), do: triggered
 
     def evaluate(%WalletUsdValuationTriggerSettings{} = settings, _trigger) do
       case WalletUsdValuationTriggerSettings.get_data(settings) do
@@ -154,11 +149,7 @@ defmodule Sanbase.Alert.Trigger.WalletUsdValuationTriggerSettings do
 
     def cache_key(%WalletUsdValuationTriggerSettings{} = settings) do
       target =
-        settings.target
-        |> Map.replace(
-          :address,
-          Sanbase.BlockchainAddress.to_internal_format(settings.target.address)
-        )
+        Map.replace(settings.target, :address, Sanbase.BlockchainAddress.to_internal_format(settings.target.address))
 
       construct_cache_key([
         settings.type,

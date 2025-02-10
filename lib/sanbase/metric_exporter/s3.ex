@@ -1,4 +1,5 @@
 defmodule Sanbase.MetricExporter.S3 do
+  @moduledoc false
   use Waffle.Definition
 
   require Sanbase.Utils.Config, as: Config

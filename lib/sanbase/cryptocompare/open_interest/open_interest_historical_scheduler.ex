@@ -13,10 +13,11 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler do
 
   use GenServer
 
-  require Logger
-  alias Sanbase.Utils.Config
   alias Sanbase.Cryptocompare.Handler
   alias Sanbase.Cryptocompare.OpenInterest.HistoricalWorker
+  alias Sanbase.Utils.Config
+
+  require Logger
 
   @oban_conf_name :oban_scrapers
   # @unique_peroid 60 * 86_400
@@ -26,10 +27,10 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
-  def queue(), do: @oban_queue
-  def resume(), do: Oban.resume_queue(@oban_conf_name, queue: @oban_queue)
-  def pause(), do: Oban.pause_queue(@oban_conf_name, queue: @oban_queue)
-  def conf_name(), do: @oban_conf_name
+  def queue, do: @oban_queue
+  def resume, do: Oban.resume_queue(@oban_conf_name, queue: @oban_queue)
+  def pause, do: Oban.pause_queue(@oban_conf_name, queue: @oban_queue)
+  def conf_name, do: @oban_conf_name
 
   def init(_opts) do
     # In order to be able to stop the historical scraper via env variables
@@ -44,7 +45,7 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler do
     {:ok, %{}}
   end
 
-  def enabled?(), do: Config.module_get(__MODULE__, :enabled?) |> String.to_existing_atom()
+  def enabled?, do: __MODULE__ |> Config.module_get(:enabled?) |> String.to_existing_atom()
 
   def schedule_previous_day_jobs(opts \\ []) do
     # This job needs to scrape only the previous day of data. It does not need to scrape
@@ -57,11 +58,14 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler do
 
     {:ok, markets_and_instruments} = Handler.get_markets_and_instruments()
 
-    for {market, instruments} <- markets_and_instruments,
-        instrument <- instruments,
-        version <- ["v1", "v2"] do
-      new_job(market, instrument, beginning_of_day, schedule_next_job, limit, version)
-    end
+    for_result =
+      for {market, instruments} <- markets_and_instruments,
+          instrument <- instruments,
+          version <- ["v1", "v2"] do
+        new_job(market, instrument, beginning_of_day, schedule_next_job, limit, version)
+      end
+
+    for_result
     |> Enum.chunk_every(200)
     |> Enum.each(&Oban.insert_all(@oban_conf_name, &1))
   end
@@ -71,13 +75,16 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler do
     limit = Keyword.fetch!(opts, :limit)
     schedule_next_job = Keyword.get(opts, :schedule_next_job, false)
     to_datetime = Keyword.get(opts, :to_datetime, DateTime.utc_now())
-    to_timestamp = to_datetime |> DateTime.to_unix()
+    to_timestamp = DateTime.to_unix(to_datetime)
     version = Keyword.get(opts, :version, "v1")
     {:ok, markets_and_instruments} = Handler.get_markets_and_instruments()
 
-    for {market, instruments} <- markets_and_instruments, instrument <- instruments do
-      new_job(market, instrument, to_timestamp, schedule_next_job, limit, version)
-    end
+    for_result =
+      for {market, instruments} <- markets_and_instruments, instrument <- instruments do
+        new_job(market, instrument, to_timestamp, schedule_next_job, limit, version)
+      end
+
+    for_result
     |> Enum.chunk_every(200)
     |> Enum.each(&Oban.insert_all(@oban_conf_name, &1))
   end

@@ -30,8 +30,8 @@ defmodule Sanbase.HtmlTest do
 
     original = replace_space_in_closing(html)
 
-    for i <- 0..140 |> Enum.take_every(5) do
-      result = HTML.truncate_html(html, i) |> replace_trailing_closing_tags()
+    for i <- Enum.take_every(0..140, 5) do
+      result = html |> HTML.truncate_html(i) |> replace_trailing_closing_tags()
       assert String.contains?(original, result)
     end
   end
@@ -41,8 +41,8 @@ defmodule Sanbase.HtmlTest do
 
     original = replace_space_in_closing(html)
 
-    for i <- 0..140 |> Enum.take_every(5) do
-      result = HTML.truncate_html(html, i) |> replace_trailing_closing_tags()
+    for i <- Enum.take_every(0..140, 5) do
+      result = html |> HTML.truncate_html(i) |> replace_trailing_closing_tags()
       assert String.contains?(original, result)
     end
   end

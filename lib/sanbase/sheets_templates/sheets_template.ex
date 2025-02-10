@@ -6,9 +6,9 @@ defmodule Sanbase.SheetsTemplate do
 
   import Ecto.Changeset
 
-  require Logger
-
   alias Sanbase.Repo
+
+  require Logger
 
   schema "sheets_templates" do
     field(:name, :string)
@@ -21,8 +21,7 @@ defmodule Sanbase.SheetsTemplate do
 
   @doc false
   def new_changeset(sheets_template, attrs \\ %{}) do
-    sheets_template
-    |> cast(attrs, [:name, :description, :url, :is_pro])
+    cast(sheets_template, attrs, [:name, :description, :url, :is_pro])
   end
 
   def changeset(sheets_template, attrs) do
@@ -35,7 +34,7 @@ defmodule Sanbase.SheetsTemplate do
     Repo.get(__MODULE__, id)
   end
 
-  def list() do
+  def list do
     Repo.all(__MODULE__)
   end
 
@@ -52,12 +51,11 @@ defmodule Sanbase.SheetsTemplate do
   end
 
   def delete(sheets_template) do
-    sheets_template |> Repo.delete()
+    Repo.delete(sheets_template)
   end
 
   def get_all(opts) do
-    list()
-    |> show_only_preview_fields?(opts)
+    show_only_preview_fields?(list(), opts)
   end
 
   # Helpers
@@ -67,8 +65,7 @@ defmodule Sanbase.SheetsTemplate do
   end
 
   defp show_only_preview_fields?(sheets_templates, %{is_logged_in: true, plan_name: "FREE"}) do
-    sheets_templates
-    |> Enum.map(fn
+    Enum.map(sheets_templates, fn
       %__MODULE__{is_pro: true} = sheets_template ->
         %{sheets_template | url: nil}
 
@@ -77,8 +74,7 @@ defmodule Sanbase.SheetsTemplate do
     end)
   end
 
-  defp show_only_preview_fields?(sheets_templates, %{is_logged_in: true, plan_name: plan})
-       when plan != "FREE" do
+  defp show_only_preview_fields?(sheets_templates, %{is_logged_in: true, plan_name: plan}) when plan != "FREE" do
     sheets_templates
   end
 end

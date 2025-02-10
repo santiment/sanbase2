@@ -1,7 +1,8 @@
 if Code.ensure_loaded?(Neuron) do
   defmodule Sanbase.Mix.CryptocompareSlugMapping do
     # credo:disable-for-this-file
-    def run() do
+    @moduledoc false
+    def run do
       map = cryptocompare_santiment_asset_mapping()
 
       {unknowns, knowns} = Enum.split_with(map, &(&1.cpc == :unknown))
@@ -14,7 +15,7 @@ if Code.ensure_loaded?(Neuron) do
       unknowns
       |> Enum.map(fn
         %{maybe: maybe, san: san} = elem ->
-          dist = String.jaro_distance(maybe.coin_name, san.name) |> Float.round(2)
+          dist = maybe.coin_name |> String.jaro_distance(san.name) |> Float.round(2)
           {dist, elem}
 
         elem ->
@@ -38,7 +39,7 @@ if Code.ensure_loaded?(Neuron) do
 
       knowns
       |> Enum.map(fn e ->
-        dist = String.jaro_distance(e.cpc.coin_name, e.san.name) |> Float.round(2)
+        dist = e.cpc.coin_name |> String.jaro_distance(e.san.name) |> Float.round(2)
         {dist, e}
       end)
       |> Enum.sort_by(&elem(&1, 0), :asc)
@@ -49,13 +50,14 @@ if Code.ensure_loaded?(Neuron) do
       end)
     end
 
-    def cryptocompare_santiment_asset_mapping() do
+    def cryptocompare_santiment_asset_mapping do
       san = get_san_assets()
       cpc = get_cryptocompare_assets()
 
-      cpc_map = Enum.into(cpc, %{}, fn m -> {m.key, m} end)
+      cpc_map = Map.new(cpc, fn m -> {m.key, m} end)
 
-      Enum.group_by(san, & &1.ticker)
+      san
+      |> Enum.group_by(& &1.ticker)
       |> Enum.flat_map(fn {ticker, list} -> tickers_list_to_map(list, cpc_map, ticker) end)
       |> Enum.map(&replace_unknown_with_maybe(&1, cpc))
     end
@@ -79,9 +81,10 @@ if Code.ensure_loaded?(Neuron) do
         %{cpc: :unknown, san: san} = elem ->
           maybe = Enum.max_by(cpc, &String.jaro_distance(&1.coin_name, san.name))
 
-          case String.jaro_distance(maybe.coin_name, san.name) > 0.8 do
-            true -> Map.put(elem, :maybe, maybe)
-            false -> elem
+          if String.jaro_distance(maybe.coin_name, san.name) > 0.8 do
+            Map.put(elem, :maybe, maybe)
+          else
+            elem
           end
 
         elem ->
@@ -89,24 +92,22 @@ if Code.ensure_loaded?(Neuron) do
       end
     end
 
-    def get_san_assets() do
+    def get_san_assets do
       Neuron.Config.set(url: "https://api.santiment.net/graphql")
 
       {:ok, %Neuron.Response{body: %{"data" => data}}} =
         Neuron.query("{ allProjects{ slug name ticker} }")
 
-      data["allProjects"]
-      |> Enum.map(fn map ->
+      Enum.map(data["allProjects"], fn map ->
         %{ticker: map["ticker"], slug: map["slug"], name: map["name"]}
       end)
     end
 
-    def get_cryptocompare_assets() do
+    def get_cryptocompare_assets do
       {:ok, %HTTPoison.Response{body: body}} =
         HTTPoison.get("https://min-api.cryptocompare.com/data/all/coinlist")
 
-      Jason.decode!(body)["Data"]
-      |> Enum.map(fn {symbol, map} ->
+      Enum.map(Jason.decode!(body)["Data"], fn {symbol, map} ->
         %{
           key: symbol,
           symbol: map["Symbol"],

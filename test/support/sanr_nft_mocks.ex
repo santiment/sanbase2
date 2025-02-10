@@ -1,4 +1,5 @@
 defmodule Sanbase.SanrNFTMocks do
+  @moduledoc false
   def get_owners_for_contract_mock(address) do
     {:ok,
      %Req.Response{
@@ -29,7 +30,7 @@ defmodule Sanbase.SanrNFTMocks do
        body: [
          %{
            "id" => 1,
-           "sanr_points_amount" => 10000,
+           "sanr_points_amount" => 10_000,
            "subscription_end_date" => end_date,
            "subscription_start_date" => start_date
          },
@@ -38,7 +39,7 @@ defmodule Sanbase.SanrNFTMocks do
          # one address holds multiple NFTs
          %{
            "id" => 2,
-           "sanr_points_amount" => 10000,
+           "sanr_points_amount" => 10_000,
            "subscription_end_date" => ~U[2024-05-05 00:00:00Z],
            "subscription_start_date" => ~U[2023-05-05 00:00:00Z]
          }

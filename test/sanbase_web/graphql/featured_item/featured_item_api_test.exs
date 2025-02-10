@@ -89,7 +89,7 @@ defmodule Sanbase.FeaturedItemApiTest do
           ready_state: Post.published()
         )
 
-      tags = insight.tags |> Enum.map(fn %{name: name} -> %{"name" => name} end)
+      tags = Enum.map(insight.tags, fn %{name: name} -> %{"name" => name} end)
 
       :ok = FeaturedItem.update_item(insight, true)
 
@@ -148,7 +148,7 @@ defmodule Sanbase.FeaturedItemApiTest do
           ready_state: Post.published()
         )
 
-      tags = insight.tags |> Enum.map(fn %{name: name} -> %{"name" => name} end)
+      tags = Enum.map(insight.tags, fn %{name: name} -> %{"name" => name} end)
       FeaturedItem.update_item(insight, true)
       FeaturedItem.update_item(insight, true)
       FeaturedItem.update_item(insight, true)

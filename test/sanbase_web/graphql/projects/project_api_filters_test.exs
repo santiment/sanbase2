@@ -11,8 +11,8 @@ defmodule SanbaseWeb.Graphql.ProjectApiFiltersTest do
       p3: insert(:random_project),
       p4: insert(:random_project),
       p5: insert(:random_project),
-      from: Timex.shift(Timex.now(), days: -30),
-      to: Timex.now()
+      from: Timex.shift(DateTime.utc_now(), days: -30),
+      to: DateTime.utc_now()
     ]
   end
 
@@ -30,13 +30,12 @@ defmodule SanbaseWeb.Graphql.ProjectApiFiltersTest do
 
     %{p1: p1, p2: p2, p3: p3, p4: p4, p5: p5} = context
 
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.MetricAdapter.slugs_by_filter/6,
-      {:ok, [p1.slug, p2.slug]}
-    )
+    (&Sanbase.Clickhouse.MetricAdapter.slugs_by_filter/6)
+    |> Sanbase.Mock.prepare_mock2({:ok, [p1.slug, p2.slug]})
     |> Sanbase.Mock.run_with_mocks(fn ->
       slugs =
-        filtered_projects(conn, [filter])
+        conn
+        |> filtered_projects([filter])
         |> get_in(["data", "allProjects"])
         |> Enum.map(& &1["slug"])
 
@@ -72,17 +71,16 @@ defmodule SanbaseWeb.Graphql.ProjectApiFiltersTest do
 
     %{p1: p1, p2: p2, p3: p3, p4: p4, p5: p5} = context
 
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.MetricAdapter.slugs_by_filter/6,
-      {:ok, [p1.slug, p2.slug, p3.slug]}
-    )
+    (&Sanbase.Clickhouse.MetricAdapter.slugs_by_filter/6)
+    |> Sanbase.Mock.prepare_mock2({:ok, [p1.slug, p2.slug, p3.slug]})
     |> Sanbase.Mock.prepare_mock2(
       &Sanbase.Price.MetricAdapter.slugs_by_filter/6,
       {:ok, [p2.slug, p3.slug, p4.slug, p5.slug]}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
       slugs =
-        filtered_projects(conn, [filter1, filter2])
+        conn
+        |> filtered_projects([filter1, filter2])
         |> get_in(["data", "allProjects"])
         |> Enum.map(& &1["slug"])
 
@@ -96,9 +94,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiFiltersTest do
   end
 
   defp filtered_projects(conn, filters) do
-    filters_str =
-      Enum.map(filters, &map_to_input_object_str/1)
-      |> Enum.join(", ")
+    filters_str = Enum.map_join(filters, ", ", &map_to_input_object_str/1)
 
     filters_str = "[" <> filters_str <> "]"
 

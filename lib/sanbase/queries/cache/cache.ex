@@ -9,13 +9,13 @@ defmodule Sanbase.Queries.Cache do
   """
   use Ecto.Schema
 
-  import Ecto.Query
   import Ecto.Changeset
+  import Ecto.Query
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
 
-  alias Sanbase.Queries.Query
   alias Sanbase.Accounts.User
   alias Sanbase.Queries.Executor.Result
+  alias Sanbase.Queries.Query
 
   @type query_id :: Query.query_id()
   @type user_id :: User.user_id()
@@ -118,7 +118,7 @@ defmodule Sanbase.Queries.Cache do
     |> :zlib.gunzip()
     |> :erlang.binary_to_term()
     |> then(&struct!(Result, &1))
-    |> then(&maybe_transform_datetimes/1)
+    |> maybe_transform_datetimes()
   end
 
   # Private functions

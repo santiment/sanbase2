@@ -8,7 +8,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePointTest do
 
   setup do
     ts =
-      DateTime.from_naive!(~N[2018-05-13 21:45:00], "Etc/UTC")
+      ~N[2018-05-13 21:45:00]
+      |> DateTime.from_naive!("Etc/UTC")
       |> DateTime.to_unix(:nanosecond)
 
     price_point = %PricePoint{
@@ -48,7 +49,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePointTest do
 
       assert Jason.decode!(value) ==
                Jason.decode!(
-                 "{\"timestamp\":1526247900,\"source\":\"coinmarketcap\",\"slug\":\"santiment\",\"price_usd\":0.292856,\"price_btc\":3.136261180345569e-5,\"volume_usd\":500,\"marketcap_usd\":400}"
+                 ~s({"timestamp":1526247900,"source":"coinmarketcap","slug":"santiment","price_usd":0.292856,"price_btc":3.136261180345569e-5,"volume_usd":500,"marketcap_usd":400})
                )
     end
 
@@ -58,7 +59,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePointTest do
 
       assert Jason.decode!(value) ==
                Jason.decode!(
-                 "{\"timestamp\":1526247900,\"source\":\"coinmarketcap\",\"slug\":\"TOTAL_MARKET\",\"price_usd\":null,\"price_btc\":null,\"volume_usd\":500,\"marketcap_usd\":400}"
+                 ~s({"timestamp":1526247900,"source":"coinmarketcap","slug":"TOTAL_MARKET","price_usd":null,"price_btc":null,"volume_usd":500,"marketcap_usd":400})
                )
     end
   end

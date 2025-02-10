@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
+  @moduledoc false
   import SanbaseWeb.Graphql.Helpers.Async
   import SanbaseWeb.Graphql.Helpers.CalibrateInterval
 
@@ -28,21 +29,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
     end
   end
 
-  def history_twitter_data(
-        root,
-        %{ticker: ticker} = args,
-        resolution
-      ) do
+  def history_twitter_data(root, %{ticker: ticker} = args, resolution) do
     slug = Project.slug_by_ticker(ticker)
     args = args |> Map.delete(:ticker) |> Map.put(:slug, slug)
     history_twitter_data(root, args, resolution)
   end
 
-  def history_twitter_data(
-        _root,
-        %{slug: slug, from: from, to: to, interval: interval},
-        _resolution
-      ) do
+  def history_twitter_data(_root, %{slug: slug, from: from, to: to, interval: interval}, _resolution) do
     with %Project{} = project <- Project.by_slug(slug),
          {:ok, twitter_name} <- Project.twitter_handle(project),
          {:ok, from, to, interval} <-

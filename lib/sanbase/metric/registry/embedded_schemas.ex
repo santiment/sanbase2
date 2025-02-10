@@ -1,5 +1,7 @@
 defmodule Sanbase.Metric.Registry.Selector do
+  @moduledoc false
   use Ecto.Schema
+
   import Ecto.Changeset
 
   @derive {Jason.Encoder, only: [:type]}
@@ -17,7 +19,9 @@ defmodule Sanbase.Metric.Registry.Selector do
 end
 
 defmodule Sanbase.Metric.Registry.Table do
+  @moduledoc false
   use Ecto.Schema
+
   import Ecto.Changeset
 
   @derive {Jason.Encoder, only: [:name]}
@@ -36,7 +40,9 @@ defmodule Sanbase.Metric.Registry.Table do
 end
 
 defmodule Sanbase.Metric.Registry.Alias do
+  @moduledoc false
   use Ecto.Schema
+
   import Ecto.Changeset
 
   @derive {Jason.Encoder, only: [:name]}
@@ -56,7 +62,9 @@ defmodule Sanbase.Metric.Registry.Alias do
 end
 
 defmodule Sanbase.Metric.Registry.Doc do
+  @moduledoc false
   use Ecto.Schema
+
   import Ecto.Changeset
 
   @derive {Jason.Encoder, only: [:link]}

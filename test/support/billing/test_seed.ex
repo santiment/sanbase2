@@ -1,9 +1,10 @@
 defmodule Sanbase.Billing.TestSeed do
+  @moduledoc false
   import Sanbase.Factory
 
   @key :product_and_plans_map_for_tests
 
-  def seed_products_and_plans() do
+  def seed_products_and_plans do
     ets_table = Sanbase.TestSetupService.get_ets_table_name()
 
     case Sanbase.Repo.get(Sanbase.Billing.Product, 1) do
@@ -32,12 +33,9 @@ defmodule Sanbase.Billing.TestSeed do
           plan_max_sanbase: insert(:plan_max_sanbase, product: product_sanbase),
           plan_pro_sanbase_yearly: insert(:plan_pro_sanbase_yearly, product: product_sanbase),
           plan_pro_70off_sanbase: insert(:plan_pro_70off_sanbase, product: product_sanbase),
-          plan_pro_70off_yearly_sanbase:
-            insert(:plan_pro_70off_yearly_sanbase, product: product_sanbase),
-          plan_pro_plus_70off_sanbase:
-            insert(:plan_pro_plus_70off_sanbase, product: product_sanbase),
-          plan_pro_plus_70off_yearly_sanbase:
-            insert(:plan_pro_plus_70off_yearly_sanbase, product: product_sanbase)
+          plan_pro_70off_yearly_sanbase: insert(:plan_pro_70off_yearly_sanbase, product: product_sanbase),
+          plan_pro_plus_70off_sanbase: insert(:plan_pro_plus_70off_sanbase, product: product_sanbase),
+          plan_pro_plus_70off_yearly_sanbase: insert(:plan_pro_plus_70off_yearly_sanbase, product: product_sanbase)
         }
 
         true = :ets.insert(ets_table, {@key, data})

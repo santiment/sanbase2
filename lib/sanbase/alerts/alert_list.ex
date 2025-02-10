@@ -1,7 +1,8 @@
 defmodule Sanbase.Alert.List do
+  @moduledoc false
   alias Sanbase.Alert.Trigger
 
-  def get() do
+  def get do
     [
       Trigger.DailyMetricTriggerSettings,
       Trigger.EthWalletTriggerSettings,

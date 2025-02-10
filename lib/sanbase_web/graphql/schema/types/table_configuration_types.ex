@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.TableConfigurationTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   enum :table_configuration_type_enum do

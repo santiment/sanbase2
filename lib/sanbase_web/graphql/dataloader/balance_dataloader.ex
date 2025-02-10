@@ -1,7 +1,8 @@
 defmodule SanbaseWeb.Graphql.BalanceDataloader do
+  @moduledoc false
   alias Sanbase.Clickhouse.HistoricalBalance
 
-  def data(), do: Dataloader.KV.new(&query/2)
+  def data, do: Dataloader.KV.new(&query/2)
 
   def query(:address_selector_current_balance, address_selector_pairs) do
     groups =
@@ -11,7 +12,8 @@ defmodule SanbaseWeb.Graphql.BalanceDataloader do
         fn {address, _selector} -> address end
       )
 
-    Sanbase.Parallel.map(groups, &get_current_balance/1,
+    groups
+    |> Sanbase.Parallel.map(&get_current_balance/1,
       max_concurrency: 4,
       ordered: false,
       timeout: 55_000
@@ -21,13 +23,14 @@ defmodule SanbaseWeb.Graphql.BalanceDataloader do
 
   def query(:address_selector_balance_change, address_selector_from_to_tuples) do
     groups =
-      address_selector_from_to_tuples
-      |> Enum.group_by(
+      Enum.group_by(
+        address_selector_from_to_tuples,
         fn {_address, selector, from, to} -> %{selector: selector, from: from, to: to} end,
         fn {address, _selector, _from, _to} -> address end
       )
 
-    Sanbase.Parallel.map(groups, &get_balance_change/1,
+    groups
+    |> Sanbase.Parallel.map(&get_balance_change/1,
       max_concurrency: 4,
       ordered: false,
       timeout: 55_000

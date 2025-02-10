@@ -1,8 +1,8 @@
 defmodule SanbaseWeb.Graphql.TableConfigurationApiTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
+  import SanbaseWeb.Graphql.TestHelpers
 
   setup do
     user = insert(:user)
@@ -41,7 +41,8 @@ defmodule SanbaseWeb.Graphql.TableConfigurationApiTest do
       %{user: user, conn: conn, settings: settings} = context
 
       table_configuration =
-        create_table_configuration(conn, settings)
+        conn
+        |> create_table_configuration(settings)
         |> get_in(["data", "createTableConfiguration"])
 
       assert table_configuration["title"] == settings.title
@@ -50,7 +51,7 @@ defmodule SanbaseWeb.Graphql.TableConfigurationApiTest do
       assert table_configuration["isPublic"] == settings.is_public
       assert table_configuration["pageSize"] == settings.page_size
       assert table_configuration["columns"] == settings.columns
-      assert table_configuration["user"]["id"] |> String.to_integer() == user.id
+      assert String.to_integer(table_configuration["user"]["id"]) == user.id
       assert table_configuration["user"]["email"] == user.email
     end
 
@@ -58,7 +59,8 @@ defmodule SanbaseWeb.Graphql.TableConfigurationApiTest do
       %{conn: conn, settings: settings} = context
 
       table_configuration_id =
-        create_table_configuration(conn, settings)
+        conn
+        |> create_table_configuration(settings)
         |> get_in(["data", "createTableConfiguration", "id"])
 
       new_settings = %{
@@ -71,7 +73,8 @@ defmodule SanbaseWeb.Graphql.TableConfigurationApiTest do
       }
 
       table_configuration =
-        update_table_configuration(conn, table_configuration_id, new_settings)
+        conn
+        |> update_table_configuration(table_configuration_id, new_settings)
         |> get_in(["data", "updateTableConfiguration"])
 
       assert table_configuration["title"] == new_settings.title
@@ -89,11 +92,13 @@ defmodule SanbaseWeb.Graphql.TableConfigurationApiTest do
       %{conn: conn, conn2: conn2, settings: settings} = context
 
       table_configuration_id =
-        create_table_configuration(conn, settings)
+        conn
+        |> create_table_configuration(settings)
         |> get_in(["data", "createTableConfiguration", "id"])
 
       error_msg =
-        update_table_configuration(conn2, table_configuration_id, %{title: "New Title"})
+        conn2
+        |> update_table_configuration(table_configuration_id, %{title: "New Title"})
         |> get_in(["errors"])
         |> hd()
         |> Map.get("message")
@@ -105,7 +110,8 @@ defmodule SanbaseWeb.Graphql.TableConfigurationApiTest do
       %{conn: conn, settings: settings} = context
 
       table_configuration_id =
-        create_table_configuration(conn, settings)
+        conn
+        |> create_table_configuration(settings)
         |> get_in(["data", "createTableConfiguration", "id"])
 
       _ = delete_table_configuration(conn, table_configuration_id)
@@ -121,29 +127,34 @@ defmodule SanbaseWeb.Graphql.TableConfigurationApiTest do
       # Create a public and private table configuration
 
       table_configuration_id1 =
-        create_table_configuration(conn, %{settings | is_public: true})
+        conn
+        |> create_table_configuration(%{settings | is_public: true})
         |> get_in(["data", "createTableConfiguration", "id"])
 
       table_configuration_id2 =
-        create_table_configuration(conn, %{settings | is_public: false})
+        conn
+        |> create_table_configuration(%{settings | is_public: false})
         |> get_in(["data", "createTableConfiguration", "id"])
 
       # Test fetching table configurations with no logged in user
 
       table_configuration1 =
-        get_table_configuration(conn_no_user, table_configuration_id1)
+        conn_no_user
+        |> get_table_configuration(table_configuration_id1)
         |> get_in(["data", "tableConfiguration"])
 
       assert table_configuration1["id"] == table_configuration_id1
 
       table_configuration2 =
-        get_table_configuration(conn_no_user, table_configuration_id2)
+        conn_no_user
+        |> get_table_configuration(table_configuration_id2)
         |> get_in(["data", "tableConfiguration"])
 
       assert table_configuration2 == nil
 
       table_configuration_ids =
-        get_table_configurations(conn_no_user, nil)
+        conn_no_user
+        |> get_table_configurations(nil)
         |> get_in(["data", "tableConfigurations"])
         |> Enum.map(& &1["id"])
 
@@ -154,11 +165,13 @@ defmodule SanbaseWeb.Graphql.TableConfigurationApiTest do
       %{user: user, conn: conn, settings: settings} = context
 
       table_configuration_id =
-        create_table_configuration(conn, settings)
+        conn
+        |> create_table_configuration(settings)
         |> get_in(["data", "createTableConfiguration", "id"])
 
       table_configuration =
-        get_table_configuration(conn, table_configuration_id)
+        conn
+        |> get_table_configuration(table_configuration_id)
         |> get_in(["data", "tableConfiguration"])
 
       assert table_configuration["title"] == settings.title
@@ -166,7 +179,7 @@ defmodule SanbaseWeb.Graphql.TableConfigurationApiTest do
       assert table_configuration["description"] == settings.description
       assert table_configuration["isPublic"] == settings.is_public
       assert table_configuration["pageSize"] == settings.page_size
-      assert table_configuration["user"]["id"] |> String.to_integer() == user.id
+      assert String.to_integer(table_configuration["user"]["id"]) == user.id
       assert table_configuration["user"]["email"] == user.email
       assert table_configuration["columns"] == settings.columns
     end
@@ -176,11 +189,13 @@ defmodule SanbaseWeb.Graphql.TableConfigurationApiTest do
       settings = Map.put(settings, :is_public, true)
 
       table_configuration_id =
-        create_table_configuration(conn, settings)
+        conn
+        |> create_table_configuration(settings)
         |> get_in(["data", "createTableConfiguration", "id"])
 
       table_configuration =
-        get_table_configuration(conn, table_configuration_id)
+        conn
+        |> get_table_configuration(table_configuration_id)
         |> get_in(["data", "tableConfiguration"])
 
       assert table_configuration["id"] == table_configuration_id
@@ -191,11 +206,13 @@ defmodule SanbaseWeb.Graphql.TableConfigurationApiTest do
       settings = Map.put(settings, :is_public, true)
 
       table_configuration_id =
-        create_table_configuration(conn, settings)
+        conn
+        |> create_table_configuration(settings)
         |> get_in(["data", "createTableConfiguration", "id"])
 
       table_configuration =
-        get_table_configuration(conn, table_configuration_id)
+        conn
+        |> get_table_configuration(table_configuration_id)
         |> get_in(["data", "tableConfiguration"])
 
       assert table_configuration["id"] == table_configuration_id
@@ -206,11 +223,13 @@ defmodule SanbaseWeb.Graphql.TableConfigurationApiTest do
       settings = Map.put(settings, :is_public, true)
 
       table_configuration_id =
-        create_table_configuration(conn, settings)
+        conn
+        |> create_table_configuration(settings)
         |> get_in(["data", "createTableConfiguration", "id"])
 
       table_configuration =
-        get_table_configuration(conn2, table_configuration_id)
+        conn2
+        |> get_table_configuration(table_configuration_id)
         |> get_in(["data", "tableConfiguration"])
 
       assert table_configuration["id"] == table_configuration_id
@@ -221,11 +240,13 @@ defmodule SanbaseWeb.Graphql.TableConfigurationApiTest do
       settings = Map.put(settings, :is_public, true)
 
       table_configuration_id =
-        create_table_configuration(conn, settings)
+        conn
+        |> create_table_configuration(settings)
         |> get_in(["data", "createTableConfiguration", "id"])
 
       error_msg =
-        update_table_configuration(conn2, table_configuration_id, %{title: "New Title"})
+        conn2
+        |> update_table_configuration(table_configuration_id, %{title: "New Title"})
         |> get_in(["errors"])
         |> hd()
         |> Map.get("message")
@@ -237,22 +258,20 @@ defmodule SanbaseWeb.Graphql.TableConfigurationApiTest do
       %{conn: conn, conn2: conn2, settings: settings} = context
       settings = Map.put(settings, :is_public, true)
 
-      [
-        table_configuration_id1,
-        table_configuration_id2,
-        table_configuration_id3,
-        table_configuration_id4
-      ] =
-        [
-          create_table_configuration(conn, settings),
-          create_table_configuration(conn, settings),
-          create_table_configuration(conn2, settings),
-          create_table_configuration(conn2, settings |> Map.put(:is_public, false))
-        ]
-        |> Enum.map(&get_in(&1, ["data", "createTableConfiguration", "id"]))
+      [table_configuration_id1, table_configuration_id2, table_configuration_id3, table_configuration_id4] =
+        Enum.map(
+          [
+            create_table_configuration(conn, settings),
+            create_table_configuration(conn, settings),
+            create_table_configuration(conn2, settings),
+            create_table_configuration(conn2, Map.put(settings, :is_public, false))
+          ],
+          &get_in(&1, ["data", "createTableConfiguration", "id"])
+        )
 
       table_configuration_ids =
-        get_table_configurations(conn, nil)
+        conn
+        |> get_table_configurations(nil)
         |> get_in(["data", "tableConfigurations"])
         |> Enum.map(& &1["id"])
 
@@ -266,23 +285,21 @@ defmodule SanbaseWeb.Graphql.TableConfigurationApiTest do
       %{conn: conn, conn2: conn2, user2: user2, settings: settings} = context
       settings = Map.put(settings, :is_public, true)
 
-      [
-        table_configuration_id1,
-        table_configuration_id2,
-        table_configuration_id3,
-        table_configuration_id4
-      ] =
-        [
-          create_table_configuration(conn, settings),
-          create_table_configuration(conn, settings),
-          create_table_configuration(conn2, settings),
-          create_table_configuration(conn2, %{settings | is_public: false})
-        ]
-        |> Enum.map(&get_in(&1, ["data", "createTableConfiguration", "id"]))
+      [table_configuration_id1, table_configuration_id2, table_configuration_id3, table_configuration_id4] =
+        Enum.map(
+          [
+            create_table_configuration(conn, settings),
+            create_table_configuration(conn, settings),
+            create_table_configuration(conn2, settings),
+            create_table_configuration(conn2, %{settings | is_public: false})
+          ],
+          &get_in(&1, ["data", "createTableConfiguration", "id"])
+        )
 
       # User gets their own public and private table configurations
       table_configuration_ids =
-        get_table_configurations(conn2, user2.id)
+        conn2
+        |> get_table_configurations(user2.id)
         |> get_in(["data", "tableConfigurations"])
         |> Enum.map(& &1["id"])
 
@@ -293,7 +310,8 @@ defmodule SanbaseWeb.Graphql.TableConfigurationApiTest do
 
       # Get only public table configurations of another user
       table_configuration_ids =
-        get_table_configurations(conn, user2.id)
+        conn
+        |> get_table_configurations(user2.id)
         |> get_in(["data", "tableConfigurations"])
         |> Enum.map(& &1["id"])
 

@@ -1,6 +1,7 @@
 defmodule Sanbase.Dashboard.Query do
-  alias Sanbase.Dashboard.Query
+  @moduledoc false
   alias Sanbase.ClickhouseRepo
+  alias Sanbase.Dashboard.Query
 
   @spec run(String.t(), Map.t(), Map.t()) ::
           {:ok, Query.Result.t()} | {:error, String.t()}
@@ -26,9 +27,7 @@ defmodule Sanbase.Dashboard.Query do
       |> sanitize_metadata_values()
 
     query =
-      Sanbase.Clickhouse.Query.new(sql, parameters,
-        settings: "log_comment='#{Jason.encode!(query_metadata)}'"
-      )
+      Sanbase.Clickhouse.Query.new(sql, parameters, settings: "log_comment='#{Jason.encode!(query_metadata)}'")
 
     with {:ok, %{sql: sql, args: args}} <- Sanbase.Clickhouse.Query.get_sql_args(query),
          sql = extend_sql(sql, query_metadata),
@@ -77,16 +76,18 @@ defmodule Sanbase.Dashboard.Query do
   end
 
   def valid_sql_query?(sql) do
-    case Map.has_key?(sql, :query) and is_binary(sql[:query]) and String.length(sql[:query]) > 0 do
-      true -> :ok
-      false -> {:error, "sql query must be a non-empty binary string"}
+    if Map.has_key?(sql, :query) and is_binary(sql[:query]) and String.length(sql[:query]) > 0 do
+      :ok
+    else
+      {:error, "sql query must be a non-empty binary string"}
     end
   end
 
   def valid_sql_parameters?(sql) do
-    case Map.has_key?(sql, :parameters) and is_map(sql[:parameters]) do
-      true -> :ok
-      false -> {:error, "sql parameters must be a map"}
+    if Map.has_key?(sql, :parameters) and is_map(sql[:parameters]) do
+      :ok
+    else
+      {:error, "sql parameters must be a map"}
     end
   end
 
@@ -97,20 +98,22 @@ defmodule Sanbase.Dashboard.Query do
   end
 
   defp extend_query_with_prod_marker(query) do
-    case prod?() do
-      true -> "-- __query_ran_from_prod_marker__ \n" <> query
-      false -> query
+    if prod?() do
+      "-- __query_ran_from_prod_marker__ \n" <> query
+    else
+      query
     end
   end
 
   defp extend_query_metadata(%{} = query_metadata) do
-    case prod?() do
-      true -> Map.put(query_metadata, :query_ran_from_prod_marker, true)
-      false -> query_metadata
+    if prod?() do
+      Map.put(query_metadata, :query_ran_from_prod_marker, true)
+    else
+      query_metadata
     end
   end
 
-  defp prod?() do
+  defp prod? do
     Application.get_env(:sanbase, :env) == :prod
   end
 
@@ -122,22 +125,20 @@ defmodule Sanbase.Dashboard.Query do
   # It is executed for every row in the result set
   defp transform_result(list), do: Enum.map(list, &handle_result_param/1)
 
-  defp handle_result_param(%Date{} = date),
-    do: DateTime.new!(date, ~T[00:00:00])
+  defp handle_result_param(%Date{} = date), do: DateTime.new!(date, ~T[00:00:00])
 
-  defp handle_result_param(%NaiveDateTime{} = ndt),
-    do: DateTime.from_naive!(ndt, "Etc/UTC")
+  defp handle_result_param(%NaiveDateTime{} = ndt), do: DateTime.from_naive!(ndt, "Etc/UTC")
 
   defp handle_result_param(data), do: data
 
   defp sanitize_metadata_values(map) do
-    Enum.map(map, fn {key, value} ->
-      case is_binary(value) do
-        # Remove questionmarks and single-quotes
-        true -> {key, String.replace(value, ~r/['?]/, "")}
-        false -> {key, value}
+    Map.new(map, fn {key, value} ->
+      # Remove questionmarks and single-quotes
+      if is_binary(value) do
+        {key, String.replace(value, ~r/['?]/, "")}
+      else
+        {key, value}
       end
     end)
-    |> Enum.into(%{})
   end
 end

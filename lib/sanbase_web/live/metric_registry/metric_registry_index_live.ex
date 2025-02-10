@@ -1,10 +1,11 @@
 defmodule SanbaseWeb.MetricRegistryIndexLive do
+  @moduledoc false
   use SanbaseWeb, :live_view
+
+  import SanbaseWeb.AvailableMetricsDescription
 
   alias Sanbase.Metric.Registry.Permissions
   alias SanbaseWeb.AvailableMetricsComponents
-
-  import SanbaseWeb.AvailableMetricsDescription
 
   @impl true
   def mount(_params, _session, socket) do
@@ -15,8 +16,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     metrics = if connected?(socket), do: Sanbase.Metric.Registry.all(), else: []
 
     {:ok,
-     socket
-     |> assign(
+     assign(socket,
        page_title: "Metric Registry",
        show_verified_changes_modal: false,
        visible_metrics_ids: Enum.map(metrics, & &1.id),
@@ -151,31 +151,18 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
       |> maybe_apply_filter(:only_unverified, params)
       |> Enum.map(& &1.id)
 
-    {:noreply,
-     socket
-     |> assign(
-       visible_metrics_ids: visible_metrics_ids,
-       filter: params
-     )}
+    {:noreply, assign(socket, visible_metrics_ids: visible_metrics_ids, filter: params)}
   end
 
   def handle_event("show_verified_changes_modal", _params, socket) do
-    {:noreply,
-     socket
-     |> assign(show_verified_changes_modal: true)}
+    {:noreply, assign(socket, show_verified_changes_modal: true)}
   end
 
   def handle_event("hide_show_verified_changes_modal", _params, socket) do
-    {:noreply,
-     socket
-     |> assign(show_verified_changes_modal: false)}
+    {:noreply, assign(socket, show_verified_changes_modal: false)}
   end
 
-  def handle_event(
-        "update_status_is_verified",
-        %{"metric_registry_id" => id, "is_verified" => bool},
-        socket
-      ) do
+  def handle_event("update_status_is_verified", %{"metric_registry_id" => id, "is_verified" => bool}, socket) do
     verified_metrics_updates_map =
       Map.update(
         socket.assigns.verified_metrics_updates_map,
@@ -189,9 +176,8 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     # updated after each time update_metric/4 is called or the metrics list is mutated
     # in any other way.
     changed_metrics_ids =
-      verified_metrics_updates_map
-      |> Enum.reduce([], fn {id, map}, acc ->
-        if map.new != map.old, do: [id | acc], else: acc
+      Enum.reduce(verified_metrics_updates_map, [], fn {id, map}, acc ->
+        if map.new == map.old, do: acc, else: [id | acc]
       end)
 
     {:noreply,
@@ -456,8 +442,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     end)
   end
 
-  defp maybe_apply_filter(metrics, :match_metric, %{"match_metric" => query})
-       when query != "" do
+  defp maybe_apply_filter(metrics, :match_metric, %{"match_metric" => query}) when query != "" do
     query = String.downcase(query)
     query_parts = String.split(query)
 
@@ -472,17 +457,14 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     |> Enum.sort_by(&String.jaro_distance(query, &1.metric), :desc)
   end
 
-  defp maybe_apply_filter(metrics, :match_table, %{"match_table" => query})
-       when query != "" do
-    metrics
-    |> Enum.filter(fn m ->
+  defp maybe_apply_filter(metrics, :match_table, %{"match_table" => query}) when query != "" do
+    Enum.filter(metrics, fn m ->
       Enum.any?(m.tables, &String.contains?(&1.name, query))
     end)
   end
 
   defp maybe_apply_filter(metrics, :match_table, %{"unverified_only" => "on"}) do
-    metrics
-    |> Enum.filter(fn m ->
+    Enum.filter(metrics, fn m ->
       m.is_verified == false
     end)
   end

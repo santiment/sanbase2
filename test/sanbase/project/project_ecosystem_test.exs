@@ -14,8 +14,7 @@ defmodule Sanbase.Project.EcosystemTest do
       insert(:project, name: "Ykc", slug: "ykc", ecosystem: "abc")
 
       list =
-        Sanbase.Project.Job.compute_ecosystem_full_path()
-        |> Enum.map(fn {p, e} -> {p.slug, e} end)
+        Enum.map(Sanbase.Project.Job.compute_ecosystem_full_path(), fn {p, e} -> {p.slug, e} end)
 
       expected_list = [
         {"abc", "/ethereum/arbitrum/abc/"},

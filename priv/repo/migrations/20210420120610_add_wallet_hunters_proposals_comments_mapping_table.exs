@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddWalletHuntersProposalsCommentsMappingTable do
+  @moduledoc false
   use Ecto.Migration
 
   @table :wallet_hunters_proposals_comments_mapping

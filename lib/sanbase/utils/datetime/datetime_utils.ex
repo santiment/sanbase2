@@ -1,4 +1,7 @@
 defmodule Sanbase.DateTimeUtils do
+  @moduledoc false
+  alias Sanbase.Metric.SqlQuery.Helper
+
   def utc_now_string_to_datetime!("utc_now" <> _ = value) do
     case utc_now_string_to_datetime(value) do
       {:ok, value} -> value
@@ -12,16 +15,12 @@ defmodule Sanbase.DateTimeUtils do
         {:ok, DateTime.utc_now()}
 
       ["utc_now", interval] ->
-        case valid_compound_duration?(interval) do
-          true ->
-            dt =
-              DateTime.utc_now()
-              |> Timex.shift(seconds: -str_to_sec(interval))
+        if valid_compound_duration?(interval) do
+          dt = Timex.shift(DateTime.utc_now(), seconds: -str_to_sec(interval))
 
-            {:ok, dt}
-
-          false ->
-            {:error, "The interval part of #{value} is not a valid interval"}
+          {:ok, dt}
+        else
+          {:error, "The interval part of #{value} is not a valid interval"}
         end
 
       _ ->
@@ -33,8 +32,7 @@ defmodule Sanbase.DateTimeUtils do
   Return a human readable representation of a datetime
   """
   def to_human_readable(datetime) do
-    datetime
-    |> Timex.format!("{0D} {Mshort} {YYYY} {h24}:{m} UTC")
+    Timex.format!(datetime, "{0D} {Mshort} {YYYY} {h24}:{m} UTC")
   end
 
   def seconds_to_human_readable(seconds) do
@@ -44,7 +42,7 @@ defmodule Sanbase.DateTimeUtils do
   end
 
   def truncate_datetimes(%{} = map, precision \\ :second) do
-    Enum.into(map, %{}, fn
+    Map.new(map, fn
       {k, %DateTime{} = dt} -> {k, DateTime.truncate(dt, precision)}
       {k, %NaiveDateTime{} = dt} -> {k, NaiveDateTime.truncate(dt, precision)}
       {k, v} -> {k, v}
@@ -69,7 +67,7 @@ defmodule Sanbase.DateTimeUtils do
   def generate_datetimes_list(from, interval, count) do
     interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
 
-    0..(count - 1) |> Enum.map(fn offset -> Timex.shift(from, seconds: interval_sec * offset) end)
+    Enum.map(0..(count - 1), fn offset -> Timex.shift(from, seconds: interval_sec * offset) end)
   end
 
   def generate_dates_inclusive(%Date{} = from, %Date{} = to) do
@@ -98,16 +96,15 @@ defmodule Sanbase.DateTimeUtils do
   end
 
   def after_interval(interval, datetime \\ DateTime.utc_now()) when is_binary(interval) do
-    str_to_sec(interval) |> seconds_after(datetime)
+    interval |> str_to_sec() |> seconds_after(datetime)
   end
 
   def before_interval(interval, datetime \\ DateTime.utc_now()) when is_binary(interval) do
-    str_to_sec(interval) |> seconds_ago(datetime)
+    interval |> str_to_sec() |> seconds_ago(datetime)
   end
 
   def seconds_after(seconds, datetime \\ DateTime.utc_now()) do
-    datetime
-    |> Timex.shift(seconds: seconds)
+    Timex.shift(datetime, seconds: seconds)
   end
 
   def days_after(days, datetime \\ DateTime.utc_now()) do
@@ -115,8 +112,7 @@ defmodule Sanbase.DateTimeUtils do
   end
 
   def seconds_ago(seconds, datetime \\ DateTime.utc_now()) do
-    datetime
-    |> Timex.shift(seconds: -seconds)
+    Timex.shift(datetime, seconds: -seconds)
   end
 
   def minutes_ago(minutes) do
@@ -132,30 +128,32 @@ defmodule Sanbase.DateTimeUtils do
   end
 
   def str_to_hours(interval) do
-    str_to_sec(interval) |> Integer.floor_div(3600)
+    interval |> str_to_sec() |> Integer.floor_div(3600)
   end
 
   def date_to_datetime(date, opts \\ []) do
-    time = Keyword.get(opts, :time, ~T[00:00:00Z]) |> Time.to_iso8601()
+    time = opts |> Keyword.get(:time, ~T[00:00:00Z]) |> Time.to_iso8601()
 
-    {:ok, datetime, _} = (Date.to_iso8601(date) <> "T" <> time <> "Z") |> DateTime.from_iso8601()
+    {:ok, datetime, _} = DateTime.from_iso8601(Date.to_iso8601(date) <> "T" <> time <> "Z")
 
     datetime
   end
 
-  @supported_interval_functions Sanbase.Metric.SqlQuery.Helper.supported_interval_functions()
-  @interval_function_to_equal_interval Sanbase.Metric.SqlQuery.Helper.interval_function_to_equal_interval()
+  @supported_interval_functions Helper.supported_interval_functions()
+  @interval_function_to_equal_interval Helper.interval_function_to_equal_interval()
 
   def maybe_str_to_sec(interval) do
-    case interval in @supported_interval_functions do
-      true -> interval
-      false -> str_to_sec(interval)
+    if interval in @supported_interval_functions do
+      interval
+    else
+      str_to_sec(interval)
     end
   end
 
   # If interval_function is 'toStartOfWeek', 'toStartOfMonth', etc.
   def str_to_sec(interval_function) when interval_function in @supported_interval_functions do
-    Map.get(@interval_function_to_equal_interval, interval_function)
+    @interval_function_to_equal_interval
+    |> Map.get(interval_function)
     |> str_to_sec()
   end
 
@@ -189,17 +187,19 @@ defmodule Sanbase.DateTimeUtils do
   def interval_to_str(interval) do
     {int_interval, duration_index} = Integer.parse(interval)
 
-    case duration_index do
-      "ns" -> "#{int_interval} nanosecond"
-      "ms" -> "#{int_interval} millisecond"
-      "s" -> "#{int_interval} second"
-      "m" -> "#{int_interval} minute"
-      "h" -> "#{int_interval} hour"
-      "d" -> "#{int_interval} day"
-      "w" -> "#{int_interval} week"
-      "y" -> "#{int_interval} year"
-    end
-    |> maybe_pluralize_interval(int_interval)
+    case_result =
+      case duration_index do
+        "ns" -> "#{int_interval} nanosecond"
+        "ms" -> "#{int_interval} millisecond"
+        "s" -> "#{int_interval} second"
+        "m" -> "#{int_interval} minute"
+        "h" -> "#{int_interval} hour"
+        "d" -> "#{int_interval} day"
+        "w" -> "#{int_interval} week"
+        "y" -> "#{int_interval} year"
+      end
+
+    maybe_pluralize_interval(case_result, int_interval)
   end
 
   def valid_compound_duration?(value) do
@@ -210,9 +210,8 @@ defmodule Sanbase.DateTimeUtils do
   end
 
   def from_erl(erl_datetime) do
-    with {:ok, naive_dt} <- NaiveDateTime.from_erl(erl_datetime),
-         {:ok, datetime} <- DateTime.from_naive(naive_dt, "Etc/UTC") do
-      {:ok, datetime}
+    with {:ok, naive_dt} <- NaiveDateTime.from_erl(erl_datetime) do
+      DateTime.from_naive(naive_dt, "Etc/UTC")
     end
   end
 

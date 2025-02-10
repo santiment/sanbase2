@@ -4,17 +4,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.ApikeyResolver do
   is delegated to the `Apikey` module
   """
 
-  require Logger
+  alias Sanbase.Accounts.Apikey
+  alias Sanbase.Accounts.User
 
-  alias Sanbase.Accounts.{Apikey, User}
+  require Logger
 
   @doc ~s"""
   Generates an apikey for the given user and returns the `user` struct.
   To fetch all apikeys use the `apikeys` field of the `user` GQL type.
   """
-  def generate_apikey(_root, _args, %{
-        context: %{auth: %{auth_method: :user_token, current_user: user}}
-      }) do
+  def generate_apikey(_root, _args, %{context: %{auth: %{auth_method: :user_token, current_user: user}}}) do
     case Apikey.generate_apikey(user) do
       {:ok, _apikey} ->
         {:ok, user}
@@ -33,9 +32,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ApikeyResolver do
   Revokes an apikey and returns the `user` struct. To fetch all apikeys use the
   `apikeys` field of the `user` GQL type.
   """
-  def revoke_apikey(_root, %{apikey: apikey}, %{
-        context: %{auth: %{auth_method: :user_token, current_user: user}}
-      }) do
+  def revoke_apikey(_root, %{apikey: apikey}, %{context: %{auth: %{auth_method: :user_token, current_user: user}}}) do
     case Apikey.revoke_apikey(user, apikey) do
       :ok ->
         {:ok, user}

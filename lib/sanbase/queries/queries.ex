@@ -4,17 +4,17 @@ defmodule Sanbase.Queries do
 
   TODO: Add more documentation
   """
-  alias Sanbase.Repo
-  alias Sanbase.Queries
-  alias Sanbase.Queries.Query
-  alias Sanbase.Queries.QueryMetadata
-  alias Sanbase.Queries.QueryExecution
-  alias Sanbase.Dashboards.Dashboard
-  alias Sanbase.Dashboards.DashboardQueryMapping
+  import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
+
   alias Sanbase.Accounts.User
   alias Sanbase.Clickhouse.Query.Environment
-
-  import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
+  alias Sanbase.Dashboards.Dashboard
+  alias Sanbase.Dashboards.DashboardQueryMapping
+  alias Sanbase.Queries
+  alias Sanbase.Queries.Query
+  alias Sanbase.Queries.QueryExecution
+  alias Sanbase.Queries.QueryMetadata
+  alias Sanbase.Repo
 
   @type user_id :: non_neg_integer()
   @type query_id :: Query.query_id()
@@ -298,13 +298,13 @@ defmodule Sanbase.Queries do
   @spec create_query(create_query_args(), user_id) ::
           {:ok, Query.t()} | {:error, String.t()} | {:error, Ecto.Changeset.t()}
   def create_query(args, user_id) do
-    args = args |> Map.merge(%{user_id: user_id, uuid: generate_uuid()})
+    args = Map.merge(args, %{user_id: user_id, uuid: generate_uuid()})
 
     changeset = Query.create_changeset(%Query{}, args)
 
     case Repo.insert(changeset) do
       {:ok, %Query{} = query} ->
-        query = query |> Repo.preload([:user])
+        query = Repo.preload(query, [:user])
         {:ok, query}
 
       {:error, changeset} ->
@@ -312,7 +312,7 @@ defmodule Sanbase.Queries do
     end
   end
 
-  def generate_uuid(), do: "query_" <> UUID.uuid4()
+  def generate_uuid, do: "query_" <> UUID.uuid4()
 
   @doc ~s"""
   Update a query.
@@ -335,7 +335,7 @@ defmodule Sanbase.Queries do
       get_for_mutation(query_id, querying_user_id)
     end)
     |> Ecto.Multi.run(:update, fn _repo, %{get_for_mutation: struct} ->
-      Query.update_changeset(struct, attrs) |> Repo.update()
+      struct |> Query.update_changeset(attrs) |> Repo.update()
     end)
     |> Repo.transaction()
     |> process_transaction_result(:update)
@@ -476,12 +476,10 @@ defmodule Sanbase.Queries do
     end
   end
 
-  defp process_transaction_result({:ok, map}, ok_field),
-    do: {:ok, map[ok_field]}
+  defp process_transaction_result({:ok, map}, ok_field), do: {:ok, map[ok_field]}
 
   defp process_transaction_result({:error, _, %Ecto.Changeset{} = changeset, _}, _ok_field),
     do: {:error, changeset_errors_string(changeset)}
 
-  defp process_transaction_result({:error, _, error, _}, _ok_field),
-    do: {:error, error}
+  defp process_transaction_result({:error, _, error, _}, _ok_field), do: {:error, error}
 end

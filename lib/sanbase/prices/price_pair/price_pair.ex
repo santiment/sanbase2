@@ -1,4 +1,6 @@
 defmodule Sanbase.PricePair do
+  @moduledoc false
+  import Sanbase.Metric.Transform, only: [exec_timeseries_data_query: 1]
   import Sanbase.Price.PricePairSql
 
   import Sanbase.Utils.Transform,
@@ -7,8 +9,6 @@ defmodule Sanbase.PricePair do
       maybe_sort: 3,
       maybe_transform_datetime_data_tuple_to_map: 1
     ]
-
-  import Sanbase.Metric.Transform, only: [exec_timeseries_data_query: 1]
 
   alias Sanbase.ClickhouseRepo
 
@@ -62,8 +62,8 @@ defmodule Sanbase.PricePair do
     source = Keyword.get(opts, :source) || @default_source
     aggregation = Keyword.get(opts, :aggregation) || :last
 
-    timeseries_data_query(
-      slug_or_slugs,
+    slug_or_slugs
+    |> timeseries_data_query(
       quote_asset,
       from,
       to,
@@ -85,7 +85,8 @@ defmodule Sanbase.PricePair do
     query_struct =
       timeseries_data_per_slug_query(slugs, quote_asset, from, to, interval, source, aggregation)
 
-    ClickhouseRepo.query_reduce(query_struct, %{}, fn [timestamp, slug, value], acc ->
+    query_struct
+    |> ClickhouseRepo.query_reduce(%{}, fn [timestamp, slug, value], acc ->
       datetime = DateTime.from_unix!(timestamp)
       elem = %{slug: slug, value: value}
       Map.update(acc, datetime, [elem], &[elem | &1])
@@ -102,10 +103,10 @@ defmodule Sanbase.PricePair do
 
   def aggregated_timeseries_data([], _, _, _, _), do: {:ok, []}
 
-  def aggregated_timeseries_data(slugs, quote_asset, from, to, opts)
-      when is_list(slugs) and length(slugs) > 1000 do
+  def aggregated_timeseries_data(slugs, quote_asset, from, to, opts) when is_list(slugs) and length(slugs) > 1000 do
     result =
-      Enum.chunk_every(slugs, 1000)
+      slugs
+      |> Enum.chunk_every(1000)
       |> Sanbase.Parallel.map(
         &aggregated_timeseries_data(&1, quote_asset, from, to, opts),
         timeout: 55_000,
@@ -132,7 +133,7 @@ defmodule Sanbase.PricePair do
       # with value `nil`. This way the API can cache the result. In case one of the
       # aggregated_timeseries_data calls fails, the slugs in it won't be included
       # at all and they will be retried next time.
-      value = if has_changed == 1, do: value, else: nil
+      value = if has_changed == 1, do: value
       Map.put(acc, slug, value)
     end)
   end
@@ -167,15 +168,13 @@ defmodule Sanbase.PricePair do
     source = Keyword.get(opts, :source, @default_source)
     query_struct = last_record_before_query(slug, quote_asset, datetime, source)
 
-    ClickhouseRepo.query_transform(
-      query_struct,
-      fn [unix, value] ->
-        %{
-          datetime: DateTime.from_unix!(unix),
-          value: value
-        }
-      end
-    )
+    query_struct
+    |> ClickhouseRepo.query_transform(fn [unix, value] ->
+      %{
+        datetime: DateTime.from_unix!(unix),
+        value: value
+      }
+    end)
     |> maybe_unwrap_ok_value()
   end
 
@@ -185,7 +184,8 @@ defmodule Sanbase.PricePair do
     case Keyword.get(opts, :source) || @default_source do
       "cryptocompare" ->
         slugs =
-          Sanbase.Project.SourceSlugMapping.get_source_slug_mappings("cryptocompare")
+          "cryptocompare"
+          |> Sanbase.Project.SourceSlugMapping.get_source_slug_mappings()
           |> Enum.map(&elem(&1, 1))
 
         {:ok, slugs}
@@ -208,7 +208,8 @@ defmodule Sanbase.PricePair do
     source = Keyword.get(opts, :source, @default_source)
     query_struct = select_any_record_query(slug, quote_asset, source)
 
-    ClickhouseRepo.query_transform(query_struct, & &1)
+    query_struct
+    |> ClickhouseRepo.query_transform(& &1)
     |> case do
       {:ok, [_]} -> {:ok, true}
       {:ok, []} -> {:ok, false}
@@ -236,7 +237,8 @@ defmodule Sanbase.PricePair do
     source = Keyword.get(opts, :source, @default_source)
     query_struct = first_datetime_query(slug, quote_asset, source)
 
-    ClickhouseRepo.query_transform(query_struct, fn
+    query_struct
+    |> ClickhouseRepo.query_transform(fn
       [timestamp] -> DateTime.from_unix!(timestamp)
     end)
     |> maybe_unwrap_ok_value()
@@ -246,7 +248,8 @@ defmodule Sanbase.PricePair do
     source = Keyword.get(opts, :source, @default_source)
     query_struct = last_datetime_computed_at_query(slug, quote_asset, source)
 
-    ClickhouseRepo.query_transform(query_struct, fn
+    query_struct
+    |> ClickhouseRepo.query_transform(fn
       [timestamp] -> DateTime.from_unix!(timestamp)
     end)
     |> maybe_unwrap_ok_value()

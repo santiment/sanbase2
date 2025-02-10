@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.RemoveDuplicatedUsernames do
+  @moduledoc false
   use Ecto.Migration
 
   import Ecto.Query
@@ -21,14 +22,11 @@ defmodule Sanbase.Repo.Migrations.RemoveDuplicatedUsernames do
       |> Enum.map(fn %User{username: username} = user ->
         if username in duplicated_usernames do
           User.changeset(user, %{username: nil})
-        else
-          nil
         end
       end)
       |> Enum.reject(&is_nil/1)
 
-    users_to_update
-    |> Enum.each(&Repo.update/1)
+    Enum.each(users_to_update, &Repo.update/1)
   end
 
   def down do

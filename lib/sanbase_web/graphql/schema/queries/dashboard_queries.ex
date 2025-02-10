@@ -6,8 +6,9 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve: 2]
 
+  alias SanbaseWeb.Graphql.Middlewares.JWTAuth
+  alias SanbaseWeb.Graphql.Middlewares.UserAuth
   alias SanbaseWeb.Graphql.Resolvers.DashboardResolver
-  alias SanbaseWeb.Graphql.Middlewares.{UserAuth, JWTAuth}
 
   object :old_dashboard_queries do
     @desc ~s"""

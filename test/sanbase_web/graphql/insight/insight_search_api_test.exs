@@ -1,14 +1,14 @@
 defmodule SanbaseWeb.Graphql.InsightSearchApiTest do
   use SanbaseWeb.ConnCase, async: false
 
-  # TODO: Fix these randomly failing tests in the CI. Disable them for now.
-  @moduletag skip_suite: true
-
-  import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.TestHelpers
   import Sanbase.Factory
+  import Sanbase.TestHelpers
+  import SanbaseWeb.Graphql.TestHelpers
 
   alias Sanbase.Insight.Post
+
+  # TODO: Fix these randomly failing tests in the CI. Disable them for now.
+  @moduletag skip_suite: true
 
   setup_all_with_mocks([
     {Sanbase.Messaging.Insight, [], [publish_in_discord: fn _ -> :ok end]}
@@ -55,7 +55,7 @@ defmodule SanbaseWeb.Graphql.InsightSearchApiTest do
 
       insights = search_insights(conn, "undergoes")
       assert length(insights) == 1
-      insight = insights |> hd()
+      insight = hd(insights)
       assert insight["id"] == post2.id
     end
 
@@ -64,7 +64,7 @@ defmodule SanbaseWeb.Graphql.InsightSearchApiTest do
 
       insights = search_insights(conn, "price_usd")
       assert length(insights) == 1
-      insight = insights |> hd()
+      insight = hd(insights)
       assert insight["id"] == post1.id
     end
 
@@ -74,7 +74,7 @@ defmodule SanbaseWeb.Graphql.InsightSearchApiTest do
       # also plural form are normalized
       insights = search_insights(conn, "explanations")
       assert length(insights) == 1
-      insight = insights |> hd()
+      insight = hd(insights)
       assert insight["id"] == post2.id
 
       # more than 1 insight
@@ -101,7 +101,7 @@ defmodule SanbaseWeb.Graphql.InsightSearchApiTest do
 
       insights = search_insights(conn, "metric explanations")
       assert length(insights) == 1
-      insight = insights |> hd()
+      insight = hd(insights)
       assert insight["id"] == post2.id
     end
 

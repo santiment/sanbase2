@@ -1,9 +1,12 @@
 defmodule Sanbase.Project.FundsRaised do
+  @moduledoc false
   import Ecto.Query
 
-  alias Sanbase.Repo
+  alias Sanbase.Model.Currency
+  alias Sanbase.Model.Ico
+  alias Sanbase.Model.IcoCurrency
   alias Sanbase.Project
-  alias Sanbase.Model.{Ico, IcoCurrency, Currency}
+  alias Sanbase.Repo
 
   def ico_price(%Project{} = project) do
     ico_with_max_price =
@@ -12,13 +15,13 @@ defmodule Sanbase.Project.FundsRaised do
       |> Map.get(:icos, [])
       |> Enum.reject(fn ico -> is_nil(ico.token_usd_ico_price) end)
       |> Enum.max_by(
-        fn ico -> ico.token_usd_ico_price |> Decimal.to_float() end,
+        fn ico -> Decimal.to_float(ico.token_usd_ico_price) end,
         fn -> nil end
       )
 
     case ico_with_max_price do
       %Ico{token_usd_ico_price: ico_price} ->
-        ico_price |> Decimal.to_float()
+        Decimal.to_float(ico_price)
 
       _ ->
         nil

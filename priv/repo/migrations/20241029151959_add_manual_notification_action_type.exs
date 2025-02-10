@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddManualNotificationActionType do
+  @moduledoc false
   use Ecto.Migration
 
   def up do

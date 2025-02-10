@@ -1,8 +1,4 @@
 defmodule Sanbase.Cryptocompare.Price.WebsocketScraper do
-  defmodule HealthcheckError do
-    defexception [:message]
-  end
-
   @moduledoc ~s"""
   Scrape the prices from Cryptocompare websocket API
   https://min-api.cryptocompare.com/documentation/websockets
@@ -16,11 +12,16 @@ defmodule Sanbase.Cryptocompare.Price.WebsocketScraper do
   """
   use WebSockex
 
-  alias Sanbase.ExternalServices.Coinmarketcap.PricePoint, as: AssetPricesPoint
   alias Sanbase.Cryptocompare.PriceOnlyPoint, as: CryptocompareAssetPricesOnlyPoint
+  alias Sanbase.ExternalServices.Coinmarketcap.PricePoint, as: AssetPricesPoint
+  alias Sanbase.Utils.Config
 
   require Logger
-  alias Sanbase.Utils.Config
+
+  defmodule HealthcheckError do
+    @moduledoc false
+    defexception [:message]
+  end
 
   # giving it a name makes sure only one instance of the scraper is alive at a time
   @name :cryptocompare_websocket_scraper
@@ -45,7 +46,7 @@ defmodule Sanbase.Cryptocompare.Price.WebsocketScraper do
     }
   end
 
-  def start_link() do
+  def start_link do
     state = %{
       start_time: DateTime.utc_now(),
       last_points: %{},
@@ -65,7 +66,7 @@ defmodule Sanbase.Cryptocompare.Price.WebsocketScraper do
     )
   end
 
-  def enabled?(), do: Config.module_get(__MODULE__, :enabled?) |> String.to_existing_atom()
+  def enabled?, do: __MODULE__ |> Config.module_get(:enabled?) |> String.to_existing_atom()
 
   def terminate(reason, state) do
     base_error_msg = "[CryptocompareWS] Terminate the websocket connection #{state[:socket_id]}."
@@ -92,9 +93,10 @@ defmodule Sanbase.Cryptocompare.Price.WebsocketScraper do
       DateTime.diff(DateTime.utc_now(), state.last_price_message_time, :millisecond)
 
     state =
-      case last_message_elapsed > @healthcheck_tolerance do
-        true -> Map.update(state, :healthcheck_sequential_failures, 1, &(&1 + 1))
-        false -> Map.put(state, :healthcheck_sequential_failures, 0)
+      if last_message_elapsed > @healthcheck_tolerance do
+        Map.update(state, :healthcheck_sequential_failures, 1, &(&1 + 1))
+      else
+        Map.put(state, :healthcheck_sequential_failures, 0)
       end
 
     if state.healthcheck_sequential_failures > @healthcheck_max_failures do
@@ -157,7 +159,8 @@ defmodule Sanbase.Cryptocompare.Price.WebsocketScraper do
     # 3 fields used in the unique key defined aboe fields, and use it to fill the
     # missing fields in subsequent frames.
     point =
-      point_from_aggregated_index_message(msg)
+      msg
+      |> point_from_aggregated_index_message()
       |> Enum.reduce(last_point, fn
         # In case the value is `nil`, put it only if the key is not present at all
         # This can happen with the first data point or if the pair does not have
@@ -241,8 +244,7 @@ defmodule Sanbase.Cryptocompare.Price.WebsocketScraper do
       Logger.error("[CryptocompareWS] Failed to export data point: #{Exception.message(e)}")
   end
 
-  defp export_asset_prices_topic(%{quote_asset: quote_asset} = point, last_points)
-       when quote_asset in ["BTC", "USD"] do
+  defp export_asset_prices_topic(%{quote_asset: quote_asset} = point, last_points) when quote_asset in ["BTC", "USD"] do
     case Map.get(slug_data_map(), point.base_asset) do
       nil ->
         :ok
@@ -257,17 +259,19 @@ defmodule Sanbase.Cryptocompare.Price.WebsocketScraper do
         btc_point = Map.get(last_points, {"CCCAGG", point.base_asset, "BTC"}, %{})
 
         tuples =
-          slugs
-          |> Enum.map(fn slug ->
-            %AssetPricesPoint{
-              slug: slug,
-              datetime: point.datetime,
-              price_usd: usd_point[:price],
-              price_btc: if(point.base_asset == "BTC", do: 1.0, else: btc_point[:price]),
-              volume_usd: usd_point[:volume_24h_to] |> Sanbase.Math.to_integer(),
-              marketcap_usd: nil
-            }
-            |> AssetPricesPoint.json_kv_tuple(slug, point.source)
+          Enum.map(slugs, fn slug ->
+            AssetPricesPoint.json_kv_tuple(
+              %AssetPricesPoint{
+                slug: slug,
+                datetime: point.datetime,
+                price_usd: usd_point[:price],
+                price_btc: if(point.base_asset == "BTC", do: 1.0, else: btc_point[:price]),
+                volume_usd: Sanbase.Math.to_integer(usd_point[:volume_24h_to]),
+                marketcap_usd: nil
+              },
+              slug,
+              point.source
+            )
           end)
 
         :ok = Sanbase.KafkaExporter.persist_async(tuples, @asset_prices_exporter)
@@ -285,15 +289,16 @@ defmodule Sanbase.Cryptocompare.Price.WebsocketScraper do
     :ok = Sanbase.KafkaExporter.persist_async(tuple, @asset_price_pairs_only_exporter)
   end
 
-  defp slug_data_map() do
-    cache_key = {__MODULE__, :slug_data_map} |> Sanbase.Cache.hash()
+  defp slug_data_map do
+    cache_key = Sanbase.Cache.hash({__MODULE__, :slug_data_map})
     {:ok, map} = Sanbase.Cache.get_or_store({cache_key, 1800}, &get_slug_data_map/0)
     map
   end
 
-  defp get_slug_data_map() do
+  defp get_slug_data_map do
     result =
-      Sanbase.Project.SourceSlugMapping.get_source_slug_mappings("cryptocompare")
+      "cryptocompare"
+      |> Sanbase.Project.SourceSlugMapping.get_source_slug_mappings()
       |> Enum.reduce(%{}, fn {cryptocompare_slug, san_slug}, acc ->
         Map.update(acc, cryptocompare_slug, [san_slug], &[san_slug | &1])
       end)
@@ -301,6 +306,6 @@ defmodule Sanbase.Cryptocompare.Price.WebsocketScraper do
     {:ok, result}
   end
 
-  defp api_key(), do: Config.module_get(Sanbase.Cryptocompare, :api_key)
-  defp websocket_url(), do: "wss://streamer.cryptocompare.com/v2"
+  defp api_key, do: Config.module_get(Sanbase.Cryptocompare, :api_key)
+  defp websocket_url, do: "wss://streamer.cryptocompare.com/v2"
 end

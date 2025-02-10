@@ -1,5 +1,7 @@
 defmodule Sanbase.Repo.Migrations.RemoveTrailingNewlineMarketPairMapping do
+  @moduledoc false
   use Ecto.Migration
+
   alias Sanbase.Exchanges.MarketPairMapping
   alias Sanbase.Repo
 

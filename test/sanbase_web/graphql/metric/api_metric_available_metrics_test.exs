@@ -36,7 +36,8 @@ defmodule SanbaseWeb.Graphql.AvailableMetricsApiTest do
     metrics =
       available_metrics |> Enum.shuffle() |> Enum.take(Enum.random(1..length(available_metrics)))
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Metric.available_metrics_for_selector/1, {:ok, metrics})
+    (&Sanbase.Metric.available_metrics_for_selector/1)
+    |> Sanbase.Mock.prepare_mock2({:ok, metrics})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result = get_available_metrics_for_selector(context.conn, %{slug: "santiment"})
 
@@ -50,7 +51,8 @@ defmodule SanbaseWeb.Graphql.AvailableMetricsApiTest do
     metrics =
       available_metrics |> Enum.shuffle() |> Enum.take(Enum.random(1..length(available_metrics)))
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Metric.available_metrics_for_selector/1, {:ok, metrics})
+    (&Sanbase.Metric.available_metrics_for_selector/1)
+    |> Sanbase.Mock.prepare_mock2({:ok, metrics})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result = get_available_metrics_for_selector(context.conn, %{contract_address: "0x1"})
 

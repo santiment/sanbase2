@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddTableConfigurationFeaturedItem do
+  @moduledoc false
   use Ecto.Migration
 
   def up do

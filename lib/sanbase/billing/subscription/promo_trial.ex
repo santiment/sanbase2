@@ -1,12 +1,14 @@
 defmodule Sanbase.Billing.Subscription.PromoTrial do
+  @moduledoc false
   use Ecto.Schema
 
   import Ecto.Changeset
 
-  alias Sanbase.Billing
-  alias Sanbase.StripeApi
   alias Sanbase.Accounts.User
-  alias Sanbase.Billing.{Subscription, Plan}
+  alias Sanbase.Billing
+  alias Sanbase.Billing.Plan
+  alias Sanbase.Billing.Subscription
+  alias Sanbase.StripeApi
 
   require Logger
 
@@ -46,8 +48,7 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
     create_promo_trial(%{plans: plans, trial_days: trial_days, user_id: user_id})
   end
 
-  def create_promo_trial(%{plans: plans, trial_days: trial_days, user_id: user_id})
-      when is_list(plans) do
+  def create_promo_trial(%{plans: plans, trial_days: trial_days, user_id: user_id}) when is_list(plans) do
     user_id = maybe_convert_to_integer(user_id)
     {:ok, user} = User.by_id(user_id)
     plans = Enum.map(plans, &maybe_convert_to_integer/1)
@@ -86,7 +87,8 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
 
   defp promo_subscribe(user, plan_ids, trial_days) when is_list(plan_ids) do
     subscriptions =
-      Plan.by_ids(plan_ids)
+      plan_ids
+      |> Plan.by_ids()
       |> Enum.map(&subscribe_to_plan(user, &1, trial_days))
 
     groups = Enum.group_by(subscriptions, fn {ok_or_error, _} -> ok_or_error end)
@@ -94,7 +96,7 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
     if errors = Map.get(groups, :error) do
       hd(errors)
     else
-      {:ok, Map.get(groups, :ok, []) |> Enum.map(&elem(&1, 1))}
+      {:ok, groups |> Map.get(:ok, []) |> Enum.map(&elem(&1, 1))}
     end
   end
 
@@ -107,9 +109,8 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
   defp subscribe_to_plan(user, plan, trial_days) do
     subscription_data = promotional_subsciption_data(user, plan, trial_days)
 
-    with {:ok, stripe_sub} <- StripeApi.create_subscription(subscription_data),
-         {:ok, subscription} <- Subscription.create_subscription_db(stripe_sub, user, plan) do
-      {:ok, subscription}
+    with {:ok, stripe_sub} <- StripeApi.create_subscription(subscription_data) do
+      Subscription.create_subscription_db(stripe_sub, user, plan)
     end
   end
 
@@ -117,7 +118,7 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
     %{
       customer: user.stripe_customer_id,
       items: [%{plan: plan.stripe_id}],
-      trial_end: Timex.shift(Timex.now(), days: trial_days) |> DateTime.to_unix()
+      trial_end: DateTime.utc_now() |> Timex.shift(days: trial_days) |> DateTime.to_unix()
     }
   end
 
@@ -138,9 +139,7 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
   end
 
   defp log_error(user, error) do
-    Logger.error(
-      "Error creating promotional subscription for user: #{inspect(user)}, reason: #{inspect(error)}"
-    )
+    Logger.error("Error creating promotional subscription for user: #{inspect(user)}, reason: #{inspect(error)}")
   end
 
   defp stringify_plans(changeset, %{plans: plans}) do

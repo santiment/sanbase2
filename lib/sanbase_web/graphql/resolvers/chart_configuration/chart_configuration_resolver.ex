@@ -1,8 +1,9 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ChartConfigurationResolver do
+  @moduledoc false
   import Absinthe.Resolution.Helpers, except: [async: 1]
 
-  alias Sanbase.Chart.Configuration
   alias Sanbase.Accounts.User
+  alias Sanbase.Chart.Configuration
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
   require Logger
@@ -45,11 +46,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChartConfigurationResolver do
 
   # Mutations
 
-  def get_chart_configuration_shared_access_token(
-        _root,
-        %{chart_configuration_id: id},
-        %{context: %{auth: %{current_user: user}}}
-      ) do
+  def get_chart_configuration_shared_access_token(_root, %{chart_configuration_id: id}, %{
+        context: %{auth: %{current_user: user}}
+      }) do
     with {_, true} <-
            {:sanbase_pro?, Sanbase.Billing.Subscription.user_has_sanbase_pro?(user.id)},
          {:ok, %Configuration{} = config} <- Configuration.by_id(id, querying_user_id: user.id),
@@ -58,8 +57,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChartConfigurationResolver do
       {:ok, shared_access_token}
     else
       {:sanbase_pro?, false} ->
-        {:error,
-         "Generating a Shared Access Token from a chart layout is allowed only for Sanbase Pro users."}
+        {:error, "Generating a Shared Access Token from a chart layout is allowed only for Sanbase Pro users."}
 
       error ->
         error
@@ -89,27 +87,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChartConfigurationResolver do
     end
   end
 
-  def create_chart_configuration(
-        _root,
-        %{settings: settings},
-        %{context: %{auth: %{current_user: user}}}
-      ) do
+  def create_chart_configuration(_root, %{settings: settings}, %{context: %{auth: %{current_user: user}}}) do
     Configuration.create(Map.put(settings, :user_id, user.id))
   end
 
-  def update_chart_configuration(
-        _root,
-        %{id: id, settings: settings},
-        %{context: %{auth: %{current_user: user}}}
-      ) do
+  def update_chart_configuration(_root, %{id: id, settings: settings}, %{context: %{auth: %{current_user: user}}}) do
     Configuration.update(id, user.id, settings)
   end
 
-  def delete_chart_configuration(
-        _root,
-        %{id: id},
-        %{context: %{auth: %{current_user: user}}}
-      ) do
+  def delete_chart_configuration(_root, %{id: id}, %{context: %{auth: %{current_user: user}}}) do
     Configuration.delete(id, user.id)
   end
 
@@ -125,8 +111,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChartConfigurationResolver do
   # Private functions
 
   defp transform_project_slug_to_id(%{project_id: _, project_slug: _}) do
-    {:error,
-     "Both projectId and projectSlug arguments are provided. Please use only one of them or none."}
+    {:error, "Both projectId and projectSlug arguments are provided. Please use only one of them or none."}
   end
 
   defp transform_project_slug_to_id(%{project_id: _} = args) do

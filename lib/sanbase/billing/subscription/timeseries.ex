@@ -1,10 +1,13 @@
 defmodule Sanbase.Billing.Subscription.Timeseries do
+  @moduledoc false
   use Ecto.Schema
+
   import Ecto.Changeset
   import Ecto.Query
 
-  alias Sanbase.Utils.Config
+  alias Sanbase.Billing.Subscription
   alias Sanbase.Repo
+  alias Sanbase.Utils.Config
 
   schema "subscription_timeseries" do
     field(:stats, :map)
@@ -39,19 +42,20 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
   end
 
   def create(subscriptions, stats) do
-    changeset(%__MODULE__{}, %{subscriptions: subscriptions, stats: stats})
+    %__MODULE__{}
+    |> changeset(%{subscriptions: subscriptions, stats: stats})
     |> Repo.insert()
   end
 
   def create_historical(subscriptions, stats, dt) do
-    changeset(%__MODULE__{}, %{subscriptions: subscriptions, stats: stats, inserted_at: dt})
+    %__MODULE__{}
+    |> changeset(%{subscriptions: subscriptions, stats: stats, inserted_at: dt})
     |> Repo.insert()
   end
 
   def format_subscriptions(subscriptions) do
-    subscriptions
-    |> Enum.map(fn map ->
-      Enum.into(map, %{}, fn {k, v} ->
+    Enum.map(subscriptions, fn map ->
+      Map.new(map, fn {k, v} ->
         k = String.to_existing_atom(k)
 
         v =
@@ -67,34 +71,35 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
   end
 
   def stats do
-    list_active_subs()
-    |> stats()
+    stats(list_active_subs())
   end
 
   def fill_history(subscriptions, start_date, end_date) do
-    Sanbase.DateTimeUtils.generate_dates_inclusive(start_date, end_date)
+    start_date
+    |> Sanbase.DateTimeUtils.generate_dates_inclusive(end_date)
     |> Enum.each(fn date ->
       dt = DateTime.new!(date, ~T[00:00:00])
       stats = stats(subscriptions, dt)
-      active_subs = historical_active(subscriptions, dt) |> non_team_members() |> paid()
+      active_subs = subscriptions |> historical_active(dt) |> non_team_members() |> paid()
       create_historical(active_subs, stats, dt)
     end)
   end
 
   def stats(subscriptions, date) do
     %{
-      team_members: historical_active(subscriptions, date) |> team_members() |> Enum.count(),
-      active_and_paid:
-        historical_active(subscriptions, date) |> non_team_members() |> paid() |> Enum.count(),
-      trialing: historical_trialing(subscriptions, date) |> non_team_members() |> Enum.count(),
+      team_members: subscriptions |> historical_active(date) |> team_members() |> Enum.count(),
+      active_and_paid: subscriptions |> historical_active(date) |> non_team_members() |> paid() |> Enum.count(),
+      trialing: subscriptions |> historical_trialing(date) |> non_team_members() |> Enum.count(),
       sanbase_active_and_paid:
-        historical_active(subscriptions, date)
+        subscriptions
+        |> historical_active(date)
         |> non_team_members()
         |> paid()
         |> product_name_starts_with("Sanbase")
         |> Enum.count(),
       san_api_active_and_paid:
-        historical_active(subscriptions, date)
+        subscriptions
+        |> historical_active(date)
         |> non_team_members()
         |> paid()
         |> product_name_starts_with("SanAPI")
@@ -107,47 +112,40 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
       liquidity: get_active_liquidity_subscriptions_count(),
       sanr_nft: get_active_sanr_nft_subscriptions_count(),
       burning_nft: get_active_burning_nft_subscriptions_count(),
-      team_members: team_members(subscriptions) |> Enum.count(),
-      active_and_paid: active_subscriptions(subscriptions) |> paid() |> Enum.count(),
-      trialing: trialing_subscriptions(subscriptions) |> Enum.count(),
+      team_members: subscriptions |> team_members() |> Enum.count(),
+      active_and_paid: subscriptions |> active_subscriptions() |> paid() |> Enum.count(),
+      trialing: subscriptions |> trialing_subscriptions() |> Enum.count(),
       sanbase_active_and_paid:
-        active_subscriptions(subscriptions)
+        subscriptions
+        |> active_subscriptions()
         |> product_name_starts_with("Sanbase")
         |> paid()
         |> Enum.count(),
       san_api_active_and_paid:
-        active_subscriptions(subscriptions)
+        subscriptions
+        |> active_subscriptions()
         |> product_name_starts_with("SanAPI")
         |> paid()
         |> Enum.count()
     }
 
-    stats
-    |> Map.put(
+    Map.put(
+      stats,
       :total_sanbase_active_and_paid,
       stats.sanbase_active_and_paid + stats.liquidity + stats.sanr_nft + stats.burning_nft
     )
   end
 
   def get_active_liquidity_subscriptions_count do
-    from(s in Sanbase.Billing.Subscription,
-      where: s.type == :liquidity and s.status == :active
-    )
-    |> Sanbase.Repo.aggregate(:count)
+    Sanbase.Repo.aggregate(from(s in Subscription, where: s.type == :liquidity and s.status == :active), :count)
   end
 
   def get_active_sanr_nft_subscriptions_count do
-    from(s in Sanbase.Billing.Subscription,
-      where: s.type == :sanr_points_nft and s.status == :active
-    )
-    |> Sanbase.Repo.aggregate(:count)
+    Sanbase.Repo.aggregate(from(s in Subscription, where: s.type == :sanr_points_nft and s.status == :active), :count)
   end
 
   def get_active_burning_nft_subscriptions_count do
-    from(s in Sanbase.Billing.Subscription,
-      where: s.type == :burning_nft and s.status == :active
-    )
-    |> Sanbase.Repo.aggregate(:count)
+    Sanbase.Repo.aggregate(from(s in Subscription, where: s.type == :burning_nft and s.status == :active), :count)
   end
 
   def list_active_subs do
@@ -206,29 +204,29 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
         email: subscription.customer.email,
         status: subscription.status,
         plan_nickname: plan(subscription).nickname,
-        product_name: plan(subscription).product |> product_name(),
+        product_name: product_name(plan(subscription).product),
         amount: plan(subscription).unit_amount,
         latest_invoice_amount_due: latest_invoice_amount(subscription, :amount_due),
         latest_invoice_amount_paid: latest_invoice_amount(subscription, :amount_paid),
         metadata: subscription.metadata,
-        start_date: subscription.start_date |> format_dt(:start),
-        end_date: subscription.ended_at |> format_dt(:end),
-        trial_start: subscription.trial_start |> format_dt(:start),
-        trial_end: subscription.trial_end |> format_dt(:end)
+        start_date: format_dt(subscription.start_date, :start),
+        end_date: format_dt(subscription.ended_at, :end),
+        trial_start: format_dt(subscription.trial_start, :start),
+        trial_end: format_dt(subscription.trial_end, :end)
       }
     end)
   end
 
   defp plan(subscription) do
-    (subscription.items.data |> hd()).price
+    hd(subscription.items.data).price
   end
 
   def product_name(stripe_product_id) do
-    %{
-      "prod_FJtAemBs4HJ1P3" => "SanAPI by Santiment",
-      "prod_FVVljrXENI3MFQ" => "Sanbase by Santiment"
-    }
-    |> Map.get(stripe_product_id, stripe_product_id)
+    Map.get(
+      %{"prod_FJtAemBs4HJ1P3" => "SanAPI by Santiment", "prod_FVVljrXENI3MFQ" => "Sanbase by Santiment"},
+      stripe_product_id,
+      stripe_product_id
+    )
   end
 
   defp latest_invoice_amount(subscription, field) do
@@ -256,14 +254,16 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
   end
 
   def active_subscriptions(subscriptions) do
-    Enum.filter(subscriptions, fn subscription ->
+    subscriptions
+    |> Enum.filter(fn subscription ->
       subscription.status in ["active", "past_due"]
     end)
     |> non_team_members()
   end
 
   def trialing_subscriptions(subscriptions) do
-    Enum.filter(subscriptions, fn subscription -> subscription.status == "trialing" end)
+    subscriptions
+    |> Enum.filter(fn subscription -> subscription.status == "trialing" end)
     |> non_team_members()
   end
 

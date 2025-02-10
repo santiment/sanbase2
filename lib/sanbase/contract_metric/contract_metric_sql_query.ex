@@ -1,5 +1,8 @@
 defmodule Sanbase.Contract.MetricAdapter.SqlQuery do
+  @moduledoc false
   import Sanbase.Metric.SqlQuery.Helper, only: [to_unix_timestamp: 3]
+
+  alias Sanbase.Clickhouse.Query
 
   def first_datetime_query(contract_address) do
     sql = """
@@ -11,7 +14,7 @@ defmodule Sanbase.Contract.MetricAdapter.SqlQuery do
 
     params = %{contract_address: Sanbase.BlockchainAddress.to_internal_format(contract_address)}
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def last_datetime_computed_at_query(contract_address) do
@@ -24,7 +27,7 @@ defmodule Sanbase.Contract.MetricAdapter.SqlQuery do
 
     params = %{contract_address: Sanbase.BlockchainAddress.to_internal_format(contract_address)}
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def timeseries_data_query("contract_transactions_count", contract_address, from, to, interval) do
@@ -48,16 +51,10 @@ defmodule Sanbase.Contract.MetricAdapter.SqlQuery do
       contract_address: Sanbase.BlockchainAddress.to_internal_format(contract_address)
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
-  def timeseries_data_query(
-        "contract_interacting_addresses_count",
-        contract_address,
-        from,
-        to,
-        interval
-      ) do
+  def timeseries_data_query("contract_interacting_addresses_count", contract_address, from, to, interval) do
     sql = """
     SELECT
       #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS time,
@@ -78,6 +75,6 @@ defmodule Sanbase.Contract.MetricAdapter.SqlQuery do
       contract_address: Sanbase.BlockchainAddress.to_internal_format(contract_address)
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 end

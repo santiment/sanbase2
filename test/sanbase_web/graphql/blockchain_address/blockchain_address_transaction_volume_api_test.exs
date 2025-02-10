@@ -33,7 +33,8 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressTransactionVolumeApiTest do
       ["0x0608b496a97806c9020c4f45ca1e7d16fe39b7a6", 712.036324, 712.036324]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    (&Sanbase.ClickhouseRepo.query/2)
+    |> Sanbase.Mock.prepare_mock2({:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         context.conn
@@ -81,7 +82,8 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressTransactionVolumeApiTest do
       [1_631_836_800, 1568.0, 820.55]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    (&Sanbase.ClickhouseRepo.query/2)
+    |> Sanbase.Mock.prepare_mock2({:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         context.conn

@@ -7,7 +7,7 @@ defmodule Sanbase.QuestionnaireTest do
 
   describe "create/update/delete questionnaire" do
     test "create" do
-      ends_at = DateTime.utc_now() |> DateTime.add(86400, :second)
+      ends_at = DateTime.add(DateTime.utc_now(), 86_400, :second)
 
       assert {:ok, questionnaire} =
                Questionnaire.create(%{
@@ -202,8 +202,8 @@ defmodule Sanbase.QuestionnaireTest do
   end
 
   defp create_questionnaire(params \\ %{}) do
-    ends_in = Map.get(params, :ends_in, 86400)
-    ends_at = DateTime.utc_now() |> DateTime.add(ends_in, :second)
+    ends_in = Map.get(params, :ends_in, 86_400)
+    ends_at = DateTime.add(DateTime.utc_now(), ends_in, :second)
 
     Questionnaire.create(%{
       name: Map.get(params, :name, "SQL Questions"),

@@ -67,13 +67,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
     expected_record1 =
       {"coinmarketcap_bitcoin_2018-08-17T08:55:37.000Z",
        Jason.decode!(
-         "{\"timestamp\":1534496137,\"source\":\"coinmarketcap\",\"slug\":\"bitcoin\",\"price_usd\":6493.02288075,\"price_btc\":1.0,\"volume_usd\":4858871494,\"marketcap_usd\":111774707274}"
+         ~s({"timestamp":1534496137,"source":"coinmarketcap","slug":"bitcoin","price_usd":6493.02288075,"price_btc":1.0,"volume_usd":4858871494,"marketcap_usd":111774707274})
        )}
 
     expected_record2 =
       {"coinmarketcap_ethereum_2018-08-17T08:54:55.000Z",
        Jason.decode!(
-         "{\"timestamp\":1534496095,\"source\":\"coinmarketcap\",\"slug\":\"ethereum\",\"price_usd\":300.96820061,\"price_btc\":0.04633099381624731,\"volume_usd\":1689698769,\"marketcap_usd\":30511368440}"
+         ~s({"timestamp":1534496095,"source":"coinmarketcap","slug":"ethereum","price_usd":300.96820061,"price_btc":0.04633099381624731,"volume_usd":1689698769,"marketcap_usd":30511368440})
        )}
 
     assert expected_record1 in prices

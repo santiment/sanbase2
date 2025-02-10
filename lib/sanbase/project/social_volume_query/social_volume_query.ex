@@ -1,16 +1,18 @@
 defmodule Sanbase.Project.SocialVolumeQuery do
+  @moduledoc false
   use Ecto.Schema
 
   import Ecto.Changeset
+
   alias Sanbase.Project
 
   @file_name "forbidden_social_volume_query_words.csv"
   @external_resource file = Path.join(__DIR__, @file_name)
-  @forbidden_words File.read!(file)
+  @forbidden_words file
+                   |> File.read!()
                    |> String.split("\n")
                    |> Enum.uniq()
-                   |> Enum.map(&String.downcase/1)
-                   |> MapSet.new()
+                   |> MapSet.new(&String.downcase/1)
 
   schema "project_social_volume_query" do
     field(:query, :string)
@@ -46,8 +48,7 @@ defmodule Sanbase.Project.SocialVolumeQuery do
   def default_query(%Project{} = project) do
     project
     |> default_query_parts()
-    |> Enum.map(fn elem -> ~s/"#{elem}"/ end)
-    |> Enum.join(" OR ")
+    |> Enum.map_join(" OR ", fn elem -> ~s/"#{elem}"/ end)
   end
 end
 

@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.ExchangeTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   object :slug_pair do

@@ -1,4 +1,5 @@
 defmodule Sanbase.Metric.SqlQuery.Helper do
+  @moduledoc false
   @aggregations [:any, :sum, :avg, :min, :max, :last, :first, :median, :count, :ohlc]
   @supported_interval_functions [
     "toStartOfDay",
@@ -22,9 +23,9 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
 
   # when computing graphql complexity the function need to be transformed to the
   # equivalent interval so it can be computed
-  def interval_function_to_equal_interval(), do: @interval_function_to_equal_interval
+  def interval_function_to_equal_interval, do: @interval_function_to_equal_interval
 
-  def supported_interval_functions(), do: @supported_interval_functions
+  def supported_interval_functions, do: @supported_interval_functions
 
   @type operator ::
           :inside_channel
@@ -38,23 +39,17 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
           | :outside_channel_inclusive
           | :outside_channel_exclusive
 
-  def aggregations(), do: @aggregations
+  def aggregations, do: @aggregations
 
   def to_unix_timestamp(interval, dt_column, opts \\ [])
 
-  def to_unix_timestamp(
-        <<digit::utf8, _::binary>> = _interval,
-        dt_column,
-        opts
-      )
-      when digit in ?0..?9 do
+  def to_unix_timestamp(<<digit::utf8, _::binary>> = _interval, dt_column, opts) when digit in ?0..?9 do
     arg_name = Keyword.fetch!(opts, :argument_name)
 
     "toUnixTimestamp(intDiv(toUInt32(toDateTime(#{dt_column})), {{#{arg_name}}}) * {{#{arg_name}}})"
   end
 
-  def to_unix_timestamp(function, dt_column, opts)
-      when function in @supported_interval_functions do
+  def to_unix_timestamp(function, dt_column, opts) when function in @supported_interval_functions do
     arg_name = Keyword.fetch!(opts, :argument_name)
 
     "if({{#{arg_name}}} = {{#{arg_name}}}, toUnixTimestamp(toDateTime(#{function}(#{dt_column}))), null)"
@@ -62,16 +57,14 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
 
   def to_unix_timestamp_from_number(interval_or_function, opts \\ [])
 
-  def to_unix_timestamp_from_number(<<digit::utf8, _::binary>> = _interval, opts)
-      when digit in ?0..?9 do
+  def to_unix_timestamp_from_number(<<digit::utf8, _::binary>> = _interval, opts) when digit in ?0..?9 do
     interval_name = Keyword.get(opts, :interval_argument_name, "interval")
     from_name = Keyword.get(opts, :from_argument_name, "from")
 
     "toUnixTimestamp(intDiv(toUInt32({{#{from_name}}} + number * {{#{interval_name}}}), {{#{interval_name}}}) * {{#{interval_name}}})"
   end
 
-  def to_unix_timestamp_from_number(function, opts)
-      when function in @supported_interval_functions do
+  def to_unix_timestamp_from_number(function, opts) when function in @supported_interval_functions do
     from_name = Keyword.get(opts, :from_argument_name, "from")
 
     expression =
@@ -110,20 +103,15 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     """
   end
 
-  def aggregation(:last, value_column, dt_column),
-    do: "argMax(#{value_column}, #{dt_column})"
+  def aggregation(:last, value_column, dt_column), do: "argMax(#{value_column}, #{dt_column})"
 
-  def aggregation(:first, value_column, dt_column),
-    do: "argMin(#{value_column}, #{dt_column})"
+  def aggregation(:first, value_column, dt_column), do: "argMin(#{value_column}, #{dt_column})"
 
-  def aggregation(:count, value_column, _dt_column),
-    do: "coalesce(toFloat64(count(#{value_column})), 0.0)"
+  def aggregation(:count, value_column, _dt_column), do: "coalesce(toFloat64(count(#{value_column})), 0.0)"
 
-  def aggregation(:sum, value_column, _dt_column),
-    do: "sumKahan(#{value_column})"
+  def aggregation(:sum, value_column, _dt_column), do: "sumKahan(#{value_column})"
 
-  def aggregation(aggr, value_column, _dt_column),
-    do: "#{aggr}(#{value_column})"
+  def aggregation(aggr, value_column, _dt_column), do: "#{aggr}(#{value_column})"
 
   def generate_comparison_string(column, :inside_channel, value),
     do: generate_comparison_string(column, :inside_channel_inclusive, value)
@@ -131,37 +119,28 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
   def generate_comparison_string(column, :outside_channel, value),
     do: generate_comparison_string(column, :outside_channel_inclusive, value)
 
-  def generate_comparison_string(column, :less_than, threshold)
-      when is_number(threshold),
-      do: "#{column} < #{threshold}"
+  def generate_comparison_string(column, :less_than, threshold) when is_number(threshold), do: "#{column} < #{threshold}"
 
-  def generate_comparison_string(column, :less_than_or_equal_to, threshold)
-      when is_number(threshold),
-      do: "#{column} <= #{threshold}"
+  def generate_comparison_string(column, :less_than_or_equal_to, threshold) when is_number(threshold),
+    do: "#{column} <= #{threshold}"
 
-  def generate_comparison_string(column, :greater_than, threshold)
-      when is_number(threshold),
-      do: "#{column} > #{threshold}"
+  def generate_comparison_string(column, :greater_than, threshold) when is_number(threshold),
+    do: "#{column} > #{threshold}"
 
-  def generate_comparison_string(column, :greater_than_or_equal_to, threshold)
-      when is_number(threshold),
-      do: "#{column} >= #{threshold}"
+  def generate_comparison_string(column, :greater_than_or_equal_to, threshold) when is_number(threshold),
+    do: "#{column} >= #{threshold}"
 
-  def generate_comparison_string(column, :inside_channel_inclusive, [low, high])
-      when is_number(low) and is_number(high),
-      do: "#{column} >= #{low} AND #{column} <= #{high}"
+  def generate_comparison_string(column, :inside_channel_inclusive, [low, high]) when is_number(low) and is_number(high),
+    do: "#{column} >= #{low} AND #{column} <= #{high}"
 
-  def generate_comparison_string(column, :inside_channel_exclusive, [low, high])
-      when is_number(low) and is_number(high),
-      do: "#{column} > #{low} AND #{column} < #{high}"
+  def generate_comparison_string(column, :inside_channel_exclusive, [low, high]) when is_number(low) and is_number(high),
+    do: "#{column} > #{low} AND #{column} < #{high}"
 
-  def generate_comparison_string(column, :outside_channel_inclusive, [low, high])
-      when is_number(low) and is_number(high),
-      do: "#{column} <= #{low} OR #{column} >= #{high}"
+  def generate_comparison_string(column, :outside_channel_inclusive, [low, high]) when is_number(low) and is_number(high),
+    do: "#{column} <= #{low} OR #{column} >= #{high}"
 
-  def generate_comparison_string(column, :outside_channel_exclusive, [low, high])
-      when is_number(low) and is_number(high),
-      do: "#{column} < #{low} OR #{column} > #{high}"
+  def generate_comparison_string(column, :outside_channel_exclusive, [low, high]) when is_number(low) and is_number(high),
+    do: "#{column} < #{low} OR #{column} > #{high}"
 
   def asset_id_filter(%{slug: slug}, opts) when is_binary(slug) do
     arg_name = Keyword.fetch!(opts, :argument_name)
@@ -175,8 +154,7 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     "asset_id IN ( SELECT DISTINCT(asset_id) FROM asset_metadata FINAL PREWHERE name IN ({{#{arg_name}}}) )"
   end
 
-  def asset_id_filter(%{contract_address: contract_address}, opts)
-      when is_binary(contract_address) do
+  def asset_id_filter(%{contract_address: contract_address}, opts) when is_binary(contract_address) do
     arg_name = Keyword.fetch!(opts, :argument_name)
 
     "asset_id IN ( SELECT asset_id FROM asset_metadata FINAL PREWHERE has(contract_addresses, {{#{arg_name}}}) LIMIT 1 )"
@@ -206,9 +184,10 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
   end
 
   def asset_id_filter(_arg, opts) do
-    case Keyword.get(opts, :allow_missing_slug, false) do
-      true -> "1 = 1"
-      false -> raise("Missing slug in asset_id_filter")
+    if Keyword.get(opts, :allow_missing_slug, false) do
+      "1 = 1"
+    else
+      raise("Missing slug in asset_id_filter")
     end
   end
 
@@ -239,9 +218,10 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
   end
 
   def signal_id_filter(_, opts) do
-    case Keyword.get(opts, :allow_missing_signal, false) do
-      true -> "1 = 1"
-      false -> raise("Missing signal in signal_id_filter")
+    if Keyword.get(opts, :allow_missing_signal, false) do
+      "1 = 1"
+    else
+      raise("Missing signal in signal_id_filter")
     end
   end
 
@@ -288,9 +268,10 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     filters_string = filters_str_list |> Enum.reverse() |> Enum.join(" AND\n")
 
     filters_string =
-      case Keyword.get(opts, :trailing_and, false) do
-        false -> filters_string
-        true -> filters_string <> " AND"
+      if Keyword.get(opts, :trailing_and, false) do
+        filters_string <> " AND"
+      else
+        filters_string
       end
 
     {filters_string, params}
@@ -298,15 +279,15 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
 
   @spec dt_to_unix(:from | :to, DateTime.t()) :: integer()
   def dt_to_unix(:from, dt) do
-    Enum.max([dt, ~U[2009-01-01 00:00:00Z]], DateTime) |> DateTime.to_unix()
+    [dt, ~U[2009-01-01 00:00:00Z]] |> Enum.max(DateTime) |> DateTime.to_unix()
   end
 
   def dt_to_unix(:to, dt) do
-    Enum.min([dt, DateTime.utc_now()], DateTime) |> DateTime.to_unix()
+    [dt, DateTime.utc_now()] |> Enum.min(DateTime) |> DateTime.to_unix()
   end
 
   def timerange_parameters(from, to) do
-    to = Enum.min_by([to, Timex.now()], &DateTime.to_unix/1)
+    to = Enum.min_by([to, DateTime.utc_now()], &DateTime.to_unix/1)
     from_unix = dt_to_unix(:from, from)
     to_unix = dt_to_unix(:to, to)
 
@@ -318,7 +299,7 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     to_unix = dt_to_unix(:to, to)
 
     interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
-    span = div(to_unix - from_unix, interval_sec) |> max(1)
+    span = (to_unix - from_unix) |> div(interval_sec) |> max(1)
 
     {from_unix, to_unix, interval_sec, span}
   end
@@ -337,8 +318,7 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     {str, Map.put(params, label_fqn_key, list)}
   end
 
-  defp do_additional_filters(:label_fqn, value, params)
-       when is_binary(value) do
+  defp do_additional_filters(:label_fqn, value, params) when is_binary(value) do
     pos = map_size(params) + 1
     label_fqn_key = "label_fqn_#{pos}"
 
@@ -348,8 +328,7 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     {str, Map.put(params, label_fqn_key, value)}
   end
 
-  defp do_additional_filters(column, [value | _] = list, params)
-       when is_binary(value) do
+  defp do_additional_filters(column, [value | _] = list, params) when is_binary(value) do
     pos = map_size(params) + 1
     filter_key = "filter_#{column}_#{pos}"
 
@@ -359,8 +338,7 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     {str, Map.put(params, filter_key, list)}
   end
 
-  defp do_additional_filters(column, [value | _] = list, params)
-       when is_number(value) do
+  defp do_additional_filters(column, [value | _] = list, params) when is_number(value) do
     pos = map_size(params) + 1
     filter_key = "filter_#{column}_#{pos}"
 

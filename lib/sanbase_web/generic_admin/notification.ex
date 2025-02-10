@@ -1,9 +1,12 @@
 defmodule SanbaseWeb.GenericAdmin.Notification do
+  @moduledoc false
   use SanbaseWeb, :live_component
 
-  def schema_module, do: Sanbase.Notifications.Notification
+  alias Sanbase.Notifications.Notification
 
-  def resource() do
+  def schema_module, do: Notification
+
+  def resource do
     %{
       index_fields: [
         :id,
@@ -29,15 +32,15 @@ defmodule SanbaseWeb.GenericAdmin.Notification do
       ],
       fields_override: %{
         action: %{
-          collection: Sanbase.Notifications.Notification.supported_actions(),
+          collection: Notification.supported_actions(),
           type: :select
         },
         step: %{
-          collection: Sanbase.Notifications.Notification.supported_steps(),
+          collection: Notification.supported_steps(),
           type: :select
         },
         channel: %{
-          collection: Sanbase.Notifications.Notification.supported_channels(),
+          collection: Notification.supported_channels(),
           type: :select
         },
         params: %{

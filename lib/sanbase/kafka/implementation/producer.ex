@@ -1,7 +1,8 @@
 defmodule Sanbase.Kafka.Implementation.Producer do
-  @client_name :kafka_client
-
+  @moduledoc false
   require Logger
+
+  @client_name :kafka_client
 
   def start_producer(topic) do
     :brod.start_producer(@client_name, topic, _producer_config = [])
@@ -32,8 +33,7 @@ defmodule Sanbase.Kafka.Implementation.Producer do
   end
 
   defp produce_list_to_topic(topic, %{} = partition_to_messages_map) do
-    partition_to_messages_map
-    |> Enum.reduce_while(:ok, fn {partition, messages}, :ok ->
+    Enum.reduce_while(partition_to_messages_map, :ok, fn {partition, messages}, :ok ->
       Logger.debug("[KafkaProducer/produce_list_to_topic] topic=#{topic} partition=#{partition}")
 
       # As `messages` is a batch, the `key` argument is used only as argument to the partitioner
@@ -51,8 +51,7 @@ defmodule Sanbase.Kafka.Implementation.Producer do
   defp add_timestamp(list) do
     time = System.system_time(:millisecond)
 
-    list
-    |> Enum.map(fn {key, value} ->
+    Enum.map(list, fn {key, value} ->
       {time, key, value}
     end)
   end
@@ -62,8 +61,7 @@ defmodule Sanbase.Kafka.Implementation.Producer do
   # keys are the partitions
   defp group_by_partition(messages, topic) do
     with {:ok, partitions_count} <- get_partitions_count(topic) do
-      messages
-      |> Enum.group_by(fn {_timestamp, key, _message} ->
+      Enum.group_by(messages, fn {_timestamp, key, _message} ->
         choose_partition(partitions_count, key)
       end)
     end
@@ -89,7 +87,8 @@ defmodule Sanbase.Kafka.Implementation.Producer do
   end
 
   defp choose_partition(partitions_count, key) do
-    :crypto.hash(:md5, key)
+    :md5
+    |> :crypto.hash(key)
     |> :erlang.binary_to_list()
     |> Enum.sum()
     |> rem(partitions_count)

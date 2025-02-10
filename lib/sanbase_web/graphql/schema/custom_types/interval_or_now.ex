@@ -4,6 +4,8 @@ defmodule SanbaseWeb.Graphql.CustomTypes.IntervalOrNow do
   """
   use Absinthe.Schema.Notation
 
+  alias Absinthe.Blueprint.Input.Null
+
   scalar :interval_or_now, name: "interval_or_now" do
     description("""
     The input is either a valid `interval` type or the string `now`
@@ -14,17 +16,18 @@ defmodule SanbaseWeb.Graphql.CustomTypes.IntervalOrNow do
   end
 
   @spec decode(Absinthe.Blueprint.Input.String.t()) :: {:ok, term()} | :error
-  @spec decode(Absinthe.Blueprint.Input.Null.t()) :: {:ok, nil}
+  @spec decode(Null.t()) :: {:ok, nil}
   defp decode(%Absinthe.Blueprint.Input.String{value: "now"}), do: {:ok, "now"}
 
   defp decode(%Absinthe.Blueprint.Input.String{value: value}) do
-    case Sanbase.DateTimeUtils.valid_compound_duration?(value) do
-      true -> {:ok, value}
-      _ -> :error
+    if Sanbase.DateTimeUtils.valid_compound_duration?(value) do
+      {:ok, value}
+    else
+      :error
     end
   end
 
-  defp decode(%Absinthe.Blueprint.Input.Null{}) do
+  defp decode(%Null{}) do
     {:ok, nil}
   end
 

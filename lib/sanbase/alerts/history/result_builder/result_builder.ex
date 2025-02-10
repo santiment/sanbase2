@@ -1,13 +1,9 @@
 defmodule Sanbase.Alert.History.ResultBuilder do
-  import Sanbase.Alert.OperationEvaluation
+  @moduledoc false
   import Sanbase.Alert.History.ResultBuilder.Transformer
+  import Sanbase.Alert.OperationEvaluation
 
-  def build(
-        data,
-        %_trigger_module{} = settings,
-        cooldown,
-        opts \\ []
-      ) do
+  def build(data, %_trigger_module{} = settings, cooldown, opts \\ []) do
     %{operation: operation, time_window: time_window} = settings
     cooldown_sec = Sanbase.DateTimeUtils.str_to_sec(cooldown)
 
@@ -25,7 +21,7 @@ defmodule Sanbase.Alert.History.ResultBuilder do
           end
       end)
 
-    {:ok, result |> Enum.reverse()}
+    {:ok, Enum.reverse(result)}
   end
 
   # Nothing has been triggered, so no cooldown
@@ -33,9 +29,9 @@ defmodule Sanbase.Alert.History.ResultBuilder do
 
   # If datetime is equal or later than last_triggered_dt + cooldown
   defp in_cooldown(last_triggered_dt, %{datetime: datetime}, cooldown_sec) do
-    DateTime.compare(
+    DateTime.before?(
       datetime,
       Timex.shift(last_triggered_dt, seconds: cooldown_sec)
-    ) == :lt
+    )
   end
 end

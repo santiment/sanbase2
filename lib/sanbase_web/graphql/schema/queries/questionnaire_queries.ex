@@ -4,9 +4,9 @@ defmodule SanbaseWeb.Graphql.Schema.QuestionnaireQueries do
   """
   use Absinthe.Schema.Notation
 
-  alias SanbaseWeb.Graphql.Resolvers.QuestionnaireResolver
-  alias SanbaseWeb.Graphql.Middlewares.JWTModeratorAuth
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
+  alias SanbaseWeb.Graphql.Middlewares.JWTModeratorAuth
+  alias SanbaseWeb.Graphql.Resolvers.QuestionnaireResolver
 
   object :questionnaire_queries do
     field :get_questionnaire, :questionnaire do

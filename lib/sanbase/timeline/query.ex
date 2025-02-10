@@ -1,9 +1,11 @@
 defmodule Sanbase.Timeline.Query do
+  @moduledoc false
   import Ecto.Query
 
-  alias Sanbase.Accounts.{UserFollower, Role}
-  alias Sanbase.UserList
+  alias Sanbase.Accounts.Role
+  alias Sanbase.Accounts.UserFollower
   alias Sanbase.Alert.UserTrigger
+  alias Sanbase.UserList
 
   # Events with public entities and current user private events
   def events_with_event_type(query, types) do
@@ -48,7 +50,8 @@ defmodule Sanbase.Timeline.Query do
 
   def events_by_sanfamily_or_followed_users_or_own_query(query, user_id) do
     sanclan_or_followed_users_or_own_ids =
-      UserFollower.followed_by_with_notifications_enabled(user_id)
+      user_id
+      |> UserFollower.followed_by_with_notifications_enabled()
       |> Enum.map(& &1.id)
       |> Enum.concat(Role.san_family_ids())
       |> Enum.concat([user_id])
@@ -71,7 +74,8 @@ defmodule Sanbase.Timeline.Query do
 
   def events_by_followed_users_query(query, user_id) do
     followed_users_ids =
-      UserFollower.followed_by_with_notifications_enabled(user_id)
+      user_id
+      |> UserFollower.followed_by_with_notifications_enabled()
       |> Enum.map(& &1.id)
 
     from(

@@ -1,4 +1,5 @@
 defmodule Sanbase.Clickhouse.MetricAdapter.Description do
+  @moduledoc false
   @circulation """
   Token circulation shows the distribution of non-transacted tokens over time.
   In other words - how many tokens are being HODLed, and for how long.
@@ -40,7 +41,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Description do
     Token Velocity for blocks 1 and 2 is `20 / 10 = 2`
   """
 
-  def description() do
+  def description do
     %{"circulation" => @circulation, "velocity" => @velocity}
   end
 end

@@ -1,8 +1,10 @@
 defmodule Sanbase.Cryptocompare.Jobs do
-  alias Sanbase.Project
-  alias Sanbase.Cryptocompare.Price
-  alias Sanbase.Cryptocompare.OpenInterest
+  @moduledoc false
+  alias Ecto.Adapters.SQL
   alias Sanbase.Cryptocompare.FundingRate
+  alias Sanbase.Cryptocompare.OpenInterest
+  alias Sanbase.Cryptocompare.Price
+  alias Sanbase.Project
 
   # Execute the function until the moved rows are 0 or up to 100 iterations.
   # The iterations are needed to avoid an infinite loop. If there is a task that
@@ -20,10 +22,12 @@ defmodule Sanbase.Cryptocompare.Jobs do
 
     queues = Enum.uniq(queues)
 
-    for queue <- queues do
-      do_move_finished_jobs(queue, opts)
-    end
-    |> Enum.reduce_while({:ok, 0}, fn
+    for_result =
+      for queue <- queues do
+        do_move_finished_jobs(queue, opts)
+      end
+
+    Enum.reduce_while(for_result, {:ok, 0}, fn
       {:ok, count}, {:ok, acc} -> {:cont, {:ok, count + acc}}
       {:error, error}, _ -> {:halt, {:error, error}}
     end)
@@ -34,8 +38,7 @@ defmodule Sanbase.Cryptocompare.Jobs do
     limit = Keyword.get(opts, :limit, 10_000)
 
     count =
-      1..iterations
-      |> Enum.reduce_while(0, fn _, rows_count_acc ->
+      Enum.reduce_while(1..iterations, 0, fn _, rows_count_acc ->
         case do_move_completed_jobs(queue, limit) do
           {:ok, 0} -> {:halt, rows_count_acc}
           {:ok, rows_count} -> {:cont, rows_count + rows_count_acc}
@@ -45,11 +48,12 @@ defmodule Sanbase.Cryptocompare.Jobs do
     {:ok, count}
   end
 
-  def remove_oban_jobs_unsupported_assets() do
+  def remove_oban_jobs_unsupported_assets do
     {:ok, oban_jobs_base_assets} = get_oban_jobs_base_assets(price_queue())
 
     supported_base_assets =
-      Project.SourceSlugMapping.get_source_slug_mappings("cryptocompare")
+      "cryptocompare"
+      |> Project.SourceSlugMapping.get_source_slug_mappings()
       |> Enum.map(&elem(&1, 0))
 
     unsupported_base_assets = oban_jobs_base_assets -- supported_base_assets
@@ -65,7 +69,7 @@ defmodule Sanbase.Cryptocompare.Jobs do
     WHERE queue = $1 AND completed_at IS NULL
     """
 
-    {:ok, %{rows: rows}} = Ecto.Adapters.SQL.query(Sanbase.Repo, query, [queue], timeout: 150_000)
+    {:ok, %{rows: rows}} = SQL.query(Sanbase.Repo, query, [queue], timeout: 150_000)
     {:ok, List.flatten(rows)}
   end
 
@@ -94,12 +98,12 @@ defmodule Sanbase.Cryptocompare.Jobs do
     """
 
     {:ok, %{num_rows: num_rows}} =
-      Ecto.Adapters.SQL.query(Sanbase.Repo, query, [queue, base_asset], timeout: 150_000)
+      SQL.query(Sanbase.Repo, query, [queue, base_asset], timeout: 150_000)
 
     {:ok, %{num_rows: num_rows, base_asset: base_asset}}
   end
 
-  defp price_queue(), do: Price.HistoricalScheduler.queue() |> to_string()
-  defp open_interest_queue(), do: OpenInterest.HistoricalScheduler.queue() |> to_string()
-  defp funding_rate_queue(), do: FundingRate.HistoricalScheduler.queue() |> to_string()
+  defp price_queue, do: to_string(Price.HistoricalScheduler.queue())
+  defp open_interest_queue, do: to_string(OpenInterest.HistoricalScheduler.queue())
+  defp funding_rate_queue, do: to_string(FundingRate.HistoricalScheduler.queue())
 end

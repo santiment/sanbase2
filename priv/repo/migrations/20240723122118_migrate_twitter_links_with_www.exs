@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.MigrateTwitterLinksWithWww do
+  @moduledoc false
   use Ecto.Migration
 
   import Ecto.Query
@@ -14,7 +15,7 @@ defmodule Sanbase.Repo.Migrations.MigrateTwitterLinksWithWww do
     :ok
   end
 
-  def migrate_twitter_handles() do
+  def migrate_twitter_handles do
     from(
       p in Project,
       where: not is_nil(p.slug) and not is_nil(p.ticker) and not is_nil(p.twitter_link)
@@ -27,7 +28,8 @@ defmodule Sanbase.Repo.Migrations.MigrateTwitterLinksWithWww do
     end)
     |> Enum.map(fn {id, link} ->
       new_link =
-        String.replace(link, "https://www.twitter.com/", "https://twitter.com/")
+        link
+        |> String.replace("https://www.twitter.com/", "https://twitter.com/")
         |> case do
           "https://twitter.com/" <> _ = link -> link
           _ -> nil

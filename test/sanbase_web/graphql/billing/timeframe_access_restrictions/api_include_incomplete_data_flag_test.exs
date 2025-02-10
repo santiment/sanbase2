@@ -31,9 +31,9 @@ defmodule Sanbase.Billing.ApiIncludeIncompleteDataFlagTest do
 
   test "incomplete data is not included when flag is false", context do
     %{conn: conn, project: project} = context
-    to = Timex.now()
+    to = DateTime.utc_now()
     from = Timex.shift(to, days: -30)
-    end_of_previous_day = Timex.beginning_of_day(to) |> Timex.shift(microseconds: -1)
+    end_of_previous_day = to |> Timex.beginning_of_day() |> Timex.shift(microseconds: -1)
     metric = "nvt"
     interval = "1d"
 
@@ -56,9 +56,9 @@ defmodule Sanbase.Billing.ApiIncludeIncompleteDataFlagTest do
 
   test "incomplete data is included when flag is true", context do
     %{conn: conn, project: project} = context
-    to = Timex.now()
+    to = DateTime.utc_now()
     from = Timex.shift(to, days: -30)
-    end_of_previous_day = Timex.beginning_of_day(to) |> Timex.shift(microseconds: -1)
+    end_of_previous_day = to |> Timex.beginning_of_day() |> Timex.shift(microseconds: -1)
     metric = "nvt"
     interval = "1d"
 
@@ -81,7 +81,7 @@ defmodule Sanbase.Billing.ApiIncludeIncompleteDataFlagTest do
 
   test "returns error if both from and to are today", context do
     %{conn: conn, project: project} = context
-    beginning_of_day = Timex.beginning_of_day(Timex.now())
+    beginning_of_day = Timex.beginning_of_day(DateTime.utc_now())
     from = Timex.shift(beginning_of_day, hours: 5)
     to = Timex.shift(beginning_of_day, hours: 10)
     metric = "nvt"
@@ -115,7 +115,7 @@ defmodule Sanbase.Billing.ApiIncludeIncompleteDataFlagTest do
     """
   end
 
-  defp metric_resp() do
+  defp metric_resp do
     {:ok,
      [
        %{value: 10.0, datetime: ~U[2019-01-01 00:00:00Z]},

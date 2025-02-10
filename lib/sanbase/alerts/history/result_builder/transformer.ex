@@ -2,8 +2,8 @@ defmodule Sanbase.Alert.History.ResultBuilder.Transformer do
   @moduledoc ~s"""
   Prepare the raw data for checking when the alrt would have fired in the past
   """
-  import Sanbase.Math, only: [percent_change: 2]
   import Sanbase.DateTimeUtils, only: [str_to_days: 1]
+  import Sanbase.Math, only: [percent_change: 2]
 
   @doc ~s"""
   Transform the raw data into data points containing the actual value, the percent
@@ -21,7 +21,8 @@ defmodule Sanbase.Alert.History.ResultBuilder.Transformer do
   def transform(raw_data, time_window, value_key) do
     time_window_in_days = Enum.max([str_to_days(time_window), 2])
 
-    Enum.chunk_every(raw_data, time_window_in_days, 1, :discard)
+    raw_data
+    |> Enum.chunk_every(time_window_in_days, 1, :discard)
     |> Enum.map(fn chunk ->
       first = List.first(chunk)
       last = List.last(chunk)

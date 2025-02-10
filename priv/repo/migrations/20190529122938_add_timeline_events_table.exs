@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddTimelineEventsTable do
+  @moduledoc false
   use Ecto.Migration
 
   @table :timeline_events

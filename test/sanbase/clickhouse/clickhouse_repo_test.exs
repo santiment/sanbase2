@@ -2,12 +2,14 @@ defmodule Sanbase.Clickhouse.ClickhouseRepoTest do
   use Sanbase.DataCase
 
   import ExUnit.CaptureLog
+
   alias Sanbase.ClickhouseRepo
 
   test "error handling when clickhouse repo returns error" do
     error_msg = "something went wrong with the connection"
 
-    Sanbase.Mock.prepare_mock2(&ClickhouseRepo.query/2, {:error, error_msg})
+    (&ClickhouseRepo.query/2)
+    |> Sanbase.Mock.prepare_mock2({:error, error_msg})
     |> Sanbase.Mock.run_with_mocks(fn ->
       log =
         capture_log(fn ->
@@ -31,7 +33,8 @@ defmodule Sanbase.Clickhouse.ClickhouseRepoTest do
   test "error handling when clickhouse throws exception" do
     error_msg = "something went wrong with the connection"
 
-    Sanbase.Mock.prepare_mock(ClickhouseRepo, :query, fn _, _ -> raise(error_msg) end)
+    ClickhouseRepo
+    |> Sanbase.Mock.prepare_mock(:query, fn _, _ -> raise(error_msg) end)
     |> Sanbase.Mock.run_with_mocks(fn ->
       log =
         capture_log(fn ->

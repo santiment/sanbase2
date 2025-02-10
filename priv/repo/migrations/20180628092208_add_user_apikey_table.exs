@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddUserApikeyTable do
+  @moduledoc false
   use Ecto.Migration
 
   @table_name :user_api_key_tokens

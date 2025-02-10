@@ -1,3 +1,5 @@
+queue = :cryptocompare_funding_rate_historical_jobs_queue
+
 defmodule Sanbase.Cryptocompare.FundingRate.HistoricalWorker do
   @moduledoc ~s"""
   An Oban Worker that processes the jobs in the cryptocompare_historical_jobs_queue
@@ -14,33 +16,31 @@ defmodule Sanbase.Cryptocompare.FundingRate.HistoricalWorker do
   default 20 attempts and the default algorithm used first retry after some seconds
   and the last attempt is done after about 3 weeks.
   """
-  @queue :cryptocompare_funding_rate_historical_jobs_queue
   use Oban.Worker,
-    queue: @queue,
+    queue: unquote(queue),
     max_attempts: 20,
     unique: [period: 60 * 86_400]
 
-  alias Sanbase.Utils.Config
-  alias Sanbase.Cryptocompare.FundingRatePoint
   alias Sanbase.Cryptocompare.ExporterProgress
+  alias Sanbase.Cryptocompare.FundingRatePoint
   alias Sanbase.Cryptocompare.Handler
+  alias Sanbase.Utils.Config
 
   require Logger
 
+  @queue queue
   @url "https://data-api.cryptocompare.com/futures/v1/historical/funding-rate/minutes"
   @default_limit 2000
   @oban_conf_name :oban_scrapers
   @topic :funding_rate_topic
 
-  def queue(), do: @queue
-  def conf_name(), do: @oban_conf_name
-  def default_limit(), do: @default_limit
+  def queue, do: @queue
+  def conf_name, do: @oban_conf_name
+  def default_limit, do: @default_limit
 
-  def pause_resume_worker(),
-    do: Sanbase.Cryptocompare.FundingRate.PauseResumeWorker
+  def pause_resume_worker, do: Sanbase.Cryptocompare.FundingRate.PauseResumeWorker
 
-  def historical_scheduler(),
-    do: Sanbase.Cryptocompare.FundingRate.HistoricalScheduler
+  def historical_scheduler, do: Sanbase.Cryptocompare.FundingRate.HistoricalScheduler
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: args}) do
@@ -112,10 +112,7 @@ defmodule Sanbase.Cryptocompare.FundingRate.HistoricalWorker do
     {:ok, data}
   end
 
-  defp maybe_schedule_next_job(
-         min_timestamp,
-         %{"schedule_next_job" => true} = args
-       ) do
+  defp maybe_schedule_next_job(min_timestamp, %{"schedule_next_job" => true} = args) do
     # Schedule a new job with the timestamp of the earliest data point only if
     # arguments specify that it should be done.
     # The historical worker executes 2 types of jobs:
@@ -126,14 +123,13 @@ defmodule Sanbase.Cryptocompare.FundingRate.HistoricalWorker do
     #    a job with `schedule_next_job` set to true. This will in turn lead to
     #    scarping the full historical data for that market/instrument
     job_args =
-      %{
+      Sanbase.Cryptocompare.FundingRate.HistoricalWorker.new(%{
         "market" => args["market"],
         "instrument" => args["instrument"],
         "schedule_next_job" => true,
         "timestamp" => min_timestamp,
         "limit" => @default_limit
-      }
-      |> Sanbase.Cryptocompare.FundingRate.HistoricalWorker.new()
+      })
 
     case Oban.insert(@oban_conf_name, job_args) do
       {:ok, _} -> :ok

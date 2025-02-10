@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddShortUrlCommentsMappingTable do
+  @moduledoc false
   use Ecto.Migration
 
   @table :short_url_comments_mapping

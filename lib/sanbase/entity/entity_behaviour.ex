@@ -1,4 +1,5 @@
 defmodule Sanbase.Entity.Behaviour do
+  @moduledoc false
   @type entity :: map()
   @type id :: integer() | binary()
   @type ids :: list(id) | list(ids)

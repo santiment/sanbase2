@@ -4,15 +4,17 @@ defmodule Sanbase.Cryptocompare.FundingRateHistoricalWorkerTest do
 
   import Sanbase.Cryptocompare.HistoricalDataStub, only: [funding_rate_data: 4]
 
+  alias Sanbase.Cryptocompare.ExporterProgress
   alias Sanbase.Cryptocompare.FundingRate
+  alias Sanbase.InMemoryKafka.Producer
 
   setup do
-    Sanbase.InMemoryKafka.Producer.clear_state()
+    Producer.clear_state()
 
     %{
       market: "binance",
       instrument: "ETH-USDT-VANILLA-PERPETUAL",
-      timestamp: ~U[2023-02-01 00:00:00Z] |> DateTime.to_unix(),
+      timestamp: DateTime.to_unix(~U[2023-02-01 00:00:00Z]),
       limit: 24,
       queue: FundingRate.HistoricalWorker.queue()
     }
@@ -35,13 +37,14 @@ defmodule Sanbase.Cryptocompare.FundingRateHistoricalWorkerTest do
       limit
     )
 
-    Sanbase.Mock.prepare_mock(HTTPoison, :get, fn url, _header, _ops ->
+    HTTPoison
+    |> Sanbase.Mock.prepare_mock(:get, fn url, _header, _ops ->
       mocked_url_response(url)
     end)
     |> Sanbase.Mock.run_with_mocks(fn ->
       FundingRate.HistoricalScheduler.resume()
 
-      assert Sanbase.Cryptocompare.ExporterProgress.get_timestamps(
+      assert ExporterProgress.get_timestamps(
                "#{market}_#{instrument}",
                to_string(queue)
              ) == nil
@@ -89,7 +92,7 @@ defmodule Sanbase.Cryptocompare.FundingRateHistoricalWorkerTest do
         }
       )
 
-      state = Sanbase.InMemoryKafka.Producer.get_state()
+      state = Producer.get_state()
       topic = state["funding_rate_cryptocompare"]
 
       assert length(topic) == limit
@@ -104,7 +107,7 @@ defmodule Sanbase.Cryptocompare.FundingRateHistoricalWorkerTest do
     end)
 
     {min_timestamp, max_timestamp} =
-      Sanbase.Cryptocompare.ExporterProgress.get_timestamps(
+      ExporterProgress.get_timestamps(
         "#{market}_#{instrument}",
         to_string(queue)
       )
@@ -137,7 +140,8 @@ defmodule Sanbase.Cryptocompare.FundingRateHistoricalWorkerTest do
       )
     end
 
-    Sanbase.Mock.prepare_mock(HTTPoison, :get, fn url, _header, _ops ->
+    HTTPoison
+    |> Sanbase.Mock.prepare_mock(:get, fn url, _header, _ops ->
       mocked_url_response(url)
     end)
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -149,7 +153,7 @@ defmodule Sanbase.Cryptocompare.FundingRateHistoricalWorkerTest do
                  queue: FundingRate.HistoricalWorker.queue()
                )
 
-      state = Sanbase.InMemoryKafka.Producer.get_state()
+      state = Producer.get_state()
       topic = state["funding_rate_cryptocompare"]
 
       # The number of non-overlapped hours is limit + 10
@@ -161,8 +165,7 @@ defmodule Sanbase.Cryptocompare.FundingRateHistoricalWorkerTest do
 
   defp mocked_url_response(url) do
     %{"to_ts" => timestamp, "limit" => limit, "market" => market, "instrument" => instrument} =
-      URI.parse(url).query
-      |> URI.decode_query()
+      URI.decode_query(URI.parse(url).query)
 
     funding_rate_data(
       market,

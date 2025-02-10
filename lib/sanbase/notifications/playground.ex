@@ -1,6 +1,7 @@
 defmodule Sanbase.Notifications.Playground do
-  alias Sanbase.Notifications.Handler
+  @moduledoc false
   alias Sanbase.Notifications.EmailNotifier
+  alias Sanbase.Notifications.Handler
 
   def test_metric_created_notification do
     Handler.handle_notification(%{

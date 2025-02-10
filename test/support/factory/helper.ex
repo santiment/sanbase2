@@ -1,6 +1,7 @@
 defmodule Sanbase.Factory.Helper do
+  @moduledoc false
   def rand_str(length \\ 10) do
-    :crypto.strong_rand_bytes(length) |> Base.encode64() |> binary_part(0, length)
+    length |> :crypto.strong_rand_bytes() |> Base.encode64() |> binary_part(0, length)
   end
 
   def pseudo_random_project_data(index) do
@@ -96,14 +97,14 @@ defmodule Sanbase.Factory.Helper do
     ]
 
     if index > length(projects) do
-      %{slug: rand_str(8), ticker: rand_str(4) |> String.upcase(), name: rand_str(10)}
+      %{slug: rand_str(8), ticker: 4 |> rand_str() |> String.upcase(), name: rand_str(10)}
     else
       Enum.at(projects, index)
     end
   end
 
   def rand_address("xrp") do
-    [
+    Enum.random([
       "r9vbV3EHvXWjSkeQ6CAcYVPGeq7TuiXY2X",
       "rUrdFHbrEKWNQQ444zcTLrThjcnHCw2FPu",
       "r49nVgaYSDuU7GEQh4mF1nyjsXSVRcUHsr",
@@ -123,21 +124,20 @@ defmodule Sanbase.Factory.Helper do
       "r3T3kYf2oGequEHvT7M4F6byeE2PzxwP5E",
       "r3kmLJN5D28dHuH8vZNUZpMC43pEHpaocV",
       "r3knww8JXufhM4R5uYdUCWScMYWGzSBsN3"
-    ]
-    |> Enum.random()
+    ])
   end
 
   def rand_address("ethereum") do
     Faker.Blockchain.Ethereum.address()
   end
 
-  def rand_interval() do
-    (Enum.random([1, 3, 5, 10, 12, 60]) |> to_string()) <>
+  def rand_interval do
+    ([1, 3, 5, 10, 12, 60] |> Enum.random() |> to_string()) <>
       Enum.random(["m", "h", "d", "w"])
   end
 
   def rand_trigger_settings(rand_project, rand_erc20_project) do
-    [
+    Enum.random([
       %{
         type: "metric_signal",
         metric: "social_volume_total",
@@ -184,7 +184,6 @@ defmodule Sanbase.Factory.Helper do
         time_window: "1d",
         operation: %{amount_down: 50.0}
       }
-    ]
-    |> Enum.random()
+    ])
   end
 end

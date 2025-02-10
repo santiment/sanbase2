@@ -1,4 +1,5 @@
 defmodule Sanbase.Cache.RehydratingCache.Supervisor do
+  @moduledoc false
   use Supervisor
 
   alias Sanbase.Cache.RehydratingCache.Store

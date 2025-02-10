@@ -1,11 +1,10 @@
 defmodule SanbaseWeb.Graphql.DashboardTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
-  alias SanbaseWeb.Graphql.Resolvers.{
-    DashboardResolver,
-    UserResolver,
-    VoteResolver
-  }
+  alias SanbaseWeb.Graphql.Resolvers.DashboardResolver
+  alias SanbaseWeb.Graphql.Resolvers.UserResolver
+  alias SanbaseWeb.Graphql.Resolvers.VoteResolver
 
   @desc ~s"""
   Information about the columns in the Clickhouse database

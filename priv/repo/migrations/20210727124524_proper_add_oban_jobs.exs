@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.ProperAddObanJobs do
+  @moduledoc false
   use Ecto.Migration
 
   alias Sanbase.Utils.Config
@@ -11,7 +12,7 @@ defmodule Sanbase.Repo.Migrations.ProperAddObanJobs do
     Oban.Migrations.down(version: 1, prefix: get_prefix())
   end
 
-  defp get_prefix() do
+  defp get_prefix do
     case Config.module_get(Sanbase, :deployment_env) do
       env when env in ["stage", "prod"] -> "sanbase2"
       _ -> "public"

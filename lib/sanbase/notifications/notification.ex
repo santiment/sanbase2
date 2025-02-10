@@ -1,10 +1,12 @@
 defmodule Sanbase.Notifications.Notification do
+  @moduledoc false
   use Ecto.Schema
+
   import Ecto.Changeset
 
-  alias Sanbase.Repo
   alias Sanbase.Metric.Registry
   alias Sanbase.Notifications.NotificationTemplate
+  alias Sanbase.Repo
 
   @supported_actions ["metric_created", "metric_updated", "metric_deleted", "message", "alert"]
   @supported_channels ["discord", "email"]

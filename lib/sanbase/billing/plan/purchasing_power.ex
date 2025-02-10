@@ -18,16 +18,16 @@ defmodule Sanbase.Billing.Plan.PurchasingPowerParity do
     off_70_percent: 70
   }
 
-  def plans(), do: @plans
-  def country_plan_map(), do: @country_plan_map
-  def symbol_to_percent_map(), do: @symbol_to_percent_map
+  def plans, do: @plans
+  def country_plan_map, do: @country_plan_map
+  def symbol_to_percent_map, do: @symbol_to_percent_map
 
   def plans_for_country(nil), do: []
 
   def plans_for_country(country_code) do
     case Map.get(@country_plan_map, country_code) do
       nil -> []
-      key -> @plans[key] |> Plan.by_ids()
+      key -> Plan.by_ids(@plans[key])
     end
   end
 
@@ -48,8 +48,8 @@ defmodule Sanbase.Billing.Plan.PurchasingPowerParity do
 
   # Purchasing power parity settings.
   def ppp_settings(geoip_data) do
-    percent_symbol = @country_plan_map |> Map.get(geoip_data.country_code)
-    percent_off = @symbol_to_percent_map |> Map.get(percent_symbol)
+    percent_symbol = Map.get(@country_plan_map, geoip_data.country_code)
+    percent_off = Map.get(@symbol_to_percent_map, percent_symbol)
 
     plans_for_country = plans_for_country(geoip_data.country_code)
 

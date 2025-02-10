@@ -1,4 +1,5 @@
 defmodule Elixir.Sanbase.Repo.Migrations.AddDashboardTextWidget do
+  @moduledoc false
   use Ecto.Migration
 
   def change do

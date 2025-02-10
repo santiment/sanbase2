@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddV2Plans do
+  @moduledoc false
   use Ecto.Migration
 
   def up do

@@ -24,7 +24,7 @@ defmodule SanbaseWeb.AuthController do
     # option to dynamically configure via parameters the redirect URLs and the real
     # origin URL
 
-    referer_url = Plug.Conn.get_req_header(conn, "referer") |> List.first()
+    referer_url = conn |> Plug.Conn.get_req_header("referer") |> List.first()
     referer_url = referer_url || SanbaseWeb.Endpoint.website_url()
 
     success_redirect_url = get_redirect_url(params, "success_redirect_url", referer_url)
@@ -56,7 +56,7 @@ defmodule SanbaseWeb.AuthController do
     # after invoking Ueberauth.run_callback
     case Ueberauth.run_callback(conn, "google", @providers["google"]) do
       %{assigns: %{ueberauth_failure: _}} = conn ->
-        conn |> redirect(to: ~p"/")
+        redirect(conn, to: ~p"/")
 
       %{assigns: %{ueberauth_auth: auth}} = conn ->
         email = auth.info.email
@@ -81,8 +81,7 @@ defmodule SanbaseWeb.AuthController do
           |> redirect(external: redirect_url)
         else
           _ ->
-            conn
-            |> redirect(external: get_session(conn, :__san_fail_redirect_url))
+            redirect(conn, external: get_session(conn, :__san_fail_redirect_url))
         end
     end
   end
@@ -90,7 +89,7 @@ defmodule SanbaseWeb.AuthController do
   def callback(conn, %{"provider" => "twitter"}) do
     case Ueberauth.run_callback(conn, "twitter", @providers["twitter"]) do
       %{assigns: %{ueberauth_failure: _}} = conn ->
-        conn |> redirect(to: ~p"/")
+        redirect(conn, to: ~p"/")
 
       %{assigns: %{ueberauth_auth: auth}} = conn ->
         %{uid: twitter_id, info: %{email: email}} = auth
@@ -111,27 +110,23 @@ defmodule SanbaseWeb.AuthController do
           |> redirect(external: redirect_url)
         else
           _ ->
-            conn
-            |> redirect(external: get_session(conn, :__san_fail_redirect_url))
+            redirect(conn, external: get_session(conn, :__san_fail_redirect_url))
         end
     end
   end
 
   defp extend_if_first_login(redirect_url, first_login) do
-    case first_login do
-      true ->
-        redirect_url
-        |> URI.parse()
-        |> URI.append_query("signup=true")
-        |> URI.to_string()
-
-      false ->
-        redirect_url
+    if first_login do
+      redirect_url
+      |> URI.parse()
+      |> URI.append_query("signup=true")
+      |> URI.to_string()
+    else
+      redirect_url
     end
   end
 
-  defp twitter_login(email, twitter_id)
-       when is_binary(email) and byte_size(email) > 0 do
+  defp twitter_login(email, twitter_id) when is_binary(email) and byte_size(email) > 0 do
     # There are 2 cases: The user has their email address visible AFTER
     # their first sanbase login. In this case this operation might fail - the find_or_insert_by/3
     # will return a new user but the update_field/3 will fail as another user will have the same
@@ -170,9 +165,10 @@ defmodule SanbaseWeb.AuthController do
     url = params[url_key] || referer_url || SanbaseWeb.Endpoint.website_url()
 
     # In case the provided redirect URL is not valid, simply redirect to sanbase
-    case validate_redirect_url(url) do
-      true -> url
-      _ -> SanbaseWeb.Endpoint.website_url()
+    if validate_redirect_url(url) do
+      url
+    else
+      SanbaseWeb.Endpoint.website_url()
     end
   end
 

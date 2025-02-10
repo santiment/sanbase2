@@ -1,9 +1,12 @@
 defmodule SanbaseWeb.Graphql.InsightTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   import Absinthe.Resolution.Helpers
 
-  alias SanbaseWeb.Graphql.Resolvers.{InsightResolver, VoteResolver, UserResolver}
+  alias SanbaseWeb.Graphql.Resolvers.InsightResolver
+  alias SanbaseWeb.Graphql.Resolvers.UserResolver
+  alias SanbaseWeb.Graphql.Resolvers.VoteResolver
   alias SanbaseWeb.Graphql.SanbaseRepo
 
   object :metric_short_description do

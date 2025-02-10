@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddOnDeletePostsTags do
+  @moduledoc false
   use Ecto.Migration
 
   @table "posts_tags"

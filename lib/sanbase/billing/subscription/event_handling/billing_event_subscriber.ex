@@ -1,13 +1,15 @@
 defmodule Sanbase.EventBus.BillingEventSubscriber do
+  @moduledoc false
   use GenServer
 
-  alias Sanbase.{Accounts, ApiCallLimit}
-  alias Sanbase.Billing.Subscription
+  alias Sanbase.Accounts
   alias Sanbase.Accounts.EmailJobs
+  alias Sanbase.ApiCallLimit
+  alias Sanbase.Billing.Subscription
 
   require Logger
 
-  def topics(), do: ["billing_events"]
+  def topics, do: ["billing_events"]
 
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name, __MODULE__))
@@ -58,8 +60,7 @@ defmodule Sanbase.EventBus.BillingEventSubscriber do
     EventBus.mark_as_completed({__MODULE__, event_shadow})
   end
 
-  defp do_handle(:update_api_call_limit_table, event_type, event)
-       when event_type in @subscription_events do
+  defp do_handle(:update_api_call_limit_table, event_type, event) when event_type in @subscription_events do
     event.data.user_id
     |> Accounts.get_user()
     |> case do
@@ -71,8 +72,7 @@ defmodule Sanbase.EventBus.BillingEventSubscriber do
     end
   end
 
-  defp do_handle(:sanbase_pro_started, event_type, event)
-       when event_type == :create_subscription do
+  defp do_handle(:sanbase_pro_started, event_type, event) when event_type == :create_subscription do
     subscription = Sanbase.Billing.Subscription.by_id(event.data.subscription_id)
 
     toggle_settings(subscription.user_id, %{
@@ -110,16 +110,12 @@ defmodule Sanbase.EventBus.BillingEventSubscriber do
 
   defp do_handle(:unfreeze_user_frozen_alerts, event_type, event)
        when event_type in [:create_subscription, :update_subscription, :renew_subscription] do
-    case Sanbase.Billing.Subscription.user_has_sanbase_pro?(event.data.user_id) do
-      true ->
-        Logger.info(
-          "[BillingEventSubscriber] Unfreezing alerts for user with id #{event.data.user_id}"
-        )
+    if Sanbase.Billing.Subscription.user_has_sanbase_pro?(event.data.user_id) do
+      Logger.info("[BillingEventSubscriber] Unfreezing alerts for user with id #{event.data.user_id}")
 
-        :ok = Sanbase.Alert.UserTrigger.unfreeze_user_frozen_alerts(event.data.user_id)
-
-      false ->
-        :ok
+      :ok = Sanbase.Alert.UserTrigger.unfreeze_user_frozen_alerts(event.data.user_id)
+    else
+      :ok
     end
   end
 
@@ -128,7 +124,8 @@ defmodule Sanbase.EventBus.BillingEventSubscriber do
   end
 
   defp toggle_settings(user_id, settings) do
-    Sanbase.Accounts.get_user(user_id)
+    user_id
+    |> Sanbase.Accounts.get_user()
     |> case do
       {:ok, user} ->
         Sanbase.Accounts.UserSettings.update_settings(user, settings)

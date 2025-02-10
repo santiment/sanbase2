@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.FormsLive do
+  @moduledoc false
   use SanbaseWeb, :live_view
 
   alias SanbaseWeb.AdminFormsComponents
@@ -26,7 +27,7 @@ defmodule SanbaseWeb.FormsLive do
     """
   end
 
-  defp get_forms_info() do
+  defp get_forms_info do
     [
       %{
         title: "Update the Ecosystem Labels of an asset",

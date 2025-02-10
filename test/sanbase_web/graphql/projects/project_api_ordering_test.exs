@@ -11,8 +11,8 @@ defmodule SanbaseWeb.Graphql.ProjectApiOrderingTest do
       p3: insert(:random_project),
       p4: insert(:random_project),
       p5: insert(:random_project),
-      from: Timex.shift(Timex.now(), days: -30),
-      to: Timex.now()
+      from: Timex.shift(DateTime.utc_now(), days: -30),
+      to: DateTime.utc_now()
     ]
   end
 
@@ -28,13 +28,12 @@ defmodule SanbaseWeb.Graphql.ProjectApiOrderingTest do
 
     %{p1: p1, p2: p2, p3: p3, p4: p4, p5: p5} = context
 
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.Price.MetricAdapter.slugs_order/5,
-      {:ok, [p1.slug, p2.slug, p3.slug, p4.slug, p5.slug]}
-    )
+    (&Sanbase.Price.MetricAdapter.slugs_order/5)
+    |> Sanbase.Mock.prepare_mock2({:ok, [p1.slug, p2.slug, p3.slug, p4.slug, p5.slug]})
     |> Sanbase.Mock.run_with_mocks(fn ->
       slugs =
-        get_projects(conn, order_by)
+        conn
+        |> get_projects(order_by)
         |> get_in(["data", "allProjects"])
         |> Enum.map(& &1["slug"])
 
@@ -59,13 +58,12 @@ defmodule SanbaseWeb.Graphql.ProjectApiOrderingTest do
 
     %{p1: p1, p2: p2, p3: p3, p4: p4, p5: p5} = context
 
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.MetricAdapter.slugs_order/5,
-      {:ok, [p1.slug, p2.slug, p3.slug, p4.slug, p5.slug]}
-    )
+    (&Sanbase.Clickhouse.MetricAdapter.slugs_order/5)
+    |> Sanbase.Mock.prepare_mock2({:ok, [p1.slug, p2.slug, p3.slug, p4.slug, p5.slug]})
     |> Sanbase.Mock.run_with_mocks(fn ->
       slugs =
-        get_projects(conn, order_by, pagination)
+        conn
+        |> get_projects(order_by, pagination)
         |> get_in(["data", "allProjects"])
         |> Enum.map(& &1["slug"])
 

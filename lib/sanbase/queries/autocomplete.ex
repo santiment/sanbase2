@@ -1,7 +1,9 @@
 defmodule Sanbase.Clickhouse.Autocomplete do
+  @moduledoc false
+  alias Sanbase.Clickhouse.Query
   alias Sanbase.ClickhouseRepo
 
-  def get_data() do
+  def get_data do
     Sanbase.ClickhouseRepo.put_dynamic_repo(Sanbase.ClickhouseRepo.ReadOnly)
 
     result = %{
@@ -13,14 +15,14 @@ defmodule Sanbase.Clickhouse.Autocomplete do
     {:ok, result}
   end
 
-  defp get_tables() do
+  defp get_tables do
     sql = """
     SELECT name, engine, partition_key, sorting_key, primary_key
     FROM system.tables
     WHERE database = 'default' AND name NOT LIKE '%_shard%'
     """
 
-    query_struct = Sanbase.Clickhouse.Query.new(sql, %{})
+    query_struct = Query.new(sql, %{})
 
     {:ok, result} =
       ClickhouseRepo.query_transform(
@@ -45,14 +47,14 @@ defmodule Sanbase.Clickhouse.Autocomplete do
     result
   end
 
-  defp get_columns() do
+  defp get_columns do
     sql = """
     SELECT table, name, type, is_in_partition_key, is_in_sorting_key, is_in_primary_key
     FROM system.columns
     WHERE database = 'default'
     """
 
-    query_struct = Sanbase.Clickhouse.Query.new(sql, %{})
+    query_struct = Query.new(sql, %{})
 
     {:ok, result} =
       ClickhouseRepo.query_transform(
@@ -79,13 +81,13 @@ defmodule Sanbase.Clickhouse.Autocomplete do
     result
   end
 
-  defp get_functions() do
+  defp get_functions do
     sql = """
     SELECT name
     FROM system.functions
     """
 
-    query_struct = Sanbase.Clickhouse.Query.new(sql, %{})
+    query_struct = Query.new(sql, %{})
     {:ok, result} = ClickhouseRepo.query_transform(query_struct, fn [name] -> %{name: name} end)
     result
   end

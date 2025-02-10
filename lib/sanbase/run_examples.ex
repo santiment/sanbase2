@@ -9,6 +9,13 @@ defmodule Sanbase.RunExamples do
 
   import Ecto.Query
 
+  alias Sanbase.Clickhouse.ApiCallData
+  alias Sanbase.Clickhouse.Github
+  alias Sanbase.Clickhouse.HistoricalBalance
+  alias Sanbase.Clickhouse.TopHolders
+  alias Sanbase.Clickhouse.TopHolders.MetricAdapter
+  alias Sanbase.SocialData.TrendingWords
+
   @queries [
     :santiment_queries,
     :menus,
@@ -32,7 +39,7 @@ defmodule Sanbase.RunExamples do
     :top_addresses,
     :ecosystem_metrics
   ]
-  def queries(), do: @queries
+  def queries, do: @queries
 
   @from ~U[2023-01-01 00:00:00Z]
   @closer_to ~U[2023-01-01 08:00:00Z]
@@ -85,7 +92,7 @@ defmodule Sanbase.RunExamples do
     :ok
   end
 
-  defp break_if_production() do
+  defp break_if_production do
     postgres = System.get_env("DATABASE_URL") || ""
     ch = System.get_env("CLICKHOUSEDATABASE_URL") || ""
     ch_ro = System.get_env("CLICKHOUSE_READONLY_DATABASE_URL") || ""
@@ -180,7 +187,7 @@ defmodule Sanbase.RunExamples do
 
   defp do_run(:trending_words) do
     {:ok, _} =
-      Sanbase.SocialData.TrendingWords.get_project_trending_history(
+      TrendingWords.get_project_trending_history(
         "bitcoin",
         ~U[2023-01-23 00:00:00Z],
         ~U[2023-01-30 00:00:00Z],
@@ -190,7 +197,7 @@ defmodule Sanbase.RunExamples do
       )
 
     {:ok, _} =
-      Sanbase.SocialData.TrendingWords.get_word_trending_history(
+      TrendingWords.get_word_trending_history(
         "bitcoin",
         @from,
         ~U[2023-01-30 00:00:00Z],
@@ -199,7 +206,7 @@ defmodule Sanbase.RunExamples do
         :all
       )
 
-    {:ok, %{}} = Sanbase.SocialData.TrendingWords.get_trending_words(@from, @to, "6h", 10, :all)
+    {:ok, %{}} = TrendingWords.get_trending_words(@from, @to, "6h", 10, :all)
 
     {:ok, :success}
   end
@@ -210,7 +217,7 @@ defmodule Sanbase.RunExamples do
 
   defp do_run(:top_holders) do
     {:ok, _} =
-      Sanbase.Clickhouse.TopHolders.percent_of_total_supply(
+      TopHolders.percent_of_total_supply(
         "ethereum",
         5,
         @from,
@@ -219,7 +226,7 @@ defmodule Sanbase.RunExamples do
       )
 
     {:ok, _} =
-      Sanbase.Clickhouse.TopHolders.top_holders(
+      TopHolders.top_holders(
         "ethereum",
         @from,
         @closer_to,
@@ -233,7 +240,7 @@ defmodule Sanbase.RunExamples do
           "amount_in_non_exchange_top_holders"
         ] do
       {:ok, _} =
-        Sanbase.Clickhouse.TopHolders.MetricAdapter.timeseries_data(
+        MetricAdapter.timeseries_data(
           metric,
           %{slug: "ethereum"},
           @from,
@@ -243,13 +250,13 @@ defmodule Sanbase.RunExamples do
         )
 
       {:ok, _} =
-        Sanbase.Clickhouse.TopHolders.MetricAdapter.first_datetime(
+        MetricAdapter.first_datetime(
           metric,
           %{slug: "ethereum"}
         )
 
       {:ok, _} =
-        Sanbase.Clickhouse.TopHolders.MetricAdapter.last_datetime_computed_at(
+        MetricAdapter.last_datetime_computed_at(
           metric,
           %{slug: "ethereum"}
         )
@@ -406,7 +413,7 @@ defmodule Sanbase.RunExamples do
   defp do_run(:github) do
     for interval <- ["1d", "toStartOfHour"] do
       {:ok, [_ | _]} =
-        Sanbase.Clickhouse.Github.dev_activity(
+        Github.dev_activity(
           ["santiment"],
           @from,
           @to,
@@ -416,7 +423,7 @@ defmodule Sanbase.RunExamples do
         )
 
       {:ok, [_ | _]} =
-        Sanbase.Clickhouse.Github.github_activity(
+        Github.github_activity(
           ["santiment"],
           @from,
           @to,
@@ -426,7 +433,7 @@ defmodule Sanbase.RunExamples do
         )
 
       {:ok, [_ | _]} =
-        Sanbase.Clickhouse.Github.dev_activity_contributors_count(
+        Github.dev_activity_contributors_count(
           ["santiment"],
           @from,
           @to,
@@ -436,7 +443,7 @@ defmodule Sanbase.RunExamples do
         )
 
       {:ok, [_ | _]} =
-        Sanbase.Clickhouse.Github.github_activity_contributors_count(
+        Github.github_activity_contributors_count(
           ["santiment"],
           @from,
           @to,
@@ -457,28 +464,28 @@ defmodule Sanbase.RunExamples do
       end
 
       {:ok, %{"santiment" => _}} =
-        Sanbase.Clickhouse.Github.total_dev_activity_contributors_count(
+        Github.total_dev_activity_contributors_count(
           ["santiment"],
           @from,
           @to
         )
 
       {:ok, %{"santiment" => _}} =
-        Sanbase.Clickhouse.Github.total_github_activity_contributors_count(
+        Github.total_github_activity_contributors_count(
           ["santiment"],
           @from,
           @to
         )
 
       {:ok, %{"santiment" => _}} =
-        Sanbase.Clickhouse.Github.total_dev_activity(
+        Github.total_dev_activity(
           ["santiment"],
           @from,
           @to
         )
 
       {:ok, %{"santiment" => _, "bitcoin" => _}} =
-        Sanbase.Clickhouse.Github.total_github_activity(
+        Github.total_github_activity(
           ["santiment", "bitcoin"],
           @from,
           @to
@@ -513,7 +520,7 @@ defmodule Sanbase.RunExamples do
           {%{infrastructure: "BTC", slug: "bitcoin"}, btc_addr}
         ] do
       {:ok, [_ | _]} =
-        Sanbase.Clickhouse.HistoricalBalance.historical_balance(
+        HistoricalBalance.historical_balance(
           selector,
           address,
           @from,
@@ -523,7 +530,7 @@ defmodule Sanbase.RunExamples do
     end
 
     {:ok, [_ | _]} =
-      Sanbase.Clickhouse.HistoricalBalance.balance_change(
+      HistoricalBalance.balance_change(
         %{infrastructure: "ETH", slug: "ethereum"},
         @null_address,
         @from,
@@ -531,7 +538,7 @@ defmodule Sanbase.RunExamples do
       )
 
     {:ok, [_ | _]} =
-      Sanbase.Clickhouse.HistoricalBalance.balance_change(
+      HistoricalBalance.balance_change(
         %{infrastructure: "XRP", currency: "XRP", issuer: "XRP"},
         xrp_addr,
         @from,
@@ -539,7 +546,7 @@ defmodule Sanbase.RunExamples do
       )
 
     {:ok, [_ | _]} =
-      Sanbase.Clickhouse.HistoricalBalance.balance_change(
+      HistoricalBalance.balance_change(
         %{infrastructure: "BTC", slug: "bitcoin"},
         btc_addr,
         @from,
@@ -547,19 +554,19 @@ defmodule Sanbase.RunExamples do
       )
 
     {:ok, [_ | _]} =
-      Sanbase.Clickhouse.HistoricalBalance.usd_value_address_change(
+      HistoricalBalance.usd_value_address_change(
         %{infrastructure: "ETH", address: @null_address},
-        Timex.shift(Timex.now(), days: -3)
+        Timex.shift(DateTime.utc_now(), days: -3)
       )
 
     {:ok, [_ | _]} =
-      Sanbase.Clickhouse.HistoricalBalance.usd_value_held_by_address(%{
+      HistoricalBalance.usd_value_held_by_address(%{
         infrastructure: "ETH",
         address: @null_address
       })
 
     {:ok, [_ | _]} =
-      Sanbase.Clickhouse.HistoricalBalance.assets_held_by_address(%{
+      HistoricalBalance.assets_held_by_address(%{
         infrastructure: "ETH",
         address: @null_address
       })
@@ -622,11 +629,11 @@ defmodule Sanbase.RunExamples do
   end
 
   defp do_run(:api_calls_made) do
-    {:ok, _} = Sanbase.Clickhouse.ApiCallData.active_users_count(@from, @to)
+    {:ok, _} = ApiCallData.active_users_count(@from, @to)
 
-    {:ok, _} = Sanbase.Clickhouse.ApiCallData.api_call_count(22, @from, @to)
+    {:ok, _} = ApiCallData.api_call_count(22, @from, @to)
 
-    {:ok, _} = Sanbase.Clickhouse.ApiCallData.api_call_history(22, @from, @to, "1d")
+    {:ok, _} = ApiCallData.api_call_history(22, @from, @to, "1d")
 
     {:ok, :success}
   end
@@ -744,8 +751,7 @@ defmodule Sanbase.RunExamples do
     {:ok, query} =
       Sanbase.Queries.create_query(
         %{
-          sql_query_text:
-            "SELECT {{big_num:human_readable}} AS big_num, {{big_num}} AS num, {{slug}} AS slug",
+          sql_query_text: "SELECT {{big_num:human_readable}} AS big_num, {{big_num}} AS num, {{slug}} AS slug",
           sql_query_parameters: %{slug: "bitcoin", big_num: 2_123_801_239_123}
         },
         user.id

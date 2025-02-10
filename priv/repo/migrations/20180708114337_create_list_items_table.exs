@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.CreateListItemsTable do
+  @moduledoc false
   use Ecto.Migration
 
   @table_name :list_items

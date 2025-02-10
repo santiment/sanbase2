@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.MetricRegistryHistoryLive do
+  @moduledoc false
   use SanbaseWeb, :live_view
 
   alias SanbaseWeb.AvailableMetricsComponents
@@ -7,12 +8,7 @@ defmodule SanbaseWeb.MetricRegistryHistoryLive do
   def mount(%{"id" => metric_registry_id}, _session, socket) do
     {:ok, list} = get_history_changes_list(metric_registry_id)
 
-    {:ok,
-     socket
-     |> assign(
-       page_title: "Metric Registry | History",
-       history_list: list
-     )}
+    {:ok, assign(socket, page_title: "Metric Registry | History", history_list: list)}
   end
 
   @impl true
@@ -61,7 +57,7 @@ defmodule SanbaseWeb.MetricRegistryHistoryLive do
         changes = ExAudit.Diff.diff(old, new)
         changes = Sanbase.ExAudit.Patch.format_patch(%{patch: changes})
 
-        Map.from_struct(struct) |> Map.put(:changes, changes)
+        struct |> Map.from_struct() |> Map.put(:changes, changes)
       end)
 
     {:ok, data}

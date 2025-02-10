@@ -14,35 +14,40 @@ defmodule SanbaseWeb.Graphql.MonitoredTwitterHandleApiTest do
   test "add twitter handle to monitor", %{conn: conn} do
     # Not monitored
     boolean =
-      is_twitter_handle_monitored(conn, %{twitter_handle: "santimentfeed"})
+      conn
+      |> is_twitter_handle_monitored(%{twitter_handle: "santimentfeed"})
       |> get_in(["data", "isTwitterHandleMonitored"])
 
     assert boolean == false
 
     # Monitor the handle, check that the operation succeeds
     result =
-      add_twitter_handle_to_monitor(conn, %{twitter_handle: "santimentfeed", notes: "note"})
+      conn
+      |> add_twitter_handle_to_monitor(%{twitter_handle: "santimentfeed", notes: "note"})
       |> get_in(["data", "addTwitterHandleToMonitor"])
 
     assert result == true
 
     # Now it's monitored
     boolean =
-      is_twitter_handle_monitored(conn, %{twitter_handle: "santimentfeed"})
+      conn
+      |> is_twitter_handle_monitored(%{twitter_handle: "santimentfeed"})
       |> get_in(["data", "isTwitterHandleMonitored"])
 
     assert boolean == true
 
     # Trying to add it again fails with an error
     error_msg =
-      add_twitter_handle_to_monitor(conn, %{twitter_handle: "santimentfeed", notes: "note"})
+      conn
+      |> add_twitter_handle_to_monitor(%{twitter_handle: "santimentfeed", notes: "note"})
       |> get_in(["errors", Access.at(0), "message"])
 
     assert error_msg =~ "already being monitored"
 
     # Get current user added handles
     handles =
-      get_current_user_handles(conn)
+      conn
+      |> get_current_user_handles()
       |> get_in(["data", "getCurrentUserSubmittedTwitterHandles"])
 
     assert handles == [%{"handle" => "santimentfeed", "notes" => "note"}]

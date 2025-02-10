@@ -32,8 +32,8 @@ defmodule Sanbase.Alert.TriggerMetricHistoryTest do
 
     {:ok, points} = UserTrigger.historical_trigger_points(trigger)
 
-    assert Enum.filter(points, & &1.triggered?) |> length() == 2
-    assert Enum.filter(points, &(!&1.triggered?)) |> length() == 8
+    assert points |> Enum.filter(& &1.triggered?) |> length() == 2
+    assert points |> Enum.filter(&(!&1.triggered?)) |> length() == 8
     assert length(points) == 10
 
     assert points
@@ -63,8 +63,8 @@ defmodule Sanbase.Alert.TriggerMetricHistoryTest do
 
     {:ok, points} = UserTrigger.historical_trigger_points(trigger)
 
-    assert Enum.filter(points, & &1.triggered?) |> length() == 2
-    assert Enum.filter(points, &(!&1.triggered?)) |> length() == 8
+    assert points |> Enum.filter(& &1.triggered?) |> length() == 2
+    assert points |> Enum.filter(&(!&1.triggered?)) |> length() == 8
     assert length(points) == 10
 
     assert points
@@ -94,8 +94,8 @@ defmodule Sanbase.Alert.TriggerMetricHistoryTest do
 
     {:ok, points} = UserTrigger.historical_trigger_points(trigger)
 
-    assert Enum.filter(points, & &1.triggered?) |> length() == 3
-    assert Enum.filter(points, &(!&1.triggered?)) |> length() == 7
+    assert points |> Enum.filter(& &1.triggered?) |> length() == 3
+    assert points |> Enum.filter(&(!&1.triggered?)) |> length() == 7
     assert length(points) == 10
 
     assert points
@@ -131,8 +131,8 @@ defmodule Sanbase.Alert.TriggerMetricHistoryTest do
 
     {:ok, points} = UserTrigger.historical_trigger_points(trigger)
 
-    assert Enum.filter(points, & &1.triggered?) |> length() == 2
-    assert Enum.filter(points, &(!&1.triggered?)) |> length() == 8
+    assert points |> Enum.filter(& &1.triggered?) |> length() == 2
+    assert points |> Enum.filter(&(!&1.triggered?)) |> length() == 8
     assert length(points) == 10
 
     assert points
@@ -162,8 +162,8 @@ defmodule Sanbase.Alert.TriggerMetricHistoryTest do
 
     {:ok, points} = UserTrigger.historical_trigger_points(trigger)
 
-    assert Enum.filter(points, & &1.triggered?) |> length() == 3
-    assert Enum.filter(points, &(!&1.triggered?)) |> length() == 7
+    assert points |> Enum.filter(& &1.triggered?) |> length() == 3
+    assert points |> Enum.filter(&(!&1.triggered?)) |> length() == 7
     assert length(points) == 10
 
     assert points
@@ -199,8 +199,8 @@ defmodule Sanbase.Alert.TriggerMetricHistoryTest do
 
     {:ok, points} = UserTrigger.historical_trigger_points(trigger)
 
-    assert Enum.filter(points, & &1.triggered?) |> length() == 3
-    assert Enum.filter(points, &(!&1.triggered?)) |> length() == 7
+    assert points |> Enum.filter(& &1.triggered?) |> length() == 3
+    assert points |> Enum.filter(&(!&1.triggered?)) |> length() == 7
     assert length(points) == 10
 
     assert points
@@ -236,8 +236,8 @@ defmodule Sanbase.Alert.TriggerMetricHistoryTest do
 
     {:ok, points} = UserTrigger.historical_trigger_points(trigger)
 
-    assert Enum.filter(points, & &1.triggered?) |> length() == 4
-    assert Enum.filter(points, &(!&1.triggered?)) |> length() == 6
+    assert points |> Enum.filter(& &1.triggered?) |> length() == 4
+    assert points |> Enum.filter(&(!&1.triggered?)) |> length() == 6
     assert length(points) == 10
 
     assert points
@@ -279,8 +279,8 @@ defmodule Sanbase.Alert.TriggerMetricHistoryTest do
 
     {:ok, points} = UserTrigger.historical_trigger_points(trigger)
 
-    assert Enum.filter(points, & &1.triggered?) |> length() == 2
-    assert Enum.filter(points, &(!&1.triggered?)) |> length() == 8
+    assert points |> Enum.filter(& &1.triggered?) |> length() == 2
+    assert points |> Enum.filter(&(!&1.triggered?)) |> length() == 8
     assert length(points) == 10
 
     assert points
@@ -310,8 +310,8 @@ defmodule Sanbase.Alert.TriggerMetricHistoryTest do
 
     {:ok, points} = UserTrigger.historical_trigger_points(trigger)
 
-    assert Enum.filter(points, & &1.triggered?) |> length() == 2
-    assert Enum.filter(points, &(!&1.triggered?)) |> length() == 8
+    assert points |> Enum.filter(& &1.triggered?) |> length() == 2
+    assert points |> Enum.filter(&(!&1.triggered?)) |> length() == 8
     assert length(points) == 10
 
     assert points
@@ -341,8 +341,8 @@ defmodule Sanbase.Alert.TriggerMetricHistoryTest do
 
     {:ok, points} = UserTrigger.historical_trigger_points(trigger)
 
-    assert Enum.filter(points, & &1.triggered?) |> length() == 4
-    assert Enum.filter(points, &(!&1.triggered?)) |> length() == 6
+    assert points |> Enum.filter(& &1.triggered?) |> length() == 4
+    assert points |> Enum.filter(&(!&1.triggered?)) |> length() == 6
     assert length(points) == 10
 
     assert points
@@ -384,8 +384,8 @@ defmodule Sanbase.Alert.TriggerMetricHistoryTest do
 
     {:ok, points} = UserTrigger.historical_trigger_points(trigger)
 
-    assert Enum.filter(points, & &1.triggered?) |> length() == 1
-    assert Enum.filter(points, &(!&1.triggered?)) |> length() == 9
+    assert points |> Enum.filter(& &1.triggered?) |> length() == 1
+    assert points |> Enum.filter(&(!&1.triggered?)) |> length() == 9
     assert length(points) == 10
 
     assert points
@@ -395,7 +395,7 @@ defmodule Sanbase.Alert.TriggerMetricHistoryTest do
            |> Map.get(:triggered?) == true
   end
 
-  defp resp() do
+  defp resp do
     [
       %{datetime: ~U[2018-11-16 00:00:00Z], value: 20},
       %{datetime: ~U[2018-11-17 00:00:00Z], value: 200},

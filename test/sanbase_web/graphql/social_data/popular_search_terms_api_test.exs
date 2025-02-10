@@ -9,7 +9,7 @@ defmodule SanbaseWeb.Graphql.SocialData.PopularSearchTermApiTest do
   end
 
   test "returns data for an interval", context do
-    now = Timex.now() |> DateTime.truncate(:second)
+    now = DateTime.truncate(DateTime.utc_now(), :second)
     yesterday = Timex.shift(now, days: -1)
 
     insert(:popular_search_term,

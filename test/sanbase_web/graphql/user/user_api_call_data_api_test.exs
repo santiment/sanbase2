@@ -2,8 +2,10 @@ defmodule SanbaseWeb.Graphql.UserApiCallDataApiTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Mock
-  import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
+  import SanbaseWeb.Graphql.TestHelpers
+
+  alias Sanbase.Clickhouse.ApiCallData
 
   setup do
     user = insert(:user)
@@ -16,7 +18,7 @@ defmodule SanbaseWeb.Graphql.UserApiCallDataApiTest do
     dt2 = ~U[2019-01-02 00:00:00Z]
     dt3 = ~U[2019-01-03 00:00:00Z]
 
-    with_mock Sanbase.Clickhouse.ApiCallData,
+    with_mock ApiCallData,
       api_call_history: fn _, _, _, _, _ ->
         {:ok,
          [
@@ -62,7 +64,7 @@ defmodule SanbaseWeb.Graphql.UserApiCallDataApiTest do
     dt1 = ~U[2019-01-01 00:00:00Z]
     dt2 = ~U[2019-01-03 00:00:00Z]
 
-    with_mock Sanbase.Clickhouse.ApiCallData,
+    with_mock ApiCallData,
       api_call_history: fn _, _, _, _, _ ->
         {:ok, []}
       end do
@@ -90,7 +92,7 @@ defmodule SanbaseWeb.Graphql.UserApiCallDataApiTest do
     dt1 = ~U[2019-01-01 00:00:00Z]
     dt2 = ~U[2019-01-03 00:00:00Z]
 
-    with_mock Sanbase.Clickhouse.ApiCallData,
+    with_mock ApiCallData,
       api_call_history: fn _, _, _, _, _ ->
         {:error, "Something went wrong"}
       end do
@@ -105,7 +107,7 @@ defmodule SanbaseWeb.Graphql.UserApiCallDataApiTest do
       %{"errors" => errors} = result
 
       assert length(errors) == 1
-      error = errors |> List.first()
+      error = List.first(errors)
       assert error["message"] == "Something went wrong"
     end
   end

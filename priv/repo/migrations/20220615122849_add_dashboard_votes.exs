@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddDashboardVotes do
+  @moduledoc false
   use Ecto.Migration
 
   @table :votes

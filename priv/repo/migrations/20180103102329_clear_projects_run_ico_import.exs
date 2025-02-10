@@ -1,9 +1,10 @@
 defmodule Sanbase.Repo.Migrations.ClearProjectsRunIcoImport do
+  @moduledoc false
   use Ecto.Migration
 
-  require Logger
-
   import Supervisor.Spec
+
+  require Logger
 
   def up do
     # Making the migration no-op. The data migration is rerun in 20180108110118_clear_projects_run_ico_import2.exs

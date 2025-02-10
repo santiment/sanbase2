@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.CreateEntitiesMv do
+  @moduledoc false
   use Ecto.Migration
 
   def up do

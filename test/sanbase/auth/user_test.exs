@@ -1,34 +1,35 @@
 defmodule Sanbase.Accounts.UserTest do
   use Sanbase.DataCase, async: false
 
-  import Mock
-  import Mox
-  import Mockery
-  import Sanbase.Factory
   import ExUnit.CaptureLog
+  import Mock
+  import Mockery
+  import Mox
+  import Sanbase.Factory
 
-  alias Sanbase.Accounts.{EthAccount, User, Statistics}
+  alias Sanbase.Accounts.EthAccount
+  alias Sanbase.Accounts.Statistics
+  alias Sanbase.Accounts.User
+  alias Sanbase.Accounts.User.UniswapStaking
+  alias Sanbase.InternalServices.Ethauth
   alias Sanbase.Repo
-  alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.StripeApi
   alias Sanbase.StripeApiTestResponse
-  alias Sanbase.Accounts.User.UniswapStaking
+  alias Sanbase.Timeline.TimelineEvent
 
   setup :set_mox_from_context
   setup :verify_on_exit!
 
   test "Delete user and associations" do
     with_mocks([
-      {Sanbase.KafkaExporter, [:passthrough],
-       [send_data_to_topic_from_current_process: fn _, _ -> :ok end]},
+      {Sanbase.KafkaExporter, [:passthrough], [send_data_to_topic_from_current_process: fn _, _ -> :ok end]},
       {StripeApi, [:passthrough],
        [
          create_customer_with_card: fn _, _ ->
            StripeApiTestResponse.create_or_update_customer_resp()
          end
        ]},
-      {StripeApi, [:passthrough],
-       [create_subscription: fn _ -> StripeApiTestResponse.create_subscription_resp() end]}
+      {StripeApi, [:passthrough], [create_subscription: fn _ -> StripeApiTestResponse.create_subscription_resp() end]}
     ]) do
       expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
       user = insert(:user, stripe_customer_id: "test")
@@ -94,7 +95,7 @@ defmodule Sanbase.Accounts.UserTest do
         Sanbase.Alert.HistoricalActivity.create(%{
           user_id: user.id,
           user_trigger_id: user_trigger.id,
-          triggered_at: Timex.now(),
+          triggered_at: DateTime.utc_now(),
           payload: %{}
         })
 
@@ -117,9 +118,9 @@ defmodule Sanbase.Accounts.UserTest do
             user_id: user.id,
             event_name: "test",
             metadata: %{},
-            created_at: Timex.now() |> DateTime.truncate(:second),
-            inserted_at: Timex.now() |> DateTime.truncate(:second),
-            updated_at: Timex.now() |> DateTime.truncate(:second)
+            created_at: DateTime.truncate(DateTime.utc_now(), :second),
+            inserted_at: DateTime.truncate(DateTime.utc_now(), :second),
+            updated_at: DateTime.truncate(DateTime.utc_now(), :second)
           }
         ],
         _is_authentiicated = true
@@ -142,7 +143,7 @@ defmodule Sanbase.Accounts.UserTest do
   test "san balance cache is stale when the san balance was updated 10 min ago" do
     user =
       insert(:user,
-        san_balance_updated_at: Timex.shift(Timex.now(), minutes: -10),
+        san_balance_updated_at: Timex.shift(DateTime.utc_now(), minutes: -10),
         privacy_policy_accepted: true
       )
 
@@ -152,7 +153,7 @@ defmodule Sanbase.Accounts.UserTest do
   test "san balance cache is not stale when the san balance was updated 5 min ago" do
     user =
       insert(:user,
-        san_balance_updated_at: Timex.shift(Timex.now(), minutes: -5),
+        san_balance_updated_at: Timex.shift(DateTime.utc_now(), minutes: -5),
         privacy_policy_accepted: true
       )
 
@@ -160,7 +161,7 @@ defmodule Sanbase.Accounts.UserTest do
   end
 
   test "update_san_balance_changeset is returning a changeset with updated san balance" do
-    mock(Sanbase.InternalServices.Ethauth, :san_balance, {:ok, 5.0})
+    mock(Ethauth, :san_balance, {:ok, 5.0})
 
     user =
       insert(:user,
@@ -182,7 +183,7 @@ defmodule Sanbase.Accounts.UserTest do
   end
 
   test "san_balance returns cached result when EthAccount.san_balance fails" do
-    mock(Sanbase.InternalServices.Ethauth, :san_balance, {:error, "foo"})
+    mock(Ethauth, :san_balance, {:error, "foo"})
 
     user =
       insert(:user,
@@ -199,7 +200,7 @@ defmodule Sanbase.Accounts.UserTest do
   test "san_balance does not update the balance if the balance cache is not stale" do
     user =
       insert(:user,
-        san_balance_updated_at: Timex.now(),
+        san_balance_updated_at: DateTime.utc_now(),
         san_balance: Decimal.new(5),
         privacy_policy_accepted: true
       )
@@ -210,21 +211,21 @@ defmodule Sanbase.Accounts.UserTest do
   test "san_balance updates the balance if the balance cache is stale" do
     user =
       insert(:user,
-        san_balance_updated_at: Timex.shift(Timex.now(), minutes: -10),
+        san_balance_updated_at: Timex.shift(DateTime.utc_now(), minutes: -10),
         privacy_policy_accepted: true,
         eth_accounts: [%EthAccount{address: "0x000000000001"}]
       )
 
-    mock(Sanbase.InternalServices.Ethauth, :san_balance, {:ok, 10.0})
+    mock(Ethauth, :san_balance, {:ok, 10.0})
 
-    user = User.by_id!(user.id) |> Repo.preload(:eth_accounts)
+    user = user.id |> User.by_id!() |> Repo.preload(:eth_accounts)
 
     assert User.san_balance(user) == {:ok, 10.0}
 
-    user = User.by_id!(user.id) |> Repo.preload(:eth_accounts)
+    user = user.id |> User.by_id!() |> Repo.preload(:eth_accounts)
 
     assert Sanbase.TestUtils.datetime_close_to(
-             Timex.now(),
+             DateTime.utc_now(),
              user.san_balance_updated_at,
              2,
              :seconds
@@ -236,7 +237,7 @@ defmodule Sanbase.Accounts.UserTest do
       insert(:user,
         san_balance: Decimal.new(10),
         test_san_balance: Decimal.new(20),
-        san_balance_updated_at: Timex.shift(Timex.now(), minutes: -2)
+        san_balance_updated_at: Timex.shift(DateTime.utc_now(), minutes: -2)
       )
 
     assert User.san_balance(user) == {:ok, 20.0}
@@ -246,7 +247,7 @@ defmodule Sanbase.Accounts.UserTest do
     user =
       insert(:user,
         san_balance: Decimal.new(10),
-        san_balance_updated_at: Timex.shift(Timex.now(), minutes: -2),
+        san_balance_updated_at: Timex.shift(DateTime.utc_now(), minutes: -2),
         privacy_policy_accepted: true
       )
 
@@ -271,7 +272,8 @@ defmodule Sanbase.Accounts.UserTest do
           registration_state: %{"state" => "finished", "datetime" => DateTime.utc_now()}
         )
 
-      Sanbase.Mock.prepare_mock2(&UniswapStaking.fetch_uniswap_san_staked_user/1, 2001)
+      (&UniswapStaking.fetch_uniswap_san_staked_user/1)
+      |> Sanbase.Mock.prepare_mock2(2001)
       |> Sanbase.Mock.run_with_mocks(fn ->
         {:ok, user} =
           User.find_or_insert_by(:email, existing_user.email, %{username: "john_snow"})
@@ -287,13 +289,14 @@ defmodule Sanbase.Accounts.UserTest do
 
   test "update_email_token updates the email_token and the email_token_generated_at" do
     {:ok, user} =
-      insert(:user, privacy_policy_accepted: true)
+      :user
+      |> insert(privacy_policy_accepted: true)
       |> User.Email.update_email_token()
 
     assert user.email_token != nil
 
     assert Sanbase.TestUtils.datetime_close_to(
-             Timex.now(),
+             DateTime.utc_now(),
              user.email_token_generated_at,
              2,
              :seconds
@@ -302,11 +305,12 @@ defmodule Sanbase.Accounts.UserTest do
 
   test "mark_email_token_as_validated updates the email_token_validated_at" do
     {:ok, user} =
-      insert(:user)
+      :user
+      |> insert()
       |> User.Email.mark_email_token_as_validated()
 
     assert Sanbase.TestUtils.datetime_close_to(
-             Timex.now(),
+             DateTime.utc_now(),
              user.email_token_validated_at,
              2,
              :seconds
@@ -320,7 +324,7 @@ defmodule Sanbase.Accounts.UserTest do
     user =
       build(:user,
         email_token: "test_token",
-        email_token_generated_at: Timex.shift(Timex.now(), days: -2)
+        email_token_generated_at: Timex.shift(DateTime.utc_now(), days: -2)
       )
 
     refute User.Email.email_token_valid?(user, "test_token")
@@ -328,8 +332,8 @@ defmodule Sanbase.Accounts.UserTest do
     user =
       build(:user,
         email_token: "test_token",
-        email_token_generated_at: Timex.now(),
-        email_token_validated_at: Timex.shift(Timex.now(), minutes: -20)
+        email_token_generated_at: DateTime.utc_now(),
+        email_token_validated_at: Timex.shift(DateTime.utc_now(), minutes: -20)
       )
 
     refute User.Email.email_token_valid?(user, "test_token")
@@ -337,7 +341,7 @@ defmodule Sanbase.Accounts.UserTest do
     user =
       build(:user,
         email_token: "test_token",
-        email_token_generated_at: Timex.now()
+        email_token_generated_at: DateTime.utc_now()
       )
 
     assert User.Email.email_token_valid?(user, "test_token")
@@ -351,7 +355,8 @@ defmodule Sanbase.Accounts.UserTest do
 
   test "find_by_email_candidate when the user exists" do
     {:ok, existing_user} =
-      insert(:user,
+      :user
+      |> insert(
         email: "test@example.com",
         privacy_policy_accepted: true
       )
@@ -368,14 +373,16 @@ defmodule Sanbase.Accounts.UserTest do
   end
 
   test "find_by_email_candidate when there are two users with the same email_candidate" do
-    insert(:user,
+    :user
+    |> insert(
       email: "test_first@example.com",
       privacy_policy_accepted: true
     )
     |> User.Email.update_email_candidate("test+foo@santiment.net")
 
     {:ok, existing_user} =
-      insert(:user,
+      :user
+      |> insert(
         email: "test@example.com",
         privacy_policy_accepted: true
       )
@@ -402,7 +409,7 @@ defmodule Sanbase.Accounts.UserTest do
     assert user.email_candidate_token_validated_at == nil
 
     assert Sanbase.TestUtils.datetime_close_to(
-             Timex.now(),
+             DateTime.utc_now(),
              user.email_candidate_token_generated_at,
              2,
              :seconds
@@ -413,7 +420,8 @@ defmodule Sanbase.Accounts.UserTest do
     email_candidate = "test+foo@santiment.net"
 
     {:ok, user} =
-      insert(:user,
+      :user
+      |> insert(
         email: "test@example.com",
         privacy_policy_accepted: true
       )
@@ -425,7 +433,7 @@ defmodule Sanbase.Accounts.UserTest do
     assert user.email_candidate == nil
 
     assert Sanbase.TestUtils.datetime_close_to(
-             Timex.now(),
+             DateTime.utc_now(),
              user.email_candidate_token_validated_at,
              2,
              :seconds
@@ -439,7 +447,7 @@ defmodule Sanbase.Accounts.UserTest do
     user =
       build(:user,
         email_candidate_token: "test_token",
-        email_candidate_token_generated_at: Timex.shift(Timex.now(), days: -2)
+        email_candidate_token_generated_at: Timex.shift(DateTime.utc_now(), days: -2)
       )
 
     refute User.Email.email_candidate_token_valid?(user, "test_token")
@@ -447,8 +455,8 @@ defmodule Sanbase.Accounts.UserTest do
     user =
       build(:user,
         email_candidate_token: "test_token",
-        email_candidate_token_generated_at: Timex.now(),
-        email_candidate_token_validated_at: Timex.shift(Timex.now(), minutes: -20)
+        email_candidate_token_generated_at: DateTime.utc_now(),
+        email_candidate_token_validated_at: Timex.shift(DateTime.utc_now(), minutes: -20)
       )
 
     refute User.Email.email_candidate_token_valid?(user, "test_token")
@@ -456,7 +464,7 @@ defmodule Sanbase.Accounts.UserTest do
     user =
       build(:user,
         email_candidate_token: "test_token",
-        email_candidate_token_generated_at: Timex.now()
+        email_candidate_token_generated_at: DateTime.utc_now()
       )
 
     assert User.Email.email_candidate_token_valid?(user, "test_token")
@@ -466,12 +474,13 @@ defmodule Sanbase.Accounts.UserTest do
     user = insert(:user)
 
     {:error, changeset} =
-      User.changeset(user, %{username: "周必聪"})
+      user
+      |> User.changeset(%{username: "周必聪"})
       |> Repo.update()
 
     refute changeset.valid?
 
-    assert errors_on(changeset)[:username] |> Enum.at(0) =~
+    assert Enum.at(errors_on(changeset)[:username], 0) =~
              "Username must contain only valid ASCII symbols"
   end
 
@@ -479,7 +488,8 @@ defmodule Sanbase.Accounts.UserTest do
     user = insert(:user)
 
     {:ok, user} =
-      User.changeset(user, %{username: " portokala "})
+      user
+      |> User.changeset(%{username: " portokala "})
       |> Repo.update()
 
     assert user.username == "portokala"
@@ -489,7 +499,8 @@ defmodule Sanbase.Accounts.UserTest do
     user = insert(:user)
 
     {:ok, user} =
-      User.changeset(user, %{
+      user
+      |> User.changeset(%{
         email: "  tesT+eMAil@saNTIment.nEt    ",
         email_candidate: " TEst+eMAil_cANDIdate@sanTIMent.NEt    "
       })
@@ -504,16 +515,18 @@ defmodule Sanbase.Accounts.UserTest do
     user2 = insert(:user)
     email = "test@santiment.net"
 
-    User.changeset(user1, %{email: email})
+    user1
+    |> User.changeset(%{email: email})
     |> Repo.update()
 
     {:error, changeset} =
-      User.changeset(user2, %{email_candidate: email})
+      user2
+      |> User.changeset(%{email_candidate: email})
       |> Repo.update()
 
     refute changeset.valid?
 
-    assert errors_on(changeset)[:email] |> Enum.at(0) == "Email has already been taken"
+    assert Enum.at(errors_on(changeset)[:email], 0) == "Email has already been taken"
   end
 
   describe "#users_with_monitored_watchlist_and_email" do
@@ -541,7 +554,8 @@ defmodule Sanbase.Accounts.UserTest do
       "http://stage-sanbase-images.s3.amazonaws.com/uploads/_empowr-coinHY5QG72SCGKYWMN4AEJQ2BRDLXNWXECT.png"
 
     {:ok, user} =
-      insert(:user)
+      :user
+      |> insert()
       |> User.update_avatar_url(avatar_url)
 
     assert user.avatar_url == avatar_url
@@ -551,7 +565,8 @@ defmodule Sanbase.Accounts.UserTest do
     avatar_url = "something invalid"
 
     {:error, changeset} =
-      insert(:user)
+      :user
+      |> insert()
       |> User.update_avatar_url(avatar_url)
 
     assert errors_on(changeset)[:avatar_url] ==
@@ -560,7 +575,7 @@ defmodule Sanbase.Accounts.UserTest do
              ]
   end
 
-  defp default_trigger_settings_string_keys() do
+  defp default_trigger_settings_string_keys do
     %{
       "type" => "metric_signal",
       "metric" => "active_addresses_24h",

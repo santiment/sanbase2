@@ -51,7 +51,7 @@ defmodule Sanbase.Dashboard.Panel do
   """
   @spec new(panel_args(), Keyword.t()) :: {:ok, t()} | {:ok, Ecto.Changeset.t()} | {:error, any()}
   def new(args, opts \\ []) do
-    opts = [check_required: true, put_id: true, as_changeset: false] |> Keyword.merge(opts)
+    opts = Keyword.merge([check_required: true, put_id: true, as_changeset: false], opts)
     handle_panel(%__MODULE__{}, args, opts)
   end
 
@@ -64,38 +64,39 @@ defmodule Sanbase.Dashboard.Panel do
   @spec update(t(), panel_args, Keyword.t()) ::
           {:ok, t()} | {:ok, Ecto.Changeset.t()} | {:error, any()}
   def update(%__MODULE__{} = panel, args, opts \\ []) do
-    opts = [check_required: false, put_id: false, as_changeset: true] |> Keyword.merge(opts)
+    opts = Keyword.merge([check_required: false, put_id: false, as_changeset: true], opts)
     handle_panel(panel, args, opts)
   end
 
   defp handle_panel(%__MODULE__{} = panel, args, opts) do
     args =
-      case Keyword.get(opts, :put_id) do
-        true -> put_in(args, [:id], UUID.uuid4())
-        false -> args
+      if Keyword.get(opts, :put_id) do
+        put_in(args, [:id], UUID.uuid4())
+      else
+        args
       end
 
-    args = Enum.reject(args, fn {_k, v} -> is_nil(v) end) |> Map.new()
+    args = args |> Enum.reject(fn {_k, v} -> is_nil(v) end) |> Map.new()
 
     changeset = changeset(panel, args)
 
     changeset =
-      case Keyword.fetch!(opts, :check_required) do
-        true -> changeset |> validate_required([:sql])
-        false -> changeset
+      if Keyword.fetch!(opts, :check_required) do
+        validate_required(changeset, [:sql])
+      else
+        changeset
       end
 
-    case changeset.valid? do
-      true ->
-        # In case of panel update, in order for `put_embed` to be able to detect
-        # that an existing panel is being updated, it needs to be added as a changeset
-        case Keyword.get(opts, :as_changeset, false) do
-          true -> {:ok, changeset}
-          false -> {:ok, Map.merge(panel, args)}
-        end
-
-      false ->
-        {:error, changeset}
+    if changeset.valid? do
+      # In case of panel update, in order for `put_embed` to be able to detect
+      # that an existing panel is being updated, it needs to be added as a changeset
+      if Keyword.get(opts, :as_changeset, false) do
+        {:ok, changeset}
+      else
+        {:ok, Map.merge(panel, args)}
+      end
+    else
+      {:error, changeset}
     end
   end
 

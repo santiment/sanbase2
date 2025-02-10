@@ -4,10 +4,8 @@ defmodule Sanbase.Alert.History.MetricHistory do
   Currently it is bucketed in `1 day` intervals and goes 90 days back.
   """
 
-  alias Sanbase.Alert.Trigger.{
-    MetricTriggerSettings,
-    DailyMetricTriggerSettings
-  }
+  alias Sanbase.Alert.Trigger.DailyMetricTriggerSettings
+  alias Sanbase.Alert.Trigger.MetricTriggerSettings
 
   @type historical_trigger_points_type :: %{
           datetime: %DateTime{},
@@ -20,8 +18,8 @@ defmodule Sanbase.Alert.History.MetricHistory do
   defimpl Sanbase.Alert.History, for: [MetricTriggerSettings, DailyMetricTriggerSettings] do
     import Sanbase.DateTimeUtils, only: [str_to_days: 1]
 
-    alias Sanbase.Alert.History.ResultBuilder
     alias Sanbase.Alert.History.MetricHistory
+    alias Sanbase.Alert.History.ResultBuilder
 
     @historical_days_from 90
     @historical_days_interval "1d"
@@ -51,7 +49,7 @@ defmodule Sanbase.Alert.History.MetricHistory do
     end
 
     def get_data(metric, target, time_window) do
-      to = Timex.now()
+      to = DateTime.utc_now()
       shift = @historical_days_from + str_to_days(time_window) - 1
 
       Sanbase.Metric.timeseries_data(

@@ -1,11 +1,12 @@
 defmodule Sanbase.Metric.Registry.ChangeSuggestion do
+  @moduledoc false
   use Ecto.Schema
+
+  import Ecto.Changeset
+  import Ecto.Query
 
   alias Sanbase.Metric.Registry
   alias Sanbase.Utils.Config
-
-  import Ecto.Query
-  import Ecto.Changeset
 
   @statuses ["approved", "declined", "pending_approval"]
   schema "metric_registry_change_suggestions" do
@@ -46,9 +47,8 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
     end
   end
 
-  def list_all_submissions() do
-    from(cs in __MODULE__, preload: [:metric_registry])
-    |> Sanbase.Repo.all()
+  def list_all_submissions do
+    Sanbase.Repo.all(from(cs in __MODULE__, preload: [:metric_registry]))
   end
 
   def update_status(id, new_status) when is_integer(id) and new_status in @statuses do
@@ -105,8 +105,7 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
     if match?(%Registry{}, maybe_struct) do
       Registry.EventEmitter.emit_event({:ok, maybe_struct}, :update_metric_registry, %{})
 
-      Node.list()
-      |> Enum.each(fn node ->
+      Enum.each(Node.list(), fn node ->
         Node.spawn(node, fn ->
           # The caller is sanbase-admin pod. Emit the event to every of the sanbase-web pods
           # in the cluster.
@@ -120,9 +119,7 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
     end
   end
 
-  defp apply_suggestion(
-         %__MODULE__{status: "pending_approval", metric_registry_id: nil} = suggestion
-       ) do
+  defp apply_suggestion(%__MODULE__{status: "pending_approval", metric_registry_id: nil} = suggestion) do
     changes = decode_changes(suggestion.changes)
     params = changes_to_changeset_params(%Registry{}, changes)
 
@@ -138,7 +135,7 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
 
   defp undo_suggestion(%__MODULE__{status: "approved"} = suggestion) do
     with {:ok, metric_registry} <- Registry.by_id(suggestion.metric_registry_id) do
-      changes = decode_changes(suggestion.changes) |> ExAudit.Diff.reverse()
+      changes = suggestion.changes |> decode_changes() |> ExAudit.Diff.reverse()
       apply_changes(suggestion, metric_registry, changes)
     end
   end
@@ -180,9 +177,9 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
 
       %{valid?: true} = changeset ->
         old = changeset.data
-        new = changeset |> Ecto.Changeset.apply_changes()
+        new = Ecto.Changeset.apply_changes(changeset)
 
-        changes = ExAudit.Diff.diff(old, new) |> encode_changes()
+        changes = old |> ExAudit.Diff.diff(new) |> encode_changes()
 
         %__MODULE__{}
         |> changeset(%{
@@ -228,7 +225,8 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
   end
 
   defp list_change(current_value_list, changes_list) when is_list(changes_list) do
-    Enum.reduce(changes_list, current_value_list, fn
+    changes_list
+    |> Enum.reduce(current_value_list, fn
       {:added_to_list, pos, value}, acc ->
         List.insert_at(acc, pos, value)
 

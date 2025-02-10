@@ -1,12 +1,18 @@
 defmodule Sanbase.SocialData do
+  @moduledoc false
   import Sanbase.Utils.ErrorHandling, only: [error_result: 1]
   import Sanbase.Utils.Transform, only: [wrap_ok: 1]
-  alias Sanbase.SocialData.{SocialVolume, SocialDominance, Community, Sentiment, ActiveUsers}
 
-  require Logger
+  alias Sanbase.SocialData.ActiveUsers
+  alias Sanbase.SocialData.Community
+  alias Sanbase.SocialData.Sentiment
+  alias Sanbase.SocialData.SocialDominance
+  alias Sanbase.SocialData.SocialVolume
   alias Sanbase.Utils.Config
 
+  require Logger
   require Mockery.Macro
+
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 
   @recv_timeout 15_000
@@ -35,24 +41,26 @@ defmodule Sanbase.SocialData do
     words = Enum.reject(words, &(&1 == "***"))
     words_str = Enum.join(words, ",")
 
-    words_context_request(words, source, size, from_datetime, to_datetime)
+    words
+    |> words_context_request(source, size, from_datetime, to_datetime)
     |> handle_response(&words_context_result/1, "word context", "words: #{words_str}")
   end
 
   def word_context(word, source, size, from_datetime, to_datetime) do
-    word_context_request(word, source, size, from_datetime, to_datetime)
+    word
+    |> word_context_request(source, size, from_datetime, to_datetime)
     |> handle_response(&word_context_result/1, "word context", "word: #{word}")
   end
 
   def word_trend_score(word, source, from_datetime, to_datetime) do
-    word_trend_score_request(word, source, from_datetime, to_datetime)
+    word
+    |> word_trend_score_request(source, from_datetime, to_datetime)
     |> handle_response(&word_trend_score_result/1, "word trend score", "word: #{word}")
   end
 
   # Private functions
 
-  defp words_context_request(words, source, size, from_datetime, to_datetime)
-       when is_list(words) do
+  defp words_context_request(words, source, size, from_datetime, to_datetime) when is_list(words) do
     from_unix = DateTime.to_unix(from_datetime)
     to_unix = DateTime.to_unix(to_datetime)
 
@@ -63,7 +71,7 @@ defmodule Sanbase.SocialData do
       params: [
         {"words", Enum.join(words, ",")},
         {"size", size},
-        {"source", source |> Atom.to_string()},
+        {"source", Atom.to_string(source)},
         {"from_timestamp", from_unix},
         {"to_timestamp", to_unix}
       ]
@@ -83,7 +91,7 @@ defmodule Sanbase.SocialData do
       params: [
         {"word", word},
         {"size", size},
-        {"source", source |> Atom.to_string()},
+        {"source", Atom.to_string(source)},
         {"from_timestamp", from_unix},
         {"to_timestamp", to_unix}
       ]
@@ -102,7 +110,7 @@ defmodule Sanbase.SocialData do
       recv_timeout: @recv_timeout,
       params: [
         {"word", word},
-        {"source", source |> Atom.to_string()},
+        {"source", Atom.to_string(source)},
         {"from_timestamp", from_unix},
         {"to_timestamp", to_unix}
       ]
@@ -146,8 +154,7 @@ defmodule Sanbase.SocialData do
   end
 
   defp handle_response(response, handle_callback, query_name_str, arg_str) do
-    response
-    |> case do
+    case response do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         {:ok, result} = Jason.decode(body)
         handle_callback.(result)
@@ -156,13 +163,11 @@ defmodule Sanbase.SocialData do
         error_result("Error status #{status} fetching #{query_name_str} for #{arg_str}: #{body}")
 
       {:error, %HTTPoison.Error{} = error} ->
-        error_result(
-          "Cannot fetch #{query_name_str} for #{arg_str}: #{HTTPoison.Error.message(error)}"
-        )
+        error_result("Cannot fetch #{query_name_str} for #{arg_str}: #{HTTPoison.Error.message(error)}")
     end
   end
 
-  defp tech_indicators_url() do
+  defp tech_indicators_url do
     Config.module_get(Sanbase.TechIndicators, :url)
   end
 

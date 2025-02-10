@@ -1,8 +1,9 @@
 defmodule SanbaseWeb.MetricRegistryShowLive do
+  @moduledoc false
   use SanbaseWeb, :live_view
 
-  import SanbaseWeb.CoreComponents
   import SanbaseWeb.AvailableMetricsDescription
+  import SanbaseWeb.CoreComponents
 
   alias Sanbase.Metric.Registry.Permissions
   alias SanbaseWeb.AvailableMetricsComponents
@@ -13,8 +14,7 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
     rows = get_rows(metric_registry)
 
     {:ok,
-     socket
-     |> assign(
+     assign(socket,
        page_title: "Metric Registry | Show #{metric_registry.metric}",
        metric_registry: metric_registry,
        rows: rows
@@ -101,8 +101,7 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
   defp stringify(ll) do
     ll
     |> List.wrap()
-    |> Enum.map(fn x -> x |> to_string() |> String.upcase() end)
-    |> Enum.join(", ")
+    |> Enum.map_join(", ", fn x -> x |> to_string() |> String.upcase() end)
   end
 
   defp get_rows(metric_registry) do
@@ -139,13 +138,13 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
       },
       %{
         key: "Aliases",
-        value: metric_registry.aliases |> Enum.map(& &1.name) |> Enum.join(", "),
+        value: Enum.map_join(metric_registry.aliases, ", ", & &1.name),
         popover_target: "popover-aliases",
         popover_target_text: get_popover_text(%{key: "Alias"})
       },
       %{
         key: "Table",
-        value: metric_registry.tables |> Enum.map(& &1.name) |> Enum.join(", "),
+        value: Enum.map_join(metric_registry.tables, ", ", & &1.name),
         popover_target: "popover-clickhouse-table",
         popover_target_text: get_popover_text(%{key: "Clickhouse Table"})
       },
@@ -175,7 +174,7 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
       },
       %{
         key: "Docs",
-        value: metric_registry.docs |> Enum.map(& &1.link) |> Enum.join(", "),
+        value: Enum.map_join(metric_registry.docs, ", ", & &1.link),
         popover_target: "popover-docs",
         popover_target_text: get_popover_text(%{key: "Docs"})
       },

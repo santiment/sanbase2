@@ -1,12 +1,12 @@
 defmodule Sanbase.SmartContracts.SanbaseNFTInterface do
+  @moduledoc false
   alias Sanbase.Accounts.User
 
   def nft_subscriptions(%User{} = user) do
     user = Sanbase.Repo.preload(user, :eth_accounts)
 
     nft_data =
-      user.eth_accounts
-      |> Enum.map(fn ea ->
+      Enum.map(user.eth_accounts, fn ea ->
         address = String.downcase(ea.address)
         data = Sanbase.SmartContracts.SanbaseNFT.nft_subscriptions_data(address)
 
@@ -27,7 +27,8 @@ defmodule Sanbase.SmartContracts.SanbaseNFTInterface do
   end
 
   def nft_subscriptions(user_id) when is_integer(user_id) do
-    User.by_id(user_id)
+    user_id
+    |> User.by_id()
     |> case do
       {:ok, user} ->
         nft_subscriptions(user)
@@ -56,13 +57,11 @@ defmodule Sanbase.SmartContracts.SanbaseNFTInterface do
   end
 
   defp nft_count(data) do
-    data
-    |> Enum.reduce(0, fn %{token_ids: token_ids}, acc -> acc + length(token_ids) end)
+    Enum.reduce(data, 0, fn %{token_ids: token_ids}, acc -> acc + length(token_ids) end)
   end
 
   defp non_valid_nft_count(data) do
-    data
-    |> Enum.reduce(0, fn %{non_valid_token_ids: non_valid_token_ids}, acc ->
+    Enum.reduce(data, 0, fn %{non_valid_token_ids: non_valid_token_ids}, acc ->
       acc + length(non_valid_token_ids)
     end)
   end

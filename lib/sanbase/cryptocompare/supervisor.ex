@@ -1,13 +1,13 @@
 defmodule Sanbase.Cryptocompare.Supervisor do
+  @moduledoc false
   use Supervisor
 
   import Sanbase.ApplicationUtils
 
-  alias Sanbase.Utils.Config
-
-  alias Sanbase.Cryptocompare.Price
-  alias Sanbase.Cryptocompare.OpenInterest
   alias Sanbase.Cryptocompare.FundingRate
+  alias Sanbase.Cryptocompare.OpenInterest
+  alias Sanbase.Cryptocompare.Price
+  alias Sanbase.Utils.Config
 
   @spec start_link(Keyword.t()) :: Supervisor.on_start()
   def start_link(opts) when is_list(opts) do
@@ -29,7 +29,7 @@ defmodule Sanbase.Cryptocompare.Supervisor do
 
   def init(_opts) do
     children =
-      [
+      normalize_children([
         start_if(
           fn ->
             Sanbase.KafkaExporter.child_spec(
@@ -41,12 +41,8 @@ defmodule Sanbase.Cryptocompare.Supervisor do
               kafka_flush_timeout: 1000
             )
           end,
-          fn ->
-            # Both the historical and realtime websocket scrapers export to that topic
-            Price.WebsocketScraper.enabled?() or Price.HistoricalScheduler.enabled?()
-          end
+          fn -> Price.WebsocketScraper.enabled?() or Price.HistoricalScheduler.enabled?() end
         ),
-        # Kafka exporter for the open interest scraper
         start_if(
           fn ->
             Sanbase.KafkaExporter.child_spec(
@@ -60,7 +56,6 @@ defmodule Sanbase.Cryptocompare.Supervisor do
           end,
           fn -> OpenInterest.HistoricalScheduler.enabled?() end
         ),
-        # Kafka exporter for the funding rate scraper
         start_if(
           fn ->
             Sanbase.KafkaExporter.child_spec(
@@ -74,29 +69,19 @@ defmodule Sanbase.Cryptocompare.Supervisor do
           end,
           fn -> FundingRate.HistoricalScheduler.enabled?() end
         ),
-        # Websocket realtime price exporter
-        start_if(
-          fn -> Price.WebsocketScraper end,
-          fn -> Price.WebsocketScraper.enabled?() end
-        ),
-        # Resume and pause on termination the price historical queue
-        start_if(
-          fn -> Price.HistoricalScheduler end,
-          fn -> Price.HistoricalScheduler.enabled?() end
-        ),
-        # Resume and pause on termination the open interest historical queue
-        start_if(
-          fn -> OpenInterest.HistoricalScheduler end,
-          fn -> OpenInterest.HistoricalScheduler.enabled?() end
-        ),
-        # Resume and pause on termination the funding rate historical queue
-        start_if(
-          fn -> FundingRate.HistoricalScheduler end,
-          fn -> FundingRate.HistoricalScheduler.enabled?() end
-        )
-      ]
-      |> normalize_children()
+        start_if(fn -> Price.WebsocketScraper end, fn -> Price.WebsocketScraper.enabled?() end),
+        start_if(fn -> Price.HistoricalScheduler end, fn -> Price.HistoricalScheduler.enabled?() end),
+        start_if(fn -> OpenInterest.HistoricalScheduler end, fn -> OpenInterest.HistoricalScheduler.enabled?() end),
+        start_if(fn -> FundingRate.HistoricalScheduler end, fn -> FundingRate.HistoricalScheduler.enabled?() end)
+      ])
 
+    # Both the historical and realtime websocket scrapers export to that topic
+    # Kafka exporter for the open interest scraper
+    # Kafka exporter for the funding rate scraper
+    # Websocket realtime price exporter
+    # Resume and pause on termination the price historical queue
+    # Resume and pause on termination the open interest historical queue
+    # Resume and pause on termination the funding rate historical queue
     Supervisor.init(children, strategy: :one_for_one)
   end
 end

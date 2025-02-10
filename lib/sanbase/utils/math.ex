@@ -1,4 +1,5 @@
 defmodule Sanbase.Math do
+  @moduledoc false
   require Integer
 
   @epsilon 1.0e-6
@@ -41,13 +42,10 @@ defmodule Sanbase.Math do
   def percent_change(nil, _current), do: +0.0
   def percent_change(_previous, nil), do: +0.0
 
-  def percent_change(previous, _current)
-      when is_number(previous) and previous <= @epsilon,
-      do: +0.0
+  def percent_change(previous, _current) when is_number(previous) and previous <= @epsilon, do: +0.0
 
   def percent_change(previous, current) when is_number(previous) and is_number(current) do
-    ((current / previous - 1) * 100)
-    |> Float.round(2)
+    Float.round((current / previous - 1) * 100, 2)
   end
 
   @spec percent_of(number(), number(), Keyword.t()) :: number() | nil
@@ -98,7 +96,7 @@ defmodule Sanbase.Math do
   def to_integer(%Decimal{} = d, _), do: d |> Decimal.round() |> Decimal.to_integer()
 
   def to_integer(str, _) when is_binary(str) do
-    case String.trim(str) |> Integer.parse() do
+    case str |> String.trim() |> Integer.parse() do
       {integer, _} ->
         integer
 
@@ -151,11 +149,11 @@ defmodule Sanbase.Math do
   def to_float(int, _) when is_integer(int), do: int * 1.0
 
   def to_float(%Decimal{} = d, _) do
-    d |> Decimal.to_float()
+    Decimal.to_float(d)
   end
 
   def to_float(str, _) when is_binary(str) do
-    {num, _} = str |> Float.parse()
+    {num, _} = Float.parse(str)
     num
   end
 
@@ -176,8 +174,7 @@ defmodule Sanbase.Math do
   def min_max([]), do: nil
 
   def min_max([h | rest]) do
-    rest
-    |> Enum.reduce({h, h}, fn
+    Enum.reduce(rest, {h, h}, fn
       elem, {min, max} when elem < min -> {elem, max}
       elem, {min, max} when elem > max -> {min, elem}
       _, acc -> acc
@@ -207,7 +204,7 @@ defmodule Sanbase.Math do
     # In case the precision is not provided, round the according
     # to some predfined rules (use more precision for smaller numbers)
     case Keyword.get(opts, :precision) do
-      nil -> mean |> round_float()
+      nil -> round_float(mean)
       precision -> Float.round(mean, precision)
     end
   end
@@ -238,18 +235,16 @@ defmodule Sanbase.Math do
       |> Float.floor()
       |> trunc()
 
-    {l1, l2} = list |> Enum.split(midpoint)
+    {l1, l2} = Enum.split(list, midpoint)
 
     # l2 is the same length as l1 or 1 element bigger as the midpoint is floored
-    case length(l2) > length(l1) do
-      true ->
-        [med | _] = l2
-        med
-
-      false ->
-        [m1 | _] = l2
-        m2 = List.last(l1)
-        mean([m1, m2])
+    if length(l2) > length(l1) do
+      [med | _] = l2
+      med
+    else
+      [m1 | _] = l2
+      m2 = List.last(l1)
+      mean([m1, m2])
     end
   end
 
@@ -337,12 +332,15 @@ defmodule Sanbase.Math do
   def zscore([], _opts), do: nil
 
   def zscore(list, opts) when is_list(list) do
-    with mean <- mean(list),
-         stdev when stdev != nil and not float_eq?(stdev, 0.0) <- stdev(list) do
-      precision = Keyword.get(opts, :precision, 2)
-      Enum.map(list, fn val -> ((val - mean) / stdev) |> Float.floor(precision) end)
-    else
-      _ -> {:error, "Cannot compute zscore on constant timeseries."}
+    mean = mean(list)
+
+    case stdev(list) do
+      stdev when stdev != nil and not float_eq?(stdev, 0.0) ->
+        precision = Keyword.get(opts, :precision, 2)
+        Enum.map(list, fn val -> Float.floor((val - mean) / stdev, precision) end)
+
+      _ ->
+        {:error, "Cannot compute zscore on constant timeseries."}
     end
   end
 

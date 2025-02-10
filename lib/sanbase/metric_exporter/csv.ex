@@ -1,7 +1,8 @@
 defmodule Sanbase.MetricExporter.CSV do
-  require Logger
-
+  @moduledoc false
   alias Sanbase.MetricExporter.S3
+
+  require Logger
 
   @send_hour ~T[17:00:00]
   @decimals 8
@@ -38,11 +39,12 @@ defmodule Sanbase.MetricExporter.CSV do
     "10M_to_inf"
   ]
 
-  @buckets_map Enum.with_index(@buckets)
-               |> Enum.into(%{}, fn {range, index} ->
+  @buckets_map @buckets
+               |> Enum.with_index()
+               |> Map.new(fn {range, index} ->
                  {range, "range_" <> @number_word_map[index + 1]}
                end)
-  @buckets_map_reverse @buckets_map |> Enum.into(%{}, fn {a, b} -> {b, a} end)
+  @buckets_map_reverse Map.new(@buckets_map, fn {a, b} -> {b, a} end)
   def buckets_map, do: @buckets_map
   def buckets_map_reverse, do: @buckets_map_reverse
 
@@ -175,12 +177,9 @@ defmodule Sanbase.MetricExporter.CSV do
     development_activity_1d: %{metrics: ["dev_activity_1d"], interval: "1d"}
   }
 
-  def slugs() do
-    Sanbase.Project.List.projects_slugs(
-      order_by_rank: true,
-      has_pagination?: true,
-      pagination: %{page: 1, page_size: 200}
-    )
+  def slugs do
+    [order_by_rank: true, has_pagination?: true, pagination: %{page: 1, page_size: 200}]
+    |> Sanbase.Project.List.projects_slugs()
     |> Enum.reject(fn slug -> String.starts_with?(slug, "p-") end)
     |> Enum.take(100)
   end
@@ -194,17 +193,19 @@ defmodule Sanbase.MetricExporter.CSV do
   end
 
   def export_history(from, to) do
-    Sanbase.DateTimeUtils.generate_dates_inclusive(from, to)
+    from
+    |> Sanbase.DateTimeUtils.generate_dates_inclusive(to)
     |> Enum.each(&export/1)
   end
 
   def export_dicts_history(from, to) do
-    Sanbase.DateTimeUtils.generate_dates_inclusive(from, to)
-    |> Enum.each(fn date -> upload_dictionaries_s3(date |> to_string()) end)
+    from
+    |> Sanbase.DateTimeUtils.generate_dates_inclusive(to)
+    |> Enum.each(fn date -> date |> to_string() |> upload_dictionaries_s3() end)
   end
 
   def export do
-    yesterday = Timex.shift(Timex.now(), days: -1) |> DateTime.to_date()
+    yesterday = DateTime.utc_now() |> Timex.shift(days: -1) |> DateTime.to_date()
     export(yesterday)
   end
 
@@ -212,12 +213,13 @@ defmodule Sanbase.MetricExporter.CSV do
     Logger.info("Start metrics csv exporter #{date}")
 
     slugs = slugs()
-    date_str = date |> to_string()
-    from = date |> DateTime.new!(~T[00:00:00])
-    to = date |> DateTime.new!(~T[23:59:59])
+    date_str = to_string(date)
+    from = DateTime.new!(date, ~T[00:00:00])
+    to = DateTime.new!(date, ~T[23:59:59])
 
     uploaded_files =
-      export_data(slugs, date, from, to)
+      slugs
+      |> export_data(date, from, to)
       |> upload_files_s3(date_str)
 
     Logger.info("""
@@ -228,8 +230,7 @@ defmodule Sanbase.MetricExporter.CSV do
 
   def export_data(slugs, date, from, to) do
     export_data =
-      @metrics_map
-      |> Enum.reduce(%{}, fn {filename, file_metrics}, export_acc ->
+      Enum.reduce(@metrics_map, %{}, fn {filename, file_metrics}, export_acc ->
         header = ["identifier", "datetime"] ++ camelize(file_metrics.metrics)
         filename = "#{filename}" <> "_santiment_#{format_dt(date, @send_hour)}.csv.gz"
 
@@ -286,22 +287,24 @@ defmodule Sanbase.MetricExporter.CSV do
   end
 
   defp fetch_data(slugs, metrics, from, to, interval) do
-    metrics
-    |> Enum.into(%{}, fn metric ->
+    Map.new(metrics, fn metric ->
       {metric, fetch_timeseries(slugs, metric, from, to, interval)}
     end)
   end
 
   defp run(slug, metrics, data, from, to, interval) do
-    for metric <- metrics do
-      data = data[metric][slug]
+    for_result =
+      for metric <- metrics do
+        data = data[metric][slug]
 
-      case data do
-        nil -> generate_empty_data(from, to, interval)
-        [] -> generate_empty_data(from, to, interval)
-        data -> data
+        case data do
+          nil -> generate_empty_data(from, to, interval)
+          [] -> generate_empty_data(from, to, interval)
+          data -> data
+        end
       end
-    end
+
+    for_result
     |> merge_by_dt()
     |> Enum.sort_by(fn {dt, _} -> dt end, {:asc, DateTime})
     |> Enum.map(fn {dt, values} ->
@@ -350,8 +353,7 @@ defmodule Sanbase.MetricExporter.CSV do
   end
 
   defp extract_slug_data(data, slug) do
-    data
-    |> Enum.map(fn map ->
+    Enum.map(data, fn map ->
       value = Enum.find_value(map.data, fn map -> if map.slug == slug, do: map.value end)
 
       %{
@@ -364,8 +366,7 @@ defmodule Sanbase.MetricExporter.CSV do
   defp merge_by_dt(list) do
     list
     |> Enum.map(fn list2 ->
-      list2
-      |> Enum.reduce(%{}, fn %{datetime: dt, value: v}, acc ->
+      Enum.reduce(list2, %{}, fn %{datetime: dt, value: v}, acc ->
         v = format_value(v)
         Map.put(acc, dt, List.wrap(v))
       end)
@@ -377,18 +378,16 @@ defmodule Sanbase.MetricExporter.CSV do
   defp merge_by_dt_key(map1, map2) when map2 == %{}, do: map1
 
   defp merge_by_dt_key(map1, map2) do
-    map1
-    |> Enum.reduce(%{}, fn {dt, v}, acc ->
+    Enum.reduce(map1, %{}, fn {dt, v}, acc ->
       v2 = map2[dt]
-      Map.put(acc, dt, [v, v2] |> List.flatten())
+      Map.put(acc, dt, List.flatten([v, v2]))
     end)
   end
 
   defp generate_empty_data(from, to, interval) do
     from = Timex.beginning_of_day(from)
 
-    count =
-      (Timex.diff(to, from, :seconds) / Sanbase.DateTimeUtils.str_to_sec(interval)) |> round()
+    count = round(Timex.diff(to, from, :seconds) / Sanbase.DateTimeUtils.str_to_sec(interval))
 
     interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
 
@@ -437,7 +436,9 @@ defmodule Sanbase.MetricExporter.CSV do
   end
 
   def alias_to_range_metric(metric) do
-    case Enum.find(@buckets_map_reverse |> Map.keys(), fn range ->
+    case @buckets_map_reverse
+         |> Map.keys()
+         |> Enum.find(fn range ->
            String.ends_with?(metric, range)
          end) do
       nil ->

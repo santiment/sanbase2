@@ -1,5 +1,7 @@
 defmodule Sanbase.Validation do
+  @moduledoc false
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
+
   defguard is_valid_price(price) when is_number(price) and price >= 0
   defguard is_valid_percent(percent) when is_number(percent) and percent >= -100
   defguard is_valid_percent_change(percent) when is_number(percent) and percent > 0
@@ -12,18 +14,15 @@ defmodule Sanbase.Validation do
 
   def valid_percent?(percent) when is_valid_percent(percent), do: :ok
 
-  def valid_percent?(percent),
-    do: {:error, "#{inspect(percent)} is not a valid percent"}
+  def valid_percent?(percent), do: {:error, "#{inspect(percent)} is not a valid percent"}
 
   def valid_time_window?(time_window) when is_binary(time_window) do
-    with :ok <- time_window_format_check(time_window),
-         :ok <- time_window_sanity_check(time_window) do
-      :ok
+    with :ok <- time_window_format_check(time_window) do
+      time_window_sanity_check(time_window)
     end
   end
 
-  def valid_time_window?(time_window),
-    do: {:error, "#{inspect(time_window)} is not a valid time window"}
+  def valid_time_window?(time_window), do: {:error, "#{inspect(time_window)} is not a valid time window"}
 
   def time_window_is_whole_days?(time_window) do
     case rem(str_to_sec(time_window), 86_400) do
@@ -36,13 +35,10 @@ defmodule Sanbase.Validation do
   end
 
   def time_window_bigger_than?(time_window, min_time_window) do
-    case str_to_sec(time_window) >= str_to_sec(min_time_window) do
-      true ->
-        :ok
-
-      false ->
-        {:error,
-         "Time window should be bigger than #{min_time_window}. Time window provided: #{time_window}"}
+    if str_to_sec(time_window) >= str_to_sec(min_time_window) do
+      :ok
+    else
+      {:error, "Time window should be bigger than #{min_time_window}. Time window provided: #{time_window}"}
     end
   end
 
@@ -128,9 +124,10 @@ defmodule Sanbase.Validation do
   # Private functions
 
   defp time_window_format_check(time_window) do
-    case Regex.match?(~r/^\d+[smhdw]$/, time_window) do
-      true -> :ok
-      false -> {:error, "#{inspect(time_window)} is not a valid time window"}
+    if Regex.match?(~r/^\d+[smhdw]$/, time_window) do
+      :ok
+    else
+      {:error, "#{inspect(time_window)} is not a valid time window"}
     end
   end
 
@@ -138,8 +135,7 @@ defmodule Sanbase.Validation do
   defp time_window_sanity_check(time_window) do
     case str_to_sec(time_window) do
       seconds when seconds >= @year_in_seconds ->
-        {:error,
-         "The time_window parameter must not be bigger than 1 year. Provided value: #{time_window}"}
+        {:error, "The time_window parameter must not be bigger than 1 year. Provided value: #{time_window}"}
 
       _ ->
         :ok

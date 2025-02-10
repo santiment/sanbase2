@@ -1,8 +1,9 @@
 defmodule Sanbase.Project.ContractData do
+  @moduledoc false
   import Ecto.Query
 
-  alias Sanbase.Repo
   alias Sanbase.Project
+  alias Sanbase.Repo
 
   @special_cases %{
     "ethereum" => %{contract_address: "ETH", decimals: 18},
@@ -13,11 +14,11 @@ defmodule Sanbase.Project.ContractData do
     "binance-coin" => %{contract_address: "BNB", decimals: 0}
   }
 
-  @special_case_slugs @special_cases |> Map.keys()
+  @special_case_slugs Map.keys(@special_cases)
 
-  def special_case_slugs(), do: @special_case_slugs
+  def special_case_slugs, do: @special_case_slugs
 
-  def special_cases(), do: @special_cases
+  def special_cases, do: @special_cases
 
   def has_contract_address?(%Project{} = project) do
     is_binary(contract_address(project))
@@ -45,8 +46,7 @@ defmodule Sanbase.Project.ContractData do
         {:ok, String.downcase(contract.address), contract.decimals || 0}
 
       _ ->
-        {:error,
-         {:missing_contract, "Can't find contract address of #{Project.describe(project)}"}}
+        {:error, {:missing_contract, "Can't find contract address of #{Project.describe(project)}"}}
     end
   end
 
@@ -60,8 +60,7 @@ defmodule Sanbase.Project.ContractData do
   def contract_info_by_slug(slug, opts \\ [])
 
   for {slug, %{contract_address: contract, decimals: decimals}} <- @special_cases do
-    def contract_info_by_slug(unquote(slug), _opts),
-      do: {:ok, unquote(contract), unquote(decimals)}
+    def contract_info_by_slug(unquote(slug), _opts), do: {:ok, unquote(contract), unquote(decimals)}
   end
 
   def contract_info_by_slug(slug, opts) do
@@ -92,7 +91,8 @@ defmodule Sanbase.Project.ContractData do
   end
 
   def contract_info_infrastructure_by_slug(slug, opts) do
-    Project.by_slug(slug,
+    slug
+    |> Project.by_slug(
       preload?: true,
       preload: [:contract_addresses, :infrastructure]
     )
@@ -102,9 +102,7 @@ defmodule Sanbase.Project.ContractData do
         {:ok, String.downcase(contract.address), contract.decimals || 0, infr_code}
 
       _ ->
-        {:error,
-         {:missing_contract,
-          "Can't find contract address or infrastructure of project with slug: #{slug}"}}
+        {:error, {:missing_contract, "Can't find contract address or infrastructure of project with slug: #{slug}"}}
     end
   end
 
@@ -132,12 +130,12 @@ defmodule Sanbase.Project.ContractData do
   end
 
   defp contract_addresses(slug) when is_binary(slug) do
-    from(
-      contract in Project.ContractAddress,
-      inner_join: p in Project,
-      on: contract.project_id == p.id,
-      where: p.slug == ^slug
+    Repo.all(
+      from(contract in Project.ContractAddress,
+        inner_join: p in Project,
+        on: contract.project_id == p.id,
+        where: p.slug == ^slug
+      )
     )
-    |> Repo.all()
   end
 end

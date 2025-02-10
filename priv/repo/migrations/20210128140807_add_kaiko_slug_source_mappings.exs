@@ -1,18 +1,21 @@
 defmodule Sanbase.Repo.Migrations.AddKaikoSlugSourceMappings do
+  @moduledoc false
   use Ecto.Migration
 
   alias Sanbase.Project
 
   def up do
     slug_to_project_id_map =
-      Enum.map(pairs(), &elem(&1, 1))
+      pairs()
+      |> Enum.map(&elem(&1, 1))
       |> Project.List.by_slugs()
       |> Map.new(fn %Project{slug: slug, id: id} -> {slug, id} end)
 
-    now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+    now = NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)
 
     data =
-      Enum.map(pairs(), fn {kaiko_code, santiment_slug} ->
+      pairs()
+      |> Enum.map(fn {kaiko_code, santiment_slug} ->
         %{
           slug: kaiko_code,
           source: "kaiko",

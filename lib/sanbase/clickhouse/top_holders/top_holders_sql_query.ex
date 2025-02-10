@@ -9,6 +9,8 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
       aggregation: 3
     ]
 
+  alias Sanbase.Clickhouse.Query
+
   defguard has_labels(map)
            when (is_map_key(map, :include_labels) and
                    is_list(:erlang.map_get(:include_labels, map)) and
@@ -78,7 +80,7 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
       |> Map.merge(included_labels_params)
       |> Map.merge(excluded_labels_params)
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def timeseries_data_query("amount_in_top_holders", params) do
@@ -131,7 +133,7 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
       span: span
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def timeseries_data_query("amount_in_exchange_top_holders", params) do
@@ -162,7 +164,7 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
     """
 
     params = %{contract: contract}
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def last_datetime_computed_at_query(table, contract) do
@@ -175,7 +177,7 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
     """
 
     params = %{contract: contract}
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp include_labels_str_args(params, opts) do

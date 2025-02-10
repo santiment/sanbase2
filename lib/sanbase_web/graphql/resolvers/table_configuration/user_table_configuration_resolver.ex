@@ -1,7 +1,8 @@
 defmodule SanbaseWeb.Graphql.Resolvers.UserTableConfigurationResolver do
-  require Logger
-
+  @moduledoc false
   alias Sanbase.Accounts.User
+
+  require Logger
 
   def chart_configurations(%User{} = user, _args, _context) do
     # Querying user_id is same as the queried user_id so it can access private data

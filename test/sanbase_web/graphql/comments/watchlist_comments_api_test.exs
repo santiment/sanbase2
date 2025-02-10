@@ -3,8 +3,8 @@ defmodule SanbaseWeb.Graphql.WatchlistCommentsApiTest do
 
   import Sanbase.Factory
   import Sanbase.TestHelpers
-  import SanbaseWeb.Graphql.TestHelpers
   import SanbaseWeb.CommentsApiHelper
+  import SanbaseWeb.Graphql.TestHelpers
 
   @opts [entity_type: :watchlist, extra_fields: ["watchlistId"]]
   setup do
@@ -42,7 +42,7 @@ defmodule SanbaseWeb.Graphql.WatchlistCommentsApiTest do
     comment = create_comment(conn, watchlist.id, content, @opts)
     comments = get_comments(other_user_conn, watchlist.id, @opts)
 
-    assert comment["watchlistId"] |> Sanbase.Math.to_integer() == watchlist.id
+    assert Sanbase.Math.to_integer(comment["watchlistId"]) == watchlist.id
     assert comment["content"] == content
     assert comment["insertedAt"] != nil
     assert comment["editedAt"] == nil
@@ -66,7 +66,7 @@ defmodule SanbaseWeb.Graphql.WatchlistCommentsApiTest do
     assert updated_comment["editedAt"] != nil
 
     edited_at = NaiveDateTime.from_iso8601!(updated_comment["editedAt"])
-    assert Sanbase.TestUtils.datetime_close_to(edited_at, Timex.now(), 1, :seconds) == true
+    assert Sanbase.TestUtils.datetime_close_to(edited_at, DateTime.utc_now(), 1, :seconds) == true
 
     assert comment["content"] == content
     assert updated_comment["content"] == new_content
@@ -83,10 +83,10 @@ defmodule SanbaseWeb.Graphql.WatchlistCommentsApiTest do
     delete_comment(conn, comment["id"], @opts)
 
     comments = get_comments(conn, watchlist.id, @opts)
-    watchlist_comment = comments |> List.first()
+    watchlist_comment = List.first(comments)
 
     assert watchlist_comment["user"]["id"] != comment["user"]["id"]
-    assert watchlist_comment["user"]["id"] |> Sanbase.Math.to_integer() == fallback_user.id
+    assert Sanbase.Math.to_integer(watchlist_comment["user"]["id"]) == fallback_user.id
 
     assert watchlist_comment["content"] != comment["content"]
     assert watchlist_comment["content"] =~ "deleted"
@@ -103,7 +103,8 @@ defmodule SanbaseWeb.Graphql.WatchlistCommentsApiTest do
     create_comment(conn, watchlist.id, "other content2", opts)
 
     [comment, subcomment1, subcomment2] =
-      get_comments(conn, watchlist.id, @opts)
+      conn
+      |> get_comments(watchlist.id, @opts)
       |> Enum.sort_by(& &1["id"])
 
     assert comment["parentId"] == nil

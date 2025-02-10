@@ -1,4 +1,5 @@
 defmodule Sanbase.QueriesMocks do
+  @moduledoc false
   def mocked_clickhouse_result(slug \\ "bitcoin") do
     %Clickhousex.Result{
       columns: ["asset_id", "metric_id", "dt", "value", "computed_at"],
@@ -20,7 +21,7 @@ defmodule Sanbase.QueriesMocks do
     }
   end
 
-  def mocked_execution_details_result() do
+  def mocked_execution_details_result do
     %Clickhousex.Result{
       query_id: "1774C4BC91E058D4",
       summary: %{

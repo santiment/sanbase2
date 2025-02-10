@@ -1,4 +1,7 @@
 defmodule Sanbase.Dashboard.Panel.Cache do
+  @moduledoc false
+  alias Sanbase.Dashboard.Query
+
   @type t :: %__MODULE__{
           id: String.t(),
           clickhouse_query_id: String.t(),
@@ -24,8 +27,6 @@ defmodule Sanbase.Dashboard.Panel.Cache do
             query_start_time: nil,
             query_end_time: nil,
             summary: nil
-
-  alias Sanbase.Dashboard.Query
 
   @spec from_query_result(Query.Result.t(), String.t(), non_neg_integer()) :: t()
   def from_query_result(%Query.Result{} = result, panel_id, dashboard_id) do

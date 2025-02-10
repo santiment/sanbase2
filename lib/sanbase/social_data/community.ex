@@ -1,18 +1,18 @@
 defmodule Sanbase.SocialData.Community do
+  @moduledoc false
   import Sanbase.Utils.ErrorHandling
 
+  alias Sanbase.Project
   alias Sanbase.Utils.Config
 
-  alias Sanbase.Project
-
   require Mockery.Macro
+
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 
   @recv_timeout 15_000
   @sources [:telegram]
 
-  def community_messages_count(selector, from, to, interval, source)
-      when source in [:all, "all", :total, "total"] do
+  def community_messages_count(selector, from, to, interval, source) when source in [:all, "all", :total, "total"] do
     result =
       @sources
       |> Sanbase.Parallel.flat_map(
@@ -28,21 +28,18 @@ defmodule Sanbase.SocialData.Community do
   end
 
   def community_messages_count(%{slug: slug}, from, to, interval, source) do
-    community_messages_count_request(slug, from, to, interval, source |> to_string())
+    slug
+    |> community_messages_count_request(from, to, interval, to_string(source))
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         {:ok, result} = Jason.decode(body)
         community_messages_count_result(result)
 
       {:ok, %HTTPoison.Response{status_code: status}} ->
-        warn_result(
-          "Error status #{status} fetching community messages count for project #{slug}"
-        )
+        warn_result("Error status #{status} fetching community messages count for project #{slug}")
 
       {:error, %HTTPoison.Error{} = error} ->
-        error_result(
-          "Cannot fetch community messages count data for project #{slug}: #{HTTPoison.Error.message(error)}"
-        )
+        error_result("Cannot fetch community messages count data for project #{slug}: #{HTTPoison.Error.message(error)}")
     end
   end
 
@@ -70,8 +67,7 @@ defmodule Sanbase.SocialData.Community do
 
   defp community_messages_count_result(result) do
     result =
-      result
-      |> Enum.map(fn
+      Enum.map(result, fn
         %{"timestamp" => timestamp, "mentions_count" => mentions_count} ->
           %{
             datetime: DateTime.from_unix!(timestamp),
@@ -82,7 +78,7 @@ defmodule Sanbase.SocialData.Community do
     {:ok, result}
   end
 
-  defp tech_indicators_url() do
+  defp tech_indicators_url do
     Config.module_get(Sanbase.TechIndicators, :url)
   end
 end

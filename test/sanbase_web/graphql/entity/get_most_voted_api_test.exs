@@ -1,8 +1,8 @@
 defmodule SanbaseWeb.Graphql.GetMostVotedApiTest do
   use SanbaseWeb.ConnCase, async: true
 
-  import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
+  import SanbaseWeb.Graphql.TestHelpers
 
   setup do
     _role = insert(:role_san_family)
@@ -118,10 +118,10 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApiTest do
 
     assert length(data) == 2
 
-    assert Enum.at(data, 0)["screener"]["id"] |> String.to_integer() ==
+    assert String.to_integer(Enum.at(data, 0)["screener"]["id"]) ==
              watchlist1.id
 
-    assert Enum.at(data, 1)["screener"]["id"] |> String.to_integer() ==
+    assert String.to_integer(Enum.at(data, 1)["screener"]["id"]) ==
              watchlist2.id
   end
 
@@ -159,10 +159,10 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApiTest do
 
     assert length(data) == 2
 
-    assert Enum.at(data, 0)["projectWatchlist"]["id"] |> String.to_integer() ==
+    assert String.to_integer(Enum.at(data, 0)["projectWatchlist"]["id"]) ==
              watchlist1.id
 
-    assert Enum.at(data, 1)["projectWatchlist"]["id"] |> String.to_integer() ==
+    assert String.to_integer(Enum.at(data, 1)["projectWatchlist"]["id"]) ==
              watchlist2.id
   end
 
@@ -200,10 +200,10 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApiTest do
 
     assert length(data) == 2
 
-    assert Enum.at(data, 0)["addressWatchlist"]["id"] |> String.to_integer() ==
+    assert String.to_integer(Enum.at(data, 0)["addressWatchlist"]["id"]) ==
              watchlist1.id
 
-    assert Enum.at(data, 1)["addressWatchlist"]["id"] |> String.to_integer() ==
+    assert String.to_integer(Enum.at(data, 1)["addressWatchlist"]["id"]) ==
              watchlist2.id
   end
 
@@ -318,13 +318,13 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApiTest do
     assert Enum.at(data, 2)["chartConfiguration"]["id"] == conf2.id
     assert Enum.at(data, 3)["chartConfiguration"]["id"] == conf1.id
 
-    assert Enum.at(data, 4)["projectWatchlist"]["id"] |> String.to_integer() ==
+    assert String.to_integer(Enum.at(data, 4)["projectWatchlist"]["id"]) ==
              project_watchlist.id
 
-    assert Enum.at(data, 5)["screener"]["id"] |> String.to_integer() ==
+    assert String.to_integer(Enum.at(data, 5)["screener"]["id"]) ==
              screener.id
 
-    assert Enum.at(data, 6)["addressWatchlist"]["id"] |> String.to_integer() ==
+    assert String.to_integer(Enum.at(data, 6)["addressWatchlist"]["id"]) ==
              address_watchlist.id
 
     assert Enum.at(data, 7)["userTrigger"]["trigger"]["id"] == user_trigger.id
@@ -355,10 +355,10 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApiTest do
              "totalPagesCount" => 4
            } = stats
 
-    assert Enum.at(data, 0)["projectWatchlist"]["id"] |> String.to_integer() ==
+    assert String.to_integer(Enum.at(data, 0)["projectWatchlist"]["id"]) ==
              project_watchlist.id
 
-    assert Enum.at(data, 1)["screener"]["id"] |> String.to_integer() ==
+    assert String.to_integer(Enum.at(data, 1)["screener"]["id"]) ==
              screener.id
   end
 
@@ -413,11 +413,11 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApiTest do
              "currentPageSize" => 10
            } = stats
 
-    assert Enum.at(data, 0)["projectWatchlist"]["id"] |> String.to_integer() == w1.id
+    assert String.to_integer(Enum.at(data, 0)["projectWatchlist"]["id"]) == w1.id
     assert Enum.at(data, 1)["insight"]["id"] == i2.id
     assert Enum.at(data, 2)["insight"]["id"] == i3.id
-    assert Enum.at(data, 3)["projectWatchlist"]["id"] |> String.to_integer() == w3.id
-    assert Enum.at(data, 4)["projectWatchlist"]["id"] |> String.to_integer() == w2.id
+    assert String.to_integer(Enum.at(data, 3)["projectWatchlist"]["id"]) == w3.id
+    assert String.to_integer(Enum.at(data, 4)["projectWatchlist"]["id"]) == w2.id
     assert Enum.at(data, 5)["userTrigger"]["trigger"]["id"] == a3.id
     assert Enum.at(data, 6)["chartConfiguration"]["id"] == c2.id
     assert Enum.at(data, 7)["chartConfiguration"]["id"] == c3.id
@@ -471,9 +471,9 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApiTest do
              "currentPageSize" => 10
            } = stats
 
-    assert Enum.at(data, 0)["projectWatchlist"]["id"] |> String.to_integer() == w1.id
+    assert String.to_integer(Enum.at(data, 0)["projectWatchlist"]["id"]) == w1.id
     assert Enum.at(data, 1)["insight"]["id"] == i1.id
-    assert Enum.at(data, 2)["screener"]["id"] |> String.to_integer() == s1.id
+    assert String.to_integer(Enum.at(data, 2)["screener"]["id"]) == s1.id
     assert Enum.at(data, 3)["chartConfiguration"]["id"] == c1.id
   end
 
@@ -515,7 +515,7 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApiTest do
              "currentPageSize" => 10
            } = stats
 
-    assert Enum.at(data, 0)["projectWatchlist"]["id"] |> String.to_integer() == w1.id
+    assert String.to_integer(Enum.at(data, 0)["projectWatchlist"]["id"]) == w1.id
     assert Enum.at(data, 1)["chartConfiguration"]["id"] == c2.id
     assert Enum.at(data, 2)["insight"]["id"] == i2.id
   end
@@ -601,7 +601,7 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApiTest do
     |> get_in(["data", "getMostVoted"])
   end
 
-  defp days_ago() do
-    Timex.shift(Timex.now(), days: -10)
+  defp days_ago do
+    Timex.shift(DateTime.utc_now(), days: -10)
   end
 end

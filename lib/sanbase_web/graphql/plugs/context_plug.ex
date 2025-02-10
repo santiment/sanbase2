@@ -11,10 +11,11 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
   @behaviour Plug
 
-  @compile {:inline, conn_to_jwt_tokens: 1}
-
   import Plug.Conn
+
   require Sanbase.Utils.Config, as: Config
+
+  @compile {:inline, conn_to_jwt_tokens: 1}
 
   def init(opts), do: opts
 
@@ -45,17 +46,14 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
            Sanbase.Cache.get_or_store(:get_san_moderator_ids, fn ->
              {:ok, Sanbase.Accounts.Role.san_moderator_ids()}
            end) do
-      context
-      |> Map.put(:is_moderator, user_id in moderator_ids)
+      Map.put(context, :is_moderator, user_id in moderator_ids)
     else
       _ ->
-        context
-        |> Map.put(:is_moderator, false)
+        Map.put(context, :is_moderator, false)
     end
   rescue
     _ ->
-      context
-      |> Map.put(:is_moderator, false)
+      Map.put(context, :is_moderator, false)
   end
 
   defp conn_to_jwt_tokens(conn) do

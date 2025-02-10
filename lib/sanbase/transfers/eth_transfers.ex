@@ -3,9 +3,10 @@ defmodule Sanbase.Transfers.EthTransfers do
   Uses ClickHouse to work with ETH transfers.
   """
 
-  import Sanbase.Utils.Transform
   import Sanbase.Transfers.Utils, only: [top_wallet_transfers_address_clause: 2]
+  import Sanbase.Utils.Transform
 
+  alias Sanbase.Clickhouse.Query
   alias Sanbase.ClickhouseRepo
 
   require Logger
@@ -159,7 +160,7 @@ defmodule Sanbase.Transfers.EthTransfers do
       offset: offset
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp top_transfers_query(from, to, opts) do
@@ -196,14 +197,15 @@ defmodule Sanbase.Transfers.EthTransfers do
       offset: offset
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp recent_transactions_query(address, opts) do
     address_clause =
-      case Keyword.get(opts, :only_sender, false) do
-        true -> "from = {{address}}"
-        false -> "(from = {{address}} OR to = {{address}})"
+      if Keyword.get(opts, :only_sender, false) do
+        "from = {{address}}"
+      else
+        "(from = {{address}} OR to = {{address}})"
       end
 
     sql = """
@@ -228,7 +230,7 @@ defmodule Sanbase.Transfers.EthTransfers do
       offset: offset
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp blockchain_address_transaction_volume_over_time_query(addresses, from, to, interval) do
@@ -266,7 +268,7 @@ defmodule Sanbase.Transfers.EthTransfers do
       to: DateTime.to_unix(to)
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp transfers_summary_query(type, address, from, to, opts) do
@@ -313,6 +315,6 @@ defmodule Sanbase.Transfers.EthTransfers do
       offset: offset
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 end

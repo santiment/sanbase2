@@ -4,9 +4,9 @@ defmodule Sanbase.Alert.RawSignalTriggerSettingsTest do
   import Sanbase.Factory
   import Sanbase.TestHelpers
 
-  alias Sanbase.Alert.UserTrigger
   alias Sanbase.Alert.Evaluator
   alias Sanbase.Alert.Trigger.RawSignalTriggerSettings
+  alias Sanbase.Alert.UserTrigger
 
   setup_all_with_mocks([
     {
@@ -47,7 +47,8 @@ defmodule Sanbase.Alert.RawSignalTriggerSettingsTest do
 
       {:ok, trigger} = create_user_trigger(user, settings)
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.Signal.raw_data/4, raw_data_result)
+      (&Sanbase.Signal.raw_data/4)
+      |> Sanbase.Mock.prepare_mock2(raw_data_result)
       |> Sanbase.Mock.run_with_mocks(fn ->
         [triggered] =
           RawSignalTriggerSettings.type()
@@ -73,7 +74,8 @@ defmodule Sanbase.Alert.RawSignalTriggerSettingsTest do
 
       {:ok, _trigger} = create_user_trigger(user, settings)
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.Signal.raw_data/4, raw_data_result)
+      (&Sanbase.Signal.raw_data/4)
+      |> Sanbase.Mock.prepare_mock2(raw_data_result)
       |> Sanbase.Mock.run_with_mocks(fn ->
         triggered =
           RawSignalTriggerSettings.type()

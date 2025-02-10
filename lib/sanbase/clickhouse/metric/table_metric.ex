@@ -1,4 +1,5 @@
 defmodule Sanbase.Clickhouse.MetricAdapter.TableMetric do
+  @moduledoc false
   import Sanbase.Clickhouse.MetricAdapter.TableSqlQuery
   import Sanbase.Utils.Transform
 
@@ -13,17 +14,12 @@ defmodule Sanbase.Clickhouse.MetricAdapter.TableMetric do
      }}
   end
 
-  def table_data(
-        "labelled_exchange_balance_sum" = metric,
-        %{slug: slug_or_slugs},
-        from,
-        to,
-        _opts
-      ) do
+  def table_data("labelled_exchange_balance_sum" = metric, %{slug: slug_or_slugs}, from, to, _opts) do
     slugs = List.wrap(slug_or_slugs)
     query_struct = table_data_query(metric, slugs, from, to)
 
-    ClickhouseRepo.query_transform(query_struct, fn [_label | tail] -> tail end)
+    query_struct
+    |> ClickhouseRepo.query_transform(fn [_label | tail] -> tail end)
     |> maybe_apply_function(&transform_table_data(&1, slugs))
   end
 
@@ -33,7 +29,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.TableMetric do
     rows = Enum.map(owner_value_pairs, fn [owner | _values] -> owner end)
 
     values =
-      Enum.map(owner_value_pairs, fn [_owner | values] -> values end)
+      owner_value_pairs
+      |> Enum.map(fn [_owner | values] -> values end)
       |> List.flatten()
       |> Enum.chunk_every(length(slugs))
 

@@ -1,7 +1,8 @@
 defmodule SanbaseWeb.GenericAdmin.ProjectEcosystemMapping do
+  @moduledoc false
   def schema_module, do: Sanbase.ProjectEcosystemMapping
 
-  def resource() do
+  def resource do
     %{
       actions: [:new, :edit, :delete],
       index_fields: [:id, :project_id, :ecosystem_id, :inserted_at, :updated_at],

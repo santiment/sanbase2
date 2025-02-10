@@ -52,7 +52,7 @@ defmodule Sanbase.Alert.Trigger.ScreenerTriggerSettings do
         }
 
   @spec type() :: Type.trigger_type()
-  def type(), do: @trigger_type
+  def type, do: @trigger_type
 
   def post_create_process(trigger), do: fill_current_state(trigger)
   def post_update_process(trigger), do: fill_current_state(trigger)
@@ -78,9 +78,10 @@ defmodule Sanbase.Alert.Trigger.ScreenerTriggerSettings do
   end
 
   def get_data(%__MODULE__{operation: %{selector: _} = selector}) do
-    with {:ok, %{slugs: slugs}} <- Project.ListSelector.slugs(selector) do
-      {:ok, slugs}
-    else
+    case Project.ListSelector.slugs(selector) do
+      {:ok, %{slugs: slugs}} ->
+        {:ok, slugs}
+
       {:error, error_msg} when is_binary(error_msg) ->
         if error_msg =~ "is not supported, is deprecated or is mistyped",
           do: {:error, {:disable_alert, @missing_metric_error}},
@@ -103,8 +104,8 @@ defmodule Sanbase.Alert.Trigger.ScreenerTriggerSettings do
   end
 
   defimpl Sanbase.Alert.Settings, for: ScreenerTriggerSettings do
-    alias Sanbase.Alert.Trigger.ScreenerTriggerSettings
     alias Sanbase.Alert.ResultBuilder
+    alias Sanbase.Alert.Trigger.ScreenerTriggerSettings
 
     def triggered?(%ScreenerTriggerSettings{triggered?: triggered}), do: triggered
 

@@ -1,5 +1,7 @@
 defmodule Sanbase.Accounts.UserApikeyToken do
+  @moduledoc false
   use Ecto.Schema
+
   import Ecto.Changeset
   import Ecto.Query
 
@@ -50,11 +52,7 @@ defmodule Sanbase.Accounts.UserApikeyToken do
   end
 
   def remove_user_token(%User{id: user_id}, token) do
-    from(
-      pair in UserApikeyToken,
-      where: pair.token == ^token and pair.user_id == ^user_id
-    )
-    |> Repo.delete_all()
+    Repo.delete_all(from(pair in UserApikeyToken, where: pair.token == ^token and pair.user_id == ^user_id))
   end
 
   def has_token?(token) do

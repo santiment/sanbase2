@@ -1,5 +1,7 @@
 defmodule Sanbase.Cache do
+  @moduledoc false
   @behaviour Sanbase.Cache.Behaviour
+
   @cache_name :sanbase_cache
   @max_cache_ttl 86_400
 
@@ -21,7 +23,8 @@ defmodule Sanbase.Cache do
 
   @impl Sanbase.Cache.Behaviour
   def hash(data) do
-    :crypto.hash(:sha256, :erlang.term_to_binary(data))
+    :sha256
+    |> :crypto.hash(:erlang.term_to_binary(data))
     |> Base.encode64()
   end
 
@@ -30,7 +33,7 @@ defmodule Sanbase.Cache do
   @impl Sanbase.Cache.Behaviour
   def size(cache) do
     bytes_size = :ets.info(ConCache.ets(cache), :memory) * :erlang.system_info(:wordsize)
-    (bytes_size / (1024 * 1024)) |> Float.round(2)
+    Float.round(bytes_size / (1024 * 1024), 2)
   end
 
   @impl Sanbase.Cache.Behaviour

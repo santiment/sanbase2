@@ -266,7 +266,7 @@ defmodule SanbaseWeb.Graphql.User.FollowingApiTest do
     """
   end
 
-  defp current_user_query() do
+  defp current_user_query do
     """
     {
       currentUser {
@@ -283,7 +283,7 @@ defmodule SanbaseWeb.Graphql.User.FollowingApiTest do
     """
   end
 
-  defp current_user_query2() do
+  defp current_user_query2 do
     """
     {
       currentUser {

@@ -10,6 +10,16 @@ defmodule Sanbase.UserList.Settings do
   3. Return the default settings
   """
 
+  use Ecto.Schema
+
+  import Ecto.Changeset
+  import Ecto.Query
+
+  alias __MODULE__.WatchlistSettings
+  alias Sanbase.Accounts.User
+  alias Sanbase.Repo
+  alias Sanbase.UserList
+
   defmodule WatchlistSettings do
     @moduledoc ~s"""
     Embeded schema that defines how the settings look like
@@ -44,7 +54,7 @@ defmodule Sanbase.UserList.Settings do
       |> validate_change(:time_window, &valid_time_window?/2)
     end
 
-    def default_settings() do
+    def default_settings do
       %{
         page_size: @default_page_size,
         time_window: @default_time_window,
@@ -62,16 +72,6 @@ defmodule Sanbase.UserList.Settings do
       end
     end
   end
-
-  use Ecto.Schema
-
-  import Ecto.Query
-  import Ecto.Changeset
-
-  alias Sanbase.Repo
-  alias Sanbase.Accounts.User
-  alias Sanbase.UserList
-  alias __MODULE__.WatchlistSettings
 
   @type t :: %__MODULE__{
           user_id: non_neg_integer(),
@@ -131,7 +131,8 @@ defmodule Sanbase.UserList.Settings do
   def update_or_create_settings(watchlist_id, user_id, settings) do
     case Repo.one(settings_query(watchlist_id, user_id)) do
       nil ->
-        changeset(%__MODULE__{}, %{
+        %__MODULE__{}
+        |> changeset(%{
           user_id: user_id,
           watchlist_id: watchlist_id,
           settings: settings
@@ -139,7 +140,8 @@ defmodule Sanbase.UserList.Settings do
         |> Repo.insert()
 
       %__MODULE__{} = ws ->
-        changeset(ws, %{settings: settings})
+        ws
+        |> changeset(%{settings: settings})
         |> Repo.update()
     end
   end
@@ -147,8 +149,7 @@ defmodule Sanbase.UserList.Settings do
   # Private functions
 
   defp get_settings(watchlist_id, user_id) do
-    from(s in settings_query(watchlist_id, user_id), select: s.settings)
-    |> Repo.one()
+    Repo.one(from(s in settings_query(watchlist_id, user_id), select: s.settings))
   end
 
   defp settings_query(watchlist_id, user_id) do

@@ -5,19 +5,18 @@ defmodule Sanbase.StatisticsTest do
   import Sanbase.TestHelpers
 
   setup_all_with_mocks([
-    {Sanbase.Clickhouse.ApiCallData, [:passthrough],
-     [active_users_count: fn _, _ -> {:ok, 10} end]}
+    {Sanbase.Clickhouse.ApiCallData, [:passthrough], [active_users_count: fn _, _ -> {:ok, 10} end]}
   ]) do
     []
   end
 
   setup do
-    user1 = insert(:user, inserted_at: Timex.shift(Timex.now(), days: -600))
-    _user2 = insert(:user, inserted_at: Timex.shift(Timex.now(), days: -20))
-    user3 = insert(:user, inserted_at: Timex.shift(Timex.now(), days: -2))
-    user4 = insert(:staked_user, inserted_at: Timex.shift(Timex.now(), days: -500))
-    _user5 = insert(:staked_user, inserted_at: Timex.shift(Timex.now(), days: -15))
-    user6 = insert(:staked_user, inserted_at: Timex.shift(Timex.now(), days: -171))
+    user1 = insert(:user, inserted_at: Timex.shift(DateTime.utc_now(), days: -600))
+    _user2 = insert(:user, inserted_at: Timex.shift(DateTime.utc_now(), days: -20))
+    user3 = insert(:user, inserted_at: Timex.shift(DateTime.utc_now(), days: -2))
+    user4 = insert(:staked_user, inserted_at: Timex.shift(DateTime.utc_now(), days: -500))
+    _user5 = insert(:staked_user, inserted_at: Timex.shift(DateTime.utc_now(), days: -15))
+    user6 = insert(:staked_user, inserted_at: Timex.shift(DateTime.utc_now(), days: -171))
 
     insert(:watchlist, %{user: user1})
     insert(:watchlist, %{user: user1})

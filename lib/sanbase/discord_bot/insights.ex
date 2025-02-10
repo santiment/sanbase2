@@ -1,9 +1,11 @@
 defmodule Sanbase.DiscordBot.Insights do
+  @moduledoc false
   import Ecto.Query
 
   def run(n) do
     data =
-      fetch_last_insights(n)
+      n
+      |> fetch_last_insights()
       |> Enum.map(&format_insight/1)
       |> Jason.encode!()
 
@@ -15,8 +17,8 @@ defmodule Sanbase.DiscordBot.Insights do
     Title: #{insight.title}
     Author: @#{insight.user.username}
     Text: #{insight.text |> Floki.parse_document!() |> Floki.text()}
-    Published At: #{NaiveDateTime.to_date(insight.published_at) |> to_string()}
-    Tags: #{insight.tags |> Enum.map(& &1.name) |> Enum.join(", ")}
+    Published At: #{insight.published_at |> NaiveDateTime.to_date() |> to_string()}
+    Tags: #{Enum.map_join(insight.tags, ", ", & &1.name)}
     """
 
     metadata = %{

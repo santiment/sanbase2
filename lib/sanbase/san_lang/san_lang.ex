@@ -21,10 +21,10 @@ defmodule Sanbase.SanLang do
     - Comparisons and boolean expressions: ==, !=, >, <, >=, <=, and, or
       - 1 + 2 * 3 + 10 > 10 => true
   """
+  import Sanbase.Utils.Transform, only: [to_bang: 1]
+
   alias Sanbase.SanLang.Environment
   alias Sanbase.SanLang.Interpreter
-
-  import Sanbase.Utils.Transform, only: [to_bang: 1]
 
   @doc ~s"""
   Evaluates the given input string as a SanLang expression and returns the result.
@@ -34,10 +34,11 @@ defmodule Sanbase.SanLang do
   """
   @spec eval(String.t(), Environment.t()) :: {:ok, any()} | {:error, String.t()}
   def eval(input, env \\ Environment.new()) when is_binary(input) do
-    with {:ok, ast} <- string_to_ast(input),
-         result <- Interpreter.eval(ast, env) do
-      {:ok, result}
-    else
+    case string_to_ast(input) do
+      {:ok, ast} ->
+        result = Interpreter.eval(ast, env)
+        {:ok, result}
+
       error ->
         handle_error(error)
     end
@@ -48,15 +49,14 @@ defmodule Sanbase.SanLang do
   """
   @spec eval(String.t(), Environment.t()) :: any() | no_return
   def eval!(input, env \\ Environment.new()) when is_binary(input) do
-    eval(input, env) |> to_bang()
+    input |> eval(env) |> to_bang()
   end
 
   defp string_to_ast(input) when is_binary(input) do
     input_charlist = String.to_charlist(input)
 
-    with {:ok, tokens, _} <- :san_lang_lexer.string(input_charlist),
-         {:ok, ast} <- :san_lang_parser.parse(tokens) do
-      {:ok, ast}
+    with {:ok, tokens, _} <- :san_lang_lexer.string(input_charlist) do
+      :san_lang_parser.parse(tokens)
     end
   end
 

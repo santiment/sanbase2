@@ -11,14 +11,15 @@ defmodule Sanbase.Dashboard.Schema do
 
   use Ecto.Schema
 
-  import Ecto.Query
   import Ecto.Changeset
-  import Sanbase.Utils.Transform, only: [to_bang: 1]
+  import Ecto.Query
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
+  import Sanbase.Utils.Transform, only: [to_bang: 1]
 
-  alias Sanbase.Repo
   alias Sanbase.Accounts.User
   alias Sanbase.Dashboard.Panel
+  alias Sanbase.Entity.Query
+  alias Sanbase.Repo
 
   @type schema_args :: %{
           optional(:name) => String.t(),
@@ -75,7 +76,7 @@ defmodule Sanbase.Dashboard.Schema do
 
   @impl Sanbase.Entity.Behaviour
   def get_visibility_data(id) do
-    Sanbase.Entity.Query.default_get_visibility_data(__MODULE__, :dashboard, id)
+    Query.default_get_visibility_data(__MODULE__, :dashboard, id)
   end
 
   @impl Sanbase.Entity.Behaviour
@@ -88,9 +89,10 @@ defmodule Sanbase.Dashboard.Schema do
       )
 
     query =
-      case Keyword.get(opts, :lock_for_update, false) do
-        false -> query
-        true -> query |> lock("FOR UPDATE")
+      if Keyword.get(opts, :lock_for_update, false) do
+        lock(query, "FOR UPDATE")
+      else
+        query
       end
 
     case Repo.one(query) do
@@ -100,36 +102,36 @@ defmodule Sanbase.Dashboard.Schema do
   end
 
   @impl Sanbase.Entity.Behaviour
-  def by_id!(dashboard_id, opts \\ []),
-    do: by_id(dashboard_id, opts) |> to_bang()
+  def by_id!(dashboard_id, opts \\ []), do: dashboard_id |> by_id(opts) |> to_bang()
 
   @impl Sanbase.Entity.Behaviour
   def by_ids(ids, opts) when is_list(ids) do
     preload = Keyword.get(opts, :preload, [:featured_item])
 
     result =
-      from(ul in base_query(),
-        where: ul.id in ^ids,
-        preload: ^preload,
-        order_by: fragment("array_position(?, ?::int)", ^ids, ul.id)
+      Repo.all(
+        from(ul in base_query(),
+          where: ul.id in ^ids,
+          preload: ^preload,
+          order_by: fragment("array_position(?, ?::int)", ^ids, ul.id)
+        )
       )
-      |> Repo.all()
 
     {:ok, result}
   end
 
   @impl Sanbase.Entity.Behaviour
-  def by_ids!(ids, opts \\ []), do: by_ids(ids, opts) |> to_bang()
+  def by_ids!(ids, opts \\ []), do: ids |> by_ids(opts) |> to_bang()
 
   # The base of all the entity queries
   defp base_entity_ids_query(opts) do
     base_query()
-    |> Sanbase.Entity.Query.maybe_filter_is_hidden(opts)
-    |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :dashboard_id)
-    |> Sanbase.Entity.Query.maybe_filter_by_users(opts)
-    |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
-    |> Sanbase.Entity.Query.maybe_filter_min_title_length(opts, :name)
-    |> Sanbase.Entity.Query.maybe_filter_min_description_length(
+    |> Query.maybe_filter_is_hidden(opts)
+    |> Query.maybe_filter_is_featured_query(opts, :dashboard_id)
+    |> Query.maybe_filter_by_users(opts)
+    |> Query.maybe_filter_by_cursor(:inserted_at, opts)
+    |> Query.maybe_filter_min_title_length(opts, :name)
+    |> Query.maybe_filter_min_description_length(
       opts,
       :description
     )
@@ -138,13 +140,15 @@ defmodule Sanbase.Dashboard.Schema do
 
   @impl Sanbase.Entity.Behaviour
   def public_and_user_entity_ids_query(user_id, opts) do
-    base_entity_ids_query(opts)
+    opts
+    |> base_entity_ids_query()
     |> where([d], d.is_public == true or d.user_id == ^user_id)
   end
 
   @impl Sanbase.Entity.Behaviour
   def public_entity_ids_query(opts) do
-    base_entity_ids_query(opts)
+    opts
+    |> base_entity_ids_query()
     |> where([d], d.is_public == true)
   end
 
@@ -153,7 +157,8 @@ defmodule Sanbase.Dashboard.Schema do
     # Disable the filter by users
     opts = Keyword.put(opts, :user_ids, nil)
 
-    base_entity_ids_query(opts)
+    opts
+    |> base_entity_ids_query()
     |> where([ul], ul.user_id == ^user_id)
   end
 
@@ -184,11 +189,7 @@ defmodule Sanbase.Dashboard.Schema do
           | {:error, String.t()}
   def get_is_public_and_owner(dashboard_id) do
     result =
-      from(d in __MODULE__,
-        where: d.id == ^dashboard_id,
-        select: %{user_id: d.user_id, is_public: d.is_public}
-      )
-      |> Repo.one()
+      Repo.one(from(d in __MODULE__, where: d.id == ^dashboard_id, select: %{user_id: d.user_id, is_public: d.is_public}))
 
     case result do
       nil -> {:error, "Dashboard does not exist"}
@@ -228,7 +229,7 @@ defmodule Sanbase.Dashboard.Schema do
   """
   @spec delete(dashboard_id) :: {:ok, t()} | {:error, Changeset.t()}
   def delete(dashboard_id) do
-    Repo.get(__MODULE__, dashboard_id) |> Repo.delete()
+    __MODULE__ |> Repo.get(dashboard_id) |> Repo.delete()
   end
 
   @doc ~s"""
@@ -315,7 +316,7 @@ defmodule Sanbase.Dashboard.Schema do
 
   # Private functions
 
-  defp base_query() do
+  defp base_query do
     from(conf in __MODULE__, where: conf.is_deleted != true)
   end
 

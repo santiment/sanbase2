@@ -1,15 +1,15 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcherTest do
   use Sanbase.DataCase
 
+  import ExUnit.CaptureLog
   import Sanbase.Factory
   import Tesla.Mock
-  import ExUnit.CaptureLog
 
-  alias Sanbase.Repo
-  alias Sanbase.Project
+  alias Sanbase.ExternalServices.Coinmarketcap
   alias Sanbase.ExternalServices.Coinmarketcap.LogoFetcher
   alias Sanbase.Model.LatestCoinmarketcapData
-
+  alias Sanbase.Project
+  alias Sanbase.Repo
   alias Sanbase.Utils.Config
 
   describe "when successful" do
@@ -18,7 +18,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcherTest do
       ethereum = insert(:project, %{ticker: "ETH", slug: "ethereum"})
 
       info_url =
-        Config.module_get(Sanbase.ExternalServices.Coinmarketcap, :api_url) <>
+        Config.module_get(Coinmarketcap, :api_url) <>
           "v2/cryptocurrency/info?slug=#{bitcoin.slug},#{ethereum.slug}"
 
       mock(fn
@@ -66,7 +66,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcherTest do
       insert(:latest_cmc_data, %{
         coinmarketcap_id: context.bitcoin.slug,
         logo_hash: "old_file_hash",
-        logo_updated_at: Timex.shift(Timex.now(), days: -1)
+        logo_updated_at: Timex.shift(DateTime.utc_now(), days: -1)
       })
 
       LogoFetcher.run()
@@ -81,7 +81,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcherTest do
       bitcoin = insert(:project, %{ticker: "BTC", slug: "bitcoin"})
 
       info_url =
-        Config.module_get(Sanbase.ExternalServices.Coinmarketcap, :api_url) <>
+        Config.module_get(Coinmarketcap, :api_url) <>
           "v2/cryptocurrency/info?slug=bitcoin"
 
       mock(fn

@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.Helpers.Utils do
+  @moduledoc false
   import Sanbase.DateTimeUtils, only: [round_datetime: 2, str_to_sec: 1]
 
   def resolution_to_user_id_or_nil(resolution) do
@@ -39,7 +40,7 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
     result =
       Enum.drop_while(data, fn %{datetime: datetime} ->
         datetime = round_datetime(datetime, second: interval_sec)
-        DateTime.compare(datetime, from) == :lt
+        DateTime.before?(datetime, from)
       end)
 
     {:ok, result}
@@ -91,14 +92,12 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
   end
 
   def replace_user_trigger_with_trigger(data) when is_list(data) do
-    data |> Enum.map(&replace_user_trigger_with_trigger/1)
+    Enum.map(data, &replace_user_trigger_with_trigger/1)
   end
 
   @spec requested_fields(%Absinthe.Resolution{}) :: MapSet.t()
   def requested_fields(%Absinthe.Resolution{} = resolution) do
-    resolution.definition.selections
-    |> Enum.map(fn %{name: name} -> Inflex.camelize(name, :lower) end)
-    |> MapSet.new()
+    MapSet.new(resolution.definition.selections, fn %{name: name} -> Inflex.camelize(name, :lower) end)
   end
 
   def requested_fields(_), do: MapSet.new([])
@@ -125,20 +124,19 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
   end
 
   defp maybe_add_field(opts, field, selector) when is_atom(field) do
-    case Map.has_key?(selector, field) do
-      true -> [{field, Map.fetch!(selector, field)}] ++ opts
-      false -> opts
+    if Map.has_key?(selector, field) do
+      [{field, Map.fetch!(selector, field)}] ++ opts
+    else
+      opts
     end
   end
 
   defp maybe_rename_field(map, old_key, new_key) do
-    case Map.has_key?(map, old_key) do
-      true ->
-        value = Map.get(map, old_key)
-        map |> Map.delete(old_key) |> Map.put(new_key, value)
-
-      false ->
-        map
+    if Map.has_key?(map, old_key) do
+      value = Map.get(map, old_key)
+      map |> Map.delete(old_key) |> Map.put(new_key, value)
+    else
+      map
     end
   end
 end

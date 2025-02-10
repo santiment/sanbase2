@@ -1,11 +1,11 @@
 defmodule SanbaseWeb.Graphql.PopularInsightAuthorApiTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
+  import SanbaseWeb.Graphql.TestHelpers
 
-  alias Sanbase.Vote
   alias Sanbase.Accounts.UserFollower
+  alias Sanbase.Vote
 
   setup do
     [user1, user2, user3, user4, user5, user6] = for _ <- 1..6, do: insert(:user)
@@ -44,10 +44,10 @@ defmodule SanbaseWeb.Graphql.PopularInsightAuthorApiTest do
     popular_authors = popular_authors(conn)
 
     expected_result = [
-      %{"id" => user2.id |> to_string()},
-      %{"id" => user1.id |> to_string()},
-      %{"id" => user5.id |> to_string()},
-      %{"id" => user4.id |> to_string()}
+      %{"id" => to_string(user2.id)},
+      %{"id" => to_string(user1.id)},
+      %{"id" => to_string(user5.id)},
+      %{"id" => to_string(user4.id)}
     ]
 
     assert popular_authors == expected_result

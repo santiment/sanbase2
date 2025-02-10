@@ -4,6 +4,7 @@ defmodule Sanbase.Alert.ResultBuilder do
   """
 
   import Sanbase.Alert.OperationEvaluation
+
   alias Sanbase.Alert.ResultBuilder.Transformer
 
   @trigger_modules Sanbase.Alert.List.get()
@@ -33,26 +34,20 @@ defmodule Sanbase.Alert.ResultBuilder do
           opts :: Keyword.t()
         ) :: {:ok, settings}
         when settings: map(), identifier: any()
-  def build(
-        data,
-        %trigger_module{operation: operation} = settings,
-        template_kv_fun,
-        opts \\ []
-      )
+  def build(data, %trigger_module{operation: operation} = settings, template_kv_fun, opts \\ [])
       when trigger_module in @trigger_modules and is_function(template_kv_fun, 2) do
     template_kv =
-      Transformer.transform(data, Keyword.get(opts, :value_key, :value))
+      data
+      |> Transformer.transform(Keyword.get(opts, :value_key, :value))
       |> Enum.reduce(%{}, fn %{} = transformed_data, acc ->
-        case operation_triggered?(transformed_data, operation) do
-          true ->
-            Map.put(
-              acc,
-              transformed_data.identifier,
-              template_kv_fun.(transformed_data, settings)
-            )
-
-          false ->
-            acc
+        if operation_triggered?(transformed_data, operation) do
+          Map.put(
+            acc,
+            transformed_data.identifier,
+            template_kv_fun.(transformed_data, settings)
+          )
+        else
+          acc
         end
       end)
 
@@ -91,43 +86,29 @@ defmodule Sanbase.Alert.ResultBuilder do
           opts :: Keyword.t()
         ) :: settings
         when settings: map(), identifier: any()
-  def build_state_difference(
-        [str | _] = current_list,
-        %trigger_module{} = settings,
-        template_kv_fun,
-        opts
-      )
-      when is_binary(str) and trigger_module in @trigger_modules and
-             is_function(template_kv_fun, 2) do
+  def build_state_difference([str | _] = current_list, %trigger_module{} = settings, template_kv_fun, opts)
+      when is_binary(str) and trigger_module in @trigger_modules and is_function(template_kv_fun, 2) do
     map = get_added_and_removed_items(settings, current_list, opts)
 
     settings =
-      case map.has_changes? do
-        true ->
-          template_kv = template_kv_fun.(map.added_removed_map, settings)
+      if map.has_changes? do
+        template_kv = template_kv_fun.(map.added_removed_map, settings)
 
-          %{
-            settings
-            | template_kv: %{"default" => template_kv},
-              state: %{map.state_list_key => current_list},
-              triggered?: true
-          }
-
-        false ->
-          %{settings | triggered?: false}
+        %{
+          settings
+          | template_kv: %{"default" => template_kv},
+            state: %{map.state_list_key => current_list},
+            triggered?: true
+        }
+      else
+        %{settings | triggered?: false}
       end
 
     {:ok, settings}
   end
 
-  def build_state_difference(
-        [tuple | _] = current_data,
-        %trigger_module{} = settings,
-        template_kv_fun,
-        opts
-      )
-      when is_tuple(tuple) and trigger_module in @trigger_modules and
-             is_function(template_kv_fun, 2) do
+  def build_state_difference([tuple | _] = current_data, %trigger_module{} = settings, template_kv_fun, opts)
+      when is_tuple(tuple) and trigger_module in @trigger_modules and is_function(template_kv_fun, 2) do
     state_list_key = Keyword.fetch!(opts, :state_list_key)
     added_items_key = Keyword.fetch!(opts, :added_items_key)
     removed_items_key = Keyword.fetch!(opts, :removed_items_key)
@@ -139,21 +120,19 @@ defmodule Sanbase.Alert.ResultBuilder do
       Enum.reduce(current_data, %{}, fn {identifier, current_list}, acc ->
         previous_list = Map.get(previous_map, identifier, [])
 
-        added_items = (current_list -- previous_list) |> Enum.reject(&is_nil/1)
-        removed_items = (previous_list -- current_list) |> Enum.reject(&is_nil/1)
+        added_items = Enum.reject(current_list -- previous_list, &is_nil/1)
+        removed_items = Enum.reject(previous_list -- current_list, &is_nil/1)
 
-        case added_items != [] or removed_items != [] do
-          true ->
-            template_kv =
-              template_kv_fun.(
-                %{added_items_key => added_items, removed_items_key => removed_items},
-                settings
-              )
+        if added_items != [] or removed_items != [] do
+          template_kv =
+            template_kv_fun.(
+              %{added_items_key => added_items, removed_items_key => removed_items},
+              settings
+            )
 
-            Map.put(acc, identifier, template_kv)
-
-          false ->
-            acc
+          Map.put(acc, identifier, template_kv)
+        else
+          acc
         end
       end)
 
@@ -168,8 +147,8 @@ defmodule Sanbase.Alert.ResultBuilder do
 
     previous_list = Map.get(settings.state, state_list_key, [])
 
-    added_items = (current_list -- previous_list) |> Enum.reject(&is_nil/1)
-    removed_items = (previous_list -- current_list) |> Enum.reject(&is_nil/1)
+    added_items = Enum.reject(current_list -- previous_list, &is_nil/1)
+    removed_items = Enum.reject(previous_list -- current_list, &is_nil/1)
 
     %{
       added_removed_map: %{added_items_key => added_items, removed_items_key => removed_items},
@@ -185,18 +164,19 @@ defmodule Sanbase.Alert.ResultBuilder do
   @spec build_enter_exit_projects_str(list(String.t()), list(String.t())) :: String.t()
   def build_enter_exit_projects_str(added_slugs, removed_slugs) do
     projects_map =
-      Sanbase.Project.List.by_slugs(added_slugs ++ removed_slugs, preload?: false)
-      |> Enum.into(%{}, fn %{slug: slug} = project -> {slug, project} end)
+      (added_slugs ++ removed_slugs)
+      |> Sanbase.Project.List.by_slugs(preload?: false)
+      |> Map.new(fn %{slug: slug} = project -> {slug, project} end)
 
     newcomers = slugs_to_projects_string_list(added_slugs, projects_map)
     leavers = slugs_to_projects_string_list(removed_slugs, projects_map)
 
     """
     #{length(newcomers)} Newcomers:
-    #{newcomers |> Enum.join("\n")}
+    #{Enum.join(newcomers, "\n")}
     ---
     #{length(leavers)} Leavers:
-    #{leavers |> Enum.join("\n")}
+    #{Enum.join(leavers, "\n")}
     """
   end
 

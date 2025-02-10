@@ -101,8 +101,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Utils do
 
   def maybe_fill_gaps_last_seen_balance_ohlc({:error, error}), do: {:error, error}
 
-  def maybe_update_first_balance({:ok, [%{has_changed: 0} | _] = data}, fun)
-      when is_function(fun, 0) do
+  def maybe_update_first_balance({:ok, [%{has_changed: 0} | _] = data}, fun) when is_function(fun, 0) do
     case fun.() do
       {:ok, balance} ->
         [first_elem | rest] = data
@@ -121,8 +120,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Utils do
 
   def maybe_drop_not_needed({:ok, result}, before_datetime) do
     result =
-      result
-      |> Enum.drop_while(fn %{datetime: dt} -> DateTime.compare(dt, before_datetime) == :lt end)
+      Enum.drop_while(result, fn %{datetime: dt} -> DateTime.before?(dt, before_datetime) end)
 
     {:ok, result}
   end

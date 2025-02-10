@@ -1,8 +1,8 @@
 defmodule SanbaseWeb.Graphql.WatchlistHistoricalStatsApiTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import Sanbase.Factory
   import ExUnit.CaptureLog
+  import Sanbase.Factory
   import Sanbase.TestHelpers
   import SanbaseWeb.Graphql.TestHelpers
 
@@ -23,10 +23,10 @@ defmodule SanbaseWeb.Graphql.WatchlistHistoricalStatsApiTest do
     datetime4 = ~U[2017-05-16 00:00:00Z]
 
     data = [
-      [datetime1 |> DateTime.to_unix(), 545, 220, 1],
-      [datetime2 |> DateTime.to_unix(), 2000, 1400, 1],
-      [datetime3 |> DateTime.to_unix(), 2600, 1600, 1],
-      [datetime4 |> DateTime.to_unix(), 1800, 1300, 1]
+      [DateTime.to_unix(datetime1), 545, 220, 1],
+      [DateTime.to_unix(datetime2), 2000, 1400, 1],
+      [DateTime.to_unix(datetime3), 2600, 1600, 1],
+      [DateTime.to_unix(datetime4), 1800, 1300, 1]
     ]
 
     {:ok, watchlist} = UserList.create_user_list(user, %{name: "test watchlist"})
@@ -81,7 +81,8 @@ defmodule SanbaseWeb.Graphql.WatchlistHistoricalStatsApiTest do
       }
     }
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: data}})
+    (&Sanbase.ClickhouseRepo.query/2)
+    |> Sanbase.Mock.prepare_mock2({:ok, %{rows: data}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result = get_watchlist_historical_stats(conn, from, to, watchlist)
       assert result == expected_result
@@ -102,7 +103,8 @@ defmodule SanbaseWeb.Graphql.WatchlistHistoricalStatsApiTest do
 
     error_msg = "Clickhouse error"
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, error_msg})
+    (&Sanbase.ClickhouseRepo.query/2)
+    |> Sanbase.Mock.prepare_mock2({:error, error_msg})
     |> Sanbase.Mock.run_with_mocks(fn ->
       assert capture_log(fn ->
                %{"errors" => [error]} = get_watchlist_historical_stats(conn, from, to, watchlist)

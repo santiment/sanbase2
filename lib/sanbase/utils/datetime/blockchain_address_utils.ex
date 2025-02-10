@@ -1,4 +1,5 @@
 defmodule Sanbase.Utils.BlockchainAddressUtils do
+  @moduledoc false
   @doc ~s"""
   Get a list where every element has a key-value pair where the key is `address`,
   `from_address` or `to_address` and the value is a string and transform that
@@ -24,8 +25,7 @@ defmodule Sanbase.Utils.BlockchainAddressUtils do
       end
 
     result =
-      list
-      |> Enum.map(fn map ->
+      Enum.map(list, fn map ->
         map
         |> Map.replace(:address, address_to_map.(map[:address]))
         |> Map.replace(:from_address, address_to_map.(map[:from_address]))

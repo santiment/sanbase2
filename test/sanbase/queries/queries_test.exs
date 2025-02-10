@@ -1,10 +1,11 @@
 defmodule Sanbase.QueriesTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import Sanbase.Factory
   import Mock, only: [assert_called: 1]
+  import Sanbase.Factory
 
   alias Sanbase.Queries
+  alias Sanbase.Queries.Executor.Result
 
   setup do
     user = insert(:user)
@@ -154,8 +155,8 @@ defmodule Sanbase.QueriesTest do
 
       assert length(list) == 3
 
-      assert Enum.map(list, & &1.id) |> Enum.sort() ==
-               [query.id, query2.id, query3.id] |> Enum.sort()
+      assert list |> Enum.map(& &1.id) |> Enum.sort() ==
+               Enum.sort([query.id, query2.id, query3.id])
     end
 
     test "get all public queries", %{user: user, user2: user2, query: query} do
@@ -196,7 +197,8 @@ defmodule Sanbase.QueriesTest do
           arity: 2
         )
 
-      Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
+      Sanbase.ClickhouseRepo
+      |> Sanbase.Mock.prepare_mock(:query, mock_fun)
       |> Sanbase.Mock.run_with_mocks(fn ->
         # In test case the execution details are avaialble immediately
         # as the result is mocked. The store_executioN_details is true
@@ -277,7 +279,8 @@ defmodule Sanbase.QueriesTest do
         user: user
       } = context
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, ch_result_mock()})
+      (&Sanbase.ClickhouseRepo.query/2)
+      |> Sanbase.Mock.prepare_mock2({:ok, ch_result_mock()})
       |> Sanbase.Mock.run_with_mocks(fn ->
         query =
           Sanbase.Queries.get_ephemeral_query_struct(sql_query_text, sql_query_parameters, user)
@@ -285,12 +288,12 @@ defmodule Sanbase.QueriesTest do
         {:ok, result} =
           Sanbase.Queries.run_query(query, user, query_metadata, store_execution_details: false)
 
-        assert %Sanbase.Queries.Executor.Result{
+        assert %Result{
                  query_id: nil,
                  clickhouse_query_id: "1774C4BC91E05698",
                  summary: %{
                    "read_bytes" => 408_534.0,
-                   "read_rows" => 12667.0,
+                   "read_rows" => 12_667.0,
                    "result_bytes" => +0.0,
                    "result_rows" => +0.0,
                    "total_rows_to_read" => 4475.0,
@@ -320,8 +323,8 @@ defmodule Sanbase.QueriesTest do
                  query_end_time: query_end_time
                } = result
 
-        assert Sanbase.TestUtils.datetime_close_to(Timex.now(), query_start_time, 2)
-        assert Sanbase.TestUtils.datetime_close_to(Timex.now(), query_end_time, 2)
+        assert Sanbase.TestUtils.datetime_close_to(DateTime.utc_now(), query_start_time, 2)
+        assert Sanbase.TestUtils.datetime_close_to(DateTime.utc_now(), query_end_time, 2)
       end)
     end
 
@@ -332,17 +335,18 @@ defmodule Sanbase.QueriesTest do
         query_metadata: query_metadata
       } = context
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, ch_result_mock()})
+      (&Sanbase.ClickhouseRepo.query/2)
+      |> Sanbase.Mock.prepare_mock2({:ok, ch_result_mock()})
       |> Sanbase.Mock.run_with_mocks(fn ->
         {:ok, result} =
           Sanbase.Queries.run_query(query, user, query_metadata, store_execution_details: false)
 
-        assert %Sanbase.Queries.Executor.Result{
+        assert %Result{
                  query_id: ^query_id,
                  clickhouse_query_id: "1774C4BC91E05698",
                  summary: %{
                    "read_bytes" => 408_534.0,
-                   "read_rows" => 12667.0,
+                   "read_rows" => 12_667.0,
                    "result_bytes" => +0.0,
                    "result_rows" => +0.0,
                    "total_rows_to_read" => 4475.0,
@@ -372,8 +376,8 @@ defmodule Sanbase.QueriesTest do
                  query_end_time: query_end_time
                } = result
 
-        assert Sanbase.TestUtils.datetime_close_to(Timex.now(), query_start_time, 2)
-        assert Sanbase.TestUtils.datetime_close_to(Timex.now(), query_end_time, 2)
+        assert Sanbase.TestUtils.datetime_close_to(DateTime.utc_now(), query_start_time, 2)
+        assert Sanbase.TestUtils.datetime_close_to(DateTime.utc_now(), query_end_time, 2)
       end)
     end
 
@@ -384,7 +388,8 @@ defmodule Sanbase.QueriesTest do
         query_metadata: query_metadata
       } = context
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, ch_result_mock()})
+      (&Sanbase.ClickhouseRepo.query/2)
+      |> Sanbase.Mock.prepare_mock2({:ok, ch_result_mock()})
       |> Sanbase.Mock.run_with_mocks(fn ->
         {:ok, %{id: query_id} = query} =
           Sanbase.Queries.get_dashboard_query(
@@ -396,12 +401,12 @@ defmodule Sanbase.QueriesTest do
         {:ok, result} =
           Sanbase.Queries.run_query(query, user, query_metadata, store_execution_details: false)
 
-        assert %Sanbase.Queries.Executor.Result{
+        assert %Result{
                  query_id: ^query_id,
                  clickhouse_query_id: "1774C4BC91E05698",
                  summary: %{
                    "read_bytes" => 408_534.0,
-                   "read_rows" => 12667.0,
+                   "read_rows" => 12_667.0,
                    "result_bytes" => +0.0,
                    "result_rows" => +0.0,
                    "total_rows_to_read" => 4475.0,
@@ -431,8 +436,8 @@ defmodule Sanbase.QueriesTest do
                  query_end_time: query_end_time
                } = result
 
-        assert Sanbase.TestUtils.datetime_close_to(Timex.now(), query_start_time, 2)
-        assert Sanbase.TestUtils.datetime_close_to(Timex.now(), query_end_time, 2)
+        assert Sanbase.TestUtils.datetime_close_to(DateTime.utc_now(), query_start_time, 2)
+        assert Sanbase.TestUtils.datetime_close_to(DateTime.utc_now(), query_end_time, 2)
       end)
     end
 
@@ -459,7 +464,8 @@ defmodule Sanbase.QueriesTest do
           dashboard_parameter_key: "slug"
         )
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, ch_result_mock()})
+      (&Sanbase.ClickhouseRepo.query/2)
+      |> Sanbase.Mock.prepare_mock2({:ok, ch_result_mock()})
       |> Sanbase.Mock.run_with_mocks(fn ->
         {:ok, standalone_query} =
           Sanbase.Queries.get_query(dashboard_query_mapping.query_id, user.id)
@@ -534,9 +540,7 @@ defmodule Sanbase.QueriesTest do
       result = query_result_mock()
 
       assert {:error, error_msg} =
-               Queries.cache_query_execution(query.id, result, user.id,
-                 max_query_size_kb_allowed: 0
-               )
+               Queries.cache_query_execution(query.id, result, user.id, max_query_size_kb_allowed: 0)
 
       assert error_msg =~ "Cannot cache the query because its compressed is"
       assert error_msg =~ "which is over the limit of 0KB"
@@ -577,13 +581,9 @@ defmodule Sanbase.QueriesTest do
       assert owner_cache_result == query_result_mock()
 
       # Check insertion time
-      assert Sanbase.TestUtils.datetime_close_to(own_cache.inserted_at, DateTime.utc_now(),
-               seconds: 2
-             )
+      assert Sanbase.TestUtils.datetime_close_to(own_cache.inserted_at, DateTime.utc_now(), seconds: 2)
 
-      assert Sanbase.TestUtils.datetime_close_to(owner_cache.inserted_at, DateTime.utc_now(),
-               seconds: 2
-             )
+      assert Sanbase.TestUtils.datetime_close_to(owner_cache.inserted_at, DateTime.utc_now(), seconds: 2)
 
       # Check owner
       assert own_cache.user_id == user2.id
@@ -618,13 +618,13 @@ defmodule Sanbase.QueriesTest do
 
   # MOCKS
 
-  defp query_result_mock() do
-    %Sanbase.Queries.Executor.Result{
+  defp query_result_mock do
+    %Result{
       query_id: 1193,
       clickhouse_query_id: "1774C4BC91E05698",
       summary: %{
         "read_bytes" => 408_534.0,
-        "read_rows" => 12667.0,
+        "read_rows" => 12_667.0,
         "result_bytes" => 0.0,
         "result_rows" => 0.0,
         "total_rows_to_read" => 4475.0,
@@ -643,7 +643,7 @@ defmodule Sanbase.QueriesTest do
     }
   end
 
-  defp ch_result_mock() do
+  defp ch_result_mock do
     %Clickhousex.Result{
       query_id: "1774C4BC91E05698",
       summary: %{
@@ -666,7 +666,7 @@ defmodule Sanbase.QueriesTest do
     }
   end
 
-  defp execution_details_mock() do
+  defp execution_details_mock do
     %Clickhousex.Result{
       query_id: "1774C4BC91E058D4",
       summary: %{

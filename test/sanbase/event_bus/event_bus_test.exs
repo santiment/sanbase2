@@ -2,8 +2,9 @@ defmodule Sanbase.EventBusTest do
   use ExUnit.Case, async: false
 
   defmodule EventBusTestSubscriber do
+    @moduledoc false
     @receiver_name :__internal_event_test_process_name_given__
-    def receiver_name(), do: @receiver_name
+    def receiver_name, do: @receiver_name
 
     def process({_topic, _id} = event_shadow) do
       event = EventBus.fetch_event(event_shadow)

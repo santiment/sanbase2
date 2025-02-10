@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
+  @moduledoc false
   use SanbaseWeb, :live_view
 
+  alias Sanbase.Metric.Registry.Sync
   alias SanbaseWeb.AvailableMetricsComponents
 
   @pubsub_topic "sanbase_metric_registry_sync"
@@ -10,9 +12,7 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
 
     syncs = get_syncs()
 
-    {:ok,
-     socket
-     |> assign(syncs: syncs, page_title: "Metric Registry | Past Sync Runs")}
+    {:ok, assign(socket, syncs: syncs, page_title: "Metric Registry | Past Sync Runs")}
   end
 
   @impl true
@@ -104,13 +104,11 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
 
   @impl true
   def handle_event("cancel_run", %{"sync-uuid" => sync_uuid}, socket) do
-    case Sanbase.Metric.Registry.Sync.cancel_run(sync_uuid) do
+    case Sync.cancel_run(sync_uuid) do
       {:ok, sync} ->
         sync = Map.update!(sync, :content, &Jason.decode!/1)
 
-        syncs =
-          socket.assigns.syncs
-          |> Enum.map(&if &1.uuid == sync.uuid, do: sync, else: &1)
+        syncs = Enum.map(socket.assigns.syncs, &if(&1.uuid == sync.uuid, do: sync, else: &1))
 
         {:noreply,
          socket
@@ -118,9 +116,7 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
          |> assign(:syncs, syncs)}
 
       {:error, error} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, error)}
+        {:noreply, put_flash(socket, :error, error)}
     end
   end
 
@@ -144,12 +140,12 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
       seconds < 3600 ->
         "#{div(seconds, 60)} minutes"
 
-      seconds < 86400 ->
+      seconds < 86_400 ->
         "#{div(seconds, 3600)} hours"
 
       true ->
-        days = div(seconds, 86400)
-        hours = div(rem(seconds, 86400), 3600)
+        days = div(seconds, 86_400)
+        hours = div(rem(seconds, 86_400), 3600)
         "#{days} days" <> if(hours == 0, do: "", else: " #{hours} hours")
     end
   end
@@ -185,8 +181,9 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
     """
   end
 
-  defp get_syncs() do
-    Sanbase.Metric.Registry.Sync.last_syncs(20)
+  defp get_syncs do
+    20
+    |> Sync.last_syncs()
     |> Enum.map(fn sync -> Map.update!(sync, :content, &Jason.decode!/1) end)
   end
 end

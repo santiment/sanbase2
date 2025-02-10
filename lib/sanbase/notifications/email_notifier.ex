@@ -1,8 +1,10 @@
 defmodule Sanbase.Notifications.EmailNotifier do
+  @moduledoc false
   import Ecto.Query
   import Sanbase.DateTimeUtils, only: [seconds_after: 1]
 
-  alias Sanbase.{Repo, Notifications.Notification}
+  alias Sanbase.Notifications.Notification
+  alias Sanbase.Repo
 
   @oban_conf_name :oban_scrapers
 
@@ -22,14 +24,16 @@ defmodule Sanbase.Notifications.EmailNotifier do
       notification_ids = Enum.map(group_notifications, & &1.id)
 
       job =
-        %{
-          channel: "email",
-          action: action,
-          notification_ids: notification_ids,
-          params: all_params,
-          step: List.first(group_notifications).step
-        }
-        |> Sanbase.Notifications.Workers.ProcessNotification.new(scheduled_at: seconds_after(5))
+        Sanbase.Notifications.Workers.ProcessNotification.new(
+          %{
+            channel: "email",
+            action: action,
+            notification_ids: notification_ids,
+            params: all_params,
+            step: List.first(group_notifications).step
+          },
+          scheduled_at: seconds_after(5)
+        )
 
       {:ok, %{id: job_id}} = Oban.insert(@oban_conf_name, job)
 
@@ -39,8 +43,7 @@ defmodule Sanbase.Notifications.EmailNotifier do
   end
 
   defp group_notifications(notifications, "metric_deleted") do
-    notifications
-    |> Enum.group_by(fn notification ->
+    Enum.group_by(notifications, fn notification ->
       {notification.step, notification.params["scheduled_at"]}
     end)
   end
@@ -50,7 +53,7 @@ defmodule Sanbase.Notifications.EmailNotifier do
   end
 
   defp get_unprocessed_notifications(action) do
-    yesterday = DateTime.utc_now() |> DateTime.add(-24, :hour)
+    yesterday = DateTime.add(DateTime.utc_now(), -24, :hour)
 
     Notification
     |> where([n], n.channel == "email")
@@ -61,8 +64,7 @@ defmodule Sanbase.Notifications.EmailNotifier do
   end
 
   defp combine_notification_params(notifications) do
-    notifications
-    |> Enum.reduce(%{}, fn notification, acc ->
+    Enum.reduce(notifications, %{}, fn notification, acc ->
       metrics = (acc["metrics_list"] || []) ++ (notification.params["metrics_list"] || [])
       acc = Map.put(acc, "metrics_list", metrics)
 

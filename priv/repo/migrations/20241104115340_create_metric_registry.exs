@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.CreateMetricRegistry do
+  @moduledoc false
   use Ecto.Migration
 
   # We have JSON records that define single metrics:

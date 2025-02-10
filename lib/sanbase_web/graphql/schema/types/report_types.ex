@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.ReportTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   object :report do

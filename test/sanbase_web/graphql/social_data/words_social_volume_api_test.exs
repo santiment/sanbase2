@@ -15,25 +15,21 @@ defmodule SanbaseWeb.Graphql.WordsSocialVolumeApiTest do
     # This test does not include treatWordAsLuceneQuery: true, so the
     # words are lowercased before being send and in the response
     body =
-      %{
+      Jason.encode!(%{
         "data" => %{
-          "btc" => %{
-            "2024-09-28T00:00:00Z" => 373,
-            "2024-09-29T00:00:00Z" => 487,
-            "2024-09-30T00:00:00Z" => 323
-          },
+          "btc" => %{"2024-09-28T00:00:00Z" => 373, "2024-09-29T00:00:00Z" => 487, "2024-09-30T00:00:00Z" => 323},
           "eth or nft" => %{
             "2024-09-28T00:00:00Z" => 1681,
             "2024-09-29T00:00:00Z" => 3246,
             "2024-09-30T00:00:00Z" => 1577
           }
         }
-      }
-      |> Jason.encode!()
+      })
 
     resp = %HTTPoison.Response{status_code: 200, body: body}
 
-    Sanbase.Mock.prepare_mock(HTTPoison, :post, fn _url, body, _headers, _options ->
+    HTTPoison
+    |> Sanbase.Mock.prepare_mock(:post, fn _url, body, _headers, _options ->
       search_texts =
         body
         |> Jason.decode!()
@@ -96,25 +92,21 @@ defmodule SanbaseWeb.Graphql.WordsSocialVolumeApiTest do
     # This test does not include treatWordAsLuceneQuery: true, so the
     # words are lowercased before being send and in the response
     body =
-      %{
+      Jason.encode!(%{
         "data" => %{
-          "BTC" => %{
-            "2024-09-28T00:00:00Z" => 373,
-            "2024-09-29T00:00:00Z" => 487,
-            "2024-09-30T00:00:00Z" => 323
-          },
+          "BTC" => %{"2024-09-28T00:00:00Z" => 373, "2024-09-29T00:00:00Z" => 487, "2024-09-30T00:00:00Z" => 323},
           "eth OR nft" => %{
             "2024-09-28T00:00:00Z" => 1681,
             "2024-09-29T00:00:00Z" => 3246,
             "2024-09-30T00:00:00Z" => 1577
           }
         }
-      }
-      |> Jason.encode!()
+      })
 
     resp = %HTTPoison.Response{status_code: 200, body: body}
 
-    Sanbase.Mock.prepare_mock(HTTPoison, :post, fn _url, body, _headers, _options ->
+    HTTPoison
+    |> Sanbase.Mock.prepare_mock(:post, fn _url, body, _headers, _options ->
       search_texts =
         body
         |> Jason.decode!()

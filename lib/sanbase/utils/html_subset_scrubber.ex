@@ -1,6 +1,8 @@
 defmodule Sanbase.Utils.HtmlSubsetScrubber do
-  require HtmlSanitizeEx.Scrubber.Meta
+  @moduledoc false
   alias HtmlSanitizeEx.Scrubber.Meta
+
+  require HtmlSanitizeEx.Scrubber.Meta
 
   Meta.remove_cdata_sections_before_scrub()
   Meta.strip_comments()

@@ -1,14 +1,15 @@
 defmodule Sanbase.Billing.Subscription.SanrNFT do
-  alias Sanbase.SmartContracts
-  alias Sanbase.Billing.Subscription
+  @moduledoc false
   alias Sanbase.Accounts.EthAccount
+  alias Sanbase.Billing.Subscription
+  alias Sanbase.SmartContracts
 
   @doc ~s"""
   Create NFT subscription for users who have valid SanR NFTs and no active
   Sanbase subscription. The token must still be valid. Tokens expire 12
   months after they are minted
   """
-  def maybe_create() do
+  def maybe_create do
     {:ok, nft_owners} = SmartContracts.SanrNFT.get_all_nft_owners()
     {:ok, nft_metadata} = SmartContracts.SanrNFT.get_all_nft_expiration_dates()
 
@@ -22,7 +23,7 @@ defmodule Sanbase.Billing.Subscription.SanrNFT do
   Remove the subscription from the users who previously held valid SanR NFT tokens but no
   longer do.
   """
-  def maybe_remove() do
+  def maybe_remove do
     {:ok, nft_owners} = SmartContracts.SanrNFT.get_all_nft_owners()
 
     addresses = Map.keys(nft_owners)
@@ -64,8 +65,7 @@ defmodule Sanbase.Billing.Subscription.SanrNFT do
     user_ids_no_longer_owners = user_ids_with_subscription -- user_ids_holding_nft
     user_ids_no_longer_owners = MapSet.new(user_ids_no_longer_owners)
 
-    subscriptions
-    |> Enum.map(fn subscription ->
+    Enum.map(subscriptions, fn subscription ->
       if subscription.user_id in user_ids_no_longer_owners do
         Subscription.NFTSubscription.remove_nft_subscription(subscription)
       end

@@ -4,8 +4,9 @@ defmodule SanbaseWeb.Graphql.ProjectApiGithubTest do
   import Mock
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
-  alias Sanbase.Project
+
   alias Sanbase.Clickhouse.Github
+  alias Sanbase.Project
 
   setup do
     market_segment_without_projects = insert(:market_segment)
@@ -116,8 +117,8 @@ defmodule SanbaseWeb.Graphql.ProjectApiGithubTest do
 
   describe "dev activity for market segments" do
     test "one segment with multiple projects", context do
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.Clickhouse.MetricAdapter.timeseries_data/6,
+      (&Sanbase.Clickhouse.MetricAdapter.timeseries_data/6)
+      |> Sanbase.Mock.prepare_mock2(
         {:ok,
          [
            %{datetime: context.dt1, value: 100},
@@ -150,10 +151,8 @@ defmodule SanbaseWeb.Graphql.ProjectApiGithubTest do
     end
 
     test "multiple segments that no project has", context do
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.Clickhouse.Github.MetricAdapter.timeseries_data/6,
-        {:ok, []}
-      )
+      (&Sanbase.Clickhouse.Github.MetricAdapter.timeseries_data/6)
+      |> Sanbase.Mock.prepare_mock2({:ok, []})
       |> Sanbase.Mock.run_with_mocks(fn ->
         result =
           dev_activity_by_market_segment_all_of(

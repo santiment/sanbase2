@@ -1,15 +1,15 @@
 defmodule Sanbase.Project.Roi do
-  alias Sanbase.Repo
-  alias Sanbase.Project
+  @moduledoc false
   alias Sanbase.Model.Ico
+  alias Sanbase.Project
+  alias Sanbase.Repo
 
   @doc ~S"""
   ROI = current_price*(ico1_tokens + ico2_tokens + ...)/(ico1_tokens*ico1_initial_price + ico2_tokens*ico2_initial_price + ...)
   We skip ICOs for which we can't calculate the initial_price or the tokens sold
   For ICOs that we don't have tokens sold we try to fill it heuristically by evenly distributing the rest of the total available supply
   """
-  def roi_usd(%Project{ticker: ticker, slug: slug} = project)
-      when not is_nil(ticker) and not is_nil(slug) do
+  def roi_usd(%Project{ticker: ticker, slug: slug} = project) when not is_nil(ticker) and not is_nil(slug) do
     with %Project{} = project <- Repo.preload(project, [:latest_coinmarketcap_data, :icos]),
          false <- is_nil(project.latest_coinmarketcap_data),
          false <- is_nil(project.latest_coinmarketcap_data.price_usd),
@@ -57,9 +57,10 @@ defmodule Sanbase.Project.Roi do
   # Currently uses latest_coinmarketcap_data.available_supply, which also includes coins not issued at any ICO
   # Maybe it's better to keep historical data of available_supply so that we can calculate it better
   defp fill_missing_tokens_sold_at_icos(%Project{} = project) do
-    with tokens_sold_at_icos <- Enum.map(project.icos, & &1.tokens_sold_at_ico),
-         unknown_count <- Enum.filter(tokens_sold_at_icos, &is_nil/1) |> length(),
-         true <- unknown_count > 0 do
+    tokens_sold_at_icos = Enum.map(project.icos, & &1.tokens_sold_at_ico)
+    unknown_count = tokens_sold_at_icos |> Enum.filter(&is_nil/1) |> length()
+
+    if unknown_count > 0 do
       zero = Decimal.new(0)
 
       known_tokens_sum =
@@ -86,7 +87,7 @@ defmodule Sanbase.Project.Roi do
         end
       end)
     else
-      _ -> project.icos
+      project.icos
     end
   end
 
@@ -111,11 +112,11 @@ defmodule Sanbase.Project.Roi do
   defp calc_token_usd_ico_price(_price_from, _currency_from, _ico_start_date, nil), do: nil
 
   defp calc_token_usd_ico_price(price_from, currency_from, ico_start_date, update_naive_dt) do
-    with :gt <- Date.compare(update_naive_dt |> NaiveDateTime.to_date(), ico_start_date),
-         datetime <- Sanbase.DateTimeUtils.date_to_datetime(ico_start_date),
+    with :gt <- update_naive_dt |> NaiveDateTime.to_date() |> Date.compare(ico_start_date),
+         datetime = Sanbase.DateTimeUtils.date_to_datetime(ico_start_date),
          price_usd when not is_nil(price_usd) <-
            Sanbase.Price.Utils.fetch_last_price_before(currency_from, "USD", datetime) do
-      price_usd = Sanbase.Math.to_float(price_usd) |> Decimal.from_float()
+      price_usd = price_usd |> Sanbase.Math.to_float() |> Decimal.from_float()
       Decimal.mult(price_from, price_usd)
     else
       _ -> nil

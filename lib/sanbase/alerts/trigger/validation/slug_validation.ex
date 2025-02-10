@@ -1,4 +1,5 @@
 defmodule Sanbase.Alert.Validation.Slug do
+  @moduledoc false
   alias Sanbase.Project
 
   @doc ~s"""
@@ -15,7 +16,6 @@ defmodule Sanbase.Alert.Validation.Slug do
   end
 
   def valid_slug?(slug) do
-    {:error,
-     "#{inspect(slug)} is not a valid slug. A valid slug is a map with a single slug key and string value"}
+    {:error, "#{inspect(slug)} is not a valid slug. A valid slug is a map with a single slug key and string value"}
   end
 end

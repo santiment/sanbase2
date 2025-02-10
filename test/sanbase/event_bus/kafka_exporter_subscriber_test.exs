@@ -1,7 +1,10 @@
 defmodule Sanbase.EventBus.KafkaExporterSubscriberTest do
   use Sanbase.DataCase, async: false
-  import Sanbase.Factory
+
   import Mox
+  import Sanbase.Factory
+
+  alias Sanbase.InMemoryKafka.Producer
 
   setup :set_mox_from_context
   setup :verify_on_exit!
@@ -11,7 +14,7 @@ defmodule Sanbase.EventBus.KafkaExporterSubscriberTest do
     # NOTE: This test is consistently failing for unknown reasons. Remove it for
     # now to unblock the other PRs and it will be revised later
 
-    Sanbase.InMemoryKafka.Producer.clear_state()
+    Producer.clear_state()
 
     user = insert(:user)
 
@@ -23,7 +26,7 @@ defmodule Sanbase.EventBus.KafkaExporterSubscriberTest do
     # # must pass from emitting to the kafka subscriber which exports the events.
     Process.sleep(500)
 
-    event_bus_data = Sanbase.InMemoryKafka.Producer.get_state()["sanbase_event_bus"] || []
+    event_bus_data = Producer.get_state()["sanbase_event_bus"] || []
 
     assert [{_key, value} | _] = event_bus_data
 

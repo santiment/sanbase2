@@ -1,22 +1,22 @@
 defmodule Sanbase.Repo.Migrations.AddMetricsTable do
+  @moduledoc false
   use Ecto.Migration
 
-  def up() do
+  def up do
     setup()
-    now = Timex.now()
+    now = DateTime.utc_now()
 
     metrics =
-      Sanbase.Metric.available_metrics()
-      |> Enum.map(fn metric ->
+      Enum.map(Sanbase.Metric.available_metrics(), fn metric ->
         %{name: metric, inserted_at: now, updated_at: now}
       end)
 
     Sanbase.Repo.insert_all(Sanbase.Metric.MetricPostgresData, metrics)
   end
 
-  def down(), do: :ok
+  def down, do: :ok
 
-  defp setup() do
+  defp setup do
     Application.ensure_all_started(:tzdata)
     Application.ensure_all_started(:stripity_stripe)
   end

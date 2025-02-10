@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.RemoveObanJobs do
+  @moduledoc false
   use Ecto.Migration
 
   def up do

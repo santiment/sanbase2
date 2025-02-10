@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.ChannelUtils do
+  @moduledoc false
   alias Sanbase.Accounts.User
 
   def params_to_user(%{"access_token" => jwt}), do: jwt_to_user(jwt)

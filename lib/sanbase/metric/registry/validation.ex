@@ -1,5 +1,8 @@
 defmodule Sanbase.Metric.Registry.Validation do
+  @moduledoc false
   import Ecto.Changeset
+
+  alias Sanbase.TemplateEngine.Captures
 
   @sync_statuses ["synced", "not_synced"]
   def validate_sync_status(:sync_status, status) do
@@ -16,8 +19,7 @@ defmodule Sanbase.Metric.Registry.Validation do
     if Sanbase.DateTimeUtils.valid_compound_duration?(min_interval) do
       if Sanbase.DateTimeUtils.str_to_days(min_interval) > 30 do
         [
-          min_interval:
-            "The provided min_interval #{min_interval} is too big - more than 30 days."
+          min_interval: "The provided min_interval #{min_interval} is too big - more than 30 days."
         ]
       else
         []
@@ -61,10 +63,10 @@ defmodule Sanbase.Metric.Registry.Validation do
     parameters = get_field(changeset, :parameters)
     metric = get_field(changeset, :metric)
     internal_metric = get_field(changeset, :internal_metric)
-    {:ok, captures1} = Sanbase.TemplateEngine.Captures.extract_captures(metric)
-    {:ok, captures2} = Sanbase.TemplateEngine.Captures.extract_captures(internal_metric)
-    captures = Enum.map(captures1 ++ captures2, & &1.inner_content) |> Enum.uniq() |> Enum.sort()
-    parameter_keys = Enum.flat_map(parameters, &Map.keys/1) |> Enum.uniq() |> Enum.sort()
+    {:ok, captures1} = Captures.extract_captures(metric)
+    {:ok, captures2} = Captures.extract_captures(internal_metric)
+    captures = (captures1 ++ captures2) |> Enum.map(& &1.inner_content) |> Enum.uniq() |> Enum.sort()
+    parameter_keys = parameters |> Enum.flat_map(&Map.keys/1) |> Enum.uniq() |> Enum.sort()
 
     if captures == parameter_keys do
       changeset

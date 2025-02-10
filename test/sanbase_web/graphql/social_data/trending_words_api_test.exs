@@ -28,7 +28,8 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
 
       rows = trending_words_rows(context)
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+      (&Sanbase.ClickhouseRepo.query/2)
+      |> Sanbase.Mock.prepare_mock2({:ok, %{rows: rows}})
       |> Sanbase.Mock.run_with_mocks(fn ->
         args = %{from: dt1, to: dt3, interval: "1d", size: 2}
 
@@ -129,7 +130,8 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
 
       rows = trending_words_rows(context)
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+      (&Sanbase.ClickhouseRepo.query/2)
+      |> Sanbase.Mock.prepare_mock2({:ok, %{rows: rows}})
       |> Sanbase.Mock.run_with_mocks(fn ->
         args = %{from: from, to: now, interval: "1d", size: 2}
 
@@ -225,17 +227,16 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
     test "error", context do
       %{dt1: dt1, dt2: dt2} = context
 
-      Sanbase.Mock.prepare_mock2(
-        &SocialData.TrendingWords.get_trending_words/6,
-        {:error, "Something broke"}
-      )
+      (&SocialData.TrendingWords.get_trending_words/6)
+      |> Sanbase.Mock.prepare_mock2({:error, "Something broke"})
       |> Sanbase.Mock.run_with_mocks(fn ->
         args = %{from: dt1, to: dt2, interval: "1h", size: 10}
 
         query = trending_words_query(args)
 
         error_msg =
-          execute(context.conn, query)
+          context.conn
+          |> execute(query)
           |> get_error_message()
 
         assert error_msg =~ "Something broke"
@@ -282,7 +283,8 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
         query = word_trending_history_query(args)
 
         error_msg =
-          execute(context.conn, query)
+          context.conn
+          |> execute(query)
           |> get_error_message()
 
         assert error_msg =~ "Something went wrong"
@@ -336,7 +338,8 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
         query = word_trending_history_query(args)
 
         error_msg =
-          execute(context.conn, query)
+          context.conn
+          |> execute(query)
           |> get_error_message()
 
         assert error_msg =~ "Something went wrong"

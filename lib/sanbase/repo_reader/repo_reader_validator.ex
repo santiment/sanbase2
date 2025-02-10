@@ -1,14 +1,16 @@
 defmodule Sanbase.RepoReader.Validator do
+  @moduledoc false
   require Logger
 
   @external_resource json_file = Path.join([__DIR__, "jsonschema.json"])
-  @jsonschema File.read!(json_file)
+  @jsonschema json_file
+              |> File.read!()
               |> Jason.decode!()
               |> ExJsonSchema.Schema.resolve()
 
   @custom_validations ["social", "contracts", "general[ticker]", "general[name]"]
 
-  def schema(), do: @jsonschema
+  def schema, do: @jsonschema
 
   @doc ~s"""
   Validate that the provided Elixir map conforms to the jsonschema and the custom
@@ -66,7 +68,7 @@ defmodule Sanbase.RepoReader.Validator do
       not is_binary(name) or String.length(name) < 2 ->
         {:error, "The name must be a string of length 2 or more"}
 
-      String.at(name, 0) != String.at(name, 0) |> String.upcase() ->
+      String.at(name, 0) != name |> String.at(0) |> String.upcase() ->
         {:error, "The name must start with a capital letter or a number"}
 
       not ((String.at(name, 0) >= "A" and String.at(name, 0) <= "Z") or
@@ -92,9 +94,10 @@ defmodule Sanbase.RepoReader.Validator do
   end
 
   defp custom_validate("general[ecosystem]", %{"general" => %{"ecosystem" => ecosystem}}) do
-    case Sanbase.AvailableSlugs.valid_slug?(ecosystem) do
-      true -> :ok
-      false -> {:error, "The ecosystem must be an existing slug"}
+    if Sanbase.AvailableSlugs.valid_slug?(ecosystem) do
+      :ok
+    else
+      {:error, "The ecosystem must be an existing slug"}
     end
   end
 
@@ -103,22 +106,18 @@ defmodule Sanbase.RepoReader.Validator do
   defp validate_url(url, type) do
     uri = URI.parse(url)
 
-    case uri.scheme != nil and is_binary(uri.host) and uri.host =~ "." do
-      true ->
-        :ok
-
-      false ->
-        {:error, "The #{type} URL #{url} is invalid - it has missing schema or host"}
+    if uri.scheme != nil and is_binary(uri.host) and uri.host =~ "." do
+      :ok
+    else
+      {:error, "The #{type} URL #{url} is invalid - it has missing schema or host"}
     end
   end
 
   defp validate_contract_map(map) do
-    case map["blockchain"] in Sanbase.BlockchainAddress.available_blockchains() do
-      true ->
-        :ok
-
-      false ->
-        {:error, "Blockchain #{map["blockchain"]} is missing or unsupported"}
+    if map["blockchain"] in Sanbase.BlockchainAddress.available_blockchains() do
+      :ok
+    else
+      {:error, "Blockchain #{map["blockchain"]} is missing or unsupported"}
     end
   end
 end

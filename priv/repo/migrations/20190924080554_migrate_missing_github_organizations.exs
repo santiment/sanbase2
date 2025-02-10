@@ -1,10 +1,11 @@
 defmodule Sanbase.Repo.Migrations.MigrateMissingeGithubOrganizations do
+  @moduledoc false
   use Ecto.Migration
 
   import Ecto.Query
 
-  alias Sanbase.Repo
   alias Sanbase.Project
+  alias Sanbase.Repo
 
   def up do
     Application.ensure_all_started(:tzdata)
@@ -14,18 +15,19 @@ defmodule Sanbase.Repo.Migrations.MigrateMissingeGithubOrganizations do
 
   def down, do: :ok
 
-  defp populate_github_organizations() do
+  defp populate_github_organizations do
     # Select all projects that have `github_link` but does not have
     # `github_organizations`. These projects have their github link
     # mistakenly added to the not appropriate, deprected field
     data =
-      from(p in Project,
-        full_join: gl in Project.GithubOrganization,
-        on: p.id == gl.project_id,
-        where: not is_nil(p.github_link) and is_nil(gl.project_id),
-        preload: [:github_organizations]
+      Repo.all(
+        from(p in Project,
+          full_join: gl in Project.GithubOrganization,
+          on: p.id == gl.project_id,
+          where: not is_nil(p.github_link) and is_nil(gl.project_id),
+          preload: [:github_organizations]
+        )
       )
-      |> Repo.all()
 
     project_id_github_org =
       data
@@ -38,8 +40,7 @@ defmodule Sanbase.Repo.Migrations.MigrateMissingeGithubOrganizations do
       |> Enum.reject(&is_nil/1)
 
     insert_data =
-      project_id_github_org
-      |> Enum.map(fn {id, org} ->
+      Enum.map(project_id_github_org, fn {id, org} ->
         %{project_id: id, organization: org}
       end)
 

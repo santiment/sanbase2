@@ -1,14 +1,15 @@
 defmodule Sanbase.Repo.Migrations.UpdatePostsToApproved do
+  @moduledoc false
   use Ecto.Migration
 
-  alias Sanbase.Repo
   alias Sanbase.Insight.Post
+  alias Sanbase.Repo
 
   def up do
-    Post |> Repo.update_all(set: [state: Post.approved_state()])
+    Repo.update_all(Post, set: [state: Post.approved_state()])
   end
 
   def down do
-    Post |> Repo.update_all(set: [state: nil])
+    Repo.update_all(Post, set: [state: nil])
   end
 end

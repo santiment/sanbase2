@@ -1,9 +1,10 @@
 defmodule Sanbase.Billing.SanBurnCreditTransactionTest do
   use Sanbase.DataCase, async: false
+
   import Sanbase.Factory
 
-  alias Sanbase.Billing.Subscription.SanBurnCreditTransaction
   alias Sanbase.Accounts.EthAccount
+  alias Sanbase.Billing.Subscription.SanBurnCreditTransaction
 
   test "1" do
     user =
@@ -12,12 +13,13 @@ defmodule Sanbase.Billing.SanBurnCreditTransactionTest do
         stripe_customer_id: "s1"
       )
 
-    timestamp = ~U[2022-05-23 05:43:40Z] |> DateTime.to_unix()
+    timestamp = DateTime.to_unix(~U[2022-05-23 05:43:40Z])
     rows = [[timestamp, "0x1", 1000, "0x4efb548a2cb8f0af7c591cef21053f6875b5d38f"]]
 
     data = %{price_usd: 4, price_btc: 0.03, marketcap: 100, volume: 100}
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Price.last_record_before/2, {:ok, data})
+    (&Sanbase.Price.last_record_before/2)
+    |> Sanbase.Mock.prepare_mock2({:ok, data})
     |> Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
     |> Sanbase.Mock.prepare_mock2(&Sanbase.StripeApi.add_credit/3, {:ok, %{}})
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -25,7 +27,8 @@ defmodule Sanbase.Billing.SanBurnCreditTransactionTest do
       [burn_trx] = SanBurnCreditTransaction.all()
 
       result =
-        Map.from_struct(burn_trx)
+        burn_trx
+        |> Map.from_struct()
         |> Map.take([
           :address,
           :credit_amount,

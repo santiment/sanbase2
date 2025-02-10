@@ -1,8 +1,9 @@
 defmodule Sanbase.AvailableMetrics do
+  @moduledoc false
   use Ecto.Schema
 
-  import Ecto.Query
   import Ecto.Changeset
+  import Ecto.Query
 
   require Logger
 
@@ -23,17 +24,17 @@ defmodule Sanbase.AvailableMetrics do
     |> validate_required([:metric])
   end
 
-  def get_not_updated() do
-    from(
-      av in __MODULE__,
-      where: av.updated_at < ^DateTime.add(DateTime.utc_now(), -86400),
-      order_by: [asc: av.updated_at],
-      select: av.metric
+  def get_not_updated do
+    Sanbase.Repo.all(
+      from(av in __MODULE__,
+        where: av.updated_at < ^DateTime.add(DateTime.utc_now(), -86_400),
+        order_by: [asc: av.updated_at],
+        select: av.metric
+      )
     )
-    |> Sanbase.Repo.all()
   end
 
-  def update_all() do
+  def update_all do
     metrics = Sanbase.Metric.available_metrics()
     metrics_not_updated_recently = get_not_updated()
 
@@ -60,7 +61,7 @@ defmodule Sanbase.AvailableMetrics do
     )
   end
 
-  def get_metrics_map() do
+  def get_metrics_map do
     metrics = Sanbase.Metric.available_metrics()
     metric_to_supported_assets_map = metric_to_available_slugs_maps()
     access_map = Sanbase.Metric.Helper.access_map()
@@ -114,40 +115,32 @@ defmodule Sanbase.AvailableMetrics do
   end
 
   defp maybe_apply_filter(metrics, :only_with_docs, %{"only_with_docs" => "on"}) do
-    metrics
-    |> Enum.filter(&(&1.docs != []))
+    Enum.filter(metrics, &(&1.docs != []))
   end
 
   defp maybe_apply_filter(metrics, :only_intraday_metrics, %{"only_intraday_metrics" => "on"}) do
-    metrics
-    |> Enum.filter(&(&1.frequency_seconds < 86400))
+    Enum.filter(metrics, &(&1.frequency_seconds < 86_400))
   end
 
-  defp maybe_apply_filter(metrics, :match_metric_name, %{"match_metric_name" => query})
-       when query != "" do
+  defp maybe_apply_filter(metrics, :match_metric_name, %{"match_metric_name" => query}) when query != "" do
     query = String.downcase(query)
 
-    metrics
-    |> Enum.filter(
-      &(String.contains?(&1.metric, query) or String.contains?(&1.internal_name, query))
-    )
+    Enum.filter(metrics, &(String.contains?(&1.metric, query) or String.contains?(&1.internal_name, query)))
   end
 
-  defp maybe_apply_filter(metrics, :metric_supports_asset, %{"metric_supports_asset" => str})
-       when str != "" do
-    metrics
-    |> Enum.filter(&Enum.member?(&1.available_assets, str))
+  defp maybe_apply_filter(metrics, :metric_supports_asset, %{"metric_supports_asset" => str}) when str != "" do
+    Enum.filter(metrics, &Enum.member?(&1.available_assets, str))
   end
 
   defp maybe_apply_filter(metrics, :only_asset_metrics, %{"only_asset_metrics" => "on"}) do
-    metrics
-    |> Enum.filter(&(&1.available_assets != [] and :slug in &1.available_selectors))
+    Enum.filter(metrics, &(&1.available_assets != [] and :slug in &1.available_selectors))
   end
 
   defp maybe_apply_filter(metrics, _, _), do: metrics
 
-  defp metric_to_available_slugs_maps() do
-    Sanbase.Repo.all(__MODULE__)
+  defp metric_to_available_slugs_maps do
+    __MODULE__
+    |> Sanbase.Repo.all()
     |> Map.new(&{&1.metric, &1.available_slugs})
   end
 end

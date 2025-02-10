@@ -1,12 +1,13 @@
 defmodule Sanbase.Menus.Menu do
+  @moduledoc false
   use Ecto.Schema
 
-  import Ecto.Query
   import Ecto.Changeset
+  import Ecto.Query
 
-  alias Sanbase.Menus.MenuItem
-  alias Sanbase.Accounts.User
   alias __MODULE__, as: Menu
+  alias Sanbase.Accounts.User
+  alias Sanbase.Menus.MenuItem
 
   @type menu_id :: non_neg_integer()
 
@@ -66,7 +67,7 @@ defmodule Sanbase.Menus.Menu do
     |> lock("FOR UPDATE")
   end
 
-  defp base_query() do
+  defp base_query do
     __MODULE__
   end
 end

@@ -1,7 +1,9 @@
 defmodule Sanbase.Clickhouse.Exchanges do
-  alias Sanbase.Clickhouse.MetricAdapter.Registry
-
+  @moduledoc false
   import Sanbase.Metric.SqlQuery.Helper, only: [asset_id_filter: 2]
+
+  alias Sanbase.Clickhouse.MetricAdapter.Registry
+  alias Sanbase.Clickhouse.Query
 
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
@@ -22,7 +24,7 @@ defmodule Sanbase.Clickhouse.Exchanges do
           balance_change30d: change_30d,
           datetime_of_first_transfer: first_seen_dt,
           days_since_first_transfer:
-            if(first_seen_dt, do: DateTime.diff(DateTime.utc_now(), first_seen_dt, :day) |> abs())
+            if(first_seen_dt, do: DateTime.utc_now() |> DateTime.diff(first_seen_dt, :day) |> abs())
         }
       end
     )
@@ -31,14 +33,12 @@ defmodule Sanbase.Clickhouse.Exchanges do
   def owners_by_slug_and_metric(metric, slug) do
     table = Map.get(Registry.table_map(), metric)
 
-    case not is_nil(table) && table =~ "label" do
-      true ->
-        query_struct = owners_by_slug_and_metric_query(metric, slug)
+    if not is_nil(table) && table =~ "label" do
+      query_struct = owners_by_slug_and_metric_query(metric, slug)
 
-        ClickhouseRepo.query_transform(query_struct, fn [owner] -> owner end)
-
-      false ->
-        {:error, "The provided metric #{metric} is not a label-based metric"}
+      ClickhouseRepo.query_transform(query_struct, fn [owner] -> owner end)
+    else
+      {:error, "The provided metric #{metric} is not a label-based metric"}
     end
   end
 
@@ -58,7 +58,7 @@ defmodule Sanbase.Clickhouse.Exchanges do
       #{if slug, do: "AND asset_id = get_asset_id({{slug}})"}
     """
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp top_exchanges_by_balance_query(slug, limit) do
@@ -150,6 +150,6 @@ defmodule Sanbase.Clickhouse.Exchanges do
     LIMIT {{limit}}
     """
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 end

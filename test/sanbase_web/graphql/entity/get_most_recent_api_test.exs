@@ -1,8 +1,10 @@
 defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
   use SanbaseWeb.ConnCase, async: true
 
-  import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
+  import SanbaseWeb.Graphql.TestHelpers
+
+  alias Sanbase.Accounts.UserRole
 
   setup do
     _role = insert(:role_san_family)
@@ -78,7 +80,7 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
 
     assert Enum.at(data, 0)["query"]["id"] == query.id
     assert Enum.at(data, 1)["dashboard"]["id"] == dashboard.id
-    assert Enum.at(data, 2)["screener"]["id"] |> String.to_integer() == screener.id
+    assert String.to_integer(Enum.at(data, 2)["screener"]["id"]) == screener.id
   end
 
   test "get most recent insights", %{conn: conn} do
@@ -131,16 +133,16 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
 
     assert length(data) == 4
 
-    assert Enum.at(data, 0)["screener"]["id"] |> String.to_integer() ==
+    assert String.to_integer(Enum.at(data, 0)["screener"]["id"]) ==
              screener4.id
 
-    assert Enum.at(data, 1)["screener"]["id"] |> String.to_integer() ==
+    assert String.to_integer(Enum.at(data, 1)["screener"]["id"]) ==
              screener3.id
 
-    assert Enum.at(data, 2)["screener"]["id"] |> String.to_integer() ==
+    assert String.to_integer(Enum.at(data, 2)["screener"]["id"]) ==
              screener2.id
 
-    assert Enum.at(data, 3)["screener"]["id"] |> String.to_integer() ==
+    assert String.to_integer(Enum.at(data, 3)["screener"]["id"]) ==
              screener1.id
   end
 
@@ -166,10 +168,10 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
            } = stats
 
     assert length(data) == 4
-    assert Enum.at(data, 0)["projectWatchlist"]["id"] |> String.to_integer() == watchlist4.id
-    assert Enum.at(data, 1)["projectWatchlist"]["id"] |> String.to_integer() == watchlist3.id
-    assert Enum.at(data, 2)["projectWatchlist"]["id"] |> String.to_integer() == watchlist2.id
-    assert Enum.at(data, 3)["projectWatchlist"]["id"] |> String.to_integer() == watchlist1.id
+    assert String.to_integer(Enum.at(data, 0)["projectWatchlist"]["id"]) == watchlist4.id
+    assert String.to_integer(Enum.at(data, 1)["projectWatchlist"]["id"]) == watchlist3.id
+    assert String.to_integer(Enum.at(data, 2)["projectWatchlist"]["id"]) == watchlist2.id
+    assert String.to_integer(Enum.at(data, 3)["projectWatchlist"]["id"]) == watchlist1.id
   end
 
   test "get most recent address watchlist", %{conn: conn} do
@@ -203,10 +205,10 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
 
     assert length(data) == 4
 
-    assert Enum.at(data, 0)["addressWatchlist"]["id"] |> String.to_integer() == watchlist4.id
-    assert Enum.at(data, 1)["addressWatchlist"]["id"] |> String.to_integer() == watchlist3.id
-    assert Enum.at(data, 2)["addressWatchlist"]["id"] |> String.to_integer() == watchlist2.id
-    assert Enum.at(data, 3)["addressWatchlist"]["id"] |> String.to_integer() == watchlist1.id
+    assert String.to_integer(Enum.at(data, 0)["addressWatchlist"]["id"]) == watchlist4.id
+    assert String.to_integer(Enum.at(data, 1)["addressWatchlist"]["id"]) == watchlist3.id
+    assert String.to_integer(Enum.at(data, 2)["addressWatchlist"]["id"]) == watchlist2.id
+    assert String.to_integer(Enum.at(data, 3)["addressWatchlist"]["id"]) == watchlist1.id
   end
 
   test "get most recent chart configuration", %{conn: conn} do
@@ -342,13 +344,13 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
 
     assert length(data) == 9
 
-    assert Enum.at(data, 0)["addressWatchlist"]["id"] |> String.to_integer() ==
+    assert String.to_integer(Enum.at(data, 0)["addressWatchlist"]["id"]) ==
              address_watchlist.id
 
-    assert Enum.at(data, 1)["projectWatchlist"]["id"] |> String.to_integer() ==
+    assert String.to_integer(Enum.at(data, 1)["projectWatchlist"]["id"]) ==
              project_watchlist.id
 
-    assert Enum.at(data, 2)["screener"]["id"] |> String.to_integer() ==
+    assert String.to_integer(Enum.at(data, 2)["screener"]["id"]) ==
              screener.id
 
     assert Enum.at(data, 3)["chartConfiguration"]["id"] == conf2.id
@@ -392,7 +394,7 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
     test "moderator can see views count" do
       moderator_user = insert(:user)
       role = insert(:role_san_moderator)
-      {:ok, _} = Sanbase.Accounts.UserRole.create(moderator_user.id, role.id)
+      {:ok, _} = UserRole.create(moderator_user.id, role.id)
       Sanbase.Cache.clear_all()
 
       moderator_conn = setup_jwt_auth(build_conn(), moderator_user)
@@ -416,7 +418,7 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
 
       data_moderator = get_most_recent(moderator_conn, [:screener])["data"]
 
-      assert Enum.at(data_moderator, 0)["screener"]["id"] |> String.to_integer() ==
+      assert String.to_integer(Enum.at(data_moderator, 0)["screener"]["id"]) ==
                screener.id
 
       assert Enum.at(data_moderator, 0)["screener"]["views"] == 1
@@ -436,7 +438,7 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
 
       data = get_most_recent(context.conn, [:screener])["data"]
 
-      assert Enum.at(data, 0)["screener"]["id"] |> String.to_integer() ==
+      assert String.to_integer(Enum.at(data, 0)["screener"]["id"]) ==
                screener.id
 
       assert Enum.at(data, 0)["screener"]["views"] == 0
@@ -520,7 +522,7 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
     assert Enum.at(data, 1)["chartConfiguration"]["id"] == c1.id
     assert Enum.at(data, 2)["insight"]["id"] == i1.id
 
-    assert Enum.at(data, 3)["projectWatchlist"]["id"] |> String.to_integer() ==
+    assert String.to_integer(Enum.at(data, 3)["projectWatchlist"]["id"]) ==
              w1.id
 
     result =
@@ -547,13 +549,13 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
     assert Enum.at(data, 4)["insight"]["id"] == i3.id
     assert Enum.at(data, 5)["insight"]["id"] == i2.id
 
-    assert Enum.at(data, 6)["projectWatchlist"]["id"] |> String.to_integer() ==
+    assert String.to_integer(Enum.at(data, 6)["projectWatchlist"]["id"]) ==
              w3.id
 
-    assert Enum.at(data, 7)["projectWatchlist"]["id"] |> String.to_integer() ==
+    assert String.to_integer(Enum.at(data, 7)["projectWatchlist"]["id"]) ==
              w2.id
 
-    assert Enum.at(data, 8)["projectWatchlist"]["id"] |> String.to_integer() ==
+    assert String.to_integer(Enum.at(data, 8)["projectWatchlist"]["id"]) ==
              w1.id
   end
 
@@ -576,7 +578,8 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
         }
       }
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.Metric.slugs_by_filter/6, {:ok, []})
+      (&Sanbase.Metric.slugs_by_filter/6)
+      |> Sanbase.Mock.prepare_mock2({:ok, []})
       |> Sanbase.Mock.run_with_mocks(fn ->
         assert Sanbase.WatchlistFunction.valid_function?(function)
       end)
@@ -617,8 +620,8 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
              "currentPageSize" => 10
            } = stats
 
-    assert Enum.at(data, 0)["screener"]["id"] |> String.to_integer() == s3.id
-    assert Enum.at(data, 1)["screener"]["id"] |> String.to_integer() == s1.id
+    assert String.to_integer(Enum.at(data, 0)["screener"]["id"]) == s3.id
+    assert String.to_integer(Enum.at(data, 1)["screener"]["id"]) == s1.id
   end
 
   test "get most recent entities with people with sanfam role", context do
@@ -633,7 +636,7 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
     user = insert(:user)
 
     {:ok, _} =
-      Sanbase.Accounts.UserRole.create(
+      UserRole.create(
         user.id,
         Sanbase.Accounts.Role.san_family_role_id()
       )
@@ -682,9 +685,9 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
     assert Enum.at(data, 1)["dashboard"]["id"] == d.id
     assert Enum.at(data, 2)["chartConfiguration"]["id"] == c.id
     assert Enum.at(data, 3)["insight"]["id"] == i.id
-    assert Enum.at(data, 4)["screener"]["id"] |> String.to_integer() == s.id
+    assert String.to_integer(Enum.at(data, 4)["screener"]["id"]) == s.id
 
-    assert Enum.at(data, 5)["projectWatchlist"]["id"] |> String.to_integer() ==
+    assert String.to_integer(Enum.at(data, 5)["projectWatchlist"]["id"]) ==
              w.id
   end
 
@@ -741,7 +744,7 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
     assert Enum.at(data, 1)["chartConfiguration"]["id"] == c.id
     assert Enum.at(data, 2)["insight"]["id"] == i.id
 
-    assert Enum.at(data, 3)["projectWatchlist"]["id"] |> String.to_integer() ==
+    assert String.to_integer(Enum.at(data, 3)["projectWatchlist"]["id"]) ==
              w.id
   end
 
@@ -762,7 +765,7 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
         settings: trigger_settings
       })
 
-    naive_dt = DateTime.to_naive(inserted_at) |> NaiveDateTime.truncate(:second)
+    naive_dt = inserted_at |> DateTime.to_naive() |> NaiveDateTime.truncate(:second)
 
     created_trigger =
       created_trigger

@@ -1,8 +1,10 @@
 defmodule Sanbase.Application.Web do
+  @moduledoc false
   import Sanbase.ApplicationUtils
+
   require Logger
 
-  def init() do
+  def init do
     :ok
   end
 
@@ -11,7 +13,7 @@ defmodule Sanbase.Application.Web do
   Along with these children all children from `Sanbase.Application.common_children/0`
   will be started, too.
   """
-  def children() do
+  def children do
     # Define workers and child supervisors to be supervised
     children = [
       # Mutex for forcing sequential execution when updating api call limits
@@ -59,16 +61,17 @@ defmodule Sanbase.Application.Web do
     {children, opts}
   end
 
-  defp oban_web_config() do
+  defp oban_web_config do
     config = Application.fetch_env!(:sanbase, Oban.Web)
 
     # In case the DB config or URL is pointing to production, put the proper
     # schema in the config. This will be used both on prod and locally when
     # connecting to the stage DB. This is automated so when the stage DB is
     # used, the config should not be changed manually to include the schema
-    case Sanbase.Utils.prod_db?() do
-      true -> Keyword.put(config, :prefix, "sanbase2")
-      false -> config
+    if Sanbase.Utils.prod_db?() do
+      Keyword.put(config, :prefix, "sanbase2")
+    else
+      config
     end
   end
 end

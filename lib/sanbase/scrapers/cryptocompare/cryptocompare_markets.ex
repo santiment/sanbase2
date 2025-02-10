@@ -1,12 +1,12 @@
 defmodule Sanbase.Cryptocompare.Markets.Scraper do
+  @moduledoc false
   alias Sanbase.Utils.Config
 
-  def run() do
-    get_data()
-    |> store_data()
+  def run do
+    store_data(get_data())
   end
 
-  defp get_data() do
+  defp get_data do
     headers = [{"Authorization", "Apikey #{api_key()}"}]
 
     {:ok, %{body: body}} = HTTPoison.get(url(), headers)
@@ -26,7 +26,7 @@ defmodule Sanbase.Cryptocompare.Markets.Scraper do
   end
 
   defp store_data(data) do
-    now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+    now = NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)
 
     data =
       data
@@ -44,9 +44,9 @@ defmodule Sanbase.Cryptocompare.Markets.Scraper do
     end)
   end
 
-  defp api_key(), do: Config.module_get(Sanbase.Cryptocompare, :api_key)
+  defp api_key, do: Config.module_get(Sanbase.Cryptocompare, :api_key)
 
-  defp url() do
+  defp url do
     "https://min-api.cryptocompare.com/data/v2/pair/mapping/exchange\?extraParams\=Santiment"
   end
 end

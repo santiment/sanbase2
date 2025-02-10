@@ -1,11 +1,12 @@
 defmodule Sanbase.Intercom.UserEvent do
+  @moduledoc false
   use Ecto.Schema
 
   import Ecto.Changeset
   import Ecto.Query
 
-  alias Sanbase.Repo
   alias Sanbase.Accounts.User
+  alias Sanbase.Repo
 
   require Logger
 
@@ -56,7 +57,7 @@ defmodule Sanbase.Intercom.UserEvent do
     end
   end
 
-  def sync_events_from_intercom() do
+  def sync_events_from_intercom do
     Logger.info("Start sync_events_from_intercom")
 
     # Skip if api key not present in env. (Run only on production)
@@ -76,21 +77,16 @@ defmodule Sanbase.Intercom.UserEvent do
   end
 
   def get_events_for_users(user_ids, from, to) do
-    from(ue in __MODULE__,
-      where:
-        ue.user_id in ^user_ids and
-          ue.created_at >= ^from and
-          ue.created_at <= ^to
-    )
-    |> Repo.all()
+    Repo.all(from(ue in __MODULE__, where: ue.user_id in ^user_ids and ue.created_at >= ^from and ue.created_at <= ^to))
   end
 
   # helpers
 
   defp sync_with_intercom(user_id, since) do
-    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    now = DateTime.truncate(DateTime.utc_now(), :second)
 
-    Sanbase.Intercom.get_events_for_user(user_id, since)
+    user_id
+    |> Sanbase.Intercom.get_events_for_user(since)
     |> Enum.map(fn %{
                      "event_name" => event_name,
                      "id" => remote_id,
@@ -127,13 +123,12 @@ defmodule Sanbase.Intercom.UserEvent do
   end
 
   defp to_json_kv_tuple(events) do
-    events
-    |> Enum.map(fn %{
-                     user_id: user_id,
-                     event_name: event_name,
-                     metadata: metadata,
-                     created_at: timestamp
-                   } = event ->
+    Enum.map(events, fn %{
+                          user_id: user_id,
+                          event_name: event_name,
+                          metadata: metadata,
+                          created_at: timestamp
+                        } = event ->
       timestamp = DateTime.to_unix(timestamp)
       key = "#{user_id}_#{timestamp}"
 

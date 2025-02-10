@@ -1,11 +1,9 @@
 defmodule Sanbase.Repo.Migrations.MigrateDaaToMetricAlert do
+  @moduledoc false
   use Ecto.Migration
 
-  alias Sanbase.Alert.Trigger.{
-    DailyActiveAddressesSettings,
-    MetricTriggerSettings
-  }
-
+  alias Sanbase.Alert.Trigger.DailyActiveAddressesSettings
+  alias Sanbase.Alert.Trigger.MetricTriggerSettings
   alias Sanbase.Alert.UserTrigger
 
   def up do
@@ -17,7 +15,7 @@ defmodule Sanbase.Repo.Migrations.MigrateDaaToMetricAlert do
     :ok
   end
 
-  defp migrate_daa_signals() do
+  defp migrate_daa_signals do
     DailyActiveAddressesSettings.type()
     |> UserTrigger.get_all_triggers_by_type()
     |> Enum.each(fn user_trigger ->
@@ -38,7 +36,7 @@ defmodule Sanbase.Repo.Migrations.MigrateDaaToMetricAlert do
     end)
   end
 
-  defp setup() do
+  defp setup do
     Application.ensure_all_started(:tzdata)
   end
 end

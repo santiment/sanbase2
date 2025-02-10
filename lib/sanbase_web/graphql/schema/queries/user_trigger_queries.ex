@@ -6,12 +6,9 @@ defmodule SanbaseWeb.Graphql.Schema.UserTriggerQueries do
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
 
-  alias SanbaseWeb.Graphql.Resolvers.{
-    UserTriggerResolver,
-    AlertsHistoricalActivityResolver
-  }
-
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
+  alias SanbaseWeb.Graphql.Resolvers.AlertsHistoricalActivityResolver
+  alias SanbaseWeb.Graphql.Resolvers.UserTriggerResolver
 
   object :alert_queries do
     @desc "Get alert trigger by its id"

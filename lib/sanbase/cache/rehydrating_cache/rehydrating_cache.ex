@@ -20,7 +20,7 @@ defmodule Sanbase.Cache.RehydratingCache do
   @name :__rehydrating_cache__
   @store_name Store.name()
 
-  def name(), do: @name
+  def name, do: @name
 
   @run_interval 20_000
   @purge_timeout_interval 30_000
@@ -40,7 +40,7 @@ defmodule Sanbase.Cache.RehydratingCache do
 
   def init(opts) do
     initial_state = %{
-      init_time: Timex.now(),
+      init_time: DateTime.utc_now(),
       task_supervisor: Keyword.fetch!(opts, :task_supervisor),
       functions: %{},
       progress: %{},
@@ -92,7 +92,8 @@ defmodule Sanbase.Cache.RehydratingCache do
   def get(key, timeout \\ 30_000, opts \\ []) when is_integer(timeout) and timeout > 0 do
     case Store.get(@store_name, key) do
       nil ->
-        GenServer.call(@name, {:get, key, timeout}, timeout)
+        @name
+        |> GenServer.call({:get, key, timeout}, timeout)
         |> handle_get_response(opts)
 
       {:ok, value} ->
@@ -179,13 +180,11 @@ defmodule Sanbase.Cache.RehydratingCache do
   end
 
   def handle_call({:register_function, %{key: key} = fun_map}, _from, state) do
-    case Map.has_key?(state.functions, key) do
-      true ->
-        {:reply, {:error, :already_registered}, state}
-
-      false ->
-        new_state = do_register_function(state, fun_map)
-        {:reply, :ok, new_state}
+    if Map.has_key?(state.functions, key) do
+      {:reply, {:error, :already_registered}, state}
+    else
+      new_state = do_register_function(state, fun_map)
+      {:reply, :ok, new_state}
     end
   end
 
@@ -195,7 +194,7 @@ defmodule Sanbase.Cache.RehydratingCache do
   end
 
   def handle_info({:store_result, fun_map, data}, state) do
-    now_unix = Timex.now() |> DateTime.to_unix()
+    now_unix = DateTime.to_unix(DateTime.utc_now())
 
     store_result_handle_info(data, state, fun_map, now_unix)
   end
@@ -244,16 +243,10 @@ defmodule Sanbase.Cache.RehydratingCache do
   defp do_register_function(state, fun_map) do
     %{key: key} = fun_map
 
-    fun_map =
-      fun_map
-      |> Map.merge(%{
-        registered_at: Timex.now(),
-        refresh_count: 0,
-        nocache_refresh_count: 0
-      })
+    fun_map = Map.merge(fun_map, %{registered_at: DateTime.utc_now(), refresh_count: 0, nocache_refresh_count: 0})
 
     %{pid: pid} = run_function(self(), fun_map, state.task_supervisor)
-    now = Timex.now()
+    now = DateTime.utc_now()
     new_progress = Map.put(state.progress, key, {:in_progress, pid, {now, DateTime.to_unix(now)}})
     new_functions = Map.put(state.functions, key, fun_map)
 
@@ -262,15 +255,14 @@ defmodule Sanbase.Cache.RehydratingCache do
 
   defp do_purge_timeouts(state) do
     %{waiting: waiting} = state
-    now = Timex.now()
+    now = DateTime.utc_now()
 
     new_waiting =
       Enum.reduce(waiting, %{}, fn {key, waiting_for_key}, acc ->
         # Remove from the waiting list all timed out records. These are the `call`s
         # that are no longer waiting for response.
         still_waiting_for_key =
-          waiting_for_key
-          |> Enum.filter(fn {_from, send_before} ->
+          Enum.filter(waiting_for_key, fn {_from, send_before} ->
             DateTime.compare(send_before, now) != :lt
           end)
 
@@ -296,28 +288,26 @@ defmodule Sanbase.Cache.RehydratingCache do
   end
 
   defp handle_in_progress_function_run(state, pid, key, fun_map, started_unix) do
-    case Process.alive?(pid) do
-      false ->
-        # If the process is dead but for some reason the progress is not
-        # changed to some timestamp or to :failed, we rerun it
+    if Process.alive?(pid) do
+      if state.now_unix - started_unix > @function_runtime_timeout do
+        # Process computing the function is alive but it is taking
+        # too long, maybe something is stuck. Restart the computation
+        Process.exit(pid, :kill)
         run_function_get_updated_progress(state, key, fun_map)
-
-      true ->
-        if state.now_unix - started_unix > @function_runtime_timeout do
-          # Process computing the function is alive but it is taking
-          # too long, maybe something is stuck. Restart the computation
-          Process.exit(pid, :kill)
-          run_function_get_updated_progress(state, key, fun_map)
-        else
-          state.progress
-        end
+      else
+        state.progress
+      end
+    else
+      # If the process is dead but for some reason the progress is not
+      # changed to some timestamp or to :failed, we rerun it
+      run_function_get_updated_progress(state, key, fun_map)
     end
   end
 
   # Walk over the functions and re-evaluate the ones that have to be re-evaluated
   defp do_run(state) do
-    now = Timex.now()
-    now_unix = now |> DateTime.to_unix()
+    now = DateTime.utc_now()
+    now_unix = DateTime.to_unix(now)
     state = Map.put(state, :now_unix, now_unix)
 
     new_progress =
@@ -351,7 +341,7 @@ defmodule Sanbase.Cache.RehydratingCache do
   defp reply_to_waiting([], _), do: :ok
 
   defp reply_to_waiting(from_list, value) do
-    now = Timex.now()
+    now = DateTime.utc_now()
 
     Enum.each(from_list, fn {from, send_before} ->
       # Do not reply in case of timeout
@@ -363,7 +353,7 @@ defmodule Sanbase.Cache.RehydratingCache do
   end
 
   defp do_fill_waiting_list(state, key, from, timeout) do
-    elem = {from, Timex.shift(Timex.now(), milliseconds: timeout)}
+    elem = {from, Timex.shift(DateTime.utc_now(), milliseconds: timeout)}
     new_waiting = Map.update(state.waiting, key, [elem], fn list -> [elem | list] end)
     %{state | waiting: new_waiting}
   end

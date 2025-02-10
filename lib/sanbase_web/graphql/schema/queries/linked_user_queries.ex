@@ -4,9 +4,8 @@ defmodule SanbaseWeb.Graphql.Schema.LinkedUserQueries do
 
   use Absinthe.Schema.Notation
 
-  alias SanbaseWeb.Graphql.Resolvers.LinkedUserResolver
-
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
+  alias SanbaseWeb.Graphql.Resolvers.LinkedUserResolver
 
   object :linked_user_queries do
     field :get_primary_user, :public_user do

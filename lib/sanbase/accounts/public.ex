@@ -1,4 +1,5 @@
 defmodule Sanbase.Accounts.User.Public do
+  @moduledoc false
   alias Sanbase.Accounts.User
   alias Sanbase.Accounts.UserSettings
 

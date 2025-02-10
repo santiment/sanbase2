@@ -1,5 +1,6 @@
 defmodule Sanbase.StripeApiTestResponse do
-  def create_coupon_resp() do
+  @moduledoc false
+  def create_coupon_resp do
     {:ok,
      %Stripe.Coupon{
        amount_off: nil,
@@ -20,7 +21,7 @@ defmodule Sanbase.StripeApiTestResponse do
      }}
   end
 
-  def create_product_resp() do
+  def create_product_resp do
     {:ok,
      %Stripe.Product{
        active: true,
@@ -42,7 +43,7 @@ defmodule Sanbase.StripeApiTestResponse do
      }}
   end
 
-  def create_plan_resp() do
+  def create_plan_resp do
     {:ok,
      %Stripe.Plan{
        active: true,

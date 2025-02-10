@@ -1,16 +1,16 @@
 defmodule Sanbase.Billing.ApiProductAccessTest do
   use SanbaseWeb.ConnCase, async: false
 
+  import Mock
   import Sanbase.Factory
   import Sanbase.TestHelpers
   import SanbaseWeb.Graphql.TestHelpers
-  import Mock
 
   alias Sanbase.Accounts.Apikey
-  alias Sanbase.Price
-  alias Sanbase.Metric
-  alias Sanbase.Signal
   alias Sanbase.Clickhouse.TopHolders
+  alias Sanbase.Metric
+  alias Sanbase.Price
+  alias Sanbase.Signal
 
   @product "SANAPI"
 
@@ -743,7 +743,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     """
   end
 
-  defp metric_resp() do
+  defp metric_resp do
     {:ok,
      [
        %{value: 10.0, datetime: ~U[2019-01-01 00:00:00Z]},
@@ -751,7 +751,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
      ]}
   end
 
-  defp top_holders_resp() do
+  defp top_holders_resp do
     {:ok,
      [
        %{
@@ -771,7 +771,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
      ]}
   end
 
-  defp signal_resp() do
+  defp signal_resp do
     {:ok,
      [
        %{value: 5.0, datetime: ~U[2020-01-01 00:00:00Z]},
@@ -779,7 +779,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
      ]}
   end
 
-  defp price_resp() do
+  defp price_resp do
     {:ok,
      [
        %{

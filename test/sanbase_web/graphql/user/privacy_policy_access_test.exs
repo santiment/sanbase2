@@ -1,18 +1,16 @@
 defmodule SanbaseWeb.Graphql.PrivacyPolicyAccessTest do
   use SanbaseWeb.ConnCase, async: false
 
+  import Mock
+  import SanbaseWeb.Graphql.TestHelpers
+
   alias Sanbase.Accounts.User
   alias Sanbase.Repo
-
-  import SanbaseWeb.Graphql.TestHelpers
-  import Mock
 
   setup_with_mocks([
     {Sanbase.TemplateMailer, [], [send: fn _, _, _ -> {:ok, :email_sent} end]}
   ]) do
-    user =
-      %User{salt: User.generate_salt()}
-      |> Repo.insert!()
+    user = Repo.insert!(%User{salt: User.generate_salt()})
 
     conn = setup_jwt_auth(build_conn(), user)
 
@@ -30,9 +28,7 @@ defmodule SanbaseWeb.Graphql.PrivacyPolicyAccessTest do
     }
     """
 
-    result =
-      conn
-      |> post("/graphql", mutation_skeleton(mutation))
+    result = post(conn, "/graphql", mutation_skeleton(mutation))
 
     [errors] = json_response(result, 200)["errors"]
 
@@ -53,7 +49,7 @@ defmodule SanbaseWeb.Graphql.PrivacyPolicyAccessTest do
     }
     """
 
-    conn |> post("/graphql", mutation_skeleton(update_mutation))
+    post(conn, "/graphql", mutation_skeleton(update_mutation))
 
     # Try to change the email now
     new_email = "test@test.test"
@@ -66,9 +62,7 @@ defmodule SanbaseWeb.Graphql.PrivacyPolicyAccessTest do
     }
     """
 
-    result =
-      conn
-      |> post("/graphql", mutation_skeleton(mutation))
+    result = post(conn, "/graphql", mutation_skeleton(mutation))
 
     assert json_response(result, 200)["data"]["changeEmail"]["success"] == true
   end
@@ -84,7 +78,7 @@ defmodule SanbaseWeb.Graphql.PrivacyPolicyAccessTest do
     }
     """
 
-    conn |> post("/graphql", mutation_skeleton(update_mutation1))
+    post(conn, "/graphql", mutation_skeleton(update_mutation1))
 
     # Update the marketing policy, privacy policy will stay `true`
     update_mutation2 = """
@@ -96,7 +90,7 @@ defmodule SanbaseWeb.Graphql.PrivacyPolicyAccessTest do
     }
     """
 
-    conn |> post("/graphql", mutation_skeleton(update_mutation2))
+    post(conn, "/graphql", mutation_skeleton(update_mutation2))
 
     # Try to change the email now
     new_email = "test3@test.test"
@@ -109,9 +103,7 @@ defmodule SanbaseWeb.Graphql.PrivacyPolicyAccessTest do
     }
     """
 
-    result =
-      conn
-      |> post("/graphql", mutation_skeleton(mutation))
+    result = post(conn, "/graphql", mutation_skeleton(mutation))
 
     assert json_response(result, 200)["data"]["changeEmail"]["success"] == true
   end
@@ -126,7 +118,7 @@ defmodule SanbaseWeb.Graphql.PrivacyPolicyAccessTest do
     }
     """
 
-    result = conn |> post("/graphql", mutation_skeleton(update_mutation))
+    result = post(conn, "/graphql", mutation_skeleton(update_mutation))
 
     assert json_response(result, 200)["data"]["updateTermsAndConditions"]["marketingAccepted"] ==
              true
@@ -142,7 +134,7 @@ defmodule SanbaseWeb.Graphql.PrivacyPolicyAccessTest do
     }
     """
 
-    result = conn |> post("/graphql", mutation_skeleton(update_mutation))
+    result = post(conn, "/graphql", mutation_skeleton(update_mutation))
 
     assert json_response(result, 200)["data"]["updateTermsAndConditions"]["privacyPolicyAccepted"] ==
              true

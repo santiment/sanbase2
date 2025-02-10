@@ -1,5 +1,7 @@
 defmodule Sanbase.Exchanges.MarketPairMapping do
+  @moduledoc false
   use Ecto.Schema
+
   import Ecto.Changeset
   import Ecto.Query
 
@@ -41,29 +43,21 @@ defmodule Sanbase.Exchanges.MarketPairMapping do
   end
 
   def get_slugs_pair_by(exchange, market_pair, source \\ @default_source) do
-    from(
-      emp in __MODULE__,
-      where:
-        emp.exchange == ^exchange and emp.market_pair == ^market_pair and emp.source == ^source,
-      select: %{from_slug: emp.from_slug, to_slug: emp.to_slug}
+    Sanbase.Repo.one(
+      from(emp in __MODULE__,
+        where: emp.exchange == ^exchange and emp.market_pair == ^market_pair and emp.source == ^source,
+        select: %{from_slug: emp.from_slug, to_slug: emp.to_slug}
+      )
     )
-    |> Sanbase.Repo.one()
   end
 
   def slugs_to_exchange_market_pair(exchange, from_slug, to_slug, source \\ @default_source) do
-    from(
-      emp in __MODULE__,
-      where:
-        emp.exchange == ^exchange and
-          emp.from_slug == ^from_slug and
-          emp.to_slug == ^to_slug and
-          emp.source == ^source,
-      select: %{
-        market_pair: emp.market_pair,
-        from_ticker: emp.from_ticker,
-        to_ticker: emp.to_ticker
-      }
+    Sanbase.Repo.one(
+      from(emp in __MODULE__,
+        where:
+          emp.exchange == ^exchange and emp.from_slug == ^from_slug and emp.to_slug == ^to_slug and emp.source == ^source,
+        select: %{market_pair: emp.market_pair, from_ticker: emp.from_ticker, to_ticker: emp.to_ticker}
+      )
     )
-    |> Sanbase.Repo.one()
   end
 end

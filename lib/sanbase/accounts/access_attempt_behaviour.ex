@@ -1,4 +1,5 @@
 defmodule Sanbase.Accounts.AccessAttemptBehaviour do
+  @moduledoc false
   @callback config() :: %{
               interval_in_minutes: pos_integer(),
               allowed_user_attempts: pos_integer(),

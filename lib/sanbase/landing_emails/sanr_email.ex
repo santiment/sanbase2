@@ -1,5 +1,7 @@
 defmodule Sanbase.LandingEmails.SanrEmail do
+  @moduledoc false
   use Ecto.Schema
+
   import Ecto.Changeset
 
   alias Sanbase.Repo

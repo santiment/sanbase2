@@ -1,12 +1,13 @@
 defmodule Sanbase.BlockchainAddress.MetricAdapter do
+  @moduledoc false
   @behaviour Sanbase.Metric.Behaviour
 
-  import Sanbase.Utils.Transform, only: [maybe_apply_function: 2, rename_map_keys: 2]
   import Sanbase.Utils.ErrorHandling, only: [not_implemented_function_for_metric_error: 2]
+  import Sanbase.Utils.Transform, only: [maybe_apply_function: 2, rename_map_keys: 2]
 
   alias Sanbase.Balance
-  alias Sanbase.Project
   alias Sanbase.BlockchainAddress
+  alias Sanbase.Project
 
   @aggregations [:sum, :ohlc]
   @default_aggregation :sum
@@ -18,17 +19,19 @@ defmodule Sanbase.BlockchainAddress.MetricAdapter do
   @metrics @histogram_metrics ++ @timeseries_metrics ++ @table_metrics
 
   # plan related - the plan is upcase string
-  @min_plan_map Enum.into(@metrics, %{}, fn metric -> {metric, "FREE"} end)
+  @min_plan_map Map.new(@metrics, fn metric -> {metric, "FREE"} end)
 
   # restriction related - the restriction is atom :free or :restricted
-  @access_map Enum.into(@metrics, %{}, fn metric -> {metric, :free} end)
+  @access_map Map.new(@metrics, fn metric -> {metric, :free} end)
 
-  @free_metrics Enum.filter(@access_map, fn {_, level} -> level == :free end)
+  @free_metrics @access_map
+                |> Enum.filter(fn {_, level} -> level == :free end)
                 |> Enum.map(&elem(&1, 0))
-  @restricted_metrics Enum.filter(@access_map, fn {_, level} -> level == :restricted end)
+  @restricted_metrics @access_map
+                      |> Enum.filter(fn {_, level} -> level == :restricted end)
                       |> Enum.map(&elem(&1, 0))
 
-  @required_selectors Enum.into(@metrics, %{}, &{&1, [[:blockchain_address], [:slug]]})
+  @required_selectors Map.new(@metrics, &{&1, [[:blockchain_address], [:slug]]})
   @default_complexity_weight 0.3
 
   @human_readable_name_map %{
@@ -43,22 +46,22 @@ defmodule Sanbase.BlockchainAddress.MetricAdapter do
   def complexity_weight(_), do: @default_complexity_weight
 
   @impl Sanbase.Metric.Behaviour
-  def required_selectors(), do: @required_selectors
+  def required_selectors, do: @required_selectors
 
   @impl Sanbase.Metric.Behaviour
-  def available_aggregations(), do: @aggregations
+  def available_aggregations, do: @aggregations
 
   @impl Sanbase.Metric.Behaviour
-  def available_timeseries_metrics(), do: @timeseries_metrics
+  def available_timeseries_metrics, do: @timeseries_metrics
 
   @impl Sanbase.Metric.Behaviour
-  def available_histogram_metrics(), do: @histogram_metrics
+  def available_histogram_metrics, do: @histogram_metrics
 
   @impl Sanbase.Metric.Behaviour
-  def available_table_metrics(), do: @table_metrics
+  def available_table_metrics, do: @table_metrics
 
   @impl Sanbase.Metric.Behaviour
-  def available_metrics(), do: @metrics
+  def available_metrics, do: @metrics
 
   @impl Sanbase.Metric.Behaviour
 
@@ -79,7 +82,7 @@ defmodule Sanbase.BlockchainAddress.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def available_slugs() do
+  def available_slugs do
     infrastructures = Balance.supported_infrastructures()
     {:ok, Project.List.slugs_by_infrastructure(infrastructures)}
   end
@@ -90,8 +93,7 @@ defmodule Sanbase.BlockchainAddress.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def first_datetime(metric, %{slug: slug, blockchain_address: %{address: address}})
-      when metric in @metrics do
+  def first_datetime(metric, %{slug: slug, blockchain_address: %{address: address}}) when metric in @metrics do
     Balance.first_datetime(address, slug)
   end
 
@@ -103,19 +105,19 @@ defmodule Sanbase.BlockchainAddress.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def incomplete_metrics(), do: []
+  def incomplete_metrics, do: []
 
   @impl Sanbase.Metric.Behaviour
-  def free_metrics(), do: @free_metrics
+  def free_metrics, do: @free_metrics
 
   @impl Sanbase.Metric.Behaviour
-  def restricted_metrics(), do: @restricted_metrics
+  def restricted_metrics, do: @restricted_metrics
 
   @impl Sanbase.Metric.Behaviour
-  def access_map(), do: @access_map
+  def access_map, do: @access_map
 
   @impl Sanbase.Metric.Behaviour
-  def min_plan_map(), do: @min_plan_map
+  def min_plan_map, do: @min_plan_map
 
   @impl Sanbase.Metric.Behaviour
   def human_readable_name(metric), do: {:ok, Map.get(@human_readable_name_map, metric)}
@@ -155,7 +157,8 @@ defmodule Sanbase.BlockchainAddress.MetricAdapter do
       ) do
     case Keyword.get(opts, :aggregation) do
       :ohlc ->
-        Sanbase.Balance.historical_balance_ohlc(address, slug, from, to, interval)
+        address
+        |> Sanbase.Balance.historical_balance_ohlc(slug, from, to, interval)
         |> maybe_apply_function(fn elem ->
           %{
             datetime: elem.datetime,
@@ -167,7 +170,8 @@ defmodule Sanbase.BlockchainAddress.MetricAdapter do
         end)
 
       _ ->
-        Sanbase.Balance.historical_balance(address, slug, from, to, interval)
+        address
+        |> Sanbase.Balance.historical_balance(slug, from, to, interval)
         |> rename_map_keys(old_key: :balance, new_key: :value)
     end
   end
@@ -181,7 +185,8 @@ defmodule Sanbase.BlockchainAddress.MetricAdapter do
         interval,
         _opts
       ) do
-    Sanbase.Balance.historical_balance_changes(address, slug, from, to, interval)
+    address
+    |> Sanbase.Balance.historical_balance_changes(slug, from, to, interval)
     |> rename_map_keys(old_key: :balance, new_key: :value)
   end
 

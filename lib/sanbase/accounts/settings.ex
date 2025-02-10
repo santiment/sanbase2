@@ -1,5 +1,7 @@
 defmodule Sanbase.Accounts.Settings do
+  @moduledoc false
   use Ecto.Schema
+
   import Ecto.Changeset
 
   @default_alerts_limit_per_day %{
@@ -10,8 +12,8 @@ defmodule Sanbase.Accounts.Settings do
     "webpush" => 1000
   }
 
-  def default_alerts_limit_per_day(), do: @default_alerts_limit_per_day
-  def alert_channels(), do: Map.keys(@default_alerts_limit_per_day)
+  def default_alerts_limit_per_day, do: @default_alerts_limit_per_day
+  def alert_channels, do: Map.keys(@default_alerts_limit_per_day)
 
   embedded_schema do
     field(:hide_privacy_data, :boolean, default: true)
@@ -51,8 +53,7 @@ defmodule Sanbase.Accounts.Settings do
   end
 
   def changeset(schema, params) do
-    schema
-    |> cast(params, [
+    cast(schema, params, [
       :theme,
       :page_size,
       :is_beta_mode,
@@ -85,11 +86,11 @@ defmodule Sanbase.Accounts.Settings do
         map -> map
       end
 
-    limits[channel] |> Sanbase.Math.to_integer()
+    Sanbase.Math.to_integer(limits[channel])
   end
 
   def get_alerts_fired_today(%__MODULE__{} = settings, channel) do
-    today_str = Date.utc_today() |> to_string()
-    settings.alerts_fired[today_str][channel] |> Sanbase.Math.to_integer() || 0
+    today_str = to_string(Date.utc_today())
+    Sanbase.Math.to_integer(settings.alerts_fired[today_str][channel]) || 0
   end
 end

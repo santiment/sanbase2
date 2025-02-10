@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.AlertsHistoricalActivityTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   object :alert_historical_activity_paginated do

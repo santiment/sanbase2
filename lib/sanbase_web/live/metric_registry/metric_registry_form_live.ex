@@ -1,10 +1,12 @@
 defmodule SanbaseWeb.MetricRegistryFormLive do
+  @moduledoc false
   use SanbaseWeb, :live_view
 
   import SanbaseWeb.CoreComponents
 
   alias Sanbase.Metric.Registry
   alias Sanbase.Metric.Registry.Permissions
+  alias Sanbase.Utils.ErrorHandling
   alias SanbaseWeb.AvailableMetricsComponents
 
   @impl true
@@ -27,8 +29,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
     form = metric_registry |> Registry.changeset(%{}) |> to_form()
 
     {:ok,
-     socket
-     |> assign(
+     assign(socket,
        is_duplicate_creation: not is_nil(duplicate_metric_registry_id) and live_action == :new,
        page_title: page_title(socket.assigns.live_action, metric_registry),
        metric_registry: metric_registry,
@@ -392,11 +393,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
     """
   end
 
-  def handle_event(
-        "save",
-        %{"registry" => params, "notes" => notes, "submitted_by" => submitted_by},
-        socket
-      )
+  def handle_event("save", %{"registry" => params, "notes" => notes, "submitted_by" => submitted_by}, socket)
       when socket.assigns.live_action == :new do
     case socket.assigns.form.errors do
       [] ->
@@ -416,7 +413,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
              |> push_navigate(to: ~p"/admin2/metric_registry/change_suggestions/")}
 
           {:error, error} ->
-            errors = Sanbase.Utils.ErrorHandling.changeset_errors(error)
+            errors = ErrorHandling.changeset_errors(error)
 
             {:noreply,
              socket
@@ -425,17 +422,11 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
         end
 
       [_ | _] = errors ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "Address field validation errors before saving: #{inspect(errors)}")}
+        {:noreply, put_flash(socket, :error, "Address field validation errors before saving: #{inspect(errors)}")}
     end
   end
 
-  def handle_event(
-        "save",
-        %{"registry" => params, "notes" => notes, "submitted_by" => submitted_by},
-        socket
-      )
+  def handle_event("save", %{"registry" => params, "notes" => notes, "submitted_by" => submitted_by}, socket)
       when socket.assigns.live_action == :edit do
     case socket.assigns.form.errors do
       [] ->
@@ -454,7 +445,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
              |> push_navigate(to: ~p"/admin2/metric_registry/change_suggestions/")}
 
           {:error, changeset} ->
-            errors = Sanbase.Utils.ErrorHandling.changeset_errors(changeset)
+            errors = ErrorHandling.changeset_errors(changeset)
             require(IEx).pry
 
             {:noreply,
@@ -464,18 +455,12 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
         end
 
       [_ | _] = errors ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "Address field validation errors before saving: #{inspect(errors)}")}
+        {:noreply, put_flash(socket, :error, "Address field validation errors before saving: #{inspect(errors)}")}
     end
   end
 
   @impl true
-  def handle_event(
-        "validate",
-        %{"registry" => params},
-        socket
-      ) do
+  def handle_event("validate", %{"registry" => params}, socket) do
     params = process_params(params)
 
     form =
@@ -483,12 +468,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
       |> Registry.changeset(params)
       |> to_form(action: :validate)
 
-    {:noreply,
-     socket
-     |> assign(
-       form: form,
-       save_errors: []
-     )}
+    {:noreply, assign(socket, form: form, save_errors: [])}
   end
 
   defp process_params(params) do

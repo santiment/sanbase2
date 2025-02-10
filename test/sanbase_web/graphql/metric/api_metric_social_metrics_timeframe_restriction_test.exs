@@ -3,8 +3,8 @@ defmodule Sanbase.Graphql.ApiMetricSocialMetricsTimeframeRestrictionTest do
 
   import Mock
   import Sanbase.Factory
-  import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.TestHelpers
+  import SanbaseWeb.Graphql.TestHelpers
 
   alias Sanbase.Metric
 
@@ -113,7 +113,7 @@ defmodule Sanbase.Graphql.ApiMetricSocialMetricsTimeframeRestrictionTest do
     """
   end
 
-  defp metric_resp() do
+  defp metric_resp do
     {:ok,
      [
        %{value: 10.0, datetime: ~U[2019-01-01 00:00:00Z]},

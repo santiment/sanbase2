@@ -1,4 +1,5 @@
 defmodule Elixir.Sanbase.Repo.Migrations.MigrateObanV11 do
+  @moduledoc false
   use Ecto.Migration
 
   require Sanbase.Utils.Config, as: Config
@@ -12,7 +13,7 @@ defmodule Elixir.Sanbase.Repo.Migrations.MigrateObanV11 do
     Oban.Migrations.down(version: 10, prefix: get_prefix())
   end
 
-  defp get_prefix() do
+  defp get_prefix do
     case Config.module_get(Sanbase, :deployment_env) do
       env when env in ["stage", "prod"] -> "sanbase2"
       _ -> "public"

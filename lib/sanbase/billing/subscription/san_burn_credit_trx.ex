@@ -1,14 +1,15 @@
 defmodule Sanbase.Billing.Subscription.SanBurnCreditTransaction do
+  @moduledoc false
   use Ecto.Schema
-
-  require Logger
 
   import Ecto.Changeset
 
-  alias Sanbase.ClickhouseRepo
   alias Sanbase.Accounts.EthAccount
   alias Sanbase.Accounts.User
+  alias Sanbase.ClickhouseRepo
   alias Sanbase.Repo
+
+  require Logger
 
   @san_contract "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098"
   @san_burn_address "0x000000000000000000000000000000000000dead"
@@ -28,16 +29,7 @@ defmodule Sanbase.Billing.Subscription.SanBurnCreditTransaction do
   end
 
   def changeset(%__MODULE__{} = burn_trx, attrs \\ %{}) do
-    burn_trx
-    |> cast(attrs, [
-      :address,
-      :trx_hash,
-      :san_amount,
-      :san_price,
-      :credit_amount,
-      :trx_datetime,
-      :user_id
-    ])
+    cast(burn_trx, attrs, [:address, :trx_hash, :san_amount, :san_price, :credit_amount, :trx_datetime, :user_id])
   end
 
   def create(attrs) do
@@ -50,19 +42,18 @@ defmodule Sanbase.Billing.Subscription.SanBurnCreditTransaction do
     not is_nil(Repo.get_by(__MODULE__, trx_hash: trx_hash))
   end
 
-  def all() do
+  def all do
     Repo.all(__MODULE__)
   end
 
-  def run() do
+  def run do
     {:ok, burn_trxs} = fetch_burn_trxs()
 
     do_run(burn_trxs)
   end
 
   def do_run(burn_trxs) do
-    burn_trxs
-    |> Enum.each(fn burn_trx ->
+    Enum.each(burn_trxs, fn burn_trx ->
       if not exist?(burn_trx.trx_hash) do
         save(burn_trx)
       end
@@ -88,13 +79,7 @@ defmodule Sanbase.Billing.Subscription.SanBurnCreditTransaction do
 
     with {:ok, user} <- fetch_user_by_address(burn_trx.address),
          {:ok, _} <- add_credit_to_stripe(user, credit_amount, burn_trx) do
-      params =
-        %{
-          user_id: user.id,
-          credit_amount: credit_amount,
-          san_price: san_price
-        }
-        |> Map.merge(burn_trx)
+      params = Map.merge(%{user_id: user.id, credit_amount: credit_amount, san_price: san_price}, burn_trx)
 
       create(params)
     else
@@ -121,7 +106,7 @@ defmodule Sanbase.Billing.Subscription.SanBurnCreditTransaction do
     Sanbase.StripeApi.add_credit(user.stripe_customer_id, -amount * 100, burn_trx.trx_hash)
   end
 
-  defp fetch_san_burns_query() do
+  defp fetch_san_burns_query do
     sql = """
     SELECT toUnixTimestamp(dt), from, value / pow(10, 18), transactionHash
     FROM erc20_transfers_to

@@ -6,10 +6,11 @@ defmodule Sanbase.TemplateEngine do
   import Sanbase.TemplateEngine.Utils, only: [human_readable: 1, stringify_value: 1]
   import Sanbase.Utils.Transform, only: [to_bang: 1]
 
+  alias Sanbase.SanLang.Environment
   alias Sanbase.TemplateEngine
   alias Sanbase.TemplateEngine.CodeEvaluation
 
-  @type option :: {:params, map()} | {:env, Sanbase.SanLang.Environment.t()}
+  @type option :: {:params, map()} | {:env, Environment.t()}
 
   @typedoc ~s"""
   The TemplateEngine function can accept the following options:
@@ -28,6 +29,7 @@ defmodule Sanbase.TemplateEngine do
         }
 
   defmodule TemplateEngineError do
+    @moduledoc false
     defexception [:message]
   end
 
@@ -67,8 +69,8 @@ defmodule Sanbase.TemplateEngine do
   """
   @spec run(String.t(), opts) :: {:ok, String.t()} | {:error, String.t()}
   def run(template, opts \\ []) do
-    params = Keyword.get(opts, :params, %{}) |> Map.new(fn {k, v} -> {to_string(k), v} end)
-    env = Keyword.get(opts, :env, Sanbase.SanLang.Environment.new())
+    params = opts |> Keyword.get(:params, %{}) |> Map.new(fn {k, v} -> {to_string(k), v} end)
+    env = Keyword.get(opts, :env, Environment.new())
 
     with {:ok, captures} <- TemplateEngine.Captures.extract_captures(template) do
       template =
@@ -89,7 +91,7 @@ defmodule Sanbase.TemplateEngine do
   """
   @spec run!(String.t(), opts) :: String.t() | no_return
   def run!(template, opts \\ []) do
-    run(template, opts) |> to_bang()
+    template |> run(opts) |> to_bang()
   end
 
   @doc ~s"""
@@ -112,12 +114,11 @@ defmodule Sanbase.TemplateEngine do
   """
   @spec run_generate_positional_params(String.t(), opts) :: {String.t(), list(any())}
   def run_generate_positional_params(template, opts) do
-    params = Keyword.get(opts, :params, %{}) |> Map.new(fn {k, v} -> {to_string(k), v} end)
-    env = Keyword.get(opts, :env, Sanbase.SanLang.Environment.new())
+    params = opts |> Keyword.get(:params, %{}) |> Map.new(fn {k, v} -> {to_string(k), v} end)
+    env = Keyword.get(opts, :env, Environment.new())
 
-    with {:ok, captures} <- TemplateEngine.Captures.extract_captures(template),
-         {:ok, result} <- do_run_generate_positional_params(template, captures, params, env) do
-      {:ok, result}
+    with {:ok, captures} <- TemplateEngine.Captures.extract_captures(template) do
+      do_run_generate_positional_params(template, captures, params, env)
     end
   end
 
@@ -159,7 +160,7 @@ defmodule Sanbase.TemplateEngine do
         {:ok, {sql, Enum.reverse(args)}}
 
       _ ->
-        missing_keys = Enum.map(errors, & &1.key) |> Enum.join(", ")
+        missing_keys = Enum.map_join(errors, ", ", & &1.key)
         params_keys = Map.keys(params)
         params_keys = if params_keys == [], do: "none", else: Enum.join(params_keys, ", ")
 
@@ -173,24 +174,14 @@ defmodule Sanbase.TemplateEngine do
     end
   end
 
-  defp replace_template_key_with_value(
-         template,
-         %{key: key, inner_content: inner_content},
-         params,
-         _env
-       ) do
+  defp replace_template_key_with_value(template, %{key: key, inner_content: inner_content}, params, _env) do
     case get_value_from_params(inner_content, params) do
       {:ok, value} -> String.replace(template, key, stringify_value(value))
       :no_value -> template
     end
   end
 
-  defp replace_template_key_with_code_execution(
-         template,
-         capture,
-         _params,
-         env
-       ) do
+  defp replace_template_key_with_code_execution(template, capture, _params, env) do
     execution_result = CodeEvaluation.eval(capture, env)
     String.replace(template, capture.key, stringify_value(execution_result))
   end

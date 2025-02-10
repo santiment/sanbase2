@@ -29,21 +29,20 @@ defmodule SanbaseWeb.Endpoint.ErrorHandler do
       # macros need to be redefined. Using `super(conn, opts)` calls the original
       # call function that was to be executed and wraps it in a try-rescue block
       def call(conn, opts) do
-        try do
-          super(conn, opts)
-        catch
-          kind, reason ->
-            export_api_call_data(conn, kind, reason)
-            :erlang.raise(kind, reason, __STACKTRACE__)
-        end
+        super(conn, opts)
+      catch
+        kind, reason ->
+          export_api_call_data(conn, kind, reason)
+          :erlang.raise(kind, reason, __STACKTRACE__)
       end
 
       defp export_api_call_data(conn, kind, reason) do
-        remote_ip = conn.remote_ip |> Sanbase.Utils.IP.ip_tuple_to_string()
+        remote_ip = Sanbase.Utils.IP.ip_tuple_to_string(conn.remote_ip)
         status_code = get_status_code(reason)
-        user_agent = Plug.Conn.get_req_header(conn, "user-agent") |> List.first()
+        user_agent = conn |> Plug.Conn.get_req_header("user-agent") |> List.first()
 
-        api_call_map(status_code, remote_ip, user_agent)
+        status_code
+        |> api_call_map(remote_ip, user_agent)
         |> Sanbase.Kafka.ApiCall.json_kv_tuple()
         |> Sanbase.KafkaExporter.persist_async(:api_call_exporter)
       end
@@ -57,11 +56,11 @@ defmodule SanbaseWeb.Endpoint.ErrorHandler do
 
       defp api_call_map(status_code, remote_ip, user_agent) do
         id =
-          Logger.metadata() |> Keyword.get(:request_id) ||
-            "gen_" <> (:crypto.strong_rand_bytes(16) |> Base.encode64())
+          Keyword.get(Logger.metadata(), :request_id) ||
+            "gen_" <> (16 |> :crypto.strong_rand_bytes() |> Base.encode64())
 
         %{
-          timestamp: DateTime.utc_now() |> DateTime.to_unix(),
+          timestamp: DateTime.to_unix(DateTime.utc_now()),
           id: id,
           query: nil,
           status_code: status_code,

@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.EntityTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   alias SanbaseWeb.Graphql.Resolvers.EntityResolver

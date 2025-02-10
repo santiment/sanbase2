@@ -1,10 +1,10 @@
 defmodule SanbaseWeb.Graphql.Resolvers.MarketSegmentResolver do
-  require Logger
-
-  alias Sanbase.Project
+  @moduledoc false
   alias Sanbase.Model.MarketSegment
-
+  alias Sanbase.Project
   alias Sanbase.Repo
+
+  require Logger
 
   def all_market_segments(_parent, _args, _resolution) do
     filter = fn _ -> true end

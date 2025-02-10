@@ -4,37 +4,42 @@ defmodule SanbaseWeb.Graphql.ProjectApiMinVolumeTest do
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
-  alias Sanbase.Project
-
-  alias Sanbase.Repo
   alias Sanbase.Model.LatestCoinmarketcapData
+  alias Sanbase.Project
+  alias Sanbase.Repo
 
   setup do
     infr_eth = insert(:infrastructure, %{code: "ETH"})
     infr_btc = insert(:infrastructure, %{code: "BTC"})
 
     project1 =
-      insert(:random_project, %{infrastructure_id: infr_eth.id})
+      :random_project
+      |> insert(%{infrastructure_id: infr_eth.id})
       |> update_latest_coinmarketcap_data(%{volume_usd: 1000, rank: 10})
 
     project2 =
-      insert(:random_project, %{infrastructure_id: infr_eth.id})
+      :random_project
+      |> insert(%{infrastructure_id: infr_eth.id})
       |> update_latest_coinmarketcap_data(%{volume_usd: 2000, rank: 9})
 
     project3 =
-      insert(:random_project, %{infrastructure_id: infr_btc.id})
+      :random_project
+      |> insert(%{infrastructure_id: infr_btc.id})
       |> update_latest_coinmarketcap_data(%{volume_usd: 3000, rank: 5})
 
     project4 =
-      insert(:random_project, %{infrastructure_id: infr_btc.id})
+      :random_project
+      |> insert(%{infrastructure_id: infr_btc.id})
       |> update_latest_coinmarketcap_data(%{volume_usd: 4000, rank: 3})
 
     project5 =
-      insert(:random_project, %{infrastructure_id: infr_eth.id})
+      :random_project
+      |> insert(%{infrastructure_id: infr_eth.id})
       |> update_latest_coinmarketcap_data(%{rank: 50})
 
     project6 =
-      insert(:random_project, %{infrastructure_id: infr_btc.id})
+      :random_project
+      |> insert(%{infrastructure_id: infr_btc.id})
       |> update_latest_coinmarketcap_data(%{rank: 100})
 
     [
@@ -69,16 +74,12 @@ defmodule SanbaseWeb.Graphql.ProjectApiMinVolumeTest do
         |> post("/graphql", query_skeleton(query, "allProjects"))
         |> json_response(200)
 
-      assert result["data"]["allProjects"] |> length() == context.projects_count
+      assert length(result["data"]["allProjects"]) == context.projects_count
 
       #  Assert that there are projects with known and with unknown volumes
-      volumes =
-        result["data"]["allProjects"]
-        |> Enum.map(& &1["volumeUsd"])
+      volumes = Enum.map(result["data"]["allProjects"], & &1["volumeUsd"])
 
-      non_nil_volumes =
-        volumes
-        |> Enum.reject(&is_nil/1)
+      non_nil_volumes = Enum.reject(volumes, &is_nil/1)
 
       assert length(volumes) > 0
       assert length(non_nil_volumes) > 0
@@ -98,7 +99,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiMinVolumeTest do
         |> post("/graphql", query_skeleton(query, "allProjects"))
         |> json_response(200)
 
-      assert result["data"]["allProjects"] |> length() == context.projects_with_volume_count
+      assert length(result["data"]["allProjects"]) == context.projects_with_volume_count
 
       assert result["data"]["allProjects"] == [
                %{"name" => context.project4.name},
@@ -122,7 +123,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiMinVolumeTest do
         |> post("/graphql", query_skeleton(query, "allProjects"))
         |> json_response(200)
 
-      assert result["data"]["allProjects"] |> length() == 2
+      assert length(result["data"]["allProjects"]) == 2
 
       assert result["data"]["allProjects"] == [
                %{"name" => context.project4.name},
@@ -144,7 +145,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiMinVolumeTest do
         |> post("/graphql", query_skeleton(query, "allProjects"))
         |> json_response(200)
 
-      assert result["data"]["allProjects"] |> length() == 2
+      assert length(result["data"]["allProjects"]) == 2
 
       assert result["data"]["allProjects"] == [
                %{"name" => context.project2.name},
@@ -169,9 +170,9 @@ defmodule SanbaseWeb.Graphql.ProjectApiMinVolumeTest do
         |> post("/graphql", query_skeleton(query, "allErc20Projects"))
         |> json_response(200)
 
-      assert result["data"]["allErc20Projects"] |> length() == context.erc20_projects_count
+      assert length(result["data"]["allErc20Projects"]) == context.erc20_projects_count
 
-      assert result["data"]["allErc20Projects"] |> Enum.sort_by(& &1["rank"]) == [
+      assert Enum.sort_by(result["data"]["allErc20Projects"], & &1["rank"]) == [
                %{"rank" => 9, "name" => context.project2.name},
                %{"rank" => 10, "name" => context.project1.name},
                %{"rank" => 50, "name" => context.project5.name}
@@ -192,7 +193,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiMinVolumeTest do
         |> post("/graphql", query_skeleton(query, "allErc20Projects"))
         |> json_response(200)
 
-      assert result["data"]["allErc20Projects"] |> length() ==
+      assert length(result["data"]["allErc20Projects"]) ==
                context.erc20_projects_with_volume_count
     end
 
@@ -210,7 +211,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiMinVolumeTest do
         |> post("/graphql", query_skeleton(query, "allErc20Projects"))
         |> json_response(200)
 
-      assert result["data"]["allErc20Projects"] |> length() == 1
+      assert length(result["data"]["allErc20Projects"]) == 1
       assert result["data"]["allErc20Projects"] == [%{"name" => context.project2.name}]
     end
 
@@ -228,7 +229,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiMinVolumeTest do
         |> post("/graphql", query_skeleton(query, "allErc20Projects"))
         |> json_response(200)
 
-      assert result["data"]["allErc20Projects"] |> length() == 1
+      assert length(result["data"]["allErc20Projects"]) == 1
       assert result["data"]["allErc20Projects"] == [%{"name" => context.project1.name}]
     end
   end
@@ -249,9 +250,9 @@ defmodule SanbaseWeb.Graphql.ProjectApiMinVolumeTest do
         |> post("/graphql", query_skeleton(query, "allCurrencyProjects"))
         |> json_response(200)
 
-      assert result["data"]["allCurrencyProjects"] |> length() == context.currency_projects_count
+      assert length(result["data"]["allCurrencyProjects"]) == context.currency_projects_count
 
-      assert result["data"]["allCurrencyProjects"] |> Enum.sort_by(& &1["rank"]) == [
+      assert Enum.sort_by(result["data"]["allCurrencyProjects"], & &1["rank"]) == [
                %{"rank" => 3, "name" => context.project4.name},
                %{"rank" => 5, "name" => context.project3.name},
                %{"rank" => 100, "name" => context.project6.name}
@@ -273,10 +274,10 @@ defmodule SanbaseWeb.Graphql.ProjectApiMinVolumeTest do
         |> post("/graphql", query_skeleton(query, "allCurrencyProjects"))
         |> json_response(200)
 
-      assert result["data"]["allCurrencyProjects"] |> length() ==
+      assert length(result["data"]["allCurrencyProjects"]) ==
                context.currency_projects_with_volume_count
 
-      volumes = result["data"]["allCurrencyProjects"] |> Enum.map(& &1["volumeUsd"])
+      volumes = Enum.map(result["data"]["allCurrencyProjects"], & &1["volumeUsd"])
       # no nil volumes are returned
       refute Enum.any?(volumes, &is_nil/1)
     end
@@ -295,7 +296,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiMinVolumeTest do
         |> post("/graphql", query_skeleton(query, "allCurrencyProjects"))
         |> json_response(200)
 
-      assert result["data"]["allCurrencyProjects"] |> length() == 1
+      assert length(result["data"]["allCurrencyProjects"]) == 1
       assert result["data"]["allCurrencyProjects"] == [%{"name" => context.project4.name}]
     end
 
@@ -313,7 +314,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiMinVolumeTest do
         |> post("/graphql", query_skeleton(query, "allCurrencyProjects"))
         |> json_response(200)
 
-      assert result["data"]["allCurrencyProjects"] |> length() == 1
+      assert length(result["data"]["allCurrencyProjects"]) == 1
       assert result["data"]["allCurrencyProjects"] == [%{"name" => context.project3.name}]
     end
   end
@@ -321,11 +322,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiMinVolumeTest do
   defp update_latest_coinmarketcap_data(project, args) do
     %LatestCoinmarketcapData{}
     |> LatestCoinmarketcapData.changeset(
-      %{
-        coinmarketcap_id: project.slug,
-        update_time: Timex.now()
-      }
-      |> Map.merge(args)
+      Map.merge(%{coinmarketcap_id: project.slug, update_time: DateTime.utc_now()}, args)
     )
     |> Repo.insert_or_update()
 

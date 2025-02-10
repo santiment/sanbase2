@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.AdminFormsLive do
+  @moduledoc false
   use SanbaseWeb, :live_view
 
   alias SanbaseWeb.AdminFormsComponents
@@ -26,7 +27,7 @@ defmodule SanbaseWeb.AdminFormsLive do
     """
   end
 
-  defp get_forms_info() do
+  defp get_forms_info do
     [
       %{
         title: "Metric registry",

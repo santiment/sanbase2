@@ -8,10 +8,12 @@ defmodule Sanbase.Dashboard.Database.Table do
     without the need to change, compile and deploy the backend
   """
 
+  require Sanbase.Utils.Config, as: Config
+
   @json_file "tables.json"
   @external_resource json_file = Path.join(__DIR__, @json_file)
 
-  @tables File.read!(json_file) |> Jason.decode!(strict: true, keys: :atoms)
+  @tables json_file |> File.read!() |> Jason.decode!(strict: true, keys: :atoms)
 
   @typedoc ~s"""
   The columns are represented as a map where the column name is the key
@@ -29,8 +31,6 @@ defmodule Sanbase.Dashboard.Database.Table do
           partition_by: String.t()
         }
 
-  require Sanbase.Utils.Config, as: Config
-
   @doc ~s"""
   Get the list of Clickhouse tables available in the SQL Editor.
 
@@ -38,7 +38,7 @@ defmodule Sanbase.Dashboard.Database.Table do
   columns, partitioning, ordering and engine used.
   """
   @spec get_tables() :: {:ok, list(t())} | {:error, String.t()}
-  def get_tables() do
+  def get_tables do
     case tables_source() do
       "local_file" -> get_tables_local_file()
       "mounted_file" -> get_tables_mounted_file()
@@ -47,16 +47,16 @@ defmodule Sanbase.Dashboard.Database.Table do
 
   # Private functions
 
-  defp tables_source(), do: Config.module_get(Sanbase.Dashboard, :tables_source, "local_file")
+  defp tables_source, do: Config.module_get(Sanbase.Dashboard, :tables_source, "local_file")
 
-  defp get_tables_local_file(), do: {:ok, @tables}
+  defp get_tables_local_file, do: {:ok, @tables}
 
-  defp get_tables_mounted_file() do
+  defp get_tables_mounted_file do
     path = Config.module_get(Sanbase.Dashboard, :mounted_file_path)
 
     case File.read(path) do
       # credo:disable-for-next-line
-      {:ok, contents} -> contents |> Jason.decode!(strict: true, keys: :atoms)
+      {:ok, contents} -> Jason.decode!(contents, strict: true, keys: :atoms)
       {:error, :enoent} -> {:error, "Tables file does not exist in the mounted file location"}
     end
   end

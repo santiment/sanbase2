@@ -9,12 +9,12 @@ defmodule Sanbase.Dashboard.Cache do
   """
   use Ecto.Schema
 
-  import Ecto.Query
   import Ecto.Changeset
+  import Ecto.Query
   import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
 
-  alias Sanbase.Repo
   alias Sanbase.Dashboard
+  alias Sanbase.Repo
 
   @type dashboard_id :: non_neg_integer()
 
@@ -54,16 +54,19 @@ defmodule Sanbase.Dashboard.Cache do
       )
 
     query =
-      case Keyword.get(opts, :lock_for_update, false) do
-        false -> query
-        true -> query |> lock("FOR UPDATE")
+      if Keyword.get(opts, :lock_for_update, false) do
+        lock(query, "FOR UPDATE")
+      else
+        query
       end
 
-    case Repo.one(query) do
-      nil -> new(dashboard_id)
-      %__MODULE__{} = cache -> {:ok, cache}
-    end
-    |> maybe_apply_function(&transform_loaded_dashboard_cache(&1, opts))
+    case_result =
+      case Repo.one(query) do
+        nil -> new(dashboard_id)
+        %__MODULE__{} = cache -> {:ok, cache}
+      end
+
+    maybe_apply_function(case_result, &transform_loaded_dashboard_cache(&1, opts))
   end
 
   def by_dashboard_and_panel_id(dashboard_id, panel_id) do
@@ -114,9 +117,10 @@ defmodule Sanbase.Dashboard.Cache do
              lock_for_update: true
            ) do
       panel_cache =
-        Dashboard.Panel.Cache.from_query_result(query_result, panel_id, dashboard_id)
+        query_result
+        |> Dashboard.Panel.Cache.from_query_result(panel_id, dashboard_id)
         |> Map.from_struct()
-        |> Map.drop([:rows])
+        |> Map.delete(:rows)
 
       panels = Map.update(cache.panels, panel_id, panel_cache, fn _ -> panel_cache end)
 
@@ -147,12 +151,12 @@ defmodule Sanbase.Dashboard.Cache do
     flag = Keyword.get(opts, :transform_loaded_panel_cache, true)
 
     panels =
-      cache.panels
-      |> Map.new(fn {panel_id, panel_cache} ->
+      Map.new(cache.panels, fn {panel_id, panel_cache} ->
         panel_cache =
-          case flag do
-            true -> transform_loaded_panel_cache(panel_cache)
-            false -> panel_cache
+          if flag do
+            transform_loaded_panel_cache(panel_cache)
+          else
+            panel_cache
           end
 
         {panel_id, panel_cache}
@@ -187,10 +191,8 @@ defmodule Sanbase.Dashboard.Cache do
 
   defp transform_cache_rows(rows) do
     transformed_rows =
-      rows
-      |> Enum.map(fn row ->
-        row
-        |> Enum.map(fn
+      Enum.map(rows, fn row ->
+        Enum.map(row, fn
           elem when is_binary(elem) ->
             case DateTime.from_iso8601(elem) do
               {:ok, datetime, _} -> datetime

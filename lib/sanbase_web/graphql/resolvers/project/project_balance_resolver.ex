@@ -1,23 +1,18 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
-  require Logger
-
+  @moduledoc false
   import Absinthe.Resolution.Helpers
 
   alias Sanbase.Project
   alias Sanbase.ProjectEthAddress
-
   alias SanbaseWeb.Graphql.SanbaseDataloader
+
+  require Logger
 
   defp current_balance_loader(loader, address_or_addresses, selector) do
     address_or_addresses
     |> List.wrap()
     |> Enum.reduce(loader, fn address, loader ->
-      loader
-      |> Dataloader.load(
-        SanbaseDataloader,
-        :address_selector_current_balance,
-        {address, selector}
-      )
+      Dataloader.load(loader, SanbaseDataloader, :address_selector_current_balance, {address, selector})
     end)
   end
 
@@ -26,13 +21,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
       address_or_addresses
       |> List.wrap()
       |> Enum.map(fn address ->
-        balance =
-          loader
-          |> Dataloader.get(
-            SanbaseDataloader,
-            :address_selector_current_balance,
-            {address, selector}
-          )
+        balance = Dataloader.get(loader, SanbaseDataloader, :address_selector_current_balance, {address, selector})
 
         balance || +0.0
       end)
@@ -41,9 +30,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
   end
 
   def eth_balance(%Project{} = project, _args, %{context: %{loader: loader}}) do
-    {:ok, eth_addresses} =
-      project
-      |> Project.eth_addresses()
+    {:ok, eth_addresses} = Project.eth_addresses(project)
 
     selector = %{slug: "ethereum"}
 
@@ -79,17 +66,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
       {:ok, eth_balance * eth_price_usd}
     else
       error ->
-        Logger.warning(
-          "Cannot calculate USD balance for #{Project.describe(project)}. Reason: #{inspect(error)}"
-        )
+        Logger.warning("Cannot calculate USD balance for #{Project.describe(project)}. Reason: #{inspect(error)}")
 
         {:nocache, {:ok, nil}}
     end
   end
 
-  def eth_address_balance(%ProjectEthAddress{address: address}, _args, %{
-        context: %{loader: loader}
-      }) do
+  def eth_address_balance(%ProjectEthAddress{address: address}, _args, %{context: %{loader: loader}}) do
     address = Sanbase.BlockchainAddress.to_internal_format(address)
     selector = %{slug: "ethereum"}
 

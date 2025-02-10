@@ -1,7 +1,8 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ProjectListResolver do
-  require Logger
-
+  @moduledoc false
   alias Sanbase.Project
+
+  require Logger
 
   @spec all_projects(any, map, any) :: {:ok, any}
   def all_projects(_parent, args, _resolution) do
@@ -46,8 +47,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectListResolver do
          projects: projects,
          stats: %{projects_count: total_projects_count}
        }}
-    else
-      error -> error
     end
   end
 
@@ -56,7 +55,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectListResolver do
   end
 
   def all_projects_by_ticker(_root, %{ticker: ticker}, _resolution) do
-    projects = Project.List.projects_by_ticker(ticker) |> Enum.uniq_by(& &1.id)
+    projects = ticker |> Project.List.projects_by_ticker() |> Enum.uniq_by(& &1.id)
 
     {:ok, projects}
   end

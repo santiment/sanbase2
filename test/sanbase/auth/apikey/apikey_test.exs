@@ -1,10 +1,8 @@
 defmodule Sanbase.Accounts.ApiKeyTest do
   use Sanbase.DataCase, async: false
 
-  alias Sanbase.Accounts.{
-    User,
-    Apikey
-  }
+  alias Sanbase.Accounts.Apikey
+  alias Sanbase.Accounts.User
 
   setup do
     {:ok, user} = User.find_or_insert_by(:email, "as819asdnmaso1011@santiment.net")

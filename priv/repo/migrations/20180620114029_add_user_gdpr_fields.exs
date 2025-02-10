@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddUserGdprFields do
+  @moduledoc false
   use Ecto.Migration
 
   # Add two GDPR related fields.

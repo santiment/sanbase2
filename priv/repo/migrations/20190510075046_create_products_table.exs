@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.CreateProductsTable do
+  @moduledoc false
   use Ecto.Migration
 
   def up do

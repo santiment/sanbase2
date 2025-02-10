@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.Schema.UserAffiliateDetailsQueries do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   alias SanbaseWeb.Graphql.Middlewares.UserAuth

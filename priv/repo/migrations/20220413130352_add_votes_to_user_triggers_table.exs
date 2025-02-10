@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddVotesToUserTriggersTable do
+  @moduledoc false
   use Ecto.Migration
 
   @table :votes

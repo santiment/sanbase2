@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.CreateQuestionnaireTables do
+  @moduledoc false
   use Ecto.Migration
 
   def change do
@@ -32,9 +33,7 @@ defmodule Sanbase.Repo.Migrations.CreateQuestionnaireTables do
       add(:uuid, :uuid, primary_key: true)
       add(:user_id, references(:users), null: false)
 
-      add(:question_uuid, references(:questionnaire_questions, column: :uuid, type: :uuid),
-        null: false
-      )
+      add(:question_uuid, references(:questionnaire_questions, column: :uuid, type: :uuid), null: false)
 
       add(:answer, :jsonb, null: false)
 

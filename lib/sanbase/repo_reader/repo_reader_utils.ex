@@ -1,4 +1,5 @@
 defmodule Sanbase.RepoReader.Utils do
+  @moduledoc false
   alias Sanbase.RepoReader.Repository
 
   require Logger
@@ -6,8 +7,8 @@ defmodule Sanbase.RepoReader.Utils do
   @repository "projects"
   @repository_url "https://github.com/santiment/#{@repository}.git"
 
-  def repository(), do: @repository
-  def repository_url(), do: @repository_url
+  def repository, do: @repository
+  def repository_url, do: @repository_url
 
   @doc ~s"""
   Clone the repository as specified by the module attribute and store
@@ -41,8 +42,7 @@ defmodule Sanbase.RepoReader.Utils do
         {:ok, %Repository{path: path}}
 
       {error, code} ->
-        {:error,
-         "Error code #{inspect(code)} cloning repository #{repository_url}: #{inspect(error)}"}
+        {:error, "Error code #{inspect(code)} cloning repository #{repository_url}: #{inspect(error)}"}
     end
   end
 
@@ -73,10 +73,9 @@ defmodule Sanbase.RepoReader.Utils do
     case errors_and_oks do
       %{error: [_ | _] = errors} ->
         error_msg =
-          Enum.map(errors, fn {dir, error} ->
+          Enum.map_join(errors, "\n", fn {dir, error} ->
             ["Found error in directory #{dir}: #{inspect(error)}"]
           end)
-          |> Enum.join("\n")
 
         {:error, error_msg}
 
@@ -112,11 +111,11 @@ defmodule Sanbase.RepoReader.Utils do
     {:ok, directories} = File.ls(path)
 
     directories_to_read =
-      Keyword.fetch!(opts, :directories_to_read)
+      opts
+      |> Keyword.fetch!(:directories_to_read)
       |> MapSet.new()
 
-    directories
-    |> Enum.reject(fn dir ->
+    Enum.reject(directories, fn dir ->
       # Remove directories like .git. Read only the changed files
       String.starts_with?(dir, ".") or dir not in directories_to_read
     end)
@@ -130,8 +129,7 @@ defmodule Sanbase.RepoReader.Utils do
   end
 
   defp get_ok_error_file_data_tuples_list(path, directories) do
-    directories
-    |> Enum.map(fn dir ->
+    Enum.map(directories, fn dir ->
       directory = Path.join([path, dir])
       data_file_path = Path.join([directory, "data.json"])
 

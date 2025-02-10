@@ -40,8 +40,9 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
   test "fetch project funds raised", context do
     %{conn: conn, project: project} = context
 
-    Sanbase.Mock.prepare_mock(Sanbase.Price, :last_record_before, fn slug, datetime ->
-      if DateTime.compare(datetime, context.datetime) == :lt do
+    Sanbase.Price
+    |> Sanbase.Mock.prepare_mock(:last_record_before, fn slug, datetime ->
+      if DateTime.before?(datetime, context.datetime) do
         case slug do
           "bitcoin" -> {:ok, %{price_usd: 2, price_btc: 0.1, marketcap: 100, volume: 100}}
           "test" -> {:ok, %{price_usd: 4, price_btc: 0.05, marketcap: 100, volume: 100}}
@@ -56,7 +57,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
       end
     end)
     |> Sanbase.Mock.run_with_mocks(fn ->
-      result = get_funds_raised(conn, project) |> get_in(["data", "projectBySlug"])
+      result = conn |> get_funds_raised(project) |> get_in(["data", "projectBySlug"])
 
       assert result == %{
                "name" => project.name,
@@ -85,7 +86,8 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
     %{conn: conn, project_no_ico: project} = context
 
     result =
-      get_funds_raised(conn, project)
+      conn
+      |> get_funds_raised(project)
       |> get_in(["data", "projectBySlug"])
 
     assert result == %{

@@ -1,6 +1,10 @@
 defmodule Sanbase.Accounts.AccessAttempt do
+  @moduledoc false
   use Ecto.Schema
-  import Ecto.{Query, Changeset}
+
+  import Ecto.Changeset
+  import Ecto.Query
+
   alias Sanbase.Repo
 
   schema "access_attempts" do
@@ -46,28 +50,28 @@ defmodule Sanbase.Accounts.AccessAttempt do
 
   defp attempts_count(type, remote_ip) when is_binary(remote_ip) do
     config = get_config(type)
-    interval_limit = Timex.shift(Timex.now(), minutes: -config.interval_in_minutes)
+    interval_limit = Timex.shift(DateTime.utc_now(), minutes: -config.interval_in_minutes)
 
-    from(attempt in __MODULE__,
-      where:
-        attempt.type == ^type and
-          attempt.ip_address == ^remote_ip and
-          attempt.inserted_at > ^interval_limit
+    Repo.aggregate(
+      from(attempt in __MODULE__,
+        where: attempt.type == ^type and attempt.ip_address == ^remote_ip and attempt.inserted_at > ^interval_limit
+      ),
+      :count,
+      :id
     )
-    |> Repo.aggregate(:count, :id)
   end
 
   defp attempts_count(type, %{id: user_id}) do
     config = get_config(type)
-    interval_limit = Timex.shift(Timex.now(), minutes: -config.interval_in_minutes)
+    interval_limit = Timex.shift(DateTime.utc_now(), minutes: -config.interval_in_minutes)
 
-    from(attempt in __MODULE__,
-      where:
-        attempt.type == ^type and
-          attempt.user_id == ^user_id and
-          attempt.inserted_at > ^interval_limit
+    Repo.aggregate(
+      from(attempt in __MODULE__,
+        where: attempt.type == ^type and attempt.user_id == ^user_id and attempt.inserted_at > ^interval_limit
+      ),
+      :count,
+      :id
     )
-    |> Repo.aggregate(:count, :id)
   end
 
   defp get_config(type) do

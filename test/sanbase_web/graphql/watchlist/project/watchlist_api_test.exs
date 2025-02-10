@@ -1,14 +1,13 @@
 defmodule SanbaseWeb.Graphql.WatchlistApiTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import Sanbase.TestHelpers
-
-  alias Sanbase.UserList
-  alias Sanbase.Timeline.TimelineEvent
-  alias Sanbase.Repo
-
-  import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
+  import Sanbase.TestHelpers
+  import SanbaseWeb.Graphql.TestHelpers
+
+  alias Sanbase.Repo
+  alias Sanbase.Timeline.TimelineEvent
+  alias Sanbase.UserList
 
   setup do
     clean_task_supervisor_children()
@@ -39,8 +38,8 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
 
       result = get_watchlist_votes(conn, watchlist.id)
       assert result["votedAt"] == vote["votedAt"]
-      voted_at = vote["votedAt"] |> Sanbase.DateTimeUtils.from_iso8601!()
-      assert Sanbase.TestUtils.datetime_close_to(voted_at, Timex.now(), seconds: 2)
+      voted_at = Sanbase.DateTimeUtils.from_iso8601!(vote["votedAt"])
+      assert Sanbase.TestUtils.datetime_close_to(voted_at, DateTime.utc_now(), seconds: 2)
       assert vote["votes"] == result["votes"]
       assert vote["votes"] == %{"currentUserVotes" => 1, "totalVoters" => 1, "totalVotes" => 1}
 
@@ -136,7 +135,7 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
     assert watchlist["description"] == "Description"
     assert watchlist["color"] == "BLACK"
     assert watchlist["is_public"] == false
-    assert watchlist["user"]["id"] == user.id |> to_string()
+    assert watchlist["user"]["id"] == to_string(user.id)
     assert length(watchlist["listItems"]) == 2
 
     assert %{"project" => %{"id" => "#{project1.id}"}} in watchlist["listItems"]
@@ -220,9 +219,7 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
     }
     """
 
-    result =
-      conn
-      |> post("/graphql", mutation_skeleton(first_update))
+    result = post(conn, "/graphql", mutation_skeleton(first_update))
 
     updated_watchlist = json_response(result, 200)["data"]["updateWatchlist"]
     assert updated_watchlist["listItems"] == [%{"project" => %{"id" => "#{project.id}"}}]
@@ -252,9 +249,7 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
     }
     """
 
-    result =
-      conn
-      |> post("/graphql", mutation_skeleton(second_update))
+    result = post(conn, "/graphql", mutation_skeleton(second_update))
 
     updated_watchlist2 = json_response(result, 200)["data"]["updateWatchlist"]
     assert updated_watchlist2["name"] == update_name
@@ -290,9 +285,7 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
     }
     """
 
-    result =
-      conn
-      |> post("/graphql", mutation_skeleton(query))
+    result = post(conn, "/graphql", mutation_skeleton(query))
 
     updated_watchlist = json_response(result, 200)["data"]["updateWatchlist"]
     assert updated_watchlist["name"] == update_name
@@ -371,13 +364,13 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
       |> json_response(200)
 
     watchlists = result["data"]["fetchWatchlists"]
-    watchlist = watchlists |> List.first()
+    watchlist = List.first(watchlists)
 
     assert length(watchlists) == 1
     assert watchlist["name"] == "My Test List"
     assert watchlist["color"] == "NONE"
     assert watchlist["is_public"] == false
-    assert watchlist["user"]["id"] == user.id |> to_string()
+    assert watchlist["user"]["id"] == to_string(user.id)
   end
 
   test "fetch public watchlists", %{user: user, conn: conn} do
@@ -390,11 +383,11 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
       |> post("/graphql", query_skeleton(query, "fetchPublicWatchlists"))
       |> json_response(200)
 
-    user_lists = result["data"]["fetchPublicWatchlists"] |> List.first()
+    user_lists = List.first(result["data"]["fetchPublicWatchlists"])
     assert user_lists["name"] == "My Test List"
     assert user_lists["color"] == "NONE"
     assert user_lists["is_public"] == true
-    assert user_lists["user"]["id"] == user.id |> to_string()
+    assert user_lists["user"]["id"] == to_string(user.id)
   end
 
   test "fetch all public watchlists", %{user: user, user2: user2, conn: conn} do
@@ -432,7 +425,7 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
         |> post("/graphql", query_skeleton(query))
         |> json_response(200)
 
-      assert result["data"]["watchlistBySlug"]["id"] |> Sanbase.Math.to_integer() == ws.id
+      assert Sanbase.Math.to_integer(result["data"]["watchlistBySlug"]["id"]) == ws.id
       assert result["data"]["watchlistBySlug"]["name"] == ws.name
       assert result["data"]["watchlistBySlug"]["slug"] == ws.slug
     end
@@ -451,7 +444,8 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
       query = query("watchlist(id: #{watchlist.id})")
 
       result =
-        post(build_conn(), "/graphql", query_skeleton(query, "watchlist"))
+        build_conn()
+        |> post("/graphql", query_skeleton(query, "watchlist"))
         |> json_response(200)
 
       assert result["data"]["watchlist"] == %{

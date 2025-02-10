@@ -1,13 +1,14 @@
 defmodule Sanbase.Billing.Plan.AccessChecker do
   @moduledoc """
   """
+  alias Sanbase.Billing.Plan.CustomAccessChecker
+  alias Sanbase.Billing.Plan.StandardAccessChecker
+
   @type query_or_argument :: {:metric, String.t()} | {:signal, String.t()} | {:query, Atom.t()}
   @type requested_product :: String.t()
   @type subscription_product :: String.t()
   @type product_code :: String.t()
   @type plan_name :: String.t()
-
-  alias Sanbase.Billing.Plan.{CustomAccessChecker, StandardAccessChecker}
 
   @doc ~s"""
   Check if a query full access is given only to users with a plan higher than free.
@@ -82,12 +83,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
           plan_name
         ) ::
           non_neg_integer() | nil
-  def historical_data_in_days(
-        query_or_argument,
-        requested_product,
-        subscription_product,
-        plan_name
-      ) do
+  def historical_data_in_days(query_or_argument, requested_product, subscription_product, plan_name) do
     case plan_name do
       "CUSTOM_" <> _ ->
         CustomAccessChecker.historical_data_in_days(
@@ -118,12 +114,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
           plan_name()
         ) ::
           non_neg_integer() | nil
-  def realtime_data_cut_off_in_days(
-        query_or_argument,
-        requested_product,
-        subscription_product,
-        plan_name
-      ) do
+  def realtime_data_cut_off_in_days(query_or_argument, requested_product, subscription_product, plan_name) do
     case plan_name do
       "CUSTOM_" <> _ ->
         CustomAccessChecker.realtime_data_cut_off_in_days(

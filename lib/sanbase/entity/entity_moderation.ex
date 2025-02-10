@@ -26,13 +26,10 @@ defmodule Sanbase.Entity.Moderation do
     end
   end
 
-  defp set_boolean_field(entity_type, id, field, value)
-       when field in [:is_deleted, :is_hidden] and is_boolean(value) do
+  defp set_boolean_field(entity_type, id, field, value) when field in [:is_deleted, :is_hidden] and is_boolean(value) do
     module = Sanbase.Entity.deduce_entity_module(entity_type)
 
-    result =
-      from(entity in module, where: entity.id == ^id)
-      |> Sanbase.Repo.update_all(set: [{field, value}])
+    result = Sanbase.Repo.update_all(from(entity in module, where: entity.id == ^id), set: [{field, value}])
 
     case result do
       {1, nil} -> {:ok, true}

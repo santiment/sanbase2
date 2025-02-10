@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.ChangeMetricsArrayType do
+  @moduledoc false
   use Ecto.Migration
 
   def up do
@@ -9,8 +10,6 @@ defmodule Sanbase.Repo.Migrations.ChangeMetricsArrayType do
   def down do
     execute("ALTER TABLE chart_configurations ALTER COLUMN metrics TYPE varchar(255)[];")
 
-    execute(
-      "ALTER TABLE chart_configurations ALTER COLUMN metrics SET DEFAULT array[]::varchar[];"
-    )
+    execute("ALTER TABLE chart_configurations ALTER COLUMN metrics SET DEFAULT array[]::varchar[];")
   end
 end

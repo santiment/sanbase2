@@ -1,5 +1,7 @@
 defmodule Sanbase.Version do
+  @moduledoc false
   use Ecto.Schema
+
   import Ecto.Changeset
 
   schema "versions" do

@@ -25,7 +25,7 @@ defmodule SanbaseWeb.Graphql.DashboardCommentApiTest do
 
     comments = dashboard_comments(other_user_conn, dashboard.id)
 
-    assert comment["dashboardId"] |> Sanbase.Math.to_integer() == dashboard.id
+    assert Sanbase.Math.to_integer(comment["dashboardId"]) == dashboard.id
     assert comment["content"] == content
     assert comment["insertedAt"] != nil
     assert comment["editedAt"] == nil
@@ -48,10 +48,10 @@ defmodule SanbaseWeb.Graphql.DashboardCommentApiTest do
     assert comment["editedAt"] == nil
     assert updated_comment["editedAt"] != nil
 
-    assert Sanbase.TestUtils.datetime_close_to(
-             updated_comment["editedAt"]
-             |> NaiveDateTime.from_iso8601!(),
-             Timex.now(),
+    assert updated_comment["editedAt"]
+           |> NaiveDateTime.from_iso8601!()
+           |> Sanbase.TestUtils.datetime_close_to(
+             DateTime.utc_now(),
              1,
              :seconds
            ) == true
@@ -71,10 +71,10 @@ defmodule SanbaseWeb.Graphql.DashboardCommentApiTest do
     delete_comment(conn, comment["id"])
 
     comments = dashboard_comments(conn, dashboard.id)
-    dashboard_comment = comments |> List.first()
+    dashboard_comment = List.first(comments)
 
     assert dashboard_comment["user"]["id"] != comment["user"]["id"]
-    assert dashboard_comment["user"]["id"] |> Sanbase.Math.to_integer() == fallback_user.id
+    assert Sanbase.Math.to_integer(dashboard_comment["user"]["id"]) == fallback_user.id
 
     assert dashboard_comment["content"] != comment["content"]
     assert dashboard_comment["content"] =~ "deleted"
@@ -87,7 +87,8 @@ defmodule SanbaseWeb.Graphql.DashboardCommentApiTest do
     create_comment(conn, dashboard.id, c2["id"], "other content2")
 
     [comment, subcomment1, subcomment2] =
-      dashboard_comments(conn, dashboard.id)
+      conn
+      |> dashboard_comments(dashboard.id)
       |> Enum.sort_by(& &1["id"])
 
     assert comment["parentId"] == nil
@@ -175,7 +176,7 @@ defmodule SanbaseWeb.Graphql.DashboardCommentApiTest do
       comments(
         entityType: DASHBOARD
         id: #{dashboard_id}
-        cursor: {type: BEFORE, datetime: "#{Timex.now()}"}) {
+        cursor: {type: BEFORE, datetime: "#{DateTime.utc_now()}"}) {
           id
           content
           dashboardId

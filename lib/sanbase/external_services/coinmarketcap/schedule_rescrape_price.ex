@@ -5,12 +5,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePrice do
   """
 
   use Ecto.Schema
+
   import Ecto.Changeset
   import Ecto.Query
 
   alias __MODULE__
-  alias Sanbase.Repo
   alias Sanbase.Project
+  alias Sanbase.Repo
 
   schema "schedule_rescrape_prices" do
     belongs_to(:project, Project)
@@ -27,13 +28,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePrice do
 
   def changeset(
         %ScheduleRescrapePrice{} = srp,
-        %{
-          original_last_updated: %{day: _, hour: _, min: _, month: _, year: _} = olu
-        } = attrs
+        %{original_last_updated: %{day: _, hour: _, min: _, month: _, year: _} = olu} = attrs
       ) do
     {:ok, olu} = to_naive(olu)
 
-    attrs = attrs |> Map.put(:original_last_updated, olu)
+    attrs = Map.put(attrs, :original_last_updated, olu)
     changeset(srp, attrs)
   end
 
@@ -52,10 +51,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePrice do
   end
 
   @doc false
-  def changeset(
-        %ScheduleRescrapePrice{} = srp,
-        attrs
-      ) do
+  def changeset(%ScheduleRescrapePrice{} = srp, attrs) do
     srp
     |> cast(attrs, [:project_id, :from, :to, :in_progress, :finished, :original_last_updated])
     |> validate_required([:project_id, :from, :to])
@@ -69,23 +65,20 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePrice do
 
   @spec delete_by_project_id(non_neg_integer()) :: {integer(), nil | [term()]}
   def delete_by_project_id(project_id) do
-    from(srp in ScheduleRescrapePrice,
-      where: srp.project_id == ^project_id
-    )
-    |> Repo.delete_all()
+    Repo.delete_all(from(srp in ScheduleRescrapePrice, where: srp.project_id == ^project_id))
   end
 
   def update(changeset) do
     Repo.update(changeset)
   end
 
-  def all_not_started() do
+  def all_not_started do
     all_query()
     |> where([p], p.in_progress == false and p.finished == false)
     |> Repo.all()
   end
 
-  def all_in_progress() do
+  def all_in_progress do
     all_query()
     |> where([p], p.in_progress == true and p.finished == false)
     |> Repo.all()
@@ -93,7 +86,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePrice do
 
   # All rescrapes ordered by the rank of the project, so higher ranked projects
   # are prioritized
-  defp all_query() do
+  defp all_query do
     from(
       srp in ScheduleRescrapePrice,
       inner_join: p in assoc(srp, :project),
@@ -104,17 +97,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePrice do
     )
   end
 
-  def to_naive(%{
-        day: day,
-        hour: hour,
-        min: min,
-        month: month,
-        year: year
-      })
-      when is_binary(day) and is_binary(hour) and is_binary(min) and is_binary(month) and
-             is_binary(year) do
-    [day, hour, min, month, year] =
-      [day, hour, min, month, year] |> Enum.map(&String.to_integer/1)
+  def to_naive(%{day: day, hour: hour, min: min, month: month, year: year})
+      when is_binary(day) and is_binary(hour) and is_binary(min) and is_binary(month) and is_binary(year) do
+    [day, hour, min, month, year] = Enum.map([day, hour, min, month, year], &String.to_integer/1)
 
     NaiveDateTime.from_erl({{year, month, day}, {hour, min, 0}})
   end

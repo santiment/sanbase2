@@ -5,14 +5,6 @@ defmodule Sanbase.Clickhouse.Github do
   be more clearly calculated by excluding events releated to commenting, issues, forks, stars, etc.
   """
 
-  @type t :: %{
-          datetime: DateTime.t(),
-          owner: String.t(),
-          repo: String.t(),
-          actor: String.t(),
-          event: String.t()
-        }
-
   import __MODULE__.SqlQuery
 
   import Sanbase.Utils.Transform,
@@ -23,6 +15,14 @@ defmodule Sanbase.Clickhouse.Github do
 
   require Logger
 
+  @type t :: %{
+          datetime: DateTime.t(),
+          owner: String.t(),
+          repo: String.t(),
+          actor: String.t(),
+          event: String.t()
+        }
+
   @doc ~s"""
   Return the number of all github events for a given organization and time period
   """
@@ -32,9 +32,9 @@ defmodule Sanbase.Clickhouse.Github do
           | {:error, String.t()}
   def total_github_activity([], _from, _to), do: {:ok, %{}}
 
-  def total_github_activity(organizations, from, to)
-      when length(organizations) > 20 do
-    Enum.chunk_every(organizations, 20)
+  def total_github_activity(organizations, from, to) when length(organizations) > 20 do
+    organizations
+    |> Enum.chunk_every(20)
     |> Sanbase.Parallel.map(
       &total_github_activity(&1, from, to),
       timeout: 25_000,
@@ -55,7 +55,7 @@ defmodule Sanbase.Clickhouse.Github do
                                                         github_activity
                                                       ],
                                                       acc ->
-      Map.put(acc, organization, github_activity |> Math.to_integer(0))
+      Map.put(acc, organization, Math.to_integer(github_activity, 0))
     end)
   end
 
@@ -69,9 +69,9 @@ defmodule Sanbase.Clickhouse.Github do
           | {:error, String.t()}
   def total_dev_activity([], _from, _to), do: {:ok, %{}}
 
-  def total_dev_activity(organizations, from, to)
-      when length(organizations) > 20 do
-    Enum.chunk_every(organizations, 20)
+  def total_dev_activity(organizations, from, to) when length(organizations) > 20 do
+    organizations
+    |> Enum.chunk_every(20)
     |> Sanbase.Parallel.map(
       &total_dev_activity(&1, from, to),
       timeout: 25_000,
@@ -92,7 +92,7 @@ defmodule Sanbase.Clickhouse.Github do
                                                         dev_activity
                                                       ],
                                                       acc ->
-      Map.put(acc, organization, dev_activity |> Math.to_integer(0))
+      Map.put(acc, organization, Math.to_integer(dev_activity, 0))
     end)
   end
 
@@ -110,9 +110,9 @@ defmodule Sanbase.Clickhouse.Github do
           | {:error, String.t()}
   def total_dev_activity_contributors_count([], _from, _to), do: {:ok, %{}}
 
-  def total_dev_activity_contributors_count(organizations, from, to)
-      when length(organizations) > 20 do
-    Enum.chunk_every(organizations, 20)
+  def total_dev_activity_contributors_count(organizations, from, to) when length(organizations) > 20 do
+    organizations
+    |> Enum.chunk_every(20)
     |> Sanbase.Parallel.map(
       &total_dev_activity_contributors_count(&1, from, to),
       timeout: 25_000,
@@ -133,7 +133,7 @@ defmodule Sanbase.Clickhouse.Github do
                                                         dev_activity
                                                       ],
                                                       acc ->
-      Map.put(acc, organization, dev_activity |> Math.to_integer(0))
+      Map.put(acc, organization, Math.to_integer(dev_activity, 0))
     end)
   end
 
@@ -150,9 +150,9 @@ defmodule Sanbase.Clickhouse.Github do
           | {:error, String.t()}
   def total_github_activity_contributors_count([], _from, _to), do: {:ok, %{}}
 
-  def total_github_activity_contributors_count(organizations, from, to)
-      when length(organizations) > 20 do
-    Enum.chunk_every(organizations, 20)
+  def total_github_activity_contributors_count(organizations, from, to) when length(organizations) > 20 do
+    organizations
+    |> Enum.chunk_every(20)
     |> Sanbase.Parallel.map(
       &total_github_activity_contributors_count(&1, from, to),
       timeout: 25_000,
@@ -173,7 +173,7 @@ defmodule Sanbase.Clickhouse.Github do
                                                         dev_activity
                                                       ],
                                                       acc ->
-      Map.put(acc, organization, dev_activity |> Math.to_integer(0))
+      Map.put(acc, organization, Math.to_integer(dev_activity, 0))
     end)
   end
 
@@ -192,9 +192,9 @@ defmodule Sanbase.Clickhouse.Github do
   def dev_activity(organizations, from, to, interval, transform, moving_average_base)
   def dev_activity([], _, _, _, _, _), do: {:ok, []}
 
-  def dev_activity(organizations, from, to, interval, transform, ma_base)
-      when length(organizations) > 10 do
-    Enum.chunk_every(organizations, 10)
+  def dev_activity(organizations, from, to, interval, transform, ma_base) when length(organizations) > 10 do
+    organizations
+    |> Enum.chunk_every(10)
     |> Sanbase.Parallel.map(
       &dev_activity(&1, from, to, interval, transform, ma_base),
       timeout: 25_000,
@@ -209,7 +209,8 @@ defmodule Sanbase.Clickhouse.Github do
   end
 
   def dev_activity(organizations, from, to, interval, "None", _) do
-    dev_activity_query(organizations, from, to, interval)
+    organizations
+    |> dev_activity_query(from, to, interval)
     |> datetime_activity_execute()
   end
 
@@ -217,7 +218,8 @@ defmodule Sanbase.Clickhouse.Github do
     interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
     from = Timex.shift(from, seconds: -((ma_base - 1) * interval_sec))
 
-    dev_activity_query(organizations, from, to, interval)
+    organizations
+    |> dev_activity_query(from, to, interval)
     |> datetime_activity_execute()
     |> maybe_apply_function(&Math.simple_moving_average(&1, ma_base, value_key: :activity))
   end
@@ -238,22 +240,17 @@ defmodule Sanbase.Clickhouse.Github do
   def github_activity([], _, _, _, _, _), do: {:ok, []}
 
   def github_activity(organizations, from, to, interval, "None", _) do
-    github_activity_query(organizations, from, to, interval)
+    organizations
+    |> github_activity_query(from, to, interval)
     |> datetime_activity_execute()
   end
 
-  def github_activity(
-        organizations,
-        from,
-        to,
-        interval,
-        "movingAverage",
-        ma_base
-      ) do
+  def github_activity(organizations, from, to, interval, "movingAverage", ma_base) do
     interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
     from = Timex.shift(from, seconds: -((ma_base - 1) * interval_sec))
 
-    github_activity_query(organizations, from, to, interval)
+    organizations
+    |> github_activity_query(from, to, interval)
     |> datetime_activity_execute()
     |> maybe_apply_function(&Math.simple_moving_average(&1, ma_base, value_key: :activity))
   end
@@ -261,8 +258,9 @@ defmodule Sanbase.Clickhouse.Github do
   def first_datetime(organization_or_organizations) do
     query_struct = first_datetime_query(organization_or_organizations)
 
-    ClickhouseRepo.query_transform(query_struct, fn [timestamp] ->
-      timestamp |> DateTime.from_unix!()
+    query_struct
+    |> ClickhouseRepo.query_transform(fn [timestamp] ->
+      DateTime.from_unix!(timestamp)
     end)
     |> maybe_unwrap_ok_value()
   end
@@ -270,70 +268,41 @@ defmodule Sanbase.Clickhouse.Github do
   def last_datetime_computed_at(organization_or_organizations) do
     query_struct = last_datetime_computed_at_query(organization_or_organizations)
 
-    ClickhouseRepo.query_transform(query_struct, fn [datetime] ->
-      datetime |> DateTime.from_unix!()
+    query_struct
+    |> ClickhouseRepo.query_transform(fn [datetime] ->
+      DateTime.from_unix!(datetime)
     end)
     |> maybe_unwrap_ok_value()
   end
 
   def dev_activity_contributors_count([], _, _, _, _, _), do: {:ok, []}
 
-  def dev_activity_contributors_count(
-        organizations,
-        from,
-        to,
-        interval,
-        "None",
-        _
-      ) do
+  def dev_activity_contributors_count(organizations, from, to, interval, "None", _) do
     do_dev_activity_contributors_count(organizations, from, to, interval)
   end
 
-  def dev_activity_contributors_count(
-        organizations,
-        from,
-        to,
-        interval,
-        "movingAverage",
-        ma_base
-      ) do
+  def dev_activity_contributors_count(organizations, from, to, interval, "movingAverage", ma_base) do
     interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
     from = Timex.shift(from, seconds: -((ma_base - 1) * interval_sec))
 
-    do_dev_activity_contributors_count(organizations, from, to, interval)
-    |> maybe_apply_function(
-      &Math.simple_moving_average(&1, ma_base, value_key: :contributors_count)
-    )
+    organizations
+    |> do_dev_activity_contributors_count(from, to, interval)
+    |> maybe_apply_function(&Math.simple_moving_average(&1, ma_base, value_key: :contributors_count))
   end
 
   def github_activity_contributors_count([], _, _, _, _, _), do: {:ok, []}
 
-  def github_activity_contributors_count(
-        organizations,
-        from,
-        to,
-        interval,
-        "None",
-        _
-      ) do
+  def github_activity_contributors_count(organizations, from, to, interval, "None", _) do
     do_github_activity_contributors_count(organizations, from, to, interval)
   end
 
-  def github_activity_contributors_count(
-        organizations,
-        from,
-        to,
-        interval,
-        "movingAverage",
-        ma_base
-      ) do
+  def github_activity_contributors_count(organizations, from, to, interval, "movingAverage", ma_base) do
     interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
     from = Timex.shift(from, seconds: -((ma_base - 1) * interval_sec))
 
-    do_github_activity_contributors_count(organizations, from, to, interval)
-    |> maybe_apply_function(
-      &Math.simple_moving_average(&1, ma_base, value_key: :contributors_count)
-    )
+    organizations
+    |> do_github_activity_contributors_count(from, to, interval)
+    |> maybe_apply_function(&Math.simple_moving_average(&1, ma_base, value_key: :contributors_count))
   end
 
   # Private functions
@@ -354,8 +323,8 @@ defmodule Sanbase.Clickhouse.Github do
 
     ClickhouseRepo.query_transform(query_struct, fn [datetime, contributors] ->
       %{
-        datetime: datetime |> DateTime.from_unix!(),
-        contributors_count: contributors |> Math.to_integer(0)
+        datetime: DateTime.from_unix!(datetime),
+        contributors_count: Math.to_integer(contributors, 0)
       }
     end)
   end
@@ -371,8 +340,8 @@ defmodule Sanbase.Clickhouse.Github do
 
     ClickhouseRepo.query_transform(query_struct, fn [datetime, contributors] ->
       %{
-        datetime: datetime |> DateTime.from_unix!(),
-        contributors_count: contributors |> Math.to_integer(0)
+        datetime: DateTime.from_unix!(datetime),
+        contributors_count: Math.to_integer(contributors, 0)
       }
     end)
   end
@@ -382,8 +351,8 @@ defmodule Sanbase.Clickhouse.Github do
 
     ClickhouseRepo.query_transform(query_struct, fn [datetime, value] ->
       %{
-        datetime: datetime |> DateTime.from_unix!(),
-        activity: value |> Math.to_integer(0)
+        datetime: DateTime.from_unix!(datetime),
+        activity: Math.to_integer(value, 0)
       }
     end)
   end

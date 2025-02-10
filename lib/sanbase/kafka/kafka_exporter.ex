@@ -64,7 +64,7 @@ defmodule Sanbase.KafkaExporter do
        kafka_flush_timeout: kafka_flush_timeout,
        buffering_max_messages: buffering_max_messages,
        can_send_after_interval: can_send_after_interval,
-       can_send_after: DateTime.utc_now() |> DateTime.add(can_send_after_interval, :millisecond)
+       can_send_after: DateTime.add(DateTime.utc_now(), can_send_after_interval, :millisecond)
      }}
   end
 
@@ -101,9 +101,7 @@ defmodule Sanbase.KafkaExporter do
   all data will be stored in Kafka and no more data is expected.
   """
   def terminate(_reason, state) do
-    Logger.info(
-      "Terminating the KafkaExporter. Sending #{length(state.data)} events to kafka topic: #{state.topic}"
-    )
+    Logger.info("Terminating the KafkaExporter. Sending #{length(state.data)} events to kafka topic: #{state.topic}")
 
     send_data(state.data, state)
     :ok
@@ -114,9 +112,7 @@ defmodule Sanbase.KafkaExporter do
   def handle_call({:persist, data}, _from, state) do
     data = List.wrap(data)
 
-    send_data_result =
-      (data ++ state.data)
-      |> send_data_immediately(%{state | size: state.size + length(data)})
+    send_data_result = send_data_immediately(data ++ state.data, %{state | size: state.size + length(data)})
 
     {:reply, send_data_result, %{state | data: [], size: 0}}
   end
@@ -132,21 +128,18 @@ defmodule Sanbase.KafkaExporter do
     data = List.wrap(data)
     new_messages_length = length(data)
 
-    case state.size + new_messages_length >= state.buffering_max_messages do
-      true ->
-        :ok = send_data(data ++ state.data, %{state | size: state.size + new_messages_length})
+    if state.size + new_messages_length >= state.buffering_max_messages do
+      :ok = send_data(data ++ state.data, %{state | size: state.size + new_messages_length})
 
-        {:noreply,
-         %{
-           state
-           | data: [],
-             size: 0,
-             can_send_after:
-               DateTime.utc_now() |> DateTime.add(state.can_send_after_interval, :millisecond)
-         }}
-
-      false ->
-        {:noreply, %{state | data: data ++ state.data, size: state.size + new_messages_length}}
+      {:noreply,
+       %{
+         state
+         | data: [],
+           size: 0,
+           can_send_after: DateTime.add(DateTime.utc_now(), state.can_send_after_interval, :millisecond)
+       }}
+    else
+      {:noreply, %{state | data: data ++ state.data, size: state.size + new_messages_length}}
     end
   end
 

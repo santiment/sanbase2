@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.FillProjectMarketSegmentsTable do
+  @moduledoc false
   use Ecto.Migration
 
   alias Sanbase.Project
@@ -17,13 +18,13 @@ defmodule Sanbase.Repo.Migrations.FillProjectMarketSegmentsTable do
 
   def down, do: :ok
 
-  defp projects_with_market_segment() do
+  defp projects_with_market_segment do
     Project.List.projects()
     |> Sanbase.Repo.preload([:market_segment])
     |> Enum.reject(fn %{market_segment: ms} -> ms == nil end)
   end
 
-  defp setup() do
+  defp setup do
     Application.ensure_all_started(:tzdata)
   end
 end

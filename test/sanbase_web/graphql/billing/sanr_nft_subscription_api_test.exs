@@ -1,8 +1,11 @@
 defmodule Sanbase.Billing.SanrNftSubscriptionsApiTest do
   use SanbaseWeb.ConnCase, async: false
+
+  import Mox
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
-  import Mox
+
+  alias Sanbase.Accounts.EthAccount
   alias Sanbase.Billing.Subscription
 
   setup :set_mox_from_context
@@ -11,12 +14,10 @@ defmodule Sanbase.Billing.SanrNftSubscriptionsApiTest do
   setup do
     user = insert(:user)
 
-    address =
-      "0x23918E95d234eEc054566DDe0841d69311814495"
-      |> Sanbase.BlockchainAddress.to_internal_format()
+    address = Sanbase.BlockchainAddress.to_internal_format("0x23918E95d234eEc054566DDe0841d69311814495")
 
     start_date = DateTime.utc_now()
-    end_date = DateTime.shift(start_date, month: 12) |> DateTime.truncate(:second)
+    end_date = start_date |> DateTime.shift(month: 12) |> DateTime.truncate(:second)
 
     %{
       user: user,
@@ -32,8 +33,8 @@ defmodule Sanbase.Billing.SanrNftSubscriptionsApiTest do
     { checkSanrNftSubscriptionEligibility }
     """
 
-    Sanbase.Mock.prepare_mock(
-      Req,
+    Req
+    |> Sanbase.Mock.prepare_mock(
       :get,
       fn req, _params ->
         case req.options.base_url do
@@ -59,7 +60,7 @@ defmodule Sanbase.Billing.SanrNftSubscriptionsApiTest do
 
       # Add a random address to the account without NFT, still not eligible
       random_address = "0x" <> rand_hex_str(38)
-      {:ok, _} = Sanbase.Accounts.EthAccount.create(context.user.id, random_address)
+      {:ok, _} = EthAccount.create(context.user.id, random_address)
 
       result =
         context.conn
@@ -70,7 +71,7 @@ defmodule Sanbase.Billing.SanrNftSubscriptionsApiTest do
       assert result == false
 
       # Add the address that actually holds an NFT, user is not eligible
-      {:ok, _} = Sanbase.Accounts.EthAccount.create(context.user.id, context.address)
+      {:ok, _} = EthAccount.create(context.user.id, context.address)
 
       result =
         context.conn
@@ -96,8 +97,8 @@ defmodule Sanbase.Billing.SanrNftSubscriptionsApiTest do
     }
     """
 
-    Sanbase.Mock.prepare_mock(
-      Req,
+    Req
+    |> Sanbase.Mock.prepare_mock(
       :get,
       fn req, _params ->
         case req.options.base_url do
@@ -121,7 +122,7 @@ defmodule Sanbase.Billing.SanrNftSubscriptionsApiTest do
 
       assert error_msg =~ "user does not have any blockchain addresses connected"
       # Add the address that actually holds an NFT, user is not eligible
-      {:ok, _} = Sanbase.Accounts.EthAccount.create(context.user.id, context.address)
+      {:ok, _} = EthAccount.create(context.user.id, context.address)
 
       result =
         context.conn

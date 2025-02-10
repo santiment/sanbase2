@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.UpdateUsersIsRegistered do
+  @moduledoc false
   use Ecto.Migration
 
   import Ecto.Query
@@ -12,7 +13,8 @@ defmodule Sanbase.Repo.Migrations.UpdateUsersIsRegistered do
     from(u in User, preload: [:eth_accounts])
     |> Repo.all()
     |> Enum.each(fn user ->
-      User.changeset(user, %{
+      user
+      |> User.changeset(%{
         is_registered:
           user.privacy_policy_accepted || !is_nil(user.email_token_validated_at) ||
             user.eth_accounts != []

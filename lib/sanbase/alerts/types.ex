@@ -1,4 +1,5 @@
 defmodule Sanbase.Alert.Type do
+  @moduledoc false
   @type trigger_type :: String.t()
   @type channel :: String.t() | list(String.t() | {String.t(), String.t()})
   @type target :: String.t()

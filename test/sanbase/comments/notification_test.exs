@@ -2,7 +2,9 @@ defmodule Sanbase.Comments.NotificationTest do
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
-  alias Sanbase.Comments.{EntityComment, Notification}
+
+  alias Sanbase.Comments.EntityComment
+  alias Sanbase.Comments.Notification
 
   @default_avatar "https://production-sanbase-images.s3.amazonaws.com/uploads/684aec65d98c952d6a29c8f0fbdcaea95787f1d4e752e62316e955a84ae97bf5_1588611275860_default-avatar.png"
 

@@ -1,5 +1,6 @@
 defmodule Sanbase.SocialHelperTest do
   use SanbaseWeb.ConnCase, async: false
+
   alias Sanbase.SocialData.SocialHelper
 
   describe "split_by_source/1" do

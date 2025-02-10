@@ -70,7 +70,7 @@ defmodule SanbaseWeb.Endpoint do
 
   plug(SanbaseWeb.Router)
 
-  def website_url() do
+  def website_url do
     Config.module_get(__MODULE__, :website_url)
   end
 
@@ -78,14 +78,12 @@ defmodule SanbaseWeb.Endpoint do
     Path.join([frontend_url(), "charts?slug=#{slug}"])
   end
 
-  def sonar_url() do
-    website_url()
-    |> Path.join("alerts")
+  def sonar_url do
+    Path.join(website_url(), "alerts")
   end
 
-  def my_alerts_url() do
-    sonar_url()
-    |> Path.join("my-alerts")
+  def my_alerts_url do
+    Path.join(sonar_url(), "my-alerts")
   end
 
   def trending_word_url(word) when is_binary(word) do
@@ -95,7 +93,7 @@ defmodule SanbaseWeb.Endpoint do
   end
 
   def trending_word_url(words) when is_list(words) do
-    words_uri = words |> Enum.map(&~s/"#{&1}"/) |> Enum.join(" OR ") |> URI.encode()
+    words_uri = words |> Enum.map_join(" OR ", &~s/"#{&1}"/) |> URI.encode()
 
     website_url()
     |> Path.join("labs/trends/explore")
@@ -112,25 +110,27 @@ defmodule SanbaseWeb.Endpoint do
     frontend_url() <> "/labs/balance?address=#{address}&assets[]=#{asset}"
   end
 
-  def feed_url() do
-    Config.module_get(__MODULE__, :website_url)
+  def feed_url do
+    __MODULE__
+    |> Config.module_get(:website_url)
     |> Path.join("feed")
   end
 
-  def user_account_url() do
-    Config.module_get(__MODULE__, :website_url)
+  def user_account_url do
+    __MODULE__
+    |> Config.module_get(:website_url)
     |> Path.join("account")
   end
 
-  def frontend_url() do
+  def frontend_url do
     Config.module_get(__MODULE__, :frontend_url)
   end
 
-  def backend_url() do
+  def backend_url do
     Config.module_get(__MODULE__, :backend_url)
   end
 
-  def api_url() do
+  def api_url do
     backend_url() <> "/graphql"
   end
 

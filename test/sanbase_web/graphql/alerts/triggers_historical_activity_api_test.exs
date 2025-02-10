@@ -56,8 +56,7 @@ defmodule SanbaseWeb.Graphql.TriggersHistoricalActivityApiTest do
 
     latest_two = current_user_alerts_activity(conn, "limit: 2")
 
-    assert latest_two["activity"]
-           |> Enum.map(&Map.get(&1, "payload")) == [%{"all" => "first"}]
+    assert Enum.map(latest_two["activity"], &Map.get(&1, "payload")) == [%{"all" => "first"}]
   end
 
   test "fetches alerts historical activity for current user", %{user: user, conn: conn} do
@@ -111,8 +110,7 @@ defmodule SanbaseWeb.Graphql.TriggersHistoricalActivityApiTest do
              second_activity.triggered_at
            ) == :eq
 
-    assert latest_two["activity"]
-           |> Enum.map(&Map.get(&1, "payload")) == [%{"all" => "second"}, %{"all" => "first"}]
+    assert Enum.map(latest_two["activity"], &Map.get(&1, "payload")) == [%{"all" => "second"}, %{"all" => "first"}]
 
     before_cursor = latest_two["cursor"]["before"]
 
@@ -123,8 +121,7 @@ defmodule SanbaseWeb.Graphql.TriggersHistoricalActivityApiTest do
         "limit: 1, cursor: {type: BEFORE, datetime: '#{before_cursor}'}"
       )
 
-    assert before_cursor_res["activity"]
-           |> Enum.map(&Map.get(&1, "payload")) == [%{"all" => "oldest"}]
+    assert Enum.map(before_cursor_res["activity"], &Map.get(&1, "payload")) == [%{"all" => "oldest"}]
 
     # insert new latest activity and fetch it with after cursor
     _latest =
@@ -143,8 +140,7 @@ defmodule SanbaseWeb.Graphql.TriggersHistoricalActivityApiTest do
         "limit: 1, cursor: {type: AFTER, datetime: '#{after_cursor}'}"
       )
 
-    assert after_cursor_res["activity"]
-           |> Enum.map(&Map.get(&1, "payload")) == [%{"all" => "latest"}]
+    assert Enum.map(after_cursor_res["activity"], &Map.get(&1, "payload")) == [%{"all" => "latest"}]
   end
 
   test "test fetching signal historical activities when there is none", %{conn: conn} do
@@ -179,8 +175,7 @@ defmodule SanbaseWeb.Graphql.TriggersHistoricalActivityApiTest do
   end
 
   defp current_user_alerts_activity(conn, args_str) do
-    query =
-      ~s|
+    query = format_interpolated_json(~s|
     {
       alertsHistoricalActivity(#{args_str}) {
         cursor {
@@ -198,8 +193,7 @@ defmodule SanbaseWeb.Graphql.TriggersHistoricalActivityApiTest do
           }
         }
       }
-    }|
-      |> format_interpolated_json()
+    }|)
 
     result =
       conn
@@ -209,7 +203,7 @@ defmodule SanbaseWeb.Graphql.TriggersHistoricalActivityApiTest do
     result["data"]["alertsHistoricalActivity"]
   end
 
-  defp default_trigger_settings_string_keys() do
+  defp default_trigger_settings_string_keys do
     %{
       "type" => "daily_active_addresses",
       "target" => %{"slug" => "santiment"},

@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.PaginationTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   enum(:cursor_type, values: [:before, :after])

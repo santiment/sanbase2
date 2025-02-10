@@ -1,4 +1,5 @@
 defmodule Sanbase.Geoip do
+  @moduledoc false
   require Logger
 
   def fetch_geo_data(ip) do
@@ -18,9 +19,7 @@ defmodule Sanbase.Geoip do
             {:ok, data}
 
           {:error, _} = error ->
-            Logger.error(
-              "[#{tag}] Error parsing response from IP Geolocation API. Full response: #{inspect(error)}"
-            )
+            Logger.error("[#{tag}] Error parsing response from IP Geolocation API. Full response: #{inspect(error)}")
 
             error
         end
@@ -37,9 +36,7 @@ defmodule Sanbase.Geoip do
         {:error, :http_error}
 
       other ->
-        Logger.error(
-          "[#{tag}] Unknown error when calling IP Geolocation API. Full error: #{inspect(other)}"
-        )
+        Logger.error("[#{tag}] Unknown error when calling IP Geolocation API. Full error: #{inspect(other)}")
 
         {:error, :unknown_error}
     end

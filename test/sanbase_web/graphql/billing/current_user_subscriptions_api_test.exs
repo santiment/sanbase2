@@ -1,5 +1,6 @@
 defmodule Sanbase.Billing.CurrentUserSubscriptionsApiTest do
   use SanbaseWeb.ConnCase, async: false
+
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
@@ -12,7 +13,8 @@ defmodule Sanbase.Billing.CurrentUserSubscriptionsApiTest do
 
   test "no subscriptions", context do
     subscriptions =
-      current_user_subscriptions(context.conn)
+      context.conn
+      |> current_user_subscriptions()
       |> get_in(["data", "currentUser", "subscriptions"])
 
     assert subscriptions == []
@@ -33,7 +35,8 @@ defmodule Sanbase.Billing.CurrentUserSubscriptionsApiTest do
     )
 
     subscriptions =
-      current_user_subscriptions(context.conn)
+      context.conn
+      |> current_user_subscriptions()
       |> get_in(["data", "currentUser", "subscriptions"])
 
     assert %{

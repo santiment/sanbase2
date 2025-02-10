@@ -22,11 +22,12 @@ defmodule SanbaseWeb.Graphql.DocumentProvider do
   """
   @behaviour Absinthe.Plug.DocumentProvider
 
+  alias Absinthe.Plug.Request.Query
   alias SanbaseWeb.Graphql.Cache
 
   @doc false
   @impl true
-  def pipeline(%Absinthe.Plug.Request.Query{pipeline: pipeline}) do
+  def pipeline(%Query{pipeline: pipeline}) do
     pipeline
     |> Absinthe.Pipeline.insert_before(
       Absinthe.Phase.Document.Complexity.Analysis,
@@ -44,8 +45,8 @@ defmodule SanbaseWeb.Graphql.DocumentProvider do
 
   @doc false
   @impl true
-  def process(%Absinthe.Plug.Request.Query{document: nil} = query, _), do: {:cont, query}
-  def process(%Absinthe.Plug.Request.Query{document: _} = query, _), do: {:halt, query}
+  def process(%Query{document: nil} = query, _), do: {:cont, query}
+  def process(%Query{document: _} = query, _), do: {:halt, query}
 end
 
 defmodule SanbaseWeb.Graphql.Phase.Document.Execution.CacheDocument do
@@ -65,6 +66,7 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Execution.CacheDocument do
   use Absinthe.Phase
 
   alias SanbaseWeb.Graphql.Cache
+
   @compile inline: [add_cache_key_to_blueprint: 2, queries_in_request: 1]
 
   @cached_queries SanbaseWeb.Graphql.AbsintheBeforeSend.cached_queries()
@@ -73,60 +75,53 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Execution.CacheDocument do
   def run(bp_root, _) do
     queries_in_request = queries_in_request(bp_root)
 
-    case Enum.any?(queries_in_request, &(&1 in @cached_queries)) do
-      false ->
-        {:ok, bp_root}
+    if Enum.any?(queries_in_request, &(&1 in @cached_queries)) do
+      context = bp_root.execution.context
 
-      true ->
-        context = bp_root.execution.context
+      # Add keys that can affect the data the user can have access to
+      additional_keys_hash =
+        Sanbase.Cache.hash(
+          {context.permissions, context.requested_product_id, context.auth.subscription, context.auth.plan,
+           context.auth.auth_method}
+        )
 
-        # Add keys that can affect the data the user can have access to
-        additional_keys_hash =
-          {context.permissions, context.requested_product_id, context.auth.subscription,
-           context.auth.plan, context.auth.auth_method}
-          |> Sanbase.Cache.hash()
+      # The ttl/max_ttl_offset might be rewritten in case `caching_params`
+      # are provided. The rewriting happens in the absinthe before_send function
+      cache_key =
+        SanbaseWeb.Graphql.Cache.cache_key(
+          {"bp_root", additional_keys_hash},
+          sanitize_blueprint(bp_root),
+          ttl: 30,
+          max_ttl_offset: 30
+        )
 
-        # The ttl/max_ttl_offset might be rewritten in case `caching_params`
-        # are provided. The rewriting happens in the absinthe before_send function
-        cache_key =
-          SanbaseWeb.Graphql.Cache.cache_key(
-            {"bp_root", additional_keys_hash},
-            sanitize_blueprint(bp_root),
-            ttl: 30,
-            max_ttl_offset: 30
-          )
+      bp_root = add_cache_key_to_blueprint(bp_root, cache_key)
 
-        bp_root = add_cache_key_to_blueprint(bp_root, cache_key)
+      case Cache.get(cache_key) do
+        nil ->
+          {:ok, bp_root}
 
-        case Cache.get(cache_key) do
-          nil ->
-            {:ok, bp_root}
+        result ->
+          # Storing it again `touch`es it and the TTL timer is restarted.
+          # This can lead to infinite storing the same value
+          Process.put(:do_not_cache_query, true)
 
-          result ->
-            # Storing it again `touch`es it and the TTL timer is restarted.
-            # This can lead to infinite storing the same value
-            Process.put(:do_not_cache_query, true)
-
-            {:jump, %{bp_root | result: result},
-             SanbaseWeb.Graphql.Phase.Document.Execution.Idempotent}
-        end
+          {:jump, %{bp_root | result: result}, SanbaseWeb.Graphql.Phase.Document.Execution.Idempotent}
+      end
+    else
+      {:ok, bp_root}
     end
   end
 
   # Private functions
 
   defp queries_in_request(%{operations: operations}) do
-    operations
-    |> Enum.flat_map(fn %{selections: selections} ->
-      selections
-      |> Enum.map(fn %{name: name} -> Inflex.camelize(name, :lower) end)
+    Enum.flat_map(operations, fn %{selections: selections} ->
+      Enum.map(selections, fn %{name: name} -> Inflex.camelize(name, :lower) end)
     end)
   end
 
-  defp add_cache_key_to_blueprint(
-         %{execution: %{context: context} = execution} = blueprint,
-         cache_key
-       ) do
+  defp add_cache_key_to_blueprint(%{execution: %{context: context} = execution} = blueprint, cache_key) do
     %{
       blueprint
       | execution: %{execution | context: Map.put(context, :query_cache_key, cache_key)}
@@ -139,9 +134,7 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Execution.CacheDocument do
   # cache key
   defp sanitize_blueprint(%DateTime{} = dt), do: dt
 
-  defp sanitize_blueprint(
-         {:argument_data, %{function: %{"args" => %{"baseProjects" => base_projects}}}} = tuple
-       ) do
+  defp sanitize_blueprint({:argument_data, %{function: %{"args" => %{"baseProjects" => base_projects}}}} = tuple) do
     has_watchlist_base? =
       Enum.any?(base_projects, fn elem ->
         match?(%{"watchlistId" => _}, elem) or match?(%{"watchlistSlug" => _}, elem)
@@ -166,9 +159,9 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Execution.CacheDocument do
     :alias
   ]
   defp sanitize_blueprint(map) when is_map(map) do
-    Map.take(map, @cache_fields)
-    |> Enum.map(&sanitize_blueprint/1)
-    |> Map.new()
+    map
+    |> Map.take(@cache_fields)
+    |> Map.new(&sanitize_blueprint/1)
   end
 
   defp sanitize_blueprint(list) when is_list(list) do
@@ -185,17 +178,19 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Execution.Idempotent do
   value in the cache so the Absinthe's Resolution and Result phases are skipped.
   """
   use Absinthe.Phase
+
   @spec run(Absinthe.Blueprint.t(), Keyword.t()) :: Absinthe.Phase.result_t()
   def run(bp_root, _), do: {:ok, bp_root}
 end
 
 defmodule SanbaseWeb.Graphql.Phase.Document.Complexity.Preprocess do
+  @moduledoc false
   use Absinthe.Phase
+
   @spec run(Absinthe.Blueprint.t(), Keyword.t()) :: Absinthe.Phase.result_t()
   def run(bp_root, _) do
     metrics =
-      bp_root.operations
-      |> Enum.flat_map(fn %{selections: selections} ->
+      Enum.flat_map(bp_root.operations, fn %{selections: selections} ->
         selections_to_metrics(selections)
       end)
 
@@ -208,8 +203,7 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Complexity.Preprocess do
   end
 
   defp selections_to_metrics(selections) do
-    selections
-    |> Enum.flat_map(fn
+    Enum.flat_map(selections, fn
       %{name: name, argument_data: %{metric: metric}} = struct ->
         case Inflex.underscore(name) do
           "get_metric" ->
@@ -226,8 +220,9 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Complexity.Preprocess do
 
   defp get_metric_selections_to_metrics(selections, metric) do
     selections =
-      Enum.map(selections, fn
-        %{name: name} -> name |> Inflex.underscore()
+      selections
+      |> Enum.map(fn
+        %{name: name} -> Inflex.underscore(name)
         _ -> nil
       end)
       |> Enum.reject(&is_nil/1)

@@ -1,8 +1,9 @@
 defmodule Sanbase.Dashboards.DashboardQueryMapping do
+  @moduledoc false
   use Ecto.Schema
 
-  import Ecto.Query
   import Ecto.Changeset
+  import Ecto.Query
 
   alias Sanbase.Dashboards.Dashboard
   alias Sanbase.Queries.Query
@@ -63,10 +64,7 @@ defmodule Sanbase.Dashboards.DashboardQueryMapping do
   """
   @spec dashboard_id_rows(dashboard_id) :: Ecto.Query.t()
   def dashboard_id_rows(dashboard_id) do
-    from(d in __MODULE__,
-      where: d.dashboard_id == ^dashboard_id
-    )
-    |> preload([:query, query: :user])
+    preload(from(d in __MODULE__, where: d.dashboard_id == ^dashboard_id), [:query, query: :user])
   end
 
   def dashboards_by_query_and_user(query_id, user_id) do
@@ -79,24 +77,20 @@ defmodule Sanbase.Dashboards.DashboardQueryMapping do
   # Private functions
 
   defp maybe_preload(query, opts) do
-    case Keyword.get(opts, :preload?, true) do
-      true ->
-        preload = Keyword.get(opts, :preload, @preload)
+    if Keyword.get(opts, :preload?, true) do
+      preload = Keyword.get(opts, :preload, @preload)
 
-        query |> preload(^preload)
-
-      false ->
-        query
+      preload(query, ^preload)
+    else
+      query
     end
   end
 
   defp maybe_lock(query, opts) do
-    case Keyword.get(opts, :lock_for_update, false) do
-      true ->
-        query |> lock("FOR UPDATE")
-
-      false ->
-        query
+    if Keyword.get(opts, :lock_for_update, false) do
+      lock(query, "FOR UPDATE")
+    else
+      query
     end
   end
 end

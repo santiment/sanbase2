@@ -1,7 +1,9 @@
 defmodule Sanbase.BlockchainAddress.BlockchainAddressUserPair do
+  @moduledoc false
   use Ecto.Schema
 
-  import Ecto.{Query, Changeset}
+  import Ecto.Changeset
+  import Ecto.Query
 
   alias Sanbase.BlockchainAddress.BlockchainAddressLabel, as: Label
 
@@ -110,8 +112,7 @@ defmodule Sanbase.BlockchainAddress.BlockchainAddressUserPair do
         # notes is an optional field. It should be replaced only if it is in the changeset
         notes_change = if Map.has_key?(changeset.changes, :notes), do: [:notes], else: []
 
-        multi
-        |> Ecto.Multi.insert(offset, changeset,
+        Ecto.Multi.insert(multi, offset, changeset,
           on_conflict: {:replace, notes_change ++ [:user_id, :blockchain_address_id]},
           conflict_target: [:user_id, :blockchain_address_id],
           returning: true
@@ -140,33 +141,31 @@ defmodule Sanbase.BlockchainAddress.BlockchainAddressUserPair do
 
   # Private functions
 
-  defp put_labels(%{valid?: true} = changeset, %{labels: label_names} = attrs)
-       when not is_nil(label_names) do
+  defp put_labels(%{valid?: true} = changeset, %{labels: label_names} = attrs) when not is_nil(label_names) do
     %{user_id: user_id, blockchain_address_id: blockchain_address_id} = attrs
 
     {:ok, labels} = Label.find_or_insert_by_names(label_names)
 
     drop_pair_labels(user_id, blockchain_address_id)
 
-    changeset
-    |> put_assoc(:labels, labels)
+    put_assoc(changeset, :labels, labels)
   end
 
   defp put_labels(changeset, _attrs), do: changeset
 
   defp drop_pair_labels(user_id, blockchain_address_id) do
     id =
-      from(pair in __MODULE__,
-        where: pair.user_id == ^user_id and pair.blockchain_address_id == ^blockchain_address_id,
-        select: pair.id
+      Sanbase.Repo.one(
+        from(pair in __MODULE__,
+          where: pair.user_id == ^user_id and pair.blockchain_address_id == ^blockchain_address_id,
+          select: pair.id
+        )
       )
-      |> Sanbase.Repo.one()
 
     if id != nil do
-      from(pair_label in @labels_join_through_table,
-        where: pair_label.blockchain_address_user_pair_id == ^id
+      Sanbase.Repo.delete_all(
+        from(pair_label in @labels_join_through_table, where: pair_label.blockchain_address_user_pair_id == ^id)
       )
-      |> Sanbase.Repo.delete_all()
     end
   end
 end

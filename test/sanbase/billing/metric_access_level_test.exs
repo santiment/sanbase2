@@ -2,6 +2,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
   use Sanbase.DataCase, async: true
 
   # @moduletag skip_suite: true
+  alias Sanbase.Billing.ApiInfo
 
   setup do
     metric_access_map = Sanbase.Metric.access_map()
@@ -10,10 +11,10 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
   end
 
   test "incomplete metrics" do
-    incomplete_metrics = Sanbase.Metric.incomplete_metrics() |> Enum.sort()
+    incomplete_metrics = Enum.sort(Sanbase.Metric.incomplete_metrics())
 
     expected =
-      [
+      Enum.sort([
         "nft_retail_trade_volume_usd",
         "realized_value_usd_1d",
         "circulation_2y",
@@ -494,7 +495,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "eth2_stakers_mvrv_usd_3y",
         "eth2_stakers_mvrv_usd_5y",
         "eth2_stakers_mvrv_usd_10y",
-        # XRP metrics
         "daily_assets_issued",
         "total_assets_issued",
         "daily_trustlines_count_change",
@@ -504,16 +504,13 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "rsi_4h",
         "rsi_1d",
         "rsi_7d",
-        # ecosystem aggregated metrics
         "ecosystem_dev_activity",
         "ecosystem_github_activity",
         "ecosystem_dev_activity_contributors_count_7d",
         "ecosystem_github_activity_contributors_count_7d",
         "gini_index",
         "annual_inflation_rate",
-        # Social metrics
         "unique_social_volume_total_1d",
-        # Sentiment V2 metrics
         "sentiment_weighted_4chan_1d_v2",
         "sentiment_weighted_bitcointalk_1d_v2",
         "sentiment_weighted_reddit_1d_v2",
@@ -535,13 +532,16 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "unique_social_volume_reddit_1d",
         "unique_social_volume_telegram_1d",
         "unique_social_volume_twitter_1d",
-        # Liquity metrics
         "liquity_active_addresses",
         "liquidity_in_amm_pools_by_asset",
         "liquidity_in_amm_pools_by_pair"
-      ]
-      |> Enum.sort()
+      ])
 
+    # XRP metrics
+    # ecosystem aggregated metrics
+    # Social metrics
+    # Sentiment V2 metrics
+    # Liquity metrics
     missing_expected_incomplete = expected -- incomplete_metrics
     unexpected_incomplete_metrics = incomplete_metrics -- expected
 
@@ -553,11 +553,12 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
 
   test "free metrics", %{metric_access_map: access_map} do
     free_metrics =
-      Sanbase.Billing.ApiInfo.get_with_access_level(access_map, :free)
+      access_map
+      |> ApiInfo.get_with_access_level(:free)
       |> Enum.sort()
 
     expected =
-      [
+      Enum.sort([
         "active_addresses_60d",
         "active_addresses_90d",
         "active_addresses_30d",
@@ -600,7 +601,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "etf_volume_usd_5m",
         "dex_amm_volume_in_xrp_5min",
         "dex_amm_volume_in_usd_5min",
-        # change metrics
         "volume_usd_change_1d",
         "volume_usd_change_7d",
         "volume_usd_change_30d",
@@ -617,7 +617,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "marketcap_usd_change_1d",
         "marketcap_usd_change_7d",
         "marketcap_usd_change_30d",
-        # Uniswap
         "uniswap_total_claims_amount",
         "uniswap_claims_amount",
         "uniswap_claims_count",
@@ -631,7 +630,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "uniswap_total_user_claims_count",
         "uniswap_user_claims_amount",
         "uniswap_user_claims_count",
-        # histogram metrics
         "eth2_staked_amount_per_label",
         "eth2_staked_address_count_per_label",
         "eth2_top_stakers",
@@ -658,9 +656,11 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "annual_inflation_rate",
         "money_supply",
         "fully_diluted_valuation_usd"
-      ]
-      |> Enum.sort()
+      ])
 
+    # change metrics
+    # Uniswap
+    # histogram metrics
     missing_expected_free = expected -- free_metrics
     unexpected_free_metrics = free_metrics -- expected
 
@@ -672,11 +672,12 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
 
   test "restricted metrics", %{metric_access_map: access_map} do
     restricted_metrics =
-      Sanbase.Billing.ApiInfo.get_with_access_level(access_map, :restricted)
+      access_map
+      |> ApiInfo.get_with_access_level(:restricted)
       |> Enum.sort()
 
     expected_restricted_metrics =
-      [
+      Enum.sort([
         "mean_realized_price_usd",
         "mean_realized_price_usd_10y",
         "mean_realized_price_usd_5y",
@@ -689,7 +690,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "mean_realized_price_usd_30d",
         "mean_realized_price_usd_7d",
         "mean_realized_price_usd_1d",
-        # mvrv Metrics
         "mvrv_long_short_diff_usd",
         "mvrv_usd",
         "mvrv_usd_10y",
@@ -715,7 +715,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "mvrv_usd_intraday_30d",
         "mvrv_usd_intraday_7d",
         "mvrv_usd_intraday_1d",
-        # circulation metrics
         "circulation_10y",
         "circulation_5y",
         "circulation_3y",
@@ -728,7 +727,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "circulation_7d",
         "circulation_1d",
         "circulation_usd_180d",
-        # dormant ciruclation
         "dormant_circulation_10y",
         "dormant_circulation_9y",
         "dormant_circulation_8y",
@@ -740,7 +738,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "dormant_circulation_180d",
         "dormant_circulation_90d",
         "dormant_circulation_usd_180d",
-        # other
         "mean_age",
         "mean_age_90d",
         "mean_age_180d",
@@ -833,7 +830,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "rsi_4h",
         "rsi_1d",
         "rsi_7d",
-        # social metrics
         "community_messages_count_telegram",
         "community_messages_count_total",
         "nft_social_volume",
@@ -918,7 +914,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "sentiment_balance_bitcointalk",
         "sentiment_balance_farcaster",
         "sentiment_balance_total",
-        # old volume_consumed metrics
         "sentiment_volume_consumed_4chan",
         "sentiment_volume_consumed_telegram",
         "sentiment_volume_consumed_reddit",
@@ -927,7 +922,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "sentiment_volume_consumed_bitcointalk",
         "sentiment_volume_consumed_farcaster",
         "sentiment_volume_consumed_total",
-        # volume_consumed gets renamed to weighted
         "sentiment_weighted_4chan",
         "sentiment_weighted_telegram",
         "sentiment_weighted_reddit",
@@ -936,7 +930,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "sentiment_weighted_bitcointalk",
         "sentiment_weighted_farcaster",
         "sentiment_weighted_total",
-        # Social metrics V2
         "sentiment_balance_4chan_v2",
         "sentiment_balance_bitcointalk_v2",
         "sentiment_balance_reddit_v2",
@@ -965,31 +958,25 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "sentiment_weighted_youtube_videos_1d_v2",
         "sentiment_weighted_youtube_videos_1h_v2",
         "sentiment_weighted_youtube_videos_v2",
-        # social v2 metrics
         "unique_social_volume_total_1d",
         "social_active_users",
         "trending_words_rank",
-        # histogram metrics
         "mentions_count_total",
         "mentions_percentage_twitter",
         "mentions_percentage_total",
         "mentions_percentage_1h_total",
         "mentions_count_twitter",
-        # social metrics for all accounts
         "age_distribution",
         "price_histogram",
         "spent_coins_cost",
         "all_spent_coins_cost",
         "uniswap_top_claimers",
-        # exchange supply metrics
         "supply_on_exchanges",
         "supply_outside_exchanges",
         "percent_of_total_supply_on_exchanges",
-        # top holders metrics
         "amount_in_top_holders",
         "amount_in_exchange_top_holders",
         "amount_in_non_exchange_top_holders",
-        # holders distribution metrics
         "holders_distribution_0.001_to_0.01",
         "holders_distribution_0.01_to_0.1",
         "holders_distribution_0.1_to_1",
@@ -1062,7 +1049,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "percent_of_holders_distribution_10M_to_100M",
         "percent_of_holders_distribution_100M_to_1B",
         "percent_of_holders_distribution_1B_to_inf",
-        # active holders distribution metrics
         "active_holders_distribution_0.001_to_0.01",
         "active_holders_distribution_0.01_to_0.1",
         "active_holders_distribution_0.1_to_1",
@@ -1127,7 +1113,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "percent_of_active_holders_distribution_100k_to_1M",
         "percent_of_active_holders_distribution_1M_to_10M",
         "percent_of_active_holders_distribution_10M_to_inf",
-        # makerdao metrics
         "dai_created",
         "dai_repaid",
         "mcd_liquidation",
@@ -1140,7 +1125,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "scd_collat_ratio",
         "scd_locked_token",
         "total_dai_created",
-        # derivatives
         "bitmex_perpetual_funding_rate",
         "bitmex_perpetual_basis",
         "bitmex_perpetual_open_interest",
@@ -1166,7 +1150,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "deribit_perpetual_funding_rate",
         "huobi_perpetual_funding_rate",
         "ftx_perpetual_open_interest",
-        # label metrics
         "active_deposits_per_exchange",
         "active_withdrawals_per_exchange",
         "deposit_transactions_per_exchange",
@@ -1196,7 +1179,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "nft_whale_trade_volume_usd",
         "nft_retail_trades_count",
         "nft_retail_trade_volume_usd",
-        # nft collection metrics
         "nft_collection_min_price",
         "nft_collection_max_price",
         "nft_collection_avg_price",
@@ -1213,12 +1195,9 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "nft_network_profit_loss_usd",
         "nft_collection_profit_loss",
         "nft_collection_profit_loss_usd",
-        # label balances
         "labelled_historical_balance",
         "labelled_historical_balance_changes",
-        # table metrics
         "labelled_exchange_balance_sum",
-        # balance and flow labeled metrics
         "miners_balance",
         "genesis_balance",
         "dex_trader_balance",
@@ -1233,7 +1212,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "makerdao_bite_keeper_balance",
         "makerdao_cdp_owner_balance",
         "proxy_balance",
-        # labeled holders metrics
         "holders_labeled_negative_distribution_100_to_1k",
         "holders_labeled_negative_distribution_0.1_to_1",
         "holders_labeled_distribution_combined_balance_total",
@@ -1286,7 +1264,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "holders_labeled_negative_distribution_100k_to_1M",
         "holders_labeled_negative_distribution_0_to_0.001",
         "holders_labeled_distribution_combined_balance_10M_to_inf",
-        # age band metrics
         "spent_coins_age_band_0d_to_1d",
         "spent_coins_age_band_1d_to_7d",
         "spent_coins_age_band_7d_to_30d",
@@ -1313,7 +1290,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "percent_of_spent_coins_age_band_5y_to_7y",
         "percent_of_spent_coins_age_band_7y_to_10y",
         "percent_of_spent_coins_age_band_10y_to_20y",
-        # hodl waves metrics
         "realized_cap_hodl_waves_0d_to_1d",
         "realized_cap_hodl_waves_1d_to_7d",
         "realized_cap_hodl_waves_7d_to_30d",
@@ -1326,16 +1302,13 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "realized_cap_hodl_waves_3y_to_5y",
         "realized_cap_hodl_waves_5y_to_10y",
         "realized_cap_hodl_waves_10y_to_20y",
-        # ETH2 metrics
         "eth2_stakers_count",
         "eth2_roi",
         "eth_beacon_deposits",
         "eth_beacon_validator_withdrawals",
         "eth_beacon_reward_withdrawals",
-        # Defi
         "defi_total_value_locked_eth",
         "defi_total_value_locked_usd",
-        # Change metrics
         "age_destroyed_change_1d",
         "age_destroyed_change_30d",
         "age_destroyed_change_7d",
@@ -1458,18 +1431,11 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "whale_transaction_count_1m_usd_to_inf_change_1d",
         "whale_transaction_count_1m_usd_to_inf_change_7d",
         "whale_transaction_count_1m_usd_to_inf_change_30d",
-        # bnb funding rates metrics
-        # ftx funding rates metric
-        # bitfinex funding rates metric
-        # dydx funding rates metric
-        # deribit funding rates metric
         "sentiment_volume_consumed_total_change_1d",
         "sentiment_volume_consumed_total_change_7d",
         "sentiment_volume_consumed_total_change_30d",
-        # contract metrics
         "contract_interacting_addresses_count",
         "contract_transactions_count",
-        # Aave v2 metrics
         "aave_v2_action_deposits",
         "aave_v2_action_liquidations",
         "aave_v2_action_new_debt",
@@ -1496,7 +1462,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "aave_v2_revenue_usd",
         "aave_v2_total_protocol_revenue_usd",
         "aave_v2_total_protocol_cumulative_revenue_usd",
-        # Aave v3 metrics
         "aave_v3_action_deposits",
         "aave_v3_action_liquidations",
         "aave_v3_action_new_debt",
@@ -1522,7 +1487,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "aave_v3_revenue_usd",
         "aave_v3_total_protocol_revenue_usd",
         "aave_v3_total_protocol_cumulative_revenue_usd",
-        # Compound metrics
         "compound_action_deposits",
         "compound_action_liquidations",
         "compound_action_new_debt",
@@ -1548,7 +1512,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "compound_revenue_usd",
         "compound_total_protocol_revenue_usd",
         "compound_total_protocol_cumulative_revenue_usd",
-        # Compound v3 metrics
         "compound_v3_action_deposits",
         "compound_v3_action_liquidations",
         "compound_v3_action_new_debt",
@@ -1572,7 +1535,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "compound_v3_supply_apy",
         "compound_v3_borrow_apy",
         "compound_v3_active_addresses",
-        # Liquity metrics
         "liquity_action_deposits",
         "liquity_action_liquidations",
         "liquity_action_new_debt",
@@ -1589,7 +1551,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "liquity_active_addresses",
         "liquidity_in_amm_pools_by_asset",
         "liquidity_in_amm_pools_by_pair",
-        # Fraxlend metrics
         "fraxlend_action_deposits",
         "fraxlend_action_liquidations",
         "fraxlend_action_new_debt",
@@ -1609,7 +1570,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "fraxlend_protocol_total_borrowed_usd",
         "fraxlend_borrow_apy",
         "fraxlend_active_addresses",
-        # Spark metrics
         "spark_action_deposits",
         "spark_action_liquidations",
         "spark_action_new_debt",
@@ -1631,7 +1591,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "spark_supply_apy",
         "spark_borrow_apy",
         "spark_active_addresses",
-        # Fluid metrics
         "fluid_action_deposits",
         "fluid_action_liquidations",
         "fluid_action_new_debt",
@@ -1645,7 +1604,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "fluid_total_new_debt_usd",
         "fluid_total_repayments_usd",
         "fluid_active_addresses",
-        # Morpho metrics
         "morpho_action_deposits",
         "morpho_action_liquidations",
         "morpho_action_new_debt",
@@ -1660,7 +1618,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "morpho_total_repayments_usd",
         "morpho_active_addresses",
         "morpho_vaults_total_supplied_usd",
-        # Makerdao metrics
         "makerdao_action_deposits",
         "makerdao_action_liquidations",
         "makerdao_action_new_debt",
@@ -1680,11 +1637,9 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "makerdao_protocol_total_supplied_usd",
         "makerdao_protocol_total_borrowed_usd",
         "makerdao_active_addresses",
-        # Makerdao DSR metrics
         "makerdao_dsr_deposits",
         "makerdao_dsr_withdrawals",
         "makerdao_dsr_total_supplied",
-        # Ethena staking metrics
         "ethena_staking_deposits",
         "ethena_staking_withdrawals",
         "ethena_staking_apy",
@@ -1696,7 +1651,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "pendle_underlying_apy",
         "pendle_implied_apy",
         "pendle_yield_spread",
-        # ETH 2.0 stakers MVRV metrics
         "eth2_stakers_realized_value_usd_365d",
         "eth2_stakers_realized_value_usd_2y",
         "eth2_stakers_realized_value_usd_3y",
@@ -1707,53 +1661,97 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "eth2_stakers_mvrv_usd_3y",
         "eth2_stakers_mvrv_usd_5y",
         "eth2_stakers_mvrv_usd_10y",
-        # XRP metrics
         "daily_assets_issued",
         "total_assets_issued",
         "daily_trustlines_count_change",
         "total_trustlines_count",
         "dex_volume_in_xrp_5m",
         "dex_volume_in_usd_5m",
-        # Some balance metrics
         "all_known_balance",
         "unlabeled_balance",
-        # Labeled historical balance "fake" metrics
         "combined_historical_balance_centralized_exchanges",
         "combined_historical_balance_decentralized_exchanges",
         "combined_historical_balance_funds",
         "historical_balance_centralized_exchanges",
         "historical_balance_decentralized_exchanges",
         "historical_balance_whales_usd"
-      ]
-      |> Enum.sort()
+      ])
+
+    # mvrv Metrics
+    # circulation metrics
+    # dormant ciruclation
+    # other
+    # social metrics
+    # old volume_consumed metrics
+    # volume_consumed gets renamed to weighted
+    # Social metrics V2
+    # social v2 metrics
+    # histogram metrics
+    # social metrics for all accounts
+    # exchange supply metrics
+    # top holders metrics
+    # holders distribution metrics
+    # active holders distribution metrics
+    # makerdao metrics
+    # derivatives
+    # label metrics
+    # nft collection metrics
+    # label balances
+    # table metrics
+    # balance and flow labeled metrics
+    # labeled holders metrics
+    # age band metrics
+    # hodl waves metrics
+    # ETH2 metrics
+    # Defi
+    # Change metrics
+    # bnb funding rates metrics
+    # ftx funding rates metric
+    # bitfinex funding rates metric
+    # dydx funding rates metric
+    # deribit funding rates metric
+    # contract metrics
+    # Aave v2 metrics
+    # Aave v3 metrics
+    # Compound metrics
+    # Compound v3 metrics
+    # Liquity metrics
+    # Fraxlend metrics
+    # Spark metrics
+    # Fluid metrics
+    # Morpho metrics
+    # Makerdao metrics
+    # Makerdao DSR metrics
+    # Ethena staking metrics
+    # ETH 2.0 stakers MVRV metrics
+    # XRP metrics
+    # Some balance metrics
+    # Labeled historical balance "fake" metrics
 
     # The diff algorithm fails to nicely print that a single metric is
     # missing but instead shows some not-understandable result when comparing
     # the lists directly
 
     # not present in expected
-    assert MapSet.difference(
-             MapSet.new(restricted_metrics),
-             MapSet.new(expected_restricted_metrics)
-           )
+    assert restricted_metrics
+           |> MapSet.new()
+           |> MapSet.difference(MapSet.new(expected_restricted_metrics))
            |> Enum.to_list() == []
 
     # not present in the metrics list
-    assert MapSet.difference(
-             MapSet.new(expected_restricted_metrics),
-             MapSet.new(restricted_metrics)
-           )
+    assert expected_restricted_metrics
+           |> MapSet.new()
+           |> MapSet.difference(MapSet.new(restricted_metrics))
            |> Enum.to_list() == []
   end
 
   test "forbidden metrics", %{metric_access_map: access_map} do
     forbidden_metrics =
-      Sanbase.Billing.ApiInfo.get_with_access_level(access_map, :forbidden)
+      access_map
+      |> ApiInfo.get_with_access_level(:forbidden)
       |> Enum.sort()
 
-    expected_forbidden_metrics =
-      []
-      |> Enum.sort()
+    expected_forbidden_metrics = Enum.sort([])
 
     assert forbidden_metrics == expected_forbidden_metrics
   end

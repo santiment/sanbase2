@@ -1,5 +1,7 @@
 defmodule SanbaseWeb.Guardian.Token do
+  @moduledoc false
   use Ecto.Schema
+
   import Ecto.Query
 
   @primary_key false
@@ -50,7 +52,8 @@ defmodule SanbaseWeb.Guardian.Token do
 
   def refresh_tokens(user_id, current_refresh_token \\ nil) do
     result =
-      refresh_tokens_by_user_id(user_id)
+      user_id
+      |> refresh_tokens_by_user_id()
       |> Enum.map(fn token ->
         is_current = not is_nil(current_refresh_token) and current_refresh_token == token.jwt
         created_at = DateTime.from_naive!(token.inserted_at, "Etc/UTC")
@@ -65,7 +68,7 @@ defmodule SanbaseWeb.Guardian.Token do
           last_active_at: last_active_at(token, created_at, is_current),
           created_at: created_at,
           is_current: is_current,
-          has_expired: DateTime.compare(DateTime.utc_now(), expires_at) == :gt
+          has_expired: DateTime.after?(DateTime.utc_now(), expires_at)
         }
       end)
 
@@ -83,8 +86,7 @@ defmodule SanbaseWeb.Guardian.Token do
         {:ok, true}
 
       result ->
-        {:error,
-         "Error renewing last exchanged at for a refresh token. Result: #{inspect(result)}"}
+        {:error, "Error renewing last exchanged at for a refresh token. Result: #{inspect(result)}"}
     end
   end
 
@@ -100,11 +102,11 @@ defmodule SanbaseWeb.Guardian.Token do
   defp refresh_tokens_by_user_id(user_id) do
     sub = to_string(user_id)
 
-    from(
-      gt in __MODULE__,
-      select: map(gt, [:jwt, :jti, :exp, :claims, :inserted_at, :typ, :last_exchanged_at]),
-      where: gt.sub == ^sub and gt.typ == "refresh"
+    Sanbase.Repo.all(
+      from(gt in __MODULE__,
+        select: map(gt, [:jwt, :jti, :exp, :claims, :inserted_at, :typ, :last_exchanged_at]),
+        where: gt.sub == ^sub and gt.typ == "refresh"
+      )
     )
-    |> Sanbase.Repo.all()
   end
 end

@@ -5,6 +5,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.TransformResolution do
   """
 
   @behaviour Absinthe.Middleware
+
   alias Absinthe.Resolution
 
   def call(%Resolution{} = resolution, _opts) do

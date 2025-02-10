@@ -1,6 +1,7 @@
 defmodule SanbaseWeb.Graphql.Resolvers.TableConfigurationResolver do
-  alias Sanbase.TableConfiguration
+  @moduledoc false
   alias Sanbase.Accounts.User
+  alias Sanbase.TableConfiguration
 
   require Logger
 
@@ -27,27 +28,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.TableConfigurationResolver do
 
   # Mutations
 
-  def create_table_configuration(
-        _root,
-        %{settings: settings},
-        %{context: %{auth: %{current_user: user}}}
-      ) do
+  def create_table_configuration(_root, %{settings: settings}, %{context: %{auth: %{current_user: user}}}) do
     TableConfiguration.create(Map.put(settings, :user_id, user.id))
   end
 
-  def update_table_configuration(
-        _root,
-        %{id: id, settings: settings},
-        %{context: %{auth: %{current_user: user}}}
-      ) do
+  def update_table_configuration(_root, %{id: id, settings: settings}, %{context: %{auth: %{current_user: user}}}) do
     TableConfiguration.update(id, user.id, settings)
   end
 
-  def delete_table_configuration(
-        _root,
-        %{id: id},
-        %{context: %{auth: %{current_user: user}}}
-      ) do
+  def delete_table_configuration(_root, %{id: id}, %{context: %{auth: %{current_user: user}}}) do
     TableConfiguration.delete(id, user.id)
   end
 end

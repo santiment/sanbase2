@@ -1,4 +1,5 @@
 defmodule Sanbase.Cryptocompare.PricePoint do
+  @moduledoc false
   defstruct [
     :base_asset,
     :quote_asset,
@@ -40,9 +41,7 @@ defmodule Sanbase.Cryptocompare.PricePoint do
       |> Map.delete(:datetime)
       |> Map.from_struct()
 
-    key =
-      [point.source, point.base_asset, point.quote_asset, point.timestamp]
-      |> Enum.join("_")
+    key = Enum.join([point.source, point.base_asset, point.quote_asset, point.timestamp], "_")
 
     {key, Jason.encode!(point)}
   end

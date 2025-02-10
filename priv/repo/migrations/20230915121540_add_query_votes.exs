@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddQueryVotes do
+  @moduledoc false
   use Ecto.Migration
 
   @table :votes

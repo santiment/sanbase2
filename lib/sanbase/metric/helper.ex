@@ -33,32 +33,32 @@ defmodule Sanbase.Metric.Helper do
     Sanbase.Clickhouse.MetricAdapter
   ]
 
-  def access_map(), do: get(:access_map)
-  def aggregations(), do: get(:aggregations)
-  def aggregations_per_metric(), do: get(:aggregations_per_metric)
-  def fixed_labels_parameters_metrics(), do: get(:fixed_labels_parameters_metrics)
-  def free_metrics(), do: get(:free_metrics)
-  def histogram_metric_to_module_map(), do: get(:histogram_metric_to_module_map)
-  def histogram_metrics(), do: get(:histogram_metrics)
-  def histogram_metrics_mapset(), do: get(:histogram_metrics_mapset)
-  def implemented_optional_functions(), do: get(:implemented_optional_functions)
-  def incomplete_metrics(), do: get(:incomplete_metrics)
-  def metric_modules(), do: @modules
-  def metric_to_module_map(), do: get(:metric_to_module_map)
-  def metric_to_modules_map(), do: get(:metric_to_modules_map)
-  def metrics(), do: get(:metrics)
-  def metrics_mapset(), do: get(:metrics_mapset)
-  def min_plan_map(), do: get(:min_plan_map)
-  def required_selectors_map(), do: get(:required_selectors_map)
-  def restricted_metrics(), do: get(:restricted_metrics)
-  def deprecated_metrics_map(), do: get(:deprecated_metrics_map)
-  def soft_deprecated_metrics_map(), do: get(:soft_deprecated_metrics_map)
-  def table_metric_to_module_map(), do: get(:table_metric_to_module_map)
-  def table_metrics(), do: get(:table_metrics)
-  def table_metrics_mapset(), do: get(:table_metrics_mapset)
-  def timeseries_metric_to_module_map(), do: get(:timeseries_metric_to_module_map)
-  def timeseries_metrics(), do: get(:timeseries_metrics)
-  def timeseries_metrics_mapset(), do: get(:timeseries_metrics_mapset)
+  def access_map, do: get(:access_map)
+  def aggregations, do: get(:aggregations)
+  def aggregations_per_metric, do: get(:aggregations_per_metric)
+  def fixed_labels_parameters_metrics, do: get(:fixed_labels_parameters_metrics)
+  def free_metrics, do: get(:free_metrics)
+  def histogram_metric_to_module_map, do: get(:histogram_metric_to_module_map)
+  def histogram_metrics, do: get(:histogram_metrics)
+  def histogram_metrics_mapset, do: get(:histogram_metrics_mapset)
+  def implemented_optional_functions, do: get(:implemented_optional_functions)
+  def incomplete_metrics, do: get(:incomplete_metrics)
+  def metric_modules, do: @modules
+  def metric_to_module_map, do: get(:metric_to_module_map)
+  def metric_to_modules_map, do: get(:metric_to_modules_map)
+  def metrics, do: get(:metrics)
+  def metrics_mapset, do: get(:metrics_mapset)
+  def min_plan_map, do: get(:min_plan_map)
+  def required_selectors_map, do: get(:required_selectors_map)
+  def restricted_metrics, do: get(:restricted_metrics)
+  def deprecated_metrics_map, do: get(:deprecated_metrics_map)
+  def soft_deprecated_metrics_map, do: get(:soft_deprecated_metrics_map)
+  def table_metric_to_module_map, do: get(:table_metric_to_module_map)
+  def table_metrics, do: get(:table_metrics)
+  def table_metrics_mapset, do: get(:table_metrics_mapset)
+  def timeseries_metric_to_module_map, do: get(:timeseries_metric_to_module_map)
+  def timeseries_metrics, do: get(:timeseries_metrics)
+  def timeseries_metrics_mapset, do: get(:timeseries_metrics_mapset)
 
   @functions [
     {:access_map, []},
@@ -90,7 +90,7 @@ defmodule Sanbase.Metric.Helper do
     # {:metric_modules, []},
   ]
 
-  def refresh_stored_terms() do
+  def refresh_stored_terms do
     Logger.info("Refreshing stored terms in the #{__MODULE__}")
 
     result =
@@ -108,7 +108,7 @@ defmodule Sanbase.Metric.Helper do
   end
 
   # Private functions
-  defp key(fun, args), do: {__MODULE__, fun, args} |> Sanbase.Cache.hash()
+  defp key(fun, args), do: Sanbase.Cache.hash({__MODULE__, fun, args})
 
   defp get(fun, args \\ []) do
     key = key(fun, args)
@@ -127,8 +127,7 @@ defmodule Sanbase.Metric.Helper do
   defp compute(:access_map, []) do
     Enum.reduce(@modules, %{}, fn module, acc ->
       metric_to_access_map =
-        module.access_map()
-        |> Map.new(fn {metric, restrictions} ->
+        Map.new(module.access_map(), fn {metric, restrictions} ->
           access_map =
             case restrictions do
               restrictions when is_map(restrictions) ->
@@ -146,7 +145,8 @@ defmodule Sanbase.Metric.Helper do
   end
 
   defp compute(:aggregations, []) do
-    Enum.reduce(@modules, [], fn module, acc ->
+    @modules
+    |> Enum.reduce([], fn module, acc ->
       aggregations = module.available_aggregations()
       aggregations ++ acc
     end)
@@ -188,13 +188,15 @@ defmodule Sanbase.Metric.Helper do
   end
 
   defp compute(:free_metrics, []) do
-    Enum.map(@modules, & &1.free_metrics())
+    @modules
+    |> Enum.map(& &1.free_metrics())
     |> List.flatten()
     |> Enum.uniq()
   end
 
   defp compute(:restricted_metrics, []) do
-    Enum.map(@modules, & &1.restricted_metrics())
+    @modules
+    |> Enum.map(& &1.restricted_metrics())
     |> List.flatten()
     |> Enum.uniq()
   end
@@ -218,13 +220,14 @@ defmodule Sanbase.Metric.Helper do
   end
 
   defp compute(:metrics, []) do
-    Enum.map(@modules, & &1.available_metrics())
+    @modules
+    |> Enum.map(& &1.available_metrics())
     |> List.flatten()
     |> Enum.uniq()
   end
 
   defp compute(:metrics_mapset, []) do
-    compute(:metrics, []) |> MapSet.new()
+    :metrics |> compute([]) |> MapSet.new()
   end
 
   defp compute(:timeseries_metric_to_module_map, []) do
@@ -237,13 +240,14 @@ defmodule Sanbase.Metric.Helper do
   end
 
   defp compute(:timeseries_metrics, []) do
-    Enum.map(@modules, & &1.available_timeseries_metrics())
+    @modules
+    |> Enum.map(& &1.available_timeseries_metrics())
     |> List.flatten()
     |> Enum.uniq()
   end
 
   defp compute(:timeseries_metrics_mapset, []) do
-    compute(:timeseries_metrics, []) |> MapSet.new()
+    :timeseries_metrics |> compute([]) |> MapSet.new()
   end
 
   defp compute(:histogram_metric_to_module_map, []) do
@@ -256,13 +260,14 @@ defmodule Sanbase.Metric.Helper do
   end
 
   defp compute(:histogram_metrics, []) do
-    Enum.map(@modules, & &1.available_histogram_metrics())
+    @modules
+    |> Enum.map(& &1.available_histogram_metrics())
     |> List.flatten()
     |> Enum.uniq()
   end
 
   defp compute(:histogram_metrics_mapset, []) do
-    compute(:histogram_metrics, []) |> MapSet.new()
+    :histogram_metrics |> compute([]) |> MapSet.new()
   end
 
   defp compute(:table_metric_to_module_map, []) do
@@ -275,17 +280,19 @@ defmodule Sanbase.Metric.Helper do
   end
 
   defp compute(:table_metrics, []) do
-    Enum.map(@modules, & &1.available_table_metrics())
+    @modules
+    |> Enum.map(& &1.available_table_metrics())
     |> List.flatten()
     |> Enum.uniq()
   end
 
   defp compute(:table_metrics_mapset, []) do
-    compute(:table_metrics, []) |> MapSet.new()
+    :table_metrics |> compute([]) |> MapSet.new()
   end
 
   defp compute(:incomplete_metrics, []) do
-    Enum.map(@modules, & &1.incomplete_metrics())
+    @modules
+    |> Enum.map(& &1.incomplete_metrics())
     |> List.flatten()
     |> Enum.uniq()
   end
@@ -355,11 +362,11 @@ defmodule Sanbase.Metric.Helper do
     :timeseries_metrics
   ]
 
-  def not_implemented() do
+  def not_implemented do
     Enum.filter(@functions, fn {fun, args} -> compute(fun, args) == :not_implemented end)
   end
 
-  def implemented() do
+  def implemented do
     Enum.filter(@functions, fn {fun, args} -> compute(fun, args) != :not_implemented end)
   end
 end

@@ -1,4 +1,5 @@
 defmodule Sanbase.Utils.ListSelector.Transform do
+  @moduledoc false
   import Sanbase.DateTimeUtils
 
   def args_to_filters_combinator(args) do
@@ -44,7 +45,7 @@ defmodule Sanbase.Utils.ListSelector.Transform do
     {to_atomize, rest} = Map.split(map, [:operator, :aggregation, :direction])
 
     to_atomize
-    |> Enum.into(%{}, fn {k, v} ->
+    |> Map.new(fn {k, v} ->
       v = if is_binary(v), do: String.to_existing_atom(v), else: v
       {k, v}
     end)
@@ -58,22 +59,20 @@ defmodule Sanbase.Utils.ListSelector.Transform do
   def transform_from_to(%{from: "utc_now" <> _ = from, to: "utc_now" <> _ = to} = map) do
     %{
       map
-      | from: utc_now_string_to_datetime!(from) |> round_datetime(rounding: :up),
-        to: utc_now_string_to_datetime!(to) |> round_datetime(rounding: :up)
+      | from: from |> utc_now_string_to_datetime!() |> round_datetime(rounding: :up),
+        to: to |> utc_now_string_to_datetime!() |> round_datetime(rounding: :up)
     }
   end
 
-  def transform_from_to(%{from: "utc_now" <> _}),
-    do: {:error, "Cannot use dynamic 'from' without dynamic 'to'"}
+  def transform_from_to(%{from: "utc_now" <> _}), do: {:error, "Cannot use dynamic 'from' without dynamic 'to'"}
 
-  def transform_from_to(%{to: "utc_now" <> _}),
-    do: {:error, "Cannot use dynamic 'to' without dynamic 'from'"}
+  def transform_from_to(%{to: "utc_now" <> _}), do: {:error, "Cannot use dynamic 'to' without dynamic 'from'"}
 
   def transform_from_to(%{from: from, to: to} = map) when is_binary(from) and is_binary(to) do
     %{
       map
-      | from: from_iso8601!(from) |> round_datetime(rounding: :up),
-        to: from_iso8601!(to) |> round_datetime(rounding: :up)
+      | from: from |> from_iso8601!() |> round_datetime(rounding: :up),
+        to: to |> from_iso8601!() |> round_datetime(rounding: :up)
     }
   end
 
@@ -110,15 +109,15 @@ defmodule Sanbase.Utils.ListSelector.Transform do
         {:error, "Cannot use 'dynamic_from' without 'dynamic_to'."}
 
       _ ->
-        now = Timex.now()
+        now = DateTime.utc_now()
         shift_to_by = if dynamic_to == "now", do: 0, else: str_to_sec(dynamic_to)
 
         from = Timex.shift(now, seconds: -str_to_sec(dynamic_from))
         to = Timex.shift(now, seconds: -shift_to_by)
 
         args
-        |> Map.put(:from, from |> round_datetime(rounding: :up))
-        |> Map.put(:to, to |> round_datetime(rounding: :up))
+        |> Map.put(:from, round_datetime(from, rounding: :up))
+        |> Map.put(:to, round_datetime(to, rounding: :up))
     end
   end
 
@@ -128,9 +127,9 @@ defmodule Sanbase.Utils.ListSelector.Transform do
 
   def maybe_shift_to_datetime(%{to: to, metric: metric} = args) do
     with {:ok, %{has_incomplete_data: true}} <- Sanbase.Metric.metadata(metric),
-         start_of_day = DateTime.utc_now() |> Timex.beginning_of_day(),
+         start_of_day = Timex.beginning_of_day(DateTime.utc_now()),
          comp when comp != :lt <- DateTime.compare(to, start_of_day) do
-      shifted_to = start_of_day |> Timex.shift(microseconds: -1)
+      shifted_to = Timex.shift(start_of_day, microseconds: -1)
       %{args | to: shifted_to}
     else
       _ -> args

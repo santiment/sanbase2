@@ -1,12 +1,15 @@
 defmodule Sanbase.DiscordBot.CodeHandler do
-  require Logger
-
+  @moduledoc false
+  alias Nostrum.Struct.Component.ActionRow
   alias Nostrum.Struct.Component.Button
-  alias Nostrum.Struct.Component.{ActionRow, TextInput}
-
+  alias Nostrum.Struct.Component.TextInput
+  alias Nostrum.Struct.Interaction
   alias Sanbase.DiscordBot.AiGenCode
-  alias Sanbase.DiscordBot.Utils
   alias Sanbase.DiscordBot.AiServer
+  alias Sanbase.DiscordBot.LegacyCommandHandler
+  alias Sanbase.DiscordBot.Utils
+
+  require Logger
 
   @team_role_id 409_637_386_012_721_155
   @local_team_role_id 854_304_500_402_880_532
@@ -28,13 +31,13 @@ defmodule Sanbase.DiscordBot.CodeHandler do
       |> List.first()
 
     options_map =
-      interaction.data.options |> Enum.into(%{}, fn option -> {option.name, option.value} end)
+      Map.new(interaction.data.options, fn option -> {option.name, option.value} end)
 
     if focused_option do
       autocomplete(interaction, focused_option.name)
     else
       with {:ok, metadata_from_options} <- metadata_from_options(options_map),
-           metadata <- Map.merge(metadata, metadata_from_options),
+           metadata = Map.merge(metadata, metadata_from_options),
            :ok <- check_from_to(interaction, metadata) do
         summarize_channel_or_thread(interaction, metadata, options_map)
       else
@@ -55,7 +58,7 @@ defmodule Sanbase.DiscordBot.CodeHandler do
 
   @spec handle_interaction(
           String.t(),
-          Nostrum.Struct.Interaction.t(),
+          Interaction.t(),
           map()
         ) :: {:ok, any()} | {:error, any()}
   def handle_interaction("code", interaction, metadata) do
@@ -75,9 +78,7 @@ defmodule Sanbase.DiscordBot.CodeHandler do
         Utils.edit_interaction_response(interaction, content, [action_row(ai_gen_code)])
 
       {:error, error} ->
-        Logger.error(
-          "Failed to generate program for question: #{option.value}, #{inspect(error)}"
-        )
+        Logger.error("Failed to generate program for question: #{option.value}, #{inspect(error)}")
 
         generic_error_message(interaction)
     end
@@ -85,7 +86,7 @@ defmodule Sanbase.DiscordBot.CodeHandler do
 
   @spec handle_interaction(
           String.t(),
-          Nostrum.Struct.Interaction.t(),
+          Interaction.t(),
           String.t(),
           map()
         ) :: {:ok, any()} | {:error, any()}
@@ -148,9 +149,7 @@ defmodule Sanbase.DiscordBot.CodeHandler do
         Utils.edit_interaction_response(interaction, content, [action_row(ai_gen_code)])
 
       {:error, error} ->
-        Logger.error(
-          "Failed to generate program with id #{old_ai_gen_code.id}: #{inspect(error)}"
-        )
+        Logger.error("Failed to generate program with id #{old_ai_gen_code.id}: #{inspect(error)}")
 
         generic_error_message(interaction)
     end
@@ -210,16 +209,14 @@ defmodule Sanbase.DiscordBot.CodeHandler do
 
   def discord_metadata(interaction) do
     {guild_name, channel_name} =
-      Sanbase.DiscordBot.LegacyCommandHandler.get_guild_channel(
+      LegacyCommandHandler.get_guild_channel(
         interaction.guild_id,
         interaction.channel_id
       )
 
     user_is_team_member =
-      Nostrum.Api.get_guild_member(
-        Sanbase.DiscordBot.LegacyCommandHandler.santiment_guild_id(),
-        interaction.user.id
-      )
+      LegacyCommandHandler.santiment_guild_id()
+      |> Nostrum.Api.get_guild_member(interaction.user.id)
       |> case do
         {:ok, member} ->
           team_role_id() in member.roles
@@ -258,8 +255,8 @@ defmodule Sanbase.DiscordBot.CodeHandler do
            channel: to_string(channel.id),
            channel_name: channel.name,
            is_thread: thread?(channel),
-           from_dt: DateTime.to_unix(from_dt) |> to_string(),
-           to_dt: DateTime.to_unix(to_dt) |> to_string()
+           from_dt: from_dt |> DateTime.to_unix() |> to_string(),
+           to_dt: to_dt |> DateTime.to_unix() |> to_string()
          }}
     end
   end
@@ -298,7 +295,7 @@ defmodule Sanbase.DiscordBot.CodeHandler do
   end
 
   def do_autocomplete(interaction, choices) do
-    choices = choices |> Enum.map(fn choice -> %{name: choice, value: choice} end)
+    choices = Enum.map(choices, fn choice -> %{name: choice, value: choice} end)
 
     response = %{
       type: 8,
@@ -329,9 +326,7 @@ defmodule Sanbase.DiscordBot.CodeHandler do
             Utils.handle_interaction_response(interaction, content, [])
 
           {:error, error} ->
-            Logger.error(
-              "Failed to summarize channel: #{metadata.channel_name}, #{inspect(error)}"
-            )
+            Logger.error("Failed to summarize channel: #{metadata.channel_name}, #{inspect(error)}")
 
             generic_error_message(interaction)
         end
@@ -351,9 +346,7 @@ defmodule Sanbase.DiscordBot.CodeHandler do
             Utils.handle_interaction_response(interaction, content, [])
 
           {:error, error} ->
-            Logger.error(
-              "Failed to summarize thread: #{metadata.channel_name}, #{inspect(error)}"
-            )
+            Logger.error("Failed to summarize thread: #{metadata.channel_name}, #{inspect(error)}")
 
             generic_error_message(interaction)
         end
@@ -399,7 +392,7 @@ defmodule Sanbase.DiscordBot.CodeHandler do
         required: true
       )
 
-    ar = ActionRow.action_row() |> ActionRow.put(changes_input)
+    ar = ActionRow.put(ActionRow.action_row(), changes_input)
 
     response = %{
       type: 9,

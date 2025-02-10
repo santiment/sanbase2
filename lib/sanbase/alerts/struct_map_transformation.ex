@@ -1,4 +1,5 @@
 defmodule Sanbase.Alert.StructMapTransformation do
+  @moduledoc false
   alias Sanbase.Alert.Trigger
 
   @unsupported_fields_error :__internal_unsupported_field_errors__
@@ -20,9 +21,7 @@ defmodule Sanbase.Alert.StructMapTransformation do
   def load_in_struct_if_valid(struct) when is_struct(struct), do: {:ok, struct}
 
   def load_in_struct_if_valid(map) when is_map(map) do
-    atomized_map =
-      map
-      |> atomize_keys()
+    atomized_map = atomize_keys(map)
 
     unsupported_fields_error = Process.get(@unsupported_fields_error)
     Process.delete(@unsupported_fields_error)
@@ -32,7 +31,7 @@ defmodule Sanbase.Alert.StructMapTransformation do
         struct_from_map(atomized_map)
 
       errors ->
-        {:error, errors |> Enum.join(",")}
+        {:error, Enum.join(errors, ",")}
     end
   end
 
@@ -57,8 +56,7 @@ defmodule Sanbase.Alert.StructMapTransformation do
     end
   end
 
-  def struct_from_map(%{type: type}),
-    do: {:error, "The trigger settings type '#{type}' is not a valid type."}
+  def struct_from_map(%{type: type}), do: {:error, "The trigger settings type '#{type}' is not a valid type."}
 
   def struct_from_map(_), do: {:error, "The trigger settings are missing `type` key."}
 

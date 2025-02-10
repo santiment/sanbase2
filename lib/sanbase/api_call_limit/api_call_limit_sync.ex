@@ -8,10 +8,10 @@ defmodule Sanbase.ApiCallLimit.Sync do
   """
   import Ecto.Query
 
-  alias Sanbase.Repo
   alias Sanbase.ApiCallLimit
+  alias Sanbase.Repo
 
-  def run() do
+  def run do
     from(acl in ApiCallLimit, where: not is_nil(acl.user_id), preload: [:user])
     |> Repo.all()
     |> Enum.map(& &1.user)

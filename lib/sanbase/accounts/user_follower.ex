@@ -4,8 +4,8 @@ defmodule Sanbase.Accounts.UserFollower do
   """
   use Ecto.Schema
 
-  import Ecto.Query
   import Ecto.Changeset
+  import Ecto.Query
   import Sanbase.Accounts.EventEmitter, only: [emit_event: 3]
 
   alias Sanbase.Accounts.User
@@ -41,13 +41,10 @@ defmodule Sanbase.Accounts.UserFollower do
          {:ok, _} <- Repo.delete(user_follower) do
       emit_event({:ok, user_follower}, :unfollow_user, %{})
       {:ok, "User successfully unfollowed"}
-    else
-      error -> error
     end
   end
 
-  def following_toggle_notification(user_id, follower_id, disable_notifications)
-      when user_id != follower_id do
+  def following_toggle_notification(user_id, follower_id, disable_notifications) when user_id != follower_id do
     from(uf in __MODULE__, where: uf.user_id == ^user_id and uf.follower_id == ^follower_id)
     |> Repo.one()
     |> case do
@@ -65,48 +62,33 @@ defmodule Sanbase.Accounts.UserFollower do
   Returns all user ids of users that are followed by certain user
   """
   def followed_by(user_id) do
-    from(
-      uf in __MODULE__,
-      inner_join: u in User,
-      on: u.id == uf.user_id,
-      where: uf.follower_id == ^user_id,
-      select: u
+    Repo.all(
+      from(uf in __MODULE__, inner_join: u in User, on: u.id == uf.user_id, where: uf.follower_id == ^user_id, select: u)
     )
-    |> Repo.all()
   end
 
   def followed_by2(user_id) do
-    from(
-      uf in __MODULE__,
-      where: uf.follower_id == ^user_id,
-      preload: [:user]
-    )
-    |> Repo.all()
+    Repo.all(from(uf in __MODULE__, where: uf.follower_id == ^user_id, preload: [:user]))
   end
 
   def followed_by_with_notifications_enabled(user_id) do
-    from(
-      uf in __MODULE__,
-      inner_join: u in User,
-      on: u.id == uf.user_id,
-      where: uf.follower_id == ^user_id and uf.is_notification_disabled != true,
-      select: u
+    Repo.all(
+      from(uf in __MODULE__,
+        inner_join: u in User,
+        on: u.id == uf.user_id,
+        where: uf.follower_id == ^user_id and uf.is_notification_disabled != true,
+        select: u
+      )
     )
-    |> Repo.all()
   end
 
   @doc """
   Returns all user ids of users that follow certain user
   """
   def followers_of(user_id) do
-    from(
-      uf in __MODULE__,
-      inner_join: u in User,
-      on: u.id == uf.follower_id,
-      where: uf.user_id == ^user_id,
-      select: u
+    Repo.all(
+      from(uf in __MODULE__, inner_join: u in User, on: u.id == uf.follower_id, where: uf.user_id == ^user_id, select: u)
     )
-    |> Repo.all()
   end
 
   def followers_of2(user_id) do
@@ -121,7 +103,7 @@ defmodule Sanbase.Accounts.UserFollower do
     end)
   end
 
-  def user_id_to_followers_count() do
+  def user_id_to_followers_count do
     from(
       uf in __MODULE__,
       select: {uf.user_id, count(uf.follower_id)},

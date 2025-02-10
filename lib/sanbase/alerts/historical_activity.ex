@@ -2,17 +2,17 @@ defmodule Sanbase.Alert.HistoricalActivity do
   @moduledoc ~s"""
   Table that persists triggered alerts and their payload.
   """
-  @derive [Jason.Encoder]
-
   use Ecto.Schema
-  import Ecto.Query
 
   import Ecto.Changeset
+  import Ecto.Query
+
+  alias __MODULE__
   alias Sanbase.Accounts.User
   alias Sanbase.Alert.UserTrigger
   alias Sanbase.Repo
 
-  alias __MODULE__
+  @derive [Jason.Encoder]
 
   schema "signals_historical_activity" do
     field(:payload, :map)
@@ -45,10 +45,10 @@ defmodule Sanbase.Alert.HistoricalActivity do
     latest alert activity.
   """
 
-  def fetch_historical_activity_for(
-        %User{id: user_id},
-        %{limit: limit, cursor: %{type: cursor_type, datetime: cursor_datetime}}
-      ) do
+  def fetch_historical_activity_for(%User{id: user_id}, %{
+        limit: limit,
+        cursor: %{type: cursor_type, datetime: cursor_datetime}
+      }) do
     HistoricalActivity
     |> user_historical_activity(user_id, limit)
     |> by_cursor(cursor_type, cursor_datetime)
@@ -114,8 +114,7 @@ defmodule Sanbase.Alert.HistoricalActivity do
   end
 
   defp convert_activity_datetimes(activity) do
-    activity
-    |> Enum.map(fn %HistoricalActivity{triggered_at: triggered_at} = ha ->
+    Enum.map(activity, fn %HistoricalActivity{triggered_at: triggered_at} = ha ->
       %{ha | triggered_at: DateTime.from_naive!(triggered_at, "Etc/UTC")}
     end)
   end

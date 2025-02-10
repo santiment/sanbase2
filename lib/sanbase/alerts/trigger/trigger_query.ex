@@ -1,4 +1,5 @@
 defmodule Sanbase.Alert.TriggerQuery do
+  @moduledoc false
   defmacro trigger_is_not_frozen() do
     quote do
       fragment("""

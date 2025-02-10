@@ -1,12 +1,13 @@
 defmodule Sanbase.SocialVolumeTest do
   use SanbaseWeb.ConnCase, async: false
-  import Mockery
-  import ExUnit.CaptureLog
 
-  alias Sanbase.SocialData.SocialVolume
-  alias Sanbase.SocialData.SocialHelper
-  alias Sanbase.SocialData.MetricAdapter
+  import ExUnit.CaptureLog
+  import Mockery
   import Sanbase.Factory
+
+  alias Sanbase.SocialData.MetricAdapter
+  alias Sanbase.SocialData.SocialHelper
+  alias Sanbase.SocialData.SocialVolume
 
   setup do
     project =
@@ -31,7 +32,7 @@ defmodule Sanbase.SocialVolumeTest do
         :get,
         {:ok,
          %HTTPoison.Response{
-           body: "{\"data\": {\"2018-04-16T11:00:00Z\": 5, \"2018-04-16T12:00:00Z\": 15}}",
+           body: ~s({"data": {"2018-04-16T11:00:00Z": 5, "2018-04-16T12:00:00Z": 15}}),
            status_code: 200
          }}
       )
@@ -79,7 +80,7 @@ defmodule Sanbase.SocialVolumeTest do
         :get,
         {:ok,
          %HTTPoison.Response{
-           body: "{\"data\": {\"2018-04-16T11:00:00Z\": 1, \"2018-04-16T12:00:00Z\": 0}}",
+           body: ~s({"data": {"2018-04-16T11:00:00Z": 1, "2018-04-16T12:00:00Z": 0}}),
            status_code: 200
          }}
       )
@@ -129,12 +130,11 @@ defmodule Sanbase.SocialVolumeTest do
         |> Enum.map(fn "social_volume_" <> source -> source end)
 
       expected_sources =
-        SocialHelper.sources()
-        |> Enum.map(fn
+        Enum.map(SocialHelper.sources(), fn
           source -> Atom.to_string(source)
         end)
 
-      assert expected_sources |> Enum.sort() == sources |> Enum.sort()
+      assert Enum.sort(expected_sources) == Enum.sort(sources)
     end
   end
 end

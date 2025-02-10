@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.CustomTypes.Decimal do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   if Code.ensure_loaded?(Decimal) do

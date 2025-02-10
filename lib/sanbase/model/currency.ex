@@ -1,11 +1,12 @@
 defmodule Sanbase.Model.Currency do
+  @moduledoc false
   use Ecto.Schema
-  import Ecto.Changeset
 
+  import Ecto.Changeset
   import Ecto.Query
-  alias Sanbase.Repo
 
   alias Sanbase.Model.Currency
+  alias Sanbase.Repo
 
   schema "currencies" do
     field(:code, :string)
@@ -20,8 +21,7 @@ defmodule Sanbase.Model.Currency do
   end
 
   def by_ids(ids) do
-    from(i in __MODULE__, where: i.id in ^ids)
-    |> Repo.all()
+    Repo.all(from(i in __MODULE__, where: i.id in ^ids))
   end
 
   def get(currency_code) do
@@ -37,7 +37,8 @@ defmodule Sanbase.Model.Currency do
   def get_or_insert(currency_code) do
     {:ok, currency} =
       Repo.transaction(fn ->
-        get(currency_code)
+        currency_code
+        |> get()
         |> case do
           nil -> insert!(currency_code)
           currency -> currency

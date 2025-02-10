@@ -1,10 +1,15 @@
 defmodule SanbaseWeb.Graphql.CachexProvider do
+  @moduledoc false
   @behaviour SanbaseWeb.Graphql.CacheProvider
+
+  import Cachex.Spec
+
+  alias Cachex.Services.Locksmith
+  alias SanbaseWeb.Graphql.CacheProvider
+
   @default_ttl_seconds 300
 
   @max_lock_acquired_time_ms 60_000
-
-  import Cachex.Spec
 
   @compile inline: [
              execute_cache_miss_function: 4,
@@ -12,12 +17,12 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
              obtain_lock: 3
            ]
 
-  @impl SanbaseWeb.Graphql.CacheProvider
+  @impl CacheProvider
   def start_link(opts) do
     Cachex.start_link(opts(opts))
   end
 
-  @impl SanbaseWeb.Graphql.CacheProvider
+  @impl CacheProvider
   def child_spec(opts) do
     Supervisor.child_spec({Cachex, opts(opts)}, id: Keyword.fetch!(opts, :id))
   end
@@ -42,25 +47,25 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
     ]
   end
 
-  @impl SanbaseWeb.Graphql.CacheProvider
+  @impl CacheProvider
   def size(cache) do
     {:ok, bytes_size} = Cachex.inspect(cache, {:memory, :bytes})
-    (bytes_size / (1024 * 1024)) |> Float.round(2)
+    Float.round(bytes_size / (1024 * 1024), 2)
   end
 
-  @impl SanbaseWeb.Graphql.CacheProvider
+  @impl CacheProvider
   def count(cache) do
     {:ok, count} = Cachex.size(cache)
     count
   end
 
-  @impl SanbaseWeb.Graphql.CacheProvider
+  @impl CacheProvider
   def clear_all(cache) do
     {:ok, _} = Cachex.clear(cache)
     :ok
   end
 
-  @impl SanbaseWeb.Graphql.CacheProvider
+  @impl CacheProvider
   def get(cache, key) do
     case Cachex.get(cache, true_key(key)) do
       {:ok, {:stored, value}} -> value
@@ -68,7 +73,7 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
     end
   end
 
-  @impl SanbaseWeb.Graphql.CacheProvider
+  @impl CacheProvider
   def store(cache, key, value) do
     case value do
       {:error, _} ->
@@ -84,7 +89,7 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
     end
   end
 
-  @impl SanbaseWeb.Graphql.CacheProvider
+  @impl CacheProvider
   def get_or_store(cache, key, func, cache_modify_middleware) do
     true_key = true_key(key)
 
@@ -128,7 +133,7 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
     {:ok, unlocker_pid} =
       __MODULE__.Unlocker.start(max_lock_acquired_time_ms: @max_lock_acquired_time_ms)
 
-    unlock_fun = fn -> Cachex.Services.Locksmith.unlock(cache_record, [true_key(key)]) end
+    unlock_fun = fn -> Locksmith.unlock(cache_record, [true_key(key)]) end
 
     try do
       true = obtain_lock(cache_record, [true_key(key)])
@@ -162,20 +167,18 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
   end
 
   defp obtain_lock(cache_record, keys, attempt) do
-    case Cachex.Services.Locksmith.lock(cache_record, keys) do
-      false ->
-        # In case the lock cannot be obtained, try again after some time
-        # In the beginning the next attempt is scheduled in an exponential
-        # backoff fashion - 10, 130, 375, 709, etc. milliseconds
-        # The backoff is capped at 2 seconds
-        sleep_ms = (:math.pow(attempt * 20, 1.6) + 10) |> trunc()
-        sleep_ms = Enum.min([sleep_ms, 2000])
+    if Locksmith.lock(cache_record, keys) do
+      true
+      # In case the lock cannot be obtained, try again after some time
+      # In the beginning the next attempt is scheduled in an exponential
+      # backoff fashion - 10, 130, 375, 709, etc. milliseconds
+      # The backoff is capped at 2 seconds
+    else
+      sleep_ms = trunc(:math.pow(attempt * 20, 1.6) + 10)
+      sleep_ms = Enum.min([sleep_ms, 2000])
 
-        Process.sleep(sleep_ms)
-        obtain_lock(cache_record, keys, attempt + 1)
-
-      true ->
-        true
+      Process.sleep(sleep_ms)
+      obtain_lock(cache_record, keys, attempt + 1)
     end
   end
 

@@ -1,17 +1,16 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
+  @moduledoc false
   import Absinthe.Resolution.Helpers, only: [on_load: 2]
   import Sanbase.DateTimeUtils, only: [round_datetime: 1]
   import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3]
 
-  alias Sanbase.Project
-  alias SanbaseWeb.Graphql.SanbaseDataloader
-  alias SanbaseWeb.Graphql.Resolvers.MetricResolver
-
   alias Sanbase.Clickhouse.TopHolders
+  alias Sanbase.Project
+  alias Sanbase.Utils.Transform
+  alias SanbaseWeb.Graphql.Resolvers.MetricResolver
+  alias SanbaseWeb.Graphql.SanbaseDataloader
 
   require Logger
-
-  alias SanbaseWeb.Graphql.Resolvers.MetricResolver
 
   def realtime_top_holders(_root, %{slug: slug, page: page, page_size: page_size}, _resolution) do
     opts = [page: page, page_size: page_size]
@@ -22,11 +21,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     end
   end
 
-  def top_holders(
-        _root,
-        %{slug: slug, from: from, to: to, page: page, page_size: page_size} = args,
-        _resolution
-      ) do
+  def top_holders(_root, %{slug: slug, from: from, to: to, page: page, page_size: page_size} = args, _resolution) do
     page_size = Enum.min([args[:number_of_holders] || page_size, 100])
     labels = Map.get(args, :labels, :all)
     owners = Map.get(args, :owners, :all)
@@ -40,13 +35,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
   def top_holders_percent_of_total_supply(
         _root,
-        %{
-          slug: slug,
-          number_of_holders: number_of_holders,
-          from: from,
-          to: to,
-          interval: interval
-        },
+        %{slug: slug, number_of_holders: number_of_holders, from: from, to: to, interval: interval},
         _resolution
       ) do
     case TopHolders.percent_of_total_supply(slug, number_of_holders, from, to, interval) do
@@ -59,24 +48,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   end
 
   def gas_used(root, args, resolution) do
-    MetricResolver.timeseries_data(
-      root,
+    root
+    |> MetricResolver.timeseries_data(
       args,
       Map.put(resolution, :source, %{metric: "total_gas_used"})
     )
-    |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :gas_used)
+    |> Transform.rename_map_keys(old_key: :value, new_key: :gas_used)
   end
 
   @doc ~S"""
   Returns the average number of daily active addresses for the last 30 days
   """
-  def average_daily_active_addresses(
-        %Project{} = project,
-        args,
-        %{context: %{loader: loader}}
-      ) do
-    to = Map.get(args, :to, Timex.now()) |> round_datetime()
-    from = Map.get(args, :from, Timex.shift(to, days: -30)) |> round_datetime()
+  def average_daily_active_addresses(%Project{} = project, args, %{context: %{loader: loader}}) do
+    to = args |> Map.get(:to, DateTime.utc_now()) |> round_datetime()
+    from = args |> Map.get(:from, Timex.shift(to, days: -30)) |> round_datetime()
 
     data = %{project: project, from: from, to: to}
 
@@ -99,8 +84,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     # will correctly group and calculate the different average addresses
 
     average_daa_activity_map =
-      loader
-      |> Dataloader.get(SanbaseDataloader, :average_daily_active_addresses, {from, to}) ||
+      Dataloader.get(loader, SanbaseDataloader, :average_daily_active_addresses, {from, to}) ||
         %{}
 
     case Map.get(average_daa_activity_map, project.slug) do
@@ -117,17 +101,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     end
   end
 
-  def percent_of_token_supply_on_exchanges(
-        root,
-        %{slug: _, from: _, to: _, interval: _} = args,
-        resolution
-      ) do
-    MetricResolver.timeseries_data(
-      root,
+  def percent_of_token_supply_on_exchanges(root, %{slug: _, from: _, to: _, interval: _} = args, resolution) do
+    root
+    |> MetricResolver.timeseries_data(
       args,
       Map.put(resolution, :source, %{metric: "percent_of_total_supply_on_exchanges"})
     )
-    |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :percent_on_exchanges)
+    |> Transform.rename_map_keys(old_key: :value, new_key: :percent_on_exchanges)
   end
 
   def eth_fees_distribution(_root, %{from: from, to: to, limit: limit}, _res) do

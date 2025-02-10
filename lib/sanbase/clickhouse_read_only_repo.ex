@@ -12,23 +12,16 @@ defmodule Sanbase.ClickhouseRepo.ReadOnly do
   ClickhouseRepo functions, but the connection pool used is the one configured
   by this module
   """
-  env = Mix.env()
-
-  default_dynamic_repo =
-    if env == :test, do: Sanbase.ClickhouseRepo, else: Sanbase.ClickhouseRepo.ReadOnly
-
-  adapter = if env == :test, do: Ecto.Adapters.Postgres, else: ClickhouseEcto
-
   use Ecto.Repo,
     otp_app: :sanbase,
-    adapter: adapter,
+    adapter: if(Mix.env() == :test, do: Ecto.Adapters.Postgres, else: ClickhouseEcto),
     read_only: true,
-    default_dynamic_repo: default_dynamic_repo
+    default_dynamic_repo: if(Mix.env() == :test, do: Sanbase.ClickhouseRepo, else: Sanbase.ClickhouseRepo.ReadOnly)
 
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   def init(_, opts) do
-    pool_size = Config.module_get(__MODULE__, :pool_size) |> Sanbase.Math.to_integer()
+    pool_size = __MODULE__ |> Config.module_get(:pool_size) |> Sanbase.Math.to_integer()
 
     opts =
       opts
@@ -41,6 +34,7 @@ defmodule Sanbase.ClickhouseRepo.ReadOnly do
 end
 
 defmodule Sanbase.ClickhouseRepo.FreeUser do
+  @moduledoc false
   use Ecto.Repo, otp_app: :sanbase, adapter: ClickhouseEcto, read_only: true
 
   def init(do_init, opts) do
@@ -51,6 +45,7 @@ defmodule Sanbase.ClickhouseRepo.FreeUser do
 end
 
 defmodule Sanbase.ClickhouseRepo.SanbaseProUser do
+  @moduledoc false
   use Ecto.Repo, otp_app: :sanbase, adapter: ClickhouseEcto, read_only: true
 
   def init(do_init, opts) do
@@ -61,6 +56,7 @@ defmodule Sanbase.ClickhouseRepo.SanbaseProUser do
 end
 
 defmodule Sanbase.ClickhouseRepo.SanbaseMaxUser do
+  @moduledoc false
   use Ecto.Repo, otp_app: :sanbase, adapter: ClickhouseEcto, read_only: true
 
   def init(do_init, opts) do
@@ -71,6 +67,7 @@ defmodule Sanbase.ClickhouseRepo.SanbaseMaxUser do
 end
 
 defmodule Sanbase.ClickhouseRepo.BusinessProUser do
+  @moduledoc false
   use Ecto.Repo, otp_app: :sanbase, adapter: ClickhouseEcto, read_only: true
 
   def init(do_init, opts) do
@@ -81,6 +78,7 @@ defmodule Sanbase.ClickhouseRepo.BusinessProUser do
 end
 
 defmodule Sanbase.ClickhouseRepo.BusinessMaxUser do
+  @moduledoc false
   use Ecto.Repo, otp_app: :sanbase, adapter: ClickhouseEcto, read_only: true
 
   def init(do_init, opts) do

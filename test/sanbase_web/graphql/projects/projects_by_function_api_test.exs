@@ -1,10 +1,10 @@
 defmodule SanbaseWeb.Graphql.ProjectsByFunctionApiTest do
   use SanbaseWeb.ConnCase, async: false
 
-  alias Sanbase.Clickhouse.MetricAdapter
-
-  import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
+  import SanbaseWeb.Graphql.TestHelpers
+
+  alias Sanbase.Clickhouse.MetricAdapter
 
   setup do
     infr_eth = insert(:infrastructure, %{code: "ETH"})
@@ -97,19 +97,21 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionApiTest do
         "pagination" => %{"page" => 1, "pageSize" => 2},
         "orderBy" => %{
           "metric" => "aily_active_addresses",
-          "from" => "#{Timex.shift(Timex.now(), days: -7)}",
-          "to" => "#{Timex.now()}",
+          "from" => "#{Timex.shift(DateTime.utc_now(), days: -7)}",
+          "to" => "#{DateTime.utc_now()}",
           "aggregation" => "#{:last}",
           "direction" => :asc
         }
       }
     }
 
-    Sanbase.Mock.prepare_mock2(&MetricAdapter.slugs_by_filter/6, {:ok, [p1.slug]})
+    (&MetricAdapter.slugs_by_filter/6)
+    |> Sanbase.Mock.prepare_mock2({:ok, [p1.slug]})
     |> Sanbase.Mock.prepare_mock2(&MetricAdapter.slugs_order/5, {:ok, [p1.slug]})
     |> Sanbase.Mock.run_with_mocks(fn ->
       error_msg =
-        execute_query(conn, query(function))
+        conn
+        |> execute_query(query(function))
         |> get_in(["errors", Access.at(0), "message"])
 
       assert error_msg =~
@@ -128,8 +130,8 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionApiTest do
         "filters" => [
           %{
             "metric" => "rice_usd",
-            "from" => "#{Timex.shift(Timex.now(), days: -7)}",
-            "to" => "#{Timex.now()}",
+            "from" => "#{Timex.shift(DateTime.utc_now(), days: -7)}",
+            "to" => "#{DateTime.utc_now()}",
             "aggregation" => "#{:last}",
             "operator" => "#{:greater_than_or_equal_to}",
             "threshold" => 10
@@ -138,11 +140,13 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionApiTest do
       }
     }
 
-    Sanbase.Mock.prepare_mock2(&MetricAdapter.slugs_by_filter/6, {:ok, [p1.slug]})
+    (&MetricAdapter.slugs_by_filter/6)
+    |> Sanbase.Mock.prepare_mock2({:ok, [p1.slug]})
     |> Sanbase.Mock.prepare_mock2(&MetricAdapter.slugs_order/5, {:ok, [p1.slug]})
     |> Sanbase.Mock.run_with_mocks(fn ->
       error_msg =
-        execute_query(conn, query(function))
+        conn
+        |> execute_query(query(function))
         |> get_in(["errors", Access.at(0), "message"])
 
       assert error_msg =~ "The metric 'rice_usd' is not supported, is deprecated or is mistyped"
@@ -159,16 +163,16 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionApiTest do
         "pagination" => %{"page" => 1, "pageSize" => 2},
         "orderBy" => %{
           "metric" => "daily_active_addresses",
-          "from" => "#{Timex.shift(Timex.now(), days: -7)}",
-          "to" => "#{Timex.now()}",
+          "from" => "#{Timex.shift(DateTime.utc_now(), days: -7)}",
+          "to" => "#{DateTime.utc_now()}",
           "aggregation" => "#{:last}",
           "direction" => :asc
         },
         "filters" => [
           %{
             "metric" => "daily_active_addresses",
-            "from" => "#{Timex.shift(Timex.now(), days: -7)}",
-            "to" => "#{Timex.now()}",
+            "from" => "#{Timex.shift(DateTime.utc_now(), days: -7)}",
+            "to" => "#{DateTime.utc_now()}",
             "aggregation" => "#{:last}",
             "operator" => "#{:greater_than_or_equal_to}",
             "threshold" => 10
@@ -177,17 +181,16 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionApiTest do
       }
     }
 
-    Sanbase.Mock.prepare_mock2(
-      &MetricAdapter.slugs_by_filter/6,
-      {:ok, [p1.slug, p2.slug, p3.slug, p4.slug]}
-    )
+    (&MetricAdapter.slugs_by_filter/6)
+    |> Sanbase.Mock.prepare_mock2({:ok, [p1.slug, p2.slug, p3.slug, p4.slug]})
     |> Sanbase.Mock.prepare_mock2(
       &MetricAdapter.slugs_order/5,
       {:ok, [p1.slug, p2.slug, p3.slug, p4.slug]}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
-        execute_query(conn, query(function))
+        conn
+        |> execute_query(query(function))
         |> get_in(["data", "allProjectsByFunction"])
 
       projects = result["projects"]
@@ -211,16 +214,16 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionApiTest do
         "filters" => [
           %{
             "metric" => "daily_active_addresses",
-            "from" => "#{Timex.shift(Timex.now(), days: -7)}",
-            "to" => "#{Timex.now()}",
+            "from" => "#{Timex.shift(DateTime.utc_now(), days: -7)}",
+            "to" => "#{DateTime.utc_now()}",
             "aggregation" => "#{:last}",
             "operator" => "#{:greater_than_or_equal_to}",
             "threshold" => 100
           },
           %{
             "metric" => "nvt",
-            "from" => "#{Timex.shift(Timex.now(), days: -7)}",
-            "to" => "#{Timex.now()}",
+            "from" => "#{Timex.shift(DateTime.utc_now(), days: -7)}",
+            "to" => "#{DateTime.utc_now()}",
             "aggregation" => "#{:last}",
             "operator" => "#{:greater_than}",
             "threshold" => 10
@@ -229,13 +232,15 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionApiTest do
       }
     }
 
-    Sanbase.Mock.prepare_mock(MetricAdapter, :slugs_by_filter, fn
+    MetricAdapter
+    |> Sanbase.Mock.prepare_mock(:slugs_by_filter, fn
       "daily_active_addresses", _, _, _, _, _ -> {:ok, [p1.slug, p2.slug, p3.slug]}
       "nvt", _, _, _, _, _ -> {:ok, [p2.slug, p3.slug, p4.slug]}
     end)
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
-        execute_query(conn, query(function))
+        conn
+        |> execute_query(query(function))
         |> get_in(["data", "allProjectsByFunction"])
 
       projects = result["projects"]
@@ -244,8 +249,8 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionApiTest do
       assert stats == %{"projectsCount" => 4}
       assert length(projects) == 4
 
-      slugs = Enum.map(projects, & &1["slug"]) |> Enum.sort()
-      assert slugs == [p1.slug, p2.slug, p3.slug, p4.slug] |> Enum.sort()
+      slugs = projects |> Enum.map(& &1["slug"]) |> Enum.sort()
+      assert slugs == Enum.sort([p1.slug, p2.slug, p3.slug, p4.slug])
     end)
   end
 
@@ -253,7 +258,8 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionApiTest do
     function = %{"name" => "selector", "args" => %{"filters" => []}}
 
     result =
-      execute_query(context.conn, query(function))
+      context.conn
+      |> execute_query(query(function))
       |> get_in(["data", "allProjectsByFunction", "projects"])
 
     projects_count = Sanbase.Project.List.projects_count()
@@ -270,7 +276,8 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionApiTest do
     }
 
     result =
-      execute_query(context.conn, query(function))
+      context.conn
+      |> execute_query(query(function))
       |> get_in(["data", "allProjectsByFunction", "projects"])
 
     assert length(result) == 5
@@ -280,7 +287,8 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionApiTest do
     function = %{"name" => "selector", "args" => %{"filters" => [%{"name" => "erc20"}]}}
 
     result =
-      execute_query(context.conn, query(function))
+      context.conn
+      |> execute_query(query(function))
       |> get_in(["data", "allProjectsByFunction", "projects"])
 
     projects_count = Sanbase.Project.List.erc20_projects_count()
@@ -297,7 +305,8 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionApiTest do
     }
 
     result =
-      execute_query(context.conn, query(function))
+      context.conn
+      |> execute_query(query(function))
       |> get_in(["data", "allProjectsByFunction", "projects"])
 
     assert length(result) == 3
@@ -308,7 +317,7 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionApiTest do
 
     result = execute_query(conn, query(function))
     projects = result["data"]["allProjectsByFunction"]["projects"]
-    slugs = Enum.map(projects, & &1["slug"]) |> Enum.sort()
+    slugs = projects |> Enum.map(& &1["slug"]) |> Enum.sort()
 
     assert slugs == ["dai", "tether"]
   end
@@ -341,8 +350,8 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionApiTest do
     result = execute_query(conn, query(function, [:volume_usd]))
     projects = result["data"]["allProjectsByFunction"]["projects"]
 
-    slugs = projects |> Enum.map(& &1["slug"])
-    volumes = projects |> Enum.map(& &1["volumeUsd"])
+    slugs = Enum.map(projects, & &1["slug"])
+    volumes = Enum.map(projects, & &1["volumeUsd"])
 
     assert slugs == ["bitcoin", "ethereum", "xrp", "tether"]
     assert Enum.all?(volumes, &Kernel.>=(&1, 1_000_000_000))
@@ -358,7 +367,7 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionApiTest do
   end
 
   defp query(function, additional_fields \\ []) when is_map(function) do
-    function = function |> Jason.encode!()
+    function = Jason.encode!(function)
 
     ~s| {
       allProjectsByFunction(
@@ -366,7 +375,7 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionApiTest do
         ) {
          projects{
            slug
-           #{additional_fields |> Enum.join(" ")}
+           #{Enum.join(additional_fields, " ")}
          }
          stats{
            projectsCount

@@ -7,9 +7,9 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests do
   """
   use Tesla
 
+  alias Sanbase.ExternalServices.ErrorCatcher
+  alias Sanbase.ExternalServices.RateLimiting
   alias Sanbase.Utils.Config
-
-  alias Sanbase.ExternalServices.{RateLimiting, ErrorCatcher}
 
   @user_agent "User-Agent: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Mobile Safari/537.36"
   plug(RateLimiting.Middleware, name: :etherscan_rate_limiter)
@@ -23,7 +23,8 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests do
   plug(Tesla.Middleware.Logger)
 
   def get_abi(address) do
-    get("/", query: [module: "contract", action: "getabi", address: address])
+    "/"
+    |> get(query: [module: "contract", action: "getabi", address: address])
     |> case do
       {:ok, %Tesla.Env{status: 200, body: %{"result" => abi}}} ->
         {:ok, abi}

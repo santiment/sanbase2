@@ -1,9 +1,9 @@
 defmodule SanbaseWeb.GenericAdmin do
-  def custom_defined_modules() do
+  @moduledoc false
+  def custom_defined_modules do
     case :application.get_key(:sanbase, :modules) do
       {:ok, modules} ->
-        modules
-        |> Enum.filter(fn module ->
+        Enum.filter(modules, fn module ->
           String.starts_with?(Atom.to_string(module), "Elixir.SanbaseWeb.GenericAdmin.")
         end)
 
@@ -42,21 +42,18 @@ defmodule SanbaseWeb.GenericAdmin do
           funcs: %{}
         }
         |> Map.merge(call_module_function_or_default(admin_module, :resource, [], %{}))
-        |> Map.update(:actions, [], fn actions -> ([:show] ++ actions) |> Enum.uniq() end)
+        |> Map.update(:actions, [], fn actions -> Enum.uniq([:show] ++ actions) end)
     }
   end
 
   def resources do
-    custom_defined_modules()
-    |> Enum.map(&schema_to_resource_name/1)
+    Enum.map(custom_defined_modules(), &schema_to_resource_name/1)
   end
 
   def call_module_function_or_default(module, function, data, default_value) do
-    try do
-      apply(module, function, data)
-    rescue
-      UndefinedFunctionError -> default_value
-    end
+    apply(module, function, data)
+  rescue
+    UndefinedFunctionError -> default_value
   end
 
   def schema_to_resource_name(schema_module) do

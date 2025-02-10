@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.LowercaseProjectAddresses do
+  @moduledoc false
   use Ecto.Migration
 
   alias Sanbase.ProjectEthAddress
@@ -9,11 +10,11 @@ defmodule Sanbase.Repo.Migrations.LowercaseProjectAddresses do
     migrate_btc()
   end
 
-  def migrate_eth() do
-    Repo.all(ProjectEthAddress)
+  def migrate_eth do
+    ProjectEthAddress
+    |> Repo.all()
     |> Enum.map(fn %ProjectEthAddress{address: address} = eth_addr ->
-      eth_addr
-      |> ProjectEthAddress.changeset(%{address: String.downcase(address)})
+      ProjectEthAddress.changeset(eth_addr, %{address: String.downcase(address)})
     end)
     |> Enum.map(&Repo.update/1)
   end

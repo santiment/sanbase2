@@ -1,19 +1,17 @@
 defmodule SanbaseWeb.Graphql.UserEthAccountApiTest do
   use SanbaseWeb.ConnCase, async: false
 
+  import ExUnit.CaptureLog
+  import SanbaseWeb.Graphql.TestHelpers
+  import Tesla.Mock
+
   alias Sanbase.Accounts.User
   alias Sanbase.Repo
-
-  import Tesla.Mock
-  import SanbaseWeb.Graphql.TestHelpers
-  import ExUnit.CaptureLog
 
   @address "0x12131415"
   @address2 "0x5432100"
   setup do
-    user =
-      %User{salt: User.generate_salt(), privacy_policy_accepted: true}
-      |> Repo.insert!()
+    user = Repo.insert!(%User{salt: User.generate_salt(), privacy_policy_accepted: true})
 
     conn = setup_jwt_auth(build_conn(), user)
 
@@ -67,7 +65,7 @@ defmodule SanbaseWeb.Graphql.UserEthAccountApiTest do
   end
 
   test "can remove eth account if there is email set", context do
-    User.changeset(context.user, %{email: "somerandomemail@santiment.net"}) |> Repo.update()
+    context.user |> User.changeset(%{email: "somerandomemail@santiment.net"}) |> Repo.update()
     add_eth_address(context.conn, @address)
     result = remove_eth_address(context.conn, @address)
 
@@ -95,7 +93,7 @@ defmodule SanbaseWeb.Graphql.UserEthAccountApiTest do
 
   defp add_eth_address(conn, address) do
     mock(fn %{method: :get} ->
-      {:ok, %Tesla.Env{status: 200, body: %{"is_valid" => true} |> Jason.encode!()}}
+      {:ok, %Tesla.Env{status: 200, body: Jason.encode!(%{"is_valid" => true})}}
     end)
 
     mutation = """

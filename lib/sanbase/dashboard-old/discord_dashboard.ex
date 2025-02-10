@@ -1,11 +1,13 @@
 defmodule Sanbase.Dashboard.DiscordDashboard do
+  @moduledoc false
   use Ecto.Schema
+
   import Ecto.Changeset
   import Ecto.Query
 
+  alias Sanbase.Accounts.User
   alias Sanbase.Dashboard
   alias Sanbase.Repo
-  alias Sanbase.Accounts.User
 
   schema "discord_dashboards" do
     field(:guild, :string)
@@ -26,8 +28,7 @@ defmodule Sanbase.Dashboard.DiscordDashboard do
 
   @doc false
   def changeset(discord_dashboard, attrs) do
-    discord_dashboard
-    |> cast(attrs, [
+    cast(discord_dashboard, attrs, [
       :panel_id,
       :name,
       :channel,
@@ -44,20 +45,21 @@ defmodule Sanbase.Dashboard.DiscordDashboard do
   end
 
   def list_pinned_channel(channel, guild) do
-    from(d in __MODULE__,
-      where: d.pinned == true and d.channel == ^channel and d.guild == ^guild,
-      order_by: [asc: d.id]
+    Repo.all(
+      from(d in __MODULE__,
+        where: d.pinned == true and d.channel == ^channel and d.guild == ^guild,
+        order_by: [asc: d.id]
+      )
     )
-    |> Repo.all()
   end
 
   def list_pinned_global(guild) do
-    from(d in __MODULE__, where: d.pinned == true and d.guild == ^guild)
-    |> Repo.all()
+    Repo.all(from(d in __MODULE__, where: d.pinned == true and d.guild == ^guild))
   end
 
   def pin_by_msg_id(message_id) do
-    by_discord_message_id(message_id)
+    message_id
+    |> by_discord_message_id()
     |> case do
       %__MODULE__{} = dashboard -> do_update(dashboard, %{pinned: true})
       nil -> {:error, :not_found}
@@ -65,7 +67,8 @@ defmodule Sanbase.Dashboard.DiscordDashboard do
   end
 
   def pin(panel_id) do
-    by_panel_id(panel_id)
+    panel_id
+    |> by_panel_id()
     |> case do
       %__MODULE__{} = dashboard -> do_update(dashboard, %{pinned: true})
       nil -> {:error, :not_found}
@@ -73,7 +76,8 @@ defmodule Sanbase.Dashboard.DiscordDashboard do
   end
 
   def unpin(panel_id) do
-    by_panel_id(panel_id)
+    panel_id
+    |> by_panel_id()
     |> case do
       %__MODULE__{} = dashboard -> do_update(dashboard, %{pinned: false})
       nil -> {:error, :not_found}
@@ -81,7 +85,8 @@ defmodule Sanbase.Dashboard.DiscordDashboard do
   end
 
   def update_message_id(panel_id, message_id) do
-    by_panel_id(panel_id)
+    panel_id
+    |> by_panel_id()
     |> case do
       %__MODULE__{} = dashboard -> do_update(dashboard, %{discord_message_id: message_id})
       nil -> {:error, :not_found}
@@ -89,13 +94,11 @@ defmodule Sanbase.Dashboard.DiscordDashboard do
   end
 
   def by_panel_id(panel_id) do
-    from(d in __MODULE__, where: d.panel_id == ^panel_id, preload: [:dashboard])
-    |> Repo.one()
+    Repo.one(from(d in __MODULE__, where: d.panel_id == ^panel_id, preload: [:dashboard]))
   end
 
   def by_discord_message_id(message_id) do
-    from(d in __MODULE__, where: d.discord_message_id == ^message_id, preload: [:dashboard])
-    |> Repo.one()
+    Repo.one(from(d in __MODULE__, where: d.discord_message_id == ^message_id, preload: [:dashboard]))
   end
 
   def do_update(dashboard, params) do

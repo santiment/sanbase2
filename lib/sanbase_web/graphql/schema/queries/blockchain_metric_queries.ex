@@ -1,13 +1,13 @@
 defmodule SanbaseWeb.Graphql.Schema.BlockchainMetricQueries do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
 
-  alias SanbaseWeb.Graphql.Resolvers.ClickhouseResolver
-  alias SanbaseWeb.Graphql.Resolvers.ExchangeResolver
-
   alias SanbaseWeb.Graphql.Complexity
   alias SanbaseWeb.Graphql.Middlewares.AccessControl
+  alias SanbaseWeb.Graphql.Resolvers.ClickhouseResolver
+  alias SanbaseWeb.Graphql.Resolvers.ExchangeResolver
 
   object :blockchain_metric_queries do
     @desc "Returns what percent of token supply is on exchanges"
@@ -56,9 +56,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainMetricQueries do
 
       arg(:slug, non_null(:string))
 
-      arg(:number_of_holders, non_null(:integer),
-        deprecate: "pageSize argument should be used instead"
-      )
+      arg(:number_of_holders, non_null(:integer), deprecate: "pageSize argument should be used instead")
 
       arg(:page, non_null(:integer), default_value: 1)
       arg(:page_size, non_null(:integer), default_value: 20)

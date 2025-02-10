@@ -1,12 +1,14 @@
 defmodule Sanbase.UserList.ListItem do
+  @moduledoc false
   use Ecto.Schema
+
   import Ecto.Changeset
   import Ecto.Query
 
+  alias Sanbase.BlockchainAddress.BlockchainAddressUserPair
+  alias Sanbase.Project
   alias Sanbase.Repo
   alias Sanbase.UserList
-  alias Sanbase.Project
-  alias Sanbase.BlockchainAddress.BlockchainAddressUserPair
 
   schema "list_items" do
     belongs_to(:project, Project)
@@ -55,8 +57,7 @@ defmodule Sanbase.UserList.ListItem do
     |> Enum.reduce(
       Ecto.Multi.new(),
       fn {changeset, offset}, multi ->
-        multi
-        |> Ecto.Multi.insert(offset, changeset, on_conflict: :nothing)
+        Ecto.Multi.insert(multi, offset, changeset, on_conflict: :nothing)
       end
     )
     |> Sanbase.Repo.transaction()
@@ -67,23 +68,20 @@ defmodule Sanbase.UserList.ListItem do
   end
 
   def delete([%{project_id: _} | _] = list_items) do
-    Enum.reduce(list_items, __MODULE__, fn map, query ->
-      query
-      |> or_where(
-        [li],
-        li.user_list_id == ^map.user_list_id and li.project_id == ^map.project_id
-      )
+    list_items
+    |> Enum.reduce(__MODULE__, fn map, query ->
+      or_where(query, [li], li.user_list_id == ^map.user_list_id and li.project_id == ^map.project_id)
     end)
     |> Repo.delete_all()
   end
 
   def delete([%{blockchain_address_id: _} | _] = list_items) do
-    Enum.reduce(list_items, __MODULE__, fn map, query ->
-      query
-      |> or_where(
+    list_items
+    |> Enum.reduce(__MODULE__, fn map, query ->
+      or_where(
+        query,
         [li],
-        li.user_list_id == ^map.user_list_id and
-          li.blockchain_address_id == ^map.blockchain_address_id
+        li.user_list_id == ^map.user_list_id and li.blockchain_address_id == ^map.blockchain_address_id
       )
     end)
     |> Repo.delete_all()

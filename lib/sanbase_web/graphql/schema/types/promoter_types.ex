@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.Schema.PromoterTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   object :promoter do

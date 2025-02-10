@@ -26,11 +26,12 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTransformTest do
       %{datetime: ~U[2019-01-08 00:00:00Z], value: 320.0}
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.MetricAdapter.timeseries_data/6, {:ok, data})
+    (&Sanbase.Clickhouse.MetricAdapter.timeseries_data/6)
+    |> Sanbase.Mock.prepare_mock2({:ok, data})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
-        get_timeseries_metric(
-          conn,
+        conn
+        |> get_timeseries_metric(
           "daily_active_addresses",
           slug,
           ~U[2019-01-04 00:00:00Z],
@@ -68,8 +69,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTransformTest do
 
   defp get_timeseries_query(metric, slug, from, to, interval, aggregation, transform) do
     transform_text =
-      Enum.map(transform, fn {key, value} -> "#{key}: #{inspect(value)}" end)
-      |> Enum.join(", ")
+      Enum.map_join(transform, ", ", fn {key, value} -> "#{key}: #{inspect(value)}" end)
 
     """
       {
@@ -79,7 +79,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTransformTest do
             from: "#{from}"
             to: "#{to}"
             interval: "#{interval}"
-            aggregation: #{Atom.to_string(aggregation) |> String.upcase()}
+            aggregation: #{aggregation |> Atom.to_string() |> String.upcase()}
             transform: {#{transform_text}}
             ){
               datetime

@@ -57,7 +57,7 @@ defmodule Sanbase.MetricRegisty.ChangeSuggestionTest do
     assert metric.sanbase_min_plan == "max"
     assert metric.is_deprecated == true
     assert metric.deprecation_note == "Because reasons."
-    assert metric.selectors |> Enum.map(&Map.get(&1, :type)) == ["slug", "slugs", "quote_asset"]
+    assert Enum.map(metric.selectors, &Map.get(&1, :type)) == ["slug", "slugs", "quote_asset"]
     assert metric.required_selectors |> hd() |> Map.get(:type) == "slug|slugs|quote_asset"
     assert metric.tables |> hd() |> Map.get(:name) == "new_intraday_table"
 
@@ -87,7 +87,7 @@ defmodule Sanbase.MetricRegisty.ChangeSuggestionTest do
     assert metric.deprecation_note == nil
   end
 
-  defp changes() do
+  defp changes do
     %{
       tables: [%{name: "new_intraday_table"}],
       access: "restricted",

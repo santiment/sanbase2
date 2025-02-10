@@ -1,4 +1,7 @@
 defmodule Sanbase.Queries.QueryCache do
+  @moduledoc false
+  alias Sanbase.Queries.Executor.Result
+
   @type t :: %__MODULE__{
           query_id: String.t(),
           dashboard_query_mapping_id: non_neg_integer(),
@@ -26,8 +29,6 @@ defmodule Sanbase.Queries.QueryCache do
             query_start_time: nil,
             query_end_time: nil,
             summary: nil
-
-  alias Sanbase.Queries.Executor.Result
 
   @spec from_query_result(Result.t(), String.t(), non_neg_integer()) :: t()
   def from_query_result(%Result{} = result, dashboard_query_mapping_id, dashboard_id) do

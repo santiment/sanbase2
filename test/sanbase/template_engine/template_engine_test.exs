@@ -1,6 +1,10 @@
 defmodule Sanbase.TemplateEngineTest do
   use ExUnit.Case, async: true
 
+  alias Sanbase.SanLang.Environment
+  alias Sanbase.TemplateEngine.Captures
+  alias Sanbase.TemplateEngine.Captures.CaptureMap
+
   doctest Sanbase.TemplateEngine, import: true
 
   describe "captures" do
@@ -15,12 +19,12 @@ defmodule Sanbase.TemplateEngineTest do
       {{}} is an empty template.
       """
 
-      captures = Sanbase.TemplateEngine.Captures.extract_captures(template)
+      captures = Captures.extract_captures(template)
 
       assert captures ==
                {:ok,
                 [
-                  %Sanbase.TemplateEngine.Captures.CaptureMap{
+                  %CaptureMap{
                     code?: false,
                     id: 0,
                     inner_content: "key1",
@@ -28,7 +32,7 @@ defmodule Sanbase.TemplateEngineTest do
                     lang: nil,
                     lang_version: nil
                   },
-                  %Sanbase.TemplateEngine.Captures.CaptureMap{
+                  %CaptureMap{
                     code?: true,
                     id: 1,
                     inner_content: "1 + 2",
@@ -36,7 +40,7 @@ defmodule Sanbase.TemplateEngineTest do
                     lang: "san",
                     lang_version: "1.0"
                   },
-                  %Sanbase.TemplateEngine.Captures.CaptureMap{
+                  %CaptureMap{
                     code?: false,
                     id: 2,
                     inner_content: "key2",
@@ -44,7 +48,7 @@ defmodule Sanbase.TemplateEngineTest do
                     lang: nil,
                     lang_version: nil
                   },
-                  %Sanbase.TemplateEngine.Captures.CaptureMap{
+                  %CaptureMap{
                     code?: true,
                     id: 3,
                     inner_content: "pow(10,18)",
@@ -52,7 +56,7 @@ defmodule Sanbase.TemplateEngineTest do
                     lang: "san",
                     lang_version: "1.0"
                   },
-                  %Sanbase.TemplateEngine.Captures.CaptureMap{
+                  %CaptureMap{
                     code?: false,
                     id: 4,
                     inner_content: "",
@@ -71,12 +75,12 @@ defmodule Sanbase.TemplateEngineTest do
       Simple key: {{key}}
       """
 
-      captures = Sanbase.TemplateEngine.Captures.extract_captures(template)
+      captures = Captures.extract_captures(template)
 
       assert captures ==
                {:ok,
                 [
-                  %Sanbase.TemplateEngine.Captures.CaptureMap{
+                  %CaptureMap{
                     code?: true,
                     key: "{% lang=san:3.14 %}",
                     id: 0,
@@ -85,7 +89,7 @@ defmodule Sanbase.TemplateEngineTest do
                     # TODO: The inner content here has been "cleaned" so it's replaced with just the empty string
                     inner_content: ""
                   },
-                  %Sanbase.TemplateEngine.Captures.CaptureMap{
+                  %CaptureMap{
                     code?: true,
                     key: "{% 1 + 2 %}",
                     id: 1,
@@ -93,7 +97,7 @@ defmodule Sanbase.TemplateEngineTest do
                     lang_version: "3.14",
                     inner_content: "1 + 2"
                   },
-                  %Sanbase.TemplateEngine.Captures.CaptureMap{
+                  %CaptureMap{
                     code?: false,
                     key: "{{key}}",
                     id: 2,
@@ -132,10 +136,10 @@ defmodule Sanbase.TemplateEngineTest do
     end
 
     test "Run code accessing the env" do
-      env = Sanbase.SanLang.Environment.new()
+      env = Environment.new()
 
       env =
-        Sanbase.SanLang.Environment.put_env_bindings(env, %{"a" => 1, "b" => "some string value"})
+        Environment.put_env_bindings(env, %{"a" => 1, "b" => "some string value"})
 
       template = """
       1 + @a = {% 1 + @a %}

@@ -17,8 +17,7 @@ defmodule SanbaseWeb.Graphql.ShortUrlApiTest do
         context.conn,
         %{
           full_url: "/something",
-          data:
-            "slug=santiment&from=2020-01-01&to=2020-02-02&interval=10d&isHidden=true&isCartesian=true"
+          data: "slug=santiment&from=2020-01-01&to=2020-02-02&interval=10d&isHidden=true&isCartesian=true"
         }
       )
 
@@ -37,11 +36,11 @@ defmodule SanbaseWeb.Graphql.ShortUrlApiTest do
       insert(:short_url, full_url: "/something", data: "slug=santiment", user: context.user)
 
     updated_short_url =
-      update_short_url(context.conn, %{
+      context.conn
+      |> update_short_url(%{
         short_url: short_url.short_url,
         full_url: "/new_full_url",
-        data:
-          "slug=santiment&from=2020-01-01&to=2020-02-02&interval=10d&isHidden=true&isCartesian=true"
+        data: "slug=santiment&from=2020-01-01&to=2020-02-02&interval=10d&isHidden=true&isCartesian=true"
       })
       |> get_in(["data", "updateShortUrl"])
 
@@ -56,7 +55,8 @@ defmodule SanbaseWeb.Graphql.ShortUrlApiTest do
     short_url = insert(:short_url, full_url: "/something", data: "slug=santiment", user: nil)
 
     error =
-      update_short_url(context.conn, %{
+      context.conn
+      |> update_short_url(%{
         short_url: short_url.short_url,
         data: "test"
       })
@@ -72,7 +72,8 @@ defmodule SanbaseWeb.Graphql.ShortUrlApiTest do
     short_url = insert(:short_url, full_url: "/something", data: "slug=santiment", user: user)
 
     error =
-      update_short_url(context.conn, %{
+      context.conn
+      |> update_short_url(%{
         short_url: short_url.short_url,
         data: "test"
       })

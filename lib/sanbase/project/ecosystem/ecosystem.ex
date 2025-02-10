@@ -14,8 +14,8 @@ defmodule Sanbase.Ecosystem do
   import Ecto.Changeset
   import Ecto.Query
 
-  alias Sanbase.ProjectEcosystemMapping
   alias Sanbase.Project
+  alias Sanbase.ProjectEcosystemMapping
 
   @type t :: %__MODULE__{
           ecosystem: String.t(),
@@ -58,7 +58,7 @@ defmodule Sanbase.Ecosystem do
   end
 
   @spec all() :: list(t())
-  def all() do
+  def all do
     Sanbase.Repo.all(__MODULE__)
   end
 
@@ -69,7 +69,7 @@ defmodule Sanbase.Ecosystem do
     query =
       case ecosystems_filter do
         :all -> query
-        ecosystems when is_list(ecosystems) -> query |> where([e], e.ecosystem in ^ecosystems)
+        ecosystems when is_list(ecosystems) -> where(query, [e], e.ecosystem in ^ecosystems)
       end
 
     {:ok, Sanbase.Repo.all(query)}
@@ -154,7 +154,7 @@ defmodule Sanbase.Ecosystem do
         preload: ^preloads
       )
 
-    projects = Sanbase.Repo.all(query) |> apply_combinator(ecosystems, opts)
+    projects = query |> Sanbase.Repo.all() |> apply_combinator(ecosystems, opts)
     {:ok, projects}
   end
 

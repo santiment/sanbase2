@@ -5,17 +5,14 @@ defmodule Sanbase.Comments.EntityComment do
   import Ecto.Query
   import Sanbase.Comments.EventEmitter, only: [emit_event: 3]
 
-  alias Sanbase.Repo
   alias Sanbase.Comment
-
-  alias Sanbase.Comment.{
-    BlockchainAddressComment,
-    ChartConfigurationComment,
-    DashboardComment,
-    PostComment,
-    TimelineEventComment,
-    WatchlistComment
-  }
+  alias Sanbase.Comment.BlockchainAddressComment
+  alias Sanbase.Comment.ChartConfigurationComment
+  alias Sanbase.Comment.DashboardComment
+  alias Sanbase.Comment.PostComment
+  alias Sanbase.Comment.TimelineEventComment
+  alias Sanbase.Comment.WatchlistComment
+  alias Sanbase.Repo
 
   @type comment_struct ::
           %BlockchainAddressComment{}
@@ -128,7 +125,8 @@ defmodule Sanbase.Comments.EntityComment do
   end
 
   def delete_all_by_entity_id(entity_type, entity_id) when is_number(entity_id) do
-    entity_comments_query(entity_type, entity_id)
+    entity_type
+    |> entity_comments_query(entity_id)
     |> Repo.delete_all()
   end
 
@@ -137,7 +135,8 @@ defmodule Sanbase.Comments.EntityComment do
     cursor = Map.get(args, :cursor) || %{}
     order = Map.get(cursor, :order, :asc)
 
-    entity_comments_query(entity_type, entity_id)
+    entity_type
+    |> entity_comments_query(entity_id)
     |> apply_cursor(cursor)
     |> order_by([c], [{^order, c.inserted_at}])
     |> limit(^limit)
@@ -164,13 +163,12 @@ defmodule Sanbase.Comments.EntityComment do
   defp maybe_add_entity_id_clause(query, _field, nil), do: query
 
   defp maybe_add_entity_id_clause(query, field, entity_id) do
-    query
-    |> where([elem], field(elem, ^field) == ^entity_id)
+    where(query, [elem], field(elem, ^field) == ^entity_id)
   end
 
   # Returns the comments that are associated with some of the
   # entities used in the feed
-  defp all_feed_comments_query() do
+  defp all_feed_comments_query do
     # Avoid cases where the mapping for a comment is deleted, thus
     # removing the comment from the list of comments for an entity,
     # but the comment is still in the comments table. This happens
@@ -244,13 +242,11 @@ defmodule Sanbase.Comments.EntityComment do
   # association is belongs_to, like `comment` belongs_to `insight` we need to
   # transform preloaded entities like so: insights: [%{}] -> insight: %{}
   defp transform_entity_list_to_singular(comments) do
-    comments
-    |> Enum.map(fn comment ->
-      @comments_feed_entities
-      |> Enum.reduce(comment, fn entity_type, acc ->
-        value = Map.get(acc, entity_type) |> List.first()
+    Enum.map(comments, fn comment ->
+      Enum.reduce(@comments_feed_entities, comment, fn entity_type, acc ->
+        value = acc |> Map.get(entity_type) |> List.first()
 
-        singular_entity = Inflex.singularize(entity_type) |> String.to_existing_atom()
+        singular_entity = entity_type |> Inflex.singularize() |> String.to_existing_atom()
 
         acc
         |> Map.delete(entity_type)
@@ -260,57 +256,55 @@ defmodule Sanbase.Comments.EntityComment do
   end
 
   defp entity_comments_query(:watchlist, entity_id) do
-    from(
-      comment in WatchlistComment,
-      preload: [:comment, comment: :user]
+    maybe_add_entity_id_clause(
+      from(comment in WatchlistComment, preload: [:comment, comment: :user]),
+      :watchlist_id,
+      entity_id
     )
-    |> maybe_add_entity_id_clause(:watchlist_id, entity_id)
   end
 
   defp entity_comments_query(:chart_configuration, entity_id) do
-    from(
-      comment in ChartConfigurationComment,
-      preload: [:comment, comment: :user]
+    maybe_add_entity_id_clause(
+      from(comment in ChartConfigurationComment, preload: [:comment, comment: :user]),
+      :chart_configuration_id,
+      entity_id
     )
-    |> maybe_add_entity_id_clause(:chart_configuration_id, entity_id)
   end
 
   defp entity_comments_query(:dashboard, entity_id) do
-    from(
-      comment in DashboardComment,
-      preload: [:comment, comment: :user]
+    maybe_add_entity_id_clause(
+      from(comment in DashboardComment, preload: [:comment, comment: :user]),
+      :dashboard_id,
+      entity_id
     )
-    |> maybe_add_entity_id_clause(:dashboard_id, entity_id)
   end
 
   defp entity_comments_query(:timeline_event, entity_id) do
-    from(
-      comment in TimelineEventComment,
-      preload: [:comment, comment: :user]
+    maybe_add_entity_id_clause(
+      from(comment in TimelineEventComment, preload: [:comment, comment: :user]),
+      :timeline_event_id,
+      entity_id
     )
-    |> maybe_add_entity_id_clause(:timeline_event_id, entity_id)
   end
 
   defp entity_comments_query(:insight, entity_id) do
-    from(comment in PostComment,
-      preload: [:comment, comment: :user]
-    )
-    |> maybe_add_entity_id_clause(:post_id, entity_id)
+    maybe_add_entity_id_clause(from(comment in PostComment, preload: [:comment, comment: :user]), :post_id, entity_id)
   end
 
   defp entity_comments_query(:blockchain_address, entity_id) do
-    from(comment in BlockchainAddressComment,
-      preload: [:comment, comment: :user]
+    maybe_add_entity_id_clause(
+      from(comment in BlockchainAddressComment, preload: [:comment, comment: :user]),
+      :blockchain_address_id,
+      entity_id
     )
-    |> maybe_add_entity_id_clause(:blockchain_address_id, entity_id)
   end
 
   defp apply_cursor(query, %{type: :before, datetime: datetime}) do
-    from(c in query, where: c.inserted_at <= ^(datetime |> DateTime.to_naive()))
+    from(c in query, where: c.inserted_at <= ^DateTime.to_naive(datetime))
   end
 
   defp apply_cursor(query, %{type: :after, datetime: datetime}) do
-    from(c in query, where: c.inserted_at >= ^(datetime |> DateTime.to_naive()))
+    from(c in query, where: c.inserted_at >= ^DateTime.to_naive(datetime))
   end
 
   defp apply_cursor(query, _), do: query

@@ -1,10 +1,11 @@
 defmodule Sanbase.Repo.Migrations.PopulateGithubOrganizationsTable do
+  @moduledoc false
   use Ecto.Migration
 
   import Ecto.Query
 
-  alias Sanbase.Repo
   alias Sanbase.Project
+  alias Sanbase.Repo
 
   def up do
     Application.ensure_all_started(:tzdata)
@@ -14,13 +15,8 @@ defmodule Sanbase.Repo.Migrations.PopulateGithubOrganizationsTable do
 
   def down, do: :ok
 
-  defp populate_github_organizations() do
-    data =
-      from(p in Project,
-        where: not is_nil(p.github_link),
-        select: {p.id, p.github_link}
-      )
-      |> Repo.all()
+  defp populate_github_organizations do
+    data = Repo.all(from(p in Project, where: not is_nil(p.github_link), select: {p.id, p.github_link}))
 
     project_id_github_org =
       data
@@ -33,8 +29,7 @@ defmodule Sanbase.Repo.Migrations.PopulateGithubOrganizationsTable do
       |> Enum.reject(&is_nil/1)
 
     insert_data =
-      project_id_github_org
-      |> Enum.map(fn {id, org} ->
+      Enum.map(project_id_github_org, fn {id, org} ->
         %{project_id: id, organization: org}
       end)
 

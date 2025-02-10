@@ -11,8 +11,8 @@ defmodule Sanbase.Project.GithubOrganization do
   import Ecto.Changeset
   import Ecto.Query
 
-  alias Sanbase.Repo
   alias Sanbase.Project
+  alias Sanbase.Repo
 
   schema "github_organizations" do
     field(:organization, :string)
@@ -36,8 +36,7 @@ defmodule Sanbase.Project.GithubOrganization do
         {:ok, org}
 
       [] ->
-        {:error,
-         "The project with id #{project_id} does not have a github organization #{organization}"}
+        {:error, "The project with id #{project_id} does not have a github organization #{organization}"}
     end
   end
 
@@ -46,7 +45,8 @@ defmodule Sanbase.Project.GithubOrganization do
   end
 
   def add_github_organization(project_id, organization) do
-    changeset(%__MODULE__{}, %{organization: organization, project_id: project_id})
+    %__MODULE__{}
+    |> changeset(%{organization: organization, project_id: project_id})
     |> Repo.insert()
   end
 
@@ -55,9 +55,8 @@ defmodule Sanbase.Project.GithubOrganization do
   end
 
   def remove_github_organization(project_id, organization) do
-    with {:ok, record} <- get(project_id, organization),
-         {:ok, record} <- Repo.delete(record) do
-      {:ok, record}
+    with {:ok, record} <- get(project_id, organization) do
+      Repo.delete(record)
     end
   end
 
@@ -69,7 +68,8 @@ defmodule Sanbase.Project.GithubOrganization do
   end
 
   def organizations_of(project_id) when is_integer(project_id) and project_id > 0 do
-    organizations_query(project_id)
+    project_id
+    |> organizations_query()
     |> Repo.all()
   end
 

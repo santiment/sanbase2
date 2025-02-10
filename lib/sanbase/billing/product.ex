@@ -24,7 +24,7 @@ defmodule Sanbase.Billing.Product do
                         k |> String.downcase() |> String.to_atom()
                       end)
 
-  @product_code_by_id_map Enum.into(@code_product_id_map, %{}, fn {k, v} -> {v, k} end)
+  @product_code_by_id_map Map.new(@code_product_id_map, fn {k, v} -> {v, k} end)
 
   schema "products" do
     field(:name, :string)
@@ -34,14 +34,13 @@ defmodule Sanbase.Billing.Product do
     has_many(:plans, Plan, on_delete: :delete_all)
   end
 
-  def product_api(), do: @product_api
-  def product_sanbase(), do: @product_sanbase
+  def product_api, do: @product_api
+  def product_sanbase, do: @product_sanbase
 
-  def product_atom_names(), do: @product_atom_names
+  def product_atom_names, do: @product_atom_names
 
   def changeset(%__MODULE__{} = product, attrs \\ %{}) do
-    product
-    |> cast(attrs, [:name, :code, :stripe_id])
+    cast(product, attrs, [:name, :code, :stripe_id])
   end
 
   def by_id(id) do
@@ -68,9 +67,9 @@ defmodule Sanbase.Billing.Product do
   If product does not have `stripe_id` - create a product in Stripe and update with
   received `stripe_id`.
   """
-  def maybe_create_product_in_stripe(%__MODULE__{stripe_id: stripe_id} = product)
-      when is_nil(stripe_id) do
-    Sanbase.StripeApi.create_product(product)
+  def maybe_create_product_in_stripe(%__MODULE__{stripe_id: stripe_id} = product) when is_nil(stripe_id) do
+    product
+    |> Sanbase.StripeApi.create_product()
     |> case do
       {:ok, stripe_product} ->
         update_product(product, %{stripe_id: stripe_product.id})
@@ -80,8 +79,7 @@ defmodule Sanbase.Billing.Product do
     end
   end
 
-  def maybe_create_product_in_stripe(%__MODULE__{stripe_id: stripe_id} = product)
-      when is_binary(stripe_id) do
+  def maybe_create_product_in_stripe(%__MODULE__{stripe_id: stripe_id} = product) when is_binary(stripe_id) do
     {:ok, product}
   end
 

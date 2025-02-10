@@ -40,8 +40,7 @@ defmodule Sanbase.Chart.Configuration.SharedAccessToken do
         {:ok, token}
 
       nil ->
-        {:error,
-         "Shared Token with the given chart_configuration_id #{chart_configuration_id} does not exist"}
+        {:error, "Shared Token with the given chart_configuration_id #{chart_configuration_id} does not exist"}
     end
   end
 
@@ -70,7 +69,8 @@ defmodule Sanbase.Chart.Configuration.SharedAccessToken do
       chart_configuration_id: config.id
     }
 
-    changeset(%__MODULE__{}, args)
+    %__MODULE__{}
+    |> changeset(args)
     |> Sanbase.Repo.insert()
   end
 
@@ -92,55 +92,52 @@ defmodule Sanbase.Chart.Configuration.SharedAccessToken do
            }}
           | {:error, String.t()}
   def get_resolved_token(%__MODULE__{} = token) do
-    cache_key = {__MODULE__, :get_resolved_token, token.uuid} |> Sanbase.Cache.hash()
+    cache_key = Sanbase.Cache.hash({__MODULE__, :get_resolved_token, token.uuid})
 
     Sanbase.Cache.get_or_store(cache_key, fn ->
-      case Sanbase.Billing.Subscription.user_has_sanbase_pro?(token.user_id) do
-        true ->
-          {:ok, config} = Configuration.by_id(token.chart_configuration_id, preload: [:project])
-          metrics = extract_metrics(config)
-          queries = extract_queries(config)
+      if Sanbase.Billing.Subscription.user_has_sanbase_pro?(token.user_id) do
+        {:ok, config} = Configuration.by_id(token.chart_configuration_id, preload: [:project])
+        metrics = extract_metrics(config)
+        queries = extract_queries(config)
 
-          result = %{
-            shared_access_token: token,
-            metrics: metrics,
-            queries: queries,
-            plan: "PRO",
-            product_id: Sanbase.Billing.Product.product_sanbase(),
-            product: "SANBASE"
-          }
+        result = %{
+          shared_access_token: token,
+          metrics: metrics,
+          queries: queries,
+          plan: "PRO",
+          product_id: Sanbase.Billing.Product.product_sanbase(),
+          product: "SANBASE"
+        }
 
-          {:ok, result}
-
-        false ->
-          {:error, "The owner of the shared token no longer has a Sanbase Pro subscription"}
+        {:ok, result}
+      else
+        {:error, "The owner of the shared token no longer has a Sanbase Pro subscription"}
       end
     end)
   end
 
   @uuid_length 12
-  defp generate_uuid() do
+  defp generate_uuid do
     token =
-      :crypto.strong_rand_bytes(@uuid_length)
+      @uuid_length
+      |> :crypto.strong_rand_bytes()
       |> Base.url_encode64(padding: false)
       |> binary_part(0, @uuid_length)
 
     prefix() <> token
   end
 
-  defp prefix() do
+  defp prefix do
     # shared chart configuration prefi
     "shchcfg_"
   end
 
   defp extract_metrics(%Configuration{} = config) do
-    config.metrics
-    |> list_to_individual_entries(config.project)
+    list_to_individual_entries(config.metrics, config.project)
   end
 
   defp extract_queries(%Configuration{} = config) do
-    config.queries
-    |> list_to_individual_entries(config.project)
+    list_to_individual_entries(config.queries, config.project)
   end
 
   defp list_to_individual_entries(nil, _project), do: []

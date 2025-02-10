@@ -4,12 +4,13 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
-  alias Sanbase.Insight.Post
-  alias Sanbase.UserList
-  alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.Accounts.UserFollower
-  alias Sanbase.Comments.EntityComment
+  alias Sanbase.Alert.Trigger.TrendingWordsTriggerSettings
   alias Sanbase.Alert.UserTrigger
+  alias Sanbase.Comments.EntityComment
+  alias Sanbase.Insight.Post
+  alias Sanbase.Timeline.TimelineEvent
+  alias Sanbase.UserList
 
   @entity_type :timeline_event
 
@@ -21,12 +22,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     project = insert(:project, slug: "santiment", ticker: "SAN")
     project2 = insert(:project, slug: "ethereum", ticker: "ETH", name: "Ethereum")
 
-    {:ok,
-     conn: conn,
-     user: user,
-     role_san_family: role_san_family,
-     project: project,
-     project2: project2}
+    {:ok, conn: conn, user: user, role_san_family: role_san_family, project: project, project2: project2}
   end
 
   test "timeline events with public entities by followed users or by san family are fetched", %{
@@ -59,7 +55,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
         post: post,
         user: user_to_follow,
         event_type: TimelineEvent.publish_insight_type(),
-        inserted_at: Timex.shift(Timex.now(), minutes: -5)
+        inserted_at: Timex.shift(DateTime.utc_now(), minutes: -5)
       )
 
     event2 =
@@ -67,7 +63,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
         post: post2,
         user: san_author,
         event_type: TimelineEvent.publish_insight_type(),
-        inserted_at: Timex.shift(Timex.now(), minutes: -4)
+        inserted_at: Timex.shift(DateTime.utc_now(), minutes: -4)
       )
 
     result = get_timeline_events(conn, "limit: 5")
@@ -78,10 +74,8 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     assert result |> hd() |> Map.get("events") |> hd() |> Map.get("data") == nil
 
     assert result |> hd() |> Map.get("cursor") == %{
-             "after" =>
-               DateTime.to_iso8601(event2.inserted_at |> DateTime.from_naive!("Etc/UTC")),
-             "before" =>
-               DateTime.to_iso8601(event1.inserted_at |> DateTime.from_naive!("Etc/UTC"))
+             "after" => event2.inserted_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_iso8601(),
+             "before" => event1.inserted_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_iso8601()
            }
   end
 
@@ -132,13 +126,14 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     {_timeline_event, user_trigger} = create_timeline_event(context.user)
 
     trigger_fired_event =
-      get_timeline_events(context.conn, "limit: 5")
+      context.conn
+      |> get_timeline_events("limit: 5")
       |> hd()
       |> Map.get("events")
       |> hd()
 
     assert trigger_fired_event["eventType"] == TimelineEvent.trigger_fired()
-    assert trigger_fired_event["user"]["id"] |> String.to_integer() == context.user.id
+    assert String.to_integer(trigger_fired_event["user"]["id"]) == context.user.id
     assert trigger_fired_event["payload"] == %{"default" => "some signal payload"}
 
     assert trigger_fired_event["data"] == %{
@@ -173,7 +168,8 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       data: %{"user_trigger_data" => %{"default" => %{"value" => 15}}}
     )
 
-    assert get_timeline_events(context.conn, "limit: 5")
+    assert context.conn
+           |> get_timeline_events("limit: 5")
            |> hd()
            |> Map.get("events")
            |> length() == 1
@@ -202,7 +198,8 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       data: %{"user_trigger_data" => %{"default" => %{"value" => 15}}}
     )
 
-    assert get_timeline_events(context.conn, "limit: 5")
+    assert context.conn
+           |> get_timeline_events("limit: 5")
            |> hd()
            |> Map.get("events")
            |> length() == 1
@@ -232,7 +229,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       data: %{"user_trigger_data" => %{"default" => %{"value" => 15}}}
     )
 
-    assert get_timeline_events(context.conn, "limit: 5") |> hd() |> Map.get("events") == []
+    assert context.conn |> get_timeline_events("limit: 5") |> hd() |> Map.get("events") == []
   end
 
   test "trigger fired event from private trigger from followed user is not fetched", context do
@@ -258,7 +255,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       data: %{"user_trigger_data" => %{"default" => %{"value" => 15}}}
     )
 
-    assert get_timeline_events(context.conn, "limit: 5") |> hd() |> Map.get("events") == []
+    assert context.conn |> get_timeline_events("limit: 5") |> hd() |> Map.get("events") == []
   end
 
   describe "timeline events for not logged in user" do
@@ -321,10 +318,10 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       result = execute_mutation(context.conn, mutation, "vote")
 
       assert result["votes"] == %{"currentUserVotes" => 1, "totalVoters" => 1, "totalVotes" => 1}
-      voted_at = result["votedAt"] |> Sanbase.DateTimeUtils.from_iso8601!()
+      voted_at = Sanbase.DateTimeUtils.from_iso8601!(result["votedAt"])
 
       assert Sanbase.TestUtils.datetime_close_to(
-               Timex.now(),
+               DateTime.utc_now(),
                Sanbase.DateTimeUtils.from_iso8601!(voted_at),
                2,
                :seconds
@@ -339,10 +336,10 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
 
       result1 = execute_mutation(context.conn, upvote_mutation, "vote")
       assert result1["votes"] == %{"currentUserVotes" => 1, "totalVoters" => 1, "totalVotes" => 1}
-      voted_at = result1["votedAt"] |> Sanbase.DateTimeUtils.from_iso8601!()
+      voted_at = Sanbase.DateTimeUtils.from_iso8601!(result1["votedAt"])
 
       assert Sanbase.TestUtils.datetime_close_to(
-               Timex.now(),
+               DateTime.utc_now(),
                Sanbase.DateTimeUtils.from_iso8601!(voted_at),
                2,
                :seconds
@@ -632,24 +629,20 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       args_str = "cursor: " <> map_to_input_object_str(%{type: :before, datetime: now})
 
       events1 =
-        get_timeline_events(
-          context.conn,
-          args_str
-        )
+        context.conn
+        |> get_timeline_events(args_str)
         |> hd()
         |> Map.get("events")
 
-      assert length(events1) == length(events |> Map.keys())
+      assert length(events1) == events |> Map.keys() |> length()
 
       args_str =
         "cursor: " <>
           map_to_input_object_str(%{type: :before, datetime: Timex.shift(now, seconds: -60)})
 
       events2 =
-        get_timeline_events(
-          context.conn,
-          args_str
-        )
+        context.conn
+        |> get_timeline_events(args_str)
         |> hd()
         |> Map.get("events")
 
@@ -663,10 +656,8 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       args_str = "cursor: " <> map_to_input_object_str(%{type: :after, datetime: now})
 
       events1 =
-        get_timeline_events(
-          context.conn,
-          args_str
-        )
+        context.conn
+        |> get_timeline_events(args_str)
         |> hd()
         |> Map.get("events")
 
@@ -677,14 +668,12 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
           map_to_input_object_str(%{type: :after, datetime: Timex.shift(now, seconds: -60)})
 
       events2 =
-        get_timeline_events(
-          context.conn,
-          args_str
-        )
+        context.conn
+        |> get_timeline_events(args_str)
         |> hd()
         |> Map.get("events")
 
-      assert length(events2) == length(events |> Map.keys())
+      assert length(events2) == events |> Map.keys() |> length()
     end
   end
 
@@ -712,7 +701,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
 
     events = result |> hd() |> Map.get("events")
 
-    assert Enum.map(events, fn event -> event |> Map.get("tags") end) == [
+    assert Enum.map(events, fn event -> Map.get(event, "tags") end) == [
              ["OWN", "ALERT"],
              ["SANFAM", "INSIGHT"],
              ["SANFAM", "INSIGHT"],
@@ -729,7 +718,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       post: insight,
       user: user_to_follow,
       event_type: TimelineEvent.publish_insight_type(),
-      inserted_at: Timex.shift(Timex.now(), months: -7)
+      inserted_at: Timex.shift(DateTime.utc_now(), months: -7)
     )
 
     result = get_timeline_events(context.conn, "limit: 5")
@@ -740,7 +729,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       post: insight,
       user: user_to_follow,
       event_type: TimelineEvent.publish_insight_type(),
-      inserted_at: Timex.shift(Timex.now(), months: -5)
+      inserted_at: Timex.shift(DateTime.utc_now(), months: -5)
     )
 
     result = get_timeline_events(context.conn, "limit: 5")
@@ -847,7 +836,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     {timeline_event, user_trigger}
   end
 
-  defp default_trigger_settings_string_keys() do
+  defp default_trigger_settings_string_keys do
     %{
       "type" => "daily_active_addresses",
       "target" => %{"slug" => "santiment"},
@@ -933,8 +922,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       )
 
     %{
-      event_with_0_votes_and_1_comments_by_followed:
-        event_with_0_votes_and_1_comments_by_followed,
+      event_with_0_votes_and_1_comments_by_followed: event_with_0_votes_and_1_comments_by_followed,
       event_with_1_votes_and_0_comments_by_sanfam: event_with_1_votes_and_0_comments_by_sanfam,
       event_with_0_votes_and_0_comments_by_sanfam: event_with_0_votes_and_0_comments_by_sanfam
     }
@@ -942,30 +930,34 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
 
   defp create_insight(context, opts) do
     params =
-      %{
-        state: Post.approved_state(),
-        ready_state: Post.published(),
-        title: "Test insight",
-        user: context.user,
-        tags: [build(:tag, name: context.project.slug)],
-        published_at: DateTime.to_naive(Timex.now())
-      }
-      |> Map.merge(opts)
+      Map.merge(
+        %{
+          state: Post.approved_state(),
+          ready_state: Post.published(),
+          title: "Test insight",
+          user: context.user,
+          tags: [build(:tag, name: context.project.slug)],
+          published_at: DateTime.to_naive(DateTime.utc_now())
+        },
+        opts
+      )
 
     insert(:post, params)
   end
 
   def create_watchlist(context, create_opts \\ %{}, update_opts \\ %{}) do
-    create_opts = %{user: context.user} |> Map.merge(create_opts)
+    create_opts = Map.merge(%{user: context.user}, create_opts)
     watchlist = insert(:watchlist, create_opts)
 
     update_opts =
-      %{
-        name: "My watch list of assets",
-        id: watchlist.id,
-        list_items: [%{project_id: context.project.id}, %{project_id: context.project2.id}]
-      }
-      |> Map.merge(update_opts)
+      Map.merge(
+        %{
+          name: "My watch list of assets",
+          id: watchlist.id,
+          list_items: [%{project_id: context.project.id}, %{project_id: context.project2.id}]
+        },
+        update_opts
+      )
 
     {:ok, watchlist} = UserList.update_user_list(context.user, update_opts)
     watchlist
@@ -989,14 +981,14 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     }
 
     trending_words_settings = %{
-      type: Sanbase.Alert.Trigger.TrendingWordsTriggerSettings.type(),
+      type: TrendingWordsTriggerSettings.type(),
       channel: "telegram",
       operation: %{trending_word: true},
       target: %{word: [context.project.slug]}
     }
 
     trending_words_settings2 = %{
-      type: Sanbase.Alert.Trigger.TrendingWordsTriggerSettings.type(),
+      type: TrendingWordsTriggerSettings.type(),
       channel: "telegram",
       operation: %{trending_word: true},
       target: %{word: ["san"]}

@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.GenericAdmin.FeaturedItem do
+  @moduledoc false
   import Ecto.Query
 
   def schema_module, do: Sanbase.FeaturedItem
@@ -21,7 +22,7 @@ defmodule SanbaseWeb.GenericAdmin.FeaturedItem do
     }
   end
 
-  defp preloads() do
+  defp preloads do
     [
       :post,
       :user_list,
@@ -33,7 +34,7 @@ defmodule SanbaseWeb.GenericAdmin.FeaturedItem do
     ]
   end
 
-  defp index_fields() do
+  defp index_fields do
     [
       :id,
       :post_id,
@@ -46,7 +47,7 @@ defmodule SanbaseWeb.GenericAdmin.FeaturedItem do
     ]
   end
 
-  defp edit_fields() do
+  defp edit_fields do
     [
       :post_id,
       :user_list_id,
@@ -57,7 +58,7 @@ defmodule SanbaseWeb.GenericAdmin.FeaturedItem do
     ]
   end
 
-  defp belongs_to() do
+  defp belongs_to do
     %{
       user_list_id: %{
         query: from(ul in Sanbase.UserList, order_by: [desc: ul.id]),

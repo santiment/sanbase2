@@ -1,6 +1,5 @@
 defmodule Sanbase.Price.SqlQuery do
-  @table "asset_prices_v3"
-
+  @moduledoc false
   import Sanbase.DateTimeUtils, only: [maybe_str_to_sec: 1]
 
   import Sanbase.Metric.SqlQuery.Helper,
@@ -12,6 +11,10 @@ defmodule Sanbase.Price.SqlQuery do
       timerange_parameters: 2,
       timerange_parameters: 3
     ]
+
+  alias Sanbase.Clickhouse.Query
+
+  @table "asset_prices_v3"
 
   def timeseries_data_query(slug_or_slugs, from, to, interval, source, aggregation) do
     sql = """
@@ -39,7 +42,7 @@ defmodule Sanbase.Price.SqlQuery do
       to: dt_to_unix(:to, to)
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def timeseries_metric_data_query(slug_or_slugs, metric, from, to, interval, source, aggregation) do
@@ -66,18 +69,10 @@ defmodule Sanbase.Price.SqlQuery do
       to: dt_to_unix(:to, to)
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
-  def timeseries_metric_data_per_slug_query(
-        slug_or_slugs,
-        metric,
-        from,
-        to,
-        interval,
-        source,
-        aggregation
-      ) do
+  def timeseries_metric_data_per_slug_query(slug_or_slugs, metric, from, to, interval, source, aggregation) do
     sql = """
     SELECT
       #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS time,
@@ -101,7 +96,7 @@ defmodule Sanbase.Price.SqlQuery do
       to: dt_to_unix(:to, to)
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def aggregated_timeseries_data_query(slugs, from, to, source, opts \\ []) do
@@ -146,7 +141,7 @@ defmodule Sanbase.Price.SqlQuery do
       source: source
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def aggregated_marketcap_and_volume_query(slugs, from, to, source, opts) do
@@ -187,7 +182,7 @@ defmodule Sanbase.Price.SqlQuery do
       source: source
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def aggregated_metric_timeseries_data_query(slugs, metric, from, to, source, aggregation) do
@@ -224,7 +219,7 @@ defmodule Sanbase.Price.SqlQuery do
       source: source
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def slugs_by_filter_query(metric, from, to, operation, threshold, aggregation, source) do
@@ -236,7 +231,7 @@ defmodule Sanbase.Price.SqlQuery do
         WHERE #{generate_comparison_string("value", operation, threshold)}
         """
 
-    Sanbase.Clickhouse.Query.put_sql(query_struct, sql)
+    Query.put_sql(query_struct, sql)
   end
 
   def slugs_order_query(metric, from, to, direction, aggregation, source) do
@@ -248,7 +243,7 @@ defmodule Sanbase.Price.SqlQuery do
         ORDER BY value #{direction |> Atom.to_string() |> String.upcase()}
         """
 
-    Sanbase.Clickhouse.Query.put_sql(query_struct, sql)
+    Query.put_sql(query_struct, sql)
   end
 
   defp filter_order_base_query(metric, from, to, aggregation, source) do
@@ -286,7 +281,7 @@ defmodule Sanbase.Price.SqlQuery do
       source: source
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def ohlc_query(slug, from, to, source) do
@@ -331,7 +326,7 @@ defmodule Sanbase.Price.SqlQuery do
       source: source
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def timeseries_ohlc_data_query(slug, from, to, interval, source) do
@@ -360,7 +355,7 @@ defmodule Sanbase.Price.SqlQuery do
       to: dt_to_unix(:to, to)
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def combined_marketcap_and_volume_query(slugs, from, to, interval, source) do
@@ -402,7 +397,7 @@ defmodule Sanbase.Price.SqlQuery do
       to: to
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def last_record_before_query(slug, datetime, source) do
@@ -429,7 +424,7 @@ defmodule Sanbase.Price.SqlQuery do
       to: dt_to_unix(:to, to)
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def last_datetime_computed_at_query(slug) do
@@ -441,7 +436,7 @@ defmodule Sanbase.Price.SqlQuery do
 
     params = %{slug: slug}
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def select_any_record_query(slug) do
@@ -453,7 +448,7 @@ defmodule Sanbase.Price.SqlQuery do
 
     params = %{slug: slug}
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def first_datetime_query(slug, source) do
@@ -470,7 +465,7 @@ defmodule Sanbase.Price.SqlQuery do
 
     params = %{slug: slug, source: source}
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def available_slugs_query(source) do
@@ -482,7 +477,7 @@ defmodule Sanbase.Price.SqlQuery do
 
     params = %{source: source}
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def slugs_with_volume_over_query(volume, source) do
@@ -502,7 +497,7 @@ defmodule Sanbase.Price.SqlQuery do
       source: source
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def latest_prices_per_slug_query(slugs, source, limit_per_slug) do
@@ -527,7 +522,7 @@ defmodule Sanbase.Price.SqlQuery do
 
     params = %{slugs: slugs, source: source, limit_per_slug: limit_per_slug}
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   # Private functions

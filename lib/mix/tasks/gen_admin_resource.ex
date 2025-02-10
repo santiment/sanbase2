@@ -1,6 +1,4 @@
 defmodule Mix.Tasks.Gen.Admin.Resource do
-  use Mix.Task
-
   @shortdoc "Generates an empty admin resource module."
   @moduledoc """
   Generates an empty admin resource module based on an Ecto schema module and a web root.
@@ -10,15 +8,15 @@ defmodule Mix.Tasks.Gen.Admin.Resource do
   mix gen.admin.resource Sanbase.Ecosystem
   """
 
+  use Mix.Task
+
   def run([schema_module | _] = args) do
     {web_root_dir, web_root_module} =
-      case length(args) > 1 do
-        true ->
-          web_root_module = Enum.at(args, 1)
-          {Macro.underscore(web_root_module), web_root_module}
-
-        false ->
-          guess_web_root()
+      if length(args) > 1 do
+        web_root_module = Enum.at(args, 1)
+        {Macro.underscore(web_root_module), web_root_module}
+      else
+        guess_web_root()
       end
 
     if schema_module in [nil, ""] or web_root_dir in [nil, ""] do
@@ -27,7 +25,7 @@ defmodule Mix.Tasks.Gen.Admin.Resource do
       schema_module = Module.safe_concat([schema_module])
       content = generate_content(schema_module, web_root_module)
 
-      schema_module_name = Module.split(schema_module) |> List.last()
+      schema_module_name = schema_module |> Module.split() |> List.last()
 
       file_path =
         "lib/#{String.downcase(web_root_dir)}/generic_admin/#{Macro.underscore(schema_module_name)}.ex"
@@ -75,8 +73,8 @@ defmodule Mix.Tasks.Gen.Admin.Resource do
     belongs_to_fields_map = generate_belongs_to_fields_map(schema_module)
 
     """
-    defmodule #{web_root}.GenericAdmin.#{Module.split(schema_module) |> List.last()} do
-      def schema_module, do: #{to_string(schema_module) |> String.replace_prefix("Elixir.", "")}
+    defmodule #{web_root}.GenericAdmin.#{schema_module |> Module.split() |> List.last()} do
+      def schema_module, do: #{schema_module |> to_string() |> String.replace_prefix("Elixir.", "")}
 
       def resource() do
         %{
@@ -94,7 +92,8 @@ defmodule Mix.Tasks.Gen.Admin.Resource do
   end
 
   defp belongs_to_fields(schema_module) do
-    schema_module.__schema__(:associations)
+    :associations
+    |> schema_module.__schema__()
     |> Enum.filter(fn assoc_name ->
       assoc = schema_module.__schema__(:association, assoc_name)
       assoc.__struct__ == Ecto.Association.BelongsTo
@@ -102,8 +101,9 @@ defmodule Mix.Tasks.Gen.Admin.Resource do
   end
 
   defp generate_belongs_to_fields_map(schema_module) do
-    belongs_to_fields(schema_module)
-    |> Enum.map(fn assoc_name ->
+    schema_module
+    |> belongs_to_fields()
+    |> Map.new(fn assoc_name ->
       {
         assoc_name,
         %{
@@ -117,7 +117,6 @@ defmodule Mix.Tasks.Gen.Admin.Resource do
         }
       }
     end)
-    |> Enum.into(%{})
   end
 
   defp get_index_fields(schema_module) do
@@ -125,7 +124,8 @@ defmodule Mix.Tasks.Gen.Admin.Resource do
   end
 
   def form_fields(schema_module, preloads) do
-    schema_module.__schema__(:fields)
+    :fields
+    |> schema_module.__schema__()
     |> Enum.reject(fn field ->
       field in [:id, :inserted_at, :updated_at] or
         maybe_replace_foreign_key(field) in preloads
@@ -142,7 +142,8 @@ defmodule Mix.Tasks.Gen.Admin.Resource do
   end
 
   defp get_preloads(schema_module) do
-    schema_module.__schema__(:associations)
+    :associations
+    |> schema_module.__schema__()
     |> Enum.map(&{&1, schema_module.__schema__(:association, &1)})
     |> Enum.filter(fn {_assoc_name, assoc} -> assoc.related != nil end)
     |> Enum.map(fn {assoc_name, _assoc} -> assoc_name end)

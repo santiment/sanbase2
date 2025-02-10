@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.CreateTelegramUserTokens do
+  @moduledoc false
   use Ecto.Migration
 
   @table "telegram_user_tokens"

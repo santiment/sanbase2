@@ -1,11 +1,13 @@
 defmodule Sanbase.Repo.Migrations.CreateNewPlansInStripe do
+  @moduledoc false
   use Ecto.Migration
 
-  require Sanbase.Utils.Config
-
-  alias Sanbase.Utils.Config
-  alias Sanbase.Billing.{Product, Plan}
+  alias Sanbase.Billing.Plan
+  alias Sanbase.Billing.Product
   alias Sanbase.Repo
+  alias Sanbase.Utils.Config
+
+  require Sanbase.Utils.Config
 
   def up do
     Application.ensure_all_started(:tzdata)
@@ -27,7 +29,7 @@ defmodule Sanbase.Repo.Migrations.CreateNewPlansInStripe do
     :ok
   end
 
-  defp stripe_api_key() do
+  defp stripe_api_key do
     Config.module_get(Sanbase.StripeConfig, :api_key)
   end
 end

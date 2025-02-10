@@ -12,7 +12,8 @@ defmodule SanbaseWeb.Graphql.AccessRestrictionsTest do
   end
 
   test "deprecated metrics", %{conn: conn} do
-    get_access_restrictions(conn)
+    conn
+    |> get_access_restrictions()
     |> Enum.each(fn restriction ->
       assert is_boolean(restriction["isDeprecated"]) == true
 
@@ -25,57 +26,63 @@ defmodule SanbaseWeb.Graphql.AccessRestrictionsTest do
   end
 
   test "free sanbase user", %{conn: conn} do
-    days_ago = Timex.shift(Timex.now(), days: -29)
-    over_two_years_ago = Timex.shift(Timex.now(), days: -(2 * 365 + 1))
+    days_ago = Timex.shift(DateTime.utc_now(), days: -29)
+    over_two_years_ago = Timex.shift(DateTime.utc_now(), days: -(2 * 365 + 1))
 
     for %{"isRestricted" => true} = restriction <- get_access_restrictions(conn) do
       from = restriction["restrictedFrom"]
       to = restriction["restrictedTo"]
 
       assert is_nil(from) ||
-               Sanbase.DateTimeUtils.from_iso8601!(from)
+               from
+               |> Sanbase.DateTimeUtils.from_iso8601!()
                |> DateTime.compare(over_two_years_ago) == :gt
 
       assert is_nil(to) ||
-               Sanbase.DateTimeUtils.from_iso8601!(to)
+               to
+               |> Sanbase.DateTimeUtils.from_iso8601!()
                |> DateTime.compare(days_ago) == :lt
     end
   end
 
   test "pro sanbase user", %{conn: conn, user: user} do
     insert(:subscription_pro_sanbase, user: user)
-    one_hour_ago = Timex.shift(Timex.now(), hours: -1)
-    over_five_years_ago = Timex.shift(Timex.now(), days: -(5 * 365 + 1))
+    one_hour_ago = Timex.shift(DateTime.utc_now(), hours: -1)
+    over_five_years_ago = Timex.shift(DateTime.utc_now(), days: -(5 * 365 + 1))
 
     for %{"isRestricted" => true} = restriction <- get_access_restrictions(conn) do
       from = restriction["restrictedFrom"]
       to = restriction["restrictedTo"]
 
       assert is_nil(from) ||
-               Sanbase.DateTimeUtils.from_iso8601!(from)
+               from
+               |> Sanbase.DateTimeUtils.from_iso8601!()
                |> DateTime.compare(over_five_years_ago) == :gt
 
       assert is_nil(to) ||
-               Sanbase.DateTimeUtils.from_iso8601!(to)
+               to
+               |> Sanbase.DateTimeUtils.from_iso8601!()
                |> DateTime.compare(one_hour_ago) == :lt
     end
   end
 
   test "pro+ sanbase user", %{conn: conn, user: user} do
     insert(:subscription_pro_plus_sanbase, user: user)
-    one_hour_ago = Timex.shift(Timex.now(), hours: -1)
-    over_five_years_ago = Timex.shift(Timex.now(), days: -(5 * 365 + 1))
+    one_hour_ago = Timex.shift(DateTime.utc_now(), hours: -1)
+    over_five_years_ago = Timex.shift(DateTime.utc_now(), days: -(5 * 365 + 1))
 
     for %{"isRestricted" => true} = restriction <- get_access_restrictions(conn) do
       from = restriction["restrictedFrom"]
       to = restriction["restrictedTo"]
 
       assert is_nil(from) ||
-               Sanbase.DateTimeUtils.from_iso8601!(from)
+               from
+               |> Sanbase.DateTimeUtils.from_iso8601!()
                |> DateTime.compare(over_five_years_ago) == :gt
 
       assert is_nil(to) ||
-               Sanbase.DateTimeUtils.from_iso8601!(to)
+               to
+               |> Sanbase.DateTimeUtils.from_iso8601!()
                |> DateTime.compare(one_hour_ago) == :lt
     end
   end

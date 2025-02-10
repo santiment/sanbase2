@@ -3,7 +3,10 @@ defprotocol Sanbase.Alert do
 end
 
 defimpl Sanbase.Alert, for: Any do
-  alias Sanbase.Accounts.{UserSettings, Settings, User}
+  alias Sanbase.Accounts.Settings
+  alias Sanbase.Accounts.User
+  alias Sanbase.Accounts.UserSettings
+  alias Sanbase.Email.Template
   alias Sanbase.Utils.Config
 
   require Logger
@@ -49,11 +52,7 @@ defimpl Sanbase.Alert, for: Any do
 
   defp send_to_channel("web_push", _user_trigger, _max_alerts_to_send), do: {"web_push", []}
 
-  defp send_webhook(
-         trigger,
-         webhook_url,
-         %{"webhook" => max_alerts_to_send}
-       ) do
+  defp send_webhook(trigger, webhook_url, %{"webhook" => max_alerts_to_send}) do
     %{id: user_trigger_id} = trigger
 
     fun = fn identifier, payload ->
@@ -71,13 +70,7 @@ defimpl Sanbase.Alert, for: Any do
   end
 
   defp send_email(
-         %{
-           user:
-             %User{
-               email: email,
-               user_settings: %{settings: %{alert_notify_email: true}}
-             } = user
-         } = trigger,
+         %{user: %User{email: email, user_settings: %{settings: %{alert_notify_email: true}}} = user} = trigger,
          %{"email" => max_alerts_to_send}
        )
        when is_binary(email) do
@@ -89,24 +82,14 @@ defimpl Sanbase.Alert, for: Any do
     send_or_limit("email", trigger, max_alerts_to_send, fun)
   end
 
-  defp send_email(
-         %{
-           user: %User{
-             email: email,
-             user_settings: %{settings: %{alert_notify_email: false}}
-           }
-         } = trigger,
-         _
-       )
+  defp send_email(%{user: %User{email: email, user_settings: %{settings: %{alert_notify_email: false}}}} = trigger, _)
        when is_binary(email) do
     %{id: trigger_id, user: %{id: user_id}, trigger: %{settings: %{payload: payload_map}}} =
       trigger
 
     # The emails notifications are disabled
     Enum.map(payload_map, fn {identifier, _payload} ->
-      {identifier,
-       {:error,
-        %{reason: :email_alert_notifications_disabled, user_id: user_id, trigger_id: trigger_id}}}
+      {identifier, {:error, %{reason: :email_alert_notifications_disabled, user_id: user_id, trigger_id: trigger_id}}}
     end)
   end
 
@@ -123,16 +106,8 @@ defimpl Sanbase.Alert, for: Any do
   end
 
   defp send_telegram(
-         %{
-           user: %User{
-             user_settings: %{
-               settings: %{
-                 telegram_chat_id: telegram_chat_id,
-                 alert_notify_telegram: true
-               }
-             }
-           }
-         } = user_trigger,
+         %{user: %User{user_settings: %{settings: %{telegram_chat_id: telegram_chat_id, alert_notify_telegram: true}}}} =
+           user_trigger,
          %{"telegram" => max_alerts_to_send}
        )
        when is_integer(telegram_chat_id) and telegram_chat_id > 0 do
@@ -152,16 +127,8 @@ defimpl Sanbase.Alert, for: Any do
   end
 
   defp send_telegram(
-         %{
-           user: %User{
-             user_settings: %{
-               settings: %{
-                 telegram_chat_id: telegram_chat_id,
-                 alert_notify_telegram: false
-               }
-             }
-           }
-         } = user_trigger,
+         %{user: %User{user_settings: %{settings: %{telegram_chat_id: telegram_chat_id, alert_notify_telegram: false}}}} =
+           user_trigger,
          _max_alerts_to_send
        )
        when is_integer(telegram_chat_id) and telegram_chat_id > 0 do
@@ -196,11 +163,7 @@ defimpl Sanbase.Alert, for: Any do
     end)
   end
 
-  defp send_telegram_channel(
-         user_trigger,
-         channel,
-         %{"telegram_channel" => max_alerts_to_send}
-       ) do
+  defp send_telegram_channel(user_trigger, channel, %{"telegram_channel" => max_alerts_to_send}) do
     fun = fn _identifier, payload ->
       payload = transform_payload(payload, user_trigger.id, :telegram_channel)
       {payload, opts} = maybe_extend_payload_telegram_channel(payload, user_trigger, channel)
@@ -222,14 +185,8 @@ defimpl Sanbase.Alert, for: Any do
   # For daily and intraday metric signals add preview image of the chart for metric + asset
   # The preview image should be a reply to the original alert message
   # only for Sanr signals telegram channel and one test channel
-  defp maybe_send_preview_image_as_reply(
-         {:ok, response},
-         %{trigger: %{settings: %{type: type}}},
-         channel,
-         opts
-       )
-       when type in ["metric_signal", "daily_metric_signal"] and
-              channel in ["@test_san_bot86", "@sanr_signals"] do
+  defp maybe_send_preview_image_as_reply({:ok, response}, %{trigger: %{settings: %{type: type}}}, channel, opts)
+       when type in ["metric_signal", "daily_metric_signal"] and channel in ["@test_san_bot86", "@sanr_signals"] do
     if short_url_id = Keyword.get(opts, :short_url_id) do
       send_preview_image(response, channel, short_url_id)
     end
@@ -238,18 +195,16 @@ defimpl Sanbase.Alert, for: Any do
   defp maybe_send_preview_image_as_reply(_, _, _, _), do: :ok
 
   defp deactivate_alert_if_bot_blocked({:error, error}, user_trigger) do
-    case String.contains?(error, "blocked the telegram bot") do
-      true ->
-        # In case the user_trigger does not have other channels but only telegram
-        # and the user has blocked our telegram bot, the alert is disabled
-        # so it does not spend resources running
-        deactivate_if_telegram_channel_only(user_trigger)
+    if String.contains?(error, "blocked the telegram bot") do
+      # In case the user_trigger does not have other channels but only telegram
+      # and the user has blocked our telegram bot, the alert is disabled
+      # so it does not spend resources running
+      deactivate_if_telegram_channel_only(user_trigger)
 
-        %{user: %User{id: user_id}, trigger: %{id: trigger_id}} = user_trigger
-        {:error, %{reason: :telegram_bot_blocked, user_id: user_id, trigger_id: trigger_id}}
-
-      false ->
-        {:error, error}
+      %{user: %User{id: user_id}, trigger: %{id: trigger_id}} = user_trigger
+      {:error, %{reason: :telegram_bot_blocked, user_id: user_id, trigger_id: trigger_id}}
+    else
+      {:error, error}
     end
   end
 
@@ -261,7 +216,8 @@ defimpl Sanbase.Alert, for: Any do
 
       image_url = "#{preview_url()}/chart/#{short_url_id}"
 
-      HTTPoison.get(image_url, [basic_auth_header()], timeout: 15_000, recv_timeout: 15_000)
+      image_url
+      |> HTTPoison.get([basic_auth_header()], timeout: 15_000, recv_timeout: 15_000)
       |> handle_chart_preview_response(channel, reply_to_message_id, image_url)
     end)
   end
@@ -271,7 +227,7 @@ defimpl Sanbase.Alert, for: Any do
   end
 
   defp handle_chart_preview_response({:ok, response}, channel, reply_to_message_id, image_url) do
-    content_type = response.headers |> Enum.into(%{}) |> Map.get("Content-Type")
+    content_type = response.headers |> Map.new() |> Map.get("Content-Type")
 
     case content_type do
       "image/jpeg" ->
@@ -342,9 +298,7 @@ defimpl Sanbase.Alert, for: Any do
     template_kv = settings.template_kv || %{}
     slugs = Map.keys(template_kv)
 
-    Logger.info(
-      "[maybe_extend_payload_telegram_channel_#{user_trigger.id}] [user_trigger: #{inspect(user_trigger.id)}]]"
-    )
+    Logger.info("[maybe_extend_payload_telegram_channel_#{user_trigger.id}] [user_trigger: #{inspect(user_trigger.id)}]]")
 
     if length(slugs) > 0 do
       slug = hd(slugs)
@@ -357,8 +311,7 @@ defimpl Sanbase.Alert, for: Any do
              short_url.short_url}
 
           _ ->
-            {"https://app.santiment.net/charts?slug=#{slug}?utm_source=telegram&utm_medium=signals",
-             nil}
+            {"https://app.santiment.net/charts?slug=#{slug}?utm_source=telegram&utm_medium=signals", nil}
         end
 
       Logger.info(
@@ -386,7 +339,7 @@ defimpl Sanbase.Alert, for: Any do
     name = Sanbase.Accounts.User.get_name(user)
 
     try do
-      case Sanbase.TemplateMailer.send(user.email, Sanbase.Email.Template.alerts_template(), %{
+      case Sanbase.TemplateMailer.send(user.email, Template.alerts_template(), %{
              name: name,
              username: name,
              payload: payload_html
@@ -401,30 +354,26 @@ defimpl Sanbase.Alert, for: Any do
     end
   end
 
-  def do_send_webhook(
-        "https://hooks.slack.com/services" <> _rest = webhook_url,
-        _identifier,
-        payload,
-        trigger_id
-      ) do
+  def do_send_webhook("https://hooks.slack.com/services" <> _rest = webhook_url, _identifier, payload, trigger_id) do
     encoded_json_payload = Jason.encode!(%{text: payload})
 
-    HTTPoison.post(webhook_url, encoded_json_payload, [{"Content-Type", "application/json"}])
+    webhook_url
+    |> HTTPoison.post(encoded_json_payload, [{"Content-Type", "application/json"}])
     |> handle_webhook_response(trigger_id)
   end
 
   def do_send_webhook(webhook_url, identifier, payload, trigger_id) do
     encoded_json_payload =
-      %{
-        timestamp: DateTime.utc_now() |> DateTime.to_unix(),
+      Jason.encode!(%{
+        timestamp: DateTime.to_unix(DateTime.utc_now()),
         identifier: identifier,
         content: payload,
         trigger_id: trigger_id,
         trigger_url: SanbaseWeb.Endpoint.show_alert_url(trigger_id)
-      }
-      |> Jason.encode!()
+      })
 
-    HTTPoison.post(webhook_url, encoded_json_payload, [{"Content-Type", "application/json"}])
+    webhook_url
+    |> HTTPoison.post(encoded_json_payload, [{"Content-Type", "application/json"}])
     |> handle_webhook_response(trigger_id)
   end
 
@@ -465,17 +414,16 @@ defimpl Sanbase.Alert, for: Any do
   end
 
   defp limits_reached_error_tuple(user, trigger, channel) do
-    {:error,
-     %{reason: :alerts_limit_reached, user_id: user.id, trigger_id: trigger.id, channel: channel}}
+    {:error, %{reason: :alerts_limit_reached, user_id: user.id, trigger_id: trigger.id, channel: channel}}
   end
 
   defp update_user_alerts_sent_per_day(user, sent_list_per_channel) do
     %{alerts_fired: alerts_fired} = Sanbase.Accounts.UserSettings.settings_for(user, force: true)
 
-    map_key = Date.utc_today() |> to_string()
+    map_key = to_string(Date.utc_today())
 
     alerts_fired_now =
-      Enum.into(sent_list_per_channel, %{}, fn {channel, sent_list} ->
+      Map.new(sent_list_per_channel, fn {channel, sent_list} ->
         count = Enum.count(sent_list, fn {_, result} -> result == :ok end)
         {channel, count}
       end)
@@ -485,7 +433,7 @@ defimpl Sanbase.Alert, for: Any do
     channels = Settings.alert_channels()
 
     alerts_fired_today_updated =
-      Enum.into(channels, %{}, fn channel ->
+      Map.new(channels, fn channel ->
         count = Map.get(alerts_fired_today, channel, 0) + Map.get(alerts_fired_now, channel, 0)
 
         {channel, count}
@@ -505,12 +453,14 @@ defimpl Sanbase.Alert, for: Any do
 
   defp send_limit_reached_notification("email", user) do
     payload_html =
-      limit_reached_payload("email")
+      "email"
+      |> limit_reached_payload()
       |> Earmark.as_html!(breaks: true, timeout: nil, mapper: &Enum.map/2)
 
     name = Sanbase.Accounts.User.get_name(user)
 
-    Sanbase.TemplateMailer.send(user.email, Sanbase.Email.Template.alerts_template(), %{
+    user.email
+    |> Sanbase.TemplateMailer.send(Template.alerts_template(), %{
       name: name,
       username: name,
       payload: payload_html
@@ -533,27 +483,27 @@ defimpl Sanbase.Alert, for: Any do
     """
   end
 
-  defp prod?(), do: Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) == "prod"
+  defp prod?, do: Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) == "prod"
 
-  defp preview_url() do
-    case prod?() do
-      true -> "https://preview.santiment.net"
-      false -> "https://preview-stage.santiment.net"
+  defp preview_url do
+    if prod?() do
+      "https://preview.santiment.net"
+    else
+      "https://preview-stage.santiment.net"
     end
   end
 
   defp base_url do
-    case prod?() do
-      true -> "https://app.santiment.net"
-      false -> "https://app-stage.santiment.net"
+    if prod?() do
+      "https://app.santiment.net"
+    else
+      "https://app-stage.santiment.net"
     end
   end
 
-  defp basic_auth_header() do
+  defp basic_auth_header do
     credentials =
-      (System.get_env("GRAPHQL_BASIC_AUTH_USERNAME") <>
-         ":" <> System.get_env("GRAPHQL_BASIC_AUTH_PASSWORD"))
-      |> Base.encode64()
+      Base.encode64(System.get_env("GRAPHQL_BASIC_AUTH_USERNAME") <> ":" <> System.get_env("GRAPHQL_BASIC_AUTH_PASSWORD"))
 
     {"Authorization", "Basic #{credentials}"}
   end

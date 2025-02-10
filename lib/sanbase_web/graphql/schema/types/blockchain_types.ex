@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.BlockchainTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   object :blockchain_metadata do

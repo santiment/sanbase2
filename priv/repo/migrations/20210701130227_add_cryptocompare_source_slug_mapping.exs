@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddCryptocompareSourceSlugMapping do
+  @moduledoc false
   use Ecto.Migration
 
   import Ecto.Query
@@ -9,11 +10,12 @@ defmodule Sanbase.Repo.Migrations.AddCryptocompareSourceSlugMapping do
     setup()
 
     mapping =
-      Path.join(__DIR__, "santiment_cryptocompare_slug_mapping.json")
+      __DIR__
+      |> Path.join("santiment_cryptocompare_slug_mapping.json")
       |> File.read!()
       |> Jason.decode!()
 
-    projects_map = Project.List.projects(include_hidden: true) |> Map.new(&{&1.slug, &1})
+    projects_map = [include_hidden: true] |> Project.List.projects() |> Map.new(&{&1.slug, &1})
 
     data =
       mapping
@@ -22,7 +24,7 @@ defmodule Sanbase.Repo.Migrations.AddCryptocompareSourceSlugMapping do
         %{
           slug: elem["cpc_symbol"],
           source: "cryptocompare",
-          project_id: Map.get(projects_map, elem["san_slug"]) |> Map.get(:id)
+          project_id: projects_map |> Map.get(elem["san_slug"]) |> Map.get(:id)
         }
       end)
 
@@ -30,8 +32,7 @@ defmodule Sanbase.Repo.Migrations.AddCryptocompareSourceSlugMapping do
   end
 
   def down do
-    from(ssm in Project.SourceSlugMapping, where: ssm.source == "cryptocompare")
-    |> Sanbase.Repo.delete_all()
+    Sanbase.Repo.delete_all(from(ssm in Project.SourceSlugMapping, where: ssm.source == "cryptocompare"))
   end
 
   defp setup do

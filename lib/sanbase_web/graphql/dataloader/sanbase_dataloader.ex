@@ -1,15 +1,14 @@
 defmodule SanbaseWeb.Graphql.SanbaseDataloader do
-  alias SanbaseWeb.Graphql.{
-    BalanceDataloader,
-    ClickhouseDataloader,
-    LabelsDataloader,
-    PostgresDataloader,
-    PriceDataloader,
-    EcosystemDataloader
-  }
+  @moduledoc false
+  alias SanbaseWeb.Graphql.BalanceDataloader
+  alias SanbaseWeb.Graphql.ClickhouseDataloader
+  alias SanbaseWeb.Graphql.EcosystemDataloader
+  alias SanbaseWeb.Graphql.LabelsDataloader
+  alias SanbaseWeb.Graphql.PostgresDataloader
+  alias SanbaseWeb.Graphql.PriceDataloader
 
   @spec data() :: Dataloader.KV.t()
-  def data() do
+  def data do
     Dataloader.KV.new(&query/2)
   end
 

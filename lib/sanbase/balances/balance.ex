@@ -1,8 +1,6 @@
 defmodule Sanbase.Balance do
+  @moduledoc false
   import __MODULE__.BalancesAggregatedSqlQuery
-
-  import Sanbase.Utils.Transform,
-    only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2, maybe_sort: 3]
 
   import Sanbase.Clickhouse.HistoricalBalance.Utils,
     only: [
@@ -10,6 +8,9 @@ defmodule Sanbase.Balance do
       maybe_fill_gaps_last_seen_balance: 1,
       maybe_fill_gaps_last_seen_balance_ohlc: 1
     ]
+
+  import Sanbase.Utils.Transform,
+    only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2, maybe_sort: 3]
 
   alias Sanbase.ClickhouseRepo
   alias Sanbase.Project
@@ -65,8 +66,7 @@ defmodule Sanbase.Balance do
   @spec historical_balance(address, slug, DateTime.t(), DateTime.t(), interval) ::
           {:ok, list(%{datetime: DateTime.t(), balance: number()})}
           | {:error, String.t()}
-  def historical_balance(address, slug, from, to, interval)
-      when is_binary(address) do
+  def historical_balance(address, slug, from, to, interval) when is_binary(address) do
     with {:ok, {decimals, _infr, blockchain}} <- info_by_slug(slug) do
       address = Sanbase.BlockchainAddress.to_internal_format(address)
 
@@ -131,8 +131,7 @@ defmodule Sanbase.Balance do
              balance_change_percent: number()
            })}
           | {:error, String.t()}
-  def historical_balance_changes([], _slug, _from, _to, _interval),
-    do: {:ok, []}
+  def historical_balance_changes([], _slug, _from, _to, _interval), do: {:ok, []}
 
   def historical_balance_changes(address_or_addresses, slug, from, to, interval) do
     with {:ok, {decimals, _infr, blockchain}} <- info_by_slug(slug) do
@@ -199,7 +198,8 @@ defmodule Sanbase.Balance do
 
     transform_fn = fn [slug, balance] -> %{slug: slug, balance: balance} end
 
-    Enum.reduce_while(tables, {:ok, []}, fn table, {:ok, acc} ->
+    tables
+    |> Enum.reduce_while({:ok, []}, fn table, {:ok, acc} ->
       query = assets_held_by_address_query(address, table, opts)
 
       case ClickhouseRepo.query_transform(query, transform_fn) do
@@ -237,7 +237,8 @@ defmodule Sanbase.Balance do
         }
       end
 
-    Enum.reduce_while(tables, {:ok, []}, fn table, {:ok, acc} ->
+    tables
+    |> Enum.reduce_while({:ok, []}, fn table, {:ok, acc} ->
       query_struct = usd_value_address_change_query(address, datetime, table)
 
       case ClickhouseRepo.query_transform(query_struct, transform_fn) do
@@ -262,7 +263,8 @@ defmodule Sanbase.Balance do
       }
     end
 
-    Enum.reduce_while(tables, {:ok, []}, fn table, {:ok, acc} ->
+    tables
+    |> Enum.reduce_while({:ok, []}, fn table, {:ok, acc} ->
       query_struct = usd_value_held_by_address_query(address, table)
 
       case ClickhouseRepo.query_transform(query_struct, transform_fn) do
@@ -309,7 +311,8 @@ defmodule Sanbase.Balance do
       address = Sanbase.BlockchainAddress.to_internal_format(address)
       query_struct = first_datetime_query(address, slug, blockchain)
 
-      ClickhouseRepo.query_transform(query_struct, fn [unix] ->
+      query_struct
+      |> ClickhouseRepo.query_transform(fn [unix] ->
         DateTime.from_unix!(unix)
       end)
       |> maybe_unwrap_ok_value()
@@ -359,16 +362,14 @@ defmodule Sanbase.Balance do
     end
   end
 
-  def realtime_balances_table("ethereum", "ETH"),
-    do: {:ok, "eth_balances_realtime"}
+  def realtime_balances_table("ethereum", "ETH"), do: {:ok, "eth_balances_realtime"}
 
   def realtime_balances_table(_, "ETH"), do: {:ok, "erc20_balances_realtime"}
 
   def realtime_balances_table(slug, _infrastructure),
     do: {:error, "The slug #{slug} does not have support for realtime balances"}
 
-  def supported_infrastructures(),
-    do: ["ETH", "BTC", "BCH", "LTC", "BNB", "BEP2", "XRP"]
+  def supported_infrastructures, do: ["ETH", "BTC", "BCH", "LTC", "BNB", "BEP2", "XRP"]
 
   # Private functions
 
@@ -398,13 +399,7 @@ defmodule Sanbase.Balance do
     end)
   end
 
-  defp do_last_balance_before(
-         address_or_addresses,
-         slug,
-         decimals,
-         blockchain,
-         datetime
-       ) do
+  defp do_last_balance_before(address_or_addresses, slug, decimals, blockchain, datetime) do
     addresses =
       address_or_addresses
       |> List.wrap()
@@ -417,7 +412,7 @@ defmodule Sanbase.Balance do
         # If an address does not own the given coin/token, it will be missing from the
         # result. Iterate it like this in order to fill the missing values with 0
         map = Map.new(list, fn [address, balance] -> {address, balance} end)
-        result = Enum.into(addresses, %{}, &{&1, Map.get(map, &1, 0)})
+        result = Map.new(addresses, &{&1, Map.get(map, &1, 0)})
 
         {:ok, result}
 
@@ -426,19 +421,12 @@ defmodule Sanbase.Balance do
     end
   end
 
-  defp do_historical_balance(
-         address,
-         slug,
-         decimals,
-         blockchain,
-         from,
-         to,
-         interval
-       ) do
+  defp do_historical_balance(address, slug, decimals, blockchain, from, to, interval) do
     query_struct =
       historical_balance_query(address, slug, decimals, blockchain, from, to, interval)
 
-    ClickhouseRepo.query_transform(query_struct, fn [unix, value, has_changed] ->
+    query_struct
+    |> ClickhouseRepo.query_transform(fn [unix, value, has_changed] ->
       %{
         datetime: DateTime.from_unix!(unix),
         balance: value,
@@ -448,7 +436,7 @@ defmodule Sanbase.Balance do
     |> maybe_update_first_balance(fn ->
       case do_last_balance_before(address, slug, decimals, blockchain, from) do
         {:ok, %{} = address_balance_maps} ->
-          balance = Map.values(address_balance_maps) |> Enum.sum()
+          balance = address_balance_maps |> Map.values() |> Enum.sum()
           {:ok, balance}
 
         {:error, error} ->
@@ -458,31 +446,21 @@ defmodule Sanbase.Balance do
     |> maybe_fill_gaps_last_seen_balance()
   end
 
-  defp do_historical_balance_ohlc(
-         address,
-         slug,
-         decimals,
-         blockchain,
-         from,
-         to,
-         interval
-       ) do
+  defp do_historical_balance_ohlc(address, slug, decimals, blockchain, from, to, interval) do
     query_struct =
       historical_balance_ohlc_query(address, slug, decimals, blockchain, from, to, interval)
 
-    ClickhouseRepo.query_transform(
-      query_struct,
-      fn [unix, open, high, low, close, has_changed] ->
-        %{
-          datetime: DateTime.from_unix!(unix),
-          open_balance: open,
-          high_balance: high,
-          low_balance: low,
-          close_balance: close,
-          has_changed: has_changed
-        }
-      end
-    )
+    query_struct
+    |> ClickhouseRepo.query_transform(fn [unix, open, high, low, close, has_changed] ->
+      %{
+        datetime: DateTime.from_unix!(unix),
+        open_balance: open,
+        high_balance: high,
+        low_balance: low,
+        close_balance: close,
+        has_changed: has_changed
+      }
+    end)
     # TODO: Implement somehow for OHLC
     # |> maybe_update_first_balance(fn ->
     #   case do_last_balance_before(address, slug, decimals, blockchain, from) do
@@ -520,10 +498,10 @@ defmodule Sanbase.Balance do
   defp maybe_override_decimals("ethereum", decimals), do: decimals
   defp maybe_override_decimals(_blockchain, _decimal), do: 0
 
-  defp hidden_projects_slugs() do
+  defp hidden_projects_slugs do
     {:ok, hidden_projects_slugs} =
       Sanbase.Cache.get_or_store(:hidden_projects_slugs, fn ->
-        mapset = Sanbase.Project.List.hidden_projects_slugs() |> MapSet.new()
+        mapset = MapSet.new(Sanbase.Project.List.hidden_projects_slugs())
 
         {:ok, mapset}
       end)

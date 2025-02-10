@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.UpdateFinishedPriceRescrapes do
+  @moduledoc false
   use Ecto.Migration
 
   import Ecto.Query
@@ -13,11 +14,9 @@ defmodule Sanbase.Repo.Migrations.UpdateFinishedPriceRescrapes do
     # both finished and in_progress - if it is finished, then update the in_progress
     # to false
 
-    from(
-      srp in ScheduleRescrapePrice,
-      where: srp.finished == true and srp.in_progress == true
+    Sanbase.Repo.update_all(from(srp in ScheduleRescrapePrice, where: srp.finished == true and srp.in_progress == true),
+      set: [in_progress: false]
     )
-    |> Sanbase.Repo.update_all(set: [in_progress: false])
   end
 
   def down do

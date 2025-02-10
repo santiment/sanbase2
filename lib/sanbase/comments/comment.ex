@@ -27,18 +27,18 @@ defmodule Sanbase.Comment do
   """
   use Ecto.Schema
 
-  import Ecto.{Query, Changeset}
+  import Ecto.Changeset
+  import Ecto.Query
   import Sanbase.Comments.EventEmitter, only: [emit_event: 3]
 
-  alias Sanbase.Repo
   alias Sanbase.Accounts.User
-  alias Sanbase.Insight.Post
-  alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.BlockchainAddress
-  alias Sanbase.Dashboard
-  alias Sanbase.UserList
   alias Sanbase.Chart.Configuration, as: ChartConfiguration
-
+  alias Sanbase.Dashboard
+  alias Sanbase.Insight.Post
+  alias Sanbase.Repo
+  alias Sanbase.Timeline.TimelineEvent
+  alias Sanbase.UserList
   alias Sanbase.Utils.Config
 
   @max_comment_length 15_000
@@ -107,9 +107,8 @@ defmodule Sanbase.Comment do
   end
 
   # TODO: These are not implementing the entity behaviour, so they are specially handled here
-  def user_can_comment_entity?(entity_type, _, _)
-      when entity_type in [:timeline_event, :blockchain_address],
-      do: {:ok, true}
+  def user_can_comment_entity?(entity_type, _, _) when entity_type in [:timeline_event, :blockchain_address],
+    do: {:ok, true}
 
   def user_can_comment_entity?(entity_type, entity_id, user_id) do
     with {:ok, map} <- Sanbase.Entity.get_visibility_data(entity_type, entity_id),
@@ -117,8 +116,7 @@ defmodule Sanbase.Comment do
       if map.user_id == user_id or map.is_public == true do
         {:ok, true}
       else
-        {:error,
-         "The entity of type #{entity_type} with id #{entity_id} is private and not owned by you."}
+        {:error, "The entity of type #{entity_type} with id #{entity_id} is private and not owned by you."}
       end
     end
   end
@@ -138,7 +136,8 @@ defmodule Sanbase.Comment do
   end
 
   def get_subcomments(comment_id, limit) do
-    subcomments_tree_query(comment_id)
+    comment_id
+    |> subcomments_tree_query()
     |> order_by([c], c.inserted_at)
     |> limit(^limit)
     |> Repo.all()
@@ -213,7 +212,8 @@ defmodule Sanbase.Comment do
   def delete(comment_id, user_id) do
     case select_comment(comment_id, user_id) do
       {:ok, comment} ->
-        anonymize(comment)
+        comment
+        |> anonymize()
         |> emit_event(:anonymize_comment, %{})
 
       {:error, error} ->
@@ -237,42 +237,38 @@ defmodule Sanbase.Comment do
          {:ok, _} <- Repo.delete(comment),
          {:ok, _} <- update_subcomments_counts(comment.root_parent_id) do
       {:ok, comment}
-    else
-      {:error, error} ->
-        {:error, error}
     end
   end
 
   def update_subcomments_counts(nil), do: {:ok, nil}
 
   def update_subcomments_counts(root_id) do
-    """
-    WITH ids AS (
-      SELECT id AS comment_id
-      FROM comments AS c
-      WHERE c.id = $1 OR c.parent_id = $1 OR c.root_parent_id = $1
-    ),
-    comment_id_count_map AS (
-      SELECT comment_id, COUNT(comment_id)
-      FROM comments, ids
-      WHERE comment_id = parent_id OR comment_id = root_parent_id
-      GROUP BY comment_id
-    )
+    Repo.query(
+      """
+      WITH ids AS (
+        SELECT id AS comment_id
+        FROM comments AS c
+        WHERE c.id = $1 OR c.parent_id = $1 OR c.root_parent_id = $1
+      ),
+      comment_id_count_map AS (
+        SELECT comment_id, COUNT(comment_id)
+        FROM comments, ids
+        WHERE comment_id = parent_id OR comment_id = root_parent_id
+        GROUP BY comment_id
+      )
 
-    UPDATE comments
-    SET subcomments_count = s.count
-    FROM (SELECT comment_id, count FROM comment_id_count_map) AS s
-    WHERE id = s.comment_id;
-    """
-    |> Repo.query([root_id])
+      UPDATE comments
+      SET subcomments_count = s.count
+      FROM (SELECT comment_id, count FROM comment_id_count_map) AS s
+      WHERE id = s.comment_id;
+      """,
+      [root_id]
+    )
   end
 
   defp multi_run(multi, :select_root_parent_id, %{parent_id: parent_id}) do
-    multi
-    |> Ecto.Multi.run(:select_root_parent_id, fn _repo, _changes ->
-      root_parent_id =
-        from(c in __MODULE__, where: c.id == ^parent_id, select: c.root_parent_id)
-        |> Repo.one()
+    Ecto.Multi.run(multi, :select_root_parent_id, fn _repo, _changes ->
+      root_parent_id = Repo.one(from(c in __MODULE__, where: c.id == ^parent_id, select: c.root_parent_id))
 
       {:ok, root_parent_id}
     end)
@@ -283,8 +279,8 @@ defmodule Sanbase.Comment do
   defp multi_run(multi, :create_new_comment, args) do
     %{user_id: user_id, content: content, parent_id: parent_id} = args
 
-    multi
-    |> Ecto.Multi.run(
+    Ecto.Multi.run(
+      multi,
       :create_new_comment,
       fn _repo, %{select_root_parent_id: parent_root_parent_id} ->
         # Handle all case: If the parent has a parent_root_id - inherit it
@@ -305,8 +301,8 @@ defmodule Sanbase.Comment do
   end
 
   defp multi_run(multi, :update_subcomments_counts, _args) do
-    multi
-    |> Ecto.Multi.run(
+    Ecto.Multi.run(
+      multi,
       :update_subcomments_count,
       fn _repo, %{create_new_comment: %__MODULE__{root_parent_id: root_id}} ->
         {:ok, _} = update_subcomments_counts(root_id)
@@ -322,7 +318,8 @@ defmodule Sanbase.Comment do
   end
 
   defp select_comment(comment_id, user_id) do
-    by_id(comment_id)
+    comment_id
+    |> by_id()
     |> case do
       nil ->
         {:error, "Comment with id #{comment_id} is not existing."}

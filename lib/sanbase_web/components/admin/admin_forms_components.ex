@@ -1,6 +1,4 @@
 defmodule SanbaseWeb.AdminFormsComponents do
-  use Phoenix.Component
-
   @moduledoc ~s"""
   Components reused in the parts of the admin panel related to
   manually approvind/declining submissions sent by users.
@@ -8,6 +6,8 @@ defmodule SanbaseWeb.AdminFormsComponents do
   Such submissions include the MonitoredTwitterHandleLive and
   EcosystemLabelSubmissionsLive
   """
+
+  use Phoenix.Component
 
   attr(:status, :string, required: true)
 

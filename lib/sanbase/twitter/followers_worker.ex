@@ -1,5 +1,7 @@
 defmodule Sanbase.Twitter.FollowersWorker do
-  alias Sanbase.Twitter
+  @moduledoc false
+  use Oban.Worker,
+    queue: :twitter_followers_migration_queue
 
   import Sanbase.DateTimeUtils,
     only: [
@@ -9,21 +11,20 @@ defmodule Sanbase.Twitter.FollowersWorker do
       from_iso8601!: 1
     ]
 
-  use Oban.Worker,
-    queue: :twitter_followers_migration_queue
+  alias Sanbase.Project
+  alias Sanbase.Twitter
+  alias Sanbase.Twitter.TimeseriesPoint
 
   require Sanbase.Utils.Config, as: Config
 
-  alias Sanbase.Project
-
-  def queue(), do: :twitter_followers_migration_queue
+  def queue, do: :twitter_followers_migration_queue
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: args}) do
     %{"slug" => slug, "from" => from} = args
 
     from = from |> from_iso8601!() |> DateTime.to_date()
-    to = Timex.now() |> DateTime.to_date()
+    to = DateTime.to_date(DateTime.utc_now())
 
     case get_data(slug, from, to) do
       {:ok, data} ->
@@ -41,7 +42,8 @@ defmodule Sanbase.Twitter.FollowersWorker do
 
   defp get_data(slug, from, to) do
     result =
-      generate_dates_inclusive(from, to)
+      from
+      |> generate_dates_inclusive(to)
       |> Enum.chunk_every(30)
       |> Enum.map(fn list -> {List.first(list), List.last(list)} end)
       |> Enum.flat_map_reduce(:ok, fn {interval_from, interval_to}, acc ->
@@ -74,8 +76,8 @@ defmodule Sanbase.Twitter.FollowersWorker do
       {:ok, twitter_handle} ->
         data
         |> Enum.map(&Map.put(&1, :twitter_handle, twitter_handle))
-        |> Enum.map(&Sanbase.Twitter.TimeseriesPoint.new/1)
-        |> Enum.map(&Sanbase.Twitter.TimeseriesPoint.json_kv_tuple/1)
+        |> Enum.map(&TimeseriesPoint.new/1)
+        |> Enum.map(&TimeseriesPoint.json_kv_tuple/1)
         |> Sanbase.KafkaExporter.send_data_to_topic_from_current_process(topic)
 
       {:error, _} ->

@@ -1,5 +1,7 @@
 defmodule SanbaseWeb.DashboardsApiHelpers do
+  @moduledoc false
   use SanbaseWeb.ConnCase, async: false
+
   import SanbaseWeb.Graphql.TestHelpers
 
   def execute_dashboard_mutation(conn, mutation, args \\ nil) do
@@ -12,7 +14,7 @@ defmodule SanbaseWeb.DashboardsApiHelpers do
           settings: %{"some_key" => [0, 1, 2, 3]}
         }
 
-    mutation_name = mutation |> Inflex.camelize(:lower)
+    mutation_name = Inflex.camelize(mutation, :lower)
 
     mutation = """
     mutation {
@@ -34,7 +36,7 @@ defmodule SanbaseWeb.DashboardsApiHelpers do
   end
 
   def execute_global_parameter_mutation(conn, mutation, args) do
-    mutation_name = mutation |> Inflex.camelize(:lower)
+    mutation_name = Inflex.camelize(mutation, :lower)
 
     mutation = """
     mutation{
@@ -50,7 +52,7 @@ defmodule SanbaseWeb.DashboardsApiHelpers do
   end
 
   def execute_dashboard_query_mutation(conn, mutation, args) do
-    mutation_name = mutation |> Inflex.camelize(:lower)
+    mutation_name = Inflex.camelize(mutation, :lower)
 
     mutation = """
     mutation {

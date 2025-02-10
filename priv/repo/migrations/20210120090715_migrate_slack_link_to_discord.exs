@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.MigrateSlackLinkToDiscord do
+  @moduledoc false
   use Ecto.Migration
 
   import Ecto.Changeset
@@ -14,16 +15,15 @@ defmodule Sanbase.Repo.Migrations.MigrateSlackLinkToDiscord do
 
   def down, do: :ok
 
-  defp migrate_discord_links() do
-    Project.List.projects_by_non_null_field(
-      :slack_link,
-      include_hidden: true
-    )
+  defp migrate_discord_links do
+    :slack_link
+    |> Project.List.projects_by_non_null_field(include_hidden: true)
     |> Enum.filter(fn %Project{slack_link: link} ->
       String.contains?(link, "discord")
     end)
     |> Enum.each(fn %Project{slack_link: link} = project ->
-      Project.changeset(project, %{discord_link: transform_discord_link(link)})
+      project
+      |> Project.changeset(%{discord_link: transform_discord_link(link)})
       |> Repo.update!()
     end)
   end

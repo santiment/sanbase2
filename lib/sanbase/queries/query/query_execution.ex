@@ -12,13 +12,13 @@ defmodule Sanbase.Queries.QueryExecution do
   """
   use Ecto.Schema
 
-  import Ecto.Query
   import Ecto.Changeset
+  import Ecto.Query
 
-  alias Sanbase.Queries.Executor.Result
   alias Sanbase.Accounts.User
-
+  alias Sanbase.Queries.Executor.Result
   alias Sanbase.Queries.Query
+  alias Sanbase.Utils.Transform
 
   @type user_id :: non_neg_integer()
   @type credits_cost :: non_neg_integer()
@@ -118,18 +118,13 @@ defmodule Sanbase.Queries.QueryExecution do
       # The c.credits_cost > 0 is added to avoid counting the queries that have been "cleared"
       # when a moderator/admin has cleared the user's queries to reset their limits. If they
       # are counted, the user might still be restricted after cleaning their limits.
-      where:
-        c.user_id == ^user_id and c.inserted_at >= ^beginning_of_month and c.credits_cost > 0,
+      where: c.user_id == ^user_id and c.inserted_at >= ^beginning_of_month and c.credits_cost > 0,
       select: %{
         monthly_credits_spent: coalesce(sum(c.credits_cost), 0),
-        queries_executed_minute:
-          fragment("COUNT(CASE WHEN inserted_at >= ? THEN 1 ELSE NULL END)", ^beginning_of_minute),
-        queries_executed_hour:
-          fragment("COUNT(CASE WHEN inserted_at >= ? THEN 1 ELSE NULL END)", ^beginning_of_hour),
-        queries_executed_day:
-          fragment("COUNT(CASE WHEN inserted_at >= ? THEN 1 ELSE NULL END)", ^beginning_of_day),
-        queries_executed_month:
-          fragment("COUNT(CASE WHEN inserted_at >= ? THEN 1 ELSE NULL END)", ^beginning_of_month)
+        queries_executed_minute: fragment("COUNT(CASE WHEN inserted_at >= ? THEN 1 ELSE NULL END)", ^beginning_of_minute),
+        queries_executed_hour: fragment("COUNT(CASE WHEN inserted_at >= ? THEN 1 ELSE NULL END)", ^beginning_of_hour),
+        queries_executed_day: fragment("COUNT(CASE WHEN inserted_at >= ? THEN 1 ELSE NULL END)", ^beginning_of_day),
+        queries_executed_month: fragment("COUNT(CASE WHEN inserted_at >= ? THEN 1 ELSE NULL END)", ^beginning_of_month)
       }
     )
   end
@@ -188,12 +183,10 @@ defmodule Sanbase.Queries.QueryExecution do
       # table or some other clickouse error occurs. Allow for 3 attempts in total before
       # reraising the exception.
 
-      case attempts_left <= 0 do
-        true ->
-          {:error, "Cannot store execution"}
-
-        false ->
-          store_execution(user_id, query_result, wait_fetching_details_ms, attempts_left - 1)
+      if attempts_left <= 0 do
+        {:error, "Cannot store execution"}
+      else
+        store_execution(user_id, query_result, wait_fetching_details_ms, attempts_left - 1)
       end
   end
 
@@ -258,12 +251,13 @@ defmodule Sanbase.Queries.QueryExecution do
   def get_user_monthly_executions(user_id, opts) do
     beginning_of_month = Timex.beginning_of_month(DateTime.utc_now())
 
-    from(
-      qe in __MODULE__,
-      where: qe.user_id == ^user_id and qe.inserted_at >= ^beginning_of_month,
-      order_by: [desc: qe.id]
+    maybe_preload(
+      from(qe in __MODULE__,
+        where: qe.user_id == ^user_id and qe.inserted_at >= ^beginning_of_month,
+        order_by: [desc: qe.id]
+      ),
+      opts
     )
-    |> maybe_preload(opts)
   end
 
   # Private functions
@@ -280,8 +274,7 @@ defmodule Sanbase.Queries.QueryExecution do
       compute_execution_details(clickhouse_query_id, query_start_time)
 
     credits_cost =
-      execution_details
-      |> Enum.reduce(0, fn {key, value}, acc ->
+      Enum.reduce(execution_details, 0, fn {key, value}, acc ->
         acc + value * Map.fetch!(@credit_cost_weights, key)
       end)
 
@@ -298,31 +291,29 @@ defmodule Sanbase.Queries.QueryExecution do
 
     Sanbase.ClickhouseRepo.put_dynamic_repo(Sanbase.ClickhouseRepo)
 
-    Sanbase.ClickhouseRepo.query_transform(
-      query_struct,
-      fn [
-           read_compressed_gb,
-           cpu_time_microseconds,
-           query_duration_ms,
-           memory_usage_gb,
-           read_rows,
-           read_gb,
-           result_rows,
-           result_gb
-         ] ->
-        %{
-          read_compressed_gb: Float.round(read_compressed_gb, 6),
-          cpu_time_microseconds: cpu_time_microseconds,
-          query_duration_ms: query_duration_ms,
-          memory_usage_gb: Float.round(memory_usage_gb, 6),
-          read_rows: read_rows,
-          read_gb: Float.round(read_gb, 6),
-          result_rows: result_rows,
-          result_gb: Float.round(result_gb, 6)
-        }
-      end
-    )
-    |> Sanbase.Utils.Transform.maybe_unwrap_ok_value()
+    query_struct
+    |> Sanbase.ClickhouseRepo.query_transform(fn [
+                                                   read_compressed_gb,
+                                                   cpu_time_microseconds,
+                                                   query_duration_ms,
+                                                   memory_usage_gb,
+                                                   read_rows,
+                                                   read_gb,
+                                                   result_rows,
+                                                   result_gb
+                                                 ] ->
+      %{
+        read_compressed_gb: Float.round(read_compressed_gb, 6),
+        cpu_time_microseconds: cpu_time_microseconds,
+        query_duration_ms: query_duration_ms,
+        memory_usage_gb: Float.round(memory_usage_gb, 6),
+        read_rows: read_rows,
+        read_gb: Float.round(read_gb, 6),
+        result_rows: result_rows,
+        result_gb: Float.round(result_gb, 6)
+      }
+    end)
+    |> Transform.maybe_unwrap_ok_value()
   end
 
   defp compute_execution_details_query(clickhouse_query_id, event_time_start) do
@@ -353,7 +344,7 @@ defmodule Sanbase.Queries.QueryExecution do
   end
 
   defp paginate(query, opts) do
-    {limit, offset} = Sanbase.Utils.Transform.opts_to_limit_offset(opts)
+    {limit, offset} = Transform.opts_to_limit_offset(opts)
 
     query
     |> limit(^limit)
@@ -361,13 +352,11 @@ defmodule Sanbase.Queries.QueryExecution do
   end
 
   defp maybe_preload(query, opts) do
-    case Keyword.get(opts, :preload?, true) do
-      false ->
-        query
-
-      true ->
-        preload = Keyword.get(opts, :preload, @preload)
-        query |> preload(^preload)
+    if Keyword.get(opts, :preload?, true) do
+      preload = Keyword.get(opts, :preload, @preload)
+      preload(query, ^preload)
+    else
+      query
     end
   end
 end

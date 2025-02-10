@@ -4,7 +4,6 @@ defmodule Sanbase.Alert.EthWalletTriggerHistoryTest do
   import Mock
 
   alias Sanbase.Alert.UserTrigger
-
   alias Sanbase.Clickhouse.HistoricalBalance
 
   setup do

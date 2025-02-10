@@ -17,8 +17,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.MultipleAuth do
     |> Enum.find(&(&1.state == :unresolved))
     |> case do
       nil ->
-        resolution
-        |> Resolution.put_result({:error, :unauthorized})
+        Resolution.put_result(resolution, {:error, :unauthorized})
 
       resolution ->
         resolution

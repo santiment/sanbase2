@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.AggregationTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   enum :aggregation do

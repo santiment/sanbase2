@@ -6,8 +6,8 @@ defmodule SanbaseWeb.Graphql.Schema.TableConfigurationQueries do
   """
   use Absinthe.Schema.Notation
 
-  alias SanbaseWeb.Graphql.Resolvers.TableConfigurationResolver
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
+  alias SanbaseWeb.Graphql.Resolvers.TableConfigurationResolver
 
   object :table_configuration_queries do
     field :table_configuration, :table_configuration do

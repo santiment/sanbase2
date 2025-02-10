@@ -1,4 +1,5 @@
 defmodule Sanbase.Utils do
+  @moduledoc false
   alias Sanbase.Utils.Config
 
   @doc ~s"""
@@ -26,7 +27,7 @@ defmodule Sanbase.Utils do
   end
 
   @prod_db_patterns ["amazonaws"]
-  def prod_db?() do
+  def prod_db? do
     database_url = System.get_env("DATABASE_URL")
 
     database_hostname = Config.module_get(Sanbase.Repo, :hostname)

@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddHistoricalActivitysTable do
+  @moduledoc false
   use Ecto.Migration
 
   @table "signals_historical_activity"

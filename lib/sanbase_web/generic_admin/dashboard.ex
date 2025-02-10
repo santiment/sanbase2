@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.GenericAdmin.Dashboard do
+  @moduledoc false
   def schema_module, do: Sanbase.Dashboards.Dashboard
   def resource_name, do: "dashboards"
 

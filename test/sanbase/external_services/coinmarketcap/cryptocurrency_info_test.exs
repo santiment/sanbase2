@@ -1,12 +1,12 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfoTest do
   use Sanbase.DataCase
 
-  alias Sanbase.Utils.Config
-
   import Sanbase.Factory
   import Tesla.Mock
 
+  alias Sanbase.ExternalServices.Coinmarketcap
   alias Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfo
+  alias Sanbase.Utils.Config
 
   @moduletag capture_log: true
 
@@ -42,11 +42,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfoTest do
     p4 = insert(:project, %{ticker: "INV1", slug: "invalid1"})
 
     url_with_invalid_slugs =
-      Config.module_get(Sanbase.ExternalServices.Coinmarketcap, :api_url) <>
+      Config.module_get(Coinmarketcap, :api_url) <>
         "v2/cryptocurrency/info?slug=bitcoin,ethereum,invalid0,invalid1"
 
     url_with_cleaned_slugs =
-      Config.module_get(Sanbase.ExternalServices.Coinmarketcap, :api_url) <>
+      Config.module_get(Coinmarketcap, :api_url) <>
         "v2/cryptocurrency/info?slug=bitcoin,ethereum"
 
     mock(fn
@@ -58,7 +58,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfoTest do
               status: %{
                 timestamp: "2019-07-15T09:09:55.761Z",
                 error_code: 400,
-                error_message: "Invalid values for \"slug\": \"invalid0,invalid1\"",
+                error_message: ~s(Invalid values for "slug": "invalid0,invalid1"),
                 credit_count: 0
               }
             })

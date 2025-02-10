@@ -1,10 +1,10 @@
-defmodule Sanbase.Signal.SqlQuery do
-  @table "signals"
+table = "signals"
 
+defmodule Sanbase.Signal.SqlQuery do
   @moduledoc ~s"""
   Define the SQL queries to access the signals in Clickhouse
 
-  The signals are stored in the '#{@table}' Clickhouse table
+  The signals are stored in the '#{table}' Clickhouse table
   """
 
   use Ecto.Schema
@@ -14,7 +14,10 @@ defmodule Sanbase.Signal.SqlQuery do
   import Sanbase.Metric.SqlQuery.Helper,
     only: [aggregation: 3, asset_id_filter: 2, signal_id_filter: 2]
 
+  alias Sanbase.Clickhouse.Query
   alias Sanbase.Signal.FileHandler
+
+  @table table
 
   @name_to_signal_map FileHandler.name_to_signal_map()
 
@@ -40,7 +43,7 @@ defmodule Sanbase.Signal.SqlQuery do
     """
 
     params = %{slug: slug}
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def available_slugs_query(signal) do
@@ -59,7 +62,7 @@ defmodule Sanbase.Signal.SqlQuery do
       signal: Map.get(@name_to_signal_map, signal)
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def first_datetime_query(signal, slug) do
@@ -76,7 +79,7 @@ defmodule Sanbase.Signal.SqlQuery do
       slug: slug
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def raw_data_query(signals, from, to) do
@@ -104,12 +107,12 @@ defmodule Sanbase.Signal.SqlQuery do
     """
 
     params = %{
-      from: from |> DateTime.to_unix(),
-      to: to |> DateTime.to_unix(),
+      from: DateTime.to_unix(from),
+      to: DateTime.to_unix(to),
       signals: signals
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def timeseries_data_query(signal, slug_or_slugs, from, to, _interval, :none) do
@@ -129,13 +132,13 @@ defmodule Sanbase.Signal.SqlQuery do
     """
 
     params = %{
-      from: from |> DateTime.to_unix(),
-      to: to |> DateTime.to_unix(),
+      from: DateTime.to_unix(from),
+      to: DateTime.to_unix(to),
       signal: Map.get(@name_to_signal_map, signal),
       slug: slug_or_slugs
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def timeseries_data_query(signal, slug_or_slugs, from, to, interval, aggregation) do
@@ -164,13 +167,13 @@ defmodule Sanbase.Signal.SqlQuery do
 
     params = %{
       interval: str_to_sec(interval),
-      from: from |> DateTime.to_unix(),
-      to: to |> DateTime.to_unix(),
+      from: DateTime.to_unix(from),
+      to: DateTime.to_unix(to),
       signal: Map.get(@name_to_signal_map, signal),
       slug: slug_or_slugs
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def aggregated_timeseries_data_query(signal, slug_or_slugs, from, to, aggregation) do
@@ -200,12 +203,12 @@ defmodule Sanbase.Signal.SqlQuery do
 
     params = %{
       signal: Map.get(@name_to_signal_map, signal),
-      from: from |> DateTime.to_unix(),
-      to: to |> DateTime.to_unix(),
-      slugs: slug_or_slugs |> List.wrap()
+      from: DateTime.to_unix(from),
+      to: DateTime.to_unix(to),
+      slugs: List.wrap(slug_or_slugs)
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp maybe_filter_signals(:all, _opts), do: ""

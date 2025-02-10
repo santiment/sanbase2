@@ -1,8 +1,10 @@
 defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
+  import SanbaseWeb.Graphql.TestHelpers
+
+  alias Sanbase.Clickhouse.Label
 
   setup do
     user = insert(:user)
@@ -33,7 +35,8 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
     }
 
     error =
-      do_execute_mutation(conn, create_watchlist_query(function: function))
+      conn
+      |> do_execute_mutation(create_watchlist_query(function: function))
       |> Map.get("errors")
       |> hd()
 
@@ -69,10 +72,8 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
     }
 
     error =
-      do_execute_mutation(
-        conn,
-        update_watchlist_query(id: watchlist.id, function: function)
-      )
+      conn
+      |> do_execute_mutation(update_watchlist_query(id: watchlist.id, function: function))
       |> Map.get("errors")
       |> hd()
 
@@ -110,12 +111,10 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
 
       top_addresses_result = Enum.slice(top_addresses_result(), 0, 2)
 
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.Balance.current_balance_top_addresses/2,
-        {:ok, top_addresses_result}
-      )
+      (&Sanbase.Balance.current_balance_top_addresses/2)
+      |> Sanbase.Mock.prepare_mock2({:ok, top_addresses_result})
       |> Sanbase.Mock.prepare_mock2(
-        &Sanbase.Clickhouse.Label.get_address_labels/2,
+        &Label.get_address_labels/2,
         {:ok, labels_result()}
       )
       |> Sanbase.Mock.run_with_mocks(fn ->
@@ -127,7 +126,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
         assert user_list["type"] == "BLOCKCHAIN_ADDRESS"
         assert user_list["color"] == "BLACK"
         assert user_list["isPublic"] == false
-        assert user_list["user"]["id"] == user.id |> to_string()
+        assert user_list["user"]["id"] == to_string(user.id)
 
         assert length(user_list["listItems"]) == 2
 
@@ -184,19 +183,21 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
       }
 
       mock_fun =
-        [
-          fn -> {:ok, Enum.slice(top_addresses_result(), 0, 2)} end,
-          fn -> {:ok, Enum.slice(top_addresses_result(), 2, 2)} end
-        ]
-        |> Sanbase.Mock.wrap_consecutives(arity: 2)
+        Sanbase.Mock.wrap_consecutives(
+          [
+            fn -> {:ok, Enum.slice(top_addresses_result(), 0, 2)} end,
+            fn -> {:ok, Enum.slice(top_addresses_result(), 2, 2)} end
+          ],
+          arity: 2
+        )
 
-      Sanbase.Mock.prepare_mock(
-        Sanbase.Balance,
+      Sanbase.Balance
+      |> Sanbase.Mock.prepare_mock(
         :current_balance_top_addresses,
         mock_fun
       )
       |> Sanbase.Mock.prepare_mock2(
-        &Sanbase.Clickhouse.Label.get_address_labels/2,
+        &Label.get_address_labels/2,
         {:ok, labels_result()}
       )
       |> Sanbase.Mock.run_with_mocks(fn ->
@@ -208,7 +209,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
         assert user_list["type"] == "BLOCKCHAIN_ADDRESS"
         assert user_list["color"] == "BLACK"
         assert user_list["isPublic"] == false
-        assert user_list["user"]["id"] == user.id |> to_string()
+        assert user_list["user"]["id"] == to_string(user.id)
 
         assert length(user_list["listItems"]) == 4
 
@@ -279,19 +280,21 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
       }
 
       mock_fun =
-        [
-          fn -> {:ok, Enum.slice(top_addresses_result(), 0, 2)} end,
-          fn -> {:ok, Enum.slice(top_addresses_result(), 2, 2)} end
-        ]
-        |> Sanbase.Mock.wrap_consecutives(arity: 2)
+        Sanbase.Mock.wrap_consecutives(
+          [
+            fn -> {:ok, Enum.slice(top_addresses_result(), 0, 2)} end,
+            fn -> {:ok, Enum.slice(top_addresses_result(), 2, 2)} end
+          ],
+          arity: 2
+        )
 
-      Sanbase.Mock.prepare_mock(
-        Sanbase.Balance,
+      Sanbase.Balance
+      |> Sanbase.Mock.prepare_mock(
         :current_balance_top_addresses,
         mock_fun
       )
       |> Sanbase.Mock.prepare_mock2(
-        &Sanbase.Clickhouse.Label.get_address_labels/2,
+        &Label.get_address_labels/2,
         {:ok, labels_result()}
       )
       |> Sanbase.Mock.run_with_mocks(fn ->
@@ -303,7 +306,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
         assert user_list["type"] == "BLOCKCHAIN_ADDRESS"
         assert user_list["color"] == "BLACK"
         assert user_list["isPublic"] == false
-        assert user_list["user"]["id"] == user.id |> to_string()
+        assert user_list["user"]["id"] == to_string(user.id)
 
         assert length(user_list["listItems"]) == 0
       end)
@@ -336,12 +339,10 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
         }
       }
 
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.ClickhouseRepo.query/2,
-        {:ok, %{rows: addresses_by_labels_result()}}
-      )
+      (&Sanbase.ClickhouseRepo.query/2)
+      |> Sanbase.Mock.prepare_mock2({:ok, %{rows: addresses_by_labels_result()}})
       |> Sanbase.Mock.prepare_mock2(
-        &Sanbase.Clickhouse.Label.get_address_labels/2,
+        &Label.get_address_labels/2,
         {:ok, labels_result()}
       )
       |> Sanbase.Mock.run_with_mocks(fn ->
@@ -409,12 +410,10 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
         }
       }
 
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.ClickhouseRepo.query/2,
-        {:ok, %{rows: addresses_by_labels_result()}}
-      )
+      (&Sanbase.ClickhouseRepo.query/2)
+      |> Sanbase.Mock.prepare_mock2({:ok, %{rows: addresses_by_labels_result()}})
       |> Sanbase.Mock.prepare_mock2(
-        &Sanbase.Clickhouse.Label.get_address_labels/2,
+        &Label.get_address_labels/2,
         {:ok, labels_result()}
       )
       |> Sanbase.Mock.run_with_mocks(fn ->
@@ -464,12 +463,10 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
         }
       }
 
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.ClickhouseRepo.query/2,
-        {:ok, %{rows: addresses_by_labels_result()}}
-      )
+      (&Sanbase.ClickhouseRepo.query/2)
+      |> Sanbase.Mock.prepare_mock2({:ok, %{rows: addresses_by_labels_result()}})
       |> Sanbase.Mock.prepare_mock2(
-        &Sanbase.Clickhouse.Label.get_address_labels/2,
+        &Label.get_address_labels/2,
         {:ok, labels_result()}
       )
       |> Sanbase.Mock.run_with_mocks(fn ->
@@ -517,7 +514,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
   defp create_watchlist_query(opts) do
     name = Keyword.get(opts, :name, "My list")
     color = Keyword.get(opts, :color, "BLACK")
-    function = Keyword.get(opts, :function) |> Jason.encode!()
+    function = opts |> Keyword.get(:function) |> Jason.encode!()
     is_screener = Keyword.get(opts, :is_screener, false)
 
     ~s|
@@ -548,7 +545,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
 
   defp update_watchlist_query(opts) do
     id = Keyword.fetch!(opts, :id)
-    function = Keyword.fetch!(opts, :function) |> Jason.encode!()
+    function = opts |> Keyword.fetch!(:function) |> Jason.encode!()
 
     ~s|
     mutation {
@@ -577,7 +574,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
     |> json_response(200)
   end
 
-  defp addresses_by_labels_result() do
+  defp addresses_by_labels_result do
     [
       ["0x4269cba223b56458d72bdce36afbe48996d78f24", "ethereum", "santiment/owner->binance:v1"],
       ["0x4269cba223b56458d72bdce36afbe48996d78f24", "ethereum", "santiment/owner->bitfinex:v1"],
@@ -588,7 +585,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
     ]
   end
 
-  defp top_addresses_result() do
+  defp top_addresses_result do
     [
       %{
         address: "0x4269cba223b56458d72bdce36afbe48996d78f24",
@@ -613,32 +610,32 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
     ]
   end
 
-  defp labels_result() do
+  defp labels_result do
     %{
       "0x4269cba223b56458d72bdce36afbe48996d78f24" => [
         %{
-          metadata: "{\"owner\": \"binance\"}",
+          metadata: ~s({"owner": "binance"}),
           name: "CEX Trader",
           origin: "santiment"
         }
       ],
       "0xa5409ec958c83c3f309868babaca7c86dcb077c1" => [
         %{
-          metadata: "{\"owner\": \"huobi\"}",
+          metadata: ~s({"owner": "huobi"}),
           name: "decentralized_exchange",
           origin: "santiment"
         }
       ],
       "0xeb2629a2734e272bcc07bda959863f316f4bd4cf" => [
         %{
-          metadata: "{\"owner\": \"binance\"}",
+          metadata: ~s({"owner": "binance"}),
           name: "centralized_exchange",
           origin: "santiment"
         }
       ],
       "0x7125160a07a753b988839b004673c668012dd631" => [
         %{
-          metadata: "{\"owner\": \"binance\"}",
+          metadata: ~s({"owner": "binance"}),
           name: "CEX Trader",
           origin: "santiment"
         }

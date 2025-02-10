@@ -4,8 +4,8 @@ defmodule SanbaseWeb.Graphql.Schema.MenuQueries do
   """
   use Absinthe.Schema.Notation
 
-  alias SanbaseWeb.Graphql.Resolvers.MenuResolver
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
+  alias SanbaseWeb.Graphql.Resolvers.MenuResolver
 
   object :menu_queries do
     field :get_menu, :json do

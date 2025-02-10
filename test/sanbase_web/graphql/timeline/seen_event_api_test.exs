@@ -4,9 +4,9 @@ defmodule SanbaseWeb.Graphql.SeenEventApiTest do
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
-  alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.Accounts.UserFollower
   alias Sanbase.Timeline.SeenEvent
+  alias Sanbase.Timeline.TimelineEvent
 
   @inight_type TimelineEvent.publish_insight_type()
 
@@ -61,7 +61,7 @@ defmodule SanbaseWeb.Graphql.SeenEventApiTest do
     """
   end
 
-  defp new_timeline_events_query() do
+  defp new_timeline_events_query do
     """
     {
       timelineEvents(filterBy: {only_not_seen: true}, limit: 10) {

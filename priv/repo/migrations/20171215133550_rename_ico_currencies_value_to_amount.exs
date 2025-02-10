@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.RenameIcoCurrencyValueToAmount do
+  @moduledoc false
   use Ecto.Migration
 
   def change do

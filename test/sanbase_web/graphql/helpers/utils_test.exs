@@ -4,6 +4,7 @@ defmodule SanbaseWeb.Graphql.Helpers.UtilsTest do
   alias SanbaseWeb.Graphql.Helpers.CalibrateInterval
 
   defmodule StoreMock do
+    @moduledoc false
     def first_datetime(_slug) do
       {:ok, DateTime.from_naive!(~N[2017-05-15 18:00:00], "Etc/UTC")}
     end

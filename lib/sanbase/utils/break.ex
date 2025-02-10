@@ -1,5 +1,7 @@
 defmodule Sanbase.Break do
+  @moduledoc false
   defmodule CompileError do
+    @moduledoc false
     defexception [:message]
   end
 

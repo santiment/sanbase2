@@ -1,5 +1,8 @@
 defmodule SanbaseWeb.Graphql.EcosystemDataloader do
-  def data(), do: Dataloader.KV.new(&query/2)
+  @moduledoc false
+  alias Sanbase.Ecosystem.Metric
+
+  def data, do: Dataloader.KV.new(&query/2)
 
   def query(:ecosystem_aggregated_metric_data, data) do
     # The key is the arguments, the value is the list of ecosystems
@@ -11,13 +14,13 @@ defmodule SanbaseWeb.Graphql.EcosystemDataloader do
         fn {ecosystem, _args} -> ecosystem end
       )
 
-    Sanbase.Parallel.map(
-      map,
+    map
+    |> Sanbase.Parallel.map(
       fn {args, ecosystems} ->
         opts = [aggregation: args[:aggregation]]
 
         {:ok, data} =
-          Sanbase.Ecosystem.Metric.aggregated_timeseries_data(
+          Metric.aggregated_timeseries_data(
             ecosystems,
             args.metric,
             args.from,
@@ -44,13 +47,13 @@ defmodule SanbaseWeb.Graphql.EcosystemDataloader do
         fn {ecosystem, _args} -> ecosystem end
       )
 
-    Sanbase.Parallel.map(
-      map,
+    map
+    |> Sanbase.Parallel.map(
       fn {args, ecosystems} ->
         opts = [aggregation: args[:aggregation]]
 
         {:ok, data} =
-          Sanbase.Ecosystem.Metric.timeseries_data(
+          Metric.timeseries_data(
             ecosystems,
             args.metric,
             args.from,
@@ -78,8 +81,7 @@ defmodule SanbaseWeb.Graphql.EcosystemDataloader do
   end
 
   defp aggregated_transform_to_map(data, args) do
-    data
-    |> Enum.reduce(%{}, fn %{ecosystem: ecosystem, value: value}, acc ->
+    Enum.reduce(data, %{}, fn %{ecosystem: ecosystem, value: value}, acc ->
       Map.put(acc, {ecosystem, args}, value)
     end)
   end

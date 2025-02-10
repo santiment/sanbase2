@@ -3,9 +3,10 @@ defmodule Sanbase.Transfers.Erc20Transfers do
   Uses ClickHouse to work with ERC20 transfers.
   """
 
-  import Sanbase.Utils.Transform
   import Sanbase.Transfers.Utils, only: [top_wallet_transfers_address_clause: 2]
+  import Sanbase.Utils.Transform
 
+  alias Sanbase.Clickhouse.Query
   alias Sanbase.ClickhouseRepo
   alias Sanbase.Project
 
@@ -75,14 +76,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
     )
   end
 
-  def blockchain_address_transaction_volume_over_time(
-        addresses,
-        contract,
-        decimals,
-        from,
-        to,
-        interval
-      ) do
+  def blockchain_address_transaction_volume_over_time(addresses, contract, decimals, from, to, interval) do
     query_struct =
       blockchain_address_transaction_volume_over_time_query(
         addresses,
@@ -110,17 +104,15 @@ defmodule Sanbase.Transfers.Erc20Transfers do
     query_struct =
       blockchain_address_transaction_volume_query(addresses, contract, decimals, from, to)
 
-    ClickhouseRepo.query_transform(
-      query_struct,
-      fn [address, incoming, outgoing] ->
-        %{
-          address: address,
-          transaction_volume_inflow: incoming,
-          transaction_volume_outflow: outgoing,
-          transaction_volume_total: incoming + outgoing
-        }
-      end
-    )
+    query_struct
+    |> ClickhouseRepo.query_transform(fn [address, incoming, outgoing] ->
+      %{
+        address: address,
+        transaction_volume_inflow: incoming,
+        transaction_volume_outflow: outgoing,
+        transaction_volume_total: incoming + outgoing
+      }
+    end)
     |> maybe_apply_function(fn data ->
       Enum.sort_by(data, & &1.transaction_volume_total, :desc)
     end)
@@ -135,7 +127,8 @@ defmodule Sanbase.Transfers.Erc20Transfers do
   def recent_transactions(address, opts) do
     query_struct = recent_transactions_query(address, opts)
 
-    ClickhouseRepo.query_transform(query_struct, fn
+    query_struct
+    |> ClickhouseRepo.query_transform(fn
       [timestamp, from_address, to_address, trx_hash, trx_value, name, decimals] ->
         %{
           datetime: DateTime.from_unix!(timestamp),
@@ -206,7 +199,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
       decimals: Integer.pow(10, decimals)
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp top_transfers_query(contract, from, to, decimals, excluded_addresses, opts) do
@@ -240,22 +233,20 @@ defmodule Sanbase.Transfers.Erc20Transfers do
       excluded_addresses: excluded_addresses
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp recent_transactions_query(address, opts) do
     only_sender = Keyword.get(opts, :only_sender, false)
 
     maybe_union_with_to_table =
-      case only_sender do
-        true ->
-          ""
-
-        false ->
-          """
-          UNION DISTINCT
-          SELECT * FROM erc20_transfers_to WHERE to = {{address}}
-          """
+      if only_sender do
+        ""
+      else
+        """
+        UNION DISTINCT
+        SELECT * FROM erc20_transfers_to WHERE to = {{address}}
+        """
       end
 
     sql = """
@@ -291,7 +282,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
       offset: offset
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp maybe_exclude_addresses([], _opts), do: ""
@@ -307,11 +298,12 @@ defmodule Sanbase.Transfers.Erc20Transfers do
   end
 
   defp maybe_transform({:ok, data}) do
-    slugs = data |> Enum.map(& &1.project)
+    slugs = Enum.map(data, & &1.project)
 
     slug_project_map =
-      Project.by_slug(slugs)
-      |> Enum.into(%{}, fn project -> {project.slug, project} end)
+      slugs
+      |> Project.by_slug()
+      |> Map.new(fn project -> {project.slug, project} end)
 
     data =
       Enum.map(data, fn %{project: slug} = trx ->
@@ -323,13 +315,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
 
   defp maybe_transform({:error, _} = result), do: result
 
-  defp blockchain_address_transaction_volume_query(
-         addresses,
-         contract,
-         decimals,
-         from,
-         to
-       ) do
+  defp blockchain_address_transaction_volume_query(addresses, contract, decimals, from, to) do
     sql = """
     SELECT
       address,
@@ -373,17 +359,10 @@ defmodule Sanbase.Transfers.Erc20Transfers do
       to: DateTime.to_unix(to)
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
-  defp blockchain_address_transaction_volume_over_time_query(
-         addresses,
-         contract,
-         decimals,
-         from,
-         to,
-         interval
-       ) do
+  defp blockchain_address_transaction_volume_over_time_query(addresses, contract, decimals, from, to, interval) do
     sql = """
     SELECT
       toUnixTimestamp(intDiv(toUInt32(dt), {{interval}}) * {{interval}}) AS time,
@@ -428,7 +407,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
       decimals: Integer.pow(10, decimals)
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp transfers_summary_query(type, address, contract, decimals, from, to, opts) do
@@ -477,6 +456,6 @@ defmodule Sanbase.Transfers.Erc20Transfers do
       offset: offset
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 end

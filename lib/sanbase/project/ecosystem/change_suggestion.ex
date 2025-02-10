@@ -30,8 +30,8 @@ defmodule Sanbase.Ecosystem.ChangeSuggestion do
     |> validate_inclusion(:status, @statuses)
   end
 
-  def list_all_submissions() do
-    from(s in __MODULE__, preload: [:project]) |> Sanbase.Repo.all()
+  def list_all_submissions do
+    Sanbase.Repo.all(from(s in __MODULE__, preload: [:project]))
   end
 
   @doc ~s"""
@@ -135,9 +135,10 @@ defmodule Sanbase.Ecosystem.ChangeSuggestion do
         Sanbase.ProjectEcosystemMapping.remove(suggestion.project_id, ecosystem)
       end
 
-    case Enum.any?(added ++ removed, &match?({:error, _}, &1)) do
-      false -> {:ok, suggestion}
-      true -> {:error, "Failed to apply changes"}
+    if Enum.any?(added ++ removed, &match?({:error, _}, &1)) do
+      {:error, "Failed to apply changes"}
+    else
+      {:ok, suggestion}
     end
   end
 end

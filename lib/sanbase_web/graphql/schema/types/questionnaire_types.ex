@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.QuestionnaireTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   enum :question_type do

@@ -1,26 +1,26 @@
 defmodule Sanbase.Utils.FileHash do
+  @moduledoc false
   @hash_algorithm :sha256
 
   @doc ~s"""
   Receives a filepath and calculates hash using sha256 algorithm.
   """
   def calculate(filepath) do
-    try do
-      hash =
-        File.stream!(filepath, 8192, [])
-        |> Enum.reduce(:crypto.hash_init(@hash_algorithm), fn line, acc ->
-          :crypto.hash_update(acc, line)
-        end)
-        |> :crypto.hash_final()
-        |> Base.encode16()
-        |> String.downcase()
+    hash =
+      filepath
+      |> File.stream!(8192, [])
+      |> Enum.reduce(:crypto.hash_init(@hash_algorithm), fn line, acc ->
+        :crypto.hash_update(acc, line)
+      end)
+      |> :crypto.hash_final()
+      |> Base.encode16()
+      |> String.downcase()
 
-      {:ok, hash}
-    rescue
-      error in File.Error ->
-        %{reason: reason} = error
-        {:error, "Error calculating file's content hash. Reason: #{reason}"}
-    end
+    {:ok, hash}
+  rescue
+    error in File.Error ->
+      %{reason: reason} = error
+      {:error, "Error calculating file's content hash. Reason: #{reason}"}
   end
 
   def algorithm do

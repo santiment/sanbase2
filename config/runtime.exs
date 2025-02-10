@@ -6,22 +6,6 @@ if config_env() in [:dev, :test] do
   Code.ensure_loaded?(Envy) && Envy.auto_load()
 end
 
-config :ueberauth, Ueberauth.Strategy.Google.OAuth,
-  client_id: System.get_env("GOOGLE_OAUTH_CLIENT_ID"),
-  client_secret: System.get_env("GOOGLE_OAUTH_CLIENT_SECRET")
-
-config :ueberauth, Ueberauth.Strategy.Twitter.OAuth,
-  consumer_key: System.get_env("TWITTER_OAUTH_CONSUMER_KEY"),
-  consumer_secret: System.get_env("TWITTER_OAUTH_CONSUMER_SECRET")
-
-config :sanbase, Sanbase.TemplateMailer,
-  adapter: Swoosh.Adapters.Mailjet,
-  api_key: System.get_env("MAILJET_API_KEY"),
-  secret: System.get_env("MAILJET_API_SECRET")
-
-config :sanbase, Sanbase.SmartContracts.SanrNFT,
-  alchemy_api_key: System.get_env("ALCHEMY_API_KEY")
-
 kafka_url = System.get_env("KAFKA_URL", "blockchain-kafka-kafka")
 kafka_port = System.get_env("KAFKA_PORT", "9092")
 kafka_enabled = System.get_env("REAL_KAFKA_ENABLED", "true")
@@ -47,6 +31,21 @@ config :brod,
     ]
   ]
 
+config :sanbase, Sanbase.SmartContracts.SanrNFT, alchemy_api_key: System.get_env("ALCHEMY_API_KEY")
+
+config :sanbase, Sanbase.TemplateMailer,
+  adapter: Swoosh.Adapters.Mailjet,
+  api_key: System.get_env("MAILJET_API_KEY"),
+  secret: System.get_env("MAILJET_API_SECRET")
+
+config :ueberauth, Ueberauth.Strategy.Google.OAuth,
+  client_id: System.get_env("GOOGLE_OAUTH_CLIENT_ID"),
+  client_secret: System.get_env("GOOGLE_OAUTH_CLIENT_SECRET")
+
+config :ueberauth, Ueberauth.Strategy.Twitter.OAuth,
+  consumer_key: System.get_env("TWITTER_OAUTH_CONSUMER_KEY"),
+  consumer_secret: System.get_env("TWITTER_OAUTH_CONSUMER_SECRET")
+
 if config_env() == :prod do
   # The secret key base is used to sign/encrypt cookies and other secrets.
   # A default value is used in config/dev.exs and config/test.exs but you
@@ -63,6 +62,41 @@ if config_env() == :prod do
   host = System.get_env("PHX_HOST") || "localhost"
   port = String.to_integer(System.get_env("PORT") || "4000")
   parity_url = System.get_env("PARITY_URL")
+
+  db_url = System.get_env("DATABASE_URL")
+  uri = URI.parse(db_url)
+  [username, password] = String.split(uri.userinfo, ":")
+  database = db_url |> String.split("/") |> List.last()
+  git_commit = System.get_env("GIT_COMMIT")
+
+  config :ethereumex,
+    url: parity_url,
+    http_options: [timeout: 25_000, recv_timeout: 25_000],
+    http_headers: [{"Content-Type", "application/json"}]
+
+  config :libcluster,
+    topologies: [
+      postgres_topology: [
+        strategy: LibclusterPostgres.Strategy,
+        config: [
+          hostname: uri.host,
+          username: username,
+          password: password,
+          database: database,
+          port: 5432,
+          parameters: [],
+          ssl: true,
+          ssl_opts: [verify: :verify_none],
+          channel_name: "sanbase_cluster"
+        ]
+      ]
+    ]
+
+  config :sanbase, Sanbase.Metric.Registry.Sync, sync_secret: System.get_env("METRIC_REGISTRY_SYNC_SECRET")
+
+  config :sanbase, Sanbase.Repo,
+    ssl: true,
+    ssl_opts: [verify: :verify_none]
 
   config :sanbase, SanbaseWeb.Endpoint,
     url: [host: host, port: port],
@@ -91,40 +125,6 @@ if config_env() == :prod do
       "//*.sanbase-admin.production.san"
     ]
 
-  config :sanbase, Sanbase.Repo,
-    ssl: true,
-    ssl_opts: [verify: :verify_none]
-
-  db_url = System.get_env("DATABASE_URL")
-  uri = URI.parse(db_url)
-  [username, password] = String.split(uri.userinfo, ":")
-  database = String.split(db_url, "/") |> List.last()
-
-  config :libcluster,
-    topologies: [
-      postgres_topology: [
-        strategy: LibclusterPostgres.Strategy,
-        config: [
-          hostname: uri.host,
-          username: username,
-          password: password,
-          database: database,
-          port: 5432,
-          parameters: [],
-          ssl: true,
-          ssl_opts: [verify: :verify_none],
-          channel_name: "sanbase_cluster"
-        ]
-      ]
-    ]
-
-  config :ethereumex,
-    url: parity_url,
-    http_options: [timeout: 25_000, recv_timeout: 25_000],
-    http_headers: [{"Content-Type", "application/json"}]
-
-  git_commit = System.get_env("GIT_COMMIT")
-
   config :sentry,
     release: "sanbase:#{git_commit}",
     dsn: System.get_env("SENTRY_DSN"),
@@ -142,7 +142,4 @@ if config_env() == :prod do
         cron: [enabled: true]
       ]
     ]
-
-  config :sanbase, Sanbase.Metric.Registry.Sync,
-    sync_secret: System.get_env("METRIC_REGISTRY_SYNC_SECRET")
 end

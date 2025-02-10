@@ -1,13 +1,13 @@
 # Run with:
 # INSIGHTS_DISCORD_NOTIFICATION_ENABLED=false CLICKHOUSE_REPO_ENABLED=false mix run lib/mix/seeds/seeds.exs
-:ok = Mix.Task.run("database_safety", [])
-
 import Sanbase.Factory
 import Sanbase.Factory.Helper
 
-alias Sanbase.UserList
 alias Sanbase.Alert.UserTrigger
 alias Sanbase.Insight.Post
+alias Sanbase.UserList
+
+:ok = Mix.Task.run("database_safety", [])
 
 Faker.start()
 
@@ -40,7 +40,7 @@ rand_erc20_project = fn -> Enum.random(erc20_projects) end
 rand_project = fn -> Enum.random(projects) end
 
 rand_projects_sublist = fn ->
-  Enum.shuffle(projects) |> Enum.take(:rand.uniform(length(projects)))
+  projects |> Enum.shuffle() |> Enum.take(:rand.uniform(length(projects)))
 end
 
 ####################

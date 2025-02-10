@@ -6,21 +6,21 @@ defmodule Sanbase.Billing.Plan do
   """
   use Ecto.Schema
 
-  import Ecto.Query
   import Ecto.Changeset
+  import Ecto.Query
 
   alias __MODULE__.CustomPlan
+  alias Sanbase.Billing.Product
+  alias Sanbase.Billing.Subscription
   alias Sanbase.Repo
-  alias Sanbase.Billing.{Product, Subscription}
 
   @plans_order [free: 0, basic: 1, pro: 2, business_pro: 3, max: 4, business_max: 5, custom: 6]
   @plans Keyword.keys(@plans_order)
 
-  def plans(), do: @plans
-  def plans_order(), do: @plans_order
+  def plans, do: @plans
+  def plans_order, do: @plans_order
 
-  def sort_plans(plans),
-    do: Enum.sort_by(plans, fn plan -> Keyword.get(@plans_order, plan) end)
+  def sort_plans(plans), do: Enum.sort_by(plans, fn plan -> Keyword.get(@plans_order, plan) end)
 
   schema "plans" do
     field(:name, :string)
@@ -103,23 +103,17 @@ defmodule Sanbase.Billing.Plan do
     |> Repo.update()
   end
 
-  def list_custom_plans() do
-    plans =
-      from(
-        p in __MODULE__,
-        where: p.has_custom_restrictions == true
-      )
-      |> Repo.all()
+  def list_custom_plans do
+    plans = Repo.all(from(p in __MODULE__, where: p.has_custom_restrictions == true))
 
     {:ok, plans}
   end
 
   def by_ids(plan_ids) when is_list(plan_ids) do
-    from(p in __MODULE__, where: p.id in ^plan_ids)
-    |> Repo.all()
+    Repo.all(from(p in __MODULE__, where: p.id in ^plan_ids))
   end
 
-  def free_plan() do
+  def free_plan do
     %__MODULE__{name: "FREE", product_id: 1}
   end
 
@@ -145,17 +139,19 @@ defmodule Sanbase.Billing.Plan do
   def plan_name(_), do: "FREE"
 
   def plan_full_name(plan) do
-    plan = plan |> Repo.preload(:product)
+    plan = Repo.preload(plan, :product)
     "#{plan.product.name} / #{plan.name}"
   end
 
   def by_id(plan_id) do
-    Repo.get(__MODULE__, plan_id)
+    __MODULE__
+    |> Repo.get(plan_id)
     |> Repo.preload(:product)
   end
 
   def by_stripe_id(stripe_id) do
-    Repo.get_by(__MODULE__, stripe_id: stripe_id)
+    __MODULE__
+    |> Repo.get_by(stripe_id: stripe_id)
     |> Repo.preload(:product)
   end
 
@@ -181,8 +177,7 @@ defmodule Sanbase.Billing.Plan do
   If a plan doesn't have filled `stripe_id` - create a plan in Stripe and update with the received
   `stripe_id`
   """
-  def maybe_create_plan_in_stripe(%__MODULE__{stripe_id: stripe_id} = plan)
-      when is_nil(stripe_id) do
+  def maybe_create_plan_in_stripe(%__MODULE__{stripe_id: stripe_id} = plan) when is_nil(stripe_id) do
     plan
     |> Sanbase.StripeApi.create_plan()
     |> case do
@@ -194,28 +189,25 @@ defmodule Sanbase.Billing.Plan do
     end
   end
 
-  def maybe_create_plan_in_stripe(%__MODULE__{stripe_id: stripe_id} = plan)
-      when is_binary(stripe_id) do
+  def maybe_create_plan_in_stripe(%__MODULE__{stripe_id: stripe_id} = plan) when is_binary(stripe_id) do
     {:ok, plan}
   end
 
   defp validate_product_is_api(:product_id, product_id) do
-    case product_id == Product.product_api() do
-      true -> []
-      false -> [product_id: "Custom plans can be created only for SANAPI product"]
+    if product_id == Product.product_api() do
+      []
+    else
+      [product_id: "Custom plans can be created only for SANAPI product"]
     end
   end
 
   defp validate_custom_api_plan_name(:name, name) do
-    case String.starts_with?(name, "CUSTOM_") and name == String.upcase(name) do
-      true ->
-        []
-
-      false ->
-        [
-          name:
-            "Custom plan name must start with 'CUSTOM_' and contain only upcase letters and digits"
-        ]
+    if String.starts_with?(name, "CUSTOM_") and name == String.upcase(name) do
+      []
+    else
+      [
+        name: "Custom plan name must start with 'CUSTOM_' and contain only upcase letters and digits"
+      ]
     end
   end
 end

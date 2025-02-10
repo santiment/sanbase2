@@ -1,13 +1,14 @@
 defmodule Sanbase.Alert.SignalTriggerSettingsTest do
   use Sanbase.DataCase, async: false
 
+  import ExUnit.CaptureLog
   import Sanbase.Factory
   import Sanbase.TestHelpers
-  import ExUnit.CaptureLog
 
-  alias Sanbase.Alert.UserTrigger
   alias Sanbase.Alert.Evaluator
   alias Sanbase.Alert.Trigger.SignalTriggerSettings
+  alias Sanbase.Alert.UserTrigger
+  alias Sanbase.Signal.SignalAdapter
 
   setup_all_with_mocks([
     {
@@ -56,14 +57,12 @@ defmodule Sanbase.Alert.SignalTriggerSettingsTest do
       # Return a fun with arity 5 that will return different results
       # for consecutive calls
       mock_fun =
-        [
-          fn -> {:ok, %{project.slug => 1}} end,
-          fn -> {:ok, %{project.slug => 5}} end
-        ]
-        |> Sanbase.Mock.wrap_consecutives(arity: 5)
+        Sanbase.Mock.wrap_consecutives([fn -> {:ok, %{project.slug => 1}} end, fn -> {:ok, %{project.slug => 5}} end],
+          arity: 5
+        )
 
-      Sanbase.Mock.prepare_mock(
-        Sanbase.Signal.SignalAdapter,
+      SignalAdapter
+      |> Sanbase.Mock.prepare_mock(
         :aggregated_timeseries_data,
         mock_fun
       )
@@ -98,14 +97,10 @@ defmodule Sanbase.Alert.SignalTriggerSettingsTest do
 
       # Return a fun with arity 5 that will return different results
       # for consecutive calls
-      mock_fun =
-        [
-          fn -> {:ok, %{project.slug => 0}} end
-        ]
-        |> Sanbase.Mock.wrap_consecutives(arity: 5)
+      mock_fun = Sanbase.Mock.wrap_consecutives([fn -> {:ok, %{project.slug => 0}} end], arity: 5)
 
-      Sanbase.Mock.prepare_mock(
-        Sanbase.Signal.SignalAdapter,
+      SignalAdapter
+      |> Sanbase.Mock.prepare_mock(
         :aggregated_timeseries_data,
         mock_fun
       )

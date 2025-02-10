@@ -1,9 +1,10 @@
 defmodule Sanbase.Queries.Refresh do
+  @moduledoc false
+  alias Sanbase.Accounts.User
   alias Sanbase.Queries.Query
   alias Sanbase.Queries.QueryMetadata
-  alias Sanbase.Queries.RefreshWorker
   alias Sanbase.Queries.RefreshSchedulerWorker
-  alias Sanbase.Accounts.User
+  alias Sanbase.Queries.RefreshWorker
 
   @oban_conf_name :oban_web
 
@@ -53,10 +54,8 @@ defmodule Sanbase.Queries.Refresh do
   end
 
   def refresh_query_dashboards_cache(query_result, user_id) do
-    Sanbase.Dashboards.DashboardQueryMapping.dashboards_by_query_and_user(
-      query_result.query_id,
-      user_id
-    )
+    query_result.query_id
+    |> Sanbase.Dashboards.DashboardQueryMapping.dashboards_by_query_and_user(user_id)
     |> Sanbase.Repo.all()
     |> Enum.each(fn mapping ->
       Sanbase.Dashboards.cache_dashboard_query_execution(
@@ -81,7 +80,7 @@ defmodule Sanbase.Queries.Refresh do
 
   defp tomorrow_1_am do
     # tomorrow 1AM after midnight
-    Timex.now()
+    DateTime.utc_now()
     |> Timex.beginning_of_day()
     |> Timex.shift(days: 1, hours: 1)
   end

@@ -1,11 +1,12 @@
 defmodule SanbaseWeb.Graphql.Schema.GithubQueries do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve: 2]
 
-  alias SanbaseWeb.Graphql.Resolvers.GithubResolver
   alias SanbaseWeb.Graphql.Complexity
   alias SanbaseWeb.Graphql.Middlewares.AccessControl
+  alias SanbaseWeb.Graphql.Resolvers.GithubResolver
 
   object :github_queries do
     @desc ~s"""

@@ -1,4 +1,5 @@
 defmodule Sanbase.Twitter.TimeseriesPoint do
+  @moduledoc false
   defstruct [
     :datetime,
     :twitter_handle,
@@ -20,9 +21,7 @@ defmodule Sanbase.Twitter.TimeseriesPoint do
       |> Map.delete(:datetime)
       |> Map.from_struct()
 
-    key =
-      [point.twitter_handle, point.timestamp]
-      |> Enum.join("_")
+    key = Enum.join([point.twitter_handle, point.timestamp], "_")
 
     {key, Jason.encode!(point)}
   end

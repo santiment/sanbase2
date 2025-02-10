@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddBlockchainAddressCommentsMappingTable do
+  @moduledoc false
   use Ecto.Migration
 
   @table :blockchain_address_comments_mapping

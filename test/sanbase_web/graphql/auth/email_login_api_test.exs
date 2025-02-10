@@ -3,8 +3,8 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
 
   import Mock
   import Mox
-  import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
+  import SanbaseWeb.Graphql.TestHelpers
 
   alias Sanbase.Accounts.User
   alias Sanbase.Repo
@@ -25,12 +25,11 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
 
       {:ok, user} =
-        insert(:user_registration_not_finished, email: "example@santiment.net")
+        :user_registration_not_finished
+        |> insert(email: "example@santiment.net")
         |> User.Email.update_email_token()
 
-      result =
-        conn
-        |> post("/graphql", mutation_skeleton(email_login_verify_mutation(user)))
+      result = post(conn, "/graphql", mutation_skeleton(email_login_verify_mutation(user)))
 
       login_data = result |> json_response(200) |> get_in(["data", "emailLoginVerify"])
       {:ok, user} = User.by_email(user.email)
@@ -43,14 +42,14 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
 
       # Assert that now() and validated_at do not differ by more than 2 seconds
       assert Sanbase.TestUtils.datetime_close_to(
-               Timex.now(),
+               DateTime.utc_now(),
                user.email_token_validated_at,
                2,
                :seconds
              )
 
       # Second login has firstLogin == false
-      {:ok, user} = user |> User.Email.update_email_token()
+      {:ok, user} = User.Email.update_email_token(user)
 
       login_data =
         conn
@@ -63,22 +62,20 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
 
     test "with a valid email token, succeeds login after more than 5 minutes" do
       {:ok, user} =
-        insert(:user, email: "example@santiment.net")
+        :user
+        |> insert(email: "example@santiment.net")
         |> User.Email.update_email_token()
 
       mutation = email_login_verify_mutation(user)
 
-      conn =
-        build_conn()
-        |> post("/graphql", mutation_skeleton(mutation))
+      conn = post(build_conn(), "/graphql", mutation_skeleton(mutation))
 
       new_now = DateTime.utc_now() |> DateTime.to_unix() |> Kernel.+(3600)
 
-      Sanbase.Mock.prepare_mock2(&Guardian.timestamp/0, new_now)
+      (&Guardian.timestamp/0)
+      |> Sanbase.Mock.prepare_mock2(new_now)
       |> Sanbase.Mock.run_with_mocks(fn ->
-        new_conn =
-          conn
-          |> post("/graphql", query_skeleton("{ currentUser{ id } }"))
+        new_conn = post(conn, "/graphql", query_skeleton("{ currentUser{ id } }"))
 
         # Still logged in
         assert json_response(new_conn, 200)["data"]["currentUser"]["id"] == to_string(user.id)
@@ -113,10 +110,11 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
 
     test "with a valid email token after more than 1 day, fail to login", %{conn: conn} do
       {:ok, user} =
-        insert(:user, email: "example@santiment.net")
+        :user
+        |> insert(email: "example@santiment.net")
         |> User.Email.update_email_token()
 
-      generated_at = Timex.shift(Timex.now(), days: -2) |> NaiveDateTime.truncate(:second)
+      generated_at = DateTime.utc_now() |> Timex.shift(days: -2) |> NaiveDateTime.truncate(:second)
 
       user =
         user
@@ -132,7 +130,8 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
     test "with a valid email token after one validation more than 5 minutes ago, fail to login again",
          %{conn: conn} do
       {:ok, user} =
-        insert(:user, email: "example@santiment.net")
+        :user
+        |> insert(email: "example@santiment.net")
         |> User.Email.update_email_token()
 
       naive_now = NaiveDateTime.utc_now()
@@ -140,10 +139,8 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       user =
         user
         |> Ecto.Changeset.change(
-          email_token_generated_at:
-            Timex.shift(naive_now, minutes: -10) |> NaiveDateTime.truncate(:second),
-          email_token_validated_at:
-            Timex.shift(naive_now, minutes: -6) |> NaiveDateTime.truncate(:second)
+          email_token_generated_at: naive_now |> Timex.shift(minutes: -10) |> NaiveDateTime.truncate(:second),
+          email_token_validated_at: naive_now |> Timex.shift(minutes: -6) |> NaiveDateTime.truncate(:second)
         )
         |> Repo.update!()
 
@@ -156,7 +153,8 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
     test "with a valid email token after one validation less than 5 minutes ago, succeeds to login again",
          %{conn: conn} do
       {:ok, user} =
-        insert(:user, email: "example@santiment.net")
+        :user
+        |> insert(email: "example@santiment.net")
         |> User.Email.update_email_token()
 
       naive_now = NaiveDateTime.utc_now()
@@ -164,10 +162,8 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       user =
         user
         |> Ecto.Changeset.change(
-          email_token_generated_at:
-            Timex.shift(naive_now, minutes: -10) |> NaiveDateTime.truncate(:second),
-          email_token_validated_at:
-            Timex.shift(naive_now, minutes: -2) |> NaiveDateTime.truncate(:second)
+          email_token_generated_at: naive_now |> Timex.shift(minutes: -10) |> NaiveDateTime.truncate(:second),
+          email_token_validated_at: naive_now |> Timex.shift(minutes: -2) |> NaiveDateTime.truncate(:second)
         )
         |> Repo.update!()
 
@@ -180,11 +176,12 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
     test "with a valid email token after it has been validated 20 min ago, fail to login",
          %{conn: conn} do
       {:ok, user} =
-        insert(:user, email: "example@santiment.net")
+        :user
+        |> insert(email: "example@santiment.net")
         |> User.Email.update_email_token()
 
-      naive_now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
-      naive_20m_ago = Timex.shift(naive_now, minutes: -20) |> NaiveDateTime.truncate(:second)
+      naive_now = NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)
+      naive_20m_ago = naive_now |> Timex.shift(minutes: -20) |> NaiveDateTime.truncate(:second)
 
       user =
         user

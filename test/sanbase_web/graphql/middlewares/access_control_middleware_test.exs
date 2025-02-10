@@ -35,8 +35,8 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
      {
       gasUsed(
         slug: "santiment",
-        from: "#{Timex.now()}",
-        to: "#{Timex.shift(Timex.now(), days: -10)}"
+        from: "#{DateTime.utc_now()}",
+        to: "#{Timex.shift(DateTime.utc_now(), days: -10)}"
         interval: "30m") {
           datetime
           gasUsed
@@ -75,9 +75,7 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
     }
     """
 
-    result =
-      context.conn
-      |> post("/graphql", query_skeleton(query))
+    result = post(context.conn, "/graphql", query_skeleton(query))
 
     error = List.first(json_response(result, 200)["errors"])["message"]
 
@@ -99,9 +97,7 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
     }
     """
 
-    result =
-      context.conn
-      |> post("/graphql", query_skeleton(query))
+    result = post(context.conn, "/graphql", query_skeleton(query))
 
     error = List.first(json_response(result, 200)["errors"])["message"]
 
@@ -114,7 +110,8 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
     {:ok, apikey} = Apikey.generate_apikey(user)
 
     conn =
-      setup_apikey_auth(build_conn(), apikey)
+      build_conn()
+      |> setup_apikey_auth(apikey)
       |> put_req_header(
         "user-agent",
         "Mozilla/5.0 (compatible; Google-Apps-Script)"
@@ -145,10 +142,8 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
     }
     """
 
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.ClickhouseRepo.query/2,
-      {:ok, result}
-    )
+    (&Sanbase.ClickhouseRepo.query/2)
+    |> Sanbase.Mock.prepare_mock2({:ok, result})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         conn
@@ -164,7 +159,8 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
     {:ok, apikey} = Apikey.generate_apikey(user)
 
     conn =
-      setup_apikey_auth(build_conn(), apikey)
+      build_conn()
+      |> setup_apikey_auth(apikey)
       |> put_req_header(
         "user-agent",
         "Mozilla/5.0 (compatible; Google-Apps-Script)"
@@ -195,10 +191,8 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
     }
     """
 
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.ClickhouseRepo.query/2,
-      {:ok, result}
-    )
+    (&Sanbase.ClickhouseRepo.query/2)
+    |> Sanbase.Mock.prepare_mock2({:ok, result})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         conn
@@ -214,7 +208,8 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
     {:ok, apikey} = Apikey.generate_apikey(user)
 
     conn =
-      setup_apikey_auth(build_conn(), apikey)
+      build_conn()
+      |> setup_apikey_auth(apikey)
       |> put_req_header(
         "user-agent",
         "Mozilla/5.0 (compatible; Google-Apps-Script)"
@@ -225,8 +220,8 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
       getMetric(metric: "social_volume_telegram") {
         timeseriesData(
           slug: "santiment",
-          from: "#{Timex.shift(Timex.now(), days: -10)}",
-          to: "#{Timex.now()}",
+          from: "#{Timex.shift(DateTime.utc_now(), days: -10)}",
+          to: "#{DateTime.utc_now()}",
           interval: "1d") {
           datetime
           value
@@ -250,20 +245,15 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
   test "returns error when sansheets user without API key is not Pro" do
     insert(:user)
 
-    conn =
-      build_conn()
-      |> put_req_header(
-        "user-agent",
-        "Mozilla/5.0 (compatible; Google-Apps-Script)"
-      )
+    conn = put_req_header(build_conn(), "user-agent", "Mozilla/5.0 (compatible; Google-Apps-Script)")
 
     query = """
     {
       getMetric(metric: "social_volume_telegram") {
         timeseriesData(
           slug: "santiment",
-          from: "#{Timex.shift(Timex.now(), days: -10)}",
-          to: "#{Timex.now()}",
+          from: "#{Timex.shift(DateTime.utc_now(), days: -10)}",
+          to: "#{DateTime.utc_now()}",
           interval: "1d") {
           datetime
           value

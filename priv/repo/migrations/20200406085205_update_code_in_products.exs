@@ -1,8 +1,9 @@
 defmodule Sanbase.Repo.Migrations.UpdateCodeInProducts do
+  @moduledoc false
   use Ecto.Migration
 
-  alias Sanbase.Repo
   alias Sanbase.Billing.Product
+  alias Sanbase.Repo
 
   @product_id_code_map %{
     1 => "SANAPI",
@@ -15,13 +16,14 @@ defmodule Sanbase.Repo.Migrations.UpdateCodeInProducts do
     setup()
 
     for {product_id, code} <- @product_id_code_map do
-      Product.by_id(product_id)
+      product_id
+      |> Product.by_id()
       |> Product.changeset(%{code: code})
       |> Repo.update!()
     end
 
     # remove Sansheets product - no longer used
-    Product.by_id(3) |> Repo.delete()
+    3 |> Product.by_id() |> Repo.delete()
   end
 
   def down do

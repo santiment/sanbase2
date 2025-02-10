@@ -25,8 +25,8 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   Only queries with many resolvers are included in the list of allowed queries.
   """
 
-  alias SanbaseWeb.Graphql.Cache
   alias Sanbase.Utils.IP
+  alias SanbaseWeb.Graphql.Cache
 
   @compile inline: [
              cache_result: 2,
@@ -51,7 +51,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     "getMostVoted"
   ]
 
-  def cached_queries(), do: @cached_queries
+  def cached_queries, do: @cached_queries
 
   def before_send(conn, %Absinthe.Blueprint{} = blueprint) do
     # Do not cache in case of:
@@ -66,13 +66,13 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
 
     maybe_update_api_call_limit_usage(conn, blueprint.execution.context, Enum.count(queries))
 
-    case do_not_cache? or has_graphql_errors?(blueprint) do
-      true -> :ok
-      false -> cache_result(queries, blueprint)
+    if do_not_cache? or has_graphql_errors?(blueprint) do
+      :ok
+    else
+      cache_result(queries, blueprint)
     end
 
-    conn
-    |> maybe_create_or_drop_session(blueprint.execution.context)
+    maybe_create_or_drop_session(conn, blueprint.execution.context)
   end
 
   defp maybe_update_api_call_limit_usage(
@@ -90,11 +90,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
 
   defp maybe_update_api_call_limit_usage(
          conn,
-         %{
-           rate_limiting_enabled: true,
-           requested_product: "SANAPI",
-           remote_ip: remote_ip
-         } = context,
+         %{rate_limiting_enabled: true, requested_product: "SANAPI", remote_ip: remote_ip} = context,
          count
        ) do
     if conn.private[:has_api_call_limit_quota_infinity] != true do
@@ -108,7 +104,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   defp maybe_update_api_call_limit_usage(_conn, _context, _count), do: :ok
 
   defp cache_result(queries, blueprint) do
-    all_queries_cachable? = queries |> Enum.all?(&Enum.member?(@cached_queries, &1))
+    all_queries_cachable? = Enum.all?(queries, &Enum.member?(@cached_queries, &1))
 
     if all_queries_cachable? do
       Cache.store(
@@ -151,10 +147,8 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   defp maybe_create_or_drop_session(conn, _), do: conn
 
   defp queries_in_request(%{operations: operations}) do
-    operations
-    |> Enum.flat_map(fn %{selections: selections} ->
-      selections
-      |> Enum.map(fn %{name: name} -> Inflex.camelize(name, :lower) end)
+    Enum.flat_map(operations, fn %{selections: selections} ->
+      Enum.map(selections, fn %{name: name} -> Inflex.camelize(name, :lower) end)
     end)
   end
 
@@ -162,11 +156,11 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
 
   # Create an API Call event for every query in a Document separately.
   defp export_api_call_data(queries, conn, blueprint) do
-    now = DateTime.utc_now() |> DateTime.to_unix(:nanosecond)
+    now = DateTime.to_unix(DateTime.utc_now(), :nanosecond)
     now_mono = System.monotonic_time()
     duration_ms = div(now_mono - blueprint.telemetry.start_time_mono, 1_000_000)
     duration_ms = Enum.max([duration_ms, 0])
-    user_agent = Plug.Conn.get_req_header(conn, "user-agent") |> List.first()
+    user_agent = conn |> Plug.Conn.get_req_header("user-agent") |> List.first()
 
     {user_id, san_tokens, auth_method, api_token} =
       extract_caller_data(blueprint.execution.context)
@@ -177,17 +171,18 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
       Map.get(blueprint.execution.context, :__get_query_name_arg__, []) ++
         Enum.reject(queries, &(&1 == "getMetric" or &1 == "getSignal"))
 
-    Enum.map(queries, fn query ->
+    queries
+    |> Enum.map(fn query ->
       # All ids in the batch need to be different so there's at least one field
       # that is different for all api calls, otherwise they can be squashed into
       # a single row when ingested in Clickhouse
       id =
-        case Logger.metadata() |> Keyword.get(:request_id) do
+        case Keyword.get(Logger.metadata(), :request_id) do
           nil ->
-            "gen_" <> (:crypto.strong_rand_bytes(16) |> Base.encode64())
+            "gen_" <> (16 |> :crypto.strong_rand_bytes() |> Base.encode64())
 
           request_id ->
-            request_id <> "_" <> (:crypto.strong_rand_bytes(6) |> Base.encode64())
+            request_id <> "_" <> (6 |> :crypto.strong_rand_bytes() |> Base.encode64())
         end
 
       {query, selector} = get_query_and_selector(query)
@@ -212,33 +207,25 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     |> Sanbase.KafkaExporter.persist_async(:api_call_exporter)
   end
 
-  defp get_query_and_selector({:get_metric, metric, selector}),
-    do: {"getMetric|#{metric}", selector}
+  defp get_query_and_selector({:get_metric, metric, selector}), do: {"getMetric|#{metric}", selector}
 
-  defp get_query_and_selector({:get_signal, signal, selector}),
-    do: {"getSignal|#{signal}", selector}
+  defp get_query_and_selector({:get_signal, signal, selector}), do: {"getSignal|#{signal}", selector}
 
   defp get_query_and_selector(query), do: {query, nil}
 
   defp remote_ip(blueprint) do
-    blueprint.execution.context.remote_ip |> IP.ip_tuple_to_string()
+    IP.ip_tuple_to_string(blueprint.execution.context.remote_ip)
   end
 
-  defp extract_caller_data(%{
-         auth: %{auth_method: :user_token, current_user: user}
-       }) do
+  defp extract_caller_data(%{auth: %{auth_method: :user_token, current_user: user}}) do
     {user.id, _san_balance = nil, :jwt, nil}
   end
 
-  defp extract_caller_data(%{
-         auth: %{auth_method: :apikey, current_user: user, token: token}
-       }) do
+  defp extract_caller_data(%{auth: %{auth_method: :apikey, current_user: user, token: token}}) do
     {user.id, _san_balance = nil, :apikey, token}
   end
 
-  defp extract_caller_data(%{
-         auth: %{auth_method: :basic}
-       }) do
+  defp extract_caller_data(%{auth: %{auth_method: :basic}}) do
     {nil, _san_balance = nil, :basic, nil}
   end
 

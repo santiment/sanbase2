@@ -1,14 +1,15 @@
 defmodule Sanbase.Cryptocompare.Price.CCCAGGPairData do
+  @moduledoc false
   alias Sanbase.Project
 
   require Logger
 
-  def get() do
-    cache_key = {__MODULE__, :get_cccagg_pairs_data} |> Sanbase.Cache.hash()
+  def get do
+    cache_key = Sanbase.Cache.hash({__MODULE__, :get_cccagg_pairs_data})
 
     {:ok, data} =
       Sanbase.Cache.get_or_store(cache_key, fn ->
-        data = raw_data() |> pairs_to_maps()
+        data = pairs_to_maps(raw_data())
         {:ok, data}
       end)
 
@@ -24,25 +25,23 @@ defmodule Sanbase.Cryptocompare.Price.CCCAGGPairData do
     end
   end
 
-  def schedule_oban_jobs() do
-    get()
-    |> Enum.each(fn elem -> add_jobs(elem) end)
+  def schedule_oban_jobs do
+    Enum.each(get(), fn elem -> add_jobs(elem) end)
   end
 
-  def schedule_previous_day_jobs() do
+  def schedule_previous_day_jobs do
     Logger.info("[CCCAGG Pair Data] Start scheduling cryptocompare previous day oban jobs")
     # Make the scrape not just for the previous day, but for a few days before
     # that too. This is to handle some cases where some CSV becoomes available
     # later than we run this code. The uniqueness checkk will handle the overlapping
     # jobs.
     supported_base_assets = supported_base_assets()
-    days_ago_7 = Date.utc_today() |> Date.add(-7)
-    days_ago_60 = Date.utc_today() |> Date.add(-60)
+    days_ago_7 = Date.add(Date.utc_today(), -7)
+    days_ago_60 = Date.add(Date.utc_today(), -60)
     today = Date.utc_today()
 
     list =
-      get()
-      |> Enum.filter(fn elem ->
+      Enum.filter(get(), fn elem ->
         elem.base_asset in supported_base_assets and
           Timex.between?(elem.end_date, days_ago_7, today)
       end)
@@ -54,8 +53,7 @@ defmodule Sanbase.Cryptocompare.Price.CCCAGGPairData do
       |> Enum.chunk_every(500)
       |> Sanbase.Parallel.map(
         fn chunk ->
-          chunk
-          |> Enum.each(fn elem ->
+          Enum.each(chunk, fn elem ->
             elem = %{
               start_date: days_ago_60,
               end_date: elem.end_date,
@@ -72,16 +70,18 @@ defmodule Sanbase.Cryptocompare.Price.CCCAGGPairData do
 
     Logger.info("[CCCAGG Pair Data] Finished scheduling cryptocompare previous day oban jobs")
 
-    case Enum.all?(result, &(&1 == :ok)) do
-      true -> :ok
-      false -> {:error, "Error while scheduling jobs"}
+    if Enum.all?(result, &(&1 == :ok)) do
+      :ok
+    else
+      {:error, "Error while scheduling jobs"}
     end
   end
 
   # Private functions
 
-  defp supported_base_assets() do
-    Project.SourceSlugMapping.get_source_slug_mappings("cryptocompare")
+  defp supported_base_assets do
+    "cryptocompare"
+    |> Project.SourceSlugMapping.get_source_slug_mappings()
     |> Enum.map(&elem(&1, 0))
   end
 
@@ -95,11 +95,10 @@ defmodule Sanbase.Cryptocompare.Price.CCCAGGPairData do
   end
 
   defp pairs_to_maps(pairs) do
-    pairs
-    |> Enum.flat_map(fn {base_asset, map} ->
-      Enum.map(map["tsyms"], fn
-        {quote_asset,
-         %{"histo_minute_start" => start_date_iso8601, "histo_minute_end" => end_date_iso8601}} ->
+    Enum.flat_map(pairs, fn {base_asset, map} ->
+      map["tsyms"]
+      |> Enum.map(fn
+        {quote_asset, %{"histo_minute_start" => start_date_iso8601, "histo_minute_end" => end_date_iso8601}} ->
           %{
             base_asset: base_asset,
             quote_asset: quote_asset,
@@ -114,7 +113,7 @@ defmodule Sanbase.Cryptocompare.Price.CCCAGGPairData do
     end)
   end
 
-  defp raw_data() do
+  defp raw_data do
     {:ok, %HTTPoison.Response{status_code: 200, body: body}} =
       HTTPoison.get("https://min-api.cryptocompare.com/data/v2/cccagg/pairs")
 

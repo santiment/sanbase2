@@ -1,4 +1,5 @@
 defmodule Sanbase.MarkExchanges do
+  @moduledoc false
   import Sanbase.MapUtils, only: [replace_lazy: 3]
 
   @exchange_labels ["centralized_exchange", "decentralized_exchange", "CEX", "DEX"]
@@ -16,7 +17,7 @@ defmodule Sanbase.MarkExchanges do
 
   def mark_exchanges(list) do
     add_is_exchange = fn address_map ->
-      labels = (address_map[:labels] || address_map[:label] || []) |> List.wrap()
+      labels = List.wrap(address_map[:labels] || address_map[:label] || [])
       is_exchange = Enum.any?(labels, &(&1[:name] in @exchange_labels))
       Map.put(address_map, :is_exchange, is_exchange)
     end

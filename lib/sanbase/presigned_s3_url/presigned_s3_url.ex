@@ -9,8 +9,8 @@ defmodule Sanbase.PresignedS3Url do
   """
   use Ecto.Schema
 
-  import Ecto.Query
   import Ecto.Changeset
+  import Ecto.Query
 
   alias __MODULE__.S3
 
@@ -28,8 +28,8 @@ defmodule Sanbase.PresignedS3Url do
     timestamps()
   end
 
-  def bucket(), do: @bucket
-  def expires_in(), do: @expires_in
+  def bucket, do: @bucket
+  def expires_in, do: @expires_in
 
   def changeset(%__MODULE__{} = url, attrs) do
     url
@@ -49,21 +49,22 @@ defmodule Sanbase.PresignedS3Url do
   def get_presigned_s3_url(user_id, object) do
     query = from(url in __MODULE__, where: url.user_id == ^user_id and url.object == ^object)
 
-    case Sanbase.Repo.one(query) do
-      nil ->
-        with {:ok, presigned_url} <- S3.generate_presigned_url(@bucket, object, @expires_in),
-             {:ok, struct} <- store(user_id, @bucket, object, presigned_url, @expires_in) do
-          {:ok, struct}
-        end
+    case_result =
+      case Sanbase.Repo.one(query) do
+        nil ->
+          with {:ok, presigned_url} <- S3.generate_presigned_url(@bucket, object, @expires_in) do
+            store(user_id, @bucket, object, presigned_url, @expires_in)
+          end
 
-      struct ->
-        {:ok, struct}
-    end
-    |> replace_with_error_if_expired()
+        struct ->
+          {:ok, struct}
+      end
+
+    replace_with_error_if_expired(case_result)
   end
 
   @doc false
-  def utc_now() do
+  def utc_now do
     # Wraps DateTime.utc_now/0 so we can mock exactly this call in the tests where the
     # behavior of expired URLs is tested
     DateTime.utc_now()
@@ -72,7 +73,7 @@ defmodule Sanbase.PresignedS3Url do
   # Private functions
 
   defp store(user_id, bucket, object, presigned_url, expires_in) do
-    expires_at = DateTime.utc_now() |> DateTime.add(expires_in, :second)
+    expires_at = DateTime.add(DateTime.utc_now(), expires_in, :second)
 
     %__MODULE__{}
     |> changeset(%{
@@ -92,8 +93,7 @@ defmodule Sanbase.PresignedS3Url do
 
     case DateTime.compare(utc_now, struct.expires_at) do
       :gt ->
-        {:error,
-         "A presigned S3 URL has been generated and has already expired at #{struct.expires_at}."}
+        {:error, "A presigned S3 URL has been generated and has already expired at #{struct.expires_at}."}
 
       _ ->
         {:ok, struct}

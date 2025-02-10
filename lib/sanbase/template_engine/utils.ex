@@ -1,4 +1,5 @@
 defmodule Sanbase.TemplateEngine.Utils do
+  @moduledoc false
   def stringify_value(value) do
     cond do
       is_number(value) -> to_string(value)

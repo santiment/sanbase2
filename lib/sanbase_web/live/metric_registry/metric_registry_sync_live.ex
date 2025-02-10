@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.MetricRegistrySyncLive do
+  @moduledoc false
   use SanbaseWeb, :live_view
 
   alias SanbaseWeb.AvailableMetricsComponents
@@ -12,11 +13,10 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
     SanbaseWeb.Endpoint.subscribe(@pubsub_topic)
 
     {:ok,
-     socket
-     |> assign(
+     assign(socket,
        syncable_metrics: syncable_metrics,
        non_syncable_metrics: not_syncable_metrics,
-       metric_ids_to_sync: Enum.map(syncable_metrics, & &1.id) |> MapSet.new(),
+       metric_ids_to_sync: MapSet.new(syncable_metrics, & &1.id),
        page_title: "Metric Registry | Sync"
      )}
   end
@@ -113,7 +113,7 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
 
   @impl true
   def handle_event("sync", _params, socket) do
-    ids = socket.assigns.metric_ids_to_sync |> Enum.to_list()
+    ids = Enum.to_list(socket.assigns.metric_ids_to_sync)
 
     case Sanbase.Metric.Registry.Sync.sync(ids) do
       {:ok, _data} ->
@@ -128,11 +128,11 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
          |> assign(
            syncable_metrics: syncable_metrics,
            non_syncable_metrics: not_syncable_metrics,
-           metric_ids_to_sync: Enum.map(syncable_metrics, & &1.id) |> MapSet.new()
+           metric_ids_to_sync: MapSet.new(syncable_metrics, & &1.id)
          )}
 
       {:error, error} ->
-        {:noreply, socket |> put_flash(:error, "Error syncing metrics: #{error}")}
+        {:noreply, put_flash(socket, :error, "Error syncing metrics: #{error}")}
     end
   end
 
@@ -152,7 +152,7 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
   def handle_event("select_all", _params, socket) do
     {:noreply,
      assign(socket,
-       metric_ids_to_sync: Enum.map(socket.assigns.syncable_metrics, & &1.id) |> MapSet.new()
+       metric_ids_to_sync: MapSet.new(socket.assigns.syncable_metrics, & &1.id)
      )}
   end
 
@@ -169,21 +169,17 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
      |> assign(
        syncable_metrics: syncable_metrics,
        non_syncable_metrics: not_syncable_metrics,
-       metric_ids_to_sync: Enum.map(syncable_metrics, & &1.id) |> MapSet.new()
+       metric_ids_to_sync: MapSet.new(syncable_metrics, & &1.id)
      )
      |> put_flash(:info, "Sync data updated due to action of another.")}
   end
 
-  defp get_syncs_data() do
+  defp get_syncs_data do
     metrics = Sanbase.Metric.Registry.all()
 
-    syncable_metrics =
-      metrics
-      |> Enum.filter(&(&1.sync_status == "not_synced" and &1.is_verified == true))
+    syncable_metrics = Enum.filter(metrics, &(&1.sync_status == "not_synced" and &1.is_verified == true))
 
-    not_syncable_metrics =
-      metrics
-      |> Enum.filter(&(&1.sync_status == "not_synced" and &1.is_verified == false))
+    not_syncable_metrics = Enum.filter(metrics, &(&1.sync_status == "not_synced" and &1.is_verified == false))
 
     {syncable_metrics, not_syncable_metrics}
   end

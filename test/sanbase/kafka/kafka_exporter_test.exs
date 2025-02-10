@@ -1,8 +1,10 @@
 defmodule KafkaExporterTest do
   use ExUnit.Case, async: false
 
+  alias Sanbase.InMemoryKafka.Producer
+
   setup do
-    topic = :crypto.strong_rand_bytes(12) |> Base.encode64()
+    topic = 12 |> :crypto.strong_rand_bytes() |> Base.encode64()
     %{topic: topic}
   end
 
@@ -20,7 +22,7 @@ defmodule KafkaExporterTest do
     data = api_call_data()
     :ok = Sanbase.KafkaExporter.persist_async(data, exporter_pid)
     Process.sleep(100)
-    state = Sanbase.InMemoryKafka.Producer.get_state()
+    state = Producer.get_state()
     assert Map.get(state, topic) == data
   end
 
@@ -38,7 +40,7 @@ defmodule KafkaExporterTest do
     data = api_call_data()
     :ok = Sanbase.KafkaExporter.persist_async(data, exporter_pid)
     Process.sleep(200)
-    state = Sanbase.InMemoryKafka.Producer.get_state()
+    state = Producer.get_state()
     assert Map.get(state, topic) == data
   end
 
@@ -57,13 +59,13 @@ defmodule KafkaExporterTest do
     # No data even after 50 api calls were persisted and some time has passed
     Process.sleep(100)
 
-    state = Sanbase.InMemoryKafka.Producer.get_state()
+    state = Producer.get_state()
 
     assert Map.get(state, topic) == nil
 
     # Aftert the kafka flush timeout has been reached the data is flushed
     Process.sleep(200)
-    state = Sanbase.InMemoryKafka.Producer.get_state()
+    state = Producer.get_state()
     topic_data = Map.get(state, topic)
     assert length(topic_data) == 50
   end
@@ -81,7 +83,7 @@ defmodule KafkaExporterTest do
     for _ <- 1..600, do: :ok = Sanbase.KafkaExporter.persist_async(api_call_data(), exporter_pid)
 
     Process.sleep(100)
-    state = Sanbase.InMemoryKafka.Producer.get_state()
+    state = Producer.get_state()
     topic_data = Map.get(state, topic)
 
     # buffering_max_messages has been sent, another 100 are still waiting in the exporter
@@ -102,31 +104,30 @@ defmodule KafkaExporterTest do
         do: :ok = Sanbase.KafkaExporter.persist_async(api_call_data(), exporter_pid)
 
     Process.sleep(300)
-    state = Sanbase.InMemoryKafka.Producer.get_state()
+    state = Producer.get_state()
     topic_data = Map.get(state, topic)
     assert length(topic_data) == 10_000
   end
 
-  defp api_call_data() do
-    %{
-      timestamp: Timex.now() |> DateTime.to_unix(),
+  defp api_call_data do
+    Sanbase.Kafka.ApiCall.json_kv_tuple(%{
+      timestamp: DateTime.to_unix(DateTime.utc_now()),
       query: random_query(),
       status_code: 200,
       user_id: :rand.uniform(100),
-      token: :crypto.strong_rand_bytes(32) |> Base.encode64(),
+      token: 32 |> :crypto.strong_rand_bytes() |> Base.encode64(),
       remote_ip: random_ip_v4(),
       user_agent: Faker.Internet.UserAgent.desktop_user_agent(),
       duration_ms: :rand.uniform_real() * 1000,
       san_tokens: Enum.random(200..2000)
-    }
-    |> Sanbase.Kafka.ApiCall.json_kv_tuple()
+    })
   end
 
-  defp random_query() do
+  defp random_query do
     Enum.random(["all_projects", "token_age_consumed", "history_price", "current_user"])
   end
 
-  defp random_ip_v4() do
+  defp random_ip_v4 do
     octet1 = :rand.uniform(255)
     octet2 = :rand.uniform(255)
     octet3 = :rand.uniform(255)
@@ -135,5 +136,5 @@ defmodule KafkaExporterTest do
     "#{octet1}.#{octet2}.#{octet3}.#{octet4}"
   end
 
-  defp rand_atom(), do: :crypto.strong_rand_bytes(12) |> Base.encode64() |> String.to_atom()
+  defp rand_atom, do: 12 |> :crypto.strong_rand_bytes() |> Base.encode64() |> String.to_atom()
 end

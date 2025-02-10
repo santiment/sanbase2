@@ -1,4 +1,5 @@
 defmodule Sanbase.Ecto.Common do
+  @moduledoc false
   import Ecto.Query
 
   @doc ~s"""
@@ -18,27 +19,16 @@ defmodule Sanbase.Ecto.Common do
     now = NaiveDateTime.utc_now()
 
     map =
-      from(p in module,
-        where: p.user_id == ^user_id,
-        select: %{
-          day:
-            fragment(
-              "COUNT(*) FILTER (WHERE inserted_at >= ?)",
-              ^NaiveDateTime.add(now, -86_400, :second)
-            ),
-          hour:
-            fragment(
-              "COUNT(*) FILTER (WHERE inserted_at >= ?)",
-              ^NaiveDateTime.add(now, -3600, :second)
-            ),
-          minute:
-            fragment(
-              "COUNT(*) FILTER (WHERE inserted_at >= ?)",
-              ^NaiveDateTime.add(now, -60, :second)
-            )
-        }
+      Sanbase.Repo.one(
+        from(p in module,
+          where: p.user_id == ^user_id,
+          select: %{
+            day: fragment("COUNT(*) FILTER (WHERE inserted_at >= ?)", ^NaiveDateTime.add(now, -86_400, :second)),
+            hour: fragment("COUNT(*) FILTER (WHERE inserted_at >= ?)", ^NaiveDateTime.add(now, -3600, :second)),
+            minute: fragment("COUNT(*) FILTER (WHERE inserted_at >= ?)", ^NaiveDateTime.add(now, -60, :second))
+          }
+        )
       )
-      |> Sanbase.Repo.one()
 
     limits = Keyword.fetch!(opts, :limits)
     entity_singular = Keyword.fetch!(opts, :entity_singular)

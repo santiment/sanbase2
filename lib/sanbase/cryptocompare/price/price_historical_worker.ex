@@ -21,14 +21,17 @@ defmodule Sanbase.Cryptocompare.Price.HistoricalWorker do
 
   import Sanbase.Cryptocompare.HTTPHeaderUtils, only: [parse_value_list: 1]
 
-  require Logger
+  alias Sanbase.Cryptocompare.OHLCVPricePoint
+  alias Sanbase.Cryptocompare.PriceOnlyPoint
   alias Sanbase.Utils.Config
+
+  require Logger
 
   @url "https://min-api.cryptocompare.com/data/histo/minute/daily"
   @oban_conf_name :oban_scrapers
 
-  def queue(), do: :cryptocompare_historical_jobs_queue
-  def conf_name(), do: @oban_conf_name
+  def queue, do: :cryptocompare_historical_jobs_queue
+  def conf_name, do: @oban_conf_name
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: args, attempt: attempt}) do
@@ -43,8 +46,7 @@ defmodule Sanbase.Cryptocompare.Price.HistoricalWorker do
           Marking it as complete so it's no longer scheduled."
         )
 
-        {:canceled,
-         "Snoozed too many times because the base asset is not in the list of available assets on Santiment."}
+        {:canceled, "Snoozed too many times because the base asset is not in the list of available assets on Santiment."}
 
       should_snooze? ->
         {:snooze, 86_400}
@@ -82,15 +84,13 @@ defmodule Sanbase.Cryptocompare.Price.HistoricalWorker do
   # Private functions
 
   defp log_time_spent(t1, t2, t3) do
-    get_data_time = ((t2 - t1) / 1000) |> Float.round(2)
-    export_data_time = ((t3 - t2) / 1000) |> Float.round(2)
+    get_data_time = Float.round((t2 - t1) / 1000, 2)
+    export_data_time = Float.round((t3 - t2) / 1000, 2)
 
-    Logger.info(
-      "[Cryptocompare Historical] Get data: #{get_data_time}s, Export data: #{export_data_time}s"
-    )
+    Logger.info("[Cryptocompare Historical] Get data: #{get_data_time}s, Export data: #{export_data_time}s")
   end
 
-  defp available_base_assets() do
+  defp available_base_assets do
     # TODO: Remove once all the used assets are scrapped
     # In order to priroritize the jobs that are more important, snooze
     # the jobs that are not having a base asset that is stored in our DBs.
@@ -99,7 +99,8 @@ defmodule Sanbase.Cryptocompare.Price.HistoricalWorker do
     {:ok, assets} =
       Sanbase.Cache.get_or_store(cache_key, fn ->
         data =
-          Sanbase.Project.SourceSlugMapping.get_source_slug_mappings("cryptocompare")
+          "cryptocompare"
+          |> Sanbase.Project.SourceSlugMapping.get_source_slug_mappings()
           |> Enum.map(&elem(&1, 0))
 
         {:ok, data}
@@ -135,7 +136,8 @@ defmodule Sanbase.Cryptocompare.Price.HistoricalWorker do
 
   defp rate_limited?(resp) do
     zero_remainings =
-      get_header(resp, "X-RateLimit-Remaining-All")
+      resp
+      |> get_header("X-RateLimit-Remaining-All")
       |> elem(1)
       |> parse_value_list()
       |> Enum.filter(&(&1.value == 0))
@@ -150,12 +152,11 @@ defmodule Sanbase.Cryptocompare.Price.HistoricalWorker do
     Sanbase.Cryptocompare.Price.HistoricalScheduler.pause()
 
     header_value =
-      get_header(resp, "X-RateLimit-Reset-All")
+      resp
+      |> get_header("X-RateLimit-Reset-All")
       |> elem(1)
 
-    Logger.info(
-      "[Cryptocompare Historical] Rate limited. X-RateLimit-Reset-All header: #{header_value}"
-    )
+    Logger.info("[Cryptocompare Historical] Rate limited. X-RateLimit-Reset-All header: #{header_value}")
 
     reset_after_seconds =
       header_value
@@ -163,9 +164,7 @@ defmodule Sanbase.Cryptocompare.Price.HistoricalWorker do
       |> Enum.find(&(&1.time_period == biggest_rate_limited_window))
       |> Map.get(:value)
 
-    data =
-      %{"type" => "resume"}
-      |> Sanbase.Cryptocompare.Price.PauseResumeWorker.new(schedule_in: reset_after_seconds)
+    data = Sanbase.Cryptocompare.Price.PauseResumeWorker.new(%{"type" => "resume"}, schedule_in: reset_after_seconds)
 
     Oban.insert(@oban_conf_name, data)
 
@@ -197,27 +196,24 @@ defmodule Sanbase.Cryptocompare.Price.HistoricalWorker do
   end
 
   defp csv_line_to_point([time, fsym, tsym, o, h, l, c, vol_from, vol_to] = list) do
-    case Enum.any?(list, &(&1 == "NaN")) do
-      true ->
-        :error
+    if Enum.any?(list, &(&1 == "NaN")) do
+      :error
+    else
+      [o, h, l, c, vol_from, vol_to] = Enum.map([o, h, l, c, vol_from, vol_to], &Sanbase.Math.to_float/1)
 
-      false ->
-        [o, h, l, c, vol_from, vol_to] =
-          [o, h, l, c, vol_from, vol_to] |> Enum.map(&Sanbase.Math.to_float/1)
-
-        %{
-          source: "cryptocompare",
-          interval_seconds: 60,
-          datetime: time |> String.to_integer() |> DateTime.from_unix!(),
-          base_asset: fsym,
-          quote_asset: tsym,
-          open: o,
-          high: h,
-          low: l,
-          close: c,
-          volume_from: vol_from,
-          volume_to: vol_to
-        }
+      %{
+        source: "cryptocompare",
+        interval_seconds: 60,
+        datetime: time |> String.to_integer() |> DateTime.from_unix!(),
+        base_asset: fsym,
+        quote_asset: tsym,
+        open: o,
+        high: h,
+        low: l,
+        close: c,
+        volume_from: vol_from,
+        volume_to: vol_to
+      }
     end
   end
 
@@ -244,8 +240,8 @@ defmodule Sanbase.Cryptocompare.Price.HistoricalWorker do
 
   defp to_ohlcv_price_point(point) do
     point
-    |> Sanbase.Cryptocompare.OHLCVPricePoint.new()
-    |> Sanbase.Cryptocompare.OHLCVPricePoint.json_kv_tuple()
+    |> OHLCVPricePoint.new()
+    |> OHLCVPricePoint.json_kv_tuple()
   end
 
   defp to_price_only_point(point) do
@@ -256,9 +252,9 @@ defmodule Sanbase.Cryptocompare.Price.HistoricalWorker do
       quote_asset: point.quote_asset,
       source: point.source
     }
-    |> Sanbase.Cryptocompare.PriceOnlyPoint.new()
-    |> Sanbase.Cryptocompare.PriceOnlyPoint.json_kv_tuple()
+    |> PriceOnlyPoint.new()
+    |> PriceOnlyPoint.json_kv_tuple()
   end
 
-  defp api_key(), do: Config.module_get(Sanbase.Cryptocompare, :api_key)
+  defp api_key, do: Config.module_get(Sanbase.Cryptocompare, :api_key)
 end

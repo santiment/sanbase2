@@ -3,8 +3,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.Helpers do
   Common functions used among multiple middlewares
   """
 
-  alias Sanbase.Accounts.User
   alias Absinthe.Resolution
+  alias Sanbase.Accounts.User
 
   @doc ~s"""
   Decides whether the user has access or not.
@@ -31,8 +31,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.Helpers do
       resolution
     else
       {:error, _message} = error_tuple ->
-        resolution
-        |> Resolution.put_result(error_tuple)
+        Resolution.put_result(resolution, error_tuple)
     end
   end
 
@@ -41,9 +40,10 @@ defmodule SanbaseWeb.Graphql.Middlewares.Helpers do
   defp access_by_email_pattern?(%User{email: email}, opts) do
     pattern = Keyword.get(opts, :access_by_email_pattern)
 
-    case is_nil(pattern) or (not is_nil(email) and String.match?(email, pattern)) do
-      true -> true
-      false -> {:error, "Access denied. Your email does not match the required pattern."}
+    if is_nil(pattern) or (not is_nil(email) and String.match?(email, pattern)) do
+      true
+    else
+      {:error, "Access denied. Your email does not match the required pattern."}
     end
   end
 

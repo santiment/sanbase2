@@ -1,8 +1,8 @@
 defmodule SanbaseWeb.Graphql.MenuApiTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
+  import SanbaseWeb.Graphql.TestHelpers
 
   setup do
     user = insert(:user)
@@ -25,7 +25,8 @@ defmodule SanbaseWeb.Graphql.MenuApiTest do
 
   test "create, update and get menu", context do
     menu =
-      menu_mutation(context.conn, :create_menu, %{name: "MyMenu", description: "Desc"})
+      context.conn
+      |> menu_mutation(:create_menu, %{name: "MyMenu", description: "Desc"})
       |> get_in(["data", "createMenu"])
 
     assert {:ok, _} = Sanbase.Menus.get_menu(menu["entityId"], context.user.id)
@@ -40,13 +41,14 @@ defmodule SanbaseWeb.Graphql.MenuApiTest do
            } = menu
 
     menu =
-      menu_mutation(context.conn, :update_menu, %{id: menu["entityId"], name: "MyMenu2"})
+      context.conn
+      |> menu_mutation(:update_menu, %{id: menu["entityId"], name: "MyMenu2"})
       |> get_in(["data", "updateMenu"])
 
     assert menu["name"] == "MyMenu2"
 
     # Get the menu
-    menu = get_menu(context.conn, menu["entityId"]) |> get_in(["data", "getMenu"])
+    menu = context.conn |> get_menu(menu["entityId"]) |> get_in(["data", "getMenu"])
 
     assert %{
              "description" => "Desc",
@@ -59,13 +61,15 @@ defmodule SanbaseWeb.Graphql.MenuApiTest do
 
     # Another user cannot update the menu
     error_msg =
-      menu_mutation(context.conn2, :update_menu, %{id: menu["entityId"], name: "MyMenu3"})
+      context.conn2
+      |> menu_mutation(:update_menu, %{id: menu["entityId"], name: "MyMenu3"})
       |> get_in(["errors", Access.at(0), "message"])
 
     assert error_msg =~ "not found or it is owned by another user"
     # Another user cannot obtain the menu
     error_msg =
-      get_menu(context.conn2, menu["entityId"])
+      context.conn2
+      |> get_menu(menu["entityId"])
       |> get_in(["errors", Access.at(0), "message"])
 
     assert error_msg =~ "not found or it is owned by another user"
@@ -73,14 +77,16 @@ defmodule SanbaseWeb.Graphql.MenuApiTest do
 
   test "delete menu", context do
     menu =
-      menu_mutation(context.conn, :create_menu, %{name: "MyMenu", description: "Desc"})
+      context.conn
+      |> menu_mutation(:create_menu, %{name: "MyMenu", description: "Desc"})
       |> get_in(["data", "createMenu"])
 
     assert {:ok, _} = Sanbase.Menus.get_menu(menu["entityId"], context.user.id)
 
     # Other users cannot delete the menu
     error_msg =
-      menu_mutation(context.conn2, :delete_menu, %{id: menu["entityId"]})
+      context.conn2
+      |> menu_mutation(:delete_menu, %{id: menu["entityId"]})
       |> get_in(["errors", Access.at(0), "message"])
 
     assert error_msg =~ "not found or it is owned by another user"
@@ -89,7 +95,8 @@ defmodule SanbaseWeb.Graphql.MenuApiTest do
 
     # The owner can delete the menu
     menu =
-      menu_mutation(context.conn, :delete_menu, %{id: menu["entityId"]})
+      context.conn
+      |> menu_mutation(:delete_menu, %{id: menu["entityId"]})
       |> get_in(["data", "deleteMenu"])
 
     assert %{"entityId" => _} = menu
@@ -99,14 +106,16 @@ defmodule SanbaseWeb.Graphql.MenuApiTest do
 
   test "add and get nested menu items", context do
     menu =
-      menu_mutation(context.conn, :create_menu, %{name: "MyMenu", description: "Desc"})
+      context.conn
+      |> menu_mutation(:create_menu, %{name: "MyMenu", description: "Desc"})
       |> get_in(["data", "createMenu"])
 
     ## Add menu items to the top-level menu
 
     # This will also internally call create_menu_item and add it as a menu
     sub_menu =
-      menu_mutation(context.conn, :create_menu, %{
+      context.conn
+      |> menu_mutation(:create_menu, %{
         name: "SubMenu",
         description: "Desc",
         parent_id: menu["entityId"],
@@ -115,7 +124,8 @@ defmodule SanbaseWeb.Graphql.MenuApiTest do
       |> get_in(["data", "createMenu"])
 
     _ =
-      menu_mutation(context.conn, :create_menu_item, %{
+      context.conn
+      |> menu_mutation(:create_menu_item, %{
         parent_id: menu["entityId"],
         entity: %{query_id: context.query.id, map_as_input_object: true},
         # this will force it to be put in front of the sub-menu added above
@@ -127,7 +137,8 @@ defmodule SanbaseWeb.Graphql.MenuApiTest do
     # Add a menu item without providing position. It will be added to the end
     # and will get a position 3
     _ =
-      menu_mutation(context.conn, :create_menu_item, %{
+      context.conn
+      |> menu_mutation(:create_menu_item, %{
         parent_id: menu["entityId"],
         entity: %{query_id: context.query.id, map_as_input_object: true}
       })
@@ -135,14 +146,16 @@ defmodule SanbaseWeb.Graphql.MenuApiTest do
 
     ## Add items to the sub-menu
     _ =
-      menu_mutation(context.conn, :create_menu_item, %{
+      context.conn
+      |> menu_mutation(:create_menu_item, %{
         parent_id: sub_menu["entityId"],
         entity: %{query_id: context.query.id, map_as_input_object: true}
       })
       |> get_in(["data", "createMenuItem"])
 
     _ =
-      menu_mutation(context.conn, :create_menu_item, %{
+      context.conn
+      |> menu_mutation(:create_menu_item, %{
         parent_id: sub_menu["entityId"],
         entity: %{dashboard_id: context.dashboard.id, map_as_input_object: true},
         position: 1
@@ -150,7 +163,7 @@ defmodule SanbaseWeb.Graphql.MenuApiTest do
       |> get_in(["data", "createMenuItem"])
 
     # Fetch the top-level menu again
-    menu = get_menu(context.conn, menu["entityId"]) |> get_in(["data", "getMenu"])
+    menu = context.conn |> get_menu(menu["entityId"]) |> get_in(["data", "getMenu"])
 
     root_menu_id = menu["entityId"]
     query_id = context.query.id
@@ -212,11 +225,13 @@ defmodule SanbaseWeb.Graphql.MenuApiTest do
 
   test "update and delete menu items", context do
     menu =
-      menu_mutation(context.conn, :create_menu, %{name: "MyMenu", description: "Desc"})
+      context.conn
+      |> menu_mutation(:create_menu, %{name: "MyMenu", description: "Desc"})
       |> get_in(["data", "createMenu"])
 
     sub_menu =
-      menu_mutation(context.conn, :create_menu, %{
+      context.conn
+      |> menu_mutation(:create_menu, %{
         name: "SubMenu",
         description: "Desc",
         parent_id: menu["entityId"]
@@ -241,7 +256,7 @@ defmodule SanbaseWeb.Graphql.MenuApiTest do
         entity: %{dashboard_id: context.dashboard.id, map_as_input_object: true}
       })
 
-    menu = get_menu(context.conn, menu["entityId"]) |> get_in(["data", "getMenu"])
+    menu = context.conn |> get_menu(menu["entityId"]) |> get_in(["data", "getMenu"])
 
     root_menu_id = menu["entityId"]
     sub_menu_id = sub_menu["entityId"]
@@ -308,7 +323,7 @@ defmodule SanbaseWeb.Graphql.MenuApiTest do
       })
 
     # Check again the new ordering of the menu items
-    menu = get_menu(context.conn, menu["entityId"]) |> get_in(["data", "getMenu"])
+    menu = context.conn |> get_menu(menu["entityId"]) |> get_in(["data", "getMenu"])
 
     # The dashboard root-menu item is removed and the only sub-menu item is moved to the root menu
     # at position one, bumping the position of the rest of the items

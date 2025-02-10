@@ -24,22 +24,11 @@ defmodule SanbaseWeb.Graphql.Middlewares.JWTModeratorAuth do
   @doc ~s"""
   Give access only if the user has a moderator role
   """
-  def call(
-        %Resolution{
-          context: %{
-            is_moderator: is_moderator,
-            auth: %{auth_method: auth_method}
-          }
-        } = resolution,
-        _opts
-      ) do
-    case is_moderator == true and auth_method == :user_token do
-      true ->
-        resolution
-
-      false ->
-        resolution
-        |> Resolution.put_result({:error, :unauthorized})
+  def call(%Resolution{context: %{is_moderator: is_moderator, auth: %{auth_method: auth_method}}} = resolution, _opts) do
+    if is_moderator == true and auth_method == :user_token do
+      resolution
+    else
+      Resolution.put_result(resolution, {:error, :unauthorized})
     end
   end
 

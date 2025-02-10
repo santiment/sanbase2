@@ -1,4 +1,5 @@
 defmodule Sanbase.ReleaseTasks.Migrate do
+  @moduledoc false
   @start_apps [
     :crypto,
     :ssl,

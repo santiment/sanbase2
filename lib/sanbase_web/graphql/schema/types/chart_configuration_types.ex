@@ -1,9 +1,12 @@
 defmodule SanbaseWeb.Graphql.ChartConfigurationTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
+
   import Absinthe.Resolution.Helpers, only: [dataloader: 1]
 
+  alias SanbaseWeb.Graphql.Resolvers.ChartConfigurationResolver
+  alias SanbaseWeb.Graphql.Resolvers.VoteResolver
   alias SanbaseWeb.Graphql.SanbaseRepo
-  alias SanbaseWeb.Graphql.Resolvers.{ChartConfigurationResolver, VoteResolver}
 
   input_object :project_chart_input_object do
     field(:title, :string)

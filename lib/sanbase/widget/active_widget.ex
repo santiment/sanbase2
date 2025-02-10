@@ -1,8 +1,9 @@
 defmodule Sanbase.Widget.ActiveWidget do
+  @moduledoc false
   use Ecto.Schema
 
-  import Ecto.Query
   import Ecto.Changeset
+  import Ecto.Query
 
   alias Sanbase.Repo
 
@@ -22,11 +23,7 @@ defmodule Sanbase.Widget.ActiveWidget do
     |> validate_required([:title, :is_active])
   end
 
-  def get_active_widgets() do
-    from(
-      widget in __MODULE__,
-      where: widget.is_active == true
-    )
-    |> Repo.all()
+  def get_active_widgets do
+    Repo.all(from(widget in __MODULE__, where: widget.is_active == true))
   end
 end

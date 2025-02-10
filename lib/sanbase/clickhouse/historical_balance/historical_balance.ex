@@ -7,9 +7,9 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
 
   import Sanbase.Utils.Transform, only: [maybe_sort: 3]
 
-  alias Sanbase.Project
   alias Sanbase.BlockchainAddress
   alias Sanbase.Clickhouse.HistoricalBalance.XrpBalance
+  alias Sanbase.Project
 
   @balances_aggregated_blockchains [
     "ethereum",
@@ -20,7 +20,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   ]
 
   @supported_infrastructures ["BCH", "BNB", "BEP2", "BTC", "LTC", "XRP", "ETH"]
-  def supported_infrastructures(), do: @supported_infrastructures
+  def supported_infrastructures, do: @supported_infrastructures
 
   @type selector :: %{
           optional(:infrastructure) => String.t(),
@@ -62,18 +62,20 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   @spec assets_held_by_address(map(), Keyword.t()) ::
           {:ok, list(map())} | {:error, String.t()}
   def assets_held_by_address(%{infrastructure: infr, address: address}, opts \\ []) do
-    case selector_to_args(%{infrastructure: infr}) do
-      %{blockchain: blockchain}
-      when balances_aggregated_blockchain?(blockchain) ->
-        Sanbase.Balance.assets_held_by_address(address, opts)
+    case_result =
+      case selector_to_args(%{infrastructure: infr}) do
+        %{blockchain: blockchain}
+        when balances_aggregated_blockchain?(blockchain) ->
+          Sanbase.Balance.assets_held_by_address(address, opts)
 
-      %{module: module} ->
-        module.assets_held_by_address(address)
+        %{module: module} ->
+          module.assets_held_by_address(address)
 
-      {:error, error} ->
-        {:error, error}
-    end
-    |> maybe_sort(:balance, :desc)
+        {:error, error} ->
+          {:error, error}
+      end
+
+    maybe_sort(case_result, :balance, :desc)
   end
 
   @doc ~s"""
@@ -86,18 +88,20 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   @spec usd_value_address_change(map(), DateTime.t()) ::
           {:ok, list(map())} | {:error, String.t()}
   def usd_value_address_change(%{infrastructure: infr, address: address}, datetime) do
-    case selector_to_args(%{infrastructure: infr}) do
-      %{blockchain: blockchain}
-      when balances_aggregated_blockchain?(blockchain) ->
-        Sanbase.Balance.usd_value_address_change(address, datetime)
+    case_result =
+      case selector_to_args(%{infrastructure: infr}) do
+        %{blockchain: blockchain}
+        when balances_aggregated_blockchain?(blockchain) ->
+          Sanbase.Balance.usd_value_address_change(address, datetime)
 
-      %{module: module} ->
-        module.usd_value_address_change(address, datetime)
+        %{module: module} ->
+          module.usd_value_address_change(address, datetime)
 
-      {:error, error} ->
-        {:error, error}
-    end
-    |> maybe_sort(:usd_value_change, :desc)
+        {:error, error} ->
+          {:error, error}
+      end
+
+    maybe_sort(case_result, :usd_value_change, :desc)
   end
 
   @doc ~s"""
@@ -110,18 +114,20 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   @spec usd_value_held_by_address(map()) ::
           {:ok, list(map())} | {:error, String.t()}
   def usd_value_held_by_address(%{infrastructure: infr, address: address}) do
-    case selector_to_args(%{infrastructure: infr}) do
-      %{blockchain: blockchain}
-      when balances_aggregated_blockchain?(blockchain) ->
-        Sanbase.Balance.usd_value_held_by_address(address)
+    case_result =
+      case selector_to_args(%{infrastructure: infr}) do
+        %{blockchain: blockchain}
+        when balances_aggregated_blockchain?(blockchain) ->
+          Sanbase.Balance.usd_value_held_by_address(address)
 
-      %{module: module} ->
-        module.usd_value_held_by_address(address)
+        %{module: module} ->
+          module.usd_value_held_by_address(address)
 
-      {:error, error} ->
-        {:error, error}
-    end
-    |> maybe_sort(:current_usd_value, :desc)
+        {:error, error} ->
+          {:error, error}
+      end
+
+    maybe_sort(case_result, :current_usd_value, :desc)
   end
 
   @doc ~s"""
@@ -200,11 +206,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
                      not is_map_key(map, :slug) and
                      map.infrastructure == "ETH")
 
-  def selector_to_args(
-        %{infrastructure: "ETH", contract: contract, decimals: decimals} = selector
-      )
-      when is_binary(contract) and is_number(decimals) and decimals > 0 and
-             not is_ethereum(selector) do
+  def selector_to_args(%{infrastructure: "ETH", contract: contract, decimals: decimals} = selector)
+      when is_binary(contract) and is_number(decimals) and decimals > 0 and not is_ethereum(selector) do
     %{
       module: :none,
       asset: String.downcase(contract),
@@ -236,8 +239,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
     end
   end
 
-  def selector_to_args(%{infrastructure: "ETH", slug: slug} = selector)
-      when is_binary(slug) do
+  def selector_to_args(%{infrastructure: "ETH", slug: slug} = selector) when is_binary(slug) do
     with %{contract: contract, decimals: decimals} <-
            get_project_details(selector) do
       %{
@@ -336,9 +338,10 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   end
 
   def selector_to_args(%{slug: slug} = selector) when not is_nil(slug) do
-    with %{infrastructure: _} = map <- get_project_details(%{slug: slug}) do
-      %{original_selector: selector} |> Map.merge(map) |> selector_to_args()
-    else
+    case get_project_details(%{slug: slug}) do
+      %{infrastructure: _} = map ->
+        %{original_selector: selector} |> Map.merge(map) |> selector_to_args()
+
       {:error, {:missing_contract, _}} ->
         {:error,
          "Invalid historical balance selector. The provided slug has no contract data available. Provided selector: #{inspect(selector)}"}

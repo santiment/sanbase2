@@ -6,9 +6,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
   import Absinthe.Resolution.Helpers, except: [async: 1]
   import SanbaseWeb.Graphql.Helpers.Utils, only: [resolution_to_user_id_or_nil: 1]
 
+  alias Sanbase.Accounts.User
   alias Sanbase.Dashboard
-  alias SanbaseWeb.Graphql.SanbaseDataloader
   alias SanbaseWeb.Graphql.Resolvers.QueriesResolver
+  alias SanbaseWeb.Graphql.SanbaseDataloader
 
   require Logger
 
@@ -17,11 +18,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
     Dashboard.Autocomplete.get_data(opts)
   end
 
-  def user_public_dashboards(%Sanbase.Accounts.User{} = user, _args, _resolution) do
+  def user_public_dashboards(%User{} = user, _args, _resolution) do
     Dashboard.get_user_public_dashboard_schemas(user.id)
   end
 
-  def user_dashboards(%Sanbase.Accounts.User{} = user, _args, _resolution) do
+  def user_dashboards(%User{} = user, _args, _resolution) do
     Dashboard.get_user_dashboard_schemas(user.id)
   end
 
@@ -41,7 +42,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
   end
 
   def delete_dashboard(_root, args, %{context: %{auth: %{current_user: user}}}) do
-    with true <- dashboard_owner?(args.id, user.id) do
+    if dashboard_owner?(args.id, user.id) do
       Dashboard.delete(args.id)
     end
   end
@@ -71,11 +72,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
     end
   end
 
-  def compute_dashboard_panel(
-        _root,
-        args,
-        %{context: %{auth: %{current_user: user}}} = resolution
-      ) do
+  def compute_dashboard_panel(_root, args, %{context: %{auth: %{current_user: user}}} = resolution) do
     %{dashboard_id: dashboard_id, panel_id: panel_id} = args
 
     with true <- can_view_dashboard?(dashboard_id, user.id),
@@ -84,11 +81,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
     end
   end
 
-  def compute_and_store_dashboard_panel(
-        _root,
-        args,
-        %{context: %{auth: %{current_user: user}}} = resolution
-      ) do
+  def compute_and_store_dashboard_panel(_root, args, %{context: %{auth: %{current_user: user}}} = resolution) do
     %{dashboard_id: dashboard_id, panel_id: panel_id} = args
     # storing requires edit access, not just view access
     with true <- dashboard_owner?(dashboard_id, user.id),
@@ -137,17 +130,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
   def get_dashboard_panel_cache(_root, args, resolution) do
     user_id_or_nil = resolution_to_user_id_or_nil(resolution)
 
-    with true <- can_view_dashboard?(args.dashboard_id, user_id_or_nil),
-         {:ok, panel_cache} <- Dashboard.load_panel_cache(args.dashboard_id, args.panel_id) do
-      {:ok, panel_cache}
+    if can_view_dashboard?(args.dashboard_id, user_id_or_nil) do
+      Dashboard.load_panel_cache(args.dashboard_id, args.panel_id)
     end
   end
 
-  def compute_raw_clickhouse_query(
-        _root,
-        args,
-        %{context: %{auth: %{current_user: user}}} = resolution
-      ) do
+  def compute_raw_clickhouse_query(_root, args, %{context: %{auth: %{current_user: user}}} = resolution) do
     with true <- can_run_computation?(user.id),
          true <- Dashboard.Query.valid_sql?(args),
          {:ok, query_result} <-
@@ -161,7 +149,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
   end
 
   def get_dashboard_schema_history_list(_root, args, %{context: %{auth: %{current_user: user}}}) do
-    with true <- dashboard_owner?(args.id, user.id) do
+    if dashboard_owner?(args.id, user.id) do
       opts = [page: args.page, page_size: args.page_size]
       Dashboard.History.get_history_list(args.id, opts)
     end
@@ -224,15 +212,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
   end
 
   defp can_run_computation?(user_id) do
-    case Dashboard.has_credits_left?(user_id) do
-      true -> true
-      false -> {:error, "The user with id #{user_id} has no credits left"}
+    if Dashboard.has_credits_left?(user_id) do
+      true
+    else
+      {:error, "The user with id #{user_id} has no credits left"}
     end
   end
 
-  defp get_query_metadata(%{
-         context: %{requested_product: product_code, auth: %{current_user: user}}
-       }) do
+  defp get_query_metadata(%{context: %{requested_product: product_code, auth: %{current_user: user}}}) do
     %{sanbase_user_id: user.id, product: String.downcase(to_string(product_code))}
   end
 end

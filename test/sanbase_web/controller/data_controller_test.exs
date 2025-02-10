@@ -3,13 +3,14 @@ defmodule SanbaseWeb.DataControllerTest do
 
   import Sanbase.Factory
 
+  alias Sanbase.Model.LatestCoinmarketcapData
   alias Sanbase.Project
   alias Sanbase.Repo
-  alias Sanbase.Model.LatestCoinmarketcapData
 
   setup do
     p1 =
-      insert(:random_erc20_project,
+      :random_erc20_project
+      |> insert(
         github_organizations: [
           build(:github_organization),
           build(:github_organization),
@@ -62,28 +63,26 @@ defmodule SanbaseWeb.DataControllerTest do
           %{"social_volume_query" => "x OR y", "rank" => nil, "telegram_chat_id" => nil}
       end
 
-    %{
-      "contract" => contract,
-      "decimals" => decimals,
-      "ticker" => project.ticker,
-      "slug" => project.slug,
-      "name" => project.name,
-      "infrastructure" => infrastructure.code,
-      "github_organizations" => github_organizations |> Enum.sort() |> Enum.join(","),
-      "coinmarketcap_id" => project.coinmarketcap_id,
-      "twitter_handle" => twitter_handle
-    }
-    |> Map.merge(new_fields)
+    Map.merge(
+      %{
+        "contract" => contract,
+        "decimals" => decimals,
+        "ticker" => project.ticker,
+        "slug" => project.slug,
+        "name" => project.name,
+        "infrastructure" => infrastructure.code,
+        "github_organizations" => github_organizations |> Enum.sort() |> Enum.join(","),
+        "coinmarketcap_id" => project.coinmarketcap_id,
+        "twitter_handle" => twitter_handle
+      },
+      new_fields
+    )
   end
 
   defp update_latest_coinmarketcap_data(project, args) do
     %LatestCoinmarketcapData{}
     |> LatestCoinmarketcapData.changeset(
-      %{
-        coinmarketcap_id: project.slug,
-        update_time: Timex.now()
-      }
-      |> Map.merge(args)
+      Map.merge(%{coinmarketcap_id: project.slug, update_time: DateTime.utc_now()}, args)
     )
     |> Repo.insert_or_update()
 

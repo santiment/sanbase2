@@ -1,4 +1,5 @@
 defmodule Sanbase.Project.Description do
+  @moduledoc false
   alias Sanbase.Project
 
   @spec describe(%Project{}) :: String.t()

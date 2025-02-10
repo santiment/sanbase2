@@ -1,12 +1,12 @@
 defmodule Sanbase.SocialData.SocialDominance do
+  @moduledoc false
   import Sanbase.Utils.ErrorHandling
 
+  alias Sanbase.SocialData
   alias Sanbase.SocialData.SocialHelper
+  alias Sanbase.Utils.Config
 
   require Mockery.Macro
-
-  alias Sanbase.Utils.Config
-  alias Sanbase.SocialData
 
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 
@@ -14,8 +14,7 @@ defmodule Sanbase.SocialData.SocialDominance do
   @hours_back_ensure_has_data 3
   @trending_words_size 10
 
-  def social_dominance(selector, from, to, interval, source)
-      when source in [:all, "all", :total] do
+  def social_dominance(selector, from, to, interval, source) when source in [:all, "all", :total] do
     social_dominance(selector, from, to, interval, SocialHelper.sources_total_string())
   end
 
@@ -26,16 +25,17 @@ defmodule Sanbase.SocialData.SocialDominance do
       # If `text_volume` is empty replace it with 0 mentions, so the end result
       # will be with all dominance = 0
       text_volume_map =
-        text_volume |> Enum.into(%{}, fn elem -> {elem.datetime, elem.mentions_count} end)
+        Map.new(text_volume, fn elem -> {elem.datetime, elem.mentions_count} end)
 
       result =
-        Enum.map(total_volume, fn %{datetime: datetime, mentions_count: total_mentions} ->
+        total_volume
+        |> Enum.map(fn %{datetime: datetime, mentions_count: total_mentions} ->
           text_mentions = Map.get(text_volume_map, datetime, 0)
           dominance = Sanbase.Math.percent_of(text_mentions, total_mentions) || +0.0
 
           %{
             datetime: datetime,
-            dominance: dominance |> Sanbase.Math.round_float()
+            dominance: Sanbase.Math.round_float(dominance)
           }
         end)
         |> Enum.sort_by(&DateTime.to_unix(&1.datetime))
@@ -51,9 +51,7 @@ defmodule Sanbase.SocialData.SocialDominance do
         social_dominance_result(result)
 
       {:ok, %{status_code: status}} ->
-        warn_result(
-          "Error status #{status} fetching social dominance for project with slug #{inspect(slug)}}"
-        )
+        warn_result("Error status #{status} fetching social dominance for project with slug #{inspect(slug)}}")
 
       {:error, %HTTPoison.Error{} = error} ->
         error_result(
@@ -63,7 +61,7 @@ defmodule Sanbase.SocialData.SocialDominance do
   end
 
   def words_social_dominance(word_or_words, opts) do
-    words = List.wrap(word_or_words) |> Enum.reject(&(&1 == "***"))
+    words = word_or_words |> List.wrap() |> Enum.reject(&(&1 == "***"))
     %{from: from, to: to, interval: interval, source: source} = social_dominance_args()
 
     with {:ok, words_volume} <-
@@ -76,7 +74,7 @@ defmodule Sanbase.SocialData.SocialDominance do
     end
   end
 
-  def social_dominance_trending_words() do
+  def social_dominance_trending_words do
     %{from: from, to: to, interval: interval, source: source} = social_dominance_args()
 
     with {:ok, words} when words != [] <- get_currently_trending_words_list(),
@@ -90,7 +88,7 @@ defmodule Sanbase.SocialData.SocialDominance do
     end
   end
 
-  defp get_currently_trending_words_list() do
+  defp get_currently_trending_words_list do
     with {:ok, trending_words} <-
            SocialData.TrendingWords.get_currently_trending_words(@trending_words_size, :all) do
       words = Enum.map(trending_words, & &1.word)
@@ -102,7 +100,8 @@ defmodule Sanbase.SocialData.SocialDominance do
     # The volumes are fetched as lists. Take the last value in each list and use it
     # to compute the dominance
     words_mentions_sum =
-      Enum.map(words_volume, &List.last(&1.timeseries_data).mentions_count)
+      words_volume
+      |> Enum.map(&List.last(&1.timeseries_data).mentions_count)
       |> Enum.sum()
 
     total_mentions = List.last(total_volume).mentions_count
@@ -114,14 +113,12 @@ defmodule Sanbase.SocialData.SocialDominance do
 
   defp compute_dominance_per_word_value(words_volume, total_volume) do
     words_volume_map =
-      words_volume
-      |> Enum.into(%{}, fn w -> {w.word, List.last(w.timeseries_data).mentions_count} end)
+      Map.new(words_volume, fn w -> {w.word, List.last(w.timeseries_data).mentions_count} end)
 
     total_mentions = List.last(total_volume).mentions_count
 
     words_dominance =
-      words_volume_map
-      |> Enum.map(fn {word, mentions} ->
+      Enum.map(words_volume_map, fn {word, mentions} ->
         %{
           word: word,
           social_dominance: Sanbase.Math.percent_of(mentions, total_mentions) || +0.0
@@ -150,7 +147,8 @@ defmodule Sanbase.SocialData.SocialDominance do
 
   defp social_dominance_result(%{"data" => map}) do
     result =
-      Enum.map(map, fn {datetime, value} ->
+      map
+      |> Enum.map(fn {datetime, value} ->
         %{
           datetime: Sanbase.DateTimeUtils.from_iso8601!(datetime),
           dominance: value
@@ -161,7 +159,7 @@ defmodule Sanbase.SocialData.SocialDominance do
     {:ok, result}
   end
 
-  defp social_dominance_args() do
+  defp social_dominance_args do
     now = DateTime.utc_now()
 
     %{
@@ -172,7 +170,7 @@ defmodule Sanbase.SocialData.SocialDominance do
     }
   end
 
-  defp metrics_hub_url() do
+  defp metrics_hub_url do
     Config.module_get(SocialData, :metricshub_url)
   end
 end

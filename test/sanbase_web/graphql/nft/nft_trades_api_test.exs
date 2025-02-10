@@ -1,8 +1,8 @@
 defmodule SanbaseWeb.Graphql.NftTradesApiTest do
   use SanbaseWeb.ConnCase, async: true
 
-  import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
+  import SanbaseWeb.Graphql.TestHelpers
 
   setup do
     user = insert(:user)
@@ -47,7 +47,8 @@ defmodule SanbaseWeb.Graphql.NftTradesApiTest do
       ]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    (&Sanbase.ClickhouseRepo.query/2)
+    |> Sanbase.Mock.prepare_mock2({:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       from = ~U[2021-11-01 00:00:00Z]
       to = ~U[2021-12-15 00:00:00Z]
@@ -82,8 +83,7 @@ defmodule SanbaseWeb.Graphql.NftTradesApiTest do
                    "address" => "0xd387a6e4e84a6c86bd90c158c6028a58cc8ac459",
                    "labelKey" => "NFT_INFLUENCER"
                  },
-                 "trxHash" =>
-                   "0xa497bf3e9ea849361fc78fc405861abf97ed08addb5ca4e3da688331ffa38344",
+                 "trxHash" => "0xa497bf3e9ea849361fc78fc405861abf97ed08addb5ca4e3da688331ffa38344",
                  "priceUsd" => 1.5
                },
                %{
@@ -105,8 +105,7 @@ defmodule SanbaseWeb.Graphql.NftTradesApiTest do
                    "address" => "0x694cd849bc80f3f772ab9aef4be2df3af054dc6b",
                    "labelKey" => nil
                  },
-                 "trxHash" =>
-                   "0xc98a6ed5c0a139d7437d96d67e120f0ba568915daeb46182bdb27ad37367c0c8",
+                 "trxHash" => "0xc98a6ed5c0a139d7437d96d67e120f0ba568915daeb46182bdb27ad37367c0c8",
                  "priceUsd" => 1.65
                }
              ]
@@ -124,7 +123,8 @@ defmodule SanbaseWeb.Graphql.NftTradesApiTest do
 
     rows = [["BAYC"]]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    (&Sanbase.ClickhouseRepo.query/2)
+    |> Sanbase.Mock.prepare_mock2({:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       assert execute_query(context.conn, query, "getNftCollectionByContract")["nftCollection"] ==
                "BAYC"

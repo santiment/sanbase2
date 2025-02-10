@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddSocialVolumeQueryTable do
+  @moduledoc false
   use Ecto.Migration
 
   @table "project_social_volume_query"

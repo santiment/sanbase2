@@ -1,11 +1,12 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfo do
+  @moduledoc false
   use Tesla
 
-  alias Sanbase.Project
   alias Sanbase.ExternalServices.Coinmarketcap
+  alias Sanbase.Project
+  alias Sanbase.Utils.Config
 
   require Logger
-  alias Sanbase.Utils.Config
 
   defstruct [:slug, :logo]
 
@@ -24,16 +25,15 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfo do
     Logger.info("[CMC] Fetching data for #{projects_count} projects")
 
     coinmarketcap_ids =
-      Enum.map(projects, &Project.coinmarketcap_id/1)
+      projects
+      |> Enum.map(&Project.coinmarketcap_id/1)
       |> Enum.sort()
 
     "v2/cryptocurrency/info?slug=#{Enum.join(coinmarketcap_ids, ",")}"
     |> get()
     |> case do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
-        Logger.info(
-          "[CMC] Successfully fetched cryptocurrency info for: #{projects_count} projects."
-        )
+        Logger.info("[CMC] Successfully fetched cryptocurrency info for: #{projects_count} projects.")
 
         {:ok, parse_json(body)}
 

@@ -18,7 +18,8 @@ defmodule SanbaseWeb.Graphql.Schema do
   use Absinthe.Schema
 
   alias SanbaseWeb.Graphql
-  alias SanbaseWeb.Graphql.{SanbaseRepo, SanbaseDataloader}
+  alias SanbaseWeb.Graphql.SanbaseDataloader
+  alias SanbaseWeb.Graphql.SanbaseRepo
 
   # Types
   import_types(Absinthe.Plug.Types)
@@ -130,15 +131,15 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.Schema.WebinarQueries)
   import_types(Graphql.Schema.WidgetQueries)
 
-  def dataloader() do
-    Dataloader.new(timeout: :timer.seconds(20), get_policy: :return_nil_on_error)
+  def dataloader do
+    [timeout: :timer.seconds(20), get_policy: :return_nil_on_error]
+    |> Dataloader.new()
     |> Dataloader.add_source(SanbaseRepo, SanbaseRepo.data())
     |> Dataloader.add_source(SanbaseDataloader, SanbaseDataloader.data())
   end
 
   def context(ctx) do
-    ctx
-    |> Map.put(:loader, dataloader())
+    Map.put(ctx, :loader, dataloader())
   end
 
   def plugins do

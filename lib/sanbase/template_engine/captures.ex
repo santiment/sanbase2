@@ -1,5 +1,9 @@
 defmodule Sanbase.TemplateEngine.Captures do
+  @moduledoc false
+  alias Sanbase.TemplateEngine.TemplateEngineError
+
   defmodule CaptureMap do
+    @moduledoc false
     @type t :: %__MODULE__{
             code?: boolean(),
             key: String.t(),
@@ -41,7 +45,8 @@ defmodule Sanbase.TemplateEngine.Captures do
   # where elements are tuples. The first element of the tuple is the whole capture
   # and the second one is the trimmed inner content.
   defp get_regex_captures(template) do
-    Regex.scan(~r/\{\{(?<capture_param>.*?)\}\}|\{\%(?<capture_code>.*?)\%\}/, template)
+    ~r/\{\{(?<capture_param>.*?)\}\}|\{\%(?<capture_code>.*?)\%\}/
+    |> Regex.scan(template)
     |> Enum.map(fn
       [a, b] -> [a, String.trim(b)]
       [a, "", b] -> [a, String.trim(b)]
@@ -55,8 +60,7 @@ defmodule Sanbase.TemplateEngine.Captures do
     lang_map = find_lang_definition_capture(captures)
 
     capture_maps =
-      captures
-      |> Enum.map(fn {[key, inner], id} ->
+      Enum.map(captures, fn {[key, inner], id} ->
         parse_template_inner(key, inner, id, lang_map)
       end)
 
@@ -111,7 +115,7 @@ defmodule Sanbase.TemplateEngine.Captures do
   end
 
   defp raise_lang_definition_error(definition) do
-    raise(Sanbase.TemplateEngine.TemplateEngineError,
+    raise(TemplateEngineError,
       message: """
       The lang definition is invalid: #{definition}.
       It must be in the format: lang=<lang>:<version> (eg. lang=san:1.0)
@@ -125,7 +129,7 @@ defmodule Sanbase.TemplateEngine.Captures do
         :ok
 
       %{key: key} ->
-        raise(Sanbase.TemplateEngine.TemplateEngineError,
+        raise(TemplateEngineError,
           message: """
           Error parsing the template. The template contains a key that itself contains
           { or }. This means that an opening or closing bracket is missing.

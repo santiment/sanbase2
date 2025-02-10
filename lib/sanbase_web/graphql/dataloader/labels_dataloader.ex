@@ -1,7 +1,8 @@
 defmodule SanbaseWeb.Graphql.LabelsDataloader do
+  @moduledoc false
   alias Sanbase.Clickhouse.Label
 
-  def data(), do: Dataloader.KV.new(&query/2)
+  def data, do: Dataloader.KV.new(&query/2)
 
   def query(:address_labels, addresses) do
     addresses

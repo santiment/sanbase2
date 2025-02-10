@@ -2,6 +2,8 @@ defmodule Sanbase.Alerts.FreezeAlertsTest do
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
+
+  alias Sanbase.Alert.Job
   alias Sanbase.Alert.UserTrigger
 
   setup do
@@ -40,7 +42,8 @@ defmodule Sanbase.Alerts.FreezeAlertsTest do
   end
 
   defp update_inserted_at(trigger, datetime) do
-    Ecto.Changeset.change(trigger, %{inserted_at: datetime})
+    trigger
+    |> Ecto.Changeset.change(%{inserted_at: datetime})
     |> Sanbase.Repo.update!()
   end
 
@@ -55,7 +58,7 @@ defmodule Sanbase.Alerts.FreezeAlertsTest do
 
     trigger = update_inserted_at(trigger, naive_days_ago(20))
 
-    Sanbase.Alert.Job.freeze_alerts()
+    Job.freeze_alerts()
 
     assert {:ok, trigger} = UserTrigger.by_user_and_id(trigger.user_id, trigger.id)
     assert UserTrigger.frozen?(trigger) == false
@@ -66,7 +69,7 @@ defmodule Sanbase.Alerts.FreezeAlertsTest do
 
     trigger = update_inserted_at(trigger, naive_days_ago(31))
 
-    Sanbase.Alert.Job.freeze_alerts()
+    Job.freeze_alerts()
 
     assert {:ok, trigger} = UserTrigger.by_user_and_id(trigger.user_id, trigger.id)
     assert {:error, error_msg} = UserTrigger.frozen?(trigger)
@@ -79,7 +82,7 @@ defmodule Sanbase.Alerts.FreezeAlertsTest do
     trigger = update_inserted_at(trigger, naive_days_ago(31))
     insert(:subscription_pro_sanbase, user: user)
 
-    Sanbase.Alert.Job.freeze_alerts()
+    Job.freeze_alerts()
 
     assert {:ok, trigger} = UserTrigger.by_user_and_id(trigger.user_id, trigger.id)
     assert UserTrigger.frozen?(trigger) == false
@@ -88,9 +91,9 @@ defmodule Sanbase.Alerts.FreezeAlertsTest do
   test "does not freeze @santiment.net user's alerts", context do
     %{user: user, trigger: trigger} = context
     # bypass email candidate verification
-    Ecto.Changeset.change(user, %{email: "test@santiment.net"}) |> Sanbase.Repo.update!()
+    user |> Ecto.Changeset.change(%{email: "test@santiment.net"}) |> Sanbase.Repo.update!()
     trigger = update_inserted_at(trigger, naive_days_ago(31))
-    Sanbase.Alert.Job.freeze_alerts()
+    Job.freeze_alerts()
 
     assert {:ok, trigger} = UserTrigger.by_user_and_id(trigger.user_id, trigger.id)
     assert UserTrigger.frozen?(trigger) == false
@@ -135,7 +138,7 @@ defmodule Sanbase.Alerts.FreezeAlertsTest do
     trigger = update_inserted_at(trigger, naive_days_ago(31))
     insert(:subscription_pro_sanbase, user: user)
 
-    Sanbase.Alert.Job.freeze_alerts()
+    Job.freeze_alerts()
 
     assert {:ok, trigger} = UserTrigger.by_user_and_id(trigger.user_id, trigger.id)
     assert UserTrigger.frozen?(trigger) == false
@@ -143,10 +146,11 @@ defmodule Sanbase.Alerts.FreezeAlertsTest do
     # Rever the is_frozen back to true. This simulates the case when the event
     # is emitted but is not handled. This can happen if the pod restarts after
     # the event is emitted and before it's handled.
-    UserTrigger.update_changeset(trigger, %{trigger: %{is_frozen: true}})
+    trigger
+    |> UserTrigger.update_changeset(%{trigger: %{is_frozen: true}})
     |> Sanbase.Repo.update!()
 
-    Sanbase.Alert.Job.unfreeze_alerts()
+    Job.unfreeze_alerts()
 
     assert {:ok, trigger} = UserTrigger.by_user_and_id(trigger.user_id, trigger.id)
     assert UserTrigger.frozen?(trigger) == false

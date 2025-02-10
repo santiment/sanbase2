@@ -1,12 +1,14 @@
 defmodule Sanbase.MonitoredTwitterHandle do
+  @moduledoc false
   use Ecto.Schema
 
-  alias Sanbase.Repo
+  import Ecto.Changeset
+  import Ecto.Query
+
   alias Sanbase.Accounts.User
   alias Sanbase.Billing.UserPromoCode
-
-  import Ecto.Query
-  import Ecto.Changeset
+  alias Sanbase.Repo
+  alias Sanbase.Utils.ErrorHandling
 
   @type t :: %__MODULE__{
           handle: String.t(),
@@ -72,7 +74,8 @@ defmodule Sanbase.MonitoredTwitterHandle do
   def update_status(record_id, status, comment \\ nil) when status in @statuses do
     # The status is updated from an admin panel
     result =
-      Repo.get!(__MODULE__, record_id)
+      __MODULE__
+      |> Repo.get!(record_id)
       |> change(%{status: status, comment: comment})
       |> Repo.update()
 
@@ -86,7 +89,7 @@ defmodule Sanbase.MonitoredTwitterHandle do
     end
   end
 
-  def list_all_approved() do
+  def list_all_approved do
     # Requested by the social data team -- do not include handles that are approved, but with a
     # comment. These could be handles that are sharing content not in english, not crypto, or
     # crypto and english, but self-promotion. The only times comments are used are to provide
@@ -100,7 +103,7 @@ defmodule Sanbase.MonitoredTwitterHandle do
     Repo.all(query)
   end
 
-  def list_all_submissions() do
+  def list_all_submissions do
     query = from(m in __MODULE__, where: m.origin == "graphql_api", preload: [:user])
 
     Repo.all(query)
@@ -124,12 +127,12 @@ defmodule Sanbase.MonitoredTwitterHandle do
   defp maybe_transform_error({:ok, _} = result), do: result
 
   defp maybe_transform_error({:error, changeset}) do
-    case Sanbase.Utils.ErrorHandling.changeset_errors(changeset) do
+    case ErrorHandling.changeset_errors(changeset) do
       %{handle: ["has already been taken"]} ->
         {:error, "The provided twitter handle is already being monitored."}
 
       _ ->
-        msg = Sanbase.Utils.ErrorHandling.changeset_errors_string(changeset)
+        msg = ErrorHandling.changeset_errors_string(changeset)
         {:error, msg}
     end
   end
@@ -165,7 +168,7 @@ defmodule Sanbase.MonitoredTwitterHandle do
       Sanbase.StripeApi.create_promo_coupon(%{
         duration: "once",
         percent_off: percent_off,
-        redeem_by: redeem_by |> DateTime.to_unix(),
+        redeem_by: DateTime.to_unix(redeem_by),
         metadata: %{campaign: @campaign, product: "SANBASE"},
         max_redemptions: 1
       })

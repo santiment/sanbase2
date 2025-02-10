@@ -1,13 +1,14 @@
 defmodule Sanbase.DiscordConsumer do
+  @moduledoc false
   use Nostrum.Consumer
 
-  require Logger
-
-  alias Sanbase.DiscordBot.LegacyCommandHandler
-  alias Sanbase.DiscordBot.CommandHandler
-  alias Sanbase.DiscordBot.CodeHandler
-  alias Nostrum.Struct.Interaction
   alias Nostrum.Struct.ApplicationCommandInteractionData
+  alias Nostrum.Struct.Interaction
+  alias Sanbase.DiscordBot.CodeHandler
+  alias Sanbase.DiscordBot.CommandHandler
+  alias Sanbase.DiscordBot.LegacyCommandHandler
+
+  require Logger
 
   @commands [
     %{
@@ -92,7 +93,8 @@ defmodule Sanbase.DiscordConsumer do
       msg_contains_bot_mention?(msg) ->
         warm_up(msg)
 
-        CommandHandler.handle_command("mention", msg)
+        "mention"
+        |> CommandHandler.handle_command(msg)
         |> case do
           {:ok, _} -> log(msg, "MENTION COMMAND SUCCESS")
           :ok -> log(msg, "MENTION COMMAND SUCCESS")
@@ -110,26 +112,19 @@ defmodule Sanbase.DiscordConsumer do
     Nostrum.Api.bulk_overwrite_global_application_commands(@commands)
   end
 
-  def handle_event({
-        :INTERACTION_CREATE,
-        %Interaction{data: %ApplicationCommandInteractionData{name: command}} = interaction,
-        _ws_state
-      })
-      when command in [
-             "query",
-             "help",
-             "list",
-             "chart",
-             "code",
-             "summary"
-           ] do
+  def handle_event(
+        {:INTERACTION_CREATE, %Interaction{data: %ApplicationCommandInteractionData{name: command}} = interaction,
+         _ws_state}
+      )
+      when command in ["query", "help", "list", "chart", "code", "summary"] do
     warm_up(interaction)
 
     case command do
       cmd when cmd in ["code", "summary"] ->
         case CodeHandler.discord_metadata(interaction) do
           %{user_is_team_member: true} = metadata ->
-            CodeHandler.handle_interaction(command, interaction, metadata)
+            command
+            |> CodeHandler.handle_interaction(interaction, metadata)
             |> handle_response(cmd, interaction, retry: false)
 
           _ ->
@@ -137,28 +132,27 @@ defmodule Sanbase.DiscordConsumer do
         end
 
       cmd when cmd in ["query", "help", "list", "chart"] ->
-        LegacyCommandHandler.handle_interaction(command, interaction)
+        command
+        |> LegacyCommandHandler.handle_interaction(interaction)
         |> handle_response(command, interaction)
     end
   end
 
-  def handle_event({
-        :INTERACTION_CREATE,
-        %Interaction{data: %ApplicationCommandInteractionData{custom_id: "run"}} = interaction,
-        _ws_state
-      }) do
+  def handle_event(
+        {:INTERACTION_CREATE, %Interaction{data: %ApplicationCommandInteractionData{custom_id: "run"}} = interaction,
+         _ws_state}
+      ) do
     warm_up(interaction)
 
-    LegacyCommandHandler.handle_interaction("run", interaction)
+    "run"
+    |> LegacyCommandHandler.handle_interaction(interaction)
     |> handle_response("run", interaction)
   end
 
-  def handle_event({
-        :INTERACTION_CREATE,
-        %Interaction{data: %ApplicationCommandInteractionData{custom_id: custom_id}} =
-          interaction,
-        _ws_state
-      }) do
+  def handle_event(
+        {:INTERACTION_CREATE, %Interaction{data: %ApplicationCommandInteractionData{custom_id: custom_id}} = interaction,
+         _ws_state}
+      ) do
     warm_up(interaction)
     [command, id] = String.split(custom_id, "_")
 
@@ -166,7 +160,8 @@ defmodule Sanbase.DiscordConsumer do
       command in ["rerun", "pin", "unpin", "show"] ->
         panel_id = id
 
-        LegacyCommandHandler.handle_interaction(command, interaction, panel_id)
+        command
+        |> LegacyCommandHandler.handle_interaction(interaction, panel_id)
         |> handle_response({command, panel_id}, interaction)
 
       command in ["up", "down"] ->
@@ -183,7 +178,8 @@ defmodule Sanbase.DiscordConsumer do
       ] ->
         case CodeHandler.discord_metadata(interaction) do
           %{user_is_team_member: true} = metadata ->
-            CodeHandler.handle_interaction(command, interaction, id, metadata)
+            command
+            |> CodeHandler.handle_interaction(interaction, id, metadata)
             |> handle_response({command, id}, interaction)
 
           _ ->
@@ -202,8 +198,7 @@ defmodule Sanbase.DiscordConsumer do
   end
 
   defp msg_contains_bot_mention?(msg) do
-    msg.mentions
-    |> Enum.any?(&(&1.id == CommandHandler.bot_id()))
+    Enum.any?(msg.mentions, &(&1.id == CommandHandler.bot_id()))
   end
 
   defp log(msg_or_interaction, log_text, opts \\ [])
@@ -273,17 +268,17 @@ defmodule Sanbase.DiscordConsumer do
         Logger.info("MSG COMMAND SUCCESS #{command} #{msg.content} #{inspect(params)}")
 
       {:error, error} ->
-        Logger.error(
-          "MSG COMMAND ERROR #{command} #{msg.content} #{inspect(params)} #{inspect(error)}"
-        )
+        Logger.error("MSG COMMAND ERROR #{command} #{msg.content} #{inspect(params)} #{inspect(error)}")
     end
   end
 
   defp do_handle_command(msg) do
-    with {:ok, name, sql} <- LegacyCommandHandler.parse_message_command(msg.content) do
-      LegacyCommandHandler.handle_command("run", name, sql, msg)
-      |> handle_msg_response("run", msg)
-    else
+    case LegacyCommandHandler.parse_message_command(msg.content) do
+      {:ok, name, sql} ->
+        "run"
+        |> LegacyCommandHandler.handle_command(name, sql, msg)
+        |> handle_msg_response("run", msg)
+
       {:error, :invalid_command} ->
         LegacyCommandHandler.handle_command("invalid_command", msg)
         LegacyCommandHandler.handle_command("help", msg)
@@ -294,12 +289,14 @@ defmodule Sanbase.DiscordConsumer do
   end
 
   defp retry({command, panel_id}, interaction) do
-    LegacyCommandHandler.handle_interaction(command, interaction, panel_id)
+    command
+    |> LegacyCommandHandler.handle_interaction(interaction, panel_id)
     |> handle_response(command, interaction, retry: false)
   end
 
   defp retry(command, interaction) do
-    LegacyCommandHandler.handle_interaction(command, interaction)
+    command
+    |> LegacyCommandHandler.handle_interaction(interaction)
     |> handle_response(command, interaction, retry: false)
   end
 
@@ -371,9 +368,7 @@ defmodule Sanbase.DiscordConsumer do
   end
 
   defp handle_result(error, msg_or_interaction, retries) when retries > 0 do
-    log(msg_or_interaction, "Unexpected error in WARM UP: #{inspect(error)}. Retrying...",
-      type: :error
-    )
+    log(msg_or_interaction, "Unexpected error in WARM UP: #{inspect(error)}. Retrying...", type: :error)
 
     warm_up(msg_or_interaction, retries - 1)
   end
@@ -382,9 +377,10 @@ defmodule Sanbase.DiscordConsumer do
     log(msg_or_interaction, "WARM UP ERROR: #{inspect(error)}. No more retries.", type: :error)
   end
 
-  def restart_ratelimiter() do
+  def restart_ratelimiter do
     supervisor_pid =
-      Process.whereis(Ratelimiter)
+      Ratelimiter
+      |> Process.whereis()
       |> Process.info()
       |> Keyword.get(:dictionary)
       |> Keyword.get(:"$ancestors")

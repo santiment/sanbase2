@@ -1,4 +1,5 @@
 defmodule Sanbase.SmartContracts.Utils do
+  @moduledoc false
   require Logger
 
   @type address :: String.t()
@@ -53,18 +54,17 @@ defmodule Sanbase.SmartContracts.Utils do
   """
   @spec call_contract(address, contract_function, list(), list()) :: list() | {:error, any()}
   def call_contract(contract, contract_function, args, return_types) do
-    Logger.info(
-      "[EthNode] Eth call contract with function #{get_function_name(contract_function)}."
-    )
+    Logger.info("[EthNode] Eth call contract with function #{get_function_name(contract_function)}.")
 
     function_signature =
-      ABI.encode(contract_function, args)
+      contract_function
+      |> ABI.encode(args)
       |> Base.encode16(case: :lower)
 
-    with {:ok, hex_encoded_binary_response} <-
-           Ethereumex.HttpClient.eth_call(%{data: "0x" <> function_signature, to: contract}) do
-      decode_contract_response(hex_encoded_binary_response, return_types)
-    else
+    case Ethereumex.HttpClient.eth_call(%{data: "0x" <> function_signature, to: contract}) do
+      {:ok, hex_encoded_binary_response} ->
+        decode_contract_response(hex_encoded_binary_response, return_types)
+
       {:error, reason} = error ->
         Logger.warning("Contract call failed: #{inspect(reason)}")
         error
@@ -74,14 +74,12 @@ defmodule Sanbase.SmartContracts.Utils do
   def call_contract_batch(contract, contract_function, args_lists, return_types, opts \\ []) do
     transform_args = Keyword.get(opts, :transform_args_list_fun, fn x -> x end)
 
-    Logger.info(
-      "[EthNode] Eth call contract batch with function #{get_function_name(contract_function)}."
-    )
+    Logger.info("[EthNode] Eth call contract batch with function #{get_function_name(contract_function)}.")
 
     requests =
       Enum.map(args_lists, fn args ->
-        function_signature = ABI.encode(contract_function, args) |> Base.encode16(case: :lower)
-        eth_call_args = [%{data: "0x" <> function_signature, to: contract}] |> transform_args.()
+        function_signature = contract_function |> ABI.encode(args) |> Base.encode16(case: :lower)
+        eth_call_args = transform_args.([%{data: "0x" <> function_signature, to: contract}])
 
         {:eth_call, eth_call_args}
       end)

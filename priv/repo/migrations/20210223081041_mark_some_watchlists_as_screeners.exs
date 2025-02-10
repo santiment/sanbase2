@@ -1,10 +1,11 @@
 defmodule Sanbase.Repo.Migrations.MarkSomeWatchlistsAsScreeners do
+  @moduledoc false
   use Ecto.Migration
 
   import Ecto.Query
 
-  alias Sanbase.UserList
   alias Sanbase.Repo
+  alias Sanbase.UserList
 
   defmacro is_screener() do
     quote do
@@ -18,8 +19,7 @@ defmodule Sanbase.Repo.Migrations.MarkSomeWatchlistsAsScreeners do
   def up do
     setup()
 
-    from(UserList, where: is_screener())
-    |> Repo.update_all(set: [is_screener: true])
+    Repo.update_all(from(UserList, where: is_screener()), set: [is_screener: true])
   end
 
   def down, do: :ok

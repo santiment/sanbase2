@@ -1,18 +1,17 @@
 defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve: 2]
 
-  alias SanbaseWeb.Graphql.Resolvers.{
-    PriceResolver,
-    ProjectResolver,
-    ProjectListResolver,
-    ProjectTransfersResolver,
-    MarketSegmentResolver
-  }
-
   alias SanbaseWeb.Graphql.Complexity
-  alias SanbaseWeb.Graphql.Middlewares.{AccessControl, ProjectPermissions}
+  alias SanbaseWeb.Graphql.Middlewares.AccessControl
+  alias SanbaseWeb.Graphql.Middlewares.ProjectPermissions
+  alias SanbaseWeb.Graphql.Resolvers.MarketSegmentResolver
+  alias SanbaseWeb.Graphql.Resolvers.PriceResolver
+  alias SanbaseWeb.Graphql.Resolvers.ProjectListResolver
+  alias SanbaseWeb.Graphql.Resolvers.ProjectResolver
+  alias SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver
 
   object :project_queries do
     @desc "Fetch all projects that have price data."

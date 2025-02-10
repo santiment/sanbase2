@@ -1,10 +1,11 @@
 defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
   use SanbaseWeb.ConnCase, async: false
 
+  import ExUnit.CaptureLog
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
-  import ExUnit.CaptureLog
 
+  alias Sanbase.Clickhouse.MetricAdapter
   alias Sanbase.Metric
 
   setup do
@@ -29,13 +30,12 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
       |> Enum.reject(&String.contains?(&1, "uniswap"))
       |> Enum.random()
 
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.MetricAdapter.histogram_data/6,
-      success_result()
-    )
+    (&MetricAdapter.histogram_data/6)
+    |> Sanbase.Mock.prepare_mock2(success_result())
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
-        get_histogram_metric(conn, metric, slug, from, to, "1d", 3)
+        conn
+        |> get_histogram_metric(metric, slug, from, to, "1d", 3)
         |> get_in(["data", "getMetric", "histogramData"])
 
       assert result == %{
@@ -58,14 +58,13 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
       |> Enum.shuffle()
       |> Enum.take(100)
 
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.MetricAdapter.histogram_data/6,
-      {:ok, [%{range: [2.0, 3.0], value: 15.0}]}
-    )
+    (&MetricAdapter.histogram_data/6)
+    |> Sanbase.Mock.prepare_mock2({:ok, [%{range: [2.0, 3.0], value: 15.0}]})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         for metric <- metrics do
-          get_histogram_metric(conn, metric, slug, from, to, "1d", 100)
+          conn
+          |> get_histogram_metric(metric, slug, from, to, "1d", 100)
           |> get_in(["data", "getMetric", "histogramData"])
         end
 
@@ -120,13 +119,12 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
     %{conn: conn, slug: slug, to: to} = context
     metric = "all_spent_coins_cost"
 
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.MetricAdapter.histogram_data/6,
-      success_result()
-    )
+    (&MetricAdapter.histogram_data/6)
+    |> Sanbase.Mock.prepare_mock2(success_result())
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
-        get_histogram_metric(conn, metric, slug, nil, to, "47h", 3)
+        conn
+        |> get_histogram_metric(metric, slug, nil, to, "47h", 3)
         |> get_in(["data", "getMetric", "histogramData"])
 
       assert result == %{
@@ -145,14 +143,12 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
     %{conn: conn, slug: slug, to: to} = context
     metric = "spent_coins_cost"
 
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.MetricAdapter.histogram_data/6,
-      success_result()
-    )
+    (&MetricAdapter.histogram_data/6)
+    |> Sanbase.Mock.prepare_mock2(success_result())
     |> Sanbase.Mock.run_with_mocks(fn ->
       capture_log(fn ->
         result = get_histogram_metric(conn, metric, slug, nil, to, "1d", 3)
-        error_msg = hd(result["errors"]) |> Map.get("message")
+        error_msg = result["errors"] |> hd() |> Map.get("message")
 
         assert error_msg =~ "Missing required `from` argument"
       end)
@@ -161,7 +157,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
 
   # Private functions
 
-  defp success_result() do
+  defp success_result do
     {:ok,
      [
        %{range: [2.0, 3.0], value: 15.0},

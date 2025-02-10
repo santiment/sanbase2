@@ -1,5 +1,9 @@
 defmodule Sanbase.Alert.Validation do
-  alias __MODULE__.{NotificationChannel, Target, Operation, Slug}
+  @moduledoc false
+  alias __MODULE__.NotificationChannel
+  alias __MODULE__.Operation
+  alias __MODULE__.Slug
+  alias __MODULE__.Target
 
   defdelegate valid_notification_channels(), to: NotificationChannel
   defdelegate valid_notification_channel?(channel), to: NotificationChannel

@@ -4,6 +4,8 @@ defmodule SanbaseWeb.Graphql.CustomTypes.Interval do
   """
   use Absinthe.Schema.Notation
 
+  alias Absinthe.Blueprint.Input.Null
+
   scalar :interval, name: "interval" do
     description("""
     The `interval` scalar type represents arbitrary time range interval,
@@ -38,22 +40,22 @@ defmodule SanbaseWeb.Graphql.CustomTypes.Interval do
   @supported_interval_functions Sanbase.Metric.SqlQuery.Helper.supported_interval_functions()
 
   @spec decode(Absinthe.Blueprint.Input.String.t()) :: {:ok, term()} | :error
-  @spec decode(Absinthe.Blueprint.Input.Null.t()) :: {:ok, nil}
+  @spec decode(Null.t()) :: {:ok, nil}
   defp decode(%Absinthe.Blueprint.Input.String{value: ""}), do: {:ok, ""}
 
-  defp decode(%Absinthe.Blueprint.Input.String{value: value})
-       when value in @supported_interval_functions do
+  defp decode(%Absinthe.Blueprint.Input.String{value: value}) when value in @supported_interval_functions do
     {:ok, value}
   end
 
   defp decode(%Absinthe.Blueprint.Input.String{value: value}) do
-    case Sanbase.DateTimeUtils.valid_compound_duration?(value) do
-      true -> {:ok, value}
-      _ -> :error
+    if Sanbase.DateTimeUtils.valid_compound_duration?(value) do
+      {:ok, value}
+    else
+      :error
     end
   end
 
-  defp decode(%Absinthe.Blueprint.Input.Null{}) do
+  defp decode(%Null{}) do
     {:ok, nil}
   end
 

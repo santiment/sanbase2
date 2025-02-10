@@ -1,14 +1,16 @@
 defmodule Sanbase.Alert.MetricTriggerSettingsTest do
   use Sanbase.DataCase, async: false
 
+  import ExUnit.CaptureLog
   import Sanbase.Factory
   import Sanbase.TestHelpers
-  import ExUnit.CaptureLog
 
-  alias Sanbase.Alert.UserTrigger
+  alias Sanbase.Accounts.UserSettings
   alias Sanbase.Alert.Evaluator
-  alias Sanbase.Metric
   alias Sanbase.Alert.Trigger.MetricTriggerSettings
+  alias Sanbase.Alert.UserTrigger
+  alias Sanbase.Clickhouse.MetricAdapter
+  alias Sanbase.Metric
 
   setup_all_with_mocks([
     {
@@ -27,7 +29,7 @@ defmodule Sanbase.Alert.MetricTriggerSettingsTest do
       Sanbase.Cache.clear_all(:alerts_evaluator_cache)
 
       user = insert(:user, user_settings: %{settings: %{alert_notify_telegram: true}})
-      Sanbase.Accounts.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
+      UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
       %{user: user}
     end
@@ -51,7 +53,8 @@ defmodule Sanbase.Alert.MetricTriggerSettingsTest do
           settings: trigger_settings
         })
 
-      Sanbase.Mock.prepare_mock(HTTPoison, :get, mock_fun())
+      HTTPoison
+      |> Sanbase.Mock.prepare_mock(:get, mock_fun())
       |> Sanbase.Mock.run_with_mocks(fn ->
         [triggered] =
           MetricTriggerSettings.type()
@@ -62,24 +65,14 @@ defmodule Sanbase.Alert.MetricTriggerSettingsTest do
       end)
     end
 
-    defp mock_fun() do
-      [
-        fn ->
-          {:ok,
-           %HTTPoison.Response{
-             status_code: 200,
-             body: "{\"data\":{\"2024-06-07T00:00:00Z\":100}}"
-           }}
-        end,
-        fn ->
-          {:ok,
-           %HTTPoison.Response{
-             status_code: 200,
-             body: "{\"data\":{\"2024-06-07T00:00:00Z\":5000}}"
-           }}
-        end
-      ]
-      |> Sanbase.Mock.wrap_consecutives(arity: 3)
+    defp mock_fun do
+      Sanbase.Mock.wrap_consecutives(
+        [
+          fn -> {:ok, %HTTPoison.Response{status_code: 200, body: ~s({"data":{"2024-06-07T00:00:00Z":100}})}} end,
+          fn -> {:ok, %HTTPoison.Response{status_code: 200, body: ~s({"data":{"2024-06-07T00:00:00Z":5000}})}} end
+        ],
+        arity: 3
+      )
     end
   end
 
@@ -91,7 +84,7 @@ defmodule Sanbase.Alert.MetricTriggerSettingsTest do
       Sanbase.Cache.clear_all(:alerts_evaluator_cache)
 
       user = insert(:user, user_settings: %{settings: %{alert_notify_telegram: true}})
-      Sanbase.Accounts.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
+      UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
       project = Sanbase.Factory.insert(:random_project)
 
@@ -120,13 +113,13 @@ defmodule Sanbase.Alert.MetricTriggerSettingsTest do
       # Return a fun with arity 5 that will return different results
       # for consecutive calls
       mock_fun =
-        [
-          fn -> {:ok, %{"TOTAL_MARKET" => 400_000_000_000}} end,
-          fn -> {:ok, %{"TOTAL_MARKET" => 401_000_000_000}} end
-        ]
-        |> Sanbase.Mock.wrap_consecutives(arity: 4)
+        Sanbase.Mock.wrap_consecutives(
+          [fn -> {:ok, %{"TOTAL_MARKET" => 400_000_000_000}} end, fn -> {:ok, %{"TOTAL_MARKET" => 401_000_000_000}} end],
+          arity: 4
+        )
 
-      Sanbase.Mock.prepare_mock(Sanbase.Metric, :aggregated_timeseries_data, mock_fun)
+      Sanbase.Metric
+      |> Sanbase.Mock.prepare_mock(:aggregated_timeseries_data, mock_fun)
       |> Sanbase.Mock.run_with_mocks(fn ->
         [triggered] =
           MetricTriggerSettings.type()
@@ -165,14 +158,13 @@ defmodule Sanbase.Alert.MetricTriggerSettingsTest do
       # Return a fun with arity 5 that will return different results
       # for consecutive calls
       mock_fun =
-        [
-          fn -> {:ok, %{project.slug => 100}} end,
-          fn -> {:ok, %{project.slug => 5000}} end
-        ]
-        |> Sanbase.Mock.wrap_consecutives(arity: 5)
+        Sanbase.Mock.wrap_consecutives(
+          [fn -> {:ok, %{project.slug => 100}} end, fn -> {:ok, %{project.slug => 5000}} end],
+          arity: 5
+        )
 
-      Sanbase.Mock.prepare_mock(
-        Sanbase.Clickhouse.MetricAdapter,
+      MetricAdapter
+      |> Sanbase.Mock.prepare_mock(
         :aggregated_timeseries_data,
         mock_fun
       )
@@ -204,8 +196,7 @@ defmodule Sanbase.Alert.MetricTriggerSettingsTest do
         target: %{slug: project.slug},
         channel: "telegram",
         operation: %{above: 300},
-        extra_explanation:
-          "A surge in tranaction volume *may suggest a growing interest and interaction* with the token"
+        extra_explanation: "A surge in tranaction volume *may suggest a growing interest and interaction* with the token"
       }
 
       {:ok, trigger} =
@@ -219,14 +210,13 @@ defmodule Sanbase.Alert.MetricTriggerSettingsTest do
       # Return a fun with arity 5 that will return different results
       # for consecutive calls
       mock_fun =
-        [
-          fn -> {:ok, %{project.slug => 100}} end,
-          fn -> {:ok, %{project.slug => 5000}} end
-        ]
-        |> Sanbase.Mock.wrap_consecutives(arity: 5)
+        Sanbase.Mock.wrap_consecutives(
+          [fn -> {:ok, %{project.slug => 100}} end, fn -> {:ok, %{project.slug => 5000}} end],
+          arity: 5
+        )
 
-      Sanbase.Mock.prepare_mock(
-        Sanbase.Clickhouse.MetricAdapter,
+      MetricAdapter
+      |> Sanbase.Mock.prepare_mock(
         :aggregated_timeseries_data,
         mock_fun
       )
@@ -272,14 +262,12 @@ defmodule Sanbase.Alert.MetricTriggerSettingsTest do
         })
 
       mock_fun =
-        [
-          fn -> {:ok, %{project.slug => 100}} end,
-          fn -> {:ok, %{project.slug => 500}} end
-        ]
-        |> Sanbase.Mock.wrap_consecutives(arity: 5)
+        Sanbase.Mock.wrap_consecutives([fn -> {:ok, %{project.slug => 100}} end, fn -> {:ok, %{project.slug => 500}} end],
+          arity: 5
+        )
 
-      Sanbase.Mock.prepare_mock(
-        Sanbase.Clickhouse.MetricAdapter,
+      MetricAdapter
+      |> Sanbase.Mock.prepare_mock(
         :aggregated_timeseries_data,
         mock_fun
       )
@@ -297,10 +285,8 @@ defmodule Sanbase.Alert.MetricTriggerSettingsTest do
          context do
       %{project: project, user: user} = context
 
-      Metric.available_metrics(
-        filter: :min_interval_less_or_equal,
-        filter_interval: "5m"
-      )
+      [filter: :min_interval_less_or_equal, filter_interval: "5m"]
+      |> Metric.available_metrics()
       |> Enum.shuffle()
       |> Enum.take(100)
       |> Enum.each(fn metric ->
@@ -362,15 +348,13 @@ defmodule Sanbase.Alert.MetricTriggerSettingsTest do
       # aggregated_timeseries_data should be called 2 times, but after the first call that returns
       # error we go to the error handling phase, not calling anything else
       mock_fun =
-        [
-          fn ->
-            {:error,
-             "The metric 'active_addresses_24h' is not supported, is deprecated or is mistyped."}
-          end
-        ]
-        |> Sanbase.Mock.wrap_consecutives(arity: 4)
+        Sanbase.Mock.wrap_consecutives(
+          [fn -> {:error, "The metric 'active_addresses_24h' is not supported, is deprecated or is mistyped."} end],
+          arity: 4
+        )
 
-      Sanbase.Mock.prepare_mock(Sanbase.Metric, :aggregated_timeseries_data, mock_fun)
+      Sanbase.Metric
+      |> Sanbase.Mock.prepare_mock(:aggregated_timeseries_data, mock_fun)
       |> Sanbase.Mock.run_with_mocks(fn ->
         {:ok, ut} =
           UserTrigger.create_user_trigger(context.user, %{

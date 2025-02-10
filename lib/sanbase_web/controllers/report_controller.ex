@@ -14,9 +14,7 @@ defmodule SanbaseWeb.ReportController do
     render(conn, "new.html", changeset: changeset)
   end
 
-  def create(conn, %{
-        "report" => %{"report" => report} = params
-      }) do
+  def create(conn, %{"report" => %{"report" => report} = params}) do
     {params, _} = Map.split(params, ~w(name description is_published is_pro tags))
     params = Sanbase.MapUtils.atomize_keys(params)
 
@@ -33,7 +31,8 @@ defmodule SanbaseWeb.ReportController do
 
   def create(conn, %{"report" => params}) do
     changeset =
-      Report.changeset(%Report{}, params)
+      %Report{}
+      |> Report.changeset(params)
       |> Ecto.Changeset.add_error(:report, "No file uploaded!")
 
     render(conn, "new.html", changeset: changeset, errors: [report: "No file uploaded!"])
@@ -45,7 +44,7 @@ defmodule SanbaseWeb.ReportController do
   end
 
   def edit(conn, %{"id" => id}) do
-    report = Report.by_id(id) |> stringify_tags()
+    report = id |> Report.by_id() |> stringify_tags()
     changeset = Report.changeset(report, %{})
     render(conn, "edit.html", report: report, changeset: changeset)
   end
@@ -74,6 +73,6 @@ defmodule SanbaseWeb.ReportController do
   end
 
   defp stringify_tags(%Report{tags: tags} = report) do
-    %Report{report | tags: tags |> Enum.join(", ")}
+    %Report{report | tags: Enum.join(tags, ", ")}
   end
 end

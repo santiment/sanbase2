@@ -1,11 +1,14 @@
 defmodule Sanbase.Alert.ScreenerTriggerSettingsTest do
   use Sanbase.DataCase, async: false
 
+  import ExUnit.CaptureLog
   import Sanbase.Factory
   import Sanbase.TestHelpers
-  import ExUnit.CaptureLog
 
-  alias Sanbase.Alert.{UserTrigger, Trigger.ScreenerTriggerSettings}
+  alias Sanbase.Alert.Scheduler
+  alias Sanbase.Alert.Trigger.ScreenerTriggerSettings
+  alias Sanbase.Alert.UserTrigger
+  alias Sanbase.Clickhouse.MetricAdapter
 
   setup do
     # Clean children on exit, otherwise DB calls from async tasks can be attempted
@@ -76,18 +79,18 @@ defmodule Sanbase.Alert.ScreenerTriggerSettingsTest do
     }
 
     mock_fun =
-      [
-        # Called in post_create_process when creating the alert
-        fn -> {:ok, []} end,
-        # Called when evaluating the alert fn ->
-        fn ->
-          {:error,
-           "The metric 'active_addresses_24h' is not supported, is deprecated or is mistyped."}
-        end
-      ]
-      |> Sanbase.Mock.wrap_consecutives(arity: 6)
+      Sanbase.Mock.wrap_consecutives(
+        [
+          fn -> {:ok, []} end,
+          fn -> {:error, "The metric 'active_addresses_24h' is not supported, is deprecated or is mistyped."} end
+        ],
+        arity: 6
+      )
 
-    Sanbase.Mock.prepare_mock(Sanbase.Metric, :slugs_by_filter, mock_fun)
+    # Called in post_create_process when creating the alert
+    # Called when evaluating the alert fn ->
+    Sanbase.Metric
+    |> Sanbase.Mock.prepare_mock(:slugs_by_filter, mock_fun)
     |> Sanbase.Mock.run_with_mocks(fn ->
       {:ok, ut} =
         UserTrigger.create_user_trigger(context.user, %{
@@ -103,7 +106,7 @@ defmodule Sanbase.Alert.ScreenerTriggerSettingsTest do
 
       log =
         capture_log(fn ->
-          assert [_] = Sanbase.Alert.Scheduler.run_alert(ScreenerTriggerSettings)
+          assert [_] = Scheduler.run_alert(ScreenerTriggerSettings)
         end)
 
       assert log =~ "Auto disable alert"
@@ -123,14 +126,17 @@ defmodule Sanbase.Alert.ScreenerTriggerSettingsTest do
     # On the first evaluation the trigger should be fired as there are changes.
     # On the second evaluation the trigger should not be fired as there are no changes
     mock_fun =
-      [
-        fn -> {:ok, [p1.slug, p2.slug, p3.slug]} end,
-        fn -> {:ok, [p3.slug, p4.slug, p5.slug]} end,
-        fn -> {:ok, [p3.slug, p4.slug, p5.slug]} end
-      ]
-      |> Sanbase.Mock.wrap_consecutives(arity: 6)
+      Sanbase.Mock.wrap_consecutives(
+        [
+          fn -> {:ok, [p1.slug, p2.slug, p3.slug]} end,
+          fn -> {:ok, [p3.slug, p4.slug, p5.slug]} end,
+          fn -> {:ok, [p3.slug, p4.slug, p5.slug]} end
+        ],
+        arity: 6
+      )
 
-    Sanbase.Mock.prepare_mock(Sanbase.Clickhouse.MetricAdapter, :slugs_by_filter, mock_fun)
+    MetricAdapter
+    |> Sanbase.Mock.prepare_mock(:slugs_by_filter, mock_fun)
     |> Sanbase.Mock.prepare_mock2(&Sanbase.Telegram.send_message/2, {:ok, "OK"})
     |> Sanbase.Mock.run_with_mocks(fn ->
       # After creation the post create processing adds p1, p2 and p3 to the state.
@@ -150,7 +156,7 @@ defmodule Sanbase.Alert.ScreenerTriggerSettingsTest do
 
       # First run
       assert capture_log(fn ->
-               Sanbase.Alert.Scheduler.run_alert(ScreenerTriggerSettings)
+               Scheduler.run_alert(ScreenerTriggerSettings)
              end) =~ "In total 1/1 screener_signal alerts were sent successfully"
 
       # Clear the result of the filter
@@ -159,7 +165,7 @@ defmodule Sanbase.Alert.ScreenerTriggerSettingsTest do
 
       # Second run
       assert capture_log(fn ->
-               Sanbase.Alert.Scheduler.run_alert(ScreenerTriggerSettings)
+               Scheduler.run_alert(ScreenerTriggerSettings)
              end) =~ "There were no screener_signal alerts triggered"
     end)
   end
@@ -172,14 +178,17 @@ defmodule Sanbase.Alert.ScreenerTriggerSettingsTest do
     # On the first evaluation the trigger should be fired as there are changes.
     # On the second evaluation the trigger should not be fired as there are no changes
     mock_fun =
-      [
-        fn -> {:ok, [p1.slug, p2.slug, p3.slug]} end,
-        fn -> {:ok, [p3.slug, p4.slug, p5.slug]} end,
-        fn -> {:ok, [p3.slug, p4.slug, p5.slug]} end
-      ]
-      |> Sanbase.Mock.wrap_consecutives(arity: 6)
+      Sanbase.Mock.wrap_consecutives(
+        [
+          fn -> {:ok, [p1.slug, p2.slug, p3.slug]} end,
+          fn -> {:ok, [p3.slug, p4.slug, p5.slug]} end,
+          fn -> {:ok, [p3.slug, p4.slug, p5.slug]} end
+        ],
+        arity: 6
+      )
 
-    Sanbase.Mock.prepare_mock(Sanbase.Clickhouse.MetricAdapter, :slugs_by_filter, mock_fun)
+    MetricAdapter
+    |> Sanbase.Mock.prepare_mock(:slugs_by_filter, mock_fun)
     |> Sanbase.Mock.prepare_mock2(&Sanbase.Telegram.send_message/2, {:ok, "OK"})
     |> Sanbase.Mock.run_with_mocks(fn ->
       # After creation the post create processing adds p1, p2 and p3 to the state.
@@ -199,7 +208,7 @@ defmodule Sanbase.Alert.ScreenerTriggerSettingsTest do
 
       # First run
       assert capture_log(fn ->
-               Sanbase.Alert.Scheduler.run_alert(ScreenerTriggerSettings)
+               Scheduler.run_alert(ScreenerTriggerSettings)
              end) =~
                "In total 1/1 screener_signal alerts were sent successfully"
 
@@ -209,7 +218,7 @@ defmodule Sanbase.Alert.ScreenerTriggerSettingsTest do
 
       # Second run
       assert capture_log(fn ->
-               Sanbase.Alert.Scheduler.run_alert(ScreenerTriggerSettings)
+               Scheduler.run_alert(ScreenerTriggerSettings)
              end) =~ "There were no screener_signal alerts triggered"
     end)
   end

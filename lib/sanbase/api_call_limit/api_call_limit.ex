@@ -1,11 +1,15 @@
 defmodule Sanbase.ApiCallLimit do
+  @moduledoc false
   use Ecto.Schema
 
-  import Ecto.{Query, Changeset}
+  import Ecto.Changeset
+  import Ecto.Query
 
-  alias Sanbase.Repo
   alias Sanbase.Accounts.User
-  alias Sanbase.Billing.{Product, Subscription}
+  alias Sanbase.Billing.Product
+  alias Sanbase.Billing.Subscription
+  alias Sanbase.Repo
+  alias Sanbase.Utils.IP
 
   require Logger
 
@@ -88,14 +92,13 @@ defmodule Sanbase.ApiCallLimit do
     # Some users have don't have limits regardless of their plan
     # In case the user has limits - check the plan
     has_limits =
-      case user_has_limits?(user) do
-        false -> false
-        true -> plan_has_limits?(plan)
+      if user_has_limits?(user) do
+        plan_has_limits?(plan)
+      else
+        false
       end
 
-    changeset =
-      acl
-      |> changeset(%{api_calls_limit_plan: plan, has_limits: has_limits})
+    changeset = changeset(acl, %{api_calls_limit_plan: plan, has_limits: has_limits})
 
     case Repo.update(changeset) do
       {:ok, _} = result ->
@@ -220,12 +223,7 @@ defmodule Sanbase.ApiCallLimit do
   end
 
   defp get_by_and_lock(:user, user) do
-    result =
-      from(acl in __MODULE__,
-        where: acl.user_id == ^user.id,
-        lock: "FOR UPDATE"
-      )
-      |> Repo.one()
+    result = Repo.one(from(acl in __MODULE__, where: acl.user_id == ^user.id, lock: "FOR UPDATE"))
 
     case result do
       nil ->
@@ -259,13 +257,13 @@ defmodule Sanbase.ApiCallLimit do
     end
   end
 
-  defp get_time_str_keys() do
+  defp get_time_str_keys do
     now = DateTime.utc_now()
 
     %{
       month_str: now |> Timex.beginning_of_month() |> to_string(),
-      hour_str: %{now | :minute => 0, :second => 0, :microsecond => {0, 0}} |> to_string(),
-      minute_str: %{now | :second => 0, :microsecond => {0, 0}} |> to_string()
+      hour_str: to_string(%{now | :minute => 0, :second => 0, :microsecond => {0, 0}}),
+      minute_str: to_string(%{now | :second => 0, :microsecond => {0, 0}})
     }
   end
 
@@ -276,10 +274,10 @@ defmodule Sanbase.ApiCallLimit do
 
     case subscription do
       %Subscription{plan: %{product: %{id: @product_api_id}}} ->
-        "sanapi_#{Subscription.plan_name(subscription)}" |> String.downcase()
+        String.downcase("sanapi_#{Subscription.plan_name(subscription)}")
 
       %Subscription{plan: %{product: %{id: @product_sanbase_id}}} ->
-        "sanbase_#{Subscription.plan_name(subscription)}" |> String.downcase()
+        String.downcase("sanbase_#{Subscription.plan_name(subscription)}")
 
       _ ->
         "sanapi_free"
@@ -355,7 +353,8 @@ defmodule Sanbase.ApiCallLimit do
       minute_str => count + Map.get(api_calls, minute_str, 0)
     }
 
-    changeset(acl, %{api_calls: new_api_calls})
+    acl
+    |> changeset(%{api_calls: new_api_calls})
     |> Repo.update()
   end
 
@@ -379,14 +378,13 @@ defmodule Sanbase.ApiCallLimit do
 
   defp user_has_limits?(%User{is_superuser: true}), do: false
 
-  defp user_has_limits?(%User{email: email}) when is_binary(email),
-    do: not String.ends_with?(email, "@santiment.net")
+  defp user_has_limits?(%User{email: email}) when is_binary(email), do: not String.ends_with?(email, "@santiment.net")
 
   defp user_has_limits?(%User{}), do: true
 
   defp remote_ip_has_limits?(remote_ip) do
-    not (Sanbase.Utils.IP.san_cluster_ip?(remote_ip) or
-           Sanbase.Utils.IP.localhost?(remote_ip))
+    not (IP.san_cluster_ip?(remote_ip) or
+           IP.localhost?(remote_ip))
   end
 
   defp plan_to_api_call_limits(plan) do

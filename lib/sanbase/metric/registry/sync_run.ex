@@ -1,8 +1,9 @@
 defmodule Sanbase.Metric.Registry.SyncRun do
+  @moduledoc false
   use Ecto.Schema
 
-  import Ecto.Query
   import Ecto.Changeset
+  import Ecto.Query
 
   @pubsub_topic "sanbase_metric_registry_sync"
 
@@ -25,8 +26,7 @@ defmodule Sanbase.Metric.Registry.SyncRun do
   end
 
   def last_syncs(limit) do
-    from(sync in __MODULE__, order_by: [desc: sync.id], limit: ^limit)
-    |> Sanbase.Repo.all()
+    Sanbase.Repo.all(from(sync in __MODULE__, order_by: [desc: sync.id], limit: ^limit))
   end
 
   def create(attrs) do
@@ -65,7 +65,6 @@ defmodule Sanbase.Metric.Registry.SyncRun do
   end
 
   def all_with_status(status) do
-    from(sync in __MODULE__, where: sync.status == ^status)
-    |> Sanbase.Repo.all()
+    Sanbase.Repo.all(from(sync in __MODULE__, where: sync.status == ^status))
   end
 end

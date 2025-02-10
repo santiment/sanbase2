@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddOnDeleteUserEntityInteractions do
+  @moduledoc false
   use Ecto.Migration
 
   @table :user_entity_interactions

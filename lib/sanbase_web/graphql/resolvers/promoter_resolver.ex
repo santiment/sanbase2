@@ -1,17 +1,16 @@
 defmodule SanbaseWeb.Graphql.Resolvers.PromoterResolver do
+  @moduledoc false
   alias Sanbase.Affiliate.FirstPromoter
 
-  def create_promoter(_root, args, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
-    FirstPromoter.create_promoter(current_user, args)
+  def create_promoter(_root, args, %{context: %{auth: %{current_user: current_user}}}) do
+    current_user
+    |> FirstPromoter.create_promoter(args)
     |> extract_and_atomize_needed_fields()
   end
 
-  def show_promoter(_root, _args, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
-    FirstPromoter.show_promoter(current_user)
+  def show_promoter(_root, _args, %{context: %{auth: %{current_user: current_user}}}) do
+    current_user
+    |> FirstPromoter.show_promoter()
     |> extract_and_atomize_needed_fields()
   end
 
@@ -61,12 +60,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PromoterResolver do
       end)
       |> Sanbase.MapUtils.atomize_keys()
 
-    promoter =
-      promoter
-      |> Map.put(
-        :dashboard_url,
-        "https://santiment.firstpromoter.com/view_dashboard_as?at=#{auth_token}"
-      )
+    promoter = Map.put(promoter, :dashboard_url, "https://santiment.firstpromoter.com/view_dashboard_as?at=#{auth_token}")
 
     {:ok, promoter}
   end

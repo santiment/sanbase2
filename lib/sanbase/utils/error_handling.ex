@@ -9,8 +9,7 @@ defmodule Sanbase.Utils.ErrorHandling do
            ]
 
   def changeset_errors(changeset) do
-    changeset
-    |> Ecto.Changeset.traverse_errors(&format_error/1)
+    Ecto.Changeset.traverse_errors(changeset, &format_error/1)
   end
 
   def changeset_errors_string(%Ecto.Changeset{} = changeset) do
@@ -41,7 +40,7 @@ defmodule Sanbase.Utils.ErrorHandling do
     {uuid, message} =
       case reason do
         <<"["::utf8, uuid::binary-size(36), "]"::utf8, message::binary>> ->
-          {uuid, message |> String.trim()}
+          {uuid, String.trim(message)}
 
         %Ecto.Changeset{} = changeset ->
           {UUID.uuid4(), changeset_errors_string(changeset)}
@@ -63,16 +62,16 @@ defmodule Sanbase.Utils.ErrorHandling do
     # TODO: Maybe remove this warning
     Logger.warning(error_msg_with_reason)
 
-    case Keyword.get(opts, :propagate_reason, true) do
-      true -> error_msg_with_reason
-      false -> error_msg
+    if Keyword.get(opts, :propagate_reason, true) do
+      error_msg_with_reason
+    else
+      error_msg
     end
   end
 
   def maybe_handle_graphql_error({:ok, result}, _), do: {:ok, result}
 
-  def maybe_handle_graphql_error({:error, error}, error_handler)
-      when is_function(error_handler, 1) do
+  def maybe_handle_graphql_error({:error, error}, error_handler) when is_function(error_handler, 1) do
     {:error, error_handler.(error)}
   end
 

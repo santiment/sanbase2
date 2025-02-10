@@ -1,8 +1,10 @@
 defmodule SanbaseWeb.GenericAdmin.ScheduleRescrapePrice do
+  @moduledoc false
   import Ecto.Query
+
   def schema_module, do: Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePrice
 
-  def resource() do
+  def resource do
     %{
       actions: [:new, :edit, :delete],
       index_fields: [

@@ -14,7 +14,8 @@ defmodule Sanbase.Accounts.LinkedUserCandidate do
 
   import Ecto.Changeset
 
-  alias Sanbase.Accounts.{User, LinkedUser}
+  alias Sanbase.Accounts.LinkedUser
+  alias Sanbase.Accounts.User
 
   schema "linked_users_candidates" do
     belongs_to(:primary_user, User)
@@ -29,8 +30,7 @@ defmodule Sanbase.Accounts.LinkedUserCandidate do
   def changeset(%__MODULE__{} = luc, attrs) do
     attrs = Map.put(attrs, :token, generate_token(attrs))
 
-    luc
-    |> cast(attrs, [:primary_user_id, :secondary_user_id, :token])
+    cast(luc, attrs, [:primary_user_id, :secondary_user_id, :token])
   end
 
   def confirm_candidate(token, confirming_user_id) do
@@ -73,9 +73,10 @@ defmodule Sanbase.Accounts.LinkedUserCandidate do
       %__MODULE__{inserted_at: inserted_at} ->
         naive_now = NaiveDateTime.utc_now()
 
-        case Timex.diff(naive_now, inserted_at, :minutes) <= @token_valid_window_minutes do
-          true -> true
-          false -> {:error, "Token has expired."}
+        if Timex.diff(naive_now, inserted_at, :minutes) <= @token_valid_window_minutes do
+          true
+        else
+          {:error, "Token has expired."}
         end
     end
   end
@@ -88,7 +89,7 @@ defmodule Sanbase.Accounts.LinkedUserCandidate do
   end
 
   defp generate_token(attrs) do
-    rand_str = :crypto.strong_rand_bytes(16) |> Base.url_encode64() |> binary_part(0, 16)
+    rand_str = 16 |> :crypto.strong_rand_bytes() |> Base.url_encode64() |> binary_part(0, 16)
 
     "prim_#{attrs.primary_user_id}_sec_#{attrs.secondary_user_id}_#{rand_str}"
   end

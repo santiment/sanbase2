@@ -24,22 +24,23 @@ defmodule SanbaseWeb.Graphql.MarketSegmentResolverTest do
 
   test "all_market_segments/3", %{conn: conn} do
     market_segments =
-      market_segments_query(conn, "allMarketSegments")
+      conn
+      |> market_segments_query("allMarketSegments")
       |> json_response(200)
       |> extract_all_market_segments()
 
-    market_segments =
-      market_segments
-      |> Enum.sort_by(& &1["name"])
+    market_segments = Enum.sort_by(market_segments, & &1["name"])
 
     expected_market_segments =
-      [
-        %{"count" => 1, "name" => "Foo"},
-        %{"count" => 1, "name" => "Bar"},
-        %{"count" => 0, "name" => "Baz"},
-        %{"count" => 1, "name" => "Qux"}
-      ]
-      |> Enum.sort_by(& &1["name"])
+      Enum.sort_by(
+        [
+          %{"count" => 1, "name" => "Foo"},
+          %{"count" => 1, "name" => "Bar"},
+          %{"count" => 0, "name" => "Baz"},
+          %{"count" => 1, "name" => "Qux"}
+        ],
+        & &1["name"]
+      )
 
     assert Enum.count(market_segments) === 4
 
@@ -48,7 +49,8 @@ defmodule SanbaseWeb.Graphql.MarketSegmentResolverTest do
 
   test "erc20_market_segments/3", %{conn: conn} do
     market_segments =
-      market_segments_query(conn, "erc20MarketSegments")
+      conn
+      |> market_segments_query("erc20MarketSegments")
       |> json_response(200)
       |> extract_erc20_market_segments()
 
@@ -61,7 +63,8 @@ defmodule SanbaseWeb.Graphql.MarketSegmentResolverTest do
 
   test "currencies_market_segments/3", %{conn: conn} do
     market_segments =
-      market_segments_query(conn, "currenciesMarketSegments")
+      conn
+      |> market_segments_query("currenciesMarketSegments")
       |> json_response(200)
       |> extract_currencies_market_segments()
 
@@ -83,22 +86,18 @@ defmodule SanbaseWeb.Graphql.MarketSegmentResolverTest do
     }
     """
 
-    conn |> post("/graphql", query_skeleton(query, query_name))
+    post(conn, "/graphql", query_skeleton(query, query_name))
   end
 
   defp extract_all_market_segments(%{"data" => %{"allMarketSegments" => all_market_segments}}) do
     all_market_segments
   end
 
-  defp extract_erc20_market_segments(%{
-         "data" => %{"erc20MarketSegments" => erc20_market_segments}
-       }) do
+  defp extract_erc20_market_segments(%{"data" => %{"erc20MarketSegments" => erc20_market_segments}}) do
     erc20_market_segments
   end
 
-  defp extract_currencies_market_segments(%{
-         "data" => %{"currenciesMarketSegments" => currencies_market_segments}
-       }) do
+  defp extract_currencies_market_segments(%{"data" => %{"currenciesMarketSegments" => currencies_market_segments}}) do
     currencies_market_segments
   end
 end

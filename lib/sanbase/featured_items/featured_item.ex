@@ -9,14 +9,14 @@ defmodule Sanbase.FeaturedItem do
   import Ecto.Changeset
   import Ecto.Query
 
-  alias Sanbase.Repo
-  alias Sanbase.Insight.Post
-  alias Sanbase.UserList
   alias Sanbase.Alert.UserTrigger
   alias Sanbase.Chart.Configuration, as: ChartConfiguration
-  alias Sanbase.TableConfiguration
   alias Sanbase.Dashboards.Dashboard
+  alias Sanbase.Insight.Post
   alias Sanbase.Queries.Query
+  alias Sanbase.Repo
+  alias Sanbase.TableConfiguration
+  alias Sanbase.UserList
 
   @table "featured_items"
   schema @table do
@@ -84,7 +84,7 @@ defmodule Sanbase.FeaturedItem do
     |> Repo.preload([:user, :list_items])
   end
 
-  def user_triggers() do
+  def user_triggers do
     user_triggers_query()
     |> join(:inner, [fi], fi in assoc(fi, :user_trigger), as: :user_trigger)
     |> select([_fi, user_trigger: ut], ut)
@@ -92,21 +92,21 @@ defmodule Sanbase.FeaturedItem do
     |> Repo.preload([:user, :tags])
   end
 
-  def chart_configurations() do
+  def chart_configurations do
     chart_configurations_query()
     |> join(:inner, [fi], fi in assoc(fi, :chart_configuration), as: :chart_configuration)
     |> select([_fi, chart_configuration: config], config)
     |> Repo.all()
   end
 
-  def table_configurations() do
+  def table_configurations do
     table_configurations_query()
     |> join(:inner, [fi], fi in assoc(fi, :table_configuration), as: :table_configuration)
     |> select([_fi, table_configuration: config], config)
     |> Repo.all()
   end
 
-  def dashboards() do
+  def dashboards do
     dashboards_query()
     |> join(:inner, [fi], fi in assoc(fi, :dashboard), as: :dashboard)
     |> order_by([fi, _], desc: fi.inserted_at, desc: fi.id)
@@ -115,7 +115,7 @@ defmodule Sanbase.FeaturedItem do
     |> Repo.preload([:user])
   end
 
-  def queries() do
+  def queries do
     queries_query()
     |> join(:inner, [fi], fi in assoc(fi, :query), as: :query)
     |> order_by([fi, _], desc: fi.inserted_at, desc: fi.id)
@@ -138,51 +138,58 @@ defmodule Sanbase.FeaturedItem do
         ) ::
           :ok | {:error, Ecto.Changeset.t()}
   def update_item(%Post{} = post, featured?) do
-    case Post.published?(post) || featured? == false do
-      true -> update_item(:post_id, post.id, featured?)
-      false -> {:error, "Not published post cannot be made featured."}
+    if Post.published?(post) || featured? == false do
+      update_item(:post_id, post.id, featured?)
+    else
+      {:error, "Not published post cannot be made featured."}
     end
   end
 
   def update_item(%UserList{} = user_list, featured?) do
-    case UserList.public?(user_list) || featured? == false do
-      true -> update_item(:user_list_id, user_list.id, featured?)
-      false -> {:error, "Private watchlists cannot be made featured."}
+    if UserList.public?(user_list) || featured? == false do
+      update_item(:user_list_id, user_list.id, featured?)
+    else
+      {:error, "Private watchlists cannot be made featured."}
     end
   end
 
   def update_item(%UserTrigger{} = user_trigger, featured?) do
-    case UserTrigger.public?(user_trigger) || featured? == false do
-      true -> update_item(:user_trigger_id, user_trigger.id, featured?)
-      false -> {:error, "Private user triggers cannot be made featured."}
+    if UserTrigger.public?(user_trigger) || featured? == false do
+      update_item(:user_trigger_id, user_trigger.id, featured?)
+    else
+      {:error, "Private user triggers cannot be made featured."}
     end
   end
 
   def update_item(%ChartConfiguration{} = configuration, featured?) do
-    case ChartConfiguration.public?(configuration) || featured? == false do
-      true -> update_item(:chart_configuration_id, configuration.id, featured?)
-      false -> {:error, "Private chart configurations cannot be made featured."}
+    if ChartConfiguration.public?(configuration) || featured? == false do
+      update_item(:chart_configuration_id, configuration.id, featured?)
+    else
+      {:error, "Private chart configurations cannot be made featured."}
     end
   end
 
   def update_item(%TableConfiguration{} = configuration, featured?) do
-    case TableConfiguration.public?(configuration) || featured? == false do
-      true -> update_item(:table_configuration_id, configuration.id, featured?)
-      false -> {:error, "Private table configurations cannot be made featured."}
+    if TableConfiguration.public?(configuration) || featured? == false do
+      update_item(:table_configuration_id, configuration.id, featured?)
+    else
+      {:error, "Private table configurations cannot be made featured."}
     end
   end
 
   def update_item(%Dashboard{} = dashboard, featured?) do
-    case Dashboard.public?(dashboard) || featured? == false do
-      true -> update_item(:dashboard_id, dashboard.id, featured?)
-      false -> {:error, "Private table dashboards cannot be made featured."}
+    if Dashboard.public?(dashboard) || featured? == false do
+      update_item(:dashboard_id, dashboard.id, featured?)
+    else
+      {:error, "Private table dashboards cannot be made featured."}
     end
   end
 
   def update_item(%Query{} = query, featured?) do
-    case Query.public?(query) || featured? == false do
-      true -> update_item(:query_id, query.id, featured?)
-      false -> {:error, "Private table queries cannot be made featured."}
+    if Query.public?(query) || featured? == false do
+      update_item(:query_id, query.id, featured?)
+    else
+      {:error, "Private table queries cannot be made featured."}
     end
   end
 
@@ -194,7 +201,8 @@ defmodule Sanbase.FeaturedItem do
   end
 
   defp update_item(type, id, true) do
-    Repo.get_by(__MODULE__, [{type, id}])
+    __MODULE__
+    |> Repo.get_by([{type, id}])
     |> case do
       nil ->
         case %__MODULE__{} |> changeset(%{type => id}) |> Repo.insert() do
@@ -207,15 +215,13 @@ defmodule Sanbase.FeaturedItem do
     end
   end
 
-  defp insights_query(), do: from(fi in __MODULE__, where: not is_nil(fi.post_id))
-  defp watchlists_query(), do: from(fi in __MODULE__, where: not is_nil(fi.user_list_id))
-  defp user_triggers_query(), do: from(fi in __MODULE__, where: not is_nil(fi.user_trigger_id))
-  defp dashboards_query(), do: from(fi in __MODULE__, where: not is_nil(fi.dashboard_id))
-  defp queries_query(), do: from(fi in __MODULE__, where: not is_nil(fi.query_id))
+  defp insights_query, do: from(fi in __MODULE__, where: not is_nil(fi.post_id))
+  defp watchlists_query, do: from(fi in __MODULE__, where: not is_nil(fi.user_list_id))
+  defp user_triggers_query, do: from(fi in __MODULE__, where: not is_nil(fi.user_trigger_id))
+  defp dashboards_query, do: from(fi in __MODULE__, where: not is_nil(fi.dashboard_id))
+  defp queries_query, do: from(fi in __MODULE__, where: not is_nil(fi.query_id))
 
-  defp chart_configurations_query(),
-    do: from(fi in __MODULE__, where: not is_nil(fi.chart_configuration_id))
+  defp chart_configurations_query, do: from(fi in __MODULE__, where: not is_nil(fi.chart_configuration_id))
 
-  defp table_configurations_query(),
-    do: from(fi in __MODULE__, where: not is_nil(fi.table_configuration_id))
+  defp table_configurations_query, do: from(fi in __MODULE__, where: not is_nil(fi.table_configuration_id))
 end

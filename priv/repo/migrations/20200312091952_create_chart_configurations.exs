@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.CreateChartConfigurations do
+  @moduledoc false
   use Ecto.Migration
 
   @table :chart_configurations

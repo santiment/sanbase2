@@ -3,10 +3,11 @@ defmodule Sanbase.Insight.PostPaywall do
   Filter paywalled insights for anonymous users or users with free plan that are not insight's author.
   Filtering means truncating the text to @max_words_shown_as_preview words of the original text.
   """
-  alias Sanbase.Insight.Post
-  alias Sanbase.Billing.{Subscription, Product}
   alias Sanbase.Accounts.User
   alias Sanbase.Billing.Plan.SanbaseAccessChecker
+  alias Sanbase.Billing.Product
+  alias Sanbase.Billing.Subscription
+  alias Sanbase.Insight.Post
 
   # Show only first @max_words_shown_as_preview word of content
   @max_words_shown_as_preview 140
@@ -42,7 +43,8 @@ defmodule Sanbase.Insight.PostPaywall do
   defp do_filter(%Post{user_id: user_id} = insight, user_id), do: insight
 
   defp do_filter(insight, _) do
-    Map.put(insight, :text, truncate(insight))
+    insight
+    |> Map.put(:text, truncate(insight))
     |> Map.put(:comments, [])
   end
 

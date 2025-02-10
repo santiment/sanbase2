@@ -1,26 +1,24 @@
 defmodule SanbaseWeb.Graphql.UserTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
-  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve: 2]
   import Absinthe.Resolution.Helpers
+  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve: 2]
 
+  alias SanbaseWeb.Graphql.Resolvers.ApikeyResolver
+  alias SanbaseWeb.Graphql.Resolvers.BillingResolver
+  alias SanbaseWeb.Graphql.Resolvers.DashboardResolver
+  alias SanbaseWeb.Graphql.Resolvers.EthAccountResolver
+  alias SanbaseWeb.Graphql.Resolvers.InsightResolver
+  alias SanbaseWeb.Graphql.Resolvers.LinkedUserResolver
+  alias SanbaseWeb.Graphql.Resolvers.SanbaseNFTResolver
+  alias SanbaseWeb.Graphql.Resolvers.UserAffiliateDetailsResolver
+  alias SanbaseWeb.Graphql.Resolvers.UserChartConfigurationResolver
+  alias SanbaseWeb.Graphql.Resolvers.UserListResolver
+  alias SanbaseWeb.Graphql.Resolvers.UserResolver
+  alias SanbaseWeb.Graphql.Resolvers.UserSettingsResolver
+  alias SanbaseWeb.Graphql.Resolvers.UserTriggerResolver
   alias SanbaseWeb.Graphql.SanbaseRepo
-
-  alias SanbaseWeb.Graphql.Resolvers.{
-    ApikeyResolver,
-    BillingResolver,
-    DashboardResolver,
-    EthAccountResolver,
-    InsightResolver,
-    LinkedUserResolver,
-    UserChartConfigurationResolver,
-    UserListResolver,
-    UserResolver,
-    UserSettingsResolver,
-    UserTriggerResolver,
-    SanbaseNFTResolver,
-    UserAffiliateDetailsResolver
-  }
 
   enum :user_role do
     value(:san_family)

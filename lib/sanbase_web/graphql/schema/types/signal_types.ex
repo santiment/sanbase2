@@ -1,12 +1,13 @@
 defmodule SanbaseWeb.Graphql.SignalTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve: 2]
 
+  alias Sanbase.Signal
   alias SanbaseWeb.Graphql.Complexity
   alias SanbaseWeb.Graphql.Middlewares.AccessControl
   alias SanbaseWeb.Graphql.Resolvers.SignalResolver
-  alias Sanbase.Signal
 
   input_object :signal_selector_input_object do
     field(:slug, :string)
@@ -69,7 +70,7 @@ defmodule SanbaseWeb.Graphql.SignalTypes do
     The default aggregation can be changed by the `aggregation` parameter of
     the `timeseriesData` field. Available aggregations are:
     [
-    #{Signal.available_aggregations() |> Enum.map(&Atom.to_string/1) |> Enum.map(&String.upcase/1) |> Enum.join(",")}
+    #{Signal.available_aggregations() |> Enum.map(&Atom.to_string/1) |> Enum.map_join(",", &String.upcase/1)}
     ]
     """
     field(:default_aggregation, :aggregation)

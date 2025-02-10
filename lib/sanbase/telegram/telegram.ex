@@ -6,19 +6,23 @@ defmodule Sanbase.Telegram do
   2. Sending messages.
   """
 
-  require Logger
-  alias Sanbase.Utils.Config
+  use Tesla
 
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
 
-  alias Sanbase.Accounts.{User, Settings, UserSettings}
+  alias Sanbase.Accounts.Settings
+  alias Sanbase.Accounts.User
+  alias Sanbase.Accounts.UserSettings
+  alias Sanbase.ExternalServices.ErrorCatcher
+  alias Sanbase.ExternalServices.RateLimiting
   alias Sanbase.Telegram.UserToken
+  alias Sanbase.Utils.Config
+
+  require Logger
 
   @type message :: String.t() | iolist()
 
-  use Tesla
   @rate_limiting_server :telegram_bot_rate_limiting_server
-  alias Sanbase.ExternalServices.{RateLimiting, ErrorCatcher}
   plug(ErrorCatcher.Middleware)
   plug(RateLimiting.Middleware, name: @rate_limiting_server)
 
@@ -30,7 +34,7 @@ defmodule Sanbase.Telegram do
   plug(Tesla.Middleware.Headers, [{"Content-Type", "application/json"}])
 
   def channel_id_valid?(chat_id) do
-    params = %{chat_id: chat_id} |> Jason.encode!()
+    params = Jason.encode!(%{chat_id: chat_id})
 
     with {:ok, %Tesla.Env{status: 200, body: body}} <- post("getChat", params),
          {:ok, %{"ok" => true}} <- Jason.decode(body) do
@@ -103,14 +107,7 @@ defmodule Sanbase.Telegram do
   @spec send_message_to_chat_id(non_neg_integer(), message, nil | %User{}) ::
           {:ok, any()} | {:error, String.t()}
   def send_message_to_chat_id(chat_id, text, user \\ nil) do
-    content =
-      %{
-        parse_mode: "markdown",
-        chat_id: chat_id,
-        text: text,
-        disable_web_page_preview: true
-      }
-      |> Jason.encode!()
+    content = Jason.encode!(%{parse_mode: "markdown", chat_id: chat_id, text: text, disable_web_page_preview: true})
 
     case post("sendMessage", content) do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
@@ -132,13 +129,7 @@ defmodule Sanbase.Telegram do
   end
 
   def send_image(chat_id, image_url, reply_to_message_id) do
-    content =
-      %{
-        chat_id: chat_id,
-        photo: image_url,
-        reply_to_message_id: reply_to_message_id
-      }
-      |> Jason.encode!()
+    content = Jason.encode!(%{chat_id: chat_id, photo: image_url, reply_to_message_id: reply_to_message_id})
 
     post("sendPhoto", content)
   end
@@ -168,7 +159,8 @@ defmodule Sanbase.Telegram do
       %UserToken{token: ^user_token, user_id: user_id} ->
         Logger.info("Setting the chat_id #{chat_id} to the user #{user_id}")
 
-        UserSettings.set_telegram_chat_id(user_id, chat_id)
+        user_id
+        |> UserSettings.set_telegram_chat_id(chat_id)
         |> case do
           {:ok, _} ->
             :ok
@@ -176,9 +168,7 @@ defmodule Sanbase.Telegram do
           {:error, changeset} ->
             error_msg = changeset_errors_string(changeset)
 
-            Logger.error(
-              "Cannot set telegram chat id for user id #{user_id}. Reason: #{error_msg}"
-            )
+            Logger.error("Cannot set telegram chat id for user id #{user_id}. Reason: #{error_msg}")
 
             {:error, error_msg}
         end

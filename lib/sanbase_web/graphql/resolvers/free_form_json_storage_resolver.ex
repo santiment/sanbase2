@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.Resolvers.FreeFormJsonStorageResolver do
+  @moduledoc false
   require Logger
 
   def get_json(_root, %{key: key}, _resolution) do

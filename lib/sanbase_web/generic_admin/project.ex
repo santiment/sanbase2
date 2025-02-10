@@ -1,9 +1,12 @@
 defmodule SanbaseWeb.GenericAdmin.Project do
+  @moduledoc false
   import Ecto.Query
+
+  alias SanbaseWeb.GenericAdmin.Subscription
 
   def schema_module, do: Sanbase.Project
 
-  def resource() do
+  def resource do
     %{
       actions: [:new, :edit],
       preloads: [:infrastructure],
@@ -92,8 +95,7 @@ defmodule SanbaseWeb.GenericAdmin.Project do
 
   def has_many(project) do
     project =
-      project
-      |> Sanbase.Repo.preload([
+      Sanbase.Repo.preload(project, [
         :contract_addresses,
         :github_organizations,
         :eth_addresses,
@@ -176,8 +178,7 @@ defmodule SanbaseWeb.GenericAdmin.Project do
       %{
         resource: "latest_coinmarketcap_data",
         resource_name: "Latest Coinmarketcap Data",
-        rows:
-          if(project.latest_coinmarketcap_data, do: [project.latest_coinmarketcap_data], else: []),
+        rows: if(project.latest_coinmarketcap_data, do: [project.latest_coinmarketcap_data], else: []),
         fields: [
           :id,
           :coinmarketcap_id,
@@ -212,7 +213,7 @@ defmodule SanbaseWeb.GenericAdmin.Project do
 
   def link(row) do
     if row.infrastructure do
-      SanbaseWeb.GenericAdmin.Subscription.href(
+      Subscription.href(
         "infrastructures",
         row.infrastructure.id,
         row.infrastructure.code
@@ -222,7 +223,7 @@ defmodule SanbaseWeb.GenericAdmin.Project do
 
   def project_link(row) do
     if row.project_id do
-      SanbaseWeb.GenericAdmin.Subscription.href(
+      Subscription.href(
         "projects",
         row.project_id,
         row.project.name
@@ -232,9 +233,10 @@ defmodule SanbaseWeb.GenericAdmin.Project do
 end
 
 defmodule SanbaseWeb.GenericAdmin.Infrastructure do
+  @moduledoc false
   def schema_module, do: Sanbase.Model.Infrastructure
 
-  def resource() do
+  def resource do
     %{
       actions: [:new, :edit],
       new_fields: [:code],
@@ -244,10 +246,12 @@ defmodule SanbaseWeb.GenericAdmin.Infrastructure do
 end
 
 defmodule SanbaseWeb.GenericAdmin.ContractAddress do
+  @moduledoc false
   import Ecto.Query
+
   def schema_module, do: Sanbase.Project.ContractAddress
 
-  def resource() do
+  def resource do
     %{
       actions: [:new, :edit],
       preloads: [:project],
@@ -274,10 +278,12 @@ defmodule SanbaseWeb.GenericAdmin.ContractAddress do
 end
 
 defmodule SanbaseWeb.GenericAdmin.GithubOrganization do
+  @moduledoc false
   import Ecto.Query
+
   def schema_module, do: Sanbase.Project.GithubOrganization
 
-  def resource() do
+  def resource do
     %{
       actions: [:new, :edit, :delete],
       preloads: [:project],
@@ -301,10 +307,12 @@ defmodule SanbaseWeb.GenericAdmin.GithubOrganization do
 end
 
 defmodule SanbaseWeb.GenericAdmin.ProjectEthAddress do
+  @moduledoc false
   import Ecto.Query
+
   def schema_module, do: Sanbase.ProjectEthAddress
 
-  def resource() do
+  def resource do
     %{
       actions: [:new, :edit],
       preloads: [:project],
@@ -326,10 +334,12 @@ defmodule SanbaseWeb.GenericAdmin.ProjectEthAddress do
 end
 
 defmodule SanbaseWeb.GenericAdmin.ProjectMarketSegments do
+  @moduledoc false
   import Ecto.Query
+
   def schema_module, do: Sanbase.Project.ProjectMarketSegment
 
-  def resource() do
+  def resource do
     %{
       actions: [:new, :edit, :delete],
       preloads: [:project, :market_segment],
@@ -370,10 +380,12 @@ defmodule SanbaseWeb.GenericAdmin.ProjectMarketSegments do
 end
 
 defmodule SanbaseWeb.GenericAdmin.MarketSegments do
+  @moduledoc false
   import Ecto.Query
+
   def schema_module, do: Sanbase.Model.MarketSegment
 
-  def resource() do
+  def resource do
     %{
       actions: [:new, :edit, :delete],
       preloads: [:projects],
@@ -384,10 +396,12 @@ defmodule SanbaseWeb.GenericAdmin.MarketSegments do
 end
 
 defmodule SanbaseWeb.GenericAdmin.SourceSlugMapping do
+  @moduledoc false
   import Ecto.Query
+
   def schema_module, do: Sanbase.Project.SourceSlugMapping
 
-  def resource() do
+  def resource do
     %{
       actions: [:new, :edit, :delete],
       preloads: [:project],
@@ -415,10 +429,12 @@ defmodule SanbaseWeb.GenericAdmin.SourceSlugMapping do
 end
 
 defmodule SanbaseWeb.GenericAdmin.Ico do
+  @moduledoc false
   import Ecto.Query
+
   def schema_module, do: Sanbase.Model.Ico
 
-  def resource() do
+  def resource do
     %{
       preloads: [:cap_currency, :project],
       new_fields: [
@@ -483,9 +499,10 @@ defmodule SanbaseWeb.GenericAdmin.Ico do
 end
 
 defmodule SanbaseWeb.GenericAdmin.Currency do
+  @moduledoc false
   def schema_module, do: Sanbase.Model.Currency
 
-  def resource() do
+  def resource do
     %{
       actions: [:show]
     }
@@ -493,9 +510,10 @@ defmodule SanbaseWeb.GenericAdmin.Currency do
 end
 
 defmodule SanbaseWeb.GenericAdmin.LatestCoinmarketcapData do
+  @moduledoc false
   def schema_module, do: Sanbase.Model.LatestCoinmarketcapData
 
-  def resource() do
+  def resource do
     %{
       actions: [:show]
     }
@@ -503,11 +521,13 @@ defmodule SanbaseWeb.GenericAdmin.LatestCoinmarketcapData do
 end
 
 defmodule SanbaseWeb.GenericAdmin.SocialVolumeQuery do
+  @moduledoc false
   import Ecto.Query
+
   def schema_module, do: Sanbase.Project.SocialVolumeQuery
   def resource_name, do: "social_volume_queries"
 
-  def resource() do
+  def resource do
     %{
       actions: [:new, :edit],
       preloads: [:project],

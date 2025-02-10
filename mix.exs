@@ -42,7 +42,7 @@ defmodule Sanbase.Mixfile do
 
   defp elixirc_paths(_), do: ["lib"]
 
-  defp deps() do
+  defp deps do
     [
       {:absinthe_phoenix, "~> 2.0"},
       {:absinthe_plug, "~> 1.5"},
@@ -157,7 +157,7 @@ defmodule Sanbase.Mixfile do
     ]
   end
 
-  defp aliases() do
+  defp aliases do
     [
       "ecto.load": [
         "load_dotenv",

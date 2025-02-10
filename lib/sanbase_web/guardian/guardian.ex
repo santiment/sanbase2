@@ -38,12 +38,9 @@ defmodule SanbaseWeb.Guardian do
   @access_token_ttl {5, :minutes}
   @refresh_token_ttl {4, :weeks}
 
-  def access_token_ttl(), do: @access_token_ttl
+  def access_token_ttl, do: @access_token_ttl
 
-  def get_shared_access_token(
-        %Configuration.SharedAccessToken{} = struct,
-        _opts \\ []
-      ) do
+  def get_shared_access_token(%Configuration.SharedAccessToken{} = struct, _opts \\ []) do
     with {:ok, shared_access_token, _claims} <-
            encode_and_sign(struct, %{type: "shared_access_token"}, ttl: @shared_access_token_ttl) do
       {:ok, %{shared_access_token: shared_access_token}}
@@ -110,10 +107,7 @@ defmodule SanbaseWeb.Guardian do
   """
   @impl Guardian
 
-  def resource_from_claims(%{
-        "sub" => shared_access_token_uuid,
-        "type" => "shared_access_token"
-      }) do
+  def resource_from_claims(%{"sub" => shared_access_token_uuid, "type" => "shared_access_token"}) do
     case Configuration.SharedAccessToken.by_uuid(shared_access_token_uuid) do
       {:ok, token} -> {:ok, token}
       {:error, _} -> {:error, :no_existing_token}
@@ -136,7 +130,8 @@ defmodule SanbaseWeb.Guardian do
   end
 
   def get_config(key) do
-    Application.get_env(:sanbase, SanbaseWeb.Endpoint)
+    :sanbase
+    |> Application.get_env(SanbaseWeb.Endpoint)
     |> Keyword.fetch!(key)
   end
 
@@ -209,11 +204,7 @@ defmodule SanbaseWeb.Guardian do
   The operation is no-op for access tokens.
   """
   @impl Guardian
-  def on_exchange(
-        {_, %{"typ" => "refresh"} = claims} = refresh_token_tuple,
-        {_, _} = new_access_token,
-        _options
-      ) do
+  def on_exchange({_, %{"typ" => "refresh"} = claims} = refresh_token_tuple, {_, _} = new_access_token, _options) do
     {:ok, true} = __MODULE__.Token.refresh_last_exchanged_at(claims)
 
     {:ok, refresh_token_tuple, new_access_token}

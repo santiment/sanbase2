@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddIsPulseFlagInsights do
+  @moduledoc false
   use Ecto.Migration
 
   # Add `is_pulse`

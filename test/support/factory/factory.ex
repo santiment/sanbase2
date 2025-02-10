@@ -1,63 +1,69 @@
 defmodule Sanbase.Factory do
+  @moduledoc false
   use ExMachina.Ecto, repo: Sanbase.Repo
 
-  alias Sanbase.Tag
-  alias Sanbase.UserList
-  alias Sanbase.Accounts.{User, UserSettings, Role, UserRole, AccessAttempt}
-  alias Sanbase.Insight.Post
-  alias Sanbase.Comment
-  alias Sanbase.{Project, ProjectEthAddress}
-
-  alias Sanbase.Model.{
-    Infrastructure,
-    MarketSegment,
-    LatestCoinmarketcapData,
-    Currency,
-    Ico,
-    IcoCurrency
-  }
-
-  alias Sanbase.Alert.{UserTrigger, HistoricalActivity}
-  alias Sanbase.Billing.{Product, Plan, Subscription}
-  alias Sanbase.Timeline.TimelineEvent
-  alias Sanbase.Chart
-  alias Sanbase.TableConfiguration
-  alias Sanbase.Email.NewsletterToken
-  alias Sanbase.Report
-  alias Sanbase.BlockchainAddress
-  alias Sanbase.SheetsTemplate
-  alias Sanbase.Webinar
+  alias Sanbase.Accounts.AccessAttempt
   alias Sanbase.Accounts.Interaction
+  alias Sanbase.Accounts.Role
+  alias Sanbase.Accounts.User
+  alias Sanbase.Accounts.UserRole
+  alias Sanbase.Accounts.UserSettings
+  alias Sanbase.Alert.HistoricalActivity
+  alias Sanbase.Alert.UserTrigger
+  alias Sanbase.Billing.Plan
+  alias Sanbase.Billing.Product
+  alias Sanbase.Billing.Subscription
+  alias Sanbase.BlockchainAddress
+  alias Sanbase.Chart
+  alias Sanbase.Comment
+  alias Sanbase.Email.NewsletterToken
+  alias Sanbase.Insight.Post
+  alias Sanbase.Metric.MetricPostgresData
+  alias Sanbase.Model.Currency
+  alias Sanbase.Model.Ico
+  alias Sanbase.Model.IcoCurrency
+  alias Sanbase.Model.Infrastructure
+  alias Sanbase.Model.LatestCoinmarketcapData
+  alias Sanbase.Model.MarketSegment
+  alias Sanbase.Project
+  alias Sanbase.ProjectEthAddress
+  alias Sanbase.Report
+  alias Sanbase.SheetsTemplate
+  alias Sanbase.TableConfiguration
+  alias Sanbase.Tag
+  alias Sanbase.Timeline.TimelineEvent
+  alias Sanbase.UserList
+  alias Sanbase.Webinar
 
   def intercation_factory do
     %Interaction{}
   end
 
-  def user_factory() do
+  def user_factory do
     %User{
-      username: :crypto.strong_rand_bytes(16) |> Base.encode16(),
-      email: (:crypto.strong_rand_bytes(16) |> Base.encode16()) <> "@santiment.net",
+      username: 16 |> :crypto.strong_rand_bytes() |> Base.encode16(),
+      email: (16 |> :crypto.strong_rand_bytes() |> Base.encode16()) <> "@santiment.net",
       salt: User.generate_salt(),
       privacy_policy_accepted: true,
       registration_state: %{"state" => "finished"},
       san_balance: Decimal.new(0),
-      san_balance_updated_at: Timex.now()
+      san_balance_updated_at: DateTime.utc_now()
     }
   end
 
-  def user_registration_not_finished_factory() do
+  def user_registration_not_finished_factory do
     %User{
-      username: :crypto.strong_rand_bytes(16) |> Base.encode16(),
-      email: (:crypto.strong_rand_bytes(16) |> Base.encode16()) <> "@santiment.net",
+      username: 16 |> :crypto.strong_rand_bytes() |> Base.encode16(),
+      email: (16 |> :crypto.strong_rand_bytes() |> Base.encode16()) <> "@santiment.net",
       salt: User.generate_salt(),
       privacy_policy_accepted: true,
       registration_state: %{"state" => "init"},
       san_balance: Decimal.new(0),
-      san_balance_updated_at: Timex.now()
+      san_balance_updated_at: DateTime.utc_now()
     }
   end
 
-  def market_factory() do
+  def market_factory do
     %Sanbase.Market{
       base_asset: "BTC",
       quote_asset: "USD",
@@ -66,13 +72,13 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def ecosystem_factory() do
+  def ecosystem_factory do
     %Sanbase.Ecosystem{
       ecosystem: "ethereum"
     }
   end
 
-  def insights_fallback_user_factory() do
+  def insights_fallback_user_factory do
     %User{
       salt: User.generate_salt(),
       username: User.anonymous_user_username(),
@@ -81,26 +87,25 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def staked_user_factory() do
+  def staked_user_factory do
     %User{
       salt: User.generate_salt(),
       san_balance: Decimal.new(20_000),
-      san_balance_updated_at: Timex.now(),
+      san_balance_updated_at: DateTime.utc_now(),
       privacy_policy_accepted: true,
       registration_state: %{"state" => "finished"}
     }
   end
 
-  def blockchain_address_factory() do
+  def blockchain_address_factory do
     %BlockchainAddress{
       address: "0x" <> rand_hex_str(38),
-      infrastructure:
-        Sanbase.Repo.get_by(Infrastructure, code: "ETH") || build(:infrastructure, %{code: "ETH"})
+      infrastructure: Sanbase.Repo.get_by(Infrastructure, code: "ETH") || build(:infrastructure, %{code: "ETH"})
     }
   end
 
-  def post_factory() do
-    metric = Sanbase.Metric.available_metrics() |> Enum.random()
+  def post_factory do
+    metric = Enum.random(Sanbase.Metric.available_metrics())
 
     %Post{
       user: build(:user),
@@ -110,14 +115,14 @@ defmodule Sanbase.Factory do
       is_paywall_required: false,
       tags: [build(:tag), build(:tag)],
       metrics: [
-        Sanbase.Repo.get_by(Sanbase.Metric.MetricPostgresData, name: metric) ||
+        Sanbase.Repo.get_by(MetricPostgresData, name: metric) ||
           build(:metric_postgres, %{name: metric})
       ]
     }
   end
 
-  def published_post_factory() do
-    metric = Sanbase.Metric.available_metrics() |> Enum.random()
+  def published_post_factory do
+    metric = Enum.random(Sanbase.Metric.available_metrics())
 
     %Post{
       state: Post.approved_state(),
@@ -129,20 +134,20 @@ defmodule Sanbase.Factory do
       is_paywall_required: false,
       tags: [build(:tag), build(:tag)],
       metrics: [
-        Sanbase.Repo.get_by(Sanbase.Metric.MetricPostgresData, name: metric) ||
+        Sanbase.Repo.get_by(MetricPostgresData, name: metric) ||
           build(:metric_postgres, %{name: metric})
       ],
       published_at: DateTime.utc_now()
     }
   end
 
-  def metric_postgres_factory() do
-    %Sanbase.Metric.MetricPostgresData{
-      name: Sanbase.Metric.available_metrics() |> Enum.random()
+  def metric_postgres_factory do
+    %MetricPostgresData{
+      name: Enum.random(Sanbase.Metric.available_metrics())
     }
   end
 
-  def chart_configuration_factory() do
+  def chart_configuration_factory do
     %Chart.Configuration{
       title: "chart configuration",
       project: insert(:random_project),
@@ -150,14 +155,14 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def dashboard_factory() do
+  def dashboard_factory do
     %Sanbase.Dashboards.Dashboard{
       name: "My Dashboard",
       user: build(:user)
     }
   end
 
-  def query_factory() do
+  def query_factory do
     %Sanbase.Queries.Query{
       uuid: Sanbase.Queries.generate_uuid(),
       name: "My Dashboard",
@@ -167,26 +172,26 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def table_configuration_factory() do
+  def table_configuration_factory do
     %TableConfiguration{
       title: "table configuration",
       user: build(:user)
     }
   end
 
-  def comment_factory() do
+  def comment_factory do
     %Comment{
       content: "some default comment"
     }
   end
 
-  def tag_factory() do
+  def tag_factory do
     %Tag{
       name: rand_str(5)
     }
   end
 
-  def post_no_default_user_factory() do
+  def post_no_default_user_factory do
     %Post{
       title: "Awesome analysis",
       text: "Text of the post",
@@ -194,17 +199,17 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def popular_search_term_factory() do
+  def popular_search_term_factory do
     %Sanbase.SocialData.PopularSearchTerm{
       title: "Some Title",
-      datetime: Timex.now(),
+      datetime: DateTime.utc_now(),
       selector_type: "text",
       search_term: rand_str(3) <> " OR " <> rand_str(6),
       options: %{interval: "1h", width: "60d"}
     }
   end
 
-  def active_widget_factory() do
+  def active_widget_factory do
     %Sanbase.Widget.ActiveWidget{
       title: "Some Title",
       description: "Some Description",
@@ -218,83 +223,82 @@ defmodule Sanbase.Factory do
     slug = Map.get(attrs, :slug, rand_str())
     coinmarketcap_id = Map.get(attrs, :coinmarketcap_id, slug)
 
-    %Project{
-      name: rand_str(),
-      ticker: rand_str(4),
-      slug: slug,
-      coinmarketcap_id: coinmarketcap_id,
-      is_hidden: false,
-      source_slug_mappings: [
-        build(:source_slug_mapping, %{source: "coinmarketcap", slug: slug})
-      ],
-      token_decimals: 18,
-      total_supply: :rand.uniform(50_000_000) + 10_000_000,
-      twitter_link: "https://twitter.com/#{rand_hex_str()}",
-      telegram_link: "https://telegram.com/#{rand_hex_str()}",
-      github_organizations: [build(:github_organization)],
-      contract_addresses: [build(:contract_address)],
-      market_segments: [build(:market_segment)],
-      infrastructure:
-        Sanbase.Repo.get_by(Infrastructure, code: "ETH") || build(:infrastructure, %{code: "ETH"}),
-      eth_addresses: [build(:project_eth_address)]
-    }
-    |> merge_attributes(attrs)
+    merge_attributes(
+      %Project{
+        name: rand_str(),
+        ticker: rand_str(4),
+        slug: slug,
+        coinmarketcap_id: coinmarketcap_id,
+        is_hidden: false,
+        source_slug_mappings: [build(:source_slug_mapping, %{source: "coinmarketcap", slug: slug})],
+        token_decimals: 18,
+        total_supply: :rand.uniform(50_000_000) + 10_000_000,
+        twitter_link: "https://twitter.com/#{rand_hex_str()}",
+        telegram_link: "https://telegram.com/#{rand_hex_str()}",
+        github_organizations: [build(:github_organization)],
+        contract_addresses: [build(:contract_address)],
+        market_segments: [build(:market_segment)],
+        infrastructure: Sanbase.Repo.get_by(Infrastructure, code: "ETH") || build(:infrastructure, %{code: "ETH"}),
+        eth_addresses: [build(:project_eth_address)]
+      },
+      attrs
+    )
   end
 
   def project_factory(attrs) do
     slug = Map.get(attrs, :slug, "santiment")
     coinmarketcap_id = Map.get(attrs, :coinmarketcap_id, slug)
 
-    %Project{
-      name: "Santiment",
-      ticker: "SAN",
-      slug: slug,
-      coinmarketcap_id: coinmarketcap_id,
-      is_hidden: false,
-      source_slug_mappings: [
-        build(:source_slug_mapping, %{source: "coinmarketcap", slug: slug})
-      ],
-      token_decimals: 18,
-      total_supply: 83_000_000,
-      twitter_link: "https://twitter.com/santimentfeed",
-      discord_link: "https://santiment.net/discord",
-      github_organizations: [build(:github_organization)],
-      contract_addresses: [build(:contract_address)],
-      market_segments: [build(:market_segment)],
-      infrastructure: nil,
-      eth_addresses: [build(:project_eth_address)]
-    }
-    |> merge_attributes(attrs)
+    merge_attributes(
+      %Project{
+        name: "Santiment",
+        ticker: "SAN",
+        slug: slug,
+        coinmarketcap_id: coinmarketcap_id,
+        is_hidden: false,
+        source_slug_mappings: [build(:source_slug_mapping, %{source: "coinmarketcap", slug: slug})],
+        token_decimals: 18,
+        total_supply: 83_000_000,
+        twitter_link: "https://twitter.com/santimentfeed",
+        discord_link: "https://santiment.net/discord",
+        github_organizations: [build(:github_organization)],
+        contract_addresses: [build(:contract_address)],
+        market_segments: [build(:market_segment)],
+        infrastructure: nil,
+        eth_addresses: [build(:project_eth_address)]
+      },
+      attrs
+    )
   end
 
   def random_project_factory(attrs) do
     slug = Map.get(attrs, :slug, rand_str())
-    ticker = Map.get(attrs, :ticker, rand_str(4) |> String.upcase())
+    ticker = Map.get(attrs, :ticker, 4 |> rand_str() |> String.upcase())
     coinmarketcap_id = Map.get(attrs, :coinmarketcap_id, slug)
 
-    %Project{
-      name: rand_str(),
-      ticker: ticker,
-      slug: slug,
-      coinmarketcap_id: coinmarketcap_id,
-      is_hidden: false,
-      source_slug_mappings: [
-        build(:source_slug_mapping, %{source: "coinmarketcap", slug: slug})
-      ],
-      token_decimals: 18,
-      total_supply: :rand.uniform(50_000_000) + 10_000_000,
-      twitter_link: "https://twitter.com/#{rand_hex_str()}",
-      discord_link: "https://discord.gg/#{rand_hex_str()}",
-      github_organizations: [build(:github_organization)],
-      contract_addresses: [build(:contract_address)],
-      market_segments: [build(:market_segment)],
-      infrastructure: nil,
-      eth_addresses: [build(:project_eth_address)]
-    }
-    |> merge_attributes(attrs)
+    merge_attributes(
+      %Project{
+        name: rand_str(),
+        ticker: ticker,
+        slug: slug,
+        coinmarketcap_id: coinmarketcap_id,
+        is_hidden: false,
+        source_slug_mappings: [build(:source_slug_mapping, %{source: "coinmarketcap", slug: slug})],
+        token_decimals: 18,
+        total_supply: :rand.uniform(50_000_000) + 10_000_000,
+        twitter_link: "https://twitter.com/#{rand_hex_str()}",
+        discord_link: "https://discord.gg/#{rand_hex_str()}",
+        github_organizations: [build(:github_organization)],
+        contract_addresses: [build(:contract_address)],
+        market_segments: [build(:market_segment)],
+        infrastructure: nil,
+        eth_addresses: [build(:project_eth_address)]
+      },
+      attrs
+    )
   end
 
-  def contract_address_factory() do
+  def contract_address_factory do
     %Project.ContractAddress{
       address: "0x" <> rand_hex_str(16),
       decimals: 18,
@@ -303,41 +307,41 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def source_slug_mapping_factory() do
+  def source_slug_mapping_factory do
     %Project.SourceSlugMapping{}
   end
 
-  def social_volume_query_factory() do
+  def social_volume_query_factory do
     %Project.SocialVolumeQuery{}
   end
 
-  def github_organization_factory() do
+  def github_organization_factory do
     %Project.GithubOrganization{
       organization: rand_str()
     }
   end
 
-  def latest_cmc_data_factory() do
+  def latest_cmc_data_factory do
     %LatestCoinmarketcapData{
       coinmarketcap_id: "santiment",
       coinmarketcap_integer_id: 1807,
       rank: 100,
       price_usd: 2,
-      price_btc: 0.0001 |> Decimal.from_float(),
+      price_btc: Decimal.from_float(0.0001),
       volume_usd: 100_000,
-      update_time: Timex.now()
+      update_time: DateTime.utc_now()
     }
   end
 
-  def market_segment_factory() do
+  def market_segment_factory do
     %MarketSegment{name: rand_str(), type: rand_str()}
   end
 
-  def currency_factory() do
+  def currency_factory do
     %Currency{code: "ETH"}
   end
 
-  def ico_currency_factory() do
+  def ico_currency_factory do
     %IcoCurrency{
       ico_id: 1,
       currency_id: 1,
@@ -345,21 +349,21 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def infrastructure_factory() do
+  def infrastructure_factory do
     %Infrastructure{
       code: "ETH"
     }
   end
 
-  def project_eth_address_factory() do
+  def project_eth_address_factory do
     %ProjectEthAddress{
-      address: "0x" <> (:crypto.strong_rand_bytes(16) |> Base.encode16()),
+      address: "0x" <> (16 |> :crypto.strong_rand_bytes() |> Base.encode16()),
       source: "",
       comments: ""
     }
   end
 
-  def user_settings_factory() do
+  def user_settings_factory do
     %UserSettings{
       settings: %{
         alert_notify_telegram: false,
@@ -372,18 +376,16 @@ defmodule Sanbase.Factory do
     is_public = Map.get(attrs, :is_public, false)
     attrs = Map.delete(attrs, :is_public)
 
-    %UserTrigger{
-      user: build(:user),
-      trigger: %{
-        title: "Generic title",
-        is_public: is_public,
-        settings: trigger_settings()
-      }
-    }
-    |> merge_attributes(attrs)
+    merge_attributes(
+      %UserTrigger{
+        user: build(:user),
+        trigger: %{title: "Generic title", is_public: is_public, settings: trigger_settings()}
+      },
+      attrs
+    )
   end
 
-  defp trigger_settings() do
+  defp trigger_settings do
     %{
       "type" => "metric_signal",
       "metric" => "daily_active_addresses",
@@ -394,33 +396,33 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def alerts_historical_activity_factory() do
+  def alerts_historical_activity_factory do
     %HistoricalActivity{
       user_trigger: %{}
     }
   end
 
-  def watchlist_factory() do
+  def watchlist_factory do
     %UserList{name: "Generic User List name", color: :red, user: build(:user), is_screener: false}
   end
 
-  def screener_factory() do
+  def screener_factory do
     %UserList{name: "Generic User List name", color: :red, user: build(:user), is_screener: true}
   end
 
-  def product_api_factory() do
+  def product_api_factory do
     %Product{id: 1, name: "Sanapi by Santiment", code: "SANAPI"}
   end
 
-  def product_sanbase_factory() do
+  def product_sanbase_factory do
     %Product{id: 2, name: "Sanbase by Santiment", code: "SANBASE"}
   end
 
-  def product_exchange_wallets_factory() do
+  def product_exchange_wallets_factory do
     %Product{id: 5, name: "Exchange Wallets by Santiment", code: "SAN_EXCHANGE_WALLETS"}
   end
 
-  def plan_free_factory() do
+  def plan_free_factory do
     %Plan{
       id: 1,
       name: "FREE",
@@ -430,7 +432,7 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def plan_essential_factory() do
+  def plan_essential_factory do
     %Plan{
       id: 2,
       name: "ESSENTIAL",
@@ -440,7 +442,7 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def plan_pro_factory() do
+  def plan_pro_factory do
     %Plan{
       id: 3,
       name: "PRO",
@@ -451,7 +453,7 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def plan_custom_factory() do
+  def plan_custom_factory do
     %Plan{
       id: 5,
       name: "CUSTOM",
@@ -461,7 +463,7 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def plan_essential_yearly_factory() do
+  def plan_essential_yearly_factory do
     %Plan{
       id: 6,
       name: "ESSENTIAL",
@@ -471,7 +473,7 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def plan_pro_yearly_factory() do
+  def plan_pro_yearly_factory do
     %Plan{
       id: 7,
       name: "PRO",
@@ -481,7 +483,7 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def plan_custom_yearly_factory() do
+  def plan_custom_yearly_factory do
     %Plan{
       id: 9,
       name: "CUSTOM",
@@ -491,17 +493,17 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def plan_business_pro_monthly_factory() do
+  def plan_business_pro_monthly_factory do
     %Plan{
       id: 107,
       name: "BUSINESS_PRO",
-      amount: 42000,
+      amount: 42_000,
       currency: "USD",
       interval: "month"
     }
   end
 
-  def plan_business_pro_yearly_factory() do
+  def plan_business_pro_yearly_factory do
     %Plan{
       id: 108,
       name: "BUSINESS_PRO",
@@ -511,17 +513,17 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def plan_business_max_monthly_factory() do
+  def plan_business_max_monthly_factory do
     %Plan{
       id: 109,
       name: "BUSINESS_MAX",
-      amount: 99900,
+      amount: 99_900,
       currency: "USD",
       interval: "month"
     }
   end
 
-  def plan_business_max_yearly_factory() do
+  def plan_business_max_yearly_factory do
     %Plan{
       id: 110,
       name: "BUSINESS_MAX",
@@ -531,7 +533,7 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def plan_free_sanbase_factory() do
+  def plan_free_sanbase_factory do
     %Plan{
       id: 11,
       name: "FREE",
@@ -541,7 +543,7 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def plan_basic_sanbase_factory() do
+  def plan_basic_sanbase_factory do
     %Plan{
       id: 205,
       name: "BASIC",
@@ -551,7 +553,7 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def plan_pro_sanbase_factory() do
+  def plan_pro_sanbase_factory do
     %Plan{
       id: 201,
       name: "PRO",
@@ -561,37 +563,37 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def plan_pro_sanbase_yearly_factory() do
+  def plan_pro_sanbase_yearly_factory do
     %Plan{
       id: 202,
       name: "PRO",
-      amount: 52900,
+      amount: 52_900,
       currency: "USD",
       interval: "year"
     }
   end
 
-  def plan_pro_plus_sanbase_factory() do
+  def plan_pro_plus_sanbase_factory do
     %Plan{
       id: 203,
       name: "PRO_PLUS",
-      amount: 24900,
+      amount: 24_900,
       currency: "USD",
       interval: "month"
     }
   end
 
-  def plan_max_sanbase_factory() do
+  def plan_max_sanbase_factory do
     %Plan{
       id: 210,
       name: "MAX",
-      amount: 24900,
+      amount: 24_900,
       currency: "USD",
       interval: "month"
     }
   end
 
-  def plan_pro_70off_sanbase_factory() do
+  def plan_pro_70off_sanbase_factory do
     %Plan{
       id: 206,
       name: "PRO",
@@ -601,17 +603,17 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def plan_pro_70off_yearly_sanbase_factory() do
+  def plan_pro_70off_yearly_sanbase_factory do
     %Plan{
       id: 207,
       name: "PRO",
-      amount: 15900,
+      amount: 15_900,
       currency: "USD",
       interval: "year"
     }
   end
 
-  def plan_pro_plus_70off_sanbase_factory() do
+  def plan_pro_plus_70off_sanbase_factory do
     %Plan{
       id: 208,
       name: "PRO_PLUS",
@@ -621,159 +623,159 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def plan_pro_plus_70off_yearly_sanbase_factory() do
+  def plan_pro_plus_70off_yearly_sanbase_factory do
     %Plan{
       id: 209,
       name: "PRO_PLUS",
-      amount: 81000,
+      amount: 81_000,
       currency: "USD",
       interval: "year"
     }
   end
 
-  def subscription_factory() do
+  def subscription_factory do
     %Subscription{
       stripe_id: rand_str(),
-      current_period_end: Timex.shift(Timex.now(), days: 1),
+      current_period_end: Timex.shift(DateTime.utc_now(), days: 1),
       status: "active"
     }
   end
 
-  def subscription_essential_factory() do
+  def subscription_essential_factory do
     %Subscription{
       stripe_id: rand_str(),
       plan_id: 2,
-      current_period_end: Timex.shift(Timex.now(), days: 1),
+      current_period_end: Timex.shift(DateTime.utc_now(), days: 1),
       status: "active"
     }
   end
 
-  def subscription_pro_factory() do
+  def subscription_pro_factory do
     %Subscription{
       stripe_id: rand_str(),
       plan_id: 3,
-      current_period_end: Timex.shift(Timex.now(), days: 1),
+      current_period_end: Timex.shift(DateTime.utc_now(), days: 1),
       status: "active"
     }
   end
 
-  def subscription_custom_factory() do
+  def subscription_custom_factory do
     %Subscription{
       stripe_id: rand_str(),
       plan_id: 5,
-      current_period_end: Timex.shift(Timex.now(), days: 1),
+      current_period_end: Timex.shift(DateTime.utc_now(), days: 1),
       status: "active"
     }
   end
 
-  def subscription_business_pro_monthly_factory() do
+  def subscription_business_pro_monthly_factory do
     %Subscription{
       stripe_id: rand_str(),
       plan_id: 107,
-      current_period_end: Timex.shift(Timex.now(), days: 1),
+      current_period_end: Timex.shift(DateTime.utc_now(), days: 1),
       status: "active"
     }
   end
 
-  def subscription_business_pro_yearly_factory() do
+  def subscription_business_pro_yearly_factory do
     %Subscription{
       stripe_id: rand_str(),
       plan_id: 108,
-      current_period_end: Timex.shift(Timex.now(), days: 1),
+      current_period_end: Timex.shift(DateTime.utc_now(), days: 1),
       status: "active"
     }
   end
 
-  def subscription_business_max_monthly_factory() do
+  def subscription_business_max_monthly_factory do
     %Subscription{
       stripe_id: rand_str(),
       plan_id: 109,
-      current_period_end: Timex.shift(Timex.now(), days: 1),
+      current_period_end: Timex.shift(DateTime.utc_now(), days: 1),
       status: "active"
     }
   end
 
-  def subscription_business_max_yearly_factory() do
+  def subscription_business_max_yearly_factory do
     %Subscription{
       stripe_id: rand_str(),
       plan_id: 110,
-      current_period_end: Timex.shift(Timex.now(), days: 1),
+      current_period_end: Timex.shift(DateTime.utc_now(), days: 1),
       status: "active"
     }
   end
 
-  def subscription_basic_sanbase_factory() do
+  def subscription_basic_sanbase_factory do
     %Subscription{
       plan_id: 205,
-      current_period_end: Timex.shift(Timex.now(), days: 1),
+      current_period_end: Timex.shift(DateTime.utc_now(), days: 1),
       status: "active"
     }
   end
 
-  def subscription_pro_sanbase_factory() do
+  def subscription_pro_sanbase_factory do
     %Subscription{
       plan_id: 201,
-      current_period_end: Timex.shift(Timex.now(), days: 1),
+      current_period_end: Timex.shift(DateTime.utc_now(), days: 1),
       status: "active"
     }
   end
 
-  def subscription_pro_plus_sanbase_factory() do
+  def subscription_pro_plus_sanbase_factory do
     %Subscription{
       plan_id: 203,
-      current_period_end: Timex.shift(Timex.now(), days: 1),
+      current_period_end: Timex.shift(DateTime.utc_now(), days: 1),
       status: "active"
     }
   end
 
-  def subscription_max_sanbase_factory() do
+  def subscription_max_sanbase_factory do
     %Subscription{
       plan_id: 210,
-      current_period_end: Timex.shift(Timex.now(), days: 1),
+      current_period_end: Timex.shift(DateTime.utc_now(), days: 1),
       status: "active"
     }
   end
 
-  def subscription_pro_custom_factory() do
+  def subscription_pro_custom_factory do
     %Subscription{
       plan_id: 24,
-      current_period_end: Timex.shift(Timex.now(), days: 1),
+      current_period_end: Timex.shift(DateTime.utc_now(), days: 1),
       status: "active"
     }
   end
 
-  def timeline_event_factory() do
+  def timeline_event_factory do
     %TimelineEvent{}
   end
 
-  def ico_factory() do
+  def ico_factory do
     %Ico{
       project_id: 1
     }
   end
 
-  def role_san_team_factory() do
+  def role_san_team_factory do
     %Role{
       id: 1,
       name: "Santiment Team Member"
     }
   end
 
-  def role_san_family_factory() do
+  def role_san_family_factory do
     %Role{
       id: 2,
       name: "Santiment Family Member"
     }
   end
 
-  def role_san_moderator_factory() do
+  def role_san_moderator_factory do
     %Role{
       id: 3,
       name: "Santiment Moderator"
     }
   end
 
-  def user_role_factory() do
+  def user_role_factory do
     %UserRole{}
   end
 
@@ -783,8 +785,8 @@ defmodule Sanbase.Factory do
 
   def newsletter_token_factory do
     %NewsletterToken{
-      token: :crypto.strong_rand_bytes(64) |> Base.encode64(),
-      email: (:crypto.strong_rand_bytes(16) |> Base.encode16()) <> "@santiment.net",
+      token: 64 |> :crypto.strong_rand_bytes() |> Base.encode64(),
+      email: (16 |> :crypto.strong_rand_bytes() |> Base.encode16()) <> "@santiment.net",
       email_token_generated_at: DateTime.utc_now()
     }
   end
@@ -809,8 +811,8 @@ defmodule Sanbase.Factory do
       title: "Webinar title",
       description: "Webinar description",
       image_url: "https://example.com/#{rand_hex_str()}",
-      start_time: Timex.shift(Timex.now(), days: 1),
-      end_time: Timex.shift(Timex.now(), days: 2)
+      start_time: Timex.shift(DateTime.utc_now(), days: 1),
+      end_time: Timex.shift(DateTime.utc_now(), days: 2)
     }
   end
 
@@ -827,7 +829,7 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def email_login_attempt_factory() do
+  def email_login_attempt_factory do
     rand_octet = fn -> :rand.uniform(255) end
 
     %AccessAttempt{
@@ -842,11 +844,11 @@ defmodule Sanbase.Factory do
   end
 
   def rand_str(length \\ 10) do
-    :crypto.strong_rand_bytes(length) |> Base.encode64() |> binary_part(0, length)
+    length |> :crypto.strong_rand_bytes() |> Base.encode64() |> binary_part(0, length)
   end
 
   def rand_hex_str(length \\ 10) do
-    :crypto.strong_rand_bytes(length) |> Base.hex_encode32(case: :lower) |> binary_part(0, length)
+    length |> :crypto.strong_rand_bytes() |> Base.hex_encode32(case: :lower) |> binary_part(0, length)
   end
 
   defp plan_stripe_id do

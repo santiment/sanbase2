@@ -1,9 +1,10 @@
 defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
+  @moduledoc false
   alias Sanbase.Clickhouse
-  alias Sanbase.Project
   alias Sanbase.Metric
+  alias Sanbase.Project
 
-  def data(), do: Dataloader.KV.new(&query/2)
+  def data, do: Dataloader.KV.new(&query/2)
 
   def query(:project_info, args) do
     args
@@ -16,7 +17,7 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
   end
 
   def query(:aggregated_metric, args) do
-    args_list = args |> Enum.to_list()
+    args_list = Enum.to_list(args)
 
     args_list
     |> Enum.group_by(fn %{selector: selector} -> selector end)
@@ -70,7 +71,8 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
   def query(:average_dev_activity, args) do
     args = Enum.to_list(args)
 
-    Enum.group_by(args, fn %{days: days} -> days end)
+    args
+    |> Enum.group_by(fn %{days: days} -> days end)
     |> Sanbase.Parallel.map(
       fn {days, group} ->
         {days, average_dev_activity(group, days)}
@@ -88,10 +90,11 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
   def query(:eth_spent, args) do
     args = Enum.to_list(args)
 
-    Enum.group_by(args, fn %{days: days} -> days end)
+    args
+    |> Enum.group_by(fn %{days: days} -> days end)
     |> Sanbase.Parallel.map(
       fn {days, group} ->
-        {days, eth_spent_for_days_group(group |> Enum.map(& &1.project), days)}
+        {days, group |> Enum.map(& &1.project) |> eth_spent_for_days_group(days)}
       end,
       ordered: false
     )
@@ -104,8 +107,8 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
       |> Enum.map(fn %{project: project} -> project.slug end)
       |> Enum.reject(&is_nil/1)
 
-    Sanbase.Metric.aggregated_timeseries_data(
-      "daily_active_addresses",
+    "daily_active_addresses"
+    |> Sanbase.Metric.aggregated_timeseries_data(
       %{slug: slugs},
       from,
       to,
@@ -121,26 +124,24 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
   end
 
   defp average_dev_activity(group, days) do
-    to = Timex.now()
+    to = DateTime.utc_now()
     from = Timex.shift(to, days: -days)
 
     organizations =
-      group
-      |> Enum.flat_map(fn %{project: project} ->
+      Enum.flat_map(group, fn %{project: project} ->
         {:ok, organizations} = Project.github_organizations(project)
         organizations
       end)
 
-    Sanbase.Metric.aggregated_timeseries_data(
-      "dev_activity",
+    "dev_activity"
+    |> Sanbase.Metric.aggregated_timeseries_data(
       %{organizations: organizations},
       from,
       to
     )
     |> case do
       {:ok, result} ->
-        result
-        |> Enum.into(%{}, fn {org, dev_activity} ->
+        Map.new(result, fn {org, dev_activity} ->
           {org, dev_activity / days}
         end)
 
@@ -150,11 +151,12 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
   end
 
   defp eth_spent_for_days_group(projects, days) do
-    from = Timex.shift(Timex.now(), days: -days)
-    to = Timex.now()
+    from = Timex.shift(DateTime.utc_now(), days: -days)
+    to = DateTime.utc_now()
 
     eth_spent_per_address =
-      eth_addresses(projects)
+      projects
+      |> eth_addresses()
       |> Enum.chunk_every(25)
       |> Sanbase.Parallel.map(&eth_spent(&1, from, to),
         map_type: :flat_map,
@@ -163,11 +165,9 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
       )
       |> Map.new()
 
-    projects
-    |> Enum.map(fn project ->
+    Map.new(projects, fn project ->
       {project.id, eth_spent_per_project(project, eth_spent_per_address)}
     end)
-    |> Map.new()
   end
 
   # Calculate the ethereum spent for a single project by summing the ethereum
@@ -178,14 +178,12 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
     {:ok, addresses} = Project.eth_addresses(project)
 
     project_addresses_eth_spent =
-      addresses
-      |> Enum.map(fn address ->
+      Enum.map(addresses, fn address ->
         Map.get(eth_spent_per_address, address, {:ok, 0})
       end)
 
-    project_eth_spent =
-      for({:ok, value} <- project_addresses_eth_spent, do: value)
-      |> Enum.sum()
+    for_result = for({:ok, value} <- project_addresses_eth_spent, do: value)
+    project_eth_spent = Enum.sum(for_result)
 
     project_addresses_eth_spent
     |> Enum.any?(&match?({:error, _}, &1))
@@ -201,14 +199,12 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
   defp eth_spent(eth_addresses, from, to) do
     case Clickhouse.HistoricalBalance.EthSpent.eth_balance_change(eth_addresses, from, to) do
       {:ok, balance_changes} ->
-        balance_changes
-        |> Enum.map(fn %{address: address, balance_change_amount: balance_change_amount} ->
+        Enum.map(balance_changes, fn %{address: address, balance_change_amount: balance_change_amount} ->
           {address, {:ok, balance_change_amount}}
         end)
 
       {:error, _} ->
-        eth_addresses
-        |> Enum.map(fn addr -> {addr, {:error, :novalue}} end)
+        Enum.map(eth_addresses, fn addr -> {addr, {:error, :novalue}} end)
     end
   end
 

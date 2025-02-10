@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.OrderNewSanbasePlans do
+  @moduledoc false
   use Ecto.Migration
 
   import Ecto.Query
@@ -14,10 +15,11 @@ defmodule Sanbase.Repo.Migrations.OrderNewSanbasePlans do
 
     order_list
     |> Enum.with_index()
-    |> Enum.into(%{}, fn {item, idx} -> {item, len - idx} end)
+    |> Map.new(fn {item, idx} -> {item, len - idx} end)
     |> Enum.sort_by(fn {_, v} -> v end, &>=/2)
     |> Enum.each(fn {plan_id, order} ->
-      Repo.get(Plan, plan_id)
+      Plan
+      |> Repo.get(plan_id)
       |> Plan.changeset(%{order: order})
       |> Repo.update()
     end)

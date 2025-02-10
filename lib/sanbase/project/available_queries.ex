@@ -4,20 +4,21 @@ defmodule Sanbase.Project.AvailableQueries do
   """
 
   alias Sanbase.Project
-  require SanbaseWeb.Graphql.Schema
+  alias SanbaseWeb.Graphql.Schema
+
+  require Schema
 
   @doc ~s"""
   Return a list of all GraphQL query names that have an argument `slug`
   """
   @spec all :: [String.t()]
-  def all() do
+  def all do
     project_queries()
   end
 
   @spec all_atom_names() :: [atom()]
-  def all_atom_names() do
-    project_queries()
-    |> Enum.map(fn query ->
+  def all_atom_names do
+    Enum.map(project_queries(), fn query ->
       query
       |> Macro.underscore()
       # credo:disable-for-next-line
@@ -36,7 +37,7 @@ defmodule Sanbase.Project.AvailableQueries do
   """
   @spec get(Sanbase.Project.t()) :: [String.t()]
   def get(%Project{} = project) do
-    project = project |> Sanbase.Repo.preload([:eth_addresses, :infrastructure])
+    project = Sanbase.Repo.preload(project, [:eth_addresses, :infrastructure])
 
     [
       &historical_balance_queries/1,
@@ -109,8 +110,8 @@ defmodule Sanbase.Project.AvailableQueries do
     end
   end
 
-  defp project_queries() do
-    {:ok, result} = Absinthe.run(available_queries_query(), SanbaseWeb.Graphql.Schema, [])
+  defp project_queries do
+    {:ok, result} = Absinthe.run(available_queries_query(), Schema, [])
     %{data: %{"__schema" => %{"queryType" => %{"fields" => fields}}}} = result
 
     fields
@@ -121,7 +122,7 @@ defmodule Sanbase.Project.AvailableQueries do
     |> Enum.map(& &1["name"])
   end
 
-  defp available_queries_query() do
+  defp available_queries_query do
     """
     query availableQueries {
       __schema {

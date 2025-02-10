@@ -1,8 +1,8 @@
 defmodule SanbaseWeb.Graphql.ProjectApiCombinedStatsTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import Sanbase.Factory
   import ExUnit.CaptureLog
+  import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
   require Sanbase.Mock
@@ -17,10 +17,10 @@ defmodule SanbaseWeb.Graphql.ProjectApiCombinedStatsTest do
     datetime4 = ~U[2017-05-16 00:00:00Z]
 
     data = [
-      [datetime1 |> DateTime.to_unix(), 545, 220, 1],
-      [datetime2 |> DateTime.to_unix(), 2000, 1400, 1],
-      [datetime3 |> DateTime.to_unix(), 2600, 1600, 1],
-      [datetime4 |> DateTime.to_unix(), 0, 0, 0]
+      [DateTime.to_unix(datetime1), 545, 220, 1],
+      [DateTime.to_unix(datetime2), 2000, 1400, 1],
+      [DateTime.to_unix(datetime3), 2600, 1600, 1],
+      [DateTime.to_unix(datetime4), 0, 0, 0]
     ]
 
     %{from: datetime1, to: datetime4, slugs: [p1.slug, p2.slug], data: data}
@@ -32,7 +32,8 @@ defmodule SanbaseWeb.Graphql.ProjectApiCombinedStatsTest do
     fn ->
       result = get_history_stats(conn, from, to, slugs)
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: data}})
+      (&Sanbase.ClickhouseRepo.query/2)
+      |> Sanbase.Mock.prepare_mock2({:ok, %{rows: data}})
       |> Sanbase.Mock.run_with_mocks(fn ->
         assert result == %{
                  "data" => %{
@@ -58,7 +59,8 @@ defmodule SanbaseWeb.Graphql.ProjectApiCombinedStatsTest do
   test "the database returns no data", context do
     %{conn: conn, from: from, to: to, slugs: slugs} = context
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: []}})
+    (&Sanbase.ClickhouseRepo.query/2)
+    |> Sanbase.Mock.prepare_mock2({:ok, %{rows: []}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result = get_history_stats(conn, from, to, slugs)
       assert result == %{"data" => %{"projectsListHistoryStats" => []}}
@@ -70,7 +72,8 @@ defmodule SanbaseWeb.Graphql.ProjectApiCombinedStatsTest do
 
     error_msg = "Database error"
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, error_msg})
+    (&Sanbase.ClickhouseRepo.query/2)
+    |> Sanbase.Mock.prepare_mock2({:error, error_msg})
     |> Sanbase.Mock.run_with_mocks(fn ->
       assert capture_log(fn ->
                %{"errors" => [error]} = get_history_stats(conn, from, to, slugs)

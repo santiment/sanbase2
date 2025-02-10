@@ -8,8 +8,8 @@ defmodule Sanbase.Accounts.Interaction do
   """
   use Ecto.Schema
 
-  import Ecto.Query
   import Ecto.Changeset
+  import Ecto.Query
 
   alias Sanbase.Accounts.User
   # The same [:user_id, :entity_id, :entity_type, :interaction_type] cannot be stored
@@ -103,8 +103,7 @@ defmodule Sanbase.Accounts.Interaction do
       |> @datetime_module.to_naive()
 
     args =
-      args
-      |> Map.merge(%{
+      Map.merge(args, %{
         user_id: user_id,
         inserted_at: inserted_at,
         updated_at: inserted_at,
@@ -127,7 +126,8 @@ defmodule Sanbase.Accounts.Interaction do
   @spec get_user_most_used(non_neg_integer(), String.t() | list(String.t()), Keyword.t()) ::
           {:ok, list(t())}
   def get_user_most_used(user_id, entity_type_or_types, opts) do
-    get_user_most_used_query(user_id, entity_type_or_types, opts)
+    user_id
+    |> get_user_most_used_query(entity_type_or_types, opts)
     |> Sanbase.Repo.all()
   end
 
@@ -150,7 +150,7 @@ defmodule Sanbase.Accounts.Interaction do
     {limit, offset} = Sanbase.Utils.Transform.opts_to_limit_offset(opts)
 
     entity_types =
-      List.wrap(entity_type_or_types) |> Enum.map(&deduce_entity_column_name/1) |> Enum.uniq()
+      entity_type_or_types |> List.wrap() |> Enum.map(&deduce_entity_column_name/1) |> Enum.uniq()
 
     from(
       row in __MODULE__,
@@ -191,16 +191,18 @@ defmodule Sanbase.Accounts.Interaction do
   end
 
   defp validate_entity_type(_changeset, entity_type) do
-    case entity_type in @supported_entity_types_internal do
-      true -> []
-      false -> [{:entity_type, "Unsupported entity type #{entity_type}"}]
+    if entity_type in @supported_entity_types_internal do
+      []
+    else
+      [{:entity_type, "Unsupported entity type #{entity_type}"}]
     end
   end
 
   defp validate_interaction_type(_changeset, interaction_type) do
-    case interaction_type in ["view", "upvote", "downvote", "comment"] do
-      true -> []
-      false -> [{:entity_type, "Unsupported interaction type #{interaction_type}"}]
+    if interaction_type in ["view", "upvote", "downvote", "comment"] do
+      []
+    else
+      [{:entity_type, "Unsupported interaction type #{interaction_type}"}]
     end
   end
 end

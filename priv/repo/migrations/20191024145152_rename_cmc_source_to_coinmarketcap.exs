@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.RenameCmcSourceToCoinmarketcap do
+  @moduledoc false
   use Ecto.Migration
 
   import Ecto.Query
@@ -8,16 +9,15 @@ defmodule Sanbase.Repo.Migrations.RenameCmcSourceToCoinmarketcap do
   def up do
     setup()
 
-    from(ssm in SourceSlugMapping,
-      where: ssm.source == "cmc",
-      update: [set: [source: "coinmarketcap"]]
+    Sanbase.Repo.update_all(
+      from(ssm in SourceSlugMapping, where: ssm.source == "cmc", update: [set: [source: "coinmarketcap"]]),
+      []
     )
-    |> Sanbase.Repo.update_all([])
   end
 
   def down, do: :ok
 
-  defp setup() do
+  defp setup do
     Application.ensure_all_started(:tzdata)
   end
 end

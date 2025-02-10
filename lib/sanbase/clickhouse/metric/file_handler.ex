@@ -62,7 +62,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
                       [],
                       fn file, acc ->
                         try do
-                          (File.read!(file) |> Jason.decode!()) ++ acc
+                          (file |> File.read!() |> Jason.decode!()) ++ acc
                         rescue
                           e in [Jason.DecodeError] ->
                             IO.warn("Jason decoding error in file #{file}")
@@ -70,5 +70,5 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
                         end
                       end
                     )
-  def raw_metrics_json(), do: @raw_metrics_json
+  def raw_metrics_json, do: @raw_metrics_json
 end

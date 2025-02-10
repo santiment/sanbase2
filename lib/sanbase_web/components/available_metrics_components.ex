@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.AvailableMetricsComponents do
+  @moduledoc false
   use Phoenix.Component
 
   alias SanbaseWeb.CoreComponents

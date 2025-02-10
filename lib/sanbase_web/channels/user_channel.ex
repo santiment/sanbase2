@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.UserChannel do
+  @moduledoc false
   use SanbaseWeb, :channel
 
   defguard is_own_channel(socket)
@@ -11,20 +12,14 @@ defmodule SanbaseWeb.UserChannel do
   end
 
   def join("users:" <> user_id, _params, socket) do
-    case String.to_integer(user_id) == socket.assigns.user_id do
-      true ->
-        {:ok, assign(socket, :user_joined_own_channel, true)}
-
-      false ->
-        {:error, "The channel subtopic must be the authenticated user id"}
+    if String.to_integer(user_id) == socket.assigns.user_id do
+      {:ok, assign(socket, :user_joined_own_channel, true)}
+    else
+      {:error, "The channel subtopic must be the authenticated user id"}
     end
   end
 
-  def handle_in(
-        "users_by_username_pattern",
-        %{"username_pattern" => username_pattern} = params,
-        socket
-      ) do
+  def handle_in("users_by_username_pattern", %{"username_pattern" => username_pattern} = params, socket) do
     size = Map.get(params, "size", 20)
     user_maps = Sanbase.Accounts.Search.by_username(username_pattern, size)
 

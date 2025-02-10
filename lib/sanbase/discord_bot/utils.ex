@@ -3,10 +3,12 @@ defmodule Sanbase.DiscordBot.Utils do
   Discord bot utils
   """
 
+  alias Nostrum.Struct.Interaction
+
   @ephemeral_message_flags 64
 
   @spec edit_interaction_response(
-          Nostrum.Struct.Interaction.t(),
+          Interaction.t(),
           String.t(),
           list()
         ) :: {:ok, Nostrum.Struct.Message.t()} | {:error, any()}
@@ -38,12 +40,12 @@ defmodule Sanbase.DiscordBot.Utils do
     end
   end
 
-  @spec interaction_ack_visible(Nostrum.Struct.Interaction.t()) :: {:ok} | {:error, any()}
+  @spec interaction_ack_visible(Interaction.t()) :: {:ok} | {:error, any()}
   def interaction_ack_visible(interaction) do
     Nostrum.Api.create_interaction_response(interaction, %{type: 5})
   end
 
-  @spec interaction_ack(Nostrum.Struct.Interaction.t()) :: {:ok} | {:error, any()}
+  @spec interaction_ack(Interaction.t()) :: {:ok} | {:error, any()}
   def interaction_ack(interaction) do
     Nostrum.Api.create_interaction_response(interaction, %{
       type: 5,
@@ -69,7 +71,8 @@ defmodule Sanbase.DiscordBot.Utils do
 
   @spec split_message(String.t(), pos_integer()) :: list(String.t())
   def split_message(content, max_length) do
-    Regex.scan(~r/.{1,#{max_length}}/s, content)
+    ~r/.{1,#{max_length}}/s
+    |> Regex.scan(content)
     |> Enum.map(&Enum.at(&1, 0))
   end
 end

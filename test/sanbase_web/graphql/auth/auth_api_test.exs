@@ -1,9 +1,9 @@
 defmodule SanbaseWeb.Graphql.AuthApiTest do
   use SanbaseWeb.ConnCase
 
+  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   setup do
     user = insert(:user)
@@ -27,18 +27,17 @@ defmodule SanbaseWeb.Graphql.AuthApiTest do
       |> post("/graphql", query_skeleton("{ currentUser{ id } }"))
       |> json_response(200)
 
-    assert result["data"]["currentUser"]["id"] |> Sanbase.Math.to_integer() ==
+    assert Sanbase.Math.to_integer(result["data"]["currentUser"]["id"]) ==
              context.user.id
   end
 
   test "the refresh token silently updates the access token", context do
     new_now = DateTime.utc_now() |> DateTime.to_unix() |> Kernel.+(3600)
 
-    Sanbase.Mock.prepare_mock2(&Guardian.timestamp/0, new_now)
+    (&Guardian.timestamp/0)
+    |> Sanbase.Mock.prepare_mock2(new_now)
     |> Sanbase.Mock.run_with_mocks(fn ->
-      new_conn =
-        context.conn
-        |> post("/graphql", query_skeleton("{ currentUser{ id } }"))
+      new_conn = post(context.conn, "/graphql", query_skeleton("{ currentUser{ id } }"))
 
       old_session = Plug.Conn.get_session(context.conn)
       new_session = Plug.Conn.get_session(new_conn)
@@ -60,7 +59,8 @@ defmodule SanbaseWeb.Graphql.AuthApiTest do
 
     new_now = DateTime.utc_now() |> DateTime.to_unix() |> Kernel.+(320)
 
-    Sanbase.Mock.prepare_mock2(&Guardian.timestamp/0, new_now)
+    (&Guardian.timestamp/0)
+    |> Sanbase.Mock.prepare_mock2(new_now)
     |> Sanbase.Mock.run_with_mocks(fn ->
       conn_same_tokens = Plug.Test.init_test_session(build_conn(), context.jwt_tokens)
 
@@ -80,7 +80,8 @@ defmodule SanbaseWeb.Graphql.AuthApiTest do
     # The refresh token TTL is 4 weeks (28 days)
     new_now = DateTime.utc_now() |> DateTime.to_unix() |> Kernel.+(30 * 86_400)
 
-    Sanbase.Mock.prepare_mock2(&Guardian.timestamp/0, new_now)
+    (&Guardian.timestamp/0)
+    |> Sanbase.Mock.prepare_mock2(new_now)
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         context.conn
@@ -106,9 +107,10 @@ defmodule SanbaseWeb.Graphql.AuthApiTest do
   test "cannot destroy sessions when the refresh at older than 10 minutes",
        context do
     # This check is implemented in a sanbase middleware where DateTime.utc_now is used
-    new_now = DateTime.utc_now() |> DateTime.add(11 * 60, :second)
+    new_now = DateTime.add(DateTime.utc_now(), 11 * 60, :second)
 
-    Sanbase.Mock.prepare_mock2(&DateTime.utc_now/0, new_now)
+    (&DateTime.utc_now/0)
+    |> Sanbase.Mock.prepare_mock2(new_now)
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         context.conn
@@ -130,15 +132,15 @@ defmodule SanbaseWeb.Graphql.AuthApiTest do
 
   test "get active sessions", context do
     ipad_conn =
-      build_conn()
-      |> Plug.Conn.put_req_header(
+      Plug.Conn.put_req_header(
+        build_conn(),
         "user-agent",
         "Mozilla/5.0 (iPad; CPU OS 12_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.1 Mobile/15E148 Safari/604.1"
       )
 
     mac_conn =
-      build_conn()
-      |> Plug.Conn.put_req_header(
+      Plug.Conn.put_req_header(
+        build_conn(),
         "user-agent",
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1.2 Safari/605.1.15"
       )
@@ -209,9 +211,7 @@ defmodule SanbaseWeb.Graphql.AuthApiTest do
     }
     """
 
-    result =
-      conn
-      |> post("/graphql", mutation_skeleton(query))
+    result = post(conn, "/graphql", mutation_skeleton(query))
 
     assert json_response(result, 200)["data"]["logout"]["success"]
     assert result.private.plug_session_info == :drop

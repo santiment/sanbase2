@@ -1,12 +1,13 @@
 defmodule Sanbase.Repo.Migrations.IcoMoveFundsRaisedTotalsToDetails do
+  @moduledoc false
   use Ecto.Migration
 
   import Ecto.Query, warn: false
 
-  alias Sanbase.Repo
+  alias Sanbase.Model.Currency
   alias Sanbase.Model.Ico
   alias Sanbase.Model.IcoCurrency
-  alias Sanbase.Model.Currency
+  alias Sanbase.Repo
 
   def up do
     usd = find_or_insert_currency("USD")
@@ -26,7 +27,7 @@ defmodule Sanbase.Repo.Migrations.IcoMoveFundsRaisedTotalsToDetails do
           i.id
         )
     )
-    |> Repo.stream(max_rows: 10000)
+    |> Repo.stream(max_rows: 10_000)
     |> Stream.each(fn ico ->
       ico_currency =
         try_from_existing_ico_currencies(ico, currencies) || try_from_totals(ico, currencies)
@@ -46,7 +47,8 @@ defmodule Sanbase.Repo.Migrations.IcoMoveFundsRaisedTotalsToDetails do
 
   defp try_from_existing_ico_currency(ico, currency, funds_raised_total) do
     funds_raised_total &&
-      Enum.find(ico.ico_currencies, &(&1.currency_id == currency.id))
+      ico.ico_currencies
+      |> Enum.find(&(&1.currency_id == currency.id))
       |> case do
         nil -> nil
         ic -> IcoCurrency.changeset(ic, %{amount: funds_raised_total})
@@ -60,19 +62,15 @@ defmodule Sanbase.Repo.Migrations.IcoMoveFundsRaisedTotalsToDetails do
   end
 
   defp try_from_total(ico, currency, funds_raised_total) do
-    funds_raised_total
-    |> case do
-      nil ->
-        nil
-
-      amount ->
-        %IcoCurrency{}
-        |> IcoCurrency.changeset(%{ico_id: ico.id, currency_id: currency.id, amount: amount})
+    case funds_raised_total do
+      nil -> nil
+      amount -> IcoCurrency.changeset(%IcoCurrency{}, %{ico_id: ico.id, currency_id: currency.id, amount: amount})
     end
   end
 
   defp find_or_insert_currency(currency_code) do
-    Repo.get_by(Currency, code: currency_code)
+    Currency
+    |> Repo.get_by(code: currency_code)
     |> case do
       result = %Currency{} ->
         result

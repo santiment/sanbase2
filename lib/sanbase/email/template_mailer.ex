@@ -1,9 +1,10 @@
 defmodule Sanbase.TemplateMailer do
+  @moduledoc false
   use Swoosh.Mailer, otp_app: :sanbase
 
-  require Logger
-
   import Swoosh.Email
+
+  require Logger
 
   @sender_email "support@santiment.net"
   @sender_name "Santiment"

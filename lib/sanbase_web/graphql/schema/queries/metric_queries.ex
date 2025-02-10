@@ -1,11 +1,12 @@
 defmodule SanbaseWeb.Graphql.Schema.MetricQueries do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 2]
 
-  alias SanbaseWeb.Graphql.Resolvers.MetricResolver
-  alias SanbaseWeb.Graphql.Middlewares.TransformResolution
   alias SanbaseWeb.Graphql.Middlewares.AccessControl
+  alias SanbaseWeb.Graphql.Middlewares.TransformResolution
+  alias SanbaseWeb.Graphql.Resolvers.MetricResolver
 
   object :metric_queries do
     @desc ~s"""

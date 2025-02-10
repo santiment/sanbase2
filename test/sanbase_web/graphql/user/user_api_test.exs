@@ -1,11 +1,11 @@
 defmodule SanbaseWeb.Graphql.UserApiTest do
   use SanbaseWeb.ConnCase, async: false
 
+  import ExUnit.CaptureLog
   import Mock
   import Mox
-  import SanbaseWeb.Graphql.TestHelpers
-  import ExUnit.CaptureLog
   import Sanbase.Factory
+  import SanbaseWeb.Graphql.TestHelpers
 
   alias Sanbase.Accounts.User
   alias Sanbase.Repo
@@ -161,7 +161,8 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
 
     test "trying to verify email_candidate with a valid email_candidate_token", %{conn: conn} do
       {:ok, user} =
-        insert(:user, email: "example@santiment.net")
+        :user
+        |> insert(email: "example@santiment.net")
         |> User.Email.update_email_candidate("example+foo@santiment.net")
 
       mutation = """
@@ -183,7 +184,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
       assert user.email_candidate == nil
       # Assert that now() and validated_at do not differ by more than 2 seconds
       assert Sanbase.TestUtils.datetime_close_to(
-               Timex.now(),
+               DateTime.utc_now(),
                user.email_candidate_token_validated_at,
                2,
                :seconds
@@ -194,11 +195,12 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
       conn: conn
     } do
       {:ok, user} =
-        insert(:user, email: "example@santiment.net")
+        :user
+        |> insert(email: "example@santiment.net")
         |> User.Email.update_email_candidate("example+foo@santiment.net")
 
       generated_at =
-        Timex.shift(NaiveDateTime.utc_now(), days: -2) |> NaiveDateTime.truncate(:second)
+        NaiveDateTime.utc_now() |> Timex.shift(days: -2) |> NaiveDateTime.truncate(:second)
 
       user =
         user
@@ -303,9 +305,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
     }
     """
 
-    result =
-      conn
-      |> post("/graphql", mutation_skeleton(query))
+    result = post(conn, "/graphql", mutation_skeleton(query))
 
     assert json_response(result, 200)["data"]["logout"]["success"]
     assert result.private.plug_session_info == :drop
@@ -338,9 +338,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
       }
       """
 
-      result =
-        conn
-        |> post("/graphql", mutation_skeleton(query))
+      result = post(conn, "/graphql", mutation_skeleton(query))
 
       %{
         "data" => %{"changeAvatar" => nil},

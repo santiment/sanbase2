@@ -21,13 +21,12 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ProjectApiProjectSignalsTest do
   test "Fetch available anomalies for project with slug", context do
     %{conn: conn, slug: slug} = context
 
-    Sanbase.Mock.prepare_mock2(
-      &Signal.available_signals/1,
-      {:ok, ["dai_mint"]}
-    )
+    (&Signal.available_signals/1)
+    |> Sanbase.Mock.prepare_mock2({:ok, ["dai_mint"]})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
-        get_available_signals(conn, slug)
+        conn
+        |> get_available_signals(slug)
         |> get_in(["data", "projectBySlug", "availableSignals"])
 
       assert result === ["dai_mint"]

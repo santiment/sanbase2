@@ -6,8 +6,8 @@ defmodule SanbaseWeb.Graphql.Schema.ChartConfigurationQueries do
   """
   use Absinthe.Schema.Notation
 
-  alias SanbaseWeb.Graphql.Resolvers.ChartConfigurationResolver
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
+  alias SanbaseWeb.Graphql.Resolvers.ChartConfigurationResolver
 
   object :project_chart_queries do
     field :chart_configuration, :chart_configuration do

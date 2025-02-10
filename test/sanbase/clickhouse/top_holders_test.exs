@@ -25,7 +25,8 @@ defmodule Sanbase.Clickhouse.TopHoldersTest do
       [DateTime.to_unix(~U[2019-01-02 00:00:00Z]), 7.1, 5.1, 12.2]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    (&Sanbase.ClickhouseRepo.query/2)
+    |> Sanbase.Mock.prepare_mock2({:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         TopHolders.percent_of_total_supply(
@@ -56,7 +57,8 @@ defmodule Sanbase.Clickhouse.TopHoldersTest do
   end
 
   test "returns empty array when query returns no rows", context do
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: []}})
+    (&Sanbase.ClickhouseRepo.query/2)
+    |> Sanbase.Mock.prepare_mock2({:ok, %{rows: []}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         TopHolders.percent_of_total_supply(

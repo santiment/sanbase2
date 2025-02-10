@@ -43,19 +43,21 @@ defmodule Sanbase.Alert.OperationText.KV do
     [op_key | _] = Map.keys(op)
     op_value = op[op_key]
 
-    form = Keyword.get(opts, :form, :singular) |> form_to_text()
+    form = opts |> Keyword.get(:form, :singular) |> form_to_text()
     special_symbol = Keyword.get(opts, :special_symbol, "")
     transform_fun = Keyword.get(opts, :value_transform, fn x -> x end)
 
     op_to_text = fn op ->
-      Atom.to_string(op)
+      op
+      |> Atom.to_string()
       |> String.replace("_", " ")
     end
 
     template =
-      case Keyword.get(opts, :negative, false) do
-        true -> "#{form} not #{op_to_text.(op_key)} #{special_symbol}{{#{op_key}:human_readable}}"
-        false -> "#{form} #{op_to_text.(op_key)} #{special_symbol}{{#{op_key}:human_readable}}"
+      if Keyword.get(opts, :negative, false) do
+        "#{form} not #{op_to_text.(op_key)} #{special_symbol}{{#{op_key}:human_readable}}"
+      else
+        "#{form} #{op_to_text.(op_key)} #{special_symbol}{{#{op_key}:human_readable}}"
       end
 
     kv = %{
@@ -67,21 +69,18 @@ defmodule Sanbase.Alert.OperationText.KV do
   end
 
   # Inside channel
-  def to_template_kv(%{current: value}, %{inside_channel: _} = op, opts),
-    do: to_template_kv(value, op, opts)
+  def to_template_kv(%{current: value}, %{inside_channel: _} = op, opts), do: to_template_kv(value, op, opts)
 
   def to_template_kv(value, %{inside_channel: [lower, upper]}, opts) do
-    form = Keyword.get(opts, :form, :singular) |> form_to_text()
+    form = opts |> Keyword.get(:form, :singular) |> form_to_text()
     special_symbol = Keyword.get(opts, :special_symbol, "")
     transform_fun = Keyword.get(opts, :value_transform, fn x -> x end)
 
     template =
-      case Keyword.get(opts, :negative, false) do
-        true ->
-          "#{form} not inside the [#{special_symbol}{{lower:human_readable}}, #{special_symbol}{{upper:human_readable}}] interval"
-
-        false ->
-          "#{form} inside the [#{special_symbol}{{lower:human_readable}}, #{special_symbol}{{upper:human_readable}}] interval"
+      if Keyword.get(opts, :negative, false) do
+        "#{form} not inside the [#{special_symbol}{{lower:human_readable}}, #{special_symbol}{{upper:human_readable}}] interval"
+      else
+        "#{form} inside the [#{special_symbol}{{lower:human_readable}}, #{special_symbol}{{upper:human_readable}}] interval"
       end
 
     kv = %{
@@ -94,21 +93,18 @@ defmodule Sanbase.Alert.OperationText.KV do
   end
 
   # Outside channel
-  def to_template_kv(%{current: value}, %{outside_channel: _} = op, opts),
-    do: to_template_kv(value, op, opts)
+  def to_template_kv(%{current: value}, %{outside_channel: _} = op, opts), do: to_template_kv(value, op, opts)
 
   def to_template_kv(value, %{outside_channel: [lower, upper]}, opts) do
-    form = Keyword.get(opts, :form, :singular) |> form_to_text()
+    form = opts |> Keyword.get(:form, :singular) |> form_to_text()
     special_symbol = Keyword.get(opts, :special_symbol, "")
     transform_fun = Keyword.get(opts, :value_transform, fn x -> x end)
 
     template =
-      case Keyword.get(opts, :negative, false) do
-        true ->
-          "#{form} not outside the [#{special_symbol}{{lower:human_readable}}, #{special_symbol}{{upper:human_readable}}] interval"
-
-        false ->
-          "#{form} outside the [#{special_symbol}{{lower:human_readable}}, #{special_symbol}{{upper:human_readable}}] interval"
+      if Keyword.get(opts, :negative, false) do
+        "#{form} not outside the [#{special_symbol}{{lower:human_readable}}, #{special_symbol}{{upper:human_readable}}] interval"
+      else
+        "#{form} outside the [#{special_symbol}{{lower:human_readable}}, #{special_symbol}{{upper:human_readable}}] interval"
       end
 
     kv = %{
@@ -121,16 +117,16 @@ defmodule Sanbase.Alert.OperationText.KV do
   end
 
   # Percent up
-  def to_template_kv(%{percent_change: value}, %{percent_up: _} = op, opts),
-    do: to_template_kv(value, op, opts)
+  def to_template_kv(%{percent_change: value}, %{percent_up: _} = op, opts), do: to_template_kv(value, op, opts)
 
   def to_template_kv(percent_change, %{percent_up: percent_up}, opts) do
     transform_fun = Keyword.get(opts, :value_transform, fn x -> x end)
 
     template =
-      case Keyword.get(opts, :negative, false) do
-        true -> "did not increase by {{percent_up_required}}%"
-        false -> "increased by {{percent_up}}%"
+      if Keyword.get(opts, :negative, false) do
+        "did not increase by {{percent_up_required}}%"
+      else
+        "increased by {{percent_up}}%"
       end
 
     kv = %{
@@ -142,20 +138,20 @@ defmodule Sanbase.Alert.OperationText.KV do
   end
 
   # Percent down
-  def to_template_kv(%{percent_change: value}, %{percent_down: _} = op, opts),
-    do: to_template_kv(value, op, opts)
+  def to_template_kv(%{percent_change: value}, %{percent_down: _} = op, opts), do: to_template_kv(value, op, opts)
 
   def to_template_kv(percent_change, %{percent_down: percent_down}, opts) do
     transform_fun = Keyword.get(opts, :value_transform, fn x -> x end)
 
     template =
-      case Keyword.get(opts, :negative, false) do
-        true -> "did not decrease by {{percent_down_required}}%"
-        false -> "decreased by {{percent_down}}%"
+      if Keyword.get(opts, :negative, false) do
+        "did not decrease by {{percent_down_required}}%"
+      else
+        "decreased by {{percent_down}}%"
       end
 
     kv = %{
-      percent_down: transform_fun.(percent_change) |> abs(),
+      percent_down: percent_change |> transform_fun.() |> abs(),
       percent_down_required: transform_fun.(percent_down)
     }
 
@@ -163,20 +159,17 @@ defmodule Sanbase.Alert.OperationText.KV do
   end
 
   # Amount up
-  def to_template_kv(%{absolute_change: value}, %{amount_up: _} = op, opts),
-    do: to_template_kv(value, op, opts)
+  def to_template_kv(%{absolute_change: value}, %{amount_up: _} = op, opts), do: to_template_kv(value, op, opts)
 
   def to_template_kv(amount_change, %{amount_up: amount_up}, opts) do
     special_symbol = Keyword.get(opts, :special_symbol, "")
     transform_fun = Keyword.get(opts, :value_transform, fn x -> x end)
 
     template =
-      case Keyword.get(opts, :negative, false) do
-        true ->
-          "did not increase by #{special_symbol}{{amount_change_up_required:human_readable}}"
-
-        false ->
-          "increased by #{special_symbol}{{amount_change_up:human_readable}}"
+      if Keyword.get(opts, :negative, false) do
+        "did not increase by #{special_symbol}{{amount_change_up_required:human_readable}}"
+      else
+        "increased by #{special_symbol}{{amount_change_up:human_readable}}"
       end
 
     kv = %{
@@ -188,24 +181,21 @@ defmodule Sanbase.Alert.OperationText.KV do
   end
 
   # Amount
-  def to_template_kv(%{absolute_change: value}, %{amount_down: _} = op, opts),
-    do: to_template_kv(value, op, opts)
+  def to_template_kv(%{absolute_change: value}, %{amount_down: _} = op, opts), do: to_template_kv(value, op, opts)
 
   def to_template_kv(amount_change, %{amount_down: amount_down}, opts) do
     special_symbol = Keyword.get(opts, :special_symbol, "")
     transform_fun = Keyword.get(opts, :value_transform, fn x -> x end)
 
     template =
-      case Keyword.get(opts, :negative, false) do
-        true ->
-          "did not decrease by #{special_symbol}{{amount_down_change_required:human_readable}}"
-
-        false ->
-          "decreased by #{special_symbol}{{amount_down_change:human_readable}}"
+      if Keyword.get(opts, :negative, false) do
+        "did not decrease by #{special_symbol}{{amount_down_change_required:human_readable}}"
+      else
+        "decreased by #{special_symbol}{{amount_down_change:human_readable}}"
       end
 
     kv = %{
-      amount_down_change: transform_fun.(amount_change) |> abs(),
+      amount_down_change: amount_change |> transform_fun.() |> abs(),
       amount_down_change_required: transform_fun.(amount_down)
     }
 
@@ -249,16 +239,17 @@ defmodule Sanbase.Alert.OperationText.KV do
         end
       end)
 
-    template = template |> Enum.join(" and ")
+    template = Enum.join(template, " and ")
 
     {template, kv}
   end
 
   def details(:metric, settings, _opts) do
-    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    now = DateTime.truncate(DateTime.utc_now(), :second)
 
     before =
-      Sanbase.DateTimeUtils.before_interval(settings.time_window, now)
+      settings.time_window
+      |> Sanbase.DateTimeUtils.before_interval(now)
       |> DateTime.truncate(:second)
 
     {:ok, metric_metadata} = Sanbase.Metric.metadata(settings.metric)
@@ -283,10 +274,11 @@ defmodule Sanbase.Alert.OperationText.KV do
   end
 
   def details(:signal, settings, _opts) do
-    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    now = DateTime.truncate(DateTime.utc_now(), :second)
 
     before =
-      Sanbase.DateTimeUtils.before_interval(settings.time_window, now)
+      settings.time_window
+      |> Sanbase.DateTimeUtils.before_interval(now)
       |> DateTime.truncate(:second)
 
     {:ok, signal_metadata} = Sanbase.Signal.metadata(settings.signal)

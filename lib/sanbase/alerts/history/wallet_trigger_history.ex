@@ -15,10 +15,7 @@ defmodule Sanbase.Alert.History.WalletTriggerHistory do
     @historical_days_from 180
     @historical_days_interval "1d"
 
-    def historical_trigger_points(
-          %WalletTriggerSettings{} = settings,
-          cooldown
-        ) do
+    def historical_trigger_points(%WalletTriggerSettings{} = settings, cooldown) do
       %{target: target, selector: selector, time_window: time_window} = settings
 
       case get_data(selector, target, time_window) do
@@ -37,7 +34,7 @@ defmodule Sanbase.Alert.History.WalletTriggerHistory do
     end
 
     defp get_historical_balance(selector, addresses, time_window) do
-      to = Timex.now()
+      to = DateTime.utc_now()
       shift = @historical_days_from + str_to_days(time_window) - 1
       from = Timex.shift(to, days: -shift)
 

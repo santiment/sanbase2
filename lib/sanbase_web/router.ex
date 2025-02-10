@@ -2,6 +2,11 @@ defmodule SanbaseWeb.Router do
   # credo:disable-for-this-file Credo.Check.Refactor.ModuleDependencies
   use SanbaseWeb, :router
 
+  alias Absinthe.Plug.DocumentProvider.Default
+  alias SanbaseWeb.Graphql.AbsintheBeforeSend
+  alias SanbaseWeb.Graphql.DocumentProvider
+  alias SanbaseWeb.Graphql.Schema
+
   pipeline :admin_pod_only do
     plug(SanbaseWeb.Plug.AdminPodOnly)
   end
@@ -58,9 +63,9 @@ defmodule SanbaseWeb.Router do
   end
 
   scope "/admin2", SanbaseWeb do
-    pipe_through([:admin_pod_only, :browser, :basic_auth, :admin2])
     import Phoenix.LiveDashboard.Router
 
+    pipe_through([:admin_pod_only, :browser, :basic_auth, :admin2])
     live_dashboard("/dashboard", metrics: SanbaseWeb.Telemetry, ecto_repos: [Sanbase.Repo])
     live("/admin_forms", AdminFormsLive)
     live("/monitored_twitter_handle_live", MonitoredTwitterHandleLive)
@@ -100,15 +105,15 @@ defmodule SanbaseWeb.Router do
       "/graphql",
       Absinthe.Plug,
       json_codec: Jason,
-      schema: SanbaseWeb.Graphql.Schema,
+      schema: Schema,
       document_providers: [
-        SanbaseWeb.Graphql.DocumentProvider,
-        Absinthe.Plug.DocumentProvider.Default
+        DocumentProvider,
+        Default
       ],
       analyze_complexity: true,
       max_complexity: 50_000,
       log_level: :info,
-      before_send: {SanbaseWeb.Graphql.AbsintheBeforeSend, :before_send}
+      before_send: {AbsintheBeforeSend, :before_send}
     )
 
     forward(
@@ -116,17 +121,17 @@ defmodule SanbaseWeb.Router do
       # Use own version of the plug with fixed XSS vulnerability
       SanbaseWeb.Graphql.GraphiqlPlug,
       json_codec: Jason,
-      schema: SanbaseWeb.Graphql.Schema,
+      schema: Schema,
       socket: SanbaseWeb.UserSocket,
       document_providers: [
-        SanbaseWeb.Graphql.DocumentProvider,
-        Absinthe.Plug.DocumentProvider.Default
+        DocumentProvider,
+        Default
       ],
       analyze_complexity: true,
       max_complexity: 50_000,
       interface: :simple,
       log_level: :info,
-      before_send: {SanbaseWeb.Graphql.AbsintheBeforeSend, :before_send}
+      before_send: {AbsintheBeforeSend, :before_send}
     )
 
     forward(
@@ -134,17 +139,17 @@ defmodule SanbaseWeb.Router do
       # Use own version of the plug with fixed XSS vulnerability
       Absinthe.Plug.GraphiQL,
       json_codec: Jason,
-      schema: SanbaseWeb.Graphql.Schema,
+      schema: Schema,
       socket: SanbaseWeb.UserSocket,
       document_providers: [
-        SanbaseWeb.Graphql.DocumentProvider,
-        Absinthe.Plug.DocumentProvider.Default
+        DocumentProvider,
+        Default
       ],
       analyze_complexity: true,
       max_complexity: 50_000,
       interface: :advanced,
       log_level: :info,
-      before_send: {SanbaseWeb.Graphql.AbsintheBeforeSend, :before_send}
+      before_send: {AbsintheBeforeSend, :before_send}
     )
   end
 

@@ -1,11 +1,15 @@
 defmodule Sanbase.Chart.Configuration do
+  @moduledoc false
   @behaviour Sanbase.Entity.Behaviour
 
   use Ecto.Schema
 
-  import Ecto.{Query, Changeset}
+  import Ecto.Changeset
+  import Ecto.Query
   import Sanbase.Utils.Transform, only: [to_bang: 1]
 
+  alias Sanbase.Entity.Query
+  alias Sanbase.Insight.Post
   alias Sanbase.Repo
 
   schema "chart_configurations" do
@@ -34,11 +38,11 @@ defmodule Sanbase.Chart.Configuration do
       on_delete: :delete_all
     )
 
-    belongs_to(:post, Sanbase.Insight.Post)
+    belongs_to(:post, Post)
     belongs_to(:user, Sanbase.Accounts.User)
     belongs_to(:project, Sanbase.Project)
 
-    has_many(:chart_events, Sanbase.Insight.Post,
+    has_many(:chart_events, Post,
       foreign_key: :chart_configuration_for_event_id,
       where: [is_chart_event: true]
     )
@@ -73,11 +77,11 @@ defmodule Sanbase.Chart.Configuration do
 
   @impl Sanbase.Entity.Behaviour
   def get_visibility_data(id) do
-    Sanbase.Entity.Query.default_get_visibility_data(__MODULE__, :chart_configration, id)
+    Query.default_get_visibility_data(__MODULE__, :chart_configration, id)
   end
 
   @impl Sanbase.Entity.Behaviour
-  def by_id!(id, opts), do: by_id(id, opts) |> to_bang()
+  def by_id!(id, opts), do: id |> by_id(opts) |> to_bang()
 
   @impl Sanbase.Entity.Behaviour
   def by_id(id, opts) do
@@ -86,7 +90,7 @@ defmodule Sanbase.Chart.Configuration do
   end
 
   @impl Sanbase.Entity.Behaviour
-  def by_ids!(ids, opts), do: by_ids(ids, opts) |> to_bang()
+  def by_ids!(ids, opts), do: ids |> by_ids(opts) |> to_bang()
 
   @impl Sanbase.Entity.Behaviour
   def by_ids(config_ids, opts) do
@@ -109,42 +113,47 @@ defmodule Sanbase.Chart.Configuration do
   defp base_entity_ids_query(opts) do
     base_query()
     |> maybe_apply_projects_filter(opts)
-    |> Sanbase.Entity.Query.maybe_filter_is_hidden(opts)
-    |> Sanbase.Entity.Query.maybe_filter_min_title_length(opts, :title)
-    |> Sanbase.Entity.Query.maybe_filter_min_description_length(opts, :description)
-    |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :chart_configuration_id)
-    |> Sanbase.Entity.Query.maybe_filter_by_users(opts)
-    |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
+    |> Query.maybe_filter_is_hidden(opts)
+    |> Query.maybe_filter_min_title_length(opts, :title)
+    |> Query.maybe_filter_min_description_length(opts, :description)
+    |> Query.maybe_filter_is_featured_query(opts, :chart_configuration_id)
+    |> Query.maybe_filter_by_users(opts)
+    |> Query.maybe_filter_by_cursor(:inserted_at, opts)
     |> select([config], config.id)
   end
 
   @impl Sanbase.Entity.Behaviour
   def public_and_user_entity_ids_query(user_id, opts) do
-    base_entity_ids_query(opts)
+    opts
+    |> base_entity_ids_query()
     |> where([config], config.is_public == true or config.user_id == ^user_id)
   end
 
   @impl Sanbase.Entity.Behaviour
   def public_entity_ids_query(opts) do
-    base_entity_ids_query(opts)
+    opts
+    |> base_entity_ids_query()
     |> where([config], config.is_public == true)
   end
 
   @impl Sanbase.Entity.Behaviour
   def user_entity_ids_query(user_id, opts) do
-    base_entity_ids_query(opts)
+    opts
+    |> base_entity_ids_query()
     |> where([config], config.user_id == ^user_id)
   end
 
   def public?(%__MODULE__{is_public: is_public}), do: is_public
 
   def user_configurations(user_id, querying_user_id, project_id \\ nil) do
-    user_chart_configurations_query(user_id, querying_user_id, project_id)
+    user_id
+    |> user_chart_configurations_query(querying_user_id, project_id)
     |> Repo.all()
   end
 
   def project_configurations(project_id, querying_user_id \\ nil) do
-    project_chart_configurations_query(project_id, querying_user_id)
+    project_id
+    |> project_chart_configurations_query(querying_user_id)
     |> Repo.all()
   end
 
@@ -175,8 +184,7 @@ defmodule Sanbase.Chart.Configuration do
   def delete(config_id, user_id) do
     case get_chart_configuration_if_owner(config_id, user_id) do
       {:ok, %__MODULE__{} = conf} ->
-        conf
-        |> Repo.delete()
+        Repo.delete(conf)
 
       {:error, error} ->
         {:error, "Cannot delete chart configuration. Reason: #{inspect(error)}"}
@@ -232,36 +240,34 @@ defmodule Sanbase.Chart.Configuration do
   end
 
   defp user_chart_configurations_query(user_id, querying_user_id, project_id) do
-    filter_by_project_query(project_id)
+    project_id
+    |> filter_by_project_query()
     |> where([conf], conf.user_id == ^user_id)
     |> accessible_by_user_query(querying_user_id)
   end
 
   defp project_chart_configurations_query(project_id, querying_user_id) do
-    filter_by_project_query(project_id)
+    project_id
+    |> filter_by_project_query()
     |> accessible_by_user_query(querying_user_id)
   end
 
   defp filter_by_project_query(project_id) when not is_nil(project_id) do
-    base_query()
-    |> where([conf], conf.project_id == ^project_id)
+    where(base_query(), [conf], conf.project_id == ^project_id)
   end
 
   defp accessible_by_user_query(query, nil) do
-    query
-    |> where([conf], conf.is_public == true)
+    where(query, [conf], conf.is_public == true)
   end
 
   defp accessible_by_user_query(query, querying_user_id) do
-    query
-    |> where([conf], conf.is_public == true or conf.user_id == ^querying_user_id)
+    where(query, [conf], conf.is_public == true or conf.user_id == ^querying_user_id)
   end
 
   defp maybe_apply_projects_filter(query, opts) do
     case Keyword.get(opts, :filter) do
       %{project_ids: project_ids} ->
-        query
-        |> where([config], config.project_id in ^project_ids)
+        where(query, [config], config.project_id in ^project_ids)
 
       _ ->
         query
@@ -271,7 +277,7 @@ defmodule Sanbase.Chart.Configuration do
   defp maybe_apply_only_with_user_access(query, opts) do
     case Keyword.get(opts, :user_id_has_access) do
       user_id when is_integer(user_id) ->
-        query |> where([config], config.user_id == ^user_id or config.is_public == true)
+        where(query, [config], config.user_id == ^user_id or config.is_public == true)
 
       _ ->
         query

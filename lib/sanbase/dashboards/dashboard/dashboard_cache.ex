@@ -9,15 +9,15 @@ defmodule Sanbase.Dashboards.DashboardCache do
   """
   use Ecto.Schema
 
-  import Ecto.Query
   import Ecto.Changeset
-  import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
+  import Ecto.Query
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
+  import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
 
-  alias Sanbase.Repo
   alias Sanbase.Dashboards.Dashboard
   alias Sanbase.Queries.Executor.Result
   alias Sanbase.Queries.QueryCache
+  alias Sanbase.Repo
 
   @type user_id :: Sanbase.Accounts.User.user_id()
   @type dashboard_id :: Dashboard.dashboard_id()
@@ -68,7 +68,8 @@ defmodule Sanbase.Dashboards.DashboardCache do
 
     # Base64 encodes 6 bits of information per character, so 16 characters is 96 bits
     # 1.3x10^13 attempts are needed (13 trillion) to have 0.1% chance of collisions
-    :crypto.hash(:sha256, binary)
+    :sha256
+    |> :crypto.hash(binary)
     |> Base.encode64(padding: false)
     |> :erlang.binary_part(0, 16)
   end
@@ -100,16 +101,19 @@ defmodule Sanbase.Dashboards.DashboardCache do
       )
 
     query =
-      case Keyword.get(opts, :lock_for_update, false) do
-        false -> query
-        true -> query |> lock("FOR UPDATE")
+      if Keyword.get(opts, :lock_for_update, false) do
+        lock(query, "FOR UPDATE")
+      else
+        query
       end
 
-    case Repo.one(query) do
-      nil -> new(dashboard_id, parameters_override, querying_user_id)
-      %__MODULE__{} = cache -> {:ok, cache}
-    end
-    |> maybe_apply_function(&transform_loaded_dashboard_cache(&1, opts))
+    case_result =
+      case Repo.one(query) do
+        nil -> new(dashboard_id, parameters_override, querying_user_id)
+        %__MODULE__{} = cache -> {:ok, cache}
+      end
+
+    maybe_apply_function(case_result, &transform_loaded_dashboard_cache(&1, opts))
   end
 
   @doc ~s"""
@@ -124,11 +128,7 @@ defmodule Sanbase.Dashboards.DashboardCache do
           dashboard_query_mapping_id(),
           Keyword.t()
         ) :: {:ok, query_cache()} | {:error, String.t()}
-  def by_dashboard_and_dashboard_query_mapping_id(
-        dashboard_id,
-        dashboard_query_mapping_id,
-        opts \\ []
-      ) do
+  def by_dashboard_and_dashboard_query_mapping_id(dashboard_id, dashboard_query_mapping_id, opts \\ []) do
     query = """
     SELECT t.query
     FROM dashboards_cache cache
@@ -141,11 +141,13 @@ defmodule Sanbase.Dashboards.DashboardCache do
 
     params = [dashboard_id, dashboard_query_mapping_id]
 
-    case Repo.query(query, params) do
-      {:ok, %{rows: [[%{} = query_cache]]}} -> {:ok, query_cache}
-      _ -> {:error, "Cannot load dashboard query cache"}
-    end
-    |> maybe_apply_function(&transform_loaded_dashboard_cache(&1, opts))
+    case_result =
+      case Repo.query(query, params) do
+        {:ok, %{rows: [[%{} = query_cache]]}} -> {:ok, query_cache}
+        _ -> {:error, "Cannot load dashboard query cache"}
+      end
+
+    maybe_apply_function(case_result, &transform_loaded_dashboard_cache(&1, opts))
   end
 
   @doc ~s"""
@@ -184,14 +186,7 @@ defmodule Sanbase.Dashboards.DashboardCache do
           Keyword.t()
         ) ::
           {:ok, t()} | {:error, any()}
-  def update_query_cache(
-        dashboard_id,
-        parameters_override,
-        dashboard_query_mapping_id,
-        query_result,
-        user_id,
-        opts
-      ) do
+  def update_query_cache(dashboard_id, parameters_override, dashboard_query_mapping_id, query_result, user_id, opts) do
     query_cache =
       QueryCache.from_query_result(query_result, dashboard_query_mapping_id, dashboard_id)
 
@@ -238,12 +233,12 @@ defmodule Sanbase.Dashboards.DashboardCache do
     flag = Keyword.get(opts, :transform_loaded_queries, true)
 
     queries =
-      cache.queries
-      |> Map.new(fn {dashboard_query_mapping_id, query_cache} ->
+      Map.new(cache.queries, fn {dashboard_query_mapping_id, query_cache} ->
         query_cache =
-          case flag do
-            true -> transform_loaded_queries(query_cache)
-            false -> query_cache
+          if flag do
+            transform_loaded_queries(query_cache)
+          else
+            query_cache
           end
 
         {dashboard_query_mapping_id, query_cache}
@@ -306,10 +301,8 @@ defmodule Sanbase.Dashboards.DashboardCache do
 
   defp transform_rows(rows) do
     transformed_rows =
-      rows
-      |> Enum.map(fn row ->
-        row
-        |> Enum.map(fn
+      Enum.map(rows, fn row ->
+        Enum.map(row, fn
           elem when is_binary(elem) ->
             case DateTime.from_iso8601(elem) do
               {:ok, datetime, _} -> datetime
@@ -347,6 +340,5 @@ defmodule Sanbase.Dashboards.DashboardCache do
 
   defp maybe_transform_error({:ok, _} = result), do: result
 
-  defp maybe_transform_error({:error, changeset}),
-    do: {:error, changeset_errors_string(changeset)}
+  defp maybe_transform_error({:error, changeset}), do: {:error, changeset_errors_string(changeset)}
 end

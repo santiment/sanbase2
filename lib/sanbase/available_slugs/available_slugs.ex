@@ -10,13 +10,13 @@ defmodule Sanbase.AvailableSlugs do
 
   # There are 2 special cases that are not a project slug but refer to big groups
   # of projects and there is marketcap and volume data for them
+  use GenServer
+
   @group_of_slugs ["TOTAL_MARKET", "TOTAL_ERC20"]
   @non_project_slugs ~w(s-and-p-500 gold crude-oil dxy gbtc ibit fbtc arkb btco bitb hodl m2-money)
 
-  def non_project_slugs(), do: @non_project_slugs
+  def non_project_slugs, do: @non_project_slugs
   @ets_table :available_projects_slugs_ets_table
-  use GenServer
-
   @impl Sanbase.AvailableSlugs.Behaviour
   def valid_slug?(slug, retries \\ 5) do
     if :ets.whereis(@ets_table) == :undefined do
@@ -69,13 +69,12 @@ defmodule Sanbase.AvailableSlugs do
         @group_of_slugs ++
         Sanbase.Project.List.projects_slugs(include_hidden: true)
 
-    ets_slugs = :ets.tab2list(ets_table) |> Enum.map(&elem(&1, 0))
+    ets_slugs = ets_table |> :ets.tab2list() |> Enum.map(&elem(&1, 0))
     slugs_to_remove = ets_slugs -- slugs
     slugs_to_add = slugs -- ets_slugs
 
-    slugs_to_remove |> Enum.each(fn slug -> :ets.delete(ets_table, slug) end)
-    slugs_to_add |> Enum.each(fn slug -> :ets.insert(ets_table, {slug, true}) end)
-
+    Enum.each(slugs_to_remove, fn slug -> :ets.delete(ets_table, slug) end)
+    Enum.each(slugs_to_add, fn slug -> :ets.insert(ets_table, {slug, true}) end)
     state
   end
 end

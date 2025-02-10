@@ -1,9 +1,11 @@
 defmodule Sanbase.Accounts.UserRole do
+  @moduledoc false
   use Ecto.Schema
 
   import Ecto.Changeset
 
-  alias Sanbase.Accounts.{User, Role}
+  alias Sanbase.Accounts.Role
+  alias Sanbase.Accounts.User
 
   @primary_key false
   schema "user_roles" do

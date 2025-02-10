@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddStripeCustomerIdToUsers do
+  @moduledoc false
   use Ecto.Migration
 
   @table :users

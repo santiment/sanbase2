@@ -31,7 +31,7 @@ defmodule Sanbase.Price.Validator do
     Supervisor.init(children, strategy: :one_for_one)
   end
 
-  def clean_state() do
+  def clean_state do
     for num <- 0..(@gen_servers_count - 1) do
       # credo:disable-for-next-line
       name = String.to_atom("Sanbase.Price.Validator.Node_#{num}")
@@ -63,6 +63,6 @@ defmodule Sanbase.Price.Validator do
 
   defp node_name(slug) do
     # credo:disable-for-next-line
-    "Sanbase.Price.Validator.Node_#{slug_to_number(slug)}" |> String.to_atom()
+    String.to_atom("Sanbase.Price.Validator.Node_#{slug_to_number(slug)}")
   end
 end

@@ -6,18 +6,12 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
   import Sanbase.Alert.Utils
   import Sanbase.DateTimeUtils
 
+  alias Sanbase.Alert.OperationText
+  alias Sanbase.Alert.ResultBuilder
+  alias Sanbase.Alert.Trigger.DailyMetricTriggerSettings
+  alias Sanbase.Alert.Trigger.MetricTriggerSettings
   alias Sanbase.Cache
   alias Sanbase.Metric
-
-  alias Sanbase.Alert.{
-    OperationText,
-    ResultBuilder
-  }
-
-  alias Sanbase.Alert.Trigger.{
-    MetricTriggerSettings,
-    DailyMetricTriggerSettings
-  }
 
   def triggered?(%{triggered?: triggered?}), do: triggered?
 
@@ -89,7 +83,8 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
       %{datetime: dt2, value: data2}
     ] = data
 
-    Enum.map(data1, fn {k, v} ->
+    data1
+    |> Enum.map(fn {k, v} ->
       {k, [%{datetime: dt1, value: v}, %{datetime: dt2, value: Map.get(data2, k)}]}
     end)
     |> Enum.reject(fn {_k, [%{value: v1}, %{value: v2}]} -> is_nil(v1) or is_nil(v2) end)
@@ -103,9 +98,7 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
   defp fetch_metric(selector, settings) do
     %{metric: metric, time_window: time_window} = settings
 
-    cache_key =
-      {:metric_alert, metric, selector, time_window, round_datetime(Timex.now())}
-      |> Sanbase.Cache.hash()
+    cache_key = Sanbase.Cache.hash({:metric_alert, metric, selector, time_window, round_datetime(DateTime.utc_now())})
 
     %{
       first_start: first_start,
@@ -140,7 +133,7 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
 
   defp timerange_params(%MetricTriggerSettings{} = settings) do
     interval_seconds = str_to_sec(settings.time_window)
-    now = Timex.now()
+    now = DateTime.utc_now()
 
     %{
       first_start: Timex.shift(now, seconds: -2 * interval_seconds),
@@ -155,7 +148,7 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
     # >= and <=, in order to fetch exactly one day of data, the `from` param
     # must start at 00:00:00Z and the `to` param must end at 23:59:59Z
     interval_seconds = str_to_sec(settings.time_window)
-    now = Timex.now() |> Timex.beginning_of_day() |> Timex.shift(seconds: -1)
+    now = DateTime.utc_now() |> Timex.beginning_of_day() |> Timex.shift(seconds: -1)
 
     %{
       first_start: Timex.shift(now, seconds: -2 * interval_seconds + 1),

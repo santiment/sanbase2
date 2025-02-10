@@ -19,7 +19,8 @@ defmodule SanbaseWeb.RootController do
   end
 
   defp path(file) do
-    Application.app_dir(:sanbase)
+    :sanbase
+    |> Application.app_dir()
     |> Path.join(file)
   end
 end

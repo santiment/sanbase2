@@ -13,14 +13,12 @@ defmodule SanbaseWeb.Plug.TelegramMatchPlug do
   def init(opts), do: opts
 
   def call(%{params: %{"path" => path}} = conn, _) do
-    case path === telegram_endpoint() do
-      true ->
-        conn
-
-      false ->
-        conn
-        |> send_resp(403, "Unauthorized")
-        |> halt()
+    if path === telegram_endpoint() do
+      conn
+    else
+      conn
+      |> send_resp(403, "Unauthorized")
+      |> halt()
     end
   end
 
@@ -30,5 +28,5 @@ defmodule SanbaseWeb.Plug.TelegramMatchPlug do
     |> halt()
   end
 
-  defp telegram_endpoint(), do: Config.module_get(Sanbase.Telegram, :telegram_endpoint)
+  defp telegram_endpoint, do: Config.module_get(Sanbase.Telegram, :telegram_endpoint)
 end

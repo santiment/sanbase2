@@ -7,7 +7,7 @@ defmodule Sanbase.EventBus.MetricRegistrySubscriber do
 
   require Logger
 
-  def topics(), do: ["metric_registry_events"]
+  def topics, do: ["metric_registry_events"]
 
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name, __MODULE__))
@@ -91,16 +91,8 @@ defmodule Sanbase.EventBus.MetricRegistrySubscriber do
     state
   end
 
-  defp handle_event(
-         %{data: %{event_type: event_type, metric: metric}},
-         event_shadow,
-         state
-       )
-       when event_type in [
-              :update_metric_registry,
-              :create_metric_registry,
-              :delete_metric_registry
-            ] do
+  defp handle_event(%{data: %{event_type: event_type, metric: metric}}, event_shadow, state)
+       when event_type in [:update_metric_registry, :create_metric_registry, :delete_metric_registry] do
     Logger.info("Start refreshing stored terms from #{__MODULE__}")
 
     {mod, fun} =
@@ -116,11 +108,7 @@ defmodule Sanbase.EventBus.MetricRegistrySubscriber do
     state
   end
 
-  defp handle_event(
-         %{data: %{event_type: :metrics_failed_to_load}},
-         event_shadow,
-         state
-       ) do
+  defp handle_event(%{data: %{event_type: :metrics_failed_to_load}}, event_shadow, state) do
     Logger.info("Metrics Registry failed to load. Will load data from the static files instead.")
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state

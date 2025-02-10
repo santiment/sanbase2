@@ -1,5 +1,7 @@
 defmodule Sanbase.Affiliate.UserAffiliateDetails do
+  @moduledoc false
   use Ecto.Schema
+
   import Ecto.Changeset
 
   alias Sanbase.Accounts.User

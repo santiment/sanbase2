@@ -12,11 +12,11 @@ defmodule Sanbase.Questionnaire do
   """
   use Ecto.Schema
 
-  import Ecto.Query
   import Ecto.Changeset
+  import Ecto.Query
 
-  alias __MODULE__.Question
   alias __MODULE__.Answer
+  alias __MODULE__.Question
 
   @type questionnaire_uuid :: String.t()
   @type t :: %__MODULE__{
@@ -106,37 +106,30 @@ defmodule Sanbase.Questionnaire do
   @doc ~s"""
   Add a question to an existing quesionnaire
   """
-  def create_question(questionnaire_uuid, params),
-    do: Question.create(questionnaire_uuid, params)
+  def create_question(questionnaire_uuid, params), do: Question.create(questionnaire_uuid, params)
 
   @doc ~s"""
   Update an existing question
   """
-  def update_question(question_uuid, params),
-    do: Question.update(question_uuid, params)
+  def update_question(question_uuid, params), do: Question.update(question_uuid, params)
 
   @doc ~s"""
   Update an existing question
   """
-  def delete_question(question_uuid),
-    do: Question.delete(question_uuid)
+  def delete_question(question_uuid), do: Question.delete(question_uuid)
 
   @doc ~s"""
   Create an answer to a given question
   """
-  def create_answer(question_uuid, user_id, params),
-    do: Answer.create(question_uuid, user_id, params)
+  def create_answer(question_uuid, user_id, params), do: Answer.create(question_uuid, user_id, params)
 
   @doc ~s"""
   """
-  def update_answer(answer_uuid, user_id, params),
-    do: Answer.update(answer_uuid, user_id, params)
+  def update_answer(answer_uuid, user_id, params), do: Answer.update(answer_uuid, user_id, params)
 
   @doc ~s"""
   """
-  def delete_answer(answer_uuid, user_id),
-    do: Answer.delete(answer_uuid, user_id)
+  def delete_answer(answer_uuid, user_id), do: Answer.delete(answer_uuid, user_id)
 
-  def user_answers(questionnaire_uuid, user_id),
-    do: Answer.user_answers(questionnaire_uuid, user_id)
+  def user_answers(questionnaire_uuid, user_id), do: Answer.user_answers(questionnaire_uuid, user_id)
 end

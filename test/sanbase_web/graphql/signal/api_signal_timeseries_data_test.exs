@@ -28,26 +28,28 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalTimeseriesDataTest do
 
     rows = [
       [
-        ~U[2019-01-01 00:00:00Z] |> DateTime.to_unix(),
+        DateTime.to_unix(~U[2019-01-01 00:00:00Z]),
         2,
         [
-          "{\"txHash\": \"0xecdeb8435aff6e18e08177bb94d52b2da6dd15b95aee7f442021911a7c9861e6\", \"address\": \"0x183c9077fb7b74f02d3badda6c85a19c92b1f648\"}",
-          "{\"txHash\": \"0x8e8eae8adeb2fae2b21387d7bea7f4287e425cfe9efc1728966eceed4feb7d4e\", \"address\": \"0x65b0bf8ee4947edd2a500d74e50a3d757dc79de0\"}"
+          ~s({"txHash": "0xecdeb8435aff6e18e08177bb94d52b2da6dd15b95aee7f442021911a7c9861e6", "address": "0x183c9077fb7b74f02d3badda6c85a19c92b1f648"}),
+          ~s({"txHash": "0x8e8eae8adeb2fae2b21387d7bea7f4287e425cfe9efc1728966eceed4feb7d4e", "address": "0x65b0bf8ee4947edd2a500d74e50a3d757dc79de0"})
         ]
       ],
       [
-        ~U[2019-01-02 00:00:00Z] |> DateTime.to_unix(),
+        DateTime.to_unix(~U[2019-01-02 00:00:00Z]),
         1,
         [
-          "{\"txHash\": \"0x0bb27622fa4fcdf39344251e9b0776467eaa5d9dbf0f025d254f55093848f2bd\", \"address\": \"0x61c808d82a3ac53231750dadc13c777b59310bd9\"}"
+          ~s({"txHash": "0x0bb27622fa4fcdf39344251e9b0776467eaa5d9dbf0f025d254f55093848f2bd", "address": "0x61c808d82a3ac53231750dadc13c777b59310bd9"})
         ]
       ]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    (&Sanbase.ClickhouseRepo.query/2)
+    |> Sanbase.Mock.prepare_mock2({:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
-        get_timeseries_signal(conn, signal, slug, from, to, interval, aggregation)
+        conn
+        |> get_timeseries_signal(signal, slug, from, to, interval, aggregation)
         |> extract_timeseries_data()
 
       assert result == [
@@ -57,13 +59,11 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalTimeseriesDataTest do
                  "metadata" => [
                    %{
                      "address" => "0x183c9077fb7b74f02d3badda6c85a19c92b1f648",
-                     "txHash" =>
-                       "0xecdeb8435aff6e18e08177bb94d52b2da6dd15b95aee7f442021911a7c9861e6"
+                     "txHash" => "0xecdeb8435aff6e18e08177bb94d52b2da6dd15b95aee7f442021911a7c9861e6"
                    },
                    %{
                      "address" => "0x65b0bf8ee4947edd2a500d74e50a3d757dc79de0",
-                     "txHash" =>
-                       "0x8e8eae8adeb2fae2b21387d7bea7f4287e425cfe9efc1728966eceed4feb7d4e"
+                     "txHash" => "0x8e8eae8adeb2fae2b21387d7bea7f4287e425cfe9efc1728966eceed4feb7d4e"
                    }
                  ]
                },
@@ -73,8 +73,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalTimeseriesDataTest do
                  "metadata" => [
                    %{
                      "address" => "0x61c808d82a3ac53231750dadc13c777b59310bd9",
-                     "txHash" =>
-                       "0x0bb27622fa4fcdf39344251e9b0776467eaa5d9dbf0f025d254f55093848f2bd"
+                     "txHash" => "0x0bb27622fa4fcdf39344251e9b0776467eaa5d9dbf0f025d254f55093848f2bd"
                    }
                  ]
                }
@@ -87,8 +86,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalTimeseriesDataTest do
     aggregation = :avg
     signals = Signal.available_signals()
 
-    Sanbase.Mock.prepare_mock2(
-      &Signal.timeseries_data/6,
+    (&Signal.timeseries_data/6)
+    |> Sanbase.Mock.prepare_mock2(
       {:ok,
        [
          %{value: 100.0, datetime: ~U[2019-01-01 00:00:00Z], metadata: []},
@@ -98,7 +97,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalTimeseriesDataTest do
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         for signal <- signals do
-          get_timeseries_signal(conn, signal, slug, from, to, interval, aggregation)
+          conn
+          |> get_timeseries_signal(signal, slug, from, to, interval, aggregation)
           |> extract_timeseries_data()
         end
 
@@ -110,11 +110,11 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalTimeseriesDataTest do
   test "returns data for all available aggregations", context do
     %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
     # nil means aggregation is not passed, we should not explicitly pass it
-    signal = Signal.available_signals() |> Enum.random()
+    signal = Enum.random(Signal.available_signals())
     {:ok, %{available_aggregations: aggregations}} = Signal.metadata(signal)
 
-    Sanbase.Mock.prepare_mock2(
-      &Signal.timeseries_data/6,
+    (&Signal.timeseries_data/6)
+    |> Sanbase.Mock.prepare_mock2(
       {:ok,
        [
          %{value: 100.0, datetime: ~U[2019-01-01 00:00:00Z], metadata: []},
@@ -124,7 +124,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalTimeseriesDataTest do
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         for aggregation <- aggregations do
-          get_timeseries_signal(conn, signal, slug, from, to, interval, aggregation)
+          conn
+          |> get_timeseries_signal(signal, slug, from, to, interval, aggregation)
           |> extract_timeseries_data()
         end
 
@@ -136,7 +137,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalTimeseriesDataTest do
   test "returns error for unavailable aggregations", context do
     %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
     aggregations = Signal.available_aggregations()
-    rand_aggregations = Enum.map(1..10, fn _ -> rand_str() |> String.to_atom() end)
+    rand_aggregations = Enum.map(1..10, fn _ -> String.to_atom(rand_str()) end)
     rand_aggregations = rand_aggregations -- aggregations
     [signal | _] = Signal.available_signals()
 
@@ -192,7 +193,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalTimeseriesDataTest do
             from: "#{from}",
             to: "#{to}",
             interval: "#{interval}",
-            aggregation: #{Atom.to_string(aggregation) |> String.upcase()}){
+            aggregation: #{aggregation |> Atom.to_string() |> String.upcase()}){
               datetime
               value
               metadata

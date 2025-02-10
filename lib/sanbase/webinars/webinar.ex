@@ -1,5 +1,7 @@
 defmodule Sanbase.Webinar do
+  @moduledoc false
   use Ecto.Schema
+
   import Ecto.Changeset
   import Ecto.Query
 
@@ -18,8 +20,7 @@ defmodule Sanbase.Webinar do
   end
 
   def new_changeset(webinar, attrs \\ %{}) do
-    webinar
-    |> cast(attrs, [:title, :description, :url, :image_url, :start_time, :end_time, :is_pro])
+    cast(webinar, attrs, [:title, :description, :url, :image_url, :start_time, :end_time, :is_pro])
   end
 
   @doc false
@@ -41,9 +42,8 @@ defmodule Sanbase.Webinar do
     Repo.get(__MODULE__, id)
   end
 
-  def list() do
-    from(w in __MODULE__, order_by: [desc: w.inserted_at])
-    |> Repo.all()
+  def list do
+    Repo.all(from(w in __MODULE__, order_by: [desc: w.inserted_at]))
   end
 
   def create(params) do
@@ -59,22 +59,19 @@ defmodule Sanbase.Webinar do
   end
 
   def delete(webinar) do
-    webinar |> Repo.delete()
+    Repo.delete(webinar)
   end
 
   def get_all(opts) do
-    list()
-    |> show_only_preview_fields?(opts)
+    show_only_preview_fields?(list(), opts)
   end
 
-  defp show_only_preview_fields?(webinars, %{plan_name: plan})
-       when plan in ["PRO", "PRO_PLUS", "MAX"] do
+  defp show_only_preview_fields?(webinars, %{plan_name: plan}) when plan in ["PRO", "PRO_PLUS", "MAX"] do
     webinars
   end
 
   defp show_only_preview_fields?(webinars, _) do
-    webinars
-    |> Enum.map(fn
+    Enum.map(webinars, fn
       %__MODULE__{is_pro: true} = webinar ->
         %{webinar | url: nil}
 

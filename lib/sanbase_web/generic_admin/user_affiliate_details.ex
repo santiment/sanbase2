@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.GenericAdmin.UserAffiliateDetails do
+  @moduledoc false
   alias Sanbase.Affiliate.UserAffiliateDetails
 
   @schema_module UserAffiliateDetails

@@ -1,5 +1,7 @@
 defmodule SanbaseWeb.QueriesApiHelpers do
+  @moduledoc false
   use SanbaseWeb.ConnCase, async: false
+
   import SanbaseWeb.Graphql.TestHelpers
 
   def execute_sql_query_mutation(conn, mutation, args \\ nil) do
@@ -9,13 +11,12 @@ defmodule SanbaseWeb.QueriesApiHelpers do
           name: "MyQuery",
           description: "some desc",
           is_public: true,
-          sql_query_text:
-            "SELECT * FROM intraday_metrics WHERE asset_id = get_asset_id({{slug}})",
+          sql_query_text: "SELECT * FROM intraday_metrics WHERE asset_id = get_asset_id({{slug}})",
           sql_query_parameters: %{slug: "bitcoin"},
           settings: %{"some_key" => [0, 1, 2, 3]}
         }
 
-    mutation_name = mutation |> Inflex.camelize(:lower)
+    mutation_name = Inflex.camelize(mutation, :lower)
 
     mutation = """
     mutation {
@@ -72,7 +73,7 @@ defmodule SanbaseWeb.QueriesApiHelpers do
   end
 
   def run_sql_query(conn, query, args) do
-    query_name = query |> Inflex.camelize(:lower)
+    query_name = Inflex.camelize(query, :lower)
 
     mutation = """
     {

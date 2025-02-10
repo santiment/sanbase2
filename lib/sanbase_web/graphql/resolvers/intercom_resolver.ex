@@ -1,13 +1,14 @@
 defmodule SanbaseWeb.Graphql.Resolvers.IntercomResolver do
+  @moduledoc false
   import Norm
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
-  alias Sanbase.Intercom.UserEvent
   alias Sanbase.Clickhouse.ApiCallData
+  alias Sanbase.Intercom.UserEvent
 
   def get_events_for_users(_, %{users: users, days: days} = args, _) do
     from = Map.get(args, :from, Sanbase.DateTimeUtils.days_ago(days))
-    to = Map.get(args, :to, Timex.now())
+    to = Map.get(args, :to, DateTime.utc_now())
 
     {:ok, UserEvent.get_events_for_users(users, from, to)}
   end
@@ -24,14 +25,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.IntercomResolver do
     with {:ok, %{} = identification} <- get_identification_fields(resolution, params),
          :ok <- validate_events(events) do
       events =
-        events
-        |> Enum.map(fn %{"event_name" => event_name, "created_at" => created_at} = event ->
+        Enum.map(events, fn %{"event_name" => event_name, "created_at" => created_at} = event ->
           %{
             event_name: event_name,
-            created_at: from_iso8601!(created_at) |> DateTime.truncate(:second),
+            created_at: created_at |> from_iso8601!() |> DateTime.truncate(:second),
             metadata: event["metadata"],
-            inserted_at: DateTime.utc_now() |> DateTime.truncate(:second),
-            updated_at: DateTime.utc_now() |> DateTime.truncate(:second),
+            inserted_at: DateTime.truncate(DateTime.utc_now(), :second),
+            updated_at: DateTime.truncate(DateTime.utc_now(), :second),
             user_id: identification.user_id,
             anonymous_user_id: identification.anonymous_user_id
           }
@@ -64,9 +64,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.IntercomResolver do
   end
 
   defp validate_events(events) do
-    case Enum.all?(events, &valid_event?/1) do
-      true -> :ok
-      false -> {:error, "The list of events contains invalid event(s)"}
+    if Enum.all?(events, &valid_event?/1) do
+      :ok
+    else
+      {:error, "The list of events contains invalid event(s)"}
     end
   end
 

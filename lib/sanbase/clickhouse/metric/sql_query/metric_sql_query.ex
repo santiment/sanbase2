@@ -1,10 +1,10 @@
-defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
-  @table "daily_metrics_v2"
+table = "daily_metrics_v2"
 
+defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   @moduledoc ~s"""
   Define the SQL queries to access to the v2 metrics in Clickhouse
 
-  The metrics are stored in the '#{@table}' clickhouse table where each metric
+  The metrics are stored in the '#{table}' clickhouse table where each metric
   is defined by a `metric_id` and every project is defined by an `asset_id`.
   """
 
@@ -24,6 +24,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     ]
 
   alias Sanbase.Clickhouse.MetricAdapter.Registry
+  alias Sanbase.Clickhouse.Query
+
+  @table table
 
   schema @table do
     field(:datetime, :utc_datetime, source: :dt)
@@ -72,7 +75,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       ORDER BY t
       """
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp maybe_get_fixed_parameters(_metric, selector, params, _opts)
@@ -135,15 +138,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     end
   end
 
-  def timeseries_data_per_slug_query(
-        metric,
-        slug_or_slugs,
-        from,
-        to,
-        interval,
-        aggregation,
-        filters
-      ) do
+  def timeseries_data_per_slug_query(metric, slug_or_slugs, from, to, interval, aggregation, filters) do
     params = [
       interval: maybe_str_to_sec(interval),
       metric: Map.get(Registry.name_to_metric_map(), metric),
@@ -178,7 +173,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     ORDER BY t
     """
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def aggregated_timeseries_data_query(metric, slugs, from, to, aggregation, filters) do
@@ -243,7 +238,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     GROUP BY slug
     """
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def slugs_by_filter_query(metric, from, to, operation, threshold, aggregation, filters) do
@@ -255,11 +250,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         WHERE #{generate_comparison_string("value", operation, threshold)}
         """
 
-    Sanbase.Clickhouse.Query.put_sql(query_struct, sql)
+    Query.put_sql(query_struct, sql)
   end
 
-  def slugs_order_query(metric, from, to, direction, aggregation, filters)
-      when direction in [:asc, :desc] do
+  def slugs_order_query(metric, from, to, direction, aggregation, filters) when direction in [:asc, :desc] do
     query_struct = aggregated_slugs_base_query(metric, from, to, aggregation, filters)
 
     sql =
@@ -268,7 +262,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         ORDER BY value #{direction |> Atom.to_string() |> String.upcase()}
         """
 
-    Sanbase.Clickhouse.Query.put_sql(query_struct, sql)
+    Query.put_sql(query_struct, sql)
   end
 
   defp aggregated_slugs_base_query(metric, from, to, aggregation, filters) do
@@ -315,15 +309,14 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     )
     """
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def available_label_fqns_for_fixed_parameters_query(metric, %{"labels" => labels}) do
     columns_map = Map.take(labels, ["label_key", "parent_label_key", "group"])
 
     where_clause =
-      Enum.map(columns_map, fn {key, _} -> "#{key} = {{#{key}}}" end)
-      |> Enum.join(" AND ")
+      Enum.map_join(columns_map, " AND ", fn {key, _} -> "#{key} = {{#{key}}}" end)
 
     sql = """
     SELECT DISTINCT(fqn)
@@ -333,19 +326,16 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       #{where_clause}
     """
 
-    params =
-      %{metric: Map.get(Registry.name_to_metric_map(), metric)}
-      |> Map.merge(columns_map)
+    params = Map.merge(%{metric: Map.get(Registry.name_to_metric_map(), metric)}, columns_map)
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def available_label_fqns_for_fixed_parameters_query(metric, slug, %{"labels" => labels}) do
     columns_map = Map.take(labels, ["label_key", "parent_label_key", "group"])
 
     where_clause =
-      Enum.map(columns_map, fn {key, _} -> "#{key} = {{#{key}}}" end)
-      |> Enum.join(" AND ")
+      Enum.map_join(columns_map, " AND ", fn {key, _} -> "#{key} = {{#{key}}}" end)
 
     sql = """
     SELECT DISTINCT(fqn)
@@ -356,14 +346,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       asset_name = {{slug}}
     """
 
-    params =
-      %{
-        metric: Map.get(Registry.name_to_metric_map(), metric),
-        slug: slug
-      }
-      |> Map.merge(columns_map)
+    params = Map.merge(%{metric: Map.get(Registry.name_to_metric_map(), metric), slug: slug}, columns_map)
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def available_label_fqns_for_labeled_intraday_metrics_query(metric) do
@@ -380,7 +365,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         metric: Map.get(Registry.name_to_metric_map(), metric)
       }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def available_label_fqns_for_labeled_intraday_metrics_query(metric, slug) do
@@ -399,10 +384,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         slug: slug
       }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
-  def available_slugs_query() do
+  def available_slugs_query do
     sql = """
     SELECT DISTINCT(name)
     FROM asset_metadata FINAL
@@ -415,7 +400,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
     params = %{}
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def available_slugs_for_metric_query(metric) do
@@ -433,7 +418,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
     params = %{metric: Map.get(Registry.name_to_metric_map(), metric)}
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def last_datetime_computed_at_query(metric, selector) do
@@ -450,7 +435,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       selector: asset_filter_value(selector)
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def first_datetime_query(metric, nil) do
@@ -464,7 +449,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
     params = %{metric: Map.get(Registry.name_to_metric_map(), metric)}
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def first_datetime_query(metric, selector) do
@@ -482,7 +467,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       selector: asset_filter_value(selector)
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def available_metrics_for_selector_query(selector) do
@@ -506,7 +491,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     """
 
     params = %{selector: selector_value}
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def available_metrics_for_slug_query(slug) do
@@ -526,7 +511,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
     params = %{selector: selector}
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   # Private functions

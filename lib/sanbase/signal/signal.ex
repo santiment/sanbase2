@@ -7,8 +7,8 @@ defmodule Sanbase.Signal do
   to the one found in Sanbase.Metric should be implemented.
   """
 
-  alias Sanbase.Signal.SignalAdapter
   alias Sanbase.Signal.Behaviour, as: Type
+  alias Sanbase.Signal.SignalAdapter
 
   @type datetime :: DateTime.t()
   @type signal :: Type.signal()
@@ -26,7 +26,7 @@ defmodule Sanbase.Signal do
   Get available aggregations
   """
   @spec available_aggregations() :: list(aggregation)
-  def available_aggregations(), do: SignalAdapter.available_aggregations()
+  def available_aggregations, do: SignalAdapter.available_aggregations()
 
   @doc ~s"""
   Get the human readable name representation of a given signal
@@ -38,19 +38,19 @@ defmodule Sanbase.Signal do
   Get a list of the free signals
   """
   @spec free_signals() :: list(signal)
-  def free_signals(), do: SignalAdapter.free_signals()
+  def free_signals, do: SignalAdapter.free_signals()
 
   @doc ~s"""
   Get a list of the free signals
   """
   @spec restricted_signals() :: list(signal)
-  def restricted_signals(), do: SignalAdapter.restricted_signals()
+  def restricted_signals, do: SignalAdapter.restricted_signals()
 
   @doc ~s"""
   Get a map where the key is a signal and the value is its access restriction
   """
   @spec access_map() :: map()
-  def access_map(), do: SignalAdapter.access_map()
+  def access_map, do: SignalAdapter.access_map()
 
   @doc ~s"""
   Checks if historical data is allowed for a given `signal`
@@ -73,7 +73,7 @@ defmodule Sanbase.Signal do
   accessible in.
   """
   @spec min_plan_map() :: map()
-  def min_plan_map() do
+  def min_plan_map do
     SignalAdapter.min_plan_map()
   end
 
@@ -81,7 +81,7 @@ defmodule Sanbase.Signal do
   Get all available signals in the json files
   """
   @spec available_signals() :: list(signal)
-  def available_signals() do
+  def available_signals do
     SignalAdapter.available_signals()
   end
 
@@ -97,7 +97,7 @@ defmodule Sanbase.Signal do
   Get available signals with timeseries data types
   """
   @spec available_timeseries_signals() :: list(signal)
-  def available_timeseries_signals() do
+  def available_timeseries_signals do
     SignalAdapter.available_timeseries_signals()
   end
 

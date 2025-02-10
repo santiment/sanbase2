@@ -1,8 +1,8 @@
 defmodule SanbaseWeb.Graphql.QuestionnaireApiTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
+  import SanbaseWeb.Graphql.TestHelpers
 
   setup do
     user = insert(:user)
@@ -20,29 +20,32 @@ defmodule SanbaseWeb.Graphql.QuestionnaireApiTest do
   test "full", %{conn: conn, moderator_conn: moderator_conn} do
     # Create a questionnaire
     questionnaire =
-      create_questionnaire(moderator_conn, %{name: "Name", description: "Descr"})
+      moderator_conn
+      |> create_questionnaire(%{name: "Name", description: "Descr"})
       |> get_in(["data", "createQuestionnaire"])
 
     # Add some questions
-    create_questionnaire_question(moderator_conn, questionnaire["uuid"], %{
+    moderator_conn
+    |> create_questionnaire_question(questionnaire["uuid"], %{
       question: "How are you?",
       type: :open_text,
       order: 1
     })
     |> get_in(["data", "createQuestionnaireQuestion"])
 
-    create_questionnaire_question(moderator_conn, questionnaire["uuid"], %{
+    moderator_conn
+    |> create_questionnaire_question(questionnaire["uuid"], %{
       question: "Select the correct answer",
       type: :single_select,
-      answer_options:
-        %{"1" => "Not correct", "2" => "Correct", "3" => "Also not correct"} |> Jason.encode!(),
+      answer_options: Jason.encode!(%{"1" => "Not correct", "2" => "Correct", "3" => "Also not correct"}),
       order: 2
     })
     |> get_in(["data", "createQuestionnaireQuestion"])
 
     # Assert the question are fetchable
     questionnaire =
-      get_questionnaire(conn, questionnaire["uuid"])
+      conn
+      |> get_questionnaire(questionnaire["uuid"])
       |> get_in(["data", "getQuestionnaire"])
 
     assert %{
@@ -78,7 +81,8 @@ defmodule SanbaseWeb.Graphql.QuestionnaireApiTest do
     # Get the user answers
 
     user_answers =
-      get_questionnaire_user_answers(conn, questionnaire["uuid"])
+      conn
+      |> get_questionnaire_user_answers(questionnaire["uuid"])
       |> get_in(["data", "getQuestionnaireUserAnswers"])
 
     # Check the recorded user answers

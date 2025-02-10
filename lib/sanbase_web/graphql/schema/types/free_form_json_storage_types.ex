@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.FreeFormJsonStorageTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   object :free_form_json_storage do

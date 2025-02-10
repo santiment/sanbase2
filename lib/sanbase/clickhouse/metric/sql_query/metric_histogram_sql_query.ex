@@ -1,13 +1,15 @@
 defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
+  @moduledoc false
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
 
   import Sanbase.Metric.SqlQuery.Helper,
     only: [to_unix_timestamp: 3, asset_id_filter: 2, metric_id_filter: 2]
 
   alias Sanbase.Clickhouse.MetricAdapter.Registry
+  alias Sanbase.Clickhouse.Query
 
   def histogram_data_query("all_spent_coins_cost", slug, _from, to, interval, _limit) do
-    interval_sec = interval |> str_to_sec()
+    interval_sec = str_to_sec(interval)
 
     metric =
       case rem(interval_sec, 86_400) do
@@ -57,18 +59,18 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
 
     params = %{
       slug: slug,
-      to: to |> DateTime.to_unix(),
+      to: DateTime.to_unix(to),
       interval: interval_sec,
       metric: metric,
       price_metric: "price_usd"
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def histogram_data_query(metric, slug, from, to, interval, _limit)
       when metric in ["price_histogram", "spent_coins_cost"] do
-    interval_sec = interval |> str_to_sec()
+    interval_sec = str_to_sec(interval)
 
     metric =
       case rem(interval_sec, 86_400) do
@@ -122,13 +124,13 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
     params = %{
       interval: interval_sec,
       slug: slug,
-      from: from |> DateTime.to_unix(),
-      to: to |> DateTime.to_unix(),
+      from: DateTime.to_unix(from),
+      to: DateTime.to_unix(to),
       metric: metric,
       price_metric: "price_usd"
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def histogram_data_query("eth2_staked_amount_per_label", "ethereum", from, to, _interval, limit) do
@@ -197,21 +199,14 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
 
     params = %{
       limit: limit,
-      from: from && from |> DateTime.to_unix(),
-      to: to |> DateTime.to_unix()
+      from: from && DateTime.to_unix(from),
+      to: DateTime.to_unix(to)
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
-  def histogram_data_query(
-        "eth2_staked_address_count_per_label",
-        "ethereum",
-        from,
-        to,
-        _interval,
-        limit
-      ) do
+  def histogram_data_query("eth2_staked_address_count_per_label", "ethereum", from, to, _interval, limit) do
     sql = """
     WITH staking_address AS (
       SELECT DISTINCT(address)
@@ -260,21 +255,14 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
 
     params = %{
       limit: limit,
-      from: from && from |> DateTime.to_unix(),
-      to: to |> DateTime.to_unix()
+      from: from && DateTime.to_unix(from),
+      to: DateTime.to_unix(to)
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
-  def histogram_data_query(
-        "eth2_top_stakers",
-        "ethereum",
-        from,
-        to,
-        _interval,
-        limit
-      ) do
+  def histogram_data_query("eth2_top_stakers", "ethereum", from, to, _interval, limit) do
     sql = """
     WITH lock_addresses AS (
       SELECT
@@ -330,22 +318,15 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
     """
 
     params = %{
-      from: from && from |> DateTime.to_unix(),
-      to: to |> DateTime.to_unix(),
+      from: from && DateTime.to_unix(from),
+      to: DateTime.to_unix(to),
       limit: limit
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
-  def histogram_data_query(
-        "eth2_staking_pools",
-        "ethereum",
-        from,
-        to,
-        _interval,
-        limit
-      ) do
+  def histogram_data_query("eth2_staking_pools", "ethereum", from, to, _interval, limit) do
     sql = """
     SELECT
       label,
@@ -395,22 +376,15 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
     """
 
     params = %{
-      from: from && from |> DateTime.to_unix(),
-      to: to |> DateTime.to_unix(),
+      from: from && DateTime.to_unix(from),
+      to: DateTime.to_unix(to),
       limit: limit
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
-  def histogram_data_query(
-        "eth2_staking_pools_usd",
-        "ethereum",
-        from,
-        to,
-        _interval,
-        limit
-      ) do
+  def histogram_data_query("eth2_staking_pools_usd", "ethereum", from, to, _interval, limit) do
     sql = """
     SELECT
       label,
@@ -472,22 +446,15 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
     """
 
     params = %{
-      from: from && from |> DateTime.to_unix(),
-      to: to |> DateTime.to_unix(),
+      from: from && DateTime.to_unix(from),
+      to: DateTime.to_unix(to),
       limit: limit
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
-  def histogram_data_query(
-        "eth2_staking_pools_validators_count_over_time",
-        "ethereum",
-        from,
-        to,
-        interval,
-        limit
-      ) do
+  def histogram_data_query("eth2_staking_pools_validators_count_over_time", "ethereum", from, to, interval, limit) do
     sql = """
     WITH (
       SELECT
@@ -621,22 +588,15 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
 
     params = %{
       interval: str_to_sec(interval),
-      from: from |> DateTime.to_unix(),
-      to: to |> DateTime.to_unix(),
+      from: DateTime.to_unix(from),
+      to: DateTime.to_unix(to),
       limit: limit
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
-  def histogram_data_query(
-        "eth2_staking_pools_validators_count_over_time_delta",
-        "ethereum",
-        from,
-        to,
-        interval,
-        limit
-      ) do
+  def histogram_data_query("eth2_staking_pools_validators_count_over_time_delta", "ethereum", from, to, interval, limit) do
     sql = """
     SELECT
       t,
@@ -684,12 +644,12 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
 
     params = %{
       interval: str_to_sec(interval),
-      from: from |> DateTime.to_unix(),
-      to: to |> DateTime.to_unix(),
+      from: DateTime.to_unix(from),
+      to: DateTime.to_unix(to),
       limit: limit
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   # Generic, "age_distribution" goes here
@@ -719,11 +679,11 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
       slug: slug,
       metric: Map.get(Registry.name_to_metric_map(), metric),
       interval: str_to_sec(interval),
-      from: from |> DateTime.to_unix(),
-      to: to |> DateTime.to_unix(),
+      from: DateTime.to_unix(from),
+      to: DateTime.to_unix(to),
       limit: limit
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 end

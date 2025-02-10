@@ -40,9 +40,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiGetQueriesTest do
     }
     """
 
-    result =
-      context.conn
-      |> post("/graphql", query_skeleton(query, "allProjects"))
+    result = post(context.conn, "/graphql", query_skeleton(query, "allProjects"))
 
     projects = json_response(result, 200)["data"]["allProjects"]
 
@@ -60,9 +58,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiGetQueriesTest do
     }
     """
 
-    result =
-      context.conn
-      |> post("/graphql", query_skeleton(query, "allErc20Projects"))
+    result = post(context.conn, "/graphql", query_skeleton(query, "allErc20Projects"))
 
     projects = json_response(result, 200)["data"]["allErc20Projects"]
 
@@ -80,9 +76,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiGetQueriesTest do
     }
     """
 
-    result =
-      context.conn
-      |> post("/graphql", query_skeleton(query, "allCurrencyProjects"))
+    result = post(context.conn, "/graphql", query_skeleton(query, "allCurrencyProjects"))
 
     projects = json_response(result, 200)["data"]["allCurrencyProjects"]
 
@@ -135,9 +129,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiGetQueriesTest do
     }
     """
 
-    result =
-      context.conn
-      |> post("/graphql", query_skeleton(query, "allProjects"))
+    result = post(context.conn, "/graphql", query_skeleton(query, "allProjects"))
 
     projects = json_response(result, 200)["data"]["allProjects"]
 

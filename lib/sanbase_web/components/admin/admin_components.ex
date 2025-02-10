@@ -1,6 +1,6 @@
 defmodule SanbaseWeb.AdminComponents do
+  @moduledoc false
   use Phoenix.Component, global_prefixes: ~w(x-)
-
   use PhoenixHTMLHelpers
 
   import SanbaseWeb.CoreComponents
@@ -108,7 +108,7 @@ defmodule SanbaseWeb.AdminComponents do
       else
         case Map.get(assigns.field_type_map, assigns.field) do
           map_or_list when map_or_list in [:map, :list] ->
-            Map.get(assigns.changeset.data, assigns.field) |> Jason.encode!()
+            assigns.changeset.data |> Map.get(assigns.field) |> Jason.encode!()
 
           _ ->
             Map.get(assigns.changeset.changes, assigns.field) ||
@@ -1031,12 +1031,9 @@ defmodule SanbaseWeb.AdminComponents do
   # private
 
   defp normalize_filters(search) do
-    (Map.get(search || %{}, "filters") || [])
-    |> case do
+    case Map.get(search || %{}, "filters") || [] do
       filters when is_map(filters) and map_size(filters) > 0 ->
-        filters
-        |> Map.to_list()
-        |> Enum.map(fn {_key, filter} -> filter end)
+        filters |> Map.to_list() |> Enum.map(fn {_key, filter} -> filter end)
 
       filters when is_list(filters) and length(filters) > 0 ->
         filters

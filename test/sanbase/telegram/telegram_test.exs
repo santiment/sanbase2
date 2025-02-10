@@ -1,12 +1,12 @@
 defmodule Sanbase.TelegramTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
+  import SanbaseWeb.Graphql.TestHelpers
 
-  alias Sanbase.Telegram
   alias Sanbase.Accounts.Settings
   alias Sanbase.Accounts.UserSettings
+  alias Sanbase.Telegram
 
   @bot_username Application.compile_env(:sanbase, [Sanbase.Telegram, :bot_username])
   @telegram_endpoint Application.compile_env(:sanbase, [Sanbase.Telegram, :telegram_endpoint])
@@ -61,7 +61,8 @@ defmodule Sanbase.TelegramTest do
 
     self_pid = self()
 
-    Sanbase.Mock.prepare_mock(Sanbase.Telegram, :send_message_to_chat_id, fn _chat_id, text ->
+    Sanbase.Telegram
+    |> Sanbase.Mock.prepare_mock(:send_message_to_chat_id, fn _chat_id, text ->
       send(self_pid, {:telegram_to_self, text})
       {:ok, text}
     end)
@@ -73,8 +74,7 @@ defmodule Sanbase.TelegramTest do
                UserSettings.settings_for(context.user, force: true)
 
       assert_receive(
-        {:telegram_to_self,
-         "You have successfully disconnected your Telegram bot from your Sanbase profile."},
+        {:telegram_to_self, "You have successfully disconnected your Telegram bot from your Sanbase profile."},
         200
       )
     end)
@@ -122,9 +122,7 @@ defmodule Sanbase.TelegramTest do
     }
     """
 
-    result =
-      context.conn
-      |> post("/graphql", query_skeleton(query, "getTelegramDeepLink"))
+    result = post(context.conn, "/graphql", query_skeleton(query, "getTelegramDeepLink"))
 
     json_response(result, 200)["data"]["getTelegramDeepLink"]
   end
@@ -136,9 +134,7 @@ defmodule Sanbase.TelegramTest do
     }
     """
 
-    result =
-      context.conn
-      |> post("/graphql", mutation_skeleton(mutation))
+    result = post(context.conn, "/graphql", mutation_skeleton(mutation))
 
     json_response(result, 200)["data"]["revokeTelegramDeepLink"]
   end
@@ -154,9 +150,7 @@ defmodule Sanbase.TelegramTest do
     }
     """
 
-    result =
-      context.conn
-      |> post("/graphql", mutation_skeleton(mutation))
+    result = post(context.conn, "/graphql", mutation_skeleton(mutation))
 
     json_response(result, 200)["data"]["disconnectTelegramBot"]
   end
@@ -187,8 +181,7 @@ defmodule Sanbase.TelegramTest do
       "update_id" => 268_889_666
     }
 
-    context.conn
-    |> post("/telegram/#{@telegram_endpoint}", response)
+    post(context.conn, "/telegram/#{@telegram_endpoint}", response)
   end
 
   defp gql_user_settings(context) do
@@ -202,9 +195,7 @@ defmodule Sanbase.TelegramTest do
     }
     """
 
-    result =
-      context.conn
-      |> post("/graphql", query_skeleton(query, "currentUser"))
+    result = post(context.conn, "/graphql", query_skeleton(query, "currentUser"))
 
     json_response(result, 200)["data"]["currentUser"]
   end

@@ -1,4 +1,5 @@
 defmodule Sanbase.Alert.Utils do
+  @moduledoc false
   alias Sanbase.Math
 
   @doc ~s"""
@@ -23,11 +24,11 @@ defmodule Sanbase.Alert.Utils do
       5.0
   """
   def round_price(price) when is_number(price) and price > 0 and price < 1 do
-    Math.to_float(price) |> Float.round(6)
+    price |> Math.to_float() |> Float.round(6)
   end
 
   def round_price(price) when is_number(price) and price >= 1 do
-    Math.to_float(price) |> Float.round(2)
+    price |> Math.to_float() |> Float.round(2)
   end
 
   @doc ~s"""
@@ -46,9 +47,10 @@ defmodule Sanbase.Alert.Utils do
   """
   @spec construct_cache_key(list(any)) :: String.t()
   def construct_cache_key(keys) when is_list(keys) do
-    data = keys |> Jason.encode!()
+    data = Jason.encode!(keys)
 
-    :crypto.hash(:sha256, data)
+    :sha256
+    |> :crypto.hash(data)
     |> Base.encode16()
     |> binary_part(0, 32)
   end

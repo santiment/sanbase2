@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.MakeUsernameUnique do
+  @moduledoc false
   use Ecto.Migration
 
   def up do

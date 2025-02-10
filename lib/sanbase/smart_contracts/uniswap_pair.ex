@@ -1,4 +1,5 @@
 defmodule Sanbase.SmartContracts.UniswapPair do
+  @moduledoc false
   import Sanbase.SmartContracts.Utils,
     only: [call_contract: 4, call_contract_batch: 5, format_address: 1, format_number: 2]
 
@@ -33,8 +34,8 @@ defmodule Sanbase.SmartContracts.UniswapPair do
 
   @spec reserves(address) :: {float(), float()} | {:error, any()}
   def reserves(contract) do
-    call_contract(
-      contract,
+    contract
+    |> call_contract(
       "getReserves()",
       [],
       [{:uint, 112}, {:uint, 112}, {:uint, 32}]
@@ -50,7 +51,8 @@ defmodule Sanbase.SmartContracts.UniswapPair do
 
   @spec total_supply(address) :: float()
   def total_supply(contract) do
-    call_contract(contract, "totalSupply()", [], [{:uint, 256}])
+    contract
+    |> call_contract("totalSupply()", [], [{:uint, 256}])
     |> case do
       [total_supply] -> format_number(total_supply, @decimals)
       {:error, _} -> +0.0
@@ -61,7 +63,8 @@ defmodule Sanbase.SmartContracts.UniswapPair do
   def balance_of(address, contract) do
     address = format_address(address)
 
-    call_contract(contract, "balanceOf(address)", [address], [{:uint, 256}])
+    contract
+    |> call_contract("balanceOf(address)", [address], [{:uint, 256}])
     |> case do
       [balance] -> format_number(balance, @decimals)
       {:error, _} -> +0.0
@@ -69,14 +72,15 @@ defmodule Sanbase.SmartContracts.UniswapPair do
   end
 
   def balances_of(addresses, contract) do
-    addresses_args = Enum.map(addresses, &format_address/1) |> Enum.map(&List.wrap/1)
+    addresses_args = addresses |> Enum.map(&format_address/1) |> Enum.map(&List.wrap/1)
     # balanceOf has 2 optional parameters - block number and opts. In case of
     # batching, the batch_request/1 function automatically appends `batch: true`
     # to the arguments list. If the first optional param is not explicilty set
     # to "latest", then it is populated by a keyword list and fails.
     opts = [transform_args_list_fun: fn list -> list ++ ["latest"] end]
 
-    call_contract_batch(contract, "balanceOf(address)", addresses_args, [{:uint, 256}], opts)
+    contract
+    |> call_contract_batch("balanceOf(address)", addresses_args, [{:uint, 256}], opts)
     |> Enum.map(fn [balance] -> [format_number(balance, @decimals)] end)
   end
 

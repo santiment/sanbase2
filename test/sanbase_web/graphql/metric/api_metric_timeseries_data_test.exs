@@ -1,11 +1,12 @@
 defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
   use SanbaseWeb.ConnCase, async: false
 
+  import ExUnit.CaptureLog
   import Mock, only: [assert_called: 1]
   import Sanbase.Factory
-  import ExUnit.CaptureLog
   import SanbaseWeb.Graphql.TestHelpers
 
+  alias Sanbase.Clickhouse.MetricAdapter
   alias Sanbase.Metric
 
   setup do
@@ -50,8 +51,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     # PricePair module instead of the Price module
     %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
 
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.PricePair.timeseries_data/6,
+    (&Sanbase.PricePair.timeseries_data/6)
+    |> Sanbase.Mock.prepare_mock2(
       {:ok,
        [
          %{value: 100.0, datetime: ~U[2019-01-01 00:00:00Z]},
@@ -60,8 +61,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
-        get_timeseries_metric(
-          conn,
+        conn
+        |> get_timeseries_metric(
           "price_usd",
           %{slug: slug, source: "cryptocompare"},
           from,
@@ -97,8 +98,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     insert(:random_project, market_segments: [market_segment])
     insert(:random_project, market_segments: [market_segment])
 
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.MetricAdapter.timeseries_data/6,
+    (&MetricAdapter.timeseries_data/6)
+    |> Sanbase.Mock.prepare_mock2(
       {:ok,
        [
          %{value: 100.0, datetime: ~U[2019-01-01 00:00:00Z]},
@@ -107,8 +108,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
-        get_timeseries_metric(
-          conn,
+        conn
+        |> get_timeseries_metric(
           "holders_distribution_0.1_to_1",
           %{market_segments: [market_segment.name]},
           from,
@@ -124,7 +125,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
              ]
 
       assert_called(
-        Sanbase.Clickhouse.MetricAdapter.timeseries_data(
+        MetricAdapter.timeseries_data(
           "holders_distribution_0.1_to_1",
           %{slug: [:_, :_, :_]},
           from,
@@ -144,8 +145,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     _p2 = insert(:random_project, market_segments: [market_segment])
     p3 = insert(:random_project, market_segments: [market_segment])
 
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.MetricAdapter.timeseries_data/6,
+    (&MetricAdapter.timeseries_data/6)
+    |> Sanbase.Mock.prepare_mock2(
       {:ok,
        [
          %{value: 100.0, datetime: ~U[2019-01-01 00:00:00Z]},
@@ -154,8 +155,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
-        get_timeseries_metric(
-          conn,
+        conn
+        |> get_timeseries_metric(
           "holders_distribution_0.1_to_1",
           %{market_segments: [market_segment.name], ignored_slugs: [p3.slug]},
           from,
@@ -171,7 +172,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
              ]
 
       assert_called(
-        Sanbase.Clickhouse.MetricAdapter.timeseries_data(
+        MetricAdapter.timeseries_data(
           "holders_distribution_0.1_to_1",
           %{slug: [:_, :_]},
           from,
@@ -187,22 +188,19 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
 
     label_metrics =
-      Metric.available_timeseries_metrics()
-      |> Enum.filter(fn metric ->
+      Enum.filter(Metric.available_timeseries_metrics(), fn metric ->
         {:ok, %{available_selectors: selectors}} = Metric.metadata(metric)
 
         :label in selectors and :owner in selectors
       end)
 
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.Metric.timeseries_data/6,
-      {:ok, [%{datetime: ~U[2020-01-01 00:00:00Z], value: 1.0}]}
-    )
+    (&Sanbase.Metric.timeseries_data/6)
+    |> Sanbase.Mock.prepare_mock2({:ok, [%{datetime: ~U[2020-01-01 00:00:00Z], value: 1.0}]})
     |> Sanbase.Mock.run_with_mocks(fn ->
       for metric <- label_metrics do
         result =
-          get_timeseries_metric(
-            conn,
+          conn
+          |> get_timeseries_metric(
             metric,
             %{slug: slug, owner: "Binance", label: "centralized_exchange"},
             from,
@@ -224,8 +222,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     metric = "daily_active_addresses"
     {:ok, %{default_aggregation: aggregation}} = Metric.metadata(metric)
 
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.MetricAdapter.timeseries_data/6,
+    (&MetricAdapter.timeseries_data/6)
+    |> Sanbase.Mock.prepare_mock2(
       {:ok,
        [
          %{value: 100.0, datetime: ~U[2019-01-01 00:00:00Z]},
@@ -234,8 +232,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
-        get_timeseries_metric(
-          conn,
+        conn
+        |> get_timeseries_metric(
           metric,
           %{slug: slug},
           from,
@@ -258,8 +256,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
 
     metrics = Metric.available_timeseries_metrics() |> Enum.shuffle() |> Enum.take(100)
 
-    Sanbase.Mock.prepare_mock2(
-      &Metric.timeseries_data/6,
+    (&Metric.timeseries_data/6)
+    |> Sanbase.Mock.prepare_mock2(
       {:ok,
        [
          %{value: 100.0, datetime: ~U[2019-01-01 00:00:00Z]},
@@ -269,8 +267,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         for metric <- metrics do
-          get_timeseries_metric(
-            conn,
+          conn
+          |> get_timeseries_metric(
             metric,
             %{slug: slug},
             from,
@@ -296,8 +294,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     {:ok, %{available_aggregations: aggregations}} = Metric.metadata(metric)
     aggregations = aggregations -- [:ohlc]
 
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.MetricAdapter.timeseries_data/6,
+    (&MetricAdapter.timeseries_data/6)
+    |> Sanbase.Mock.prepare_mock2(
       {:ok,
        [
          %{value: 100.0, datetime: ~U[2019-01-01 00:00:00Z]},
@@ -307,8 +305,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         for aggregation <- aggregations do
-          get_timeseries_metric(
-            conn,
+          conn
+          |> get_timeseries_metric(
             metric,
             %{slug: slug},
             from,
@@ -331,7 +329,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
     aggregations = Metric.available_aggregations()
 
-    rand_aggregations = Enum.map(1..10, fn _ -> rand_str() |> String.to_atom() end)
+    rand_aggregations = Enum.map(1..10, fn _ -> String.to_atom(rand_str()) end)
 
     rand_aggregations = rand_aggregations -- aggregations
     [metric | _] = Metric.available_timeseries_metrics()
@@ -410,8 +408,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     interval = "1h"
 
     ch_metric_error =
-      get_timeseries_metric(
-        context.conn,
+      context.conn
+      |> get_timeseries_metric(
         "mvrv_usd",
         %{slug: slug},
         from,
@@ -424,8 +422,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
       |> get_in(["message"])
 
     social_metric_error =
-      get_timeseries_metric(
-        context.conn,
+      context.conn
+      |> get_timeseries_metric(
         "twitter_followers",
         %{slug: slug},
         from,
@@ -454,15 +452,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     |> String.to_integer()
   end
 
-  defp get_timeseries_metric(
-         conn,
-         metric,
-         selector,
-         from,
-         to,
-         interval,
-         aggregation
-       ) do
+  defp get_timeseries_metric(conn, metric, selector, from, to, interval, aggregation) do
     query = get_timeseries_query(metric, selector, from, to, interval, aggregation)
 
     conn
@@ -470,14 +460,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     |> json_response(200)
   end
 
-  defp get_timeseries_metric_without_selector(
-         conn,
-         metric,
-         from,
-         to,
-         interval,
-         aggregation
-       ) do
+  defp get_timeseries_metric_without_selector(conn, metric, from, to, interval, aggregation) do
     query = get_timeseries_query_without_selector(metric, from, to, interval, aggregation)
 
     conn
@@ -502,7 +485,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
             from: "#{from}",
             to: "#{to}",
             interval: "#{interval}",
-            aggregation: #{Atom.to_string(aggregation) |> String.upcase()}){
+            aggregation: #{aggregation |> Atom.to_string() |> String.upcase()}){
               datetime
               value
             }
@@ -511,13 +494,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     """
   end
 
-  defp get_timeseries_query_without_selector(
-         metric,
-         from,
-         to,
-         interval,
-         aggregation
-       ) do
+  defp get_timeseries_query_without_selector(metric, from, to, interval, aggregation) do
     """
       {
         getMetric(metric: "#{metric}"){
@@ -525,7 +502,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
             from: "#{from}",
             to: "#{to}",
             interval: "#{interval}",
-            aggregation: #{Atom.to_string(aggregation) |> String.upcase()}){
+            aggregation: #{aggregation |> Atom.to_string() |> String.upcase()}){
               datetime
               value
             }

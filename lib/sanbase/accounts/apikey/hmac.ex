@@ -36,6 +36,7 @@ defmodule Sanbase.Accounts.Hmac do
   """
 
   alias Sanbase.Utils.Config
+
   require Logger
 
   @rand_bytes_length 32
@@ -43,14 +44,16 @@ defmodule Sanbase.Accounts.Hmac do
 
   @spec hmac(String.t()) :: String.t()
   def hmac(token) when is_binary(token) do
-    :crypto.mac(:hmac, :sha256, secret_key(), token)
+    :hmac
+    |> :crypto.mac(:sha256, secret_key(), token)
     |> Base.encode32(case: :lower)
     |> binary_part(0, byte_size(token))
   end
 
   @spec generate_token :: String.t()
-  def generate_token() do
-    :crypto.strong_rand_bytes(@rand_bytes_length)
+  def generate_token do
+    @rand_bytes_length
+    |> :crypto.strong_rand_bytes()
     |> Base.encode32(case: :lower)
     |> binary_part(0, @apikey_length)
   end
@@ -74,12 +77,11 @@ defmodule Sanbase.Accounts.Hmac do
         {:ok, {token, apikey}}
 
       _ ->
-        {:error,
-         "Apikey '#{token_apikey}' is malformed - it must have two string parts separated by underscore"}
+        {:error, "Apikey '#{token_apikey}' is malformed - it must have two string parts separated by underscore"}
     end
   end
 
   # Private functions
 
-  defp secret_key(), do: Config.module_get(__MODULE__, :secret_key)
+  defp secret_key, do: Config.module_get(__MODULE__, :secret_key)
 end

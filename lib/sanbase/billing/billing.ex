@@ -6,11 +6,13 @@ defmodule Sanbase.Billing do
   import Ecto.Query
   import Sanbase.Billing.EventEmitter, only: [emit_event: 3]
 
-  alias Sanbase.Repo
-  alias Sanbase.Billing.{Product, Plan, Subscription}
+  alias Sanbase.Accounts.User
+  alias Sanbase.Billing.Plan
+  alias Sanbase.Billing.Product
+  alias Sanbase.Billing.Subscription
   alias Sanbase.Billing.Subscription.LiquiditySubscription
   alias Sanbase.Billing.Subscription.ProPlus
-  alias Sanbase.Accounts.User
+  alias Sanbase.Repo
   alias Sanbase.StripeApi
 
   # Subscription API
@@ -36,20 +38,21 @@ defmodule Sanbase.Billing do
   defdelegate create_free_basic_api, to: ProPlus
   defdelegate delete_free_basic_api, to: ProPlus
 
-  def list_products(), do: Repo.all(Product)
+  def list_products, do: Repo.all(Product)
 
-  def list_plans() do
-    from(p in Plan, preload: [:product])
-    |> Repo.all()
+  def list_plans do
+    Repo.all(from(p in Plan, preload: [:product]))
   end
 
   def eligible_for_sanbase_trial?(user_id) do
-    Subscription.all_user_subscriptions_for_product(user_id, Product.product_sanbase())
+    user_id
+    |> Subscription.all_user_subscriptions_for_product(Product.product_sanbase())
     |> Enum.empty?()
   end
 
   def eligible_for_api_trial?(user_id) do
-    Subscription.all_user_subscriptions_for_product(user_id, Product.product_api())
+    user_id
+    |> Subscription.all_user_subscriptions_for_product(Product.product_api())
     |> Enum.empty?()
   end
 
@@ -63,12 +66,9 @@ defmodule Sanbase.Billing do
   `priv/repo/seed_plans_and_products.exs` must be executed.
   """
   @spec sync_products_with_stripe() :: :ok | {:error, %Stripe.Error{}}
-  def sync_products_with_stripe() do
-    with :ok <- run_sync(list_products(), &Product.maybe_create_product_in_stripe/1),
-         :ok <- run_sync(list_plans(), &Plan.maybe_create_plan_in_stripe/1) do
-      :ok
-    else
-      {:error, error} -> {:error, error}
+  def sync_products_with_stripe do
+    with :ok <- run_sync(list_products(), &Product.maybe_create_product_in_stripe/1) do
+      run_sync(list_plans(), &Plan.maybe_create_plan_in_stripe/1)
     end
   end
 
@@ -86,7 +86,8 @@ defmodule Sanbase.Billing do
   # Return :ok if all function calls over the list return {:ok, _}
   # Return the error otherwise
   defp run_sync(list, function) when is_function(function, 1) do
-    Enum.map(list, function)
+    list
+    |> Enum.map(function)
     |> Enum.find(:ok, fn
       {:ok, _} -> false
       {:error, _} -> true
@@ -105,8 +106,7 @@ defmodule Sanbase.Billing do
     end
   end
 
-  def create_or_update_stripe_customer(%User{stripe_customer_id: stripe_id} = user, nil)
-      when is_binary(stripe_id) do
+  def create_or_update_stripe_customer(%User{stripe_customer_id: stripe_id} = user, nil) when is_binary(stripe_id) do
     {:ok, user}
   end
 
@@ -119,10 +119,8 @@ defmodule Sanbase.Billing do
     end
   end
 
-  def get_sanbase_pro_user_ids() do
-    sanbase_user_ids_mapset =
-      Subscription.get_direct_sanbase_pro_user_ids()
-      |> MapSet.new()
+  def get_sanbase_pro_user_ids do
+    sanbase_user_ids_mapset = MapSet.new(Subscription.get_direct_sanbase_pro_user_ids())
 
     linked_user_id_pairs = Sanbase.Accounts.LinkedUser.get_all_user_id_pairs()
 
@@ -130,9 +128,10 @@ defmodule Sanbase.Billing do
       Enum.reduce(linked_user_id_pairs, MapSet.new(), fn pair, acc ->
         {primary_user_id, secondary_user_id} = pair
 
-        case primary_user_id in sanbase_user_ids_mapset do
-          true -> MapSet.put(acc, secondary_user_id)
-          false -> acc
+        if primary_user_id in sanbase_user_ids_mapset do
+          MapSet.put(acc, secondary_user_id)
+        else
+          acc
         end
       end)
 

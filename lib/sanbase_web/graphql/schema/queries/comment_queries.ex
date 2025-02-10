@@ -4,9 +4,8 @@ defmodule SanbaseWeb.Graphql.Schema.CommentQueries do
   """
   use Absinthe.Schema.Notation
 
-  alias SanbaseWeb.Graphql.Resolvers.CommentResolver
-
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
+  alias SanbaseWeb.Graphql.Resolvers.CommentResolver
 
   object :comment_queries do
     field :comments_feed, list_of(:comments_feed_item) do

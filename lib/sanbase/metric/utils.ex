@@ -1,6 +1,9 @@
 defmodule Sanbase.Metric.Utils do
+  @moduledoc false
   def available_metrics_for_contract(module, contract_address) do
-    Sanbase.Project.List.by_contracts(List.wrap(contract_address))
+    contract_address
+    |> List.wrap()
+    |> Sanbase.Project.List.by_contracts()
     |> Enum.map(& &1.slug)
     |> case do
       [] -> []

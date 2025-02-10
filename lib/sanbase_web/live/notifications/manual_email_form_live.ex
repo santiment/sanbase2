@@ -1,5 +1,7 @@
 defmodule SanbaseWeb.NotificationsLive.ManualEmailFormLive do
+  @moduledoc false
   use SanbaseWeb, :live_view
+
   alias Sanbase.Notifications.Handler
 
   def mount(_params, _session, socket) do
@@ -67,11 +69,7 @@ defmodule SanbaseWeb.NotificationsLive.ManualEmailFormLive do
     """
   end
 
-  def handle_event(
-        "send_email",
-        %{"action" => action, "subject" => subject, "content" => content},
-        socket
-      ) do
+  def handle_event("send_email", %{"action" => action, "subject" => subject, "content" => content}, socket) do
     case Handler.handle_manual_notification(%{
            action: action,
            channel: "email",

@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddChartConfigurationCommentsMappingTable do
+  @moduledoc false
   use Ecto.Migration
 
   @table :chart_configuration_comments_mapping

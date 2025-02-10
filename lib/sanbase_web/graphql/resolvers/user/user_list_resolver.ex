@@ -1,22 +1,24 @@
 defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
-  require Logger
-
+  @moduledoc false
   import Absinthe.Resolution.Helpers, except: [async: 1]
-  import SanbaseWeb.Graphql.Helpers.Async, only: [async: 1]
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1]
+  import SanbaseWeb.Graphql.Helpers.Async, only: [async: 1]
 
   alias Sanbase.Accounts.User
-  alias Sanbase.UserList
   alias Sanbase.Project
   alias Sanbase.SocialData.TrendingWords
-
-  alias SanbaseWeb.Graphql.Helpers.Utils
+  alias Sanbase.UserList
   alias SanbaseWeb.Graphql.Cache
+  alias SanbaseWeb.Graphql.Helpers.Utils
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
+  require Logger
+
   @trending_words_size 10
-  @trending_fields [:trending_slugs, :trending_tickers, :trending_names, :trending_projects]
-                   |> Enum.map(&Inflex.camelize(&1, :lower))
+  @trending_fields Enum.map(
+                     [:trending_slugs, :trending_tickers, :trending_names, :trending_projects],
+                     &Inflex.camelize(&1, :lower)
+                   )
 
   ###########################
   #         Queries         #
@@ -31,9 +33,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
     {:error, "Only logged in users can call this method"}
   end
 
-  def fetch_public_user_lists(_root, %{} = args, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
+  def fetch_public_user_lists(_root, %{} = args, %{context: %{auth: %{current_user: current_user}}}) do
     type = Map.get(args, :type) || :project
     UserList.fetch_public_user_lists(current_user, type)
   end
@@ -53,9 +53,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   #   end
   # end
 
-  def watchlist(_root, %{id: id}, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
+  def watchlist(_root, %{id: id}, %{context: %{auth: %{current_user: current_user}}}) do
     # TODO: Added since `settings` is under cache_resolve and updating the settings and refetching the watchlist result
     # in fetching stale data. Need to find a better way to handle this.
     Process.put(:do_not_cache_query, true)
@@ -67,9 +65,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
     UserList.user_list(id, %User{id: nil})
   end
 
-  def watchlist_by_slug(_root, %{slug: slug}, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
+  def watchlist_by_slug(_root, %{slug: slug}, %{context: %{auth: %{current_user: current_user}}}) do
     Process.put(:do_not_cache_query, true)
     UserList.user_list_by_slug(slug, current_user)
   end
@@ -89,9 +85,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
     UserList.fetch_user_lists(user, type)
   end
 
-  def user_list(_root, %{user_list_id: user_list_id}, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
+  def user_list(_root, %{user_list_id: user_list_id}, %{context: %{auth: %{current_user: current_user}}}) do
     UserList.user_list(user_list_id, current_user)
   end
 
@@ -99,9 +93,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
     UserList.user_list(user_list_id, %User{id: nil})
   end
 
-  def settings(%UserList{} = watchlist, _args, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
+  def settings(%UserList{} = watchlist, _args, %{context: %{auth: %{current_user: current_user}}}) do
     UserList.Settings.settings_for(watchlist, current_user)
   end
 
@@ -109,23 +101,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
     UserList.Settings.settings_for(watchlist, nil)
   end
 
-  def stats(
-        %UserList{type: :project} = user_list,
-        _args,
-        resolution
-      ) do
+  def stats(%UserList{type: :project} = user_list, _args, resolution) do
     with {:ok, %{projects: projects}} <- UserList.get_projects(user_list) do
       trending_words_stats = trending_words_stats(projects, resolution)
-      result = Map.merge(trending_words_stats, %{projects_count: length(projects)})
+      result = Map.put(trending_words_stats, :projects_count, length(projects))
       {:ok, result}
     end
   end
 
-  def stats(
-        %UserList{type: :blockchain_address} = user_list,
-        _args,
-        _resolution
-      ) do
+  def stats(%UserList{type: :blockchain_address} = user_list, _args, _resolution) do
     with {:ok, %{total_blockchain_addresses_count: count}} <-
            UserList.get_blockchain_addresses(user_list) do
       {:ok, %{blockchain_addresses_count: count}}
@@ -161,9 +145,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
           {:ok, words} = TrendingWords.get_currently_trending_words(@trending_words_size, :all)
 
           result =
-            words
-            |> Enum.map(fn %{word: word} -> String.downcase(word) end)
-            |> MapSet.new()
+            MapSet.new(words, fn %{word: word} -> String.downcase(word) end)
 
           {:ok, result}
         end,
@@ -203,11 +185,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
     }
   end
 
-  def historical_stats(
-        %UserList{} = user_list,
-        %{from: from, to: to, interval: interval},
-        _resolution
-      ) do
+  def historical_stats(%UserList{} = user_list, %{from: from, to: to, interval: interval}, _resolution) do
     async(fn ->
       with {:ok, %{projects: projects}} <- UserList.get_projects(user_list),
            {:ok, projects} <- deduplicate_multichain_projects(projects),
@@ -244,8 +222,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
         UserList.get_blockchain_addresses(user_list)
 
       result =
-        blockchain_addresses
-        |> Enum.map(
+        Enum.map(
+          blockchain_addresses,
           &%{
             blockchain_address: %{
               id: &1.id,
@@ -297,11 +275,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
     end
   end
 
-  def add_watchlist_items(
-        _root,
-        %{id: id, list_items: _} = args,
-        %{context: %{auth: %{current_user: current_user}}}
-      ) do
+  def add_watchlist_items(_root, %{id: id, list_items: _} = args, %{context: %{auth: %{current_user: current_user}}}) do
     with {:ok, watchlist} <- UserList.by_id(id, []),
          {:ok, args} <- transform_slug_to_project_id(args),
          true <- has_permissions?(watchlist, current_user, :update) do
@@ -318,11 +292,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
     end
   end
 
-  def remove_watchlist_items(
-        _root,
-        %{id: id, list_items: _} = args,
-        %{context: %{auth: %{current_user: current_user}}}
-      ) do
+  def remove_watchlist_items(_root, %{id: id, list_items: _} = args, %{context: %{auth: %{current_user: current_user}}}) do
     with {:ok, watchlist} <- UserList.by_id(id, []),
          {:ok, args} <- transform_slug_to_project_id(args),
          true <- has_permissions?(watchlist, current_user, :update) do
@@ -345,7 +315,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
     slugs = Enum.map(slug_items, &(&1[:slug] || &1["slug"]))
 
     project_items =
-      Project.List.ids_by_slugs(slugs)
+      slugs
+      |> Project.List.ids_by_slugs()
       |> Enum.map(fn project_id -> %{project_id: project_id} end)
 
     list_items = non_slug_items ++ project_items
@@ -359,24 +330,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   def update_watchlist_settings(_root, %{id: watchlist_id, settings: settings}, %{
         context: %{auth: %{current_user: current_user}}
       }) do
-    UserList.Settings.update_or_create_settings(watchlist_id, current_user.id, settings)
+    watchlist_id
+    |> UserList.Settings.update_or_create_settings(current_user.id, settings)
     |> case do
       {:ok, %{settings: settings}} ->
         {:ok, settings}
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        {:error,
-         message: "Cannot update watchlist settings", details: changeset_errors(changeset)}
+        {:error, message: "Cannot update watchlist settings", details: changeset_errors(changeset)}
     end
   end
 
-  def remove_user_list(_root, %{id: watchlist_id} = args, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
+  def remove_user_list(_root, %{id: watchlist_id} = args, %{context: %{auth: %{current_user: current_user}}}) do
     with {:ok, watchlist} <- UserList.by_id(watchlist_id, []),
-         true <- has_permissions?(watchlist, current_user, :delete),
-         {:ok, watchlist} <- remove_watchlist(current_user, args) do
-      {:ok, watchlist}
+         true <- has_permissions?(watchlist, current_user, :delete) do
+      remove_watchlist(current_user, args)
     end
   end
 

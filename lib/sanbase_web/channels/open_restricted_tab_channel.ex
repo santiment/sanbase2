@@ -1,16 +1,15 @@
 defmodule SanbaseWeb.OpenRestrictedTabChannel do
+  @moduledoc false
   use SanbaseWeb, :channel
 
   alias SanbaseWeb.Presence
 
   def join("open_restricted_tabs:" <> user_id, _params, socket) do
-    case String.to_integer(user_id) == socket.assigns.user_id do
-      true ->
-        {:ok, _} = Presence.track(socket, socket.assigns.user_id, %{})
-        {:ok, socket}
-
-      false ->
-        {:error, "The channel subtopic must be the authenticated user id"}
+    if String.to_integer(user_id) == socket.assigns.user_id do
+      {:ok, _} = Presence.track(socket, socket.assigns.user_id, %{})
+      {:ok, socket}
+    else
+      {:error, "The channel subtopic must be the authenticated user id"}
     end
   end
 

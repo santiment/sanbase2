@@ -1,29 +1,26 @@
 defmodule SanbaseWeb.Graphql.SanbaseRepo do
-  alias Sanbase.Repo
-  alias Sanbase.Project
-  alias Sanbase.Insight.Post
-  alias Sanbase.Timeline.TimelineEvent
-
   import Ecto.Query
 
+  alias Sanbase.Insight.Post
+  alias Sanbase.Project
+  alias Sanbase.Repo
+  alias Sanbase.Timeline.TimelineEvent
+
   @spec data() :: Dataloader.Ecto.t()
-  def data() do
+  def data do
     Dataloader.Ecto.new(Repo, query: &query/2)
   end
 
   def query(Project, _args) do
-    Project
-    |> preload(^Project.preloads())
+    preload(Project, ^Project.preloads())
   end
 
   def query(Post, _args) do
-    Post
-    |> preload([:votes])
+    preload(Post, [:votes])
   end
 
   def query(TimelineEvent, _args) do
-    TimelineEvent
-    |> preload([:votes])
+    preload(TimelineEvent, [:votes])
   end
 
   def query(queryable, _args) do

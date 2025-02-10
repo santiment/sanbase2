@@ -35,7 +35,6 @@ defmodule Sanbase.Dashboards.TextWidget do
   @fields [:name, :description, :body]
 
   def changeset(%__MODULE__{} = widget, attrs) do
-    widget
-    |> cast(attrs, @fields)
+    cast(widget, attrs, @fields)
   end
 end

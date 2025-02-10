@@ -1,11 +1,13 @@
 defmodule Sanbase.Accounts.EthAccount do
+  @moduledoc false
   use Ecto.Schema
+
   import Ecto.Changeset
   import Ecto.Query
 
+  alias Sanbase.Accounts.User
   alias Sanbase.Repo
   alias Sanbase.SmartContracts.UniswapPair
-  alias Sanbase.Accounts.User
 
   require Logger
   require Mockery.Macro
@@ -28,7 +30,7 @@ defmodule Sanbase.Accounts.EthAccount do
     |> unique_constraint(:address)
   end
 
-  def all() do
+  def all do
     Repo.all(__MODULE__)
   end
 
@@ -52,23 +54,18 @@ defmodule Sanbase.Accounts.EthAccount do
         {0, _} -> {:error, "Address #{address} does not exist or is not owned by user #{user_id}"}
       end
     else
-      {:error,
-       "Cannot remove ethereum address #{address}. There must be an email or other ethereum address set."}
+      {:error, "Cannot remove ethereum address #{address}. There must be an email or other ethereum address set."}
     end
   end
 
   def by_address(address) do
     lowercase_address = String.downcase(address)
 
-    from(ea in __MODULE__,
-      where: fragment("LOWER(?)", ea.address) == ^lowercase_address
-    )
-    |> Repo.one()
+    Repo.one(from(ea in __MODULE__, where: fragment("LOWER(?)", ea.address) == ^lowercase_address))
   end
 
   def all_by_user(user_id) do
-    from(ea in __MODULE__, where: ea.user_id == ^user_id)
-    |> Repo.all()
+    Repo.all(from(ea in __MODULE__, where: ea.user_id == ^user_id))
   end
 
   def address_to_user_id_map(addresses) when is_list(addresses) do
@@ -103,7 +100,8 @@ defmodule Sanbase.Accounts.EthAccount do
   """
   @spec san_staked_address(String.t(), String.t()) :: float()
   def san_staked_address(address, contract) when is_binary(address) and is_binary(contract) do
-    UniswapPair.balance_of(address, contract)
+    address
+    |> UniswapPair.balance_of(contract)
     |> calculate_san_staked(contract_data_map(contract))
   end
 
@@ -116,7 +114,8 @@ defmodule Sanbase.Accounts.EthAccount do
       |> Enum.chunk_every(90)
       |> Enum.flat_map(&UniswapPair.balances_of(&1, contract))
 
-    Enum.zip(addresses, result)
+    addresses
+    |> Enum.zip(result)
     |> Map.new(fn {addr, [balance]} ->
       {addr, calculate_san_staked(balance, data_map)}
     end)
@@ -129,7 +128,7 @@ defmodule Sanbase.Accounts.EthAccount do
          {_reserves0, _reserves1} = reserves <- UniswapPair.reserves(contract) do
       %{
         total_supply: total_supply,
-        reserves: reserves |> elem(UniswapPair.get_san_position(contract))
+        reserves: elem(reserves, UniswapPair.get_san_position(contract))
       }
     else
       {:error, _} -> %{total_supply: 0.0, reserves: 0.0}
@@ -141,8 +140,7 @@ defmodule Sanbase.Accounts.EthAccount do
     +0.0
   end
 
-  defp calculate_san_staked(_address_staked_tokens, %{total_supply: total_supply})
-       when total_supply == 0.0 do
+  defp calculate_san_staked(_address_staked_tokens, %{total_supply: total_supply}) when total_supply == 0.0 do
     +0.0
   end
 
@@ -153,18 +151,15 @@ defmodule Sanbase.Accounts.EthAccount do
   end
 
   defp delete_user_address(user_id, address) do
-    from(
-      ea in __MODULE__,
-      where: ea.user_id == ^user_id and ea.address == ^address
-    )
-    |> Repo.delete_all()
+    Repo.delete_all(from(ea in __MODULE__, where: ea.user_id == ^user_id and ea.address == ^address))
   end
 
   defp can_remove_eth_account?(user_id, address) do
     {:ok, %User{email: email}} = User.by_id(user_id)
 
     count_other_accounts =
-      all_by_user(user_id)
+      user_id
+      |> all_by_user()
       |> Enum.map(& &1.address)
       |> Enum.reject(&(&1 == address))
       |> Enum.uniq()

@@ -1,4 +1,5 @@
 defmodule Sanbase.Alert.Validation.Operation do
+  @moduledoc false
   import Sanbase.Validation
 
   alias Sanbase.Alert.Operation
@@ -32,8 +33,7 @@ defmodule Sanbase.Alert.Validation.Operation do
         valid_operation?(operation)
 
       [op] when op in @absolute_value_operations ->
-        {:error,
-         "#{inspect(operation)} is an absolute value operation, not an absolute change one."}
+        {:error, "#{inspect(operation)} is an absolute value operation, not an absolute change one."}
 
       [op] when op in @percent_operations ->
         {:error, "#{inspect(operation)} is a percent, not an absolute change one."}
@@ -47,7 +47,7 @@ defmodule Sanbase.Alert.Validation.Operation do
   end
 
   def valid_absolute_value_operation?(operation) do
-    case Map.keys(operation) |> List.first() do
+    case operation |> Map.keys() |> List.first() do
       op when op in @absolute_value_operations or op in @channel_operations ->
         valid_operation?(operation)
 
@@ -73,50 +73,40 @@ defmodule Sanbase.Alert.Validation.Operation do
   def valid_operation?(%{none_of: list}) when is_list(list), do: valid_combinator_operation?(list)
 
   # Validate percent changes
-  def valid_operation?(%{percent_up: percent} = map)
-      when map_size(map) == 1 and is_valid_percent_change(percent),
-      do: :ok
+  def valid_operation?(%{percent_up: percent} = map) when map_size(map) == 1 and is_valid_percent_change(percent), do: :ok
 
-  def valid_operation?(%{percent_down: percent} = map)
-      when map_size(map) == 1 and is_valid_percent_change(percent),
-      do: :ok
+  def valid_operation?(%{percent_down: percent} = map) when map_size(map) == 1 and is_valid_percent_change(percent),
+    do: :ok
 
   # Validate absolute values
-  def valid_operation?(%{above: above} = map) when map_size(map) == 1 and is_number(above),
+  def valid_operation?(%{above: above} = map) when map_size(map) == 1 and is_number(above), do: :ok
+
+  def valid_operation?(%{below: below} = map) when map_size(map) == 1 and is_number(below), do: :ok
+
+  def valid_operation?(%{above_or_equal: above_or_equal} = map) when map_size(map) == 1 and is_number(above_or_equal),
     do: :ok
 
-  def valid_operation?(%{below: below} = map) when map_size(map) == 1 and is_number(below),
+  def valid_operation?(%{below_or_equal: below_or_equal} = map) when map_size(map) == 1 and is_number(below_or_equal),
     do: :ok
-
-  def valid_operation?(%{above_or_equal: above_or_equal} = map)
-      when map_size(map) == 1 and is_number(above_or_equal),
-      do: :ok
-
-  def valid_operation?(%{below_or_equal: below_or_equal} = map)
-      when map_size(map) == 1 and is_number(below_or_equal),
-      do: :ok
 
   # Validate channels
-  def valid_operation?(%{inside_channel: [min, max]}),
-    do: valid_channel_operation?(:inside_channel, [min, max])
+  def valid_operation?(%{inside_channel: [min, max]}), do: valid_channel_operation?(:inside_channel, [min, max])
 
-  def valid_operation?(%{outside_channel: [min, max]}),
-    do: valid_channel_operation?(:outside_channel, [min, max])
+  def valid_operation?(%{outside_channel: [min, max]}), do: valid_channel_operation?(:outside_channel, [min, max])
 
   # Validate absolute value changes
-  def valid_operation?(%{amount_up: value} = map) when map_size(map) == 1 and is_number(value),
-    do: :ok
+  def valid_operation?(%{amount_up: value} = map) when map_size(map) == 1 and is_number(value), do: :ok
 
-  def valid_operation?(%{amount_down: value} = map) when map_size(map) == 1 and is_number(value),
-    do: :ok
+  def valid_operation?(%{amount_down: value} = map) when map_size(map) == 1 and is_number(value), do: :ok
 
   # Validate screener alert
   def valid_operation?(%{selector: %{watchlist_id: id}}) when is_integer(id) and id > 0, do: :ok
 
   def valid_operation?(%{selector: _} = selector) do
-    case Sanbase.Project.ListSelector.valid_selector?(selector) do
-      true -> :ok
-      false -> {:error, "The provided selector is not valid."}
+    if Sanbase.Project.ListSelector.valid_selector?(selector) do
+      :ok
+    else
+      {:error, "The provided selector is not valid."}
     end
   end
 
@@ -134,7 +124,7 @@ defmodule Sanbase.Alert.Validation.Operation do
   # Private functions
   defp all_operations_have_same_type?(list, operation_type) do
     Enum.all?(list, fn elem ->
-      type = Map.keys(elem) |> List.first()
+      type = elem |> Map.keys() |> List.first()
       type in operation_type
     end)
   end
@@ -148,7 +138,8 @@ defmodule Sanbase.Alert.Validation.Operation do
   end
 
   defp all_operations_have_same_type?(list) do
-    Enum.map(list, &Operation.type/1)
+    list
+    |> Enum.map(&Operation.type/1)
     |> Enum.uniq()
     |> case do
       [_] -> true
@@ -157,7 +148,7 @@ defmodule Sanbase.Alert.Validation.Operation do
   end
 
   defp combinator_operation_valid?(operation, type) do
-    list = Map.values(operation) |> List.first()
+    list = operation |> Map.values() |> List.first()
 
     with true <- all_operations_valid?(list),
          true <- all_operations_have_same_type?(list, type) do

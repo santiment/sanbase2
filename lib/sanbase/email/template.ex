@@ -1,4 +1,5 @@
 defmodule Sanbase.Email.Template do
+  @moduledoc false
   @templates %{
     "sanr-network-welcome" => %{
       id: 5_078_949,
@@ -188,7 +189,7 @@ defmodule Sanbase.Email.Template do
 
   def comment_notification_template, do: @comment_notification_template
   def verify_email_weekly_digest_template, do: @verify_email_weekly_digest_template
-  def verification_email_template(), do: @verification_email_template
+  def verification_email_template, do: @verification_email_template
 
   def choose_login_template(origin_url, first_login?: true) when is_binary(origin_url) do
     template_by_product(origin_url, :register)

@@ -1,12 +1,15 @@
 defmodule Sanbase.Mailer do
+  @moduledoc false
   use Oban.Worker, queue: :email_queue
-
-  require Logger
 
   import Sanbase.Email.Template
 
-  alias Sanbase.Accounts.{User, UserSettings}
-  alias Sanbase.Billing.{Subscription, Product}
+  alias Sanbase.Accounts.User
+  alias Sanbase.Accounts.UserSettings
+  alias Sanbase.Billing.Product
+  alias Sanbase.Billing.Subscription
+
+  require Logger
 
   @edu_templates ~w(first-edu-email second-edu-email)
   @end_of_trial_template end_of_trial_template()

@@ -25,8 +25,8 @@ defmodule Sanbase.Accounts.UserFollowerTest do
       UserFollower.follow(user2.id, user.id)
       UserFollower.follow(user.id, user2.id)
 
-      following_ids = UserFollower.followed_by(user.id) |> Enum.map(& &1.id)
-      followers_ids = UserFollower.followers_of(user.id) |> Enum.map(& &1.id)
+      following_ids = user.id |> UserFollower.followed_by() |> Enum.map(& &1.id)
+      followers_ids = user.id |> UserFollower.followers_of() |> Enum.map(& &1.id)
 
       assert following_ids == [user2.id]
       assert followers_ids == [user2.id]
@@ -65,8 +65,8 @@ defmodule Sanbase.Accounts.UserFollowerTest do
       UserFollower.follow(user2.id, user.id)
       UserFollower.follow(user3.id, user.id)
 
-      following_ids = UserFollower.followed_by(user.id) |> Enum.map(& &1.id) |> Enum.sort()
-      expected_following_ids = [user2.id, user3.id] |> Enum.sort()
+      following_ids = user.id |> UserFollower.followed_by() |> Enum.map(& &1.id) |> Enum.sort()
+      expected_following_ids = Enum.sort([user2.id, user3.id])
       assert following_ids == expected_following_ids
     end
   end
@@ -84,8 +84,8 @@ defmodule Sanbase.Accounts.UserFollowerTest do
       UserFollower.follow(user.id, user2.id)
       UserFollower.follow(user.id, user3.id)
 
-      followers_ids = UserFollower.followers_of(user.id) |> Enum.map(& &1.id) |> Enum.sort()
-      expected_followers_ids = [user2.id, user3.id] |> Enum.sort()
+      followers_ids = user.id |> UserFollower.followers_of() |> Enum.map(& &1.id) |> Enum.sort()
+      expected_followers_ids = Enum.sort([user2.id, user3.id])
       assert followers_ids == expected_followers_ids
     end
   end

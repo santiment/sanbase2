@@ -1,4 +1,5 @@
 defmodule Sanbase.InternalServices.Ethauth do
+  @moduledoc false
   use Tesla
 
   alias Sanbase.Utils.Config
@@ -71,23 +72,23 @@ defmodule Sanbase.InternalServices.Ethauth do
   def san_balance(address) do
     Logger.info("[Ethauth] Get san balance for #{address}")
 
-    get(client(), "san_balance", query: [addr: address], opts: @tesla_opts)
+    client()
+    |> get("san_balance", query: [addr: address], opts: @tesla_opts)
     |> case do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
-        san_balance = body |> Sanbase.Math.to_float()
+        san_balance = Sanbase.Math.to_float(body)
 
         {:ok, san_balance / @san_token_decimals}
 
       {:ok, %Tesla.Env{status: status, body: body}} ->
-        {:error,
-         "Error fetching SAN balance for address. #{address}. Status: #{status}. Body: #{inspect(body)}"}
+        {:error, "Error fetching SAN balance for address. #{address}. Status: #{status}. Body: #{inspect(body)}"}
 
       {:error, error} ->
         {:error, "Error fetching SAN balance for address. #{address}. Reason: #{inspect(error)}"}
     end
   end
 
-  defp client() do
+  defp client do
     ethauth_url = Config.module_get(__MODULE__, :url)
 
     Tesla.client([

@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.GenericAdmin.Subscription do
+  @moduledoc false
   def schema_module, do: Sanbase.Billing.Subscription
 
   def resource do
@@ -36,9 +37,7 @@ defmodule SanbaseWeb.GenericAdmin.Subscription do
 
   def href(resource, id, label) do
     relative_url =
-      SanbaseWeb.Router.Helpers.generic_admin_path(SanbaseWeb.Endpoint, :show, id,
-        resource: resource
-      )
+      SanbaseWeb.Router.Helpers.generic_admin_path(SanbaseWeb.Endpoint, :show, id, resource: resource)
 
     PhoenixHTMLHelpers.Link.link(label,
       to: relative_url,
@@ -48,6 +47,7 @@ defmodule SanbaseWeb.GenericAdmin.Subscription do
 end
 
 defmodule SanbaseWeb.GenericAdmin.Plan do
+  @moduledoc false
   def schema_module, do: Sanbase.Billing.Plan
 
   def resource do
@@ -74,7 +74,7 @@ defmodule SanbaseWeb.GenericAdmin.Plan do
         restrictions: %{
           value_modifier: fn plan ->
             if(plan.restrictions,
-              do: Map.from_struct(plan.restrictions) |> Jason.encode!(),
+              do: plan.restrictions |> Map.from_struct() |> Jason.encode!(),
               else: ""
             )
           end
@@ -85,6 +85,7 @@ defmodule SanbaseWeb.GenericAdmin.Plan do
 end
 
 defmodule SanbaseWeb.GenericAdmin.Product do
+  @moduledoc false
   def schema_module, do: Sanbase.Billing.Product
 
   def resource do
@@ -99,6 +100,7 @@ defmodule SanbaseWeb.GenericAdmin.Product do
 end
 
 defmodule SanbaseWeb.GenericAdmin.PromoTrial do
+  @moduledoc false
   import Ecto.Query
 
   alias Sanbase.Billing.Subscription.PromoTrial
@@ -127,11 +129,9 @@ defmodule SanbaseWeb.GenericAdmin.PromoTrial do
           value_modifier: fn promo_trial ->
             id_name_map = PromoTrial.plan_id_name_map()
 
-            promo_trial.plans
-            |> Enum.map(fn plan -> id_name_map[plan] || plan end)
-            |> Enum.join(",")
+            Enum.map_join(promo_trial.plans, ",", fn plan -> id_name_map[plan] || plan end)
           end,
-          collection: PromoTrial.plan_id_name_map() |> Enum.map(fn {id, name} -> {name, id} end),
+          collection: Enum.map(PromoTrial.plan_id_name_map(), fn {id, name} -> {name, id} end),
           type: :multiselect
         }
       }

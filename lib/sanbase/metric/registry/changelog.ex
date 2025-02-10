@@ -1,8 +1,9 @@
 defmodule Sanbase.Metric.Registry.Changelog do
+  @moduledoc false
   use Ecto.Schema
 
-  import Ecto.Query
   import Ecto.Changeset
+  import Ecto.Query
 
   alias Sanbase.Metric.Registry
 
@@ -23,7 +24,7 @@ defmodule Sanbase.Metric.Registry.Changelog do
 
   def create_changest(%Ecto.Changeset{} = changeset) do
     old = changeset.data
-    new = changeset |> Ecto.Changeset.apply_changes()
+    new = Ecto.Changeset.apply_changes(changeset)
 
     old = Jason.encode!(old)
     new = Jason.encode!(new)

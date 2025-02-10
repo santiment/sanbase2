@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.Helpers.CalibrateInterval do
+  @moduledoc false
   alias Sanbase.DateTimeUtils
 
   def calibrate(module, id, from, to, interval, min_seconds \\ 300, max_data_points \\ 500)
@@ -52,29 +53,11 @@ defmodule SanbaseWeb.Graphql.Helpers.CalibrateInterval do
     {:ok, DateTime.from_unix!(from), to, "#{interval}s"}
   end
 
-  def calibrate(
-        _module,
-        _metric,
-        _id,
-        from,
-        to,
-        interval,
-        _min_interval,
-        _max_data_points
-      ) do
+  def calibrate(_module, _metric, _id, from, to, interval, _min_interval, _max_data_points) do
     {:ok, from, to, interval}
   end
 
-  def calibrate_moving_average(
-        module,
-        id,
-        from,
-        to,
-        interval,
-        min_interval,
-        moving_average_base,
-        max_data_points \\ 500
-      ) do
+  def calibrate_moving_average(module, id, from, to, interval, min_interval, moving_average_base, max_data_points \\ 500) do
     {:ok, from, to, interval} =
       calibrate(module, id, from, to, interval, min_interval, max_data_points)
 
@@ -95,31 +78,30 @@ defmodule SanbaseWeb.Graphql.Helpers.CalibrateInterval do
   end
 
   def calibrate_incomplete_data_params(false, module, metric, from, to) do
-    case module.has_incomplete_data?(metric) do
-      true -> rewrite_params_incomplete_data(from, to)
-      false -> {:ok, from, to}
+    if module.has_incomplete_data?(metric) do
+      rewrite_params_incomplete_data(from, to)
+    else
+      {:ok, from, to}
     end
   end
 
   defp rewrite_params_incomplete_data(from, to) do
-    end_of_previous_day = Timex.now() |> Timex.beginning_of_day() |> Timex.shift(microseconds: -1)
+    end_of_previous_day = DateTime.utc_now() |> Timex.beginning_of_day() |> Timex.shift(microseconds: -1)
 
-    case DateTime.compare(from, end_of_previous_day) != :lt do
-      true ->
-        {:error,
-         """
-         The time range provided [#{from} - #{to}] is contained in today. The metric
-         requested could have incomplete data as it's calculated since the beginning
-         of the day and not for the last 24 hours. If you still want to see this
-         data you can pass the flag `includeIncompleteData: true` in the
-         `timeseriesData` arguments
-         """}
+    if DateTime.before?(from, end_of_previous_day) do
+      to =
+        if DateTime.after?(to, end_of_previous_day), do: end_of_previous_day, else: to
 
-      false ->
-        to =
-          if DateTime.compare(to, end_of_previous_day) == :gt, do: end_of_previous_day, else: to
-
-        {:ok, from, to}
+      {:ok, from, to}
+    else
+      {:error,
+       """
+       The time range provided [#{from} - #{to}] is contained in today. The metric
+       requested could have incomplete data as it's calculated since the beginning
+       of the day and not for the last 24 hours. If you still want to see this
+       data you can pass the flag `includeIncompleteData: true` in the
+       `timeseriesData` arguments
+       """}
     end
   end
 end

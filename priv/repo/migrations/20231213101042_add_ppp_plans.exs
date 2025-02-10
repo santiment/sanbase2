@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddPppPlans do
+  @moduledoc false
   use Ecto.Migration
 
   def up do

@@ -1,9 +1,11 @@
 defmodule Sanbase.Email.NewsletterToken do
+  @moduledoc false
   use Ecto.Schema
+
   import Ecto.Changeset
 
-  alias Sanbase.Repo
   alias Sanbase.Accounts.User.Email
+  alias Sanbase.Repo
 
   # Email verification links will be valid 24 hours
   @login_email_valid_minutes 24 * 60
@@ -34,7 +36,7 @@ defmodule Sanbase.Email.NewsletterToken do
     |> change(
       email: email,
       token: Email.generate_email_token(),
-      email_token_generated_at: DateTime.utc_now() |> DateTime.truncate(:second),
+      email_token_generated_at: DateTime.truncate(DateTime.utc_now(), :second),
       email_token_validated_at: nil
     )
     |> Repo.insert()
@@ -42,12 +44,13 @@ defmodule Sanbase.Email.NewsletterToken do
 
   def mark_email_token_as_validated(newsletter_token) do
     newsletter_token
-    |> change(email_token_validated_at: DateTime.utc_now() |> DateTime.truncate(:second))
+    |> change(email_token_validated_at: DateTime.truncate(DateTime.utc_now(), :second))
     |> Repo.update()
   end
 
   def verify_token(email, token) do
-    get_by(email, token)
+    email
+    |> get_by(token)
     |> check_and_mark_valid_token()
   end
 
@@ -68,7 +71,7 @@ defmodule Sanbase.Email.NewsletterToken do
          } = newsletter_token
        ) do
     if is_nil(email_token_validated_at) &&
-         Timex.diff(Timex.now(), email_token_generated_at, :minutes) <
+         Timex.diff(DateTime.utc_now(), email_token_generated_at, :minutes) <
            @login_email_valid_minutes do
       mark_email_token_as_validated(newsletter_token)
     else

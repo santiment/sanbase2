@@ -15,7 +15,7 @@ defmodule Mix.Tasks.CloneMetricRegistry do
   def run(args) do
     opts = parse_args(args)
     file = Path.join([__DIR__, "metric_registry_pg_dump.sql"])
-    db_url = Keyword.get(opts, :database_url) |> String.replace_prefix("ecto://", "postgres://")
+    db_url = opts |> Keyword.get(:database_url) |> String.replace_prefix("ecto://", "postgres://")
 
     try do
       {"", 0} =

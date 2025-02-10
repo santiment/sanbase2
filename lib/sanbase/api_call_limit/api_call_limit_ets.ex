@@ -9,8 +9,8 @@ defmodule Sanbase.ApiCallLimit.ETS do
   """
   use GenServer
 
-  alias Sanbase.ApiCallLimit
   alias Sanbase.Accounts.User
+  alias Sanbase.ApiCallLimit
 
   @type entity_type :: :remote_ip | :user
   @type remote_ip :: String.t()
@@ -39,7 +39,7 @@ defmodule Sanbase.ApiCallLimit.ETS do
     {:ok, %{ets_table: ets_table}}
   end
 
-  def clear_all(), do: :ets.delete_all_objects(@ets_table)
+  def clear_all, do: :ets.delete_all_objects(@ets_table)
 
   def clear_data(:user, %User{id: user_id}), do: :ets.delete(@ets_table, user_id)
   def clear_data(:remote_ip, remote_ip), do: :ets.delete(@ets_table, remote_ip)
@@ -64,8 +64,7 @@ defmodule Sanbase.ApiCallLimit.ETS do
   """
   def update_usage(_type, _entity, _count, :basic), do: :ok
 
-  def update_usage(:user, %User{} = user, count, _auth_method),
-    do: do_update_usage(:user, user, user.id, count)
+  def update_usage(:user, %User{} = user, count, _auth_method), do: do_update_usage(:user, user, user.id, count)
 
   def update_usage(:remote_ip, remote_ip, count, _auth_method),
     do: do_update_usage(:remote_ip, remote_ip, remote_ip, count)
@@ -93,7 +92,7 @@ defmodule Sanbase.ApiCallLimit.ETS do
             :lt ->
               # Update the `blocked_for_seconds` field in order to properly return
               # the report the time left until unblocked
-              blocked_for_seconds = DateTime.diff(error_map.blocked_until, now) |> abs()
+              blocked_for_seconds = error_map.blocked_until |> DateTime.diff(now) |> abs()
               error_map = Map.put(error_map, :blocked_for_seconds, blocked_for_seconds)
 
               {:error, error_map}

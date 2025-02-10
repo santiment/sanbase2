@@ -1,9 +1,11 @@
 defmodule SanbaseWeb.ApiCallLimitTest do
   use SanbaseWeb.ConnCase, async: false
 
+  import Mox
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
-  import Mox
+
+  alias Sanbase.Accounts.Apikey
 
   @remote_ip "91.246.248.228"
 
@@ -12,11 +14,11 @@ defmodule SanbaseWeb.ApiCallLimitTest do
 
   setup do
     san_user = insert(:user, email: "santiment@santiment.net")
-    {:ok, san_apikey} = Sanbase.Accounts.Apikey.generate_apikey(san_user)
+    {:ok, san_apikey} = Apikey.generate_apikey(san_user)
     san_apikey_conn = setup_apikey_auth(build_conn(), san_apikey)
 
     user = insert(:user, email: "santiment@gmail.com")
-    {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(user)
+    {:ok, apikey} = Apikey.generate_apikey(user)
     apikey_conn = setup_apikey_auth(build_conn(), apikey)
 
     project = insert(:random_project)
@@ -35,7 +37,8 @@ defmodule SanbaseWeb.ApiCallLimitTest do
   describe "free apikey user" do
     test "make request before rate limit is applied", context do
       result =
-        make_api_call(context.apikey_conn, [])
+        context.apikey_conn
+        |> make_api_call([])
         |> json_response(200)
 
       assert result == %{
@@ -48,9 +51,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
 
       response = make_api_call(context.apikey_conn, [{"x-forwarded-for", @remote_ip}])
 
-      result =
-        response
-        |> json_response(429)
+      result = json_response(response, 429)
 
       %{"errors" => %{"details" => error_msg}} = result
 
@@ -66,7 +67,8 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       for _ <- 1..10, do: make_api_call(context.apikey_conn, [])
 
       result =
-        make_api_call(context.apikey_conn, [])
+        context.apikey_conn
+        |> make_api_call([])
         |> json_response(200)
 
       assert result == %{
@@ -79,9 +81,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
 
       response = make_api_call(context.apikey_conn, [{"x-forwarded-for", @remote_ip}])
 
-      result =
-        response
-        |> json_response(429)
+      result = json_response(response, 429)
 
       %{"errors" => %{"details" => error_msg}} = result
 
@@ -99,9 +99,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
 
       response = make_api_call(context.apikey_conn, [])
 
-      result =
-        response
-        |> json_response(429)
+      result = json_response(response, 429)
 
       %{"errors" => %{"details" => error_msg}} = result
 
@@ -118,9 +116,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
 
       response = make_api_call(context.apikey_conn, [{"x-forwarded-for", @remote_ip}])
 
-      result =
-        response
-        |> json_response(429)
+      result = json_response(response, 429)
 
       %{"errors" => %{"details" => error_msg}} = result
 
@@ -142,9 +138,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
 
       response = make_api_call(context.san_apikey_conn, [{"x-forwarded-for", @remote_ip}])
 
-      result =
-        response
-        |> json_response(200)
+      result = json_response(response, 200)
 
       assert result == %{
                "data" => %{"allProjects" => [%{"slug" => context.project.slug}]}
@@ -159,7 +153,8 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       Sanbase.ApiCallLimit.update_usage(:user, context.user, 500, :apikey)
 
       result =
-        make_api_call(context.apikey_conn, [{"x-forwarded-for", @remote_ip}])
+        context.apikey_conn
+        |> make_api_call([{"x-forwarded-for", @remote_ip}])
         |> json_response(200)
 
       assert result == %{
@@ -176,9 +171,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
 
       response = make_api_call(context.apikey_conn, [{"x-forwarded-for", @remote_ip}])
 
-      result =
-        response
-        |> json_response(429)
+      result = json_response(response, 429)
 
       %{"errors" => %{"details" => error_msg}} = result
 
@@ -233,7 +226,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       days_in_old_month = 4
 
       now =
-        Timex.now()
+        DateTime.utc_now()
         |> Timex.end_of_month()
         |> Timex.shift(days: 1)
         |> Timex.end_of_month()
@@ -242,9 +235,10 @@ defmodule SanbaseWeb.ApiCallLimitTest do
         |> Timex.shift(days: -(days_in_old_month - 1))
 
       for i <- 0..(iterations - 1) do
-        dt = DateTime.add(now, 86400 * i, :second)
+        dt = DateTime.add(now, 86_400 * i, :second)
 
-        Sanbase.Mock.prepare_mock2(&DateTime.utc_now/0, dt)
+        (&DateTime.utc_now/0)
+        |> Sanbase.Mock.prepare_mock2(dt)
         |> Sanbase.Mock.run_with_mocks(fn ->
           Sanbase.Parallel.map(
             1..(api_calls_per_iteration - 1),
@@ -262,7 +256,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
         api_calls_this_minute =
           acl.api_calls
           |> Enum.max_by(fn {k, _v} ->
-            Sanbase.DateTimeUtils.from_iso8601!(k) |> DateTime.to_unix()
+            k |> Sanbase.DateTimeUtils.from_iso8601!() |> DateTime.to_unix()
           end)
           |> elem(1)
 
@@ -299,7 +293,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       # will timeout in the `can_send_after` check as it will be in the past if we shift
       # backwards
       now =
-        Timex.now()
+        DateTime.utc_now()
         |> Timex.end_of_month()
         |> Timex.shift(days: 1)
 
@@ -307,9 +301,10 @@ defmodule SanbaseWeb.ApiCallLimitTest do
         # This test might fail if executed 0-14 minutes before midnight
         # If we mock the dt to be a concrete date, then the KafkaExporter
         # send_after will fail
-        dt = DateTime.add(now, 86400 * i, :second)
+        dt = DateTime.add(now, 86_400 * i, :second)
 
-        Sanbase.Mock.prepare_mock2(&DateTime.utc_now/0, dt)
+        (&DateTime.utc_now/0)
+        |> Sanbase.Mock.prepare_mock2(dt)
         |> Sanbase.Mock.run_with_mocks(fn ->
           Sanbase.Parallel.map(
             1..(api_calls_per_iteration - 1),
@@ -327,7 +322,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
         api_calls_this_minute =
           acl.api_calls
           |> Enum.max_by(fn {k, _v} ->
-            Sanbase.DateTimeUtils.from_iso8601!(k) |> DateTime.to_unix()
+            k |> Sanbase.DateTimeUtils.from_iso8601!() |> DateTime.to_unix()
           end)
           |> elem(1)
 
@@ -366,7 +361,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       # will timeout in the `can_send_after` check as it will be in the past if we shift
       # backwards
       now =
-        Timex.now()
+        DateTime.utc_now()
         |> Timex.end_of_month()
         |> Timex.shift(days: 1)
 
@@ -374,9 +369,10 @@ defmodule SanbaseWeb.ApiCallLimitTest do
         # This test might fail if executed 0-14 minutes before midnight
         # If we mock the dt to be a concrete date, then the KafkaExporter
         # send_after will fail
-        dt = DateTime.add(now, 86400 * i, :second)
+        dt = DateTime.add(now, 86_400 * i, :second)
 
-        Sanbase.Mock.prepare_mock2(&DateTime.utc_now/0, dt)
+        (&DateTime.utc_now/0)
+        |> Sanbase.Mock.prepare_mock2(dt)
         |> Sanbase.Mock.run_with_mocks(fn ->
           Sanbase.Parallel.map(
             1..(api_calls_per_iteration - 1),
@@ -396,7 +392,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
         api_calls_this_minute =
           acl.api_calls
           |> Enum.max_by(fn {k, _v} ->
-            Sanbase.DateTimeUtils.from_iso8601!(k) |> DateTime.to_unix()
+            k |> Sanbase.DateTimeUtils.from_iso8601!() |> DateTime.to_unix()
           end)
           |> elem(1)
 
@@ -426,7 +422,8 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       Sanbase.ApiCallLimit.update_usage(:user, context.user, 50, :apikey)
 
       result =
-        make_api_call(context.apikey_conn, [])
+        context.apikey_conn
+        |> make_api_call([])
         |> json_response(200)
 
       assert result == %{
@@ -440,9 +437,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
 
       response = make_api_call(context.apikey_conn, [{"x-forwarded-for", @remote_ip}])
 
-      result =
-        response
-        |> json_response(429)
+      result = json_response(response, 429)
 
       %{"errors" => %{"details" => error_msg}} = result
 
@@ -459,7 +454,8 @@ defmodule SanbaseWeb.ApiCallLimitTest do
     test "ip address make request", context do
       # Use an IP address that is not a loopback or private
       result =
-        make_api_call(context.conn, [{"x-forwarded-for", @remote_ip}])
+        context.conn
+        |> make_api_call([{"x-forwarded-for", @remote_ip}])
         |> json_response(200)
 
       assert result == %{
@@ -477,9 +473,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
 
       response = make_api_call(context.conn, [{"x-forwarded-for", @remote_ip}])
 
-      result =
-        response
-        |> json_response(429)
+      result = json_response(response, 429)
 
       %{"errors" => %{"details" => error_msg}} = result
 
@@ -499,10 +493,11 @@ defmodule SanbaseWeb.ApiCallLimitTest do
     test "subscribe while rate limited", context do
       expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
 
-      Sanbase.Mock.prepare_mocks2([
+      [
         {&StripeApi.create_customer_with_card/2, SATR.create_or_update_customer_resp()},
         {&StripeApi.create_subscription/1, SATR.create_subscription_resp()}
-      ])
+      ]
+      |> Sanbase.Mock.prepare_mocks2()
       |> Sanbase.Mock.run_with_mocks(fn ->
         # Exhaust the minute and hour limits of the sanapi_free plan. The amount
         # should not exceed the minute limit of the sanapi_pro plan as it will get
@@ -511,9 +506,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
 
         response = make_api_call(context.apikey_conn, [{"x-forwarded-for", @remote_ip}])
 
-        result =
-          response
-          |> json_response(429)
+        result = json_response(response, 429)
 
         %{"errors" => %{"details" => error_msg}} = result
 
@@ -526,9 +519,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
 
         response = make_api_call(context.apikey_conn, [{"x-forwarded-for", @remote_ip}])
 
-        result =
-          response
-          |> json_response(200)
+        result = json_response(response, 200)
 
         assert result == %{
                  "data" => %{
@@ -552,17 +543,19 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       Process.sleep(50)
 
       result =
-        self_reset_api_calls(context.apikey_conn)
+        context.apikey_conn
+        |> self_reset_api_calls()
         |> get_in(["data", "selfResetApiRateLimits"])
 
-      assert result["id"] |> String.to_integer() == context.user.id
+      assert String.to_integer(result["id"]) == context.user.id
 
       {:ok, quota3} = Sanbase.ApiCallLimit.get_quota_db(:user, context.user)
 
       assert quota3.api_calls_remaining.month == quota.api_calls_remaining.month
 
       error_msg =
-        self_reset_api_calls(context.apikey_conn)
+        context.apikey_conn
+        |> self_reset_api_calls()
         |> get_in(["errors", Access.at(0), "message"])
 
       assert error_msg =~ "Cannot self reset the API calls rate limits"

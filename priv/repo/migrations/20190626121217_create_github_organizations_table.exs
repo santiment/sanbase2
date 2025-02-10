@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.CreateGithubOrganizationsTable do
+  @moduledoc false
   use Ecto.Migration
 
   @table :github_organizations

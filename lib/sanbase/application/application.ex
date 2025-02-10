@@ -1,12 +1,18 @@
 defmodule Sanbase.Application do
+  @moduledoc false
   use Application
 
   import Sanbase.ApplicationUtils
 
-  require Logger
+  alias Sanbase.Application.Admin
+  alias Sanbase.Application.Alerts
+  alias Sanbase.Application.Queries
+  alias Sanbase.Application.Scrapers
+  alias Sanbase.Application.Web
+  alias Sanbase.EventBus.KafkaExporterSubscriber
   alias Sanbase.Utils.Config
 
-  alias Sanbase.EventBus.KafkaExporterSubscriber
+  require Logger
 
   def start(_type, _args) do
     Code.ensure_loaded?(Envy) && Envy.auto_load()
@@ -66,27 +72,27 @@ defmodule Sanbase.Application do
     # Container specific init
     case container_type do
       "all" ->
-        Sanbase.Application.Web.init()
-        Sanbase.Application.Scrapers.init()
-        Sanbase.Application.Alerts.init()
+        Web.init()
+        Scrapers.init()
+        Alerts.init()
 
       "admin" ->
-        Sanbase.Application.Admin.init()
+        Admin.init()
 
       "web" ->
-        Sanbase.Application.Web.init()
+        Web.init()
 
       "signals" ->
-        Sanbase.Application.Alerts.init()
+        Alerts.init()
 
       "scrapers" ->
-        Sanbase.Application.Scrapers.init()
+        Scrapers.init()
 
       "queries" ->
-        Sanbase.Application.Queries.init()
+        Queries.init()
 
       _ ->
-        Sanbase.Application.Web.init()
+        Web.init()
     end
   end
 
@@ -120,17 +126,17 @@ defmodule Sanbase.Application do
   def children_opts(container_type) do
     case container_type do
       "all" ->
-        {web_children, _} = Sanbase.Application.Web.children()
-        {scrapers_children, _} = Sanbase.Application.Scrapers.children()
-        {alerts_children, _} = Sanbase.Application.Alerts.children()
-        {admin_children, _} = Sanbase.Application.Admin.children()
-        {queries_children, _} = Sanbase.Application.Admin.children()
+        {web_children, _} = Web.children()
+        {scrapers_children, _} = Scrapers.children()
+        {alerts_children, _} = Alerts.children()
+        {admin_children, _} = Admin.children()
+        {queries_children, _} = Admin.children()
 
         children =
           web_children ++
             scrapers_children ++ alerts_children ++ admin_children ++ queries_children
 
-        children = children |> Enum.uniq()
+        children = Enum.uniq(children)
 
         opts = [
           strategy: :one_for_one,
@@ -142,22 +148,22 @@ defmodule Sanbase.Application do
         {children, opts}
 
       "admin" ->
-        Sanbase.Application.Admin.children()
+        Admin.children()
 
       "web" ->
-        Sanbase.Application.Web.children()
+        Web.children()
 
       "scrapers" ->
-        Sanbase.Application.Scrapers.children()
+        Scrapers.children()
 
       "queries" ->
-        Sanbase.Application.Queries.children()
+        Queries.children()
 
       type when type in ["alerts", "signals"] ->
-        Sanbase.Application.Alerts.children()
+        Alerts.children()
 
       _unknown ->
-        Sanbase.Application.Web.children()
+        Web.children()
     end
   end
 
@@ -231,12 +237,9 @@ defmodule Sanbase.Application do
         id: :sanbase_event_bus_kafka_exporter,
         name: :sanbase_event_bus_kafka_exporter,
         topic: Config.module_get!(KafkaExporterSubscriber, :event_bus_topic),
-        kafka_flush_timeout:
-          Config.module_get_integer!(KafkaExporterSubscriber, :kafka_flush_timeout),
-        buffering_max_messages:
-          Config.module_get_integer!(KafkaExporterSubscriber, :buffering_max_messages),
-        can_send_after_interval:
-          Config.module_get_integer!(KafkaExporterSubscriber, :can_send_after_interval)
+        kafka_flush_timeout: Config.module_get_integer!(KafkaExporterSubscriber, :kafka_flush_timeout),
+        buffering_max_messages: Config.module_get_integer!(KafkaExporterSubscriber, :buffering_max_messages),
+        can_send_after_interval: Config.module_get_integer!(KafkaExporterSubscriber, :can_send_after_interval)
       )
     ]
   end
@@ -245,7 +248,7 @@ defmodule Sanbase.Application do
   Children common for all types of container types
   """
   @spec common_children() :: [:supervisor.child_spec() | {module(), term()} | module()]
-  def common_children() do
+  def common_children do
     clickhouse_readonly = [Sanbase.ClickhouseRepo.ReadOnly]
 
     clickhouse_readonly_per_plan = [
@@ -276,45 +279,20 @@ defmodule Sanbase.Application do
         )
       end
 
-    [
-      # Telemetry metrics
+    List.flatten([
       SanbaseWeb.Telemetry,
-
-      # Prometheus metrics
       SanbaseWeb.Prometheus,
-
-      # Start the Postgres Ecto repository
       Sanbase.Repo,
-
-      # Start the main ClickhouseRepo. This is started in all
-      # pods as each pod will need it.
-      start_in_and_if(
-        fn -> Sanbase.ClickhouseRepo end,
-        [:dev, :prod],
-        fn -> Sanbase.ClickhouseRepo.enabled?() end
-      ),
-
-      # Start the main clickhouse read-only repos
+      start_in_and_if(fn -> Sanbase.ClickhouseRepo end, [:dev, :prod], fn -> Sanbase.ClickhouseRepo.enabled?() end),
       clickhouse_readonly_children,
-
-      # Start the clickhouse read-only repos for different plans
       clickhouse_readonly_per_plan_children,
-
-      # Start the Task Supervisor
       {Task.Supervisor, [name: Sanbase.TaskSupervisor]},
-
-      # Star the API call service
       Sanbase.ApiCallLimit.ETS,
-
-      # Start telegram rate limiter. Used both in web and alerts
-      Sanbase.ExternalServices.RateLimiting.Server.child_spec(
-        :telegram_bot_rate_limiting_server,
+      Sanbase.ExternalServices.RateLimiting.Server.child_spec(:telegram_bot_rate_limiting_server,
         scale: 1000,
         limit: 30,
         time_between_requests: 10
       ),
-
-      # General purpose cache available in all types
       {Sanbase.Cache,
        [
          id: :sanbase_generic_cache,
@@ -323,26 +301,46 @@ defmodule Sanbase.Application do
          global_ttl: :timer.minutes(5),
          acquire_lock_timeout: 60_000
        ]},
-
-      # Service for fast checking if a slug is valid
-      # `:available_slugs_module` option changes the module
-      # used in test env to another one, this one is unused
       start_in(Sanbase.AvailableSlugs, [:dev, :prod]),
-
-      # Start the PubSub
       {Phoenix.PubSub, name: Sanbase.PubSub},
-
-      # Start the Presence
       SanbaseWeb.Presence,
-
-      # Start the endpoint when the application starts
       SanbaseWeb.Endpoint,
-
-      # Process that starts test-only deps
       start_in(Sanbase.TestSetupService, [:test]),
       Sanbase.EventBus.children()
-    ]
-    |> List.flatten()
+    ])
+
+    # Telemetry metrics
+
+    # Prometheus metrics
+
+    # Start the Postgres Ecto repository
+
+    # Start the main ClickhouseRepo. This is started in all
+    # pods as each pod will need it.
+
+    # Start the main clickhouse read-only repos
+
+    # Start the clickhouse read-only repos for different plans
+
+    # Start the Task Supervisor
+
+    # Star the API call service
+
+    # Start telegram rate limiter. Used both in web and alerts
+
+    # General purpose cache available in all types
+
+    # Service for fast checking if a slug is valid
+    # `:available_slugs_module` option changes the module
+    # used in test env to another one, this one is unused
+
+    # Start the PubSub
+
+    # Start the Presence
+
+    # Start the endpoint when the application starts
+
+    # Process that starts test-only deps
   end
 
   def config_change(changed, _new, removed) do

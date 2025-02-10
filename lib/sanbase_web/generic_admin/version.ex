@@ -1,7 +1,8 @@
 defmodule SanbaseWeb.GenericAdmin.Version do
+  @moduledoc false
   def schema_module, do: Sanbase.Version
 
-  def resource() do
+  def resource do
     %{
       actions: [:show],
       preloads: [:user],

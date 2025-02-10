@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddDashboardFeatured do
+  @moduledoc false
   use Ecto.Migration
 
   def up do

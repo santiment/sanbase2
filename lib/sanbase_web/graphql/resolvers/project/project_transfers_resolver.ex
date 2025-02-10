@@ -1,22 +1,21 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
-  require Logger
-
-  import SanbaseWeb.Graphql.Helpers.Async
+  @moduledoc false
   import Absinthe.Resolution.Helpers, except: [async: 1]
+  import SanbaseWeb.Graphql.Helpers.Async
 
-  alias Sanbase.Transfers
+  alias Sanbase.Clickhouse.HistoricalBalance.EthSpent
+  alias Sanbase.Clickhouse.Label
   alias Sanbase.Project
+  alias Sanbase.Transfers
   alias Sanbase.Utils.BlockchainAddressUtils
-  alias SanbaseWeb.Graphql.{Cache, SanbaseDataloader}
-  alias Sanbase.Clickhouse.{Label, HistoricalBalance.EthSpent}
+  alias SanbaseWeb.Graphql.Cache
+  alias SanbaseWeb.Graphql.SanbaseDataloader
+
+  require Logger
 
   @max_concurrency 100
 
-  def token_top_transfers(
-        %Project{} = project,
-        args,
-        _resolution
-      ) do
+  def token_top_transfers(%Project{} = project, args, _resolution) do
     async(fn -> calculate_token_top_transfers(project, args) end)
   end
 
@@ -42,9 +41,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
     end
   end
 
-  def eth_spent(%Project{} = project, %{days: days}, %{
-        context: %{loader: loader}
-      }) do
+  def eth_spent(%Project{} = project, %{days: days}, %{context: %{loader: loader}}) do
     loader
     |> Dataloader.load(SanbaseDataloader, :eth_spent, %{
       project: project,
@@ -68,11 +65,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
     end
   end
 
-  def eth_spent_over_time(
-        %Project{} = project,
-        %{from: from, to: to, interval: interval},
-        _resolution
-      ) do
+  def eth_spent_over_time(%Project{} = project, %{from: from, to: to, interval: interval}, _resolution) do
     async(calculate_eth_spent_over_time_cached(project, from, to, interval))
   end
 
@@ -80,16 +73,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
   Returns the accumulated ETH spent by all ERC20 projects for a given time period.
   """
   def eth_spent_by_all_projects(_, %{from: from, to: to}, _resolution) do
-    Project.List.projects()
-    |> calculate_eth_spent_by_projects(from, to)
+    calculate_eth_spent_by_projects(Project.List.projects(), from, to)
   end
 
   @doc ~s"""
   Returns the accumulated ETH spent by all ERC20 projects for a given time period.
   """
   def eth_spent_by_erc20_projects(_, %{from: from, to: to}, _resolution) do
-    Project.List.erc20_projects()
-    |> calculate_eth_spent_by_projects(from, to)
+    calculate_eth_spent_by_projects(Project.List.erc20_projects(), from, to)
   end
 
   defp calculate_eth_spent_by_projects(projects, from, to) do
@@ -112,12 +103,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
   Returns a list of ETH spent by all ERC20 projects for a given time period,
   grouped by the given `interval`.
   """
-  def eth_spent_over_time_by_erc20_projects(
-        _root,
-        %{from: from, to: to, interval: interval},
-        _resolution
-      ) do
-    Project.List.erc20_projects() |> eth_spent_over_time(from, to, interval)
+  def eth_spent_over_time_by_erc20_projects(_root, %{from: from, to: to, interval: interval}, _resolution) do
+    eth_spent_over_time(Project.List.erc20_projects(), from, to, interval)
   end
 
   @doc ~s"""
@@ -125,12 +112,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
   grouped by the given `interval`.
   """
 
-  def eth_spent_over_time_by_all_projects(
-        _root,
-        %{from: from, to: to, interval: interval},
-        _resolution
-      ) do
-    Project.List.projects() |> eth_spent_over_time(from, to, interval)
+  def eth_spent_over_time_by_all_projects(_root, %{from: from, to: to, interval: interval}, _resolution) do
+    eth_spent_over_time(Project.List.projects(), from, to, interval)
   end
 
   defp eth_spent_over_time(projects, from, to, interval) do
@@ -143,18 +126,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
     |> combine_eth_spent_by_all_projects()
   end
 
-  def eth_top_transfers(
-        %Project{} = project,
-        args,
-        _resolution
-      ) do
+  def eth_top_transfers(%Project{} = project, args, _resolution) do
     async(fn -> calculate_eth_top_transfers(project, args) end)
   end
 
-  defp calculate_eth_top_transfers(
-         %Project{slug: "ethereum"} = project,
-         args
-       ) do
+  defp calculate_eth_top_transfers(%Project{slug: "ethereum"} = project, args) do
     %{from: from, to: to, transaction_type: _trx_type, limit: limit} = args
     limit = Enum.min([limit, 100])
 
@@ -165,9 +141,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
       {:ok, transfers}
     else
       error ->
-        Logger.warning(
-          "Cannot fetch top ETH transfers for #{Project.describe(project)}. Reason: #{inspect(error)}"
-        )
+        Logger.warning("Cannot fetch top ETH transfers for #{Project.describe(project)}. Reason: #{inspect(error)}")
 
         {:nocache, {:ok, []}}
     end
@@ -187,9 +161,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
       {:ok, transfers}
     else
       error ->
-        Logger.warning(
-          "Cannot fetch top ETH transfers for #{Project.describe(project)}. Reason: #{inspect(error)}"
-        )
+        Logger.warning("Cannot fetch top ETH transfers for #{Project.describe(project)}. Reason: #{inspect(error)}")
 
         {:nocache, {:ok, []}}
     end
@@ -197,11 +169,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
 
   # Private functions
 
-  defp calculate_eth_spent_cached(
-         %Project{id: id} = project,
-         from_datetime,
-         to_datetime
-       ) do
+  defp calculate_eth_spent_cached(%Project{id: id} = project, from_datetime, to_datetime) do
     Cache.wrap(
       fn -> calculate_eth_spent(project, from_datetime, to_datetime) end,
       {:eth_spent, id},
@@ -219,20 +187,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
         {:ok, nil}
 
       {:error, error} ->
-        Logger.warning(
-          "Cannot calculate ETH spent for #{Project.describe(project)}. Reason: #{inspect(error)}"
-        )
+        Logger.warning("Cannot calculate ETH spent for #{Project.describe(project)}. Reason: #{inspect(error)}")
 
         {:nocache, {:ok, nil}}
     end
   end
 
-  defp calculate_eth_spent_over_time_cached(
-         %Project{id: id} = project,
-         from,
-         to,
-         interval
-       ) do
+  defp calculate_eth_spent_over_time_cached(%Project{id: id} = project, from, to, interval) do
     Cache.wrap(
       fn -> calculate_eth_spent_over_time(project, from, to, interval) end,
       {:eth_spent_over_time, id},

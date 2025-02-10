@@ -1,12 +1,12 @@
 defmodule SanbaseWeb.Graphql.Resolvers.MarketResolver do
-  require Logger
-
+  @moduledoc false
   import Sanbase.Utils.ErrorHandling,
     only: [maybe_handle_graphql_error: 2, handle_graphql_error: 3]
 
+  require Logger
+
   def market_exchanges(_root, _args, _resolution) do
-    Sanbase.Market.list_exchanges()
-    |> maybe_handle_graphql_error(fn error ->
+    maybe_handle_graphql_error(Sanbase.Market.list_exchanges(), fn error ->
       handle_graphql_error(
         "Market Exchanges",
         nil,

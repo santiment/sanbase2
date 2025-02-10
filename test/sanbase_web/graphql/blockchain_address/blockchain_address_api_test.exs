@@ -5,6 +5,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
   import SanbaseWeb.Graphql.TestHelpers
 
   alias Sanbase.BlockchainAddress.BlockchainAddressUserPair
+  alias Sanbase.Clickhouse.Label
 
   setup do
     user = insert(:user)
@@ -21,10 +22,12 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
   test "fetch blockchain address labels with getBlockchainAddressLabels API", context do
     rows = [["santiment/miner:v1", "Miner"], ["santiment/owner->Coinbase:v1", "owner->Coinbase"]]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    (&Sanbase.ClickhouseRepo.query/2)
+    |> Sanbase.Mock.prepare_mock2({:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
-        get_blockchain_address_labels(context.conn)
+        context.conn
+        |> get_blockchain_address_labels()
         |> get_in(["data", "getBlockchainAddressLabels"])
 
       assert result == [
@@ -43,10 +46,12 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
   end
 
   test "fetch (create) a non-existing blockchain address", context do
-    Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.Label.get_address_labels/2, {:ok, %{}})
+    (&Label.get_address_labels/2)
+    |> Sanbase.Mock.prepare_mock2({:ok, %{}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
-        blockchain_address(context.conn, %{
+        context.conn
+        |> blockchain_address(%{
           address: "0x4efb548a2cb8f0af7c591cef21053f6875b5d38f",
           infrastructure: "ETH"
         })
@@ -60,17 +65,20 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
   end
 
   test "fetch an existing blockchain address by id", context do
-    Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.Label.get_address_labels/2, {:ok, %{}})
+    (&Label.get_address_labels/2)
+    |> Sanbase.Mock.prepare_mock2({:ok, %{}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       address_id =
-        blockchain_address(context.conn, %{
+        context.conn
+        |> blockchain_address(%{
           address: "0x4efb548a2cb8f0af7c591cef21053f6875b5d38f",
           infrastructure: "ETH"
         })
         |> get_in(["data", "blockchainAddress", "id"])
 
       result =
-        blockchain_address(context.conn, %{id: address_id})
+        context.conn
+        |> blockchain_address(%{id: address_id})
         |> get_in(["data", "blockchainAddress"])
 
       # The same address if fetched and a new one is not created
@@ -91,10 +99,12 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
         infrastructure: context.eth_infrastructure
       )
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.Label.get_address_labels/2, {:ok, %{}})
+    (&Label.get_address_labels/2)
+    |> Sanbase.Mock.prepare_mock2({:ok, %{}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
-        blockchain_address(context.conn, %{
+        context.conn
+        |> blockchain_address(%{
           address: "0x4efb548a2cb8f0af7c591cef21053f6875b5d38f",
           infrastructure: context.eth_infrastructure.code
         })
@@ -128,7 +138,8 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
     labels = ["cex trader", "whale", "eth"]
 
     result =
-      update_blockchain_address_user_pair(context.conn, %{id: pair.id}, notes, labels)
+      context.conn
+      |> update_blockchain_address_user_pair(%{id: pair.id}, notes, labels)
       |> get_in(["data", "updateBlockchainAddressUserPair"])
 
     assert result["id"] == pair.id
@@ -141,7 +152,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
            ]
 
     assert result["blockchainAddress"]["address"] == blockchain_address.address
-    assert result["user"]["id"] |> Sanbase.Math.to_integer() == context.user.id
+    assert Sanbase.Math.to_integer(result["user"]["id"]) == context.user.id
   end
 
   @tag capture_log: true

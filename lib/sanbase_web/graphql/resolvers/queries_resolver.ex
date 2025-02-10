@@ -1,8 +1,9 @@
 defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
-  alias Sanbase.Queries
+  @moduledoc false
   alias Sanbase.Dashboards
-  alias Sanbase.Queries.QueryMetadata
+  alias Sanbase.Queries
   alias Sanbase.Queries.Executor.Result
+  alias Sanbase.Queries.QueryMetadata
 
   require Logger
 
@@ -17,9 +18,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     Queries.create_query(args, user.id)
   end
 
-  def update_query(_root, %{id: id} = args, %{
-        context: %{auth: %{current_user: user}}
-      }) do
+  def update_query(_root, %{id: id} = args, %{context: %{auth: %{current_user: user}}}) do
     parameters = Map.delete(args, :id)
     Queries.update_query(id, parameters, user.id)
   end
@@ -28,17 +27,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     Queries.delete_query(id, user.id)
   end
 
-  def get_user_queries(
-        _root,
-        %{page: page, page_size: page_size} = args,
-        resolution
-      ) do
+  def get_user_queries(_root, %{page: page, page_size: page_size} = args, resolution) do
     querying_user_id = get_in(resolution.context.auth, [:current_user, Access.key(:id)])
     queried_user_id = Map.get(args, :user_id, querying_user_id)
 
     if is_nil(queried_user_id) do
-      {:error,
-       "Error getting user queries: neither userId is provided, nor the query is executed by a logged in user."}
+      {:error, "Error getting user queries: neither userId is provided, nor the query is executed by a logged in user."}
     else
       Queries.get_user_queries(
         queried_user_id,
@@ -49,21 +43,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     end
   end
 
-  def get_public_queries(
-        _root,
-        %{page: page, page_size: page_size},
-        _resolution
-      ) do
+  def get_public_queries(_root, %{page: page, page_size: page_size}, _resolution) do
     Queries.get_public_queries(page: page, page_size: page_size)
   end
 
   # Run query operations
 
-  def run_sql_query(
-        _root,
-        %{id: query_id},
-        %{context: %{auth: %{current_user: user}} = context} = resolution
-      ) do
+  def run_sql_query(_root, %{id: query_id}, %{context: %{auth: %{current_user: user}} = context} = resolution) do
     with :ok <-
            Queries.user_can_execute_query(user, context.subscription_product, context.auth.plan),
          {:ok, query} <- Queries.get_query(query_id, user.id) do
@@ -102,8 +88,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
   def run_dashboard_sql_query(
         _root,
         %{dashboard_id: dashboard_id, dashboard_query_mapping_id: mapping_id} = args,
-        %{context: %{auth: %{current_user: user, plan: plan}, subscription_product: product}} =
-          resolution
+        %{context: %{auth: %{current_user: user, plan: plan}, subscription_product: product}} = resolution
       ) do
     parameters_override = Map.get(args, :parameters_override, %{})
     force_parameters_override = Map.get(args, :force_parameters_override, false)
@@ -167,11 +152,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     end
   end
 
-  def get_user_dashboards(
-        _root,
-        %{page: page, page_size: page_size} = args,
-        resolution
-      ) do
+  def get_user_dashboards(_root, %{page: page, page_size: page_size} = args, resolution) do
     querying_user_id = get_in(resolution.context.auth, [:current_user, Access.key(:id)])
     queried_user_id = Map.get(args, :user_id, querying_user_id)
 
@@ -188,38 +169,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     end
   end
 
-  def create_dashboard(
-        _root,
-        %{} = args,
-        %{context: %{auth: %{current_user: user}}}
-      ) do
+  def create_dashboard(_root, %{} = args, %{context: %{auth: %{current_user: user}}}) do
     Dashboards.create_dashboard(args, user.id)
   end
 
-  def update_dashboard(
-        _root,
-        %{id: id} = args,
-        %{context: %{auth: %{current_user: user}}}
-      ) do
+  def update_dashboard(_root, %{id: id} = args, %{context: %{auth: %{current_user: user}}}) do
     args = Map.delete(args, :id)
     Dashboards.update_dashboard(id, args, user.id)
   end
 
-  def delete_dashboard(
-        _root,
-        %{id: id},
-        %{context: %{auth: %{current_user: user}}}
-      ) do
+  def delete_dashboard(_root, %{id: id}, %{context: %{auth: %{current_user: user}}}) do
     Dashboards.delete_dashboard(id, user.id)
   end
 
   # Query-Dashboard interactions
 
-  def create_dashboard_query(
-        _root,
-        %{dashboard_id: dashboard_id, query_id: query_id} = args,
-        %{context: %{auth: %{current_user: user}}}
-      ) do
+  def create_dashboard_query(_root, %{dashboard_id: dashboard_id, query_id: query_id} = args, %{
+        context: %{auth: %{current_user: user}}
+      }) do
     Dashboards.add_query_to_dashboard(
       dashboard_id,
       query_id,
@@ -236,11 +203,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     Dashboards.update_dashboard_query(dashboard_id, mapping_id, user.id, settings)
   end
 
-  def delete_dashboard_query(
-        _root,
-        %{dashboard_id: dashboard_id, dashboard_query_mapping_id: mapping_id},
-        %{context: %{auth: %{current_user: user}}}
-      ) do
+  def delete_dashboard_query(_root, %{dashboard_id: dashboard_id, dashboard_query_mapping_id: mapping_id}, %{
+        context: %{auth: %{current_user: user}}
+      }) do
     Dashboards.remove_query_from_dashboard(dashboard_id, mapping_id, user.id)
   end
 
@@ -255,10 +220,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
 
   def cache_query_execution(
         _root,
-        %{
-          query_id: query_id,
-          compressed_query_execution_result: compressed_query_execution_result
-        },
+        %{query_id: query_id, compressed_query_execution_result: compressed_query_execution_result},
         %{context: %{auth: %{current_user: user}}}
       ) do
     with {:ok, result} <- transform_cache_input(compressed_query_execution_result),
@@ -309,11 +271,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     end
   end
 
-  def get_cached_dashboard_queries_executions(
-        _root,
-        %{dashboard_id: dashboard_id} = args,
-        resolution
-      ) do
+  def get_cached_dashboard_queries_executions(_root, %{dashboard_id: dashboard_id} = args, resolution) do
     querying_user_id = get_in(resolution.context.auth, [:current_user, Access.key(:id)])
 
     parameters_override = Map.get(args, :parameters_override, %{})
@@ -331,27 +289,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
 
   # Dashboard Global Parameters CRUD (without explicit read)
 
-  def add_dashboard_global_parameter(
-        _root,
-        %{dashboard_id: dashboard_id, key: key, value: value_map},
-        %{context: %{auth: %{current_user: user}}}
-      ) do
+  def add_dashboard_global_parameter(_root, %{dashboard_id: dashboard_id, key: key, value: value_map}, %{
+        context: %{auth: %{current_user: user}}
+      }) do
     with {:ok, value} <- get_global_param_one_value(value_map) do
       Dashboards.add_global_parameter(dashboard_id, user.id, key: key, value: value)
     end
   end
 
-  def update_dashboard_global_parameter(
-        _root,
-        %{dashboard_id: dashboard_id, key: key} = args,
-        %{context: %{auth: %{current_user: user}}}
-      ) do
+  def update_dashboard_global_parameter(_root, %{dashboard_id: dashboard_id, key: key} = args, %{
+        context: %{auth: %{current_user: user}}
+      }) do
     opts = args |> Map.take([:new_key, :new_value]) |> Keyword.new()
 
     case opts do
       [] ->
-        {:error,
-         "Error update dashboard global parameter: neither new_key nor new_value provided"}
+        {:error, "Error update dashboard global parameter: neither new_key nor new_value provided"}
 
       [_ | _] ->
         opts = Keyword.put(opts, :key, key)
@@ -369,11 +322,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     end
   end
 
-  def delete_dashboard_global_parameter(
-        _root,
-        %{dashboard_id: dashboard_id, key: key},
-        %{context: %{auth: %{current_user: user}}}
-      ) do
+  def delete_dashboard_global_parameter(_root, %{dashboard_id: dashboard_id, key: key}, %{
+        context: %{auth: %{current_user: user}}
+      }) do
     Dashboards.delete_global_parameter(dashboard_id, user.id, dashboard_parameter_key: key)
   end
 
@@ -417,15 +368,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
 
   # Exectutions Histiory
 
-  def get_clickhouse_query_execution_stats(
-        _root,
-        %{clickhouse_query_id: clickhouse_query_id},
-        _resolution
-      ) do
+  def get_clickhouse_query_execution_stats(_root, %{clickhouse_query_id: clickhouse_query_id}, _resolution) do
     case Queries.QueryExecution.get_execution_stats(clickhouse_query_id) do
       {:ok, %{execution_details: details} = result} ->
         # For legacy reasons the API response is flat.
-        result = Map.delete(result, :execution_details) |> Map.merge(details)
+        result = result |> Map.delete(:execution_details) |> Map.merge(details)
         {:ok, result}
 
       {:error, error} ->
@@ -433,92 +380,64 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     end
   end
 
-  def get_query_execution(
-        _root,
-        %{clickhouse_query_id: clickhouse_query_id},
-        %{context: %{auth: %{current_user: user}}}
-      ) do
+  def get_query_execution(_root, %{clickhouse_query_id: clickhouse_query_id}, %{context: %{auth: %{current_user: user}}}) do
     Queries.get_query_execution(clickhouse_query_id, user.id)
   end
 
-  def get_query_executions(
-        _root,
-        %{page: page, page_size: page_size},
-        %{context: %{auth: %{current_user: user}}}
-      ) do
+  def get_query_executions(_root, %{page: page, page_size: page_size}, %{context: %{auth: %{current_user: user}}}) do
     Queries.get_user_query_executions(user.id, page: page, page_size: page_size)
   end
 
   # Text Widgets
 
-  def add_dashboard_text_widget(_root, %{dashboard_id: dashboard_id} = args, %{
-        context: %{auth: %{current_user: user}}
-      }) do
+  def add_dashboard_text_widget(_root, %{dashboard_id: dashboard_id} = args, %{context: %{auth: %{current_user: user}}}) do
     args = Map.delete(args, :dashboard_id)
     Dashboards.add_text_widget(dashboard_id, user.id, args)
   end
 
-  def update_dashboard_text_widget(
-        _root,
-        %{dashboard_id: dashboard_id, text_widget_id: text_widget_id} = args,
-        %{
-          context: %{auth: %{current_user: user}}
-        }
-      ) do
+  def update_dashboard_text_widget(_root, %{dashboard_id: dashboard_id, text_widget_id: text_widget_id} = args, %{
+        context: %{auth: %{current_user: user}}
+      }) do
     args = Map.drop(args, [:dashboard_id, :text_widget_id])
     Dashboards.update_text_widget(dashboard_id, text_widget_id, user.id, args)
   end
 
-  def delete_dashboard_text_widget(
-        _root,
-        %{dashboard_id: dashboard_id, text_widget_id: text_widget_id},
-        %{
-          context: %{auth: %{current_user: user}}
-        }
-      ) do
+  def delete_dashboard_text_widget(_root, %{dashboard_id: dashboard_id, text_widget_id: text_widget_id}, %{
+        context: %{auth: %{current_user: user}}
+      }) do
     Dashboards.delete_text_widget(dashboard_id, text_widget_id, user.id)
   end
 
   # Image Widgets
 
-  def add_dashboard_image_widget(_root, %{dashboard_id: dashboard_id} = args, %{
-        context: %{auth: %{current_user: user}}
-      }) do
+  def add_dashboard_image_widget(_root, %{dashboard_id: dashboard_id} = args, %{context: %{auth: %{current_user: user}}}) do
     Dashboards.add_image_widget(dashboard_id, user.id, args)
   end
 
-  def update_dashboard_image_widget(
-        _root,
-        %{dashboard_id: dashboard_id, image_widget_id: text_widget_id} = args,
-        %{
-          context: %{auth: %{current_user: user}}
-        }
-      ) do
+  def update_dashboard_image_widget(_root, %{dashboard_id: dashboard_id, image_widget_id: text_widget_id} = args, %{
+        context: %{auth: %{current_user: user}}
+      }) do
     Dashboards.update_image_widget(dashboard_id, text_widget_id, user.id, args)
   end
 
-  def delete_dashboard_image_widget(
-        _root,
-        %{dashboard_id: dashboard_id, image_widget_id: text_widget_id},
-        %{
-          context: %{auth: %{current_user: user}}
-        }
-      ) do
+  def delete_dashboard_image_widget(_root, %{dashboard_id: dashboard_id, image_widget_id: text_widget_id}, %{
+        context: %{auth: %{current_user: user}}
+      }) do
     Dashboards.delete_image_widget(dashboard_id, text_widget_id, user.id)
   end
 
   def atomize_dashboard_panels_sql_keys(struct) do
     panels = Enum.map(struct.panels, &atomize_panel_sql_keys/1)
 
-    struct
-    |> Map.put(:panels, panels)
+    Map.put(struct, :panels, panels)
   end
 
   def atomize_panel_sql_keys(panel) do
     case panel do
       %{sql: %{} = sql} ->
         atomized_sql =
-          Map.new(sql, fn
+          sql
+          |> Map.new(fn
             {k, v} when is_binary(k) ->
               # Ignore old, no longer existing keys like san_query_id
               try do
@@ -543,11 +462,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
 
   defp get_global_param_one_value(value_map) do
     if map_size(value_map) == 1 do
-      value = Map.values(value_map) |> List.first()
+      value = value_map |> Map.values() |> List.first()
       {:ok, value}
     else
-      {:error,
-       "Error adding dashboard global parameter: the `value` input object must set only a single field"}
+      {:error, "Error adding dashboard global parameter: the `value` input object must set only a single field"}
     end
   end
 end

@@ -1,13 +1,15 @@
 defmodule Sanbase.Accounts.Search do
+  @moduledoc false
   import Ecto.Query
 
   alias Sanbase.Accounts.User
 
   def by_username(username, size) do
     username_pattern =
-      case String.starts_with?(username, "%") or String.ends_with?(username, "%") do
-        true -> username
-        false -> "%#{username}%"
+      if String.starts_with?(username, "%") or String.ends_with?(username, "%") do
+        username
+      else
+        "%#{username}%"
       end
 
     from(u in User,
@@ -24,13 +26,9 @@ defmodule Sanbase.Accounts.Search do
     |> Enum.take(size)
   end
 
-  def user_ids_with_santiment_email() do
+  def user_ids_with_santiment_email do
     result =
-      from(u in User,
-        where: not is_nil(u.email) and ilike(u.email, "%@santiment.net"),
-        select: u.id
-      )
-      |> Sanbase.Repo.all()
+      Sanbase.Repo.all(from(u in User, where: not is_nil(u.email) and ilike(u.email, "%@santiment.net"), select: u.id))
 
     {:ok, result}
   end

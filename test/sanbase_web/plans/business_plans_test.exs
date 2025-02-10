@@ -4,17 +4,20 @@ defmodule SanbaseWeb.Plans.BusinessPlansTest do
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
+  alias Sanbase.Accounts.Apikey
+  alias Sanbase.Billing.Plan.AccessChecker
+
   setup do
     user = insert(:user, email: "test@example.com")
     insert(:subscription_business_max_monthly, user: user)
     conn = setup_jwt_auth(build_conn(), user)
-    {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(user)
+    {:ok, apikey} = Apikey.generate_apikey(user)
     apikey_conn = setup_apikey_auth(build_conn(), apikey)
 
     business_pro_user = insert(:user, email: "test2@example.com")
     insert(:subscription_business_pro_monthly, user: business_pro_user)
     business_pro_conn = setup_jwt_auth(build_conn(), business_pro_user)
-    {:ok, business_pro_apikey} = Sanbase.Accounts.Apikey.generate_apikey(business_pro_user)
+    {:ok, business_pro_apikey} = Apikey.generate_apikey(business_pro_user)
     business_pro_apikey_conn = setup_apikey_auth(build_conn(), business_pro_apikey)
 
     [
@@ -101,7 +104,7 @@ defmodule SanbaseWeb.Plans.BusinessPlansTest do
   test "BUSINESS_PRO user has access to metrics with min_plan=PRO", _context do
     api_pro_only_metric = fetch_api_metric_with_min_plan_pro()
 
-    assert Sanbase.Billing.Plan.AccessChecker.plan_has_access?(
+    assert AccessChecker.plan_has_access?(
              "BUSINESS_PRO",
              "SANAPI",
              api_pro_only_metric
@@ -111,7 +114,7 @@ defmodule SanbaseWeb.Plans.BusinessPlansTest do
   test "BUSINESS_MAX user has access to metrics with min_plan=PRO", _context do
     api_pro_only_metric = fetch_api_metric_with_min_plan_pro()
 
-    assert Sanbase.Billing.Plan.AccessChecker.plan_has_access?(
+    assert AccessChecker.plan_has_access?(
              "BUSINESS_MAX",
              "SANAPI",
              api_pro_only_metric
@@ -119,7 +122,8 @@ defmodule SanbaseWeb.Plans.BusinessPlansTest do
   end
 
   test "BUSINESS_PRO after api call remaining count", context do
-    make_api_call(context.business_pro_apikey_conn, [])
+    context.business_pro_apikey_conn
+    |> make_api_call([])
     |> json_response(200)
 
     {:ok, quota} = Sanbase.ApiCallLimit.get_quota(:user, context.business_pro_user, :apikey)
@@ -127,7 +131,8 @@ defmodule SanbaseWeb.Plans.BusinessPlansTest do
   end
 
   test "BUSINESS_MAX after api call remaining count", context do
-    make_api_call(context.apikey_conn, [])
+    context.apikey_conn
+    |> make_api_call([])
     |> json_response(200)
 
     {:ok, quota} = Sanbase.ApiCallLimit.get_quota(:user, context.user, :apikey)
@@ -135,7 +140,7 @@ defmodule SanbaseWeb.Plans.BusinessPlansTest do
   end
 
   test "BUSINESS_MAX user no historical data or realtime restrictions", %{user: user} do
-    {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(user)
+    {:ok, apikey} = Apikey.generate_apikey(user)
     apikey_conn = setup_apikey_auth(build_conn(), apikey)
 
     for %{"isRestricted" => is_restrictred} <- get_access_restrictions(apikey_conn) do

@@ -1,19 +1,15 @@
 defmodule Sanbase.Balance.BalancesAggregatedSqlQuery do
-  import Sanbase.Utils.Transform, only: [opts_to_limit_offset: 1]
+  @moduledoc false
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
 
   import Sanbase.Metric.SqlQuery.Helper,
     only: [generate_comparison_string: 3, timerange_parameters: 3]
 
-  def historical_balance_changes_query(
-        addresses,
-        slug,
-        decimals,
-        blockchain,
-        from,
-        to,
-        interval
-      ) do
+  import Sanbase.Utils.Transform, only: [opts_to_limit_offset: 1]
+
+  alias Sanbase.Clickhouse.Query
+
+  def historical_balance_changes_query(addresses, slug, decimals, blockchain, from, to, interval) do
     balance_changes_sql = """
     SELECT
       toUnixTimestamp(intDiv(toUInt32(dt), {{interval}}) * {{interval}}) AS time,
@@ -70,7 +66,7 @@ defmodule Sanbase.Balance.BalancesAggregatedSqlQuery do
       span: span
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def balance_change_query(addresses, slug, decimals, blockchain, from, to) do
@@ -106,18 +102,10 @@ defmodule Sanbase.Balance.BalancesAggregatedSqlQuery do
       decimals: Integer.pow(10, decimals)
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
-  def historical_balance_query(
-        address,
-        slug,
-        decimals,
-        blockchain,
-        from,
-        to,
-        interval
-      ) do
+  def historical_balance_query(address, slug, decimals, blockchain, from, to, interval) do
     sql = """
      SELECT time, SUM(value), toUInt8(SUM(has_changed))
       FROM (
@@ -155,7 +143,7 @@ defmodule Sanbase.Balance.BalancesAggregatedSqlQuery do
     from_unix = DateTime.to_unix(from)
     to_unix = DateTime.to_unix(to)
     interval_sec = str_to_sec(interval)
-    span = div(to_unix - from_unix, interval_sec) |> max(1)
+    span = (to_unix - from_unix) |> div(interval_sec) |> max(1)
 
     params = %{
       interval: interval_sec,
@@ -168,18 +156,10 @@ defmodule Sanbase.Balance.BalancesAggregatedSqlQuery do
       decimals: Integer.pow(10, decimals)
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
-  def historical_balance_ohlc_query(
-        address,
-        slug,
-        decimals,
-        blockchain,
-        from,
-        to,
-        interval
-      ) do
+  def historical_balance_ohlc_query(address, slug, decimals, blockchain, from, to, interval) do
     sql = """
     SELECT
       time, SUM(open) AS open,
@@ -228,7 +208,7 @@ defmodule Sanbase.Balance.BalancesAggregatedSqlQuery do
     from_unix = DateTime.to_unix(from)
     to_unix = DateTime.to_unix(to)
     interval_sec = str_to_sec(interval)
-    span = div(to_unix - from_unix, interval_sec) |> max(1)
+    span = (to_unix - from_unix) |> div(interval_sec) |> max(1)
 
     params = %{
       interval: interval_sec,
@@ -241,7 +221,7 @@ defmodule Sanbase.Balance.BalancesAggregatedSqlQuery do
       decimals: Integer.pow(10, decimals)
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def current_balance_query(addresses, slug, decimals, blockchain, _table) do
@@ -272,7 +252,7 @@ defmodule Sanbase.Balance.BalancesAggregatedSqlQuery do
       decimals: Integer.pow(10, decimals)
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def first_datetime_query(address, slug, blockchain) when is_binary(address) do
@@ -291,17 +271,10 @@ defmodule Sanbase.Balance.BalancesAggregatedSqlQuery do
     """
 
     params = %{address: address, blockchain: blockchain, slug: slug}
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
-  def addresses_by_filter_query(
-        _slug,
-        decimals,
-        operator,
-        threshold,
-        "eth_balances_realtime" = table,
-        _opts
-      ) do
+  def addresses_by_filter_query(_slug, decimals, operator, threshold, "eth_balances_realtime" = table, _opts) do
     sql = """
     SELECT address, balance
     FROM (
@@ -317,7 +290,7 @@ defmodule Sanbase.Balance.BalancesAggregatedSqlQuery do
 
     params = %{decimals: decimals}
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def addresses_by_filter_query(slug, decimals, operator, threshold, table, _opts) do
@@ -342,7 +315,7 @@ defmodule Sanbase.Balance.BalancesAggregatedSqlQuery do
       decimals: decimals
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def top_addresses_query(_slug, decimals, blockchain, "eth_balances_realtime" = table, opts) do
@@ -378,7 +351,7 @@ defmodule Sanbase.Balance.BalancesAggregatedSqlQuery do
     OFFSET {{offset}}
     """
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def top_addresses_query(slug, decimals, blockchain, table, opts) do
@@ -413,7 +386,7 @@ defmodule Sanbase.Balance.BalancesAggregatedSqlQuery do
     LIMIT {{limit}} OFFSET {{offset}}
     """
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp maybe_join_labels(:all, _blockchain, params), do: {"", params}
@@ -469,7 +442,7 @@ defmodule Sanbase.Balance.BalancesAggregatedSqlQuery do
 
     params = %{address: address, datetime: DateTime.to_unix(datetime)}
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def assets_held_by_address_query(address, _table, opts \\ []) do
@@ -499,7 +472,7 @@ defmodule Sanbase.Balance.BalancesAggregatedSqlQuery do
 
     params = %{address: address}
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def usd_value_address_change_query(address, datetime, table, opts \\ []) do
@@ -533,7 +506,7 @@ defmodule Sanbase.Balance.BalancesAggregatedSqlQuery do
     ) USING (name)
     """
 
-    Sanbase.Clickhouse.Query.put_sql(query_struct, sql)
+    Query.put_sql(query_struct, sql)
   end
 
   def usd_value_held_by_address_query(address, table, opts \\ []) do
@@ -559,7 +532,7 @@ defmodule Sanbase.Balance.BalancesAggregatedSqlQuery do
     ) USING (name)
     """
 
-    Sanbase.Clickhouse.Query.put_sql(query_struct, sql)
+    Query.put_sql(query_struct, sql)
   end
 
   def last_balance_before_query(addresses, slug, decimals, blockchain, datetime) do
@@ -592,7 +565,7 @@ defmodule Sanbase.Balance.BalancesAggregatedSqlQuery do
       decimals: Integer.pow(10, decimals)
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp address_clause(address, opts) when is_binary(address) do

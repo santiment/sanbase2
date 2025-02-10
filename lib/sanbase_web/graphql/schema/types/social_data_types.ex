@@ -1,8 +1,10 @@
 defmodule SanbaseWeb.Graphql.SocialDataTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
-  alias SanbaseWeb.Graphql.Resolvers.SocialDataResolver
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
+
+  alias SanbaseWeb.Graphql.Resolvers.SocialDataResolver
 
   enum :most_tweet_type do
     value(:most_positive)

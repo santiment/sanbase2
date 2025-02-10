@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.CreateDashboardQueryMappingsTable do
+  @moduledoc false
   use Ecto.Migration
 
   @table :dashboard_query_mappings

@@ -1,14 +1,16 @@
 defmodule Sanbase.Messaging.Insight do
-  require Mockery.Macro
-  alias Sanbase.Utils.Config
-  require Logger
-
+  @moduledoc false
   alias Sanbase.Insight.Post
+  alias Sanbase.Utils.Config
+
+  require Logger
+  require Mockery.Macro
 
   def publish_in_discord(post) do
-    case Config.module_get(__MODULE__, :enabled, "true") |> String.to_existing_atom() do
-      true -> do_publish_in_discord(post)
-      false -> :ok
+    if __MODULE__ |> Config.module_get(:enabled, "true") |> String.to_existing_atom() do
+      do_publish_in_discord(post)
+    else
+      :ok
     end
   end
 
@@ -30,9 +32,7 @@ defmodule Sanbase.Messaging.Insight do
     end
   end
 
-  defp create_discord_payload(
-         %Post{id: id, title: title, user: user, published_at: published_at} = _post
-       ) do
+  defp create_discord_payload(%Post{id: id, title: title, user: user, published_at: published_at} = _post) do
     link = posts_url(id)
 
     content = ~s"""
@@ -70,6 +70,6 @@ defmodule Sanbase.Messaging.Insight do
   end
 
   defp posts_url(id), do: "#{insights_url()}/read/#{id}"
-  defp insights_url(), do: Config.module_get(SanbaseWeb.Endpoint, :insights_url)
-  defp http_client(), do: Mockery.Macro.mockable(HTTPoison)
+  defp insights_url, do: Config.module_get(SanbaseWeb.Endpoint, :insights_url)
+  defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 end

@@ -1,8 +1,9 @@
 defmodule Sanbase.ShortUrl do
+  @moduledoc false
   use Ecto.Schema
 
-  import Ecto.Query
   import Ecto.Changeset
+  import Ecto.Query
 
   alias Sanbase.Repo
 
@@ -58,27 +59,24 @@ defmodule Sanbase.ShortUrl do
         |> Repo.update()
 
       _ ->
-        {:error,
-         "The Short URL #{short_url} does not exist or belongs to another user and cannot be updated"}
+        {:error, "The Short URL #{short_url} does not exist or belongs to another user and cannot be updated"}
     end
   end
 
   def get(short_url) when is_binary(short_url) do
-    from(
-      url in __MODULE__,
-      where: url.short_url == ^short_url
-    )
-    |> Repo.one()
+    Repo.one(from(url in __MODULE__, where: url.short_url == ^short_url))
   end
 
   defp hash_short_url(full_url, data, user_id) do
-    :crypto.hash(:sha256, :erlang.term_to_binary({full_url, data, user_id}))
+    :sha256
+    |> :crypto.hash(:erlang.term_to_binary({full_url, data, user_id}))
     |> Base.url_encode64(padding: false)
     |> binary_part(0, @short_url_length)
   end
 
-  defp random_short_url() do
-    :crypto.strong_rand_bytes(@short_url_length)
+  defp random_short_url do
+    @short_url_length
+    |> :crypto.strong_rand_bytes()
     |> Base.url_encode64(padding: false)
     |> binary_part(0, @short_url_length)
   end

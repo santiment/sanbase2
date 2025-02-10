@@ -2,11 +2,13 @@ defmodule Sanbase.DevUtils.GraphQLQueryExecutor do
   @moduledoc """
   A helper module for executing GraphQL queries in elixir shell and livebooks.
   """
-  require SanbaseWeb.Guardian
   import Plug.Test
+
+  alias Sanbase.Accounts.User
   alias SanbaseWeb.Graphql.AuthPlug
   alias SanbaseWeb.Graphql.ContextPlug
-  alias Sanbase.Accounts.User
+
+  require SanbaseWeb.Guardian
 
   @doc """
   Executes a GraphQL query with the given user credentials and returns the result.
@@ -23,7 +25,7 @@ defmodule Sanbase.DevUtils.GraphQLQueryExecutor do
           conn = setup_jwt_auth(current_user)
           context = conn.private.absinthe.context
 
-          Keyword.merge(opts, context: context)
+          Keyword.put(opts, :context, context)
       end
 
     case Absinthe.run(query, SanbaseWeb.Graphql.Schema, opts) do

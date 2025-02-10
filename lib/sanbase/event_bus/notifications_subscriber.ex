@@ -6,7 +6,7 @@ defmodule Sanbase.EventBus.NotificationsSubscriber do
 
   require Logger
 
-  def topics(), do: ["metric_registry_events"]
+  def topics, do: ["metric_registry_events"]
 
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name, __MODULE__))
@@ -50,16 +50,8 @@ defmodule Sanbase.EventBus.NotificationsSubscriber do
     {:noreply, state}
   end
 
-  defp handle_event(
-         %{data: %{event_type: event_type, metric: _metric}} = event,
-         event_shadow,
-         state
-       )
-       when event_type in [
-              :update_metric_registry,
-              :create_metric_registry,
-              :delete_metric_registry
-            ] do
+  defp handle_event(%{data: %{event_type: event_type, metric: _metric}} = event, event_shadow, state)
+       when event_type in [:update_metric_registry, :create_metric_registry, :delete_metric_registry] do
     Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
       Sanbase.Notifications.Handler.handle_metric_registry_event(event)
     end)

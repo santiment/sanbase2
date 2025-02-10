@@ -1,10 +1,14 @@
 defmodule Sanbase.Twitter do
-  @table "twitter_followers"
-
+  @moduledoc false
   import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2]
 
+  alias Sanbase.Clickhouse.Query
+
+  @table "twitter_followers"
+
   def timeseries_data(twitter_handle, from, to, interval) do
-    timeseries_data_query(twitter_handle, from, to, interval)
+    twitter_handle
+    |> timeseries_data_query(from, to, interval)
     |> Sanbase.ClickhouseRepo.query_transform(fn [dt, value] ->
       %{
         datetime: DateTime.from_unix!(dt),
@@ -14,7 +18,8 @@ defmodule Sanbase.Twitter do
   end
 
   def timeseries_data_per_handle(twitter_handles, from, to, interval) do
-    timeseries_data_per_handle_query(twitter_handles, from, to, interval)
+    twitter_handles
+    |> timeseries_data_per_handle_query(from, to, interval)
     |> Sanbase.ClickhouseRepo.query_reduce(
       %{},
       fn [timestamp, slug, value], acc ->
@@ -31,7 +36,8 @@ defmodule Sanbase.Twitter do
   end
 
   def last_record(twitter_handle) do
-    last_record_query(twitter_handle)
+    twitter_handle
+    |> last_record_query()
     |> Sanbase.ClickhouseRepo.query_transform(fn [dt, value] ->
       %{
         datetime: DateTime.from_unix!(dt),
@@ -42,13 +48,15 @@ defmodule Sanbase.Twitter do
   end
 
   def first_datetime(twitter_handle) do
-    first_datetime_query(twitter_handle)
+    twitter_handle
+    |> first_datetime_query()
     |> Sanbase.ClickhouseRepo.query_transform(fn [ts] -> DateTime.from_unix!(ts) end)
     |> maybe_unwrap_ok_value()
   end
 
   def last_datetime(twitter_handle) do
-    last_datetime_query(twitter_handle)
+    twitter_handle
+    |> last_datetime_query()
     |> Sanbase.ClickhouseRepo.query_transform(fn [ts] -> DateTime.from_unix!(ts) end)
     |> maybe_unwrap_ok_value()
   end
@@ -76,7 +84,7 @@ defmodule Sanbase.Twitter do
       to: to
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp timeseries_data_per_handle_query(twitter_handles, from, to, interval) do
@@ -101,7 +109,7 @@ defmodule Sanbase.Twitter do
       to: to
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp last_record_query(twitter_handle) do
@@ -117,7 +125,7 @@ defmodule Sanbase.Twitter do
 
     params = %{twitter_handle: twitter_handle}
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp first_datetime_query(twitter_handle) do
@@ -130,7 +138,7 @@ defmodule Sanbase.Twitter do
 
     params = %{twitter_handle: twitter_handle}
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp last_datetime_query(twitter_handle) do
@@ -143,6 +151,6 @@ defmodule Sanbase.Twitter do
 
     params = %{twitter_handle: twitter_handle}
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 end

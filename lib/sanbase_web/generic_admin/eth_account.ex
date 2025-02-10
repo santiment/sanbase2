@@ -1,7 +1,8 @@
 defmodule SanbaseWeb.GenericAdmin.EthAccount do
+  @moduledoc false
   def schema_module, do: Sanbase.Accounts.EthAccount
 
-  def resource() do
+  def resource do
     %{
       actions: [:new, :edit, :delete],
       index_fields: [:id, :address, :user_id, :inserted_at, :updated_at],

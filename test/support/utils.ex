@@ -28,12 +28,13 @@ defmodule Sanbase.TestUtils do
   end
 
   def random_string(length \\ 16) do
-    :crypto.strong_rand_bytes(length)
+    length
+    |> :crypto.strong_rand_bytes()
     |> Base.url_encode64()
     |> binary_part(0, length)
   end
 
-  def counter() do
+  def counter do
     System.unique_integer([:positive])
   end
 end

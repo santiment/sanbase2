@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.MigrateWrongWalletMovementsAlerts do
+  @moduledoc false
   use Ecto.Migration
 
   alias Sanbase.Alert.Trigger.WalletTriggerSettings
@@ -13,21 +14,14 @@ defmodule Sanbase.Repo.Migrations.MigrateWrongWalletMovementsAlerts do
     :ok
   end
 
-  defp migrate_wallet_movement_signals() do
+  defp migrate_wallet_movement_signals do
     WalletTriggerSettings.type()
     |> UserTrigger.get_all_triggers_by_type()
     |> Enum.each(&maybe_update/1)
   end
 
   defp maybe_update(
-         %{
-           trigger: %{
-             settings:
-               %{
-                 selector: %{currency: currency, infrastructure: infr}
-               } = settings
-           }
-         } = user_trigger
+         %{trigger: %{settings: %{selector: %{currency: currency, infrastructure: infr}} = settings}} = user_trigger
        )
        when infr != "XRP" do
     new_settings = %{settings | selector: %{slug: currency, infrastructure: infr}}
@@ -39,16 +33,7 @@ defmodule Sanbase.Repo.Migrations.MigrateWrongWalletMovementsAlerts do
       })
   end
 
-  defp maybe_update(
-         %{
-           trigger: %{
-             settings:
-               %{
-                 selector: %{infrastructure: "Own"}
-               } = settings
-           }
-         } = user_trigger
-       ) do
+  defp maybe_update(%{trigger: %{settings: %{selector: %{infrastructure: "Own"}} = settings}} = user_trigger) do
     new_settings = %{settings | selector: %{infrastructure: ETH}}
 
     {:ok, _} =
@@ -60,7 +45,7 @@ defmodule Sanbase.Repo.Migrations.MigrateWrongWalletMovementsAlerts do
 
   defp maybe_update(_), do: :ok
 
-  defp setup() do
+  defp setup do
     Application.ensure_all_started(:tzdata)
   end
 end

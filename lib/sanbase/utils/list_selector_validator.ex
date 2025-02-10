@@ -1,4 +1,5 @@
 defmodule Sanbase.Utils.ListSelector.Validator do
+  @moduledoc false
   import Norm
 
   def valid_args?(args) do
@@ -14,16 +15,14 @@ defmodule Sanbase.Utils.ListSelector.Validator do
       |> to_string()
       |> String.downcase()
 
-    case filters_combinator in ["and", "or"] do
-      true ->
-        true
-
-      false ->
-        {:error,
-         """
-         Unsupported filter_combinator #{inspect(filters_combinator)}.
-         Supported filter combinators are 'and' and 'or'.
-         """}
+    if filters_combinator in ["and", "or"] do
+      true
+    else
+      {:error,
+       """
+       Unsupported filter_combinator #{inspect(filters_combinator)}.
+       Supported filter combinators are 'and' and 'or'.
+       """}
     end
   end
 
@@ -84,62 +83,52 @@ defmodule Sanbase.Utils.ListSelector.Validator do
   end
 
   def valid_filters?(filters, type) do
-    case Enum.all?(filters, &is_map/1) do
-      true ->
-        filters
-        |> Enum.map(&valid_filter?(type, &1))
-        |> Enum.find(&(&1 != true))
-        |> case do
-          nil -> true
-          error -> error
-        end
-
-      false ->
-        {:error, "Individual filters inside the filters list must be a map."}
+    if Enum.all?(filters, &is_map/1) do
+      filters
+      |> Enum.map(&valid_filter?(type, &1))
+      |> Enum.find(&(&1 != true))
+      |> case do
+        nil -> true
+        error -> error
+      end
+    else
+      {:error, "Individual filters inside the filters list must be a map."}
     end
   end
 
   def valid_filter?(:project, %{name: "traded_on_exchanges", args: %{exchanges: list} = args}) do
     combinator = Map.get(args, :exchanges_combinator, "and")
 
-    case is_list(list) and list != [] do
-      true ->
-        case combinator in ["and", "or"] do
-          true ->
-            true
-
-          false ->
-            {:error,
-             """
-             Unsupported exchanges_combinator: #{inspect(combinator)}.
-             Supported values for that combinator are 'and' and 'or'.
-             """}
-        end
-
-      false ->
-        {:error, "The traded_on_exchanges filter must provide a non-empty list of 'exchanges'."}
+    if is_list(list) and list != [] do
+      if combinator in ["and", "or"] do
+        true
+      else
+        {:error,
+         """
+         Unsupported exchanges_combinator: #{inspect(combinator)}.
+         Supported values for that combinator are 'and' and 'or'.
+         """}
+      end
+    else
+      {:error, "The traded_on_exchanges filter must provide a non-empty list of 'exchanges'."}
     end
   end
 
   def valid_filter?(:project, %{name: "market_segments", args: %{market_segments: list} = args}) do
     combinator = Map.get(args, :market_segments_combinator, "and")
 
-    case is_list(list) and list != [] do
-      true ->
-        case combinator in ["and", "or"] do
-          true ->
-            true
-
-          false ->
-            {:error,
-             """
-             Unsupported market_segments_combinator: #{inspect(combinator)}.
-             Supported values for that combinators are 'and' and 'or'.
-             """}
-        end
-
-      false ->
-        {:error, "The market segments filter must provide a non-empty list of 'market_segments'."}
+    if is_list(list) and list != [] do
+      if combinator in ["and", "or"] do
+        true
+      else
+        {:error,
+         """
+         Unsupported market_segments_combinator: #{inspect(combinator)}.
+         Supported values for that combinators are 'and' and 'or'.
+         """}
+      end
+    else
+      {:error, "The market segments filter must provide a non-empty list of 'market_segments'."}
     end
   end
 
@@ -152,10 +141,7 @@ defmodule Sanbase.Utils.ListSelector.Validator do
     metric_filter(metric, filter)
   end
 
-  def valid_filter?(
-        :blockchain_address,
-        %{name: "top_addresses", args: %{slug: _, page: _, page_size: _} = filter}
-      ) do
+  def valid_filter?(:blockchain_address, %{name: "top_addresses", args: %{slug: _, page: _, page_size: _} = filter}) do
     filter_schema =
       schema(%{
         slug: spec(is_binary()),
@@ -169,10 +155,7 @@ defmodule Sanbase.Utils.ListSelector.Validator do
     end
   end
 
-  def valid_filter?(
-        :blockchain_address,
-        %{name: "addresses_by_labels", args: %{label_fqns: _} = filter}
-      ) do
+  def valid_filter?(:blockchain_address, %{name: "addresses_by_labels", args: %{label_fqns: _} = filter}) do
     filter_schema =
       schema(%{
         blockchain: spec(is_binary()),
@@ -185,10 +168,7 @@ defmodule Sanbase.Utils.ListSelector.Validator do
     end
   end
 
-  def valid_filter?(
-        :blockchain_address,
-        %{name: "addresses_by_label_keys", args: %{label_fqns: _} = filter}
-      ) do
+  def valid_filter?(:blockchain_address, %{name: "addresses_by_label_keys", args: %{label_fqns: _} = filter}) do
     filter_schema =
       schema(%{
         blockchain: spec(is_binary()),
@@ -201,9 +181,7 @@ defmodule Sanbase.Utils.ListSelector.Validator do
   end
 
   def valid_filter?(type, filter),
-    do:
-      {:error,
-       "The #{inspect(type)} filter #{inspect(filter)} is not supported or has mistyped fields."}
+    do: {:error, "The #{inspect(type)} filter #{inspect(filter)} is not supported or has mistyped fields."}
 
   def metric_filter(metric, filter) do
     filter_schema =

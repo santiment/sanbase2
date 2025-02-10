@@ -3,8 +3,8 @@ defmodule Sanbase.DashboardsTest do
 
   import Sanbase.Factory
 
-  alias Sanbase.Queries
   alias Sanbase.Dashboards
+  alias Sanbase.Queries
 
   setup do
     user = insert(:user)
@@ -151,7 +151,8 @@ defmodule Sanbase.DashboardsTest do
         query_metadata: query_metadata
       } = context
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, result_mock()})
+      (&Sanbase.ClickhouseRepo.query/2)
+      |> Sanbase.Mock.prepare_mock2({:ok, result_mock()})
       |> Sanbase.Mock.run_with_mocks(fn ->
         {:ok, result} =
           Queries.run_query(query, user, query_metadata, store_execution_details: false)
@@ -213,7 +214,7 @@ defmodule Sanbase.DashboardsTest do
                ],
                summary: %{
                  "read_bytes" => 408_534.0,
-                 "read_rows" => 12667.0,
+                 "read_rows" => 12_667.0,
                  "result_bytes" => +0.0,
                  "result_rows" => +0.0,
                  "total_rows_to_read" => 4475.0,
@@ -233,12 +234,11 @@ defmodule Sanbase.DashboardsTest do
         query_metadata: query_metadata
       } = context
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, result_mock()})
+      (&Sanbase.ClickhouseRepo.query/2)
+      |> Sanbase.Mock.prepare_mock2({:ok, result_mock()})
       |> Sanbase.Mock.run_with_mocks(fn ->
         assert {:ok, result} =
-                 Sanbase.Queries.run_query(query, user2, query_metadata,
-                   store_execution_details: false
-                 )
+                 Sanbase.Queries.run_query(query, user2, query_metadata, store_execution_details: false)
 
         assert {:error, error_msg} =
                  Sanbase.Dashboards.cache_dashboard_query_execution(
@@ -255,7 +255,7 @@ defmodule Sanbase.DashboardsTest do
     end
   end
 
-  defp result_mock() do
+  defp result_mock do
     %Clickhousex.Result{
       query_id: "1774C4BC91E05698",
       summary: %{

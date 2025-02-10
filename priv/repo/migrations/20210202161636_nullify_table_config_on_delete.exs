@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.NullifyTableConfigOnDelete do
+  @moduledoc false
   use Ecto.Migration
 
   @table :user_lists

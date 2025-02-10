@@ -1,10 +1,14 @@
 defmodule Sanbase.Accounts.UserSettings do
+  @moduledoc false
   use Ecto.Schema
+
   import Ecto.Changeset
 
-  alias Sanbase.Accounts.{User, Settings}
+  alias Sanbase.Accounts.Settings
+  alias Sanbase.Accounts.User
+  alias Sanbase.Billing.Product
+  alias Sanbase.Billing.Subscription
   alias Sanbase.Repo
-  alias Sanbase.Billing.{Subscription, Product}
 
   @self_reset_api_rate_limits_cooldown 90
 
@@ -26,7 +30,8 @@ defmodule Sanbase.Accounts.UserSettings do
   def settings_for(user, opts \\ [])
 
   def settings_for(user, opts) do
-    user_settings_for(user, opts)
+    user
+    |> user_settings_for(opts)
     |> modify_settings()
   end
 
@@ -42,16 +47,14 @@ defmodule Sanbase.Accounts.UserSettings do
   def can_self_reset_api_rate_limits?(user) do
     %{self_api_rate_limits_reset_at: last_self_reset_at} = settings_for(user)
 
-    case do_can_self_reset_api_rate_limits?(last_self_reset_at) do
-      true ->
-        true
-
-      false ->
-        {:error,
-         """
-         Cannot self reset the API calls rate limits.
-         The last reset was less than #{@self_reset_api_rate_limits_cooldown} days ago on #{last_self_reset_at}.
-         """}
+    if do_can_self_reset_api_rate_limits?(last_self_reset_at) do
+      true
+    else
+      {:error,
+       """
+       Cannot self reset the API calls rate limits.
+       The last reset was less than #{@self_reset_api_rate_limits_cooldown} days ago on #{last_self_reset_at}.
+       """}
     end
   end
 
@@ -82,7 +85,8 @@ defmodule Sanbase.Accounts.UserSettings do
   end
 
   def update_self_reset_api_rate_limits_datetime(user, dt) do
-    user_settings_for(user, force: true)
+    user
+    |> user_settings_for(force: true)
     |> changeset(%{user_id: user.id, settings: %{self_api_rate_limits_reset_at: dt}})
     |> Sanbase.Repo.update()
   end
@@ -101,20 +105,22 @@ defmodule Sanbase.Accounts.UserSettings do
     } = user_settings
 
     # A map of "channel" => list pairs
-    notifications_sent_today = Map.get(alerts_fired, Date.utc_today() |> to_string(), %{})
+    notifications_sent_today = Map.get(alerts_fired, to_string(Date.utc_today()), %{})
 
     default_alerts_limit_per_day = Settings.default_alerts_limit_per_day()
 
     result =
-      Map.keys(default_alerts_limit_per_day)
+      default_alerts_limit_per_day
+      |> Map.keys()
       |> Enum.reduce(%{}, fn channel, map ->
         channel_limit =
-          (Map.get(alerts_per_day_limit, channel) ||
-             Map.fetch!(default_alerts_limit_per_day, channel))
-          |> Sanbase.Math.to_integer()
+          Sanbase.Math.to_integer(
+            Map.get(alerts_per_day_limit, channel) || Map.fetch!(default_alerts_limit_per_day, channel)
+          )
 
         channel_sent_today =
-          Map.get(notifications_sent_today, channel, 0)
+          notifications_sent_today
+          |> Map.get(channel, 0)
           |> Sanbase.Math.to_integer()
 
         left_to_send = Enum.max([channel_limit - channel_sent_today, 0])
@@ -133,11 +139,8 @@ defmodule Sanbase.Accounts.UserSettings do
   end
 
   # max emails per day = 200, max telegram per day = 1000
-  def update_settings(user, %{
-        alerts_per_day_limit: %{"email" => email_limit, "telegram" => telegram_limit}
-      })
-      when is_integer(email_limit) and email_limit > 0 and is_integer(telegram_limit) and
-             telegram_limit > 0 do
+  def update_settings(user, %{alerts_per_day_limit: %{"email" => email_limit, "telegram" => telegram_limit}})
+      when is_integer(email_limit) and email_limit > 0 and is_integer(telegram_limit) and telegram_limit > 0 do
     default_limits = Sanbase.Accounts.Settings.default_alerts_limit_per_day()
 
     cond do
@@ -148,8 +151,7 @@ defmodule Sanbase.Accounts.UserSettings do
         {:error, "Telegram limit cannot be more than 1000"}
 
       true ->
-        limits =
-          default_limits |> Map.merge(%{"email" => email_limit, "telegram" => telegram_limit})
+        limits = Map.merge(default_limits, %{"email" => email_limit, "telegram" => telegram_limit})
 
         settings_update(user.id, %{alerts_per_day_limit: limits})
     end
@@ -177,7 +179,8 @@ defmodule Sanbase.Accounts.UserSettings do
 
   defp settings_update(user_id, params) do
     changeset =
-      Repo.get_by(__MODULE__, user_id: user_id)
+      __MODULE__
+      |> Repo.get_by(user_id: user_id)
       |> case do
         nil ->
           # There are no settings inserted for that user still, create a record
@@ -187,7 +190,7 @@ defmodule Sanbase.Accounts.UserSettings do
           changeset(us, %{settings: params})
       end
 
-    case changeset |> Repo.insert_or_update() do
+    case Repo.insert_or_update(changeset) do
       {:ok, %__MODULE__{} = us} ->
         maybe_emit_event_on_changes(user_id, changeset.changes)
         {:ok, %{us | settings: modify_settings(us)}}
@@ -247,9 +250,10 @@ defmodule Sanbase.Accounts.UserSettings do
 
   defp user_settings_for(%{user_settings: %{settings: _}} = user, opts) do
     user =
-      case Keyword.get(opts, :force, false) do
-        false -> user
-        true -> Repo.preload(user, [:user_settings], force: true)
+      if Keyword.get(opts, :force, false) do
+        Repo.preload(user, [:user_settings], force: true)
+      else
+        user
       end
 
     user.user_settings
@@ -258,7 +262,8 @@ defmodule Sanbase.Accounts.UserSettings do
   defp user_settings_for(%User{id: user_id}, _opts) do
     case Repo.get_by(__MODULE__, user_id: user_id) do
       nil ->
-        changeset(%__MODULE__{}, %{user_id: user_id, settings: %{}})
+        %__MODULE__{}
+        |> changeset(%{user_id: user_id, settings: %{}})
         |> Repo.insert!()
 
       %__MODULE__{} = us ->
@@ -269,7 +274,7 @@ defmodule Sanbase.Accounts.UserSettings do
   defp do_can_self_reset_api_rate_limits?(nil = _last_self_reset_at), do: true
 
   defp do_can_self_reset_api_rate_limits?(%DateTime{} = last_self_reset_at) do
-    dt_threshold = DateTime.utc_now() |> DateTime.add(-@self_reset_api_rate_limits_cooldown, :day)
+    dt_threshold = DateTime.add(DateTime.utc_now(), -@self_reset_api_rate_limits_cooldown, :day)
 
     DateTime.compare(last_self_reset_at, dt_threshold) != :gt
   end

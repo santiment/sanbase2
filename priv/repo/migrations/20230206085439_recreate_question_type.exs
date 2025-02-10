@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.RecreateQuestionType do
+  @moduledoc false
   use Ecto.Migration
 
   def up do
@@ -13,7 +14,7 @@ defmodule Sanbase.Repo.Migrations.RecreateQuestionType do
     """)
   end
 
-  def schema() do
+  def schema do
     case Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) do
       env when env in ["stage", "prod"] -> "sanbase2"
       _ -> "public"

@@ -4,6 +4,8 @@ defmodule SanbaseWeb.Graphql.CustomTypes.LabelFqn do
   """
   use Absinthe.Schema.Notation
 
+  alias Absinthe.Blueprint.Input.Null
+
   scalar :interval_or_now, name: "interval_or_now" do
     description("""
     The input is either a valid `interval` type or the string `now`
@@ -14,7 +16,7 @@ defmodule SanbaseWeb.Graphql.CustomTypes.LabelFqn do
   end
 
   @spec decode(Absinthe.Blueprint.Input.String.t()) :: {:ok, term()} | :error
-  @spec decode(Absinthe.Blueprint.Input.Null.t()) :: {:ok, nil}
+  @spec decode(Null.t()) :: {:ok, nil}
 
   defp decode(%Absinthe.Blueprint.Input.String{value: label_fqn}) do
     case Sanbase.Clickhouse.Label.Validator.valid_label_fqn?(label_fqn) do
@@ -23,7 +25,7 @@ defmodule SanbaseWeb.Graphql.CustomTypes.LabelFqn do
     end
   end
 
-  defp decode(%Absinthe.Blueprint.Input.Null{}) do
+  defp decode(%Null{}) do
     {:ok, nil}
   end
 

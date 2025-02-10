@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.ProjectApiSocialVolumeQuery do
+  @moduledoc false
   use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory

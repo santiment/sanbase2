@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.CreateInfrastructures do
+  @moduledoc false
   use Ecto.Migration
 
   def change do

@@ -1,8 +1,8 @@
 defmodule SanbaseWeb.Graphql.CurrentUserApiTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
+  import SanbaseWeb.Graphql.TestHelpers
 
   setup do
     user = insert(:user)
@@ -29,7 +29,7 @@ defmodule SanbaseWeb.Graphql.CurrentUserApiTest do
     dashboard = insert(:dashboard, user: user, is_public: true)
     dashboard2 = insert(:dashboard, user: user, is_public: false)
 
-    result = get_user(conn) |> get_in(["data", "currentUser"])
+    result = conn |> get_user() |> get_in(["data", "currentUser"])
 
     assert result["email"] == user.email
     assert result["username"] == user.username
@@ -61,13 +61,13 @@ defmodule SanbaseWeb.Graphql.CurrentUserApiTest do
 
   describe "eligible_for_sanbase_trial" do
     test "eligible when user doesn't have sanbase subscription", context do
-      result = get_user(context.conn) |> get_in(["data", "currentUser"])
+      result = context.conn |> get_user() |> get_in(["data", "currentUser"])
       assert result["isEligibleForSanbaseTrial"]
     end
 
     test "not eligible when user already has sanbase subscription", context do
       insert(:subscription_pro_sanbase, user: context.user)
-      result = get_user(context.conn) |> get_in(["data", "currentUser"])
+      result = context.conn |> get_user() |> get_in(["data", "currentUser"])
       refute result["isEligibleForSanbaseTrial"]
     end
   end
@@ -80,14 +80,14 @@ defmodule SanbaseWeb.Graphql.CurrentUserApiTest do
         insert(:user, registration_state: %{"state" => "finished", "datetime" => registration_dt})
 
       conn = setup_jwt_auth(build_conn(), user)
-      result = get_user(conn) |> get_in(["data", "currentUser"])
+      result = conn |> get_user() |> get_in(["data", "currentUser"])
       assert result["signupDatetime"] == DateTime.to_iso8601(registration_dt)
     end
 
     test "when user has no registration_state - returns nil", _context do
       user = insert(:user)
       conn = setup_jwt_auth(build_conn(), user)
-      result = get_user(conn) |> get_in(["data", "currentUser"])
+      result = conn |> get_user() |> get_in(["data", "currentUser"])
       assert result["signupDatetime"] == nil
     end
   end

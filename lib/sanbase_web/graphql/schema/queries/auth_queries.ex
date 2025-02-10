@@ -4,14 +4,11 @@ defmodule SanbaseWeb.Graphql.Schema.AuthQueries do
   """
   use Absinthe.Schema.Notation
 
+  alias SanbaseWeb.Graphql.Middlewares.CreateOrDeleteSession
+  alias SanbaseWeb.Graphql.Middlewares.DeleteSession
+  alias SanbaseWeb.Graphql.Middlewares.JWTAuth
+  alias SanbaseWeb.Graphql.Middlewares.RefreshTokenAgeCheck
   alias SanbaseWeb.Graphql.Resolvers.AuthResolver
-
-  alias SanbaseWeb.Graphql.Middlewares.{
-    CreateOrDeleteSession,
-    DeleteSession,
-    JWTAuth,
-    RefreshTokenAgeCheck
-  }
 
   object :auth_queries do
     field :get_auth_sessions, list_of(:auth_session) do

@@ -1,7 +1,9 @@
 defmodule SanbaseWeb.Graphql.Schema.IntercomQueries do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
-  alias SanbaseWeb.Graphql.Middlewares.{BasicAuth, SanbaseProductOrigin}
+  alias SanbaseWeb.Graphql.Middlewares.BasicAuth
+  alias SanbaseWeb.Graphql.Middlewares.SanbaseProductOrigin
   alias SanbaseWeb.Graphql.Resolvers.IntercomResolver
 
   object :intercom_queries do

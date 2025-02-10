@@ -1,13 +1,16 @@
 defmodule SanbaseWeb.Graphql.Resolvers.WebinarResolver do
-  require Logger
-
+  @moduledoc false
+  alias Sanbase.Billing.Product
+  alias Sanbase.Billing.Subscription
   alias Sanbase.Webinar
   alias Sanbase.Webinars.Registration
-  alias Sanbase.Billing.{Subscription, Product}
+
+  require Logger
 
   def get_webinars(_root, _args, %{context: %{auth: %{current_user: user}}}) do
     plan =
-      Subscription.current_subscription(user, Product.product_sanbase())
+      user
+      |> Subscription.current_subscription(Product.product_sanbase())
       |> Subscription.plan_name()
 
     {:ok, Webinar.get_all(%{is_logged_in: true, plan_name: plan})}
@@ -18,7 +21,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.WebinarResolver do
   end
 
   def register_for_webinar(_root, args, %{context: %{auth: %{current_user: user}}}) do
-    Registration.create(%{user_id: user.id, webinar_id: args.webinar_id})
+    %{user_id: user.id, webinar_id: args.webinar_id}
+    |> Registration.create()
     |> case do
       {:ok, _} -> {:ok, true}
       {:error, _} -> {:ok, false}

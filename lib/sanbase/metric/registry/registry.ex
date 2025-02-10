@@ -1,17 +1,17 @@
 defmodule Sanbase.Metric.Registry do
+  @moduledoc false
   use Ecto.Schema
 
-  import Ecto.Query
   import Ecto.Changeset
+  import Ecto.Query
   import Sanbase.Metric.Registry.EventEmitter, only: [emit_event: 3]
 
-  alias __MODULE__.Validation
+  alias __MODULE__.Alias
   alias __MODULE__.ChangeSuggestion
   alias __MODULE__.Doc
-  alias __MODULE__.Alias
   alias __MODULE__.Selector
   alias __MODULE__.Table
-
+  alias __MODULE__.Validation
   alias Sanbase.Repo
   alias Sanbase.TemplateEngine
 
@@ -19,9 +19,9 @@ defmodule Sanbase.Metric.Registry do
   # Careful not to delete the space at the end
   @human_readable_name_regex ~r|^[a-zA-Z0-9_\.\-{}():/\\ ]+$|
   @aggregations ["sum", "last", "count", "avg", "max", "min", "first"]
-  def aggregations(), do: @aggregations
+  def aggregations, do: @aggregations
   @metric_regex ~r/^[a-z0-9_{}:]+$/
-  def metric_regex(), do: @metric_regex
+  def metric_regex, do: @metric_regex
 
   @type t :: %__MODULE__{
           id: integer(),
@@ -216,13 +216,13 @@ defmodule Sanbase.Metric.Registry do
     metric_registry
     |> changeset(attrs)
     |> then(fn changeset ->
-      if changeset.changes != %{},
-        do: changeset |> put_change(:sync_status, "not_synced"),
-        else: changeset
+      if changeset.changes == %{},
+        do: changeset,
+        else: put_change(changeset, :sync_status, "not_synced")
     end)
     |> then(fn changeset ->
       if changeset.changes != %{} and attrs[:is_verified] != true,
-        do: changeset |> put_change(:is_verified, false),
+        do: put_change(changeset, :is_verified, false),
         else: changeset
     end)
     |> Repo.update()
@@ -268,7 +268,7 @@ defmodule Sanbase.Metric.Registry do
   in persistent_term is refreshed.
   """
   @spec refresh_stored_terms() :: :ok
-  def refresh_stored_terms() do
+  def refresh_stored_terms do
     # Do not change the order of these calls
     # It is important as some of the modules later refreshed later
     # depend on the modules refreshed earlier
@@ -285,7 +285,7 @@ defmodule Sanbase.Metric.Registry do
   need to be resolved, or aliases need to be applied.
   """
   @spec all() :: [t()]
-  def all() do
+  def all do
     query = from(m in __MODULE__, order_by: [asc: m.id])
 
     Sanbase.Repo.all(query)
@@ -316,12 +316,7 @@ defmodule Sanbase.Metric.Registry do
   # Private
 
   defp maybe_emit_event(result, event_type, opts)
-       when is_tuple(result) and
-              event_type in [
-                :create_metric_registry,
-                :update_metric_registry,
-                :delete_metric_registry
-              ] do
+       when is_tuple(result) and event_type in [:create_metric_registry, :update_metric_registry, :delete_metric_registry] do
     if Keyword.get(opts, :emit_event, true) do
       emit_event(result, event_type, %{})
     else
@@ -340,8 +335,7 @@ defmodule Sanbase.Metric.Registry do
     [registry] ++ aliases
   end
 
-  defp apply_template_parameters(%__MODULE__{} = registry)
-       when registry.is_template == true do
+  defp apply_template_parameters(%__MODULE__{} = registry) when registry.is_template == true do
     %{
       metric: metric,
       internal_metric: internal_metric,
@@ -359,6 +353,5 @@ defmodule Sanbase.Metric.Registry do
     end
   end
 
-  defp apply_template_parameters(registry) when registry.is_template == false,
-    do: [registry]
+  defp apply_template_parameters(registry) when registry.is_template == false, do: [registry]
 end

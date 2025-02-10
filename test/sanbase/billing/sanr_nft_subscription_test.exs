@@ -1,9 +1,12 @@
 defmodule Sanbase.Billing.SanrNFTSubscriptionTest do
   use Sanbase.DataCase, async: false
-  import Sanbase.Factory
+
   import Mox
+  import Sanbase.Factory
+
   alias Sanbase.Accounts.EthAccount
   alias Sanbase.Billing.Subscription
+  alias Sanbase.Email.MockMailjetApi
 
   setup :set_mox_from_context
   setup :verify_on_exit!
@@ -11,13 +14,11 @@ defmodule Sanbase.Billing.SanrNFTSubscriptionTest do
   setup do
     user = insert(:user)
 
-    address =
-      "0x23918E95d234eEc054566DDe0841d69311814495"
-      |> Sanbase.BlockchainAddress.to_internal_format()
+    address = Sanbase.BlockchainAddress.to_internal_format("0x23918E95d234eEc054566DDe0841d69311814495")
 
     {:ok, _} = EthAccount.create(user.id, address)
     start_date = DateTime.utc_now()
-    end_date = DateTime.shift(start_date, month: 12) |> DateTime.truncate(:second)
+    end_date = start_date |> DateTime.shift(month: 12) |> DateTime.truncate(:second)
 
     %{
       user: user,
@@ -28,11 +29,11 @@ defmodule Sanbase.Billing.SanrNFTSubscriptionTest do
   end
 
   test "create subscription", context do
-    expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
+    expect(MockMailjetApi, :subscribe, fn _, _ -> :ok end)
     %{user: user, address: address, start_date: start_date, end_date: end_date} = context
 
-    Sanbase.Mock.prepare_mock(
-      Req,
+    Req
+    |> Sanbase.Mock.prepare_mock(
       :get,
       fn req, _params ->
         case req.options.base_url do
@@ -59,14 +60,12 @@ defmodule Sanbase.Billing.SanrNFTSubscriptionTest do
   end
 
   test "remove subscription", %{user: user} do
-    expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
-    end_date = DateTime.shift(DateTime.utc_now(), month: 12) |> DateTime.truncate(:second)
+    expect(MockMailjetApi, :subscribe, fn _, _ -> :ok end)
+    end_date = DateTime.utc_now() |> DateTime.shift(month: 12) |> DateTime.truncate(:second)
     Subscription.NFTSubscription.create_nft_subscription(user.id, :sanr_points_nft, end_date)
 
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.SmartContracts.SanrNFT.get_all_nft_owners/0,
-      {:ok, %{}}
-    )
+    (&Sanbase.SmartContracts.SanrNFT.get_all_nft_owners/0)
+    |> Sanbase.Mock.prepare_mock2({:ok, %{}})
     |> Sanbase.Mock.prepare_mock2(
       &Sanbase.SmartContracts.SanrNFT.get_all_nft_expiration_dates/0,
       {:ok, %{}}

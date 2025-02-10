@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddSerialIdToListItems do
+  @moduledoc false
   use Ecto.Migration
 
   @table :list_items

@@ -7,13 +7,14 @@ defmodule Sanbase.Alert.Trigger.SignalTriggerSettings do
 
   use Vex.Struct
 
-  import Sanbase.{Validation, Alert.Validation}
+  import Sanbase.Alert.Validation
   import Sanbase.DateTimeUtils, only: [round_datetime: 1, str_to_sec: 1]
+  import Sanbase.Validation
 
   alias __MODULE__
-  alias Sanbase.Project
   alias Sanbase.Alert.Type
   alias Sanbase.Cache
+  alias Sanbase.Project
   alias Sanbase.Signal
 
   @derive {Jason.Encoder, except: [:filtered_target, :triggered?, :payload, :template_kv]}
@@ -53,7 +54,7 @@ defmodule Sanbase.Alert.Trigger.SignalTriggerSettings do
   validates(:time_window, &valid_time_window?/1)
 
   @spec type() :: String.t()
-  def type(), do: @trigger_type
+  def type, do: @trigger_type
 
   def post_create_process(_trigger), do: :nochange
   def post_update_process(_trigger), do: :nochange
@@ -79,8 +80,9 @@ defmodule Sanbase.Alert.Trigger.SignalTriggerSettings do
     %{signal: signal, time_window: time_window} = settings
 
     cache_key =
-      {__MODULE__, :fetch_signal_data, signal, selector, time_window, round_datetime(Timex.now())}
-      |> Sanbase.Cache.hash()
+      Sanbase.Cache.hash(
+        {__MODULE__, :fetch_signal_data, signal, selector, time_window, round_datetime(DateTime.utc_now())}
+      )
 
     %{
       first_start: first_start,
@@ -108,7 +110,7 @@ defmodule Sanbase.Alert.Trigger.SignalTriggerSettings do
 
   defp timerange_params(%SignalTriggerSettings{} = settings) do
     interval_seconds = str_to_sec(settings.time_window)
-    now = Timex.now()
+    now = DateTime.utc_now()
 
     %{
       first_start: Timex.shift(now, seconds: -2 * interval_seconds),
@@ -121,7 +123,8 @@ defmodule Sanbase.Alert.Trigger.SignalTriggerSettings do
   defimpl Sanbase.Alert.Settings, for: SignalTriggerSettings do
     import Sanbase.Alert.Utils
 
-    alias Sanbase.Alert.{OperationText, ResultBuilder}
+    alias Sanbase.Alert.OperationText
+    alias Sanbase.Alert.ResultBuilder
 
     def triggered?(%SignalTriggerSettings{triggered?: triggered}), do: triggered
 

@@ -1,8 +1,10 @@
 defmodule Sanbase.InternalServices.EthNode do
+  @moduledoc false
   use Tesla
 
-  require Logger
   alias Sanbase.Utils.Config
+
+  require Logger
 
   @eth_decimals 1_000_000_000_000_000_000
 
@@ -22,16 +24,13 @@ defmodule Sanbase.InternalServices.EthNode do
       {:ok, result}
     else
       {:ok, %Tesla.Env{status: status, body: body}} ->
-        {:error,
-         "Error get_transaction_by_hash for hash #{transaction_hash}. Status #{status}. Body: #{inspect(body)}"}
+        {:error, "Error get_transaction_by_hash for hash #{transaction_hash}. Status #{status}. Body: #{inspect(body)}"}
 
       {:error, error} ->
-        {:error,
-         "Error get_transaction_by_hash for hash #{transaction_hash}. Reason: #{inspect(error)}"}
+        {:error, "Error get_transaction_by_hash for hash #{transaction_hash}. Reason: #{inspect(error)}"}
 
       error ->
-        {:error,
-         "Error get_transaction_by_hash for hash #{transaction_hash}. Reason: #{inspect(error)}"}
+        {:error, "Error get_transaction_by_hash for hash #{transaction_hash}. Reason: #{inspect(error)}"}
     end
   end
 
@@ -54,11 +53,9 @@ defmodule Sanbase.InternalServices.EthNode do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         id_to_address_map = Map.new(addresses, fn {addr, index} -> {index, addr} end)
 
-        body
-        |> Enum.map(fn %{"id" => id, "result" => hex_balance} ->
+        Map.new(body, fn %{"id" => id, "result" => hex_balance} ->
           {Map.get(id_to_address_map, id), hex_to_eth_balance(hex_balance)}
         end)
-        |> Map.new()
 
       _ ->
         {:error, "Failed getting ETH balance for a list of addresses"}
@@ -68,14 +65,13 @@ defmodule Sanbase.InternalServices.EthNode do
   def get_eth_balance(address) do
     Logger.info("[EthNode] Get eth balance for an address.")
 
-    with {:ok, %Tesla.Env{status: 200, body: body}} <-
-           execute_json_rpc_call("eth_getBalance", [address, "latest"]),
-         hex_balance <- body["result"] do
-      {:ok, hex_to_eth_balance(hex_balance)}
-    else
+    case execute_json_rpc_call("eth_getBalance", [address, "latest"]) do
+      {:ok, %Tesla.Env{status: 200, body: body}} ->
+        hex_balance = body["result"]
+        {:ok, hex_to_eth_balance(hex_balance)}
+
       {:ok, %Tesla.Env{status: status, body: body}} ->
-        {:error,
-         "Failed getting ETH balance for address #{address}. Status: #{status}. Body: #{inspect(body)}"}
+        {:error, "Failed getting ETH balance for address #{address}. Status: #{status}. Body: #{inspect(body)}"}
 
       {:error, error} ->
         {:error, "Failed getting ETH balance for address #{address}. Reason: #{inspect(error)}"}
@@ -101,7 +97,7 @@ defmodule Sanbase.InternalServices.EthNode do
     post(client(), "/", batch, opts: [adapter: [recv_timeout: 25_000]])
   end
 
-  defp client() do
+  defp client do
     parity_url = Config.module_get(__MODULE__, :url)
 
     Tesla.client([

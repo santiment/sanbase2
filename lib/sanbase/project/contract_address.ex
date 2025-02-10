@@ -1,4 +1,5 @@
 defmodule Sanbase.Project.ContractAddress do
+  @moduledoc false
   use Ecto.Schema
 
   import Ecto.Changeset
@@ -35,10 +36,7 @@ defmodule Sanbase.Project.ContractAddress do
           optional(:label) => String.t()
         }) :: {:ok, %__MODULE__{}} | {:error, any()}
         when address: String.t(), decimals: non_neg_integer()
-  def add_contract(
-        %Project{id: project_id},
-        %{} = attrs
-      ) do
+  def add_contract(%Project{id: project_id}, %{} = attrs) do
     map = %{
       address: Map.get(attrs, :address),
       decimals: Map.get(attrs, :decimals),

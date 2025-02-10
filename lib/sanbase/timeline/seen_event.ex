@@ -1,10 +1,12 @@
 defmodule Sanbase.Timeline.SeenEvent do
+  @moduledoc false
   use Ecto.Schema
+
   import Ecto.Changeset
   import Ecto.Query
 
-  alias Sanbase.Repo
   alias Sanbase.Accounts.User
+  alias Sanbase.Repo
   alias Sanbase.Timeline.TimelineEvent
 
   schema "seen_timeline_events" do
@@ -24,13 +26,14 @@ defmodule Sanbase.Timeline.SeenEvent do
   end
 
   def fetch_or_create(params) do
-    fetch(params)
+    params
+    |> fetch()
     |> case do
       %__MODULE__{} = seen_event ->
         {:ok, seen_event}
 
       nil ->
-        params = Map.put(params, :seen_at, Timex.now())
+        params = Map.put(params, :seen_at, DateTime.utc_now())
 
         %__MODULE__{}
         |> changeset(params)
@@ -39,12 +42,10 @@ defmodule Sanbase.Timeline.SeenEvent do
   end
 
   def fetch(%{event_id: event_id, user_id: user_id}) do
-    from(se in __MODULE__, where: se.user_id == ^user_id and se.event_id == ^event_id)
-    |> Repo.one()
+    Repo.one(from(se in __MODULE__, where: se.user_id == ^user_id and se.event_id == ^event_id))
   end
 
   def last_seen_for_user(user_id) do
-    from(se in __MODULE__, where: se.user_id == ^user_id, select: max(se.event_id))
-    |> Repo.one()
+    Repo.one(from(se in __MODULE__, where: se.user_id == ^user_id, select: max(se.event_id)))
   end
 end

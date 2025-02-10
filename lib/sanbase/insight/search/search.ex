@@ -1,7 +1,8 @@
 defmodule Sanbase.Insight.Search do
+  @moduledoc false
   import Ecto.Query
-  import Sanbase.Utils.Transform, only: [opts_to_limit_offset: 1]
   import Sanbase.Insight.Search.Macro
+  import Sanbase.Utils.Transform, only: [opts_to_limit_offset: 1]
 
   @doc ~s"""
   Provided a query which has `document_tokens` tsvector field and a search term,
@@ -9,18 +10,15 @@ defmodule Sanbase.Insight.Search do
   """
 
   def run(query, search_term, opts) do
-    case is_incomplete_word?(search_term) do
-      true ->
-        # Add `:*` to the end of the word so we can search for prefixes
-        to_tsquery_incomplete_search(query, search_term, opts)
-
-      false ->
-        websearch_to_tsquery_complete_search(query, search_term, opts)
+    if is_incomplete_word?(search_term) do
+      # Add `:*` to the end of the word so we can search for prefixes
+      to_tsquery_incomplete_search(query, search_term, opts)
+    else
+      websearch_to_tsquery_complete_search(query, search_term, opts)
     end
   end
 
-  defp is_incomplete_word?(search_term),
-    do: String.match?(search_term, ~r/^[[:alnum:]]+$/)
+  defp is_incomplete_word?(search_term), do: String.match?(search_term, ~r/^[[:alnum:]]+$/)
 
   defp to_tsquery_incomplete_search(query, search_term, opts) do
     # The following heuristic is used here: If the search term is
@@ -98,7 +96,7 @@ defmodule Sanbase.Insight.Search do
     :ok
   end
 
-  def update_all_document_tokens() do
+  def update_all_document_tokens do
     {:ok, _} =
       Sanbase.Repo.query("""
       WITH cte AS (
@@ -119,7 +117,7 @@ defmodule Sanbase.Insight.Search do
   end
 
   # cannot be used in fragment as it does not allow for interpolation
-  defp tags_metrics_join_str() do
+  defp tags_metrics_join_str do
     """
     LEFT OUTER JOIN posts_tags ON posts.id = posts_tags.post_id
     LEFT OUTER JOIN tags ON tags.id = posts_tags.tag_id
@@ -128,7 +126,7 @@ defmodule Sanbase.Insight.Search do
     """
   end
 
-  defp document_tokens_weighted_str() do
+  defp document_tokens_weighted_str do
     """
     setweight(to_tsvector('english', posts.title), 'A') ||
     setweight(to_tsvector('english', posts.text), 'C') ||
@@ -139,16 +137,16 @@ defmodule Sanbase.Insight.Search do
 
   # Extend the term so it is searching for prefixes
   defp modify_search_term(search_term) do
-    case String.ends_with?(search_term, ":*") do
-      true -> search_term
-      false -> search_term <> ":*"
+    if String.ends_with?(search_term, ":*") do
+      search_term
+    else
+      search_term <> ":*"
     end
   end
 
   defp transform_highlights(list) do
-    list
-    |> Enum.map(fn %{highlights: highlights} = map ->
-      highlights = highlights |> Map.new(fn {k, v} -> {k, split_highlight_response(v)} end)
+    Enum.map(list, fn %{highlights: highlights} = map ->
+      highlights = Map.new(highlights, fn {k, v} -> {k, split_highlight_response(v)} end)
       Map.put(map, :highlights, highlights)
     end)
   end

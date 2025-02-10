@@ -1,17 +1,15 @@
 defmodule SanbaseWeb.Graphql.Middlewares.PostPaywallFilter do
+  @moduledoc false
   @behaviour Absinthe.Middleware
-  alias Absinthe.Resolution
 
-  alias Sanbase.Insight.{Post, PostPaywall}
+  alias Absinthe.Resolution
+  alias Sanbase.Insight.Post
+  alias Sanbase.Insight.PostPaywall
   alias Sanbase.Timeline.TimelineEvent
 
   def call(%Resolution{errors: [_ | _]} = resolution, _opts), do: resolution
 
-  def call(
-        %Resolution{value: value, context: context} = resolution,
-        _opts
-      )
-      when not is_nil(value) do
+  def call(%Resolution{value: value, context: context} = resolution, _opts) when not is_nil(value) do
     %{resolution | value: filter_value(value, context.auth[:current_user])}
   end
 
@@ -19,7 +17,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.PostPaywallFilter do
 
   # helpers
   defp filter_value(%Post{} = insight, current_user) do
-    PostPaywall.maybe_filter_paywalled([insight], current_user) |> hd()
+    [insight] |> PostPaywall.maybe_filter_paywalled(current_user) |> hd()
   end
 
   defp filter_value([%Post{} | _rest] = insights, current_user) do
@@ -38,7 +36,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.PostPaywallFilter do
 
   defp update_event_insight(event, current_user) do
     Map.update(event, :post, nil, fn insight ->
-      PostPaywall.maybe_filter_paywalled([insight], current_user) |> hd()
+      [insight] |> PostPaywall.maybe_filter_paywalled(current_user) |> hd()
     end)
   end
 end

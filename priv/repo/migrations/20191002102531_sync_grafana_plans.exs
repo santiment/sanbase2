@@ -1,10 +1,13 @@
 defmodule Sanbase.Repo.Migrations.SyncGrafanaPlans do
+  @moduledoc false
   use Ecto.Migration
 
   import Ecto.Query
-  alias Sanbase.Utils.Config
-  alias Sanbase.Billing.{Product, Plan}
+
+  alias Sanbase.Billing.Plan
+  alias Sanbase.Billing.Product
   alias Sanbase.Repo
+  alias Sanbase.Utils.Config
 
   require Sanbase.Utils.Config
 
@@ -28,12 +31,12 @@ defmodule Sanbase.Repo.Migrations.SyncGrafanaPlans do
 
   def down, do: :ok
 
-  defp setup() do
+  defp setup do
     Application.ensure_all_started(:tzdata)
     Application.ensure_all_started(:stripity_stripe)
   end
 
-  defp stripe_api_key() do
+  defp stripe_api_key do
     Config.module_get(Sanbase.StripeConfig, :api_key)
   end
 end

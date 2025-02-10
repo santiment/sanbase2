@@ -1,15 +1,18 @@
 defmodule Sanbase.Billing.QueryAccessLevelTest do
   use ExUnit.Case, async: true
 
+  alias Sanbase.Billing.ApiInfo
+
   # Assert that a query's access level does not change incidentally
   describe "subscription meta" do
     test "free queries defined in the schema" do
       free_queries =
-        Sanbase.Billing.ApiInfo.get_queries_with_access_level(:free)
+        :free
+        |> ApiInfo.get_queries_with_access_level()
         |> Enum.sort()
 
       expected_free_queries =
-        [
+        Enum.sort([
           :active_widgets,
           :address_historical_balance_change,
           :alerts_historical_activity,
@@ -163,7 +166,6 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :watchlist_by_slug,
           :words_social_dominance,
           :words_social_dominance_old,
-          # Queries 2.0
           :get_dashboard,
           :get_sql_query,
           :get_public_queries,
@@ -174,9 +176,9 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :run_sql_query,
           :get_cached_query_executions,
           :check_sanr_nft_subscription_eligibility
-        ]
-        |> Enum.sort()
+        ])
 
+      # Queries 2.0
       unexpected_free_queries = free_queries -- expected_free_queries
       assert unexpected_free_queries == []
 
@@ -186,11 +188,12 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
 
     test "restricted queries defined in the schema" do
       restricted_queries =
-        Sanbase.Billing.ApiInfo.get_queries_with_access_level(:restricted)
+        :restricted
+        |> ApiInfo.get_queries_with_access_level()
         |> Enum.sort()
 
       expected_restricted_queries =
-        [
+        Enum.sort([
           :gas_used,
           :get_latest_metric_data,
           :get_project_trending_history,
@@ -206,8 +209,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :word_trend_score,
           :words_context,
           :words_social_volume
-        ]
-        |> Enum.sort()
+        ])
 
       unexpected_restricted_queries = restricted_queries -- expected_restricted_queries
       assert unexpected_restricted_queries == []
@@ -219,7 +221,8 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
     test "forbidden queries from the schema" do
       # Forbidden queries are acessible only by basic authorization
       forbidden_queries =
-        Sanbase.Billing.ApiInfo.get_queries_with_access_level(:forbidden)
+        :forbidden
+        |> ApiInfo.get_queries_with_access_level()
         |> Enum.sort()
 
       expected_forbidden_queries = []

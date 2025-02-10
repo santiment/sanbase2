@@ -1,16 +1,13 @@
 defmodule Sanbase.Alert.WalletTriggerTest do
   use Sanbase.DataCase, async: false
 
+  import ExUnit.CaptureLog
   import Mock
   import Sanbase.Factory
-  import ExUnit.CaptureLog
 
-  alias Sanbase.Alert.{
-    UserTrigger,
-    Trigger.WalletTriggerSettings,
-    Scheduler
-  }
-
+  alias Sanbase.Alert.Scheduler
+  alias Sanbase.Alert.Trigger.WalletTriggerSettings
+  alias Sanbase.Alert.UserTrigger
   alias Sanbase.Clickhouse.HistoricalBalance
 
   setup do

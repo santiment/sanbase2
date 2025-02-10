@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.FillContractAddressesTable do
+  @moduledoc false
   use Ecto.Migration
 
   import Ecto.Query
@@ -9,13 +10,14 @@ defmodule Sanbase.Repo.Migrations.FillContractAddressesTable do
     setup()
 
     project_id_contract_list =
-      from(p in Project,
-        where: not is_nil(p.main_contract_address),
-        select: {p.id, p.main_contract_address, p.token_decimals}
+      Sanbase.Repo.all(
+        from(p in Project,
+          where: not is_nil(p.main_contract_address),
+          select: {p.id, p.main_contract_address, p.token_decimals}
+        )
       )
-      |> Sanbase.Repo.all()
 
-    now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+    now = NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)
 
     insert_data =
       Enum.map(project_id_contract_list, fn {id, address, decimals} ->
@@ -36,7 +38,7 @@ defmodule Sanbase.Repo.Migrations.FillContractAddressesTable do
     :ok
   end
 
-  defp setup() do
+  defp setup do
     Application.ensure_all_started(:tzdata)
   end
 end

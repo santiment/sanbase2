@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.PriceTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   object :price_point do

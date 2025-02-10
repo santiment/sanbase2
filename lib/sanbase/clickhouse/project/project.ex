@@ -1,4 +1,5 @@
 defmodule Sanbase.Clickhouse.Project do
+  @moduledoc false
   def projects_info(slugs) do
     query = projects_info_query(slugs)
 

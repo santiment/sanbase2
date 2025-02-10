@@ -1,8 +1,13 @@
 defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
+  import SanbaseWeb.Graphql.TestHelpers
+
+  alias Sanbase.Alert.UserTrigger
+  alias Sanbase.Chart.Configuration
+  alias Sanbase.Insight.Post
+  alias SanbaseWeb.Graphql.Cache
 
   setup do
     moderator_user = insert(:user)
@@ -28,7 +33,8 @@ defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
       watchlist = insert(:watchlist, type: :project)
 
       error_msg =
-        moderate_delete(context.conn, :project_watchlist, watchlist.id)
+        context.conn
+        |> moderate_delete(:project_watchlist, watchlist.id)
         |> get_in(["errors", Access.at(0), "message"])
 
       assert error_msg == "unauthorized"
@@ -50,12 +56,12 @@ defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
 
     test "chart configuration", %{moderator_conn: moderator_conn} do
       config = insert(:chart_configuration, is_public: true)
-      assert {:ok, _} = Sanbase.Chart.Configuration.by_id(config.id, [])
+      assert {:ok, _} = Configuration.by_id(config.id, [])
 
       assert %{"data" => %{"moderateDelete" => true}} =
                moderate_delete(moderator_conn, :chart_configuration, config.id)
 
-      assert {:error, error_msg} = Sanbase.Chart.Configuration.by_id(config.id, [])
+      assert {:error, error_msg} = Configuration.by_id(config.id, [])
 
       assert error_msg =~ "does not exist"
     end
@@ -63,20 +69,18 @@ defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
     test "user trigger", %{moderator_conn: moderator_conn} do
       user_trigger = insert(:user_trigger)
 
-      assert {:ok, _} = Sanbase.Alert.UserTrigger.by_id(user_trigger.id, [])
+      assert {:ok, _} = UserTrigger.by_id(user_trigger.id, [])
 
       assert %{"data" => %{"moderateDelete" => true}} =
                moderate_delete(moderator_conn, :user_trigger, user_trigger.id)
 
-      assert {:error, error_msg} = Sanbase.Alert.UserTrigger.by_id(user_trigger.id, [])
+      assert {:error, error_msg} = UserTrigger.by_id(user_trigger.id, [])
 
       assert error_msg =~ "does not exist"
     end
 
     defp moderate_delete(conn, entity_type, entity_id) do
-      args_str =
-        %{entity_type: entity_type, entity_id: entity_id}
-        |> map_to_args()
+      args_str = map_to_args(%{entity_type: entity_type, entity_id: entity_id})
 
       mutation = """
       mutation{
@@ -95,7 +99,8 @@ defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
       watchlist = insert(:watchlist, type: :project)
 
       error_msg =
-        moderate_hide(context.conn, :project_watchlist, watchlist.id)
+        context.conn
+        |> moderate_hide(:project_watchlist, watchlist.id)
         |> get_in(["errors", Access.at(0), "message"])
 
       assert error_msg == "unauthorized"
@@ -120,7 +125,7 @@ defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
       assert %{"data" => %{"moderateHide" => true}} =
                moderate_hide(moderator_conn, :project_watchlist, watchlist.id)
 
-      SanbaseWeb.Graphql.Cache.clear_all()
+      Cache.clear_all()
 
       assert %{
                "data" => [],
@@ -138,7 +143,7 @@ defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
     test "chart configuration", %{conn: conn, moderator_conn: moderator_conn} do
       config = insert(:chart_configuration, is_public: true)
       config_id = config.id
-      assert {:ok, _} = Sanbase.Chart.Configuration.by_id(config.id, [])
+      assert {:ok, _} = Configuration.by_id(config.id, [])
 
       assert %{
                "data" => [%{"chartConfiguration" => %{"id" => ^config_id}}],
@@ -153,7 +158,7 @@ defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
       assert %{"data" => %{"moderateHide" => true}} =
                moderate_hide(moderator_conn, :chart_configuration, config.id)
 
-      SanbaseWeb.Graphql.Cache.clear_all()
+      Cache.clear_all()
 
       assert %{
                "data" => [],
@@ -165,14 +170,14 @@ defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
                }
              } = get_most_recent(conn, :chart_configuration)
 
-      assert {:ok, _} = Sanbase.Chart.Configuration.by_id(config.id, [])
+      assert {:ok, _} = Configuration.by_id(config.id, [])
     end
 
     test "user trigger", %{conn: conn, moderator_conn: moderator_conn} do
       user_trigger = insert(:user_trigger, is_public: true)
       user_trigger_id = user_trigger.id
 
-      assert {:ok, _} = Sanbase.Alert.UserTrigger.by_id(user_trigger.id, [])
+      assert {:ok, _} = UserTrigger.by_id(user_trigger.id, [])
 
       assert %{
                "data" => [
@@ -189,7 +194,7 @@ defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
       assert %{"data" => %{"moderateHide" => true}} =
                moderate_hide(moderator_conn, :user_trigger, user_trigger.id)
 
-      SanbaseWeb.Graphql.Cache.clear_all()
+      Cache.clear_all()
 
       assert %{
                "data" => [],
@@ -201,15 +206,15 @@ defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
                }
              } = get_most_recent(conn, :user_trigger)
 
-      assert {:ok, _} = Sanbase.Alert.UserTrigger.by_id(user_trigger.id, [])
+      assert {:ok, _} = UserTrigger.by_id(user_trigger.id, [])
     end
 
     test "unbpuslish insight", %{conn: conn, moderator_conn: moderator_conn} do
       insight = insert(:published_post)
       insight_id = insight.id
 
-      assert {:ok, post} = Sanbase.Insight.Post.by_id(insight.id, [])
-      assert post.ready_state == Sanbase.Insight.Post.published()
+      assert {:ok, post} = Post.by_id(insight.id, [])
+      assert post.ready_state == Post.published()
 
       assert %{
                "data" => [%{"insight" => %{"id" => ^insight_id}}],
@@ -232,10 +237,10 @@ defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
                |> post("/graphql", mutation_skeleton(mutation))
                |> json_response(200)
 
-      SanbaseWeb.Graphql.Cache.clear_all()
+      Cache.clear_all()
 
-      assert {:ok, post} = Sanbase.Insight.Post.by_id(insight.id, [])
-      assert post.ready_state == Sanbase.Insight.Post.draft()
+      assert {:ok, post} = Post.by_id(insight.id, [])
+      assert post.ready_state == Post.draft()
 
       assert %{
                "data" => [],
@@ -257,7 +262,7 @@ defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
       user_trigger = insert(:user_trigger, is_public: true)
       user_trigger_id = user_trigger.id
 
-      assert {:ok, _} = Sanbase.Alert.UserTrigger.by_id(user_trigger.id, [])
+      assert {:ok, _} = UserTrigger.by_id(user_trigger.id, [])
 
       assert %{
                "data" => [
@@ -281,7 +286,7 @@ defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
       assert %{"data" => %{"moderateHide" => true}} =
                moderate_hide(moderator_conn, :user_trigger, user_trigger.id)
 
-      SanbaseWeb.Graphql.Cache.clear_all()
+      Cache.clear_all()
 
       assert %{
                "data" => [],
@@ -293,13 +298,11 @@ defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
                }
              } = get_most_recent(moderator_conn, :user_trigger)
 
-      assert {:ok, _} = Sanbase.Alert.UserTrigger.by_id(user_trigger.id, [])
+      assert {:ok, _} = UserTrigger.by_id(user_trigger.id, [])
     end
 
     defp moderate_hide(conn, entity_type, entity_id) do
-      args_str =
-        %{entity_type: entity_type, entity_id: entity_id}
-        |> map_to_args()
+      args_str = map_to_args(%{entity_type: entity_type, entity_id: entity_id})
 
       mutation = """
       mutation{
@@ -337,7 +340,7 @@ defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
 
       assert moderate_featured(moderator_conn, :insight, insight.id) == true
 
-      SanbaseWeb.Graphql.Cache.clear_all()
+      Cache.clear_all()
 
       assert %{
                "data" => [
@@ -350,7 +353,7 @@ defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
 
     test "watchlist", %{moderator_conn: moderator_conn} do
       watchlist = insert(:watchlist, is_public: true, type: :project)
-      watchlist_id = watchlist.id |> to_string()
+      watchlist_id = to_string(watchlist.id)
 
       featured_watchlists = fn ->
         query = "{ featuredWatchlists(type: PROJECT){ id } }"
@@ -377,7 +380,7 @@ defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
       assert moderate_featured(moderator_conn, :project_watchlist, watchlist.id) ==
                true
 
-      SanbaseWeb.Graphql.Cache.clear_all()
+      Cache.clear_all()
 
       assert %{
                "data" => [
@@ -422,7 +425,7 @@ defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
       assert moderate_featured(moderator_conn, :chart_configuration, config.id) ==
                true
 
-      SanbaseWeb.Graphql.Cache.clear_all()
+      Cache.clear_all()
 
       assert %{
                "data" => [
@@ -469,7 +472,7 @@ defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
       assert moderate_featured(moderator_conn, :user_trigger, user_trigger.id) ==
                true
 
-      SanbaseWeb.Graphql.Cache.clear_all()
+      Cache.clear_all()
 
       assert %{
                "data" => [
@@ -490,9 +493,7 @@ defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
     end
 
     defp moderate_featured(conn, entity_type, entity_id) do
-      args_str =
-        %{entity_type: entity_type, entity_id: entity_id, flag: true}
-        |> map_to_args()
+      args_str = map_to_args(%{entity_type: entity_type, entity_id: entity_id, flag: true})
 
       mutation = """
       mutation{

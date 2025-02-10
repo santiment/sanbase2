@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.CustomTypes.SanitizedString do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   alias Absinthe.Blueprint.Input

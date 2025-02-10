@@ -1,8 +1,9 @@
 defmodule Sanbase.BlockchainAddress do
+  @moduledoc false
   use Ecto.Schema
 
-  import Ecto.Query
   import Ecto.Changeset
+  import Ecto.Query
 
   alias Sanbase.Model.Infrastructure
 
@@ -29,9 +30,9 @@ defmodule Sanbase.BlockchainAddress do
   @ethereum_regex ~r/^0x([A-Fa-f0-9]{40})$/
   @bitcoin_regex ~r/^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,39}$/
 
-  def ethereum_regex(), do: @ethereum_regex
-  def bitcoin_regex(), do: @bitcoin_regex
-  def xrp_regex(), do: @xrp_regex
+  def ethereum_regex, do: @ethereum_regex
+  def bitcoin_regex, do: @bitcoin_regex
+  def xrp_regex, do: @xrp_regex
 
   schema "blockchain_addresses" do
     field(:address, :string)
@@ -40,7 +41,7 @@ defmodule Sanbase.BlockchainAddress do
     belongs_to(:infrastructure, Infrastructure)
   end
 
-  def available_blockchains(), do: @blockchains
+  def available_blockchains, do: @blockchains
 
   def changeset(%__MODULE__{} = addr, attrs \\ %{}) do
     addr
@@ -61,13 +62,11 @@ defmodule Sanbase.BlockchainAddress do
   def by_selector(%{id: id}), do: by_id(id)
 
   def by_selector(%{infrastructure: infrastructure, address: address}) do
-    with {:ok, %{id: infrastructure_id}} <- Sanbase.Model.Infrastructure.by_code(infrastructure),
-         {:ok, addr} <-
-           maybe_create(%{
-             address: address,
-             infrastructure_id: infrastructure_id
-           }) do
-      {:ok, addr}
+    with {:ok, %{id: infrastructure_id}} <- Sanbase.Model.Infrastructure.by_code(infrastructure) do
+      maybe_create(%{
+        address: address,
+        infrastructure_id: infrastructure_id
+      })
     end
   end
 
@@ -118,16 +117,15 @@ defmodule Sanbase.BlockchainAddress do
   def maybe_create(list) when is_list(list) do
     changesets = list |> Enum.map(&changeset(%__MODULE__{}, &1)) |> Enum.with_index()
 
-    Enum.reduce(
-      changesets,
+    changesets
+    |> Enum.reduce(
       Ecto.Multi.new(),
       fn {changeset, offset}, multi ->
         # notes is an optional field. It should be replaced only if it is in the changeset
         notes_change = if Map.has_key?(changeset.changes, :notes), do: [:notes], else: []
         replace = notes_change ++ [:address, :infrastructure_id]
 
-        multi
-        |> Ecto.Multi.insert(offset, changeset,
+        Ecto.Multi.insert(multi, offset, changeset,
           on_conflict: {:replace, replace},
           conflict_target: [:address, :infrastructure_id],
           returning: true

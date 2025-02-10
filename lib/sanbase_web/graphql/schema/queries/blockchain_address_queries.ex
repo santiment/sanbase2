@@ -1,11 +1,12 @@
 defmodule SanbaseWeb.Graphql.Schema.BlockchainAddressQueries do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
 
   alias SanbaseWeb.Graphql.Complexity
-  alias SanbaseWeb.Graphql.Middlewares.JWTAuth
   alias SanbaseWeb.Graphql.Middlewares.AccessControl
+  alias SanbaseWeb.Graphql.Middlewares.JWTAuth
   alias SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver
 
   object :blockchain_address_queries do

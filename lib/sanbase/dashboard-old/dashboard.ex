@@ -22,6 +22,7 @@ defmodule Sanbase.Dashboard do
   """
 
   alias Sanbase.Dashboard
+  alias Sanbase.Dashboard.Panel.Cache
 
   @type user_id :: non_neg_integer()
   @type dashboard_id :: non_neg_integer()
@@ -66,8 +67,7 @@ defmodule Sanbase.Dashboard do
   """
   @spec get_user_public_dashboard_schemas(user_id) ::
           {:ok, list(Dashboard.Schema.t())} | {:error, any()}
-  def get_user_public_dashboard_schemas(user_id),
-    do: Dashboard.Schema.user_public_dashboards(user_id)
+  def get_user_public_dashboard_schemas(user_id), do: Dashboard.Schema.user_public_dashboards(user_id)
 
   @doc ~s"""
   Get a list of all the dashboards of a user - both public and private
@@ -82,8 +82,7 @@ defmodule Sanbase.Dashboard do
   The keys in the list are the panel ids.
   """
   @spec load_cache(dashboard_id) :: {:ok, Dashboard.Cache.t()} | {:error, any()}
-  def load_cache(dashboard_id),
-    do: Dashboard.Cache.by_dashboard_id(dashboard_id)
+  def load_cache(dashboard_id), do: Dashboard.Cache.by_dashboard_id(dashboard_id)
 
   @doc ~s"""
   Get a single dashboard panel cached version
@@ -92,8 +91,7 @@ defmodule Sanbase.Dashboard do
   """
   @spec load_panel_cache(dashboard_id, panel_id) ::
           {:ok, Dashboard.Cache.panel_cache()} | {:error, any()}
-  def load_panel_cache(dashboard_id, panel_id),
-    do: Dashboard.Cache.by_dashboard_and_panel_id(dashboard_id, panel_id)
+  def load_panel_cache(dashboard_id, panel_id), do: Dashboard.Cache.by_dashboard_and_panel_id(dashboard_id, panel_id)
 
   @doc ~s"""
   Check if a given user has credits left
@@ -126,7 +124,7 @@ defmodule Sanbase.Dashboard do
       end)
 
       {:ok,
-       Dashboard.Panel.Cache.from_query_result(
+       Cache.from_query_result(
          query_result,
          panel_id,
          dashboard_id
@@ -151,7 +149,7 @@ defmodule Sanbase.Dashboard do
       end)
 
       panel_cache =
-        Dashboard.Panel.Cache.from_query_result(
+        Cache.from_query_result(
           query_result,
           panel_id,
           dashboard_id

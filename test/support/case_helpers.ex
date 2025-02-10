@@ -1,4 +1,5 @@
 defmodule Sanbase.CaseHelpers do
+  @moduledoc false
   defmacro checkout_shared(tags) do
     quote bind_quoted: [tags: tags] do
       repos =

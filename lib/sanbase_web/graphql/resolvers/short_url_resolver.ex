@@ -1,14 +1,13 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ShortUrlResolver do
-  import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
+  @moduledoc false
   import Absinthe.Resolution.Helpers
+  import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
 
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
   require Logger
 
-  def create_short_url(_root, %{} = args, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
+  def create_short_url(_root, %{} = args, %{context: %{auth: %{current_user: current_user}}}) do
     do_create_short_url(args, current_user.id)
   end
 
@@ -16,9 +15,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ShortUrlResolver do
     do_create_short_url(args, nil)
   end
 
-  def update_short_url(_root, %{short_url: short_url} = args, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
+  def update_short_url(_root, %{short_url: short_url} = args, %{context: %{auth: %{current_user: current_user}}}) do
     params = Map.delete(args, :short_url)
     Sanbase.ShortUrl.update(current_user.id, short_url, params)
   end

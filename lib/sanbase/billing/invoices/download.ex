@@ -1,5 +1,6 @@
 defmodule Sanbase.Billing.Invoices.Download do
-  def run() do
+  @moduledoc false
+  def run do
     now = DateTime.utc_now()
 
     for year <- 2020..now.year, month <- 1..12 do
@@ -12,18 +13,18 @@ defmodule Sanbase.Billing.Invoices.Download do
   end
 
   def get({month, year}) do
-    from = Timex.beginning_of_month(year, month) |> Timex.to_datetime() |> DateTime.to_unix()
-    to = Timex.end_of_month(year, month) |> Timex.to_datetime() |> DateTime.to_unix()
+    from = year |> Timex.beginning_of_month(month) |> Timex.to_datetime() |> DateTime.to_unix()
+    to = year |> Timex.end_of_month(month) |> Timex.to_datetime() |> DateTime.to_unix()
 
     invoices =
-      list_invoices([], %{created: %{gte: from, lte: to}, limit: 100, status: "paid"})
+      []
+      |> list_invoices(%{created: %{gte: from, lte: to}, limit: 100, status: "paid"})
       |> Enum.filter(&(&1.total > 0 or abs(&1.starting_balance) > 0))
 
     IO.puts("Number of invoices for #{year}_#{month}: #{length(invoices)}")
 
     invoices =
-      invoices
-      |> Enum.map(fn inv ->
+      Enum.map(invoices, fn inv ->
         # label = if inv.starting_balance == 0, do: "fiat", else: "crypto"
         url = inv.invoice_pdf
         IO.puts("#{year}_#{month} fetching url: #{url}")
@@ -42,7 +43,7 @@ defmodule Sanbase.Billing.Invoices.Download do
       end)
 
     zipname = "#{year}_#{month}.zip"
-    {:ok, _zipfile} = :zip.create(zipname |> to_charlist(), invoices)
+    {:ok, _zipfile} = zipname |> to_charlist() |> :zip.create(invoices)
     IO.puts("***************** result zipfile: #{zipname}")
 
     zipname
@@ -51,10 +52,11 @@ defmodule Sanbase.Billing.Invoices.Download do
   def extract_filename(response) do
     header =
       response.headers
-      |> Enum.into(%{})
+      |> Map.new()
       |> Map.get("Content-Disposition")
 
-    Regex.run(~r/filename=\"([^"]+)\"/, header)
+    ~r/filename=\"([^"]+)\"/
+    |> Regex.run(header)
     |> Enum.at(1)
   end
 
@@ -64,23 +66,25 @@ defmodule Sanbase.Billing.Invoices.Download do
         acc
 
       list ->
-        next = Enum.at(list, -1) |> Map.get(:id)
+        next = list |> Enum.at(-1) |> Map.get(:id)
         list_invoices(acc ++ list, Map.put(args, :starting_after, next))
     end
   end
 
   def list_invoices([], args) do
     list = do_list(args)
-    next = Enum.at(list, -1) |> Map.get(:id)
+    next = list |> Enum.at(-1) |> Map.get(:id)
     list_invoices(list, Map.put(args, :starting_after, next))
   end
 
   def do_list(params) do
-    Sanbase.StripeApi.list_invoices(params)
+    params
+    |> Sanbase.StripeApi.list_invoices()
     |> elem(1)
     |> Map.get(:data, [])
     |> Enum.map(fn invoice ->
-      Map.split(invoice, [
+      invoice
+      |> Map.split([
         :id,
         :customer,
         :total,

@@ -8,15 +8,17 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
   """
   use GenServer, restart: :permanent, shutdown: 5_000
 
+  alias Sanbase.DateTimeUtils
+  alias Sanbase.ExternalServices.Coinmarketcap.PricePoint
+  alias Sanbase.ExternalServices.Coinmarketcap.Ticker
+  alias Sanbase.Model.LatestCoinmarketcapData
+  alias Sanbase.Price.Validator
+  alias Sanbase.Project
+  alias Sanbase.Repo
   alias Sanbase.Utils.Config
+
   require Logger
 
-  alias Sanbase.Repo
-  alias Sanbase.DateTimeUtils
-  alias Sanbase.Project
-  alias Sanbase.Model.LatestCoinmarketcapData
-  alias Sanbase.ExternalServices.Coinmarketcap.{Ticker, PricePoint}
-  alias Sanbase.Price.Validator
   @prices_exporter :prices_exporter
 
   def start_link(_state) do
@@ -27,11 +29,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     if Config.module_get(__MODULE__, :sync_enabled, false) do
       Process.send(self(), :sync, [:noconnect])
 
-      update_interval = Config.module_get(__MODULE__, :update_interval) |> String.to_integer()
+      update_interval = __MODULE__ |> Config.module_get(:update_interval) |> String.to_integer()
 
-      Logger.info(
-        "[CMC] Starting TickerFetcher scraper. It will query coinmarketcap every #{update_interval} seconds."
-      )
+      Logger.info("[CMC] Starting TickerFetcher scraper. It will query coinmarketcap every #{update_interval} seconds.")
 
       {:ok, %{update_interval: update_interval}}
     else
@@ -97,7 +97,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     fetched_slugs = MapSet.new(tickers, & &1.slug)
 
     # Handle separately tokens that might be out of top N.
-    custom_cmc_slugs = @custom_cmc_slugs |> Enum.reject(&(&1 in fetched_slugs))
+    custom_cmc_slugs = Enum.reject(@custom_cmc_slugs, &(&1 in fetched_slugs))
     {:ok, custom_tickers} = Ticker.fetch_data_by_slug(custom_cmc_slugs)
 
     tickers = tickers ++ custom_tickers
@@ -115,19 +115,14 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
 
     # Store the data in LatestCoinmarketcapData in postgres
 
-    tickers
-    |> Enum.each(&store_latest_coinmarketcap_data!/1)
-
-    tickers
-    |> export_to_kafka(cmc_id_to_slugs_mapping)
-
-    Logger.info(
-      "[CMC] Fetching realtime data from coinmarketcap done. The data is imported in the database."
-    )
+    Enum.each(tickers, &store_latest_coinmarketcap_data!/1)
+    export_to_kafka(tickers, cmc_id_to_slugs_mapping)
+    Logger.info("[CMC] Fetching realtime data from coinmarketcap done. The data is imported in the database.")
   end
 
-  defp coinmarketcap_to_santiment_slug_map() do
-    Project.List.projects_with_source("coinmarketcap", include_hidden: true)
+  defp coinmarketcap_to_santiment_slug_map do
+    "coinmarketcap"
+    |> Project.List.projects_with_source(include_hidden: true)
     |> Enum.reduce(%{}, fn %Project{slug: slug} = project, acc ->
       Map.update(acc, Project.coinmarketcap_id(project), [slug], fn slugs ->
         [slug | slugs]
@@ -172,9 +167,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
   defp export_to_kafka(tickers, cmc_id_to_slugs_mapping) do
     tickers
     |> Enum.flat_map(fn %Ticker{} = ticker ->
-      case Map.get(cmc_id_to_slugs_mapping, ticker.slug, []) |> List.wrap() do
+      case cmc_id_to_slugs_mapping |> Map.get(ticker.slug, []) |> List.wrap() do
         [_ | _] = slugs ->
-          price_point = Ticker.to_price_point(ticker) |> PricePoint.sanity_filters()
+          price_point = ticker |> Ticker.to_price_point() |> PricePoint.sanity_filters()
 
           Enum.map(slugs, fn slug ->
             PricePoint.json_kv_tuple(price_point, slug)
@@ -187,9 +182,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     |> Sanbase.KafkaExporter.persist_sync(@prices_exporter)
   rescue
     e ->
-      Logger.error(
-        "[CMC] Realtime exporter failed to export to Kafka. Reason: #{Exception.message(e)}"
-      )
+      Logger.error("[CMC] Realtime exporter failed to export to Kafka. Reason: #{Exception.message(e)}")
   end
 
   # Helper functions
@@ -228,7 +221,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
       {:not_existing_project, changeset} ->
         # If there is not id then the project was not returned from the DB
         # but initialized by the function
-        project = changeset |> Repo.insert_or_update!()
+        project = Repo.insert_or_update!(changeset)
 
         Project.SourceSlugMapping.create(%{
           source: "coinmarketcap",
@@ -255,7 +248,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     end
   end
 
-  defp top_projects_to_follow() do
-    Config.module_get(__MODULE__, :top_projects_to_follow, "25") |> String.to_integer()
+  defp top_projects_to_follow do
+    __MODULE__ |> Config.module_get(:top_projects_to_follow, "25") |> String.to_integer()
   end
 end

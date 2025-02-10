@@ -1,4 +1,5 @@
 defmodule Sanbase.ReleaseTasks do
+  @moduledoc false
   alias Sanbase.ReleaseTasks.Migrate
 
   def migrate do

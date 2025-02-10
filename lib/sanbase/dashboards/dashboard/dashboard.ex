@@ -8,15 +8,15 @@ defmodule Sanbase.Dashboards.Dashboard do
 
   use Ecto.Schema
 
-  import Ecto.Query
   import Ecto.Changeset
+  import Ecto.Query
   import Sanbase.Utils.Transform, only: [to_bang: 1]
 
-  alias Sanbase.Repo
   alias Sanbase.Accounts.User
-  alias Sanbase.Queries.Query
-  alias Sanbase.Dashboards.TextWidget
   alias Sanbase.Dashboards.ImageWidget
+  alias Sanbase.Dashboards.TextWidget
+  alias Sanbase.Queries.Query
+  alias Sanbase.Repo
 
   @type t :: %__MODULE__{
           id: non_neg_integer(),
@@ -116,7 +116,7 @@ defmodule Sanbase.Dashboards.Dashboard do
   @update_fields @create_fields -- [:user_id]
 
   @preload [:queries, :user, :featured_item, [queries: :user]]
-  def default_preload(), do: @preload
+  def default_preload, do: @preload
 
   @doc false
   def changeset(%__MODULE__{} = dashboard, attrs) do
@@ -146,19 +146,14 @@ defmodule Sanbase.Dashboards.Dashboard do
   def get_for_read(dashboard_id, querying_user_id, opts \\ [])
 
   def get_for_read(dashboard_id, nil = _querying_user_id, opts) do
-    from(
-      d in base_query(),
-      where: d.id == ^dashboard_id and d.is_public == true
-    )
-    |> maybe_preload(opts)
+    maybe_preload(from(d in base_query(), where: d.id == ^dashboard_id and d.is_public == true), opts)
   end
 
   def get_for_read(dashboard_id, querying_user_id, opts) do
-    from(
-      d in base_query(),
-      where: d.id == ^dashboard_id and (d.is_public == true or d.user_id == ^querying_user_id)
+    maybe_preload(
+      from(d in base_query(), where: d.id == ^dashboard_id and (d.is_public == true or d.user_id == ^querying_user_id)),
+      opts
     )
-    |> maybe_preload(opts)
   end
 
   @doc ~s"""
@@ -167,12 +162,10 @@ defmodule Sanbase.Dashboards.Dashboard do
   """
   @spec get_for_mutation(dashboard_id, user_id, opts) :: Ecto.Query.t()
   def get_for_mutation(dashboard_id, querying_user_id, opts) when not is_nil(querying_user_id) do
-    from(
-      d in base_query(),
-      where: d.id == ^dashboard_id and d.user_id == ^querying_user_id,
-      lock: "FOR UPDATE"
+    maybe_preload(
+      from(d in base_query(), where: d.id == ^dashboard_id and d.user_id == ^querying_user_id, lock: "FOR UPDATE"),
+      opts
     )
-    |> maybe_preload(opts)
   end
 
   @doc ~s"""
@@ -181,14 +174,14 @@ defmodule Sanbase.Dashboards.Dashboard do
   Public dashboard's cache can be refreshed by anyone.
   """
   @spec get_for_cache_update(dashboard_id, user_id, opts) :: Ecto.Query.t()
-  def get_for_cache_update(dashboard_id, querying_user_id, opts)
-      when not is_nil(querying_user_id) do
-    from(
-      d in base_query(),
-      where: d.id == ^dashboard_id and (d.user_id == ^querying_user_id or d.is_public == true),
-      lock: "FOR UPDATE"
+  def get_for_cache_update(dashboard_id, querying_user_id, opts) when not is_nil(querying_user_id) do
+    maybe_preload(
+      from(d in base_query(),
+        where: d.id == ^dashboard_id and (d.user_id == ^querying_user_id or d.is_public == true),
+        lock: "FOR UPDATE"
+      ),
+      opts
     )
-    |> maybe_preload(opts)
   end
 
   @spec get_user_dashboards(dashboard_id, user_id | nil, opts) :: Ecto.Query.t()
@@ -233,9 +226,10 @@ defmodule Sanbase.Dashboards.Dashboard do
     # without locking, a race condition is possible and not all updates
     # will be applied.
     query =
-      case Keyword.get(opts, :lock_for_update, false) do
-        false -> query
-        true -> query |> lock("FOR UPDATE")
+      if Keyword.get(opts, :lock_for_update, false) do
+        lock(query, "FOR UPDATE")
+      else
+        query
       end
 
     case Repo.one(query) do
@@ -245,36 +239,38 @@ defmodule Sanbase.Dashboards.Dashboard do
   end
 
   @impl Sanbase.Entity.Behaviour
-  def by_id!(dashboard_id, opts \\ []),
-    do: by_id(dashboard_id, opts) |> to_bang()
+  def by_id!(dashboard_id, opts \\ []), do: dashboard_id |> by_id(opts) |> to_bang()
 
   @impl Sanbase.Entity.Behaviour
   def by_ids(ids, opts) when is_list(ids) do
     preload = Keyword.get(opts, :preload, [:featured_item])
 
     result =
-      from(ul in base_query(),
-        where: ul.id in ^ids,
-        preload: ^preload,
-        order_by: fragment("array_position(?, ?::int)", ^ids, ul.id)
+      Repo.all(
+        from(ul in base_query(),
+          where: ul.id in ^ids,
+          preload: ^preload,
+          order_by: fragment("array_position(?, ?::int)", ^ids, ul.id)
+        )
       )
-      |> Repo.all()
 
     {:ok, result}
   end
 
   @impl Sanbase.Entity.Behaviour
-  def by_ids!(ids, opts \\ []), do: by_ids(ids, opts) |> to_bang()
+  def by_ids!(ids, opts \\ []), do: ids |> by_ids(opts) |> to_bang()
 
   @impl Sanbase.Entity.Behaviour
   def public_and_user_entity_ids_query(user_id, opts) do
-    base_entity_ids_query(opts)
+    opts
+    |> base_entity_ids_query()
     |> where([d], d.is_public == true or d.user_id == ^user_id)
   end
 
   @impl Sanbase.Entity.Behaviour
   def public_entity_ids_query(opts) do
-    base_entity_ids_query(opts)
+    opts
+    |> base_entity_ids_query()
     |> where([d], d.is_public == true)
   end
 
@@ -283,7 +279,8 @@ defmodule Sanbase.Dashboards.Dashboard do
     # Disable the filter by users
     opts = Keyword.put(opts, :user_ids, nil)
 
-    base_entity_ids_query(opts)
+    opts
+    |> base_entity_ids_query()
     |> where([ul], ul.user_id == ^user_id)
   end
 
@@ -291,7 +288,7 @@ defmodule Sanbase.Dashboards.Dashboard do
 
   # Private functions
 
-  defp base_query() do
+  defp base_query do
     from(conf in __MODULE__, where: conf.is_deleted != true)
   end
 
@@ -319,13 +316,11 @@ defmodule Sanbase.Dashboards.Dashboard do
   end
 
   defp maybe_preload(query, opts) do
-    case Keyword.get(opts, :preload?, true) do
-      false ->
-        query
-
-      true ->
-        preload = opts |> Keyword.get(:preload, @preload)
-        query |> preload(^preload)
+    if Keyword.get(opts, :preload?, true) do
+      preload = Keyword.get(opts, :preload, @preload)
+      preload(query, ^preload)
+    else
+      query
     end
   end
 end

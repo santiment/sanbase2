@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddOnDeletePostsMetrics do
+  @moduledoc false
   use Ecto.Migration
 
   @table "posts_metrics"

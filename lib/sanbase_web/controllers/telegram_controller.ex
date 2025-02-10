@@ -27,7 +27,7 @@ defmodule SanbaseWeb.TelegramController do
     |> send_resp()
   end
 
-  defp welcome_message() do
+  defp welcome_message do
     ~s"""
     🤖Beep boop, Santiment Alerts bot here!
 

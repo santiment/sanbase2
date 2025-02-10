@@ -1,5 +1,6 @@
 defmodule Sanbase.Cache.RehydratingCache.Store do
-  def name(), do: :__rehydrating_cache_store__
+  @moduledoc false
+  def name, do: :__rehydrating_cache_store__
 
   def put(store, key, data, ttl) when is_integer(ttl) and ttl > 0 do
     Sanbase.Cache.store(store, {key, ttl}, data)

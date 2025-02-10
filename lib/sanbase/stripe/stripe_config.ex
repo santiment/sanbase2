@@ -1,4 +1,5 @@
 defmodule Sanbase.StripeConfig do
+  @moduledoc false
   alias Sanbase.Utils.Config
 
   def api_key do

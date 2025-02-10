@@ -7,6 +7,7 @@ defmodule Sanbase.Metric.LatestMetric do
     only: [asset_id_filter: 2, metric_id_filter: 2, aggregation: 3]
 
   alias Sanbase.Clickhouse.MetricAdapter.Registry
+  alias Sanbase.Clickhouse.Query
 
   def latest_metrics_data(metrics, %{slug: slug_or_slugs}) do
     slugs = List.wrap(slug_or_slugs)
@@ -75,14 +76,13 @@ defmodule Sanbase.Metric.LatestMetric do
   end
 
   defp get_metric_name(table, metric) when table in ["intraday_metrics", "daily_metrics_v2"] do
-    name = Map.get(Registry.metric_to_names_map(), metric, []) |> List.first()
+    name = Registry.metric_to_names_map() |> Map.get(metric, []) |> List.first()
     name || metric
   end
 
   defp get_metric_name(_table, metric), do: metric
 
-  defp get_data_query(table, metrics, slugs, _opts)
-       when table in ["intraday_metrics", "daily_metrics_v2"] do
+  defp get_data_query(table, metrics, slugs, _opts) when table in ["intraday_metrics", "daily_metrics_v2"] do
     metrics = Enum.map(metrics, &Map.get(Registry.name_to_metric_map(), &1))
 
     sql = """
@@ -113,7 +113,7 @@ defmodule Sanbase.Metric.LatestMetric do
       slugs: slugs
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp get_data_query("asset_prices_v3", metrics, slugs, opts) do
@@ -121,8 +121,7 @@ defmodule Sanbase.Metric.LatestMetric do
     metric_name_suffix = Keyword.get(opts, :metric_name_suffix, "")
 
     metrics_aggregated_selector_str =
-      Enum.map(metrics, fn m -> "#{aggregation(:last, "#{m}", "dt")} AS #{m}" end)
-      |> Enum.join("\n,")
+      Enum.map_join(metrics, "\n,", fn m -> "#{aggregation(:last, "#{m}", "dt")} AS #{m}" end)
 
     query = """
     SELECT
@@ -137,7 +136,7 @@ defmodule Sanbase.Metric.LatestMetric do
     GROUP BY slug
     """
 
-    metrics_pairs_str = Enum.map(metrics, fn m -> "(#{m}, '#{m}')" end) |> Enum.join(",")
+    metrics_pairs_str = Enum.map_join(metrics, ",", fn m -> "(#{m}, '#{m}')" end)
 
     sql = """
     SELECT
@@ -160,6 +159,6 @@ defmodule Sanbase.Metric.LatestMetric do
       metric_name_suffix: metric_name_suffix
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 end

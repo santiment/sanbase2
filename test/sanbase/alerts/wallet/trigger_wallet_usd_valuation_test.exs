@@ -1,16 +1,13 @@
 defmodule Sanbase.Alert.WalletUsdValuationTriggerSettingsTest do
   use Sanbase.DataCase, async: false
 
+  import ExUnit.CaptureLog
   import Mock
   import Sanbase.Factory
-  import ExUnit.CaptureLog
 
-  alias Sanbase.Alert.{
-    UserTrigger,
-    Trigger.WalletUsdValuationTriggerSettings,
-    Scheduler
-  }
-
+  alias Sanbase.Alert.Scheduler
+  alias Sanbase.Alert.Trigger.WalletUsdValuationTriggerSettings
+  alias Sanbase.Alert.UserTrigger
   alias Sanbase.Clickhouse.HistoricalBalance
 
   setup do
@@ -83,7 +80,7 @@ defmodule Sanbase.Alert.WalletUsdValuationTriggerSettingsTest do
     end
   end
 
-  defp data() do
+  defp data do
     [
       %{
         balance_change: -8.427353299921378,

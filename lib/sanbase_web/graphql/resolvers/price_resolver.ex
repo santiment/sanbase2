@@ -1,10 +1,11 @@
 defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
-  require Logger
-
+  @moduledoc false
   import SanbaseWeb.Graphql.Helpers.CalibrateInterval, only: [calibrate: 6]
 
   alias Sanbase.Price
   alias Sanbase.Project
+
+  require Logger
 
   @total_market "TOTAL_MARKET"
   @total_erc20 "TOTAL_ERC20"
@@ -17,9 +18,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
     %{from: from, to: to, interval: interval} = args
 
     with {:ok, from, to, interval} <-
-           calibrate(Price, @total_market, from, to, interval, 300),
-         {:ok, result} <- Price.timeseries_data(@total_market, from, to, interval) do
-      {:ok, result}
+           calibrate(Price, @total_market, from, to, interval, 300) do
+      Price.timeseries_data(@total_market, from, to, interval)
     end
   end
 
@@ -51,8 +51,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
       {:ok, result}
     else
       {:get_slug, nil} ->
-        {:error,
-         "The provided ticker '#{ticker}' is misspelled or there is no data for this ticker"}
+        {:error, "The provided ticker '#{ticker}' is misspelled or there is no data for this ticker"}
 
       error ->
         {:error, "Cannot fetch history price for #{ticker}. Reason: #{inspect(error)}"}

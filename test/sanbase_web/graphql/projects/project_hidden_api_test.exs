@@ -13,7 +13,7 @@ defmodule SanbaseWeb.Graphql.ProjectHiddenApiTest do
     projects = all_projects(conn)
     assert length(projects) == 2
 
-    slugs = projects |> Enum.map(& &1["slug"])
+    slugs = Enum.map(projects, & &1["slug"])
 
     assert p1.slug in slugs
     assert p2.slug in slugs
@@ -23,7 +23,7 @@ defmodule SanbaseWeb.Graphql.ProjectHiddenApiTest do
     projects = all_projects_including_hidden(conn)
     assert length(projects) == 3
 
-    slugs = projects |> Enum.map(& &1["slug"])
+    slugs = Enum.map(projects, & &1["slug"])
     assert p1.slug in slugs
     assert p2.slug in slugs
     assert p3.slug in slugs
@@ -34,7 +34,8 @@ defmodule SanbaseWeb.Graphql.ProjectHiddenApiTest do
     p2 = insert(:random_erc20_project)
 
     assert {:ok, _} =
-             Sanbase.Project.changeset(p2, %{is_hidden: true, hidden_reason: "duplicate"})
+             p2
+             |> Sanbase.Project.changeset(%{is_hidden: true, hidden_reason: "duplicate"})
              |> Sanbase.Repo.update()
 
     # not a hidden project

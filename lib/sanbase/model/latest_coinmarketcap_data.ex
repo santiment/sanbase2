@@ -1,6 +1,9 @@
 defmodule Sanbase.Model.LatestCoinmarketcapData do
+  @moduledoc false
   use Ecto.Schema
+
   import Ecto.Changeset
+
   alias Sanbase.Model.LatestCoinmarketcapData
   alias Sanbase.Repo
 

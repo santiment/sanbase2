@@ -28,8 +28,7 @@ defmodule Sanbase.FailedTestFormatter do
 
           test_identifier = "#{file}:#{line}#{reason}"
 
-          config
-          |> Map.update(kind, %{counter: 1, list: [test_identifier]}, fn map ->
+          Map.update(config, kind, %{counter: 1, list: [test_identifier]}, fn map ->
             map |> Map.update!(:counter, &(&1 + 1)) |> Map.update!(:list, &[test_identifier | &1])
           end)
 
@@ -56,7 +55,7 @@ defmodule Sanbase.FailedTestFormatter do
       if (get_in(config, [kind, :counter]) || 0) > 0 do
         # All tests that failed an assert will have `kind = :error`
         error_tests_message =
-          get_in(config, [kind, :list]) |> Enum.map(&(" " <> &1)) |> Enum.join("\n")
+          config |> get_in([kind, :list]) |> Enum.map_join("\n", &(" " <> &1))
 
         formatted_message =
           IO.ANSI.red() <>

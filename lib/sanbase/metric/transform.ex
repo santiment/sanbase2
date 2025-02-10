@@ -1,4 +1,5 @@
 defmodule Sanbase.Metric.Transform do
+  @moduledoc false
   def transform_to_value_pairs(data, key_name \\ nil)
 
   def transform_to_value_pairs({:ok, []}, _), do: {:ok, []}
@@ -10,8 +11,7 @@ defmodule Sanbase.Metric.Transform do
     [key_name] = (result |> hd() |> Map.keys()) -- [:datetime]
 
     result =
-      result
-      |> Enum.map(fn %{^key_name => value, datetime: datetime} ->
+      Enum.map(result, fn %{^key_name => value, datetime: datetime} ->
         %{value: value, datetime: datetime}
       end)
 
@@ -20,8 +20,7 @@ defmodule Sanbase.Metric.Transform do
 
   def transform_to_value_pairs({:ok, result}, key_name) do
     result =
-      result
-      |> Enum.map(fn %{^key_name => value, datetime: datetime} ->
+      Enum.map(result, fn %{^key_name => value, datetime: datetime} ->
         %{value: value, datetime: datetime}
       end)
 

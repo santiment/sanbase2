@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddApiCallLimitsTable do
+  @moduledoc false
   use Ecto.Migration
 
   @table :api_call_limits

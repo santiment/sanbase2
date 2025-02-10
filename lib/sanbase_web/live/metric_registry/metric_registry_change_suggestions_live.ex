@@ -1,20 +1,16 @@
 defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
+  @moduledoc false
   use SanbaseWeb, :live_view
 
-  alias SanbaseWeb.AdminFormsComponents
-  alias Sanbase.Metric.Registry.Permissions
   alias Sanbase.Metric.Registry.ChangeSuggestion
+  alias Sanbase.Metric.Registry.Permissions
+  alias SanbaseWeb.AdminFormsComponents
   alias SanbaseWeb.AvailableMetricsComponents
 
   @impl true
   def mount(_params, _session, socket) do
     {:ok,
-     socket
-     |> assign(
-       page_title: "Metric Registry | Change Requests",
-       rows: list_all_submissions(),
-       form: to_form(%{})
-     )}
+     assign(socket, page_title: "Metric Registry | Change Requests", rows: list_all_submissions(), form: to_form(%{}))}
   end
 
   @impl true
@@ -143,11 +139,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
   end
 
   @impl true
-  def handle_event(
-        "update_status",
-        %{"status" => status, "record_id" => record_id},
-        socket
-      )
+  def handle_event("update_status", %{"status" => status, "record_id" => record_id}, socket)
       when status in ["approved", "declined"] do
     record_id = String.to_integer(record_id)
 
@@ -177,8 +169,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
           error
       end
 
-    socket
-    |> put_flash(:error, "Error accepting the suggested changes.\n Reason: #{error_msg}!")
+    put_flash(socket, :error, "Error accepting the suggested changes.\n Reason: #{error_msg}!")
   end
 
   defp update_assigns_row(rows, record_id, status) do
@@ -190,18 +181,15 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
     |> order_records()
   end
 
-  defp list_all_submissions() do
+  defp list_all_submissions do
     Sanbase.Metric.Registry.ChangeSuggestion.list_all_submissions()
     |> Enum.map(&Map.from_struct/1)
-    |> Enum.map(
-      &Map.update!(&1, :changes, fn encoded -> ChangeSuggestion.decode_changes(encoded) end)
-    )
+    |> Enum.map(&Map.update!(&1, :changes, fn encoded -> ChangeSuggestion.decode_changes(encoded) end))
     |> order_records()
   end
 
   @status_order %{"pending_approval" => 3, "approved" => 2, "declined" => 1}
   defp order_records(handles) do
-    handles
-    |> Enum.sort_by(&{@status_order[&1.status], &1.id}, :desc)
+    Enum.sort_by(handles, &{@status_order[&1.status], &1.id}, :desc)
   end
 end

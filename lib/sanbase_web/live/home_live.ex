@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.HomeLive do
+  @moduledoc false
   use SanbaseWeb, :live_view
 
   def mount(_params, _session, socket) do

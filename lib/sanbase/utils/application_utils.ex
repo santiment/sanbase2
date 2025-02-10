@@ -1,12 +1,14 @@
 defmodule Sanbase.ApplicationUtils do
-  require Logger
+  @moduledoc false
   alias Sanbase.Utils.Config
+
+  require Logger
 
   @doc ~s"""
   Get the container type of the currently running pod. It can be one of web,
   signals, scrapers or all. If no container typer is defined, it defaults to all.
   """
-  def container_type() do
+  def container_type do
     System.get_env("CONTAINER_TYPE") || "all"
   end
 
@@ -51,8 +53,7 @@ defmodule Sanbase.ApplicationUtils do
   and the condition is met
   """
   @spec start_in_and_if((-> any), [atom()], (-> boolean)) :: nil | any
-  def start_in_and_if(expr, environments, condition)
-      when is_function(condition, 0) and is_function(expr, 0) do
+  def start_in_and_if(expr, environments, condition) when is_function(condition, 0) and is_function(expr, 0) do
     env = Config.module_get(Sanbase, :env)
 
     if condition.() and env in environments do
@@ -70,7 +71,6 @@ defmodule Sanbase.ApplicationUtils do
   Passing the children through `normalize_children/1` will remove these records.
   """
   def normalize_children(children) do
-    children
-    |> Enum.reject(&is_nil/1)
+    Enum.reject(children, &is_nil/1)
   end
 end

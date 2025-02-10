@@ -2,12 +2,12 @@ defmodule Sanbase.Messaging.Discord do
   @moduledoc ~s"""
   Send notification to Discord and handle the response
   """
-  require Mockery.Macro
   require Logger
+  require Mockery.Macro
 
   @type json :: String.t()
 
-  defp http_client(), do: Mockery.Macro.mockable(HTTPoison)
+  defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 
   @doc ~s"""
   Send the payload to Discord. Handle the response and log accordingly
@@ -23,11 +23,9 @@ defmodule Sanbase.Messaging.Discord do
         :ok
 
       {:ok, %HTTPoison.Response{status_code: 429, body: body} = resp} ->
-        body = body |> Jason.decode!()
+        body = Jason.decode!(body)
 
-        Logger.info(
-          "Cannot publish #{alert_name} alert in Discord: HTTP Response: #{inspect(resp)}"
-        )
+        Logger.info("Cannot publish #{alert_name} alert in Discord: HTTP Response: #{inspect(resp)}")
 
         Process.sleep(body["retry_after"] + 1000)
 
@@ -39,9 +37,7 @@ defmodule Sanbase.Messaging.Discord do
         )
 
       {:ok, %HTTPoison.Response{} = resp} ->
-        Logger.error(
-          "Cannot publish #{alert_name} alert in Discord: HTTP Response: #{inspect(resp)}"
-        )
+        Logger.error("Cannot publish #{alert_name} alert in Discord: HTTP Response: #{inspect(resp)}")
 
         {:error, "Cannot publish #{alert_name} alert in Discord"}
 

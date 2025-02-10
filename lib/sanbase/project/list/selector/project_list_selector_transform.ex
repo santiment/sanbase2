@@ -1,4 +1,5 @@
 defmodule Sanbase.Project.ListSelector.Transform do
+  @moduledoc false
   import Sanbase.DateTimeUtils
   import Sanbase.Utils.ListSelector.Transform, only: [atomize_values: 1]
 
@@ -23,7 +24,8 @@ defmodule Sanbase.Project.ListSelector.Transform do
   end
 
   def args_to_order_by(args) do
-    get_in(args, [:selector, :order_by])
+    args
+    |> get_in([:selector, :order_by])
     |> transform_from_to()
     |> update_dynamic_datetimes()
     |> atomize_values()
@@ -38,10 +40,10 @@ defmodule Sanbase.Project.ListSelector.Transform do
       map
       | from:
           if(is_binary(from),
-            do: from_iso8601!(from) |> round_datetime(rounding: :up),
+            do: from |> from_iso8601!() |> round_datetime(rounding: :up),
             else: from
           ),
-        to: if(is_binary(to), do: from_iso8601!(to) |> round_datetime(rounding: :up), else: to)
+        to: if(is_binary(to), do: to |> from_iso8601!() |> round_datetime(rounding: :up), else: to)
     }
   end
 
@@ -78,15 +80,15 @@ defmodule Sanbase.Project.ListSelector.Transform do
         {:error, "Cannot use 'dynamic_from' without 'dynamic_to'."}
 
       _ ->
-        now = Timex.now()
+        now = DateTime.utc_now()
         shift_to_by = if dynamic_to == "now", do: 0, else: str_to_sec(dynamic_to)
 
         from = Timex.shift(now, seconds: -str_to_sec(dynamic_from))
         to = Timex.shift(now, seconds: -shift_to_by)
 
         map
-        |> Map.put(:from, from |> round_datetime(rounding: :up))
-        |> Map.put(:to, to |> round_datetime(rounding: :up))
+        |> Map.put(:from, round_datetime(from, rounding: :up))
+        |> Map.put(:to, round_datetime(to, rounding: :up))
     end
   end
 

@@ -1,10 +1,11 @@
 defmodule Sanbase.Billing.Subscription.NFTSubscription do
-  alias Sanbase.Repo
+  @moduledoc false
   alias Sanbase.Billing.Subscription
+  alias Sanbase.Repo
 
   @sanbase_pro_plan Sanbase.Billing.Plan.Metadata.current_san_stake_plan()
 
-  def run() do
+  def run do
     # Runs every 10 minutes, configured in scheduler_config.exs
     if prod?() do
       Subscription.SanbaseNFT.maybe_create()
@@ -23,8 +24,7 @@ defmodule Sanbase.Billing.Subscription.NFTSubscription do
   that the user is eligible for the subscription.
   """
   @spec create_nft_subscription(non_neg_integer, atom, DateTime.t()) :: %Subscription{}
-  def create_nft_subscription(user_id, type, current_period_end)
-      when type in [:sanr_points_nft, :burning_nft] do
+  def create_nft_subscription(user_id, type, current_period_end) when type in [:sanr_points_nft, :burning_nft] do
     Subscription.create(
       %{
         user_id: user_id,
@@ -61,7 +61,7 @@ defmodule Sanbase.Billing.Subscription.NFTSubscription do
 
   # Private functions
 
-  defp prod?() do
+  defp prod? do
     Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) in ["prod"]
   end
 end

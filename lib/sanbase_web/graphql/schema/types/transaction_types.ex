@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.TransactionTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   enum :transaction_type do

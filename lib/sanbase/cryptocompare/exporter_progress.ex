@@ -1,8 +1,9 @@
 defmodule Sanbase.Cryptocompare.ExporterProgress do
+  @moduledoc false
   use Ecto.Schema
 
-  import Ecto.Query
   import Ecto.Changeset
+  import Ecto.Query
 
   schema "cryptocompare_exporter_progress" do
     field(:key, :string)
@@ -30,7 +31,8 @@ defmodule Sanbase.Cryptocompare.ExporterProgress do
     |> Ecto.Multi.run(:create_or_update, fn _repo, %{get: progress} ->
       case progress do
         nil ->
-          changeset(%__MODULE__{}, %{
+          %__MODULE__{}
+          |> changeset(%{
             key: key,
             queue: queue,
             min_timestamp: min_timestamp,
@@ -39,7 +41,8 @@ defmodule Sanbase.Cryptocompare.ExporterProgress do
           |> Sanbase.Repo.insert()
 
         %__MODULE__{} = progress ->
-          changeset(progress, %{
+          progress
+          |> changeset(%{
             min_timestamp: Enum.min([progress.min_timestamp, min_timestamp]),
             max_timestamp: Enum.max([progress.max_timestamp, max_timestamp])
           })
@@ -54,10 +57,11 @@ defmodule Sanbase.Cryptocompare.ExporterProgress do
   end
 
   def get_timestamps(key, queue) do
-    from(progress in __MODULE__,
-      where: progress.key == ^key and progress.queue == ^queue,
-      select: {progress.min_timestamp, progress.max_timestamp}
+    Sanbase.Repo.one(
+      from(progress in __MODULE__,
+        where: progress.key == ^key and progress.queue == ^queue,
+        select: {progress.min_timestamp, progress.max_timestamp}
+      )
     )
-    |> Sanbase.Repo.one()
   end
 end

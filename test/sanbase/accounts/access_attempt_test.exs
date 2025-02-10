@@ -1,8 +1,12 @@
 defmodule Sanbase.Accounts.AccessAttemptTest do
   use Sanbase.DataCase, async: false
-  alias Sanbase.Accounts.{AccessAttempt, EmailLoginAttempt}
-  alias Sanbase.Repo
+
   import Sanbase.Factory
+
+  alias Sanbase.Accounts.AccessAttempt
+  alias Sanbase.Accounts.CouponAttempt
+  alias Sanbase.Accounts.EmailLoginAttempt
+  alias Sanbase.Repo
 
   setup do
     user = insert(:user)
@@ -42,7 +46,7 @@ defmodule Sanbase.Accounts.AccessAttemptTest do
       assert {:error, :too_many_attempts} = AccessAttempt.check_attempt_limit(type, user, ip)
 
       # Time travel past the interval by updating timestamps
-      past_time = DateTime.utc_now() |> DateTime.add(-(config.interval_in_minutes + 1), :minute)
+      past_time = DateTime.add(DateTime.utc_now(), -(config.interval_in_minutes + 1), :minute)
 
       Repo.update_all(
         from(a in AccessAttempt, where: a.user_id == ^user.id),
@@ -91,7 +95,7 @@ defmodule Sanbase.Accounts.AccessAttemptTest do
 
   describe "coupon attempts" do
     test "allows attempts within coupon-specific user limits", %{user: user, ip: ip} do
-      config = Sanbase.Accounts.CouponAttempt.config()
+      config = CouponAttempt.config()
 
       for _i <- 1..(config.allowed_user_attempts + 1) do
         {:ok, _} = AccessAttempt.create("coupon", user, ip)
@@ -102,7 +106,7 @@ defmodule Sanbase.Accounts.AccessAttemptTest do
     end
 
     test "allows attempts within coupon-specific IP limits", %{ip: ip} do
-      config = Sanbase.Accounts.CouponAttempt.config()
+      config = CouponAttempt.config()
 
       for _i <- 1..(config.allowed_ip_attempts + 1) do
         user = insert(:user)
@@ -116,7 +120,7 @@ defmodule Sanbase.Accounts.AccessAttemptTest do
     end
 
     test "resets coupon attempts after interval", %{user: user, ip: ip} do
-      config = Sanbase.Accounts.CouponAttempt.config()
+      config = CouponAttempt.config()
 
       # Make maximum allowed attempts
       for _i <- 1..(config.allowed_user_attempts + 1) do
@@ -127,7 +131,7 @@ defmodule Sanbase.Accounts.AccessAttemptTest do
                AccessAttempt.check_attempt_limit("coupon", user, ip)
 
       # Time travel past the interval
-      past_time = DateTime.utc_now() |> DateTime.add(-(config.interval_in_minutes + 1), :minute)
+      past_time = DateTime.add(DateTime.utc_now(), -(config.interval_in_minutes + 1), :minute)
 
       Repo.update_all(
         from(a in AccessAttempt, where: a.user_id == ^user.id),

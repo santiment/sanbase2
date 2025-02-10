@@ -13,7 +13,8 @@ defmodule Sanbase.ModeratorQueries do
   @spec reset_user_monthly_credits(user_id) :: :ok
   def reset_user_monthly_credits(user_id) do
     query =
-      Sanbase.Queries.QueryExecution.get_user_monthly_executions(user_id, preload?: false)
+      user_id
+      |> Sanbase.Queries.QueryExecution.get_user_monthly_executions(preload?: false)
       # Exclude order_by clause so update_all/2 can be executed
       |> Ecto.Query.exclude(:order_by)
       # To avoid match errors on the second `nil` element in the restult tuple

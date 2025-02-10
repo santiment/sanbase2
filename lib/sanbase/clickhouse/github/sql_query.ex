@@ -1,4 +1,7 @@
 defmodule Sanbase.Clickhouse.Github.SqlQuery do
+  @moduledoc false
+  import Sanbase.DateTimeUtils, only: [maybe_str_to_sec: 1]
+
   import Sanbase.Metric.SqlQuery.Helper,
     only: [
       timerange_parameters: 3,
@@ -6,7 +9,7 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
       to_unix_timestamp_from_number: 2
     ]
 
-  import Sanbase.DateTimeUtils, only: [maybe_str_to_sec: 1]
+  alias Sanbase.Clickhouse.Query
 
   @non_dev_events [
     "IssueCommentEvent",
@@ -24,7 +27,7 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
 
   @table "github_v2"
 
-  def non_dev_events(), do: @non_dev_events
+  def non_dev_events, do: @non_dev_events
 
   def first_datetime_query(organization_or_organizations) do
     sql = """
@@ -36,10 +39,10 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
       dt <= now()
     """
 
-    organizations = List.wrap(organization_or_organizations) |> Enum.map(&String.downcase/1)
+    organizations = organization_or_organizations |> List.wrap() |> Enum.map(&String.downcase/1)
     params = %{organizations: organizations}
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def last_datetime_computed_at_query(organization_or_organizations) do
@@ -52,10 +55,10 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
       AND dt <= now()
     """
 
-    organizations = List.wrap(organization_or_organizations) |> Enum.map(&String.downcase/1)
+    organizations = organization_or_organizations |> List.wrap() |> Enum.map(&String.downcase/1)
     params = %{organizations: organizations}
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def dev_activity_contributors_count_query(organizations, from, to, interval) do
@@ -63,7 +66,7 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
 
     params = %{
       interval: maybe_str_to_sec(interval),
-      organizations: organizations |> Enum.map(&String.downcase/1),
+      organizations: Enum.map(organizations, &String.downcase/1),
       from: from,
       to: to,
       span: span,
@@ -72,25 +75,27 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
 
     # {to_unix_timestamp(interval, "dt", argument_name: "interval")} AS time,
     sql =
-      """
-      SELECT time, toUInt32(SUM(uniq_contributors)) AS value
-      FROM (
-        SELECT
-          #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS time,
-          uniqExact(actor) AS uniq_contributors
-        FROM #{@table}
-        PREWHERE
-          owner IN ({{organizations}}) AND
-          dt >= toDateTime({{from}}) AND
-          dt < toDateTime({{to}}) AND
-          event NOT IN ({{non_dev_events}})
+      wrap_timeseries_in_gap_filling_query(
+        """
+        SELECT time, toUInt32(SUM(uniq_contributors)) AS value
+        FROM (
+          SELECT
+            #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS time,
+            uniqExact(actor) AS uniq_contributors
+          FROM #{@table}
+          PREWHERE
+            owner IN ({{organizations}}) AND
+            dt >= toDateTime({{from}}) AND
+            dt < toDateTime({{to}}) AND
+            event NOT IN ({{non_dev_events}})
+          GROUP BY time
+        )
         GROUP BY time
+        """,
+        interval
       )
-      GROUP BY time
-      """
-      |> wrap_timeseries_in_gap_filling_query(interval)
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def github_activity_contributors_count_query(organizations, from, to, interval) do
@@ -98,7 +103,7 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
 
     params = %{
       interval: maybe_str_to_sec(interval),
-      organizations: organizations |> Enum.map(&String.downcase/1),
+      organizations: Enum.map(organizations, &String.downcase/1),
       from: from,
       to: to,
       span: span,
@@ -106,24 +111,26 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
     }
 
     sql =
-      """
-      SELECT time, toUInt32(SUM(uniq_contributors)) AS value
-      FROM (
-        SELECT
-          #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS time,
-          uniqExact(actor) AS uniq_contributors
-        FROM #{@table}
-        PREWHERE
-          owner IN ({{organizations}}) AND
-          dt >= toDateTime({{from}}) AND
-          dt < toDateTime({{to}})
+      wrap_timeseries_in_gap_filling_query(
+        """
+        SELECT time, toUInt32(SUM(uniq_contributors)) AS value
+        FROM (
+          SELECT
+            #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS time,
+            uniqExact(actor) AS uniq_contributors
+          FROM #{@table}
+          PREWHERE
+            owner IN ({{organizations}}) AND
+            dt >= toDateTime({{from}}) AND
+            dt < toDateTime({{to}})
+          GROUP BY time
+        )
         GROUP BY time
+        """,
+        interval
       )
-      GROUP BY time
-      """
-      |> wrap_timeseries_in_gap_filling_query(interval)
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def dev_activity_query(organizations, from, to, interval) do
@@ -131,7 +138,7 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
 
     params = %{
       interval: maybe_str_to_sec(interval),
-      organizations: organizations |> Enum.map(&String.downcase/1),
+      organizations: Enum.map(organizations, &String.downcase/1),
       from: from,
       to: to,
       span: span,
@@ -139,29 +146,31 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
     }
 
     sql =
-      """
-      SELECT time, SUM(events) AS value
-      FROM (
-        SELECT
-          #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS time,
-          count(events) AS events
+      wrap_timeseries_in_gap_filling_query(
+        """
+        SELECT time, SUM(events) AS value
         FROM (
-          SELECT any(event) AS events, dt
-          FROM #{@table}
-          PREWHERE
-            owner IN ({{organizations}}) AND
-            dt >= toDateTime({{from}}) AND
-            dt < toDateTime({{to}}) AND
-            event NOT IN ({{non_dev_events}})
-          GROUP BY owner, repo, dt, event
+          SELECT
+            #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS time,
+            count(events) AS events
+          FROM (
+            SELECT any(event) AS events, dt
+            FROM #{@table}
+            PREWHERE
+              owner IN ({{organizations}}) AND
+              dt >= toDateTime({{from}}) AND
+              dt < toDateTime({{to}}) AND
+              event NOT IN ({{non_dev_events}})
+            GROUP BY owner, repo, dt, event
+          )
+          GROUP BY time
         )
         GROUP BY time
+        """,
+        interval
       )
-      GROUP BY time
-      """
-      |> wrap_timeseries_in_gap_filling_query(interval)
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def github_activity_query(organizations, from, to, interval) do
@@ -169,7 +178,7 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
 
     params = %{
       interval: maybe_str_to_sec(interval),
-      organizations: organizations |> Enum.map(&String.downcase/1),
+      organizations: Enum.map(organizations, &String.downcase/1),
       from: from,
       to: to,
       span: span,
@@ -177,33 +186,35 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
     }
 
     sql =
-      """
-      SELECT time, SUM(events) AS value
-      FROM (
-        SELECT
-          #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS time,
-          count(events) AS events
+      wrap_timeseries_in_gap_filling_query(
+        """
+        SELECT time, SUM(events) AS value
         FROM (
-          SELECT any(event) AS events, dt
-          FROM #{@table}
-          PREWHERE
-            owner IN ({{organizations}}) AND
-            dt >= toDateTime({{from}}) AND
-            dt < toDateTime({{to}})
-          GROUP BY owner, repo, dt, event
+          SELECT
+            #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS time,
+            count(events) AS events
+          FROM (
+            SELECT any(event) AS events, dt
+            FROM #{@table}
+            PREWHERE
+              owner IN ({{organizations}}) AND
+              dt >= toDateTime({{from}}) AND
+              dt < toDateTime({{to}})
+            GROUP BY owner, repo, dt, event
+          )
+          GROUP BY time
         )
         GROUP BY time
+        """,
+        interval
       )
-      GROUP BY time
-      """
-      |> wrap_timeseries_in_gap_filling_query(interval)
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def total_github_activity_query(organizations, from, to) do
     sql =
-      """
+      wrap_aggregated_in_zero_filling_query("""
       SELECT owner, toUInt64(COUNT(*)) AS value
       FROM(
         SELECT owner, COUNT(*)
@@ -215,21 +226,20 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
         GROUP BY owner, repo, dt, event
       )
       GROUP BY owner
-      """
-      |> wrap_aggregated_in_zero_filling_query()
+      """)
 
     params = [
-      organizations: organizations |> Enum.map(&String.downcase/1),
+      organizations: Enum.map(organizations, &String.downcase/1),
       from: DateTime.to_unix(from),
       to: DateTime.to_unix(to)
     ]
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def total_dev_activity_query(organizations, from, to) do
     sql =
-      """
+      wrap_aggregated_in_zero_filling_query("""
       SELECT owner, toUInt64(COUNT(*)) AS value
       FROM(
         SELECT owner, COUNT(*)
@@ -242,22 +252,21 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
         GROUP BY owner, repo, dt, event
       )
       GROUP BY owner
-      """
-      |> wrap_aggregated_in_zero_filling_query()
+      """)
 
     params = %{
-      organizations: organizations |> Enum.map(&String.downcase/1),
+      organizations: Enum.map(organizations, &String.downcase/1),
       from: DateTime.to_unix(from),
       to: DateTime.to_unix(to),
       non_dev_events: @non_dev_events
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def total_dev_activity_contributors_count_query(organizations, from, to) do
     sql =
-      """
+      wrap_aggregated_in_zero_filling_query("""
       SELECT owner, uniqExact(actor) AS value
       FROM #{@table}
       PREWHERE
@@ -266,22 +275,21 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
         dt <= toDateTime({{to}}) AND
         event NOT IN ({{non_dev_events}})
       GROUP BY owner
-      """
-      |> wrap_aggregated_in_zero_filling_query()
+      """)
 
     params = %{
-      organizations: organizations |> Enum.map(&String.downcase/1),
+      organizations: Enum.map(organizations, &String.downcase/1),
       from: DateTime.to_unix(from),
       to: DateTime.to_unix(to),
       non_dev_events: @non_dev_events
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def total_github_activity_contributors_count_query(organizations, from, to) do
     sql =
-      """
+      wrap_aggregated_in_zero_filling_query("""
       SELECT owner, uniqExact(actor) AS value
       FROM #{@table}
       PREWHERE
@@ -289,16 +297,15 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
         dt >= toDateTime({{from}}) AND
         dt <= toDateTime({{to}})
       GROUP BY owner
-      """
-      |> wrap_aggregated_in_zero_filling_query()
+      """)
 
     params = %{
-      organizations: organizations |> Enum.map(&String.downcase/1),
+      organizations: Enum.map(organizations, &String.downcase/1),
       from: DateTime.to_unix(from),
       to: DateTime.to_unix(to)
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp wrap_aggregated_in_zero_filling_query(query) do

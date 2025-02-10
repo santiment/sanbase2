@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddUniqueConstraintToIpAddress do
+  @moduledoc false
   use Ecto.Migration
 
   def up do

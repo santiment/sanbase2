@@ -7,10 +7,10 @@ defmodule Sanbase.TestSetupService do
   checking if the slug is in the list.
   """
 
-  @ets_table :__test_only_ets_table__
   use GenServer
 
-  def get_ets_table_name(), do: @ets_table
+  @ets_table :__test_only_ets_table__
+  def get_ets_table_name, do: @ets_table
 
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name, __MODULE__))

@@ -4,8 +4,9 @@ defmodule SanbaseWeb.Graphql.ProjectApiDevActivityTest do
   import Mock
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
-  alias Sanbase.Project
+
   alias Sanbase.Clickhouse.Github
+  alias Sanbase.Project
 
   setup do
     project1 = insert(:random_project, %{github_organizations: [build(:github_organization)]})

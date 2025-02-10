@@ -1,11 +1,12 @@
 defmodule Sanbase.Accounts.User.Name do
+  @moduledoc false
   import Ecto.Query
 
   def valid_name?(nil), do: {:error, "Name must be a string and not null"}
 
   def valid_name?(name) do
     # The downcase is only to make the checks easier
-    name = String.downcase(name) |> String.trim()
+    name = name |> String.downcase() |> String.trim()
 
     with true <- valid_utf8_string?(name, "Name"),
          true <- valid_length?(name, "Name"),
@@ -19,7 +20,7 @@ defmodule Sanbase.Accounts.User.Name do
   def valid_username?(nil), do: {:error, "Username must be a string and not null"}
 
   def valid_username?(username) when is_binary(username) do
-    username = String.downcase(username) |> String.trim()
+    username = username |> String.downcase() |> String.trim()
 
     with true <- valid_ascii_string?(username, "Username"),
          true <- valid_length?(username, "Username"),
@@ -32,9 +33,10 @@ defmodule Sanbase.Accounts.User.Name do
   end
 
   defp valid_utf8_string?(value, fieldname) do
-    case String.valid?(value) do
-      true -> true
-      false -> {:error, "#{fieldname} must be a valid UTF-8 string"}
+    if String.valid?(value) do
+      true
+    else
+      {:error, "#{fieldname} must be a valid UTF-8 string"}
     end
   end
 
@@ -44,16 +46,18 @@ defmodule Sanbase.Accounts.User.Name do
       |> String.to_charlist()
       |> List.ascii_printable?()
 
-    case ascii_printable? do
-      true -> true
-      false -> {:error, "#{fieldname} must contain only valid ASCII symbols"}
+    if ascii_printable? do
+      true
+    else
+      {:error, "#{fieldname} must contain only valid ASCII symbols"}
     end
   end
 
   defp has_forbidden_characters?(value, fieldname) do
-    case String.contains?(value, [">", "<", "/", "\\"]) do
-      false -> false
-      true -> {:error, "#{fieldname} must not contain the forbidden characters >, <, /, \\"}
+    if String.contains?(value, [">", "<", "/", "\\"]) do
+      {:error, "#{fieldname} must not contain the forbidden characters >, <, /, \\"}
+    else
+      false
     end
   end
 
@@ -95,26 +99,22 @@ defmodule Sanbase.Accounts.User.Name do
     "</js>"
   ]
   defp forbidden?(value, fieldname) do
-    case value in @forbiden_names or
-           Enum.any?(@forbiden_names, fn u ->
-             String.starts_with?(value, u) or String.ends_with?(value, u)
-           end) do
-      false ->
-        false
-
-      true ->
-        {:error, "#{fieldname} is not allowed. Choose another #{String.downcase(fieldname)}"}
+    if value in @forbiden_names or
+         Enum.any?(@forbiden_names, fn u ->
+           String.starts_with?(value, u) or String.ends_with?(value, u)
+         end) do
+      {:error, "#{fieldname} is not allowed. Choose another #{String.downcase(fieldname)}"}
+    else
+      false
     end
   end
 
   @config Expletive.configure(blacklist: Expletive.Blacklist.english())
   defp swear?(value, fieldname) do
-    case Expletive.profane?(value, @config) do
-      false ->
-        false
-
-      true ->
-        {:error, "#{fieldname} is not allowed. Choose another #{String.downcase(fieldname)}"}
+    if Expletive.profane?(value, @config) do
+      {:error, "#{fieldname} is not allowed. Choose another #{String.downcase(fieldname)}"}
+    else
+      false
     end
   end
 end

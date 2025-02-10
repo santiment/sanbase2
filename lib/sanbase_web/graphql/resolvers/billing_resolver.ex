@@ -1,27 +1,31 @@
 defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
-  alias Sanbase.Billing
-  alias Sanbase.Billing.Subscription
-  alias Sanbase.Billing.Plan
-  alias Sanbase.Billing.UserPromoCode
-  alias Sanbase.Billing.Plan.PurchasingPowerParity
-
+  @moduledoc false
+  alias Sanbase.Accounts.CouponAttempt
+  alias Sanbase.Accounts.EthAccount
   alias Sanbase.Accounts.User
-
+  alias Sanbase.Billing
+  alias Sanbase.Billing.Plan
+  alias Sanbase.Billing.Plan.PurchasingPowerParity
+  alias Sanbase.Billing.Subscription
+  alias Sanbase.Billing.UserPromoCode
+  alias Sanbase.Geoip.Data
+  alias Sanbase.SmartContracts.SanrNFT
   alias Sanbase.StripeApi
+  alias Sanbase.Utils.IP
 
   require Logger
 
   def products_with_plans(_root, _args, %{context: %{remote_ip: remote_ip}}) do
-    remote_ip = Sanbase.Utils.IP.ip_tuple_to_string(remote_ip)
-    Sanbase.Geoip.Data.find_or_insert(remote_ip)
+    remote_ip = IP.ip_tuple_to_string(remote_ip)
+    Data.find_or_insert(remote_ip)
 
     Plan.product_with_plans()
   end
 
   def ppp_settings(_root, _args, %{context: %{remote_ip: remote_ip}}) do
-    remote_ip = Sanbase.Utils.IP.ip_tuple_to_string(remote_ip)
+    remote_ip = IP.ip_tuple_to_string(remote_ip)
 
-    with {:ok, geoip_data} <- Sanbase.Geoip.Data.find_or_insert(remote_ip),
+    with {:ok, geoip_data} <- Data.find_or_insert(remote_ip),
          true <- PurchasingPowerParity.ip_eligible_for_ppp?(geoip_data.ip_address) do
       {:ok, PurchasingPowerParity.ppp_settings(geoip_data)}
     else
@@ -29,9 +33,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     end
   end
 
-  def subscribe(_root, %{plan_id: plan_id} = args, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
+  def subscribe(_root, %{plan_id: plan_id} = args, %{context: %{auth: %{current_user: current_user}}}) do
     payment_instrument = Map.take(args, [:card_token, :payment_method_id])
     coupon = Map.get(args, :coupon)
 
@@ -54,9 +56,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     end
   end
 
-  def pay_now(_root, %{subscription_id: subscription_id}, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
+  def pay_now(_root, %{subscription_id: subscription_id}, %{context: %{auth: %{current_user: current_user}}}) do
     Subscription.pay_now(current_user, subscription_id)
   end
 
@@ -156,10 +156,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     end
   end
 
-  def payments(_root, _args, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
-    StripeApi.list_payments(current_user)
+  def payments(_root, _args, %{context: %{auth: %{current_user: current_user}}}) do
+    current_user
+    |> StripeApi.list_payments()
     |> case do
       {:ok, []} ->
         {:ok, []}
@@ -173,13 +172,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     end
   end
 
-  def get_coupon(_root, %{coupon: coupon}, %{
-        context: %{remote_ip: remote_ip, auth: %{current_user: current_user}}
-      }) do
-    remote_ip = Sanbase.Utils.IP.ip_tuple_to_string(remote_ip)
+  def get_coupon(_root, %{coupon: coupon}, %{context: %{remote_ip: remote_ip, auth: %{current_user: current_user}}}) do
+    remote_ip = IP.ip_tuple_to_string(remote_ip)
 
-    with :ok <- Sanbase.Accounts.CouponAttempt.check_attempt_limit(current_user, remote_ip),
-         {:ok, _} <- Sanbase.Accounts.CouponAttempt.create(current_user, remote_ip),
+    with :ok <- CouponAttempt.check_attempt_limit(current_user, remote_ip),
+         {:ok, _} <- CouponAttempt.create(current_user, remote_ip),
          {:ok,
           %Stripe.Coupon{
             valid: valid,
@@ -206,9 +203,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     end
   end
 
-  def upcoming_invoice(_root, %{subscription_id: subscription_id}, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
+  def upcoming_invoice(_root, %{subscription_id: subscription_id}, %{context: %{auth: %{current_user: current_user}}}) do
     current_user_id = current_user.id
 
     with %Subscription{user_id: ^current_user_id} = subscription <-
@@ -231,9 +226,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     end
   end
 
-  def fetch_default_payment_instrument(_root, _args, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
+  def fetch_default_payment_instrument(_root, _args, %{context: %{auth: %{current_user: current_user}}}) do
     with {:ok, customer} <- StripeApi.fetch_stripe_customer(current_user),
          {:card?, card} when not is_nil(card) <- {:card?, choose_default_card(customer)} do
       {:ok,
@@ -259,9 +252,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     end
   end
 
-  def obtain_sanr_nft_subscription(_root, _args, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
+  def obtain_sanr_nft_subscription(_root, _args, %{context: %{auth: %{current_user: current_user}}}) do
     has_active_subscription? =
       if Subscription.user_has_active_sanbase_subscriptions?(current_user.id) do
         {:error, "The user already has an active Sanbase subscription"}
@@ -269,7 +260,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
         false
       end
 
-    addresses = Sanbase.Accounts.EthAccount.all_by_user(current_user.id) |> Enum.map(& &1.address)
+    addresses = current_user.id |> EthAccount.all_by_user() |> Enum.map(& &1.address)
 
     has_accounts_linked? =
       if [] == addresses do
@@ -278,7 +269,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
         true
       end
 
-    token_data = Sanbase.SmartContracts.SanrNFT.get_latest_valid_nft_token(addresses)
+    token_data = SanrNFT.get_latest_valid_nft_token(addresses)
 
     has_sanr_nft_token? =
       case token_data do
@@ -303,12 +294,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     end
   end
 
-  def check_sanr_nft_subscription_eligibility(_root, _args, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
-    addresses = Sanbase.Accounts.EthAccount.all_by_user(current_user.id) |> Enum.map(& &1.address)
+  def check_sanr_nft_subscription_eligibility(_root, _args, %{context: %{auth: %{current_user: current_user}}}) do
+    addresses = current_user.id |> EthAccount.all_by_user() |> Enum.map(& &1.address)
 
-    case Sanbase.SmartContracts.SanrNFT.get_latest_valid_nft_token(addresses) do
+    case SanrNFT.get_latest_valid_nft_token(addresses) do
       {:ok, _} -> {:ok, true}
       {:error, _} -> {:ok, false}
     end
@@ -347,7 +336,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
       StripeApi.maybe_detach_payment_method(current_user.stripe_customer_id)
     end
 
-    Billing.create_or_update_stripe_customer(current_user, card_token)
+    current_user
+    |> Billing.create_or_update_stripe_customer(card_token)
     |> case do
       {:ok, _} ->
         {:ok, true}
@@ -361,9 +351,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     end
   end
 
-  def delete_default_payment_instrument(_root, _args, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
+  def delete_default_payment_instrument(_root, _args, %{context: %{auth: %{current_user: current_user}}}) do
     case StripeApi.delete_default_card(current_user) do
       :ok ->
         {:ok, true}
@@ -377,9 +365,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     end
   end
 
-  def create_stripe_setup_intent(_root, _args, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
+  def create_stripe_setup_intent(_root, _args, %{context: %{auth: %{current_user: current_user}}}) do
     case StripeApi.create_setup_intent(current_user) do
       {:ok, setup_intent} ->
         {:ok, %{client_secret: setup_intent.client_secret}}
@@ -414,16 +400,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     end
   end
 
-  def check_annual_discount_eligibility(_root, _args, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
+  def check_annual_discount_eligibility(_root, _args, %{context: %{auth: %{current_user: current_user}}}) do
     {:ok, Subscription.annual_discount_eligibility(current_user.id)}
   end
 
   # private functions
   defp transform_payments(%Stripe.List{data: payments}) do
-    payments
-    |> Enum.map(fn
+    Enum.map(payments, fn
       %Stripe.Charge{
         status: status,
         amount: amount,
@@ -463,8 +446,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
         log_error(log_message, reason)
         {:error, reason}
 
-      {:not_cancelled?,
-       %Subscription{cancel_at_period_end: true, current_period_end: current_period_end}} ->
+      {:not_cancelled?, %Subscription{cancel_at_period_end: true, current_period_end: current_period_end}} ->
         reason =
           "Subscription is scheduled for cancellation at the end of the paid period: #{current_period_end}"
 

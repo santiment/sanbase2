@@ -1,11 +1,12 @@
 defmodule SanbaseWeb.UploadImageLive do
+  @moduledoc false
   use SanbaseWeb, :live_view
 
   @impl true
   def mount(_params, _session, socket) do
     socket =
-      allow_upload(
-        socket,
+      socket
+      |> allow_upload(
         :images,
         accept: ~w(.png .jpg .jpeg .mp4),
         max_entries: 1,
@@ -148,9 +149,7 @@ defmodule SanbaseWeb.UploadImageLive do
         {:noreply, socket}
 
       [] ->
-        socket =
-          socket
-          |> put_flash(:error, "Attach an image before trying to upload")
+        socket = put_flash(socket, :error, "Attach an image before trying to upload")
 
         {:noreply, socket}
     end
@@ -164,7 +163,7 @@ defmodule SanbaseWeb.UploadImageLive do
     [_, extension] = String.split(entry.client_type, "/", parts: 2)
     client_name = String.trim_trailing(entry.client_name, Path.extname(entry.client_name))
     # Do not use Base64 as it contains '/', which can mess up the paths
-    rand_part = :crypto.strong_rand_bytes(5) |> Base.encode32()
+    rand_part = 5 |> :crypto.strong_rand_bytes() |> Base.encode32()
 
     # The client_name and name are both stripepd of extensions
     name = if name == "", do: client_name, else: name
@@ -174,7 +173,8 @@ defmodule SanbaseWeb.UploadImageLive do
 
   defp maybe_resize_image(path, filepath, transform_to_logo) do
     if transform_to_logo do
-      Mogrify.open(path)
+      path
+      |> Mogrify.open()
       |> Mogrify.resize("64x64")
       |> Mogrify.custom("type", "PaletteAlpha")
       |> Mogrify.save(path: filepath)

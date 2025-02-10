@@ -1,16 +1,19 @@
 defmodule SanbaseWeb.Graphql.TestHelpers do
-  import Plug.Conn
+  @moduledoc false
   import Phoenix.ConnTest
+  import Plug.Conn
   import Sanbase.Factory
 
-  alias Sanbase.{Metric, Signal}
   alias Sanbase.Billing.Plan.AccessChecker
+  alias Sanbase.Metric
+  alias Sanbase.Signal
 
   # The default endpoint for testing
   @endpoint SanbaseWeb.Endpoint
 
   def v2_restricted_metric_for_plan(position, product, plan_name) do
-    fully_restricted_metrics_for_plan(product, plan_name)
+    product
+    |> fully_restricted_metrics_for_plan(plan_name)
     |> Stream.cycle()
     |> Enum.at(position)
   end
@@ -18,8 +21,7 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
   def fully_restricted_metrics_for_plan(product, plan_name) do
     fully_restricted = Metric.restricted_metrics() -- restricted_metrics_with_free_realtime()
 
-    fully_restricted
-    |> Enum.filter(&AccessChecker.plan_has_access?(plan_name, product, {:metric, &1}))
+    Enum.filter(fully_restricted, &AccessChecker.plan_has_access?(plan_name, product, {:metric, &1}))
   end
 
   def restricted_metrics_with_free_realtime do
@@ -35,9 +37,9 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
     |> Enum.at(position)
   end
 
-  def get_free_timeseries_element(position, product, argument)
-      when argument in [:metric, :signal] do
-    free_timeseries_elements(product, argument)
+  def get_free_timeseries_element(position, product, argument) when argument in [:metric, :signal] do
+    product
+    |> free_timeseries_elements(argument)
     |> Enum.to_list()
     |> Stream.cycle()
     |> Enum.at(position)
@@ -50,8 +52,7 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
       {_, %{^product => "FREE"}} -> true
       _ -> false
     end)
-    |> Enum.map(fn {metric, _} -> metric end)
-    |> MapSet.new()
+    |> MapSet.new(fn {metric, _} -> metric end)
     |> MapSet.intersection(MapSet.new(Metric.free_metrics()))
     |> MapSet.intersection(MapSet.new(Metric.available_timeseries_metrics()))
   end
@@ -63,24 +64,18 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
       {_, %{^product => "FREE"}} -> true
       _ -> false
     end)
-    |> Enum.map(fn {signal, _} -> signal end)
-    |> MapSet.new()
+    |> MapSet.new(fn {signal, _} -> signal end)
     |> MapSet.intersection(MapSet.new(Signal.free_signals()))
     |> MapSet.intersection(MapSet.new(Signal.available_timeseries_signals()))
   end
 
   def from_to(from_days_shift, to_days_shift) do
-    from = Timex.shift(DateTime.utc_now(), days: -from_days_shift) |> DateTime.truncate(:second)
-    to = Timex.shift(DateTime.utc_now(), days: -to_days_shift) |> DateTime.truncate(:second)
+    from = DateTime.utc_now() |> Timex.shift(days: -from_days_shift) |> DateTime.truncate(:second)
+    to = DateTime.utc_now() |> Timex.shift(days: -to_days_shift) |> DateTime.truncate(:second)
     {from, to}
   end
 
-  def query_skeleton(
-        query,
-        query_name \\ "",
-        variable_defs \\ "",
-        variables \\ "{}"
-      ) do
+  def query_skeleton(query, query_name \\ "", variable_defs \\ "", variables \\ "{}") do
     %{
       "operationName" => "#{query_name}",
       "query" => "query #{query_name}#{variable_defs} #{query}",
@@ -109,15 +104,13 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
   end
 
   def setup_apikey_auth(conn, apikey) do
-    conn
-    |> put_req_header("authorization", "Apikey " <> apikey)
+    put_req_header(conn, "authorization", "Apikey " <> apikey)
   end
 
   def setup_basic_auth(conn, user, pass) do
     token = Base.encode64(user <> ":" <> pass)
 
-    conn
-    |> put_req_header("authorization", "Basic " <> token)
+    put_req_header(conn, "authorization", "Basic " <> token)
   end
 
   def execute_query(conn, query) do
@@ -168,7 +161,7 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
   end
 
   def string_list_to_string(list) do
-    str = list |> Enum.map(fn elem -> ~s|"#{elem}"| end) |> Enum.join(",")
+    str = Enum.map_join(list, ",", fn elem -> ~s|"#{elem}"| end)
     "[" <> str <> "]"
   end
 
@@ -179,9 +172,9 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
     map = Map.delete(map, :map_as_input_object)
     map = Map.new(map, fn {k, v} -> {key.(k), v} end)
 
-    Enum.map(map, fn
+    Enum.map_join(map, ", ", fn
       {k, [%{} | _] = l} ->
-        ~s/#{key.(k)}: [#{Enum.map(l, &map_to_input_object_str/1) |> Enum.join(",")}]/
+        ~s/#{key.(k)}: [#{Enum.map_join(l, ",", &map_to_input_object_str/1)}]/
 
       {k, %DateTime{} = dt} ->
         ~s/#{key.(k)}: "#{dt |> DateTime.truncate(:second) |> DateTime.to_iso8601()}"/
@@ -204,17 +197,15 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
 
       {k, [atom | _] = atom_list} when is_atom(atom) ->
         atom_list_str =
-          Enum.map(atom_list, fn a ->
+          Enum.map_join(atom_list, ", ", fn a ->
             a |> Atom.to_string() |> String.upcase()
           end)
-          |> Enum.join(", ")
 
         ~s/#{key.(k)}: [#{atom_list_str}]/
 
       {k, v} ->
         ~s/#{key.(k)}: #{inspect(v)}/
     end)
-    |> Enum.join(", ")
   end
 
   def map_to_input_object_str(%{} = map, opts \\ []) do
@@ -281,15 +272,9 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
   end
 
   defp add_missing_selector(:contract_address, selector),
-    do:
-      Map.put(
-        selector,
-        :contract_address,
-        "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098"
-      )
+    do: Map.put(selector, :contract_address, "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098")
 
-  defp add_missing_selector(:label_fqn, selector),
-    do: Map.put(selector, :label_fqn, "santiment/owner->Coinbase:v1")
+  defp add_missing_selector(:label_fqn, selector), do: Map.put(selector, :label_fqn, "santiment/owner->Coinbase:v1")
 
   defp add_missing_selector(:label_fqns, selector) do
     Map.put(selector, :label_fqns, [

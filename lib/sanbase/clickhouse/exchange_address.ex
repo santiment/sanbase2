@@ -1,18 +1,24 @@
 defmodule Sanbase.Clickhouse.ExchangeAddress do
+  @moduledoc false
   import Sanbase.Utils.Transform
+
+  alias Sanbase.Clickhouse.Query
+
   @supported_blockchains ["bitcoin", "ethereum", "xrp"]
 
-  def supported_blockchains(), do: @supported_blockchains
+  def supported_blockchains, do: @supported_blockchains
 
   def exchange_names(blockchain, is_dex \\ nil)
 
   def exchange_names(blockchain, is_dex) when blockchain in @supported_blockchains do
     query_struct = exchange_names_query(blockchain, is_dex)
 
-    Sanbase.ClickhouseRepo.query_reduce(query_struct, [], fn [owner], acc ->
-      case is_binary(owner) and owner != "" do
-        true -> [owner | acc]
-        false -> acc
+    query_struct
+    |> Sanbase.ClickhouseRepo.query_reduce([], fn [owner], acc ->
+      if is_binary(owner) and owner != "" do
+        [owner | acc]
+      else
+        acc
       end
     end)
     |> maybe_apply_function(&Enum.sort/1)
@@ -38,15 +44,13 @@ defmodule Sanbase.Clickhouse.ExchangeAddress do
 
   def exchange_addresses_for_exchange(blockchain, owner, limit \\ 1000)
 
-  def exchange_addresses_for_exchange(blockchain, owner, limit)
-      when blockchain in @supported_blockchains do
+  def exchange_addresses_for_exchange(blockchain, owner, limit) when blockchain in @supported_blockchains do
     query_struct = exchange_addresses_for_exchange_query(blockchain, owner, limit)
 
     Sanbase.ClickhouseRepo.query_transform(query_struct, fn [address] -> address end)
   end
 
-  def exchange_addresses_for_exchange(blockchain, _owner, _limit),
-    do: not_supported_blockchain_error(blockchain)
+  def exchange_addresses_for_exchange(blockchain, _owner, _limit), do: not_supported_blockchain_error(blockchain)
 
   # Private functions
 
@@ -82,10 +86,10 @@ defmodule Sanbase.Clickhouse.ExchangeAddress do
     """
 
     params = %{
-      blockchain: blockchain |> String.downcase()
+      blockchain: String.downcase(blockchain)
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp exchange_addresses_query(blockchain, limit) do
@@ -111,11 +115,11 @@ defmodule Sanbase.Clickhouse.ExchangeAddress do
     """
 
     params = %{
-      blockchain: blockchain |> String.downcase(),
+      blockchain: String.downcase(blockchain),
       limit: limit
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp exchange_addresses_for_exchange_query(blockchain, owner, limit) do
@@ -141,12 +145,12 @@ defmodule Sanbase.Clickhouse.ExchangeAddress do
     """
 
     params = %{
-      blockchain: blockchain |> String.downcase(),
+      blockchain: String.downcase(blockchain),
       owner: owner,
       limit: limit
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp exchange_type_filter(type) when type in [:cex, :dex, :both] do

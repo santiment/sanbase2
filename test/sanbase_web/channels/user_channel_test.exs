@@ -34,7 +34,7 @@ defmodule SanbaseWeb.UserChannelTest do
       ref = push(socket, "users_by_username_pattern", %{"username_pattern" => "test"})
       assert_reply(ref, :ok, %{"users" => users})
 
-      assert users |> Enum.map(& &1.username) ==
+      assert Enum.map(users, & &1.username) ==
                [
                  u2.username,
                  u1.username,
@@ -70,7 +70,7 @@ defmodule SanbaseWeb.UserChannelTest do
       })
     end
 
-    defp get_socket() do
+    defp get_socket do
       {:ok, socket} = connect(SanbaseWeb.UserSocket, %{})
 
       {:ok, _, socket} = subscribe_and_join(socket, SanbaseWeb.UserChannel, "users:common", %{})

@@ -8,9 +8,9 @@ defmodule Sanbase.Alert.Evaluator do
   (email or telegram), name and description of the alert, etc. are ignored
   """
 
-  alias Sanbase.Cache
-  alias Sanbase.Alert.UserTrigger
   alias Sanbase.Alert.Trigger
+  alias Sanbase.Alert.UserTrigger
+  alias Sanbase.Cache
 
   require Logger
 
@@ -46,20 +46,12 @@ defmodule Sanbase.Alert.Evaluator do
         Logger.info("Auto disable alert with id #{user_trigger.id}. Reason: #{error_msg}")
         _ = UserTrigger.update_is_active(user_trigger.id, user_trigger.user_id, false)
 
-        user_trigger
-        |> put_in(
-          [Access.key!(:trigger), Access.key!(:settings), Access.key!(:triggered?)],
-          false
-        )
+        put_in(user_trigger, [Access.key!(:trigger), Access.key!(:settings), Access.key!(:triggered?)], false)
 
       error ->
         Logger.error("Unknown and unexpected error during evaluation: #{inspect(error)}")
 
-        user_trigger
-        |> put_in(
-          [Access.key!(:trigger), Access.key!(:settings), Access.key!(:triggered?)],
-          false
-        )
+        put_in(user_trigger, [Access.key!(:trigger), Access.key!(:settings), Access.key!(:triggered?)], false)
     end
   end
 
@@ -78,7 +70,8 @@ defmodule Sanbase.Alert.Evaluator do
 
     case result do
       {:ok, evaluated_trigger} ->
-        fill_user_trigger_from_cached(user_trigger, evaluated_trigger)
+        user_trigger
+        |> fill_user_trigger_from_cached(evaluated_trigger)
         |> emit_event(Trigger.triggered?(evaluated_trigger), :alert_triggered)
 
       {:error, {:disable_alert, reason}} ->
@@ -86,18 +79,10 @@ defmodule Sanbase.Alert.Evaluator do
 
         _ = UserTrigger.update_is_active(user_trigger.id, user_trigger.user_id, false)
 
-        user_trigger
-        |> put_in(
-          [Access.key!(:trigger), Access.key!(:settings), Access.key!(:triggered?)],
-          false
-        )
+        put_in(user_trigger, [Access.key!(:trigger), Access.key!(:settings), Access.key!(:triggered?)], false)
 
       {:error, _} ->
-        user_trigger
-        |> put_in(
-          [Access.key!(:trigger), Access.key!(:settings), Access.key!(:triggered?)],
-          false
-        )
+        put_in(user_trigger, [Access.key!(:trigger), Access.key!(:settings), Access.key!(:triggered?)], false)
     end
   end
 
@@ -116,8 +101,8 @@ defmodule Sanbase.Alert.Evaluator do
     )
     |> case do
       %{trigger: %{settings: %{state: _}}} = user_trigger ->
-        user_trigger
-        |> put_in(
+        put_in(
+          user_trigger,
           [Access.key!(:trigger), Access.key!(:settings), Access.key!(:state)],
           evaluated_trigger.settings.state
         )
@@ -128,8 +113,7 @@ defmodule Sanbase.Alert.Evaluator do
   end
 
   defp filter_triggered(triggers, type) do
-    triggers
-    |> Enum.filter(fn
+    Enum.filter(triggers, fn
       %UserTrigger{trigger: trigger} ->
         Trigger.triggered?(trigger)
 
@@ -143,12 +127,11 @@ defmodule Sanbase.Alert.Evaluator do
   end
 
   defp populate_payload(triggers) do
-    triggers
-    |> Enum.map(fn %UserTrigger{} = user_trigger ->
+    Enum.map(triggers, fn %UserTrigger{} = user_trigger ->
       template_kv = user_trigger.trigger.settings.template_kv
 
       payload =
-        Enum.into(template_kv, %{}, fn {identifier, {template, kv}} ->
+        Map.new(template_kv, fn {identifier, {template, kv}} ->
           try do
             {identifier, Trigger.payload_to_string({template, kv})}
           rescue
@@ -165,11 +148,7 @@ defmodule Sanbase.Alert.Evaluator do
           end
         end)
 
-      user_trigger
-      |> put_in(
-        [Access.key!(:trigger), Access.key!(:settings), Access.key!(:payload)],
-        payload
-      )
+      put_in(user_trigger, [Access.key!(:trigger), Access.key!(:settings), Access.key!(:payload)], payload)
     end)
   end
 

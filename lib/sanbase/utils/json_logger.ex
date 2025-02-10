@@ -1,4 +1,5 @@
 defmodule Sanbase.Utils.JsonLogger do
+  @moduledoc false
   def format(level, message, timestamp, metadata) do
     {date, {h, min, s, ms}} = timestamp
 

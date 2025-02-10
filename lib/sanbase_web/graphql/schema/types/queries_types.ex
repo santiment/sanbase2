@@ -1,9 +1,10 @@
 defmodule SanbaseWeb.Graphql.QueriesTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
+  alias SanbaseWeb.Graphql.Resolvers.DashboardResolver
   alias SanbaseWeb.Graphql.Resolvers.UserResolver
   alias SanbaseWeb.Graphql.Resolvers.VoteResolver
-  alias SanbaseWeb.Graphql.Resolvers.DashboardResolver
 
   @desc ~s"""
   A GraphQL type that represents an SQL Query.

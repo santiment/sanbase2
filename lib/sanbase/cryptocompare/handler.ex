@@ -1,6 +1,7 @@
 defmodule Sanbase.Cryptocompare.Handler do
-  alias Sanbase.Cryptocompare.HTTPHeaderUtils
+  @moduledoc false
   alias Sanbase.Cryptocompare.ExporterProgress
+  alias Sanbase.Cryptocompare.HTTPHeaderUtils
   alias Sanbase.Utils.Config, as: Config
 
   require Logger
@@ -24,8 +25,7 @@ defmodule Sanbase.Cryptocompare.Handler do
           | {:error, :first_timestamp_reached}
           | {:error, :rate_limit}
           | {:ok, min_timestamp :: non_neg_integer(), data_list :: list()}
-  def get_data(url, process_json_response_function, opts)
-      when is_function(process_json_response_function, 1) do
+  def get_data(url, process_json_response_function, opts) when is_function(process_json_response_function, 1) do
     # For open_interest we support versioning, so the key might differ by having _v2 suffix
     timestamps_key =
       Keyword.get(opts, :exporter_progress_key, "#{opts[:market]}_#{opts[:instrument]}")
@@ -52,7 +52,7 @@ defmodule Sanbase.Cryptocompare.Handler do
     end
   end
 
-  def get_markets_and_instruments() do
+  def get_markets_and_instruments do
     cache_key = {__MODULE__, :get_markets_and_instruments}
     Sanbase.Cache.get_or_store({cache_key, 600}, &do_get_markets_and_instruments/0)
 
@@ -74,7 +74,8 @@ defmodule Sanbase.Cryptocompare.Handler do
             to_string(queue)
           )
 
-        process_function.(http_response.body)
+        http_response.body
+        |> process_function.()
         |> maybe_remove_known_timestamps(timestamps, opts)
 
       {:error_limited, %{value: rate_limited_seconds}} ->
@@ -97,7 +98,7 @@ defmodule Sanbase.Cryptocompare.Handler do
     HTTPoison.get(url, headers, recv_timeout: 15_000)
   end
 
-  defp do_get_markets_and_instruments() do
+  defp do_get_markets_and_instruments do
     url = "https://data-api.cryptocompare.com/futures/v1/markets/instruments"
     headers = [{"authorization", "Apikey #{api_key()}"}]
 
@@ -144,7 +145,7 @@ defmodule Sanbase.Cryptocompare.Handler do
     |> Map.new()
   end
 
-  defp api_key(), do: Config.module_get(Sanbase.Cryptocompare, :api_key)
+  defp api_key, do: Config.module_get(Sanbase.Cryptocompare, :api_key)
 
   defp maybe_remove_known_timestamps({:ok, list}, timestamps, opts) do
     # Filter out all the data points for which we already have data.
@@ -156,18 +157,16 @@ defmodule Sanbase.Cryptocompare.Handler do
 
     min_timestamp = if list != [], do: Enum.min_by(list, & &1.timestamp).timestamp
 
-    case Keyword.get(opts, :remove_known_timestamps, false) do
-      false ->
-        {:ok, min_timestamp, list}
+    if Keyword.get(opts, :remove_known_timestamps, false) do
+      list =
+        case timestamps do
+          nil -> list
+          {min, max} -> Enum.reject(list, &(&1.timestamp in min..max))
+        end
 
-      true ->
-        list =
-          case timestamps do
-            nil -> list
-            {min, max} -> list |> Enum.reject(&(&1.timestamp in min..max))
-          end
-
-        {:ok, min_timestamp, list}
+      {:ok, min_timestamp, list}
+    else
+      {:ok, min_timestamp, list}
     end
   end
 

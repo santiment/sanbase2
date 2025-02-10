@@ -4,11 +4,11 @@ defmodule Sanbase.Dashboard.QueryExecution do
   """
   use Ecto.Schema
 
-  import Ecto.Query
   import Ecto.Changeset
+  import Ecto.Query
 
-  alias Sanbase.Dashboard
   alias Sanbase.Accounts.User
+  alias Sanbase.Dashboard
 
   @type user_id :: non_neg_integer()
   @type credits_cost :: non_neg_integer()
@@ -56,13 +56,12 @@ defmodule Sanbase.Dashboard.QueryExecution do
           {:ok, credits_cost()}
   def credits_spent(user_id, from, to) do
     credits_cost =
-      from(c in __MODULE__,
-        where:
-          c.user_id == ^user_id and c.inserted_at >= ^from and
-            c.inserted_at <= ^to,
-        select: sum(c.credits_cost)
+      Sanbase.Repo.one(
+        from(c in __MODULE__,
+          where: c.user_id == ^user_id and c.inserted_at >= ^from and c.inserted_at <= ^to,
+          select: sum(c.credits_cost)
+        )
       )
-      |> Sanbase.Repo.one()
 
     {:ok, credits_cost || 0}
   end
@@ -187,7 +186,8 @@ defmodule Sanbase.Dashboard.QueryExecution do
     }
 
     credits_cost =
-      Map.merge(execution_details, weights, fn _k, value, weight ->
+      execution_details
+      |> Map.merge(weights, fn _k, value, weight ->
         value * weight
       end)
       |> Map.values()
@@ -202,30 +202,28 @@ defmodule Sanbase.Dashboard.QueryExecution do
 
     Sanbase.ClickhouseRepo.put_dynamic_repo(Sanbase.ClickhouseRepo)
 
-    Sanbase.ClickhouseRepo.query_transform(
-      query_struct,
-      fn [
-           read_compressed_gb,
-           cpu_time_microseconds,
-           query_duration_ms,
-           memory_usage_gb,
-           read_rows,
-           read_gb,
-           result_rows,
-           result_gb
-         ] ->
-        %{
-          read_compressed_gb: Float.round(read_compressed_gb, 6),
-          cpu_time_microseconds: cpu_time_microseconds,
-          query_duration_ms: query_duration_ms,
-          memory_usage_gb: Float.round(memory_usage_gb, 6),
-          read_rows: read_rows,
-          read_gb: Float.round(read_gb, 6),
-          result_rows: result_rows,
-          result_gb: Float.round(result_gb, 6)
-        }
-      end
-    )
+    query_struct
+    |> Sanbase.ClickhouseRepo.query_transform(fn [
+                                                   read_compressed_gb,
+                                                   cpu_time_microseconds,
+                                                   query_duration_ms,
+                                                   memory_usage_gb,
+                                                   read_rows,
+                                                   read_gb,
+                                                   result_rows,
+                                                   result_gb
+                                                 ] ->
+      %{
+        read_compressed_gb: Float.round(read_compressed_gb, 6),
+        cpu_time_microseconds: cpu_time_microseconds,
+        query_duration_ms: query_duration_ms,
+        memory_usage_gb: Float.round(memory_usage_gb, 6),
+        read_rows: read_rows,
+        read_gb: Float.round(read_gb, 6),
+        result_rows: result_rows,
+        result_gb: Float.round(result_gb, 6)
+      }
+    end)
     |> Sanbase.Utils.Transform.maybe_unwrap_ok_value()
   end
 

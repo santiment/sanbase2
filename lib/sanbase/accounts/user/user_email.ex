@@ -1,16 +1,18 @@
 defmodule Sanbase.Accounts.User.Email do
-  alias Sanbase.Repo
-  alias Sanbase.Accounts.User
-
+  @moduledoc false
   import Sanbase.Accounts.EventEmitter, only: [emit_event: 3]
+
+  alias Sanbase.Accounts.User
+  alias Sanbase.Email.Template
+  alias Sanbase.Repo
 
   require Mockery.Macro
 
   @token_valid_window_minutes 60
   @email_token_length 64
 
-  def generate_email_token() do
-    :crypto.strong_rand_bytes(@email_token_length) |> Base.url_encode64()
+  def generate_email_token do
+    @email_token_length |> :crypto.strong_rand_bytes() |> Base.url_encode64()
   end
 
   def find_by_email_candidate(email_candidate, email_candidate_token) do
@@ -32,7 +34,7 @@ defmodule Sanbase.Accounts.User.Email do
     user
     |> User.changeset(%{
       email_token: generate_email_token(),
-      email_token_generated_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second),
+      email_token_generated_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second),
       email_token_validated_at: nil,
       consent_id: consent
     })
@@ -44,8 +46,7 @@ defmodule Sanbase.Accounts.User.Email do
     |> User.changeset(%{
       email_candidate: email_candidate,
       email_candidate_token: generate_email_token(),
-      email_candidate_token_generated_at:
-        NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second),
+      email_candidate_token_generated_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second),
       email_candidate_token_validated_at: nil
     })
     |> Repo.update()
@@ -54,7 +55,7 @@ defmodule Sanbase.Accounts.User.Email do
 
   def mark_email_token_as_validated(user) do
     validated_at =
-      (user.email_token_validated_at || Timex.now())
+      (user.email_token_validated_at || DateTime.utc_now())
       |> Timex.to_naive_datetime()
       |> NaiveDateTime.truncate(:second)
 
@@ -78,7 +79,7 @@ defmodule Sanbase.Accounts.User.Email do
 
   def update_email_from_email_candidate(user) do
     validated_at =
-      (user.email_candidate_token_validated_at || Timex.now())
+      (user.email_candidate_token_validated_at || DateTime.utc_now())
       |> Timex.to_naive_datetime()
       |> NaiveDateTime.truncate(:second)
 
@@ -101,7 +102,7 @@ defmodule Sanbase.Accounts.User.Email do
     - Has been issues less than #{@token_valid_window_minutes} minutes ago
   """
   def email_token_valid?(user, token) do
-    naive_now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+    naive_now = NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)
 
     # same token, not used and still valid
     user.email_token == token and
@@ -112,7 +113,7 @@ defmodule Sanbase.Accounts.User.Email do
   end
 
   def email_candidate_token_valid?(user, email_candidate_token) do
-    naive_now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+    naive_now = NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)
 
     # same token, not used and still valid
     user.email_candidate_token == email_candidate_token and
@@ -131,7 +132,7 @@ defmodule Sanbase.Accounts.User.Email do
 
   def send_verify_email(user) do
     verify_link = SanbaseWeb.Endpoint.verify_url(user.email_candidate_token, user.email_candidate)
-    template = Sanbase.Email.Template.verification_email_template()
+    template = Template.verification_email_template()
 
     Sanbase.TemplateMailer.send(user.email_candidate, template, %{verify_link: verify_link})
   end
@@ -139,7 +140,7 @@ defmodule Sanbase.Accounts.User.Email do
   defp do_send_login_email(user, first_login, origin_host_parts, args) do
     origin_url = "https://" <> Enum.join(origin_host_parts, ".")
 
-    template = Sanbase.Email.Template.choose_login_template(origin_url, first_login?: first_login)
+    template = Template.choose_login_template(origin_url, first_login?: first_login)
 
     case generate_login_link(user, first_login, origin_url, args) do
       {:ok, login_link} ->
@@ -168,21 +169,21 @@ defmodule Sanbase.Accounts.User.Email do
          {:ok, query_map} <-
            add_redirect_url(query_map, :fail_redirect_url, args[:fail_redirect_url]) do
       login_link =
-        URI.parse(login_url)
+        login_url
+        |> URI.parse()
         |> URI.append_query(URI.encode_query(query_map))
         |> URI.to_string()
 
       {:ok, login_link}
-    else
-      error -> error
     end
   end
 
   def add_redirect_url(query_map, _key, nil), do: {:ok, query_map}
 
   def add_redirect_url(query_map, key, url) when is_binary(url) do
-    with parsed <- URI.parse(url),
-         "https" <- parsed.scheme,
+    parsed = URI.parse(url)
+
+    with "https" <- parsed.scheme,
          true <- allowed_url?(String.split(parsed.host, ".")) do
       {:ok, Map.put(query_map, key, url)}
     else

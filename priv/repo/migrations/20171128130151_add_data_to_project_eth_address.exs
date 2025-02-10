@@ -1,9 +1,12 @@
 defmodule Sanbase.Repo.Migrations.AddDataToProjectEthAddress do
+  @moduledoc false
   use Ecto.Migration
-  require Logger
+
   alias Sanbase.Project
   alias Sanbase.ProjectEthAddress
   alias Sanbase.Repo
+
+  require Logger
 
   def make_eth_address({name, address}) do
     [

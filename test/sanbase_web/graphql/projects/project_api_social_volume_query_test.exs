@@ -23,7 +23,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiSocialVolumeQueryTest do
       }
     ]
 
-    assert result |> Enum.sort_by(& &1["slug"]) == expected_result |> Enum.sort_by(& &1["slug"])
+    assert Enum.sort_by(result, & &1["slug"]) == Enum.sort_by(expected_result, & &1["slug"])
   end
 
   test "social volume for projects with predefined query", %{conn: conn} do
@@ -44,10 +44,10 @@ defmodule SanbaseWeb.Graphql.ProjectApiSocialVolumeQueryTest do
       }
     ]
 
-    assert result |> Enum.sort_by(& &1["slug"]) == expected_result |> Enum.sort_by(& &1["slug"])
+    assert Enum.sort_by(result, & &1["slug"]) == Enum.sort_by(expected_result, & &1["slug"])
   end
 
-  defp all_projects_social_volume_query() do
+  defp all_projects_social_volume_query do
     """
     {
       allProjects{

@@ -99,13 +99,13 @@ defmodule SanbaseWeb.Graphql.Cache do
   end
 
   @doc "Clears the whole cache. Slow."
-  def clear_all(), do: CacheProvider.clear_all(@cache_name)
+  def clear_all, do: CacheProvider.clear_all(@cache_name)
 
   @doc " The size of the cache in megabytes"
-  def size(), do: CacheProvider.size(@cache_name)
+  def size, do: CacheProvider.size(@cache_name)
 
   @doc "The number of entries in the cache"
-  def count(), do: CacheProvider.count(@cache_name)
+  def count, do: CacheProvider.count(@cache_name)
 
   @doc "The the value for a given key form the cache"
   def get(key), do: CacheProvider.get(@cache_name, key)
@@ -158,20 +158,19 @@ defmodule SanbaseWeb.Graphql.Cache do
           Keyword.get(opts, :honor_do_not_cache_flag, false) and
             Process.get(:do_not_cache_query) == true
 
-        case skip_cache? do
-          true -> fun.()
-          false -> get_or_store(cache_key, fun)
+        if skip_cache? do
+          fun.()
+        else
+          get_or_store(cache_key, fun)
         end
     end
   end
 
   defp generate_subscription_args(context, opts) do
-    case Keyword.get(opts, :include_subscription_in_key, false) do
-      false ->
-        []
-
-      true ->
-        [plan: get_in(context, [:auth, :plan]), product_id: get_in(context, [:product_id])]
+    if Keyword.get(opts, :include_subscription_in_key, false) do
+      [plan: get_in(context, [:auth, :plan]), product_id: get_in(context, [:product_id])]
+    else
+      []
     end
   end
 
@@ -207,11 +206,7 @@ defmodule SanbaseWeb.Graphql.Cache do
     {:ok, value}
   end
 
-  defp cache_modify_middleware(
-         cache_name,
-         cache_key,
-         {:middleware, Absinthe.Middleware.Async = midl, {fun, opts}}
-       ) do
+  defp cache_modify_middleware(cache_name, cache_key, {:middleware, Absinthe.Middleware.Async = midl, {fun, opts}}) do
     caching_fun = fn ->
       CacheProvider.get_or_store(cache_name, cache_key, fun, &cache_modify_middleware/3)
     end
@@ -253,14 +248,14 @@ defmodule SanbaseWeb.Graphql.Cache do
 
     # Using phash2 as a random number between 0 and max_ttl_offset is needed.
     # collisions are allowed and do not lead to errors
-    ttl = base_ttl + ({name, additional_args} |> :erlang.phash2(max_ttl_offset))
+    ttl = base_ttl + :erlang.phash2({name, additional_args}, max_ttl_offset)
 
     if args[:caching_params] do
       # This is used in the Absinthe's before_send function
       Process.put(:__change_absinthe_before_send_caching_ttl__, ttl)
     end
 
-    args = args |> convert_values(ttl)
+    args = convert_values(args, ttl)
 
     # Include the current datetime bucket to relieve some locking issues. If a process
     # somehow does not release a lock, force the key to change after the base_ttl + max_ttl_offset
@@ -270,9 +265,7 @@ defmodule SanbaseWeb.Graphql.Cache do
     bucket_ttl = base_ttl + max_ttl_offset + :erlang.phash2({name, args}, 180)
     current_bucket = convert_values(DateTime.utc_now(), bucket_ttl)
 
-    cache_key =
-      {__MODULE__, current_bucket, :__internal_graphql_api_caching__, name, args}
-      |> Sanbase.Cache.hash()
+    cache_key = Sanbase.Cache.hash({__MODULE__, current_bucket, :__internal_graphql_api_caching__, name, args})
 
     {cache_key, ttl}
   end
@@ -283,8 +276,7 @@ defmodule SanbaseWeb.Graphql.Cache do
   defp convert_values(%_{} = v, _), do: Map.from_struct(v)
 
   defp convert_values(args, ttl) when is_list(args) or is_map(args) do
-    args
-    |> Enum.map(fn
+    Enum.map(args, fn
       {k, v} ->
         [k, convert_values(v, ttl)]
 

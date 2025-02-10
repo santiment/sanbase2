@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.SheetsTemplateTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   object :sheets_template do

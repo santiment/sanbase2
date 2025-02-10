@@ -1,8 +1,9 @@
 defmodule Sanbase.DiscordBot.AiServer do
-  require Logger
-
+  @moduledoc false
   alias Sanbase.DiscordBot.AiContext
   alias Sanbase.DiscordBot.AiGenCode
+
+  require Logger
 
   def summarize_channel(channel, args) do
     args = Map.merge(%{channel: channel, thread: nil}, args)
@@ -17,7 +18,8 @@ defmodule Sanbase.DiscordBot.AiServer do
   def do_summarize(params) do
     url = "#{ai_server_url()}/summarize"
 
-    do_request_ai_server(url, params)
+    url
+    |> do_request_ai_server(params)
     |> case do
       {:ok, result} ->
         if result["error"] do
@@ -36,7 +38,8 @@ defmodule Sanbase.DiscordBot.AiServer do
     url = "#{ai_server_url()}/question"
 
     route_blacklist =
-      AiContext.check_limits(discord_metadata)
+      discord_metadata
+      |> AiContext.check_limits()
       |> case do
         :ok -> []
         {:error, _, _} -> ["twitter"]
@@ -51,7 +54,8 @@ defmodule Sanbase.DiscordBot.AiServer do
       metadata: discord_metadata
     }
 
-    do_request_ai_server(url, ai_server_params)
+    url
+    |> do_request_ai_server(ai_server_params)
     |> case do
       {:ok, result} ->
         {:ok, ai_context} = create_ai_context(result, question, discord_metadata)
@@ -69,7 +73,8 @@ defmodule Sanbase.DiscordBot.AiServer do
   def generate_program(query, discord_metadata) do
     url = "#{ai_server_url()}/generate"
 
-    do_request_ai_server(url, %{query: query})
+    url
+    |> do_request_ai_server(%{query: query})
     |> case do
       {:ok, result} ->
         params = %{
@@ -96,7 +101,8 @@ defmodule Sanbase.DiscordBot.AiServer do
   def find_or_generate_program(query, discord_metadata) do
     url = "#{ai_server_url()}/find_or_generate"
 
-    do_request_ai_server(url, %{query: query})
+    url
+    |> do_request_ai_server(%{query: query})
     |> case do
       {:ok, result} ->
         params = %{
@@ -123,7 +129,8 @@ defmodule Sanbase.DiscordBot.AiServer do
   def change_program(ai_gen_code, changes, discord_metadata, chat_history \\ []) do
     url = "#{ai_server_url()}/change"
 
-    do_request_ai_server(url, %{
+    url
+    |> do_request_ai_server(%{
       query: ai_gen_code.question,
       program: ai_gen_code.program,
       changes: changes,
@@ -155,7 +162,8 @@ defmodule Sanbase.DiscordBot.AiServer do
   def save_program(ai_gen_code) do
     url = "#{ai_server_url()}/save"
 
-    do_request_ai_server(url, %{query: ai_gen_code.question, program: ai_gen_code.program})
+    url
+    |> do_request_ai_server(%{query: ai_gen_code.question, program: ai_gen_code.program})
     |> case do
       {:ok, _} ->
         {:ok, ai_gen_code} = AiGenCode.change(ai_gen_code, %{is_saved_vs: true})
@@ -167,7 +175,7 @@ defmodule Sanbase.DiscordBot.AiServer do
   end
 
   # postgres indexing
-  def manage_postgres_index() do
+  def manage_postgres_index do
     if prod?() do
       url = "#{ai_server_url()}/postgres/index"
       HTTPoison.put(url, Jason.encode!(%{hours: 1}), [{"Content-Type", "application/json"}])
@@ -176,7 +184,7 @@ defmodule Sanbase.DiscordBot.AiServer do
     :ok
   end
 
-  def manage_postgres_index2() do
+  def manage_postgres_index2 do
     if prod?() do
       url = "#{ai_server_url()}/postgres/index2"
       HTTPoison.put(url, Jason.encode!(%{hours: 1}), [{"Content-Type", "application/json"}])
@@ -189,10 +197,11 @@ defmodule Sanbase.DiscordBot.AiServer do
   def search_insights(query) do
     url = "#{ai_server_url()}/question/insights"
 
-    HTTPoison.post(url, Jason.encode!(%{query: query}), [{"Content-Type", "application/json"}])
+    url
+    |> HTTPoison.post(Jason.encode!(%{query: query}), [{"Content-Type", "application/json"}])
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        body |> Jason.decode!()
+        Jason.decode!(body)
 
       _ ->
         []
@@ -253,11 +262,11 @@ defmodule Sanbase.DiscordBot.AiServer do
     AiContext.create(params)
   end
 
-  defp ai_server_url() do
+  defp ai_server_url do
     System.get_env("AI_SERVER_URL")
   end
 
-  defp prod?(), do: Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) == "prod"
+  defp prod?, do: Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) == "prod"
 
   @cryptos %{
     "eth" => ["eth", "ethereum"],
@@ -271,7 +280,8 @@ defmodule Sanbase.DiscordBot.AiServer do
   end
 
   defp crypto_project(project) do
-    Enum.reduce(@cryptos, [project], fn {key, value}, acc ->
+    @cryptos
+    |> Enum.reduce([project], fn {key, value}, acc ->
       if project == key, do: acc ++ value, else: acc
     end)
     |> Enum.uniq()

@@ -23,13 +23,13 @@ defmodule Sanbase.Alert.Trigger.RawSignalTriggerSettings do
 
   use Vex.Struct
 
-  import Sanbase.Validation
   import Sanbase.DateTimeUtils, only: [round_datetime: 1, str_to_sec: 1]
+  import Sanbase.Validation
 
   alias __MODULE__
-  alias Sanbase.Project
   alias Sanbase.Alert.Type
   alias Sanbase.Cache
+  alias Sanbase.Project
   alias Sanbase.Signal
 
   @derive {Jason.Encoder, except: [:filtered_target, :triggered?, :payload, :template_kv]}
@@ -64,7 +64,7 @@ defmodule Sanbase.Alert.Trigger.RawSignalTriggerSettings do
   validates(:time_window, &valid_time_window?/1)
 
   @spec type() :: String.t()
-  def type(), do: @trigger_type
+  def type, do: @trigger_type
 
   def post_create_process(_trigger), do: :nochange
   def post_update_process(_trigger), do: :nochange
@@ -80,8 +80,7 @@ defmodule Sanbase.Alert.Trigger.RawSignalTriggerSettings do
       fired_slugs = Enum.map(data, & &1.slug)
 
       data =
-        target_list
-        |> Enum.filter(fn slug -> slug in fired_slugs end)
+        Enum.filter(target_list, fn slug -> slug in fired_slugs end)
 
       {:ok, data}
     end
@@ -91,9 +90,9 @@ defmodule Sanbase.Alert.Trigger.RawSignalTriggerSettings do
     %{signal: signal, time_window: time_window} = settings
 
     cache_key =
-      {__MODULE__, :fetch_raw_signal_data, signal, slug_or_slugs, time_window,
-       round_datetime(Timex.now())}
-      |> Sanbase.Cache.hash()
+      Sanbase.Cache.hash(
+        {__MODULE__, :fetch_raw_signal_data, signal, slug_or_slugs, time_window, round_datetime(DateTime.utc_now())}
+      )
 
     %{from: from, to: to} = timerange_params(settings)
 
@@ -104,7 +103,7 @@ defmodule Sanbase.Alert.Trigger.RawSignalTriggerSettings do
 
   defp timerange_params(%RawSignalTriggerSettings{} = settings) do
     interval_seconds = str_to_sec(settings.time_window)
-    now = Timex.now()
+    now = DateTime.utc_now()
 
     %{
       from: Timex.shift(now, seconds: -interval_seconds),
@@ -131,10 +130,7 @@ defmodule Sanbase.Alert.Trigger.RawSignalTriggerSettings do
       end
     end
 
-    defp build_result(
-           fired_slugs,
-           %RawSignalTriggerSettings{filtered_target: %{list: slugs}} = settings
-         ) do
+    defp build_result(fired_slugs, %RawSignalTriggerSettings{filtered_target: %{list: slugs}} = settings) do
       template_kv =
         Enum.reduce(fired_slugs, %{}, fn slug, acc ->
           if slug in slugs do
@@ -145,16 +141,14 @@ defmodule Sanbase.Alert.Trigger.RawSignalTriggerSettings do
         end)
 
       settings =
-        case template_kv != %{} do
-          true ->
-            %RawSignalTriggerSettings{
-              settings
-              | triggered?: true,
-                template_kv: template_kv
-            }
-
-          false ->
-            %RawSignalTriggerSettings{settings | triggered?: false}
+        if template_kv == %{} do
+          %RawSignalTriggerSettings{settings | triggered?: false}
+        else
+          %RawSignalTriggerSettings{
+            settings
+            | triggered?: true,
+              template_kv: template_kv
+          }
         end
 
       {:ok, settings}
@@ -176,16 +170,18 @@ defmodule Sanbase.Alert.Trigger.RawSignalTriggerSettings do
       {details_template, details_kv} = OperationText.details(:signal, settings)
 
       kv =
-        %{
-          type: settings.type,
-          signal: settings.signal,
-          project_name: project.name,
-          project_slug: project.slug,
-          project_ticker: project.ticker,
-          sanbase_project_link: "https://app.santiment.net/charts?slug=#{project.slug}",
-          signal_human_readable_name: human_readable_name
-        }
-        |> OperationText.merge_kvs(details_kv)
+        OperationText.merge_kvs(
+          %{
+            type: settings.type,
+            signal: settings.signal,
+            project_name: project.name,
+            project_slug: project.slug,
+            project_ticker: project.ticker,
+            sanbase_project_link: "https://app.santiment.net/charts?slug=#{project.slug}",
+            signal_human_readable_name: human_readable_name
+          },
+          details_kv
+        )
 
       template = """
       🔔 [\#{{project_ticker}}]({{sanbase_project_link}}) | {{signal_human_readable_name}} signal fired for *{{project_name}}*.

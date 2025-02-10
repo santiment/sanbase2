@@ -12,15 +12,15 @@ defmodule Sanbase.Alert.Trigger.EthWalletTriggerSettings do
 
   use Vex.Struct
 
-  import Sanbase.Validation
-  import Sanbase.Alert.Validation
   import Sanbase.Alert.OperationEvaluation
+  import Sanbase.Alert.Validation
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1, round_datetime: 2]
+  import Sanbase.Validation
 
   alias __MODULE__
   alias Sanbase.Alert.Type
-  alias Sanbase.Project
   alias Sanbase.Clickhouse.HistoricalBalance
+  alias Sanbase.Project
 
   @trigger_type "eth_wallet"
   @derive {Jason.Encoder, except: [:filtered_target, :triggered?, :payload, :template_kv]}
@@ -58,17 +58,13 @@ defmodule Sanbase.Alert.Trigger.EthWalletTriggerSettings do
   validates(:time_window, &valid_time_window?/1)
 
   @spec type() :: String.t()
-  def type(), do: @trigger_type
+  def type, do: @trigger_type
 
   def post_create_process(_trigger), do: :nochange
   def post_update_process(_trigger), do: :nochange
 
-  def get_data(
-        %__MODULE__{
-          filtered_target: %{list: target_list, type: :eth_address}
-        } = settings
-      ) do
-    to = Timex.now()
+  def get_data(%__MODULE__{filtered_target: %{list: target_list, type: :eth_address}} = settings) do
+    to = DateTime.utc_now()
     from = Timex.shift(to, seconds: -str_to_sec(settings.time_window))
 
     data =
@@ -105,7 +101,7 @@ defmodule Sanbase.Alert.Trigger.EthWalletTriggerSettings do
   end
 
   defp project_eth_addresses_balance(project, settings) do
-    to = Timex.now()
+    to = DateTime.utc_now()
     from = Timex.shift(to, seconds: -str_to_sec(settings.time_window))
     {:ok, eth_addresses} = Project.eth_addresses(project)
 
@@ -127,8 +123,7 @@ defmodule Sanbase.Alert.Trigger.EthWalletTriggerSettings do
 
   defp aggregate_balance_changes(balance_data) do
     {_balance_start, _balance_end, _balance_change} =
-      balance_data
-      |> Enum.reduce({0, 0, 0}, fn
+      Enum.reduce(balance_data, {0, 0, 0}, fn
         %{} = map, {start_acc, end_acc, change_acc} ->
           {
             start_acc + map.balance_start,
@@ -140,9 +135,9 @@ defmodule Sanbase.Alert.Trigger.EthWalletTriggerSettings do
 
   defp balance_change(addresses, slug, from, to) do
     cache_key =
-      {__MODULE__, :balance_change, addresses, slug, round_datetime(from, second: 60),
-       round_datetime(to, second: 60)}
-      |> Sanbase.Cache.hash()
+      Sanbase.Cache.hash(
+        {__MODULE__, :balance_change, addresses, slug, round_datetime(from, second: 60), round_datetime(to, second: 60)}
+      )
 
     Sanbase.Cache.get_or_store(:alerts_evaluator_cache, cache_key, fn ->
       selector = %{infrastructure: "ETH", slug: slug}
@@ -176,16 +171,14 @@ defmodule Sanbase.Alert.Trigger.EthWalletTriggerSettings do
       template_kv =
         Enum.reduce(list, %{}, fn
           {project_or_addr, from, %{balance_change: balance_change} = balance_data}, acc ->
-            case operation_triggered?(balance_change, settings.operation) do
-              true ->
-                Map.put(
-                  acc,
-                  to_identifier(project_or_addr),
-                  template_kv(project_or_addr, settings, balance_data, from)
-                )
-
-              false ->
-                acc
+            if operation_triggered?(balance_change, settings.operation) do
+              Map.put(
+                acc,
+                to_identifier(project_or_addr),
+                template_kv(project_or_addr, settings, balance_data, from)
+              )
+            else
+              acc
             end
         end)
 

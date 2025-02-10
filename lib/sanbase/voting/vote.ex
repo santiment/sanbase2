@@ -4,17 +4,16 @@ defmodule Sanbase.Vote do
   """
   use Ecto.Schema
 
-  import Ecto.Query
   import Ecto.Changeset
+  import Ecto.Query
 
-  alias Sanbase.Repo
   alias Sanbase.Accounts.User
-
+  alias Sanbase.Alert.UserTrigger
   alias Sanbase.Chart
   alias Sanbase.Insight.Post
-  alias Sanbase.UserList
+  alias Sanbase.Repo
   alias Sanbase.Timeline.TimelineEvent
-  alias Sanbase.Alert.UserTrigger
+  alias Sanbase.UserList
 
   @type vote_params :: %{
           :user_id => non_neg_integer(),
@@ -91,7 +90,7 @@ defmodule Sanbase.Vote do
   def create(attrs) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(:select_if_exists, fn _repo, _changes ->
-      {:ok, get_by_opts(attrs |> Keyword.new())}
+      {:ok, attrs |> Keyword.new() |> get_by_opts()}
     end)
     |> Ecto.Multi.run(:create_or_increase_count, fn _repo, %{select_if_exists: vote} ->
       case vote do
@@ -106,7 +105,8 @@ defmodule Sanbase.Vote do
           {:ok, vote}
 
         %__MODULE__{count: count} = vote ->
-          changeset(vote, %{count: count + 1})
+          vote
+          |> changeset(%{count: count + 1})
           |> Repo.update()
       end
     end)
@@ -126,7 +126,7 @@ defmodule Sanbase.Vote do
   def downvote(attrs) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(:select_if_exists, fn _repo, _changes ->
-      {:ok, get_by_opts(attrs |> Keyword.new())}
+      {:ok, attrs |> Keyword.new() |> get_by_opts()}
     end)
     |> Ecto.Multi.run(:decrease_count_or_destroy, fn _repo, %{select_if_exists: vote} ->
       case vote do
@@ -137,7 +137,8 @@ defmodule Sanbase.Vote do
           with {:ok, _} <- Repo.delete(vote), do: {:ok, %__MODULE__{}}
 
         %__MODULE__{count: count} ->
-          changeset(vote, %{count: count - 1})
+          vote
+          |> changeset(%{count: count - 1})
           |> Repo.update()
       end
     end)
@@ -149,25 +150,27 @@ defmodule Sanbase.Vote do
   end
 
   def voted_at(entity_type, entity_ids, user_id) when is_integer(user_id) do
-    voted_at_query(entity_type, entity_ids, user_id)
+    entity_type
+    |> voted_at_query(entity_ids, user_id)
     |> Repo.all()
   end
 
   def vote_stats(entity_type, entity_ids, user_id \\ nil) do
     result =
-      total_votes_query(entity_type, entity_ids, user_id)
+      entity_type
+      |> total_votes_query(entity_ids, user_id)
       |> Repo.all()
 
     # Override `:current_user_votes` with nil if the user_id is nil
     # The SQL query returns 0 in these cases
     case user_id do
-      nil -> result |> Enum.map(&Map.put(&1, :current_user_votes, nil))
+      nil -> Enum.map(result, &Map.put(&1, :current_user_votes, nil))
       _ -> result
     end
   end
 
   @spec post_id_to_votes() :: map()
-  def post_id_to_votes() do
+  def post_id_to_votes do
     from(
       v in __MODULE__,
       group_by: v.post_id,

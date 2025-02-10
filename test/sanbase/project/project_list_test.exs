@@ -1,10 +1,12 @@
 defmodule Sanbase.ProjectListTest do
   use Sanbase.DataCase, async: false
 
-  alias Sanbase.Project
-
-  import Sanbase.Factory
   import ExUnit.CaptureLog
+  import Sanbase.Factory
+
+  alias Sanbase.Model.LatestCoinmarketcapData
+  alias Sanbase.Project
+  alias Sanbase.SocialData.TrendingWords
 
   describe "ordering with and without min_volume" do
     test "does not join twice when min_volume is provided" do
@@ -21,12 +23,12 @@ defmodule Sanbase.ProjectListTest do
     end
 
     test "equivalent results with and without min_volume when all projects have cmc data" do
-      insert(:random_project) |> update_latest_cmc_data(%{rank: 1, volume_usd: 500})
-      insert(:random_project) |> update_latest_cmc_data(%{rank: 2, volume_usd: 1100})
-      insert(:random_project) |> update_latest_cmc_data(%{rank: 3, volume_usd: 1200})
-      insert(:random_project) |> update_latest_cmc_data(%{rank: 4, volume_usd: 2000})
-      insert(:random_project) |> update_latest_cmc_data(%{rank: 5, volume_usd: 200})
-      insert(:random_project) |> update_latest_cmc_data(%{rank: 6, volume_usd: 10_000})
+      :random_project |> insert() |> update_latest_cmc_data(%{rank: 1, volume_usd: 500})
+      :random_project |> insert() |> update_latest_cmc_data(%{rank: 2, volume_usd: 1100})
+      :random_project |> insert() |> update_latest_cmc_data(%{rank: 3, volume_usd: 1200})
+      :random_project |> insert() |> update_latest_cmc_data(%{rank: 4, volume_usd: 2000})
+      :random_project |> insert() |> update_latest_cmc_data(%{rank: 5, volume_usd: 200})
+      :random_project |> insert() |> update_latest_cmc_data(%{rank: 6, volume_usd: 10_000})
 
       assert Project.List.projects_page(1, 2) == Project.List.projects_page(1, 2, min_volume: 0)
       assert Project.List.projects_page(2, 2) == Project.List.projects_page(2, 2, min_volume: 0)
@@ -38,10 +40,8 @@ defmodule Sanbase.ProjectListTest do
 
   describe "no projects" do
     test "currently trending projects" do
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.SocialData.TrendingWords.get_currently_trending_words/2,
-        {:ok, [%{word: "btc"}]}
-      )
+      (&TrendingWords.get_currently_trending_words/2)
+      |> Sanbase.Mock.prepare_mock2({:ok, [%{word: "btc"}]})
       |> Sanbase.Mock.run_with_mocks(fn ->
         assert Project.List.currently_trending_projects() == []
       end)
@@ -95,29 +95,34 @@ defmodule Sanbase.ProjectListTest do
   describe "with projects" do
     setup do
       p1 =
-        insert(:random_erc20_project, ticker: "BTC")
+        :random_erc20_project
+        |> insert(ticker: "BTC")
         |> update_latest_cmc_data(%{rank: 2, volume_usd: 500})
 
       p2 =
-        insert(:random_erc20_project, ticker: "BTC")
+        :random_erc20_project
+        |> insert(ticker: "BTC")
         |> update_latest_cmc_data(%{rank: 3, volume_usd: 1100})
 
       p3 =
-        insert(:random_erc20_project)
+        :random_erc20_project
+        |> insert()
         |> update_latest_cmc_data(%{rank: 4, volume_usd: 2500})
 
       p4 = insert(:random_project, source_slug_mappings: [])
 
-      p5 = insert(:random_project) |> update_latest_cmc_data(%{rank: 5, volume_usd: 100})
+      p5 = :random_project |> insert() |> update_latest_cmc_data(%{rank: 5, volume_usd: 100})
 
-      p6 = insert(:random_project) |> update_latest_cmc_data(%{rank: 6})
+      p6 = :random_project |> insert() |> update_latest_cmc_data(%{rank: 6})
 
       p7 =
-        insert(:random_project, is_hidden: true)
+        :random_project
+        |> insert(is_hidden: true)
         |> update_latest_cmc_data(%{rank: 1, volume_usd: 5000})
 
       p8 =
-        insert(:random_erc20_project, is_hidden: true)
+        :random_erc20_project
+        |> insert(is_hidden: true)
         |> update_latest_cmc_data(%{rank: 11, volume_usd: 5000})
 
       hidden_projects = [p7: p7, p8: p8]
@@ -136,15 +141,15 @@ defmodule Sanbase.ProjectListTest do
     end
 
     test "all projects", context do
-      assert Project.List.projects() |> length() == context.total_count
+      assert length(Project.List.projects()) == context.total_count
     end
 
     test "all erc20 projects", context do
-      assert Project.List.erc20_projects() |> length() == context.total_erc20_count
+      assert length(Project.List.erc20_projects()) == context.total_erc20_count
     end
 
     test "all currency projects", context do
-      assert Project.List.currency_projects() |> length() == context.total_currency_count
+      assert length(Project.List.currency_projects()) == context.total_currency_count
     end
 
     test "all projects by ticker", context do
@@ -210,8 +215,8 @@ defmodule Sanbase.ProjectListTest do
       %{hidden_projects: [{_, hidden_project} | _], non_hidden_projects: [{_, project} | _]} =
         context
 
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.SocialData.TrendingWords.get_currently_trending_words/2,
+      (&TrendingWords.get_currently_trending_words/2)
+      |> Sanbase.Mock.prepare_mock2(
         {:ok,
          [
            %{word: hidden_project.slug},
@@ -221,20 +226,16 @@ defmodule Sanbase.ProjectListTest do
       |> Sanbase.Mock.run_with_mocks(fn ->
         currently_trending_projects = Project.List.currently_trending_projects()
 
-        assert currently_trending_projects |> length() == 1
+        assert length(currently_trending_projects) == 1
         assert currently_trending_projects |> hd() |> Map.get(:slug) == project.slug
       end)
     end
   end
 
   defp update_latest_cmc_data(project, args) do
-    %Sanbase.Model.LatestCoinmarketcapData{}
-    |> Sanbase.Model.LatestCoinmarketcapData.changeset(
-      %{
-        coinmarketcap_id: project.slug,
-        update_time: Timex.now()
-      }
-      |> Map.merge(args)
+    %LatestCoinmarketcapData{}
+    |> LatestCoinmarketcapData.changeset(
+      Map.merge(%{coinmarketcap_id: project.slug, update_time: DateTime.utc_now()}, args)
     )
     |> Sanbase.Repo.insert_or_update()
 

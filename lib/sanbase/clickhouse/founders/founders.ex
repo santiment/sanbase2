@@ -1,4 +1,7 @@
 defmodule Sanbase.Clickhouse.Founders do
+  @moduledoc false
+  alias Sanbase.Clickhouse.Query
+
   def get_founders(slug \\ nil) do
     query = get_founders_query(slug)
 
@@ -13,7 +16,7 @@ defmodule Sanbase.Clickhouse.Founders do
     FROM founder_metadata
     """
 
-    Sanbase.Clickhouse.Query.new(sql, %{})
+    Query.new(sql, %{})
   end
 
   defp get_founders_query(slug) do
@@ -23,6 +26,6 @@ defmodule Sanbase.Clickhouse.Founders do
     WHERE slug = {{slug}}
     """
 
-    Sanbase.Clickhouse.Query.new(sql, %{slug: slug})
+    Query.new(sql, %{slug: slug})
   end
 end

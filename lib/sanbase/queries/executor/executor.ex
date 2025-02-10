@@ -1,8 +1,9 @@
 defmodule Sanbase.Queries.Executor do
+  @moduledoc false
+  alias Sanbase.Clickhouse.Query.Environment
+  alias Sanbase.Queries.Executor.Result
   alias Sanbase.Queries.Query
   alias Sanbase.Queries.QueryMetadata
-  alias Sanbase.Queries.Executor.Result
-  alias Sanbase.Clickhouse.Query.Environment
 
   @doc ~s"""
   Compute the SQL defined in the panel by executing it against ClickHouse.
@@ -13,7 +14,7 @@ defmodule Sanbase.Queries.Executor do
   @spec run(Query.t(), QueryMetadata.t(), Environment.t()) ::
           {:ok, Result.t()} | {:error, String.t()}
   def run(%Query{} = query, %{} = query_metadata, %{} = environment) do
-    query_start_time = DateTime.utc_now() |> DateTime.truncate(:millisecond)
+    query_start_time = DateTime.truncate(DateTime.utc_now(), :millisecond)
 
     _ = put_dynamic_repo()
 
@@ -36,7 +37,7 @@ defmodule Sanbase.Queries.Executor do
            columns: map.column_names,
            column_types: map.column_types,
            query_start_time: query_start_time,
-           query_end_time: DateTime.utc_now() |> DateTime.truncate(:millisecond)
+           query_end_time: DateTime.truncate(DateTime.utc_now(), :millisecond)
          }}
 
       {:error, error} ->
@@ -51,7 +52,7 @@ defmodule Sanbase.Queries.Executor do
     Map.new(summary, fn {k, v} -> {k, Sanbase.Math.to_float(v)} end)
   end
 
-  defp put_dynamic_repo() do
+  defp put_dynamic_repo do
     # Use the pool defined by the ReadOnly repo. This is used only here
     # as this is the only place where we need to execute queries written
     # by the user. The ReadOnly repo is connecting to the database with
@@ -67,7 +68,8 @@ defmodule Sanbase.Queries.Executor do
 
     opts = [settings: "log_comment='#{Jason.encode!(query_metadata)}'", environment: environment]
 
-    Sanbase.Clickhouse.Query.new(query.sql_query_text, query.sql_query_parameters, opts)
+    query.sql_query_text
+    |> Sanbase.Clickhouse.Query.new(query.sql_query_parameters, opts)
     |> extend_sql_query(query_metadata)
   end
 

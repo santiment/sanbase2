@@ -32,10 +32,10 @@ defmodule SanbaseWeb.Graphql.ReportsApiTest do
 
   describe "get reports" do
     setup do
-      now = Timex.now()
+      now = DateTime.utc_now()
       not_published = insert(:report, is_published: false, inserted_at: now)
 
-      seconds_ago = NaiveDateTime.utc_now() |> Timex.shift(seconds: -5)
+      seconds_ago = Timex.shift(NaiveDateTime.utc_now(), seconds: -5)
       free_report = insert(:report, is_pro: false, is_published: true, inserted_at: seconds_ago)
       pro_report = insert(:report, is_pro: true, is_published: true)
 
@@ -114,7 +114,7 @@ defmodule SanbaseWeb.Graphql.ReportsApiTest do
 
   describe "get reports by tags" do
     setup do
-      seconds_ago = NaiveDateTime.utc_now() |> Timex.shift(seconds: -5)
+      seconds_ago = Timex.shift(NaiveDateTime.utc_now(), seconds: -5)
       insert(:report, is_pro: false, is_published: true)
 
       r1 =
@@ -168,7 +168,7 @@ defmodule SanbaseWeb.Graphql.ReportsApiTest do
   def get_reports_by_tags(conn, tags) do
     query = """
     {
-      getReportsByTags(tags: #{tags |> Jason.encode!()})
+      getReportsByTags(tags: #{Jason.encode!(tags)})
       {
         url
         name

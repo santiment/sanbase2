@@ -1,7 +1,9 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.PriceScrapingProgress do
+  @moduledoc false
   use Ecto.Schema
 
-  import Ecto.{Query, Changeset}
+  import Ecto.Changeset
+  import Ecto.Query
 
   alias Sanbase.Repo
 

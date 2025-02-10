@@ -10,16 +10,16 @@ defmodule Sanbase.Alert.Operation do
   @channel_operations [:inside_channel, :outside_channel]
   @combinator_operations [:some_of, :all_of, :none_of]
 
-  def percent_operations(), do: @percent_operations
-  def absolute_value_operations(), do: @absolute_value_operations
-  def absolute_change_operations(), do: @absolute_change_operations
-  def absolute_operations(), do: @absolute_operations
-  def channel_operations(), do: @channel_operations
-  def combinator_operations(), do: @combinator_operations
+  def percent_operations, do: @percent_operations
+  def absolute_value_operations, do: @absolute_value_operations
+  def absolute_change_operations, do: @absolute_change_operations
+  def absolute_operations, do: @absolute_operations
+  def channel_operations, do: @channel_operations
+  def combinator_operations, do: @combinator_operations
 
   @spec type(map()) :: :percent | :absolute | :channel | :combinator
   def type(operation_map) when is_map(operation_map) and map_size(operation_map) == 1 do
-    operation = Map.keys(operation_map) |> List.first()
+    operation = operation_map |> Map.keys() |> List.first()
 
     case operation do
       op when op in @percent_operations -> :percent
@@ -32,7 +32,7 @@ defmodule Sanbase.Alert.Operation do
   @spec type_extended(map()) ::
           :percent | :absolute_value | :absolute_change | :channel | :combinator
   def type_extended(operation_map) when is_map(operation_map) and map_size(operation_map) == 1 do
-    operation = Map.keys(operation_map) |> List.first()
+    operation = operation_map |> Map.keys() |> List.first()
 
     case operation do
       op when op in @percent_operations -> :percent

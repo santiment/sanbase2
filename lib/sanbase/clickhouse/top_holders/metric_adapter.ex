@@ -5,21 +5,19 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   @behaviour Sanbase.Metric.Behaviour
 
   import Sanbase.Clickhouse.TopHolders.SqlQuery
+  import Sanbase.Utils.ErrorHandling, only: [not_implemented_function_for_metric_error: 2]
 
   import Sanbase.Utils.Transform,
     only: [maybe_fill_gaps_last_seen: 2, maybe_unwrap_ok_value: 1]
 
-  import Sanbase.Utils.ErrorHandling, only: [not_implemented_function_for_metric_error: 2]
-
-  alias Sanbase.Project
-
   alias Sanbase.ClickhouseRepo
+  alias Sanbase.Project
 
   @supported_infrastructures ["ETH"]
 
   @default_complexity_weight 0.3
 
-  def supported_infrastructures(), do: @supported_infrastructures
+  def supported_infrastructures, do: @supported_infrastructures
 
   @infrastructure_to_table %{"ETH" => "eth_top_holders_daily"}
 
@@ -39,22 +37,24 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   @metrics @histogram_metrics ++ @timeseries_metrics ++ @table_metrics
 
   # plan related - the plan is upcase string
-  @min_plan_map Enum.into(@metrics, %{}, fn metric ->
+  @min_plan_map Map.new(@metrics, fn metric ->
                   {metric, %{"SANAPI" => "FREE", "SANBASE" => "FREE"}}
                 end)
 
   # restriction related - the restriction is atom :free or :restricted
-  @access_map Enum.into(@metrics, %{}, fn metric -> {metric, :restricted} end)
-  @free_metrics Enum.filter(@access_map, fn {_, level} -> level == :free end)
+  @access_map Map.new(@metrics, fn metric -> {metric, :restricted} end)
+  @free_metrics @access_map
+                |> Enum.filter(fn {_, level} -> level == :free end)
                 |> Enum.map(&elem(&1, 0))
-  @restricted_metrics Enum.filter(@access_map, fn {_, level} -> level == :restricted end)
+  @restricted_metrics @access_map
+                      |> Enum.filter(fn {_, level} -> level == :restricted end)
                       |> Enum.map(&elem(&1, 0))
 
-  @required_selectors Enum.into(@metrics, %{}, &{&1, []})
+  @required_selectors Map.new(@metrics, &{&1, []})
   @default_holders_count 10
 
   @impl Sanbase.Metric.Behaviour
-  def required_selectors(), do: @required_selectors
+  def required_selectors, do: @required_selectors
 
   @impl Sanbase.Metric.Behaviour
   def broken_data(_metric, _selector, _from, _to), do: {:ok, []}
@@ -66,7 +66,8 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
          {:ok, params} <-
            timeseries_data_params(selector, contract, infr, from, to, interval, decimals, opts) do
       result =
-        timeseries_data_query(metric, params)
+        metric
+        |> timeseries_data_query(params)
         |> ClickhouseRepo.query_transform(fn [timestamp, value, has_changed] ->
           %{datetime: DateTime.from_unix!(timestamp), value: value, has_changed: has_changed}
         end)
@@ -146,19 +147,19 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   def complexity_weight(_), do: @default_complexity_weight
 
   @impl Sanbase.Metric.Behaviour
-  def available_aggregations(), do: @aggregations
+  def available_aggregations, do: @aggregations
 
   @impl Sanbase.Metric.Behaviour
-  def available_timeseries_metrics(), do: @timeseries_metrics
+  def available_timeseries_metrics, do: @timeseries_metrics
 
   @impl Sanbase.Metric.Behaviour
-  def available_histogram_metrics(), do: @histogram_metrics
+  def available_histogram_metrics, do: @histogram_metrics
 
   @impl Sanbase.Metric.Behaviour
-  def available_table_metrics(), do: @table_metrics
+  def available_table_metrics, do: @table_metrics
 
   @impl Sanbase.Metric.Behaviour
-  def available_metrics(), do: @metrics
+  def available_metrics, do: @metrics
 
   @impl Sanbase.Metric.Behaviour
   def available_metrics(%{address: _address}), do: []
@@ -172,9 +173,10 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
          {:ok, infr} <- Project.infrastructure_real_code(project) do
       if infr in @supported_infrastructures and Project.has_contract_address?(project) do
         # Until we have Binance exchange addresses remove exchange metrics for it.
-        case infr in ["ETH"] do
-          true -> {:ok, @metrics}
-          false -> {:ok, @metrics |> Enum.reject(&String.contains?(&1, "exchange"))}
+        if infr in ["ETH"] do
+          {:ok, @metrics}
+        else
+          {:ok, Enum.reject(@metrics, &String.contains?(&1, "exchange"))}
         end
       else
         {:ok, []}
@@ -192,7 +194,8 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
       table = to_table(contract, infr)
       query_struct = first_datetime_query(table, contract)
 
-      ClickhouseRepo.query_transform(query_struct, fn [timestamp] ->
+      query_struct
+      |> ClickhouseRepo.query_transform(fn [timestamp] ->
         DateTime.from_unix!(timestamp)
       end)
       |> maybe_unwrap_ok_value()
@@ -207,7 +210,8 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
       _query_struct = first_datetime_query(table, contract)
       query_struct = last_datetime_computed_at_query(table, contract)
 
-      ClickhouseRepo.query_transform(query_struct, fn [timestamp] ->
+      query_struct
+      |> ClickhouseRepo.query_transform(fn [timestamp] ->
         DateTime.from_unix!(timestamp)
       end)
       |> maybe_unwrap_ok_value()
@@ -215,15 +219,16 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def available_slugs() do
-    cache_key = {__MODULE__, :available_slugs} |> Sanbase.Cache.hash()
+  def available_slugs do
+    cache_key = Sanbase.Cache.hash({__MODULE__, :available_slugs})
 
     Sanbase.Cache.get_or_store({cache_key, 1800}, &projects_with_supported_infrastructure/0)
   end
 
-  defp projects_with_supported_infrastructure() do
+  defp projects_with_supported_infrastructure do
     result =
-      Project.List.projects(preload: [:infrastructure, :contract_addresses])
+      [preload: [:infrastructure, :contract_addresses]]
+      |> Project.List.projects()
       |> Enum.filter(fn project ->
         case Project.infrastructure_real_code(project) do
           {:ok, infr_code} ->
@@ -245,23 +250,22 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def incomplete_metrics(), do: []
+  def incomplete_metrics, do: []
 
   @impl Sanbase.Metric.Behaviour
-  def free_metrics(), do: @free_metrics
+  def free_metrics, do: @free_metrics
 
   @impl Sanbase.Metric.Behaviour
-  def restricted_metrics(), do: @restricted_metrics
+  def restricted_metrics, do: @restricted_metrics
 
   @impl Sanbase.Metric.Behaviour
-  def access_map(), do: @access_map
+  def access_map, do: @access_map
 
   @impl Sanbase.Metric.Behaviour
-  def min_plan_map(), do: @min_plan_map
+  def min_plan_map, do: @min_plan_map
 
   # Private functions
-  defp chain_supported?(infr, _slug, _metric_) when infr in @supported_infrastructures,
-    do: true
+  defp chain_supported?(infr, _slug, _metric_) when infr in @supported_infrastructures, do: true
 
   defp chain_supported?(_infr, slug, metric) do
     {:error, "The metric #{metric} is not supported for #{slug}"}

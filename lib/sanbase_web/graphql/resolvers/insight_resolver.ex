@@ -1,12 +1,12 @@
 defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
-  require Logger
-
+  @moduledoc false
   import Absinthe.Resolution.Helpers, except: [async: 1]
 
-  alias SanbaseWeb.Graphql.SanbaseDataloader
   alias Sanbase.Accounts.User
-  alias Sanbase.Insight.{Post, PopularAuthor}
   alias Sanbase.Comments.EntityComment
+  alias Sanbase.Insight.PopularAuthor
+  alias Sanbase.Insight.Post
+  alias SanbaseWeb.Graphql.SanbaseDataloader
 
   require Logger
 
@@ -48,8 +48,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     Post.by_id(post_id, [])
   end
 
-  def all_insights(_root, %{tags: tags, page: page, page_size: page_size} = args, _context)
-      when is_list(tags) do
+  def all_insights(_root, %{tags: tags, page: page, page_size: page_size} = args, _context) when is_list(tags) do
     opts = [
       is_pulse: Map.get(args, :is_pulse),
       is_paywall_required: Map.get(args, :is_paywall_required),
@@ -79,11 +78,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     {:ok, posts}
   end
 
-  def all_insights_for_user(
-        _root,
-        %{user_id: user_id, page: page, page_size: page_size} = args,
-        _context
-      ) do
+  def all_insights_for_user(_root, %{user_id: user_id, page: page, page_size: page_size} = args, _context) do
     opts = [
       is_pulse: Map.get(args, :is_pulse),
       is_paywall_required: Map.get(args, :is_paywall_required),
@@ -124,11 +119,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     {:ok, posts}
   end
 
-  def all_insights_by_search_term(
-        _root,
-        %{search_term: search_term, page: page, page_size: page_size} = args,
-        _context
-      ) do
+  def all_insights_by_search_term(_root, %{search_term: search_term, page: page, page_size: page_size} = args, _context) do
     opts = [
       is_pulse: Map.get(args, :is_pulse),
       is_paywall_required: Map.get(args, :is_paywall_required),
@@ -170,9 +161,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   the `text` field as it will be filled only for those insights.
   """
   def pulse_text(%Post{} = post, _args, _resolution) do
-    case Post.pulse?(post) do
-      true -> {:ok, post.text}
-      _ -> {:ok, nil}
+    if Post.pulse?(post) do
+      {:ok, post.text}
+    else
+      {:ok, nil}
     end
   end
 
@@ -183,21 +175,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     end
   end
 
-  def update_post(_root, %{id: post_id} = args, %{
-        context: %{auth: %{current_user: %User{} = user}}
-      }) do
+  def update_post(_root, %{id: post_id} = args, %{context: %{auth: %{current_user: %User{} = user}}}) do
     Post.update(post_id, user, args)
   end
 
-  def delete_post(_root, %{id: post_id}, %{
-        context: %{auth: %{current_user: %User{} = user}}
-      }) do
+  def delete_post(_root, %{id: post_id}, %{context: %{auth: %{current_user: %User{} = user}}}) do
     Post.delete(post_id, user)
   end
 
-  def publish_insight(_root, %{id: post_id}, %{
-        context: %{auth: %{current_user: %User{id: user_id}}}
-      }) do
+  def publish_insight(_root, %{id: post_id}, %{context: %{auth: %{current_user: %User{id: user_id}}}}) do
     Post.publish(post_id, user_id)
   end
 
@@ -218,7 +204,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   # Note: deprecated - should be removed if not used by frontend
   def insight_comments(_root, %{insight_id: insight_id} = args, _resolution) do
     comments =
-      EntityComment.get_comments(:insight, insight_id, args)
+      :insight
+      |> EntityComment.get_comments(insight_id, args)
       |> Enum.map(& &1.comment)
 
     {:ok, comments}

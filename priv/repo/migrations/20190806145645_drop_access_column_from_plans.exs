@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.DropAccessColumnFromPlans do
+  @moduledoc false
   use Ecto.Migration
 
   def change do

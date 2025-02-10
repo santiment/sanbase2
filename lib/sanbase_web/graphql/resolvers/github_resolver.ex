@@ -1,11 +1,12 @@
 defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
-  require Logger
-
-  import SanbaseWeb.Graphql.Helpers.CalibrateInterval
+  @moduledoc false
   import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3, handle_graphql_error: 4]
+  import SanbaseWeb.Graphql.Helpers.CalibrateInterval
 
   alias Sanbase.Clickhouse.Github
   alias Sanbase.Project
+
+  require Logger
 
   def dev_activity(
         _root,
@@ -90,15 +91,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
 
     with projects when is_list(projects) <-
            Project.List.by_market_segment_all_of(market_segments),
-         slugs <- Enum.map(projects, & &1.slug),
+         slugs = Enum.map(projects, & &1.slug),
          {:ok, result} <- get_dev_activity_many_slugs(slugs, args, root, resolution) do
       {:ok, result}
     else
       {:error, error} ->
-        {:error,
-         handle_graphql_error("dev_activity", market_segments, error,
-           description: "market segments"
-         )}
+        {:error, handle_graphql_error("dev_activity", market_segments, error, description: "market segments")}
     end
   end
 
@@ -126,8 +124,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
         {:ok, result}
 
       error ->
-        {:error,
-         handle_graphql_error("dev_activity", organizations, error, description: "organizations")}
+        {:error, handle_graphql_error("dev_activity", organizations, error, description: "organizations")}
     end
   end
 

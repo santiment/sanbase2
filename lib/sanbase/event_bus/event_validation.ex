@@ -8,6 +8,9 @@ defmodule Sanbase.EventBus.EventValidation do
   #############################################################################
   ## Accounts Events
   #############################################################################
+  alias Sanbase.Billing.Plan
+  alias Sanbase.Billing.Product
+
   def valid?(%{event_type: :update_username, user_id: id, old_username: old, new_username: new}),
     do: valid_integer_id?(id) and valid_maybe_nil_string_field_change?(old, new)
 
@@ -20,12 +23,8 @@ defmodule Sanbase.EventBus.EventValidation do
   def valid?(%{event_type: :update_email_candidate, user_id: id, email_candidate: email}),
     do: valid_integer_id?(id) and is_binary(email)
 
-  def valid?(%{
-        event_type: :disconnect_telegram_bot,
-        user_id: id,
-        telegram_chat_id: telegram_chat_id
-      }),
-      do: valid_integer_id?(id) and is_integer(telegram_chat_id)
+  def valid?(%{event_type: :disconnect_telegram_bot, user_id: id, telegram_chat_id: telegram_chat_id}),
+    do: valid_integer_id?(id) and is_integer(telegram_chat_id)
 
   def valid?(%{event_type: :register_user, user_id: id, login_origin: login_origin}),
     do: valid_integer_id?(id) and (is_atom(login_origin) or is_binary(login_origin))
@@ -38,8 +37,7 @@ defmodule Sanbase.EventBus.EventValidation do
   def valid?(%{event_type: :login_user, user_id: id, login_origin: login_origin}),
     do: valid_integer_id?(id) and (is_atom(login_origin) or is_binary(login_origin))
 
-  def valid?(%{event_type: :send_email_login_link, user_id: id}),
-    do: valid_integer_id?(id)
+  def valid?(%{event_type: :send_email_login_link, user_id: id}), do: valid_integer_id?(id)
 
   def valid?(%{event_type: :create_user, user_id: id}), do: valid_integer_id?(id)
 
@@ -56,19 +54,10 @@ defmodule Sanbase.EventBus.EventValidation do
   #############################################################################
   ## Comments Events
   #############################################################################
-  def valid?(%{
-        event_type: :create_comment,
-        user_id: user_id,
-        comment_id: comment_id,
-        entity: entity
-      }),
-      do: valid_integer_id?(user_id) and valid_integer_id?(comment_id) and is_atom(entity)
+  def valid?(%{event_type: :create_comment, user_id: user_id, comment_id: comment_id, entity: entity}),
+    do: valid_integer_id?(user_id) and valid_integer_id?(comment_id) and is_atom(entity)
 
-  def valid?(%{
-        event_type: event_type,
-        user_id: user_id,
-        comment_id: comment_id
-      })
+  def valid?(%{event_type: event_type, user_id: user_id, comment_id: comment_id})
       when event_type in [:update_comment, :anonymize_comment],
       do: valid_integer_id?(user_id) and valid_integer_id?(comment_id)
 
@@ -76,13 +65,7 @@ defmodule Sanbase.EventBus.EventValidation do
   ## Insight Events
   #############################################################################
   def valid?(%{event_type: event_type, user_id: user_id, insight_id: insight_id})
-      when event_type in [
-             :create_insight,
-             :update_insight,
-             :delete_insight,
-             :publish_insight,
-             :unpublish_insight
-           ],
+      when event_type in [:create_insight, :update_insight, :delete_insight, :publish_insight, :unpublish_insight],
       do: valid_integer_id?(user_id) and valid_integer_id?(insight_id)
 
   #############################################################################
@@ -95,34 +78,19 @@ defmodule Sanbase.EventBus.EventValidation do
   #############################################################################
   ## Apikey Events
   #############################################################################
-  def valid?(%{
-        event_type: event_type,
-        user_id: user_id,
-        token: token
-      })
+  def valid?(%{event_type: event_type, user_id: user_id, token: token})
       when event_type in [:generate_apikey, :revoke_apikey],
       do: is_binary(token) and token != "" and valid_integer_id?(user_id)
 
   #############################################################################
   ## Billing Events
   #############################################################################
-  def valid?(%{
-        event_type: :create_stripe_customer,
-        user_id: user_id,
-        stripe_customer_id: customer_id
-      }),
-      do: valid_integer_id?(user_id) and valid_string_id?(customer_id)
+  def valid?(%{event_type: :create_stripe_customer, user_id: user_id, stripe_customer_id: customer_id}),
+    do: valid_integer_id?(user_id) and valid_string_id?(customer_id)
 
-  def valid?(%{
-        event_type: event_type,
-        user_id: user_id,
-        stripe_customer_id: customer_id,
-        card_token: card_token
-      })
+  def valid?(%{event_type: event_type, user_id: user_id, stripe_customer_id: customer_id, card_token: card_token})
       when event_type in [:create_stripe_customer, :update_stripe_customer],
-      do:
-        valid_integer_id?(user_id) and valid_string_id?(customer_id) and
-          (is_nil(card_token) or is_binary(card_token))
+      do: valid_integer_id?(user_id) and valid_string_id?(customer_id) and (is_nil(card_token) or is_binary(card_token))
 
   def valid?(
         %{
@@ -139,9 +107,7 @@ defmodule Sanbase.EventBus.EventValidation do
              :renew_subscription,
              :cancel_subscription_at_period_end
            ],
-      do:
-        valid_integer_id?(subscription_id) and valid_integer_id?(user_id) and
-          valid_subscription_stripe_id?(event)
+      do: valid_integer_id?(subscription_id) and valid_integer_id?(user_id) and valid_subscription_stripe_id?(event)
 
   #############################################################################
   ## Payment Events
@@ -150,16 +116,10 @@ defmodule Sanbase.EventBus.EventValidation do
       when event_type in [:payment_success, :payment_fail, :charge_fail],
       do: (is_nil(user_id) or valid_integer_id?(user_id)) and valid_string_id?(stripe_event_id)
 
-  def valid?(%{
-        event_type: :new_subscription,
-        user_id: user_id,
-        stripe_id: stripe_id,
-        plan: plan,
-        product: product
-      }) do
+  def valid?(%{event_type: :new_subscription, user_id: user_id, stripe_id: stripe_id, plan: plan, product: product}) do
     valid_integer_id?(user_id) and valid_string_id?(stripe_id) and
-      plan in Sanbase.Billing.Plan.plans() and
-      product in Sanbase.Billing.Product.product_atom_names()
+      plan in Plan.plans() and
+      product in Product.product_atom_names()
   end
 
   def valid?(%{
@@ -170,8 +130,8 @@ defmodule Sanbase.EventBus.EventValidation do
         product: product
       }) do
     valid_integer_id?(user_id) and valid_string_id?(stripe_id) and
-      plan in Sanbase.Billing.Plan.plans() and
-      product in Sanbase.Billing.Product.product_atom_names()
+      plan in Plan.plans() and
+      product in Product.product_atom_names()
   end
 
   def valid?(%{
@@ -183,25 +143,18 @@ defmodule Sanbase.EventBus.EventValidation do
         promo_code: promo_code
       }) do
     valid_integer_id?(user_id) and valid_string_id?(stripe_id) and is_binary(promo_code) and
-      plan in Sanbase.Billing.Plan.plans() and
-      product in Sanbase.Billing.Product.product_atom_names()
+      plan in Plan.plans() and
+      product in Product.product_atom_names()
   end
 
   #############################################################################
   ## Promoter Events
   #############################################################################
-  def valid?(%{
-        event_type: :create_promoter,
-        user_id: user_id,
-        promoter_origin: promoter_origin
-      }) do
+  def valid?(%{event_type: :create_promoter, user_id: user_id, promoter_origin: promoter_origin}) do
     valid_integer_id?(user_id) and is_binary(promoter_origin) and promoter_origin != ""
   end
 
-  def valid?(%{
-        event_type: event_type,
-        user_id: user_id
-      })
+  def valid?(%{event_type: event_type, user_id: user_id})
       when event_type in [
              :subscribe_biweekly_report,
              :unsubscribe_biweekly_report,
@@ -219,9 +172,7 @@ defmodule Sanbase.EventBus.EventValidation do
 
   #############################################################################
 
-  def valid?(%{
-        event_type: event_type
-      })
+  def valid?(%{event_type: event_type})
       when event_type in [
              :bulk_metric_registry_change,
              :create_metric_registry,
@@ -255,6 +206,5 @@ defmodule Sanbase.EventBus.EventValidation do
   defp valid_subscription_stripe_id?(%{type: :nft_subscription, stripe_subscription_id: id}),
     do: is_nil(id) or valid_string_id?(id)
 
-  defp valid_subscription_stripe_id?(%{stripe_subscription_id: id}),
-    do: valid_string_id?(id)
+  defp valid_subscription_stripe_id?(%{stripe_subscription_id: id}), do: valid_string_id?(id)
 end

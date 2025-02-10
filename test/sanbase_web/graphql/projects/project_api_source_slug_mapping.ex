@@ -24,7 +24,8 @@ defmodule SanbaseWeb.Graphql.ProjectApiSourceSlugMappingTest do
     result = Enum.sort_by(result, & &1["slug"])
 
     expected_result =
-      Enum.map([p1, p2, p3], fn project ->
+      [p1, p2, p3]
+      |> Enum.map(fn project ->
         %{
           "slug" => project.slug,
           "sourceSlugMappings" =>

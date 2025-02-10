@@ -1,4 +1,5 @@
 defmodule Sanbase.Cryptocompare.HistoricalDataStub do
+  @moduledoc false
   def ohlcv_price_data(base_asset, quote_asset, date) do
     date =
       case date do
@@ -178,7 +179,8 @@ defmodule Sanbase.Cryptocompare.HistoricalDataStub do
 
   defp plus_minute_unix(date, minutes) do
     # receive a date Date and minutes int and return unix timestamp that is minutes after date
-    DateTime.new!(date, ~T[00:00:00])
+    date
+    |> DateTime.new!(~T[00:00:00])
     |> Timex.shift(minutes: minutes)
     |> DateTime.to_unix()
   end

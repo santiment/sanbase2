@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.CreateQueriesCacheTable do
+  @moduledoc false
   use Ecto.Migration
 
   @table :queries_cache

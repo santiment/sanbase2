@@ -18,11 +18,11 @@ defmodule Sanbase.Metric do
 
   import Sanbase.Utils.Transform, only: [maybe_sort: 3, maybe_apply_function: 2]
 
+  alias Sanbase.Clickhouse.MetricAdapter.Registry
+
   # Use only the types from the behaviour module
   alias Sanbase.Metric.Behaviour, as: Type
   alias Sanbase.Metric.Helper
-
-  alias Sanbase.Clickhouse.MetricAdapter.Registry
 
   @compile inline: [
              execute_if_aggregation_valid: 3,
@@ -55,16 +55,18 @@ defmodule Sanbase.Metric do
   """
   @spec has_metric?(any()) :: true | {:error, String.t()}
   def has_metric?(metric) do
-    case metric in Helper.metrics_mapset() do
-      true -> true
-      false -> metric_not_available_error(metric)
+    if metric in Helper.metrics_mapset() do
+      true
+    else
+      metric_not_available_error(metric)
     end
   end
 
   def required_selectors(metric) do
-    case metric in Helper.metrics_mapset() do
-      true -> {:ok, Map.get(Helper.required_selectors_map(), metric, [])}
-      false -> metric_not_available_error(metric)
+    if metric in Helper.metrics_mapset() do
+      {:ok, Map.get(Helper.required_selectors_map(), metric, [])}
+    else
+      metric_not_available_error(metric)
     end
   end
 
@@ -92,7 +94,7 @@ defmodule Sanbase.Metric do
   if the name is known.
   """
   @spec hidden_metrics() :: MapSet.t()
-  def hidden_metrics() do
+  def hidden_metrics do
     Registry.hidden_metrics_mapset()
   end
 
@@ -150,8 +152,8 @@ defmodule Sanbase.Metric do
         aggregation = Keyword.get(opts, :aggregation, nil)
 
         fun = fn ->
-          module.timeseries_data(
-            metric,
+          metric
+          |> module.timeseries_data(
             selector,
             from,
             to,
@@ -188,8 +190,8 @@ defmodule Sanbase.Metric do
         aggregation = Keyword.get(opts, :aggregation, nil)
 
         fun = fn ->
-          module.timeseries_data_per_slug(
-            metric,
+          metric
+          |> module.timeseries_data_per_slug(
             selector,
             from,
             to,
@@ -199,7 +201,8 @@ defmodule Sanbase.Metric do
           |> maybe_round_floats(:timeseries_data_per_slug)
         end
 
-        execute_if_aggregation_valid(fun, metric, aggregation)
+        fun
+        |> execute_if_aggregation_valid(metric, aggregation)
         |> maybe_sort(:datetime, :asc)
         |> maybe_apply_function(&sort_data_field_by_slug_asc/1)
     end
@@ -225,8 +228,8 @@ defmodule Sanbase.Metric do
         aggregation = Keyword.get(opts, :aggregation, nil)
 
         fun = fn ->
-          module.aggregated_timeseries_data(
-            metric,
+          metric
+          |> module.aggregated_timeseries_data(
             selector,
             from,
             to,
@@ -508,7 +511,9 @@ defmodule Sanbase.Metric do
             supported_slugs = Sanbase.Project.List.projects_slugs()
 
             slugs =
-              MapSet.intersection(MapSet.new(slugs), MapSet.new(supported_slugs))
+              slugs
+              |> MapSet.new()
+              |> MapSet.intersection(MapSet.new(supported_slugs))
               |> Enum.to_list()
 
             {:ok, slugs}
@@ -557,7 +562,7 @@ defmodule Sanbase.Metric do
   Get all available aggregations
   """
   @spec available_aggregations :: list(Type.aggregation())
-  def available_aggregations(), do: Helper.aggregations()
+  def available_aggregations, do: Helper.aggregations()
 
   @doc ~s"""
   Get all available metrics.
@@ -588,8 +593,7 @@ defmodule Sanbase.Metric do
 
     hidden = hidden_metrics()
 
-    metrics
-    |> Enum.reject(&(&1 in hidden))
+    Enum.reject(metrics, &(&1 in hidden))
   end
 
   @doc ~s"""
@@ -615,9 +619,7 @@ defmodule Sanbase.Metric do
     parallel_opts = [ordered: false, max_concurrency: 8, timeout: 60_000]
 
     parallel_fun = fn module ->
-      cache_key =
-        {__MODULE__, :available_metrics_for_selector_in_module, module, selector}
-        |> Sanbase.Cache.hash()
+      cache_key = Sanbase.Cache.hash({__MODULE__, :available_metrics_for_selector_in_module, module, selector})
 
       Sanbase.Cache.get_or_store(cache_key, fn -> module.available_metrics(selector) end)
     end
@@ -635,10 +637,9 @@ defmodule Sanbase.Metric do
   @spec available_timeseries_metrics_for_slug(any) :: available_metrics_with_nocache_result
   def available_timeseries_metrics_for_slug(selector) do
     available_metrics =
-      Sanbase.Cache.get_or_store(
-        {__MODULE__, :available_metrics_for_slug, selector} |> Sanbase.Cache.hash(),
-        fn -> available_metrics_for_selector(selector) end
-      )
+      {__MODULE__, :available_metrics_for_slug, selector}
+      |> Sanbase.Cache.hash()
+      |> Sanbase.Cache.get_or_store(fn -> available_metrics_for_selector(selector) end)
 
     case available_metrics do
       {:nocache, {:ok, metrics}} ->
@@ -656,10 +657,9 @@ defmodule Sanbase.Metric do
   @spec available_histogram_metrics_for_slug(any) :: available_metrics_with_nocache_result
   def available_histogram_metrics_for_slug(selector) do
     available_metrics =
-      Sanbase.Cache.get_or_store(
-        {__MODULE__, :available_metrics_for_slug, selector} |> Sanbase.Cache.hash(),
-        fn -> available_metrics_for_selector(selector) end
-      )
+      {__MODULE__, :available_metrics_for_slug, selector}
+      |> Sanbase.Cache.hash()
+      |> Sanbase.Cache.get_or_store(fn -> available_metrics_for_selector(selector) end)
 
     case available_metrics do
       {:nocache, {:ok, metrics}} ->
@@ -677,10 +677,9 @@ defmodule Sanbase.Metric do
   @spec available_table_metrics_for_slug(any) :: available_metrics_with_nocache_result
   def available_table_metrics_for_slug(selector) do
     available_metrics =
-      Sanbase.Cache.get_or_store(
-        {__MODULE__, :available_metrics_for_slug, selector} |> Sanbase.Cache.hash(),
-        fn -> available_metrics_for_selector(selector) end
-      )
+      {__MODULE__, :available_metrics_for_slug, selector}
+      |> Sanbase.Cache.hash()
+      |> Sanbase.Cache.get_or_store(fn -> available_metrics_for_selector(selector) end)
 
     case available_metrics do
       {:nocache, {:ok, metrics}} ->
@@ -695,28 +694,28 @@ defmodule Sanbase.Metric do
   Get all available timeseries metrics
   """
   @spec available_timeseries_metrics() :: list(metric)
-  def available_timeseries_metrics(), do: Helper.timeseries_metrics()
+  def available_timeseries_metrics, do: Helper.timeseries_metrics()
 
   @doc ~s"""
   Get all available histogram metrics
   """
   @spec available_histogram_metrics() :: list(metric)
-  def available_histogram_metrics(), do: Helper.histogram_metrics()
+  def available_histogram_metrics, do: Helper.histogram_metrics()
 
   @doc ~s"""
   Get all available table metrics
   """
   @spec available_table_metrics() :: list(metric)
-  def available_table_metrics(), do: Helper.table_metrics()
+  def available_table_metrics, do: Helper.table_metrics()
 
   @doc ~s"""
   Get all slugs for which at least one of the metrics is available
   """
   @spec available_slugs() :: Type.available_slugs_result()
-  def available_slugs() do
+  def available_slugs do
     # Providing a 2 element tuple `{any, integer}` will use that second element
     # as TTL for the cache key
-    cache_key = {__MODULE__, :available_slugs_all_metrics} |> Sanbase.Cache.hash()
+    cache_key = Sanbase.Cache.hash({__MODULE__, :available_slugs_all_metrics})
 
     Sanbase.Cache.get_or_store({cache_key, 1800}, &get_available_slugs/0)
   end
@@ -725,25 +724,25 @@ defmodule Sanbase.Metric do
   Get all incomplete metrics
   """
   @spec incomplete_metrics() :: list(metric)
-  def incomplete_metrics(), do: Helper.incomplete_metrics()
+  def incomplete_metrics, do: Helper.incomplete_metrics()
 
   @doc ~s"""
   Get all free metrics
   """
   @spec free_metrics() :: list(metric)
-  def free_metrics(), do: Helper.free_metrics()
+  def free_metrics, do: Helper.free_metrics()
 
   @doc ~s"""
   Get all restricted metrics
   """
   @spec restricted_metrics() :: list(metric)
-  def restricted_metrics(), do: Helper.restricted_metrics()
+  def restricted_metrics, do: Helper.restricted_metrics()
 
   @doc ~s"""
   Get a map where the key is a metric and the value is the access level
   """
   @spec access_map() :: map()
-  def access_map(), do: Helper.access_map()
+  def access_map, do: Helper.access_map()
 
   @doc ~s"""
   Checks if historical data is allowed for a given `metric`
@@ -766,7 +765,7 @@ defmodule Sanbase.Metric do
   accessible in.
   """
   @spec min_plan_map() :: map()
-  def min_plan_map(), do: Helper.min_plan_map()
+  def min_plan_map, do: Helper.min_plan_map()
 
   # Private functions
 
@@ -815,8 +814,7 @@ defmodule Sanbase.Metric do
 
   defp choose_closest_metric_by_type(_type, nil, nil, nil), do: nil
 
-  defp choose_closest_metric_by_type(:all, timeseries, histogram, table),
-    do: {"", timeseries || histogram || table}
+  defp choose_closest_metric_by_type(:all, timeseries, histogram, table), do: {"", timeseries || histogram || table}
 
   defp choose_closest_metric_by_type(:timeseries, timeseries, histogram, table) do
     # The queried metric is of type :timeseries. Return with highest priority the closest
@@ -845,12 +843,10 @@ defmodule Sanbase.Metric do
   defp execute_if_aggregation_valid(fun, metric, aggregation) do
     aggregation_valid? = aggregation in Map.get(Helper.aggregations_per_metric(), metric)
 
-    case aggregation_valid? do
-      true ->
-        fun.()
-
-      false ->
-        {:error, "The aggregation #{aggregation} is not supported for the metric #{metric}"}
+    if aggregation_valid? do
+      fun.()
+    else
+      {:error, "The aggregation #{aggregation} is not supported for the metric #{metric}"}
     end
   end
 
@@ -878,9 +874,10 @@ defmodule Sanbase.Metric do
         end
 
       true ->
-        case Keyword.get(opts, :return_all_modules, false) do
-          false -> metric_to_single_module(metric, opts)
-          true -> Map.get(Helper.metric_to_modules_map(), metric)
+        if Keyword.get(opts, :return_all_modules, false) do
+          Map.get(Helper.metric_to_modules_map(), metric)
+        else
+          metric_to_single_module(metric, opts)
         end
     end
   end
@@ -919,8 +916,7 @@ defmodule Sanbase.Metric do
   defp filter_metrics_by_min_interval(metrics, interval, compare_fun) do
     interval_to_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
 
-    metrics
-    |> Enum.filter(fn metric ->
+    Enum.filter(metrics, fn metric ->
       {:ok, %{min_interval: min_interval}} = metadata(metric)
 
       min_interval_sec = Sanbase.DateTimeUtils.str_to_sec(min_interval)
@@ -929,7 +925,7 @@ defmodule Sanbase.Metric do
     end)
   end
 
-  defp get_available_slugs() do
+  defp get_available_slugs do
     {slugs, errors} =
       Enum.reduce(Helper.metric_modules(), {[], []}, fn module, {slugs_acc, errors} ->
         case module.available_slugs() do
@@ -939,7 +935,7 @@ defmodule Sanbase.Metric do
       end)
 
     case errors do
-      [] -> {:ok, slugs |> Enum.uniq()}
+      [] -> {:ok, Enum.uniq(slugs)}
       _ -> {:error, "Cannot fetch all available slugs. Errors: #{inspect(errors)}"}
     end
   end
@@ -952,7 +948,8 @@ defmodule Sanbase.Metric do
     hidden = hidden_metrics()
 
     available_metrics =
-      Enum.flat_map(metrics_in_modules, fn
+      metrics_in_modules
+      |> Enum.flat_map(fn
         {:ok, metrics} -> metrics
         _ -> []
       end)
@@ -961,13 +958,12 @@ defmodule Sanbase.Metric do
       |> Enum.reject(&(&1 in hidden))
       |> Enum.sort()
 
-    has_errors? =
-      metrics_in_modules
-      |> Enum.any?(&(not match?({:ok, _}, &1)))
+    has_errors? = Enum.any?(metrics_in_modules, &(not match?({:ok, _}, &1)))
 
-    case has_errors? do
-      true -> {:nocache, {:ok, available_metrics}}
-      false -> {:ok, available_metrics}
+    if has_errors? do
+      {:nocache, {:ok, available_metrics}}
+    else
+      {:ok, available_metrics}
     end
   end
 

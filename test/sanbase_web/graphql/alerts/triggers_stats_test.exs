@@ -4,6 +4,8 @@ defmodule SanbaseWeb.Graphql.Alerts.TriggersStatsTest do
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
+  alias Sanbase.Alerts.Stats
+
   setup do
     user = insert(:user)
     conn = setup_jwt_auth(build_conn(), user)
@@ -13,15 +15,16 @@ defmodule SanbaseWeb.Graphql.Alerts.TriggersStatsTest do
   end
 
   test "when no alerts, stats are empty", context do
-    assert Sanbase.Alerts.Stats.fired_alerts_24h(context.user.id) == %{}
+    assert Stats.fired_alerts_24h(context.user.id) == %{}
     assert alert_stats_error(context.conn) == "No stats available"
   end
 
   test "when no alerts today", context do
-    create_user_trigger(context)
+    context
+    |> create_user_trigger()
     |> create_alert_historical_activity(3)
 
-    assert Sanbase.Alerts.Stats.fired_alerts_24h(context.user.id) == %{}
+    assert Stats.fired_alerts_24h(context.user.id) == %{}
     assert alert_stats_error(context.conn) == "No stats available"
   end
 
@@ -34,7 +37,7 @@ defmodule SanbaseWeb.Graphql.Alerts.TriggersStatsTest do
 
     create_alert_historical_activity(user_trigger, 0)
 
-    assert Sanbase.Alerts.Stats.fired_alerts_24h(context.user.id) == %{
+    assert Stats.fired_alerts_24h(context.user.id) == %{
              data: [
                %{
                  alert_types: ["Transaction volume"],
@@ -64,7 +67,7 @@ defmodule SanbaseWeb.Graphql.Alerts.TriggersStatsTest do
            }
   end
 
-  defp default_trigger_settings_string_keys() do
+  defp default_trigger_settings_string_keys do
     %{
       "type" => "metric_signal",
       "metric" => "transaction_volume",
@@ -97,7 +100,7 @@ defmodule SanbaseWeb.Graphql.Alerts.TriggersStatsTest do
           "santiment" => %{"type" => "metric_signal", "metric" => "transaction_volume"}
         }
       },
-      triggered_at: Timex.shift(Timex.now(), days: -days)
+      triggered_at: Timex.shift(DateTime.utc_now(), days: -days)
     )
   end
 

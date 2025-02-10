@@ -1,8 +1,10 @@
 defmodule SanbaseWeb.SuggestGithubOrganizationsAdminLive do
+  @moduledoc false
   use SanbaseWeb, :live_view
 
-  alias SanbaseWeb.UserFormsComponents
+  alias Sanbase.Project.GithubOrganization.ChangeSuggestion
   alias SanbaseWeb.AdminFormsComponents
+  alias SanbaseWeb.UserFormsComponents
 
   @impl true
   def mount(_params, _session, socket) do
@@ -95,7 +97,7 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsAdminLive do
   def handle_event("update_status", %{"status" => "undo", "record_id" => record_id}, socket) do
     record_id = String.to_integer(record_id)
 
-    case Sanbase.Project.GithubOrganization.ChangeSuggestion.undo_suggestion(record_id) do
+    case ChangeSuggestion.undo_suggestion(record_id) do
       {:ok, record} ->
         rows =
           update_assigns_row(socket.assigns.rows, record_id, record.status)
@@ -113,15 +115,11 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsAdminLive do
   end
 
   @impl true
-  def handle_event(
-        "update_status",
-        %{"status" => status, "record_id" => record_id},
-        socket
-      )
+  def handle_event("update_status", %{"status" => status, "record_id" => record_id}, socket)
       when status in ["approved", "declined"] do
     record_id = String.to_integer(record_id)
 
-    case Sanbase.Project.GithubOrganization.ChangeSuggestion.update_status(record_id, status) do
+    case ChangeSuggestion.update_status(record_id, status) do
       {:ok, _} ->
         rows = update_assigns_row(socket.assigns.rows, record_id, status)
 
@@ -147,16 +145,14 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsAdminLive do
           error
       end
 
-    socket
-    |> put_flash(:error, "Error accepting the suggested changes.\n Reason: #{error_msg}!")
+    put_flash(socket, :error, "Error accepting the suggested changes.\n Reason: #{error_msg}!")
   end
 
   defp update_assigns_row(rows, record_id, status) do
     rows
     |> Enum.map(fn
       %{id: ^record_id} = record ->
-        record
-        |> Map.put(:status, status)
+        Map.put(record, :status, status)
 
       record ->
         record
@@ -164,8 +160,8 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsAdminLive do
     |> order_records()
   end
 
-  defp list_all_submissions() do
-    Sanbase.Project.GithubOrganization.ChangeSuggestion.list_all_submissions()
+  defp list_all_submissions do
+    ChangeSuggestion.list_all_submissions()
     |> Enum.map(fn struct ->
       %{
         id: struct.id,
@@ -182,8 +178,8 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsAdminLive do
   end
 
   defp order_records(handles) do
-    handles
-    |> Enum.sort_by(
+    Enum.sort_by(
+      handles,
       fn record ->
         case record.status do
           "pending_approval" -> 1

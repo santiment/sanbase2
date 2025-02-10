@@ -55,7 +55,7 @@ defmodule Sanbase.Timeline.Cursor do
      }}
   end
 
-  defp six_months_ago() do
-    Timex.shift(Timex.now(), months: -6)
+  defp six_months_ago do
+    Timex.shift(DateTime.utc_now(), months: -6)
   end
 end

@@ -4,9 +4,9 @@ defmodule SanbaseWeb.Graphql.Schema.TimelineQueries do
   """
   use Absinthe.Schema.Notation
 
-  alias SanbaseWeb.Graphql.Resolvers.TimelineEventResolver
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
   alias SanbaseWeb.Graphql.Middlewares.PostPaywallFilter
+  alias SanbaseWeb.Graphql.Resolvers.TimelineEventResolver
 
   object :timeline_queries do
     field :timeline_events, list_of(:timeline_events_paginated) do

@@ -1,11 +1,12 @@
 defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
+  import SanbaseWeb.Graphql.TestHelpers
 
+  alias Sanbase.Accounts.Hmac
+  alias Sanbase.Accounts.UserApikeyToken
   alias Sanbase.Repo
-  alias Sanbase.Accounts.{UserApikeyToken, Hmac}
 
   @moduletag capture_log: true
 
@@ -23,7 +24,8 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
     _ = generate_apikey(conn)
 
     apikeys =
-      get_apikeys(conn)
+      conn
+      |> get_apikeys()
       |> json_response(200)
       |> get_in(["data", "currentUser", "apikeys"])
 
@@ -36,7 +38,8 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
     apikey_conn = setup_apikey_auth(build_conn(), apikey)
 
     error =
-      get_apikeys(apikey_conn)
+      apikey_conn
+      |> get_apikeys()
       |> json_response(200)
       |> get_in(["errors"])
       |> hd()
@@ -46,7 +49,8 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
 
   test "generate a valid apikey", %{conn: conn} do
     apikeys =
-      generate_apikey(conn)
+      conn
+      |> generate_apikey()
       |> json_response(200)
       |> extract_api_key_list()
 
@@ -61,7 +65,8 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
   test "revoke an apikey", %{conn: conn} do
     # Generate and check that a valid single apikey is present
     apikeys =
-      generate_apikey(conn)
+      conn
+      |> generate_apikey()
       |> json_response(200)
       |> extract_api_key_list()
 
@@ -71,7 +76,8 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
 
     # Revoke and check that the apikey is now not present and not valid
     apikeys2 =
-      revoke_apikey(conn, apikey)
+      conn
+      |> revoke_apikey(apikey)
       |> json_response(200)
       |> extract_api_key_list()
 
@@ -85,17 +91,19 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
   test "other users cannot revoke my apikey", %{conn: conn, conn2: conn2} do
     # Get apikey for user1
     apikey =
-      generate_apikey(conn)
+      conn
+      |> generate_apikey()
       |> json_response(200)
       |> extract_api_key_list()
       |> List.first()
 
     # Check that user2 cannot revoke it
     result2 =
-      revoke_apikey(conn2, apikey)
+      conn2
+      |> revoke_apikey(apikey)
       |> json_response(200)
 
-    err_struct = result2["errors"] |> List.first()
+    err_struct = List.first(result2["errors"])
     assert err_struct["message"] =~ "Provided apikey is malformed or not valid"
   end
 
@@ -104,7 +112,8 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
     generate_apikey(conn)
 
     [apikey1, apikey2, apikey3] =
-      generate_apikey(conn)
+      conn
+      |> generate_apikey()
       |> json_response(200)
       |> extract_api_key_list()
 
@@ -115,7 +124,8 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
 
   test "revoke apikey twice", %{conn: conn} do
     [apikey] =
-      generate_apikey(conn)
+      conn
+      |> generate_apikey()
       |> json_response(200)
       |> extract_api_key_list()
 
@@ -123,23 +133,25 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
     revoke_apikey(conn, apikey)
 
     result =
-      revoke_apikey(conn, apikey)
+      conn
+      |> revoke_apikey(apikey)
       |> json_response(200)
 
-    err_struct = result["errors"] |> List.first()
+    err_struct = List.first(result["errors"])
     assert err_struct["message"] =~ "Provided apikey is malformed or not valid"
   end
 
   test "user dropped while the connection is up", %{conn: conn, user: user} do
     [apikey] =
-      generate_apikey(conn)
+      conn
+      |> generate_apikey()
       |> json_response(200)
       |> extract_api_key_list()
 
     Repo.delete(user)
 
     result = revoke_apikey(conn, apikey)
-    {:ok, msg} = result.resp_body |> Jason.decode()
+    {:ok, msg} = Jason.decode(result.resp_body)
 
     assert result.status == 400
     assert msg["errors"]["details"] == "Invalid JSON Web Token (JWT)"
@@ -149,7 +161,8 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
     generate_apikey(conn)
 
     [apikey1, apikey2] =
-      generate_apikey(conn)
+      conn
+      |> generate_apikey()
       |> json_response(200)
       |> extract_api_key_list()
 
@@ -166,17 +179,19 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
 
   test "cannot revoke malformed apikey", %{conn: conn} do
     [apikey] =
-      generate_apikey(conn)
+      conn
+      |> generate_apikey()
       |> json_response(200)
       |> extract_api_key_list()
 
     apikey = apikey <> "s"
 
     result =
-      revoke_apikey(conn, apikey)
+      conn
+      |> revoke_apikey(apikey)
       |> json_response(200)
 
-    err_struct = result["errors"] |> List.first()
+    err_struct = List.first(result["errors"])
     assert err_struct["message"] =~ "Provided apikey is malformed or not valid"
   end
 
@@ -196,26 +211,14 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
     }
     """
 
-    conn |> post("/graphql", mutation_skeleton(query))
+    post(conn, "/graphql", mutation_skeleton(query))
   end
 
-  defp extract_api_key_list(%{
-         "data" => %{
-           "generateApikey" => %{
-             "apikeys" => apikeys
-           }
-         }
-       }) do
+  defp extract_api_key_list(%{"data" => %{"generateApikey" => %{"apikeys" => apikeys}}}) do
     apikeys
   end
 
-  defp extract_api_key_list(%{
-         "data" => %{
-           "revokeApikey" => %{
-             "apikeys" => apikeys
-           }
-         }
-       }) do
+  defp extract_api_key_list(%{"data" => %{"revokeApikey" => %{"apikeys" => apikeys}}}) do
     apikeys
   end
 
@@ -228,7 +231,7 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
     }
     """
 
-    conn |> post("/graphql", mutation_skeleton(query))
+    post(conn, "/graphql", mutation_skeleton(query))
   end
 
   defp get_apikeys(conn) do
@@ -240,6 +243,6 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
     }
     """
 
-    conn |> post("/graphql", query_skeleton(query))
+    post(conn, "/graphql", query_skeleton(query))
   end
 end

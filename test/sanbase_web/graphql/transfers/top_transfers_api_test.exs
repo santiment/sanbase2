@@ -95,7 +95,8 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
   end
 
   test "top transfers for a slug", context do
-    Sanbase.Mock.prepare_mock2(&Sanbase.Transfers.top_transfers/5, {:ok, all_transfers()})
+    (&Sanbase.Transfers.top_transfers/5)
+    |> Sanbase.Mock.prepare_mock2({:ok, all_transfers()})
     |> Sanbase.Mock.run_with_mocks(fn ->
       query = """
       {
@@ -238,10 +239,8 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
   end
 
   test "top transfers for an address and slug", context do
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.Transfers.top_wallet_transfers/7,
-      {:ok, address_transfers()}
-    )
+    (&Sanbase.Transfers.top_wallet_transfers/7)
+    |> Sanbase.Mock.prepare_mock2({:ok, address_transfers()})
     |> Sanbase.Mock.run_with_mocks(fn ->
       query = """
       {
@@ -379,7 +378,8 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
       }
       """
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.Transfers.top_transfers/5, {:ok, all_transfers()})
+      (&Sanbase.Transfers.top_transfers/5)
+      |> Sanbase.Mock.prepare_mock2({:ok, all_transfers()})
       |> Sanbase.Mock.run_with_mocks(fn ->
         conn
         |> post("/graphql", query_skeleton(query, "topTransfers"))
@@ -427,7 +427,7 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
 
   # Private functions
 
-  defp all_transfers() do
+  defp all_transfers do
     [
       %{
         datetime: @datetime1,

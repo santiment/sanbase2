@@ -1,20 +1,19 @@
 defmodule Sanbase.TestHelpers do
+  @moduledoc false
   def wait_event_bus_subscriber(topic) do
-    case Sanbase.EventBusTest.EventBusTestSubscriber in EventBus.subscribers(topic) do
-      true ->
-        :ok
-
-      false ->
-        Process.sleep(50)
-        wait_event_bus_subscriber(topic)
+    if Sanbase.EventBusTest.EventBusTestSubscriber in EventBus.subscribers(topic) do
+      :ok
+    else
+      Process.sleep(50)
+      wait_event_bus_subscriber(topic)
     end
   end
 
-  @moduledoc false
   defmacro setup_all_with_mocks(mocks, do: setup_block) do
     quote do
       setup_all do
         require Mock
+
         Mock.mock_modules(unquote(mocks))
 
         # The mocks are linked to the process that setup all the tests and are
@@ -38,7 +37,8 @@ defmodule Sanbase.TestHelpers do
   defmacro clean_task_supervisor_children() do
     quote do
       on_exit(fn ->
-        Task.Supervisor.children(Sanbase.TaskSupervisor)
+        Sanbase.TaskSupervisor
+        |> Task.Supervisor.children()
         |> Enum.map(fn child ->
           Task.Supervisor.terminate_child(Sanbase.TaskSupervisor, child)
         end)
@@ -49,6 +49,6 @@ defmodule Sanbase.TestHelpers do
   def generate_datetimes(from, interval, count) when count >= 1 do
     interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
 
-    0..(count - 1) |> Enum.map(fn offset -> Timex.shift(from, seconds: interval_sec * offset) end)
+    Enum.map(0..(count - 1), fn offset -> Timex.shift(from, seconds: interval_sec * offset) end)
   end
 end

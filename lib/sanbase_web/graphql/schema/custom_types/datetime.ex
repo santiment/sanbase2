@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.CustomTypes.DateTime do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   alias Absinthe.Blueprint.Input
@@ -62,7 +63,8 @@ defmodule SanbaseWeb.Graphql.CustomTypes.DateTime do
   end
 
   defp serialize_datetime(%NaiveDateTime{} = ndt) do
-    DateTime.from_naive!(ndt, "Etc/UTC")
+    ndt
+    |> DateTime.from_naive!("Etc/UTC")
     |> DateTime.truncate(:second)
     |> DateTime.to_iso8601()
   end

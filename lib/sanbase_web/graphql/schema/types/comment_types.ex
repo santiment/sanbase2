@@ -1,9 +1,11 @@
 defmodule SanbaseWeb.Graphql.CommentTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
 
-  alias SanbaseWeb.Graphql.Resolvers.{CommentEntityIdResolver, UserResolver}
+  alias SanbaseWeb.Graphql.Resolvers.CommentEntityIdResolver
+  alias SanbaseWeb.Graphql.Resolvers.UserResolver
 
   enum :comment_entity_type_enum do
     value(:blockchain_address)

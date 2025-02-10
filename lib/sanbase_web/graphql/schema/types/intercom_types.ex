@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.IntercomTypes do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   object :user_attribute do

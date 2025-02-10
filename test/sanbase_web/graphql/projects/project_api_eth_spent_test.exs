@@ -6,7 +6,7 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
   import SanbaseWeb.Graphql.TestHelpers
 
   setup do
-    datetime1 = Timex.now() |> Timex.beginning_of_day()
+    datetime1 = Timex.beginning_of_day(DateTime.utc_now())
     datetime2 = Timex.shift(datetime1, days: -10)
     datetime3 = Timex.shift(datetime1, days: -15)
 
@@ -14,7 +14,7 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
 
     project = insert(:random_erc20_project, infrastructure: eth_infr)
 
-    project_address = project.eth_addresses |> List.first()
+    project_address = List.first(project.eth_addresses)
 
     [
       project: project,
@@ -38,7 +38,8 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
       ]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    (&Sanbase.ClickhouseRepo.query/2)
+    |> Sanbase.Mock.prepare_mock2({:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       query = """
       {
@@ -48,9 +49,7 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
       }
       """
 
-      result =
-        context.conn
-        |> post("/graphql", query_skeleton(query, "project"))
+      result = post(context.conn, "/graphql", query_skeleton(query, "project"))
 
       trx_sum = json_response(result, 200)["data"]["project"]
 
@@ -70,7 +69,8 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
       ]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    (&Sanbase.ClickhouseRepo.query/2)
+    |> Sanbase.Mock.prepare_mock2({:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       query = """
       {
@@ -80,9 +80,7 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
       }
       """
 
-      result =
-        context.conn
-        |> post("/graphql", query_skeleton(query, "project"))
+      result = post(context.conn, "/graphql", query_skeleton(query, "project"))
 
       trx_sum = json_response(result, 200)["data"]["project"]
 
@@ -102,7 +100,8 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
       ]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    (&Sanbase.ClickhouseRepo.query/2)
+    |> Sanbase.Mock.prepare_mock2({:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       query = """
       {
@@ -112,9 +111,7 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
       }
       """
 
-      result =
-        context.conn
-        |> post("/graphql", query_skeleton(query, "ethSpentByErc20Projects"))
+      result = post(context.conn, "/graphql", query_skeleton(query, "ethSpentByErc20Projects"))
 
       total_eth_spent = json_response(result, 200)["data"]["ethSpentByErc20Projects"]
 
@@ -124,7 +121,9 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
 
   test "eth spent over time by erc20 projects", context do
     [dt0, dt1, dt2, dt3, dt4, dt5] =
-      generate_datetimes(Timex.shift(Timex.now(), days: -5), "1d", 6)
+      DateTime.utc_now()
+      |> Timex.shift(days: -5)
+      |> generate_datetimes("1d", 6)
       |> Enum.map(&DateTime.to_unix/1)
 
     # Historical Balances Changes uses internally the historical balances query,
@@ -138,7 +137,8 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
       [dt5, 21_500, 1]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    (&Sanbase.ClickhouseRepo.query/2)
+    |> Sanbase.Mock.prepare_mock2({:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       query = """
       {
@@ -151,9 +151,7 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
       }
       """
 
-      result =
-        context.conn
-        |> post("/graphql", query_skeleton(query, "ethSpentOverTimeByErc20Projects"))
+      result = post(context.conn, "/graphql", query_skeleton(query, "ethSpentOverTimeByErc20Projects"))
 
       total_spent = json_response(result, 200)["data"]["ethSpentOverTimeByErc20Projects"]
 

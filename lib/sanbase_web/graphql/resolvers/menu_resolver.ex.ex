@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.Resolvers.MenuResolver do
+  @moduledoc false
   alias Sanbase.Menus
 
   # Menu CRUD
@@ -11,52 +12,51 @@ defmodule SanbaseWeb.Graphql.Resolvers.MenuResolver do
     {:error, reason}
   end
 
-  def get_menu(
-        _root,
-        %{id: menu_id},
-        resolution
-      ) do
+  def get_menu(_root, %{id: menu_id}, resolution) do
     querying_user_id = get_in(resolution.context.auth, [:current_user, Access.key(:id)])
 
-    Menus.get_menu(menu_id, querying_user_id)
+    menu_id
+    |> Menus.get_menu(querying_user_id)
     |> maybe_transform_menu()
   end
 
   def create_menu(_root, %{name: _} = param, %{context: %{auth: %{current_user: current_user}}}) do
-    Menus.create_menu(param, current_user.id)
+    param
+    |> Menus.create_menu(current_user.id)
     |> maybe_transform_menu()
   end
 
   def update_menu(_root, %{id: id} = params, %{context: %{auth: %{current_user: current_user}}}) do
-    Menus.update_menu(id, params, current_user.id)
+    id
+    |> Menus.update_menu(params, current_user.id)
     |> maybe_transform_menu()
   end
 
   def delete_menu(_root, %{id: id}, %{context: %{auth: %{current_user: current_user}}}) do
-    Menus.delete_menu(id, current_user.id)
+    id
+    |> Menus.delete_menu(current_user.id)
     |> maybe_transform_menu()
   end
 
   # MenuItem C~R~UD
 
-  def create_menu_item(_root, %{} = args, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
+  def create_menu_item(_root, %{} = args, %{context: %{auth: %{current_user: current_user}}}) do
     with {:ok, params} <- create_menu_item_params(args) do
-      Menus.create_menu_item(params, current_user.id)
+      params
+      |> Menus.create_menu_item(current_user.id)
       |> maybe_transform_menu()
     end
   end
 
-  def update_menu_item(_root, %{id: id} = params, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
-    Menus.update_menu_item(id, params, current_user.id)
+  def update_menu_item(_root, %{id: id} = params, %{context: %{auth: %{current_user: current_user}}}) do
+    id
+    |> Menus.update_menu_item(params, current_user.id)
     |> maybe_transform_menu()
   end
 
   def delete_menu_item(_root, %{id: id}, %{context: %{auth: %{current_user: current_user}}}) do
-    Menus.delete_menu_item(id, current_user.id)
+    id
+    |> Menus.delete_menu_item(current_user.id)
     |> maybe_transform_menu()
   end
 
@@ -74,9 +74,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MenuResolver do
   end
 
   defp create_menu_item_params(_),
-    do:
-      {:error,
-       "Create menu item parameters are missing the required parent_menu_id and/or entity fields"}
+    do: {:error, "Create menu item parameters are missing the required parent_menu_id and/or entity fields"}
 
   defp entity_to_params(map) do
     params = Map.reject(map, fn {_k, v} -> is_nil(v) end)

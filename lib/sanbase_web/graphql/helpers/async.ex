@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.Helpers.Async do
+  @moduledoc false
   require Absinthe.Resolution.Helpers
 
   @doc ~s"""
@@ -9,9 +10,11 @@ defmodule SanbaseWeb.Graphql.Helpers.Async do
 
   defmacro async(func) do
     quote bind_quoted: [func: func] do
-      require Sanbase.Utils.Config
+      alias Sanbase.Utils.Config
 
-      if Sanbase.Utils.Config.module_get(Sanbase, :env) == :test do
+      require Config
+
+      if Config.module_get(Sanbase, :env) == :test do
         func.()
       else
         Absinthe.Resolution.Helpers.async(func)

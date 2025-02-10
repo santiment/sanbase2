@@ -2,16 +2,17 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Mock
-  import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
   import Sanbase.TestHelpers
+  import SanbaseWeb.Graphql.TestHelpers
 
-  alias Sanbase.Tag
-  alias Sanbase.Vote
   alias Sanbase.Insight.Post
+  alias Sanbase.Messaging.Insight
   alias Sanbase.Project
   alias Sanbase.Repo
+  alias Sanbase.Tag
   alias Sanbase.Timeline.TimelineEvent
+  alias Sanbase.Vote
 
   setup do
     clean_task_supervisor_children()
@@ -118,23 +119,20 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       result = execute_query(context.conn, query, "currentUser")
 
       expected_insights =
-        [
-          %{
-            "id" => published.id,
-            "readyState" => "#{published.ready_state}",
-            "text" => "#{published.text}",
-            "pulseText" => nil
-          },
-          %{
-            "id" => draft.id,
-            "readyState" => "#{draft.ready_state}",
-            "text" => "#{draft.text}",
-            "pulseText" => nil
-          }
-        ]
-        |> Enum.sort_by(& &1["id"])
+        Enum.sort_by(
+          [
+            %{
+              "id" => published.id,
+              "readyState" => "#{published.ready_state}",
+              "text" => "#{published.text}",
+              "pulseText" => nil
+            },
+            %{"id" => draft.id, "readyState" => "#{draft.ready_state}", "text" => "#{draft.text}", "pulseText" => nil}
+          ],
+          & &1["id"]
+        )
 
-      insights = result["insights"] |> Enum.sort_by(& &1["id"])
+      insights = Enum.sort_by(result["insights"], & &1["id"])
 
       assert insights == expected_insights
     end
@@ -187,16 +185,12 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       result = execute_query(context.conn, query, "getUser")
 
       expected_insights =
-        [
-          %{
-            "id" => published.id,
-            "readyState" => "#{published.ready_state}",
-            "text" => "#{published.text}"
-          }
-        ]
-        |> Enum.sort_by(& &1["id"])
+        Enum.sort_by(
+          [%{"id" => published.id, "readyState" => "#{published.ready_state}", "text" => "#{published.text}"}],
+          & &1["id"]
+        )
 
-      insights = result["insights"] |> Enum.sort_by(& &1["id"])
+      insights = Enum.sort_by(result["insights"], & &1["id"])
 
       assert insights == expected_insights
     end
@@ -252,9 +246,9 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     }
     """
 
-    result = conn |> post("/graphql", query_skeleton(query, "post"))
+    result = post(conn, "/graphql", query_skeleton(query, "post"))
 
-    assert json_response(result, 200)["data"]["insight"] |> Map.get("text") == post.text
+    assert Map.get(json_response(result, 200)["data"]["insight"], "text") == post.text
   end
 
   test "Getting an insight by id for anon user", %{user: user} do
@@ -280,9 +274,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     }
     """
 
-    result =
-      build_conn()
-      |> post("/graphql", query_skeleton(query, "insight"))
+    result = post(build_conn(), "/graphql", query_skeleton(query, "insight"))
 
     fetched_insight = json_response(result, 200)["data"]["insight"]
     assert fetched_insight["state"] == post.state
@@ -290,7 +282,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     {:ok, created_at, 0} = DateTime.from_iso8601(fetched_insight["createdAt"])
 
     assert Sanbase.TestUtils.datetime_close_to(
-             Timex.now(),
+             DateTime.utc_now(),
              created_at,
              2,
              :seconds
@@ -299,7 +291,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     {:ok, updated_at, 0} = DateTime.from_iso8601(fetched_insight["updatedAt"])
 
     assert Sanbase.TestUtils.datetime_close_to(
-             Timex.now(),
+             DateTime.utc_now(),
              updated_at,
              2,
              :seconds
@@ -324,9 +316,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     }
     """
 
-    result =
-      build_conn()
-      |> post("/graphql", query_skeleton(query, "allInsights"))
+    result = post(build_conn(), "/graphql", query_skeleton(query, "allInsights"))
 
     assert [
              %{
@@ -372,9 +362,9 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     }
     """
 
-    result = conn |> post("/graphql", query_skeleton(query, "allInsights"))
+    result = post(conn, "/graphql", query_skeleton(query, "allInsights"))
 
-    assert json_response(result, 200)["data"]["allInsights"] |> length() == 2
+    assert length(json_response(result, 200)["data"]["allInsights"]) == 2
   end
 
   test "Getting all insight for given user, paginated", %{
@@ -386,7 +376,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       user: user,
       ready_state: Post.published(),
       state: Post.approved_state(),
-      published_at: Timex.shift(Timex.now(), hours: -1)
+      published_at: Timex.shift(DateTime.utc_now(), hours: -1)
     )
 
     post2 =
@@ -394,7 +384,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
         user: user,
         ready_state: Post.published(),
         state: Post.approved_state(),
-        published_at: Timex.now()
+        published_at: DateTime.utc_now()
       )
 
     insert(:post, user: user, ready_state: Post.draft())
@@ -411,7 +401,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
     all_insights_for_user = execute_query(conn, query, "allInsightsForUser")
 
-    assert all_insights_for_user |> Enum.count() == 1
+    assert Enum.count(all_insights_for_user) == 1
     assert all_insights_for_user |> hd() |> Map.get("text") == post2.text
   end
 
@@ -453,7 +443,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       |> json_response(200)
       |> get_in(["data", "allInsightsUserVoted"])
 
-    assert result |> Enum.count() == 1
+    assert Enum.count(result) == 1
     assert result |> hd() |> Map.get("text") == post.text
   end
 
@@ -467,7 +457,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
         user: user,
         ready_state: Post.published(),
         state: Post.approved_state(),
-        published_at: Timex.now() |> Timex.shift(seconds: -10)
+        published_at: Timex.shift(DateTime.utc_now(), seconds: -10)
       )
 
     Vote.create(%{post_id: post.id, user_id: user.id})
@@ -491,9 +481,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     }
     """
 
-    result =
-      conn
-      |> post("/graphql", query_skeleton(query, "allInsights"))
+    result = post(conn, "/graphql", query_skeleton(query, "allInsights"))
 
     Repo.all(Post)
 
@@ -564,10 +552,10 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       )
 
     query = insights_by_tags_query([tag1.name, tag2.name])
-    result = execute_query(build_conn(), query, "allInsights") |> Enum.sort_by(& &1["id"])
+    result = build_conn() |> execute_query(query, "allInsights") |> Enum.sort_by(& &1["id"])
 
     assert result ==
-             [%{"id" => post.id}, %{"id" => post3.id}] |> Enum.sort_by(& &1["id"])
+             Enum.sort_by([%{"id" => post.id}, %{"id" => post3.id}], & &1["id"])
   end
 
   describe "Create insight" do
@@ -601,9 +589,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       }
       """
 
-      result =
-        conn
-        |> post("/graphql", mutation_skeleton(query))
+      result = post(conn, "/graphql", mutation_skeleton(query))
 
       insight = json_response(result, 200)["data"]["createInsight"]
 
@@ -616,19 +602,19 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       assert %{"name" => "price_usd"} in insight["metrics"]
       assert %{"name" => "volume_usd"} in insight["metrics"]
 
-      assert insight["priceChartProject"]["id"] |> String.to_integer() == project.id
-      assert insight["user"]["id"] == user.id |> Integer.to_string()
+      assert String.to_integer(insight["priceChartProject"]["id"]) == project.id
+      assert insight["user"]["id"] == Integer.to_string(user.id)
       assert insight["votes"]["totalVotes"] == 0
       assert insight["publishedAt"] == nil
 
       created_at = Timex.parse!(insight["createdAt"], "{ISO:Extended}")
 
       # Assert that now() and created_at do not differ by more than 2 seconds.
-      assert Sanbase.TestUtils.datetime_close_to(Timex.now(), created_at, 2, :seconds)
+      assert Sanbase.TestUtils.datetime_close_to(DateTime.utc_now(), created_at, 2, :seconds)
     end
 
     test "adding a new insight with a very long title", %{conn: conn} do
-      long_title = Stream.cycle(["a"]) |> Enum.take(200) |> Enum.join()
+      long_title = ["a"] |> Stream.cycle() |> Enum.take(200) |> Enum.join()
 
       query = """
       mutation {
@@ -639,9 +625,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       }
       """
 
-      result =
-        conn
-        |> post("/graphql", mutation_skeleton(query))
+      result = post(conn, "/graphql", mutation_skeleton(query))
 
       assert json_response(result, 200)["errors"]
     end
@@ -664,9 +648,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       }
       """
 
-      result =
-        conn
-        |> post("/graphql", mutation_skeleton(mutation))
+      result = post(conn, "/graphql", mutation_skeleton(mutation))
 
       [tag] = json_response(result, 200)["data"]["createInsight"]["tags"]
       [related_projects] = json_response(result, 200)["data"]["createInsight"]["relatedProjects"]
@@ -692,9 +674,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       }
       """
 
-      result =
-        conn
-        |> post("/graphql", mutation_skeleton(mutation))
+      result = post(conn, "/graphql", mutation_skeleton(mutation))
 
       [image] = json_response(result, 200)["data"]["createInsight"]["images"]
 
@@ -719,24 +699,20 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       }
       """
 
-      _ =
-        conn
-        |> post("/graphql", mutation_skeleton(mutation))
+      _ = post(conn, "/graphql", mutation_skeleton(mutation))
 
-      result2 =
-        conn
-        |> post("/graphql", mutation_skeleton(mutation))
+      result2 = post(conn, "/graphql", mutation_skeleton(mutation))
 
       [error] = json_response(result2, 200)["errors"]
-      assert String.contains?(error["details"]["images"] |> hd(), "already used")
+      assert error["details"]["images"] |> hd() |> String.contains?("already used")
     end
   end
 
   describe "Update insight" do
     test "update post", %{conn: conn, user: user} do
       image_url = upload_image(conn)
-      tag1 = %Tag{name: "PRJ1"} |> Repo.insert!()
-      tag2 = %Tag{name: "PRJ2"} |> Repo.insert!()
+      tag1 = Repo.insert!(%Tag{name: "PRJ1"})
+      tag2 = Repo.insert!(%Tag{name: "PRJ2"})
 
       post =
         insert(:post,
@@ -769,9 +745,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
         }
       """
 
-      result =
-        conn
-        |> post("/graphql", mutation_skeleton(mutation))
+      result = post(conn, "/graphql", mutation_skeleton(mutation))
 
       new_post = json_response(result, 200)["data"]["updateInsight"]
       assert new_post["title"] == "Awesome post2"
@@ -779,8 +753,8 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
     test "cannot update not owned insight", %{conn: conn, staked_user: staked_user} do
       image_url = upload_image(conn)
-      tag1 = %Tag{name: "PRJ1"} |> Repo.insert!()
-      tag2 = %Tag{name: "PRJ2"} |> Repo.insert!()
+      tag1 = Repo.insert!(%Tag{name: "PRJ1"})
+      tag2 = Repo.insert!(%Tag{name: "PRJ2"})
 
       post =
         insert(:post,
@@ -806,9 +780,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
         }
       """
 
-      result =
-        conn
-        |> post("/graphql", mutation_skeleton(mutation))
+      result = post(conn, "/graphql", mutation_skeleton(mutation))
 
       [error] = json_response(result, 200)["errors"]
       assert String.contains?(error["message"], "Cannot update not owned insight")
@@ -821,8 +793,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
         insert(:post,
           user: user,
           ready_state: Post.published(),
-          updated_at:
-            Timex.shift(NaiveDateTime.utc_now(), seconds: -1) |> NaiveDateTime.truncate(:second)
+          updated_at: NaiveDateTime.utc_now() |> Timex.shift(seconds: -1) |> NaiveDateTime.truncate(:second)
         )
 
       mutation = """
@@ -844,10 +815,11 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       assert result["data"]["updateInsight"]["text"] == "Example body2"
 
       updated_at =
-        Sanbase.DateTimeUtils.from_iso8601!(result["data"]["updateInsight"]["updatedAt"])
+        result["data"]["updateInsight"]["updatedAt"]
+        |> Sanbase.DateTimeUtils.from_iso8601!()
         |> DateTime.to_naive()
 
-      assert NaiveDateTime.compare(updated_at, post.updated_at) == :gt
+      assert NaiveDateTime.after?(updated_at, post.updated_at)
     end
 
     test "can update tags for published insight", %{conn: conn, user: user} do
@@ -920,9 +892,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       }
       """
 
-      result =
-        conn
-        |> post("/graphql", mutation_skeleton(query))
+      result = post(conn, "/graphql", mutation_skeleton(query))
 
       data = json_response(result, 200)
 
@@ -936,7 +906,8 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       user: user,
       conn: conn
     } do
-      Sanbase.Mock.prepare_mock2(&Sanbase.Messaging.Insight.publish_in_discord/1, :ok)
+      (&Insight.publish_in_discord/1)
+      |> Sanbase.Mock.prepare_mock2(:ok)
       |> Sanbase.Mock.run_with_mocks(fn ->
         post =
           insert(:post,
@@ -971,8 +942,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
     test "still returns post when discord publish fails", %{user: user, conn: conn} do
       with_mocks([
-        {Sanbase.Messaging.Insight, [],
-         [publish_in_discord: fn _ -> {:error, "Error publishing in discord"} end]}
+        {Insight, [], [publish_in_discord: fn _ -> {:error, "Error publishing in discord"} end]}
       ]) do
         post =
           insert(:post,
@@ -1032,8 +1002,8 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
   end
 
   test "Get all tags", %{conn: conn} do
-    tag1 = %Tag{name: "PRJ1"} |> Repo.insert!()
-    tag2 = %Tag{name: "PRJ2"} |> Repo.insert!()
+    tag1 = Repo.insert!(%Tag{name: "PRJ1"})
+    tag2 = Repo.insert!(%Tag{name: "PRJ2"})
 
     query = """
     {
@@ -1043,9 +1013,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     }
     """
 
-    result =
-      conn
-      |> post("/graphql", query_skeleton(query, "allTags"))
+    result = post(conn, "/graphql", query_skeleton(query, "allTags"))
 
     assert json_response(result, 200)["data"]["allTags"] ==
              [%{"name" => tag1.name}, %{"name" => tag2.name}]
@@ -1053,13 +1021,12 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
   test "Voting for an insight", %{conn: conn, user: user} do
     sanbase_post =
-      %Post{
+      Repo.insert!(%Post{
         user_id: user.id,
         title: "Awesome analysis",
         text: "Example MD text of the analysis",
         state: Post.approved_state()
-      }
-      |> Repo.insert!()
+      })
 
     query = """
     mutation {
@@ -1083,13 +1050,12 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
   test "Unvoting an insight", %{conn: conn, user: user} do
     sanbase_post =
-      %Post{
+      Repo.insert!(%Post{
         user_id: user.id,
         title: "Awesome analysis",
         text: "Some text here",
         state: Post.approved_state()
-      }
-      |> Repo.insert!()
+      })
 
     Vote.create(%{post_id: sanbase_post.id, user_id: user.id})
 
@@ -1101,9 +1067,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     }
     """
 
-    result =
-      conn
-      |> post("/graphql", mutation_skeleton(query))
+    result = post(conn, "/graphql", mutation_skeleton(query))
 
     result_post = json_response(result, 200)["data"]["unvote"]
 
@@ -1137,13 +1101,14 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       args = %{
         title: "test chart event title",
         text: "test chart event text",
-        chart_event_datetime: DateTime.utc_now() |> DateTime.to_iso8601(),
+        chart_event_datetime: DateTime.to_iso8601(DateTime.utc_now()),
         chart_configuration_id: conf.id
       }
 
       query = create_chart_event(args)
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.Messaging.Insight.publish_in_discord/1, :ok)
+      (&Insight.publish_in_discord/1)
+      |> Sanbase.Mock.prepare_mock2(:ok)
       |> Sanbase.Mock.run_with_mocks(fn ->
         res = execute_mutation_with_success(query, "createChartEvent", context.conn)
 
@@ -1163,7 +1128,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
         create_chart_event(%{
           title: "test chart event title",
           text: "test chart event text",
-          chart_event_datetime: DateTime.utc_now() |> DateTime.to_iso8601(),
+          chart_event_datetime: DateTime.to_iso8601(DateTime.utc_now()),
           chart_configuration_id: 123
         })
 
@@ -1176,12 +1141,12 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     user: user,
     conn: conn
   } do
-    datetime_inside1 = Timex.now() |> Timex.shift(days: -10)
-    datetime_inside2 = Timex.now() |> Timex.shift(days: -20)
-    datetime_outside1 = Timex.now()
-    datetime_outside2 = Timex.now() |> Timex.shift(days: -30)
-    from = Timex.now() |> Timex.shift(days: -25) |> DateTime.to_iso8601()
-    to = Timex.now() |> Timex.shift(days: -5) |> DateTime.to_iso8601()
+    datetime_inside1 = Timex.shift(DateTime.utc_now(), days: -10)
+    datetime_inside2 = Timex.shift(DateTime.utc_now(), days: -20)
+    datetime_outside1 = DateTime.utc_now()
+    datetime_outside2 = Timex.shift(DateTime.utc_now(), days: -30)
+    from = DateTime.utc_now() |> Timex.shift(days: -25) |> DateTime.to_iso8601()
+    to = DateTime.utc_now() |> Timex.shift(days: -5) |> DateTime.to_iso8601()
 
     common_args = %{user: user, ready_state: Post.published(), state: Post.approved_state()}
 
@@ -1198,7 +1163,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     }
     """
 
-    result = conn |> post("/graphql", query_skeleton(query, "allInsights"))
+    result = post(conn, "/graphql", query_skeleton(query, "allInsights"))
 
     assert json_response(result, 200)["data"]["allInsights"] ==
              [%{"id" => post1.id}, %{"id" => post2.id}]
@@ -1271,9 +1236,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       path: @test_file_path
     }
 
-    result =
-      conn
-      |> post("/graphql", %{"query" => mutation, "img" => upload})
+    result = post(conn, "/graphql", %{"query" => mutation, "img" => upload})
 
     [image_data] = json_response(result, 200)["data"]["uploadImage"]
     image_data["imageUrl"]

@@ -1,10 +1,10 @@
 defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
   use SanbaseWeb.ConnCase, async: false
 
-  alias Sanbase.Model.Ico
-
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
+
+  alias Sanbase.Model.Ico
 
   require Sanbase.Mock
 
@@ -27,13 +27,13 @@ defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
     |> Sanbase.Repo.insert!()
 
     %Ico{}
-    |> Ico.changeset(%{project_id: project.id, start_date: dt1 |> DateTime.to_date()})
+    |> Ico.changeset(%{project_id: project.id, start_date: DateTime.to_date(dt1)})
     |> Sanbase.Repo.insert!()
 
     %Ico{}
     |> Ico.changeset(%{
       project_id: project.id,
-      start_date: dt2 |> DateTime.to_date(),
+      start_date: DateTime.to_date(dt2),
       token_eth_ico_price: 5
     })
     |> Sanbase.Repo.insert!()
@@ -44,7 +44,8 @@ defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
   test "fetch project ROI", context do
     response = last_record_before_fixture(context)
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Price.last_record_before/2, response)
+    (&Sanbase.Price.last_record_before/2)
+    |> Sanbase.Mock.prepare_mock2(response)
     |> Sanbase.Mock.run_with_mocks(fn ->
       assert get_roi(context.conn, context.project) == %{"roiUsd" => "2.5"}
     end)
@@ -53,7 +54,8 @@ defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
   test "fetch project ROI2", context do
     response = last_record_before_fixture(context)
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Price.last_record_before/2, response)
+    (&Sanbase.Price.last_record_before/2)
+    |> Sanbase.Mock.prepare_mock2(response)
     |> Sanbase.Mock.run_with_mocks(fn ->
       assert get_roi(context.conn, context.project) == %{"roiUsd" => "2.5"}
     end)

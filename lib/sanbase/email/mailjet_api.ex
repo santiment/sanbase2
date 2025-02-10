@@ -1,4 +1,5 @@
 defmodule Sanbase.Email.MailjetApiBehaviour do
+  @moduledoc false
   @callback subscribe(atom(), String.t() | [String.t()]) :: :ok | {:error, term()}
   @callback unsubscribe(atom(), String.t() | [String.t()]) :: :ok | {:error, term()}
   @callback send_to_list(atom(), String.t(), String.t(), keyword()) :: :ok | {:error, term()}
@@ -7,10 +8,11 @@ defmodule Sanbase.Email.MailjetApiBehaviour do
 end
 
 defmodule Sanbase.Email.MailjetApi do
+  @moduledoc false
   @behaviour Sanbase.Email.MailjetApiBehaviour
 
-  require Sanbase.Utils.Config, as: Config
   require Logger
+  require Sanbase.Utils.Config, as: Config
 
   @base_url "https://api.mailjet.com/v3/REST/"
   @bi_weekly_list_id -1
@@ -45,14 +47,13 @@ defmodule Sanbase.Email.MailjetApi do
   end
 
   def send_to_list(list_id, subject, content, opts \\ []) do
-    with {:ok, emails} <- list_subscribed_emails(list_id),
-         :ok <- Enum.each(emails, &send_email(&1, subject, content, opts)) do
-      :ok
+    with {:ok, emails} <- list_subscribed_emails(list_id) do
+      Enum.each(emails, &send_email(&1, subject, content, opts))
     end
   end
 
   def send_email(email, subject, content, opts \\ []) do
-    html_content = if Keyword.get(opts, :html, false), do: content, else: nil
+    html_content = if Keyword.get(opts, :html, false), do: content
     text_content = if html_content, do: nil, else: content
 
     payload = %{
@@ -91,17 +92,14 @@ defmodule Sanbase.Email.MailjetApi do
 
   # list subscribed emails for list
   def list_subscribed_emails(list_atom) do
-    with {:ok, contact_ids} <- get_contact_ids(list_atom),
-         {:ok, emails} <- get_emails_for_contacts(contact_ids) do
-      {:ok, emails}
+    with {:ok, contact_ids} <- get_contact_ids(list_atom) do
+      get_emails_for_contacts(contact_ids)
     end
   end
 
   defp get_contact_ids(list_atom) do
-    Req.get!(
-      @base_url <> "listrecipient?ContactsList=#{@mailjet_lists[list_atom]}&Limit=1000",
-      headers: headers()
-    )
+    (@base_url <> "listrecipient?ContactsList=#{@mailjet_lists[list_atom]}&Limit=1000")
+    |> Req.get!(headers: headers())
     |> case do
       %{status: 200, body: %{"Data" => recipients}} ->
         contact_ids = Enum.map(recipients, & &1["ContactID"])
@@ -130,10 +128,8 @@ defmodule Sanbase.Email.MailjetApi do
   end
 
   defp get_email_for_contact(contact_id) do
-    Req.get!(
-      @base_url <> "contact/#{contact_id}",
-      headers: headers()
-    )
+    (@base_url <> "contact/#{contact_id}")
+    |> Req.get!(headers: headers())
     |> case do
       %{status: 200, body: %{"Data" => [contact | _]}} ->
         {:ok, contact["Email"]}
@@ -167,8 +163,8 @@ defmodule Sanbase.Email.MailjetApi do
   end
 
   defp manage_subscription(body_json, list_id, action) do
-    HTTPoison.post(
-      @base_url <> "contactslist/#{list_id}/managemanycontacts",
+    (@base_url <> "contactslist/#{list_id}/managemanycontacts")
+    |> HTTPoison.post(
       body_json,
       headers()
     )
@@ -178,16 +174,12 @@ defmodule Sanbase.Email.MailjetApi do
         :ok
 
       {:ok, %HTTPoison.Response{} = response} ->
-        Logger.error(
-          "Error #{action} email to Mailjet: #{inspect(body_json)}}. Response: #{inspect(response)}"
-        )
+        Logger.error("Error #{action} email to Mailjet: #{inspect(body_json)}}. Response: #{inspect(response)}")
 
         {:error, response.body}
 
       {:error, reason} ->
-        Logger.error(
-          "Error #{action} email to Mailjet : #{body_json}}. Reason: #{inspect(reason)}"
-        )
+        Logger.error("Error #{action} email to Mailjet : #{body_json}}. Reason: #{inspect(reason)}")
 
         {:error, reason}
     end

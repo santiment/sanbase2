@@ -4,6 +4,8 @@ defmodule SanbaseWeb.Graphql.CustomTypes.BlockchainAddress do
   """
   use Absinthe.Schema.Notation
 
+  alias Absinthe.Blueprint.Input.Null
+
   # Types must have a unique name. `:blockchain_address` is already taken
   scalar :binary_blockchain_address, name: "binary_blockchain_address" do
     description("""
@@ -18,7 +20,7 @@ defmodule SanbaseWeb.Graphql.CustomTypes.BlockchainAddress do
   end
 
   @spec decode(Absinthe.Blueprint.Input.String.t()) :: {:ok, term()} | :error
-  @spec decode(Absinthe.Blueprint.Input.Null.t()) :: {:ok, nil}
+  @spec decode(Null.t()) :: {:ok, nil}
   defp decode(%Absinthe.Blueprint.Input.String{value: ""}), do: {:ok, ""}
 
   defp decode(%Absinthe.Blueprint.Input.String{value: value}) do
@@ -26,7 +28,7 @@ defmodule SanbaseWeb.Graphql.CustomTypes.BlockchainAddress do
     {:ok, value}
   end
 
-  defp decode(%Absinthe.Blueprint.Input.Null{}) do
+  defp decode(%Null{}) do
     {:ok, nil}
   end
 

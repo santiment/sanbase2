@@ -1,28 +1,26 @@
 defmodule Sanbase.SocialData.SocialVolume do
+  @moduledoc false
   import Sanbase.Utils.ErrorHandling
+  import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
+
+  alias Sanbase.Clickhouse.NftTrade
+  alias Sanbase.Project
+  alias Sanbase.SocialData.SocialHelper
+  alias Sanbase.Utils.Config
 
   require Logger
   require Mockery.Macro
-  alias Sanbase.Utils.Config
-
-  alias Sanbase.SocialData.SocialHelper
-  alias Sanbase.Project
-  alias Sanbase.Clickhouse.NftTrade
-
-  import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
 
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 
   @recv_timeout 25_000
   def social_volume(selector, from, to, interval, source, opts \\ [])
 
-  def social_volume(selector, from, to, interval, source, opts)
-      when source in [:all, "all", :total] do
+  def social_volume(selector, from, to, interval, source, opts) when source in [:all, "all", :total] do
     social_volume(selector, from, to, interval, SocialHelper.sources_total_string(), opts)
   end
 
-  def social_volume(%{contract_address: contract}, from, to, interval, source, opts)
-      when is_binary(contract) do
+  def social_volume(%{contract_address: contract}, from, to, interval, source, opts) when is_binary(contract) do
     search_text =
       contract
       |> Sanbase.BlockchainAddress.to_internal_format()
@@ -37,20 +35,21 @@ defmodule Sanbase.SocialData.SocialVolume do
     end
   end
 
-  def social_volume(%{words: words} = selector, from, to, interval, source, opts)
-      when is_list(words) do
+  def social_volume(%{words: words} = selector, from, to, interval, source, opts) when is_list(words) do
     transformed_words = Enum.reject(words, &(&1 == "***"))
     treat_word_as_lucene_query = Keyword.get(opts, :treat_word_as_lucene_query, false)
 
     transformed_words =
-      case Keyword.get(opts, :treat_word_as_lucene_query, false) do
-        false -> transformed_words |> Enum.map(&String.downcase/1)
-        true -> transformed_words
+      if Keyword.get(opts, :treat_word_as_lucene_query, false) do
+        transformed_words
+      else
+        Enum.map(transformed_words, &String.downcase/1)
       end
 
     selector = %{selector | words: transformed_words}
 
-    social_volume_list_request(selector, from, to, interval, source, opts)
+    selector
+    |> social_volume_list_request(from, to, interval, source, opts)
     |> handle_words_social_volume_response(selector)
     |> maybe_apply_function(fn result ->
       if treat_word_as_lucene_query do
@@ -66,7 +65,8 @@ defmodule Sanbase.SocialData.SocialVolume do
   end
 
   def social_volume(selector, from, to, interval, source, opts) do
-    social_volume_request(selector, from, to, interval, source, opts)
+    selector
+    |> social_volume_request(from, to, interval, source, opts)
     |> handle_response(selector)
   end
 
@@ -83,9 +83,7 @@ defmodule Sanbase.SocialData.SocialVolume do
         warn_result("Error status #{status} fetching social volume for #{inspect(selector)}")
 
       {:error, %HTTPoison.Error{} = error} ->
-        error_result(
-          "Cannot fetch social volume data for #{inspect(selector)}: #{HTTPoison.Error.message(error)}"
-        )
+        error_result("Cannot fetch social volume data for #{inspect(selector)}: #{HTTPoison.Error.message(error)}")
     end
   end
 
@@ -108,9 +106,7 @@ defmodule Sanbase.SocialData.SocialVolume do
         warn_result("Error status #{status} fetching social volume for #{inspect(selector)}")
 
       {:error, %HTTPoison.Error{} = error} ->
-        error_result(
-          "Cannot fetch social volume data for #{inspect(selector)}: #{HTTPoison.Error.message(error)}"
-        )
+        error_result("Cannot fetch social volume data for #{inspect(selector)}: #{HTTPoison.Error.message(error)}")
 
       {:error, error} ->
         {:error, error}
@@ -141,7 +137,7 @@ defmodule Sanbase.SocialData.SocialVolume do
     #     "2022-10-05T00:00:00Z" => 1399
     #   }
     # }
-    case Map.values(data) |> List.first() do
+    case data |> Map.values() |> List.first() do
       %{} ->
         data
 
@@ -151,7 +147,7 @@ defmodule Sanbase.SocialData.SocialVolume do
     end
   end
 
-  def social_volume_projects() do
+  def social_volume_projects do
     projects = Enum.map(Project.List.projects(), fn %Project{slug: slug} -> slug end)
 
     {:ok, projects}
@@ -161,14 +157,13 @@ defmodule Sanbase.SocialData.SocialVolume do
     url = Path.join([metrics_hub_url(), opts_to_metric(opts)])
 
     body =
-      %{
+      Jason.encode_to_iodata!(%{
         "search_texts" => Enum.join(words, ","),
         "from_timestamp" => from |> DateTime.truncate(:second) |> DateTime.to_iso8601(),
         "to_timestamp" => to |> DateTime.truncate(:second) |> DateTime.to_iso8601(),
         "interval" => interval,
         "source" => source
-      }
-      |> Jason.encode_to_iodata!()
+      })
 
     options = [recv_timeout: @recv_timeout]
     headers = [{"Content-Type", "application/json"}]
@@ -198,7 +193,8 @@ defmodule Sanbase.SocialData.SocialVolume do
   end
 
   defp social_volume_result(map) do
-    Enum.map(map, fn {datetime, value} ->
+    map
+    |> Enum.map(fn {datetime, value} ->
       %{
         datetime: Sanbase.DateTimeUtils.from_iso8601!(datetime),
         mentions_count: value
@@ -214,7 +210,7 @@ defmodule Sanbase.SocialData.SocialVolume do
     end
   end
 
-  defp metrics_hub_url() do
+  defp metrics_hub_url do
     Config.module_get(Sanbase.SocialData, :metricshub_url)
   end
 

@@ -1,11 +1,12 @@
 defmodule Sanbase.Alerts.Stats do
+  @moduledoc false
   import Ecto.Query
 
-  alias Sanbase.Repo
   alias Sanbase.Alert.HistoricalActivity
+  alias Sanbase.Repo
 
   def fired_alerts_24h(user_id) do
-    now = Timex.now()
+    now = DateTime.utc_now()
     day_ago = Timex.shift(now, days: -1)
     week_ago = Timex.shift(now, days: -7)
     query = from(ha in HistoricalActivity, where: ha.user_id == ^user_id, select: ha.data)
@@ -22,27 +23,23 @@ defmodule Sanbase.Alerts.Stats do
 
   defp compute(stats_day, stats_week) do
     stats_week =
-      stats_week
-      |> Enum.reduce(%{}, fn {slug, alerts}, acc -> Map.merge(acc, %{slug => alerts}) end)
+      Enum.reduce(stats_week, %{}, fn {slug, alerts}, acc -> Map.put(acc, slug, alerts) end)
 
     total_fired =
-      stats_day
-      |> Enum.reduce(0, fn {_slug, alerts}, count -> count + length(alerts.alerts) end)
+      Enum.reduce(stats_day, 0, fn {_slug, alerts}, count -> count + length(alerts.alerts) end)
 
     total_fired_weekly =
-      stats_week
-      |> Enum.reduce(0, fn {_slug, alerts}, count -> count + length(alerts.alerts) end)
+      Enum.reduce(stats_week, 0, fn {_slug, alerts}, count -> count + length(alerts.alerts) end)
 
     total_fired_weekly_avg = total_fired_weekly / 7
 
     total_fired_percent_change = Sanbase.Math.percent_change(total_fired_weekly_avg, total_fired)
 
     fired_alerts =
-      stats_day
-      |> Enum.map(fn {slug, fired_data} ->
+      Enum.map(stats_day, fn {slug, fired_data} ->
         avg_week = stats_week[slug].count / 7
         percent_change = Sanbase.Math.percent_change(avg_week, fired_data.count)
-        alerts_types = fired_data.alerts |> Enum.map(&alert_type(&1))
+        alerts_types = Enum.map(fired_data.alerts, &alert_type(&1))
 
         %{
           slug: slug,
@@ -61,12 +58,15 @@ defmodule Sanbase.Alerts.Stats do
   end
 
   defp alert_type(alert) do
-    case alert.type do
-      "metric_signal" -> alert.metric
-      "daily_metric_signal" -> alert.metric
-      "signal_data" -> alert.signal
-      _ -> alert.type
-    end
+    case_result =
+      case alert.type do
+        "metric_signal" -> alert.metric
+        "daily_metric_signal" -> alert.metric
+        "signal_data" -> alert.signal
+        _ -> alert.type
+      end
+
+    case_result
     |> String.replace("_", " ")
     |> String.capitalize()
   end
@@ -75,15 +75,13 @@ defmodule Sanbase.Alerts.Stats do
     all = Repo.all(query)
 
     screener =
-      all
-      |> Enum.filter(fn data ->
+      Enum.filter(all, fn data ->
         not is_nil(data["user_trigger_data"]["default"]) and
           data["user_trigger_data"]["default"]["type"] == "screener_signal"
       end)
 
     metric_or_signal =
-      all
-      |> Enum.filter(fn data ->
+      Enum.filter(all, fn data ->
         Enum.all?(data["user_trigger_data"], fn {_, utd} ->
           utd["type"] in ["metric_signal", "daily_metric_signal", "signal_data"]
         end)
@@ -91,18 +89,15 @@ defmodule Sanbase.Alerts.Stats do
 
     screener =
       Enum.flat_map(screener, fn data ->
-        data["user_trigger_data"]
-        |> Enum.flat_map(fn {_, utd} ->
+        Enum.flat_map(data["user_trigger_data"], fn {_, utd} ->
           alert = %{type: utd["type"]}
           Enum.map(utd["added_slugs"], fn slug -> {slug, alert} end)
         end)
       end)
 
     metric_or_signal =
-      metric_or_signal
-      |> Enum.flat_map(fn data ->
-        data["user_trigger_data"]
-        |> Enum.map(fn {slug, utd} ->
+      Enum.flat_map(metric_or_signal, fn data ->
+        Enum.map(data["user_trigger_data"], fn {slug, utd} ->
           alert = %{
             type: utd["type"],
             metric: utd["metric"],
@@ -122,7 +117,7 @@ defmodule Sanbase.Alerts.Stats do
     |> Enum.reduce(%{}, fn {slug, alerts}, acc ->
       Map.update(acc, slug, alerts, fn old -> old ++ alerts end)
     end)
-    |> Enum.into(%{}, fn {slug, alerts} ->
+    |> Map.new(fn {slug, alerts} ->
       {slug, %{alerts: alerts, count: length(alerts)}}
     end)
     |> Enum.sort_by(fn {_slug, data} -> data.count end, :desc)

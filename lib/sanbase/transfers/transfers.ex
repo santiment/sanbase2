@@ -1,7 +1,9 @@
 defmodule Sanbase.Transfers do
+  @moduledoc false
   alias Sanbase.Project
-
-  alias Sanbase.Transfers.{EthTransfers, Erc20Transfers, BtcTransfers}
+  alias Sanbase.Transfers.BtcTransfers
+  alias Sanbase.Transfers.Erc20Transfers
+  alias Sanbase.Transfers.EthTransfers
 
   def incoming_transfers_summary(slug, address, from, to, opts) do
     case Project.contract_info_infrastructure_by_slug(slug) do
@@ -32,7 +34,8 @@ defmodule Sanbase.Transfers do
   def blockchain_address_transaction_volume(slug, address_or_addresses, from, to) do
     case Project.contract_info_infrastructure_by_slug(slug) do
       {:ok, contract, decimals, "ETH"} ->
-        to_addresses_list(address_or_addresses)
+        address_or_addresses
+        |> to_addresses_list()
         |> Erc20Transfers.blockchain_address_transaction_volume(
           contract,
           decimals,
@@ -42,20 +45,16 @@ defmodule Sanbase.Transfers do
     end
   end
 
-  def blockchain_address_transaction_volume_over_time(
-        slug,
-        address_or_addresses,
-        from,
-        to,
-        interval
-      ) do
+  def blockchain_address_transaction_volume_over_time(slug, address_or_addresses, from, to, interval) do
     case Project.contract_info_infrastructure_by_slug(slug) do
       {:ok, "ETH", _, _} ->
-        to_addresses_list(address_or_addresses)
+        address_or_addresses
+        |> to_addresses_list()
         |> EthTransfers.blockchain_address_transaction_volume_over_time(from, to, interval)
 
       {:ok, contract, decimals, "ETH"} ->
-        to_addresses_list(address_or_addresses)
+        address_or_addresses
+        |> to_addresses_list()
         |> Erc20Transfers.blockchain_address_transaction_volume_over_time(
           contract,
           decimals,
@@ -66,26 +65,21 @@ defmodule Sanbase.Transfers do
     end
   end
 
-  def top_wallet_transfers(
-        slug,
-        address_or_addresses,
-        from,
-        to,
-        page,
-        page_size,
-        transaction_type
-      ) do
+  def top_wallet_transfers(slug, address_or_addresses, from, to, page, page_size, transaction_type) do
     case Project.contract_info_infrastructure_by_slug(slug) do
       {:ok, "BTC", _, _} ->
-        to_addresses_list(address_or_addresses)
+        address_or_addresses
+        |> to_addresses_list()
         |> BtcTransfers.top_wallet_transfers(from, to, page, page_size, transaction_type)
 
       {:ok, "ETH", _, _} ->
-        to_addresses_list(address_or_addresses)
+        address_or_addresses
+        |> to_addresses_list()
         |> EthTransfers.top_wallet_transfers(from, to, page, page_size, transaction_type)
 
       {:ok, contract, decimals, "ETH"} ->
-        to_addresses_list(address_or_addresses)
+        address_or_addresses
+        |> to_addresses_list()
         |> Erc20Transfers.top_wallet_transfers(
           contract,
           from,

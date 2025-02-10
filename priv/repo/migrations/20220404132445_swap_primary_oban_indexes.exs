@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.SwapPrimaryObanIndexes do
+  @moduledoc false
   use Ecto.Migration
 
   require Sanbase.Utils.Config, as: Config
@@ -25,7 +26,7 @@ defmodule Sanbase.Repo.Migrations.SwapPrimaryObanIndexes do
     )
   end
 
-  defp get_prefix() do
+  defp get_prefix do
     case Config.module_get(Sanbase, :deployment_env) do
       env when env in ["stage", "prod"] -> "sanbase2"
       _ -> "public"

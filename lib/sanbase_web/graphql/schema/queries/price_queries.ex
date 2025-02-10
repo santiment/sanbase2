@@ -1,11 +1,12 @@
 defmodule SanbaseWeb.Graphql.Schema.PriceQueries do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
 
-  alias SanbaseWeb.Graphql.Resolvers.PriceResolver
   alias SanbaseWeb.Graphql.Complexity
   alias SanbaseWeb.Graphql.Middlewares.AccessControl
+  alias SanbaseWeb.Graphql.Resolvers.PriceResolver
 
   object :price_queries do
     @desc "Fetch price history for a given slug and time interval."

@@ -1,9 +1,9 @@
 defmodule SanbaseWeb.Graphql.ApiMetricAggregatedTimeseriesDataTest do
   use SanbaseWeb.ConnCase, async: false
 
+  import ExUnit.CaptureLog
   import Mock
   import Sanbase.Factory
-  import ExUnit.CaptureLog
   import SanbaseWeb.Graphql.TestHelpers
 
   alias Sanbase.Metric
@@ -26,14 +26,12 @@ defmodule SanbaseWeb.Graphql.ApiMetricAggregatedTimeseriesDataTest do
     # PricePair module instead of the Price module
     %{conn: conn, slug: slug, from: from, to: to} = context
 
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.PricePair.aggregated_timeseries_data/5,
-      {:ok, %{slug => 154.44}}
-    )
+    (&Sanbase.PricePair.aggregated_timeseries_data/5)
+    |> Sanbase.Mock.prepare_mock2({:ok, %{slug => 154.44}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
-        get_aggregated_timeseries_metric(
-          conn,
+        conn
+        |> get_aggregated_timeseries_metric(
           "price_usd",
           %{slug: slug, source: "cryptocompare"},
           from,
@@ -59,15 +57,15 @@ defmodule SanbaseWeb.Graphql.ApiMetricAggregatedTimeseriesDataTest do
   test "returns data for an available metric", context do
     %{conn: conn, slug: slug, from: from, to: to} = context
 
-    Sanbase.Mock.prepare_mock(
-      Sanbase.Clickhouse.MetricAdapter,
+    Sanbase.Clickhouse.MetricAdapter
+    |> Sanbase.Mock.prepare_mock(
       :aggregated_timeseries_data,
       fn _, slug, _, _, _ -> {:ok, %{slug => 100}} end
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
-        get_aggregated_timeseries_metric(
-          conn,
+        conn
+        |> get_aggregated_timeseries_metric(
           "daily_active_addresses",
           %{slug: slug},
           from,
@@ -88,13 +86,15 @@ defmodule SanbaseWeb.Graphql.ApiMetricAggregatedTimeseriesDataTest do
       |> Enum.shuffle()
       |> Enum.take(100)
 
-    Sanbase.Mock.prepare_mock(Metric, :aggregated_timeseries_data, fn _, slug_arg, _, _, _ ->
+    Metric
+    |> Sanbase.Mock.prepare_mock(:aggregated_timeseries_data, fn _, slug_arg, _, _, _ ->
       {:ok, %{slug_arg => 100}}
     end)
     |> Sanbase.Mock.run_with_mocks(fn ->
       for metric <- metrics do
         result =
-          get_aggregated_timeseries_metric(conn, metric, %{slug: slug}, from, to, nil)
+          conn
+          |> get_aggregated_timeseries_metric(metric, %{slug: slug}, from, to, nil)
           |> extract_aggregated_timeseries_data()
 
         assert result == 100
@@ -105,16 +105,18 @@ defmodule SanbaseWeb.Graphql.ApiMetricAggregatedTimeseriesDataTest do
   test "returns data for all available aggregations", context do
     %{conn: conn, slug: slug, from: from, to: to} = context
     # nil means aggregation is not passed, we should not explicitly pass it
-    metric = Metric.available_timeseries_metrics() |> Enum.random()
+    metric = Enum.random(Metric.available_timeseries_metrics())
     {:ok, %{available_aggregations: aggregations}} = Metric.metadata(metric)
 
-    Sanbase.Mock.prepare_mock(Metric, :aggregated_timeseries_data, fn _, slug, _, _, _ ->
+    Metric
+    |> Sanbase.Mock.prepare_mock(:aggregated_timeseries_data, fn _, slug, _, _, _ ->
       {:ok, %{slug => 100}}
     end)
     |> Sanbase.Mock.run_with_mocks(fn ->
       for aggregation <- aggregations do
         result =
-          get_aggregated_timeseries_metric(conn, metric, %{slug: slug}, from, to, aggregation)
+          conn
+          |> get_aggregated_timeseries_metric(metric, %{slug: slug}, from, to, aggregation)
           |> extract_aggregated_timeseries_data()
 
         assert result == 100
@@ -125,7 +127,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricAggregatedTimeseriesDataTest do
   test "returns error for unavailable aggregations", context do
     %{conn: conn, slug: slug, from: from, to: to} = context
     aggregations = Metric.available_aggregations()
-    rand_aggregations = Enum.map(1..10, fn _ -> rand_str() |> String.to_atom() end)
+    rand_aggregations = Enum.map(1..10, fn _ -> String.to_atom(rand_str()) end)
     rand_aggregations = rand_aggregations -- aggregations
     [metric | _] = Metric.available_timeseries_metrics()
 
@@ -198,14 +200,13 @@ defmodule SanbaseWeb.Graphql.ApiMetricAggregatedTimeseriesDataTest do
   end
 
   defp extract_aggregated_timeseries_data(result) do
-    result
-    |> get_in(["data", "getMetric", "aggregatedTimeseriesData"])
+    get_in(result, ["data", "getMetric", "aggregatedTimeseriesData"])
   end
 
   defp get_aggregated_timeseries_query(metric, selector, from, to, aggregation) do
     # Put so some of the source metrics do not fail. If the source exists do not
     # replace it. In case the source is not needed it won't be used.
-    selector = selector |> Map.put_new(:source, "twitter")
+    selector = Map.put_new(selector, :source, "twitter")
     selector = extend_selector_with_required_fields(metric, selector)
 
     """
@@ -215,7 +216,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricAggregatedTimeseriesDataTest do
             selector: #{map_to_input_object_str(selector)}
             from: "#{from}"
             to: "#{to}"
-            #{if aggregation, do: "aggregation: #{Atom.to_string(aggregation) |> String.upcase()}"})
+            #{if aggregation, do: "aggregation: #{aggregation |> Atom.to_string() |> String.upcase()}"})
         }
       }
     """
@@ -228,7 +229,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricAggregatedTimeseriesDataTest do
           aggregatedTimeseriesData(
             from: "#{from}"
             to: "#{to}"
-            aggregation: #{Atom.to_string(aggregation) |> String.upcase()})
+            aggregation: #{aggregation |> Atom.to_string() |> String.upcase()})
         }
       }
     """

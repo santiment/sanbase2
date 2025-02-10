@@ -1,5 +1,7 @@
 defmodule SanbaseWeb.Graphql.Schema.SheetsTemplateQueries do
+  @moduledoc false
   use Absinthe.Schema.Notation
+
   alias SanbaseWeb.Graphql.Resolvers.SheetsTemplateResolver
 
   object :sheets_template_queries do

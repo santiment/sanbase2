@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
+  @moduledoc false
   import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
   import SanbaseWeb.Graphql.Helpers.Utils, only: [transform_user_trigger: 1]
 
@@ -24,14 +25,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
     types = get_types(args)
     opts = get_opts(args, resolution)
 
-    case early_return_empty?(opts) do
-      true ->
-        {:ok, []}
-
-      false ->
-        Sanbase.Entity.get_most_voted(types, opts)
-        |> maybe_extend_with_views_count(opts)
-        |> maybe_apply_function(&handle_result/1)
+    if early_return_empty?(opts) do
+      {:ok, []}
+    else
+      types
+      |> Sanbase.Entity.get_most_voted(opts)
+      |> maybe_extend_with_views_count(opts)
+      |> maybe_apply_function(&handle_result/1)
     end
   end
 
@@ -42,21 +42,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
     types = get_types(args)
     opts = get_opts(args, resolution)
 
-    case early_return_empty?(opts) do
-      true ->
-        {:ok, empty_stats()}
+    if early_return_empty?(opts) do
+      {:ok, empty_stats()}
+    else
+      {:ok, total_entities_count} = Sanbase.Entity.get_most_voted_total_count(types, opts)
 
-      false ->
-        {:ok, total_entities_count} = Sanbase.Entity.get_most_voted_total_count(types, opts)
+      stats = %{
+        current_page: opts[:page],
+        current_page_size: opts[:page_size],
+        total_pages_count: (total_entities_count / opts[:page_size]) |> Float.ceil() |> trunc(),
+        total_entities_count: total_entities_count
+      }
 
-        stats = %{
-          current_page: opts[:page],
-          current_page_size: opts[:page_size],
-          total_pages_count: (total_entities_count / opts[:page_size]) |> Float.ceil() |> trunc(),
-          total_entities_count: total_entities_count
-        }
-
-        {:ok, stats}
+      {:ok, stats}
     end
   end
 
@@ -69,14 +67,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
     types = get_types(args)
     opts = get_opts(args, resolution)
 
-    case early_return_empty?(opts) do
-      true ->
-        {:ok, []}
-
-      false ->
-        Sanbase.Entity.get_most_recent(types, opts)
-        |> maybe_extend_with_views_count(opts)
-        |> maybe_apply_function(&handle_result/1)
+    if early_return_empty?(opts) do
+      {:ok, []}
+    else
+      types
+      |> Sanbase.Entity.get_most_recent(opts)
+      |> maybe_extend_with_views_count(opts)
+      |> maybe_apply_function(&handle_result/1)
     end
   end
 
@@ -86,21 +83,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
     types = get_types(args)
     opts = get_opts(args, resolution)
 
-    case early_return_empty?(opts) do
-      true ->
-        {:ok, empty_stats()}
+    if early_return_empty?(opts) do
+      {:ok, empty_stats()}
+    else
+      {:ok, total_entities_count} = Sanbase.Entity.get_most_recent_total_count(types, opts)
 
-      false ->
-        {:ok, total_entities_count} = Sanbase.Entity.get_most_recent_total_count(types, opts)
+      stats = %{
+        current_page: opts[:page],
+        current_page_size: opts[:page_size],
+        total_pages_count: (total_entities_count / opts[:page_size]) |> Float.ceil() |> trunc(),
+        total_entities_count: total_entities_count
+      }
 
-        stats = %{
-          current_page: opts[:page],
-          current_page_size: opts[:page_size],
-          total_pages_count: (total_entities_count / opts[:page_size]) |> Float.ceil() |> trunc(),
-          total_entities_count: total_entities_count
-        }
-
-        {:ok, stats}
+      {:ok, stats}
     end
   end
 
@@ -123,14 +118,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
     types = get_types(args)
     opts = get_opts(args, resolution)
 
-    case early_return_empty?(opts) do
-      true ->
-        {:ok, []}
-
-      false ->
-        Sanbase.Entity.get_most_used(types, opts)
-        |> maybe_extend_with_views_count(opts)
-        |> maybe_apply_function(&handle_result/1)
+    if early_return_empty?(opts) do
+      {:ok, []}
+    else
+      types
+      |> Sanbase.Entity.get_most_used(opts)
+      |> maybe_extend_with_views_count(opts)
+      |> maybe_apply_function(&handle_result/1)
     end
   end
 
@@ -141,21 +135,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
     types = get_types(args)
     opts = get_opts(args, resolution)
 
-    case early_return_empty?(opts) do
-      true ->
-        {:ok, empty_stats()}
+    if early_return_empty?(opts) do
+      {:ok, empty_stats()}
+    else
+      {:ok, total_entities_count} = Sanbase.Entity.get_most_used_total_count(types, opts)
 
-      false ->
-        {:ok, total_entities_count} = Sanbase.Entity.get_most_used_total_count(types, opts)
+      stats = %{
+        current_page: opts[:page],
+        current_page_size: opts[:page_size],
+        total_pages_count: (total_entities_count / opts[:page_size]) |> Float.ceil() |> trunc(),
+        total_entities_count: total_entities_count
+      }
 
-        stats = %{
-          current_page: opts[:page],
-          current_page_size: opts[:page_size],
-          total_pages_count: (total_entities_count / opts[:page_size]) |> Float.ceil() |> trunc(),
-          total_entities_count: total_entities_count
-        }
-
-        {:ok, stats}
+      {:ok, stats}
     end
   end
 
@@ -196,14 +188,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
   # TODO: Frontend needs to put filter in `New` tab and backend
   # needs to set these to default 0
   defp temp_maybe_rewrite_min_length_args(opts, args) do
-    case Map.get(args, :current_user_data_only, false) do
-      true ->
-        opts
-        |> Keyword.put(:min_title_length, 0)
-        |> Keyword.put(:min_description_length, 0)
-
-      false ->
-        opts
+    if Map.get(args, :current_user_data_only, false) do
+      opts
+      |> Keyword.put(:min_title_length, 0)
+      |> Keyword.put(:min_description_length, 0)
+    else
+      opts
     end
   end
 
@@ -231,9 +221,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
   end
 
   defp maybe_add_value_option(opts, key, args) do
-    case Map.has_key?(args, key) do
-      true -> Keyword.put(opts, key, Map.get(args, key))
-      false -> opts
+    if Map.has_key?(args, key) do
+      Keyword.put(opts, key, Map.get(args, key))
+    else
+      opts
     end
   end
 
@@ -243,9 +234,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
   end
 
   defp maybe_extend_with_views_count({:ok, result}, opts) do
-    case Keyword.get(opts, :is_moderator, false) do
-      true -> {:ok, Sanbase.Entity.extend_with_views_count(result)}
-      false -> {:ok, result}
+    if Keyword.get(opts, :is_moderator, false) do
+      {:ok, Sanbase.Entity.extend_with_views_count(result)}
+    else
+      {:ok, result}
     end
   end
 
@@ -266,7 +258,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
       do: Process.put(:do_not_cache_query, true)
   end
 
-  defp empty_stats() do
+  defp empty_stats do
     %{
       current_page: 1,
       current_page_size: 0,

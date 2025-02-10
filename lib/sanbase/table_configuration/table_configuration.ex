@@ -1,7 +1,9 @@
 defmodule Sanbase.TableConfiguration do
+  @moduledoc false
   use Ecto.Schema
 
-  import Ecto.{Query, Changeset}
+  import Ecto.Changeset
+  import Ecto.Query
 
   alias Sanbase.Repo
 
@@ -33,8 +35,7 @@ defmodule Sanbase.TableConfiguration do
   end
 
   def update_changeset(%__MODULE__{} = table_configuration, attrs \\ %{}) do
-    table_configuration
-    |> cast(attrs, @fields)
+    cast(table_configuration, attrs, @fields)
   end
 
   def by_id(table_configuration_id, querying_user_id \\ nil) do
@@ -44,7 +45,8 @@ defmodule Sanbase.TableConfiguration do
   def public?(%__MODULE__{is_public: is_public}), do: is_public
 
   def user_table_configurations(user_id, querying_user_id) do
-    user_table_configurations_query(user_id, querying_user_id)
+    user_id
+    |> user_table_configurations_query(querying_user_id)
     |> Repo.all()
   end
 
@@ -75,8 +77,7 @@ defmodule Sanbase.TableConfiguration do
   def delete(table_configuration_id, user_id) do
     case get_table_configuration_if_owner(table_configuration_id, user_id) do
       {:ok, %__MODULE__{} = conf} ->
-        conf
-        |> Repo.delete()
+        Repo.delete(conf)
 
       {:error, error} ->
         {:error, "Cannot delete table configuration. Reason: #{inspect(error)}"}
@@ -103,8 +104,7 @@ defmodule Sanbase.TableConfiguration do
         {:ok, conf}
 
       %__MODULE__{} ->
-        {:error,
-         "table configuration with id #{table_configuration_id} is not owned by the user with id #{user_id}"}
+        {:error, "table configuration with id #{table_configuration_id} is not owned by the user with id #{user_id}"}
 
       nil ->
         {:error, "table configuration with id #{table_configuration_id} does not exist."}
@@ -118,12 +118,10 @@ defmodule Sanbase.TableConfiguration do
   end
 
   defp accessible_by_user_query(query, nil) do
-    query
-    |> where([conf], conf.is_public == true)
+    where(query, [conf], conf.is_public == true)
   end
 
   defp accessible_by_user_query(query, querying_user_id) do
-    query
-    |> where([conf], conf.is_public == true or conf.user_id == ^querying_user_id)
+    where(query, [conf], conf.is_public == true or conf.user_id == ^querying_user_id)
   end
 end

@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.WalletsProjectIdNotNull do
+  @moduledoc false
   use Ecto.Migration
 
   def up do

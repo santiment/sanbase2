@@ -1,8 +1,10 @@
 defmodule Sanbase.Affiliate.FirstPromoter do
+  @moduledoc false
   import Sanbase.Affiliate.EventEmitter, only: [emit_event: 3]
 
+  alias Sanbase.Accounts.User
+  alias Sanbase.Accounts.UserSettings
   alias Sanbase.Affiliate.FirstPromoterApi
-  alias Sanbase.Accounts.{User, UserSettings}
 
   @type promoter_args :: %{
           optional(:ref_id) => String.t(),

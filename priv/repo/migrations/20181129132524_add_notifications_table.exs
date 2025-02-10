@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddNotificationsTable do
+  @moduledoc false
   use Ecto.Migration
 
   # There is currently `notification` table. To avoid dropping records from it

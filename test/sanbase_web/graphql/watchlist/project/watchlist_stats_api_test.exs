@@ -1,12 +1,12 @@
 defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import Sanbase.TestHelpers
-
   import Mock
-  import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
+  import Sanbase.TestHelpers
+  import SanbaseWeb.Graphql.TestHelpers
 
+  alias Sanbase.SocialData.TrendingWords
   alias Sanbase.UserList
 
   setup do
@@ -38,7 +38,7 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
   end
 
   test "no ticker or slug is trending", context do
-    with_mock Sanbase.SocialData.TrendingWords,
+    with_mock TrendingWords,
       get_currently_trending_words: fn _, _ ->
         {:ok,
          [
@@ -61,9 +61,9 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
   end
 
   test "one of the slugs is trending", context do
-    slug = context.project1.slug |> String.downcase()
+    slug = String.downcase(context.project1.slug)
 
-    with_mock Sanbase.SocialData.TrendingWords,
+    with_mock TrendingWords,
       get_currently_trending_words: fn _, _ ->
         {:ok,
          [
@@ -90,9 +90,9 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
   end
 
   test "one of the tickers is trending", context do
-    ticker = context.project2.ticker |> String.downcase()
+    ticker = String.downcase(context.project2.ticker)
 
-    with_mock Sanbase.SocialData.TrendingWords,
+    with_mock TrendingWords,
       get_currently_trending_words: fn _, _ ->
         {:ok,
          [
@@ -119,10 +119,10 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
   end
 
   test "both tickers and slugs are trending", context do
-    ticker = context.project1.ticker |> String.downcase()
-    slug = context.project1.slug |> String.downcase()
+    ticker = String.downcase(context.project1.ticker)
+    slug = String.downcase(context.project1.slug)
 
-    with_mock Sanbase.SocialData.TrendingWords,
+    with_mock TrendingWords,
       get_currently_trending_words: fn _, _ ->
         {:ok,
          [
@@ -151,9 +151,9 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
   end
 
   test "name is trending", context do
-    name = context.project1.name |> String.downcase()
+    name = String.downcase(context.project1.name)
 
-    with_mock Sanbase.SocialData.TrendingWords,
+    with_mock TrendingWords,
       get_currently_trending_words: fn _, _ ->
         {:ok,
          [
@@ -181,10 +181,10 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
   end
 
   test "two names are trending", context do
-    name1 = context.project1.name |> String.downcase()
-    name2 = context.project2.name |> String.downcase()
+    name1 = String.downcase(context.project1.name)
+    name2 = String.downcase(context.project2.name)
 
-    with_mock Sanbase.SocialData.TrendingWords,
+    with_mock TrendingWords,
       get_currently_trending_words: fn _, _ ->
         {:ok,
          [
@@ -197,15 +197,15 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
 
       %{"data" => %{"watchlist" => %{"stats" => %{"trendingNames" => names}}}} = result
 
-      assert names |> Enum.sort() == [name1, name2] |> Enum.sort()
+      assert Enum.sort(names) == Enum.sort([name1, name2])
     end
   end
 
   test "trending projects fetched by name and ticker", context do
-    name1 = context.project1.name |> String.downcase()
-    ticker2 = context.project2.ticker |> String.downcase()
+    name1 = String.downcase(context.project1.name)
+    ticker2 = String.downcase(context.project2.ticker)
 
-    with_mock Sanbase.SocialData.TrendingWords,
+    with_mock TrendingWords,
       get_currently_trending_words: fn _, _ ->
         {:ok,
          [
@@ -219,22 +219,24 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
       %{"data" => %{"watchlist" => %{"stats" => %{"trendingProjects" => projects}}}} = result
 
       expected_result =
-        [
-          %{"slug" => context.project1.slug},
-          %{"slug" => context.project2.slug}
-        ]
-        |> Enum.sort_by(fn %{"slug" => slug} -> slug end)
+        Enum.sort_by(
+          [
+            %{"slug" => context.project1.slug},
+            %{"slug" => context.project2.slug}
+          ],
+          fn %{"slug" => slug} -> slug end
+        )
 
-      projects_sorted = projects |> Enum.sort_by(fn %{"slug" => slug} -> slug end)
+      projects_sorted = Enum.sort_by(projects, fn %{"slug" => slug} -> slug end)
 
       assert projects_sorted == expected_result
     end
   end
 
   test "trending projects fetched by slug", context do
-    slug = context.project1.slug |> String.downcase()
+    slug = String.downcase(context.project1.slug)
 
-    with_mock Sanbase.SocialData.TrendingWords,
+    with_mock TrendingWords,
       get_currently_trending_words: fn _, _ ->
         {:ok,
          [
@@ -255,11 +257,11 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
   end
 
   test "trending projects are uniq when slug, name and ticker are trending", context do
-    slug = context.project1.slug |> String.downcase()
-    name = context.project1.name |> String.downcase()
-    ticker = context.project1.ticker |> String.downcase()
+    slug = String.downcase(context.project1.slug)
+    name = String.downcase(context.project1.name)
+    ticker = String.downcase(context.project1.ticker)
 
-    with_mock Sanbase.SocialData.TrendingWords,
+    with_mock TrendingWords,
       get_currently_trending_words: fn _, _ ->
         {:ok,
          [
@@ -282,12 +284,12 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
   end
 
   test "project not in watchlist is not included", context do
-    slug = context.project1.slug |> String.downcase()
-    name = context.project3.name |> String.downcase()
-    ticker = context.project3.ticker |> String.downcase()
-    slug2 = context.project3.slug |> String.downcase()
+    slug = String.downcase(context.project1.slug)
+    name = String.downcase(context.project3.name)
+    ticker = String.downcase(context.project3.ticker)
+    slug2 = String.downcase(context.project3.slug)
 
-    with_mock Sanbase.SocialData.TrendingWords,
+    with_mock TrendingWords,
       get_currently_trending_words: fn _, _ ->
         {:ok,
          [

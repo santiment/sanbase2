@@ -1,4 +1,5 @@
 defmodule Sanbase.Ecosystem.Metric do
+  @moduledoc false
   import Sanbase.DateTimeUtils, only: [maybe_str_to_sec: 1]
 
   import Sanbase.Metric.SqlQuery.Helper,
@@ -9,6 +10,7 @@ defmodule Sanbase.Ecosystem.Metric do
     ]
 
   alias Sanbase.Clickhouse.MetricAdapter.Registry
+  alias Sanbase.Clickhouse.Query
 
   def aggregated_timeseries_data(ecosystems, metric, from, to, opts) do
     aggregation =
@@ -77,7 +79,7 @@ defmodule Sanbase.Ecosystem.Metric do
     GROUP BY ecosystem
     """
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp timeseries_data_query(ecosystems, metric, from, to, interval, aggregation) do
@@ -110,6 +112,6 @@ defmodule Sanbase.Ecosystem.Metric do
     ORDER BY t ASC
     """
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 end

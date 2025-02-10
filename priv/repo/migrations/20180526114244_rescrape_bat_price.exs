@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.RescrapeBatPrice do
+  @moduledoc false
   use Ecto.Migration
 
   alias Sanbase.Prices.Store
@@ -18,7 +19,7 @@ defmodule Sanbase.Repo.Migrations.RescrapeBatPrice do
 
   # Helper functions
 
-  defp start_store() do
+  defp start_store do
     opts = [strategy: :one_for_one, max_restarts: 5, max_seconds: 1]
     Supervisor.start_link([Store.child_spec()], opts)
   end

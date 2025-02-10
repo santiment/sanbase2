@@ -4,6 +4,8 @@ defmodule Sanbase.Cryptocompare.RemoveUnsupportedBaseAssetsTest do
 
   import Sanbase.Factory
 
+  alias Ecto.Adapters.SQL
+  alias Sanbase.Cryptocompare.Jobs
   alias Sanbase.Project
 
   setup do
@@ -27,28 +29,28 @@ defmodule Sanbase.Cryptocompare.RemoveUnsupportedBaseAssetsTest do
 
     # Check that all 40 jobs and 4 different base assets are present
     assert {:ok, %{rows: [[40]]}} =
-             Ecto.Adapters.SQL.query(Sanbase.Repo, "SELECT count(*) FROM oban_jobs;", [])
+             SQL.query(Sanbase.Repo, "SELECT count(*) FROM oban_jobs;", [])
 
     {:ok, base_assets} =
-      Sanbase.Cryptocompare.Jobs.get_oban_jobs_base_assets("cryptocompare_historical_jobs_queue")
+      Jobs.get_oban_jobs_base_assets("cryptocompare_historical_jobs_queue")
 
-    assert [p1.ticker, p2.ticker, p3.ticker, p4.ticker] |> Enum.sort() ==
-             base_assets |> Enum.sort()
+    assert Enum.sort([p1.ticker, p2.ticker, p3.ticker, p4.ticker]) ==
+             Enum.sort(base_assets)
 
     # Remove two of the mappings making those 2 no longer supported
     assert {1, nil} = Project.SourceSlugMapping.remove(p1.id, "cryptocompare")
     assert {1, nil} = Project.SourceSlugMapping.remove(p4.id, "cryptocompare")
 
     # Remove the unsupported base assets and test that the jobs are removed
-    Sanbase.Cryptocompare.Jobs.remove_oban_jobs_unsupported_assets()
+    Jobs.remove_oban_jobs_unsupported_assets()
 
     assert {:ok, %{rows: [[20]]}} =
-             Ecto.Adapters.SQL.query(Sanbase.Repo, "SELECT count(*) FROM oban_jobs;", [])
+             SQL.query(Sanbase.Repo, "SELECT count(*) FROM oban_jobs;", [])
 
     {:ok, base_assets} =
-      Sanbase.Cryptocompare.Jobs.get_oban_jobs_base_assets("cryptocompare_historical_jobs_queue")
+      Jobs.get_oban_jobs_base_assets("cryptocompare_historical_jobs_queue")
 
-    assert [p2.ticker, p3.ticker] |> Enum.sort() ==
-             base_assets |> Enum.sort()
+    assert Enum.sort([p2.ticker, p3.ticker]) ==
+             Enum.sort(base_assets)
   end
 end

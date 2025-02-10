@@ -52,8 +52,7 @@ defmodule Sanbase.Alert.ValidationTest do
       ]
 
       all_true? =
-        valid_cases
-        |> Enum.all?(fn operation ->
+        Enum.all?(valid_cases, fn operation ->
           Validation.valid_operation?(operation) == :ok
         end)
 
@@ -72,9 +71,8 @@ defmodule Sanbase.Alert.ValidationTest do
       ]
 
       all_errors? =
-        error_cases
-        |> Enum.all?(fn operation ->
-          Validation.valid_operation?(operation) |> elem(0) == :error
+        Enum.all?(error_cases, fn operation ->
+          operation |> Validation.valid_operation?() |> elem(0) == :error
         end)
 
       assert all_errors?
@@ -90,8 +88,7 @@ defmodule Sanbase.Alert.ValidationTest do
       ]
 
       all_true? =
-        valid_cases
-        |> Enum.all?(fn operation ->
+        Enum.all?(valid_cases, fn operation ->
           Validation.valid_percent_change_operation?(operation) == :ok
         end)
 
@@ -148,8 +145,7 @@ defmodule Sanbase.Alert.ValidationTest do
       ]
 
       assert Validation.valid_operation?(%{some_of: valid_cases}) ==
-               {:error,
-                "The list of operation contains not valid operation: %{percent_up: \"NaN\"}"}
+               {:error, "The list of operation contains not valid operation: %{percent_up: \"NaN\"}"}
     end
 
     test "with invalid parameters in all_of returns proper error message" do
@@ -160,8 +156,7 @@ defmodule Sanbase.Alert.ValidationTest do
       ]
 
       assert Validation.valid_operation?(%{all_of: valid_cases}) ==
-               {:error,
-                "The list of operation contains not valid operation: %{percent_up: \"NaN\"}"}
+               {:error, "The list of operation contains not valid operation: %{percent_up: \"NaN\"}"}
     end
 
     test "with invalid cases returns {:error, error_message}" do
@@ -174,9 +169,8 @@ defmodule Sanbase.Alert.ValidationTest do
       ]
 
       all_errors? =
-        error_cases
-        |> Enum.all?(fn operation ->
-          Validation.valid_operation?(operation) |> elem(0) == :error
+        Enum.all?(error_cases, fn operation ->
+          operation |> Validation.valid_operation?() |> elem(0) == :error
         end)
 
       assert all_errors?
@@ -194,8 +188,7 @@ defmodule Sanbase.Alert.ValidationTest do
       ]
 
       all_true? =
-        valid_cases
-        |> Enum.all?(fn operation ->
+        Enum.all?(valid_cases, fn operation ->
           Validation.valid_absolute_change_operation?(operation) == :ok
         end)
 
@@ -214,9 +207,8 @@ defmodule Sanbase.Alert.ValidationTest do
       ]
 
       all_errors? =
-        error_cases
-        |> Enum.all?(fn operation ->
-          Validation.valid_absolute_change_operation?(operation) |> elem(0) == :error
+        Enum.all?(error_cases, fn operation ->
+          operation |> Validation.valid_absolute_change_operation?() |> elem(0) == :error
         end)
 
       assert all_errors?
@@ -234,8 +226,7 @@ defmodule Sanbase.Alert.ValidationTest do
 
     test "with invalid operation, because it is a absolute value one, returns proper error message" do
       assert Validation.valid_absolute_change_operation?(%{above: 10}) ==
-               {:error,
-                "%{above: 10} is an absolute value operation, not an absolute change one."}
+               {:error, "%{above: 10} is an absolute value operation, not an absolute change one."}
     end
   end
 
@@ -250,8 +241,7 @@ defmodule Sanbase.Alert.ValidationTest do
       ]
 
       all_true? =
-        valid_cases
-        |> Enum.all?(fn operation ->
+        Enum.all?(valid_cases, fn operation ->
           Validation.valid_absolute_value_operation?(operation) == :ok
         end)
 
@@ -270,9 +260,8 @@ defmodule Sanbase.Alert.ValidationTest do
       ]
 
       all_errors? =
-        error_cases
-        |> Enum.all?(fn operation ->
-          Validation.valid_absolute_value_operation?(operation) |> elem(0) == :error
+        Enum.all?(error_cases, fn operation ->
+          operation |> Validation.valid_absolute_value_operation?() |> elem(0) == :error
         end)
 
       assert all_errors?
@@ -290,8 +279,7 @@ defmodule Sanbase.Alert.ValidationTest do
 
     test "with invalid operation, because it is a absolute change one, returns proper error message" do
       assert Validation.valid_absolute_value_operation?(%{amount_up: 10}) ==
-               {:error,
-                "%{amount_up: 10} is an absolute change operation, not an absolute value one."}
+               {:error, "%{amount_up: 10} is an absolute change operation, not an absolute value one."}
     end
   end
 
@@ -306,8 +294,7 @@ defmodule Sanbase.Alert.ValidationTest do
       ]
 
       all_true? =
-        valid_cases
-        |> Enum.all?(fn operation ->
+        Enum.all?(valid_cases, fn operation ->
           Validation.valid_percent_change_operation?(operation) == :ok
         end)
 
@@ -326,9 +313,8 @@ defmodule Sanbase.Alert.ValidationTest do
       ]
 
       all_errors? =
-        error_cases
-        |> Enum.all?(fn operation ->
-          Validation.valid_percent_change_operation?(operation) |> elem(0) == :error
+        Enum.all?(error_cases, fn operation ->
+          operation |> Validation.valid_percent_change_operation?() |> elem(0) == :error
         end)
 
       assert all_errors?
@@ -400,7 +386,7 @@ defmodule Sanbase.Alert.ValidationTest do
         ]
       }
 
-      assert Validation.valid_percent_change_operation?(error_case) |> elem(0) == :error
+      assert error_case |> Validation.valid_percent_change_operation?() |> elem(0) == :error
     end
 
     test "with a not fitting operation in a percent some_of returns proper message" do

@@ -1,6 +1,5 @@
 defmodule SanbaseWeb.Graphql.Resolvers.TimelineEventResolver do
-  require Logger
-
+  @moduledoc false
   import Absinthe.Resolution.Helpers, except: [async: 1]
 
   import SanbaseWeb.Graphql.Helpers.Utils,
@@ -10,9 +9,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.TimelineEventResolver do
   alias Sanbase.Vote
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
-  def timeline_events(_root, args, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
+  require Logger
+
+  def timeline_events(_root, args, %{context: %{auth: %{current_user: current_user}}}) do
     case TimelineEvent.events(current_user, args) do
       {:ok, %{events: events} = result} ->
         {:ok, %{result | events: replace_user_trigger_with_trigger(events)}}

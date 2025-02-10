@@ -29,8 +29,7 @@ defmodule Sanbase.Alert.History.SignalHistory do
     @spec historical_trigger_points(map(), String.t()) ::
             {:ok, list(SignalHistory.historical_trigger_points_type())}
             | {:error, String.t()}
-    def historical_trigger_points(%{target: target} = settings, cooldown)
-        when has_binary_key?(target, :slug) do
+    def historical_trigger_points(%{target: target} = settings, cooldown) when has_binary_key?(target, :slug) do
       %{signal: signal, time_window: time_window} = settings
 
       case get_data(signal, target, time_window) do
@@ -48,7 +47,7 @@ defmodule Sanbase.Alert.History.SignalHistory do
     end
 
     def get_data(signal, target, time_window) do
-      to = Timex.now()
+      to = DateTime.utc_now()
       shift = @historical_days_from + str_to_days(time_window) - 1
 
       Sanbase.Signal.timeseries_data(

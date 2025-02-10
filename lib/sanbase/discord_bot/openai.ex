@@ -1,4 +1,5 @@
 defmodule Sanbase.OpenAI do
+  @moduledoc false
   require Logger
 
   @doc """
@@ -89,7 +90,7 @@ defmodule Sanbase.OpenAI do
     chat(prompt, opts, retries - 1)
   end
 
-  defp openai_api_key() do
+  defp openai_api_key do
     System.get_env("OPENAI_API_KEY")
   end
 end

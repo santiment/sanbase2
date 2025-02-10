@@ -1,11 +1,12 @@
 defmodule SanbaseWeb.Graphql.ApiMetricTableDataTest do
   use SanbaseWeb.ConnCase, async: false
 
+  import ExUnit.CaptureLog
   import Mock, only: [assert_called: 1]
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
-  import ExUnit.CaptureLog
 
+  alias Sanbase.Clickhouse.MetricAdapter
   alias Sanbase.Metric
 
   setup do
@@ -26,17 +27,14 @@ defmodule SanbaseWeb.Graphql.ApiMetricTableDataTest do
     %{conn: conn, slugs: slugs, from: from, to: to} = context
     list_of_slugs = Enum.map(slugs, fn slug -> "#{slug}" end)
 
-    metric =
-      Metric.available_table_metrics()
-      |> Enum.random()
+    metric = Enum.random(Metric.available_table_metrics())
 
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.MetricAdapter.table_data/5,
-      success_result(list_of_slugs)
-    )
+    (&MetricAdapter.table_data/5)
+    |> Sanbase.Mock.prepare_mock2(success_result(list_of_slugs))
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
-        get_table_metric(conn, metric, slugs, from, to)
+        conn
+        |> get_table_metric(metric, slugs, from, to)
         |> get_in(["data", "getMetric", "tableData"])
 
       assert result == %{
@@ -53,14 +51,13 @@ defmodule SanbaseWeb.Graphql.ApiMetricTableDataTest do
 
     metrics = Metric.available_table_metrics() |> Enum.shuffle() |> Enum.take(100)
 
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.MetricAdapter.table_data/5,
-      success_result(list_of_slugs)
-    )
+    (&MetricAdapter.table_data/5)
+    |> Sanbase.Mock.prepare_mock2(success_result(list_of_slugs))
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         for metric <- metrics do
-          get_table_metric(conn, metric, slugs, from, to)
+          conn
+          |> get_table_metric(metric, slugs, from, to)
           |> get_in(["data", "getMetric", "tableData"])
         end
 
@@ -80,14 +77,12 @@ defmodule SanbaseWeb.Graphql.ApiMetricTableDataTest do
 
     list_of_slugs = [p1.slug, p2.slug]
 
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.MetricAdapter.table_data/5,
-      success_result(list_of_slugs)
-    )
+    (&MetricAdapter.table_data/5)
+    |> Sanbase.Mock.prepare_mock2(success_result(list_of_slugs))
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
-        get_table_metric_ms(
-          conn,
+        conn
+        |> get_table_metric_ms(
           "labelled_exchange_balance_sum",
           market_segment.name,
           [],
@@ -103,7 +98,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTableDataTest do
              }
 
       assert_called(
-        Sanbase.Clickhouse.MetricAdapter.table_data(
+        MetricAdapter.table_data(
           "labelled_exchange_balance_sum",
           %{slug: [:_, :_]},
           from,
@@ -124,14 +119,12 @@ defmodule SanbaseWeb.Graphql.ApiMetricTableDataTest do
 
     list_of_slugs = [p1.slug, p2.slug]
 
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.MetricAdapter.table_data/5,
-      success_result(list_of_slugs)
-    )
+    (&MetricAdapter.table_data/5)
+    |> Sanbase.Mock.prepare_mock2(success_result(list_of_slugs))
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
-        get_table_metric_ms(
-          conn,
+        conn
+        |> get_table_metric_ms(
           "labelled_exchange_balance_sum",
           market_segment.name,
           [p3.slug],
@@ -147,7 +140,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTableDataTest do
              }
 
       assert_called(
-        Sanbase.Clickhouse.MetricAdapter.table_data(
+        MetricAdapter.table_data(
           "labelled_exchange_balance_sum",
           %{slug: [:_, :_]},
           from,
@@ -228,8 +221,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTableDataTest do
 
   defp get_table_query(metric, slugs, from, to) do
     list_of_slugs =
-      Enum.map(slugs, fn slug -> "\"#{slug}\"" end)
-      |> Enum.join(",")
+      Enum.map_join(slugs, ",", fn slug -> "\"#{slug}\"" end)
 
     """
       {

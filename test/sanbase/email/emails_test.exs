@@ -4,14 +4,14 @@ defmodule Sanbase.EmailsTest do
 
   import Mock
   import Mox
-  import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.Factory
-  import Sanbase.Email.Template
-
   import Sanbase.DateTimeUtils, only: [days_after: 1]
+  import Sanbase.Email.Template
+  import Sanbase.Factory
+  import SanbaseWeb.Graphql.TestHelpers
 
   alias Sanbase.Accounts.User
   alias Sanbase.Billing.Subscription
+  alias Sanbase.Email.MockMailjetApi
   alias Sanbase.StripeApi
   alias Sanbase.StripeApiTestResponse
 
@@ -25,8 +25,7 @@ defmodule Sanbase.EmailsTest do
          StripeApiTestResponse.create_or_update_customer_resp()
        end
      ]},
-    {StripeApi, [:passthrough],
-     [create_subscription: fn _ -> StripeApiTestResponse.create_subscription_resp() end]},
+    {StripeApi, [:passthrough], [create_subscription: fn _ -> StripeApiTestResponse.create_subscription_resp() end]},
     {StripeApi, [:passthrough],
      [
        fetch_stripe_customer: fn _ ->
@@ -46,9 +45,9 @@ defmodule Sanbase.EmailsTest do
 
   describe "schedule emails" do
     test "on user registration", context do
-      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
+      expect(MockMailjetApi, :subscribe, fn _, _ -> :ok end)
 
-      {:ok, user} = context.not_registered_user |> User.Email.update_email_token()
+      {:ok, user} = User.Email.update_email_token(context.not_registered_user)
 
       execute_mutation(build_conn(), email_login_verify_mutation(user))
       # FIXME: it works in isolation but jobs are not enqueued when running all tests
@@ -89,7 +88,7 @@ defmodule Sanbase.EmailsTest do
     end
 
     test "on Sanbase PRO trial started", context do
-      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
+      expect(MockMailjetApi, :subscribe, fn _, _ -> :ok end)
 
       Subscription.create(%{
         stripe_id: "123",
@@ -126,7 +125,7 @@ defmodule Sanbase.EmailsTest do
     end
 
     test "on Sanbase PRO subscription started", context do
-      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
+      expect(MockMailjetApi, :subscribe, fn _, _ -> :ok end)
       query = subscribe_mutation(context.plans.plan_pro_sanbase.id)
 
       execute_mutation(context.conn, query)
@@ -146,7 +145,7 @@ defmodule Sanbase.EmailsTest do
     end
 
     test "on API PRO subscription started", context do
-      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
+      expect(MockMailjetApi, :subscribe, fn _, _ -> :ok end)
       query = subscribe_mutation(context.plans.plan_pro.id)
 
       execute_mutation(context.conn, query)

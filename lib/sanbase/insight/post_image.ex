@@ -1,9 +1,11 @@
 defmodule Sanbase.Insight.PostImage do
+  @moduledoc false
   use Ecto.Schema
+
   import Ecto.Changeset
 
-  alias Sanbase.Insight.Post
   alias __MODULE__
+  alias Sanbase.Insight.Post
 
   schema "post_images" do
     belongs_to(:post, Post)

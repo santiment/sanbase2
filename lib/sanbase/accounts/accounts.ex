@@ -1,9 +1,11 @@
 defmodule Sanbase.Accounts do
-  alias Sanbase.Repo
-  alias __MODULE__.{User, EthAccount}
-
+  @moduledoc false
   import Ecto.Query
   import Sanbase.Accounts.User.Ecto, only: [registration_state_equals: 1]
+
+  alias __MODULE__.EthAccount
+  alias __MODULE__.User
+  alias Sanbase.Repo
 
   def get_user(user_id_or_ids) do
     User.by_id(user_id_or_ids)
@@ -83,12 +85,13 @@ defmodule Sanbase.Accounts do
   defp atomic_update(user_id, old_state, new_registration_state) do
     # Atomic update. If the same code is execute from multiple processes or nodes
     # only one of them should succeed
-    from(
-      user in User,
-      where: user.id == ^user_id and registration_state_equals(old_state),
-      update: [set: [registration_state: ^new_registration_state]],
-      select: user
+    Repo.update_all(
+      from(user in User,
+        where: user.id == ^user_id and registration_state_equals(old_state),
+        update: [set: [registration_state: ^new_registration_state]],
+        select: user
+      ),
+      []
     )
-    |> Repo.update_all([])
   end
 end

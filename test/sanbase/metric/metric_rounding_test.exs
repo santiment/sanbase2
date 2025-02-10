@@ -13,7 +13,8 @@ defmodule Sanbase.MetricRoundingTest do
       [1_711_929_600, 469_393.100000000003]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    (&Sanbase.ClickhouseRepo.query/2)
+    |> Sanbase.Mock.prepare_mock2({:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       {:ok, data} =
         Sanbase.Metric.timeseries_data(

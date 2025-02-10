@@ -1,4 +1,5 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.PricePoint do
+  @moduledoc false
   @volume_usd_limit 500_000_000_000
   @price_usd_limit 1_000_000
 

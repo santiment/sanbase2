@@ -1,20 +1,26 @@
 defmodule Sanbase.Repo.Migrations.FillPriceTagProjectsFromTags do
+  @moduledoc false
   use Ecto.Migration
+
   import Ecto.Query
 
+  alias Sanbase.Insight.Post
+
   def up do
-    setup()
     import Ecto.Query
 
+    setup()
+
     posts =
-      from(p in Sanbase.Insight.Post, preload: [:tags])
+      from(p in Post, preload: [:tags])
       |> Sanbase.Repo.all()
       |> Enum.reject(&(&1.tags == [] or not is_nil(&1.price_chart_project_id)))
 
-    first_tags = posts |> Enum.map(fn %{tags: [first_tag | _]} -> first_tag.name end)
+    first_tags = Enum.map(posts, fn %{tags: [first_tag | _]} -> first_tag.name end)
 
     ticker_to_project_map =
-      Sanbase.Project.List.by_field(first_tags, :ticker)
+      first_tags
+      |> Sanbase.Project.List.by_field(:ticker)
       |> Map.new(fn %{ticker: ticker} = project -> {ticker, project} end)
 
     posts
@@ -22,13 +28,11 @@ defmodule Sanbase.Repo.Migrations.FillPriceTagProjectsFromTags do
     |> Enum.reduce(
       Ecto.Multi.new(),
       fn {post, offset}, multi ->
-        first_tag = List.first(post.tags) |> Map.get(:name)
+        first_tag = post.tags |> List.first() |> Map.get(:name)
 
         case Map.get(ticker_to_project_map, first_tag) do
           %Sanbase.Project{} = project ->
-            changeset =
-              post
-              |> Sanbase.Insight.Post.update_changeset(%{price_chart_project_id: project.id})
+            changeset = Post.update_changeset(post, %{price_chart_project_id: project.id})
 
             Ecto.Multi.update(multi, offset, changeset, on_conflict: :nothing)
 

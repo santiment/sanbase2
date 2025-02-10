@@ -1,9 +1,11 @@
 defmodule Sanbase.Notifications.DiscordBehaviour do
+  @moduledoc false
   @callback send_message(webhook :: String.t(), content :: String.t(), opts :: Keyword.t()) ::
               :ok | {:error, term()}
 end
 
 defmodule Sanbase.Notifications.DiscordClient do
+  @moduledoc false
   @behaviour Sanbase.Notifications.DiscordBehaviour
 
   def client do

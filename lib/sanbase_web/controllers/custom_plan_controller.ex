@@ -37,7 +37,7 @@ defmodule SanbaseWeb.CustomPlanController do
     custom_plan = Plan.by_id(id)
 
     custom_plan_users =
-      Sanbase.Billing.Subscription.get_subscriptions_for_plan(id) |> Enum.map(& &1.user)
+      id |> Sanbase.Billing.Subscription.get_subscriptions_for_plan() |> Enum.map(& &1.user)
 
     render(conn, "show.html", custom_plan: custom_plan, custom_plan_users: custom_plan_users)
   end
@@ -72,13 +72,12 @@ defmodule SanbaseWeb.CustomPlanController do
     historical_data_in_days = Map.fetch!(restrictions_params, "historical_data_in_days")
 
     restrictions = %{
-      api_call_limits: Map.fetch!(restrictions_params, "api_call_limits") |> Jason.decode!(),
-      query_access: Map.fetch!(restrictions_params, "query_access") |> Jason.decode!(),
-      metric_access: Map.fetch!(restrictions_params, "metric_access") |> Jason.decode!(),
-      signal_access: Map.fetch!(restrictions_params, "signal_access") |> Jason.decode!(),
+      api_call_limits: restrictions_params |> Map.fetch!("api_call_limits") |> Jason.decode!(),
+      query_access: restrictions_params |> Map.fetch!("query_access") |> Jason.decode!(),
+      metric_access: restrictions_params |> Map.fetch!("metric_access") |> Jason.decode!(),
+      signal_access: restrictions_params |> Map.fetch!("signal_access") |> Jason.decode!(),
       restricted_access_as_plan: Map.fetch!(restrictions_params, "restricted_access_as_plan"),
-      realtime_data_cut_off_in_days:
-        if(realtime_data_cut_off_in_days != "", do: realtime_data_cut_off_in_days),
+      realtime_data_cut_off_in_days: if(realtime_data_cut_off_in_days != "", do: realtime_data_cut_off_in_days),
       historical_data_in_days: if(historical_data_in_days != "", do: historical_data_in_days)
     }
 

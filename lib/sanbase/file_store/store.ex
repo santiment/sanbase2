@@ -1,4 +1,5 @@
 defmodule Sanbase.FileStore do
+  @moduledoc false
   use Waffle.Definition
 
   @versions [:original]
@@ -30,8 +31,7 @@ defmodule Sanbase.FileStore do
   # Helper functions
 
   defp allowed_extenstion?(file) do
-    @extension_whitelist
-    |> Enum.member?(Path.extname(file.file_name |> String.downcase()))
+    Enum.member?(@extension_whitelist, file.file_name |> String.downcase() |> Path.extname())
   end
 
   defp allowed_size?(file) do

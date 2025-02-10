@@ -5,14 +5,14 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
   import Sanbase.Factory
 
   alias Sanbase.ExternalServices.ProjectInfo
-  alias Sanbase.Project
   alias Sanbase.Model.Ico
+  alias Sanbase.Project
   alias Sanbase.Repo
   alias Sanbase.Tag
 
   test "creating project info from a project" do
     project =
-      %Project{
+      Repo.insert!(%Project{
         slug: "slug",
         name: "Name",
         website_link: "website.link.com",
@@ -29,11 +29,9 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
         ticker: "SAN",
         token_decimals: 4,
         total_supply: 50_000
-      }
-      |> Repo.insert!()
+      })
 
-    %Ico{project_id: project.id}
-    |> Repo.insert!()
+    Repo.insert!(%Ico{project_id: project.id})
 
     expected_project_info = %ProjectInfo{
       slug: "slug",
@@ -58,9 +56,7 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
   end
 
   test "updating project info if there is no ico attached to it" do
-    project =
-      %Project{slug: "santiment", name: "Santiment"}
-      |> Repo.insert!()
+    project = Repo.insert!(%Project{slug: "santiment", name: "Santiment"})
 
     {:ok, project} =
       ProjectInfo.update_project(
@@ -84,13 +80,9 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
   end
 
   test "updating project info if there is ico attached to it" do
-    project =
-      %Project{slug: "santiment", name: "Santiment"}
-      |> Repo.insert!()
+    project = Repo.insert!(%Project{slug: "santiment", name: "Santiment"})
 
-    ico =
-      %Ico{project_id: project.id}
-      |> Repo.insert!()
+    ico = Repo.insert!(%Ico{project_id: project.id})
 
     {:ok, project} =
       ProjectInfo.update_project(
@@ -114,9 +106,7 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
   test "update project_info with new ticker inserts into tags" do
     ticker = "SAN"
 
-    project =
-      %Project{slug: "santiment", name: "Santiment"}
-      |> Repo.insert!()
+    project = Repo.insert!(%Project{slug: "santiment", name: "Santiment"})
 
     {:ok, project} =
       ProjectInfo.update_project(
@@ -135,12 +125,8 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
   test "update project_info with ticker - does not insert into tags if duplicate tag" do
     ticker = "SAN"
 
-    %Tag{name: ticker}
-    |> Repo.insert!()
-
-    project =
-      %Project{slug: "santiment", name: "Santiment", ticker: "OLD_TICKR"}
-      |> Repo.insert!()
+    Repo.insert!(%Tag{name: ticker})
+    project = Repo.insert!(%Project{slug: "santiment", name: "Santiment", ticker: "OLD_TICKR"})
 
     assert capture_log(fn ->
              ProjectInfo.update_project(

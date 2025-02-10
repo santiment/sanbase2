@@ -1,20 +1,22 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
+  @moduledoc false
   use Tesla
 
-  require Logger
-
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
-  alias Sanbase.Project
-  alias Sanbase.Model.LatestCoinmarketcapData
-  alias Sanbase.Repo
+
   alias Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfo
   alias Sanbase.FileStore
+  alias Sanbase.Model.LatestCoinmarketcapData
+  alias Sanbase.Project
+  alias Sanbase.Repo
   alias Sanbase.Utils.FileHash
+
+  require Logger
 
   @log_tag "[CMC][LogoFetcher]"
   @size 64
 
-  def run() do
+  def run do
     projects = Project.List.projects_with_source("coinmarketcap", include_hidden: true)
 
     Logger.info("#{@log_tag} Started fetching logos from coinmarketcap.")
@@ -25,7 +27,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
     |> Enum.chunk_every(100)
     |> Enum.each(fn projects ->
       {:ok, remote_projects} = CryptocurrencyInfo.fetch_data(projects)
-      logo_map = remote_projects |> Enum.into(%{}, fn ci -> {ci.slug, ci.logo} end)
+      logo_map = Map.new(remote_projects, fn ci -> {ci.slug, ci.logo} end)
 
       Enum.each(projects, fn project ->
         update_project_logos(project, logo_map, dir_path)
@@ -45,7 +47,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
     dir_path = Temp.mkdir!("logotemp")
 
     {:ok, remote_projects} = CryptocurrencyInfo.fetch_data([project])
-    logo_map = remote_projects |> Enum.into(%{}, fn ci -> {ci.slug, ci.logo} end)
+    logo_map = Map.new(remote_projects, fn ci -> {ci.slug, ci.logo} end)
     update_project_logos(project, logo_map, dir_path)
 
     File.rm_rf!(dir_path)
@@ -54,8 +56,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
   defp update_project_logos(project, logo_map, dir_path) do
     with coinmarketcap_id when not is_nil(coinmarketcap_id) <- Project.coinmarketcap_id(project),
          url when not is_nil(url) <- Map.get(logo_map, coinmarketcap_id),
-         file_extension <- Path.extname(url |> String.downcase()),
-         filename <- coinmarketcap_id <> file_extension,
+         file_extension = url |> String.downcase() |> Path.extname(),
+         filename = coinmarketcap_id <> file_extension,
          {:ok, local_filepath} <- download(url, dir_path, filename),
          true <- logo_changed?(project, local_filepath),
          {:ok, local_filepath} <- resize_image(local_filepath, dir_path, filename),
@@ -91,7 +93,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
             latest_cmc_data
             |> LatestCoinmarketcapData.changeset(%{
               logo_hash: file_hash,
-              logo_updated_at: Timex.now()
+              logo_updated_at: DateTime.utc_now()
             })
             |> Repo.insert_or_update!()
 
@@ -106,7 +108,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
     dest_filepath = dest_path <> "/" <> filename
 
     try do
-      Mogrify.open(source_path)
+      source_path
+      |> Mogrify.open()
       |> Mogrify.resize("#{@size}x#{@size}")
       |> Mogrify.custom("type", "PaletteAlpha")
       |> Mogrify.save(path: dest_filepath)
@@ -149,25 +152,21 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
       {:error, error} ->
         error_msg = inspect(error)
 
-        Logger.error(
-          "#{@log_tag} Failed uploading logo: #{filepath}. Error message: #{error_msg}"
-        )
+        Logger.error("#{@log_tag} Failed uploading logo: #{filepath}. Error message: #{error_msg}")
 
         {:error, error_msg}
     end
   end
 
   defp update_local_project(%Project{} = project, %{} = fields) do
-    case Project.changeset(project, fields) |> Repo.update() do
+    case project |> Project.changeset(fields) |> Repo.update() do
       {:ok, schema} ->
         {:ok, schema}
 
       {:error, error} ->
         error_msg = changeset_errors_string(error)
 
-        Logger.error(
-          "#{@log_tag} Error updating project locally: #{project.slug}. Error message: #{error_msg}"
-        )
+        Logger.error("#{@log_tag} Error updating project locally: #{project.slug}. Error message: #{error_msg}")
 
         {:error, error_msg}
     end

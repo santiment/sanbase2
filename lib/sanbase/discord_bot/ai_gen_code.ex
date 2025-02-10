@@ -1,5 +1,7 @@
 defmodule Sanbase.DiscordBot.AiGenCode do
+  @moduledoc false
   use Ecto.Schema
+
   import Ecto.Changeset
   import Ecto.Query
 
@@ -47,12 +49,14 @@ defmodule Sanbase.DiscordBot.AiGenCode do
   end
 
   def create(params) do
-    changeset(%__MODULE__{}, params)
+    %__MODULE__{}
+    |> changeset(params)
     |> Repo.insert()
   end
 
   def change(ai_gen_code, params) do
-    changeset(ai_gen_code, params)
+    ai_gen_code
+    |> changeset(params)
     |> Repo.update()
   end
 

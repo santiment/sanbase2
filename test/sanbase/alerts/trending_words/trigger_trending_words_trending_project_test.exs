@@ -1,14 +1,15 @@
 defmodule Sanbase.Alert.TriggerTrendingWordsTrendingProjectTest do
   use Sanbase.DataCase, async: false
 
+  import ExUnit.CaptureLog
   import Mock
   import Sanbase.Factory
-  import ExUnit.CaptureLog
 
-  alias Sanbase.Alert.UserTrigger
   alias Sanbase.Alert.Evaluator
-
+  alias Sanbase.Alert.Scheduler
   alias Sanbase.Alert.Trigger.TrendingWordsTriggerSettings
+  alias Sanbase.Alert.UserTrigger
+  alias Sanbase.SocialData.TrendingWords
 
   setup do
     Sanbase.Cache.clear_all(:alerts_evaluator_cache)
@@ -41,10 +42,10 @@ defmodule Sanbase.Alert.TriggerTrendingWordsTrendingProjectTest do
   end
 
   test "evaluate trending words triggers", context do
-    with_mock Sanbase.SocialData.TrendingWords, [:passthrough],
+    with_mock TrendingWords, [:passthrough],
       get_currently_trending_words: fn _, _ ->
         {:ok,
-         [%{word: context.project.name |> String.upcase(), score: 10}] ++
+         [%{word: String.upcase(context.project.name), score: 10}] ++
            top_words()}
       end do
       [triggered] =
@@ -66,24 +67,24 @@ defmodule Sanbase.Alert.TriggerTrendingWordsTrendingProjectTest do
         %Tesla.Env{status: 200, body: "ok"}
     end)
 
-    with_mock Sanbase.SocialData.TrendingWords, [:passthrough],
+    with_mock TrendingWords, [:passthrough],
       get_currently_trending_words: fn _, _ ->
-        {:ok, [%{word: context.project.name |> String.downcase(), score: 10}] ++ top_words()}
+        {:ok, [%{word: String.downcase(context.project.name), score: 10}] ++ top_words()}
       end do
       assert capture_log(fn ->
-               Sanbase.Alert.Scheduler.run_alert(TrendingWordsTriggerSettings)
+               Scheduler.run_alert(TrendingWordsTriggerSettings)
              end) =~
                "In total 1/1 trending_words alerts were sent successfully"
 
       Sanbase.Cache.clear_all(:alerts_evaluator_cache)
 
       assert capture_log(fn ->
-               Sanbase.Alert.Scheduler.run_alert(TrendingWordsTriggerSettings)
+               Scheduler.run_alert(TrendingWordsTriggerSettings)
              end) =~ "There were no trending_words alerts triggered"
     end
   end
 
-  defp top_words() do
+  defp top_words do
     [
       %{score: 1740.2647984845628, word: "bat"},
       %{score: 792.9209638684719, word: "coinbase"},

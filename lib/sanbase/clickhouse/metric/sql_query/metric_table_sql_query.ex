@@ -1,4 +1,5 @@
 defmodule Sanbase.Clickhouse.MetricAdapter.TableSqlQuery do
+  @moduledoc false
   alias Sanbase.Clickhouse.MetricAdapter.Registry
 
   def table_data_query("labelled_exchange_balance_sum" = metric, slug_or_slugs, from, to) do
@@ -30,13 +31,15 @@ defmodule Sanbase.Clickhouse.MetricAdapter.TableSqlQuery do
     """
 
     params =
-      %{
-        metric: Map.get(Registry.name_to_metric_map(), metric),
-        from: from |> DateTime.to_unix(),
-        to: to |> DateTime.to_unix(),
-        slugs: slugs
-      }
-      |> Map.merge(sum_query_params)
+      Map.merge(
+        %{
+          metric: Map.get(Registry.name_to_metric_map(), metric),
+          from: DateTime.to_unix(from),
+          to: DateTime.to_unix(to),
+          slugs: slugs
+        },
+        sum_query_params
+      )
 
     Sanbase.Clickhouse.Query.new(sql, params)
   end

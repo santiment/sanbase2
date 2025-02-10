@@ -142,7 +142,7 @@ defmodule SanbaseWeb.Graphql.AvailableBlockchainApiTest do
            ]
   end
 
-  defp get_available_blockchains() do
+  defp get_available_blockchains do
     query = """
     {
       getAvailableBlockchains{

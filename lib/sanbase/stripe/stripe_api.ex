@@ -3,9 +3,10 @@ defmodule Sanbase.StripeApi do
   Module wrapping communication with Stripe.
   """
 
-  alias Sanbase.Billing
-  alias Sanbase.Billing.{Product, Plan}
   alias Sanbase.Accounts.User
+  alias Sanbase.Billing
+  alias Sanbase.Billing.Plan
+  alias Sanbase.Billing.Product
 
   @type subscription_item :: %{plan: String.t()}
   @type subscription :: %{
@@ -64,15 +65,13 @@ defmodule Sanbase.StripeApi do
     Stripe.Customer.update(stripe_customer_id, params)
   end
 
-  def fetch_stripe_customer(%User{stripe_customer_id: stripe_customer_id})
-      when is_binary(stripe_customer_id) do
+  def fetch_stripe_customer(%User{stripe_customer_id: stripe_customer_id}) when is_binary(stripe_customer_id) do
     Stripe.Customer.retrieve(stripe_customer_id, expand: ["default_source"])
   end
 
   def fetch_stripe_customer(_), do: {:error, "Customer has no default card"}
 
-  def delete_default_card(%User{stripe_customer_id: stripe_customer_id})
-      when is_binary(stripe_customer_id) do
+  def delete_default_card(%User{stripe_customer_id: stripe_customer_id}) when is_binary(stripe_customer_id) do
     with {:ok, customer} <- Stripe.Customer.retrieve(stripe_customer_id),
          {:ok, _} <- delete_card(customer) do
       :ok
@@ -131,8 +130,9 @@ defmodule Sanbase.StripeApi do
   def remove_duplicate_payment_methods(payment_method_id, customer_id) do
     with {:ok, payment_method} <- Stripe.PaymentMethod.retrieve(payment_method_id),
          {:ok, %Stripe.List{data: payment_methods}} <-
-           Stripe.PaymentMethod.list(customer: customer_id),
-         fingerprint <- payment_method.card.fingerprint do
+           Stripe.PaymentMethod.list(customer: customer_id) do
+      fingerprint = payment_method.card.fingerprint
+
       payment_methods
       |> Enum.filter(fn pm ->
         pm.card.fingerprint == fingerprint && pm.id != payment_method_id
@@ -182,8 +182,7 @@ defmodule Sanbase.StripeApi do
   end
 
   def cancel_subscription_at_period_end(stripe_id) do
-    stripe_id
-    |> update_subscription(%{cancel_at_period_end: true})
+    update_subscription(stripe_id, %{cancel_at_period_end: true})
   end
 
   def cancel_subscription_immediately(stripe_id) do
@@ -201,9 +200,8 @@ defmodule Sanbase.StripeApi do
   def upgrade_downgrade(db_subscription, plan) do
     with {:ok, params} <- get_upgrade_downgrade_subscription_params(db_subscription, plan),
          # Remove coupon for free basic API subscription
-         {:ok, params} <- maybe_remove_coupon(params, db_subscription, plan),
-         {:ok, stripe_subscription} <- update_subscription(db_subscription.stripe_id, params) do
-      {:ok, stripe_subscription}
+         {:ok, params} <- maybe_remove_coupon(params, db_subscription, plan) do
+      update_subscription(db_subscription.stripe_id, params)
     end
   end
 
@@ -226,8 +224,7 @@ defmodule Sanbase.StripeApi do
     Stripe.Coupon.retrieve(coupon_id)
   end
 
-  def list_payments(%User{stripe_customer_id: stripe_customer_id})
-      when is_binary(stripe_customer_id) do
+  def list_payments(%User{stripe_customer_id: stripe_customer_id}) when is_binary(stripe_customer_id) do
     Stripe.Charge.list(%{customer: stripe_customer_id})
   end
 
@@ -302,6 +299,7 @@ defmodule Sanbase.StripeApi do
 end
 
 defmodule Sanbase.StripeApi.Webhook do
+  @moduledoc false
   def construct_event(body, signature, webhook_secret) do
     Stripe.Webhook.construct_event(body, signature, webhook_secret)
   end

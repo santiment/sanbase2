@@ -2,12 +2,16 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker.OHLCVPriceTest do
   use Sanbase.DataCase
   use Oban.Testing, repo: Sanbase.Repo
 
-  import Sanbase.Factory
-  import Sanbase.DateTimeUtils, only: [generate_dates_inclusive: 2]
   import Sanbase.Cryptocompare.HistoricalDataStub, only: [ohlcv_price_data: 3]
+  import Sanbase.DateTimeUtils, only: [generate_dates_inclusive: 2]
+  import Sanbase.Factory
+
+  alias Sanbase.Cryptocompare.Price.HistoricalScheduler
+  alias Sanbase.Cryptocompare.Price.HistoricalWorker
+  alias Sanbase.InMemoryKafka.Producer
 
   setup do
-    Sanbase.InMemoryKafka.Producer.clear_state()
+    Producer.clear_state()
     project = insert(:random_erc20_project)
 
     mapping =
@@ -30,36 +34,37 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker.OHLCVPriceTest do
     from = ~D[2021-01-01]
     to = ~D[2021-01-10]
 
-    Sanbase.Cryptocompare.Price.HistoricalScheduler.add_jobs(base_asset, quote_asset, from, to)
+    HistoricalScheduler.add_jobs(base_asset, quote_asset, from, to)
 
-    Sanbase.Mock.prepare_mock(HTTPoison, :get, fn url, _header, _ops ->
+    HTTPoison
+    |> Sanbase.Mock.prepare_mock(:get, fn url, _header, _ops ->
       # return different timestamps for every date
       [_, date_str] = Regex.split(~r/\d{4}-\d{2}-\d{2}/, url, include_captures: true, trim: true)
 
       ohlcv_price_data(base_asset, quote_asset, date_str)
     end)
     |> Sanbase.Mock.run_with_mocks(fn ->
-      Sanbase.Cryptocompare.Price.HistoricalScheduler.resume()
+      HistoricalScheduler.resume()
 
       # Assert that all the jobs are enqueued
       for date <- generate_dates_inclusive(from, to) do
         assert_enqueued(
-          worker: Sanbase.Cryptocompare.Price.HistoricalWorker,
+          worker: HistoricalWorker,
           args: %{
             base_asset: base_asset,
             quote_asset: quote_asset,
-            date: date |> to_string()
+            date: to_string(date)
           }
         )
       end
 
       # Drain the queue, synchronously executing all the jobs in the current process
       assert %{success: 10, failure: 0} =
-               Oban.drain_queue(Sanbase.Cryptocompare.Price.HistoricalScheduler.conf_name(),
-                 queue: Sanbase.Cryptocompare.Price.HistoricalWorker.queue()
+               Oban.drain_queue(HistoricalScheduler.conf_name(),
+                 queue: HistoricalWorker.queue()
                )
 
-      state = Sanbase.InMemoryKafka.Producer.get_state()
+      state = Producer.get_state()
       ohlcv_topic = state["asset_ohlcv_price_pairs"]
 
       # 10 days with 20 records in each
@@ -109,6 +114,6 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker.OHLCVPriceTest do
     end)
 
     # Seems to fix some error
-    Sanbase.Cryptocompare.Price.HistoricalScheduler.pause()
+    HistoricalScheduler.pause()
   end
 end

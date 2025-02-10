@@ -3,12 +3,13 @@ defmodule Sanbase.Clickhouse.Label do
   Labeling addresses
   """
 
-  import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
-
   import Sanbase.Metric.SqlQuery.Helper,
     only: [label_id_by_label_fqn_filter: 2, label_id_by_label_key_filter: 2]
 
+  import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
+
   alias Sanbase.Accounts.User
+  alias Sanbase.Clickhouse.Query
 
   @type label :: %{
           name: String.t(),
@@ -44,8 +45,8 @@ defmodule Sanbase.Clickhouse.Label do
 
     query_struct = addresses_by_label_fqns_query(label_fqns, blockchain)
 
-    Sanbase.ClickhouseRepo.query_reduce(
-      query_struct,
+    query_struct
+    |> Sanbase.ClickhouseRepo.query_reduce(
       %{},
       fn [address, blockchain, label_fqn], acc ->
         Map.update(acc, {address, blockchain}, [label_fqn], &[label_fqn | &1])
@@ -65,8 +66,8 @@ defmodule Sanbase.Clickhouse.Label do
 
     query_struct = addresses_by_label_keys_query(label_keys, blockchain)
 
-    Sanbase.ClickhouseRepo.query_reduce(
-      query_struct,
+    query_struct
+    |> Sanbase.ClickhouseRepo.query_reduce(
       %{},
       fn [address, blockchain, label_fqn], acc ->
         Map.update(acc, {address, blockchain}, [label_fqn], &[label_fqn | &1])
@@ -77,22 +78,20 @@ defmodule Sanbase.Clickhouse.Label do
     end)
   end
 
-  defp apply_addresses_labels_combinator(
-         address_blockchain_labels_map,
-         label_fqns,
-         opts
-       ) do
-    case Keyword.get(opts, :labels_combinator, :or) do
-      :or ->
-        address_blockchain_labels_map
+  defp apply_addresses_labels_combinator(address_blockchain_labels_map, label_fqns, opts) do
+    # Reject all addresses that don't have all the required label_fqns
+    case_result =
+      case Keyword.get(opts, :labels_combinator, :or) do
+        :or ->
+          address_blockchain_labels_map
 
-      :and ->
-        # Reject all addresses that don't have all the required label_fqns
-        Enum.reject(address_blockchain_labels_map, fn {_address_blockchain, address_label_fqns} ->
-          Enum.any?(label_fqns, &(&1 not in address_label_fqns))
-        end)
-    end
-    |> Enum.map(fn {{address, blockchain}, _labels} ->
+        :and ->
+          Enum.reject(address_blockchain_labels_map, fn {_address_blockchain, address_label_fqns} ->
+            Enum.any?(label_fqns, &(&1 not in address_label_fqns))
+          end)
+      end
+
+    Enum.map(case_result, fn {{address, blockchain}, _labels} ->
       %{
         address: address,
         infrastructure: Sanbase.BlockchainAddress.infrastructure_from_blockchain(blockchain)
@@ -141,28 +140,28 @@ defmodule Sanbase.Clickhouse.Label do
     )
   end
 
-  def add_user_labels_to_address(%User{id: user_id, username: username}, selector, labels)
-      when not is_nil(username) do
-    for label <- labels do
-      data = %{
-        type: "SINGLE",
-        event: "CREATE",
-        blockchain:
-          Sanbase.BlockchainAddress.blockchain_from_infrastructure(selector.infrastructure),
-        address: Sanbase.BlockchainAddress.to_internal_format(selector.address),
-        label: %{
-          key: label,
-          owner: username,
-          owner_id: user_id
-        },
-        event_dt: DateTime.to_iso8601(DateTime.utc_now()),
-        change_reason: %{}
-      }
+  def add_user_labels_to_address(%User{id: user_id, username: username}, selector, labels) when not is_nil(username) do
+    for_result =
+      for label <- labels do
+        data = %{
+          type: "SINGLE",
+          event: "CREATE",
+          blockchain: Sanbase.BlockchainAddress.blockchain_from_infrastructure(selector.infrastructure),
+          address: Sanbase.BlockchainAddress.to_internal_format(selector.address),
+          label: %{
+            key: label,
+            owner: username,
+            owner_id: user_id
+          },
+          event_dt: DateTime.to_iso8601(DateTime.utc_now()),
+          change_reason: %{}
+        }
 
-      key = label <> data.event_dt
-      {key, Jason.encode!(data)}
-    end
-    |> Sanbase.KafkaExporter.send_data_to_topic_from_current_process(@create_label_topic)
+        key = label <> data.event_dt
+        {key, Jason.encode!(data)}
+      end
+
+    Sanbase.KafkaExporter.send_data_to_topic_from_current_process(for_result, @create_label_topic)
   end
 
   def add_user_labels_to_address(%User{username: nil}, _selector, _labels),
@@ -179,14 +178,13 @@ defmodule Sanbase.Clickhouse.Label do
 
     params = %{slug: slug}
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   # For backwards compatibility, if the slug is nil treat it as ethereum blockchain
   defp slug_to_blockchain(nil), do: "ethereum"
 
-  defp slug_to_blockchain(slug),
-    do: Sanbase.Project.slug_to_blockchain(slug)
+  defp slug_to_blockchain(slug), do: Sanbase.Project.slug_to_blockchain(slug)
 
   def addresses_by_label_fqns_query(label_fqns, nil = _blockchain) do
     sql = """
@@ -199,7 +197,7 @@ defmodule Sanbase.Clickhouse.Label do
     """
 
     params = %{label_fqns: label_fqns}
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def addresses_by_label_fqns_query(label_fqns, blockchain) do
@@ -214,7 +212,7 @@ defmodule Sanbase.Clickhouse.Label do
     """
 
     params = %{label_fqns: label_fqns, blockchain: blockchain}
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def addresses_by_label_keys_query(label_keys, nil = _blockchain) do
@@ -228,7 +226,7 @@ defmodule Sanbase.Clickhouse.Label do
     """
 
     params = %{label_keys: label_keys}
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def addresses_by_label_keys_query(label_keys, blockchain) do
@@ -243,7 +241,7 @@ defmodule Sanbase.Clickhouse.Label do
     """
 
     params = %{label_keys: label_keys, blockchain: blockchain}
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   # update_labels/2 is used to avoid duplicates
@@ -265,7 +263,7 @@ defmodule Sanbase.Clickhouse.Label do
     params = %{addresses: addresses, slug: slug, blockchain: blockchain}
     sql = create_addresses_labels_query(slug)
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp get_list_of_addresses(maps) do
@@ -288,12 +286,11 @@ defmodule Sanbase.Clickhouse.Label do
         nil
 
       map ->
-        labels = Map.get(labels_map, map.address, []) |> Enum.sort_by(& &1.name)
+        labels = labels_map |> Map.get(map.address, []) |> Enum.sort_by(& &1.name)
         Map.put(map, :labels, labels)
     end
 
-    maps
-    |> Enum.map(fn %{} = map ->
+    Enum.map(maps, fn %{} = map ->
       map
       |> Map.replace(:address, add_labels.(Map.get(map, :address)))
       |> Map.replace(:from_address, add_labels.(Map.get(map, :from_address)))

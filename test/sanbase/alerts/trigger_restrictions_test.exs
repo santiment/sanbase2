@@ -4,6 +4,8 @@ defmodule Sanbase.Alert.TriggerRestrictionsTest do
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
+  alias Sanbase.Billing.Plan.SanbaseAccessChecker
+
   setup do
     trigger_settings = %{
       type: "metric_signal",
@@ -55,13 +57,13 @@ defmodule Sanbase.Alert.TriggerRestrictionsTest do
     user = insert(:user)
     conn = setup_jwt_auth(build_conn(), user)
 
-    assert Sanbase.Billing.Plan.SanbaseAccessChecker.alerts_limit("FREE") == 3
+    assert SanbaseAccessChecker.alerts_limit("FREE") == 3
 
     for _ <- 1..3 do
       assert %{"data" => %{"createTrigger" => _}} = create_trigger(conn)
     end
 
-    error_msg = create_trigger(conn) |> get_in(["errors", Access.at(0), "message"])
+    error_msg = conn |> create_trigger() |> get_in(["errors", Access.at(0), "message"])
 
     assert error_msg =~
              "You have reached the limit of alerts for your plan (3).Please upgrade your plan to create more alerts."
@@ -72,13 +74,13 @@ defmodule Sanbase.Alert.TriggerRestrictionsTest do
     _ = insert(:subscription_pro_sanbase, user: user)
     conn = setup_jwt_auth(build_conn(), user)
 
-    assert Sanbase.Billing.Plan.SanbaseAccessChecker.alerts_limit("PRO") == 20
+    assert SanbaseAccessChecker.alerts_limit("PRO") == 20
 
     for _ <- 1..20 do
       assert %{"data" => %{"createTrigger" => _}} = create_trigger(conn)
     end
 
-    error_msg = create_trigger(conn) |> get_in(["errors", Access.at(0), "message"])
+    error_msg = conn |> create_trigger() |> get_in(["errors", Access.at(0), "message"])
 
     assert error_msg =~
              "You have reached the limit of alerts for your plan (20).Please upgrade your plan to create more alerts."
@@ -89,7 +91,7 @@ defmodule Sanbase.Alert.TriggerRestrictionsTest do
     _ = insert(:subscription_pro_sanbase, user: user)
     conn = setup_jwt_auth(build_conn(), user)
 
-    assert Sanbase.Billing.Plan.SanbaseAccessChecker.alerts_limit("PRO_PLUS") == 50
+    assert SanbaseAccessChecker.alerts_limit("PRO_PLUS") == 50
 
     for _ <- 1..49 do
       assert %{"data" => %{"createTrigger" => _}} = create_trigger(conn)

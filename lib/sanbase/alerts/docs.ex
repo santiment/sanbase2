@@ -1,4 +1,5 @@
 defmodule Sanbase.Alert.Docs do
+  @moduledoc false
   def academy_link(metric) do
     prefix = "https://academy.santiment.net/metrics/"
 

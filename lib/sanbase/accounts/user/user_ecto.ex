@@ -1,4 +1,5 @@
 defmodule Sanbase.Accounts.User.Ecto do
+  @moduledoc false
   defmacro registration_state_equals(state) do
     quote do
       fragment(

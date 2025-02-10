@@ -1,8 +1,11 @@
 defmodule Sanbase.Geoip.Data do
+  @moduledoc false
   use Ecto.Schema
+
   import Ecto.Changeset
-  alias Sanbase.Repo
+
   alias Sanbase.Geoip
+  alias Sanbase.Repo
 
   schema "geoip_data" do
     field(:ip_address, :string)

@@ -1,4 +1,5 @@
 defmodule Sanbase.Twitter.FollowersScheduler do
+  @moduledoc false
   use GenServer
 
   alias Sanbase.Twitter
@@ -14,17 +15,15 @@ defmodule Sanbase.Twitter.FollowersScheduler do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
-  def conf_name(), do: @oban_conf_name
-  def resume(), do: Oban.resume_queue(@oban_conf_name, queue: @oban_queue)
-  def pause(), do: Oban.pause_queue(@oban_conf_name, queue: @oban_queue)
+  def conf_name, do: @oban_conf_name
+  def resume, do: Oban.resume_queue(@oban_conf_name, queue: @oban_queue)
+  def pause, do: Oban.pause_queue(@oban_conf_name, queue: @oban_queue)
 
   def init(_opts) do
     # In order to be able to stop the historical scraper via env variables
     # the queue is defined as paused and should be resumed from code.
     if enabled?() do
-      Logger.info(
-        "[Twitter Followers Migration] Start exporting twitter followers timeseries data."
-      )
+      Logger.info("[Twitter Followers Migration] Start exporting twitter followers timeseries data.")
 
       resume()
     end
@@ -32,9 +31,9 @@ defmodule Sanbase.Twitter.FollowersScheduler do
     {:ok, %{}}
   end
 
-  def enabled?(), do: Config.module_get(__MODULE__, :enabled?) |> String.to_existing_atom()
+  def enabled?, do: __MODULE__ |> Config.module_get(:enabled?) |> String.to_existing_atom()
 
-  def add_jobs() do
+  def add_jobs do
     {:ok, slugs} = Twitter.MetricAdapter.available_slugs()
 
     slugs_left = slugs -- get_recorded_slugs()
@@ -43,7 +42,7 @@ defmodule Sanbase.Twitter.FollowersScheduler do
     Oban.insert_all(@oban_conf_name, data)
   end
 
-  def get_recorded_slugs() do
+  def get_recorded_slugs do
     query = """
     SELECT DISTINCT args->>'slug' FROM oban_jobs
     WHERE queue = 'twitter_followers_migration_queue'

@@ -4,7 +4,9 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
   """
   use GenServer
 
-  def topics(), do: ["user_events"]
+  alias Sanbase.Email.MailjetApi
+
+  def topics, do: ["user_events"]
 
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name, __MODULE__))
@@ -34,15 +36,11 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
     {:noreply, new_state}
   end
 
-  defp handle_event(
-         %{data: %{event_type: :register_user, user_id: user_id}},
-         event_shadow,
-         state
-       ) do
+  defp handle_event(%{data: %{event_type: :register_user, user_id: user_id}}, event_shadow, state) do
     {:ok, _} = Sanbase.Accounts.EmailJobs.schedule_emails_after_sign_up(user_id)
 
     email = Sanbase.Accounts.get_user!(user_id).email
-    if email, do: Sanbase.Email.MailjetApi.client().subscribe(:monthly_newsletter, email)
+    if email, do: MailjetApi.client().subscribe(:monthly_newsletter, email)
 
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
@@ -55,81 +53,51 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
     state
   end
 
-  defp handle_event(
-         %{data: %{event_type: :subscribe_monthly_newsletter, user_id: user_id}},
-         event_shadow,
-         state
-       ) do
+  defp handle_event(%{data: %{event_type: :subscribe_monthly_newsletter, user_id: user_id}}, event_shadow, state) do
     email = Sanbase.Accounts.get_user!(user_id).email
-    if email, do: Sanbase.Email.MailjetApi.client().subscribe(:monthly_newsletter, email)
+    if email, do: MailjetApi.client().subscribe(:monthly_newsletter, email)
 
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end
 
-  defp handle_event(
-         %{data: %{event_type: :unsubscribe_monthly_newsletter, user_id: user_id}},
-         event_shadow,
-         state
-       ) do
+  defp handle_event(%{data: %{event_type: :unsubscribe_monthly_newsletter, user_id: user_id}}, event_shadow, state) do
     email = Sanbase.Accounts.get_user!(user_id).email
-    if email, do: Sanbase.Email.MailjetApi.client().unsubscribe(:monthly_newsletter, email)
+    if email, do: MailjetApi.client().unsubscribe(:monthly_newsletter, email)
 
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end
 
-  defp handle_event(
-         %{data: %{event_type: :subscribe_biweekly_pro, user_id: _user_id}},
-         event_shadow,
-         state
-       ) do
+  defp handle_event(%{data: %{event_type: :subscribe_biweekly_pro, user_id: _user_id}}, event_shadow, state) do
     # email = Sanbase.Accounts.get_user!(user_id).email
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end
 
-  defp handle_event(
-         %{data: %{event_type: :unsubscribe_biweekly_pro, user_id: _user_id}},
-         event_shadow,
-         state
-       ) do
+  defp handle_event(%{data: %{event_type: :unsubscribe_biweekly_pro, user_id: _user_id}}, event_shadow, state) do
     # email = Sanbase.Accounts.get_user!(user_id).email
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end
 
-  defp handle_event(
-         %{data: %{event_type: :subscribe_metric_updates, user_id: user_id}},
-         event_shadow,
-         state
-       ) do
+  defp handle_event(%{data: %{event_type: :subscribe_metric_updates, user_id: user_id}}, event_shadow, state) do
     email = Sanbase.Accounts.get_user!(user_id).email
-    if email, do: Sanbase.Email.MailjetApi.client().subscribe(:metric_updates, email)
+    if email, do: MailjetApi.client().subscribe(:metric_updates, email)
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end
 
-  defp handle_event(
-         %{data: %{event_type: :unsubscribe_metric_updates, user_id: user_id}},
-         event_shadow,
-         state
-       ) do
+  defp handle_event(%{data: %{event_type: :unsubscribe_metric_updates, user_id: user_id}}, event_shadow, state) do
     email = Sanbase.Accounts.get_user!(user_id).email
-    if email, do: Sanbase.Email.MailjetApi.client().unsubscribe(:metric_updates, email)
+    if email, do: MailjetApi.client().unsubscribe(:metric_updates, email)
 
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end
 
   defp handle_event(
-         %{
-           data: %{
-             event_type: :disconnect_telegram_bot,
-             user_id: _,
-             telegram_chat_id: chat_id
-           }
-         },
+         %{data: %{event_type: :disconnect_telegram_bot, user_id: _, telegram_chat_id: chat_id}},
          event_shadow,
          state
        ) do

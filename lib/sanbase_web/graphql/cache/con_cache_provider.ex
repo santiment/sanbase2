@@ -4,6 +4,8 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
   """
   @behaviour SanbaseWeb.Graphql.CacheProvider
 
+  alias SanbaseWeb.Graphql.CacheProvider
+
   @compile {:inline,
             get: 2,
             store: 3,
@@ -14,12 +16,12 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
 
   @max_cache_ttl 7200
 
-  @impl SanbaseWeb.Graphql.CacheProvider
+  @impl CacheProvider
   def start_link(opts) do
     ConCache.start_link(opts(opts))
   end
 
-  @impl SanbaseWeb.Graphql.CacheProvider
+  @impl CacheProvider
   def child_spec(opts) do
     Supervisor.child_spec({ConCache, opts(opts)}, id: Keyword.fetch!(opts, :id))
   end
@@ -33,14 +35,14 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
     ]
   end
 
-  @impl SanbaseWeb.Graphql.CacheProvider
+  @impl CacheProvider
   def size(cache) do
     bytes_size = :ets.info(ConCache.ets(cache), :memory) * :erlang.system_info(:wordsize)
 
-    _megabytes_size = (bytes_size / (1024 * 1024)) |> Float.round(2)
+    _megabytes_size = Float.round(bytes_size / (1024 * 1024), 2)
   end
 
-  @impl SanbaseWeb.Graphql.CacheProvider
+  @impl CacheProvider
   def count(cache) do
     cache
     |> ConCache.ets()
@@ -48,7 +50,7 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
     |> length()
   end
 
-  @impl SanbaseWeb.Graphql.CacheProvider
+  @impl CacheProvider
   def clear_all(cache) do
     cache
     |> ConCache.ets()
@@ -56,7 +58,7 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
     |> Enum.each(fn {key, _} -> ConCache.delete(cache, key) end)
   end
 
-  @impl SanbaseWeb.Graphql.CacheProvider
+  @impl CacheProvider
   def get(cache, key) do
     case ConCache.get(cache, true_key(key)) do
       {:stored, value} -> value
@@ -64,7 +66,7 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
     end
   end
 
-  @impl SanbaseWeb.Graphql.CacheProvider
+  @impl CacheProvider
   def store(cache, key, value) do
     case value do
       {:error, _} ->
@@ -79,7 +81,7 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
     end
   end
 
-  @impl SanbaseWeb.Graphql.CacheProvider
+  @impl CacheProvider
   def get_or_store(cache, key, func, cache_modify_middleware) do
     # Do not include the TTL as part of the key name.
     true_key = true_key(key)

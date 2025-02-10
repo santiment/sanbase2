@@ -18,6 +18,11 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   """
   @behaviour Absinthe.Middleware
 
+  alias Absinthe.Resolution
+  alias Sanbase.Billing.Plan
+  alias Sanbase.Billing.Plan.AccessChecker
+  alias Sanbase.Billing.Product
+
   @compile {:inline,
             transform_resolution: 1,
             check_has_access: 2,
@@ -29,14 +34,6 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
             restrict_from: 3,
             restrict_to: 3,
             check_from_to_both_outside: 1}
-
-  alias Absinthe.Resolution
-
-  alias Sanbase.Billing.{
-    Plan,
-    Plan.AccessChecker,
-    Product
-  }
 
   @freely_available_slugs ["santiment"]
   @minimal_datetime_param ~U[2009-01-01 00:00:00Z]
@@ -93,21 +90,13 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   # Basic auth should have no restrictions. Check only the sanity of the `from`
   # and `to` params. This includes checks that `to` is after `from` and that
   # both are after 2009-01-01T00:00:00Z.
-  defp check_has_access(
-         %Resolution{context: %{auth: %{auth_method: :basic}}} = resolution,
-         _opts
-       ) do
-    resolution
-    |> check_from_to_params_sanity()
+  defp check_has_access(%Resolution{context: %{auth: %{auth_method: :basic}}} = resolution, _opts) do
+    check_from_to_params_sanity(resolution)
   end
 
-  defp check_has_access(
-         %Resolution{context: %{__slug__: slug}} = resolution,
-         _opts
-       )
+  defp check_has_access(%Resolution{context: %{__slug__: slug}} = resolution, _opts)
        when is_binary(slug) and slug in @freely_available_slugs do
-    resolution
-    |> check_from_to_params_sanity()
+    check_from_to_params_sanity(resolution)
   end
 
   @xrp_free_metrics_patterns [
@@ -119,17 +108,14 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     ~r/^(total|daily)_assets_issued*/,
     ~r/^(total|daily)_trustlines_count*/
   ]
-  defp check_has_access(
-         %Resolution{context: %{__slug__: slug, __metric__: metric}} = resolution,
-         opts
-       )
+  defp check_has_access(%Resolution{context: %{__slug__: slug, __metric__: metric}} = resolution, opts)
        when is_binary(slug) and slug in ["xrp", "ripple"] do
     cond do
       metric == nil ->
         full_check_has_access(resolution, opts)
 
       Enum.any?(@xrp_free_metrics_patterns, &Regex.match?(&1, metric)) ->
-        resolution |> check_from_to_params_sanity()
+        check_from_to_params_sanity(resolution)
 
       true ->
         full_check_has_access(resolution, opts)
@@ -172,18 +158,16 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   # The shared access token is checked first and if it gives access to the
   # request, the user plan access is bypassed
   defp check_plan_has_access(resolution) do
-    case check_shared_access_token_has_access?(resolution) do
-      true -> resolution
-      false -> check_user_plan_has_access(resolution)
+    if check_shared_access_token_has_access?(resolution) do
+      resolution
+    else
+      check_user_plan_has_access(resolution)
     end
   end
 
   defp check_shared_access_token_has_access?(%Resolution{
          arguments: arguments,
-         context: %{
-           __query_argument_atom_name__: query_or_argument,
-           resolved_shared_access_token: token
-         }
+         context: %{__query_argument_atom_name__: query_or_argument, resolved_shared_access_token: token}
        }) do
     %{product: product_code, plan: plan_name} = token
 
@@ -194,8 +178,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     plan_has_access? and token_has_access?
   end
 
-  defp check_shared_access_token_has_access?(%Resolution{} = _resolution),
-    do: false
+  defp check_shared_access_token_has_access?(%Resolution{} = _resolution), do: false
 
   defp token_has_access?(token, query_or_argument, slug) do
     case query_or_argument do
@@ -221,46 +204,39 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
       subscription_product: subscription_product
     } = context_to_plan_name_product_code(context)
 
-    case AccessChecker.plan_has_access?(query_or_argument, requested_product, plan_name) do
-      true ->
-        resolution
+    if AccessChecker.plan_has_access?(query_or_argument, requested_product, plan_name) do
+      resolution
+    else
+      min_plan = AccessChecker.min_plan(query_or_argument, requested_product)
+      {argument, argument_name} = query_or_argument
 
-      false ->
-        min_plan = AccessChecker.min_plan(query_or_argument, requested_product)
-        {argument, argument_name} = query_or_argument
+      Resolution.put_result(
+        resolution,
+        {:error,
+         """
+         The #{argument} #{argument_name} is not accessible with the currently used \
+         #{subscription_product || requested_product} #{plan_name} subscription. Please upgrade to #{requested_product} #{min_plan} subscription \
+         or a Custom Plan that has access to it.
 
-        Resolution.put_result(
-          resolution,
-          {:error,
-           """
-           The #{argument} #{argument_name} is not accessible with the currently used \
-           #{subscription_product || requested_product} #{plan_name} subscription. Please upgrade to #{requested_product} #{min_plan} subscription \
-           or a Custom Plan that has access to it.
-
-           If you have a subscription for one product but attempt to fetch data using \
-           another product, this error will still be shown. The data on SANBASE cannot \
-           be fetched with a SANAPI subscription and vice versa.
-           """}
-        )
+         If you have a subscription for one product but attempt to fetch data using \
+         another product, this error will still be shown. The data on SANBASE cannot \
+         be fetched with a SANAPI subscription and vice versa.
+         """}
+      )
     end
   end
 
   # If the query is marked as having free realtime and historical data
   # do not restrict anything
-  defp maybe_apply_restrictions(resolution, %{
-         allow_realtime_data: true,
-         allow_historical_data: true
-       }) do
+  defp maybe_apply_restrictions(resolution, %{allow_realtime_data: true, allow_historical_data: true}) do
     resolution
   end
 
   # Dispatch the resolution of restricted and not-restricted queries to
   # different functions if there are `from` and `to` parameters
   defp maybe_apply_restrictions(
-         %Resolution{
-           context: %{__query_argument_atom_name__: query_or_argument},
-           arguments: %{from: _from, to: _to}
-         } = resolution,
+         %Resolution{context: %{__query_argument_atom_name__: query_or_argument}, arguments: %{from: _from, to: _to}} =
+           resolution,
          middleware_args
        ) do
     if Plan.AccessChecker.restricted?(query_or_argument) do
@@ -300,8 +276,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
       realtime_data_cut_off_in_days: realtime_data_cut_off_in_days
     } = args
 
-    resolution
-    |> update_resolution_from_to(
+    update_resolution_from_to(
+      resolution,
       restrict_from(from, middleware_args, historical_data_in_days),
       restrict_to(to, middleware_args, realtime_data_cut_off_in_days)
     )
@@ -310,10 +286,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   defp restricted_query_shared_access_token(
          %Resolution{
            arguments: %{from: from, to: to},
-           context: %{
-             __query_argument_atom_name__: query_or_argument,
-             resolved_shared_access_token: _token
-           }
+           context: %{__query_argument_atom_name__: query_or_argument, resolved_shared_access_token: _token}
          },
          _middleware_args,
          query_or_argument
@@ -373,8 +346,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
       # metric or signal
       {_, _} ->
         middleware_args = %{
-          allow_historical_data:
-            AccessChecker.historical_data_freely_available?(query_or_argument),
+          allow_historical_data: AccessChecker.historical_data_freely_available?(query_or_argument),
           allow_realtime_data: AccessChecker.realtime_data_freely_available?(query_or_argument)
         }
 
@@ -393,24 +365,22 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   end
 
   # Move the `to` datetime back so access to realtime data is not given
-  defp restrict_to(to_datetime, %{allow_realtime_data: true}, _),
-    do: to_datetime
+  defp restrict_to(to_datetime, %{allow_realtime_data: true}, _), do: to_datetime
 
   defp restrict_to(to_datetime, _, nil), do: to_datetime
 
   defp restrict_to(to_datetime, _, days) do
-    restrict_to = Timex.shift(Timex.now(), days: -days)
+    restrict_to = Timex.shift(DateTime.utc_now(), days: -days)
     Enum.min_by([to_datetime, restrict_to], &DateTime.to_unix/1)
   end
 
   # Move the `from` datetime forward so access to historical data is not given
-  defp restrict_from(from_datetime, %{allow_historical_data: true}, _),
-    do: from_datetime
+  defp restrict_from(from_datetime, %{allow_historical_data: true}, _), do: from_datetime
 
   defp restrict_from(from_datetime, _, nil), do: from_datetime
 
   defp restrict_from(from_datetime, _, days) when is_integer(days) do
-    restrict_from = Timex.shift(Timex.now(), days: -days)
+    restrict_from = Timex.shift(DateTime.utc_now(), days: -days)
     Enum.max_by([from_datetime, restrict_from], &DateTime.to_unix/1)
   end
 
@@ -428,8 +398,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   end
 
   defp from_or_to_params_are_after_minimal_datetime(from, to) do
-    if DateTime.compare(from, @minimal_datetime_param) == :gt and
-         DateTime.compare(to, @minimal_datetime_param) == :gt do
+    if DateTime.after?(from, @minimal_datetime_param) and
+         DateTime.after?(to, @minimal_datetime_param) do
       true
     else
       {:error,
@@ -446,105 +416,74 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
       resolution
     else
       {:error, _message} = error ->
-        resolution
-        |> Resolution.put_result(error)
+        Resolution.put_result(resolution, error)
     end
   end
 
   defp check_from_to_params_sanity(%Resolution{} = resolution), do: resolution
 
-  defp check_from_to_both_outside(
-         %Resolution{arguments: %{from: from, to: to}, context: context} = resolution
-       ) do
-    case to_param_is_after_from(from, to) do
-      true ->
-        resolution
+  defp check_from_to_both_outside(%Resolution{arguments: %{from: from, to: to}, context: context} = resolution) do
+    if to_param_is_after_from(from, to) do
+      resolution
+    else
+      # If we reach here the first time we checked `to < from` was not true
+      # This means that the middleware rewrote the params in a way that this is
+      # now true. If that happens - both from and to are outside the allowed interval
+      %{
+        plan_name: plan_name,
+        requested_product: requested_product,
+        subscription_product: subscription_product
+      } = context_to_plan_name_product_code(context)
 
-      _ ->
-        # If we reach here the first time we checked `to < from` was not true
-        # This means that the middleware rewrote the params in a way that this is
-        # now true. If that happens - both from and to are outside the allowed interval
-        %{
-          plan_name: plan_name,
-          requested_product: requested_product,
-          subscription_product: subscription_product
-        } = context_to_plan_name_product_code(context)
+      query_or_argument = context[:__query_argument_atom_name__]
 
-        query_or_argument = context[:__query_argument_atom_name__]
-
-        %{restricted_from: restricted_from, restricted_to: restricted_to} =
-          Sanbase.Billing.Plan.Restrictions.get(
-            query_or_argument,
-            requested_product,
-            subscription_product,
-            plan_name
-          )
-
-        resolution
-        |> Resolution.put_result(
-          {:error,
-           """
-           Both `from` and `to` parameters are outside the allowed interval you can query \
-           #{query_or_argument |> elem(1)} with your current subscription #{subscription_product || requested_product} #{plan_name}. \
-           Upgrade to a higher tier in order to access more data.
-
-           Allowed time restrictions:
-             - `from` - #{restricted_from || "unrestricted"}
-             - `to` - #{restricted_to || "unrestricted"}
-           """}
+      %{restricted_from: restricted_from, restricted_to: restricted_to} =
+        Sanbase.Billing.Plan.Restrictions.get(
+          query_or_argument,
+          requested_product,
+          subscription_product,
+          plan_name
         )
+
+      Resolution.put_result(
+        resolution,
+        {:error,
+         """
+         Both `from` and `to` parameters are outside the allowed interval you can query \
+         #{elem(query_or_argument, 1)} with your current subscription #{subscription_product || requested_product} #{plan_name}. \
+         Upgrade to a higher tier in order to access more data.
+
+         Allowed time restrictions:
+           - `from` - #{restricted_from || "unrestricted"}
+           - `to` - #{restricted_to || "unrestricted"}
+         """}
+      )
     end
   end
 
   defp check_from_to_both_outside(%Resolution{} = resolution), do: resolution
 
-  defp update_resolution_from_to(
-         %Resolution{arguments: args} = resolution,
-         from,
-         to
-       ) do
+  defp update_resolution_from_to(%Resolution{arguments: args} = resolution, from, to) do
     %Resolution{resolution | arguments: %{args | from: from, to: to}}
   end
 
   # metrics
-  defp get_query_or_argument(:timeseries_data, %{metric: metric}, _args),
-    do: {:metric, metric}
+  defp get_query_or_argument(:timeseries_data, %{metric: metric}, _args), do: {:metric, metric}
 
-  defp get_query_or_argument(
-         :timeseries_data_per_slug,
-         %{metric: metric},
-         _args
-       ),
-       do: {:metric, metric}
+  defp get_query_or_argument(:timeseries_data_per_slug, %{metric: metric}, _args), do: {:metric, metric}
 
-  defp get_query_or_argument(
-         :aggregated_timeseries_data,
-         %{metric: metric},
-         _args
-       ),
-       do: {:metric, metric}
+  defp get_query_or_argument(:aggregated_timeseries_data, %{metric: metric}, _args), do: {:metric, metric}
 
-  defp get_query_or_argument(:aggregated_timeseries_data, _source, %{
-         metric: metric
-       }),
-       do: {:metric, metric}
+  defp get_query_or_argument(:aggregated_timeseries_data, _source, %{metric: metric}), do: {:metric, metric}
 
-  defp get_query_or_argument(:histogram_data, %{metric: metric}, _args),
-    do: {:metric, metric}
+  defp get_query_or_argument(:histogram_data, %{metric: metric}, _args), do: {:metric, metric}
 
-  defp get_query_or_argument(:table_data, %{metric: metric}, _args),
-    do: {:metric, metric}
+  defp get_query_or_argument(:table_data, %{metric: metric}, _args), do: {:metric, metric}
 
   # signals
-  defp get_query_or_argument(:timeseries_data, %{signal: signal}, _args),
-    do: {:signal, signal}
+  defp get_query_or_argument(:timeseries_data, %{signal: signal}, _args), do: {:signal, signal}
 
-  defp get_query_or_argument(
-         :aggregated_timeseries_data,
-         %{signal: signal},
-         _args
-       ),
-       do: {:signal, signal}
+  defp get_query_or_argument(:aggregated_timeseries_data, %{signal: signal}, _args), do: {:signal, signal}
 
   # query
   defp get_query_or_argument(query, _source, _args), do: {:query, query}

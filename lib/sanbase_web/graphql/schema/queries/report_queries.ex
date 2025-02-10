@@ -1,7 +1,9 @@
 defmodule SanbaseWeb.Graphql.Schema.ReportQueries do
+  @moduledoc false
   use Absinthe.Schema.Notation
-  alias SanbaseWeb.Graphql.Resolvers.ReportResolver
+
   alias SanbaseWeb.Graphql.Middlewares.BasicAuth
+  alias SanbaseWeb.Graphql.Resolvers.ReportResolver
 
   object :report_queries do
     @desc ~s"""

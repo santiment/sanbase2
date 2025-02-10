@@ -3,14 +3,15 @@ defmodule Sanbase.Alert.MaxAlertsPerDayTest do
 
   import Sanbase.Factory
 
-  alias Sanbase.Alert.UserTrigger
+  alias Sanbase.Accounts.UserSettings
   alias Sanbase.Alert.Trigger.MetricTriggerSettings
+  alias Sanbase.Alert.UserTrigger
 
   setup do
     project = insert(:random_erc20_project)
 
     user = insert(:user, user_settings: %{settings: %{alert_notify_telegram: true}})
-    Sanbase.Accounts.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
+    UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
     trigger_settings = %{
       type: "metric_signal",
@@ -35,11 +36,9 @@ defmodule Sanbase.Alert.MaxAlertsPerDayTest do
     {:ok, _} = create_trigger_fun.()
 
     mock_fun =
-      [
-        fn -> {:ok, %{project.slug => 100}} end,
-        fn -> {:ok, %{project.slug => 500}} end
-      ]
-      |> Sanbase.Mock.wrap_consecutives(arity: 5)
+      Sanbase.Mock.wrap_consecutives([fn -> {:ok, %{project.slug => 100}} end, fn -> {:ok, %{project.slug => 500}} end],
+        arity: 5
+      )
 
     [
       trigger: trigger,
@@ -53,14 +52,14 @@ defmodule Sanbase.Alert.MaxAlertsPerDayTest do
   test "does not send notifications after limit is reached", context do
     %{user: user, mock_fun: mock_fun} = context
 
-    Sanbase.Accounts.UserSettings.update_settings(user, %{
+    UserSettings.update_settings(user, %{
       alerts_per_day_limit: %{"email" => 1, "telegram" => 1}
     })
 
     self_pid = self()
 
-    Sanbase.Mock.prepare_mock(
-      Sanbase.Clickhouse.MetricAdapter,
+    Sanbase.Clickhouse.MetricAdapter
+    |> Sanbase.Mock.prepare_mock(
       :aggregated_timeseries_data,
       mock_fun
     )

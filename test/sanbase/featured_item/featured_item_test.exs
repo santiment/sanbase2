@@ -134,7 +134,8 @@ defmodule Sanbase.FeaturedItemTest do
 
     test "marking watchlists as featured" do
       watchlist =
-        insert(:watchlist, is_public: true, type: :blockchain_address)
+        :watchlist
+        |> insert(is_public: true, type: :blockchain_address)
         |> Sanbase.Repo.preload([:list_items])
 
       insert(:watchlist, is_public: true, type: :project)
@@ -154,7 +155,7 @@ defmodule Sanbase.FeaturedItemTest do
     end
 
     test "marking watchlist as featured is idempotent" do
-      watchlist = insert(:watchlist, is_public: true) |> Sanbase.Repo.preload([:list_items])
+      watchlist = :watchlist |> insert(is_public: true) |> Sanbase.Repo.preload([:list_items])
       :ok = FeaturedItem.update_item(watchlist, true)
       :ok = FeaturedItem.update_item(watchlist, true)
       :ok = FeaturedItem.update_item(watchlist, true)
@@ -175,7 +176,7 @@ defmodule Sanbase.FeaturedItemTest do
     end
 
     test "marking user_triggers as featured" do
-      user_trigger = insert(:user_trigger, is_public: true) |> Sanbase.Repo.preload([:tags])
+      user_trigger = :user_trigger |> insert(is_public: true) |> Sanbase.Repo.preload([:tags])
       :ok = FeaturedItem.update_item(user_trigger, true)
       assert FeaturedItem.user_triggers() == [user_trigger]
     end
@@ -189,7 +190,8 @@ defmodule Sanbase.FeaturedItemTest do
 
     test "marking user_trigger as featured is idempotent" do
       user_trigger =
-        insert(:user_trigger, is_public: true)
+        :user_trigger
+        |> insert(is_public: true)
         |> Sanbase.Repo.preload([:tags])
 
       :ok = FeaturedItem.update_item(user_trigger, true)

@@ -1,4 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddBlockchainAddressLabelsTable do
+  @moduledoc false
   use Ecto.Migration
 
   @table :blockchain_address_labels

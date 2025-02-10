@@ -1,10 +1,11 @@
 defmodule SanbaseWeb.Graphql.Schema.SignalQueries do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 2]
 
-  alias SanbaseWeb.Graphql.Resolvers.SignalResolver
   alias SanbaseWeb.Graphql.Middlewares.TransformResolution
+  alias SanbaseWeb.Graphql.Resolvers.SignalResolver
 
   object :signal_queries do
     @desc ~s"""

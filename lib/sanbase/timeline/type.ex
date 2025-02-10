@@ -1,4 +1,5 @@
 defmodule Sanbase.Timeline.Type do
+  @moduledoc false
   @type event_type() :: String.t()
   @type autor_type() :: :all | :followed | :sanfam | :own
   @type filter() :: %{

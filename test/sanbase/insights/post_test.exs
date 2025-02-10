@@ -2,8 +2,9 @@ defmodule Sanbase.Insight.PostTest do
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
-  alias Sanbase.Repo
+
   alias Sanbase.Insight.Post
+  alias Sanbase.Repo
 
   test "create_changeset creates the post in approved state" do
     post = insert(:post)
@@ -16,7 +17,7 @@ defmodule Sanbase.Insight.PostTest do
     post = insert(:post)
 
     Post.assign_all_user_insights_to_anonymous(post.user_id)
-    updated_post = Post |> Repo.get(post.id)
+    updated_post = Repo.get(Post, post.id)
 
     assert updated_post.user_id == fallback_user.id
   end

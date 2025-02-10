@@ -4,8 +4,8 @@ defmodule SanbaseWeb.Graphql.Schema.VoteQueries do
   """
   use Absinthe.Schema.Notation
 
-  alias SanbaseWeb.Graphql.Resolvers.VoteResolver
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
+  alias SanbaseWeb.Graphql.Resolvers.VoteResolver
 
   object :vote_mutations do
     @desc """

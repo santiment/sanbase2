@@ -1,11 +1,12 @@
 defmodule SanbaseWeb.Graphql.Resolvers.IcoResolver do
-  require Logger
-
-  import Ecto.Query, warn: false
+  @moduledoc false
   import Absinthe.Resolution.Helpers
+  import Ecto.Query, warn: false
 
-  alias Sanbase.Model.Ico
   alias Sanbase.Model.Currency
+  alias Sanbase.Model.Ico
+
+  require Logger
 
   def cap_currency(%Ico{cap_currency_id: nil}, _args, _resolution), do: {:ok, nil}
 
@@ -16,7 +17,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.IcoResolver do
   end
 
   def currencies_by_id(_, currency_ids) do
-    Currency.by_ids(currency_ids)
+    currency_ids
+    |> Currency.by_ids()
     |> Map.new(fn currency -> {currency.id, currency.code} end)
   end
 
@@ -27,7 +29,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.IcoResolver do
   end
 
   def funds_raised_by_id(_, ico_ids) do
-    Ico.funds_raised_by_icos(ico_ids)
+    ico_ids
+    |> Ico.funds_raised_by_icos()
     |> Enum.group_by(& &1.ico_id, &%{currency_code: &1.currency_code, amount: &1.amount})
   end
 

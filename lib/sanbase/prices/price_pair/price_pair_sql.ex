@@ -1,6 +1,5 @@
 defmodule Sanbase.Price.PricePairSql do
-  @table "asset_price_pairs_only"
-
+  @moduledoc false
   import Sanbase.Metric.SqlQuery.Helper,
     only: [
       aggregation: 3,
@@ -10,15 +9,11 @@ defmodule Sanbase.Price.PricePairSql do
       timerange_parameters: 3
     ]
 
-  def timeseries_data_query(
-        slug_or_slugs,
-        quote_asset,
-        from,
-        to,
-        interval,
-        source,
-        aggregation
-      ) do
+  alias Sanbase.Clickhouse.Query
+
+  @table "asset_price_pairs_only"
+
+  def timeseries_data_query(slug_or_slugs, quote_asset, from, to, interval, source, aggregation) do
     sql = """
     SELECT
       toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), {{interval}}) * {{interval}}) AS time,
@@ -45,18 +40,10 @@ defmodule Sanbase.Price.PricePairSql do
       to: to
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
-  def timeseries_data_per_slug_query(
-        slugs,
-        quote_asset,
-        from,
-        to,
-        interval,
-        source,
-        aggregation
-      ) do
+  def timeseries_data_per_slug_query(slugs, quote_asset, from, to, interval, source, aggregation) do
     sql = """
     SELECT
       toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), {{interval}}) * {{interval}}) AS time,
@@ -84,17 +71,10 @@ defmodule Sanbase.Price.PricePairSql do
       to: to
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
-  def aggregated_timeseries_data_query(
-        slugs,
-        quote_asset,
-        from,
-        to,
-        source,
-        aggregation
-      ) do
+  def aggregated_timeseries_data_query(slugs, quote_asset, from, to, source, aggregation) do
     sql = """
     SELECT slug, SUM(value), toUInt32(SUM(has_changed))
     FROM (
@@ -138,18 +118,10 @@ defmodule Sanbase.Price.PricePairSql do
       source: source
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
-  def slugs_by_filter_query(
-        quote_asset,
-        from,
-        to,
-        source,
-        operation,
-        threshold,
-        aggregation
-      ) do
+  def slugs_by_filter_query(quote_asset, from, to, source, operation, threshold, aggregation) do
     query_struct = filter_order_base_query(quote_asset, from, to, source, aggregation)
 
     sql =
@@ -159,7 +131,7 @@ defmodule Sanbase.Price.PricePairSql do
         """
 
     San
-    Sanbase.Clickhouse.Query.put_sql(query_struct, sql)
+    Query.put_sql(query_struct, sql)
   end
 
   def slugs_order_query(quote_asset, from, to, source, direction, aggregation) do
@@ -171,7 +143,7 @@ defmodule Sanbase.Price.PricePairSql do
         ORDER BY value #{direction |> Atom.to_string() |> String.upcase()}
         """
 
-    Sanbase.Clickhouse.Query.put_sql(query_struct, sql)
+    Query.put_sql(query_struct, sql)
   end
 
   defp filter_order_base_query(quote_asset, from, to, source, aggregation) do
@@ -201,11 +173,11 @@ defmodule Sanbase.Price.PricePairSql do
     params = [
       quote_asset: quote_asset,
       source: source,
-      from: from |> DateTime.to_unix(),
-      to: to |> DateTime.to_unix()
+      from: DateTime.to_unix(from),
+      to: DateTime.to_unix(to)
     ]
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def last_record_before_query(slug, quote_asset, datetime, source) do
@@ -235,7 +207,7 @@ defmodule Sanbase.Price.PricePairSql do
       to: dt_to_unix(:to, to)
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def select_any_record_query(slug, quote_asset, source) do
@@ -254,7 +226,7 @@ defmodule Sanbase.Price.PricePairSql do
       source: source
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def first_datetime_query(slug, quote_asset, source) do
@@ -276,7 +248,7 @@ defmodule Sanbase.Price.PricePairSql do
       source: source
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def last_datetime_computed_at_query(slug, quote_asset, source) do
@@ -295,7 +267,7 @@ defmodule Sanbase.Price.PricePairSql do
       source: source
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def available_quote_assets_query(slug, source) do
@@ -313,7 +285,7 @@ defmodule Sanbase.Price.PricePairSql do
       source: source
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def available_slugs_query(source) do
@@ -330,11 +302,11 @@ defmodule Sanbase.Price.PricePairSql do
     """
 
     params = %{
-      datetime: DateTime.add(DateTime.utc_now(), -7, :day) |> DateTime.to_unix(),
+      datetime: DateTime.utc_now() |> DateTime.add(-7, :day) |> DateTime.to_unix(),
       source: source
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   def available_slugs_query(quote_asset, source) do
@@ -353,11 +325,11 @@ defmodule Sanbase.Price.PricePairSql do
 
     params = %{
       quote_asset: quote_asset,
-      datetime: DateTime.add(DateTime.utc_now(), -7, :day) |> DateTime.to_unix(),
+      datetime: DateTime.utc_now() |> DateTime.add(-7, :day) |> DateTime.to_unix(),
       source: source
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   # Private functions
@@ -368,7 +340,7 @@ defmodule Sanbase.Price.PricePairSql do
     "base_asset = dictGetString('san_to_cryptocompare_asset_mapping', 'base_asset', tuple({{#{arg_name}}}))"
   end
 
-  defp base_asset_to_slug() do
+  defp base_asset_to_slug do
     "dictGetString('cryptocompare_to_san_asset_mapping', 'slug', tuple(base_asset)) "
   end
 

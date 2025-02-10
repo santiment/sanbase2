@@ -13,9 +13,10 @@ defmodule Sanbase.Billing.StripeEvent do
   import Ecto.Changeset
   import Sanbase.Billing.EventEmitter, only: [emit_event: 3]
 
-  alias Sanbase.Repo
   alias Sanbase.Accounts.User
-  alias Sanbase.Billing.{Subscription, Plan}
+  alias Sanbase.Billing.Plan
+  alias Sanbase.Billing.Subscription
+  alias Sanbase.Repo
   alias Sanbase.StripeApi
 
   require Logger
@@ -50,7 +51,8 @@ defmodule Sanbase.Billing.StripeEvent do
   end
 
   def update(id, params) do
-    by_id(id)
+    id
+    |> by_id()
     |> changeset(params)
     |> Repo.update()
   end
@@ -73,11 +75,7 @@ defmodule Sanbase.Billing.StripeEvent do
   defp to_event_type("invoice.payment_action_required"), do: :payment_action_required
 
   defp handle_event(
-         %{
-           "id" => id,
-           "type" => type,
-           "data" => %{"object" => %{"subscription" => subscription_id}}
-         } = stripe_event
+         %{"id" => id, "type" => type, "data" => %{"object" => %{"subscription" => subscription_id}}} = stripe_event
        )
        when type in ["invoice.payment_succeeded", "invoice.payment_failed"] do
     emit_event({:ok, stripe_event}, to_event_type(type), %{})
@@ -114,20 +112,12 @@ defmodule Sanbase.Billing.StripeEvent do
   end
 
   # skip processing when payment is not connected to subscription
-  defp handle_event(%{"id" => id, "type" => type})
-       when type in ["invoice.payment_succeeded", "invoice.payment_failed"] do
+  defp handle_event(%{"id" => id, "type" => type}) when type in ["invoice.payment_succeeded", "invoice.payment_failed"] do
     update(id, %{is_processed: true})
   end
 
-  defp handle_event(%{
-         "id" => id,
-         "type" => type,
-         "data" => %{"object" => %{"id" => subscription_id}}
-       })
-       when type in [
-              "customer.subscription.updated",
-              "customer.subscription.deleted"
-            ] do
+  defp handle_event(%{"id" => id, "type" => type, "data" => %{"object" => %{"id" => subscription_id}}})
+       when type in ["customer.subscription.updated", "customer.subscription.deleted"] do
     handle_event_common(id, type, subscription_id)
   end
 
@@ -149,7 +139,7 @@ defmodule Sanbase.Billing.StripeEvent do
     with {:ok, stripe_sub} <-
            StripeApi.retrieve_subscription(subscription_id),
          {_, {:ok, %User{} = user}} <- {:user?, User.by_stripe_customer_id(stripe_sub.customer)},
-         stripe_plan_id <- stripe_sub.items.data |> hd() |> Map.get(:plan) |> Map.get(:id),
+         stripe_plan_id = stripe_sub.items.data |> hd() |> Map.get(:plan) |> Map.get(:id),
          {_, %Plan{} = plan} <- {:plan?, Plan.by_stripe_id(stripe_plan_id)},
          {:ok, _sub} <- Subscription.create_subscription_db(stripe_sub, user, plan) do
       update(id, %{is_processed: true})

@@ -1,17 +1,19 @@
 defmodule Sanbase.Clickhouse.NftTrade do
+  @moduledoc false
   import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1]
 
+  alias Sanbase.Clickhouse.Query
   alias Sanbase.ClickhouseRepo
 
   def get_trades_count(label_key, from, to) do
     query_struct = get_trades_count_query(label_key, from, to)
 
-    ClickhouseRepo.query_transform(query_struct, fn [count] -> count end)
+    query_struct
+    |> ClickhouseRepo.query_transform(fn [count] -> count end)
     |> maybe_unwrap_ok_value()
   end
 
-  def get_trades(label_key, from, to, opts)
-      when label_key in [:nft_influencer, :nft_whale] do
+  def get_trades(label_key, from, to, opts) when label_key in [:nft_influencer, :nft_whale] do
     query_struct = get_trades_query(label_key, from, to, opts)
 
     ClickhouseRepo.query_transform(
@@ -34,7 +36,8 @@ defmodule Sanbase.Clickhouse.NftTrade do
         ] = list
 
         quantities =
-          Enum.zip(token_ids, amount_tokens)
+          token_ids
+          |> Enum.zip(amount_tokens)
           |> Enum.map(fn {id, amount} ->
             %{
               token_id: id,
@@ -104,7 +107,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
 
     params = %{blockchain: blockchain, contract: contract}
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp get_trades_count_query(label_key, from, to) do
@@ -123,7 +126,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
       label_key: to_string(label_key)
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
   defp get_trades_query(label_key, from, to, opts) do
@@ -221,10 +224,10 @@ defmodule Sanbase.Clickhouse.NftTrade do
       offset: offset
     }
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+    Query.new(sql, params)
   end
 
-  defp label_key_dt_filtered_subquery() do
+  defp label_key_dt_filtered_subquery do
     nft_influences_subquery = """
     (
       SELECT address

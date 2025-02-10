@@ -4,11 +4,10 @@ defmodule Sanbase.Alert.TriggerTrendingWordsWatchlistTargetTest do
   import Mock
   import Sanbase.Factory
 
-  alias Sanbase.UserList
-  alias Sanbase.Alert.UserTrigger
   alias Sanbase.Alert.Evaluator
-
   alias Sanbase.Alert.Trigger.TrendingWordsTriggerSettings
+  alias Sanbase.Alert.UserTrigger
+  alias Sanbase.UserList
 
   setup do
     Sanbase.Cache.clear_all(:alerts_evaluator_cache)
@@ -73,7 +72,7 @@ defmodule Sanbase.Alert.TriggerTrendingWordsWatchlistTargetTest do
     end
   end
 
-  defp top_words() do
+  defp top_words do
     [
       %{score: 1740.2647984845628, word: "bat"},
       %{score: 792.9209638684719, word: "coinbase"},

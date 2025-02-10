@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
+  @moduledoc false
   import Absinthe.Resolution.Helpers
 
   import Sanbase.Utils.ErrorHandling,
@@ -17,10 +18,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
           {:ok, result}
 
         {:error, error} ->
-          {:error,
-           handle_graphql_error("Assets held by address", selector.address, error,
-             description: "address"
-           )}
+          {:error, handle_graphql_error("Assets held by address", selector.address, error, description: "address")}
       end
     end
   end
@@ -32,22 +30,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
           {:ok, result}
 
         {:error, error} ->
-          {:error,
-           handle_graphql_error("USD value address change", selector.address, error,
-             description: "address"
-           )}
+          {:error, handle_graphql_error("USD value address change", selector.address, error, description: "address")}
       end
     end
   end
 
-  def historical_balance(
-        _root,
-        %{from: from, to: to, interval: interval, address: address} = args,
-        _resolution
-      ) do
+  def historical_balance(_root, %{from: from, to: to, interval: interval, address: address} = args, _resolution) do
     with {:ok, selector} <- args_to_historical_balance_selector(args) do
-      HistoricalBalance.historical_balance(
-        selector,
+      selector
+      |> HistoricalBalance.historical_balance(
         address,
         from,
         to,
@@ -64,13 +55,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
     end
   end
 
-  def address_historical_balance_change(
-        _root,
-        %{from: from, to: to, addresses: addresses} = args,
-        _resolution
-      ) do
+  def address_historical_balance_change(_root, %{from: from, to: to, addresses: addresses} = args, _resolution) do
     with {:ok, selector} <- args_to_historical_balance_selector(args) do
-      HistoricalBalance.balance_change(selector, addresses, from, to)
+      selector
+      |> HistoricalBalance.balance_change(addresses, from, to)
       |> maybe_handle_graphql_error(fn error ->
         handle_graphql_error(
           "Historical Balance Change per Address",
@@ -83,8 +71,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
   end
 
   def miners_balance(root, %{} = args, resolution) do
-    MetricResolver.timeseries_data(
-      root,
+    root
+    |> MetricResolver.timeseries_data(
       args,
       Map.put(resolution, :source, %{metric: "miners_balance"})
     )
@@ -94,9 +82,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
     )
   end
 
-  def balance_usd(%{slug: slug, balance: balance}, _args, %{
-        context: %{loader: loader}
-      }) do
+  def balance_usd(%{slug: slug, balance: balance}, _args, %{context: %{loader: loader}}) do
     loader
     |> Dataloader.load(SanbaseDataloader, :last_price_usd, slug)
     |> on_load(fn loader ->
@@ -109,15 +95,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
   # Private functions
 
   defp args_to_historical_balance_selector(args) do
-    case Map.get(args, :selector) do
-      nil ->
-        address = args.address
-        infrastructure = Sanbase.BlockchainAddress.to_infrastructure(address)
-        %{infrastructure: infrastructure, address: address}
+    case_result =
+      case Map.get(args, :selector) do
+        nil ->
+          address = args.address
+          infrastructure = Sanbase.BlockchainAddress.to_infrastructure(address)
+          %{infrastructure: infrastructure, address: address}
 
-      selector ->
-        selector |> Map.put(:address, args[:address]) |> Map.put(:addresses, args[:addresses])
-    end
+        selector ->
+          selector |> Map.put(:address, args[:address]) |> Map.put(:addresses, args[:addresses])
+      end
+
+    case_result
     |> validate_historical_balance_selector()
     |> case do
       {:ok, selector} -> {:ok, Map.drop(selector, [:address, :addresses])}
@@ -158,12 +147,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
   end
 
   defp validate_historical_balance_selector(%{infrastructure: "ETH"} = selector) do
-    case Regex.match?(Sanbase.BlockchainAddress.ethereum_regex(), selector.address) do
-      true ->
-        {:ok, selector}
-
-      false ->
-        {:error, "Invalid Ethereum address: #{selector.address}"}
+    if Regex.match?(Sanbase.BlockchainAddress.ethereum_regex(), selector.address) do
+      {:ok, selector}
+    else
+      {:error, "Invalid Ethereum address: #{selector.address}"}
     end
   end
 
@@ -173,8 +160,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
         {:error, "Invalid Bitcoin address: #{selector.address}"}
 
       selector[:slug] not in [nil, "bitcoin"] ->
-        {:error,
-         "When fetching Bitcoin historical balances, do not provide slug or provide the `bitcoin` slug."}
+        {:error, "When fetching Bitcoin historical balances, do not provide slug or provide the `bitcoin` slug."}
 
       true ->
         {:ok, selector}
@@ -185,8 +171,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
 
   def address_matches_regex?(%{address: address}, regex), do: String.match?(address, regex)
 
-  def address_matches_regex?(%{addresses: addresses}, regex),
-    do: Enum.all?(addresses, &String.match?(&1, regex))
+  def address_matches_regex?(%{addresses: addresses}, regex), do: Enum.all?(addresses, &String.match?(&1, regex))
 
   defp format_address(%{address: address}), do: address
   defp format_address(%{addresses: addresses}), do: Enum.join(addresses, ", ")

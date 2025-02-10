@@ -1,4 +1,5 @@
 defmodule Sanbase.Utils.Transform do
+  @moduledoc false
   def to_bang(result) do
     case result do
       {:ok, result} -> result
@@ -22,12 +23,10 @@ defmodule Sanbase.Utils.Transform do
   def combine_mapsets(mapsets_list, opts) do
     case Keyword.fetch!(opts, :combinator) do
       c when c in ["or", :or] ->
-        mapsets_list
-        |> Enum.reduce(&MapSet.union(&1, &2))
+        Enum.reduce(mapsets_list, &MapSet.union(&1, &2))
 
       c when c in ["and", :and] ->
-        mapsets_list
-        |> Enum.reduce(&MapSet.intersection(&1, &2))
+        Enum.reduce(mapsets_list, &MapSet.intersection(&1, &2))
     end
   end
 
@@ -59,9 +58,8 @@ defmodule Sanbase.Utils.Transform do
     new_key = Keyword.fetch!(opts, :new_key)
 
     result =
-      data
-      |> Enum.map(fn
-        %{^old_key => value} = elem -> elem |> Map.put(new_key, value)
+      Enum.map(data, fn
+        %{^old_key => value} = elem -> Map.put(elem, new_key, value)
         elem -> elem
       end)
 
@@ -94,8 +92,7 @@ defmodule Sanbase.Utils.Transform do
     new_key = Keyword.fetch!(opts, :new_key)
 
     result =
-      data
-      |> Enum.map(fn
+      Enum.map(data, fn
         %{^old_key => value} = elem ->
           elem |> Map.delete(old_key) |> Map.put(new_key, value)
 
@@ -111,11 +108,9 @@ defmodule Sanbase.Utils.Transform do
   end
 
   def rename_map_keys!(map, old_keys: old_keys, new_keys: new_keys) do
-    old_new_keys_map = Enum.zip(old_keys, new_keys) |> Enum.into(%{})
+    old_new_keys_map = old_keys |> Enum.zip(new_keys) |> Map.new()
 
-    map
-    |> Enum.map(fn {k, v} -> {old_new_keys_map[k] || k, v} end)
-    |> Enum.into(%{})
+    Map.new(map, fn {k, v} -> {old_new_keys_map[k] || k, v} end)
   end
 
   @doc ~s"""
@@ -147,16 +142,13 @@ defmodule Sanbase.Utils.Transform do
   def maybe_extract_value_from_tuple({:ok, value}), do: value
   def maybe_extract_value_from_tuple({:error, error}), do: {:error, error}
 
-  def maybe_apply_function({:ok, list}, fun) when is_function(fun, 1),
-    do: {:ok, fun.(list)}
+  def maybe_apply_function({:ok, list}, fun) when is_function(fun, 1), do: {:ok, fun.(list)}
 
   def maybe_apply_function({:error, error}, _), do: {:error, error}
 
   def maybe_transform_datetime_data_tuple_to_map(data) do
-    data
-    |> maybe_apply_function(fn list ->
-      list
-      |> Enum.map(fn {datetime, data} -> %{datetime: datetime, data: data} end)
+    maybe_apply_function(data, fn list ->
+      Enum.map(list, fn {datetime, data} -> %{datetime: datetime, data: data} end)
     end)
   end
 
@@ -182,15 +174,13 @@ defmodule Sanbase.Utils.Transform do
     {:ok, [%{a: 100, value: 4}, %{a: 1, value: 5}, %{a: -1, value: 6}]}
   """
   def maybe_sort(data, :datetime, direction) when direction in [:asc, :desc] do
-    data
-    |> maybe_apply_function(fn list ->
+    maybe_apply_function(data, fn list ->
       Enum.sort_by(list, & &1.datetime, {direction, DateTime})
     end)
   end
 
   def maybe_sort(data, key, direction) when direction in [:asc, :desc] do
-    data
-    |> maybe_apply_function(fn list ->
+    maybe_apply_function(data, fn list ->
       Enum.sort_by(list, & &1[key], direction)
     end)
   end
@@ -236,7 +226,7 @@ defmodule Sanbase.Utils.Transform do
   """
   @spec merge_by_datetime(list(), list(), fun(), any()) :: list()
   def merge_by_datetime(list1, list2, func, key) do
-    map = list2 |> Enum.into(%{}, fn %{datetime: dt} = item2 -> {dt, item2[key]} end)
+    map = Map.new(list2, fn %{datetime: dt} = item2 -> {dt, item2[key]} end)
 
     list1
     |> Enum.map(fn %{datetime: datetime} = item1 ->
@@ -305,7 +295,7 @@ defmodule Sanbase.Utils.Transform do
       values
       |> Enum.reduce({[], unknown_previous_value}, fn
         %{has_changed: 0} = elem, {acc, last_seen} ->
-          elem = Map.put(elem, key, last_seen) |> Map.delete(:has_changed)
+          elem = elem |> Map.put(key, last_seen) |> Map.delete(:has_changed)
           {[elem | acc], last_seen}
 
         %{has_changed: 1} = elem, {acc, _last_seen} ->
@@ -318,8 +308,7 @@ defmodule Sanbase.Utils.Transform do
     {:ok, result}
   end
 
-  def maybe_fill_gaps_last_seen({:error, error}, _key, _unknown_previous_value),
-    do: {:error, error}
+  def maybe_fill_gaps_last_seen({:error, error}, _key, _unknown_previous_value), do: {:error, error}
 
   @spec opts_to_limit_offset(page: non_neg_integer(), page_size: pos_integer()) ::
           {pos_integer(), non_neg_integer()}

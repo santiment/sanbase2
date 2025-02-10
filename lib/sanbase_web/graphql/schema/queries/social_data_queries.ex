@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
+  @moduledoc false
   use Absinthe.Schema.Notation
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve: 2]

@@ -30,27 +30,25 @@ defmodule Sanbase.Billing.Plan.Restrictions do
     type_str = to_string(type)
     name_str = construct_name(type, name)
 
-    case AccessChecker.plan_has_access?(query_or_argument, requested_product, plan_name) do
-      false ->
-        no_access_map(type_str, name_str)
-
-      true ->
-        case AccessChecker.restricted?(query_or_argument) do
-          false ->
-            not_restricted_access_map(type_str, name_str)
-
-          true ->
-            maybe_restricted_access_map(
-              type_str,
-              name_str,
-              plan_name,
-              requested_product,
-              subscription_product,
-              query_or_argument
-            )
+    case_result =
+      if AccessChecker.plan_has_access?(query_or_argument, requested_product, plan_name) do
+        if AccessChecker.restricted?(query_or_argument) do
+          maybe_restricted_access_map(
+            type_str,
+            name_str,
+            plan_name,
+            requested_product,
+            subscription_product,
+            query_or_argument
+          )
+        else
+          not_restricted_access_map(type_str, name_str)
         end
-    end
-    |> post_process()
+      else
+        no_access_map(type_str, name_str)
+      end
+
+    post_process(case_result)
   end
 
   @doc ~s"""
@@ -59,14 +57,13 @@ defmodule Sanbase.Billing.Plan.Restrictions do
   """
   @spec get_all(String.t(), String.t(), :query | :metric | :signal | nil) :: list(restriction)
   def get_all(plan_name, product_code, filter \\ nil) do
-    metrics = Sanbase.Metric.available_metrics() |> Enum.map(&{:metric, &1})
-    signals = Sanbase.Signal.available_signals() |> Enum.map(&{:signal, &1})
-    queries = Sanbase.Project.AvailableQueries.all_atom_names() |> Enum.map(&{:query, &1})
+    metrics = Enum.map(Sanbase.Metric.available_metrics(), &{:metric, &1})
+    signals = Enum.map(Sanbase.Signal.available_signals(), &{:signal, &1})
+    queries = Enum.map(Sanbase.Project.AvailableQueries.all_atom_names(), &{:query, &1})
 
     # elements are {:metric, <string>} or {:query, <atom>} or {:signal, <string>}
     result =
-      (queries ++ metrics ++ signals)
-      |> Enum.map(fn query_or_argument ->
+      Enum.map(queries ++ metrics ++ signals, fn query_or_argument ->
         get(query_or_argument, product_code, product_code, plan_name)
       end)
 
@@ -79,9 +76,8 @@ defmodule Sanbase.Billing.Plan.Restrictions do
   # Private functions
 
   defp post_process(map) do
-    map
     # Replace misssing `is_deprecated` with `false`. Replace `nil` with `false`.
-    |> Map.update(:is_deprecated, false, fn value -> if is_nil(value), do: false, else: value end)
+    Map.update(map, :is_deprecated, false, fn value -> if is_nil(value), do: false, else: value end)
   end
 
   defp maybe_filter_by_type(list, nil), do: list
@@ -94,28 +90,24 @@ defmodule Sanbase.Billing.Plan.Restrictions do
   defp no_access_map(type_str, name_str) do
     additional_data = additional_data(type_str, name_str)
 
-    %{
-      type: type_str,
-      name: name_str,
-      human_readable_name: name_str,
-      is_accessible: false,
-      is_restricted: true,
-      restricted_from: nil,
-      restricted_to: nil
-    }
-    |> Map.merge(additional_data)
+    Map.merge(
+      %{
+        type: type_str,
+        name: name_str,
+        human_readable_name: name_str,
+        is_accessible: false,
+        is_restricted: true,
+        restricted_from: nil,
+        restricted_to: nil
+      },
+      additional_data
+    )
   end
 
   defp not_restricted_access_map(type_str, name_str) do
     additional_data = additional_data(type_str, name_str)
 
-    %{
-      type: type_str,
-      name: name_str,
-      is_accessible: true,
-      is_restricted: false
-    }
-    |> Map.merge(additional_data)
+    Map.merge(%{type: type_str, name: name_str, is_accessible: true, is_restricted: false}, additional_data)
   end
 
   defp maybe_restricted_access_map(
@@ -126,7 +118,7 @@ defmodule Sanbase.Billing.Plan.Restrictions do
          subscription_product,
          query_or_metric
        ) do
-    now = Timex.now()
+    now = DateTime.utc_now()
 
     restricted_from =
       case AccessChecker.historical_data_in_days(
@@ -153,22 +145,25 @@ defmodule Sanbase.Billing.Plan.Restrictions do
 
     additional_data = additional_data(type_str, name_str)
 
-    %{
-      type: type_str,
-      name: name_str,
-      is_accessible: true,
-      is_restricted: not is_nil(restricted_from) or not is_nil(restricted_to),
-      restricted_from: restricted_from,
-      restricted_to: restricted_to,
-      # The metric additional data will override the docs field
-      docs: []
-    }
-    |> Map.merge(additional_data)
+    Map.merge(
+      %{
+        type: type_str,
+        name: name_str,
+        is_accessible: true,
+        is_restricted: not is_nil(restricted_from) or not is_nil(restricted_to),
+        restricted_from: restricted_from,
+        restricted_to: restricted_to,
+        docs: []
+      },
+      additional_data
+    )
+
+    # The metric additional data will override the docs field
   end
 
-  defp construct_name(:metric, name), do: name |> to_string()
-  defp construct_name(:signal, name), do: name |> to_string()
-  defp construct_name(:query, name), do: name |> Inflex.camelize(:lower)
+  defp construct_name(:metric, name), do: to_string(name)
+  defp construct_name(:signal, name), do: to_string(name)
+  defp construct_name(:query, name), do: Inflex.camelize(name, :lower)
 
   defp additional_data("metric", metric) do
     case Sanbase.Metric.metadata(metric) do
@@ -210,11 +205,7 @@ defmodule Sanbase.Billing.Plan.Restrictions do
   end
 
   defp additional_data("query", query)
-       when query in [
-              "dailyActiveDeposits",
-              "historyTwitterData",
-              "percentOfTokenSupplyOnExchanges"
-            ],
+       when query in ["dailyActiveDeposits", "historyTwitterData", "percentOfTokenSupplyOnExchanges"],
        do: %{min_interval: "1d", internal_name: query}
 
   defp additional_data("query", query)
@@ -234,15 +225,9 @@ defmodule Sanbase.Billing.Plan.Restrictions do
        do: %{min_interval: "5m", internal_name: query}
 
   defp additional_data("query", query),
-    do: %{
-      min_interval: nil,
-      internal_name: query,
-      available_selectors: [],
-      required_selectors: []
-    }
+    do: %{min_interval: nil, internal_name: query, available_selectors: [], required_selectors: []}
 
   defp get_extra_queries(_plan_name, _product_code) do
-    [not_restricted_access_map("query", "ethSpentOverTime")]
-    |> Enum.map(&post_process/1)
+    Enum.map([not_restricted_access_map("query", "ethSpentOverTime")], &post_process/1)
   end
 end

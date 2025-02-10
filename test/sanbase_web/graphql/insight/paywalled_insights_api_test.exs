@@ -1,9 +1,10 @@
 defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
+  import SanbaseWeb.Graphql.TestHelpers
 
+  alias Sanbase.Billing.Plan.SanbaseAccessChecker
   alias Sanbase.Insight.Post
   alias Sanbase.Timeline.TimelineEvent
 
@@ -17,7 +18,7 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
 
   describe "filter paywalled when fetching insight by id" do
     setup do
-      text = Stream.cycle(["alabala"]) |> Enum.take(200) |> Enum.join(" ")
+      text = ["alabala"] |> Stream.cycle() |> Enum.take(200) |> Enum.join(" ")
       author = insert(:user)
 
       post =
@@ -66,12 +67,11 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
 
     test "with logged in user with Sanapi PRO subscription", context do
       subscription =
-        insert(:subscription_pro, user: context.user)
+        :subscription_pro
+        |> insert(user: context.user)
         |> Sanbase.Repo.preload(:plan)
 
-      assert Sanbase.Billing.Plan.SanbaseAccessChecker.can_access_paywalled_insights?(
-               subscription
-             )
+      assert SanbaseAccessChecker.can_access_paywalled_insights?(subscription)
 
       insight = execute_query(context.conn, context.query, "insight")
 
@@ -81,12 +81,11 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
 
     test "with logged in user with SANBASE MAX subscription", context do
       subscription =
-        insert(:subscription_max_sanbase, user: context.user)
+        :subscription_max_sanbase
+        |> insert(user: context.user)
         |> Sanbase.Repo.preload(:plan)
 
-      assert Sanbase.Billing.Plan.SanbaseAccessChecker.can_access_paywalled_insights?(
-               subscription
-             )
+      assert SanbaseAccessChecker.can_access_paywalled_insights?(subscription)
 
       insight = execute_query(context.conn, context.query, "insight")
 
@@ -96,12 +95,11 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
 
     test "with logged in user with BUSINESS_PRO subscription", context do
       subscription =
-        insert(:subscription_business_pro_monthly, user: context.user)
+        :subscription_business_pro_monthly
+        |> insert(user: context.user)
         |> Sanbase.Repo.preload(:plan)
 
-      assert Sanbase.Billing.Plan.SanbaseAccessChecker.can_access_paywalled_insights?(
-               subscription
-             )
+      assert SanbaseAccessChecker.can_access_paywalled_insights?(subscription)
 
       insight = execute_query(context.conn, context.query, "insight")
 
@@ -111,12 +109,11 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
 
     test "with logged in user with BUSINESS_MAX subscription", context do
       subscription =
-        insert(:subscription_business_max_monthly, user: context.user)
+        :subscription_business_max_monthly
+        |> insert(user: context.user)
         |> Sanbase.Repo.preload(:plan)
 
-      assert Sanbase.Billing.Plan.SanbaseAccessChecker.can_access_paywalled_insights?(
-               subscription
-             )
+      assert SanbaseAccessChecker.can_access_paywalled_insights?(subscription)
 
       insight = execute_query(context.conn, context.query, "insight")
 
@@ -152,7 +149,7 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
 
   describe "filter paywalled when fetching all insights and timeline events" do
     setup do
-      text = Stream.cycle(["alabala"]) |> Enum.take(200) |> Enum.join(" ")
+      text = ["alabala"] |> Stream.cycle() |> Enum.take(200) |> Enum.join(" ")
       author = insert(:user)
       query = all_insights_query()
 
@@ -215,7 +212,7 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
     """
   end
 
-  defp timeline_events_query() do
+  defp timeline_events_query do
     """
     {
       timelineEvents {
@@ -249,7 +246,7 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
     """
   end
 
-  defp all_insights_query() do
+  defp all_insights_query do
     """
     {
       allInsights {

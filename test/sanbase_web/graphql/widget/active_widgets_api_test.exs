@@ -1,8 +1,8 @@
 defmodule SanbaseWeb.Graphql.ActiveWidgetsApiTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
+  import SanbaseWeb.Graphql.TestHelpers
 
   test "fetcha active widgets", %{conn: conn} do
     widget = insert(:active_widget, is_active: true)

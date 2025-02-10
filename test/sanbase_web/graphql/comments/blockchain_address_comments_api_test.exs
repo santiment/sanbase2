@@ -3,9 +3,8 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressCommentsApiTest do
 
   import Sanbase.Factory
   import Sanbase.TestHelpers
-  import SanbaseWeb.Graphql.TestHelpers
-
   import SanbaseWeb.CommentsApiHelper
+  import SanbaseWeb.Graphql.TestHelpers
 
   @opts [entity_type: :blockchain_address, extra_fields: ["blockchainAddressId"]]
   setup do
@@ -44,7 +43,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressCommentsApiTest do
 
     comments = get_comments(other_user_conn, blockchain_address.id, @opts)
 
-    assert comment["blockchainAddressId"] |> Sanbase.Math.to_integer() == blockchain_address.id
+    assert Sanbase.Math.to_integer(comment["blockchainAddressId"]) == blockchain_address.id
     assert comment["content"] == content
     assert comment["insertedAt"] != nil
     assert comment["editedAt"] == nil
@@ -68,7 +67,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressCommentsApiTest do
     assert updated_comment["editedAt"] != nil
 
     edited_at = NaiveDateTime.from_iso8601!(updated_comment["editedAt"])
-    assert Sanbase.TestUtils.datetime_close_to(edited_at, Timex.now(), 1, :seconds) == true
+    assert Sanbase.TestUtils.datetime_close_to(edited_at, DateTime.utc_now(), 1, :seconds) == true
 
     assert comment["content"] == content
     assert updated_comment["content"] == new_content
@@ -85,11 +84,11 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressCommentsApiTest do
     delete_comment(conn, comment["id"], @opts)
 
     comments = get_comments(conn, blockchain_address.id, @opts)
-    blockchain_address_comment = comments |> List.first()
+    blockchain_address_comment = List.first(comments)
 
     assert blockchain_address_comment["user"]["id"] != comment["user"]["id"]
 
-    assert blockchain_address_comment["user"]["id"] |> Sanbase.Math.to_integer() ==
+    assert Sanbase.Math.to_integer(blockchain_address_comment["user"]["id"]) ==
              fallback_user.id
 
     assert blockchain_address_comment["content"] != comment["content"]
@@ -107,7 +106,8 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressCommentsApiTest do
     create_comment(conn, blockchain_address.id, "some content", opts)
 
     [comment, subcomment1, subcomment2] =
-      get_comments(conn, blockchain_address.id, @opts)
+      conn
+      |> get_comments(blockchain_address.id, @opts)
       |> Enum.sort_by(& &1["id"])
 
     assert comment["parentId"] == nil

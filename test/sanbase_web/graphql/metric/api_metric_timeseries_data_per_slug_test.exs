@@ -39,11 +39,12 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataPerSlugTest do
       }
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.PricePair.timeseries_data_per_slug/6, {:ok, data})
+    (&Sanbase.PricePair.timeseries_data_per_slug/6)
+    |> Sanbase.Mock.prepare_mock2({:ok, data})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
-        get_timeseries_per_slug_metric(
-          conn,
+        conn
+        |> get_timeseries_per_slug_metric(
           "price_usd",
           %{slugs: [project1.slug, project2.slug], source: "cryptocompare"},
           from,
@@ -53,13 +54,13 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataPerSlugTest do
         )
         |> extract_timeseries_data_per_slug()
 
-      assert %{"datetime" => dt_str1, "data" => data1} = result |> Enum.at(0)
-      assert dt_str1 |> Sanbase.DateTimeUtils.from_iso8601!() == dt1
+      assert %{"datetime" => dt_str1, "data" => data1} = Enum.at(result, 0)
+      assert Sanbase.DateTimeUtils.from_iso8601!(dt_str1) == dt1
       assert %{"slug" => project1.slug, "value" => 200.0} in data1
       assert %{"slug" => project2.slug, "value" => 150.0} in data1
 
-      assert %{"datetime" => dt_str2, "data" => data2} = result |> Enum.at(1)
-      assert dt_str2 |> Sanbase.DateTimeUtils.from_iso8601!() == dt2
+      assert %{"datetime" => dt_str2, "data" => data2} = Enum.at(result, 1)
+      assert Sanbase.DateTimeUtils.from_iso8601!(dt_str2) == dt2
       assert %{"slug" => project1.slug, "value" => 400.0} in data2
       assert %{"slug" => project2.slug, "value" => 100.0} in data2
 
@@ -89,11 +90,12 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataPerSlugTest do
       [DateTime.to_unix(dt2), project2.slug, 200]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    (&Sanbase.ClickhouseRepo.query/2)
+    |> Sanbase.Mock.prepare_mock2({:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
-        get_timeseries_per_slug_metric(
-          conn,
+        conn
+        |> get_timeseries_per_slug_metric(
           "daily_active_addresses",
           %{slugs: [project1.slug, project2.slug]},
           from,
@@ -103,13 +105,13 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataPerSlugTest do
         )
         |> extract_timeseries_data_per_slug()
 
-      assert %{"datetime" => dt_str1, "data" => data1} = result |> Enum.at(0)
-      assert dt_str1 |> Sanbase.DateTimeUtils.from_iso8601!() == dt1
+      assert %{"datetime" => dt_str1, "data" => data1} = Enum.at(result, 0)
+      assert Sanbase.DateTimeUtils.from_iso8601!(dt_str1) == dt1
       assert %{"slug" => project1.slug, "value" => 400.0} in data1
       assert %{"slug" => project2.slug, "value" => 100.0} in data1
 
-      assert %{"datetime" => dt_str2, "data" => data2} = result |> Enum.at(1)
-      assert dt_str2 |> Sanbase.DateTimeUtils.from_iso8601!() == dt2
+      assert %{"datetime" => dt_str2, "data" => data2} = Enum.at(result, 1)
+      assert Sanbase.DateTimeUtils.from_iso8601!(dt_str2) == dt2
       assert %{"slug" => project1.slug, "value" => 500.0} in data2
       assert %{"slug" => project2.slug, "value" => 200.0} in data2
     end)
@@ -134,20 +136,12 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataPerSlugTest do
     error_msg = result["errors"] |> hd() |> Map.get("message")
 
     assert error_msg =~
-             "Can't fetch daily_active_addresses for project with slug [\"aaaaa\", \"bbbbb\", \"unsupported_slug\"], Reason: \"The slug \\\"unsupported_slug\\\" is not an existing slug."
+             ~s(Can't fetch daily_active_addresses for project with slug ["aaaaa", "bbbbb", "unsupported_slug"], Reason: "The slug \\"unsupported_slug\\" is not an existing slug.)
   end
 
   # Private functions
 
-  defp get_timeseries_per_slug_metric(
-         conn,
-         metric,
-         selector,
-         from,
-         to,
-         interval,
-         aggregation
-       ) do
+  defp get_timeseries_per_slug_metric(conn, metric, selector, from, to, interval, aggregation) do
     query = get_timeseries_per_slug_query(metric, selector, from, to, interval, aggregation)
 
     conn
@@ -170,7 +164,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataPerSlugTest do
             from: "#{from}",
             to: "#{to}",
             interval: "#{interval}",
-            aggregation: #{Atom.to_string(aggregation) |> String.upcase()}){
+            aggregation: #{aggregation |> Atom.to_string() |> String.upcase()}){
               datetime
               data{ slug value }
             }

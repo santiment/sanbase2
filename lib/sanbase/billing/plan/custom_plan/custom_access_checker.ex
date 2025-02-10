@@ -3,6 +3,7 @@ defmodule Sanbase.Billing.Plan.CustomAccessChecker do
   """
 
   alias Sanbase.Billing.Plan.CustomPlan
+  alias Sanbase.Billing.Plan.StandardAccessChecker
 
   @type query_or_argument :: {:metric, String.t()} | {:signal, String.t()} | {:query, Atom.t()}
   @type requested_product :: String.t()
@@ -11,7 +12,7 @@ defmodule Sanbase.Billing.Plan.CustomAccessChecker do
   @type plan_name :: String.t()
 
   def restricted?(query_or_argument) do
-    Sanbase.Billing.Plan.StandardAccessChecker.restricted?(query_or_argument)
+    StandardAccessChecker.restricted?(query_or_argument)
   end
 
   def plan_has_access?(query_or_argument, product_code, plan_name) do
@@ -23,13 +24,11 @@ defmodule Sanbase.Billing.Plan.CustomAccessChecker do
   end
 
   def historical_data_freely_available?(query_or_argument) do
-    Sanbase.Billing.Plan.StandardAccessChecker.historical_data_freely_available?(
-      query_or_argument
-    )
+    StandardAccessChecker.historical_data_freely_available?(query_or_argument)
   end
 
   def realtime_data_freely_available?(query_or_argument) do
-    Sanbase.Billing.Plan.StandardAccessChecker.realtime_data_freely_available?(query_or_argument)
+    StandardAccessChecker.realtime_data_freely_available?(query_or_argument)
   end
 
   @doc """
@@ -43,12 +42,7 @@ defmodule Sanbase.Billing.Plan.CustomAccessChecker do
           plan_name
         ) ::
           non_neg_integer() | nil
-  def historical_data_in_days(
-        query_or_argument,
-        requested_product,
-        subscription_product,
-        plan_name
-      ) do
+  def historical_data_in_days(query_or_argument, requested_product, subscription_product, plan_name) do
     CustomPlan.Access.historical_data_in_days(
       query_or_argument,
       requested_product,
@@ -68,12 +62,7 @@ defmodule Sanbase.Billing.Plan.CustomAccessChecker do
           plan_name
         ) ::
           non_neg_integer() | nil
-  def realtime_data_cut_off_in_days(
-        query_or_argument,
-        requested_product,
-        subscription_product,
-        plan_name
-      ) do
+  def realtime_data_cut_off_in_days(query_or_argument, requested_product, subscription_product, plan_name) do
     CustomPlan.Access.realtime_data_cut_off_in_days(
       query_or_argument,
       requested_product,

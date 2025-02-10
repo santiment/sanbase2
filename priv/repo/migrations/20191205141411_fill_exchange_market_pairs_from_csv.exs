@@ -1,15 +1,18 @@
 defmodule Sanbase.Repo.Migrations.FillExchangeMarketPairsFromCsv do
+  @moduledoc false
   use Ecto.Migration
 
   alias Sanbase.Exchanges.MarketPairMapping
+
   @source "coinmarketcap"
 
   def up do
     setup()
 
     data =
-      Path.expand("exchange_market_pairs_final.csv", __DIR__)
-      |> File.stream!([], :line)
+      "exchange_market_pairs_final.csv"
+      |> Path.expand(__DIR__)
+      |> File.stream!(:line, [])
       |> Enum.map(fn line ->
         [exchange, market_pair, from_slug, to_slug, from_ticker, to_ticker] =
           String.split(line, ",", trim: true)
@@ -22,8 +25,8 @@ defmodule Sanbase.Repo.Migrations.FillExchangeMarketPairsFromCsv do
           from_ticker: from_ticker,
           to_ticker: to_ticker,
           source: @source,
-          inserted_at: Timex.now(),
-          updated_at: Timex.now()
+          inserted_at: DateTime.utc_now(),
+          updated_at: DateTime.utc_now()
         }
       end)
 

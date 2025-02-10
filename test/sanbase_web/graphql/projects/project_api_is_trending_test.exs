@@ -20,20 +20,22 @@ defmodule SanbaseWeb.Graphql.ProjectApiIsTrendingTest do
         |> Enum.sort_by(& &1["slug"])
 
       expected_result =
-        [
-          %{"isTrending" => false, "slug" => p1.slug},
-          %{"isTrending" => false, "slug" => p2.slug},
-          %{"isTrending" => false, "slug" => p3.slug},
-          %{"isTrending" => true, "slug" => p4.slug},
-          %{"isTrending" => true, "slug" => p5.slug}
-        ]
-        |> Enum.sort_by(& &1["slug"])
+        Enum.sort_by(
+          [
+            %{"isTrending" => false, "slug" => p1.slug},
+            %{"isTrending" => false, "slug" => p2.slug},
+            %{"isTrending" => false, "slug" => p3.slug},
+            %{"isTrending" => true, "slug" => p4.slug},
+            %{"isTrending" => true, "slug" => p5.slug}
+          ],
+          & &1["slug"]
+        )
 
       assert result == expected_result
     end
   end
 
-  defp all_projects_trending_query() do
+  defp all_projects_trending_query do
     """
     {
       allProjects{
@@ -44,7 +46,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiIsTrendingTest do
     """
   end
 
-  defp trending_projects() do
+  defp trending_projects do
     [
       %{score: 372, slug: "eos"},
       %{score: 309, slug: "satoshi"},

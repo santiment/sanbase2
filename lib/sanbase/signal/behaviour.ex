@@ -1,4 +1,5 @@
 defmodule Sanbase.Signal.Behaviour do
+  @moduledoc false
   @type slug :: String.t()
   @type selector :: map()
   @type signal :: String.t()

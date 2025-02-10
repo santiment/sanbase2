@@ -1,4 +1,5 @@
 defmodule Sanbase.Queries.RefreshSchedulerWorker do
+  @moduledoc false
   use Oban.Worker,
     queue: :refresh_queries,
     max_attempts: 3

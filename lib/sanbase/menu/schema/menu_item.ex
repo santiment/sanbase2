@@ -1,12 +1,13 @@
 defmodule Sanbase.Menus.MenuItem do
+  @moduledoc false
   use Ecto.Schema
 
-  import Ecto.Query
   import Ecto.Changeset
+  import Ecto.Query
 
+  alias Sanbase.Dashboards.Dashboard
   alias Sanbase.Menus.Menu
   alias Sanbase.Queries.Query
-  alias Sanbase.Dashboards.Dashboard
 
   @type t :: %__MODULE__{
           parent_id: Menu.menu_id(),
@@ -75,14 +76,13 @@ defmodule Sanbase.Menus.MenuItem do
   end
 
   def update(menu, attrs) do
-    menu
+    cast(menu, attrs, [:parent_id, :position])
     # Do not allow to change the entity. Prefer deleting and adding a new item instead.
-    |> cast(attrs, [:parent_id, :position])
   end
 
   # Private functions
 
-  defp base_query() do
+  defp base_query do
     from(m in __MODULE__)
   end
 end

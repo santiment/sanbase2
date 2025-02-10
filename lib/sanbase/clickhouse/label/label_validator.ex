@@ -1,4 +1,5 @@
 defmodule Sanbase.Clickhouse.Label.Validator do
+  @moduledoc false
   @doc ~s"""
   Check if the provided label_fqn is valid
   """
@@ -6,9 +7,8 @@ defmodule Sanbase.Clickhouse.Label.Validator do
   def valid_label_fqn?(label_fqn) do
     with [owner, key_value, version] <- parse_label_fqn(label_fqn),
          true <- valid_owner?(owner, label_fqn),
-         true <- valid_key_value?(key_value, label_fqn),
-         true <- valid_version?(version, label_fqn) do
-      true
+         true <- valid_key_value?(key_value, label_fqn) do
+      valid_version?(version, label_fqn)
     end
   end
 
@@ -20,9 +20,10 @@ defmodule Sanbase.Clickhouse.Label.Validator do
   end
 
   defp valid_owner?(owner, label_fqn) do
-    case is_binary(owner) and ascii_string_or_nil?(owner) do
-      true -> true
-      false -> {:error, error_msg(:owner, owner, label_fqn)}
+    if is_binary(owner) and ascii_string_or_nil?(owner) do
+      true
+    else
+      {:error, error_msg(:owner, owner, label_fqn)}
     end
   end
 
@@ -37,9 +38,8 @@ defmodule Sanbase.Clickhouse.Label.Validator do
   defp valid_key_value?(key_value, label_fqn) do
     case String.split(key_value, "->") do
       [key, value] ->
-        with true <- valid_key?(key, label_fqn),
-             true <- valid_value?(value, label_fqn) do
-          true
+        if valid_key?(key, label_fqn) do
+          valid_value?(value, label_fqn)
         end
 
       [key] ->
@@ -48,16 +48,18 @@ defmodule Sanbase.Clickhouse.Label.Validator do
   end
 
   defp valid_key?(key, label_fqn) do
-    case Regex.match?(~r/[a-zA-Z0-0\(\)\_\-]+/, key) do
-      true -> true
-      false -> {:error, error_msg(:key, key, label_fqn)}
+    if Regex.match?(~r/[a-zA-Z0-0\(\)\_\-]+/, key) do
+      true
+    else
+      {:error, error_msg(:key, key, label_fqn)}
     end
   end
 
   defp valid_value?(value, label_fqn) do
-    case Regex.match?(~r/[a-zA-Z0-0\(\)\_\-\s\:\/]+/, value) do
-      true -> true
-      false -> {:error, error_msg(:value, value, label_fqn)}
+    if Regex.match?(~r/[a-zA-Z0-0\(\)\_\-\s\:\/]+/, value) do
+      true
+    else
+      {:error, error_msg(:value, value, label_fqn)}
     end
   end
 
@@ -70,8 +72,7 @@ defmodule Sanbase.Clickhouse.Label.Validator do
     end
   end
 
-  defp valid_version?(version, label_fqn),
-    do: {:error, error_msg(:version, version, label_fqn)}
+  defp valid_version?(version, label_fqn), do: {:error, error_msg(:version, version, label_fqn)}
 
   defp error_msg(key, value, label_fqn) do
     "The #{key} part '#{inspect(value)}' of the label_fqn '#{inspect(label_fqn)}' is not valid."

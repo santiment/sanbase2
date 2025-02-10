@@ -12,12 +12,13 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
 
   use Vex.Struct
 
-  import Sanbase.{Validation, Alert.Validation}
+  import Sanbase.Alert.Validation
   import Sanbase.DateTimeUtils, only: [round_datetime: 1, str_to_sec: 1]
+  import Sanbase.Validation
 
   alias __MODULE__
-  alias Sanbase.Project
   alias Sanbase.Alert.Type
+  alias Sanbase.Project
 
   @derive {Jason.Encoder, except: [:filtered_target, :triggered?, :payload, :template_kv]}
   @trigger_type "wallet_movement"
@@ -57,7 +58,7 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
   validates(:time_window, &valid_time_window?/1)
 
   @spec type() :: String.t()
-  def type(), do: @trigger_type
+  def type, do: @trigger_type
 
   def post_create_process(_trigger), do: :nochange
   def post_update_process(_trigger), do: :nochange
@@ -65,12 +66,7 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
   @doc ~s"""
   Return a list of the `settings.metric` values for the necessary time range
   """
-  def get_data(
-        %__MODULE__{
-          filtered_target: %{list: target_list, type: :address},
-          selector: selector
-        } = settings
-      ) do
+  def get_data(%__MODULE__{filtered_target: %{list: target_list, type: :address}, selector: selector} = settings) do
     {from, to} = get_timeseries_params(settings)
 
     target_list
@@ -82,13 +78,14 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
         infrastructure: selector.infrastructure
       }
 
-      with {:ok, [%{address: ^address} = result]} <- balance_change(selector, address, from, to) do
-        {address,
-         [
-           %{datetime: from, balance: result.balance_start},
-           %{datetime: to, balance: result.balance_end}
-         ]}
-      else
+      case balance_change(selector, address, from, to) do
+        {:ok, [%{address: ^address} = result]} ->
+          {address,
+           [
+             %{datetime: from, balance: result.balance_start},
+             %{datetime: to, balance: result.balance_end}
+           ]}
+
         {:ok, [%{address: returned_address}]} ->
           raise("""
           The address returned from balance_change in WalletTriggerSettings has
@@ -105,12 +102,7 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
     |> maybe_combine_balances(settings)
   end
 
-  def get_data(
-        %__MODULE__{
-          filtered_target: %{list: target_list, type: :slug},
-          selector: selector
-        } = settings
-      ) do
+  def get_data(%__MODULE__{filtered_target: %{list: target_list, type: :slug}, selector: selector} = settings) do
     {from, to} = get_timeseries_params(settings)
 
     target_list
@@ -122,8 +114,8 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
 
       with {:ok, data} <- balance_change(selector, eth_addresses, from, to) do
         {balance_before, balance_after} =
-          data
-          |> Enum.reduce(
+          Enum.reduce(
+            data,
             {0, 0},
             fn %{} = result, {balance_before_acc, balance_after_acc} ->
               {result.balance_start + balance_before_acc, result.balance_end + balance_after_acc}
@@ -143,7 +135,7 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
   end
 
   defp get_timeseries_params(%{time_window: time_window}) do
-    to = Timex.now()
+    to = DateTime.utc_now()
     from = Timex.shift(to, seconds: -str_to_sec(time_window))
 
     {from, to}
@@ -151,8 +143,7 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
 
   defp balance_change(selector, address, from, to) do
     cache_key =
-      {__MODULE__, :wallet_signal, selector, address, round_datetime(from), round_datetime(to)}
-      |> Sanbase.Cache.hash()
+      Sanbase.Cache.hash({__MODULE__, :wallet_signal, selector, address, round_datetime(from), round_datetime(to)})
 
     Sanbase.Cache.get_or_store(:alerts_evaluator_cache, cache_key, fn ->
       Sanbase.Clickhouse.HistoricalBalance.balance_change(selector, address, from, to)
@@ -162,7 +153,8 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
   defimpl Sanbase.Alert.Settings, for: WalletTriggerSettings do
     import Sanbase.Alert.Utils
 
-    alias Sanbase.Alert.{OperationText, ResultBuilder}
+    alias Sanbase.Alert.OperationText
+    alias Sanbase.Alert.ResultBuilder
 
     def triggered?(%WalletTriggerSettings{triggered?: triggered}), do: triggered
 
@@ -275,30 +267,28 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
   defp maybe_combine_balances([], _settings), do: []
 
   defp maybe_combine_balances(data, settings) do
-    case Map.get(settings.target, :use_combined_balance, false) do
-      false ->
+    if Map.get(settings.target, :use_combined_balance, false) do
+      [{_addr, first_balance} | rest] =
         data
 
-      true ->
-        [{_addr, first_balance} | rest] =
-          data
+      combined_balance =
+        Enum.reduce(rest, first_balance, fn {_addr, balances}, acc ->
+          [%{datetime: from, balance: balance_start}, %{datetime: to, balance: balance_end}] =
+            acc
 
-        combined_balance =
-          Enum.reduce(rest, first_balance, fn {_addr, balances}, acc ->
-            [%{datetime: from, balance: balance_start}, %{datetime: to, balance: balance_end}] =
-              acc
+          [%{balance: addr_balance_start}, %{balance: addr_balance_end}] = balances
 
-            [%{balance: addr_balance_start}, %{balance: addr_balance_end}] = balances
+          [
+            %{datetime: from, balance: balance_start + addr_balance_start},
+            %{datetime: to, balance: balance_end + addr_balance_end}
+          ]
+        end)
 
-            [
-              %{datetime: from, balance: balance_start + addr_balance_start},
-              %{datetime: to, balance: balance_end + addr_balance_end}
-            ]
-          end)
-
-        combined_addresses = Enum.map(data, &elem(&1, 0)) |> Enum.join(", ")
-        combined_addresses = "(combined balances of) " <> combined_addresses
-        [{combined_addresses, combined_balance}]
+      combined_addresses = Enum.map_join(data, ", ", &elem(&1, 0))
+      combined_addresses = "(combined balances of) " <> combined_addresses
+      [{combined_addresses, combined_balance}]
+    else
+      data
     end
   end
 end

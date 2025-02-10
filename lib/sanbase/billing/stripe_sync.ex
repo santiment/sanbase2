@@ -1,11 +1,12 @@
 defmodule Sanbase.Billing.StripeSync do
+  @moduledoc false
   import Ecto.Query
 
   @topic "sanbase_stripe_transactions"
 
   def run do
     if not localhost_or_stage?() do
-      start_dt = Timex.now() |> Timex.beginning_of_day()
+      start_dt = Timex.beginning_of_day(DateTime.utc_now())
 
       sync_all_transactions(start_dt)
     end
@@ -18,17 +19,18 @@ defmodule Sanbase.Billing.StripeSync do
     plan_map = plan_map()
     product_map = product_map()
 
-    Sanbase.DateTimeUtils.generate_datetimes_list(
-      start_dt,
+    start_dt
+    |> Sanbase.DateTimeUtils.generate_datetimes_list(
       "1d",
-      Timex.diff(Timex.now(), start_dt, :days)
+      Timex.diff(DateTime.utc_now(), start_dt, :days)
     )
     |> Enum.each(fn dt ->
-      from = Timex.beginning_of_day(dt) |> DateTime.to_unix()
-      to = Timex.end_of_day(dt) |> DateTime.to_unix()
+      from = dt |> Timex.beginning_of_day() |> DateTime.to_unix()
+      to = dt |> Timex.end_of_day() |> DateTime.to_unix()
       params = %{created: %{gte: from, lt: to}}
 
-      transactions(params)
+      params
+      |> transactions()
       |> Enum.map(fn transaction ->
         data = %{
           id: transaction.id,
@@ -51,19 +53,18 @@ defmodule Sanbase.Billing.StripeSync do
 
   def transactions(params \\ %{}) do
     # %{created: %{gte: from_ux, lt: to_ux}}
-    params = %{limit: 10} |> Map.merge(params)
+    params = Map.merge(%{limit: 10}, params)
 
     {:ok, res} =
       Stripe.Charge.list(params, expand: ["data.invoice.subscription.plan"], timeout: 30_000)
 
     transactions =
-      res.data
-      |> Enum.map(fn charge ->
-        subscription = if charge.invoice, do: charge.invoice.subscription, else: nil
+      Enum.map(res.data, fn charge ->
+        subscription = if charge.invoice, do: charge.invoice.subscription
 
         {plan, product} =
           if subscription do
-            subscription_item = subscription.items.data |> List.first()
+            subscription_item = List.first(subscription.items.data)
             plan = subscription_item.plan
             {plan.id, plan.product}
           else
@@ -82,8 +83,8 @@ defmodule Sanbase.Billing.StripeSync do
       end)
 
     if res.has_more do
-      id = List.last(res.data) |> Map.get(:id)
-      transactions ++ transactions(Map.merge(params, %{starting_after: id}))
+      id = res.data |> List.last() |> Map.get(:id)
+      transactions ++ transactions(Map.put(params, :starting_after, id))
     else
       transactions
     end
@@ -122,8 +123,7 @@ defmodule Sanbase.Billing.StripeSync do
   end
 
   defp to_json_kv_tuple(transactions) do
-    transactions
-    |> Enum.map(fn transaction ->
+    Enum.map(transactions, fn transaction ->
       key = transaction.id
       transaction = Map.delete(transaction, :id)
       {key, Jason.encode!(transaction)}

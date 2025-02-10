@@ -1,9 +1,9 @@
 defmodule SanbaseWeb.Graphql.ProjectApiEthSpentOverTimeTest do
   use SanbaseWeb.ConnCase, async: false
 
+  import Sanbase.Factory
   import Sanbase.TestHelpers
   import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.Factory
 
   setup do
     ticker = "TESTXYZ"
@@ -22,21 +22,22 @@ defmodule SanbaseWeb.Graphql.ProjectApiEthSpentOverTimeTest do
 
   test "project eth spent over time", context do
     [dt0, dt1, dt2, dt3, dt4, dt5, dt6] =
-      generate_datetimes(~U[2017-05-12T00:00:00Z], "1d", 7) |> Enum.map(&DateTime.to_unix/1)
+      ~U[2017-05-12T00:00:00Z] |> generate_datetimes("1d", 7) |> Enum.map(&DateTime.to_unix/1)
 
     # Historical Balances Changes uses internally the historical balances query,
     # so that's what needs to be mocked
     rows = [
-      [dt0, 20000, 1],
-      [dt1, 19500, 1],
-      [dt2, 18000, 1],
-      [dt3, 12000, 1],
+      [dt0, 20_000, 1],
+      [dt1, 19_500, 1],
+      [dt2, 18_000, 1],
+      [dt3, 12_000, 1],
       [dt4, 0, 0],
       [dt5, 0, 0],
       [dt6, 5500, 1]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    (&Sanbase.ClickhouseRepo.query/2)
+    |> Sanbase.Mock.prepare_mock2({:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       query = """
       {
@@ -52,9 +53,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiEthSpentOverTimeTest do
       }
       """
 
-      result =
-        context.conn
-        |> post("/graphql", query_skeleton(query, "project"))
+      result = post(context.conn, "/graphql", query_skeleton(query, "project"))
 
       eth_spent_over_time = json_response(result, 200)["data"]["project"]["ethSpentOverTime"]
 

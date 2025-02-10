@@ -341,6 +341,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
 
   defp compute(:metrics_data_type_map, []) do
     get_metrics([])
+    # credo:disable-for-next-line
     |> Map.new(&{&1.metric, String.to_atom(&1.data_type)})
   end
 
@@ -360,6 +361,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
       selectors =
         m.selectors
         |> Enum.map(& &1.type)
+        # credo:disable-for-next-line
         |> Enum.map(&String.to_atom/1)
 
       {m.metric, selectors}
@@ -378,6 +380,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
         m.required_selectors
         |> Enum.map(& &1.type)
         |> Enum.map(fn binary_selectors ->
+          # credo:disable-for-next-line
           binary_selectors |> String.split("|") |> Enum.map(&String.to_atom/1)
         end)
 
@@ -448,6 +451,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   defp compute(:metrics_list_with_data_type, [type]) do
     get_metrics([])
     |> Enum.reduce([], fn m, acc ->
+      # credo:disable-for-next-line
       if String.to_atom(m.data_type) == type,
         do: [m.metric | acc],
         else: acc
@@ -457,6 +461,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   defp compute(:metrics_mapset_with_data_type, [type]) do
     get_metrics([])
     |> Enum.reduce(MapSet.new(), fn m, acc ->
+      # credo:disable-for-next-line
       if String.to_atom(m.data_type) == type,
         do: MapSet.put(acc, m.metric),
         else: acc

@@ -136,7 +136,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     end
   end
 
-  defp maybe_cache_execution(_cache? = false, _, _, _, _, _), do: :ok
+  defp maybe_cache_execution(false = _cache?, _, _, _, _, _), do: :ok
 
   defp maybe_cache_execution(true, result, dashboard_id, mapping_id, parameters_override, user) do
     result =

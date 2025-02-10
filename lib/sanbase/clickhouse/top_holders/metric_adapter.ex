@@ -7,7 +7,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   import Sanbase.Clickhouse.TopHolders.SqlQuery
 
   import Sanbase.Utils.Transform,
-    only: [maybe_fill_gaps_last_seen: 2, maybe_apply_function: 2, maybe_unwrap_ok_value: 1]
+    only: [maybe_fill_gaps_last_seen: 2, maybe_unwrap_ok_value: 1]
 
   import Sanbase.Utils.ErrorHandling, only: [not_implemented_function_for_metric_error: 2]
 

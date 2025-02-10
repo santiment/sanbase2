@@ -167,11 +167,11 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
 
   defp check_experimental_metric_access(
          %Resolution{
-           context: %{__metric__: metric_name, current_user: current_user}
+           context: %{__metric__: metric_name, auth: %{current_user: current_user}}
          } = resolution
        ) do
     # Have to get from cache
-    with {:ok, metric} <- MetricRegistry.by_name(Atom.to_string(metric_name)),
+    with {:ok, metric} <- Sanbase.Metric.Registry.by_name(metric_name, "timeseries"),
          true <- metric.status in ["alpha", "beta"] do
       do_check_experimental_metric(current_user, metric, resolution)
     else

@@ -189,22 +189,27 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
         "alpha" ->
           Resolution.put_result(
             resolution,
-            {:error, "The metric #{metric.metric} is currently in alpha phase and is exclusively available to alpha users."}
+            {:error,
+             "The metric #{metric.metric} is currently in alpha phase and is exclusively available to alpha users."}
           )
 
         "beta" ->
           Resolution.put_result(
             resolution,
-            {:error, "The metric #{metric.metric} is currently in beta phase and is exclusively available to alpha and beta users."}
+            {:error,
+             "The metric #{metric.metric} is currently in beta phase and is exclusively available to alpha and beta users."}
           )
       end
     end
   end
 
-  defp user_can_access_metric?(%Sanbase.Accounts.User{status: user_status}, metric_status) do
+  defp user_can_access_metric?(
+         %Sanbase.Accounts.User{metric_access_level: user_metric_access_level},
+         metric_status
+       ) do
     case metric_status do
-      "alpha" -> user_status == "alpha"
-      "beta" -> user_status in ["alpha", "beta"]
+      "alpha" -> user_metric_access_level == "alpha"
+      "beta" -> user_metric_access_level in ["alpha", "beta"]
       _ -> false
     end
   end

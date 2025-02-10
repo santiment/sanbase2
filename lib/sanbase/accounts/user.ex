@@ -31,7 +31,7 @@ defmodule Sanbase.Accounts.User do
 
   # User with free subscription that is used for external integration testing
   @sanbase_bot_email "sanbase.bot@santiment.net"
-  @allowed_statuses ["regular", "alpha", "beta"]
+  @allowed_metric_access_levels ["alpha", "beta", "released"]
 
   @derive {Inspect,
            except: [
@@ -88,7 +88,7 @@ defmodule Sanbase.Accounts.User do
     field(:privacy_policy_accepted, :boolean, default: false)
     field(:marketing_accepted, :boolean, default: false)
 
-    field(:status, :string, default: "regular")
+    field(:metric_access_level, :string, default: "released")
 
     has_one(:user_settings, UserSettings, on_delete: :delete_all)
 
@@ -173,7 +173,7 @@ defmodule Sanbase.Accounts.User do
       :username,
       :name,
       :registration_state,
-      :status
+      :metric_access_level
     ])
     |> normalize_user_identificator(:username, attrs[:username])
     |> normalize_user_identificator(:email, attrs[:email])
@@ -186,7 +186,7 @@ defmodule Sanbase.Accounts.User do
     |> unique_constraint(:username)
     |> unique_constraint(:stripe_customer_id)
     |> unique_constraint(:twitter_id)
-    |> validate_inclusion(:status, @allowed_statuses)
+    |> validate_inclusion(:metric_access_level, @allowed_metric_access_levels)
   end
 
   def san_balance(user), do: __MODULE__.SanBalance.san_balance(user)

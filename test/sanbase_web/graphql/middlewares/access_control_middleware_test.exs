@@ -322,7 +322,7 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
     end
 
     test "beta metric can be accessed by alpha user", context do
-      alpha_user = insert(:user, status: "alpha")
+      alpha_user = insert(:user, metric_access_level: "alpha")
       conn = setup_jwt_auth(build_conn(), alpha_user)
 
       {:ok, metric} = Sanbase.Metric.Registry.by_name("price_usd_5m", "timeseries")
@@ -344,7 +344,7 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
     end
 
     test "beta metric can be accessed by beta user", context do
-      beta_user = insert(:user, status: "beta")
+      beta_user = insert(:user, metric_access_level: "beta")
       conn = setup_jwt_auth(build_conn(), beta_user)
 
       {:ok, metric} = Sanbase.Metric.Registry.by_name("price_usd_5m", "timeseries")
@@ -366,7 +366,7 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
     end
 
     test "beta metric cannot be accessed by regular user", context do
-      regular_user = insert(:user, status: "regular")
+      regular_user = insert(:user, metric_access_level: "released")
       conn = setup_jwt_auth(build_conn(), regular_user)
 
       {:ok, metric} = Sanbase.Metric.Registry.by_name("price_usd_5m", "timeseries")
@@ -386,11 +386,11 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
              } = result
 
       assert error_message ==
-               "This metric is in beta and is only available to alpha or beta users."
+               "The metric price_usd_5m is currently in beta phase and is exclusively available to alpha and beta users."
     end
 
     test "alpha metric cannot be accessed by beta user", context do
-      beta_user = insert(:user, status: "beta")
+      beta_user = insert(:user, metric_access_level: "beta")
       conn = setup_jwt_auth(build_conn(), beta_user)
 
       {:ok, metric} = Sanbase.Metric.Registry.by_name("price_usd_5m", "timeseries")
@@ -409,11 +409,12 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
                ]
              } = result
 
-      assert error_message == "This metric is in alpha and is only available to alpha users."
+      assert error_message ==
+               "The metric price_usd_5m is currently in alpha phase and is exclusively available to alpha users."
     end
 
     test "released free metrics can be accessed by any user", context do
-      regular_user = insert(:user, status: "regular")
+      regular_user = insert(:user, metric_access_level: "released")
       conn = setup_jwt_auth(build_conn(), regular_user)
 
       {:ok, metric} = Sanbase.Metric.Registry.by_name("price_usd_5m", "timeseries")
@@ -435,7 +436,7 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
     end
 
     test "alpha metric can be accessed by alpha user", context do
-      alpha_user = insert(:user, status: "alpha")
+      alpha_user = insert(:user, metric_access_level: "alpha")
       conn = setup_jwt_auth(build_conn(), alpha_user)
 
       {:ok, metric} = Sanbase.Metric.Registry.by_name("price_usd_5m", "timeseries")

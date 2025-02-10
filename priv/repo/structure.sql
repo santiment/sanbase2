@@ -4598,7 +4598,7 @@ CREATE TABLE public.users (
     twitter_id character varying(255) DEFAULT NULL::character varying,
     name character varying(255),
     registration_state jsonb DEFAULT '{"state": "init"}'::jsonb,
-    status character varying(255) DEFAULT 'regular'::character varying NOT NULL
+    metric_access_level character varying(255) DEFAULT 'released'::character varying NOT NULL
 );
 
 

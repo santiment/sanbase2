@@ -53,6 +53,11 @@ defmodule Sanbase.SocialData.SocialVolume do
     social_volume_list_request(selector, from, to, interval, source, opts)
     |> handle_words_social_volume_response(selector)
     |> maybe_apply_function(fn result ->
+      Enum.map(result, fn map ->
+        Map.update!(map, :word, &URI.decode_www_form/1)
+      end)
+    end)
+    |> maybe_apply_function(fn result ->
       if treat_word_as_lucene_query do
         result
       else
@@ -162,7 +167,7 @@ defmodule Sanbase.SocialData.SocialVolume do
 
     body =
       %{
-        "search_texts" => Enum.join(words, ","),
+        "encoded_search_texts" => words |> Enum.map(&URI.encode_www_form/1) |> Enum.join(","),
         "from_timestamp" => from |> DateTime.truncate(:second) |> DateTime.to_iso8601(),
         "to_timestamp" => to |> DateTime.truncate(:second) |> DateTime.to_iso8601(),
         "interval" => interval,

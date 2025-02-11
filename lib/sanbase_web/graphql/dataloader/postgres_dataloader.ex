@@ -39,6 +39,22 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
   def query(:user_trigger_voted_at, data),
     do: get_voted_at(:user_trigger, :user_trigger_id, data)
 
+  def query(:available_founders_per_slug, slugs) do
+    slugs = Enum.to_list(slugs)
+
+    {:ok, founders} =
+      if length(slugs) > 100 do
+        # If there are too many projects, just fetch all founders instead of passing
+        # huge list of slugs as argument
+        Sanbase.Clickhouse.Founders.get_founders()
+      else
+        Sanbase.Clickhouse.Founders.get_founders(slugs)
+      end
+
+    founders
+    |> Map.new(fn %{slug: slug, name: name} -> {slug, List.wrap(name)} end)
+  end
+
   def query(:users_by_id, user_ids) do
     user_ids = Enum.to_list(user_ids)
 

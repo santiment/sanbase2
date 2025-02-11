@@ -2,39 +2,60 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
   use SanbaseWeb, :live_view
 
   alias SanbaseWeb.AdminFormsComponents
+  alias Sanbase.Metric.Registry.Permissions
   alias Sanbase.Metric.Registry.ChangeSuggestion
+  alias SanbaseWeb.AvailableMetricsComponents
 
   @impl true
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(:rows, list_all_submissions())
-     |> assign(:form, to_form(%{}))}
+     |> assign(
+       page_title: "Metric Registry | Change Requests",
+       rows: list_all_submissions(),
+       form: to_form(%{})
+     )}
   end
 
   @impl true
   def render(assigns) do
     ~H"""
     <div>
+      <h1 class="text-blue-700 text-2xl mb-4">
+        Metric Registry Change Requests
+      </h1>
+      <AvailableMetricsComponents.available_metrics_button
+        text="Back to Metric Registry"
+        href={~p"/admin2/metric_registry"}
+        icon="hero-home"
+      />
       <div class="flex-1 p:2 sm:p-6 justify-evenly">
         <.table id="metric_registry_changes_suggestions" rows={@rows}>
           <:col :let={row} label="Status">
             <AdminFormsComponents.status status={row.status} />
           </:col>
-          <:col :let={row} label="Metric">
+          <:col :let={row} label="Metric" col_class="max-w-[320px] break-words">
             <.link
+              :if={row.metric_registry_id}
               class="underline text-blue-600"
               href={~p"/admin2/metric_registry/show/#{row.metric_registry_id}"}
               target="_blank"
             >
               {row.metric_registry.metric}
             </.link>
+            <span :if={!row.metric_registry_id} class="text-sm font-bold text-green-800">
+              NEW METRIC
+            </span>
           </:col>
           <:col :let={row} label="Changes"><.formatted_changes row={row} /></:col>
           <:col :let={row} label="Notes">{row.notes}</:col>
           <:col :let={row} label="Submitted By">{row.submitted_by}</:col>
           <:action :let={row}>
-            <.action_buttons form={@form} row={row} />
+            <.action_buttons
+              :if={Permissions.can?(:apply_change_suggestions, [])}
+              form={@form}
+              row={row}
+            />
           </:action>
         </.table>
       </div>
@@ -56,7 +77,6 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
       class="flex flex-col lg:flex-row space-y-2 lg:space-y-0 md:space-x-2"
     >
       <input type="hidden" name="record_id" value={@row.id} />
-
       <.action_button
         value="approved"
         text="Approve"
@@ -71,13 +91,23 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
       />
       <.action_button
         value="undo"
-        text="Undo"
-        disabled={@row.status != "approved"}
+        text={undo_text(@row.status)}
+        disabled={
+          # Undo is disabled if it's still in pending state or
+          # if the change request is for adding a new metric and it is approved
+          # metrics cannot be deleted by undoing the change here
+          @row.status == "pending_approval" or
+            (@row.status == "approved" and @row.metric_registry_id == nil)
+        }
         colors="bg-amber-600 hover:bg-amber-800"
       />
     </.form>
     """
   end
+
+  defp undo_text("approved"), do: "Undo Approval"
+  defp undo_text("declined"), do: "Undo Refusal"
+  defp undo_text("pending_approval"), do: "Undo"
 
   def action_button(assigns) do
     ~H"""

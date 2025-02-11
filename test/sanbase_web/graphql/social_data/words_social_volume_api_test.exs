@@ -22,7 +22,7 @@ defmodule SanbaseWeb.Graphql.WordsSocialVolumeApiTest do
             "2024-09-29T00:00:00Z" => 487,
             "2024-09-30T00:00:00Z" => 323
           },
-          "eth or nft" => %{
+          "eth OR nft OR 43,400" => %{
             "2024-09-28T00:00:00Z" => 1681,
             "2024-09-29T00:00:00Z" => 3246,
             "2024-09-30T00:00:00Z" => 1577
@@ -37,10 +37,10 @@ defmodule SanbaseWeb.Graphql.WordsSocialVolumeApiTest do
       search_texts =
         body
         |> Jason.decode!()
-        |> Map.get("search_texts")
+        |> Map.get("encoded_search_texts")
 
       # Assert that the words are lowercased before they are sent
-      assert search_texts == "eth or nft,btc"
+      assert search_texts == "eth+OR+nft+OR+43%2C400,btc"
 
       {:ok, resp}
     end)
@@ -48,10 +48,11 @@ defmodule SanbaseWeb.Graphql.WordsSocialVolumeApiTest do
       query = """
       {
         wordsSocialVolume(
-          selector: { words: ["eth OR nft", "btc"] }
+          selector: { words: ["eth OR nft OR 43,400", "btc"] }
           from: "2024-09-28T00:00:00Z"
           to: "2024-09-30T00:00:00Z"
           interval: "1d"
+          treatWordAsLuceneQuery: true
         ){
           word
           timeseriesData{
@@ -84,7 +85,7 @@ defmodule SanbaseWeb.Graphql.WordsSocialVolumeApiTest do
                        %{"datetime" => "2024-09-29T00:00:00Z", "mentionsCount" => 3246},
                        %{"datetime" => "2024-09-30T00:00:00Z", "mentionsCount" => 1577}
                      ],
-                     "word" => "eth OR nft"
+                     "word" => "eth OR nft OR 43,400"
                    }
                  ]
                }
@@ -118,10 +119,10 @@ defmodule SanbaseWeb.Graphql.WordsSocialVolumeApiTest do
       search_texts =
         body
         |> Jason.decode!()
-        |> Map.get("search_texts")
+        |> Map.get("encoded_search_texts")
 
       # Assert that the words are **not** lowercased before they are sent
-      assert search_texts == "eth OR nft,BTC"
+      assert search_texts == "eth+OR+nft,BTC"
 
       {:ok, resp}
     end)

@@ -5,9 +5,14 @@ defmodule Sanbase.Metric.Registry do
   import Ecto.Changeset
   import Sanbase.Metric.Registry.EventEmitter, only: [emit_event: 3]
 
-  alias Sanbase.Repo
   alias __MODULE__.Validation
   alias __MODULE__.ChangeSuggestion
+  alias __MODULE__.Doc
+  alias __MODULE__.Alias
+  alias __MODULE__.Selector
+  alias __MODULE__.Table
+
+  alias Sanbase.Repo
   alias Sanbase.TemplateEngine
 
   # Matches letters, digits, _, -, :, ., {, }, (, ), \, /  and space
@@ -19,74 +24,6 @@ defmodule Sanbase.Metric.Registry do
   def metric_regex(), do: @metric_regex
   @allowed_statuses ["alpha", "beta", "released"]
   def allowed_statuses(), do: @allowed_statuses
-
-  defmodule Selector do
-    use Ecto.Schema
-    import Ecto.Changeset
-
-    @primary_key false
-    embedded_schema do
-      field(:type, :string)
-    end
-
-    def changeset(%__MODULE__{} = struct, attrs) do
-      struct
-      |> cast(attrs, [:type])
-      |> validate_required([:type])
-    end
-  end
-
-  defmodule Table do
-    use Ecto.Schema
-    import Ecto.Changeset
-
-    @primary_key false
-    embedded_schema do
-      field(:name, :string)
-    end
-
-    def changeset(%__MODULE__{} = struct, attrs) do
-      struct
-      |> cast(attrs, [:name])
-      |> validate_required([:name])
-      |> validate_format(:name, ~r/[a-z0-9_\-]/)
-    end
-  end
-
-  defmodule Alias do
-    use Ecto.Schema
-    import Ecto.Changeset
-
-    @primary_key false
-    embedded_schema do
-      field(:name, :string)
-    end
-
-    def changeset(%__MODULE__{} = struct, attrs) do
-      struct
-      |> cast(attrs, [:name])
-      |> validate_required(:name)
-      |> validate_format(:name, Sanbase.Metric.Registry.metric_regex())
-      |> validate_length(:name, min: 3, max: 100)
-    end
-  end
-
-  defmodule Doc do
-    use Ecto.Schema
-    import Ecto.Changeset
-
-    @primary_key false
-    embedded_schema do
-      field(:link, :string)
-    end
-
-    def changeset(%__MODULE__{} = struct, attrs) do
-      struct
-      |> cast(attrs, [:link])
-      |> validate_required([:link])
-      |> validate_format(:link, ~r|https://academy.santiment.net|)
-    end
-  end
 
   @type t :: %__MODULE__{
           id: integer(),
@@ -115,9 +52,26 @@ defmodule Sanbase.Metric.Registry do
           data_type: String.t(),
           docs: [%Doc{}],
           status: String.t(),
+          is_verified: boolean(),
+          sync_status: String.t(),
           inserted_at: DateTime.t(),
           updated_at: DateTime.t()
         }
+
+  # The struct is encoded to JSON when it is being synced to prod
+  # The fields specified in the :except are the ones that should
+  # not be synced.
+  @derive {Jason.Encoder,
+           except: [
+             :__struct__,
+             :__meta__,
+             :id,
+             :inserted_at,
+             :updated_at,
+             :sync_status,
+             :change_suggestions
+           ]}
+
   @timestamps_opts [type: :utc_datetime]
   schema "metric_registry" do
     # How the metric is exposed to external users
@@ -149,10 +103,12 @@ defmodule Sanbase.Metric.Registry do
     field(:is_deprecated, :boolean, default: false)
     field(:hard_deprecate_after, :utc_datetime, default: nil)
     field(:deprecation_note, :string, default: nil)
-
     field(:data_type, :string, default: "timeseries")
 
     field(:status, :string, default: "released")
+    # Sync-related fields
+    field(:is_verified, :boolean)
+    field(:sync_status, :string)
 
     embeds_many(:tables, Table, on_replace: :delete)
     embeds_many(:selectors, Selector, on_replace: :delete)
@@ -184,12 +140,14 @@ defmodule Sanbase.Metric.Registry do
       :is_hidden,
       :is_template,
       :is_timebound,
+      :is_verified,
       :metric,
       :min_interval,
       :sanbase_min_plan,
       :sanapi_min_plan,
       :parameters,
-      :status
+      :status,
+      :sync_status
     ])
     |> cast_embed(:selectors,
       required: false,
@@ -241,6 +199,7 @@ defmodule Sanbase.Metric.Registry do
     |> validate_inclusion(:exposed_environments, ["all", "none", "stage", "prod"])
     |> validate_inclusion(:access, ["free", "restricted"])
     |> validate_change(:min_interval, &Validation.validate_min_interval/2)
+    |> validate_change(:sync_status, &Validation.validate_sync_status/2)
     |> validate_inclusion(:sanbase_min_plan, ["free", "pro", "max"])
     |> validate_inclusion(:sanapi_min_plan, ["free", "pro", "max"])
     |> validate_inclusion(:status, @allowed_statuses)
@@ -251,6 +210,8 @@ defmodule Sanbase.Metric.Registry do
   end
 
   def create(attrs, opts \\ []) do
+    attrs = Map.merge(attrs, %{sync_status: "not_synced", is_verified: false})
+
     %__MODULE__{}
     |> changeset(attrs)
     |> Repo.insert()
@@ -260,6 +221,16 @@ defmodule Sanbase.Metric.Registry do
   def update(%__MODULE__{} = metric_registry, attrs, opts \\ []) do
     metric_registry
     |> changeset(attrs)
+    |> then(fn changeset ->
+      if changeset.changes != %{},
+        do: changeset |> put_change(:sync_status, "not_synced"),
+        else: changeset
+    end)
+    |> then(fn changeset ->
+      if changeset.changes != %{} and attrs[:is_verified] != true,
+        do: changeset |> put_change(:is_verified, false),
+        else: changeset
+    end)
     |> Repo.update()
     |> maybe_emit_event(:update_metric_registry, opts)
   end
@@ -277,7 +248,7 @@ defmodule Sanbase.Metric.Registry do
     end
   end
 
-  def by_name(metric, data_type, fixed_parameters \\ %{}) do
+  def by_name(metric, data_type \\ "timeseries", fixed_parameters \\ %{}) do
     query =
       from(mr in __MODULE__,
         where:
@@ -320,7 +291,17 @@ defmodule Sanbase.Metric.Registry do
   need to be resolved, or aliases need to be applied.
   """
   @spec all() :: [t()]
-  def all(), do: Sanbase.Repo.all(__MODULE__)
+  def all() do
+    query = from(m in __MODULE__, order_by: [asc: m.id])
+
+    Sanbase.Repo.all(query)
+  end
+
+  def by_ids(ids) do
+    query = from(m in __MODULE__, where: m.id in ^ids)
+
+    Sanbase.Repo.all(query)
+  end
 
   @doc ~s"""
   Resolve all the metric registry records.
@@ -347,7 +328,7 @@ defmodule Sanbase.Metric.Registry do
                 :update_metric_registry,
                 :delete_metric_registry
               ] do
-    if Keyword.get(opts, :emit_event?, true) do
+    if Keyword.get(opts, :emit_event, true) do
       emit_event(result, event_type, %{})
     else
       result

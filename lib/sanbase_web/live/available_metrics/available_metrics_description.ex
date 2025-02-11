@@ -50,6 +50,17 @@ defmodule SanbaseWeb.AvailableMetricsDescription do
     """
   end
 
+  def get_popover_text(%{key: "Human Readable Name"} = assigns) do
+    ~H"""
+    <pre>
+    The name of the metric formatted in a way that is suitable for showing
+    in Web UI and in texts shown to end clients. The name is capitalized, underscores
+    are replaced with spaces and other formatting is applied.
+    Example: The human readable name of 'price_usd' is 'USD Price'
+    </pre>
+    """
+  end
+
   def get_popover_text(%{key: "Clickhouse Table"} = assigns) do
     ~H"""
     <pre>
@@ -389,6 +400,45 @@ defmodule SanbaseWeb.AvailableMetricsDescription do
     - `alpha` - The metric is in the alpha phase and is only accessible to alpha users.
     - `beta` - The metric is in the beta phase and is only accessible to beta users.
     - `released` - The metric is released and is accessible to all users.
+    </pre>
+    """
+  end
+
+  def get_popover_text(%{key: "Verified Status"} = assigns) do
+    ~H"""
+    <pre>
+    After a metric is created or updated, it is directly put in an <b>UNVERIFIED</b> state.
+
+    The unverified status requires the changes to be tested. When the changes have been
+    manually tested, someone needs to manually change the status of the metric from
+    <b>UNVERIFIED</b> to <b>VERIFIED</b>, which states that the metric is ready to be deployed from
+    staging to production.
+
+    Only verified metrics can be synced from stage to prod.
+    </pre>
+    """
+  end
+
+  def get_popover_text(%{key: "Exposed Environments"} = assigns) do
+    ~H"""
+    <pre>
+    One of: none, all, stage, prod.
+    Controls on which deployment environment the metric is visible.
+    </pre>
+    """
+  end
+
+  def get_popover_text(%{key: "Sync Status"} = assigns) do
+    ~H"""
+    <pre>
+    Shows whether the current version fo the metric has been deployed to production.
+
+    After a metric is created or updated, it is directly put in a <b>NOT SYNCED</b> state.
+
+    The not synced metrics are put into <b>SYNCED</b> state only after they have been synced
+    to production.
+
+    Only metrics in <b>NOT SYNCED</b> state are deployed from stage to prod.
     </pre>
     """
   end

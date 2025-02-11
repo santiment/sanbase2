@@ -29,7 +29,7 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
       :status,
       :submitted_by
     ])
-    |> validate_required([:metric_registry_id, :changes])
+    |> validate_required([:changes])
     |> validate_inclusion(:status, @statuses)
   end
 
@@ -42,7 +42,7 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
   def by_id(id) do
     case Sanbase.Repo.get(__MODULE__, id) do
       %__MODULE__{} = record -> {:ok, record}
-      nil -> {:error, "Metric Registry Change Suggestion with id #{id} not found"}
+      nil -> {:error, "Metric Registry Change Request with id #{id} not found"}
     end
   end
 
@@ -120,6 +120,15 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
     end
   end
 
+  defp apply_suggestion(
+         %__MODULE__{status: "pending_approval", metric_registry_id: nil} = suggestion
+       ) do
+    changes = decode_changes(suggestion.changes)
+    params = changes_to_changeset_params(%Registry{}, changes)
+
+    Registry.create(params, emit_event: false)
+  end
+
   defp apply_suggestion(%__MODULE__{status: "pending_approval"} = suggestion) do
     with {:ok, metric_registry} <- Registry.by_id(suggestion.metric_registry_id) do
       changes = decode_changes(suggestion.changes)
@@ -138,7 +147,8 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
     params = changes_to_changeset_params(metric_registry, changes)
 
     if Config.module_get(__MODULE__, :debug_applying_changes, false) do
-      changeset = Registry.changeset(metric_registry, params)
+      changeset =
+        Registry.changeset(metric_registry, params)
 
       same_as_applying_patch? =
         Ecto.Changeset.apply_changes(changeset) == ExAudit.Patch.patch(metric_registry, changes)
@@ -153,10 +163,17 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
     # only after the DB changes are commited and not from insite the transaction. If the event
     # is emitted from inside the transaction, the event handler can be invoked before the DB
     # changes are commited and this handler will have no effect.
-    Sanbase.Metric.Registry.update(metric_registry, params, emit_event?: false)
+    Sanbase.Metric.Registry.update(metric_registry, params, emit_event: false)
   end
 
   def create_change_suggestion(%Registry{} = registry, params, notes, submitted_by) do
+    # After change suggestion is applied, put the metric in a unverified state and mark
+    # is as not synced. Someone needs to manually verify the metric after it is tested.
+    # When the data is synced between stage and prod, the sync status will be updated.
+
+    # Convert all keys to strings so we don't get error if atom keys come from some caller
+    params = Map.new(params, fn {k, v} -> {to_string(k), v} end)
+
     case Registry.changeset(registry, params) do
       %{valid?: false} = changeset ->
         {:error, changeset}

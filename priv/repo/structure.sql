@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.1 (Homebrew)
--- Dumped by pg_dump version 15.1 (Homebrew)
+-- Dumped from database version 15.10 (Homebrew)
+-- Dumped by pg_dump version 15.10 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -2343,6 +2343,8 @@ CREATE TABLE public.metric_registry (
     inserted_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
     status character varying(255) DEFAULT 'released'::character varying NOT NULL
+    is_verified boolean DEFAULT true NOT NULL,
+    sync_status character varying(255) DEFAULT 'synced'::character varying NOT NULL
 );
 
 
@@ -2382,6 +2384,39 @@ ALTER SEQUENCE public.metric_registry_change_suggestions_id_seq OWNED BY public.
 
 
 --
+-- Name: metric_registry_changelog; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.metric_registry_changelog (
+    id bigint NOT NULL,
+    metric_registry_id bigint,
+    old text,
+    new text,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: metric_registry_changelog_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.metric_registry_changelog_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: metric_registry_changelog_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.metric_registry_changelog_id_seq OWNED BY public.metric_registry_changelog.id;
+
+
+--
 -- Name: metric_registry_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -2398,6 +2433,42 @@ CREATE SEQUENCE public.metric_registry_id_seq
 --
 
 ALTER SEQUENCE public.metric_registry_id_seq OWNED BY public.metric_registry.id;
+
+
+--
+-- Name: metric_registry_sync_runs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.metric_registry_sync_runs (
+    id bigint NOT NULL,
+    uuid character varying(255),
+    sync_type character varying(255),
+    status character varying(255),
+    content text,
+    actual_changes text,
+    errors text,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: metric_registry_sync_runs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.metric_registry_sync_runs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: metric_registry_sync_runs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.metric_registry_sync_runs_id_seq OWNED BY public.metric_registry_sync_runs.id;
 
 
 --
@@ -5305,6 +5376,20 @@ ALTER TABLE ONLY public.metric_registry_change_suggestions ALTER COLUMN id SET D
 
 
 --
+-- Name: metric_registry_changelog id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metric_registry_changelog ALTER COLUMN id SET DEFAULT nextval('public.metric_registry_changelog_id_seq'::regclass);
+
+
+--
+-- Name: metric_registry_sync_runs id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metric_registry_sync_runs ALTER COLUMN id SET DEFAULT nextval('public.metric_registry_sync_runs_id_seq'::regclass);
+
+
+--
 -- Name: metrics id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6218,11 +6303,27 @@ ALTER TABLE ONLY public.metric_registry_change_suggestions
 
 
 --
+-- Name: metric_registry_changelog metric_registry_changelog_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metric_registry_changelog
+    ADD CONSTRAINT metric_registry_changelog_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: metric_registry metric_registry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.metric_registry
     ADD CONSTRAINT metric_registry_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: metric_registry_sync_runs metric_registry_sync_runs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metric_registry_sync_runs
+    ADD CONSTRAINT metric_registry_sync_runs_pkey PRIMARY KEY (id);
 
 
 --
@@ -7322,10 +7423,24 @@ CREATE INDEX menus_user_id_index ON public.menus USING btree (user_id);
 
 
 --
+-- Name: metric_registry_changelog_metric_registry_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX metric_registry_changelog_metric_registry_id_index ON public.metric_registry_changelog USING btree (metric_registry_id);
+
+
+--
 -- Name: metric_registry_composite_unique_index; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE UNIQUE INDEX metric_registry_composite_unique_index ON public.metric_registry USING btree (metric, data_type, fixed_parameters);
+
+
+--
+-- Name: metric_registry_sync_runs_uuid_sync_type_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX metric_registry_sync_runs_uuid_sync_type_index ON public.metric_registry_sync_runs USING btree (uuid, sync_type);
 
 
 --
@@ -8558,6 +8673,14 @@ ALTER TABLE ONLY public.metric_registry_change_suggestions
 
 
 --
+-- Name: metric_registry_changelog metric_registry_changelog_metric_registry_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metric_registry_changelog
+    ADD CONSTRAINT metric_registry_changelog_metric_registry_id_fkey FOREIGN KEY (metric_registry_id) REFERENCES public.metric_registry(id);
+
+
+--
 -- Name: monitored_twitter_handles monitored_twitter_handles_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -9787,17 +9910,21 @@ INSERT INTO public."schema_migrations" (version) VALUES (20241029080754);
 INSERT INTO public."schema_migrations" (version) VALUES (20241029082533);
 INSERT INTO public."schema_migrations" (version) VALUES (20241029151959);
 INSERT INTO public."schema_migrations" (version) VALUES (20241030141825);
-INSERT INTO public."schema_migrations" (version) VALUES (20241104061632);
 INSERT INTO public."schema_migrations" (version) VALUES (20241104115340);
 INSERT INTO public."schema_migrations" (version) VALUES (20241108112754);
 INSERT INTO public."schema_migrations" (version) VALUES (20241112094924);
 INSERT INTO public."schema_migrations" (version) VALUES (20241114140339);
 INSERT INTO public."schema_migrations" (version) VALUES (20241114141110);
 INSERT INTO public."schema_migrations" (version) VALUES (20241116104556);
+INSERT INTO public."schema_migrations" (version) VALUES (20241121133719);
+INSERT INTO public."schema_migrations" (version) VALUES (20241128113958);
 INSERT INTO public."schema_migrations" (version) VALUES (20241128161315);
 INSERT INTO public."schema_migrations" (version) VALUES (20241202104812);
 INSERT INTO public."schema_migrations" (version) VALUES (20241212054904);
+INSERT INTO public."schema_migrations" (version) VALUES (20250110083203);
 INSERT INTO public."schema_migrations" (version) VALUES (20250121155544);
+INSERT INTO public."schema_migrations" (version) VALUES (20250124152414);
+INSERT INTO public."schema_migrations" (version) VALUES (20250203104426);
 INSERT INTO public."schema_migrations" (version) VALUES (20250207100755);
 INSERT INTO public."schema_migrations" (version) VALUES (20250207134446);
 INSERT INTO public."schema_migrations" (version) VALUES (20250207134654);

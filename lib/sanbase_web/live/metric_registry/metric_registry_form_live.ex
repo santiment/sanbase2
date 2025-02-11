@@ -4,14 +4,24 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
   import SanbaseWeb.CoreComponents
 
   alias Sanbase.Metric.Registry
+  alias Sanbase.Metric.Registry.Permissions
   alias SanbaseWeb.AvailableMetricsComponents
 
   @impl true
   def mount(params, session, socket) do
+    duplicate_metric_registry_id = params["duplicate_metric_registry_id"]
+    live_action = socket.assigns.live_action
+
     {:ok, metric_registry} =
-      case socket.assigns.live_action do
-        :new -> {:ok, %Registry{}}
-        :edit -> Registry.by_id(Map.fetch!(params, "id"))
+      cond do
+        not is_nil(duplicate_metric_registry_id) and live_action == :new ->
+          Registry.by_id(duplicate_metric_registry_id)
+
+        live_action == :new ->
+          {:ok, %Registry{}}
+
+        live_action == :edit ->
+          Registry.by_id(Map.fetch!(params, "id"))
       end
 
     form = metric_registry |> Registry.changeset(%{}) |> to_form()
@@ -19,9 +29,10 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
     {:ok,
      socket
      |> assign(
+       is_duplicate_creation: not is_nil(duplicate_metric_registry_id) and live_action == :new,
+       page_title: page_title(socket.assigns.live_action, metric_registry),
        metric_registry: metric_registry,
-       email: get_email(session),
-       page_title: page_title(socket.assigns.live_action, metric_registry.metric),
+       email: nil,
        form: form,
        save_errors: []
      )}
@@ -31,19 +42,27 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col justify-center w-7/8">
-      <h1 class="text-gray-800 text-2xl">
-        <span :if={@live_action == :edit}>
-          Showing details for <span class="text-blue-700">{@metric_registry.metric}</span>
-        </span>
-        <span :if={@live_action == :new} class="text-blue-700">
+      <div class="text-gray-800 text-2xl">
+        <div :if={@live_action == :edit}>
+          Edit <span class="text-blue-700">{@metric_registry.metric}</span>
+        </div>
+        <div :if={@live_action == :new and @is_duplicate_creation == false} class="text-blue-700">
           Creating a new metric
-        </span>
-      </h1>
+        </div>
+
+        <div :if={@live_action == :new and @is_duplicate_creation == true} class="text-blue-700">
+          Duplicating the metric {@metric_registry.metric}
+        </div>
+        <div :if={@live_action == :new and @is_duplicate_creation == true} class="text-sm">
+          Some of the pre-filled values must be changed
+          so the new metric differs a little bit from the old one.
+        </div>
+      </div>
       <div class="my-4">
         <AvailableMetricsComponents.available_metrics_button
           text="Back to Metric Registry"
           href={~p"/admin2/metric_registry"}
-          icon="hero-arrow-uturn-left"
+          icon="hero-home"
         />
 
         <AvailableMetricsComponents.available_metrics_button
@@ -52,19 +71,18 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
           href={~p"/admin2/metric_registry/show/#{@metric_registry}"}
           icon="hero-arrow-right-circle"
         />
+
+        <AvailableMetricsComponents.available_metrics_button
+          :if={Permissions.can?(:edit, []) and @live_action == :edit}
+          text="Duplicate Metric"
+          href={
+            ~p"/admin2/metric_registry/new?#{%{duplicate_metric_registry_id: @metric_registry.id}}"
+          }
+          icon="hero-document-duplicate"
+        />
       </div>
       <div>
-        <span :if={!!@email}>Submit channges as: <span class="font-bold">{@email}</span></span>
-        <span :if={!@email}>
-          If you want to label your change submission with your email,
-          <.link
-            class="text-blue-500 underline"
-            href={SanbaseWeb.Endpoint.frontend_url()}
-            target="_blank"
-          >
-            login to Sanbase!
-          </.link>
-        </span>
+        <span :if={@email}>Submit channges as: <span class="font-bold">{@email}</span></span>
       </div>
       <.simple_form id="metric_registry_form" for={@form} phx-change="validate" phx-submit="save">
         <.input type="text" id="input-metric" field={@form[:metric]} label="Metric" />
@@ -157,7 +175,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
         <.deprecation_input form={@form} />
         <div class="border border-gray-200 rounded-lg px-3 py-6 flex-row space-y-5">
           <span class="text-sm font-semibold leading-6 text-zinc-800">
-            Extra Change Suggestion details
+            Extra Change Request details
           </span>
 
           <.input
@@ -173,7 +191,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
             name="submitted_by"
             value={@email}
           />
-          <.button phx-disable-with="Submitting...">Submit Change Suggestion</.button>
+          <.button phx-disable-with="Submitting...">Submit Change Request</.button>
         </div>
         <.error :for={{field, [reason]} <- @save_errors}>
           {to_string(field) <> ": " <> inspect(reason)}
@@ -381,19 +399,28 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
     """
   end
 
-  def handle_event("save", %{"registry" => params}, socket)
+  def handle_event(
+        "save",
+        %{"registry" => params, "notes" => notes, "submitted_by" => submitted_by},
+        socket
+      )
       when socket.assigns.live_action == :new do
     case socket.assigns.form.errors do
       [] ->
         params = process_params(params)
 
-        case Sanbase.Metric.Registry.create(params) do
-          {:ok, struct} ->
+        case Registry.ChangeSuggestion.create_change_suggestion(
+               %Registry{id: nil},
+               params,
+               notes,
+               submitted_by
+             ) do
+          {:ok, _change_suggestion} ->
             {:noreply,
              socket
              |> assign(save_errors: [])
-             |> put_flash(:info, "Metric registry created")
-             |> push_navigate(to: ~p"/admin2/metric_registry/show/#{struct}")}
+             |> put_flash(:info, "Metric registry change request created")
+             |> push_navigate(to: ~p"/admin2/metric_registry/change_suggestions/")}
 
           {:error, error} ->
             errors = Sanbase.Utils.ErrorHandling.changeset_errors(error)
@@ -501,19 +528,6 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
 
   defp maybe_update_if_present(params, _), do: params
 
-  defp page_title(:new, _), do: "Creating a new metric"
-  defp page_title(:edit, metric), do: "#{metric} | Edit metric"
-
-  # Get the email from the refresh token. The access token expires more quick
-  # and we don't need to refresh it from here. We only need to get the email
-  # of the santiment user in order to prefill some column showing who submits the
-  # suggestion
-  defp get_email(%{"refresh_token" => token}) when is_binary(token) do
-    case SanbaseWeb.Guardian.resource_from_token(token) do
-      {:ok, %{email: email}, _token_claims} when is_binary(email) -> email
-      _ -> nil
-    end
-  end
-
-  defp get_email(_), do: nil
+  defp page_title(:new, _metric_registry), do: "Metric Registry | Create New Record"
+  defp page_title(:edit, metric_registry), do: "Metric Registry | Edit #{metric_registry.metric}"
 end

@@ -216,6 +216,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     )
   end
 
+  def available_founders(%Project{slug: slug}, _args, %{context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(SanbaseDataloader, :available_founders_per_slug, slug)
+    |> on_load(fn loader ->
+      founders =
+        loader
+        |> Dataloader.get(SanbaseDataloader, :available_founders_per_slug, slug)
+
+      {:ok, founders}
+    end)
+  end
+
   # Private functions
 
   defp trending_projects() do

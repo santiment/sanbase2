@@ -334,6 +334,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       )
     end
 
+    field :available_founders, list_of(:string) do
+      cache_resolve(&ProjectResolver.available_founders/3, ttl: 600)
+    end
+
     field(:id, non_null(:id))
     field(:name, non_null(:string))
     field(:slug, :string)

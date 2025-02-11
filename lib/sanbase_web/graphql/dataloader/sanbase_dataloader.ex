@@ -53,8 +53,6 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     :short_urls_comments_count,
     :timeline_events_comments_count,
     :watchlist_comments_count,
-    # Users
-    :users_by_id,
     # Votes
     :chart_configuration_vote_stats,
     :chart_configuration_voted_at,
@@ -78,7 +76,11 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     :market_segment,
     :project_by_slug,
     :traded_on_exchanges_count,
-    :traded_on_exchanges
+    :traded_on_exchanges,
+    # Users
+    :users_by_id,
+    # Founders
+    :available_founders_per_slug
   ]
 
   @postgres_dataloader @postgres_dataloader ++ @postgres_comments_dataloader

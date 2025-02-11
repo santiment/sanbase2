@@ -327,7 +327,7 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
 
       {:ok, metric} = Sanbase.Metric.Registry.by_name("price_usd_5m", "timeseries")
       {:ok, _} = Sanbase.Metric.Registry.update(metric, %{status: "beta"})
-      true = Sanbase.Clickhouse.MetricAdapter.Registry.refresh_stored_terms()
+      Sanbase.Metric.Registry.refresh_stored_terms()
 
       Sanbase.Mock.prepare_mock2(
         &Sanbase.ClickhouseRepo.query/2,
@@ -350,7 +350,7 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
 
       {:ok, metric} = Sanbase.Metric.Registry.by_name("price_usd_5m", "timeseries")
       {:ok, _} = Sanbase.Metric.Registry.update(metric, %{status: "beta"})
-      true = Sanbase.Clickhouse.MetricAdapter.Registry.refresh_stored_terms()
+      Sanbase.Metric.Registry.refresh_stored_terms()
 
       Sanbase.Mock.prepare_mock2(
         &Sanbase.ClickhouseRepo.query/2,
@@ -373,7 +373,7 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
 
       {:ok, metric} = Sanbase.Metric.Registry.by_name("price_usd_5m", "timeseries")
       {:ok, _} = Sanbase.Metric.Registry.update(metric, %{status: "beta"})
-      true = Sanbase.Clickhouse.MetricAdapter.Registry.refresh_stored_terms()
+      Sanbase.Metric.Registry.refresh_stored_terms()
 
       result =
         conn
@@ -398,7 +398,7 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
 
       {:ok, metric} = Sanbase.Metric.Registry.by_name("price_usd_5m", "timeseries")
       {:ok, _} = Sanbase.Metric.Registry.update(metric, %{status: "alpha"})
-      true = Sanbase.Clickhouse.MetricAdapter.Registry.refresh_stored_terms()
+      Sanbase.Metric.Registry.refresh_stored_terms()
 
       result =
         conn
@@ -423,7 +423,7 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
 
       {:ok, metric} = Sanbase.Metric.Registry.by_name("price_usd_5m", "timeseries")
       {:ok, _} = Sanbase.Metric.Registry.update(metric, %{status: "released"})
-      true = Sanbase.Clickhouse.MetricAdapter.Registry.refresh_stored_terms()
+      Sanbase.Metric.Registry.refresh_stored_terms()
 
       Sanbase.Mock.prepare_mock2(
         &Sanbase.ClickhouseRepo.query/2,
@@ -446,7 +446,7 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
 
       {:ok, metric} = Sanbase.Metric.Registry.by_name("price_usd_5m", "timeseries")
       {:ok, _} = Sanbase.Metric.Registry.update(metric, %{status: "alpha"})
-      true = Sanbase.Clickhouse.MetricAdapter.Registry.refresh_stored_terms()
+      Sanbase.Metric.Registry.refresh_stored_terms()
 
       Sanbase.Mock.prepare_mock2(
         &Sanbase.ClickhouseRepo.query/2,

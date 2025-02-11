@@ -519,6 +519,11 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     last datetime that the user has access to.
     """
     field(:restricted_to, :datetime)
+
+    @desc ~s"""
+    The status of the metric.
+    """
+    field(:status, :string)
   end
 
   object :metric do

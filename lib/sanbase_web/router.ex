@@ -71,6 +71,7 @@ defmodule SanbaseWeb.Router do
 
     live "/notifications/manual/discord", NotificationsLive.ManualDiscordFormLive
     live "/notifications/manual/email", NotificationsLive.ManualEmailFormLive
+    live "/notifications/digest/:action", NotificationsLive.DigestFormLive
 
     resources("/reports", ReportController)
     resources("/sheets_templates", SheetsTemplateController)

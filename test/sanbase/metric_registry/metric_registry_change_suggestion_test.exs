@@ -1,4 +1,4 @@
-defmodule Sanbase.MetricRegisty.ChangeSuggestionTest do
+defmodule Sanbase.MetricRegisty.MetricRegistryChangeSuggestionTest do
   use Sanbase.DataCase
 
   alias Sanbase.Metric.Registry

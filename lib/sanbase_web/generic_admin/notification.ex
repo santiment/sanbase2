@@ -25,6 +25,14 @@ defmodule SanbaseWeb.GenericAdmin.Notification do
         %{
           name: "Manual Email Notification",
           path: ~p"/admin2/notifications/manual/email"
+        },
+        %{
+          name: "Metric Created Email Digest",
+          path: ~p"/admin2/notifications/digest/metric_created"
+        },
+        %{
+          name: "Metric Deleted Email Digest",
+          path: ~p"/admin2/notifications/digest/metric_deleted"
         }
       ],
       fields_override: %{

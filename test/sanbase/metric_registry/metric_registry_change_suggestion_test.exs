@@ -87,7 +87,7 @@ defmodule Sanbase.MetricRegisty.MetricRegistryChangeSuggestionTest do
     assert metric.deprecation_note == nil
   end
 
-  test "change parameters" do
+  test "change parameters - 1" do
     assert {:ok, metric} = Registry.by_name("mvrv_usd_{{timebound}}")
 
     params = %{
@@ -114,6 +114,86 @@ defmodule Sanbase.MetricRegisty.MetricRegistryChangeSuggestionTest do
     assert {:ok, metric} = Registry.by_name("mvrv_usd_{{timebound}}")
 
     assert metric.parameters == params["parameters"]
+  end
+
+  test "change parameters - 2" do
+    assert {:ok, metric} = Registry.by_name("mvrv_usd_{{timebound}}")
+
+    params = %{
+      "parameters" => metric.parameters |> List.delete_at(0)
+    }
+
+    assert {:ok, struct} =
+             ChangeSuggestion.create_change_suggestion(metric, params, "Testing purposes", "")
+
+    assert {:ok, _} = ChangeSuggestion.update_status(struct.id, "approved")
+
+    assert {:ok, metric} = Registry.by_name("mvrv_usd_{{timebound}}")
+
+    assert metric.parameters == params["parameters"]
+  end
+
+  test "change parameters - 3" do
+    assert {:ok, metric} = Registry.by_name("mvrv_usd_{{timebound}}")
+
+    params = %{
+      "parameters" => metric.parameters |> List.insert_at(2, %{"timebound" => "22d"})
+    }
+
+    assert {:ok, struct} =
+             ChangeSuggestion.create_change_suggestion(metric, params, "Testing purposes", "")
+
+    assert {:ok, _} = ChangeSuggestion.update_status(struct.id, "approved")
+
+    assert {:ok, metric} = Registry.by_name("mvrv_usd_{{timebound}}")
+
+    assert metric.parameters == params["parameters"]
+  end
+
+  test "change parameters - 4" do
+    assert {:ok, metric} = Registry.by_name("mvrv_usd_{{timebound}}")
+
+    # Swap the first 2 params
+    params = %{
+      "parameters" =>
+        metric.parameters
+        |> List.replace_at(1, Enum.at(metric.parameters, 0))
+        |> List.replace_at(0, Enum.at(metric.parameters, 1))
+    }
+
+    assert {:ok, struct} =
+             ChangeSuggestion.create_change_suggestion(metric, params, "Testing purposes", "")
+
+    assert {:ok, _} = ChangeSuggestion.update_status(struct.id, "approved")
+
+    assert {:ok, metric} = Registry.by_name("mvrv_usd_{{timebound}}")
+
+    assert metric.parameters == params["parameters"]
+  end
+
+  test "change parameters - 5" do
+    assert {:ok, metric} = Registry.by_name("mvrv_usd_{{timebound}}")
+
+    # Swap the first 2 params
+    params = %{"parameters" => []}
+
+    assert {:error, %Ecto.Changeset{valid?: false, errors: [parameters: {params_error, _}]}} =
+             ChangeSuggestion.create_change_suggestion(metric, params, "Testing purposes", "")
+
+    assert params_error =~ "metric is labeled as template"
+    assert params_error =~ "parameters cannot be empty"
+  end
+
+  test "change parameters - 6" do
+    assert {:ok, metric} = Registry.by_name("mvrv_usd_{{timebound}}")
+
+    # Swap the first 2 params
+    params = %{"parameters" => metric.parameters |> List.insert_at(0, %{"mistyped_key" => "2y"})}
+
+    assert {:error, %Ecto.Changeset{valid?: false, errors: [parameters: {params_error, _}]}} =
+             ChangeSuggestion.create_change_suggestion(metric, params, "Testing purposes", "")
+
+    assert params_error =~ "provided parameters do not match the captures"
   end
 
   defp changes() do

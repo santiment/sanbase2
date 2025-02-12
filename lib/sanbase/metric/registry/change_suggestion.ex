@@ -228,21 +228,36 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
   end
 
   defp list_change(current_value_list, changes_list) when is_list(changes_list) do
-    Enum.reduce(changes_list, current_value_list, fn
-      {:added_to_list, pos, value}, acc ->
-        List.insert_at(acc, pos, value)
+    ExAudit.Patch.patch(current_value_list, changes_list)
+    |> embeds_to_maps()
 
-      {:removed_from_list, pos, _value}, acc ->
-        List.delete_at(acc, pos)
+    # The old implementation. Remove at a later stage if no issues are discovered using ExAudit.Patch
+    # changes_list
+    # |> Enum.reduce(current_value_list, fn change_op, acc ->
+    #   case change_op do
+    #     {:added_to_list, pos, value} ->
+    #       List.insert_at(acc, pos, value)
+    #
+    #     {:removed_from_list, pos, _value} ->
+    #       # If we list like [1,2,3] and operations {:removed_from_list, 1, _}, {:removed_from_list, 2, _}
+    #       # by the time we execute the second removal, the list will be with reduced size, so the
+    #       # element won't be removed as there will be no element at position 2
+    #       List.replace_at(acc, pos, :__deleted__)
+    #
+    #     {:changed_in_list, pos, map} ->
+    #       [{embedded_schema_key, {:changed, {:primitive_change, _old, new}}}] = Map.to_list(map)
+    #       List.update_at(acc, pos, &Map.put(&1, embedded_schema_key, new))
+    #   end
+    # end)
+    # |> Enum.reject(&(&1 == :__deleted__))
+  end
 
-      {:changed_in_list, pos, map}, acc ->
-        [{embedded_schema_key, {:changed, {:primitive_change, _old, new}}}] = Keyword.new(map)
-
-        List.update_at(acc, pos, fn embed ->
-          Map.put(embed, embedded_schema_key, new)
-        end)
-    end)
+  defp embeds_to_maps(list) do
     # In changesets the embeds must be maps, not structs
-    |> Enum.map(&Map.from_struct/1)
+    list
+    |> Enum.map(fn
+      struct when is_struct(struct) -> Map.from_struct(struct)
+      map when is_map(map) -> map
+    end)
   end
 end

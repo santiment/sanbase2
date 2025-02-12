@@ -87,6 +87,35 @@ defmodule Sanbase.MetricRegisty.MetricRegistryChangeSuggestionTest do
     assert metric.deprecation_note == nil
   end
 
+  test "change parameters" do
+    assert {:ok, metric} = Registry.by_name("mvrv_usd_{{timebound}}")
+
+    params = %{
+      "parameters" => [
+        %{"timebound" => "1y"},
+        %{"timebound" => "2y"},
+        %{"timebound" => "3y"},
+        %{"timebound" => "5y"},
+        %{"timebound" => "7y"},
+        %{"timebound" => "10y"}
+      ]
+    }
+
+    assert {:ok, struct} =
+             ChangeSuggestion.create_change_suggestion(
+               metric,
+               params,
+               _note = "Testing purposes",
+               _submitted_by = ""
+             )
+
+    assert {:ok, _} = ChangeSuggestion.update_status(struct.id, "approved")
+
+    assert {:ok, metric} = Registry.by_name("mvrv_usd_{{timebound}}")
+
+    assert metric.parameters == params["parameters"]
+  end
+
   defp changes() do
     %{
       tables: [%{name: "new_intraday_table"}],

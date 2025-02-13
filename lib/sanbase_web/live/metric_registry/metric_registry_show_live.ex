@@ -43,7 +43,7 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
         />
 
         <AvailableMetricsComponents.available_metrics_button
-          :if={Permissions.can?(:edit, [])}
+          :if={Permissions.can?(:see_history, [])}
           text="History"
           href={~p"/admin2/metric_registry/history/#{@metric_registry}"}
           icon="hero-calendar-days"

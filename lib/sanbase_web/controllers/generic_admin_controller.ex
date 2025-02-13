@@ -12,7 +12,9 @@ defmodule SanbaseWeb.GenericAdminController do
   end
 
   def all_routes do
-    (resources_to_routes() ++ custom_routes()) |> Enum.sort()
+    sorted_routes = (resources_to_routes() ++ custom_routes()) |> Enum.sort()
+    # So authenticate can be on the top
+    [{"Authenticate", ~p"/admin2/authenticate"}] ++ sorted_routes
   end
 
   def all_routes(conn) do

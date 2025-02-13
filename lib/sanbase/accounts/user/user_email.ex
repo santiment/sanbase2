@@ -129,6 +129,12 @@ defmodule Sanbase.Accounts.User.Email do
   def send_login_email(user, first_login, [_, "santiment", "net"] = origin_host_parts, args),
     do: do_send_login_email(user, first_login, origin_host_parts, args)
 
+  def send_login_email(user, first_login, [_, "stage", "san"] = origin_host_parts, args),
+    do: do_send_login_email(user, first_login, origin_host_parts, args)
+
+  def send_login_email(user, first_login, [_, "production", "san"] = origin_host_parts, args),
+    do: do_send_login_email(user, first_login, origin_host_parts, args)
+
   def send_verify_email(user) do
     verify_link = SanbaseWeb.Endpoint.verify_url(user.email_candidate_token, user.email_candidate)
     template = Sanbase.Email.Template.verification_email_template()

@@ -61,6 +61,7 @@ defmodule SanbaseWeb.Router do
     pipe_through([:admin_pod_only, :browser, :basic_auth, :admin2])
     import Phoenix.LiveDashboard.Router
 
+    live("/authenticate", AdminAuthenticateLive)
     live_dashboard("/dashboard", metrics: SanbaseWeb.Telemetry, ecto_repos: [Sanbase.Repo])
     live("/admin_forms", AdminFormsLive)
     live("/monitored_twitter_handle_live", MonitoredTwitterHandleLive)

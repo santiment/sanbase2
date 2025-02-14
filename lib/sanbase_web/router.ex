@@ -37,6 +37,10 @@ defmodule SanbaseWeb.Router do
     plug(SanbaseWeb.Plug.BotLoginPlug)
   end
 
+  pipeline :admin_email_auth do
+    plug(SanbaseWeb.Plug.AdminEmailAuth)
+  end
+
   pipeline :admin2 do
     plug(SanbaseWeb.GenericAdminAssignRoutes)
     plug(:put_layout, html: {SanbaseWeb.Layouts, :admin2})
@@ -55,6 +59,10 @@ defmodule SanbaseWeb.Router do
     live("/", FormsLive)
     live("/suggest_ecosystems", SuggestEcosystemLabelsChangeLive)
     live("/suggest_github_organizations", SuggestGithubOrganizationsLive)
+  end
+
+  scope "/admin_auth", SanbaseWeb do
+    pipe_through([:admin_pod_only, :browser, :admin_email_auth])
   end
 
   scope "/admin2", SanbaseWeb do

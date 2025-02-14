@@ -134,6 +134,16 @@ defmodule SanbaseWeb.Endpoint do
     backend_url() <> "/graphql"
   end
 
+  def admin_url() do
+    {domain, port} =
+      case System.get_env("SANTIMENT_ROOT_DOMAIN") do
+        nil -> {"localhost", System.get_env("PORT", "4000")}
+        domain -> {domain, System.get_env("SANTIMENT_ADMIN_VPN_SERVICE_PORT", "31080")}
+      end
+
+    "http://#{domain}:#{port}"
+  end
+
   def verify_url(email_candidate_token, email_candidate) do
     frontend_url() <>
       "/verify_email?" <>

@@ -96,6 +96,21 @@ defmodule Sanbase.Metric do
     Registry.hidden_metrics_mapset()
   end
 
+  @spec experimental_metrics() :: MapSet.t()
+  def experimental_metrics() do
+    Registry.alpha_metrics() |> MapSet.union(Registry.beta_metrics())
+  end
+
+  @spec alpha_metrics() :: MapSet.t()
+  def alpha_metrics() do
+    Registry.alpha_metrics()
+  end
+
+  @spec beta_metrics() :: MapSet.t()
+  def beta_metrics() do
+    Registry.beta_metrics()
+  end
+
   @doc ~s"""
   Check if a metric has incomplete data.
 

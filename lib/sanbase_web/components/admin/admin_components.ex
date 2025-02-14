@@ -107,7 +107,7 @@ defmodule SanbaseWeb.AdminComponents do
         ""
       else
         case Map.get(assigns.field_type_map, assigns.field) do
-          map_or_list when map_or_list in [:map, :list] ->
+          map_or_list when map_or_list in [:map, :list, {:array, :string}] ->
             Map.get(assigns.changeset.data, assigns.field) |> Jason.encode!()
 
           _ ->
@@ -134,6 +134,7 @@ defmodule SanbaseWeb.AdminComponents do
         :assoc -> "text"
         :binary -> "text"
         :any -> "text"
+        {:array, :string} -> "text"
         _ -> "text"
       end
 

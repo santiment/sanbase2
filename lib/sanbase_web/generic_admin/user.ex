@@ -9,9 +9,27 @@ defmodule SanbaseWeb.GenericAdmin.User do
   def resource do
     %{
       actions: [:edit, :delete],
-      index_fields: [:id, :username, :email, :twitter_id, :is_superuser, :san_balance],
-      edit_fields: [:is_superuser, :test_san_balance, :email, :stripe_customer_id],
+      index_fields: [
+        :id,
+        :username,
+        :email,
+        :twitter_id,
+        :is_superuser,
+        :san_balance,
+        :metric_access_level
+      ],
+      edit_fields: [
+        :is_superuser,
+        :test_san_balance,
+        :email,
+        :stripe_customer_id,
+        :metric_access_level
+      ],
       fields_override: %{
+        metric_access_level: %{
+          type: :select,
+          collection: ~w[alpha beta released]
+        },
         stripe_customer_id: %{
           value_modifier: fn user ->
             case user.stripe_customer_id do

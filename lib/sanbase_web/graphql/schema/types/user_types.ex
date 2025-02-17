@@ -336,6 +336,8 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field(:docs, list_of(:docs_object))
     field(:available_selectors, list_of(:selector_name))
     field(:required_selectors, list_of(list_of(:selector_name)))
+    # only metrics have status, for queries and signals it is nil
+    field(:status, :string)
   end
 
   object :api_call_data do

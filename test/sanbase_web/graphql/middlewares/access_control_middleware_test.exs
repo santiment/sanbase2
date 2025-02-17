@@ -283,4 +283,184 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
              If you already have Sanbase Pro, please make sure that a correct API key is provided.
              """
   end
+
+  describe "free experimental metrics access" do
+    setup do
+      project = insert(:random_erc20_project)
+      from = Timex.shift(Timex.now(), days: -10)
+      to = Timex.now()
+
+      result = %{
+        rows: [
+          [DateTime.to_unix(from), 100],
+          [DateTime.to_unix(to), 150]
+        ]
+      }
+
+      query = fn metric_name ->
+        """
+        {
+          getMetric(metric: "#{metric_name}") {
+            timeseriesData(
+              slug: "#{project.slug}",
+              from: "#{from}",
+              to: "#{to}",
+              interval: "1d") {
+              datetime
+              value
+            }
+          }
+        }
+        """
+      end
+
+      [
+        project: project,
+        query: query,
+        mock_result: result
+      ]
+    end
+
+    test "beta metric can be accessed by alpha user", context do
+      alpha_user = insert(:user, metric_access_level: "alpha")
+      conn = setup_jwt_auth(build_conn(), alpha_user)
+
+      {:ok, metric} = Sanbase.Metric.Registry.by_name("price_usd_5m", "timeseries")
+      {:ok, _} = Sanbase.Metric.Registry.update(metric, %{status: "beta"})
+      Sanbase.Metric.Registry.refresh_stored_terms()
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.ClickhouseRepo.query/2,
+        {:ok, context.mock_result}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          conn
+          |> post("/graphql", query_skeleton(context.query.("price_usd_5m")))
+          |> json_response(200)
+
+        assert Map.has_key?(result, "data")
+        refute Map.has_key?(result, "errors")
+      end)
+    end
+
+    test "beta metric can be accessed by beta user", context do
+      beta_user = insert(:user, metric_access_level: "beta")
+      conn = setup_jwt_auth(build_conn(), beta_user)
+
+      {:ok, metric} = Sanbase.Metric.Registry.by_name("price_usd_5m", "timeseries")
+      {:ok, _} = Sanbase.Metric.Registry.update(metric, %{status: "beta"})
+      Sanbase.Metric.Registry.refresh_stored_terms()
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.ClickhouseRepo.query/2,
+        {:ok, context.mock_result}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          conn
+          |> post("/graphql", query_skeleton(context.query.("price_usd_5m")))
+          |> json_response(200)
+
+        assert Map.has_key?(result, "data")
+        refute Map.has_key?(result, "errors")
+      end)
+    end
+
+    test "beta metric cannot be accessed by regular user", context do
+      regular_user = insert(:user, metric_access_level: "released")
+      conn = setup_jwt_auth(build_conn(), regular_user)
+
+      {:ok, metric} = Sanbase.Metric.Registry.by_name("price_usd_5m", "timeseries")
+      {:ok, _} = Sanbase.Metric.Registry.update(metric, %{status: "beta"})
+      Sanbase.Metric.Registry.refresh_stored_terms()
+
+      result =
+        conn
+        |> post("/graphql", query_skeleton(context.query.("price_usd_5m")))
+        |> json_response(200)
+
+      assert %{
+               "errors" => [
+                 %{
+                   "message" => error_message
+                 }
+               ]
+             } = result
+
+      assert error_message ==
+               "The metric price_usd_5m is currently in beta phase and is exclusively available to alpha and beta users."
+    end
+
+    test "alpha metric cannot be accessed by beta user", context do
+      beta_user = insert(:user, metric_access_level: "beta")
+      conn = setup_jwt_auth(build_conn(), beta_user)
+
+      {:ok, metric} = Sanbase.Metric.Registry.by_name("price_usd_5m", "timeseries")
+      {:ok, _} = Sanbase.Metric.Registry.update(metric, %{status: "alpha"})
+      Sanbase.Metric.Registry.refresh_stored_terms()
+
+      result =
+        conn
+        |> post("/graphql", query_skeleton(context.query.("price_usd_5m")))
+        |> json_response(200)
+
+      assert %{
+               "errors" => [
+                 %{
+                   "message" => error_message
+                 }
+               ]
+             } = result
+
+      assert error_message ==
+               "The metric price_usd_5m is currently in alpha phase and is exclusively available to alpha users."
+    end
+
+    test "released free metrics can be accessed by any user", context do
+      regular_user = insert(:user, metric_access_level: "released")
+      conn = setup_jwt_auth(build_conn(), regular_user)
+
+      {:ok, metric} = Sanbase.Metric.Registry.by_name("price_usd_5m", "timeseries")
+      {:ok, _} = Sanbase.Metric.Registry.update(metric, %{status: "released"})
+      Sanbase.Metric.Registry.refresh_stored_terms()
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.ClickhouseRepo.query/2,
+        {:ok, context.mock_result}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          conn
+          |> post("/graphql", query_skeleton(context.query.("price_usd_5m")))
+          |> json_response(200)
+
+        assert Map.has_key?(result, "data")
+        refute Map.has_key?(result, "errors")
+      end)
+    end
+
+    test "alpha metric can be accessed by alpha user", context do
+      alpha_user = insert(:user, metric_access_level: "alpha")
+      conn = setup_jwt_auth(build_conn(), alpha_user)
+
+      {:ok, metric} = Sanbase.Metric.Registry.by_name("price_usd_5m", "timeseries")
+      {:ok, _} = Sanbase.Metric.Registry.update(metric, %{status: "alpha"})
+      Sanbase.Metric.Registry.refresh_stored_terms()
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.ClickhouseRepo.query/2,
+        {:ok, context.mock_result}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          conn
+          |> post("/graphql", query_skeleton(context.query.("price_usd_5m")))
+          |> json_response(200)
+
+        assert Map.has_key?(result, "data")
+        refute Map.has_key?(result, "errors")
+      end)
+    end
+  end
 end

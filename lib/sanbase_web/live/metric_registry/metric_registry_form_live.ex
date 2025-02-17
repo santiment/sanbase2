@@ -158,6 +158,13 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
           options={[true, false]}
         />
         <.input
+          type="select"
+          id="input-status"
+          field={@form[:status]}
+          label="Status"
+          options={Registry.allowed_statuses()}
+        />
+        <.input
           type="textarea"
           id="input-parameters"
           field={@form[:parameters]}

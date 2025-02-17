@@ -390,6 +390,20 @@ defmodule SanbaseWeb.AvailableMetricsDescription do
     """
   end
 
+  def get_popover_text(%{key: "Status"} = assigns) do
+    ~H"""
+    <pre>
+    The status controls the access level of the metric according to user `metric_access_level`.
+    The access control according to subscription plans is done separately.
+
+    The status can be one of the following:
+    - `alpha` - The metric is in the alpha phase and is only accessible to alpha users.
+    - `beta` - The metric is in the beta phase and is only accessible to beta users.
+    - `released` - The metric is released and is accessible to all users.
+    </pre>
+    """
+  end
+
   def get_popover_text(%{key: "Verified Status"} = assigns) do
     ~H"""
     <pre>

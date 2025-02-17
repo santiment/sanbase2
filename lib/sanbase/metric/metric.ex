@@ -96,6 +96,21 @@ defmodule Sanbase.Metric do
     Registry.hidden_metrics_mapset()
   end
 
+  @spec experimental_metrics() :: MapSet.t()
+  def experimental_metrics() do
+    Registry.alpha_metrics() |> MapSet.union(Registry.beta_metrics())
+  end
+
+  @spec alpha_metrics() :: MapSet.t()
+  def alpha_metrics() do
+    Registry.alpha_metrics()
+  end
+
+  @spec beta_metrics() :: MapSet.t()
+  def beta_metrics() do
+    Registry.beta_metrics()
+  end
+
   @doc ~s"""
   Check if a metric has incomplete data.
 
@@ -597,9 +612,11 @@ defmodule Sanbase.Metric do
   The available metrics list is the combination of the available metrics lists
   of every metric module.
   """
-  @spec available_metrics_for_selector(any) :: available_metrics_with_nocache_result
+  @spec available_metrics_for_selector(any, Keyword.t()) :: available_metrics_with_nocache_result
 
-  def available_metrics_for_selector(%{address: _address}) do
+  def available_metrics_for_selector(selector, opts \\ [])
+
+  def available_metrics_for_selector(%{address: _address}, _opts) do
     hidden = hidden_metrics()
 
     metrics =
@@ -611,15 +628,20 @@ defmodule Sanbase.Metric do
     {:ok, metrics}
   end
 
-  def available_metrics_for_selector(selector) do
+  def available_metrics_for_selector(selector, opts) do
+    user_metric_access_level = Keyword.get(opts, :user_metric_access_level, "released")
     parallel_opts = [ordered: false, max_concurrency: 8, timeout: 60_000]
 
     parallel_fun = fn module ->
       cache_key =
-        {__MODULE__, :available_metrics_for_selector_in_module, module, selector}
+        {__MODULE__, :available_metrics_for_selector_in_module, module, selector,
+         user_metric_access_level}
         |> Sanbase.Cache.hash()
 
-      Sanbase.Cache.get_or_store(cache_key, fn -> module.available_metrics(selector) end)
+      Sanbase.Cache.get_or_store(cache_key, fn ->
+        module.available_metrics(selector)
+        |> maybe_remove_experimental_metrics(user_metric_access_level)
+      end)
     end
 
     metrics_in_modules =
@@ -632,12 +654,13 @@ defmodule Sanbase.Metric do
   Get the available timeseries metrics for a given slug.
   The result is a subset of available_metrics_for_slug/1
   """
-  @spec available_timeseries_metrics_for_slug(any) :: available_metrics_with_nocache_result
-  def available_timeseries_metrics_for_slug(selector) do
+  @spec available_timeseries_metrics_for_slug(any, Keyword.t()) ::
+          available_metrics_with_nocache_result
+  def available_timeseries_metrics_for_slug(selector, opts \\ []) do
     available_metrics =
       Sanbase.Cache.get_or_store(
         {__MODULE__, :available_metrics_for_slug, selector} |> Sanbase.Cache.hash(),
-        fn -> available_metrics_for_selector(selector) end
+        fn -> available_metrics_for_selector(selector, opts) end
       )
 
     case available_metrics do
@@ -653,12 +676,13 @@ defmodule Sanbase.Metric do
   Get the available histogram metrics for a given slug.
   The result is a subset of available_metrics_for_slug/1
   """
-  @spec available_histogram_metrics_for_slug(any) :: available_metrics_with_nocache_result
-  def available_histogram_metrics_for_slug(selector) do
+  @spec available_histogram_metrics_for_slug(any, Keyword.t()) ::
+          available_metrics_with_nocache_result
+  def available_histogram_metrics_for_slug(selector, opts \\ []) do
     available_metrics =
       Sanbase.Cache.get_or_store(
         {__MODULE__, :available_metrics_for_slug, selector} |> Sanbase.Cache.hash(),
-        fn -> available_metrics_for_selector(selector) end
+        fn -> available_metrics_for_selector(selector, opts) end
       )
 
     case available_metrics do
@@ -674,12 +698,13 @@ defmodule Sanbase.Metric do
   Get the available table metrics for a given slug.
   The result is a subset of available_metrics_for_slug/1
   """
-  @spec available_table_metrics_for_slug(any) :: available_metrics_with_nocache_result
-  def available_table_metrics_for_slug(selector) do
+  @spec available_table_metrics_for_slug(any, Keyword.t()) ::
+          available_metrics_with_nocache_result
+  def available_table_metrics_for_slug(selector, opts \\ []) do
     available_metrics =
       Sanbase.Cache.get_or_store(
         {__MODULE__, :available_metrics_for_slug, selector} |> Sanbase.Cache.hash(),
-        fn -> available_metrics_for_selector(selector) end
+        fn -> available_metrics_for_selector(selector, opts) end
       )
 
     case available_metrics do
@@ -981,12 +1006,18 @@ defmodule Sanbase.Metric do
   defp extend_metadata(metadata, metric) do
     hard_deprecate_after = Map.get(Helper.deprecated_metrics_map(), metric)
     is_soft_deprecated = Map.get(Helper.soft_deprecated_metrics_map(), metric)
-
     is_deprecated = is_struct(hard_deprecate_after, DateTime) or is_soft_deprecated
+
+    status =
+      case Sanbase.Clickhouse.MetricAdapter.Registry.by_name(metric) do
+        %{status: status} -> status
+        _ -> "released"
+      end
 
     metadata
     |> Map.put(:is_deprecated, is_deprecated)
     |> Map.put(:hard_deprecate_after, hard_deprecate_after)
+    |> Map.put(:status, status)
   end
 
   defp maybe_round_floats({:error, error}, _), do: {:error, error}
@@ -1029,4 +1060,14 @@ defmodule Sanbase.Metric do
 
   defp round_value(num) when is_float(num), do: Float.round(num, 12)
   defp round_value(num), do: num
+
+  defp maybe_remove_experimental_metrics({:ok, metrics}, "alpha"), do: {:ok, metrics}
+
+  defp maybe_remove_experimental_metrics({:ok, metrics}, "beta"),
+    do: {:ok, Enum.reject(metrics, &(&1 in alpha_metrics()))}
+
+  defp maybe_remove_experimental_metrics({:ok, metrics}, "released"),
+    do: {:ok, Enum.reject(metrics, &(&1 in experimental_metrics()))}
+
+  defp maybe_remove_experimental_metrics(result, _), do: result
 end

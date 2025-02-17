@@ -101,7 +101,8 @@ defmodule Sanbase.Billing.Plan.Restrictions do
       is_accessible: false,
       is_restricted: true,
       restricted_from: nil,
-      restricted_to: nil
+      restricted_to: nil,
+      status: "released"
     }
     |> Map.merge(additional_data)
   end
@@ -113,7 +114,8 @@ defmodule Sanbase.Billing.Plan.Restrictions do
       type: type_str,
       name: name_str,
       is_accessible: true,
-      is_restricted: false
+      is_restricted: false,
+      status: "released"
     }
     |> Map.merge(additional_data)
   end
@@ -160,6 +162,7 @@ defmodule Sanbase.Billing.Plan.Restrictions do
       is_restricted: not is_nil(restricted_from) or not is_nil(restricted_to),
       restricted_from: restricted_from,
       restricted_to: restricted_to,
+      status: "released",
       # The metric additional data will override the docs field
       docs: []
     }
@@ -183,7 +186,8 @@ defmodule Sanbase.Billing.Plan.Restrictions do
           hard_deprecate_after: metadata.hard_deprecate_after,
           docs: metadata.docs,
           available_selectors: metadata.available_selectors,
-          required_selectors: metadata.required_selectors
+          required_selectors: metadata.required_selectors,
+          status: metadata.status
         }
 
       {:error, error} ->

@@ -24,6 +24,21 @@ defmodule SanbaseWeb.Graphql.AccessRestrictionsTest do
     end)
   end
 
+  test "metrics have status", %{conn: conn} do
+    {:ok, metric} = Sanbase.Metric.Registry.by_name("price_usd_5m", "timeseries")
+    {:ok, _} = Sanbase.Metric.Registry.update(metric, %{status: "alpha"})
+    Sanbase.Metric.Registry.refresh_stored_terms()
+
+    get_access_restrictions_for_metrics(conn)
+    |> Enum.each(fn restriction ->
+      if restriction["name"] == "price_usd_5m" do
+        assert restriction["status"] == "alpha"
+      else
+        assert restriction["status"] == "released"
+      end
+    end)
+  end
+
   test "free sanbase user", %{conn: conn} do
     days_ago = Timex.shift(Timex.now(), days: -29)
     over_two_years_ago = Timex.shift(Timex.now(), days: -(2 * 365 + 1))
@@ -83,9 +98,34 @@ defmodule SanbaseWeb.Graphql.AccessRestrictionsTest do
   defp get_access_restrictions(conn) do
     query = """
     {
-      getAccessRestrictions{
+      getAccessRestrictions {
         type
         name
+        status
+        minInterval
+        internalName
+        isRestricted
+        restrictedFrom
+        restrictedTo
+        isDeprecated
+        hardDeprecateAfter
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", query_skeleton(query))
+    |> json_response(200)
+    |> get_in(["data", "getAccessRestrictions"])
+  end
+
+  defp get_access_restrictions_for_metrics(conn) do
+    query = """
+    {
+      getAccessRestrictions(filter: METRIC){
+        type
+        name
+        status
         minInterval
         internalName
         isRestricted

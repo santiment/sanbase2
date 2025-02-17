@@ -47,35 +47,51 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     {:ok, Process.get(:__executed_clickhouse_sql_list__, []) |> Enum.reverse()}
   end
 
-  def get_available_metrics(_root, %{plan: plan, product: product} = args, _resolution) do
+  def get_available_metrics(_root, %{plan: plan, product: product} = args, resolution) do
     product_code = product |> Atom.to_string() |> String.upcase()
     plan_name = plan |> to_string() |> String.upcase()
+
+    user_metric_access_level =
+      get_in(resolution.context, [:auth, :current_user, Access.key(:metric_access_level)]) ||
+        "released"
 
     metrics =
       AccessChecker.get_available_metrics_for_plan(plan_name, product_code)
       |> maybe_filter_incomplete_metrics(args[:has_incomplete_data])
       |> maybe_apply_regex_filter(args[:name_regex_filter])
       |> remove_hidden_metrics()
+      |> maybe_remove_experimental_metrics(user_metric_access_level)
       |> Enum.uniq()
       |> Enum.sort(:asc)
 
     {:ok, metrics}
   end
 
-  def get_available_metrics(_root, args, _resolution) do
+  def get_available_metrics(_root, args, resolution) do
+    user_metric_access_level =
+      get_in(resolution.context, [:auth, :current_user, Access.key(:metric_access_level)]) ||
+        "released"
+
     metrics =
       Metric.available_metrics()
       |> maybe_filter_incomplete_metrics(args[:has_incomplete_data])
       |> maybe_apply_regex_filter(args[:name_regex_filter])
       |> remove_hidden_metrics()
+      |> maybe_remove_experimental_metrics(user_metric_access_level)
       |> Enum.uniq()
       |> Enum.sort(:asc)
 
     {:ok, metrics}
   end
 
-  def get_available_metrics_for_selector(_root, args, _resolution) do
-    case Metric.available_metrics_for_selector(args.selector) do
+  def get_available_metrics_for_selector(_root, args, resolution) do
+    user_metric_access_level =
+      get_in(resolution.context, [:auth, :current_user, Access.key(:metric_access_level)]) ||
+        "released"
+
+    case Metric.available_metrics_for_selector(args.selector,
+           user_metric_access_level: user_metric_access_level
+         ) do
       {:ok, metrics} ->
         metrics = maybe_apply_regex_filter(metrics, args[:name_regex_filter])
         metrics = Enum.sort(metrics, :asc)
@@ -568,5 +584,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
     metrics
     |> Enum.reject(&(&1 in hidden_metrics))
+  end
+
+  defp maybe_remove_experimental_metrics(metrics, "alpha") do
+    metrics
+  end
+
+  defp maybe_remove_experimental_metrics(metrics, "beta") do
+    metrics
+    |> Enum.reject(&(&1 in Sanbase.Metric.alpha_metrics()))
+  end
+
+  defp maybe_remove_experimental_metrics(metrics, _) do
+    metrics
+    |> Enum.reject(&(&1 in Sanbase.Metric.experimental_metrics()))
   end
 end

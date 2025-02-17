@@ -1,9 +1,9 @@
 defmodule Sanbase.Email.MailjetApiBehaviour do
   @callback subscribe(atom(), String.t() | [String.t()]) :: :ok | {:error, term()}
   @callback unsubscribe(atom(), String.t() | [String.t()]) :: :ok | {:error, term()}
-  @callback send_to_list(atom(), String.t(), String.t(), keyword()) :: :ok | {:error, term()}
+  @callback send_to_list(atom(), String.t(), String.t(), Keyword.t()) :: :ok | {:error, term()}
   @callback list_subscribed_emails(atom()) :: {:ok, [String.t()]} | {:error, term()}
-  @callback send_email(String.t(), String.t(), String.t(), keyword()) :: :ok | {:error, term()}
+  @callback send_email(String.t(), String.t(), String.t(), Keyword.t()) :: :ok | {:error, term()}
 end
 
 defmodule Sanbase.Email.MailjetApi do

@@ -73,6 +73,7 @@ defmodule Sanbase.AvailableMetrics do
       %{
         metric: m.metric,
         internal_name: m.internal_metric,
+        status: m.status,
         docs: Map.get(m, :docs) || [],
         available_assets: Map.get(metric_to_supported_assets_map, m.metric) || [],
         default_aggregation: m.default_aggregation,

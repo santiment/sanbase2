@@ -374,6 +374,8 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
             name="match_table"
             placeholder="Filter by table"
           />
+
+          <.filter_status value={@filter["status"]} />
         </div>
         <div class="flex flex-col flex-wrap mt-4 space-y-2 items-start">
           <.filter_unverified />
@@ -422,6 +424,24 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
       placeholder={@placeholder}
       phx-debounce="200"
     />
+    """
+  end
+
+  defp filter_status(assigns) do
+    ~H"""
+    <select
+      name="status"
+      class="block w-48 ps-4 text-sm text-gray-900 border border-gray-300 rounded-lg bg-white"
+    >
+      <option value="">All Statuses</option>
+      <option
+        :for={status <- Sanbase.Metric.Registry.allowed_statuses()}
+        value={status}
+        selected={@value == status}
+      >
+        {String.capitalize(status)}
+      </option>
+    </select>
     """
   end
 
@@ -494,6 +514,13 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     metrics
     |> Enum.filter(fn m ->
       m.is_verified == false
+    end)
+  end
+
+  defp maybe_apply_filter(metrics, :match_metric, %{"status" => status}) when status != "" do
+    metrics
+    |> Enum.filter(fn m ->
+      m.status == status
     end)
   end
 

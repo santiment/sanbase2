@@ -144,6 +144,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
 
   defp full_check_has_access(resolution, opts) do
     resolution
+    |> apply_if_not_resolved(&check_experimental_metric_access/1)
     |> apply_if_not_resolved(&check_plan_has_access/1)
     |> apply_if_not_resolved(&check_from_to_params_sanity/1)
     |> apply_if_not_resolved(&maybe_apply_restrictions(&1, opts))
@@ -162,6 +163,57 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
 
   defp apply_if_not_resolved(resolution, fun) do
     fun.(resolution)
+  end
+
+  defp check_experimental_metric_access(
+         %Resolution{
+           context: %{__metric__: metric_name, auth: %{current_user: current_user}}
+         } = resolution
+       )
+       when is_binary(metric_name) do
+    # Have to get from cache
+    with %Sanbase.Metric.Registry{} = metric <-
+           Sanbase.Clickhouse.MetricAdapter.Registry.by_name(metric_name),
+         true <- metric.status in ["alpha", "beta"] do
+      do_check_experimental_metric(current_user, metric, resolution)
+    else
+      _ -> resolution
+    end
+  end
+
+  defp check_experimental_metric_access(%Resolution{} = resolution), do: resolution
+
+  defp do_check_experimental_metric(current_user, metric, resolution) do
+    if user_can_access_metric?(current_user, metric.status) do
+      resolution
+    else
+      case metric.status do
+        "alpha" ->
+          Resolution.put_result(
+            resolution,
+            {:error,
+             "The metric #{metric.metric} is currently in alpha phase and is exclusively available to alpha users."}
+          )
+
+        "beta" ->
+          Resolution.put_result(
+            resolution,
+            {:error,
+             "The metric #{metric.metric} is currently in beta phase and is exclusively available to alpha and beta users."}
+          )
+      end
+    end
+  end
+
+  defp user_can_access_metric?(
+         %Sanbase.Accounts.User{metric_access_level: user_metric_access_level},
+         metric_status
+       ) do
+    case metric_status do
+      "alpha" -> user_metric_access_level == "alpha"
+      "beta" -> user_metric_access_level in ["alpha", "beta"]
+      _ -> false
+    end
   end
 
   # The request will be granted further access in two cases:

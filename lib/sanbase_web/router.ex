@@ -2,6 +2,8 @@ defmodule SanbaseWeb.Router do
   # credo:disable-for-this-file Credo.Check.Refactor.ModuleDependencies
   use SanbaseWeb, :router
 
+  import SanbaseWeb.AdminUserAuth
+
   pipeline :admin_pod_only do
     plug(SanbaseWeb.Plug.AdminPodOnly)
   end
@@ -38,7 +40,7 @@ defmodule SanbaseWeb.Router do
   end
 
   pipeline :admin_email_auth do
-    plug(SanbaseWeb.Plug.AdminEmailAuth)
+    plug(SanbaseWeb.Plug.AdminEmailAuthPlug)
   end
 
   pipeline :admin2 do
@@ -61,15 +63,25 @@ defmodule SanbaseWeb.Router do
     live("/suggest_github_organizations", SuggestGithubOrganizationsLive)
   end
 
-  scope "/admin_auth", SanbaseWeb do
-    pipe_through([:admin_pod_only, :browser, :admin_email_auth])
-  end
-
   scope "/admin2", SanbaseWeb do
     pipe_through([:admin_pod_only, :browser, :basic_auth, :admin2])
     import Phoenix.LiveDashboard.Router
 
-    live("/authenticate", AdminAuthenticateLive)
+    scope "/metric_registry" do
+      live_session :require_authenticated_user,
+        on_mount: [{SanbaseWeb.AdminUserAuth, :ensure_authenticated}] do
+        live("/", MetricRegistryIndexLive)
+        live("/change_suggestions", MetricRegistryChangeSuggestionsLive)
+        live("/show/:id", MetricRegistryShowLive)
+        live("/edit/:id", MetricRegistryFormLive, :edit)
+        live("/history/:id", MetricRegistryHistoryLive)
+        live("/new", MetricRegistryFormLive, :new)
+        live("/sync", MetricRegistrySyncLive, :new)
+        live("/sync_runs", MetricRegistrySyncRunsLive, :new)
+        live("/sync/:uuid", MetricRegistrySyncRunDetailsLive, :new)
+      end
+    end
+
     live_dashboard("/dashboard", metrics: SanbaseWeb.Telemetry, ecto_repos: [Sanbase.Repo])
     live("/admin_forms", AdminFormsLive)
     live("/monitored_twitter_handle_live", MonitoredTwitterHandleLive)
@@ -91,16 +103,6 @@ defmodule SanbaseWeb.Router do
     get("/generic/search", GenericAdminController, :search)
     get("/generic/show_action", GenericAdminController, :show_action)
     resources("/generic", GenericAdminController)
-
-    live("/metric_registry", MetricRegistryIndexLive)
-    live("/metric_registry/change_suggestions", MetricRegistryChangeSuggestionsLive)
-    live("/metric_registry/show/:id", MetricRegistryShowLive)
-    live("/metric_registry/edit/:id", MetricRegistryFormLive, :edit)
-    live("/metric_registry/history/:id", MetricRegistryHistoryLive)
-    live("/metric_registry/new", MetricRegistryFormLive, :new)
-    live("/metric_registry/sync", MetricRegistrySyncLive, :new)
-    live("/metric_registry/sync_runs", MetricRegistrySyncRunsLive, :new)
-    live("/metric_registry/sync/:uuid", MetricRegistrySyncRunDetailsLive, :new)
   end
 
   scope "/" do
@@ -190,7 +192,23 @@ defmodule SanbaseWeb.Router do
     # REST endpoint for downloading a CSV with the available metrics
     live("/available_metrics", AvailableMetricsLive)
     live("/available_metrics/:metric", MetricDetailsLive)
+
     get("/export_available_metrics", AvailableMetricsController, :export)
+  end
+
+  scope "/admin_auth", SanbaseWeb do
+    pipe_through([:admin_pod_only, :browser, :admin_email_auth])
+    get("/handle_auth", AdminAuthController, :handle_admin_email_auth)
+  end
+
+  scope "/", SanbaseWeb do
+    pipe_through([:browser, :admin_pod_only])
+
+    live_session :redirect_if_user_is_authenticated,
+      on_mount: [{SanbaseWeb.AdminUserAuth, :redirect_if_user_is_authenticated}] do
+      live("/admin_auth/login", AdminAuthenticateLive)
+      get("/admin_auth/logout", AdminAuthController, :logout)
+    end
   end
 
   scope "/", SanbaseWeb do

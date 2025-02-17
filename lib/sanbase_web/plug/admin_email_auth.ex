@@ -3,10 +3,10 @@ defmodule SanbaseWeb.Plug.AdminEmailAuthPlug do
   """
 
   @behaviour Plug
+  import Plug.Conn
 
   alias Sanbase.Accounts
   alias Sanbase.Accounts.User
-  import Plug.Conn
 
   def init(opts), do: opts
 
@@ -30,19 +30,17 @@ defmodule SanbaseWeb.Plug.AdminEmailAuthPlug do
     device_data = SanbaseWeb.Guardian.device_data(conn)
 
     with {:ok, user} <- User.find_or_insert_by(:email, email),
-         first_login? <- User.RegistrationState.first_login?(user, "email_login_verify"),
          true <- User.Email.email_token_valid?(user, token),
-         {:ok, user} <- User.Email.check_email_token(user, token),
          {:ok, jwt_tokens_map} <- SanbaseWeb.Guardian.get_jwt_tokens(user, device_data),
          {:ok, user} <- User.Email.mark_email_token_as_validated(user),
          {:ok, _, _user} <- Accounts.forward_registration(user, "email_login_verify", %{}) do
-      SanbaseWeb.Guardian.add_jwt_tokens_to_conn_session(
-        conn,
-        Map.take(jwt_tokens_map, [:access_token, :refresh_token])
-      )
+      tokens = Map.take(jwt_tokens_map, [:access_token, :refresh_token])
+
+      conn
+      |> SanbaseWeb.Guardian.add_jwt_tokens_to_conn_session(tokens)
     else
       _ ->
-        conn |> send_resp(403, "Failed to login")
+        conn |> send_resp(403, "Failed to login") |> halt()
     end
   end
 
@@ -57,7 +55,7 @@ defmodule SanbaseWeb.Plug.AdminEmailAuthPlug do
       )
     else
       _ ->
-        conn |> send_resp(403, "Failed to login")
+        conn |> send_resp(403, "Failed to login") |> halt()
     end
   end
 end

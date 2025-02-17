@@ -56,6 +56,17 @@ defmodule SanbaseWeb.Guardian do
     |> Plug.Conn.put_session(:refresh_token, jwt_tokens_map.refresh_token)
   end
 
+  def revoke_and_remove_jwt_tokens_from_conn_session(conn) do
+    IO.inspect(conn |> Plug.Conn.get_session())
+
+    {:ok, refresh_token} = Plug.Conn.get_session(conn, :refresh_token)
+    {:ok, _} = SanbaseWeb.Guardian.revoke(refresh_token)
+
+    conn
+    |> Plug.Conn.delete_session(:access_token)
+    |> Plug.Conn.delete_session(:refresh_token)
+  end
+
   def get_jwt_tokens(%User{} = user, args \\ %{}) do
     platform = Map.get(args, :platform, :unknown)
     client = Map.get(args, :client, :unknown)

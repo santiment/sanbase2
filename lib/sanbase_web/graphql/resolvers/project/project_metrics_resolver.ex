@@ -19,13 +19,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
     Sanbase.Clickhouse.Label.label_fqns_with_asset(slug)
   end
 
-  def available_metrics(%Project{slug: slug}, _args, _resolution) do
+  def available_metrics(%Project{slug: slug}, _args, resolution) do
     # TEMP 02.02.2023: Handle ripple -> xrp rename
     {:ok, %{slug: slug}} = Sanbase.Project.Selector.args_to_selector(%{slug: slug})
 
+    user_metric_access_level =
+      get_in(resolution.context, [:auth, :current_user, Access.key(:metric_access_level)]) ||
+        "released"
+
     query = :available_metrics
     cache_key = {__MODULE__, query, slug} |> Sanbase.Cache.hash()
-    fun = fn -> Metric.available_metrics_for_selector(%{slug: slug}) end
+
+    fun = fn ->
+      Metric.available_metrics_for_selector(%{slug: slug},
+        user_metric_access_level: user_metric_access_level
+      )
+    end
 
     maybe_register_and_get(cache_key, fun, slug, query)
   end
@@ -38,13 +47,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
     end
   end
 
-  def available_timeseries_metrics(%Project{slug: slug}, _args, _resolution) do
+  def available_timeseries_metrics(%Project{slug: slug}, _args, resolution) do
     # TEMP 02.02.2023: Handle ripple -> xrp rename
     {:ok, %{slug: slug}} = Sanbase.Project.Selector.args_to_selector(%{slug: slug})
 
+    user_metric_access_level =
+      get_in(resolution.context, [:auth, :current_user, Access.key(:metric_access_level)]) ||
+        "released"
+
     query = :available_timeseries_metrics
     cache_key = {__MODULE__, query, slug} |> Sanbase.Cache.hash()
-    fun = fn -> Metric.available_timeseries_metrics_for_slug(%{slug: slug}) end
+
+    fun = fn ->
+      Metric.available_timeseries_metrics_for_slug(%{slug: slug},
+        user_metric_access_level: user_metric_access_level
+      )
+    end
 
     maybe_register_and_get(cache_key, fun, slug, query)
   end

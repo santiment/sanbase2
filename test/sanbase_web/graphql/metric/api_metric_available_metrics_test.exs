@@ -36,7 +36,7 @@ defmodule SanbaseWeb.Graphql.AvailableMetricsApiTest do
     metrics =
       available_metrics |> Enum.shuffle() |> Enum.take(Enum.random(1..length(available_metrics)))
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Metric.available_metrics_for_selector/1, {:ok, metrics})
+    Sanbase.Mock.prepare_mock2(&Sanbase.Metric.available_metrics_for_selector/2, {:ok, metrics})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result = get_available_metrics_for_selector(context.conn, %{slug: "santiment"})
 
@@ -50,7 +50,7 @@ defmodule SanbaseWeb.Graphql.AvailableMetricsApiTest do
     metrics =
       available_metrics |> Enum.shuffle() |> Enum.take(Enum.random(1..length(available_metrics)))
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Metric.available_metrics_for_selector/1, {:ok, metrics})
+    Sanbase.Mock.prepare_mock2(&Sanbase.Metric.available_metrics_for_selector/2, {:ok, metrics})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result = get_available_metrics_for_selector(context.conn, %{contract_address: "0x1"})
 
@@ -61,36 +61,6 @@ defmodule SanbaseWeb.Graphql.AvailableMetricsApiTest do
   test "available metrics with selector address", context do
     result = get_available_metrics_for_selector(context.conn, %{address: "0x1"})
     assert "nft_collection_max_price_usd" in result
-  end
-
-  def get_available_metrics(conn, args) do
-    query = """
-    {
-      getAvailableMetrics(#{map_to_args(args)})
-    }
-    """
-
-    execute_query(conn, query, "getAvailableMetrics")
-  end
-
-  def get_available_metrics2(conn) do
-    query = """
-    {
-      getAvailableMetrics
-    }
-    """
-
-    execute_query(conn, query, "getAvailableMetrics")
-  end
-
-  def get_available_metrics_for_selector(conn, selector) do
-    query = """
-    {
-      getAvailableMetricsForSelector(selector:#{map_to_input_object_str(selector)})
-    }
-    """
-
-    execute_query(conn, query, "getAvailableMetricsForSelector")
   end
 
   describe "metrics visibility based on user access level" do
@@ -158,5 +128,35 @@ defmodule SanbaseWeb.Graphql.AvailableMetricsApiTest do
       refute "daily_active_addresses" in metrics
       assert "price_usd" in metrics
     end
+  end
+
+  def get_available_metrics(conn, args) do
+    query = """
+    {
+      getAvailableMetrics(#{map_to_args(args)})
+    }
+    """
+
+    execute_query(conn, query, "getAvailableMetrics")
+  end
+
+  def get_available_metrics2(conn) do
+    query = """
+    {
+      getAvailableMetrics
+    }
+    """
+
+    execute_query(conn, query, "getAvailableMetrics")
+  end
+
+  def get_available_metrics_for_selector(conn, selector) do
+    query = """
+    {
+      getAvailableMetricsForSelector(selector:#{map_to_input_object_str(selector)})
+    }
+    """
+
+    execute_query(conn, query, "getAvailableMetricsForSelector")
   end
 end

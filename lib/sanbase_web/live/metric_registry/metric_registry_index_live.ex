@@ -101,6 +101,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
         </:col>
         <:col
           :let={row}
+          :if={Permissions.can?(:access_verified_status, [])}
           label="Verified Status"
           popover_target="popover-verified-status"
           popover_target_text={get_popover_text(%{key: "Verified Status"})}
@@ -110,6 +111,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
 
         <:col
           :let={row}
+          :if={Permissions.can?(:access_sync_status, [])}
           label="Sync Status"
           popover_target="popover-sync-status"
           popover_target_text={get_popover_text(%{key: "Sync Status"})}
@@ -335,6 +337,13 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           href={~p"/admin2/metric_registry/sync"}
         />
 
+        <AvailableMetricsComponents.available_metrics_button
+          :if={Permissions.can?(:see_sync_runs, [])}
+          text="List Sync Runs"
+          href={~p"/admin2/metric_registry/sync_runs"}
+          icon="hero-list-bullet"
+        />
+
         <AvailableMetricsComponents.link_button
           icon="hero-document-text"
           text="Docs"
@@ -373,6 +382,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
         </div>
       </form>
       <.phx_click_button
+        :if={Permissions.can?(:access_verified_status, [])}
         phx_click="show_verified_changes_modal"
         class={
           if(@changed_metrics_ids == [],

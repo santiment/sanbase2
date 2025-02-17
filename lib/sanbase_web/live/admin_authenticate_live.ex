@@ -16,9 +16,9 @@ defmodule SanbaseWeb.AdminAuthenticateLive do
 
   def render(assigns) do
     ~H"""
-    <div class="min-h-screen flex fle-col items-center justify-center py-6 px-4">
-      <div class="grid md:grid-cols-2 items-center gap-6 max-w-6xl w-full">
-        <div class="border border-gray-300 rounded-lg p-6 max-w-md max-md:mx-auto">
+    <div class="min-h-screen flex flex-col items-center py-6 px-4">
+      <div class="items-center gap-6 w-full">
+        <div class="border border-gray-300 rounded-lg p-6 max-w-md mx-auto">
           <form class="space-y-4" phx-change="validate_email" phx-submit="login">
             <div class="mb-8">
               <h3 class="text-gray-800 text-3xl font-bold">Sign in</h3>
@@ -88,14 +88,13 @@ defmodule SanbaseWeb.AdminAuthenticateLive do
         {:noreply,
          socket
          |> assign(valid_email: true, error: nil, email: nil)
-         |> put_flash(:info, "Login email successfully sent")}
+         |> push_navigate(to: ~p"/admin_auth/handle_auth?email=#{email}")}
 
       {:ok, :direct_login} ->
         {:noreply,
          socket
          |> assign(valid_email: true, error: nil, email: nil)
-         |> put_flash(:info, "Successully logged in as #{email}")}
-        |> push_navigate(to: ~p"/admin2/")
+         |> push_navigate(to: ~p"/admin_auth/handle_auth?email=#{email}")}
 
       {:error, _error} ->
         {:noreply,

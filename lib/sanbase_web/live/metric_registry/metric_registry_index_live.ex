@@ -1,13 +1,13 @@
 defmodule SanbaseWeb.MetricRegistryIndexLive do
   use SanbaseWeb, :live_view
 
+  import SanbaseWeb.AvailableMetricsDescription
+
   alias Sanbase.Metric.Registry.Permissions
   alias SanbaseWeb.AvailableMetricsComponents
 
-  import SanbaseWeb.AvailableMetricsDescription
-
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(_params, session, socket) do
     # Load the metrics only when connected
     # We don't care about SEO here. Loadin on non-connected makes it so
     # if someone is fast to click on Verified Status toggle, the action
@@ -23,9 +23,19 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
        metrics: metrics,
        changed_metrics_ids: [],
        verified_metrics_updates_map: %{},
-       filter: %{}
+       filter: %{},
+       email: get_email(session)
      )}
   end
+
+  defp get_email(%{"refresh_token" => token}) when is_binary(token) do
+    case SanbaseWeb.Guardian.resource_from_token(token) do
+      {:ok, %{email: email}, _token_claims} when is_binary(email) -> email
+      _ -> nil
+    end
+  end
+
+  defp get_email(_), do: nil
 
   @impl true
   def render(assigns) do
@@ -46,6 +56,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
       <h1 class="text-blue-700 text-2xl mb-4">
         Metric Registry Index
       </h1>
+      <div :if={@email}>{@email}</div>
       <div class="text-gray-400 text-sm py-2">
         <div>
           Showing {length(@visible_metrics_ids)} metrics

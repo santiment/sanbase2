@@ -117,6 +117,8 @@ defmodule SanbaseWeb.AuthController do
     end
   end
 
+  # Private functions
+
   defp extend_if_first_login(redirect_url, first_login) do
     case first_login do
       true ->

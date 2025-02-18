@@ -57,9 +57,7 @@ defmodule SanbaseWeb.Guardian do
   end
 
   def revoke_and_remove_jwt_tokens_from_conn_session(conn) do
-    IO.inspect(conn |> Plug.Conn.get_session())
-
-    {:ok, refresh_token} = Plug.Conn.get_session(conn, :refresh_token)
+    refresh_token = Plug.Conn.get_session(conn, :refresh_token)
     {:ok, _} = SanbaseWeb.Guardian.revoke(refresh_token)
 
     conn

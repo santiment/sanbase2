@@ -24,23 +24,14 @@ defmodule SanbaseWeb.AdminUserAuth do
   Authenticates the user by looking into the session
   and remember me token.
   """
-  def fetch_current_user(conn, _opts) do
-    {user_token, conn} = ensure_user_token(conn)
-    user = user_token && Accounts.get_user_by_session_token(user_token)
-    assign(conn, :current_user, user)
-  end
-
-  defp ensure_user_token(conn) do
-    if token = get_session(conn, :user_token) do
-      {token, conn}
+  def maybe_assign_current_user(conn, _opts) do
+    with token when token != nil <- get_session(conn, :refresh_token),
+         {:ok, %Accounts.User{} = user, _claims} <- SanbaseWeb.Guardian.resource_from_token(token) do
+      conn
+      |> assign(:current_user, user)
     else
-      conn = fetch_cookies(conn, signed: [@remember_me_cookie])
-
-      if token = conn.cookies[@remember_me_cookie] do
-        {token, put_token_in_session(conn, token)}
-      else
-        {nil, conn}
-      end
+      _ ->
+        conn
     end
   end
 
@@ -69,7 +60,10 @@ defmodule SanbaseWeb.AdminUserAuth do
     if socket.assigns.current_user do
       {:halt,
        socket
-       # |> put_flash( :info, "You are already authenticated as #{socket.assigns.current_user.email}.")
+       |> Phoenix.LiveView.put_flash(
+         :info,
+         "You are already authenticated as #{socket.assigns.current_user.email}."
+       )
        |> Phoenix.LiveView.redirect(to: signed_in_path(socket))}
     else
       {:cont, socket}
@@ -77,8 +71,6 @@ defmodule SanbaseWeb.AdminUserAuth do
   end
 
   defp mount_current_user(socket, session) do
-    socket = update_in(socket.assigns, &Map.drop(&1, [:current_user]))
-
     Phoenix.Component.assign_new(socket, :current_user, fn ->
       with %{"refresh_token" => token} <- session,
            {:ok, %Accounts.User{} = user, _claims} <-
@@ -121,12 +113,6 @@ defmodule SanbaseWeb.AdminUserAuth do
       |> redirect(to: ~p"/admin_auth/login")
       |> halt()
     end
-  end
-
-  defp put_token_in_session(conn, token) do
-    conn
-    |> put_session(:user_token, token)
-    |> put_session(:live_socket_id, "users_sessions:#{Base.url_encode64(token)}")
   end
 
   defp maybe_store_return_to(%{method: "GET"} = conn) do

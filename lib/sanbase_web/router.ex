@@ -64,7 +64,7 @@ defmodule SanbaseWeb.Router do
   end
 
   scope "/admin2", SanbaseWeb do
-    pipe_through([:admin_pod_only, :browser, :basic_auth, :admin2])
+    pipe_through([:admin_pod_only, :browser, :basic_auth, :maybe_assign_current_user, :admin2])
     import Phoenix.LiveDashboard.Router
 
     scope "/metric_registry" do

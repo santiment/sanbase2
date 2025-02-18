@@ -11,19 +11,13 @@ defmodule SanbaseWeb.GenericAdminController do
     SanbaseWeb.GenericAdmin.resource_module_map()
   end
 
-  def all_routes do
-    sorted_routes = (resources_to_routes() ++ custom_routes()) |> Enum.sort()
-    # So authenticate can be on the top
-    [{"Authenticate", ~p"/admin_auth/login"}, {"Logout", ~p"/admin_auth/logout"}] ++ sorted_routes
-  end
-
   def all_routes(conn) do
     sorted_routes = (resources_to_routes() ++ custom_routes()) |> Enum.sort()
 
     if conn.assigns[:current_user] do
-      [{"Logout", "~p/admin_auth/logout"}] ++ sorted_routes
+      [{"Logout", ~p"/admin_auth/logout"}] ++ sorted_routes
     else
-      [{"Authenticate", "~p/admin_auth/login"}] ++ sorted_routes
+      [{"Authenticate", ~p"/admin_auth/login"}] ++ sorted_routes
     end
   end
 

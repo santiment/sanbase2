@@ -85,6 +85,7 @@ if config_env() == :prod do
     load_from_system_env: true,
     check_origin: [
       "//*.santiment.net",
+      "//*.santiment.network",
       "//*.sanr.app",
       "//*.sanitize.page",
       "//*.sanbase-admin.stage.san",

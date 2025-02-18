@@ -423,6 +423,7 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
 
   defp get_no_auth_product_id(origin) do
     case String.ends_with?(origin, "santiment.net") or
+           String.ends_with?(origin, "santiment.network") or
            String.ends_with?(origin, "sanr.app") or
            String.ends_with?(origin, "sanitize.page") do
       true -> @product_id_sanbase

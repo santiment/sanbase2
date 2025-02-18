@@ -4,6 +4,7 @@ defmodule SanbaseWeb.GenericAdminAssignRoutes do
   def init(options), do: options
 
   def call(conn, _opts) do
-    assign(conn, :routes, SanbaseWeb.GenericAdminController.all_routes())
+    all_routes = SanbaseWeb.GenericAdminController.all_routes(conn)
+    assign(conn, :routes, all_routes)
   end
 end

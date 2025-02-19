@@ -1,5 +1,8 @@
 defmodule Sanbase.Metric.Registry.Permissions do
-  @view "Metric Registry Viewer"
+  defmodule Error do
+    defexception [:message]
+  end
+
   @edit "Metric Registry Change Suggester"
   @approve "Metric Registry Change Approver"
   @deployer "Metric Registry Deployer"
@@ -10,6 +13,12 @@ defmodule Sanbase.Metric.Registry.Permissions do
       true
     else
       check_permission(action, opts)
+    end
+  end
+
+  def raise_if_cannot(action, opts) do
+    if not can?(action, opts) do
+      raise __MODULE__.Error, message: "You don't have permission to #{action}"
     end
   end
 
@@ -56,6 +65,7 @@ defmodule Sanbase.Metric.Registry.Permissions do
   end
 
   defp any_role?(any_of_these_roles, opts) do
+    # If the user has any of thee roles listed, the user has permission
     user_roles = Keyword.get(opts, :roles, [])
     Enum.any?(any_of_these_roles, &(&1 in user_roles))
   end

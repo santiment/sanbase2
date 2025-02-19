@@ -410,6 +410,8 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
         socket
       )
       when socket.assigns.live_action == :new do
+    Permissions.raise_if_cannot(:create, roles: socket.assigns.current_user_role_names)
+
     case socket.assigns.form.errors do
       [] ->
         params = process_params(params)
@@ -449,6 +451,8 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
         socket
       )
       when socket.assigns.live_action == :edit do
+    Permissions.raise_if_cannot(:edit, roles: socket.assigns.current_user_role_names)
+
     case socket.assigns.form.errors do
       [] ->
         params = process_params(params)

@@ -27,6 +27,8 @@ defmodule SanbaseWeb.AdminUserAuth do
   def maybe_assign_current_user(conn, _opts) do
     with token when token != nil <- get_session(conn, :refresh_token),
          {:ok, %Accounts.User{} = user, _claims} <- SanbaseWeb.Guardian.resource_from_token(token) do
+      user = user |> Sanbase.Repo.preload([:roles, roles: :role])
+
       conn
       |> assign(:current_user, user)
     else
@@ -70,12 +72,30 @@ defmodule SanbaseWeb.AdminUserAuth do
     end
   end
 
+  def on_mount(:extract_and_assign_current_user_roles, _params, session, socket) do
+    socket =
+      socket
+      |> mount_current_user(session)
+      |> Phoenix.Component.assign_new(:current_user_role_ids, fn ->
+        socket.assigns.current_user.roles
+        |> Enum.map(& &1.role.id)
+      end)
+      |> Phoenix.Component.assign_new(:current_user_role_names, fn ->
+        socket.assigns.current_user.roles
+        |> Enum.sort_by(& &1.role.id, :desc)
+        |> Enum.map(& &1.role.name)
+      end)
+
+    {:cont, socket}
+  end
+
   defp mount_current_user(socket, session) do
     Phoenix.Component.assign_new(socket, :current_user, fn ->
       with %{"refresh_token" => token} <- session,
            {:ok, %Accounts.User{} = user, _claims} <-
              SanbaseWeb.Guardian.resource_from_token(token) do
         user
+        |> Sanbase.Repo.preload([:roles, roles: :role])
       else
         _ ->
           nil

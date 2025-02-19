@@ -28,6 +28,10 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
       <h1 class="text-blue-700 text-2xl mb-4">
         Metric Registry Sync
       </h1>
+      <SanbaseWeb.MetricRegistryComponents.user_details
+        current_user={@current_user}
+        current_user_role_names={@current_user_role_names}
+      />
       <div class="text-gray-400 text-sm py-2">
         <div>
           {length(@syncable_metrics)} metric(s) available to be synced from stage to prod}

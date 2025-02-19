@@ -69,7 +69,10 @@ defmodule SanbaseWeb.Router do
 
     scope "/metric_registry" do
       live_session :require_authenticated_user,
-        on_mount: [{SanbaseWeb.AdminUserAuth, :ensure_authenticated}] do
+        on_mount: [
+          {SanbaseWeb.AdminUserAuth, :ensure_authenticated},
+          {SanbaseWeb.AdminUserAuth, :extract_and_assign_current_user_roles}
+        ] do
         live("/", MetricRegistryIndexLive)
         live("/change_suggestions", MetricRegistryChangeSuggestionsLive)
         live("/show/:id", MetricRegistryShowLive)

@@ -24,6 +24,10 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
       <h1 class="text-blue-700 text-2xl mb-4">
         Metric Registry Change Requests
       </h1>
+      <SanbaseWeb.MetricRegistryComponents.user_details
+        current_user={@current_user}
+        current_user_role_names={@current_user_role_names}
+      />
       <AvailableMetricsComponents.available_metrics_button
         text="Back to Metric Registry"
         href={~p"/admin2/metric_registry"}
@@ -52,7 +56,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
           <:col :let={row} label="Submitted By">{row.submitted_by}</:col>
           <:action :let={row}>
             <.action_buttons
-              :if={Permissions.can?(:apply_change_suggestions, [])}
+              :if={Permissions.can?(:apply_change_suggestions, roles: @current_user_role_names)}
               form={@form}
               row={row}
             />
@@ -125,7 +129,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
   def handle_event("update_status", %{"status" => "undo", "record_id" => record_id}, socket) do
     record_id = String.to_integer(record_id)
 
-    case Sanbase.Metric.Registry.ChangeSuggestion.undo(record_id) do
+    case ChangeSuggestion.undo(record_id) do
       {:ok, record} ->
         rows =
           update_assigns_row(socket.assigns.rows, record_id, record.status)
@@ -191,7 +195,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
   end
 
   defp list_all_submissions() do
-    Sanbase.Metric.Registry.ChangeSuggestion.list_all_submissions()
+    ChangeSuggestion.list_all_submissions()
     |> Enum.map(&Map.from_struct/1)
     |> Enum.map(
       &Map.update!(&1, :changes, fn encoded -> ChangeSuggestion.decode_changes(encoded) end)

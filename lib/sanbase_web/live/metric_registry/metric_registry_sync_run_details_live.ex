@@ -25,7 +25,10 @@ defmodule SanbaseWeb.MetricRegistrySyncRunDetailsLive do
       <h1 class="text-blue-700 text-2xl mb-4">
         Metric Registry Sync Details | {@sync.uuid}
       </h1>
-
+      <SanbaseWeb.MetricRegistryComponents.user_details
+        current_user={@current_user}
+        current_user_role_names={@current_user_role_names}
+      />
       <div class="my-4">
         <AvailableMetricsComponents.available_metrics_button
           text="Back to Metric Registry"

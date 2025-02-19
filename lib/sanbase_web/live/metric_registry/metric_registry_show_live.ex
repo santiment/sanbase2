@@ -28,6 +28,10 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
       <h1 class="text-gray-800 text-2xl">
         Showing details for <span class="text-blue-700">{@metric_registry.metric}</span>
       </h1>
+      <SanbaseWeb.MetricRegistryComponents.user_details
+        current_user={@current_user}
+        current_user_role_names={@current_user_role_names}
+      />
       <div class="my-4">
         <AvailableMetricsComponents.available_metrics_button
           text="Back to Metric Registry"
@@ -36,21 +40,21 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
         />
 
         <AvailableMetricsComponents.available_metrics_button
-          :if={Permissions.can?(:edit, [])}
+          :if={Permissions.can?(:edit, roles: @current_user_role_names)}
           text="Edit Metric"
           href={~p"/admin2/metric_registry/edit/#{@metric_registry}"}
           icon="hero-pencil-square"
         />
 
         <AvailableMetricsComponents.available_metrics_button
-          :if={Permissions.can?(:see_history, [])}
+          :if={Permissions.can?(:see_history, roles: @current_user_role_names)}
           text="History"
           href={~p"/admin2/metric_registry/history/#{@metric_registry}"}
           icon="hero-calendar-days"
         />
 
         <AvailableMetricsComponents.available_metrics_button
-          :if={Permissions.can?(:edit, [])}
+          :if={Permissions.can?(:edit, roles: @current_user_role_names)}
           text="Duplicate Metric"
           href={
             ~p"/admin2/metric_registry/new?#{%{duplicate_metric_registry_id: @metric_registry.id}}"

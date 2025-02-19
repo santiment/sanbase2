@@ -22,7 +22,10 @@ defmodule Sanbase.Notifications.TemplateRenderer do
         {key, value}
         when is_list(value) and
                key in ["metrics_list", "asset_categories", :metrics_list, :asset_categories] ->
-          {to_string(key), Enum.join(value, ", ")}
+          {to_string(key),
+           value
+           |> Enum.map(&to_string/1)
+           |> Enum.join(", ")}
 
         {k, v} ->
           {to_string(k), v}

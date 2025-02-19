@@ -127,6 +127,10 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
 
   @impl true
   def handle_event("update_status", %{"status" => "undo", "record_id" => record_id}, socket) do
+    Permissions.raise_if_cannot(:apply_change_suggestions,
+      roles: socket.assigns.current_user_role_names
+    )
+
     record_id = String.to_integer(record_id)
 
     case ChangeSuggestion.undo(record_id) do
@@ -153,6 +157,10 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
         socket
       )
       when status in ["approved", "declined"] do
+    Permissions.raise_if_cannot(:apply_change_suggestions,
+      roles: socket.assigns.current_user_role_names
+    )
+
     record_id = String.to_integer(record_id)
 
     case Sanbase.Metric.Registry.ChangeSuggestion.update_status(record_id, status) do

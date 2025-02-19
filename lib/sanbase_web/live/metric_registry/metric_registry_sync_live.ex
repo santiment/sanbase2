@@ -2,6 +2,7 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
   use SanbaseWeb, :live_view
 
   alias SanbaseWeb.AvailableMetricsComponents
+  alias Sanbase.Metric.Registry.Permissions
 
   @pubsub_topic "sanbase_metric_registry_sync"
 
@@ -82,6 +83,7 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
         </:col>
       </.table>
       <.phx_click_button
+        :if={Permissions.can?(:start_sync, roles: @current_user_role_names)}
         text="Sync Metrics"
         phx_click="sync"
         class="min-w-42 bg-blue-700 hover:bg-blue-800 text-white"
@@ -117,6 +119,8 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
 
   @impl true
   def handle_event("sync", _params, socket) do
+    Permissions.raise_if_cannot(:start_sync, roles: socket.assigns.current_user_role_names)
+
     ids = socket.assigns.metric_ids_to_sync |> Enum.to_list()
 
     case Sanbase.Metric.Registry.Sync.sync(ids) do

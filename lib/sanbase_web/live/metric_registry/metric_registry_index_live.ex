@@ -257,7 +257,10 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
         Change the verified status of one or more metrics.
       </div>
       <div :if={@changed_metrics_ids != []}>
-        <.table id="uploaded_images" rows={Enum.filter(@metrics, &(&1.id in @changed_metrics_ids))}>
+        <.table
+          id="confirm_verified_changes_update_table"
+          rows={Enum.filter(@metrics, &(&1.id in @changed_metrics_ids))}
+        >
           <:col :let={row} label="Metric" col_class="max-w-[420px]">
             <.metric_names
               metric={row.metric}
@@ -275,6 +278,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
             phx_click="confirm_verified_changes_update"
             class="bg-green-500 hover:bg-green-900 text-white"
             text="Confirm Changes"
+            count={length(@changed_metrics_ids)}
           />
           <.phx_click_button
             phx_click="hide_show_verified_changes_modal"

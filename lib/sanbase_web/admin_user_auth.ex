@@ -89,6 +89,24 @@ defmodule SanbaseWeb.AdminUserAuth do
     {:cont, socket}
   end
 
+  def on_mount(:ensure_user_has_metric_registry_role, _params, _session, socket) do
+    roles = socket.assign.current_user_role_names
+
+    if Enum.any?(roles, &String.starts_with?(&1, "Metric Registry")) do
+      {:cont, socket}
+    else
+      socket =
+        socket
+        |> Phoenix.LiveView.put_flash(
+          :error,
+          "You must a Metric Reigstry role in order to access this page."
+        )
+        |> Phoenix.LiveView.redirect(to: ~p"/admin2")
+
+      {:halt, socket}
+    end
+  end
+
   defp mount_current_user(socket, session) do
     Phoenix.Component.assign_new(socket, :current_user, fn ->
       with %{"refresh_token" => token} <- session,

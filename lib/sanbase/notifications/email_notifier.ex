@@ -4,7 +4,14 @@ defmodule Sanbase.Notifications.EmailNotifier do
 
   alias Sanbase.{Repo, Notifications.Notification}
 
-  @oban_conf_name :oban_scrapers
+  def oban_conf_name do
+    Sanbase.ApplicationUtils.container_type()
+    |> case do
+      "all" -> :oban_web
+      # web, admin, scrapers
+      container_type -> String.to_existing_atom("oban_#{container_type}")
+    end
+  end
 
   def send_daily_digest(action) do
     notifications = get_unprocessed_notifications(action)
@@ -31,7 +38,7 @@ defmodule Sanbase.Notifications.EmailNotifier do
         }
         |> Sanbase.Notifications.Workers.ProcessNotification.new(scheduled_at: seconds_after(5))
 
-      {:ok, %{id: job_id}} = Oban.insert(@oban_conf_name, job)
+      {:ok, %{id: job_id}} = Oban.insert(oban_conf_name(), job)
 
       # update all notifications with the job_id
       Enum.each(group_notifications, &Notification.update(&1, %{job_id: job_id}))

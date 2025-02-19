@@ -130,6 +130,7 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
     changes = decode_changes(suggestion.changes)
     params = changes_to_changeset_params(%Registry{}, changes)
 
+    # Do not emit an event as this is called from within a transaction.
     Registry.create(params, emit_event: false)
   end
 

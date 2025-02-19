@@ -66,8 +66,12 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
     end)
     |> Sanbase.Repo.transaction()
     |> case do
-      {:ok, %{update_status: record, maybe_apply_suggestions: maybe_struct}} ->
-        handle_metric_regisry_update(maybe_struct)
+      {:ok,
+       %{get_suggestion: struct, update_status: record, maybe_apply_suggestions: maybe_struct}} ->
+        action_type =
+          if struct.metric_registry_id, do: :update_metric_registry, else: :create_metric_registry
+
+        handle_metric_regisry_action(action_type, maybe_struct)
 
         {:ok, record}
 
@@ -92,7 +96,7 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
     |> Sanbase.Repo.transaction()
     |> case do
       {:ok, %{update_status: record, maybe_apply_suggestions: maybe_struct}} ->
-        handle_metric_regisry_update(maybe_struct)
+        handle_metric_regisry_action(:update_metric_registry, maybe_struct)
 
         {:ok, record}
 
@@ -101,9 +105,9 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
     end
   end
 
-  defp handle_metric_regisry_update(maybe_struct) do
+  defp handle_metric_regisry_action(action_type, maybe_struct) do
     if match?(%Registry{}, maybe_struct) do
-      Registry.EventEmitter.emit_event({:ok, maybe_struct}, :update_metric_registry, %{})
+      Registry.EventEmitter.emit_event({:ok, maybe_struct}, action_type, %{})
 
       Node.list()
       |> Enum.each(fn node ->
@@ -112,7 +116,7 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
           # in the cluster.
           # Process the event only by the metric registry subscriber, otherwise the event
           # will be recorded multiple in kafka and trigger multiple notifications
-          Registry.EventEmitter.emit_event({:ok, maybe_struct}, :update_metric_registry, %{
+          Registry.EventEmitter.emit_event({:ok, maybe_struct}, action_type, %{
             __only_process_by__: [Sanbase.EventBus.MetricRegistrySubscriber]
           })
         end)
@@ -126,7 +130,7 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
     changes = decode_changes(suggestion.changes)
     params = changes_to_changeset_params(%Registry{}, changes)
 
-    Registry.create(params, emit_event: true)
+    Registry.create(params, emit_event: false)
   end
 
   defp apply_suggestion(%__MODULE__{status: "pending_approval"} = suggestion) do

@@ -22,10 +22,12 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
       <h1 class="text-blue-700 text-2xl mb-4">
         Metric Registry Sync Runs
       </h1>
+      <SanbaseWeb.MetricRegistryComponents.user_details
+        current_user={@current_user}
+        current_user_role_names={@current_user_role_names}
+      />
       <div class="text-gray-400 text-sm py-2">
-        <div>
-          Showing the last {length(@syncs)} syncs
-        </div>
+        Showing the last {length(@syncs)} syncs
       </div>
       <div class="my-4">
         <AvailableMetricsComponents.available_metrics_button
@@ -144,12 +146,12 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
       seconds < 3600 ->
         "#{div(seconds, 60)} minutes"
 
-      seconds < 86400 ->
+      seconds < 86_400 ->
         "#{div(seconds, 3600)} hours"
 
       true ->
-        days = div(seconds, 86400)
-        hours = div(rem(seconds, 86400), 3600)
+        days = div(seconds, 86_400)
+        hours = div(rem(seconds, 86_400), 3600)
         "#{days} days" <> if(hours == 0, do: "", else: " #{hours} hours")
     end
   end

@@ -7,7 +7,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
   alias SanbaseWeb.AvailableMetricsComponents
 
   @impl true
-  def mount(_params, session, socket) do
+  def mount(_params, _session, socket) do
     # Load the metrics only when connected
     # We don't care about SEO here. Loadin on non-connected makes it so
     # if someone is fast to click on Verified Status toggle, the action
@@ -23,19 +23,9 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
        metrics: metrics,
        changed_metrics_ids: [],
        verified_metrics_updates_map: %{},
-       filter: %{},
-       email: get_email(session)
+       filter: %{}
      )}
   end
-
-  defp get_email(%{"refresh_token" => token}) when is_binary(token) do
-    case SanbaseWeb.Guardian.resource_from_token(token) do
-      {:ok, %{email: email}, _token_claims} when is_binary(email) -> email
-      _ -> nil
-    end
-  end
-
-  defp get_email(_), do: nil
 
   @impl true
   def render(assigns) do
@@ -56,14 +46,21 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
       <h1 class="text-blue-700 text-2xl mb-4">
         Metric Registry Index
       </h1>
-      <div :if={@email}>{@email}</div>
+      <SanbaseWeb.MetricRegistryComponents.user_details
+        current_user={@current_user}
+        current_user_role_names={@current_user_role_names}
+      />
       <div class="text-gray-400 text-sm py-2">
         <div>
           Showing {length(@visible_metrics_ids)} metrics
         </div>
       </div>
-      <.navigation />
-      <.filters filter={@filter} changed_metrics_ids={@changed_metrics_ids} />
+      <.navigation current_user_role_names={@current_user_role_names} />
+      <.filters
+        filter={@filter}
+        changed_metrics_ids={@changed_metrics_ids}
+        current_user_role_names={@current_user_role_names}
+      />
       <AvailableMetricsComponents.table_with_popover_th
         id="metrics_registry"
         rows={take_ordered(@metrics, @visible_metrics_ids)}
@@ -112,7 +109,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
         </:col>
         <:col
           :let={row}
-          :if={Permissions.can?(:access_verified_status, [])}
+          :if={Permissions.can?(:access_verified_status, roles: @current_user_role_names)}
           label="Verified Status"
           popover_target="popover-verified-status"
           popover_target_text={get_popover_text(%{key: "Verified Status"})}
@@ -122,7 +119,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
 
         <:col
           :let={row}
-          :if={Permissions.can?(:access_sync_status, [])}
+          :if={Permissions.can?(:access_sync_status, roles: @current_user_role_names)}
           label="Sync Status"
           popover_target="popover-sync-status"
           popover_target_text={get_popover_text(%{key: "Sync Status"})}
@@ -139,13 +136,13 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
             href={~p"/admin2/metric_registry/show/#{row.id}"}
           />
           <AvailableMetricsComponents.link_button
-            :if={Permissions.can?(:edit, [])}
+            :if={Permissions.can?(:edit, roles: @current_user_role_names)}
             text="Edit"
             href={~p"/admin2/metric_registry/edit/#{row.id}"}
           />
 
           <AvailableMetricsComponents.link_button
-            :if={Permissions.can?(:edit, [])}
+            :if={Permissions.can?(:edit, roles: @current_user_role_names)}
             text="Duplicate"
             href={~p"/admin2/metric_registry/new?#{%{duplicate_metric_registry_id: row.id}}"}
           />
@@ -330,7 +327,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     <div class="my-2">
       <div>
         <AvailableMetricsComponents.link_button
-          :if={Permissions.can?(:create, [])}
+          :if={Permissions.can?(:create, roles: @current_user_role_names)}
           icon="hero-plus"
           text="Create New Metric"
           href={~p"/admin2/metric_registry/new"}
@@ -342,14 +339,14 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
         />
 
         <AvailableMetricsComponents.link_button
-          :if={Permissions.can?(:start_sync, [])}
+          :if={Permissions.can?(:start_sync, roles: @current_user_role_names)}
           icon="hero-arrow-path-rounded-square"
           text="Sync Metrics"
           href={~p"/admin2/metric_registry/sync"}
         />
 
         <AvailableMetricsComponents.available_metrics_button
-          :if={Permissions.can?(:see_sync_runs, [])}
+          :if={Permissions.can?(:see_sync_runs, roles: @current_user_role_names)}
           text="List Sync Runs"
           href={~p"/admin2/metric_registry/sync_runs"}
           icon="hero-list-bullet"
@@ -393,7 +390,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
         </div>
       </form>
       <.phx_click_button
-        :if={Permissions.can?(:access_verified_status, [])}
+        :if={Permissions.can?(:access_verified_status, roles: @current_user_role_names)}
         phx_click="show_verified_changes_modal"
         class={
           if(@changed_metrics_ids == [],

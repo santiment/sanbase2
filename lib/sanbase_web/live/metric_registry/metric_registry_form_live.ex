@@ -8,7 +8,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
   alias SanbaseWeb.AvailableMetricsComponents
 
   @impl true
-  def mount(params, session, socket) do
+  def mount(params, _session, socket) do
     duplicate_metric_registry_id = params["duplicate_metric_registry_id"]
     live_action = socket.assigns.live_action
 
@@ -58,6 +58,11 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
           so the new metric differs a little bit from the old one.
         </div>
       </div>
+
+      <SanbaseWeb.MetricRegistryComponents.user_details
+        current_user={@current_user}
+        current_user_role_names={@current_user_role_names}
+      />
       <div class="my-4">
         <AvailableMetricsComponents.available_metrics_button
           text="Back to Metric Registry"
@@ -73,7 +78,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
         />
 
         <AvailableMetricsComponents.available_metrics_button
-          :if={Permissions.can?(:edit, []) and @live_action == :edit}
+          :if={Permissions.can?(:edit, roles: @current_user_role_names) and @live_action == :edit}
           text="Duplicate Metric"
           href={
             ~p"/admin2/metric_registry/new?#{%{duplicate_metric_registry_id: @metric_registry.id}}"

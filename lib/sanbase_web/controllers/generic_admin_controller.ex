@@ -11,13 +11,21 @@ defmodule SanbaseWeb.GenericAdminController do
     SanbaseWeb.GenericAdmin.resource_module_map()
   end
 
-  def all_routes(conn) do
+  def all_routes(conn \\ nil) do
     sorted_routes = (resources_to_routes() ++ custom_routes()) |> Enum.sort()
 
-    if conn.assigns[:current_user] do
-      [{"Logout", ~p"/admin_auth/logout"}] ++ sorted_routes
-    else
-      [{"Authenticate", ~p"/admin_auth/login"}] ++ sorted_routes
+    case conn do
+      %{assigns: %{current_user: _}} ->
+        [{"Logout", ~p"/admin_auth/logout"}] ++ sorted_routes
+
+      %{assigns: _} ->
+        [{"Authenticate", ~p"/admin_auth/login"}] ++ sorted_routes
+
+      _ ->
+        # If the conn is not provided then we're in the cond do
+        # where we filter the routes in a search operation. Do not return
+        # neither Authenticate, nor Logout
+        sorted_routes
     end
   end
 

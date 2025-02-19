@@ -126,7 +126,7 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
     changes = decode_changes(suggestion.changes)
     params = changes_to_changeset_params(%Registry{}, changes)
 
-    Registry.create(params, emit_event: false)
+    Registry.create(params, emit_event: true)
   end
 
   defp apply_suggestion(%__MODULE__{status: "pending_approval"} = suggestion) do

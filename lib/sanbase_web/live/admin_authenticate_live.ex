@@ -122,7 +122,8 @@ defmodule SanbaseWeb.AdminAuthenticateLive do
     with {:ok, %{first_login: first_login} = user} <- User.find_or_insert_by(:email, email, %{}),
          {:ok, user} <- User.Email.update_email_token(user),
          [_ | _] = host_parts <- get_origin_host_parts(),
-         {:ok, _} <- User.Email.send_login_email(user, first_login, host_parts, %{}) do
+         {:ok, _} <-
+           User.Email.send_login_email(user, first_login, host_parts, %{is_admin_login: true}) do
       {:ok, :login_email_sent}
     end
   end

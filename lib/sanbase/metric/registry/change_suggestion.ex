@@ -1,11 +1,11 @@
 defmodule Sanbase.Metric.Registry.ChangeSuggestion do
   use Ecto.Schema
 
-  alias Sanbase.Metric.Registry
-  alias Sanbase.Utils.Config
-
   import Ecto.Query
   import Ecto.Changeset
+
+  alias Sanbase.Metric.Registry
+  alias Sanbase.Utils.Config
 
   @statuses ["approved", "declined", "pending_approval"]
   schema "metric_registry_change_suggestions" do
@@ -137,38 +137,45 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
   defp apply_suggestion(%__MODULE__{status: "pending_approval"} = suggestion) do
     with {:ok, metric_registry} <- Registry.by_id(suggestion.metric_registry_id) do
       changes = decode_changes(suggestion.changes)
-      apply_changes(suggestion, metric_registry, changes)
+      apply_changes("change_request_approve", suggestion, metric_registry, changes)
     end
   end
 
   defp undo_suggestion(%__MODULE__{status: "approved"} = suggestion) do
     with {:ok, metric_registry} <- Registry.by_id(suggestion.metric_registry_id) do
       changes = decode_changes(suggestion.changes) |> ExAudit.Diff.reverse()
-      apply_changes(suggestion, metric_registry, changes)
+      apply_changes("change_request_undo", suggestion, metric_registry, changes)
     end
   end
 
-  defp apply_changes(%__MODULE__{} = suggestion, %Registry{} = metric_registry, changes) do
+  defp apply_changes(
+         change_trigger,
+         %__MODULE__{} = suggestion,
+         %Registry{} = metric_registry,
+         changes
+       ) do
     params = changes_to_changeset_params(metric_registry, changes)
+    maybe_debug_applying_changes(metric_registry, changes, params, suggestion)
 
-    if Config.module_get(__MODULE__, :debug_applying_changes, false) do
-      changeset =
-        Registry.changeset(metric_registry, params)
-
-      same_as_applying_patch? =
-        Ecto.Changeset.apply_changes(changeset) == ExAudit.Patch.patch(metric_registry, changes)
-
-      if !same_as_applying_patch? do
-        raise("Applying patch failed for suggestion #{suggestion.id}")
-      end
-    end
-
-    # Do not emit the event. After the transaction is commited and if the update is applied,
+    # Do not emit the event as this is called from within a transaction.
+    # After the transaction is commited and if the update is applied,
     # update_status/2 or undo/1 will emit the event. This is done so the event is emitted
     # only after the DB changes are commited and not from insite the transaction. If the event
     # is emitted from inside the transaction, the event handler can be invoked before the DB
     # changes are commited and this handler will have no effect.
-    Sanbase.Metric.Registry.update(metric_registry, params, emit_event: false)
+    case Registry.update(metric_registry, params, emit_event: false) do
+      {:ok, updated_metric_registry} ->
+        registry_changeset = Registry.changeset(metric_registry, params)
+
+        {:ok, _} =
+          Registry.Changelog.create_changeset(registry_changeset, change_trigger: change_trigger)
+          |> Sanbase.Repo.insert()
+
+        {:ok, updated_metric_registry}
+
+      {:error, error} ->
+        {:error, error}
+    end
   end
 
   def create_change_suggestion(%Registry{} = registry, params, notes, submitted_by) do
@@ -213,6 +220,22 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
   end
 
   # Private
+
+  defp maybe_debug_applying_changes(metric_registry, changes, params, suggestion) do
+    # If the debug_applying_changes is set to true, we check if our computation of params
+    # is the same as applying the patch via ExAudit. Enabled in tests
+    if Config.module_get(__MODULE__, :debug_applying_changes, false) do
+      changeset =
+        Registry.changeset(metric_registry, params)
+
+      same_as_applying_patch? =
+        Ecto.Changeset.apply_changes(changeset) == ExAudit.Patch.patch(metric_registry, changes)
+
+      if !same_as_applying_patch? do
+        raise("Applying patch failed for suggestion #{suggestion.id}")
+      end
+    end
+  end
 
   defp do_update_status(%__MODULE__{} = record, new_status) do
     record

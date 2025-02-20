@@ -219,11 +219,13 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
       # Explicitly put the old is_verified status in the first argument otherwise Ecto
       # will decide that the value does not change and will not mutate the DB
       {:ok, _} =
-        Sanbase.Metric.Registry.update(
+        Sanbase.Metric.Registry.update_is_verified(
+          # Put the old is_verified here so after a few toggles we still know
+          # how it started
           %{metric | is_verified: map.old},
-          %{is_verified: map.new},
-          emit_event: false
+          %{is_verified: map.new}
         )
+        |> Sanbase.Repo.update()
     end
 
     {:noreply,

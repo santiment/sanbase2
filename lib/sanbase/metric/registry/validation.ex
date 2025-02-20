@@ -1,17 +1,6 @@
 defmodule Sanbase.Metric.Registry.Validation do
   import Ecto.Changeset
 
-  @sync_statuses ["synced", "not_synced"]
-  def validate_sync_status(:sync_status, status) do
-    if status in @sync_statuses do
-      []
-    else
-      [
-        sync_status: "The provided sync_status #{status} is not supported."
-      ]
-    end
-  end
-
   def validate_min_interval(:min_interval, min_interval) do
     if Sanbase.DateTimeUtils.valid_compound_duration?(min_interval) do
       if Sanbase.DateTimeUtils.str_to_days(min_interval) > 30 do

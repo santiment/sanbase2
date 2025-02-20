@@ -54,6 +54,13 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
         />
 
         <AvailableMetricsComponents.available_metrics_button
+          :if={Permissions.can?(:see_history, roles: @current_user_role_names)}
+          text="Changes Since Last Sync"
+          href={~p"/admin2/metric_registry/diff/#{@metric_registry}"}
+          icon="hero-list-bullet"
+        />
+
+        <AvailableMetricsComponents.available_metrics_button
           :if={Permissions.can?(:edit, roles: @current_user_role_names)}
           text="Duplicate Metric"
           href={

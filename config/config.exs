@@ -80,8 +80,6 @@ config :sanbase, Sanbase.KafkaExporter,
   asset_price_pairs_topic: {:system, "KAFKA_CRYPTOCOMPARE_PRICES_TOPIC", "asset_price_pairs"},
   asset_price_pairs_only_topic:
     {:system, "KAFKA_CRYPTOCOMPARE_PRICES_ONLY_TOPIC", "asset_price_pairs_only"},
-  asset_ohlcv_price_pairs_topic:
-    {:system, "KAFKA_ASSET_OHLCV_PRICE_POINTS_TOPIC", "asset_ohlcv_price_pairs"},
   open_interest_topic: {:system, "KAFKA_OPEN_INTEREST_TOPIC", "open_interest_cryptocompare"},
   open_interest_topic_v2:
     {:system, "KAFKA_OPEN_INTEREST_TOPIC_V2", "open_interest_cryptocompare_v2"},

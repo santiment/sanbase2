@@ -202,7 +202,7 @@ defmodule SanbaseWeb.Router do
 
   scope "/admin_auth", SanbaseWeb do
     pipe_through([:admin_pod_only, :browser, :admin_email_auth])
-    get("/handle_auth", AdminAuthController, :handle_admin_email_auth)
+    get("/email_login", AdminAuthController, :handle_admin_email_auth)
   end
 
   scope "/", SanbaseWeb do

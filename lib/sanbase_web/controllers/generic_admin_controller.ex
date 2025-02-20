@@ -15,8 +15,8 @@ defmodule SanbaseWeb.GenericAdminController do
     sorted_routes = (resources_to_routes() ++ custom_routes()) |> Enum.sort()
 
     case conn do
-      %{assigns: %{current_user: _}} ->
-        [{"Logout", ~p"/admin_auth/logout"}] ++ sorted_routes
+      %{assigns: %{current_user: user}} ->
+        [{"Logout (#{user.email})", ~p"/admin_auth/logout"}] ++ sorted_routes
 
       %{assigns: _} ->
         [{"Authenticate", ~p"/admin_auth/login"}] ++ sorted_routes

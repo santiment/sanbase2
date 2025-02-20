@@ -3,6 +3,8 @@ defmodule SanbaseWeb.AdminAuthenticateLive do
 
   alias Sanbase.Accounts.User
 
+  require Logger
+
   def mount(_params, _session, socket) do
     {:ok,
      socket
@@ -88,21 +90,24 @@ defmodule SanbaseWeb.AdminAuthenticateLive do
         {:noreply,
          socket
          |> assign(valid_email: true, error: nil, email: nil)
-         |> push_navigate(to: ~p"/admin_auth/handle_auth?email=#{email}")}
+         |> put_flash(:info, "Login email sent. Please check your inbox.")
+         |> push_navigate(to: ~p"/admin2")}
 
       {:ok, :direct_login} ->
         {:noreply,
          socket
          |> assign(valid_email: true, error: nil, email: nil)
-         |> push_navigate(to: ~p"/admin_auth/handle_auth?email=#{email}")}
+         |> push_navigate(to: ~p"/admin_auth/email_login?email=#{email}")}
 
-      {:error, _error} ->
-        {:noreply,
-         socket
-         |> put_flash(
-           :error,
-           "An error occurred while sending the login email. Please try again later."
-         )}
+      {:error, error} ->
+        error_msg =
+          """
+          An error occurred while sending the login email. Please try again later.
+          Error: #{inspect(error)}
+          """
+
+        Logger.error(error_msg)
+        {:noreply, socket |> put_flash(:error, error_msg)}
     end
   end
 
@@ -133,6 +138,6 @@ defmodule SanbaseWeb.AdminAuthenticateLive do
     admin_url = SanbaseWeb.Endpoint.admin_url()
     %URI{host: host} = URI.parse(admin_url)
 
-    String.split(host)
+    String.split(host, ".")
   end
 end

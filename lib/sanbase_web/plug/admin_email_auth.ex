@@ -18,7 +18,11 @@ defmodule SanbaseWeb.Plug.AdminEmailAuthPlug do
       _ ->
         case params["token"] do
           nil ->
-            conn |> send_resp(400, "Bad Request -- User Token Missing")
+            conn
+            |> send_resp(
+              400,
+              "Bad Request -- User Token Missing. Params present: #{Map.keys(params) |> Enum.join(", ")}"
+            )
 
           token ->
             check_and_login(conn, email, token)

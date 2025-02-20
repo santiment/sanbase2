@@ -88,9 +88,8 @@ defmodule Sanbase.MetricRegistrySyncTest do
 
     # Verify only price_usd_5m and mvrv_usd metrics to properly test
     # that sync only affects verified metrics
-    {:ok, _} = Sanbase.Metric.Registry.update(m1, %{is_verified: true}, emit_event: false)
-
-    {:ok, _} = Sanbase.Metric.Registry.update(m2, %{is_verified: true}, emit_event: false)
+    {:ok, _} = Sanbase.Metric.Registry.update_is_verified(m1, true)
+    {:ok, _} = Sanbase.Metric.Registry.update_is_verified(m2, true)
 
     [m1.id, m2.id]
   end
@@ -98,7 +97,11 @@ defmodule Sanbase.MetricRegistrySyncTest do
   test "mocked sync content", _context do
     {:ok, m} = Registry.by_name("price_usd_5m")
     # Make it ready to sync.
-    {:ok, m} = Registry.update(m, %{is_verified: true, sync_status: "not_synced"})
+    # Use a changeset as the update/create functrions do not allow to manually play
+    # with these fields
+    {:ok, m} =
+      Registry.changeset(m, %{is_verified: true, sync_status: "not_synced"})
+      |> Sanbase.Repo.update()
 
     # This is used for mock when taking the records to be synced
     # As the initiating and receiving databases in test env are the same

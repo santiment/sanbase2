@@ -19,10 +19,12 @@ defmodule Sanbase.Metric.Registry do
   # Careful not to delete the space at the end
   @human_readable_name_regex ~r|^[a-zA-Z0-9_\.\-{}():/\\ ]+$|
   @aggregations ["sum", "last", "count", "avg", "max", "min", "first"]
-  def aggregations(), do: @aggregations
   @metric_regex ~r/^[a-z0-9_{}:]+$/
-  def metric_regex(), do: @metric_regex
   @allowed_statuses ["alpha", "beta", "released"]
+  @allowed_sync_statuses ["synced", "not_synced"]
+
+  def aggregations(), do: @aggregations
+  def metric_regex(), do: @metric_regex
   def allowed_statuses(), do: @allowed_statuses
 
   @type t :: %__MODULE__{
@@ -54,6 +56,7 @@ defmodule Sanbase.Metric.Registry do
           status: String.t(),
           is_verified: boolean(),
           sync_status: String.t(),
+          last_sync_datetime: DateTime.t(),
           inserted_at: DateTime.t(),
           updated_at: DateTime.t()
         }
@@ -69,6 +72,7 @@ defmodule Sanbase.Metric.Registry do
              :inserted_at,
              :updated_at,
              :sync_status,
+             :last_sync_datetime,
              :change_suggestions
            ]}
 
@@ -109,6 +113,7 @@ defmodule Sanbase.Metric.Registry do
     # Sync-related fields
     field(:is_verified, :boolean)
     field(:sync_status, :string)
+    field(:last_sync_datetime, :utc_datetime)
 
     embeds_many(:tables, Table, on_replace: :delete)
     embeds_many(:selectors, Selector, on_replace: :delete)
@@ -147,7 +152,8 @@ defmodule Sanbase.Metric.Registry do
       :sanapi_min_plan,
       :parameters,
       :status,
-      :sync_status
+      :sync_status,
+      :last_sync_datetime
     ])
     |> cast_embed(:selectors,
       required: false,
@@ -199,7 +205,7 @@ defmodule Sanbase.Metric.Registry do
     |> validate_inclusion(:exposed_environments, ["all", "none", "stage", "prod"])
     |> validate_inclusion(:access, ["free", "restricted"])
     |> validate_change(:min_interval, &Validation.validate_min_interval/2)
-    |> validate_change(:sync_status, &Validation.validate_sync_status/2)
+    |> validate_inclusion(:sync_status, @allowed_sync_statuses)
     |> validate_inclusion(:sanbase_min_plan, ["free", "pro", "max"])
     |> validate_inclusion(:sanapi_min_plan, ["free", "pro", "max"])
     |> validate_inclusion(:status, @allowed_statuses)
@@ -210,7 +216,10 @@ defmodule Sanbase.Metric.Registry do
   end
 
   def create(attrs, opts \\ []) do
-    attrs = Map.merge(attrs, %{sync_status: "not_synced", is_verified: false})
+    # Convert to string so we can override any sync_status/is_verified change
+    # attempted manually. `attrs` cannot mix atoms and strings
+    attrs = Map.new(attrs, fn {k, v} -> {to_string(k), v} end)
+    attrs = Map.merge(attrs, %{"sync_status" => "not_synced", "is_verified" => false})
 
     %__MODULE__{}
     |> changeset(attrs)
@@ -218,18 +227,33 @@ defmodule Sanbase.Metric.Registry do
     |> maybe_emit_event(:create_metric_registry, opts)
   end
 
-  def update(%__MODULE__{} = metric_registry, attrs, opts \\ []) do
+  def mark_as_synced(metric_registry) do
+    metric_registry
+    |> changeset(%{
+      sync_status: "synced",
+      sync_last_datetime: DateTime.utc_now() |> DateTime.truncate(:second)
+    })
+    |> Repo.update()
+  end
+
+  def update_is_verified(metric_registry, is_verified) do
+    metric_registry
+    |> changeset(%{is_verified: is_verified})
+    |> Repo.update()
+  end
+
+  def update(%__MODULE__{} = metric_registry, %{} = attrs, opts \\ []) do
     metric_registry
     |> changeset(attrs)
     |> then(fn changeset ->
-      if changeset.changes != %{},
-        do: changeset |> put_change(:sync_status, "not_synced"),
-        else: changeset
-    end)
-    |> then(fn changeset ->
-      if changeset.changes != %{} and attrs[:is_verified] != true,
-        do: changeset |> put_change(:is_verified, false),
-        else: changeset
+      if changeset.changes != %{} do
+        # If there is any change, then put the metric in not synced and unverified state
+        # If you want to change these fields either use mark_as_synced and update_is_verified
+        # or work with the changeset directly
+        changeset |> put_change(:sync_status, "not_synced") |> put_change(:is_verified, false)
+      else
+        changeset
+      end
     end)
     |> Repo.update()
     |> maybe_emit_event(:update_metric_registry, opts)

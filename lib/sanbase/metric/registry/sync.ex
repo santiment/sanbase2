@@ -155,9 +155,15 @@ defmodule Sanbase.Metric.Registry.Sync do
         case Registry.by_name(metric, data_type, fixed_parameters) do
           # Update existing metric
           {:ok, metric_registry} ->
+            # Working directly with changesets allow to manually put sync_status
+            # Using the update/create functions do not
             params = Map.put(params, "sync_status", "synced")
             registry_changeset = Registry.changeset(metric_registry, params)
-            changelog_changeset = Registry.Changelog.create_changest(registry_changeset)
+
+            changelog_changeset =
+              Registry.Changelog.create_changeset(registry_changeset,
+                change_trigger: "sync_apply"
+              )
 
             # Update the Registry Record with the changed
             # Insert a record in the Registry.Changelog
@@ -172,8 +178,10 @@ defmodule Sanbase.Metric.Registry.Sync do
 
             {updated_multi, [registry_changeset | changesets]}
 
-          # Insert new metric
+          # There is no such metric. This is creating a new metric
           {:error, _} ->
+            # Working directly with changesets allow to manually put sync_status
+            # Using the update/create functions do not
             params = Map.put(params, "sync_status", "synced")
             registry_changeset = Registry.changeset(%Registry{}, params)
 
@@ -235,7 +243,7 @@ defmodule Sanbase.Metric.Registry.Sync do
                map.data_type,
                map.fixed_parameters
              ),
-           {:ok, _metric} <- Registry.update(metric, %{"sync_status" => "synced"}) do
+           {:ok, _metric} <- Registry.mark_as_synced(metric) do
         {:cont, :ok}
       else
         error -> {:halt, error}

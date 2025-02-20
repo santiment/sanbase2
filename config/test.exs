@@ -60,6 +60,8 @@ config :sanbase, Sanbase.EventBus.MetricRegistrySubscriber,
 config :sanbase, Sanbase.ExternalServices.RateLimiting.Server,
   implementation_module: Sanbase.ExternalServices.RateLimiting.TestServer
 
+config :sanbase, Sanbase.Metric.Registry.ChangeSuggestion, debug_applying_changes: true
+
 # Configure postgres database
 config :sanbase, Sanbase.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,

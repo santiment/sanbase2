@@ -2344,7 +2344,8 @@ CREATE TABLE public.metric_registry (
     updated_at timestamp with time zone NOT NULL,
     is_verified boolean DEFAULT true NOT NULL,
     sync_status character varying(255) DEFAULT 'synced'::character varying NOT NULL,
-    status character varying(255) DEFAULT 'released'::character varying NOT NULL
+    status character varying(255) DEFAULT 'released'::character varying NOT NULL,
+    last_sync_datetime timestamp(0) without time zone
 );
 
 
@@ -2393,7 +2394,8 @@ CREATE TABLE public.metric_registry_changelog (
     old text,
     new text,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    change_trigger character varying(255)
 );
 
 
@@ -9929,3 +9931,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250207100755);
 INSERT INTO public."schema_migrations" (version) VALUES (20250207134446);
 INSERT INTO public."schema_migrations" (version) VALUES (20250207134654);
 INSERT INTO public."schema_migrations" (version) VALUES (20250219075723);
+INSERT INTO public."schema_migrations" (version) VALUES (20250219155459);
+INSERT INTO public."schema_migrations" (version) VALUES (20250220134051);

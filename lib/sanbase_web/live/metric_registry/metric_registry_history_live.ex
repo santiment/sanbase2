@@ -5,12 +5,14 @@ defmodule SanbaseWeb.MetricRegistryHistoryLive do
 
   @impl true
   def mount(%{"id" => metric_registry_id}, _session, socket) do
+    {:ok, metric_registry} = Sanbase.Metric.Registry.by_id(metric_registry_id)
     {:ok, list} = get_history_changes_list(metric_registry_id)
 
     {:ok,
      socket
      |> assign(
        page_title: "Metric Registry | History",
+       metric_registry: metric_registry,
        history_list: list
      )}
   end
@@ -41,9 +43,16 @@ defmodule SanbaseWeb.MetricRegistryHistoryLive do
       </div>
 
       <hr class="h-px my-8 bg-gray-200 border-0 dark:bg-gray-700" />
+      <div class="font-bold text-xl text-blue-800">{@metric_registry.metric}</div>
       <.table id="metrics_registry_sync_runs" rows={@history_list}>
+        <:col :let={row} label="ID">
+          {row.id}
+        </:col>
         <:col :let={row} label="Datetime">
           {row.inserted_at}
+        </:col>
+        <:col :let={row} label="Change Trigger">
+          <.change_trigger_formatted change_trigger={row.change_trigger} />
         </:col>
         <:col :let={row} label="Changes">
           {row.changes}
@@ -68,5 +77,28 @@ defmodule SanbaseWeb.MetricRegistryHistoryLive do
       end)
 
     {:ok, data}
+  end
+
+  defp change_trigger_formatted(assigns) do
+    ~H"""
+    <span
+      :if={@change_trigger}
+      class={[
+        "px-3 py-2 text-xs font-semibold text-white rounded-full",
+        get_bg_color(@change_trigger)
+      ]}
+    >
+      {@change_trigger |> String.replace("_", " ") |> String.upcase()}
+    </span>
+    """
+  end
+
+  defp get_bg_color(change_trigger) do
+    case change_trigger do
+      "sync_apply" -> "bg-blue-800"
+      "change_request_approve" -> "bg-green-800"
+      "change_request_undo" -> "bg-red-800"
+      _ -> "bg-gray-800"
+    end
   end
 end

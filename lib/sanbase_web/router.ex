@@ -79,6 +79,7 @@ defmodule SanbaseWeb.Router do
         live("/show/:id", MetricRegistryShowLive)
         live("/edit/:id", MetricRegistryFormLive, :edit)
         live("/history/:id", MetricRegistryHistoryLive)
+        live("/diff/:id", MetricRegistryDiffLive)
         live("/new", MetricRegistryFormLive, :new)
         live("/sync", MetricRegistrySyncLive, :new)
         live("/sync_runs", MetricRegistrySyncRunsLive, :new)

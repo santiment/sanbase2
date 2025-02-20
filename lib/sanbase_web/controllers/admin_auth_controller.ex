@@ -5,9 +5,6 @@ defmodule SanbaseWeb.AdminAuthController do
 
   use SanbaseWeb, :controller
 
-  alias Sanbase.Accounts
-  alias Sanbase.Accounts.User
-
   require Logger
 
   def handle_admin_email_auth(conn, _params) do

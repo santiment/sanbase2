@@ -160,8 +160,7 @@ defmodule Sanbase.Accounts.User.Email do
   end
 
   defp do_send_login_email(user, first_login, origin_host_parts, args) do
-    origin_url = "https://" <> Enum.join(origin_host_parts, ".")
-
+    origin_url = construct_origin_url(origin_host_parts, args)
     template = Sanbase.Email.Template.choose_login_template(origin_url, first_login?: first_login)
 
     case generate_login_link(user, first_login, origin_url, args) do
@@ -173,11 +172,27 @@ defmodule Sanbase.Accounts.User.Email do
     end
   end
 
+  defp construct_origin_url(origin_host_parts, args) do
+    if Map.get(args, :is_admin_login, false) do
+      "https://" <> Enum.join(origin_host_parts, ".")
+    else
+      SanbaseWeb.Endpoint.admin_url()
+    end
+  end
+
   defp generate_login_link(user, first_login, origin_url, args) do
     # If this is the first login that also creates the user, then
     # append signup=true to the query params
     login_url = if is_binary(origin_url), do: origin_url, else: SanbaseWeb.Endpoint.frontend_url()
-    login_url = Path.join(login_url, "/email_login")
+
+    path =
+      if Map.get(args, :is_admin_login, false) do
+        "email_login"
+      else
+        "admin_auth/email_login"
+      end
+
+    login_url = Path.join(login_url, path)
 
     signup_map = if first_login, do: %{signup: true}, else: %{}
 

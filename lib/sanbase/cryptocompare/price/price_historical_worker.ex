@@ -226,26 +226,13 @@ defmodule Sanbase.Cryptocompare.Price.HistoricalWorker do
   end
 
   defp export_data(data) do
-    export_asset_ohlcv_price_pairs_topic(data)
     export_asset_price_pairs_only_topic(data)
-  end
-
-  defp export_asset_ohlcv_price_pairs_topic(data) do
-    data = Enum.map(data, &to_ohlcv_price_point/1)
-    topic = Config.module_get!(Sanbase.KafkaExporter, :asset_ohlcv_price_pairs_topic)
-    Sanbase.KafkaExporter.send_data_to_topic_from_current_process(data, topic)
   end
 
   defp export_asset_price_pairs_only_topic(data) do
     data = Enum.map(data, &to_price_only_point/1)
     topic = Config.module_get!(Sanbase.KafkaExporter, :asset_price_pairs_only_topic)
     Sanbase.KafkaExporter.send_data_to_topic_from_current_process(data, topic)
-  end
-
-  defp to_ohlcv_price_point(point) do
-    point
-    |> Sanbase.Cryptocompare.OHLCVPricePoint.new()
-    |> Sanbase.Cryptocompare.OHLCVPricePoint.json_kv_tuple()
   end
 
   defp to_price_only_point(point) do

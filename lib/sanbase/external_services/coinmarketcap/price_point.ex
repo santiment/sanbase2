@@ -1,6 +1,8 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.PricePoint do
+  @marketcap_usd_limit 10_000_000_000_000
   @volume_usd_limit 500_000_000_000
   @price_usd_limit 1_000_000
+  @price_btc_limit 1_000
 
   @prices_source "coinmarketcap"
   defstruct [
@@ -28,20 +30,34 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePoint do
     {key, value}
   end
 
+  defguard num_ge(num, limit) when is_number(num) and is_number(limit) and num > limit
+
   def sanity_filters([]), do: []
 
   def sanity_filters([%__MODULE__{} | _] = price_points) when is_list(price_points) do
-    Enum.map(price_points, fn
-      %{volume_usd: volume_usd} = price_point
-      when is_number(volume_usd) and volume_usd > @volume_usd_limit ->
-        %{price_point | volume_usd: nil}
-
-      %{price_usd: price_usd} = price_point
-      when is_number(price_usd) and price_usd > @price_usd_limit ->
-        %{price_point | price_usd: nil}
-
-      price_point ->
+    # For each price point nullify the fields that exceed the limits
+    Enum.map(price_points, fn %__MODULE__{} = price_point ->
+      map =
         price_point
+        |> Map.from_struct()
+        |> Map.new(fn
+          {:volume_usd, volume_usd} when num_ge(volume_usd, @volume_usd_limit) ->
+            {:volume_usd, nil}
+
+          {:price_usd, price_usd} when num_ge(price_usd, @price_usd_limit) ->
+            {:price_usd, nil}
+
+          {:price_btc, price_btc} when num_ge(price_btc, @price_btc_limit) ->
+            {:price_btc, nil}
+
+          {:marketcap_usd, marketcap_usd} when num_ge(marketcap_usd, @marketcap_usd_limit) ->
+            {:marketcap_usd, nil}
+
+          {k, v} ->
+            {k, v}
+        end)
+
+      struct!(__MODULE__, map)
     end)
   end
 

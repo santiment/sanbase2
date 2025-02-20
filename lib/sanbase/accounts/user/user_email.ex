@@ -174,9 +174,9 @@ defmodule Sanbase.Accounts.User.Email do
 
   defp construct_origin_url(origin_host_parts, args) do
     if Map.get(args, :is_admin_login, false) do
-      "https://" <> Enum.join(origin_host_parts, ".")
-    else
       SanbaseWeb.Endpoint.admin_url()
+    else
+      "https://" <> Enum.join(origin_host_parts, ".")
     end
   end
 
@@ -187,9 +187,9 @@ defmodule Sanbase.Accounts.User.Email do
 
     path =
       if Map.get(args, :is_admin_login, false) do
-        "email_login"
-      else
         "admin_auth/email_login"
+      else
+        "email_login"
       end
 
     login_url = Path.join(login_url, path)

@@ -156,8 +156,8 @@ defmodule Sanbase.Metric.Registry.Sync do
           # Update existing metric
           {:ok, metric_registry} ->
             # Working directly with changesets allow to manually put sync_status
-            # Using the update/create functions do not
-            params = Map.put(params, "sync_status", "synced")
+            # Using the update/create functions do not allow manually setting it
+            params = Map.merge(params, Registry.mark_as_synced_params())
             registry_changeset = Registry.changeset(metric_registry, params)
 
             changelog_changeset =
@@ -181,8 +181,8 @@ defmodule Sanbase.Metric.Registry.Sync do
           # There is no such metric. This is creating a new metric
           {:error, _} ->
             # Working directly with changesets allow to manually put sync_status
-            # Using the update/create functions do not
-            params = Map.put(params, "sync_status", "synced")
+            # Using the update/create functions do not allow manually setting it
+            params = Map.merge(params, Registry.mark_as_synced_params())
             registry_changeset = Registry.changeset(%Registry{}, params)
 
             updated_multi =

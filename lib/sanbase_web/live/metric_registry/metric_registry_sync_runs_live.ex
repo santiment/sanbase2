@@ -44,7 +44,7 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
       </div>
       <.table id="metrics_registry_sync_runs" rows={@syncs}>
         <:col :let={row} label="Datetime">
-          {row.inserted_at}
+          {Timex.format!(row.inserted_at, "%F %T%:z", :strftime)}
         </:col>
 
         <:col :let={row} label="UUID">

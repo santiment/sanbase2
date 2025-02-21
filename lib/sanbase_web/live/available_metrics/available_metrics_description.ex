@@ -442,4 +442,12 @@ defmodule SanbaseWeb.AvailableMetricsDescription do
     </pre>
     """
   end
+
+  def get_popover_text(%{key: "Last Sync Datetime"} = assigns) do
+    ~H"""
+    <pre>
+    If the metric has been synced, shows the last datetime of the sync
+    </pre>
+    """
+  end
 end

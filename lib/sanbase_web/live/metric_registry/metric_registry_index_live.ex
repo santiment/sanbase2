@@ -73,6 +73,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
             metric={row.metric}
             internal_metric={row.internal_metric}
             human_readable_name={row.human_readable_name}
+            status={row.status}
           />
         </:col>
         <:col
@@ -223,9 +224,8 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           # Put the old is_verified here so after a few toggles we still know
           # how it started
           %{metric | is_verified: map.old},
-          %{is_verified: map.new}
+          map.new
         )
-        |> Sanbase.Repo.update()
     end
 
     {:noreply,
@@ -268,6 +268,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
               metric={row.metric}
               internal_metric={row.internal_metric}
               human_readable_name={row.human_readable_name}
+              status={row.status}
             />
           </:col>
           <:col :let={row} label="New Status">
@@ -483,7 +484,15 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
   defp metric_names(assigns) do
     ~H"""
     <div class="flex flex-col break-normal">
-      <div class="text-black text-base">{@human_readable_name}</div>
+      <div class="text-black text-base">
+        {@human_readable_name}
+        <span
+          :if={@status in ["alpha", "beta"]}
+          class={if @status == "alpha", do: "text-amber-600 text-sm", else: "text-violet-600 text-sm"}
+        >
+          ({String.upcase(@status)})
+        </span>
+      </div>
       <div class="text-gray-900 text-sm">{@metric} (API)</div>
       <div class="text-gray-900 text-sm">{@internal_metric} (DB)</div>
     </div>

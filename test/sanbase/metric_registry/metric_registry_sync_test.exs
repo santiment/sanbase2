@@ -141,9 +141,7 @@ defmodule Sanbase.MetricRegistrySyncTest do
                  {:changed,
                   [{:added_to_list, 0, %Sanbase.Metric.Registry.Alias{name: "new_alias"}}]},
                min_interval: {:changed, {:primitive_change, "1s", "1d"}},
-               exposed_environments: {:changed, {:primitive_change, "all", "stage"}},
-               # TODO: Mayber exclude?
-               sync_status: {:changed, {:primitive_change, "not_synced", "synced"}}
+               exposed_environments: {:changed, {:primitive_change, "all", "stage"}}
              }
 
       # Check some fields after sync

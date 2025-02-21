@@ -132,7 +132,11 @@ defmodule Sanbase.Metric.Registry.Sync do
         new = changeset |> Ecto.Changeset.apply_changes()
 
         key = Map.take(changeset.data, [:metric, :data_type, :fixed_parameters])
-        {key, ExAudit.Diff.diff(old, new)}
+        # When sync is applied, the logic for applying function also handles
+        # the sync status related fields. They are not important for the actual changes
+        diff = ExAudit.Diff.diff(old, new) |> Map.drop([:sync_status, :last_sync_datetime])
+
+        {key, diff}
       end)
 
     {:ok, changes}

@@ -25,8 +25,8 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col justify-center w-7/8">
-      <h1 class="text-gray-800 text-2xl">
-        Showing details for <span class="text-blue-700">{@metric_registry.metric}</span>
+      <h1 class="text-blue-700 text-2xl mb-4">
+        Metric Registry Details | {@metric_registry.metric}
       </h1>
       <SanbaseWeb.MetricRegistryComponents.user_details
         current_user={@current_user}
@@ -55,9 +55,9 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
 
         <AvailableMetricsComponents.available_metrics_button
           :if={Permissions.can?(:see_history, roles: @current_user_role_names)}
-          text="Changes Since Last Sync"
+          text="Diff Since Last Sync"
           href={~p"/admin2/metric_registry/diff/#{@metric_registry}"}
-          icon="hero-list-bullet"
+          icon="hero-code-bracket-square"
         />
 
         <AvailableMetricsComponents.available_metrics_button
@@ -144,9 +144,15 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
       },
       %{
         key: "Sync Status",
-        value: metric_registry.sync_status,
+        value: String.upcase(metric_registry.sync_status) |> String.replace("_", " "),
         popover_target: "popover-sync-status",
         popover_target_text: get_popover_text(%{key: "Sync Status"})
+      },
+      %{
+        key: "Last Sync Datetime",
+        value: metric_registry.last_sync_datetime || "No Syncs",
+        popover_target: "popover-last-sync-datetime",
+        popover_target_text: get_popover_text(%{key: "Last Sync Datetime"})
       },
       %{
         key: "Aliases",

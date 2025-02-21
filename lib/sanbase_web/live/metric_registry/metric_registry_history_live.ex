@@ -49,7 +49,7 @@ defmodule SanbaseWeb.MetricRegistryHistoryLive do
           {row.id}
         </:col>
         <:col :let={row} label="Datetime">
-          {row.inserted_at}
+          {Timex.format!(row.inserted_at, "%F %T%:z", :strftime)}
         </:col>
         <:col :let={row} label="Change Trigger">
           <.change_trigger_formatted change_trigger={row.change_trigger} />
@@ -66,7 +66,9 @@ defmodule SanbaseWeb.MetricRegistryHistoryLive do
     {:ok, list} = Sanbase.Metric.Registry.Changelog.by_metric_registry_id(metric_registry_id)
 
     data =
-      Enum.map(list, fn %{old: old, new: new} = struct ->
+      list
+      |> Enum.sort_by(& &1.id, :desc)
+      |> Enum.map(fn %{old: old, new: new} = struct ->
         new = Jason.decode!(new)
         old = Jason.decode!(old)
 

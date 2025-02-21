@@ -51,4 +51,41 @@ defmodule Sanbase.Metric.Registry.Changelog do
 
     {:ok, Sanbase.Repo.all(query)}
   end
+
+  def state_before_last_sync(metric_registry_id, nil = _last_sync_datetime) do
+    query =
+      from(changelog in __MODULE__,
+        where: changelog.metric_registry_id == ^metric_registry_id,
+        order_by: [asc: :id],
+        limit: 1
+      )
+
+    case Sanbase.Repo.one(query) do
+      %__MODULE__{} = struct ->
+        Jason.decode(struct.old)
+
+      nil ->
+        {:error, "No changes known for #{metric_registry_id}"}
+    end
+  end
+
+  def state_before_last_sync(metric_registry_id, %DateTime{} = last_sync_datetime) do
+    query =
+      from(changelog in __MODULE__,
+        where:
+          changelog.metric_registry_id == ^metric_registry_id and
+            changelog.change_trigger == "sync_apply" and
+            changelog.inserted_at <= ^last_sync_datetime,
+        order_by: [asc: :id],
+        limit: 1
+      )
+
+    case Sanbase.Repo.one(query) do
+      %__MODULE__{} = struct ->
+        Jason.decode(struct.old)
+
+      nil ->
+        {:error, "No changes known for #{metric_registry_id}"}
+    end
+  end
 end

@@ -71,6 +71,7 @@ defmodule Sanbase.Metric.Registry do
              :id,
              :inserted_at,
              :updated_at,
+             :is_verified,
              :sync_status,
              :last_sync_datetime,
              :change_suggestions
@@ -227,16 +228,21 @@ defmodule Sanbase.Metric.Registry do
     |> maybe_emit_event(:create_metric_registry, opts)
   end
 
+  def mark_as_synced_params() do
+    %{
+      "sync_status" => "synced",
+      "last_sync_datetime" => DateTime.utc_now() |> DateTime.truncate(:second)
+    }
+  end
+
   def mark_as_synced(metric_registry) do
     metric_registry
-    |> changeset(%{
-      sync_status: "synced",
-      sync_last_datetime: DateTime.utc_now() |> DateTime.truncate(:second)
-    })
+    |> changeset(mark_as_synced_params())
     |> Repo.update()
   end
 
-  def update_is_verified(metric_registry, is_verified) do
+  def update_is_verified(%__MODULE__{} = metric_registry, is_verified)
+      when is_boolean(is_verified) do
     metric_registry
     |> changeset(%{is_verified: is_verified})
     |> Repo.update()

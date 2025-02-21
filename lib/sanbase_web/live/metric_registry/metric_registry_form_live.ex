@@ -190,12 +190,6 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
             label="Notes"
             placeholder="Explanation why the changes are submitted"
           />
-          <.input
-            type="email"
-            label="Submitted by (enter your email address)"
-            name="submitted_by"
-            value={@email}
-          />
           <.button phx-disable-with="Submitting...">Submit Change Request</.button>
         </div>
         <.error :for={{field, [reason]} <- @save_errors}>
@@ -406,7 +400,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
 
   def handle_event(
         "save",
-        %{"registry" => params, "notes" => notes, "submitted_by" => submitted_by},
+        %{"registry" => params, "notes" => notes},
         socket
       )
       when socket.assigns.live_action == :new do
@@ -420,7 +414,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
                %Registry{id: nil},
                params,
                notes,
-               submitted_by
+               socket.assigns.current_user.email
              ) do
           {:ok, _change_suggestion} ->
             {:noreply,
@@ -447,7 +441,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
 
   def handle_event(
         "save",
-        %{"registry" => params, "notes" => notes, "submitted_by" => submitted_by},
+        %{"registry" => params, "notes" => notes},
         socket
       )
       when socket.assigns.live_action == :edit do
@@ -461,7 +455,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
                socket.assigns.metric_registry,
                params,
                notes,
-               submitted_by
+               socket.assigns.current_user.email
              ) do
           {:ok, _change_suggestion} ->
             {:noreply,

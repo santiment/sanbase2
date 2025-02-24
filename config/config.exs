@@ -215,12 +215,6 @@ config :ex_aws,
   secret_access_key: [{:system, "AWS_SECRET_ACCESS_KEY"}, :instance_role],
   region: "eu-central-1"
 
-config :sanbase, Sanbase.SimpleMailer,
-  adapter: Swoosh.Adapters.AmazonSES,
-  region: "eu-west-1",
-  access_key: {:system, "AWS_SES_ACCESS_KEY_ID"},
-  secret: {:system, "AWS_SES_SECRET_ACCESS_KEY"}
-
 config :sanbase, Sanbase.PresignedS3Url.S3,
   access_key_id: {:system, "AWS_USER_DATASETS_ACCESS_KEY_ID"},
   secret_access_key: {:system, "AWS_USER_DATASETS_SECRET_ACCESS_KEY"}

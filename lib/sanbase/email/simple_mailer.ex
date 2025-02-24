@@ -5,7 +5,7 @@ defmodule Sanbase.SimpleMailer do
 
   def send_email(rcpt_email, subject, body) do
     new()
-    |> from("support@santiment.net")
+    |> from({"Santiment", "support@santiment.net"})
     |> to(rcpt_email)
     |> subject(subject)
     |> text_body(body)

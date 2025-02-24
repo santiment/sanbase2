@@ -19,6 +19,12 @@ config :sanbase, Sanbase.TemplateMailer,
   api_key: System.get_env("MAILJET_API_KEY"),
   secret: System.get_env("MAILJET_API_SECRET")
 
+config :sanbase, Sanbase.SimpleMailer,
+  adapter: Swoosh.Adapters.AmazonSES,
+  region: "eu-west-1",
+  access_key: System.get_env("AWS_SES_ACCESS_KEY_ID"),
+  secret: System.get_env("AWS_SES_SECRET_ACCESS_KEY")
+
 config :sanbase, Sanbase.SmartContracts.SanrNFT,
   alchemy_api_key: System.get_env("ALCHEMY_API_KEY")
 

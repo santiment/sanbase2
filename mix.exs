@@ -76,6 +76,8 @@ defmodule Sanbase.Mixfile do
       {:ex_abi, "~> 0.6"},
       {:ex_aws_s3, "~> 2.0"},
       {:ex_aws, "~> 2.0"},
+      {:ex_aws_ses, "~> 2.4"},
+      {:gen_smtp, "~> 1.2"},
       {:ex_json_schema, "~> 0.10.2"},
       {:ex_keccak, "~> 0.7"},
       {:ex_machina, "~> 2.2", only: [:dev, :test]},

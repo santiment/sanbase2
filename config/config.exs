@@ -216,15 +216,10 @@ config :ex_aws,
   region: "eu-central-1"
 
 config :sanbase, Sanbase.SimpleMailer,
-  adapter: Swoosh.Adapters.SMTP,
-  relay: "email-smtp.eu-west-1.amazonaws.com",
-  username: {:system, "SMTP_USERNAME_SES"},
-  password: {:system, "SMTP_PASSWORD_SES"},
-  ssl: false,
-  tls: false,
-  auth: :always,
-  port: 587,
-  retries: 2
+  adapter: Swoosh.Adapters.AmazonSES,
+  region: "eu-west-1",
+  access_key: {:system, "AWS_SES_ACCESS_KEY_ID"},
+  secret: {:system, "AWS_SES_SECRET_ACCESS_KEY"}
 
 config :sanbase, Sanbase.PresignedS3Url.S3,
   access_key_id: {:system, "AWS_USER_DATASETS_ACCESS_KEY_ID"},

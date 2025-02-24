@@ -20,7 +20,6 @@ defmodule SanbaseWeb.MetricRegistryDiffLive do
 
               diff_changes =
                 ExAudit.Diff.diff(old_state_json, metric_registry_map)
-                |> dbg()
 
               html_safe_changes = Sanbase.ExAudit.Patch.format_patch(%{patch: diff_changes})
 

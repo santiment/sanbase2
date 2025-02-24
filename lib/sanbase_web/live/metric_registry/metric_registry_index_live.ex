@@ -19,6 +19,8 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
      |> assign(
        page_title: "Metric Registry",
        show_verified_changes_modal: false,
+       show_not_synced_diff: false,
+       not_synced_metric_registry: nil,
        visible_metrics_ids: Enum.map(metrics, & &1.id),
        metrics: metrics,
        changed_metrics_ids: [],
@@ -30,6 +32,16 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
   @impl true
   def render(assigns) do
     ~H"""
+    <.modal
+      :if={@show_not_synced_diff}
+      show
+      id="not_synced_diff"
+      max_modal_width="max-w-6xl"
+      on_cancel={JS.push("hide_show_not_synced_diff")}
+    >
+      <.diff_since_last_sync metric_registry={@not_synced_metric_registry} />
+    </.modal>
+
     <.modal
       :if={@show_verified_changes_modal}
       show
@@ -158,8 +170,8 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     visible_metrics_ids =
       socket.assigns.metrics
       |> maybe_apply_filter(:match_metric, params)
-      |> maybe_apply_filter(:match_table, params)
-      |> maybe_apply_filter(:only_unverified, params)
+      |> maybe_apply_filter(:unverified_only, params)
+      |> maybe_apply_filter(:not_synced_only, params)
       |> Enum.map(& &1.id)
 
     {:noreply,
@@ -171,15 +183,24 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
   end
 
   def handle_event("show_verified_changes_modal", _params, socket) do
-    {:noreply,
-     socket
-     |> assign(show_verified_changes_modal: true)}
+    {:noreply, socket |> assign(show_verified_changes_modal: true)}
   end
 
   def handle_event("hide_show_verified_changes_modal", _params, socket) do
+    {:noreply, socket |> assign(show_verified_changes_modal: false)}
+  end
+
+  def handle_event("show_not_synced_diff", %{"metric_registry_id" => id}, socket) do
     {:noreply,
      socket
-     |> assign(show_verified_changes_modal: false)}
+     |> assign(
+       show_not_synced_diff: true,
+       not_synced_metric_registry: Enum.find(socket.assigns.metrics, &(&1.id == id))
+     )}
+  end
+
+  def handle_event("hide_show_not_synced_diff", _params, socket) do
+    {:noreply, socket |> assign(show_not_synced_diff: false)}
   end
 
   def handle_event(
@@ -251,6 +272,33 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     """
   end
 
+  defp diff_since_last_sync(assigns) do
+    {:ok, old_state_json} =
+      Sanbase.Metric.Registry.Changelog.state_before_last_sync(
+        assigns.metric_registry.id,
+        assigns.metric_registry.last_sync_datetime
+      )
+
+    metric_registry_map = Jason.encode!(assigns.metric_registry) |> Jason.decode!()
+
+    diff_changes =
+      ExAudit.Diff.diff(old_state_json, metric_registry_map)
+
+    html_safe_changes = Sanbase.ExAudit.Patch.format_patch(%{patch: diff_changes})
+
+    assigns = assign(assigns, :html_safe_changes, html_safe_changes)
+
+    ~H"""
+    <div :if={@metric_registry.last_sync_datetime} class="font-bold text-xl text-blue-800 mb-4">
+      Diff Since Last Sync | {@metric_registry.metric}
+    </div>
+    <div :if={!@metric_registry.last_sync_datetime} class="font-bold text-gray-400 text-sm mb-4">
+      Diff Since Metric Creation | {@metric_registry.metric}
+    </div>
+    <div>{@html_safe_changes}</div>
+    """
+  end
+
   defp list_metrics_verified_status_changed(assigns) do
     ~H"""
     <div>
@@ -317,15 +365,23 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
 
   def sync_status(assigns) do
     ~H"""
-    <span class="ms-3 text-sm font-bold">
-      <span :if={@row.sync_status == "synced"} class="text-green-900">
+    <div>
+      <span :if={@row.sync_status == "synced"} class="text-green-900 ms-3 text-sm font-bold">
         SYNCED
       </span>
 
-      <span :if={@row.sync_status == "not_synced"} class="text-red-700">
-        NOT SYNCED
+      <span :if={@row.sync_status == "not_synced"} class="text-red-700 ms-3 text-sm font-bold">
+        <div>NOT SYNCED</div>
       </span>
-    </span>
+
+      <div
+        :if={@row.sync_status == "not_synced"}
+        class="text-gray-400 text-sm font-semibold cursor-pointer"
+        phx-click={JS.push("show_not_synced_diff", value: %{metric_registry_id: @row.id})}
+      >
+        (click to see diff)
+      </div>
+    </div>
     """
   end
 
@@ -383,17 +439,11 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
             placeholder="Filter by metric name"
           />
 
-          <.filter_input
-            id="table-search"
-            value={@filter["match_table"]}
-            name="match_table"
-            placeholder="Filter by table"
-          />
-
           <.filter_status value={@filter["status"]} />
         </div>
-        <div class="flex flex-col flex-wrap mt-4 space-y-2 items-start">
+        <div class="flex flex-row mt-4 space-x-2 ">
           <.filter_unverified />
+          <.filter_not_synced />
         </div>
       </form>
       <.phx_click_button
@@ -415,14 +465,31 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
   defp filter_unverified(assigns) do
     ~H"""
     <div class="flex items-center mb-4 ">
-      <input
-        id="unverified-only"
-        name="unverified_only"
-        type="checkbox"
-        class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded "
-      />
-      <label for="default-checkbox" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-        Show Unverified Only
+      <label for="unverified-only" class="cursor-pointer ms-2 text-sm font-medium text-gray-900">
+        <input
+          id="unverified-only"
+          name="unverified_only"
+          type="checkbox"
+          class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded "
+        /> Show Only Unverified
+      </label>
+    </div>
+    """
+  end
+
+  defp filter_not_synced(assigns) do
+    ~H"""
+    <div class="flex items-center mb-4 ">
+      <label
+        for="not-synced-only"
+        class="cursor-pointer ms-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+      >
+        <input
+          id="not-synced-only"
+          name="not_synced_only"
+          type="checkbox"
+          class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded "
+        /> Show Only Not Synced
       </label>
     </div>
     """
@@ -525,18 +592,17 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     |> Enum.sort_by(&String.jaro_distance(query, &1.metric), :desc)
   end
 
-  defp maybe_apply_filter(metrics, :match_table, %{"match_table" => query})
-       when query != "" do
-    metrics
-    |> Enum.filter(fn m ->
-      Enum.any?(m.tables, &String.contains?(&1.name, query))
-    end)
-  end
-
-  defp maybe_apply_filter(metrics, :match_table, %{"unverified_only" => "on"}) do
+  defp maybe_apply_filter(metrics, :unverified_only, %{"unverified_only" => "on"}) do
     metrics
     |> Enum.filter(fn m ->
       m.is_verified == false
+    end)
+  end
+
+  defp maybe_apply_filter(metrics, :not_synced_only, %{"not_synced_only" => "on"}) do
+    metrics
+    |> Enum.filter(fn m ->
+      m.sync_status != "synced"
     end)
   end
 

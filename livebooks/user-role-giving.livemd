@@ -1,0 +1,33 @@
+# Role Giver
+
+## Section
+
+```elixir
+emails = ["some_name@santiment.net"]
+
+roles_to_give = %{
+  "Metric Registry Owner" => 0,
+  "Metric Registry Viewer" => 0,
+  "Metric Registry Deployer" => 0,
+  "Metric Registry Change Suggester" => 0
+}
+```
+
+```elixir
+# Get the users
+users =
+  Enum.map(emails, fn e ->
+    {:ok, u} = Sanbase.Accounts.User.by_email(e)
+    u
+  end)
+```
+
+```elixir
+# Assign the roles from the map which are not 0
+roles = Enum.filter(roles_to_give, fn {_k, v} -> v == 1 end) |> Enum.map(fn {k, _v} -> k end)
+roles_ids = Sanbase.Accounts.Role.by_names(roles) |> Enum.map(& &1.id)
+
+for %{id: user_id} <- users, role_id <- roles_ids do
+  Sanbase.Accounts.UserRole.create(user_id, role_id)
+end
+```

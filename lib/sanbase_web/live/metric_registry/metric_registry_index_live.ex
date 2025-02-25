@@ -273,30 +273,53 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
   end
 
   defp diff_since_last_sync(assigns) do
-    {:ok, old_state_json} =
-      Sanbase.Metric.Registry.Changelog.state_before_last_sync(
-        assigns.metric_registry.id,
-        assigns.metric_registry.last_sync_datetime
-      )
+    with {:ok, old_state_json} <-
+           Sanbase.Metric.Registry.Changelog.state_before_last_sync(
+             assigns.metric_registry.id,
+             assigns.metric_registry.last_sync_datetime
+           ) do
+      metric_registry_map = Jason.encode!(assigns.metric_registry) |> Jason.decode!()
 
-    metric_registry_map = Jason.encode!(assigns.metric_registry) |> Jason.decode!()
+      diff_changes =
+        ExAudit.Diff.diff(old_state_json, metric_registry_map)
 
-    diff_changes =
-      ExAudit.Diff.diff(old_state_json, metric_registry_map)
+      html_safe_changes = Sanbase.ExAudit.Patch.format_patch(%{patch: diff_changes})
 
-    html_safe_changes = Sanbase.ExAudit.Patch.format_patch(%{patch: diff_changes})
+      assigns = assign(assigns, :html_safe_changes, html_safe_changes)
 
-    assigns = assign(assigns, :html_safe_changes, html_safe_changes)
+      ~H"""
+      <div :if={@metric_registry.last_sync_datetime} class="font-bold text-xl text-blue-800 mb-4">
+        Diff Since Last Sync | {@metric_registry.metric}
+      </div>
+      <div :if={!@metric_registry.last_sync_datetime} class="font-bold text-gray-400 text-sm mb-4">
+        Diff Since Metric Creation | {@metric_registry.metric}
+      </div>
+      <div>{@html_safe_changes}</div>
+      """
+    else
+      _ ->
+        ~H"""
+        <div>
+          <div>
+            This should not be visible.
+          </div>
+          <div>
+            This can be caused because some things were done on staging before some of the helper database tables were introduced.
+            <br /> If you see this message contact the backend team and share the following details:
+          </div>
+          <div>
+            Metric Id: {@metric_registry.id}
+          </div>
+          <div>
+            Metric Name: {@metric_registry.metric}
+          </div>
 
-    ~H"""
-    <div :if={@metric_registry.last_sync_datetime} class="font-bold text-xl text-blue-800 mb-4">
-      Diff Since Last Sync | {@metric_registry.metric}
-    </div>
-    <div :if={!@metric_registry.last_sync_datetime} class="font-bold text-gray-400 text-sm mb-4">
-      Diff Since Metric Creation | {@metric_registry.metric}
-    </div>
-    <div>{@html_safe_changes}</div>
-    """
+          <div class="text-wrap break-words ">
+            {:erlang.term_to_binary(@metric_registry) |> Base.encode64()}
+          </div>
+        </div>
+        """
+    end
   end
 
   defp list_metrics_verified_status_changed(assigns) do

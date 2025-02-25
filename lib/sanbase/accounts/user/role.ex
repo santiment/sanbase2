@@ -35,6 +35,14 @@ defmodule Sanbase.Accounts.Role do
   def san_team_ids(), do: get_role_ids(@san_team_role_id)
   def san_moderator_ids(), do: get_role_ids(@san_moderator_role_id)
 
+  def by_names(names) do
+    from(
+      r in __MODULE__,
+      where: r.name in ^names
+    )
+    |> Sanbase.Repo.all()
+  end
+
   # Private functions
 
   defp get_role_ids(role_id) do

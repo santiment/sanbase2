@@ -207,6 +207,28 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
     end
   end
 
+  def update_change_suggestion(%__MODULE__{} = suggestion, %Registry{} = registry, params, notes) do
+    params = Map.new(params, fn {k, v} -> {to_string(k), v} end)
+
+    case Registry.changeset(registry, params) do
+      %{valid?: false} = changeset ->
+        {:error, changeset}
+
+      %{valid?: true} = changeset ->
+        old = changeset.data
+        new = changeset |> Ecto.Changeset.apply_changes()
+
+        changes = ExAudit.Diff.diff(old, new) |> encode_changes()
+
+        suggestion
+        |> changeset(%{
+          notes: notes,
+          changes: changes
+        })
+        |> Sanbase.Repo.update()
+    end
+  end
+
   def encode_changes(changes) do
     changes
     |> :erlang.term_to_binary()
@@ -217,6 +239,18 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
     changes
     |> Base.decode64!()
     |> :erlang.binary_to_term()
+  end
+
+  def changes_to_changeset_params(%Registry{} = metric_registry, changes) do
+    Enum.reduce(changes, %{}, fn {key, change}, acc ->
+      case change do
+        {:changed, {:primitive_change, _old, new}} ->
+          Map.put(acc, key, new)
+
+        {:changed, [_ | _] = list} ->
+          Map.put(acc, key, list_change(Map.fetch!(metric_registry, key), list))
+      end
+    end)
   end
 
   # Private
@@ -241,18 +275,6 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
     record
     |> changeset(%{status: new_status})
     |> Sanbase.Repo.update()
-  end
-
-  defp changes_to_changeset_params(metric_registry, changes) do
-    Enum.reduce(changes, %{}, fn {key, change}, acc ->
-      case change do
-        {:changed, {:primitive_change, _old, new}} ->
-          Map.put(acc, key, new)
-
-        {:changed, [_ | _] = list} ->
-          Map.put(acc, key, list_change(Map.fetch!(metric_registry, key), list))
-      end
-    end)
   end
 
   defp list_change(current_value_list, changes_list) when is_list(changes_list) do

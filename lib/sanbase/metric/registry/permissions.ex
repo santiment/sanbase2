@@ -40,6 +40,14 @@ defmodule Sanbase.Metric.Registry.Permissions do
     stage_or_dev?() and any_role?([@approve], opts)
   end
 
+  def check_permission(:edit_change_suggestion, opts) do
+    user_email = Keyword.get(opts, :user_email)
+    submitter_email = Keyword.get(opts, :submitter_email)
+
+    stage_or_dev?() and any_role?([@edit], opts) and
+      (is_binary(user_email) and user_email == submitter_email)
+  end
+
   def check_permission(:access_verified_status, _) do
     # Will depend on the user roles as well
     stage_or_dev?()

@@ -258,38 +258,36 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
   end
 
   attr :name, :string, required: true
-  attr :text, :string, required: true
   attr :ef, :map, required: false, default: nil
 
   def inputs_for_drop_button(assigns) do
     ~H"""
     <button
       type="button"
-      class="text-gray-900 my-1 bg-white hover:bg-red-100 border border-gray-200 font-medium rounded-lg text-sm px-4 py-2 text-center inline-flex items-center"
+      class="mt-2.5 mr-2 bg-white border border-gray-300 hover:bg-gray-50  rounded-xl text-sm px-3 py-2.5 inline-flex items-center"
       name={@name}
       value={@ef.index}
       phx-click={JS.dispatch("change")}
     >
-      <.icon name="hero-x-mark" class="w-6 h-6 relative bg-red-700" />
-      {@text}
+      <.icon name="hero-x-mark" class="w-4 h-4 text-red-700" />
     </button>
     """
   end
 
   attr :name, :string, required: true
-  attr :text, :string, required: true
 
   def inputs_for_add_button(assigns) do
     ~H"""
-    <hr class="h-px my-8 bg-gray-200 border-0 dark:bg-gray-700" />
     <button
       type="button"
       name={@name}
       value="new"
       phx-click={JS.dispatch("change")}
-      class="text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center"
+      class="mt-4 mr-2 bg-white border border-gray-300 hover:bg-gray-50 hover:text-gray-700 text-gray-600 font-semibold rounded-xl text-sm px-5 py-2.5 inline-flex items-center "
     >
-      {@text}
+      <.icon name="hero-plus-circle" class="w-4 h-4 text-gray-500 mr-2" />
+      <!-- Update icon to 'plus' for 'Add' -->
+      Add
     </button>
     """
   end
@@ -311,18 +309,20 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
       </span>
       <.inputs_for :let={ef} field={@form[@form_field]}>
         <input type="hidden" name={"registry[#{@sort_param}][]"} value={ef.index} />
-        <.input type="text" field={ef[@embeded_schema_field]} placeholder={@placeholder || @singular} />
-
-        <.inputs_for_drop_button
-          ef={ef}
-          name={"registry[#{@drop_param}][]"}
-          text={"Remove #{@singular}"}
-        />
+        <div class="flex flex-grow min-w-0 items-start">
+          <.inputs_for_drop_button ef={ef} name={"registry[#{@drop_param}][]"} />
+          <.input
+            type="text"
+            outer_div_class="flex-grow"
+            field={ef[@embeded_schema_field]}
+            placeholder={@placeholder || @singular}
+          />
+        </div>
       </.inputs_for>
 
       <input type="hidden" name={"registry[#{@drop_param}][]"} />
 
-      <.inputs_for_add_button name={"registry[#{@sort_param}][]"} text={"Add new #{@singular}"} />
+      <.inputs_for_add_button name={"registry[#{@sort_param}][]"} />
     </div>
     """
   end

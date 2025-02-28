@@ -2450,7 +2450,8 @@ CREATE TABLE public.metric_registry_sync_runs (
     actual_changes text,
     errors text,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    is_dry_run boolean DEFAULT false
 );
 
 
@@ -9933,3 +9934,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250207134654);
 INSERT INTO public."schema_migrations" (version) VALUES (20250219075723);
 INSERT INTO public."schema_migrations" (version) VALUES (20250219155459);
 INSERT INTO public."schema_migrations" (version) VALUES (20250220134051);
+INSERT INTO public."schema_migrations" (version) VALUES (20250226111103);

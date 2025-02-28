@@ -297,7 +297,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
       <div>{@html_safe_changes}</div>
       """
     else
-      _ ->
+      _err ->
         ~H"""
         <div>
           <div>

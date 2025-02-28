@@ -56,15 +56,24 @@ defmodule Sanbase.TemplateMailer do
           nil -> template[:subject]
         end
 
-      new()
-      |> to(rcpt_email)
-      |> from(from)
-      |> subject(subject)
-      |> put_provider_option(:template_id, template[:id])
-      |> put_provider_option(:template_error_deliver, false)
-      |> put_provider_option(:template_error_reporting, "team.backend@santiment.net")
-      |> put_provider_option(:variables, vars)
-      |> deliver()
+      email =
+        new()
+        |> to(rcpt_email)
+        |> from(from)
+        |> subject(subject)
+        |> put_provider_option(:template_id, template[:id])
+        |> put_provider_option(:template_error_deliver, false)
+        |> put_provider_option(:template_error_reporting, "team.backend@santiment.net")
+        |> put_provider_option(:variables, vars)
+
+      case deliver(email) do
+        {:ok, _} = success ->
+          success
+
+        _error ->
+          Logger.error("Failed to send email on current node #{node()}, trying other nodes")
+          try_send_on_other_nodes(email)
+      end
     else
       Logger.error("Missing email template: #{template_slug}")
       {:error, "Could not send email: Missing template."}
@@ -73,6 +82,31 @@ defmodule Sanbase.TemplateMailer do
 
   def send(_, _template_slug, _vars) do
     {:error, "invalid email"}
+  end
+
+  defp try_send_on_other_nodes(email) do
+    nodes = Node.list()
+    try_nodes_sequentially(nodes, email)
+  end
+
+  defp try_nodes_sequentially([], _email) do
+    Logger.error("Failed to send email on all nodes")
+    {:error, "Failed to send email on all nodes"}
+  end
+
+  defp try_nodes_sequentially([node | rest], email) do
+    Logger.info("Trying to send email on node #{node}")
+
+    result =
+      Task.Supervisor.async({Sanbase.TaskSupervisor, node}, fn ->
+        Sanbase.TemplateMailer.deliver(email)
+      end)
+      |> Task.await()
+
+    case result do
+      {:ok, _} = success -> success
+      _error -> try_nodes_sequentially(rest, email)
+    end
   end
 
   def generate_from(template_slug) do

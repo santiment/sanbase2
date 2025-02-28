@@ -90,11 +90,12 @@ defmodule Sanbase.Metric.Registry.Sync do
 
     with :ok <- check_apply_env(),
          {:ok, list} when is_list(list) <- Jason.decode(content),
-         {:ok, changesets} <- maybe_apply_sync_content(list, is_dry_run),
+         {:ok, %Ecto.Multi{} = multi, changesets} when is_list(changesets) <-
+           maybe_apply_sync_content(list, is_dry_run),
          {:ok, actual_changes} <- generate_actual_changes_applied(changesets),
-         {:ok, _} <-
-           send_sync_completed_confirmation(confirmation_endpoint, actual_changes),
-         {:ok, _sync} <- store_applied_sync_in_db(sync_uuid, content, actual_changes, is_dry_run) do
+         {:ok, _} <- send_sync_completed_confirmation(confirmation_endpoint, actual_changes),
+         {:ok, _sync} <- store_applied_sync_in_db(sync_uuid, content, actual_changes, is_dry_run),
+         :ok <- emit_apply_sync_events(multi, is_dry_run) do
       :ok
     end
   end
@@ -189,9 +190,13 @@ defmodule Sanbase.Metric.Registry.Sync do
             # Update the Registry Record with the changed
             # Insert a record in the Registry.Changelog
             updated_multi =
-              Ecto.Multi.update(multi, metric_registry.id, registry_changeset)
+              Ecto.Multi.update(
+                multi,
+                {:metric_registry_update, metric_registry.id, metric_registry.metric},
+                registry_changeset
+              )
               |> Ecto.Multi.insert(
-                {:metric_registry_changelog, metric_registry.id},
+                {:metric_registry_changelog, metric_registry.id, metric_registry.metric},
                 changelog_changeset
               )
 
@@ -225,10 +230,10 @@ defmodule Sanbase.Metric.Registry.Sync do
     if is_dry_run do
       # If this is a dry run direclty return only the changesets
       # without comitting them to the database
-      {:ok, changesets}
+      {:ok, multi, changesets}
     else
       case Sanbase.Repo.transaction(multi) do
-        {:ok, _map} -> {:ok, changesets}
+        {:ok, _map} -> {:ok, multi, changesets}
         {:error, _name, error, _changes_so_far} -> {:error, error}
       end
     end
@@ -390,6 +395,32 @@ defmodule Sanbase.Metric.Registry.Sync do
       |> Enum.map(fn {%{metric: _, data_type: _, fixed_parameters: _} = key, _changes} -> key end)
 
     {:ok, keys}
+  end
+
+  defp emit_apply_sync_events(_multi, true = _is_dry_run), do: :ok
+
+  defp emit_apply_sync_events(multi, false = _is_dry_run) do
+    Logger.info("Emitting sync events")
+
+    # This makes DB call for each event. If this is a problem, we can optimize later
+    # Most syncs should in practice contain no more than 10 metrics
+    multi.operations
+    |> Enum.each(fn
+      {{:metric_registry_create, metric, data_type, fixed_parameters}, _changeset} ->
+        Registry.by_name(metric, data_type, fixed_parameters)
+        |> Sanbase.Metric.Registry.EventEmitter.emit_event(:create_metric_registry, %{})
+
+      {{:metric_registry_update, id, _metric}, _changeset} ->
+        # if changeset.changes != %{} do
+
+        Registry.by_id(id)
+        |> Sanbase.Metric.Registry.EventEmitter.emit_event(:update_metric_registry, %{})
+
+      _ ->
+        :ok
+    end)
+
+    :ok
   end
 
   defp get_confirmation_endpoint(sync) do

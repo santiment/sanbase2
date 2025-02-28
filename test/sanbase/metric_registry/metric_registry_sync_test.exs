@@ -46,7 +46,8 @@ defmodule Sanbase.MetricRegistrySyncTest do
                   status: "completed",
                   uuid: ^uuid,
                   is_dry_run: true,
-                  actual_changes: actual_changes
+                  actual_changes: actual_changes,
+                  sync_type: "outgoing"
                 }} =
                  Registry.Sync.by_uuid(uuid, "outgoing")
 
@@ -55,7 +56,8 @@ defmodule Sanbase.MetricRegistrySyncTest do
                   status: "completed",
                   uuid: ^uuid,
                   is_dry_run: true,
-                  actual_changes: ^actual_changes
+                  actual_changes: ^actual_changes,
+                  sync_type: "incoming"
                 }} =
                  Registry.Sync.by_uuid(uuid, "incoming")
 
@@ -241,7 +243,8 @@ defmodule Sanbase.MetricRegistrySyncTest do
                   status: "completed",
                   uuid: ^uuid,
                   is_dry_run: false,
-                  actual_changes: actual_changes
+                  actual_changes: actual_changes,
+                  sync_type: "outgoing"
                 }} =
                  Registry.Sync.by_uuid(uuid, "outgoing")
 
@@ -250,7 +253,8 @@ defmodule Sanbase.MetricRegistrySyncTest do
                   status: "completed",
                   uuid: ^uuid,
                   is_dry_run: false,
-                  actual_changes: actual_changes
+                  actual_changes: ^actual_changes,
+                  sync_type: "incoming"
                 }} =
                  Registry.Sync.by_uuid(uuid, "incoming")
 

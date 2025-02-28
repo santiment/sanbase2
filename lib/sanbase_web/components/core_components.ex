@@ -274,6 +274,7 @@ defmodule SanbaseWeb.CoreComponents do
   attr(:name, :any)
   attr(:label, :string, default: nil)
   attr(:value, :any)
+  attr(:outer_div_class, :string, default: "")
 
   attr(:type, :string,
     default: "text",
@@ -374,7 +375,7 @@ defmodule SanbaseWeb.CoreComponents do
   # All other inputs text, datetime-local, url, password, etc. are handled here...
   def input(assigns) do
     ~H"""
-    <div>
+    <div class={@outer_div_class}>
       <.label for={@id}>{@label}</.label>
       <input
         type={@type}

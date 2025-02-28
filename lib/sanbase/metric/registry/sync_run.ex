@@ -14,12 +14,14 @@ defmodule Sanbase.Metric.Registry.SyncRun do
     field(:actual_changes, :string)
     field(:errors, :string)
 
+    field(:is_dry_run, :boolean)
+
     timestamps()
   end
 
   def changeset(%__MODULE__{} = sync, attrs) do
     sync
-    |> cast(attrs, [:uuid, :content, :actual_changes, :status, :errors, :sync_type])
+    |> cast(attrs, [:uuid, :content, :actual_changes, :status, :errors, :sync_type, :is_dry_run])
     |> validate_inclusion(:status, ["scheduled", "executing", "completed", "failed", "cancelled"])
     |> validate_inclusion(:sync_type, ["outgoing", "incoming"])
   end

@@ -4,23 +4,28 @@ defmodule Sanbase.Metric.Registry.Sync do
   source of truth.
   """
 
-  alias Hex.Solver.Registry
+  import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
+
   alias Sanbase.Metric.Registry
+  alias Sanbase.Metric.Registry.SyncRun
   alias Sanbase.Utils.Config
 
-  import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
   require Logger
 
   @pubsub_topic "sanbase_metric_registry_sync"
 
-  def by_uuid(uuid) do
-    Registry.SyncRun.by_uuid(uuid)
+  def by_uuid(uuid, sync_type \\ "outgoing") when sync_type in ["outgoing", "incoming"] do
+    SyncRun.by_uuid(uuid, sync_type)
+  end
+
+  def last_syncs(limit) do
+    SyncRun.last_syncs(limit)
   end
 
   def cancel_run(uuid) do
-    case Registry.SyncRun.by_uuid(uuid) do
+    case SyncRun.by_uuid(uuid) do
       {:ok, sync} ->
-        case Registry.SyncRun.update_status(sync, "cancelled", "Manually canceled") do
+        case SyncRun.update_status(sync, "cancelled", "Manually canceled") do
           {:ok, sync} ->
             {:ok, sync}
 
@@ -36,16 +41,18 @@ defmodule Sanbase.Metric.Registry.Sync do
   @doc ~s"""
   Start a sync that will sync the not synced metrics from stage to prod
   """
-  @spec sync(list(non_neg_integer())) :: :ok
-  def sync(metric_registry_ids) when is_list(metric_registry_ids) do
+  @spec sync(list(non_neg_integer()), Keyword.t()) :: :ok
+  def sync(metric_registry_ids, opts \\ []) when is_list(metric_registry_ids) do
     Logger.info("Initiating sync for #{length(metric_registry_ids)} metric registry records")
+
+    is_dry_run = Keyword.get(opts, :dry_run, false)
 
     with :ok <- no_running_syncs(),
          :ok <- check_initiate_env(),
          {:ok, content} <- get_sync_content(metric_registry_ids),
-         {:ok, sync} <- store_initial_sync_in_db(content),
-         {:ok, sync} <- Registry.SyncRun.update_status(sync, "executing"),
-         :ok <- start_sync(sync) do
+         {:ok, sync} <- store_initial_sync_in_db(content, is_dry_run),
+         {:ok, sync} <- SyncRun.update_status(sync, "executing"),
+         :ok <- start_sync(sync, is_dry_run) do
       SanbaseWeb.Endpoint.broadcast_from(self(), @pubsub_topic, "sync_started", %{})
       {:ok, sync}
     end
@@ -56,15 +63,17 @@ defmodule Sanbase.Metric.Registry.Sync do
   back to the initiator that the sync is finished. The initiator calls this function
   to mark the sync as completed.
   """
-  def mark_sync_as_completed(sync_uuid, actual_changes) when is_binary(sync_uuid) do
+  def mark_sync_as_completed(sync_uuid, actual_changes)
+      when is_binary(sync_uuid) and is_binary(actual_changes) do
+    # actual_changes is a string that is encoded and zipped
+    # Use decode_changes/1 to revert back to its original value, if needed
     Logger.info("Marking Metric Registry sync as finished for UUID #{sync_uuid}")
 
-    with {:ok, decoded_changes} <- decode_changes(actual_changes),
-         {:ok, sync} <- Registry.SyncRun.by_uuid(sync_uuid),
-         {:ok, list} <- extract_metric_registry_identifiers_list(decoded_changes),
-         :ok <- mark_metric_registries_as_synced(list),
+    with {:ok, sync} <- SyncRun.by_uuid(sync_uuid),
+         # In case of dry run there has been no sync, so we'll not mark as synced
+         :ok <- maybe_mark_metrics_as_synced(sync, actual_changes),
          {:ok, sync} <-
-           Registry.SyncRun.update(sync, %{status: "completed", actual_changes: actual_changes}) do
+           SyncRun.update(sync, %{status: "completed", actual_changes: actual_changes}) do
       SanbaseWeb.Endpoint.broadcast_from(self(), @pubsub_topic, "sync_completed", %{})
 
       {:ok, sync}
@@ -74,29 +83,27 @@ defmodule Sanbase.Metric.Registry.Sync do
   def apply_sync(%{
         "content" => content,
         "confirmation_endpoint" => confirmation_endpoint,
-        "sync_uuid" => sync_uuid
+        "sync_uuid" => sync_uuid,
+        "is_dry_run" => is_dry_run
       }) do
     Logger.info("Applying Metric Registry sync")
 
     with :ok <- check_apply_env(),
          {:ok, list} when is_list(list) <- Jason.decode(content),
-         {:ok, changesets} <- do_apply_sync_content(list),
+         {:ok, changesets} <- maybe_apply_sync_content(list, is_dry_run),
          {:ok, actual_changes} <- generate_actual_changes_applied(changesets),
-         {:ok, _} <- send_sync_completed_confirmation(confirmation_endpoint, actual_changes),
-         {:ok, _sync} <- store_applied_sync_in_db(content, sync_uuid) do
+         {:ok, _} <-
+           send_sync_completed_confirmation(confirmation_endpoint, actual_changes),
+         {:ok, _sync} <- store_applied_sync_in_db(sync_uuid, content, actual_changes, is_dry_run) do
       :ok
     end
   end
 
-  def last_syncs(limit) do
-    Registry.SyncRun.last_syncs(limit)
-  end
+  def actual_changes_formatted(%SyncRun{actual_changes: nil}), do: ""
 
-  def actual_changes_formatted(%Registry.SyncRun{actual_changes: nil}), do: ""
-
-  def actual_changes_formatted(%Registry.SyncRun{actual_changes: actual_changes}) do
-    with {:ok, decoded} <- decode_changes(actual_changes) do
-      decoded
+  def actual_changes_formatted(%SyncRun{actual_changes: actual_changes}) do
+    with {:ok, decoded_changes} when is_list(decoded_changes) <- decode_changes(actual_changes) do
+      decoded_changes
       # Has the form {key, change}
       |> Enum.map(fn {key, changes} ->
         formatted_patch = Sanbase.ExAudit.Patch.format_patch(%{patch: changes})
@@ -134,22 +141,27 @@ defmodule Sanbase.Metric.Registry.Sync do
         key = Map.take(changeset.data, [:metric, :data_type, :fixed_parameters])
         # When sync is applied, the logic for applying function also handles
         # the sync status related fields. They are not important for the actual changes
-        diff = ExAudit.Diff.diff(old, new) |> Map.drop([:sync_status, :last_sync_datetime])
+        diff =
+          case ExAudit.Diff.diff(old, new) do
+            map when is_map(map) -> Map.drop(map, [:sync_status, :last_sync_datetime])
+            :not_changed -> %{}
+          end
 
         {key, diff}
       end)
 
-    {:ok, changes}
+    {:ok, encode_changes(changes)}
   end
 
-  defp send_sync_completed_confirmation(url, changes) do
+  defp send_sync_completed_confirmation(url, actual_changes) do
     # The URL already contains the sync uuid and the secret token
     Logger.info("Confirming that a Metric Registry sync was completed to url #{url}")
 
-    Req.post(url, json: %{actual_changes: encode_changes(changes)})
+    Req.post(url, json: %{actual_changes: actual_changes})
   end
 
-  defp do_apply_sync_content(list) do
+  defp maybe_apply_sync_content(list, is_dry_run) when is_boolean(is_dry_run) do
+    # After the Ecto.Multi is built, it is committed to the database only in case is_dry_run_ is false
     {multi, changesets} =
       list
       |> Enum.reduce({Ecto.Multi.new(), []}, fn params, {multi, changesets} ->
@@ -161,7 +173,12 @@ defmodule Sanbase.Metric.Registry.Sync do
           {:ok, metric_registry} ->
             # Working directly with changesets allow to manually put sync_status
             # Using the update/create functions do not allow manually setting it
-            params = Map.merge(params, Registry.mark_as_synced_params())
+            # In case of dry run do not add these params
+            params =
+              if is_dry_run,
+                do: params,
+                else: Map.merge(params, Registry.mark_as_synced_params())
+
             registry_changeset = Registry.changeset(metric_registry, params)
 
             changelog_changeset =
@@ -186,7 +203,12 @@ defmodule Sanbase.Metric.Registry.Sync do
           {:error, _} ->
             # Working directly with changesets allow to manually put sync_status
             # Using the update/create functions do not allow manually setting it
-            params = Map.merge(params, Registry.mark_as_synced_params())
+            # In case of dry run do not add these params
+            params =
+              if is_dry_run,
+                do: params,
+                else: Map.merge(params, Registry.mark_as_synced_params())
+
             registry_changeset = Registry.changeset(%Registry{}, params)
 
             updated_multi =
@@ -200,28 +222,37 @@ defmodule Sanbase.Metric.Registry.Sync do
         end
       end)
 
-    case Sanbase.Repo.transaction(multi) do
-      {:ok, _map} -> {:ok, changesets}
-      {:error, _name, error, _changes_so_far} -> {:error, error}
+    if is_dry_run do
+      # If this is a dry run direclty return only the changesets
+      # without comitting them to the database
+      {:ok, changesets}
+    else
+      case Sanbase.Repo.transaction(multi) do
+        {:ok, _map} -> {:ok, changesets}
+        {:error, _name, error, _changes_so_far} -> {:error, error}
+      end
     end
   end
 
   defp no_running_syncs() do
-    case Registry.SyncRun.all_with_status("executing") do
+    case SyncRun.all_with_status("executing") do
       [] -> :ok
       [_ | _] -> {:error, "Sync process is already running"}
     end
   end
 
-  defp start_sync(sync) do
+  defp start_sync(%SyncRun{} = sync, is_dry_run) when is_boolean(is_dry_run) do
     url = get_sync_target_url()
 
-    json = %{
-      "sync_uuid" => sync.uuid,
-      "content" => sync.content,
-      "generated_at" => DateTime.utc_now() |> DateTime.truncate(:second) |> DateTime.to_iso8601(),
-      "confirmation_endpoint" => get_confirmation_endpoint(sync)
-    }
+    json =
+      %{
+        "is_dry_run" => is_dry_run,
+        "sync_uuid" => sync.uuid,
+        "content" => sync.content,
+        "generated_at" =>
+          DateTime.utc_now() |> DateTime.truncate(:second) |> DateTime.to_iso8601(),
+        "confirmation_endpoint" => get_confirmation_endpoint(sync)
+      }
 
     case Req.post(url, json: json) do
       {:ok, %Req.Response{status: 200}} ->
@@ -229,12 +260,12 @@ defmodule Sanbase.Metric.Registry.Sync do
 
       {:ok, %Req.Response{status: status, body: body}} ->
         error = "Failed to sync, received status code: #{status}. Body: #{body}"
-        {:ok, _} = Registry.SyncRun.update_status(sync, "failed", error)
+        {:ok, _} = SyncRun.update_status(sync, "failed", error)
         {:error, error}
 
       {:error, reason} ->
         error = inspect(reason)
-        {:ok, _} = Registry.SyncRun.update_status(sync, "failed", error)
+        {:ok, _} = SyncRun.update_status(sync, "failed", error)
         {:error, "Failed to sync, error: #{error}"}
     end
   end
@@ -255,26 +286,39 @@ defmodule Sanbase.Metric.Registry.Sync do
     end)
   end
 
-  defp store_initial_sync_in_db(content) do
+  defp store_initial_sync_in_db(content, is_dry_run) do
     attrs = %{
       content: content,
       sync_type: "outgoing",
       status: "scheduled",
-      uuid: Ecto.UUID.generate()
+      uuid: Ecto.UUID.generate(),
+      is_dry_run: is_dry_run
     }
 
-    Registry.SyncRun.create(attrs)
+    SyncRun.create(attrs)
   end
 
-  defp store_applied_sync_in_db(content, uuid) do
+  defp store_applied_sync_in_db(uuid, content, actual_changes, is_dry_run) do
     attrs = %{
+      uuid: uuid,
       content: content,
+      actual_changes: actual_changes,
+      is_dry_run: is_dry_run,
       sync_type: "incoming",
-      status: "completed",
-      uuid: uuid
+      status: "completed"
     }
 
-    Registry.SyncRun.create(attrs)
+    SyncRun.create(attrs)
+  end
+
+  defp maybe_mark_metrics_as_synced(%SyncRun{is_dry_run: true}, _), do: :ok
+
+  defp maybe_mark_metrics_as_synced(%SyncRun{is_dry_run: false}, actual_changes) do
+    with {:ok, decoded_changes} when is_list(decoded_changes) <- decode_changes(actual_changes),
+         {:ok, list} <- extract_metric_registry_identifiers_list(decoded_changes),
+         :ok <- mark_metric_registries_as_synced(list) do
+      :ok
+    end
   end
 
   defp get_sync_target_url() do

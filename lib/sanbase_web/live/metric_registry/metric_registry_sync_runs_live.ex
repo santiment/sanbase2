@@ -43,6 +43,9 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
         />
       </div>
       <.table id="metrics_registry_sync_runs" rows={@syncs}>
+        <:col :let={row} label="Run Type">
+          <.formatted_dry_run is_dry_run={row.is_dry_run} />
+        </:col>
         <:col :let={row} label="Datetime">
           {Timex.format!(row.inserted_at, "%F %T%:z", :strftime)}
         </:col>
@@ -63,17 +66,7 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
           </span>
         </:col>
         <:col :let={row} label="Status">
-          <div class="flex flex-col">
-            <span>{row.status}</span>
-            <span
-              :if={execution_too_long?(row.status, row.inserted_at)}
-              class="text-red-500"
-              data-popover-target={"popover-executing-too-long-#{row.id}"}
-            >
-              <.icon name="hero-exclamation-circle" /> Executing for too long!
-              ({rough_duration_since(row.inserted_at)})
-            </span>
-          </div>
+          <.formatted_completed_status id={row.id} status={row.status} inserted_at={row.inserted_at} />
         </:col>
 
         <:col :let={row} label="No. Metrics Synced">
@@ -179,6 +172,43 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
     """
   end
 
+  defp formatted_completed_status(assigns) do
+    ~H"""
+    <div class="flex flex-col">
+      <span :if={@status == "completed"} class="text-green-500">
+        <.icon name="hero-check-circle" /> Completed
+      </span>
+
+      <span :if={@status in ["failed", "cancelled"]} class="text-red-500">
+        <.icon name="hero-x-circle" /> {String.capitalize(@status)}
+      </span>
+
+      <span :if={@status in ["executing", "scheduled"]} class="text-amber-500" }>
+        <.icon name="hero-ellipsis-horizontal" /> {String.capitalize(@status)}
+      </span>
+      <span
+        :if={execution_too_long?(@status, @inserted_at)}
+        class="text-red-500"
+        data-popover-target={"popover-executing-too-long-#{@id}"}
+      >
+        <.icon name="hero-exclamation-circle" /> Executing for too long!
+        ({rough_duration_since(@inserted_at)})
+      </span>
+    </div>
+    """
+  end
+
+  defp formatted_dry_run(assigns) do
+    ~H"""
+    <span :if={@is_dry_run} class="text-fuchsia-300 font-bold">
+      DRY RUN
+    </span>
+    <span :if={!@is_dry_run} class="text-green-500 font-bold">
+      REAL RUN
+    </span>
+    """
+  end
+
   defp list_synced_metrics(assigns) do
     ~H"""
     <div class="max-w-xl">
@@ -188,7 +218,7 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
   end
 
   defp get_syncs() do
-    Sanbase.Metric.Registry.Sync.last_syncs(20)
+    Sanbase.Metric.Registry.Sync.last_syncs(100)
     |> Enum.map(fn sync -> Map.update!(sync, :content, &Jason.decode!/1) end)
   end
 end

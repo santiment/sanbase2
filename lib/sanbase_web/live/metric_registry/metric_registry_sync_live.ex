@@ -16,6 +16,7 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
      socket
      |> assign(
        syncable_metrics: syncable_metrics,
+       is_dry_run: true,
        non_syncable_metrics: not_syncable_metrics,
        metric_ids_to_sync: Enum.map(syncable_metrics, & &1.id) |> MapSet.new(),
        page_title: "Metric Registry | Sync"
@@ -53,6 +54,19 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
           href={~p"/admin2/metric_registry/sync_runs"}
           icon="hero-list-bullet"
         />
+      </div>
+
+      <div class="flex items-center mb-4 ">
+        <label for="unverified-only" class="cursor-pointer ms-2 text-sm font-medium text-gray-900">
+          <input
+            id="is-dry-run"
+            name="is_dry_run"
+            checked={@is_dry_run}
+            type="checkbox"
+            class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded "
+            phx-click="update_is_dry_sync"
+          /> Dry Run
+        </label>
       </div>
 
       <div class="flex flex-col space-y-2 md:flex-row md:space-x-2 md:space-y-0">
@@ -123,7 +137,7 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
 
     ids = socket.assigns.metric_ids_to_sync |> Enum.to_list()
 
-    case Sanbase.Metric.Registry.Sync.sync(ids) do
+    case Sanbase.Metric.Registry.Sync.sync(ids, dry_run: socket.assigns.is_dry_run) do
       {:ok, _data} ->
         # Add some artificial wait period so there's some time for the sync
         # to finish.
@@ -142,6 +156,10 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
       {:error, error} ->
         {:noreply, socket |> put_flash(:error, "Error syncing metrics: #{error}")}
     end
+  end
+
+  def handle_event("update_is_dry_sync", params, socket) do
+    {:noreply, assign(socket, is_dry_run: Map.get(params, "value") == "on")}
   end
 
   def handle_event("update_should_sync", %{"metric_registry_id" => id} = params, socket) do

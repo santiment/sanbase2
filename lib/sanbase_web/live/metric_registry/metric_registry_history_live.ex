@@ -86,7 +86,7 @@ defmodule SanbaseWeb.MetricRegistryHistoryLive do
     <span
       :if={@change_trigger}
       class={[
-        "px-3 py-2 text-xs font-semibold text-white rounded-full",
+        "px-3 py-2 text-xs font-semibold text-white rounded-full text-nowrap",
         get_bg_color(@change_trigger)
       ]}
     >

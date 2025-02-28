@@ -1,12 +1,14 @@
 defmodule SanbaseWeb.MetricRegistryController do
   use SanbaseWeb, :controller
 
+  require Logger
+
   def sync(conn, %{"secret" => secret} = params) do
     case secret == get_sync_secret() do
       true ->
         try do
           case Sanbase.Metric.Registry.Sync.apply_sync(
-                 Map.take(params, ["content", "confirmation_endpoint", "sync_uuid"])
+                 Map.take(params, ["content", "confirmation_endpoint", "sync_uuid", "is_dry_run"])
                ) do
             :ok ->
               conn
@@ -20,6 +22,12 @@ defmodule SanbaseWeb.MetricRegistryController do
           end
         rescue
           e ->
+            Logger.error("""
+            Exception trying to sync metric registry.
+
+            #{Exception.format_stacktrace(__STACKTRACE__)}
+            """)
+
             conn
             |> resp(500, "Error syncing: #{Exception.message(e)}")
             |> send_resp()
@@ -39,6 +47,7 @@ defmodule SanbaseWeb.MetricRegistryController do
       }) do
     case secret == get_sync_secret() do
       true ->
+        # The code fetches the sync by the UUID and checks there if the sync is dry run or not
         case Sanbase.Metric.Registry.Sync.mark_sync_as_completed(sync_uuid, actual_changes) do
           {:ok, _} ->
             conn

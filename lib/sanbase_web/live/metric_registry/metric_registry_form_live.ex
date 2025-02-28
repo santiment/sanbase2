@@ -22,7 +22,8 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
     # If the update_change_request_id is present, we need to apply the changes
     # as this is actually editing a Change Request. The notes are not part of the
     # metric registry and need to be additionally added here
-    {:ok, metric_registry, notes} = maybe_apply_change_request(original_metric_registry, params)
+    {:ok, metric_registry, suggestion} =
+      maybe_apply_change_request(original_metric_registry, params)
 
     form = metric_registry |> Registry.changeset(%{}) |> to_form()
 
@@ -36,7 +37,8 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
        metric_registry: metric_registry,
        original_metric_registry: original_metric_registry,
        email: nil,
-       notes: notes,
+       suggestion: suggestion,
+       notes: if(suggestion, do: suggestion.notes),
        form: form,
        save_errors: []
      )}
@@ -62,14 +64,14 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
     update_change_request_id = params["update_change_request_id"]
 
     if is_nil(update_change_request_id) do
-      {:ok, metric_registry, _notes = nil}
+      {:ok, metric_registry, _suggestion = nil}
     else
       {:ok, suggestion} = Registry.ChangeSuggestion.by_id(update_change_request_id)
       changes = Registry.ChangeSuggestion.decode_changes(suggestion.changes)
       params = Registry.ChangeSuggestion.changes_to_changeset_params(metric_registry, changes)
       changeset = Registry.changeset(metric_registry, params)
       metric_registry_with_changes = Ecto.Changeset.apply_changes(changeset)
-      {:ok, metric_registry_with_changes, suggestion.notes}
+      {:ok, metric_registry_with_changes, suggestion}
     end
   end
 
@@ -451,11 +453,18 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
     """
   end
 
+  @impl true
   def handle_event("save", %{"registry" => params, "notes" => notes}, socket)
       when socket.assigns.live_action == :edit and
              socket.assigns.is_updating_change_request == true do
-    # TODO: Create permission for updating where we check user email and original submitter email
-    Permissions.raise_if_cannot(:create, roles: socket.assigns.current_user_role_names)
+    #
+    # Edit a Change Request that updates an existing metric registry
+    #
+    Permissions.raise_if_cannot(:edit_change_suggestion,
+      roles: socket.assigns.current_user_role_names,
+      user_email: socket.assigns.current_user.email,
+      submitter_email: socket.assigns.suggestion.submitted_by
+    )
 
     case socket.assigns.form.errors do
       [] ->
@@ -467,6 +476,55 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
         case Registry.ChangeSuggestion.update_change_suggestion(
                suggestion,
                socket.assigns.original_metric_registry,
+               params,
+               notes
+             ) do
+          {:ok, _change_suggestion} ->
+            {:noreply,
+             socket
+             |> assign(save_errors: [])
+             |> put_flash(:info, "Metric registry change request updated")
+             |> push_navigate(to: ~p"/admin2/metric_registry/change_suggestions/")}
+
+          {:error, error} ->
+            errors = Sanbase.Utils.ErrorHandling.changeset_errors(error)
+
+            {:noreply,
+             socket
+             |> assign(:save_errors, errors)
+             |> put_flash(:error, "Fix field validation errors before saving")}
+        end
+
+      [_ | _] = errors ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Fix field validation errors before saving: #{inspect(errors)}")}
+    end
+  end
+
+  @impl true
+  def handle_event("save", %{"registry" => params, "notes" => notes}, socket)
+      when socket.assigns.live_action == :new and
+             socket.assigns.is_updating_change_request == true do
+    #
+    # Edit a Change Request that creates a new metric registry record
+    #
+    Permissions.raise_if_cannot(:edit_change_suggestion,
+      roles: socket.assigns.current_user_role_names,
+      user_email: socket.assigns.current_user.email,
+      submitter_email: socket.assigns.suggestion.submitted_by
+    )
+
+    case socket.assigns.form.errors do
+      [] ->
+        params = process_params(params)
+
+        {:ok, suggestion} =
+          Registry.ChangeSuggestion.by_id(socket.assigns.update_change_request_id)
+
+        case Registry.ChangeSuggestion.update_change_suggestion(
+               suggestion,
+               %Registry{id: nil},
                params,
                notes
              ) do
@@ -635,4 +693,8 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
   defp page_title(:edit, metric_registry, update_change_request_id),
     do:
       "Metric Registry | Edit Change Request ##{update_change_request_id} for #{metric_registry.metric}"
+
+  defp page_title(:new, metric_registry, update_change_request_id),
+    do:
+      "Metric Registry | Edit Change Request ##{update_change_request_id} for creating a new metrics"
 end

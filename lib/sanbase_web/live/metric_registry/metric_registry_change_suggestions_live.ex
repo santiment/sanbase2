@@ -155,7 +155,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
     )
 
     case metric_registry_id do
-      nil ->
+      none when none in [nil, ""] ->
         {:noreply,
          socket
          |> push_navigate(

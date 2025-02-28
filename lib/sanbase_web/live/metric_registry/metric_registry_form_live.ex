@@ -278,17 +278,19 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
 
   def inputs_for_add_button(assigns) do
     ~H"""
-    <button
-      type="button"
-      name={@name}
-      value="new"
-      phx-click={JS.dispatch("change")}
-      class="mt-4 mr-2 bg-white border border-gray-300 hover:bg-gray-50 hover:text-gray-700 text-gray-600 font-semibold rounded-xl text-sm px-5 py-2.5 inline-flex items-center "
-    >
-      <.icon name="hero-plus-circle" class="w-4 h-4 text-gray-500 mr-2" />
-      <!-- Update icon to 'plus' for 'Add' -->
+    <div>
+      <button
+        type="button"
+        name={@name}
+        value="new"
+        phx-click={JS.dispatch("change")}
+        class="mt-4 mr-2 bg-white border border-gray-300 hover:bg-gray-50 hover:text-gray-700 text-gray-600 font-semibold rounded-xl text-sm px-5 py-2.5 inline-flex items-center "
+      >
+        <.icon name="hero-plus-circle" class="w-4 h-4 text-gray-500 mr-2" />
+        <!-- Update icon to 'plus' for 'Add' -->
       Add
-    </button>
+      </button>
+    </div>
     """
   end
 

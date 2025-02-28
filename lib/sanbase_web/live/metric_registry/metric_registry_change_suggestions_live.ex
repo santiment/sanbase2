@@ -158,14 +158,16 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
       nil ->
         {:noreply,
          socket
-         |> push_navigate(to: ~p"/admin2/metric_registry/new?update_change_request=#{record_id}")}
+         |> push_navigate(
+           to: ~p"/admin2/metric_registry/new?update_change_request_id=#{record_id}"
+         )}
 
       _ ->
         {:noreply,
          socket
          |> push_navigate(
            to:
-             ~p"/admin2/metric_registry/edit/#{metric_registry_id}?update_change_request=#{record_id}"
+             ~p"/admin2/metric_registry/edit/#{metric_registry_id}?update_change_request_id=#{record_id}"
          )}
     end
   end

@@ -78,13 +78,6 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     opts = resolve_fixed_parameters(opts, metric)
     filters = get_filters(metric, opts)
 
-    [
-      metric,
-      selector,
-      filters,
-      opts
-    ]
-
     timeseries_data_query(metric, selector, from, to, interval, aggregation, filters, opts)
     |> exec_timeseries_data_query()
   end
@@ -96,7 +89,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
     filters = get_filters(metric, opts)
 
-    timeseries_data_per_slug_query(metric, slug, from, to, interval, aggregation, filters)
+    timeseries_data_per_slug_query(metric, slug, from, to, interval, aggregation, filters, opts)
     |> ClickhouseRepo.query_reduce(
       %{},
       fn [timestamp, slug, value], acc ->
@@ -130,7 +123,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
     filters = Keyword.get(opts, :additional_filters, [])
     slugs = List.wrap(slug_or_slugs)
-    get_aggregated_timeseries_data(metric, slugs, from, to, aggregation, filters)
+    get_aggregated_timeseries_data(metric, slugs, from, to, aggregation, filters, opts)
   end
 
   @impl Sanbase.Metric.Behaviour
@@ -319,12 +312,12 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     |> ClickhouseRepo.query_transform(fn [slug] -> slug end)
   end
 
-  defp get_aggregated_timeseries_data(metric, slugs, from, to, aggregation, filters)
+  defp get_aggregated_timeseries_data(metric, slugs, from, to, aggregation, filters, opts)
        when is_list(slugs) and length(slugs) > 1000 do
     result =
       Enum.chunk_every(slugs, 1000)
       |> Sanbase.Parallel.map(
-        &get_aggregated_timeseries_data(metric, &1, from, to, aggregation, filters),
+        &get_aggregated_timeseries_data(metric, &1, from, to, aggregation, filters, opts),
         timeout: 55_000,
         max_concurrency: 8,
         ordered: false,
@@ -337,9 +330,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     {:ok, result}
   end
 
-  defp get_aggregated_timeseries_data(metric, slugs, from, to, aggregation, filters)
+  defp get_aggregated_timeseries_data(metric, slugs, from, to, aggregation, filters, opts)
        when is_list(slugs) do
-    query_struct = aggregated_timeseries_data_query(metric, slugs, from, to, aggregation, filters)
+    query_struct =
+      aggregated_timeseries_data_query(metric, slugs, from, to, aggregation, filters, opts)
 
     ClickhouseRepo.query_reduce(query_struct, %{}, fn [slug, value, has_changed], acc ->
       value = if has_changed == 1, do: value, else: nil

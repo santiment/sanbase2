@@ -327,9 +327,16 @@ defmodule Sanbase.Metric.Registry.Sync do
     port = Config.module_get(SanbaseWeb.Endpoint, [:http, :port])
 
     case deployment_env do
-      "dev" -> "http://localhost:#{port}/sync_metric_registry?secret=#{secret}"
-      "prod" -> raise("Cannot initiate sync from PROD")
-      "stage" -> "https://api.santiment.net/sync_metric_registry?secret=#{secret}"
+      "dev" ->
+        "http://localhost:#{port}/sync_metric_registry?secret=#{secret}"
+
+      "prod" ->
+        raise("Cannot initiate sync from PROD")
+
+      "stage" ->
+        # admin_url gives the current admin endpoint. Replace stage with production
+        admin_url = SanbaseWeb.Endpoint.admin_url() |> String.replace(".stage.", ".production.")
+        Path.join(admin_url, "/sync_metric_registry?secret=#{secret}")
     end
   end
 
@@ -395,7 +402,7 @@ defmodule Sanbase.Metric.Registry.Sync do
   defp get_confirmation_endpoint(sync) do
     secret = Sanbase.Utils.Config.module_get(Sanbase.Metric.Registry.Sync, :sync_secret)
 
-    SanbaseWeb.Endpoint.backend_url()
+    SanbaseWeb.Endpoint.admin_url()
     |> URI.parse()
     |> URI.append_path("/mark_metric_registry_sync_as_finished/#{sync.uuid}?secret=#{secret}")
     |> URI.to_string()

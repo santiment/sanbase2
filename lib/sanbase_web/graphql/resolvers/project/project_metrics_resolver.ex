@@ -95,14 +95,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
     # TEMP 02.02.2023: Handle ripple -> xrp rename
     {:ok, %{slug: slug}} = Sanbase.Project.Selector.args_to_selector(%{slug: slug})
 
+    only_finalized_data = Map.get(args, :only_finalized_data, false)
+
     with true <- Metric.has_metric?(metric),
          false <- Metric.hard_deprecated?(metric),
          include_incomplete_data = Map.get(args, :include_incomplete_data, false),
          {:ok, from, to} <-
-           calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to) do
-      from = from |> DateTime.truncate(:second)
-      to = to |> DateTime.truncate(:second)
-      {:ok, opts} = selector_args_to_opts(args)
+           calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to),
+         {:ok, opts} <- selector_args_to_opts(args),
+         opts <- Keyword.put(opts, :only_finalized_data, only_finalized_data) do
+      from = DateTime.truncate(from, :second)
+      to = DateTime.truncate(to, :second)
 
       data = %{
         slug: slug,

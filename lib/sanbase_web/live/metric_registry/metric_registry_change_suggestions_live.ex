@@ -60,6 +60,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
               form={@form}
               row={row}
               current_user={@current_user}
+              current_user_role_names={@current_user_role_names}
             />
           </:action>
         </.table>
@@ -111,7 +112,14 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
       />
 
       <.action_button
-        :if={@row.status == "pending_approval" and @row.submitted_by == @current_user.email}
+        :if={
+          @row.status == "pending_approval" and
+            Permissions.can?(:edit_change_suggestion,
+              roles: @current_user_role_names,
+              user_email: @current_user.email,
+              submitter_email: @row.submitted_by
+            )
+        }
         disabled={false}
         value="edit"
         text="Edit"

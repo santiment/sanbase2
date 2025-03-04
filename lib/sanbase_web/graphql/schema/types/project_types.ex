@@ -322,6 +322,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       arg(:to, non_null(:datetime))
       arg(:aggregation, :aggregation, default_value: nil)
       arg(:include_incomplete_data, :boolean, default_value: false)
+      arg(:only_finalized_data, :boolean, default_value: false)
       arg(:caching_params, :caching_params_input_object)
       arg(:error_on_data_fetch_fail, :boolean, default_value: false)
 

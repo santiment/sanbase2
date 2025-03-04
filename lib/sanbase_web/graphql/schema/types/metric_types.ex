@@ -570,6 +570,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       arg(:aggregation, :aggregation, default_value: nil)
       arg(:transform, :timeseries_metric_transform_input_object)
       arg(:include_incomplete_data, :boolean, default_value: false)
+      arg(:only_finalized_data, :boolean, default_value: false)
       arg(:caching_params, :caching_params_input_object)
 
       complexity(&Complexity.from_to_interval/3)
@@ -586,6 +587,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       arg(:aggregation, :aggregation, default_value: nil)
       arg(:transform, :timeseries_metric_transform_input_object)
       arg(:include_incomplete_data, :boolean, default_value: false)
+      arg(:only_finalized_data, :boolean, default_value: false)
       arg(:caching_params, :caching_params_input_object)
 
       complexity(&Complexity.from_to_interval/3)
@@ -609,6 +611,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       arg(:to, non_null(:datetime))
       arg(:aggregation, :aggregation, default_value: nil)
       arg(:caching_params, :caching_params_input_object)
+      arg(:only_finalized_data, :boolean, default_value: false)
 
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)

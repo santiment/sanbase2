@@ -67,8 +67,10 @@ defmodule Sanbase.TemplateEngine do
   """
   @spec run(String.t(), opts) :: {:ok, String.t()} | {:error, String.t()}
   def run(template, opts \\ []) do
+    IO.inspect(template)
     params = Keyword.get(opts, :params, %{}) |> Map.new(fn {k, v} -> {to_string(k), v} end)
     env = Keyword.get(opts, :env, Sanbase.SanLang.Environment.new())
+    IO.inspect(params)
 
     with {:ok, captures} <- TemplateEngine.Captures.extract_captures(template) do
       template =

@@ -696,5 +696,5 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
 
   defp page_title(:new, metric_registry, update_change_request_id),
     do:
-      "Metric Registry | Edit Change Request ##{update_change_request_id} for creating a new metrics"
+      "Metric Registry | Edit Change Request ##{update_change_request_id} for creating a new metric #{metric_registry.metric}"
 end

@@ -83,7 +83,7 @@ defmodule SanbaseWeb.Router do
         live("/new", MetricRegistryFormLive, :new)
         live("/sync", MetricRegistrySyncLive, :new)
         live("/sync_runs", MetricRegistrySyncRunsLive, :new)
-        live("/sync/:uuid", MetricRegistrySyncRunDetailsLive, :new)
+        live("/sync/:sync_type/:uuid", MetricRegistrySyncRunDetailsLive, :new)
       end
     end
 

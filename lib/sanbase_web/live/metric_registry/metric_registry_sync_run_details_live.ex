@@ -4,9 +4,9 @@ defmodule SanbaseWeb.MetricRegistrySyncRunDetailsLive do
   alias SanbaseWeb.AvailableMetricsComponents
   alias Sanbase.Metric.Registry.Sync
   @impl true
-  def mount(%{"uuid" => sync_uuid}, _session, socket) do
+  def mount(%{"uuid" => sync_uuid, "sync_type" => sync_type}, _session, socket) do
     {:ok, sync} =
-      Sanbase.Metric.Registry.Sync.by_uuid(sync_uuid)
+      Sanbase.Metric.Registry.Sync.by_uuid(sync_uuid, sync_type)
 
     sync = sync |> Map.update!(:content, &Jason.decode!/1)
 

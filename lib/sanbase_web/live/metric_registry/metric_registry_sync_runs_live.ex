@@ -80,13 +80,14 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
         <:col :let={row}>
           <AvailableMetricsComponents.link_button
             text="Details"
-            href={~p"/admin2/metric_registry/sync/#{row.uuid}"}
+            href={~p"/admin2/metric_registry/sync/#{row.sync_type}/#{row.uuid}"}
           />
           <span :if={execution_too_long?(row.status, row.inserted_at)}>
             <AvailableMetricsComponents.event_button
               phx_click="cancel_run"
               class="bg-amber-600 hover:bg-amber-800"
               phx-value-sync-uuid={row.uuid}
+              phx-value-sync-type={row.sync_type}
               display_text="Cancel Run"
             />
           </span>
@@ -98,8 +99,8 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
   end
 
   @impl true
-  def handle_event("cancel_run", %{"sync-uuid" => sync_uuid}, socket) do
-    case Sanbase.Metric.Registry.Sync.cancel_run(sync_uuid) do
+  def handle_event("cancel_run", %{"sync-uuid" => sync_uuid, "sync-type" => sync_type}, socket) do
+    case Sanbase.Metric.Registry.Sync.cancel_run(sync_uuid, sync_type) do
       {:ok, sync} ->
         sync = Map.update!(sync, :content, &Jason.decode!/1)
 

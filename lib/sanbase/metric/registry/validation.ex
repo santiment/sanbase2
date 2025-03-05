@@ -39,7 +39,9 @@ defmodule Sanbase.Metric.Registry.Validation do
         )
 
       is_template and parameters != [] ->
-        validate_parameters_match_captures(changeset)
+        changeset
+        |> validate_parameters_match_captures()
+        |> validate_parameter_values()
 
       true ->
         changeset
@@ -69,4 +71,63 @@ defmodule Sanbase.Metric.Registry.Validation do
       )
     end
   end
+
+  @interval_parameters ["timebound", "sliding_window", "interval"]
+  @number_parameters ["value", "period"]
+  @suffixed_number_parameters ["threshold", "low", "high"]
+  def validate_parameter_values(changeset) do
+    parameters = get_field(changeset, :parameters)
+    metric = get_field(changeset, :metric)
+
+    invalid_parameters =
+      parameters
+      |> Enum.filter(fn map ->
+        Enum.any?(map, fn
+          # The interval-valued parameters must be something like "1d", "30d", "2y"
+          {key, value} when key in ["low", "high"] ->
+            not (suffixed_string_number?(value) or interval?(value) or value == "inf")
+
+          {key, value} when key in @interval_parameters ->
+            not interval?(value)
+
+          {key, value} when key in @number_parameters ->
+            # The number-valued parameters ust be a binary representing a number (integer or float)
+            not is_binary(value) or not match?({_, ""}, Float.parse(value))
+
+          {key, value} when key in @suffixed_number_parameters ->
+            # The allowed values are numbers or numbers with suffix like k and M: 5, 1k, 10M
+            not suffixed_string_number?(value) and not interval?(value)
+
+          _ ->
+            false
+        end)
+      end)
+
+    if invalid_parameters == [] do
+      changeset
+    else
+      add_error(
+        changeset,
+        :parameters,
+        """
+        There provided parameters have invalid values in the metric #{metric}. Different parameters have different constaints (interval, number, etc.)
+        Invalid parameters: #{Enum.join(invalid_parameters, ", ")}
+        """
+      )
+    end
+  end
+
+  defp interval?(value) do
+    is_binary(value) and Sanbase.DateTimeUtils.valid_compound_duration?(value)
+  end
+
+  defp suffixed_string_number?(num) when is_binary(num) do
+    case Float.parse(num) do
+      {_value, ""} -> true
+      {_value, suffix} when suffix in ["k", "M"] -> true
+      _ -> false
+    end
+  end
+
+  defp suffixed_string_number?(_), do: false
 end

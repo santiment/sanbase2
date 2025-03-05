@@ -90,12 +90,13 @@ defmodule Sanbase.Metric.Registry.Sync do
 
     with :ok <- check_apply_env(),
          {:ok, list} when is_list(list) <- Jason.decode(content),
-         {:ok, %Ecto.Multi{} = multi, changesets} when is_list(changesets) <-
+         {:ok, %Ecto.Multi{} = _multi, changesets} when is_list(changesets) <-
            maybe_apply_sync_content(list, is_dry_run),
          {:ok, actual_changes} <- generate_actual_changes_applied(changesets),
          {:ok, _} <- send_sync_completed_confirmation(confirmation_endpoint, actual_changes),
-         {:ok, _sync} <- store_applied_sync_in_db(sync_uuid, content, actual_changes, is_dry_run),
-         :ok <- emit_apply_sync_events(multi, is_dry_run) do
+         {:ok, _sync} <- store_applied_sync_in_db(sync_uuid, content, actual_changes, is_dry_run) do
+      # TODO: Enable at a later moment.
+      # :ok <- emit_apply_sync_events(multi, is_dry_run) do
       :ok
     end
   end

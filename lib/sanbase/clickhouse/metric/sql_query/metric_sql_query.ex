@@ -1,14 +1,10 @@
 defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
-  @table "daily_metrics_v2"
-
   @moduledoc ~s"""
   Define the SQL queries to access to the v2 metrics in Clickhouse
 
-  The metrics are stored in the '#{@table}' clickhouse table where each metric
+  The metrics are stored in clickhouse tables where each metric
   is defined by a `metric_id` and every project is defined by an `asset_id`.
   """
-
-  use Ecto.Schema
 
   import Sanbase.DateTimeUtils, only: [maybe_str_to_sec: 1]
 
@@ -25,22 +21,19 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
   alias Sanbase.Clickhouse.MetricAdapter.Registry
 
-  schema @table do
-    field(:datetime, :utc_datetime, source: :dt)
-    field(:asset_id, :integer)
-    field(:metric_id, :integer)
-    field(:value, :float)
-    field(:computed_at, :utc_datetime)
-  end
-
   def timeseries_data_query(metric, selector, from, to, interval, aggregation, filters, opts) do
+    table = Map.get(Registry.table_map(), metric)
+
     params = %{
       interval: maybe_str_to_sec(interval),
       metric: Map.get(Registry.name_to_metric_map(), metric),
       from: dt_to_unix(:from, from),
       to: dt_to_unix(:to, to),
-      selector: asset_filter_value(selector)
+      selector: asset_filter_value(selector),
+      table: Map.get(Registry.table_map(), metric)
     }
+
+    only_finalized_data = Keyword.get(opts, :only_finalized_data, false)
 
     {additional_filters, params} =
       maybe_get_additional_filters(metric, filters, params, trailing_and: true)
@@ -57,8 +50,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         SELECT
           dt,
           argMax(value, computed_at) AS value
-        FROM #{Map.get(Registry.table_map(), metric)}
+        FROM {{table}}
         PREWHERE
+          #{finalized_data_filter_str(table, only_finalized_data)}
           #{fixed_parameters_str}
           #{additional_filters}
           #{maybe_convert_to_date(:after, metric, "dt", "toDateTime({{from}})")} AND
@@ -142,16 +136,21 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         to,
         interval,
         aggregation,
-        filters
+        filters,
+        opts
       ) do
-    params = [
+    table = Map.get(Registry.table_map(), metric)
+
+    params = %{
       interval: maybe_str_to_sec(interval),
       metric: Map.get(Registry.name_to_metric_map(), metric),
       from: dt_to_unix(:from, from),
       to: dt_to_unix(:to, to),
-      selector: slug_or_slugs
-    ]
+      selector: slug_or_slugs,
+      table: table
+    }
 
+    only_finalized_data = Keyword.get(opts, :only_finalized_data, false)
     {additional_filters, params} = additional_filters(filters, params, trailing_and: true)
 
     sql = """
@@ -164,8 +163,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         asset_id,
         dt,
         argMax(value, computed_at) AS value2
-      FROM #{Map.get(Registry.table_map(), metric)}
+      FROM {{table}}
       PREWHERE
+        #{finalized_data_filter_str(table, only_finalized_data)}
         #{additional_filters}
         #{maybe_convert_to_date(:after, metric, "dt", "toDateTime({{from}})")} AND
         #{maybe_convert_to_date(:before, metric, "dt", "toDateTime({{to}})")} AND
@@ -181,7 +181,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  def aggregated_timeseries_data_query(metric, slugs, from, to, aggregation, filters) do
+  def aggregated_timeseries_data_query(metric, slugs, from, to, aggregation, filters, opts) do
     # In case of `:last` aggregation, scanning big intervals of data leads to
     # unnecessarily increased resources consumption as we're getting only the
     # last value. We rewrite the `from` parameter to be closer to `to`. This
@@ -194,13 +194,18 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         _ -> from
       end
 
+    table = Map.get(Registry.table_map(), metric)
+
     params = %{
       slugs: slugs,
       # Fetch internal metric name used. Fallback to the same name if missing.
       metric: Map.get(Registry.name_to_metric_map(), metric),
       from: dt_to_unix(:from, from),
-      to: dt_to_unix(:to, to)
+      to: dt_to_unix(:to, to),
+      table: table
     }
+
+    only_finalized_data = Keyword.get(opts, :only_finalized_data, false)
 
     {additional_filters, params} =
       maybe_get_additional_filters(metric, filters, params, trailing_and: true)
@@ -223,11 +228,12 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         SELECT dt, asset_id, argMax(value, computed_at) AS value
         FROM (
           SELECT dt, asset_id, metric_id, value, computed_at
-          FROM #{Map.get(Registry.table_map(), metric)}
+          FROM {{table}}
           PREWHERE
+            #{finalized_data_filter_str(table, only_finalized_data)}
             #{additional_filters}
             #{asset_id_filter(%{slug: slugs}, argument_name: "slugs")} AND
-          #{metric_id_filter(metric, argument_name: "metric")} AND
+            #{metric_id_filter(metric, argument_name: "metric")} AND
             isNotNull(value) AND NOT isNaN(value) AND
             #{maybe_convert_to_date(:after, metric, "dt", "toDateTime({{from}})")} AND
             #{maybe_convert_to_date(:before, metric, "dt", "toDateTime({{to}})")}
@@ -580,4 +586,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
   defp asset_filter_value(%{slug: slug_or_slugs}), do: slug_or_slugs
   defp asset_filter_value(_), do: nil
+
+  defp finalized_data_filter_str("intraday_metrics", true), do: "is_finalized = true AND"
+  defp finalized_data_filter_str("daily_metrics_v2", true), do: "is_finalized = true AND"
+  defp finalized_data_filter_str(_, _), do: ""
 end

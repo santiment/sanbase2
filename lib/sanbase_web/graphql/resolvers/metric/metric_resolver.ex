@@ -272,12 +272,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         %{source: %{metric: metric}}
       ) do
     include_incomplete_data = Map.get(args, :include_incomplete_data, false)
+    only_finalized_data = Map.get(args, :only_finalized_data, false)
 
     with {:ok, selector} <- args_to_selector(args),
          true <- all_required_selectors_present?(metric, selector),
          true <- valid_metric_selector_pair?(metric, selector),
          true <- valid_owners_labels_selection?(args),
          {:ok, opts} <- selector_args_to_opts(args),
+         opts <- Keyword.put(opts, :only_finalized_data, only_finalized_data),
          {:ok, from, to} <-
            calibrate_incomplete_data_params(
              include_incomplete_data,
@@ -413,6 +415,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   # from the Metric module.
   defp fetch_timeseries_data(metric, args, requested_fields, function)
        when function in [:timeseries_data, :timeseries_data_per_slug] do
+    only_finalized_data = Map.get(args, :only_finalized_data, false)
+
     with {:ok, selector} <- args_to_selector(args),
          {:ok, transform} <- MetricTransform.args_to_transform(args),
          true <- all_required_selectors_present?(metric, selector),
@@ -420,6 +424,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
          true <- valid_owners_labels_selection?(args),
          true <- valid_timeseries_selection?(requested_fields, args),
          {:ok, opts} <- selector_args_to_opts(args),
+         opts <- Keyword.put(opts, :only_finalized_data, only_finalized_data),
          {:ok, from, to, interval} <-
            transform_datetime_params(selector, metric, transform, args),
          {:ok, result} <-

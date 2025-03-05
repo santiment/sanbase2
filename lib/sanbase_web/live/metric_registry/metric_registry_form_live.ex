@@ -9,33 +9,70 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
 
   @impl true
   def mount(params, _session, socket) do
+    update_change_request_id = params["update_change_request_id"]
     duplicate_metric_registry_id = params["duplicate_metric_registry_id"]
     live_action = socket.assigns.live_action
 
-    {:ok, metric_registry} =
-      cond do
-        not is_nil(duplicate_metric_registry_id) and live_action == :new ->
-          Registry.by_id(duplicate_metric_registry_id)
+    # In case we are updating a change request, the changes need to be
+    # compared against the original metric registry.
+    # If we compare the new changes agaisnt the metric_registry computed below
+    # with applied changes, the `old -> new` changes will be wrong
+    {:ok, original_metric_registry} = get_metric_registry(socket, params)
 
-        live_action == :new ->
-          {:ok, %Registry{}}
-
-        live_action == :edit ->
-          Registry.by_id(Map.fetch!(params, "id"))
-      end
+    # If the update_change_request_id is present, we need to apply the changes
+    # as this is actually editing a Change Request. The notes are not part of the
+    # metric registry and need to be additionally added here
+    {:ok, metric_registry, suggestion} =
+      maybe_apply_change_request(original_metric_registry, params)
 
     form = metric_registry |> Registry.changeset(%{}) |> to_form()
 
     {:ok,
      socket
      |> assign(
+       is_updating_change_request: not is_nil(update_change_request_id),
+       update_change_request_id: update_change_request_id,
        is_duplicate_creation: not is_nil(duplicate_metric_registry_id) and live_action == :new,
-       page_title: page_title(socket.assigns.live_action, metric_registry),
+       page_title: page_title(live_action, metric_registry, update_change_request_id),
        metric_registry: metric_registry,
+       original_metric_registry: original_metric_registry,
        email: nil,
+       suggestion: suggestion,
+       notes: if(suggestion, do: suggestion.notes),
        form: form,
        save_errors: []
      )}
+  end
+
+  def get_metric_registry(socket, params) do
+    live_action = socket.assigns.live_action
+    duplicate_metric_registry_id = params["duplicate_metric_registry_id"]
+
+    cond do
+      not is_nil(duplicate_metric_registry_id) and live_action == :new ->
+        Registry.by_id(duplicate_metric_registry_id)
+
+      live_action == :new ->
+        {:ok, %Registry{}}
+
+      live_action == :edit ->
+        Registry.by_id(Map.fetch!(params, "id"))
+    end
+  end
+
+  defp maybe_apply_change_request(metric_registry, params) do
+    update_change_request_id = params["update_change_request_id"]
+
+    if is_nil(update_change_request_id) do
+      {:ok, metric_registry, _suggestion = nil}
+    else
+      {:ok, suggestion} = Registry.ChangeSuggestion.by_id(update_change_request_id)
+      changes = Registry.ChangeSuggestion.decode_changes(suggestion.changes)
+      params = Registry.ChangeSuggestion.changes_to_changeset_params(metric_registry, changes)
+      changeset = Registry.changeset(metric_registry, params)
+      metric_registry_with_changes = Ecto.Changeset.apply_changes(changeset)
+      {:ok, metric_registry_with_changes, suggestion}
+    end
   end
 
   @impl true
@@ -43,14 +80,30 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
     ~H"""
     <div class="flex flex-col justify-center w-7/8">
       <div class="text-gray-800 text-2xl">
-        <div :if={@live_action == :edit}>
+        <div :if={@live_action == :edit and not @is_updating_change_request}>
           Edit <span class="text-blue-700">{@metric_registry.metric}</span>
         </div>
-        <div :if={@live_action == :new and @is_duplicate_creation == false} class="text-blue-700">
+
+        <div :if={@live_action == :edit and @is_updating_change_request}>
+          Edit Change Request #{@update_change_request_id} for metric
+          <span class="text-blue-700">{@metric_registry.metric}</span>
+        </div>
+        <div
+          :if={
+            @live_action == :new and @is_duplicate_creation == false and
+              not @is_updating_change_request
+          }
+          class="text-blue-700"
+        >
           Creating a new metric
         </div>
 
-        <div :if={@live_action == :new and @is_duplicate_creation == true} class="text-blue-700">
+        <div
+          :if={
+            @live_action == :new and @is_duplicate_creation == true and @is_updating_change_request
+          }
+          class="text-blue-700"
+        >
           Duplicating the metric {@metric_registry.metric}
         </div>
         <div :if={@live_action == :new and @is_duplicate_creation == true} class="text-sm">
@@ -186,7 +239,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
           <.input
             type="textarea"
             name="notes"
-            value=""
+            value={@notes}
             label="Notes"
             placeholder="Explanation why the changes are submitted"
           />
@@ -278,17 +331,19 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
 
   def inputs_for_add_button(assigns) do
     ~H"""
-    <button
-      type="button"
-      name={@name}
-      value="new"
-      phx-click={JS.dispatch("change")}
-      class="mt-4 mr-2 bg-white border border-gray-300 hover:bg-gray-50 hover:text-gray-700 text-gray-600 font-semibold rounded-xl text-sm px-5 py-2.5 inline-flex items-center "
-    >
-      <.icon name="hero-plus-circle" class="w-4 h-4 text-gray-500 mr-2" />
-      <!-- Update icon to 'plus' for 'Add' -->
+    <div>
+      <button
+        type="button"
+        name={@name}
+        value="new"
+        phx-click={JS.dispatch("change")}
+        class="mt-4 mr-2 bg-white border border-gray-300 hover:bg-gray-50 hover:text-gray-700 text-gray-600 font-semibold rounded-xl text-sm px-5 py-2.5 inline-flex items-center "
+      >
+        <.icon name="hero-plus-circle" class="w-4 h-4 text-gray-500 mr-2" />
+        <!-- Update icon to 'plus' for 'Add' -->
       Add
-    </button>
+      </button>
+    </div>
     """
   end
 
@@ -398,6 +453,104 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
     """
   end
 
+  @impl true
+  def handle_event("save", %{"registry" => params, "notes" => notes}, socket)
+      when socket.assigns.live_action == :edit and
+             socket.assigns.is_updating_change_request == true do
+    #
+    # Edit a Change Request that updates an existing metric registry
+    #
+    Permissions.raise_if_cannot(:edit_change_suggestion,
+      roles: socket.assigns.current_user_role_names,
+      user_email: socket.assigns.current_user.email,
+      submitter_email: socket.assigns.suggestion.submitted_by
+    )
+
+    case socket.assigns.form.errors do
+      [] ->
+        params = process_params(params)
+
+        {:ok, suggestion} =
+          Registry.ChangeSuggestion.by_id(socket.assigns.update_change_request_id)
+
+        case Registry.ChangeSuggestion.update_change_suggestion(
+               suggestion,
+               socket.assigns.original_metric_registry,
+               params,
+               notes
+             ) do
+          {:ok, _change_suggestion} ->
+            {:noreply,
+             socket
+             |> assign(save_errors: [])
+             |> put_flash(:info, "Metric registry change request updated")
+             |> push_navigate(to: ~p"/admin2/metric_registry/change_suggestions/")}
+
+          {:error, error} ->
+            errors = Sanbase.Utils.ErrorHandling.changeset_errors(error)
+
+            {:noreply,
+             socket
+             |> assign(:save_errors, errors)
+             |> put_flash(:error, "Fix field validation errors before saving")}
+        end
+
+      [_ | _] = errors ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Fix field validation errors before saving: #{inspect(errors)}")}
+    end
+  end
+
+  @impl true
+  def handle_event("save", %{"registry" => params, "notes" => notes}, socket)
+      when socket.assigns.live_action == :new and
+             socket.assigns.is_updating_change_request == true do
+    #
+    # Edit a Change Request that creates a new metric registry record
+    #
+    Permissions.raise_if_cannot(:edit_change_suggestion,
+      roles: socket.assigns.current_user_role_names,
+      user_email: socket.assigns.current_user.email,
+      submitter_email: socket.assigns.suggestion.submitted_by
+    )
+
+    case socket.assigns.form.errors do
+      [] ->
+        params = process_params(params)
+
+        {:ok, suggestion} =
+          Registry.ChangeSuggestion.by_id(socket.assigns.update_change_request_id)
+
+        case Registry.ChangeSuggestion.update_change_suggestion(
+               suggestion,
+               %Registry{id: nil},
+               params,
+               notes
+             ) do
+          {:ok, _change_suggestion} ->
+            {:noreply,
+             socket
+             |> assign(save_errors: [])
+             |> put_flash(:info, "Metric registry change request updated")
+             |> push_navigate(to: ~p"/admin2/metric_registry/change_suggestions/")}
+
+          {:error, error} ->
+            errors = Sanbase.Utils.ErrorHandling.changeset_errors(error)
+
+            {:noreply,
+             socket
+             |> assign(:save_errors, errors)
+             |> put_flash(:error, "Fix field validation errors before saving")}
+        end
+
+      [_ | _] = errors ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Fix field validation errors before saving: #{inspect(errors)}")}
+    end
+  end
+
   def handle_event(
         "save",
         %{"registry" => params, "notes" => notes},
@@ -429,13 +582,13 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
             {:noreply,
              socket
              |> assign(:save_errors, errors)
-             |> put_flash(:error, "Address field validation errors before saving")}
+             |> put_flash(:error, "Fix field validation errors before saving")}
         end
 
       [_ | _] = errors ->
         {:noreply,
          socket
-         |> put_flash(:error, "Address field validation errors before saving: #{inspect(errors)}")}
+         |> put_flash(:error, "Fix field validation errors before saving: #{inspect(errors)}")}
     end
   end
 
@@ -476,7 +629,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
       [_ | _] = errors ->
         {:noreply,
          socket
-         |> put_flash(:error, "Address field validation errors before saving: #{inspect(errors)}")}
+         |> put_flash(:error, "Fix field validation errors before saving: #{inspect(errors)}")}
     end
   end
 
@@ -531,6 +684,17 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
 
   defp maybe_update_if_present(params, _), do: params
 
-  defp page_title(:new, _metric_registry), do: "Metric Registry | Create New Record"
-  defp page_title(:edit, metric_registry), do: "Metric Registry | Edit #{metric_registry.metric}"
+  defp page_title(:new, _metric_registry, nil = _update_change_request_id),
+    do: "Metric Registry | Create New Record"
+
+  defp page_title(:edit, metric_registry, nil = _update_change_request_id),
+    do: "Metric Registry | Edit #{metric_registry.metric}"
+
+  defp page_title(:edit, metric_registry, update_change_request_id),
+    do:
+      "Metric Registry | Edit Change Request ##{update_change_request_id} for #{metric_registry.metric}"
+
+  defp page_title(:new, metric_registry, update_change_request_id),
+    do:
+      "Metric Registry | Edit Change Request ##{update_change_request_id} for creating a new metric #{metric_registry.metric}"
 end

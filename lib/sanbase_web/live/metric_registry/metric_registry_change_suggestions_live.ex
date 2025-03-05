@@ -59,6 +59,8 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
               :if={Permissions.can?(:apply_change_suggestions, roles: @current_user_role_names)}
               form={@form}
               row={row}
+              current_user={@current_user}
+              current_user_role_names={@current_user_role_names}
             />
           </:action>
         </.table>
@@ -77,18 +79,21 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
     ~H"""
     <.form
       for={@form}
-      phx-submit="update_status"
+      phx-submit="take_action"
       class="flex flex-col lg:flex-row space-y-2 lg:space-y-0 md:space-x-2"
     >
       <input type="hidden" name="record_id" value={@row.id} />
+      <input type="hidden" name="metric_registry_id" value={@row.metric_registry_id} />
+      <input type="hidden" name="change_request_submitter_email" value={@row.submitted_by} />
+
       <.action_button
-        value="approved"
+        value="approve"
         text="Approve"
         disabled={@row.status != "pending_approval"}
         colors="bg-green-600 hover:bg-green-800"
       />
       <.action_button
-        value="declined"
+        value="decline"
         text="Decline"
         disabled={@row.status != "pending_approval"}
         colors="bg-red-600 hover:bg-red-800"
@@ -105,6 +110,21 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
         }
         colors="bg-amber-600 hover:bg-amber-800"
       />
+
+      <.action_button
+        :if={
+          @row.status == "pending_approval" and
+            Permissions.can?(:edit_change_suggestion,
+              roles: @current_user_role_names,
+              user_email: @current_user.email,
+              submitter_email: @row.submitted_by
+            )
+        }
+        disabled={false}
+        value="edit"
+        text="Edit"
+        colors="bg-fuchsia-600 hover:bg-fuchsia-800"
+      />
     </.form>
     """
   end
@@ -116,7 +136,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
   def action_button(assigns) do
     ~H"""
     <AdminFormsComponents.button
-      name="status"
+      name="action"
       value={@value}
       class={if @disabled, do: "bg-gray-300", else: @colors}
       disabled={@disabled}
@@ -126,7 +146,42 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
   end
 
   @impl true
-  def handle_event("update_status", %{"status" => "undo", "record_id" => record_id}, socket) do
+  def handle_event(
+        "take_action",
+        %{
+          "action" => "edit",
+          "record_id" => record_id,
+          "metric_registry_id" => metric_registry_id,
+          "change_request_submitter_email" => submitted_by_email
+        },
+        socket
+      ) do
+    Permissions.can?(:edit_change_suggestion,
+      roles: socket.assigns.current_user_role_names,
+      user_email: socket.assigns.current_user.email,
+      submitter_email: submitted_by_email
+    )
+
+    case metric_registry_id do
+      none when none in [nil, ""] ->
+        {:noreply,
+         socket
+         |> push_navigate(
+           to: ~p"/admin2/metric_registry/new?update_change_request_id=#{record_id}"
+         )}
+
+      _ ->
+        {:noreply,
+         socket
+         |> push_navigate(
+           to:
+             ~p"/admin2/metric_registry/edit/#{metric_registry_id}?update_change_request_id=#{record_id}"
+         )}
+    end
+  end
+
+  @impl true
+  def handle_event("take_action", %{"action" => "undo", "record_id" => record_id}, socket) do
     Permissions.raise_if_cannot(:apply_change_suggestions,
       roles: socket.assigns.current_user_role_names
     )
@@ -152,11 +207,13 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
 
   @impl true
   def handle_event(
-        "update_status",
-        %{"status" => status, "record_id" => record_id},
+        "take_action",
+        %{"action" => action, "record_id" => record_id},
         socket
       )
-      when status in ["approved", "declined"] do
+      when action in ["approve", "decline"] do
+    status = action <> "d"
+
     Permissions.raise_if_cannot(:apply_change_suggestions,
       roles: socket.assigns.current_user_role_names
     )

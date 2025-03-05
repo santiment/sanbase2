@@ -329,8 +329,7 @@ defmodule Sanbase.Metric.Registry.Sync do
   defp get_sync_target_url() do
     secret = Config.module_get(Sanbase.Metric.Registry.Sync, :sync_secret)
     deployment_env = Config.module_get(Sanbase, :deployment_env)
-    # port = Config.module_get(SanbaseWeb.Endpoint, [:http, :port])
-    port = 4001
+    port = Config.module_get(SanbaseWeb.Endpoint, [:http, :port])
 
     case deployment_env do
       "dev" -> "http://localhost:#{port}/sync_metric_registry?secret=#{secret}"
@@ -467,8 +466,7 @@ defmodule Sanbase.Metric.Registry.Sync do
   defp get_confirmation_endpoint(sync) do
     secret = Sanbase.Utils.Config.module_get(Sanbase.Metric.Registry.Sync, :sync_secret)
 
-    # SanbaseWeb.Endpoint.backend_url()
-    "http://localhost:4000/"
+    SanbaseWeb.Endpoint.backend_url()
     |> URI.parse()
     |> URI.append_path("/mark_metric_registry_sync_as_finished/#{sync.uuid}?secret=#{secret}")
     |> URI.to_string()

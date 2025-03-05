@@ -204,8 +204,11 @@ defmodule Sanbase.DateTimeUtils do
 
   def valid_compound_duration?(value) do
     case Integer.parse(value) do
-      {int, string} when is_integer(int) and string in ["ns", "s", "m", "h", "d", "w"] -> true
-      _ -> false
+      {int, string} when is_integer(int) and string in ["ns", "s", "m", "h", "d", "w", "y"] ->
+        true
+
+      _ ->
+        false
     end
   end
 

@@ -57,7 +57,7 @@ defmodule Sanbase.Metric.Registry.SyncRun do
     end
   end
 
-  def by_uuid(uuid, sync_type \\ "outgoing") do
+  def by_uuid(uuid, sync_type) when sync_type in ["outgoing", "incoming"] do
     query = from(sync in __MODULE__, where: sync.uuid == ^uuid and sync.sync_type == ^sync_type)
 
     case Sanbase.Repo.one(query) do

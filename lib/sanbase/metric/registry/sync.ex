@@ -14,7 +14,7 @@ defmodule Sanbase.Metric.Registry.Sync do
 
   @pubsub_topic "sanbase_metric_registry_sync"
 
-  def by_uuid(uuid, sync_type \\ "outgoing") when sync_type in ["outgoing", "incoming"] do
+  def by_uuid(uuid, sync_type) when sync_type in ["outgoing", "incoming"] do
     SyncRun.by_uuid(uuid, sync_type)
   end
 
@@ -22,8 +22,8 @@ defmodule Sanbase.Metric.Registry.Sync do
     SyncRun.last_syncs(limit)
   end
 
-  def cancel_run(uuid) do
-    case SyncRun.by_uuid(uuid) do
+  def cancel_run(uuid, sync_type) do
+    case SyncRun.by_uuid(uuid, sync_type) do
       {:ok, sync} ->
         case SyncRun.update_status(sync, "cancelled", "Manually canceled") do
           {:ok, sync} ->
@@ -69,7 +69,7 @@ defmodule Sanbase.Metric.Registry.Sync do
     # Use decode_changes/1 to revert back to its original value, if needed
     Logger.info("Marking Metric Registry sync as finished for UUID #{sync_uuid}")
 
-    with {:ok, sync} <- SyncRun.by_uuid(sync_uuid),
+    with {:ok, sync} <- SyncRun.by_uuid(sync_uuid, "outgoing"),
          # In case of dry run there has been no sync, so we'll not mark as synced
          :ok <- maybe_mark_metrics_as_synced(sync, actual_changes),
          {:ok, sync} <-
@@ -138,8 +138,8 @@ defmodule Sanbase.Metric.Registry.Sync do
       Enum.map(changesets, fn changeset ->
         old = changeset.data
         new = changeset |> Ecto.Changeset.apply_changes()
+        key = Map.take(Map.from_struct(new), [:metric, :data_type, :fixed_parameters])
 
-        key = Map.take(changeset.data, [:metric, :data_type, :fixed_parameters])
         # When sync is applied, the logic for applying function also handles
         # the sync status related fields. They are not important for the actual changes
         diff =
@@ -329,7 +329,8 @@ defmodule Sanbase.Metric.Registry.Sync do
   defp get_sync_target_url() do
     secret = Config.module_get(Sanbase.Metric.Registry.Sync, :sync_secret)
     deployment_env = Config.module_get(Sanbase, :deployment_env)
-    port = Config.module_get(SanbaseWeb.Endpoint, [:http, :port])
+    # port = Config.module_get(SanbaseWeb.Endpoint, [:http, :port])
+    port = 4001
 
     case deployment_env do
       "dev" -> "http://localhost:#{port}/sync_metric_registry?secret=#{secret}"
@@ -402,17 +403,29 @@ defmodule Sanbase.Metric.Registry.Sync do
   defp emit_apply_sync_events(multi, false = _is_dry_run) do
     Logger.info("Emitting sync events")
 
+    # Count inserts and updates
+    {inserts_count, updates_count} =
+      multi.operations
+      |> Enum.reduce({0, 0}, fn
+        {{:metric_registry_insert, _, _, _}, _}, {inserts, updates} ->
+          {inserts + 1, updates}
+
+        {{:metric_registry_update, _, _}, _}, {inserts, updates} ->
+          {inserts, updates + 1}
+
+        _, acc ->
+          acc
+      end)
+
     # This makes DB call for each event. If this is a problem, we can optimize later
     # Most syncs should in practice contain no more than 10 metrics
     multi.operations
     |> Enum.each(fn
-      {{:metric_registry_create, metric, data_type, fixed_parameters}, _changeset} ->
+      {{:metric_registry_insert, metric, data_type, fixed_parameters}, _changeset} ->
         Registry.by_name(metric, data_type, fixed_parameters)
         |> Sanbase.Metric.Registry.EventEmitter.emit_event(:create_metric_registry, %{})
 
       {{:metric_registry_update, id, _metric}, _changeset} ->
-        # if changeset.changes != %{} do
-
         Registry.by_id(id)
         |> Sanbase.Metric.Registry.EventEmitter.emit_event(:update_metric_registry, %{})
 
@@ -420,13 +433,42 @@ defmodule Sanbase.Metric.Registry.Sync do
         :ok
     end)
 
+    event_data = %{
+      inserts_count: inserts_count,
+      updates_count: updates_count
+    }
+
+    Sanbase.Metric.Registry.EventEmitter.emit_event(
+      {:ok, event_data},
+      :bulk_metric_registry_change,
+      %{__only_process_by__: [Sanbase.EventBus.MetricRegistrySubscriber]}
+    )
+
+    emit_distributed_event(event_data)
+
     :ok
+  end
+
+  defp emit_distributed_event(event_data) do
+    Node.list()
+    |> Enum.each(fn node ->
+      IO.puts("Emitting event :bulk_metric_registry_change to #{node}")
+
+      Node.spawn(node, fn ->
+        Sanbase.Metric.Registry.EventEmitter.emit_event(
+          {:ok, event_data},
+          :bulk_metric_registry_change,
+          %{__only_process_by__: [Sanbase.EventBus.MetricRegistrySubscriber]}
+        )
+      end)
+    end)
   end
 
   defp get_confirmation_endpoint(sync) do
     secret = Sanbase.Utils.Config.module_get(Sanbase.Metric.Registry.Sync, :sync_secret)
 
-    SanbaseWeb.Endpoint.backend_url()
+    # SanbaseWeb.Endpoint.backend_url()
+    "http://localhost:4000/"
     |> URI.parse()
     |> URI.append_path("/mark_metric_registry_sync_as_finished/#{sync.uuid}?secret=#{secret}")
     |> URI.to_string()

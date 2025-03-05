@@ -36,7 +36,7 @@ defmodule Sanbase.MetricRegistrySyncTest do
         assert {:ok, %{status: "executing", uuid: uuid, is_dry_run: true}} =
                  Registry.Sync.sync([m.id], dry_run: true)
 
-        Process.sleep(100)
+        Process.sleep(1000)
 
         # Make sure both the outgoing and the incoming syncs are looking good
         # In test env we have both outgoing and incoming as the sync happens from and to
@@ -106,7 +106,7 @@ defmodule Sanbase.MetricRegistrySyncTest do
 
       Process.sleep(100)
 
-      assert {:ok, %{status: "completed", uuid: ^uuid}} = Registry.Sync.by_uuid(uuid)
+      assert {:ok, %{status: "completed", uuid: ^uuid}} = Registry.Sync.by_uuid(uuid, "incoming")
       {:ok, m} = Registry.by_id(m.id)
       assert m.sync_status == "synced"
     end
@@ -125,7 +125,7 @@ defmodule Sanbase.MetricRegistrySyncTest do
 
       Process.sleep(100)
 
-      assert {:ok, %{status: "completed", uuid: ^uuid}} = Registry.Sync.by_uuid(uuid)
+      assert {:ok, %{status: "completed", uuid: ^uuid}} = Registry.Sync.by_uuid(uuid, "incoming")
       {:ok, m1} = Registry.by_id(m1_id)
       {:ok, m2} = Registry.by_id(m2_id)
       assert m1.sync_status == "synced"
@@ -233,7 +233,7 @@ defmodule Sanbase.MetricRegistrySyncTest do
         assert {:ok, %{status: "executing", is_dry_run: false, uuid: uuid}} =
                  Registry.Sync.sync([m.id], dry_run: false)
 
-        Process.sleep(100)
+        Process.sleep(200)
 
         # Make sure both the outgoing and the incoming syncs are looking good
         # In test env we have both outgoing and incoming as the sync happens from and to

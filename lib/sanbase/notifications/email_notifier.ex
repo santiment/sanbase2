@@ -45,18 +45,18 @@ defmodule Sanbase.Notifications.EmailNotifier do
     end)
   end
 
-  defp group_notifications(notifications, "metric_deleted") do
+  def group_notifications(notifications, "metric_deleted") do
     notifications
     |> Enum.group_by(fn notification ->
       {notification.step, notification.params["scheduled_at"]}
     end)
   end
 
-  defp group_notifications(notifications, _action) do
+  def group_notifications(notifications, _action) do
     %{{nil, nil} => notifications}
   end
 
-  defp get_unprocessed_notifications(action) do
+  def get_unprocessed_notifications(action) do
     yesterday = DateTime.utc_now() |> DateTime.add(-24, :hour)
 
     Notification
@@ -67,7 +67,7 @@ defmodule Sanbase.Notifications.EmailNotifier do
     |> Repo.all()
   end
 
-  defp combine_notification_params(notifications) do
+  def combine_notification_params(notifications) do
     notifications
     |> Enum.reduce(%{}, fn notification, acc ->
       metrics = (acc["metrics_list"] || []) ++ (notification.params["metrics_list"] || [])

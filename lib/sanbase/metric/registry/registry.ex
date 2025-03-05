@@ -340,16 +340,29 @@ defmodule Sanbase.Metric.Registry do
   """
   @spec resolve([t()]) :: [t()]
   def resolve(list) when is_list(list) do
-    Enum.flat_map(list, &resolve/1)
+    Enum.flat_map(list, &resolve_registry/1)
   end
 
-  def resolve(%__MODULE__{} = registry) do
+  def resolve_safe(list) when is_list(list) do
+    list
+    |> Enum.reduce({[], []}, fn %__MODULE__{} = registry, {resolved_acc, error_acc} ->
+      try do
+        resolved_list = resolve_registry(registry)
+
+        {resolved_list ++ resolved_acc, error_acc}
+      rescue
+        _ -> {resolved_acc, [registry | error_acc]}
+      end
+    end)
+  end
+
+  # Private
+
+  def resolve_registry(%__MODULE__{} = registry) do
     registry
     |> resolve_aliases()
     |> Enum.flat_map(&apply_template_parameters/1)
   end
-
-  # Private
 
   defp maybe_emit_event(result, event_type, opts)
        when is_tuple(result) and

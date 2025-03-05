@@ -147,9 +147,13 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
     Keyword.validate!(opts, [:remove_hard_deprecated])
 
     Sanbase.Cache.get_or_store(registry_cache_key(opts), fn ->
-      data =
+      # TODO: Show somewhere that the registries with errors.
+      {data, _registires_with_errors} =
         Sanbase.Metric.Registry.all()
-        |> Sanbase.Metric.Registry.resolve()
+        |> Sanbase.Metric.Registry.resolve_safe()
+
+      data =
+        data
         |> filter_exposed_environments(opts)
         |> filter_hard_deprecated(opts)
 
@@ -198,8 +202,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
           end
         end)
         |> Enum.reject(&is_nil/1)
-        |> Sanbase.Metric.Registry.resolve()
-        |> then(fn list ->
+        |> Sanbase.Metric.Registry.resolve_safe()
+        |> then(fn {list, _registries_with_errors} ->
           if Keyword.get(opts, :remove_hard_deprecated, true),
             do: remove_hard_deprecated(list),
             else: list

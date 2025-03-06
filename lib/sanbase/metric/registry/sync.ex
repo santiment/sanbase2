@@ -6,6 +6,7 @@ defmodule Sanbase.Metric.Registry.Sync do
 
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
 
+  alias Sanbase.Metric.Registry.EventEmitter
   alias Sanbase.Metric.Registry
   alias Sanbase.Metric.Registry.SyncRun
   alias Sanbase.Utils.Config
@@ -418,15 +419,22 @@ defmodule Sanbase.Metric.Registry.Sync do
 
     # This makes DB call for each event. If this is a problem, we can optimize later
     # Most syncs should in practice contain no more than 10 metrics
+    # This might include many changes. Do not process them with the MetricRegistrySubscriber
+    # as this will cause the in-memory data to be refreshed multiple times.
+    # Instead, emit a single bulk event at the end, which will refresh the in-memory data only once
     multi.operations
     |> Enum.each(fn
       {{:metric_registry_insert, metric, data_type, fixed_parameters}, _changeset} ->
         Registry.by_name(metric, data_type, fixed_parameters)
-        |> Sanbase.Metric.Registry.EventEmitter.emit_event(:create_metric_registry, %{})
+        |> EventEmitter.emit_event(:create_metric_registry, %{
+          __skip_process_by__: [Sanbase.EventBus.MetricRegistrySubscriber]
+        })
 
       {{:metric_registry_update, id, _metric}, _changeset} ->
         Registry.by_id(id)
-        |> Sanbase.Metric.Registry.EventEmitter.emit_event(:update_metric_registry, %{})
+        |> EventEmitter.emit_event(:update_metric_registry, %{
+          __skip_process_by__: [Sanbase.EventBus.MetricRegistrySubscriber]
+        })
 
       _ ->
         :ok
@@ -437,7 +445,7 @@ defmodule Sanbase.Metric.Registry.Sync do
       updates_count: updates_count
     }
 
-    Sanbase.Metric.Registry.EventEmitter.emit_event(
+    EventEmitter.emit_event(
       {:ok, event_data},
       :bulk_metric_registry_change,
       %{__only_process_by__: [Sanbase.EventBus.MetricRegistrySubscriber]}
@@ -454,7 +462,7 @@ defmodule Sanbase.Metric.Registry.Sync do
       IO.puts("Emitting event :bulk_metric_registry_change to #{node}")
 
       Node.spawn(node, fn ->
-        Sanbase.Metric.Registry.EventEmitter.emit_event(
+        EventEmitter.emit_event(
           {:ok, event_data},
           :bulk_metric_registry_change,
           %{__only_process_by__: [Sanbase.EventBus.MetricRegistrySubscriber]}

@@ -2,7 +2,7 @@ defmodule Sanbase.Email.MailjetApiBehaviour do
   @callback subscribe(atom(), String.t() | [String.t()]) :: :ok | {:error, term()}
   @callback unsubscribe(atom(), String.t() | [String.t()]) :: :ok | {:error, term()}
   @callback send_to_list(atom(), String.t(), String.t(), Keyword.t()) :: :ok | {:error, term()}
-  @callback list_subscribed_emails(atom()) :: {:ok, [String.t()]} | {:error, term()}
+  @callback fetch_list_emails(atom()) :: {:ok, [String.t()]} | {:error, term()}
   @callback send_email(String.t(), String.t(), String.t(), Keyword.t()) :: :ok | {:error, term()}
 end
 
@@ -45,7 +45,7 @@ defmodule Sanbase.Email.MailjetApi do
   end
 
   def send_to_list(list_id, subject, content, opts \\ []) do
-    with {:ok, emails} <- list_subscribed_emails(list_id),
+    with {:ok, emails} <- fetch_list_emails(list_id),
          :ok <- Enum.each(emails, &send_email(&1, subject, content, opts)) do
       :ok
     end
@@ -89,12 +89,33 @@ defmodule Sanbase.Email.MailjetApi do
       {:error, error}
   end
 
-  # list subscribed emails for list
-  def list_subscribed_emails(list_atom) do
-    with {:ok, contact_ids} <- get_contact_ids(list_atom),
-         {:ok, emails} <- get_emails_for_contacts(contact_ids) do
-      {:ok, emails}
+  @doc """
+  Fetches all emails in a Mailjet list using the contacts API.
+  """
+  def fetch_list_emails(list_atom) do
+    list_id = @mailjet_lists[list_atom]
+    url = @base_url <> "contact"
+
+    case Req.get!(url,
+           headers: headers(),
+           params: [ContactsList: list_id, limit: 1000]
+         ) do
+      %{status: 200, body: %{"Data" => data}} ->
+        emails = Enum.map(data, & &1["Email"])
+        Logger.info("Successfully fetched #{length(emails)} emails from list #{list_atom}")
+        {:ok, emails}
+
+      %{status: _status} = response ->
+        Logger.error("Error fetching emails from Mailjet list #{list_atom}: #{inspect(response)}")
+        {:error, response.body}
     end
+  rescue
+    error ->
+      Logger.error(
+        "Error fetching emails from Mailjet list #{list_atom}. Reason: #{inspect(error)}"
+      )
+
+      {:error, error}
   end
 
   defp get_contact_ids(list_atom) do

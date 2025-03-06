@@ -4,8 +4,14 @@ defmodule Sanbase.Notifications.Handler do
 
   alias Sanbase.{Repo, Notifications.Notification}
 
-  # The metric registry events and manual notifications come from admin pod, so we use the admin Oban config
-  @oban_conf_name :oban_admin
+  def oban_conf_name do
+    Sanbase.ApplicationUtils.container_type()
+    |> case do
+      "all" -> :oban_web
+      # web, admin, scrapers
+      container_type -> String.to_existing_atom("oban_#{container_type}")
+    end
+  end
 
   @default_channels %{
     "metric_created" => ["discord", "email"],
@@ -145,7 +151,7 @@ defmodule Sanbase.Notifications.Handler do
             scheduled_at: scheduled_at
           )
 
-        {:ok, %{id: job_id}} = Oban.insert(@oban_conf_name, job)
+        {:ok, %{id: job_id}} = Oban.insert(oban_conf_name(), job)
         {:ok, job_id}
       end)
       |> Ecto.Multi.run(:update_notification, fn _repo,
@@ -206,7 +212,7 @@ defmodule Sanbase.Notifications.Handler do
             scheduled_at: seconds_after(5)
           )
 
-        {:ok, %{id: job_id}} = Oban.insert(@oban_conf_name, job)
+        {:ok, %{id: job_id}} = Oban.insert(oban_conf_name(), job)
 
         {:ok, job_id}
       end)
@@ -301,7 +307,7 @@ defmodule Sanbase.Notifications.Handler do
             scheduled_at: seconds_after(5)
           )
 
-        {:ok, %{id: job_id}} = Oban.insert(@oban_conf_name, job)
+        {:ok, %{id: job_id}} = Oban.insert(oban_conf_name(), job)
 
         {:ok, job_id}
       end)
@@ -346,7 +352,7 @@ defmodule Sanbase.Notifications.Handler do
     # Cancel all Oban jobs
     if all_job_ids != [] do
       query = Oban.Job |> where([j], j.id in ^all_job_ids)
-      Oban.cancel_all_jobs(:oban_web, query)
+      Oban.cancel_all_jobs(oban_conf_name(), query)
     end
 
     # Update notification statuses to cancelled

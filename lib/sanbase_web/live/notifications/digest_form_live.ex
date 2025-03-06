@@ -13,7 +13,8 @@ defmodule SanbaseWeb.NotificationsLive.DigestFormLive do
        email_content: nil,
        email_recipients: [],
        preview_groups: [],
-       current_group_index: 0
+       current_group_index: 0,
+       show_recipients_modal: false
      )}
   end
 
@@ -33,126 +34,250 @@ defmodule SanbaseWeb.NotificationsLive.DigestFormLive do
       </div>
 
       <div class="bg-white shadow rounded-lg p-6">
-        <%= if @preview_mode do %>
-          <div class="mb-6">
-            <h3 class="text-lg font-semibold mb-2">Email Preview</h3>
+        <.email_preview
+          :if={@preview_mode}
+          action={@action}
+          preview_groups={@preview_groups}
+          current_group_index={@current_group_index}
+          email_recipients={@email_recipients}
+          email_content={@email_content}
+        />
 
-            <%= if length(@preview_groups) > 1 do %>
-              <div class="mb-4 flex items-center justify-between">
-                <div class="text-sm text-gray-600">
-                  Showing group {@current_group_index + 1} of {length(@preview_groups)}
-                  <%= if current_group = Enum.at(@preview_groups, @current_group_index) do %>
-                    <div class="mt-1">
-                      <%= if @action == "metric_deleted" do %>
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          Step: {format_step(current_group.step)}
-                        </span>
-                        <%= if current_group.scheduled_at do %>
-                          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 ml-2">
-                            Scheduled: {format_date(current_group.scheduled_at)}
-                          </span>
-                        <% end %>
-                      <% end %>
-                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 ml-2">
-                        {current_group.notification_count} notification{if current_group.notification_count !=
-                                                                             1,
-                                                                           do: "s"}
-                      </span>
-                    </div>
-                  <% end %>
-                </div>
-                <div class="flex space-x-2">
-                  <.button
-                    type="button"
-                    phx-click="prev_group"
-                    disabled={@current_group_index == 0}
-                    class="text-sm px-2 py-1"
-                  >
-                    Previous
-                  </.button>
-                  <.button
-                    type="button"
-                    phx-click="next_group"
-                    disabled={@current_group_index == length(@preview_groups) - 1}
-                    class="text-sm px-2 py-1"
-                  >
-                    Next
-                  </.button>
-                </div>
-              </div>
-            <% else %>
-              <%= if current_group = Enum.at(@preview_groups, 0) do %>
-                <div class="mb-4">
-                  <%= if @action == "metric_deleted" do %>
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      Step: {format_step(current_group.step)}
-                    </span>
-                    <%= if current_group.scheduled_at do %>
-                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 ml-2">
-                        Scheduled: {format_date(current_group.scheduled_at)}
-                      </span>
-                    <% end %>
-                  <% end %>
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 ml-2">
-                    {current_group.notification_count} notification{if current_group.notification_count !=
-                                                                         1,
-                                                                       do: "s"}
-                  </span>
-                </div>
-              <% end %>
-            <% end %>
-
-            <div class="mb-4">
-              <h4 class="text-md font-medium mb-1">Recipients:</h4>
-              <div class="bg-gray-50 p-3 rounded border max-h-40 overflow-y-auto">
-                <%= if Enum.empty?(@email_recipients) do %>
-                  <p class="text-gray-500 italic">No recipients found</p>
-                <% else %>
-                  <ul class="list-disc pl-5">
-                    <%= for recipient <- @email_recipients do %>
-                      <li class="text-sm text-gray-700">{recipient}</li>
-                    <% end %>
-                  </ul>
-                <% end %>
-              </div>
-            </div>
-
-            <div class="mb-4">
-              <h4 class="text-md font-medium mb-1">Email Content:</h4>
-              <div class="bg-gray-50 p-3 rounded border">
-                <%= if @email_content do %>
-                  <div class="email-content-preview border rounded p-4 bg-white overflow-auto">
-                    <iframe srcdoc={@email_content} class="w-full min-h-[400px] border-0"></iframe>
-                  </div>
-                <% else %>
-                  <p class="text-gray-500 italic">No content to preview</p>
-                <% end %>
-              </div>
-            </div>
-
-            <div class="flex space-x-3 mt-4">
-              <.button type="button" phx-click="send_digest" class="bg-green-600 hover:bg-green-700">
-                Confirm & Send
-              </.button>
-              <.button type="button" phx-click="cancel_preview" class="bg-gray-500 hover:bg-gray-600">
-                Cancel
-              </.button>
-            </div>
-          </div>
-        <% else %>
-          <p class="mb-4 text-gray-600">
-            This will send an email digest for all unprocessed {format_title(@action)} notifications from the last 24 hours.
-          </p>
-
-          <.form for={@form} phx-submit="preview_digest">
-            <div>
-              <.button type="submit" phx-disable-with="Generating Preview...">
-                Preview Digest
-              </.button>
-            </div>
-          </.form>
-        <% end %>
+        <.digest_form :if={!@preview_mode} action={@action} form={@form} />
       </div>
+
+      <.modal
+        :if={@show_recipients_modal}
+        id="recipients-modal"
+        show
+        on_cancel={JS.push("hide_recipients_modal")}
+      >
+        <div class="flex items-center justify-between w-full mb-4">
+          <h2 class="text-lg font-semibold">All Recipients ({length(@email_recipients)})</h2>
+        </div>
+
+        <div class="mt-4 max-h-[60vh] overflow-y-auto">
+          <ul class="list-disc pl-5 space-y-1">
+            <li :for={recipient <- @email_recipients} class="text-sm text-gray-700">
+              {recipient}
+            </li>
+          </ul>
+        </div>
+
+        <div class="flex justify-end mt-6">
+          <.button
+            type="button"
+            phx-click="hide_recipients_modal"
+            class="bg-gray-500 hover:bg-gray-600"
+          >
+            Close
+          </.button>
+        </div>
+      </.modal>
+    </div>
+    """
+  end
+
+  attr :action, :string, required: true
+  attr :preview_groups, :list, required: true
+  attr :current_group_index, :integer, required: true
+  attr :email_recipients, :list, required: true
+  attr :email_content, :string, required: true
+
+  def email_preview(assigns) do
+    current_group = Enum.at(assigns.preview_groups, assigns.current_group_index)
+    assigns = assign(assigns, :current_group, current_group)
+
+    ~H"""
+    <div class="mb-6">
+      <h3 class="text-lg font-semibold mb-2">Email Preview</h3>
+
+      <.group_navigation
+        :if={length(@preview_groups) > 1}
+        preview_groups={@preview_groups}
+        current_group_index={@current_group_index}
+        current_group={@current_group}
+        action={@action}
+      />
+
+      <.group_info
+        :if={length(@preview_groups) == 1 && @current_group}
+        current_group={@current_group}
+        action={@action}
+      />
+
+      <.recipients_list email_recipients={@email_recipients} />
+
+      <.email_content_preview email_content={@email_content} />
+
+      <div class="flex space-x-3 mt-4">
+        <.button type="button" phx-click="send_digest" class="bg-green-600 hover:bg-green-700">
+          Confirm & Send
+        </.button>
+        <.button type="button" phx-click="cancel_preview" class="bg-gray-500 hover:bg-gray-600">
+          Cancel
+        </.button>
+      </div>
+    </div>
+    """
+  end
+
+  attr :preview_groups, :list, required: true
+  attr :current_group_index, :integer, required: true
+  attr :current_group, :map, required: true
+  attr :action, :string, required: true
+
+  def group_navigation(assigns) do
+    ~H"""
+    <div class="mb-4 flex items-center justify-between">
+      <div class="text-sm text-gray-600">
+        Showing group {@current_group_index + 1} of {length(@preview_groups)}
+        <.group_badges :if={@current_group} current_group={@current_group} action={@action} />
+      </div>
+      <div class="flex space-x-2">
+        <.button
+          type="button"
+          phx-click="prev_group"
+          disabled={@current_group_index == 0}
+          class="text-sm px-2 py-1"
+        >
+          Previous
+        </.button>
+        <.button
+          type="button"
+          phx-click="next_group"
+          disabled={@current_group_index == length(@preview_groups) - 1}
+          class="text-sm px-2 py-1"
+        >
+          Next
+        </.button>
+      </div>
+    </div>
+    """
+  end
+
+  attr :current_group, :map, required: true
+  attr :action, :string, required: true
+
+  def group_info(assigns) do
+    ~H"""
+    <div class="mb-4">
+      <.group_badges current_group={@current_group} action={@action} />
+    </div>
+    """
+  end
+
+  attr :current_group, :map, required: true
+  attr :action, :string, required: true
+
+  def group_badges(assigns) do
+    ~H"""
+    <div class="mt-1">
+      <span
+        :if={@action == "metric_deleted"}
+        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+      >
+        Step: {format_step(@current_group.step)}
+      </span>
+      <span
+        :if={@action == "metric_deleted" && @current_group.scheduled_at}
+        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 ml-2"
+      >
+        Deprecation Scheduled At: {format_date(@current_group.scheduled_at)}
+      </span>
+      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 ml-2">
+        {@current_group.notification_count} notification{if @current_group.notification_count != 1,
+          do: "s"}
+      </span>
+    </div>
+    """
+  end
+
+  attr :email_recipients, :list, required: true
+
+  def recipients_list(assigns) do
+    recipient_count = length(assigns.email_recipients)
+    display_recipients = Enum.take(assigns.email_recipients, 10)
+
+    assigns =
+      assign(assigns,
+        recipient_count: recipient_count,
+        display_recipients: display_recipients
+      )
+
+    ~H"""
+    <div class="mb-4">
+      <h4 class="text-md font-medium mb-1">
+        Recipients:
+        <span class="text-sm font-normal text-gray-600">
+          ({@recipient_count} total)
+        </span>
+      </h4>
+      <div class="bg-gray-50 p-3 rounded border max-h-40 overflow-y-auto">
+        <p :if={Enum.empty?(@email_recipients)} class="text-gray-500 italic">
+          No recipients found
+        </p>
+
+        <div :if={!Enum.empty?(@email_recipients)}>
+          <ul class="list-disc pl-5">
+            <li :for={recipient <- @display_recipients} class="text-sm text-gray-700">
+              {recipient}
+            </li>
+          </ul>
+
+          <div :if={@recipient_count > 0} class="mt-2 text-center">
+            <button
+              type="button"
+              phx-click="show_recipients_modal"
+              class="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+            >
+              Show all {@recipient_count} recipients
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  attr :email_content, :string, required: true
+
+  def email_content_preview(assigns) do
+    ~H"""
+    <div class="mb-4">
+      <h4 class="text-md font-medium mb-1">Email Content:</h4>
+      <div class="bg-gray-50 p-3 rounded border">
+        <p :if={!@email_content} class="text-gray-500 italic">
+          No content to preview
+        </p>
+        <div
+          :if={@email_content}
+          class="email-content-preview border rounded p-4 bg-white overflow-auto"
+        >
+          <iframe srcdoc={@email_content} class="w-full min-h-[400px] border-0"></iframe>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  attr :action, :string, required: true
+  attr :form, :any, required: true
+
+  def digest_form(assigns) do
+    ~H"""
+    <div>
+      <p class="mb-4 text-gray-600">
+        This will send an email digest for all unprocessed {format_title(@action)} notifications from the last 24 hours.
+      </p>
+
+      <.form for={@form} phx-submit="preview_digest">
+        <div>
+          <.button type="submit" phx-disable-with="Generating Preview...">
+            Preview Digest
+          </.button>
+        </div>
+      </.form>
     </div>
     """
   end
@@ -215,6 +340,14 @@ defmodule SanbaseWeb.NotificationsLive.DigestFormLive do
     end
   end
 
+  def handle_event("show_recipients_modal", _params, socket) do
+    {:noreply, assign(socket, show_recipients_modal: true)}
+  end
+
+  def handle_event("hide_recipients_modal", _params, socket) do
+    {:noreply, assign(socket, show_recipients_modal: false)}
+  end
+
   def handle_event("cancel_preview", _params, socket) do
     {:noreply,
      socket
@@ -223,7 +356,8 @@ defmodule SanbaseWeb.NotificationsLive.DigestFormLive do
        email_content: nil,
        email_recipients: [],
        preview_groups: [],
-       current_group_index: 0
+       current_group_index: 0,
+       show_recipients_modal: false
      )}
   end
 
@@ -237,9 +371,10 @@ defmodule SanbaseWeb.NotificationsLive.DigestFormLive do
        email_content: nil,
        email_recipients: [],
        preview_groups: [],
-       current_group_index: 0
+       current_group_index: 0,
+       show_recipients_modal: false
      )
-     |> put_flash(:info, "Email digest sent successfully!")}
+     |> put_flash(:info, "Email digest sending job scheduled successfully!")}
   end
 
   defp format_title(action) do
@@ -313,7 +448,7 @@ defmodule SanbaseWeb.NotificationsLive.DigestFormLive do
   defp get_email_recipients do
     # Get the configured mailing list
     list_id = metric_updates_list()
-    MailjetApi.client().list_subscribed_emails(list_id)
+    MailjetApi.client().fetch_list_emails(list_id)
   end
 
   defp metric_updates_list do

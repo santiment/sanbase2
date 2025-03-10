@@ -143,7 +143,7 @@ defmodule Sanbase.Alert.Trigger.WalletUsdValuationTriggerSettings do
           build_result(data, settings)
 
         _ ->
-          settings = %WalletUsdValuationTriggerSettings{settings | triggered?: false}
+          settings = %{settings | triggered?: false}
           {:ok, settings}
       end
     end

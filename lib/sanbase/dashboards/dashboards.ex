@@ -248,7 +248,7 @@ defmodule Sanbase.Dashboards do
 
     new_sql_query_parameters = Map.merge(query.sql_query_parameters, overrides)
 
-    query = %Query{query | sql_query_parameters: new_sql_query_parameters}
+    query = %{query | sql_query_parameters: new_sql_query_parameters}
     {:ok, query}
   end
 
@@ -1069,7 +1069,7 @@ defmodule Sanbase.Dashboards do
       dashboard.queries
       |> Enum.map(&mask_query_not_viewable_parts(&1, querying_user_id))
 
-    %Dashboard{dashboard | queries: masked_queries}
+    %{dashboard | queries: masked_queries}
   end
 
   defp mask_query_not_viewable_parts(

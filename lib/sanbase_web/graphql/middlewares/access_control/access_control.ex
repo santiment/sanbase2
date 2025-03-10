@@ -87,7 +87,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
       |> Map.put(:__slug__, extracted_slug)
       |> Map.put(:__metric__, extracted_metric)
 
-    %Resolution{resolution | context: context}
+    %{resolution | context: context}
   end
 
   # Basic auth should have no restrictions. Check only the sanity of the `from`
@@ -555,7 +555,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
          from,
          to
        ) do
-    %Resolution{resolution | arguments: %{args | from: from, to: to}}
+    %{resolution | arguments: %{args | from: from, to: to}}
   end
 
   # metrics

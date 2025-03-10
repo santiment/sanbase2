@@ -74,6 +74,6 @@ defmodule SanbaseWeb.ReportController do
   end
 
   defp stringify_tags(%Report{tags: tags} = report) do
-    %Report{report | tags: tags |> Enum.join(", ")}
+    %{report | tags: tags |> Enum.join(", ")}
   end
 end

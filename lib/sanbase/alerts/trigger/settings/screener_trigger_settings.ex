@@ -118,7 +118,7 @@ defmodule Sanbase.Alert.Trigger.ScreenerTriggerSettings do
 
         _ ->
           # {:error, _} or {:ok, []}
-          settings = %ScreenerTriggerSettings{settings | triggered?: false}
+          settings = %{settings | triggered?: false}
           {:ok, settings}
       end
     end

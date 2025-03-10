@@ -176,11 +176,7 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
                 end
               end)
 
-            %TrendingWordsTriggerSettings{
-              settings
-              | triggered?: template_kv != %{},
-                template_kv: template_kv
-            }
+            %{settings | triggered?: template_kv != %{}, template_kv: template_kv}
         end
 
       {:ok, settings}

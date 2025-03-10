@@ -189,11 +189,7 @@ defmodule Sanbase.Alert.Trigger.EthWalletTriggerSettings do
             end
         end)
 
-      settings = %EthWalletTriggerSettings{
-        settings
-        | template_kv: template_kv,
-          triggered?: template_kv != %{}
-      }
+      settings = %{settings | template_kv: template_kv, triggered?: template_kv != %{}}
 
       {:ok, settings}
     end

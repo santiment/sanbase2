@@ -147,11 +147,7 @@ defmodule Sanbase.Alert.Trigger.RawSignalTriggerSettings do
       settings =
         case template_kv != %{} do
           true ->
-            %RawSignalTriggerSettings{
-              settings
-              | triggered?: true,
-                template_kv: template_kv
-            }
+            %{settings | triggered?: true, template_kv: template_kv}
 
           false ->
             %{settings | triggered?: false}

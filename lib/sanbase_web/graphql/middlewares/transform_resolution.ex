@@ -21,10 +21,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.TransformResolution do
     selectors = get_selectors(resolution)
     elem = {:get_metric, metric, selectors}
 
-    %Resolution{
-      resolution
-      | context: Map.update(context, :__get_query_name_arg__, [elem], &[elem | &1])
-    }
+    %{resolution | context: Map.update(context, :__get_query_name_arg__, [elem], &[elem | &1])}
   end
 
   defp do_call(:get_signal, %{context: context} = resolution) do
@@ -32,10 +29,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.TransformResolution do
     selectors = get_selectors(resolution)
     elem = {:get_signal, signal, selectors}
 
-    %Resolution{
-      resolution
-      | context: Map.update(context, :__get_query_name_arg__, [elem], &[elem | &1])
-    }
+    %{resolution | context: Map.update(context, :__get_query_name_arg__, [elem], &[elem | &1])}
   end
 
   defp do_call(_query_field, resolution) do

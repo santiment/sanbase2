@@ -138,11 +138,11 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
 
   # The auth method is not `basic` and the slug is not one of the freely available slugs
   # all of the required checks are done
-  defp check_has_access(resolution, opts) do
+  defp check_has_access(%Resolution{} = resolution, opts) do
     full_check_has_access(resolution, opts)
   end
 
-  defp full_check_has_access(resolution, opts) do
+  defp full_check_has_access(%Resolution{} = resolution, opts) do
     resolution
     |> apply_if_not_resolved(&check_experimental_metric_access/1)
     |> apply_if_not_resolved(&check_plan_has_access/1)
@@ -161,7 +161,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     resolution
   end
 
-  defp apply_if_not_resolved(resolution, fun) do
+  defp apply_if_not_resolved(%Resolution{} = resolution, fun) do
     fun.(resolution)
   end
 
@@ -183,7 +183,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
 
   defp check_experimental_metric_access(%Resolution{} = resolution), do: resolution
 
-  defp do_check_experimental_metric(current_user, metric, resolution) do
+  defp do_check_experimental_metric(current_user, metric, %Resolution{} = resolution) do
     if user_can_access_metric?(current_user, metric.status) do
       resolution
     else
@@ -223,7 +223,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   #
   # The shared access token is checked first and if it gives access to the
   # request, the user plan access is bypassed
-  defp check_plan_has_access(resolution) do
+  defp check_plan_has_access(%Resolution{} = resolution) do
     case check_shared_access_token_has_access?(resolution) do
       true -> resolution
       false -> check_user_plan_has_access(resolution)
@@ -299,7 +299,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
 
   # If the query is marked as having free realtime and historical data
   # do not restrict anything
-  defp maybe_apply_restrictions(resolution, %{
+  defp maybe_apply_restrictions(%Resolution{} = resolution, %{
          allow_realtime_data: true,
          allow_historical_data: true
        }) do
@@ -322,11 +322,11 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     end
   end
 
-  defp maybe_apply_restrictions(resolution, _) do
+  defp maybe_apply_restrictions(%Resolution{} = resolution, _) do
     resolution
   end
 
-  defp restricted_query(resolution, middleware_args, query_or_argument) do
+  defp restricted_query(%Resolution{} = resolution, middleware_args, query_or_argument) do
     args =
       case restricted_query_shared_access_token(
              resolution,
@@ -383,7 +383,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     }
   end
 
-  defp restricted_query_shared_access_token(_, _, _), do: nil
+  defp restricted_query_shared_access_token(%Resolution{} = _, _, _), do: nil
 
   defp restricted_query_user_plan(
          %Resolution{arguments: %{from: from, to: to}, context: context},
@@ -440,7 +440,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     end
   end
 
-  defp not_restricted_query(resolution, _middleware_args) do
+  defp not_restricted_query(%Resolution{} = resolution, _middleware_args) do
     resolution
   end
 

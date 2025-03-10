@@ -202,6 +202,22 @@ defmodule Sanbase.DateTimeUtils do
     |> maybe_pluralize_interval(int_interval)
   end
 
+  def rough_duration_since(%NaiveDateTime{} = ndt) do
+    seconds = NaiveDateTime.diff(NaiveDateTime.utc_now(), ndt, :second)
+
+    cond do
+      seconds < 3600 ->
+        "#{div(seconds, 60)} minutes"
+
+      seconds < 86_400 ->
+        "#{div(seconds, 3600)} hours"
+
+      true ->
+        days = div(seconds, 86_400)
+        "#{days} days"
+    end
+  end
+
   def valid_compound_duration?(value) do
     case Integer.parse(value) do
       {int, string} when is_integer(int) and string in ["ns", "s", "m", "h", "d", "w", "y"] ->

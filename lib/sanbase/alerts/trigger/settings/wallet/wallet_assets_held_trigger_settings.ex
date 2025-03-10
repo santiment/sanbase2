@@ -134,7 +134,7 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
 
         _ ->
           # TODO: Handle errror case
-          settings = %WalletAssetsHeldTriggerSettings{settings | triggered?: false}
+          settings = %{settings | triggered?: false}
           {:ok, settings}
       end
     end

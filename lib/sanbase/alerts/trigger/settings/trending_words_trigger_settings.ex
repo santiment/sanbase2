@@ -79,7 +79,7 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
     def triggered?(%TrendingWordsTriggerSettings{triggered?: triggered}), do: triggered
 
     def evaluate(%TrendingWordsTriggerSettings{filtered_target: %{list: []}} = settings, _trigger) do
-      settings = %TrendingWordsTriggerSettings{settings | triggered?: false}
+      settings = %{settings | triggered?: false}
       {:ok, settings}
     end
 
@@ -89,7 +89,7 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
           build_result(top_words, settings)
 
         _ ->
-          settings = %TrendingWordsTriggerSettings{settings | triggered?: false}
+          settings = %{settings | triggered?: false}
           {:ok, settings}
       end
     end
@@ -110,10 +110,10 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
         case Sanbase.DateTimeUtils.time_in_range?(trigger_time, now, after_15_mins) do
           true ->
             template_kv = %{settings.target => template_kv(settings, top_words)}
-            %TrendingWordsTriggerSettings{settings | triggered?: true, template_kv: template_kv}
+            %{settings | triggered?: true, template_kv: template_kv}
 
           false ->
-            %TrendingWordsTriggerSettings{settings | triggered?: false}
+            %{settings | triggered?: false}
         end
 
       {:ok, settings}
@@ -132,11 +132,11 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
       settings =
         case trending_words do
           [] ->
-            %TrendingWordsTriggerSettings{settings | triggered?: false}
+            %{settings | triggered?: false}
 
           [_ | _] = words ->
             template_kv = %{words => template_kv(settings, words)}
-            %TrendingWordsTriggerSettings{settings | triggered?: true, template_kv: template_kv}
+            %{settings | triggered?: true, template_kv: template_kv}
         end
 
       {:ok, settings}
@@ -165,7 +165,7 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
           true ->
             # If there are no trending words in the intersection there is no
             # point of checking the projects separately
-            %TrendingWordsTriggerSettings{settings | triggered?: false}
+            %{settings | triggered?: false}
 
           false ->
             template_kv =

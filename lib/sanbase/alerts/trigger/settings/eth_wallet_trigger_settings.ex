@@ -164,7 +164,7 @@ defmodule Sanbase.Alert.Trigger.EthWalletTriggerSettings do
 
         _ ->
           # TODO: Handle error case
-          settings = %EthWalletTriggerSettings{settings | triggered?: false}
+          settings = %{settings | triggered?: false}
           {:ok, settings}
       end
     end

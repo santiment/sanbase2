@@ -126,7 +126,7 @@ defmodule Sanbase.Alert.Trigger.RawSignalTriggerSettings do
 
         _ ->
           # TODO: Handle error case
-          settings = %RawSignalTriggerSettings{settings | triggered?: false}
+          settings = %{settings | triggered?: false}
           {:ok, settings}
       end
     end
@@ -154,7 +154,7 @@ defmodule Sanbase.Alert.Trigger.RawSignalTriggerSettings do
             }
 
           false ->
-            %RawSignalTriggerSettings{settings | triggered?: false}
+            %{settings | triggered?: false}
         end
 
       {:ok, settings}

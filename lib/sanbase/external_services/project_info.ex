@@ -77,7 +77,7 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
 
     case Project.coinmarketcap_id(project) do
       nil -> project_info
-      cmc_id -> %__MODULE__{project_info | coinmarketcap_id: cmc_id}
+      cmc_id -> %{project_info | coinmarketcap_id: cmc_id}
     end
   end
 
@@ -200,7 +200,7 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
        )
        when is_binary(contract) do
     case Ethauth.total_supply(contract) do
-      {:ok, total_supply} -> %ProjectInfo{project_info | total_supply: total_supply}
+      {:ok, total_supply} -> %{project_info | total_supply: total_supply}
       _ -> project_info
     end
   end
@@ -212,7 +212,7 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
        )
        when is_binary(contract) do
     case Ethauth.token_decimals(contract) do
-      {:ok, token_decimals} -> %ProjectInfo{project_info | token_decimals: token_decimals}
+      {:ok, token_decimals} -> %{project_info | token_decimals: token_decimals}
       _ -> project_info
     end
   end
@@ -230,13 +230,13 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
 
     {block_number, ""} = Integer.parse(block_number_hex, 16)
 
-    %ProjectInfo{project_info | contract_block_number: block_number}
+    %{project_info | contract_block_number: block_number}
   end
 
   defp fetch_abi(%ProjectInfo{main_contract_address: main_contract_address} = project_info) do
     case Etherscan.Requests.get_abi(main_contract_address) do
       {:ok, abi} ->
-        %ProjectInfo{project_info | contract_abi: abi}
+        %{project_info | contract_abi: abi}
 
       {:error, error} ->
         Logger.warning(

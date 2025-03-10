@@ -2,9 +2,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
   # credo:disable-for-this-file
   use Tesla
 
-  alias Decimal, as: D
   alias Sanbase.ExternalServices.RateLimiting
-  alias Sanbase.ExternalServices.ProjectInfo
   alias Sanbase.ExternalServices.ErrorCatcher
 
   require Logger
@@ -131,8 +129,8 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
       match ->
         Floki.text(match)
         |> parse_total_supply()
-        |> D.round()
-        |> D.to_integer()
+        |> Decimal.round()
+        |> Decimal.to_integer()
     end
   end
 
@@ -171,6 +169,6 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
     |> String.split()
     |> Enum.find(fn x -> String.starts_with?(x, "Supply") end)
     |> (fn supply -> String.trim(supply, "Supply:") end).()
-    |> D.new()
+    |> Decimal.new()
   end
 end

@@ -91,12 +91,11 @@ defmodule Sanbase.Alert.Trigger.ScreenerTriggerSettings do
     end
   end
 
-  defp fill_current_state(trigger) do
-    %{settings: settings} = trigger
+  defp fill_current_state(%Sanbase.Alert.Trigger{} = trigger) do
+    %{settings: %ScreenerTriggerSettings{} = settings} = trigger
 
     with {:ok, slugs} <- get_data(settings) do
       settings = %{settings | state: %{slugs_in_screener: slugs}}
-
       trigger = %{trigger | settings: settings}
       {:ok, trigger}
     end

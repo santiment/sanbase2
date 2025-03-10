@@ -70,7 +70,7 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
     missing_values? or !Project.has_contract_address?(project)
   end
 
-  def from_project(project) do
+  def from_project(%Project{} = project) do
     project_info =
       struct(__MODULE__, Map.to_list(project))
       |> struct(Map.to_list(find_or_create_initial_ico(project)))
@@ -140,7 +140,7 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
   end
 
   defp maybe_add_contract_address(
-         project,
+         %Project{} = project,
          %{main_contract_address: contract_address} = project_info_map
        )
        when is_binary(contract_address) do
@@ -161,9 +161,9 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
     Repo.preload(project, [:contract_addresses], force: true)
   end
 
-  defp maybe_add_contract_address(project, _project_info_map), do: project
+  defp maybe_add_contract_address(%Project{} = project, _project_info_map), do: project
 
-  defp insert_tag({:ok, project}, project_info) do
+  defp insert_tag({:ok, %Project{} = project}, %ProjectInfo{} = project_info) do
     do_insert_tag(project, project_info)
     {:ok, project}
   end
@@ -188,7 +188,7 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
 
   defp do_insert_tag(_, _), do: :ok
 
-  defp find_or_create_initial_ico(project) do
+  defp find_or_create_initial_ico(%Project{} = project) do
     case Project.initial_ico(project) do
       nil -> %Ico{project_id: project.id}
       ico -> ico

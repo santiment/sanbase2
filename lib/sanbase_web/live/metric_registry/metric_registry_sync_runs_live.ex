@@ -133,23 +133,6 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
       NaiveDateTime.diff(NaiveDateTime.utc_now(), inserted_at, :second) > 60
   end
 
-  defp rough_duration_since(%NaiveDateTime{} = ndt) do
-    seconds = NaiveDateTime.diff(NaiveDateTime.utc_now(), ndt, :second)
-
-    cond do
-      seconds < 3600 ->
-        "#{div(seconds, 60)} minutes"
-
-      seconds < 86_400 ->
-        "#{div(seconds, 3600)} hours"
-
-      true ->
-        days = div(seconds, 86_400)
-        hours = div(rem(seconds, 86_400), 3600)
-        "#{days} days" <> if(hours == 0, do: "", else: " #{hours} hours")
-    end
-  end
-
   attr :phx_click, :string, required: true
   attr :text, :string, required: true
   attr :count, :integer, required: false, default: nil
@@ -193,7 +176,7 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
         data-popover-target={"popover-executing-too-long-#{@id}"}
       >
         <.icon name="hero-exclamation-circle" /> Executing for too long!
-        ({rough_duration_since(@inserted_at)})
+        ({Sanbase.DateTimeUtils.rough_duration_since(@inserted_at)})
       </span>
     </div>
     """

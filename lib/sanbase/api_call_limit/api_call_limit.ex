@@ -295,26 +295,16 @@ defmodule Sanbase.ApiCallLimit do
   end
 
   defp do_get_quota(%__MODULE__{} = acl) do
-    %{api_calls_limit_plan: plan, api_calls: api_calls} = acl
-
-    keys = get_time_str_keys()
-
-    api_calls_limits = plan_to_api_call_limits(plan)
-
     # The api calls made in the specified period
-    api_calls = %{
-      month: Map.get(api_calls, keys.month_str, 0),
-      hour: Map.get(api_calls, keys.hour_str, 0),
-      minute: Map.get(api_calls, keys.minute_str, 0)
-    }
+    {
+      %{month: _, hour: _, minute: _} = api_calls_remaining,
+      %{month: _, hour: _, minute: _} = api_calls_limits
+    } = get_api_calls_maps(acl)
 
-    api_calls_remaining = %{
-      month: Enum.max([api_calls_limits.month - api_calls.month, 0]),
-      hour: Enum.max([api_calls_limits.hour - api_calls.hour, 0]),
-      minute: Enum.max([api_calls_limits.minute - api_calls.minute, 0])
-    }
-
+    # The min remaining calls among the minute, hour and values
     min_remaining = api_calls_remaining |> Map.values() |> Enum.min()
+    # Randomize the quota size so when the API calls are distributed among all
+    # API pods the quotas don't expire at the same time
     quota_size = @quota_size_base + :rand.uniform(@quota_size_max_offset)
 
     case Enum.min([quota_size, min_remaining]) do
@@ -344,6 +334,26 @@ defmodule Sanbase.ApiCallLimit do
            api_calls_limits: api_calls_limits
          }}
     end
+  end
+
+  defp get_api_calls_maps(%__MODULE__{api_calls_limit_plan: plan, api_calls: api_calls_made}) do
+    keys = get_time_str_keys()
+
+    api_calls_limits = plan_to_api_call_limits(plan)
+
+    api_calls_made = %{
+      month: Map.get(api_calls_made, keys.month_str, 0),
+      hour: Map.get(api_calls_made, keys.hour_str, 0),
+      minute: Map.get(api_calls_made, keys.minute_str, 0)
+    }
+
+    api_calls_remaining = %{
+      month: Enum.max([api_calls_limits.month - api_calls_made.month, 0]),
+      hour: Enum.max([api_calls_limits.hour - api_calls_made.hour, 0]),
+      minute: Enum.max([api_calls_limits.minute - api_calls_made.minute, 0])
+    }
+
+    {api_calls_remaining, api_calls_limits}
   end
 
   defp do_update_usage_db(%__MODULE__{api_calls: api_calls} = acl, count) do

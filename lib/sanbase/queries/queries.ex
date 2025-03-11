@@ -119,6 +119,10 @@ defmodule Sanbase.Queries do
     Queries.Authorization.user_can_execute_query(user, product_code, plan_name)
   end
 
+  def max_access_dynamic_repo() do
+    Queries.Authorization.max_access_dynamic_repo()
+  end
+
   def user_plan_to_dynamic_repo(product_code, plan_name) do
     Queries.Authorization.user_plan_to_dynamic_repo(product_code, plan_name)
   end

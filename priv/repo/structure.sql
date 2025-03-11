@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.10 (Homebrew)
--- Dumped by pg_dump version 15.10 (Homebrew)
+-- Dumped from database version 15.1 (Homebrew)
+-- Dumped by pg_dump version 15.1 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -2310,6 +2310,47 @@ ALTER SEQUENCE public.menus_id_seq OWNED BY public.menus.id;
 
 
 --
+-- Name: metric_display_order; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.metric_display_order (
+    id bigint NOT NULL,
+    metric character varying(255) NOT NULL,
+    category character varying(255) NOT NULL,
+    "group" character varying(255) DEFAULT ''::character varying,
+    display_order integer NOT NULL,
+    source_type character varying(255) DEFAULT 'code'::character varying,
+    source_id integer,
+    added_at timestamp(0) without time zone,
+    label character varying(255),
+    style character varying(255) DEFAULT 'line'::character varying,
+    format character varying(255) DEFAULT ''::character varying,
+    description text,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: metric_display_order_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.metric_display_order_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: metric_display_order_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.metric_display_order_id_seq OWNED BY public.metric_display_order.id;
+
+
+--
 -- Name: metric_registry; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2342,10 +2383,16 @@ CREATE TABLE public.metric_registry (
     deprecation_note text,
     inserted_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
+    status character varying(255) DEFAULT 'released'::character varying NOT NULL,
     is_verified boolean DEFAULT true NOT NULL,
     sync_status character varying(255) DEFAULT 'synced'::character varying NOT NULL,
-    status character varying(255) DEFAULT 'released'::character varying NOT NULL,
-    last_sync_datetime timestamp(0) without time zone
+    last_sync_datetime timestamp(0) without time zone,
+    category character varying(255),
+    "group" character varying(255) DEFAULT ''::character varying,
+    label character varying(255),
+    style character varying(255) DEFAULT 'line'::character varying,
+    format character varying(255) DEFAULT ''::character varying,
+    description text
 );
 
 
@@ -5365,6 +5412,13 @@ ALTER TABLE ONLY public.menus ALTER COLUMN id SET DEFAULT nextval('public.menus_
 
 
 --
+-- Name: metric_display_order id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metric_display_order ALTER COLUMN id SET DEFAULT nextval('public.metric_display_order_id_seq'::regclass);
+
+
+--
 -- Name: metric_registry id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6295,6 +6349,14 @@ ALTER TABLE ONLY public.menu_items
 
 ALTER TABLE ONLY public.menus
     ADD CONSTRAINT menus_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: metric_display_order metric_display_order_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metric_display_order
+    ADD CONSTRAINT metric_display_order_pkey PRIMARY KEY (id);
 
 
 --
@@ -7423,6 +7485,34 @@ CREATE UNIQUE INDEX market_segments_name_index ON public.market_segments USING b
 --
 
 CREATE INDEX menus_user_id_index ON public.menus USING btree (user_id);
+
+
+--
+-- Name: metric_display_order_category_group_display_order_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX metric_display_order_category_group_display_order_index ON public.metric_display_order USING btree (category, "group", display_order);
+
+
+--
+-- Name: metric_display_order_metric_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX metric_display_order_metric_index ON public.metric_display_order USING btree (metric);
+
+
+--
+-- Name: metric_display_order_source_type_source_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX metric_display_order_source_type_source_id_index ON public.metric_display_order USING btree (source_type, source_id);
+
+
+--
+-- Name: metric_registry_category_group_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX metric_registry_category_group_index ON public.metric_registry USING btree (category, "group");
 
 
 --
@@ -9913,20 +10003,19 @@ INSERT INTO public."schema_migrations" (version) VALUES (20241029080754);
 INSERT INTO public."schema_migrations" (version) VALUES (20241029082533);
 INSERT INTO public."schema_migrations" (version) VALUES (20241029151959);
 INSERT INTO public."schema_migrations" (version) VALUES (20241030141825);
+INSERT INTO public."schema_migrations" (version) VALUES (20241104061632);
 INSERT INTO public."schema_migrations" (version) VALUES (20241104115340);
 INSERT INTO public."schema_migrations" (version) VALUES (20241108112754);
 INSERT INTO public."schema_migrations" (version) VALUES (20241112094924);
 INSERT INTO public."schema_migrations" (version) VALUES (20241114140339);
 INSERT INTO public."schema_migrations" (version) VALUES (20241114141110);
 INSERT INTO public."schema_migrations" (version) VALUES (20241116104556);
-INSERT INTO public."schema_migrations" (version) VALUES (20241121133719);
 INSERT INTO public."schema_migrations" (version) VALUES (20241128113958);
 INSERT INTO public."schema_migrations" (version) VALUES (20241128161315);
 INSERT INTO public."schema_migrations" (version) VALUES (20241202104812);
 INSERT INTO public."schema_migrations" (version) VALUES (20241212054904);
 INSERT INTO public."schema_migrations" (version) VALUES (20250110083203);
 INSERT INTO public."schema_migrations" (version) VALUES (20250121155544);
-INSERT INTO public."schema_migrations" (version) VALUES (20250124152414);
 INSERT INTO public."schema_migrations" (version) VALUES (20250203104426);
 INSERT INTO public."schema_migrations" (version) VALUES (20250207100755);
 INSERT INTO public."schema_migrations" (version) VALUES (20250207134446);
@@ -9935,3 +10024,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250219075723);
 INSERT INTO public."schema_migrations" (version) VALUES (20250219155459);
 INSERT INTO public."schema_migrations" (version) VALUES (20250220134051);
 INSERT INTO public."schema_migrations" (version) VALUES (20250226111103);
+INSERT INTO public."schema_migrations" (version) VALUES (20250307114659);
+INSERT INTO public."schema_migrations" (version) VALUES (20250311103938);

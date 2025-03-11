@@ -22,10 +22,14 @@ defmodule Sanbase.Metric.Registry do
   @metric_regex ~r/^[a-z0-9_{}:]+$/
   @allowed_statuses ["alpha", "beta", "released"]
   @allowed_sync_statuses ["synced", "not_synced"]
+  @allowed_styles ["filledLine", "greenRedBar", "bar", "line", "area", "reference"]
+  @allowed_formats ["", "usd", "percent"]
 
   def aggregations(), do: @aggregations
   def metric_regex(), do: @metric_regex
   def allowed_statuses(), do: @allowed_statuses
+  def allowed_styles(), do: @allowed_styles
+  def allowed_formats(), do: @allowed_formats
 
   @type t :: %__MODULE__{
           id: integer(),
@@ -57,6 +61,13 @@ defmodule Sanbase.Metric.Registry do
           is_verified: boolean(),
           sync_status: String.t(),
           last_sync_datetime: DateTime.t(),
+          # UI metadata fields
+          category: String.t(),
+          group: String.t(),
+          label: String.t(),
+          style: String.t(),
+          format: String.t(),
+          description: String.t(),
           inserted_at: DateTime.t(),
           updated_at: DateTime.t()
         }
@@ -116,6 +127,14 @@ defmodule Sanbase.Metric.Registry do
     field(:sync_status, :string)
     field(:last_sync_datetime, :utc_datetime)
 
+    # UI metadata fields
+    field(:category, :string)
+    field(:group, :string, default: "")
+    field(:label, :string)
+    field(:style, :string, default: "line")
+    field(:format, :string, default: "")
+    field(:description, :string)
+
     embeds_many(:tables, Table, on_replace: :delete)
     embeds_many(:selectors, Selector, on_replace: :delete)
     embeds_many(:required_selectors, Selector, on_replace: :delete)
@@ -154,7 +173,13 @@ defmodule Sanbase.Metric.Registry do
       :parameters,
       :status,
       :sync_status,
-      :last_sync_datetime
+      :last_sync_datetime,
+      :category,
+      :group,
+      :label,
+      :style,
+      :format,
+      :description
     ])
     |> cast_embed(:selectors,
       required: false,
@@ -210,6 +235,8 @@ defmodule Sanbase.Metric.Registry do
     |> validate_inclusion(:sanbase_min_plan, ["free", "pro", "max"])
     |> validate_inclusion(:sanapi_min_plan, ["free", "pro", "max"])
     |> validate_inclusion(:status, @allowed_statuses)
+    |> validate_inclusion(:style, @allowed_styles)
+    |> validate_inclusion(:format, @allowed_formats)
     |> Validation.validate_template_fields()
     |> unique_constraint([:metric, :data_type, :fixed_parameters],
       name: :metric_registry_composite_unique_index

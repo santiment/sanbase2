@@ -1,0 +1,321 @@
+/* Metric Metadata Page Styles */
+.metric-metadata-page {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.metric-metadata-page h1 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+/* Actions bar */
+.actions {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.filter-container {
+  flex-grow: 1;
+  margin-left: 20px;
+}
+
+.filter-container input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+/* Metrics container layout */
+.metrics-container {
+  display: flex;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.categories-list {
+  flex: 0 0 250px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  padding: 15px;
+}
+
+.metrics-list {
+  flex: 1;
+}
+
+/* Categories list */
+.categories-list h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+.categories-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.categories-list li {
+  margin-bottom: 8px;
+}
+
+.categories-list li a {
+  display: block;
+  padding: 8px 10px;
+  color: #333;
+  text-decoration: none;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.categories-list li a:hover {
+  background-color: #e9e9e9;
+}
+
+.categories-list li.selected a {
+  background-color: #007bff;
+  color: white;
+}
+
+.count {
+  color: #777;
+  font-size: 0.9em;
+}
+
+.categories-list li.selected .count {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Metrics table */
+.metrics-list table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.metrics-list th,
+.metrics-list td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.metrics-list th {
+  background-color: #f5f5f5;
+  font-weight: 600;
+}
+
+.metrics-list tr:hover {
+  background-color: #f9f9f9;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-container {
+  background-color: white;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 20px;
+  position: relative;
+}
+
+.close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #777;
+}
+
+.close-button:hover {
+  color: #333;
+}
+
+/* Form styles */
+.metric-metadata-form h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.form-group textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.form-actions {
+  margin-top: 20px;
+  text-align: right;
+}
+
+/* Button styles */
+.btn {
+  display: inline-block;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  background-color: #e9e9e9;
+  color: #333;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background-color: #007bff;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #0069d9;
+}
+
+.btn-sm {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+/* Metric Metadata Form Component */
+.metric-metadata-form .form-section {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+}
+
+.metric-metadata-form h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #374151;
+}
+
+.metric-metadata-form .metric-source-selector {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.metric-metadata-form .metric-search {
+  position: relative;
+  margin-bottom: 1rem;
+}
+
+.metric-metadata-form .metric-search-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  z-index: 10;
+  max-height: 15rem;
+  overflow-y: auto;
+}
+
+.metric-metadata-form .metric-search-results ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.metric-metadata-form .metric-search-results li {
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.metric-metadata-form .metric-search-results li:last-child {
+  border-bottom: none;
+}
+
+.metric-metadata-form .metric-search-results li a {
+  display: block;
+  color: #374151;
+  text-decoration: none;
+}
+
+.metric-metadata-form .metric-search-results li a:hover {
+  color: #2563eb;
+}
+
+.metric-metadata-form .metric-search-results li.more-results {
+  color: #6b7280;
+  font-style: italic;
+  text-align: center;
+}
+
+.metric-metadata-form .form-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.metric-metadata-form .form-group {
+  flex: 1;
+}
+
+.metric-metadata-form .form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+}
+
+.metric-metadata-form .btn-primary {
+  background-color: #2563eb;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.metric-metadata-form .btn-primary:hover {
+  background-color: #1d4ed8;
+} 

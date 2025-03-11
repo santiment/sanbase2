@@ -453,6 +453,7 @@ defmodule SanbaseWeb.NotificationsLive.DigestFormLive do
 
   defp metric_updates_list do
     Sanbase.Utils.Config.module_get(Sanbase.Notifications, :mailjet_metric_updates_list)
+    # credo:disable-for-next-line
     |> String.to_atom()
   end
 end

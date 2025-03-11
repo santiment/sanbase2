@@ -83,14 +83,11 @@ defmodule Sanbase.HTML do
       |> Enum.into(%{}, fn {idx, node} ->
         node =
           case node do
-            %Floki.HTMLTree.HTMLNode{children_nodes_ids: children_nodes_ids} ->
+            %Floki.HTMLTree.HTMLNode{children_nodes_ids: children_nodes_ids} = node ->
               new_children_nodes_ids =
                 intersection(children_nodes_ids, node_ids) |> Enum.reverse()
 
-              %Floki.HTMLTree.HTMLNode{
-                node
-                | children_nodes_ids: new_children_nodes_ids
-              }
+              %{node | children_nodes_ids: new_children_nodes_ids}
 
             _ ->
               node
@@ -124,7 +121,7 @@ defmodule Sanbase.HTML do
     node_words_count = calc_words(content)
 
     if words_acc + node_words_count >= max_words do
-      updated_node = %Floki.HTMLTree.Text{
+      updated_node = %{
         node
         | content:
             truncate_text(

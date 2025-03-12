@@ -91,7 +91,7 @@ defmodule SanbaseWeb.AdminAuthenticateLive do
          socket
          |> assign(valid_email: true, error: nil, email: nil)
          |> put_flash(:info, "Login email sent. Please check your inbox.")
-         |> push_navigate(to: ~p"/admin2")}
+         |> push_navigate(to: ~p"/admin")}
 
       {:ok, :direct_login} ->
         {:noreply,

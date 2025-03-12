@@ -24,7 +24,7 @@ defmodule SanbaseWeb.SuggestEcosystemLabelsChangeAdminLive do
           <:col :let={row} label="Asset">
             <.link
               class="underline text-blue-600"
-              href={~p"/admin2/generic/#{row.project_id}?resource=projects"}
+              href={~p"/admin/generic/#{row.project_id}?resource=projects"}
               target="_blank"
             >
               {row.project_name}

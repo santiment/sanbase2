@@ -136,18 +136,18 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
         >
           <AvailableMetricsComponents.link_button
             text="Show"
-            href={~p"/admin2/metric_registry/show/#{row.id}"}
+            href={~p"/admin/metric_registry/show/#{row.id}"}
           />
           <AvailableMetricsComponents.link_button
             :if={Permissions.can?(:edit, roles: @current_user_role_names)}
             text="Edit"
-            href={~p"/admin2/metric_registry/edit/#{row.id}"}
+            href={~p"/admin/metric_registry/edit/#{row.id}"}
           />
 
           <AvailableMetricsComponents.link_button
             :if={Permissions.can?(:edit, roles: @current_user_role_names)}
             text="Duplicate"
-            href={~p"/admin2/metric_registry/new?#{%{duplicate_metric_registry_id: row.id}}"}
+            href={~p"/admin/metric_registry/new?#{%{duplicate_metric_registry_id: row.id}}"}
           />
         </:col>
       </AvailableMetricsComponents.table_with_popover_th>
@@ -451,25 +451,25 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           :if={Permissions.can?(:create, roles: @current_user_role_names)}
           icon="hero-plus"
           text="Create New Metric"
-          href={~p"/admin2/metric_registry/new"}
+          href={~p"/admin/metric_registry/new"}
         />
         <AvailableMetricsComponents.link_button
           icon="hero-list-bullet"
           text="See Change Requests"
-          href={~p"/admin2/metric_registry/change_suggestions"}
+          href={~p"/admin/metric_registry/change_suggestions"}
         />
 
         <AvailableMetricsComponents.link_button
           :if={Permissions.can?(:start_sync, roles: @current_user_role_names)}
           icon="hero-arrow-path-rounded-square"
           text="Sync Metrics"
-          href={~p"/admin2/metric_registry/sync"}
+          href={~p"/admin/metric_registry/sync"}
         />
 
         <AvailableMetricsComponents.available_metrics_button
           :if={Permissions.can?(:see_sync_runs, roles: @current_user_role_names)}
           text="List Sync Runs"
-          href={~p"/admin2/metric_registry/sync_runs"}
+          href={~p"/admin/metric_registry/sync_runs"}
           icon="hero-list-bullet"
         />
 

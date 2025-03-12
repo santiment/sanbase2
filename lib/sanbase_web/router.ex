@@ -43,9 +43,9 @@ defmodule SanbaseWeb.Router do
     plug(SanbaseWeb.Plug.AdminEmailAuthPlug)
   end
 
-  pipeline :admin2 do
+  pipeline :admin do
     plug(SanbaseWeb.GenericAdminAssignRoutes)
-    plug(:put_layout, html: {SanbaseWeb.Layouts, :admin2})
+    plug(:put_layout, html: {SanbaseWeb.Layouts, :admin})
   end
 
   scope "/auth", SanbaseWeb do
@@ -63,8 +63,8 @@ defmodule SanbaseWeb.Router do
     live("/suggest_github_organizations", SuggestGithubOrganizationsLive)
   end
 
-  scope "/admin2", SanbaseWeb do
-    pipe_through([:admin_pod_only, :browser, :basic_auth, :maybe_assign_current_user, :admin2])
+  scope "/admin", SanbaseWeb do
+    pipe_through([:admin_pod_only, :browser, :basic_auth, :maybe_assign_current_user, :admin])
     import Phoenix.LiveDashboard.Router
 
     scope "/metric_registry" do

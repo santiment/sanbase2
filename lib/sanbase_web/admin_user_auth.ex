@@ -11,7 +11,7 @@ defmodule SanbaseWeb.AdminUserAuth do
 
     conn
     |> renew_session()
-    |> redirect(to: ~p"/admin2")
+    |> redirect(to: ~p"/admin")
   end
 
   defp renew_session(conn) do
@@ -101,7 +101,7 @@ defmodule SanbaseWeb.AdminUserAuth do
           :error,
           "You must have a Metric Reigstry role in order to access this page."
         )
-        |> Phoenix.LiveView.redirect(to: ~p"/admin2")
+        |> Phoenix.LiveView.redirect(to: ~p"/admin")
 
       {:halt, socket}
     end
@@ -159,5 +159,5 @@ defmodule SanbaseWeb.AdminUserAuth do
 
   defp maybe_store_return_to(conn), do: conn
 
-  defp signed_in_path(_conn), do: ~p"/admin2"
+  defp signed_in_path(_conn), do: ~p"/admin"
 end

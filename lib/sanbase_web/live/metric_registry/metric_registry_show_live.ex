@@ -35,28 +35,28 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
       <div class="my-4">
         <AvailableMetricsComponents.available_metrics_button
           text="Back to Metric Registry"
-          href={~p"/admin2/metric_registry"}
+          href={~p"/admin/metric_registry"}
           icon="hero-arrow-uturn-left"
         />
 
         <AvailableMetricsComponents.available_metrics_button
           :if={Permissions.can?(:edit, roles: @current_user_role_names)}
           text="Edit Metric"
-          href={~p"/admin2/metric_registry/edit/#{@metric_registry}"}
+          href={~p"/admin/metric_registry/edit/#{@metric_registry}"}
           icon="hero-pencil-square"
         />
 
         <AvailableMetricsComponents.available_metrics_button
           :if={Permissions.can?(:see_history, roles: @current_user_role_names)}
           text="History"
-          href={~p"/admin2/metric_registry/history/#{@metric_registry}"}
+          href={~p"/admin/metric_registry/history/#{@metric_registry}"}
           icon="hero-calendar-days"
         />
 
         <AvailableMetricsComponents.available_metrics_button
           :if={Permissions.can?(:see_history, roles: @current_user_role_names)}
           text="Diff Since Last Sync"
-          href={~p"/admin2/metric_registry/diff/#{@metric_registry}"}
+          href={~p"/admin/metric_registry/diff/#{@metric_registry}"}
           icon="hero-code-bracket-square"
         />
 
@@ -64,7 +64,7 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
           :if={Permissions.can?(:edit, roles: @current_user_role_names)}
           text="Duplicate Metric"
           href={
-            ~p"/admin2/metric_registry/new?#{%{duplicate_metric_registry_id: @metric_registry.id}}"
+            ~p"/admin/metric_registry/new?#{%{duplicate_metric_registry_id: @metric_registry.id}}"
           }
           icon="hero-document-duplicate"
         />
@@ -72,7 +72,7 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
         <AvailableMetricsComponents.available_metrics_button
           text="Notifications"
           href={
-            ~p"/admin2/generic/search?resource=notifications&search[filters][0][field]=metric_registry_id&search[filters][0][value]=#{@metric_registry.id}"
+            ~p"/admin/generic/search?resource=notifications&search[filters][0][field]=metric_registry_id&search[filters][0][value]=#{@metric_registry.id}"
           }
           icon="hero-envelope"
         />

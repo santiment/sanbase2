@@ -18,6 +18,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
     {:ok,
      socket
      |> assign(
+       page_title: "Santiment | Available Metrics",
        visible_metrics: visible_metrics,
        metrics_map: metrics_map,
        filter: default_filter

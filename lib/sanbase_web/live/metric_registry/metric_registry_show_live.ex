@@ -68,6 +68,12 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
           }
           icon="hero-document-duplicate"
         />
+        <AvailableMetricsComponents.available_metrics_button
+          :if={Permissions.can?(:edit, roles: @current_user_role_names)}
+          text="Test Metric"
+          href={metric_graphiql_url(@metric_registry)}
+          icon="hero-rocket-launch"
+        />
 
         <AvailableMetricsComponents.available_metrics_button
           text="Notifications"
@@ -92,6 +98,50 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
       </.table>
     </div>
     """
+  end
+
+  defp metric_graphiql_url(metric_registry) do
+    # TODO: Move this to a handle_event so the DB query will be executed only
+    # if the button is pressed
+    slug =
+      case Sanbase.AvailableMetrics.get_metric_available_slugs(metric_registry.metric) do
+        {:ok, slugs} ->
+          # If we have precomputed the available slugs
+          cond do
+            # If ethereum/bitcoin are available, use them
+            "ethereum" in slugs -> "ethereum"
+            "bitcoin" in slugs -> "bitcoin"
+            true -> Enum.random(slugs)
+          end
+
+        {:error, _} ->
+          "ethereum"
+      end
+
+    # Add aliases so the timeseries data is seen before the metadata
+    # For many metrics the list of available assets has thousands of assets
+    # and seeing the timeseries data will require a lot of scrolling
+    query = """
+    {
+      getMetric(metric: "#{metric_registry.metric}"){
+        R1_timeseries: timeseriesData(
+          slug: "#{slug}"
+          from: "utc_now-60d"
+          to: "utc_now"
+          interval: "7d"
+        ){
+          datetime
+          value
+         }
+
+        R2_metadata: metadata {
+          availableSlugs
+        }
+      }
+    }
+    """
+
+    SanbaseWeb.Endpoint.backend_url() <> "/graphiql?query=#{URI.encode_www_form(query)}"
   end
 
   defp formatted_value(assigns) do

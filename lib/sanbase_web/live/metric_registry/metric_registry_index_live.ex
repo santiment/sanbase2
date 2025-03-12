@@ -2,6 +2,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
   use SanbaseWeb, :live_view
 
   import SanbaseWeb.AvailableMetricsDescription
+  import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
 
   alias Sanbase.Metric.Registry.Permissions
   alias SanbaseWeb.AvailableMetricsComponents
@@ -25,7 +26,8 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
        metrics: metrics,
        changed_metrics_ids: [],
        verified_metrics_updates_map: %{},
-       filter: %{}
+       filter: %{},
+       sort_by: "ID ↑"
      )}
   end
 
@@ -72,6 +74,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
         filter={@filter}
         changed_metrics_ids={@changed_metrics_ids}
         current_user_role_names={@current_user_role_names}
+        sort_by={@sort_by}
       />
       <AvailableMetricsComponents.table_with_popover_th
         id="metrics_registry"
@@ -90,27 +93,11 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
         </:col>
         <:col
           :let={row}
-          label="Frequency"
-          popover_target="popover-min-interval"
-          popover_target_text={get_popover_text(%{key: "Frequency"})}
-        >
-          {row.min_interval}
-        </:col>
-        <:col
-          :let={row}
           label="Table"
           popover_target="popover-table"
           popover_target_text={get_popover_text(%{key: "Clickhouse Table"})}
         >
-          <.embeded_schema_show list={row.tables} key={:name} />
-        </:col>
-        <:col
-          :let={row}
-          label="Default Aggregation"
-          popover_target="popover-default-aggregation"
-          popover_target_text={get_popover_text(%{key: "Default Aggregation"})}
-        >
-          {row.default_aggregation}
+          <.tables_and_interval tables={row.tables} min_interval={row.min_interval} />
         </:col>
         <:col
           :let={row}
@@ -138,6 +125,9 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           popover_target_text={get_popover_text(%{key: "Sync Status"})}
         >
           <.sync_status row={row} />
+        </:col>
+        <:col :let={row} label="Dates">
+          <.dates inserted_at={row.inserted_at} updated_at={row.updated_at} />
         </:col>
         <:col
           :let={row}
@@ -172,6 +162,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
       |> maybe_apply_filter(:match_metric, params)
       |> maybe_apply_filter(:unverified_only, params)
       |> maybe_apply_filter(:not_synced_only, params)
+      |> maybe_apply_filter(:sort_by, params)
       |> Enum.map(& &1.id)
 
     {:noreply,
@@ -235,38 +226,82 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
   end
 
   def handle_event("confirm_verified_changes_update", _params, socket) do
-    for metric <- socket.assigns.metrics, metric.id in socket.assigns.changed_metrics_ids do
-      map = Map.get(socket.assigns.verified_metrics_updates_map, metric.id)
+    results =
+      for metric <- socket.assigns.metrics, metric.id in socket.assigns.changed_metrics_ids do
+        map = Map.get(socket.assigns.verified_metrics_updates_map, metric.id)
 
-      # Explicitly put the old is_verified status in the first argument otherwise Ecto
-      # will decide that the value does not change and will not mutate the DB
-      {:ok, _} =
+        # Explicitly put the old is_verified status in the first argument otherwise Ecto
+        # will decide that the value does not change and will not mutate the DB
         Sanbase.Metric.Registry.update_is_verified(
           # Put the old is_verified here so after a few toggles we still know
           # how it started
           %{metric | is_verified: map.old},
           map.new
         )
-    end
+      end
 
-    {:noreply,
-     socket
-     |> assign(
-       changed_metrics_ids: [],
-       verified_metrics_updates_map: %{},
-       show_verified_changes_modal: false
-     )
-     |> put_flash(
-       :info,
-       "Suggessfully updated the is_verified status of #{length(socket.assigns.changed_metrics_ids)} metric metricss"
-     )}
+    errors = Enum.filter(results, &match?({:error, _}, &1))
+
+    case errors do
+      [_ | _] ->
+        {:noreply,
+         socket
+         |> assign(
+           changed_metric_ids: [],
+           verified_metrics_updates_map: %{},
+           show_verified_changes_modal: false
+         )
+         |> put_flash(
+           :error,
+           """
+           Successfully updated the is_verified status of #{length(socket.assigns.changed_metrics_ids) - length(errors)} metric metrics.
+           Failed to update the is_verified status of #{length(errors)} metric metrics.
+
+           Errors:
+           #{Enum.map(errors, fn {:error, error} -> changeset_errors_string(error) end) |> Enum.join(", ")}
+           """
+         )}
+
+      [] ->
+        {:noreply,
+         socket
+         |> assign(
+           changed_metrics_ids: [],
+           verified_metrics_updates_map: %{},
+           show_verified_changes_modal: false
+         )
+         |> put_flash(
+           :info,
+           "Successfully updated the is_verified status of #{length(socket.assigns.changed_metrics_ids)} metric metrics"
+         )}
+    end
   end
 
-  defp embeded_schema_show(assigns) do
+  defp dates(assigns) do
     ~H"""
-    <div>
-      <div :for={item <- @list}>
-        {Map.get(item, @key)}
+    <div class="flex flex-col">
+      <div class="text-nowrap">
+        <span class="text-green-600 font-bold">Created</span> {Sanbase.DateTimeUtils.rough_duration_since(
+          @inserted_at
+        )} ago
+      </div>
+      <div :if={@inserted_at != @updated_at}>
+        <span class="text-amber-600 font-bold">Updated</span> {Sanbase.DateTimeUtils.rough_duration_since(
+          @updated_at
+        )} ago
+      </div>
+    </div>
+    """
+  end
+
+  defp tables_and_interval(assigns) do
+    ~H"""
+    <div class="flex flex-col">
+      <div :for={table_map <- @tables}>
+        {Map.get(table_map, :name)}
+      </div>
+      <div class="text-gray-400">
+        (min interval <b>{@min_interval}</b>)
       </div>
     </div>
     """
@@ -452,21 +487,42 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
   defp filters(assigns) do
     ~H"""
     <div>
-      <span class="text-sm font-semibold leading-6 text-zinc-800">Filters</span>
-      <form phx-change="apply_filters">
-        <div class="flex flex-col flex-wrap space-y-2 items-start md:flex-row md:items-center md:gap-x-2 md:space-y-0">
-          <.filter_input
-            id="metric-name-search"
-            value={@filter["match_metric"]}
-            name="match_metric"
-            placeholder="Filter by metric name"
-          />
+      <form phx-change="apply_filters" class="flex flex-col mb-4">
+        <div>
+          <span class="text-sm font-semibold leading-6 text-zinc-800">Filters</span>
+          <div class="flex flex-col flex-wrap space-y-2 items-start md:flex-row md:items-center md:gap-x-2 md:space-y-0">
+            <.filter_input
+              id="metric-name-search"
+              value={@filter["match_metric"]}
+              name="match_metric"
+              placeholder="Filter by metric name"
+            />
 
-          <.filter_status value={@filter["status"]} />
+            <.filter_status value={@filter["status"]} />
+          </div>
+          <div class="flex flex-row mt-4 space-x-2 ">
+            <.filter_unverified />
+            <.filter_not_synced />
+          </div>
         </div>
-        <div class="flex flex-row mt-4 space-x-2 ">
-          <.filter_unverified />
-          <.filter_not_synced />
+        <div>
+          <span class="text-sm font-semibold leading-6 text-zinc-800">Sort By</span>
+          <.input
+            id="sort-by"
+            type="select"
+            name="sort_by"
+            value={@sort_by}
+            options={[
+              "ID ↑",
+              "ID ↓",
+              "Name ↑",
+              "Name ↓",
+              "Created At ↑",
+              "Created At ↓",
+              "Updated At ↑",
+              "Updated At ↓"
+            ]}
+          />
         </div>
       </form>
       <.phx_click_button
@@ -634,6 +690,19 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     |> Enum.filter(fn m ->
       m.status == status
     end)
+  end
+
+  defp maybe_apply_filter(metrics, :sort_by, %{"sort_by" => sort_by}) do
+    case sort_by do
+      "ID ↑" -> Enum.sort_by(metrics, & &1.id, :asc)
+      "ID ↓" -> Enum.sort_by(metrics, & &1.id, :desc)
+      "Name ↑" -> Enum.sort_by(metrics, & &1.metric, :asc)
+      "Name ↓" -> Enum.sort_by(metrics, & &1.metric, :desc)
+      "Created At ↑" -> Enum.sort_by(metrics, & &1.inserted_at, {:asc, DateTime})
+      "Created At ↓" -> Enum.sort_by(metrics, & &1.inserted_at, {:desc, DateTime})
+      "Updated At ↑" -> Enum.sort_by(metrics, & &1.updated_at, {:asc, DateTime})
+      "Updated At ↓" -> Enum.sort_by(metrics, & &1.updated_at, {:desc, DateTime})
+    end
   end
 
   defp maybe_apply_filter(metrics, _, _), do: metrics

@@ -47,7 +47,12 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
           <.formatted_dry_run is_dry_run={row.is_dry_run} />
         </:col>
         <:col :let={row} label="Datetime">
-          {Timex.format!(row.inserted_at, "%F %T%:z", :strftime)}
+          <div>
+            <div>{Timex.format!(row.inserted_at, "%F %T%:z", :strftime)}</div>
+            <div class="text-gray-500">
+              ({Sanbase.DateTimeUtils.rough_duration_since(row.inserted_at)} ago)
+            </div>
+          </div>
         </:col>
 
         <:col :let={row} label="UUID">

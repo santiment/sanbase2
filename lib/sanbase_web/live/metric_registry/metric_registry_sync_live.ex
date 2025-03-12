@@ -47,13 +47,13 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
       <div class="my-4">
         <AvailableMetricsComponents.available_metrics_button
           text="Back to Metric Registry"
-          href={~p"/admin2/metric_registry"}
+          href={~p"/admin/metric_registry"}
           icon="hero-home"
         />
 
         <AvailableMetricsComponents.available_metrics_button
           text="List Sync Runs"
-          href={~p"/admin2/metric_registry/sync_runs"}
+          href={~p"/admin/metric_registry/sync_runs"}
           icon="hero-list-bullet"
         />
       </div>
@@ -153,7 +153,7 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
         {:noreply,
          socket
          |> put_flash(:info, "Sucessfully initiated sync of #{length(ids)} metrics")
-         |> push_navigate(to: ~p"/admin2/metric_registry/sync_runs")
+         |> push_navigate(to: ~p"/admin/metric_registry/sync_runs")
          |> assign(
            syncable_metrics: syncable_metrics,
            non_syncable_metrics: not_syncable_metrics,

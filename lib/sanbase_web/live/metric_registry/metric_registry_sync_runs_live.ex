@@ -32,13 +32,13 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
       <div class="my-4">
         <AvailableMetricsComponents.available_metrics_button
           text="Back to Metric Registry"
-          href={~p"/admin2/metric_registry"}
+          href={~p"/admin/metric_registry"}
           icon="hero-home"
         />
 
         <AvailableMetricsComponents.available_metrics_button
           text="Back to Sync View"
-          href={~p"/admin2/metric_registry/sync"}
+          href={~p"/admin/metric_registry/sync"}
           icon="hero-arrow-uturn-left"
         />
       </div>
@@ -88,7 +88,7 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
         <:col :let={row}>
           <AvailableMetricsComponents.link_button
             text="Details"
-            href={~p"/admin2/metric_registry/sync/#{row.sync_type}/#{row.uuid}"}
+            href={~p"/admin/metric_registry/sync/#{row.sync_type}/#{row.uuid}"}
           />
           <span :if={execution_too_long?(row.status, row.inserted_at)}>
             <AvailableMetricsComponents.event_button

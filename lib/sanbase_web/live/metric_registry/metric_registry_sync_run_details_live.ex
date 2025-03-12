@@ -32,13 +32,13 @@ defmodule SanbaseWeb.MetricRegistrySyncRunDetailsLive do
       <div class="my-4">
         <AvailableMetricsComponents.available_metrics_button
           text="Back to Metric Registry"
-          href={~p"/admin2/metric_registry"}
+          href={~p"/admin/metric_registry"}
           icon="hero-home"
         />
 
         <AvailableMetricsComponents.available_metrics_button
           text="List Sync Runs"
-          href={~p"/admin2/metric_registry/sync_runs"}
+          href={~p"/admin/metric_registry/sync_runs"}
           icon="hero-list-bullet"
         />
       </div>

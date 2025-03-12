@@ -31,15 +31,15 @@ defmodule SanbaseWeb.GenericAdminController do
 
   def custom_routes do
     [
-      {"Webinars", ~p"/admin2/webinars"},
-      {"Sheets Templates", ~p"/admin2/sheets_templates/"},
-      {"Reports", ~p"/admin2/reports"},
-      {"Custom Plans", ~p"/admin2/custom_plans"},
-      {"Monitored Twitter Handles", ~p"/admin2/monitored_twitter_handle_live"},
+      {"Webinars", ~p"/admin/webinars"},
+      {"Sheets Templates", ~p"/admin/sheets_templates/"},
+      {"Reports", ~p"/admin/reports"},
+      {"Custom Plans", ~p"/admin/custom_plans"},
+      {"Monitored Twitter Handles", ~p"/admin/monitored_twitter_handle_live"},
       {"Ecosystem Project Labels Suggestions", ~p"/forms/suggest_ecosystems"},
       {"User Forms", ~p"/forms"},
-      {"Admin Forms", ~p"/admin2/admin_forms"},
-      {"Metric Registry", ~p"/admin2/metric_registry"}
+      {"Admin Forms", ~p"/admin/admin_forms"},
+      {"Metric Registry", ~p"/admin/metric_registry"}
     ]
   end
 
@@ -51,7 +51,7 @@ defmodule SanbaseWeb.GenericAdminController do
         |> Enum.map(&String.capitalize/1)
         |> Enum.join(" ")
 
-      {resource_name, ~p"/admin2/generic?resource=#{resource}"}
+      {resource_name, ~p"/admin/generic?resource=#{resource}"}
     end)
   end
 

@@ -9,7 +9,7 @@ defmodule SanbaseWeb.AdminAuthController do
 
   def handle_admin_email_auth(conn, _params) do
     conn
-    |> redirect(to: ~p"/admin2")
+    |> redirect(to: ~p"/admin")
   end
 
   def logout(conn, _params) do

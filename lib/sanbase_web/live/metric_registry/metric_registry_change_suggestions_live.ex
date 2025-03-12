@@ -38,7 +38,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
       />
       <AvailableMetricsComponents.available_metrics_button
         text="Back to Metric Registry"
-        href={~p"/admin2/metric_registry"}
+        href={~p"/admin/metric_registry"}
         icon="hero-home"
       />
       <.filters users={@users} filters={@filters} />
@@ -55,7 +55,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
             <.link
               :if={row.metric_registry_id}
               class="underline text-blue-600"
-              href={~p"/admin2/metric_registry/show/#{row.metric_registry_id}"}
+              href={~p"/admin/metric_registry/show/#{row.metric_registry_id}"}
               target="_blank"
             >
               {row.metric_registry.metric}
@@ -118,7 +118,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
         {:noreply,
          socket
          |> push_navigate(
-           to: ~p"/admin2/metric_registry/new?update_change_request_id=#{record_id}"
+           to: ~p"/admin/metric_registry/new?update_change_request_id=#{record_id}"
          )}
 
       _ ->
@@ -126,7 +126,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
          socket
          |> push_navigate(
            to:
-             ~p"/admin2/metric_registry/edit/#{metric_registry_id}?update_change_request_id=#{record_id}"
+             ~p"/admin/metric_registry/edit/#{metric_registry_id}?update_change_request_id=#{record_id}"
          )}
     end
   end

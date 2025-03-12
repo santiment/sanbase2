@@ -202,19 +202,25 @@ defmodule Sanbase.DateTimeUtils do
     |> maybe_pluralize_interval(int_interval)
   end
 
-  def rough_duration_since(%NaiveDateTime{} = ndt) do
-    seconds = NaiveDateTime.diff(NaiveDateTime.utc_now(), ndt, :second)
+  def rough_duration_since(datetime) do
+    seconds =
+      case datetime do
+        %NaiveDateTime{} -> NaiveDateTime.diff(NaiveDateTime.utc_now(), datetime, :second)
+        %DateTime{} -> DateTime.diff(DateTime.utc_now(), datetime, :second)
+      end
 
     cond do
       seconds < 3600 ->
-        "#{div(seconds, 60)} minutes"
+        minutes = div(seconds, 60)
+        "#{minutes} #{if(minutes == 1, do: "minute", else: "minutes")}"
 
       seconds < 86_400 ->
-        "#{div(seconds, 3600)} hours"
+        hours = div(seconds, 3600)
+        "#{hours} #{if(hours == 1, do: "hour", else: "hours")}"
 
       true ->
         days = div(seconds, 86_400)
-        "#{days} days"
+        "#{days} #{if(days == 1, do: "day", else: "days")}"
     end
   end
 

@@ -780,7 +780,10 @@ defmodule Sanbase.Metric.DisplayOrder do
     {:error, "Invalid row format: #{inspect(row)}"}
   end
 
-  defp is_new?(added_at, days \\ 14) do
+  @doc """
+  Check if a metric was added recently (within the specified number of days).
+  """
+  def is_new?(added_at, days \\ 14) do
     case added_at do
       nil ->
         false

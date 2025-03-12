@@ -41,13 +41,19 @@ defmodule Sanbase.Metric.Registry.Sync do
 
   @doc ~s"""
   Start a sync that will sync the not synced metrics from stage to prod
+
+  Opts are:
+  - dry_run (boolean) -- Whether the sync will actually apply the changes or only compute the
+    changes that are to be applied
+
+  - started_by (string) -- The email of the person who started the sync
   """
   @spec sync(list(non_neg_integer()), Keyword.t()) :: :ok
   def sync(metric_registry_ids, opts \\ []) when is_list(metric_registry_ids) do
     Logger.info("Initiating sync for #{length(metric_registry_ids)} metric registry records")
 
-    is_dry_run = Keyword.get(opts, :dry_run, false)
-    started_by = Keyword.get(opts, :started_by)
+    is_dry_run = Keyword.fetch!(opts, :dry_run)
+    started_by = Keyword.fetch!(opts, :started_by)
 
     with :ok <- no_running_syncs(),
          :ok <- check_initiate_env(),

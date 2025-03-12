@@ -74,6 +74,9 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
           <.formatted_completed_status id={row.id} status={row.status} inserted_at={row.inserted_at} />
         </:col>
 
+        <:col :let={row} label="Started By">
+          {row.started_by || "Unknown"}
+        </:col>
         <:col :let={row} label="No. Metrics Synced">
           {length(row.content)}
         </:col>

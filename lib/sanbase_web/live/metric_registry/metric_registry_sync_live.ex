@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.MetricRegistrySyncLive do
   use SanbaseWeb, :live_view
 
+  import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
+
   alias SanbaseWeb.AvailableMetricsComponents
   alias Sanbase.Metric.Registry.Permissions
 
@@ -137,7 +139,12 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
 
     ids = socket.assigns.metric_ids_to_sync |> Enum.to_list()
 
-    case Sanbase.Metric.Registry.Sync.sync(ids, dry_run: socket.assigns.is_dry_run) do
+    sync_opts = [
+      dry_run: socket.assigns.is_dry_run,
+      started_by: socket.assigns.current_user.email
+    ]
+
+    case Sanbase.Metric.Registry.Sync.sync(ids, sync_opts) do
       {:ok, _data} ->
         # Add some artificial wait period so there's some time for the sync
         # to finish.
@@ -153,8 +160,10 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
            metric_ids_to_sync: Enum.map(syncable_metrics, & &1.id) |> MapSet.new()
          )}
 
-      {:error, error} ->
-        {:noreply, socket |> put_flash(:error, "Error syncing metrics: #{error}")}
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Error syncing metrics: #{changeset_errors_string(changeset)}")}
     end
   end
 

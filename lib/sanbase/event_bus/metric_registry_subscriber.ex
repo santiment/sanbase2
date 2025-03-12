@@ -57,8 +57,16 @@ defmodule Sanbase.EventBus.MetricRegistrySubscriber do
     :ok
   end
 
-  def on_metric_registry_change(_event_type, _metric) do
+  def on_metric_registry_change(event_type, metric) do
     :ok = Sanbase.Metric.Registry.refresh_stored_terms()
+
+    if event_type == :create_metric_registry do
+      # If this is a new metric immediatelly (async) start
+      # precomputing the available assets that are cached in the DB
+      Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+        Sanbase.AvailableMetrics.update_metric(metric)
+      end)
+    end
 
     :ok
   end

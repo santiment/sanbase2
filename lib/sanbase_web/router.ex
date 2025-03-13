@@ -75,6 +75,9 @@ defmodule SanbaseWeb.Router do
 
     import Phoenix.LiveDashboard.Router
 
+    # Project Changelog routes
+    live("/project_changelog", ProjectChangelogLive)
+
     scope "/metric_registry" do
       live_session :require_authenticated_user,
         on_mount: [

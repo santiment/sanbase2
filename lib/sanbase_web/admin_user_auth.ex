@@ -24,7 +24,7 @@ defmodule SanbaseWeb.AdminUserAuth do
   Authenticates the user by looking into the session
   and remember me token.
   """
-  def maybe_assign_current_user(conn, _opts) do
+  def assign_current_user_or_redirect(conn, _opts) do
     with token when token != nil <- get_session(conn, :refresh_token),
          {:ok, %Accounts.User{} = user, _claims} <- SanbaseWeb.Guardian.resource_from_token(token) do
       user = user |> Sanbase.Repo.preload([:roles, roles: :role])
@@ -34,6 +34,36 @@ defmodule SanbaseWeb.AdminUserAuth do
     else
       _ ->
         conn
+        |> put_flash(:error, "You must log in to access this page")
+        |> maybe_store_return_to()
+        |> redirect(to: ~p"/admin_auth/login")
+        |> halt()
+    end
+  end
+
+  def assign_current_user_roles(conn, _opts) do
+    %Sanbase.Accounts.User{} = user = conn.assigns.current_user
+
+    roles =
+      user.roles
+      |> Enum.sort_by(& &1.role.id, :desc)
+      |> Enum.map(& &1.role.name)
+
+    conn
+    |> assign(:current_user_role_names, roles)
+  end
+
+  def ensure_user_has_admin_panel_role(conn, _opts) do
+    has_admin_role? =
+      Enum.any?(conn.assigns.current_user_role_names, &String.starts_with?(&1, "Admin Panel"))
+
+    if has_admin_role? do
+      conn
+    else
+      conn
+      |> put_flash(:error, "You must have an Admin Panel role to access this page")
+      |> halt()
+      |> send_resp(401, "Unauthorized. You must have an Admin Panel role to access this page")
     end
   end
 

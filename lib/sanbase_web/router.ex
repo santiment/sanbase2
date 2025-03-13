@@ -64,7 +64,15 @@ defmodule SanbaseWeb.Router do
   end
 
   scope "/admin", SanbaseWeb do
-    pipe_through([:admin_pod_only, :browser, :basic_auth, :maybe_assign_current_user, :admin])
+    pipe_through([
+      :admin_pod_only,
+      :browser,
+      :assign_current_user_or_redirect,
+      :assign_current_user_roles,
+      :ensure_user_has_admin_panel_role,
+      :admin
+    ])
+
     import Phoenix.LiveDashboard.Router
 
     # Project Changelog routes

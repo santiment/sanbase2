@@ -27,11 +27,15 @@ defmodule Sanbase.Admin.Permissions do
     any_role?([@view], opts)
   end
 
-  def check_permission(:create, opts) do
+  def check_permission(new, opts) when new in [:new, :create] do
     any_role?([@edit], opts)
   end
 
   def check_permission(:edit, opts) do
+    any_role?([@edit], opts)
+  end
+
+  def check_permission(:delete, opts) do
     any_role?([@edit], opts)
   end
 

@@ -118,57 +118,6 @@ defmodule Sanbase.Email.MailjetApi do
       {:error, error}
   end
 
-  defp get_contact_ids(list_atom) do
-    Req.get!(
-      @base_url <> "listrecipient?ContactsList=#{@mailjet_lists[list_atom]}&Limit=1000",
-      headers: headers()
-    )
-    |> case do
-      %{status: 200, body: %{"Data" => recipients}} ->
-        contact_ids = Enum.map(recipients, & &1["ContactID"])
-        {:ok, contact_ids}
-
-      %{status: _code} = response ->
-        Logger.error("Error fetching contact IDs from Mailjet list: #{inspect(response)}")
-        {:error, response.body}
-    end
-  rescue
-    error ->
-      Logger.error("Error fetching contact IDs from Mailjet list. Reason: #{inspect(error)}")
-      {:error, error}
-  end
-
-  defp get_emails_for_contacts(contact_ids) do
-    emails_with_results = Enum.map(contact_ids, &get_email_for_contact/1)
-
-    # Filter out any errors and just collect successful emails
-    emails =
-      emails_with_results
-      |> Enum.filter(&match?({:ok, _}, &1))
-      |> Enum.map(fn {:ok, email} -> email end)
-
-    {:ok, emails}
-  end
-
-  defp get_email_for_contact(contact_id) do
-    Req.get!(
-      @base_url <> "contact/#{contact_id}",
-      headers: headers()
-    )
-    |> case do
-      %{status: 200, body: %{"Data" => [contact | _]}} ->
-        {:ok, contact["Email"]}
-
-      %{status: _code} = response ->
-        Logger.error("Error fetching email for contact #{contact_id}: #{inspect(response)}")
-        {:error, response.body}
-    end
-  rescue
-    error ->
-      Logger.error("Error fetching email for contact #{contact_id}. Reason: #{inspect(error)}")
-      {:error, error}
-  end
-
   # private
 
   defp subscribe_unsubscribe(list_atom, email_or_emails, action) do

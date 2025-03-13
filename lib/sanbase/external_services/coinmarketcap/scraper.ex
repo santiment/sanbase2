@@ -4,7 +4,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
   import Sanbase.ExternalServices.Coinmarketcap.Utils, only: [wait_rate_limit: 2]
   require Logger
 
-  alias Sanbase.ExternalServices.{RateLimiting, ProjectInfo, ErrorCatcher}
+  alias Sanbase.ExternalServices.{RateLimiting, ErrorCatcher}
 
   @rate_limiting_server :http_coinmarketcap_rate_limiter
 

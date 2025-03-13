@@ -4,7 +4,6 @@ defmodule SanbaseWeb.ProjectChangelogLive do
   alias Sanbase.Project
   alias Sanbase.Project.ProjectVersions
   alias Sanbase.ExAudit.Patch
-  import SanbaseWeb.CoreComponents
 
   @dates_per_page 10
 

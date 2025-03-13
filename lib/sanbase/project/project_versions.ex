@@ -8,7 +8,6 @@ defmodule Sanbase.Project.ProjectVersions do
   alias Sanbase.Repo
   alias Sanbase.Version
   alias Sanbase.Project
-  alias ExAudit.Type.Action
 
   @doc """
   Get changelog entries grouped by date.

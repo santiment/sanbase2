@@ -3,13 +3,16 @@
 ## Section
 
 ```elixir
-emails = ["some_name@santiment.net"]
+emails = ["test@santiment.net"]
 
 roles_to_give = %{
-  "Metric Registry Owner" => 0,
   "Metric Registry Viewer" => 0,
+  "Metric Registry Change Suggester" => 0,
+  "Metric Registry Owner" => 0,
   "Metric Registry Deployer" => 0,
-  "Metric Registry Change Suggester" => 0
+  "Admin Panel Viewer" => 0,
+  "Admin Panel Editor" => 0,
+  "Admin Panel Owner" => 1
 }
 ```
 
@@ -27,7 +30,11 @@ users =
 roles = Enum.filter(roles_to_give, fn {_k, v} -> v == 1 end) |> Enum.map(fn {k, _v} -> k end)
 roles_ids = Sanbase.Accounts.Role.by_names(roles) |> Enum.map(& &1.id)
 
-for %{id: user_id} <- users, role_id <- roles_ids do
-  Sanbase.Accounts.UserRole.create(user_id, role_id)
+for %{id: user_id, email: email} <- users, role_id <- roles_ids do
+  try do
+    Sanbase.Accounts.UserRole.create(user_id, role_id)
+  rescue
+    _ -> {:error, "#{email} already has role #{role_id}"}
+  end
 end
 ```

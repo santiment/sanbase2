@@ -12,6 +12,9 @@ defmodule Sanbase.Accounts.Role do
   @registry_change_approver_role_id 6
   @registry_deployer_role_id 7
   @registry_owner_id 8
+  @admin_panel_viewer_id 9
+  @admin_panel_editor_id 10
+  @admin_panel_owner_id 11
 
   schema "roles" do
     field(:name, :string)
@@ -25,11 +28,6 @@ defmodule Sanbase.Accounts.Role do
   def san_team_role_id(), do: @san_team_role_id
   def san_family_role_id(), do: @san_family_role_id
   def san_moderator_role_id(), do: @san_moderator_role_id
-  def registry_viewer_role_id(), do: @registry_viewer_role_id
-  def registry_change_suggester_role_id(), do: @registry_change_suggester_id
-  def registry_change_approver_role_id(), do: @registry_change_approver_role_id
-  def registry_deployer_role_id(), do: @registry_deployer_role_id
-  def registry_owner_role_id(), do: @registry_owner_id
 
   def san_family_ids(), do: get_role_ids(@san_family_role_id)
   def san_team_ids(), do: get_role_ids(@san_team_role_id)

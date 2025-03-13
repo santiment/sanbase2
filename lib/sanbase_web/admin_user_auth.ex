@@ -48,7 +48,6 @@ defmodule SanbaseWeb.AdminUserAuth do
       user.roles
       |> Enum.sort_by(& &1.role.id, :desc)
       |> Enum.map(& &1.role.name)
-      |> dbg()
 
     conn
     |> assign(:current_user_role_names, roles)

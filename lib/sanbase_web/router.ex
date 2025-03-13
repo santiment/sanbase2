@@ -67,6 +67,9 @@ defmodule SanbaseWeb.Router do
     pipe_through([:admin_pod_only, :browser, :basic_auth, :maybe_assign_current_user, :admin])
     import Phoenix.LiveDashboard.Router
 
+    # Project Changelog routes
+    live("/project_changelog", ProjectChangelogLive)
+
     scope "/metric_registry" do
       live_session :require_authenticated_user,
         on_mount: [

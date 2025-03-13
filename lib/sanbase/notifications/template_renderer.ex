@@ -23,9 +23,14 @@ defmodule Sanbase.Notifications.TemplateRenderer do
         when is_list(value) and
                key in ["metrics_list", "asset_categories", :metrics_list, :asset_categories] ->
           {to_string(key),
-           value
-           |> Enum.map(&to_string/1)
-           |> Enum.join(", ")}
+           if mime_type == "text/html" do
+             items = Enum.map(value, &to_string/1)
+             "<ul>" <> Enum.map_join(items, "", fn item -> "<li>#{item}</li>" end) <> "</ul>"
+           else
+             value
+             |> Enum.map(&to_string/1)
+             |> Enum.join(", ")
+           end}
 
         {k, v} ->
           {to_string(k), v}

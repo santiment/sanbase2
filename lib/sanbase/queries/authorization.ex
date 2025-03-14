@@ -18,6 +18,15 @@ defmodule Sanbase.Queries.Authorization do
   end
 
   @doc ~s"""
+  Returns the dynamic repo whose credentials have the least restrictions.
+  This is used to execute queries when basic auth is used
+  """
+  @spec max_access_dynamic_repo() :: module()
+  def max_access_dynamic_repo() do
+    Sanbase.ClickhouseRepo.BusinessMaxUser
+  end
+
+  @doc ~s"""
   Convert the user's plan to a dynamic Clickhouse repo.
   """
   @spec user_plan_to_dynamic_repo(String.t(), String.t()) :: module()

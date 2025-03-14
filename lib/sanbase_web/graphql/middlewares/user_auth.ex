@@ -14,6 +14,9 @@ defmodule SanbaseWeb.Graphql.Middlewares.UserAuth do
   The user must have accepted the privacy policy in order to access resources.
   This allows both API key authentication and JWT authentication
   """
+  def call(%Resolution{context: %{auth: %{auth_method: :basic}}} = resolution, _opts),
+    do: resolution
+
   def call(
         %Resolution{
           context: %{

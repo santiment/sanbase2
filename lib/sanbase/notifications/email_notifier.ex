@@ -57,7 +57,7 @@ defmodule Sanbase.Notifications.EmailNotifier do
   end
 
   def get_unprocessed_notifications(action) do
-    yesterday = DateTime.utc_now() |> DateTime.add(-1000, :hour)
+    yesterday = DateTime.utc_now() |> DateTime.add(-24, :hour)
 
     Notification
     |> where([n], n.channel == "email")

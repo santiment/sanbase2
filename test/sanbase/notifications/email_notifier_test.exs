@@ -25,9 +25,11 @@ defmodule Sanbase.Notifications.EmailNotifierTest do
       # Call the function with our test notification
       result = EmailNotifier.combine_notification_params([notification])
 
-      # Check that the metrics_list contains the expected format
-      assert [metric_with_docs] = result["metrics_list"]
-      assert metric_with_docs == "#{registry.metric} (#{hd(registry.docs).link})"
+      assert result["metrics_list"] == [registry.metric]
+
+      assert result["metrics_docs_map"] == %{
+               registry.metric => registry.docs |> Enum.map(& &1.link)
+             }
     end
 
     test "handles notifications without metric_registry_id" do

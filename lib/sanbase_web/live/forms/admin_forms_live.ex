@@ -34,7 +34,7 @@ defmodule SanbaseWeb.AdminFormsLive do
         Manage the Clickhouse metrics exposed through the API
         """,
         buttons: [
-          %{url: ~p"/admin2/metric_registry", text: "Open"}
+          %{url: ~p"/admin/metric_registry", text: "Open"}
         ]
       },
       %{
@@ -43,7 +43,7 @@ defmodule SanbaseWeb.AdminFormsLive do
         Approve or decline submissions for new Twitter handles to be monitored, suggested by users.
         """,
         buttons: [
-          %{url: ~p"/admin2/monitored_twitter_handle_live", text: "Open"}
+          %{url: ~p"/admin/monitored_twitter_handle_live", text: "Open"}
         ]
       },
       %{
@@ -52,7 +52,7 @@ defmodule SanbaseWeb.AdminFormsLive do
         Approve or decline submissions for changes to the list of ecosystems for an asset
         """,
         buttons: [
-          %{url: ~p"/admin2/suggest_ecosystems_admin_live", text: "Open"}
+          %{url: ~p"/admin/suggest_ecosystems_admin_live", text: "Open"}
         ]
       },
       %{
@@ -61,7 +61,7 @@ defmodule SanbaseWeb.AdminFormsLive do
         Approve or decline submissions for changes to the list of github organizations for an asset
         """,
         buttons: [
-          %{url: ~p"/admin2/suggest_github_organizations_admin_live", text: "Open"}
+          %{url: ~p"/admin/suggest_github_organizations_admin_live", text: "Open"}
         ]
       },
       %{
@@ -70,8 +70,8 @@ defmodule SanbaseWeb.AdminFormsLive do
         Upload an image that can be used for avatars, project logos, etc.
         """,
         buttons: [
-          %{url: ~p"/admin2/upload_image_live", text: "Upload an image"},
-          %{url: ~p"/admin2/uploaded_images_live", text: "List uploads"}
+          %{url: ~p"/admin/upload_image_live", text: "Upload an image"},
+          %{url: ~p"/admin/uploaded_images_live", text: "List uploads"}
         ]
       },
       %{
@@ -80,8 +80,8 @@ defmodule SanbaseWeb.AdminFormsLive do
         Send a manual notification to Discord or email
         """,
         buttons: [
-          %{url: ~p"/admin2/notifications/manual/discord", text: "Discord"},
-          %{url: ~p"/admin2/notifications/manual/email", text: "Email"}
+          %{url: ~p"/admin/notifications/manual/discord", text: "Discord"},
+          %{url: ~p"/admin/notifications/manual/email", text: "Email"}
         ]
       }
     ]

@@ -242,7 +242,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
         |> Timex.shift(days: -(days_in_old_month - 1))
 
       for i <- 0..(iterations - 1) do
-        dt = DateTime.add(now, 86400 * i, :second)
+        dt = DateTime.add(now, 86_400 * i, :second)
 
         Sanbase.Mock.prepare_mock2(&DateTime.utc_now/0, dt)
         |> Sanbase.Mock.run_with_mocks(fn ->
@@ -307,7 +307,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
         # This test might fail if executed 0-14 minutes before midnight
         # If we mock the dt to be a concrete date, then the KafkaExporter
         # send_after will fail
-        dt = DateTime.add(now, 86400 * i, :second)
+        dt = DateTime.add(now, 86_400 * i, :second)
 
         Sanbase.Mock.prepare_mock2(&DateTime.utc_now/0, dt)
         |> Sanbase.Mock.run_with_mocks(fn ->
@@ -374,7 +374,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
         # This test might fail if executed 0-14 minutes before midnight
         # If we mock the dt to be a concrete date, then the KafkaExporter
         # send_after will fail
-        dt = DateTime.add(now, 86400 * i, :second)
+        dt = DateTime.add(now, 86_400 * i, :second)
 
         Sanbase.Mock.prepare_mock2(&DateTime.utc_now/0, dt)
         |> Sanbase.Mock.run_with_mocks(fn ->

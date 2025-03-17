@@ -26,11 +26,18 @@ defmodule Sanbase.AvailableMetrics do
   def get_not_updated() do
     from(
       av in __MODULE__,
-      where: av.updated_at < ^DateTime.add(DateTime.utc_now(), -86400),
+      where: av.updated_at < ^DateTime.add(DateTime.utc_now(), -86_400),
       order_by: [asc: av.updated_at],
       select: av.metric
     )
     |> Sanbase.Repo.all()
+  end
+
+  def update_metric(metric) do
+    {:ok, slugs} = Sanbase.Metric.available_slugs(metric)
+    {:ok, _} = create_or_update(%{metric: metric, available_slugs: slugs})
+  rescue
+    _ -> {:error, "Failed to update available slugs for #{metric}"}
   end
 
   def update_all() do
@@ -121,7 +128,7 @@ defmodule Sanbase.AvailableMetrics do
 
   defp maybe_apply_filter(metrics, :only_intraday_metrics, %{"only_intraday_metrics" => "on"}) do
     metrics
-    |> Enum.filter(&(&1.frequency_seconds < 86400))
+    |> Enum.filter(&(&1.frequency_seconds < 86_400))
   end
 
   defp maybe_apply_filter(metrics, :match_metric_name, %{"match_metric_name" => query})

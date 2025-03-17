@@ -59,13 +59,13 @@ defmodule SanbaseWeb.MetricRegistryDiffLive do
       <div class="my-4">
         <AvailableMetricsComponents.available_metrics_button
           text="Back to Metric Registry"
-          href={~p"/admin2/metric_registry"}
+          href={~p"/admin/metric_registry"}
           icon="hero-home"
         />
 
         <AvailableMetricsComponents.available_metrics_button
           text="Back to Metric Page"
-          href={~p"/admin2/metric_registry/show/#{@metric_registry.id}"}
+          href={~p"/admin/metric_registry/show/#{@metric_registry.id}"}
           icon="hero-list-bullet"
         />
       </div>

@@ -20,19 +20,19 @@ defmodule SanbaseWeb.GenericAdmin.Notification do
       custom_index_actions: [
         %{
           name: "Manual Discord Notification",
-          path: ~p"/admin2/notifications/manual/discord"
+          path: ~p"/admin/notifications/manual/discord"
         },
         %{
           name: "Manual Email Notification",
-          path: ~p"/admin2/notifications/manual/email"
+          path: ~p"/admin/notifications/manual/email"
         },
         %{
           name: "Metric Created Email Digest",
-          path: ~p"/admin2/notifications/digest/metric_created"
+          path: ~p"/admin/notifications/digest/metric_created"
         },
         %{
           name: "Metric Deleted Email Digest",
-          path: ~p"/admin2/notifications/digest/metric_deleted"
+          path: ~p"/admin/notifications/digest/metric_deleted"
         }
       ],
       fields_override: %{
@@ -61,7 +61,7 @@ defmodule SanbaseWeb.GenericAdmin.Notification do
 
               job_id ->
                 PhoenixHTMLHelpers.Link.link(job_id,
-                  to: "/admin2/generic/#{job_id}?resource=oban_jobs",
+                  to: "/admin/generic/#{job_id}?resource=oban_jobs",
                   class: "text-blue-600 hover:text-blue-800"
                 )
             end
@@ -75,7 +75,7 @@ defmodule SanbaseWeb.GenericAdmin.Notification do
 
               metric_registry_id ->
                 PhoenixHTMLHelpers.Link.link(metric_registry_id,
-                  to: "/admin2/metric_registry/show/#{metric_registry_id}",
+                  to: "/admin/metric_registry/show/#{metric_registry_id}",
                   class: "text-blue-600 hover:text-blue-800"
                 )
             end

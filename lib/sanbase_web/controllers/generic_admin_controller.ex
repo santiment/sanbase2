@@ -7,8 +7,8 @@ defmodule SanbaseWeb.GenericAdminController do
   alias Sanbase.Repo
   alias SanbaseWeb.GenericAdmin
 
-  def resource_module_map() do
-    SanbaseWeb.GenericAdmin.resource_module_map()
+  def resource_module_map(%Plug.Conn{} = conn) do
+    SanbaseWeb.GenericAdmin.resource_module_map(conn)
   end
 
   def all_routes(conn \\ nil) do
@@ -31,15 +31,15 @@ defmodule SanbaseWeb.GenericAdminController do
 
   def custom_routes do
     [
-      {"Webinars", ~p"/admin2/webinars"},
-      {"Sheets Templates", ~p"/admin2/sheets_templates/"},
-      {"Reports", ~p"/admin2/reports"},
-      {"Custom Plans", ~p"/admin2/custom_plans"},
-      {"Monitored Twitter Handles", ~p"/admin2/monitored_twitter_handle_live"},
+      {"Webinars", ~p"/admin/webinars"},
+      {"Sheets Templates", ~p"/admin/sheets_templates/"},
+      {"Reports", ~p"/admin/reports"},
+      {"Custom Plans", ~p"/admin/custom_plans"},
+      {"Monitored Twitter Handles", ~p"/admin/monitored_twitter_handle_live"},
       {"Ecosystem Project Labels Suggestions", ~p"/forms/suggest_ecosystems"},
       {"User Forms", ~p"/forms"},
-      {"Admin Forms", ~p"/admin2/admin_forms"},
-      {"Metric Registry", ~p"/admin2/metric_registry"}
+      {"Admin Forms", ~p"/admin/admin_forms"},
+      {"Metric Registry", ~p"/admin/metric_registry"}
     ]
   end
 
@@ -51,29 +51,29 @@ defmodule SanbaseWeb.GenericAdminController do
         |> Enum.map(&String.capitalize/1)
         |> Enum.join(" ")
 
-      {resource_name, ~p"/admin2/generic?resource=#{resource}"}
+      {resource_name, ~p"/admin/generic?resource=#{resource}"}
     end)
   end
 
-  def home(conn, _params) do
+  def home(%Plug.Conn{} = conn, _params) do
     render(conn, :home, search_value: "")
   end
 
-  def index(conn, %{"resource" => resource} = params) do
+  def index(%Plug.Conn{} = conn, %{"resource" => resource} = params) do
     page = params["page"] || 0
     page_size = params["page_size"] || 10
 
-    render(conn, "index.html",
-      table: resource_to_table_params(resource, %{page: page, page_size: page_size})
+    render(%Plug.Conn{} = conn, "index.html",
+      table: resource_to_table_params(conn, resource, %{page: page, page_size: page_size})
     )
   end
 
-  def index(conn, _) do
+  def index(%Plug.Conn{} = conn, _) do
     render(conn, "error.html")
   end
 
-  def new(conn, %{"resource" => resource} = params) do
-    module = module_from_resource(resource)
+  def new(%Plug.Conn{} = conn, %{"resource" => resource} = params) do
+    module = module_from_resource(conn, resource)
     changeset = module.changeset(struct(module), %{})
 
     args =
@@ -81,16 +81,16 @@ defmodule SanbaseWeb.GenericAdminController do
         changeset: changeset,
         data: %{}
       }
-      |> Map.merge(resource_params(resource, :new, params))
+      |> Map.merge(resource_params(conn, resource, :new, params))
       |> Keyword.new()
 
     render(conn, "new.html", args)
   end
 
-  def create(conn, %{"resource" => resource} = params) do
-    module = module_from_resource(resource)
-    admin_module = resource_module_map()[resource][:admin_module]
-    resource_params = resource_params(resource, :new, params)
+  def create(%Plug.Conn{} = conn, %{"resource" => resource} = params) do
+    module = module_from_resource(conn, resource)
+    admin_module = resource_module_map(conn)[resource][:admin_module]
+    resource_params = resource_params(conn, resource, :new, params)
 
     field_type_map = resource_params.field_type_map
 
@@ -105,11 +105,11 @@ defmodule SanbaseWeb.GenericAdminController do
   end
 
   def search(
-        conn,
+        %Plug.Conn{} = conn,
         %{"resource" => resource, "search" => %{"filters" => filters}} = params
       ) do
-    module = module_from_resource(resource)
-    preloads = resource_module_map()[resource][:preloads] || []
+    module = module_from_resource(conn, resource)
+    preloads = resource_module_map(conn)[resource][:preloads] || []
     page = to_integer(params["page"] || 0)
     page_size = to_integer(params["page_size"] || 10)
 
@@ -149,7 +149,7 @@ defmodule SanbaseWeb.GenericAdminController do
 
     render(conn, "index.html",
       table:
-        resource_to_table_params(resource, %{
+        resource_to_table_params(conn, resource, %{
           total_rows: total_rows,
           rows: paginated_rows,
           page: page,
@@ -159,9 +159,9 @@ defmodule SanbaseWeb.GenericAdminController do
     )
   end
 
-  def show(conn, %{"resource" => resource, "id" => id}) do
-    resource_config = resource_module_map()[resource]
-    module = module_from_resource(resource)
+  def show(%Plug.Conn{} = conn, %{"resource" => resource, "id" => id}) do
+    resource_config = resource_module_map(conn)[resource]
+    module = module_from_resource(conn, resource)
     admin_module = resource_config[:admin_module]
     data = Repo.get(module, id) |> Repo.preload(resource_config[:preloads] || [])
 
@@ -183,15 +183,15 @@ defmodule SanbaseWeb.GenericAdminController do
         has_many:
           GenericAdmin.call_module_function_or_default(admin_module, :has_many, [data], [])
       }
-      |> Map.merge(resource_params(resource, :show))
+      |> Map.merge(resource_params(conn, resource, :show))
       |> Keyword.new()
 
     render(conn, "show.html", args)
   end
 
-  def edit(conn, %{"resource" => resource, "id" => id} = params) do
-    module = module_from_resource(resource)
-    admin_module = resource_module_map()[resource][:admin_module]
+  def edit(%Plug.Conn{} = conn, %{"resource" => resource, "id" => id} = params) do
+    module = module_from_resource(conn, resource)
+    admin_module = resource_module_map(conn)[resource][:admin_module]
     data = Repo.get(module, id)
     changeset = module.changeset(data, %{})
 
@@ -203,16 +203,16 @@ defmodule SanbaseWeb.GenericAdminController do
         changeset: changeset,
         data: data
       }
-      |> Map.merge(resource_params(resource, :edit, params))
+      |> Map.merge(resource_params(conn, resource, :edit, params))
       |> Keyword.new()
 
     render(conn, "edit.html", args)
   end
 
-  def update(conn, %{"id" => id, "resource" => resource} = params) do
-    module = module_from_resource(resource)
-    admin_module = resource_module_map()[resource][:admin_module]
-    resource_params = resource_params(resource, :update, params)
+  def update(%Plug.Conn{} = conn, %{"id" => id, "resource" => resource} = params) do
+    module = module_from_resource(conn, resource)
+    admin_module = resource_module_map(conn)[resource][:admin_module]
+    resource_params = resource_params(conn, resource, :update, params)
     data = Repo.get(module, id)
     field_type_map = resource_params.field_type_map
 
@@ -226,9 +226,9 @@ defmodule SanbaseWeb.GenericAdminController do
     update_and_redirect(conn, changeset, data, params, changes, resource, admin_module)
   end
 
-  def delete(conn, %{"id" => id, "resource" => resource}) do
-    resource_config = resource_module_map()[resource]
-    module = module_from_resource(resource)
+  def delete(%Plug.Conn{} = conn, %{"id" => id, "resource" => resource}) do
+    resource_config = resource_module_map(conn)[resource]
+    module = module_from_resource(conn, resource)
 
     if :delete in resource_config[:actions] do
       Repo.get(module, id)
@@ -247,8 +247,8 @@ defmodule SanbaseWeb.GenericAdminController do
     end
   end
 
-  def show_action(conn, %{"action" => action, "resource" => resource, "id" => id}) do
-    admin_module = resource_module_map()[resource][:admin_module]
+  def show_action(%Plug.Conn{} = conn, %{"action" => action, "resource" => resource, "id" => id}) do
+    admin_module = resource_module_map(conn)[resource][:admin_module]
     apply(admin_module, String.to_existing_atom(action), [conn, %{resource: resource, id: id}])
   end
 
@@ -288,7 +288,7 @@ defmodule SanbaseWeb.GenericAdminController do
             changeset: changeset,
             data: %{}
           }
-          |> Map.merge(resource_params(resource, :create, params))
+          |> Map.merge(resource_params(conn, resource, :create, params))
           |> Keyword.new()
 
         render(conn, "new.html", args)
@@ -326,7 +326,7 @@ defmodule SanbaseWeb.GenericAdminController do
             changeset: changeset,
             data: data
           }
-          |> Map.merge(resource_params(resource, :update, params))
+          |> Map.merge(resource_params(conn, resource, :update, params))
           |> Keyword.new()
 
         render(conn, "edit.html", args)
@@ -344,10 +344,11 @@ defmodule SanbaseWeb.GenericAdminController do
     |> Enum.into(%{})
   end
 
-  defp module_from_resource(resource), do: resource_module_map()[resource][:module]
+  defp module_from_resource(%Plug.Conn{} = conn, resource) when is_binary(resource),
+    do: resource_module_map(conn)[resource][:module]
 
-  defp resource_to_table_params(resource, params) do
-    resource_config = resource_module_map()[resource]
+  defp resource_to_table_params(%Plug.Conn{} = conn, resource, params) when is_binary(resource) do
+    resource_config = resource_module_map(conn)[resource]
     module = resource_config[:module]
     admin_module = resource_config[:admin_module]
     preloads = resource_config[:preloads] || []
@@ -386,7 +387,7 @@ defmodule SanbaseWeb.GenericAdminController do
       assocs: assocs,
       search: params[:search]
     }
-    |> Map.merge(resource_params(resource, action))
+    |> Map.merge(resource_params(conn, resource, action))
   end
 
   defp maybe_fetch_rows(rows, module, preloads, page, page_size) do
@@ -410,8 +411,8 @@ defmodule SanbaseWeb.GenericAdminController do
     end
   end
 
-  defp resource_params(resource, action, params \\ %{}) do
-    resource_config = resource_module_map()[resource]
+  defp resource_params(%Plug.Conn{} = conn, resource, action, params \\ %{}) do
+    resource_config = resource_module_map(conn)[resource]
     resource_name = String.capitalize(resource)
     module = resource_config[:module]
 

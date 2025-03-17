@@ -1,4 +1,3 @@
-
 # Metric Registry
 
 The Metric Registry is our tool for managing what metrics are exposed in our API and how.
@@ -9,8 +8,9 @@ This document will guide you how to use the Web interface to add/edit metrics, h
 ## Location
 
 The Metric Registry can be found on the following locations:
-- stage: http://sanbase-admin.stage.san:31080/admin2/metric_registry
-- prod: http://sanbase-admin.production.san:31080/admin2/metric_registry
+
+- stage: <http://sanbase-admin.stage.san:31080/admin/metric_registry>
+- prod: <http://sanbase-admin.production.san:31080/admin/metric_registry>
 
 ---
 
@@ -20,12 +20,12 @@ The Metric Registry behaves differently in staging and production environments.
 This reflects the way metrics are supposed to be tested and deployed.
 
 - **Stage**: Metrics can only be created and edited on staging. After a metric is
-created/updated, it is put in a unverified and not synced status. After the
-changes are tested, the metric status can be changed to verified. Verified but
-not synced metrics can be synced to production.
+  created/updated, it is put in a unverified and not synced status. After the
+  changes are tested, the metric status can be changed to verified. Verified but
+  not synced metrics can be synced to production.
 - **Production**: No direct
-changes are allowed on production. This is done so stage and production can be
-kept in the exact same state.
+  changes are allowed on production. This is done so stage and production can be
+  kept in the exact same state.
 
 ## Metric Registry Index
 
@@ -44,11 +44,13 @@ To create a new metric, follow these steps:
 
 1. Navigate to the Metrics Regitry Index page.
 2. Choose how to create a metric:
-  - Click on the "Create New Metric" button located at the top left corner of the page to create a new metric from scratch
-  - Click on `Duplicate` button on a given metric row to create a new metric, but have all the fields pre-filled with the values
+
+- Click on the "Create New Metric" button located at the top left corner of the page to create a new metric from scratch
+- Click on `Duplicate` button on a given metric row to create a new metric, but have all the fields pre-filled with the values
   from the metric being duplicated.
+
 3. Fill/change the form on the page that you are redirected to.
-5. Click "Submit Change Request" to create a change request.
+4. Click "Submit Change Request" to create a change request.
 
 ---
 
@@ -59,10 +61,12 @@ To create a new metric, follow these steps:
 To edit an existing metric:
 
 1. Go to the Metric Registry Index page and locate the metric you wish to edit.
-  - You can locate it either by scrolling or by using the Filter by metric name input field
+
+- You can locate it either by scrolling or by using the Filter by metric name input field
+
 2. Click on the `Edit` button on the metric row
-4. Update the fields as necessary.
-5. Click "Submit Change Request" to create a change request.
+3. Update the fields as necessary.
+4. Click "Submit Change Request" to create a change request.
 
 The form is the same used for creating new metrics.
 
@@ -130,5 +134,3 @@ You can also view what exactly is the content of each sync by clicking on `Detai
 ![](./metric_registry_history_page.png)
 
 On production you can also see all the changes that were applied via sync to a given metric.
-
-

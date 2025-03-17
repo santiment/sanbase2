@@ -33,8 +33,14 @@ defmodule Sanbase.MetricRegistrySyncTest do
         assert not Enum.any?(m.aliases, &(&1.name == "new_alias"))
 
         # Run the Sync
-        assert {:ok, %{status: "executing", uuid: uuid, is_dry_run: true}} =
-                 Registry.Sync.sync([m.id], dry_run: true)
+        assert {:ok,
+                %{
+                  status: "executing",
+                  uuid: uuid,
+                  is_dry_run: true,
+                  started_by: "test@santiment.net"
+                }} =
+                 Registry.Sync.sync([m.id], dry_run: true, started_by: "test@santiment.net")
 
         Process.sleep(1000)
 
@@ -46,6 +52,7 @@ defmodule Sanbase.MetricRegistrySyncTest do
                   status: "completed",
                   uuid: ^uuid,
                   is_dry_run: true,
+                  started_by: "test@santiment.net",
                   actual_changes: actual_changes,
                   sync_type: "outgoing"
                 }} =
@@ -56,6 +63,7 @@ defmodule Sanbase.MetricRegistrySyncTest do
                   status: "completed",
                   uuid: ^uuid,
                   is_dry_run: true,
+                  started_by: "test@santiment.net",
                   actual_changes: ^actual_changes,
                   sync_type: "incoming"
                 }} =
@@ -101,12 +109,25 @@ defmodule Sanbase.MetricRegistrySyncTest do
       assert {:ok, _} =
                Registry.changeset(m, %{sync_status: "not_synced"}) |> Sanbase.Repo.update()
 
-      assert {:ok, %{status: "executing", uuid: uuid}} =
-               Registry.Sync.sync([m.id], dry_run: false)
+      assert {:ok,
+              %{
+                status: "executing",
+                uuid: uuid,
+                is_dry_run: false,
+                started_by: "test@santiment.net"
+              }} =
+               Registry.Sync.sync([m.id], dry_run: false, started_by: "test@santiment.net")
 
       Process.sleep(100)
 
-      assert {:ok, %{status: "completed", uuid: ^uuid}} = Registry.Sync.by_uuid(uuid, "incoming")
+      assert {:ok,
+              %{
+                status: "completed",
+                uuid: ^uuid,
+                is_dry_run: false,
+                started_by: "test@santiment.net"
+              }} = Registry.Sync.by_uuid(uuid, "incoming")
+
       {:ok, m} = Registry.by_id(m.id)
       assert m.sync_status == "synced"
     end
@@ -121,11 +142,21 @@ defmodule Sanbase.MetricRegistrySyncTest do
       assert m2.sync_status == "not_synced"
 
       assert {:ok, %{status: "executing", uuid: uuid}} =
-               Registry.Sync.sync([m1_id, m2_id], dry_run: false)
+               Registry.Sync.sync([m1_id, m2_id],
+                 dry_run: false,
+                 started_by: "test@santiment.net"
+               )
 
       Process.sleep(100)
 
-      assert {:ok, %{status: "completed", uuid: ^uuid}} = Registry.Sync.by_uuid(uuid, "incoming")
+      assert {:ok,
+              %{
+                status: "completed",
+                uuid: ^uuid,
+                is_dry_run: false,
+                started_by: "test@santiment.net"
+              }} = Registry.Sync.by_uuid(uuid, "incoming")
+
       {:ok, m1} = Registry.by_id(m1_id)
       {:ok, m2} = Registry.by_id(m2_id)
       assert m1.sync_status == "synced"
@@ -230,8 +261,14 @@ defmodule Sanbase.MetricRegistrySyncTest do
         assert not Enum.any?(m.aliases, &(&1.name == "new_alias"))
 
         # Run the Sync
-        assert {:ok, %{status: "executing", is_dry_run: false, uuid: uuid}} =
-                 Registry.Sync.sync([m.id], dry_run: false)
+        assert {:ok,
+                %{
+                  uuid: uuid,
+                  status: "executing",
+                  is_dry_run: false,
+                  started_by: "test@santiment.net"
+                }} =
+                 Registry.Sync.sync([m.id], dry_run: false, started_by: "test@santiment.net")
 
         Process.sleep(200)
 
@@ -243,6 +280,7 @@ defmodule Sanbase.MetricRegistrySyncTest do
                   status: "completed",
                   uuid: ^uuid,
                   is_dry_run: false,
+                  started_by: "test@santiment.net",
                   actual_changes: actual_changes,
                   sync_type: "outgoing"
                 }} =
@@ -253,6 +291,7 @@ defmodule Sanbase.MetricRegistrySyncTest do
                   status: "completed",
                   uuid: ^uuid,
                   is_dry_run: false,
+                  started_by: "test@santiment.net",
                   actual_changes: ^actual_changes,
                   sync_type: "incoming"
                 }} =

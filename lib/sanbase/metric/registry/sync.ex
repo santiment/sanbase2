@@ -6,6 +6,7 @@ defmodule Sanbase.Metric.Registry.Sync do
 
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
 
+  alias Sanbase.Metric.Registry.EventEmitter
   alias Sanbase.Metric.Registry
   alias Sanbase.Metric.Registry.SyncRun
   alias Sanbase.Utils.Config
@@ -40,19 +41,26 @@ defmodule Sanbase.Metric.Registry.Sync do
 
   @doc ~s"""
   Start a sync that will sync the not synced metrics from stage to prod
+
+  Opts are:
+  - dry_run (boolean) -- Whether the sync will actually apply the changes or only compute the
+    changes that are to be applied
+
+  - started_by (string) -- The email of the person who started the sync
   """
   @spec sync(list(non_neg_integer()), Keyword.t()) :: :ok
   def sync(metric_registry_ids, opts \\ []) when is_list(metric_registry_ids) do
     Logger.info("Initiating sync for #{length(metric_registry_ids)} metric registry records")
 
-    is_dry_run = Keyword.get(opts, :dry_run, false)
+    is_dry_run = Keyword.fetch!(opts, :dry_run)
+    started_by = Keyword.fetch!(opts, :started_by)
 
     with :ok <- no_running_syncs(),
          :ok <- check_initiate_env(),
          {:ok, content} <- get_sync_content(metric_registry_ids),
-         {:ok, sync} <- store_initial_sync_in_db(content, is_dry_run),
+         {:ok, sync} <- store_initial_sync_in_db(content, started_by, is_dry_run),
          {:ok, sync} <- SyncRun.update_status(sync, "executing"),
-         :ok <- start_sync(sync, is_dry_run) do
+         :ok <- start_sync(sync, started_by, is_dry_run) do
       SanbaseWeb.Endpoint.broadcast_from(self(), @pubsub_topic, "sync_started", %{})
       {:ok, sync}
     end
@@ -84,7 +92,8 @@ defmodule Sanbase.Metric.Registry.Sync do
         "content" => content,
         "confirmation_endpoint" => confirmation_endpoint,
         "sync_uuid" => sync_uuid,
-        "is_dry_run" => is_dry_run
+        "is_dry_run" => is_dry_run,
+        "started_by" => started_by
       }) do
     Logger.info("Applying Metric Registry sync")
 
@@ -94,7 +103,8 @@ defmodule Sanbase.Metric.Registry.Sync do
            maybe_apply_sync_content(list, is_dry_run),
          {:ok, actual_changes} <- generate_actual_changes_applied(changesets),
          {:ok, _} <- send_sync_completed_confirmation(confirmation_endpoint, actual_changes),
-         {:ok, _sync} <- store_applied_sync_in_db(sync_uuid, content, actual_changes, is_dry_run),
+         {:ok, _sync} <-
+           store_applied_sync_in_db(sync_uuid, content, actual_changes, started_by, is_dry_run),
          :ok <- emit_apply_sync_events(multi, is_dry_run) do
       :ok
     end
@@ -246,13 +256,14 @@ defmodule Sanbase.Metric.Registry.Sync do
     end
   end
 
-  defp start_sync(%SyncRun{} = sync, is_dry_run) when is_boolean(is_dry_run) do
+  defp start_sync(%SyncRun{} = sync, started_by, is_dry_run) when is_boolean(is_dry_run) do
     url = get_sync_target_url()
 
     json =
       %{
-        "is_dry_run" => is_dry_run,
         "sync_uuid" => sync.uuid,
+        "is_dry_run" => is_dry_run,
+        "started_by" => started_by,
         "content" => sync.content,
         "generated_at" =>
           DateTime.utc_now() |> DateTime.truncate(:second) |> DateTime.to_iso8601(),
@@ -291,11 +302,12 @@ defmodule Sanbase.Metric.Registry.Sync do
     end)
   end
 
-  defp store_initial_sync_in_db(content, is_dry_run) do
+  defp store_initial_sync_in_db(content, started_by, is_dry_run) do
     attrs = %{
       content: content,
       sync_type: "outgoing",
       status: "scheduled",
+      started_by: started_by,
       uuid: Ecto.UUID.generate(),
       is_dry_run: is_dry_run
     }
@@ -303,12 +315,13 @@ defmodule Sanbase.Metric.Registry.Sync do
     SyncRun.create(attrs)
   end
 
-  defp store_applied_sync_in_db(uuid, content, actual_changes, is_dry_run) do
+  defp store_applied_sync_in_db(uuid, content, actual_changes, started_by, is_dry_run) do
     attrs = %{
       uuid: uuid,
       content: content,
       actual_changes: actual_changes,
       is_dry_run: is_dry_run,
+      started_by: started_by,
       sync_type: "incoming",
       status: "completed"
     }
@@ -418,15 +431,22 @@ defmodule Sanbase.Metric.Registry.Sync do
 
     # This makes DB call for each event. If this is a problem, we can optimize later
     # Most syncs should in practice contain no more than 10 metrics
+    # This might include many changes. Do not process them with the MetricRegistrySubscriber
+    # as this will cause the in-memory data to be refreshed multiple times.
+    # Instead, emit a single bulk event at the end, which will refresh the in-memory data only once
     multi.operations
     |> Enum.each(fn
       {{:metric_registry_insert, metric, data_type, fixed_parameters}, _changeset} ->
         Registry.by_name(metric, data_type, fixed_parameters)
-        |> Sanbase.Metric.Registry.EventEmitter.emit_event(:create_metric_registry, %{})
+        |> EventEmitter.emit_event(:create_metric_registry, %{
+          __skip_process_by__: [Sanbase.EventBus.MetricRegistrySubscriber]
+        })
 
       {{:metric_registry_update, id, _metric}, _changeset} ->
         Registry.by_id(id)
-        |> Sanbase.Metric.Registry.EventEmitter.emit_event(:update_metric_registry, %{})
+        |> EventEmitter.emit_event(:update_metric_registry, %{
+          __skip_process_by__: [Sanbase.EventBus.MetricRegistrySubscriber]
+        })
 
       _ ->
         :ok
@@ -437,7 +457,7 @@ defmodule Sanbase.Metric.Registry.Sync do
       updates_count: updates_count
     }
 
-    Sanbase.Metric.Registry.EventEmitter.emit_event(
+    EventEmitter.emit_event(
       {:ok, event_data},
       :bulk_metric_registry_change,
       %{__only_process_by__: [Sanbase.EventBus.MetricRegistrySubscriber]}
@@ -454,7 +474,7 @@ defmodule Sanbase.Metric.Registry.Sync do
       IO.puts("Emitting event :bulk_metric_registry_change to #{node}")
 
       Node.spawn(node, fn ->
-        Sanbase.Metric.Registry.EventEmitter.emit_event(
+        EventEmitter.emit_event(
           {:ok, event_data},
           :bulk_metric_registry_change,
           %{__only_process_by__: [Sanbase.EventBus.MetricRegistrySubscriber]}

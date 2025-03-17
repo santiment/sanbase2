@@ -79,7 +79,7 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
     def triggered?(%TrendingWordsTriggerSettings{triggered?: triggered}), do: triggered
 
     def evaluate(%TrendingWordsTriggerSettings{filtered_target: %{list: []}} = settings, _trigger) do
-      settings = %TrendingWordsTriggerSettings{settings | triggered?: false}
+      settings = %{settings | triggered?: false}
       {:ok, settings}
     end
 
@@ -89,7 +89,7 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
           build_result(top_words, settings)
 
         _ ->
-          settings = %TrendingWordsTriggerSettings{settings | triggered?: false}
+          settings = %{settings | triggered?: false}
           {:ok, settings}
       end
     end
@@ -100,7 +100,9 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
 
     defp build_result(
            top_words,
-           %{operation: %{send_at_predefined_time: true, trigger_time: trigger_time}} = settings
+           %TrendingWordsTriggerSettings{
+             operation: %{send_at_predefined_time: true, trigger_time: trigger_time}
+           } = settings
          ) do
       trigger_time = Sanbase.DateTimeUtils.time_from_iso8601!(trigger_time)
       now = Time.utc_now()
@@ -110,10 +112,10 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
         case Sanbase.DateTimeUtils.time_in_range?(trigger_time, now, after_15_mins) do
           true ->
             template_kv = %{settings.target => template_kv(settings, top_words)}
-            %TrendingWordsTriggerSettings{settings | triggered?: true, template_kv: template_kv}
+            %{settings | triggered?: true, template_kv: template_kv}
 
           false ->
-            %TrendingWordsTriggerSettings{settings | triggered?: false}
+            %{settings | triggered?: false}
         end
 
       {:ok, settings}
@@ -121,7 +123,10 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
 
     defp build_result(
            top_words,
-           %{operation: %{trending_word: true}, filtered_target: %{list: words}} = settings
+           %TrendingWordsTriggerSettings{
+             operation: %{trending_word: true},
+             filtered_target: %{list: words}
+           } = settings
          ) do
       top_words = top_words |> Enum.map(&String.downcase(&1.word))
 
@@ -132,11 +137,11 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
       settings =
         case trending_words do
           [] ->
-            %TrendingWordsTriggerSettings{settings | triggered?: false}
+            %{settings | triggered?: false}
 
           [_ | _] = words ->
             template_kv = %{words => template_kv(settings, words)}
-            %TrendingWordsTriggerSettings{settings | triggered?: true, template_kv: template_kv}
+            %{settings | triggered?: true, template_kv: template_kv}
         end
 
       {:ok, settings}
@@ -144,7 +149,10 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
 
     defp build_result(
            top_words,
-           %{operation: %{trending_project: true}, filtered_target: %{list: slugs}} = settings
+           %TrendingWordsTriggerSettings{
+             operation: %{trending_project: true},
+             filtered_target: %{list: slugs}
+           } = settings
          ) do
       projects = Project.List.by_slugs(slugs)
 
@@ -165,7 +173,7 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
           true ->
             # If there are no trending words in the intersection there is no
             # point of checking the projects separately
-            %TrendingWordsTriggerSettings{settings | triggered?: false}
+            %{settings | triggered?: false}
 
           false ->
             template_kv =
@@ -176,18 +184,16 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
                 end
               end)
 
-            %TrendingWordsTriggerSettings{
-              settings
-              | triggered?: template_kv != %{},
-                template_kv: template_kv
-            }
+            %{settings | triggered?: template_kv != %{}, template_kv: template_kv}
         end
 
       {:ok, settings}
     end
 
     defp template_kv(
-           %{operation: %{send_at_predefined_time: true, trigger_time: trigger_time}} = settings,
+           %TrendingWordsTriggerSettings{
+             operation: %{send_at_predefined_time: true, trigger_time: trigger_time}
+           } = settings,
            top_words
          ) do
       max_len = get_max_len(top_words)
@@ -225,7 +231,10 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
       |> maybe_extend_with_explanation(settings)
     end
 
-    defp template_kv(%{operation: %{trending_word: true}} = settings, [word]) do
+    defp template_kv(
+           %TrendingWordsTriggerSettings{operation: %{trending_word: true}} = settings,
+           [word]
+         ) do
       kv = %{
         type: TrendingWordsTriggerSettings.type(),
         operation: settings.operation,
@@ -243,7 +252,10 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
       |> maybe_extend_with_explanation(settings)
     end
 
-    defp template_kv(%{operation: %{trending_word: true}} = settings, [_, _ | _] = words) do
+    defp template_kv(
+           %TrendingWordsTriggerSettings{operation: %{trending_word: true}} = settings,
+           [_, _ | _] = words
+         ) do
       {last, previous} = List.pop_at(words, -1)
       words_str = (Enum.map(previous, &"**#{&1}**") |> Enum.join(",")) <> " and **#{last}**"
 
@@ -264,7 +276,10 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
       |> maybe_extend_with_explanation(settings)
     end
 
-    defp template_kv(%{operation: %{trending_project: true}} = settings, project) do
+    defp template_kv(
+           %TrendingWordsTriggerSettings{operation: %{trending_project: true}} = settings,
+           project
+         ) do
       kv = %{
         type: TrendingWordsTriggerSettings.type(),
         operation: settings.operation,
@@ -308,7 +323,7 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
       {template, kv}
     end
 
-    defp maybe_extend_with_explanation({template, kv}, settings) do
+    defp maybe_extend_with_explanation({template, kv}, %TrendingWordsTriggerSettings{} = settings) do
       default_explanation =
         case settings.include_default_explanation do
           true -> @default_explanation

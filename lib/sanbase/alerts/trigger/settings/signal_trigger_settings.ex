@@ -132,7 +132,7 @@ defmodule Sanbase.Alert.Trigger.SignalTriggerSettings do
 
         _ ->
           # TODO: Handle error
-          settings = %SignalTriggerSettings{settings | triggered?: false}
+          settings = %{settings | triggered?: false}
           {:ok, settings}
       end
     end

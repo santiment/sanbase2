@@ -2,9 +2,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
   # credo:disable-for-this-file
   use Tesla
 
-  alias Decimal, as: D
   alias Sanbase.ExternalServices.RateLimiting
-  alias Sanbase.ExternalServices.ProjectInfo
   alias Sanbase.ExternalServices.ErrorCatcher
 
   require Logger
@@ -63,7 +61,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
   def parse_address_page!(html, project_info) do
     {:ok, html} = Floki.parse_document(html)
 
-    %ProjectInfo{project_info | creation_transaction: creation_transaction(html)}
+    %{project_info | creation_transaction: creation_transaction(html)}
   end
 
   def parse_token_page!(nil, project_info), do: project_info
@@ -71,10 +69,10 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
   def parse_token_page!(html, project_info) do
     {:ok, html} = Floki.parse_document(html)
 
-    %ProjectInfo{
+    # We want to override the currently stored total_supply and that's the reason why the order is different than the rest of the fields
+    %{
       project_info
-      | # We want to override the currently stored total_supply and that's the reason why the order is different than the rest of the fields
-        total_supply: total_supply(html) || project_info.total_supply,
+      | total_supply: total_supply(html) || project_info.total_supply,
         main_contract_address: project_info.main_contract_address || main_contract_address(html),
         token_decimals: project_info.token_decimals || token_decimals(html),
         website_link: project_info.website_link || website_link(html),
@@ -131,8 +129,8 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
       match ->
         Floki.text(match)
         |> parse_total_supply()
-        |> D.round()
-        |> D.to_integer()
+        |> Decimal.round()
+        |> Decimal.to_integer()
     end
   end
 
@@ -171,6 +169,6 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
     |> String.split()
     |> Enum.find(fn x -> String.starts_with?(x, "Supply") end)
     |> (fn supply -> String.trim(supply, "Supply:") end).()
-    |> D.new()
+    |> Decimal.new()
   end
 end

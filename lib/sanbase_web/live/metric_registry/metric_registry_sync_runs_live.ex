@@ -32,13 +32,13 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
       <div class="my-4">
         <AvailableMetricsComponents.available_metrics_button
           text="Back to Metric Registry"
-          href={~p"/admin2/metric_registry"}
+          href={~p"/admin/metric_registry"}
           icon="hero-home"
         />
 
         <AvailableMetricsComponents.available_metrics_button
           text="Back to Sync View"
-          href={~p"/admin2/metric_registry/sync"}
+          href={~p"/admin/metric_registry/sync"}
           icon="hero-arrow-uturn-left"
         />
       </div>
@@ -47,7 +47,12 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
           <.formatted_dry_run is_dry_run={row.is_dry_run} />
         </:col>
         <:col :let={row} label="Datetime">
-          {Timex.format!(row.inserted_at, "%F %T%:z", :strftime)}
+          <div>
+            <div>{Timex.format!(row.inserted_at, "%F %T%:z", :strftime)}</div>
+            <div class="text-gray-500">
+              ({Sanbase.DateTimeUtils.rough_duration_since(row.inserted_at)} ago)
+            </div>
+          </div>
         </:col>
 
         <:col :let={row} label="UUID">
@@ -69,6 +74,9 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
           <.formatted_completed_status id={row.id} status={row.status} inserted_at={row.inserted_at} />
         </:col>
 
+        <:col :let={row} label="Started By">
+          {row.started_by || "Unknown"}
+        </:col>
         <:col :let={row} label="No. Metrics Synced">
           {length(row.content)}
         </:col>
@@ -80,7 +88,7 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
         <:col :let={row}>
           <AvailableMetricsComponents.link_button
             text="Details"
-            href={~p"/admin2/metric_registry/sync/#{row.sync_type}/#{row.uuid}"}
+            href={~p"/admin/metric_registry/sync/#{row.sync_type}/#{row.uuid}"}
           />
           <span :if={execution_too_long?(row.status, row.inserted_at)}>
             <AvailableMetricsComponents.event_button
@@ -133,23 +141,6 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
       NaiveDateTime.diff(NaiveDateTime.utc_now(), inserted_at, :second) > 60
   end
 
-  defp rough_duration_since(%NaiveDateTime{} = ndt) do
-    seconds = NaiveDateTime.diff(NaiveDateTime.utc_now(), ndt, :second)
-
-    cond do
-      seconds < 3600 ->
-        "#{div(seconds, 60)} minutes"
-
-      seconds < 86_400 ->
-        "#{div(seconds, 3600)} hours"
-
-      true ->
-        days = div(seconds, 86_400)
-        hours = div(rem(seconds, 86_400), 3600)
-        "#{days} days" <> if(hours == 0, do: "", else: " #{hours} hours")
-    end
-  end
-
   attr :phx_click, :string, required: true
   attr :text, :string, required: true
   attr :count, :integer, required: false, default: nil
@@ -193,7 +184,7 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
         data-popover-target={"popover-executing-too-long-#{@id}"}
       >
         <.icon name="hero-exclamation-circle" /> Executing for too long!
-        ({rough_duration_since(@inserted_at)})
+        ({Sanbase.DateTimeUtils.rough_duration_since(@inserted_at)})
       </span>
     </div>
     """

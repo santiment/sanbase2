@@ -149,14 +149,14 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
       <div class="my-4">
         <AvailableMetricsComponents.available_metrics_button
           text="Back to Metric Registry"
-          href={~p"/admin2/metric_registry"}
+          href={~p"/admin/metric_registry"}
           icon="hero-home"
         />
 
         <AvailableMetricsComponents.available_metrics_button
           :if={@live_action == :edit}
           text="See Metric"
-          href={~p"/admin2/metric_registry/show/#{@metric_registry}"}
+          href={~p"/admin/metric_registry/show/#{@metric_registry}"}
           icon="hero-arrow-right-circle"
         />
 
@@ -164,7 +164,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
           :if={Permissions.can?(:edit, roles: @current_user_role_names) and @live_action == :edit}
           text="Duplicate Metric"
           href={
-            ~p"/admin2/metric_registry/new?#{%{duplicate_metric_registry_id: @metric_registry.id}}"
+            ~p"/admin/metric_registry/new?#{%{duplicate_metric_registry_id: @metric_registry.id}}"
           }
           icon="hero-document-duplicate"
         />
@@ -574,7 +574,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
              socket
              |> assign(save_errors: [])
              |> put_flash(:info, "Metric registry change request updated")
-             |> push_navigate(to: ~p"/admin2/metric_registry/change_suggestions/")}
+             |> push_navigate(to: ~p"/admin/metric_registry/change_suggestions/")}
 
           {:error, error} ->
             errors = Sanbase.Utils.ErrorHandling.changeset_errors(error)
@@ -623,7 +623,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
              socket
              |> assign(save_errors: [])
              |> put_flash(:info, "Metric registry change request updated")
-             |> push_navigate(to: ~p"/admin2/metric_registry/change_suggestions/")}
+             |> push_navigate(to: ~p"/admin/metric_registry/change_suggestions/")}
 
           {:error, error} ->
             errors = Sanbase.Utils.ErrorHandling.changeset_errors(error)
@@ -664,7 +664,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
              socket
              |> assign(save_errors: [])
              |> put_flash(:info, "Metric registry change request created")
-             |> push_navigate(to: ~p"/admin2/metric_registry/change_suggestions/")}
+             |> push_navigate(to: ~p"/admin/metric_registry/change_suggestions/")}
 
           {:error, error} ->
             errors = Sanbase.Utils.ErrorHandling.changeset_errors(error)
@@ -704,7 +704,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
             {:noreply,
              socket
              |> put_flash(:info, "Metric registry change suggestion submitted")
-             |> push_navigate(to: ~p"/admin2/metric_registry/change_suggestions/")}
+             |> push_navigate(to: ~p"/admin/metric_registry/change_suggestions/")}
 
           {:error, changeset} ->
             errors = Sanbase.Utils.ErrorHandling.changeset_errors(changeset)

@@ -58,11 +58,11 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
   @spec type() :: String.t()
   def type(), do: @trigger_type
 
-  def post_create_process(trigger), do: fill_current_state(trigger)
-  def post_update_process(trigger), do: fill_current_state(trigger)
+  def post_create_process(%Sanbase.Alert.Trigger{} = trigger), do: fill_current_state(trigger)
+  def post_update_process(%Sanbase.Alert.Trigger{} = trigger), do: fill_current_state(trigger)
 
-  defp fill_current_state(trigger) do
-    %{settings: settings} = trigger
+  defp fill_current_state(%Sanbase.Alert.Trigger{} = trigger) do
+    %{settings: %WalletAssetsHeldTriggerSettings{} = settings} = trigger
 
     temp_settings =
       Map.put(settings, :filtered_target, Sanbase.Alert.Trigger.get_filtered_target(trigger))
@@ -80,7 +80,7 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
   @doc ~s"""
   Return a list of the `settings.metric` values for the necessary time range
   """
-  def get_data(%__MODULE__{
+  def get_data(%WalletAssetsHeldTriggerSettings{
         filtered_target: %{list: target_list},
         selector: selector
       }) do
@@ -109,7 +109,7 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
     {:ok, data}
   end
 
-  defp assets_held(selector) do
+  defp assets_held(%{} = selector) do
     cache_key =
       {__MODULE__, :assets_held, selector, round_datetime(DateTime.utc_now())}
       |> Sanbase.Cache.hash()
@@ -134,7 +134,7 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
 
         _ ->
           # TODO: Handle errror case
-          settings = %WalletAssetsHeldTriggerSettings{settings | triggered?: false}
+          settings = %{settings | triggered?: false}
           {:ok, settings}
       end
     end
@@ -167,7 +167,7 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
       ])
     end
 
-    defp template_kv(values, settings) do
+    defp template_kv(values, %WalletAssetsHeldTriggerSettings{} = settings) do
       %{added_slugs: added_slugs, removed_slugs: removed_slugs} = values
 
       kv = %{

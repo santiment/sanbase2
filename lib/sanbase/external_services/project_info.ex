@@ -70,14 +70,14 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
     missing_values? or !Project.has_contract_address?(project)
   end
 
-  def from_project(project) do
+  def from_project(%Project{} = project) do
     project_info =
       struct(__MODULE__, Map.to_list(project))
       |> struct(Map.to_list(find_or_create_initial_ico(project)))
 
     case Project.coinmarketcap_id(project) do
       nil -> project_info
-      cmc_id -> %__MODULE__{project_info | coinmarketcap_id: cmc_id}
+      cmc_id -> %{project_info | coinmarketcap_id: cmc_id}
     end
   end
 
@@ -140,7 +140,7 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
   end
 
   defp maybe_add_contract_address(
-         project,
+         %Project{} = project,
          %{main_contract_address: contract_address} = project_info_map
        )
        when is_binary(contract_address) do
@@ -161,9 +161,9 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
     Repo.preload(project, [:contract_addresses], force: true)
   end
 
-  defp maybe_add_contract_address(project, _project_info_map), do: project
+  defp maybe_add_contract_address(%Project{} = project, _project_info_map), do: project
 
-  defp insert_tag({:ok, project}, project_info) do
+  defp insert_tag({:ok, %Project{} = project}, %ProjectInfo{} = project_info) do
     do_insert_tag(project, project_info)
     {:ok, project}
   end
@@ -188,7 +188,7 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
 
   defp do_insert_tag(_, _), do: :ok
 
-  defp find_or_create_initial_ico(project) do
+  defp find_or_create_initial_ico(%Project{} = project) do
     case Project.initial_ico(project) do
       nil -> %Ico{project_id: project.id}
       ico -> ico
@@ -200,7 +200,7 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
        )
        when is_binary(contract) do
     case Ethauth.total_supply(contract) do
-      {:ok, total_supply} -> %ProjectInfo{project_info | total_supply: total_supply}
+      {:ok, total_supply} -> %{project_info | total_supply: total_supply}
       _ -> project_info
     end
   end
@@ -212,7 +212,7 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
        )
        when is_binary(contract) do
     case Ethauth.token_decimals(contract) do
-      {:ok, token_decimals} -> %ProjectInfo{project_info | token_decimals: token_decimals}
+      {:ok, token_decimals} -> %{project_info | token_decimals: token_decimals}
       _ -> project_info
     end
   end
@@ -230,13 +230,13 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
 
     {block_number, ""} = Integer.parse(block_number_hex, 16)
 
-    %ProjectInfo{project_info | contract_block_number: block_number}
+    %{project_info | contract_block_number: block_number}
   end
 
   defp fetch_abi(%ProjectInfo{main_contract_address: main_contract_address} = project_info) do
     case Etherscan.Requests.get_abi(main_contract_address) do
       {:ok, abi} ->
-        %ProjectInfo{project_info | contract_abi: abi}
+        %{project_info | contract_abi: abi}
 
       {:error, error} ->
         Logger.warning(

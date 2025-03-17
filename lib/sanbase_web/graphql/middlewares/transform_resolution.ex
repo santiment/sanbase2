@@ -16,34 +16,28 @@ defmodule SanbaseWeb.Graphql.Middlewares.TransformResolution do
     |> do_call(resolution)
   end
 
-  defp do_call(:get_metric, %{context: context} = resolution) do
+  defp do_call(:get_metric, %Resolution{context: context} = resolution) do
     %{arguments: %{metric: metric}} = resolution
     selectors = get_selectors(resolution)
     elem = {:get_metric, metric, selectors}
 
-    %Resolution{
-      resolution
-      | context: Map.update(context, :__get_query_name_arg__, [elem], &[elem | &1])
-    }
+    %{resolution | context: Map.update(context, :__get_query_name_arg__, [elem], &[elem | &1])}
   end
 
-  defp do_call(:get_signal, %{context: context} = resolution) do
+  defp do_call(:get_signal, %Resolution{context: context} = resolution) do
     %{arguments: %{signal: signal}} = resolution
     selectors = get_selectors(resolution)
     elem = {:get_signal, signal, selectors}
 
-    %Resolution{
-      resolution
-      | context: Map.update(context, :__get_query_name_arg__, [elem], &[elem | &1])
-    }
+    %{resolution | context: Map.update(context, :__get_query_name_arg__, [elem], &[elem | &1])}
   end
 
-  defp do_call(_query_field, resolution) do
+  defp do_call(_query_field, %Resolution{} = resolution) do
     resolution
   end
 
   @fields_with_selector ["timeseriesData", "timeseriesDataPerSlug", "aggregatedTimeseriesData"]
-  defp get_selectors(resolution) do
+  defp get_selectors(%Resolution{} = resolution) do
     resolution.definition.selections
     |> Enum.map(fn %{name: name} = field ->
       case Inflex.camelize(name, :lower) do

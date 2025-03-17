@@ -15,15 +15,26 @@ defmodule Sanbase.Metric.Registry.SyncRun do
     field(:errors, :string)
 
     field(:is_dry_run, :boolean)
+    field(:started_by, :string)
 
     timestamps()
   end
 
   def changeset(%__MODULE__{} = sync, attrs) do
     sync
-    |> cast(attrs, [:uuid, :content, :actual_changes, :status, :errors, :sync_type, :is_dry_run])
+    |> cast(attrs, [
+      :uuid,
+      :content,
+      :actual_changes,
+      :status,
+      :errors,
+      :sync_type,
+      :is_dry_run,
+      :started_by
+    ])
     |> validate_inclusion(:status, ["scheduled", "executing", "completed", "failed", "cancelled"])
     |> validate_inclusion(:sync_type, ["outgoing", "incoming"])
+    |> validate_format(:started_by, ~r/(\w+)@santiment.net$/)
   end
 
   def last_syncs(limit) do

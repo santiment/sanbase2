@@ -352,12 +352,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   end
 
   defp resolve_fixed_parameters(opts, metric) do
-    cond do
-      metric in Registry.fixed_labels_parameters_metrics_mapset() ->
-        opts ++ [fixed_parameters: Map.get(Registry.fixed_parameters_map(), metric)]
-
-      true ->
-        opts
+    if metric in Registry.fixed_labels_parameters_metrics_mapset() do
+      [fixed_parameters: Map.get(Registry.fixed_parameters_map(), metric)] ++ opts
+    else
+      opts
     end
   end
 end

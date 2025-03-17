@@ -107,6 +107,13 @@ defmodule Sanbase.EventBus do
       __only_process_by__: [Sanbase.EventBus.MetricRegistrySubscriber]
     })
 
+  To mark that the event needs to not be processed by some of the subscribers, emit the event
+  in the following way.
+
+    Registry.EventEmitter.emit_event({:ok, maybe_struct}, :update_metric_registry, %{
+      __skip_process_by__: [Sanbase.EventBus.MetricRegistrySubscriber]
+    })
+
   Note that in order for this to work, the emitter must propagate the args, usually by building some
   event map from the arguments and then piping it into `|>Map.merge(args)`
   """
@@ -114,19 +121,33 @@ defmodule Sanbase.EventBus do
   def handle_event(module, event, event_shadow, state, handle_fun)
       when is_function(handle_fun, 0) do
     case event do
-      %{data: %{__only_process_by__: list}} ->
+      %{data: %{__skip_process_by__: _, __only_process_by__: _}} ->
+        raise(
+          ArgumentError,
+          "Cannot have both __skip_process_by__ and __only_process_by__ in event emitting"
+        )
+
+      %{data: %{__skip_process_by__: list}} ->
         if module in list do
-          handle_fun.()
-        else
-          # If __only_process_by__ is set and the module is not part of it,
-          # do not process this event, but direclty mark it as processed and
-          # return the state unchanged
+          # Skip if the module is in the list
           EventBus.mark_as_completed({module, event_shadow})
 
+          state
+        else
+          handle_fun.()
+        end
+
+      %{data: %{__only_process_by__: list}} ->
+        if module in list do
+          # Process only if the module is in the list
+          handle_fun.()
+        else
+          EventBus.mark_as_completed({module, event_shadow})
           state
         end
 
       _ ->
+        # If no special condition is present, process the event in all cases
         handle_fun.()
     end
   end

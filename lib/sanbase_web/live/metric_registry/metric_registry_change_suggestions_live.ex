@@ -8,11 +8,19 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
 
   @impl true
   def mount(_params, _session, socket) do
+    rows = list_all_submissions()
+    selected_tab = "pending_approval"
+
     {:ok,
      socket
      |> assign(
        page_title: "Metric Registry | Change Requests",
-       rows: list_all_submissions(),
+       rows: rows,
+       users:
+         Enum.map(rows, & &1.submitted_by) |> Enum.uniq() |> Enum.reject(&is_nil/1) |> Enum.sort(),
+       selected_tab: selected_tab,
+       filters: %{},
+       current_user_only: false,
        form: to_form(%{})
      )}
   end
@@ -30,11 +38,16 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
       />
       <AvailableMetricsComponents.available_metrics_button
         text="Back to Metric Registry"
-        href={~p"/admin2/metric_registry"}
+        href={~p"/admin/metric_registry"}
         icon="hero-home"
       />
-      <div class="flex-1 p:2 sm:p-6 justify-evenly">
-        <.table id="metric_registry_changes_suggestions" rows={@rows}>
+      <.filters users={@users} filters={@filters} />
+      <.tabs rows={@rows} selected_tab={@selected_tab} filters={@filters} />
+      <div class="flex-1 p-2 sm:p-6 justify-evenly">
+        <.table
+          id="metric_registry_changes_suggestions"
+          rows={visible_rows(@rows, @selected_tab, @filters)}
+        >
           <:col :let={row} label="Status">
             <AdminFormsComponents.status status={row.status} />
           </:col>
@@ -42,7 +55,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
             <.link
               :if={row.metric_registry_id}
               class="underline text-blue-600"
-              href={~p"/admin2/metric_registry/show/#{row.metric_registry_id}"}
+              href={~p"/admin/metric_registry/show/#{row.metric_registry_id}"}
               target="_blank"
             >
               {row.metric_registry.metric}
@@ -51,7 +64,10 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
               NEW METRIC
             </span>
           </:col>
-          <:col :let={row} label="Changes"><.formatted_changes row={row} /></:col>
+          <:col :let={row} label="Changes"><.formatted_changes changes={row.changes} /></:col>
+          <:col :let={row} label="Date">
+            <.request_dates inserted_at={row.inserted_at} updated_at={row.updated_at} />
+          </:col>
           <:col :let={row} label="Notes">{row.notes}</:col>
           <:col :let={row} label="Submitted By">{row.submitted_by}</:col>
           <:action :let={row}>
@@ -69,80 +85,15 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
     """
   end
 
-  def formatted_changes(assigns) do
-    ~H"""
-    {Sanbase.ExAudit.Patch.format_patch(%{patch: @row.changes})}
-    """
+  @impl true
+  def handle_event("apply_filters", %{"only_submitted_by" => email}, socket) do
+    {:noreply,
+     assign(socket, filters: Map.put(socket.assigns.filters, :only_submitted_by, email))}
   end
 
-  def action_buttons(assigns) do
-    ~H"""
-    <.form
-      for={@form}
-      phx-submit="take_action"
-      class="flex flex-col lg:flex-row space-y-2 lg:space-y-0 md:space-x-2"
-    >
-      <input type="hidden" name="record_id" value={@row.id} />
-      <input type="hidden" name="metric_registry_id" value={@row.metric_registry_id} />
-      <input type="hidden" name="change_request_submitter_email" value={@row.submitted_by} />
-
-      <.action_button
-        value="approve"
-        text="Approve"
-        disabled={@row.status != "pending_approval"}
-        colors="bg-green-600 hover:bg-green-800"
-      />
-      <.action_button
-        value="decline"
-        text="Decline"
-        disabled={@row.status != "pending_approval"}
-        colors="bg-red-600 hover:bg-red-800"
-      />
-      <.action_button
-        value="undo"
-        text={undo_text(@row.status)}
-        disabled={
-          # Undo is disabled if it's still in pending state or
-          # if the change request is for adding a new metric and it is approved
-          # metrics cannot be deleted by undoing the change here
-          @row.status == "pending_approval" or
-            (@row.status == "approved" and @row.metric_registry_id == nil)
-        }
-        colors="bg-amber-600 hover:bg-amber-800"
-      />
-
-      <.action_button
-        :if={
-          @row.status == "pending_approval" and
-            Permissions.can?(:edit_change_suggestion,
-              roles: @current_user_role_names,
-              user_email: @current_user.email,
-              submitter_email: @row.submitted_by
-            )
-        }
-        disabled={false}
-        value="edit"
-        text="Edit"
-        colors="bg-fuchsia-600 hover:bg-fuchsia-800"
-      />
-    </.form>
-    """
-  end
-
-  defp undo_text("approved"), do: "Undo Approval"
-  defp undo_text("declined"), do: "Undo Refusal"
-  defp undo_text("pending_approval"), do: "Undo"
-
-  def action_button(assigns) do
-    ~H"""
-    <AdminFormsComponents.button
-      name="action"
-      value={@value}
-      class={if @disabled, do: "bg-gray-300", else: @colors}
-      disabled={@disabled}
-      display_text={@text}
-    />
-    """
+  @impl true
+  def handle_event("select_tab", %{"tab" => tab}, socket) do
+    {:noreply, assign(socket, selected_tab: tab)}
   end
 
   @impl true
@@ -167,7 +118,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
         {:noreply,
          socket
          |> push_navigate(
-           to: ~p"/admin2/metric_registry/new?update_change_request_id=#{record_id}"
+           to: ~p"/admin/metric_registry/new?update_change_request_id=#{record_id}"
          )}
 
       _ ->
@@ -175,7 +126,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
          socket
          |> push_navigate(
            to:
-             ~p"/admin2/metric_registry/edit/#{metric_registry_id}?update_change_request_id=#{record_id}"
+             ~p"/admin/metric_registry/edit/#{metric_registry_id}?update_change_request_id=#{record_id}"
          )}
     end
   end
@@ -234,6 +185,170 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
       {:error, changeset} ->
         {:noreply, add_changeset_error_flash(socket, changeset)}
     end
+  end
+
+  defp visible_rows(rows, tab, filters) do
+    rows
+    |> Enum.filter(fn row -> row.status == tab end)
+    |> maybe_apply_filter(:only_submitted_by, filters)
+  end
+
+  defp maybe_apply_filter(rows, :only_submitted_by, %{only_submitted_by: "all"}), do: rows
+
+  defp maybe_apply_filter(rows, :only_submitted_by, %{only_submitted_by: email}) do
+    Enum.filter(rows, fn row -> row.submitted_by == email end)
+  end
+
+  defp maybe_apply_filter(rows, _filter, _filters), do: rows
+
+  defp formatted_changes(assigns) do
+    ~H"""
+    {Sanbase.ExAudit.Patch.format_patch(%{patch: @changes})}
+    """
+  end
+
+  defp request_dates(assigns) do
+    ~H"""
+    <div class="flex flex-col">
+      <div class="text-nowrap">
+        <span class="text-green-600 font-bold">Created</span> {Sanbase.DateTimeUtils.rough_duration_since(
+          @inserted_at
+        )} ago
+      </div>
+      <div :if={@inserted_at != @updated_at}>
+        <span class="text-amber-600 font-bold">Updated</span> {Sanbase.DateTimeUtils.rough_duration_since(
+          @updated_at
+        )} ago
+      </div>
+    </div>
+    """
+  end
+
+  defp filters(assigns) do
+    ~H"""
+    <div>
+      <form phx-change="apply_filters">
+        <.input
+          value={@filters["only_submitted_by"] || "all"}
+          type="select"
+          name="only_submitted_by"
+          label="Filter by submitter"
+          options={["all"] ++ @users}
+        />
+      </form>
+    </div>
+    """
+  end
+
+  defp tabs(assigns) do
+    ~H"""
+    <div class="flex flex-wrap space-x-2 mt-6 border-b border-gray-200">
+      <.tab
+        text="Pending Approval"
+        tab="pending_approval"
+        is_selected={@selected_tab == "pending_approval"}
+        count={length(visible_rows(@rows, "pending_approval", @filters))}
+      />
+      <.tab
+        text="Approved"
+        tab="approved"
+        is_selected={@selected_tab == "approved"}
+        count={length(visible_rows(@rows, "approved", @filters))}
+      />
+      <.tab
+        text="Declined"
+        tab="declined"
+        is_selected={@selected_tab == "declined"}
+        count={length(visible_rows(@rows, "declined", @filters))}
+      />
+    </div>
+    """
+  end
+
+  defp tab(assigns) do
+    ~H"""
+    <span phx-click={JS.push("select_tab", value: %{tab: @tab})}>
+      <span class={[
+        "inline-block text-sm font-bold p-2 rounded-t-lg cursor-pointer hover:border-b-2 hover:border-blue-600 hover:text-blue-600",
+        if(@is_selected,
+          do: "border-blue-800 border-b-2 text-blue-800",
+          else: "text-gray-800"
+        )
+      ]}>
+        {@text} ({@count})
+      </span>
+    </span>
+    """
+  end
+
+  defp action_buttons(assigns) do
+    ~H"""
+    <.form
+      for={@form}
+      phx-submit="take_action"
+      class="flex flex-col lg:flex-row space-y-2 lg:space-y-0 md:space-x-2"
+    >
+      <input type="hidden" name="record_id" value={@row.id} />
+      <input type="hidden" name="metric_registry_id" value={@row.metric_registry_id} />
+      <input type="hidden" name="change_request_submitter_email" value={@row.submitted_by} />
+
+      <.action_button
+        value="approve"
+        text="Approve"
+        disabled={@row.status != "pending_approval"}
+        colors="bg-green-600 hover:bg-green-800"
+      />
+      <.action_button
+        value="decline"
+        text="Decline"
+        disabled={@row.status != "pending_approval"}
+        colors="bg-red-600 hover:bg-red-800"
+      />
+      <.action_button
+        value="undo"
+        text={undo_text(@row.status)}
+        disabled={
+          # Undo is disabled if it's still in pending state or
+          # if the change request is for adding a new metric and it is approved
+          # metrics cannot be deleted by undoing the change here
+          @row.status == "pending_approval" or
+            (@row.status == "approved" and @row.metric_registry_id == nil)
+        }
+        colors="bg-amber-600 hover:bg-amber-800"
+      />
+
+      <.action_button
+        :if={
+          @row.status == "pending_approval" and
+            Permissions.can?(:edit_change_suggestion,
+              roles: @current_user_role_names,
+              user_email: @current_user.email,
+              submitter_email: @row.submitted_by
+            )
+        }
+        disabled={false}
+        value="edit"
+        text="Edit"
+        colors="bg-fuchsia-600 hover:bg-fuchsia-800"
+      />
+    </.form>
+    """
+  end
+
+  defp undo_text("approved"), do: "Undo Approval"
+  defp undo_text("declined"), do: "Undo Refusal"
+  defp undo_text("pending_approval"), do: "Undo"
+
+  defp action_button(assigns) do
+    ~H"""
+    <AdminFormsComponents.button
+      name="action"
+      value={@value}
+      class={if @disabled, do: "bg-gray-300", else: @colors}
+      disabled={@disabled}
+      display_text={@text}
+    />
+    """
   end
 
   defp add_changeset_error_flash(socket, changeset_or_error) do

@@ -23,7 +23,7 @@ defmodule SanbaseWeb.NotificationsLive.DigestFormLive do
     <div class="max-w-2xl mx-auto">
       <div class="flex items-center justify-between mb-4">
         <.link
-          navigate={~p"/admin2/generic?resource=notifications"}
+          navigate={~p"/admin/generic?resource=notifications"}
           class="text-sm text-gray-600 hover:text-gray-900"
         >
           ← Back to Notifications
@@ -454,6 +454,7 @@ defmodule SanbaseWeb.NotificationsLive.DigestFormLive do
 
   defp metric_updates_list do
     Sanbase.Utils.Config.module_get(Sanbase.Notifications, :mailjet_metric_updates_list)
+    # credo:disable-for-next-line
     |> String.to_atom()
   end
 end

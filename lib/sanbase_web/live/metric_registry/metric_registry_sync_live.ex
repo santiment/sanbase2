@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.MetricRegistrySyncLive do
   use SanbaseWeb, :live_view
 
+  import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
+
   alias SanbaseWeb.AvailableMetricsComponents
   alias Sanbase.Metric.Registry.Permissions
 
@@ -45,13 +47,13 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
       <div class="my-4">
         <AvailableMetricsComponents.available_metrics_button
           text="Back to Metric Registry"
-          href={~p"/admin2/metric_registry"}
+          href={~p"/admin/metric_registry"}
           icon="hero-home"
         />
 
         <AvailableMetricsComponents.available_metrics_button
           text="List Sync Runs"
-          href={~p"/admin2/metric_registry/sync_runs"}
+          href={~p"/admin/metric_registry/sync_runs"}
           icon="hero-list-bullet"
         />
       </div>
@@ -137,7 +139,12 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
 
     ids = socket.assigns.metric_ids_to_sync |> Enum.to_list()
 
-    case Sanbase.Metric.Registry.Sync.sync(ids, dry_run: socket.assigns.is_dry_run) do
+    sync_opts = [
+      dry_run: socket.assigns.is_dry_run,
+      started_by: socket.assigns.current_user.email
+    ]
+
+    case Sanbase.Metric.Registry.Sync.sync(ids, sync_opts) do
       {:ok, _data} ->
         # Add some artificial wait period so there's some time for the sync
         # to finish.
@@ -146,15 +153,17 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
         {:noreply,
          socket
          |> put_flash(:info, "Sucessfully initiated sync of #{length(ids)} metrics")
-         |> push_navigate(to: ~p"/admin2/metric_registry/sync_runs")
+         |> push_navigate(to: ~p"/admin/metric_registry/sync_runs")
          |> assign(
            syncable_metrics: syncable_metrics,
            non_syncable_metrics: not_syncable_metrics,
            metric_ids_to_sync: Enum.map(syncable_metrics, & &1.id) |> MapSet.new()
          )}
 
-      {:error, error} ->
-        {:noreply, socket |> put_flash(:error, "Error syncing metrics: #{error}")}
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Error syncing metrics: #{changeset_errors_string(changeset)}")}
     end
   end
 

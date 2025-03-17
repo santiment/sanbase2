@@ -126,7 +126,7 @@ defmodule Sanbase.Alert.Trigger do
       _ ->
         case Sanbase.Alert.Settings.evaluate(trigger_settings, trigger) do
           {:ok, trigger_settings} ->
-            trigger = %Trigger{trigger | settings: trigger_settings}
+            trigger = %{trigger | settings: trigger_settings}
             {:ok, trigger}
 
           {:error, error} ->

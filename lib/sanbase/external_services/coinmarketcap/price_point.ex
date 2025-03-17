@@ -30,7 +30,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePoint do
     {key, value}
   end
 
-  defguard num_ge(num, limit) when is_number(num) and is_number(limit) and num > limit
+  defguard num_ge(num, threshold)
+           when is_number(num) and is_number(threshold) and num >= threshold
+
+  defguard num_le(num, threshold)
+           when is_number(num) and is_number(threshold) and num <= threshold
 
   def sanity_filters([]), do: []
 
@@ -50,7 +54,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePoint do
           {:price_btc, price_btc} when num_ge(price_btc, @price_btc_limit) ->
             {:price_btc, nil}
 
-          {:marketcap_usd, marketcap_usd} when num_ge(marketcap_usd, @marketcap_usd_limit) ->
+          {:marketcap_usd, marketcap_usd}
+          when num_ge(marketcap_usd, @marketcap_usd_limit) or num_le(marketcap_usd, 0) ->
             {:marketcap_usd, nil}
 
           {k, v} ->

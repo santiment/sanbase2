@@ -50,7 +50,7 @@ defmodule Sanbase.Price.SqlQuery do
     FROM #{@table}
     PREWHERE
       #{slug_filter(slug_or_slugs, argument_name: "slug")} AND
-      NOT isNaN(#{metric}) AND isNotNull(#{metric}) AND #{metric} > 0 AND
+      NOT isNaN(#{metric}) AND isNotNull(#{metric})  AND
       source = cast({{source}}, 'LowCardinality(String)') AND
       dt >= toDateTime({{from}}) AND
       dt < toDateTime({{to}})
@@ -272,7 +272,7 @@ defmodule Sanbase.Price.SqlQuery do
         #{aggregation(aggregation, "#{metric}", "dt")} AS value
       FROM #{@table}
       PREWHERE
-        isNotNull(#{metric}) AND NOT isNaN(#{metric}) AND #{metric} > 0 AND
+        isNotNull(#{metric}) AND NOT isNaN(#{metric}) AND
         dt >= toDateTime({{from}}) AND
         dt < toDateTime({{to}}) AND
         source = cast({{source}}, 'LowCardinality(String)')

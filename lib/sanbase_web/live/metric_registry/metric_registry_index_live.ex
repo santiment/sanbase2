@@ -159,12 +159,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
   @impl true
   def handle_event("apply_filters", params, socket) do
     visible_metrics_ids =
-      socket.assigns.metrics
-      |> maybe_apply_filter(:match_metric, params)
-      |> maybe_apply_filter(:unverified_only, params)
-      |> maybe_apply_filter(:not_synced_only, params)
-      |> maybe_apply_filter(:no_docs_only, params)
-      |> maybe_apply_filter(:sort_by, params)
+      apply_filters(socket.assigns.metrics, params)
       |> Enum.map(& &1.id)
 
     {:noreply,
@@ -521,6 +516,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
             <.filter_status value={@filter["status"]} />
           </div>
           <div class="flex flex-row mt-4 space-x-2 ">
+            <.filter_not_deprecated />
             <.filter_unverified />
             <.filter_not_synced />
             <.filter_without_docs />
@@ -562,6 +558,21 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     """
   end
 
+  defp filter_not_deprecated(assigns) do
+    ~H"""
+    <div class="flex items-center mb-4 ">
+      <label for="not-deprecated-only" class="cursor-pointer ms-2 text-sm font-medium text-gray-900">
+        <input
+          id="not-deprecated-only"
+          name="not_deprecated_only"
+          type="checkbox"
+          class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded "
+        /> Not Deprecated
+      </label>
+    </div>
+    """
+  end
+
   defp filter_unverified(assigns) do
     ~H"""
     <div class="flex items-center mb-4 ">
@@ -571,7 +582,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           name="unverified_only"
           type="checkbox"
           class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded "
-        /> Show Only Unverified
+        /> Unverified
       </label>
     </div>
     """
@@ -694,6 +705,16 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     end)
   end
 
+  defp apply_filters(metrics, filters) do
+    metrics
+    |> maybe_apply_filter(:maybe_hide_hard_deprecated, filters)
+    |> maybe_apply_filter(:match_metric, filters)
+    |> maybe_apply_filter(:unverified_only, filters)
+    |> maybe_apply_filter(:not_synced_only, filters)
+    |> maybe_apply_filter(:no_docs_only, filters)
+    |> maybe_apply_filter(:sort_by, filters)
+  end
+
   defp maybe_apply_filter(metrics, :match_metric, %{"match_metric" => query})
        when query != "" do
     query = String.downcase(query)
@@ -708,6 +729,13 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
         end)
     end)
     |> Enum.sort_by(&String.jaro_distance(query, &1.metric), :desc)
+  end
+
+  defp maybe_apply_filter(metrics, :unverified_only, %{"not_deprecated_only" => "on"}) do
+    metrics
+    |> Enum.reject(fn m ->
+      m.hard_deprecate_after && DateTime.before?(m.hard_deprecate_after, DateTime.utc_now())
+    end)
   end
 
   defp maybe_apply_filter(metrics, :unverified_only, %{"unverified_only" => "on"}) do

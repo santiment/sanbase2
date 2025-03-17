@@ -64,7 +64,9 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
               NEW METRIC
             </span>
           </:col>
-          <:col :let={row} label="Changes"><.formatted_changes changes={row.changes} /></:col>
+          <:col :let={row} label="Changes">
+            <.formatted_changes is_new_metric={!row.metric_registry_id} changes={row.changes} />
+          </:col>
           <:col :let={row} label="Date">
             <.request_dates inserted_at={row.inserted_at} updated_at={row.updated_at} />
           </:col>
@@ -203,8 +205,19 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
 
   defp formatted_changes(assigns) do
     ~H"""
-    {Sanbase.ExAudit.Patch.format_patch(%{patch: @changes})}
+    <div>
+      <div :if={@is_new_metric and no_docs?(@changes)} class="text-2xl font-bold text-red-700 mb-2">
+        MISSING DOCUMENTATION
+      </div>
+      <div>
+        {Sanbase.ExAudit.Patch.format_patch(%{patch: @changes})}
+      </div>
+    </div>
     """
+  end
+
+  defp no_docs?(changes) do
+    not Map.has_key?(changes, :docs)
   end
 
   defp request_dates(assigns) do

@@ -600,7 +600,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           name="not_synced_only"
           type="checkbox"
           class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded "
-        /> Show Only Not Synced
+        /> Not Synced
       </label>
     </div>
     """
@@ -618,7 +618,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           name="no_docs_only"
           type="checkbox"
           class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded "
-        /> Show Only Without Docs
+        /> Without Docs
       </label>
     </div>
     """

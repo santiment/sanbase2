@@ -1,5 +1,5 @@
 defmodule Sanbase.Balance do
-  import __MODULE__.BalancesAggregatedSqlQuery
+  import __MODULE__.SqlQuery
 
   import Sanbase.Utils.Transform,
     only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2, maybe_sort: 3]

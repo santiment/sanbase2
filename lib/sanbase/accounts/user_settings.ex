@@ -126,9 +126,15 @@ defmodule Sanbase.Accounts.UserSettings do
   end
 
   def update_settings(user, %{is_subscribed_biweekly_report: true} = params) do
-    case Subscription.current_subscription_plan(user.id, Product.product_sanbase()) do
-      pro when pro in ["PRO", "PRO_PLUS", "MAX"] -> settings_update(user.id, params)
-      _ -> {:error, "Only PRO users can subscribe to Biweekly Report"}
+    cond do
+      Subscription.current_subscription_plan(user.id, Product.product_sanbase()) != "FREE" ->
+        settings_update(user.id, params)
+
+      Subscription.current_subscription_plan(user.id, Product.product_api()) != "FREE" ->
+        settings_update(user.id, params)
+
+      true ->
+        {:error, "Only users with an active subscription plan can subscribe to Biweekly Report"}
     end
   end
 

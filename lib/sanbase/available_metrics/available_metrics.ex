@@ -23,11 +23,19 @@ defmodule Sanbase.AvailableMetrics do
     |> validate_required([:metric])
   end
 
-  def get_not_updated() do
+  def get_not_updated_recently() do
     from(
       av in __MODULE__,
-      where: av.updated_at < ^DateTime.add(DateTime.utc_now(), -86_400),
+      where: av.updated_at < ^DateTime.add(DateTime.utc_now(), -2 * 86_400),
       order_by: [asc: av.updated_at],
+      select: av.metric
+    )
+    |> Sanbase.Repo.all()
+  end
+
+  def get_all_updated() do
+    from(
+      av in __MODULE__,
       select: av.metric
     )
     |> Sanbase.Repo.all()
@@ -42,10 +50,16 @@ defmodule Sanbase.AvailableMetrics do
 
   def update_all() do
     metrics = Sanbase.Metric.available_metrics()
-    metrics_not_updated_recently = get_not_updated()
 
-    # First update the metrics that were not updated for the longest time
-    ordered_metrics = metrics_not_updated_recently ++ (metrics -- metrics_not_updated_recently)
+    metrics_not_updated_at_all = metrics -- get_all_updated()
+    metrics_not_updated_recently = get_not_updated_recently()
+
+    ordered_metrics = metrics_not_updated_at_all ++ metrics_not_updated_recently ++ metrics
+
+    # Use the fact that Enum.uniq/1 keeps the order of the first occurence.
+    # After the uniqueness is applied it is guaranteed that first we'll update the never updated metrics,
+    # then those who were not updated recently, and then the rest
+    ordered_metrics = Enum.uniq(ordered_metrics)
 
     for metric <- ordered_metrics do
       try do

@@ -138,6 +138,20 @@ defmodule Sanbase.Clickhouse.Query do
     end
   end
 
+  def get_sql_args_v2(%__MODULE__{} = query) do
+    query = preprocess_query(query)
+
+    with {:ok, {sql, args}} <-
+           Sanbase.TemplateEngine.run_generate_positional_params_v2(
+             query.sql,
+             params: query.parameters,
+             env: query.environment
+           ) do
+      result = %{sql: sql, args: args}
+      {:ok, result}
+    end
+  end
+
   # Private functions
 
   defp preprocess_query(query) do

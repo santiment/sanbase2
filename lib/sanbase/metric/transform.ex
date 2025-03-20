@@ -69,7 +69,7 @@ defmodule Sanbase.Metric.Transform do
   def remove_missing_values({:error, error}), do: {:error, error}
 
   def exec_timeseries_data_query(%Sanbase.Clickhouse.Query{} = query) do
-    Sanbase.ClickhouseRepo.query_transform(query, fn
+    Sanbase.ChRepo.query_transform(query, fn
       [unix, value] ->
         %{datetime: DateTime.from_unix!(unix), value: value}
 

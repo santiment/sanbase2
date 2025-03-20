@@ -879,7 +879,7 @@ defmodule Sanbase.Metric do
     end
   end
 
-  defp get_module(metric, opts \\ []) do
+  def get_module(metric, opts \\ []) do
     selector = Keyword.get(opts, :selector, %{})
 
     cond do

@@ -2,17 +2,17 @@ defmodule SanbaseWeb.MetricDisplayOrderShowLive do
   use SanbaseWeb, :live_view
 
   import SanbaseWeb.CoreComponents
-  alias Sanbase.Metric.DisplayOrder
+  alias Sanbase.Metric.UIMetadata.DisplayOrder
   alias SanbaseWeb.AvailableMetricsComponents
 
   @impl true
-  def mount(%{"metric" => metric}, _session, socket) do
-    case DisplayOrder.by_metric(metric) do
+  def mount(%{"metric_id" => metric_id}, _session, socket) do
+    case DisplayOrder.by_id(String.to_integer(metric_id)) do
       nil ->
         {:ok,
          socket
          |> put_flash(:error, "Metric not found")
-         |> push_navigate(to: ~p"/admin2/metric_registry/display_order")}
+         |> push_navigate(to: ~p"/admin/metric_registry/display_order")}
 
       display_order ->
         {:ok,
@@ -45,14 +45,13 @@ defmodule SanbaseWeb.MetricDisplayOrderShowLive do
     <div class="my-4">
       <AvailableMetricsComponents.available_metrics_button
         text="Back to Display Order"
-        href={~p"/admin2/metric_registry/display_order"}
+        href={~p"/admin/metric_registry/display_order"}
         icon="hero-arrow-uturn-left"
       />
 
       <AvailableMetricsComponents.available_metrics_button
-        :if={@display_order.source_type == "code"}
         text="Edit Metric"
-        href={~p"/admin2/metric_registry/display_order/edit/#{@display_order.metric}"}
+        href={~p"/admin/metric_registry/display_order/edit/#{@display_order.id}"}
         icon="hero-pencil-square"
       />
     </div>
@@ -62,18 +61,46 @@ defmodule SanbaseWeb.MetricDisplayOrderShowLive do
   attr :display_order, :map, required: true
 
   def metric_details(assigns) do
+    # Get the category and group names
+    category_name =
+      if assigns.display_order.category,
+        do: assigns.display_order.category.name,
+        else: ""
+
+    group_name =
+      if assigns.display_order.group,
+        do: assigns.display_order.group.name,
+        else: ""
+
+    # Format the inserted_at date if available, handling both NaiveDateTime and DateTime
+    added_at =
+      case assigns.display_order.inserted_at do
+        nil ->
+          "Not specified"
+
+        date when is_struct(date, NaiveDateTime) ->
+          Calendar.strftime(date, "%Y-%m-%d %H:%M:%S")
+
+        date when is_struct(date, DateTime) ->
+          Calendar.strftime(date, "%Y-%m-%d %H:%M:%S")
+
+        _ ->
+          "Invalid date format"
+      end
+
     rows = [
       %{key: "Metric", value: assigns.display_order.metric},
-      %{key: "Label", value: assigns.display_order.label || ""},
-      %{key: "Category", value: assigns.display_order.category},
-      %{key: "Group", value: assigns.display_order.group || ""},
+      %{key: "Label", value: assigns.display_order.ui_human_readable_name || ""},
+      %{key: "Category", value: category_name},
+      %{key: "Group", value: group_name},
       %{key: "Display Order", value: assigns.display_order.display_order},
-      %{key: "Source Type", value: assigns.display_order.source_type},
-      %{key: "Source ID", value: assigns.display_order.source_id},
-      %{key: "Added At", value: assigns.display_order.added_at || "Not specified"},
-      %{key: "Style", value: assigns.display_order.style || "line"},
-      %{key: "Format", value: assigns.display_order.format || ""},
-      %{key: "Description", value: assigns.display_order.description || ""}
+      %{key: "Code Module", value: assigns.display_order.code_module || "None"},
+      %{key: "Metric Registry ID", value: assigns.display_order.metric_registry_id},
+      %{key: "Added At", value: added_at},
+      %{key: "Chart Style", value: assigns.display_order.chart_style || "line"},
+      %{key: "Unit", value: assigns.display_order.unit || ""},
+      %{key: "Description", value: assigns.display_order.description || ""},
+      %{key: "Args", value: inspect(assigns.display_order.args || %{})}
     ]
 
     assigns = assign(assigns, :rows, rows)

@@ -341,43 +341,6 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
         value: metric_registry.status,
         popover_target: "popover-status",
         popover_target_text: get_popover_text(%{key: "Status"})
-      },
-      # UI Metadata Fields
-      %{
-        key: "Category",
-        value: metric_registry.category || "",
-        popover_target: "popover-category",
-        popover_target_text: get_popover_text(%{key: "Category"})
-      },
-      %{
-        key: "Group",
-        value: metric_registry.group || "",
-        popover_target: "popover-group",
-        popover_target_text: get_popover_text(%{key: "Group"})
-      },
-      %{
-        key: "Label",
-        value: metric_registry.label || "",
-        popover_target: "popover-label",
-        popover_target_text: get_popover_text(%{key: "Label"})
-      },
-      %{
-        key: "Style",
-        value: metric_registry.style || "line",
-        popover_target: "popover-style",
-        popover_target_text: get_popover_text(%{key: "Style"})
-      },
-      %{
-        key: "Format",
-        value: metric_registry.format || "",
-        popover_target: "popover-format",
-        popover_target_text: get_popover_text(%{key: "Format"})
-      },
-      %{
-        key: "Description",
-        value: metric_registry.description || "",
-        popover_target: "popover-description",
-        popover_target_text: get_popover_text(%{key: "Description"})
       }
     ]
   end

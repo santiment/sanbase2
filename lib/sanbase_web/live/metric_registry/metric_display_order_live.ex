@@ -2,7 +2,7 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
   use SanbaseWeb, :live_view
 
   import SanbaseWeb.CoreComponents
-  alias Sanbase.Metric.DisplayOrder
+  alias Sanbase.Metric.UIMetadata.DisplayOrder
   alias SanbaseWeb.AvailableMetricsComponents
 
   @impl true
@@ -11,13 +11,16 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
     metrics = ordered_data.metrics
     categories = ordered_data.categories
 
+    # Get the name of the first category if available
+    first_category_name = if length(categories) > 0, do: List.first(categories).name, else: nil
+
     {:ok,
      socket
      |> assign(
        page_title: "Metric Display Order",
        metrics: metrics,
        categories: categories,
-       selected_category: List.first(categories),
+       selected_category: first_category_name,
        selected_group: nil,
        filtered_metrics: [],
        reordering: false
@@ -44,149 +47,16 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
         Metric Display Order
       </div>
 
-      <div class="my-4">
-        <AvailableMetricsComponents.available_metrics_button
-          text="Back to Metric Registry"
-          href={~p"/admin2/metric_registry"}
-          icon="hero-home"
-        />
-      </div>
+      <.navigation />
 
-      <div class="flex flex-row space-x-4 mb-4">
-        <div class="w-1/4">
-          <.simple_form for={%{}} as={:filter} phx-change="filter">
-            <.input
-              type="select"
-              name="category"
-              value={@selected_category}
-              label="Category"
-              options={@categories}
-            />
-          </.simple_form>
-        </div>
+      <.filters
+        categories={@categories}
+        selected_category={@selected_category}
+        groups={@groups}
+        selected_group={@selected_group}
+      />
 
-        <div :if={@groups && length(@groups) > 0} class="w-1/4">
-          <.simple_form for={%{}} as={:filter} phx-change="filter">
-            <.input
-              type="select"
-              name="group"
-              value={@selected_group}
-              label="Group"
-              options={[{"All Groups", nil} | @groups]}
-            />
-          </.simple_form>
-        </div>
-      </div>
-
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th
-                scope="col"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Order
-              </th>
-              <th
-                scope="col"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Metric
-              </th>
-              <th
-                scope="col"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Label
-              </th>
-              <th
-                scope="col"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Category
-              </th>
-              <th
-                scope="col"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Group
-              </th>
-              <th
-                scope="col"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Style
-              </th>
-              <th
-                scope="col"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Format
-              </th>
-              <th
-                scope="col"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody id="metrics" phx-hook="Sortable" class="bg-white divide-y divide-gray-200">
-            <%= for {metric, index} <- Enum.with_index(@filtered_metrics) do %>
-              <tr id={"metric-#{metric.metric}"} data-id={metric.metric} class="hover:bg-gray-50">
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <div class="flex items-center">
-                    <button
-                      phx-click="move-up"
-                      phx-value-metric={metric.metric}
-                      class="mr-2"
-                      disabled={index == 0}
-                    >
-                      <.icon name="hero-arrow-up" class="w-4 h-4" />
-                    </button>
-                    <span>{index + 1}</span>
-                    <button
-                      phx-click="move-down"
-                      phx-value-metric={metric.metric}
-                      class="ml-2"
-                      disabled={index == length(@filtered_metrics) - 1}
-                    >
-                      <.icon name="hero-arrow-down" class="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {metric.metric}
-                  <%= if metric.is_new do %>
-                    <span class="ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                      NEW
-                    </span>
-                  <% end %>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {metric.label}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {metric.category}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {metric.group}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {metric.style}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {metric.format}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <.metric_actions metric={metric} />
-                </td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-      </div>
+      <.metrics_table filtered_metrics={@filtered_metrics} />
 
       <.modal :if={@reordering} id="reordering-modal" show>
         <.header>Reordering Metrics</.header>
@@ -199,12 +69,199 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
     """
   end
 
+  def navigation(assigns) do
+    ~H"""
+    <div class="my-4 flex flex-row space-x-2">
+      <AvailableMetricsComponents.available_metrics_button
+        text="Back to Metric Registry"
+        href={~p"/admin/metric_registry"}
+        icon="hero-home"
+      />
+      <AvailableMetricsComponents.available_metrics_button
+        text="Manage Categories"
+        href={~p"/admin/metric_registry/categories"}
+        icon="hero-rectangle-group"
+      />
+      <AvailableMetricsComponents.available_metrics_button
+        text="Manage Groups"
+        href={~p"/admin/metric_registry/groups"}
+        icon="hero-user-group"
+      />
+    </div>
+    """
+  end
+
+  attr :categories, :list, required: true
+  attr :selected_category, :string, required: true
+  attr :groups, :list, required: true
+  attr :selected_group, :any, required: true
+
+  def filters(assigns) do
+    ~H"""
+    <div class="flex flex-row space-x-4 mb-4">
+      <div class="w-1/4">
+        <.simple_form for={%{}} as={:filter} phx-change="filter">
+          <.input
+            type="select"
+            name="category"
+            value={@selected_category}
+            label="Category"
+            options={Enum.map(@categories, fn cat -> {cat.name, cat.name} end)}
+          />
+        </.simple_form>
+      </div>
+
+      <div :if={@groups && length(@groups) > 0} class="w-1/4">
+        <.simple_form for={%{}} as={:filter} phx-change="filter">
+          <.input
+            type="select"
+            name="group"
+            value={@selected_group}
+            label="Group"
+            options={[{"All Groups", nil} | Enum.map(@groups, fn group -> {group, group} end)]}
+          />
+        </.simple_form>
+      </div>
+    </div>
+    """
+  end
+
+  attr :filtered_metrics, :list, required: true
+
+  def metrics_table(assigns) do
+    ~H"""
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th
+              scope="col"
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Order
+            </th>
+            <th
+              scope="col"
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Metric
+            </th>
+            <th
+              scope="col"
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Label
+            </th>
+            <th
+              scope="col"
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Category
+            </th>
+            <th
+              scope="col"
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Group
+            </th>
+            <th
+              scope="col"
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Style
+            </th>
+            <th
+              scope="col"
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Format
+            </th>
+            <th
+              scope="col"
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Actions
+            </th>
+          </tr>
+        </thead>
+        <tbody id="metrics" phx-hook="Sortable" class="bg-white divide-y divide-gray-200">
+          <.metric_row
+            :for={{metric, index} <- Enum.with_index(@filtered_metrics)}
+            metric={metric}
+            index={index}
+            total_count={length(@filtered_metrics)}
+          />
+        </tbody>
+      </table>
+    </div>
+    """
+  end
+
+  attr :metric, :map, required: true
+  attr :index, :integer, required: true
+  attr :total_count, :integer, required: true
+
+  def metric_row(assigns) do
+    ~H"""
+    <tr id={"metric-#{@metric.id}"} data-id={@metric.id} class="hover:bg-gray-50">
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        <div class="flex items-center">
+          <button
+            phx-click="move-up"
+            phx-value-metric-id={@metric.id}
+            class="mr-2"
+            disabled={@index == 0}
+          >
+            <.icon name="hero-arrow-up" class="w-4 h-4" />
+          </button>
+          <span>{@index + 1}</span>
+          <button
+            phx-click="move-down"
+            phx-value-metric-id={@metric.id}
+            class="ml-2"
+            disabled={@index == @total_count - 1}
+          >
+            <.icon name="hero-arrow-down" class="w-4 h-4" />
+          </button>
+        </div>
+      </td>
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        {@metric.metric}
+        <span
+          :if={@metric.is_new}
+          class="ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800"
+        >
+          NEW
+        </span>
+      </td>
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        {@metric.ui_human_readable_name}
+      </td>
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        {@metric.category_name}
+      </td>
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        {@metric.group_name}
+      </td>
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        {@metric.chart_style}
+      </td>
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        {@metric.unit}
+      </td>
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        <.metric_actions metric={@metric} />
+      </td>
+    </tr>
+    """
+  end
+
   @impl true
   def handle_event("filter", %{"category" => category}, socket) do
     {:noreply,
      socket
      |> assign(selected_category: category, selected_group: nil)
-     |> push_patch(to: ~p"/admin2/metric_registry/display_order?category=#{category}")}
+     |> push_patch(to: ~p"/admin/metric_registry/display_order?category=#{category}")}
   end
 
   def handle_event("filter", %{"group" => group}, socket) do
@@ -213,28 +270,27 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
      |> assign(selected_group: group)
      |> push_patch(
        to:
-         ~p"/admin2/metric_registry/display_order?category=#{socket.assigns.selected_category}&group=#{group}"
+         ~p"/admin/metric_registry/display_order?category=#{socket.assigns.selected_category}&group=#{group}"
      )}
   end
 
-  def handle_event("move-up", %{"metric" => metric}, socket) do
+  def handle_event("move-up", %{"metric_id" => metric_id}, socket) do
     metrics = socket.assigns.filtered_metrics
-    index = Enum.find_index(metrics, &(&1.metric == metric))
+    {id, _} = Integer.parse(metric_id)
+    index = Enum.find_index(metrics, &(&1.id == id))
 
     if index > 0 do
       # Swap with the previous metric
       metrics =
         List.update_at(metrics, index - 1, fn prev_metric ->
-          display_order = DisplayOrder.by_metric(prev_metric.metric)
-          DisplayOrder.update(display_order, %{display_order: display_order.display_order + 1})
-          %{prev_metric | display_order: display_order.display_order + 1}
+          {:ok, updated} = DisplayOrder.increment_display_order(prev_metric.id)
+          %{prev_metric | display_order: updated.display_order}
         end)
 
       metrics =
         List.update_at(metrics, index, fn current_metric ->
-          display_order = DisplayOrder.by_metric(current_metric.metric)
-          DisplayOrder.update(display_order, %{display_order: display_order.display_order - 1})
-          %{current_metric | display_order: display_order.display_order - 1}
+          {:ok, updated} = DisplayOrder.decrement_display_order(current_metric.id)
+          %{current_metric | display_order: updated.display_order}
         end)
 
       # Sort by display_order
@@ -246,24 +302,23 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
     end
   end
 
-  def handle_event("move-down", %{"metric" => metric}, socket) do
+  def handle_event("move-down", %{"metric_id" => metric_id}, socket) do
     metrics = socket.assigns.filtered_metrics
-    index = Enum.find_index(metrics, &(&1.metric == metric))
+    {id, _} = Integer.parse(metric_id)
+    index = Enum.find_index(metrics, &(&1.id == id))
 
     if index < length(metrics) - 1 do
       # Swap with the next metric
       metrics =
         List.update_at(metrics, index + 1, fn next_metric ->
-          display_order = DisplayOrder.by_metric(next_metric.metric)
-          DisplayOrder.update(display_order, %{display_order: display_order.display_order - 1})
-          %{next_metric | display_order: display_order.display_order - 1}
+          {:ok, updated} = DisplayOrder.decrement_display_order(next_metric.id)
+          %{next_metric | display_order: updated.display_order}
         end)
 
       metrics =
         List.update_at(metrics, index, fn current_metric ->
-          display_order = DisplayOrder.by_metric(current_metric.metric)
-          DisplayOrder.update(display_order, %{display_order: display_order.display_order + 1})
-          %{current_metric | display_order: display_order.display_order + 1}
+          {:ok, updated} = DisplayOrder.increment_display_order(current_metric.id)
+          %{current_metric | display_order: updated.display_order}
         end)
 
       # Sort by display_order
@@ -280,22 +335,23 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
 
     if length(metrics) > 0 do
       first_metric = List.first(metrics)
-      category = first_metric.category
+      category_id = first_metric.category_id
 
       # Update the display order for each metric
       new_order =
         ids
         |> Enum.with_index(1)
         |> Enum.map(fn {id, index} ->
-          # Extract the metric name from the id (format: "metric-{metric_name}")
-          metric = String.replace(id, "metric-", "")
-          %{metric: metric, display_order: index}
+          # Extract the metric ID from the id (format: "metric-{metric_id}")
+          metric_id = String.replace(id, "metric-", "")
+          {metric_id, _} = Integer.parse(metric_id)
+          %{metric_id: metric_id, display_order: index}
         end)
 
       # Save the new order
       socket = assign(socket, reordering: true)
 
-      case DisplayOrder.reorder_metrics(category, new_order) do
+      case DisplayOrder.reorder_metrics(category_id, new_order) do
         {:ok, _} ->
           # Refresh the metrics list
           ordered_data = DisplayOrder.get_ordered_metrics()
@@ -326,19 +382,21 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
     # Filter metrics by category
     filtered_metrics =
       metrics
-      |> Enum.filter(&(&1.category == category))
+      |> Enum.filter(&(&1.category_name == category))
 
     # Get unique groups for this category
     groups =
       filtered_metrics
-      |> Enum.map(& &1.group)
+      |> Enum.map(& &1.group_name)
+      |> Enum.reject(&is_nil/1)
+      |> Enum.reject(&(&1 == ""))
       |> Enum.uniq()
       |> Enum.sort()
 
     # Filter by group if selected
     filtered_metrics =
       if group && group != "" do
-        Enum.filter(filtered_metrics, &(&1.group == group))
+        Enum.filter(filtered_metrics, &(&1.group_name == group))
       else
         filtered_metrics
       end
@@ -355,29 +413,13 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
     ~H"""
     <div class="flex space-x-2">
       <.link
-        :if={@metric.source_type == "registry"}
-        navigate={~p"/admin2/metric_registry/show/#{@metric.source_id}"}
+        navigate={~p"/admin/metric_registry/display_order/show/#{@metric.id}"}
         class="text-blue-600 hover:text-blue-900"
       >
         Show
       </.link>
       <.link
-        :if={@metric.source_type == "registry"}
-        navigate={~p"/admin2/metric_registry/edit/#{@metric.source_id}"}
-        class="text-green-600 hover:text-green-900"
-      >
-        Edit
-      </.link>
-      <.link
-        :if={@metric.source_type != "registry"}
-        navigate={~p"/admin2/metric_registry/display_order/show/#{@metric.metric}"}
-        class="text-blue-600 hover:text-blue-900"
-      >
-        Show
-      </.link>
-      <.link
-        :if={@metric.source_type == "code"}
-        navigate={~p"/admin2/metric_registry/display_order/edit/#{@metric.metric}"}
+        navigate={~p"/admin/metric_registry/display_order/edit/#{@metric.id}"}
         class="text-green-600 hover:text-green-900"
       >
         Edit

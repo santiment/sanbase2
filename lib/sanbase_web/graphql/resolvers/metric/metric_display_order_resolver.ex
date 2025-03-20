@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.Resolvers.MetricDisplayOrderResolver do
-  alias Sanbase.Metric.DisplayOrder
+  alias Sanbase.Metric.UIMetadata.DisplayOrder
 
   def get_ordered_metrics(_root, _args, _resolution) do
     ordered_data = DisplayOrder.get_ordered_metrics()

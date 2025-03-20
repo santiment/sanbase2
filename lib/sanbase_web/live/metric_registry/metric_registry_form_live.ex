@@ -27,33 +27,6 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
 
     form = metric_registry |> Registry.changeset(%{}) |> to_form()
 
-    # Get all categories in order
-    ordered_metrics = Sanbase.Metric.DisplayOrder.all_ordered()
-
-    # Extract unique categories in the order they appear
-    categories =
-      ordered_metrics
-      |> Enum.map(& &1.category)
-      |> Enum.uniq()
-
-    # Group metrics by category and extract unique groups in order
-    groups_by_category =
-      ordered_metrics
-      |> Enum.group_by(& &1.category)
-      |> Enum.map(fn {category, metrics} ->
-        groups =
-          metrics
-          |> Enum.map(& &1.group)
-          |> Enum.uniq()
-
-        {category, groups}
-      end)
-      |> Map.new()
-
-    # Initialize groups for the current category
-    current_category = metric_registry.category || ""
-    groups_for_category = Map.get(groups_by_category, current_category, [])
-
     {:ok,
      socket
      |> assign(
@@ -67,10 +40,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
        suggestion: suggestion,
        notes: if(suggestion, do: suggestion.notes),
        form: form,
-       save_errors: [],
-       categories: categories,
-       groups_by_category: groups_by_category,
-       groups_for_category: groups_for_category
+       save_errors: []
      )}
   end
 
@@ -111,12 +81,12 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
     <div class="flex flex-col justify-center w-7/8">
       <div class="text-gray-800 text-2xl">
         <div :if={@live_action == :edit and not @is_updating_change_request}>
-          Edit <span class="text-blue-700">{@form.data.metric}</span>
+          Edit <span class="text-blue-700">{@metric_registry.metric}</span>
         </div>
 
         <div :if={@live_action == :edit and @is_updating_change_request}>
           Edit Change Request #{@update_change_request_id} for metric
-          <span class="text-blue-700">{@form.data.metric}</span>
+          <span class="text-blue-700">{@metric_registry.metric}</span>
         </div>
         <div
           :if={
@@ -134,7 +104,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
           }
           class="text-blue-700"
         >
-          Duplicating the metric {@form.data.metric}
+          Duplicating the metric {@metric_registry.metric}
         </div>
         <div :if={@live_action == :new and @is_duplicate_creation == true} class="text-sm">
           Some of the pre-filled values must be changed
@@ -256,15 +226,10 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
           type="textarea"
           id="input-parameters"
           field={@form[:parameters]}
-          value={Jason.encode!(@form.data.parameters)}
+          value={Jason.encode!(@metric_registry.parameters)}
           label="Parameters"
         />
 
-        <.metadata_input
-          form={@form}
-          categories={@categories}
-          groups_for_category={@groups_for_category}
-        />
         <.deprecation_input form={@form} />
         <div class="border border-gray-200 rounded-lg px-3 py-6 flex-row space-y-5">
           <span class="text-sm font-semibold leading-6 text-zinc-800">
@@ -284,61 +249,6 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
           {to_string(field) <> ": " <> inspect(reason)}
         </.error>
       </.simple_form>
-    </div>
-    """
-  end
-
-  def metadata_input(assigns) do
-    ~H"""
-    <div class="border border-gray-200 rounded-lg px-3 py-6">
-      <span class="text-sm font-semibold leading-6 text-zinc-800">
-        UI Metadata
-      </span>
-
-      <.input
-        type="select"
-        id="input-category"
-        field={@form[:category]}
-        label="Category"
-        options={@categories}
-        prompt="Select a category"
-        phx-change="category_changed"
-      />
-
-      <.input
-        type="select"
-        id="input-group"
-        field={@form[:group]}
-        label="Group"
-        options={@groups_for_category}
-        prompt="Select a group (optional)"
-      />
-
-      <.input type="text" id="input-label" field={@form[:label]} label="Label" />
-
-      <.input
-        type="select"
-        id="input-style"
-        field={@form[:style]}
-        label="Chart Style"
-        options={Sanbase.Metric.Registry.allowed_styles()}
-      />
-
-      <.input
-        type="select"
-        id="input-format"
-        field={@form[:format]}
-        label="Value Format"
-        options={["" | Sanbase.Metric.Registry.allowed_formats()]}
-      />
-
-      <.input
-        type="textarea"
-        id="input-description"
-        field={@form[:description]}
-        label="Description"
-        placeholder="Detailed description of what this metric measures and how it can be used"
-      />
     </div>
     """
   end
@@ -741,27 +651,6 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
      |> assign(
        form: form,
        save_errors: []
-     )}
-  end
-
-  @impl true
-  def handle_event("category_changed", %{"registry" => %{"category" => category}}, socket) do
-    # Get the groups for the selected category
-    groups = Map.get(socket.assigns.groups_by_category || %{}, category, [])
-
-    # Update the form with the new category
-    params = %{"category" => category}
-
-    form =
-      socket.assigns.metric_registry
-      |> Registry.changeset(params)
-      |> to_form(action: :validate)
-
-    {:noreply,
-     socket
-     |> assign(
-       form: form,
-       groups_for_category: groups
      )}
   end
 

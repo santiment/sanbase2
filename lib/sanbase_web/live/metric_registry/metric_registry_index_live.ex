@@ -483,7 +483,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
         <AvailableMetricsComponents.available_metrics_button
           icon="hero-list-bullet"
           text="UI Display Order"
-          href={~p"/admin2/metric_registry/display_order"}
+          href={~p"/admin/metric_registry/display_order"}
         />
       </div>
     </div>

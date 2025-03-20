@@ -513,17 +513,13 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
 
     A dashboard is holding together queries, each defining a
     Clickhouse SQL query and how to visualize it. The dashboard
-    usually has a topic it is about and the panels in it show
+    usually has a topic it is about and the queries in it show
     different types of information about that topic.
 
     The dashboard is created with its name, description, parameters and public
     status. Public dashboards are visible to all users.
 
-    In order to manipulate the panels of the dashboard, refer to the
-    createDashboardPanel/updateDashboardPanel/removeDashboardPanel
-    mutations.
-
-    Dashboard holds the global parameters that are shared by all panels.
+    Dashboard holds the global parameters that are shared by all queries
     """
     field :create_dashboard, :dashboard do
       arg(:name, non_null(:string))
@@ -538,10 +534,6 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
 
     @desc ~s"""
     Update the name, description, parameters or public status of a dashboard.
-
-    In order to manipulate the panels of the dashboard, refer to the
-    createDashboardPanel/updateDashboardPanel/removeDashboardPanel
-    mutations.
     """
     field :update_dashboard, :dashboard do
       arg(:id, non_null(:integer))

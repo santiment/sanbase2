@@ -75,9 +75,9 @@ defmodule Sanbase.Notifications.EmailNotifier do
     notifications
     |> Enum.reduce(%{}, fn notification, acc ->
       metrics = (acc["metrics_list"] || []) ++ (notification.params["metrics_list"] || [])
-      metrics_with_docs = add_docs_to_metrics(metrics, metric_docs_map)
+      metrics = Enum.map(metrics, &to_string/1)
 
-      acc = Map.put(acc, "metrics_list", metrics_with_docs)
+      acc = Map.put(acc, "metrics_list", metrics)
       acc = Map.put(acc, "metrics_docs_map", metric_docs_map)
 
       case notification.params["scheduled_at"] do
@@ -115,11 +115,6 @@ defmodule Sanbase.Notifications.EmailNotifier do
       [main_entry | alias_entries]
     end)
     |> Map.new()
-  end
-
-  defp add_docs_to_metrics(metrics, metric_docs_map) do
-    metrics
-    |> Enum.map(&to_string/1)
   end
 
   defp get_doc_links(docs) when is_list(docs) do

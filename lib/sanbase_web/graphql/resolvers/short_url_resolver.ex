@@ -1,8 +1,5 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ShortUrlResolver do
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
-  import Absinthe.Resolution.Helpers
-
-  alias SanbaseWeb.Graphql.SanbaseDataloader
 
   require Logger
 

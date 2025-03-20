@@ -209,7 +209,7 @@ defmodule Sanbase.Dashboards.Dashboard do
       where: ^where,
       preload: ^@preload
     )
-    |> paginate(opts)
+    |> maybe_paginate(opts)
     |> maybe_preload(opts)
   end
 
@@ -307,12 +307,18 @@ defmodule Sanbase.Dashboards.Dashboard do
     |> select([ul], ul.id)
   end
 
-  defp paginate(query, opts) do
-    {limit, offset} = Sanbase.Utils.Transform.opts_to_limit_offset(opts)
+  defp maybe_paginate(query, opts) do
+    case Keyword.get(opts, :paginate?, true) do
+      true ->
+        {limit, offset} = Sanbase.Utils.Transform.opts_to_limit_offset(opts)
 
-    query
-    |> limit(^limit)
-    |> offset(^offset)
+        query
+        |> limit(^limit)
+        |> offset(^offset)
+
+      false ->
+        query
+    end
   end
 
   defp maybe_preload(query, opts) do

@@ -89,7 +89,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     end
 
     field :dashboards, list_of(:dashboard) do
-      cache_resolve(&QueriesResolver.get_user_public_dashboards/3, ttl: 60)
+      cache_resolve(&QueriesResolver.get_all_user_public_dashboards/3, ttl: 60)
     end
   end
 
@@ -229,7 +229,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     end
 
     field :dashboards, list_of(:dashboard) do
-      cache_resolve(&QueriesResolver.get_user_dashboards/3, ttl: 60)
+      cache_resolve(&QueriesResolver.get_all_current_user_dashboards/3, ttl: 60)
     end
 
     field :subscriptions, list_of(:subscription_plan) do

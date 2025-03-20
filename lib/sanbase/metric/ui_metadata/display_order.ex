@@ -74,16 +74,6 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
     ])
     |> validate_required([:category_id, :display_order])
     |> validate_inclusion(:source_type, ["registry", "code"])
-    |> validate_code_module()
-  end
-
-  # Ensure code_module is either nil or a valid string
-  defp validate_code_module(changeset) do
-    case get_change(changeset, :code_module) do
-      nil -> changeset
-      module when is_binary(module) -> changeset
-      _other -> put_change(changeset, :code_module, nil)
-    end
   end
 
   def create(attrs) do
@@ -480,13 +470,6 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
       # If there's an error (like missing columns in the registry table), default to code
       _ -> {"code", nil, nil}
     end
-  end
-
-  # Helper function to get value from registry if available, otherwise from display_order
-  defp get_preferred_value(registry_metric, field, display_order_value) do
-    registry_value = get_in(registry_metric || %{}, [Access.key(field)])
-
-    if registry_value, do: registry_value, else: display_order_value
   end
 
   @doc """

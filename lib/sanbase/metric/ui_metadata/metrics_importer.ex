@@ -1,6 +1,6 @@
 defmodule Sanbase.Metric.UIMetadata.MetricsImporter do
   @moduledoc """
-  Module for importing metrics metadata from JSON files.
+  Module for importing metrics UI metadata from JSON files.
 
   This module handles the entire process of importing metrics data from a JSON file,
   including creating necessary categories and groups, and reporting success/failure statistics.
@@ -265,7 +265,7 @@ defmodule Sanbase.Metric.UIMetadata.MetricsImporter do
   # Log duplicates
   defp log_duplicates(dupes) do
     if map_size(dupes) > 0 do
-      Logger.warn("Found #{map_size(dupes)} duplicate metrics in JSON file:")
+      Logger.warning("Found #{map_size(dupes)} duplicate metrics in JSON file:")
 
       Enum.each(dupes, fn {metric_name, occurrences} ->
         locations =
@@ -273,7 +273,7 @@ defmodule Sanbase.Metric.UIMetadata.MetricsImporter do
             "#{c}/#{g || "no group"}"
           end)
 
-        Logger.warn("  - #{metric_name} appears in: #{locations}")
+        Logger.warning("  - #{metric_name} appears in: #{locations}")
       end)
     end
 

@@ -4087,14 +4087,22 @@
       {
         "category": "Social",
         "label": "Active social users (Telegram)",
-        "metric": "social_active_users_telegram",
-        "style": "line"
+        "metric": "social_active_users",
+        "style": "line",
+        "args": {
+          "source": "telegram",
+          "channel": "telegram"
+        }
       },
       {
         "category": "Social",
         "label": "Active social users (Twitter)",
-        "metric": "social_active_users_twitter",
-        "style": "line"
+        "metric": "social_active_users",
+        "style": "line",
+        "args": {
+          "source": "twitter_crypto",
+          "channel": "twitter"
+        }
       },
       {
         "category": "Social",

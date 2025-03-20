@@ -98,6 +98,7 @@ defmodule SanbaseWeb.Router do
         live("/display_order", MetricDisplayOrderLive)
         live("/display_order/show/:metric_id", MetricDisplayOrderShowLive)
         live("/display_order/edit/:metric_id", MetricDisplayOrderFormLive, :edit)
+        live("/display_order/new", MetricDisplayOrderNewLive, :new)
         live("/categories", CategoryLive.Index)
         live("/categories/new", CategoryLive.Form, :new)
         live("/categories/edit/:id", CategoryLive.Form, :edit)

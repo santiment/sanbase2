@@ -23,7 +23,10 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
        selected_category: first_category_name,
        selected_group: nil,
        filtered_metrics: [],
-       reordering: false
+       reordering: false,
+       search_query: "",
+       search_results: [],
+       highlighted_metric_id: nil
      )
      |> filter_metrics()}
   end
@@ -33,9 +36,16 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
     category = params["category"] || socket.assigns.selected_category
     group = params["group"]
 
+    highlighted_metric_id =
+      params["highlight_metric"] && String.to_integer(params["highlight_metric"])
+
     {:noreply,
      socket
-     |> assign(selected_category: category, selected_group: group)
+     |> assign(
+       selected_category: category,
+       selected_group: group,
+       highlighted_metric_id: highlighted_metric_id
+     )
      |> filter_metrics()}
   end
 
@@ -49,14 +59,22 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
 
       <.navigation />
 
+      <.search_box search_query={@search_query} />
+
       <.filters
         categories={@categories}
         selected_category={@selected_category}
         groups={@groups}
         selected_group={@selected_group}
+        search_query={@search_query}
       />
 
-      <.metrics_table filtered_metrics={@filtered_metrics} />
+      <.search_results :if={@search_results != []} search_results={@search_results} />
+
+      <.metrics_table
+        filtered_metrics={@filtered_metrics}
+        highlighted_metric_id={@highlighted_metric_id}
+      />
 
       <.modal :if={@reordering} id="reordering-modal" show>
         <.header>Reordering Metrics</.header>
@@ -87,6 +105,11 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
         href={~p"/admin/metric_registry/groups"}
         icon="hero-user-group"
       />
+      <AvailableMetricsComponents.available_metrics_button
+        text="New Metric Display Order"
+        href={~p"/admin/metric_registry/display_order/new"}
+        icon="hero-plus"
+      />
     </div>
     """
   end
@@ -95,6 +118,7 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
   attr :selected_category, :string, required: true
   attr :groups, :list, required: true
   attr :selected_group, :any, required: true
+  attr :search_query, :string, required: true
 
   def filters(assigns) do
     ~H"""
@@ -122,11 +146,115 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
           />
         </.simple_form>
       </div>
+
+      <div :if={has_active_filters?(assigns)} class="flex items-end">
+        <button
+          phx-click="reset_filters"
+          class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
+        >
+          Reset Filters
+        </button>
+      </div>
+    </div>
+    """
+  end
+
+  # Add this helper function to determine if there are active filters
+  defp has_active_filters?(assigns) do
+    default_category =
+      if length(assigns.categories) > 0, do: List.first(assigns.categories).name, else: nil
+
+    assigns.selected_category != default_category ||
+      assigns.selected_group != nil ||
+      (assigns.search_query && String.trim(assigns.search_query) != "")
+  end
+
+  attr :search_query, :string, required: true
+
+  def search_box(assigns) do
+    ~H"""
+    <div class="mb-4">
+      <form phx-change="global_search" class="flex">
+        <input
+          type="text"
+          name="search_query"
+          value={@search_query}
+          placeholder="Search for metrics across all categories..."
+          phx-debounce="300"
+          class="flex-1 rounded-l-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+        />
+        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700">
+          Search
+        </button>
+      </form>
+    </div>
+    """
+  end
+
+  attr :search_results, :list, required: true
+
+  def search_results(assigns) do
+    ~H"""
+    <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+      <h3 class="font-medium text-lg mb-2">Search Results</h3>
+      <div class="overflow-x-auto max-h-60 overflow-y-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-100 sticky top-0">
+            <tr>
+              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Metric
+              </th>
+              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Label
+              </th>
+              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Category
+              </th>
+              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Group
+              </th>
+              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Action
+              </th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <%= for result <- @search_results do %>
+              <tr>
+                <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                  {result.metric}
+                </td>
+                <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                  {result.ui_human_readable_name}
+                </td>
+                <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                  {result.category_name}
+                </td>
+                <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                  {result.group_name}
+                </td>
+                <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                  <button
+                    phx-click="focus_metric"
+                    phx-value-id={result.id}
+                    phx-value-category={result.category_name}
+                    phx-value-group={if result.group_name, do: result.group_name, else: ""}
+                    class="text-blue-600 hover:text-blue-900"
+                  >
+                    Focus
+                  </button>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
     </div>
     """
   end
 
   attr :filtered_metrics, :list, required: true
+  attr :highlighted_metric_id, :integer, default: nil
 
   def metrics_table(assigns) do
     ~H"""
@@ -190,6 +318,7 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
             metric={metric}
             index={index}
             total_count={length(@filtered_metrics)}
+            highlighted={@highlighted_metric_id && @highlighted_metric_id == metric.id}
           />
         </tbody>
       </table>
@@ -200,24 +329,29 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
   attr :metric, :map, required: true
   attr :index, :integer, required: true
   attr :total_count, :integer, required: true
+  attr :highlighted, :boolean, default: false
 
   def metric_row(assigns) do
     ~H"""
-    <tr id={"metric-#{@metric.id}"} data-id={@metric.id} class="hover:bg-gray-50">
+    <tr
+      id={"metric-#{@metric.id}"}
+      data-id={@metric.id}
+      class={["hover:bg-gray-50", @highlighted && "bg-yellow-100"]}
+    >
       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
         <div class="flex items-center">
           <button
             phx-click="move-up"
-            phx-value-metric-id={@metric.id}
+            phx-value-metric_id={@metric.id}
             class="mr-2"
             disabled={@index == 0}
           >
             <.icon name="hero-arrow-up" class="w-4 h-4" />
           </button>
-          <span>{@index + 1}</span>
+          <span>{@metric.display_order}</span>
           <button
             phx-click="move-down"
-            phx-value-metric-id={@metric.id}
+            phx-value-metric_id={@metric.id}
             class="ml-2"
             disabled={@index == @total_count - 1}
           >
@@ -274,7 +408,11 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
      )}
   end
 
-  def handle_event("move-up", %{"metric_id" => metric_id}, socket) do
+  def handle_event("move-up", params, socket) do
+    dbg(params)
+    # Extract metric_id regardless of format (could be "metric_id" or "metric-id")
+    metric_id = params["metric_id"] || params["metric-id"]
+
     metrics = socket.assigns.filtered_metrics
     {id, _} = Integer.parse(metric_id)
     index = Enum.find_index(metrics, &(&1.id == id))
@@ -302,7 +440,10 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
     end
   end
 
-  def handle_event("move-down", %{"metric_id" => metric_id}, socket) do
+  def handle_event("move-down", params, socket) do
+    # Extract metric_id regardless of format (could be "metric_id" or "metric-id")
+    metric_id = params["metric_id"] || params["metric-id"]
+
     metrics = socket.assigns.filtered_metrics
     {id, _} = Integer.parse(metric_id)
     index = Enum.find_index(metrics, &(&1.id == id))
@@ -331,21 +472,69 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
   end
 
   def handle_event("reorder", %{"ids" => ids}, socket) do
-    metrics = socket.assigns.filtered_metrics
+    filtered_metrics = socket.assigns.filtered_metrics
 
-    if length(metrics) > 0 do
-      first_metric = List.first(metrics)
+    if length(filtered_metrics) > 0 do
+      first_metric = List.first(filtered_metrics)
       category_id = first_metric.category_id
 
-      # Update the display order for each metric
-      new_order =
+      # Get all metrics in this category, not just the filtered ones
+      all_category_metrics =
+        socket.assigns.metrics
+        |> Enum.filter(&(&1.category_id == category_id))
+        |> Enum.sort_by(& &1.display_order)
+
+      # Map of current display orders by metric_id for all metrics in the category
+      current_orders = Map.new(all_category_metrics, fn m -> {m.id, m.display_order} end)
+
+      # Get the filtered metrics in their current display order
+      filtered_metrics_sorted = Enum.sort_by(filtered_metrics, & &1.display_order)
+      filtered_ids = Enum.map(filtered_metrics, & &1.id)
+
+      # Extract the new order of the filtered metrics from the drag-and-drop
+      new_filtered_order =
         ids
-        |> Enum.with_index(1)
-        |> Enum.map(fn {id, index} ->
-          # Extract the metric ID from the id (format: "metric-{metric_id}")
+        |> Enum.map(fn id ->
           metric_id = String.replace(id, "metric-", "")
           {metric_id, _} = Integer.parse(metric_id)
-          %{metric_id: metric_id, display_order: index}
+          metric_id
+        end)
+
+      # Get the original display order values to preserve
+      original_orders =
+        filtered_metrics_sorted
+        |> Enum.map(& &1.display_order)
+        |> Enum.sort()
+
+      # Create a mapping of new position to original display_order value
+      position_to_order =
+        Enum.zip(1..length(original_orders), original_orders)
+        |> Map.new()
+
+      # Create mapping of filtered metric IDs to their new display orders
+      # This preserves the original display_order values but with the new ordering
+      filtered_positions =
+        new_filtered_order
+        |> Enum.with_index(1)
+        |> Enum.map(fn {id, idx} ->
+          {id, position_to_order[idx]}
+        end)
+        |> Map.new()
+
+      # 2. Create the complete new order for all metrics in the category
+      new_order =
+        all_category_metrics
+        |> Enum.map(fn metric ->
+          new_order =
+            if metric.id in filtered_ids do
+              # Use the new position for filtered metrics while preserving original values
+              Map.get(filtered_positions, metric.id)
+            else
+              # Keep the same display order for non-filtered metrics
+              current_orders[metric.id]
+            end
+
+          %{metric_id: metric.id, display_order: new_order}
         end)
 
       # Save the new order
@@ -374,6 +563,80 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
     else
       {:noreply, socket}
     end
+  end
+
+  @impl true
+  def handle_event("delete_metric", %{"id" => id}, socket) do
+    {id, _} = Integer.parse(id)
+
+    # Find the metric to delete
+    case DisplayOrder.by_id(id) do
+      nil ->
+        {:noreply, socket |> put_flash(:error, "Metric not found")}
+
+      display_order ->
+        # Try to delete the metric
+        case DisplayOrder.delete(display_order) do
+          {:ok, _} ->
+            # Get updated metrics list after deletion
+            ordered_data = DisplayOrder.get_ordered_metrics()
+            metrics = ordered_data.metrics
+
+            {:noreply,
+             socket
+             |> put_flash(:info, "Metric display order deleted successfully")
+             |> assign(metrics: metrics)
+             |> filter_metrics()}
+
+          {:error, changeset} ->
+            {:noreply,
+             socket
+             |> put_flash(:error, "Error deleting metric: #{inspect(changeset.errors)}")}
+        end
+    end
+  end
+
+  @impl true
+  def handle_event("global_search", %{"search_query" => query}, socket) do
+    if String.length(query) >= 2 do
+      # Search across all metrics regardless of category
+      search_results =
+        socket.assigns.metrics
+        |> Enum.filter(fn metric ->
+          downcased_query = String.downcase(query)
+
+          String.contains?(String.downcase(metric.metric || ""), downcased_query) ||
+            String.contains?(
+              String.downcase(metric.ui_human_readable_name || ""),
+              downcased_query
+            )
+        end)
+        # Limit results to avoid overwhelming the UI
+        |> Enum.take(20)
+
+      {:noreply, assign(socket, search_query: query, search_results: search_results)}
+    else
+      {:noreply, assign(socket, search_query: query, search_results: [])}
+    end
+  end
+
+  @impl true
+  def handle_event("focus_metric", %{"id" => id, "category" => category} = params, socket) do
+    # Convert id to integer
+    {id, _} = Integer.parse(id)
+
+    # Get group value, default to nil if not present
+    group = params["group"]
+
+    # Navigate to the category and group with the metric highlighted
+    target_url =
+      if group && group != "" do
+        ~p"/admin/metric_registry/display_order?category=#{category}&group=#{group}&highlight_metric=#{id}"
+      else
+        ~p"/admin/metric_registry/display_order?category=#{category}&highlight_metric=#{id}"
+      end
+
+    {:noreply, push_patch(socket, to: target_url)}
   end
 
   defp filter_metrics(socket) do
@@ -424,7 +687,34 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
       >
         Edit
       </.link>
+      <.link
+        phx-click="delete_metric"
+        phx-value-id={@metric.id}
+        data-confirm="Are you sure you want to delete this metric display order? This action cannot be undone."
+        class="text-red-600 hover:text-red-900 cursor-pointer"
+      >
+        Delete
+      </.link>
     </div>
     """
+  end
+
+  @impl true
+  def handle_event("reset_filters", _params, socket) do
+    # Get the first category as default (just like in mount)
+    first_category_name =
+      if length(socket.assigns.categories) > 0,
+        do: List.first(socket.assigns.categories).name,
+        else: nil
+
+    {:noreply,
+     socket
+     |> assign(
+       selected_category: first_category_name,
+       selected_group: nil,
+       search_query: "",
+       search_results: []
+     )
+     |> push_patch(to: ~p"/admin/metric_registry/display_order")}
   end
 end

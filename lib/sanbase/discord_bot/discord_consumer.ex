@@ -3,17 +3,11 @@ defmodule Sanbase.DiscordConsumer do
 
   require Logger
 
-  alias Sanbase.DiscordBot.LegacyCommandHandler
   alias Sanbase.DiscordBot.CommandHandler
-  alias Sanbase.DiscordBot.CodeHandler
   alias Nostrum.Struct.Interaction
   alias Nostrum.Struct.ApplicationCommandInteractionData
 
   @commands [
-    %{
-      name: "help",
-      description: "Show help info and commands"
-    },
     %{
       name: "summary",
       description: "Summarize a channel or thread",
@@ -45,10 +39,6 @@ defmodule Sanbase.DiscordConsumer do
       description: "Run new query"
     },
     %{
-      name: "list",
-      description: "List pinned queries"
-    },
-    %{
       name: "chart",
       description: "Create a Sanbase metric chart",
       options: [
@@ -67,18 +57,6 @@ defmodule Sanbase.DiscordConsumer do
           autocomplete: true
         }
       ]
-    },
-    %{
-      name: "code",
-      description: "Answer question by generating code",
-      options: [
-        %{
-          type: 3,
-          name: "question",
-          description: "Ask a question",
-          required: true
-        }
-      ]
     }
   ]
 
@@ -86,9 +64,6 @@ defmodule Sanbase.DiscordConsumer do
 
   def handle_event({:MESSAGE_CREATE, msg, _ws_state}) do
     cond do
-      LegacyCommandHandler.command?(msg.content) ->
-        do_handle_command(msg)
-
       msg_contains_bot_mention?(msg) ->
         warm_up(msg)
 
@@ -116,41 +91,24 @@ defmodule Sanbase.DiscordConsumer do
         _ws_state
       })
       when command in [
-             "query",
-             "help",
-             "list",
-             "chart",
-             "code",
              "summary"
            ] do
     warm_up(interaction)
 
     case command do
-      cmd when cmd in ["code", "summary"] ->
-        case CodeHandler.discord_metadata(interaction) do
+      cmd when cmd in ["summary"] ->
+        case CommandHandler.discord_metadata(interaction) do
           %{user_is_team_member: true} = metadata ->
-            CodeHandler.handle_interaction(command, interaction, metadata)
-            |> handle_response(cmd, interaction, retry: false)
+            CommandHandler.handle_interaction(command, interaction, metadata)
+            |> handle_response(cmd, interaction, metadata, retry: false)
 
           _ ->
-            CodeHandler.access_denied(interaction)
+            CommandHandler.access_denied(interaction)
         end
 
-      cmd when cmd in ["query", "help", "list", "chart"] ->
-        LegacyCommandHandler.handle_interaction(command, interaction)
-        |> handle_response(command, interaction)
+      _ ->
+        :noop
     end
-  end
-
-  def handle_event({
-        :INTERACTION_CREATE,
-        %Interaction{data: %ApplicationCommandInteractionData{custom_id: "run"}} = interaction,
-        _ws_state
-      }) do
-    warm_up(interaction)
-
-    LegacyCommandHandler.handle_interaction("run", interaction)
-    |> handle_response("run", interaction)
   end
 
   def handle_event({
@@ -163,32 +121,9 @@ defmodule Sanbase.DiscordConsumer do
     [command, id] = String.split(custom_id, "_")
 
     cond do
-      command in ["rerun", "pin", "unpin", "show"] ->
-        panel_id = id
-
-        LegacyCommandHandler.handle_interaction(command, interaction, panel_id)
-        |> handle_response({command, panel_id}, interaction)
-
       command in ["up", "down"] ->
         thread_id = id
         CommandHandler.handle_interaction(command, interaction, thread_id)
-
-      command in [
-        "show-program",
-        "show-program-result",
-        "change-program-modal",
-        "generate-program",
-        "save-program",
-        "program-changes"
-      ] ->
-        case CodeHandler.discord_metadata(interaction) do
-          %{user_is_team_member: true} = metadata ->
-            CodeHandler.handle_interaction(command, interaction, id, metadata)
-            |> handle_response({command, id}, interaction)
-
-          _ ->
-            CodeHandler.access_denied(interaction)
-        end
 
       true ->
         :noop
@@ -257,53 +192,12 @@ defmodule Sanbase.DiscordConsumer do
     end
   end
 
-  defp handle_msg_response(response, command, msg) do
-    params = %{
-      channel: to_string(msg.channel_id),
-      guild: to_string(msg.guild_id),
-      discord_user_id: to_string(msg.author.id),
-      discord_user_handle: msg.author.username <> msg.author.discriminator
-    }
-
-    case response do
-      {:ok, _} ->
-        Logger.info("MSG COMMAND SUCCESS #{command} #{msg.content} #{inspect(params)}")
-
-      :ok ->
-        Logger.info("MSG COMMAND SUCCESS #{command} #{msg.content} #{inspect(params)}")
-
-      {:error, error} ->
-        Logger.error(
-          "MSG COMMAND ERROR #{command} #{msg.content} #{inspect(params)} #{inspect(error)}"
-        )
-    end
+  defp retry(command, interaction, metadata) do
+    CommandHandler.handle_interaction(command, interaction, metadata)
+    |> handle_response(command, interaction, metadata, retry: false)
   end
 
-  defp do_handle_command(msg) do
-    with {:ok, name, sql} <- LegacyCommandHandler.parse_message_command(msg.content) do
-      LegacyCommandHandler.handle_command("run", name, sql, msg)
-      |> handle_msg_response("run", msg)
-    else
-      {:error, :invalid_command} ->
-        LegacyCommandHandler.handle_command("invalid_command", msg)
-        LegacyCommandHandler.handle_command("help", msg)
-
-      false ->
-        :ignore
-    end
-  end
-
-  defp retry({command, panel_id}, interaction) do
-    LegacyCommandHandler.handle_interaction(command, interaction, panel_id)
-    |> handle_response(command, interaction, retry: false)
-  end
-
-  defp retry(command, interaction) do
-    LegacyCommandHandler.handle_interaction(command, interaction)
-    |> handle_response(command, interaction, retry: false)
-  end
-
-  defp handle_response(response, command, interaction, opts \\ []) do
+  defp handle_response(response, command, interaction, metadata, opts) do
     params = %{
       channel: to_string(interaction.channel_id),
       guild: to_string(interaction.guild_id),
@@ -327,7 +221,7 @@ defmodule Sanbase.DiscordConsumer do
         Logger.error("COMMAND ERROR #{command_insp} #{inspect(params)} #{inspect(error)}")
 
         if Keyword.get(opts, :retry, true) do
-          retry(command, interaction)
+          retry(command, interaction, metadata)
         end
 
       {:error, error} ->

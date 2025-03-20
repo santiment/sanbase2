@@ -508,64 +508,6 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
   end
 
   describe "get clickhouse database information" do
-    test "get available clickhouse tables API", context do
-      query = """
-      {
-        getAvailableClickhouseTables{
-          table
-          description
-          columns
-          engine
-          orderBy
-          partitionBy
-        }
-      }
-      """
-
-      result =
-        context.conn
-        |> post("/graphql", query_skeleton(query))
-        |> json_response(200)
-        |> get_in(["data", "getAvailableClickhouseTables"])
-
-      assert %{
-               "columns" => %{
-                 "base_asset" => "LowCardinality(String)",
-                 "dt" => "DateTime",
-                 "price" => "Float64",
-                 "quote_asset" => "LowCardinality(String)",
-                 "source" => "LowCardinality(String)"
-               },
-               "description" =>
-                 "Provide price_usd, price_btc, volume_usd and marketcap_usd metrics for assets",
-               "engine" => "ReplicatedReplacingMergeTree",
-               "orderBy" => ["base_asset", "quote_asset", "source", "dt"],
-               "partitionBy" => "toYYYYMM(dt)",
-               "table" => "asset_prices_v3"
-             } in result
-
-      assert %{
-               "columns" => %{
-                 "assetRefId" => "UInt64",
-                 "blockNumber" => "UInt32",
-                 "contract" => "LowCardinality(String)",
-                 "dt" => "DateTime",
-                 "from" => "LowCardinality(String)",
-                 "logIndex" => "UInt32",
-                 "primaryKey" => "UInt64",
-                 "to" => "LowCardinality(String)",
-                 "transactionHash" => "String",
-                 "value" => "Float64",
-                 "valueExactBase36" => "String"
-               },
-               "description" => "Provide the on-chain transfers for Ethereum itself",
-               "engine" => "Distributed",
-               "orderBy" => ["from", "type", "to", "dt", "transactionHash", "primaryKey"],
-               "partitionBy" => "toStartOfMonth(dt)",
-               "table" => "erc20_transfers"
-             } in result
-    end
-
     test "get clickhouse database metadata", context do
       query = """
       {

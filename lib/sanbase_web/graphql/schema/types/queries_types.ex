@@ -106,8 +106,6 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
     # Virtual view field
     field(:views, :integer)
 
-    # New: Queries. This is replacing the :panels
-    # list from Queries 1.0
     field(:queries, list_of(:sql_query))
 
     field(:text_widgets, list_of(:text_widget))
@@ -135,8 +133,7 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
   end
 
   object :dashboard_for_lists do
-    # Do not allow fetching queries/panels when a list
-    # of dashboards is used.
+    # Do not allow fetching queries when a list of dashboards is used.
 
     field(:id, non_null(:integer))
     field(:name, non_null(:string))
@@ -182,8 +179,7 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
   Get memory/duration/credits/etc. details about an
   executed clickhouse query.
 
-  Every computation (from a panel or a raw query) generates
-  a clickhouse_query_id that uniquly identifies that exact
+  Every computation generates a clickhouse_query_id that uniquly identifies that exact
   query run. It can be used to get the details about a
   query execution - how much memory it used, how long it run,
   how many credits were spent running this query, etc.

@@ -163,9 +163,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     querying_user_id = get_in(resolution.context.auth, [:current_user, Access.key(:id)])
 
     with {:ok, dashboard} <- Dashboards.get_dashboard(id, querying_user_id) do
-      # For backwards compatibility, properly provide the panels.
-      # The Frontend will migrate to queries once they detect panels
-      dashboard = atomize_dashboard_panels_sql_keys(dashboard)
       {:ok, dashboard}
     end
   end
@@ -191,14 +188,30 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     end
   end
 
-  def get_user_public_dashboards(
+  def get_all_current_user_dashboards(
         _root,
-        %{page: page, page_size: page_size} = args,
+        _args,
         resolution
       ) do
     querying_user_id = get_in(resolution.context.auth, [:current_user, Access.key(:id)])
-    queried_user_id = Map.get(args, :user_id, querying_user_id)
 
+    if is_nil(querying_user_id) do
+      {:error,
+       "Error getting current user dashboards: the query is not executed by a logged in user."}
+    else
+      Dashboards.user_dashboards(
+        querying_user_id,
+        querying_user_id,
+        paginated?: false
+      )
+    end
+  end
+
+  def get_all_user_public_dashboards(
+        %Sanbase.Accounts.User{id: queried_user_id},
+        _args,
+        _resolution
+      ) do
     if is_nil(queried_user_id) do
       {:error,
        "Error getting user dashboards: neither userId is provided, nor the query is executed by a logged in user."}
@@ -206,10 +219,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
       Dashboards.user_dashboards(
         queried_user_id,
         # The public dashboards are those seen by anonymous users
-        # TODO: Maybe rework
         _querying_user_id = nil,
-        page: page,
-        page_size: page_size
+        paginate?: false
       )
     end
   end
@@ -549,38 +560,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
 
   def generate_title_by_query(_root, %{sql_query_text: sql_query_text}, _resolution) do
     Sanbase.OpenAI.generate_from_sql(sql_query_text)
-  end
-
-  def atomize_dashboard_panels_sql_keys(struct) do
-    panels = Enum.map(struct.panels, &atomize_panel_sql_keys/1)
-
-    struct
-    |> Map.put(:panels, panels)
-  end
-
-  def atomize_panel_sql_keys(panel) do
-    case panel do
-      %{sql: %{} = sql} ->
-        atomized_sql =
-          Map.new(sql, fn
-            {k, v} when is_binary(k) ->
-              # Ignore old, no longer existing keys like san_query_id
-              try do
-                {String.to_existing_atom(k), v}
-              rescue
-                _ -> {nil, nil}
-              end
-
-            {k, v} ->
-              {k, v}
-          end)
-          |> Map.delete(nil)
-
-        %{panel | sql: atomized_sql}
-
-      panel ->
-        panel
-    end
   end
 
   # Private functions

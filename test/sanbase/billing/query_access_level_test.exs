@@ -173,7 +173,13 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :run_raw_sql_query,
           :run_sql_query,
           :get_cached_query_executions,
-          :check_sanr_nft_subscription_eligibility
+          :check_sanr_nft_subscription_eligibility,
+          # UI Metrics metadata queries
+          :get_categories_and_groups,
+          :get_metrics_by_category,
+          :get_metrics_by_category_and_group,
+          :get_ordered_metrics,
+          :get_recently_added_metrics
         ]
         |> Enum.sort()
 

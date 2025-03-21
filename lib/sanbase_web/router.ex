@@ -95,6 +95,16 @@ defmodule SanbaseWeb.Router do
         live("/sync", MetricRegistrySyncLive, :new)
         live("/sync_runs", MetricRegistrySyncRunsLive, :new)
         live("/sync/:sync_type/:uuid", MetricRegistrySyncRunDetailsLive, :new)
+        live("/display_order", MetricDisplayOrderLive)
+        live("/display_order/show/:metric_id", MetricDisplayOrderShowLive)
+        live("/display_order/edit/:metric_id", MetricDisplayOrderFormLive, :edit)
+        live("/display_order/new", MetricDisplayOrderNewLive, :new)
+        live("/categories", CategoryLive.Index)
+        live("/categories/new", CategoryLive.Form, :new)
+        live("/categories/edit/:id", CategoryLive.Form, :edit)
+        live("/groups", GroupLive.Index)
+        live("/groups/new", GroupLive.Form, :new)
+        live("/groups/edit/:id", GroupLive.Form, :edit)
       end
     end
 

@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import the metric metadata styles */
+@import "./metric_metadata.css";
+
 .table-responsive {
   display: block;
   width: 100%;

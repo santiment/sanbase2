@@ -83,6 +83,10 @@ defmodule Sanbase.Metric.Transform do
             close: close
           }
         }
+
+      data ->
+        IO.inspect(data, label: "-----------------")
+        data
     end)
   end
 end

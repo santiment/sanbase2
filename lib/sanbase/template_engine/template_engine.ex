@@ -196,6 +196,12 @@ defmodule Sanbase.TemplateEngine do
 
                 case modifier do
                   "inline" ->
+                    if not Regex.match?(~r/[a-zA-Z0-9_]/, value) do
+                      raise ArgumentError,
+                        message:
+                          "When inlining in a query, the value can only contain letters, numbers and _"
+                    end
+
                     template_acc = String.replace(template_acc, capture_map.key, value)
                     {template_acc, args_acc, errors, position}
 
@@ -244,6 +250,9 @@ defmodule Sanbase.TemplateEngine do
         {:error, error_str}
     end
   end
+
+  @ch_types ["Bool", "String", "DateTime64", "UInt8", "UInt64", "Int64", "Float64", "Array"]
+  def ch_types(), do: @ch_types
 
   defp ch_type_of(value) do
     cond do

@@ -47,23 +47,31 @@ defmodule Sanbase.ChRepo do
   @spec query_transform(String.t(), list(), (list() -> any())) ::
           {:ok, any()} | {:error, String.t()}
   def query_transform(%Sanbase.Clickhouse.Query{} = query, transform_fn) do
+    query = Sanbase.Clickhouse.Query.put_format(query, nil)
+
     with {:ok, %{sql: sql, args: args}} <- Sanbase.Clickhouse.Query.get_sql_args_v2(query) do
-      IO.inspect({sql, args})
       query_transform(sql, args, transform_fn)
     end
   end
 
   def query_transform(query, args, transform_fn) do
-    case execute_query_transform(query, args) do
-      {:ok, result} ->
-        {:ok, Enum.map(result.rows, transform_fn)}
+    IO.inspect("EXECUTING.....")
 
-      {:error, error} ->
-        {:error, error}
+    try do
+      case execute_query_transform(query, args) do
+        {:ok, result} ->
+          IO.inspect(result, label: "__________________________________")
+          {:ok, Enum.map(result.rows, transform_fn)}
+
+        {:error, error} ->
+          {:error, error}
+      end
+    rescue
+      e ->
+        IO.inspect({"================", e, Exception.message(e)})
+        log_and_return_error_from_exception(e, "query_transform/3", __STACKTRACE__)
     end
-  rescue
-    e ->
-      log_and_return_error_from_exception(e, "query_transform/3", __STACKTRACE__)
+    |> dbg()
   end
 
   @doc ~s"""
@@ -120,13 +128,13 @@ defmodule Sanbase.ChRepo do
   end
 
   def query_reduce(query, args, init, reducer) do
-    ordered_params = order_params(query, args)
-    sanitized_query = sanitize_query(query)
+    # ordered_params = order_params(query, args)
+    # sanitized_query = sanitize_query(query)
 
-    maybe_store_executed_clickhouse_sql(sanitized_query, ordered_params)
-    maybe_print_interpolated_query(sanitized_query, ordered_params)
+    # maybe_store_executed_clickhouse_sql(query, args)
+    # maybe_print_interpolated_query(query, args)
 
-    case __MODULE__.query(sanitized_query, ordered_params) do
+    case __MODULE__.query(query, args) do
       {:ok, result} ->
         {:ok, Enum.reduce(result.rows, init, reducer)}
 
@@ -139,19 +147,24 @@ defmodule Sanbase.ChRepo do
   end
 
   defp execute_query_transform(query, args, opts \\ []) do
-    ordered_params = order_params(query, args)
-    sanitized_query = sanitize_query(query)
+    # ordered_params = order_params(query, args)
+    # sanitized_query = sanitize_query(query)
+    #
+    # maybe_store_executed_clickhouse_sql(sanitized_query, ordered_params)
+    # maybe_print_interpolated_query(sanitized_query, ordered_params)
 
-    maybe_store_executed_clickhouse_sql(sanitized_query, ordered_params)
-    maybe_print_interpolated_query(sanitized_query, ordered_params)
+    IO.inspect(query)
+    IO.inspect(args)
 
-    case __MODULE__.query(sanitized_query, ordered_params) do
+    case __MODULE__.query(query, args, types: Sanbase.TemplateEngine.ch_types()) do
       {:ok, result} ->
+        IO.inspect(result, label: "_++________________________________________")
         {:ok, result}
 
       {:error, error} ->
         log_and_return_error(error, "query_transform/3", opts)
     end
+    |> dbg()
   end
 
   @masked_error_message "Cannot execute database query. If issue persists please contact Santiment Support."

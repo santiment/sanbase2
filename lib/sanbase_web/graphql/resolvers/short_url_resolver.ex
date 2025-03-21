@@ -1,8 +1,5 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ShortUrlResolver do
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
-  import Absinthe.Resolution.Helpers
-
-  alias SanbaseWeb.Graphql.SanbaseDataloader
 
   require Logger
 
@@ -36,14 +33,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ShortUrlResolver do
       nil -> {:error, "Short url #{short_url} does not exist."}
       %Sanbase.ShortUrl{} = short_url -> {:ok, short_url}
     end
-  end
-
-  def comments_count(%{id: id}, _args, %{context: %{loader: loader}}) do
-    loader
-    |> Dataloader.load(SanbaseDataloader, :short_urls_comments_count, id)
-    |> on_load(fn loader ->
-      {:ok, Dataloader.get(loader, SanbaseDataloader, :short_urls_comments_count, id) || 0}
-    end)
   end
 
   # Private functions

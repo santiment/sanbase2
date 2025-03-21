@@ -121,6 +121,16 @@ defmodule Sanbase.TemplateEngine do
     end
   end
 
+  def run_generate_positional_params_v2(template, opts) do
+    params = Keyword.get(opts, :params, %{}) |> Map.new(fn {k, v} -> {to_string(k), v} end)
+    env = Keyword.get(opts, :env, Sanbase.SanLang.Environment.new())
+
+    with {:ok, captures} <- TemplateEngine.Captures.extract_captures(template),
+         {:ok, result} <- do_run_generate_positional_params_v2(template, captures, params, env) do
+      {:ok, result}
+    end
+  end
+
   # Private
 
   defp do_run_generate_positional_params(template, captures, params, env) do
@@ -131,7 +141,7 @@ defmodule Sanbase.TemplateEngine do
         fn
           %{code?: false} = capture_map, {template_acc, args_acc, errors, position} ->
             case get_value_from_params(capture_map.inner_content, params) do
-              {:ok, value} ->
+              {:ok, %{value: value}} ->
                 template_acc = String.replace(template_acc, capture_map.key, "?#{position}")
                 args_acc = [value | args_acc]
                 {template_acc, args_acc, errors, position + 1}
@@ -173,6 +183,81 @@ defmodule Sanbase.TemplateEngine do
     end
   end
 
+  defp do_run_generate_positional_params_v2(template, captures, params, env) do
+    {sql, args, errors, _position} =
+      Enum.reduce(
+        captures,
+        {template, _args = [], _errors = [], _position = 0},
+        fn
+          %{code?: false} = capture_map, {template_acc, args_acc, errors, position} ->
+            case get_value_from_params(capture_map.inner_content, params) do
+              {:ok, %{value: value, modifier: modifier}} ->
+                type = ch_type_of(value)
+
+                case modifier do
+                  "inline" ->
+                    template_acc = String.replace(template_acc, capture_map.key, value)
+                    {template_acc, args_acc, errors, position}
+
+                  _ ->
+                    template_acc =
+                      String.replace(template_acc, capture_map.key, "{$#{position}:#{type}}")
+
+                    args_acc = [value | args_acc]
+                    {template_acc, args_acc, errors, position + 1}
+                end
+
+              :no_value ->
+                error = %{
+                  error: :missing_parameter,
+                  key: capture_map.key
+                }
+
+                errors = [error | errors]
+                {template_acc, args_acc, errors, position + 1}
+            end
+
+          %{code?: true} = capture_map, {template_acc, args_acc, errors, position} ->
+            execution_result = CodeEvaluation.eval(capture_map, env)
+            type = ch_type_of(execution_result)
+            template_acc = String.replace(template_acc, capture_map.key, "{$#{position}:#{type}")
+            args_acc = [execution_result | args_acc]
+            {template_acc, args_acc, errors, position + 1}
+        end
+      )
+
+    case errors do
+      [] ->
+        {:ok, {sql, Enum.reverse(args)}}
+
+      _ ->
+        missing_keys = Enum.map(errors, & &1.key) |> Enum.join(", ")
+        params_keys = Map.keys(params)
+        params_keys = if params_keys == [], do: "none", else: Enum.join(params_keys, ", ")
+
+        error_str =
+          """
+          One or more of the {{<key>}} templates in the query text do not correspond to any of the parameters.
+          Template keys missing from the parameters: #{missing_keys}. Parameters' keys defined: #{params_keys}
+          """
+
+        {:error, error_str}
+    end
+  end
+
+  defp ch_type_of(value) do
+    cond do
+      is_boolean(value) -> "Bool"
+      is_binary(value) -> "String"
+      match?(%DateTime{}, value) or match?(%NaiveDateTime{}, value) -> "DateTime64"
+      is_integer(value) and value in [0..255] -> "UInt8"
+      is_integer(value) and value >= 0 -> "UInt64"
+      is_integer(value) and value < 0 -> "Int64"
+      is_float(value) -> "Float64"
+      is_list(value) -> "Array"
+    end
+  end
+
   defp replace_template_key_with_value(
          template,
          %{key: key, inner_content: inner_content},
@@ -180,7 +265,7 @@ defmodule Sanbase.TemplateEngine do
          _env
        ) do
     case get_value_from_params(inner_content, params) do
-      {:ok, value} -> String.replace(template, key, stringify_value(value))
+      {:ok, %{value: value}} -> String.replace(template, key, stringify_value(value))
       :no_value -> template
     end
   end
@@ -203,12 +288,20 @@ defmodule Sanbase.TemplateEngine do
       end
 
     case Map.get(params, key) do
-      nil -> :no_value
-      value -> {:ok, maybe_apply_modifier(value, key, modifier)}
+      nil ->
+        :no_value
+
+      value ->
+        {:ok,
+         %{
+           value: maybe_apply_modifier(value, key, modifier),
+           modifier: modifier
+         }}
     end
   end
 
   defp maybe_apply_modifier(value, _key, "human_readable"), do: human_readable(value)
+  defp maybe_apply_modifier(value, _key, "inline"), do: value
   defp maybe_apply_modifier(value, _key, nil), do: value
 
   defp maybe_apply_modifier(_, key, modifier),

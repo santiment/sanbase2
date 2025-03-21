@@ -24,23 +24,23 @@ config :sanbase, Sanbase.Alerts.Scheduler,
       task: {Sanbase.Alert.Scheduler, :run_alert, [Trigger.ScreenerTriggerSettings]}
     ],
     eth_wallet_alert: [
-      schedule: "3-59/5 * * * *",
+      schedule: "3-59/30 * * * *",
       task: {Sanbase.Alert.Scheduler, :run_alert, [Trigger.EthWalletTriggerSettings]}
     ],
     wallet_movement_alert: [
-      schedule: "3-59/5 * * * *",
+      schedule: "3-59/30 * * * *",
       task: {Sanbase.Alert.Scheduler, :run_alert, [Trigger.WalletTriggerSettings]}
     ],
     wallet_usd_valuation_alert: [
       # Run the alert every 15 minutes as it's heavier to compute. Also, address
       # USD valuations do not change drastically that often.
-      schedule: "4-59/15 * * * *",
+      schedule: "4-59/30 * * * *",
       task: {Sanbase.Alert.Scheduler, :run_alert, [Trigger.WalletUsdValuationTriggerSettings]}
     ],
     wallet_assets_held_alert: [
       # Run the alert every 15 minutes as it's heavier to compute. Also, address
       # assets held do not change drastically that often.
-      schedule: "5-59/15 * * * *",
+      schedule: "5-59/30 * * * *",
       task: {Sanbase.Alert.Scheduler, :run_alert, [Trigger.WalletAssetsHeldTriggerSettings]}
     ],
     trending_words_sonar_alert: [

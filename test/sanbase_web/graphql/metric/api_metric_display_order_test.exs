@@ -26,7 +26,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricDisplayOrderTest do
         category_id: category2.id
       })
 
-    {:ok, _} =
+    {:ok, metric1} =
       Sanbase.Metric.UIMetadata.DisplayOrder.add_metric(
         "price_usd",
         category1.id,
@@ -38,7 +38,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricDisplayOrderTest do
         type: "metric"
       )
 
-    {:ok, _} =
+    {:ok, metric2} =
       Sanbase.Metric.UIMetadata.DisplayOrder.add_metric(
         "price_btc",
         category1.id,
@@ -50,7 +50,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricDisplayOrderTest do
         type: "metric"
       )
 
-    {:ok, _} =
+    {:ok, metric3} =
       Sanbase.Metric.UIMetadata.DisplayOrder.add_metric(
         "active_addresses_24h",
         category2.id,
@@ -62,7 +62,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricDisplayOrderTest do
         type: "metric"
       )
 
-    {:ok, _} =
+    {:ok, metric4} =
       Sanbase.Metric.UIMetadata.DisplayOrder.add_metric(
         "transaction_volume",
         category2.id,
@@ -74,7 +74,16 @@ defmodule SanbaseWeb.Graphql.ApiMetricDisplayOrderTest do
         type: "metric"
       )
 
-    %{conn: conn, user: user}
+    %{
+      conn: conn,
+      user: user,
+      category1: category1,
+      category2: category2,
+      metric1: metric1,
+      metric2: metric2,
+      metric3: metric3,
+      metric4: metric4
+    }
   end
 
   test "get ordered metrics works properly", %{conn: conn} do
@@ -205,5 +214,92 @@ defmodule SanbaseWeb.Graphql.ApiMetricDisplayOrderTest do
     assert metric["uiHumanReadableName"] == "Active Addresses 24h"
     assert metric["categoryName"] == "On-chain"
     assert metric["groupName"] == "Network Activity"
+  end
+
+  test "reordering metrics works properly", %{
+    conn: conn,
+    category1: category1,
+    metric1: metric1,
+    metric2: metric2
+  } do
+    # Fetch initial state directly from database
+    metrics_before =
+      Sanbase.Metric.UIMetadata.DisplayOrder.by_category(category1.id)
+      |> Enum.sort_by(& &1.display_order)
+
+    # Get the metrics we're interested in
+    price_usd_before = Enum.find(metrics_before, &(&1.metric == "price_usd"))
+    price_btc_before = Enum.find(metrics_before, &(&1.metric == "price_btc"))
+
+    # Verify initial ordering (price_usd should be first)
+    assert price_usd_before.display_order < price_btc_before.display_order
+
+    # Now reorder the metrics
+    new_order = [
+      # Increase price_usd display_order to 10
+      %{metric_id: metric1.id, display_order: 10},
+      # Set price_btc display_order to 5
+      %{metric_id: metric2.id, display_order: 5}
+    ]
+
+    # Apply the reordering
+    assert {:ok, :ok} =
+             Sanbase.Metric.UIMetadata.DisplayOrder.reorder_metrics(category1.id, new_order)
+
+    # Verify directly in the database that the records were updated
+    price_usd_db = Sanbase.Repo.get(Sanbase.Metric.UIMetadata.DisplayOrder, metric1.id)
+    price_btc_db = Sanbase.Repo.get(Sanbase.Metric.UIMetadata.DisplayOrder, metric2.id)
+
+    # Verify the reordering worked in the database
+    assert price_btc_db.display_order < price_usd_db.display_order
+    assert price_btc_db.display_order == 5
+    assert price_usd_db.display_order == 10
+
+    # Now fetch all metrics for this category again from DB to verify order
+    metrics_after =
+      Sanbase.Metric.UIMetadata.DisplayOrder.by_category(category1.id)
+      |> Enum.sort_by(& &1.display_order)
+
+    # First metric should now be price_btc
+    first_metric = List.first(metrics_after)
+    assert first_metric.metric == "price_btc"
+    assert first_metric.display_order == 5
+
+    query_api = """
+    {
+      getOrderedMetrics {
+        metrics {
+          metric
+          categoryName
+          displayOrder
+        }
+      }
+    }
+    """
+
+    api_result =
+      conn
+      |> post("/graphql", query_skeleton(query_api, "getOrderedMetrics"))
+      |> json_response(200)
+      |> get_in(["data", "getOrderedMetrics", "metrics"])
+
+    assert api_result == [
+             %{"categoryName" => "Financial", "displayOrder" => 5, "metric" => "price_btc"},
+             %{
+               "categoryName" => "Financial",
+               "displayOrder" => 10,
+               "metric" => "price_usd"
+             },
+             %{
+               "categoryName" => "On-chain",
+               "displayOrder" => 1,
+               "metric" => "active_addresses_24h"
+             },
+             %{
+               "categoryName" => "On-chain",
+               "displayOrder" => 2,
+               "metric" => "transaction_volume"
+             }
+           ]
   end
 end

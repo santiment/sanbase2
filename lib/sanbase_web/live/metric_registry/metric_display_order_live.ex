@@ -409,7 +409,6 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
   end
 
   def handle_event("move-up", params, socket) do
-    dbg(params)
     # Extract metric_id regardless of format (could be "metric_id" or "metric-id")
     metric_id = params["metric_id"] || params["metric-id"]
 
@@ -472,96 +471,31 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
   end
 
   def handle_event("reorder", %{"ids" => ids}, socket) do
-    filtered_metrics = socket.assigns.filtered_metrics
+    # Use the new module for handling reordering
+    alias Sanbase.Metric.UIMetadata.DisplayOrder.Reorder
 
-    if length(filtered_metrics) > 0 do
-      first_metric = List.first(filtered_metrics)
-      category_id = first_metric.category_id
+    case Reorder.prepare_reordering(ids, socket.assigns.metrics) do
+      {:ok, category_id, new_order} ->
+        case Reorder.apply_reordering(category_id, new_order) do
+          {:ok, :ok} ->
+            # Refresh the data after reordering
+            # Use the existing mechanism to fetch metrics
+            ordered_data = Sanbase.Metric.UIMetadata.DisplayOrder.get_ordered_metrics()
+            metrics = ordered_data.metrics
 
-      # Get all metrics in this category, not just the filtered ones
-      all_category_metrics =
-        socket.assigns.metrics
-        |> Enum.filter(&(&1.category_id == category_id))
-        |> Enum.sort_by(& &1.display_order)
+            # Use the existing filter_metrics implementation
+            {:noreply,
+             socket
+             |> assign(:metrics, metrics)
+             |> filter_metrics()}
 
-      # Map of current display orders by metric_id for all metrics in the category
-      current_orders = Map.new(all_category_metrics, fn m -> {m.id, m.display_order} end)
+          {:error, error} ->
+            {:noreply,
+             socket |> put_flash(:error, "Failed to reorder metrics: #{inspect(error)}")}
+        end
 
-      # Get the filtered metrics in their current display order
-      filtered_metrics_sorted = Enum.sort_by(filtered_metrics, & &1.display_order)
-      filtered_ids = Enum.map(filtered_metrics, & &1.id)
-
-      # Extract the new order of the filtered metrics from the drag-and-drop
-      new_filtered_order =
-        ids
-        |> Enum.map(fn id ->
-          metric_id = String.replace(id, "metric-", "")
-          {metric_id, _} = Integer.parse(metric_id)
-          metric_id
-        end)
-
-      # Get the original display order values to preserve
-      original_orders =
-        filtered_metrics_sorted
-        |> Enum.map(& &1.display_order)
-        |> Enum.sort()
-
-      # Create a mapping of new position to original display_order value
-      position_to_order =
-        Enum.zip(1..length(original_orders), original_orders)
-        |> Map.new()
-
-      # Create mapping of filtered metric IDs to their new display orders
-      # This preserves the original display_order values but with the new ordering
-      filtered_positions =
-        new_filtered_order
-        |> Enum.with_index(1)
-        |> Enum.map(fn {id, idx} ->
-          {id, position_to_order[idx]}
-        end)
-        |> Map.new()
-
-      # 2. Create the complete new order for all metrics in the category
-      new_order =
-        all_category_metrics
-        |> Enum.map(fn metric ->
-          new_order =
-            if metric.id in filtered_ids do
-              # Use the new position for filtered metrics while preserving original values
-              Map.get(filtered_positions, metric.id)
-            else
-              # Keep the same display order for non-filtered metrics
-              current_orders[metric.id]
-            end
-
-          %{metric_id: metric.id, display_order: new_order}
-        end)
-
-      # Save the new order
-      socket = assign(socket, reordering: true)
-
-      case DisplayOrder.reorder_metrics(category_id, new_order) do
-        {:ok, _} ->
-          # Refresh the metrics list
-          ordered_data = DisplayOrder.get_ordered_metrics()
-          metrics = ordered_data.metrics
-
-          {:noreply,
-           socket
-           |> assign(
-             metrics: metrics,
-             reordering: false
-           )
-           |> filter_metrics()}
-
-        {:error, reason} ->
-          {:noreply,
-           socket
-           |> assign(reordering: false)
-           |> put_flash(:error, "Failed to reorder metrics: #{inspect(reason)}")}
-      end
-    else
-      {:noreply, socket}
+      {:error, reason} ->
+        {:noreply, socket |> put_flash(:error, reason)}
     end
   end
 

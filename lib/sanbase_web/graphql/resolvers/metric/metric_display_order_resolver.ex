@@ -72,6 +72,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricDisplayOrderResolver do
     group_name = if display_order.group, do: display_order.group.name, else: nil
 
     %{
+      id: display_order.id,
       metric: display_order.metric,
       type: display_order.type,
       ui_human_readable_name: display_order.ui_human_readable_name,

@@ -148,6 +148,7 @@ defmodule Sanbase.Metric.UIMetadata.MetricsImporter do
     # Get metric name and registry_metric (template) if present
     metric_name = metric_data["metric"]
     registry_metric = metric_data["registry_metric"]
+    metric_type = metric_data["type"] || "metric"
 
     updated_processed = MapSet.put(processed_metrics, metric_name)
 
@@ -162,7 +163,8 @@ defmodule Sanbase.Metric.UIMetadata.MetricsImporter do
         unit: metric_data["format"] || "",
         description: metric_data["description"] || "",
         args: metric_data["args"] || %{},
-        registry_metric: registry_metric
+        registry_metric: registry_metric,
+        type: metric_type
       )
 
     case result do

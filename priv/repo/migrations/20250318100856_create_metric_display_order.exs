@@ -16,6 +16,7 @@ defmodule Sanbase.Repo.Migrations.CreateMetricDisplayOrder do
       add(:chart_style, :string, default: "line")
       add(:unit, :string, default: "")
       add(:description, :text)
+      add(:type, :string, default: "metric")
 
       timestamps()
     end

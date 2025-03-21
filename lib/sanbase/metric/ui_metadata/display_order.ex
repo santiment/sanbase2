@@ -14,6 +14,7 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
 
   @allowed_chart_styles ["filledLine", "greenRedBar", "bar", "line", "area", "reference"]
   @allowed_unit_formats ["", "usd", "percent"]
+  @allowed_metric_types ["metric", "query"]
 
   @type t :: %__MODULE__{
           id: integer(),
@@ -30,6 +31,7 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
           unit: String.t(),
           description: String.t(),
           args: map(),
+          type: String.t(),
           inserted_at: DateTime.t(),
           updated_at: DateTime.t()
         }
@@ -42,6 +44,7 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
     field(:unit, :string, default: "")
     field(:description, :string)
     field(:args, :map, default: %{})
+    field(:type, :string, default: "metric")
 
     field(:display_order, :integer)
 
@@ -70,10 +73,12 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
       :chart_style,
       :unit,
       :description,
-      :args
+      :args,
+      :type
     ])
     |> validate_required([:category_id, :display_order])
     |> validate_inclusion(:source_type, ["registry", "code"])
+    |> validate_inclusion(:type, @allowed_metric_types)
   end
 
   def create(attrs) do
@@ -299,7 +304,10 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
           metric_registry_id: display_order.metric_registry_id,
           args: display_order.args || %{},
           is_new: is_new?(display_order.inserted_at),
-          display_order: display_order.display_order
+          display_order: display_order.display_order,
+          inserted_at: display_order.inserted_at,
+          updated_at: display_order.updated_at,
+          type: display_order.type
         }
       end)
 
@@ -321,6 +329,7 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
     description = Keyword.get(opts, :description, "")
     args = Keyword.get(opts, :args, %{})
     source_type = Keyword.get(opts, :source_type)
+    type = Keyword.get(opts, :type, "metric")
 
     # Handle the case where Sanbase.Metric.get_module might return a non-string value
     code_module_value = Sanbase.Metric.get_module(metric_name)
@@ -376,7 +385,8 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
       chart_style: chart_style,
       unit: unit,
       description: description,
-      args: args
+      args: args,
+      type: type
     }
 
     create(attrs)
@@ -419,6 +429,13 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
   """
   def get_available_formats do
     @allowed_unit_formats
+  end
+
+  @doc """
+  Get all available metric types.
+  """
+  def get_available_metric_types do
+    @allowed_metric_types
   end
 
   @doc """

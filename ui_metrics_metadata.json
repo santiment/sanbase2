@@ -286,14 +286,16 @@
         "description": "Shows the amount of ETH moved out of the project’s ICO wallets over time",
         "label": "Eth Spent Over Time",
         "metric": "ethSpentOverTime",
-        "style": "line"
+        "style": "line",
+        "type": "query"
       },
       {
         "category": "On-chain",
         "description": "Shows the amount of Gas accrued on the Ethereum network daily. Gas is a unit that measures the amount of computational effort it will take to successfully conduct a transaction or execute a contract on the Ethereum blockchain",
         "label": "Gas Used",
         "metric": "gasUsed",
-        "style": "line"
+        "style": "line",
+        "type": "query"
       },
       {
         "category": "On-chain",
@@ -2525,48 +2527,42 @@
         "category": "On-chain",
         "label": "[100 - 1,000) coins",
         "metric": "holders_labeled_distribution_100_to_1k",
+        "registry_metric": "holders_labeled_distribution_{{lower}}_to_{{upper}}",
         "style": "line"
       },
       {
         "category": "On-chain",
         "label": "[1,000 - 10,000) coins",
         "metric": "holders_labeled_distribution_1k_to_10k",
+        "registry_metric": "holders_labeled_distribution_{{lower}}_to_{{upper}}",
         "style": "line"
       },
       {
         "category": "On-chain",
         "label": "[10,000 - 100,000) coins",
         "metric": "holders_labeled_distribution_10k_to_100k",
+        "registry_metric": "holders_labeled_distribution_{{lower}}_to_{{upper}}",
         "style": "line"
       },
       {
         "category": "On-chain",
         "label": "[100,000  - 1,000,000) coins",
         "metric": "holders_labeled_distribution_100k_to_1M",
+        "registry_metric": "holders_labeled_distribution_{{lower}}_to_{{upper}}",
         "style": "line"
       },
       {
         "category": "On-chain",
         "label": "[1,000,000 - 10,000,000) coins",
         "metric": "holders_labeled_distribution_1M_to_10M",
+        "registry_metric": "holders_labeled_distribution_{{lower}}_to_{{upper}}",
         "style": "line"
       },
       {
         "category": "On-chain",
-        "label": "[10,000,000 - 100,000,000) coins",
-        "metric": "holders_labeled_distribution_10M_to_100M",
-        "style": "line"
-      },
-      {
-        "category": "On-chain",
-        "label": "[100,000,000 - 1,000,000,000) coins",
-        "metric": "holders_labeled_distribution_100M_to_1B",
-        "style": "line"
-      },
-      {
-        "category": "On-chain",
-        "label": "[1,000,000,000 - infinity) coins",
-        "metric": "holders_labeled_distribution_1B_to_inf",
+        "label": "[10,000,000 - infinity) coins",
+        "metric": "holders_labeled_distribution_10M_to_inf",
+        "registry_metric": "holders_labeled_distribution_{{lower}}_to_{{upper}}",
         "style": "line"
       },
       {
@@ -3725,7 +3721,8 @@
         "group": "Top Holders",
         "label": "Supply held by top addresses (as % of total supply)",
         "metric": "topHoldersPercentOfTotalSupply",
-        "style": "line"
+        "style": "line",
+        "type": "query"
       },
       {
         "category": "On-chain Labels",
@@ -4114,14 +4111,26 @@
       {
         "category": "Social",
         "label": "Twitter Followers 24h",
-        "metric": "twitter_followers_24h",
-        "style": "line"
+        "metric": "twitter_followers",
+        "style": "line",
+        "args": {
+          "transform": {
+            "type": "changes"
+          },
+          "interval": "24h"
+        }
       },
       {
         "category": "Social",
         "label": "Twitter Followers 7d",
-        "metric": "twitter_followers_7d",
-        "style": "line"
+        "metric": "twitter_followers",
+        "style": "line",
+        "args": {
+          "transform": {
+            "type": "changes"
+          },
+          "interval": "7d"
+        }
       },
       {
         "category": "Social",

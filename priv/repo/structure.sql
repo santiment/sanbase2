@@ -2328,6 +2328,7 @@ CREATE TABLE public.metric_display_order (
     chart_style character varying(255) DEFAULT 'line'::character varying,
     unit character varying(255) DEFAULT ''::character varying,
     description text,
+    type character varying(255) DEFAULT 'metric'::character varying,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );

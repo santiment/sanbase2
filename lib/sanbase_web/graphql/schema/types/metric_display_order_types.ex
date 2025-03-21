@@ -7,17 +7,18 @@ defmodule SanbaseWeb.Graphql.MetricDisplayOrderTypes do
 
   object :metric_display_order do
     field(:metric, non_null(:string))
-    field(:label, :string)
-    field(:category, non_null(:string))
-    field(:group, :string)
-    field(:style, :string)
-    field(:format, :string)
+    field(:type, :string)
+    field(:ui_human_readable_name, :string)
+    field(:category_name, :string)
+    field(:group_name, :string)
+    field(:chart_style, :string)
+    field(:unit, :string)
     field(:description, :string)
-    field(:source_type, :string)
-    field(:source_id, :integer)
-    field(:added_at, :datetime)
+    field(:args, :json)
     field(:is_new, :boolean)
     field(:display_order, :integer)
+    field(:inserted_at, :datetime)
+    field(:updated_at, :datetime)
   end
 
   object :metric_categories_and_metrics do

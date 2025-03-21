@@ -1,88 +1,61 @@
 defmodule SanbaseWeb.Graphql.Resolvers.MetricDisplayOrderResolver do
   alias Sanbase.Metric.UIMetadata.DisplayOrder
+  alias Sanbase.Repo
 
   def get_ordered_metrics(_root, _args, _resolution) do
     ordered_data = DisplayOrder.get_ordered_metrics()
 
     {:ok,
      %{
-       categories: ordered_data.categories,
+       categories: ordered_data.categories |> Enum.map(& &1.name),
        metrics: ordered_data.metrics
      }}
   end
 
   def get_metrics_by_category(_root, %{category: category}, _resolution) do
-    metrics = DisplayOrder.by_category(category)
+    # Find category by name
+    case Sanbase.Metric.UIMetadata.Category.by_name(category) do
+      nil ->
+        {:ok, []}
 
-    # Transform the metrics to match the GraphQL type
-    metrics =
-      Enum.map(metrics, fn metric ->
-        %{
-          metric: metric.metric,
-          label: metric.label,
-          category: metric.category,
-          group: metric.group,
-          style: metric.style,
-          format: metric.format,
-          description: metric.description,
-          source_type: metric.source_type,
-          source_id: metric.source_id,
-          added_at: metric.added_at,
-          is_new: DisplayOrder.is_new?(metric.added_at),
-          display_order: metric.display_order
-        }
-      end)
+      category_record ->
+        metrics =
+          DisplayOrder.by_category(category_record.id)
+          |> Enum.map(&Repo.preload(&1, [:category, :group]))
+          |> Enum.map(&to_api_format/1)
 
-    {:ok, metrics}
+        {:ok, metrics}
+    end
   end
 
   def get_metrics_by_category_and_group(_root, %{category: category, group: group}, _resolution) do
-    metrics = DisplayOrder.by_category_and_group(category, group)
+    # Find category by name
+    case Sanbase.Metric.UIMetadata.Category.by_name(category) do
+      nil ->
+        {:ok, []}
 
-    # Transform the metrics to match the GraphQL type
-    metrics =
-      Enum.map(metrics, fn metric ->
-        %{
-          metric: metric.metric,
-          label: metric.label,
-          category: metric.category,
-          group: metric.group,
-          style: metric.style,
-          format: metric.format,
-          description: metric.description,
-          source_type: metric.source_type,
-          source_id: metric.source_id,
-          added_at: metric.added_at,
-          is_new: DisplayOrder.is_new?(metric.added_at),
-          display_order: metric.display_order
-        }
-      end)
+      category_record ->
+        # Find group by name and category_id
+        case Sanbase.Metric.UIMetadata.Group.by_name_and_category(group, category_record.id) do
+          nil ->
+            {:ok, []}
 
-    {:ok, metrics}
+          group_record ->
+            metrics =
+              DisplayOrder.by_category_and_group(category_record.id, group_record.id)
+              |> Enum.map(&Repo.preload(&1, [:category, :group]))
+              |> Enum.map(&to_api_format/1)
+
+            {:ok, metrics}
+        end
+    end
   end
 
   def get_recently_added_metrics(_root, %{days: days}, _resolution) do
-    metrics = DisplayOrder.recently_added(days)
-
-    # Transform the metrics to match the GraphQL type
     metrics =
-      Enum.map(metrics, fn metric ->
-        %{
-          metric: metric.metric,
-          label: metric.label,
-          category: metric.category,
-          group: metric.group,
-          style: metric.style,
-          format: metric.format,
-          description: metric.description,
-          source_type: metric.source_type,
-          source_id: metric.source_id,
-          added_at: metric.added_at,
-          # These are all new by definition
-          is_new: true,
-          display_order: metric.display_order
-        }
-      end)
+      DisplayOrder.recently_added(days)
+      |> Enum.map(&Repo.preload(&1, [:category, :group]))
+      |> Enum.map(&to_api_format/1)
 
     {:ok, metrics}
   end
@@ -91,5 +64,27 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricDisplayOrderResolver do
     categories_and_groups = DisplayOrder.get_categories_and_groups()
 
     {:ok, categories_and_groups}
+  end
+
+  # Convert database record to API format
+  defp to_api_format(display_order) do
+    category_name = if display_order.category, do: display_order.category.name, else: nil
+    group_name = if display_order.group, do: display_order.group.name, else: nil
+
+    %{
+      metric: display_order.metric,
+      type: display_order.type,
+      ui_human_readable_name: display_order.ui_human_readable_name,
+      category_name: category_name,
+      group_name: group_name,
+      chart_style: display_order.chart_style,
+      unit: display_order.unit,
+      description: display_order.description,
+      args: display_order.args,
+      is_new: DisplayOrder.is_new?(display_order.inserted_at),
+      display_order: display_order.display_order,
+      inserted_at: display_order.inserted_at,
+      updated_at: display_order.updated_at
+    }
   end
 end

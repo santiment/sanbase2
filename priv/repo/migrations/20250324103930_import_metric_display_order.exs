@@ -8,56 +8,41 @@ defmodule Sanbase.Repo.Migrations.ImportMetricDisplayOrder do
   def up do
     setup()
 
-    try do
-      case DisplayOrder.import_from_json_file() do
-        {:ok, stats} ->
-          IO.puts("Successfully imported metric display order data from JSON.")
+    file = Path.join(__DIR__, "ui_metrics_metadata.json")
 
-          IO.puts(
-            "Inserted: #{stats.inserted}, Existing: #{stats.existing}, Failed: #{stats.failed}"
-          )
+    case DisplayOrder.import_from_json_file(file) do
+      {:ok, stats} ->
+        IO.puts("Successfully imported metric display order data from JSON.")
 
-          if stats.failed > 0 do
-            IO.puts("\nFailed metrics:")
+        IO.puts(
+          "Inserted: #{stats.inserted}, Existing: #{stats.existing}, Failed: #{stats.failed}"
+        )
 
-            Enum.each(stats.failed_metrics, fn failed ->
-              IO.puts(
-                "- #{failed.metric} (#{failed.category}/#{failed.group || "no group"}): #{failed.reason}"
-              )
-            end)
-          end
+        if stats.failed > 0 do
+          IO.puts("\nFailed metrics:")
 
-          if map_size(stats.duplicates) > 0 do
-            IO.puts("\nDuplicate metrics found in JSON file:")
+          Enum.each(stats.failed_metrics, fn failed ->
+            IO.puts(
+              "- #{failed.metric} (#{failed.category}/#{failed.group || "no group"}): #{failed.reason}"
+            )
+          end)
+        end
 
-            Enum.each(stats.duplicates, fn {metric_name, occurrences} ->
-              locations =
-                Enum.map_join(occurrences, ", ", fn %{category: c, group: g} ->
-                  "#{c}/#{g || "no group"}"
-                end)
+        if map_size(stats.duplicates) > 0 do
+          IO.puts("\nDuplicate metrics found in JSON file:")
 
-              IO.puts("- #{metric_name} appears in: #{locations}")
-            end)
-          end
+          Enum.each(stats.duplicates, fn {metric_name, occurrences} ->
+            locations =
+              Enum.map_join(occurrences, ", ", fn %{category: c, group: g} ->
+                "#{c}/#{g || "no group"}"
+              end)
 
-        {:error, reason} ->
-          IO.puts("Error importing metric display order data: #{inspect(reason)}")
-      end
-    rescue
-      e in RuntimeError ->
-        IO.puts("Runtime error during import: #{Exception.message(e)}")
-        IO.puts(Exception.format_stacktrace())
-        reraise e, __STACKTRACE__
+            IO.puts("- #{metric_name} appears in: #{locations}")
+          end)
+        end
 
-      e ->
-        IO.puts("Error during import: #{inspect(e)}")
-        IO.puts(Exception.format_stacktrace(__STACKTRACE__))
-        reraise e, __STACKTRACE__
-    catch
-      kind, reason ->
-        IO.puts("Caught #{kind} with reason: #{inspect(reason)}")
-        IO.puts(Exception.format_stacktrace(__STACKTRACE__))
-        :erlang.raise(kind, reason, __STACKTRACE__)
+      {:error, reason} ->
+        IO.puts("Error importing metric display order data: #{inspect(reason)}")
     end
   end
 

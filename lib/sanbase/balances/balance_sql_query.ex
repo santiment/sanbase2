@@ -39,6 +39,72 @@ defmodule Sanbase.Balance.SqlQuery do
   def decimals("dogecoin", _), do: 1
   def decimals(_, decimals), do: Integer.pow(10, decimals)
 
+  def balance_change_query(
+        addresses,
+        "ethereum" = slug,
+        decimals,
+        "ethereum" = blockchain,
+        from,
+        to
+      ) do
+    sql = """
+    WITH
+      toDateTime({{from}}) AS from,
+      toDateTime({{to}}) AS to,
+      ({{addresses}}) AS addresses_of_interest,
+      starting_balances AS
+      (
+          SELECT
+              address,
+              last_balance_at AS dt,
+              balance
+          FROM {{yearly_snapshot_table}}
+          WHERE (toYear(from) = year) AND (address IN (addresses_of_interest))
+      ),
+      usual_balances AS
+      (
+          SELECT
+              address,
+              dt,
+              balance,
+              txID,
+              computedAt
+          FROM {{table}}
+          WHERE address IN (addresses_of_interest) AND dt >= toStartOfYear(from) AND dt <= to
+      ),
+      merged AS
+      (
+          SELECT
+              *,
+              '' AS txID,
+              dt AS computedAt
+          FROM starting_balances
+          UNION ALL
+          SELECT *
+          FROM usual_balances
+      )
+    SELECT
+        address,
+        argMaxIf(balance, (dt, txID, computedAt), dt <= from) / {{decimals}} AS start_balance,
+        argMaxIf(balance, (dt, txID, computedAt), dt <= to) / {{decimals}} AS end_balance,
+        end_balance - start_balance AS diff
+    FROM merged
+    GROUP BY address;
+    """
+
+    params = %{
+      addresses: addresses,
+      slug: slug,
+      from: DateTime.to_unix(from),
+      to: DateTime.to_unix(to),
+      decimals: decimals(blockchain, decimals),
+      table: blockchain_to_table(blockchain, slug),
+      yearly_snapshot_table: "eth_balance_yearly_snapshots"
+    }
+
+    Sanbase.Clickhouse.Query.new(sql, params)
+  end
+
   def balance_change_query(addresses, slug, decimals, blockchain, from, to) do
     sql = """
     SELECT

@@ -387,6 +387,7 @@ defmodule SanbaseWeb.NotificationsLive.DigestFormLive do
     notifications_groups
     |> Enum.map(fn {key, group_notifications} ->
       all_params = EmailNotifier.combine_notification_params(group_notifications)
+
       step = List.first(group_notifications).step
       notification_count = length(group_notifications)
 

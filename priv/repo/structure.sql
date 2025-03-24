@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.10 (Homebrew)
--- Dumped by pg_dump version 15.10 (Homebrew)
+-- Dumped from database version 15.1 (Homebrew)
+-- Dumped by pg_dump version 15.1 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -2310,6 +2310,50 @@ ALTER SEQUENCE public.menus_id_seq OWNED BY public.menus.id;
 
 
 --
+-- Name: metric_display_order; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.metric_display_order (
+    id bigint NOT NULL,
+    metric character varying(255),
+    registry_metric character varying(255),
+    args jsonb DEFAULT '{}'::jsonb,
+    category_id bigint NOT NULL,
+    group_id bigint,
+    display_order integer NOT NULL,
+    source_type character varying(255) DEFAULT 'code'::character varying,
+    code_module character varying(255),
+    metric_registry_id bigint,
+    ui_human_readable_name character varying(255),
+    chart_style character varying(255) DEFAULT 'line'::character varying,
+    unit character varying(255) DEFAULT ''::character varying,
+    description text,
+    type character varying(255) DEFAULT 'metric'::character varying,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: metric_display_order_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.metric_display_order_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: metric_display_order_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.metric_display_order_id_seq OWNED BY public.metric_display_order.id;
+
+
+--
 -- Name: metric_registry; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2342,9 +2386,9 @@ CREATE TABLE public.metric_registry (
     deprecation_note text,
     inserted_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
+    status character varying(255) DEFAULT 'released'::character varying NOT NULL,
     is_verified boolean DEFAULT true NOT NULL,
     sync_status character varying(255) DEFAULT 'synced'::character varying NOT NULL,
-    status character varying(255) DEFAULT 'released'::character varying NOT NULL,
     last_sync_datetime timestamp(0) without time zone
 );
 
@@ -4311,6 +4355,70 @@ ALTER SEQUENCE public.timeline_events_id_seq OWNED BY public.timeline_events.id;
 
 
 --
+-- Name: ui_metadata_categories; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ui_metadata_categories (
+    id bigint NOT NULL,
+    name character varying(255) NOT NULL,
+    display_order integer NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: ui_metadata_categories_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.ui_metadata_categories_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: ui_metadata_categories_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.ui_metadata_categories_id_seq OWNED BY public.ui_metadata_categories.id;
+
+
+--
+-- Name: ui_metadata_groups; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ui_metadata_groups (
+    id bigint NOT NULL,
+    name character varying(255) NOT NULL,
+    category_id bigint NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: ui_metadata_groups_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.ui_metadata_groups_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: ui_metadata_groups_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.ui_metadata_groups_id_seq OWNED BY public.ui_metadata_groups.id;
+
+
+--
 -- Name: user_affiliate_details; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -5366,6 +5474,13 @@ ALTER TABLE ONLY public.menus ALTER COLUMN id SET DEFAULT nextval('public.menus_
 
 
 --
+-- Name: metric_display_order id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metric_display_order ALTER COLUMN id SET DEFAULT nextval('public.metric_display_order_id_seq'::regclass);
+
+
+--
 -- Name: metric_registry id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -5741,6 +5856,20 @@ ALTER TABLE ONLY public.timeline_event_comments_mapping ALTER COLUMN id SET DEFA
 --
 
 ALTER TABLE ONLY public.timeline_events ALTER COLUMN id SET DEFAULT nextval('public.timeline_events_id_seq'::regclass);
+
+
+--
+-- Name: ui_metadata_categories id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ui_metadata_categories ALTER COLUMN id SET DEFAULT nextval('public.ui_metadata_categories_id_seq'::regclass);
+
+
+--
+-- Name: ui_metadata_groups id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ui_metadata_groups ALTER COLUMN id SET DEFAULT nextval('public.ui_metadata_groups_id_seq'::regclass);
 
 
 --
@@ -6299,6 +6428,14 @@ ALTER TABLE ONLY public.menus
 
 
 --
+-- Name: metric_display_order metric_display_order_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metric_display_order
+    ADD CONSTRAINT metric_display_order_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: metric_registry_change_suggestions metric_registry_change_suggestions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6784,6 +6921,22 @@ ALTER TABLE ONLY public.timeline_event_comments_mapping
 
 ALTER TABLE ONLY public.timeline_events
     ADD CONSTRAINT timeline_events_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: ui_metadata_categories ui_metadata_categories_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ui_metadata_categories
+    ADD CONSTRAINT ui_metadata_categories_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: ui_metadata_groups ui_metadata_groups_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ui_metadata_groups
+    ADD CONSTRAINT ui_metadata_groups_pkey PRIMARY KEY (id);
 
 
 --
@@ -7882,6 +8035,20 @@ CREATE INDEX timeline_events_user_trigger_id_index ON public.timeline_events USI
 
 
 --
+-- Name: ui_metadata_categories_name_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX ui_metadata_categories_name_index ON public.ui_metadata_categories USING btree (name);
+
+
+--
+-- Name: ui_metadata_groups_name_category_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX ui_metadata_groups_name_category_id_index ON public.ui_metadata_groups USING btree (name, category_id);
+
+
+--
 -- Name: user_affiliate_details_user_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8669,6 +8836,30 @@ ALTER TABLE ONLY public.menus
 
 
 --
+-- Name: metric_display_order metric_display_order_category_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metric_display_order
+    ADD CONSTRAINT metric_display_order_category_id_fkey FOREIGN KEY (category_id) REFERENCES public.ui_metadata_categories(id) ON DELETE CASCADE;
+
+
+--
+-- Name: metric_display_order metric_display_order_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metric_display_order
+    ADD CONSTRAINT metric_display_order_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.ui_metadata_groups(id) ON DELETE CASCADE;
+
+
+--
+-- Name: metric_display_order metric_display_order_metric_registry_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metric_display_order
+    ADD CONSTRAINT metric_display_order_metric_registry_id_fkey FOREIGN KEY (metric_registry_id) REFERENCES public.metric_registry(id) ON DELETE CASCADE;
+
+
+--
 -- Name: metric_registry_change_suggestions metric_registry_change_suggestions_metric_registry_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -9154,6 +9345,14 @@ ALTER TABLE ONLY public.timeline_events
 
 ALTER TABLE ONLY public.timeline_events
     ADD CONSTRAINT timeline_events_user_trigger_id_fkey FOREIGN KEY (user_trigger_id) REFERENCES public.user_triggers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: ui_metadata_groups ui_metadata_groups_category_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ui_metadata_groups
+    ADD CONSTRAINT ui_metadata_groups_category_id_fkey FOREIGN KEY (category_id) REFERENCES public.ui_metadata_categories(id) ON DELETE CASCADE;
 
 
 --
@@ -9914,20 +10113,19 @@ INSERT INTO public."schema_migrations" (version) VALUES (20241029080754);
 INSERT INTO public."schema_migrations" (version) VALUES (20241029082533);
 INSERT INTO public."schema_migrations" (version) VALUES (20241029151959);
 INSERT INTO public."schema_migrations" (version) VALUES (20241030141825);
+INSERT INTO public."schema_migrations" (version) VALUES (20241104061632);
 INSERT INTO public."schema_migrations" (version) VALUES (20241104115340);
 INSERT INTO public."schema_migrations" (version) VALUES (20241108112754);
 INSERT INTO public."schema_migrations" (version) VALUES (20241112094924);
 INSERT INTO public."schema_migrations" (version) VALUES (20241114140339);
 INSERT INTO public."schema_migrations" (version) VALUES (20241114141110);
 INSERT INTO public."schema_migrations" (version) VALUES (20241116104556);
-INSERT INTO public."schema_migrations" (version) VALUES (20241121133719);
 INSERT INTO public."schema_migrations" (version) VALUES (20241128113958);
 INSERT INTO public."schema_migrations" (version) VALUES (20241128161315);
 INSERT INTO public."schema_migrations" (version) VALUES (20241202104812);
 INSERT INTO public."schema_migrations" (version) VALUES (20241212054904);
 INSERT INTO public."schema_migrations" (version) VALUES (20250110083203);
 INSERT INTO public."schema_migrations" (version) VALUES (20250121155544);
-INSERT INTO public."schema_migrations" (version) VALUES (20250124152414);
 INSERT INTO public."schema_migrations" (version) VALUES (20250203104426);
 INSERT INTO public."schema_migrations" (version) VALUES (20250207100755);
 INSERT INTO public."schema_migrations" (version) VALUES (20250207134446);
@@ -9938,3 +10136,6 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250220134051);
 INSERT INTO public."schema_migrations" (version) VALUES (20250226111103);
 INSERT INTO public."schema_migrations" (version) VALUES (20250312085101);
 INSERT INTO public."schema_migrations" (version) VALUES (20250313103159);
+INSERT INTO public."schema_migrations" (version) VALUES (20250318100855);
+INSERT INTO public."schema_migrations" (version) VALUES (20250318100856);
+INSERT INTO public."schema_migrations" (version) VALUES (20250324103930);

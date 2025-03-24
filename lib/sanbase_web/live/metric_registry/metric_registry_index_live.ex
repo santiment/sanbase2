@@ -494,6 +494,12 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           href="https://github.com/santiment/sanbase2/blob/master/docs/metric_registry/index.md"
           target="_blank"
         />
+
+        <AvailableMetricsComponents.available_metrics_button
+          icon="hero-list-bullet"
+          text="UI Display Order"
+          href={~p"/admin/metric_registry/display_order"}
+        />
       </div>
     </div>
     """

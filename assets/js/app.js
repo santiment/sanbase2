@@ -6,10 +6,18 @@ import topbar from "../vendor/topbar"
 import Alpine from 'alpinejs'
 import "flowbite/dist/flowbite.phoenix.js";
 import { FocusInput } from "./focus_input"
+import Sortable from 'sortablejs'
+import { Sortable as SortableHook } from "./metric_hooks"
+
+// Make Sortable available globally
+window.Sortable = Sortable
 
 window.Alpine = Alpine
 Alpine.start()
-const Hooks = { FocusInput: FocusInput }
+const Hooks = { 
+  FocusInput: FocusInput,
+  Sortable: SortableHook
+}
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 let liveSocket = new LiveSocket("/live", Socket, {
   params: { _csrf_token: csrfToken },

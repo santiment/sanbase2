@@ -81,6 +81,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.VoteTypes)
   import_types(Graphql.WebinarTypes)
   import_types(Graphql.WidgetTypes)
+  import_types(Graphql.MetricDisplayOrderTypes)
 
   # Queries and mutations
   import_types(Graphql.Schema.AuthQueries)
@@ -191,6 +192,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:user_queries)
     import_fields(:webinar_queries)
     import_fields(:widget_queries)
+    import_fields(:metric_display_order_queries)
   end
 
   mutation do

@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+
 .table-responsive {
   display: block;
   width: 100%;

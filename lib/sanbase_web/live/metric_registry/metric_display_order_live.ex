@@ -409,7 +409,6 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
   end
 
   def handle_event("move-up", params, socket) do
-    # Extract metric_id regardless of format (could be "metric_id" or "metric-id")
     metric_id = params["metric_id"] || params["metric-id"]
 
     metrics = socket.assigns.filtered_metrics
@@ -417,7 +416,6 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
     index = Enum.find_index(metrics, &(&1.id == id))
 
     if index > 0 do
-      # Swap with the previous metric
       metrics =
         List.update_at(metrics, index - 1, fn prev_metric ->
           {:ok, updated} = DisplayOrder.increment_display_order(prev_metric.id)
@@ -430,7 +428,6 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
           %{current_metric | display_order: updated.display_order}
         end)
 
-      # Sort by display_order
       metrics = Enum.sort_by(metrics, & &1.display_order)
 
       {:noreply, assign(socket, filtered_metrics: metrics)}
@@ -440,7 +437,6 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
   end
 
   def handle_event("move-down", params, socket) do
-    # Extract metric_id regardless of format (could be "metric_id" or "metric-id")
     metric_id = params["metric_id"] || params["metric-id"]
 
     metrics = socket.assigns.filtered_metrics
@@ -448,7 +444,6 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
     index = Enum.find_index(metrics, &(&1.id == id))
 
     if index < length(metrics) - 1 do
-      # Swap with the next metric
       metrics =
         List.update_at(metrics, index + 1, fn next_metric ->
           {:ok, updated} = DisplayOrder.decrement_display_order(next_metric.id)
@@ -461,7 +456,6 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
           %{current_metric | display_order: updated.display_order}
         end)
 
-      # Sort by display_order
       metrics = Enum.sort_by(metrics, & &1.display_order)
 
       {:noreply, assign(socket, filtered_metrics: metrics)}
@@ -471,19 +465,15 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
   end
 
   def handle_event("reorder", %{"ids" => ids}, socket) do
-    # Use the new module for handling reordering
     alias Sanbase.Metric.UIMetadata.DisplayOrder.Reorder
 
     case Reorder.prepare_reordering(ids, socket.assigns.metrics) do
       {:ok, category_id, new_order} ->
         case Reorder.apply_reordering(category_id, new_order) do
           {:ok, :ok} ->
-            # Refresh the data after reordering
-            # Use the existing mechanism to fetch metrics
             ordered_data = Sanbase.Metric.UIMetadata.DisplayOrder.get_ordered_metrics()
             metrics = ordered_data.metrics
 
-            # Use the existing filter_metrics implementation
             {:noreply,
              socket
              |> assign(:metrics, metrics)
@@ -503,16 +493,13 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
   def handle_event("delete_metric", %{"id" => id}, socket) do
     {id, _} = Integer.parse(id)
 
-    # Find the metric to delete
     case DisplayOrder.by_id(id) do
       nil ->
         {:noreply, socket |> put_flash(:error, "Metric not found")}
 
       display_order ->
-        # Try to delete the metric
         case DisplayOrder.delete(display_order) do
           {:ok, _} ->
-            # Get updated metrics list after deletion
             ordered_data = DisplayOrder.get_ordered_metrics()
             metrics = ordered_data.metrics
 
@@ -533,7 +520,6 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
   @impl true
   def handle_event("global_search", %{"search_query" => query}, socket) do
     if String.length(query) >= 2 do
-      # Search across all metrics regardless of category
       search_results =
         socket.assigns.metrics
         |> Enum.filter(fn metric ->
@@ -545,7 +531,6 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
               downcased_query
             )
         end)
-        # Limit results to avoid overwhelming the UI
         |> Enum.take(20)
 
       {:noreply, assign(socket, search_query: query, search_results: search_results)}
@@ -556,13 +541,10 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
 
   @impl true
   def handle_event("focus_metric", %{"id" => id, "category" => category} = params, socket) do
-    # Convert id to integer
     {id, _} = Integer.parse(id)
 
-    # Get group value, default to nil if not present
     group = params["group"]
 
-    # Navigate to the category and group with the metric highlighted
     target_url =
       if group && group != "" do
         ~p"/admin/metric_registry/display_order?category=#{category}&group=#{group}&highlight_metric=#{id}"
@@ -573,15 +555,31 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
     {:noreply, push_patch(socket, to: target_url)}
   end
 
+  @impl true
+  def handle_event("reset_filters", _params, socket) do
+    first_category_name =
+      if length(socket.assigns.categories) > 0,
+        do: List.first(socket.assigns.categories).name,
+        else: nil
+
+    {:noreply,
+     socket
+     |> assign(
+       selected_category: first_category_name,
+       selected_group: nil,
+       search_query: "",
+       search_results: []
+     )
+     |> push_patch(to: ~p"/admin/metric_registry/display_order")}
+  end
+
   defp filter_metrics(socket) do
     %{metrics: metrics, selected_category: category, selected_group: group} = socket.assigns
 
-    # Filter metrics by category
     filtered_metrics =
       metrics
       |> Enum.filter(&(&1.category_name == category))
 
-    # Get unique groups for this category
     groups =
       filtered_metrics
       |> Enum.map(& &1.group_name)
@@ -590,7 +588,6 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
       |> Enum.uniq()
       |> Enum.sort()
 
-    # Filter by group if selected
     filtered_metrics =
       if group && group != "" do
         Enum.filter(filtered_metrics, &(&1.group_name == group))
@@ -598,7 +595,6 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
         filtered_metrics
       end
 
-    # Sort by display_order
     filtered_metrics = Enum.sort_by(filtered_metrics, & &1.display_order)
 
     assign(socket, filtered_metrics: filtered_metrics, groups: groups)
@@ -631,24 +627,5 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
       </.link>
     </div>
     """
-  end
-
-  @impl true
-  def handle_event("reset_filters", _params, socket) do
-    # Get the first category as default (just like in mount)
-    first_category_name =
-      if length(socket.assigns.categories) > 0,
-        do: List.first(socket.assigns.categories).name,
-        else: nil
-
-    {:noreply,
-     socket
-     |> assign(
-       selected_category: first_category_name,
-       selected_group: nil,
-       search_query: "",
-       search_results: []
-     )
-     |> push_patch(to: ~p"/admin/metric_registry/display_order")}
   end
 end

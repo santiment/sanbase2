@@ -156,25 +156,21 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
   Get all metric display order entries ordered by category, group, and display_order.
   """
   def all_ordered do
-    # Get all categories with their ordering
     categories = Category.all_ordered()
 
     category_order_map =
       Map.new(categories, fn category -> {category.id, category.display_order} end)
 
-    # Get all metrics with preloaded category and group
     metrics =
       Repo.all(
         from(m in __MODULE__,
-          preload: [:category, :group]
+          preload: [:category, :group, :metric_registry]
         )
       )
 
-    # Sort metrics by category display_order, then group, then metric display_order
     Enum.sort_by(metrics, fn metric ->
       category_position = Map.get(category_order_map, metric.category_id, 999)
-      group_name = if metric.group, do: metric.group.name, else: ""
-      {category_position, group_name, metric.display_order}
+      {category_position, metric.display_order}
     end)
   end
 
@@ -224,34 +220,38 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
   The new_order parameter should be a list of maps with metric_id and display_order keys.
   """
   def reorder_metrics(category_id, new_order) do
-    Repo.transaction(fn ->
-      # Process each metric in the new order
-      Enum.each(new_order, fn %{metric_id: metric_id, display_order: new_display_order} ->
-        # Find the metric in the database by ID
-        case Repo.get(__MODULE__, metric_id) do
-          nil ->
-            Repo.rollback("Metric with ID #{metric_id} not found")
+    metrics_ids = Enum.map(new_order, & &1.metric_id)
 
-          %__MODULE__{} = record ->
-            # Check if the metric is in the correct category
-            if record.category_id != category_id do
-              Repo.rollback(
-                "Metric with ID #{metric_id} is not in category with ID #{category_id}"
-              )
-            else
-              # Update the display order - using Repo.update directly within transaction
-              changeset = changeset(record, %{display_order: new_display_order})
+    metrics =
+      Repo.all(
+        from(m in __MODULE__,
+          where: m.id in ^metrics_ids and m.category_id == ^category_id,
+          select: m.id
+        )
+      )
 
-              case Repo.update(changeset) do
-                {:ok, _} -> :ok
-                {:error, error} -> Repo.rollback(error)
-              end
-            end
-        end
-      end)
+    if length(metrics) != length(metrics_ids) do
+      {:error, "Some metrics don't exist or are not in the specified category"}
+    else
+      multi =
+        Enum.reduce(new_order, Ecto.Multi.new(), fn %{metric_id: id, display_order: order},
+                                                    multi ->
+          Ecto.Multi.update_all(
+            multi,
+            "update_#{id}",
+            from(m in __MODULE__, where: m.id == ^id),
+            set: [display_order: order]
+          )
+        end)
 
-      :ok
-    end)
+      case Repo.transaction(multi) do
+        {:ok, _results} ->
+          {:ok, :ok}
+
+        {:error, failed_operation, failed_value, _changes_so_far} ->
+          {:error, "Failed on #{failed_operation}: #{inspect(failed_value)}"}
+      end
+    end
   end
 
   @doc """
@@ -261,11 +261,9 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
   def get_ordered_metrics do
     ordered_metrics = all_ordered()
 
-    # Get categories in order
     categories = Category.all_ordered()
     ordered_category_data = Enum.map(categories, fn cat -> %{id: cat.id, name: cat.name} end)
 
-    # Create a map of metric names to their registry entries
     registry_metrics =
       Registry.all()
       |> Registry.resolve()
@@ -273,20 +271,15 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
         Map.put(acc, registry.metric, registry)
       end)
 
-    # Combine the data
     metrics =
       Enum.map(ordered_metrics, fn display_order ->
         metric = display_order.metric
 
-        # Try to get the metric from the registry
         registry_metric = Map.get(registry_metrics, metric)
 
-        # Get category and group info
         category_name = if display_order.category, do: display_order.category.name, else: nil
         group_name = if display_order.group, do: display_order.group.name, else: nil
 
-        # Create the metric map with metadata, preferring values from display_order
-        # but falling back to registry if available
         %{
           id: display_order.id,
           metric: metric,
@@ -311,7 +304,6 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
         }
       end)
 
-    # Return both the metrics and the ordered categories
     %{
       metrics: metrics,
       categories: ordered_category_data
@@ -331,7 +323,6 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
     source_type = Keyword.get(opts, :source_type)
     type = Keyword.get(opts, :type, "metric")
 
-    # Handle the case where Sanbase.Metric.get_module might return a non-string value
     code_module_value = Sanbase.Metric.get_module(metric_name)
 
     code_module =
@@ -353,7 +344,6 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
         max -> max
       end
 
-    # Determine source type and registry ID if not provided
     {source_type, code_module, metric_registry_id} =
       if source_type do
         {source_type, code_module, metric_registry_id}
@@ -361,7 +351,6 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
         metric = if registry_metric, do: registry_metric, else: metric_name
         {s_type, c_module, m_registry_id} = determine_metric_source(metric)
 
-        # Ensure code_module is a string or nil
         normalized_code_module =
           case c_module do
             nil -> nil
@@ -403,7 +392,6 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
       date ->
         threshold = DateTime.utc_now() |> DateTime.add(-days * 24 * 60 * 60, :second)
 
-        # Convert NaiveDateTime to DateTime if needed
         date_with_timezone =
           case date do
             %NaiveDateTime{} ->
@@ -445,11 +433,9 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
   - groups_by_category: map of category to list of groups
   """
   def get_categories_and_groups do
-    # Get categories in order
     categories = Category.all_ordered()
     ordered_categories = Enum.map(categories, fn cat -> %{id: cat.id, name: cat.name} end)
 
-    # Get all groups by category
     groups_by_category =
       Enum.reduce(categories, %{}, fn category, acc ->
         groups = Group.by_category(category.id)
@@ -463,14 +449,12 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
     }
   end
 
-  # Determine if a metric is from the registry or defined in code
   defp determine_metric_source(metric) do
     try do
       case Registry.by_name(metric) do
         {:ok, registry} ->
           {"registry", nil, registry.id}
 
-        # Default to code
         {:error, _} ->
           module = Sanbase.Metric.get_module(metric)
 
@@ -484,7 +468,6 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
           {"code", code_module, nil}
       end
     rescue
-      # If there's an error (like missing columns in the registry table), default to code
       _ -> {"code", nil, nil}
     end
   end

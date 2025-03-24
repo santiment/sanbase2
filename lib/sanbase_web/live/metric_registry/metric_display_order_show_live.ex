@@ -61,7 +61,6 @@ defmodule SanbaseWeb.MetricDisplayOrderShowLive do
   attr :display_order, :map, required: true
 
   def metric_details(assigns) do
-    # Get the category and group names
     category_name =
       if assigns.display_order.category,
         do: assigns.display_order.category.name,
@@ -72,7 +71,6 @@ defmodule SanbaseWeb.MetricDisplayOrderShowLive do
         do: assigns.display_order.group.name,
         else: ""
 
-    # Format the inserted_at date if available, handling both NaiveDateTime and DateTime
     added_at =
       case assigns.display_order.inserted_at do
         nil ->

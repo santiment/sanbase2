@@ -233,5 +233,62 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder.ReorderTest do
       assert Enum.at(updated_metrics, 2).id == metric1.id
       assert Enum.at(updated_metrics, 2).display_order == 15
     end
+
+    test "all_ordered sorts by category display order and then metric display order regardless of group",
+         %{
+           metric1: metric1,
+           metric2: metric2,
+           metric3: metric3,
+           metric4: metric4
+         } do
+      # Metrics:
+      # - metric1: category1 (order=1), group1, display_order=5
+      # - metric2: category1 (order=1), group1, display_order=10
+      # - metric3: category1 (order=1), group2, display_order=15
+      # - metric4: category2 (order=2), group3, display_order=3
+
+      # Create two new metrics in a different group but with display_orders between the existing ones
+      {:ok, new_category} = Category.create(%{name: "Financial 2", display_order: 1})
+      {:ok, group_z} = Group.create(%{name: "ZGroup", category_id: new_category.id})
+
+      {:ok, metric_z1} =
+        DisplayOrder.add_metric(
+          "z_metric_1",
+          new_category.id,
+          group_z.id,
+          ui_human_readable_name: "Z Metric 1"
+        )
+
+      {:ok, _} = DisplayOrder.do_update(metric_z1, %{display_order: 7})
+
+      {:ok, metric_z2} =
+        DisplayOrder.add_metric(
+          "z_metric_2",
+          new_category.id,
+          group_z.id,
+          ui_human_readable_name: "Z Metric 2"
+        )
+
+      {:ok, _} = DisplayOrder.do_update(metric_z2, %{display_order: 12})
+
+      # Now get all ordered metrics
+      ordered_metrics = DisplayOrder.all_ordered()
+
+      # Extract the metrics in order by ID
+      metric_ids = Enum.map(ordered_metrics, & &1.id)
+
+      # First should be all category1 metrics ordered by display_order
+      # regardless of which group they're in
+      category1_metrics = [metric1.id, metric_z1.id, metric2.id, metric_z2.id, metric3.id]
+
+      # Then category2 metrics
+      category2_metrics = [metric4.id]
+
+      # Check if the first 5 metrics are the category1 metrics in the expected order
+      assert Enum.take(metric_ids, 5) == category1_metrics
+
+      # Check if the next metric is from category2
+      assert Enum.at(metric_ids, 5) == List.first(category2_metrics)
+    end
   end
 end

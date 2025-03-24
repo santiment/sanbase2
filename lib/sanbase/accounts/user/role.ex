@@ -7,14 +7,15 @@ defmodule Sanbase.Accounts.Role do
   @san_team_role_id 1
   @san_family_role_id 2
   @san_moderator_role_id 3
-  @registry_viewer_role_id 4
-  @registry_change_suggester_id 5
-  @registry_change_approver_role_id 6
-  @registry_deployer_role_id 7
-  @registry_owner_id 8
-  @admin_panel_viewer_id 9
-  @admin_panel_editor_id 10
-  @admin_panel_owner_id 11
+  # Comment them out
+  # @registry_viewer_role_id 4
+  # @registry_change_suggester_id 5
+  # @registry_change_approver_role_id 6
+  # @registry_deployer_role_id 7
+  # @registry_owner_id 8
+  # @admin_panel_viewer_id 9
+  # @admin_panel_editor_id 10
+  # @admin_panel_owner_id 11
 
   schema "roles" do
     field(:name, :string)

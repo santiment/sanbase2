@@ -1,5 +1,5 @@
 defmodule Sanbase.Balance do
-  import __MODULE__.BalancesAggregatedSqlQuery
+  import __MODULE__.SqlQuery
 
   import Sanbase.Utils.Transform,
     only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2, maybe_sort: 3]
@@ -536,15 +536,12 @@ defmodule Sanbase.Balance do
     Enum.reject(list, &(&1.slug in hidden_projects_slugs))
   end
 
-  def address_supported_tables(_), do: [nil]
-
-  # TODO: Uncomment this table when migrating back to the original tables balances
-  # defp address_supported_tables(address) do
-  #   case Sanbase.BlockchainAddress.to_infrastructure(address) do
-  #     "ETH" -> ["erc20_balances_address", "eth_balances"]
-  #     "BTC" -> ["btc_balances", "ltc_balances", "doge_balances"]
-  #     "XRP" -> ["xrp_balances"]
-  #     _ -> []
-  #   end
-  # end
+  defp address_supported_tables(address) do
+    case Sanbase.BlockchainAddress.to_infrastructure(address) do
+      "ETH" -> ["erc20_balances_address", "eth_balances"]
+      "BTC" -> ["btc_balances", "ltc_balances", "doge_balances"]
+      "XRP" -> ["xrp_balances"]
+      _ -> []
+    end
+  end
 end

@@ -222,19 +222,31 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
 
     test "update email settings", context do
       expect(Sanbase.Email.MockMailjetApi, :unsubscribe, fn _, _ -> :ok end)
-      query = change_email_settings("isSubscribedMonthlyNewsletter: false")
+      query = update_user_settings("isSubscribedMonthlyNewsletter: false")
       result = execute_mutation(context.conn, query)
       refute result["isSubscribedMonthlyNewsletter"]
     end
 
-    test "only pro user can update bi-weekly report email setting", context do
-      query = change_email_settings("isSubscribedBiweeklyReport: true")
+    test "sanbase pro user can update bi-weekly report email setting", context do
+      query = update_user_settings("isSubscribedBiweeklyReport: true")
 
       assert execute_mutation_with_error(context.conn, query) =~
-               "Only PRO users can subscribe to Biweekly Report"
+               "Only users with an active subscription plan can subscribe to Biweekly Report"
 
       insert(:subscription_pro_sanbase, user: context.user)
-      query = change_email_settings("isSubscribedBiweeklyReport: true")
+      query = update_user_settings("isSubscribedBiweeklyReport: true")
+      result = execute_mutation(context.conn, query)
+      assert result["isSubscribedBiweeklyReport"]
+    end
+
+    test "business pro user can update bi-weekly report email setting", context do
+      query = update_user_settings("isSubscribedBiweeklyReport: true")
+
+      assert execute_mutation_with_error(context.conn, query) =~
+               "Only users with an active subscription plan can subscribe to Biweekly Report"
+
+      insert(:subscription_business_pro_monthly, user: context.user)
+      query = update_user_settings("isSubscribedBiweeklyReport: true")
       result = execute_mutation(context.conn, query)
       assert result["isSubscribedBiweeklyReport"]
     end
@@ -242,11 +254,11 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     test "toggle metric updates email setting", context do
       expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
       expect(Sanbase.Email.MockMailjetApi, :unsubscribe, fn _, _ -> :ok end)
-      query = change_email_settings("isSubscribedMetricUpdates: true")
+      query = update_user_settings("isSubscribedMetricUpdates: true")
       result = execute_mutation(context.conn, query)
       assert result["isSubscribedMetricUpdates"]
 
-      query = change_email_settings("isSubscribedMetricUpdates: false")
+      query = update_user_settings("isSubscribedMetricUpdates: false")
       result = execute_mutation(context.conn, query)
       refute result["isSubscribedMetricUpdates"]
     end
@@ -341,7 +353,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     """
   end
 
-  defp change_email_settings(arg) do
+  defp update_user_settings(arg) do
     """
     mutation {
       updateUserSettings(settings: {#{arg}}) {

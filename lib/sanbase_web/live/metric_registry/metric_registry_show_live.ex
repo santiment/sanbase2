@@ -12,11 +12,16 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
     {:ok, metric_registry} = Sanbase.Metric.Registry.by_id(id)
     rows = get_rows(metric_registry)
 
+    # The URL is nil if no slug is supported
+    # TODO: Extend the selector by using the required_selectors field
+    metric_graphiql_url = metric_graphiql_url(metric_registry)
+
     {:ok,
      socket
      |> assign(
        page_title: "Metric Registry | Show #{metric_registry.metric}",
        metric_registry: metric_registry,
+       metric_graphiql_url: metric_graphiql_url,
        rows: rows
      )}
   end
@@ -68,12 +73,6 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
           }
           icon="hero-document-duplicate"
         />
-        <AvailableMetricsComponents.available_metrics_button
-          :if={Permissions.can?(:edit, roles: @current_user_role_names)}
-          text="Test Metric"
-          href={metric_graphiql_url(@metric_registry)}
-          icon="hero-rocket-launch"
-        />
 
         <AvailableMetricsComponents.available_metrics_button
           text="Notifications"
@@ -81,6 +80,14 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
             ~p"/admin/generic/search?resource=notifications&search[filters][0][field]=metric_registry_id&search[filters][0][value]=#{@metric_registry.id}"
           }
           icon="hero-envelope"
+        />
+
+        <AvailableMetricsComponents.available_metrics_button
+          :if={Permissions.can?(:edit, roles: @current_user_role_names)}
+          text="Test Metric"
+          href={@metric_graphiql_url}
+          icon="hero-rocket-launch"
+          disabled={@metric_graphiql_url == nil}
         />
       </div>
       <.table id="metric_registry" rows={@rows}>
@@ -101,8 +108,6 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
   end
 
   defp metric_graphiql_url(metric_registry) do
-    # TODO: Move this to a handle_event so the DB query will be executed only
-    # if the button is pressed
     slug =
       case Sanbase.AvailableMetrics.get_metric_available_slugs(metric_registry.metric) do
         {:ok, slugs} ->
@@ -111,6 +116,7 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
             # If ethereum/bitcoin are available, use them
             "ethereum" in slugs -> "ethereum"
             "bitcoin" in slugs -> "bitcoin"
+            slugs == [] -> :no_slug_supported
             true -> Enum.random(slugs)
           end
 
@@ -118,30 +124,36 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
           "ethereum"
       end
 
-    # Add aliases so the timeseries data is seen before the metadata
-    # For many metrics the list of available assets has thousands of assets
-    # and seeing the timeseries data will require a lot of scrolling
-    query = """
-    {
-      getMetric(metric: "#{metric_registry.metric}"){
-        R1_timeseries: timeseriesData(
-          slug: "#{slug}"
-          from: "utc_now-60d"
-          to: "utc_now"
-          interval: "7d"
-        ){
-          datetime
-          value
-         }
+    case slug do
+      :no_slug_supported ->
+        nil
 
-        R2_metadata: metadata {
-          availableSlugs
+      _ ->
+        # Add aliases so the timeseries data is seen before the metadata
+        # For many metrics the list of available assets has thousands of assets
+        # and seeing the timeseries data will require a lot of scrolling
+        query = """
+        {
+          getMetric(metric: "#{metric_registry.metric}"){
+            R1_timeseries: timeseriesData(
+              slug: "#{slug}"
+              from: "utc_now-60d"
+              to: "utc_now"
+              interval: "7d"
+            ){
+              datetime
+              value
+             }
+
+            R2_metadata: metadata {
+              availableSlugs
+            }
+          }
         }
-      }
-    }
-    """
+        """
 
-    SanbaseWeb.Endpoint.backend_url() <> "/graphiql?query=#{URI.encode_www_form(query)}"
+        SanbaseWeb.Endpoint.backend_url() <> "/graphiql?query=#{URI.encode_www_form(query)}"
+    end
   end
 
   defp formatted_value(assigns) do

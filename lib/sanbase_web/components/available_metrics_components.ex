@@ -49,12 +49,19 @@ defmodule SanbaseWeb.AvailableMetricsComponents do
   attr :text, :string, required: true
   attr :href, :string, required: true
   attr :icon, :string, default: nil
+  attr :disabled, :boolean, default: false
 
   def available_metrics_button(assigns) do
     ~H"""
     <.link
       href={@href}
-      class="text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center gap-x-2"
+      class={[
+        if(@disabled,
+          do: "pointer-events-none bg-gray-100 text-gray-400",
+          else: "bg-white hover:bg-gray-100 text-gray-900"
+        ),
+        "border border-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center gap-x-2"
+      ]}
     >
       <CoreComponents.icon :if={@icon} name={@icon} class="text-gray-500" />
       {@text}

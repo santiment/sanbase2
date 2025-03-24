@@ -2,6 +2,7 @@ defmodule Sanbase.Queries.Executor do
   alias Sanbase.Queries.Query
   alias Sanbase.Queries.QueryMetadata
   alias Sanbase.Queries.Executor.Result
+  alias Sanbase.Clickhouse
   alias Sanbase.Clickhouse.Query.Environment
 
   @doc ~s"""
@@ -17,7 +18,7 @@ defmodule Sanbase.Queries.Executor do
 
     _ = put_dynamic_repo()
 
-    %Sanbase.Clickhouse.Query{} =
+    %Clickhouse.Query{} =
       clickhouse_query = create_clickhouse_query(query, query_metadata, environment)
 
     case Sanbase.ClickhouseRepo.query_transform_with_metadata(
@@ -67,29 +68,34 @@ defmodule Sanbase.Queries.Executor do
 
     opts = [settings: "log_comment='#{Jason.encode!(query_metadata)}'", environment: environment]
 
-    Sanbase.Clickhouse.Query.new(query.sql_query_text, query.sql_query_parameters, opts)
+    Clickhouse.Query.new(query.sql_query_text, query.sql_query_parameters, opts)
     |> extend_sql_query(query_metadata)
   end
 
-  defp extend_sql_query(clickhouse_query, query_metadata) do
-    extended_sql =
-      clickhouse_query
-      |> Sanbase.Clickhouse.Query.get_sql_text()
-      |> extend_query_with_prod_marker()
-      |> extend_query_with_user_id_comment(query_metadata.sanbase_user_id)
-
-    Sanbase.Clickhouse.Query.put_sql(clickhouse_query, extended_sql)
+  defp extend_sql_query(
+         %Clickhouse.Query{} = query,
+         %{sanbase_user_id: user_id} = _query_metadata
+       ) do
+    query
+    |> Clickhouse.Query.add_leading_comment(user_id_comment(user_id))
+    |> then(fn query ->
+      if comment = prod_marker_comment() do
+        Clickhouse.Query.add_leading_comment(query, comment)
+      else
+        query
+      end
+    end)
   end
 
-  defp extend_query_with_prod_marker(query) do
+  defp prod_marker_comment() do
     case Application.get_env(:sanbase, :env) do
-      :prod -> "-- __query_ran_from_prod_marker__ \n" <> query
-      _ -> query
+      :prod -> "__query_ran_from_prod_marker__"
+      _ -> nil
     end
   end
 
-  defp extend_query_with_user_id_comment(query, user_id) do
-    "-- __sanbase_user_id_running_the_query__ #{user_id}\n" <> query
+  defp user_id_comment(user_id) do
+    "__sanbase_user_id_running_the_query__ #{user_id}"
   end
 
   # This is passed as the transform function to the ClickhouseRepo function

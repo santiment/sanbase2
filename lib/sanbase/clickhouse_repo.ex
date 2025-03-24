@@ -47,7 +47,11 @@ defmodule Sanbase.ClickhouseRepo do
   @spec query_transform(String.t(), list(), (list() -> any())) ::
           {:ok, any()} | {:error, String.t()}
   def query_transform(%Sanbase.Clickhouse.Query{} = query, transform_fn) do
-    with {:ok, %{sql: sql, args: args}} <- Sanbase.Clickhouse.Query.get_sql_args(query) do
+    type = System.get_env("CONTAINER_TYPE") || "all"
+
+    with query <-
+           Sanbase.Clickhouse.Query.add_leading_comment(query, "sanbase_container_type #{type}"),
+         {:ok, %{sql: sql, args: args}} <- Sanbase.Clickhouse.Query.get_sql_args(query) do
       query_transform(sql, args, transform_fn)
     end
   end
@@ -75,7 +79,11 @@ defmodule Sanbase.ClickhouseRepo do
   @spec query_transform_with_metadata(String.t(), list(), (list() -> list())) ::
           {:ok, Map.t()} | {:error, String.t()}
   def query_transform_with_metadata(%Sanbase.Clickhouse.Query{} = query, transform_fn) do
-    with {:ok, %{sql: sql, args: args}} <- Sanbase.Clickhouse.Query.get_sql_args(query) do
+    type = System.get_env("CONTAINER_TYPE") || "all"
+
+    with query <-
+           Sanbase.Clickhouse.Query.add_leading_comment(query, "sanbase_container_type #{type}"),
+         {:ok, %{sql: sql, args: args}} <- Sanbase.Clickhouse.Query.get_sql_args(query) do
       query_transform_with_metadata(sql, args, transform_fn)
     end
   end
@@ -113,7 +121,11 @@ defmodule Sanbase.ClickhouseRepo do
           {:ok, Map.t()} | {:error, String.t()}
         when acc: any
   def query_reduce(%Sanbase.Clickhouse.Query{} = query, init, reducer) do
-    with {:ok, %{sql: sql, args: args}} <- Sanbase.Clickhouse.Query.get_sql_args(query) do
+    type = System.get_env("CONTAINER_TYPE") || "all"
+
+    with query <-
+           Sanbase.Clickhouse.Query.add_leading_comment(query, "sanbase_container_type #{type}"),
+         {:ok, %{sql: sql, args: args}} <- Sanbase.Clickhouse.Query.get_sql_args(query) do
       query_reduce(sql, args, init, reducer)
     end
   end

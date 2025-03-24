@@ -6,7 +6,7 @@ defmodule Sanbase.Clickhouse.Query do
   using named parameters and a template. It also provides options for adding
   the Clickhous specific SETTINGS and FORMAT fragments to the query.
   """
-  defstruct [:sql, :parameters, :settings, :format, :environment]
+  defstruct [:sql, :parameters, :settings, :leading_comments, :format, :environment]
 
   alias Sanbase.Clickhouse.Query.Environment
 
@@ -17,6 +17,7 @@ defmodule Sanbase.Clickhouse.Query do
           sql: sql(),
           parameters: parameters(),
           settings: String.t() | nil,
+          leading_comments: [],
           environment: Environment.t(),
           format: String.t()
         }
@@ -51,7 +52,26 @@ defmodule Sanbase.Clickhouse.Query do
       parameters: parameters,
       settings: Keyword.get(opts, :settings, nil),
       format: Keyword.get(opts, :format, @default_format),
-      environment: Keyword.get(opts, :environment, Environment.empty())
+      environment: Keyword.get(opts, :environment, Environment.empty()),
+      leading_comments: Keyword.get(opts, :leading_comments, [])
+    }
+  end
+
+  @doc ~s"""
+  Add a string comment to the query. The comment will be added as a leading comment
+  to the query when executed.
+
+  For example adding "sanbase_container_type web" comment to the query `SELECT * FORM table`
+  will make it so the query executed in Clickhouse will have the following format:
+
+    -- sanbase_container_type web
+    SELECT * FROM table
+  """
+  @spec add_leading_comment(t(), String.t()) :: t()
+  def add_leading_comment(struct, comment) do
+    %{
+      struct
+      | leading_comments: [comment | struct.leading_comments]
     }
   end
 
@@ -105,11 +125,28 @@ defmodule Sanbase.Clickhouse.Query do
     |> trim_trailing_semicolon()
     |> add_format()
     |> add_settings()
+    |> prepend_leading_comments()
   end
 
   defp trim_trailing_semicolon(%{sql: sql} = query) do
     sql = sql |> String.trim() |> String.trim_trailing(";")
     %{query | sql: sql}
+  end
+
+  defp prepend_leading_comments(%{leading_comments: []} = query), do: query
+
+  defp prepend_leading_comments(%{sql: sql, leading_comments: comments} = query) do
+    comments_str =
+      comments
+      |> Enum.reverse()
+      |> Enum.map(fn c -> "-- #{c}" end)
+      |> Enum.join("\n")
+      |> String.trim()
+      |> String.trim_trailing("\n")
+
+    new_sql = comments_str <> "\n" <> sql
+
+    %{query | sql: new_sql}
   end
 
   defp add_settings(%{settings: nil} = struct), do: struct

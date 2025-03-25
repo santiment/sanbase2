@@ -3,6 +3,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
   alias Sanbase.Dashboards
   alias Sanbase.Queries.QueryMetadata
   alias Sanbase.Queries.Executor.Result
+  alias Absinthe.Resolution
 
   require Logger
 
@@ -62,6 +63,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
   def run_sql_query(
         _root,
         %{id: query_id},
+        %Resolution{context: %{auth: %{auth_method: :basic}}} = resolution
+      ) do
+    with {:ok, query} <- Queries.get_query(query_id, nil) do
+      Process.put(:queries_dynamic_repo, Queries.max_access_dynamic_repo())
+
+      query_metadata = QueryMetadata.from_resolution(resolution)
+      Queries.run_query(query, %Sanbase.Accounts.User{id: -1}, query_metadata)
+    end
+  end
+
+  def run_sql_query(
+        _root,
+        %{id: query_id},
         %{context: %{auth: %{current_user: user}} = context} = resolution
       ) do
     with :ok <-
@@ -75,6 +89,28 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
       query_metadata = QueryMetadata.from_resolution(resolution)
       Queries.run_query(query, user, query_metadata)
     end
+  end
+
+  def run_raw_sql_query(
+        _root,
+        %{sql_query_text: query_text, sql_query_parameters: query_parameters},
+        %{context: %{auth: %{auth_method: :basic}}} = resolution
+      ) do
+    query_parameters = if query_parameters == "{}", do: %{}, else: query_parameters
+
+    Process.put(
+      :queries_dynamic_repo,
+      Queries.max_access_dynamic_repo()
+    )
+
+    query_metadata = QueryMetadata.from_resolution(resolution)
+
+    query =
+      Queries.get_ephemeral_query_struct(query_text, query_parameters, %Sanbase.Accounts.User{
+        id: -1
+      })
+
+    Queries.run_query(query, %Sanbase.Accounts.User{id: -1}, query_metadata)
   end
 
   def run_raw_sql_query(

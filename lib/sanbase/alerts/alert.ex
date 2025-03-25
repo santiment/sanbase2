@@ -145,7 +145,7 @@ defimpl Sanbase.Alert, for: Any do
       # is the only channel and the telegram bot is blocked by the user.
       # The function returns :ok or {:error, reason} which is used in the
       # caller.
-      deactivate_alert_if_bot_blocked(response, user_trigger)
+      maybe_deactivate_trigger(response, user_trigger)
     end
 
     send_or_limit("telegram", user_trigger, max_alerts_to_send, fun)
@@ -213,7 +213,7 @@ defimpl Sanbase.Alert, for: Any do
       # is the only channel and the telegram bot is blocked by the user.
       # The function returns :ok or {:error, reason} which is used in the
       # caller.
-      deactivate_alert_if_bot_blocked(response, user_trigger)
+      maybe_deactivate_trigger(response, user_trigger)
     end
 
     send_or_limit("telegram_channel", user_trigger, max_alerts_to_send, fun)
@@ -237,9 +237,18 @@ defimpl Sanbase.Alert, for: Any do
 
   defp maybe_send_preview_image_as_reply(_, _, _, _), do: :ok
 
-  defp deactivate_alert_if_bot_blocked({:error, error}, user_trigger) do
-    case String.contains?(error, "blocked the telegram bot") do
-      true ->
+  defp maybe_deactivate_trigger({:error, error}, user_trigger) do
+    cond do
+      String.contains?(error, "chat not found") ->
+        # In case the user_trigger does not have other channels but only telegram
+        # and the user has blocked our telegram bot, the alert is disabled
+        # so it does not spend resources running
+        deactivate_if_telegram_channel_only(user_trigger)
+
+        %{user: %User{id: user_id}, trigger: %{id: trigger_id}} = user_trigger
+        {:error, %{reason: :telegram_chat_not_found, user_id: user_id, trigger_id: trigger_id}}
+
+      String.contains?(error, "blocked the telegram bot") ->
         # In case the user_trigger does not have other channels but only telegram
         # and the user has blocked our telegram bot, the alert is disabled
         # so it does not spend resources running
@@ -248,12 +257,23 @@ defimpl Sanbase.Alert, for: Any do
         %{user: %User{id: user_id}, trigger: %{id: trigger_id}} = user_trigger
         {:error, %{reason: :telegram_bot_blocked, user_id: user_id, trigger_id: trigger_id}}
 
-      false ->
+      String.contains?(error, "error 404. Reason: Not Found") ->
+        # In case the user_trigger does not have other channels but only telegram
+        # and the user has blocked our telegram bot, the alert is disabled
+        # so it does not spend resources running
+        deactivate_if_telegram_channel_only(user_trigger)
+
+        %{user: %User{id: user_id}, trigger: %{id: trigger_id}} = user_trigger
+
+        {:error,
+         %{reason: :telegram_chat_not_found_404, user_id: user_id, trigger_id: trigger_id}}
+
+      true ->
         {:error, error}
     end
   end
 
-  defp deactivate_alert_if_bot_blocked(_response, _trigger), do: :ok
+  defp maybe_deactivate_trigger(_response, _trigger), do: :ok
 
   defp send_preview_image(response, channel, short_url_id) do
     Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->

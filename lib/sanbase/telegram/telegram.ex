@@ -95,7 +95,7 @@ defmodule Sanbase.Telegram do
   end
 
   @doc ~s"""
-  Send a telegram message to a given chat_id.
+  Send aj telegram message to a given chat_id.
   The chat_id is just the chat_id of the telegram chat if it is sending messages to a user
   The chat_id is the `@<alias name>` of a channel when the channel is pubic
   The chat_id is `-100<chat id>` when the channel is private
@@ -116,11 +116,29 @@ defmodule Sanbase.Telegram do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         {:ok, body}
 
+      {:ok, %Tesla.Env{status: 400, body: json_body}} ->
+        body = Jason.decode!(json_body)
+
+        error_msg =
+          "Telegram message not senterror 400. Reason: #{Map.get(body, "description", "Bad request")}"
+
+        Logger.info(error_msg)
+        {:error, error_msg}
+
       {:ok, %Tesla.Env{status: 403}} ->
         user_data = if user, do: "User with id #{user.id}", else: "User"
 
         error_msg =
-          "Telegram message not sent. Reason: #{user_data} has blocked the telegram bot."
+          "Telegram message not sent error 403. Reason: #{user_data} has blocked the telegram bot."
+
+        Logger.info(error_msg)
+        {:error, error_msg}
+
+      {:ok, %Tesla.Env{status: 404, body: json_body}} ->
+        body = Jason.decode!(json_body)
+
+        error_msg =
+          "Telegram message not sent error 404. Reason: #{Map.get(body, "description", "Chat ID not found")}"
 
         Logger.info(error_msg)
         {:error, error_msg}
@@ -128,6 +146,7 @@ defmodule Sanbase.Telegram do
       error ->
         Logger.warning("Telegram message not sent. Reason: #{inspect(error)}")
         {:error, "Telegram message not sent."}
+        error
     end
   end
 

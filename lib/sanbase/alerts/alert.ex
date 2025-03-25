@@ -310,7 +310,8 @@ defimpl Sanbase.Alert, for: Any do
 
   defp deactivate_if_telegram_channel_only(user_trigger) do
     case user_trigger do
-      %{trigger: %{settings: %{channel: channel}}} when channel in ["telegram", ["telegram"]] ->
+      %{trigger: %{settings: %{channel: channel}}}
+      when channel in ["telegram", ["telegram"], "telegram_channel", ["telegram_channel"]] ->
         Logger.info("Deactivating user trigger with id #{user_trigger.id} because the user \
         with id #{user_trigger.user.id} has blocked the telegram bot.")
         Sanbase.Alert.UserTrigger.update_is_active(user_trigger.id, user_trigger.user_id, false)

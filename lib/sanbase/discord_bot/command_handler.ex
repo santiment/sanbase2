@@ -19,6 +19,17 @@ defmodule Sanbase.DiscordBot.CommandHandler do
 
   @max_message_length 1950
 
+  @team_role_id 409_637_386_012_721_155
+  @local_team_role_id 854_304_500_402_880_532
+
+  @spec team_role_id() :: integer()
+  def team_role_id do
+    case Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) do
+      "dev" -> @local_team_role_id
+      _ -> @team_role_id
+    end
+  end
+
   def bot_id() do
     case Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) do
       "dev" -> @local_bot_id
@@ -55,6 +66,40 @@ defmodule Sanbase.DiscordBot.CommandHandler do
     end
   end
 
+  def handle_interaction("summary", interaction, metadata) do
+    Utils.interaction_ack_visible(interaction)
+
+    focused_option =
+      interaction.data.options
+      |> Enum.filter(& &1.focused)
+      |> List.first()
+
+    options_map =
+      interaction.data.options |> Enum.into(%{}, fn option -> {option.name, option.value} end)
+
+    if focused_option do
+      autocomplete(interaction, focused_option.name)
+    else
+      with {:ok, metadata_from_options} <- metadata_from_options(options_map),
+           metadata <- Map.merge(metadata, metadata_from_options),
+           :ok <- check_from_to(interaction, metadata) do
+        summarize_channel_or_thread(interaction, metadata, options_map)
+      else
+        {:error, :from_to_check} ->
+          send_error_message(
+            interaction,
+            "The 'to' datetime should be greater than the 'from' datetime."
+          )
+
+        {:error, error} ->
+          send_error_message(interaction, error)
+
+        _ ->
+          generic_error_message(interaction)
+      end
+    end
+  end
+
   def handle_interaction("up", interaction, context_id) do
     discord_user = interaction.user.username <> interaction.user.discriminator
     AiContext.add_vote(context_id, %{discord_user => 1})
@@ -65,6 +110,15 @@ defmodule Sanbase.DiscordBot.CommandHandler do
     discord_user = interaction.user.username <> interaction.user.discriminator
     AiContext.add_vote(context_id, %{discord_user => -1})
     respond_to_component_interaction(interaction, context_id)
+  end
+
+  def access_denied(interaction) do
+    Utils.interaction_ack_visible(interaction)
+
+    content =
+      "You don't have access to this command. The command is available only to Santiment team members."
+
+    Utils.edit_interaction_response(interaction, content, [])
   end
 
   # helpers
@@ -217,6 +271,38 @@ defmodule Sanbase.DiscordBot.CommandHandler do
     |> Enum.any?()
   end
 
+  def discord_metadata(interaction) do
+    {guild_name, channel_name} =
+      get_guild_channel(
+        interaction.guild_id,
+        interaction.channel_id
+      )
+
+    user_is_team_member =
+      Nostrum.Api.get_guild_member(
+        santiment_guild_id(),
+        interaction.user.id
+      )
+      |> case do
+        {:ok, member} ->
+          team_role_id() in member.roles
+
+        other ->
+          Logger.error("Failed to get guild member: #{inspect(other)}")
+          false
+      end
+
+    %{
+      channel: to_string(interaction.channel_id),
+      guild_id: to_string(interaction.guild_id),
+      channel_name: channel_name,
+      is_thread: thread?(interaction.channel),
+      guild_name: guild_name,
+      discord_user: interaction.user.username <> interaction.user.discriminator,
+      user_is_team_member: user_is_team_member
+    }
+  end
+
   defp respond_to_component_interaction(interaction, context_id) do
     Nostrum.Api.create_interaction_response(interaction.id, interaction.token, %{
       # interaction response type: UPDATE_MESSAGE*	7	for components, edit the message the component was attached to
@@ -227,7 +313,7 @@ defmodule Sanbase.DiscordBot.CommandHandler do
     })
   end
 
-  def ai_context_action_row(%AiContext{} = context) do
+  defp ai_context_action_row(%AiContext{} = context) do
     ar = ActionRow.action_row()
     votes_pos = context.votes |> Enum.count(fn {_k, v} -> v == 1 end)
     votes_neg = context.votes |> Enum.count(fn {_k, v} -> v == -1 end)
@@ -253,7 +339,7 @@ defmodule Sanbase.DiscordBot.CommandHandler do
     |> ActionRow.append(thumbs_down_button)
   end
 
-  def ai_context_action_row(context_id) do
+  defp ai_context_action_row(context_id) do
     context = Sanbase.DiscordBot.AiContext.by_id(context_id)
 
     ai_context_action_row(context)
@@ -383,5 +469,172 @@ defmodule Sanbase.DiscordBot.CommandHandler do
     Nostrum.Api.start_typing(thread_id)
     :timer.sleep(7000)
     loop_typing(thread_id)
+  end
+
+  defp summarize_channel_or_thread(interaction, metadata, options_map) do
+    case metadata.is_thread do
+      false ->
+        case AiServer.summarize_channel(
+               metadata.channel,
+               Map.take(metadata, [:from_dt, :to_dt])
+             ) do
+          {:ok, summary} ->
+            content = """
+            📝 Summary for channel: #{metadata.channel_name} from: `#{options_map["from_dt"]}`, to: `#{options_map["to_dt"]}`
+
+            #{summary}
+            """
+
+            Utils.handle_interaction_response(interaction, content, [])
+
+          {:error, error} ->
+            Logger.error(
+              "Failed to summarize channel: #{metadata.channel_name}, #{inspect(error)}"
+            )
+
+            generic_error_message(interaction)
+        end
+
+      true ->
+        case AiServer.summarize_thread(
+               metadata.channel,
+               Map.take(metadata, [:from_dt, :to_dt])
+             ) do
+          {:ok, summary} ->
+            content = """
+            📝 Summary for thread: #{metadata.channel_name} from: `#{options_map["from_dt"]}`, to: `#{options_map["to_dt"]}`
+
+            #{summary}
+            """
+
+            Utils.handle_interaction_response(interaction, content, [])
+
+          {:error, error} ->
+            Logger.error(
+              "Failed to summarize thread: #{metadata.channel_name}, #{inspect(error)}"
+            )
+
+            generic_error_message(interaction)
+        end
+
+      _ ->
+        generic_error_message(interaction)
+    end
+  end
+
+  defp check_from_to(interaction, metadata) do
+    if metadata[:to_dt] > metadata[:from_dt] do
+      :ok
+    else
+      content = """
+      The 'to' datetime should be greater than the 'from' datetime.
+      """
+
+      Utils.handle_interaction_response(interaction, content, [])
+
+      {:error, :from_to_check}
+    end
+  end
+
+  def metadata_from_options(options_map) do
+    {:ok, channel} = Nostrum.Api.get_channel(options_map["channel_or_thread"])
+    from_dt = text_to_datetime(options_map["from_dt"])
+    to_dt = text_to_datetime(options_map["to_dt"])
+
+    cond do
+      :unsupported_datetime_representation == from_dt ->
+        {:error, "Invalid `from` datetime option"}
+
+      :unsupported_datetime_representation == to_dt ->
+        {:error, "Invalid `to` datetime option"}
+
+      true ->
+        {:ok,
+         %{
+           channel: to_string(channel.id),
+           channel_name: channel.name,
+           is_thread: thread?(channel),
+           from_dt: DateTime.to_unix(from_dt) |> to_string(),
+           to_dt: DateTime.to_unix(to_dt) |> to_string()
+         }}
+    end
+  end
+
+  defp autocomplete(interaction, "from_dt") do
+    choices = [
+      "yesterday",
+      "2 days ago",
+      "3 days ago",
+      "4 days ago",
+      "5 days ago",
+      "6 days ago",
+      "last week",
+      "2 weeks ago",
+      "last month"
+    ]
+
+    do_autocomplete(interaction, choices)
+  end
+
+  defp autocomplete(interaction, "to_dt") do
+    choices = [
+      "now",
+      "yesterday",
+      "2 days ago",
+      "3 days ago",
+      "4 days ago",
+      "5 days ago",
+      "6 days ago",
+      "last week",
+      "2 weeks ago",
+      "last month"
+    ]
+
+    do_autocomplete(interaction, choices)
+  end
+
+  defp do_autocomplete(interaction, choices) do
+    choices = choices |> Enum.map(fn choice -> %{name: choice, value: choice} end)
+
+    response = %{
+      type: 8,
+      data: %{
+        choices: choices
+      }
+    }
+
+    Nostrum.Api.create_interaction_response(interaction, response)
+  end
+
+  def generic_error_message(interaction) do
+    content = "An errror occured. Please try again"
+    Utils.edit_interaction_response(interaction, content, [])
+  end
+
+  defp text_to_datetime("now"), do: DateTime.utc_now()
+  defp text_to_datetime("yesterday"), do: Timex.shift(DateTime.utc_now(), days: -1)
+  defp text_to_datetime("1 day ago"), do: Timex.shift(DateTime.utc_now(), days: -1)
+  defp text_to_datetime("2 days ago"), do: Timex.shift(DateTime.utc_now(), days: -2)
+  defp text_to_datetime("3 days ago"), do: Timex.shift(DateTime.utc_now(), days: -3)
+  defp text_to_datetime("4 days ago"), do: Timex.shift(DateTime.utc_now(), days: -4)
+  defp text_to_datetime("5 days ago"), do: Timex.shift(DateTime.utc_now(), days: -5)
+  defp text_to_datetime("6 days ago"), do: Timex.shift(DateTime.utc_now(), days: -6)
+  defp text_to_datetime("last week"), do: Timex.shift(DateTime.utc_now(), weeks: -1)
+  defp text_to_datetime("last 2 weeks"), do: Timex.shift(DateTime.utc_now(), weeks: -14)
+  defp text_to_datetime("last month"), do: Timex.shift(DateTime.utc_now(), months: -1)
+  defp text_to_datetime(_), do: :unsupported_datetime_representation
+
+  defp thread?(%Nostrum.Struct.Channel{type: 11}) do
+    true
+  end
+
+  defp thread?(_), do: false
+
+  defp send_error_message(interaction, error) do
+    content = """
+    #{error}
+    """
+
+    Utils.handle_interaction_response(interaction, content, [])
   end
 end

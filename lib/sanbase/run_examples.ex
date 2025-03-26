@@ -632,19 +632,21 @@ defmodule Sanbase.RunExamples do
   end
 
   defp do_run(:sanqueries) do
+    sql = """
+    SELECT dt, value
+    FROM intraday_metrics
+    WHERE
+      asset_id = (SELECT asset_id FROM asset_metadata WHERE name == {{slug}} LIMIT 1) AND
+      metric_id = (SELECT metric_id FROM metric_metadata WHERE name == {{metric}} LIMIT 1)
+    LIMIT 2
+    """
+
+    user = %Sanbase.Accounts.User{id: 22}
+    params = %{slug: "bitcoin", metric: "active_addresses_24h"}
+    query = Sanbase.Queries.get_ephemeral_query_struct(sql, params, user)
+
     {:ok, _} =
-      Sanbase.Dashboard.Query.run(
-        """
-        SELECT dt, value
-        FROM intraday_metrics
-        WHERE
-          asset_id = (SELECT asset_id FROM asset_metadata WHERE name == {{slug}} LIMIT 1) AND
-          metric_id = (SELECT metric_id FROM metric_metadata WHERE name == {{metric}} LIMIT 1)
-        LIMIT 2
-        """,
-        %{slug: "bitcoin", metric: "active_addresses_24h"},
-        %{sanbase_user_id: 22}
-      )
+      Sanbase.Queries.run_query(query, user, %{})
 
     {:ok, :success}
   end

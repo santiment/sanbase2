@@ -3,6 +3,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
   alias Sanbase.Dashboards
   alias Sanbase.Queries.QueryMetadata
   alias Sanbase.Queries.Executor.Result
+  alias SanbaseWeb.Graphql.SanbaseDataloader
+
+  import Absinthe.Resolution.Helpers, except: [async: 1]
 
   require Logger
 
@@ -160,9 +163,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     querying_user_id = get_in(resolution.context.auth, [:current_user, Access.key(:id)])
 
     with {:ok, dashboard} <- Dashboards.get_dashboard(id, querying_user_id) do
-      # For backwards compatibility, properly provide the panels.
-      # The Frontend will migrate to queries once they detect panels
-      dashboard = atomize_dashboard_panels_sql_keys(dashboard)
       {:ok, dashboard}
     end
   end
@@ -184,6 +184,43 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
         querying_user_id,
         page: page,
         page_size: page_size
+      )
+    end
+  end
+
+  def get_all_current_user_dashboards(
+        _root,
+        _args,
+        resolution
+      ) do
+    querying_user_id = get_in(resolution.context.auth, [:current_user, Access.key(:id)])
+
+    if is_nil(querying_user_id) do
+      {:error,
+       "Error getting current user dashboards: the query is not executed by a logged in user."}
+    else
+      Dashboards.user_dashboards(
+        querying_user_id,
+        querying_user_id,
+        paginated?: false
+      )
+    end
+  end
+
+  def get_all_user_public_dashboards(
+        %Sanbase.Accounts.User{id: queried_user_id},
+        _args,
+        _resolution
+      ) do
+    if is_nil(queried_user_id) do
+      {:error,
+       "Error getting user dashboards: neither userId is provided, nor the query is executed by a logged in user."}
+    else
+      Dashboards.user_dashboards(
+        queried_user_id,
+        # The public dashboards are those seen by anonymous users
+        _querying_user_id = nil,
+        paginate?: false
       )
     end
   end
@@ -507,36 +544,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     Dashboards.delete_image_widget(dashboard_id, text_widget_id, user.id)
   end
 
-  def atomize_dashboard_panels_sql_keys(struct) do
-    panels = Enum.map(struct.panels, &atomize_panel_sql_keys/1)
-
-    struct
-    |> Map.put(:panels, panels)
+  def dashboard_comments_count(%{id: id}, _args, %{context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(SanbaseDataloader, :dashboard_comments_count, id)
+    |> on_load(fn loader ->
+      count = Dataloader.get(loader, SanbaseDataloader, :dashboard_comments_count, id)
+      {:ok, count || 0}
+    end)
   end
 
-  def atomize_panel_sql_keys(panel) do
-    case panel do
-      %{sql: %{} = sql} ->
-        atomized_sql =
-          Map.new(sql, fn
-            {k, v} when is_binary(k) ->
-              # Ignore old, no longer existing keys like san_query_id
-              try do
-                {String.to_existing_atom(k), v}
-              rescue
-                _ -> {nil, nil}
-              end
+  def get_clickhouse_database_metadata(_root, args, _resolution) do
+    opts = [functions_filter: args[:functions_filter]]
+    Sanbase.Clickhouse.Autocomplete.get_data(opts)
+  end
 
-            {k, v} ->
-              {k, v}
-          end)
-          |> Map.delete(nil)
-
-        %{panel | sql: atomized_sql}
-
-      panel ->
-        panel
-    end
+  def generate_title_by_query(_root, %{sql_query_text: sql_query_text}, _resolution) do
+    Sanbase.OpenAI.generate_from_sql(sql_query_text)
   end
 
   # Private functions

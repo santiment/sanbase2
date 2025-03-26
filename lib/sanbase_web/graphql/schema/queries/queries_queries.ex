@@ -4,10 +4,9 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
   """
   use Absinthe.Schema.Notation
 
-  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 2]
+  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve: 2]
 
   alias SanbaseWeb.Graphql.Resolvers.QueriesResolver
-  # alias SanbaseWeb.Graphql.Resolvers.DashboardResolver
   alias SanbaseWeb.Graphql.Middlewares.UserAuth
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
 
@@ -90,7 +89,7 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
     how many gigabytes/rows were read, how big is the result, how much CPU
     time it used, etc.
     """
-    field :get_clickhouse_query_execution_stats, :query_execution_stats do
+    field :get_clickhouse_query_execution_stats, :sql_query_execution_stats do
       meta(access: :free)
       arg(:clickhouse_query_id, non_null(:string))
 
@@ -223,6 +222,30 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
       middleware(UserAuth)
 
       resolve(&QueriesResolver.run_dashboard_sql_query/3)
+    end
+
+    @desc ~s"""
+    Get metadata bout the Clickhouse database exposed for the SQL Editor.
+
+    The metadata about the Clickhouse database includes information
+    about the columns, tables and functions. This information can be used
+    for displaying info to user and also in the autocomplete implementation
+    """
+    field :get_clickhouse_database_metadata, :clickhouse_database_metadata do
+      meta(access: :free)
+
+      arg(:functions_filter, :clickhouse_metadata_function_filter_enum)
+
+      cache_resolve(&QueriesResolver.get_clickhouse_database_metadata/3)
+    end
+
+    field :generate_title_by_query, :query_human_description do
+      meta(access: :free)
+      arg(:sql_query_text, non_null(:string))
+
+      middleware(UserAuth)
+
+      resolve(&QueriesResolver.generate_title_by_query/3)
     end
   end
 
@@ -490,17 +513,13 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
 
     A dashboard is holding together queries, each defining a
     Clickhouse SQL query and how to visualize it. The dashboard
-    usually has a topic it is about and the panels in it show
+    usually has a topic it is about and the queries in it show
     different types of information about that topic.
 
     The dashboard is created with its name, description, parameters and public
     status. Public dashboards are visible to all users.
 
-    In order to manipulate the panels of the dashboard, refer to the
-    createDashboardPanel/updateDashboardPanel/removeDashboardPanel
-    mutations.
-
-    Dashboard holds the global parameters that are shared by all panels.
+    Dashboard holds the global parameters that are shared by all queries
     """
     field :create_dashboard, :dashboard do
       arg(:name, non_null(:string))
@@ -515,10 +534,6 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
 
     @desc ~s"""
     Update the name, description, parameters or public status of a dashboard.
-
-    In order to manipulate the panels of the dashboard, refer to the
-    createDashboardPanel/updateDashboardPanel/removeDashboardPanel
-    mutations.
     """
     field :update_dashboard, :dashboard do
       arg(:id, non_null(:integer))

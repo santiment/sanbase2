@@ -153,18 +153,13 @@ defmodule Sanbase.ChRepo do
     # maybe_store_executed_clickhouse_sql(sanitized_query, ordered_params)
     # maybe_print_interpolated_query(sanitized_query, ordered_params)
 
-    IO.inspect(query)
-    IO.inspect(args)
-
-    case __MODULE__.query(query, args, types: Sanbase.TemplateEngine.ch_types()) do
+    case __MODULE__.query(query, args) do
       {:ok, result} ->
-        IO.inspect(result, label: "_++________________________________________")
         {:ok, result}
 
       {:error, error} ->
         log_and_return_error(error, "query_transform/3", opts)
     end
-    |> dbg()
   end
 
   @masked_error_message "Cannot execute database query. If issue persists please contact Santiment Support."

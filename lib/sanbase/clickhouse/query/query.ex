@@ -6,9 +6,9 @@ defmodule Sanbase.Clickhouse.Query do
   using named parameters and a template. It also provides options for adding
   the Clickhous specific SETTINGS and FORMAT fragments to the query.
   """
-  defstruct [:sql, :parameters, :settings, :leading_comments, :format, :environment]
-
   alias Sanbase.Clickhouse.Query.Environment
+
+  defstruct [:sql, :parameters, :log_comment, :leading_comments, :format, :environment]
 
   @type sql :: String.t()
   @type parameters :: Map.t()
@@ -16,7 +16,7 @@ defmodule Sanbase.Clickhouse.Query do
   @type t :: %__MODULE__{
           sql: sql(),
           parameters: parameters(),
-          settings: String.t() | nil,
+          log_comment: map() | nil,
           leading_comments: [],
           environment: Environment.t(),
           format: String.t()
@@ -34,14 +34,12 @@ defmodule Sanbase.Clickhouse.Query do
     iex> Sanbase.Clickhouse.Query.new(
     ...    "SELECT * FROM intraday_metrics WHERE asset_id = get_asset_id({{slug}})) LIMIT 5",
     ...    %{slug: "bitcoin"},
-    ...    settings: 'log_comment=[\'comment\']',
     ...    format: "JSONCompact"
     ...  )
 
     %Sanbase.Clickhouse.Query{
       sql: "SELECT * FROM intraday_metrics WHERE asset_id = get_asset_id({{slug}})) LIMIT 5",
       parameters: %{slug: "bitcoin"},
-      settings: 'log_comment=[\'comment\']',
       format: "JSONCompact"
     }
   """
@@ -50,7 +48,7 @@ defmodule Sanbase.Clickhouse.Query do
     %__MODULE__{
       sql: sql,
       parameters: parameters,
-      settings: Keyword.get(opts, :settings, nil),
+      log_comment: Keyword.get(opts, :log_comment, %{}),
       format: Keyword.get(opts, :format, @default_format),
       environment: Keyword.get(opts, :environment, Environment.empty()),
       leading_comments: Keyword.get(opts, :leading_comments, [])
@@ -68,7 +66,7 @@ defmodule Sanbase.Clickhouse.Query do
     SELECT * FROM table
   """
   @spec add_leading_comment(t(), String.t()) :: t()
-  def add_leading_comment(struct, comment) do
+  def add_leading_comment(%__MODULE__{} = struct, comment) do
     %{
       struct
       | leading_comments: [comment | struct.leading_comments]
@@ -76,7 +74,7 @@ defmodule Sanbase.Clickhouse.Query do
   end
 
   @spec put_sql(t(), sql) :: t()
-  def put_sql(struct, sql) when is_binary(sql) do
+  def put_sql(%__MODULE__{} = struct, sql) when is_binary(sql) do
     %{struct | sql: sql}
   end
 
@@ -84,15 +82,37 @@ defmodule Sanbase.Clickhouse.Query do
   def get_sql_parameters(%__MODULE__{} = query), do: query.parameters
 
   @spec put_sql(t(), parameters) :: t()
-  def put_parameters(struct, parameters) when is_map(parameters) do
+  def put_parameters(%__MODULE__{} = struct, parameters) when is_map(parameters) do
     %{struct | parameters: parameters}
   end
 
+  @doc ~s"""
+
+  """
   @spec add_parameter(t(), any(), any()) :: t()
-  def add_parameter(struct, key, value) do
+  def add_parameter(%__MODULE__{} = struct, key, value) do
     parameters = struct.parameters |> Map.put(key, value)
 
     %{struct | parameters: parameters}
+  end
+
+  @doc ~s"""
+  Extends the `log_comment` field of the given struct with additional data from the provided map.
+
+  ## Parameters
+  - `struct`: A `%__MODULE__{}` struct whose `log_comment` field will be extended.
+  - `map`: A map containing the additional data to be merged into the `log_comment`.
+
+  ## Returns
+  The updated struct with the extended `log_comment`.
+
+  """
+  @spec extend_log_comment(t(), map()) :: t()
+  def extend_log_comment(%__MODULE__{} = struct, map) when is_map(map) do
+    %{
+      struct
+      | log_comment: Map.merge(struct.log_comment, map)
+    }
   end
 
   @doc ~s"""
@@ -149,9 +169,11 @@ defmodule Sanbase.Clickhouse.Query do
     %{query | sql: new_sql}
   end
 
-  defp add_settings(%{settings: nil} = struct), do: struct
+  defp add_settings(%{log_comment: map} = struct) when map_size(map) == 0, do: struct
 
-  defp add_settings(%{sql: sql, settings: settings} = query) do
+  defp add_settings(%{sql: sql, log_comment: log_comment} = query) do
+    settings = "log_comment='#{Jason.encode!(log_comment)}'"
+
     sql = sql <> "\nSETTINGS #{settings}"
     %{query | sql: sql}
   end

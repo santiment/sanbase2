@@ -3,6 +3,7 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
 
   alias SanbaseWeb.Graphql.Resolvers.UserResolver
   alias SanbaseWeb.Graphql.Resolvers.VoteResolver
+  alias SanbaseWeb.Graphql.Resolvers.QueriesResolver
 
   @desc ~s"""
   A GraphQL type that represents an SQL Query.

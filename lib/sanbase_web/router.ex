@@ -105,6 +105,7 @@ defmodule SanbaseWeb.Router do
         live("/groups", GroupLive.Index)
         live("/groups/new", GroupLive.Form, :new)
         live("/groups/edit/:id", GroupLive.Form, :edit)
+        live("/changelog", MetricChangelogLive)
       end
     end
 

@@ -8,6 +8,7 @@ import "flowbite/dist/flowbite.phoenix.js";
 import { FocusInput } from "./focus_input"
 import Sortable from 'sortablejs'
 import { Sortable as SortableHook } from "./metric_hooks"
+import { InfiniteScroll } from "./infinite_scroll"
 
 // Make Sortable available globally
 window.Sortable = Sortable
@@ -16,7 +17,8 @@ window.Alpine = Alpine
 Alpine.start()
 const Hooks = { 
   FocusInput: FocusInput,
-  Sortable: SortableHook
+  Sortable: SortableHook,
+  InfiniteScroll: InfiniteScroll
 }
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 let liveSocket = new LiveSocket("/live", Socket, {

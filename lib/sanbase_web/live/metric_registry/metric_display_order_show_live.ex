@@ -89,6 +89,7 @@ defmodule SanbaseWeb.MetricDisplayOrderShowLive do
     rows = [
       %{key: "Metric", value: assigns.display_order.metric},
       %{key: "Label", value: assigns.display_order.ui_human_readable_name || ""},
+      %{key: "UI Key", value: assigns.display_order.ui_key || ""},
       %{key: "Category", value: category_name},
       %{key: "Group", value: group_name},
       %{key: "Display Order", value: assigns.display_order.display_order},

@@ -208,6 +208,9 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
                 Label
               </th>
               <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                UI Key
+              </th>
+              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Category
               </th>
               <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -226,6 +229,9 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
                 </td>
                 <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                   {result.ui_human_readable_name}
+                </td>
+                <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                  {result.ui_key}
                 </td>
                 <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                   {result.category_name}
@@ -279,6 +285,12 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
               class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
             >
               Label
+            </th>
+            <th
+              scope="col"
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              UI Key
             </th>
             <th
               scope="col"
@@ -370,6 +382,9 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
       </td>
       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
         {@metric.ui_human_readable_name}
+      </td>
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        {@metric.ui_key}
       </td>
       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
         {@metric.category_name}
@@ -528,6 +543,10 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
           String.contains?(String.downcase(metric.metric || ""), downcased_query) ||
             String.contains?(
               String.downcase(metric.ui_human_readable_name || ""),
+              downcased_query
+            ) ||
+            String.contains?(
+              String.downcase(metric.ui_key || ""),
               downcased_query
             )
         end)

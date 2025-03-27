@@ -159,6 +159,7 @@ defmodule Sanbase.Metric.UIMetadata.MetricsImporter do
         category_id,
         group_id,
         ui_human_readable_name: metric_data["label"] || metric_name,
+        ui_key: metric_data["ui_key"] || nil,
         chart_style: metric_data["style"] || "line",
         unit: metric_data["format"] || "",
         description: metric_data["description"] || "",

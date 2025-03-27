@@ -9,6 +9,7 @@ defmodule SanbaseWeb.Graphql.MetricDisplayOrderTypes do
     field(:metric, non_null(:string))
     field(:type, :string)
     field(:ui_human_readable_name, :string)
+    field(:ui_key, :string)
     field(:category_name, :string)
     field(:group_name, :string)
     field(:chart_style, :string)

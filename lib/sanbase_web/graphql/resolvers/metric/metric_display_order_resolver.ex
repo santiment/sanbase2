@@ -76,6 +76,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricDisplayOrderResolver do
       metric: display_order.metric,
       type: display_order.type,
       ui_human_readable_name: display_order.ui_human_readable_name,
+      ui_key: display_order.ui_key,
       category_name: category_name,
       group_name: group_name,
       chart_style: display_order.chart_style,

@@ -27,6 +27,7 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
           code_module: String.t(),
           metric_registry_id: integer(),
           ui_human_readable_name: String.t(),
+          ui_key: String.t(),
           chart_style: String.t(),
           unit: String.t(),
           description: String.t(),
@@ -40,6 +41,7 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
     field(:metric, :string)
     field(:registry_metric, :string)
     field(:ui_human_readable_name, :string)
+    field(:ui_key, :string)
     field(:chart_style, :string, default: "line")
     field(:unit, :string, default: "")
     field(:description, :string)
@@ -70,6 +72,7 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
       :code_module,
       :metric_registry_id,
       :ui_human_readable_name,
+      :ui_key,
       :chart_style,
       :unit,
       :description,
@@ -285,6 +288,7 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
           metric: metric,
           registry_metric: registry_metric,
           ui_human_readable_name: display_order.ui_human_readable_name || metric,
+          ui_key: display_order.ui_key,
           category_id: display_order.category_id,
           category_name: category_name,
           group_id: display_order.group_id,
@@ -316,6 +320,7 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
   """
   def add_metric(metric_name, category_id, group_id \\ nil, opts \\ []) do
     ui_human_readable_name = Keyword.get(opts, :ui_human_readable_name, metric_name)
+    ui_key = Keyword.get(opts, :ui_key)
     chart_style = Keyword.get(opts, :chart_style, "line")
     unit = Keyword.get(opts, :unit, "")
     description = Keyword.get(opts, :description, "")
@@ -371,6 +376,7 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
       metric_registry_id: metric_registry_id,
       registry_metric: registry_metric,
       ui_human_readable_name: ui_human_readable_name,
+      ui_key: ui_key,
       chart_style: chart_style,
       unit: unit,
       description: description,

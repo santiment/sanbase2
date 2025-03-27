@@ -68,6 +68,7 @@ defmodule SanbaseWeb.MetricDisplayOrderNewLive do
   defp create_form do
     to_form(%{
       "ui_human_readable_name" => "",
+      "ui_key" => "",
       "category_id" => "",
       "group_id" => "",
       "chart_style" => "line",
@@ -256,6 +257,12 @@ defmodule SanbaseWeb.MetricDisplayOrderNewLive do
     ~H"""
     <.simple_form for={@form} phx-change="validate" phx-submit="save">
       <.input type="text" field={@form[:ui_human_readable_name]} label="Label" />
+      <.input
+        type="text"
+        field={@form[:ui_key]}
+        label="UI Key"
+        placeholder="e.g. daily_active_addresses"
+      />
 
       <.input
         type="select"
@@ -320,6 +327,7 @@ defmodule SanbaseWeb.MetricDisplayOrderNewLive do
           :source,
           to_form(%{
             "ui_human_readable_name" => metric.human_readable_name,
+            "ui_key" => "",
             "metric_name" => metric.metric,
             "registry_metric" => metric.metric
           })
@@ -390,6 +398,7 @@ defmodule SanbaseWeb.MetricDisplayOrderNewLive do
               category_id,
               group_id,
               ui_human_readable_name: params["ui_human_readable_name"],
+              ui_key: params["ui_key"],
               chart_style: params["chart_style"],
               unit: params["unit"],
               description: params["description"],
@@ -412,6 +421,7 @@ defmodule SanbaseWeb.MetricDisplayOrderNewLive do
               category_id,
               group_id,
               ui_human_readable_name: params["ui_human_readable_name"],
+              ui_key: params["ui_key"],
               chart_style: params["chart_style"],
               unit: params["unit"],
               description: params["description"],

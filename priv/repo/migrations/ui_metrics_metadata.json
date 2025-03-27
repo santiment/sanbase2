@@ -228,6 +228,13 @@
       },
       {
         "category": "Financial",
+        "label": "BTC and S&P 500 Price Divergence",
+        "metric": "btc_s_and_p_price_divergence",
+        "ui_key": "btc_s_and_p_price_divergence",
+        "style": "line"
+      },
+      {
+        "category": "Financial",
         "label": "Minimum Daily Price of NFT Collections in ETH",
         "metric": "nft_collection_min_price",
         "style": "line"
@@ -3786,7 +3793,8 @@
         "group": "Exchanges 2.0",
         "label": "KuCoin Historical Balance",
         "metric": "labelled_historical_balance",
-        "style": "line"
+        "style": "line",
+        "ui_key": "lhb_KuCoin"
       },
       {
         "args": {
@@ -3796,7 +3804,8 @@
         "group": "Exchanges 2.0",
         "label": "Poloniex Historical Balance",
         "metric": "labelled_historical_balance",
-        "style": "line"
+        "style": "line",
+        "ui_key": "lhb_Poloniex"
       },
       {
         "args": {
@@ -3806,7 +3815,8 @@
         "group": "Exchanges 2.0",
         "label": "Kraken Historical Balance",
         "metric": "labelled_historical_balance",
-        "style": "line"
+        "style": "line",
+        "ui_key": "lhb_Kraken"
       },
       {
         "args": {
@@ -3816,7 +3826,8 @@
         "group": "Exchanges 2.0",
         "label": "Binance Historical Balance",
         "metric": "labelled_historical_balance",
-        "style": "line"
+        "style": "line",
+        "ui_key": "lhb_Binance"
       },
       {
         "args": {
@@ -3826,7 +3837,8 @@
         "group": "Exchanges 2.0",
         "label": "Bitfinex Historical Balance",
         "metric": "labelled_historical_balance",
-        "style": "line"
+        "style": "line",
+        "ui_key": "lhb_Bitfinex"
       },
       {
         "args": {
@@ -3836,7 +3848,8 @@
         "group": "Exchanges 2.0",
         "label": "Gate Historical Balance",
         "metric": "labelled_historical_balance",
-        "style": "line"
+        "style": "line",
+        "ui_key": "lhb_Gate"
       },
       {
         "args": {
@@ -3846,7 +3859,8 @@
         "group": "Exchanges 2.0",
         "label": "Bittrex Historical Balance",
         "metric": "labelled_historical_balance",
-        "style": "line"
+        "style": "line",
+        "ui_key": "lhb_Bittrex"
       },
       {
         "args": {
@@ -3856,7 +3870,8 @@
         "group": "Exchanges 2.0",
         "label": "Huobi Historical Balance",
         "metric": "labelled_historical_balance",
-        "style": "line"
+        "style": "line",
+        "ui_key": "lhb_Huobi"
       },
       {
         "args": {
@@ -3866,7 +3881,8 @@
         "group": "Exchanges 2.0",
         "label": "Coinbase Historical Balance",
         "metric": "labelled_historical_balance",
-        "style": "line"
+        "style": "line",
+        "ui_key": "lhb_Coinbase"
       },
       {
         "args": {
@@ -3876,7 +3892,8 @@
         "group": "Exchanges 2.0",
         "label": "OKX Historical Balance",
         "metric": "labelled_historical_balance",
-        "style": "line"
+        "style": "line",
+        "ui_key": "lhb_OKEx"
       },
       {
         "args": {
@@ -3886,7 +3903,8 @@
         "group": "Exchanges 2.0",
         "label": "Bitstamp Historical Balance",
         "metric": "labelled_historical_balance",
-        "style": "line"
+        "style": "line",
+        "ui_key": "lhb_Bitstamp"
       },
       {
         "args": {
@@ -3896,7 +3914,8 @@
         "group": "Exchanges 2.0",
         "label": "KuCoin Historical Balance Changes",
         "metric": "labelled_historical_balance_changes",
-        "style": "line"
+        "style": "line",
+        "ui_key": "lhbc_KuCoin"
       },
       {
         "args": {
@@ -3906,7 +3925,8 @@
         "group": "Exchanges 2.0",
         "label": "Poloniex Historical Balance Changes",
         "metric": "labelled_historical_balance_changes",
-        "style": "line"
+        "style": "line",
+        "ui_key": "lhbc_Poloniex"
       },
       {
         "args": {
@@ -3916,7 +3936,8 @@
         "group": "Exchanges 2.0",
         "label": "Kraken Historical Balance Changes",
         "metric": "labelled_historical_balance_changes",
-        "style": "line"
+        "style": "line",
+        "ui_key": "lhbc_Kraken"
       },
       {
         "args": {
@@ -3926,7 +3947,8 @@
         "group": "Exchanges 2.0",
         "label": "Binance Historical Balance Changes",
         "metric": "labelled_historical_balance_changes",
-        "style": "line"
+        "style": "line",
+        "ui_key": "lhbc_Binance"
       },
       {
         "args": {
@@ -3936,7 +3958,8 @@
         "group": "Exchanges 2.0",
         "label": "Bitfinex Historical Balance Changes",
         "metric": "labelled_historical_balance_changes",
-        "style": "line"
+        "style": "line",
+        "ui_key": "lhbc_Bitfinex"
       },
       {
         "args": {
@@ -3946,7 +3969,8 @@
         "group": "Exchanges 2.0",
         "label": "Gate Historical Balance Changes",
         "metric": "labelled_historical_balance_changes",
-        "style": "line"
+        "style": "line",
+        "ui_key": "lhbc_Gate"
       },
       {
         "args": {
@@ -3956,7 +3980,8 @@
         "group": "Exchanges 2.0",
         "label": "Bittrex Historical Balance Changes",
         "metric": "labelled_historical_balance_changes",
-        "style": "line"
+        "style": "line",
+        "ui_key": "lhbc_Bittrex"
       },
       {
         "args": {
@@ -3966,7 +3991,8 @@
         "group": "Exchanges 2.0",
         "label": "Huobi Historical Balance Changes",
         "metric": "labelled_historical_balance_changes",
-        "style": "line"
+        "style": "line",
+        "ui_key": "lhbc_Huobi"
       },
       {
         "args": {
@@ -3976,7 +4002,8 @@
         "group": "Exchanges 2.0",
         "label": "Coinbase Historical Balance Changes",
         "metric": "labelled_historical_balance_changes",
-        "style": "line"
+        "style": "line",
+        "ui_key": "lhbc_Coinbase"
       },
       {
         "args": {
@@ -3986,7 +4013,8 @@
         "group": "Exchanges 2.0",
         "label": "OKX Historical Balance Changes",
         "metric": "labelled_historical_balance_changes",
-        "style": "line"
+        "style": "line",
+        "ui_key": "lhbc_OKEx"
       },
       {
         "args": {
@@ -3996,7 +4024,8 @@
         "group": "Exchanges 2.0",
         "label": "Bitstamp Historical Balance Changes",
         "metric": "labelled_historical_balance_changes",
-        "style": "line"
+        "style": "line",
+        "ui_key": "lhbc_Bitstamp"
       },
       {
         "args": {
@@ -4006,7 +4035,8 @@
         "group": "Funds",
         "label": "Supply held by Funds",
         "metric": "labelled_historical_balance",
-        "style": "line"
+        "style": "line",
+        "ui_key": "amount_in_funds"
       },
       {
         "args": {
@@ -4016,7 +4046,8 @@
         "group": "DeFi",
         "label": "Supply held by Bridges",
         "metric": "labelled_historical_balance",
-        "style": "line"
+        "style": "line",
+        "ui_key": "amount_in_bridges"
       },
       {
         "args": {
@@ -4026,7 +4057,8 @@
         "group": "DeFi",
         "label": "Supply held by Lendings",
         "metric": "labelled_historical_balance",
-        "style": "line"
+        "style": "line",
+        "ui_key": "amount_in_lendings"
       },
       {
         "args": {
@@ -4036,7 +4068,8 @@
         "group": "Miners",
         "label": "Supply held by Miners",
         "metric": "labelled_historical_balance",
-        "style": "line"
+        "style": "line",
+        "ui_key": "amount_in_miners"
       }
     ],
     "Social": [
@@ -4089,7 +4122,8 @@
         "args": {
           "source": "telegram",
           "channel": "telegram"
-        }
+        },
+        "ui_key": "social_active_users_telegram"
       },
       {
         "category": "Social",
@@ -4099,7 +4133,8 @@
         "args": {
           "source": "twitter_crypto",
           "channel": "twitter"
-        }
+        },
+        "ui_key": "social_active_users_twitter"
       },
       {
         "category": "Social",
@@ -4118,7 +4153,8 @@
             "type": "changes"
           },
           "interval": "24h"
-        }
+        },
+        "ui_key": "twitter_followers_24h"
       },
       {
         "category": "Social",
@@ -4130,13 +4166,15 @@
             "type": "changes"
           },
           "interval": "7d"
-        }
+        },
+        "ui_key": "twitter_followers_7d"
       },
       {
         "category": "Social",
         "label": "Trending Social Rank",
         "metric": "trending_words_rank",
-        "style": "reference"
+        "style": "reference",
+        "ui_key": "trending_social_rank"
       },
       {
         "category": "Social",

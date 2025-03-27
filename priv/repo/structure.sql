@@ -2330,7 +2330,8 @@ CREATE TABLE public.metric_display_order (
     description text,
     type character varying(255) DEFAULT 'metric'::character varying,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    ui_key character varying(255)
 );
 
 
@@ -10139,3 +10140,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250313103159);
 INSERT INTO public."schema_migrations" (version) VALUES (20250318100855);
 INSERT INTO public."schema_migrations" (version) VALUES (20250318100856);
 INSERT INTO public."schema_migrations" (version) VALUES (20250324103930);
+INSERT INTO public."schema_migrations" (version) VALUES (20250327120623);

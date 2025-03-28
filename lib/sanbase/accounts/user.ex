@@ -33,6 +33,8 @@ defmodule Sanbase.Accounts.User do
   @sanbase_bot_email "sanbase.bot@santiment.net"
   @allowed_metric_access_levels ["alpha", "beta", "released"]
 
+  @preloads [:roles, :eth_accounts, :user_settings]
+
   @derive {Inspect,
            except: [
              :salt,
@@ -232,7 +234,7 @@ defmodule Sanbase.Accounts.User do
   def by_id(user_id, opts \\ [])
 
   def by_id(user_id, opts) when is_integer(user_id) do
-    query = from(u in __MODULE__, where: u.id == ^user_id)
+    query = from(u in __MODULE__, where: u.id == ^user_id) |> maybe_preload(opts)
 
     query =
       case Keyword.get(opts, :lock_for_update, false) do
@@ -246,20 +248,20 @@ defmodule Sanbase.Accounts.User do
     end
   end
 
-  def by_id(user_ids, _opts) when is_list(user_ids) do
+  def by_id(user_ids, opts) when is_list(user_ids) do
     users =
       from(
         u in __MODULE__,
         where: u.id in ^user_ids,
-        order_by: fragment("array_position(?, ?::int)", ^user_ids, u.id),
-        preload: [:eth_accounts, :user_settings]
+        order_by: fragment("array_position(?, ?::int)", ^user_ids, u.id)
       )
+      |> maybe_preload(opts)
       |> Repo.all()
 
     {:ok, users}
   end
 
-  def by_search_text(search_text) do
+  def by_search_text(search_text, opts \\ []) do
     search_text = "%" <> search_text <> "%"
 
     from(u in __MODULE__,
@@ -267,52 +269,53 @@ defmodule Sanbase.Accounts.User do
       or_where: like(u.username, ^search_text),
       or_where: like(u.name, ^search_text)
     )
+    |> maybe_preload(opts)
     |> Repo.all()
   end
 
-  @doc false
-  def all_users() do
-    # Apparantly, it does not fetch all users.
-    from(
-      u in __MODULE__,
-      order_by: [desc: u.updated_at],
-      limit: 2000
-    )
-    |> Repo.all()
-  end
+  def by_email(email, opts \\ []) when is_binary(email) do
+    query = from(u in __MODULE__, where: u.email == ^email) |> maybe_preload(opts)
 
-  def by_email(email) when is_binary(email) do
-    case Sanbase.Repo.get_by(User, email: email) do
+    case Sanbase.Repo.one(query) do
       nil -> {:error, "Cannot fetch user with email #{email}"}
       %__MODULE__{} = user -> {:ok, user}
     end
   end
 
-  def by_username(username) when is_binary(username) do
-    case Sanbase.Repo.get_by(User, username: username) do
+  def by_username(username, opts \\ []) when is_binary(username) do
+    query = from(u in __MODULE__, where: u.username == ^username) |> maybe_preload(opts)
+
+    case Sanbase.Repo.one(query) do
       nil -> {:error, "Cannot fetch user with username #{username}"}
       %__MODULE__{} = user -> {:ok, user}
     end
   end
 
-  def by_twitter_id(twitter_id) when is_binary(twitter_id) do
-    case Sanbase.Repo.get_by(User, twitter_id: twitter_id) do
+  def by_twitter_id(twitter_id, opts \\ []) when is_binary(twitter_id) do
+    query = from(u in __MODULE__, where: u.twitter_id == ^twitter_id) |> maybe_preload(opts)
+
+    case Sanbase.Repo.one(query) do
       nil -> {:error, "Cannot fetch user with twitter_id #{twitter_id}"}
       %__MODULE__{} = user -> {:ok, user}
     end
   end
 
-  def by_stripe_customer_id(stripe_customer_id) do
-    case Repo.get_by(User, stripe_customer_id: stripe_customer_id) do
+  def by_stripe_customer_id(stripe_customer_id, opts \\ []) do
+    query =
+      from(u in __MODULE__, where: u.stripe_customer_id == ^stripe_customer_id)
+      |> maybe_preload(opts)
+
+    case Sanbase.Repo.one(query) do
       nil -> {:error, "Cannot fetch user with stripe_customer_id #{stripe_customer_id}"}
       %__MODULE__{} = user -> {:ok, user}
     end
   end
 
-  def by_selector(%{id: id}), do: by_id(Sanbase.Math.to_integer(id))
-  def by_selector(%{email: email}), do: by_email(email)
-  def by_selector(%{username: username}), do: by_username(username)
-  def by_selector(%{twitter_id: twitter_id}), do: by_twitter_id(twitter_id)
+  def by_selector(selector, opts \\ [])
+  def by_selector(%{id: id}, opts), do: by_id(Sanbase.Math.to_integer(id), opts)
+  def by_selector(%{email: email}, opts), do: by_email(email, opts)
+  def by_selector(%{username: username}, opts), do: by_username(username, opts)
+  def by_selector(%{twitter_id: twitter_id}, opts), do: by_twitter_id(twitter_id, opts)
 
   def update_field(%__MODULE__{} = user, field, value) do
     case Map.fetch!(user, field) == value do
@@ -331,7 +334,10 @@ defmodule Sanbase.Accounts.User do
     # so the registration progress can evolve in the proper direction
     value = normalize_user_identificator(field, value)
 
-    case Repo.get_by(User, [{field, value}]) do
+    query =
+      from(u in __MODULE__, where: field(u, ^field) == ^value) |> maybe_preload(preload?: true)
+
+    case Repo.one(query) do
       nil ->
         user_create_attrs =
           Map.merge(
@@ -412,9 +418,9 @@ defmodule Sanbase.Accounts.User do
     from(
       u in __MODULE__,
       inner_join: ea in assoc(u, :eth_accounts),
-      preload: :eth_accounts,
       distinct: true
     )
+    |> maybe_preload(preload?: true)
     |> Repo.all()
   end
 
@@ -426,5 +432,18 @@ defmodule Sanbase.Accounts.User do
     |> changeset(attrs)
     |> Repo.update()
     |> emit_event(:update_user_profile, %{})
+  end
+
+  # Private functions
+
+  defp maybe_preload(query, opts) do
+    case Keyword.get(opts, :preload?, true) do
+      true ->
+        preloads = Keyword.get(opts, :preload, @preloads)
+        query |> preload(^preloads)
+
+      false ->
+        query
+    end
   end
 end

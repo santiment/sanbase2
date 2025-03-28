@@ -486,6 +486,48 @@
       },
       {
         "category": "On-chain",
+        "group": "Aave Safety Module",
+        "label": "Aave Safety Module Staked Amount",
+        "metric": "aave_safety_module_amount",
+        "style": "line"
+      },
+      {
+        "category": "On-chain",
+        "group": "Aave Safety Module",
+        "label": "Aave Safety Module Staked Amount in USD",
+        "metric": "aave_safety_module_amount_usd",
+        "style": "line"
+      },
+      {
+        "category": "On-chain",
+        "group": "Aave Safety Module",
+        "label": "Aave Safety Module Emission in USD",
+        "metric": "aave_safety_module_emission_usd",
+        "style": "line"
+      },
+      {
+        "category": "On-chain",
+        "group": "Aave Safety Module",
+        "label": "Aave Safety Module APR",
+        "metric": "aave_safety_module_apr",
+        "style": "line"
+      },
+      {
+        "category": "On-chain",
+        "group": "Aave Safety Module",
+        "label": "Aave Safety Module Total Staked Amount in USD",
+        "metric": "aave_safety_module_total_amount_usd",
+        "style": "line"
+      },
+      {
+        "category": "On-chain",
+        "group": "Aave Safety Module",
+        "label": "Aave Safety Module Total Emission in USD",
+        "metric": "aave_safety_module_total_emission_usd",
+        "style": "line"
+      },
+      {
+        "category": "On-chain",
         "group": "Aave v2",
         "label": "Aave v2 Deposits",
         "metric": "aave_v2_action_deposits",
@@ -1693,6 +1735,34 @@
         "label": "Fluid Protocol Total Repayments in USD",
         "metric": "fluid_total_repayments_usd",
         "style": "bar"
+      },
+      {
+        "category": "On-chain",
+        "group": "Fluid",
+        "label": "Fluid Total Supplied",
+        "metric": "fluid_total_supplied",
+        "style": "line"
+      },
+      {
+        "category": "On-chain",
+        "group": "Fluid",
+        "label": "Fluid Total Supplied in USD",
+        "metric": "fluid_total_supplied_usd",
+        "style": "line"
+      },
+      {
+        "category": "On-chain",
+        "group": "Fluid",
+        "label": "Fluid Supply APY",
+        "metric": "fluid_supply_apy",
+        "style": "line"
+      },
+      {
+        "category": "On-chain",
+        "group": "Fluid",
+        "label": "Fluid Protocol Total Supplied in USD",
+        "metric": "fluid_protocol_total_supplied_usd",
+        "style": "line"
       },
       {
         "category": "On-chain",

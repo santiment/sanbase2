@@ -55,6 +55,10 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field(:website_url, :string)
     field(:twitter_url, :string)
 
+    field(:user_roles, list_of(:user_role)) do
+      resolve(&UserResolver.user_roles/3)
+    end
+
     field :triggers, list_of(:trigger) do
       cache_resolve(&UserTriggerResolver.public_triggers/3, ttl: 60)
     end

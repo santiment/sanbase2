@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.1 (Homebrew)
--- Dumped by pg_dump version 15.1 (Homebrew)
+-- Dumped from database version 15.10 (Homebrew)
+-- Dumped by pg_dump version 15.10 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -2387,9 +2387,9 @@ CREATE TABLE public.metric_registry (
     deprecation_note text,
     inserted_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
-    status character varying(255) DEFAULT 'released'::character varying NOT NULL,
     is_verified boolean DEFAULT true NOT NULL,
     sync_status character varying(255) DEFAULT 'synced'::character varying NOT NULL,
+    status character varying(255) DEFAULT 'released'::character varying NOT NULL,
     last_sync_datetime timestamp(0) without time zone
 );
 
@@ -4782,7 +4782,10 @@ CREATE TABLE public.users (
     twitter_id character varying(255) DEFAULT NULL::character varying,
     name character varying(255),
     registration_state jsonb DEFAULT '{"state": "init"}'::jsonb,
-    metric_access_level character varying(255) DEFAULT 'released'::character varying NOT NULL
+    metric_access_level character varying(255) DEFAULT 'released'::character varying NOT NULL,
+    description text,
+    twitter_url character varying(255),
+    website_url character varying(255)
 );
 
 
@@ -10114,19 +10117,20 @@ INSERT INTO public."schema_migrations" (version) VALUES (20241029080754);
 INSERT INTO public."schema_migrations" (version) VALUES (20241029082533);
 INSERT INTO public."schema_migrations" (version) VALUES (20241029151959);
 INSERT INTO public."schema_migrations" (version) VALUES (20241030141825);
-INSERT INTO public."schema_migrations" (version) VALUES (20241104061632);
 INSERT INTO public."schema_migrations" (version) VALUES (20241104115340);
 INSERT INTO public."schema_migrations" (version) VALUES (20241108112754);
 INSERT INTO public."schema_migrations" (version) VALUES (20241112094924);
 INSERT INTO public."schema_migrations" (version) VALUES (20241114140339);
 INSERT INTO public."schema_migrations" (version) VALUES (20241114141110);
 INSERT INTO public."schema_migrations" (version) VALUES (20241116104556);
+INSERT INTO public."schema_migrations" (version) VALUES (20241121133719);
 INSERT INTO public."schema_migrations" (version) VALUES (20241128113958);
 INSERT INTO public."schema_migrations" (version) VALUES (20241128161315);
 INSERT INTO public."schema_migrations" (version) VALUES (20241202104812);
 INSERT INTO public."schema_migrations" (version) VALUES (20241212054904);
 INSERT INTO public."schema_migrations" (version) VALUES (20250110083203);
 INSERT INTO public."schema_migrations" (version) VALUES (20250121155544);
+INSERT INTO public."schema_migrations" (version) VALUES (20250124152414);
 INSERT INTO public."schema_migrations" (version) VALUES (20250203104426);
 INSERT INTO public."schema_migrations" (version) VALUES (20250207100755);
 INSERT INTO public."schema_migrations" (version) VALUES (20250207134446);
@@ -10140,4 +10144,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250313103159);
 INSERT INTO public."schema_migrations" (version) VALUES (20250318100855);
 INSERT INTO public."schema_migrations" (version) VALUES (20250318100856);
 INSERT INTO public."schema_migrations" (version) VALUES (20250324103930);
+INSERT INTO public."schema_migrations" (version) VALUES (20250326110304);
 INSERT INTO public."schema_migrations" (version) VALUES (20250327120623);

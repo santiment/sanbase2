@@ -55,6 +55,10 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field(:website_url, :string)
     field(:twitter_url, :string)
 
+    field(:user_roles, list_of(:user_role)) do
+      resolve(&UserResolver.user_roles/3)
+    end
+
     field :triggers, list_of(:trigger) do
       cache_resolve(&UserTriggerResolver.public_triggers/3, ttl: 60)
     end
@@ -69,6 +73,10 @@ defmodule SanbaseWeb.Graphql.UserTypes do
 
     field :followers, :follower_data do
       resolve(&UserResolver.followers/3)
+    end
+
+    field :subscriptions, list_of(:public_subscription_plan) do
+      resolve(&BillingResolver.public_user_subscriptions/3)
     end
 
     field :insights, list_of(:post) do
@@ -239,8 +247,8 @@ defmodule SanbaseWeb.Graphql.UserTypes do
       cache_resolve(&QueriesResolver.get_all_current_user_dashboards/3, ttl: 60)
     end
 
-    field :subscriptions, list_of(:subscription_plan) do
-      resolve(&BillingResolver.subscriptions/3)
+    field :subscriptions, list_of(:public_subscription_plan) do
+      resolve(&BillingResolver.public_user_subscriptions/3)
     end
 
     field :is_eligible_for_sanbase_trial, :boolean do

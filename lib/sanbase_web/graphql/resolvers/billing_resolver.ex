@@ -397,6 +397,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     {:ok, Subscription.user_subscriptions_plus_incomplete(user)}
   end
 
+  def public_user_subscriptions(%User{} = user, _args, _resolution) do
+    subscriptions = Subscription.user_subscriptions_plus_incomplete(user)
+
+    public_subscriptions =
+      Enum.map(subscriptions, fn sub ->
+        %{
+          plan_name: Plan.plan_name(sub.plan),
+          product_name: sub.plan.product.code
+        }
+      end)
+
+    {:ok, public_subscriptions}
+  end
+
   def eligible_for_sanbase_trial?(%User{} = user, _args, _resolution) do
     {:ok, Billing.eligible_for_sanbase_trial?(user.id)}
   end

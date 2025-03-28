@@ -12,6 +12,27 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
     {:ok, user: user, user2: user2}
   end
 
+  test "fetch subscriptions of public user", context do
+    %{conn: conn, user: user} = context
+
+    insert(:subscription_pro_sanbase, user: user)
+    insert(:subscription_business_pro_monthly, user: user)
+
+    result = get_user(conn, user)
+
+    assert %{
+             "data" => %{
+               "getUser" => %{
+                 "subscriptions" => public_user_subscriptions
+               }
+             }
+           } = result
+
+    assert length(public_user_subscriptions) == 2
+    assert %{"productName" => "SANBASE", "planName" => "PRO"} in public_user_subscriptions
+    assert %{"productName" => "SANAPI", "planName" => "BUSINESS_PRO"} in public_user_subscriptions
+  end
+
   test "fetch public watchlists of a user", context do
     %{conn: conn, user: user} = context
 
@@ -35,7 +56,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                    %{"id" => "#{watchlist.id}"}
                  ],
                  "chartConfigurations" => [],
-                 "dashboards" => []
+                 "dashboards" => [],
+                 "subscriptions" => []
                }
              }
            }
@@ -64,7 +86,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                  "username" => "#{user.username}",
                  "watchlists" => [],
                  "chartConfigurations" => [],
-                 "dashboards" => []
+                 "dashboards" => [],
+                 "subscriptions" => []
                }
              }
            }
@@ -91,7 +114,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                  "username" => "#{user.username}",
                  "watchlists" => [],
                  "chartConfigurations" => [],
-                 "dashboards" => []
+                 "dashboards" => [],
+                 "subscriptions" => []
                }
              }
            }
@@ -118,7 +142,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                  "username" => "#{user.username}",
                  "watchlists" => [],
                  "chartConfigurations" => [%{"id" => chart_configuration.id}],
-                 "dashboards" => []
+                 "dashboards" => [],
+                 "subscriptions" => []
                }
              }
            }
@@ -145,7 +170,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                  "username" => "#{user.username}",
                  "watchlists" => [],
                  "chartConfigurations" => [],
-                 "dashboards" => [%{"id" => dashboard.id}]
+                 "dashboards" => [%{"id" => dashboard.id}],
+                 "subscriptions" => []
                }
              }
            }
@@ -169,7 +195,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                  "username" => "#{user.username}",
                  "watchlists" => [],
                  "chartConfigurations" => [],
-                 "dashboards" => []
+                 "dashboards" => [],
+                 "subscriptions" => []
                }
              }
            }
@@ -193,7 +220,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                  "username" => "#{user.username}",
                  "watchlists" => [],
                  "chartConfigurations" => [],
-                 "dashboards" => []
+                 "dashboards" => [],
+                 "subscriptions" => []
                }
              }
            }
@@ -210,6 +238,7 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
         insights{ id }
         triggers{ id }
         watchlists{ id }
+        subscriptions{ planName productName }
         chartConfigurations{ id }
         dashboards{ id }
         followers{ count users { id } }

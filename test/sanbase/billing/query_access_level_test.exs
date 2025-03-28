@@ -10,6 +10,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
 
       expected_free_queries =
         [
+          :compute_raw_clickhouse_query,
           :active_widgets,
           :address_historical_balance_change,
           :alerts_historical_activity,

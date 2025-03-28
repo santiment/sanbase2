@@ -80,6 +80,28 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     end
   end
 
+  def compute_raw_clickhouse_query(
+        _root,
+        %{query: query_text, parameters: query_parameters},
+        %{context: %{auth: %{current_user: user}} = context} = resolution
+      ) do
+    # There is some issue with setting `%{}` as default parameters, so we continue to use
+    # "{}" and parse it properly here, before passing it on.
+    query_parameters = if query_parameters == "{}", do: %{}, else: query_parameters
+
+    with :ok <-
+           Queries.user_can_execute_query(user, context.subscription_product, context.auth.plan) do
+      Process.put(
+        :queries_dynamic_repo,
+        Queries.user_plan_to_dynamic_repo(context.subscription_product, context.auth.plan)
+      )
+
+      query_metadata = QueryMetadata.from_resolution(resolution)
+      query = Queries.get_ephemeral_query_struct(query_text, query_parameters, user)
+      Queries.run_query(query, user, query_metadata)
+    end
+  end
+
   def run_raw_sql_query(
         _root,
         %{sql_query_text: query_text, sql_query_parameters: query_parameters},

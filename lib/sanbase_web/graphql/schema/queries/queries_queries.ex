@@ -130,6 +130,19 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
       resolve(&QueriesResolver.run_raw_sql_query/3)
     end
 
+    field :compute_raw_clickhouse_query, :sql_query_execution_result do
+      meta(access: :free)
+      arg(:query, non_null(:string))
+      arg(:parameters, non_null(:json))
+
+      middleware(UserAuth)
+
+      cache_resolve(&QueriesResolver.compute_raw_clickhouse_query/3,
+        ttl: 10,
+        max_ttl_offset: 10
+      )
+    end
+
     @desc ~s"""
     Compute the query asidentified by the id. The query can be computed only if the
     querying user has read access to it (owns the query or the query is public).
@@ -794,6 +807,19 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
       middleware(JWTAuth)
 
       resolve(&QueriesResolver.delete_dashboard_image_widget/3)
+    end
+
+    field :compute_raw_clickhouse_query, :sql_query_execution_result do
+      meta(access: :free)
+      arg(:query, non_null(:string))
+      arg(:parameters, non_null(:json))
+
+      middleware(UserAuth)
+
+      cache_resolve(&QueriesResolver.compute_raw_clickhouse_query/3,
+        ttl: 10,
+        max_ttl_offset: 10
+      )
     end
   end
 end

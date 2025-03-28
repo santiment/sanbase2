@@ -204,6 +204,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
 
     @desc "Change the user's avatar."
     field :change_avatar, :user do
+      deprecate("Use updateUserProfile instead")
       arg(:avatar_url, non_null(:string))
 
       middleware(JWTAuth)
@@ -213,6 +214,16 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
     field :self_reset_api_rate_limits, :user do
       middleware(UserAuth)
       resolve(&UserResolver.self_reset_api_rate_limits/3)
+    end
+
+    field :update_user_profile, :user do
+      arg(:description, :string)
+      arg(:website_url, :string)
+      arg(:twitter_url, :string)
+      arg(:avatal_url, :string)
+
+      middleware(JWTAuth)
+      resolve(&UserResolver.update_profile/3)
     end
   end
 end

@@ -43,6 +43,9 @@ defmodule Sanbase.EventBus.EventValidation do
 
   def valid?(%{event_type: :create_user, user_id: id}), do: valid_integer_id?(id)
 
+  def valid?(%{event_type: :update_user, user_id: id}),
+    do: valid_integer_id?(id)
+
   #############################################################################
   ## Alert Events
   #############################################################################

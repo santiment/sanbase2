@@ -48,6 +48,11 @@ defmodule SanbaseWeb.Graphql.BillingTypes do
     field(:is_private, :boolean)
   end
 
+  object :public_subscription_plan do
+    field(:plan_name, :string)
+    field(:product_name, :string)
+  end
+
   object :subscription_plan do
     field(:id, :id)
     field(:user, :user)

@@ -17,6 +17,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
 
   def is_moderator(_root, _args, _resolution), do: {:ok, false}
 
+  def roles(%User{} = user, _args, _resolution) do
+    {:ok, user.roles |> Enum.map(& &1.role.name)}
+  end
+
   def email(%User{email: nil}, _args, _resolution), do: {:ok, nil}
 
   def email(%User{id: id, email: email}, _args, %{
@@ -333,5 +337,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
     |> on_load(fn loader ->
       {:ok, Dataloader.get(loader, SanbaseDataloader, :users_by_id, user_id)}
     end)
+  end
+
+  def update_profile(_root, args, %{context: %{auth: %{current_user: user}}}) do
+    case User.update(user, args) do
+      {:ok, user} ->
+        {:ok, user}
+
+      {:error, changeset} ->
+        {
+          :error,
+          message: "Cannot update user profile", details: changeset_errors(changeset)
+        }
+    end
   end
 end

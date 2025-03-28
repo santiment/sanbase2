@@ -12,6 +12,18 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
     {:ok, user: user, user2: user2}
   end
 
+  test "fetch user roles of public users", context do
+    %{conn: conn, user: user} = context
+
+    role = insert(:role_san_team)
+
+    insert(:user_role, user: user, role: role)
+
+    result = get_user(conn, user)
+
+    assert %{"data" => %{"getUser" => %{"roles" => ["Santiment Team Member"]}}} = result
+  end
+
   test "fetch subscriptions of public user", context do
     %{conn: conn, user: user} = context
 
@@ -57,7 +69,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                  ],
                  "chartConfigurations" => [],
                  "dashboards" => [],
-                 "subscriptions" => []
+                 "subscriptions" => [],
+                 "roles" => []
                }
              }
            }
@@ -87,7 +100,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                  "watchlists" => [],
                  "chartConfigurations" => [],
                  "dashboards" => [],
-                 "subscriptions" => []
+                 "subscriptions" => [],
+                 "roles" => []
                }
              }
            }
@@ -115,7 +129,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                  "watchlists" => [],
                  "chartConfigurations" => [],
                  "dashboards" => [],
-                 "subscriptions" => []
+                 "subscriptions" => [],
+                 "roles" => []
                }
              }
            }
@@ -143,7 +158,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                  "watchlists" => [],
                  "chartConfigurations" => [%{"id" => chart_configuration.id}],
                  "dashboards" => [],
-                 "subscriptions" => []
+                 "subscriptions" => [],
+                 "roles" => []
                }
              }
            }
@@ -171,7 +187,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                  "watchlists" => [],
                  "chartConfigurations" => [],
                  "dashboards" => [%{"id" => dashboard.id}],
-                 "subscriptions" => []
+                 "subscriptions" => [],
+                 "roles" => []
                }
              }
            }
@@ -196,7 +213,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                  "watchlists" => [],
                  "chartConfigurations" => [],
                  "dashboards" => [],
-                 "subscriptions" => []
+                 "subscriptions" => [],
+                 "roles" => []
                }
              }
            }
@@ -221,7 +239,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                  "watchlists" => [],
                  "chartConfigurations" => [],
                  "dashboards" => [],
-                 "subscriptions" => []
+                 "subscriptions" => [],
+                 "roles" => []
                }
              }
            }
@@ -239,6 +258,7 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
         triggers{ id }
         watchlists{ id }
         subscriptions{ planName productName }
+        roles
         chartConfigurations{ id }
         dashboards{ id }
         followers{ count users { id } }

@@ -334,4 +334,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
       {:ok, Dataloader.get(loader, SanbaseDataloader, :users_by_id, user_id)}
     end)
   end
+
+  def update_profile(_root, args, %{context: %{auth: %{current_user: user}}}) do
+    case User.update(user, args) do
+      {:ok, user} ->
+        {:ok, user}
+
+      {:error, changeset} ->
+        {
+          :error,
+          message: "Cannot update user profile", details: changeset_errors(changeset)
+        }
+    end
+  end
 end

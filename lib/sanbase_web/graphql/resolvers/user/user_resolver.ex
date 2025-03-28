@@ -17,8 +17,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
 
   def is_moderator(_root, _args, _resolution), do: {:ok, false}
 
-  def user_roles(%User{} = user, _args, _resolution) do
-    {:ok, User.roles(user)}
+  def roles(%User{} = user, _args, _resolution) do
+    {:ok, user.roles |> Enum.map(& &1.role.name)}
   end
 
   def email(%User{email: nil}, _args, _resolution), do: {:ok, nil}

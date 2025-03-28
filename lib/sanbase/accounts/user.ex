@@ -33,7 +33,7 @@ defmodule Sanbase.Accounts.User do
   @sanbase_bot_email "sanbase.bot@santiment.net"
   @allowed_metric_access_levels ["alpha", "beta", "released"]
 
-  @preloads [:roles, :eth_accounts, :user_settings]
+  @preloads [:roles, [roles: :role], :eth_accounts, :user_settings]
 
   @derive {Inspect,
            except: [

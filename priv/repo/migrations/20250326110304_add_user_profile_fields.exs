@@ -7,8 +7,8 @@ defmodule Sanbase.Repo.Migrations.AddUserProfileFields do
       add(:description, :text)
 
       # Social links
-      add(:twitter_url, :string)
       add(:website_url, :string)
+      add(:twitter_handle, :string)
     end
   end
 end

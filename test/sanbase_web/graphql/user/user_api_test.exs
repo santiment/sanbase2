@@ -392,11 +392,11 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
         updateUserProfile(
           description: "Test description"
           websiteUrl: "https://example.com"
-          twitterUrl: "https://twitter.com/test"
+          twitterHandle: "test"
         ) {
           description
           websiteUrl
-          twitterUrl
+          twitterHandle
         }
       }
       """
@@ -405,7 +405,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
 
       assert result["description"] == "Test description"
       assert result["websiteUrl"] == "https://example.com"
-      assert result["twitterUrl"] == "https://twitter.com/test"
+      assert result["twitterHandle"] == "test"
     end
 
     test "can update individual fields", %{conn: conn} do
@@ -414,7 +414,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
         updateUserProfile(description: "Only description updated") {
           description
           websiteUrl
-          twitterUrl
+          twitterHandle
         }
       }
       """
@@ -423,7 +423,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
 
       assert result["description"] == "Only description updated"
       assert result["websiteUrl"] == nil
-      assert result["twitterUrl"] == nil
+      assert result["twitterHandle"] == nil
     end
 
     test "invalid URL format returns error", %{conn: conn} do

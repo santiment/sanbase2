@@ -219,7 +219,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
     field :update_user_profile, :user do
       arg(:description, :string)
       arg(:website_url, :string)
-      arg(:twitter_url, :string)
+      arg(:twitter_handle, :string)
       arg(:avatal_url, :string)
 
       middleware(JWTAuth)

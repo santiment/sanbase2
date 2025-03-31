@@ -102,11 +102,17 @@ defmodule Sanbase.Entity do
     module.get_visibility_data(entity_id)
   end
 
+  @doc ~s"""
+  Return information about the number of created entities by a given user
+  """
   @spec get_user_entities_stats(user_id) :: {:ok, map()} | no_return()
   def get_user_entities_stats(user_id) do
-    query = by_user_id_base_query(user_id, [])
+    with {:ok, query} <- by_user_id_base_query(user_id, []),
+         result when is_list(result) <- Sanbase.Repo.all(query) do
+      result = result |> Map.new(fn {type, count} -> {String.to_existing_atom(type), count} end)
 
-    Sanbase.Repo.all()
+      {:ok, result}
+    end
   end
 
   @doc ~s"""
@@ -509,27 +515,36 @@ defmodule Sanbase.Entity do
     {:ok, total_count}
   end
 
-  defp by_user_id_base_query(user_id, opts \\ []) when is_integer(user_id) do
-    entities = Keyword.get(opts, :entities, @supported_entity_type)
+  defp by_user_id_base_query(user_id, _opts) when is_integer(user_id) do
+    entities = [
+      :insight,
+      :screener,
+      :project_watchlist,
+      :address_watchlist,
+      :chart_configuration,
+      :user_trigger,
+      :dashboard,
+      :query
+    ]
 
-    where_clause_query =
+    query =
       Enum.reduce(entities, nil, fn type, query_acc ->
         # TODO: Improve entities_ids_query/2. With these 2 options we include all of the
         # user entities and exclude any other entities.
         entity_ids_query =
           entity_ids_query(type,
-            include_all_user_entities: user_id,
+            include_all_user_entities: true,
+            current_user_id: user_id,
             include_public_entities: false
           )
-
-        entity_type_name = Sanbase.Accounts.Interaction.deduce_entity_column_name(type)
 
         entity_query =
           from(entity in entity_ids_query)
           # Remove the existing `entity.id` select and replace it with another
           # one
           |> exclude(:select)
-          |> select([e], {^type, fragment("COUNT(*)")})
+          # |> select([e], {^"#{type}", fragment("COUNT(*)")})
+          |> select([e], {^"#{type}", fragment("COUNT(*)")})
 
         case query_acc do
           nil ->
@@ -539,6 +554,8 @@ defmodule Sanbase.Entity do
             query_acc |> union(^entity_query)
         end
       end)
+
+    {:ok, query}
   end
 
   defp most_used_base_query(entities, opts) when is_list(entities) and entities != [] do

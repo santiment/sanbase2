@@ -88,7 +88,7 @@ defmodule Sanbase.Accounts.User do
 
     field(:description, :string)
     field(:website_url, :string)
-    field(:twitter_url, :string)
+    field(:twitter_handle, :string)
 
     # GDPR related fields
     field(:privacy_policy_accepted, :boolean, default: false)
@@ -182,7 +182,7 @@ defmodule Sanbase.Accounts.User do
       :registration_state,
       :description,
       :website_url,
-      :twitter_url
+      :twitter_handle
     ])
     |> normalize_user_identificator(:username, attrs[:username])
     |> normalize_user_identificator(:email, attrs[:email])
@@ -192,7 +192,7 @@ defmodule Sanbase.Accounts.User do
     |> validate_change(:email_candidate, &validate_email_candidate_change/2)
     |> validate_change(:avatar_url, &validate_url_change/2)
     |> validate_change(:website_url, &validate_url_change(&1, &2, require_path: false))
-    |> validate_change(:twitter_url, &validate_url_change(&1, &2, require_path: false))
+    |> validate_format(:twitter_handle, ~r/^@?(\w){1,15}$/)
     |> unique_constraint(:email)
     |> unique_constraint(:username)
     |> unique_constraint(:stripe_customer_id)

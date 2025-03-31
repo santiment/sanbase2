@@ -11,14 +11,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   alias Sanbase.Accounts.UserSettings
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
-  def is_moderator(_root, _args, %{context: %{is_moderator: is_moderator}}) do
-    {:ok, is_moderator}
+  def moderator?(%User{roles: roles}, _args, _resolution) do
+    flag = Enum.any?(roles, fn user_role -> user_role.role.name == "Santiment Moderator" end)
+
+    {:ok, flag}
   end
 
-  def is_moderator(_root, _args, _resolution), do: {:ok, false}
+  def santiment_team_member?(%User{roles: roles}, _args, _resolutiond) do
+    flag = Enum.any?(roles, fn user_role -> user_role.role.name == "Santiment Team Member" end)
 
-  def roles(%User{} = user, _args, _resolution) do
-    {:ok, user.roles |> Enum.map(& &1.role.name)}
+    {:ok, flag}
   end
 
   def email(%User{email: nil}, _args, _resolution), do: {:ok, nil}
@@ -55,6 +57,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
         Logger.warning("Error getting a user's san balance. Reason: #{inspect(error)}")
         {:nocache, {:ok, 0.0}}
     end
+  end
+
+  def votes_stats(%User{} = user, _args, _resolution) do
+    Sanbase.Vote.user_total_votes(user.id)
   end
 
   def api_calls_history(

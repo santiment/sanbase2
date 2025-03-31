@@ -4784,8 +4784,8 @@ CREATE TABLE public.users (
     registration_state jsonb DEFAULT '{"state": "init"}'::jsonb,
     metric_access_level character varying(255) DEFAULT 'released'::character varying NOT NULL,
     description text,
-    twitter_url character varying(255),
-    website_url character varying(255)
+    website_url character varying(255),
+    twitter_handle character varying(255)
 );
 
 

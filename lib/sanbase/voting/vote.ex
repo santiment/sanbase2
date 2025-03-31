@@ -182,6 +182,31 @@ defmodule Sanbase.Vote do
     Repo.get_by(__MODULE__, opts)
   end
 
+  def user_total_votes(user_id) do
+    query =
+      from(
+        v in __MODULE__,
+        where: v.user_id == ^user_id,
+        select: %{
+          insight_votes: fragment("COUNT(CASE WHEN post_id IS NOT NULL THEN 1 ELSE 0 END)"),
+          watchlist_votes:
+            fragment("COUNT(CASE WHEN watchlist_id IS NOT NULL THEN 1 ELSE 0 END)"),
+          chart_configuration_votes:
+            fragment("COUNT(CASE WHEN chart_configuration_id IS NOT NULL THEN 1 ELSE 0 END)"),
+          alert_votes: fragment("COUNT(CASE WHEN user_trigger_id IS NOT NULL THEN 1 ELSE 0 END)"),
+          dashboard_votes:
+            fragment("COUNT(CASE WHEN dashboard_id IS NOT NULL THEN 1 ELSE 0 END)"),
+          query_votes: fragment("COUNT(CASE WHEN query_id IS NOT NULL THEN 1 ELSE 0 END)")
+        }
+      )
+
+    votes = Repo.one(query)
+    # Put the total_votes as a separate field
+    votes = Map.put(votes, :total_votes, Enum.sum(Map.values(votes)))
+
+    {:ok, votes}
+  end
+
   # Private functions
 
   defp total_votes_query(entity_type, entity_ids, user_id) do

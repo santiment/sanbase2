@@ -67,6 +67,10 @@ defmodule SanbaseWeb.Graphql.UserTypes do
       resolve(&UserResolver.votes_stats/3)
     end
 
+    field :entities_stats, :entities_stats do
+      resolve(&UserResolver.entities_stats/3)
+    end
+
     field :triggers, list_of(:trigger) do
       cache_resolve(&UserTriggerResolver.public_triggers/3, ttl: 60)
     end
@@ -155,6 +159,10 @@ defmodule SanbaseWeb.Graphql.UserTypes do
 
     field :votes_stats, :votes_stats do
       resolve(&UserResolver.votes_stats/3)
+    end
+
+    field :entities_stats, :entities_stats do
+      resolve(&UserResolver.entities_stats/3)
     end
 
     field :queries_executions_info, :queries_executions_info do
@@ -316,11 +324,14 @@ defmodule SanbaseWeb.Graphql.UserTypes do
   end
 
   object :entities_stats do
-    field(:published_insights_count, :integer)
-    field(:queries_count, :integer)
-    field(:dashboards_count, :integer)
-    field(:chart_configurations_count, :integer)
-    field(:alerts_count, :integer)
+    field(:insights_created, :integer)
+    field(:queries_created, :integer)
+    field(:dashboards_created, :integer)
+    field(:chart_configurations_created, :integer)
+    field(:alerts_created, :integer)
+    field(:screeners_created, :integer)
+    field(:project_watchlists_created, :integer)
+    field(:address_watchlists_created, :integer)
   end
 
   object :votes_stats do

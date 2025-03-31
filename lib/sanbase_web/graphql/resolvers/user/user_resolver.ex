@@ -63,6 +63,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
     Sanbase.Vote.user_total_votes(user.id)
   end
 
+  def entities_stats(%User{} = user, _args, _resolution) do
+    with {:ok, map} <- Sanbase.Entity.get_user_entities_stats(user.id) do
+      result = %{
+        insights_created: Map.get(map, :insight, 0),
+        chart_configurations_created: Map.get(map, :chart_configuration, 0),
+        queries_created: Map.get(map, :query, 0),
+        dashboards_created: Map.get(map, :dashboard, 0),
+        alerts_created: Map.get(map, :user_trigger, 0),
+        screeners_created: Map.get(map, :screener, 0),
+        project_watchlists_created: Map.get(map, :project_watchlist, 0),
+        address_watchlists_created: Map.get(map, :address_watchlist, 0)
+      }
+
+      {:ok, result}
+    end
+  end
+
   def api_calls_history(
         %User{} = user,
         %{from: from, to: to, interval: interval} = args,

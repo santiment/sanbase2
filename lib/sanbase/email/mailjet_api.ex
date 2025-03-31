@@ -17,7 +17,7 @@ defmodule Sanbase.Email.MailjetApi do
   @monthly_newsletter_list_id 61_085
   @mailjet_sanr_list_id 10_321_582
   @alpha_naratives_list_id 10_321_590
-  @metric_updates_list_id 10_326_520
+  @metric_updates_list_id 10_327_883
   @dev_metric_updates_list_id 10_326_671
   @stage_metric_updates_list_id 10_326_676
 

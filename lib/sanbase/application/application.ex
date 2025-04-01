@@ -168,6 +168,11 @@ defmodule Sanbase.Application do
   """
   def prepended_children(container_type) do
     [
+      # To enable the persistent term backend
+      # https://hexdocs.pm/absinthe/overview.html
+      {Absinthe.Schema, SanbaseWeb.Graphql.Schema},
+
+      # Start (optionally) the Kafka Brod Supervisor
       start_in_and_if(
         fn ->
           %{

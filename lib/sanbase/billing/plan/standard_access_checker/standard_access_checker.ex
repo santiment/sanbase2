@@ -44,20 +44,22 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
 
   @doc documentation_ref: "# DOCS access-plans/index.md"
 
-  case ApiInfo.get_queries_without_access_level() do
-    [] ->
-      :ok
+  def run_check() do
+    case ApiInfo.get_queries_without_access_level() do
+      [] ->
+        :ok
 
-    queries ->
-      require Sanbase.Break, as: Break
+      queries ->
+        require Sanbase.Break, as: Break
 
-      Break.break("""
-      There are GraphQL queries defined without specifying their access level.
-      The access level could be either `free` or `restricted`.
-      To define an access level, put `meta(access: <level>)` in the field definition.
+        Break.break("""
+        There are GraphQL queries defined without specifying their access level.
+        The access level could be either `free` or `restricted`.
+        To define an access level, put `meta(access: <level>)` in the field definition.
 
-      Queries without access level: #{inspect(queries)}
-      """)
+        Queries without access level: #{inspect(queries)}
+        """)
+    end
   end
 
   @doc ~s"""

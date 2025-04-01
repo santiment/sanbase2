@@ -8,8 +8,32 @@ defmodule Sanbase.Billing.ApiInfo do
   # case replace the @query_type with the commented one - it has high chances for the
   # proper error location to be revealed
   # @query_type %{fields: %{}}
-  @query_type Absinthe.Schema.lookup_type(SanbaseWeb.Graphql.Schema, :query)
-  @fields @query_type.fields |> Map.keys()
+  defp query_type() do
+    # Write the above one with persistent term
+    case :persistent_term.get(:__api_info_query_type__, :undefined) do
+      :undefined ->
+        data = Absinthe.Schema.lookup_type(SanbaseWeb.Graphql.Schema, :query)
+        :persistent_term.put(:__api_info_query_type__, data)
+        data
+
+      data ->
+        data
+    end
+  end
+
+  defp query_type_fields_keys() do
+    # Write the above one with persistent term
+    case :persistent_term.get(:__api_info_query_type_fields__, :undefined) do
+      :undefined ->
+        query_type = Absinthe.Schema.lookup_type(SanbaseWeb.Graphql.Schema, :query)
+        data = query_type.fields |> Map.keys()
+        :persistent_term.put(:__api_info_query_type_fields__, data)
+        data
+
+      data ->
+        data
+    end
+  end
 
   @type query_or_argument_tuple ::
           {:query, Atom.t()} | {:metric, String.t()} | {:signal, String.t()}
@@ -45,9 +69,9 @@ defmodule Sanbase.Billing.ApiInfo do
       when is_list(fields) and is_list(values) and length(fields) == length(values) do
     field_value_pairs = Enum.zip(fields, values)
 
-    Enum.filter(@fields, fn f ->
+    Enum.filter(query_type_fields_keys(), fn f ->
       Enum.all?(field_value_pairs, fn {field, value} ->
-        Map.get(@query_type.fields, f) |> Absinthe.Type.meta(field) == value
+        Map.get(query_type().fields, f) |> Absinthe.Type.meta(field) == value
       end)
     end)
   end
@@ -96,8 +120,8 @@ defmodule Sanbase.Billing.ApiInfo do
 
   # Private functions
   defp get_query_meta_field_list(field) do
-    Enum.map(@fields, fn f ->
-      {f, Map.get(@query_type.fields, f) |> Absinthe.Type.meta(field)}
+    Enum.map(query_type_fields_keys(), fn f ->
+      {f, Map.get(query_type().fields, f) |> Absinthe.Type.meta(field)}
     end)
   end
 

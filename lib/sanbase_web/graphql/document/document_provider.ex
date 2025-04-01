@@ -40,12 +40,26 @@ defmodule SanbaseWeb.Graphql.DocumentProvider do
       Absinthe.Phase.Document.Result,
       SanbaseWeb.Graphql.Phase.Document.Execution.Idempotent
     )
+    |> transform_for_persistent_term_backend()
   end
 
   @doc false
   @impl true
   def process(%Absinthe.Plug.Request.Query{document: nil} = query, _), do: {:cont, query}
   def process(%Absinthe.Plug.Request.Query{document: _} = query, _), do: {:halt, query}
+
+  defp transform_for_persistent_term_backend(pipeline) do
+    Enum.map(pipeline, fn
+      Absinthe.Phase.Schema.InlineFunctions ->
+        {Absinthe.Phase.Schema.InlineFunctions, inline_always: true}
+
+      {Absinthe.Phase.Schema.Compile, options} ->
+        {Absinthe.Phase.Schema.PopulatePersistentTerm, options}
+
+      phase ->
+        phase
+    end)
+  end
 end
 
 defmodule SanbaseWeb.Graphql.Phase.Document.Execution.CacheDocument do

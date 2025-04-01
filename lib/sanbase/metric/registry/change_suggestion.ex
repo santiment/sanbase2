@@ -33,12 +33,6 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
     |> validate_inclusion(:status, @statuses)
   end
 
-  def create(attrs) do
-    %__MODULE__{}
-    |> changeset(attrs)
-    |> Sanbase.Repo.insert()
-  end
-
   def by_id(id) do
     case Sanbase.Repo.get(__MODULE__, id) do
       %__MODULE__{} = record -> {:ok, record}
@@ -196,14 +190,14 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
 
         changes = ExAudit.Diff.diff(old, new) |> encode_changes()
 
-        %__MODULE__{}
-        |> changeset(%{
+        attrs = %{
           metric_registry_id: registry.id,
           notes: notes,
           submitted_by: submitted_by,
           changes: changes
-        })
-        |> Sanbase.Repo.insert()
+        }
+
+        do_create(attrs)
     end
   end
 
@@ -280,26 +274,6 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
   defp list_change(current_value_list, changes_list) when is_list(changes_list) do
     ExAudit.Patch.patch(current_value_list, changes_list)
     |> embeds_to_maps()
-
-    # The old implementation. Remove at a later stage if no issues are discovered using ExAudit.Patch
-    # changes_list
-    # |> Enum.reduce(current_value_list, fn change_op, acc ->
-    #   case change_op do
-    #     {:added_to_list, pos, value} ->
-    #       List.insert_at(acc, pos, value)
-    #
-    #     {:removed_from_list, pos, _value} ->
-    #       # If we list like [1,2,3] and operations {:removed_from_list, 1, _}, {:removed_from_list, 2, _}
-    #       # by the time we execute the second removal, the list will be with reduced size, so the
-    #       # element won't be removed as there will be no element at position 2
-    #       List.replace_at(acc, pos, :__deleted__)
-    #
-    #     {:changed_in_list, pos, map} ->
-    #       [{embedded_schema_key, {:changed, {:primitive_change, _old, new}}}] = Map.to_list(map)
-    #       List.update_at(acc, pos, &Map.put(&1, embedded_schema_key, new))
-    #   end
-    # end)
-    # |> Enum.reject(&(&1 == :__deleted__))
   end
 
   defp embeds_to_maps(list) do
@@ -309,5 +283,40 @@ defmodule Sanbase.Metric.Registry.ChangeSuggestion do
       struct when is_struct(struct) -> Map.from_struct(struct)
       map when is_map(map) -> map
     end)
+  end
+
+  defp do_create(%{metric_registry_id: id} = attrs) when not is_nil(id) do
+    # Change request to update an existing record
+    %__MODULE__{}
+    |> changeset(attrs)
+    |> Sanbase.Repo.insert()
+  end
+
+  defp do_create(%{} = attrs) do
+    # Change request to create a new record
+    if unique_metric_registry?(attrs) do
+      %__MODULE__{}
+      |> changeset(attrs)
+      |> Sanbase.Repo.insert()
+    else
+      {:error,
+       "The change request is trying to create a metric registry (metric/data type/fixed paramters combination) that already exists."}
+    end
+  end
+
+  defp unique_metric_registry?(attrs) do
+    changes = decode_changes(attrs.changes)
+
+    params = changes_to_changeset_params(%Registry{}, changes)
+
+    # TODO: Improve hardcoding of data_type and fixed_parameters
+    case Registry.by_name(
+           params.metric,
+           params[:data_type] || "timeseries",
+           params[:fixed_parameters] || %{}
+         ) do
+      {:ok, _} -> false
+      {:error, _} -> true
+    end
   end
 end

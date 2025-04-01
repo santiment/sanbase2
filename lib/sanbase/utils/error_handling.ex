@@ -8,11 +8,14 @@ defmodule Sanbase.Utils.ErrorHandling do
              description_and_identifier: 2
            ]
 
+  @type traverse_result :: %{atom => [term] | traverse_result}
+  @spec changeset_errors(Ecto.Changeset.t()) :: traverse_result
   def changeset_errors(changeset) do
     changeset
     |> Ecto.Changeset.traverse_errors(&format_error/1)
   end
 
+  @spec changeset_errors_string(Ecto.Changeset.t()) :: String.t()
   def changeset_errors_string(%Ecto.Changeset{} = changeset) do
     changeset
     |> Ecto.Changeset.traverse_errors(&format_error/1)

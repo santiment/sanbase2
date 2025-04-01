@@ -15,13 +15,16 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
   test "fetch user roles of public users", context do
     %{conn: conn, user: user} = context
 
-    role = insert(:role_san_team)
+    role_team = insert(:role_san_team)
+    role_mod = insert(:role_san_moderator)
 
-    insert(:user_role, user: user, role: role)
+    insert(:user_role, user: user, role: role_team)
+    insert(:user_role, user: user, role: role_mod)
 
     result = get_user(conn, user)
 
-    assert %{"data" => %{"getUser" => %{"roles" => ["Santiment Team Member"]}}} = result
+    assert %{"data" => %{"getUser" => %{"isSantimentTeamMember" => true, "isModerator" => true}}} =
+             result
   end
 
   test "fetch subscriptions of public user", context do
@@ -70,7 +73,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                  "chartConfigurations" => [],
                  "dashboards" => [],
                  "subscriptions" => [],
-                 "roles" => []
+                 "isModerator" => false,
+                 "isSantimentTeamMember" => false
                }
              }
            }
@@ -101,7 +105,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                  "chartConfigurations" => [],
                  "dashboards" => [],
                  "subscriptions" => [],
-                 "roles" => []
+                 "isModerator" => false,
+                 "isSantimentTeamMember" => false
                }
              }
            }
@@ -130,7 +135,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                  "chartConfigurations" => [],
                  "dashboards" => [],
                  "subscriptions" => [],
-                 "roles" => []
+                 "isModerator" => false,
+                 "isSantimentTeamMember" => false
                }
              }
            }
@@ -159,7 +165,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                  "chartConfigurations" => [%{"id" => chart_configuration.id}],
                  "dashboards" => [],
                  "subscriptions" => [],
-                 "roles" => []
+                 "isModerator" => false,
+                 "isSantimentTeamMember" => false
                }
              }
            }
@@ -188,7 +195,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                  "chartConfigurations" => [],
                  "dashboards" => [%{"id" => dashboard.id}],
                  "subscriptions" => [],
-                 "roles" => []
+                 "isModerator" => false,
+                 "isSantimentTeamMember" => false
                }
              }
            }
@@ -214,7 +222,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                  "chartConfigurations" => [],
                  "dashboards" => [],
                  "subscriptions" => [],
-                 "roles" => []
+                 "isModerator" => false,
+                 "isSantimentTeamMember" => false
                }
              }
            }
@@ -240,7 +249,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                  "chartConfigurations" => [],
                  "dashboards" => [],
                  "subscriptions" => [],
-                 "roles" => []
+                 "isModerator" => false,
+                 "isSantimentTeamMember" => false
                }
              }
            }
@@ -258,7 +268,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
         triggers{ id }
         watchlists{ id }
         subscriptions{ planName productName }
-        roles
+        isModerator
+        isSantimentTeamMember
         chartConfigurations{ id }
         dashboards{ id }
         followers{ count users { id } }

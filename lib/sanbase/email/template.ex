@@ -40,11 +40,6 @@ defmodule Sanbase.Email.Template do
       subject: "Confirm your registration",
       required_vars: [:login_link]
     },
-    "sanbase-post-registration-mail" => %{
-      id: 4_127_351,
-      subject: "Welcome to Sanbase",
-      required_vars: [:username]
-    },
     "sanbase-verify-email-mail" => %{
       id: 4_127_547,
       subject: "Verify your email",
@@ -75,41 +70,11 @@ defmodule Sanbase.Email.Template do
       subject: "Your trial is ending and card will be charged!",
       required_vars: [:subscription_type, :subscription_duration, :name]
     },
-    "50-percent-discount-offer" => %{
-      id: 4_127_588,
-      subject: "Get your one-time 50% offer",
-      required_vars: [:name, :end_subscription_date]
-    },
-    "35-percent-discount-offer" => %{
-      id: 4_127_592,
-      subject: "Get your one-time 35% offer",
-      required_vars: [:name, :date]
-    },
     "signal-mail" => %{
       id: 4_127_602,
       subject: "Sanbase alert!",
       dynamic_subject: "Sanbase alert: {{username}}",
       required_vars: [:username, :payload]
-    },
-    "first-edu-email" => %{
-      id: 4_132_905,
-      subject: "How to time Ethereum tops with just 3 indicators | Santiment Academy",
-      required_vars: []
-    },
-    "second-edu-email" => %{
-      id: 4_132_860,
-      subject: "Sanbase tips",
-      required_vars: [:name]
-    },
-    "trial-suggestion" => %{
-      id: 4_132_855,
-      subject: "Start your free trial today",
-      required_vars: []
-    },
-    "slip-away-users" => %{
-      id: 4_132_877,
-      subject: "Explore the power of our customisable charts",
-      required_vars: [:name]
     },
     "notification" => %{
       id: 4_127_647,
@@ -138,18 +103,6 @@ defmodule Sanbase.Email.Template do
   # Alert fired template
   @alerts_template "signal-mail"
 
-  # Post sign up templates
-  @sign_up_templates %{
-    # immediately after sign up
-    welcome_email: "sanbase-post-registration-mail",
-    # on the 4th day
-    first_education_email: "first-edu-email",
-    # on the 6th day
-    trial_suggestion: "trial-suggestion",
-    # on the 7th day
-    second_education_email: "second-edu-email"
-  }
-
   # Send when Sanbase pro subscription starts
   @pro_subscription_stared_template "pro-started"
 
@@ -166,10 +119,6 @@ defmodule Sanbase.Email.Template do
 
   @automatic_renewal_template "automatic_renewal"
 
-  # Send after 2 weeks of inactivity.
-  # FIXME- currently not send, inactivity should be defined
-  # @slip_away_template "slip-away-users"
-
   # Send on new comment for insights and timeline events entities
   # The recipient is either author of the entity, previous commenter or the comment is a reply
   @comment_notification_template "notification"
@@ -178,7 +127,6 @@ defmodule Sanbase.Email.Template do
 
   def templates, do: @templates
   def alerts_template, do: @alerts_template
-  def sign_up_templates, do: @sign_up_templates
   def pro_subscription_stared_template, do: @pro_subscription_stared_template
   def post_cancellation_template, do: @post_cancellation_template
   def post_cancellation_template2, do: @post_cancellation_template2

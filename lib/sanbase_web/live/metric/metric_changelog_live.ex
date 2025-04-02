@@ -333,10 +333,6 @@ defmodule SanbaseWeb.MetricChangelogLive do
     end
   end
 
-  defp format_time(datetime) do
-    Calendar.strftime(datetime, "%H:%M:%S")
-  end
-
   defp has_docs?(metric) do
     metric.docs && length(metric.docs) > 0
   end

@@ -20,6 +20,7 @@ defmodule Sanbase.Email.MailjetApi do
   @metric_updates_list_id 10_327_883
   @dev_metric_updates_list_id 10_326_671
   @stage_metric_updates_list_id 10_326_676
+  @new_registrations_list_id 10_327_896
 
   @mailjet_lists %{
     bi_weekly: @bi_weekly_list_id,
@@ -28,7 +29,8 @@ defmodule Sanbase.Email.MailjetApi do
     alpha_naratives_emails: @alpha_naratives_list_id,
     metric_updates: @metric_updates_list_id,
     metric_updates_dev: @dev_metric_updates_list_id,
-    metric_updates_stage: @stage_metric_updates_list_id
+    metric_updates_stage: @stage_metric_updates_list_id,
+    new_registrations: @new_registrations_list_id
   }
   @send_api_url "https://api.mailjet.com/v3.1/send"
 

@@ -576,13 +576,18 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
              |> put_flash(:info, "Metric registry change request created")
              |> push_navigate(to: ~p"/admin/metric_registry/change_suggestions/")}
 
-          {:error, error} ->
+          {:error, %Ecto.Changeset{} = error} ->
             errors = Sanbase.Utils.ErrorHandling.changeset_errors(error)
 
             {:noreply,
              socket
              |> assign(:save_errors, errors)
              |> put_flash(:error, "Fix field validation errors before saving")}
+
+          {:error, error} when is_binary(error) ->
+            {:noreply,
+             socket
+             |> put_flash(:error, "Error creating change request: #{error}")}
         end
 
       [_ | _] = errors ->

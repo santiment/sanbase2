@@ -49,7 +49,27 @@ defmodule SanbaseWeb.Graphql.UserTypes do
 
     field(:name, :string)
     field(:username, :string)
+    field(:description, :string)
+
     field(:avatar_url, :string)
+    field(:website_url, :string)
+    field(:twitter_handle, :string)
+
+    field :is_moderator, :boolean do
+      resolve(&UserResolver.moderator?/3)
+    end
+
+    field :is_santiment_team_member, :boolean do
+      resolve(&UserResolver.santiment_team_member?/3)
+    end
+
+    field :votes_stats, :votes_stats do
+      resolve(&UserResolver.votes_stats/3)
+    end
+
+    field :entities_stats, :entities_stats do
+      resolve(&UserResolver.entities_stats/3)
+    end
 
     field :triggers, list_of(:trigger) do
       cache_resolve(&UserTriggerResolver.public_triggers/3, ttl: 60)
@@ -65,6 +85,10 @@ defmodule SanbaseWeb.Graphql.UserTypes do
 
     field :followers, :follower_data do
       resolve(&UserResolver.followers/3)
+    end
+
+    field :subscriptions, list_of(:public_subscription_plan) do
+      resolve(&BillingResolver.public_user_subscriptions/3)
     end
 
     field :insights, list_of(:post) do
@@ -129,6 +153,17 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field(:stripe_customer_id, :string)
     field(:inserted_at, non_null(:datetime))
     field(:updated_at, non_null(:datetime))
+    field(:description, :string)
+    field(:website_url, :string)
+    field(:twitter_handle, :string)
+
+    field :votes_stats, :votes_stats do
+      resolve(&UserResolver.votes_stats/3)
+    end
+
+    field :entities_stats, :entities_stats do
+      resolve(&UserResolver.entities_stats/3)
+    end
 
     field :queries_executions_info, :queries_executions_info do
       resolve(&UserResolver.queries_executions_info/3)
@@ -139,7 +174,11 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     end
 
     field :is_moderator, :boolean do
-      resolve(&UserResolver.is_moderator/3)
+      resolve(&UserResolver.moderator?/3)
+    end
+
+    field :is_santiment_team_member, :boolean do
+      resolve(&UserResolver.santiment_team_member?/3)
     end
 
     field :permissions, :access_level do
@@ -282,6 +321,27 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field :signup_datetime, :datetime do
       resolve(&UserResolver.signup_datetime/3)
     end
+  end
+
+  object :entities_stats do
+    field(:insights_created, :integer)
+    field(:queries_created, :integer)
+    field(:dashboards_created, :integer)
+    field(:chart_configurations_created, :integer)
+    field(:alerts_created, :integer)
+    field(:screeners_created, :integer)
+    field(:project_watchlists_created, :integer)
+    field(:address_watchlists_created, :integer)
+  end
+
+  object :votes_stats do
+    field(:insight_votes, :integer)
+    field(:watchlist_votes, :integer)
+    field(:chart_configuration_votes, :integer)
+    field(:alert_votes, :integer)
+    field(:dashboard_votes, :integer)
+    field(:query_votes, :integer)
+    field(:total_votes, :integer)
   end
 
   object :relays_quota do

@@ -384,4 +384,68 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
              |> json_response(200)
              |> get_in(["data", "currentUser", "isModerator"])
   end
+
+  describe "Update user profile" do
+    test "successfully updates profile fields", %{conn: conn} do
+      mutation = """
+      mutation {
+        updateUserProfile(
+          description: "Test description"
+          websiteUrl: "https://example.com"
+          twitterHandle: "test"
+        ) {
+          description
+          websiteUrl
+          twitterHandle
+        }
+      }
+      """
+
+      result = execute_mutation(conn, mutation, "updateUserProfile")
+
+      assert result["description"] == "Test description"
+      assert result["websiteUrl"] == "https://example.com"
+      assert result["twitterHandle"] == "test"
+    end
+
+    test "can update individual fields", %{conn: conn} do
+      mutation = """
+      mutation {
+        updateUserProfile(description: "Only description updated") {
+          description
+          websiteUrl
+          twitterHandle
+        }
+      }
+      """
+
+      result = execute_mutation(conn, mutation, "updateUserProfile")
+
+      assert result["description"] == "Only description updated"
+      assert result["websiteUrl"] == nil
+      assert result["twitterHandle"] == nil
+    end
+
+    test "invalid URL format returns error", %{conn: conn} do
+      mutation = """
+      mutation {
+        updateUserProfile(websiteUrl: "invalid-url") {
+          websiteUrl
+        }
+      }
+      """
+
+      result =
+        conn
+        |> post("/graphql", mutation_skeleton(mutation))
+
+      error = json_response(result, 200)["errors"] |> hd()
+
+      assert error["details"] == %{
+               "website_url" => ["URL 'invalid-url' is missing a scheme (e.g. https)"]
+             }
+
+      assert error["message"] == "Cannot update user profile"
+    end
+  end
 end

@@ -11,11 +11,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   alias Sanbase.Accounts.UserSettings
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
-  def is_moderator(_root, _args, %{context: %{is_moderator: is_moderator}}) do
-    {:ok, is_moderator}
+  def moderator?(%User{roles: roles}, _args, _resolution) do
+    flag = Enum.any?(roles, fn user_role -> user_role.role.name == "Santiment Moderator" end)
+
+    {:ok, flag}
   end
 
-  def is_moderator(_root, _args, _resolution), do: {:ok, false}
+  def santiment_team_member?(%User{roles: roles}, _args, _resolutiond) do
+    flag = Enum.any?(roles, fn user_role -> user_role.role.name == "Santiment Team Member" end)
+
+    {:ok, flag}
+  end
 
   def email(%User{email: nil}, _args, _resolution), do: {:ok, nil}
 
@@ -50,6 +56,27 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
       {:error, error} ->
         Logger.warning("Error getting a user's san balance. Reason: #{inspect(error)}")
         {:nocache, {:ok, 0.0}}
+    end
+  end
+
+  def votes_stats(%User{} = user, _args, _resolution) do
+    Sanbase.Vote.user_total_votes(user.id)
+  end
+
+  def entities_stats(%User{} = user, _args, _resolution) do
+    with {:ok, map} <- Sanbase.Entity.get_user_entities_stats(user.id) do
+      result = %{
+        insights_created: Map.get(map, :insight, 0),
+        chart_configurations_created: Map.get(map, :chart_configuration, 0),
+        queries_created: Map.get(map, :query, 0),
+        dashboards_created: Map.get(map, :dashboard, 0),
+        alerts_created: Map.get(map, :user_trigger, 0),
+        screeners_created: Map.get(map, :screener, 0),
+        project_watchlists_created: Map.get(map, :project_watchlist, 0),
+        address_watchlists_created: Map.get(map, :address_watchlist, 0)
+      }
+
+      {:ok, result}
     end
   end
 
@@ -333,5 +360,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
     |> on_load(fn loader ->
       {:ok, Dataloader.get(loader, SanbaseDataloader, :users_by_id, user_id)}
     end)
+  end
+
+  def update_profile(_root, args, %{context: %{auth: %{current_user: user}}}) do
+    case User.update(user, args) do
+      {:ok, user} ->
+        {:ok, user}
+
+      {:error, changeset} ->
+        {
+          :error,
+          message: "Cannot update user profile", details: changeset_errors(changeset)
+        }
+    end
   end
 end

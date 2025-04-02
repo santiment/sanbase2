@@ -110,7 +110,7 @@ defmodule Sanbase.Validation do
       uri.host == nil ->
         {:error, "URL '#{url}' is missing a host"}
 
-      uri.path == nil ->
+      Keyword.get(opts, :require_path, true) and uri.path == nil ->
         {:error, "URL '#{url}' is missing path (e.g. missing the /image.png part)"}
 
       # If true this will try to DNS resolve the hostname and check if it exists
@@ -123,6 +123,11 @@ defmodule Sanbase.Validation do
       true ->
         :ok
     end
+  end
+
+  def valid_url_simple?(url) do
+    uri = URI.parse(url)
+    uri.scheme != nil and uri.host != nil
   end
 
   # Private functions

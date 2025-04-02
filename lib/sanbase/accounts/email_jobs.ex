@@ -4,42 +4,6 @@ defmodule Sanbase.Accounts.EmailJobs do
 
   @oban_conf_name :oban_web
 
-  def schedule_emails_after_sign_up(user_id) do
-    user = Sanbase.Accounts.User.by_id!(user_id)
-    templates = Sanbase.Email.Template.sign_up_templates()
-
-    name = Sanbase.Accounts.User.get_name(user)
-    vars = %{name: name, username: name}
-
-    multi = Ecto.Multi.new()
-
-    multi =
-      Oban.insert(
-        @oban_conf_name,
-        multi,
-        :welcome_email_job,
-        scheduled_email(:welcome_email, templates, user, vars)
-      )
-
-    multi =
-      Oban.insert(
-        @oban_conf_name,
-        multi,
-        :first_education_email_job,
-        scheduled_email(:first_education_email, templates, user, vars)
-      )
-
-    multi =
-      Oban.insert(
-        @oban_conf_name,
-        multi,
-        :second_education_email_job,
-        scheduled_email(:second_education_email, templates, user, vars)
-      )
-
-    Sanbase.Repo.transaction(multi)
-  end
-
   def send_automatic_renewal_email(subscription, charge_date_unix) do
     user = Sanbase.Accounts.User.by_id!(subscription.user_id)
     name = Sanbase.Accounts.User.get_name(user)
@@ -144,25 +108,5 @@ defmodule Sanbase.Accounts.EmailJobs do
       end
 
     "Sanbase #{plan_name}"
-  end
-
-  # Private
-
-  defp scheduled_email(email_type, templates, user, vars) do
-    scheduled_at =
-      case email_type do
-        :welcome_email -> nil
-        :first_education_email -> days_after(4)
-        :second_education_email -> days_after(7)
-      end
-
-    Sanbase.Mailer.new(
-      %{
-        user_id: user.id,
-        template: templates[email_type],
-        vars: vars
-      },
-      scheduled_at: scheduled_at
-    )
   end
 end

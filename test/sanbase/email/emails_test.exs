@@ -10,7 +10,6 @@ defmodule Sanbase.EmailsTest do
 
   import Sanbase.DateTimeUtils, only: [days_after: 1]
 
-  alias Sanbase.Accounts.User
   alias Sanbase.Billing.Subscription
   alias Sanbase.StripeApi
   alias Sanbase.StripeApiTestResponse
@@ -45,49 +44,6 @@ defmodule Sanbase.EmailsTest do
   end
 
   describe "schedule emails" do
-    test "on user registration", context do
-      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
-
-      {:ok, user} = context.not_registered_user |> User.Email.update_email_token()
-
-      execute_mutation(build_conn(), email_login_verify_mutation(user))
-      # FIXME: it works in isolation but jobs are not enqueued when running all tests
-
-      args = %{
-        user_id: context.not_registered_user.id,
-        vars: %{
-          name: context.not_registered_user.username,
-          username: context.not_registered_user.username
-        }
-      }
-
-      assert_enqueued(
-        [
-          worker: Sanbase.Mailer,
-          args: Map.put(args, :template, sign_up_templates()[:welcome_email])
-        ],
-        500
-      )
-
-      assert_enqueued(
-        [
-          worker: Sanbase.Mailer,
-          args: Map.put(args, :template, sign_up_templates()[:first_education_email]),
-          scheduled_at: {days_after(4), delta: 10}
-        ],
-        500
-      )
-
-      assert_enqueued(
-        [
-          worker: Sanbase.Mailer,
-          args: Map.put(args, :template, sign_up_templates()[:second_education_email]),
-          scheduled_at: {days_after(7), delta: 10}
-        ],
-        500
-      )
-    end
-
     test "on Sanbase PRO trial started", context do
       expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
 
@@ -156,58 +112,6 @@ defmodule Sanbase.EmailsTest do
   end
 
   describe "performing email jobs" do
-    test "send welcome email", context do
-      assert {:ok, :email_sent} =
-               perform_job(Sanbase.Mailer, %{
-                 "user_id" => context.user.id,
-                 "template" => sign_up_templates()[:welcome_email]
-               })
-
-      assert_called(Sanbase.TemplateMailer.send(context.user.email, :_, :_))
-    end
-
-    test "do not send welcome email when user has no email" do
-      user_no_email = insert(:user, email: nil)
-
-      assert :ok =
-               perform_job(Sanbase.Mailer, %{
-                 "user_id" => user_no_email.id,
-                 "template" => sign_up_templates()[:welcome_email]
-               })
-    end
-
-    test "send 1st edu email", context do
-      assert {:ok, :email_sent} =
-               perform_job(Sanbase.Mailer, %{
-                 "user_id" => context.user.id,
-                 "template" => sign_up_templates()[:first_education_email]
-               })
-
-      assert_called(Sanbase.TemplateMailer.send(context.user.email, :_, :_))
-    end
-
-    test "send 2nd edu email", context do
-      assert {:ok, :email_sent} =
-               perform_job(Sanbase.Mailer, %{
-                 "user_id" => context.user.id,
-                 "template" => sign_up_templates()[:second_education_email]
-               })
-
-      assert_called(Sanbase.TemplateMailer.send(context.user.email, :_, :_))
-    end
-
-    test "do not send edu emails if user opted out", context do
-      insert(:user_settings, user: context.user, settings: %{is_subscribed_edu_emails: false})
-
-      assert :ok =
-               perform_job(Sanbase.Mailer, %{
-                 "user_id" => context.user.id,
-                 "template" => sign_up_templates()[:first_education_email]
-               })
-
-      refute called(Sanbase.TemplateMailer.send(context.user.email, :_, :_))
-    end
-
     test "send trial started", context do
       insert(:subscription_pro_sanbase, user: context.user, status: "trialing")
 
@@ -257,27 +161,6 @@ defmodule Sanbase.EmailsTest do
 
       refute called(Sanbase.TemplateMailer.send(context.user.email, :_, :_))
     end
-  end
-
-  defp email_login_verify_mutation(user) do
-    """
-    mutation {
-      emailLoginVerify(email: "#{user.email}", token: "#{user.email_token}") {
-        token
-        user {
-          primaryUserSanbaseSubscription{
-            status
-            plan{
-              name
-              product {
-                name
-              }
-            }
-          }
-        }
-      }
-    }
-    """
   end
 
   defp subscribe_mutation(plan_id) do

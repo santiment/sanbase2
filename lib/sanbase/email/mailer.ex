@@ -5,7 +5,7 @@ defmodule Sanbase.Mailer do
 
   import Sanbase.Email.Template
 
-  alias Sanbase.Accounts.{User, UserSettings}
+  alias Sanbase.Accounts.User
   alias Sanbase.Billing.{Subscription, Product}
 
   @edu_templates ~w(first-edu-email second-edu-email)
@@ -35,14 +35,13 @@ defmodule Sanbase.Mailer do
 
   defp can_send?(user, template, params \\ %{})
 
-  defp can_send?(user, template, _params) when template in ["trial-suggestion"] do
-    not Subscription.user_has_sanbase_pro?(user.id)
+  # FIXME: remove this after the scheduled jobs have passed
+  defp can_send?(_user, template, _params) when template in ["trial-suggestion"] do
+    false
   end
 
-  defp can_send?(user, template, _params) when template in @edu_templates do
-    user = Sanbase.Repo.preload(user, :user_settings)
-
-    UserSettings.settings_for(user).is_subscribed_edu_emails
+  defp can_send?(_user, template, _params) when template in @edu_templates do
+    false
   end
 
   defp can_send?(user, @trial_started_template, _params) do

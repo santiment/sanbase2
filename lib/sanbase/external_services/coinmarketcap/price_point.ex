@@ -1,4 +1,6 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.PricePoint do
+  require Logger
+
   @marketcap_usd_limit 10_000_000_000_000
   @volume_usd_limit 500_000_000_000
   @price_usd_limit 1_000_000
@@ -45,17 +47,23 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePoint do
         price_point
         |> Map.from_struct()
         |> Map.new(fn
-          {:volume_usd, volume_usd} when num_ge(volume_usd, @volume_usd_limit) ->
+          {:volume_usd, value} when num_ge(value, @volume_usd_limit) ->
+            Logger.info("PricePoint sanitizing #{price_point.slug} Volume USD: #{value}")
+
             {:volume_usd, nil}
 
-          {:price_usd, price_usd} when num_ge(price_usd, @price_usd_limit) ->
+          {:price_usd, value} when num_ge(value, @price_usd_limit) ->
+            Logger.info("PricePoint sanitizing #{price_point.slug} Price USD: #{value}")
+
             {:price_usd, nil}
 
-          {:price_btc, price_btc} when num_ge(price_btc, @price_btc_limit) ->
+          {:price_btc, value} when num_ge(value, @price_btc_limit) ->
+            Logger.info("PricePoint sanitizing #{price_point.slug} Price BTC: #{value}")
             {:price_btc, nil}
 
-          {:marketcap_usd, marketcap_usd}
-          when num_ge(marketcap_usd, @marketcap_usd_limit) or num_le(marketcap_usd, 0) ->
+          {:marketcap_usd, value}
+          when num_ge(value, @marketcap_usd_limit) or num_le(value, 0) ->
+            Logger.info("PricePoint sanitizing #{price_point.slug} Marketcap USD: #{value}")
             {:marketcap_usd, nil}
 
           {k, v} ->

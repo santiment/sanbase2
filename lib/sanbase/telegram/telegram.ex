@@ -171,7 +171,14 @@ defmodule Sanbase.Telegram do
         name: "photo"
       )
       |> Tesla.Multipart.add_field("chat_id", to_string(chat_id))
-      |> Tesla.Multipart.add_field("reply_to_message_id", to_string(reply_to_message_id))
+
+    body =
+      if reply_to_message_id do
+        body
+        |> Tesla.Multipart.add_field("reply_to_message_id", to_string(reply_to_message_id))
+      else
+        body
+      end
 
     post("sendPhoto", body)
   end

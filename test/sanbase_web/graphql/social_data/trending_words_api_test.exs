@@ -29,6 +29,7 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
       rows = trending_words_rows(context)
 
       Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+      |> Sanbase.Mock.prepare_mock2(&Req.get/2, req_response())
       |> Sanbase.Mock.run_with_mocks(fn ->
         args = %{from: dt1, to: dt3, interval: "1d", size: 2}
 
@@ -46,6 +47,7 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
                              %{"score" => 1.0, "word" => "tight"},
                              %{"score" => 0.82, "word" => "short"}
                            ],
+                           "topDocuments" => [],
                            "project" => nil,
                            "score" => 82.0,
                            "summary" => "Third summary",
@@ -63,6 +65,23 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
                            "context" => [
                              %{"score" => 1.0, "word" => "bitcoin"},
                              %{"score" => 0.63, "word" => "eth"}
+                           ],
+                           "topDocuments" => [
+                             %{
+                               "documentUrl" =>
+                                 "https://x.com/wiseadvicesumit/status/1907848088691372207",
+                               "screenName" => "wiseadvicesumit",
+                               "source" => "twitter",
+                               "text" => "Did Trump impose tariff on $PI? https://t.co/sc8V8ECxJe"
+                             },
+                             %{
+                               "documentUrl" =>
+                                 "https://x.com/luke_broyles/status/1907688417883807769",
+                               "screenName" => "luke_broyles",
+                               "source" => "twitter",
+                               "text" =>
+                                 "So if I send Bitcoin to another country what is the tariff on that?..."
+                             }
                            ],
                            "project" => %{"slug" => "bitcoin"},
                            "score" => 74.5,
@@ -82,6 +101,23 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
                              %{"score" => 1.0, "word" => "halving"},
                              %{"score" => 0.85, "word" => "btc"}
                            ],
+                           "topDocuments" => [
+                             %{
+                               "documentUrl" =>
+                                 "https://x.com/PeterSchiff/status/1907784515054915715",
+                               "screenName" => "PeterSchiff",
+                               "source" => "twitter",
+                               "text" =>
+                                 "Trump's tariffs are illegal. Congress delegated the President the power to impose reciprocal tariffs. But Trump's tariffs are reciprocal in name only. They are based on a bogus formula that attributes any nation's trade surplus to tariffs, even if tariffs are low or nonexistent."
+                             },
+                             %{
+                               "documentUrl" =>
+                                 "https://x.com/zerohedge/status/1907895179995988449",
+                               "screenName" => "zerohedge",
+                               "source" => "twitter",
+                               "text" => "*TRUMP SAYS MARKET RESPONSE TO TARIFFS WAS EXPECTED"
+                             }
+                           ],
                            "project" => %{"slug" => "ethereum"},
                            "score" => 72.4,
                            "summary" => "The summary",
@@ -100,6 +136,7 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
                              %{"score" => 1.0, "word" => "tight"},
                              %{"score" => 0.82, "word" => "short"}
                            ],
+                           "topDocuments" => [],
                            "project" => nil,
                            "score" => 70.0,
                            "summary" => "Third summary",
@@ -130,6 +167,7 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
       rows = trending_words_rows(context)
 
       Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+      |> Sanbase.Mock.prepare_mock2(&Req.get/2, req_response())
       |> Sanbase.Mock.run_with_mocks(fn ->
         args = %{from: from, to: now, interval: "1d", size: 2}
 
@@ -147,6 +185,7 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
                              %{"score" => 1.0, "word" => "tight"},
                              %{"score" => 0.82, "word" => "short"}
                            ],
+                           "topDocuments" => [],
                            "project" => nil,
                            "score" => 82.0,
                            "summary" => "***",
@@ -164,6 +203,14 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
                            "context" => [
                              %{"score" => 1.0, "word" => "bitcoin"},
                              %{"score" => 0.63, "word" => "eth"}
+                           ],
+                           "topDocuments" => [
+                             %{
+                               "documentUrl" => nil,
+                               "screenName" => "***",
+                               "source" => "***",
+                               "text" => "***"
+                             }
                            ],
                            "project" => %{"slug" => "bitcoin"},
                            "score" => 74.5,
@@ -183,6 +230,14 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
                              %{"score" => 1.0, "word" => "halving"},
                              %{"score" => 0.85, "word" => "btc"}
                            ],
+                           "topDocuments" => [
+                             %{
+                               "documentUrl" => nil,
+                               "screenName" => "***",
+                               "source" => "***",
+                               "text" => "***"
+                             }
+                           ],
                            "project" => %{"slug" => "ethereum"},
                            "score" => 72.4,
                            "summary" => "***",
@@ -201,6 +256,7 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
                              %{"score" => 1.0, "word" => "tight"},
                              %{"score" => 0.82, "word" => "short"}
                            ],
+                           "topDocuments" => [],
                            "project" => nil,
                            "score" => 70.0,
                            "summary" => "Third summary",
@@ -229,6 +285,7 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
         &SocialData.TrendingWords.get_trending_words/6,
         {:error, "Something broke"}
       )
+      |> Sanbase.Mock.prepare_mock2(&Req.get/2, req_response())
       |> Sanbase.Mock.run_with_mocks(fn ->
         args = %{from: dt1, to: dt2, interval: "1h", size: 10}
 
@@ -355,6 +412,10 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
           "{'word': 'btc', 'score': 0.85}",
           "{'word': 'halving', 'score': 1.0}"
         ],
+        [
+          "1907784515054915715",
+          "1907895179995988449"
+        ],
         "The summary",
         "Bullish summary",
         "Bearish summary",
@@ -369,6 +430,10 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
         [
           "{'word': 'eth', 'score': 0.63}",
           "{'word': 'bitcoin', 'score': 1.0}"
+        ],
+        [
+          "1907848088691372207",
+          "1907688417883807769"
         ],
         "Another summary",
         "Bullish summary",
@@ -385,6 +450,7 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
           "{'word': 'short', 'score': 0.82}",
           "{'word': 'tight', 'score': 1.0}"
         ],
+        [],
         "Third summary",
         "Bullish summary",
         "Bearish summary",
@@ -400,6 +466,7 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
           "{'word': 'short', 'score': 0.82}",
           "{'word': 'tight', 'score': 1.0}"
         ],
+        [],
         "Third summary",
         "Bullish summary",
         "Bearish summary",
@@ -432,6 +499,12 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
             positiveBbSentimentRatio
             negativeBbSentimentRatio
             neutralBbSentimentRatio
+            topDocuments{
+              screenName
+              text
+              source
+              documentUrl
+            }
             context{
               word
               score
@@ -487,5 +560,23 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
     |> Map.get("errors")
     |> hd()
     |> Map.get("message")
+  end
+
+  defp req_response() do
+    {:ok,
+     %Req.Response{
+       status: 200,
+       headers: %{
+         "connection" => ["keep-alive"],
+         "content-type" => ["application/json"],
+         "date" => ["Fri, 04 Apr 2025 07:18:24 GMT"]
+       },
+       body: %{
+         "data" =>
+           "[{\"index\":\"twitter_crypto-v2\",\"doc_id\":\"1907848088691372207\",\"text\":\"Did Trump impose tariff on $PI? https:\\/\\/t.co\\/sc8V8ECxJe\",\"source\":null,\"screen_name\":\"wiseadvicesumit\",\"link_url\":null},{\"index\":\"twitter_crypto-v2\",\"doc_id\":\"1907688417883807769\",\"text\":\"So if I send Bitcoin to another country what is the tariff on that?...\",\"source\":null,\"screen_name\":\"luke_broyles\",\"link_url\":null},{\"index\":\"twitter_crypto-v2\",\"doc_id\":\"1907784515054915715\",\"text\":\"Trump's tariffs are illegal. Congress delegated the President the power to impose reciprocal tariffs. But Trump's tariffs are reciprocal in name only. They are based on a bogus formula that attributes any nation's trade surplus to tariffs, even if tariffs are low or nonexistent.\",\"source\":null,\"screen_name\":\"PeterSchiff\",\"link_url\":null},{\"index\":\"twitter_crypto-v2\",\"doc_id\":\"1907895179995988449\",\"text\":\"*TRUMP SAYS MARKET RESPONSE TO TARIFFS WAS EXPECTED\",\"source\":null,\"screen_name\":\"zerohedge\",\"link_url\":null},{\"index\":\"twitter_crypto-v2\",\"doc_id\":\"1907895877357941234\",\"text\":\"Donald Trump right now: I would consider a deal where China approves the TikTok sale in exchange for tariff relief.\\n\\n\\\"I'm open to tariff negotiations if other countries offer something phenomenal\\\"\\n\\nDonald Trump added: Market response to tariffs today was expected\",\"source\":null,\"screen_name\":\"unusual_whales\",\"link_url\":null}]"
+       },
+       trailers: %{},
+       private: %{}
+     }}
   end
 end

@@ -78,6 +78,30 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
     Sanbase.SocialData.PopularSearchTerm.get(from, to)
   end
 
+  def top_documents(
+        %{top_documents_ids: ["***"]},
+        _args,
+        _resolution
+      ) do
+    # If the word is a masked one, we don't fetch the real documents but hide them
+    {:ok,
+     [%{text: "***", screen_name: "***", source: "***", document_id: "***", document_url: nil}]}
+  end
+
+  def top_documents(
+        %{top_documents_ids: doc_ids},
+        _args,
+        %{context: %{loader: loader}}
+      ) do
+    loader
+    |> Dataloader.load(SanbaseDataloader, :social_documents_by_ids, doc_ids)
+    |> on_load(fn loader ->
+      result = Dataloader.get_many(loader, SanbaseDataloader, :social_documents_by_ids, doc_ids)
+
+      {:ok, result}
+    end)
+  end
+
   def project_from_slug(_root, _args, %{source: %{slug: slug}, context: %{loader: loader}}) do
     loader
     |> Dataloader.load(SanbaseDataloader, :project_by_slug, slug)
@@ -218,14 +242,27 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
   defp sort_and_mask_trending_words(top_words, subscription_plan) do
     Enum.sort_by(top_words, & &1.score, :desc)
     |> Enum.with_index()
-    |> Enum.map(fn {word, index} ->
+    |> Enum.map(fn {word, word_index} ->
       # Add a feature flag to mask first 3 words for free users
-      if System.get_env("MASK_FIRST_3_WORDS_FREE_USER") in ["true", "1"] and
-           subscription_plan == "FREE" and index < 3 do
-        %{word | word: "***", summary: "***", bullish_summary: "***", bearish_summary: "***"}
+      if should_mask?(word_index, subscription_plan) do
+        %{
+          word
+          | word: "***",
+            summary: "***",
+            bullish_summary: "***",
+            bearish_summary: "***",
+            top_documents_ids: if(word.top_documents_ids == [], do: [], else: ["***"])
+        }
       else
         word
       end
     end)
+  end
+
+  defp should_mask?(word_index, subscription_plan) do
+    # Free users should not see the data for the first 3 trending words
+    word_index < 3 and
+      System.get_env("MASK_FIRST_3_WORDS_FREE_USER") in ["true", "1"] and
+      subscription_plan == "FREE"
   end
 end

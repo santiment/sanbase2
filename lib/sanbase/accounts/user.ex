@@ -274,6 +274,22 @@ defmodule Sanbase.Accounts.User do
     |> Repo.all()
   end
 
+  def by_jti(jti, opts \\ []) do
+    query =
+      from(u in __MODULE__,
+        inner_join: gt in SanbaseWeb.Guardian.Token,
+        on: u.id == fragment("CAST(? AS INTEGER)", gt.sub),
+        where: gt.jti == ^jti,
+        select: u
+      )
+      |> maybe_preload(opts)
+
+    case Sanbase.Repo.one(query) do
+      nil -> {:error, "Cannot fetch user with jti #{jti}"}
+      %__MODULE__{} = user -> {:ok, user}
+    end
+  end
+
   def by_email(email, opts \\ []) when is_binary(email) do
     query = from(u in __MODULE__, where: u.email == ^email) |> maybe_preload(opts)
 

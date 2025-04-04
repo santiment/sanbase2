@@ -205,7 +205,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
     case UserSettings.disconnect_telegram_bot(user) do
       {:ok, _user_settings} ->
         # Refresh the data in the user
-        Sanbase.Accounts.get_user(user.id)
+        Sanbase.Accounts.User.by_id(user.id)
 
       {:error, changeset} ->
         {

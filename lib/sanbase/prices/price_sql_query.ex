@@ -51,6 +51,7 @@ defmodule Sanbase.Price.SqlQuery do
     PREWHERE
       #{slug_filter(slug_or_slugs, argument_name: "slug")} AND
       NOT isNaN(#{metric}) AND isNotNull(#{metric})  AND
+      #{if metric == "marketcap_usd", do: "marketcap_usd > 0 AND"}
       source = cast({{source}}, 'LowCardinality(String)') AND
       dt >= toDateTime({{from}}) AND
       dt < toDateTime({{to}})
@@ -86,6 +87,8 @@ defmodule Sanbase.Price.SqlQuery do
     FROM #{@table} FINAL
     PREWHERE
       #{slug_filter(slug_or_slugs, argument_name: "slug")} AND
+      NOT isNaN(#{metric}) AND isNotNull(#{metric})  AND
+      #{if metric == "marketcap_usd", do: "marketcap_usd > 0 AND"}
       source = cast({{source}}, 'LowCardinality(String)') AND
       dt >= toDateTime({{from}}) AND
       dt < toDateTime({{to}})
@@ -172,6 +175,7 @@ defmodule Sanbase.Price.SqlQuery do
       FROM #{@table}
       PREWHERE
         slug IN ({{slugs}}) AND
+        marketcap_usd > 0 AND
         dt >= toDateTime({{from}}) AND
         dt < toDateTime({{to}}) AND
         source = cast({{source}}, 'LowCardinality(String)')
@@ -208,6 +212,7 @@ defmodule Sanbase.Price.SqlQuery do
       FROM #{@table}
       PREWHERE
         NOT isNaN(#{metric}) AND isNotNull(#{metric}) AND
+        #{if metric == "marketcap_usd", do: "marketcap_usd > 0 AND"}
         slug IN ({{slugs}}) AND
         source = cast({{source}}, 'LowCardinality(String)') AND
         dt < toDateTime({{to}})
@@ -273,6 +278,7 @@ defmodule Sanbase.Price.SqlQuery do
       FROM #{@table}
       PREWHERE
         isNotNull(#{metric}) AND NOT isNaN(#{metric}) AND
+        #{if metric == "marketcap_usd", do: "marketcap_usd > 0 AND"}
         dt >= toDateTime({{from}}) AND
         dt < toDateTime({{to}}) AND
         source = cast({{source}}, 'LowCardinality(String)')
@@ -382,6 +388,7 @@ defmodule Sanbase.Price.SqlQuery do
       FROM #{@table}
       PREWHERE
         slug IN ({{slugs}}) AND
+        marketcap_usd > 0 AND
         source = cast({{source}}, 'LowCardinality(String)') AND
         dt >= toDateTime({{from}}) AND
         dt < toDateTime({{to}})

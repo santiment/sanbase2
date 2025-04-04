@@ -241,6 +241,7 @@ defmodule Sanbase.Accounts.User do
         false -> query
         true -> query |> lock("FOR UPDATE")
       end
+      |> maybe_preload(opts)
 
     case Sanbase.Repo.one(query) do
       nil -> {:error, "Cannot fetch the user with id #{user_id}"}

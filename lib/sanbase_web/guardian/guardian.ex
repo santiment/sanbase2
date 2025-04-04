@@ -134,7 +134,7 @@ defmodule SanbaseWeb.Guardian do
   # needs to be exchanged for a new access token
   def resource_from_claims(%{"sub" => user_id, "type" => type})
       when type in ["user_access_token", "user_refresh_token"] do
-    case Sanbase.Accounts.get_user(Sanbase.Math.to_integer(user_id)) do
+    case Sanbase.Accounts.User.by_id(Sanbase.Math.to_integer(user_id)) do
       {:ok, user} -> {:ok, user}
       {:error, _} -> {:error, :no_existing_user}
     end

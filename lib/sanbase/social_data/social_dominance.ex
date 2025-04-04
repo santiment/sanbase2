@@ -2,11 +2,10 @@ defmodule Sanbase.SocialData.SocialDominance do
   import Sanbase.Utils.ErrorHandling
 
   alias Sanbase.SocialData.SocialHelper
+  alias Sanbase.SocialData
+  alias Sanbase.Utils.Config
 
   require Mockery.Macro
-
-  alias Sanbase.Utils.Config
-  alias Sanbase.SocialData
 
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 

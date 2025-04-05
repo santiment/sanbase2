@@ -239,6 +239,11 @@ defimpl Sanbase.Alert, for: Any do
 
   defp maybe_deactivate_trigger({:error, error}, user_trigger) do
     cond do
+      not is_binary(error) ->
+        # If the error is not binary, for example :closed, do not alerts_template
+        # the other functions
+        :ok
+
       String.contains?(error, "chat not found") ->
         # In case the user_trigger does not have other channels but only telegram
         # and the user has blocked our telegram bot, the alert is disabled

@@ -1,11 +1,9 @@
 defmodule Sanbase.Email.MailjetApiBehaviour do
   @callback subscribe(atom(), String.t() | [String.t()]) :: :ok | {:error, term()}
   @callback unsubscribe(atom(), String.t() | [String.t()]) :: :ok | {:error, term()}
-  @callback send_to_list(atom(), String.t(), String.t(), Keyword.t()) :: :ok | {:error, term()}
   @callback fetch_list_emails(atom()) :: {:ok, [String.t()]} | {:error, term()}
   @callback send_email(String.t(), String.t(), String.t(), Keyword.t()) :: :ok | {:error, term()}
-  @callback send_campaign(atom(), String.t(), String.t(), keyword()) ::
-              :ok | {:error, term()}
+  @callback send_campaign(atom(), String.t(), keyword()) :: :ok | {:error, term()}
 end
 
 defmodule Sanbase.Email.MailjetApi do
@@ -34,7 +32,6 @@ defmodule Sanbase.Email.MailjetApi do
     metric_updates_stage: @stage_metric_updates_list_id,
     new_registrations: @new_registrations_list_id
   }
-  @send_api_url "https://api.mailjet.com/v3.1/send"
 
   def client do
     Application.get_env(:sanbase, :mailjet_api, __MODULE__)
@@ -47,13 +44,13 @@ defmodule Sanbase.Email.MailjetApi do
 
   * `list_atom` - The atom representing the contact list to send to
   * `html_content` - The HTML content of the email
-  * `text_content` - The plain text content of the email
   * `opts` - Additional options for the campaign
     * `:title` - The title of the campaign (default: "Metric Updates")
     * `:subject` - The subject line of the email (default: "Metric Updates")
     * `:sender_email` - The sender email address (default: "metrics@santiment.net")
     * `:sender_name` - The sender name (default: "Santiment Metrics")
     * `:locale` - The locale for the campaign (default: "en_US")
+    * `:text_content` - The plain text content of the email (default: "")
 
   ## Returns
 
@@ -73,12 +70,9 @@ defmodule Sanbase.Email.MailjetApi do
   <p><a href=\\"[[UNSUB_LINK_EN]]\\">Unsubscribe</a></p>
   \"\"\"
 
-  text_content = "New metrics available: Price/Volume Correlation and Exchange Inflow"
-
   Sanbase.Email.MailjetApi.send_campaign(
     :metric_updates_dev,
     html_content,
-    text_content,
     [
       title: "April Metrics Update",
       subject: "New Metrics Available - April 2025"
@@ -86,9 +80,8 @@ defmodule Sanbase.Email.MailjetApi do
   )
   ```
   """
-  @spec send_campaign(atom(), String.t(), String.t(), keyword()) ::
-          :ok | {:error, term()}
-  def send_campaign(list_atom, html_content, text_content, opts \\ []) do
+  @spec send_campaign(atom(), String.t(), keyword()) :: :ok | {:error, term()}
+  def send_campaign(list_atom, html_content, opts \\ []) do
     campaign_url = @base_url <> "campaigndraft"
     list_id = @mailjet_lists[list_atom]
 
@@ -98,6 +91,7 @@ defmodule Sanbase.Email.MailjetApi do
     sender_email = Keyword.get(opts, :sender_email, "support@santiment.net")
     sender_name = Keyword.get(opts, :sender_name, "Santiment Metrics")
     locale = Keyword.get(opts, :locale, "en_US")
+    text_content = Keyword.get(opts, :text_content, "")
 
     # Create campaign draft
     draft_data = %{
@@ -200,80 +194,6 @@ defmodule Sanbase.Email.MailjetApi do
 
   def unsubscribe(list_atom, email_or_emails) do
     subscribe_unsubscribe(list_atom, email_or_emails, :unsubscribe)
-  end
-
-  def send_to_list(list_id, subject, content, opts \\ []) do
-    with {:ok, emails} <- fetch_list_emails(list_id),
-         :ok <- Enum.each(emails, &send_email(&1, subject, content, opts)) do
-      :ok
-    end
-  end
-
-  def send_email(email, subject, content, opts \\ []) do
-    html_content = if Keyword.get(opts, :html, false), do: content, else: nil
-    text_content = if html_content, do: nil, else: content
-
-    payload = %{
-      "Messages" => [
-        %{
-          "From" => %{
-            "Email" => "support@santiment.net",
-            "Name" => "Santiment"
-          },
-          "Subject" => subject,
-          "HTMLPart" => html_content,
-          "TextPart" => text_content,
-          "To" => [
-            %{
-              "Email" => email
-            }
-          ]
-        }
-      ]
-    }
-
-    case Req.post!(@send_api_url, json: payload, headers: headers()) do
-      %{status: status} when status in 200..299 ->
-        Logger.info("Email sent successfully to #{email}")
-        :ok
-
-      response ->
-        Logger.error("Failed to send email to #{email}. Response: #{inspect(response)}")
-        {:error, response}
-    end
-  rescue
-    error ->
-      Logger.error("Error sending email to #{email}. Reason: #{inspect(error)}")
-      {:error, error}
-  end
-
-  @doc """
-  Fetches all emails in a Mailjet list using the contacts API.
-  """
-  def fetch_list_emails(list_atom) do
-    list_id = @mailjet_lists[list_atom]
-    url = @base_url <> "contact"
-
-    case Req.get!(url,
-           headers: headers(),
-           params: [ContactsList: list_id, limit: 1000]
-         ) do
-      %{status: 200, body: %{"Data" => data}} ->
-        emails = Enum.map(data, & &1["Email"])
-        Logger.info("Successfully fetched #{length(emails)} emails from list #{list_atom}")
-        {:ok, emails}
-
-      %{status: _status} = response ->
-        Logger.error("Error fetching emails from Mailjet list #{list_atom}: #{inspect(response)}")
-        {:error, response.body}
-    end
-  rescue
-    error ->
-      Logger.error(
-        "Error fetching emails from Mailjet list #{list_atom}. Reason: #{inspect(error)}"
-      )
-
-      {:error, error}
   end
 
   # private

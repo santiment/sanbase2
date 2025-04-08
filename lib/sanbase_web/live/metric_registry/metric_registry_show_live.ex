@@ -108,27 +108,31 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
   end
 
   defp metric_graphiql_url(metric_registry) do
-    slug =
+    result =
       case Sanbase.AvailableMetrics.get_metric_available_slugs(metric_registry.metric) do
         {:ok, slugs} ->
           # If we have precomputed the available slugs
           cond do
             # If ethereum/bitcoin are available, use them
-            "ethereum" in slugs -> "ethereum"
-            "bitcoin" in slugs -> "bitcoin"
-            slugs == [] -> :no_slug_supported
-            true -> Enum.random(slugs)
+            slugs == [] -> {:error, :no_slug_supported}
+            "ethereum" in slugs -> {:ok, "ethereum"}
+            "bitcoin" in slugs -> {:ok, "bitcoin"}
+            true -> {:ok, Enum.random(slugs)}
           end
 
-        {:error, _} ->
-          "ethereum"
+        {:error, _error} ->
+          # Still generate the GraphiQL query, but populate it
+          # with a placeholder slug. The function can return an error
+          # if the available slugs list for a metric is still not
+          # computed
+          {:ok, "no_known_supported_slug_replace_me"}
       end
 
-    case slug do
-      :no_slug_supported ->
+    case result do
+      {:error, _} ->
         nil
 
-      _ ->
+      {:ok, slug} ->
         # Add aliases so the timeseries data is seen before the metadata
         # For many metrics the list of available assets has thousands of assets
         # and seeing the timeseries data will require a lot of scrolling

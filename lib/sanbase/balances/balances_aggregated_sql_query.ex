@@ -299,7 +299,7 @@ defmodule Sanbase.Balance.BalancesAggregatedSqlQuery do
         decimals,
         operator,
         threshold,
-        "eth_balances_realtime" = table,
+        "eth_balances" = table,
         _opts
       ) do
     sql = """
@@ -345,7 +345,7 @@ defmodule Sanbase.Balance.BalancesAggregatedSqlQuery do
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  def top_addresses_query(_slug, decimals, blockchain, "eth_balances_realtime" = table, opts) do
+  def top_addresses_query(_slug, decimals, blockchain, "eth_balances" = table, opts) do
     direction = if Keyword.get(opts, :direction) == :asc, do: "ASC", else: "DESC"
     labels = Keyword.get(opts, :labels, :all)
 

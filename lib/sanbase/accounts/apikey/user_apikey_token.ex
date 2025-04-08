@@ -79,13 +79,4 @@ defmodule Sanbase.Accounts.UserApikeyToken do
         true
     end
   end
-
-  def user_by_token(token) when is_binary(token) do
-    from(uat in UserApikeyToken, where: uat.token == ^token, preload: [:user])
-    |> Repo.one()
-    |> case do
-      %__MODULE__{user: user} -> {:ok, user}
-      _ -> {:error, "Apikey not valid or malformed"}
-    end
-  end
 end

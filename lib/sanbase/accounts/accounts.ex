@@ -1,9 +1,9 @@
 defmodule Sanbase.Accounts do
-  alias Sanbase.Repo
-  alias __MODULE__.{User, EthAccount}
-
   import Ecto.Query
   import Sanbase.Accounts.User.Ecto, only: [registration_state_equals: 1]
+
+  alias Sanbase.Repo
+  alias __MODULE__.{User, EthAccount}
 
   def get_user(user_id_or_ids) do
     User.by_id(user_id_or_ids)

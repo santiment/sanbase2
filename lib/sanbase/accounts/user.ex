@@ -290,6 +290,22 @@ defmodule Sanbase.Accounts.User do
     end
   end
 
+  def by_apikey_token(token, opts \\ []) when is_binary(token) do
+    query =
+      from(
+        u in __MODULE__,
+        inner_join: uat in Sanbase.Accounts.UserApikeyToken,
+        on: u.id == uat.user_id,
+        where: uat.token == ^token
+      )
+      |> maybe_preload(opts)
+
+    case Sanbase.Repo.one(query) do
+      %__MODULE__{} = user -> {:ok, user}
+      nil -> {:error, "Apikey not valid or malformed"}
+    end
+  end
+
   def by_email(email, opts \\ []) when is_binary(email) do
     query = from(u in __MODULE__, where: u.email == ^email) |> maybe_preload(opts)
 

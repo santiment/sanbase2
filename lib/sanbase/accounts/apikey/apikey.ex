@@ -31,7 +31,7 @@ defmodule Sanbase.Accounts.Apikey do
   def apikey_to_user(apikey) do
     with {:ok, {token, _rest}} <- Hmac.split_apikey(apikey),
          {_, true} <- {:valid?, Hmac.apikey_valid?(token, apikey)},
-         {_, {:ok, user}} <- {:user?, UserApikeyToken.user_by_token(token)} do
+         {_, {:ok, user}} <- {:user?, User.by_apikey_token(token)} do
       {:ok, user}
     else
       {:valid?, _} ->

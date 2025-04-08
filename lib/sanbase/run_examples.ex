@@ -572,7 +572,7 @@ defmodule Sanbase.RunExamples do
         18,
         "ETH",
         "ethereum",
-        "eth_balances_realtime",
+        "eth_balances",
         labels: ["whale_usd_balance"],
         page: 1,
         page_size: 10

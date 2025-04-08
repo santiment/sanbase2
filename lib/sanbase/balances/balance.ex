@@ -286,7 +286,7 @@ defmodule Sanbase.Balance do
           {:ok} | {:error, String.t()}
   def addresses_by_filter(slug, operator, threshold, opts) do
     with {:ok, {decimals, infr, _blockchain}} <- info_by_slug(slug),
-         {:ok, table} <- realtime_balances_table(slug, infr) do
+         {:ok, table} <- balances_table(slug, infr) do
       query_struct = addresses_by_filter_query(slug, decimals, operator, threshold, table, opts)
 
       ClickhouseRepo.query_transform(query_struct, fn [address, balance] ->
@@ -323,7 +323,7 @@ defmodule Sanbase.Balance do
           {:ok, [%{address: address, balance: number()}]} | {:error, String.t()}
   def current_balance(address_or_addresses, slug) do
     with {:ok, {decimals, infr, blockchain}} <- info_by_slug(slug),
-         {:ok, table} <- realtime_balances_table_or_nil(slug, infr) do
+         {:ok, table} <- balances_table_or_nil(slug, infr) do
       addresses =
         address_or_addresses
         |> List.wrap()
@@ -335,7 +335,7 @@ defmodule Sanbase.Balance do
 
   def current_balance_top_addresses(slug, opts) do
     with {:ok, {decimals, infrastructure, blockchain}} <- info_by_slug(slug),
-         {:ok, table} <- realtime_balances_table(slug, infrastructure) do
+         {:ok, table} <- balances_table(slug, infrastructure) do
       current_balance_top_addresses(slug, decimals, infrastructure, blockchain, table, opts)
     end
   end
@@ -352,19 +352,18 @@ defmodule Sanbase.Balance do
     end)
   end
 
-  def realtime_balances_table_or_nil(slug, infr) do
-    case realtime_balances_table(slug, infr) do
+  def balances_table_or_nil(slug, infr) do
+    case balances_table(slug, infr) do
       {:ok, table} -> {:ok, table}
       _ -> {:ok, nil}
     end
   end
 
-  def realtime_balances_table("ethereum", "ETH"),
-    do: {:ok, "eth_balances_realtime"}
+  def balances_table("ethereum", "ETH"), do: {:ok, "eth_balances"}
 
-  def realtime_balances_table(_, "ETH"), do: {:ok, "erc20_balances_realtime"}
+  def balances_table(_, "ETH"), do: {:ok, "erc20_balances"}
 
-  def realtime_balances_table(slug, _infrastructure),
+  def balances_table(slug, _infrastructure),
     do: {:error, "The slug #{slug} does not have support for realtime balances"}
 
   def supported_infrastructures(),

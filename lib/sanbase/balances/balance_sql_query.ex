@@ -4,27 +4,6 @@ defmodule Sanbase.Balance.SqlQuery do
   import Sanbase.Metric.SqlQuery.Helper,
     only: [generate_comparison_string: 3, timerange_parameters: 3]
 
-  def blockchain_to_table(blockchain, slug) do
-    case blockchain do
-      "ethereum" -> if slug == "ethereum", do: "eth_balances", else: "erc20_balances_address"
-      "bitcoin" -> "btc_balances"
-      "litecoin" -> "ltc_balances"
-      "dogecoin" -> "doge_balances"
-      "bitcoin-cash" -> "bch_balances"
-      "binance" -> "bep20_balances"
-    end
-  end
-
-  def table_to_slug(table) do
-    case table do
-      "eth_balances" -> "ethereum"
-      "btc_balances" -> "bitcoin"
-      "ltc_balances" -> "litecoin"
-      "doge_balances" -> "dogecoin"
-      "bch_balances" -> "bitcoin-cash"
-    end
-  end
-
   def maybe_selector_clause("ethereum", "ethereum", _slug_key), do: ""
 
   def maybe_selector_clause("ethereum", _, slug_key) do
@@ -98,7 +77,7 @@ defmodule Sanbase.Balance.SqlQuery do
       from: DateTime.to_unix(from),
       to: DateTime.to_unix(to),
       decimals: decimals(blockchain, decimals),
-      table: blockchain_to_table(blockchain, slug),
+      table: blockchain_to_table_address_ordered(blockchain, slug),
       yearly_snapshot_table: "eth_balance_yearly_snapshots"
     }
 
@@ -126,7 +105,7 @@ defmodule Sanbase.Balance.SqlQuery do
       from: DateTime.to_unix(from),
       to: DateTime.to_unix(to),
       decimals: decimals(blockchain, decimals),
-      table: blockchain_to_table(blockchain, slug)
+      table: blockchain_to_table_address_ordered(blockchain, slug)
     }
 
     Sanbase.Clickhouse.Query.new(sql, params)
@@ -187,7 +166,7 @@ defmodule Sanbase.Balance.SqlQuery do
       to: to,
       interval: interval,
       span: span,
-      table: blockchain_to_table(blockchain, slug)
+      table: blockchain_to_table_address_ordered(blockchain, slug)
     }
 
     Sanbase.Clickhouse.Query.new(sql, params)
@@ -263,7 +242,7 @@ defmodule Sanbase.Balance.SqlQuery do
       to: to,
       interval: interval,
       span: span,
-      table: blockchain_to_table(blockchain, slug)
+      table: blockchain_to_table_address_ordered(blockchain, slug)
     }
 
     Sanbase.Clickhouse.Query.new(sql, params)
@@ -285,7 +264,7 @@ defmodule Sanbase.Balance.SqlQuery do
       addresses: addresses,
       slug: slug,
       decimals: decimals(blockchain, decimals),
-      table: blockchain_to_table(blockchain, slug)
+      table: blockchain_to_table_address_ordered(blockchain, slug)
     }
 
     Sanbase.Clickhouse.Query.new(sql, params)
@@ -303,7 +282,7 @@ defmodule Sanbase.Balance.SqlQuery do
     params = %{
       address: address,
       slug: slug,
-      table: blockchain_to_table(blockchain, slug)
+      table: blockchain_to_table_address_ordered(blockchain, slug)
     }
 
     Sanbase.Clickhouse.Query.new(sql, params)
@@ -314,7 +293,7 @@ defmodule Sanbase.Balance.SqlQuery do
         decimals,
         operator,
         threshold,
-        "eth_balances_realtime" = table,
+        "eth_balances" = table,
         _opts
       ) do
     sql = """
@@ -360,7 +339,7 @@ defmodule Sanbase.Balance.SqlQuery do
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  def top_addresses_query(_slug, decimals, blockchain, "eth_balances_realtime" = table, opts) do
+  def top_addresses_query(_slug, decimals, blockchain, "eth_balances" = table, opts) do
     direction = if Keyword.get(opts, :direction) == :asc, do: "ASC", else: "DESC"
     labels = Keyword.get(opts, :labels, :all)
 
@@ -538,7 +517,7 @@ defmodule Sanbase.Balance.SqlQuery do
 
   def assets_held_by_address_query(address, table, opts \\ [])
 
-  def assets_held_by_address_query(address, "erc20_balances_" <> _ = table, opts) do
+  def assets_held_by_address_query(address, "erc20_balances" <> _ = table, opts) do
     sql = """
     SELECT
       name,
@@ -680,7 +659,7 @@ defmodule Sanbase.Balance.SqlQuery do
       slug: slug,
       decimals: decimals(blockchain, decimals),
       datetime: DateTime.to_unix(datetime),
-      table: blockchain_to_table(blockchain, slug)
+      table: blockchain_to_table_address_ordered(blockchain, slug)
     }
 
     Sanbase.Clickhouse.Query.new(sql, params)
@@ -699,5 +678,26 @@ defmodule Sanbase.Balance.SqlQuery do
   defp address_clause(addresses, opts) when is_list(addresses) do
     arg_name = Keyword.fetch!(opts, :argument_name)
     "address IN ({{#{arg_name}}})"
+  end
+
+  defp blockchain_to_table_address_ordered(blockchain, slug) do
+    case blockchain do
+      "ethereum" -> if slug == "ethereum", do: "eth_balances", else: "erc20_balances_address"
+      "bitcoin" -> "btc_balances"
+      "litecoin" -> "ltc_balances"
+      "dogecoin" -> "doge_balances"
+      "bitcoin-cash" -> "bch_balances"
+      "binance" -> "bep20_balances"
+    end
+  end
+
+  defp table_to_slug(table) do
+    case table do
+      "eth_balances" -> "ethereum"
+      "btc_balances" -> "bitcoin"
+      "ltc_balances" -> "litecoin"
+      "doge_balances" -> "dogecoin"
+      "bch_balances" -> "bitcoin-cash"
+    end
   end
 end

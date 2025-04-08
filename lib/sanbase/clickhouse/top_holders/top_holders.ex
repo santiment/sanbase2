@@ -195,7 +195,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
     WITH
       (
         SELECT argMax(balance, dt)
-        FROM erc20_balances_realtime
+        FROM erc20_balances
         WHERE
           #{asset_ref_id_filter.("asset_ref_id", argument_name: "slug")} AND
           addressType = 'total'
@@ -219,7 +219,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
       (argMax(balance, dt) / decimals) AS balance2,
       balance2 * price_usd AS balance_usd,
       (balance2 / (total_balance / decimals)) AS partOfTotal
-    FROM erc20_balances_realtime
+    FROM erc20_balances
     WHERE
       #{asset_ref_id_filter.("asset_ref_id", argument_name: "slug")} AND
       addressType = 'normal'

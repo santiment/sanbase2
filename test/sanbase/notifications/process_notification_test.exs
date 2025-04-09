@@ -50,7 +50,7 @@ defmodule Sanbase.Notifications.ProcessNotificationTest do
 
   test "processes email notification job" do
     # Stub the Mailjet client to simulate sending an email
-    stub(Sanbase.Email.MockMailjetApi, :send_to_list, fn _list, _subject, content, _opts ->
+    stub(Sanbase.Email.MockMailjetApi, :send_campaign, fn _list, content, _opts ->
       assert content =~ "metric A"
       :ok
     end)

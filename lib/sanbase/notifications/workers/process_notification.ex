@@ -4,8 +4,6 @@ defmodule Sanbase.Notifications.Workers.ProcessNotification do
   alias Sanbase.Notifications.{Notification, TemplateRenderer}
   alias Sanbase.Utils.Config
 
-  @subject "Sanbase Metric Updates"
-
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"is_manual" => true, "channel" => "discord"} = args}) do
     params = args["params"]
@@ -27,13 +25,9 @@ defmodule Sanbase.Notifications.Workers.ProcessNotification do
     params = args["params"]
     notification_id = args["notification_id"]
     notification = Notification.by_id(notification_id)
+    # campaign title = Metric Updates [month], day
 
-    case Sanbase.Email.MailjetApi.client().send_to_list(
-           metric_updates_list(),
-           params["subject"],
-           params["content"],
-           []
-         ) do
+    case send_campaign(metric_updates_list(), params["content"]) do
       :ok -> mark_processed(notification)
       error -> error
     end
@@ -66,12 +60,7 @@ defmodule Sanbase.Notifications.Workers.ProcessNotification do
         mime_type: "text/html"
       })
 
-    case Sanbase.Email.MailjetApi.client().send_to_list(
-           metric_updates_list(),
-           @subject,
-           content,
-           html: true
-         ) do
+    case send_campaign(metric_updates_list(), content) do
       :ok ->
         args["notification_ids"]
         |> Enum.map(&Notification.by_id/1)
@@ -109,5 +98,18 @@ defmodule Sanbase.Notifications.Workers.ProcessNotification do
     %{
       "metric_updates" => discord_webhook()
     }
+  end
+
+  defp send_campaign(list_atom, content) do
+    date_formatted = Timex.format!(Timex.today(), "{Mshort}, {D}")
+
+    Sanbase.Email.MailjetApi.client().send_campaign(
+      list_atom,
+      content,
+      title: "Metric Updates #{date_formatted}",
+      subject: "Metric Updates #{date_formatted}",
+      sender_email: "support@santiment.net",
+      sender_name: "Santiment Metrics"
+    )
   end
 end

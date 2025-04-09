@@ -157,11 +157,11 @@ defmodule Sanbase.Price.SqlQuery do
     volume_aggr = Keyword.get(opts, :volume_aggregation, :avg)
 
     sql = """
-    SELECT slugString, SUM(marketcap_usd), SUM(volume_usd), toUInt32(SUM(has_changed))
+    SELECT slugString, SUM(marketcap_usd2), SUM(volume_usd), toUInt32(SUM(has_changed))
     FROM (
       SELECT
         arrayJoin([{{slugs}}]) AS slugString,
-        toFloat64(0) AS marketcap_usd,
+        toFloat64(0) AS marketcap_usd2,
         toFloat64(0) AS volume_usd,
         toUInt32(0) AS has_changed
 
@@ -169,7 +169,7 @@ defmodule Sanbase.Price.SqlQuery do
 
       SELECT
         cast(slug, 'String') AS slugString,
-        #{aggregation(marketcap_aggr, "marketcap_usd", "dt")} AS marketcap_usd,
+        #{aggregation(marketcap_aggr, "marketcap_usd", "dt")} AS marketcap_usd2,
         #{aggregation(volume_aggr, "volume_usd", "dt")} AS volume_usd,
         toUInt32(1) AS has_changed
       FROM #{@table}
@@ -371,18 +371,18 @@ defmodule Sanbase.Price.SqlQuery do
 
   def combined_marketcap_and_volume_query(slugs, from, to, interval, source) do
     sql = """
-    SELECT time,SUM(marketcap_usd), SUM(volume_usd), toUInt32(SUM(has_changed))
+    SELECT time,SUM(marketcap_usd2), SUM(volume_usd), toUInt32(SUM(has_changed))
     FROM (
       SELECT
         toUnixTimestamp(intDiv(toUInt32({{from}} + number * {{interval}}), {{interval}}) * {{interval}}) AS time,
-        toFloat64(0) AS marketcap_usd,
+        toFloat64(0) AS marketcap_usd2,
         toFloat64(0) AS volume_usd,
         toUInt32(0) AS has_changed
       FROM numbers({{span}})
       UNION ALL
       SELECT
         #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS time,
-        argMax(marketcap_usd, dt) AS marketcap_usd,
+        argMax(marketcap_usd, dt) AS marketcap_usd2,
         argMax(volume_usd, dt) AS volume_usd,
         toUInt32(1) AS has_changed
       FROM #{@table}

@@ -264,6 +264,7 @@ defmodule SanbaseWeb.Router do
     get("/santiment_team_members/:secret", DataController, :santiment_team_members)
     get("/cryptocompare_asset_mapping", CryptocompareAssetMappingController, :data)
     post("/stripe_webhook", StripeController, :webhook)
+    post("/mailjet/webhook", MailjetController, :webhook)
 
     post("/projects_data_validator_webhook", RepoReaderController, :validator_webhook)
     post("/projects_data_reader_webhook/:secret", RepoReaderController, :reader_webhook)

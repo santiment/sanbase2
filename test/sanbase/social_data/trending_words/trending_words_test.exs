@@ -31,6 +31,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                      dt1 => [
                        %{
                          context: [%{score: 1.0, word: "usd"}, %{score: 0.5, word: "money"}],
+                         top_documents_ids: [],
                          score: 5,
                          slug: "ethereum",
                          summaries: [
@@ -53,6 +54,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                        },
                        %{
                          context: [%{score: 1.0, word: "usd"}, %{score: 0.5, word: "money"}],
+                         top_documents_ids: [],
                          score: 10,
                          slug: "bitcoin",
                          summaries: [
@@ -77,6 +79,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                      dt2 => [
                        %{
                          context: [%{score: 1.0, word: "usd"}, %{score: 0.5, word: "money"}],
+                         top_documents_ids: [],
                          score: 70,
                          slug: nil,
                          summaries: [
@@ -99,6 +102,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                        },
                        %{
                          context: [%{score: 1.0, word: "usd"}, %{score: 0.5, word: "money"}],
+                         top_documents_ids: [],
                          score: 2,
                          slug: "santiment",
                          summaries: [
@@ -123,6 +127,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                      dt3 => [
                        %{
                          context: [%{score: 1.0, word: "usd"}, %{score: 0.5, word: "money"}],
+                         top_documents_ids: ["123123"],
                          score: 2,
                          slug: "ripple",
                          summaries: [
@@ -145,6 +150,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                        },
                        %{
                          context: [%{score: 1.0, word: "usd"}, %{score: 0.5, word: "money"}],
+                         top_documents_ids: [],
                          score: 1,
                          slug: "ethereum",
                          summaries: [
@@ -198,6 +204,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                    [
                      %{
                        context: [%{score: 1.0, word: "usd"}, %{score: 0.5, word: "money"}],
+                       top_documents_ids: ["123123"],
                        score: 2,
                        slug: "ripple",
                        summaries: [
@@ -220,6 +227,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                      },
                      %{
                        context: [%{score: 1.0, word: "usd"}, %{score: 0.5, word: "money"}],
+                       top_documents_ids: [],
                        score: 1,
                        slug: "ethereum",
                        summaries: [
@@ -354,6 +362,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
         "BTC_bitcoin",
         10,
         context,
+        [],
         "summary1",
         "bullish_summary1",
         "bearish_summary1",
@@ -366,6 +375,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
         "ETH_ethereum",
         5,
         context,
+        [],
         "summary2",
         "bullish_summary2",
         "bearish_summary2",
@@ -378,6 +388,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
         "SAN_santiment",
         2,
         context,
+        [],
         "summary3",
         "bullish_summary3",
         "bearish_summary3",
@@ -390,6 +401,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
         nil,
         70,
         context,
+        [],
         "summary4",
         "bullish_summary4",
         "bearish_summary4",
@@ -402,6 +414,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
         "ETH_ethereum",
         1,
         context,
+        [],
         "summary5",
         "bullish_summary5",
         "bearish_summary5",
@@ -414,6 +427,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
         "XRP_ripple",
         2,
         context,
+        ["123123"],
         "summary6",
         "bullish_summary6",
         "bearish_summary6",

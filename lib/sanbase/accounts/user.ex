@@ -241,6 +241,7 @@ defmodule Sanbase.Accounts.User do
         false -> query
         true -> query |> lock("FOR UPDATE")
       end
+      |> maybe_preload(opts)
 
     case Sanbase.Repo.one(query) do
       nil -> {:error, "Cannot fetch the user with id #{user_id}"}
@@ -271,6 +272,38 @@ defmodule Sanbase.Accounts.User do
     )
     |> maybe_preload(opts)
     |> Repo.all()
+  end
+
+  def by_jti(jti, opts \\ []) do
+    query =
+      from(u in __MODULE__,
+        inner_join: gt in SanbaseWeb.Guardian.Token,
+        on: u.id == fragment("CAST(? AS INTEGER)", gt.sub),
+        where: gt.jti == ^jti,
+        select: u
+      )
+      |> maybe_preload(opts)
+
+    case Sanbase.Repo.one(query) do
+      nil -> {:error, "Cannot fetch user with jti #{jti}"}
+      %__MODULE__{} = user -> {:ok, user}
+    end
+  end
+
+  def by_apikey_token(token, opts \\ []) when is_binary(token) do
+    query =
+      from(
+        u in __MODULE__,
+        inner_join: uat in Sanbase.Accounts.UserApikeyToken,
+        on: u.id == uat.user_id,
+        where: uat.token == ^token
+      )
+      |> maybe_preload(opts)
+
+    case Sanbase.Repo.one(query) do
+      %__MODULE__{} = user -> {:ok, user}
+      nil -> {:error, "Apikey not valid or malformed"}
+    end
   end
 
   def by_email(email, opts \\ []) when is_binary(email) do

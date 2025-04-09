@@ -5,6 +5,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserSettingsResolver do
 
   alias Sanbase.Accounts.{User, UserSettings}
 
+  def settings(_root, _args, %{context: %{auth: %{auth_method: :basic}}}) do
+    {:ok, %{}}
+  end
+
   def settings(%User{} = user, _args, _resolution) do
     {:ok, UserSettings.settings_for(user)}
   end

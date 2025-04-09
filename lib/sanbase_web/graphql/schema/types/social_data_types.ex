@@ -134,6 +134,14 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
     field(:position, :integer)
   end
 
+  object :social_document do
+    field(:source, :string)
+    field(:screen_name, :string)
+    field(:text, :string)
+    field(:document_id, :string)
+    field(:document_url, :string)
+  end
+
   object :word_with_context do
     field(:context, list_of(:word_context))
     field(:score, non_null(:float))
@@ -145,6 +153,10 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
     field(:positive_bb_sentiment_ratio, :float)
     field(:negative_bb_sentiment_ratio, :float)
     field(:neutral_bb_sentiment_ratio, :float)
+
+    field :top_documents, list_of(:social_document) do
+      cache_resolve(&SocialDataResolver.top_documents/3)
+    end
 
     field :project, :project do
       cache_resolve(&SocialDataResolver.project_from_root_slug/3)

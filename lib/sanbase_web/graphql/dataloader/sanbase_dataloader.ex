@@ -1,18 +1,20 @@
 defmodule SanbaseWeb.Graphql.SanbaseDataloader do
-  alias SanbaseWeb.Graphql.{
-    BalanceDataloader,
-    ClickhouseDataloader,
-    LabelsDataloader,
-    PostgresDataloader,
-    PriceDataloader,
-    EcosystemDataloader
-  }
+  alias SanbaseWeb.Graphql.BalanceDataloader
+  alias SanbaseWeb.Graphql.ClickhouseDataloader
+  alias SanbaseWeb.Graphql.EcosystemDataloader
+  alias SanbaseWeb.Graphql.LabelsDataloader
+  alias SanbaseWeb.Graphql.MetricshubDataloader
+  alias SanbaseWeb.Graphql.PostgresDataloader
+  alias SanbaseWeb.Graphql.PriceDataloader
 
   @spec data() :: Dataloader.KV.t()
   def data() do
     Dataloader.KV.new(&query/2)
   end
 
+  @metricshub_dataloader [
+    :social_documents_by_ids
+  ]
   @labels_dataloader [
     :address_labels
   ]
@@ -69,6 +71,7 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     :watchlist_vote_stats,
     :watchlist_voted_at
   ]
+
   @postgres_dataloader [
     :current_user_address_details,
     :infrastructure,
@@ -81,19 +84,23 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     :users_by_id,
     # Founders
     :available_founders_per_slug
+    # Trending Words
   ]
 
   @postgres_dataloader @postgres_dataloader ++ @postgres_comments_dataloader
 
   @ecosystem_dataloader [:ecosystem_aggregated_metric_data, :ecosystem_timeseries_metric_data]
 
+  @postgres_dataloader MapSet.new(@postgres_dataloader)
+  @clickhouse_dataloader MapSet.new(@clickhouse_dataloader)
+
   def query(queryable, args) do
     cond do
-      queryable in @labels_dataloader ->
-        LabelsDataloader.query(queryable, args)
-
       queryable in @clickhouse_dataloader ->
         ClickhouseDataloader.query(queryable, args)
+
+      queryable in @postgres_dataloader ->
+        PostgresDataloader.query(queryable, args)
 
       queryable in @balance_dataloader ->
         BalanceDataloader.query(queryable, args)
@@ -101,11 +108,14 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
       queryable in @price_dataloader ->
         PriceDataloader.query(queryable, args)
 
-      queryable in @postgres_dataloader ->
-        PostgresDataloader.query(queryable, args)
+      queryable in @metricshub_dataloader ->
+        MetricshubDataloader.query(queryable, args)
 
       queryable in @ecosystem_dataloader ->
         EcosystemDataloader.query(queryable, args)
+
+      queryable in @labels_dataloader ->
+        LabelsDataloader.query(queryable, args)
 
       true ->
         raise(RuntimeError, "Unknown queryable provided to the dataloder: #{inspect(queryable)}")

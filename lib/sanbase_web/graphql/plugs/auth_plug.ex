@@ -380,7 +380,9 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
 
     case Base.encode64(username <> ":" <> password) do
       ^auth_attempt ->
-        {:ok, %User{is_superuser: true}}
+        # Put roles as [] otherwise we get Ecto.Association.NotLoaded error
+        # when computing moderator and superuser
+        {:ok, %User{id: -1, is_superuser: true, roles: []}}
 
       _ ->
         {:error, "Invalid basic authentication header credentials"}

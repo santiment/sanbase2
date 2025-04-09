@@ -196,6 +196,32 @@ defmodule Sanbase.Email.MailjetApi do
     subscribe_unsubscribe(list_atom, email_or_emails, :unsubscribe)
   end
 
+  def fetch_list_emails(list_atom) do
+    list_id = @mailjet_lists[list_atom]
+    url = @base_url <> "contact"
+
+    case Req.get!(url,
+           headers: headers(),
+           params: [ContactsList: list_id, limit: 1000]
+         ) do
+      %{status: 200, body: %{"Data" => data}} ->
+        emails = Enum.map(data, & &1["Email"])
+        Logger.info("Successfully fetched #{length(emails)} emails from list #{list_atom}")
+        {:ok, emails}
+
+      %{status: _status} = response ->
+        Logger.error("Error fetching emails from Mailjet list #{list_atom}: #{inspect(response)}")
+        {:error, response.body}
+    end
+  rescue
+    error ->
+      Logger.error(
+        "Error fetching emails from Mailjet list #{list_atom}. Reason: #{inspect(error)}"
+      )
+
+      {:error, error}
+  end
+
   # private
 
   defp subscribe_unsubscribe(list_atom, email_or_emails, action) do

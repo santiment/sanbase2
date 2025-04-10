@@ -6,7 +6,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
   import Sanbase.Utils.Transform
   import Sanbase.Transfers.Utils, only: [top_wallet_transfers_address_clause: 2]
 
-  alias Sanbase.ClickhouseRepo
+  alias Sanbase.ChRepo
   alias Sanbase.Project
 
   defguard is_non_neg_integer(int) when is_integer(int) and int > 0
@@ -29,7 +29,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
     opts = [page: page, page_size: page_size]
     query_struct = top_wallet_transfers_query(wallets, contract, from, to, decimals, type, opts)
 
-    ClickhouseRepo.query_transform(query_struct, fn
+    ChRepo.query_transform(query_struct, fn
       [timestamp, from_address, to_address, trx_hash, trx_value] ->
         %{
           datetime: DateTime.from_unix!(timestamp),
@@ -61,7 +61,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
     opts = [page: page, page_size: page_size]
     query_struct = top_transfers_query(contract, from, to, decimals, excluded_addresses, opts)
 
-    ClickhouseRepo.query_transform(
+    ChRepo.query_transform(
       query_struct,
       fn [datetime, from_address, to_address, trx_hash, trx_value] ->
         %{
@@ -93,7 +93,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
         interval
       )
 
-    ClickhouseRepo.query_transform(
+    ChRepo.query_transform(
       query_struct,
       fn [unix, incoming, outgoing] ->
         %{
@@ -110,7 +110,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
     query_struct =
       blockchain_address_transaction_volume_query(addresses, contract, decimals, from, to)
 
-    ClickhouseRepo.query_transform(
+    ChRepo.query_transform(
       query_struct,
       fn [address, incoming, outgoing] ->
         %{
@@ -135,7 +135,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
   def recent_transactions(address, opts) do
     query_struct = recent_transactions_query(address, opts)
 
-    ClickhouseRepo.query_transform(query_struct, fn
+    ChRepo.query_transform(query_struct, fn
       [timestamp, from_address, to_address, trx_hash, trx_value, name, decimals] ->
         %{
           datetime: DateTime.from_unix!(timestamp),
@@ -162,7 +162,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
   defp execute_transfers_summary_query(type, address, contract, decimals, from, to, opts) do
     query_struct = transfers_summary_query(type, address, contract, decimals, from, to, opts)
 
-    ClickhouseRepo.query_transform(
+    ChRepo.query_transform(
       query_struct,
       fn [last_transfer_datetime, address, transaction_volume, transfers_count] ->
         %{

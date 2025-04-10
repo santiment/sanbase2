@@ -60,7 +60,7 @@ defmodule Sanbase.Metric.LatestMetric do
   def get_data(table, metrics, slugs, opts) do
     query_struct = get_data_query(table, metrics, slugs, opts)
 
-    Sanbase.ClickhouseRepo.query_transform(
+    Sanbase.ChRepo.query_transform(
       query_struct,
       fn [slug, metric, value, dt_unix, computed_at_unix] ->
         %{

@@ -163,7 +163,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         asset_id,
         dt,
         argMax(value, computed_at) AS value2
-      FROM {{table}}
+      FROM \{\{table:inline\}\}
       PREWHERE
         #{finalized_data_filter_str(table, only_finalized_data)}
         #{additional_filters}
@@ -228,7 +228,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         SELECT dt, asset_id, argMax(value, computed_at) AS value
         FROM (
           SELECT dt, asset_id, metric_id, value, computed_at
-          FROM {{table}}
+          FROM \{\{table:inline\}\}
           PREWHERE
             #{finalized_data_filter_str(table, only_finalized_data)}
             #{additional_filters}

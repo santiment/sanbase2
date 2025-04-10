@@ -298,7 +298,7 @@ defmodule Sanbase.Queries.QueryExecution do
 
     Sanbase.ClickhouseRepo.put_dynamic_repo(Sanbase.ClickhouseRepo)
 
-    Sanbase.ClickhouseRepo.query_transform(
+    Sanbase.ChRepo.query_transform(
       query_struct,
       fn [
            read_compressed_gb,

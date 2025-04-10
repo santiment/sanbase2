@@ -12,7 +12,7 @@ defmodule Sanbase.Intercom do
   alias Sanbase.Clickhouse.ApiCallData
   alias Sanbase.Accounts.EthAccount
   alias Sanbase.Repo
-  alias Sanbase.ClickhouseRepo
+  alias Sanbase.ChRepo
 
   require Logger
 
@@ -224,7 +224,7 @@ defmodule Sanbase.Intercom do
 
     query_struct = Sanbase.Clickhouse.Query.new(sql, params)
 
-    ClickhouseRepo.query_transform(query_struct, fn [dt, user_id, attributes] ->
+    ChRepo.query_transform(query_struct, fn [dt, user_id, attributes] ->
       %{
         dt: dt,
         user_id: user_id,
@@ -250,7 +250,7 @@ defmodule Sanbase.Intercom do
 
     query_struct = Sanbase.Clickhouse.Query.new(sql, params)
 
-    ClickhouseRepo.query_transform(query_struct, fn [dt, user_id, attributes] ->
+    ChRepo.query_transform(query_struct, fn [dt, user_id, attributes] ->
       %{
         dt: dt,
         user_id: user_id,
@@ -272,7 +272,7 @@ defmodule Sanbase.Intercom do
 
     query_struct = Sanbase.Clickhouse.Query.new(sql, params)
 
-    {:ok, user_ids} = ClickhouseRepo.query_transform(query_struct, fn [user_id] -> user_id end)
+    {:ok, user_ids} = ChRepo.query_transform(query_struct, fn [user_id] -> user_id end)
 
     user_ids
   end
@@ -518,7 +518,7 @@ defmodule Sanbase.Intercom do
     GROUP BY user_id
     """
 
-    Sanbase.ClickhouseRepo.query_transform(query, [], fn [user_id] -> user_id end)
+    Sanbase.ChRepo.query_transform(query, [], fn [user_id] -> user_id end)
     |> case do
       {:ok, result} -> result
       {:error, _} -> []

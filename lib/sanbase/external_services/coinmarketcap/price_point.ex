@@ -32,11 +32,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePoint do
     {key, value}
   end
 
-  defguard num_ge(num, threshold)
+  defguard num_gte(num, threshold)
            when is_number(num) and is_number(threshold) and num >= threshold
 
-  defguard num_le(num, threshold)
-           when is_number(num) and is_number(threshold) and num <= threshold
+  defguard num_lt(num, threshold)
+           when is_number(num) and is_number(threshold) and num < threshold
 
   def sanity_filters([]), do: []
 
@@ -47,22 +47,22 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePoint do
         price_point
         |> Map.from_struct()
         |> Map.new(fn
-          {:volume_usd, value} when num_ge(value, @volume_usd_limit) ->
+          {:volume_usd, value} when num_gte(value, @volume_usd_limit) ->
             Logger.info("PricePoint sanitizing #{price_point.slug} Volume USD: #{value}")
 
             {:volume_usd, nil}
 
-          {:price_usd, value} when num_ge(value, @price_usd_limit) ->
+          {:price_usd, value} when num_gte(value, @price_usd_limit) ->
             Logger.info("PricePoint sanitizing #{price_point.slug} Price USD: #{value}")
 
             {:price_usd, nil}
 
-          {:price_btc, value} when num_ge(value, @price_btc_limit) ->
+          {:price_btc, value} when num_gte(value, @price_btc_limit) ->
             Logger.info("PricePoint sanitizing #{price_point.slug} Price BTC: #{value}")
             {:price_btc, nil}
 
           {:marketcap_usd, value}
-          when num_ge(value, @marketcap_usd_limit) or num_le(value, 0) ->
+          when num_gte(value, @marketcap_usd_limit) or num_lt(value, 0) ->
             Logger.info("PricePoint sanitizing #{price_point.slug} Marketcap USD: #{value}")
             {:marketcap_usd, nil}
 

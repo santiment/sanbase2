@@ -2,7 +2,6 @@ defmodule Sanbase.Email.MailjetApiBehaviour do
   @callback subscribe(atom(), String.t() | [String.t()]) :: :ok | {:error, term()}
   @callback unsubscribe(atom(), String.t() | [String.t()]) :: :ok | {:error, term()}
   @callback fetch_list_emails(atom()) :: {:ok, [String.t()]} | {:error, term()}
-  @callback send_email(String.t(), String.t(), String.t(), Keyword.t()) :: :ok | {:error, term()}
   @callback send_campaign(atom(), String.t(), keyword()) :: :ok | {:error, term()}
 end
 

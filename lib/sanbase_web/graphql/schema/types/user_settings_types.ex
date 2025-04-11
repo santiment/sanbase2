@@ -16,15 +16,18 @@ defmodule SanbaseWeb.Graphql.UserSettingsTypes do
     field(:alert_notify_telegram, :boolean)
     field(:alerts_per_day_limit, :json)
     field(:is_subscribed_edu_emails, :boolean)
-    field(:is_subscribed_monthly_newsletter, :boolean)
+
+    field(:is_subscribed_weekly_newsletter, :boolean)
+
+    field(:is_subscribed_monthly_newsletter, :boolean,
+      deprecate: "The monthly newsletter has been replaced by a weekly newsletter"
+    )
+
     field(:is_subscribed_biweekly_report, :boolean)
     field(:is_subscribed_marketing_emails, :boolean)
     field(:is_subscribed_comments_emails, :boolean)
     field(:is_subscribed_likes_emails, :boolean)
     field(:is_subscribed_metric_updates, :boolean)
-    # Fixme: backwards compatibility, should be removed when removed from frontend.
-    # option is not used
-    field(:newsletter_subscription, :string, default_value: "OFF")
     field(:sanbase_version, :string)
 
     field(:self_api_rate_limits_reset_at, :datetime)
@@ -62,6 +65,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTypes do
     field(:alerts_per_day_limit, :json)
     field(:favorite_metrics, list_of(:string))
     field(:is_subscribed_edu_emails, :boolean)
+    field(:is_subscribed_weekly_newsletter, :boolean)
     field(:is_subscribed_monthly_newsletter, :boolean)
     field(:is_subscribed_biweekly_report, :boolean)
     field(:is_subscribed_marketing_emails, :boolean)

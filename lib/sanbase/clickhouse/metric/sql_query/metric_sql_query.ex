@@ -50,7 +50,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         SELECT
           dt,
           argMax(value, computed_at) AS value
-        FROM {{table}}
+        FROM {{table:inline}}
         PREWHERE
           #{finalized_data_filter_str(table, only_finalized_data)}
           #{fixed_parameters_str}

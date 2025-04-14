@@ -172,7 +172,7 @@ defmodule SanbaseWeb.GenericAdmin.Comment do
 
   def resource do
     %{
-      actions: [:new, :edit],
+      actions: [:new, :edit, :delete],
       preloads: [:user],
       index_fields: [:id, :user_id, :content],
       new_fields: [:user, :content],

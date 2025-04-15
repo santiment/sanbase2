@@ -20,11 +20,21 @@ defmodule Sanbase.Email.MailjetEventEmitter do
     |> notify()
   end
 
-  def handle_event({:ok, user_id}, :is_subscribed_monthly_newsletter, data) do
+  def handle_event({:ok, user_id}, event_type, data)
+      when event_type in [:is_subscribed_monthly_newsletter, :is_subscribed_weekly_newsletter] do
     event_type =
-      case data[:is_subscribed_monthly_newsletter] do
-        true -> :subscribe_monthly_newsletter
-        false -> :unsubscribe_monthly_newsletter
+      cond do
+        event_type == :is_subscribed_monthly_newsletter and data[event_type] == true ->
+          :subscribe_monthly_newsletter
+
+        event_type == :is_subscribed_monthly_newsletter and data[event_type] == false ->
+          :unsubscribe_monthly_newsletter
+
+        event_type == :is_subscribed_weekly_newsletter and data[event_type] == true ->
+          :subscribe_weekly_newsletter
+
+        event_type == :is_subscribed_weekly_newsletter and data[event_type] == false ->
+          :unsubscribe_weekly_newsletter
       end
 
     %{

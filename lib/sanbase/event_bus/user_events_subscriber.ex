@@ -42,6 +42,7 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
     email = Sanbase.Accounts.get_user!(user_id).email
 
     if email do
+      Sanbase.Email.MailjetApi.client().subscribe(:weekly_newsletter, email)
       Sanbase.Email.MailjetApi.client().subscribe(:monthly_newsletter, email)
       Sanbase.Email.MailjetApi.client().subscribe(:new_registrations, email)
     end
@@ -58,24 +59,38 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
   end
 
   defp handle_event(
-         %{data: %{event_type: :subscribe_monthly_newsletter, user_id: user_id}},
+         %{data: %{event_type: event_type, user_id: user_id}},
          event_shadow,
          state
-       ) do
+       )
+       when event_type in [:subscribe_weekly_newsletter, :subscribe_monthly_newsletter] do
     email = Sanbase.Accounts.get_user!(user_id).email
-    if email, do: Sanbase.Email.MailjetApi.client().subscribe(:monthly_newsletter, email)
+
+    email_list =
+      if event_type == :subscribe_weekly_newsletter,
+        do: :weekly_newsletter,
+        else: :monthly_newsletter
+
+    if email, do: Sanbase.Email.MailjetApi.client().subscribe(email_list, email)
 
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end
 
   defp handle_event(
-         %{data: %{event_type: :unsubscribe_monthly_newsletter, user_id: user_id}},
+         %{data: %{event_type: event_type, user_id: user_id}},
          event_shadow,
          state
-       ) do
+       )
+       when event_type in [:unsubscribe_weekly_newsletter, :unsubscribe_monthly_newsletter] do
     email = Sanbase.Accounts.get_user!(user_id).email
-    if email, do: Sanbase.Email.MailjetApi.client().unsubscribe(:monthly_newsletter, email)
+
+    email_list =
+      if event_type == :unsubscribe_weekly_newsletter,
+        do: :weekly_newsletter,
+        else: :monthly_newsletter
+
+    if email, do: Sanbase.Email.MailjetApi.client().unsubscribe(email_list, email)
 
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state

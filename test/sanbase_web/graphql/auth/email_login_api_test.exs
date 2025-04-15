@@ -390,9 +390,6 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
         user {
           email
           firstLogin
-          settings {
-            newsletterSubscription
-          }
         }
         accessToken
       }

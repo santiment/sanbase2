@@ -166,7 +166,7 @@ defmodule Sanbase.Email.MailjetApi do
     Logger.debug("Making #{method} request to #{url} with data: #{inspect(data)}")
 
     try do
-      result = apply(Req, method, [url, [json: data, headers: headers()]]) |> dbg()
+      result = apply(Req, method, [url, [json: data, headers: headers()]])
 
       case result do
         {:ok, %{status: status, body: body}} when status in 200..299 ->

@@ -125,6 +125,8 @@ defmodule Sanbase.Accounts.UserSettings do
     {:ok, result}
   end
 
+  # TODO: Make it so update_settings takes into consideration all settings params instead of
+  # ignoring the rest of the params if is_subscribed_biweekly_report is set to true
   def update_settings(user, %{is_subscribed_biweekly_report: true} = params) do
     cond do
       Subscription.current_subscription_plan(user.id, Product.product_sanbase()) != "FREE" ->
@@ -208,18 +210,17 @@ defmodule Sanbase.Accounts.UserSettings do
 
     email_lists_keys = [
       :is_subscribed_biweekly_report,
+      :is_subscribed_weekly_newsletter,
       :is_subscribed_monthly_newsletter,
       :is_subscribed_metric_updates
     ]
 
-    for key <- Map.keys(settings_changes) do
-      if key in email_lists_keys do
-        Sanbase.Email.MailjetEventEmitter.emit_event(
-          {:ok, user_id},
-          key,
-          Map.put(%{}, key, settings_changes[key])
-        )
-      end
+    for key <- Map.keys(settings_changes), key in email_lists_keys do
+      Sanbase.Email.MailjetEventEmitter.emit_event(
+        {:ok, user_id},
+        _event_type = key,
+        Map.put(%{}, key, settings_changes[key])
+      )
     end
   end
 

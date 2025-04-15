@@ -13,6 +13,7 @@ defmodule Sanbase.Email.MailjetEventHandler do
   alias Sanbase.Repo
 
   @mailjet_list_mapping %{
+    "10327896" => :is_subscribed_edu_emails,
     "10327883" => :is_subscribed_metric_updates,
     # dev
     "10326671" => :is_subscribed_metric_updates,

@@ -51,6 +51,7 @@ defmodule Sanbase.Email.MailjetApi do
     * `:locale` - The locale for the campaign (default: "en_US")
     * `:text_content` - The plain text content of the email (default: "")
 
+
   ## Returns
 
   * `:ok` - If the campaign was successfully created and sent

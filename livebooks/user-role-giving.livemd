@@ -3,17 +3,17 @@
 ## Section
 
 ```elixir
-emails = ["ivan.i@santiment.net"]
+emails = ["test.test@santiment.net"]
 
 roles_to_give = %{
   "Santiment Team Member" => 1,
   "Santiment Moderator" => 1,
   "Metric Registry Viewer" => 1,
-  "Metric Registry Change Suggester" => 0,
+  "Metric Registry Change Suggester" => 1,
   "Metric Registry Owner" => 0,
   "Metric Registry Deployer" => 0,
   "Admin Panel Viewer" => 1,
-  "Admin Panel Editor" => 0,
+  "Admin Panel Editor" => 1,
   "Admin Panel Owner" => 0
 }
 ```

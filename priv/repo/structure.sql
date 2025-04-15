@@ -1270,279 +1270,6 @@ ALTER SEQUENCE public.email_login_attempts_id_seq OWNED BY public.email_login_at
 
 
 --
--- Name: post_comments_mapping; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.post_comments_mapping (
-    id bigint NOT NULL,
-    comment_id bigint,
-    post_id bigint,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
-);
-
-
---
--- Name: posts; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.posts (
-    id bigint NOT NULL,
-    user_id bigint NOT NULL,
-    title character varying(255) NOT NULL,
-    link text,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
-    state character varying(255),
-    moderation_comment character varying(255),
-    short_desc text,
-    text text,
-    ready_state character varying(255) DEFAULT 'draft'::character varying,
-    discourse_topic_url character varying(255),
-    published_at timestamp without time zone,
-    is_pulse boolean DEFAULT false,
-    is_paywall_required boolean DEFAULT false,
-    metrics character varying(255)[] DEFAULT ARRAY[]::character varying[],
-    prediction character varying(255) DEFAULT NULL::character varying,
-    price_chart_project_id bigint,
-    document_tokens tsvector,
-    is_chart_event boolean DEFAULT false,
-    chart_event_datetime timestamp(0) without time zone,
-    chart_configuration_for_event_id bigint,
-    is_deleted boolean DEFAULT false,
-    is_hidden boolean DEFAULT false
-);
-
-
---
--- Name: user_lists; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.user_lists (
-    id bigint NOT NULL,
-    name character varying(255),
-    is_public boolean DEFAULT false,
-    color public.color,
-    user_id bigint,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
-    function jsonb DEFAULT '{"args": [], "name": "empty"}'::jsonb,
-    slug character varying(255),
-    is_monitored boolean DEFAULT false,
-    table_configuration_id bigint,
-    description text,
-    type public.watchlist_type DEFAULT 'project'::public.watchlist_type NOT NULL,
-    is_screener boolean DEFAULT false,
-    is_deleted boolean DEFAULT false,
-    is_hidden boolean DEFAULT false
-);
-
-
---
--- Name: user_triggers; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.user_triggers (
-    id bigint NOT NULL,
-    user_id bigint NOT NULL,
-    trigger jsonb NOT NULL,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
-    is_deleted boolean DEFAULT false,
-    is_hidden boolean DEFAULT false
-);
-
-
---
--- Name: votes; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.votes (
-    id bigint NOT NULL,
-    post_id bigint,
-    user_id bigint NOT NULL,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
-    timeline_event_id bigint,
-    count integer DEFAULT 1,
-    chart_configuration_id bigint,
-    watchlist_id bigint,
-    user_trigger_id bigint,
-    dashboard_id bigint,
-    query_id bigint,
-    CONSTRAINT only_one_fk CHECK ((((((((
-CASE
-    WHEN (post_id IS NULL) THEN 0
-    ELSE 1
-END +
-CASE
-    WHEN (timeline_event_id IS NULL) THEN 0
-    ELSE 1
-END) +
-CASE
-    WHEN (chart_configuration_id IS NULL) THEN 0
-    ELSE 1
-END) +
-CASE
-    WHEN (watchlist_id IS NULL) THEN 0
-    ELSE 1
-END) +
-CASE
-    WHEN (user_trigger_id IS NULL) THEN 0
-    ELSE 1
-END) +
-CASE
-    WHEN (dashboard_id IS NULL) THEN 0
-    ELSE 1
-END) +
-CASE
-    WHEN (query_id IS NULL) THEN 0
-    ELSE 1
-END) = 1))
-);
-
-
---
--- Name: watchlist_comments_mapping; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.watchlist_comments_mapping (
-    id bigint NOT NULL,
-    comment_id bigint,
-    watchlist_id bigint,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
-);
-
-
---
--- Name: entities; Type: MATERIALIZED VIEW; Schema: public; Owner: -
---
-
-CREATE MATERIALIZED VIEW public.entities AS
- SELECT foo.entity_id,
-    foo.entity_type,
-    foo.user_id,
-    foo.created_at,
-    foo.is_deleted,
-    foo.is_hidden,
-    foo.is_public,
-    foo.comments_count,
-    foo.voted_users_count,
-    foo.votes_count
-   FROM ( SELECT p.id AS entity_id,
-            'insight'::text AS entity_type,
-            p.user_id,
-            COALESCE(p.published_at, p.inserted_at) AS created_at,
-            p.is_deleted,
-            p.is_hidden,
-                CASE
-                    WHEN (((p.ready_state)::text = 'published'::text) AND ((p.state)::text = 'approved'::text)) THEN true
-                    WHEN (((p.ready_state)::text <> 'published'::text) OR ((p.state)::text <> 'approved'::text)) THEN false
-                    ELSE NULL::boolean
-                END AS is_public,
-            COALESCE(pcm.comments_count, (0)::bigint) AS comments_count,
-            COALESCE(votes.voted_users_count, (0)::bigint) AS voted_users_count,
-            COALESCE(votes.votes_count, (0)::bigint) AS votes_count
-           FROM ((public.posts p
-             LEFT JOIN ( SELECT post_comments_mapping.post_id,
-                    count(*) AS comments_count
-                   FROM public.post_comments_mapping
-                  GROUP BY post_comments_mapping.post_id) pcm ON ((p.id = pcm.post_id)))
-             LEFT JOIN ( SELECT votes_1.post_id,
-                    count(*) AS voted_users_count,
-                    sum(votes_1.count) AS votes_count
-                   FROM public.votes votes_1
-                  GROUP BY votes_1.post_id) votes ON ((p.id = votes.post_id)))
-        UNION
-         SELECT cc.id AS entity_id,
-            'chart_configuration'::text AS entity_type,
-            cc.user_id,
-            cc.inserted_at AS created_at,
-            cc.is_deleted,
-            cc.is_hidden,
-            cc.is_public,
-            COALESCE(cccm.comments_count, (0)::bigint) AS comments_count,
-            COALESCE(votes.voted_users_count, (0)::bigint) AS voted_users_count,
-            COALESCE(votes.votes_count, (0)::bigint) AS votes_count
-           FROM ((public.chart_configurations cc
-             LEFT JOIN ( SELECT chart_configuration_comments_mapping.chart_configuration_id,
-                    count(*) AS comments_count
-                   FROM public.chart_configuration_comments_mapping
-                  GROUP BY chart_configuration_comments_mapping.chart_configuration_id) cccm ON ((cc.id = cccm.chart_configuration_id)))
-             LEFT JOIN ( SELECT votes_1.chart_configuration_id,
-                    count(*) AS voted_users_count,
-                    sum(votes_1.count) AS votes_count
-                   FROM public.votes votes_1
-                  GROUP BY votes_1.chart_configuration_id) votes ON ((cc.id = votes.chart_configuration_id)))
-        UNION
-         SELECT ul.id AS entity_id,
-                CASE
-                    WHEN ul.is_screener THEN 'screener'::text
-                    WHEN (ul.type = 'project'::public.watchlist_type) THEN 'project_watchlist'::text
-                    WHEN (ul.type = 'blockchain_address'::public.watchlist_type) THEN 'address_watchlist'::text
-                    ELSE NULL::text
-                END AS entity_type,
-            ul.user_id,
-            ul.inserted_at AS created_at,
-            ul.is_deleted,
-            ul.is_hidden,
-            ul.is_public,
-            COALESCE(wcm.comments_count, (0)::bigint) AS comments_count,
-            COALESCE(votes.voted_users_count, (0)::bigint) AS voted_users_count,
-            COALESCE(votes.votes_count, (0)::bigint) AS votes_count
-           FROM ((public.user_lists ul
-             LEFT JOIN ( SELECT watchlist_comments_mapping.watchlist_id,
-                    count(*) AS comments_count
-                   FROM public.watchlist_comments_mapping
-                  GROUP BY watchlist_comments_mapping.watchlist_id) wcm ON ((ul.id = wcm.watchlist_id)))
-             LEFT JOIN ( SELECT votes_1.watchlist_id,
-                    count(*) AS voted_users_count,
-                    sum(votes_1.count) AS votes_count
-                   FROM public.votes votes_1
-                  GROUP BY votes_1.watchlist_id) votes ON ((ul.id = votes.watchlist_id)))
-        UNION
-         SELECT d.id AS entity_id,
-            'dashboards'::text AS entity_type,
-            d.user_id,
-            d.inserted_at AS created_at,
-            d.is_deleted,
-            d.is_hidden,
-            d.is_public,
-            COALESCE(dcm.comments_count, (0)::bigint) AS comments_count,
-            COALESCE(votes.voted_users_count, (0)::bigint) AS voted_users_count,
-            COALESCE(votes.votes_count, (0)::bigint) AS votes_count
-           FROM ((public.dashboards d
-             LEFT JOIN ( SELECT dashboard_comments_mapping.dashboard_id,
-                    count(*) AS comments_count
-                   FROM public.dashboard_comments_mapping
-                  GROUP BY dashboard_comments_mapping.dashboard_id) dcm ON ((d.id = dcm.dashboard_id)))
-             LEFT JOIN ( SELECT votes_1.dashboard_id,
-                    count(*) AS voted_users_count,
-                    sum(votes_1.count) AS votes_count
-                   FROM public.votes votes_1
-                  GROUP BY votes_1.dashboard_id) votes ON ((d.id = votes.dashboard_id)))
-        UNION
-         SELECT ut.id AS entity_id,
-            'user_trigger'::text AS entity_type,
-            ut.user_id,
-            ut.inserted_at AS created_at,
-            ut.is_deleted,
-            ut.is_hidden,
-            ((ut.trigger ->> 'is_public'::text) = 'true'::text) AS is_public,
-            0 AS comments_count,
-            COALESCE(votes.voted_users_count, (0)::bigint) AS voted_users_count,
-            COALESCE(votes.votes_count, (0)::bigint) AS votes_count
-           FROM (public.user_triggers ut
-             LEFT JOIN ( SELECT votes_1.user_trigger_id,
-                    count(*) AS voted_users_count,
-                    sum(votes_1.count) AS votes_count
-                   FROM public.votes votes_1
-                  GROUP BY votes_1.user_trigger_id) votes ON ((ut.id = votes.user_trigger_id)))) foo
-  WITH NO DATA;
-
-
---
 -- Name: eth_accounts; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2842,6 +2569,19 @@ ALTER SEQUENCE public.popular_search_terms_id_seq OWNED BY public.popular_search
 
 
 --
+-- Name: post_comments_mapping; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.post_comments_mapping (
+    id bigint NOT NULL,
+    comment_id bigint,
+    post_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
 -- Name: post_comments_mapping_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -2891,6 +2631,38 @@ CREATE SEQUENCE public.post_images_id_seq
 --
 
 ALTER SEQUENCE public.post_images_id_seq OWNED BY public.post_images.id;
+
+
+--
+-- Name: posts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.posts (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    title character varying(255) NOT NULL,
+    link text,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL,
+    state character varying(255),
+    moderation_comment character varying(255),
+    short_desc text,
+    text text,
+    ready_state character varying(255) DEFAULT 'draft'::character varying,
+    discourse_topic_url character varying(255),
+    published_at timestamp without time zone,
+    is_pulse boolean DEFAULT false,
+    is_paywall_required boolean DEFAULT false,
+    metrics character varying(255)[] DEFAULT ARRAY[]::character varying[],
+    prediction character varying(255) DEFAULT NULL::character varying,
+    price_chart_project_id bigint,
+    document_tokens tsvector,
+    is_chart_event boolean DEFAULT false,
+    chart_event_datetime timestamp(0) without time zone,
+    chart_configuration_for_event_id bigint,
+    is_deleted boolean DEFAULT false,
+    is_hidden boolean DEFAULT false
+);
 
 
 --
@@ -4567,6 +4339,30 @@ CREATE TABLE public.user_followers (
 
 
 --
+-- Name: user_lists; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_lists (
+    id bigint NOT NULL,
+    name character varying(255),
+    is_public boolean DEFAULT false,
+    color public.color,
+    user_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL,
+    function jsonb DEFAULT '{"args": [], "name": "empty"}'::jsonb,
+    slug character varying(255),
+    is_monitored boolean DEFAULT false,
+    table_configuration_id bigint,
+    description text,
+    type public.watchlist_type DEFAULT 'project'::public.watchlist_type NOT NULL,
+    is_screener boolean DEFAULT false,
+    is_deleted boolean DEFAULT false,
+    is_hidden boolean DEFAULT false
+);
+
+
+--
 -- Name: user_lists_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -4667,6 +4463,21 @@ CREATE SEQUENCE public.user_settings_id_seq
 --
 
 ALTER SEQUENCE public.user_settings_id_seq OWNED BY public.user_settings.id;
+
+
+--
+-- Name: user_triggers; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_triggers (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    trigger jsonb NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL,
+    is_deleted boolean DEFAULT false,
+    is_hidden boolean DEFAULT false
+);
 
 
 --
@@ -4841,6 +4652,55 @@ CREATE SEQUENCE public.versions_id_seq
 --
 
 ALTER SEQUENCE public.versions_id_seq OWNED BY public.versions.id;
+
+
+--
+-- Name: votes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.votes (
+    id bigint NOT NULL,
+    post_id bigint,
+    user_id bigint NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL,
+    timeline_event_id bigint,
+    count integer DEFAULT 1,
+    chart_configuration_id bigint,
+    watchlist_id bigint,
+    user_trigger_id bigint,
+    dashboard_id bigint,
+    query_id bigint,
+    CONSTRAINT only_one_fk CHECK ((((((((
+CASE
+    WHEN (post_id IS NULL) THEN 0
+    ELSE 1
+END +
+CASE
+    WHEN (timeline_event_id IS NULL) THEN 0
+    ELSE 1
+END) +
+CASE
+    WHEN (chart_configuration_id IS NULL) THEN 0
+    ELSE 1
+END) +
+CASE
+    WHEN (watchlist_id IS NULL) THEN 0
+    ELSE 1
+END) +
+CASE
+    WHEN (user_trigger_id IS NULL) THEN 0
+    ELSE 1
+END) +
+CASE
+    WHEN (dashboard_id IS NULL) THEN 0
+    ELSE 1
+END) +
+CASE
+    WHEN (query_id IS NULL) THEN 0
+    ELSE 1
+END) = 1))
+);
 
 
 --
@@ -5040,6 +4900,19 @@ CREATE SEQUENCE public.wallet_hunters_votes_id_seq
 --
 
 ALTER SEQUENCE public.wallet_hunters_votes_id_seq OWNED BY public.wallet_hunters_votes.id;
+
+
+--
+-- Name: watchlist_comments_mapping; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.watchlist_comments_mapping (
+    id bigint NOT NULL,
+    comment_id bigint,
+    watchlist_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
 
 
 --
@@ -8436,7 +8309,7 @@ ALTER TABLE ONLY public.blockchain_address_user_pairs_labels
 --
 
 ALTER TABLE ONLY public.blockchain_address_user_pairs
-    ADD CONSTRAINT blockchain_address_user_pairs_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+    ADD CONSTRAINT blockchain_address_user_pairs_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -8596,7 +8469,7 @@ ALTER TABLE ONLY public.dashboards_history
 --
 
 ALTER TABLE ONLY public.dashboards
-    ADD CONSTRAINT dashboards_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+    ADD CONSTRAINT dashboards_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -9012,7 +8885,7 @@ ALTER TABLE ONLY public.posts
 --
 
 ALTER TABLE ONLY public.presigned_s3_urls
-    ADD CONSTRAINT presigned_s3_urls_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+    ADD CONSTRAINT presigned_s3_urls_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -9148,7 +9021,7 @@ ALTER TABLE ONLY public.queries_cache
 --
 
 ALTER TABLE ONLY public.queries
-    ADD CONSTRAINT queries_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+    ADD CONSTRAINT queries_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -10146,3 +10019,7 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250318100856);
 INSERT INTO public."schema_migrations" (version) VALUES (20250324103930);
 INSERT INTO public."schema_migrations" (version) VALUES (20250326110304);
 INSERT INTO public."schema_migrations" (version) VALUES (20250327120623);
+INSERT INTO public."schema_migrations" (version) VALUES (20250411143236);
+INSERT INTO public."schema_migrations" (version) VALUES (20250413084531);
+INSERT INTO public."schema_migrations" (version) VALUES (20250414115309);
+INSERT INTO public."schema_migrations" (version) VALUES (20250414122835);

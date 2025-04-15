@@ -7,7 +7,7 @@ defmodule SanbaseWeb.GenericAdmin.Post do
   @edit_fields ~w(is_featured is_pulse is_paywall_required ready_state prediction state moderation_comment)a
   def resource do
     %{
-      actions: [:edit],
+      actions: [:edit, :delete],
       preloads: [:user, :price_chart_project],
       index_fields: @index_fields,
       edit_fields: @edit_fields,
@@ -91,7 +91,7 @@ defmodule SanbaseWeb.GenericAdmin.PostTags do
 
   def resource do
     %{
-      actions: [:new, :edit],
+      actions: [:new, :edit, :delete],
       preloads: [:tag, :post],
       index_fields: [:id, :post_id, :tag_id],
       new_fields: [:post, :tag],
@@ -120,7 +120,7 @@ defmodule SanbaseWeb.GenericAdmin.Tag do
 
   def resource do
     %{
-      actions: [:new, :edit],
+      actions: [:new, :edit, :delete],
       preloads: [],
       index_fields: [:id, :name],
       new_fields: [:name],
@@ -135,7 +135,7 @@ defmodule SanbaseWeb.GenericAdmin.PostComment do
 
   def resource do
     %{
-      actions: [:new, :edit],
+      actions: [:new, :edit, :delete],
       preloads: [:comment, :post],
       index_fields: [:id, :post_id, :comment_id],
       new_fields: [:post, :comment],
@@ -172,7 +172,7 @@ defmodule SanbaseWeb.GenericAdmin.Comment do
 
   def resource do
     %{
-      actions: [:new, :edit],
+      actions: [:new, :edit, :delete],
       preloads: [:user],
       index_fields: [:id, :user_id, :content],
       new_fields: [:user, :content],

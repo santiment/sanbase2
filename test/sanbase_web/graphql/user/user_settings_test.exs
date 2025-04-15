@@ -185,6 +185,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
              "favorite_metrics" => ["daily_active_addresses", "nvt"],
              "isSubscribedBiweeklyReport" => false,
              "isSubscribedEduEmails" => true,
+             "isSubscribedWeeklyNewsletter" => true,
              "isSubscribedMonthlyNewsletter" => true,
              "isSubscribedMarketingEmails" => false,
              "isSubscribedMetricUpdates" => false
@@ -205,6 +206,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
              "favorite_metrics" => [],
              "isSubscribedBiweeklyReport" => false,
              "isSubscribedEduEmails" => true,
+             "isSubscribedWeeklyNewsletter" => true,
              "isSubscribedMonthlyNewsletter" => true,
              "isSubscribedMarketingEmails" => false,
              "isSubscribedMetricUpdates" => false
@@ -216,14 +218,23 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
       result = execute_query(context.conn, current_user_query(), "currentUser")
 
       assert result["settings"]["isSubscribedEduEmails"]
+      assert result["settings"]["isSubscribedWeeklyNewsletter"]
       assert result["settings"]["isSubscribedMonthlyNewsletter"]
       refute result["settings"]["isSubscribedBiweeklyReport"]
     end
 
-    test "update email settings", context do
+    test "update newsletter settings", context do
       expect(Sanbase.Email.MockMailjetApi, :unsubscribe, fn _, _ -> :ok end)
-      query = update_user_settings("isSubscribedMonthlyNewsletter: false")
+      expect(Sanbase.Email.MockMailjetApi, :unsubscribe, fn _, _ -> :ok end)
+
+      query =
+        update_user_settings(
+          "isSubscribedMonthlyNewsletter: false, isSubscribedWeeklyNewsletter: false"
+        )
+
       result = execute_mutation(context.conn, query)
+
+      refute result["isSubscribedWeeklyNewsletter"]
       refute result["isSubscribedMonthlyNewsletter"]
     end
 
@@ -278,6 +289,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
           tableColumns
           favorite_metrics
           isSubscribedEduEmails
+          isSubscribedWeeklyNewsletter
           isSubscribedMonthlyNewsletter
           isSubscribedBiweeklyReport
           isSubscribedMarketingEmails
@@ -358,6 +370,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     mutation {
       updateUserSettings(settings: {#{arg}}) {
         isSubscribedEduEmails
+        isSubscribedWeeklyNewsletter
         isSubscribedMonthlyNewsletter
         isSubscribedBiweeklyReport
         isSubscribedMetricUpdates

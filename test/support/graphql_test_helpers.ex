@@ -145,10 +145,23 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
   def execute_mutation(conn, mutation) do
     [_, mutation_name] = Regex.run(~r/^\s*mutation\s*\{\s*([\w]+)\s*\(/, mutation)
 
-    conn
-    |> post("/graphql", mutation_skeleton(mutation))
-    |> json_response(200)
-    |> get_in(["data", mutation_name])
+    result_graphql =
+      conn
+      |> post("/graphql", mutation_skeleton(mutation))
+      |> json_response(200)
+
+    result_mutation = result_graphql |> get_in(["data", mutation_name])
+
+    if result_mutation == nil do
+      # In  this case we don't expect an error but we got an error.
+      raise RuntimeError,
+        message: """
+        Mutation #{mutation_name} failed.
+        Got errors: #{result_graphql |> Map.get("errors") |> inspect()}
+        """
+    end
+
+    result_mutation
   end
 
   def execute_mutation(conn, query, query_name) do

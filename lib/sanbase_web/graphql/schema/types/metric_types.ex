@@ -579,6 +579,41 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       cache_resolve(&MetricResolver.timeseries_data/3)
     end
 
+    field :timeseries_data_json, :json do
+      arg(:slug, :string)
+      arg(:selector, :metric_target_selector_input_object)
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :interval, default_value: "1d")
+      arg(:aggregation, :aggregation, default_value: nil)
+      arg(:transform, :timeseries_metric_transform_input_object)
+      arg(:include_incomplete_data, :boolean, default_value: false)
+      arg(:only_finalized_data, :boolean, default_value: false)
+      arg(:caching_params, :caching_params_input_object)
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(AccessControl)
+
+      cache_resolve(&MetricResolver.timeseries_data/3)
+    end
+
+    field :timeseries_data_per_slug_json, :json do
+      arg(:selector, :metric_target_selector_input_object)
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :interval, default_value: "1d")
+      arg(:aggregation, :aggregation, default_value: nil)
+      arg(:transform, :timeseries_metric_transform_input_object)
+      arg(:include_incomplete_data, :boolean, default_value: false)
+      arg(:only_finalized_data, :boolean, default_value: false)
+      arg(:caching_params, :caching_params_input_object)
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(AccessControl)
+
+      cache_resolve(&MetricResolver.timeseries_data_per_slug/3)
+    end
+
     field :timeseries_data_per_slug, list_of(:metric_data_per_slug) do
       arg(:selector, :metric_target_selector_input_object)
       arg(:from, non_null(:datetime))

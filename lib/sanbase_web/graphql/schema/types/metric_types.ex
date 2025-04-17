@@ -111,6 +111,18 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:moving_average_base, :integer)
   end
 
+  input_object :timeseries_data_json_fields do
+    field(:datetime, :string)
+    field(:value, :string)
+  end
+
+  input_object :timeseries_data_per_slug_json_fields do
+    field(:datetime, :string)
+    field(:value, :string)
+    field(:data, :string)
+    field(:slug, :string)
+  end
+
   enum :metric_data_type do
     value(:timeseries)
     value(:histogram)
@@ -590,6 +602,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       arg(:include_incomplete_data, :boolean, default_value: false)
       arg(:only_finalized_data, :boolean, default_value: false)
       arg(:caching_params, :caching_params_input_object)
+      arg(:fields, :timeseries_data_json_fields)
 
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)
@@ -607,6 +620,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       arg(:include_incomplete_data, :boolean, default_value: false)
       arg(:only_finalized_data, :boolean, default_value: false)
       arg(:caching_params, :caching_params_input_object)
+      arg(:fields, :timeseries_data_per_slug_json_fields)
 
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)

@@ -430,13 +430,51 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
          {:ok, result} <-
            apply(Metric, function, [metric, selector, from, to, interval, opts]),
          {:ok, result} <- MetricTransform.apply_transform(transform, result),
-         {:ok, result} <- fit_from_datetime(result, %{args | interval: interval}) do
-      {:ok, result |> Enum.reject(&is_nil/1)}
+         {:ok, result} <- fit_from_datetime(result, %{args | interval: interval}),
+         {:ok, result} <- maybe_rename_fields(result, function, args) do
+      result = result |> Enum.reject(&is_nil/1)
+      {:ok, result}
     end
     |> maybe_handle_graphql_error(fn error ->
       handle_graphql_error(metric, args_to_raw_selector(args), error)
     end)
   end
+
+  defp maybe_rename_fields(result, :timeseries_data, %{fields: map})
+       when is_map(map) and map_size(map) > 0 do
+    result =
+      result
+      |> Enum.map(fn %{datetime: d, value: v} ->
+        %{
+          Map.get(map, :datetime, :datetime) => d,
+          Map.get(map, :value, :value) => v
+        }
+      end)
+
+    {:ok, result}
+  end
+
+  defp maybe_rename_fields(result, :timeseries_data_per_slug, %{fields: map})
+       when is_map(map) and map_size(map) > 0 do
+    result =
+      result
+      |> Enum.map(fn %{datetime: datetime, data: data} ->
+        %{
+          Map.get(map, :datetime, :datetime) => datetime,
+          Map.get(map, :data, :data) =>
+            Enum.map(data, fn %{value: value, slug: slug} ->
+              %{
+                Map.get(map, :value, :value) => value,
+                Map.get(map, :slug, :slug) => slug
+              }
+            end)
+        }
+      end)
+
+    {:ok, result}
+  end
+
+  defp maybe_rename_fields(result, _function, _args), do: {:ok, result}
 
   defp transform_datetime_params(selector, metric, transform, args) do
     %{from: from, to: to, interval: interval} = args

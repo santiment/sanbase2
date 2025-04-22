@@ -59,39 +59,61 @@ defmodule SanbaseWeb.Graphql.AccessRestrictionsTest do
 
   test "pro sanbase user", %{conn: conn, user: user} do
     insert(:subscription_pro_sanbase, user: user)
-    one_hour_ago = Timex.shift(Timex.now(), hours: -1)
-    over_five_years_ago = Timex.shift(Timex.now(), days: -(5 * 365 + 1))
 
     for %{"isRestricted" => true} = restriction <- get_access_restrictions(conn) do
       from = restriction["restrictedFrom"]
       to = restriction["restrictedTo"]
 
       assert is_nil(from) ||
-               Sanbase.DateTimeUtils.from_iso8601!(from)
-               |> DateTime.compare(over_five_years_ago) == :gt
+               iso_datetime_older_than_years(from, 5)
 
       assert is_nil(to) ||
-               Sanbase.DateTimeUtils.from_iso8601!(to)
-               |> DateTime.compare(one_hour_ago) == :lt
+               iso_datetime_newer_than_hours(to, 1)
     end
   end
 
   test "pro+ sanbase user", %{conn: conn, user: user} do
     insert(:subscription_pro_plus_sanbase, user: user)
-    one_hour_ago = Timex.shift(Timex.now(), hours: -1)
-    over_five_years_ago = Timex.shift(Timex.now(), days: -(5 * 365 + 1))
 
     for %{"isRestricted" => true} = restriction <- get_access_restrictions(conn) do
       from = restriction["restrictedFrom"]
       to = restriction["restrictedTo"]
 
       assert is_nil(from) ||
-               Sanbase.DateTimeUtils.from_iso8601!(from)
-               |> DateTime.compare(over_five_years_ago) == :gt
+               iso_datetime_older_than_years(from, 5)
 
       assert is_nil(to) ||
-               Sanbase.DateTimeUtils.from_iso8601!(to)
-               |> DateTime.compare(one_hour_ago) == :lt
+               iso_datetime_newer_than_hours(to, 1)
+    end
+  end
+
+  test "business pro user", %{conn: conn, user: user} do
+    insert(:subscription_business_pro_monthly, user: user)
+
+    for %{"isRestricted" => true} = restriction <- get_access_restrictions(conn) do
+      from = restriction["restrictedFrom"]
+      to = restriction["restrictedTo"]
+
+      assert is_nil(from) ||
+               iso_datetime_older_than_years(from, 5)
+
+      assert is_nil(to) ||
+               iso_datetime_newer_than_hours(to, 1)
+    end
+  end
+
+  test "business max user", %{conn: conn, user: user} do
+    insert(:subscription_business_max_monthly, user: user)
+
+    for %{"isRestricted" => true} = restriction <- get_access_restrictions(conn) do
+      from = restriction["restrictedFrom"]
+      to = restriction["restrictedTo"]
+
+      assert is_nil(from) ||
+               iso_datetime_older_than_years(from, 5)
+
+      assert is_nil(to) ||
+               iso_datetime_newer_than_hours(to, 1)
     end
   end
 
@@ -141,5 +163,27 @@ defmodule SanbaseWeb.Graphql.AccessRestrictionsTest do
     |> post("/graphql", query_skeleton(query))
     |> json_response(200)
     |> get_in(["data", "getAccessRestrictions"])
+  end
+
+  # filter all the metrics that are restricted and lest than 5 years
+  defp restricted_metrics(conn) do
+    get_access_restrictions_for_metrics(conn)
+    |> Enum.filter(fn restriction -> restriction["isRestricted"] end)
+    |> Enum.filter(fn restriction ->
+      not is_nil(restriction["restrictedFrom"]) &&
+        not iso_datetime_older_than_years(restriction["restrictedFrom"], 5)
+    end)
+  end
+
+  def iso_datetime_older_than_years(iso_datetime, years) do
+    datetime = Sanbase.DateTimeUtils.from_iso8601!(iso_datetime)
+
+    DateTime.compare(datetime, Timex.shift(Timex.now(), days: -(years * 365 + 1))) == :lt
+  end
+
+  def iso_datetime_newer_than_hours(iso_datetime, hours) do
+    datetime = Sanbase.DateTimeUtils.from_iso8601!(iso_datetime)
+
+    DateTime.compare(datetime, Timex.shift(Timex.now(), hours: hours)) == :gt
   end
 end

@@ -1,8 +1,10 @@
 defmodule SanbaseWeb.Graphql.Complexity do
   require Logger
 
+  alias Sanbase.Billing.Subscription
+
   @compile inline: [
-             calculate_complexity: 3,
+             calculate_complexity: 4,
              interval_seconds: 1,
              years_difference_weighted: 2,
              get_metric_name: 1
@@ -28,39 +30,79 @@ defmodule SanbaseWeb.Graphql.Complexity do
     0
   end
 
-  def from_to_interval(
-        args,
-        child_complexity,
-        %{context: %{auth: %{subscription: subscription}}} = struct
-      )
-      when not is_nil(subscription) do
-    complexity = calculate_complexity(args, child_complexity, struct)
+  def from_to_interval(args, child_complexity, struct) do
+    complexity = calculate_complexity(args, child_complexity, struct, use_selector_weight: false)
 
-    case Sanbase.Billing.Plan.plan_name(subscription.plan) do
-      "FREE" -> complexity
-      "BASIC" -> div(complexity, 4)
-      "PRO" -> div(complexity, 5)
-      "PRO_PLUS" -> div(complexity, 5)
-      "MAX" -> div(complexity, 5)
-      "BUSINESS_PRO" -> div(complexity, 6)
-      "BUSINESS_MAX" -> div(complexity, 7)
-      "CUSTOM" -> div(complexity, 7)
-      # TODO: Move complexity reducer to restrictions map
-      "CUSTOM_" <> _ -> div(complexity, 7)
+    case struct do
+      %{context: %{auth: %{subscription: subscription}}} when not is_nil(subscription) ->
+        div(complexity, complexity_divider_number(subscription))
+
+      _ ->
+        complexity
     end
   end
 
-  def from_to_interval(%{} = args, child_complexity, struct) do
-    calculate_complexity(args, child_complexity, struct)
+  def from_to_interval_selector_weight(_, _, %{context: %{auth: %{auth_method: :basic}}}) do
+    # Does not pattern match on `%Absinthe.Complexity{}` so `%Absinthe.Resolution{}`
+    # can be passed. This is possible because only the context is used
+    0
+  end
+
+  def from_to_interval_selector_weight(args, child_complexity, struct) do
+    complexity = calculate_complexity(args, child_complexity, struct, use_selector_weight: true)
+
+    case struct do
+      %{context: %{auth: %{subscription: subscription}}} when not is_nil(subscription) ->
+        div(complexity, complexity_divider_number(subscription))
+
+      _ ->
+        complexity
+    end
   end
 
   # Private functions
 
-  defp calculate_complexity(%{from: from, to: to} = args, child_complexity, struct) do
+  defp complexity_divider_number(%Subscription{plan: plan}) do
+    case plan.name do
+      "FREE" -> 1
+      "BASIC" -> 4
+      "PRO" -> 5
+      "PRO_PLUS" -> 5
+      "MAX" -> 5
+      "BUSINESS_PRO" -> 6
+      "BUSINESS_MAX" -> 7
+      "CUSTOM" -> 7
+      # TODO: Move complexity reducer to restrictions map
+      "CUSTOM_" <> _ -> 7
+    end
+  end
+
+  defp calculate_complexity(
+         %{from: from, to: to} = args,
+         child_complexity,
+         %Absinthe.Complexity{} = struct,
+         opts
+       )
+       when is_number(child_complexity) do
     seconds_difference = Timex.diff(from, to, :seconds) |> abs()
-    years_difference_weighted = years_difference_weighted(from, to)
+    years_difference_weight = years_difference_weighted(from, to)
     interval_seconds = interval_seconds(args) |> max(1)
     metric = get_metric_name(struct)
+
+    # Compute weights
+    # - child_complexity -- the number of selected fields
+    # - data_points_count -- the number of data points returned
+    #   The total number of fields (numbers, text, etc.) returned is
+    #   child_complexity * data_points_count
+    # - years_difference_weight -- if the query spans many years it means that
+    #   to compute the result we need to scan more data in the database
+    # - selector_weight -- in case of timeseriesDataPerSlug the number of data points
+    #   depends on the number of assets/slugs. If 10 assets are provided, the data points
+    #   returned will be 10 times more compared to the same query with 1 slug provided
+    data_points_count = seconds_difference / interval_seconds
+
+    selector_weight =
+      if Keyword.fetch!(opts, :use_selector_weight), do: selector_weight(args), else: 1
 
     complexity_weight =
       with metric when is_binary(metric) <- metric,
@@ -72,11 +114,36 @@ defmodule SanbaseWeb.Graphql.Complexity do
 
     child_complexity = if child_complexity == 0, do: 2, else: child_complexity
 
-    (child_complexity * (seconds_difference / interval_seconds) * years_difference_weighted *
-       complexity_weight)
+    [
+      selector_weight,
+      child_complexity,
+      data_points_count,
+      years_difference_weight,
+      complexity_weight
+    ]
+    |> Enum.product()
     |> Sanbase.Math.to_integer()
   end
 
+  @assets_count_weight 0.1
+  defp selector_weight(args) do
+    case args do
+      %{selector: %{slugs: slugs}} ->
+        Enum.max([1, length(slugs) * @assets_count_weight])
+
+      %{selector: %{slug: slugs}} when is_list(slugs) ->
+        Enum.max([1, length(slugs) * @assets_count_weight])
+
+      %{selector: %{slug: slug}} when is_binary(slug) ->
+        1
+
+      _ ->
+        {:ok, %{slug: slugs}} = Sanbase.Project.Selector.args_to_selector(args)
+        Enum.max([1, length(slugs) * @assets_count_weight])
+    end
+  end
+
+  defp selector_weight(_), do: 1
   # This case is important as here the flow comes from `timeseries_data_complexity`
   # and it will be handled by extracting the name from the %Absinthe.Resolution{}
   # struct manually passed. This is done because otherwise the same `getMetric`

@@ -114,13 +114,19 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
   input_object :timeseries_data_json_fields do
     field(:datetime, :string)
     field(:value, :string)
+
+    field(:value_ohlc, :string)
+    field(:open, :string)
+    field(:high, :string)
+    field(:close, :string)
+    field(:low, :string)
   end
 
   input_object :timeseries_data_per_slug_json_fields do
     field(:datetime, :string)
-    field(:value, :string)
     field(:data, :string)
     field(:slug, :string)
+    field(:value, :string)
   end
 
   enum :metric_data_type do

@@ -70,6 +70,8 @@ defmodule SanbaseWeb.Graphql.Complexity do
         _ -> 1
       end
 
+    child_complexity = if child_complexity == 0, do: 2, else: child_complexity
+
     (child_complexity * (seconds_difference / interval_seconds) * years_difference_weighted *
        complexity_weight)
     |> Sanbase.Math.to_integer()

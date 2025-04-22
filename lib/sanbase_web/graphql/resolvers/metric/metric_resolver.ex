@@ -444,11 +444,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
        when is_map(map) and map_size(map) > 0 do
     result =
       result
-      |> Enum.map(fn %{datetime: d, value: v} ->
-        %{
-          Map.get(map, :datetime, :datetime) => d,
-          Map.get(map, :value, :value) => v
-        }
+      |> Enum.map(fn
+        %{datetime: d, value: v} ->
+          %{
+            Map.get(map, :datetime, :datetime) => d,
+            Map.get(map, :value, :value) => v
+          }
+
+        %{datetime: d, value_ohlc: ohlc} ->
+          %{
+            Map.get(map, :datetime, :datetime) => d,
+            Map.get(map, :value_ohlc, :value_ohlc) => %{
+              Map.get(map, :open, :open) => ohlc.open,
+              Map.get(map, :high, :high) => ohlc.high,
+              Map.get(map, :close, :close) => ohlc.close,
+              Map.get(map, :low, :low) => ohlc.low
+            }
+          }
       end)
 
     {:ok, result}
@@ -462,11 +474,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         %{
           Map.get(map, :datetime, :datetime) => datetime,
           Map.get(map, :data, :data) =>
-            Enum.map(data, fn %{value: value, slug: slug} ->
-              %{
-                Map.get(map, :value, :value) => value,
-                Map.get(map, :slug, :slug) => slug
-              }
+            Enum.map(data, fn
+              %{value: value, slug: slug} ->
+                %{
+                  Map.get(map, :value, :value) => value,
+                  Map.get(map, :slug, :slug) => slug
+                }
             end)
         }
       end)

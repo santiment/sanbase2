@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.10 (Homebrew)
--- Dumped by pg_dump version 15.10 (Homebrew)
+-- Dumped from database version 15.1 (Homebrew)
+-- Dumped by pg_dump version 15.1 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -2114,9 +2114,9 @@ CREATE TABLE public.metric_registry (
     deprecation_note text,
     inserted_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
+    status character varying(255) DEFAULT 'released'::character varying NOT NULL,
     is_verified boolean DEFAULT true NOT NULL,
     sync_status character varying(255) DEFAULT 'synced'::character varying NOT NULL,
-    status character varying(255) DEFAULT 'released'::character varying NOT NULL,
     last_sync_datetime timestamp(0) without time zone
 );
 
@@ -4128,6 +4128,43 @@ ALTER SEQUENCE public.timeline_events_id_seq OWNED BY public.timeline_events.id;
 
 
 --
+-- Name: tweet_predictions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.tweet_predictions (
+    id bigint NOT NULL,
+    tweet_id character varying(255) NOT NULL,
+    "timestamp" timestamp(0) without time zone NOT NULL,
+    text text NOT NULL,
+    url character varying(255) NOT NULL,
+    is_prediction boolean NOT NULL,
+    is_interesting boolean DEFAULT false NOT NULL,
+    screen_name character varying(255) NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: tweet_predictions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.tweet_predictions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: tweet_predictions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.tweet_predictions_id_seq OWNED BY public.tweet_predictions.id;
+
+
+--
 -- Name: ui_metadata_categories; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -5736,6 +5773,13 @@ ALTER TABLE ONLY public.timeline_events ALTER COLUMN id SET DEFAULT nextval('pub
 
 
 --
+-- Name: tweet_predictions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tweet_predictions ALTER COLUMN id SET DEFAULT nextval('public.tweet_predictions_id_seq'::regclass);
+
+
+--
 -- Name: ui_metadata_categories id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6798,6 +6842,14 @@ ALTER TABLE ONLY public.timeline_event_comments_mapping
 
 ALTER TABLE ONLY public.timeline_events
     ADD CONSTRAINT timeline_events_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: tweet_predictions tweet_predictions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tweet_predictions
+    ADD CONSTRAINT tweet_predictions_pkey PRIMARY KEY (id);
 
 
 --
@@ -7909,6 +7961,13 @@ CREATE INDEX timeline_events_user_list_id_index ON public.timeline_events USING 
 --
 
 CREATE INDEX timeline_events_user_trigger_id_index ON public.timeline_events USING btree (user_trigger_id);
+
+
+--
+-- Name: tweet_predictions_tweet_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX tweet_predictions_tweet_id_index ON public.tweet_predictions USING btree (tweet_id);
 
 
 --
@@ -9990,20 +10049,19 @@ INSERT INTO public."schema_migrations" (version) VALUES (20241029080754);
 INSERT INTO public."schema_migrations" (version) VALUES (20241029082533);
 INSERT INTO public."schema_migrations" (version) VALUES (20241029151959);
 INSERT INTO public."schema_migrations" (version) VALUES (20241030141825);
+INSERT INTO public."schema_migrations" (version) VALUES (20241104061632);
 INSERT INTO public."schema_migrations" (version) VALUES (20241104115340);
 INSERT INTO public."schema_migrations" (version) VALUES (20241108112754);
 INSERT INTO public."schema_migrations" (version) VALUES (20241112094924);
 INSERT INTO public."schema_migrations" (version) VALUES (20241114140339);
 INSERT INTO public."schema_migrations" (version) VALUES (20241114141110);
 INSERT INTO public."schema_migrations" (version) VALUES (20241116104556);
-INSERT INTO public."schema_migrations" (version) VALUES (20241121133719);
 INSERT INTO public."schema_migrations" (version) VALUES (20241128113958);
 INSERT INTO public."schema_migrations" (version) VALUES (20241128161315);
 INSERT INTO public."schema_migrations" (version) VALUES (20241202104812);
 INSERT INTO public."schema_migrations" (version) VALUES (20241212054904);
 INSERT INTO public."schema_migrations" (version) VALUES (20250110083203);
 INSERT INTO public."schema_migrations" (version) VALUES (20250121155544);
-INSERT INTO public."schema_migrations" (version) VALUES (20250124152414);
 INSERT INTO public."schema_migrations" (version) VALUES (20250203104426);
 INSERT INTO public."schema_migrations" (version) VALUES (20250207100755);
 INSERT INTO public."schema_migrations" (version) VALUES (20250207134446);
@@ -10019,7 +10077,7 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250318100856);
 INSERT INTO public."schema_migrations" (version) VALUES (20250324103930);
 INSERT INTO public."schema_migrations" (version) VALUES (20250326110304);
 INSERT INTO public."schema_migrations" (version) VALUES (20250327120623);
-INSERT INTO public."schema_migrations" (version) VALUES (20250411143236);
 INSERT INTO public."schema_migrations" (version) VALUES (20250413084531);
 INSERT INTO public."schema_migrations" (version) VALUES (20250414115309);
 INSERT INTO public."schema_migrations" (version) VALUES (20250414122835);
+INSERT INTO public."schema_migrations" (version) VALUES (20250416132314);

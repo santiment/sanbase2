@@ -7,7 +7,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccessControlResolver do
     plan_name = plan_name |> to_string() |> String.upcase()
 
     product_id =
-      Product.id_by_code(Map.get(args, :product)) || context[:product] ||
+      Product.id_by_code(Map.get(args, :product)) || context[:requested_product_id] ||
         context[:subscription_product_id] || Product.product_api()
 
     product_code = Product.code_by_id(product_id)

@@ -76,7 +76,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataPerSlugTest do
     end)
   end
 
-  test "returns data", context do
+  test "returns data - timeseriesDataPerSlug", context do
     %{conn: conn, from: from, to: to, project1: project1, project2: project2} = context
 
     dt1 = ~U[2020-10-10 00:00:00Z]
@@ -112,6 +112,71 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataPerSlugTest do
       assert dt_str2 |> Sanbase.DateTimeUtils.from_iso8601!() == dt2
       assert %{"slug" => project1.slug, "value" => 500.0} in data2
       assert %{"slug" => project2.slug, "value" => 200.0} in data2
+    end)
+  end
+
+  test "returns data - timeseriesDataPerSlugJson", context do
+    %{conn: conn, from: from, to: to, project1: project1, project2: project2} = context
+
+    dt1 = ~U[2020-10-10 00:00:00Z]
+    dt2 = ~U[2020-10-11 00:00:00Z]
+
+    rows = [
+      [DateTime.to_unix(dt1), project1.slug, 400],
+      [DateTime.to_unix(dt1), project2.slug, 100],
+      [DateTime.to_unix(dt2), project1.slug, 500],
+      [DateTime.to_unix(dt2), project2.slug, 200]
+    ]
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      # Without fields renaming
+      result =
+        get_timeseries_per_slug_json_metric(
+          conn,
+          "daily_active_addresses",
+          %{slugs: [project1.slug, project2.slug]},
+          from,
+          to,
+          "1d",
+          :avg,
+          nil
+        )
+        |> get_in(["data", "getMetric", "timeseriesDataPerSlugJson"])
+
+      assert %{"datetime" => dt_str1, "data" => data1} = result |> Enum.at(0)
+      assert dt_str1 |> Sanbase.DateTimeUtils.from_iso8601!() == dt1
+      assert %{"slug" => project1.slug, "value" => 400} in data1
+      assert %{"slug" => project2.slug, "value" => 100} in data1
+
+      assert %{"datetime" => dt_str2, "data" => data2} = result |> Enum.at(1)
+      assert dt_str2 |> Sanbase.DateTimeUtils.from_iso8601!() == dt2
+      assert %{"slug" => project1.slug, "value" => 500} in data2
+      assert %{"slug" => project2.slug, "value" => 200} in data2
+
+      # With fields renaming
+      result =
+        get_timeseries_per_slug_json_metric(
+          conn,
+          "daily_active_addresses",
+          %{slugs: [project1.slug, project2.slug]},
+          from,
+          to,
+          "1d",
+          :avg,
+          "{datetime: \"dt\", data: \"d\", value: \"v\", slug: \"s\"}"
+        )
+        |> get_in(["data", "getMetric", "timeseriesDataPerSlugJson"])
+
+      assert %{"dt" => dt_str1, "d" => data1} = result |> Enum.at(0)
+      assert dt_str1 |> Sanbase.DateTimeUtils.from_iso8601!() == dt1
+      assert %{"s" => project1.slug, "v" => 400} in data1
+      assert %{"s" => project2.slug, "v" => 100} in data1
+
+      assert %{"dt" => dt_str2, "d" => data2} = result |> Enum.at(1)
+      assert dt_str2 |> Sanbase.DateTimeUtils.from_iso8601!() == dt2
+      assert %{"s" => project1.slug, "v" => 500} in data2
+      assert %{"s" => project2.slug, "v" => 200} in data2
     end)
   end
 
@@ -155,6 +220,32 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataPerSlugTest do
     |> json_response(200)
   end
 
+  defp get_timeseries_per_slug_json_metric(
+         conn,
+         metric,
+         selector,
+         from,
+         to,
+         interval,
+         aggregation,
+         fields
+       ) do
+    query =
+      get_timeseries_per_slug_json_query(
+        metric,
+        selector,
+        from,
+        to,
+        interval,
+        aggregation,
+        fields
+      )
+
+    conn
+    |> post("/graphql", query_skeleton(query, "getMetric"))
+    |> json_response(200)
+  end
+
   def extract_timeseries_data_per_slug(result) do
     %{"data" => %{"getMetric" => %{"timeseriesDataPerSlug" => timeseries_data}}} = result
 
@@ -174,6 +265,30 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataPerSlugTest do
               datetime
               data{ slug value }
             }
+        }
+      }
+    """
+  end
+
+  defp get_timeseries_per_slug_json_query(
+         metric,
+         selector,
+         from,
+         to,
+         interval,
+         aggregation,
+         fields
+       ) do
+    """
+      {
+        getMetric(metric: "#{metric}"){
+          timeseriesDataPerSlugJson(
+            selector: #{map_to_input_object_str(selector)},
+            from: "#{from}",
+            to: "#{to}",
+            interval: "#{interval}",
+            aggregation: #{Atom.to_string(aggregation) |> String.upcase()}
+            #{if fields, do: "fields: #{fields}"})
         }
       }
     """

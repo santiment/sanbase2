@@ -206,6 +206,8 @@ defmodule Sanbase.EventBus.EventValidation do
         user_id: user_id
       })
       when event_type in [
+             :subscribe_weekly_newsletter,
+             :unsubscribe_weekly_newsletter,
              :subscribe_biweekly_report,
              :unsubscribe_biweekly_report,
              :subscribe_monthly_newsletter,

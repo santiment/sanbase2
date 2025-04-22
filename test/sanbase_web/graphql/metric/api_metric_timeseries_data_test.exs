@@ -219,6 +219,59 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     end)
   end
 
+  test "timeseriesDataJson", context do
+    %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
+    metric = "daily_active_addresses"
+
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.Clickhouse.MetricAdapter.timeseries_data/6,
+      {:ok,
+       [
+         %{value: 100.0, datetime: ~U[2019-01-01 00:00:00Z]},
+         %{value: 200.0, datetime: ~U[2019-01-02 00:00:00Z]}
+       ]}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      result =
+        get_timeseries_metric_json(
+          conn,
+          metric,
+          %{slug: slug},
+          from,
+          to,
+          interval,
+          :last,
+          nil
+        )
+
+      %{"data" => %{"getMetric" => %{"timeseriesDataJson" => timeseries_data_json}}} = result
+
+      assert timeseries_data_json == [
+               %{"value" => 100.0, "datetime" => "2019-01-01T00:00:00Z"},
+               %{"value" => 200.0, "datetime" => "2019-01-02T00:00:00Z"}
+             ]
+
+      result =
+        get_timeseries_metric_json(
+          conn,
+          metric,
+          %{slug: slug},
+          from,
+          to,
+          interval,
+          :last,
+          "{datetime: \"d\", value: \"v\"}"
+        )
+
+      %{"data" => %{"getMetric" => %{"timeseriesDataJson" => timeseries_data_json}}} = result
+
+      assert timeseries_data_json == [
+               %{"v" => 100.0, "d" => "2019-01-01T00:00:00Z"},
+               %{"v" => 200.0, "d" => "2019-01-02T00:00:00Z"}
+             ]
+    end)
+  end
+
   test "returns data for an available metric", context do
     %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
     metric = "daily_active_addresses"
@@ -331,6 +384,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
     aggregations = Metric.available_aggregations()
 
+    # credo:disable-for-next-line
     rand_aggregations = Enum.map(1..10, fn _ -> rand_str() |> String.to_atom() end)
 
     rand_aggregations = rand_aggregations -- aggregations
@@ -463,7 +517,25 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
          interval,
          aggregation
        ) do
-    query = get_timeseries_query(metric, selector, from, to, interval, aggregation)
+    query = get_timeseries_data_query(metric, selector, from, to, interval, aggregation)
+
+    conn
+    |> post("/graphql", query_skeleton(query, "getMetric"))
+    |> json_response(200)
+  end
+
+  defp get_timeseries_metric_json(
+         conn,
+         metric,
+         selector,
+         from,
+         to,
+         interval,
+         aggregation,
+         fields
+       ) do
+    query =
+      get_timeseries_data_json_query(metric, selector, from, to, interval, aggregation, fields)
 
     conn
     |> post("/graphql", query_skeleton(query, "getMetric"))
@@ -478,7 +550,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
          interval,
          aggregation
        ) do
-    query = get_timeseries_query_without_selector(metric, from, to, interval, aggregation)
+    query = get_timeseries_data_query_without_selector(metric, from, to, interval, aggregation)
 
     conn
     |> post("/graphql", query_skeleton(query, "getMetric"))
@@ -491,27 +563,46 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     timeseries_data
   end
 
-  defp get_timeseries_query(metric, selector, from, to, interval, aggregation) do
+  defp get_timeseries_data_query(metric, selector, from, to, interval, aggregation) do
     selector = extend_selector_with_required_fields(metric, selector)
 
     """
-      {
-        getMetric(metric: "#{metric}"){
-          timeseriesData(
-            selector: #{map_to_input_object_str(selector)},
-            from: "#{from}",
-            to: "#{to}",
-            interval: "#{interval}",
-            aggregation: #{Atom.to_string(aggregation) |> String.upcase()}){
-              datetime
-              value
-            }
-        }
+    {
+      getMetric(metric: "#{metric}"){
+        timeseriesData(
+          selector: #{map_to_input_object_str(selector)},
+          from: "#{from}",
+          to: "#{to}",
+          interval: "#{interval}",
+          aggregation: #{Atom.to_string(aggregation) |> String.upcase()}){
+            datetime
+            value
+          }
       }
+    }
     """
   end
 
-  defp get_timeseries_query_without_selector(
+  defp get_timeseries_data_json_query(metric, selector, from, to, interval, aggregation, fields) do
+    selector = extend_selector_with_required_fields(metric, selector)
+
+    """
+    {
+      getMetric(metric: "#{metric}"){
+        timeseriesDataJson(
+          selector: #{map_to_input_object_str(selector)}
+          from: "#{from}"
+          to: "#{to}"
+          interval: "#{interval}"
+          aggregation: #{Atom.to_string(aggregation) |> String.upcase()}
+          #{if fields, do: "fields: #{fields}"}
+        )
+      }
+    }
+    """
+  end
+
+  defp get_timeseries_data_query_without_selector(
          metric,
          from,
          to,

@@ -40,9 +40,10 @@ defmodule Sanbase.Accounts.Settings do
     field(:is_subscribed_likes_emails, :boolean, default: true)
     field(:is_subscribed_metric_updates, :boolean, default: false)
 
-    # 2. Email campaigns/lists through Mailchimp
-    field(:is_subscribed_monthly_newsletter, :boolean, default: true)
+    # 2. Email campaigns/lists through Mailjet
+    field(:is_subscribed_weekly_newsletter, :boolean, default: true)
     field(:is_subscribed_biweekly_report, :boolean, default: false)
+    field(:is_subscribed_monthly_newsletter, :boolean, default: true)
 
     # Rate Limits Settings
     field(:self_api_rate_limits_reset_at, :utc_datetime, default: nil)
@@ -67,6 +68,7 @@ defmodule Sanbase.Accounts.Settings do
       :alerts_per_day_limit,
       :alerts_fired,
       :is_subscribed_edu_emails,
+      :is_subscribed_weekly_newsletter,
       :is_subscribed_monthly_newsletter,
       :is_subscribed_biweekly_report,
       :is_subscribed_metric_updates,

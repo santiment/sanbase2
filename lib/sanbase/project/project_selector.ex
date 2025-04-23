@@ -23,10 +23,45 @@ defmodule Sanbase.Project.Selector do
   def args_to_raw_selector(%{selector: %{} = selector}), do: selector
   def args_to_raw_selector(_), do: %{}
 
-  def args_to_selector(args) do
+  @doc ~s"""
+  Resolve the arguments to a selector of slugs. If the selector is already
+  defined as a list of slugs, this list is returned.
+
+  For example if the arguments contain %{selector: %{watchlistId: 1}} this will be
+  resolved to %{selector: %{slug: ["slug1", "slug2", ...]}} where the list contains all
+  the slugs from the watchlist.
+
+  ## Options
+    - use_process_dictionary: if true, the selector will be cached in the process dictionary
+      for faster access. This is useful when the selector is used multiple times in the same
+      request. This is the case when first computing the complexity and then fetching the data
+      in getMetric's timeseries data API calls.
+      Some watchlists can be defined as a screener and to compute the list of slugs a clickhouse
+      database query should be made which returns all assets based on some condition.
+      More complex screeners can be constructed as intersection or union of many such DB calls,
+      making them slow to compute. So caching them in the process dictionary is a good idea.
+  """
+  @spec args_to_selector(map(), Keyword.t()) :: map()
+  def args_to_selector(args, opts \\ []) do
     selector = args |> args_to_raw_selector()
 
-    with {:ok, selector} <- transform_selector(selector),
+    if Keyword.get(opts, :use_process_dictionary, false) do
+      if result = Process.get({:args_to_selector, selector}) do
+        result
+      else
+        result = do_args_to_selector(selector)
+        Process.put({:args_to_selector, selector}, result)
+        result
+      end
+    else
+      do_args_to_selector(selector)
+    end
+  end
+
+  # Private functions
+
+  defp do_args_to_selector(raw_selector) do
+    with {:ok, selector} <- transform_selector(raw_selector),
          {:ok, selector} <- maybe_ignore_slugs(selector),
          # TEMP 02.02.2023: Handle ripple -> xrp rename
          {:ok, selector} <- temp_replace_slugs(selector),
@@ -34,8 +69,6 @@ defmodule Sanbase.Project.Selector do
       {:ok, selector}
     end
   end
-
-  # Private functions
 
   defp valid_selector?(%{slug: nil}) do
     {:error, "The slug or slugs arguments must not be null."}

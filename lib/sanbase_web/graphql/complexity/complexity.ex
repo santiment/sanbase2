@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.Complexity do
-  require Logger
-
   alias Sanbase.Billing.Subscription
+
+  require Logger
 
   @compile inline: [
              calculate_complexity: 4,
@@ -66,6 +66,7 @@ defmodule SanbaseWeb.Graphql.Complexity do
     case plan.name do
       "FREE" -> 1
       "BASIC" -> 4
+      "ESSENTIAL" -> 4
       "PRO" -> 5
       "PRO_PLUS" -> 5
       "MAX" -> 5
@@ -125,7 +126,7 @@ defmodule SanbaseWeb.Graphql.Complexity do
     |> Sanbase.Math.to_integer()
   end
 
-  @assets_count_weight 0.1
+  @assets_count_weight 0.04
   defp selector_weight(args) do
     case args do
       %{selector: %{slugs: slugs}} ->
@@ -138,8 +139,23 @@ defmodule SanbaseWeb.Graphql.Complexity do
         1
 
       _ ->
-        {:ok, %{slug: slugs}} = Sanbase.Project.Selector.args_to_selector(args)
-        Enum.max([1, length(slugs) * @assets_count_weight])
+        # Use the process dictionary to compute and store the selector resolved result
+        # in the process dictionary (can be reworked to ETS in the future).
+        # Complexity checks run before any other middleware. We do some transformations
+        # in the middleware and we can compute the resolved selector there and store it in
+        # the context of the resolution struct, but the middleware is guaranteed to run **after**
+        # the complexity check. So we need a mechanism to store the selector when it is first
+        # computed in the complexity check here. The complexity macro returns just a number and
+        # cannot modify the resolution struct. So we use the process dictionary.
+        case Sanbase.Project.Selector.args_to_selector(args, use_process_dictionary: true) do
+          {:ok, %{slug: slugs}} ->
+            Enum.max([1, length(slugs) * @assets_count_weight])
+
+          _ ->
+            # Most likely the selector is empty. The resolver should return a proper error
+            # Put some default weight here
+            1
+        end
     end
   end
 

@@ -6,7 +6,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     only: [handle_graphql_error: 3, maybe_handle_graphql_error: 2]
 
   import Sanbase.Project.Selector,
-    only: [args_to_selector: 1, args_to_raw_selector: 1]
+    only: [args_to_selector: 2, args_to_raw_selector: 1]
 
   import SanbaseWeb.Graphql.Helpers.Utils
 
@@ -20,7 +20,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   @datapoints 300
 
   @wordsize 8
-  @max_heap_size_in_words div(500 * 1024 * 1024, @wordsize)
+  @max_heap_size_in_mbs 500
+  @max_heap_size_in_words div(@max_heap_size_in_mbs * 1024 * 1024, @wordsize)
 
   def get_metric(_root, %{metric: metric} = args, _resolution) do
     with false <- Metric.hard_deprecated?(metric),
@@ -195,7 +196,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   end
 
   def available_since(_root, args, %{source: %{metric: metric}}) do
-    with {:ok, selector} <- args_to_selector(args),
+    with {:ok, selector} <- args_to_selector(args, use_process_dictionary: true),
          true <- all_required_selectors_present?(metric, selector),
          {:ok, opts} <- selector_args_to_opts(args),
          {:ok, first_datetime} <- Metric.first_datetime(metric, selector, opts) do
@@ -211,7 +212,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   end
 
   def last_datetime_computed_at(_root, args, %{source: %{metric: metric}}) do
-    with {:ok, selector} <- args_to_selector(args),
+    with {:ok, selector} <- args_to_selector(args, use_process_dictionary: true),
          true <- all_required_selectors_present?(metric, selector),
          {:ok, opts} <- selector_args_to_opts(args),
          true <- valid_metric_selector_pair?(metric, selector) do
@@ -227,7 +228,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   end
 
   def broken_data(_root, %{from: from, to: to} = args, %{source: %{metric: metric}}) do
-    with {:ok, selector} <- args_to_selector(args),
+    with {:ok, selector} <- args_to_selector(args, use_process_dictionary: true),
          true <- all_required_selectors_present?(metric, selector),
          true <- valid_metric_selector_pair?(metric, selector),
          true <- valid_owners_labels_selection?(args),
@@ -274,7 +275,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     include_incomplete_data = Map.get(args, :include_incomplete_data, false)
     only_finalized_data = Map.get(args, :only_finalized_data, false)
 
-    with {:ok, selector} <- args_to_selector(args),
+    with {:ok, selector} <- args_to_selector(args, use_process_dictionary: true),
          true <- all_required_selectors_present?(metric, selector),
          true <- valid_metric_selector_pair?(metric, selector),
          true <- valid_owners_labels_selection?(args),
@@ -313,7 +314,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     interval = transform_interval(metric, interval)
 
     with true <- valid_histogram_args?(metric, args),
-         {:ok, selector} <- args_to_selector(args),
+         {:ok, selector} <- args_to_selector(args, use_process_dictionary: true),
          true <- all_required_selectors_present?(metric, selector),
          true <- valid_metric_selector_pair?(metric, selector),
          true <- valid_owners_labels_selection?(args),
@@ -332,7 +333,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         %{from: from, to: to} = args,
         %{source: %{metric: metric}}
       ) do
-    with {:ok, selector} <- args_to_selector(args),
+    with {:ok, selector} <- args_to_selector(args, use_process_dictionary: true),
          true <- all_required_selectors_present?(metric, selector),
          true <- valid_metric_selector_pair?(metric, selector),
          true <- valid_owners_labels_selection?(args),
@@ -345,7 +346,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   end
 
   def latest_metrics_data(_root, %{metrics: metrics} = args, _resolution) do
-    with {:ok, selector} <- args_to_selector(args),
+    with {:ok, selector} <- args_to_selector(args, use_process_dictionary: true),
          :ok <- check_metrics_slugs_cartesian_limit(metrics, selector, 20_000),
          {:ok, data} <-
            Metric.LatestMetric.latest_metrics_data(metrics, selector) do
@@ -417,7 +418,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
        when function in [:timeseries_data, :timeseries_data_per_slug] do
     only_finalized_data = Map.get(args, :only_finalized_data, false)
 
-    with {:ok, selector} <- args_to_selector(args),
+    with {:ok, selector} <- args_to_selector(args, use_process_dictionary: true),
          {:ok, transform} <- MetricTransform.args_to_transform(args),
          true <- all_required_selectors_present?(metric, selector),
          true <- valid_metric_selector_pair?(metric, selector),

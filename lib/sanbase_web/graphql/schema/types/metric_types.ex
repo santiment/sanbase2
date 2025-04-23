@@ -592,7 +592,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       arg(:caching_params, :caching_params_input_object)
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(AccessControl)
+      middleware(AccessControl, resolve_slugs_list: true)
 
       cache_resolve(&MetricResolver.timeseries_data/3)
     end
@@ -611,7 +611,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       arg(:fields, :timeseries_data_json_fields)
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(AccessControl)
+      middleware(AccessControl, resolve_slugs_list: true)
 
       cache_resolve(&MetricResolver.timeseries_data/3)
     end
@@ -629,7 +629,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       arg(:fields, :timeseries_data_per_slug_json_fields)
 
       complexity(&Complexity.from_to_interval_selector_weight/3)
-      middleware(AccessControl)
+      middleware(AccessControl, resolve_slugs_list: true)
 
       cache_resolve(&MetricResolver.timeseries_data_per_slug/3)
     end
@@ -646,7 +646,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       arg(:caching_params, :caching_params_input_object)
 
       complexity(&Complexity.from_to_interval_selector_weight/3)
-      middleware(AccessControl)
+      middleware(AccessControl, resolve_slugs_list: true)
 
       cache_resolve(&MetricResolver.timeseries_data_per_slug/3)
     end

@@ -19,7 +19,9 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   @behaviour Absinthe.Middleware
 
   @compile {:inline,
-            transform_resolution: 1,
+            transform_resolution: 2,
+            extract_selector_data: 2,
+            extract_metric_and_query_data: 2,
             check_has_access: 2,
             full_check_has_access: 2,
             apply_if_not_resolved: 2,
@@ -48,16 +50,33 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   # - When the auth method is not `basic` - all the required checks are done
   def call(resolution, opts) do
     resolution
-    |> transform_resolution()
+    |> transform_resolution(opts)
     |> check_has_access(opts)
   end
 
   # The name of the query/mutation can be passed in snake case or camel case.
   # Here we transform the name to an atom in snake case for consistency
   # and faster comparison of atoms
-  defp transform_resolution(%Resolution{} = resolution) do
+  defp transform_resolution(%Resolution{context: context} = resolution, opts) do
+    context =
+      context
+      |> Map.merge(extract_selector_data(resolution, opts))
+      |> Map.merge(extract_metric_and_query_data(resolution, opts))
+
+    %{resolution | context: context}
+  end
+
+  defp extract_selector_data(%Absinthe.Resolution{} = resolution, _opts) do
+    %{arguments: arguments} = resolution
+
+    # Make it easier to check cases where we have either %{selector: %{slug: slug}} or just %{slug: slug}
+    extracted_slug = Map.get(arguments, :slug) || get_in(arguments, [:selector, :slug])
+
+    %{__slug__: extracted_slug}
+  end
+
+  defp extract_metric_and_query_data(%Absinthe.Resolution{} = resolution, opts) do
     %{
-      context: context,
       definition: definition,
       arguments: arguments,
       source: source
@@ -69,9 +88,6 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
       |> String.to_existing_atom()
       |> get_query_or_argument(source, arguments)
 
-    # Make it easier to check cases where we have either %{selector: %{slug: slug}} or just %{slug: slug}
-    extracted_slug = Map.get(arguments, :slug) || get_in(arguments, [:selector, :slug])
-
     # Make it easier to work with the getMetric's `metric` argument,
     # so resolution.source does not need to be checked. This way it can
     # also be extracted from aggregatedTimeseriesData on a project type
@@ -81,13 +97,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
         _ -> nil
       end
 
-    context =
-      context
-      |> Map.put(:__query_argument_atom_name__, query_atom_name)
-      |> Map.put(:__slug__, extracted_slug)
-      |> Map.put(:__metric__, extracted_metric)
-
-    %{resolution | context: context}
+    %{__query_argument_atom_name__: query_atom_name, __metric__: extracted_metric}
   end
 
   # Basic auth should have no restrictions. Check only the sanity of the `from`

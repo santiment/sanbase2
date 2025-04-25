@@ -104,6 +104,15 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     end)
   end
 
+  def timeseries_data_per_slug(metric, selector, _from, _to, _interval, _opts) do
+    {:error,
+     """
+     Error fetching timeseries data per slug for #{metric}. The selector is not supported.
+     The selector is not a slug or list of slugs and cannot be resolved to a list of slugs.
+     Got: #{inspect(selector)}
+     """}
+  end
+
   @impl Sanbase.Metric.Behaviour
   defdelegate histogram_data(metric, slug, from, to, interval, limit), to: HistogramMetric
 

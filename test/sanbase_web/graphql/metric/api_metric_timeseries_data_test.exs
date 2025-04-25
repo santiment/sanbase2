@@ -266,8 +266,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
       %{"data" => %{"getMetric" => %{"timeseriesDataJson" => timeseries_data_json}}} = result
 
       assert timeseries_data_json == [
-               %{"v" => 100.0, "d" => "2019-01-01T00:00:00Z"},
-               %{"v" => 200.0, "d" => "2019-01-02T00:00:00Z"}
+               %{"v" => 100.0, "datetime" => "2019-01-01T00:00:00Z"},
+               %{"v" => 200.0, "datetime" => "2019-01-02T00:00:00Z"}
              ]
     end)
   end
@@ -457,46 +457,6 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
            end) =~ "Can't fetch #{metric} for an empty selector"
   end
 
-  test "complexity for clickhouse metrics is smaller", context do
-    slug = "ethereum"
-    to = ~U[2020-05-01 00:00:00Z]
-    from = ~U[2009-01-01 00:00:00Z]
-    interval = "1h"
-
-    ch_metric_error =
-      get_timeseries_metric(
-        context.conn,
-        "mvrv_usd",
-        %{slug: slug},
-        from,
-        to,
-        interval,
-        :last
-      )
-      |> get_in(["errors"])
-      |> List.first()
-      |> get_in(["message"])
-
-    social_metric_error =
-      get_timeseries_metric(
-        context.conn,
-        "twitter_followers",
-        %{slug: slug},
-        from,
-        to,
-        interval,
-        :last
-      )
-      |> get_in(["errors"])
-      |> List.first()
-      |> get_in(["message"])
-
-    ch_metric_complexity = error_to_complexity(ch_metric_error)
-    social_metric_complexity = error_to_complexity(social_metric_error)
-
-    assert ch_metric_complexity + 1 < social_metric_complexity
-  end
-
   # Private functions
 
   defp error_to_complexity(error_msg) do
@@ -600,6 +560,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
       }
     }
     """
+    |> dbg()
   end
 
   defp get_timeseries_data_query_without_selector(

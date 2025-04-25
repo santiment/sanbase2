@@ -6,8 +6,7 @@ defmodule SanbaseWeb.Graphql.Complexity do
   @compile inline: [
              calculate_complexity: 4,
              interval_seconds: 1,
-             years_difference_weighted: 2,
-             get_metric_name: 1
+             years_difference_weighted: 2
            ]
   @doc ~S"""
   Returns the complexity as a real number.
@@ -81,14 +80,13 @@ defmodule SanbaseWeb.Graphql.Complexity do
   defp calculate_complexity(
          %{from: from, to: to} = args,
          child_complexity,
-         %Absinthe.Complexity{} = struct,
+         %Absinthe.Complexity{} = _struct,
          opts
        )
        when is_number(child_complexity) do
     seconds_difference = Timex.diff(from, to, :seconds) |> abs()
     years_difference_weight = years_difference_weighted(from, to)
     interval_seconds = interval_seconds(args) |> max(1)
-    metric = get_metric_name(struct)
 
     # Compute weights
     # - child_complexity -- the number of selected fields
@@ -105,22 +103,13 @@ defmodule SanbaseWeb.Graphql.Complexity do
     selector_weight =
       if Keyword.fetch!(opts, :use_selector_weight), do: selector_weight(args), else: 1
 
-    complexity_weight =
-      with metric when is_binary(metric) <- metric,
-           weight when is_number(weight) <- Sanbase.Metric.complexity_weight(metric) do
-        weight
-      else
-        _ -> 1
-      end
-
     child_complexity = if child_complexity == 0, do: 2, else: child_complexity
 
     [
       selector_weight,
       child_complexity,
       data_points_count,
-      years_difference_weight,
-      complexity_weight
+      years_difference_weight
     ]
     |> Enum.product()
     |> Sanbase.Math.to_integer()
@@ -156,29 +145,6 @@ defmodule SanbaseWeb.Graphql.Complexity do
             # Put some default weight here
             1
         end
-    end
-  end
-
-  defp selector_weight(_), do: 1
-  # This case is important as here the flow comes from `timeseries_data_complexity`
-  # and it will be handled by extracting the name from the %Absinthe.Resolution{}
-  # struct manually passed. This is done because otherwise the same `getMetric`
-  # resolution flow could pass twice through this code and remove 2 metrics instead
-  # of just one. This happens if both timeseries_data and timeseries_data_complexity
-  # are queried
-  defp get_metric_name(%{source: %{metric: metric}}), do: metric
-
-  defp get_metric_name(_) do
-    case Process.get(:__metric_name_from_get_metric_api__) do
-      [metric | rest] ->
-        # If there are batched requests they will be resolved in the same order
-        # as their are in the list. When computing complexity for a metric put back
-        # the list without this one metric so the next one can be properly fetched.
-        Process.put(:__metric_name_from_get_metric_api__, rest)
-        metric
-
-      _ ->
-        nil
     end
   end
 

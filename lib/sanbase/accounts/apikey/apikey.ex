@@ -59,7 +59,8 @@ defmodule Sanbase.Accounts.Apikey do
   """
   @spec generate_apikey(%User{}) :: {:ok, String.t()} | {:error, String.t()}
   def generate_apikey(%User{id: user_id} = user) do
-    with token when is_non_empty_string(token) <- Hmac.generate_token(),
+    with true <- UserApikeyToken.user_can_generate_apikey?(user),
+         token when is_non_empty_string(token) <- Hmac.generate_token(),
          {:ok, user_apikey_token} <- UserApikeyToken.add_user_token(user, token),
          apikey when is_non_empty_string(apikey) <- Hmac.generate_apikey(token) do
       emit_event({:ok, user_apikey_token}, :generate_apikey, %{user: user})
@@ -67,7 +68,7 @@ defmodule Sanbase.Accounts.Apikey do
     else
       error ->
         {:error,
-         "Error generating new apikey for user with id #{user_id}. Inspecting error: #{inspect(error)}"}
+         "Error generating new apikey for user with id #{user_id}. Reason: #{inspect(error)}"}
     end
   end
 
@@ -85,7 +86,7 @@ defmodule Sanbase.Accounts.Apikey do
       :ok
     else
       error ->
-        {:error, "Provided apikey is malformed or not valid. Inspecting error: #{inspect(error)}"}
+        {:error, "Provided apikey is malformed or not valid. Reason: #{inspect(error)}"}
     end
   end
 

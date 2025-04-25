@@ -7,6 +7,9 @@ defmodule Sanbase.Accounts.UserApikeyToken do
   alias Sanbase.Accounts.User
   alias Sanbase.Repo
 
+  @api_keys_per_user_limit 10
+  def api_keys_per_user_limit(), do: @api_keys_per_user_limit
+
   schema "user_api_key_tokens" do
     field(:token, :string)
 
@@ -20,6 +23,23 @@ defmodule Sanbase.Accounts.UserApikeyToken do
     |> cast(attrs, [:token, :user_id])
     |> validate_required([:token, :user_id])
     |> unique_constraint(:token)
+  end
+
+  def user_can_generate_apikey?(%User{id: user_id}) do
+    query =
+      from(
+        pair in UserApikeyToken,
+        where: pair.user_id == ^user_id,
+        select: count(pair.id)
+      )
+
+    case Sanbase.Repo.one(query) do
+      num when is_number(num) and num < @api_keys_per_user_limit ->
+        true
+
+      _ ->
+        {:error, "Cannot create more than #{@api_keys_per_user_limit} API keys"}
+    end
   end
 
   def user_tokens(%User{id: user_id}) do

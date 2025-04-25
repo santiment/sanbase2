@@ -4,13 +4,13 @@ defmodule Sanbase.Insight.PostPaywall do
   Filtering means truncating the text to @max_words_shown_as_preview words of the original text.
   """
   alias Sanbase.Insight.Post
-  alias Sanbase.Billing.{Subscription, Product}
+  alias Sanbase.Billing.Subscription
+  alias Sanbase.Billing.Product
   alias Sanbase.Accounts.User
   alias Sanbase.Billing.Plan.SanbaseAccessChecker
 
   # Show only first @max_words_shown_as_preview word of content
   @max_words_shown_as_preview 140
-  @product_sanbase Product.product_sanbase()
 
   @type insight_or_insights :: %Post{} | [%Post{}]
   @type current_user_or_nil :: %User{} | nil
@@ -20,11 +20,15 @@ defmodule Sanbase.Insight.PostPaywall do
   def maybe_filter_paywalled(insights, nil), do: maybe_filter(insights, nil)
 
   def maybe_filter_paywalled(insights, %User{} = user) do
-    subscription =
-      Subscription.current_subscription(user, @product_sanbase) ||
+    subscriptions =
+      [
+        Subscription.current_subscription(user, Product.product_sanbase()),
         Subscription.current_subscription(user, Product.product_api())
+      ]
 
-    if SanbaseAccessChecker.can_access_paywalled_insights?(subscription) do
+    can_access? = Enum.any?(subscriptions, &SanbaseAccessChecker.can_access_paywalled_insights?/1)
+
+    if can_access? do
       insights
     else
       maybe_filter(insights, user.id)

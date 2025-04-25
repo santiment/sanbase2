@@ -5,7 +5,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
 
   alias SanbaseWeb.Graphql.SanbaseDataloader
   alias Sanbase.Accounts.User
-  alias Sanbase.Insight.{Post, PopularAuthor}
+  alias Sanbase.Insight.Post
+  alias Sanbase.Insight.PopularAuthor
   alias Sanbase.Comments.EntityComment
 
   require Logger

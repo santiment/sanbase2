@@ -105,6 +105,32 @@ defmodule SanbaseWeb.Graphql.InsightCommentApiTest do
     assert comments |> hd() |> get_in(["user", "email"]) == "<email hidden>"
   end
 
+  test "free users cannot comment a pro insight, sanbase and business users can", context do
+    %{post: post} = context
+
+    content = "nice post"
+    post = insert(:published_post, is_paywall_required: true, user: post.user)
+
+    user = insert(:user)
+    conn = setup_jwt_auth(build_conn(), user)
+
+    error = create_comment_with_error(conn, post.id, content, @opts)
+
+    assert error =~ "The post is paywalled and you don't have an active subscription"
+
+    insert(:subscription_pro_sanbase, user: user)
+
+    assert %{"content" => ^content} =
+             create_comment(conn, post.id, content, @opts)
+
+    user2 = insert(:user)
+    insert(:subscription_business_pro_monthly, user: user2)
+    conn2 = setup_jwt_auth(build_conn(), user2)
+
+    assert %{"content" => ^content} =
+             create_comment(conn2, post.id, content, @opts)
+  end
+
   test "update a comment", context do
     %{conn: conn, post: post} = context
 

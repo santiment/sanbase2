@@ -38,6 +38,8 @@ defmodule Sanbase.Comment do
   alias Sanbase.Dashboards.Dashboard
   alias Sanbase.UserList
   alias Sanbase.Chart.Configuration, as: ChartConfiguration
+  alias Sanbase.Billing.Subscription
+  alias Sanbase.Billing.Plan.SanbaseAccessChecker
 
   alias Sanbase.Utils.Config
 
@@ -106,14 +108,14 @@ defmodule Sanbase.Comment do
     |> foreign_key_constraint(:root_parent_id)
   end
 
-  # TODO: These are not implementing the entity behaviour, so they are specially handled here
   def user_can_comment_entity?(entity_type, _, _)
       when entity_type in [:timeline_event, :blockchain_address],
       do: {:ok, true}
 
   def user_can_comment_entity?(entity_type, entity_id, user_id) do
     with {:ok, map} <- Sanbase.Entity.get_visibility_data(entity_type, entity_id),
-         {:ok, true} <- has_not_reached_rate_limits?(user_id) do
+         {:ok, true} <- has_not_reached_rate_limits?(user_id),
+         {:ok, true} <- can_comment_paywalled_entity(entity_type, entity_id, user_id) do
       if map.user_id == user_id or map.is_public == true do
         {:ok, true}
       else
@@ -121,6 +123,35 @@ defmodule Sanbase.Comment do
          "The entity of type #{entity_type} with id #{entity_id} is private and not owned by you."}
       end
     end
+  end
+
+  defp can_comment_paywalled_entity(:insight, insight_id, user_id) do
+    with {:ok, post} <- Post.by_id(insight_id, []) do
+      cond do
+        post.ready_state != "published" ->
+          {:error, "The post is not published"}
+
+        post.is_paywall_required == true ->
+          subscriptions = Subscription.user_subscriptions(%User{id: user_id})
+
+          has_access? =
+            Enum.any?(subscriptions, &SanbaseAccessChecker.can_access_paywalled_insights?/1)
+
+          if has_access? do
+            {:ok, true}
+          else
+            {:error, "The post is paywalled and you don't have an active subscription"}
+          end
+
+        true ->
+          {:ok, true}
+      end
+    end
+  end
+
+  defp can_comment_paywalled_entity(_, _, _) do
+    # Nothing other than insight is now paywalled
+    {:ok, true}
   end
 
   def has_not_reached_rate_limits?(user_id) do

@@ -55,7 +55,7 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
 
     # should not appear in the result because the post is
     # not published
-    {:ok, _} =
+    {:error, _} =
       EntityComment.create_and_link(
         :insight,
         context.unpublished_insight.id,

@@ -159,7 +159,6 @@ defmodule SanbaseWeb.Graphql.Complexity do
     end
   end
 
-  defp selector_weight(_), do: 1
   # This case is important as here the flow comes from `timeseries_data_complexity`
   # and it will be handled by extracting the name from the %Absinthe.Resolution{}
   # struct manually passed. This is done because otherwise the same `getMetric`

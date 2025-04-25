@@ -252,7 +252,16 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Complexity.Preprocess do
     # name from the list both times - so it has to be there twice, while
     # `timeseries_data_complexity` won't go through that path.
     # `histogram_data` does not have complexity checks right now.
-    temp = selections -- ["timeseries_data", "aggregated_timeseries_data"]
+    temp =
+      selections --
+        [
+          "timeseries_data",
+          "timeseries_data_json",
+          "timeseries_data_per_slug",
+          "timeseries_data_per_slug_json",
+          "aggregated_timeseries_data"
+        ]
+
     common_parts = selections -- temp
 
     Enum.map(common_parts, fn _ -> metric end)

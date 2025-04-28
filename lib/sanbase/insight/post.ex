@@ -17,9 +17,9 @@ defmodule Sanbase.Insight.Post do
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.Metric.MetricPostgresData
   alias Sanbase.Chart.Configuration
+  alias Sanbase.Utils.Config
 
   require Logger
-  alias Sanbase.Utils.Config
 
   @preloads [:user, :images, :tags, :chart_configuration_for_event]
 

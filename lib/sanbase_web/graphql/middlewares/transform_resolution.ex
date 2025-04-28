@@ -36,7 +36,13 @@ defmodule SanbaseWeb.Graphql.Middlewares.TransformResolution do
     resolution
   end
 
-  @fields_with_selector ["timeseriesData", "timeseriesDataPerSlug", "aggregatedTimeseriesData"]
+  @fields_with_selector [
+    "timeseriesData",
+    "timeseriesDataJson",
+    "timeseriesDataPerSlug",
+    "timeseriesDataPerSlugJson",
+    "aggregatedTimeseriesData"
+  ]
   defp get_selectors(%Resolution{} = resolution) do
     resolution.definition.selections
     |> Enum.map(fn %{name: name} = field ->

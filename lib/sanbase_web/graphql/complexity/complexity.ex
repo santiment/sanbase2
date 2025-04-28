@@ -121,7 +121,7 @@ defmodule SanbaseWeb.Graphql.Complexity do
     ]
     |> Enum.product()
     |> then(fn complexity ->
-      if complexity > 50_000 do
+      if complexity > 50_000 and selector_weight > 1 do
         map = get_in(struct.context[:auth]) || %{}
         plan = map[:plan]
         product = map[:requested_product] || "unknown"

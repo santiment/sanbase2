@@ -214,6 +214,7 @@ defmodule Sanbase.Accounts.User do
     %__MODULE__{}
     |> changeset(attrs)
     |> Repo.insert()
+    |> maybe_preload_struct()
     |> emit_event(:create_user, %{})
   end
 
@@ -221,6 +222,7 @@ defmodule Sanbase.Accounts.User do
     user
     |> changeset(attrs)
     |> Repo.update()
+    |> maybe_preload_struct()
     |> emit_event(:update_user, %{})
   end
 
@@ -356,7 +358,12 @@ defmodule Sanbase.Accounts.User do
         {:ok, user}
 
       false ->
-        user |> changeset(%{field => value}) |> Repo.update()
+        # Calling local update/2 will collide with import Ecto.Query
+        user
+        |> changeset(%{field => value})
+        |> Repo.update()
+        |> maybe_preload_struct()
+        |> emit_event(:update_user, %{})
     end
   end
 
@@ -457,16 +464,6 @@ defmodule Sanbase.Accounts.User do
     |> Repo.all()
   end
 
-  @doc ~s"""
-  Used to
-  """
-  def update_profile(%__MODULE__{} = user, attrs) do
-    user
-    |> changeset(attrs)
-    |> Repo.update()
-    |> emit_event(:update_user_profile, %{})
-  end
-
   # Private functions
 
   defp maybe_preload(query, opts) do
@@ -479,4 +476,7 @@ defmodule Sanbase.Accounts.User do
         query
     end
   end
+
+  defp maybe_preload_struct({:ok, %__MODULE__{} = user}), do: {:ok, Repo.preload(user, @preloads)}
+  defp maybe_preload_struct({:error, _} = error), do: error
 end

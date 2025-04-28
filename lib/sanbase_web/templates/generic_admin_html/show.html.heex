@@ -61,6 +61,7 @@
   <%= for table <- @has_many do %>
     <SanbaseWeb.AdminComponents.has_many_table
       resource={table.resource}
+      actions={Map.get(table, :actions, [])}
       resource_name={table.resource_name}
       rows={table.rows}
       fields={table.fields}

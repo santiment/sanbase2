@@ -121,14 +121,28 @@ defmodule SanbaseWeb.Graphql.Complexity do
     ]
     |> Enum.product()
     |> then(fn complexity ->
-      if complexity > 50_000 and selector_weight > 1 do
+      plan = get_in(struct.context, [:auth, :plan])
+
+      if complexity > 50_000 and selector_weight > 1 and plan != "FREE" do
         map = get_in(struct.context[:auth]) || %{}
         plan = map[:plan]
         product = map[:requested_product] || "unknown"
         user_id = (map[:current_user] || %{}) |> Map.get(:id)
 
         Logger.warning("""
-        [Complexity] If the selector_weight #{selector_weight} is included in the complexity
+        [ComplexityRestriction] A user's queryr has exceeded the complexity limit and is: #{complexity}
+        Args: metric: #{metric}, from: #{from}, to: #{to}, interval (in seconds) #{interval_seconds}, child_complexity: #{child_complexity}
+        Plan: #{plan}, product: #{product}, user_id: #{user_id || "anon"}
+        """)
+      end
+
+      if complexity > 50_000 and complexity / selector_weight < 50_000 and selector_weight > 1 do
+        map = get_in(struct.context[:auth]) || %{}
+        product = map[:requested_product] || "unknown"
+        user_id = (map[:current_user] || %{}) |> Map.get(:id)
+
+        Logger.warning("""
+        [ComplexitySelector] If the selector_weight #{selector_weight} is included in the complexity
         computation, the API call would have been rejected. Computed complexity is #{complexity}.
         Args: #{metric}, #{from}, #{to}, #{interval_seconds}, #{child_complexity}
         Plan: #{plan}, product: #{product}, user_id: #{user_id || "anon"}
@@ -149,7 +163,7 @@ defmodule SanbaseWeb.Graphql.Complexity do
     end
   end
 
-  @assets_count_weight 0.04
+  @assets_count_weight 0.1
   defp selector_weight(args, opts) do
     if Keyword.get(opts, :use_selector_weight, false) do
       do_selector_weight(args)
@@ -159,6 +173,9 @@ defmodule SanbaseWeb.Graphql.Complexity do
   end
 
   defp do_selector_weight(args) do
+    # Compute the selector weight as the number of slugs multiplied by @assets_count_weight
+    # We could replace this with some function that gives increasingly higher weights
+    # as the number of assets grow, for example: 0.1*x + 0.001*x*x
     case args do
       %{selector: %{slugs: slugs}} ->
         slugs_list_to_weight(slugs)

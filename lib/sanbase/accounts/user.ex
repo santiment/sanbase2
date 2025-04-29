@@ -34,6 +34,7 @@ defmodule Sanbase.Accounts.User do
   @allowed_metric_access_levels ["alpha", "beta", "released"]
 
   @preloads [:roles, [roles: :role], :eth_accounts, :user_settings]
+  def preloads(), do: @preloads
 
   @derive {Inspect,
            except: [
@@ -224,6 +225,25 @@ defmodule Sanbase.Accounts.User do
     |> Repo.update()
     |> maybe_preload_struct()
     |> emit_event(:update_user, %{})
+  end
+
+  def atomic_update_registration_state(user_id, old_state, new_state, opts \\ []) do
+    from(
+      user in __MODULE__,
+      where:
+        user.id == ^user_id and
+          fragment(
+            "registration_state->'state' = ?",
+            ^old_state
+          ),
+      update: [set: [registration_state: ^new_state]],
+      select: user
+    )
+    |> Repo.update_all([])
+    |> case do
+      {1, [user]} -> {1, [Repo.preload(user, @preloads)]}
+      other -> other
+    end
   end
 
   def by_id!(user_id) do

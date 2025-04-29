@@ -151,7 +151,7 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
     end
 
     field :comments_count, :integer do
-      resolve(&QueriesResolver.comments_count/3)
+      resolve(&QueriesResolver.dashboard_comments_count/3)
     end
 
     field :voted_at, :datetime do

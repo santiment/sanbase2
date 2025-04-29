@@ -130,7 +130,8 @@ defmodule SanbaseWeb.Graphql.Complexity do
         user_id = (map[:current_user] || %{}) |> Map.get(:id)
 
         Logger.warning("""
-        [ComplexityRestriction] A user's queryr has exceeded the complexity limit and is: #{complexity}
+        [ComplexityRestriction] A user's query has exceeded the complexity limit and is: #{complexity}
+        Selector weight: #{selector_weight}. Complexity without selector weight: #{complexity / selector_weight}
         Args: metric: #{metric}, from: #{from}, to: #{to}, interval (in seconds) #{interval_seconds}, child_complexity: #{child_complexity}
         Plan: #{plan}, product: #{product}, user_id: #{user_id || "anon"}
         """)

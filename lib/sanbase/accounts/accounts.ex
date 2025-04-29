@@ -1,9 +1,7 @@
 defmodule Sanbase.Accounts do
-  import Ecto.Query
-  import Sanbase.Accounts.User.Ecto, only: [registration_state_equals: 1]
-
   alias Sanbase.Repo
-  alias __MODULE__.{User, EthAccount}
+  alias Sanbase.Accounts.User
+  alias Sanbase.Accounts.EthAccount
 
   def get_user(user_id_or_ids) do
     User.by_id(user_id_or_ids)
@@ -50,7 +48,7 @@ defmodule Sanbase.Accounts do
       {:next_state, state, data} ->
         registration_state = %{"state" => state, "data" => data, "datetime" => DateTime.utc_now()}
 
-        case atomic_update(user.id, current_state, registration_state) do
+        case User.atomic_update_registration_state(user.id, current_state, registration_state) do
           {1, [user]} -> {:ok, :evolve_state, user}
           {0, _} -> {:ok, :keep_state, user}
         end
@@ -78,17 +76,5 @@ defmodule Sanbase.Accounts do
       {:error, _, reason, _} ->
         {:error, reason}
     end
-  end
-
-  defp atomic_update(user_id, old_state, new_registration_state) do
-    # Atomic update. If the same code is execute from multiple processes or nodes
-    # only one of them should succeed
-    from(
-      user in User,
-      where: user.id == ^user_id and registration_state_equals(old_state),
-      update: [set: [registration_state: ^new_registration_state]],
-      select: user
-    )
-    |> Repo.update_all([])
   end
 end

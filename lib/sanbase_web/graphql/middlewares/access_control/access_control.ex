@@ -75,7 +75,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     %{__slug__: extracted_slug}
   end
 
-  defp extract_metric_and_query_data(%Absinthe.Resolution{} = resolution, opts) do
+  defp extract_metric_and_query_data(%Absinthe.Resolution{} = resolution, _opts) do
     %{
       definition: definition,
       arguments: arguments,

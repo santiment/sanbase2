@@ -195,6 +195,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :get_latest_metric_data,
           :get_project_trending_history,
           :get_trending_words,
+          :get_trending_stories,
           :get_word_trending_history,
           :miners_balance,
           :percent_of_token_supply_on_exchanges,

@@ -150,8 +150,8 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
     field(:search_text, non_null(:string))
     field(:related_tokens, list_of(:string))
     field(:summary, non_null(:string))
-    field(:bullish_ratio, non_null(:float))
-    field(:bearish_ratio, non_null(:float))
+    field(:bullish_ratio, :float)
+    field(:bearish_ratio, :float)
   end
 
   object :social_document do

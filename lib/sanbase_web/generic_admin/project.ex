@@ -108,6 +108,7 @@ defmodule SanbaseWeb.GenericAdmin.Project do
     [
       %{
         resource: "contract_addresses",
+        actions: [:edit, :delete],
         resource_name: "Contract Addresses",
         rows: project.contract_addresses,
         fields: [:id, :address],
@@ -249,7 +250,7 @@ defmodule SanbaseWeb.GenericAdmin.ContractAddress do
 
   def resource() do
     %{
-      actions: [:new, :edit],
+      actions: [:new, :edit, :delete],
       preloads: [:project],
       new_fields: [:project, :address, :decimals, :label, :description],
       edit_fields: [:project, :address, :decimals, :label, :description],

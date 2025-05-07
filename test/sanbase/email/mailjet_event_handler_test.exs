@@ -4,7 +4,7 @@ defmodule Sanbase.Email.MailjetEventHandlerTest do
   import Sanbase.Factory
 
   alias Sanbase.Email.MailjetEventHandler
-  alias Sanbase.Accounts.{User, UserSettings}
+  alias Sanbase.Accounts.UserSettings
   alias Sanbase.Repo
 
   describe "handle_unsubscribe/2" do

@@ -338,6 +338,7 @@ defmodule SanbaseWeb.AdminComponents do
   />
   """
 
+  attr(:actions, :list, required: false, default: [])
   attr(:resource, :string, required: true)
   attr(:resource_name, :string, required: true)
   attr(:create_link_kv, :list, required: false, default: [])
@@ -363,7 +364,7 @@ defmodule SanbaseWeb.AdminComponents do
             fields={@fields}
             assocs={%{}}
             field_type_map={%{}}
-            actions={[]}
+            actions={@actions |> Enum.filter(&(&1 in [:edit, :delete]))}
             funcs={@funcs}
           />
         </table>

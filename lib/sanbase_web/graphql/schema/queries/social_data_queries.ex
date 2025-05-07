@@ -83,6 +83,29 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
     end
 
     @desc ~s"""
+    Returns lists with trending stories
+
+    * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    * interval - a string representing at what interval the words are returned
+    * size - an integer showing how many words should be included in the top list (max 30)
+    """
+    field :get_trending_stories, list_of(:trending_stories) do
+      meta(access: :restricted)
+
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :interval, default_value: "1d")
+      arg(:size, non_null(:integer))
+
+      arg(:source, :trending_stories_source)
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(AccessControl, %{allow_realtime_data: true})
+      cache_resolve(&SocialDataResolver.get_trending_stories/3, ttl: 600, max_ttl_offset: 240)
+    end
+
+    @desc ~s"""
     Returns lists with the position of a word in the list of trending words
     over time
 

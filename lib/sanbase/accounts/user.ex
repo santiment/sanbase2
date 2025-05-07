@@ -34,6 +34,7 @@ defmodule Sanbase.Accounts.User do
   @allowed_metric_access_levels ["alpha", "beta", "released"]
 
   @preloads [:roles, [roles: :role], :eth_accounts, :user_settings]
+  def preloads(), do: @preloads
 
   @derive {Inspect,
            except: [
@@ -214,6 +215,7 @@ defmodule Sanbase.Accounts.User do
     %__MODULE__{}
     |> changeset(attrs)
     |> Repo.insert()
+    |> maybe_preload_struct()
     |> emit_event(:create_user, %{})
   end
 
@@ -221,7 +223,27 @@ defmodule Sanbase.Accounts.User do
     user
     |> changeset(attrs)
     |> Repo.update()
+    |> maybe_preload_struct()
     |> emit_event(:update_user, %{})
+  end
+
+  def atomic_update_registration_state(user_id, old_state, new_state, opts \\ []) do
+    from(
+      user in __MODULE__,
+      where:
+        user.id == ^user_id and
+          fragment(
+            "registration_state->'state' = ?",
+            ^old_state
+          ),
+      update: [set: [registration_state: ^new_state]],
+      select: user
+    )
+    |> Repo.update_all([])
+    |> case do
+      {1, [user]} -> {1, [Repo.preload(user, @preloads)]}
+      other -> other
+    end
   end
 
   def by_id!(user_id) do
@@ -356,7 +378,12 @@ defmodule Sanbase.Accounts.User do
         {:ok, user}
 
       false ->
-        user |> changeset(%{field => value}) |> Repo.update()
+        # Calling local update/2 will collide with import Ecto.Query
+        user
+        |> changeset(%{field => value})
+        |> Repo.update()
+        |> maybe_preload_struct()
+        |> emit_event(:update_user, %{})
     end
   end
 
@@ -457,16 +484,6 @@ defmodule Sanbase.Accounts.User do
     |> Repo.all()
   end
 
-  @doc ~s"""
-  Used to
-  """
-  def update_profile(%__MODULE__{} = user, attrs) do
-    user
-    |> changeset(attrs)
-    |> Repo.update()
-    |> emit_event(:update_user_profile, %{})
-  end
-
   # Private functions
 
   defp maybe_preload(query, opts) do
@@ -479,4 +496,7 @@ defmodule Sanbase.Accounts.User do
         query
     end
   end
+
+  defp maybe_preload_struct({:ok, %__MODULE__{} = user}), do: {:ok, Repo.preload(user, @preloads)}
+  defp maybe_preload_struct({:error, _} = error), do: error
 end

@@ -38,7 +38,15 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       metric = get_free_timeseries_element(context.next_integer.(), @product, :metric)
       slug = context.project.slug
       selector = %{slug: slug}
+
+      # timeseriesData
       query = metric_query(metric, selector, from, to)
+      result = execute_query(context.conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+
+      # timeseriesDataJson
+      query = metric_json_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
       assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
@@ -68,7 +76,17 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, "FREE")
       slug = context.project.slug
       selector = %{slug: slug}
+
+      # timeseriesData
       query = metric_query(metric, selector, from, to)
+      result = execute_query(context.conn, query, "getMetric")
+
+      assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
+      refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+
+      # timeseriesDataJson
+      query = metric_json_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
       assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
@@ -103,7 +121,16 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
         metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, "FREE")
         slug = context.project.slug
         selector = %{slug: slug}
+
+        # timeseriesData
         query = metric_query(metric, selector, from, to)
+        result = execute_query(context.conn, query, "getMetric")
+
+        assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+        assert result != nil
+
+        # timeseriesDataJson
+        query = metric_json_query(metric, selector, from, to)
         result = execute_query(context.conn, query, "getMetric")
 
         assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
@@ -133,7 +160,15 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       metric = get_free_timeseries_element(context.next_integer.(), @product, :metric)
       slug = context.project.slug
       selector = %{slug: slug}
+
+      # timeseriesData
       query = metric_query(metric, selector, from, to)
+      result = execute_query(context.conn, query, "getMetric")
+      assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+
+      # timeseriesDataJson
+      query = metric_json_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
       assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
@@ -165,7 +200,16 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
       slug = context.project.slug
       selector = %{slug: slug}
+
+      # timeseriesData
       query = metric_query(metric, selector, from, to)
+      result = execute_query(context.conn, query, "getMetric")
+
+      assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+
+      # timeseriesDataJson
+      query = metric_json_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
       assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
@@ -198,7 +242,17 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :basic)
       slug = context.project.slug
       selector = %{slug: slug}
+
+      # timeseriesData
       query = metric_query(metric, selector, from, to)
+      result = execute_query(context.conn, query, "getMetric")
+
+      assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
+      refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+
+      # timeseriesDataJson
+      query = metric_json_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
       assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
@@ -212,7 +266,16 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :basic)
       slug = context.project.slug
       selector = %{slug: slug}
+
+      # timeseriesData
       query = metric_query(metric, selector, from, to)
+      result = execute_query_with_error(context.conn, query, "getMetric")
+
+      refute called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
+      assert result != nil
+
+      # timeseriesDataJson
+      query = metric_json_query(metric, selector, from, to)
       result = execute_query_with_error(context.conn, query, "getMetric")
 
       refute called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
@@ -224,7 +287,16 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :basic)
       slug = context.project.slug
       selector = %{slug: slug}
+
+      # timeseriesData
       query = metric_query(metric, selector, from, to)
+      result = execute_query(context.conn, query, "getMetric")
+
+      assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+
+      # timeseriesDataJson
+      query = metric_json_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
       assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
@@ -246,7 +318,26 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       metric = "withdrawal_balance"
       slug = context.project.slug
       selector = %{slug: slug}
+
+      # timeseriesData
       query = metric_query(metric, selector, from, to)
+      error_message = execute_query_with_error(context.conn, query, "getMetric")
+
+      refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+
+      assert error_message ==
+               """
+               The metric #{metric} is not accessible with the currently used \
+               SANAPI BASIC subscription. Please upgrade to SANAPI PRO subscription \
+               or a Custom Plan that has access to it.
+
+               If you have a subscription for one product but attempt to fetch data using \
+               another product, this error will still be shown. The data on SANBASE cannot \
+               be fetched with a SANAPI subscription and vice versa.
+               """
+
+      # timeseriesDataJson
+      query = metric_json_query(metric, selector, from, to)
       error_message = execute_query_with_error(context.conn, query, "getMetric")
 
       refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
@@ -288,7 +379,16 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       metric = "active_deposits"
       slug = context.project.slug
       selector = %{slug: slug}
+      #
+      # timeseriesData
       query = metric_query(metric, selector, from, to)
+      result = execute_query(context.conn, query, "getMetric")
+
+      assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
+      assert result != nil
+
+      # timeseriesDataJson
+      query = metric_json_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
       assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
@@ -307,7 +407,15 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       metric = get_free_timeseries_element(context.next_integer.(), @product, :metric)
       slug = context.project.slug
       selector = %{slug: slug}
+
+      # timeseriesData
       query = metric_query(metric, selector, from, to)
+      result = execute_query(context.conn, query, "getMetric")
+      assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+
+      # timeseriesDataJson
+      query = metric_json_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
       assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
@@ -337,7 +445,16 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, "PRO")
       slug = context.project.slug
       selector = %{slug: slug}
+
+      # timeseriesData
       query = metric_query(metric, selector, from, to)
+      result = execute_query(context.conn, query, "getMetric")
+
+      assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+
+      # timeseriesDataJson
+      query = metric_json_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
       assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
@@ -359,7 +476,16 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, "PRO")
       slug = context.project.slug
       selector = %{slug: slug}
+
+      # timeseriesData
       query = metric_query(metric, selector, from, to)
+      result = execute_query(context.conn, query, "getMetric")
+
+      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+
+      # timeseriesDataJson
+      query = metric_json_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
       assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
@@ -381,7 +507,16 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, "PRO")
       slug = context.project.slug
       selector = %{slug: slug}
+
+      # timeseriesData
       query = metric_query(metric, selector, from, to)
+      result = execute_query(context.conn, query, "getMetric")
+
+      assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+
+      # timeseriesDataJson
+      query = metric_json_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
       assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
@@ -403,7 +538,16 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       metric = "mvrv_long_short_diff_usd"
       slug = context.project.slug
       selector = %{slug: slug}
+
+      # timeseriesData
       query = metric_query(metric, selector, from, to)
+      result = execute_query(context.conn, query, "getMetric")
+
+      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+
+      # timeseriesDataJson
+      query = metric_json_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
       assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
@@ -422,7 +566,15 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       metric = get_free_timeseries_element(context.next_integer.(), @product, :metric)
       slug = context.project.slug
       selector = %{slug: slug}
+
+      # timeseriesData
       query = metric_query(metric, selector, from, to)
+      result = execute_query(context.conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+
+      # timeseriesDataJson
+      query = metric_json_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
       assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
@@ -452,7 +604,15 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, "CUSTOM")
       slug = context.project.slug
       selector = %{slug: slug}
+
+      # timeseriesData
       query = metric_query(metric, selector, from, to)
+      result = execute_query(context.conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+
+      # timeseriesDataJson
+      query = metric_json_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
       assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
@@ -473,7 +633,15 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       metric = "holders_distribution_0.01_to_0.1"
       slug = context.project.slug
       selector = %{slug: slug}
+
+      # timeseriesData
       query = metric_query(metric, selector, from, to)
+      result = execute_query(context.conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+
+      # timeseriesDataJson
+      query = metric_json_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
       assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
@@ -527,7 +695,15 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       metric = "mean_age"
       slug = context.project.slug
       selector = %{slug: slug}
+
+      # timeseriesData
       query = metric_query(metric, selector, from, to)
+      result = execute_query(data.apikey_conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+
+      # timeseriesDataJson
+      query = metric_json_query(metric, selector, from, to)
       result = execute_query(data.apikey_conn, query, "getMetric")
       assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
@@ -539,7 +715,16 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       metric = "mean_age"
       slug = context.project.slug
       selector = %{slug: slug}
+
+      # timeseriesData
       query = metric_query(metric, selector, from, to)
+      result = execute_query(data.apikey_conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
+      refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+
+      # timeseriesDataJson
+      query = metric_json_query(metric, selector, from, to)
       result = execute_query(data.apikey_conn, query, "getMetric")
       assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
       refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
@@ -552,7 +737,16 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       metric = "mean_age"
       slug = context.project.slug
       selector = %{slug: slug}
+
+      # timeseriesData
       query = metric_query(metric, selector, from, to)
+      result = execute_query(data.apikey_conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
+      refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+
+      # timeseriesDataJson
+      query = metric_json_query(metric, selector, from, to)
       result = execute_query(data.apikey_conn, query, "getMetric")
       assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
       refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
@@ -566,7 +760,15 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       metric = "mean_age"
       slug = context.project.slug
       selector = %{slug: slug}
+
+      # timeseriesData
       query = metric_query(metric, selector, from, to)
+      result = execute_query(data.apikey_conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+
+      # timeseriesDataJson
+      query = metric_json_query(metric, selector, from, to)
       result = execute_query(data.apikey_conn, query, "getMetric")
       assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
@@ -578,7 +780,16 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       metric = "mean_age"
       slug = context.project.slug
       selector = %{slug: slug}
+
+      # timeseriesData
       query = metric_query(metric, selector, from, to)
+      result = execute_query(data.apikey_conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
+      refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+
+      # timeseriesDataJson
+      query = metric_json_query(metric, selector, from, to)
       result = execute_query(data.apikey_conn, query, "getMetric")
       assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
       refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
@@ -591,7 +802,16 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       metric = "mean_age"
       slug = context.project.slug
       selector = %{slug: slug}
+
+      # timeseriesData
       query = metric_query(metric, selector, from, to)
+      result = execute_query(data.apikey_conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
+      refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+
+      # timeseriesDataJson
+      query = metric_json_query(metric, selector, from, to)
       result = execute_query(data.apikey_conn, query, "getMetric")
       assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
       refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
@@ -605,7 +825,15 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       metric = "mean_age"
       slug = context.project.slug
       selector = %{slug: slug}
+
+      # timeseriesData
       query = metric_query(metric, selector, from, to)
+      result = execute_query(data.apikey_conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+
+      # timeseriesDataJson
+      query = metric_json_query(metric, selector, from, to)
       result = execute_query(data.apikey_conn, query, "getMetric")
       assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
@@ -617,7 +845,16 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       metric = "mean_age"
       slug = context.project.slug
       selector = %{slug: slug}
+
+      # timeseriesData
       query = metric_query(metric, selector, from, to)
+      result = execute_query(data.apikey_conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
+      refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+
+      # timeseriesDataJson
+      query = metric_json_query(metric, selector, from, to)
       result = execute_query(data.apikey_conn, query, "getMetric")
       assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
       refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
@@ -631,7 +868,15 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       metric = "mean_age"
       slug = context.project.slug
       selector = %{slug: slug}
+
+      # timeseriesData
       query = metric_query(metric, selector, from, to)
+      result = execute_query(data.apikey_conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+
+      # timeseriesDataJson
+      query = metric_json_query(metric, selector, from, to)
       result = execute_query(data.apikey_conn, query, "getMetric")
       assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
@@ -643,7 +888,16 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       metric = "mean_age"
       slug = context.project.slug
       selector = %{slug: slug}
+
+      # timeseriesData
       query = metric_query(metric, selector, from, to)
+      result = execute_query(data.apikey_conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
+      refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+
+      # timeseriesDataJson
+      query = metric_json_query(metric, selector, from, to)
       result = execute_query(data.apikey_conn, query, "getMetric")
       assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
       refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
@@ -656,7 +910,15 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       metric = "mean_age"
       slug = context.project.slug
       selector = %{slug: slug}
+
+      # timeseriesData
       query = metric_query(metric, selector, from, to)
+      result = execute_query(data.apikey_conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+
+      # timeseriesDataJson
+      query = metric_json_query(metric, selector, from, to)
       result = execute_query(data.apikey_conn, query, "getMetric")
       assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
@@ -676,7 +938,15 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       metric = "mean_realized_price_usd_1d"
       slug = context.project.slug
       selector = %{slug: slug}
+
+      # timeseriesData
       query = metric_query(metric, selector, from, to)
+      result = execute_query(data.apikey_conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+
+      # timeseriesDataJson
+      query = metric_json_query(metric, selector, from, to)
       result = execute_query(data.apikey_conn, query, "getMetric")
       assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
@@ -700,6 +970,23 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
               datetime
               value
           }
+        }
+      }
+    """
+  end
+
+  defp metric_json_query(metric, selector, from, to) do
+    selector = extend_selector_with_required_fields(metric, selector)
+
+    """
+      {
+        getMetric(metric: "#{metric}") {
+          timeseriesData: timeseriesDataJson(
+            selector: #{map_to_input_object_str(selector)}
+            from: "#{from}"
+            to: "#{to}"
+            interval: "30d"
+            includeIncompleteData: true)
         }
       }
     """

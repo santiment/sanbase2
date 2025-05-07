@@ -24,6 +24,19 @@ defmodule Sanbase.Accounts.ApiKeyTest do
     assert user.id == retrieved_user.id
   end
 
+  test "cannot create more than N api keys", %{user: user} do
+    # Create 10 apikeys
+    limit = Sanbase.Accounts.UserApikeyToken.api_keys_per_user_limit()
+
+    for _ <- 1..limit do
+      assert {:ok, _} = Apikey.generate_apikey(user)
+    end
+
+    # Try to create the 11th and expect an error
+    assert {:error, error} = Apikey.generate_apikey(user)
+    assert error =~ "Cannot create more than #{limit} API keys"
+  end
+
   # Will find th token in the db but will fail at the hmac part
   test "fail when apikey second part is invalid", %{user: user} do
     {:ok, apikey} = Apikey.generate_apikey(user)

@@ -185,6 +185,9 @@ defmodule SanbaseWeb.Graphql.UserTypes do
       resolve(&UserResolver.permissions/3)
     end
 
+    field(:metric_access_level, :string)
+    field(:feature_access_level, :string)
+
     field :san_balance, :float do
       cache_resolve(&UserResolver.san_balance/3)
     end

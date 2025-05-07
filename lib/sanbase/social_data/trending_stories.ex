@@ -21,9 +21,9 @@ defmodule Sanbase.SocialData.TrendingStories do
     Sanbase.ClickhouseRepo.query_reduce(query_struct, %{}, fn
       [
         dt,
-        score,
         title,
         search_text,
+        score,
         related_tokens,
         summary,
         bullish_ratio,
@@ -50,9 +50,9 @@ defmodule Sanbase.SocialData.TrendingStories do
     sql = """
     SELECT
       t,
-      score,
       title,
       search_text,
+      score,
       related_tokens,
       summary,
       bullish_ratio,

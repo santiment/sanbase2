@@ -27,7 +27,7 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
       name: Keyword.fetch!(opts, :name),
       # When the keys reach 2 million, remove 30% of the
       # least recently written keys
-      limit: 500_000,
+      limit: 100_000,
       policy: Cachex.Policy.LRW,
       reclaim: 0.3,
       # How often the Janitor process runs to clean the cache
@@ -198,11 +198,22 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
   end
 
   defp cache_item(cache, {key, ttl}, value) when is_integer(ttl) do
-    Cachex.put(cache, key, value, ttl: :timer.seconds(ttl))
+    # TODO: Very hacky, fix asap
+    # This way we disallow storing some responses that are 10mb (for example) in the cache
+    # Cachex limits are put on the number of cached entries, not their size. Caching just a few hundred
+    # of those can take 2-5GB of memory, running the pod out of memory.
+    # We can swtich to using the complexity as a measurement. It is almost guaranteed that high complexity
+    # means a lot of data points, meaning a lot of data to be stored.
+    if :erts_debug.size(value) < 300_000 do
+      Cachex.put(cache, key, value, ttl: :timer.seconds(ttl))
+    end
   end
 
   defp cache_item(cache, key, value) do
-    Cachex.put(cache, key, value, ttl: :timer.seconds(@default_ttl_seconds))
+    # TODO: Very hacky, fix asap
+    if :erts_debug.size(value) < 300_000 do
+      Cachex.put(cache, key, value, ttl: :timer.seconds(@default_ttl_seconds))
+    end
   end
 
   defp true_key({key, ttl}) when is_integer(ttl), do: key

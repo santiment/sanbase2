@@ -27,7 +27,7 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
       name: Keyword.fetch!(opts, :name),
       # When the keys reach 2 million, remove 30% of the
       # least recently written keys
-      limit: 2_000_000,
+      limit: 500_000,
       policy: Cachex.Policy.LRW,
       reclaim: 0.3,
       # How often the Janitor process runs to clean the cache

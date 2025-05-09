@@ -78,9 +78,6 @@ defmodule SanbaseWeb.Router do
     # Project Changelog routes
     live("/project_changelog", ProjectChangelogLive)
 
-    # Tweets prediction classifier route
-    live("/tweets_prediction", TweetsPredictionLive)
-
     scope "/metric_registry" do
       live_session :require_authenticated_user,
         on_mount: [
@@ -109,6 +106,16 @@ defmodule SanbaseWeb.Router do
         live("/groups/new", GroupLive.Form, :new)
         live("/groups/edit/:id", GroupLive.Form, :edit)
         live("/changelog", MetricChangelogLive)
+      end
+    end
+
+    scope "/tweets_prediction" do
+      live_session :tweets_prediction_authenticated_user,
+        on_mount: [
+          {SanbaseWeb.AdminUserAuth, :ensure_authenticated},
+          {SanbaseWeb.AdminUserAuth, :extract_and_assign_current_user_roles}
+        ] do
+        live("/", TweetsPredictionLive)
       end
     end
 

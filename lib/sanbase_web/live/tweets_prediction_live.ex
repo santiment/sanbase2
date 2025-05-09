@@ -38,7 +38,7 @@ defmodule SanbaseWeb.TweetsPredictionLive do
     # Get tweet classification counts
     counts = TweetPrediction.get_counts()
 
-    case TweetsApi.fetch_tweets() do
+    case TweetsApi.fetch_tweets(socket.assigns.current_user.email) do
       {:ok, tweets} ->
         # Filter out already classified tweets
         filtered_tweets =

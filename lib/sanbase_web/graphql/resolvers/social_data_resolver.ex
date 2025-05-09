@@ -297,10 +297,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
           | title: "***",
             summary: "***",
             search_text: "***",
-            related_tokens: ["***"],
-            bullish_ratio: -1,
-            bearish_ratio: -1,
-            bearish_summary: "***"
+            related_tokens: ["***"]
         }
       else
         story

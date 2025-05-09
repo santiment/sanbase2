@@ -31,7 +31,7 @@ defmodule Sanbase.Accounts.User do
 
   # User with free subscription that is used for external integration testing
   @sanbase_bot_email "sanbase.bot@santiment.net"
-  @allowed_metric_access_levels ["alpha", "beta", "released"]
+  @allowed_access_levels ["alpha", "beta", "released"]
 
   @preloads [:roles, [roles: :role], :eth_accounts, :user_settings]
   def preloads(), do: @preloads
@@ -96,6 +96,7 @@ defmodule Sanbase.Accounts.User do
     field(:marketing_accepted, :boolean, default: false)
 
     field(:metric_access_level, :string, default: "released")
+    field(:feature_access_level, :string, default: "released")
 
     has_one(:user_settings, UserSettings, on_delete: :delete_all)
 
@@ -180,6 +181,7 @@ defmodule Sanbase.Accounts.User do
       :username,
       :name,
       :metric_access_level,
+      :feature_access_level,
       :registration_state,
       :description,
       :website_url,
@@ -198,7 +200,8 @@ defmodule Sanbase.Accounts.User do
     |> unique_constraint(:username)
     |> unique_constraint(:stripe_customer_id)
     |> unique_constraint(:twitter_id)
-    |> validate_inclusion(:metric_access_level, @allowed_metric_access_levels)
+    |> validate_inclusion(:metric_access_level, @allowed_access_levels)
+    |> validate_inclusion(:feature_access_level, @allowed_access_levels)
   end
 
   def san_balance(user), do: __MODULE__.SanBalance.san_balance(user)

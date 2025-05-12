@@ -23,10 +23,15 @@ defmodule SanbaseWeb.GenericAdmin.User do
         :test_san_balance,
         :email,
         :stripe_customer_id,
-        :metric_access_level
+        :metric_access_level,
+        :feature_access_level
       ],
       fields_override: %{
         metric_access_level: %{
+          type: :select,
+          collection: ~w[alpha beta released]
+        },
+        feature_access_level: %{
           type: :select,
           collection: ~w[alpha beta released]
         },

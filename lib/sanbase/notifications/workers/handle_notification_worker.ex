@@ -1,5 +1,5 @@
 defmodule Sanbase.Notifications.Workers.HandleNotificationWorker do
-  use Oban.Worker, queue: :reminder_notifications_queue
+  use Oban.Worker, queue: :notifications_queue
 
   alias Sanbase.Notifications.Handler
 

@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.10 (Homebrew)
--- Dumped by pg_dump version 15.10 (Homebrew)
+-- Dumped from database version 15.1 (Homebrew)
+-- Dumped by pg_dump version 15.1 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -2114,9 +2114,9 @@ CREATE TABLE public.metric_registry (
     deprecation_note text,
     inserted_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
+    status character varying(255) DEFAULT 'released'::character varying NOT NULL,
     is_verified boolean DEFAULT true NOT NULL,
     sync_status character varying(255) DEFAULT 'synced'::character varying NOT NULL,
-    status character varying(255) DEFAULT 'released'::character varying NOT NULL,
     last_sync_datetime timestamp(0) without time zone
 );
 
@@ -3588,6 +3588,59 @@ CREATE SEQUENCE public.schedule_rescrape_prices_id_seq
 --
 
 ALTER SEQUENCE public.schedule_rescrape_prices_id_seq OWNED BY public.schedule_rescrape_prices.id;
+
+
+--
+-- Name: scheduled_deprecation_notifications; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.scheduled_deprecation_notifications (
+    id bigint NOT NULL,
+    deprecation_date date NOT NULL,
+    contact_list_name character varying(255) NOT NULL,
+    api_endpoint character varying(255) NOT NULL,
+    links character varying(255)[] NOT NULL,
+    schedule_email_subject character varying(255) NOT NULL,
+    schedule_email_html text NOT NULL,
+    schedule_email_scheduled_at timestamp(0) without time zone NOT NULL,
+    schedule_email_job_id character varying(255),
+    schedule_email_sent_at timestamp(0) without time zone,
+    schedule_email_dispatch_status character varying(255) DEFAULT 'pending'::character varying NOT NULL,
+    reminder_email_subject character varying(255) NOT NULL,
+    reminder_email_html text NOT NULL,
+    reminder_email_scheduled_at timestamp(0) without time zone NOT NULL,
+    reminder_email_job_id character varying(255),
+    reminder_email_sent_at timestamp(0) without time zone,
+    reminder_email_dispatch_status character varying(255) DEFAULT 'pending'::character varying NOT NULL,
+    executed_email_subject character varying(255) NOT NULL,
+    executed_email_html text NOT NULL,
+    executed_email_scheduled_at timestamp(0) without time zone NOT NULL,
+    executed_email_job_id character varying(255),
+    executed_email_sent_at timestamp(0) without time zone,
+    executed_email_dispatch_status character varying(255) DEFAULT 'pending'::character varying NOT NULL,
+    status character varying(255) DEFAULT 'pending'::character varying NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: scheduled_deprecation_notifications_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.scheduled_deprecation_notifications_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: scheduled_deprecation_notifications_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.scheduled_deprecation_notifications_id_seq OWNED BY public.scheduled_deprecation_notifications.id;
 
 
 --
@@ -5676,6 +5729,13 @@ ALTER TABLE ONLY public.schedule_rescrape_prices ALTER COLUMN id SET DEFAULT nex
 
 
 --
+-- Name: scheduled_deprecation_notifications id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.scheduled_deprecation_notifications ALTER COLUMN id SET DEFAULT nextval('public.scheduled_deprecation_notifications_id_seq'::regclass);
+
+
+--
 -- Name: seen_timeline_events id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6707,6 +6767,14 @@ ALTER TABLE ONLY public.sanr_emails
 
 ALTER TABLE ONLY public.schedule_rescrape_prices
     ADD CONSTRAINT schedule_rescrape_prices_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: scheduled_deprecation_notifications scheduled_deprecation_notifications_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.scheduled_deprecation_notifications
+    ADD CONSTRAINT scheduled_deprecation_notifications_pkey PRIMARY KEY (id);
 
 
 --
@@ -7829,6 +7897,20 @@ CREATE UNIQUE INDEX sanr_emails_email_index ON public.sanr_emails USING btree (e
 --
 
 CREATE INDEX schedule_rescrape_prices_project_id_index ON public.schedule_rescrape_prices USING btree (project_id);
+
+
+--
+-- Name: scheduled_deprecation_notifications_deprecation_date_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX scheduled_deprecation_notifications_deprecation_date_index ON public.scheduled_deprecation_notifications USING btree (deprecation_date);
+
+
+--
+-- Name: scheduled_deprecation_notifications_status_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX scheduled_deprecation_notifications_status_index ON public.scheduled_deprecation_notifications USING btree (status);
 
 
 --
@@ -10050,20 +10132,19 @@ INSERT INTO public."schema_migrations" (version) VALUES (20241029080754);
 INSERT INTO public."schema_migrations" (version) VALUES (20241029082533);
 INSERT INTO public."schema_migrations" (version) VALUES (20241029151959);
 INSERT INTO public."schema_migrations" (version) VALUES (20241030141825);
+INSERT INTO public."schema_migrations" (version) VALUES (20241104061632);
 INSERT INTO public."schema_migrations" (version) VALUES (20241104115340);
 INSERT INTO public."schema_migrations" (version) VALUES (20241108112754);
 INSERT INTO public."schema_migrations" (version) VALUES (20241112094924);
 INSERT INTO public."schema_migrations" (version) VALUES (20241114140339);
 INSERT INTO public."schema_migrations" (version) VALUES (20241114141110);
 INSERT INTO public."schema_migrations" (version) VALUES (20241116104556);
-INSERT INTO public."schema_migrations" (version) VALUES (20241121133719);
 INSERT INTO public."schema_migrations" (version) VALUES (20241128113958);
 INSERT INTO public."schema_migrations" (version) VALUES (20241128161315);
 INSERT INTO public."schema_migrations" (version) VALUES (20241202104812);
 INSERT INTO public."schema_migrations" (version) VALUES (20241212054904);
 INSERT INTO public."schema_migrations" (version) VALUES (20250110083203);
 INSERT INTO public."schema_migrations" (version) VALUES (20250121155544);
-INSERT INTO public."schema_migrations" (version) VALUES (20250124152414);
 INSERT INTO public."schema_migrations" (version) VALUES (20250203104426);
 INSERT INTO public."schema_migrations" (version) VALUES (20250207100755);
 INSERT INTO public."schema_migrations" (version) VALUES (20250207134446);
@@ -10087,3 +10168,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250416132314);
 INSERT INTO public."schema_migrations" (version) VALUES (20250507135031);
 INSERT INTO public."schema_migrations" (version) VALUES (20250512124853);
 INSERT INTO public."schema_migrations" (version) VALUES (20250512130838);
+INSERT INTO public."schema_migrations" (version) VALUES (20250512140823);

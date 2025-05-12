@@ -123,6 +123,9 @@ defmodule SanbaseWeb.Router do
     live "/notifications/manual/discord", NotificationsLive.ManualDiscordFormLive
     live "/notifications/manual/email", NotificationsLive.ManualEmailFormLive
     live "/notifications/digest/:action", NotificationsLive.DigestFormLive
+    # Add route for scheduled deprecation notification UI
+    live "/scheduled_deprecations", ScheduledDeprecationIndexLive, :index
+    live "/scheduled_deprecations/new", ScheduledDeprecationLive, :new
 
     resources("/reports", ReportController)
     resources("/sheets_templates", SheetsTemplateController)

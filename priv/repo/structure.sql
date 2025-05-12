@@ -10085,3 +10085,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250414115309);
 INSERT INTO public."schema_migrations" (version) VALUES (20250414122835);
 INSERT INTO public."schema_migrations" (version) VALUES (20250416132314);
 INSERT INTO public."schema_migrations" (version) VALUES (20250507135031);
+INSERT INTO public."schema_migrations" (version) VALUES (20250512124853);

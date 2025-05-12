@@ -34,6 +34,23 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     value(:jwt)
   end
 
+  @desc ~s"""
+  Shows what is the access level of the user for a given flag.
+  Access levels can be:
+    - Early Access - ALPHA and BETA
+    - Standard Access - RELEASED. Default for everyone
+
+  When a user has early access set (for metrics, for features, etc.) the user
+  can access that metric/feature before it is released for everyone.
+  The access level by default is RELEASED. It can be changed only manually by a
+  Santiment Administrator.
+  """
+  enum :user_access_level do
+    value(:alpha)
+    value(:beta)
+    value(:released)
+  end
+
   input_object :user_selector_input_object do
     field(:id, :id)
     field(:email, :string)
@@ -185,8 +202,13 @@ defmodule SanbaseWeb.Graphql.UserTypes do
       resolve(&UserResolver.permissions/3)
     end
 
-    field(:metric_access_level, :string)
-    field(:feature_access_level, :string)
+    field :metric_access_level, non_null(:user_access_level) do
+      resolve(&UserResolver.metric_access_level/3)
+    end
+
+    field :feature_access_level, non_null(:user_access_level) do
+      resolve(&UserResolver.feature_access_level/3)
+    end
 
     field :san_balance, :float do
       cache_resolve(&UserResolver.san_balance/3)

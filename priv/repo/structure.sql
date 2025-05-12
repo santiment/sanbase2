@@ -4687,7 +4687,7 @@ CREATE TABLE public.users (
     description text,
     website_url character varying(255),
     twitter_handle character varying(255),
-    feature_access_level character varying(255)
+    feature_access_level character varying(255) DEFAULT 'released'::character varying NOT NULL
 );
 
 
@@ -10166,4 +10166,6 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250414115309);
 INSERT INTO public."schema_migrations" (version) VALUES (20250414122835);
 INSERT INTO public."schema_migrations" (version) VALUES (20250416132314);
 INSERT INTO public."schema_migrations" (version) VALUES (20250507135031);
+INSERT INTO public."schema_migrations" (version) VALUES (20250512124853);
+INSERT INTO public."schema_migrations" (version) VALUES (20250512130838);
 INSERT INTO public."schema_migrations" (version) VALUES (20250512140823);

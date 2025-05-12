@@ -18,7 +18,6 @@ defmodule Sanbase.Notifications.DeprecationTemplates do
         template_html: """
         <p>Hello,</p>
         <p>Please be advised that the API endpoint <strong>{{api_endpoint}}</strong> is scheduled for deprecation on <strong>{{scheduled_at_formatted}}</strong>.</p>
-        <p>For more details, please visit:</p>
         {{links_html}}
         <p>Thank you,<br/>The Santiment Team</p>
         """
@@ -30,7 +29,6 @@ defmodule Sanbase.Notifications.DeprecationTemplates do
         template_html: """
         <p>Hello,</p>
         <p>This is a reminder that the API endpoint <strong>{{api_endpoint}}</strong> will be deprecated on <strong>{{scheduled_at_formatted}}</strong> (in 3 days).</p>
-        <p>For more details, please visit:</p>
         {{links_html}}
         <p>Thank you,<br/>The Santiment Team</p>
         """
@@ -42,7 +40,6 @@ defmodule Sanbase.Notifications.DeprecationTemplates do
         template_html: """
         <p>Hello,</p>
         <p>The API endpoint <strong>{{api_endpoint}}</strong> has now been deprecated as scheduled.</p>
-        <p>Please refer to the following links for alternatives or documentation:</p>
         {{links_html}}
         <p>Thank you,<br/>The Santiment Team</p>
         """

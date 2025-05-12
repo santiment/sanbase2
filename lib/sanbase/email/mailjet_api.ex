@@ -277,8 +277,8 @@ defmodule Sanbase.Email.MailjetApi do
 
   defp has_mailjet_params?() do
     has? =
-      not is_nil(Config.module_get(Sanbase.TempalteMailer, :api_key)) and
-        not is_nil(Config.module_get(Sanbase.TempalteMailer, :secret))
+      not is_nil(Config.module_get(Sanbase.TemplateMailer, :api_key)) and
+        not is_nil(Config.module_get(Sanbase.TemplateMailer, :secret))
 
     if has? do
       true

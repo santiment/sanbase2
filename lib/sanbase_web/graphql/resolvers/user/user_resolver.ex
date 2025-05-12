@@ -23,6 +23,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
     {:ok, flag}
   end
 
+  def feature_access_level(%User{feature_access_level: level}, _args, _resolution) do
+    level_to_atom(level)
+  end
+
+  def metric_access_level(%User{feature_access_level: level}, _args, _resolution) do
+    level_to_atom(level)
+  end
+
+  defp level_to_atom(level) do
+    case level do
+      "alpha" -> {:ok, :alpha}
+      "beta" -> {:ok, :beta}
+      "released" -> {:ok, :released}
+      _ -> {:error, "Invalid access level"}
+    end
+  end
+
   def email(%User{email: nil}, _args, _resolution), do: {:ok, nil}
 
   def email(%User{id: id, email: email}, _args, %{

@@ -137,20 +137,7 @@ defmodule SanbaseWeb.Graphql.Complexity do
         """)
       end
 
-      if complexity > 50_000 and complexity / selector_weight < 50_000 and selector_weight > 1 do
-        map = get_in(struct.context[:auth]) || %{}
-        product = map[:requested_product] || "unknown"
-        user_id = (map[:current_user] || %{}) |> Map.get(:id)
-
-        Logger.warning("""
-        [ComplexitySelector] If the selector_weight #{selector_weight} is included in the complexity
-        computation, the API call would have been rejected. Computed complexity is #{complexity}.
-        Args: #{metric}, #{from}, #{to}, #{interval_seconds}, #{child_complexity}
-        Plan: #{plan}, product: #{product}, user_id: #{user_id || "anon"}
-        """)
-      end
-
-      complexity / selector_weight
+      complexity
     end)
     |> Sanbase.Math.to_integer()
   end

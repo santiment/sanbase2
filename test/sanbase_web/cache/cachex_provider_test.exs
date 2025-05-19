@@ -37,7 +37,7 @@ defmodule SanbaseWeb.Graphql.CachexProviderTest do
           send(test_pid, "message from precalculation")
           {:ok, "Hello"}
         end,
-        & &1
+        fn _, _, _ -> :ok end
       )
     end
 
@@ -59,7 +59,7 @@ defmodule SanbaseWeb.Graphql.CachexProviderTest do
         send(test_pid, "message from precalculation")
         {:ok, "Hello"}
       end,
-      & &1
+      fn _, _, _ -> :ok end
     )
 
     assert_receive("message from precalculation")
@@ -71,7 +71,7 @@ defmodule SanbaseWeb.Graphql.CachexProviderTest do
         send(test_pid, "message from precalculation")
         {:ok, "Hello"}
       end,
-      & &1
+      fn _, _, _ -> :ok end
     )
 
     refute_receive("message from precalculation")
@@ -88,7 +88,7 @@ defmodule SanbaseWeb.Graphql.CachexProviderTest do
         send(test_pid, "message from precalculation")
         {:error, "Goodbye"}
       end,
-      & &1
+      fn _, _, _ -> :ok end
     )
 
     assert_receive("message from precalculation")
@@ -100,7 +100,7 @@ defmodule SanbaseWeb.Graphql.CachexProviderTest do
         send(test_pid, "message from precalculation")
         {:error, "Goodbye"}
       end,
-      & &1
+      fn _, _, _ -> :ok end
     )
 
     assert_receive("message from precalculation")

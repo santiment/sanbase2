@@ -3,7 +3,8 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
 
   alias Sanbase.Repo
   alias Sanbase.Comment
-  alias Sanbase.Model.{MarketSegment, Infrastructure}
+  alias Sanbase.Model.MarketSegment
+  alias Sanbase.Model.Infrastructure
 
   def data() do
     Dataloader.KV.new(&query/2)
@@ -62,15 +63,26 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
     Map.new(users, &{&1.id, &1})
   end
 
-  def query(:market_segment, market_segment_ids) do
-    market_segment_ids = Enum.to_list(market_segment_ids)
+  def query(:market_segments, project_ids) do
+    project_ids = Enum.to_list(project_ids)
 
     from(ms in MarketSegment,
-      where: ms.id in ^market_segment_ids
+      join: p in assoc(ms, :projects),
+      where: p.id in ^project_ids,
+      select: {p.id, ms.name}
     )
     |> Repo.all()
-    |> Enum.map(fn %MarketSegment{id: id, name: name} -> {id, name} end)
+    |> Enum.group_by(fn {project_id, _segment} -> project_id end, fn {_project_id, segment} ->
+      segment
+    end)
     |> Map.new()
+  end
+
+  def query(:social_volume_query, project_ids) do
+    project_ids = Enum.to_list(project_ids)
+
+    Sanbase.Project.SocialVolumeQuery.by_project_ids(project_ids)
+    |> Map.new(&{&1.project_id, &1})
   end
 
   def query(:infrastructure, infrastructure_ids) do

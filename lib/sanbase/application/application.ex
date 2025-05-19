@@ -348,7 +348,7 @@ defmodule Sanbase.Application do
        [
          id: :sanbase_generic_cache,
          name: Sanbase.Cache.name(),
-         ttl_check_interval: :timer.seconds(30),
+         ttl_check_interval: :timer.seconds(15),
          global_ttl: :timer.minutes(5),
          acquire_lock_timeout: 60_000
        ]},

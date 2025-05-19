@@ -93,8 +93,12 @@ defmodule Sanbase.SocialData.TrendingStories do
   end
 
   defp default_source() do
-    ch_url = System.get_env("CLICKHOUSE_URL") || ""
+    ch_url = System.get_env("CLICKHOUSE_DATABASE_URL") || ""
 
-    if ch_url =~ "prduction", do: "twitter_crypto", else: "telegram"
+    # On prod we use the service name. When connection to the DB locally
+    # the connection string is one that is resolved by the VPN.
+    if String.contains?(ch_url, ["default.svc.cluster", "production"]),
+      do: "twitter_crypto",
+      else: "telegram"
   end
 end

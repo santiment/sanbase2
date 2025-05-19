@@ -6,8 +6,6 @@ defmodule SanbaseWeb.Graphql.Cache do
   """
 
   alias __MODULE__, as: CacheMod
-  # alias SanbaseWeb.Graphql.ConCacheProvider, as: CacheProvider
-  # CachexProvider uses Cachex.fetch (fallback runs in worker → breaks Dataloader)
   alias SanbaseWeb.Graphql.CachexProvider, as: CacheProvider
 
   @ttl 300

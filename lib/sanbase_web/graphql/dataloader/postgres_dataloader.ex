@@ -3,7 +3,8 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
 
   alias Sanbase.Repo
   alias Sanbase.Comment
-  alias Sanbase.Model.{MarketSegment, Infrastructure}
+  alias Sanbase.Model.MarketSegment
+  alias Sanbase.Model.Infrastructure
   alias Sanbase.Project.{ContractAddress, ProjectMarketSegment, SourceSlugMapping}
   alias Sanbase.Project.SocialVolumeQuery
   alias Sanbase.ProjectEthAddress
@@ -57,17 +58,6 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
 
     {:ok, users} = Sanbase.Accounts.User.by_id(user_ids)
     Map.new(users, &{&1.id, &1})
-  end
-
-  def query(:market_segment, market_segment_ids) do
-    market_segment_ids = Enum.to_list(market_segment_ids)
-
-    from(ms in MarketSegment,
-      where: ms.id in ^market_segment_ids
-    )
-    |> Repo.all()
-    |> Enum.map(fn %MarketSegment{id: id, name: name} -> {id, name} end)
-    |> Map.new()
   end
 
   def query(:infrastructure, infrastructure_ids) do

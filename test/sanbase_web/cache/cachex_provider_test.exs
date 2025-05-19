@@ -6,8 +6,6 @@ defmodule SanbaseWeb.Graphql.CachexProviderTest do
   @cache_name :graphql_cache_test_name_cachex
   @cache_id :graphql_cache_test_id_cachex
 
-  @moduletag skip: true
-
   setup do
     {:ok, pid} = CacheProvider.start_link(name: @cache_name, id: @cache_id)
     on_exit(fn -> Process.exit(pid, :normal) end)
@@ -521,6 +519,49 @@ defmodule SanbaseWeb.Graphql.CachexProviderTest do
   end
 
   # ---------------------------------------------------------------------------
+  # get_or_store/4 — fallback execution context
+  #
+  # These tests guard against regressing back to `Cachex.fetch`, where the
+  # fallback runs inside the Courier worker process instead of the caller.
+  # That breaks Absinthe.Dataloader batching (loader is process-scoped) and
+  # any process-dict signals the caller has set.
+  # ---------------------------------------------------------------------------
+
+  test "get_or_store runs the fallback in the caller process (not a Cachex worker)" do
+    caller_pid = self()
+
+    CacheProvider.get_or_store(
+      @cache_name,
+      "fallback_caller_pid_key",
+      fn ->
+        send(caller_pid, {:fallback_ran_in, self()})
+        {:ok, "v"}
+      end,
+      & &1
+    )
+
+    assert_receive {:fallback_ran_in, fallback_pid}, 1000
+
+    assert fallback_pid == caller_pid,
+           "fallback ran in #{inspect(fallback_pid)} but caller is #{inspect(caller_pid)} — " <>
+             "Cachex.fetch would dispatch through Courier and break Dataloader batching"
+  end
+
+  test "get_or_store fallback observes the caller's process dictionary" do
+    Process.put(:caller_marker, :i_was_set_by_caller)
+
+    result =
+      CacheProvider.get_or_store(
+        @cache_name,
+        "fallback_pdict_key",
+        fn -> {:ok, Process.get(:caller_marker)} end,
+        & &1
+      )
+
+    assert {:ok, :i_was_set_by_caller} == result
+  end
+
+  # ---------------------------------------------------------------------------
   # configuration: default_ttl_seconds, reclaim, max_entries, limit_check_interval_ms
   # ---------------------------------------------------------------------------
 
@@ -550,13 +591,7 @@ defmodule SanbaseWeb.Graphql.CachexProviderTest do
       id = :cachex_config_reclaim_id
 
       {:ok, pid} =
-        CacheProvider.start_link(
-          name: name,
-          id: id,
-          max_entries: 5,
-          reclaim: 0.4,
-          limit_check_interval_ms: 100
-        )
+        CacheProvider.start_link(name: name, id: id, max_entries: 5, reclaim: 0.4)
 
       on_exit(fn -> Process.exit(pid, :normal) end)
 
@@ -564,7 +599,8 @@ defmodule SanbaseWeb.Graphql.CachexProviderTest do
         CacheProvider.store(name, "key_#{i}", {:ok, i})
       end
 
-      Process.sleep(250)
+      # Evented hook is async; let the mailbox drain.
+      Process.sleep(100)
 
       count = CacheProvider.count(name)
       expected_after_reclaim = 5 - round(5 * 0.4)

@@ -1,16 +1,12 @@
 defmodule SanbaseWeb.Graphql.CachexProvider do
   @behaviour SanbaseWeb.Graphql.CacheProvider
-  @default_ttl_seconds 300
-
-  @max_lock_acquired_time_ms 60_000
 
   import Cachex.Spec
 
-  @compile inline: [
-             execute_cache_miss_function: 4,
-             handle_execute_cache_miss_function: 4,
-             obtain_lock: 3
-           ]
+  @default_max_entries 2_000_000
+  @default_reclaim_ratio 0.3
+  @default_ttl_seconds 300
+  @default_expiration_interval_seconds 10
 
   @impl SanbaseWeb.Graphql.CacheProvider
   def start_link(opts) do
@@ -23,20 +19,24 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
   end
 
   defp opts(opts) do
+    max_entries = Keyword.get(opts, :max_entries, @default_max_entries)
+    reclaim = Keyword.get(opts, :reclaim, @default_reclaim_ratio)
+    default_ttl = Keyword.get(opts, :default_ttl_seconds, @default_ttl_seconds)
+
+    expiration_interval =
+      Keyword.get(opts, :expiration_interval_seconds, @default_expiration_interval_seconds)
+
     [
       name: Keyword.fetch!(opts, :name),
-      # When the keys reach 2 million, remove 30% of the
-      # least recently written keys
-      limit: 2_000_000,
-      policy: Cachex.Policy.LRW,
-      reclaim: 0.3,
-      # How often the Janitor process runs to clean the cache
-      interval: 5000,
-      # The default TTL of keys in the cache
+      # Cachex.Limit.Evented mirrors v3's Cachex.Policy.LRW: it hooks every
+      # write and prunes reactively, keeping ETS bounded near max_entries.
+      hooks: [
+        hook(module: Cachex.Limit.Evented, args: {max_entries, [reclaim: reclaim]})
+      ],
       expiration:
         expiration(
-          default: :timer.seconds(@default_ttl_seconds),
-          interval: :timer.seconds(10),
+          default: :timer.seconds(default_ttl),
+          interval: :timer.seconds(expiration_interval),
           lazy: true
         )
     ]
@@ -63,11 +63,8 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
   @impl SanbaseWeb.Graphql.CacheProvider
   def get(cache, key) do
     case Cachex.get(cache, true_key(key)) do
-      {:ok, compressed_value} when is_binary(compressed_value) ->
-        decompress_value(compressed_value)
-
-      _ ->
-        nil
+      {:ok, compressed} when is_binary(compressed) -> decompress_value(compressed)
+      _ -> nil
     end
   end
 
@@ -78,12 +75,12 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
         :ok
 
       {:nocache, _} ->
-        Process.put(:has_nocache_field, true)
-
+        Process.put(:do_not_cache_query, true)
         :ok
 
       _ ->
-        cache_item(cache, key, value)
+        Cachex.put(cache, true_key(key), compress_value(value), put_opts(key))
+        :ok
     end
   end
 
@@ -92,104 +89,56 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
     true_key = true_key(key)
 
     case Cachex.get(cache, true_key) do
-      {:ok, compressed_value} when is_binary(compressed_value) ->
-        decompress_value(compressed_value)
+      {:ok, compressed} when is_binary(compressed) ->
+        decompress_value(compressed)
 
       _ ->
-        execute_cache_miss_function(cache, key, func, cache_modify_middleware)
+        # Per-key stampede protection via ConCache.Lock. The fallback runs in
+        # the caller process so Absinthe's Dataloader batching and process-dict
+        # signals (e.g. :do_not_cache_query) are preserved. We piggyback on the
+        # already-running :sanbase_cache ConCache instance for its lock pids; no
+        # data is stored in it.
+        ConCache.isolated(Sanbase.Cache.name(), {__MODULE__, true_key}, fn ->
+          case Cachex.get(cache, true_key) do
+            {:ok, compressed} when is_binary(compressed) ->
+              decompress_value(compressed)
+
+            _ ->
+              execute_and_maybe_cache(cache, key, true_key, func, cache_modify_middleware)
+          end
+        end)
     end
   end
 
-  defp execute_cache_miss_function(cache, key, func, cache_modify_middleware) do
-    # This is the only place where we need to have the transactional get_or_store
-    # mechanism. Cachex.fetch! is running in multiple processes, which causes issues
-    # when testing. Cachex.transaction has a non-configurable timeout. We actually
-    # can achieve the required behavior by manually getting and realeasing the lock.
-    # The transactional guarantees are not needed.
-    cache_record = Cachex.Services.Overseer.ensure(cache)
-
-    # Start a process that will handle the unlock in case this process terminates
-    # without releasing the lock. The process is not linked to the current one so
-    # it can continue to live and do its job even if this process terminates.
-    {:ok, unlocker_pid} =
-      __MODULE__.Unlocker.start(max_lock_acquired_time_ms: @max_lock_acquired_time_ms)
-
-    unlock_fun = fn -> Cachex.Services.Locksmith.unlock(cache_record, [true_key(key)]) end
-
-    try do
-      true = obtain_lock(cache_record, [true_key(key)])
-      _ = GenServer.cast(unlocker_pid, {:unlock_after, unlock_fun})
-
-      case Cachex.get(cache, true_key(key)) do
-        {:ok, compressed_value} when is_binary(compressed_value) ->
-          # First check if the result has not been stored while waiting for the lock.
-          decompress_value(compressed_value)
-
-        _ ->
-          handle_execute_cache_miss_function(
-            cache,
-            key,
-            _result = func.(),
-            cache_modify_middleware
-          )
-      end
-    after
-      true = unlock_fun.()
-      # We expect the process to unlock only in case we don't reach here for some reason.
-      # If we're here we can kill the process. If the process has already unlocked
-      _ = GenServer.cast(unlocker_pid, :stop)
-    end
-  end
-
-  defp obtain_lock(cache_record, keys, attempt \\ 0)
-
-  defp obtain_lock(_cache_record, _keys, 30) do
-    raise("Obtaining cache lock failed because of timeout")
-  end
-
-  defp obtain_lock(cache_record, keys, attempt) do
-    case Cachex.Services.Locksmith.lock(cache_record, keys) do
-      false ->
-        # In case the lock cannot be obtained, try again after some time
-        # In the beginning the next attempt is scheduled in an exponential
-        # backoff fashion - 10, 130, 375, 709, etc. milliseconds
-        # The backoff is capped at 2 seconds
-        sleep_ms = (:math.pow(attempt * 20, 1.6) + 10) |> trunc()
-        sleep_ms = Enum.min([sleep_ms, 2000])
-
-        Process.sleep(sleep_ms)
-        obtain_lock(cache_record, keys, attempt + 1)
-
-      true ->
-        true
-    end
-  end
-
-  defp handle_execute_cache_miss_function(cache, key, result, cache_modify_middleware) do
-    case result do
-      {:middleware, _, _} = tuple ->
-        cache_modify_middleware.(cache, key, tuple)
-
-      {:nocache, value} ->
-        Process.put(:has_nocache_field, true)
-        value
+  defp execute_and_maybe_cache(cache, key, true_key, func, cache_modify_middleware) do
+    case safe_invoke(func) do
+      {:ok, _} = ok_tuple ->
+        Cachex.put(cache, true_key, compress_value(ok_tuple), put_opts(key))
+        ok_tuple
 
       {:error, _} = error ->
         error
 
-      {:ok, _value} = ok_tuple ->
-        cache_item(cache, key, ok_tuple)
-        ok_tuple
+      {:nocache, value} ->
+        Process.put(:do_not_cache_query, true)
+        value
+
+      {:middleware, _, _} = tuple ->
+        cache_modify_middleware.(cache, key, tuple)
     end
   end
 
-  defp cache_item(cache, {key, ttl}, value) when is_integer(ttl) do
-    Cachex.put(cache, key, compress_value(value), ttl: :timer.seconds(ttl))
+  # Match Cachex.fetch's behavior: a raise in the fallback fn becomes an
+  # `{:error, message}` tuple so concurrent callers don't all crash. The
+  # resolver layer treats errors as uncached.
+  defp safe_invoke(func) do
+    func.()
+  rescue
+    e -> {:error, Exception.message(e)}
   end
 
-  defp cache_item(cache, key, value) do
-    Cachex.put(cache, key, compress_value(value), ttl: :timer.seconds(@default_ttl_seconds))
-  end
+  defp put_opts({_key, ttl}) when is_integer(ttl), do: [expire: :timer.seconds(ttl)]
+  defp put_opts(_key), do: []
 
   defp true_key({key, ttl}) when is_integer(ttl), do: key
   defp true_key(key), do: key

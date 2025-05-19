@@ -52,7 +52,7 @@ defmodule Sanbase.Mixfile do
        github: "santiment/absinthe", branch: "memory-footprint-improvements", override: true},
       {:brod, "~> 4.0"},
       {:browser, "~> 0.5"},
-      {:cachex, "~> 3.0"},
+      {:cachex, "~> 4.1"},
       {:cidr, "~> 1.1"},
       {:ecto_ch, "~> 0.8"},
       {:ch, "~> 0.7"},

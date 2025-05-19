@@ -98,7 +98,6 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     :eth_addresses,
     :infrastructure,
     :insights_count_per_user,
-    :market_segment,
     :market_segments,
     :post_categories,
     :project_by_slug,

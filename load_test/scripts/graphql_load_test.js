@@ -57,7 +57,9 @@ if (!Object.prototype.hasOwnProperty.call(scenarios, selectedScenario)) {
 export const options = {
   scenarios: {
     default: scenarios[selectedScenario],
-  },  thresholds: {
+  },
+  setupTimeout: "300s",
+  thresholds: {
     http_req_duration: ["p(95)<5000"],
     graphql_errors: ["rate<0.1"],
   },
@@ -490,15 +492,8 @@ function hasSelector(data, metric, selectorName) {
   return selectors && selectors.includes(selectorName);
 }
 
-// Weighted query selection — currentUser gets extra weight, metric queries dominate
+// Weighted query selection — getMetric variants only (post-setup load focus)
 const queryFunctions = [
-  queryAllProjects,
-  queryAllProjects,
-  queryAllProjectsWithAggregated,
-  queryAllProjectsWithAggregated,
-  queryProjectBySlug,
-  queryProjectBySlug,
-  queryProjectBySlug,
   queryGetMetricMetadata,
   queryGetMetricTimeseries,
   queryGetMetricTimeseries,
@@ -511,10 +506,16 @@ const queryFunctions = [
   queryGetMetricGithub,
   queryGetMetricGithub,
   queryGetMetricHolders,
-  queryCurrentUser,
-  queryCurrentUser,
-  queryCurrentUser,
 ];
+
+// Sprinkled-in non-metric queries — fire roughly every 10 iterations per VU
+const sideQueryFunctions = [
+  queryCurrentUser,
+  queryAllProjects,
+  queryAllProjectsWithAggregated,
+  queryProjectBySlug,
+];
+const SIDE_QUERY_EVERY = 10;
 
 // --- Main Test ---
 
@@ -522,8 +523,10 @@ export default function (data) {
   // Round-robin API key by VU id
   const apikey = apikeys[(__VU - 1) % apikeys.length];
 
-  // Pick a random query (weighted), passing setup data for slug lookup
-  const { name, query } = randomFrom(queryFunctions)(data);
+  // Every ~Nth iteration mix in a non-metric query; otherwise rotate getMetric*.
+  const pool =
+    Math.random() < 1 / SIDE_QUERY_EVERY ? sideQueryFunctions : queryFunctions;
+  const { name, query } = randomFrom(pool)(data);
 
   const params = {
     headers: {

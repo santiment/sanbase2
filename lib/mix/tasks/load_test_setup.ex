@@ -70,13 +70,17 @@ defmodule Mix.Tasks.LoadTest.Setup do
   defp ensure_subscription(user) do
     case Sanbase.Billing.Subscription.current_subscription(user, @sanapi_product_id) do
       nil ->
-        Sanbase.Billing.Subscription.create(%{
+        # Insert directly via changeset to skip event emission — the billing event
+        # validator rejects :fiat subscriptions with a nil stripe_subscription_id.
+        %Sanbase.Billing.Subscription{}
+        |> Sanbase.Billing.Subscription.changeset(%{
           user_id: user.id,
           plan_id: @business_pro_monthly_plan_id,
           status: "active",
           current_period_end: Timex.shift(Timex.now(), years: 1),
           type: :fiat
         })
+        |> Sanbase.Repo.insert!()
 
       _subscription ->
         :ok

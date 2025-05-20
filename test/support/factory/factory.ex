@@ -773,6 +773,13 @@ defmodule Sanbase.Factory do
     }
   end
 
+  def role_admin_panel_viewer_factory() do
+    %Role{
+      id: 4,
+      name: "Admin Panel Viewer"
+    }
+  end
+
   def user_role_factory() do
     %UserRole{}
   end

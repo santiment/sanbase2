@@ -17,6 +17,11 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
     value(:all)
   end
 
+  enum :trending_stories_source do
+    value(:telegram)
+    value(:twitter_crypto)
+  end
+
   enum :trending_words_source do
     value(:telegram)
     value(:twitter)
@@ -132,6 +137,21 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
   object :trending_word_position do
     field(:datetime, non_null(:datetime))
     field(:position, :integer)
+  end
+
+  object :trending_stories do
+    field(:datetime, non_null(:datetime))
+    field(:top_stories, list_of(:trending_story))
+  end
+
+  object :trending_story do
+    field(:title, non_null(:string))
+    field(:score, non_null(:float))
+    field(:search_text, non_null(:string))
+    field(:related_tokens, list_of(:string))
+    field(:summary, non_null(:string))
+    field(:bullish_ratio, :float)
+    field(:bearish_ratio, :float)
   end
 
   object :social_document do

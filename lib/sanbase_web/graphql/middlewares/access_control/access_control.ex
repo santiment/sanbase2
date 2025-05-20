@@ -75,7 +75,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     %{__slug__: extracted_slug}
   end
 
-  defp extract_metric_and_query_data(%Absinthe.Resolution{} = resolution, opts) do
+  defp extract_metric_and_query_data(%Absinthe.Resolution{} = resolution, _opts) do
     %{
       definition: definition,
       arguments: arguments,
@@ -569,44 +569,26 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   end
 
   # metrics
-  defp get_query_or_argument(:timeseries_data, %{metric: metric}, _args),
+  @get_metric_fields [
+    :timeseries_data,
+    :timeseries_data_json,
+    :timeseries_data_per_slug,
+    :timeseries_data_per_slug_json,
+    :table_data,
+    :histogram_data
+  ]
+  defp get_query_or_argument(field, %{metric: metric}, _args) when field in @get_metric_fields,
     do: {:metric, metric}
 
-  defp get_query_or_argument(
-         :timeseries_data_per_slug,
-         %{metric: metric},
-         _args
-       ),
-       do: {:metric, metric}
-
-  defp get_query_or_argument(
-         :aggregated_timeseries_data,
-         %{metric: metric},
-         _args
-       ),
-       do: {:metric, metric}
-
-  defp get_query_or_argument(:aggregated_timeseries_data, _source, %{
-         metric: metric
-       }),
-       do: {:metric, metric}
-
-  defp get_query_or_argument(:histogram_data, %{metric: metric}, _args),
-    do: {:metric, metric}
-
-  defp get_query_or_argument(:table_data, %{metric: metric}, _args),
+  defp get_query_or_argument(:aggregated_timeseries_data, _source, %{metric: metric}),
     do: {:metric, metric}
 
   # signals
   defp get_query_or_argument(:timeseries_data, %{signal: signal}, _args),
     do: {:signal, signal}
 
-  defp get_query_or_argument(
-         :aggregated_timeseries_data,
-         %{signal: signal},
-         _args
-       ),
-       do: {:signal, signal}
+  defp get_query_or_argument(:aggregated_timeseries_data, %{signal: signal}, _args),
+    do: {:signal, signal}
 
   # query
   defp get_query_or_argument(query, _source, _args), do: {:query, query}

@@ -104,7 +104,8 @@ defmodule Sanbase.Email.MailjetApi do
     }
 
     result =
-      with {:ok, %{body: %{"Data" => data}}} <- make_request(:post, campaign_url, draft_data),
+      with true <- has_mailjet_params?(),
+           {:ok, %{body: %{"Data" => data}}} <- make_request(:post, campaign_url, draft_data),
            draft_id when is_integer(draft_id) <- get_draft_id(data),
 
            # Calculate URLs and prepare content data
@@ -272,6 +273,18 @@ defmodule Sanbase.Email.MailjetApi do
       Config.module_get!(Sanbase.TemplateMailer, :api_key) <>
         ":" <> Config.module_get!(Sanbase.TemplateMailer, :secret)
     )
+  end
+
+  defp has_mailjet_params?() do
+    has? =
+      not is_nil(Config.module_get(Sanbase.TemplateMailer, :api_key)) and
+        not is_nil(Config.module_get(Sanbase.TemplateMailer, :secret))
+
+    if has? do
+      true
+    else
+      {:error, "Missing Mailjet API key and/or secret"}
+    end
   end
 
   defp headers do

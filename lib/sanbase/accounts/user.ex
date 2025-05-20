@@ -31,9 +31,10 @@ defmodule Sanbase.Accounts.User do
 
   # User with free subscription that is used for external integration testing
   @sanbase_bot_email "sanbase.bot@santiment.net"
-  @allowed_metric_access_levels ["alpha", "beta", "released"]
+  @allowed_access_levels ["alpha", "beta", "released"]
 
   @preloads [:roles, [roles: :role], :eth_accounts, :user_settings]
+  def preloads(), do: @preloads
 
   @derive {Inspect,
            except: [
@@ -95,6 +96,7 @@ defmodule Sanbase.Accounts.User do
     field(:marketing_accepted, :boolean, default: false)
 
     field(:metric_access_level, :string, default: "released")
+    field(:feature_access_level, :string, default: "released")
 
     has_one(:user_settings, UserSettings, on_delete: :delete_all)
 
@@ -179,6 +181,7 @@ defmodule Sanbase.Accounts.User do
       :username,
       :name,
       :metric_access_level,
+      :feature_access_level,
       :registration_state,
       :description,
       :website_url,
@@ -197,7 +200,8 @@ defmodule Sanbase.Accounts.User do
     |> unique_constraint(:username)
     |> unique_constraint(:stripe_customer_id)
     |> unique_constraint(:twitter_id)
-    |> validate_inclusion(:metric_access_level, @allowed_metric_access_levels)
+    |> validate_inclusion(:metric_access_level, @allowed_access_levels)
+    |> validate_inclusion(:feature_access_level, @allowed_access_levels)
   end
 
   def san_balance(user), do: __MODULE__.SanBalance.san_balance(user)
@@ -214,6 +218,7 @@ defmodule Sanbase.Accounts.User do
     %__MODULE__{}
     |> changeset(attrs)
     |> Repo.insert()
+    |> maybe_preload_struct()
     |> emit_event(:create_user, %{})
   end
 
@@ -221,7 +226,27 @@ defmodule Sanbase.Accounts.User do
     user
     |> changeset(attrs)
     |> Repo.update()
+    |> maybe_preload_struct()
     |> emit_event(:update_user, %{})
+  end
+
+  def atomic_update_registration_state(user_id, old_state, new_state, opts \\ []) do
+    from(
+      user in __MODULE__,
+      where:
+        user.id == ^user_id and
+          fragment(
+            "registration_state->'state' = ?",
+            ^old_state
+          ),
+      update: [set: [registration_state: ^new_state]],
+      select: user
+    )
+    |> Repo.update_all([])
+    |> case do
+      {1, [user]} -> {1, [Repo.preload(user, @preloads)]}
+      other -> other
+    end
   end
 
   def by_id!(user_id) do
@@ -356,7 +381,12 @@ defmodule Sanbase.Accounts.User do
         {:ok, user}
 
       false ->
-        user |> changeset(%{field => value}) |> Repo.update()
+        # Calling local update/2 will collide with import Ecto.Query
+        user
+        |> changeset(%{field => value})
+        |> Repo.update()
+        |> maybe_preload_struct()
+        |> emit_event(:update_user, %{})
     end
   end
 
@@ -457,16 +487,6 @@ defmodule Sanbase.Accounts.User do
     |> Repo.all()
   end
 
-  @doc ~s"""
-  Used to
-  """
-  def update_profile(%__MODULE__{} = user, attrs) do
-    user
-    |> changeset(attrs)
-    |> Repo.update()
-    |> emit_event(:update_user_profile, %{})
-  end
-
   # Private functions
 
   defp maybe_preload(query, opts) do
@@ -479,4 +499,7 @@ defmodule Sanbase.Accounts.User do
         query
     end
   end
+
+  defp maybe_preload_struct({:ok, %__MODULE__{} = user}), do: {:ok, Repo.preload(user, @preloads)}
+  defp maybe_preload_struct({:error, _} = error), do: error
 end

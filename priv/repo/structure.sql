@@ -3591,6 +3591,59 @@ ALTER SEQUENCE public.schedule_rescrape_prices_id_seq OWNED BY public.schedule_r
 
 
 --
+-- Name: scheduled_deprecation_notifications; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.scheduled_deprecation_notifications (
+    id bigint NOT NULL,
+    deprecation_date date NOT NULL,
+    contact_list_name character varying(255) NOT NULL,
+    api_endpoint character varying(255) NOT NULL,
+    links character varying(255)[] NOT NULL,
+    schedule_email_subject character varying(255) NOT NULL,
+    schedule_email_html text NOT NULL,
+    schedule_email_scheduled_at timestamp(0) without time zone NOT NULL,
+    schedule_email_job_id character varying(255),
+    schedule_email_sent_at timestamp(0) without time zone,
+    schedule_email_dispatch_status character varying(255) DEFAULT 'pending'::character varying NOT NULL,
+    reminder_email_subject character varying(255) NOT NULL,
+    reminder_email_html text NOT NULL,
+    reminder_email_scheduled_at timestamp(0) without time zone NOT NULL,
+    reminder_email_job_id character varying(255),
+    reminder_email_sent_at timestamp(0) without time zone,
+    reminder_email_dispatch_status character varying(255) DEFAULT 'pending'::character varying NOT NULL,
+    executed_email_subject character varying(255) NOT NULL,
+    executed_email_html text NOT NULL,
+    executed_email_scheduled_at timestamp(0) without time zone NOT NULL,
+    executed_email_job_id character varying(255),
+    executed_email_sent_at timestamp(0) without time zone,
+    executed_email_dispatch_status character varying(255) DEFAULT 'pending'::character varying NOT NULL,
+    status character varying(255) DEFAULT 'pending'::character varying NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: scheduled_deprecation_notifications_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.scheduled_deprecation_notifications_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: scheduled_deprecation_notifications_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.scheduled_deprecation_notifications_id_seq OWNED BY public.scheduled_deprecation_notifications.id;
+
+
+--
 -- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -4633,7 +4686,8 @@ CREATE TABLE public.users (
     metric_access_level character varying(255) DEFAULT 'released'::character varying NOT NULL,
     description text,
     website_url character varying(255),
-    twitter_handle character varying(255)
+    twitter_handle character varying(255),
+    feature_access_level character varying(255) DEFAULT 'released'::character varying NOT NULL
 );
 
 
@@ -5675,6 +5729,13 @@ ALTER TABLE ONLY public.schedule_rescrape_prices ALTER COLUMN id SET DEFAULT nex
 
 
 --
+-- Name: scheduled_deprecation_notifications id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.scheduled_deprecation_notifications ALTER COLUMN id SET DEFAULT nextval('public.scheduled_deprecation_notifications_id_seq'::regclass);
+
+
+--
 -- Name: seen_timeline_events id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6706,6 +6767,14 @@ ALTER TABLE ONLY public.sanr_emails
 
 ALTER TABLE ONLY public.schedule_rescrape_prices
     ADD CONSTRAINT schedule_rescrape_prices_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: scheduled_deprecation_notifications scheduled_deprecation_notifications_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.scheduled_deprecation_notifications
+    ADD CONSTRAINT scheduled_deprecation_notifications_pkey PRIMARY KEY (id);
 
 
 --
@@ -7828,6 +7897,20 @@ CREATE UNIQUE INDEX sanr_emails_email_index ON public.sanr_emails USING btree (e
 --
 
 CREATE INDEX schedule_rescrape_prices_project_id_index ON public.schedule_rescrape_prices USING btree (project_id);
+
+
+--
+-- Name: scheduled_deprecation_notifications_deprecation_date_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX scheduled_deprecation_notifications_deprecation_date_index ON public.scheduled_deprecation_notifications USING btree (deprecation_date);
+
+
+--
+-- Name: scheduled_deprecation_notifications_status_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX scheduled_deprecation_notifications_status_index ON public.scheduled_deprecation_notifications USING btree (status);
 
 
 --
@@ -10077,7 +10160,12 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250318100856);
 INSERT INTO public."schema_migrations" (version) VALUES (20250324103930);
 INSERT INTO public."schema_migrations" (version) VALUES (20250326110304);
 INSERT INTO public."schema_migrations" (version) VALUES (20250327120623);
+INSERT INTO public."schema_migrations" (version) VALUES (20250411143236);
 INSERT INTO public."schema_migrations" (version) VALUES (20250413084531);
 INSERT INTO public."schema_migrations" (version) VALUES (20250414115309);
 INSERT INTO public."schema_migrations" (version) VALUES (20250414122835);
 INSERT INTO public."schema_migrations" (version) VALUES (20250416132314);
+INSERT INTO public."schema_migrations" (version) VALUES (20250507135031);
+INSERT INTO public."schema_migrations" (version) VALUES (20250512124853);
+INSERT INTO public."schema_migrations" (version) VALUES (20250512130838);
+INSERT INTO public."schema_migrations" (version) VALUES (20250512140823);

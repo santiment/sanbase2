@@ -122,6 +122,33 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
     SocialData.social_volume_projects()
   end
 
+  def get_trending_stories(
+        _root,
+        %{from: from, to: to, interval: interval, size: size} = args,
+        resolution
+      ) do
+    source = Map.get(args, :source)
+
+    case SocialData.TrendingStories.get_trending_stories(from, to, interval, size, source) do
+      {:ok, result} ->
+        result =
+          result
+          |> Enum.map(fn {datetime, top_stories} ->
+            %{
+              datetime: datetime,
+              top_stories:
+                sort_and_mask_trending_stories(top_stories, resolution.context.auth.plan)
+            }
+          end)
+          |> Enum.sort_by(& &1.datetime, {:asc, DateTime})
+
+        {:ok, result}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
   def get_trending_words(
         _root,
         %{from: from, to: to, interval: interval, size: size} = args,
@@ -255,6 +282,25 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
         }
       else
         word
+      end
+    end)
+  end
+
+  defp sort_and_mask_trending_stories(top_stories, subscription_plan) do
+    Enum.sort_by(top_stories, & &1.score, :desc)
+    |> Enum.with_index()
+    |> Enum.map(fn {story, story_index} ->
+      # Add a feature flag to mask first 3 words for free users
+      if should_mask?(story_index, subscription_plan) do
+        %{
+          story
+          | title: "***",
+            summary: "***",
+            search_text: "***",
+            related_tokens: ["***"]
+        }
+      else
+        story
       end
     end)
   end

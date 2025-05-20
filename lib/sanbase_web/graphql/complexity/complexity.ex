@@ -81,13 +81,17 @@ defmodule SanbaseWeb.Graphql.Complexity do
   defp calculate_complexity(
          %{from: from, to: to} = args,
          child_complexity,
-         %Absinthe.Complexity{} = struct,
+         struct,
          opts
        )
        when is_number(child_complexity) do
     seconds_difference = Timex.diff(from, to, :seconds) |> abs()
     years_difference_weight = years_difference_weighted(from, to)
     interval_seconds = interval_seconds(args) |> max(1)
+    #
+    # Struct can be Absinthe.Complexity if it is called from the complexity macro,
+    # but it can also be called with Absinthe.Resolution when called from the
+    # MetricResolver.timeseries_data_complexity/3 resolver function
     metric = get_metric_name(struct)
 
     # Compute weights
@@ -102,16 +106,9 @@ defmodule SanbaseWeb.Graphql.Complexity do
     #   returned will be 10 times more compared to the same query with 1 slug provided
     data_points_count = seconds_difference / interval_seconds
 
-    selector_weight =
-      if Keyword.fetch!(opts, :use_selector_weight), do: selector_weight(args), else: 1
+    selector_weight = selector_weight(args, opts)
 
-    complexity_weight =
-      with metric when is_binary(metric) <- metric,
-           weight when is_number(weight) <- Sanbase.Metric.complexity_weight(metric) do
-        weight
-      else
-        _ -> 1
-      end
+    complexity_weight = complexity_weight(metric)
 
     child_complexity = if child_complexity == 0, do: 2, else: child_complexity
 
@@ -123,20 +120,71 @@ defmodule SanbaseWeb.Graphql.Complexity do
       complexity_weight
     ]
     |> Enum.product()
+    |> then(fn complexity ->
+      plan = get_in(struct.context, [:auth, :plan])
+
+      if complexity > 50_000 and selector_weight > 1 and plan != "FREE" do
+        map = get_in(struct.context[:auth]) || %{}
+        plan = map[:plan]
+        product = map[:requested_product] || "unknown"
+        user_id = (map[:current_user] || %{}) |> Map.get(:id)
+
+        Logger.warning("""
+        [ComplexityRestriction] A user's query has exceeded the complexity limit and is: #{complexity}
+        Selector weight: #{selector_weight}. Complexity without selector weight: #{complexity / selector_weight}
+        Args: metric: #{metric}, from: #{from}, to: #{to}, interval (in seconds) #{interval_seconds}, child_complexity: #{child_complexity}
+        Plan: #{plan}, product: #{product}, user_id: #{user_id || "anon"}
+        """)
+      end
+
+      if complexity > 50_000 and complexity / selector_weight < 50_000 and selector_weight > 1 do
+        map = get_in(struct.context[:auth]) || %{}
+        product = map[:requested_product] || "unknown"
+        user_id = (map[:current_user] || %{}) |> Map.get(:id)
+
+        Logger.warning("""
+        [ComplexitySelector] If the selector_weight #{selector_weight} is included in the complexity
+        computation, the API call would have been rejected. Computed complexity is #{complexity}.
+        Args: #{metric}, #{from}, #{to}, #{interval_seconds}, #{child_complexity}
+        Plan: #{plan}, product: #{product}, user_id: #{user_id || "anon"}
+        """)
+      end
+
+      complexity / selector_weight
+    end)
     |> Sanbase.Math.to_integer()
   end
 
-  @assets_count_weight 0.04
-  defp selector_weight(args) do
+  defp complexity_weight(metric) do
+    with metric when is_binary(metric) <- metric,
+         weight when is_number(weight) <- Sanbase.Metric.complexity_weight(metric) do
+      weight
+    else
+      _ -> 1
+    end
+  end
+
+  @assets_count_weight 0.1
+  defp selector_weight(args, opts) do
+    if Keyword.get(opts, :use_selector_weight, false) do
+      do_selector_weight(args)
+    else
+      1
+    end
+  end
+
+  defp do_selector_weight(args) do
+    # Compute the selector weight as the number of slugs multiplied by @assets_count_weight
+    # We could replace this with some function that gives increasingly higher weights
+    # as the number of assets grow, for example: 0.1*x + 0.001*x*x
     case args do
       %{selector: %{slugs: slugs}} ->
-        Enum.max([1, length(slugs) * @assets_count_weight])
+        slugs_list_to_weight(slugs)
 
-      %{selector: %{slug: slugs}} when is_list(slugs) ->
-        Enum.max([1, length(slugs) * @assets_count_weight])
-
-      %{selector: %{slug: slug}} when is_binary(slug) ->
-        1
+      %{selector: %{slug: slug_or_slugs}} ->
+        # From the API the `slug` can be binary, but if it comes
+        # from args_to_selector/1 it can also be a list
+        List.wrap(slug_or_slugs) |> slugs_list_to_weight()
 
       _ ->
         # Use the process dictionary to compute and store the selector resolved result
@@ -149,7 +197,7 @@ defmodule SanbaseWeb.Graphql.Complexity do
         # cannot modify the resolution struct. So we use the process dictionary.
         case Sanbase.Project.Selector.args_to_selector(args, use_process_dictionary: true) do
           {:ok, %{slug: slugs}} ->
-            Enum.max([1, length(slugs) * @assets_count_weight])
+            slugs_list_to_weight(slugs)
 
           _ ->
             # Most likely the selector is empty. The resolver should return a proper error
@@ -157,6 +205,10 @@ defmodule SanbaseWeb.Graphql.Complexity do
             1
         end
     end
+  end
+
+  defp slugs_list_to_weight(slugs) do
+    Enum.max([1, length(slugs) * @assets_count_weight])
   end
 
   # This case is important as here the flow comes from `timeseries_data_complexity`

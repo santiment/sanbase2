@@ -63,8 +63,11 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
   @impl SanbaseWeb.Graphql.CacheProvider
   def get(cache, key) do
     case Cachex.get(cache, true_key(key)) do
-      {:ok, {:stored, value}} -> value
-      _ -> nil
+      {:ok, compressed_value} when is_binary(compressed_value) ->
+        decompress_value(compressed_value)
+
+      _ ->
+        nil
     end
   end
 
@@ -80,7 +83,7 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
         :ok
 
       _ ->
-        cache_item(cache, key, {:stored, value})
+        cache_item(cache, key, value)
     end
   end
 
@@ -89,30 +92,13 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
     true_key = true_key(key)
 
     case Cachex.get(cache, true_key) do
-      {:ok, {:stored, value}} ->
-        value
+      {:ok, compressed_value} when is_binary(compressed_value) ->
+        decompress_value(compressed_value)
 
       _ ->
         execute_cache_miss_function(cache, key, func, cache_modify_middleware)
     end
   end
-
-  # defp execute_cache_miss_function(cache, key, func, cache_modify_middleware) do
-  #   Cachex.transaction!(cache, [key], fn cache ->
-  #     case Cachex.get(cache, true_key(key)) do
-  #       {:ok, {:stored, value}} ->
-  #         value
-
-  #       _ ->
-  #         handle_execute_cache_miss_function(
-  #           cache,
-  #           key,
-  #           _result = func.(),
-  #           cache_modify_middleware
-  #         )
-  #     end
-  #   end)
-  # end
 
   defp execute_cache_miss_function(cache, key, func, cache_modify_middleware) do
     # This is the only place where we need to have the transactional get_or_store
@@ -135,9 +121,9 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
       _ = GenServer.cast(unlocker_pid, {:unlock_after, unlock_fun})
 
       case Cachex.get(cache, true_key(key)) do
-        {:ok, {:stored, value}} ->
+        {:ok, compressed_value} when is_binary(compressed_value) ->
           # First check if the result has not been stored while waiting for the lock.
-          value
+          decompress_value(compressed_value)
 
         _ ->
           handle_execute_cache_miss_function(
@@ -192,73 +178,31 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
         error
 
       {:ok, _value} = ok_tuple ->
-        cache_item(cache, key, {:stored, ok_tuple})
+        cache_item(cache, key, ok_tuple)
         ok_tuple
     end
   end
 
   defp cache_item(cache, {key, ttl}, value) when is_integer(ttl) do
-    Cachex.put(cache, key, value, ttl: :timer.seconds(ttl))
+    Cachex.put(cache, key, compress_value(value), ttl: :timer.seconds(ttl))
   end
 
   defp cache_item(cache, key, value) do
-    Cachex.put(cache, key, value, ttl: :timer.seconds(@default_ttl_seconds))
+    Cachex.put(cache, key, compress_value(value), ttl: :timer.seconds(@default_ttl_seconds))
   end
 
   defp true_key({key, ttl}) when is_integer(ttl), do: key
   defp true_key(key), do: key
 
-  # Cachex.fetch spawns processes which fails ecto sandbox tests
-  # defp key_to_ttl_ms({_key, ttl}) when is_integer(ttl), do: ttl * 1000
-  # defp key_to_ttl_ms(_), do: @default_ttl_seconds * 1000
-  # @impl SanbaseWeb.Graphql.CacheProvider
-  # def get_or_store(cache, key, func, cache_modify_middleware) do
-  #   {_, result} =
-  #     Cachex.fetch(
-  #       cache,
-  #       true_key(key),
-  #       fn ->
-  #         result = func.()
+  defp compress_value(value) do
+    value
+    |> :erlang.term_to_binary()
+    |> :zlib.gzip()
+  end
 
-  #         handle_fetch_function_result(
-  #           cache,
-  #           key,
-  #           result,
-  #           cache_modify_middleware
-  #         )
-  #       end,
-  #       ttl: key_to_ttl_ms(key)
-  #     )
-
-  #   result
-  # end
-  # This is executed from inside the Cachex.fetch/4 function. It is required to
-  # return {:ignore, result} or {:commit, result} indicating whether or not the
-  # result should be stored in the cache
-  # defp handle_fetch_function_result(cache, key, result, cache_modify_middleware) do
-  #   case result do
-  #     {:middleware, _, _} = tuple ->
-  #       # Execute the same function with the new result. When the result is an
-  #       # :ok | :error | :nocache tuple it will be handled
-  #       middleware_result = cache_modify_middleware.(cache, key, tuple)
-
-  #       handle_fetch_function_result(
-  #         cache,
-  #         key,
-  #         middleware_result,
-  #         cache_modify_middleware
-  #       )
-
-  #     {:nocache, value} ->
-  #       Process.put(:has_nocache_field, true)
-  #       {:ignore, value}
-
-  #     {:error, _} = error ->
-  #       {:ignore, error}
-
-  #     value ->
-  #       cache_item(cache, key, value)
-  #       {:ignore, value}
-  #   end
-  # end
+  defp decompress_value(value) do
+    value
+    |> :zlib.gunzip()
+    |> :erlang.binary_to_term()
+  end
 end

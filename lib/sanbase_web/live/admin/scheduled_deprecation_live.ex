@@ -49,49 +49,21 @@ defmodule SanbaseWeb.ScheduledDeprecationLive do
 
       <.simple_form for={@form} id="deprecation-form" phx-change="validate" phx-submit="save">
         <.inputs_for :let={f} field={@form[:data]}>
-          <h2 class="text-lg font-semibold mt-6 mb-3 border-b pb-2">Scheduling & Common Details</h2>
-          <.input
-            id={f[:scheduled_at].id}
-            name={f[:scheduled_at].name}
-            value={f[:scheduled_at].value}
-            type="date"
-            label="Deprecation Date"
-            required
-            outer_div_class="w-1/4"
-            errors={@save_errors[:scheduled_at] || []}
-          />
-          <.input
-            field={f[:contact_list]}
-            type="select"
-            label="Send To"
-            options={@contact_lists}
-            required
-            errors={@save_errors[:contact_list] || []}
+          <.common_details_form
+            form={f}
+            save_errors={@save_errors}
+            contact_lists={@contact_lists}
+            common_vars={@common_vars}
           />
 
-          <%= for var <- @common_vars do %>
-            <% key_str = var.key %>
-            <% field_proxy = f[key_str] %>
-            <.input
-              id={field_proxy.id}
-              name={field_proxy.name}
-              value={field_proxy.value}
-              type="text"
-              label={var.label}
-              placeholder={if var.type == :list, do: "Comma-separated URLs"}
-              errors={@save_errors[String.to_atom(key_str)] || []}
-            />
-          <% end %>
-
-          <%= for step <- [:schedule, :reminder, :executed] do %>
-            <.render_step
-              step={step}
-              templates={@templates}
-              main_form={f}
-              form={f[step]}
-              preview={@previews[step]}
-            />
-          <% end %>
+          <.step_notification_form
+            :for={step <- [:schedule, :reminder, :executed]}
+            step={step}
+            templates={@templates}
+            main_form={f}
+            form={f[step]}
+            preview={@previews[step]}
+          />
         </.inputs_for>
 
         <.button type="submit" phx-disable-with="Scheduling...">Schedule Notifications</.button>
@@ -259,10 +231,140 @@ defmodule SanbaseWeb.ScheduledDeprecationLive do
         Logger.error("Template engine error (#{step} body): #{inspect(err)}")
         nil
     end
-  rescue
-    e ->
-      Logger.error("Error generating preview for #{step}: #{inspect(e)}")
-      nil
+  end
+
+  attr :form, :map, required: true
+  attr :save_errors, :map, required: true
+  attr :contact_lists, :list, required: true
+  attr :common_vars, :list, required: true
+
+  def common_details_form(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :placeholders,
+        Enum.into(assigns.common_vars, %{}, fn var -> {var.key, get_var_placeholder(var)} end)
+      )
+
+    ~H"""
+    <h2 class="text-lg font-semibold mt-6 mb-3 border-b pb-2">Scheduling & Common Details</h2>
+    <.input
+      id={@form[:scheduled_at].id}
+      name={@form[:scheduled_at].name}
+      value={@form[:scheduled_at].value}
+      type="date"
+      label="Deprecation Date"
+      required
+      outer_div_class="w-1/4"
+      errors={@save_errors[:scheduled_at] || []}
+    />
+    <.input
+      field={@form[:contact_list]}
+      type="select"
+      label="Send To"
+      options={@contact_lists}
+      required
+      errors={@save_errors[:contact_list] || []}
+    />
+    <.input
+      :for={var <- @common_vars}
+      id={@form[var.key].id}
+      name={@form[var.key].name}
+      value={@form[var.key].value}
+      type="text"
+      label={var.label}
+      placeholder={@placeholders[var.key]}
+      errors={@save_errors[String.to_atom(var.key)] || []}
+    />
+    """
+  end
+
+  attr :step, :atom, required: true
+  attr :scheduled_at, :string, required: true
+  attr :contact_list, :string, required: true
+  attr :preview, :map, required: true
+
+  def step_preview(assigns) do
+    ~H"""
+    <div class="mt-6 border-t pt-4">
+      <h3 class="text-md font-semibold mb-2">Preview Details</h3>
+      <p class="text-sm text-gray-600 mb-3">
+        Will be sent on
+        <span class="font-semibold">
+          {render_send_date(@step, @scheduled_at)}
+        </span>
+        to list:
+        <span class="font-semibold">
+          {@contact_list}
+        </span>
+      </p>
+      <p><strong>Subject:</strong> {@preview.subject}</p>
+      <p class="mt-2"><strong>Body:</strong></p>
+      <iframe class="w-full h-64 border border-gray-300 rounded" srcdoc={@preview.body_html} />
+    </div>
+    """
+  end
+
+  attr :step, :atom, required: true
+  attr :templates, :map, required: true
+  attr :main_form, :map, required: true
+  attr :form, :map, required: true
+  attr :preview, :map, required: false
+
+  def step_notification_form(assigns) do
+    config = assigns.templates[assigns.step]
+    assigns = assign(assigns, :config, config)
+
+    ~H"""
+    <div class="mt-8 border border-gray-200 rounded-lg p-4 mb-6">
+      <h2 class="text-xl font-semibold capitalize mb-4 border-b pb-2">
+        Step: {@step} Notification
+        <span :if={@step == :reminder} class="text-sm text-gray-500 font-normal">
+          (Sent 3 days before)
+        </span>
+        <span :if={@step == :executed} class="text-sm text-gray-500 font-normal">
+          (Sent on deprecation date)
+        </span>
+      </h2>
+
+      <.inputs_for :let={sf} field={@form}>
+        <.input
+          field={sf[:subject]}
+          type="text"
+          label="Email Subject"
+          value={sf[:subject].value || @config.default_subject}
+          required
+        />
+      </.inputs_for>
+
+      <.step_preview
+        :if={@preview}
+        step={@step}
+        scheduled_at={@main_form[:scheduled_at].value}
+        contact_list={@main_form[:contact_list].value}
+        preview={@preview}
+      />
+    </div>
+    """
+  end
+
+  defp render_send_date(:schedule, _scheduled_at_str) do
+    format_date(Date.to_iso8601(Date.utc_today()))
+  end
+
+  defp render_send_date(:reminder, scheduled_at_str) do
+    case Date.from_iso8601(scheduled_at_str) do
+      {:ok, scheduled_date} ->
+        send_date = Date.add(scheduled_date, -3)
+        format_date(Date.to_iso8601(send_date))
+
+      _ ->
+        format_date(scheduled_at_str)
+    end
+  end
+
+  defp render_send_date(:executed, scheduled_at_str) do
+    format_date(scheduled_at_str)
   end
 
   defp links_html_for_step(step, links_list) do
@@ -426,13 +528,6 @@ defmodule SanbaseWeb.ScheduledDeprecationLive do
         Logger.error("Template engine error for SAVE (#{step} body): #{inspect(err)}")
         {:error, {step, :template_error_body}}
     end
-  rescue
-    e ->
-      Logger.error(
-        "Error generating email content for SAVE (#{step}): #{inspect(e)} stacktrace: #{inspect(__STACKTRACE__)}"
-      )
-
-      {:error, {step, :generation_failed}}
   end
 
   defp initialize_form_data(templates, common_vars, contact_lists) do
@@ -451,82 +546,7 @@ defmodule SanbaseWeb.ScheduledDeprecationLive do
     |> Map.merge(step_data)
   end
 
-  defp render_step(assigns) do
-    step = assigns.step
-    templates = assigns.templates
-    main_form = assigns.main_form
-    step_form = assigns.form
-    preview = assigns.preview
-    config = templates[step]
-
-    assigns =
-      assigns
-      |> assign(:step, step)
-      |> assign(:main_form, main_form)
-      |> assign(:form, step_form)
-      |> assign(:preview, preview)
-      |> assign(:config, config)
-
-    ~H"""
-    <div class="mt-8 border border-gray-200 rounded-lg p-4 mb-6">
-      <h2 class="text-xl font-semibold capitalize mb-4 border-b pb-2">
-        Step: {@step} Notification
-        <span :if={@step == :reminder} class="text-sm text-gray-500 font-normal">
-          (Sent 3 days before)
-        </span>
-        <span :if={@step == :executed} class="text-sm text-gray-500 font-normal">
-          (Sent on deprecation date)
-        </span>
-      </h2>
-
-      <.inputs_for :let={sf} field={@form}>
-        <.input
-          field={sf[:subject]}
-          type="text"
-          label="Email Subject"
-          value={sf[:subject].value || @config.default_subject}
-          required
-        />
-      </.inputs_for>
-
-      <div :if={@preview} class="mt-6 border-t pt-4">
-        <h3 class="text-md font-semibold mb-2">Preview Details</h3>
-
-        <p class="text-sm text-gray-600 mb-3">
-          Will be sent on
-          <span class="font-semibold">
-            {render_send_date(@step, @main_form[:scheduled_at].value)}
-          </span>
-          to list:
-          <span class="font-semibold">
-            {@main_form[:contact_list].value}
-          </span>
-        </p>
-
-        <p><strong>Subject:</strong> {@preview.subject}</p>
-        <p class="mt-2"><strong>Body:</strong></p>
-        <iframe class="w-full h-64 border border-gray-300 rounded" srcdoc={@preview.body_html} />
-      </div>
-    </div>
-    """
-  end
-
-  defp render_send_date(:schedule, _scheduled_at_str) do
-    format_date(Date.to_iso8601(Date.utc_today()))
-  end
-
-  defp render_send_date(:reminder, scheduled_at_str) do
-    case Date.from_iso8601(scheduled_at_str) do
-      {:ok, scheduled_date} ->
-        send_date = Date.add(scheduled_date, -3)
-        format_date(Date.to_iso8601(send_date))
-
-      _ ->
-        format_date(scheduled_at_str)
-    end
-  end
-
-  defp render_send_date(:executed, scheduled_at_str) do
-    format_date(scheduled_at_str)
+  defp get_var_placeholder(var) do
+    if var.type == :list, do: "Comma-separated URLs", else: nil
   end
 end

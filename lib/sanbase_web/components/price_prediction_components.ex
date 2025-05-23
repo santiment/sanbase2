@@ -12,7 +12,9 @@ defmodule SanbaseWeb.PricePredictionComponents do
     <div class="border rounded-lg p-3" id={"prediction-#{@prediction["id"]}"} {@rest}>
       <div class="flex justify-between text-xs text-gray-500 mb-1">
         <span class="flex items-center gap-2">
-          <span class="font-bold">Prediction ID: {@prediction["id"]}</span>
+          <span class="font-bold text-blue-600">
+            {extract_account_name(@prediction["tweet_url"])}
+          </span>
           <span
             :if={@prediction["prediction"]["asset"] != "N/A"}
             class="px-2 py-0.5 bg-green-100 text-green-800 rounded text-xs"
@@ -169,4 +171,20 @@ defmodule SanbaseWeb.PricePredictionComponents do
 
   defp format_asset_name("N/A"), do: "No Asset"
   defp format_asset_name(asset), do: asset
+
+  defp extract_account_name(tweet_url) do
+    case URI.parse(tweet_url) do
+      %URI{path: path} when is_binary(path) ->
+        path
+        |> String.split("/")
+        |> Enum.at(1)
+        |> case do
+          nil -> "@Unknown"
+          account -> "@#{account}"
+        end
+
+      _ ->
+        "@Unknown"
+    end
+  end
 end

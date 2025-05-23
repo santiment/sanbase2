@@ -21,7 +21,7 @@ defmodule Sanbase.Insight.Post do
 
   require Logger
 
-  @preloads [:user, :images, :tags, :chart_configuration_for_event]
+  @preloads [:user, :featured_item, :images, :tags, :chart_configuration_for_event]
 
   # state can be changed by moderators
   @awaiting_approval "awaiting_approval"
@@ -158,7 +158,7 @@ defmodule Sanbase.Insight.Post do
 
   @impl Sanbase.Entity.Behaviour
   def by_ids(post_ids, opts) when is_list(post_ids) do
-    preload = Keyword.get(opts, :preload, [:featured_item, :tags])
+    preload = Keyword.get(opts, :preload, @preloads)
 
     result =
       from(p in base_query(),

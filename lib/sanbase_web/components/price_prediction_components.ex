@@ -15,7 +15,6 @@ defmodule SanbaseWeb.PricePredictionComponents do
           <span class="font-bold text-blue-600">
             {extract_account_name(@prediction["tweet_url"])}
           </span>
-          <span class="font-bold">ID: {@prediction["id"]}</span>
           <span
             :if={@prediction["prediction"]["asset"] != "N/A"}
             class="px-2 py-0.5 bg-green-100 text-green-800 rounded text-xs"

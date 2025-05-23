@@ -119,6 +119,10 @@ defmodule SanbaseWeb.Router do
       end
     end
 
+    scope "/price_predictions" do
+      live("/", PricePredictionsLive)
+    end
+
     live_dashboard("/dashboard", metrics: SanbaseWeb.Telemetry, ecto_repos: [Sanbase.Repo])
     live("/admin_forms", AdminFormsLive)
     live("/monitored_twitter_handle_live", MonitoredTwitterHandleLive)

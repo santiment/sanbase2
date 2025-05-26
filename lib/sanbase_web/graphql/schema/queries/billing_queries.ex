@@ -77,7 +77,7 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
     field :check_annual_discount_eligibility, :annual_discount_eligibility do
       meta(access: :free)
 
-      middleware(JWTAuth)
+      middleware(JWTAuth, allow_access_without_terms_accepted: true)
 
       resolve(&BillingResolver.check_annual_discount_eligibility/3)
     end
@@ -95,7 +95,7 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
     field :check_sanr_nft_subscription_eligibility, :boolean do
       meta(access: :free)
 
-      middleware(JWTAuth)
+      middleware(JWTAuth, allow_access_without_terms_accepted: true)
 
       resolve(&BillingResolver.check_sanr_nft_subscription_eligibility/3)
     end

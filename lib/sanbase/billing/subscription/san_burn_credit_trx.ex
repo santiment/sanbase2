@@ -124,7 +124,7 @@ defmodule Sanbase.Billing.Subscription.SanBurnCreditTransaction do
   defp fetch_san_burns_query() do
     sql = """
     SELECT toUnixTimestamp(dt), from, value / pow(10, 18), transactionHash
-    FROM erc20_transfers_to
+    FROM erc20_transfers
     WHERE
       dt > now() - INTERVAL 1 DAY AND
       contract = {{contract}} AND

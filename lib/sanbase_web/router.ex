@@ -147,6 +147,8 @@ defmodule SanbaseWeb.Router do
     get("/generic/search", GenericAdminController, :search)
     get("/generic/show_action", GenericAdminController, :show_action)
     resources("/generic", GenericAdminController)
+
+    live("/user_stats", UserStatsLive)
   end
 
   scope "/" do

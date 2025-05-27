@@ -230,7 +230,7 @@ defmodule Sanbase.Accounts.User do
     |> emit_event(:update_user, %{})
   end
 
-  def atomic_update_registration_state(user_id, old_state, new_state, opts \\ []) do
+  def atomic_update_registration_state(user_id, old_state, new_state, _opts \\ []) do
     from(
       user in __MODULE__,
       where:

@@ -192,6 +192,8 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
 
       {query, selector} = get_query_and_selector(query)
 
+      bin_result = :erlang.term_to_binary(blueprint.result)
+
       %{
         timestamp: div(now, 1_000_000_000),
         id: id,
@@ -205,7 +207,9 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
         remote_ip: remote_ip(blueprint),
         user_agent: user_agent,
         duration_ms: duration_ms,
-        san_tokens: san_tokens
+        san_tokens: san_tokens,
+        response_size_byte: byte_size(bin_result),
+        compressed_response_size_byte: byte_size(:zlib.gzip(bin_result))
       }
     end)
     |> Sanbase.Kafka.ApiCall.json_kv_tuple_no_hash_collision()

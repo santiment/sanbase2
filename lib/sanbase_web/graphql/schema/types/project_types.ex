@@ -436,35 +436,15 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     end
 
     field :main_contract_address, :string do
-      cache_resolve(
-        dataloader(SanbaseRepo, :contract_addresses,
-          callback: fn contract_addresses, _project, _args ->
-            case contract_addresses do
-              [_ | _] ->
-                main = Project.ContractAddress.list_to_main_contract_address(contract_addresses)
-                {:ok, main.address}
-
-              _ ->
-                {:ok, nil}
-            end
-          end
-        ),
-        fun_name: :project_main_contract_address
-      )
+      cache_resolve(&ProjectResolver.main_contract_address/3)
     end
 
     field :contract_addresses, list_of(:contract_address) do
-      cache_resolve(
-        dataloader(SanbaseRepo),
-        fun_name: :project_contract_addresses
-      )
+      cache_resolve(&ProjectResolver.contract_addresses/3)
     end
 
     field :eth_addresses, list_of(:eth_address) do
-      cache_resolve(
-        dataloader(SanbaseRepo),
-        fun_name: :eth_addresses_resolver_fun
-      )
+      cache_resolve(&ProjectResolver.eth_addresses/3)
     end
 
     field :social_volume_query, :string do
@@ -472,12 +452,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     end
 
     field :source_slug_mappings, list_of(:source_slug_mapping) do
-      cache_resolve(
-        dataloader(SanbaseRepo, :source_slug_mappings,
-          callback: fn query, _project, _args -> {:ok, query} end
-        ),
-        fun_name: :source_slug_mappings
-      )
+      cache_resolve(&ProjectResolver.source_slug_mappings/3)
     end
 
     field :market_segment, :string do

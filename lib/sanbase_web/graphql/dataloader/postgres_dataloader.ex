@@ -5,6 +5,10 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
   alias Sanbase.Comment
   alias Sanbase.Model.MarketSegment
   alias Sanbase.Model.Infrastructure
+  alias Sanbase.Project
+  alias Sanbase.Project.ContractAddress
+  alias Sanbase.Project.SourceSlugMapping
+  alias Sanbase.ProjectEthAddress
 
   def data() do
     Dataloader.KV.new(&query/2)
@@ -197,6 +201,54 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
     |> Enum.to_list()
     |> Sanbase.Project.List.by_slugs()
     |> Enum.into(%{}, fn %{slug: slug} = project -> {slug, project} end)
+  end
+
+  def query(:main_contract_address, project_ids) do
+    project_ids = Enum.to_list(project_ids)
+
+    from(ca in ContractAddress,
+      where: ca.project_id in ^project_ids,
+      select: {ca.project_id, ca}
+    )
+    |> Repo.all()
+    |> Enum.group_by(fn {project_id, _} -> project_id end, fn {_, ca} -> ca end)
+    |> Map.new(fn {project_id, contract_addresses} ->
+      main = ContractAddress.list_to_main_contract_address(contract_addresses)
+      {project_id, main.address}
+    end)
+  end
+
+  def query(:contract_addresses, project_ids) do
+    project_ids = Enum.to_list(project_ids)
+
+    from(ca in ContractAddress,
+      where: ca.project_id in ^project_ids,
+      select: {ca.project_id, ca}
+    )
+    |> Repo.all()
+    |> Enum.group_by(fn {project_id, _} -> project_id end, fn {_, ca} -> ca end)
+  end
+
+  def query(:eth_addresses, project_ids) do
+    project_ids = Enum.to_list(project_ids)
+
+    from(ea in ProjectEthAddress,
+      where: ea.project_id in ^project_ids,
+      select: {ea.project_id, ea}
+    )
+    |> Repo.all()
+    |> Enum.group_by(fn {project_id, _} -> project_id end, fn {_, ea} -> ea end)
+  end
+
+  def query(:source_slug_mappings, project_ids) do
+    project_ids = Enum.to_list(project_ids)
+
+    from(ssm in SourceSlugMapping,
+      where: ssm.project_id in ^project_ids,
+      select: {ssm.project_id, ssm}
+    )
+    |> Repo.all()
+    |> Enum.group_by(fn {project_id, _} -> project_id end, fn {_, ssm} -> ssm end)
   end
 
   # Private functions

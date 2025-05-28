@@ -254,7 +254,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
         false ->
           """
           UNION DISTINCT
-          SELECT * FROM erc20_transfers_to WHERE to = {{address}}
+          SELECT * FROM erc20_transfers WHERE to = {{address}}
           """
       end
 
@@ -354,7 +354,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
         to AS address,
         any(value) AS incoming,
         0 AS outgoing
-      FROM erc20_transfers_to
+      FROM erc20_transfers
       WHERE
         to IN ({{from}}) AND
         assetRefId = cityHash64('ETH_' || {{contract}}) AND
@@ -408,7 +408,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
         dt,
         any(value) AS incoming,
         0 AS outgoing
-      FROM erc20_transfers_to
+      FROM erc20_transfers
       WHERE
         to in ({{addresses}}) AND
         assetRefId = cityHash64('ETH_' || {{contract}}) AND
@@ -440,7 +440,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
 
     {select_column, filter_column, table} =
       case type do
-        :incoming -> {"from", "to", "erc20_transfers_to"}
+        :incoming -> {"from", "to", "erc20_transfers"}
         :outgoing -> {"to", "from", "erc20_transfers"}
       end
 

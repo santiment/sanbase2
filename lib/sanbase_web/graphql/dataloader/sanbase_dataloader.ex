@@ -84,7 +84,12 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     # Users
     :users_by_id,
     # Founders
-    :available_founders_per_slug
+    :available_founders_per_slug,
+    # Contract addresses
+    :main_contract_address,
+    :contract_addresses,
+    :eth_addresses,
+    :source_slug_mappings
     # Trending Words
   ]
 

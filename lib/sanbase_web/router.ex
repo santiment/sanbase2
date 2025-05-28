@@ -204,6 +204,9 @@ defmodule SanbaseWeb.Router do
       log_level: :info,
       before_send: {SanbaseWeb.Graphql.AbsintheBeforeSend, :before_send}
     )
+
+    # MCP (Model Context Protocol) server endpoint
+    post("/mcp", SanbaseWeb.MCPController, :handle)
   end
 
   scope "/", SanbaseWeb do

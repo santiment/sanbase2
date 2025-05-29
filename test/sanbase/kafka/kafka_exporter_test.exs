@@ -108,6 +108,8 @@ defmodule KafkaExporterTest do
   end
 
   defp api_call_data() do
+    result = :crypto.strong_rand_bytes(1024) |> Base.encode64()
+
     %{
       timestamp: Timex.now() |> DateTime.to_unix(),
       query: random_query(),
@@ -117,7 +119,9 @@ defmodule KafkaExporterTest do
       remote_ip: random_ip_v4(),
       user_agent: Faker.Internet.UserAgent.desktop_user_agent(),
       duration_ms: :rand.uniform_real() * 1000,
-      san_tokens: Enum.random(200..2000)
+      san_tokens: Enum.random(200..2000),
+      response_size_bytes: byte_size(result),
+      compressed_response_size_bytes: byte_size(:zlib.gzip(result))
     }
     |> Sanbase.Kafka.ApiCall.json_kv_tuple()
   end

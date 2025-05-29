@@ -14,7 +14,9 @@ defmodule Sanbase.Kafka.ApiCall do
           remote_ip: String.t(),
           user_agent: String.t(),
           duration_ms: non_neg_integer() | nil,
-          san_tokens: float() | nil
+          san_tokens: float() | nil,
+          response_size_bytes: non_neg_integer() | nil,
+          compressed_response_size_bytes: non_neg_integer() | nil
         }
 
   @type json_kv_tuple :: {String.t(), String.t()}

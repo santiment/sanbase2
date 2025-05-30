@@ -72,6 +72,7 @@ defmodule Sanbase.Mixfile do
       {:ethereumex, "~> 0.9"},
       {:esbuild, "~> 0.7", runtime: Mix.env() == :dev},
       {:tailwind, "~> 0.2", runtime: Mix.env() == :dev},
+      {:tidewave, "~> 0.1", only: :dev},
       {:event_bus, "~> 1.7.0"},
       {:ex_abi, "~> 0.6"},
       {:ex_aws_s3, "~> 2.0"},

@@ -14,7 +14,8 @@ defmodule Sanbase.MCP.Tools do
   @spec list_tools() :: list(map())
   def list_tools do
     [
-      say_hi_tool_schema()
+      say_hi_tool_schema(),
+      list_available_metrics_tool_schema()
     ]
   end
 
@@ -24,6 +25,10 @@ defmodule Sanbase.MCP.Tools do
   @spec call_tool(String.t(), map()) :: {:ok, map()} | {:error, String.t()}
   def call_tool("say_hi", arguments) do
     execute_say_hi(arguments)
+  end
+
+  def call_tool("list_available_metrics", arguments) do
+    execute_list_available_metrics(arguments)
   end
 
   def call_tool(unknown_tool, _arguments) do
@@ -50,6 +55,25 @@ defmodule Sanbase.MCP.Tools do
             "description" => "Language for the greeting",
             "enum" => ["en", "es", "fr", "de", "bg"],
             "default" => "en"
+          }
+        }
+      }
+    }
+  end
+
+  defp list_available_metrics_tool_schema do
+    %{
+      "name" => "list_available_metrics",
+      "description" =>
+        "Lists all available Sanbase metrics and their metadata including supported assets, access levels, and documentation",
+      "inputSchema" => %{
+        "type" => "object",
+        "properties" => %{
+          "format" => %{
+            "type" => "string",
+            "description" => "Output format for the metrics data",
+            "enum" => ["json", "summary"],
+            "default" => "summary"
           }
         }
       }
@@ -87,5 +111,91 @@ defmodule Sanbase.MCP.Tools do
     }
 
     {:ok, result}
+  end
+
+  defp execute_list_available_metrics(arguments) do
+    format = Map.get(arguments, "format", "summary")
+
+    Logger.info("MCP list_available_metrics tool called with format=#{format}")
+
+    try do
+      metrics_map = Sanbase.AvailableMetrics.get_metrics_map()
+
+      content_text =
+        case format do
+          "json" ->
+            metrics_map
+            |> Jason.encode!(pretty: true)
+
+          "summary" ->
+            generate_metrics_summary(metrics_map)
+        end
+
+      result = %{
+        "content" => [
+          %{
+            "type" => "text",
+            "text" => content_text
+          }
+        ],
+        "isError" => false
+      }
+
+      {:ok, result}
+    rescue
+      error ->
+        Logger.error("Error in list_available_metrics: #{inspect(error)}")
+
+        result = %{
+          "content" => [
+            %{
+              "type" => "text",
+              "text" => "Error retrieving metrics: #{Exception.message(error)}"
+            }
+          ],
+          "isError" => true
+        }
+
+        {:ok, result}
+    end
+  end
+
+  defp generate_metrics_summary(metrics_map) do
+    total_metrics = map_size(metrics_map)
+
+    status_counts =
+      metrics_map
+      |> Enum.group_by(fn {_metric, data} -> data.status end)
+      |> Enum.map(fn {status, metrics} -> "#{status}: #{length(metrics)}" end)
+      |> Enum.join(", ")
+
+    access_levels =
+      metrics_map
+      |> Enum.group_by(fn {_metric, data} -> Map.get(data.access || %{}, "sanapi", "unknown") end)
+      |> Enum.map(fn {access, metrics} -> "#{access}: #{length(metrics)}" end)
+      |> Enum.join(", ")
+
+    sample_metrics =
+      metrics_map
+      |> Enum.take(5)
+      |> Enum.map(fn {metric, data} ->
+        "• #{metric} (#{data.status}) - #{length(data.available_assets)} assets, #{data.frequency}"
+      end)
+      |> Enum.join("\n")
+
+    """
+    📊 Sanbase Available Metrics Summary
+
+    Total Metrics: #{total_metrics}
+
+    Status Distribution: #{status_counts}
+
+    Access Levels: #{access_levels}
+
+    Sample Metrics:
+    #{sample_metrics}
+
+    Use format="json" for complete detailed data including all metrics, supported assets, selectors, and documentation.
+    """
   end
 end

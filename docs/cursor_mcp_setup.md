@@ -132,6 +132,16 @@ Once configured, Cursor AI will have access to these Sanbase tools:
 **Example usage in Cursor**:
 > "Use the say_hi tool to greet me in French"
 
+### `list_available_metrics`
+- **Description**: Lists all available Sanbase metrics and their metadata
+- **Parameters**:
+  - `format` (string, optional): Output format - "summary" or "json" (default: "summary")
+- **Returns**: Comprehensive information about all Sanbase metrics including supported assets, access levels, documentation, and more
+
+**Example usage in Cursor**:
+> "Use the list_available_metrics tool to show me all available metrics"
+> "Get the list of available metrics in JSON format"
+
 ## Troubleshooting
 
 ### MCP Server Not Responding

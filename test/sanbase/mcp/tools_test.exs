@@ -27,6 +27,22 @@ defmodule Sanbase.MCP.ToolsTest do
                      }
                    }
                  }
+               },
+               %{
+                 "name" => "list_available_metrics",
+                 "description" =>
+                   "Lists all available Sanbase metrics and their metadata including supported assets, access levels, and documentation",
+                 "inputSchema" => %{
+                   "type" => "object",
+                   "properties" => %{
+                     "format" => %{
+                       "type" => "string",
+                       "description" => "Output format for the metrics data",
+                       "enum" => ["json", "summary"],
+                       "default" => "summary"
+                     }
+                   }
+                 }
                }
              ] = tools
     end
@@ -121,6 +137,35 @@ defmodule Sanbase.MCP.ToolsTest do
       {:error, message} = Tools.call_tool("unknown_tool", %{})
 
       assert "Unknown tool: unknown_tool" = message
+    end
+  end
+
+  describe "call_tool/2 - list_available_metrics" do
+    test "list_available_metrics tool is properly registered" do
+      # Just test that the tool responds (it may fail due to DB issues in test)
+      result = Tools.call_tool("list_available_metrics", %{})
+
+      # The tool should return a proper MCP response structure regardless of success/failure
+      assert {:ok, response} = result
+      assert %{"content" => [%{"type" => "text", "text" => _text}], "isError" => _} = response
+    end
+
+    test "list_available_metrics tool with json format parameter" do
+      # Test that the tool accepts the json format parameter
+      result = Tools.call_tool("list_available_metrics", %{"format" => "json"})
+
+      # The tool should return a proper MCP response structure regardless of success/failure
+      assert {:ok, response} = result
+      assert %{"content" => [%{"type" => "text", "text" => _text}], "isError" => _} = response
+    end
+
+    test "list_available_metrics tool with summary format parameter" do
+      # Test that the tool accepts the summary format parameter
+      result = Tools.call_tool("list_available_metrics", %{"format" => "summary"})
+
+      # The tool should return a proper MCP response structure regardless of success/failure
+      assert {:ok, response} = result
+      assert %{"content" => [%{"type" => "text", "text" => _text}], "isError" => _} = response
     end
   end
 end

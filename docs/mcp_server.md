@@ -50,6 +50,50 @@ A friendly greeting tool that demonstrates basic MCP functionality.
 }
 ```
 
+### list_available_metrics
+
+Lists all available Sanbase metrics and their metadata including supported assets, access levels, and documentation.
+
+**Parameters:**
+- `format` (string, optional) - Output format for the metrics data (default: "summary")
+  - Supported formats: "summary", "json"
+
+**Example usage:**
+```json
+{
+  "name": "list_available_metrics",
+  "arguments": {
+    "format": "summary"
+  }
+}
+```
+
+**Response (summary format):**
+```json
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "📊 Sanbase Available Metrics Summary\n\nTotal Metrics: 150\n\nStatus Distribution: active: 120, deprecated: 30\n\nAccess Levels: free: 80, restricted: 70\n\nSample Metrics:\n• daily_active_addresses (active) - 1200 assets, 1d\n• price_usd (active) - 1500 assets, 5m\n..."
+    }
+  ],
+  "isError": false
+}
+```
+
+**Example usage (JSON format):**
+```json
+{
+  "name": "list_available_metrics",
+  "arguments": {
+    "format": "json"
+  }
+}
+```
+
+**Response (JSON format):**
+Returns complete detailed JSON data for all metrics including their metadata, supported assets, selectors, documentation, and access information.
+
 ## HTTP Endpoint
 
 The MCP server is accessible via HTTP POST at `/mcp`. The endpoint accepts JSON-RPC 2.0 requests and supports both single requests and batch requests.

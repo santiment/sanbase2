@@ -30,6 +30,17 @@ defmodule SanbaseWeb.Router do
     plug(SanbaseWeb.Graphql.RequestHaltPlug)
   end
 
+  pipeline :mcp do
+    plug(:accepts, ["json"])
+    plug(RemoteIp)
+    plug(:fetch_session)
+  end
+
+  pipeline :sse do
+    plug(RemoteIp)
+    plug(:fetch_session)
+  end
+
   pipeline :telegram do
     plug(SanbaseWeb.Plug.TelegramMatchPlug)
   end
@@ -204,9 +215,20 @@ defmodule SanbaseWeb.Router do
       log_level: :info,
       before_send: {SanbaseWeb.Graphql.AbsintheBeforeSend, :before_send}
     )
+  end
+
+  scope "/" do
+    pipe_through(:mcp)
 
     # MCP (Model Context Protocol) server endpoint
     post("/mcp", SanbaseWeb.MCPController, :handle)
+  end
+
+  # SSE endpoint without accepts plug to support text/event-stream
+  scope "/" do
+    pipe_through(:sse)
+
+    get("/mcp", SanbaseWeb.MCPController, :sse)
   end
 
   scope "/", SanbaseWeb do

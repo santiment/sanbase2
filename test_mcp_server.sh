@@ -21,6 +21,7 @@ echo
 echo "2. Testing MCP initialization..."
 INIT_RESPONSE=$(curl -s -X POST http://localhost:4000/mcp \
   -H "Content-Type: application/json" \
+  -D /tmp/mcp_headers.txt \
   -d '{
     "jsonrpc": "2.0",
     "id": "1",
@@ -39,6 +40,10 @@ if echo "$INIT_RESPONSE" | jq -e '.result.serverInfo.name' > /dev/null 2>&1; the
     echo "   ✅ MCP initialization successful"
     echo "   📋 Server: $(echo "$INIT_RESPONSE" | jq -r '.result.serverInfo.name')"
     echo "   📋 Version: $(echo "$INIT_RESPONSE" | jq -r '.result.serverInfo.version')"
+    
+    # Extract session ID from headers
+    SESSION_ID=$(grep -i "mcp-session-id:" /tmp/mcp_headers.txt | cut -d' ' -f2 | tr -d '\r\n')
+    echo "   📋 Session ID: $SESSION_ID"
 else
     echo "   ❌ MCP initialization failed"
     echo "   Response: $INIT_RESPONSE"
@@ -50,6 +55,7 @@ echo
 echo "3. Testing tools/list..."
 TOOLS_RESPONSE=$(curl -s -X POST http://localhost:4000/mcp \
   -H "Content-Type: application/json" \
+  -H "mcp-session-id: $SESSION_ID" \
   -d '{"jsonrpc":"2.0","id":"2","method":"tools/list"}')
 
 if echo "$TOOLS_RESPONSE" | jq -e '.result.tools[0].name' > /dev/null 2>&1; then
@@ -68,6 +74,7 @@ echo
 echo "4. Testing say_hi tool..."
 SAY_HI_RESPONSE=$(curl -s -X POST http://localhost:4000/mcp \
   -H "Content-Type: application/json" \
+  -H "mcp-session-id: $SESSION_ID" \
   -d '{
     "jsonrpc": "2.0",
     "id": "3",
@@ -103,6 +110,7 @@ for i in "${!LANGUAGES[@]}"; do
     
     LANG_RESPONSE=$(curl -s -X POST http://localhost:4000/mcp \
       -H "Content-Type: application/json" \
+      -H "mcp-session-id: $SESSION_ID" \
       -d "{
         \"jsonrpc\": \"2.0\",
         \"id\": \"$((4+i))\",
@@ -123,6 +131,66 @@ for i in "${!LANGUAGES[@]}"; do
         echo "   ❌ $LANG_NAME ($LANG): Failed"
     fi
 done
+echo
+
+# Test 6: Test list_available_metrics tool (summary format)
+echo "6. Testing list_available_metrics tool (summary format)..."
+METRICS_SUMMARY_RESPONSE=$(curl -s -X POST http://localhost:4000/mcp \
+  -H "Content-Type: application/json" \
+  -H "mcp-session-id: $SESSION_ID" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": "10",
+    "method": "tools/call",
+    "params": {
+      "name": "list_available_metrics",
+      "arguments": {
+        "format": "summary"
+      }
+    }
+  }')
+
+if echo "$METRICS_SUMMARY_RESPONSE" | jq -e '.result.content[0].text' > /dev/null 2>&1; then
+    echo "   ✅ list_available_metrics (summary) executed successfully"
+    SUMMARY_TEXT=$(echo "$METRICS_SUMMARY_RESPONSE" | jq -r '.result.content[0].text')
+    TOTAL_METRICS=$(echo "$SUMMARY_TEXT" | grep "Total Metrics:" | head -1)
+    echo "   📋 $TOTAL_METRICS"
+else
+    echo "   ❌ list_available_metrics (summary) execution failed"
+    echo "   Response: $METRICS_SUMMARY_RESPONSE"
+fi
+echo
+
+# Test 7: Test list_available_metrics tool (JSON format) - just verify it works, don't print the full JSON
+echo "7. Testing list_available_metrics tool (JSON format)..."
+METRICS_JSON_RESPONSE=$(curl -s -X POST http://localhost:4000/mcp \
+  -H "Content-Type: application/json" \
+  -H "mcp-session-id: $SESSION_ID" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": "11",
+    "method": "tools/call",
+    "params": {
+      "name": "list_available_metrics",
+      "arguments": {
+        "format": "json"
+      }
+    }
+  }')
+
+if echo "$METRICS_JSON_RESPONSE" | jq -e '.result.content[0].text' > /dev/null 2>&1; then
+    echo "   ✅ list_available_metrics (JSON) executed successfully"
+    JSON_TEXT=$(echo "$METRICS_JSON_RESPONSE" | jq -r '.result.content[0].text')
+    if echo "$JSON_TEXT" | jq . > /dev/null 2>&1; then
+        METRIC_COUNT=$(echo "$JSON_TEXT" | jq 'keys | length')
+        echo "   📋 Returned $METRIC_COUNT metrics in JSON format"
+    else
+        echo "   ⚠️  Response is not valid JSON"
+    fi
+else
+    echo "   ❌ list_available_metrics (JSON) execution failed"
+    echo "   Response: $METRICS_JSON_RESPONSE"
+fi
 echo
 
 echo "🎉 All MCP server tests completed successfully!"

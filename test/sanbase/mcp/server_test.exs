@@ -77,7 +77,10 @@ defmodule Sanbase.MCP.ServerTest do
                }
              } = response
 
-      assert [%{"name" => "say_hi"}] = tools
+      assert [
+               %{"name" => "say_hi"},
+               %{"name" => "list_available_metrics"}
+             ] = tools
     end
 
     test "handles tools/call request for say_hi" do

@@ -46,6 +46,10 @@ defmodule SanbaseWeb.Endpoint do
     plug(Phoenix.CodeReloader)
   end
 
+  if Code.ensure_loaded?(Tidewave) do
+    plug Tidewave
+  end
+
   plug(Plug.RequestId)
   plug(Plug.Logger)
 

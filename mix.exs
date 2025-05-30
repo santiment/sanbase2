@@ -155,7 +155,8 @@ defmodule Sanbase.Mixfile do
       {:waffle, "~> 1.1"},
       {:websockex, "~> 0.4.3"},
       {:mox, "~> 1.2"},
-      {:ex_audit, "~> 0.10.0"}
+      {:ex_audit, "~> 0.10.0"},
+      {:req, "~> 0.5"}
     ]
   end
 

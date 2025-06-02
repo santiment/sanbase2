@@ -794,7 +794,11 @@ defmodule Sanbase.Entity do
         _ -> nil
       end
 
-    entity_opts = Keyword.put(entity_opts, :is_paywall_required, is_paywall_required)
+    entity_opts =
+      entity_opts
+      |> Keyword.put(:is_paywall_required, is_paywall_required)
+      |> Keyword.put(:tags, get_in(opts, [:filter, :insight, :tags]))
+
     current_user_id = Keyword.get(opts, :current_user_id)
 
     include_all_user_entities = Keyword.fetch!(opts, :include_all_user_entities)

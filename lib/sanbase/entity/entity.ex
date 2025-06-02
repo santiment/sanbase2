@@ -75,6 +75,7 @@ defmodule Sanbase.Entity do
           | {:page_size, non_neg_integer()}
           | {:cursor, map()}
           | {:user_ids, list(non_neg_integer())}
+          | {:public_status, :all | :public | :private}
 
   @type opts :: [option]
   @type result_map :: %{
@@ -232,7 +233,7 @@ defmodule Sanbase.Entity do
 
   def by_id(entity_type, entity_id) do
     module = deduce_entity_module(entity_type)
-    apply(module, :by_id, [entity_id, []])
+    module.by_id(entity_id, [])
   end
 
   @doc ~s"""
@@ -786,6 +787,14 @@ defmodule Sanbase.Entity do
       Keyword.take(opts, @passed_opts) ++
         [preload?: false, distinct?: true, ordered?: false]
 
+    is_paywall_required =
+      case get_in(opts, [:filter, :insight, :paywall]) do
+        :paywalled_only -> true
+        :non_paywalled_only -> false
+        _ -> nil
+      end
+
+    entity_opts = Keyword.put(entity_opts, :is_paywall_required, is_paywall_required)
     current_user_id = Keyword.get(opts, :current_user_id)
 
     include_all_user_entities = Keyword.fetch!(opts, :include_all_user_entities)

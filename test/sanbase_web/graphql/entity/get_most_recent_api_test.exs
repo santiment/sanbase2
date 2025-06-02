@@ -17,6 +17,52 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
     Timex.shift(DateTime.utc_now(), seconds: -seconds)
   end
 
+  test "get most recent insight with paywall and tags filter", %{conn: conn} do
+    _ =
+      insert(:published_post,
+        inserted_at: seconds_ago(45),
+        title: "Title 1",
+        tags: [build(:tag, name: "tag1"), build(:tag, name: "tag2")],
+        is_paywall_required: false
+      )
+
+    _ =
+      insert(:post,
+        ready_state: "draft",
+        inserted_at: seconds_ago(40),
+        title: "Title",
+        tags: [build(:tag, name: "tag3")],
+        is_paywall_required: true
+      )
+
+    insight =
+      insert(:published_post,
+        inserted_at: seconds_ago(35),
+        title: "Title",
+        tags: Sanbase.Tag.by_names(["tag1", "tag3"]),
+        is_paywall_required: true
+      )
+
+    result =
+      get_most_recent(conn, [:insight],
+        filter: %{
+          map_as_input_object: true,
+          insight: %{
+            map_as_input_object: true,
+            tags: ["tag1"],
+            paywall: :paywalled_only
+          }
+        }
+      )
+
+    data = result["data"]
+    stats = result["stats"]
+
+    assert stats["totalEntitiesCount"] == 1
+    assert length(data) == 1
+    assert hd(data)["insight"]["id"] == insight.id
+  end
+
   test "get most recent with min title and description length", %{conn: conn} do
     _ =
       insert(:screener,

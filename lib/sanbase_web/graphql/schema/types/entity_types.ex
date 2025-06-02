@@ -19,7 +19,6 @@ defmodule SanbaseWeb.Graphql.EntityTypes do
   input_object :insight_entity_filter do
     field(:tags, list_of(:string))
     field(:paywall, :insight_paywall_filter)
-    field(:ready_state, :insight_ready_state_filter)
   end
 
   enum :insight_paywall_filter do

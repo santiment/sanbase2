@@ -6,6 +6,32 @@ defmodule SanbaseWeb.Graphql.EntityTypes do
   input_object :entity_filter do
     field(:slugs, list_of(:string))
     field(:metrics, list_of(:string))
+
+    @desc ~s"""
+    Control whether the public, private or both type of entities are returned.
+    Private entities are returned only if the user is the owner of the entity.
+    """
+    field(:public_status, :entity_public_status)
+
+    field(:insight, :insight_entity_filter)
+  end
+
+  input_object :insight_entity_filter do
+    field(:tags, list_of(:string))
+    field(:paywall, :insight_paywall_filter)
+    field(:ready_state, :insight_ready_state_filter)
+  end
+
+  enum :insight_paywall_filter do
+    value(:all)
+    value(:paywalled_only)
+    value(:non_paywalled_only)
+  end
+
+  enum :entity_public_status do
+    value(:all)
+    value(:public)
+    value(:private)
   end
 
   enum :entity_interaction_interaction_type do

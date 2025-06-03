@@ -7,7 +7,7 @@ config :sanbase, SanbaseWeb.Guardian,
 config :ueberauth, Ueberauth,
   providers: [
     google: {Ueberauth.Strategy.Google, [default_scope: "email"]},
-    twitter: {Ueberauth.Strategy.Twitter, []}
+    twitter: {Sanbase.Ueberauth.Strategy.Twitter, []}
   ]
 
 config :guardian, Guardian.DB,

@@ -10,9 +10,8 @@ config :sanbase, Sanbase.ClickhouseRepo,
   database: "not_secret_default",
   username: "not_secret_default",
   password: "",
-  timeout: 100_000,
   pool_size: {:system, "CLICKHOUSE_POOL_SIZE", "25"},
-  pool_overflow: 5
+  max_overflow: 5
 
 clickhouse_read_only_opts = [
   adapter: ClickhouseEcto,
@@ -22,9 +21,7 @@ clickhouse_read_only_opts = [
   database: "not_secret_default",
   username: "not_secret_default",
   password: "",
-  timeout: 100_000,
   pool_size: {:system, "CLICKHOUSE_READONLY_POOL_SIZE", "0"},
-  pool_overflow: 3,
   max_overflow: 5
 ]
 

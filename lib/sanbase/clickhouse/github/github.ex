@@ -378,8 +378,6 @@ defmodule Sanbase.Clickhouse.Github do
   end
 
   defp datetime_activity_execute(query_struct) do
-    ClickhouseRepo.query_transform(query_struct, & &1)
-
     ClickhouseRepo.query_transform(query_struct, fn [datetime, value] ->
       %{
         datetime: datetime |> DateTime.from_unix!(),

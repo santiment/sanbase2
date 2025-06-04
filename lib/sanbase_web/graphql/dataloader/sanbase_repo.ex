@@ -3,6 +3,7 @@ defmodule SanbaseWeb.Graphql.SanbaseRepo do
   alias Sanbase.Project
   alias Sanbase.Insight.Post
   alias Sanbase.Timeline.TimelineEvent
+  alias Sanbase.Chat.{Chat, ChatMessage}
 
   import Ecto.Query
 
@@ -24,6 +25,16 @@ defmodule SanbaseWeb.Graphql.SanbaseRepo do
   def query(TimelineEvent, _args) do
     TimelineEvent
     |> preload([:votes])
+  end
+
+  def query(Chat, _args) do
+    Chat
+    |> preload([:user, :chat_messages])
+  end
+
+  def query(ChatMessage, _args) do
+    ChatMessage
+    |> preload([:chat])
   end
 
   def query(queryable, _args) do

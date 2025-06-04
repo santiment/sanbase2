@@ -296,6 +296,10 @@ defmodule SanbaseWeb.Graphql.UserTypes do
       cache_resolve(&QueriesResolver.get_all_current_user_dashboards/3, ttl: 60)
     end
 
+    field :chats, list_of(:chat_summary) do
+      resolve(&SanbaseWeb.Graphql.Resolvers.ChatResolver.my_chats/3)
+    end
+
     field :subscriptions, list_of(:subscription_plan) do
       resolve(&BillingResolver.subscriptions/3)
     end

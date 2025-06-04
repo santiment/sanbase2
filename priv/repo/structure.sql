@@ -797,6 +797,36 @@ ALTER SEQUENCE public.chart_configurations_id_seq OWNED BY public.chart_configur
 
 
 --
+-- Name: chat_messages; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.chat_messages (
+    id uuid NOT NULL,
+    chat_id uuid NOT NULL,
+    content text NOT NULL,
+    role character varying(255) NOT NULL,
+    context jsonb DEFAULT '{}'::jsonb,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL,
+    CONSTRAINT valid_role CHECK (((role)::text = ANY ((ARRAY['user'::character varying, 'assistant'::character varying])::text[])))
+);
+
+
+--
+-- Name: chats; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.chats (
+    id uuid NOT NULL,
+    title character varying(255) NOT NULL,
+    user_id bigint NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL,
+    type character varying(255) DEFAULT 'dyor_dashboard'::character varying NOT NULL
+);
+
+
+--
 -- Name: clickhouse_query_executions; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -6122,6 +6152,22 @@ ALTER TABLE ONLY public.chart_configurations
 
 
 --
+-- Name: chat_messages chat_messages_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.chat_messages
+    ADD CONSTRAINT chat_messages_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: chats chats_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.chats
+    ADD CONSTRAINT chats_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: clickhouse_query_executions clickhouse_query_executions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7260,6 +7306,48 @@ CREATE INDEX chart_configurations_project_id_index ON public.chart_configuration
 --
 
 CREATE INDEX chart_configurations_user_id_index ON public.chart_configurations USING btree (user_id);
+
+
+--
+-- Name: chat_messages_chat_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX chat_messages_chat_id_index ON public.chat_messages USING btree (chat_id);
+
+
+--
+-- Name: chat_messages_inserted_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX chat_messages_inserted_at_index ON public.chat_messages USING btree (inserted_at);
+
+
+--
+-- Name: chat_messages_role_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX chat_messages_role_index ON public.chat_messages USING btree (role);
+
+
+--
+-- Name: chats_inserted_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX chats_inserted_at_index ON public.chats USING btree (inserted_at);
+
+
+--
+-- Name: chats_type_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX chats_type_index ON public.chats USING btree (type);
+
+
+--
+-- Name: chats_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX chats_user_id_index ON public.chats USING btree (user_id);
 
 
 --
@@ -8500,6 +8588,22 @@ ALTER TABLE ONLY public.chart_configurations
 
 ALTER TABLE ONLY public.chart_configurations
     ADD CONSTRAINT chart_configurations_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: chat_messages chat_messages_chat_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.chat_messages
+    ADD CONSTRAINT chat_messages_chat_id_fkey FOREIGN KEY (chat_id) REFERENCES public.chats(id) ON DELETE CASCADE;
+
+
+--
+-- Name: chats chats_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.chats
+    ADD CONSTRAINT chats_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -10144,6 +10248,7 @@ INSERT INTO public."schema_migrations" (version) VALUES (20241128161315);
 INSERT INTO public."schema_migrations" (version) VALUES (20241202104812);
 INSERT INTO public."schema_migrations" (version) VALUES (20241212054904);
 INSERT INTO public."schema_migrations" (version) VALUES (20250110083203);
+INSERT INTO public."schema_migrations" (version) VALUES (20250117000001);
 INSERT INTO public."schema_migrations" (version) VALUES (20250121155544);
 INSERT INTO public."schema_migrations" (version) VALUES (20250203104426);
 INSERT INTO public."schema_migrations" (version) VALUES (20250207100755);
@@ -10169,3 +10274,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250507135031);
 INSERT INTO public."schema_migrations" (version) VALUES (20250512124853);
 INSERT INTO public."schema_migrations" (version) VALUES (20250512130838);
 INSERT INTO public."schema_migrations" (version) VALUES (20250512140823);
+INSERT INTO public."schema_migrations" (version) VALUES (20250512141238);
+INSERT INTO public."schema_migrations" (version) VALUES (20250604072648);

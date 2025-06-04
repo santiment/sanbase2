@@ -19,7 +19,7 @@ defmodule Sanbase.Price do
     ]
 
   alias Sanbase.Project
-  alias Sanbase.ClickhouseRepo
+  alias Sanbase.ChRepo
 
   @default_source "coinmarketcap"
   @supported_sources ["coinmarketcap", "cryptocompare"]
@@ -154,7 +154,7 @@ defmodule Sanbase.Price do
 
       query_struct = timeseries_data_query(slug_or_slugs, from, to, interval, source, aggregation)
 
-      ClickhouseRepo.query_transform(
+      ChRepo.query_transform(
         query_struct,
         fn [timestamp, price_usd, price_btc, marketcap_usd, volume_usd] ->
           %{
@@ -238,7 +238,7 @@ defmodule Sanbase.Price do
           aggregation
         )
 
-      ClickhouseRepo.query_reduce(query_struct, %{}, fn [timestamp, slug, value], acc ->
+      ChRepo.query_reduce(query_struct, %{}, fn [timestamp, slug, value], acc ->
         datetime = DateTime.from_unix!(timestamp)
         elem = %{slug: slug, value: value}
         Map.update(acc, datetime, [elem], &[elem | &1])
@@ -271,7 +271,7 @@ defmodule Sanbase.Price do
 
       query_struct = aggregated_timeseries_data_query(slugs, from, to, source)
 
-      ClickhouseRepo.query_transform(query_struct, fn
+      ChRepo.query_transform(query_struct, fn
         [slug, price_usd, price_btc, marketcap_usd, volume_usd, has_changed] ->
           %{
             slug: slug,
@@ -333,7 +333,7 @@ defmodule Sanbase.Price do
       query_struct =
         aggregated_metric_timeseries_data_query(slugs, metric, from, to, source, aggregation)
 
-      ClickhouseRepo.query_reduce(query_struct, %{}, fn
+      ChRepo.query_reduce(query_struct, %{}, fn
         [slug, value, has_changed], acc ->
           value = if has_changed == 1, do: value
           Map.put(acc, slug, value)
@@ -362,7 +362,7 @@ defmodule Sanbase.Price do
 
       query_struct = aggregated_marketcap_and_volume_query(slugs, from, to, source, opts)
 
-      ClickhouseRepo.query_transform(query_struct, fn
+      ChRepo.query_transform(query_struct, fn
         [slug, marketcap_usd, volume_usd, has_changed] ->
           %{
             slug: slug,
@@ -385,7 +385,7 @@ defmodule Sanbase.Price do
   def latest_prices_per_slug(slugs, source, limit_per_slug) when is_list(slugs) do
     query_struct = latest_prices_per_slug_query(slugs, source, limit_per_slug)
 
-    ClickhouseRepo.query_reduce(query_struct, %{}, fn [slug, prices_usd, prices_btc], acc ->
+    ChRepo.query_reduce(query_struct, %{}, fn [slug, prices_usd, prices_btc], acc ->
       acc
       |> Map.put({slug, "USD"}, prices_usd)
       |> Map.put({slug, "BTC"}, prices_btc)
@@ -399,7 +399,7 @@ defmodule Sanbase.Price do
       query_struct =
         slugs_by_filter_query(metric, from, to, operator, threshold, aggregation, source)
 
-      ClickhouseRepo.query_transform(query_struct, fn [slug, _value] -> slug end)
+      ChRepo.query_transform(query_struct, fn [slug, _value] -> slug end)
     end
   end
 
@@ -409,7 +409,7 @@ defmodule Sanbase.Price do
 
       query_struct = slugs_order_query(metric, from, to, direction, aggregation, source)
 
-      ClickhouseRepo.query_transform(query_struct, fn [slug, _value] -> slug end)
+      ChRepo.query_transform(query_struct, fn [slug, _value] -> slug end)
     end
   end
 
@@ -424,7 +424,7 @@ defmodule Sanbase.Price do
     with {:ok, source} <- opts_to_source(opts) do
       query_struct = last_record_before_query(slug, datetime, source)
 
-      ClickhouseRepo.query_transform(
+      ChRepo.query_transform(
         query_struct,
         fn [price_usd, price_btc, marketcap_usd, volume_usd] ->
           %{
@@ -450,7 +450,7 @@ defmodule Sanbase.Price do
     with {:ok, source} <- opts_to_source(opts) do
       query_struct = ohlc_query(slug, from, to, source)
 
-      ClickhouseRepo.query_transform(query_struct, fn [open, high, low, close, has_changed] ->
+      ChRepo.query_transform(query_struct, fn [open, high, low, close, has_changed] ->
         %{
           open_price_usd: open,
           high_price_usd: high,
@@ -474,7 +474,7 @@ defmodule Sanbase.Price do
     with {:ok, source} <- opts_to_source(opts) do
       query_struct = timeseries_ohlc_data_query(slug, from, to, interval, source)
 
-      ClickhouseRepo.query_transform(
+      ChRepo.query_transform(
         query_struct,
         fn [timestamp, open, high, low, close] ->
           %{
@@ -523,7 +523,7 @@ defmodule Sanbase.Price do
 
       query_struct = combined_marketcap_and_volume_query(slugs, from, to, interval, source)
 
-      ClickhouseRepo.query_transform(
+      ChRepo.query_transform(
         query_struct,
         fn [timestamp, marketcap_usd, volume_usd, has_changed] ->
           %{
@@ -559,14 +559,14 @@ defmodule Sanbase.Price do
     with {:ok, source} <- opts_to_source(opts) do
       query_struct = slugs_with_volume_over_query(volume, source)
 
-      ClickhouseRepo.query_transform(query_struct, fn [slug] -> slug end)
+      ChRepo.query_transform(query_struct, fn [slug] -> slug end)
     end
   end
 
   def has_data?(slug) do
     query_struct = select_any_record_query(slug)
 
-    case ClickhouseRepo.query_transform(query_struct, & &1) do
+    case ChRepo.query_transform(query_struct, & &1) do
       {:ok, [_]} -> {:ok, true}
       {:ok, []} -> {:ok, false}
       {:error, error} -> {:error, error}
@@ -585,7 +585,7 @@ defmodule Sanbase.Price do
     with {:ok, source} <- opts_to_source(opts) do
       query_struct = first_datetime_query(slug, source)
 
-      ClickhouseRepo.query_transform(query_struct, fn
+      ChRepo.query_transform(query_struct, fn
         [timestamp] -> DateTime.from_unix!(timestamp)
       end)
       |> maybe_unwrap_ok_value()
@@ -595,7 +595,7 @@ defmodule Sanbase.Price do
   def last_datetime_computed_at(slug) do
     query_struct = last_datetime_computed_at_query(slug)
 
-    ClickhouseRepo.query_transform(query_struct, fn [datetime] ->
+    ChRepo.query_transform(query_struct, fn [datetime] ->
       DateTime.from_unix!(datetime)
     end)
     |> maybe_unwrap_ok_value()

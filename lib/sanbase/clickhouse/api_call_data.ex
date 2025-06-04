@@ -9,7 +9,7 @@ defmodule Sanbase.Clickhouse.ApiCallData do
   import Sanbase.Utils.Transform,
     only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2, maybe_sort: 3]
 
-  alias Sanbase.ClickhouseRepo
+  alias Sanbase.ChRepo
 
   @doc ~s"""
   Get a timeseries with the total number of api calls made by a user in a given interval
@@ -21,7 +21,7 @@ defmodule Sanbase.Clickhouse.ApiCallData do
   def api_call_history(user_id, from, to, interval, auth_method \\ :apikey) do
     query_struct = api_call_history_query(user_id, from, to, interval, auth_method)
 
-    ClickhouseRepo.query_transform(query_struct, fn [t, count] ->
+    ChRepo.query_transform(query_struct, fn [t, count] ->
       %{
         datetime: DateTime.from_unix!(t),
         api_calls_count: count
@@ -38,7 +38,7 @@ defmodule Sanbase.Clickhouse.ApiCallData do
   def api_call_count(user_id, from, to, auth_method \\ :apikey) do
     query_struct = api_call_count_query(user_id, from, to, auth_method)
 
-    ClickhouseRepo.query_transform(query_struct, fn [count] -> count end)
+    ChRepo.query_transform(query_struct, fn [count] -> count end)
     |> maybe_unwrap_ok_value()
   end
 
@@ -47,7 +47,7 @@ defmodule Sanbase.Clickhouse.ApiCallData do
   def active_users_count(from, to) do
     query_struct = active_users_count_query(from, to)
 
-    ClickhouseRepo.query_transform(query_struct, fn [value] -> value end)
+    ChRepo.query_transform(query_struct, fn [value] -> value end)
     |> maybe_unwrap_ok_value()
   end
 
@@ -57,7 +57,7 @@ defmodule Sanbase.Clickhouse.ApiCallData do
     until = Keyword.get(opts, :until, Timex.now())
     query_struct = users_used_api_query(until)
 
-    ClickhouseRepo.query_transform(query_struct, fn [value] -> value end)
+    ChRepo.query_transform(query_struct, fn [value] -> value end)
   end
 
   @spec users_used_sansheets(Keyword.t()) ::
@@ -66,7 +66,7 @@ defmodule Sanbase.Clickhouse.ApiCallData do
     until = Keyword.get(opts, :until, Timex.now())
     query_struct = users_used_sansheets_query(until)
 
-    ClickhouseRepo.query_transform(query_struct, fn [value] -> value end)
+    ChRepo.query_transform(query_struct, fn [value] -> value end)
   end
 
   @spec api_calls_count_per_user(Keyword.t()) ::
@@ -75,7 +75,7 @@ defmodule Sanbase.Clickhouse.ApiCallData do
     until = Keyword.get(opts, :until, Timex.now())
     query_struct = api_calls_count_per_user_query(until)
 
-    ClickhouseRepo.query_reduce(query_struct, %{}, fn [user_id, count], acc ->
+    ChRepo.query_reduce(query_struct, %{}, fn [user_id, count], acc ->
       Map.put(acc, user_id, count)
     end)
   end
@@ -85,7 +85,7 @@ defmodule Sanbase.Clickhouse.ApiCallData do
   def api_metric_distribution() do
     query_struct = api_metric_distribution_query()
 
-    ClickhouseRepo.query_transform(query_struct, fn [metric, count] ->
+    ChRepo.query_transform(query_struct, fn [metric, count] ->
       %{metric: metric, count: count}
     end)
     |> maybe_unwrap_ok_value()
@@ -96,7 +96,7 @@ defmodule Sanbase.Clickhouse.ApiCallData do
   def api_metric_distribution_per_user() do
     query_struct = api_metric_distribution_per_user_query()
 
-    ClickhouseRepo.query_reduce(query_struct, %{}, fn [user_id, metric, count], acc ->
+    ChRepo.query_reduce(query_struct, %{}, fn [user_id, metric, count], acc ->
       Map.update(acc, user_id, %{}, fn map ->
         update_api_distribution_user_map(map, metric, count)
       end)

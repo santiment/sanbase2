@@ -1,7 +1,20 @@
+defmodule Sanbase.AI.OpenAIClientBehaviour do
+  @moduledoc """
+  Behaviour for OpenAI client to enable mocking in tests.
+  """
+
+  @callback chat_completion(String.t(), String.t(), Keyword.t()) ::
+              {:ok, String.t()} | {:error, String.t()}
+
+  @callback generate_chat_title(String.t()) :: {:ok, String.t()} | {:error, String.t()}
+end
+
 defmodule Sanbase.AI.OpenAIClient do
   @moduledoc """
   OpenAI API client using Req for chat completions.
   """
+
+  @behaviour Sanbase.AI.OpenAIClientBehaviour
 
   require Logger
 

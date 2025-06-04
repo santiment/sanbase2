@@ -154,6 +154,9 @@ config :sanbase, Sanbase.Insight.Post,
   creation_limit_day: 1000,
   creation_limit_minute: 1000
 
+# Configure test environment for OpenAI client mocking
+config :sanbase, :openai_client, Sanbase.AI.MockOpenAIClient
+
 if(File.exists?("config/test.secret.exs")) do
   import_config "test.secret.exs"
 end

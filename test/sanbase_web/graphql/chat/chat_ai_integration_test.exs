@@ -4,12 +4,13 @@ defmodule SanbaseWeb.Graphql.ChatAIIntegrationTest do
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.TestHelpers
-  import Mock
+  import Mox
 
-  alias Sanbase.AI.OpenAIClient
   alias Sanbase.Chat
   alias Sanbase.Dashboards
   alias Sanbase.Queries
+
+  setup :verify_on_exit!
 
   setup do
     clean_task_supervisor_children()
@@ -60,77 +61,77 @@ defmodule SanbaseWeb.Graphql.ChatAIIntegrationTest do
 
       mock_title = "Bitcoin Price Analysis"
 
-      with_mocks([
-        {OpenAIClient, [],
-         [
-           chat_completion: fn _system_prompt, _user_message, _opts ->
-             {:ok, mock_ai_response}
-           end,
-           generate_chat_title: fn _message ->
-             {:ok, mock_title}
-           end
-         ]}
-      ]) do
-        mutation = """
-        mutation {
-          sendChatMessage(
-            content: "What trends can you identify in Bitcoin's recent price action?"
-            context: {
-              dashboardId: "#{dashboard.id}"
-              asset: "bitcoin"
-              metrics: ["price_usd", "volume_usd"]
-            }
-          ) {
+      expect(Sanbase.AI.MockOpenAIClient, :chat_completion, fn system_prompt,
+                                                               user_message,
+                                                               _opts ->
+        # Verify the system prompt contains dashboard information
+        assert String.contains?(system_prompt, "Bitcoin Analysis Dashboard")
+        assert String.contains?(system_prompt, "Bitcoin Price Trends")
+        assert user_message == "What trends can you identify in Bitcoin's recent price action?"
+
+        {:ok, mock_ai_response}
+      end)
+
+      expect(Sanbase.AI.MockOpenAIClient, :generate_chat_title, fn message ->
+        assert message == "What trends can you identify in Bitcoin's recent price action?"
+        {:ok, mock_title}
+      end)
+
+      mutation = """
+      mutation {
+        sendChatMessage(
+          content: "What trends can you identify in Bitcoin's recent price action?"
+          context: {
+            dashboardId: "#{dashboard.id}"
+            asset: "bitcoin"
+            metrics: ["price_usd", "volume_usd"]
+          }
+        ) {
+          id
+          title
+          type
+          chatMessages {
             id
-            title
-            type
-            chatMessages {
-              id
-              content
-              role
-              context
-            }
+            content
+            role
+            context
           }
         }
-        """
+      }
+      """
 
-        result =
-          conn
-          |> post("/graphql", mutation_skeleton(mutation))
-          |> json_response(200)
-          |> get_in(["data", "sendChatMessage"])
+      result =
+        conn
+        |> post("/graphql", mutation_skeleton(mutation))
+        |> json_response(200)
+        |> get_in(["data", "sendChatMessage"])
 
-        # Verify the chat was created
-        assert result["type"] == "DYOR_DASHBOARD"
-        # AI generates some title
-        assert String.length(result["title"]) > 0
+      # Verify the chat was created
+      assert result["type"] == "DYOR_DASHBOARD"
+      # AI generates some title
+      assert String.length(result["title"]) > 0
 
-        # Should have both user and AI messages immediately (synchronous)
-        assert length(result["chatMessages"]) >= 1
+      # Should have both user and AI messages immediately (synchronous)
+      assert length(result["chatMessages"]) >= 1
 
-        user_message = Enum.find(result["chatMessages"], &(&1["role"] == "USER"))
+      user_message = Enum.find(result["chatMessages"], &(&1["role"] == "USER"))
 
-        assert user_message["content"] ==
-                 "What trends can you identify in Bitcoin's recent price action?"
+      assert user_message["content"] ==
+               "What trends can you identify in Bitcoin's recent price action?"
 
-        expected_context = %{
-          "dashboard_id" => to_string(dashboard.id),
-          "asset" => "bitcoin",
-          "metrics" => ["price_usd", "volume_usd"]
-        }
+      expected_context = %{
+        "dashboard_id" => to_string(dashboard.id),
+        "asset" => "bitcoin",
+        "metrics" => ["price_usd", "volume_usd"]
+      }
 
-        assert user_message["context"] == expected_context
+      assert user_message["context"] == expected_context
 
-        # Check that AI response exists (content may vary)
-        ai_message = Enum.find(result["chatMessages"], &(&1["role"] == "ASSISTANT"))
+      # Check that AI response exists (content may vary)
+      ai_message = Enum.find(result["chatMessages"], &(&1["role"] == "ASSISTANT"))
 
-        if ai_message do
-          assert String.length(ai_message["content"]) > 0
-        end
-
-        # Verify OpenAI was called appropriately
-        assert_called(OpenAIClient.chat_completion(:_, :_, :_))
-        assert_called(OpenAIClient.generate_chat_title(:_))
+      if ai_message do
+        assert String.length(ai_message["content"]) > 0
       end
     end
 
@@ -150,103 +151,114 @@ defmodule SanbaseWeb.Graphql.ChatAIIntegrationTest do
       mock_ai_response =
         "Looking at the Bitcoin Analysis Dashboard data, I can provide insights on your follow-up question..."
 
-      with_mock OpenAIClient,
-        chat_completion: fn _system_prompt, _user_message, _opts ->
-          {:ok, mock_ai_response}
-        end do
-        mutation = """
-        mutation {
-          sendChatMessage(
-            chatId: "#{chat.id}"
-            content: "What about volume patterns?"
-            context: {
-              dashboardId: "#{dashboard.id}"
-              asset: "bitcoin"
-              metrics: ["volume_usd"]
-            }
-          ) {
-            id
-            chatMessages {
-              content
-              role
-            }
+      expect(Sanbase.AI.MockOpenAIClient, :chat_completion, fn system_prompt,
+                                                               user_message,
+                                                               _opts ->
+        # Verify the system prompt contains dashboard information
+        assert String.contains?(system_prompt, "Bitcoin Analysis Dashboard")
+        assert String.contains?(system_prompt, "Bitcoin Price Trends")
+        assert user_message == "What about volume patterns?"
+
+        {:ok, mock_ai_response}
+      end)
+
+      mutation = """
+      mutation {
+        sendChatMessage(
+          chatId: "#{chat.id}"
+          content: "What about volume patterns?"
+          context: {
+            dashboardId: "#{dashboard.id}"
+            asset: "bitcoin"
+            metrics: ["volume_usd"]
+          }
+        ) {
+          id
+          chatMessages {
+            content
+            role
           }
         }
-        """
+      }
+      """
 
-        result =
-          conn
-          |> post("/graphql", mutation_skeleton(mutation))
-          |> json_response(200)
-          |> get_in(["data", "sendChatMessage"])
+      result =
+        conn
+        |> post("/graphql", mutation_skeleton(mutation))
+        |> json_response(200)
+        |> get_in(["data", "sendChatMessage"])
 
-        # Should have initial messages plus new user message and AI response
-        messages = result["chatMessages"]
-        user_messages = Enum.filter(messages, &(&1["role"] == "USER"))
-        assert length(user_messages) == 2
+      # Should have initial messages plus new user message and AI response
+      messages = result["chatMessages"]
+      user_messages = Enum.filter(messages, &(&1["role"] == "USER"))
+      assert length(user_messages) == 2
 
-        ai_messages = Enum.filter(messages, &(&1["role"] == "ASSISTANT"))
-        # May have AI responses (content may vary)
-        if length(ai_messages) > 0 do
-          Enum.each(ai_messages, fn ai_msg ->
-            assert String.length(ai_msg["content"]) > 0
-          end)
-        end
-
-        assert_called(OpenAIClient.chat_completion(:_, :_, :_))
+      ai_messages = Enum.filter(messages, &(&1["role"] == "ASSISTANT"))
+      # May have AI responses (content may vary)
+      if length(ai_messages) > 0 do
+        Enum.each(ai_messages, fn ai_msg ->
+          assert String.length(ai_msg["content"]) > 0
+        end)
       end
     end
 
     test "handles missing dashboard gracefully", %{conn: conn} do
-      with_mock OpenAIClient,
-        chat_completion: fn _system_prompt, _user_message, _opts ->
-          {:ok, "Generic response about cryptocurrency analysis"}
-        end,
-        generate_chat_title: fn _message ->
-          {:ok, "Bitcoin Discussion"}
-        end do
-        mutation = """
-        mutation {
-          sendChatMessage(
-            content: "Tell me about Bitcoin"
-            context: {
-              dashboardId: "999999"
-              asset: "bitcoin"
-            }
-          ) {
-            id
-            title
-            chatMessages {
-              content
-              role
-            }
+      expect(Sanbase.AI.MockOpenAIClient, :chat_completion, fn system_prompt,
+                                                               user_message,
+                                                               _opts ->
+        # Should fall back to generic prompt when dashboard doesn't exist
+        assert String.contains?(
+                 system_prompt,
+                 "cryptocurrency data analysis and investment research"
+               )
+
+        assert user_message == "Tell me about Bitcoin"
+
+        {:ok, "Generic response about cryptocurrency analysis"}
+      end)
+
+      expect(Sanbase.AI.MockOpenAIClient, :generate_chat_title, fn message ->
+        assert message == "Tell me about Bitcoin"
+        {:ok, "Bitcoin Discussion"}
+      end)
+
+      mutation = """
+      mutation {
+        sendChatMessage(
+          content: "Tell me about Bitcoin"
+          context: {
+            dashboardId: "999999"
+            asset: "bitcoin"
+          }
+        ) {
+          id
+          title
+          chatMessages {
+            content
+            role
           }
         }
-        """
+      }
+      """
 
-        result =
-          conn
-          |> post("/graphql", mutation_skeleton(mutation))
-          |> json_response(200)
-          |> get_in(["data", "sendChatMessage"])
+      result =
+        conn
+        |> post("/graphql", mutation_skeleton(mutation))
+        |> json_response(200)
+        |> get_in(["data", "sendChatMessage"])
 
-        # AI generates some title
-        assert String.length(result["title"]) > 0
-        assert length(result["chatMessages"]) >= 1
+      # AI generates some title
+      assert String.length(result["title"]) > 0
+      assert length(result["chatMessages"]) >= 1
 
-        # Should have both user and AI messages now (synchronous)
-        user_message = Enum.find(result["chatMessages"], &(&1["role"] == "USER"))
-        assert user_message["content"] == "Tell me about Bitcoin"
+      # Should have both user and AI messages now (synchronous)
+      user_message = Enum.find(result["chatMessages"], &(&1["role"] == "USER"))
+      assert user_message["content"] == "Tell me about Bitcoin"
 
-        ai_message = Enum.find(result["chatMessages"], &(&1["role"] == "ASSISTANT"))
+      ai_message = Enum.find(result["chatMessages"], &(&1["role"] == "ASSISTANT"))
 
-        if ai_message do
-          assert String.length(ai_message["content"]) > 0
-        end
-
-        # Should call OpenAI for both response and title generation
-        assert_called(OpenAIClient.chat_completion(:_, :_, :_))
-        assert_called(OpenAIClient.generate_chat_title(:_))
+      if ai_message do
+        assert String.length(ai_message["content"]) > 0
       end
     end
   end

@@ -2,12 +2,14 @@ defmodule Sanbase.AI.ChatAIServiceTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory
-  import Mock
+  import Mox
 
-  alias Sanbase.AI.{ChatAIService, OpenAIClient}
+  alias Sanbase.AI.ChatAIService
   alias Sanbase.Chat
   alias Sanbase.Dashboards
   alias Sanbase.Queries
+
+  setup :verify_on_exit!
 
   setup do
     user = insert(:user)
@@ -69,23 +71,24 @@ defmodule Sanbase.AI.ChatAIServiceTest do
       mock_response =
         "Based on the Bitcoin Price Query in your Crypto Analysis Dashboard, I can see that..."
 
-      with_mock OpenAIClient,
-        chat_completion: fn _system_prompt, _user_message, _opts ->
-          {:ok, mock_response}
-        end do
-        assert {:ok, response} =
-                 ChatAIService.generate_ai_response(
-                   user_message,
-                   context,
-                   chat.id,
-                   user.id
-                 )
+      expect(Sanbase.AI.MockOpenAIClient, :chat_completion, fn system_prompt, user_msg, _opts ->
+        # Verify the system prompt contains dashboard information
+        assert String.contains?(system_prompt, "Crypto Analysis Dashboard")
+        assert String.contains?(system_prompt, "Bitcoin Price Query")
+        assert user_msg == user_message
 
-        assert response == mock_response
+        {:ok, mock_response}
+      end)
 
-        # Verify that the OpenAI client was called with appropriate system prompt
-        assert_called(OpenAIClient.chat_completion(:_, :_, :_))
-      end
+      assert {:ok, response} =
+               ChatAIService.generate_ai_response(
+                 user_message,
+                 context,
+                 chat.id,
+                 user.id
+               )
+
+      assert response == mock_response
     end
 
     test "generates generic response when no dashboard context", %{user: user, chat: chat} do
@@ -94,20 +97,27 @@ defmodule Sanbase.AI.ChatAIServiceTest do
 
       mock_response = "Blockchain is a distributed ledger technology..."
 
-      with_mock OpenAIClient,
-        chat_completion: fn _system_prompt, _user_message, _opts ->
-          {:ok, mock_response}
-        end do
-        assert {:ok, response} =
-                 ChatAIService.generate_ai_response(
-                   user_message,
-                   context,
-                   chat.id,
-                   user.id
-                 )
+      expect(Sanbase.AI.MockOpenAIClient, :chat_completion, fn system_prompt, user_msg, _opts ->
+        # Verify it's using the generic system prompt
+        assert String.contains?(
+                 system_prompt,
+                 "cryptocurrency data analysis and investment research"
+               )
 
-        assert response == mock_response
-      end
+        assert user_msg == user_message
+
+        {:ok, mock_response}
+      end)
+
+      assert {:ok, response} =
+               ChatAIService.generate_ai_response(
+                 user_message,
+                 context,
+                 chat.id,
+                 user.id
+               )
+
+      assert response == mock_response
     end
 
     test "handles invalid dashboard_id", %{user: user, chat: chat} do
@@ -141,20 +151,44 @@ defmodule Sanbase.AI.ChatAIServiceTest do
 
       mock_response = "Generic response due to access error"
 
-      with_mock OpenAIClient,
-        chat_completion: fn _system_prompt, _user_message, _opts ->
-          {:ok, mock_response}
-        end do
-        assert {:ok, response} =
-                 ChatAIService.generate_ai_response(
-                   user_message,
-                   context,
-                   chat.id,
-                   user.id
-                 )
+      expect(Sanbase.AI.MockOpenAIClient, :chat_completion, fn system_prompt, user_msg, _opts ->
+        # Should fall back to generic prompt when dashboard access fails
+        assert String.contains?(
+                 system_prompt,
+                 "cryptocurrency data analysis and investment research"
+               )
 
-        assert response == mock_response
-      end
+        assert user_msg == user_message
+
+        {:ok, mock_response}
+      end)
+
+      assert {:ok, response} =
+               ChatAIService.generate_ai_response(
+                 user_message,
+                 context,
+                 chat.id,
+                 user.id
+               )
+
+      assert response == mock_response
+    end
+
+    test "handles OpenAI API errors", %{user: user, chat: chat} do
+      user_message = "Test message"
+      context = %{}
+
+      expect(Sanbase.AI.MockOpenAIClient, :chat_completion, fn _system_prompt, _user_msg, _opts ->
+        {:error, "API rate limit exceeded"}
+      end)
+
+      assert {:error, "Failed to generate response: API rate limit exceeded"} =
+               ChatAIService.generate_ai_response(
+                 user_message,
+                 context,
+                 chat.id,
+                 user.id
+               )
     end
   end
 
@@ -163,39 +197,75 @@ defmodule Sanbase.AI.ChatAIServiceTest do
       first_message = "What are the key metrics for Bitcoin analysis?"
       mock_title = "Bitcoin Analysis Metrics"
 
-      with_mock OpenAIClient,
-        generate_chat_title: fn _message ->
-          {:ok, mock_title}
-        end do
-        assert :ok = ChatAIService.generate_and_update_chat_title(chat.id, first_message)
+      expect(Sanbase.AI.MockOpenAIClient, :generate_chat_title, fn message ->
+        assert message == first_message
+        {:ok, mock_title}
+      end)
 
-        # Give the async task time to complete
-        Process.sleep(100)
+      assert :ok = ChatAIService.generate_and_update_chat_title(chat.id, first_message)
 
-        # Verify the chat title was updated
-        updated_chat = Chat.get_chat(chat.id)
-        assert updated_chat.title == mock_title
+      # Give the async task time to complete
+      Process.sleep(100)
 
-        assert_called(OpenAIClient.generate_chat_title(first_message))
-      end
+      # Verify the chat title was updated
+      updated_chat = Chat.get_chat(chat.id)
+      assert updated_chat.title == mock_title
     end
 
     test "handles title generation errors gracefully", %{chat: chat} do
       first_message = "Test message"
 
-      with_mock OpenAIClient,
-        generate_chat_title: fn _message ->
-          {:error, "API error"}
-        end do
-        assert :ok = ChatAIService.generate_and_update_chat_title(chat.id, first_message)
+      expect(Sanbase.AI.MockOpenAIClient, :generate_chat_title, fn message ->
+        assert message == first_message
+        {:error, "API error"}
+      end)
 
-        # Give the async task time to complete
-        Process.sleep(100)
+      assert :ok = ChatAIService.generate_and_update_chat_title(chat.id, first_message)
 
-        # Chat title should remain unchanged
-        updated_chat = Chat.get_chat(chat.id)
-        assert updated_chat.title == "Test Chat"
-      end
+      # Give the async task time to complete
+      Process.sleep(100)
+
+      # Chat title should remain unchanged
+      updated_chat = Chat.get_chat(chat.id)
+      assert updated_chat.title == "Test Chat"
+    end
+  end
+
+  describe "generate_and_update_chat_title_sync/2" do
+    test "generates and updates chat title synchronously", %{chat: chat} do
+      first_message = "What are the key metrics for Bitcoin analysis?"
+      mock_title = "Bitcoin Analysis Metrics"
+
+      expect(Sanbase.AI.MockOpenAIClient, :generate_chat_title, fn message ->
+        assert message == first_message
+        {:ok, mock_title}
+      end)
+
+      assert {:ok, updated_chat} =
+               ChatAIService.generate_and_update_chat_title_sync(chat.id, first_message)
+
+      # Verify the chat title was updated immediately
+      assert updated_chat.title == mock_title
+
+      # Verify in database too
+      db_chat = Chat.get_chat(chat.id)
+      assert db_chat.title == mock_title
+    end
+
+    test "handles title generation errors", %{chat: chat} do
+      first_message = "Test message"
+
+      expect(Sanbase.AI.MockOpenAIClient, :generate_chat_title, fn message ->
+        assert message == first_message
+        {:error, "API error"}
+      end)
+
+      assert {:error, "Failed to generate chat title: API error"} =
+               ChatAIService.generate_and_update_chat_title_sync(chat.id, first_message)
+
+      # Chat title should remain unchanged
+      updated_chat = Chat.get_chat(chat.id)
+      assert updated_chat.title == "Test Chat"
     end
   end
 end

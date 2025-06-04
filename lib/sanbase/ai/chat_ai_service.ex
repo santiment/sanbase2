@@ -42,7 +42,7 @@ defmodule Sanbase.AI.ChatAIService do
   @spec generate_and_update_chat_title(String.t(), String.t()) :: :ok
   def generate_and_update_chat_title(chat_id, first_message) do
     Task.start(fn ->
-      case OpenAIClient.generate_chat_title(first_message) do
+      case openai_client().generate_chat_title(first_message) do
         {:ok, title} ->
           case Chat.update_chat_title(chat_id, title) do
             {:ok, _} -> Logger.info("Updated chat title for chat #{chat_id}")
@@ -63,7 +63,7 @@ defmodule Sanbase.AI.ChatAIService do
   @spec generate_and_update_chat_title_sync(String.t(), String.t()) ::
           {:ok, Chat.t()} | {:error, String.t()}
   def generate_and_update_chat_title_sync(chat_id, first_message) do
-    case OpenAIClient.generate_chat_title(first_message) do
+    case openai_client().generate_chat_title(first_message) do
       {:ok, title} ->
         case Chat.update_chat_title(chat_id, title) do
           {:ok, updated_chat} ->
@@ -129,7 +129,7 @@ defmodule Sanbase.AI.ChatAIService do
   defp generate_dashboard_response(user_message, context, dashboard_context) do
     system_prompt = build_dashboard_system_prompt(dashboard_context, context)
 
-    case OpenAIClient.chat_completion(system_prompt, user_message,
+    case openai_client().chat_completion(system_prompt, user_message,
            max_tokens: 1500,
            temperature: 0.7
          ) do
@@ -185,12 +185,16 @@ defmodule Sanbase.AI.ChatAIService do
     Keep responses concise and focused on actionable insights for investment research (DYOR - Do Your Own Research).
     """
 
-    case OpenAIClient.chat_completion(system_prompt, user_message,
+    case openai_client().chat_completion(system_prompt, user_message,
            max_tokens: 800,
            temperature: 0.7
          ) do
       {:ok, response} -> {:ok, response}
       {:error, reason} -> {:error, "Failed to generate response: #{reason}"}
     end
+  end
+
+  defp openai_client do
+    Application.get_env(:sanbase, :openai_client, OpenAIClient)
   end
 end

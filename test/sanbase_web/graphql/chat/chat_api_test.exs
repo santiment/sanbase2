@@ -4,6 +4,7 @@ defmodule SanbaseWeb.Graphql.ChatApiTest do
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
   import Sanbase.TestHelpers
+  import Mox
 
   alias Sanbase.Chat
 
@@ -14,6 +15,44 @@ defmodule SanbaseWeb.Graphql.ChatApiTest do
     other_user = insert(:user)
 
     conn = setup_jwt_auth(build_conn(), user)
+
+    # Setup default OpenAI mocks to prevent real API calls
+    stub(Sanbase.AI.MockOpenAIClient, :chat_completion, fn _system_prompt, user_message, _opts ->
+      # Provide a reasonable mock response based on the user message
+      msg = String.downcase(user_message)
+
+      response =
+        cond do
+          String.contains?(msg, "bitcoin") ->
+            "Bitcoin is currently showing interesting price patterns based on recent market data."
+
+          String.contains?(msg, "ethereum") ->
+            "Ethereum metrics indicate strong network activity and usage patterns."
+
+          String.contains?(msg, "price") ->
+            "The price analysis shows several key trends worth monitoring for your investment research."
+
+          true ->
+            "Based on the available data, here are some insights for your cryptocurrency analysis."
+        end
+
+      {:ok, response}
+    end)
+
+    stub(Sanbase.AI.MockOpenAIClient, :generate_chat_title, fn first_message ->
+      # Generate a reasonable title based on the first message
+      msg = String.downcase(first_message)
+
+      title =
+        cond do
+          String.contains?(msg, "bitcoin") -> "Bitcoin Analysis"
+          String.contains?(msg, "ethereum") -> "Ethereum Discussion"
+          String.contains?(msg, "price") -> "Price Analysis"
+          true -> "Crypto Discussion"
+        end
+
+      {:ok, title}
+    end)
 
     {:ok, conn: conn, user: user, other_user: other_user}
   end

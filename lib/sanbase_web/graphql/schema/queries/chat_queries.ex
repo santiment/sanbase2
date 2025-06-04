@@ -46,7 +46,9 @@ defmodule SanbaseWeb.Graphql.Schema.ChatQueries do
     All messages sent through this API are user messages.
     """
     field :send_chat_message, :chat do
-      arg(:input, non_null(:chat_message_input))
+      arg(:chat_id, :id)
+      arg(:content, non_null(:string))
+      arg(:context, :chat_context_input)
 
       middleware(JWTAuth)
       resolve(&ChatResolver.send_chat_message/3)

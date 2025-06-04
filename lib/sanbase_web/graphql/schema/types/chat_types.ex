@@ -9,6 +9,10 @@ defmodule SanbaseWeb.Graphql.ChatTypes do
     value(:assistant)
   end
 
+  enum :chat_type do
+    value(:dyor_dashboard)
+  end
+
   object :chat_context do
     field(:dashboard_id, :string)
     field(:asset, :string)
@@ -35,6 +39,18 @@ defmodule SanbaseWeb.Graphql.ChatTypes do
   object :chat do
     field(:id, non_null(:id))
     field(:title, non_null(:string))
+
+    field :type, non_null(:chat_type) do
+      resolve(fn chat, _args, _context ->
+        # Convert string type to enum value
+        case chat.type do
+          "dyor_dashboard" -> {:ok, :dyor_dashboard}
+          # fallback to default
+          _ -> {:ok, :dyor_dashboard}
+        end
+      end)
+    end
+
     field(:inserted_at, non_null(:datetime))
     field(:updated_at, non_null(:datetime))
 
@@ -56,15 +72,21 @@ defmodule SanbaseWeb.Graphql.ChatTypes do
   object :chat_summary do
     field(:id, non_null(:id))
     field(:title, non_null(:string))
+
+    field :type, non_null(:chat_type) do
+      resolve(fn chat, _args, _context ->
+        # Convert string type to enum value
+        case chat.type do
+          "dyor_dashboard" -> {:ok, :dyor_dashboard}
+          # fallback to default
+          _ -> {:ok, :dyor_dashboard}
+        end
+      end)
+    end
+
     field(:inserted_at, non_null(:datetime))
     field(:updated_at, non_null(:datetime))
     field(:messages_count, :integer)
     field(:latest_message, :chat_message)
-  end
-
-  input_object :chat_message_input do
-    field(:chat_id, :id)
-    field(:content, non_null(:string))
-    field(:context, :chat_context_input)
   end
 end

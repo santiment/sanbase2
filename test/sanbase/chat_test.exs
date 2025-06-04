@@ -326,4 +326,55 @@ defmodule Sanbase.ChatTest do
       assert msg3.context == follow_up_context
     end
   end
+
+  describe "chat types" do
+    test "creates chat with default type" do
+      user = insert(:user)
+
+      {:ok, chat} = Chat.create_chat(%{title: "Test Chat", user_id: user.id})
+
+      assert chat.type == "dyor_dashboard"
+    end
+
+    test "creates chat with specific type" do
+      user = insert(:user)
+
+      {:ok, chat} =
+        Chat.create_chat(%{title: "Test Chat", user_id: user.id, type: "dyor_dashboard"})
+
+      assert chat.type == "dyor_dashboard"
+    end
+
+    test "creates chat with message and default type" do
+      user = insert(:user)
+
+      {:ok, chat} = Chat.create_chat_with_message(user.id, "Test message")
+
+      assert chat.type == "dyor_dashboard"
+      assert length(chat.chat_messages) == 1
+    end
+
+    test "creates chat with message and specific type" do
+      user = insert(:user)
+
+      {:ok, chat} = Chat.create_chat_with_message(user.id, "Test message", %{}, "dyor_dashboard")
+
+      assert chat.type == "dyor_dashboard"
+      assert length(chat.chat_messages) == 1
+    end
+
+    test "validates chat type inclusion" do
+      user = insert(:user)
+
+      changeset =
+        Sanbase.Chat.Chat.create_changeset(%{
+          title: "Test",
+          user_id: user.id,
+          type: "invalid_type"
+        })
+
+      refute changeset.valid?
+      assert changeset.errors[:type]
+    end
+  end
 end

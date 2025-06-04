@@ -5,9 +5,12 @@ defmodule Sanbase.Chat.Chat do
   alias Sanbase.Accounts.User
   alias Sanbase.Chat.ChatMessage
 
+  @chat_types ["dyor_dashboard"]
+
   @type t :: %__MODULE__{
           id: Ecto.UUID.t(),
           title: String.t(),
+          type: String.t(),
           user_id: integer(),
           user: User.t() | Ecto.Association.NotLoaded.t(),
           chat_messages: [ChatMessage.t()] | Ecto.Association.NotLoaded.t(),
@@ -20,6 +23,7 @@ defmodule Sanbase.Chat.Chat do
 
   schema "chats" do
     field(:title, :string)
+    field(:type, :string, default: "dyor_dashboard")
     belongs_to(:user, User, type: :integer)
     has_many(:chat_messages, ChatMessage, preload_order: [asc: :inserted_at])
 
@@ -27,7 +31,7 @@ defmodule Sanbase.Chat.Chat do
   end
 
   @required_fields [:title, :user_id]
-  @optional_fields []
+  @optional_fields [:type]
 
   @spec changeset(t(), map()) :: Ecto.Changeset.t()
   def changeset(%__MODULE__{} = chat, attrs \\ %{}) do
@@ -35,6 +39,9 @@ defmodule Sanbase.Chat.Chat do
     |> cast(attrs, @required_fields ++ @optional_fields)
     |> validate_required(@required_fields)
     |> validate_length(:title, min: 1, max: 255)
+    |> validate_inclusion(:type, @chat_types,
+      message: "must be one of: #{Enum.join(@chat_types, ", ")}"
+    )
     |> foreign_key_constraint(:user_id)
   end
 
@@ -43,4 +50,7 @@ defmodule Sanbase.Chat.Chat do
     %__MODULE__{}
     |> changeset(attrs)
   end
+
+  @spec chat_types() :: [String.t()]
+  def chat_types, do: @chat_types
 end

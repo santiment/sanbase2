@@ -11,6 +11,7 @@ The Chat system provides a complete conversation interface where users can inter
 #### `chats`
 - `id` (binary_id, primary key) - Unique chat identifier
 - `title` (string, required) - Chat title (max 255 chars, generated from first message)
+- `type` (string, required, default: "dyor_dashboard") - Chat type for different UI contexts
 - `user_id` (binary_id, foreign key) - Reference to owning user
 - `inserted_at`, `updated_at` (timestamps)
 
@@ -27,6 +28,7 @@ The Chat system provides a complete conversation interface where users can inter
 - `chat_id` for message retrieval
 - `inserted_at` for chronological ordering
 - `role` for filtering by message type
+- `type` for filtering chats by type
 
 ## Core Modules
 
@@ -34,8 +36,8 @@ The Chat system provides a complete conversation interface where users can inter
 
 #### `Sanbase.Chat`
 Main context module providing:
-- `create_chat_with_message/3` - Creates chat with initial user message
-- `create_chat/1` - Creates empty chat
+- `create_chat_with_message/4` - Creates chat with initial user message and optional type
+- `create_chat/1` - Creates empty chat (defaults to "dyor_dashboard" type)
 - `add_message_to_chat/4` - Adds message with role and context
 - `add_assistant_response/3` - Convenience for AI responses
 - `get_chat_with_messages/1` - Retrieves chat with preloaded messages
@@ -49,6 +51,7 @@ Main context module providing:
 - Binary ID primary key
 - Belongs to user, has many chat_messages
 - Title validation (max 255 chars)
+- Type validation (must be "dyor_dashboard")
 - Messages preloaded and ordered by inserted_at
 
 #### `Sanbase.Chat.ChatMessage`  
@@ -66,12 +69,17 @@ Main context module providing:
 type Chat {
   id: ID!
   title: String!
+  type: ChatType!
   insertedAt: DateTime!
   updatedAt: DateTime!
   user: PublicUser
   chatMessages: [ChatMessage!]
   messagesCount: Int
   latestMessage: ChatMessage
+}
+
+enum ChatType {
+  DYOR_DASHBOARD
 }
 ```
 
@@ -94,14 +102,14 @@ enum ChatMessageRole {
 ```
 
 #### `:chat_summary`
-Lightweight chat representation for list views with messages count and latest message.
+Lightweight chat representation for list views with messages count, latest message, and type.
 
 ### Mutations
 
 #### `sendChatMessage`
 ```graphql
 mutation {
-  sendChatMessage(input: {
+  sendChatMessage(
     chatId: ID          # Optional: creates new chat if not provided
     content: String!    # Required: message content  
     context: {          # Optional: contextual metadata
@@ -109,7 +117,7 @@ mutation {
       asset: String
       metrics: [String]
     }
-  }) {
+  ) {
     # Returns full Chat object
   }
 }
@@ -169,13 +177,13 @@ query {
 ### Creating New Conversation
 ```graphql
 mutation {
-  sendChatMessage(input: {
+  sendChatMessage(
     content: "What are Bitcoin's key metrics?"
     context: {
       asset: "bitcoin"
       metrics: ["price_usd", "volume_usd"]
     }
-  }) {
+  ) {
     id
     title
     chatMessages {
@@ -190,13 +198,13 @@ mutation {
 ### Continuing Conversation
 ```graphql
 mutation {
-  sendChatMessage(input: {
+  sendChatMessage(
     chatId: "existing-chat-id"
     content: "How about Ethereum?"
     context: {
       asset: "ethereum"
     }
-  }) {
+  ) {
     chatMessages {
       content
       role
@@ -265,3 +273,24 @@ Comprehensive test coverage includes:
 - Chat field added to User type via resolver
 - Returns chat summaries for user's chats
 - Integrated with existing user authentication system 
+
+## Chat Types
+
+The system supports different chat types to distinguish conversations across different UI contexts:
+
+### Current Types
+- **"dyor_dashboard"** - Default type for DYOR (Do Your Own Research) dashboard conversations
+
+### Type Behavior
+- All chats default to "dyor_dashboard" type when not specified
+- Type is validated at the schema level to ensure only supported types are used
+- GraphQL API exposes type as an enum (`DYOR_DASHBOARD`) for type safety
+- Internal storage uses strings for simplicity
+- Future types can be easily added by updating the `@chat_types` list in the schema
+
+### Adding New Types
+To add a new chat type:
+1. Add the string value to `@chat_types` in `Sanbase.Chat.Chat`
+2. Add the corresponding enum value in `SanbaseWeb.Graphql.ChatTypes` 
+3. Update the GraphQL type resolver to handle the new string value
+4. Update any relevant documentation 

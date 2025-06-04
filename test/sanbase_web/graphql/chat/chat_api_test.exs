@@ -22,16 +22,17 @@ defmodule SanbaseWeb.Graphql.ChatApiTest do
     test "creates a new chat when chat_id not provided", %{conn: conn, user: user} do
       mutation = """
       mutation {
-        sendChatMessage(input: {
+        sendChatMessage(
           content: "What are the top Bitcoin metrics?"
           context: {
             dashboardId: "crypto_dashboard"
             asset: "bitcoin"
             metrics: ["price_usd", "volume_usd"]
           }
-        }) {
+        ) {
           id
           title
+          type
           insertedAt
           chatMessages {
             id
@@ -48,13 +49,15 @@ defmodule SanbaseWeb.Graphql.ChatApiTest do
 
       result = execute_mutation_with_success(mutation, "sendChatMessage", conn)
 
-      assert result["title"] == "What are the top Bitcoin metrics?"
+      # AI generates some title
+      assert String.length(result["title"]) > 0
+      assert result["type"] == "DYOR_DASHBOARD"
       assert result["user"]["id"] == to_string(user.id)
-      assert length(result["chatMessages"]) == 1
+      # At least user message
+      assert length(result["chatMessages"]) >= 1
 
-      [message] = result["chatMessages"]
-      assert message["content"] == "What are the top Bitcoin metrics?"
-      assert message["role"] == "USER"
+      user_message = Enum.find(result["chatMessages"], &(&1["role"] == "USER"))
+      assert user_message["content"] == "What are the top Bitcoin metrics?"
 
       expected_context = %{
         "dashboard_id" => "crypto_dashboard",
@@ -62,15 +65,15 @@ defmodule SanbaseWeb.Graphql.ChatApiTest do
         "metrics" => ["price_usd", "volume_usd"]
       }
 
-      assert message["context"] == expected_context
+      assert user_message["context"] == expected_context
     end
 
     test "creates chat with minimal input", %{conn: conn} do
       mutation = """
       mutation {
-        sendChatMessage(input: {
+        sendChatMessage(
           content: "Simple question"
-        }) {
+        ) {
           id
           title
           chatMessages {
@@ -83,20 +86,20 @@ defmodule SanbaseWeb.Graphql.ChatApiTest do
 
       result = execute_mutation_with_success(mutation, "sendChatMessage", conn)
 
-      assert result["title"] == "Simple question"
-      assert length(result["chatMessages"]) == 1
+      # AI generates some title
+      assert String.length(result["title"]) > 0
+      assert length(result["chatMessages"]) >= 1
 
-      [message] = result["chatMessages"]
-      assert message["content"] == "Simple question"
-      assert message["context"] == %{}
+      user_message = Enum.find(result["chatMessages"], &(&1["content"] == "Simple question"))
+      assert user_message["context"] == %{}
     end
 
     test "fails without authentication" do
       mutation = """
       mutation {
-        sendChatMessage(input: {
+        sendChatMessage(
           content: "Test message"
-        }) {
+        ) {
           id
         }
       }
@@ -106,22 +109,24 @@ defmodule SanbaseWeb.Graphql.ChatApiTest do
       assert result["message"] == "unauthorized"
     end
 
-    test "creates chat with long message and truncated title", %{conn: conn} do
+    test "creates chat with long message and AI-generated title", %{conn: conn} do
       long_message = String.duplicate("a", 60)
-      expected_title = String.slice(long_message, 0, 50) <> "..."
 
       mutation = """
       mutation {
-        sendChatMessage(input: {
+        sendChatMessage(
           content: "#{long_message}"
-        }) {
+        ) {
           title
         }
       }
       """
 
       result = execute_mutation_with_success(mutation, "sendChatMessage", conn)
-      assert result["title"] == expected_title
+      # AI will generate a meaningful title, not truncated content
+      assert String.length(result["title"]) > 0
+      # AI generates different title
+      assert result["title"] != long_message
     end
   end
 
@@ -134,14 +139,14 @@ defmodule SanbaseWeb.Graphql.ChatApiTest do
     test "adds user message to existing chat", %{conn: conn, chat: chat} do
       mutation = """
       mutation {
-        sendChatMessage(input: {
+        sendChatMessage(
           chatId: "#{chat.id}"
           content: "Follow-up question"
           context: {
             asset: "ethereum"
             metrics: ["price_usd"]
           }
-        }) {
+        ) {
           id
           title
           chatMessages {
@@ -176,10 +181,10 @@ defmodule SanbaseWeb.Graphql.ChatApiTest do
 
       mutation = """
       mutation {
-        sendChatMessage(input: {
+        sendChatMessage(
           chatId: "#{other_chat.id}"
           content: "Trying to access"
-        }) {
+        ) {
           id
         }
       }
@@ -194,10 +199,10 @@ defmodule SanbaseWeb.Graphql.ChatApiTest do
 
       mutation = """
       mutation {
-        sendChatMessage(input: {
+        sendChatMessage(
           chatId: "#{fake_id}"
           content: "Test message"
-        }) {
+        ) {
           id
         }
       }
@@ -479,13 +484,13 @@ defmodule SanbaseWeb.Graphql.ChatApiTest do
       # 1. Create a new chat with first message
       create_mutation = """
       mutation {
-        sendChatMessage(input: {
+        sendChatMessage(
           content: "What's Bitcoin's price?"
           context: {
             asset: "bitcoin"
             metrics: ["price_usd"]
           }
-        }) {
+        ) {
           id
           title
         }
@@ -498,13 +503,13 @@ defmodule SanbaseWeb.Graphql.ChatApiTest do
       # 2. Add a follow-up user question (simulating assistant response would be done via backend API)
       followup_mutation = """
       mutation {
-        sendChatMessage(input: {
+        sendChatMessage(
           chatId: "#{chat_id}"
           content: "What about Ethereum?"
           context: {
             asset: "ethereum"
           }
-        }) {
+        ) {
           chatMessages {
             content
             role
@@ -527,10 +532,10 @@ defmodule SanbaseWeb.Graphql.ChatApiTest do
       # 3. Add another user message
       third_mutation = """
       mutation {
-        sendChatMessage(input: {
+        sendChatMessage(
           chatId: "#{chat_id}"
           content: "Can you compare them?"
-        }) {
+        ) {
           chatMessages {
             content
             role
@@ -555,11 +560,14 @@ defmodule SanbaseWeb.Graphql.ChatApiTest do
       """
 
       final_result = execute_query(conn, chat_query, "chat")
-      assert final_result["title"] == "What's Bitcoin's price?"
-      assert length(final_result["chatMessages"]) == 3
+      # AI generates some title
+      assert String.length(final_result["title"]) > 0
+      # At least the 3 user messages
+      assert length(final_result["chatMessages"]) >= 3
 
       messages = final_result["chatMessages"]
-      contents = Enum.map(messages, & &1["content"])
+      user_messages = Enum.filter(messages, &(&1["role"] == "USER"))
+      contents = Enum.map(user_messages, & &1["content"])
       assert "What's Bitcoin's price?" in contents
       assert "What about Ethereum?" in contents
       assert "Can you compare them?" in contents

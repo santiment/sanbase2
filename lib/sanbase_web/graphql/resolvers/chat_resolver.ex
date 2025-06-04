@@ -6,6 +6,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChatResolver do
   import Absinthe.Resolution.Helpers, warn: false
 
   alias Sanbase.Chat
+  alias Sanbase.AI.ChatAIService
 
   @doc "Get current user's chats ordered by most recent activity"
   def my_chats(_root, _args, %{context: %{auth: %{current_user: current_user}}}) do
@@ -65,38 +66,55 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChatResolver do
   end
 
   @doc "Send a user message - creates new chat if chatId not provided, adds to existing chat otherwise"
-  def send_chat_message(_root, %{input: input}, %{context: %{auth: %{current_user: current_user}}}) do
-    context = parse_context_input(Map.get(input, :context, %{}))
+  def send_chat_message(_root, args, %{context: %{auth: %{current_user: current_user}}}) do
+    context = parse_context_input(Map.get(args, :context, %{}))
 
-    case Map.get(input, :chat_id) do
-      nil ->
-        # Create new chat with the user message
-        case Chat.create_chat_with_message(current_user.id, input.content, context) do
-          {:ok, chat} -> {:ok, chat}
-          {:error, changeset} -> {:error, format_changeset_errors(changeset)}
-        end
+    result =
+      case Map.get(args, :chat_id) do
+        nil ->
+          # Create new chat with the user message
+          case Chat.create_chat_with_message(current_user.id, args.content, context) do
+            {:ok, chat} ->
+              # For new chats, generate AI title and response synchronously
+              maybe_generate_ai_response(chat, args.content, context, current_user.id,
+                is_new_chat: true
+              )
 
-      chat_id ->
-        # Add user message to existing chat
-        case Chat.get_chat(chat_id) do
-          nil ->
-            {:error, "Chat not found"}
+              # Return the updated chat with AI response
+              {:ok, Chat.get_chat_with_messages(chat.id)}
 
-          chat ->
-            if chat.user_id == current_user.id do
-              case Chat.add_message_to_chat(chat_id, input.content, :user, context) do
-                {:ok, _message} ->
-                  # Return the updated chat with messages
-                  {:ok, Chat.get_chat_with_messages(chat_id)}
+            {:error, changeset} ->
+              {:error, format_changeset_errors(changeset)}
+          end
 
-                {:error, changeset} ->
-                  {:error, format_changeset_errors(changeset)}
+        chat_id ->
+          # Add user message to existing chat
+          case Chat.get_chat(chat_id) do
+            nil ->
+              {:error, "Chat not found"}
+
+            chat ->
+              if chat.user_id == current_user.id do
+                case Chat.add_message_to_chat(chat_id, args.content, :user, context) do
+                  {:ok, _message} ->
+                    # Generate AI response for existing chat synchronously
+                    maybe_generate_ai_response(chat, args.content, context, current_user.id,
+                      is_new_chat: false
+                    )
+
+                    # Return the updated chat with AI response
+                    {:ok, Chat.get_chat_with_messages(chat_id)}
+
+                  {:error, changeset} ->
+                    {:error, format_changeset_errors(changeset)}
+                end
+              else
+                {:error, "Access denied"}
               end
-            else
-              {:error, "Access denied"}
-            end
-        end
-    end
+          end
+      end
+
+    result
   end
 
   @doc "Delete a chat"
@@ -158,5 +176,34 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChatResolver do
       "#{field}: #{Enum.join(errors, ", ")}"
     end)
     |> Enum.join("; ")
+  end
+
+  defp maybe_generate_ai_response(chat, user_message, context, user_id, opts) do
+    # Only generate AI responses for DYOR dashboard chats
+    if chat.type == "dyor_dashboard" do
+      # Generate AI response synchronously
+      case ChatAIService.generate_ai_response(user_message, context, chat.id, user_id) do
+        {:ok, ai_response} ->
+          Chat.add_assistant_response(chat.id, ai_response)
+
+        {:error, reason} ->
+          require Logger
+          Logger.error("Failed to generate AI response: #{reason}")
+      end
+
+      # Generate chat title for new chats synchronously
+      if Keyword.get(opts, :is_new_chat, false) do
+        case ChatAIService.generate_and_update_chat_title_sync(chat.id, user_message) do
+          {:ok, _updated_chat} ->
+            :ok
+
+          {:error, reason} ->
+            require Logger
+            Logger.error("Failed to update chat title: #{inspect(reason)}")
+        end
+      end
+    end
+
+    :ok
   end
 end

@@ -15,7 +15,8 @@ defmodule Sanbase.Chat do
 
   @type chat_attrs :: %{
           title: String.t(),
-          user_id: integer()
+          user_id: integer(),
+          type: String.t()
         }
 
   @type message_attrs :: %{
@@ -28,13 +29,13 @@ defmodule Sanbase.Chat do
   Creates a new chat conversation with an initial user message.
   The chat title is derived from the first user message.
   """
-  @spec create_chat_with_message(integer(), String.t(), map()) ::
+  @spec create_chat_with_message(integer(), String.t(), map(), String.t()) ::
           {:ok, Chat.t()} | {:error, Ecto.Changeset.t()}
-  def create_chat_with_message(user_id, content, context \\ %{}) do
+  def create_chat_with_message(user_id, content, context \\ %{}, type \\ "dyor_dashboard") do
     title = generate_title_from_content(content)
 
     Repo.transaction(fn ->
-      with {:ok, chat} <- create_chat(%{title: title, user_id: user_id}),
+      with {:ok, chat} <- create_chat(%{title: title, user_id: user_id, type: type}),
            {:ok, _message} <- add_message_to_chat(chat.id, content, :user, context) do
         get_chat_with_messages!(chat.id)
       else

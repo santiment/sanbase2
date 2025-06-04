@@ -821,7 +821,8 @@ CREATE TABLE public.chats (
     title character varying(255) NOT NULL,
     user_id bigint NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    type character varying(255) DEFAULT 'dyor_dashboard'::character varying NOT NULL
 );
 
 
@@ -7336,6 +7337,13 @@ CREATE INDEX chats_inserted_at_index ON public.chats USING btree (inserted_at);
 
 
 --
+-- Name: chats_type_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX chats_type_index ON public.chats USING btree (type);
+
+
+--
 -- Name: chats_user_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10266,3 +10274,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250507135031);
 INSERT INTO public."schema_migrations" (version) VALUES (20250512124853);
 INSERT INTO public."schema_migrations" (version) VALUES (20250512130838);
 INSERT INTO public."schema_migrations" (version) VALUES (20250512140823);
+INSERT INTO public."schema_migrations" (version) VALUES (20250512141238);
+INSERT INTO public."schema_migrations" (version) VALUES (20250604072648);

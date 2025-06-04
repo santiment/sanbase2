@@ -99,7 +99,8 @@ config :sanbase, Sanbase.ExternalServices.RateLimiting.Server,
 config :sanbase, Sanbase.ClickhouseRepo,
   adapter: Ecto.Adapters.Postgres,
   queue_target: 10_000,
-  queue_interval: 2000,
+  queue_interval: 30_000,
+  timeout: 100_000,
   max_overflow: 3,
   scheme: :http
 
@@ -107,6 +108,7 @@ clickhouse_read_only_opts = [
   adapter: Ecto.Adapters.Postgres,
   queue_target: 60_000,
   queue_interval: 60_000,
+  timeout: 100_000,
   max_overflow: 3,
   scheme: :http
 ]
@@ -124,7 +126,7 @@ config :sanbase, Sanbase.Repo,
   pool_size: {:system, "SANBASE_POOL_SIZE", "20"},
   max_overflow: 5,
   queue_target: 5000,
-  queue_interval: 1000,
+  queue_interval: 10_000,
   timeout: 30_000,
   migration_timestamps: [type: :naive_datetime_usec]
 

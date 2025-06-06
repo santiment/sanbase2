@@ -28,13 +28,24 @@ defmodule SanbaseWeb.Guardian.Token do
     end
   end
 
-  def revoke_all_with_user_id(user_id) do
+  def revoke_all_with_user_id(user_id) when is_integer(user_id) do
     sub = to_string(user_id)
 
     from(gt in __MODULE__, where: gt.sub == ^sub)
     |> Sanbase.Repo.delete_all()
     |> case do
-      {num, _} when is_integer(num) -> :ok
+      {num, _} when is_integer(num) -> {:ok, "Revoked #{num} tokens"}
+      _ -> {:error, "Failed revoking all refresh tokens for a user"}
+    end
+  end
+
+  def revoke_all_with_user_id(user_ids) when is_list(user_ids) do
+    subs = Enum.map(user_ids, &to_string/1)
+
+    from(gt in __MODULE__, where: gt.sub in ^subs)
+    |> Sanbase.Repo.delete_all()
+    |> case do
+      {num, _} when is_integer(num) -> {:ok, "Revoked #{num} tokens"}
       _ -> {:error, "Failed revoking all refresh tokens for a user"}
     end
   end

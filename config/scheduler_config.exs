@@ -7,6 +7,10 @@ config :sanbase, Sanbase.Alerts.Scheduler,
   timeout: 30_000,
   overlap: false,
   jobs: [
+    monitor_excessive_sanbase_usage: [
+      schedule: "0 */3 * * *",
+      task: {Sanbase.Mix.LogoutExcessiveUsage, :run, []}
+    ],
     freeze_user_alerts: [
       schedule: "0 5 * * *",
       task: {Sanbase.Alert.Job, :freeze_alerts, []}

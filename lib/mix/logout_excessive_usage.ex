@@ -23,6 +23,7 @@ defmodule Sanbase.Mix.LogoutExcessiveUsage do
     sql = """
     SELECT DISTINCT(user_id) FROM
     (
+      -- users who made unrealistically many sanbase calls in a day, most likely scraping
       SELECT user_id
       FROM
       (
@@ -43,6 +44,7 @@ defmodule Sanbase.Mix.LogoutExcessiveUsage do
 
       UNION ALL
 
+      -- users who made unrealistically many sanbase calls in a month, most likely scraping
       SELECT user_id
       FROM
       (
@@ -51,7 +53,7 @@ defmodule Sanbase.Mix.LogoutExcessiveUsage do
               toMonth(dt) AS month,
               count(*) AS cnt
           FROM api_call_data
-          WHERE (dt >= (now() - toIntervalDay(14))) AND (auth_method = 'jwt') AND (query LIKE 'getMetric%')
+          WHERE (dt >= (now() - toIntervalDay(60))) AND (auth_method = 'jwt') AND (query LIKE 'getMetric%')
           GROUP BY
               user_id,
               month
@@ -61,23 +63,42 @@ defmodule Sanbase.Mix.LogoutExcessiveUsage do
       )
       WHERE cnt > 150_000
 
+      UNION ALL
+
+      -- users who simply forgot to hide they're making calls from python
       SELECT user_id
       FROM
       (
           SELECT
               user_id,
-              toMonth(dt) AS month,
               count(*) AS cnt
           FROM api_call_data
-          WHERE (dt >= (now() - toIntervalDay(14))) AND (auth_method = 'jwt') AND (user_agent LIKE '%python-requests%')
-          GROUP BY
-              user_id,
-              month
+          WHERE (dt >= (now() - toIntervalDay(3))) AND (auth_method = 'jwt') AND (user_agent LIKE '%python-requests%')
+          GROUP BY user_id
           ORDER BY cnt DESC
           LIMIT 1 BY user_id
           LIMIT 50
       )
       WHERE cnt > 100
+
+      UNION ALL
+
+      -- users who don't sleep, most likely bots
+      WITH 3 AS days
+      SELECT user_id
+      FROM
+      (
+          SELECT
+              user_id,
+              count(distinct(toStartOfHour(dt))) AS hours_active
+          FROM api_call_data
+          WHERE (dt >= (now() - toIntervalDay(days))) AND (auth_method = 'jwt')
+          GROUP BY
+              user_id
+          ORDER BY hours_active DESC
+          LIMIT 100
+      )
+      WHERE hours_active > 18*days
     )
     """
 

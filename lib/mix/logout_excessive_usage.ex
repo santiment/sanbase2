@@ -60,6 +60,24 @@ defmodule Sanbase.Mix.LogoutExcessiveUsage do
           LIMIT 50
       )
       WHERE cnt > 150_000
+
+      SELECT user_id
+      FROM
+      (
+          SELECT
+              user_id,
+              toMonth(dt) AS month,
+              count(*) AS cnt
+          FROM api_call_data
+          WHERE (dt >= (now() - toIntervalDay(14))) AND (auth_method = 'jwt') AND (user_agent LIKE '%python-requests%')
+          GROUP BY
+              user_id,
+              month
+          ORDER BY cnt DESC
+          LIMIT 1 BY user_id
+          LIMIT 50
+      )
+      WHERE cnt > 100
     )
     """
 

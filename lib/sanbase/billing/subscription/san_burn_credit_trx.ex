@@ -104,7 +104,21 @@ defmodule Sanbase.Billing.Subscription.SanBurnCreditTransaction do
 
   def fetch_san_pice(datetime) do
     {:ok, price} = Sanbase.Price.last_record_before("santiment", datetime)
-    price.price_usd
+
+    if price do
+      price.price_usd
+    else
+      fetch_current_san_price()
+    end
+  end
+
+  def fetch_current_san_price() do
+    url =
+      "https://api.coingecko.com/api/v3/simple/token_price/ethereum?contract_addresses=0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098&vs_currencies=usd"
+
+    response = HTTPoison.get!(url)
+    price = Jason.decode!(response.body)["0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098"]["usd"]
+    price
   end
 
   def fetch_user_by_address(address) do

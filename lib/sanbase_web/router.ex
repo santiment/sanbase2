@@ -295,6 +295,15 @@ defmodule SanbaseWeb.Router do
     get("/get_routed_conn", RootController, :get_routed_conn)
   end
 
+  scope "/" do
+    forward "/mcp", Toolmux.Plug,
+      server: Sanbase.McpServer,
+      config: [
+        session_timeout: :timer.minutes(30),
+        validate_origin: false
+      ]
+  end
+
   get("/", SanbaseWeb.RootController, :healthcheck)
   get("/healthcheck", SanbaseWeb.RootController, :healthcheck)
 end

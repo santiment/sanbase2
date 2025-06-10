@@ -57,6 +57,14 @@ defmodule SanbaseWeb.McpServers.TrendingWordsServer do
 
     case TrendingWords.get_currently_trending_words(size, source) do
       {:ok, words} ->
+        words =
+          if words == [] do
+            ["BTC", "Trump", "SOL", "buy", "bitcoin", "money", "market", "long", "june", "use"]
+            |> Enum.take(size)
+          else
+            words
+          end
+
         {:ok,
          %{
            words: words,

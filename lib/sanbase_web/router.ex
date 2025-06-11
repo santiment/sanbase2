@@ -123,6 +123,16 @@ defmodule SanbaseWeb.Router do
       live("/", PricePredictionsLive)
     end
 
+    scope "/disagreement_tweets" do
+      live_session :disagreement_tweets_authenticated_user,
+        on_mount: [
+          {SanbaseWeb.AdminUserAuth, :ensure_authenticated},
+          {SanbaseWeb.AdminUserAuth, :extract_and_assign_current_user_roles}
+        ] do
+        live("/", DisagreementTweetsLive)
+      end
+    end
+
     live_dashboard("/dashboard", metrics: SanbaseWeb.Telemetry, ecto_repos: [Sanbase.Repo])
     live("/admin_forms", AdminFormsLive)
     live("/monitored_twitter_handle_live", MonitoredTwitterHandleLive)

@@ -1195,6 +1195,53 @@ ALTER SEQUENCE public.dashboards_id_seq OWNED BY public.dashboards.id;
 
 
 --
+-- Name: disagreement_tweets; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.disagreement_tweets (
+    id bigint NOT NULL,
+    tweet_id character varying(255) NOT NULL,
+    "timestamp" timestamp(0) without time zone NOT NULL,
+    screen_name character varying(255) NOT NULL,
+    text text NOT NULL,
+    url character varying(255) NOT NULL,
+    agreement boolean DEFAULT false NOT NULL,
+    openai_is_prediction boolean,
+    openai_prob_true double precision,
+    openai_prob_false double precision,
+    openai_prob_other double precision,
+    openai_time_seconds double precision,
+    llama_is_prediction boolean,
+    llama_prob_true double precision,
+    llama_prob_false double precision,
+    llama_prob_other double precision,
+    llama_time_seconds double precision,
+    classification_count integer DEFAULT 0,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: disagreement_tweets_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.disagreement_tweets_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: disagreement_tweets_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.disagreement_tweets_id_seq OWNED BY public.disagreement_tweets.id;
+
+
+--
 -- Name: discord_dashboards; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -4211,6 +4258,40 @@ ALTER SEQUENCE public.timeline_events_id_seq OWNED BY public.timeline_events.id;
 
 
 --
+-- Name: tweet_classifications; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.tweet_classifications (
+    id bigint NOT NULL,
+    disagreement_tweet_id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    is_prediction boolean NOT NULL,
+    classified_at timestamp(0) without time zone NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: tweet_classifications_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.tweet_classifications_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: tweet_classifications_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.tweet_classifications_id_seq OWNED BY public.tweet_classifications.id;
+
+
+--
 -- Name: tweet_predictions; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -5311,6 +5392,13 @@ ALTER TABLE ONLY public.dashboards_history ALTER COLUMN id SET DEFAULT nextval('
 
 
 --
+-- Name: disagreement_tweets id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.disagreement_tweets ALTER COLUMN id SET DEFAULT nextval('public.disagreement_tweets_id_seq'::regclass);
+
+
+--
 -- Name: discord_dashboards id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -5864,6 +5952,13 @@ ALTER TABLE ONLY public.timeline_events ALTER COLUMN id SET DEFAULT nextval('pub
 
 
 --
+-- Name: tweet_classifications id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tweet_classifications ALTER COLUMN id SET DEFAULT nextval('public.tweet_classifications_id_seq'::regclass);
+
+
+--
 -- Name: tweet_predictions id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6253,6 +6348,14 @@ ALTER TABLE ONLY public.dashboards_history
 
 ALTER TABLE ONLY public.dashboards
     ADD CONSTRAINT dashboards_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: disagreement_tweets disagreement_tweets_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.disagreement_tweets
+    ADD CONSTRAINT disagreement_tweets_pkey PRIMARY KEY (id);
 
 
 --
@@ -6960,6 +7063,14 @@ ALTER TABLE ONLY public.timeline_events
 
 
 --
+-- Name: tweet_classifications tweet_classifications_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tweet_classifications
+    ADD CONSTRAINT tweet_classifications_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: tweet_predictions tweet_predictions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7425,6 +7536,27 @@ CREATE INDEX dashboards_history_dashboard_id_index ON public.dashboards_history 
 --
 
 CREATE INDEX dashboards_history_hash_index ON public.dashboards_history USING btree (hash);
+
+
+--
+-- Name: disagreement_tweets_classification_count_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX disagreement_tweets_classification_count_index ON public.disagreement_tweets USING btree (classification_count);
+
+
+--
+-- Name: disagreement_tweets_timestamp_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX disagreement_tweets_timestamp_index ON public.disagreement_tweets USING btree ("timestamp");
+
+
+--
+-- Name: disagreement_tweets_tweet_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX disagreement_tweets_tweet_id_index ON public.disagreement_tweets USING btree (tweet_id);
 
 
 --
@@ -8132,6 +8264,20 @@ CREATE INDEX timeline_events_user_list_id_index ON public.timeline_events USING 
 --
 
 CREATE INDEX timeline_events_user_trigger_id_index ON public.timeline_events USING btree (user_trigger_id);
+
+
+--
+-- Name: tweet_classifications_disagreement_tweet_id_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX tweet_classifications_disagreement_tweet_id_user_id_index ON public.tweet_classifications USING btree (disagreement_tweet_id, user_id);
+
+
+--
+-- Name: tweet_classifications_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX tweet_classifications_user_id_index ON public.tweet_classifications USING btree (user_id);
 
 
 --
@@ -9471,6 +9617,22 @@ ALTER TABLE ONLY public.timeline_events
 
 
 --
+-- Name: tweet_classifications tweet_classifications_disagreement_tweet_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tweet_classifications
+    ADD CONSTRAINT tweet_classifications_disagreement_tweet_id_fkey FOREIGN KEY (disagreement_tweet_id) REFERENCES public.disagreement_tweets(id) ON DELETE CASCADE;
+
+
+--
+-- Name: tweet_classifications tweet_classifications_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tweet_classifications
+    ADD CONSTRAINT tweet_classifications_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: ui_metadata_groups ui_metadata_groups_category_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -10276,3 +10438,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250512130838);
 INSERT INTO public."schema_migrations" (version) VALUES (20250512140823);
 INSERT INTO public."schema_migrations" (version) VALUES (20250512141238);
 INSERT INTO public."schema_migrations" (version) VALUES (20250604072648);
+INSERT INTO public."schema_migrations" (version) VALUES (20250610155025);

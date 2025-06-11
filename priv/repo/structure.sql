@@ -1315,38 +1315,6 @@ ALTER SEQUENCE public.ecosystems_id_seq OWNED BY public.ecosystems.id;
 
 
 --
--- Name: email_login_attempts; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.email_login_attempts (
-    id bigint NOT NULL,
-    user_id bigint NOT NULL,
-    ip_address character varying(39),
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
-);
-
-
---
--- Name: email_login_attempts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.email_login_attempts_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: email_login_attempts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.email_login_attempts_id_seq OWNED BY public.email_login_attempts.id;
-
-
---
 -- Name: eth_accounts; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -5413,13 +5381,6 @@ ALTER TABLE ONLY public.ecosystems ALTER COLUMN id SET DEFAULT nextval('public.e
 
 
 --
--- Name: email_login_attempts id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.email_login_attempts ALTER COLUMN id SET DEFAULT nextval('public.email_login_attempts_id_seq'::regclass);
-
-
---
 -- Name: eth_accounts id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6372,14 +6333,6 @@ ALTER TABLE ONLY public.discord_dashboards
 
 ALTER TABLE ONLY public.ecosystems
     ADD CONSTRAINT ecosystems_pkey PRIMARY KEY (id);
-
-
---
--- Name: email_login_attempts email_login_attempts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.email_login_attempts
-    ADD CONSTRAINT email_login_attempts_pkey PRIMARY KEY (id);
 
 
 --
@@ -7585,20 +7538,6 @@ CREATE INDEX document_tokens_index ON public.posts USING gin (document_tokens);
 --
 
 CREATE UNIQUE INDEX ecosystems_ecosystem_index ON public.ecosystems USING btree (ecosystem);
-
-
---
--- Name: email_login_attempts_ip_address_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX email_login_attempts_ip_address_index ON public.email_login_attempts USING btree (ip_address);
-
-
---
--- Name: email_login_attempts_user_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX email_login_attempts_user_id_index ON public.email_login_attempts USING btree (user_id);
 
 
 --
@@ -8878,14 +8817,6 @@ ALTER TABLE ONLY public.discord_dashboards
 
 ALTER TABLE ONLY public.discord_dashboards
     ADD CONSTRAINT discord_dashboards_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
-
-
---
--- Name: email_login_attempts email_login_attempts_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.email_login_attempts
-    ADD CONSTRAINT email_login_attempts_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
 
 
 --
@@ -10439,3 +10370,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250512140823);
 INSERT INTO public."schema_migrations" (version) VALUES (20250512141238);
 INSERT INTO public."schema_migrations" (version) VALUES (20250604072648);
 INSERT INTO public."schema_migrations" (version) VALUES (20250610155025);
+INSERT INTO public."schema_migrations" (version) VALUES (20250611104342);

@@ -38,6 +38,16 @@ defmodule Sanbase.TweetsApi do
   end
 
   @doc """
+  Fetches crypto influencer tweets for disagreement classification
+  """
+  @spec fetch_influencer_tweets(keyword()) :: {:ok, list(map())} | {:error, any()}
+  def fetch_influencer_tweets(opts \\ []) do
+    hours = Keyword.get(opts, :hours, 24)
+
+    fetch_influencer_tweets_from_api(hours)
+  end
+
+  @doc """
   Classifies a tweet text using both AI models
   """
   @spec classify_tweet(String.t()) :: {:ok, map()} | {:error, any()}
@@ -97,6 +107,16 @@ defmodule Sanbase.TweetsApi do
 
   defp fetch_recent_tweets_from_api(hours, size) do
     url = "#{ai_server_url()}/tweets/recent?hours=#{hours}&count=#{size}"
+
+    HTTPoison.get(url, [{"accept", "application/json"}],
+      timeout: 30_000,
+      recv_timeout: 30_000
+    )
+    |> handle_response("tweets")
+  end
+
+  defp fetch_influencer_tweets_from_api(hours) do
+    url = "#{ai_server_url()}/crypto/tweets?hours=#{hours}"
 
     HTTPoison.get(url, [{"accept", "application/json"}],
       timeout: 30_000,

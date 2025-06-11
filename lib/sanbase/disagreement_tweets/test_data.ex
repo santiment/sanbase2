@@ -11,7 +11,8 @@ defmodule Sanbase.DisagreementTweets.TestData do
   ## Options
 
     * `:hours` - Number of hours to look back for tweets (default: 24)
-    * `:size` - Maximum number of tweets to fetch (default: 50)
+    * `:size` - Maximum number of tweets to fetch (default: 50) - ignored when influencers: true
+    * `:influencers` - If true, fetches from crypto influencers endpoint instead of recent tweets (default: false)
 
   ## Examples
 
@@ -20,14 +21,25 @@ defmodule Sanbase.DisagreementTweets.TestData do
 
       iex> Sanbase.DisagreementTweets.TestData.populate(hours: 12, size: 100)
       {:ok, %{fetched: 100, classified: 95, stored: 15, skipped: 5, errors: 1}}
+
+      iex> Sanbase.DisagreementTweets.TestData.populate(influencers: true, hours: 6)
+      {:ok, %{fetched: 25, classified: 23, stored: 8, skipped: 2, errors: 0}}
   """
   def populate(opts \\ []) do
     hours = Keyword.get(opts, :hours, 24)
     size = Keyword.get(opts, :size, 50)
+    influencers = Keyword.get(opts, :influencers, false)
 
-    IO.puts("🔍 Fetching recent tweets...")
+    IO.puts("🔍 Fetching #{if influencers, do: "crypto influencer", else: "recent"} tweets...")
 
-    case TweetsApi.fetch_recent_tweets(hours: hours, size: size) do
+    result =
+      if influencers do
+        TweetsApi.fetch_influencer_tweets(hours: hours)
+      else
+        TweetsApi.fetch_recent_tweets(hours: hours, size: size)
+      end
+
+    case result do
       {:ok, tweets} ->
         IO.puts("✅ Fetched #{length(tweets)} tweets")
         IO.puts("🤖 Starting classification and storage...")

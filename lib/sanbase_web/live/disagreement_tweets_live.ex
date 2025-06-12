@@ -56,7 +56,8 @@ defmodule SanbaseWeb.DisagreementTweetsLive do
 
         :classified_by_me ->
           DisagreementTweets.list_classified_by_user(user_id, limit: 50)
-          |> Enum.sort_by(& &1.classification_count, :desc)
+
+        # No sorting needed - already ordered by classified_at desc from database
 
         :completed ->
           DisagreementTweets.list_by_classification_count_with_user_status(5, user_id, limit: 50)

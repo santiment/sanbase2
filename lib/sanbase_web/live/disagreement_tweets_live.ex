@@ -154,19 +154,6 @@ defmodule SanbaseWeb.DisagreementTweetsLive do
           <p class="text-sm text-gray-500">Loading tweets...</p>
         </div>
 
-        <div
-          :if={!@loading and Enum.empty?(@tweets)}
-          class="flex flex-col items-center justify-center h-32 text-center"
-        >
-          <p class="text-sm text-gray-500 mb-2">No tweets available for this category</p>
-          <button
-            class="bg-blue-500 hover:bg-blue-700 text-white text-xs font-bold py-1 px-2 rounded"
-            phx-click="refresh"
-          >
-            Refresh Data
-          </button>
-        </div>
-
         <div :if={!@loading and not Enum.empty?(@tweets)} class="space-y-4 mt-4">
           <.disagreement_tweet_card
             :for={tweet <- @tweets}

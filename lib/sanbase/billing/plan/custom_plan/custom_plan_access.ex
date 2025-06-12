@@ -9,6 +9,13 @@ defmodule Sanbase.Billing.Plan.CustomPlan.Access do
     get_data(plan_name, product_code).restrictions.api_call_limits
   end
 
+  def response_size_limits(_plan_name, _product_code) do
+    # TODO: Implement in the custom plan table
+    # Also, at the moment the response size limits are applied only to free and trial
+    # plans, and there should not be trial custom plans
+    %{"minute" => 1000, "hour" => 10_000, "month" => 200_000}
+  end
+
   def restricted_access_as_plan(plan_name, product_code) do
     get_data(plan_name, product_code).restrictions.restricted_access_as_plan
   end

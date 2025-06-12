@@ -54,7 +54,15 @@ defmodule Sanbase.CascadeDeleteUserTest do
 
     {:ok, _} = Sanbase.Accounts.Apikey.generate_apikey(user)
     {:ok, _} = Sanbase.ApiCallLimit.get_quota_db(:user, user)
-    :ok = Sanbase.ApiCallLimit.update_usage(:user, user, 500, :apikey)
+
+    :ok =
+      Sanbase.ApiCallLimit.update_usage(
+        :user,
+        :apikey,
+        user,
+        _api_calls_count = 500,
+        _result_byte_size = 1000
+      )
 
     {:ok, _} =
       TimelineEvent.create_changeset(%TimelineEvent{}, %{

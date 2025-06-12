@@ -5,14 +5,14 @@ defmodule Sanbase.DisagreementTweets do
 
   import Ecto.Query
   alias Sanbase.Repo
-  alias Sanbase.DisagreementTweets.{DisagreementTweet, TweetClassification}
+  alias Sanbase.DisagreementTweets.{ClassifiedTweet, TweetClassification}
 
   @doc """
-  Creates a disagreement tweet record
+  Creates a classified tweet
   """
-  def create_disagreement_tweet(attrs) do
-    %DisagreementTweet{}
-    |> DisagreementTweet.changeset(attrs)
+  def create_classified_tweet(attrs) do
+    %ClassifiedTweet{}
+    |> ClassifiedTweet.changeset(attrs)
     |> Repo.insert()
   end
 
@@ -20,16 +20,17 @@ defmodule Sanbase.DisagreementTweets do
   Gets a disagreement tweet by tweet ID
   """
   def get_by_tweet_id(tweet_id) do
-    Repo.get_by(DisagreementTweet, tweet_id: tweet_id)
+    Repo.get_by(ClassifiedTweet, tweet_id: tweet_id)
   end
 
   @doc """
   Lists disagreement tweets with optional filters
   """
   def list_disagreement_tweets(opts \\ []) do
-    DisagreementTweet
+    ClassifiedTweet
+    |> ClassifiedTweet.disagreement_tweets()
     |> apply_filters(opts)
-    |> DisagreementTweet.order_by_timestamp()
+    |> ClassifiedTweet.order_by_timestamp()
     |> Repo.all()
   end
 
@@ -37,10 +38,11 @@ defmodule Sanbase.DisagreementTweets do
   Gets tweets not classified by the user
   """
   def list_not_classified_by_user(user_id, opts \\ []) do
-    DisagreementTweet
-    |> DisagreementTweet.not_classified_by_user(user_id)
+    ClassifiedTweet
+    |> ClassifiedTweet.disagreement_tweets()
+    |> ClassifiedTweet.not_classified_by_user(user_id)
     |> apply_filters(opts)
-    |> DisagreementTweet.order_by_timestamp()
+    |> ClassifiedTweet.order_by_timestamp()
     |> Repo.all()
     |> add_user_classification_status(user_id)
   end
@@ -52,9 +54,10 @@ defmodule Sanbase.DisagreementTweets do
     limit = Keyword.get(opts, :limit, 20)
 
     tweets =
-      from(dt in DisagreementTweet,
+      from(dt in ClassifiedTweet,
         join: tc in TweetClassification,
-        on: tc.disagreement_tweet_id == dt.id and tc.user_id == ^user_id,
+        on: tc.classified_tweet_id == dt.id and tc.user_id == ^user_id,
+        where: dt.has_disagreement == true,
         order_by: [desc: tc.classified_at],
         limit: ^limit
       )
@@ -67,10 +70,11 @@ defmodule Sanbase.DisagreementTweets do
   Gets tweets by classification count
   """
   def list_by_classification_count(count, opts \\ []) when is_integer(count) and is_list(opts) do
-    DisagreementTweet
-    |> DisagreementTweet.by_classification_count(count)
+    ClassifiedTweet
+    |> ClassifiedTweet.disagreement_tweets()
+    |> ClassifiedTweet.by_classification_count(count)
     |> apply_filters(opts)
-    |> DisagreementTweet.order_by_timestamp()
+    |> ClassifiedTweet.order_by_timestamp()
     |> Repo.all()
   end
 
@@ -78,10 +82,11 @@ defmodule Sanbase.DisagreementTweets do
   Gets tweets by classification count with user status
   """
   def list_by_classification_count_with_user_status(count, user_id, opts \\ []) do
-    DisagreementTweet
-    |> DisagreementTweet.by_classification_count(count)
+    ClassifiedTweet
+    |> ClassifiedTweet.disagreement_tweets()
+    |> ClassifiedTweet.by_classification_count(count)
     |> apply_filters(opts)
-    |> DisagreementTweet.order_by_timestamp()
+    |> ClassifiedTweet.order_by_timestamp()
     |> Repo.all()
     |> add_user_classification_status(user_id)
   end
@@ -95,7 +100,7 @@ defmodule Sanbase.DisagreementTweets do
     |> Repo.insert()
     |> case do
       {:ok, classification} ->
-        update_classification_count(classification.disagreement_tweet_id)
+        update_classification_count(classification.classified_tweet_id)
         {:ok, classification}
 
       error ->
@@ -109,9 +114,9 @@ defmodule Sanbase.DisagreementTweets do
   def get_user_classification(tweet_id, user_id) do
     query =
       from(tc in TweetClassification,
-        join: dt in DisagreementTweet,
-        on: tc.disagreement_tweet_id == dt.id,
-        where: dt.tweet_id == ^tweet_id and tc.user_id == ^user_id
+        join: dt in ClassifiedTweet,
+        on: tc.classified_tweet_id == dt.id,
+        where: dt.tweet_id == ^tweet_id and tc.user_id == ^user_id and dt.has_disagreement == true
       )
 
     Repo.one(query)
@@ -128,10 +133,14 @@ defmodule Sanbase.DisagreementTweets do
   Gets statistics about disagreement tweets
   """
   def get_stats do
-    total_tweets = Repo.aggregate(DisagreementTweet, :count, :id)
+    total_tweets =
+      ClassifiedTweet
+      |> ClassifiedTweet.disagreement_tweets()
+      |> Repo.aggregate(:count, :id)
 
     classification_counts =
-      from(dt in DisagreementTweet,
+      from(dt in ClassifiedTweet,
+        where: dt.has_disagreement == true,
         group_by: dt.classification_count,
         select: {dt.classification_count, count(dt.id)}
       )
@@ -150,20 +159,23 @@ defmodule Sanbase.DisagreementTweets do
   def get_tab_counts(user_id) do
     # Count of tweets not classified by user
     not_classified_by_me =
-      DisagreementTweet
-      |> DisagreementTweet.not_classified_by_user(user_id)
+      ClassifiedTweet
+      |> ClassifiedTweet.disagreement_tweets()
+      |> ClassifiedTweet.not_classified_by_user(user_id)
       |> Repo.aggregate(:count, :id)
 
     # Count of tweets classified by user
     classified_by_me =
-      DisagreementTweet
-      |> DisagreementTweet.classified_by_user(user_id)
+      ClassifiedTweet
+      |> ClassifiedTweet.disagreement_tweets()
+      |> ClassifiedTweet.classified_by_user(user_id)
       |> Repo.aggregate(:count, :id)
 
     # Count of completed tweets (classified by 5 people)
     completed =
-      DisagreementTweet
-      |> DisagreementTweet.by_classification_count(5)
+      ClassifiedTweet
+      |> ClassifiedTweet.disagreement_tweets()
+      |> ClassifiedTweet.by_classification_count(5)
       |> Repo.aggregate(:count, :id)
 
     %{
@@ -217,7 +229,7 @@ defmodule Sanbase.DisagreementTweets do
       llama_time_seconds: get_in(tweet_data, ["llama_inhouse", "time_seconds"])
     }
 
-    create_disagreement_tweet(attrs)
+    create_classified_tweet(attrs)
   end
 
   defp parse_timestamp(timestamp_str) do
@@ -238,7 +250,7 @@ defmodule Sanbase.DisagreementTweets do
       case key do
         :prob_range ->
           {min_prob, max_prob} = value
-          DisagreementTweet.in_prob_range(query, min_prob, max_prob)
+          ClassifiedTweet.in_prob_range(query, min_prob, max_prob)
 
         :limit ->
           from(q in query, limit: ^value)
@@ -249,15 +261,15 @@ defmodule Sanbase.DisagreementTweets do
     end)
   end
 
-  defp update_classification_count(disagreement_tweet_id) do
+  defp update_classification_count(classified_tweet_id) do
     count =
       Repo.aggregate(
-        from(tc in TweetClassification, where: tc.disagreement_tweet_id == ^disagreement_tweet_id),
+        from(tc in TweetClassification, where: tc.classified_tweet_id == ^classified_tweet_id),
         :count,
         :id
       )
 
-    from(dt in DisagreementTweet, where: dt.id == ^disagreement_tweet_id)
+    from(dt in ClassifiedTweet, where: dt.id == ^classified_tweet_id)
     |> Repo.update_all(set: [classification_count: count])
   end
 
@@ -266,9 +278,10 @@ defmodule Sanbase.DisagreementTweets do
 
     classified_tweet_ids =
       from(tc in TweetClassification,
-        join: dt in DisagreementTweet,
-        on: tc.disagreement_tweet_id == dt.id,
-        where: dt.tweet_id in ^tweet_ids and tc.user_id == ^user_id,
+        join: dt in ClassifiedTweet,
+        on: tc.classified_tweet_id == dt.id,
+        where:
+          dt.tweet_id in ^tweet_ids and tc.user_id == ^user_id and dt.has_disagreement == true,
         select: dt.tweet_id
       )
       |> Repo.all()

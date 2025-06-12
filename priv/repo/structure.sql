@@ -827,6 +827,35 @@ CREATE TABLE public.chats (
 
 
 --
+-- Name: classified_tweets; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.classified_tweets (
+    id bigint NOT NULL,
+    tweet_id character varying(255) NOT NULL,
+    "timestamp" timestamp(0) without time zone NOT NULL,
+    screen_name character varying(255) NOT NULL,
+    text text NOT NULL,
+    url character varying(255) NOT NULL,
+    agreement boolean DEFAULT false NOT NULL,
+    openai_is_prediction boolean,
+    openai_prob_true double precision,
+    openai_prob_false double precision,
+    openai_prob_other double precision,
+    openai_time_seconds double precision,
+    llama_is_prediction boolean,
+    llama_prob_true double precision,
+    llama_prob_false double precision,
+    llama_prob_other double precision,
+    llama_time_seconds double precision,
+    classification_count integer DEFAULT 0,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL,
+    has_disagreement boolean DEFAULT true NOT NULL
+);
+
+
+--
 -- Name: clickhouse_query_executions; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1195,34 +1224,6 @@ ALTER SEQUENCE public.dashboards_id_seq OWNED BY public.dashboards.id;
 
 
 --
--- Name: disagreement_tweets; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.disagreement_tweets (
-    id bigint NOT NULL,
-    tweet_id character varying(255) NOT NULL,
-    "timestamp" timestamp(0) without time zone NOT NULL,
-    screen_name character varying(255) NOT NULL,
-    text text NOT NULL,
-    url character varying(255) NOT NULL,
-    agreement boolean DEFAULT false NOT NULL,
-    openai_is_prediction boolean,
-    openai_prob_true double precision,
-    openai_prob_false double precision,
-    openai_prob_other double precision,
-    openai_time_seconds double precision,
-    llama_is_prediction boolean,
-    llama_prob_true double precision,
-    llama_prob_false double precision,
-    llama_prob_other double precision,
-    llama_time_seconds double precision,
-    classification_count integer DEFAULT 0,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
-);
-
-
---
 -- Name: disagreement_tweets_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -1238,7 +1239,7 @@ CREATE SEQUENCE public.disagreement_tweets_id_seq
 -- Name: disagreement_tweets_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.disagreement_tweets_id_seq OWNED BY public.disagreement_tweets.id;
+ALTER SEQUENCE public.disagreement_tweets_id_seq OWNED BY public.classified_tweets.id;
 
 
 --
@@ -4231,7 +4232,7 @@ ALTER SEQUENCE public.timeline_events_id_seq OWNED BY public.timeline_events.id;
 
 CREATE TABLE public.tweet_classifications (
     id bigint NOT NULL,
-    disagreement_tweet_id bigint NOT NULL,
+    classified_tweet_id bigint NOT NULL,
     user_id bigint NOT NULL,
     is_prediction boolean NOT NULL,
     classified_at timestamp(0) without time zone NOT NULL,
@@ -5290,6 +5291,13 @@ ALTER TABLE ONLY public.chart_configurations ALTER COLUMN id SET DEFAULT nextval
 
 
 --
+-- Name: classified_tweets id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.classified_tweets ALTER COLUMN id SET DEFAULT nextval('public.disagreement_tweets_id_seq'::regclass);
+
+
+--
 -- Name: clickhouse_query_executions id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -5357,13 +5365,6 @@ ALTER TABLE ONLY public.dashboards_cache ALTER COLUMN id SET DEFAULT nextval('pu
 --
 
 ALTER TABLE ONLY public.dashboards_history ALTER COLUMN id SET DEFAULT nextval('public.dashboards_history_id_seq'::regclass);
-
-
---
--- Name: disagreement_tweets id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.disagreement_tweets ALTER COLUMN id SET DEFAULT nextval('public.disagreement_tweets_id_seq'::regclass);
 
 
 --
@@ -6312,10 +6313,10 @@ ALTER TABLE ONLY public.dashboards
 
 
 --
--- Name: disagreement_tweets disagreement_tweets_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: classified_tweets disagreement_tweets_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.disagreement_tweets
+ALTER TABLE ONLY public.classified_tweets
     ADD CONSTRAINT disagreement_tweets_pkey PRIMARY KEY (id);
 
 
@@ -7415,6 +7416,13 @@ CREATE INDEX chats_user_id_index ON public.chats USING btree (user_id);
 
 
 --
+-- Name: classified_tweets_has_disagreement_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX classified_tweets_has_disagreement_index ON public.classified_tweets USING btree (has_disagreement);
+
+
+--
 -- Name: clickhouse_query_executions_query_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7495,21 +7503,21 @@ CREATE INDEX dashboards_history_hash_index ON public.dashboards_history USING bt
 -- Name: disagreement_tweets_classification_count_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX disagreement_tweets_classification_count_index ON public.disagreement_tweets USING btree (classification_count);
+CREATE INDEX disagreement_tweets_classification_count_index ON public.classified_tweets USING btree (classification_count);
 
 
 --
 -- Name: disagreement_tweets_timestamp_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX disagreement_tweets_timestamp_index ON public.disagreement_tweets USING btree ("timestamp");
+CREATE INDEX disagreement_tweets_timestamp_index ON public.classified_tweets USING btree ("timestamp");
 
 
 --
 -- Name: disagreement_tweets_tweet_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX disagreement_tweets_tweet_id_index ON public.disagreement_tweets USING btree (tweet_id);
+CREATE UNIQUE INDEX disagreement_tweets_tweet_id_index ON public.classified_tweets USING btree (tweet_id);
 
 
 --
@@ -8209,7 +8217,7 @@ CREATE INDEX timeline_events_user_trigger_id_index ON public.timeline_events USI
 -- Name: tweet_classifications_disagreement_tweet_id_user_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX tweet_classifications_disagreement_tweet_id_user_id_index ON public.tweet_classifications USING btree (disagreement_tweet_id, user_id);
+CREATE UNIQUE INDEX tweet_classifications_disagreement_tweet_id_user_id_index ON public.tweet_classifications USING btree (classified_tweet_id, user_id);
 
 
 --
@@ -9552,7 +9560,7 @@ ALTER TABLE ONLY public.timeline_events
 --
 
 ALTER TABLE ONLY public.tweet_classifications
-    ADD CONSTRAINT tweet_classifications_disagreement_tweet_id_fkey FOREIGN KEY (disagreement_tweet_id) REFERENCES public.disagreement_tweets(id) ON DELETE CASCADE;
+    ADD CONSTRAINT tweet_classifications_disagreement_tweet_id_fkey FOREIGN KEY (classified_tweet_id) REFERENCES public.classified_tweets(id) ON DELETE CASCADE;
 
 
 --
@@ -10371,3 +10379,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250512141238);
 INSERT INTO public."schema_migrations" (version) VALUES (20250604072648);
 INSERT INTO public."schema_migrations" (version) VALUES (20250610155025);
 INSERT INTO public."schema_migrations" (version) VALUES (20250611104342);
+INSERT INTO public."schema_migrations" (version) VALUES (20250612090655);

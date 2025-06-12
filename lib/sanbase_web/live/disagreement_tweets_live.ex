@@ -92,10 +92,10 @@ defmodule SanbaseWeb.DisagreementTweetsLive do
 
     if tweet do
       attrs = %{
-        disagreement_tweet_id: tweet.id,
+        classified_tweet_id: tweet.id,
         user_id: user_id,
         is_prediction: is_prediction == "true",
-        classified_at: NaiveDateTime.utc_now()
+        classified_at: DateTime.utc_now()
       }
 
       case DisagreementTweets.create_classification(attrs) do

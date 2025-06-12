@@ -74,28 +74,29 @@ defmodule Sanbase.DisagreementTweets.TestData do
                 # Create full classified tweet object
                 classified_tweet = Map.put(tweet, "classification", classification)
 
-                # Check if this tweet should be stored (disagreement criteria)
-                should_store =
+                # Check if this tweet has disagreement (for flagging purposes)
+                has_disagreement =
                   classification["agreement"] == false or
                     prob_in_range?(classification, 0.3, 0.7)
 
-                if should_store do
-                  case store_classified_tweet(classified_tweet) do
-                    {:ok, _tweet} ->
+                # Store all tweets, but flag disagreement ones
+                case store_classified_tweet(classified_tweet, has_disagreement) do
+                  {:ok, _tweet} ->
+                    if has_disagreement do
                       IO.puts("✅ Stored disagreement tweet")
-                      %{acc | stored: acc.stored + 1}
+                    else
+                      IO.puts("💾 Stored regular tweet")
+                    end
 
-                    {:error, :already_exists} ->
-                      IO.puts("⏭️  Skipped (already exists)")
-                      %{acc | skipped: acc.skipped + 1}
+                    %{acc | stored: acc.stored + 1}
 
-                    {:error, _reason} ->
-                      IO.puts("❌ Error storing tweet")
-                      %{acc | errors: acc.errors + 1}
-                  end
-                else
-                  IO.puts("📊 Classified but no disagreement")
-                  acc
+                  {:error, :already_exists} ->
+                    IO.puts("⏭️  Skipped (already exists)")
+                    %{acc | skipped: acc.skipped + 1}
+
+                  {:error, _reason} ->
+                    IO.puts("❌ Error storing tweet")
+                    %{acc | errors: acc.errors + 1}
                 end
 
               {:error, reason} ->
@@ -122,7 +123,7 @@ defmodule Sanbase.DisagreementTweets.TestData do
     end
   end
 
-  defp store_classified_tweet(classified_tweet) do
+  defp store_classified_tweet(classified_tweet, has_disagreement) do
     tweet_with_classification = Map.merge(classified_tweet, classified_tweet["classification"])
 
     attrs = %{
@@ -141,10 +142,11 @@ defmodule Sanbase.DisagreementTweets.TestData do
       llama_prob_true: get_in(tweet_with_classification, ["llama_inhouse", "probability_true"]),
       llama_prob_false: get_in(tweet_with_classification, ["llama_inhouse", "probability_false"]),
       llama_prob_other: get_in(tweet_with_classification, ["llama_inhouse", "probability_other"]),
-      llama_time_seconds: get_in(tweet_with_classification, ["llama_inhouse", "time_seconds"])
+      llama_time_seconds: get_in(tweet_with_classification, ["llama_inhouse", "time_seconds"]),
+      has_disagreement: has_disagreement
     }
 
-    case DisagreementTweets.create_disagreement_tweet(attrs) do
+    case DisagreementTweets.create_classified_tweet(attrs) do
       {:ok, tweet} ->
         {:ok, tweet}
 

@@ -51,6 +51,10 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
         <.ai_classification_comparison tweet={@tweet} />
       </div>
 
+      <div :if={Map.get(@tweet, :user_has_classified, false)} class="mb-4">
+        <.voting_details tweet={@tweet} />
+      </div>
+
       <div :if={@show_classification_buttons} class="pt-3 border-t border-gray-100">
         <.classification_buttons tweet_id={@tweet.tweet_id} />
       </div>
@@ -128,6 +132,60 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
         </div>
         <div class="text-xs text-gray-500">
           Prediction Confidence
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  @doc """
+  Renders voting details showing user classifications
+  """
+  attr :tweet, :map, required: true
+
+  def voting_details(assigns) do
+    ~H"""
+    <div class="bg-blue-50 rounded-lg p-3">
+      <div class="flex items-center justify-between mb-3">
+        <h4 class="text-sm font-medium text-gray-700">Expert Classifications</h4>
+        <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
+          {@tweet.classification_count}/5 votes
+        </span>
+      </div>
+
+      <div :if={length(Map.get(@tweet, :classifications, [])) > 0} class="space-y-2">
+        <div
+          :for={classification <- Map.get(@tweet, :classifications, [])}
+          class="flex items-center justify-between text-xs"
+        >
+          <span class="text-gray-600">{get_user_display(classification.user_email)}</span>
+          <span class={[
+            "px-2 py-1 rounded-full font-medium",
+            if(classification.is_prediction,
+              do: "bg-green-100 text-green-800",
+              else: "bg-red-100 text-red-800"
+            )
+          ]}>
+            {if classification.is_prediction, do: "👍 Prediction", else: "👎 Not Prediction"}
+          </span>
+        </div>
+      </div>
+
+      <div
+        :if={@tweet.classification_count == 5 and @tweet.experts_is_prediction != nil}
+        class="mt-3 pt-3 border-t border-blue-200"
+      >
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-medium text-gray-700">Expert Consensus:</span>
+          <span class={[
+            "text-sm px-3 py-1 rounded-full font-bold",
+            if(@tweet.experts_is_prediction,
+              do: "bg-green-200 text-green-900",
+              else: "bg-red-200 text-red-900"
+            )
+          ]}>
+            {if @tweet.experts_is_prediction, do: "✅ PREDICTION", else: "❌ NOT PREDICTION"}
+          </span>
         </div>
       </div>
     </div>
@@ -271,4 +329,19 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
   end
 
   defp format_probability(_), do: "N/A"
+
+  defp get_user_display(email) when is_binary(email) do
+    email
+    |> String.split("@")
+    |> List.first()
+    |> case do
+      username when byte_size(username) > 12 ->
+        String.slice(username, 0, 12) <> "..."
+
+      username ->
+        username
+    end
+  end
+
+  defp get_user_display(_), do: "Unknown"
 end

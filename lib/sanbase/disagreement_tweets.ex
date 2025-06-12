@@ -57,7 +57,7 @@ defmodule Sanbase.DisagreementTweets do
       from(dt in ClassifiedTweet,
         join: tc in TweetClassification,
         on: tc.classified_tweet_id == dt.id and tc.user_id == ^user_id,
-        where: dt.has_disagreement == true,
+        where: dt.review_required == true,
         order_by: [desc: tc.classified_at],
         limit: ^limit
       )
@@ -101,6 +101,7 @@ defmodule Sanbase.DisagreementTweets do
     |> case do
       {:ok, classification} ->
         update_classification_count(classification.classified_tweet_id)
+        calculate_experts_consensus(classification.classified_tweet_id)
         {:ok, classification}
 
       error ->
@@ -116,7 +117,7 @@ defmodule Sanbase.DisagreementTweets do
       from(tc in TweetClassification,
         join: dt in ClassifiedTweet,
         on: tc.classified_tweet_id == dt.id,
-        where: dt.tweet_id == ^tweet_id and tc.user_id == ^user_id and dt.has_disagreement == true
+        where: dt.tweet_id == ^tweet_id and tc.user_id == ^user_id and dt.review_required == true
       )
 
     Repo.one(query)
@@ -130,6 +131,26 @@ defmodule Sanbase.DisagreementTweets do
   end
 
   @doc """
+  Gets all classifications for a tweet with user email information
+  """
+  def get_tweet_classifications_with_users(tweet_id) do
+    from(tc in TweetClassification,
+      join: dt in ClassifiedTweet,
+      on: tc.classified_tweet_id == dt.id,
+      join: u in Sanbase.Accounts.User,
+      on: tc.user_id == u.id,
+      where: dt.tweet_id == ^tweet_id,
+      select: %{
+        user_email: u.email,
+        is_prediction: tc.is_prediction,
+        classified_at: tc.classified_at
+      },
+      order_by: tc.classified_at
+    )
+    |> Repo.all()
+  end
+
+  @doc """
   Gets statistics about disagreement tweets
   """
   def get_stats do
@@ -140,7 +161,7 @@ defmodule Sanbase.DisagreementTweets do
 
     classification_counts =
       from(dt in ClassifiedTweet,
-        where: dt.has_disagreement == true,
+        where: dt.review_required == true,
         group_by: dt.classification_count,
         select: {dt.classification_count, count(dt.id)}
       )
@@ -273,6 +294,31 @@ defmodule Sanbase.DisagreementTweets do
     |> Repo.update_all(set: [classification_count: count])
   end
 
+  defp calculate_experts_consensus(classified_tweet_id) do
+    classification_count =
+      Repo.aggregate(
+        from(tc in TweetClassification, where: tc.classified_tweet_id == ^classified_tweet_id),
+        :count,
+        :id
+      )
+
+    if classification_count == 5 do
+      prediction_count =
+        Repo.aggregate(
+          from(tc in TweetClassification,
+            where: tc.classified_tweet_id == ^classified_tweet_id and tc.is_prediction == true
+          ),
+          :count,
+          :id
+        )
+
+      experts_is_prediction = prediction_count >= 3
+
+      from(dt in ClassifiedTweet, where: dt.id == ^classified_tweet_id)
+      |> Repo.update_all(set: [experts_is_prediction: experts_is_prediction])
+    end
+  end
+
   defp add_user_classification_status(tweets, user_id) do
     tweet_ids = Enum.map(tweets, & &1.tweet_id)
 
@@ -281,15 +327,27 @@ defmodule Sanbase.DisagreementTweets do
         join: dt in ClassifiedTweet,
         on: tc.classified_tweet_id == dt.id,
         where:
-          dt.tweet_id in ^tweet_ids and tc.user_id == ^user_id and dt.has_disagreement == true,
+          dt.tweet_id in ^tweet_ids and tc.user_id == ^user_id and dt.review_required == true,
         select: dt.tweet_id
       )
       |> Repo.all()
       |> MapSet.new()
 
-    Enum.map(tweets, fn tweet ->
-      user_has_classified = MapSet.member?(classified_tweet_ids, tweet.tweet_id)
-      Map.put(tweet, :user_has_classified, user_has_classified)
-    end)
+    tweets_with_classifications =
+      tweets
+      |> Enum.map(fn tweet ->
+        user_has_classified = MapSet.member?(classified_tweet_ids, tweet.tweet_id)
+
+        classifications =
+          if user_has_classified,
+            do: get_tweet_classifications_with_users(tweet.tweet_id),
+            else: []
+
+        tweet
+        |> Map.put(:user_has_classified, user_has_classified)
+        |> Map.put(:classifications, classifications)
+      end)
+
+    tweets_with_classifications
   end
 end

@@ -851,7 +851,8 @@ CREATE TABLE public.classified_tweets (
     classification_count integer DEFAULT 0,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    has_disagreement boolean DEFAULT true NOT NULL
+    review_required boolean DEFAULT true NOT NULL,
+    experts_is_prediction boolean
 );
 
 
@@ -7416,10 +7417,17 @@ CREATE INDEX chats_user_id_index ON public.chats USING btree (user_id);
 
 
 --
--- Name: classified_tweets_has_disagreement_index; Type: INDEX; Schema: public; Owner: -
+-- Name: classified_tweets_experts_is_prediction_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX classified_tweets_has_disagreement_index ON public.classified_tweets USING btree (has_disagreement);
+CREATE INDEX classified_tweets_experts_is_prediction_index ON public.classified_tweets USING btree (experts_is_prediction);
+
+
+--
+-- Name: classified_tweets_review_required_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX classified_tweets_review_required_index ON public.classified_tweets USING btree (review_required);
 
 
 --
@@ -10380,3 +10388,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250604072648);
 INSERT INTO public."schema_migrations" (version) VALUES (20250610155025);
 INSERT INTO public."schema_migrations" (version) VALUES (20250611104342);
 INSERT INTO public."schema_migrations" (version) VALUES (20250612090655);
+INSERT INTO public."schema_migrations" (version) VALUES (20250612131900);
+INSERT INTO public."schema_migrations" (version) VALUES (20250612133320);

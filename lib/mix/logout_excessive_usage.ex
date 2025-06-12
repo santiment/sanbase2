@@ -1,6 +1,8 @@
 defmodule Sanbase.Mix.LogoutExcessiveUsage do
   def run() do
     {:ok, user_ids} = get_offenders()
+    # Do some whitelisting
+    user_ids == user_ids -- whitelist_user_ids()
     user_ids = Enum.map(user_ids, &to_string/1)
 
     case SanbaseWeb.Guardian.Token.revoke_all_with_user_id(user_ids) do
@@ -105,5 +107,11 @@ defmodule Sanbase.Mix.LogoutExcessiveUsage do
     query_struct = Sanbase.Clickhouse.Query.new(sql, %{})
 
     Sanbase.ClickhouseRepo.query_transform(query_struct, fn [user_id] -> user_id end)
+  end
+
+  def whitelist_user_ids() do
+    user_ids_str = System.get_env("WHITELIST_USER_IDS_DO_NOT_LOGOUT") || ""
+
+    String.split(user_ids_str, ",", trim: true) |> Enum.map(&String.to_integer/1)
   end
 end

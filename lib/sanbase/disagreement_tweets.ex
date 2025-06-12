@@ -46,16 +46,21 @@ defmodule Sanbase.DisagreementTweets do
   end
 
   @doc """
-  Gets tweets classified by the user
+  Lists disagreement tweets classified by a specific user
   """
   def list_classified_by_user(user_id, opts \\ []) do
-    DisagreementTweet
-    |> DisagreementTweet.classified_by_user(user_id)
-    |> apply_filters(opts)
-    |> DisagreementTweet.order_by_timestamp()
-    |> preload([:classifications])
-    |> Repo.all()
-    |> add_user_classification_status(user_id)
+    limit = Keyword.get(opts, :limit, 20)
+
+    tweets =
+      from(dt in DisagreementTweet,
+        join: tc in TweetClassification,
+        on: tc.disagreement_tweet_id == dt.id and tc.user_id == ^user_id,
+        order_by: [desc: tc.classified_at],
+        limit: ^limit
+      )
+      |> Repo.all()
+
+    add_user_classification_status(tweets, user_id)
   end
 
   @doc """

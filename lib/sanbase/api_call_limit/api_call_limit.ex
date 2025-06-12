@@ -5,55 +5,30 @@ defmodule Sanbase.ApiCallLimit do
 
   alias Sanbase.Repo
   alias Sanbase.Accounts.User
-  alias Sanbase.Billing.{Product, Subscription}
+  alias Sanbase.Billing.Product
+  alias Sanbase.Billing.Subscription
+  alias Sanbase.ApiCallLimit.Restrictions
 
   require Logger
 
   @quota_size_base Application.compile_env(:sanbase, [__MODULE__, :quota_size])
   @quota_size_max_offset Application.compile_env(:sanbase, [__MODULE__, :quota_size_max_offset])
 
+  # So we can use them in pattern matching in case
+  @product_api_id Product.product_api()
+  @product_sanbase_id Product.product_sanbase()
+
   @plans_without_limits [
     "sanapi_enterprise",
     "sanapi_custom"
   ]
-  @limits_per_month %{
-    "sanbase_basic" => 1000,
-    "sanbase_pro" => 5000,
-    "sanbase_pro_plus" => 80_000,
-    "sanbase_max" => 80_000,
-    "sanapi_free" => 1000,
-    "sanapi_basic" => 300_000,
-    "sanapi_pro" => 600_000,
-    "sanapi_business_pro" => 600_000,
-    "sanapi_business_max" => 1_200_000
-  }
+  @api_call_limits_per_month Restrictions.call_limits_per_month()
+  @api_call_limits_per_hour Restrictions.call_limits_per_hour()
+  @api_call_limits_per_minute Restrictions.call_limits_per_minute()
 
-  @limits_per_hour %{
-    "sanbase_basic" => 500,
-    "sanbase_pro" => 1000,
-    "sanbase_pro_plus" => 4000,
-    "sanbase_max" => 4000,
-    "sanapi_free" => 500,
-    "sanapi_basic" => 20_000,
-    "sanapi_pro" => 30_000,
-    "sanapi_business_pro" => 30_000,
-    "sanapi_business_max" => 60_000
-  }
-
-  @limits_per_minute %{
-    "sanbase_basic" => 100,
-    "sanbase_pro" => 100,
-    "sanbase_pro_plus" => 100,
-    "sanbase_max" => 100,
-    "sanapi_free" => 100,
-    "sanapi_basic" => 300,
-    "sanapi_pro" => 600,
-    "sanapi_business_pro" => 600,
-    "sanapi_business_max" => 1200
-  }
-
-  @product_api_id Product.product_api()
-  @product_sanbase_id Product.product_sanbase()
+  @response_size_limits_mb_per_month Restrictions.response_size_limits_mb_per_month()
+  # @response_size_limits_per_hour Restrictions.response_size_limits_per_hour()
+  # @response_size_limits_per_minute Restrictions.response_size_limits_per_minute()
 
   schema "api_call_limits" do
     # If has_limits_no_matter_plan is false then plan is not checked.
@@ -61,7 +36,9 @@ defmodule Sanbase.ApiCallLimit do
     field(:has_limits_no_matter_plan, :boolean, default: true)
     field(:has_limits, :boolean, default: true)
     field(:api_calls_limit_plan, :string, default: "sanapi_free")
+    field(:api_calls_limit_subscription_status, :string, default: "active")
     field(:api_calls, :map, default: %{})
+    field(:api_calls_responses_size_mb, :map, default: %{})
     field(:remote_ip, :string, default: nil)
 
     belongs_to(:user, User)
@@ -75,7 +52,9 @@ defmodule Sanbase.ApiCallLimit do
       :has_limits_no_matter_plan,
       :has_limits,
       :api_calls_limit_plan,
-      :api_calls
+      :api_calls_limit_subscription_status,
+      :api_calls,
+      :api_calls_responses_size_mb
     ])
     |> validate_required([:has_limits, :api_calls_limit_plan])
   end
@@ -83,7 +62,7 @@ defmodule Sanbase.ApiCallLimit do
   def update_user_plan(%User{} = user) do
     %__MODULE__{} = acl = get_by_and_lock(:user, user)
 
-    plan = user_to_plan(user)
+    {plan, subscription_status} = user_to_plan(user)
 
     # Some users have don't have limits regardless of their plan
     # In case the user has limits - check the plan
@@ -95,7 +74,11 @@ defmodule Sanbase.ApiCallLimit do
 
     changeset =
       acl
-      |> changeset(%{api_calls_limit_plan: plan, has_limits: has_limits})
+      |> changeset(%{
+        api_calls_limit_plan: plan,
+        api_calls_limit_subscription_status: subscription_status,
+        has_limits: has_limits
+      })
 
     case Repo.update(changeset) do
       {:ok, _} = result ->
@@ -117,7 +100,7 @@ defmodule Sanbase.ApiCallLimit do
   end
 
   defdelegate get_quota(type, entity, auth_method), to: __MODULE__.ETS
-  defdelegate update_usage(type, entity, count, auth_method), to: __MODULE__.ETS
+  defdelegate update_usage(type, entity, count, auth_method, result_byte_size), to: __MODULE__.ETS
 
   def get_quota_db(type, entity) do
     Ecto.Multi.new()
@@ -134,13 +117,13 @@ defmodule Sanbase.ApiCallLimit do
     end
   end
 
-  def update_usage_db(type, entity, count) do
+  def update_usage_db(type, entity, count, result_byte_size) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(:get_acl, fn _repo, _changes ->
       {:ok, get_by_and_lock(type, entity)}
     end)
     |> Ecto.Multi.run(:update_quota, fn _repo, %{get_acl: acl} ->
-      do_update_usage_db(acl, count)
+      do_update_usage_db(acl, count, result_byte_size)
     end)
     |> Repo.transaction()
     |> case do
@@ -150,7 +133,7 @@ defmodule Sanbase.ApiCallLimit do
   end
 
   def reset(%User{} = user) do
-    if struct = Repo.get_by(__MODULE__, user_id: user.id), do: Repo.delete(struct)
+    if struct = Repo.get_by(__MODULE__, user_id: user.id), do: Repo.delete!(struct)
 
     case create(:user, user) do
       {:ok, acl} -> {:ok, acl}
@@ -160,39 +143,45 @@ defmodule Sanbase.ApiCallLimit do
 
   # Private functions
 
-  defp create(type, entity, count \\ 0)
+  defp create(type, entity)
 
-  defp create(:user, %User{} = user, count) do
+  defp create(:user, %User{} = user) do
     %{month_str: month_str, hour_str: hour_str, minute_str: minute_str} = get_time_str_keys()
 
-    api_calls = %{month_str => count, hour_str => count, minute_str => count}
-
-    plan = user_to_plan(user)
+    api_calls = %{month_str => 0, hour_str => 0, minute_str => 0}
+    response_sizes = %{month_str => 0, hour_str => 0, minute_str => 0}
+    {subscription_plan, subscription_status} = user_to_plan(user)
 
     has_limits =
       user_has_limits?(user) and
-        plan not in @plans_without_limits
+        subscription_plan not in @plans_without_limits
 
     %__MODULE__{}
     |> changeset(%{
       user_id: user.id,
-      api_calls_limit_plan: plan,
+      api_calls_limit_plan: subscription_plan,
+      api_calls_limit_subscription_status: subscription_status,
       has_limits: has_limits,
-      api_calls: api_calls
+      api_calls: api_calls,
+      api_calls_responses_size_mb: response_sizes
     })
     |> Repo.insert()
   end
 
-  defp create(:remote_ip, remote_ip, count) do
+  defp create(:remote_ip, remote_ip) do
     %{month_str: month_str, hour_str: hour_str, minute_str: minute_str} = get_time_str_keys()
-    api_calls = %{month_str => count, hour_str => count, minute_str => count}
+
+    api_calls = %{month_str => 0, hour_str => 0, minute_str => 0}
+    response_sizes = %{month_str => 0, hour_str => 0, minute_str => 0}
 
     %__MODULE__{}
     |> changeset(%{
       remote_ip: remote_ip,
       api_calls_limit_plan: "sanapi_free",
+      api_calls_limit_subscription_status: "active",
       has_limits: remote_ip_has_limits?(remote_ip),
-      api_calls: api_calls
+      api_calls: api_calls,
+      api_calls_responses_size_mb: response_sizes
     })
     |> Repo.insert()
   end
@@ -275,14 +264,15 @@ defmodule Sanbase.ApiCallLimit do
         Subscription.current_subscription(user, @product_sanbase_id)
 
     case subscription do
-      %Subscription{plan: %{product: %{id: @product_api_id}}} ->
-        "sanapi_#{Subscription.plan_name(subscription)}" |> String.downcase()
+      %Subscription{status: status, plan: %{product: %{id: @product_api_id}}} ->
+        {"sanapi_#{Subscription.plan_name(subscription)}" |> String.downcase(), to_string(status)}
 
-      %Subscription{plan: %{product: %{id: @product_sanbase_id}}} ->
-        "sanbase_#{Subscription.plan_name(subscription)}" |> String.downcase()
+      %Subscription{status: status, plan: %{product: %{id: @product_sanbase_id}}} ->
+        {"sanbase_#{Subscription.plan_name(subscription)}" |> String.downcase(),
+         to_string(status)}
 
       _ ->
-        "sanapi_free"
+        {"sanapi_free", "active"}
     end
   end
 
@@ -296,6 +286,53 @@ defmodule Sanbase.ApiCallLimit do
 
   defp do_get_quota(%__MODULE__{} = acl) do
     # The api calls made in the specified period
+
+    with :ok <- check_result_size_limits(acl),
+         {:ok, %{} = map} <- check_api_calls_limits(acl) do
+      {:ok, map}
+    else
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  defp check_result_size_limits(
+         %__MODULE__{api_calls_limit_subscription_status: status, api_calls_limit_plan: plan} =
+           acl
+       )
+       when status in ["trialing"] or plan == "sanapi_free" do
+    %{api_calls_responses_size_mb: api_calls_responses_size_mb, api_calls_limit_plan: plan} = acl
+    %{month_str: month_str} = get_time_str_keys()
+
+    size_limits = plan_to_response_size_limits(plan)
+    now = DateTime.utc_now()
+
+    cond do
+      (api_calls_responses_size_mb[month_str] || 0) > size_limits.month ->
+        blocked_for_seconds = DateTime.diff(Timex.end_of_month(now), now, :second)
+
+        {:error,
+         %{
+           reason: :response_size_limit_exceeded,
+           blocked_until: DateTime.add(now, blocked_for_seconds, :second),
+           blocked_for_seconds: blocked_for_seconds
+         }}
+
+      # NOTE: Currently only the monthly limits are applied
+      #
+      # (api_calls_responses_size_mb[hour_str] || 0) > 100 ->
+      #   {:error, "The API response size for the hour exceeded the limit of 100 MB."}
+      #
+      # (api_calls_responses_size_mb[minute_str] || 0) > 10 ->
+      #   {:error, "The API response size for the minute exceeded the limit of 10 MB."}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp check_result_size_limits(_acl), do: :ok
+
+  defp check_api_calls_limits(%__MODULE__{} = acl) do
     {
       %{month: _, hour: _, minute: _} = api_calls_remaining,
       %{month: _, hour: _, minute: _} = api_calls_limits
@@ -313,13 +350,14 @@ defmodule Sanbase.ApiCallLimit do
 
         blocked_for_seconds =
           cond do
-            api_calls_remaining.month == 0 -> Timex.diff(Timex.end_of_month(now), now, :seconds)
+            api_calls_remaining.month == 0 -> DateTime.diff(Timex.end_of_month(now), now, :second)
             api_calls_remaining.hour == 0 -> 3600 - (now.minute * 60 + now.second)
             api_calls_remaining.minute == 0 -> 60 - now.second
           end
 
         {:error,
          %{
+           reason: :rate_limited,
            blocked_until: DateTime.add(now, blocked_for_seconds, :second),
            blocked_for_seconds: blocked_for_seconds,
            api_calls_remaining: api_calls_remaining,
@@ -331,7 +369,8 @@ defmodule Sanbase.ApiCallLimit do
          %{
            quota: quota,
            api_calls_remaining: api_calls_remaining,
-           api_calls_limits: api_calls_limits
+           api_calls_limits: api_calls_limits,
+           api_calls_responses_size_mb: get_response_sizes_in_mb_map(acl)
          }}
     end
   end
@@ -356,8 +395,22 @@ defmodule Sanbase.ApiCallLimit do
     {api_calls_remaining, api_calls_limits}
   end
 
-  defp do_update_usage_db(%__MODULE__{api_calls: api_calls} = acl, count) do
+  defp get_response_sizes_in_mb_map(%__MODULE__{
+         api_calls_responses_size_mb: api_calls_responses_size_mb
+       }) do
+    keys = get_time_str_keys()
+
+    %{
+      month: Map.get(api_calls_responses_size_mb, keys.month_str, 0),
+      hour: Map.get(api_calls_responses_size_mb, keys.hour_str, 0),
+      minute: Map.get(api_calls_responses_size_mb, keys.minute_str, 0)
+    }
+  end
+
+  defp do_update_usage_db(%__MODULE__{} = acl, count, acc_results_byte_size)
+       when is_integer(count) and is_integer(acc_results_byte_size) do
     %{month_str: month_str, hour_str: hour_str, minute_str: minute_str} = get_time_str_keys()
+    %{api_calls: api_calls, api_calls_responses_size_mb: api_calls_responses_size_mb} = acl
 
     new_api_calls = %{
       month_str => count + Map.get(api_calls, month_str, 0),
@@ -365,7 +418,20 @@ defmodule Sanbase.ApiCallLimit do
       minute_str => count + Map.get(api_calls, minute_str, 0)
     }
 
-    changeset(acl, %{api_calls: new_api_calls})
+    # Store in mb instead of bytes so the value reached by accumulating results for
+    # a whole month is easier to work with
+    result_mb = acc_results_byte_size |> Kernel./(1024 * 1024) |> Float.round(6)
+
+    new_api_responses_size_mb = %{
+      month_str => result_mb + Map.get(api_calls_responses_size_mb, month_str, 0),
+      hour_str => result_mb + Map.get(api_calls_responses_size_mb, hour_str, 0),
+      minute_str => result_mb + Map.get(api_calls_responses_size_mb, minute_str, 0)
+    }
+
+    changeset(acl, %{
+      api_calls: new_api_calls,
+      api_calls_responses_size_mb: new_api_responses_size_mb
+    })
     |> Repo.update()
   end
 
@@ -412,9 +478,28 @@ defmodule Sanbase.ApiCallLimit do
 
       _ ->
         %{
-          month: @limits_per_month[plan],
-          hour: @limits_per_hour[plan],
-          minute: @limits_per_minute[plan]
+          month: @api_call_limits_per_month[plan],
+          hour: @api_call_limits_per_hour[plan],
+          minute: @api_call_limits_per_minute[plan]
+        }
+    end
+  end
+
+  defp plan_to_response_size_limits(plan) do
+    case plan do
+      "sanapi_custom_" <> _ ->
+        "sanapi_" <> plan_name = plan
+        plan_name = String.upcase(plan_name)
+
+        %{"month" => month} =
+          Sanbase.Billing.Plan.CustomPlan.Access.response_size_limits(plan_name, "SANAPI")
+
+        # Not using hour/minute limits for now
+        %{month: month}
+
+      _ ->
+        %{
+          month: @response_size_limits_mb_per_month[plan]
         }
     end
   end

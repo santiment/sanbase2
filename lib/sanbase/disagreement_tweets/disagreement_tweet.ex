@@ -14,7 +14,7 @@ defmodule Sanbase.DisagreementTweets.ClassifiedTweet do
     field(:text, :string)
     field(:url, :string)
     field(:agreement, :boolean)
-    field(:has_disagreement, :boolean, default: false)
+    field(:review_required, :boolean, default: false)
 
     # OpenAI model fields
     field(:openai_is_prediction, :boolean)
@@ -31,6 +31,7 @@ defmodule Sanbase.DisagreementTweets.ClassifiedTweet do
     field(:llama_time_seconds, :float)
 
     field(:classification_count, :integer, default: 0)
+    field(:experts_is_prediction, :boolean)
 
     has_many(:classifications, TweetClassification, foreign_key: :classified_tweet_id)
 
@@ -44,7 +45,7 @@ defmodule Sanbase.DisagreementTweets.ClassifiedTweet do
     :text,
     :url,
     :agreement,
-    :has_disagreement
+    :review_required
   ]
 
   @optional_fields [
@@ -58,7 +59,8 @@ defmodule Sanbase.DisagreementTweets.ClassifiedTweet do
     :llama_prob_false,
     :llama_prob_other,
     :llama_time_seconds,
-    :classification_count
+    :classification_count,
+    :experts_is_prediction
   ]
 
   def changeset(tweet, attrs) do
@@ -67,13 +69,13 @@ defmodule Sanbase.DisagreementTweets.ClassifiedTweet do
     |> validate_required(@required_fields)
     |> unique_constraint(:tweet_id)
     |> validate_inclusion(:agreement, [true, false])
-    |> validate_inclusion(:has_disagreement, [true, false])
+    |> validate_inclusion(:review_required, [true, false])
     |> validate_number(:classification_count, greater_than_or_equal_to: 0)
   end
 
   # Query helpers for disagreement tweets only
   def disagreement_tweets(query \\ __MODULE__) do
-    from(q in query, where: q.has_disagreement == true)
+    from(q in query, where: q.review_required == true)
   end
 
   def not_classified_by_user(query \\ disagreement_tweets(), user_id) do

@@ -161,7 +161,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       Sanbase.ApiCallLimit.update_usage(
         :user,
         :apikey,
-        context.user,
+        context.san_user,
         _api_call_count = 999_999_999,
         _result_size_bytes = 1000
       )

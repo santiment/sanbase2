@@ -100,7 +100,7 @@ defmodule Sanbase.ApiCallLimit do
   end
 
   defdelegate get_quota(type, entity, auth_method), to: __MODULE__.ETS
-  defdelegate update_usage(type, entity, count, auth_method, result_byte_size), to: __MODULE__.ETS
+  defdelegate update_usage(type, auth_method, entity, count, result_byte_size), to: __MODULE__.ETS
 
   def get_quota_db(type, entity) do
     Ecto.Multi.new()

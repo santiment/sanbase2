@@ -31,7 +31,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   @compile inline: [
              cache_result: 2,
              get_query_and_selector: 1,
-             export_api_call_data: 3,
+             export_api_call_data: 4,
              extract_caller_data: 1,
              get_cache_key: 1,
              has_graphql_errors?: 1,
@@ -61,10 +61,17 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     # to infinite storing the same value if there are enough requests
 
     queries = queries_in_request(blueprint)
-    export_api_call_data(queries, conn, blueprint)
+
+    result_sizes = result_sizes(blueprint)
+    export_api_call_data(queries, conn, blueprint, result_sizes)
     do_not_cache? = Process.get(:do_not_cache_query) == true
 
-    maybe_update_api_call_limit_usage(conn, blueprint.execution.context, Enum.count(queries))
+    maybe_update_api_call_limit_usage(
+      conn,
+      blueprint.execution.context,
+      Enum.count(queries),
+      result_sizes
+    )
 
     case do_not_cache? or has_graphql_errors?(blueprint) do
       true -> :ok
@@ -75,6 +82,18 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     |> maybe_create_or_drop_session(blueprint.execution.context)
   end
 
+  defp result_sizes(%{result: result = _blueprint}) do
+    byte_result = :erlang.term_to_binary(result)
+    byte_size = byte_result |> byte_size()
+    compressed_byte_size = byte_result |> :zlib.gzip() |> byte_size()
+
+    %{
+      byte_size: byte_size,
+      compressed_byte_size: compressed_byte_size,
+      min_byte_size: min(byte_size, compressed_byte_size)
+    }
+  end
+
   defp maybe_update_api_call_limit_usage(
          conn,
          %{
@@ -82,10 +101,19 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
            requested_product: "SANAPI",
            auth: %{current_user: user, auth_method: auth_method}
          },
-         count
-       ) do
+         count,
+         result_sizes
+       )
+       when is_map(result_sizes) do
     if conn.private[:has_api_call_limit_quota_infinity] != true,
-      do: Sanbase.ApiCallLimit.update_usage(:user, user, count, auth_method)
+      do:
+        Sanbase.ApiCallLimit.update_usage(
+          :user,
+          auth_method,
+          user,
+          count,
+          result_sizes.min_byte_size
+        )
   end
 
   defp maybe_update_api_call_limit_usage(
@@ -95,17 +123,25 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
            requested_product: "SANAPI",
            remote_ip: remote_ip
          } = context,
-         count
-       ) do
+         count,
+         result_sizes
+       )
+       when is_map(result_sizes) and is_tuple(remote_ip) do
     if conn.private[:has_api_call_limit_quota_infinity] != true do
       auth_method = context[:auth][:auth_method] || :unauthorized
       remote_ip = IP.ip_tuple_to_string(remote_ip)
 
-      Sanbase.ApiCallLimit.update_usage(:remote_ip, remote_ip, count, auth_method)
+      Sanbase.ApiCallLimit.update_usage(
+        :remote_ip,
+        auth_method,
+        remote_ip,
+        count,
+        result_sizes.min_byte_size
+      )
     end
   end
 
-  defp maybe_update_api_call_limit_usage(_conn, _context, _count), do: :ok
+  defp maybe_update_api_call_limit_usage(_conn, _context, _count, _result_sizes), do: :ok
 
   defp cache_result(queries, blueprint) do
     all_queries_cachable? = queries |> Enum.all?(&Enum.member?(@cached_queries, &1))
@@ -161,7 +197,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   # API Call exporting functions
 
   # Create an API Call event for every query in a Document separately.
-  defp export_api_call_data(queries, conn, blueprint) do
+  defp export_api_call_data(queries, conn, blueprint, result_sizes) when is_map(result_sizes) do
     now = DateTime.utc_now() |> DateTime.to_unix(:nanosecond)
     now_mono = System.monotonic_time()
     duration_ms = div(now_mono - blueprint.telemetry.start_time_mono, 1_000_000)
@@ -192,8 +228,6 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
 
       {query, selector} = get_query_and_selector(query)
 
-      bin_result = :erlang.term_to_binary(blueprint.result)
-
       %{
         timestamp: div(now, 1_000_000_000),
         id: id,
@@ -208,8 +242,8 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
         user_agent: user_agent,
         duration_ms: duration_ms,
         san_tokens: san_tokens,
-        response_size_byte: byte_size(bin_result),
-        compressed_response_size_byte: byte_size(:zlib.gzip(bin_result))
+        response_size_byte: result_sizes.byte_size,
+        compressed_response_size_byte: result_sizes.compressed_byte_size
       }
     end)
     |> Sanbase.Kafka.ApiCall.json_kv_tuple_no_hash_collision()

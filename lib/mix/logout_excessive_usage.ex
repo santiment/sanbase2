@@ -2,7 +2,7 @@ defmodule Sanbase.Mix.LogoutExcessiveUsage do
   def run() do
     {:ok, user_ids} = get_offenders()
     # Do some whitelisting
-    user_ids == user_ids -- whitelist_user_ids()
+    user_ids = user_ids -- whitelist_user_ids()
     user_ids = Enum.map(user_ids, &to_string/1)
 
     case SanbaseWeb.Guardian.Token.revoke_all_with_user_id(user_ids) do

@@ -155,7 +155,7 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
       nil
     else
       module = @product_to_access_module[requested_product]
-      apply(module, :historical_data_in_days, [subscription_product, plan_name])
+      module.historical_data_in_days(subscription_product, plan_name)
     end
   end
 

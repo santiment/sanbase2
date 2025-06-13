@@ -62,13 +62,13 @@ defmodule Sanbase.ApiCallLimit.ETS do
   API calls is tracked in-memory in an ETS table and after a certain number of
   API calls is made, the number is updated in the centralized database.
   """
-  def update_usage(_type, _entity, _count, :basic), do: :ok
+  def update_usage(_type, :basic, _user_or_remote_ip, _count, _result_byte_size), do: :ok
 
-  def update_usage(:user, %User{} = user, count, _auth_method),
-    do: do_update_usage(:user, user, user.id, count)
+  def update_usage(:user, _auth_method, %User{} = user, count, result_byte_size),
+    do: do_update_usage(:user, user, user.id, count, result_byte_size)
 
-  def update_usage(:remote_ip, remote_ip, count, _auth_method),
-    do: do_update_usage(:remote_ip, remote_ip, remote_ip, count)
+  def update_usage(:remote_ip, _auth_method, remote_ip, count, result_byte_size),
+    do: do_update_usage(:remote_ip, remote_ip, remote_ip, count, result_byte_size)
 
   # Private functions
 
@@ -81,7 +81,8 @@ defmodule Sanbase.ApiCallLimit.ETS do
           # No data stored yet. Initialize by checking the postgres
           get_quota_from_db_and_update_ets(entity_type, entity, entity_key)
 
-        [{^entity_key, :rate_limited, error_map}] ->
+        [{^entity_key, reason, error_map}]
+        when reason in [:rate_limited, :response_size_limit_exceeded] ->
           # Try again after `retry_again_after` datetime in case something changed.
           # This handles cases where the data changed without a plan upgrade, for
           # example changing the `has_limits` in the admin panel manually.
@@ -102,11 +103,14 @@ defmodule Sanbase.ApiCallLimit.ETS do
               get_quota_from_db_and_update_ets(entity_type, entity, entity_key)
           end
 
-        [{^entity_key, :infinity, :infinity, metadata, _refresh_after_datetime}] ->
+        [{^entity_key, :infinity, :infinity, _result_size, metadata, _refresh_after_datetime}] ->
           # The entity does not have rate limits applied
           {:ok, %{metadata | quota: :infinity}}
 
-        [{^entity_key, api_calls_remaining, quota, _metadata, _refresh_after_datetime}]
+        [
+          {^entity_key, quota, api_calls_remaining, acc_result_byte_size, _metadata,
+           _refresh_after_datetime}
+        ]
         when api_calls_remaining <= 0 ->
           # The in-memory quota has been exhausted. The api calls made are
           # recorded in postgres and a new quota is obtained. api_calls_remaing
@@ -117,10 +121,14 @@ defmodule Sanbase.ApiCallLimit.ETS do
             entity_type,
             entity,
             entity_key,
-            api_calls_made
+            api_calls_made,
+            acc_result_byte_size
           )
 
-        [{^entity_key, api_calls_remaining, quota, metadata, refresh_after_datetime}] ->
+        [
+          {^entity_key, quota, api_calls_remaining, acc_result_byte_size, metadata,
+           refresh_after_datetime}
+        ] ->
           # The in-memory quota is not exhausted.
           case DateTime.compare(DateTime.utc_now(), refresh_after_datetime) do
             :gt ->
@@ -130,7 +138,8 @@ defmodule Sanbase.ApiCallLimit.ETS do
                 entity_type,
                 entity,
                 entity_key,
-                api_calls_made
+                api_calls_made,
+                acc_result_byte_size
               )
 
             _ ->
@@ -143,22 +152,35 @@ defmodule Sanbase.ApiCallLimit.ETS do
     result
   end
 
-  defp do_update_usage(entity_type, entity, entity_key, count) do
+  defp do_update_usage(entity_type, entity, entity_key, count, result_byte_size) do
     lock = Mutex.await(Sanbase.ApiCallLimitMutex, {entity_type, entity_key}, 5_000)
 
     case :ets.lookup(@ets_table, entity_key) do
       [] ->
-        update_usage_get_quota_from_db_and_update_ets(entity_type, entity, entity_key, count)
+        update_usage_get_quota_from_db_and_update_ets(
+          entity_type,
+          entity,
+          entity_key,
+          count,
+          result_byte_size
+        )
 
         :ok
 
-      [{^entity_key, :infinity, :infinity, _metadata, _refresh_after_datetime}] ->
+      [
+        {^entity_key, _quota = :infinity, _api_calls_remaining = :infinity, _result_size,
+         _metadata, _refresh_after_datetime}
+      ] ->
         :ok
 
-      [{^entity_key, :rate_limited, _error_map}] ->
+      [{^entity_key, reason, _error_map}]
+      when reason in [:rate_limited, :response_size_limit_exceeded] ->
         :ok
 
-      [{^entity_key, api_calls_remaining, quota, _metadata, _refresh_after_datetime}]
+      [
+        {^entity_key, quota, api_calls_remaining, acc_result_byte_size, _metadata,
+         _refresh_after_datetime}
+      ]
       when api_calls_remaining <= count ->
         # The remaining calls in the quota are less than the number of calls made now.
         # Update the central DB, get a new quota and put in ETS.
@@ -171,11 +193,17 @@ defmodule Sanbase.ApiCallLimit.ETS do
           entity_type,
           entity,
           entity_key,
-          api_calls_made
+          api_calls_made,
+          acc_result_byte_size + result_byte_size
         )
 
-      [{^entity_key, api_calls_remaining, _quota, metadata, _refresh_after_datetime}] ->
-        true = do_upate_ets_usage(entity_key, api_calls_remaining, count, metadata)
+      [
+        {^entity_key, _quota, api_calls_remaining, _acc_result_byte_size, metadata,
+         _refresh_after_datetime}
+      ] ->
+        # The results size is stored as ETS counter where we atomically just add result_byte_size
+        true =
+          do_upate_ets_usage(entity_key, api_calls_remaining, count, result_byte_size, metadata)
 
         :ok
     end
@@ -183,7 +211,7 @@ defmodule Sanbase.ApiCallLimit.ETS do
     Mutex.release(Sanbase.ApiCallLimitMutex, lock)
   end
 
-  defp do_upate_ets_usage(entity_key, api_calls_remaining, count, metadata) do
+  defp do_upate_ets_usage(entity_key, api_calls_remaining, count, result_byte_size, metadata) do
     remaining = metadata.api_calls_remaining
 
     # This metadata is used for the HTTP headers only. The values here
@@ -201,18 +229,27 @@ defmodule Sanbase.ApiCallLimit.ETS do
       :ets.update_element(
         @ets_table,
         entity_key,
-        {2, api_calls_remaining - count}
+        {3, api_calls_remaining - count}
       )
 
-    true = :ets.update_element(@ets_table, entity_key, {4, metadata})
+    _ = :ets.update_counter(@ets_table, entity_key, {4, result_byte_size})
+
+    true = :ets.update_element(@ets_table, entity_key, {5, metadata})
   end
 
-  defp update_usage_get_quota_from_db_and_update_ets(entity_type, entity, entity_key, count) do
+  defp update_usage_get_quota_from_db_and_update_ets(
+         entity_type,
+         entity,
+         entity_key,
+         count,
+         result_byte_size
+       ) do
     {:ok, _} =
       ApiCallLimit.update_usage_db(
         entity_type,
         entity,
-        count
+        count,
+        result_byte_size
       )
 
     # Adding clearing of the ETS record before fetching a new quota and
@@ -240,12 +277,14 @@ defmodule Sanbase.ApiCallLimit.ETS do
         true =
           :ets.insert(
             @ets_table,
-            {entity_key, _api_calls_remaining = quota, quota, metadata, refresh_after_datetime}
+            {entity_key, quota, _api_calls_remaining = quota, _acc_result_byte_size = 0, metadata,
+             refresh_after_datetime}
           )
 
         {:ok, metadata}
 
-      {:error, %{blocked_until: _} = error_map} ->
+      {:error, %{reason: reason, blocked_until: _} = error_map}
+      when reason in [:rate_limited, :response_size_limit_exceeded] ->
         retry_again_after =
           Enum.min(
             [error_map.blocked_until, DateTime.add(now, 60, :second)],
@@ -254,7 +293,7 @@ defmodule Sanbase.ApiCallLimit.ETS do
 
         error_map = Map.put(error_map, :retry_again_after, retry_again_after)
 
-        true = :ets.insert(@ets_table, {entity_key, :rate_limited, error_map})
+        true = :ets.insert(@ets_table, {entity_key, reason, error_map})
 
         {:error, error_map}
     end

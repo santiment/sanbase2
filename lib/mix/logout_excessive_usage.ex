@@ -1,23 +1,38 @@
 defmodule Sanbase.Mix.LogoutExcessiveUsage do
+  require Logger
+
   def run() do
-    {:ok, user_ids} = get_offenders()
-    # Do some whitelisting
-    user_ids = user_ids -- whitelist_user_ids()
-    user_ids = Enum.map(user_ids, &to_string/1)
+    if enabled?() do
+      {:ok, user_ids} = get_offenders()
+      # Do some whitelisting
+      user_ids = user_ids -- whitelist_user_ids()
+      user_ids = Enum.map(user_ids, &to_string/1)
 
-    case SanbaseWeb.Guardian.Token.revoke_all_with_user_id(user_ids) do
-      {:ok, _} ->
-        IO.puts("""
-        Revoked all tokens for users with excessive usage: #{inspect(user_ids)}
-        This usage pattern indicates people using Sanbase access pattern in scripts
-        or scraping, which is not allowed.
-        """)
+      case SanbaseWeb.Guardian.Token.revoke_all_with_user_id(user_ids) do
+        {:ok, _} ->
+          Logger.info("""
+          Revoked all tokens for users with excessive usage: #{inspect(user_ids)}
+          This usage pattern indicates people using Sanbase access pattern in scripts
+          or scraping, which is not allowed.
+          """)
 
-      {:error, reason} ->
-        IO.puts("""
-        Failed to revoke tokens for users with excessive usage: #{inspect(user_ids)}.
-        Reason: #{inspect(reason)}
-        """)
+        {:error, reason} ->
+          Logger.info("""
+          Failed to revoke tokens for users with excessive usage: #{inspect(user_ids)}.
+          Reason: #{inspect(reason)}
+          """)
+      end
+    else
+      Logger.info("""
+      Scheduled running #{__MODULE__} but won't run as it's not enabled via env var
+      """)
+    end
+  end
+
+  def enabled?() do
+    case System.get_env("SANBASE_LOGOUT_EXCESSIVE_USAGE") do
+      x when x in ["True", "true", "1"] -> true
+      _ -> false
     end
   end
 

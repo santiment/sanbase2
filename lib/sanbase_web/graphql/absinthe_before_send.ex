@@ -59,19 +59,20 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     # - result is taken from the cache and should not be stored again. Storing
     # it again `touch`es it and the TTL timer is restarted. This can lead
     # to infinite storing the same value if there are enough requests
-
     queries = queries_in_request(blueprint)
-
     result_sizes = result_sizes(blueprint)
-    export_api_call_data(queries, conn, blueprint, result_sizes)
     do_not_cache? = Process.get(:do_not_cache_query) == true
 
-    maybe_update_api_call_limit_usage(
-      conn,
-      blueprint.execution.context,
-      Enum.count(queries),
-      result_sizes
-    )
+    maybe_async(fn -> export_api_call_data(queries, conn, blueprint, result_sizes) end)
+
+    maybe_async(fn ->
+      maybe_update_api_call_limit_usage(
+        conn,
+        blueprint.execution.context,
+        Enum.count(queries),
+        result_sizes
+      )
+    end)
 
     case do_not_cache? or has_graphql_errors?(blueprint) do
       true -> :ok
@@ -80,6 +81,11 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
 
     conn
     |> maybe_create_or_drop_session(blueprint.execution.context)
+  end
+
+  case Application.compile_env(:sanbase, :env) do
+    :test -> defp maybe_async(fun), do: fun.()
+    _ -> defp maybe_async(fun), do: Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fun)
   end
 
   defp result_sizes(%{result: result = _blueprint}) do

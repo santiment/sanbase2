@@ -131,7 +131,8 @@ defmodule Sanbase.Billing.Plan do
     "MAX",
     "BUSINESS_PRO",
     "BUSINESS_MAX",
-    "CUSTOM"
+    "CUSTOM",
+    "PREMIUM"
   ]
 
   def plan_name(%__MODULE__{} = plan) do

@@ -72,6 +72,20 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field(:website_url, :string)
     field(:twitter_handle, :string)
 
+    @desc ~s"""
+    String representation of when the user was last active on sanbase.
+    The returned result is in the form 'Last 5 mintes', 'Last 24 hours', etc.
+
+    API activity authenticated with apikeys is not considered here.
+    """
+    field :last_sanbase_activity, :string do
+      resolve(&UserResolver.last_sanbase_activity/3)
+    end
+
+    field :joined_at, :datetime do
+      resolve(&UserResolver.joined_at/3)
+    end
+
     field :is_moderator, :boolean do
       resolve(&UserResolver.moderator?/3)
     end

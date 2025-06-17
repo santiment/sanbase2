@@ -17,6 +17,31 @@ defmodule SanbaseWeb.Guardian.Token do
     timestamps()
   end
 
+  def user_id_last_activity(user_id) do
+    query =
+      from(gt in __MODULE__,
+        where: gt.sub == ^to_string(user_id)
+      )
+
+    case Sanbase.Repo.all(query) do
+      [] ->
+        {:error, "User has not exchanged any refresh tokens"}
+
+      list ->
+        last_activity =
+          Enum.flat_map(list, fn %{updated_at: updated_at, last_exchanged_at: last_exchanged_at} ->
+            [
+              last_exchanged_at,
+              DateTime.from_naive!(updated_at, "Etc/UTC")
+            ]
+          end)
+          |> Enum.reject(&is_nil/1)
+          |> Enum.max(DateTime)
+
+        {:ok, last_activity}
+    end
+  end
+
   def revoke(jti, user_id) do
     sub = to_string(user_id)
 

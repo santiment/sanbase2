@@ -80,6 +80,38 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
     Sanbase.Vote.user_total_votes(user.id)
   end
 
+  def last_sanbase_activity(%User{} = user, _args, _resolutiond) do
+    # Take advantage of the fact that there are 2 JWTs - one short-lived (5 minutes) access token
+    # and one long-lived (30 days) refresh token. When making a request, if the access token is
+    # expired, the refresh token is exchagned for a new access token and this operation is recorded
+    # in the database by bumping the `last_exchanged_at` field
+    # API calls with apikey does is not reflected here
+    with {:ok, datetime} <- SanbaseWeb.Guardian.Token.user_id_last_activity(user.id) do
+      now = DateTime.utc_now()
+
+      last_activity_str =
+        cond do
+          DateTime.diff(now, datetime, :second) < 300 -> "Last 5 minutes"
+          DateTime.diff(now, datetime, :second) < 3600 -> "Last hour"
+          DateTime.diff(now, datetime, :hour) < 24 -> "Last 24 hours"
+          DateTime.diff(now, datetime, :day) < 3 -> "Last 3 days"
+          true -> "More than 3 days ago"
+        end
+
+      {:ok, last_activity_str}
+    end
+  end
+
+  def joined_at(%User{} = user, _args, _resolution) do
+    case user do
+      %{registration_state: %{"state" => "finished", "datetime" => datetime_iso8601}} ->
+        {:ok, Sanbase.DateTimeUtils.from_iso8601!(datetime_iso8601)}
+
+      %{inserted_at: %NaiveDateTime{} = naive_datetime} ->
+        {:ok, DateTime.from_naive!(naive_datetime, "Etc/UTC")}
+    end
+  end
+
   def entities_stats(%User{} = user, _args, _resolution) do
     with {:ok, map} <- Sanbase.Entity.get_user_entities_stats(user.id) do
       result = %{

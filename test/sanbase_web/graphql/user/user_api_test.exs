@@ -70,6 +70,79 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
     end
   end
 
+  test "lastSanbaseActivity for public user" do
+    user = insert(:user)
+
+    conn = setup_jwt_auth(build_conn(), user)
+
+    query = fn user_id ->
+      """
+      {
+        getUser(selector: {id: #{user_id}}) {
+          lastSanbaseActivity
+        }
+      }
+      """
+    end
+
+    result = execute_query(conn, query.(user.id), "getUser")
+
+    assert result["lastSanbaseActivity"] == "Last 5 minutes"
+  end
+
+  test "joinedAt for public user" do
+    one_day_ago =
+      DateTime.utc_now() |> DateTime.add(-1, :day) |> DateTime.truncate(:second)
+
+    user1 = insert(:user, inserted_at: one_day_ago)
+    user2 = insert(:user)
+    user3 = insert(:user_registration_not_finished, inserted_at: one_day_ago)
+
+    conn = setup_jwt_auth(build_conn(), user1)
+
+    query = fn user_id ->
+      """
+      {
+        getUser(selector: {id: #{user_id}}) {
+          joinedAt
+        }
+      }
+      """
+    end
+
+    result1 = execute_query(conn, query.(user1.id), "getUser")
+    result2 = execute_query(conn, query.(user2.id), "getUser")
+    result3 = execute_query(conn, query.(user3.id), "getUser")
+
+    # User 1
+    # User is inserted one day ago, but the registration_state datetime is set to the moment
+    # of creation, i.e. now
+    assert Sanbase.TestUtils.datetime_close_to(
+             Sanbase.DateTimeUtils.from_iso8601!(result1["joinedAt"]),
+             Timex.now(),
+             seconds: 2
+           )
+
+    # User 2
+    # User is just now and the registration_state datetime is set to the moment
+    # of creation, i.e. now
+    assert Sanbase.TestUtils.datetime_close_to(
+             Sanbase.DateTimeUtils.from_iso8601!(result2["joinedAt"]),
+             Timex.now(),
+             seconds: 2
+           )
+
+    # User 3
+    # The user is inserted one day ago but the registration process has not finished, so we'll use the
+    # inserted_at datetime, i.e. yesterday
+    #
+    assert Sanbase.TestUtils.datetime_close_to(
+             Sanbase.DateTimeUtils.from_iso8601!(result3["joinedAt"]),
+             one_day_ago,
+             seconds: 2
+           )
+  end
+
   describe "Current user" do
     test "default san_balance is 0.0", %{conn: conn} do
       query = """
@@ -263,35 +336,37 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
     end
   end
 
-  test "Change name of current user", %{conn: conn} do
-    # allow non-ascii symbols as well
-    new_name = "new име utf8 José"
+  describe "Change names" do
+    test "Change name of current user", %{conn: conn} do
+      # allow non-ascii symbols as well
+      new_name = "new име utf8 José"
 
-    mutation = """
-    mutation {
-      changeName(name: "#{new_name}") {
-        name
+      mutation = """
+      mutation {
+        changeName(name: "#{new_name}") {
+          name
+        }
       }
-    }
-    """
+      """
 
-    result = execute_mutation(conn, mutation, "changeName")
-    assert result["name"] == new_name
-  end
+      result = execute_mutation(conn, mutation, "changeName")
+      assert result["name"] == new_name
+    end
 
-  test "Change username of current user", %{conn: conn} do
-    new_username = "new_username_changed"
+    test "Change username of current user", %{conn: conn} do
+      new_username = "new_username_changed"
 
-    mutation = """
-    mutation {
-      changeUsername(username: "#{new_username}") {
-        username
+      mutation = """
+      mutation {
+        changeUsername(username: "#{new_username}") {
+          username
+        }
       }
-    }
-    """
+      """
 
-    result = execute_mutation(conn, mutation, "changeUsername")
-    assert result["username"] == new_username
+      result = execute_mutation(conn, mutation, "changeUsername")
+      assert result["username"] == new_username
+    end
   end
 
   test "logout clears session", %{conn: conn} do

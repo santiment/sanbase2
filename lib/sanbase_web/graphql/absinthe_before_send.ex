@@ -29,7 +29,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   alias Sanbase.Utils.IP
 
   @compile inline: [
-             cache_result: 2,
+             maybe_cache_result: 2,
              get_query_and_selector: 1,
              export_api_call_data: 1,
              extract_caller_data: 1,
@@ -60,19 +60,21 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     # it again `touch`es it and the TTL timer is restarted. This can lead
     # to infinite storing the same value if there are enough requests
     do_not_cache? = Process.get(:do_not_cache_query) == true
-    query_metadata = query_metadata(conn, blueprint)
 
-    maybe_async(fn -> export_api_call_data(query_metadata) end)
+    has_graphql_errors? = has_graphql_errors?(blueprint)
 
-    maybe_async(fn ->
-      maybe_update_api_call_limit_usage(query_metadata)
-    end)
+    if not has_graphql_errors? and has_queries?(blueprint) do
+      query_metadata = query_metadata(conn, blueprint)
 
-    case do_not_cache? or has_graphql_errors?(blueprint) do
-      true -> :ok
-      # The pre_override_queries are the getMetric and getSignal query names
-      # before they got renamed to getMetric|<metric> and getSignal|<signal>
-      false -> cache_result(query_metadata.pre_override_queries, blueprint)
+      maybe_async(fn -> export_api_call_data(query_metadata) end)
+      maybe_async(fn -> maybe_update_api_call_limit_usage(query_metadata) end)
+
+      case do_not_cache? or has_graphql_errors? do
+        true -> :ok
+        # The pre_override_queries are the getMetric and getSignal query names
+        # before they got renamed to getMetric|<metric> and getSignal|<signal>
+        false -> maybe_cache_result(query_metadata.pre_override_queries, blueprint)
+      end
     end
 
     conn
@@ -183,7 +185,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
 
   defp maybe_update_api_call_limit_usage(_query_metadata), do: :ok
 
-  defp cache_result(queries, blueprint) do
+  defp maybe_cache_result(queries, blueprint) do
     all_queries_cachable? = queries |> Enum.all?(&Enum.member?(@cached_queries, &1))
 
     if all_queries_cachable? do
@@ -225,6 +227,14 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   end
 
   defp maybe_create_or_drop_session(conn, _), do: conn
+
+  defp has_queries?(%{operations: operations}) do
+    operations
+    |> Enum.any?(fn %{selections: selections} ->
+      selections
+      |> Enum.any?(fn %{name: _name} -> true end)
+    end)
+  end
 
   defp queries_in_request(%{operations: operations}) do
     operations
@@ -284,7 +294,9 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   defp get_query_and_selector(query), do: {query, nil}
 
   defp remote_ip(blueprint) do
-    blueprint.execution.context.remote_ip |> IP.ip_tuple_to_string()
+    if Map.has_key?(blueprint.execution.context, :remote_ip),
+      do: blueprint.execution.context.remote_ip |> IP.ip_tuple_to_string(),
+      else: ""
   end
 
   defp extract_caller_data(%{

@@ -171,7 +171,9 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalTimeseriesDataTest do
   # Private functions
 
   defp get_timeseries_signal(conn, signal, slug, from, to, interval, aggregation) do
-    query = get_timeseries_query(signal, slug, from, to, interval, aggregation)
+    query =
+      get_timeseries_query(signal, slug, from, to, interval, aggregation)
+      |> dbg()
 
     conn
     |> post("/graphql", query_skeleton(query, "getSignal"))

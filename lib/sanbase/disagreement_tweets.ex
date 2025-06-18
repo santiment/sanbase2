@@ -351,7 +351,7 @@ defmodule Sanbase.DisagreementTweets do
         user_has_classified = MapSet.member?(classified_tweet_ids, tweet.tweet_id)
 
         classifications =
-          if user_has_classified,
+          if user_has_classified or tweet.classification_count >= 5,
             do: get_tweet_classifications_with_users(tweet.tweet_id),
             else: []
 

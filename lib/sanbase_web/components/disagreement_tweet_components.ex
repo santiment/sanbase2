@@ -25,6 +25,18 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
               do: "person",
               else: "people"} classified
           </span>
+          <span
+            :if={@tweet.classification_count >= 5}
+            class={[
+              "text-xs px-2 py-1 rounded-full font-medium",
+              if(@tweet.experts_is_prediction,
+                do: "bg-green-100 text-green-800",
+                else: "bg-red-100 text-red-800"
+              )
+            ]}
+          >
+            {if @tweet.experts_is_prediction, do: "✅ PREDICTION", else: "❌ NOT PREDICTION"}
+          </span>
         </div>
 
         <a
@@ -47,11 +59,11 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
 
       <p class="text-sm text-gray-800 mb-4 leading-relaxed whitespace-pre-line">{@tweet.text}</p>
 
-      <div :if={Map.get(@tweet, :user_has_classified, false)} class="mb-4">
+      <div :if={@tweet.classification_count >= 5} class="mb-4">
         <.ai_classification_comparison tweet={@tweet} />
       </div>
 
-      <div :if={Map.get(@tweet, :user_has_classified, false)} class="mb-4">
+      <div :if={@tweet.classification_count >= 5} class="mb-4">
         <.voting_details tweet={@tweet} />
       </div>
 

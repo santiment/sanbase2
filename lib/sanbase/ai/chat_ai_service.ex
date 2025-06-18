@@ -82,7 +82,7 @@ defmodule Sanbase.AI.ChatAIService do
   end
 
   defp do_generate_response(user_message, context, dashboard_id, _chat_id, user_id) do
-    with {:ok, dashboard_context} <- fetch_dashboard_context(dashboard_id, user_id),
+    with {:ok, dashboard_context} <- fetch_dashboard_context(dashboard_id, user_id, context),
          {:ok, ai_response} <-
            generate_dashboard_response(user_message, context, dashboard_context) do
       {:ok, ai_response}
@@ -93,12 +93,12 @@ defmodule Sanbase.AI.ChatAIService do
     end
   end
 
-  defp fetch_dashboard_context(dashboard_id, user_id) do
+  def fetch_dashboard_context(dashboard_id, user_id, context \\ %{}) do
     case Dashboards.get_dashboard(dashboard_id, user_id) do
       {:ok, dashboard} ->
         queries_context =
           dashboard.queries
-          |> Enum.map(&extract_query_info/1)
+          |> Enum.map(&extract_query_info(&1, context))
           |> Enum.reject(&is_nil/1)
 
         context = %{
@@ -114,12 +114,36 @@ defmodule Sanbase.AI.ChatAIService do
     end
   end
 
-  defp extract_query_info(query) do
-    %{
-      name: query.name,
-      description: query.description,
-      sql_query_text: mask_sensitive_sql(query.sql_query_text)
+  defp extract_query_info(query, context \\ %{}) do
+    # Get the asset from context or use a default
+    asset = Map.get(context, "asset", "bitcoin")
+
+    # Create a new query with the asset parameter overridden
+    # That works only for DYOR dashboard because we know the key name
+    query_with_params = %{
+      query
+      | sql_query_parameters: Map.put(query.sql_query_parameters, "Asset", asset)
     }
+
+    case Sanbase.Queries.run_query(query_with_params, query.user, %{},
+           store_execution_details: false
+         ) do
+      {:ok, result} ->
+        %{
+          name: query.name,
+          description: query.description,
+          sql_query_text: mask_sensitive_sql(query.sql_query_text),
+          columns: result.columns,
+          rows: result.rows
+        }
+
+      {:error, _} ->
+        %{
+          name: query.name,
+          description: query.description,
+          sql_query_text: mask_sensitive_sql(query.sql_query_text)
+        }
+    end
   end
 
   defp mask_sensitive_sql("<masked>"), do: "<masked>"

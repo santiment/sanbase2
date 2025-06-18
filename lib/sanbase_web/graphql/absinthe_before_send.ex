@@ -63,16 +63,25 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     result_sizes = result_sizes(blueprint)
     do_not_cache? = Process.get(:do_not_cache_query) == true
 
-    maybe_async(fn -> export_api_call_data(queries, conn, blueprint, result_sizes) end)
+    # Temporarily disable
+    # maybe_async(fn -> export_api_call_data(queries, conn, blueprint, result_sizes) end)
+    #
+    # maybe_async(fn ->
+    #   maybe_update_api_call_limit_usage(
+    #     conn,
+    #     blueprint.execution.context,
+    #     Enum.count(queries),
+    #     result_sizes
+    #   )
+    # end)
+    export_api_call_data(queries, conn, blueprint, result_sizes)
 
-    maybe_async(fn ->
-      maybe_update_api_call_limit_usage(
-        conn,
-        blueprint.execution.context,
-        Enum.count(queries),
-        result_sizes
-      )
-    end)
+    maybe_update_api_call_limit_usage(
+      conn,
+      blueprint.execution.context,
+      Enum.count(queries),
+      result_sizes
+    )
 
     case do_not_cache? or has_graphql_errors?(blueprint) do
       true -> :ok

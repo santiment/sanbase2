@@ -173,6 +173,8 @@ defmodule Sanbase.AI.ChatAIService do
         Query: #{query.name || "Unnamed"}
         Description: #{query.description || "No description"}
         SQL: #{query.sql_query_text}
+        Columns: #{inspect(query.columns)}
+        Rows: #{inspect(query.rows)}
         """
       end)
       |> Enum.join("\n\n")

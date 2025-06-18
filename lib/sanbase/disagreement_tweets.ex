@@ -14,6 +14,17 @@ defmodule Sanbase.DisagreementTweets do
     %ClassifiedTweet{}
     |> ClassifiedTweet.changeset(attrs)
     |> Repo.insert()
+    |> case do
+      {:ok, tweet} ->
+        {:ok, tweet}
+
+      {:error,
+       %Ecto.Changeset{errors: [tweet_id: {_, [constraint: :unique, constraint_name: _]}]}} ->
+        {:error, :already_exists}
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
   end
 
   @doc """
@@ -178,11 +189,12 @@ defmodule Sanbase.DisagreementTweets do
   Gets tab counts for a specific user
   """
   def get_tab_counts(user_id) do
-    # Count of tweets not classified by user
+    # Count of tweets not classified by user and with less than 5 classifications
     not_classified_by_me =
       ClassifiedTweet
       |> ClassifiedTweet.disagreement_tweets()
       |> ClassifiedTweet.not_classified_by_user(user_id)
+      |> where([ct], ct.classification_count < 5)
       |> Repo.aggregate(:count, :id)
 
     # Count of tweets classified by user
@@ -339,7 +351,7 @@ defmodule Sanbase.DisagreementTweets do
         user_has_classified = MapSet.member?(classified_tweet_ids, tweet.tweet_id)
 
         classifications =
-          if user_has_classified,
+          if user_has_classified or tweet.classification_count >= 5,
             do: get_tweet_classifications_with_users(tweet.tweet_id),
             else: []
 

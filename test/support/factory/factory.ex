@@ -39,7 +39,11 @@ defmodule Sanbase.Factory do
       email: (:crypto.strong_rand_bytes(16) |> Base.encode16()) <> "@santiment.net",
       salt: User.generate_salt(),
       privacy_policy_accepted: true,
-      registration_state: %{"state" => "finished"},
+      registration_state: %{
+        "state" => "finished",
+        "datetime" => "#{DateTime.utc_now()}",
+        "data" => %{"origin_url" => "http://localhost"}
+      },
       san_balance: Decimal.new(0),
       san_balance_updated_at: Timex.now()
     }

@@ -361,8 +361,8 @@ defmodule SanbaseWeb.Graphql.UserTypes do
       resolve(&UserAffiliateDetailsResolver.are_user_affiliate_datails_submitted/3)
     end
 
-    field :signup_datetime, :datetime do
-      resolve(&UserResolver.signup_datetime/3)
+    field :joined_at, :datetime do
+      resolve(&UserResolver.joined_at/3)
     end
   end
 

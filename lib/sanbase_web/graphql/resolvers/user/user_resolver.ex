@@ -103,6 +103,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   end
 
   def joined_at(%User{} = user, _args, _resolution) do
+    do_get_joined_at(user)
+  end
+
+  def joined_at(_root, _args, %{context: %{auth: %{current_user: user}}}) do
+    do_get_joined_at(user)
+  end
+
+  defp do_get_joined_at(%User{} = user) do
     case user do
       %{registration_state: %{"state" => "finished", "datetime" => datetime_iso8601}} ->
         {:ok, Sanbase.DateTimeUtils.from_iso8601!(datetime_iso8601)}
@@ -393,14 +401,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
 
   def user_promo_codes(_, _, _) do
     {:ok, []}
-  end
-
-  def signup_datetime(_root, _args, %{context: %{auth: %{current_user: user}}}) do
-    {:ok, User.get_signup_dt(user)}
-  end
-
-  def signup_datetime(%User{} = user, _args, _resolution) do
-    {:ok, User.get_signup_dt(user)}
   end
 
   def user_no_preloads(%{user_id: user_id}, _args, %{context: %{loader: loader}}) do

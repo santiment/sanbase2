@@ -184,18 +184,21 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
       </div>
 
       <div
-        :if={@tweet.classification_count == 5 and @tweet.experts_is_prediction != nil}
+        :if={@tweet.classification_count >= 5 and @tweet.experts_is_prediction != nil}
         class="mt-3 pt-3 border-t border-blue-200"
       >
         <div class="flex items-center justify-between">
           <span class="text-sm font-medium text-gray-700">Expert Consensus:</span>
-          <span class={[
-            "text-sm px-3 py-1 rounded-full font-bold",
-            if(@tweet.experts_is_prediction,
-              do: "bg-green-200 text-green-900",
-              else: "bg-red-200 text-red-900"
-            )
-          ]}>
+          <span
+            :if={@tweet.classification_count >= 5 and @tweet.experts_is_prediction != nil}
+            class={[
+              "text-sm px-3 py-1 rounded-full font-bold",
+              if(@tweet.experts_is_prediction,
+                do: "bg-green-200 text-green-900",
+                else: "bg-red-200 text-red-900"
+              )
+            ]}
+          >
             {if @tweet.experts_is_prediction, do: "✅ PREDICTION", else: "❌ NOT PREDICTION"}
           </span>
         </div>

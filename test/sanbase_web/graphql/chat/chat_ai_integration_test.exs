@@ -61,6 +61,18 @@ defmodule SanbaseWeb.Graphql.ChatAIIntegrationTest do
 
       mock_title = "Bitcoin Price Analysis"
 
+      # Mock the query execution
+      query_result = %Sanbase.Queries.Executor.Result{
+        query_id: 1,
+        clickhouse_query_id: "test-query-id",
+        summary: %{},
+        rows: [["bitcoin", 250, ~U[2023-01-01 00:00:00Z], 50000.0]],
+        columns: ["asset", "metric_id", "dt", "value"],
+        column_types: ["String", "UInt64", "DateTime", "Float64"],
+        query_start_time: DateTime.utc_now(),
+        query_end_time: DateTime.utc_now()
+      }
+
       expect(Sanbase.AI.MockOpenAIClient, :chat_completion, fn system_prompt,
                                                                user_message,
                                                                _opts ->
@@ -100,39 +112,42 @@ defmodule SanbaseWeb.Graphql.ChatAIIntegrationTest do
       }
       """
 
-      result =
-        conn
-        |> post("/graphql", mutation_skeleton(mutation))
-        |> json_response(200)
-        |> get_in(["data", "sendChatMessage"])
+      Sanbase.Mock.prepare_mock2(&Sanbase.Queries.run_query/4, {:ok, query_result})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          conn
+          |> post("/graphql", mutation_skeleton(mutation))
+          |> json_response(200)
+          |> get_in(["data", "sendChatMessage"])
 
-      # Verify the chat was created
-      assert result["type"] == "DYOR_DASHBOARD"
-      # AI generates some title
-      assert String.length(result["title"]) > 0
+        # Verify the chat was created
+        assert result["type"] == "DYOR_DASHBOARD"
+        # AI generates some title
+        assert String.length(result["title"]) > 0
 
-      # Should have both user and AI messages immediately (synchronous)
-      assert length(result["chatMessages"]) >= 1
+        # Should have both user and AI messages immediately (synchronous)
+        assert length(result["chatMessages"]) >= 1
 
-      user_message = Enum.find(result["chatMessages"], &(&1["role"] == "USER"))
+        user_message = Enum.find(result["chatMessages"], &(&1["role"] == "USER"))
 
-      assert user_message["content"] ==
-               "What trends can you identify in Bitcoin's recent price action?"
+        assert user_message["content"] ==
+                 "What trends can you identify in Bitcoin's recent price action?"
 
-      expected_context = %{
-        "dashboard_id" => to_string(dashboard.id),
-        "asset" => "bitcoin",
-        "metrics" => ["price_usd", "volume_usd"]
-      }
+        expected_context = %{
+          "dashboard_id" => to_string(dashboard.id),
+          "asset" => "bitcoin",
+          "metrics" => ["price_usd", "volume_usd"]
+        }
 
-      assert user_message["context"] == expected_context
+        assert user_message["context"] == expected_context
 
-      # Check that AI response exists (content may vary)
-      ai_message = Enum.find(result["chatMessages"], &(&1["role"] == "ASSISTANT"))
+        # Check that AI response exists (content may vary)
+        ai_message = Enum.find(result["chatMessages"], &(&1["role"] == "ASSISTANT"))
 
-      if ai_message do
-        assert String.length(ai_message["content"]) > 0
-      end
+        if ai_message do
+          assert String.length(ai_message["content"]) > 0
+        end
+      end)
     end
 
     test "adds AI response to existing DYOR dashboard chat", %{
@@ -150,6 +165,18 @@ defmodule SanbaseWeb.Graphql.ChatAIIntegrationTest do
 
       mock_ai_response =
         "Looking at the Bitcoin Analysis Dashboard data, I can provide insights on your follow-up question..."
+
+      # Mock the query execution
+      query_result = %Sanbase.Queries.Executor.Result{
+        query_id: 1,
+        clickhouse_query_id: "test-query-id",
+        summary: %{},
+        rows: [["bitcoin", 250, ~U[2023-01-01 00:00:00Z], 50000.0]],
+        columns: ["asset", "metric_id", "dt", "value"],
+        column_types: ["String", "UInt64", "DateTime", "Float64"],
+        query_start_time: DateTime.utc_now(),
+        query_end_time: DateTime.utc_now()
+      }
 
       expect(Sanbase.AI.MockOpenAIClient, :chat_completion, fn system_prompt,
                                                                user_message,
@@ -182,24 +209,27 @@ defmodule SanbaseWeb.Graphql.ChatAIIntegrationTest do
       }
       """
 
-      result =
-        conn
-        |> post("/graphql", mutation_skeleton(mutation))
-        |> json_response(200)
-        |> get_in(["data", "sendChatMessage"])
+      Sanbase.Mock.prepare_mock2(&Sanbase.Queries.run_query/4, {:ok, query_result})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          conn
+          |> post("/graphql", mutation_skeleton(mutation))
+          |> json_response(200)
+          |> get_in(["data", "sendChatMessage"])
 
-      # Should have initial messages plus new user message and AI response
-      messages = result["chatMessages"]
-      user_messages = Enum.filter(messages, &(&1["role"] == "USER"))
-      assert length(user_messages) == 2
+        # Should have initial messages plus new user message and AI response
+        messages = result["chatMessages"]
+        user_messages = Enum.filter(messages, &(&1["role"] == "USER"))
+        assert length(user_messages) == 2
 
-      ai_messages = Enum.filter(messages, &(&1["role"] == "ASSISTANT"))
-      # May have AI responses (content may vary)
-      if length(ai_messages) > 0 do
-        Enum.each(ai_messages, fn ai_msg ->
-          assert String.length(ai_msg["content"]) > 0
-        end)
-      end
+        ai_messages = Enum.filter(messages, &(&1["role"] == "ASSISTANT"))
+        # May have AI responses (content may vary)
+        if length(ai_messages) > 0 do
+          Enum.each(ai_messages, fn ai_msg ->
+            assert String.length(ai_msg["content"]) > 0
+          end)
+        end
+      end)
     end
 
     test "handles missing dashboard gracefully", %{conn: conn} do

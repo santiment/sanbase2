@@ -122,7 +122,7 @@ defmodule Sanbase.AI.ChatAIService do
     # That works only for DYOR dashboard because we know the key name
     query_with_params = %{
       query
-      | sql_query_parameters: Map.put(query.sql_query_parameters, "Asset", asset)
+      | sql_query_parameters: Map.put(query.sql_query_parameters || %{}, "Asset", asset)
     }
 
     case Sanbase.Queries.run_query(query_with_params, query.user, %{},
@@ -169,12 +169,24 @@ defmodule Sanbase.AI.ChatAIService do
     queries_info =
       dashboard_context.queries
       |> Enum.map(fn query ->
+        columns_info =
+          case Map.get(query, :columns) do
+            nil -> "No data available"
+            columns -> inspect(columns)
+          end
+
+        rows_info =
+          case Map.get(query, :rows) do
+            nil -> "No data available"
+            rows -> inspect(rows)
+          end
+
         """
         Query: #{query.name || "Unnamed"}
         Description: #{query.description || "No description"}
         SQL: #{query.sql_query_text}
-        Columns: #{inspect(query.columns)}
-        Rows: #{inspect(query.rows)}
+        Columns: #{columns_info}
+        Rows: #{rows_info}
         """
       end)
       |> Enum.join("\n\n")

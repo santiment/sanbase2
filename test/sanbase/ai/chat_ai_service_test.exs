@@ -71,6 +71,18 @@ defmodule Sanbase.AI.ChatAIServiceTest do
       mock_response =
         "Based on the Bitcoin Price Query in your Crypto Analysis Dashboard, I can see that..."
 
+      # Mock the query execution
+      query_result = %Sanbase.Queries.Executor.Result{
+        query_id: 1,
+        clickhouse_query_id: "test-query-id",
+        summary: %{},
+        rows: [["bitcoin", 250, ~U[2023-01-01 00:00:00Z], 50000.0]],
+        columns: ["asset", "metric_id", "dt", "value"],
+        column_types: ["String", "UInt64", "DateTime", "Float64"],
+        query_start_time: DateTime.utc_now(),
+        query_end_time: DateTime.utc_now()
+      }
+
       expect(Sanbase.AI.MockOpenAIClient, :chat_completion, fn system_prompt, user_msg, _opts ->
         # Verify the system prompt contains dashboard information
         assert String.contains?(system_prompt, "Crypto Analysis Dashboard")
@@ -80,15 +92,18 @@ defmodule Sanbase.AI.ChatAIServiceTest do
         {:ok, mock_response}
       end)
 
-      assert {:ok, response} =
-               ChatAIService.generate_ai_response(
-                 user_message,
-                 context,
-                 chat.id,
-                 user.id
-               )
+      Sanbase.Mock.prepare_mock2(&Sanbase.Queries.run_query/4, {:ok, query_result})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert {:ok, response} =
+                 ChatAIService.generate_ai_response(
+                   user_message,
+                   context,
+                   chat.id,
+                   user.id
+                 )
 
-      assert response == mock_response
+        assert response == mock_response
+      end)
     end
 
     test "generates generic response when no dashboard context", %{user: user, chat: chat} do

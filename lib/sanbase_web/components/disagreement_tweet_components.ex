@@ -25,6 +25,18 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
               do: "person",
               else: "people"} classified
           </span>
+          <span
+            :if={@tweet.classification_count >= 5}
+            class={[
+              "text-xs px-2 py-1 rounded-full font-medium",
+              if(@tweet.experts_is_prediction,
+                do: "bg-green-100 text-green-800",
+                else: "bg-red-100 text-red-800"
+              )
+            ]}
+          >
+            {if @tweet.experts_is_prediction, do: "✅ PREDICTION", else: "❌ NOT PREDICTION"}
+          </span>
         </div>
 
         <a
@@ -47,11 +59,11 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
 
       <p class="text-sm text-gray-800 mb-4 leading-relaxed whitespace-pre-line">{@tweet.text}</p>
 
-      <div :if={Map.get(@tweet, :user_has_classified, false)} class="mb-4">
+      <div :if={@tweet.classification_count >= 5} class="mb-4">
         <.ai_classification_comparison tweet={@tweet} />
       </div>
 
-      <div :if={Map.get(@tweet, :user_has_classified, false)} class="mb-4">
+      <div :if={@tweet.classification_count >= 5} class="mb-4">
         <.voting_details tweet={@tweet} />
       </div>
 
@@ -172,18 +184,21 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
       </div>
 
       <div
-        :if={@tweet.classification_count == 5 and @tweet.experts_is_prediction != nil}
+        :if={@tweet.classification_count >= 5 and @tweet.experts_is_prediction != nil}
         class="mt-3 pt-3 border-t border-blue-200"
       >
         <div class="flex items-center justify-between">
           <span class="text-sm font-medium text-gray-700">Expert Consensus:</span>
-          <span class={[
-            "text-sm px-3 py-1 rounded-full font-bold",
-            if(@tweet.experts_is_prediction,
-              do: "bg-green-200 text-green-900",
-              else: "bg-red-200 text-red-900"
-            )
-          ]}>
+          <span
+            :if={@tweet.classification_count >= 5 and @tweet.experts_is_prediction != nil}
+            class={[
+              "text-sm px-3 py-1 rounded-full font-bold",
+              if(@tweet.experts_is_prediction,
+                do: "bg-green-200 text-green-900",
+                else: "bg-red-200 text-red-900"
+              )
+            ]}
+          >
             {if @tweet.experts_is_prediction, do: "✅ PREDICTION", else: "❌ NOT PREDICTION"}
           </span>
         </div>

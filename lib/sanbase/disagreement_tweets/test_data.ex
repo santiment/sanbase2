@@ -148,15 +148,9 @@ defmodule Sanbase.DisagreementTweets.TestData do
     }
 
     case DisagreementTweets.create_classified_tweet(attrs) do
-      {:ok, tweet} ->
-        {:ok, tweet}
-
-      {:error, changeset} ->
-        if changeset.errors[:tweet_id] do
-          {:error, :already_exists}
-        else
-          {:error, changeset}
-        end
+      {:ok, tweet} -> {:ok, tweet}
+      {:error, :already_exists} -> {:error, :already_exists}
+      {:error, changeset} -> {:error, changeset}
     end
   end
 

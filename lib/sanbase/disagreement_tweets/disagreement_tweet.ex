@@ -67,7 +67,7 @@ defmodule Sanbase.DisagreementTweets.ClassifiedTweet do
     tweet
     |> cast(attrs, @required_fields ++ @optional_fields)
     |> validate_required(@required_fields)
-    |> unique_constraint(:tweet_id)
+    |> unique_constraint(:tweet_id, name: :disagreement_tweets_tweet_id_index)
     |> validate_inclusion(:agreement, [true, false])
     |> validate_inclusion(:review_required, [true, false])
     |> validate_number(:classification_count, greater_than_or_equal_to: 0)

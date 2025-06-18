@@ -51,6 +51,19 @@ defmodule Sanbase.Queries.QueryMetadata do
     }
   end
 
+  def from_ai_chat(user_id) do
+    %{
+      sanbase_user_id: system_user().id,
+      requesting_user_id: user_id,
+      product: "AI_CHAT",
+      query_ran_from_prod_marker: @prod?
+    }
+  end
+
+  def system_user do
+    %Sanbase.Accounts.User{id: -1}
+  end
+
   def sanitize(map) do
     Map.new(map, fn {key, value} ->
       case is_binary(value) do

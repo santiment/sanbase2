@@ -92,7 +92,7 @@ defmodule Sanbase.AI.ChatAIServiceTest do
         {:ok, mock_response}
       end)
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.Queries.run_query/4, {:ok, query_result})
+      Sanbase.Mock.prepare_mock2(&Sanbase.Queries.run_query_internal/3, {:ok, query_result})
       |> Sanbase.Mock.run_with_mocks(fn ->
         assert {:ok, response} =
                  ChatAIService.generate_ai_response(

@@ -101,6 +101,33 @@ defmodule Sanbase.Queries do
     end
   end
 
+  @doc ~s"""
+  Run a query using the system user but tracking the actual requesting user in metadata.
+  This uses the max access dynamic repo to bypass permission restrictions.
+
+  This is intended for internal use where we need to run queries on behalf of users
+  without the user needing the appropriate permissions (e.g., AI chat features).
+  """
+  @spec run_query_internal(Query.t(), QueryMetadata.t(), Keyword.t()) ::
+          {:ok, Executor.Result.t()} | {:error, String.t()}
+  def run_query_internal(%Query{} = query, query_metadata, opts \\ []) do
+    # Set max access dynamic repo
+    Process.put(:queries_dynamic_repo, max_access_dynamic_repo())
+
+    system_user = %User{id: -1}
+
+    with {:ok, environment} <- Environment.new(query, system_user),
+         {:ok, result} <- Queries.Executor.run(query, query_metadata, environment) do
+      maybe_store_execution_data_async(result, system_user.id, opts)
+
+      # Remove the dynamic repo from the process
+      Process.delete(:queries_dynamic_repo)
+
+      # Return the result
+      {:ok, result}
+    end
+  end
+
   def user_executions_summary(user_id) do
     query = QueryExecution.executions_summary(user_id)
 
@@ -117,6 +144,10 @@ defmodule Sanbase.Queries do
   @spec user_can_execute_query(%User{}, String.t(), String.t()) :: :ok | {:error, String.t()}
   def user_can_execute_query(user, product_code, plan_name) do
     Queries.Authorization.user_can_execute_query(user, product_code, plan_name)
+  end
+
+  def max_access_dynamic_repo() do
+    Queries.Authorization.max_access_dynamic_repo()
   end
 
   def user_plan_to_dynamic_repo(product_code, plan_name) do

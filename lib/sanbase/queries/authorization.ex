@@ -2,6 +2,15 @@ defmodule Sanbase.Queries.Authorization do
   alias Sanbase.Accounts.User
 
   @doc ~s"""
+  Returns the dynamic repo whose credentials have the least restrictions.
+  This is used to execute queries when basic auth is used
+  """
+  @spec max_access_dynamic_repo() :: module()
+  def max_access_dynamic_repo() do
+    Sanbase.ClickhouseRepo.BusinessMaxUser
+  end
+
+  @doc ~s"""
   Check if the user has credits left to run a computation.
 
   Each query has a cost in credits. The cost is computed based on the query

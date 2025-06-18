@@ -6,6 +6,7 @@ defmodule Sanbase.AI.ChatAIService do
   require Logger
 
   alias Sanbase.AI.OpenAIClient
+  alias Sanbase.Accounts.User
   alias Sanbase.Dashboards
   alias Sanbase.Chat
 
@@ -98,7 +99,7 @@ defmodule Sanbase.AI.ChatAIService do
       {:ok, dashboard} ->
         queries_context =
           dashboard.queries
-          |> Enum.map(&extract_query_info(&1, context))
+          |> Enum.map(&extract_query_info(&1, context, user_id))
           |> Enum.reject(&is_nil/1)
 
         context = %{
@@ -114,7 +115,7 @@ defmodule Sanbase.AI.ChatAIService do
     end
   end
 
-  defp extract_query_info(query, context \\ %{}) do
+  defp extract_query_info(query, context, requesting_user_id) do
     # Get the asset from context or use a default
     asset = Map.get(context, "asset", "bitcoin")
 
@@ -125,7 +126,9 @@ defmodule Sanbase.AI.ChatAIService do
       | sql_query_parameters: Map.put(query.sql_query_parameters || %{}, "Asset", asset)
     }
 
-    case Sanbase.Queries.run_query(query_with_params, query.user, %{},
+    query_metadata = Sanbase.Queries.QueryMetadata.from_ai_chat(requesting_user_id)
+
+    case Sanbase.Queries.run_query_internal(query_with_params, query_metadata,
            store_execution_details: false
          ) do
       {:ok, result} ->

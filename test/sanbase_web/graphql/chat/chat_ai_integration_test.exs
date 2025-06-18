@@ -112,7 +112,7 @@ defmodule SanbaseWeb.Graphql.ChatAIIntegrationTest do
       }
       """
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.Queries.run_query/4, {:ok, query_result})
+      Sanbase.Mock.prepare_mock2(&Sanbase.Queries.run_query_internal/3, {:ok, query_result})
       |> Sanbase.Mock.run_with_mocks(fn ->
         result =
           conn
@@ -209,7 +209,7 @@ defmodule SanbaseWeb.Graphql.ChatAIIntegrationTest do
       }
       """
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.Queries.run_query/4, {:ok, query_result})
+      Sanbase.Mock.prepare_mock2(&Sanbase.Queries.run_query_internal/3, {:ok, query_result})
       |> Sanbase.Mock.run_with_mocks(fn ->
         result =
           conn

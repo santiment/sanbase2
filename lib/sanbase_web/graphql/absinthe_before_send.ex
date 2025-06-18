@@ -31,7 +31,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   @compile inline: [
              cache_result: 2,
              get_query_and_selector: 1,
-             export_api_call_data: 4,
+             export_api_call_data: 1,
              extract_caller_data: 1,
              get_cache_key: 1,
              has_graphql_errors?: 1,
@@ -59,33 +59,20 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     # - result is taken from the cache and should not be stored again. Storing
     # it again `touch`es it and the TTL timer is restarted. This can lead
     # to infinite storing the same value if there are enough requests
-    queries = queries_in_request(blueprint)
-    result_sizes = result_sizes(blueprint)
     do_not_cache? = Process.get(:do_not_cache_query) == true
+    query_metadata = query_metadata(conn, blueprint)
 
-    # Temporarily disable
-    # maybe_async(fn -> export_api_call_data(queries, conn, blueprint, result_sizes) end)
-    #
-    # maybe_async(fn ->
-    #   maybe_update_api_call_limit_usage(
-    #     conn,
-    #     blueprint.execution.context,
-    #     Enum.count(queries),
-    #     result_sizes
-    #   )
-    # end)
-    export_api_call_data(queries, conn, blueprint, result_sizes)
+    maybe_async(fn -> export_api_call_data(query_metadata) end)
 
-    maybe_update_api_call_limit_usage(
-      conn,
-      blueprint.execution.context,
-      Enum.count(queries),
-      result_sizes
-    )
+    maybe_async(fn ->
+      maybe_update_api_call_limit_usage(query_metadata)
+    end)
 
     case do_not_cache? or has_graphql_errors?(blueprint) do
       true -> :ok
-      false -> cache_result(queries, blueprint)
+      # The pre_override_queries are the getMetric and getSignal query names
+      # before they got renamed to getMetric|<metric> and getSignal|<signal>
+      false -> cache_result(query_metadata.pre_override_queries, blueprint)
     end
 
     conn
@@ -95,6 +82,47 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   case Application.compile_env(:sanbase, :env) do
     :test -> defp maybe_async(fun), do: fun.()
     _ -> defp maybe_async(fun), do: Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fun)
+  end
+
+  defp query_metadata(conn, blueprint) do
+    now_mono = System.monotonic_time()
+    duration_ms = div(now_mono - blueprint.telemetry.start_time_mono, 1_000_000)
+    duration_ms = Enum.max([duration_ms, 0])
+    user_agent = Plug.Conn.get_req_header(conn, "user-agent") |> List.first()
+
+    pre_override_queries = queries_in_request(blueprint)
+
+    queries =
+      Map.get(blueprint.execution.context, :__get_query_name_arg__, []) ++
+        Enum.reject(pre_override_queries, &(&1 == "getMetric" or &1 == "getSignal"))
+
+    result_sizes = result_sizes(blueprint)
+
+    caller_data =
+      extract_caller_data(blueprint.execution.context)
+
+    partial_context =
+      Map.take(blueprint.execution.context, [
+        :auth,
+        :rate_limiting_enabled,
+        :requested_product,
+        :remote_ip
+      ])
+
+    %{
+      timestamp: DateTime.utc_now() |> DateTime.to_unix(:second),
+      has_graphql_errors: has_graphql_errors?(blueprint),
+      has_api_call_limit_quota_infinity: conn.private[:has_api_call_limit_quota_infinity],
+      duration_ms: duration_ms,
+      user_agent: user_agent,
+      pre_override_queries: pre_override_queries,
+      queries: queries,
+      queries_count: length(queries),
+      result_sizes: result_sizes,
+      caller_data: caller_data,
+      remote_ip: remote_ip(blueprint),
+      partial_context: partial_context
+    }
   end
 
   defp result_sizes(%{result: result = _blueprint}) do
@@ -110,53 +138,50 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   end
 
   defp maybe_update_api_call_limit_usage(
-         conn,
          %{
-           rate_limiting_enabled: true,
-           requested_product: "SANAPI",
-           auth: %{current_user: user, auth_method: auth_method}
-         },
-         count,
-         result_sizes
-       )
-       when is_map(result_sizes) do
-    if conn.private[:has_api_call_limit_quota_infinity] != true,
-      do:
-        Sanbase.ApiCallLimit.update_usage(
-          :user,
-          auth_method,
-          user,
-          count,
-          result_sizes.min_byte_size
-        )
+           partial_context: %{
+             rate_limiting_enabled: true,
+             requested_product: "SANAPI",
+             auth: %{current_user: user}
+           }
+         } = query_metadata
+       ) do
+    if query_metadata.has_api_call_limit_quota_infinity != true do
+      Sanbase.ApiCallLimit.update_usage(
+        :user,
+        query_metadata.caller_data.auth_method,
+        user,
+        query_metadata.queries_count,
+        query_metadata.result_sizes.min_byte_size
+      )
+    end
   end
 
   defp maybe_update_api_call_limit_usage(
-         conn,
          %{
-           rate_limiting_enabled: true,
-           requested_product: "SANAPI",
-           remote_ip: remote_ip
-         } = context,
-         count,
-         result_sizes
+           partial_context: %{
+             rate_limiting_enabled: true,
+             requested_product: "SANAPI",
+             remote_ip: remote_ip
+           }
+         } = query_metadata
        )
-       when is_map(result_sizes) and is_tuple(remote_ip) do
-    if conn.private[:has_api_call_limit_quota_infinity] != true do
-      auth_method = context[:auth][:auth_method] || :unauthorized
+       when is_tuple(remote_ip) do
+    if query_metadata.has_api_call_limit_quota_infinity != true do
+      auth_method = query_metadata.caller_data.auth_method || :unauthorized
       remote_ip = IP.ip_tuple_to_string(remote_ip)
 
       Sanbase.ApiCallLimit.update_usage(
         :remote_ip,
         auth_method,
         remote_ip,
-        count,
-        result_sizes.min_byte_size
+        query_metadata.queries_count,
+        query_metadata.result_sizes.min_byte_size
       )
     end
   end
 
-  defp maybe_update_api_call_limit_usage(_conn, _context, _count, _result_sizes), do: :ok
+  defp maybe_update_api_call_limit_usage(_query_metadata), do: :ok
 
   defp cache_result(queries, blueprint) do
     all_queries_cachable? = queries |> Enum.all?(&Enum.member?(@cached_queries, &1))
@@ -212,23 +237,8 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   # API Call exporting functions
 
   # Create an API Call event for every query in a Document separately.
-  defp export_api_call_data(queries, conn, blueprint, result_sizes) when is_map(result_sizes) do
-    now = DateTime.utc_now() |> DateTime.to_unix(:nanosecond)
-    now_mono = System.monotonic_time()
-    duration_ms = div(now_mono - blueprint.telemetry.start_time_mono, 1_000_000)
-    duration_ms = Enum.max([duration_ms, 0])
-    user_agent = Plug.Conn.get_req_header(conn, "user-agent") |> List.first()
-
-    {user_id, san_tokens, auth_method, api_token} =
-      extract_caller_data(blueprint.execution.context)
-
-    # Replace all occurences of getMetric and getSignal with names where
-    # the metric or signal argument is also included
-    queries =
-      Map.get(blueprint.execution.context, :__get_query_name_arg__, []) ++
-        Enum.reject(queries, &(&1 == "getMetric" or &1 == "getSignal"))
-
-    Enum.map(queries, fn query ->
+  defp export_api_call_data(query_metadata) when is_map(query_metadata) do
+    Enum.map(query_metadata.queries, fn query ->
       # All ids in the batch need to be different so there's at least one field
       # that is different for all api calls, otherwise they can be squashed into
       # a single row when ingested in Clickhouse
@@ -244,21 +254,21 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
       {query, selector} = get_query_and_selector(query)
 
       %{
-        timestamp: div(now, 1_000_000_000),
+        timestamp: query_metadata.timestamp,
         id: id,
         query: query,
         selector: Jason.encode!(selector),
         status_code: 200,
-        has_graphql_errors: has_graphql_errors?(blueprint),
-        user_id: user_id,
-        auth_method: auth_method,
-        api_token: api_token,
-        remote_ip: remote_ip(blueprint),
-        user_agent: user_agent,
-        duration_ms: duration_ms,
-        san_tokens: san_tokens,
-        response_size_byte: result_sizes.byte_size,
-        compressed_response_size_byte: result_sizes.compressed_byte_size
+        has_graphql_errors: query_metadata.has_graphql_errors,
+        user_id: query_metadata.caller_data.user_id,
+        san_tokens: query_metadata.caller_data.san_balance,
+        auth_method: query_metadata.caller_data.auth_method,
+        api_token: query_metadata.caller_data.api_token,
+        remote_ip: query_metadata.remote_ip,
+        user_agent: query_metadata.user_agent,
+        duration_ms: query_metadata.duration_ms,
+        response_size_byte: query_metadata.result_sizes.byte_size,
+        compressed_response_size_byte: query_metadata.result_sizes.compressed_byte_size
       }
     end)
     |> Sanbase.Kafka.ApiCall.json_kv_tuple_no_hash_collision()
@@ -280,22 +290,23 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   defp extract_caller_data(%{
          auth: %{auth_method: :user_token, current_user: user}
        }) do
-    {user.id, _san_balance = nil, :jwt, nil}
+    %{user_id: user.id, san_balance: nil, auth_method: :jwt, api_token: nil}
   end
 
   defp extract_caller_data(%{
-         auth: %{auth_method: :apikey, current_user: user, token: token}
+         auth: %{auth_method: :apikey, current_user: user, api_token: token}
        }) do
-    {user.id, _san_balance = nil, :apikey, token}
+    %{user_id: user.id, san_balance: nil, auth_method: :apikey, api_token: token}
   end
 
   defp extract_caller_data(%{
          auth: %{auth_method: :basic}
        }) do
-    {nil, _san_balance = nil, :basic, nil}
+    %{user_id: nil, san_balance: nil, auth_method: :basic, api_token: nil}
   end
 
-  defp extract_caller_data(_), do: {nil, nil, nil, nil}
+  defp extract_caller_data(_),
+    do: %{user_id: nil, san_balance: nil, auth_method: nil, api_token: nil}
 
   defp has_graphql_errors?(%Absinthe.Blueprint{result: %{errors: _}}), do: true
   defp has_graphql_errors?(_), do: false

@@ -160,6 +160,7 @@ defmodule SanbaseWeb.DisagreementTweetsLive do
             :for={tweet <- @tweets}
             tweet={tweet}
             show_classification_buttons={@active_tab == :not_classified_by_me}
+            show_results={@active_tab in [:classified_by_me, :completed]}
             user_id={@current_user.id}
           />
         </div>

@@ -57,6 +57,9 @@ defmodule Sanbase.ApiCallLimit do
       :api_calls_responses_size_mb
     ])
     |> validate_required([:has_limits, :api_calls_limit_plan])
+    |> unique_constraint(:remote_ip, name: :api_call_limits_remote_ip_index)
+    |> unique_constraint(:user_id, name: :api_call_limits_user_id_index)
+    |> foreign_key_constraint(:user_id)
   end
 
   def update_user_plan(%User{} = user) do
@@ -135,10 +138,7 @@ defmodule Sanbase.ApiCallLimit do
   def reset(%User{} = user) do
     if struct = Repo.get_by(__MODULE__, user_id: user.id), do: Repo.delete!(struct)
 
-    case create(:user, user) do
-      {:ok, acl} -> {:ok, acl}
-      {:error, _} -> {:error, "Failed to reset the API call limits of user #{user.id}"}
-    end
+    create(:user, user)
   end
 
   # Private functions
@@ -156,16 +156,39 @@ defmodule Sanbase.ApiCallLimit do
       user_has_limits?(user) and
         subscription_plan not in @plans_without_limits
 
-    %__MODULE__{}
-    |> changeset(%{
-      user_id: user.id,
-      api_calls_limit_plan: subscription_plan,
-      api_calls_limit_subscription_status: subscription_status,
-      has_limits: has_limits,
-      api_calls: api_calls,
-      api_calls_responses_size_mb: response_sizes
-    })
-    |> Repo.insert()
+    changeset =
+      changeset(%__MODULE__{}, %{
+        user_id: user.id,
+        api_calls_limit_plan: subscription_plan,
+        api_calls_limit_subscription_status: subscription_status,
+        has_limits: has_limits,
+        api_calls: api_calls,
+        api_calls_responses_size_mb: response_sizes
+      })
+
+    case Repo.insert(changeset) do
+      {:ok, acl} ->
+        {:ok, acl}
+
+      {:error, %Ecto.Changeset{errors: [user_id: {"does not exist", _}]}} ->
+        {:error, "User with id #{user.id} does not exist"}
+
+      {:error, %Ecto.Changeset{errors: [user_id: {"has already been taken", _}]}} ->
+        case Repo.get_by(__MODULE__, user_id: user.id) do
+          nil ->
+            {:error, "Could not create or fetch existing API call limit for user.id #{user.id}"}
+
+          acl ->
+            {:ok, acl}
+        end
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:error,
+         """
+         Failed to create API call limit record for user_id: #{user.id}.
+         Reason: #{Sanbase.Utils.Error.changeset_error_to_string(changeset)}
+         """}
+    end
   end
 
   defp create(:remote_ip, remote_ip) do
@@ -174,16 +197,37 @@ defmodule Sanbase.ApiCallLimit do
     api_calls = %{month_str => 0, hour_str => 0, minute_str => 0}
     response_sizes = %{month_str => 0, hour_str => 0, minute_str => 0}
 
-    %__MODULE__{}
-    |> changeset(%{
-      remote_ip: remote_ip,
-      api_calls_limit_plan: "sanapi_free",
-      api_calls_limit_subscription_status: "active",
-      has_limits: remote_ip_has_limits?(remote_ip),
-      api_calls: api_calls,
-      api_calls_responses_size_mb: response_sizes
-    })
-    |> Repo.insert()
+    changeset =
+      changeset(%__MODULE__{}, %{
+        remote_ip: remote_ip,
+        api_calls_limit_plan: "sanapi_free",
+        api_calls_limit_subscription_status: "active",
+        has_limits: remote_ip_has_limits?(remote_ip),
+        api_calls: api_calls,
+        api_calls_responses_size_mb: response_sizes
+      })
+
+    case Repo.insert(changeset) do
+      {:ok, acl} ->
+        {:ok, acl}
+
+      {:error, %Ecto.Changeset{errors: [remote_ip: {"has already been taken", _}]}} ->
+        case Repo.get_by(__MODULE__, remote_ip: remote_ip) do
+          nil ->
+            {:error,
+             "Could not create or fetch existing API call limit for remote_ip #{remote_ip}"}
+
+          acl ->
+            {:ok, acl}
+        end
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:error,
+         """
+         Failed to create API call limit record for remote ip: #{remote_ip}.
+         Reason: #{Sanbase.Utils.Error.changeset_error_to_string(changeset)}
+         """}
+    end
   end
 
   defp get_by(:user, user) do

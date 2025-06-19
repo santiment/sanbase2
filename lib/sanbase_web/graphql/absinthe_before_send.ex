@@ -61,15 +61,15 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     # to infinite storing the same value if there are enough requests
     do_not_cache? = Process.get(:do_not_cache_query) == true
 
-    has_graphql_errors? = has_graphql_errors?(blueprint)
+    %{success: success_queries, error: error_queries} = get_queries_per_result(blueprint)
 
-    if not has_graphql_errors? and has_queries?(blueprint) do
-      query_metadata = query_metadata(conn, blueprint)
+    if success_queries != [] do
+      query_metadata = query_metadata(conn, blueprint, success_queries)
 
       maybe_async(fn -> export_api_call_data(query_metadata) end)
       maybe_async(fn -> maybe_update_api_call_limit_usage(query_metadata) end)
 
-      case do_not_cache? or has_graphql_errors? do
+      case do_not_cache? or error_queries != [] do
         true -> :ok
         # The pre_override_queries are the getMetric and getSignal query names
         # before they got renamed to getMetric|<metric> and getSignal|<signal>
@@ -86,13 +86,18 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     _ -> defp maybe_async(fun), do: Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fun)
   end
 
-  defp query_metadata(conn, blueprint) do
+  defp query_metadata(conn, blueprint, success_queries) do
     now_mono = System.monotonic_time()
     duration_ms = div(now_mono - blueprint.telemetry.start_time_mono, 1_000_000)
     duration_ms = Enum.max([duration_ms, 0])
     user_agent = Plug.Conn.get_req_header(conn, "user-agent") |> List.first()
 
     pre_override_queries = queries_in_request(blueprint)
+
+    IO.inspect({
+      success_queries,
+      pre_override_queries
+    })
 
     queries =
       Map.get(blueprint.execution.context, :__get_query_name_arg__, []) ++
@@ -244,6 +249,17 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     end)
   end
 
+  defp queries_in_request_v2(%{operations: operations}) do
+    # We need to use both the name and the alias in order to properly export only the successful ones
+    # And also to count them
+    operations
+    |> Enum.flat_map(fn %{selections: selections} ->
+      selections
+      |> Enum.map(fn %{name: name, alias: alias} -> {alias, Inflex.camelize(name, :lower)} end)
+    end)
+    |> Map.new()
+  end
+
   # API Call exporting functions
 
   # Create an API Call event for every query in a Document separately.
@@ -319,6 +335,41 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
 
   defp extract_caller_data(_),
     do: %{user_id: nil, san_balance: nil, auth_method: nil, api_token: nil}
+
+  defp get_queries_per_result(blueprint) do
+    all_queries = queries_in_request(blueprint)
+
+    case blueprint.result do
+      # If there is data it means at least some of the queries succeeded.
+      # If the document has multiple queries, some of them still could have failed,
+      # but not with graphql-level critical error. Such errors include checks we perform
+      # after the documented is checked to be a valid GraphQL error.
+      # Such checks can include authorization errors -- user does not have access with
+      # their subscription plan, non existent metric or asset, etc.
+      %{data: data, errors: errors} when is_map(data) and is_list(errors) ->
+        error_queries = errors |> Enum.map(fn %{path: [name | _]} -> name end)
+        success_queries = all_queries -- error_queries
+
+        %{
+          success: success_queries,
+          error: error_queries
+        }
+
+      # Only successful queries, none failed.
+      %{data: data} = map when is_map(data) and not is_map_key(map, :errors) ->
+        %{success: all_queries, error: []}
+
+      # If there is no 'data' then we do not return any result, so all queries
+      # in the request have failed. Some queries can fail because there is some breaking
+      # GraphQL error in another query -- mistyped field, type violation, etc.
+      %{errors: errors} = map when is_list(errors) and not is_map_key(map, :data) ->
+        %{
+          success: [],
+          error: all_queries
+        }
+    end
+    |> dbg()
+  end
 
   defp has_graphql_errors?(%Absinthe.Blueprint{result: %{errors: _}}), do: true
   defp has_graphql_errors?(_), do: false

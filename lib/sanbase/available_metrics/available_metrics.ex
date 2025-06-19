@@ -81,6 +81,10 @@ defmodule Sanbase.AvailableMetrics do
     )
   end
 
+  def metrics_by_filter(filter) do
+    Sanbase.AvailableMetrics.apply_filters(get_metrics_map(), filter)
+  end
+
   def get_metrics_map() do
     metrics = Sanbase.Metric.available_metrics()
     metric_to_supported_assets_map = metric_to_available_slugs_maps()

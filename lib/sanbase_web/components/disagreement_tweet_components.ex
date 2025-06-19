@@ -6,6 +6,7 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
   """
   attr :tweet, :map, required: true
   attr :show_classification_buttons, :boolean, default: false
+  attr :show_results, :boolean, default: false
   attr :user_id, :integer, required: true
   attr :rest, :global
 
@@ -59,11 +60,11 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
 
       <p class="text-sm text-gray-800 mb-4 leading-relaxed whitespace-pre-line">{@tweet.text}</p>
 
-      <div :if={@tweet.classification_count >= 5} class="mb-4">
+      <div :if={@show_results or @tweet.classification_count >= 5} class="mb-4">
         <.ai_classification_comparison tweet={@tweet} />
       </div>
 
-      <div :if={@tweet.classification_count >= 5} class="mb-4">
+      <div :if={@show_results or @tweet.classification_count >= 5} class="mb-4">
         <.voting_details tweet={@tweet} />
       </div>
 

@@ -65,7 +65,7 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
       ) do
     query_struct = histogram_data_query(metric, selector, from, to, interval, limit)
 
-    Sanbase.ClickhouseRepo.query_transform(query_struct, fn [address, value] ->
+    Sanbase.ChRepo.query_transform(query_struct, fn [address, value] ->
       %{address: address, value: value}
     end)
     |> maybe_add_balances(from, to)

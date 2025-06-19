@@ -8,7 +8,7 @@ defmodule Sanbase.SocialData.Spikes do
     query =
       get_metric_spikes_explanations_query(metric, selector, from, to)
 
-    Sanbase.ClickhouseRepo.query_transform(query, fn [from, to, summary] ->
+    Sanbase.ChRepo.query_transform(query, fn [from, to, summary] ->
       %{
         spike_start_datetime: DateTime.from_unix!(from),
         spike_end_datetime: DateTime.from_unix!(to),
@@ -21,7 +21,7 @@ defmodule Sanbase.SocialData.Spikes do
     query =
       get_metric_spikes_explanations_count_query(metric, selector, from, to, interval)
 
-    Sanbase.ClickhouseRepo.query_transform(query, fn [dt, count] ->
+    Sanbase.ChRepo.query_transform(query, fn [dt, count] ->
       %{
         datetime: DateTime.from_unix!(dt),
         count: count
@@ -31,19 +31,19 @@ defmodule Sanbase.SocialData.Spikes do
 
   def available_assets() do
     query_struct = available_assets_query()
-    Sanbase.ClickhouseRepo.query_transform(query_struct, fn [slug] -> slug end)
+    Sanbase.ChRepo.query_transform(query_struct, fn [slug] -> slug end)
   end
 
   def available_assets(metric) do
     query_struct = available_assets_query(metric)
-    Sanbase.ClickhouseRepo.query_transform(query_struct, fn [slug] -> slug end)
+    Sanbase.ChRepo.query_transform(query_struct, fn [slug] -> slug end)
   end
 
   def available_metrics() do
     names_map = Sanbase.Clickhouse.MetricAdapter.Registry.metric_to_names_map()
     query_struct = available_metrics_query()
 
-    Sanbase.ClickhouseRepo.query_transform(query_struct, fn [metric] ->
+    Sanbase.ChRepo.query_transform(query_struct, fn [metric] ->
       Map.get(names_map, metric, []) |> List.first()
     end)
     |> maybe_apply_function(fn list -> Enum.reject(list, &is_nil/1) end)
@@ -53,7 +53,7 @@ defmodule Sanbase.SocialData.Spikes do
     names_map = Sanbase.Clickhouse.MetricAdapter.Registry.metric_to_names_map()
     query_struct = available_metrics_query(selector)
 
-    Sanbase.ClickhouseRepo.query_transform(query_struct, fn [metric] ->
+    Sanbase.ChRepo.query_transform(query_struct, fn [metric] ->
       Map.get(names_map, metric, []) |> List.first()
     end)
     |> maybe_apply_function(fn list -> Enum.reject(list, &is_nil/1) end)

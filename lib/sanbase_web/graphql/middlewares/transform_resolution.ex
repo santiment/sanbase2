@@ -19,7 +19,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.TransformResolution do
   defp do_call(:get_metric, alias, %Resolution{context: context} = resolution) do
     %{arguments: %{metric: metric}} = resolution
     selectors = get_selectors(resolution)
-    elem = {:get_metric, alias, metric, selectors}
+    elem = {:get_metric, alias || "getMetric", metric, selectors}
 
     %{resolution | context: Map.update(context, :__get_query_name_arg__, [elem], &[elem | &1])}
   end
@@ -27,7 +27,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.TransformResolution do
   defp do_call(:get_signal, alias, %Resolution{context: context} = resolution) do
     %{arguments: %{signal: signal}} = resolution
     selectors = get_selectors(resolution)
-    elem = {:get_signal, alias, signal, selectors}
+    elem = {:get_signal, alias || "getSignal", signal, selectors}
 
     %{resolution | context: Map.update(context, :__get_query_name_arg__, [elem], &[elem | &1])}
   end

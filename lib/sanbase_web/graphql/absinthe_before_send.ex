@@ -60,12 +60,11 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     # it again `touch`es it and the TTL timer is restarted. This can lead
     # to infinite storing the same value if there are enough requests
     do_not_cache? = Process.get(:do_not_cache_query) == true
-    IO.inspect(queries_in_request_v2(blueprint), label: "Queries in request")
 
-    %{success: success_queries, error: error_queries} = get_queries_per_result(blueprint)
+    %{success: success_queries, error: error_queries} = get_queries_in_document(blueprint)
 
     if success_queries != [] do
-      query_metadata = query_metadata(conn, blueprint, success_queries)
+      query_metadata = query_metadata(conn, blueprint, success_queries, error_queries)
 
       maybe_async(fn -> export_api_call_data(query_metadata) end)
       maybe_async(fn -> maybe_update_api_call_limit_usage(query_metadata) end)
@@ -74,7 +73,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
         true -> :ok
         # The pre_override_queries are the getMetric and getSignal query names
         # before they got renamed to getMetric|<metric> and getSignal|<signal>
-        false -> maybe_cache_result(query_metadata.pre_override_queries, blueprint)
+        false -> maybe_cache_result(query_metadata.queries, blueprint)
       end
     end
 
@@ -87,24 +86,12 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     _ -> defp maybe_async(fun), do: Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fun)
   end
 
-  defp query_metadata(conn, blueprint, success_queries) do
+  defp query_metadata(conn, blueprint, success_queries, error_queries) do
     now_mono = System.monotonic_time()
     duration_ms = div(now_mono - blueprint.telemetry.start_time_mono, 1_000_000)
     duration_ms = Enum.max([duration_ms, 0])
     user_agent = Plug.Conn.get_req_header(conn, "user-agent") |> List.first()
 
-    pre_override_queries = queries_in_request(blueprint)
-
-    IO.inspect({
-      success_queries,
-      pre_override_queries
-    })
-
-    queries =
-      Map.get(blueprint.execution.context, :__get_query_name_arg__, []) ++
-        Enum.reject(pre_override_queries, &(&1 == "getMetric" or &1 == "getSignal"))
-
-    IO.inspect(queries, label: "QUERIES AFTER CONTEXT")
     result_sizes = result_sizes(blueprint)
 
     caller_data =
@@ -118,15 +105,18 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
         :remote_ip
       ])
 
+    queries = success_queries ++ error_queries
+
     %{
       timestamp: DateTime.utc_now() |> DateTime.to_unix(:second),
       has_graphql_errors: has_graphql_errors?(blueprint),
       has_api_call_limit_quota_infinity: conn.private[:has_api_call_limit_quota_infinity],
       duration_ms: duration_ms,
       user_agent: user_agent,
-      pre_override_queries: pre_override_queries,
       queries: queries,
-      queries_count: length(queries),
+      success_queries: success_queries,
+      success_queries_count: length(success_queries),
+      error_queries: error_queries,
       result_sizes: result_sizes,
       caller_data: caller_data,
       remote_ip: remote_ip(blueprint),
@@ -160,7 +150,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
         :user,
         query_metadata.caller_data.auth_method,
         user,
-        query_metadata.queries_count,
+        query_metadata.success_queries_count,
         query_metadata.result_sizes.min_byte_size
       )
     end
@@ -184,7 +174,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
         :remote_ip,
         auth_method,
         remote_ip,
-        query_metadata.queries_count,
+        query_metadata.success_queries_count,
         query_metadata.result_sizes.min_byte_size
       )
     end
@@ -235,14 +225,6 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
 
   defp maybe_create_or_drop_session(conn, _), do: conn
 
-  defp has_queries?(%{operations: operations}) do
-    operations
-    |> Enum.any?(fn %{selections: selections} ->
-      selections
-      |> Enum.any?(fn %{name: _name} -> true end)
-    end)
-  end
-
   defp queries_in_request(%{operations: operations}) do
     operations
     |> Enum.flat_map(fn %{selections: selections} ->
@@ -257,7 +239,10 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     operations
     |> Enum.flat_map(fn %{selections: selections} ->
       selections
-      |> Enum.map(fn %{name: name, alias: alias} -> {alias, Inflex.camelize(name, :lower)} end)
+      |> Enum.map(fn %{name: name, alias: alias} ->
+        name = Inflex.camelize(name, :lower)
+        {alias || name, Inflex.camelize(name, :lower)}
+      end)
     end)
     |> Map.new()
   end
@@ -266,24 +251,12 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
 
   # Create an API Call event for every query in a Document separately.
   defp export_api_call_data(query_metadata) when is_map(query_metadata) do
-    Enum.map(query_metadata.queries, fn query ->
-      # All ids in the batch need to be different so there's at least one field
-      # that is different for all api calls, otherwise they can be squashed into
-      # a single row when ingested in Clickhouse
-      id =
-        case Logger.metadata() |> Keyword.get(:request_id) do
-          nil ->
-            "gen_" <> (:crypto.strong_rand_bytes(16) |> Base.encode64())
-
-          request_id ->
-            request_id <> "_" <> (:crypto.strong_rand_bytes(6) |> Base.encode64())
-        end
-
+    Enum.map(query_metadata.success_queries, fn query ->
       {query, selector} = get_query_and_selector(query)
 
       %{
+        id: generate_id(),
         timestamp: query_metadata.timestamp,
-        id: id,
         query: query,
         selector: Jason.encode!(selector),
         status_code: 200,
@@ -303,10 +276,23 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     |> Sanbase.KafkaExporter.persist_async(:api_call_exporter)
   end
 
-  defp get_query_and_selector({:get_metric, alias, metric, selector}),
+  defp generate_id() do
+    # All ids in the batch need to be different so there's at least one field
+    # that is different for all api calls, otherwise they can be squashed into
+    # a single row when ingested in Clickhouse
+    case Logger.metadata() |> Keyword.get(:request_id) do
+      nil ->
+        "gen_" <> (:crypto.strong_rand_bytes(16) |> Base.encode64())
+
+      request_id ->
+        request_id <> "_" <> (:crypto.strong_rand_bytes(6) |> Base.encode64())
+    end
+  end
+
+  defp get_query_and_selector({:get_metric, _alias, metric, selector}),
     do: {"getMetric|#{metric}", selector}
 
-  defp get_query_and_selector({:get_signal, alias, signal, selector}),
+  defp get_query_and_selector({:get_signal, _alias, signal, selector}),
     do: {"getSignal|#{signal}", selector}
 
   defp get_query_and_selector(query), do: {query, nil}
@@ -338,8 +324,13 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   defp extract_caller_data(_),
     do: %{user_id: nil, san_balance: nil, auth_method: nil, api_token: nil}
 
-  defp get_queries_per_result(blueprint) do
-    all_queries = queries_in_request(blueprint)
+  defp get_queries_in_document(blueprint) do
+    # In the formaat %{"alias" => "query_name"}.
+    # GraphQL aliases are defined as:
+    # { price_usd: getMetric(metric: "price_usd") ... }
+    # In case of no alias, the query name itself is put as key
+    alias_to_query_name_map = queries_in_request_v2(blueprint)
+    all_aliases = Map.keys(alias_to_query_name_map)
 
     case blueprint.result do
       # If there is data it means at least some of the queries succeeded.
@@ -350,7 +341,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
       # their subscription plan, non existent metric or asset, etc.
       %{data: data, errors: errors} when is_map(data) and is_list(errors) ->
         error_queries = errors |> Enum.map(fn %{path: [name | _]} -> name end)
-        success_queries = all_queries -- error_queries
+        success_queries = all_aliases -- error_queries
 
         %{
           success: success_queries,
@@ -359,7 +350,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
 
       # Only successful queries, none failed.
       %{data: data} = map when is_map(data) and not is_map_key(map, :errors) ->
-        %{success: all_queries, error: []}
+        %{success: all_aliases, error: []}
 
       # If there is no 'data' then we do not return any result, so all queries
       # in the request have failed. Some queries can fail because there is some breaking
@@ -367,9 +358,39 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
       %{errors: errors} = map when is_list(errors) and not is_map_key(map, :data) ->
         %{
           success: [],
-          error: all_queries
+          error: all_aliases
         }
     end
+    |> rename_aliases_to_query_names(alias_to_query_name_map, blueprint)
+  end
+
+  defp rename_aliases_to_query_names(
+         %{success: success, error: error},
+         alias_to_query_name_map,
+         %Absinthe.Blueprint{} = blueprint
+       )
+       when is_map(alias_to_query_name_map) do
+    # Get a list where the elements are one of:
+    # - {:get_metric, alias, metric, selector} |
+    # - {:get_signal, alias, signal, selector} |
+    # These will replace the `alias: getMetric` seen in the queries list in order
+    # to enrich them with the metric/signal that has been queried by the user
+    alias_to_get_query_tuple_map =
+      Map.get(blueprint.execution.context, :__get_query_name_arg__, [])
+      |> Map.new(fn
+        {:get_metric, alias, _metric, _selector} = tuple -> {alias, tuple}
+        {:get_signal, alias, _signal, _selector} = tuple -> {alias, tuple}
+      end)
+
+    # alias_to_query_name_map is a map where the key is the GraphQL alias given to a query and the value
+    # is the query name. In case of no alias, the query name itself is used
+    rename_mapper = fn list ->
+      Enum.map(list, fn alias ->
+        Map.get(alias_to_get_query_tuple_map, alias) || Map.fetch!(alias_to_query_name_map, alias)
+      end)
+    end
+
+    %{success: rename_mapper.(success), error: rename_mapper.(error)}
   end
 
   defp has_graphql_errors?(%Absinthe.Blueprint{result: %{errors: _}}), do: true

@@ -60,6 +60,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     # it again `touch`es it and the TTL timer is restarted. This can lead
     # to infinite storing the same value if there are enough requests
     do_not_cache? = Process.get(:do_not_cache_query) == true
+    IO.inspect(queries_in_request_v2(blueprint), label: "Queries in request")
 
     %{success: success_queries, error: error_queries} = get_queries_per_result(blueprint)
 
@@ -103,6 +104,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
       Map.get(blueprint.execution.context, :__get_query_name_arg__, []) ++
         Enum.reject(pre_override_queries, &(&1 == "getMetric" or &1 == "getSignal"))
 
+    IO.inspect(queries, label: "QUERIES AFTER CONTEXT")
     result_sizes = result_sizes(blueprint)
 
     caller_data =
@@ -301,10 +303,10 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     |> Sanbase.KafkaExporter.persist_async(:api_call_exporter)
   end
 
-  defp get_query_and_selector({:get_metric, metric, selector}),
+  defp get_query_and_selector({:get_metric, alias, metric, selector}),
     do: {"getMetric|#{metric}", selector}
 
-  defp get_query_and_selector({:get_signal, signal, selector}),
+  defp get_query_and_selector({:get_signal, alias, signal, selector}),
     do: {"getSignal|#{signal}", selector}
 
   defp get_query_and_selector(query), do: {query, nil}
@@ -368,7 +370,6 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
           error: all_queries
         }
     end
-    |> dbg()
   end
 
   defp has_graphql_errors?(%Absinthe.Blueprint{result: %{errors: _}}), do: true

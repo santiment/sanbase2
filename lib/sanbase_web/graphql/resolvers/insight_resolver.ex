@@ -206,6 +206,37 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     {:ok, Sanbase.Tag.all()}
   end
 
+  case Application.compile_env(:sanbase, :env) do
+    :test ->
+      # In test env our file store stores images not in S3, but in /tmp
+      defp image_url_regex() do
+        storage_dir = Application.get_env(:waffle, :storage_dir)
+
+        # Properly append / at the end otherwise compiled regex wont' be  proper
+        storage_dir =
+          if String.last(storage_dir) != "/", do: storage_dir <> "/", else: storage_dir
+
+        Regex.compile!(~s{#{storage_dir}[^\s"<>]+(?:\.jpg|\.png|\.gif|\.jpeg)})
+      end
+
+    _ ->
+      defp image_url_regex(),
+        do:
+          ~r{https://[a-zA-Z0-9\-\.]*sanbase-images.s3\.amazonaws\.com/[^\s"<>]+(?:\.jpg|\.png|\.gif|\.jpeg)}
+  end
+
+  defp image_url_regex() do
+    ~r{https://[a-zA-Z0-9\-\.]*sanbase-images.s3\.amazonaws\.com/[^\s"<>]+(?:\.jpg|\.png|\.gif|\.jpeg)}
+  end
+
+  def extract_images_from_text(%Post{text: text}, _args, _resolution) do
+    image_urls =
+      Regex.scan(image_url_regex(), text)
+      |> Enum.map(fn [url] -> url end)
+
+    {:ok, Enum.map(image_urls, fn image_url -> %{image_url: image_url} end)}
+  end
+
   def insights_count(%User{id: id}, _args, %{context: %{loader: loader}}) do
     loader
     |> Dataloader.load(SanbaseDataloader, :insights_count_per_user, id)

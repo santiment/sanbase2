@@ -8,16 +8,24 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
     user = insert(:user)
     project = insert(:random_project)
     project2 = insert(:random_project)
-    insert(:subscription_business_pro_monthly, user: user)
+    insert(:subscription_business_max_monthly, user: user)
 
     {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(user)
     conn = setup_apikey_auth(build_conn(), apikey)
 
-    %{conn: conn, apikey: apikey, project: project, project2: project2}
+    %{
+      conn: conn,
+      apikey: apikey,
+      project: project,
+      project2: project2,
+      from: ~U[2019-01-05 00:00:00Z],
+      to: ~U[2019-01-06 00:00:00Z]
+    }
   end
 
   test "export get_metric api calls with the metric and slug as arguments", context do
     %{conn: conn, apikey: apikey, project: %{slug: slug}, project2: %{slug: slug2}} = context
+    %{from: from, to: to} = context
 
     Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.MetricAdapter.timeseries_data/6, {:ok, []})
     |> Sanbase.Mock.prepare_mock2(
@@ -25,9 +33,6 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
       {:ok, []}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
-      from = ~U[2019-01-05 00:00:00Z]
-      to = ~U[2019-01-06 00:00:00Z]
-
       Sanbase.InMemoryKafka.Producer.clear_state()
       get_metric(conn, "mvrv_usd", slug, from, to, "1d")
       get_metric(conn, "nvt", slug, from, to, "1d")
@@ -98,15 +103,171 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
     end)
   end
 
+  test "nothing is exported when query returns error due to argument error", context do
+    %{conn: conn, project: %{slug: slug}} = context
+    %{from: from, to: to} = context
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.MetricAdapter.timeseries_data/6, {:ok, []})
+    |> Sanbase.Mock.prepare_mock2(
+      &Sanbase.Clickhouse.MetricAdapter.timeseries_data_per_slug/6,
+      {:ok, []}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      Sanbase.InMemoryKafka.Producer.clear_state()
+      # One successful
+      get_metric(conn, "mvrv_usd", slug, from, to, "1d")
+
+      # And a few failed
+      get_metric(conn, "mvrv_usds", slug, from, to, "1d")
+      get_metric(conn, "nvts", slug, from, to, "1d")
+
+      # force the sending
+      Sanbase.KafkaExporter.flush(:api_call_exporter)
+
+      %{"sanbase_api_call_data" => api_calls} = Sanbase.InMemoryKafka.Producer.get_state()
+
+      api_calls =
+        Enum.map(api_calls, fn {_, data} ->
+          data = Jason.decode!(data)
+
+          %{query: data["query"]}
+        end)
+
+      # Only the successful one is exported and counted
+      assert assert api_calls == [%{query: "getMetric|mvrv_usd"}]
+    end)
+  end
+
+  test "nothing is exported when query returns error due to graphql error", context do
+    %{conn: conn, project: %{slug: slug}} = context
+    %{from: from, to: to} = context
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.MetricAdapter.timeseries_data/6, {:ok, []})
+    |> Sanbase.Mock.prepare_mock2(
+      &Sanbase.Clickhouse.MetricAdapter.timeseries_data_per_slug/6,
+      {:ok, []}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      Sanbase.InMemoryKafka.Producer.clear_state()
+      # One successful
+      get_metric(conn, "mvrv_usd", slug, from, to, "1d")
+
+      # And a failed due to typo in query name
+      query = """
+      {
+        getMMMMMetric(metric: "nvt") {
+          timeseriesData(slug: "#{slug}", from: "#{from}", to: "#{to}", interval: "1d"){
+            datetime
+            value
+          }
+        }
+      }
+      """
+
+      conn
+      |> post("/graphql", query_skeleton(query))
+      |> json_response(200)
+
+      # force the sending
+      Sanbase.KafkaExporter.flush(:api_call_exporter)
+
+      %{"sanbase_api_call_data" => api_calls} = Sanbase.InMemoryKafka.Producer.get_state()
+
+      api_calls =
+        Enum.map(api_calls, fn {_, data} ->
+          data = Jason.decode!(data)
+
+          %{query: data["query"]}
+        end)
+
+      # Only the successful one is exported and counted
+      assert assert api_calls == [%{query: "getMetric|mvrv_usd"}]
+    end)
+  end
+
+  test "only some queries return data - export only successful api calls", context do
+    %{conn: conn, project: %{slug: slug}} = context
+    %{from: from, to: to} = context
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.MetricAdapter.timeseries_data/6, {:ok, []})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      Sanbase.InMemoryKafka.Producer.clear_state()
+
+      query = """
+      {
+
+        willSucceed: getMetric(metric: "mvrv_usd") {
+          timeseriesDataJson(slug: "#{slug}", from: "#{from}", to: "#{to}", interval: "1d")
+        }
+
+        willFailUnsupprotedSlug: getMetric(metric: "nvt") {
+          timeseriesDataJson(slug: "some_unsupported_slug", from: "#{from}", to: "#{to}", interval: "1d")
+        }
+      }
+      """
+
+      conn
+      |> post("/graphql", query_skeleton(query))
+      |> json_response(200)
+
+      # force the sending
+      Sanbase.KafkaExporter.flush(:api_call_exporter)
+
+      %{"sanbase_api_call_data" => api_calls} = Sanbase.InMemoryKafka.Producer.get_state()
+
+      api_calls =
+        Enum.map(api_calls, fn {_, data} ->
+          data = Jason.decode!(data)
+
+          %{query: data["query"]}
+        end)
+
+      # Only the successful one is exported and counted
+      assert api_calls == [%{query: "getMetric|mvrv_usd"}]
+    end)
+  end
+
+  test "no queries return due to critical error in one of them -- nothing is exported", context do
+    %{conn: conn, project: %{slug: slug}} = context
+    %{from: from, to: to} = context
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.MetricAdapter.timeseries_data/6, {:ok, []})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      Sanbase.InMemoryKafka.Producer.clear_state()
+
+      query = """
+      {
+
+        willSucceedIfAlone: getMetric(metric: "mvrv_usd") {
+          timeseriesDataJson(slug: "#{slug}", from: "#{from}", to: "#{to}", interval: "1d")
+        }
+
+        willCrashTheWholeDocumentDueToAggregation: getMetric(metric: "nvt") {
+          timeseriesDataJson(slug: "some_unsupported_slug", from: "#{from}", to: "#{to}", interval: "1d", aggregation: INVALID_AGGR)
+        }
+      }
+      """
+
+      conn
+      |> post("/graphql", query_skeleton(query))
+      |> json_response(200)
+
+      # force the sending
+      Sanbase.KafkaExporter.flush(:api_call_exporter)
+
+      state = Sanbase.InMemoryKafka.Producer.get_state()
+      # Only the successful one is exported and counted
+      assert Enum.empty?(state)
+    end)
+  end
+
   defp get_metric(conn, metric, slug, from, to, interval) do
+    # Intentionally one query is defined as get_metric and the other as getMetric
+    # so casing unification is tested
     query = """
     {
       get_metric(metric: "#{metric}") {
-        timeseriesData(slug: "#{slug}", from: "#{from}", to: "#{to}", interval: "#{interval}"){
-          datetime
-          value
-        }
-      }
+        timeseriesDataJson(slug: "#{slug}", from: "#{from}", to: "#{to}", interval: "#{interval}")      }
     }
     """
 
@@ -120,14 +281,8 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
 
     query = """
     {
-      get_metric(metric: "#{metric}") {
-        timeseriesDataPerSlug(selector: {slugs: [#{slugs_str}]}, from: "#{from}", to: "#{to}", interval: "#{interval}"){
-          datetime
-          data{
-            slug
-            value
-          }
-        }
+      getMetric(metric: "#{metric}") {
+        timeseriesDataPerSlugJson(selector: {slugs: [#{slugs_str}]}, from: "#{from}", to: "#{to}", interval: "#{interval}")
       }
     }
     """

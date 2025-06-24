@@ -248,7 +248,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
         # to the underlaying GraphQL query. If there is no alias, use the query
         # name as key. In a document if two or more of the same queries are used,
         # all but one need to have an alias so there would be no name conflicts.
-        {Inflex.camelize(alias || name), Inflex.camelize(name, :lower)}
+        {Inflex.camelize(alias || name, :lower), Inflex.camelize(name, :lower)}
       end)
     end)
     |> Map.new()
@@ -357,7 +357,15 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
       # Such checks can include authorization errors -- user does not have access with
       # their subscription plan, non existent metric or asset, etc.
       %{data: data, errors: errors} when is_map(data) and is_list(errors) ->
-        error_queries = errors |> Enum.map(fn %{path: [name | _]} -> name end)
+        error_queries =
+          errors
+          |> Enum.flat_map(fn
+            %{path: [name | _]} -> [Inflex.camelize(name, :lower)]
+            %{path: []} -> []
+            %{path: nil} -> []
+            _ -> []
+          end)
+
         success_queries = all_aliases -- error_queries
 
         %{
@@ -413,7 +421,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     # the selector that has been provided (like {"slugs": ["bitcoin", "ethereum"]})
     rename_mapper = fn list ->
       Enum.map(list, fn alias ->
-        alias = Inflex.camelize(alias, :lower)
+        alias = alias |> Inflex.camelize(:lower)
         Map.get(alias_to_get_query_tuple_map, alias) || Map.fetch!(alias_to_query_name_map, alias)
       end)
     end

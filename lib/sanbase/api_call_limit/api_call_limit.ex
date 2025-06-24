@@ -186,7 +186,7 @@ defmodule Sanbase.ApiCallLimit do
         {:error,
          """
          Failed to create API call limit record for user_id: #{user.id}.
-         Reason: #{Sanbase.Utils.Error.changeset_error_to_string(changeset)}
+         Reason: #{Sanbase.Utils.ErrorHandling.changeset_errors_string(changeset)}
          """}
     end
   end
@@ -225,7 +225,7 @@ defmodule Sanbase.ApiCallLimit do
         {:error,
          """
          Failed to create API call limit record for remote ip: #{remote_ip}.
-         Reason: #{Sanbase.Utils.Error.changeset_error_to_string(changeset)}
+         Reason: #{Sanbase.Utils.ErrorHandling.changeset_errors_string(changeset)}
          """}
     end
   end

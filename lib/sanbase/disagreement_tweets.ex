@@ -59,6 +59,21 @@ defmodule Sanbase.DisagreementTweets do
   end
 
   @doc """
+  Gets tweets not classified by the user and not yet completed (< 5 classifications)
+  Ordered by classification count descending to prioritize tweets that need fewer votes
+  """
+  def list_not_classified_incomplete_by_user(user_id, opts \\ []) do
+    ClassifiedTweet
+    |> ClassifiedTweet.disagreement_tweets()
+    |> ClassifiedTweet.not_classified_by_user(user_id)
+    |> ClassifiedTweet.classification_count_less_than(5)
+    |> apply_filters(opts)
+    |> ClassifiedTweet.order_by_classification_priority()
+    |> Repo.all()
+    |> add_user_classification_status(user_id)
+  end
+
+  @doc """
   Lists disagreement tweets classified by a specific user
   """
   def list_classified_by_user(user_id, opts \\ []) do

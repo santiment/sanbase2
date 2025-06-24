@@ -51,9 +51,7 @@ defmodule SanbaseWeb.DisagreementTweetsLive do
     tweets =
       case tab do
         :not_classified_by_me ->
-          DisagreementTweets.list_not_classified_by_user(user_id, limit: 50)
-          |> Enum.reject(&(&1.classification_count >= 5))
-          |> Enum.sort_by(& &1.classification_count, :desc)
+          DisagreementTweets.list_not_classified_incomplete_by_user(user_id, limit: 50)
 
         :classified_by_me ->
           DisagreementTweets.list_classified_by_user(user_id, limit: 50)

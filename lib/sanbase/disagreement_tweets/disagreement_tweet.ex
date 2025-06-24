@@ -97,6 +97,10 @@ defmodule Sanbase.DisagreementTweets.ClassifiedTweet do
     from(q in query, where: q.classification_count == ^count)
   end
 
+  def classification_count_less_than(query \\ disagreement_tweets(), count) do
+    from(q in query, where: q.classification_count < ^count)
+  end
+
   def in_prob_range(query, min_prob, max_prob) do
     from(q in query,
       where:
@@ -107,5 +111,9 @@ defmodule Sanbase.DisagreementTweets.ClassifiedTweet do
 
   def order_by_timestamp(query \\ __MODULE__) do
     from(q in query, order_by: [desc: q.timestamp])
+  end
+
+  def order_by_classification_priority(query \\ __MODULE__) do
+    from(q in query, order_by: [desc: q.classification_count, desc: q.timestamp])
   end
 end

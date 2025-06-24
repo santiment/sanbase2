@@ -5,6 +5,11 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
   import Sanbase.Factory
 
   setup do
+    # The test suite is not asynchronous. Wait a little before cleaning the state
+    # so all other tests finish exporting their data and we can clean it.
+    Process.sleep(100)
+    Sanbase.InMemoryKafka.Producer.clear_state()
+
     user = insert(:user)
     project = insert(:random_project)
     project2 = insert(:random_project)
@@ -33,7 +38,6 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
       {:ok, []}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
-      Sanbase.InMemoryKafka.Producer.clear_state()
       get_metric(conn, "mvrv_usd", slug, from, to, "1d")
       get_metric(conn, "nvt", slug, from, to, "1d")
       get_metric(conn, "daily_active_addresses", slug, from, to, "1d")
@@ -113,7 +117,6 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
       {:ok, []}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
-      Sanbase.InMemoryKafka.Producer.clear_state()
       # One successful
       get_metric(conn, "mvrv_usd", slug, from, to, "1d")
 
@@ -148,7 +151,6 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
       {:ok, []}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
-      Sanbase.InMemoryKafka.Producer.clear_state()
       # One successful
       get_metric(conn, "mvrv_usd", slug, from, to, "1d")
 
@@ -191,8 +193,6 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
 
     Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.MetricAdapter.timeseries_data/6, {:ok, []})
     |> Sanbase.Mock.run_with_mocks(fn ->
-      Sanbase.InMemoryKafka.Producer.clear_state()
-
       query = """
       {
 
@@ -233,8 +233,6 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
 
     Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.MetricAdapter.timeseries_data/6, {:ok, []})
     |> Sanbase.Mock.run_with_mocks(fn ->
-      Sanbase.InMemoryKafka.Producer.clear_state()
-
       query = """
       {
 

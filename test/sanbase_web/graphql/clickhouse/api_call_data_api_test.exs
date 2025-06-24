@@ -8,15 +8,16 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
     user = insert(:user)
     project = insert(:random_project)
     project2 = insert(:random_project)
-    insert(:subscription_pro_sanbase, user: user)
-    conn = setup_jwt_auth(build_conn(), user)
-    %{conn: conn, project: project, project2: project2}
+    insert(:subscription_business_pro_monthly, user: user)
+
+    {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(user)
+    conn = setup_apikey_auth(build_conn(), apikey)
+
+    %{conn: conn, apikey: apikey, project: project, project2: project2}
   end
 
-  @tag :skip
-  # TODO: fix this test. On CI it timeouts, locally also fails but with different error
   test "export get_metric api calls with the metric and slug as arguments", context do
-    %{conn: conn, project: %{slug: slug}, project2: %{slug: slug2}} = context
+    %{conn: conn, apikey: apikey, project: %{slug: slug}, project2: %{slug: slug2}} = context
 
     Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.MetricAdapter.timeseries_data/6, {:ok, []})
     |> Sanbase.Mock.prepare_mock2(
@@ -43,7 +44,13 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
       api_calls =
         Enum.map(api_calls, fn {_, data} ->
           data = Jason.decode!(data)
-          %{query: data["query"], selector: data["selector"]}
+
+          %{
+            query: data["query"],
+            selector: data["selector"],
+            api_token: data["api_token"],
+            auth_method: data["auth_method"]
+          }
         end)
 
       # There could be some test that exported api calls data and that happens async
@@ -52,29 +59,41 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
       slug_selector = [%{slug: slug}] |> Jason.encode!()
       slugs_selector = [%{slugs: [slug, slug2]}] |> Jason.encode!()
 
+      api_token = String.split(apikey, "_") |> hd()
+
       assert %{
                query: "getMetric|daily_active_addresses",
-               selector: slug_selector
+               selector: slug_selector,
+               auth_method: "apikey",
+               api_token: api_token
              } in api_calls
 
       assert %{
                query: "getMetric|nvt",
-               selector: slug_selector
+               selector: slug_selector,
+               auth_method: "apikey",
+               api_token: api_token
              } in api_calls
 
       assert %{
                query: "getMetric|mvrv_usd",
-               selector: slug_selector
+               selector: slug_selector,
+               auth_method: "apikey",
+               api_token: api_token
              } in api_calls
 
       assert %{
                query: "getMetric|nvt",
-               selector: slugs_selector
+               selector: slugs_selector,
+               auth_method: "apikey",
+               api_token: api_token
              } in api_calls
 
       assert %{
                query: "getMetric|mvrv_usd",
-               selector: slugs_selector
+               selector: slugs_selector,
+               auth_method: "apikey",
+               api_token: api_token
              } in api_calls
     end)
   end

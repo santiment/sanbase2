@@ -54,6 +54,16 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
 
   def cached_queries(), do: @cached_queries
 
+  case Application.compile_env(:sanbase, :env) do
+    :test ->
+      defp enabled?(), do: Application.get_env(__MODULE__, :api_call_exporting_enabled, false)
+      defp maybe_async(fun), do: fun.()
+
+    _ ->
+      defp enabled?(), do: true
+      defp maybe_async(fun), do: Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fun)
+  end
+
   def before_send(conn, %Absinthe.Blueprint{} = blueprint) do
     %{success: success_queries, error: error_queries} = get_queries_in_document(blueprint)
 
@@ -64,7 +74,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     # we can use to analyze user errors and notify the user in case of increased amount of errors.
     # One of the more famous errors is that the asset that is queried is not supported or is mistyped.
     # Users might miss that a lot of their queries fail with this error.
-    if success_queries != [] do
+    if success_queries != [] and enabled?() do
       query_metadata = query_metadata(conn, blueprint, success_queries, error_queries)
 
       maybe_async(fn -> export_api_call_data(query_metadata) end)
@@ -91,11 +101,6 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
 
     conn
     |> maybe_create_or_drop_session(blueprint.execution.context)
-  end
-
-  case Application.compile_env(:sanbase, :env) do
-    :test -> defp maybe_async(fun), do: fun.()
-    _ -> defp maybe_async(fun), do: Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fun)
   end
 
   defp query_metadata(conn, blueprint, success_queries, error_queries) do

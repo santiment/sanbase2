@@ -10,6 +10,14 @@ defmodule SanbaseWeb.ApiCallLimitTest do
   setup :set_mox_from_context
   setup :verify_on_exit!
 
+  setup_all do
+    Application.put_env(SanbaseWeb.Graphql.AbsintheBeforeSend, :api_call_exporting_enabled, true)
+
+    on_exit(fn ->
+      Application.delete_env(SanbaseWeb.Graphql.AbsintheBeforeSend, :api_call_exporting_enabled)
+    end)
+  end
+
   setup do
     san_user = insert(:user, email: "santiment@santiment.net")
     {:ok, san_apikey} = Sanbase.Accounts.Apikey.generate_apikey(san_user)

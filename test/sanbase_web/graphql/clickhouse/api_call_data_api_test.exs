@@ -4,6 +4,14 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
 
+  setup_all do
+    Application.put_env(SanbaseWeb.Graphql.AbsintheBeforeSend, :api_call_exporting_enabled, true)
+
+    on_exit(fn ->
+      Application.delete_env(SanbaseWeb.Graphql.AbsintheBeforeSend, :api_call_exporting_enabled)
+    end)
+  end
+
   setup do
     # The test suite is not asynchronous. Wait a little before cleaning the state
     # so all other tests finish exporting their data and we can clean it.
@@ -254,8 +262,8 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
       Sanbase.KafkaExporter.flush(:api_call_exporter)
 
       state = Sanbase.InMemoryKafka.Producer.get_state()
-      # Only the successful one is exported and counted
-      assert Enum.empty?(state)
+      api_calls = Map.get(state, "sanbase_api_call_data", %{})
+      assert Enum.empty?(api_calls)
     end)
   end
 

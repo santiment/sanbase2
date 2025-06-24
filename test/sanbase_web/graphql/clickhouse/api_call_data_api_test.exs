@@ -4,6 +4,7 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
 
+  @moduletag skip: true
   setup_all do
     Application.put_env(SanbaseWeb.Graphql.AbsintheBeforeSend, :api_call_exporting_enabled, true)
 

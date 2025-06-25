@@ -23,7 +23,6 @@ module.exports = {
   plugins: [
     require('flowbite/plugin'),
     require("@tailwindcss/forms"),
-    require("@tailwindcss/typography"),
     // Allows prefixing tailwind classes with LiveView classes to add rules
     // only when LiveView classes are applied, for example:
     //

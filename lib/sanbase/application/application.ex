@@ -168,6 +168,9 @@ defmodule Sanbase.Application do
   """
   def prepended_children(container_type) do
     [
+      # Graceful shutdown handler - must be started first
+      Sanbase.GracefulShutdown,
+
       # To enable the persistent term backend
       # https://hexdocs.pm/absinthe/overview.html
       {Absinthe.Schema, SanbaseWeb.Graphql.Schema},

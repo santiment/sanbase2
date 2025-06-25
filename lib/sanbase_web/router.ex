@@ -164,6 +164,9 @@ defmodule SanbaseWeb.Router do
   scope "/" do
     pipe_through(:api)
 
+    # Health check endpoint for Kubernetes probes
+    get("/health", SanbaseWeb.HealthController, :health)
+
     forward(
       "/graphql",
       Absinthe.Plug,

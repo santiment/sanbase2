@@ -1,3 +1,52 @@
 #!/bin/sh
+
+# This script starts the Sanbase server with proper signal handling
+# for graceful shutdown in Kubernetes environments.
+
+set -e
+
+# Function to handle graceful shutdown
+graceful_shutdown() {
+    echo "Received shutdown signal, starting graceful shutdown..."
+    
+    # Send SIGTERM to the Elixir application
+    if [ -n "$APP_PID" ]; then
+        echo "Sending SIGTERM to application (PID: $APP_PID)"
+        kill -TERM "$APP_PID"
+        
+        # Wait for graceful shutdown (30 seconds)
+        echo "Waiting for graceful shutdown (30 seconds)..."
+        timeout 30 tail --pid="$APP_PID" -f /dev/null || true
+        
+        # If still running, force kill
+        if kill -0 "$APP_PID" 2>/dev/null; then
+            echo "Graceful shutdown timeout reached, forcing shutdown..."
+            kill -KILL "$APP_PID"
+        fi
+    fi
+    
+    exit 0
+}
+
+# Set up signal handlers
+trap graceful_shutdown TERM INT
+
+# Start the application
+echo "Starting Sanbase application..."
 cd -P -- "$(dirname -- "$0")"
-PHX_SERVER=true exec ./sanbase start
+PHX_SERVER=true exec ./sanbase start &
+APP_PID=$!
+
+# Wait for the application to start
+sleep 2
+
+# Check if the application is still running
+if ! kill -0 "$APP_PID" 2>/dev/null; then
+    echo "Application failed to start"
+    exit 1
+fi
+
+echo "Application started successfully (PID: $APP_PID)"
+
+# Wait for the application to exit
+wait "$APP_PID"

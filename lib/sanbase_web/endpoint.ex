@@ -53,6 +53,9 @@ defmodule SanbaseWeb.Endpoint do
   plug(Plug.RequestId)
   plug(Plug.Logger)
 
+  # Track requests for graceful shutdown
+  plug(SanbaseWeb.Plug.RequestTracker)
+
   # This plug should be placed before Plug.Parsers because it is reading the
   # request body and it can be read only once and if used anywhere else should be stored
   plug(SanbaseWeb.Plug.VerifyStripeWebhook)

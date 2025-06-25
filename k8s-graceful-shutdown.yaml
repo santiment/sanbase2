@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sanbase-web
+  labels:
+    app: sanbase-web
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: sanbase-web
+  template:
+    metadata:
+      labels:
+        app: sanbase-web
+    spec:
+      containers:
+      - name: sanbase
+        image: sanbase:latest
+        ports:
+        - containerPort: 4000
+        env:
+        - name: MIX_ENV
+          value: "prod"
+        - name: PHX_SERVER
+          value: "true"
+        # Graceful shutdown configuration
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "echo 'PreStop hook: Starting graceful shutdown'"]
+        # Termination grace period - should be longer than our internal timeout
+        terminationGracePeriodSeconds: 60
+        # Liveness probe
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 4000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        # Readiness probe
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 4000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sanbase-web-service
+spec:
+  selector:
+    app: sanbase-web
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 4000
+  type: ClusterIP 

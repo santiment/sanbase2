@@ -83,16 +83,7 @@ defmodule SanbaseWeb.AcademyQAComponents do
         </div>
       </div>
 
-      <div class="prose prose-sm max-w-none text-gray-800
-                  prose-headings:text-gray-900 prose-headings:font-semibold prose-headings:mb-4 prose-headings:mt-6
-                  prose-h1:text-xl prose-h2:text-lg prose-h3:text-base
-                  prose-p:mb-4 prose-p:leading-relaxed
-                  prose-strong:text-gray-900 prose-strong:font-semibold
-                  prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline
-                  prose-ol:list-decimal prose-ul:list-disc prose-li:my-1
-                  prose-code:bg-gray-100 prose-code:text-gray-900 prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:text-sm prose-code:font-mono
-                  prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:p-4 prose-pre:rounded-lg prose-pre:overflow-x-auto prose-pre:text-sm prose-pre:font-mono
-                  prose-blockquote:border-l-4 prose-blockquote:border-blue-500 prose-blockquote:pl-4 prose-blockquote:italic">
+      <div class="prose prose-sm max-w-none text-gray-800 prose-headings:text-gray-900 prose-strong:text-gray-900 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-ol:list-decimal prose-ul:list-disc prose-li:my-1">
         {raw(markdown_to_html(@answer_data["answer"]))}
       </div>
     </div>

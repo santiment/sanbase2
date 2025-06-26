@@ -33,12 +33,20 @@ defmodule Sanbase.Application do
     # include some Ecto adapters, Telemetry, Phoenix Endpoint, etc.
     common_children = common_children()
 
+    # Some children need to be started last
+    # At the moment these are the Endpoint and the ConnectionDrainer. This way when the
+    # application is stopped, we first stop the ConnectionDrainer which will drain
+    # the connections and stop the acceptor pool. The Endpoint is also here, so the rest
+    # of the services that are needed to process the remaining requests are still running --
+    # DB connections, Caches, API Call Exporters, etc.
+    last_children = last_children()
+
     # Combine all the children to be started. Run a normalization. This normalization
     # takes care of the results of some custom `start_in` and `start_if` custom cases.
     # They might return `nil` to signal that they don't have to be started and these
     # values need to be cleaned.
     children =
-      (prepended_children ++ common_children ++ children)
+      (prepended_children ++ common_children ++ children ++ last_children)
       |> Sanbase.ApplicationUtils.normalize_children()
       |> Enum.uniq()
 
@@ -340,20 +348,24 @@ defmodule Sanbase.Application do
       # Start the Presence
       SanbaseWeb.Presence,
 
-      # Start the endpoint when the application starts
+      # Process that starts test-only deps
+      start_in(Sanbase.TestSetupService, [:test]),
+      Sanbase.EventBus.children()
+    ]
+    |> List.flatten()
+  end
+
+  def last_children() do
+    # Start the endpoint when the application starts
+    [
       SanbaseWeb.Endpoint,
 
       # Drain the running connections before closing. This will allow the
       # currently executing API calls to finish. The drainer first makes
       # the TCP acceptor to stop accepting new connections and then waits
       # until there are no connections or 30 seconds pass.
-      {SanbaseWeb.ConnectionDrainer, shutdown: 30_000, ranch_ref: SanbaseWeb.Endpoint.HTTP},
-
-      # Process that starts test-only deps
-      start_in(Sanbase.TestSetupService, [:test]),
-      Sanbase.EventBus.children()
+      {SanbaseWeb.ConnectionDrainer, shutdown: 30_000, ranch_ref: SanbaseWeb.Endpoint.HTTP}
     ]
-    |> List.flatten()
   end
 
   def config_change(changed, _new, removed) do

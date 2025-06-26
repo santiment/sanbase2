@@ -329,6 +329,28 @@ defmodule Sanbase.Application do
          acquire_lock_timeout: 60_000
        ]},
 
+      # Mutex for forcing sequential execution when updating api call limits
+      start_if(
+        fn ->
+          Supervisor.child_spec(
+            {Mutex, name: Sanbase.ApiCallLimitMutex},
+            id: Sanbase.ApiCallLimitMutex
+          )
+        end,
+        fn -> container_type() in ["web", "all"] end
+      ),
+
+      # Start the graphQL in-memory cache
+      start_if(
+        fn ->
+          SanbaseWeb.Graphql.Cache.child_spec(
+            id: :graphql_api_cache,
+            name: :graphql_cache
+          )
+        end,
+        fn -> container_type() in ["web", "all"] end
+      ),
+
       # Service for fast checking if a slug is valid
       # `:available_slugs_module` option changes the module
       # used in test env to another one, this one is unused

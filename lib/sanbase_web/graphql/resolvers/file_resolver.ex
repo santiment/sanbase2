@@ -10,7 +10,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.FileResolver do
     The files are first uploaded to an AWS S3 bucket and then then the image url,
     the content hash and used hash algorithm are stored in postgres.
   """
-  def upload_image(_root, %{images: images}, _resolution) do
+  def upload_image(_root, %{images: images}, %{context: %{auth: %{current_user: current_user}}}) do
     # In S3 there are no folders so the file name just contains some random text
     # and a slash in it. Locally (in test and dev mode) the files are treated as if
     # they are located in a folder called `scope`
@@ -21,7 +21,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.FileResolver do
         # Prepend the timestamp in milliseconds to the name to avoid name collision
         # when uploading images with the same hash and name
         arg = %{arg | filename: milliseconds_str() <> "_" <> file_name}
-        save_image_content(arg)
+        save_image_content(arg, current_user.id)
       end)
 
     :ok = save_image_meta_data(image_data)
@@ -31,7 +31,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.FileResolver do
 
   # Helper functions
 
-  defp save_image_content(%Plug.Upload{filename: file_name} = arg) do
+  defp save_image_content(%Plug.Upload{filename: file_name} = arg, user_id) do
     with {:ok, content_hash} <- FileHash.calculate(arg.path),
          {:ok, file_name} <- FileStore.store({arg, content_hash}) do
       image_url = FileStore.url({file_name, content_hash})
@@ -40,7 +40,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.FileResolver do
         file_name: file_name,
         image_url: image_url,
         content_hash: content_hash,
-        hash_algorithm: FileHash.algorithm() |> Atom.to_string()
+        hash_algorithm: FileHash.algorithm() |> Atom.to_string(),
+        user_id: user_id
       }
     else
       {:error, error} ->

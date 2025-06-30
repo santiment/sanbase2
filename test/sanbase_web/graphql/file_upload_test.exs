@@ -66,8 +66,8 @@ defmodule SanbaseWeb.Graphql.FileUploadTest do
       mutation {
         uploadImage(images: ["img"]){
           fileName
-          contentHash,
-          imageUrl,
+          contentHash
+          imageUrl
           error
         }
       }

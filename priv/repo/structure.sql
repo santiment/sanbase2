@@ -3028,7 +3028,8 @@ CREATE TABLE public.post_images (
     image_url text NOT NULL,
     content_hash text NOT NULL,
     hash_algorithm text NOT NULL,
-    post_id bigint
+    post_id bigint,
+    user_id bigint
 );
 
 
@@ -10270,6 +10271,14 @@ ALTER TABLE ONLY public.post_images
 
 
 --
+-- Name: post_images post_images_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.post_images
+    ADD CONSTRAINT post_images_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: posts posts_chart_configuration_for_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -11555,6 +11564,7 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250611104342);
 INSERT INTO public."schema_migrations" (version) VALUES (20250612090655);
 INSERT INTO public."schema_migrations" (version) VALUES (20250612131900);
 INSERT INTO public."schema_migrations" (version) VALUES (20250612133320);
+INSERT INTO public."schema_migrations" (version) VALUES (20250630112632);
 INSERT INTO public."schema_migrations" (version) VALUES (20250703133723);
 INSERT INTO public."schema_migrations" (version) VALUES (20250703144448);
 INSERT INTO public."schema_migrations" (version) VALUES (20250709132930);

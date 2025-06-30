@@ -25,7 +25,15 @@ defmodule SanbaseWeb.Guardian.Token do
 
     case Sanbase.Repo.all(query) do
       [] ->
-        {:error, "User has not exchanged any refresh tokens"}
+        case Sanbase.Accounts.get_user(user_id) do
+          # Alternatively, we can also check if the registration_state is finished
+          # and report with a different error message if it's not
+          {:ok, %{updated_at: updated_at}} ->
+            {:ok, DateTime.from_naive!(updated_at, "Etc/UTC")}
+
+          _ ->
+            {:error, "User with id #{user_id} does not exist"}
+        end
 
       list ->
         last_activity =

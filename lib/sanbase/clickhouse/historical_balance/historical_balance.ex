@@ -11,16 +11,9 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   alias Sanbase.BlockchainAddress
   alias Sanbase.Clickhouse.HistoricalBalance.XrpBalance
 
-  @balances_aggregated_blockchains [
-    "ethereum",
-    "bitcoin",
-    "bitcoin-cash",
-    "litecoin",
-    "binance"
-  ]
+  @balance_module_supported_blockchains Sanbase.Balance.supported_blockchains()
 
-  @supported_infrastructures ["BCH", "BNB", "BEP2", "BTC", "LTC", "XRP", "ETH"]
-  def supported_infrastructures(), do: @supported_infrastructures
+  def supported_infrastructures(), do: Sanbase.Balance.supported_infrastructures()
 
   @type selector :: %{
           optional(:infrastructure) => String.t(),
@@ -49,8 +42,9 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
           | {:ok, list(%{datetime: DateTime.t(), balance: number()})}
           | {:error, String.t()}
 
-  defguard balances_aggregated_blockchain?(blockchain)
-           when blockchain in @balances_aggregated_blockchains
+  # The Balance module does not properly support "xrp" and we'll use our custom implementation for now
+  defguard balance_module_supported_blockchain?(blockchain)
+           when blockchain != "xrp" and blockchain in @balance_module_supported_blockchains
 
   @doc ~s"""
   Return a list of the assets that a given address currently holds or
@@ -64,7 +58,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   def assets_held_by_address(%{infrastructure: infr, address: address}, opts \\ []) do
     case selector_to_args(%{infrastructure: infr}) do
       %{blockchain: blockchain}
-      when balances_aggregated_blockchain?(blockchain) ->
+      when balance_module_supported_blockchain?(blockchain) ->
         Sanbase.Balance.assets_held_by_address(address, opts)
 
       %{module: module} ->
@@ -88,7 +82,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   def usd_value_address_change(%{infrastructure: infr, address: address}, datetime) do
     case selector_to_args(%{infrastructure: infr}) do
       %{blockchain: blockchain}
-      when balances_aggregated_blockchain?(blockchain) ->
+      when balance_module_supported_blockchain?(blockchain) ->
         Sanbase.Balance.usd_value_address_change(address, datetime)
 
       %{module: module} ->
@@ -112,7 +106,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   def usd_value_held_by_address(%{infrastructure: infr, address: address}) do
     case selector_to_args(%{infrastructure: infr}) do
       %{blockchain: blockchain}
-      when balances_aggregated_blockchain?(blockchain) ->
+      when balance_module_supported_blockchain?(blockchain) ->
         Sanbase.Balance.usd_value_held_by_address(address)
 
       %{module: module} ->
@@ -140,7 +134,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   def balance_change(selector, address, from, to) do
     case selector_to_args(selector) do
       %{blockchain: blockchain, slug: slug}
-      when balances_aggregated_blockchain?(blockchain) ->
+      when balance_module_supported_blockchain?(blockchain) ->
         Sanbase.Balance.balance_change(address, slug, from, to)
 
       %{module: module, asset: asset, decimals: decimals} ->
@@ -166,7 +160,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   def historical_balance(selector, address, from, to, interval) do
     case selector_to_args(selector) do
       %{blockchain: blockchain, slug: slug}
-      when balances_aggregated_blockchain?(blockchain) ->
+      when balance_module_supported_blockchain?(blockchain) ->
         Sanbase.Balance.historical_balance(address, slug, from, to, interval)
 
       %{module: module, asset: asset, decimals: decimals} ->
@@ -182,7 +176,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   def current_balance(selector, address) do
     case selector_to_args(selector) do
       %{blockchain: blockchain, slug: slug}
-      when balances_aggregated_blockchain?(blockchain) ->
+      when balance_module_supported_blockchain?(blockchain) ->
         Sanbase.Balance.current_balance(address, slug)
 
       %{module: module, asset: asset, decimals: decimals} ->

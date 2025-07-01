@@ -688,6 +688,7 @@ defmodule Sanbase.Balance.SqlQuery do
       "dogecoin" -> "doge_balances"
       "bitcoin-cash" -> "bch_balances"
       "binance" -> "bep20_balances"
+      "xrp" -> "xrp_balances"
     end
   end
 

@@ -8,7 +8,7 @@ config :sanbase, Sanbase.Alerts.Scheduler,
   overlap: false,
   jobs: [
     monitor_excessive_sanbase_usage: [
-      schedule: "0 */6 * * *",
+      schedule: "0 * * * *",
       task: {Sanbase.Mix.LogoutExcessiveUsage, :run, []}
     ],
     freeze_user_alerts: [

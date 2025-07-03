@@ -677,16 +677,14 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       assert ready_state == Post.draft()
     end
 
-    @test_file_hash "15e9f3c52e8c7f2444c5074f3db2049707d4c9ff927a00ddb8609bfae5925399"
     test "create an insight with image and retrieve the image hash and url", %{conn: conn} do
       image_url = upload_image(conn)
 
       mutation = """
       mutation {
-        createInsight(title: "Awesome post", text: "Example body", imageUrls: ["#{image_url}"]) {
+        createInsight(title: "Awesome post", text: "Example body, urls: #{image_url}", imageUrls: ["#{image_url}"]) {
           images{
             imageUrl
-            contentHash
           }
         }
       }
@@ -699,7 +697,6 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       [image] = json_response(result, 200)["data"]["createInsight"]["images"]
 
       assert image["imageUrl"] == image_url
-      assert image["contentHash"] == @test_file_hash
 
       # assert that the file exists
       assert true == File.exists?(image_url)
@@ -713,7 +710,6 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
         createInsight(title: "Awesome post", text: "Example body", imageUrls: ["#{image_url}"]) {
           images{
             imageUrl
-            contentHash
           }
         }
       }
@@ -763,7 +759,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
               title
               text
               metrics{ name }
-              images{ imageUrl contentHash }
+              images{ imageUrl }
               tags { name }
           }
         }
@@ -797,7 +793,6 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
             text,
             images{
               imageUrl
-              contentHash
             }
             tags {
               name
@@ -1258,8 +1253,6 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     mutation = """
       mutation {
         uploadImage(images: ["img"]){
-          fileName
-          contentHash
           imageUrl
         }
       }

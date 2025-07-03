@@ -10,6 +10,14 @@ defmodule SanbaseWeb.ApiCallLimitTest do
   setup :set_mox_from_context
   setup :verify_on_exit!
 
+  setup_all do
+    Application.put_env(SanbaseWeb.Graphql.AbsintheBeforeSend, :api_call_exporting_enabled, true)
+
+    on_exit(fn ->
+      Application.delete_env(SanbaseWeb.Graphql.AbsintheBeforeSend, :api_call_exporting_enabled)
+    end)
+  end
+
   setup do
     san_user = insert(:user, email: "santiment@santiment.net")
     {:ok, san_apikey} = Sanbase.Accounts.Apikey.generate_apikey(san_user)
@@ -44,7 +52,13 @@ defmodule SanbaseWeb.ApiCallLimitTest do
     end
 
     test "make request after minute rate limit is applied", context do
-      Sanbase.ApiCallLimit.update_usage(:user, context.user, 200, :apikey)
+      Sanbase.ApiCallLimit.update_usage(
+        :user,
+        :apikey,
+        context.user,
+        _api_call_count = 200,
+        _result_size_bytes = 1000
+      )
 
       response = make_api_call(context.apikey_conn, [{"x-forwarded-for", @remote_ip}])
 
@@ -75,7 +89,13 @@ defmodule SanbaseWeb.ApiCallLimitTest do
     end
 
     test "make request after hour rate limit is applied", context do
-      Sanbase.ApiCallLimit.update_usage(:user, context.user, 600, :apikey)
+      Sanbase.ApiCallLimit.update_usage(
+        :user,
+        :apikey,
+        context.user,
+        _api_call_count = 600,
+        _result_size_bytes = 1000
+      )
 
       response = make_api_call(context.apikey_conn, [{"x-forwarded-for", @remote_ip}])
 
@@ -94,7 +114,14 @@ defmodule SanbaseWeb.ApiCallLimitTest do
     end
 
     test "make many requests after rate limit is applied", context do
-      Sanbase.ApiCallLimit.update_usage(:user, context.user, 1000, :apikey)
+      Sanbase.ApiCallLimit.update_usage(
+        :user,
+        :apikey,
+        context.user,
+        _api_call_count = 1000,
+        _result_size_bytes = 1000
+      )
+
       for _ <- 1..10, do: make_api_call(context.apikey_conn, [])
 
       response = make_api_call(context.apikey_conn, [])
@@ -114,7 +141,13 @@ defmodule SanbaseWeb.ApiCallLimitTest do
     end
 
     test "make request after month rate limit is applied", context do
-      Sanbase.ApiCallLimit.update_usage(:user, context.user, 2000, :apikey)
+      Sanbase.ApiCallLimit.update_usage(
+        :user,
+        :apikey,
+        context.user,
+        _api_call_count = 2000,
+        _result_size_bytes = 1000
+      )
 
       response = make_api_call(context.apikey_conn, [{"x-forwarded-for", @remote_ip}])
 
@@ -135,9 +168,10 @@ defmodule SanbaseWeb.ApiCallLimitTest do
     test "@santiment.net emails do not have limits", context do
       Sanbase.ApiCallLimit.update_usage(
         :user,
+        :apikey,
         context.san_user,
-        999_999_999,
-        :apikey
+        _api_call_count = 999_999_999,
+        _result_size_bytes = 1000
       )
 
       response = make_api_call(context.san_apikey_conn, [{"x-forwarded-for", @remote_ip}])
@@ -156,7 +190,13 @@ defmodule SanbaseWeb.ApiCallLimitTest do
     test "pro sanapi subscription before rate limiting", context do
       insert(:subscription_pro, user: context.user)
       # 600/6_000/600_000 are the minute/hour/month rate limits
-      Sanbase.ApiCallLimit.update_usage(:user, context.user, 500, :apikey)
+      Sanbase.ApiCallLimit.update_usage(
+        :user,
+        :apikey,
+        context.user,
+        _api_call_count = 500,
+        _result_size_bytes = 1000
+      )
 
       result =
         make_api_call(context.apikey_conn, [{"x-forwarded-for", @remote_ip}])
@@ -172,7 +212,13 @@ defmodule SanbaseWeb.ApiCallLimitTest do
 
       Sanbase.ApiCallLimit.update_user_plan(context.user)
       # 600/6_000/600_000 are the minute/hour/month rate limits
-      Sanbase.ApiCallLimit.update_usage(:user, context.user, 700, :apikey)
+      Sanbase.ApiCallLimit.update_usage(
+        :user,
+        :apikey,
+        context.user,
+        _api_call_count = 700,
+        _result_size_bytes = 1000
+      )
 
       response = make_api_call(context.apikey_conn, [{"x-forwarded-for", @remote_ip}])
 
@@ -192,7 +238,14 @@ defmodule SanbaseWeb.ApiCallLimitTest do
 
     test "concurrent update of the stored values", context do
       insert(:subscription_pro, user: context.user)
-      Sanbase.ApiCallLimit.update_usage(:user, context.user, 0, :apikey)
+
+      Sanbase.ApiCallLimit.update_usage(
+        :user,
+        :apikey,
+        context.user,
+        _api_call_count = 0,
+        _result_size_bytes = 0
+      )
 
       iterations = 100
       api_calls_per_iteration = 5
@@ -201,7 +254,12 @@ defmodule SanbaseWeb.ApiCallLimitTest do
         1..iterations,
         fn _ ->
           {:ok, _updated} =
-            Sanbase.ApiCallLimit.update_usage_db(:user, context.user, api_calls_per_iteration)
+            Sanbase.ApiCallLimit.update_usage_db(
+              :user,
+              context.user,
+              api_calls_per_iteration,
+              _result_size_bytes = 10_000
+            )
         end,
         max_concurrency: 30
       )
@@ -216,7 +274,14 @@ defmodule SanbaseWeb.ApiCallLimitTest do
 
     test "make many concurrent api calls - datetime goes over the next month", context do
       insert(:subscription_pro, user: context.user)
-      Sanbase.ApiCallLimit.update_usage(:user, context.user, 0, :apikey)
+
+      Sanbase.ApiCallLimit.update_usage(
+        :user,
+        :apikey,
+        context.user,
+        _api_call_count = 0,
+        _result_size_bytes = 0
+      )
 
       acl = Sanbase.Repo.get_by(Sanbase.ApiCallLimit, user_id: context.user.id)
       api_calls_made = Enum.max(Map.values(acl.api_calls))
@@ -283,7 +348,14 @@ defmodule SanbaseWeb.ApiCallLimitTest do
 
     test "make many concurrent api calls - all succeed", context do
       insert(:subscription_pro, user: context.user)
-      Sanbase.ApiCallLimit.update_usage(:user, context.user, 0, :apikey)
+
+      Sanbase.ApiCallLimit.update_usage(
+        :user,
+        :apikey,
+        context.user,
+        _api_calls_count = 0,
+        _result_byte_size = 0
+      )
 
       acl = Sanbase.Repo.get_by(Sanbase.ApiCallLimit, user_id: context.user.id)
       api_calls_made = Enum.max(Map.values(acl.api_calls))
@@ -350,7 +422,14 @@ defmodule SanbaseWeb.ApiCallLimitTest do
 
     test "make many concurrent api calls while updating user - all succeed", context do
       insert(:subscription_pro, user: context.user)
-      Sanbase.ApiCallLimit.update_usage(:user, context.user, 0, :apikey)
+
+      Sanbase.ApiCallLimit.update_usage(
+        :user,
+        :apikey,
+        context.user,
+        _api_calls_count = 0,
+        _result_byte_size = 0
+      )
 
       acl = Sanbase.Repo.get_by(Sanbase.ApiCallLimit, user_id: context.user.id)
       api_calls_made = Enum.max(Map.values(acl.api_calls))
@@ -423,7 +502,13 @@ defmodule SanbaseWeb.ApiCallLimitTest do
     test "make request before rate limit is applied", context do
       insert(:subscription_pro_sanbase, user: context.user)
 
-      Sanbase.ApiCallLimit.update_usage(:user, context.user, 50, :apikey)
+      Sanbase.ApiCallLimit.update_usage(
+        :user,
+        :apikey,
+        context.user,
+        _api_calls_count = 50,
+        _result_byte_size = 1000
+      )
 
       result =
         make_api_call(context.apikey_conn, [])
@@ -436,7 +521,14 @@ defmodule SanbaseWeb.ApiCallLimitTest do
 
     test "make request after minute rate limit is applied", context do
       insert(:subscription_pro_sanbase, user: context.user)
-      Sanbase.ApiCallLimit.update_usage(:user, context.user, 200, :apikey)
+
+      Sanbase.ApiCallLimit.update_usage(
+        :user,
+        :apikey,
+        context.user,
+        _api_calls_count = 200,
+        _result_byte_size = 1000
+      )
 
       response = make_api_call(context.apikey_conn, [{"x-forwarded-for", @remote_ip}])
 
@@ -470,9 +562,10 @@ defmodule SanbaseWeb.ApiCallLimitTest do
     test "ip address cannot make request after quota is exhausted", context do
       Sanbase.ApiCallLimit.update_usage(
         :remote_ip,
+        :unauthorized,
         @remote_ip,
-        999_999_999,
-        :unauthorized
+        _api_calls_count = 999_999_999,
+        _result_size = 1000
       )
 
       response = make_api_call(context.conn, [{"x-forwarded-for", @remote_ip}])
@@ -507,7 +600,14 @@ defmodule SanbaseWeb.ApiCallLimitTest do
         # Exhaust the minute and hour limits of the sanapi_free plan. The amount
         # should not exceed the minute limit of the sanapi_pro plan as it will get
         # ratelimited for the minute
-        Sanbase.ApiCallLimit.update_usage(:user, context.user, 550, :apikey)
+
+        Sanbase.ApiCallLimit.update_usage(
+          :user,
+          :apikey,
+          context.user,
+          _api_calls_count = 550,
+          _result_size = 1000
+        )
 
         response = make_api_call(context.apikey_conn, [{"x-forwarded-for", @remote_ip}])
 

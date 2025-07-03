@@ -366,8 +366,16 @@ defmodule Sanbase.Balance do
   def balances_table(slug, _infrastructure),
     do: {:error, "The slug #{slug} does not have support for realtime balances"}
 
-  def supported_infrastructures(),
-    do: ["ETH", "BTC", "BCH", "LTC", "BNB", "BEP2", "XRP"]
+  @supported_infrastructures ["ETH", "BTC", "BCH", "LTC", "BNB", "BEP2", "XRP"]
+
+  @supprorted_blockchains Enum.map(
+                            @supported_infrastructures,
+                            &Sanbase.BlockchainAddress.blockchain_from_infrastructure/1
+                          )
+                          |> Enum.uniq()
+
+  def supported_infrastructures(), do: @supported_infrastructures
+  def supported_blockchains(), do: @supprorted_blockchains
 
   # Private functions
 

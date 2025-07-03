@@ -27,6 +27,62 @@ defmodule Sanbase.TweetsApi do
   end
 
   @doc """
+  Fetches recent tweets for disagreement classification
+  """
+  @spec fetch_recent_tweets(keyword()) :: {:ok, list(map())} | {:error, any()}
+  def fetch_recent_tweets(opts \\ []) do
+    hours = Keyword.get(opts, :hours, 24)
+    size = Keyword.get(opts, :size, 10)
+
+    fetch_recent_tweets_from_api(hours, size)
+  end
+
+  @doc """
+  Fetches crypto influencer tweets for disagreement classification
+  """
+  @spec fetch_influencer_tweets(keyword()) :: {:ok, list(map())} | {:error, any()}
+  def fetch_influencer_tweets(opts \\ []) do
+    hours = Keyword.get(opts, :hours, 24)
+
+    fetch_influencer_tweets_from_api(hours)
+  end
+
+  @doc """
+  Classifies a tweet text using both AI models
+  """
+  @spec classify_tweet(String.t()) :: {:ok, map()} | {:error, any()}
+  def classify_tweet(tweet_text) do
+    classify_tweet_with_api(tweet_text)
+  end
+
+  @doc """
+  Fetches recent tweets and classifies them with disagreement detection
+  """
+  @spec fetch_and_classify_tweets(keyword()) :: {:ok, list(map())} | {:error, any()}
+  def fetch_and_classify_tweets(opts \\ []) do
+    case fetch_recent_tweets(opts) do
+      {:ok, tweets} ->
+        IO.puts("Classifying #{length(tweets)} tweets")
+
+        classified_tweets =
+          Enum.map(tweets, fn tweet ->
+            case classify_tweet(tweet["text"]) do
+              {:ok, classification} ->
+                Map.put(tweet, "classification", classification)
+
+              {:error, _} ->
+                tweet
+            end
+          end)
+
+        {:ok, classified_tweets}
+
+      error ->
+        error
+    end
+  end
+
+  @doc """
   Fetches price predictions from the AI server
   Returns a list of price predictions with tweet information and prediction data
 
@@ -47,6 +103,75 @@ defmodule Sanbase.TweetsApi do
     Cache.get_or_store(Cache.name(), cache_key, fn ->
       fetch_price_predictions_from_api(maksim_filter)
     end)
+  end
+
+  defp fetch_recent_tweets_from_api(hours, size) do
+    url = "#{ai_server_url()}/tweets/recent?hours=#{hours}&count=#{size}"
+
+    HTTPoison.get(url, [{"accept", "application/json"}],
+      timeout: 30_000,
+      recv_timeout: 30_000
+    )
+    |> handle_response("tweets")
+  end
+
+  defp fetch_influencer_tweets_from_api(hours) do
+    url = "#{ai_server_url()}/crypto/tweets?hours=#{hours}"
+
+    HTTPoison.get(url, [{"accept", "application/json"}],
+      timeout: 30_000,
+      recv_timeout: 30_000
+    )
+    |> handle_response("tweets")
+  end
+
+  defp classify_tweet_with_api(tweet_text) do
+    url = "#{ai_server_url()}/classify"
+    body = Jason.encode!(%{"tweet_text" => tweet_text})
+
+    HTTPoison.post(
+      url,
+      body,
+      [{"Content-Type", "application/json"}, {"accept", "application/json"}],
+      timeout: 30_000,
+      recv_timeout: 30_000
+    )
+    |> handle_classify_response()
+  end
+
+  defp handle_response({:ok, %HTTPoison.Response{status_code: 200, body: body}}, key) do
+    case Jason.decode(body) do
+      {:ok, %{^key => data}} -> {:ok, data}
+      {:ok, decoded} -> {:ok, decoded}
+      {:error, error} -> {:error, "JSON decode error: #{inspect(error)}"}
+    end
+  end
+
+  defp handle_response({:ok, %HTTPoison.Response{status_code: status_code, body: body}}, _key) do
+    Logger.error("API Error. Status: #{status_code}, body: #{body}")
+    {:error, "API Error. Status: #{status_code}"}
+  end
+
+  defp handle_response({:error, error}, _key) do
+    Logger.error("HTTP Error: #{inspect(error)}")
+    {:error, "HTTP Error: #{inspect(error)}"}
+  end
+
+  defp handle_classify_response({:ok, %HTTPoison.Response{status_code: 200, body: body}}) do
+    case Jason.decode(body) do
+      {:ok, data} -> {:ok, data}
+      {:error, error} -> {:error, "JSON decode error: #{inspect(error)}"}
+    end
+  end
+
+  defp handle_classify_response({:ok, %HTTPoison.Response{status_code: status_code, body: body}}) do
+    Logger.error("Classification API Error. Status: #{status_code}, body: #{body}")
+    {:error, "Classification API Error. Status: #{status_code}"}
+  end
+
+  defp handle_classify_response({:error, error}) do
+    Logger.error("Classification HTTP Error: #{inspect(error)}")
+    {:error, "Classification HTTP Error: #{inspect(error)}"}
   end
 
   defp fetch_price_predictions_from_api(maksim_filter) do

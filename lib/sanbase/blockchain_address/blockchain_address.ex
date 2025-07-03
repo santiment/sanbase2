@@ -99,7 +99,7 @@ defmodule Sanbase.BlockchainAddress do
       Regex.match?(@bitcoin_regex, address) ->
         "BTC"
 
-      Regex.match?(~r/^r[0-9a-zA-Z]]{23,33}$/, address) and
+      Regex.match?(~r/^r[0-9a-zA-Z]{24,34}$/, address) and
           not Regex.match?(~r/[0OlI]/, address) ->
         "XRP"
 

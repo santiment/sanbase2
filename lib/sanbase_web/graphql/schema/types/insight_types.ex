@@ -27,6 +27,10 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
     field(:highlights, :post_highlights)
   end
 
+  object :post_image_data do
+    field(:image_url, non_null(:string))
+  end
+
   object :post do
     field(:id, non_null(:integer))
 
@@ -45,7 +49,11 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
     field(:state, :string)
     field(:moderation_comment, :string)
     field(:ready_state, :string)
-    field(:images, list_of(:image_data))
+
+    field :images, list_of(:post_image_data) do
+      resolve(&InsightResolver.extract_images_from_text/3)
+    end
+
     field(:tags, list_of(:tag))
     field(:metrics, list_of(:metric_short_description), resolve: dataloader(SanbaseRepo))
     field(:price_chart_project, :project, resolve: dataloader(SanbaseRepo))

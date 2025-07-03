@@ -329,6 +329,28 @@ defmodule Sanbase.Application do
          acquire_lock_timeout: 60_000
        ]},
 
+      # Mutex for forcing sequential execution when updating api call limits
+      start_if(
+        fn ->
+          Supervisor.child_spec(
+            {Mutex, name: Sanbase.ApiCallLimitMutex},
+            id: Sanbase.ApiCallLimitMutex
+          )
+        end,
+        fn -> container_type() in ["web", "all"] end
+      ),
+
+      # Start the graphQL in-memory cache
+      start_if(
+        fn ->
+          SanbaseWeb.Graphql.Cache.child_spec(
+            id: :graphql_api_cache,
+            name: :graphql_cache
+          )
+        end,
+        fn -> container_type() in ["web", "all"] end
+      ),
+
       # Service for fast checking if a slug is valid
       # `:available_slugs_module` option changes the module
       # used in test env to another one, this one is unused
@@ -342,6 +364,12 @@ defmodule Sanbase.Application do
 
       # Start the endpoint when the application starts
       SanbaseWeb.Endpoint,
+
+      # Drain the running connections before closing. This will allow the
+      # currently executing API calls to finish. The drainer first makes
+      # the TCP acceptor to stop accepting new connections and then waits
+      # until there are no connections or 30 seconds pass.
+      {SanbaseWeb.ConnectionDrainer, shutdown: 30_000, ranch_ref: SanbaseWeb.Endpoint.HTTP},
 
       # Process that starts test-only deps
       start_in(Sanbase.TestSetupService, [:test]),

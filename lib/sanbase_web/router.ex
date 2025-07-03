@@ -78,6 +78,8 @@ defmodule SanbaseWeb.Router do
     # Project Changelog routes
     live("/project_changelog", ProjectChangelogLive)
 
+    live("/academy_qa", AcademyQALive)
+
     scope "/metric_registry" do
       live_session :require_authenticated_user,
         on_mount: [
@@ -121,6 +123,16 @@ defmodule SanbaseWeb.Router do
 
     scope "/price_predictions" do
       live("/", PricePredictionsLive)
+    end
+
+    scope "/disagreement_tweets" do
+      live_session :disagreement_tweets_authenticated_user,
+        on_mount: [
+          {SanbaseWeb.AdminUserAuth, :ensure_authenticated},
+          {SanbaseWeb.AdminUserAuth, :extract_and_assign_current_user_roles}
+        ] do
+        live("/", DisagreementTweetsLive)
+      end
     end
 
     live_dashboard("/dashboard", metrics: SanbaseWeb.Telemetry, ecto_repos: [Sanbase.Repo])

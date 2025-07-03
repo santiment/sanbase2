@@ -4,6 +4,14 @@ defmodule SanbaseWeb.Plans.BusinessPlansTest do
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
+  setup_all do
+    Application.put_env(SanbaseWeb.Graphql.AbsintheBeforeSend, :api_call_exporting_enabled, true)
+
+    on_exit(fn ->
+      Application.delete_env(SanbaseWeb.Graphql.AbsintheBeforeSend, :api_call_exporting_enabled)
+    end)
+  end
+
   setup do
     user = insert(:user, email: "test@example.com")
     insert(:subscription_business_max_monthly, user: user)

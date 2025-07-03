@@ -14,6 +14,7 @@ port = String.to_integer(System.get_env("PORT") || "4000")
 config :sanbase, SanbaseWeb.Endpoint,
   http: [
     :inet6,
+    compress: true,
     port: port,
     protocol_options: [
       # Bump up cowboy2's timeout to 100 seconds

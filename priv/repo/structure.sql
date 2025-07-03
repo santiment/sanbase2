@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.1 (Homebrew)
--- Dumped by pg_dump version 15.1 (Homebrew)
+-- Dumped from database version 15.10 (Homebrew)
+-- Dumped by pg_dump version 15.10 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -476,7 +476,9 @@ CREATE TABLE public.api_call_limits (
     has_limits boolean DEFAULT true,
     api_calls_limit_plan character varying(255) DEFAULT 'free'::character varying,
     api_calls jsonb DEFAULT '{}'::jsonb,
-    has_limits_no_matter_plan boolean DEFAULT true
+    has_limits_no_matter_plan boolean DEFAULT true,
+    api_calls_responses_size_mb jsonb DEFAULT '{}'::jsonb,
+    api_calls_limit_subscription_status character varying(255) DEFAULT 'active'::character varying
 );
 
 
@@ -823,6 +825,36 @@ CREATE TABLE public.chats (
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
     type character varying(255) DEFAULT 'dyor_dashboard'::character varying NOT NULL
+);
+
+
+--
+-- Name: classified_tweets; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.classified_tweets (
+    id bigint NOT NULL,
+    tweet_id character varying(255) NOT NULL,
+    "timestamp" timestamp(0) without time zone NOT NULL,
+    screen_name character varying(255) NOT NULL,
+    text text NOT NULL,
+    url character varying(255) NOT NULL,
+    agreement boolean DEFAULT false NOT NULL,
+    openai_is_prediction boolean,
+    openai_prob_true double precision,
+    openai_prob_false double precision,
+    openai_prob_other double precision,
+    openai_time_seconds double precision,
+    llama_is_prediction boolean,
+    llama_prob_true double precision,
+    llama_prob_false double precision,
+    llama_prob_other double precision,
+    llama_time_seconds double precision,
+    classification_count integer DEFAULT 0,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL,
+    review_required boolean DEFAULT true NOT NULL,
+    experts_is_prediction boolean
 );
 
 
@@ -1195,6 +1227,25 @@ ALTER SEQUENCE public.dashboards_id_seq OWNED BY public.dashboards.id;
 
 
 --
+-- Name: disagreement_tweets_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.disagreement_tweets_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: disagreement_tweets_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.disagreement_tweets_id_seq OWNED BY public.classified_tweets.id;
+
+
+--
 -- Name: discord_dashboards; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1265,38 +1316,6 @@ CREATE SEQUENCE public.ecosystems_id_seq
 --
 
 ALTER SEQUENCE public.ecosystems_id_seq OWNED BY public.ecosystems.id;
-
-
---
--- Name: email_login_attempts; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.email_login_attempts (
-    id bigint NOT NULL,
-    user_id bigint NOT NULL,
-    ip_address character varying(39),
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
-);
-
-
---
--- Name: email_login_attempts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.email_login_attempts_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: email_login_attempts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.email_login_attempts_id_seq OWNED BY public.email_login_attempts.id;
 
 
 --
@@ -2144,9 +2163,9 @@ CREATE TABLE public.metric_registry (
     deprecation_note text,
     inserted_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
-    status character varying(255) DEFAULT 'released'::character varying NOT NULL,
     is_verified boolean DEFAULT true NOT NULL,
     sync_status character varying(255) DEFAULT 'synced'::character varying NOT NULL,
+    status character varying(255) DEFAULT 'released'::character varying NOT NULL,
     last_sync_datetime timestamp(0) without time zone
 );
 
@@ -4211,6 +4230,40 @@ ALTER SEQUENCE public.timeline_events_id_seq OWNED BY public.timeline_events.id;
 
 
 --
+-- Name: tweet_classifications; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.tweet_classifications (
+    id bigint NOT NULL,
+    classified_tweet_id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    is_prediction boolean NOT NULL,
+    classified_at timestamp(0) without time zone NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: tweet_classifications_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.tweet_classifications_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: tweet_classifications_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.tweet_classifications_id_seq OWNED BY public.tweet_classifications.id;
+
+
+--
 -- Name: tweet_predictions; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -5241,6 +5294,13 @@ ALTER TABLE ONLY public.chart_configurations ALTER COLUMN id SET DEFAULT nextval
 
 
 --
+-- Name: classified_tweets id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.classified_tweets ALTER COLUMN id SET DEFAULT nextval('public.disagreement_tweets_id_seq'::regclass);
+
+
+--
 -- Name: clickhouse_query_executions id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -5322,13 +5382,6 @@ ALTER TABLE ONLY public.discord_dashboards ALTER COLUMN id SET DEFAULT nextval('
 --
 
 ALTER TABLE ONLY public.ecosystems ALTER COLUMN id SET DEFAULT nextval('public.ecosystems_id_seq'::regclass);
-
-
---
--- Name: email_login_attempts id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.email_login_attempts ALTER COLUMN id SET DEFAULT nextval('public.email_login_attempts_id_seq'::regclass);
 
 
 --
@@ -5864,6 +5917,13 @@ ALTER TABLE ONLY public.timeline_events ALTER COLUMN id SET DEFAULT nextval('pub
 
 
 --
+-- Name: tweet_classifications id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tweet_classifications ALTER COLUMN id SET DEFAULT nextval('public.tweet_classifications_id_seq'::regclass);
+
+
+--
 -- Name: tweet_predictions id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6256,6 +6316,14 @@ ALTER TABLE ONLY public.dashboards
 
 
 --
+-- Name: classified_tweets disagreement_tweets_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.classified_tweets
+    ADD CONSTRAINT disagreement_tweets_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: discord_dashboards discord_dashboards_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6269,14 +6337,6 @@ ALTER TABLE ONLY public.discord_dashboards
 
 ALTER TABLE ONLY public.ecosystems
     ADD CONSTRAINT ecosystems_pkey PRIMARY KEY (id);
-
-
---
--- Name: email_login_attempts email_login_attempts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.email_login_attempts
-    ADD CONSTRAINT email_login_attempts_pkey PRIMARY KEY (id);
 
 
 --
@@ -6960,6 +7020,14 @@ ALTER TABLE ONLY public.timeline_events
 
 
 --
+-- Name: tweet_classifications tweet_classifications_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tweet_classifications
+    ADD CONSTRAINT tweet_classifications_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: tweet_predictions tweet_predictions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7351,6 +7419,20 @@ CREATE INDEX chats_user_id_index ON public.chats USING btree (user_id);
 
 
 --
+-- Name: classified_tweets_experts_is_prediction_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX classified_tweets_experts_is_prediction_index ON public.classified_tweets USING btree (experts_is_prediction);
+
+
+--
+-- Name: classified_tweets_review_required_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX classified_tweets_review_required_index ON public.classified_tweets USING btree (review_required);
+
+
+--
 -- Name: clickhouse_query_executions_query_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7428,6 +7510,27 @@ CREATE INDEX dashboards_history_hash_index ON public.dashboards_history USING bt
 
 
 --
+-- Name: disagreement_tweets_classification_count_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX disagreement_tweets_classification_count_index ON public.classified_tweets USING btree (classification_count);
+
+
+--
+-- Name: disagreement_tweets_timestamp_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX disagreement_tweets_timestamp_index ON public.classified_tweets USING btree ("timestamp");
+
+
+--
+-- Name: disagreement_tweets_tweet_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX disagreement_tweets_tweet_id_index ON public.classified_tweets USING btree (tweet_id);
+
+
+--
 -- Name: discord_dashboards_dashboard_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7453,20 +7556,6 @@ CREATE INDEX document_tokens_index ON public.posts USING gin (document_tokens);
 --
 
 CREATE UNIQUE INDEX ecosystems_ecosystem_index ON public.ecosystems USING btree (ecosystem);
-
-
---
--- Name: email_login_attempts_ip_address_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX email_login_attempts_ip_address_index ON public.email_login_attempts USING btree (ip_address);
-
-
---
--- Name: email_login_attempts_user_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX email_login_attempts_user_id_index ON public.email_login_attempts USING btree (user_id);
 
 
 --
@@ -8135,6 +8224,20 @@ CREATE INDEX timeline_events_user_trigger_id_index ON public.timeline_events USI
 
 
 --
+-- Name: tweet_classifications_disagreement_tweet_id_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX tweet_classifications_disagreement_tweet_id_user_id_index ON public.tweet_classifications USING btree (classified_tweet_id, user_id);
+
+
+--
+-- Name: tweet_classifications_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX tweet_classifications_user_id_index ON public.tweet_classifications USING btree (user_id);
+
+
+--
 -- Name: tweet_predictions_tweet_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8732,14 +8835,6 @@ ALTER TABLE ONLY public.discord_dashboards
 
 ALTER TABLE ONLY public.discord_dashboards
     ADD CONSTRAINT discord_dashboards_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
-
-
---
--- Name: email_login_attempts email_login_attempts_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.email_login_attempts
-    ADD CONSTRAINT email_login_attempts_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
 
 
 --
@@ -9468,6 +9563,22 @@ ALTER TABLE ONLY public.timeline_events
 
 ALTER TABLE ONLY public.timeline_events
     ADD CONSTRAINT timeline_events_user_trigger_id_fkey FOREIGN KEY (user_trigger_id) REFERENCES public.user_triggers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: tweet_classifications tweet_classifications_disagreement_tweet_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tweet_classifications
+    ADD CONSTRAINT tweet_classifications_disagreement_tweet_id_fkey FOREIGN KEY (classified_tweet_id) REFERENCES public.classified_tweets(id) ON DELETE CASCADE;
+
+
+--
+-- Name: tweet_classifications tweet_classifications_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tweet_classifications
+    ADD CONSTRAINT tweet_classifications_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -10236,13 +10347,13 @@ INSERT INTO public."schema_migrations" (version) VALUES (20241029080754);
 INSERT INTO public."schema_migrations" (version) VALUES (20241029082533);
 INSERT INTO public."schema_migrations" (version) VALUES (20241029151959);
 INSERT INTO public."schema_migrations" (version) VALUES (20241030141825);
-INSERT INTO public."schema_migrations" (version) VALUES (20241104061632);
 INSERT INTO public."schema_migrations" (version) VALUES (20241104115340);
 INSERT INTO public."schema_migrations" (version) VALUES (20241108112754);
 INSERT INTO public."schema_migrations" (version) VALUES (20241112094924);
 INSERT INTO public."schema_migrations" (version) VALUES (20241114140339);
 INSERT INTO public."schema_migrations" (version) VALUES (20241114141110);
 INSERT INTO public."schema_migrations" (version) VALUES (20241116104556);
+INSERT INTO public."schema_migrations" (version) VALUES (20241121133719);
 INSERT INTO public."schema_migrations" (version) VALUES (20241128113958);
 INSERT INTO public."schema_migrations" (version) VALUES (20241128161315);
 INSERT INTO public."schema_migrations" (version) VALUES (20241202104812);
@@ -10250,6 +10361,7 @@ INSERT INTO public."schema_migrations" (version) VALUES (20241212054904);
 INSERT INTO public."schema_migrations" (version) VALUES (20250110083203);
 INSERT INTO public."schema_migrations" (version) VALUES (20250117000001);
 INSERT INTO public."schema_migrations" (version) VALUES (20250121155544);
+INSERT INTO public."schema_migrations" (version) VALUES (20250124152414);
 INSERT INTO public."schema_migrations" (version) VALUES (20250203104426);
 INSERT INTO public."schema_migrations" (version) VALUES (20250207100755);
 INSERT INTO public."schema_migrations" (version) VALUES (20250207134446);
@@ -10274,5 +10386,10 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250507135031);
 INSERT INTO public."schema_migrations" (version) VALUES (20250512124853);
 INSERT INTO public."schema_migrations" (version) VALUES (20250512130838);
 INSERT INTO public."schema_migrations" (version) VALUES (20250512140823);
-INSERT INTO public."schema_migrations" (version) VALUES (20250512141238);
 INSERT INTO public."schema_migrations" (version) VALUES (20250604072648);
+INSERT INTO public."schema_migrations" (version) VALUES (20250605123515);
+INSERT INTO public."schema_migrations" (version) VALUES (20250610155025);
+INSERT INTO public."schema_migrations" (version) VALUES (20250611104342);
+INSERT INTO public."schema_migrations" (version) VALUES (20250612090655);
+INSERT INTO public."schema_migrations" (version) VALUES (20250612131900);
+INSERT INTO public."schema_migrations" (version) VALUES (20250612133320);

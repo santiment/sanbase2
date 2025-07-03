@@ -13,26 +13,32 @@ defmodule SanbaseWeb.Graphql.Middlewares.TransformResolution do
     definition.name
     |> Macro.underscore()
     |> String.to_existing_atom()
-    |> do_call(resolution)
+    |> do_call(definition.alias, resolution)
   end
 
-  defp do_call(:get_metric, %Resolution{context: context} = resolution) do
+  defp do_call(:get_metric, alias, %Resolution{context: context} = resolution) do
     %{arguments: %{metric: metric}} = resolution
     selectors = get_selectors(resolution)
-    elem = {:get_metric, metric, selectors}
+    # In case of no alias, use the query name as alias. It is guaranteed that if there are two
+    # of the same queries in a document, at least one of them will have an alias,
+    # otherwise we get name collision.
+    elem = {:get_metric, alias || "getMetric", metric, selectors}
 
     %{resolution | context: Map.update(context, :__get_query_name_arg__, [elem], &[elem | &1])}
   end
 
-  defp do_call(:get_signal, %Resolution{context: context} = resolution) do
+  defp do_call(:get_signal, alias, %Resolution{context: context} = resolution) do
     %{arguments: %{signal: signal}} = resolution
     selectors = get_selectors(resolution)
-    elem = {:get_signal, signal, selectors}
+    # In case of no alias, use the query name as alias. It is guaranteed that if there are two
+    # of the same queries in a document, at least one of them will have an alias,
+    # otherwise we get name collision.
+    elem = {:get_signal, alias || "getSignal", signal, selectors}
 
     %{resolution | context: Map.update(context, :__get_query_name_arg__, [elem], &[elem | &1])}
   end
 
-  defp do_call(_query_field, %Resolution{} = resolution) do
+  defp do_call(_query_field, _alias, %Resolution{} = resolution) do
     resolution
   end
 

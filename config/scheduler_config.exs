@@ -8,7 +8,7 @@ config :sanbase, Sanbase.Alerts.Scheduler,
   overlap: false,
   jobs: [
     monitor_excessive_sanbase_usage: [
-      schedule: "0 */3 * * *",
+      schedule: "0 * * * *",
       task: {Sanbase.Mix.LogoutExcessiveUsage, :run, []}
     ],
     freeze_user_alerts: [
@@ -170,10 +170,6 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     sync_nft_subscriptions: [
       schedule: "9-59/10 * * * *",
       task: {Sanbase.Billing.Subscription.NFTSubscription, :run, []}
-    ],
-    manage_postgres_index2: [
-      schedule: "10 * * * *",
-      task: {Sanbase.DiscordBot.AiServer, :manage_postgres_index2, []}
     ],
     renew_available_metrics_slugs: [
       schedule: "@daily",

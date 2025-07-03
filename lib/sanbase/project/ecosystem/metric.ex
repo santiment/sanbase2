@@ -16,7 +16,7 @@ defmodule Sanbase.Ecosystem.Metric do
 
     query = aggregated_timeseries_data_query(ecosystems, metric, from, to, aggregation)
 
-    case Sanbase.ClickhouseRepo.query_transform(query, & &1) do
+    case Sanbase.ChRepo.query_transform(query, & &1) do
       {:ok, data} ->
         result =
           Enum.map(data, fn [ecosystem, value] -> %{ecosystem: ecosystem, value: value} end)
@@ -34,7 +34,7 @@ defmodule Sanbase.Ecosystem.Metric do
 
     query = timeseries_data_query(ecosystems, metric, from, to, interval, aggregation)
 
-    case Sanbase.ClickhouseRepo.query_transform(query, & &1) do
+    case Sanbase.ChRepo.query_transform(query, & &1) do
       {:ok, data} ->
         result =
           Enum.map(data, fn [ecosystem, dt, value] ->

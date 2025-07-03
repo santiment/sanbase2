@@ -68,7 +68,8 @@ defmodule Sanbase.Chat do
           chat_id: chat_id,
           content: content,
           role: role,
-          context: context
+          context: context,
+          sources: []
         }
         |> ChatMessage.create_changeset()
         |> Repo.insert()
@@ -100,6 +101,45 @@ defmodule Sanbase.Chat do
           {:ok, ChatMessage.t()} | {:error, Ecto.Changeset.t()}
   def add_assistant_response(chat_id, content, context \\ %{}) do
     add_message_to_chat(chat_id, content, :assistant, context)
+  end
+
+  @doc """
+  Adds an assistant response with sources to a chat conversation.
+  """
+  @spec add_assistant_response_with_sources(Ecto.UUID.t(), String.t(), [map()], map()) ::
+          {:ok, ChatMessage.t()} | {:error, Ecto.Changeset.t()}
+  def add_assistant_response_with_sources(chat_id, content, sources, context \\ %{}) do
+    Repo.transaction(fn ->
+      # Insert the message with sources
+      message_result =
+        %{
+          chat_id: chat_id,
+          content: content,
+          role: :assistant,
+          context: context,
+          sources: sources
+        }
+        |> ChatMessage.create_changeset()
+        |> Repo.insert()
+
+      case message_result do
+        {:ok, message} ->
+          # Update the chat's updated_at timestamp
+          case get_chat(chat_id) do
+            nil ->
+              Repo.rollback({:error, :chat_not_found})
+
+            chat ->
+              case touch_chat_updated_at(chat) do
+                {:ok, _} -> message
+                {:error, changeset} -> Repo.rollback(changeset)
+              end
+          end
+
+        {:error, changeset} ->
+          Repo.rollback(changeset)
+      end
+    end)
   end
 
   @doc """

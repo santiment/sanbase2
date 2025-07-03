@@ -16,6 +16,7 @@ defmodule Sanbase.Chat.ChatMessage do
           content: String.t(),
           role: role(),
           context: context(),
+          sources: [map()],
           chat_id: Ecto.UUID.t(),
           chat: Chat.t() | Ecto.Association.NotLoaded.t(),
           inserted_at: DateTime.t(),
@@ -31,13 +32,14 @@ defmodule Sanbase.Chat.ChatMessage do
     field(:content, :string)
     field(:role, Ecto.Enum, values: @roles)
     field(:context, :map, default: %{})
+    field(:sources, {:array, :map})
     belongs_to(:chat, Chat)
 
     timestamps()
   end
 
   @required_fields [:content, :role, :chat_id]
-  @optional_fields [:context]
+  @optional_fields [:context, :sources]
 
   @spec changeset(t(), map()) :: Ecto.Changeset.t()
   def changeset(%__MODULE__{} = chat_message, attrs \\ %{}) do

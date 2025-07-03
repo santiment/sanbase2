@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.10 (Homebrew)
--- Dumped by pg_dump version 15.10 (Homebrew)
+-- Dumped from database version 15.1 (Homebrew)
+-- Dumped by pg_dump version 15.1 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -810,7 +810,8 @@ CREATE TABLE public.chat_messages (
     context jsonb DEFAULT '{}'::jsonb,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    CONSTRAINT valid_role CHECK (((role)::text = ANY ((ARRAY['user'::character varying, 'assistant'::character varying])::text[])))
+    sources jsonb[] DEFAULT ARRAY[]::jsonb[],
+    CONSTRAINT valid_role CHECK (((role)::text = ANY (ARRAY[('user'::character varying)::text, ('assistant'::character varying)::text])))
 );
 
 
@@ -7398,6 +7399,13 @@ CREATE INDEX chat_messages_role_index ON public.chat_messages USING btree (role)
 
 
 --
+-- Name: chat_messages_sources_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX chat_messages_sources_index ON public.chat_messages USING gin (sources);
+
+
+--
 -- Name: chats_inserted_at_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10393,3 +10401,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250611104342);
 INSERT INTO public."schema_migrations" (version) VALUES (20250612090655);
 INSERT INTO public."schema_migrations" (version) VALUES (20250612131900);
 INSERT INTO public."schema_migrations" (version) VALUES (20250612133320);
+INSERT INTO public."schema_migrations" (version) VALUES (20250703133723);

@@ -11,6 +11,7 @@ defmodule SanbaseWeb.Graphql.ChatTypes do
 
   enum :chat_type do
     value(:dyor_dashboard)
+    value(:academy_qa)
   end
 
   object :chat_context do
@@ -30,6 +31,7 @@ defmodule SanbaseWeb.Graphql.ChatTypes do
     field(:content, non_null(:string))
     field(:role, non_null(:chat_message_role))
     field(:context, :json)
+    field(:sources, :json)
     field(:inserted_at, non_null(:datetime))
     field(:updated_at, non_null(:datetime))
 
@@ -45,6 +47,7 @@ defmodule SanbaseWeb.Graphql.ChatTypes do
         # Convert string type to enum value
         case chat.type do
           "dyor_dashboard" -> {:ok, :dyor_dashboard}
+          "academy_qa" -> {:ok, :academy_qa}
           # fallback to default
           _ -> {:ok, :dyor_dashboard}
         end
@@ -78,6 +81,7 @@ defmodule SanbaseWeb.Graphql.ChatTypes do
         # Convert string type to enum value
         case chat.type do
           "dyor_dashboard" -> {:ok, :dyor_dashboard}
+          "academy_qa" -> {:ok, :academy_qa}
           # fallback to default
           _ -> {:ok, :dyor_dashboard}
         end

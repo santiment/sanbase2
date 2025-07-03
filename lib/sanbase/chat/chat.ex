@@ -5,7 +5,7 @@ defmodule Sanbase.Chat.Chat do
   alias Sanbase.Accounts.User
   alias Sanbase.Chat.ChatMessage
 
-  @chat_types ["dyor_dashboard"]
+  @chat_types ["dyor_dashboard", "academy_qa"]
 
   @type t :: %__MODULE__{
           id: Ecto.UUID.t(),

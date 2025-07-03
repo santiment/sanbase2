@@ -21,6 +21,7 @@ The Chat system provides a complete conversation interface where users can inter
 - `content` (text, required) - Message content
 - `role` (enum: :user, :assistant) - Message author role
 - `context` (map) - Contextual metadata (dashboard_id, asset, metrics)
+- `sources` (array of maps) - Academy QA source references with title, URL, similarity
 - `inserted_at`, `updated_at` (timestamps)
 
 ### Indexes
@@ -90,6 +91,7 @@ type ChatMessage {
   content: String!
   role: ChatMessageRole!
   context: JSON
+  sources: JSON
   insertedAt: DateTime!
   updatedAt: DateTime!
   chat: Chat
@@ -247,6 +249,20 @@ query {
 - Common fields: dashboard_id, asset, metrics
 - Validated at schema level for known fields
 - Stored as JSON in database
+
+### Sources Support
+- Academy QA chat type returns structured sources alongside AI responses
+- Sources field contains array of maps with title, URL, similarity, and other metadata
+- Sources are stored separately from assistant response content for frontend flexibility
+- Available through GraphQL API as JSON field on ChatMessage type
+
+### Academy API Integration
+- Academy QA chats integrate with aiserver API at `/academy/query` endpoint
+- API receives: question, chat_id, message_id, chat_history (up to 20 messages), user_id
+- chat_id: UUID of the chat conversation for context tracking
+- message_id: UUID of the specific user message being processed
+- user_id: User ID or "anonymous" for unauthenticated users
+- API returns structured response with answer text and sources array
 
 ### Message Ordering
 - Messages ordered by `inserted_at` chronologically

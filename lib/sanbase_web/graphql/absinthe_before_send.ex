@@ -24,6 +24,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   Most of the simple queries use 1 cache call and won't benefit from this approach.
   Only queries with many resolvers are included in the list of allowed queries.
   """
+  require Logger
 
   alias SanbaseWeb.Graphql.Cache
   alias Sanbase.Utils.IP
@@ -289,15 +290,19 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   end
 
   defp generate_id() do
+    IO.inspect(Process.get(:"$logger_metadata$"))
+    request_id = (Process.get(:"$logger_metadata$") || %{}) |> Map.get(:request_id)
+
+    IO.inspect(request_id)
     # All ids in the batch need to be different so there's at least one field
     # that is different for all api calls, otherwise they can be squashed into
     # a single row when ingested in Clickhouse
-    case Logger.metadata() |> Keyword.get(:request_id) do
+    case Process.get(:"$logger_metadata$") do
+      %{request_id: request_id} when is_binary(request_id) ->
+        request_id <> "_" <> (:crypto.strong_rand_bytes(6) |> Base.encode64())
+
       nil ->
         "gen_" <> (:crypto.strong_rand_bytes(16) |> Base.encode64())
-
-      request_id ->
-        request_id <> "_" <> (:crypto.strong_rand_bytes(6) |> Base.encode64())
     end
   end
 

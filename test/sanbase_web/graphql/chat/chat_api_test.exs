@@ -133,19 +133,34 @@ defmodule SanbaseWeb.Graphql.ChatApiTest do
       assert user_message["context"] == %{}
     end
 
-    test "fails without authentication" do
+    test "creates anonymous chat when not authenticated" do
       mutation = """
       mutation {
         sendChatMessage(
           content: "Test message"
         ) {
           id
+          title
+          chatMessages {
+            content
+            role
+          }
         }
       }
       """
 
-      result = execute_mutation_with_errors(mutation, build_conn())
-      assert result["message"] == "unauthorized"
+      result = execute_mutation_with_success(mutation, "sendChatMessage", build_conn())
+
+      # Verify anonymous chat was created
+      assert result["title"] == "Test message"
+      assert length(result["chatMessages"]) >= 1
+
+      user_message = Enum.find(result["chatMessages"], &(&1["role"] == "USER"))
+      assert user_message["content"] == "Test message"
+
+      # Verify chat exists in database as anonymous
+      chat = Chat.get_chat(result["id"])
+      assert chat.user_id == nil
     end
 
     test "creates chat with long message and AI-generated title", %{conn: conn} do

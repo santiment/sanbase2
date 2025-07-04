@@ -822,7 +822,7 @@ CREATE TABLE public.chat_messages (
 CREATE TABLE public.chats (
     id uuid NOT NULL,
     title character varying(255) NOT NULL,
-    user_id bigint NOT NULL,
+    user_id integer,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
     type character varying(255) DEFAULT 'dyor_dashboard'::character varying NOT NULL
@@ -7406,6 +7406,13 @@ CREATE INDEX chat_messages_sources_index ON public.chat_messages USING gin (sour
 
 
 --
+-- Name: chats_anonymous_updated_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX chats_anonymous_updated_at_index ON public.chats USING btree (updated_at) WHERE (user_id IS NULL);
+
+
+--
 -- Name: chats_inserted_at_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7424,6 +7431,13 @@ CREATE INDEX chats_type_index ON public.chats USING btree (type);
 --
 
 CREATE INDEX chats_user_id_index ON public.chats USING btree (user_id);
+
+
+--
+-- Name: chats_user_id_updated_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX chats_user_id_updated_at_index ON public.chats USING btree (user_id, updated_at);
 
 
 --
@@ -10402,3 +10416,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250612090655);
 INSERT INTO public."schema_migrations" (version) VALUES (20250612131900);
 INSERT INTO public."schema_migrations" (version) VALUES (20250612133320);
 INSERT INTO public."schema_migrations" (version) VALUES (20250703133723);
+INSERT INTO public."schema_migrations" (version) VALUES (20250703144448);

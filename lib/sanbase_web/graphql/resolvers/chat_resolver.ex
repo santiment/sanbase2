@@ -39,7 +39,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChatResolver do
         {:error, "Chat not found"}
 
       chat ->
-        if chat.user_id == current_user.id do
+        if can_access_chat?(chat, current_user) do
+          {:ok, chat}
+        else
+          {:error, "Access denied"}
+        end
+    end
+  end
+
+  def get_chat(_root, %{id: chat_id}, _context) do
+    case Chat.get_chat_with_messages(chat_id) do
+      nil ->
+        {:error, "Chat not found"}
+
+      chat ->
+        if can_access_chat?(chat, nil) do
           {:ok, chat}
         else
           {:error, "Access denied"}
@@ -56,7 +70,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChatResolver do
         {:error, "Chat not found"}
 
       chat ->
-        if chat.user_id == current_user.id do
+        if can_access_chat?(chat, current_user) do
+          limit = Map.get(args, :limit, 50)
+          offset = Map.get(args, :offset, 0)
+          messages = Chat.get_chat_messages(chat_id, limit: limit, offset: offset)
+          {:ok, messages}
+        else
+          {:error, "Access denied"}
+        end
+    end
+  end
+
+  def get_chat_messages(_root, %{chat_id: chat_id} = args, _context) do
+    case Chat.get_chat(chat_id) do
+      nil ->
+        {:error, "Chat not found"}
+
+      chat ->
+        if can_access_chat?(chat, nil) do
           limit = Map.get(args, :limit, 50)
           offset = Map.get(args, :offset, 0)
           messages = Chat.get_chat_messages(chat_id, limit: limit, offset: offset)
@@ -125,6 +156,63 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChatResolver do
     result
   end
 
+  def send_chat_message(_root, args, _context) do
+    context = parse_context_input(Map.get(args, :context, %{}))
+    chat_type = convert_enum_to_string(Map.get(args, :type, :dyor_dashboard))
+
+    result =
+      case Map.get(args, :chat_id) do
+        nil ->
+          # Create new anonymous chat with the user message
+          case Chat.create_chat_with_message(nil, args.content, context, chat_type) do
+            {:ok, chat} ->
+              # Get the initial user message ID (first message in a new chat)
+              user_message = List.first(chat.chat_messages)
+
+              # For new chats, generate AI response synchronously (no title generation for anonymous)
+              maybe_generate_ai_response(chat, args.content, context, nil,
+                is_new_chat: true,
+                message_id: user_message.id
+              )
+
+              # Return the updated chat with AI response
+              {:ok, Chat.get_chat_with_messages(chat.id)}
+
+            {:error, changeset} ->
+              {:error, format_changeset_errors(changeset)}
+          end
+
+        chat_id ->
+          # Add user message to existing anonymous chat
+          case Chat.get_chat(chat_id) do
+            nil ->
+              {:error, "Chat not found"}
+
+            chat ->
+              if can_access_chat?(chat, nil) do
+                case Chat.add_message_to_chat(chat_id, args.content, :user, context) do
+                  {:ok, message} ->
+                    # Generate AI response for existing chat synchronously
+                    maybe_generate_ai_response(chat, args.content, context, nil,
+                      is_new_chat: false,
+                      message_id: message.id
+                    )
+
+                    # Return the updated chat with AI response
+                    {:ok, Chat.get_chat_with_messages(chat_id)}
+
+                  {:error, changeset} ->
+                    {:error, format_changeset_errors(changeset)}
+                end
+              else
+                {:error, "Access denied"}
+              end
+          end
+      end
+
+    result
+  end
+
   @doc "Delete a chat"
   def delete_chat(_root, %{id: chat_id}, %{context: %{auth: %{current_user: current_user}}}) do
     case Chat.get_chat(chat_id) do
@@ -132,7 +220,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChatResolver do
         {:error, "Chat not found"}
 
       chat ->
-        if chat.user_id == current_user.id do
+        if can_access_chat?(chat, current_user) do
           case Chat.delete_chat(chat_id) do
             {:ok, deleted_chat} -> {:ok, deleted_chat}
             {:error, :not_found} -> {:error, "Chat not found"}
@@ -204,8 +292,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChatResolver do
             Logger.error("Failed to generate AI response: #{reason}")
         end
 
-        # Generate chat title for new chats synchronously
-        if Keyword.get(opts, :is_new_chat, false) do
+        # Generate chat title for new chats synchronously (only for authenticated users)
+        if Keyword.get(opts, :is_new_chat, false) && user_id do
           case ChatAIService.generate_and_update_chat_title_sync(chat.id, user_message) do
             {:ok, _updated_chat} ->
               :ok
@@ -234,8 +322,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChatResolver do
             Logger.error("Failed to generate Academy AI response: #{reason}")
         end
 
-        # Generate chat title for new chats synchronously
-        if Keyword.get(opts, :is_new_chat, false) do
+        # Generate chat title for new chats synchronously (only for authenticated users)
+        if Keyword.get(opts, :is_new_chat, false) && user_id do
           case ChatAIService.generate_and_update_chat_title_sync(chat.id, user_message) do
             {:ok, _updated_chat} ->
               :ok
@@ -252,5 +340,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChatResolver do
     end
 
     :ok
+  end
+
+  # Access control helper
+  defp can_access_chat?(chat, current_user) do
+    cond do
+      # Authenticated user owns the chat
+      current_user && chat.user_id == current_user.id -> true
+      # Anonymous chat (no owner) - anyone can access
+      is_nil(chat.user_id) -> true
+      # No access
+      true -> false
+    end
   end
 end

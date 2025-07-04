@@ -15,7 +15,7 @@ defmodule Sanbase.Chat do
 
   @type chat_attrs :: %{
           title: String.t(),
-          user_id: integer(),
+          user_id: integer() | nil,
           type: String.t()
         }
 
@@ -29,7 +29,7 @@ defmodule Sanbase.Chat do
   Creates a new chat conversation with an initial user message.
   The chat title is derived from the first user message.
   """
-  @spec create_chat_with_message(integer(), String.t(), map(), String.t()) ::
+  @spec create_chat_with_message(integer() | nil, String.t(), map(), String.t()) ::
           {:ok, Chat.t()} | {:error, Ecto.Changeset.t()}
   def create_chat_with_message(user_id, content, context \\ %{}, type \\ "dyor_dashboard") do
     title = generate_title_from_content(content)
@@ -174,9 +174,12 @@ defmodule Sanbase.Chat do
 
   @doc """
   Lists all chats for a specific user, ordered by most recent first.
+  Returns empty list for nil user_id (anonymous users can't list chats).
   """
-  @spec list_user_chats(integer()) :: [Chat.t()]
-  def list_user_chats(user_id) do
+  @spec list_user_chats(integer() | nil) :: [Chat.t()]
+  def list_user_chats(nil), do: []
+
+  def list_user_chats(user_id) when is_integer(user_id) do
     Chat
     |> where([c], c.user_id == ^user_id)
     |> order_by([c], desc: c.updated_at)

@@ -25,6 +25,8 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   Only queries with many resolvers are included in the list of allowed queries.
   """
 
+  require Logger
+
   alias SanbaseWeb.Graphql.Cache
   alias Sanbase.Utils.IP
 
@@ -125,6 +127,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     queries = success_queries ++ error_queries
 
     %{
+      request_id: generate_id(),
       timestamp: DateTime.utc_now() |> DateTime.to_unix(:second),
       has_graphql_errors: has_graphql_errors?(blueprint),
       has_api_call_limit_quota_infinity: conn.private[:has_api_call_limit_quota_infinity],
@@ -267,7 +270,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
       {query, selector} = get_query_and_selector(query)
 
       %{
-        id: generate_id(),
+        id: query_metadata.request_id,
         timestamp: query_metadata.timestamp,
         query: query,
         selector: Jason.encode!(selector),
@@ -293,11 +296,15 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     # that is different for all api calls, otherwise they can be squashed into
     # a single row when ingested in Clickhouse
     case Logger.metadata() |> Keyword.get(:request_id) do
-      nil ->
-        "gen_" <> (:crypto.strong_rand_bytes(16) |> Base.encode64())
+      request_id when is_binary(request_id) ->
+        request_id <> "|" <> (:crypto.strong_rand_bytes(3) |> Base.encode64())
 
-      request_id ->
-        request_id <> "_" <> (:crypto.strong_rand_bytes(6) |> Base.encode64())
+      nil ->
+        # The ID does not need to be unique, it needs to be different for the queries in the same document.
+        # In the API call table the unique key is (dt, user_id, query, id)
+        # 6 bytes is more than enough -- there are 2^(6*8) =~ 2.81e+14 possibilities
+        #
+        "gen_" <> (:crypto.strong_rand_bytes(6) |> Base.encode64(padding: false))
     end
   end
 

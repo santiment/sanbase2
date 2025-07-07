@@ -41,6 +41,27 @@ defmodule Sanbase.ChatTest do
       assert {:error, changeset} = Chat.create_chat_with_message(999_999, content)
       assert "does not exist" in errors_on(changeset).user_id
     end
+
+    test "creates anonymous chat with message" do
+      content = "What are the top metrics for Bitcoin analysis?"
+
+      context = %{
+        "dashboard_id" => "dash_123",
+        "asset" => "bitcoin",
+        "metrics" => ["price_usd", "dev_activity"]
+      }
+
+      assert {:ok, chat} = Chat.create_chat_with_message(nil, content, context)
+      assert chat.title == content
+      assert chat.user_id == nil
+      assert chat.type == "dyor_dashboard"
+      assert length(chat.chat_messages) == 1
+
+      [message] = chat.chat_messages
+      assert message.content == content
+      assert message.role == :user
+      assert message.context == context
+    end
   end
 
   describe "create_chat/1" do
@@ -58,7 +79,7 @@ defmodule Sanbase.ChatTest do
 
       errors = errors_on(changeset)
       assert "can't be blank" in errors.title
-      assert "can't be blank" in errors.user_id
+      # user_id is now optional to support anonymous chats
     end
 
     test "fails with empty title" do
@@ -67,6 +88,15 @@ defmodule Sanbase.ChatTest do
 
       assert {:error, changeset} = Chat.create_chat(attrs)
       assert "can't be blank" in errors_on(changeset).title
+    end
+
+    test "creates anonymous chat with nil user_id" do
+      attrs = %{title: "Anonymous Chat", user_id: nil}
+
+      assert {:ok, chat} = Chat.create_chat(attrs)
+      assert chat.title == "Anonymous Chat"
+      assert chat.user_id == nil
+      assert chat.type == "dyor_dashboard"
     end
   end
 
@@ -212,6 +242,13 @@ defmodule Sanbase.ChatTest do
     test "returns empty list for user with no chats" do
       user = insert(:user)
       assert Chat.list_user_chats(user.id) == []
+    end
+
+    test "returns empty list for anonymous user (nil user_id)" do
+      # Create some anonymous chats to ensure they don't appear in the list
+      {:ok, _anonymous_chat} = Chat.create_chat(%{title: "Anonymous Chat", user_id: nil})
+
+      assert Chat.list_user_chats(nil) == []
     end
   end
 

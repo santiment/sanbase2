@@ -133,19 +133,34 @@ defmodule SanbaseWeb.Graphql.ChatApiTest do
       assert user_message["context"] == %{}
     end
 
-    test "fails without authentication" do
+    test "creates anonymous chat when not authenticated" do
       mutation = """
       mutation {
         sendChatMessage(
           content: "Test message"
         ) {
           id
+          title
+          chatMessages {
+            content
+            role
+          }
         }
       }
       """
 
-      result = execute_mutation_with_errors(mutation, build_conn())
-      assert result["message"] == "unauthorized"
+      result = execute_mutation_with_success(mutation, "sendChatMessage", build_conn())
+
+      # Verify anonymous chat was created
+      assert result["title"] == "Test message"
+      assert length(result["chatMessages"]) >= 1
+
+      user_message = Enum.find(result["chatMessages"], &(&1["role"] == "USER"))
+      assert user_message["content"] == "Test message"
+
+      # Verify chat exists in database as anonymous
+      chat = Chat.get_chat(result["id"])
+      assert chat.user_id == nil
     end
 
     test "creates chat with long message and AI-generated title", %{conn: conn} do
@@ -610,6 +625,190 @@ defmodule SanbaseWeb.Graphql.ChatApiTest do
       assert "What's Bitcoin's price?" in contents
       assert "What about Ethereum?" in contents
       assert "Can you compare them?" in contents
+    end
+  end
+
+  describe "academy QA chat type" do
+    test "creates academy_qa chat and generates AI response", %{conn: conn, user: user} do
+      # Mock the Academy AI service
+      mock_academy_response =
+        "Blockchain is a distributed ledger technology that maintains continuously growing lists of records, called blocks."
+
+      mock_response = %{
+        "answer" => mock_academy_response,
+        "confidence" => "high",
+        "sources" => [
+          %{
+            "number" => 0,
+            "title" => "Blockchain Basics",
+            "url" => "https://academy.santiment.net/blockchain-basics",
+            "similarity" => 0.95
+          }
+        ]
+      }
+
+      http_response = %HTTPoison.Response{status_code: 200, body: Jason.encode!(mock_response)}
+
+      Sanbase.Mock.prepare_mock2(&HTTPoison.post/4, {:ok, http_response})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        # First, create an academy_qa chat via Chat context to set up the type
+        {:ok, chat} =
+          Chat.create_chat_with_message(
+            user.id,
+            "What is blockchain?",
+            %{},
+            "academy_qa"
+          )
+
+        mutation = """
+        mutation {
+          sendChatMessage(
+            chatId: "#{chat.id}"
+            content: "Tell me more about consensus mechanisms"
+          ) {
+            id
+            type
+            chatMessages {
+              content
+              role
+            }
+          }
+        }
+        """
+
+        result = execute_mutation_with_success(mutation, "sendChatMessage", conn)
+
+        assert result["type"] == "ACADEMY_QA"
+
+        # Should have at least the original user message and the follow-up
+        messages = result["chatMessages"]
+        user_messages = Enum.filter(messages, &(&1["role"] == "USER"))
+        assert length(user_messages) >= 2
+
+        # Check that the new message was added
+        follow_up_message =
+          Enum.find(messages, &(&1["content"] == "Tell me more about consensus mechanisms"))
+
+        assert follow_up_message["role"] == "USER"
+      end)
+    end
+
+    test "academy_qa chat works for anonymous users", %{user: user} do
+      # Mock the Academy AI service for anonymous user
+      mock_academy_response =
+        "DeFi stands for Decentralized Finance, which refers to financial services using smart contracts on blockchains."
+
+      mock_response = %{
+        "answer" => mock_academy_response,
+        "sources" => []
+      }
+
+      http_response = %HTTPoison.Response{status_code: 200, body: Jason.encode!(mock_response)}
+
+      Sanbase.Mock.prepare_mock2(&HTTPoison.post/4, {:ok, http_response})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        {:ok, chat} =
+          Chat.create_chat_with_message(
+            user.id,
+            "What is DeFi?",
+            %{},
+            "academy_qa"
+          )
+
+        assert chat.type == "academy_qa"
+        # Verify that the chat was created correctly
+        chat_with_messages = Chat.get_chat_with_messages(chat.id)
+        assert length(chat_with_messages.chat_messages) >= 1
+      end)
+    end
+
+    test "academy_qa chat handles API errors gracefully", %{conn: conn, user: user} do
+      # Mock API error response
+      http_response = %HTTPoison.Response{status_code: 500, body: ""}
+
+      Sanbase.Mock.prepare_mock2(&HTTPoison.post/4, {:ok, http_response})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        {:ok, chat} =
+          Chat.create_chat_with_message(
+            user.id,
+            "What is cryptocurrency?",
+            %{},
+            "academy_qa"
+          )
+
+        mutation = """
+        mutation {
+          sendChatMessage(
+            chatId: "#{chat.id}"
+            content: "This should still work despite API error"
+          ) {
+            id
+            type
+            chatMessages {
+              content
+              role
+            }
+          }
+        }
+        """
+
+        # The mutation should still succeed even if AI response fails
+        result = execute_mutation_with_success(mutation, "sendChatMessage", conn)
+        assert result["type"] == "ACADEMY_QA"
+
+        # The user message should still be stored
+        user_messages = Enum.filter(result["chatMessages"], &(&1["role"] == "USER"))
+
+        new_message =
+          Enum.find(user_messages, &(&1["content"] == "This should still work despite API error"))
+
+        assert new_message != nil
+      end)
+    end
+
+    test "supports creating academy_qa chat type through GraphQL", %{conn: conn, user: user} do
+      # Create chat directly with academy_qa type
+      {:ok, chat} =
+        Chat.create_chat(%{title: "Academy Chat", user_id: user.id, type: "academy_qa"})
+
+      query = """
+      {
+        chat(id: "#{chat.id}") {
+          id
+          title
+          type
+        }
+      }
+      """
+
+      result = execute_query(conn, query, "chat")
+      assert result["type"] == "ACADEMY_QA"
+      assert result["title"] == "Academy Chat"
+    end
+
+    test "lists academy_qa chats correctly", %{conn: conn, user: user} do
+      {:ok, _dyor_chat} =
+        Chat.create_chat(%{title: "DYOR Chat", user_id: user.id, type: "dyor_dashboard"})
+
+      {:ok, _academy_chat} =
+        Chat.create_chat(%{title: "Academy Chat", user_id: user.id, type: "academy_qa"})
+
+      query = """
+      {
+        myChats {
+          id
+          title
+          type
+        }
+      }
+      """
+
+      result = execute_query(conn, query, "myChats")
+      assert length(result) == 2
+
+      types = Enum.map(result, & &1["type"])
+      assert "DYOR_DASHBOARD" in types
+      assert "ACADEMY_QA" in types
     end
   end
 

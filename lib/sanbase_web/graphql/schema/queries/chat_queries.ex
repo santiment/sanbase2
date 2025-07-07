@@ -22,7 +22,6 @@ defmodule SanbaseWeb.Graphql.Schema.ChatQueries do
 
       arg(:id, non_null(:id))
 
-      middleware(JWTAuth)
       resolve(&ChatResolver.get_chat/3)
     end
 
@@ -34,7 +33,6 @@ defmodule SanbaseWeb.Graphql.Schema.ChatQueries do
       arg(:limit, :integer, default_value: 50)
       arg(:offset, :integer, default_value: 0)
 
-      middleware(JWTAuth)
       resolve(&ChatResolver.get_chat_messages/3)
     end
   end
@@ -49,8 +47,8 @@ defmodule SanbaseWeb.Graphql.Schema.ChatQueries do
       arg(:chat_id, :id)
       arg(:content, non_null(:string))
       arg(:context, :chat_context_input)
+      arg(:type, :chat_type, default_value: :dyor_dashboard)
 
-      middleware(JWTAuth)
       resolve(&ChatResolver.send_chat_message/3)
     end
 

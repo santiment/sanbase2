@@ -55,7 +55,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       Sanbase.ApiCallLimit.update_usage(
         :user,
         :apikey,
-        context.user,
+        context.user.id,
         _api_call_count = 200,
         _result_size_bytes = 1000
       )
@@ -92,7 +92,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       Sanbase.ApiCallLimit.update_usage(
         :user,
         :apikey,
-        context.user,
+        context.user.id,
         _api_call_count = 600,
         _result_size_bytes = 1000
       )
@@ -117,7 +117,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       Sanbase.ApiCallLimit.update_usage(
         :user,
         :apikey,
-        context.user,
+        context.user.id,
         _api_call_count = 1000,
         _result_size_bytes = 1000
       )
@@ -144,7 +144,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       Sanbase.ApiCallLimit.update_usage(
         :user,
         :apikey,
-        context.user,
+        context.user.id,
         _api_call_count = 2000,
         _result_size_bytes = 1000
       )
@@ -169,7 +169,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       Sanbase.ApiCallLimit.update_usage(
         :user,
         :apikey,
-        context.san_user,
+        context.san_user.id,
         _api_call_count = 999_999_999,
         _result_size_bytes = 1000
       )
@@ -193,7 +193,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       Sanbase.ApiCallLimit.update_usage(
         :user,
         :apikey,
-        context.user,
+        context.user.id,
         _api_call_count = 500,
         _result_size_bytes = 1000
       )
@@ -215,7 +215,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       Sanbase.ApiCallLimit.update_usage(
         :user,
         :apikey,
-        context.user,
+        context.user.id,
         _api_call_count = 700,
         _result_size_bytes = 1000
       )
@@ -242,7 +242,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       Sanbase.ApiCallLimit.update_usage(
         :user,
         :apikey,
-        context.user,
+        context.user.id,
         _api_call_count = 0,
         _result_size_bytes = 0
       )
@@ -256,7 +256,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
           {:ok, _updated} =
             Sanbase.ApiCallLimit.update_usage_db(
               :user,
-              context.user,
+              context.user.id,
               api_calls_per_iteration,
               _result_size_bytes = 10_000
             )
@@ -264,7 +264,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
         max_concurrency: 30
       )
 
-      {:ok, quota} = Sanbase.ApiCallLimit.get_quota_db(:user, context.user)
+      {:ok, quota} = Sanbase.ApiCallLimit.get_quota_db(:user, context.user.id)
       this_month_limit = Enum.max(Map.values(quota.api_calls_limits))
 
       this_month_remaining = Enum.max(Map.values(quota.api_calls_remaining))
@@ -278,12 +278,13 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       Sanbase.ApiCallLimit.update_usage(
         :user,
         :apikey,
-        context.user,
+        context.user.id,
         _api_call_count = 0,
         _result_size_bytes = 0
       )
 
       acl = Sanbase.Repo.get_by(Sanbase.ApiCallLimit, user_id: context.user.id)
+
       api_calls_made = Enum.max(Map.values(acl.api_calls))
 
       assert api_calls_made == 0
@@ -352,12 +353,13 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       Sanbase.ApiCallLimit.update_usage(
         :user,
         :apikey,
-        context.user,
+        context.user.id,
         _api_calls_count = 0,
         _result_byte_size = 0
       )
 
       acl = Sanbase.Repo.get_by(Sanbase.ApiCallLimit, user_id: context.user.id)
+
       api_calls_made = Enum.max(Map.values(acl.api_calls))
 
       assert api_calls_made == 0
@@ -426,12 +428,13 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       Sanbase.ApiCallLimit.update_usage(
         :user,
         :apikey,
-        context.user,
+        context.user.id,
         _api_calls_count = 0,
         _result_byte_size = 0
       )
 
       acl = Sanbase.Repo.get_by(Sanbase.ApiCallLimit, user_id: context.user.id)
+
       api_calls_made = Enum.max(Map.values(acl.api_calls))
 
       assert api_calls_made == 0
@@ -505,7 +508,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       Sanbase.ApiCallLimit.update_usage(
         :user,
         :apikey,
-        context.user,
+        context.user.id,
         _api_calls_count = 50,
         _result_byte_size = 1000
       )
@@ -525,7 +528,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       Sanbase.ApiCallLimit.update_usage(
         :user,
         :apikey,
-        context.user,
+        context.user.id,
         _api_calls_count = 200,
         _result_byte_size = 1000
       )
@@ -604,7 +607,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
         Sanbase.ApiCallLimit.update_usage(
           :user,
           :apikey,
-          context.user,
+          context.user.id,
           _api_calls_count = 550,
           _result_size = 1000
         )
@@ -641,11 +644,11 @@ defmodule SanbaseWeb.ApiCallLimitTest do
 
   describe "execute mutation to self reset rate limits" do
     test "self reset", context do
-      {:ok, quota} = Sanbase.ApiCallLimit.get_quota_db(:user, context.user)
+      {:ok, quota} = Sanbase.ApiCallLimit.get_quota_db(:user, context.user.id)
 
       for _ <- 1..25, do: make_api_call(context.apikey_conn, [])
 
-      {:ok, quota2} = Sanbase.ApiCallLimit.get_quota_db(:user, context.user)
+      {:ok, quota2} = Sanbase.ApiCallLimit.get_quota_db(:user, context.user.id)
 
       assert quota2.api_calls_remaining.month < quota.api_calls_remaining.month
 
@@ -657,7 +660,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
 
       assert result["id"] |> String.to_integer() == context.user.id
 
-      {:ok, quota3} = Sanbase.ApiCallLimit.get_quota_db(:user, context.user)
+      {:ok, quota3} = Sanbase.ApiCallLimit.get_quota_db(:user, context.user.id)
 
       assert quota3.api_calls_remaining.month == quota.api_calls_remaining.month
 

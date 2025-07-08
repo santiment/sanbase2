@@ -87,7 +87,7 @@ defmodule SanbaseWeb.Graphql.RequestHaltPlug do
         requested_product: "SANAPI",
         auth: %{current_user: user, auth_method: auth_method, plan: plan_name}
       }) do
-    case ApiCallLimit.get_quota(:user, user, auth_method) do
+    case ApiCallLimit.get_quota(:user, user.id, auth_method) do
       {:error, %{reason: :rate_limited, blocked_for_seconds: _} = rate_limit_map} ->
         conn =
           Sanbase.Utils.Conn.put_extra_resp_headers(

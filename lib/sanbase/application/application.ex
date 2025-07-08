@@ -204,7 +204,7 @@ defmodule Sanbase.Application do
       start_if(
         fn ->
           {PartitionSupervisor,
-           child_spec: Sanbase.ApiCallLimit.Collector.child_spec([]),
+           child_spec: apply(Sanbase.ApiCallLimit.collector_module(), :child_spec, [[]]),
            name: SanbaseWeb.ApiCallLimit.PartitionSupervisor}
         end,
         fn ->

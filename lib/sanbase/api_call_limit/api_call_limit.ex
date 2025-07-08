@@ -62,8 +62,11 @@ defmodule Sanbase.ApiCallLimit do
     |> foreign_key_constraint(:user_id)
   end
 
+  # -1 is used for Basic authenthication user
+  defguard is_entity_key(key) when is_binary(key) or (is_integer(key) and key >= -1)
+
   def update_user_plan(%User{} = user) do
-    %__MODULE__{} = acl = get_by_and_lock(:user, user)
+    %__MODULE__{} = acl = get_by_and_lock(:user, user.id)
 
     {plan, subscription_status} = user_to_plan(user)
 
@@ -87,7 +90,7 @@ defmodule Sanbase.ApiCallLimit do
       {:ok, _} = result ->
         # Clear the in-memory data for a user so the new restrictions
         # can be picked up faster. Do this only if the plan actually changes
-        __MODULE__.ETS.clear_data(:user, user)
+        __MODULE__.ETS.clear_data(:user, user.id)
 
         if new_plan = Ecto.Changeset.get_change(changeset, :api_calls_limit_plan) do
           Logger.info(
@@ -102,13 +105,34 @@ defmodule Sanbase.ApiCallLimit do
     end
   end
 
-  defdelegate get_quota(type, entity, auth_method), to: __MODULE__.ETS
-  defdelegate update_usage(type, auth_method, entity, count, result_byte_size), to: __MODULE__.ETS
+  case Application.compile_env(:sanbase, :env) do
+    :test -> @partitions 1
+    _ -> @partitions 8
+  end
 
-  def get_quota_db(type, entity) do
+  def get_quota(entity_type, entity_key, auth_method) when is_entity_key(entity_key) do
+    partition_key = :erlang.phash2(entity_key, @partitions)
+
+    Sanbase.ApiCallLimit.Collector.get_quota(
+      {:via, PartitionSupervisor, {SanbaseWeb.ApiCallLimit.PartitionSupervisor, partition_key}},
+      {entity_type, entity_key, auth_method}
+    )
+  end
+
+  def update_usage(entity_type, auth_method, entity_key, count, result_byte_size)
+      when is_entity_key(entity_key) do
+    partition_key = :erlang.phash2(entity_key, @partitions)
+
+    Sanbase.ApiCallLimit.Collector.update_usage(
+      {:via, PartitionSupervisor, {SanbaseWeb.ApiCallLimit.PartitionSupervisor, partition_key}},
+      {entity_type, auth_method, entity_key, count, result_byte_size}
+    )
+  end
+
+  def get_quota_db(entity_type, entity_key) when is_entity_key(entity_key) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(:get_acl, fn _repo, _changes ->
-      {:ok, get_by(type, entity)}
+      {:ok, get_by(entity_type, entity_key)}
     end)
     |> Ecto.Multi.run(:get_quota, fn _repo, %{get_acl: acl} ->
       do_get_quota(acl)
@@ -120,10 +144,11 @@ defmodule Sanbase.ApiCallLimit do
     end
   end
 
-  def update_usage_db(type, entity, count, result_byte_size) do
+  def update_usage_db(entity_type, entity_key, count, result_byte_size)
+      when is_entity_key(entity_key) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(:get_acl, fn _repo, _changes ->
-      {:ok, get_by_and_lock(type, entity)}
+      {:ok, get_by_and_lock(entity_type, entity_key)}
     end)
     |> Ecto.Multi.run(:update_quota, fn _repo, %{get_acl: acl} ->
       do_update_usage_db(acl, count, result_byte_size)
@@ -135,17 +160,18 @@ defmodule Sanbase.ApiCallLimit do
     end
   end
 
-  def reset(%User{} = user) do
-    if struct = Repo.get_by(__MODULE__, user_id: user.id), do: Repo.delete!(struct)
+  def reset(user_id) when is_integer(user_id) do
+    if struct = Repo.get_by(__MODULE__, user_id: user_id), do: Repo.delete!(struct)
 
-    create(:user, user)
+    create(:user, user_id)
   end
 
   # Private functions
 
-  defp create(type, entity)
+  defp create(entity_type, entity_key)
 
-  defp create(:user, %User{} = user) do
+  defp create(:user, user_id) when is_integer(user_id) do
+    user = Sanbase.Accounts.get_user!(user_id)
     %{month_str: month_str, hour_str: hour_str, minute_str: minute_str} = get_time_str_keys()
 
     api_calls = %{month_str => 0, hour_str => 0, minute_str => 0}
@@ -230,10 +256,10 @@ defmodule Sanbase.ApiCallLimit do
     end
   end
 
-  defp get_by(:user, user) do
-    case Repo.get_by(__MODULE__, user_id: user.id) do
+  defp get_by(:user, user_id) do
+    case Repo.get_by(__MODULE__, user_id: user_id) do
       nil ->
-        {:ok, acl} = create(:user, user)
+        {:ok, acl} = create(:user, user_id)
         acl
 
       %__MODULE__{} = acl ->
@@ -252,10 +278,10 @@ defmodule Sanbase.ApiCallLimit do
     end
   end
 
-  defp get_by_and_lock(:user, user) do
+  defp get_by_and_lock(:user, user_id) do
     result =
       from(acl in __MODULE__,
-        where: acl.user_id == ^user.id,
+        where: acl.user_id == ^user_id,
         lock: "FOR UPDATE"
       )
       |> Repo.one()
@@ -265,8 +291,8 @@ defmodule Sanbase.ApiCallLimit do
         # Ensure that the result we get back has a lock. This is making more
         # DB calls, but it should be executed only once per user/remote_ip and
         # after that all subsequent calls should go into the second case.
-        {:ok, _acl} = create(:user, user)
-        get_by_and_lock(:user, user)
+        {:ok, _acl} = create(:user, user_id)
+        get_by_and_lock(:user, user_id)
 
       %__MODULE__{} = acl ->
         acl

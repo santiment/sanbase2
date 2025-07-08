@@ -11,7 +11,8 @@ defmodule SanbaseWeb.AcademyQALive do
        answer_data: nil,
        loading: false,
        error: nil,
-       show_sources: false
+       show_sources: false,
+       current_user: socket.assigns[:current_user]
      )}
   end
 
@@ -23,6 +24,12 @@ defmodule SanbaseWeb.AcademyQALive do
       send(self(), {:fetch_answer, question})
       {:noreply, assign(socket, question: question, loading: true, error: nil, answer_data: nil)}
     end
+  end
+
+  @impl true
+  def handle_event("ask_suggestion", %{"suggestion" => suggestion}, socket) do
+    send(self(), {:fetch_answer, suggestion})
+    {:noreply, assign(socket, question: suggestion, loading: true, error: nil, answer_data: nil)}
   end
 
   @impl true
@@ -44,7 +51,9 @@ defmodule SanbaseWeb.AcademyQALive do
 
   @impl true
   def handle_info({:fetch_answer, question}, socket) do
-    case fetch_academy_answer(question) do
+    user_id = if socket.assigns.current_user, do: socket.assigns.current_user.id, else: nil
+
+    case Sanbase.AI.AcademyAIService.generate_standalone_response(question, user_id, true) do
       {:ok, answer_data} ->
         {:noreply,
          assign(socket,
@@ -61,35 +70,6 @@ defmodule SanbaseWeb.AcademyQALive do
            answer_data: nil
          )}
     end
-  end
-
-  defp fetch_academy_answer(question) do
-    url = "#{ai_server_url()}/academy/query"
-    body = Jason.encode!(%{"question" => question})
-
-    case HTTPoison.post(
-           url,
-           body,
-           [{"Content-Type", "application/json"}, {"accept", "application/json"}],
-           timeout: 30_000,
-           recv_timeout: 30_000
-         ) do
-      {:ok, %HTTPoison.Response{status_code: 200, body: response_body}} ->
-        case Jason.decode(response_body) do
-          {:ok, data} -> {:ok, data}
-          {:error, _} -> {:error, "Failed to parse response"}
-        end
-
-      {:ok, %HTTPoison.Response{status_code: status_code}} ->
-        {:error, "Server error: #{status_code}"}
-
-      {:error, error} ->
-        {:error, "Network error: #{inspect(error)}"}
-    end
-  end
-
-  defp ai_server_url do
-    System.get_env("AI_SERVER_URL")
   end
 
   @impl true
@@ -113,9 +93,15 @@ defmodule SanbaseWeb.AcademyQALive do
           <.answer_display answer_data={@answer_data} />
 
           <.sources_section
-            sources={@answer_data["sources"]}
+            sources={@answer_data.sources}
             show_sources={@show_sources}
-            total_time_ms={@answer_data["total_time_ms"]}
+            total_time_ms={@answer_data.total_time_ms}
+          />
+
+          <.suggestions_section
+            :if={@answer_data.suggestions && length(@answer_data.suggestions) > 0}
+            suggestions={@answer_data.suggestions}
+            suggestions_confidence={@answer_data.suggestions_confidence}
           />
         </div>
       </div>

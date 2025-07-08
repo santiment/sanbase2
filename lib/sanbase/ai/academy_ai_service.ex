@@ -25,12 +25,39 @@ defmodule Sanbase.AI.AcademyAIService do
       chat_id: chat_id,
       message_id: message_id,
       chat_history: chat_history,
-      user_id: user_id_string
+      user_id: user_id_string,
+      include_suggestions: false
     }
 
     case make_academy_request(request_params) do
       {:ok, response} ->
         {:ok, extract_academy_response(response)}
+
+      {:error, reason} ->
+        Logger.error("Academy AI request failed: #{inspect(reason)}")
+        {:error, "Failed to get Academy response"}
+    end
+  end
+
+  @doc """
+  Generates an Academy Q&A response for a standalone question (without chat context).
+
+  Optionally includes suggestions for related questions.
+  """
+  @spec generate_standalone_response(String.t(), integer() | nil, boolean()) ::
+          {:ok, map()} | {:error, String.t()}
+  def generate_standalone_response(question, user_id \\ nil, include_suggestions \\ true) do
+    user_id_string = if user_id, do: to_string(user_id), else: "anonymous"
+
+    request_params = %{
+      question: question,
+      user_id: user_id_string,
+      include_suggestions: include_suggestions
+    }
+
+    case make_academy_request(request_params) do
+      {:ok, response} ->
+        {:ok, extract_full_response(response)}
 
       {:error, reason} ->
         Logger.error("Academy AI request failed: #{inspect(reason)}")
@@ -56,17 +83,17 @@ defmodule Sanbase.AI.AcademyAIService do
 
   defp make_academy_request(params) do
     url = "#{ai_server_url()}/academy/query"
-    body = Jason.encode!(params)
-    headers = [{"Content-Type", "application/json"}, {"accept", "application/json"}]
 
-    case HTTPoison.post(url, body, headers, timeout: 30_000, recv_timeout: 30_000) do
-      {:ok, %HTTPoison.Response{status_code: 200, body: response_body}} ->
-        case Jason.decode(response_body) do
-          {:ok, decoded_response} -> {:ok, decoded_response}
-          {:error, _} -> {:error, "Failed to parse response"}
-        end
+    case Req.post(url,
+           json: params,
+           headers: %{"accept" => "application/json"},
+           receive_timeout: 30_000,
+           connect_options: [timeout: 30_000]
+         ) do
+      {:ok, %Req.Response{status: 200, body: response_body}} ->
+        {:ok, response_body}
 
-      {:ok, %HTTPoison.Response{status_code: status}} ->
+      {:ok, %Req.Response{status: status}} ->
         {:error, "Academy API error: status #{status}"}
 
       {:error, error} ->
@@ -81,6 +108,17 @@ defmodule Sanbase.AI.AcademyAIService do
     %{
       answer: answer,
       sources: sources
+    }
+  end
+
+  defp extract_full_response(response) do
+    %{
+      answer: Map.get(response, "answer", ""),
+      sources: Map.get(response, "sources", []),
+      suggestions: Map.get(response, "suggestions", []),
+      suggestions_confidence: Map.get(response, "suggestions_confidence", ""),
+      confidence: Map.get(response, "confidence", ""),
+      total_time_ms: Map.get(response, "total_time_ms", 0)
     }
   end
 

@@ -6,7 +6,6 @@ defmodule Sanbase.AI.ChatAIService do
   require Logger
 
   alias Sanbase.AI.OpenAIClient
-  alias Sanbase.Accounts.User
   alias Sanbase.Dashboards
   alias Sanbase.Chat
 

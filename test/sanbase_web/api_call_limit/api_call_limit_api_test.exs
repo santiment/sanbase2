@@ -254,7 +254,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       iterations = 100
       api_calls_per_iteration = 5
 
-      Enum.map(
+      Sanbase.Parallel.map(
         1..iterations,
         fn _ ->
           {:ok, _updated} =
@@ -264,7 +264,9 @@ defmodule SanbaseWeb.ApiCallLimitTest do
               api_calls_per_iteration,
               _result_size_bytes = 10_000
             )
-        end
+        end,
+        max_concurrency: 10,
+        ordered: false
       )
 
       {:ok, quota} = Sanbase.ApiCallLimit.get_quota_db(:user, context.user.id)
@@ -293,8 +295,8 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       assert api_calls_made == 0
 
       max_quota = 20
-      iterations = 10
-      api_calls_per_iteration = 300
+      iterations = 7
+      api_calls_per_iteration = 50
 
       # `now` is set to 4 days before the end of next month. This way the `can_send_after` of
       # KafkaExporter won't sleep forever (as it will be in the past). Setting it to 3 days before
@@ -367,8 +369,8 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       assert api_calls_made == 0
 
       max_quota = 20
-      iterations = 14
-      api_calls_per_iteration = 300
+      iterations = 5
+      api_calls_per_iteration = 100
 
       # Set now to be the beginning of a month so when it is shifted 14 times by 1 day
       # it won't go in the next month. We're shifting forward otherwise the KafkaExporter

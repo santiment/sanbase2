@@ -29,6 +29,17 @@ defmodule Sanbase.ApiCallLimit do
   @response_size_limits_mb_per_month Restrictions.response_size_limits_mb_per_month()
   # @response_size_limits_per_hour Restrictions.response_size_limits_per_hour()
   # @response_size_limits_per_minute Restrictions.response_size_limits_per_minute()
+  #
+
+  @supervisor_module SanbaseWeb.ApiCallLimit.PartitionSupervisor
+
+  @collector_module Sanbase.ApiCallLimit.Collector
+  def collector_module(), do: @collector_module
+
+  case Application.compile_env(:sanbase, :env) do
+    :test -> @partitions 1
+    _ -> @partitions 8
+  end
 
   schema "api_call_limits" do
     # If has_limits_no_matter_plan is false then plan is not checked.
@@ -88,9 +99,12 @@ defmodule Sanbase.ApiCallLimit do
 
     case Repo.update(changeset) do
       {:ok, _} = result ->
-        # Clear the in-memory data for a user so the new restrictions
-        # can be picked up faster. Do this only if the plan actually changes
-        __MODULE__.ETS.clear_data(:user, user.id)
+        partition_key = :erlang.phash2(user.id, @partitions)
+
+        @collector_module.clear_data(
+          {:via, PartitionSupervisor, {@supervisor_module, partition_key}},
+          {:user, user.id}
+        )
 
         if new_plan = Ecto.Changeset.get_change(changeset, :api_calls_limit_plan) do
           Logger.info(
@@ -105,16 +119,18 @@ defmodule Sanbase.ApiCallLimit do
     end
   end
 
-  case Application.compile_env(:sanbase, :env) do
-    :test -> @partitions 1
-    _ -> @partitions 8
+  def clear_all() do
+    for {_partition, pid, _type, _modules} <-
+          PartitionSupervisor.which_children(@supervisor_module) do
+      @collector_module.clear_all(pid)
+    end
   end
 
   def get_quota(entity_type, entity_key, auth_method) when is_entity_key(entity_key) do
     partition_key = :erlang.phash2(entity_key, @partitions)
 
-    Sanbase.ApiCallLimit.Collector.get_quota(
-      {:via, PartitionSupervisor, {SanbaseWeb.ApiCallLimit.PartitionSupervisor, partition_key}},
+    @collector_module.get_quota(
+      {:via, PartitionSupervisor, {@supervisor_module, partition_key}},
       {entity_type, entity_key, auth_method}
     )
   end
@@ -123,8 +139,8 @@ defmodule Sanbase.ApiCallLimit do
       when is_entity_key(entity_key) do
     partition_key = :erlang.phash2(entity_key, @partitions)
 
-    Sanbase.ApiCallLimit.Collector.update_usage(
-      {:via, PartitionSupervisor, {SanbaseWeb.ApiCallLimit.PartitionSupervisor, partition_key}},
+    @collector_module.update_usage(
+      {:via, PartitionSupervisor, {@supervisor_module, partition_key}},
       {entity_type, auth_method, entity_key, count, result_byte_size}
     )
   end

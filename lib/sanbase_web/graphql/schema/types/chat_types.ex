@@ -32,6 +32,7 @@ defmodule SanbaseWeb.Graphql.ChatTypes do
     field(:role, non_null(:chat_message_role))
     field(:context, :json)
     field(:sources, :json)
+    field(:suggestions, :json)
     field(:inserted_at, non_null(:datetime))
     field(:updated_at, non_null(:datetime))
 

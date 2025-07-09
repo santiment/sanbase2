@@ -73,12 +73,12 @@ defmodule SanbaseWeb.AcademyQAComponents do
         <div class="flex items-center gap-4">
           <span class={[
             "text-xs px-2 py-1 rounded-full font-medium",
-            confidence_class(@answer_data["confidence"])
+            confidence_class(@answer_data.confidence)
           ]}>
-            {String.upcase(@answer_data["confidence"] || "unknown")} CONFIDENCE
+            {String.upcase(@answer_data.confidence || "unknown")} CONFIDENCE
           </span>
           <span class="text-xs text-gray-500">
-            {format_time(@answer_data["total_time_ms"])}
+            {format_time(@answer_data.total_time_ms)}
           </span>
         </div>
       </div>
@@ -93,7 +93,62 @@ defmodule SanbaseWeb.AcademyQAComponents do
                   prose-code:bg-gray-100 prose-code:text-gray-900 prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:text-sm prose-code:font-mono
                   prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:p-4 prose-pre:rounded-lg prose-pre:overflow-x-auto prose-pre:text-sm prose-pre:font-mono
                   prose-blockquote:border-l-4 prose-blockquote:border-blue-500 prose-blockquote:pl-4 prose-blockquote:italic">
-        {raw(markdown_to_html(@answer_data["answer"]))}
+        {raw(markdown_to_html(@answer_data.answer))}
+      </div>
+    </div>
+    """
+  end
+
+  @doc """
+  Renders the suggestions section with clickable suggestion links
+  """
+  attr :suggestions, :list, required: true
+  attr :suggestions_confidence, :string, default: ""
+
+  def suggestions_section(assigns) do
+    ~H"""
+    <div class="border rounded-lg bg-white shadow-sm">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <div class="flex items-center gap-3">
+          <h3 class="text-lg font-semibold text-gray-900">Related Questions</h3>
+          <span
+            :if={@suggestions_confidence != ""}
+            class={[
+              "text-xs px-2 py-1 rounded-full font-medium",
+              confidence_class(@suggestions_confidence)
+            ]}
+          >
+            {String.upcase(@suggestions_confidence)} CONFIDENCE
+          </span>
+        </div>
+        <p class="text-sm text-gray-600 mt-1">
+          Click on any question below to get an answer
+        </p>
+      </div>
+
+      <div class="px-6 py-4 space-y-2">
+        <button
+          :for={suggestion <- @suggestions}
+          phx-click="ask_suggestion"
+          phx-value-suggestion={suggestion}
+          class="w-full text-left p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors group"
+        >
+          <div class="flex items-start gap-3">
+            <svg
+              class="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z"
+                clip-rule="evenodd"
+              >
+              </path>
+            </svg>
+            <span class="text-sm text-gray-700 group-hover:text-blue-700">{suggestion}</span>
+          </div>
+        </button>
       </div>
     </div>
     """
@@ -155,22 +210,26 @@ defmodule SanbaseWeb.AcademyQAComponents do
       <div class="flex items-start justify-between mb-2">
         <div class="flex items-center gap-2">
           <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
-            [{@source["number"]}]
+            [{Map.get(@source, "number", Map.get(@source, :number, ""))}]
           </span>
-          <h4 class="font-medium text-gray-900">{@source["title"]}</h4>
+          <h4 class="font-medium text-gray-900">
+            {Map.get(@source, "title", Map.get(@source, :title, ""))}
+          </h4>
         </div>
         <div class="flex items-center gap-2 text-xs text-gray-500">
-          <span>{Float.round(@source["similarity"] * 100, 1)}% match</span>
+          <span>
+            {Float.round(Map.get(@source, "similarity", Map.get(@source, :similarity, 0)) * 100, 1)}% match
+          </span>
         </div>
       </div>
 
       <a
-        href={@source["url"]}
+        href={Map.get(@source, "url", Map.get(@source, :url, ""))}
         target="_blank"
         rel="noopener noreferrer"
         class="text-sm text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
       >
-        <span>{@source["url"]}</span>
+        <span>{Map.get(@source, "url", Map.get(@source, :url, ""))}</span>
         <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
           <path
             fill-rule="evenodd"

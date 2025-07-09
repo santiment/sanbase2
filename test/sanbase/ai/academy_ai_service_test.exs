@@ -1,8 +1,9 @@
 defmodule Sanbase.AI.AcademyAIServiceTest do
-  use SanbaseWeb.ConnCase, async: false
+  use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
   import Mox
+  import ExUnit.CaptureLog
 
   alias Sanbase.AI.AcademyAIService
   alias Sanbase.Chat
@@ -59,10 +60,10 @@ defmodule Sanbase.AI.AcademyAIServiceTest do
         "total_time_ms" => 950
       }
 
-      # Mock HTTPoison.post to simulate aiserver response
-      http_response = %HTTPoison.Response{status_code: 200, body: Jason.encode!(mock_response)}
+      # Mock Req.post using prepare_mock2
+      http_response = %Req.Response{status: 200, body: mock_response}
 
-      Sanbase.Mock.prepare_mock2(&HTTPoison.post/4, {:ok, http_response})
+      Sanbase.Mock.prepare_mock2(&Req.post/2, {:ok, http_response})
       |> Sanbase.Mock.run_with_mocks(fn ->
         message_id = Ecto.UUID.generate()
 
@@ -92,49 +93,50 @@ defmodule Sanbase.AI.AcademyAIServiceTest do
     end
 
     test "generates response for anonymous user", %{chat: chat} do
-      question = "What is blockchain?"
+      question = "What is Santiment?"
 
       mock_response = %{
-        "answer" =>
-          "Blockchain is a distributed ledger technology that maintains a continuously growing list of records.",
+        "answer" => "Santiment is a crypto analytics platform.",
+        "confidence" => "high",
         "sources" => []
       }
 
-      http_response = %HTTPoison.Response{status_code: 200, body: Jason.encode!(mock_response)}
+      http_response = %Req.Response{status: 200, body: mock_response}
 
-      Sanbase.Mock.prepare_mock2(&HTTPoison.post/4, {:ok, http_response})
+      Sanbase.Mock.prepare_mock2(&Req.post/2, {:ok, http_response})
       |> Sanbase.Mock.run_with_mocks(fn ->
         message_id = Ecto.UUID.generate()
 
         assert {:ok, response} =
-                 AcademyAIService.generate_academy_response(question, chat.id, message_id, nil)
+                 AcademyAIService.generate_academy_response(
+                   question,
+                   chat.id,
+                   message_id,
+                   nil
+                 )
 
-        expected_answer =
-          "Blockchain is a distributed ledger technology that maintains a continuously growing list of records."
-
-        assert response == %{answer: expected_answer, sources: []}
+        assert response == %{answer: "Santiment is a crypto analytics platform.", sources: []}
       end)
     end
 
     test "handles response with sources without URLs", %{user: user, chat: chat} do
-      question = "What is staking?"
+      question = "What is DeFi?"
 
       mock_response = %{
-        "answer" =>
-          "Staking is the process of participating in the validation of transactions on a proof-of-stake blockchain.",
+        "answer" => "DeFi stands for decentralized finance.",
+        "confidence" => "medium",
         "sources" => [
           %{
             "number" => 0,
-            "title" => "Staking Basics",
-            "url" => "",
+            "title" => "DeFi Introduction",
             "similarity" => 0.88
           }
         ]
       }
 
-      http_response = %HTTPoison.Response{status_code: 200, body: Jason.encode!(mock_response)}
+      http_response = %Req.Response{status: 200, body: mock_response}
 
-      Sanbase.Mock.prepare_mock2(&HTTPoison.post/4, {:ok, http_response})
+      Sanbase.Mock.prepare_mock2(&Req.post/2, {:ok, http_response})
       |> Sanbase.Mock.run_with_mocks(fn ->
         message_id = Ecto.UUID.generate()
 
@@ -145,106 +147,107 @@ defmodule Sanbase.AI.AcademyAIServiceTest do
                    message_id,
                    user.id
                  )
-
-        expected_answer =
-          "Staking is the process of participating in the validation of transactions on a proof-of-stake blockchain."
 
         expected_sources = [
           %{
             "number" => 0,
-            "title" => "Staking Basics",
-            "url" => "",
+            "title" => "DeFi Introduction",
             "similarity" => 0.88
           }
         ]
 
-        assert response == %{answer: expected_answer, sources: expected_sources}
+        assert response == %{
+                 answer: "DeFi stands for decentralized finance.",
+                 sources: expected_sources
+               }
       end)
     end
 
     test "handles API error response", %{user: user, chat: chat} do
-      question = "What is NFT?"
+      http_response = %Req.Response{status: 500, body: %{}}
 
-      http_response = %HTTPoison.Response{status_code: 500, body: ""}
-
-      Sanbase.Mock.prepare_mock2(&HTTPoison.post/4, {:ok, http_response})
+      Sanbase.Mock.prepare_mock2(&Req.post/2, {:ok, http_response})
       |> Sanbase.Mock.run_with_mocks(fn ->
         message_id = Ecto.UUID.generate()
 
-        assert {:error, "Failed to get Academy response"} =
-                 AcademyAIService.generate_academy_response(
-                   question,
-                   chat.id,
-                   message_id,
-                   user.id
-                 )
+        # Capture logs to suppress error messages during test
+        capture_log(fn ->
+          assert {:error, error} =
+                   AcademyAIService.generate_academy_response(
+                     "What is DeFi?",
+                     chat.id,
+                     message_id,
+                     user.id
+                   )
+
+          assert error == "Failed to get Academy response"
+        end)
       end)
     end
 
     test "handles network error", %{user: user, chat: chat} do
-      question = "What is DAO?"
-
-      Sanbase.Mock.prepare_mock2(&HTTPoison.post/4, {:error, %HTTPoison.Error{reason: :timeout}})
+      Sanbase.Mock.prepare_mock2(&Req.post/2, {:error, %Req.TransportError{reason: :timeout}})
       |> Sanbase.Mock.run_with_mocks(fn ->
         message_id = Ecto.UUID.generate()
 
-        assert {:error, "Failed to get Academy response"} =
-                 AcademyAIService.generate_academy_response(
-                   question,
-                   chat.id,
-                   message_id,
-                   user.id
-                 )
+        # Capture logs to suppress error messages during test
+        capture_log(fn ->
+          assert {:error, error} =
+                   AcademyAIService.generate_academy_response(
+                     "What is DeFi?",
+                     chat.id,
+                     message_id,
+                     user.id
+                   )
+
+          assert error == "Failed to get Academy response"
+        end)
       end)
     end
 
     test "handles empty chat (no history)", %{user: user} do
-      {:ok, empty_chat} =
-        Chat.create_chat(%{
-          title: "Empty Chat",
-          user_id: user.id,
-          type: "academy_qa"
-        })
-
-      question = "What is cryptocurrency?"
+      # Create a new chat with no messages
+      {:ok, empty_chat} = Chat.create_chat(%{title: "Empty Chat"})
 
       mock_response = %{
-        "answer" => "Cryptocurrency is a digital or virtual currency secured by cryptography.",
+        "answer" => "This is a response without chat history.",
+        "confidence" => "high",
         "sources" => []
       }
 
-      http_response = %HTTPoison.Response{status_code: 200, body: Jason.encode!(mock_response)}
+      http_response = %Req.Response{status: 200, body: mock_response}
 
-      Sanbase.Mock.prepare_mock2(&HTTPoison.post/4, {:ok, http_response})
+      Sanbase.Mock.prepare_mock2(&Req.post/2, {:ok, http_response})
       |> Sanbase.Mock.run_with_mocks(fn ->
         message_id = Ecto.UUID.generate()
 
         assert {:ok, response} =
                  AcademyAIService.generate_academy_response(
-                   question,
+                   "What is blockchain?",
                    empty_chat.id,
                    message_id,
                    user.id
                  )
 
-        expected_answer =
-          "Cryptocurrency is a digital or virtual currency secured by cryptography."
-
-        assert response == %{answer: expected_answer, sources: []}
+        assert response == %{
+                 answer: "This is a response without chat history.",
+                 sources: []
+               }
       end)
     end
 
     test "builds correct chat history format", %{user: user, chat: chat} do
-      question = "Tell me more about smart contracts"
+      question = "Tell me more about crypto trading"
 
       mock_response = %{
-        "answer" => "Smart contracts are self-executing contracts.",
+        "answer" => "Crypto trading involves buying and selling cryptocurrencies.",
+        "confidence" => "high",
         "sources" => []
       }
 
-      http_response = %HTTPoison.Response{status_code: 200, body: Jason.encode!(mock_response)}
+      http_response = %Req.Response{status: 200, body: mock_response}
 
-      Sanbase.Mock.prepare_mock2(&HTTPoison.post/4, {:ok, http_response})
+      Sanbase.Mock.prepare_mock2(&Req.post/2, {:ok, http_response})
       |> Sanbase.Mock.run_with_mocks(fn ->
         message_id = Ecto.UUID.generate()
 
@@ -256,8 +259,112 @@ defmodule Sanbase.AI.AcademyAIServiceTest do
                    user.id
                  )
 
-        expected_answer = "Smart contracts are self-executing contracts."
-        assert response == %{answer: expected_answer, sources: []}
+        assert response.answer == "Crypto trading involves buying and selling cryptocurrencies."
+      end)
+    end
+  end
+
+  describe "generate_standalone_response/3" do
+    test "generates response with suggestions for standalone question" do
+      question = "What are the key DeFi metrics to track?"
+
+      mock_response = %{
+        "answer" => "Key DeFi metrics include TVL, volume, and active addresses.",
+        "confidence" => "high",
+        "sources" => [
+          %{
+            "number" => 0,
+            "title" => "DeFi Metrics Guide",
+            "url" => "https://academy.santiment.net/defi-metrics",
+            "similarity" => 0.92
+          }
+        ],
+        "suggestions" => [
+          "How to calculate Total Value Locked (TVL)?",
+          "What is the significance of trading volume in DeFi?",
+          "How do active addresses indicate DeFi adoption?"
+        ],
+        "suggestions_confidence" => "high",
+        "total_time_ms" => 1250
+      }
+
+      http_response = %Req.Response{status: 200, body: mock_response}
+
+      Sanbase.Mock.prepare_mock2(&Req.post/2, {:ok, http_response})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert {:ok, response} =
+                 AcademyAIService.generate_standalone_response(question, nil, true)
+
+        assert response.answer == "Key DeFi metrics include TVL, volume, and active addresses."
+        assert response.confidence == "high"
+        assert response.suggestions_confidence == "high"
+        assert length(response.suggestions) == 3
+        assert response.total_time_ms == 1250
+
+        assert Enum.member?(response.suggestions, "How to calculate Total Value Locked (TVL)?")
+
+        assert Enum.member?(
+                 response.suggestions,
+                 "What is the significance of trading volume in DeFi?"
+               )
+
+        assert Enum.member?(
+                 response.suggestions,
+                 "How do active addresses indicate DeFi adoption?"
+               )
+      end)
+    end
+
+    test "generates response without suggestions when disabled" do
+      question = "What is yield farming?"
+
+      mock_response = %{
+        "answer" => "Yield farming involves lending crypto assets to earn rewards.",
+        "confidence" => "medium",
+        "sources" => [],
+        "total_time_ms" => 800
+      }
+
+      http_response = %Req.Response{status: 200, body: mock_response}
+
+      Sanbase.Mock.prepare_mock2(&Req.post/2, {:ok, http_response})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert {:ok, response} =
+                 AcademyAIService.generate_standalone_response(question, nil, false)
+
+        assert response.answer == "Yield farming involves lending crypto assets to earn rewards."
+        assert response.confidence == "medium"
+        assert response.suggestions == []
+        assert response.suggestions_confidence == ""
+        assert response.total_time_ms == 800
+      end)
+    end
+
+    test "handles standalone API error" do
+      http_response = %Req.Response{status: 500, body: %{}}
+
+      Sanbase.Mock.prepare_mock2(&Req.post/2, {:ok, http_response})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        # Capture logs to suppress error messages during test
+        capture_log(fn ->
+          assert {:error, error} =
+                   AcademyAIService.generate_standalone_response("What is DeFi?", nil, true)
+
+          assert error == "Failed to get Academy response"
+        end)
+      end)
+    end
+
+    test "handles network error for standalone request" do
+      Sanbase.Mock.prepare_mock2(&Req.post/2, {:error, %Req.TransportError{reason: :timeout}})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        # Capture logs to suppress error messages during test
+        capture_log(fn ->
+          assert {:error, error} =
+                   AcademyAIService.generate_standalone_response("What is DeFi?", nil, true)
+
+          assert error == "Failed to get Academy response"
+        end)
       end)
     end
   end

@@ -4,6 +4,7 @@ defmodule SanbaseWeb.Graphql.AnonymousChatApiTest do
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
   import Mox
+  import ExUnit.CaptureLog
 
   alias Sanbase.Chat
 
@@ -322,9 +323,9 @@ defmodule SanbaseWeb.Graphql.AnonymousChatApiTest do
 
     test "handles Academy AI API error for anonymous user", %{conn: conn} do
       # Mock Academy AI service error
-      http_response = %HTTPoison.Response{status_code: 500, body: ""}
+      http_response = %Req.Response{status: 500, body: ""}
 
-      Sanbase.Mock.prepare_mock2(&HTTPoison.post/4, {:ok, http_response})
+      Sanbase.Mock.prepare_mock2(&Req.post/2, {:ok, http_response})
       |> Sanbase.Mock.run_with_mocks(fn ->
         mutation = """
         mutation {
@@ -340,21 +341,24 @@ defmodule SanbaseWeb.Graphql.AnonymousChatApiTest do
         }
         """
 
-        conn = post(conn, "/graphql", %{"query" => mutation})
+        # Capture logs to suppress error messages during test
+        capture_log(fn ->
+          conn = post(conn, "/graphql", %{"query" => mutation})
 
-        assert %{
-                 "data" => %{
-                   "sendChatMessage" => %{
-                     "chatMessages" => [
-                       %{
-                         "content" => "What is DeFi?",
-                         "role" => "USER"
-                       }
-                       # No AI response due to error
-                     ]
+          assert %{
+                   "data" => %{
+                     "sendChatMessage" => %{
+                       "chatMessages" => [
+                         %{
+                           "content" => "What is DeFi?",
+                           "role" => "USER"
+                         }
+                         # No AI response due to error
+                       ]
+                     }
                    }
-                 }
-               } = json_response(conn, 200)
+                 } = json_response(conn, 200)
+        end)
       end)
     end
   end
@@ -374,8 +378,8 @@ defmodule SanbaseWeb.Graphql.AnonymousChatApiTest do
       ]
     }
 
-    http_response = %HTTPoison.Response{status_code: 200, body: Jason.encode!(mock_response)}
-    Sanbase.Mock.prepare_mock2(&HTTPoison.post/4, {:ok, http_response})
+    http_response = %Req.Response{status: 200, body: mock_response}
+    Sanbase.Mock.prepare_mock2(&Req.post/2, {:ok, http_response})
   end
 
   defp mock_dyor_response do

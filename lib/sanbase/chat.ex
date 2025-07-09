@@ -143,6 +143,57 @@ defmodule Sanbase.Chat do
   end
 
   @doc """
+  Adds an assistant response with sources and suggestions to a chat conversation.
+  """
+  @spec add_assistant_response_with_sources_and_suggestions(
+          Ecto.UUID.t(),
+          String.t(),
+          [map()],
+          [String.t()],
+          map()
+        ) :: {:ok, ChatMessage.t()} | {:error, Ecto.Changeset.t()}
+  def add_assistant_response_with_sources_and_suggestions(
+        chat_id,
+        content,
+        sources,
+        suggestions,
+        context \\ %{}
+      ) do
+    Repo.transaction(fn ->
+      # Insert the message with sources and suggestions
+      message_result =
+        %{
+          chat_id: chat_id,
+          content: content,
+          role: :assistant,
+          context: context,
+          sources: sources,
+          suggestions: suggestions
+        }
+        |> ChatMessage.create_changeset()
+        |> Repo.insert()
+
+      case message_result do
+        {:ok, message} ->
+          # Update the chat's updated_at timestamp
+          case get_chat(chat_id) do
+            nil ->
+              Repo.rollback({:error, :chat_not_found})
+
+            chat ->
+              case touch_chat_updated_at(chat) do
+                {:ok, _} -> message
+                {:error, changeset} -> Repo.rollback(changeset)
+              end
+          end
+
+        {:error, changeset} ->
+          Repo.rollback(changeset)
+      end
+    end)
+  end
+
+  @doc """
   Retrieves a chat with all its messages, ordered by insertion time.
   """
   @spec get_chat_with_messages(Ecto.UUID.t()) :: Chat.t() | nil

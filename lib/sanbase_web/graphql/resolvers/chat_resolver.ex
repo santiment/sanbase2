@@ -306,16 +306,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChatResolver do
 
       "academy_qa" ->
         # Generate Academy AI response synchronously
-        message_id = Keyword.get(opts, :message_id)
+        _message_id = Keyword.get(opts, :message_id)
 
-        case AcademyAIService.generate_academy_response(
-               user_message,
-               chat.id,
-               message_id,
-               user_id
-             ) do
-          {:ok, %{answer: answer, sources: sources}} ->
-            Chat.add_assistant_response_with_sources(chat.id, answer, sources)
+        case AcademyAIService.generate_standalone_response(user_message, user_id, true) do
+          {:ok, %{answer: answer, sources: sources, suggestions: suggestions}} ->
+            Chat.add_assistant_response_with_sources_and_suggestions(
+              chat.id,
+              answer,
+              sources,
+              suggestions
+            )
 
           {:error, reason} ->
             require Logger

@@ -5,6 +5,8 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
   import Sanbase.Factory
 
   @moduletag skip: true
+  @moduletag capture_log: true
+
   setup_all do
     Application.put_env(SanbaseWeb.Graphql.AbsintheBeforeSend, :api_call_exporting_enabled, true)
 
@@ -212,6 +214,10 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
         willFailUnsupprotedSlug: getMetric(metric: "nvt") {
           timeseriesDataJson(slug: "some_unsupported_slug", from: "#{from}", to: "#{to}", interval: "1d")
         }
+
+        query_0: getMetric(metric: "transaction_volume") {
+          timeseriesDataJson(slug: "#{slug}", from: "#{from}", to: "#{to}", interval: "1d")
+        }
       }
       """
 
@@ -232,7 +238,9 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
         end)
 
       # Only the successful one is exported and counted
-      assert api_calls == [%{query: "getMetric|mvrv_usd"}]
+      assert length(api_calls) == 2
+      assert %{query: "getMetric|mvrv_usd"} in api_calls
+      assert %{query: "getMetric|transaction_volume"} in api_calls
     end)
   end
 

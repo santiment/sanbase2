@@ -67,7 +67,8 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   end
 
   def before_send(conn, %Absinthe.Blueprint{} = blueprint) do
-    %{success: success_queries, error: error_queries} = get_queries_in_document(blueprint)
+    %{success: success_queries, error: error_queries} =
+      get_queries_in_document(blueprint)
 
     # If there are no successful queries, it means that we returned just an error to the user.
     # Error queries are not exported and they do not bump the API calls count of the user.
@@ -424,8 +425,11 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     alias_to_get_query_tuple_map =
       Map.get(blueprint.execution.context, :__get_query_name_arg__, [])
       |> Map.new(fn
-        {:get_metric, alias, _metric, _selector} = tuple -> {alias, tuple}
-        {:get_signal, alias, _signal, _selector} = tuple -> {alias, tuple}
+        {:get_metric, alias, _metric, _selector} = tuple ->
+          {Inflex.camelize(alias, :lower), tuple}
+
+        {:get_signal, alias, _signal, _selector} = tuple ->
+          {Inflex.camelize(alias, :lower), tuple}
       end)
 
     # Rename aliases to the query name itself, or in case of getMetric and getSignal -- the the whole tuple.
@@ -438,6 +442,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
       end)
     end
 
+    %{success: success, error: error}
     %{success: rename_mapper.(success), error: rename_mapper.(error)}
   end
 

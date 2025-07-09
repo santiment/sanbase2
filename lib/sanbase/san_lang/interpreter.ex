@@ -76,6 +76,11 @@ defmodule Sanbase.SanLang.Interpreter do
 
   @supported_functions SanLang.Kernel.__info__(:functions)
                        |> Enum.map(fn {name, _arity} -> to_string(name) end)
+  
+  @supported_function_atoms SanLang.Kernel.__info__(:functions)
+                            |> Enum.map(fn {name, _arity} -> name end)
+                            |> MapSet.new()
+
   defp eval_function_call(function_name, args, env)
        when is_binary(function_name) and function_name in @supported_functions do
     args =
@@ -93,11 +98,20 @@ defmodule Sanbase.SanLang.Interpreter do
 
     # Each of the functions in the Kernel module takes an environment as the last argument
     args = args ++ [env]
-    # We've already checked that the function name exists. Somethimes there are strange
-    # errors during tests that :map_keys is not an existing atom, even though there is
-    # such a function in the SanLang.Kernel module
-    # credo:disable-for-next-line
-    apply(SanLang.Kernel, String.to_atom(function_name), args)
+    
+    # Safely convert to atom only if it exists in our whitelist
+    # This prevents atom exhaustion attacks by not creating new atoms
+    try do
+      function_atom = String.to_existing_atom(function_name)
+      if function_atom in @supported_function_atoms do
+        apply(SanLang.Kernel, function_atom, args)
+      else
+        raise UndefinedFunctionError, message: "Function #{function_name} is not supported"
+      end
+    rescue
+      ArgumentError ->
+        raise UndefinedFunctionError, message: "Function #{function_name} is not supported"
+    end
   end
 
   defp eval_function_call(function_name, _args, _env) when is_binary(function_name) do

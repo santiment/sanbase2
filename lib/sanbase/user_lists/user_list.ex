@@ -243,8 +243,8 @@ defmodule Sanbase.UserList do
 
         total_projects_count =
           (Enum.map(list_item_projects, & &1.slug) ++ all_included_slugs)
-          |> Enum.reject(&is_nil(&1.slug))
-          |> Enum.uniq_by(& &1.id)
+          |> Enum.reject(&is_nil/1)
+          |> Enum.uniq()
           |> length()
 
         {:ok,
@@ -305,11 +305,16 @@ defmodule Sanbase.UserList do
     %{id: user_list_id} = params
     params = update_list_items_params(params, user)
 
-    changeset =
-      user_list_id
-      |> by_id!([])
-      |> Repo.preload(:list_items)
-      |> update_changeset(params)
+    # Optimize: Fetch user list with preloaded associations in a single query
+    # This prevents the N+1 query pattern by combining fetch and preload operations
+    user_list = 
+      from(ul in base_query(), 
+        where: ul.id == ^user_list_id,
+        preload: :list_items
+      )
+      |> Repo.one!()
+
+    changeset = user_list |> update_changeset(params)
 
     Repo.update(changeset)
     |> maybe_create_event(changeset, TimelineEvent.update_watchlist_type())

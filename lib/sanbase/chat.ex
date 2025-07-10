@@ -194,6 +194,34 @@ defmodule Sanbase.Chat do
   end
 
   @doc """
+  Updates feedback for a specific message.
+  Implements toggle behavior: same feedback type = nil, different = new type.
+  """
+  @spec update_message_feedback(Ecto.UUID.t(), String.t()) ::
+          {:ok, ChatMessage.t()} | {:error, Ecto.Changeset.t()}
+  def update_message_feedback(message_id, feedback_type)
+      when feedback_type in ["thumbs_up", "thumbs_down"] do
+    case Repo.get(ChatMessage, message_id) do
+      nil ->
+        {:error, :message_not_found}
+
+      message ->
+        new_feedback =
+          if message.feedback_type == feedback_type do
+            # Toggle off if same feedback
+            nil
+          else
+            # Set new feedback
+            feedback_type
+          end
+
+        message
+        |> ChatMessage.changeset(%{feedback_type: new_feedback})
+        |> Repo.update()
+    end
+  end
+
+  @doc """
   Retrieves a chat with all its messages, ordered by insertion time.
   """
   @spec get_chat_with_messages(Ecto.UUID.t()) :: Chat.t() | nil

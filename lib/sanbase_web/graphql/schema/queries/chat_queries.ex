@@ -59,5 +59,18 @@ defmodule SanbaseWeb.Graphql.Schema.ChatQueries do
       middleware(JWTAuth)
       resolve(&ChatResolver.delete_chat/3)
     end
+
+    @desc """
+    Submit feedback for a chat message. Implements toggle behavior:
+    - Same feedback type removes feedback (sets to null)
+    - Different feedback type switches to the new type
+    - Only works on assistant messages
+    """
+    field :submit_chat_message_feedback, :chat_message do
+      arg(:message_id, non_null(:id))
+      arg(:feedback_type, non_null(:chat_message_feedback_type))
+
+      resolve(&ChatResolver.submit_message_feedback/3)
+    end
   end
 end

@@ -812,6 +812,8 @@ CREATE TABLE public.chat_messages (
     updated_at timestamp without time zone NOT NULL,
     sources jsonb[] DEFAULT ARRAY[]::jsonb[],
     suggestions text[] DEFAULT ARRAY[]::text[],
+    feedback_type character varying(255),
+    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY ((ARRAY['thumbs_up'::character varying, 'thumbs_down'::character varying])::text[])) OR (feedback_type IS NULL))),
     CONSTRAINT valid_role CHECK (((role)::text = ANY ((ARRAY['user'::character varying, 'assistant'::character varying])::text[])))
 );
 
@@ -10419,3 +10421,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250612133320);
 INSERT INTO public."schema_migrations" (version) VALUES (20250703133723);
 INSERT INTO public."schema_migrations" (version) VALUES (20250703144448);
 INSERT INTO public."schema_migrations" (version) VALUES (20250709132930);
+INSERT INTO public."schema_migrations" (version) VALUES (20250710091509);

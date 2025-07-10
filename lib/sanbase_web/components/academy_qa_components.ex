@@ -100,6 +100,58 @@ defmodule SanbaseWeb.AcademyQAComponents do
   end
 
   @doc """
+  Renders feedback buttons for assistant responses
+  """
+  attr :message_id, :string, required: true
+  attr :current_feedback, :string, default: nil
+
+  def feedback_buttons(assigns) do
+    ~H"""
+    <div class="flex items-center gap-3 mt-4 pt-4 border-t border-gray-200">
+      <span class="text-sm text-gray-600">Was this helpful?</span>
+
+      <button
+        phx-click="submit_feedback"
+        phx-value-message_id={@message_id}
+        phx-value-feedback_type="thumbs_up"
+        class={[
+          "flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-medium transition-colors",
+          if(@current_feedback == "thumbs_up",
+            do: "bg-green-100 text-green-800 border border-green-300",
+            else:
+              "bg-gray-100 text-gray-700 hover:bg-green-50 hover:text-green-700 border border-gray-300"
+          )
+        ]}
+      >
+        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
+        </svg>
+        <span>Yes</span>
+      </button>
+
+      <button
+        phx-click="submit_feedback"
+        phx-value-message_id={@message_id}
+        phx-value-feedback_type="thumbs_down"
+        class={[
+          "flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-medium transition-colors",
+          if(@current_feedback == "thumbs_down",
+            do: "bg-red-100 text-red-800 border border-red-300",
+            else:
+              "bg-gray-100 text-gray-700 hover:bg-red-50 hover:text-red-700 border border-gray-300"
+          )
+        ]}
+      >
+        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M18 9.5a1.5 1.5 0 11-3 0v-6a1.5 1.5 0 013 0v6zM14 9.667v-5.43a2 2 0 00-1.106-1.79l-.05-.025A4 4 0 0011.057 2H5.64a2 2 0 00-1.962 1.608l-1.2 6A2 2 0 004.44 12H8v4a2 2 0 002 2 1 1 0 001-1v-.667a4 4 0 01.8-2.4l1.4-1.866a4 4 0 00.8-2.4z" />
+        </svg>
+        <span>No</span>
+      </button>
+    </div>
+    """
+  end
+
+  @doc """
   Renders the suggestions section with clickable suggestion links
   """
   attr :suggestions, :list, required: true

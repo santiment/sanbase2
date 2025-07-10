@@ -232,6 +232,27 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChatResolver do
     end
   end
 
+  @doc "Submit feedback for a chat message"
+  def submit_message_feedback(
+        _root,
+        %{message_id: message_id, feedback_type: feedback_type},
+        _context
+      ) do
+    # Convert GraphQL enum to string
+    feedback_string = convert_feedback_enum_to_string(feedback_type)
+
+    case Chat.update_message_feedback(message_id, feedback_string) do
+      {:ok, updated_message} ->
+        {:ok, updated_message}
+
+      {:error, :message_not_found} ->
+        {:error, "Message not found"}
+
+      {:error, changeset} ->
+        {:error, format_changeset_errors(changeset)}
+    end
+  end
+
   # Field resolvers for nested fields
   def chat_messages(%{id: chat_id}, _args, _resolution) do
     messages = Chat.get_chat_messages(chat_id)
@@ -254,6 +275,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChatResolver do
   defp convert_enum_to_string(:dyor_dashboard), do: "dyor_dashboard"
   defp convert_enum_to_string(:academy_qa), do: "academy_qa"
   defp convert_enum_to_string(type) when is_binary(type), do: type
+
+  defp convert_feedback_enum_to_string(:thumbs_up), do: "thumbs_up"
+  defp convert_feedback_enum_to_string(:thumbs_down), do: "thumbs_down"
 
   defp parse_context_input(nil), do: %{}
 

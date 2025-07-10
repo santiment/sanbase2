@@ -9,6 +9,9 @@ defmodule SanbaseWeb.AcademyQALive do
      assign(socket,
        question: "",
        answer_data: nil,
+       chat_id: nil,
+       assistant_message_id: nil,
+       assistant_feedback: nil,
        loading: false,
        error: nil,
        show_sources: false,
@@ -22,14 +25,30 @@ defmodule SanbaseWeb.AcademyQALive do
       {:noreply, put_flash(socket, :error, "Please enter a question")}
     else
       send(self(), {:fetch_answer, question})
-      {:noreply, assign(socket, question: question, loading: true, error: nil, answer_data: nil)}
+
+      {:noreply,
+       assign(socket,
+         question: question,
+         loading: true,
+         error: nil,
+         answer_data: nil,
+         assistant_message_id: nil
+       )}
     end
   end
 
   @impl true
   def handle_event("ask_suggestion", %{"suggestion" => suggestion}, socket) do
     send(self(), {:fetch_answer, suggestion})
-    {:noreply, assign(socket, question: suggestion, loading: true, error: nil, answer_data: nil)}
+
+    {:noreply,
+     assign(socket,
+       question: suggestion,
+       loading: true,
+       error: nil,
+       answer_data: nil,
+       assistant_message_id: nil
+     )}
   end
 
   @impl true
@@ -43,6 +62,9 @@ defmodule SanbaseWeb.AcademyQALive do
      assign(socket,
        question: "",
        answer_data: nil,
+       chat_id: nil,
+       assistant_message_id: nil,
+       assistant_feedback: nil,
        loading: false,
        error: nil,
        show_sources: false
@@ -50,24 +72,89 @@ defmodule SanbaseWeb.AcademyQALive do
   end
 
   @impl true
+  def handle_event(
+        "submit_feedback",
+        %{"message_id" => message_id, "feedback_type" => feedback_type},
+        socket
+      ) do
+    case Sanbase.Chat.update_message_feedback(message_id, feedback_type) do
+      {:ok, updated_message} ->
+        {:noreply, assign(socket, assistant_feedback: updated_message.feedback_type)}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Failed to submit feedback")}
+    end
+  end
+
+  @impl true
   def handle_info({:fetch_answer, question}, socket) do
     user_id = if socket.assigns.current_user, do: socket.assigns.current_user.id, else: nil
 
-    case Sanbase.AI.AcademyAIService.generate_standalone_response(question, user_id, true) do
-      {:ok, answer_data} ->
-        {:noreply,
-         assign(socket,
-           answer_data: answer_data,
-           loading: false,
-           error: nil
-         )}
+    # Create or use existing chat
+    chat_result =
+      case socket.assigns.chat_id do
+        nil ->
+          # Create new chat for this session
+          Sanbase.Chat.create_chat_with_message(user_id, question, %{}, "academy_qa")
 
-      {:error, error} ->
+        chat_id ->
+          # Add message to existing chat
+          case Sanbase.Chat.add_message_to_chat(chat_id, question, :user, %{}) do
+            {:ok, _message} -> {:ok, Sanbase.Chat.get_chat_with_messages(chat_id)}
+            error -> error
+          end
+      end
+
+    case chat_result do
+      {:ok, chat} ->
+        # Generate AI response
+        case Sanbase.AI.AcademyAIService.generate_standalone_response(question, user_id, true) do
+          {:ok, answer_data} ->
+            # Add assistant response to chat
+            case Sanbase.Chat.add_assistant_response_with_sources_and_suggestions(
+                   chat.id,
+                   answer_data.answer,
+                   answer_data.sources,
+                   answer_data.suggestions || []
+                 ) do
+              {:ok, assistant_message} ->
+                {:noreply,
+                 assign(socket,
+                   chat_id: chat.id,
+                   assistant_message_id: assistant_message.id,
+                   assistant_feedback: assistant_message.feedback_type,
+                   answer_data: answer_data,
+                   loading: false,
+                   error: nil
+                 )}
+
+              {:error, _reason} ->
+                {:noreply,
+                 assign(socket,
+                   loading: false,
+                   error: "Failed to save response",
+                   answer_data: nil,
+                   assistant_message_id: nil
+                 )}
+            end
+
+          {:error, error} ->
+            {:noreply,
+             assign(socket,
+               loading: false,
+               error: error,
+               answer_data: nil,
+               assistant_message_id: nil
+             )}
+        end
+
+      {:error, _reason} ->
         {:noreply,
          assign(socket,
            loading: false,
-           error: error,
-           answer_data: nil
+           error: "Failed to create chat",
+           answer_data: nil,
+           assistant_message_id: nil
          )}
     end
   end
@@ -90,7 +177,15 @@ defmodule SanbaseWeb.AcademyQALive do
         </div>
 
         <div :if={@answer_data && !@loading} class="mt-6 space-y-4">
-          <.answer_display answer_data={@answer_data} />
+          <div>
+            <.answer_display answer_data={@answer_data} />
+
+            <.feedback_buttons
+              :if={@assistant_message_id}
+              message_id={@assistant_message_id}
+              current_feedback={@assistant_feedback}
+            />
+          </div>
 
           <.sources_section
             sources={@answer_data.sources}

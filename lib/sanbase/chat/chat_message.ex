@@ -18,6 +18,7 @@ defmodule Sanbase.Chat.ChatMessage do
           context: context(),
           sources: [map()],
           suggestions: [String.t()] | nil,
+          feedback_type: String.t() | nil,
           chat_id: Ecto.UUID.t(),
           chat: Chat.t() | Ecto.Association.NotLoaded.t(),
           inserted_at: DateTime.t(),
@@ -25,6 +26,7 @@ defmodule Sanbase.Chat.ChatMessage do
         }
 
   @roles [:user, :assistant]
+  @feedback_types ["thumbs_up", "thumbs_down"]
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -35,13 +37,14 @@ defmodule Sanbase.Chat.ChatMessage do
     field(:context, :map, default: %{})
     field(:sources, {:array, :map})
     field(:suggestions, {:array, :string})
+    field(:feedback_type, :string)
     belongs_to(:chat, Chat)
 
     timestamps()
   end
 
   @required_fields [:content, :role, :chat_id]
-  @optional_fields [:context, :sources, :suggestions]
+  @optional_fields [:context, :sources, :suggestions, :feedback_type]
 
   @spec changeset(t(), map()) :: Ecto.Changeset.t()
   def changeset(%__MODULE__{} = chat_message, attrs \\ %{}) do
@@ -50,6 +53,7 @@ defmodule Sanbase.Chat.ChatMessage do
     |> validate_required(@required_fields)
     |> validate_length(:content, min: 1)
     |> validate_inclusion(:role, @roles)
+    |> validate_inclusion(:feedback_type, @feedback_types ++ [nil])
     |> validate_context()
     |> foreign_key_constraint(:chat_id)
   end
@@ -106,4 +110,5 @@ defmodule Sanbase.Chat.ChatMessage do
   end
 
   def roles, do: @roles
+  def feedback_types, do: @feedback_types
 end

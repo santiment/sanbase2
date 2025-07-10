@@ -14,6 +14,11 @@ defmodule SanbaseWeb.Graphql.ChatTypes do
     value(:academy_qa)
   end
 
+  enum :chat_message_feedback_type do
+    value(:thumbs_up)
+    value(:thumbs_down)
+  end
+
   object :chat_context do
     field(:dashboard_id, :string)
     field(:asset, :string)
@@ -33,6 +38,18 @@ defmodule SanbaseWeb.Graphql.ChatTypes do
     field(:context, :json)
     field(:sources, :json)
     field(:suggestions, :json)
+
+    field :feedback_type, :chat_message_feedback_type do
+      resolve(fn message, _args, _context ->
+        case message.feedback_type do
+          "thumbs_up" -> {:ok, :thumbs_up}
+          "thumbs_down" -> {:ok, :thumbs_down}
+          nil -> {:ok, nil}
+          _ -> {:ok, nil}
+        end
+      end)
+    end
+
     field(:inserted_at, non_null(:datetime))
     field(:updated_at, non_null(:datetime))
 

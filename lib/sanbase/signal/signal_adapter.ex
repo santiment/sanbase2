@@ -7,7 +7,7 @@ defmodule Sanbase.Signal.SignalAdapter do
     only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2]
 
   alias Sanbase.Signal.FileHandler
-  alias Sanbase.ClickhouseRepo
+  alias Sanbase.ChRepo
 
   @aggregations FileHandler.aggregations()
   @aggregation_map FileHandler.aggregation_map()
@@ -66,7 +66,7 @@ defmodule Sanbase.Signal.SignalAdapter do
   def available_signals(%{slug: slug}) when is_binary(slug) do
     query_struct = available_signals_query(slug)
 
-    ClickhouseRepo.query_transform(query_struct, fn [signal] ->
+    ChRepo.query_transform(query_struct, fn [signal] ->
       Map.get(@signal_to_name_map, signal)
     end)
     |> maybe_apply_function(fn list -> Enum.reject(list, &is_nil/1) end)
@@ -76,7 +76,7 @@ defmodule Sanbase.Signal.SignalAdapter do
   def available_slugs(signal) do
     query_struct = available_slugs_query(signal)
 
-    ClickhouseRepo.query_transform(query_struct, fn [slug] -> slug end)
+    ChRepo.query_transform(query_struct, fn [slug] -> slug end)
   end
 
   @impl Sanbase.Signal.Behaviour
@@ -99,7 +99,7 @@ defmodule Sanbase.Signal.SignalAdapter do
   def first_datetime(signal, %{slug: slug}) when is_binary(slug) do
     query_struct = first_datetime_query(signal, slug)
 
-    ClickhouseRepo.query_transform(query_struct, fn
+    ChRepo.query_transform(query_struct, fn
       [0] -> nil
       [timestamp] -> DateTime.from_unix!(timestamp)
     end)
@@ -110,7 +110,7 @@ defmodule Sanbase.Signal.SignalAdapter do
   def raw_data(signals, selector, from, to) do
     query_struct = raw_data_query(signals, from, to)
 
-    ClickhouseRepo.query_transform(
+    ChRepo.query_transform(
       query_struct,
       fn [unix, signal, slug, value, metadata] ->
         metadata =
@@ -146,7 +146,7 @@ defmodule Sanbase.Signal.SignalAdapter do
 
     query_struct = timeseries_data_query(signal, slugs, from, to, interval, aggregation)
 
-    ClickhouseRepo.query_transform(query_struct, fn [unix, value, metadata] ->
+    ChRepo.query_transform(query_struct, fn [unix, value, metadata] ->
       metadata =
         metadata
         |> List.wrap()
@@ -178,7 +178,7 @@ defmodule Sanbase.Signal.SignalAdapter do
 
     query_struct = aggregated_timeseries_data_query(signal, slugs, from, to, aggregation)
 
-    ClickhouseRepo.query_reduce(query_struct, %{}, fn [slug, value], acc ->
+    ChRepo.query_reduce(query_struct, %{}, fn [slug, value], acc ->
       Map.put(acc, slug, value)
     end)
   end

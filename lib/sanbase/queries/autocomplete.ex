@@ -1,5 +1,5 @@
 defmodule Sanbase.Clickhouse.Autocomplete do
-  alias Sanbase.ClickhouseRepo
+  alias Sanbase.ChRepo
 
   def get_data(opts \\ []) do
     Sanbase.ClickhouseRepo.put_dynamic_repo(Sanbase.ClickhouseRepo.ReadOnly)
@@ -23,7 +23,7 @@ defmodule Sanbase.Clickhouse.Autocomplete do
     query_struct = Sanbase.Clickhouse.Query.new(sql, %{})
 
     {:ok, result} =
-      ClickhouseRepo.query_transform(
+      ChRepo.query_transform(
         query_struct,
         fn [
              name,
@@ -55,7 +55,7 @@ defmodule Sanbase.Clickhouse.Autocomplete do
     query_struct = Sanbase.Clickhouse.Query.new(sql, %{})
 
     {:ok, result} =
-      ClickhouseRepo.query_transform(
+      ChRepo.query_transform(
         query_struct,
         fn [
              table,
@@ -96,7 +96,7 @@ defmodule Sanbase.Clickhouse.Autocomplete do
     query_struct = Sanbase.Clickhouse.Query.new(sql, %{})
 
     {:ok, result} =
-      ClickhouseRepo.query_transform(query_struct, fn [name, origin] ->
+      ChRepo.query_transform(query_struct, fn [name, origin] ->
         %{name: name, origin: origin}
       end)
 

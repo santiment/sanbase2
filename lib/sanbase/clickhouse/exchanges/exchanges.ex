@@ -8,7 +8,7 @@ defmodule Sanbase.Clickhouse.Exchanges do
   def top_exchanges_by_balance(%{slug: slug}, limit, _opts \\ []) when is_binary(slug) do
     query_struct = top_exchanges_by_balance_query(slug, limit)
 
-    ClickhouseRepo.query_transform(
+    ChRepo.query_transform(
       query_struct,
       fn [owner, label, balance, change_1d, change_7d, change_30d, first_seen_ts] ->
         first_seen_dt = if first_seen_ts, do: DateTime.from_unix!(first_seen_ts)
@@ -35,7 +35,7 @@ defmodule Sanbase.Clickhouse.Exchanges do
       true ->
         query_struct = owners_by_slug_and_metric_query(metric, slug)
 
-        ClickhouseRepo.query_transform(query_struct, fn [owner] -> owner end)
+        ChRepo.query_transform(query_struct, fn [owner] -> owner end)
 
       false ->
         {:error, "The provided metric #{metric} is not a label-based metric"}

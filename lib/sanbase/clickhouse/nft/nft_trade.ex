@@ -1,12 +1,12 @@
 defmodule Sanbase.Clickhouse.NftTrade do
   import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1]
 
-  alias Sanbase.ClickhouseRepo
+  alias Sanbase.ChRepo
 
   def get_trades_count(label_key, from, to) do
     query_struct = get_trades_count_query(label_key, from, to)
 
-    ClickhouseRepo.query_transform(query_struct, fn [count] -> count end)
+    ChRepo.query_transform(query_struct, fn [count] -> count end)
     |> maybe_unwrap_ok_value()
   end
 
@@ -14,7 +14,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
       when label_key in [:nft_influencer, :nft_whale] do
     query_struct = get_trades_query(label_key, from, to, opts)
 
-    ClickhouseRepo.query_transform(
+    ChRepo.query_transform(
       query_struct,
       fn list ->
         [
@@ -71,7 +71,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
 
     query_struct = fetch_label_query(contract, blockchain, "value")
 
-    case ClickhouseRepo.query_transform(query_struct, fn [label] -> label end) do
+    case ChRepo.query_transform(query_struct, fn [label] -> label end) do
       {:ok, [label]} when not is_nil(label) -> label
       _ -> nil
     end
@@ -83,7 +83,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
 
     query_struct = fetch_label_query(contract, blockchain, "search_text")
 
-    case ClickhouseRepo.query_transform(query_struct, fn [search_term] -> search_term end) do
+    case ChRepo.query_transform(query_struct, fn [search_term] -> search_term end) do
       {:ok, [search_term]} when not is_nil(search_term) -> search_term
       _ -> nil
     end

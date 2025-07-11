@@ -91,6 +91,19 @@ config :sanbase, Sanbase.ClickhouseRepo,
   pool_size: {:system, "CLICKHOUSE_POOL_SIZE", "3"},
   show_sensitive_data_on_connection_error: true
 
+config :sanbase, Sanbase.ChRepo,
+  adapter: Ecto.Adapters.ClickHouse,
+  loggers: [Ecto.LogEntry],
+  hostname: "clickhouse",
+  port: 8123,
+  database: "default",
+  username: "default",
+  password: "",
+  timeout: 60_000,
+  pool_size: {:system, "CLICKHOUSE_POOL_SIZE", "3"},
+  # idle_interval: 60_000,
+  show_sensitive_data_on_connection_error: true
+
 clickhouse_read_only_opts = [
   adapter: ClickhouseEcto,
   loggers: [Ecto.LogEntry, Sanbase.Prometheus.EctoInstrumenter],

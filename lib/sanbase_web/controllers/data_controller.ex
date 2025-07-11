@@ -303,6 +303,7 @@ defmodule SanbaseWeb.DataController do
             social_volume_query: social_volume_query,
             rank: rank,
             telegram_chat_id: project.telegram_chat_id,
+            telegram_chat_name: project.telegram_chat_name,
             coinmarketcap_id: project.coinmarketcap_id,
             twitter_handle: twitter_handle
           }

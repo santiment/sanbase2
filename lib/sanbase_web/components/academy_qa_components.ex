@@ -21,6 +21,181 @@ defmodule SanbaseWeb.AcademyQAComponents do
   end
 
   @doc """
+  Renders the keyword search form with autocomplete from search API
+  """
+  attr :keyword_query, :string, required: true
+  attr :keyword_loading, :boolean, default: false
+  attr :autocomplete_suggestions, :list, default: []
+  attr :show_autocomplete, :boolean, default: false
+
+  def keyword_search_form(assigns) do
+    ~H"""
+    <div class="relative">
+      <form phx-submit="keyword_search" class="space-y-4">
+        <div class="flex gap-3">
+          <div class="flex-1 relative">
+            <input
+              type="text"
+              name="keyword_query"
+              value={@keyword_query}
+              placeholder="Search Academy content by keywords..."
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              disabled={@keyword_loading}
+              phx-change="keyword_input_change"
+              phx-blur="hide_autocomplete"
+              autocomplete="off"
+            />
+            
+    <!-- Autocomplete Dropdown with search results -->
+            <div
+              :if={@show_autocomplete && length(@autocomplete_suggestions) > 0}
+              class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-96 overflow-y-auto"
+            >
+              <div class="p-2 text-xs text-gray-500 border-b border-gray-100">
+                Press Enter to search "{@keyword_query}" or click a suggestion below:
+              </div>
+              <button
+                :for={suggestion <- @autocomplete_suggestions}
+                type="button"
+                phx-click="select_autocomplete"
+                phx-value-suggestion={suggestion["title"]}
+                class="w-full text-left p-3 hover:bg-green-50 focus:bg-green-50 border-b border-gray-100 last:border-b-0 group"
+              >
+                <div class="flex items-start gap-3">
+                  <div class="flex-1">
+                    <!-- Breadcrumb -->
+                    <div class="text-xs text-gray-500 mb-1">
+                      {Map.get(suggestion, "breadcrumb", "")}
+                    </div>
+                    <!-- Title -->
+                    <div class="text-sm font-medium text-gray-900 group-hover:text-green-700 mb-1">
+                      {Map.get(suggestion, "title", "")}
+                    </div>
+                    <!-- Description -->
+                    <div class="text-xs text-gray-600 line-clamp-2">
+                      {Map.get(suggestion, "description", "")}
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-1 text-xs text-gray-500 flex-shrink-0">
+                    <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
+                      {Float.round(Map.get(suggestion, "relevance_score", 0), 2)}
+                    </span>
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+          <button
+            type="submit"
+            disabled={@keyword_loading}
+            class="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-medium py-3 px-6 rounded-lg transition-colors"
+          >
+            {if @keyword_loading, do: "Searching...", else: "Search"}
+          </button>
+          <button
+            :if={@keyword_query != ""}
+            type="button"
+            phx-click="clear_keyword"
+            class="bg-gray-500 hover:bg-gray-600 text-white font-medium py-3 px-4 rounded-lg transition-colors"
+          >
+            Clear
+          </button>
+        </div>
+      </form>
+      
+    <!-- Backdrop for blur effect -->
+      <div
+        :if={@show_autocomplete}
+        class="fixed inset-0 bg-black bg-opacity-10 z-40"
+        phx-click="hide_autocomplete"
+      >
+      </div>
+    </div>
+    """
+  end
+
+  @doc """
+  Renders keyword search results
+  """
+  attr :results, :map, required: true
+
+  def keyword_results_display(assigns) do
+    ~H"""
+    <div class="mt-6 space-y-4">
+      <div class="border rounded-lg p-6 bg-white shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-gray-900">Search Results</h3>
+          <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium">
+            {length(Map.get(@results, "results", []))} results
+          </span>
+        </div>
+
+        <div :if={Map.get(@results, "results", []) == []} class="text-center py-8">
+          <p class="text-gray-500">No results found. Try different keywords.</p>
+        </div>
+
+        <div :if={Map.get(@results, "results", []) != []} class="space-y-4">
+          <.keyword_result_item :for={result <- Map.get(@results, "results", [])} result={result} />
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  @doc """
+  Renders a single keyword search result item
+  """
+  attr :result, :map, required: true
+
+  def keyword_result_item(assigns) do
+    ~H"""
+    <div class="border border-gray-200 rounded-lg p-5 hover:border-green-300 hover:bg-green-50 transition-colors">
+      <!-- Breadcrumb -->
+      <div class="text-xs text-gray-500 mb-2">
+        {Map.get(@result, "breadcrumb", "")}
+      </div>
+      
+    <!-- Title as clickable link -->
+      <a
+        href={Map.get(@result, "academy_url", "")}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="block group"
+      >
+        <h4 class="text-lg font-medium text-blue-600 group-hover:text-blue-800 group-hover:underline mb-2">
+          {Map.get(@result, "title", "")}
+        </h4>
+      </a>
+      
+    <!-- Description -->
+      <p class="text-sm text-gray-600 mb-3 leading-relaxed">
+        {Map.get(@result, "description", "")}
+      </p>
+      
+    <!-- Meta information -->
+      <div class="flex items-center justify-between text-xs text-gray-500">
+        <div class="flex items-center gap-4">
+          <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
+            Category: {Map.get(@result, "category", "")}
+          </span>
+          <span class="bg-green-100 text-green-700 px-2 py-1 rounded-full">
+            Score: {Float.round(Map.get(@result, "relevance_score", 0), 2)}
+          </span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span :if={Map.get(@result, "author", "") != ""}>
+            by {Map.get(@result, "author", "")}
+          </span>
+          <span :if={Map.get(@result, "last_modified", "") != ""}>
+            • {format_date(Map.get(@result, "last_modified", ""))}
+          </span>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  @doc """
   Renders the question input form
   """
   attr :question, :string, required: true
@@ -304,6 +479,27 @@ defmodule SanbaseWeb.AcademyQAComponents do
   defp format_time(nil), do: "N/A"
   defp format_time(ms) when is_integer(ms), do: "#{Float.round(ms / 1000, 1)}s"
   defp format_time(_), do: "N/A"
+
+  defp format_date(nil), do: ""
+  defp format_date(""), do: ""
+
+  defp format_date(date_string) when is_binary(date_string) do
+    case DateTime.from_iso8601(date_string) do
+      {:ok, datetime, _} ->
+        datetime
+        |> DateTime.to_date()
+        |> Date.to_string()
+
+      {:error, _} ->
+        # Try parsing just the date part if it's in YYYY-MM-DD format
+        case Date.from_iso8601(String.slice(date_string, 0..9)) do
+          {:ok, date} -> Date.to_string(date)
+          {:error, _} -> date_string
+        end
+    end
+  end
+
+  defp format_date(_), do: ""
 
   defp markdown_to_html(markdown) when is_binary(markdown) do
     case Earmark.as_html(markdown) do

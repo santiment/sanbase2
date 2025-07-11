@@ -1,5 +1,6 @@
 defmodule Sanbase.SocialData.SocialDominance do
   import Sanbase.Utils.ErrorHandling
+  import Sanbase.SocialData.Utils, only: [maybe_add_and_rename_field: 4]
 
   alias Sanbase.SocialData.SocialHelper
   alias Sanbase.SocialData
@@ -130,18 +131,21 @@ defmodule Sanbase.SocialData.SocialDominance do
     {:ok, words_dominance}
   end
 
-  defp social_dominance_request(%{slug: slug}, from, to, interval, source) do
+  defp social_dominance_request(%{slug: slug} = selector, from, to, interval, source) do
     url = "#{metrics_hub_url()}/social_dominance"
 
     options = [
       recv_timeout: @recv_timeout,
-      params: [
-        {"slug", slug},
-        {"from_timestamp", from |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
-        {"to_timestamp", to |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
-        {"interval", interval},
-        {"source", source}
-      ]
+      params:
+        [
+          {"slug", slug},
+          {"from_timestamp", from |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
+          {"to_timestamp", to |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
+          {"interval", interval},
+          {"source", source}
+        ]
+        |> maybe_add_and_rename_field(selector, :only_project_channels, "project")
+        |> maybe_add_and_rename_field(selector, :only_project_channels_spec, "project_spec")
     ]
 
     http_client().get(url, [], options)

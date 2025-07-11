@@ -20,6 +20,8 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
         opts
         |> maybe_add_field(:additional_filters, selector)
         |> maybe_add_field(:source, selector)
+        |> maybe_add_field(:only_project_channels, selector)
+        |> maybe_add_field(:only_project_channels_spec, selector)
       else
         opts
       end
@@ -105,7 +107,17 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
 
   # Private functions
 
-  @fields [:owner, :label, :label_fqn, :label_fqns, :blockchain, :owners, :labels]
+  @fields [
+    :owner,
+    :label,
+    :label_fqn,
+    :label_fqns,
+    :blockchain,
+    :owners,
+    :labels,
+    :only_project_channels,
+    :only_project_channels_spec
+  ]
   defp maybe_add_field(opts, :additional_filters, selector) do
     case Map.split(selector, @fields) do
       {map, _rest} when map_size(map) > 0 ->

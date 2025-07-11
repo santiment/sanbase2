@@ -885,7 +885,8 @@ defmodule Sanbase.Metric do
     cond do
       metric in Sanbase.SocialData.MetricAdapter.available_metrics() and
           (match?(%{text: _}, selector) or match?(%{contract_address: _}, selector) or
-             match?(%{founders: _}, selector)) ->
+             match?(%{founders: _}, selector) or
+             match?(%{only_project_channels: <<_::binary>>}, selector)) ->
         Sanbase.SocialData.MetricAdapter
 
       metric in Sanbase.Clickhouse.Github.MetricAdapter.available_metrics() and

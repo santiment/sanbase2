@@ -1,5 +1,6 @@
 defmodule Sanbase.SocialData.ActiveUsers do
   import Sanbase.Utils.ErrorHandling
+  import Sanbase.SocialData.Utils, only: [maybe_add_and_rename_field: 4]
 
   require Logger
   alias Sanbase.Utils.Config
@@ -9,9 +10,9 @@ defmodule Sanbase.SocialData.ActiveUsers do
 
   @recv_timeout 25_000
 
-  def social_active_users(%{source: source}, from, to, interval)
+  def social_active_users(%{source: source} = selector, from, to, interval)
       when source in ["telegram", "twitter_crypto", "twitter", "reddit", "bitcointalk"] do
-    case active_users_request(from, to, interval, source) do
+    case active_users_request(selector, from, to, interval, source) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         {:ok, result} = Jason.decode(body)
         active_users_result(result)
@@ -33,17 +34,20 @@ defmodule Sanbase.SocialData.ActiveUsers do
     error_result("Invalid arguments.")
   end
 
-  defp active_users_request(from, to, interval, source) do
+  defp active_users_request(selector, from, to, interval, source) do
     url = "#{metrics_hub_url()}/social_active_users"
 
     options = [
       recv_timeout: @recv_timeout,
-      params: [
-        {"from_timestamp", from |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
-        {"to_timestamp", to |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
-        {"interval", interval},
-        {"source", source}
-      ]
+      params:
+        [
+          {"from_timestamp", from |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
+          {"to_timestamp", to |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
+          {"interval", interval},
+          {"source", source}
+        ]
+        |> maybe_add_and_rename_field(selector, :only_project_channels, "project")
+        |> maybe_add_and_rename_field(selector, :only_project_channels_spec, "project_spec")
     ]
 
     http_client().get(url, [], options)

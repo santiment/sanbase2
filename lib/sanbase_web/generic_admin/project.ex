@@ -15,7 +15,8 @@ defmodule SanbaseWeb.GenericAdmin.Project do
         :website_link,
         :infrastructure_id,
         :token_decimals,
-        :is_hidden
+        :is_hidden,
+        :telegram_chat_name
       ],
       new_fields: [
         :name,
@@ -29,6 +30,7 @@ defmodule SanbaseWeb.GenericAdmin.Project do
         :is_hidden,
         :hidden_reason,
         :telegram_chat_id,
+        :telegram_chat_name,
         :logo_url,
         :dark_logo_url,
         :email,
@@ -64,6 +66,7 @@ defmodule SanbaseWeb.GenericAdmin.Project do
         :is_hidden,
         :hidden_reason,
         :telegram_chat_id,
+        :telegram_chat_name,
         :logo_url,
         :dark_logo_url,
         :email,

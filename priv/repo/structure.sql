@@ -3003,7 +3003,8 @@ CREATE TABLE public.project (
     multichain_project_group_key character varying(255) DEFAULT NULL::character varying,
     deployed_on_ecosystem_id bigint,
     hidden_since timestamp(0) without time zone,
-    hidden_reason text
+    hidden_reason text,
+    telegram_chat_name character varying(255)
 );
 
 
@@ -10422,3 +10423,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250703133723);
 INSERT INTO public."schema_migrations" (version) VALUES (20250703144448);
 INSERT INTO public."schema_migrations" (version) VALUES (20250709132930);
 INSERT INTO public."schema_migrations" (version) VALUES (20250710091509);
+INSERT INTO public."schema_migrations" (version) VALUES (20250711133635);

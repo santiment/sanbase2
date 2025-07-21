@@ -59,6 +59,7 @@ defmodule Sanbase.Project do
     field(:slack_link, :string)
     field(:telegram_link, :string)
     field(:telegram_chat_id, :integer)
+    field(:telegram_chat_name, :string)
     field(:twitter_link, :string)
     field(:website_link, :string)
     field(:whitepaper_link, :string)
@@ -139,6 +140,7 @@ defmodule Sanbase.Project do
       :slug,
       :team_token_wallet,
       :telegram_chat_id,
+      :telegram_chat_name,
       :telegram_link,
       :ticker,
       :token_address,

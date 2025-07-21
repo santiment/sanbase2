@@ -355,6 +355,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:whitepaper_link, :string)
     field(:blog_link, :string)
     field(:telegram_chat_id, :integer)
+    field(:telegram_chat_name, :string)
     field(:slack_link, :string)
     field(:discord_link, :string)
     field(:linkedin_link, :string)
@@ -618,6 +619,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
     field :twitter_data, :twitter_data do
       cache_resolve(&TwitterResolver.twitter_data/3, ttl: 300)
+    end
+
+    field :telegram_data, :telegram_data do
+      cache_resolve(&ProjectResolver.telegram_data/3, ttl: 300)
     end
 
     field :marketcap_usd, :float do

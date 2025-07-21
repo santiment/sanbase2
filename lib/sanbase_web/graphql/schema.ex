@@ -71,6 +71,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.SocialDataTypes)
   import_types(Graphql.TableConfigurationTypes)
   import_types(Graphql.TagTypes)
+  import_types(Graphql.TelegramTypes)
   import_types(Graphql.TimelineEventTypes)
   import_types(Graphql.TransactionTypes)
   import_types(Graphql.TransferTypes)

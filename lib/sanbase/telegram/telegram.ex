@@ -10,6 +10,7 @@ defmodule Sanbase.Telegram do
   alias Sanbase.Utils.Config
 
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
+  import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1]
 
   alias Sanbase.Accounts.{User, Settings, UserSettings}
   alias Sanbase.Telegram.UserToken
@@ -214,6 +215,35 @@ defmodule Sanbase.Telegram do
       _ ->
         {:error, "There is not user connected with the provided user token."}
     end
+  end
+
+  def telegram_channel_members_count(telegram_chat_name) do
+    telegram_channel_members_count_query(telegram_chat_name)
+    |> Sanbase.ClickhouseRepo.query_transform(fn [dt, value] ->
+      %{
+        datetime: DateTime.from_unix!(dt),
+        members_count: value
+      }
+    end)
+    |> maybe_unwrap_ok_value()
+  end
+
+  # private
+
+  defp telegram_channel_members_count_query(telegram_chat_name) do
+    sql = """
+    SELECT
+      toUnixTimestamp(timestamp),
+      participants_count
+    FROM tg_participants_count
+    WHERE
+      source = {{telegram_chat_name}} AND
+      timestamp = (SELECT max(timestamp) FROM tg_participants_count WHERE source = {{telegram_chat_name}})
+    """
+
+    params = %{telegram_chat_name: telegram_chat_name}
+
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   # Private functions

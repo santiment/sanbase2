@@ -59,6 +59,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, funds_raised}
   end
 
+  def telegram_data(%Project{telegram_chat_name: chat_name}, _args, _resolution) do
+    if is_binary(chat_name) and chat_name != "" do
+      Sanbase.Telegram.telegram_channel_members_count(chat_name)
+    else
+      {:ok, nil}
+    end
+  end
+
   def infrastructure(%Project{infrastructure_id: nil}, _args, _resolution), do: {:ok, nil}
 
   def infrastructure(%Project{infrastructure_id: infrastructure_id}, _args, %{

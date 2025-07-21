@@ -53,13 +53,28 @@ defmodule SanbaseWeb.DataControllerTest do
     new_fields =
       cond do
         project.id == context.p1.id ->
-          %{"social_volume_query" => "", "rank" => 20, "telegram_chat_id" => nil}
+          %{
+            "social_volume_query" => "",
+            "rank" => 20,
+            "telegram_chat_id" => nil,
+            "telegram_chat_name" => nil
+          }
 
         project.id == context.p2.id ->
-          %{"social_volume_query" => "", "rank" => nil, "telegram_chat_id" => 123}
+          %{
+            "social_volume_query" => "",
+            "rank" => nil,
+            "telegram_chat_id" => 123,
+            "telegram_chat_name" => nil
+          }
 
         project.id == context.p3.id ->
-          %{"social_volume_query" => "x OR y", "rank" => nil, "telegram_chat_id" => nil}
+          %{
+            "social_volume_query" => "x OR y",
+            "rank" => nil,
+            "telegram_chat_id" => nil,
+            "telegram_chat_name" => nil
+          }
       end
 
     %{

@@ -23,6 +23,14 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     value(:custom)
   end
 
+  enum :only_project_channels_spec_enum do
+    value(:all)
+    value(:team)
+    value(:influencers)
+    value(:partners)
+    value(:funds)
+  end
+
   enum :selector_name do
     # common
     value(:blockchain)
@@ -45,6 +53,8 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     value(:text)
     value(:founders)
     value(:source)
+    value(:only_project_channels)
+    value(:only_project_channels_spec)
     # label related
     value(:owner)
     value(:owners)
@@ -88,6 +98,8 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:text, :string)
     field(:source, :string)
     field(:founders, list_of(:string))
+    field(:only_project_channels, :string)
+    field(:only_project_channels_spec, :only_project_channels_spec_enum)
     # dev activity related
     field(:organization, :string)
     field(:organizations, list_of(:string))

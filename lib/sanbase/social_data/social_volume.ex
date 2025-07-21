@@ -1,5 +1,6 @@
 defmodule Sanbase.SocialData.SocialVolume do
   import Sanbase.Utils.ErrorHandling
+  import Sanbase.SocialData.Utils, only: [maybe_add_and_rename_field: 4]
 
   require Logger
   require Mockery.Macro
@@ -162,7 +163,7 @@ defmodule Sanbase.SocialData.SocialVolume do
     {:ok, projects}
   end
 
-  defp social_volume_list_request(%{words: words}, from, to, interval, source, opts) do
+  defp social_volume_list_request(%{words: words} = selector, from, to, interval, source, opts) do
     url = Path.join([metrics_hub_url(), opts_to_metric(opts)])
 
     body =
@@ -173,6 +174,8 @@ defmodule Sanbase.SocialData.SocialVolume do
         "interval" => interval,
         "source" => source
       }
+      |> maybe_add_and_rename_field(selector, :only_project_channels, "project")
+      |> maybe_add_and_rename_field(selector, :only_project_channels_spec, "project_spec")
       |> Jason.encode_to_iodata!()
 
     options = [recv_timeout: @recv_timeout]
@@ -189,13 +192,16 @@ defmodule Sanbase.SocialData.SocialVolume do
       options =
         [
           recv_timeout: @recv_timeout,
-          params: [
-            {selector_name, selector_value},
-            {"from_timestamp", from |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
-            {"to_timestamp", to |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
-            {"interval", interval},
-            {"source", source}
-          ]
+          params:
+            [
+              {selector_name, selector_value},
+              {"from_timestamp", from |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
+              {"to_timestamp", to |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
+              {"interval", interval},
+              {"source", source}
+            ]
+            |> maybe_add_and_rename_field(selector, :only_project_channels, "project")
+            |> maybe_add_and_rename_field(selector, :only_project_channels_spec, "project_spec")
         ]
 
       http_client().get(url, [], options)

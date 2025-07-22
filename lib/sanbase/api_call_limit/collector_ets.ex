@@ -1,4 +1,4 @@
-defmodule Sanbase.ApiCallLimit.Collector do
+defmodule Sanbase.ApiCallLimit.CollectorETS do
   use GenServer
 
   def start_link(args) do

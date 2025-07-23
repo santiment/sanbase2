@@ -130,6 +130,8 @@ defmodule Sanbase.Metric.Registry do
   end
 
   def changeset(%__MODULE__{} = metric_registry, attrs) do
+    attrs = maybe_update_is_template(attrs)
+
     metric_registry
     |> cast(attrs, [
       :access,
@@ -410,4 +412,13 @@ defmodule Sanbase.Metric.Registry do
 
   defp apply_template_parameters(registry) when registry.is_template == false,
     do: [registry]
+
+  defp maybe_update_is_template(attrs) do
+    if metric = attrs["metric"] do
+      {:ok, captures} = Sanbase.TemplateEngine.Captures.extract_captures(metric)
+      Map.put(attrs, "is_template", captures != [])
+    else
+      attrs
+    end
+  end
 end

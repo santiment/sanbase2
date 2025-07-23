@@ -63,7 +63,7 @@ defmodule Sanbase.Billing.Plan.CustomPlan.Loader do
     plan =
       from(p in Plan,
         where:
-          p.name == ^plan_name and p.product_id == ^product_id and
+          p.name == ^plan_name and
             p.has_custom_restrictions == true,
         # There are montly and yearly plans, both should have the same plan
         limit: 1

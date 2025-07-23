@@ -47,6 +47,8 @@ defmodule Sanbase.Metric.Registry do
           is_timebound: boolean(),
           has_incomplete_data: boolean(),
           exposed_environments: String.t(),
+          stabilization_period: String.t(),
+          is_mutable: boolean(),
           is_hidden: boolean(),
           is_deprecated: boolean(),
           hard_deprecate_after: DateTime.t(),
@@ -104,6 +106,9 @@ defmodule Sanbase.Metric.Registry do
 
     field(:exposed_environments, :string, default: "all")
 
+    field(:stabilization_period, :string, default: nil)
+    field(:is_mutable, :boolean, default: nil)
+
     field(:is_hidden, :boolean, default: false)
     field(:is_deprecated, :boolean, default: false)
     field(:hard_deprecate_after, :utc_datetime, default: nil)
@@ -139,6 +144,8 @@ defmodule Sanbase.Metric.Registry do
       :data_type,
       :deprecation_note,
       :exposed_environments,
+      :stabilization_period,
+      :is_mutable,
       :fixed_parameters,
       :hard_deprecate_after,
       :has_incomplete_data,
@@ -207,7 +214,8 @@ defmodule Sanbase.Metric.Registry do
     |> validate_inclusion(:data_type, ["timeseries", "histogram", "table"])
     |> validate_inclusion(:exposed_environments, ["all", "none", "stage", "prod"])
     |> validate_inclusion(:access, ["free", "restricted"])
-    |> validate_change(:min_interval, &Validation.validate_min_interval/2)
+    |> validate_change(:stabilization_period, &Validation.validate_interval/2)
+    |> validate_change(:min_interval, &Validation.validate_interval/2)
     |> validate_inclusion(:sync_status, @allowed_sync_statuses)
     |> validate_inclusion(:sanbase_min_plan, ["free", "pro", "max"])
     |> validate_inclusion(:sanapi_min_plan, ["free", "pro", "max"])

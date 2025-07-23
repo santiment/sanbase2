@@ -20,12 +20,22 @@ defmodule Sanbase.Billing.Plan.CustomPlan.Access do
     get_data(plan_name, product_code).restrictions.restricted_access_as_plan
   end
 
-  def historical_data_in_days(_query, product_code, product_code, plan_name) do
-    get_data(plan_name, product_code).restrictions.historical_data_in_days
+  def historical_data_in_days(
+        query_or_argument,
+        requested_product,
+        _subscription_product,
+        plan_name
+      ) do
+    get_data(plan_name, requested_product).restrictions.historical_data_in_days
   end
 
-  def realtime_data_cut_off_in_days(_query, product_code, product_code, plan_name) do
-    get_data(plan_name, product_code).restrictions.realtime_data_cut_off_in_days
+  def realtime_data_cut_off_in_days(
+        query_or_argument,
+        requested_product,
+        _subscription_product,
+        plan_name
+      ) do
+    get_data(plan_name, requested_product).restrictions.realtime_data_cut_off_in_days
   end
 
   def plan_has_access?(query_or_argument, product_code, plan_name) do

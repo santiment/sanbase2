@@ -14,7 +14,8 @@ defmodule Sanbase.Metric.Registry.MetricVersions do
   Returns a list of maps with date, created_metrics, and deprecated_metrics.
   Supports limit and offset for infinite scrolling.
   """
-  @spec get_changelog_by_date(integer(), integer(), String.t() | nil) :: {list(map()), boolean()}
+  @spec get_changelog_by_date(integer(), integer(), String.t() | nil) ::
+          {list(map()), boolean(), integer()}
   def get_changelog_by_date(limit, offset, search_term \\ nil) do
     {creation_events_query, deprecation_events_query} = build_base_queries()
 
@@ -41,7 +42,7 @@ defmodule Sanbase.Metric.Registry.MetricVersions do
     metrics_by_id = fetch_metrics_for_dates(paginated_dates, events_by_date)
     changelog_entries = build_changelog_entries(paginated_dates, events_by_date, metrics_by_id)
 
-    {changelog_entries, has_more}
+    {changelog_entries, has_more, total_dates}
   end
 
   defp build_base_queries do

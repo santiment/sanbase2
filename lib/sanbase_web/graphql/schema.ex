@@ -84,6 +84,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.WebinarTypes)
   import_types(Graphql.WidgetTypes)
   import_types(Graphql.MetricDisplayOrderTypes)
+  import_types(Graphql.ChangelogTypes)
 
   # Queries and mutations
   import_types(Graphql.Schema.AuthQueries)
@@ -132,6 +133,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.Schema.VoteQueries)
   import_types(Graphql.Schema.WebinarQueries)
   import_types(Graphql.Schema.WidgetQueries)
+  import_types(Graphql.Schema.ChangelogQueries)
 
   def dataloader() do
     Dataloader.new(timeout: :timer.seconds(20), get_policy: :return_nil_on_error)
@@ -195,6 +197,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:webinar_queries)
     import_fields(:widget_queries)
     import_fields(:metric_display_order_queries)
+    import_fields(:changelog_queries)
   end
 
   mutation do

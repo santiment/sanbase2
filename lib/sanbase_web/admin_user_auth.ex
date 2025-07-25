@@ -137,7 +137,7 @@ defmodule SanbaseWeb.AdminUserAuth do
         |> Phoenix.LiveView.put_flash(
           :error,
           """
-          You must have a Metric Reigstry role in order to access this page.
+          You must have a Metric Registry role in order to access this page.
 
           To get a role:
           Viewer: Sanbase.Accounts.UserRole.create(#{socket.assigns.current_user.id}, #{Sanbase.Accounts.Role.metric_registry_viewer_role_id()})

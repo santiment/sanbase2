@@ -99,6 +99,8 @@ defmodule Sanbase.AvailableMetrics do
         available_assets: Map.get(metric_to_supported_assets_map, m.metric) || [],
         default_aggregation: m.default_aggregation,
         frequency: m.min_interval,
+        stabilization_period: m.stabilization_period,
+        can_mutate: m.can_mutate,
         frequency_seconds: Sanbase.DateTimeUtils.str_to_sec(m.min_interval),
         sanbase_access: "free",
         sanapi_access: "free",

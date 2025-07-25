@@ -3,8 +3,8 @@ defmodule Sanbase.Repo.Migrations.AddMetricRegistryStabParam do
 
   def change do
     alter table(:metric_registry) do
-      add(:stability_period, :string, null: true)
-      add(:is_mutable, :boolean, null: true)
+      add(:stabilization_period, :string, null: true)
+      add(:can_mutate, :boolean, null: true)
     end
   end
 end

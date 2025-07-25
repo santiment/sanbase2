@@ -169,7 +169,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
        required_selectors: Map.get(Registry.required_selectors_map(), metric, []),
        data_type: Map.get(Registry.metrics_data_type_map(), metric),
        is_timebound: Map.get(Registry.timebound_flag_map(), metric),
-       is_mutable: Map.get(Registry.is_mutable_map(), metric),
+       can_mutate: Map.get(Registry.can_mutate_map(), metric),
        stabilization_period: Map.get(Registry.stabilization_period_map(), metric),
        complexity_weight: @default_complexity_weight,
        docs: Map.get(Registry.docs_links_map(), metric),

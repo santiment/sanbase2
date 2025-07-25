@@ -5,15 +5,15 @@ defmodule Sanbase.Metric.Registry.Validation do
     if Sanbase.DateTimeUtils.valid_compound_duration?(value) do
       if Sanbase.DateTimeUtils.str_to_days(value) > 30 do
         [
-          min_interval: "The provided #{column} value #{value} is too big - more than 30 days."
+          {column, "The provided #{column} value #{value} is too big - more than 30 days."}
         ]
       else
         []
       end
     else
       [
-        min_interval: "The provided #{column} value #{value} is not a valid duration - \
-        a number followed by one of: s (second), m (minute), h (hour) or d (day)"
+        {column, "The provided #{column} value #{value} is not a valid duration - \
+        a number followed by one of: s (second), m (minute), h (hour) or d (day)"}
       ]
     end
   end

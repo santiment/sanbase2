@@ -1,21 +1,48 @@
 defmodule Sanbase.Repo.Migrations.FillStabilizationRegistryData do
   use Ecto.Migration
 
-  def change do
+  def up do
+    data = get_data()
+
+    Enum.each(data, fn {metric, {stabilization_period, can_mutate}} ->
+      with {:ok, registry} <- Sanbase.Metric.Registry.by_name(metric) do
+        registry
+        |> Sanbase.Metric.Registry.changeset(%{
+          stabilization_period: stabilization_period,
+          can_mutate: can_mutate
+        })
+        # So we don't change the updated_at, otherwise we'll have a lot of records
+        # that will show that they were recently updated, but there would be nothing in the
+        # metric registry changelog.
+        # Doing it via the metric registry change request + sync will be much more work
+        |> Ecto.Changeset.force_change(:updated_at, registry.updated_at)
+        |> Sanbase.Repo.update!()
+      end
+    end)
+  end
+
+  def down do
+    :ok
   end
 
   defp get_data() do
     csv_data()
     |> String.split("\n", trim: true)
-    |> Enum.map(&String.split(&1, ",", trim: true))
-    |> Enum.map(fn [metric, stabilization_period, mutable] ->
-      case mutable do
-        "YES" -> true
-        "NO" -> false
-        _ -> nil
-      end
+    |> Enum.map(&String.split(&1, ","))
+    |> Map.new(fn [metric, stabilization_period, can_mutate] ->
+      can_mutate =
+        case can_mutate do
+          "YES" -> true
+          "NO" -> false
+          _ -> nil
+        end
 
-      [metric, stabilization_period, mutable]
+      stabilization_period =
+        if Sanbase.DateTimeUtils.valid_compound_duration?(stabilization_period),
+          do: stabilization_period,
+          else: nil
+
+      {metric, {stabilization_period, can_mutate}}
     end)
   end
 

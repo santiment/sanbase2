@@ -293,6 +293,18 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
         popover_target_text: get_popover_text(%{key: "Is Template Metric"})
       },
       %{
+        key: "Stabilization Period",
+        value: metric_registry.stabilization_period,
+        popover_target: "popover-stabilization-period",
+        popover_target_text: get_popover_text(%{key: "Stabilization Period"})
+      },
+      %{
+        key: "Can Mutate",
+        value: metric_registry.can_mutate,
+        popover_target: "popover-can-mutate",
+        popover_target_text: get_popover_text(%{key: "Can Mutate"})
+      },
+      %{
         key: "Parameters",
         value: Jason.encode!(metric_registry.parameters),
         popover_target: "popover-parameters",

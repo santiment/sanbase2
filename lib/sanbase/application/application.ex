@@ -373,7 +373,13 @@ defmodule Sanbase.Application do
 
       # Process that starts test-only deps
       start_in(Sanbase.TestSetupService, [:test]),
-      Sanbase.EventBus.children()
+      Sanbase.EventBus.children(),
+
+      # MCP Related
+
+      Hermes.Server.Registry,
+      {Sanbase.MCP.Server, transport: :streamable_http},
+      {Sanbase.MCP.Client, transport: {:streamable_http, base_url: "http://localhost:4000"}}
     ]
     |> List.flatten()
   end

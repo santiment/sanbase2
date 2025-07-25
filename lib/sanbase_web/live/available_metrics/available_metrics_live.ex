@@ -88,6 +88,24 @@ defmodule SanbaseWeb.AvailableMetricsLive do
         >
           {row.frequency}
         </:col>
+
+        <:col
+          :let={row}
+          label="Stabilization Period"
+          popover_target="popover-stabilization-period"
+          popover_target_text={get_popover_text(%{key: "Stabilization Period"})}
+        >
+          {row.frequency}
+        </:col>
+
+        <:col
+          :let={row}
+          label="Can Mutate"
+          popover_target="popover-can-mutate"
+          popover_target_text={get_popover_text(%{key: "Can Mutate"})}
+        >
+          {row.frequency}
+        </:col>
         <:col
           :let={row}
           label="Selectors"

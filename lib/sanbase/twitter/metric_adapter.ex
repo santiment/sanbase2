@@ -105,6 +105,8 @@ defmodule Sanbase.Twitter.MetricAdapter do
        internal_metric: metric,
        has_incomplete_data: has_incomplete_data?(metric),
        min_interval: "6h",
+       stabilization_period: "24h",
+       can_mutate: false,
        default_aggregation: :last,
        available_aggregations: @aggregations,
        available_selectors: [:slug],

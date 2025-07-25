@@ -181,6 +181,8 @@ defmodule Sanbase.Billing.Plan.Restrictions do
         %{
           human_readable_name: human_readable_name,
           min_interval: metadata.min_interval,
+          stabilization_period: metadata.stabilization_period,
+          can_mutate: metadata.can_mutate,
           internal_name: metadata.internal_metric,
           is_deprecated: metadata.is_deprecated,
           hard_deprecate_after: metadata.hard_deprecate_after,

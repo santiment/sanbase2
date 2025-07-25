@@ -48,7 +48,7 @@ defmodule Sanbase.Metric.Registry do
           has_incomplete_data: boolean(),
           exposed_environments: String.t(),
           stabilization_period: String.t(),
-          is_mutable: boolean(),
+          can_mutate: boolean(),
           is_hidden: boolean(),
           is_deprecated: boolean(),
           hard_deprecate_after: DateTime.t(),
@@ -107,7 +107,7 @@ defmodule Sanbase.Metric.Registry do
     field(:exposed_environments, :string, default: "all")
 
     field(:stabilization_period, :string, default: nil)
-    field(:is_mutable, :boolean, default: nil)
+    field(:can_mutate, :boolean, default: nil)
 
     field(:is_hidden, :boolean, default: false)
     field(:is_deprecated, :boolean, default: false)
@@ -145,7 +145,7 @@ defmodule Sanbase.Metric.Registry do
       :deprecation_note,
       :exposed_environments,
       :stabilization_period,
-      :is_mutable,
+      :can_mutate,
       :fixed_parameters,
       :hard_deprecate_after,
       :has_incomplete_data,

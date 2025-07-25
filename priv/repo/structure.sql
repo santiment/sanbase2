@@ -2171,8 +2171,8 @@ CREATE TABLE public.metric_registry (
     sync_status character varying(255) DEFAULT 'synced'::character varying NOT NULL,
     status character varying(255) DEFAULT 'released'::character varying NOT NULL,
     last_sync_datetime timestamp(0) without time zone,
-    stability_period character varying(255),
-    is_mutable boolean
+    stabilization_period character varying(255),
+    can_mutate boolean
 );
 
 
@@ -10427,3 +10427,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250709132930);
 INSERT INTO public."schema_migrations" (version) VALUES (20250710091509);
 INSERT INTO public."schema_migrations" (version) VALUES (20250711133635);
 INSERT INTO public."schema_migrations" (version) VALUES (20250723114539);
+INSERT INTO public."schema_migrations" (version) VALUES (20250724112853);

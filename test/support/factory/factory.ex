@@ -786,15 +786,15 @@ defmodule Sanbase.Factory do
 
   def role_admin_panel_editor_factory() do
     %Role{
-      id: Sanbase.Accounts.Role.admin_panel_viewer_role_id(),
-      name: "Admin Panel Viewer"
+      id: Sanbase.Accounts.Role.admin_panel_editor_role_id(),
+      name: "Admin Panel Editor"
     }
   end
 
   def role_admin_panel_owner_factory() do
     %Role{
       id: Sanbase.Accounts.Role.admin_panel_owner_role_id(),
-      name: "Admin Panel Viewer"
+      name: "Admin Panel Owner"
     }
   end
 

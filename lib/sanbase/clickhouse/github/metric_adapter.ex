@@ -201,6 +201,8 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
        internal_metric: metric,
        has_incomplete_data: has_incomplete_data?(metric),
        min_interval: "5m",
+       stabilization_period: "4h",
+       can_mutate: true,
        default_aggregation: :sum,
        available_aggregations: @aggregations,
        available_selectors: [:slug],

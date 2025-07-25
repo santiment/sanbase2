@@ -430,6 +430,8 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field(:human_readable_name, non_null(:string))
     field(:internal_name, non_null(:string))
     field(:min_interval, :string)
+    field(:stabilization_period, :interval)
+    field(:can_mutate, :boolean)
     field(:is_restricted, non_null(:boolean))
     field(:is_accessible, non_null(:boolean))
     field(:restricted_from, :datetime)

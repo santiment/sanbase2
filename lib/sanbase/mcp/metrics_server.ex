@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.MCP.MetricsServer do
+defmodule Sanbase.MCP.MetricsServer do
   @moduledoc "MCP server for Sanbase metrics access"
 
   use Hermes.Server,
@@ -7,6 +7,6 @@ defmodule SanbaseWeb.MCP.MetricsServer do
     capabilities: [:tools]
 
   # Register our metrics tools
-  component(SanbaseWeb.MCP.AvailableMetricsTool)
-  component(SanbaseWeb.MCP.FetchMetricDataTool)
+  component(Sanbase.MCP.DiscoveryTool)
+  component(Sanbase.MCP.FetchMetricDataTool)
 end

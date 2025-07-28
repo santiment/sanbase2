@@ -30,7 +30,7 @@ defmodule Sanbase.Application.Web do
       Hermes.Server.Registry,
 
       # MCP server for metrics access
-      {SanbaseWeb.MCP.MetricsServer, transport: :streamable_http},
+      {Sanbase.MCP.MetricsServer, transport: :streamable_http},
 
       # Start libcluster
       start_in(

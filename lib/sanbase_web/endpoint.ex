@@ -72,11 +72,6 @@ defmodule SanbaseWeb.Endpoint do
   # Some things are configured at runtime in SanbaseWeb.Plug.SessionPlug.call
   plug(SanbaseWeb.Plug.SessionPlug, @session_options)
 
-  # MCP server endpoint for metrics access
-  plug Hermes.Server.Transport.StreamableHTTP.Plug,
-    server: SanbaseWeb.MCP.MetricsServer,
-    path: "/mcp"
-
   plug(SanbaseWeb.Router)
 
   def website_url() do

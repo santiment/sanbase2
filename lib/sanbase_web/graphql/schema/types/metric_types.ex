@@ -396,17 +396,31 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     end
 
     @desc ~s"""
-    List of slugs which can be provided to the `timeseriesData` field to fetch
-    the metric.
+    List of slugs which can be provided to the `timeseriesDataJson` (and co.)
+    field to fetch the metric.
     """
     field :available_slugs, list_of(:string) do
       cache_resolve(&MetricResolver.get_available_slugs/3, ttl: 300)
     end
 
+    @desc ~s"""
+    List of projects which slug can be provided to the `timeseriesDataJson` (and co.)
+    field to fetch the metric.
+    """
     field :available_projects, list_of(:project) do
       cache_resolve(&MetricResolver.get_available_projects/3, ttl: 300)
     end
 
+    @desc ~s"""
+    List of label FQNs (Fully Qualified Names) that can be provided to the `timeseriesDataJson` (and co.)
+    selector `labelFqn` field to fetch the metric for a specific label.
+
+    Label FQNs are used to identify specific sets of addresses or entities,
+    such as exchanges, funds, or whales, associated with a project.
+    This field allows filtering the metric by these labels, enabling more granular queries.
+    For more information about label FQNs, see:
+    - https://academy.santiment.net/labels/label-fqn
+    """
     field :available_label_fqns, list_of(:string) do
       arg(:slug, :string)
       cache_resolve(&MetricResolver.get_available_label_fqns/3, ttl: 300)
@@ -416,6 +430,20 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     The minimal granularity for which the data is available.
     """
     field(:min_interval, :string)
+
+    @desc ~s"""
+    The stabilization period is the time period after which the metric is considered stable.
+    The value of the metric can change during the stabilization period, but it is considered stable
+    after the stabilization period. A metric value can be recalculated until a desired number
+    of confirmation blocks is reached.
+    """
+    field(:stabilization_period, :interval)
+
+    @desc ~s"""
+    A boolean flag that indicates whether the metric value can change after the
+    stabilization period is over.
+    """
+    field(:can_mutate, :boolean)
 
     @desc ~s"""
     When the interval provided in the query is bigger than `min_interval` and

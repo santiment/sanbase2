@@ -34,9 +34,11 @@ defmodule Sanbase.Metric.Behaviour do
           required_selectors: list(atom()),
           data_type: available_data_types(),
           complexity_weight: number(),
+          stabilization_period: String.t(),
           has_incomplete_data: boolean(),
           is_label_fqn_metric: boolean(),
           is_timebound: boolean(),
+          can_mutate: boolean(),
           # A metric can be deprecated, which means that it is marked
           # as deprecated, but it is still accsessible. If hard_deprecate_after
           # is not set, the deprecation is considered soft.

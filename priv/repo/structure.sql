@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.1 (Homebrew)
--- Dumped by pg_dump version 15.1 (Homebrew)
+-- Dumped from database version 15.10 (Homebrew)
+-- Dumped by pg_dump version 15.10 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -813,8 +813,8 @@ CREATE TABLE public.chat_messages (
     sources jsonb[] DEFAULT ARRAY[]::jsonb[],
     suggestions text[] DEFAULT ARRAY[]::text[],
     feedback_type character varying(255),
-    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY ((ARRAY['thumbs_up'::character varying, 'thumbs_down'::character varying])::text[])) OR (feedback_type IS NULL))),
-    CONSTRAINT valid_role CHECK (((role)::text = ANY ((ARRAY['user'::character varying, 'assistant'::character varying])::text[])))
+    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY (ARRAY[('thumbs_up'::character varying)::text, ('thumbs_down'::character varying)::text])) OR (feedback_type IS NULL))),
+    CONSTRAINT valid_role CHECK (((role)::text = ANY (ARRAY[('user'::character varying)::text, ('assistant'::character varying)::text])))
 );
 
 
@@ -2167,10 +2167,12 @@ CREATE TABLE public.metric_registry (
     deprecation_note text,
     inserted_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
-    status character varying(255) DEFAULT 'released'::character varying NOT NULL,
     is_verified boolean DEFAULT true NOT NULL,
     sync_status character varying(255) DEFAULT 'synced'::character varying NOT NULL,
-    last_sync_datetime timestamp(0) without time zone
+    status character varying(255) DEFAULT 'released'::character varying NOT NULL,
+    last_sync_datetime timestamp(0) without time zone,
+    stabilization_period character varying(255),
+    can_mutate boolean
 );
 
 
@@ -10424,3 +10426,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250703144448);
 INSERT INTO public."schema_migrations" (version) VALUES (20250709132930);
 INSERT INTO public."schema_migrations" (version) VALUES (20250710091509);
 INSERT INTO public."schema_migrations" (version) VALUES (20250711133635);
+INSERT INTO public."schema_migrations" (version) VALUES (20250723114539);
+INSERT INTO public."schema_migrations" (version) VALUES (20250724112853);

@@ -758,29 +758,50 @@ defmodule Sanbase.Factory do
 
   def role_san_team_factory() do
     %Role{
-      id: 1,
+      id: Sanbase.Accounts.Role.san_team_role_id(),
       name: "Santiment Team Member"
     }
   end
 
   def role_san_family_factory() do
     %Role{
-      id: 2,
+      id: Sanbase.Accounts.Role.san_family_role_id(),
       name: "Santiment Family Member"
     }
   end
 
   def role_san_moderator_factory() do
     %Role{
-      id: 3,
+      id: Sanbase.Accounts.Role.san_moderator_role_id(),
       name: "Santiment Moderator"
     }
   end
 
   def role_admin_panel_viewer_factory() do
     %Role{
-      id: 4,
+      id: Sanbase.Accounts.Role.admin_panel_viewer_role_id(),
       name: "Admin Panel Viewer"
+    }
+  end
+
+  def role_admin_panel_editor_factory() do
+    %Role{
+      id: Sanbase.Accounts.Role.admin_panel_editor_role_id(),
+      name: "Admin Panel Editor"
+    }
+  end
+
+  def role_admin_panel_owner_factory() do
+    %Role{
+      id: Sanbase.Accounts.Role.admin_panel_owner_role_id(),
+      name: "Admin Panel Owner"
+    }
+  end
+
+  def role_metric_registry_owner_factory() do
+    %Role{
+      id: Sanbase.Accounts.Role.metric_registry_owner_role_id(),
+      name: "Metric Registry Owner"
     }
   end
 

@@ -29,6 +29,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   def min_interval_map(), do: get(:min_interval_map)
   def min_plan_map(), do: get(:min_plan_map)
   def names_map(), do: get(:names_map)
+  def can_mutate_map(), do: get(:can_mutate_map)
+  def stabilization_period_map(), do: get(:stabilization_period_map)
   def name_to_metric_map(), do: get(:name_to_metric_map)
   def required_selectors_map(), do: get(:required_selectors_map)
   def selectors_map(), do: get(:selectors_map)
@@ -70,6 +72,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
     {:min_interval_map, []},
     {:min_plan_map, []},
     {:name_to_metric_map, []},
+    {:can_mutate_map, []},
+    {:stabilization_period_map, []},
     {:names_map, []},
     {:required_selectors_map, []},
     {:selectors_map, []},
@@ -368,6 +372,14 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
 
   defp compute(:incomplete_data_map, []) do
     get_metrics([]) |> Map.new(&{&1.metric, &1.has_incomplete_data})
+  end
+
+  defp compute(:stabilization_period_map, []) do
+    get_metrics([]) |> Map.new(&{&1.metric, &1.stabilization_period})
+  end
+
+  defp compute(:can_mutate_map, []) do
+    get_metrics([]) |> Map.new(&{&1.metric, &1.can_mutate})
   end
 
   defp compute(:incomplete_metrics, []) do

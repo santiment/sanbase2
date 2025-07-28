@@ -1,20 +1,19 @@
 defmodule Sanbase.Metric.Registry.Validation do
   import Ecto.Changeset
 
-  def validate_min_interval(:min_interval, min_interval) do
-    if Sanbase.DateTimeUtils.valid_compound_duration?(min_interval) do
-      if Sanbase.DateTimeUtils.str_to_days(min_interval) > 30 do
+  def validate_interval(column, value) when column in [:min_interval, :stabilization_period] do
+    if Sanbase.DateTimeUtils.valid_compound_duration?(value) do
+      if Sanbase.DateTimeUtils.str_to_days(value) > 30 do
         [
-          min_interval:
-            "The provided min_interval #{min_interval} is too big - more than 30 days."
+          {column, "The provided #{column} value #{value} is too big - more than 30 days."}
         ]
       else
         []
       end
     else
       [
-        min_interval:
-          "The provided min_interval #{min_interval} is not a valid duration - a number followed by one of: s (second), m (minute), h (hour) or d (day)"
+        {column, "The provided #{column} value #{value} is not a valid duration - \
+        a number followed by one of: s (second), m (minute), h (hour) or d (day)"}
       ]
     end
   end

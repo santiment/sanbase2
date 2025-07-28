@@ -96,6 +96,45 @@ defmodule SanbaseWeb.AvailableMetricsDescription do
     """
   end
 
+  def get_popover_text(%{key: "Stabilization Period"} = assigns) do
+    ~H"""
+    <pre>
+    The <b>Stabilization Period</b> is the time interval after which
+    the metric data is considered stable and unlikely to change.
+
+    Due to the specifics of our metrics calculation algorithms (especially for on-chain data),
+    metric values may be recalculated several times after they are first provided via the API.
+    This can happen, for example, while waiting for a required number of blockchain confirmations
+    or as new data becomes available.
+
+    The stabilization period defines how long after the initial calculation the data may still change.
+    Once this period has passed, the data is generally considered <b>immutable</b> and safe for
+    use in critical applications.
+
+    <b>Example:</b> If the stabilization period is 24 hours, the metric value for a given day
+    may be updated several times within those 24 hours, but after that, it is considered final.
+    </pre>
+    """
+  end
+
+  def get_popover_text(%{key: "Can Mutate"} = assigns) do
+    ~H"""
+    <pre>
+    The <b>Can Mutate</b> field indicates whether the metric data can change even after the
+    stabilization period has passed.
+
+    In most cases, once the stabilization period is over, the metric data is considered final.
+    However, for some metrics, it is possible for the data to be recalculated or updated later
+    due to changes in the underlying calculation parameters (for example, if the set of addresses
+    included in the calculation is updated).
+
+    If <b>Can Mutate</b> is <b>true</b>, you should be aware that the metric value may change even
+    after it was previously considered stable. If <b>false</b>, the data is guaranteed to remain
+    unchanged after the stabilization period.
+    </pre>
+    """
+  end
+
   def get_popover_text(%{key: "Has Incomplete Data"} = assigns) do
     ~H"""
     <pre>

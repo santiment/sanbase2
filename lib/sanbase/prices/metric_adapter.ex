@@ -80,6 +80,8 @@ defmodule Sanbase.Price.MetricAdapter do
        internal_metric: metric,
        has_incomplete_data: has_incomplete_data?(metric),
        min_interval: "1s",
+       stabilization_period: "1h",
+       can_mutate: false,
        default_aggregation: @default_aggregation,
        available_aggregations: @aggregations,
        available_selectors: [:slug],

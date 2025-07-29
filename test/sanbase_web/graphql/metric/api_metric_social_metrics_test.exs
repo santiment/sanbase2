@@ -25,26 +25,18 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
 
       [_, combined_metrics] = community_messages_count_metrics()
 
-      resp1 = """
-       [
-        {"mentions_count": 100, "timestamp": #{DateTime.to_unix(from)}},
-        {"mentions_count": 200, "timestamp": #{DateTime.to_unix(to)}},
-        {"mentions_count": 300, "timestamp": #{DateTime.to_unix(after_to)}}
-      ]
+      resp = """
+        {
+          "data": {
+            "#{DateTime.to_iso8601(from)}": 100,
+            "#{DateTime.to_iso8601(to)}": 200,
+            "#{DateTime.to_iso8601(after_to)}": 300
+          }
+        }
       """
 
-      resp2 = """
-      [
-        {"mentions_count": 100, "timestamp": #{DateTime.to_unix(from)}},
-        {"mentions_count": 200, "timestamp": #{DateTime.to_unix(to)}}
-      ]
-      """
-
-      Sanbase.Mock.prepare_mock(HTTPoison, :get, fn url, _, _ ->
-        case String.contains?(url, "telegram") do
-          true -> {:ok, %HTTPoison.Response{body: resp1, status_code: 200}}
-          false -> {:ok, %HTTPoison.Response{body: resp2, status_code: 200}}
-        end
+      Sanbase.Mock.prepare_mock(HTTPoison, :get, fn _url, _, _ ->
+        {:ok, %HTTPoison.Response{body: resp, status_code: 200}}
       end)
       |> Sanbase.Mock.run_with_mocks(fn ->
         for metric <- combined_metrics do
@@ -54,9 +46,9 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
 
           # There is only 1 source for community messages - telegram
           assert result == [
-                   %{"value" => 100.0, "datetime" => from |> DateTime.to_iso8601()},
-                   %{"value" => 200.0, "datetime" => to |> DateTime.to_iso8601()},
-                   %{"value" => 300.0, "datetime" => after_to |> DateTime.to_iso8601()}
+                   %{"value" => 200.0, "datetime" => from |> DateTime.to_iso8601()},
+                   %{"value" => 400.0, "datetime" => to |> DateTime.to_iso8601()},
+                   %{"value" => 600.0, "datetime" => after_to |> DateTime.to_iso8601()}
                  ]
         end
       end)
@@ -67,10 +59,12 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
       [single_source_metrics, combined_metrics] = community_messages_count_metrics()
 
       resp = """
-      [
-        {"mentions_count": 100, "timestamp": #{DateTime.to_unix(from)}},
-        {"mentions_count": 200, "timestamp": #{DateTime.to_unix(to)}}
-      ]
+        {
+          "data": {
+            "#{DateTime.to_iso8601(from)}" : 100,
+            "#{DateTime.to_iso8601(to)}" : 200
+          }
+        }
       """
 
       Sanbase.Mock.prepare_mock2(
@@ -94,10 +88,10 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
             get_timeseries_metric(conn, metric, :slug, project.slug, from, to, interval)
             |> extract_timeseries_data()
 
-          # There is only 1 source for community messages
+          # There are 2 sources for community messages, so the values are doubled
           assert result == [
-                   %{"value" => 100.0, "datetime" => from |> DateTime.to_iso8601()},
-                   %{"value" => 200.0, "datetime" => to |> DateTime.to_iso8601()}
+                   %{"value" => 200.0, "datetime" => from |> DateTime.to_iso8601()},
+                   %{"value" => 400.0, "datetime" => to |> DateTime.to_iso8601()}
                  ]
         end
       end)

@@ -835,6 +835,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "rsi_7d",
         # social metrics
         "community_messages_count_telegram",
+        "community_messages_count_reddit",
         "community_messages_count_total",
         "nft_social_volume",
         "social_dominance_4chan",

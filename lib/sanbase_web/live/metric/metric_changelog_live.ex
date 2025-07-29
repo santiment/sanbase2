@@ -31,7 +31,7 @@ defmodule SanbaseWeb.MetricChangelogLive do
     limit = socket.assigns.limit
     offset = 0
 
-    {changelog_entries, has_more} =
+    {changelog_entries, has_more, _total_dates} =
       MetricVersions.get_changelog_by_date(limit, offset, search_term)
 
     {:noreply,
@@ -48,7 +48,8 @@ defmodule SanbaseWeb.MetricChangelogLive do
     limit = @load_more_increment
     offset = socket.assigns.offset
 
-    {new_entries, has_more} = MetricVersions.get_changelog_by_date(limit, offset, search_term)
+    {new_entries, has_more, _total_dates} =
+      MetricVersions.get_changelog_by_date(limit, offset, search_term)
 
     updated_entries = socket.assigns.changelog_entries ++ new_entries
 
@@ -84,7 +85,7 @@ defmodule SanbaseWeb.MetricChangelogLive do
     limit = @initial_limit
     offset = 0
 
-    {changelog_entries, has_more} =
+    {changelog_entries, has_more, _total_dates} =
       MetricVersions.get_changelog_by_date(limit, offset, search_term)
 
     {:noreply,

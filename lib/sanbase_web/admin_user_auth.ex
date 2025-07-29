@@ -63,7 +63,14 @@ defmodule SanbaseWeb.AdminUserAuth do
       conn
       |> put_flash(:error, "You must have an Admin Panel role to access this page")
       |> halt()
-      |> send_resp(401, "Unauthorized. You must have an Admin Panel role to access this page")
+      |> send_resp(401, """
+      Unauthorized. You must have an Admin Panel role to access this page
+
+      In order to gain a role, a Backend Team member (ivan.i or tsvetozar.p) should execute one of these:
+      To give a Viewer role: Sanbase.Accounts.UserRole.create(#{conn.assigns.current_user.id}, #{Sanbase.Accounts.Role.admin_panel_viewer_role_id()})
+      To give a Editor role: Sanbase.Accounts.UserRole.create(#{conn.assigns.current_user.id}, #{Sanbase.Accounts.Role.admin_panel_editor_role_id()})
+      To give a Owner  role: Sanbase.Accounts.UserRole.create(#{conn.assigns.current_user.id}, #{Sanbase.Accounts.Role.admin_panel_owner_role_id()})
+      """)
     end
   end
 
@@ -129,7 +136,13 @@ defmodule SanbaseWeb.AdminUserAuth do
         socket
         |> Phoenix.LiveView.put_flash(
           :error,
-          "You must have a Metric Reigstry role in order to access this page."
+          """
+          You must have a Metric Registry role in order to access this page.
+
+          To get a role:
+          Viewer: Sanbase.Accounts.UserRole.create(#{socket.assigns.current_user.id}, #{Sanbase.Accounts.Role.metric_registry_viewer_role_id()})
+          Owner: Sanbase.Accounts.UserRole.create(#{socket.assigns.current_user.id}, #{Sanbase.Accounts.Role.metric_registry_owner_role_id()})
+          """
         )
         |> Phoenix.LiveView.redirect(to: ~p"/admin")
 

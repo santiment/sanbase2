@@ -182,6 +182,21 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
           label="Has Incomplete Data"
           options={[true, false]}
         />
+
+        <.input
+          type="text"
+          id="input-stabilization-period"
+          field={@form[:stabilization_period]}
+          label="Stabilization Period"
+        />
+
+        <.input
+          type="select"
+          id="input-can-mutate"
+          field={@form[:can_mutate]}
+          label="Can Mutate"
+          options={[true, false]}
+        />
         <.input
           type="select"
           id="input-exposed-environments"

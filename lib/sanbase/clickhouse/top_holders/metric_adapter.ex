@@ -116,6 +116,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
        internal_metric: metric,
        has_incomplete_data: has_incomplete_data?(metric),
        min_interval: "1d",
+       can_mutate: true,
        default_aggregation: @default_aggregation,
        available_aggregations: @aggregations,
        available_selectors: [:slug, :holders_count],

@@ -130,14 +130,15 @@ These are the fields describing a trigger.
 ```
 
 #### Example settings structure for `signal_data`
+
 ```json
 // Send an alert if there are any signals
 {
   "type": "signal_data",
   "signal": "dai_mint",
-  "target": {"slug": "mint-collateral-dai"},
+  "target": { "slug": "mint-collateral-dai" },
   "channel": "telegram",
-  "operation": {"above": 0}
+  "operation": { "above": 0 }
 }
 ```
 
@@ -146,10 +147,10 @@ These are the fields describing a trigger.
 {
   "type": "signal_data",
   "signal": "dai_mint",
-  "target": {"slug": "mint-collateral-dai"},
+  "target": { "slug": "mint-collateral-dai" },
   "channel": "telegram",
   "time_window": "1d",
-  "operation": {"above": 0}
+  "operation": { "above": 0 }
 }
 ```
 
@@ -312,6 +313,7 @@ The following blockchains are supported, identified by `infrastructure`:
 
 When working with the alert, provide the `infrastructure` in the selector and the
 address in the `target`.
+
 ```json
 // The USD valuation of the null address increased by $1 million in the past 24 hours
 {
@@ -319,7 +321,7 @@ address in the `target`.
   "channel": "telegram",
   "target": { "address": "0x0000000000000000000000000000000000000000" },
   "time_window": "1d",
-  "selector": { "infrastructure": "ETH"},
+  "selector": { "infrastructure": "ETH" },
   "operation": { "amount_up": 1000000 }
 }
 ```
@@ -344,6 +346,7 @@ The following blockchains are supported, identified by `infrastructure`:
 
 When working with the alert, provide the `infrastructure` in the selector and the
 address in the `target`.
+
 ```json
 // The set of assets the NULL address holds has changed
 {
@@ -351,10 +354,9 @@ address in the `target`.
   "channel": "telegram",
   "target": { "address": "0x0000000000000000000000000000000000000000" },
   "time_window": "1d",
-  "selector": { "infrastructure": "ETH"}
+  "selector": { "infrastructure": "ETH" }
 }
 ```
-
 
 #### Example settings structure for `metric_signal`
 
@@ -373,6 +375,7 @@ All `social_volume_*` metrics also support the `text` target.
 ##### Social data
 
 - "community_messages_count_telegram"
+- "community_messages_count_reddit"
 - "community_messages_count_total"
 - "social_dominance_reddit"
 - "social_dominance_telegram"
@@ -484,7 +487,6 @@ internal logic) with the only difference that it is evaluated only once a day at
 - withdrawal_transactions
 - etc.
 
-
 ```json
 // The Mean Age of Santiment' increased by 10% AND is above 100
 {
@@ -528,7 +530,7 @@ the same way with the same syntax in this signal
   "channel": "telegram",
   "operation": {
     "selector": {
-      "base_projects": {"watchlistSlug": "stablecoins"},
+      "base_projects": { "watchlistSlug": "stablecoins" },
       "filters": [
         {
           "metric": "daily_active_addresse",

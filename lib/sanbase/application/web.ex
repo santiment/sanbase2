@@ -26,12 +26,6 @@ defmodule Sanbase.Application.Web do
       # Oban instance responsible for sending emails
       {Oban, oban_web_config()},
 
-      # MCP server registry
-      Hermes.Server.Registry,
-
-      # MCP server for metrics access
-      {Sanbase.MCP.MetricsServer, transport: :streamable_http},
-
       # Start libcluster
       start_in(
         {Cluster.Supervisor,

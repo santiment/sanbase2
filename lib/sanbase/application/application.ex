@@ -85,6 +85,9 @@ defmodule Sanbase.Application do
       "queries" ->
         Sanbase.Application.Queries.init()
 
+      "mcp" ->
+        Sanbase.Application.Mcp.init()
+
       _ ->
         Sanbase.Application.Web.init()
     end
@@ -110,6 +113,9 @@ defmodule Sanbase.Application do
 
       type when type in ["alerts", "signals"] ->
         Logger.info("Starting Alerts Sanbase.")
+
+      "mcp" ->
+        Logger.info("Starting MCP Sanbase.")
 
       unknown ->
         Logger.warning("Unkwnown type #{inspect(unknown)}. Starting a default web container.")
@@ -155,6 +161,9 @@ defmodule Sanbase.Application do
 
       type when type in ["alerts", "signals"] ->
         Sanbase.Application.Alerts.children()
+
+      "mcp" ->
+        Sanbase.Application.Mcp.children()
 
       _unknown ->
         Sanbase.Application.Web.children()

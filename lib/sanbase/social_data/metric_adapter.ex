@@ -24,6 +24,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
     ## Community messages count counts the total amount of messages in a project's
     # own social medium. All messages are counted. Handles spam
     "community_messages_count_telegram",
+    "community_messages_count_reddit",
     "community_messages_count_total"
   ]
 

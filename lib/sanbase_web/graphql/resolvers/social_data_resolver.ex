@@ -251,14 +251,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
     end)
   end
 
-  def word_trend_score(
-        _root,
-        %{word: word, source: source, from: from, to: to},
-        _resolution
-      ) do
-    SocialData.word_trend_score(word, source, from, to)
-  end
-
   def social_dominance_trending_words(_, _, _) do
     Sanbase.SocialData.SocialDominance.social_dominance_trending_words()
   end

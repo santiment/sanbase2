@@ -188,12 +188,6 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
     field(:summaries, list_of(:trending_word_summary))
   end
 
-  object :word_trend_score do
-    field(:datetime, non_null(:datetime))
-    field(:score, non_null(:float))
-    field(:source, :trending_words_source)
-  end
-
   object :word_context do
     field(:word, non_null(:string))
     field(:score, non_null(:float))

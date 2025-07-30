@@ -44,11 +44,6 @@ defmodule Sanbase.SocialData do
     |> handle_response(&word_context_result/1, "word context", "word: #{word}")
   end
 
-  def word_trend_score(word, source, from_datetime, to_datetime) do
-    word_trend_score_request(word, source, from_datetime, to_datetime)
-    |> handle_response(&word_trend_score_result/1, "word trend score", "word: #{word}")
-  end
-
   # Private functions
 
   defp words_context_request(words, source, size, from_datetime, to_datetime)
@@ -92,25 +87,6 @@ defmodule Sanbase.SocialData do
     http_client().get(url, [], options)
   end
 
-  defp word_trend_score_request(word, source, from_datetime, to_datetime) do
-    from_unix = DateTime.to_unix(from_datetime)
-    to_unix = DateTime.to_unix(to_datetime)
-
-    url = "#{tech_indicators_url()}/indicator/word_trend_score"
-
-    options = [
-      recv_timeout: @recv_timeout,
-      params: [
-        {"word", word},
-        {"source", source |> Atom.to_string()},
-        {"from_timestamp", from_unix},
-        {"to_timestamp", to_unix}
-      ]
-    ]
-
-    http_client().get(url, [], options)
-  end
-
   defp word_context_result(result) do
     result
     |> Enum.map(fn {k, v} -> %{word: k, score: v["score"]} end)
@@ -128,20 +104,6 @@ defmodule Sanbase.SocialData do
         context: context
       }
     end)
-    |> wrap_ok()
-  end
-
-  defp word_trend_score_result(result) do
-    result
-    |> Enum.map(fn
-      %{"timestamp" => timestamp, "score" => score, "hour" => hour, "source" => source} ->
-        %{
-          datetime: combine_unix_dt_and_hour(timestamp, hour),
-          score: score,
-          source: String.to_existing_atom(source)
-        }
-    end)
-    |> Enum.sort(&(&1.score >= &2.score))
     |> wrap_ok()
   end
 

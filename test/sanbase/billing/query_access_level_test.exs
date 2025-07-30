@@ -209,7 +209,6 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :top_holders,
           :top_holders_percent_of_total_supply,
           :word_context,
-          :word_trend_score,
           :words_context,
           :words_social_volume
         ]

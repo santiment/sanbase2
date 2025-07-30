@@ -65,60 +65,6 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
     end
   end
 
-  describe "trend score" do
-    test "successfully fetch word trend score", context do
-      success_response = [
-        %{
-          score: 3725.6617392595313,
-          source: :telegram,
-          datetime: ~U[2019-01-10T08:00:00Z]
-        }
-      ]
-
-      with_mock SocialData, word_trend_score: fn _, _, _, _ -> {:ok, success_response} end do
-        args = %{
-          word: "qtum",
-          source: "TELEGRAM",
-          from: "2018-01-09T00:00:00Z",
-          to: "2018-01-10T00:00:00Z"
-        }
-
-        query = word_trend_score_query(args)
-        result = execute_and_parse_success_response(context.conn, query, "wordTrendScore")
-
-        assert result == %{
-                 "data" => %{
-                   "wordTrendScore" => [
-                     %{
-                       "score" => 3725.6617392595313,
-                       "source" => "TELEGRAM",
-                       "datetime" => "2019-01-10T08:00:00Z"
-                     }
-                   ]
-                 }
-               }
-      end
-    end
-
-    test "fetching word trend score - proper error message is returned", context do
-      error_response =
-        "Error status 500 fetching word trend score for word merry: Internal Server Error"
-
-      with_mock SocialData, word_trend_score: fn _, _, _, _ -> {:error, error_response} end do
-        args = %{
-          word: "merry",
-          source: "TELEGRAM",
-          from: "#{Timex.shift(Timex.now(), days: -20)}",
-          to: "#{Timex.now()}"
-        }
-
-        query = word_trend_score_query(args)
-        error = execute_and_parse_error_response(context.conn, query, "wordTrendScore")
-        assert error == error_response
-      end
-    end
-  end
-
   defp word_context_query(args) do
     """
     {
@@ -131,23 +77,6 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
       ) {
         word
         score
-      }
-    }
-    """
-  end
-
-  defp word_trend_score_query(args) do
-    """
-    {
-      wordTrendScore(
-        word: "#{args.word}",
-        source: #{args.source},
-        from: "#{args.from}",
-        to: "#{args.to}"
-      ) {
-        datetime,
-        score,
-        source
       }
     }
     """

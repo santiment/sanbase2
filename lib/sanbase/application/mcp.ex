@@ -6,7 +6,13 @@ defmodule Sanbase.Application.Mcp do
   end
 
   def children() do
-    children = []
+    children = [
+      # MCP server registry
+      Hermes.Server.Registry,
+
+      # MCP server for metrics access
+      {Sanbase.MCP.MetricsServer, transport: :streamable_http}
+    ]
 
     opts = [
       name: Sanbase.McpSupervisor,

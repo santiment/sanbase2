@@ -20,6 +20,12 @@ defmodule Sanbase.MCP.DiscoveryTool do
 
   @impl true
   def execute(params, frame) do
+    # Note: Do it like this so we can wrap it in an if can_execute?/3 clause
+    # so the execute/2 function itself is not
+    do_execute(params, frame)
+  end
+
+  defp do_execute(params, frame) do
     response_data =
       case {params[:slug], params[:metric]} do
         {nil, nil} ->

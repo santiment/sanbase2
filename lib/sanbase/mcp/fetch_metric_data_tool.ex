@@ -16,7 +16,13 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
   end
 
   @impl true
-  def execute(%{metric: metric, slug: slug}, frame) do
+  def execute(params, frame) do
+    # Note: Do it like this so we can wrap it in an if can_execute?/3 clause
+    # so the execute/2 function itself is not
+    do_execute(params, frame)
+  end
+
+  defp do_execute(%{metric: metric, slug: slug}, frame) do
     with {:ok, _metric} <- validate_metric(metric),
          {:ok, _slug} <- validate_slug(slug),
          {:ok, data} <- fetch_metric_data(metric, slug) do

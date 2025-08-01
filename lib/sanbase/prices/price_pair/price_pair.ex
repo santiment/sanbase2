@@ -10,7 +10,7 @@ defmodule Sanbase.PricePair do
 
   import Sanbase.Metric.Transform, only: [exec_timeseries_data_query: 1]
 
-  alias Sanbase.ClickhouseRepo
+  alias Sanbase.ChRepo
 
   @default_source "cryptocompare"
 
@@ -85,7 +85,7 @@ defmodule Sanbase.PricePair do
     query_struct =
       timeseries_data_per_slug_query(slugs, quote_asset, from, to, interval, source, aggregation)
 
-    ClickhouseRepo.query_reduce(query_struct, %{}, fn [timestamp, slug, value], acc ->
+    ChRepo.query_reduce(query_struct, %{}, fn [timestamp, slug, value], acc ->
       datetime = DateTime.from_unix!(timestamp)
       elem = %{slug: slug, value: value}
       Map.update(acc, datetime, [elem], &[elem | &1])
@@ -127,7 +127,7 @@ defmodule Sanbase.PricePair do
     query_struct =
       aggregated_timeseries_data_query(slugs, quote_asset, from, to, source, aggregation)
 
-    ClickhouseRepo.query_reduce(query_struct, %{}, fn [slug, value, has_changed], acc ->
+    ChRepo.query_reduce(query_struct, %{}, fn [slug, value, has_changed], acc ->
       # This way if the slug does not have any data still include it in the result
       # with value `nil`. This way the API can cache the result. In case one of the
       # aggregated_timeseries_data calls fails, the slugs in it won't be included
@@ -146,7 +146,7 @@ defmodule Sanbase.PricePair do
     query_struct =
       slugs_by_filter_query(quote_asset, from, to, source, operator, threshold, aggregation)
 
-    ClickhouseRepo.query_transform(query_struct, fn [slug, _value] -> slug end)
+    ChRepo.query_transform(query_struct, fn [slug, _value] -> slug end)
   end
 
   def slugs_order(quote_asset, from, to, direction, opts \\ [])
@@ -155,7 +155,7 @@ defmodule Sanbase.PricePair do
     aggregation = Keyword.get(opts, :aggregation) || :last
     source = Keyword.get(opts, :source, @default_source)
     query_struct = slugs_order_query(quote_asset, from, to, source, direction, aggregation)
-    ClickhouseRepo.query_transform(query_struct, fn [slug, _value] -> slug end)
+    ChRepo.query_transform(query_struct, fn [slug, _value] -> slug end)
   end
 
   @doc ~s"""
@@ -167,7 +167,7 @@ defmodule Sanbase.PricePair do
     source = Keyword.get(opts, :source, @default_source)
     query_struct = last_record_before_query(slug, quote_asset, datetime, source)
 
-    ClickhouseRepo.query_transform(
+    ChRepo.query_transform(
       query_struct,
       fn [unix, value] ->
         %{
@@ -199,7 +199,7 @@ defmodule Sanbase.PricePair do
     source = Keyword.get(opts, :source) || @default_source
     query_struct = available_slugs_query(quote_asset, source)
 
-    ClickhouseRepo.query_transform(query_struct, fn [slug] -> slug end)
+    ChRepo.query_transform(query_struct, fn [slug] -> slug end)
   end
 
   def has_data?(slug, quote_asset, opts \\ [])
@@ -208,7 +208,7 @@ defmodule Sanbase.PricePair do
     source = Keyword.get(opts, :source, @default_source)
     query_struct = select_any_record_query(slug, quote_asset, source)
 
-    ClickhouseRepo.query_transform(query_struct, & &1)
+    ChRepo.query_transform(query_struct, & &1)
     |> case do
       {:ok, [_]} -> {:ok, true}
       {:ok, []} -> {:ok, false}
@@ -222,7 +222,7 @@ defmodule Sanbase.PricePair do
     source = Keyword.get(opts, :source, @default_source)
     query_struct = available_quote_assets_query(slug, source)
 
-    ClickhouseRepo.query_transform(query_struct, fn [quote_asset] -> quote_asset end)
+    ChRepo.query_transform(query_struct, fn [quote_asset] -> quote_asset end)
   end
 
   @doc ~s"""
@@ -236,7 +236,7 @@ defmodule Sanbase.PricePair do
     source = Keyword.get(opts, :source, @default_source)
     query_struct = first_datetime_query(slug, quote_asset, source)
 
-    ClickhouseRepo.query_transform(query_struct, fn
+    ChRepo.query_transform(query_struct, fn
       [timestamp] -> DateTime.from_unix!(timestamp)
     end)
     |> maybe_unwrap_ok_value()
@@ -246,7 +246,7 @@ defmodule Sanbase.PricePair do
     source = Keyword.get(opts, :source, @default_source)
     query_struct = last_datetime_computed_at_query(slug, quote_asset, source)
 
-    ClickhouseRepo.query_transform(query_struct, fn
+    ChRepo.query_transform(query_struct, fn
       [timestamp] -> DateTime.from_unix!(timestamp)
     end)
     |> maybe_unwrap_ok_value()

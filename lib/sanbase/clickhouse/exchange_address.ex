@@ -9,7 +9,7 @@ defmodule Sanbase.Clickhouse.ExchangeAddress do
   def exchange_names(blockchain, is_dex) when blockchain in @supported_blockchains do
     query_struct = exchange_names_query(blockchain, is_dex)
 
-    Sanbase.ClickhouseRepo.query_reduce(query_struct, [], fn [owner], acc ->
+    Sanbase.ChRepo.query_reduce(query_struct, [], fn [owner], acc ->
       case is_binary(owner) and owner != "" do
         true -> [owner | acc]
         false -> acc
@@ -25,7 +25,7 @@ defmodule Sanbase.Clickhouse.ExchangeAddress do
   def exchange_addresses(blockchain, limit) when blockchain in @supported_blockchains do
     query_struct = exchange_addresses_query(blockchain, limit)
 
-    Sanbase.ClickhouseRepo.query_transform(query_struct, fn [address, label, owner] ->
+    Sanbase.ChRepo.query_transform(query_struct, fn [address, label, owner] ->
       %{
         address: address,
         is_dex: if(label == "decentralized_exchange", do: true, else: false),
@@ -42,7 +42,7 @@ defmodule Sanbase.Clickhouse.ExchangeAddress do
       when blockchain in @supported_blockchains do
     query_struct = exchange_addresses_for_exchange_query(blockchain, owner, limit)
 
-    Sanbase.ClickhouseRepo.query_transform(query_struct, fn [address] -> address end)
+    Sanbase.ChRepo.query_transform(query_struct, fn [address] -> address end)
   end
 
   def exchange_addresses_for_exchange(blockchain, _owner, _limit),

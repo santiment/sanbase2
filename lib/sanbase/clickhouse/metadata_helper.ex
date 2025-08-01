@@ -4,7 +4,7 @@ defmodule Sanbase.Clickhouse.MetadataHelper do
   anomalies metadata from ClickHouse
   """
 
-  alias Sanbase.ClickhouseRepo
+  alias Sanbase.ChRepo
   alias Sanbase.Clickhouse.MetricAdapter.Registry
   import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
 
@@ -18,7 +18,7 @@ defmodule Sanbase.Clickhouse.MetadataHelper do
       query_struct =
         Sanbase.Clickhouse.Query.new("SELECT toUInt32(asset_id), name FROM asset_metadata", %{})
 
-      ClickhouseRepo.query_reduce(query_struct, %{}, fn [asset_id, slug], acc ->
+      ChRepo.query_reduce(query_struct, %{}, fn [asset_id, slug], acc ->
         Map.put(acc, slug, asset_id)
       end)
     end)
@@ -54,7 +54,7 @@ defmodule Sanbase.Clickhouse.MetadataHelper do
     query_struct =
       Sanbase.Clickhouse.Query.new("SELECT toUInt32(metric_id), name FROM metric_metadata", %{})
 
-    ClickhouseRepo.query_reduce(query_struct, %{}, fn [metric_id, name], acc ->
+    ChRepo.query_reduce(query_struct, %{}, fn [metric_id, name], acc ->
       names = Map.get(Registry.metric_to_names_map(), name, [name])
 
       names

@@ -5,7 +5,7 @@ defmodule Sanbase.Twitter do
 
   def timeseries_data(twitter_handle, from, to, interval) do
     timeseries_data_query(twitter_handle, from, to, interval)
-    |> Sanbase.ClickhouseRepo.query_transform(fn [dt, value] ->
+    |> Sanbase.ChRepo.query_transform(fn [dt, value] ->
       %{
         datetime: DateTime.from_unix!(dt),
         value: value
@@ -15,7 +15,7 @@ defmodule Sanbase.Twitter do
 
   def timeseries_data_per_handle(twitter_handles, from, to, interval) do
     timeseries_data_per_handle_query(twitter_handles, from, to, interval)
-    |> Sanbase.ClickhouseRepo.query_reduce(
+    |> Sanbase.ChRepo.query_reduce(
       %{},
       fn [timestamp, slug, value], acc ->
         datetime = DateTime.from_unix!(timestamp)
@@ -32,7 +32,7 @@ defmodule Sanbase.Twitter do
 
   def last_record(twitter_handle) do
     last_record_query(twitter_handle)
-    |> Sanbase.ClickhouseRepo.query_transform(fn [dt, value] ->
+    |> Sanbase.ChRepo.query_transform(fn [dt, value] ->
       %{
         datetime: DateTime.from_unix!(dt),
         followers_count: value
@@ -43,13 +43,13 @@ defmodule Sanbase.Twitter do
 
   def first_datetime(twitter_handle) do
     first_datetime_query(twitter_handle)
-    |> Sanbase.ClickhouseRepo.query_transform(fn [ts] -> DateTime.from_unix!(ts) end)
+    |> Sanbase.ChRepo.query_transform(fn [ts] -> DateTime.from_unix!(ts) end)
     |> maybe_unwrap_ok_value()
   end
 
   def last_datetime(twitter_handle) do
     last_datetime_query(twitter_handle)
-    |> Sanbase.ClickhouseRepo.query_transform(fn [ts] -> DateTime.from_unix!(ts) end)
+    |> Sanbase.ChRepo.query_transform(fn [ts] -> DateTime.from_unix!(ts) end)
     |> maybe_unwrap_ok_value()
   end
 

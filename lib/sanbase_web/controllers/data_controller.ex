@@ -255,7 +255,7 @@ defmodule SanbaseWeb.DataController do
   defp get_slug_to_asset_id_map() do
     query = "SELECT name AS slug, asset_id FROM asset_metadata FINAL"
 
-    case Sanbase.ClickhouseRepo.query_transform(query, [], & &1) do
+    case Sanbase.ChRepo.query_transform(query, [], & &1) do
       {:ok, result} ->
         map = Map.new(result, fn [slug, asset_id] -> {slug, asset_id} end)
 

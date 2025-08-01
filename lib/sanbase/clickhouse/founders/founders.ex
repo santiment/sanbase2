@@ -3,7 +3,7 @@ defmodule Sanbase.Clickhouse.Founders do
     slugs = List.wrap(slug_or_slugs)
     query = get_founders_query(slugs)
 
-    Sanbase.ClickhouseRepo.query_transform(query, fn [name, project_slug] ->
+    Sanbase.ChRepo.query_transform(query, fn [name, project_slug] ->
       %{name: name, slug: project_slug}
     end)
   end

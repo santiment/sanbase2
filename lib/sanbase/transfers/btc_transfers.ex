@@ -1,5 +1,5 @@
 defmodule Sanbase.Transfers.BtcTransfers do
-  alias Sanbase.ClickhouseRepo
+  alias Sanbase.ChRepo
 
   @type transaction :: %{
           from_address: String.t(),
@@ -20,7 +20,7 @@ defmodule Sanbase.Transfers.BtcTransfers do
   def top_transfers(from, to, page, page_size, excluded_addresses \\ []) do
     query_struct = top_transfers_query(from, to, page, page_size, excluded_addresses)
 
-    Sanbase.ClickhouseRepo.query_transform(
+    Sanbase.ChRepo.query_transform(
       query_struct,
       fn [dt, to_address, value, trx_id] ->
         %{
@@ -49,7 +49,7 @@ defmodule Sanbase.Transfers.BtcTransfers do
   def top_wallet_transfers(wallets, from, to, page, page_size, type) do
     query_struct = top_wallet_transfers_query(wallets, from, to, page, page_size, type)
 
-    ClickhouseRepo.query_transform(query_struct, fn
+    ChRepo.query_transform(query_struct, fn
       [timestamp, address, trx_hash, balance, old_balance, abs_value] ->
         # if the new balance is bigger then the address is the receiver
         {from_address, to_address} =

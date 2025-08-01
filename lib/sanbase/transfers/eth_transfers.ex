@@ -6,7 +6,7 @@ defmodule Sanbase.Transfers.EthTransfers do
   import Sanbase.Utils.Transform
   import Sanbase.Transfers.Utils, only: [top_wallet_transfers_address_clause: 2]
 
-  alias Sanbase.ClickhouseRepo
+  alias Sanbase.ChRepo
 
   require Logger
 
@@ -36,7 +36,7 @@ defmodule Sanbase.Transfers.EthTransfers do
     opts = [page: page, page_size: page_size]
     query_struct = top_wallet_transfers_query(wallets, from, to, type, opts)
 
-    ClickhouseRepo.query_transform(query_struct, fn
+    ChRepo.query_transform(query_struct, fn
       [timestamp, from_address, to_address, trx_hash, trx_value] ->
         %{
           datetime: DateTime.from_unix!(timestamp),
@@ -54,7 +54,7 @@ defmodule Sanbase.Transfers.EthTransfers do
     opts = [page: page, page_size: page_size]
     query_struct = top_transfers_query(from, to, opts)
 
-    ClickhouseRepo.query_transform(query_struct, fn
+    ChRepo.query_transform(query_struct, fn
       [timestamp, from_address, to_address, trx_hash, trx_value] ->
         %{
           datetime: DateTime.from_unix!(timestamp),
@@ -75,7 +75,7 @@ defmodule Sanbase.Transfers.EthTransfers do
   def recent_transactions(address, opts) do
     query_struct = recent_transactions_query(address, opts)
 
-    ClickhouseRepo.query_transform(query_struct, fn
+    ChRepo.query_transform(query_struct, fn
       [timestamp, from_address, to_address, trx_hash, trx_value] ->
         %{
           datetime: DateTime.from_unix!(timestamp),
@@ -99,7 +99,7 @@ defmodule Sanbase.Transfers.EthTransfers do
     query_struct =
       blockchain_address_transaction_volume_over_time_query(addresses, from, to, interval)
 
-    ClickhouseRepo.query_transform(
+    ChRepo.query_transform(
       query_struct,
       fn [unix, incoming, outgoing] ->
         %{
@@ -117,7 +117,7 @@ defmodule Sanbase.Transfers.EthTransfers do
   defp execute_transfers_summary_query(type, address, from, to, opts) do
     query_struct = transfers_summary_query(type, address, from, to, opts)
 
-    ClickhouseRepo.query_transform(
+    ChRepo.query_transform(
       query_struct,
       fn [last_transfer_datetime, address, transaction_volumes, transfers_count] ->
         %{

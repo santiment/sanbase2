@@ -8,7 +8,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
   import Sanbase.Clickhouse.HistoricalBalance.Utils
   import Sanbase.Metric.SqlQuery.Helper, only: [timerange_parameters: 3]
 
-  alias Sanbase.ClickhouseRepo
+  alias Sanbase.ChRepo
 
   @table "xrp_balances"
 
@@ -16,7 +16,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
   def assets_held_by_address(address) do
     query_struct = current_balances_query([address], "XRP")
 
-    ClickhouseRepo.query_transform(query_struct, fn [^address, value] ->
+    ChRepo.query_transform(query_struct, fn [^address, value] ->
       %{
         slug: "xrp",
         balance: value
@@ -28,7 +28,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
   def current_balance(addresses, _currency, _decimals) do
     query_struct = current_balances_query(addresses, "XRP")
 
-    ClickhouseRepo.query_transform(query_struct, fn [address, value] ->
+    ChRepo.query_transform(query_struct, fn [address, value] ->
       %{
         address: address,
         balance: value
@@ -66,7 +66,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
       when is_binary(address) do
     query_struct = historical_balance_query(address, currency, issuer, from, to, interval)
 
-    ClickhouseRepo.query_transform(query_struct, fn [dt, balance, has_changed] ->
+    ChRepo.query_transform(query_struct, fn [dt, balance, has_changed] ->
       %{
         datetime: DateTime.from_unix!(dt),
         balance: balance,
@@ -93,7 +93,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
       when is_binary(address_or_addresses) or is_list(address_or_addresses) do
     query_struct = balance_change_query(address_or_addresses, currency, issuer, from, to)
 
-    ClickhouseRepo.query_transform(query_struct, fn
+    ChRepo.query_transform(query_struct, fn
       [address, balance_start, balance_end, balance_change] ->
         %{
           address: address,
@@ -127,7 +127,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
         interval
       )
 
-    ClickhouseRepo.query_transform(query_struct, fn [dt, change] ->
+    ChRepo.query_transform(query_struct, fn [dt, change] ->
       %{
         datetime: DateTime.from_unix!(dt),
         balance_change: change
@@ -139,7 +139,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
   def last_balance_before(address, %{currency: currency, issuer: issuer}, _decimals, datetime) do
     query_struct = last_balance_before_query(address, currency, issuer, datetime)
 
-    case ClickhouseRepo.query_transform(query_struct, & &1) do
+    case ChRepo.query_transform(query_struct, & &1) do
       {:ok, [[balance]]} -> {:ok, balance}
       {:ok, []} -> {:ok, 0}
       {:error, error} -> {:error, error}

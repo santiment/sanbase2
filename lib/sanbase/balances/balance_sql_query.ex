@@ -48,7 +48,7 @@ defmodule Sanbase.Balance.SqlQuery do
               balance,
               txID,
               computedAt
-          FROM {{table}}
+          FROM \{\{table:inline\}\}
           WHERE address IN (addresses_of_interest) AND dt >= toStartOfYear(from) AND dt <= to
       ),
       merged AS
@@ -91,7 +91,7 @@ defmodule Sanbase.Balance.SqlQuery do
       argMaxIf(balance, (dt, txID, computedAt), dt <= {{from}}) / {{decimals}} AS start_balance,
       argMaxIf(balance, (dt, txID, computedAt), dt <= {{to}}) / {{decimals}} AS end_balance,
       end_balance - start_balance AS diff
-    FROM {{table}}
+    FROM \{\{table:inline\}\}
     WHERE
       #{maybe_selector_clause(blockchain, slug, "slug")}
       #{address_clause(addresses, argument_name: "addresses")} AND
@@ -142,7 +142,7 @@ defmodule Sanbase.Balance.SqlQuery do
           toUnixTimestamp(intDiv(toUInt32(dt), {{interval}}) * {{interval}}) AS time,
           address,
           argMax(balance, (dt, txID, computedAt)) / {{decimals}} AS balance
-        FROM {{table}}
+        FROM \{\{table:inline\}\}
         WHERE
           #{maybe_selector_clause(blockchain, slug, "slug")}
           #{address_clause(addresses, argument_name: "addresses")} AND
@@ -218,7 +218,7 @@ defmodule Sanbase.Balance.SqlQuery do
           max(balance) / {{decimals}} AS high,
           argMax(balance, (dt, txID, computedAt)) / {{decimals}} AS close,
           min(balance) / {{decimals}} AS low
-        FROM {{table}}
+        FROM \{\{table:inline\}\}
         WHERE
           #{maybe_selector_clause(blockchain, slug, "slug")}
           #{address_clause(addresses, argument_name: "addresses")} AND
@@ -253,7 +253,7 @@ defmodule Sanbase.Balance.SqlQuery do
     SELECT
       address,
       argMax(balance, (dt, txID, computedAt)) / {{decimals}}
-    FROM {{table}}
+    FROM \{\{table:inline\}\}
     WHERE
       #{maybe_selector_clause(blockchain, slug, "slug")}
       #{address_clause(addresses, argument_name: "addresses")}
@@ -273,7 +273,7 @@ defmodule Sanbase.Balance.SqlQuery do
   def first_datetime_query(address, slug, blockchain) when is_binary(address) do
     sql = """
     SELECT toUnixTimestamp(min(dt))
-    FROM {{table}}
+    FROM \{\{table:inline\}\}
     WHERE
       #{maybe_selector_clause(blockchain, slug, "slug")}
       #{address_clause(address, argument_name: "address")}
@@ -457,7 +457,7 @@ defmodule Sanbase.Balance.SqlQuery do
         balance,
         txID,
         computedAt
-      FROM {{table}}
+      FROM \{\{table:inline\}\}
       WHERE
         #{address_clause(address, argument_name: "address")}
     )
@@ -498,7 +498,7 @@ defmodule Sanbase.Balance.SqlQuery do
         0
       ) AS current_balance,
       current_balance - previous_balance AS balance_change
-    FROM {{table}}
+    FROM \{\{table:inline\}\}
     WHERE
       #{address_clause(address, argument_name: "address")}
     #{if Keyword.get(opts, :show_assets_with_zero_balance, false), do: "", else: "HAVING balance > 0"}
@@ -530,7 +530,7 @@ defmodule Sanbase.Balance.SqlQuery do
         balance,
         txID,
         computedAt
-      FROM {{table}}
+      FROM \{\{table:inline\}\}
       WHERE
         #{address_clause(address, argument_name: "address")}
     )
@@ -560,7 +560,7 @@ defmodule Sanbase.Balance.SqlQuery do
     SELECT
       {{slug}} AS name,
       argMax(balance, (dt, txID, computedAt)) / {{decimals}} AS balance
-    FROM {{table}}
+    FROM \{\{table:inline\}\}
     WHERE
       #{address_clause(address, argument_name: "address")}
     #{if Keyword.get(opts, :show_assets_with_zero_balance, false), do: "", else: "HAVING balance > 0"}
@@ -646,7 +646,7 @@ defmodule Sanbase.Balance.SqlQuery do
     SELECT
       address,
       argMaxIf(balance, (dt, txID, computedAt), dt <= {{datetime}}) / {{decimals}}
-    FROM {{table}}
+    FROM \{\{table:inline\}\}
     WHERE
       #{maybe_selector_clause(blockchain, slug, "slug")}
       #{address_clause(addresses, argument_name: "addresses")} AND

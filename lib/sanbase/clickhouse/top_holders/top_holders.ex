@@ -3,7 +3,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
   Uses ClickHouse to calculate the percent supply in exchanges, non exchanges and combined
   """
 
-  alias Sanbase.ClickhouseRepo
+  alias Sanbase.ChRepo
   alias Sanbase.Clickhouse.Label
   alias Sanbase.Project
 
@@ -32,7 +32,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
   def realtime_top_holders(slug, opts) do
     query_struct = realtime_top_holders_query(slug, opts)
 
-    ClickhouseRepo.query_transform(query_struct, &holder_transform_func/1)
+    ChRepo.query_transform(query_struct, &holder_transform_func/1)
   end
 
   @spec top_holders(String.t(), DateTime.t(), DateTime.t(), Keyword.t()) ::
@@ -45,7 +45,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
          query_struct <-
            top_holders_query(slug, contract, decimals, from, to, opts),
          {:ok, result} <-
-           ClickhouseRepo.query_transform(
+           ChRepo.query_transform(
              query_struct,
              &holder_transform_func/1
            ),
@@ -83,7 +83,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
           interval
         )
 
-      ClickhouseRepo.query_transform(
+      ChRepo.query_transform(
         query_struct,
         fn [dt, in_exchanges, outside_exchanges, in_top_holders_total] ->
           %{
@@ -123,7 +123,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
         interval
       )
 
-    ClickhouseRepo.query_transform(
+    ChRepo.query_transform(
       query_struct,
       fn [dt, in_exchanges, outside_exchanges, in_holders] ->
         %{

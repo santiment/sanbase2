@@ -44,6 +44,8 @@ defmodule Sanbase.Mixfile do
 
   defp deps() do
     [
+      {:ecto_ch, "~> 0.6.0"},
+      ###
       {:absinthe_phoenix, "~> 2.0"},
       {:absinthe_plug, "~> 1.5"},
       {:absinthe, "~> 1.5"},

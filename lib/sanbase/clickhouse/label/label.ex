@@ -20,7 +20,7 @@ defmodule Sanbase.Clickhouse.Label do
   def label_fqns_with_asset(slug) do
     query_struct = label_fqns_with_asset_query(slug)
 
-    Sanbase.ClickhouseRepo.query_transform(query_struct, fn [fqn, owner, version] ->
+    Sanbase.ChRepo.query_transform(query_struct, fn [fqn, owner, version] ->
       display_name =
         fqn
         |> String.trim_leading("#{owner}/")
@@ -44,7 +44,7 @@ defmodule Sanbase.Clickhouse.Label do
 
     query_struct = addresses_by_label_fqns_query(label_fqns, blockchain)
 
-    Sanbase.ClickhouseRepo.query_reduce(
+    Sanbase.ChRepo.query_reduce(
       query_struct,
       %{},
       fn [address, blockchain, label_fqn], acc ->
@@ -65,7 +65,7 @@ defmodule Sanbase.Clickhouse.Label do
 
     query_struct = addresses_by_label_keys_query(label_keys, blockchain)
 
-    Sanbase.ClickhouseRepo.query_reduce(
+    Sanbase.ChRepo.query_reduce(
       query_struct,
       %{},
       fn [address, blockchain, label_fqn], acc ->
@@ -108,7 +108,7 @@ defmodule Sanbase.Clickhouse.Label do
     query_struct = addresses_labels_query(slug, blockchain, addresses)
 
     result =
-      Sanbase.ClickhouseRepo.query_reduce(
+      Sanbase.ChRepo.query_reduce(
         query_struct,
         %{},
         fn [address, label, metadata], acc ->
@@ -130,7 +130,7 @@ defmodule Sanbase.Clickhouse.Label do
     blockchain = slug_to_blockchain(slug)
     query_struct = addresses_labels_query(slug, blockchain, addresses)
 
-    Sanbase.ClickhouseRepo.query_reduce(
+    Sanbase.ChRepo.query_reduce(
       query_struct,
       %{},
       fn [address, label, metadata], acc ->

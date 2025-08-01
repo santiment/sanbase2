@@ -2,12 +2,12 @@ defmodule Sanbase.Clickhouse.Fees do
   import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
 
   alias Sanbase.Project
-  alias Sanbase.ClickhouseRepo
+  alias Sanbase.ChRepo
 
   def eth_fees_distribution(from, to, limit) do
     query_struct = eth_fees_distribution_query(from, to, limit)
 
-    ClickhouseRepo.query_transform(query_struct, & &1)
+    ChRepo.query_transform(query_struct, & &1)
     |> maybe_apply_function(&value_fees_list_to_result/1)
   end
 

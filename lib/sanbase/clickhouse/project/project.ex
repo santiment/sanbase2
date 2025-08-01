@@ -2,7 +2,7 @@ defmodule Sanbase.Clickhouse.Project do
   def projects_info(slugs) do
     query = projects_info_query(slugs)
 
-    Sanbase.ClickhouseRepo.query_reduce(query, %{}, fn [slug, full, summary], acc ->
+    Sanbase.ChRepo.query_reduce(query, %{}, fn [slug, full, summary], acc ->
       Map.put(acc, slug, %{full: full, summary: summary})
     end)
   end

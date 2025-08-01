@@ -23,7 +23,7 @@ defmodule Sanbase.SocialData.TrendingWords do
   import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
   import Sanbase.Metric.SqlQuery.Helper, only: [to_unix_timestamp: 3, dt_to_unix: 2]
 
-  alias Sanbase.ClickhouseRepo
+  alias Sanbase.ChRepo
 
   @type word :: String.t()
   @type slug :: String.t()
@@ -71,7 +71,7 @@ defmodule Sanbase.SocialData.TrendingWords do
 
     query_struct = get_trending_words_query(from, to, interval, size, source, word_type_filter)
 
-    ClickhouseRepo.query_reduce(query_struct, %{}, fn
+    ChRepo.query_reduce(query_struct, %{}, fn
       [
         dt,
         word,
@@ -150,7 +150,7 @@ defmodule Sanbase.SocialData.TrendingWords do
     # ranking
     query_struct = get_trending_words_query(from, to, interval, size, source, :all)
 
-    ClickhouseRepo.query_reduce(query_struct, %{}, fn
+    ChRepo.query_reduce(query_struct, %{}, fn
       [_dt, _word, nil, _score], acc ->
         acc
 
@@ -218,7 +218,7 @@ defmodule Sanbase.SocialData.TrendingWords do
     source = if source == :all, do: default_source(), else: to_string(source)
     query_struct = word_trending_history_query(word, from, to, interval, size, source)
 
-    ClickhouseRepo.query_transform(query_struct, fn [dt, position] ->
+    ChRepo.query_transform(query_struct, fn [dt, position] ->
       position = if position > 0, do: position
 
       %{
@@ -242,7 +242,7 @@ defmodule Sanbase.SocialData.TrendingWords do
     source = if source == :all, do: default_source(), else: to_string(source)
     query_struct = project_trending_history_query(slug, from, to, interval, size, source)
 
-    ClickhouseRepo.query_transform(query_struct, fn [dt, position] ->
+    ChRepo.query_transform(query_struct, fn [dt, position] ->
       position = if position > 0, do: position
 
       %{

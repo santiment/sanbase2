@@ -21,7 +21,7 @@ defmodule Sanbase.Queries.Executor do
     %Clickhouse.Query{} =
       clickhouse_query = create_clickhouse_query(query, query_metadata, environment)
 
-    case Sanbase.ClickhouseRepo.query_transform_with_metadata(
+    case Sanbase.ChRepo.query_transform_with_metadata(
            clickhouse_query,
            &transform_result/1
          ) do

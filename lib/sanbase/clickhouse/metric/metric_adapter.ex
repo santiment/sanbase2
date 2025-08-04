@@ -16,7 +16,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   alias __MODULE__.TableMetric
   alias __MODULE__.Registry
 
-  alias Sanbase.ClickhouseRepo
+  alias Sanbase.ChRepo
 
   @default_complexity_weight 0.3
 
@@ -90,7 +90,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     filters = get_filters(metric, opts)
 
     timeseries_data_per_slug_query(metric, slug, from, to, interval, aggregation, filters, opts)
-    |> ClickhouseRepo.query_reduce(
+    |> ChRepo.query_reduce(
       %{},
       fn [timestamp, slug, value], acc ->
         datetime = DateTime.from_unix!(timestamp)
@@ -134,7 +134,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     filters = Keyword.get(opts, :additional_filters, [])
 
     slugs_by_filter_query(metric, from, to, operator, threshold, aggregation, filters)
-    |> ClickhouseRepo.query_transform(fn [slug, _value] -> slug end)
+    |> ChRepo.query_transform(fn [slug, _value] -> slug end)
   end
 
   @impl Sanbase.Metric.Behaviour
@@ -145,7 +145,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     filters = Keyword.get(opts, :additional_filters, [])
 
     slugs_order_query(metric, from, to, direction, aggregation, filters)
-    |> ClickhouseRepo.query_transform(fn [slug, _value] -> slug end)
+    |> ChRepo.query_transform(fn [slug, _value] -> slug end)
   end
 
   @impl Sanbase.Metric.Behaviour
@@ -202,7 +202,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   @impl Sanbase.Metric.Behaviour
   def available_metrics(selector) do
     available_metrics_for_selector_query(selector)
-    |> ClickhouseRepo.query_transform(fn [metric] ->
+    |> ChRepo.query_transform(fn [metric] ->
       Map.get(Registry.metric_to_names_map(), metric)
     end)
     |> maybe_apply_function(fn metrics ->
@@ -221,12 +221,12 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
         fixed_parameters = Map.get(Registry.fixed_parameters_map(), metric)
         query_struct = available_label_fqns_for_fixed_parameters_query(metric, fixed_parameters)
 
-        Sanbase.ClickhouseRepo.query_transform(query_struct, & &1)
+        Sanbase.ChRepo.query_transform(query_struct, & &1)
         |> maybe_apply_function(&List.flatten/1)
 
       Map.get(Registry.table_map(), metric) == "labeled_intraday_metrics_v2" ->
         query_struct = available_label_fqns_for_labeled_intraday_metrics_query(metric)
-        Sanbase.ClickhouseRepo.query_transform(query_struct, & &1)
+        Sanbase.ChRepo.query_transform(query_struct, & &1)
 
       true ->
         {:ok, []}
@@ -242,12 +242,12 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
         query_struct =
           available_label_fqns_for_fixed_parameters_query(metric, slug, fixed_parameters)
 
-        Sanbase.ClickhouseRepo.query_transform(query_struct, & &1)
+        Sanbase.ChRepo.query_transform(query_struct, & &1)
         |> maybe_apply_function(&List.flatten/1)
 
       Map.get(Registry.table_map(), metric) == "labeled_intraday_metrics_v2" ->
         query_struct = available_label_fqns_for_labeled_intraday_metrics_query(metric, slug)
-        Sanbase.ClickhouseRepo.query_transform(query_struct, & &1)
+        Sanbase.ChRepo.query_transform(query_struct, & &1)
 
       true ->
         {:ok, []}
@@ -282,7 +282,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
       true ->
         first_datetime_query(metric, selector)
-        |> ClickhouseRepo.query_transform(fn [datetime] -> DateTime.from_unix!(datetime) end)
+        |> ChRepo.query_transform(fn [datetime] -> DateTime.from_unix!(datetime) end)
         |> maybe_unwrap_ok_value()
     end
   end
@@ -295,7 +295,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
       true ->
         last_datetime_computed_at_query(metric, selector)
-        |> ClickhouseRepo.query_transform(fn [datetime] -> DateTime.from_unix!(datetime) end)
+        |> ChRepo.query_transform(fn [datetime] -> DateTime.from_unix!(datetime) end)
         |> maybe_unwrap_ok_value()
     end
   end
@@ -306,12 +306,12 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
   defp get_available_slugs() do
     available_slugs_query()
-    |> ClickhouseRepo.query_transform(fn [slug] -> slug end)
+    |> ChRepo.query_transform(fn [slug] -> slug end)
   end
 
   defp get_available_slugs(metric) do
     available_slugs_for_metric_query(metric)
-    |> ClickhouseRepo.query_transform(fn [slug] -> slug end)
+    |> ChRepo.query_transform(fn [slug] -> slug end)
   end
 
   defp get_aggregated_timeseries_data(metric, slugs, from, to, aggregation, filters, opts)
@@ -337,7 +337,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     query_struct =
       aggregated_timeseries_data_query(metric, slugs, from, to, aggregation, filters, opts)
 
-    ClickhouseRepo.query_reduce(query_struct, %{}, fn [slug, value, has_changed], acc ->
+    ChRepo.query_reduce(query_struct, %{}, fn [slug, value, has_changed], acc ->
       value = if has_changed == 1, do: value, else: nil
       Map.put(acc, slug, value)
     end)

@@ -30,7 +30,7 @@ defmodule Sanbase.Contract.MetricAdapter do
   @default_complexity_weight 1.0
   @aggregations [:count]
 
-  alias Sanbase.ClickhouseRepo
+  alias Sanbase.ChRepo
 
   @impl Sanbase.Metric.Behaviour
   def has_incomplete_data?(_metric), do: false
@@ -48,7 +48,7 @@ defmodule Sanbase.Contract.MetricAdapter do
   def timeseries_data(metric, %{contract_address: contract_address}, from, to, interval, _opts)
       when is_binary(contract_address) do
     timeseries_data_query(metric, contract_address, from, to, interval)
-    |> ClickhouseRepo.query_transform(fn [unix, value] ->
+    |> ChRepo.query_transform(fn [unix, value] ->
       %{
         datetime: DateTime.from_unix!(unix),
         value: value
@@ -81,7 +81,7 @@ defmodule Sanbase.Contract.MetricAdapter do
       when is_binary(contract_address) do
     query_struct = first_datetime_query(contract_address)
 
-    ClickhouseRepo.query_transform(query_struct, fn [unix] ->
+    ChRepo.query_transform(query_struct, fn [unix] ->
       DateTime.from_unix!(unix)
     end)
     |> maybe_unwrap_ok_value()
@@ -92,7 +92,7 @@ defmodule Sanbase.Contract.MetricAdapter do
       when is_binary(contract_address) do
     query_struct = last_datetime_computed_at_query(contract_address)
 
-    ClickhouseRepo.query_transform(query_struct, fn [unix] -> DateTime.from_unix!(unix) end)
+    ChRepo.query_transform(query_struct, fn [unix] -> DateTime.from_unix!(unix) end)
     |> maybe_unwrap_ok_value()
   end
 

@@ -308,6 +308,13 @@ defmodule Sanbase.Application do
         fn -> Sanbase.ClickhouseRepo.enabled?() end
       ),
 
+      # Start the main ChRepo. This is started in all
+      # pods as each pod will need it.
+      start_in_and_if(
+        fn -> Sanbase.ChRepo end,
+        [:dev, :prod],
+        fn -> Sanbase.ChRepo.enabled?() end
+      ),
       # Start the main clickhouse read-only repos
       clickhouse_readonly_children,
 

@@ -5,7 +5,7 @@ defmodule Sanbase.Billing.Subscription.SanBurnCreditTransaction do
 
   import Ecto.Changeset
 
-  alias Sanbase.ClickhouseRepo
+  alias Sanbase.ChRepo
   alias Sanbase.Accounts.EthAccount
   alias Sanbase.Accounts.User
   alias Sanbase.Repo
@@ -72,7 +72,7 @@ defmodule Sanbase.Billing.Subscription.SanBurnCreditTransaction do
   def fetch_burn_trxs do
     query_struct = fetch_san_burns_query()
 
-    ClickhouseRepo.query_transform(query_struct, fn [timestamp, address, value, trx_id] ->
+    ChRepo.query_transform(query_struct, fn [timestamp, address, value, trx_id] ->
       %{
         trx_datetime: DateTime.from_unix!(timestamp),
         address: address,

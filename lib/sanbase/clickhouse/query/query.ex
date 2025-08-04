@@ -78,7 +78,15 @@ defmodule Sanbase.Clickhouse.Query do
     %{struct | sql: sql}
   end
 
+  @spec put_format(t(), String.t()) :: t()
+  def put_format(struct, format) do
+    %{struct | format: format}
+  end
+
+  @spec get_sql_text(t()) :: String.t()
   def get_sql_text(%__MODULE__{} = query), do: query.sql
+
+  @spec get_sql_parameters(t()) :: map()
   def get_sql_parameters(%__MODULE__{} = query), do: query.parameters
 
   @spec put_sql(t(), parameters) :: t()
@@ -138,6 +146,20 @@ defmodule Sanbase.Clickhouse.Query do
     end
   end
 
+  def get_sql_args_v2(%__MODULE__{} = query) do
+    query = preprocess_query(query)
+
+    with {:ok, {sql, args}} <-
+           Sanbase.TemplateEngine.run_generate_positional_params_v2(
+             query.sql,
+             params: query.parameters,
+             env: query.environment
+           ) do
+      result = %{sql: sql, args: args}
+      {:ok, result}
+    end
+  end
+
   # Private functions
 
   defp preprocess_query(query) do
@@ -178,7 +200,9 @@ defmodule Sanbase.Clickhouse.Query do
     %{query | sql: sql}
   end
 
-  defp add_format(%{sql: sql, format: format} = query) do
+  defp add_format(%{format: nil} = struct), do: struct
+
+  defp add_format(%{sql: sql, format: format} = query) when not is_nil(format) do
     sql = sql <> "\nFORMAT #{format}"
     %{query | sql: sql}
   end

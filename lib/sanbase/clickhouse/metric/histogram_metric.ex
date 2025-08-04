@@ -5,7 +5,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
   import Sanbase.Metric.SqlQuery.Helper, only: [asset_id_filter: 2]
 
   alias Sanbase.Metric
-  alias Sanbase.ClickhouseRepo
+  alias Sanbase.ChRepo
 
   @spent_coins_cost_histograms [
     "price_histogram",
@@ -40,7 +40,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
   def histogram_data("age_distribution" = metric, %{slug: slug}, from, to, interval, limit) do
     query_struct = histogram_data_query(metric, slug, from, to, interval, limit)
 
-    ClickhouseRepo.query_transform(query_struct, fn [unix, value] ->
+    ChRepo.query_transform(query_struct, fn [unix, value] ->
       range_from = unix |> DateTime.from_unix!()
 
       range_to =
@@ -58,7 +58,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
       when metric in @spent_coins_cost_histograms do
     query_struct = histogram_data_query(metric, slug, from, to, interval, limit)
 
-    ClickhouseRepo.query_transform(query_struct, fn [price, amount] ->
+    ChRepo.query_transform(query_struct, fn [price, amount] ->
       %{
         price: Sanbase.Math.to_float(price),
         value: Sanbase.Math.to_float(amount)
@@ -71,7 +71,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
       when metric in @eth2_string_label_float_value_metrics do
     query_struct = histogram_data_query(metric, slug, from, to, interval, limit)
 
-    ClickhouseRepo.query_transform(query_struct, fn [label, amount] ->
+    ChRepo.query_transform(query_struct, fn [label, amount] ->
       %{
         label: label,
         value: Sanbase.Math.to_float(amount)
@@ -83,7 +83,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
       when metric in @eth2_string_address_string_label_float_value_metrics do
     query_struct = histogram_data_query(metric, slug, from, to, interval, limit)
 
-    ClickhouseRepo.query_transform(query_struct, fn [address, label, amount] ->
+    ChRepo.query_transform(query_struct, fn [address, label, amount] ->
       %{
         address: address,
         label: label,
@@ -96,7 +96,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
       when metric in @eth2_datetime_staking_pools_integer_valuation_list do
     query_struct = histogram_data_query(metric, slug, from, to, interval, limit)
 
-    ClickhouseRepo.query_transform(query_struct, fn [timestamp, value] ->
+    ChRepo.query_transform(query_struct, fn [timestamp, value] ->
       %{
         datetime: DateTime.from_unix!(timestamp),
         value:
@@ -119,7 +119,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
     params = %{selector: selector}
 
     Sanbase.Clickhouse.Query.new(sql, params)
-    |> ClickhouseRepo.query_transform(fn [timestamp] ->
+    |> ChRepo.query_transform(fn [timestamp] ->
       DateTime.from_unix!(timestamp)
     end)
     |> maybe_unwrap_ok_value()
@@ -153,7 +153,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
     }
 
     Sanbase.Clickhouse.Query.new(sql, params)
-    |> ClickhouseRepo.query_transform(fn [timestamp] -> DateTime.from_unix!(timestamp) end)
+    |> ChRepo.query_transform(fn [timestamp] -> DateTime.from_unix!(timestamp) end)
     |> maybe_unwrap_ok_value()
   end
 
@@ -176,7 +176,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
     sql = "SELECT toUnixTimestamp(max(dt)) FROM eth2_staking_transfers_v2"
     query_struct = Sanbase.Clickhouse.Query.new(sql, %{})
 
-    ClickhouseRepo.query_transform(query_struct, fn [timestamp] ->
+    ChRepo.query_transform(query_struct, fn [timestamp] ->
       DateTime.from_unix!(timestamp)
     end)
     |> maybe_unwrap_ok_value()

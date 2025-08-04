@@ -13,7 +13,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
 
   alias Sanbase.Project
 
-  alias Sanbase.ClickhouseRepo
+  alias Sanbase.ChRepo
 
   @supported_infrastructures ["ETH"]
 
@@ -67,7 +67,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
            timeseries_data_params(selector, contract, infr, from, to, interval, decimals, opts) do
       result =
         timeseries_data_query(metric, params)
-        |> ClickhouseRepo.query_transform(fn [timestamp, value, has_changed] ->
+        |> ChRepo.query_transform(fn [timestamp, value, has_changed] ->
           %{datetime: DateTime.from_unix!(timestamp), value: value, has_changed: has_changed}
         end)
 
@@ -193,7 +193,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
       table = to_table(contract, infr)
       query_struct = first_datetime_query(table, contract)
 
-      ClickhouseRepo.query_transform(query_struct, fn [timestamp] ->
+      ChRepo.query_transform(query_struct, fn [timestamp] ->
         DateTime.from_unix!(timestamp)
       end)
       |> maybe_unwrap_ok_value()
@@ -208,7 +208,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
       _query_struct = first_datetime_query(table, contract)
       query_struct = last_datetime_computed_at_query(table, contract)
 
-      ClickhouseRepo.query_transform(query_struct, fn [timestamp] ->
+      ChRepo.query_transform(query_struct, fn [timestamp] ->
         DateTime.from_unix!(timestamp)
       end)
       |> maybe_unwrap_ok_value()

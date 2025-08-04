@@ -14,7 +14,8 @@ defmodule Sanbase.Project.Multichain do
     "o-" => %{ecosystem: "Optimism"},
     "a-" => %{ecosystem: "Avalanche"},
     "p-" => %{ecosystem: "Polygon"},
-    "bnb-" => %{ecosystem: "BNB Chain"}
+    "bnb-" => %{ecosystem: "BNB Chain"},
+    "sol-" => %{ecosystem: "Solana"}
   }
 
   @doc """

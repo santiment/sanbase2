@@ -428,13 +428,20 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     sql = """
     SELECT DISTINCT(name)
     FROM asset_metadata FINAL
-    PREWHERE asset_id in (
-      SELECT DISTINCT(asset_id)
-      FROM available_metrics
-      PREWHERE
-        #{metric_id_filter(metric, argument_name: "metric")} AND
-        end_dt > now() - INTERVAL 14 DAY
-    )
+    WHERE
+      asset_id IN (
+        SELECT DISTINCT(asset_id)
+        FROM available_metrics
+        WHERE
+          #{metric_id_filter(metric, argument_name: "metric")} AND
+          end_dt > now() - INTERVAL 14 DAY
+      ) AND
+      asset_id NOT IN (
+        SELECT DISTINCT(asset_id)
+        FROM publicly_disabled_metrics
+        WHERE
+          #{metric_id_filter(metric, argument_name: "metric")}
+      )
     """
 
     params = %{metric: Map.get(Registry.name_to_metric_map(), metric)}
@@ -499,16 +506,17 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       end
 
     sql = """
-    SELECT name
+    SELECT dictGet('metrics', 'name', metric_id)
     FROM available_metrics FINAL
-    INNER JOIN (
-      SELECT name, metric_id
-      FROM metric_metadata FINAL
-    ) USING (metric_id)
-    PREWHERE
+    WHERE
       #{asset_id_filter(selector, argument_name: "selector")} AND
-      end_dt > now() - INTERVAL 14 DAY
-
+      end_dt > now() - INTERVAL 14 DAY AND
+      metric_id NOT IN (
+        SELECT metric_id
+        FROM publicly_disabled_metrics
+        WHERE
+          #{asset_id_filter(selector, argument_name: "selector")}
+      )
     """
 
     params = %{selector: selector_value}
@@ -517,22 +525,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
   def available_metrics_for_slug_query(slug) do
     selector = %{slug: slug}
-
-    sql = """
-    SELECT name
-    FROM available_metrics FINAL
-    INNER JOIN (
-      SELECT name, metric_id
-      FROM metric_metadata FINAL
-    ) USING (metric_id)
-    PREWHERE
-      #{asset_id_filter(selector, argument_name: "selector")} AND
-      end_dt > now() - INTERVAL 14 DAY
-    """
-
-    params = %{selector: selector}
-
-    Sanbase.Clickhouse.Query.new(sql, params)
+    available_metrics_for_selector_query(selector)
   end
 
   # Private functions

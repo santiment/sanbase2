@@ -69,6 +69,8 @@ defmodule Sanbase.Application do
         Sanbase.Application.Web.init()
         Sanbase.Application.Scrapers.init()
         Sanbase.Application.Alerts.init()
+        Sanbase.Application.Queries.init()
+        Sanbase.Application.Mcp.init()
 
       "admin" ->
         Sanbase.Application.Admin.init()

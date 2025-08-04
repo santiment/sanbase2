@@ -1,6 +1,5 @@
 defmodule Sanbase.MCP.CheckAuthentication do
-  @moduledoc "Fetch metric data for the last 30 days with daily resolution"
-
+  @moduledoc "Return information about the authenticated user, if any"
   use Hermes.Server.Component, type: :tool
 
   alias Hermes.Server.Response

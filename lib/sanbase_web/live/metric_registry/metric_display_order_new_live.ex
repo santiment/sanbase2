@@ -269,7 +269,6 @@ defmodule SanbaseWeb.MetricDisplayOrderNewLive do
         field={@form[:category_id]}
         label="Category"
         options={Enum.map(@categories, fn cat -> {cat.name, cat.id} end)}
-        phx-change="category_changed"
       />
 
       <.input

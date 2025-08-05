@@ -570,6 +570,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
 
   # metrics
   @get_metric_fields [
+    :aggregated_timeseries_data,
     :timeseries_data,
     :timeseries_data_json,
     :timeseries_data_per_slug,

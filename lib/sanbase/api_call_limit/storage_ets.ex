@@ -1,4 +1,4 @@
-defmodule Sanbase.ApiCallLimit.ETS do
+defmodule Sanbase.ApiCallLimit.StorageETS do
   @moduledoc ~s"""
   Track the API Call quotas (get and update) of the user and remote IPs.
 
@@ -163,6 +163,11 @@ defmodule Sanbase.ApiCallLimit.ETS do
   end
 
   defp do_update_usage(entity_type, entity_key, count, result_byte_size) do
+    # There is a possibility of race conditions if the same entity_key is used
+    # concurrently from multiple processes.
+    # This module access is serialized through the CollectorETS GenServer, which is
+    # started under a PartitionSupervisor, partitioned by the entity_key.
+    # This way all actions for the same key are sequential.
     case :ets.lookup(@ets_table, entity_key) do
       [] ->
         update_usage_get_quota_from_db_and_update_ets(

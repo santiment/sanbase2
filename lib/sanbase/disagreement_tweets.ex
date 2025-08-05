@@ -309,6 +309,81 @@ defmodule Sanbase.DisagreementTweets do
     end)
   end
 
+  @doc """
+  Updates asset direction information for a completed tweet
+  """
+  def update_asset_direction(tweet_id, attrs) do
+    case get_by_tweet_id(tweet_id) do
+      nil ->
+        {:error, :not_found}
+
+      tweet ->
+        if tweet.classification_count >= 5 and tweet.experts_is_prediction == true do
+          tweet
+          |> ClassifiedTweet.changeset(attrs)
+          |> Repo.update()
+        else
+          {:error, :not_eligible}
+        end
+    end
+  end
+
+  @doc """
+  Searches project tickers for autocomplete functionality with query and limit
+  """
+  def search_project_tickers(query, limit \\ 10) when is_binary(query) do
+    query = String.trim(query)
+
+    if String.length(query) < 2 do
+      []
+    else
+      search_pattern = "%" <> String.upcase(query) <> "%"
+
+      # Search for exact matches first, then partial matches
+      exact_matches =
+        from(p in Sanbase.Project,
+          where: not is_nil(p.ticker) and p.ticker == ^String.upcase(query),
+          select: p.ticker,
+          order_by: p.ticker,
+          limit: ^limit
+        )
+        |> Repo.all()
+
+      partial_matches =
+        from(p in Sanbase.Project,
+          where: not is_nil(p.ticker) and ilike(p.ticker, ^search_pattern),
+          select: p.ticker,
+          order_by: p.ticker,
+          limit: ^limit
+        )
+        |> Repo.all()
+
+      # Combine results, prioritizing exact matches, and remove duplicates
+      (exact_matches ++ partial_matches)
+      |> Enum.uniq()
+      |> Enum.take(limit)
+    end
+  end
+
+  @doc """
+  Gets all project tickers for autocomplete functionality
+  """
+  def get_project_tickers do
+    from(p in Sanbase.Project,
+      where: not is_nil(p.ticker),
+      select: p.ticker,
+      order_by: p.ticker
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Checks if a tweet has asset direction information
+  """
+  def has_asset_direction?(tweet) do
+    not is_nil(tweet.prediction_direction) or not is_nil(tweet.base_asset)
+  end
+
   defp update_classification_count(classified_tweet_id) do
     count =
       Repo.aggregate(

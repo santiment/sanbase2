@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.10 (Homebrew)
--- Dumped by pg_dump version 15.10 (Homebrew)
+-- Dumped from database version 15.1 (Homebrew)
+-- Dumped by pg_dump version 15.1 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -858,7 +858,10 @@ CREATE TABLE public.classified_tweets (
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
     review_required boolean DEFAULT true NOT NULL,
-    experts_is_prediction boolean
+    experts_is_prediction boolean,
+    prediction_direction character varying(255),
+    base_asset character varying(255),
+    quote_asset character varying(255)
 );
 
 
@@ -2167,9 +2170,9 @@ CREATE TABLE public.metric_registry (
     deprecation_note text,
     inserted_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
+    status character varying(255) DEFAULT 'released'::character varying NOT NULL,
     is_verified boolean DEFAULT true NOT NULL,
     sync_status character varying(255) DEFAULT 'synced'::character varying NOT NULL,
-    status character varying(255) DEFAULT 'released'::character varying NOT NULL,
     last_sync_datetime timestamp(0) without time zone,
     stabilization_period character varying(255),
     can_mutate boolean
@@ -7447,10 +7450,31 @@ CREATE INDEX chats_user_id_updated_at_index ON public.chats USING btree (user_id
 
 
 --
+-- Name: classified_tweets_base_asset_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX classified_tweets_base_asset_index ON public.classified_tweets USING btree (base_asset);
+
+
+--
 -- Name: classified_tweets_experts_is_prediction_index; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX classified_tweets_experts_is_prediction_index ON public.classified_tweets USING btree (experts_is_prediction);
+
+
+--
+-- Name: classified_tweets_prediction_direction_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX classified_tweets_prediction_direction_index ON public.classified_tweets USING btree (prediction_direction);
+
+
+--
+-- Name: classified_tweets_quote_asset_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX classified_tweets_quote_asset_index ON public.classified_tweets USING btree (quote_asset);
 
 
 --
@@ -10428,3 +10452,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250710091509);
 INSERT INTO public."schema_migrations" (version) VALUES (20250711133635);
 INSERT INTO public."schema_migrations" (version) VALUES (20250723114539);
 INSERT INTO public."schema_migrations" (version) VALUES (20250724112853);
+INSERT INTO public."schema_migrations" (version) VALUES (20250805131523);

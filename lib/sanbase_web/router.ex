@@ -154,7 +154,6 @@ defmodule SanbaseWeb.Router do
 
     resources("/reports", ReportController)
     resources("/sheets_templates", SheetsTemplateController)
-    resources("/webinars", WebinarController)
     resources("/custom_plans", CustomPlanController)
 
     get("/", GenericAdminController, :home)

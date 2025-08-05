@@ -57,9 +57,7 @@ defmodule Sanbase.Billing.Plan.CustomPlan.Loader do
     end
   end
 
-  defp get_plan("CUSTOM_" <> _ = plan_name, product_code) do
-    product_id = Sanbase.Billing.Product.id_by_code(product_code)
-
+  defp get_plan("CUSTOM_" <> _ = plan_name, _product_code) do
     plan =
       from(p in Plan,
         where:

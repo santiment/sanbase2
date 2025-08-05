@@ -31,7 +31,6 @@ defmodule SanbaseWeb.GenericAdminController do
 
   def custom_routes do
     [
-      {"Webinars", ~p"/admin/webinars"},
       {"Sheets Templates", ~p"/admin/sheets_templates/"},
       {"Reports", ~p"/admin/reports"},
       {"Custom Plans", ~p"/admin/custom_plans"},

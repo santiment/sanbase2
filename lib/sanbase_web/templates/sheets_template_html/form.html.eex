@@ -1,6 +1,6 @@
 <div class="shadow-xl p-10 bg-white max-w-xl rounded mb-4">
 <%= form_for @changeset, @action, [multipart: true], fn f -> %>
-  <%= if @changeset.action do %>
+  <%= if @changeset.action != nil do %>
     <div class="text-white px-6 py-4 border-0 rounded relative mb-4 bg-red-500">
       <p>Oops, something went wrong! Please check the errors below.</p>
     </div>

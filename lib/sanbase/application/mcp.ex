@@ -1,6 +1,4 @@
 defmodule Sanbase.Application.Mcp do
-  import Sanbase.ApplicationUtils
-
   def init() do
     :ok
   end

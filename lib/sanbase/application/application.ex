@@ -353,17 +353,6 @@ defmodule Sanbase.Application do
          acquire_lock_timeout: 60_000
        ]},
 
-      # Mutex for forcing sequential execution when updating api call limits
-      start_if(
-        fn ->
-          Supervisor.child_spec(
-            {Mutex, name: Sanbase.ApiCallLimitMutex},
-            id: Sanbase.ApiCallLimitMutex
-          )
-        end,
-        fn -> container_type() in ["web", "all"] end
-      ),
-
       # Start the graphQL in-memory cache
       start_if(
         fn ->

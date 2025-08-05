@@ -153,7 +153,6 @@ defmodule SanbaseWeb.Router do
     live "/scheduled_deprecations/new", ScheduledDeprecationLive, :new
 
     resources("/reports", ReportController)
-    resources("/sheets_templates", SheetsTemplateController)
     resources("/custom_plans", CustomPlanController)
 
     get("/", GenericAdminController, :home)

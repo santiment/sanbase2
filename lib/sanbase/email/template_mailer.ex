@@ -21,53 +21,63 @@ defmodule Sanbase.TemplateMailer do
                "sheets-sign-up",
                "sanbase-verify-email-mail"
              ] do
-    template = Sanbase.Email.Template.templates()[template_slug]
+    if Sanbase.Email.email_excluded?(rcpt_email) do
+      Logger.info("Email #{rcpt_email} is excluded from receiving emails")
+      {:ok, :excluded}
+    else
+      template = Sanbase.Email.Template.templates()[template_slug]
 
-    subject =
-      case template[:dynamic_subject] do
-        subject when is_binary(subject) -> Sanbase.TemplateEngine.run!(subject, params: vars)
-        nil -> template[:subject]
-      end
-
-    body =
-      case template_slug do
-        login when login in ["sanbase-sign-in-mail", "neuro-sign-in", "sheets-sign-in"] ->
-          login_template(vars)
-
-        register when register in ["sanbase-sign-up-mail", "neuro-sign-up", "sheets-sign-up"] ->
-          register_template(vars)
-
-        verify when verify in ["sanbase-verify-email-mail"] ->
-          verify_template(vars)
-      end
-
-    Sanbase.SimpleMailer.send_email(rcpt_email, subject, body)
-  end
-
-  def send(rcpt_email, template_slug, vars) when is_binary(rcpt_email) and rcpt_email != "" do
-    template = Sanbase.Email.Template.templates()[template_slug]
-    vars = Map.put(vars, :current_year, Date.utc_today().year)
-    from = generate_from(template_slug)
-
-    if template do
       subject =
         case template[:dynamic_subject] do
           subject when is_binary(subject) -> Sanbase.TemplateEngine.run!(subject, params: vars)
           nil -> template[:subject]
         end
 
-      new()
-      |> to(rcpt_email)
-      |> from(from)
-      |> subject(subject)
-      |> put_provider_option(:template_id, template[:id])
-      |> put_provider_option(:template_error_deliver, false)
-      |> put_provider_option(:template_error_reporting, "team.backend@santiment.net")
-      |> put_provider_option(:variables, vars)
-      |> deliver()
+      body =
+        case template_slug do
+          login when login in ["sanbase-sign-in-mail", "neuro-sign-in", "sheets-sign-in"] ->
+            login_template(vars)
+
+          register when register in ["sanbase-sign-up-mail", "neuro-sign-up", "sheets-sign-up"] ->
+            register_template(vars)
+
+          verify when verify in ["sanbase-verify-email-mail"] ->
+            verify_template(vars)
+        end
+
+      Sanbase.SimpleMailer.send_email(rcpt_email, subject, body)
+    end
+  end
+
+  def send(rcpt_email, template_slug, vars) when is_binary(rcpt_email) and rcpt_email != "" do
+    if Sanbase.Email.email_excluded?(rcpt_email) do
+      Logger.info("Email #{rcpt_email} is excluded from receiving emails")
+      {:ok, :excluded}
     else
-      Logger.error("Missing email template: #{template_slug}")
-      {:error, "Could not send email: Missing template."}
+      template = Sanbase.Email.Template.templates()[template_slug]
+      vars = Map.put(vars, :current_year, Date.utc_today().year)
+      from = generate_from(template_slug)
+
+      if template do
+        subject =
+          case template[:dynamic_subject] do
+            subject when is_binary(subject) -> Sanbase.TemplateEngine.run!(subject, params: vars)
+            nil -> template[:subject]
+          end
+
+        new()
+        |> to(rcpt_email)
+        |> from(from)
+        |> subject(subject)
+        |> put_provider_option(:template_id, template[:id])
+        |> put_provider_option(:template_error_deliver, false)
+        |> put_provider_option(:template_error_reporting, "team.backend@santiment.net")
+        |> put_provider_option(:variables, vars)
+        |> deliver()
+      else
+        Logger.error("Missing email template: #{template_slug}")
+        {:error, "Could not send email: Missing template."}
+      end
     end
   end
 

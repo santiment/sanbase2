@@ -1,0 +1,24 @@
+# Long-lived JWT for testing
+
+## Section
+
+```elixir
+{:ok, user} = Sanbase.Accounts.User.find_or_insert_by(:username, "no_subscription_long_lived_jwt")
+```
+
+```elixir
+# 5 years
+ttl = {5 * 52, :weeks}
+
+# NOTE:
+# Execute this on stage as the encoding and signing will use the stage signing keys
+# Doing this locally will use some default local key which won't work on stage
+{:ok, %{access_token: token}} =
+  SanbaseWeb.Guardian.get_jwt_tokens(user, %{access_token_ttl: ttl, refresh_token_ttl: ttl})
+```
+
+```elixir
+{:ok, user, claims} = SanbaseWeb.Guardian.resource_from_token(token)
+
+IO.puts("User from token is #{user.username}")
+```

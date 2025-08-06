@@ -69,6 +69,8 @@ defmodule Sanbase.Application do
         Sanbase.Application.Web.init()
         Sanbase.Application.Scrapers.init()
         Sanbase.Application.Alerts.init()
+        Sanbase.Application.Queries.init()
+        Sanbase.Application.Mcp.init()
 
       "admin" ->
         Sanbase.Application.Admin.init()
@@ -131,10 +133,12 @@ defmodule Sanbase.Application do
         {alerts_children, _} = Sanbase.Application.Alerts.children()
         {admin_children, _} = Sanbase.Application.Admin.children()
         {queries_children, _} = Sanbase.Application.Admin.children()
+        {mcp_children, _} = Sanbase.Application.Mcp.children()
 
         children =
           web_children ++
-            scrapers_children ++ alerts_children ++ admin_children ++ queries_children
+            scrapers_children ++
+            alerts_children ++ admin_children ++ queries_children ++ mcp_children
 
         children = children |> Enum.uniq()
 

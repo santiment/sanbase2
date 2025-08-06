@@ -1,5 +1,0 @@
-<h1 class="text-4xl font-black mb-4">Edit Webinar</h1>
-
-<%= render "edit_form.html", Map.put(assigns, :action, Routes.webinar_path(@conn, :update, @webinar)) %>
-
-<span><%= link "Back", to: Routes.webinar_path(@conn, :index), class: "flex-shrink-0 border-4 text-teal-500 hover:text-teal-800 py-1 px-2 rounded", type: "button" %></span>

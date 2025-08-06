@@ -225,10 +225,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
           ~r{https://[a-zA-Z0-9\-\.]*sanbase-images.s3\.amazonaws\.com/[^\s"<>]+(?:\.jpg|\.png|\.gif|\.jpeg)}
   end
 
-  defp image_url_regex() do
-    ~r{https://[a-zA-Z0-9\-\.]*sanbase-images.s3\.amazonaws\.com/[^\s"<>]+(?:\.jpg|\.png|\.gif|\.jpeg)}
-  end
-
   def extract_images_from_text(%Post{text: text}, _args, _resolution) do
     image_urls =
       Regex.scan(image_url_regex(), text)

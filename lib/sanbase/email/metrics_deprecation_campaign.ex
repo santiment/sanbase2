@@ -150,6 +150,7 @@ defmodule Sanbase.Email.MetricsDeprecationCampaign do
       end
 
     Repo.all(query)
+    |> Enum.reject(fn u -> String.ends_with?(u.email, "santiment.net") end)
   end
 
   @doc """

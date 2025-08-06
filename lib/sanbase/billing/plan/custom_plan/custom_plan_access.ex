@@ -21,7 +21,7 @@ defmodule Sanbase.Billing.Plan.CustomPlan.Access do
   end
 
   def historical_data_in_days(
-        query_or_argument,
+        _query_or_argument,
         requested_product,
         _subscription_product,
         plan_name
@@ -30,7 +30,7 @@ defmodule Sanbase.Billing.Plan.CustomPlan.Access do
   end
 
   def realtime_data_cut_off_in_days(
-        query_or_argument,
+        _query_or_argument,
         requested_product,
         _subscription_product,
         plan_name

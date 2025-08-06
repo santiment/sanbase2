@@ -1,6 +1,4 @@
 defmodule Sanbase.Application.Mcp do
-  import Sanbase.ApplicationUtils
-
   def init() do
     :ok
   end
@@ -11,7 +9,7 @@ defmodule Sanbase.Application.Mcp do
       Hermes.Server.Registry,
 
       # MCP server for metrics access
-      {Sanbase.MCP.MetricsServer, transport: :streamable_http}
+      {Sanbase.MCP.MetricsServer, [transport: {:streamable_http, start: true}]}
     ]
 
     opts = [

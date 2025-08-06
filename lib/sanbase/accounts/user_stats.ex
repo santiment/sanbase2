@@ -7,7 +7,6 @@ defmodule Sanbase.Accounts.UserStats do
   alias Sanbase.Repo
   alias Sanbase.Accounts.User
   alias Sanbase.Billing.{Subscription, Product}
-  alias Sanbase.Clickhouse.ApiCallData
 
   @spec inactive_free_users_count() ::
           {:ok, %{count: non_neg_integer(), emails: list(String.t())}} | {:error, String.t()}
@@ -179,15 +178,6 @@ defmodule Sanbase.Accounts.UserStats do
     end
   end
 
-  defp get_ever_active_users do
-    query_struct = ever_active_users_query()
-
-    case Sanbase.ClickhouseRepo.query_transform(query_struct, fn [user_id] -> user_id end) do
-      {:ok, user_ids} -> {:ok, user_ids}
-      {:error, reason} -> {:error, reason}
-    end
-  end
-
   defp active_users_since_query(since_datetime) do
     sql = """
     SELECT DISTINCT user_id
@@ -209,17 +199,6 @@ defmodule Sanbase.Accounts.UserStats do
     """
 
     params = %{from_datetime: from_datetime, to_datetime: to_datetime}
-    Sanbase.Clickhouse.Query.new(sql, params)
-  end
-
-  defp ever_active_users_query do
-    sql = """
-    SELECT DISTINCT user_id
-    FROM api_call_data
-    WHERE user_id != 0
-    """
-
-    params = %{}
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 

@@ -3,8 +3,6 @@ defmodule Sanbase.SocialData.Community do
 
   alias Sanbase.Utils.Config
 
-  alias Sanbase.Project
-
   require Logger
   require Mockery.Macro
 

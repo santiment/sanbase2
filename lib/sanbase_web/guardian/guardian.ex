@@ -73,14 +73,14 @@ defmodule SanbaseWeb.Guardian do
            encode_and_sign(
              user,
              %{client: client, platform: platform, type: "user_access_token"},
-             ttl: @access_token_ttl
+             ttl: Map.get(args, :access_token_ttl, @access_token_ttl)
            ),
          {:ok, refresh_token, _claims} <-
            encode_and_sign(
              user,
              %{client: client, platform: platform, type: "user_refresh_token"},
              token_type: "refresh",
-             ttl: @refresh_token_ttl
+             ttl: Map.get(args, :refresh_token_ttl, @refresh_token_ttl)
            ) do
       {:ok, %{access_token: access_token, refresh_token: refresh_token}}
     end

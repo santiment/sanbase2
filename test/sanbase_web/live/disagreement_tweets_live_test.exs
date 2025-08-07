@@ -121,11 +121,6 @@ defmodule SanbaseWeb.DisagreementTweetsLiveTest do
                  String.contains?(List.first(tickers_btc), "BTC")
       end
     end
-
-    test "get_project_tickers returns list of tickers" do
-      tickers = DisagreementTweets.get_project_tickers()
-      assert is_list(tickers)
-    end
   end
 
   describe "project cache functionality" do

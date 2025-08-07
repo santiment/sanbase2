@@ -336,18 +336,6 @@ defmodule Sanbase.DisagreementTweets do
   end
 
   @doc """
-  Gets all project tickers for autocomplete functionality
-  """
-  def get_project_tickers do
-    from(p in Sanbase.Project,
-      where: not is_nil(p.ticker),
-      select: p.ticker,
-      order_by: p.ticker
-    )
-    |> Repo.all()
-  end
-
-  @doc """
   Checks if a tweet has asset direction information
   """
   def has_asset_direction?(tweet) do

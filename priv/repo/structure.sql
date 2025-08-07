@@ -1326,6 +1326,38 @@ ALTER SEQUENCE public.ecosystems_id_seq OWNED BY public.ecosystems.id;
 
 
 --
+-- Name: email_exclusion_list; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.email_exclusion_list (
+    id bigint NOT NULL,
+    email character varying(255) NOT NULL,
+    reason text,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: email_exclusion_list_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.email_exclusion_list_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: email_exclusion_list_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.email_exclusion_list_id_seq OWNED BY public.email_exclusion_list.id;
+
+
+--
 -- Name: eth_accounts; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -5395,6 +5427,13 @@ ALTER TABLE ONLY public.ecosystems ALTER COLUMN id SET DEFAULT nextval('public.e
 
 
 --
+-- Name: email_exclusion_list id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.email_exclusion_list ALTER COLUMN id SET DEFAULT nextval('public.email_exclusion_list_id_seq'::regclass);
+
+
+--
 -- Name: eth_accounts id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6347,6 +6386,14 @@ ALTER TABLE ONLY public.discord_dashboards
 
 ALTER TABLE ONLY public.ecosystems
     ADD CONSTRAINT ecosystems_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: email_exclusion_list email_exclusion_list_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.email_exclusion_list
+    ADD CONSTRAINT email_exclusion_list_pkey PRIMARY KEY (id);
 
 
 --
@@ -7608,6 +7655,13 @@ CREATE INDEX document_tokens_index ON public.posts USING gin (document_tokens);
 --
 
 CREATE UNIQUE INDEX ecosystems_ecosystem_index ON public.ecosystems USING btree (ecosystem);
+
+
+--
+-- Name: email_exclusion_list_email_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX email_exclusion_list_email_index ON public.email_exclusion_list USING btree (email);
 
 
 --
@@ -10453,3 +10507,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250711133635);
 INSERT INTO public."schema_migrations" (version) VALUES (20250723114539);
 INSERT INTO public."schema_migrations" (version) VALUES (20250724112853);
 INSERT INTO public."schema_migrations" (version) VALUES (20250805131523);
+INSERT INTO public."schema_migrations" (version) VALUES (20250806103908);

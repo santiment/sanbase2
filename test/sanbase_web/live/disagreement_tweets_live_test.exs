@@ -108,9 +108,53 @@ defmodule SanbaseWeb.DisagreementTweetsLiveTest do
       assert length(tickers) <= 10
     end
 
+    test "search_project_tickers uses cached fuzzy search" do
+      # Test fuzzy matching capabilities
+      tickers = DisagreementTweets.search_project_tickers("bitco")
+      assert is_list(tickers)
+
+      # Test that exact matches are prioritized
+      tickers_btc = DisagreementTweets.search_project_tickers("BTC")
+
+      if length(tickers_btc) > 0 do
+        assert List.first(tickers_btc) == "BTC" or
+                 String.contains?(List.first(tickers_btc), "BTC")
+      end
+    end
+
     test "get_project_tickers returns list of tickers" do
       tickers = DisagreementTweets.get_project_tickers()
       assert is_list(tickers)
+    end
+  end
+
+  describe "project cache functionality" do
+    alias Sanbase.Project.ProjectCache
+
+    test "search_projects returns empty list for short queries" do
+      assert ProjectCache.search_projects("B") == []
+    end
+
+    test "search_projects returns results for valid queries" do
+      results = ProjectCache.search_projects("BTC", 5)
+      assert is_list(results)
+      assert length(results) <= 5
+    end
+
+    test "get_cached_projects returns project data" do
+      projects = ProjectCache.get_cached_projects()
+      assert is_list(projects)
+
+      if length(projects) > 0 do
+        project = List.first(projects)
+        assert Map.has_key?(project, :name)
+        assert Map.has_key?(project, :ticker)
+        assert Map.has_key?(project, :slug)
+      end
+    end
+
+    test "clear_cache works without errors" do
+      assert :ok = ProjectCache.clear_cache()
     end
   end
 

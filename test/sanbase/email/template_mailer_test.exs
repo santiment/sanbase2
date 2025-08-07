@@ -1,26 +1,29 @@
 defmodule Sanbase.TemplateMailerTest do
   use Sanbase.DataCase
 
+  import Mock
+
   alias Sanbase.TemplateMailer
   alias Sanbase.Email
 
   describe "send/3 with exclusion list" do
     test "sends email when recipient is not excluded" do
-      # This is a mock test since we don't want to actually send emails in tests
-      # In a real implementation, you might use mox to mock the email delivery
       email = "allowed@example.com"
 
       # Ensure email is not excluded
       refute Email.email_excluded?(email)
 
-      # In real tests, you'd mock the actual email sending
-      # For now, we'll just verify the function can be called
-      result =
-        TemplateMailer.send(email, "sanbase-sign-in-mail", %{login_link: "http://example.com"})
+      # Mock the SimpleMailer to avoid actual email sending
+      with_mock Sanbase.SimpleMailer, send_email: fn _, _, _ -> {:ok, :mocked_result} end do
+        result =
+          TemplateMailer.send(email, "sanbase-sign-in-mail", %{login_link: "http://example.com"})
 
-      # The result would depend on your actual email provider response
-      # This test mainly ensures no exceptions are thrown
-      assert result != nil
+        # Should call the mocked SimpleMailer and return its result
+        assert result == {:ok, :mocked_result}
+
+        # Verify that SimpleMailer.send_email was called
+        assert_called(Sanbase.SimpleMailer.send_email(:_, :_, :_))
+      end
     end
 
     test "does not send email when recipient is excluded" do
@@ -51,6 +54,7 @@ defmodule Sanbase.TemplateMailerTest do
       email = "excluded@example.com"
       Email.exclude_email(email, "User requested")
 
+      # No need to mock since this email is excluded and won't reach SimpleMailer
       result = TemplateMailer.send(email, "some-template", %{})
 
       assert result == {:ok, :excluded}

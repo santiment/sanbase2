@@ -33,6 +33,11 @@ defmodule Sanbase.DisagreementTweets.ClassifiedTweet do
     field(:classification_count, :integer, default: 0)
     field(:experts_is_prediction, :boolean)
 
+    # Asset direction fields
+    field(:prediction_direction, :string)
+    field(:base_asset, :string)
+    field(:quote_asset, :string)
+
     has_many(:classifications, TweetClassification, foreign_key: :classified_tweet_id)
 
     timestamps()
@@ -60,7 +65,10 @@ defmodule Sanbase.DisagreementTweets.ClassifiedTweet do
     :llama_prob_other,
     :llama_time_seconds,
     :classification_count,
-    :experts_is_prediction
+    :experts_is_prediction,
+    :prediction_direction,
+    :base_asset,
+    :quote_asset
   ]
 
   def changeset(tweet, attrs) do
@@ -70,6 +78,7 @@ defmodule Sanbase.DisagreementTweets.ClassifiedTweet do
     |> unique_constraint(:tweet_id, name: :disagreement_tweets_tweet_id_index)
     |> validate_inclusion(:agreement, [true, false])
     |> validate_inclusion(:review_required, [true, false])
+    |> validate_inclusion(:prediction_direction, ["up", "down", "side", "other"])
     |> validate_number(:classification_count, greater_than_or_equal_to: 0)
   end
 

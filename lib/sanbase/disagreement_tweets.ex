@@ -309,6 +309,39 @@ defmodule Sanbase.DisagreementTweets do
     end)
   end
 
+  @doc """
+  Updates asset direction information for a completed tweet
+  """
+  def update_asset_direction(tweet_id, attrs) do
+    case get_by_tweet_id(tweet_id) do
+      nil ->
+        {:error, :not_found}
+
+      tweet ->
+        if tweet.classification_count >= 5 and tweet.experts_is_prediction == true do
+          tweet
+          |> ClassifiedTweet.changeset(attrs)
+          |> Repo.update()
+        else
+          {:error, :not_eligible}
+        end
+    end
+  end
+
+  @doc """
+  Searches project tickers for autocomplete functionality using cached fuzzy search
+  """
+  def search_project_tickers(query, limit \\ 10) when is_binary(query) do
+    Sanbase.Project.ProjectCache.search_projects(query, limit)
+  end
+
+  @doc """
+  Checks if a tweet has asset direction information
+  """
+  def has_asset_direction?(tweet) do
+    not is_nil(tweet.prediction_direction) or not is_nil(tweet.base_asset)
+  end
+
   defp update_classification_count(classified_tweet_id) do
     count =
       Repo.aggregate(

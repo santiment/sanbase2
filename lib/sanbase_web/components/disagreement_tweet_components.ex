@@ -7,6 +7,7 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
   attr :tweet, :map, required: true
   attr :show_classification_buttons, :boolean, default: false
   attr :show_results, :boolean, default: false
+  attr :show_asset_direction_form, :boolean, default: false
   attr :user_id, :integer, required: true
   attr :rest, :global
 
@@ -66,6 +67,10 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
 
       <div :if={@show_results or @tweet.classification_count >= 5} class="mb-4">
         <.voting_details tweet={@tweet} />
+      </div>
+
+      <div :if={@show_asset_direction_form} class="mb-4">
+        <.asset_direction_display_or_form tweet={@tweet} />
       </div>
 
       <div :if={@show_classification_buttons} class="pt-3 border-t border-gray-100">
@@ -240,6 +245,126 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
   end
 
   @doc """
+  Renders asset direction information or form to add it
+  """
+  attr :tweet, :map, required: true
+
+  def asset_direction_display_or_form(assigns) do
+    ~H"""
+    <div class="bg-yellow-50 rounded-lg p-4">
+      <h4 class="text-sm font-medium text-gray-700 mb-3">Asset Direction Information</h4>
+
+      <div :if={has_asset_direction_info?(@tweet)} class="space-y-2">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div :if={@tweet.prediction_direction} class="text-center">
+            <span class="text-xs text-gray-500 block">Direction</span>
+            <span class={[
+              "inline-block px-3 py-1 rounded-full text-sm font-medium mt-1",
+              direction_color(@tweet.prediction_direction)
+            ]}>
+              {direction_display(@tweet.prediction_direction)}
+            </span>
+          </div>
+
+          <div :if={@tweet.base_asset} class="text-center">
+            <span class="text-xs text-gray-500 block">Base Asset</span>
+            <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium mt-1 inline-block">
+              {@tweet.base_asset}
+            </span>
+          </div>
+
+          <div :if={@tweet.quote_asset} class="text-center">
+            <span class="text-xs text-gray-500 block">Quote Asset</span>
+            <span class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm font-medium mt-1 inline-block">
+              {@tweet.quote_asset}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <form
+        :if={!has_asset_direction_info?(@tweet)}
+        phx-submit="add_asset_direction"
+        phx-hook="TickerAutocomplete"
+        id={"asset_direction_form_#{@tweet.tweet_id}"}
+        class="space-y-4"
+      >
+        <input type="hidden" name="tweet_id" value={@tweet.tweet_id} />
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Prediction Direction
+            </label>
+            <select
+              name="prediction_direction"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select direction...</option>
+              <option value="up">📈 Up</option>
+              <option value="down">📉 Down</option>
+              <option value="side">➡️ Sideways</option>
+              <option value="other">❓ Other</option>
+            </select>
+          </div>
+
+          <div class="relative">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Base Asset (optional)
+            </label>
+            <input
+              type="text"
+              name="base_asset"
+              placeholder="e.g., BTC, ETH..."
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              phx-change="search_tickers"
+              phx-debounce="300"
+              autocomplete="off"
+              id={"base_asset_#{@tweet.tweet_id}"}
+            />
+            <div
+              id={"base_asset_suggestions_#{@tweet.tweet_id}"}
+              class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-48 overflow-y-auto hidden"
+            >
+            </div>
+          </div>
+
+          <div class="relative">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Quote Asset (optional)
+            </label>
+            <input
+              type="text"
+              name="quote_asset"
+              placeholder="USD (default), EUR..."
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              phx-change="search_tickers"
+              phx-debounce="300"
+              autocomplete="off"
+              id={"quote_asset_#{@tweet.tweet_id}"}
+            />
+            <div
+              id={"quote_asset_suggestions_#{@tweet.tweet_id}"}
+              class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-48 overflow-y-auto hidden"
+            >
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end">
+          <button
+            type="submit"
+            class="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors"
+          >
+            Add Asset Direction
+          </button>
+        </div>
+      </form>
+    </div>
+    """
+  end
+
+  @doc """
   Renders a header with title and refresh button for disagreement tweets
   """
   attr :title, :string, default: "Tweet Classification"
@@ -360,4 +485,20 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
   end
 
   defp get_user_display(_), do: "Unknown"
+
+  defp has_asset_direction_info?(tweet) do
+    tweet.prediction_direction != nil and tweet.prediction_direction != ""
+  end
+
+  defp direction_display("up"), do: "📈 Up"
+  defp direction_display("down"), do: "📉 Down"
+  defp direction_display("side"), do: "➡️ Sideways"
+  defp direction_display("other"), do: "❓ Other"
+  defp direction_display(_), do: "N/A"
+
+  defp direction_color("up"), do: "bg-green-100 text-green-800"
+  defp direction_color("down"), do: "bg-red-100 text-red-800"
+  defp direction_color("side"), do: "bg-yellow-100 text-yellow-800"
+  defp direction_color("other"), do: "bg-purple-100 text-purple-800"
+  defp direction_color(_), do: "bg-gray-100 text-gray-600"
 end

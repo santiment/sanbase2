@@ -74,6 +74,18 @@ defmodule SanbaseWeb.DisagreementTweetsLive do
   end
 
   @impl true
+  def handle_info({:search_tickers, query, field}, socket) do
+    tickers = DisagreementTweets.search_project_tickers(query, 10)
+
+    # Send the results back to the client using a push event
+    {:noreply,
+     push_event(socket, "ticker_suggestions", %{
+       field: field,
+       suggestions: tickers
+     })}
+  end
+
+  @impl true
   def handle_event("change_tab", %{"tab" => tab}, socket) do
     {:noreply, push_patch(socket, to: ~p"/admin/disagreement_tweets?tab=#{tab}")}
   end
@@ -113,6 +125,55 @@ defmodule SanbaseWeb.DisagreementTweetsLive do
   end
 
   @impl true
+  def handle_event(
+        "add_asset_direction",
+        %{
+          "tweet_id" => tweet_id,
+          "prediction_direction" => prediction_direction,
+          "base_asset" => base_asset,
+          "quote_asset" => quote_asset
+        },
+        socket
+      ) do
+    # Clean up empty strings to nils
+    attrs = %{
+      prediction_direction: if(prediction_direction == "", do: nil, else: prediction_direction),
+      base_asset: if(base_asset == "", do: nil, else: String.upcase(base_asset)),
+      quote_asset: if(quote_asset == "", do: nil, else: String.upcase(quote_asset))
+    }
+
+    # Set default quote_asset to USD if base_asset is provided but quote_asset is empty
+    attrs =
+      if attrs.base_asset && !attrs.quote_asset do
+        Map.put(attrs, :quote_asset, "USD")
+      else
+        attrs
+      end
+
+    case DisagreementTweets.update_asset_direction(tweet_id, attrs) do
+      {:ok, _tweet} ->
+        # Reload tweets for current tab
+        send(self(), {:load_tweets, socket.assigns.active_tab})
+        {:noreply, put_flash(socket, :info, "Asset direction added successfully!")}
+
+      {:error, :not_found} ->
+        {:noreply, put_flash(socket, :error, "Tweet not found")}
+
+      {:error, :not_eligible} ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "This tweet is not eligible for asset direction (must be completed and classified as prediction)"
+         )}
+
+      {:error, changeset} ->
+        error_msg = extract_error_message(changeset)
+        {:noreply, put_flash(socket, :error, "Error adding asset direction: #{error_msg}")}
+    end
+  end
+
+  @impl true
   def handle_event("filter_prob_range", %{"min" => min_str, "max" => max_str}, socket) do
     min_prob = String.to_float(min_str)
     max_prob = String.to_float(max_str)
@@ -123,6 +184,25 @@ defmodule SanbaseWeb.DisagreementTweetsLive do
     send(self(), {:load_tweets, socket.assigns.active_tab})
 
     {:noreply, assign(socket, filter_options: filter_options, loading: true)}
+  end
+
+  @impl true
+  def handle_event("search_tickers", params, socket) do
+    # Extract field and query from phx-change form data
+    field =
+      case params["_target"] do
+        [field_name] -> field_name
+        _ -> nil
+      end
+
+    query = if field, do: Map.get(params, field, ""), else: ""
+
+    if field && String.length(String.trim(query)) >= 2 do
+      # Send async message to search for tickers
+      send(self(), {:search_tickers, String.trim(query), field})
+    end
+
+    {:noreply, socket}
   end
 
   defp extract_error_message(changeset) do
@@ -159,6 +239,10 @@ defmodule SanbaseWeb.DisagreementTweetsLive do
             tweet={tweet}
             show_classification_buttons={@active_tab == :not_classified_by_me}
             show_results={@active_tab in [:classified_by_me, :completed]}
+            show_asset_direction_form={
+              @active_tab == :completed and tweet.classification_count >= 5 and
+                tweet.experts_is_prediction == true
+            }
             user_id={@current_user.id}
           />
         </div>

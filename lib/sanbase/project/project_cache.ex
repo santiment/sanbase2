@@ -66,6 +66,7 @@ defmodule Sanbase.Project.ProjectCache do
     |> Enum.sort_by(fn {_project, score} -> score end, :desc)
     |> Enum.take(limit)
     |> Enum.map(fn {project, _score} -> project.ticker end)
+    |> Enum.uniq()
   end
 
   defp score_project(project, query, query_upper) do

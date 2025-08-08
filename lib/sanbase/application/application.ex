@@ -200,6 +200,17 @@ defmodule Sanbase.Application do
         end
       ),
 
+      # API Call usage Collector Partition Supervisor
+      start_if(
+        fn ->
+          {PartitionSupervisor,
+           child_spec: apply(Sanbase.ApiCallLimit.collector_module(), :child_spec, [[]]),
+           name: SanbaseWeb.ApiCallLimit.PartitionSupervisor}
+        end,
+        fn ->
+          container_type in ["all", "web"]
+        end
+      ),
       # API Calls exporter is started only in `web` and `all` pods.
       start_if(
         fn ->
@@ -322,7 +333,7 @@ defmodule Sanbase.Application do
       {Task.Supervisor, [name: Sanbase.TaskSupervisor]},
 
       # Star the API call service
-      Sanbase.ApiCallLimit.ETS,
+      Sanbase.ApiCallLimit.StorageETS,
 
       # Start telegram rate limiter. Used both in web and alerts
       Sanbase.ExternalServices.RateLimiting.Server.child_spec(
@@ -341,17 +352,6 @@ defmodule Sanbase.Application do
          global_ttl: :timer.minutes(5),
          acquire_lock_timeout: 60_000
        ]},
-
-      # Mutex for forcing sequential execution when updating api call limits
-      start_if(
-        fn ->
-          Supervisor.child_spec(
-            {Mutex, name: Sanbase.ApiCallLimitMutex},
-            id: Sanbase.ApiCallLimitMutex
-          )
-        end,
-        fn -> container_type() in ["web", "all"] end
-      ),
 
       # Start the graphQL in-memory cache
       start_if(

@@ -176,6 +176,7 @@ defmodule Sanbase.SocialData.SocialVolume do
       }
       |> maybe_add_and_rename_field(selector, :only_project_channels, "project")
       |> maybe_add_and_rename_field(selector, :only_project_channels_spec, "project_spec")
+      |> maybe_add_is_market_metric_field(opts)
       |> Jason.encode_to_iodata!()
 
     options = [recv_timeout: @recv_timeout]
@@ -202,6 +203,7 @@ defmodule Sanbase.SocialData.SocialVolume do
             ]
             |> maybe_add_and_rename_field(selector, :only_project_channels, "project")
             |> maybe_add_and_rename_field(selector, :only_project_channels_spec, "project_spec")
+            |> maybe_add_is_market_metric_param(opts)
         ]
 
       http_client().get(url, [], options)
@@ -227,6 +229,20 @@ defmodule Sanbase.SocialData.SocialVolume do
 
   defp metrics_hub_url() do
     Config.module_get(Sanbase.SocialData, :metricshub_url)
+  end
+
+  defp maybe_add_is_market_metric_field(body, opts) do
+    case Keyword.get(opts, :is_market_metric) do
+      true -> Map.put(body, "is_market_metric", "true")
+      _ -> body
+    end
+  end
+
+  defp maybe_add_is_market_metric_param(params, opts) do
+    case Keyword.get(opts, :is_market_metric) do
+      true -> params ++ [{"is_market_metric", "true"}]
+      _ -> params
+    end
   end
 
   defp wrap_ok(result), do: {:ok, result}

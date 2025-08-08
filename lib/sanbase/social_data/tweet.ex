@@ -44,10 +44,10 @@ defmodule Sanbase.SocialData.Tweet do
               Map.fetch!(map, "timestamp")
               |> NaiveDateTime.from_iso8601!()
               |> DateTime.from_naive!("Etc/UTC"),
-            replies_count: Map.fetch!(map, "reply"),
+            replies_count: Map.fetch!(map, "reply_count"),
             sentiment_positive: Map.fetch!(map, "sentiment_pos"),
             sentiment_negative: Map.fetch!(map, "sentiment_neg"),
-            retweets_count: Map.fetch!(map, "retweet")
+            retweets_count: Map.fetch!(map, "retweet_count")
           }
         end)
 

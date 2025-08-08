@@ -215,6 +215,11 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       """
       arg(:treat_word_as_lucene_query, :boolean, default_value: false)
 
+      @desc ~s"""
+      If true, the metric will be marked as a market metric in the metrics hub request. Default is false.
+      """
+      arg(:is_market_metric, :boolean, default_value: false)
+
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl, %{allow_realtime_data: true})
       cache_resolve(&SocialDataResolver.words_social_volume/3, ttl: 600, max_ttl_offset: 240)

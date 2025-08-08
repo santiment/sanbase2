@@ -198,9 +198,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
         _resolution
       ) do
     treat_as_lucene = Map.get(args, :treat_word_as_lucene_query, false)
+    is_market_metric = Map.get(args, :is_market_metric, false)
 
     SocialData.social_volume(selector, from, to, interval, :total,
-      treat_word_as_lucene_query: treat_as_lucene
+      treat_word_as_lucene_query: treat_as_lucene,
+      is_market_metric: is_market_metric
     )
   end
 

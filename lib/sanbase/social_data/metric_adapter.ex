@@ -85,10 +85,13 @@ defmodule Sanbase.SocialData.MetricAdapter do
            when is_map(s) and (is_map_key(s, :text) or is_map_key(s, :contract_address))
 
   @impl Sanbase.Metric.Behaviour
-  def timeseries_data("nft_social_volume", selector, from, to, interval, _opts)
+  def timeseries_data("nft_social_volume", selector, from, to, interval, opts)
       when is_supported_nft_sv_selector(selector) do
+    is_market_metric = Keyword.get(opts, :is_market_metric, false)
+
     Sanbase.SocialData.social_volume(selector, from, to, interval, "total",
-      metric: "nft_social_volume"
+      metric: "nft_social_volume",
+      is_market_metric: is_market_metric
     )
     |> transform_to_value_pairs(:mentions_count)
   end
@@ -109,21 +112,27 @@ defmodule Sanbase.SocialData.MetricAdapter do
         from,
         to,
         interval,
-        _opts
+        opts
       )
       when is_binary(contract) do
+    is_market_metric = Keyword.get(opts, :is_market_metric, false)
+
     Sanbase.SocialData.social_volume(selector, from, to, interval, "total",
-      metric: "nft_social_volume"
+      metric: "nft_social_volume",
+      is_market_metric: is_market_metric
     )
     |> transform_to_value_pairs(:mentions_count)
   end
 
   @impl Sanbase.Metric.Behaviour
-  def timeseries_data(metric, selector, from, to, interval, _opts)
+  def timeseries_data(metric, selector, from, to, interval, opts)
       when metric in @social_volume_timeseries_metrics do
     "social_volume_" <> source = metric
+    is_market_metric = Keyword.get(opts, :is_market_metric, false)
 
-    Sanbase.SocialData.social_volume(selector, from, to, interval, source)
+    Sanbase.SocialData.social_volume(selector, from, to, interval, source,
+      is_market_metric: is_market_metric
+    )
     |> transform_to_value_pairs(:mentions_count)
   end
 

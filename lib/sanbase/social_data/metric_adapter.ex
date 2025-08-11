@@ -33,16 +33,15 @@ defmodule Sanbase.SocialData.MetricAdapter do
                                            "social_dominance_#{source}"
                                          end)
 
-  @sentiment_timeseries_metrics for name <- ["sentiment"],
-                                    source <- @sources,
-                                    type <- [
-                                      "positive",
-                                      "negative",
-                                      "balance",
-                                      "volume_consumed",
-                                      "weighted"
-                                    ],
-                                    do: "#{name}_#{type}_#{source}"
+  @supported_sentiment_types Sanbase.SocialData.Sentiment.supported_sentiment_types()
+
+  # List of the metrics so searching for the stirng in the code base can lead to here:
+  #
+  @sentiment_timeseries_metrics for source <- @sources,
+                                    type <- @supported_sentiment_types,
+                                    do: "sentiment_#{type}_#{source}"
+  def sentiment_timeseries_metrics(),
+    do: @sentiment_timeseries_metrics
 
   @active_users_timeseries_metrics ["social_active_users"]
   @timeseries_metrics @social_dominance_timeseries_metrics ++
@@ -155,6 +154,8 @@ defmodule Sanbase.SocialData.MetricAdapter do
   def timeseries_data(metric, %{} = selector, from, to, interval, _opts)
       when metric in @sentiment_timeseries_metrics do
     "sentiment_" <> type_source = metric
+    # Here it returns the type as we've already stripped the leading 'sentiment_'
+    # from the metric
     {type, source} = SocialHelper.split_by_source(type_source)
 
     Sanbase.SocialData.sentiment(selector, from, to, interval, source, type)

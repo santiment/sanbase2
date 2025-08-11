@@ -24,7 +24,6 @@ defmodule Sanbase.Email.MetricsDeprecationCampaign do
   alias Sanbase.Accounts.User
   alias Sanbase.Repo
 
-  @deprecation_date "October 5th, 2025"
   @test_active_api_users_list_id 10_328_703
   @active_api_users_list_id 10_328_716
 
@@ -82,7 +81,7 @@ defmodule Sanbase.Email.MetricsDeprecationCampaign do
 
   - **Enhanced Data Quality:** By concentrating on our core metrics, we can dedicate more resources to ensuring their accuracy, consistency, and uptime, which are foundational to your success.
   - **Increased Flexibility:** You will gain the ability to compute custom derivatives tailored precisely to your unique ML models and analytical needs, removing any limitations from our pre-defined aggregations.
-  - **What Action is Required?** You will need to **update your data pipelines and ML models** to compute these derivative metrics directly from our raw 5-minute data. **The deadline for this transition is #{@deprecation_date}**. Any calls to the deprecated API endpoints after this date will cease to function.
+  - **What Action is Required?** You will need to **update your data pipelines and ML models** to compute these derivative metrics directly from our raw 5-minute data. **The deadline for this transition is {{DATE_HUMAN_READABLE}} **. Any calls to the deprecated API endpoints after this date will cease to function.
 
   **We are here to help you every step of the way:** We have prepared a **comprehensive "Migration Kit"** to make this transition as smooth as possible, which includes ready-to-use functions in Python (Pandas, NumPy) and R to replicate common derivative metric logic.
 
@@ -116,6 +115,10 @@ defmodule Sanbase.Email.MetricsDeprecationCampaign do
   """
 
   @test_user_ids [1, 2]
+
+  def human_readable_date_after_2_months do
+    Timex.shift(Timex.today(), months: 2) |> Timex.format!("{Mfull} {D}, {YYYY}")
+  end
 
   @doc """
   Gets all users with active SANAPI subscriptions.
@@ -335,8 +338,12 @@ defmodule Sanbase.Email.MetricsDeprecationCampaign do
   Sends one campaign to the entire list with "Dear Customer" instead of personalized usernames.
   Much simpler - no temporary lists, no individual campaigns, just one campaign to the whole list.
   """
-  def send_simple_initial_campaign(list_id) do
-    simple_template = String.replace(@initial_template, "{{username}}", "Customer")
+  def send_simple_initial_campaign(
+        list_id,
+        deprecation_date \\ human_readable_date_after_2_months()
+      ) do
+    simple_template =
+      String.replace(@initial_template, "{{DATE_HUMAN_READABLE}}", deprecation_date)
 
     with {:ok, html_content} <- markdown_to_html(simple_template),
          :ok <-

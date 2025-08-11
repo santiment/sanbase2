@@ -1,20 +1,28 @@
 defmodule Sanbase.SocialData.Sentiment do
   import Sanbase.Utils.ErrorHandling
+  import Sanbase.SocialData.Utils, only: [maybe_add_and_rename_field: 4]
+
+  alias Sanbase.Utils.Config
+  alias Sanbase.SocialData.SocialHelper
 
   require Logger
-  alias Sanbase.Utils.Config
-
-  alias Sanbase.SocialData.SocialHelper
 
   require Mockery.Macro
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 
   @recv_timeout 25_000
 
-  def sentiment(selector, from, to, interval, source, type)
-      when source in [:all, "all", :total] do
-    sentiment(selector, from, to, interval, SocialHelper.sources_total_string(), type)
-  end
+  @supported_sentiment_types [
+    "positive",
+    "negative",
+    "balance",
+    "volume_consumed",
+    "weighted",
+    "bearish",
+    "bullish",
+    "neutral"
+  ]
+  def supported_sentiment_types(), do: @supported_sentiment_types
 
   def sentiment(selector, from, to, interval, source, type) do
     case sentiment_request(selector, from, to, interval, source, type) do
@@ -42,13 +50,16 @@ defmodule Sanbase.SocialData.Sentiment do
 
       options = [
         recv_timeout: @recv_timeout,
-        params: [
-          {selector_name, selector_value},
-          {"from_timestamp", from |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
-          {"to_timestamp", to |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
-          {"interval", interval},
-          {"source", source}
-        ]
+        params:
+          [
+            {selector_name, selector_value},
+            {"from_timestamp", from |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
+            {"to_timestamp", to |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
+            {"interval", interval},
+            {"source", source}
+          ]
+          |> maybe_add_and_rename_field(selector, :only_project_channels, "project")
+          |> maybe_add_and_rename_field(selector, :only_project_channels_spec, "project_spec")
       ]
 
       http_client().get(url, [], options)

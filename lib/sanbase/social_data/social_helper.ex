@@ -57,7 +57,7 @@ defmodule Sanbase.SocialData.SocialHelper do
 
   @doc ~s"""
   Get a string balance_twitter and split it into two parts -- a source (twitter, telegram, etc.)
-  and everything before the source
+  and everything before the source.
   """
   def split_by_source(str) do
     source =
@@ -65,8 +65,7 @@ defmodule Sanbase.SocialData.SocialHelper do
       |> Enum.map(&to_string/1)
       |> Enum.find(&String.ends_with?(str, &1))
 
-    type = String.trim_trailing(str, "_#{source}")
-
-    {type, source}
+    all_before_source = String.trim_trailing(str, "_#{source}")
+    {all_before_source, source}
   end
 end

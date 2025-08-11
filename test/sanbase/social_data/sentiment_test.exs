@@ -34,7 +34,7 @@ defmodule Sanbase.SentimentTest do
          }}
       )
 
-      result = Sentiment.sentiment(%{slug: "santiment"}, from, to, "1h", :telegram, "positive")
+      result = Sentiment.sentiment(%{slug: "santiment"}, from, to, "1h", "telegram", "positive")
 
       assert result ==
                {:ok,
@@ -51,7 +51,7 @@ defmodule Sanbase.SentimentTest do
       mock(HTTPoison, :get, {:ok, %HTTPoison.Response{body: "Some message", status_code: 404}})
 
       assert capture_log(fn ->
-               Sentiment.sentiment(%{slug: "santiment"}, from, to, "1h", :telegram, "positive")
+               Sentiment.sentiment(%{slug: "santiment"}, from, to, "1h", "telegram", "positive")
              end) =~
                "Error status 404 fetching sentiment positive for %{slug: \"santiment\"}\n"
     end
@@ -63,7 +63,7 @@ defmodule Sanbase.SentimentTest do
       mock(HTTPoison, :get, {:error, %HTTPoison.Error{reason: :econnrefused}})
 
       assert capture_log(fn ->
-               Sentiment.sentiment(%{slug: "santiment"}, from, to, "1h", :telegram, "positive")
+               Sentiment.sentiment(%{slug: "santiment"}, from, to, "1h", "telegram", "positive")
              end) =~
                "Cannot fetch sentiment positive data for %{slug: \"santiment\"}: :econnrefused\n"
     end
@@ -82,7 +82,7 @@ defmodule Sanbase.SentimentTest do
          }}
       )
 
-      result = Sentiment.sentiment(%{text: "btc moon"}, from, to, "6h", :telegram, "positive")
+      result = Sentiment.sentiment(%{text: "btc moon"}, from, to, "6h", "telegram", "positive")
 
       assert result ==
                {:ok,
@@ -99,7 +99,7 @@ defmodule Sanbase.SentimentTest do
       mock(HTTPoison, :get, {:ok, %HTTPoison.Response{body: "Some message", status_code: 404}})
 
       assert capture_log(fn ->
-               Sentiment.sentiment(%{text: "btc moon"}, from, to, "6h", :reddit, "positive")
+               Sentiment.sentiment(%{text: "btc moon"}, from, to, "6h", "reddit", "positive")
              end) =~
                "Error status 404 fetching sentiment positive for %{text: \"btc moon\"}\n"
     end
@@ -111,7 +111,7 @@ defmodule Sanbase.SentimentTest do
       mock(HTTPoison, :get, {:error, %HTTPoison.Error{reason: :econnrefused}})
 
       assert capture_log(fn ->
-               Sentiment.sentiment(%{text: "btc moon"}, from, to, "6h", :discord, "positive")
+               Sentiment.sentiment(%{text: "btc moon"}, from, to, "6h", "twitter", "positive")
              end) =~
                "Cannot fetch sentiment positive data for %{text: \"btc moon\"}: :econnrefused\n"
     end
@@ -132,7 +132,7 @@ defmodule Sanbase.SentimentTest do
          }}
       )
 
-      result = Sentiment.sentiment(%{slug: "santiment"}, from, to, "1h", :telegram, "negative")
+      result = Sentiment.sentiment(%{slug: "santiment"}, from, to, "1h", "telegram", "negative")
 
       assert result ==
                {:ok,
@@ -149,7 +149,7 @@ defmodule Sanbase.SentimentTest do
       mock(HTTPoison, :get, {:ok, %HTTPoison.Response{body: "Some message", status_code: 404}})
 
       assert capture_log(fn ->
-               Sentiment.sentiment(%{slug: "santiment"}, from, to, "1h", :telegram, "negative")
+               Sentiment.sentiment(%{slug: "santiment"}, from, to, "1h", "telegram", "negative")
              end) =~
                "Error status 404 fetching sentiment negative for %{slug: \"santiment\"}\n"
     end
@@ -161,7 +161,7 @@ defmodule Sanbase.SentimentTest do
       mock(HTTPoison, :get, {:error, %HTTPoison.Error{reason: :econnrefused}})
 
       assert capture_log(fn ->
-               Sentiment.sentiment(%{slug: "santiment"}, from, to, "1h", :telegram, "negative")
+               Sentiment.sentiment(%{slug: "santiment"}, from, to, "1h", "telegram", "negative")
              end) =~
                "Cannot fetch sentiment negative data for %{slug: \"santiment\"}: :econnrefused\n"
     end
@@ -180,7 +180,7 @@ defmodule Sanbase.SentimentTest do
          }}
       )
 
-      result = Sentiment.sentiment(%{text: "btc moon"}, from, to, "6h", :telegram, "negative")
+      result = Sentiment.sentiment(%{text: "btc moon"}, from, to, "6h", "telegram", "negative")
 
       assert result ==
                {:ok,
@@ -197,7 +197,7 @@ defmodule Sanbase.SentimentTest do
       mock(HTTPoison, :get, {:ok, %HTTPoison.Response{body: "Some message", status_code: 404}})
 
       assert capture_log(fn ->
-               Sentiment.sentiment(%{text: "btc moon"}, from, to, "6h", :reddit, "negative")
+               Sentiment.sentiment(%{text: "btc moon"}, from, to, "6h", "reddit", "negative")
              end) =~
                "Error status 404 fetching sentiment negative for %{text: \"btc moon\"}\n"
     end
@@ -209,7 +209,7 @@ defmodule Sanbase.SentimentTest do
       mock(HTTPoison, :get, {:error, %HTTPoison.Error{reason: :econnrefused}})
 
       assert capture_log(fn ->
-               Sentiment.sentiment(%{text: "btc moon"}, from, to, "6h", :discord, "negative")
+               Sentiment.sentiment(%{text: "btc moon"}, from, to, "6h", "twitter", "negative")
              end) =~
                "Cannot fetch sentiment negative data for %{text: \"btc moon\"}: :econnrefused\n"
     end
@@ -230,7 +230,7 @@ defmodule Sanbase.SentimentTest do
          }}
       )
 
-      result = Sentiment.sentiment(%{slug: "santiment"}, from, to, "1h", :telegram, "balance")
+      result = Sentiment.sentiment(%{slug: "santiment"}, from, to, "1h", "telegram", "balance")
 
       assert result ==
                {:ok,
@@ -247,7 +247,7 @@ defmodule Sanbase.SentimentTest do
       mock(HTTPoison, :get, {:ok, %HTTPoison.Response{body: "Some message", status_code: 404}})
 
       assert capture_log(fn ->
-               Sentiment.sentiment(%{slug: "santiment"}, from, to, "1h", :telegram, "balance")
+               Sentiment.sentiment(%{slug: "santiment"}, from, to, "1h", "telegram", "balance")
              end) =~
                "Error status 404 fetching sentiment balance for %{slug: \"santiment\"}\n"
     end
@@ -259,7 +259,7 @@ defmodule Sanbase.SentimentTest do
       mock(HTTPoison, :get, {:error, %HTTPoison.Error{reason: :econnrefused}})
 
       assert capture_log(fn ->
-               Sentiment.sentiment(%{slug: "santiment"}, from, to, "1h", :telegram, "balance")
+               Sentiment.sentiment(%{slug: "santiment"}, from, to, "1h", "telegram", "balance")
              end) =~
                "Cannot fetch sentiment balance data for %{slug: \"santiment\"}: :econnrefused\n"
     end
@@ -278,7 +278,7 @@ defmodule Sanbase.SentimentTest do
          }}
       )
 
-      result = Sentiment.sentiment(%{text: "btc moon"}, from, to, "6h", :telegram, "balance")
+      result = Sentiment.sentiment(%{text: "btc moon"}, from, to, "6h", "telegram", "balance")
 
       assert result ==
                {:ok,
@@ -295,7 +295,7 @@ defmodule Sanbase.SentimentTest do
       mock(HTTPoison, :get, {:ok, %HTTPoison.Response{body: "Some message", status_code: 404}})
 
       assert capture_log(fn ->
-               Sentiment.sentiment(%{text: "btc moon"}, from, to, "6h", :reddit, "balance")
+               Sentiment.sentiment(%{text: "btc moon"}, from, to, "6h", "reddit", "balance")
              end) =~
                "Error status 404 fetching sentiment balance for %{text: \"btc moon\"}\n"
     end
@@ -307,7 +307,7 @@ defmodule Sanbase.SentimentTest do
       mock(HTTPoison, :get, {:error, %HTTPoison.Error{reason: :econnrefused}})
 
       assert capture_log(fn ->
-               Sentiment.sentiment(%{text: "btc moon"}, from, to, "6h", :discord, "balance")
+               Sentiment.sentiment(%{text: "btc moon"}, from, to, "6h", "twitter", "balance")
              end) =~
                "Cannot fetch sentiment balance data for %{text: \"btc moon\"}: :econnrefused\n"
     end
@@ -329,7 +329,7 @@ defmodule Sanbase.SentimentTest do
       )
 
       result =
-        Sentiment.sentiment(%{slug: "santiment"}, from, to, "1h", :telegram, "volume_consumed")
+        Sentiment.sentiment(%{slug: "santiment"}, from, to, "1h", "telegram", "volume_consumed")
 
       assert result ==
                {:ok,
@@ -351,7 +351,7 @@ defmodule Sanbase.SentimentTest do
                  from,
                  to,
                  "1h",
-                 :telegram,
+                 "telegram",
                  "volume_consumed"
                )
              end) =~
@@ -370,7 +370,7 @@ defmodule Sanbase.SentimentTest do
                  from,
                  to,
                  "1h",
-                 :telegram,
+                 "telegram",
                  "volume_consumed"
                )
              end) =~
@@ -392,7 +392,7 @@ defmodule Sanbase.SentimentTest do
       )
 
       result =
-        Sentiment.sentiment(%{text: "btc moon"}, from, to, "6h", :telegram, "volume_consumed")
+        Sentiment.sentiment(%{text: "btc moon"}, from, to, "6h", "telegram", "volume_consumed")
 
       assert result ==
                {:ok,
@@ -414,7 +414,7 @@ defmodule Sanbase.SentimentTest do
                  from,
                  to,
                  "6h",
-                 :reddit,
+                 "reddit",
                  "volume_consumed"
                )
              end) =~
@@ -433,7 +433,7 @@ defmodule Sanbase.SentimentTest do
                  from,
                  to,
                  "6h",
-                 :discord,
+                 "twitter",
                  "volume_consumed"
                )
              end) =~

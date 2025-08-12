@@ -160,6 +160,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     {:ok,
      %{
        metric: metric,
+       status: Map.get(Registry.name_to_status_map(), metric, "released"),
        internal_metric: Map.get(Registry.name_to_metric_map(), metric, metric),
        has_incomplete_data: has_incomplete_data?(metric),
        min_interval: min_interval,

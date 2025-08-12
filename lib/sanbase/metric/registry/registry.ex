@@ -361,7 +361,14 @@ defmodule Sanbase.Metric.Registry do
 
         {resolved_list ++ resolved_acc, error_acc}
       rescue
-        _ -> {resolved_acc, [registry | error_acc]}
+        e ->
+          Logger.error("""
+          Metric Registry record failed to resolve.
+          Registry id: #{registry.id}, metric: #{registry.metric}
+          Reason: #{Exception.message(e)}
+          """)
+
+          {resolved_acc, [registry | error_acc]}
       end
     end)
   end

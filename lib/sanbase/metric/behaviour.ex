@@ -24,10 +24,14 @@ defmodule Sanbase.Metric.Behaviour do
 
   @type selector :: slug | blockchain_address_slug_selector | map()
 
+  @typedoc "One of alpha, beta or released. Default is released"
+  @type status :: String.t()
+
   @type metadata :: %{
           metric: metric,
           internal_metric: metric,
           min_interval: interval(),
+          status: status(),
           default_aggregation: atom(),
           available_aggregations: list(atom()),
           available_selectors: list(atom()),

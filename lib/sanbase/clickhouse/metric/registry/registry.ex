@@ -32,6 +32,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   def can_mutate_map(), do: get(:can_mutate_map)
   def stabilization_period_map(), do: get(:stabilization_period_map)
   def name_to_metric_map(), do: get(:name_to_metric_map)
+  def name_to_status_map(), do: get(:name_to_status_map)
   def required_selectors_map(), do: get(:required_selectors_map)
   def selectors_map(), do: get(:selectors_map)
   def soft_deprecated_metrics_map(), do: get(:soft_deprecated_metrics_map)
@@ -72,6 +73,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
     {:min_interval_map, []},
     {:min_plan_map, []},
     {:name_to_metric_map, []},
+    {:name_to_status_map, []},
     {:can_mutate_map, []},
     {:stabilization_period_map, []},
     {:names_map, []},
@@ -345,14 +347,15 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   end
 
   defp compute(:docs_links_map, []) do
-    get_metrics([])
-    |> Map.new(fn m ->
-      {m.metric, m.docs}
-    end)
+    get_metrics([]) |> Map.new(fn m -> {m.metric, m.docs} end)
   end
 
   defp compute(:name_to_metric_map, []) do
     get_metrics([]) |> Map.new(&{&1.metric, &1.internal_metric})
+  end
+
+  defp compute(:name_to_status_map, []) do
+    get_metrics([]) |> Map.new(&{&1.metric, &1.status})
   end
 
   defp compute(:metric_to_names_map, []) do

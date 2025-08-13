@@ -89,15 +89,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
     |> Enum.find(fn metric -> metric.metric == name end)
   end
 
-  def alpha_metrics() do
+  def metrics_by_status(status) do
     get_metrics([])
-    |> Enum.filter(&(&1.status == "alpha"))
-    |> MapSet.new(& &1.metric)
-  end
-
-  def beta_metrics() do
-    get_metrics([])
-    |> Enum.filter(&(&1.status == "beta"))
+    |> Enum.filter(&(&1.status == status))
     |> MapSet.new(& &1.metric)
   end
 

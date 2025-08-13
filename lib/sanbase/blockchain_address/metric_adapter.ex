@@ -137,7 +137,8 @@ defmodule Sanbase.BlockchainAddress.MetricAdapter do
        is_deprecated: false,
        hard_deprecate_after: nil,
        docs: [],
-       is_label_fqn_metric: false
+       is_label_fqn_metric: false,
+       status: "released"
      }}
   end
 

@@ -104,7 +104,8 @@ defmodule Sanbase.PricePair.MetricAdapter do
        is_label_fqn_metric: false,
        is_deprecated: false,
        docs: [%{link: "https://academy.santiment.net/metrics/price"}],
-       hard_deprecate_after: nil
+       hard_deprecate_after: nil,
+       status: "released"
      }}
   end
 

@@ -31,10 +31,15 @@ defmodule SanbaseWeb.Graphql.AccessRestrictionsTest do
 
     get_access_restrictions_for_metrics(conn)
     |> Enum.each(fn restriction ->
-      if restriction["name"] == "price_usd_5m" do
-        assert restriction["status"] == "alpha"
-      else
-        assert restriction["status"] == "released"
+      case restriction["name"] do
+        "price_usd_5m" ->
+          assert restriction["status"] == "alpha"
+
+        "price_usd" ->
+          assert restriction["status"] == "released"
+
+        _ ->
+          assert restriction["status"] in ["alpha", "beta", "released"]
       end
     end)
   end

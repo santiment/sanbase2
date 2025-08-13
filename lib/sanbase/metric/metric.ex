@@ -61,6 +61,13 @@ defmodule Sanbase.Metric do
     end
   end
 
+  @doc ~s"""
+  Specify which selectors are required for a given metric. If a required selector
+  is not provided, the API call should return an error without attempting to compute
+  the result.
+  """
+  @spec required_selectors(metric) ::
+          {:ok, Type.required_selectors_result()} | {:error, String.t()}
   def required_selectors(metric) do
     case metric in Helper.metrics_mapset() do
       true -> {:ok, Map.get(Helper.required_selectors_map(), metric, [])}
@@ -68,6 +75,24 @@ defmodule Sanbase.Metric do
     end
   end
 
+  @doc ~s"""
+  Returns false if the metric is not deprecated.
+  Otherwise returns {:error, string} where the string explains since
+  when the metric is deprecated.
+
+  The function is intended to be used in a with pipe:
+    ...
+    false <- hard_deprecated?(metric)
+    ...
+    ... do
+     # do something
+    else
+      {:error, error_message} ->
+        {:error, error_message}
+    end
+  """
+  @spec hard_deprecated?(metric) ::
+          false | {:error, String.t()}
   def hard_deprecated?(metric) do
     now = DateTime.utc_now()
     hard_deprecate_after = Map.get(Helper.deprecated_metrics_map(), metric)
@@ -96,19 +121,70 @@ defmodule Sanbase.Metric do
     Registry.hidden_metrics_mapset()
   end
 
+  defp get_metrics_by_status(statuses) when is_list(statuses) do
+    cache_key = {__MODULE__, :get_metrics_by_statuses, statuses} |> Sanbase.Cache.hash()
+
+    {:ok, metrics_mapset} =
+      Sanbase.Cache.get_or_store(cache_key, fn ->
+        # Get all the alpha and beta metrics from the registry
+        # This is precomputed and fast
+
+        registry_mapset =
+          Enum.reduce(statuses, MapSet.new(), fn status, acc ->
+            MapSet.union(acc, MapSet.new(Registry.metrics_by_status(status)))
+          end)
+
+        # We have very few metrics outside the registry, so we can
+        # call the metadata for each metric and filter them by status
+        # At some point this can be improved to use a precomputed map
+        # in each MetricAdapter
+        others_mapset =
+          Enum.reduce(
+            Helper.metric_modules() -- [Sanbase.Clickhouse.MetricAdapter],
+            MapSet.new(),
+            fn module, acc ->
+              experimental_metrics =
+                module.available_metrics()
+                |> Enum.filter(fn metric ->
+                  {:ok, m} = module.metadata(metric)
+                  m.status in statuses
+                end)
+
+              MapSet.union(acc, MapSet.new(experimental_metrics))
+            end
+          )
+
+        {:ok, MapSet.union(registry_mapset, others_mapset)}
+      end)
+
+    metrics_mapset
+  end
+
+  @doc ~s"""
+  The union of all alpha and beta status metrics. These metrics are still
+  not released for all users
+  """
   @spec experimental_metrics() :: MapSet.t()
   def experimental_metrics() do
-    Registry.alpha_metrics() |> MapSet.union(Registry.beta_metrics())
+    get_metrics_by_status(["alpha", "beta"])
   end
 
+  @doc ~s"""
+  Metrics with alpha status are not released for all users.
+  They are available only to users with alpha access level.
+  """
   @spec alpha_metrics() :: MapSet.t()
   def alpha_metrics() do
-    Registry.alpha_metrics()
+    get_metrics_by_status(["alpha"])
   end
 
+  @doc ~s"""
+  Metrics with beta status are not released for all users.
+  They are available only to users with alpha or beta access level.
+  """
   @spec beta_metrics() :: MapSet.t()
   def beta_metrics() do
-    Registry.beta_metrics()
+    get_metrics_by_status(["beta"])
   end
 
   @doc ~s"""
@@ -119,7 +195,7 @@ defmodule Sanbase.Metric do
   Active Addresses at 18:00 contains only for 3/4 of the day. The value for a given
   day becomes constant only when the next day starts.
   """
-  @spec has_incomplete_data?(Sanbase.Metric.Behaviour.metric()) :: boolean()
+  @spec has_incomplete_data?(metric()) :: boolean()
   def has_incomplete_data?(metric) do
     case get_module(metric) do
       nil ->
@@ -130,6 +206,8 @@ defmodule Sanbase.Metric do
     end
   end
 
+  @spec broken_data(metric(), selector(), DateTime.t(), DateTime.t()) ::
+          Type.broken_data_result()
   def broken_data(metric, selector, from, to) do
     metric = maybe_replace_metric(metric, selector)
 
@@ -601,10 +679,8 @@ defmodule Sanbase.Metric do
           filter_metrics_by_min_interval(Helper.metrics(), filter_interval, &>=/2)
       end
 
-    hidden = hidden_metrics()
-
     metrics
-    |> Enum.reject(&(&1 in hidden))
+    |> Enum.reject(&(&1 in hidden_metrics()))
   end
 
   @doc ~s"""
@@ -1009,16 +1085,9 @@ defmodule Sanbase.Metric do
     is_soft_deprecated = Map.get(Helper.soft_deprecated_metrics_map(), metric)
     is_deprecated = is_struct(hard_deprecate_after, DateTime) or is_soft_deprecated
 
-    status =
-      case Sanbase.Clickhouse.MetricAdapter.Registry.by_name(metric) do
-        %{status: status} -> status
-        _ -> "released"
-      end
-
     metadata
     |> Map.put(:is_deprecated, is_deprecated)
     |> Map.put(:hard_deprecate_after, hard_deprecate_after)
-    |> Map.put(:status, status)
   end
 
   defp maybe_round_floats({:error, error}, _), do: {:error, error}

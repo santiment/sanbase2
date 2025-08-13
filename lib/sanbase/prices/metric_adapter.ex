@@ -92,7 +92,8 @@ defmodule Sanbase.Price.MetricAdapter do
        docs: docs_links(metric) |> Enum.map(fn link -> %{link: link} end),
        is_deprecated: false,
        hard_deprecate_after: nil,
-       is_label_fqn_metric: false
+       is_label_fqn_metric: false,
+       status: "released"
      }}
   end
 

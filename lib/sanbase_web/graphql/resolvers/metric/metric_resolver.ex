@@ -644,15 +644,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   end
 
   defp maybe_remove_experimental_metrics(metrics, "alpha") do
+    # alpha users have access to alpha, beta and released metrics
     metrics
   end
 
   defp maybe_remove_experimental_metrics(metrics, "beta") do
+    # beta users have access to beta and released metrics, but not alpha
     metrics
     |> Enum.reject(&(&1 in Sanbase.Metric.alpha_metrics()))
   end
 
   defp maybe_remove_experimental_metrics(metrics, _) do
+    # normal users have access to released metrics only, and not alpha and beta
     metrics
     |> Enum.reject(&(&1 in Sanbase.Metric.experimental_metrics()))
   end

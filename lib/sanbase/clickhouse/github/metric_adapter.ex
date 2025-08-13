@@ -213,7 +213,8 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
        docs: Enum.map(docs_links(metric), fn l -> %{link: l} end),
        is_label_fqn_metric: false,
        is_deprecated: false,
-       hard_deprecate_after: nil
+       hard_deprecate_after: nil,
+       status: "released"
      }}
   end
 

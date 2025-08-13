@@ -114,7 +114,8 @@ defmodule Sanbase.Contract.MetricAdapter do
        docs: [],
        is_label_fqn_metric: false,
        is_deprecated: false,
-       hard_deprecate_after: nil
+       hard_deprecate_after: nil,
+       status: "released"
      }}
   end
 

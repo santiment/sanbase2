@@ -40,8 +40,6 @@ defmodule Sanbase.SocialData.MetricAdapter do
   @sentiment_timeseries_metrics for source <- @sources,
                                     type <- @supported_sentiment_types,
                                     do: "sentiment_#{type}_#{source}"
-  def sentiment_timeseries_metrics(),
-    do: @sentiment_timeseries_metrics
 
   @active_users_timeseries_metrics ["social_active_users"]
   @timeseries_metrics @social_dominance_timeseries_metrics ++
@@ -67,6 +65,11 @@ defmodule Sanbase.SocialData.MetricAdapter do
                       |> Map.put("social_active_users", [[:source]])
 
   @default_complexity_weight 1
+
+  @status_map Enum.filter(@sentiment_timeseries_metrics, fn metric ->
+                String.contains?(metric, ["bearish", "bullish", "neutral"])
+              end)
+              |> Map.new(fn metric -> {metric, "alpha"} end)
 
   @impl Sanbase.Metric.Behaviour
   def has_incomplete_data?(_), do: false
@@ -338,7 +341,8 @@ defmodule Sanbase.SocialData.MetricAdapter do
        is_deprecated: false,
        is_timebound: false,
        docs: Enum.map(docs_links(metric), fn link -> %{link: link} end),
-       is_label_fqn_metric: false
+       is_label_fqn_metric: false,
+       status: Map.get(@status_map, metric, "released")
      }}
   end
 

@@ -649,7 +649,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
 
       assert quota2.api_calls_remaining.month < quota.api_calls_remaining.month
 
-      Process.sleep(50)
+      Process.sleep(250)
 
       result =
         self_reset_api_calls(context.apikey_conn)

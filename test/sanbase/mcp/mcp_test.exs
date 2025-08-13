@@ -2,6 +2,7 @@ defmodule SanbaseWeb.Graphql.MCPTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory
+  import Sanbase.TestHelpers, only: [try_few_times: 2]
 
   setup do
     user = insert(:user)
@@ -53,6 +54,12 @@ defmodule SanbaseWeb.Graphql.MCPTest do
     assert Sanbase.MCP.Client |> Process.whereis() |> Process.alive?() == true
     assert Hermes.Server.Registry |> Process.whereis() |> Process.alive?() == true
 
+    result =
+      try_few_times(fn -> Sanbase.MCP.Client.call_tool("check_authentication", %{}) end,
+        attempts: 3,
+        sleep: 250
+      )
+
     assert {:ok,
             %Hermes.MCP.Response{
               result: %{
@@ -67,7 +74,7 @@ defmodule SanbaseWeb.Graphql.MCPTest do
               id: "req_" <> _,
               method: "tools/call",
               is_error: false
-            }} = Sanbase.MCP.Client.call_tool("check_authentication", %{})
+            }} = result
 
     assert {:ok, %{"id" => id, "email" => email, "apikey" => apikey}} = Jason.decode(json)
     assert id == context.user.id

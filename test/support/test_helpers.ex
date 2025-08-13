@@ -1,4 +1,32 @@
 defmodule Sanbase.TestHelpers do
+  @moduledoc false
+
+  @doc ~s"""
+  `function/0` should return either {:ok, result} or {:error, reason}.
+
+  If the function returns an error, it will be retried `attempts` times, sleeping
+  for `sleep` ms in between attempts.
+  In case of success, it is immedately returned.
+  In case of `attempts` number of errors, the error is returned.
+  """
+  def try_few_times(function, opts) when is_function(function, 0) do
+    attempts = Keyword.fetch!(opts, :attempts)
+    sleep = Keyword.fetch!(opts, :sleep)
+
+    case function.() do
+      {:ok, result} ->
+        {:ok, result}
+
+      {:error, _} = error ->
+        if attempts > 1 do
+          Process.sleep(sleep)
+          try_few_times(function, Keyword.put(opts, :attempts, attempts - 1))
+        else
+          error
+        end
+    end
+  end
+
   def wait_event_bus_subscriber(topic) do
     case Sanbase.EventBusTest.EventBusTestSubscriber in EventBus.subscribers(topic) do
       true ->
@@ -10,7 +38,6 @@ defmodule Sanbase.TestHelpers do
     end
   end
 
-  @moduledoc false
   defmacro setup_all_with_mocks(mocks, do: setup_block) do
     quote do
       setup_all do

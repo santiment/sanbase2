@@ -2,6 +2,8 @@ defmodule Sanbase.PricePair.MetricAdapter do
   @behaviour Sanbase.Metric.Behaviour
   alias Sanbase.PricePair
 
+  import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
+
   @aggregations [:any, :sum, :avg, :min, :max, :last, :first, :median, :ohlc, :count]
   @default_aggregation :last
 
@@ -49,6 +51,7 @@ defmodule Sanbase.PricePair.MetricAdapter do
     opts = update_opts(opts)
 
     PricePair.timeseries_data_per_slug(slug, quote_asset, from, to, interval, opts)
+    |> maybe_apply_function(&rename_same_aliases(&1, slug))
   end
 
   @impl Sanbase.Metric.Behaviour
@@ -202,4 +205,70 @@ defmodule Sanbase.PricePair.MetricAdapter do
   defp metric_to_quote_asset("price_usd"), do: "USD"
   defp metric_to_quote_asset("price_usdt"), do: "USDT"
   defp metric_to_quote_asset("price_eth"), do: "ETH"
+
+  defp rename_same_aliases({result, result_slugs_mapset}, slug_or_slugs) do
+    parameters_slugs_mapset = slug_or_slugs |> List.wrap() |> MapSet.new()
+
+    if needs_renaming?(result_slugs_mapset, parameters_slugs_mapset) do
+      result
+      |> rename(parameters_slugs_mapset, result_slugs_mapset)
+    else
+      result
+    end
+  end
+
+  defp needs_renaming?(mapset1, mapset2) do
+    not MapSet.equal?(mapset1, mapset2)
+  end
+
+  defp rename(result, parameters_slugs_mapset, _result_slugs_mapset) do
+    prefixes = Sanbase.Project.Multichain.prefix_mapping() |> Map.keys()
+
+    # The logic for renaming is tightly coupled with the drawbacks of the SQL used.
+    # The data is stored using cryptocompare asset name (like base_asset="ARB") but
+    # at Santiment we can have many asset pointing to the same cryptocompare asset like
+    # "arbitrum" and "arb-arbitrum"
+    rename_or_add_mapping =
+      Enum.reduce(parameters_slugs_mapset, [], fn param_slug, acc ->
+        if String.starts_with?(param_slug, prefixes) do
+          base_slug = String.split(param_slug, "-", parts: 2) |> List.last()
+
+          if base_slug in parameters_slugs_mapset do
+            [{:duplicate, _result_slug = base_slug, _duplicate_as = param_slug}] ++ acc
+          else
+            [{:rename, base_slug, param_slug}] ++ acc
+          end
+        else
+          acc
+        end
+      end)
+
+    Enum.reduce(rename_or_add_mapping, result, fn
+      {:rename, old_slug, new_slug}, acc ->
+        Enum.map(acc, fn %{data: data} = elem ->
+          new_data = rename_slug_in_data(data, old_slug, new_slug)
+          Map.put(elem, :data, new_data)
+        end)
+
+      {:duplicate, existing_slug, new_slug}, acc ->
+        Enum.map(acc, fn %{data: data} = elem ->
+          new_data = duplicate_slug_in_data(data, existing_slug, new_slug)
+          Map.put(elem, :data, new_data)
+        end)
+    end)
+  end
+
+  defp rename_slug_in_data(data_list, old_slug, new_slug) do
+    Enum.map(data_list, fn
+      %{slug: ^old_slug} = elem -> Map.put(elem, :slug, new_slug)
+      elem -> elem
+    end)
+  end
+
+  defp duplicate_slug_in_data(data_list, old_slug, new_slug) do
+    Enum.flat_map(data_list, fn
+      %{slug: ^old_slug} = elem -> [elem, Map.put(elem, :slug, new_slug)]
+      elem -> [elem]
+    end)
+  end
 end

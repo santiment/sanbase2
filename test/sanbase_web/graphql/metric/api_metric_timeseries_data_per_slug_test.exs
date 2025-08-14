@@ -1,7 +1,6 @@
 defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataPerSlugTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import Mock
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
@@ -28,18 +27,14 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataPerSlugTest do
     dt1 = ~U[2020-10-10 00:00:00Z]
     dt2 = ~U[2020-10-11 00:00:00Z]
 
-    data = [
-      %{
-        datetime: dt1,
-        data: [%{slug: project1.slug, value: 200}, %{slug: project2.slug, value: 150}]
-      },
-      %{
-        datetime: dt2,
-        data: [%{slug: project1.slug, value: 400}, %{slug: project2.slug, value: 100}]
-      }
+    rows = [
+      [DateTime.to_unix(dt1), project1.slug, 200],
+      [DateTime.to_unix(dt1), project2.slug, 150],
+      [DateTime.to_unix(dt2), project1.slug, 400],
+      [DateTime.to_unix(dt2), project2.slug, 100]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.PricePair.timeseries_data_per_slug/6, {:ok, data})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         get_timeseries_per_slug_metric(
@@ -62,17 +57,6 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataPerSlugTest do
       assert dt_str2 |> Sanbase.DateTimeUtils.from_iso8601!() == dt2
       assert %{"slug" => project1.slug, "value" => 400.0} in data2
       assert %{"slug" => project2.slug, "value" => 100.0} in data2
-
-      assert_called(
-        Sanbase.PricePair.timeseries_data_per_slug(
-          [project1.slug, project2.slug],
-          "USD",
-          from,
-          to,
-          "1d",
-          :_
-        )
-      )
     end)
   end
 

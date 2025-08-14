@@ -58,26 +58,38 @@ defmodule Sanbase.Price.PricePairSql do
         aggregation
       ) do
     sql = """
+    WITH wanted AS
+    (
+      SELECT
+        dictGetString('san_to_cryptocompare_asset_mapping', 'base_asset', tuple(slug)) AS base_asset,
+        slug
+      FROM system.one
+      ARRAY JOIN [{{slugs}}] AS slug
+      HAVING base_asset != ''
+    )
     SELECT
       toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), {{interval}}) * {{interval}}) AS time,
-      #{base_asset_to_slug()} AS slug,
+      wanted.slug,
       #{aggregation(aggregation, "price", "dt")}
-    FROM #{@table}
+    FROM asset_price_pairs_only
+    INNER JOIN wanted USING (base_asset)
     PREWHERE
-      #{slug_filter_map(slugs, argument_name: "selector")} AND
+      base_asset IN ( SELECT base_asset FROM wanted) AND
       quote_asset = {{quote_asset}} AND
       source = {{source}} AND
       dt >= toDateTime({{from}}) AND
       dt < toDateTime({{to}})
-    GROUP BY time, slug
-    ORDER BY time
+    GROUP BY
+        time,
+        wanted.slug
+    ORDER BY time ASC
     """
 
     {from, to, interval, _span} = timerange_parameters(from, to, interval)
 
     params = %{
       interval: interval,
-      selector: slugs,
+      slugs: slugs,
       quote_asset: quote_asset,
       source: source,
       from: from,

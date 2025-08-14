@@ -10,6 +10,7 @@ defmodule Sanbase.Project.Multichain do
   alias Sanbase.Project
 
   @prefix_mapping %{
+    "aave-" => %{ecosystem: "Aave"},
     "arb-" => %{ecosystem: "Arbitrum"},
     "o-" => %{ecosystem: "Optimism"},
     "a-" => %{ecosystem: "Avalanche"},
@@ -17,6 +18,7 @@ defmodule Sanbase.Project.Multichain do
     "bnb-" => %{ecosystem: "BNB Chain"},
     "sol-" => %{ecosystem: "Solana"}
   }
+  def prefix_mapping(), do: @prefix_mapping
 
   @doc """
   Marks a project as a multichain project

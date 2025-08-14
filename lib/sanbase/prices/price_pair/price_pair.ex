@@ -75,9 +75,11 @@ defmodule Sanbase.PricePair do
     |> exec_timeseries_data_query()
   end
 
-  def timeseries_data_per_slug([], _quote_asset, _from, _to, _interval, _opts), do: {:ok, []}
+  def timeseries_data_per_slug([], _quote_asset, _from, _to, _interval, _opts),
+    do: {:ok, {[], MapSet.new()}}
 
-  def timeseries_data_per_slug(slug_or_slugs, quote_asset, from, to, interval, opts) do
+  def timeseries_data_per_slug(slug_or_slugs, quote_asset, from, to, interval, opts)
+      when is_binary(slug_or_slugs) or (is_list(slug_or_slugs) and slug_or_slugs != []) do
     source = Keyword.get(opts, :source) || @default_source
     aggregation = Keyword.get(opts, :aggregation) || :last
     slugs = List.wrap(slug_or_slugs)
@@ -85,13 +87,33 @@ defmodule Sanbase.PricePair do
     query_struct =
       timeseries_data_per_slug_query(slugs, quote_asset, from, to, interval, source, aggregation)
 
-    ClickhouseRepo.query_reduce(query_struct, %{}, fn [timestamp, slug, value], acc ->
+    ClickhouseRepo.query_reduce(query_struct, {%{}, MapSet.new()}, fn [timestamp, slug, value],
+                                                                      {acc, slugs_mapset} ->
       datetime = DateTime.from_unix!(timestamp)
       elem = %{slug: slug, value: value}
-      Map.update(acc, datetime, [elem], &[elem | &1])
+
+      {
+        Map.update(acc, datetime, [elem], &[elem | &1]),
+        MapSet.put(slugs_mapset, slug)
+      }
+
+      # Add this extra field to the map so that it can be used in the
+      # step where some slug names may be renamed due to losing the name
+      # in the cpc<->san mapping (example arb-arbitrum could be renamed to arbitrum
+      # due to the way CH dictionaries work)
     end)
-    |> maybe_transform_datetime_data_tuple_to_map()
-    |> maybe_sort(:datetime, :asc)
+    |> case do
+      {:ok, {result, slugs_mapset}} ->
+        result =
+          result
+          |> Enum.map(fn {datetime, data} -> %{datetime: datetime, data: data} end)
+          |> Enum.sort_by(& &1.datetime, {:asc, DateTime})
+
+        {:ok, {result, slugs_mapset}}
+
+      {:error, error} ->
+        {:error, error}
+    end
   end
 
   @doc ~s"""

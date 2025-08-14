@@ -26,6 +26,7 @@ defmodule SanbaseWeb.CryptocompareAssetMappingController do
     |> Enum.join("\n")
   end
 
+  @prefixes Sanbase.Project.Multichain.prefix_mapping() |> Map.keys()
   # xrp before ripple
   # Ethereum asset before assets on other chains (with prefixes)
   defp sort_assets(list) do
@@ -33,7 +34,7 @@ defmodule SanbaseWeb.CryptocompareAssetMappingController do
     |> Enum.sort_by(fn {_, value} ->
       case String.split(value, "-", parts: 2) do
         ["xrp" | _] -> {-1, value}
-        [prefix, _] when prefix in ["a", "p", "o", "bnb", "arb", "sol", "aave"] -> {1, value}
+        [prefix, _] when prefix in @prefixes -> {1, value}
         _ -> {0, value}
       end
     end)

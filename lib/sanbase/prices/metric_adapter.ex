@@ -1,5 +1,8 @@
 defmodule Sanbase.Price.MetricAdapter do
   @behaviour Sanbase.Metric.Behaviour
+
+  import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
+
   alias Sanbase.Price
 
   @aggregations [:any, :sum, :avg, :min, :max, :last, :first, :median, :ohlc, :count]

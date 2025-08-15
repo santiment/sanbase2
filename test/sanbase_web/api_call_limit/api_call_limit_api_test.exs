@@ -6,10 +6,6 @@ defmodule SanbaseWeb.ApiCallLimitTest do
   import Mox
 
   @remote_ip "91.246.248.228"
-  def rand_ip() do
-    rand = fn -> :rand.uniform(255) end
-    "#{rand.()}.#{rand.()}.#{rand.()}.#{rand.()}"
-  end
 
   setup :set_mox_from_context
   setup :verify_on_exit!
@@ -33,7 +29,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
 
     project = insert(:random_project)
 
-    Sanbase.ApiCallLimit.clear_all()
+    Sanbase.ApiCallLimit.ETS.clear_all()
 
     %{
       user: user,
@@ -254,7 +250,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       iterations = 100
       api_calls_per_iteration = 5
 
-      Enum.map(
+      Sanbase.Parallel.map(
         1..iterations,
         fn _ ->
           {:ok, _updated} =
@@ -264,7 +260,8 @@ defmodule SanbaseWeb.ApiCallLimitTest do
               api_calls_per_iteration,
               _result_size_bytes = 10_000
             )
-        end
+        end,
+        max_concurrency: 30
       )
 
       {:ok, quota} = Sanbase.ApiCallLimit.get_quota_db(:user, context.user.id)
@@ -315,12 +312,14 @@ defmodule SanbaseWeb.ApiCallLimitTest do
 
         Sanbase.Mock.prepare_mock2(&DateTime.utc_now/0, dt)
         |> Sanbase.Mock.run_with_mocks(fn ->
-          Enum.map(
+          Sanbase.Parallel.map(
             1..(api_calls_per_iteration - 1),
             fn _ ->
               res = make_api_call(context.apikey_conn, [])
               assert res.status == 200
-            end
+            end,
+            max_concurrent: 50,
+            ordered: false
           )
         end)
 
@@ -348,7 +347,6 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       assert api_calls_made <= real_api_calls_made + allowed_difference
     end
 
-    @tag timeout: :infinity
     test "make many concurrent api calls - all succeed", context do
       insert(:subscription_pro, user: context.user)
 
@@ -387,12 +385,14 @@ defmodule SanbaseWeb.ApiCallLimitTest do
 
         Sanbase.Mock.prepare_mock2(&DateTime.utc_now/0, dt)
         |> Sanbase.Mock.run_with_mocks(fn ->
-          Enum.map(
+          Sanbase.Parallel.map(
             1..(api_calls_per_iteration - 1),
             fn _ ->
               res = make_api_call(context.apikey_conn, [])
               assert res.status == 200
-            end
+            end,
+            max_concurrent: 50,
+            ordered: false
           )
         end)
 
@@ -460,14 +460,16 @@ defmodule SanbaseWeb.ApiCallLimitTest do
 
         Sanbase.Mock.prepare_mock2(&DateTime.utc_now/0, dt)
         |> Sanbase.Mock.run_with_mocks(fn ->
-          Enum.map(
+          Sanbase.Parallel.map(
             1..(api_calls_per_iteration - 1),
             fn i ->
               {:ok, _} = Sanbase.Accounts.User.change_username(context.user, "username_#{i}")
 
               res = make_api_call(context.apikey_conn, [])
               assert res.status == 200
-            end
+            end,
+            max_concurrent: 50,
+            ordered: false
           )
         end)
 
@@ -552,7 +554,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
     test "ip address make request", context do
       # Use an IP address that is not a loopback or private
       result =
-        make_api_call(context.conn, [{"x-forwarded-for", rand_ip()}])
+        make_api_call(context.conn, [{"x-forwarded-for", @remote_ip}])
         |> json_response(200)
 
       assert result == %{
@@ -624,8 +626,6 @@ defmodule SanbaseWeb.ApiCallLimitTest do
           context.user,
           context.plans.plan_pro
         )
-
-        Process.sleep(50)
 
         response = make_api_call(context.apikey_conn, [{"x-forwarded-for", @remote_ip}])
 

@@ -12,25 +12,12 @@ defmodule Sanbase.ApiCallLimit.Collector do
   # In test environment we use call to make it synchronous. Otherwise in tests we need
   # to sleep for some time before checking the result
   case Application.compile_env(:sanbase, :env) do
-    :test ->
-      def update_usage(server, msg) do
-        GenServer.call(server, {:update_usage, msg})
-      end
-
-    _ ->
-      def update_usage(server, msg), do: GenServer.cast(server, {:update_usage, msg})
+    :test -> def update_usage(server, msg), do: GenServer.call(server, {:update_usage, msg})
+    _ -> def update_usage(server, msg), do: GenServer.cast(server, {:update_usage, msg})
   end
 
   def get_quota(server, msg) do
     GenServer.call(server, {:get_quota, msg})
-  end
-
-  def clear_data(server, msg) do
-    GenServer.call(server, {:clear_data, msg})
-  end
-
-  def clear_all(server) do
-    GenServer.call(server, :clear_all)
   end
 
   def handle_cast(
@@ -69,15 +56,5 @@ defmodule Sanbase.ApiCallLimit.Collector do
   def handle_call({:get_quota, {entity_type, entity_key, auth_method}}, _from, state) do
     quota = Sanbase.ApiCallLimit.ETS.get_quota(entity_type, entity_key, auth_method)
     {:reply, quota, state}
-  end
-
-  def handle_call({:clear_data, {:user, user_id}}, _from, state) do
-    Sanbase.ApiCallLimit.ETS.clear_data(:user, user_id)
-    {:reply, :ok, state}
-  end
-
-  def handle_call(:clear_all, _from, state) do
-    Sanbase.ApiCallLimit.ETS.clear_all()
-    {:reply, :ok, state}
   end
 end

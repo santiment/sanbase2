@@ -1,7 +1,5 @@
-defmodule Sanbase.ApiCallLimit.CollectorETS do
+defmodule Sanbase.ApiCallLimit.Collector do
   use GenServer
-
-  alias Sanbase.ApiCallLimit.StorageETS
 
   def start_link(args) do
     GenServer.start_link(__MODULE__, args)
@@ -40,7 +38,7 @@ defmodule Sanbase.ApiCallLimit.CollectorETS do
         state
       ) do
     # Async, used in dev/prod env
-    StorageETS.update_usage(
+    Sanbase.ApiCallLimit.ETS.update_usage(
       entity_type,
       auth_method,
       entity_key,
@@ -56,8 +54,8 @@ defmodule Sanbase.ApiCallLimit.CollectorETS do
         _from,
         state
       ) do
-    # Sync, used in test env
-    StorageETS.update_usage(
+    # Symc, used in test env
+    Sanbase.ApiCallLimit.ETS.update_usage(
       entity_type,
       auth_method,
       entity_key,
@@ -69,17 +67,17 @@ defmodule Sanbase.ApiCallLimit.CollectorETS do
   end
 
   def handle_call({:get_quota, {entity_type, entity_key, auth_method}}, _from, state) do
-    quota = StorageETS.get_quota(entity_type, entity_key, auth_method)
+    quota = Sanbase.ApiCallLimit.ETS.get_quota(entity_type, entity_key, auth_method)
     {:reply, quota, state}
   end
 
   def handle_call({:clear_data, {:user, user_id}}, _from, state) do
-    StorageETS.clear_data(:user, user_id)
+    Sanbase.ApiCallLimit.ETS.clear_data(:user, user_id)
     {:reply, :ok, state}
   end
 
   def handle_call(:clear_all, _from, state) do
-    StorageETS.clear_all()
+    Sanbase.ApiCallLimit.ETS.clear_all()
     {:reply, :ok, state}
   end
 end

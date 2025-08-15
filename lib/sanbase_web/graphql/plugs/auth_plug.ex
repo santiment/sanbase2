@@ -370,7 +370,7 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
         result
 
       _ ->
-        %{permissions: User.Permissions.no_permissions()}
+        anon_user_auth_struct(conn)
     end
   end
 

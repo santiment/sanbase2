@@ -18,6 +18,25 @@ defmodule SanbaseWeb.Graphql.AuthApiTest do
     }
   end
 
+  test "expirted JWT is treated as anon", context do
+    {:ok, jwt_tokens} =
+      SanbaseWeb.Guardian.get_jwt_tokens(context.user, %{
+        access_token_ttl: {0, :seconds},
+        refresh_token_ttl: {0, :seconds}
+      })
+
+    Process.sleep(1100)
+
+    conn = Plug.Test.init_test_session(build_conn(), jwt_tokens)
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton("{ currentUser{ id } }"))
+      |> json_response(200)
+
+    assert result["data"]["currentUser"] == nil
+  end
+
   test "conn with JWT tokens in sessions works properly", context do
     # Test that when the session contains the access/refresh token, it is
     # properly resolved to the user

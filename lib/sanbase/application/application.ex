@@ -333,7 +333,7 @@ defmodule Sanbase.Application do
       {Task.Supervisor, [name: Sanbase.TaskSupervisor]},
 
       # Star the API call service
-      Sanbase.ApiCallLimit.StorageETS,
+      Sanbase.ApiCallLimit.ETS,
 
       # Start telegram rate limiter. Used both in web and alerts
       Sanbase.ExternalServices.RateLimiting.Server.child_spec(

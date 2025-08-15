@@ -1,8 +1,7 @@
 defmodule Sanbase.ApiCallLimit do
   use Ecto.Schema
 
-  import Ecto.Query
-  import Ecto.Changeset
+  import Ecto.{Query, Changeset}
 
   alias Sanbase.Repo
   alias Sanbase.Accounts.User
@@ -23,7 +22,6 @@ defmodule Sanbase.ApiCallLimit do
     "sanapi_enterprise",
     "sanapi_custom"
   ]
-
   @api_call_limits_per_month Restrictions.call_limits_per_month()
   @api_call_limits_per_hour Restrictions.call_limits_per_hour()
   @api_call_limits_per_minute Restrictions.call_limits_per_minute()
@@ -31,13 +29,11 @@ defmodule Sanbase.ApiCallLimit do
   @response_size_limits_mb_per_month Restrictions.response_size_limits_mb_per_month()
   # @response_size_limits_per_hour Restrictions.response_size_limits_per_hour()
   # @response_size_limits_per_minute Restrictions.response_size_limits_per_minute()
+  #
 
-  # Use ETS to store the in-memory API call related data
-  @collector_module Sanbase.ApiCallLimit.CollectorETS
-  # Use GenServer to store the in-memory API call related data
-  # @collector_module Sanbase.ApiCallLimit.CollectorGenServer
   @supervisor_module SanbaseWeb.ApiCallLimit.PartitionSupervisor
 
+  @collector_module Sanbase.ApiCallLimit.Collector
   def collector_module(), do: @collector_module
 
   case Application.compile_env(:sanbase, :env) do

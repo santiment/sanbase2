@@ -1,4 +1,4 @@
-defmodule Sanbase.ApiCallLimit.CollectorGenServer do
+defmodule Sanbase.ApiCallLimit.CollectorCounter do
   @moduledoc ~s"""
   Track the API Call quotas (get and update) of the user and remote IPs.
 
@@ -34,8 +34,13 @@ defmodule Sanbase.ApiCallLimit.CollectorGenServer do
   # In test environment we use call to make it synchronous. Otherwise in tests we need
   # to sleep for some time before checking the result
   case Application.compile_env(:sanbase, :env) do
-    :test -> def update_usage(server, msg), do: GenServer.call(server, {:update_usage, msg})
-    _env -> def update_usage(server, msg), do: GenServer.cast(server, {:update_usage, msg})
+    :test ->
+      def update_usage(server, msg) do
+        GenServer.call(server, {:update_usage, msg})
+      end
+
+    _ ->
+      def update_usage(server, msg), do: GenServer.cast(server, {:update_usage, msg})
   end
 
   def get_quota(server, msg) do
@@ -75,14 +80,15 @@ defmodule Sanbase.ApiCallLimit.CollectorGenServer do
   end
 
   def handle_call({:clear_data, {:user, entity_key}}, _from, state) do
-    new_state =
-      Map.delete(state, entity_key)
+    new_state = Map.delete(state, entity_key)
 
     {:reply, :ok, new_state}
   end
 
   # Private functions
 
+  @spec do_get_quota(map(), entity_type, entity_key, auth_method) ::
+          {{:ok, map()} | {:error, map()}, map()}
   defp do_get_quota(state, _type, _entity_key, :basic),
     do: {{:ok, %{quota: :infinity}}, state}
 
@@ -92,7 +98,14 @@ defmodule Sanbase.ApiCallLimit.CollectorGenServer do
   defp do_get_quota(state, :remote_ip, ip, _auth_method),
     do: do_get_quota_impl(state, :remote_ip, ip)
 
-  # Basic auth does not have a quota, so it is not stored in the state
+  @spec do_update_usage(
+          map(),
+          entity_type,
+          auth_method,
+          entity_key,
+          non_neg_integer(),
+          non_neg_integer()
+        ) :: map()
   defp do_update_usage(state, _type, :basic, _user_id_or_remote_ip, _count, _result_byte_size),
     do: state
 
@@ -111,7 +124,8 @@ defmodule Sanbase.ApiCallLimit.CollectorGenServer do
         # No data stored yet. Initialize by checking the postgres
         get_quota_from_db_and_update_state(state, entity_type, entity_key)
 
-      {reason, error_map} when reason in [:rate_limited, :response_size_limit_exceeded] ->
+      {reason, error_map}
+      when reason in [:rate_limited, :response_size_limit_exceeded] ->
         # Try again after `retry_again_after` datetime in case something changed.
         now = DateTime.utc_now()
 
@@ -125,11 +139,10 @@ defmodule Sanbase.ApiCallLimit.CollectorGenServer do
             {{:error, error_map}, state}
 
           _ ->
-            # It's time to try again, the rate limited period is over
             get_quota_from_db_and_update_state(state, entity_type, entity_key)
         end
 
-      {_quota = :infinity, _remaining, _result_size, metadata, _refresh_after_datetime} ->
+      {:infinity, :infinity, _result_size, metadata, _refresh_after_datetime} ->
         # The entity does not have rate limits applied
         {{:ok, %{metadata | quota: :infinity}}, state}
 
@@ -272,11 +285,17 @@ defmodule Sanbase.ApiCallLimit.CollectorGenServer do
         result_byte_size
       )
 
-    get_quota_from_db_and_update_state(state, entity_type, entity_key)
+    # Clear the state entry before fetching a new quota
+    cleared_state = Map.delete(state, entity_key)
+
+    get_quota_from_db_and_update_state(cleared_state, entity_type, entity_key)
   end
 
   defp get_quota_from_db_and_update_state(state, entity_type, entity_key) do
     now = DateTime.utc_now()
+
+    # Clear the state entry before fetching a new quota
+    cleared_state = Map.delete(state, entity_key)
 
     case ApiCallLimit.get_quota_db(entity_type, entity_key) do
       {:ok, %{quota: quota} = metadata} ->
@@ -286,17 +305,12 @@ defmodule Sanbase.ApiCallLimit.CollectorGenServer do
           {quota, _api_calls_remaining = quota, _acc_result_byte_size = 0, metadata,
            refresh_after_datetime}
 
-        new_state = Map.put(state, entity_key, entry)
+        new_state = Map.put(cleared_state, entity_key, entry)
 
         {{:ok, metadata}, new_state}
 
       {:error, %{reason: reason, blocked_until: _} = error_map}
       when reason in [:rate_limited, :response_size_limit_exceeded] ->
-        # Try again after `retry_again_after` datetime in case something changed.
-        # This handles cases where the data changed without a plan upgrade, for
-        # example changing the `has_limits` in the admin panel manually.
-        # User plan upgrades are handled separately by clearing the ETS records
-        # for the user.
         retry_again_after =
           Enum.min(
             [error_map.blocked_until, DateTime.add(now, 60, :second)],
@@ -306,7 +320,7 @@ defmodule Sanbase.ApiCallLimit.CollectorGenServer do
         error_map = Map.put(error_map, :retry_again_after, retry_again_after)
 
         entry = {reason, error_map}
-        new_state = Map.put(state, entity_key, entry)
+        new_state = Map.put(cleared_state, entity_key, entry)
 
         {{:error, error_map}, new_state}
     end

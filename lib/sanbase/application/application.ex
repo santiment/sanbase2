@@ -200,17 +200,6 @@ defmodule Sanbase.Application do
         end
       ),
 
-      # API Call usage Collector Partition Supervisor
-      start_if(
-        fn ->
-          {PartitionSupervisor,
-           child_spec: Sanbase.ApiCallLimit.Collector.child_spec([]),
-           name: SanbaseWeb.ApiCallLimit.PartitionSupervisor}
-        end,
-        fn ->
-          container_type in ["all", "web"]
-        end
-      ),
       # API Calls exporter is started only in `web` and `all` pods.
       start_if(
         fn ->

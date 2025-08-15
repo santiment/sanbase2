@@ -170,7 +170,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
       Sanbase.ApiCallLimit.update_usage(
         :user,
         query_metadata.caller_data.auth_method,
-        user.id,
+        user,
         query_metadata.success_queries_count,
         query_metadata.result_sizes.min_byte_size
       )

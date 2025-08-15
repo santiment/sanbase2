@@ -10,6 +10,14 @@ defmodule Sanbase.Application.Alerts do
   """
   def children() do
     children = [
+      # Mutex used when sending notifications for triggered alerts
+      # Guards agains concurrently sending notifications to a single user
+      # which can bypass the limit for alerts per day
+      Supervisor.child_spec(
+        {Mutex, name: Sanbase.AlertMutex},
+        id: Sanbase.AlertMutex
+      ),
+
       # Start the alert evaluator cache
       {Sanbase.Cache,
        [

@@ -16,6 +16,10 @@ defmodule Sanbase.MCP.MetricsServer do
   component(Sanbase.MCP.DiscoveryTool)
   component(Sanbase.MCP.FetchMetricDataTool)
 
+  # Register our insights tools
+  component(Sanbase.MCP.InsightDiscoveryTool)
+  component(Sanbase.MCP.InsightDetailTool)
+
   if Application.compile_env(:sanbase, :env) in [:test, :dev] do
     IO.puts("Defining the extra MCP Server tools used in dev and test")
     # Some tools are enabled only in dev mode so we can test things during development

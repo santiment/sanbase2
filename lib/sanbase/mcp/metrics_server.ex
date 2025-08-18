@@ -1,4 +1,4 @@
-defmodule Sanbase.MCP.MetricsServer do
+defmodule Sanbase.MCP.Server do
   @moduledoc "MCP server for Sanbase metrics access"
 
   use Hermes.Server,

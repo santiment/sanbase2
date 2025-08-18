@@ -8,16 +8,6 @@ defmodule SanbaseWeb.Graphql.MCPTest do
     user = insert(:user)
     {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(user)
 
-    # Start the MCP server with proper capabilities
-    # {:ok, server_pid} =
-    #   Hermes.Server.start_link(
-    #     Sanbase.MCP.MetricsServer,
-    #     transport: {:streamable_http, []},
-    #     client_info: %{"name" => "SanbaseTestMCPClient", "version" => "1.0.0"},
-    #     capabilities: [:tools],
-    #     protocol_version: "2025-03-26"
-    #   )
-
     %{user: user, apikey: apikey}
   end
 
@@ -47,13 +37,16 @@ defmodule SanbaseWeb.Graphql.MCPTest do
     # The sleep is here so we wait for the response, otherwise the call_tool/2
     # is called while `server_capabilities` are `nil` and we get the error
     # `Server capabilities not set`
-    Process.sleep(300)
 
-    assert %{"tools" => _} = Sanbase.MCP.MetricsServer.server_capabilities()
+    assert %{"tools" => _} = Sanbase.MCP.Server.server_capabilities()
     assert client |> Process.alive?() == true
     assert Sanbase.MCP.Client |> Process.whereis() |> Process.alive?() == true
     assert Hermes.Server.Registry |> Process.whereis() |> Process.alive?() == true
 
+    # It is not guaranteed that the client has received the server capabiliteies
+    # so quick after starting. When the client starts it sends a request to the server
+    # and if we try to call some tool before the server responds, we get an error.
+    # To mitigate that try a few times to call the server, with sleep between calls.
     result =
       try_few_times(fn -> Sanbase.MCP.Client.call_tool("check_authentication", %{}) end,
         attempts: 3,

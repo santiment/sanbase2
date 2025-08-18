@@ -144,7 +144,7 @@ defmodule Sanbase.Transfers.EthTransfers do
       dt >= toDateTime({{from}}) AND
       dt < toDateTime({{to}}) AND
       type = 'call'
-    GROUP BY from, type, to, dt, transactionHash, primaryKey
+    GROUP BY from, type, to, dt, transactionHash, internalTxPosition
     ORDER BY value DESC
     LIMIT {{limit}} OFFSET {{offset}}
     """
@@ -171,7 +171,7 @@ defmodule Sanbase.Transfers.EthTransfers do
       transactionHash,
       (any(value) / #{@eth_decimals}) AS value
     FROM (
-      SELECT dt, type, from, to, transactionHash, primaryKey, value
+      SELECT dt, type, from, to, transactionHash, internalTxPosition, value
       FROM #{@table}
       PREWHERE
         type = 'call' AND
@@ -179,7 +179,7 @@ defmodule Sanbase.Transfers.EthTransfers do
         dt < toDateTime({{to}})
         WHERE value > {{value_filter}} * #{@eth_decimals}
     )
-    GROUP BY from, type, to, dt, transactionHash, primaryKey
+    GROUP BY from, type, to, dt, transactionHash, internalTxPosition
     ORDER BY value DESC
     LIMIT {{limit}} OFFSET {{offset}}
     """
@@ -214,7 +214,7 @@ defmodule Sanbase.Transfers.EthTransfers do
       PREWHERE
         #{address_clause} AND
         type = 'call'
-      GROUP BY from, type, to, dt, transactionHash, primaryKey
+      GROUP BY from, type, to, dt, transactionHash, internalTxPosition
     )
     ORDER BY dt DESC
     LIMIT {{limit}} OFFSET {{offset}}
@@ -244,7 +244,7 @@ defmodule Sanbase.Transfers.EthTransfers do
         from IN ({{addresses}}) AND
         dt >= toDateTime({{from}}) AND
         dt < toDateTime({{to}})
-      GROUP BY dt, from, to, transactionHash, primaryKey
+      GROUP BY dt, from, to, transactionHash, internalTxPosition
 
       UNION ALL
 
@@ -254,7 +254,7 @@ defmodule Sanbase.Transfers.EthTransfers do
         to in ({{addresses}}) AND
         dt >= toDateTime({{from}}) AND
         dt < toDateTime({{to}})
-      GROUP BY dt, from, to, transactionHash, primaryKey
+      GROUP BY dt, from, to, transactionHash, internalTxPosition
     )
     GROUP BY time
     """
@@ -296,7 +296,7 @@ defmodule Sanbase.Transfers.EthTransfers do
         type != 'fee' AND
         dt >= toDateTime({{from}}) AND
         dt < toDateTime({{to}})
-      GROUP BY from, type, to, dt, transactionHash, primaryKey
+      GROUP BY from, type, to, dt, transactionHash, internalTxPosition
     )
     GROUP BY "#{select_column}"
     ORDER BY #{order_by_str} DESC

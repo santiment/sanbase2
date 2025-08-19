@@ -136,7 +136,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
   end
 
   defp store_price_points(%Project{slug: slug} = project, price_points, _) do
-    price_points = PricePoint.sanity_filters(price_points)
+    price_points = PricePoint.sanity_filters(price_points, slug)
     %{datetime: latest_datetime} = Enum.max_by(price_points, &DateTime.to_unix(&1.datetime))
 
     export_prices_to_kafka(project, price_points)
@@ -145,7 +145,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
   end
 
   defp store_price_points("TOTAL_MARKET", price_points, _) do
-    price_points = PricePoint.sanity_filters(price_points)
+    price_points = PricePoint.sanity_filters(price_points, "TOTAL_MARKET")
 
     %{datetime: latest_datetime} = Enum.max_by(price_points, &DateTime.to_unix(&1.datetime))
 

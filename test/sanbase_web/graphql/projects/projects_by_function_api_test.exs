@@ -63,6 +63,13 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionApiTest do
 
     insert(:latest_cmc_data, %{coinmarketcap_id: "xrp", rank: 3, volume_usd: 1_000_000_000})
 
+    insert(:project, %{
+      ticker: "ANOTHER_XRP",
+      slug: "xrp2",
+      coinmarketcap_id: "xrp",
+      market_segments: [mineable]
+    })
+
     insert(:random_erc20_project, %{
       ticker: "MKR",
       slug: "maker",
@@ -324,16 +331,35 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionApiTest do
            ]
   end
 
-  test "projects by function for top all projects", %{conn: conn} do
+  test "projects by function for top all projects - size argument", %{conn: conn} do
     function = %{"name" => "top_all_projects", "args" => %{"size" => 3}}
-    result = execute_query(conn, query(function))
+    result = execute_query(conn, query(function, ["rank"]))
     projects = result["data"]["allProjectsByFunction"]["projects"]
 
-    assert projects == [
-             %{"slug" => "bitcoin"},
-             %{"slug" => "ethereum"},
-             %{"slug" => "xrp"}
-           ]
+    assert length(projects) == 3
+
+    assert [
+             %{"slug" => "bitcoin", "rank" => 1},
+             %{"slug" => "ethereum", "rank" => 2},
+             %{"slug" => "xrp", "rank" => 3}
+           ] == projects
+  end
+
+  test "projects by function for top all projects - rank_up_to argument", %{conn: conn} do
+    function = %{"name" => "top_all_projects", "args" => %{"rank_up_to" => 3}}
+    result = execute_query(conn, query(function, ["rank"]))
+    projects = result["data"]["allProjectsByFunction"]["projects"]
+
+    # xrp and another-xrp have the same rank. So with rank_up_to=3 we return 4 projects,
+    # thus testing that it behaves differently compared to size=3
+    assert length(projects) == 4
+
+    assert [
+             %{"slug" => "bitcoin", "rank" => 1},
+             %{"slug" => "ethereum", "rank" => 2},
+             %{"slug" => "xrp", "rank" => 3},
+             %{"slug" => "xrp2", "rank" => 3}
+           ] == projects
   end
 
   test "projects by function for min volume", %{conn: conn} do
@@ -344,7 +370,7 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionApiTest do
     slugs = projects |> Enum.map(& &1["slug"])
     volumes = projects |> Enum.map(& &1["volumeUsd"])
 
-    assert slugs == ["bitcoin", "ethereum", "xrp", "tether"]
+    assert slugs == ["bitcoin", "ethereum", "xrp", "xrp2", "tether"]
     assert Enum.all?(volumes, &Kernel.>=(&1, 1_000_000_000))
   end
 

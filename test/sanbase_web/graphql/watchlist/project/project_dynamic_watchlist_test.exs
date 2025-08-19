@@ -294,7 +294,10 @@ defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
 
   test "dynamic watchlist for top erc20 projects", %{conn: conn} do
     function = %{"name" => "top_erc20_projects", "args" => %{"size" => 2}}
-    result = do_execute_mutation(conn, create_watchlist_query(function: function))
+
+    result =
+      do_execute_mutation(conn, create_watchlist_query(function: function))
+
     user_list = result["data"]["createWatchlist"]
 
     assert user_list["listItems"] == [

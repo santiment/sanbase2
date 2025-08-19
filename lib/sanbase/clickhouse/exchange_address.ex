@@ -59,26 +59,25 @@ defmodule Sanbase.Clickhouse.ExchangeAddress do
   end
 
   defp exchange_names_query(blockchain, is_dex) do
-    exchange_type =
+    label_filter =
       case is_dex do
-        nil -> :both
-        true -> :dex
-        false -> :cex
+        nil ->
+          "label_id IN (SELECT label_id FROM label_metadata WHERE key IN ('centralized_exchange', 'decentralized_exchange'))"
+
+        true ->
+          "label_id IN (SELECT label_id FROM label_metadata WHERE key IN ('decentralized_exchange'))"
+
+        false ->
+          "label_id IN (SELECT label_id FROM label_metadata WHERE key IN ('centralized_exchange'))"
       end
 
     sql = """
-    SELECT DISTINCT dictGet('labels', 'value', label_id)
-    FROM current_label_addresses
+    SELECT
+      name
+    FROM labeled_entities_names
     WHERE
       blockchain = {{blockchain}} AND
-      label_id IN ( SELECT label_id FROM label_metadata WHERE key = 'owner' ) AND
-      address IN (
-        SELECT DISTINCT address
-        FROM current_label_addresses
-        WHERE
-          blockchain = {{blockchain}} AND
-          #{exchange_type_filter(exchange_type)}
-      )
+      #{label_filter}
     """
 
     params = %{

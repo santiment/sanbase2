@@ -108,12 +108,23 @@ defmodule Sanbase.WatchlistFunction do
 
   def valid_function?(%__MODULE__{name: name, args: args} = fun, opts)
       when name in ["top_all_projects", "top_erc20_projects"] do
-    size = Map.get(args, "size") || Map.fetch!(args, :size)
+    size = Map.get(args, "size") || Map.get(args, :size)
+    rank_up_to = Map.get(args, "rank_up_to") || Map.get(args, :rank_up_to)
+
     ignored_projects = Map.get(args, "ignored_projects") || Map.get(args, :ignored_projects) || []
 
-    case is_integer(size) and size > 0 do
-      false ->
+    cond do
+      is_nil(size) and is_nil(rank_up_to) ->
+        {:error, "Provide either the size or rank_up_to argument."}
+
+      not is_nil(size) and not is_nil(rank_up_to) ->
+        {:error, "Provide only size or rank_up_to argument"}
+
+      is_integer(size) and size <= 0 ->
         {:error, "The size argument must be a positive integer."}
+
+      is_integer(rank_up_to) and rank_up_to <= 0 ->
+        {:error, "The rank up to argument must be a positive integer."}
 
       true ->
         case is_list(ignored_projects) do
@@ -251,14 +262,35 @@ defmodule Sanbase.WatchlistFunction do
   end
 
   def evaluate(%__MODULE__{name: "top_all_projects", args: args}) do
-    size = Map.get(args, "size") || Map.fetch!(args, :size)
+    size = Map.get(args, "size") || Map.get(args, :size)
+    rank_up_to = Map.get(args, "rank_up_to") || Map.get(args, :rank_up_to)
+
     ignored_projects = Map.get(args, "ignored_projects") || Map.get(args, :ignored_projects) || []
     ignored_projects_mapset = MapSet.new(ignored_projects)
 
     projects =
-      Project.List.projects_page(1, size + length(ignored_projects))
-      |> Enum.reject(fn %Project{slug: slug} -> slug in ignored_projects_mapset end)
-      |> Enum.take(size)
+      cond do
+        not is_nil(size) ->
+          Project.List.projects_page(1, size + length(ignored_projects))
+          |> Enum.reject(fn %Project{slug: slug} -> slug in ignored_projects_mapset end)
+          |> Enum.take(size)
+
+        not is_nil(rank_up_to) ->
+          Project.List.projects()
+          |> Enum.reject(fn %Project{slug: slug} -> slug in ignored_projects_mapset end)
+          |> Enum.filter(fn
+            %{latest_coinmarketcap_data: %{rank: rank}} when is_integer(rank) ->
+              rank <= rank_up_to
+
+            _ ->
+              false
+          end)
+          # Tuples are sorted first by arity, then element by element
+          # Sorting both by rank and slug we have a determinisitc sort, i.e.
+          # all multichain assets like a-tether, arb-tether, o-tether, etc. will
+          # always be returned in the same order
+          |> Enum.sort_by(&{&1.latest_coinmarketcap_data.rank, &1.slug}, :asc)
+      end
 
     {:ok,
      %{

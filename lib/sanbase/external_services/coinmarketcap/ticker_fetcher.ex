@@ -93,12 +93,16 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     # Fetch current coinmarketcap data for many tickers
     # It fetches data for the the first N projects, where N is specified in
     # the COINMARKETCAP_API_PROJECTS_NUMBER env var
-    {:ok, tickers} = Ticker.fetch_data(opts)
+    {:ok, tickers} =
+      Ticker.fetch_data(opts)
+
     fetched_slugs = MapSet.new(tickers, & &1.slug)
 
     # Handle separately tokens that might be out of top N.
     custom_cmc_slugs = @custom_cmc_slugs |> Enum.reject(&(&1 in fetched_slugs))
-    {:ok, custom_tickers} = Ticker.fetch_data_by_slug(custom_cmc_slugs)
+
+    {:ok, custom_tickers} =
+      Ticker.fetch_data_by_slug(custom_cmc_slugs)
 
     tickers = tickers ++ custom_tickers
 
@@ -106,7 +110,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     # santiment slugs that have that coinmarketcap_id
     cmc_id_to_slugs_mapping = coinmarketcap_to_santiment_slug_map()
 
-    tickers = remove_not_valid_prices(tickers, cmc_id_to_slugs_mapping)
+    tickers =
+      remove_not_valid_prices(tickers, cmc_id_to_slugs_mapping)
 
     # Create a project if it's a new one in the top projects and we don't have it
     tickers
@@ -174,7 +179,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     |> Enum.flat_map(fn %Ticker{} = ticker ->
       case Map.get(cmc_id_to_slugs_mapping, ticker.slug, []) |> List.wrap() do
         [_ | _] = slugs ->
-          price_point = Ticker.to_price_point(ticker) |> PricePoint.sanity_filters()
+          # In case of many slugs this means we have multichain assets like tether, a-tether, etc.
+          # Use the name of the one with shortest length, i.e. the one without a prefix.
+          main_slug = Enum.min_by(slugs, &String.length/1)
+
+          price_point =
+            Ticker.to_price_point(ticker)
+            |> PricePoint.sanity_filters(main_slug)
 
           Enum.map(slugs, fn slug ->
             PricePoint.json_kv_tuple(price_point, slug)

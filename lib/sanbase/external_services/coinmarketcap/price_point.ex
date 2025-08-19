@@ -1,8 +1,26 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.PricePoint do
   require Logger
 
-  @marketcap_usd_limit 10_000_000_000_000
-  @volume_usd_limit 500_000_000_000
+  @custom_marketcap_usd_limit_map %{
+    "TOTAL_MARKET" => 20_000_000_000_000,
+    "bitcoin" => 10_000_000_000_000,
+    "ethereum" => 2_000_000_000_000,
+    "tether" => 2_000_000_000_000,
+    "xrp" => 2_000_000_000_000,
+    "solana" => 2_000_000_000_000,
+    "bnb" => 2_000_000_000_000
+  }
+
+  @custom_volume_usd_limit_map %{
+    "TOTAL_MARKET" => 3_000_000_000_000,
+    "tether" => 1_000_000_000_000,
+    "bitcoin" => 1_000_000_000_000,
+    "ethereum" => 1_000_000_000_000,
+    "dai" => 500_000_000_000
+  }
+
+  @marketcap_usd_limit 300_000_000_000
+  @volume_usd_limit 200_000_000_000
   @price_usd_limit 1_000_000
   @price_btc_limit 1_000
 
@@ -38,16 +56,28 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePoint do
   defguard num_lt(num, threshold)
            when is_number(num) and is_number(threshold) and num < threshold
 
-  def sanity_filters([]), do: []
+  def sanity_filters([], _slug), do: []
 
-  def sanity_filters([%__MODULE__{} | _] = price_points) when is_list(price_points) do
+  def sanity_filters([%__MODULE__{} | _] = price_points, slug) when is_list(price_points) do
     # For each price point nullify the fields that exceed the limits
     Enum.map(price_points, fn %__MODULE__{} = price_point ->
+      # For volume and marketcap we use a little bit higher limits for some known big assets
+      # and smaller limits for the rest. Before we had too big default limit, which was
+      # allowing some very big marketcaps like 10T
+      marketcap_limit = Map.get(@custom_marketcap_usd_limit_map, slug, @marketcap_usd_limit)
+      volume_limit = Map.get(@custom_volume_usd_limit_map, slug, @volume_usd_limit)
+
       map =
         price_point
         |> Map.from_struct()
         |> Map.new(fn
-          {:volume_usd, value} when num_gte(value, @volume_usd_limit) ->
+          {:marketcap_usd, value}
+          when num_gte(value, marketcap_limit) or num_lt(value, 0) ->
+            Logger.info("PricePoint sanitizing #{price_point.slug} Marketcap USD: #{value}")
+            {:marketcap_usd, nil}
+
+          {:volume_usd, value}
+          when num_gte(value, volume_limit) ->
             Logger.info("PricePoint sanitizing #{price_point.slug} Volume USD: #{value}")
 
             {:volume_usd, nil}
@@ -61,11 +91,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePoint do
             Logger.info("PricePoint sanitizing #{price_point.slug} Price BTC: #{value}")
             {:price_btc, nil}
 
-          {:marketcap_usd, value}
-          when num_gte(value, @marketcap_usd_limit) or num_lt(value, 0) ->
-            Logger.info("PricePoint sanitizing #{price_point.slug} Marketcap USD: #{value}")
-            {:marketcap_usd, nil}
-
           {k, v} ->
             {k, v}
         end)
@@ -74,9 +99,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePoint do
     end)
   end
 
-  def sanity_filters(%__MODULE__{} = price_point) do
+  def sanity_filters(%__MODULE__{} = price_point, slug) do
     [price_point]
-    |> sanity_filters()
+    |> sanity_filters(slug)
     |> hd()
   end
 

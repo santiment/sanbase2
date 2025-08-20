@@ -14,8 +14,7 @@ defmodule Sanbase.Cryptocompare.Jobs do
       [price_queue(), open_interest_queue(), funding_rate_queue()] ++
         [
           "cryptocompare_historical_add_jobs_queue",
-          "email_queue",
-          "twitter_followers_migration_queue"
+          "email_queue"
         ]
 
     queues = Enum.uniq(queues)

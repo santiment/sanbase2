@@ -85,7 +85,6 @@ defmodule Sanbase.Mixfile do
       {:ex_unit_notifier, "~> 1.0", only: :test},
       {:expletive, "~> 0.1.0"},
       {:exprof, "~> 0.2.0"},
-      {:extwitter, "~> 0.12"},
       {:faker, "~> 0.17", only: [:dev, :test]},
       {:finch, "~> 0.18"},
       {:floki, "~> 0.20"},

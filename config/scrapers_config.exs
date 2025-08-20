@@ -15,13 +15,6 @@ config :sanbase, Sanbase.ExternalServices.Coinmarketcap.TickerFetcher,
 config :sanbase, Sanbase.ExternalServices.Etherscan.Requests,
   apikey: {:system, "ETHERSCAN_APIKEY", ""}
 
-config :sanbase, Sanbase.Twitter.Worker,
-  consumer_key: {:system, "TWITTER_CONSUMER_KEY"},
-  consumer_secret: {:system, "TWITTER_CONSUMER_SECRET"},
-  # 6 hours
-  update_interval: 1000 * 60 * 60 * 6,
-  sync_enabled: {:system, "TWITTER_SCRAPER_ENABLED", false}
-
 config :sanbase, Oban.Scrapers,
   repo: Sanbase.Repo,
   name: :oban_scrapers,
@@ -64,6 +57,3 @@ config :sanbase, Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler,
 
 config :sanbase, Sanbase.Cryptocompare.FundingRate.HistoricalScheduler,
   enabled?: {:system, "CRYPTOCOMPARE_HISTORICAL_FUNDING_RATE_SCHEDULER_ENABLED", "false"}
-
-config :sanbase, Sanbase.Twitter.FollowersScheduler,
-  enabled?: {:system, "TWITTER_FOLLOWERS_SCHEDULER_ENABLED", "false"}

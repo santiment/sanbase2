@@ -71,9 +71,6 @@ defmodule Sanbase.Application.Scrapers do
       # Historical prices work is scheduled by Oban
       Sanbase.Cryptocompare.Supervisor,
 
-      # Twitter account data tracking worker
-      Sanbase.Twitter.Worker,
-
       # Quantum Scheduler
       start_if(
         fn -> {Sanbase.Scrapers.Scheduler, []} end,

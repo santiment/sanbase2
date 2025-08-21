@@ -110,7 +110,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
   defp etherscan_token_name(html) do
     Floki.attribute(
       html,
-      "[data-test='section-coin-stats-explorers'] a[href*='etherscan.io'",
+      "[data-test='section-coin-stats-explorers'] a[href*='etherscan.io']",
       "href"
     )
     |> Enum.map(fn link ->

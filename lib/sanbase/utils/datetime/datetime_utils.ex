@@ -37,6 +37,18 @@ defmodule Sanbase.DateTimeUtils do
     |> Timex.format!("{0D} {Mshort} {YYYY} {h24}:{m} UTC")
   end
 
+  defp to_iso8601(nil), do: nil
+
+  defp to_iso8601(%NaiveDateTime{} = naive_datetime) do
+    naive_datetime
+    |> DateTime.from_naive!("Etc/UTC")
+    |> DateTime.to_iso8601()
+  end
+
+  defp to_iso8601(%DateTime{} = datetime) do
+    DateTime.to_iso8601(datetime)
+  end
+
   def seconds_to_human_readable(seconds) do
     seconds
     |> Timex.Duration.from_seconds()

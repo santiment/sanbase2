@@ -82,6 +82,12 @@ defmodule SanbaseWeb.Endpoint do
     Path.join([frontend_url(), "charts?slug=#{slug}"])
   end
 
+  def insight_url(insight_id) do
+    website_url()
+    |> Path.join("/insights/read")
+    |> Path.join(to_string(insight_id))
+  end
+
   def sonar_url() do
     website_url()
     |> Path.join("alerts")

@@ -1,4 +1,4 @@
-defmodule Sanbase.MCP.DiscoveryTool do
+defmodule Sanbase.MCP.MetricsAndAssetsDiscoveryTool do
   @moduledoc "Smart discovery tool for metrics and slugs with optional filtering"
 
   use Hermes.Server.Component, type: :tool

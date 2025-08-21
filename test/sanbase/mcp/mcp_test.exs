@@ -8,16 +8,6 @@ defmodule SanbaseWeb.Graphql.MCPTest do
     user = insert(:user)
     {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(user)
 
-    # Start the MCP server with proper capabilities
-    # {:ok, server_pid} =
-    #   Hermes.Server.start_link(
-    #     Sanbase.MCP.MetricsServer,
-    #     transport: {:streamable_http, []},
-    #     client_info: %{"name" => "SanbaseTestMCPClient", "version" => "1.0.0"},
-    #     capabilities: [:tools],
-    #     protocol_version: "2025-03-26"
-    #   )
-
     %{user: user, apikey: apikey}
   end
 
@@ -49,7 +39,7 @@ defmodule SanbaseWeb.Graphql.MCPTest do
     # `Server capabilities not set`
     Process.sleep(300)
 
-    assert %{"tools" => _} = Sanbase.MCP.MetricsServer.server_capabilities()
+    assert %{"tools" => _} = Sanbase.MCP.Server.server_capabilities()
     assert client |> Process.alive?() == true
     assert Sanbase.MCP.Client |> Process.whereis() |> Process.alive?() == true
     assert Hermes.Server.Registry |> Process.whereis() |> Process.alive?() == true

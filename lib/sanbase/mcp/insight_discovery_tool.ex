@@ -83,16 +83,11 @@ defmodule Sanbase.MCP.InsightDiscoveryTool do
       id: post.id,
       title: post.title,
       tags: Enum.map(post.tags, & &1.name),
-      link: build_insight_link(post.id),
+      link: SanbaseWeb.Endpoint.insight_url(post.id),
       published_at: format_datetime(post.published_at),
       author: post.user.username || "Anonymous",
       prediction: post.prediction
     }
-  end
-
-  defp build_insight_link(post_id) do
-    base_url = Application.get_env(:sanbase, :frontend_url, "https://app.santiment.net")
-    "#{base_url}/insights/read/#{post_id}"
   end
 
   defp format_datetime(nil), do: nil

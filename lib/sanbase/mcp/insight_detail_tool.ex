@@ -93,13 +93,8 @@ defmodule Sanbase.MCP.InsightDetailTool do
       tags: Enum.map(post.tags, & &1.name),
       metrics: Enum.map(post.metrics, & &1.name),
       prediction: post.prediction,
-      link: build_insight_link(post.id)
+      link: SanbaseWeb.Endpoint.insight_url(post.id)
     }
-  end
-
-  defp build_insight_link(post_id) do
-    base_url = Application.get_env(:sanbase, :frontend_url, "https://app.santiment.net")
-    "#{base_url}/insights/read/#{post_id}"
   end
 
   defp format_datetime(nil), do: nil

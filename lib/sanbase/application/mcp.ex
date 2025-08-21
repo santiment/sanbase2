@@ -9,7 +9,7 @@ defmodule Sanbase.Application.Mcp do
       Hermes.Server.Registry,
 
       # MCP server for metrics access
-      {Sanbase.MCP.MetricsServer, [transport: {:streamable_http, start: true}]}
+      {Sanbase.MCP.Server, [transport: {:streamable_http, start: true}]}
     ]
 
     opts = [

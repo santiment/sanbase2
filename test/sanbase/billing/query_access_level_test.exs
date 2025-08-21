@@ -85,7 +85,6 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :get_coupon,
           :get_ecosystems,
           :get_events_for_users,
-          :get_free_form_json,
           :get_full_url,
           :get_label_based_metric_owners,
           :get_market_exchanges,

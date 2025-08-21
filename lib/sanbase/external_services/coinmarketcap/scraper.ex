@@ -58,40 +58,63 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
   # Private functions
 
   defp name(html) do
-    Floki.attribute(html, ".logo-32x32", "alt")
+    Floki.attribute(html, "[data-role='coin-name']", "title")
     |> List.first()
   end
 
   defp ticker(html) do
-    case Floki.find(html, "h1 > .text-bold.h3.text-gray.text-large") do
-      [{_, _, [str]}] when is_binary(str) ->
-        str
-        |> String.replace(~r/[\(\)]/, "")
+    Floki.attribute(html, "[data-role='coin-symbol']", "text")
+    |> List.first()
+    |> case do
+      nil ->
+        Floki.find(html, "[data-role='coin-symbol']")
+        |> Floki.text()
+        |> String.trim()
 
-      _ ->
-        nil
+      ticker ->
+        ticker
     end
   end
 
   defp website_link(html) do
-    Floki.attribute(html, ".bottom-margin-2x a:fl-contains('Website')", "href")
-    |> List.first()
+    website_link =
+      Floki.attribute(html, "a[data-test='chip-website-link']", "href")
+      |> List.first()
+
+    # Handle protocol-relative URLs (starting with //)
+    case website_link do
+      nil -> nil
+      "//" <> _ = url -> "https:#{url}"
+      url when is_binary(url) -> url
+      _ -> nil
+    end
   end
 
   defp github_link(html) do
+    # First try to find GitHub link in the socials section
     github_link =
-      Floki.attribute(html, "a:fl-contains('Source Code')", "href")
+      Floki.attribute(
+        html,
+        "[data-test='section-coin-stats-socials'] a[href*='github.com']",
+        "href"
+      )
       |> List.first()
 
-    if github_link && String.contains?(github_link, "https://github.com/") do
-      github_link
+    case github_link do
+      "//" <> _ = url -> "https:#{url}"
+      url when is_binary(url) -> url
+      _ -> nil
     end
   end
 
   defp etherscan_token_name(html) do
-    Floki.attribute(html, "a:fl-contains('Explorer')", "href")
+    Floki.attribute(
+      html,
+      "[data-test='section-coin-stats-explorers'] a[href*='etherscan.io'",
+      "href"
+    )
     |> Enum.map(fn link ->
-      Regex.run(~r{https://etherscan.io/token/(.+)}, link)
+      Regex.run(~r{etherscan.io/token/(.+)}, link)
     end)
     |> Enum.find(& &1)
     |> case do
@@ -101,14 +124,59 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
   end
 
   defp main_contract_address(html) do
-    Floki.attribute(html, "a:fl-contains('Explorer')", "href")
-    |> Enum.map(fn link ->
-      Regex.run(~r{https://ethplorer.io/address/(.+)}, link)
-    end)
-    |> Enum.find(& &1)
-    |> case do
-      nil -> nil
-      list -> List.last(list)
-    end
+    # Look for contract address in __NEXT_DATA__ script tag first
+    _contract_address =
+      Floki.find(html, "script#__NEXT_DATA__")
+      |> List.first()
+      |> case do
+        nil ->
+          nil
+
+        script ->
+          script_content =
+            script
+            |> Floki.raw_html()
+
+          case Regex.run(~r/"contractAddress":"(0x[a-fA-F0-9]{40})"/, script_content) do
+            [_, address] -> address
+            _ -> nil
+          end
+      end
+
+    # # If not found in __NEXT_DATA__, search in head section
+    # contract_address ||
+    #   Floki.find(html, "head")
+    #   |> Floki.text()
+    #   |> String.trim()
+    #   |> then(fn text ->
+    #     case Regex.run(~r/"contractAddress":"(0x[a-fA-F0-9]{40})"/, text) do
+    #       [_, address] -> address
+    #       _ -> nil
+    #     end
+    #   end)
+    #
+    # # If not found in head, search in body section
+    # contract_address ||
+    #   Floki.find(html, "body")
+    #   |> Floki.text()
+    #   |> String.trim()
+    #   |> then(fn text ->
+    #     case Regex.run(~r/"contractAddress":"(0x[a-fA-F0-9]{40})"/, text) do
+    #       [_, address] -> address
+    #       _ -> nil
+    #     end
+    #   end)
+    #
+    # # Fallback: look for any 0x address in the entire document
+    # contract_address ||
+    #   Floki.find(html, "html")
+    #   |> Floki.text()
+    #   |> String.trim()
+    #   |> then(fn text ->
+    #     case Regex.run(~r/0x[a-fA-F0-9]{40}/, text) do
+    #       [address] -> address
+    #       _ -> nil
+    #     end
+    #   end)
   end
 end

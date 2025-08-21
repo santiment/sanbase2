@@ -9,7 +9,13 @@ defmodule Sanbase.MCP.InsightDiscoveryTool do
   schema do
     field(:time_period, :string,
       required: false,
-      description: "Time period for insights (e.g., '7d', '30d', '90d'). Defaults to '30d'"
+      description: """
+      Time period for insights (e.g., '7d', '30d', '90d').
+      This parameter defines the range of insights to fetch - from <time_period> time
+      ago up until now.
+
+      Defaults to 30d.
+      """
     )
   end
 
@@ -39,43 +45,31 @@ defmodule Sanbase.MCP.InsightDiscoveryTool do
   end
 
   defp parse_time_period(time_period) do
-    case Regex.run(~r/^(\d+)([dhw])$/, time_period) do
-      [_, amount_str, unit] ->
-        amount = String.to_integer(amount_str)
-
-        unit_atom =
-          case unit do
-            "d" -> :day
-            "h" -> :hour
-            "w" -> :week
-          end
-
-        to_datetime = DateTime.utc_now()
-        from_datetime = DateTime.add(to_datetime, -amount, unit_atom)
-        {:ok, {from_datetime, to_datetime}}
-
-      nil ->
-        {:error, "Invalid time period format. Use format like '30d', '7d', '2w', '24h'"}
+    if Sanbase.DateTimeUtils.valid_interval?(time_period) do
+      seconds = Sanbase.DateTimeUtils.str_to_sec(time_period)
+      to_datetime = DateTime.utc_now()
+      from_datetime = DateTime.add(to_datetime, -seconds, :second)
+      {:ok, {from_datetime, to_datetime}}
+    else
+      {:error, "Invalid time period format. Use format like '30d', '7d', '2w', '24h'"}
     end
   end
 
   defp fetch_insights(from_datetime, to_datetime) do
-    try do
-      insights =
-        Post.public_insights(
-          from: from_datetime,
-          to: to_datetime,
-          page: 1,
-          page_size: 100,
-          preload: [:tags, :user]
-        )
-        |> Enum.map(&format_insight_summary/1)
+    insights =
+      Post.public_insights(
+        from: from_datetime,
+        to: to_datetime,
+        page: 1,
+        page_size: 100,
+        preload: [:tags, :user]
+      )
+      |> Enum.map(&format_insight_summary/1)
 
-      {:ok, insights}
-    rescue
-      error ->
-        {:error, "Failed to fetch insights: #{inspect(error)}"}
-    end
+    {:ok, insights}
+  rescue
+    error ->
+      {:error, "Failed to fetch insights: #{inspect(error)}"}
   end
 
   defp format_insight_summary(post) do
@@ -84,17 +78,9 @@ defmodule Sanbase.MCP.InsightDiscoveryTool do
       title: post.title,
       tags: Enum.map(post.tags, & &1.name),
       link: SanbaseWeb.Endpoint.insight_url(post.id),
-      published_at: format_datetime(post.published_at),
+      published_at: Sanbase.DateTimeUtils.to_iso8601(post.published_at),
       author: post.user.username || "Anonymous",
       prediction: post.prediction
     }
-  end
-
-  defp format_datetime(nil), do: nil
-
-  defp format_datetime(naive_datetime) when is_struct(naive_datetime, NaiveDateTime) do
-    naive_datetime
-    |> DateTime.from_naive!("Etc/UTC")
-    |> DateTime.to_iso8601()
   end
 end

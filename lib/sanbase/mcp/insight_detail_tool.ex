@@ -35,12 +35,10 @@ defmodule Sanbase.MCP.InsightDetailTool do
   end
 
   defp parse_insight_ids(insight_ids) when is_list(insight_ids) do
-    try do
-      parsed = Enum.map(insight_ids, &ensure_integer/1)
-      {:ok, parsed}
-    rescue
-      _ -> {:error, "Invalid insight IDs format. Expected array of integers."}
-    end
+    parsed = Enum.map(insight_ids, &ensure_integer/1)
+    {:ok, parsed}
+  rescue
+    _ -> {:error, "Invalid insight IDs format. Expected array of integers."}
   end
 
   defp parse_insight_ids(insight_ids) when is_binary(insight_ids) do
@@ -65,19 +63,13 @@ defmodule Sanbase.MCP.InsightDetailTool do
     do: raise(ArgumentError, "Cannot convert #{inspect(value)} to integer")
 
   defp fetch_insight_details(insight_ids) do
-    try do
-      case Post.by_ids(insight_ids, preload: [:tags, :user, :metrics]) do
-        {:ok, posts} ->
-          insights = Enum.map(posts, &format_insight_detail/1)
-          {:ok, insights}
+    {:ok, posts} = Post.by_ids(insight_ids, preload: [:tags, :user, :metrics])
 
-        {:error, reason} ->
-          {:error, "Failed to fetch insights: #{inspect(reason)}"}
-      end
-    rescue
-      error ->
-        {:error, "Failed to fetch insight details: #{inspect(error)}"}
-    end
+    insights = Enum.map(posts, &format_insight_detail/1)
+    {:ok, insights}
+  rescue
+    error ->
+      {:error, "Failed to fetch insight details: #{inspect(error)}"}
   end
 
   defp format_insight_detail(post) do
@@ -86,26 +78,14 @@ defmodule Sanbase.MCP.InsightDetailTool do
       title: post.title,
       short_desc: post.short_desc,
       text: post.text,
-      published_at: format_datetime(post.published_at),
+      published_at: Sanbase.DateTimeUtils.to_iso8601(post.published_at),
       author: %{
-        username: post.user.username || "Anonymous"
+        username: post.user.username || "Unnamed"
       },
       tags: Enum.map(post.tags, & &1.name),
       metrics: Enum.map(post.metrics, & &1.name),
       prediction: post.prediction,
       link: SanbaseWeb.Endpoint.insight_url(post.id)
     }
-  end
-
-  defp format_datetime(nil), do: nil
-
-  defp format_datetime(naive_datetime) when is_struct(naive_datetime, NaiveDateTime) do
-    naive_datetime
-    |> DateTime.from_naive!("Etc/UTC")
-    |> DateTime.to_iso8601()
-  end
-
-  defp format_datetime(datetime) when is_struct(datetime, DateTime) do
-    DateTime.to_iso8601(datetime)
   end
 end

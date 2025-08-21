@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.1 (Homebrew)
--- Dumped by pg_dump version 15.1 (Homebrew)
+-- Dumped from database version 15.10 (Homebrew)
+-- Dumped by pg_dump version 15.10 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -1572,38 +1572,6 @@ ALTER SEQUENCE public.finished_oban_jobs_id_seq OWNED BY public.finished_oban_jo
 
 
 --
--- Name: free_form_json_storage; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.free_form_json_storage (
-    id bigint NOT NULL,
-    key character varying(255),
-    value jsonb DEFAULT '{}'::jsonb,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
-);
-
-
---
--- Name: free_form_json_storage_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.free_form_json_storage_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: free_form_json_storage_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.free_form_json_storage_id_seq OWNED BY public.free_form_json_storage.id;
-
-
---
 -- Name: geoip_data; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2202,9 +2170,9 @@ CREATE TABLE public.metric_registry (
     deprecation_note text,
     inserted_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
-    status character varying(255) DEFAULT 'released'::character varying NOT NULL,
     is_verified boolean DEFAULT true NOT NULL,
     sync_status character varying(255) DEFAULT 'synced'::character varying NOT NULL,
+    status character varying(255) DEFAULT 'released'::character varying NOT NULL,
     last_sync_datetime timestamp(0) without time zone,
     stabilization_period character varying(255),
     can_mutate boolean
@@ -5469,13 +5437,6 @@ ALTER TABLE ONLY public.finished_oban_jobs ALTER COLUMN id SET DEFAULT nextval('
 
 
 --
--- Name: free_form_json_storage id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.free_form_json_storage ALTER COLUMN id SET DEFAULT nextval('public.free_form_json_storage_id_seq'::regclass);
-
-
---
 -- Name: geoip_data id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6442,14 +6403,6 @@ ALTER TABLE ONLY public.featured_items
 
 ALTER TABLE ONLY public.finished_oban_jobs
     ADD CONSTRAINT finished_oban_jobs_pkey PRIMARY KEY (id);
-
-
---
--- Name: free_form_json_storage free_form_json_storage_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.free_form_json_storage
-    ADD CONSTRAINT free_form_json_storage_pkey PRIMARY KEY (id);
 
 
 --
@@ -7760,13 +7713,6 @@ CREATE INDEX finished_oban_jobs_inserted_at_index ON public.finished_oban_jobs U
 --
 
 CREATE INDEX finished_oban_jobs_queue_index ON public.finished_oban_jobs USING btree (queue);
-
-
---
--- Name: free_form_json_storage_key_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX free_form_json_storage_key_index ON public.free_form_json_storage USING btree (key);
 
 
 --
@@ -10508,3 +10454,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250723114539);
 INSERT INTO public."schema_migrations" (version) VALUES (20250724112853);
 INSERT INTO public."schema_migrations" (version) VALUES (20250805131523);
 INSERT INTO public."schema_migrations" (version) VALUES (20250806103908);
+INSERT INTO public."schema_migrations" (version) VALUES (20250821111317);

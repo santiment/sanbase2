@@ -56,6 +56,10 @@ defmodule Sanbase.MCP.InsightDiscoveryTool do
   end
 
   defp fetch_insights(from_datetime, to_datetime) do
+    # NOTE: This fetches both public and paywalled insights.
+    # Leaving a note so we can decide later if we want to check the user's
+    # subscription when fetching insights, so we don't leak paywalled insights
+    # via the MCP
     insights =
       Post.public_insights(
         from: from_datetime,

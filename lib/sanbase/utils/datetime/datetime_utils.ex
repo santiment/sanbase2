@@ -37,15 +37,19 @@ defmodule Sanbase.DateTimeUtils do
     |> Timex.format!("{0D} {Mshort} {YYYY} {h24}:{m} UTC")
   end
 
-  defp to_iso8601(nil), do: nil
+  @doc ~s"""
+  Formats datetimes to ISO 8601, i.e. 2025-08-22T06:57:50Z
+  If the datetime is NaiveDateTime, it is converted to DateTime in UTC.
+  """
+  def to_iso8601(nil), do: nil
 
-  defp to_iso8601(%NaiveDateTime{} = naive_datetime) do
+  def to_iso8601(%NaiveDateTime{} = naive_datetime) do
     naive_datetime
     |> DateTime.from_naive!("Etc/UTC")
     |> DateTime.to_iso8601()
   end
 
-  defp to_iso8601(%DateTime{} = datetime) do
+  def to_iso8601(%DateTime{} = datetime) do
     DateTime.to_iso8601(datetime)
   end
 

@@ -1,4 +1,4 @@
-defmodule Sanbase.MCP.InsightDetailTool do
+defmodule Sanbase.MCP.FetchInsightsTool do
   @moduledoc "Fetch full text content for specific santiment crypto insights IDs"
 
   use Hermes.Server.Component, type: :tool

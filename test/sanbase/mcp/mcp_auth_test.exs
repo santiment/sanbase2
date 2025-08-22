@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.MCPTest do
+defmodule SanbaseWeb.Graphql.MCPAuthTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory

@@ -18,7 +18,7 @@ defmodule Sanbase.MCP.Server do
 
   # Register our insights tools
   component(Sanbase.MCP.InsightDiscoveryTool)
-  component(Sanbase.MCP.InsightDetailTool)
+  component(Sanbase.MCP.FetchInsightsTool)
 
   if Application.compile_env(:sanbase, :env) in [:test, :dev] do
     IO.puts("Defining the extra MCP Server tools used in dev and test")

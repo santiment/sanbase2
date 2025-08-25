@@ -2707,7 +2707,6 @@ CREATE TABLE public.posts (
     short_desc text,
     text text,
     ready_state character varying(255) DEFAULT 'draft'::character varying,
-    discourse_topic_url character varying(255),
     published_at timestamp without time zone,
     is_pulse boolean DEFAULT false,
     is_paywall_required boolean DEFAULT false,
@@ -10455,3 +10454,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250724112853);
 INSERT INTO public."schema_migrations" (version) VALUES (20250805131523);
 INSERT INTO public."schema_migrations" (version) VALUES (20250806103908);
 INSERT INTO public."schema_migrations" (version) VALUES (20250821111317);
+INSERT INTO public."schema_migrations" (version) VALUES (20250825074648);

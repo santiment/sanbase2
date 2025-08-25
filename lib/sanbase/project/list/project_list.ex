@@ -700,7 +700,7 @@ defmodule Sanbase.Project.List do
     case Keyword.get(opts, :min_volume) do
       nil ->
         from(p in query,
-          inner_join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
+          left_join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
           order_by: [latest_cmc.rank, p.slug]
         )
 

@@ -73,22 +73,22 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePoint do
         |> Map.new(fn
           {:marketcap_usd, value}
           when num_gte(value, marketcap_limit) or num_lt(value, 0) ->
-            Logger.info("PricePoint sanitizing #{price_point.slug} Marketcap USD: #{value}")
+            Logger.info("PricePoint sanitizing #{slug} Marketcap USD: #{value}")
             {:marketcap_usd, nil}
 
           {:volume_usd, value}
           when num_gte(value, volume_limit) ->
-            Logger.info("PricePoint sanitizing #{price_point.slug} Volume USD: #{value}")
+            Logger.info("PricePoint sanitizing #{slug} Volume USD: #{value}")
 
             {:volume_usd, nil}
 
           {:price_usd, value} when num_gte(value, @price_usd_limit) ->
-            Logger.info("PricePoint sanitizing #{price_point.slug} Price USD: #{value}")
+            Logger.info("PricePoint sanitizing #{slug} Price USD: #{value}")
 
             {:price_usd, nil}
 
           {:price_btc, value} when num_gte(value, @price_btc_limit) ->
-            Logger.info("PricePoint sanitizing #{price_point.slug} Price BTC: #{value}")
+            Logger.info("PricePoint sanitizing #{slug} Price BTC: #{value}")
             {:price_btc, nil}
 
           {k, v} ->

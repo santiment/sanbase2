@@ -81,70 +81,79 @@ defmodule Sanbase.MCP.MetricsAndAssetsDiscoveryTool do
   defp do_execute(params, frame) do
     response_data =
       case {params[:slug], params[:metric]} do
-        {nil, nil} ->
-          assets = DataCatalog.get_all_projects() |> dbg()
-          metrics = DataCatalog.get_all_metrics() |> dbg()
-          # Return everything
-          %{
-            metrics: metrics,
-            assets: assets,
-            metrics_count: length(metrics),
-            assets_count: length(assets),
-            description: "All available metrics and slugs"
-          }
-
-        {slug, nil} ->
-          # Return metrics for specific slug
-          case DataCatalog.get_available_metrics_for_slug(slug) do
-            {:ok, metrics} ->
-              %{
-                slug: slug,
-                metrics: metrics,
-                metrics_count: length(metrics),
-                description: "All metrics available for #{slug}"
-              }
-
-            {:error, reason} ->
-              %{
-                error: reason,
-                available_assets: DataCatalog.get_all_projects()
-              }
-          end
-
-        {nil, metric} ->
-          # Return slugs for specific metric
-          case DataCatalog.get_available_projects_for_metric(metric) do
-            {:ok, assets} ->
-              %{
-                metric: metric,
-                assets: assets,
-                assets_count: length(assets),
-                description: "All slugs available for #{metric} metric"
-              }
-
-            {:error, reason} ->
-              %{
-                error: reason,
-                available_metrics: DataCatalog.get_metric_names()
-              }
-          end
-
-        {slug, metric} ->
-          # Validate specific combination
-          case DataCatalog.validate_metric_slug_combination(metric, slug) do
-            {:ok, metric_info} ->
-              %{
-                slug: slug,
-                metric: metric_info,
-                available: true,
-                description: "#{metric} is available for #{slug}"
-              }
-
-            {:error, reason} ->
-              %{error: reason}
-          end
+        {nil, nil} -> get_data(nil, nil)
+        {slug, nil} when is_binary(slug) -> get_data(slug, _metric = nil)
+        {nil, metric} when is_binary(metric) -> get_data(_slug = nil, metric)
+        {slug, metric} when is_binary(slug) and is_binary(metric) -> get_data(slug, metric)
       end
 
     {:reply, Response.json(Response.tool(), response_data), frame}
+  end
+
+  defp get_data(nil = _slug, nil = _metric) do
+    assets = DataCatalog.get_all_projects()
+    metrics = DataCatalog.get_all_metrics()
+    # Return everything
+    %{
+      metrics: metrics,
+      assets: assets,
+      metrics_count: length(metrics),
+      assets_count: length(assets),
+      description: "All available metrics and slugs"
+    }
+  end
+
+  defp get_data(slug, nil = _metric) do
+    # Return metrics for specific slug
+    case DataCatalog.get_available_metrics_for_slug(slug) do
+      {:ok, metrics} ->
+        %{
+          slug: slug,
+          metrics: metrics,
+          metrics_count: length(metrics),
+          description: "All metrics available for #{slug}"
+        }
+
+      {:error, reason} ->
+        %{
+          error: reason,
+          available_assets: DataCatalog.get_all_projects()
+        }
+    end
+  end
+
+  defp get_data(nil = _slug, metric) do
+    # Return slugs for specific metric
+    case DataCatalog.get_available_projects_for_metric(metric) do
+      {:ok, assets} ->
+        %{
+          metric: metric,
+          assets: assets,
+          assets_count: length(assets),
+          description: "All slugs available for #{metric} metric"
+        }
+
+      {:error, reason} ->
+        %{
+          error: reason,
+          available_metrics: DataCatalog.get_metric_names()
+        }
+    end
+  end
+
+  defp get_data(slug, metric) do
+    # Validate specific combination
+    case DataCatalog.validate_metric_slug_combination(metric, slug) do
+      {:ok, metric_info} ->
+        %{
+          slug: slug,
+          metric: metric_info,
+          available: true,
+          description: "#{metric} is available for #{slug}"
+        }
+
+      {:error, reason} ->
+        %{error: reason}
+    end
   end
 end

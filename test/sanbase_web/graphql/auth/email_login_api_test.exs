@@ -5,6 +5,7 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
   import Mox
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
+  import Ecto.Query
 
   alias Sanbase.Accounts.User
   alias Sanbase.Repo
@@ -314,24 +315,21 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       assert msg =~ "Invalid success_redirect_url: https://example.com/success"
     end
 
-    test "succeeds when different users login from the same ip not more than 20 times", context do
+    test "succeeds when different users login from the same ip within burst limits", context do
+      config = Sanbase.Accounts.EmailLoginAttempt.config()
       user1 = insert(:user, email: "john@example.com")
       user2 = insert(:user, email: "jane@example.com")
-      user3 = insert(:user, email: "jake@example.com")
-      user4 = insert(:user, email: "joel@example.com")
 
-      for _ <- 1..5,
+      # Create attempts just under the IP burst limit
+      attempts_per_user = div(config.allowed_ip_burst_attempts - 1, 2)
+
+      for _ <- 1..attempts_per_user,
           do: insert(:email_login_attempt, user: user1, ip_address: "127.0.0.1")
 
-      for _ <- 1..5,
+      for _ <- 1..attempts_per_user,
           do: insert(:email_login_attempt, user: user2, ip_address: "127.0.0.1")
 
-      for _ <- 1..5,
-          do: insert(:email_login_attempt, user: user3, ip_address: "127.0.0.1")
-
-      for _ <- 1..5,
-          do: insert(:email_login_attempt, user: user4, ip_address: "127.0.0.1")
-
+      # Total attempts still under the burst limit
       result =
         context.conn
         |> Plug.Conn.put_req_header("origin", "https://app.santiment.net")
@@ -341,11 +339,13 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       assert result["success"]
     end
 
-    test "fails if the user has attempted to login more than 5 times having the same email",
+    test "fails if the user has attempted to login more than user burst limit having the same email",
          context do
+      config = Sanbase.Accounts.EmailLoginAttempt.config()
       user = insert(:user, email: "john@example.com")
 
-      for _ <- 1..6,
+      # Exceed user burst limit
+      for _ <- 1..(config.allowed_user_burst_attempts + 1),
           # As the login attemt in this test is made on localhost, the below ip should not match
           do: insert(:email_login_attempt, user: user, ip_address: "157.7.7.7")
 
@@ -360,15 +360,19 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       assert msg =~ "Too many login attempts"
     end
 
-    test "fails if the user has attempted to login more than 20 having the same ip",
+    test "fails if the user has attempted to login more than IP burst limit having the same ip",
          context do
+      config = Sanbase.Accounts.EmailLoginAttempt.config()
       user1 = insert(:user, email: "john@example.com")
       user2 = insert(:user, email: "jane@example.com")
 
-      for _ <- 1..11,
+      # Exceed IP burst limit by creating one more attempt than allowed
+      attempts_per_user = div(config.allowed_ip_burst_attempts + 1, 2)
+
+      for _ <- 1..attempts_per_user,
           do: insert(:email_login_attempt, user: user1, ip_address: "127.0.0.1")
 
-      for _ <- 1..11,
+      for _ <- 1..(config.allowed_ip_burst_attempts + 1 - attempts_per_user),
           do: insert(:email_login_attempt, user: user2, ip_address: "127.0.0.1")
 
       msg =
@@ -380,6 +384,73 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
         |> Map.get("message")
 
       assert msg =~ "Too many login attempts"
+    end
+
+    test "fails if IP exceeds burst limit before user creation (prevents user pollution)",
+         context do
+      config = Sanbase.Accounts.EmailLoginAttempt.config()
+      test_ip = "127.0.0.1"
+
+      for i <- 1..(config.allowed_ip_burst_attempts + 1) do
+        existing_user = insert(:user, email: "user#{i}@example.com")
+        {:ok, _} = Sanbase.Accounts.AccessAttempt.create("email_login", existing_user, test_ip)
+      end
+
+      # Verify we've exceeded the IP burst limit
+      ip_check_result = Sanbase.Accounts.EmailLoginAttempt.check_ip_attempt_limit(test_ip)
+      assert ip_check_result == {:error, :too_many_burst_attempts}
+
+      # Generate a unique email to avoid conflicts with other tests
+      unique_email = "newuser#{System.unique_integer([:positive])}@example.com"
+
+      # Now try to send email login for a completely new email - this should be blocked by IP rate limiting
+      response =
+        context.conn
+        |> Plug.Conn.put_req_header("origin", "https://app.santiment.net")
+        |> email_login(%{email: unique_email})
+
+      assert response["errors"] != nil
+
+      assert Enum.any?(response["errors"], fn error ->
+               String.contains?(error["message"], "Too many login attempts")
+             end)
+
+      # Verify the user doesn't exist in the database
+      assert {:error, _} = Sanbase.Accounts.User.by_email(unique_email)
+    end
+
+    test "fails if IP exceeds daily limit before user creation", context do
+      config = Sanbase.Accounts.EmailLoginAttempt.config()
+      test_ip = "127.0.0.1"
+
+      # Create attempts from past (to avoid burst limit interference) that exceed daily limit
+      past_time = DateTime.utc_now() |> DateTime.add(-10, :minute)
+
+      for i <- 1..(config.allowed_ip_daily_attempts + 1) do
+        existing_user = insert(:user, email: "dailyuser#{i}@example.com")
+
+        {:ok, attempt} =
+          Sanbase.Accounts.AccessAttempt.create("email_login", existing_user, test_ip)
+
+        from(a in Sanbase.Accounts.AccessAttempt, where: a.id == ^attempt.id)
+        |> Sanbase.Repo.update_all(set: [inserted_at: past_time])
+      end
+
+      user_count_before = Sanbase.Repo.aggregate(Sanbase.Accounts.User, :count, :id)
+
+      response =
+        context.conn
+        |> Plug.Conn.put_req_header("origin", "https://app.santiment.net")
+        |> Plug.Conn.put_req_header("x-forwarded-for", test_ip)
+        |> email_login(%{email: "newdailyuser@example.com"})
+
+      msg = response["errors"] |> hd() |> Map.get("message")
+
+      user_count_after = Sanbase.Repo.aggregate(Sanbase.Accounts.User, :count, :id)
+
+      assert msg != nil and msg =~ "Too many login attempts"
+      assert user_count_before == user_count_after
+      assert {:error, _} = Sanbase.Accounts.User.by_email("newdailyuser@example.com")
     end
   end
 

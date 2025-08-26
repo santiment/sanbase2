@@ -178,13 +178,15 @@ defmodule Sanbase.MCP.DataCatalog do
   @doc "Get available metrics for a specific slug"
   def get_available_metrics_for_slug(slug) do
     if valid_slug?(slug) do
-      {:ok, all_metrics} = Sanbase.Metric.available_metrics_for_selector(%{slug: slug})
+      metrics_intersection = fn metrics ->
+        MapSet.intersection(MapSet.new(metrics), MapSet.new(get_metric_names()))
+        |> Enum.to_list()
+      end
 
-      # Get the intersection of the exposed metrics in the tool and the metrics supported
-      # by the asset
-      {:ok,
-       MapSet.intersection(MapSet.new(all_metrics), MapSet.new(get_metric_names()))
-       |> Enum.to_list()}
+      case Sanbase.Metric.available_metrics_for_selector(%{slug: slug}) do
+        {:ok, metrics} -> {:ok, metrics_intersection.(metrics)}
+        {:nocache, {:ok, metrics}} -> {:ok, metrics_intersection.(metrics)}
+      end
     else
       {:error, "Slug '#{slug}' not supported or mistyped."}
     end
@@ -193,9 +195,17 @@ defmodule Sanbase.MCP.DataCatalog do
   @doc "Get available slugs for a specific metric"
   def get_available_slugs_for_metric(metric) do
     if metric in get_metric_names() do
-      {:ok, Sanbase.Metric.available_slugs(metric)}
+      Sanbase.Metric.available_slugs(metric)
     else
       {:error, "Metric '#{metric}' not supported or mistyped."}
+    end
+  end
+
+  def get_available_projects_for_metric(metric) do
+    with projects when is_list(projects) <- get_all_projects(),
+         {:ok, slugs} <- get_available_slugs_for_metric(metric) do
+      slugs_mapset = MapSet.new(slugs)
+      {:ok, Enum.filter(projects, fn p -> p.slug in slugs_mapset end)}
     end
   end
 
@@ -209,12 +219,10 @@ defmodule Sanbase.MCP.DataCatalog do
   def validate_metric_slug_combination(metric, slug) do
     cond do
       not valid_slug?(slug) ->
-        {:error,
-         "Slug '#{slug}' not found. Available slugs: #{Enum.join(@available_slugs, ", ")}"}
+        {:error, "Slug '#{slug}' mistyped or not supported."}
 
       not valid_metric?(metric) ->
-        {:error,
-         "Metric '#{metric}' not found. Available metrics: #{Enum.join(get_metric_names(), ", ")}"}
+        {:error, "Metric '#{metric}' mistyped or not supported."}
 
       true ->
         metric_info = Enum.find(@available_metrics, &(&1.name == metric))

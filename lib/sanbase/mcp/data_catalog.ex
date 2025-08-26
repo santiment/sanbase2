@@ -122,7 +122,7 @@ defmodule Sanbase.MCP.DataCatalog do
 
   @spec get_all_projects() :: list(map())
   def get_all_projects() do
-    cache_key = {__MODULE__, :available_slugs} |> Sanbase.Cache.hash()
+    cache_key = {__MODULE__, :get_all_projects} |> Sanbase.Cache.hash()
 
     {:ok, projects_data} =
       Sanbase.Cache.get_or_store(cache_key, fn ->

@@ -31,20 +31,118 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
       insert(:project,
         ticker: "BTC",
         slug: "bitcoin",
-        name: "Bitcoin"
+        name: "Bitcoin",
+        description: "Bitcoin Description"
       )
 
     p2 =
       insert(:project,
         ticker: "ETH",
         slug: "ethereum",
-        name: "Ethereum"
+        name: "Ethereum",
+        description: "Ethereum Description"
       )
 
     %{user: user, apikey: apikey, p1: p1, p2: p2}
   end
 
-  test "assets and metrics discovery tool", _context do
+  test "assets and metrics discovery tool - available metrics for slug", _context do
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.Metric.available_metrics_for_selector/1,
+      {:ok, ["price_usd", "daily_active_addresses"]}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      result =
+        try_few_times(
+          fn ->
+            Sanbase.MCP.Client.call_tool("metrics_and_assets_discovery_tool", %{slug: "bitcoin"})
+          end,
+          attempts: 3,
+          sleep: 250
+        )
+
+      assert {:ok,
+              %Hermes.MCP.Response{
+                result: %{
+                  "content" => [
+                    %{
+                      "text" => json_text,
+                      "type" => "text"
+                    }
+                  ],
+                  "isError" => false
+                },
+                id: "req_" <> _,
+                method: "tools/call",
+                is_error: false
+              }} = result
+
+      assert Jason.decode!(json_text) ==
+               %{
+                 "description" => "All metrics available for bitcoin",
+                 "metrics" => ["daily_active_addresses", "price_usd"],
+                 "metrics_count" => 2,
+                 "slug" => "bitcoin"
+               }
+    end)
+  end
+
+  test "assets and metrics discovery tool - available slugs for metric", _context do
+    Sanbase.Mock.prepare_mock2(&Sanbase.Metric.available_slugs/1, {:ok, ["bitcoin", "ethereum"]})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      result =
+        try_few_times(
+          fn ->
+            Sanbase.MCP.Client.call_tool("metrics_and_assets_discovery_tool", %{
+              metric: "daily_active_addresses"
+            })
+          end,
+          attempts: 3,
+          sleep: 250
+        )
+
+      assert {:ok,
+              %Hermes.MCP.Response{
+                result: %{
+                  "content" => [
+                    %{
+                      "text" => json_text,
+                      "type" => "text"
+                    }
+                  ],
+                  "isError" => false
+                },
+                id: "req_" <> _,
+                method: "tools/call",
+                is_error: false
+              }} = result
+
+      assert Jason.decode!(json_text) == %{
+               "assets" => [
+                 %{
+                   "description" => "Bitcoin Description",
+                   "name" => "Bitcoin",
+                   "slug" => "bitcoin",
+                   "ticker" => "BTC"
+                 },
+                 %{
+                   "description" => "Ethereum Description",
+                   "name" => "Ethereum",
+                   "slug" => "ethereum",
+                   "ticker" => "ETH"
+                 }
+               ],
+               "assets_count" => 2,
+               "description" => "All slugs available for daily_active_addresses metric",
+               "metric" => "daily_active_addresses"
+             }
+    end)
+  end
+
+  test "assets and metrics discovery tool - full list", _context do
+    # No need to mock as the assets are fetched from the DB
+    # and the metric list is hardcoded. No checks for available metrics per asset are made,
+    # or vice versa
     result =
       try_few_times(
         fn -> Sanbase.MCP.Client.call_tool("metrics_and_assets_discovery_tool", %{}) end,
@@ -73,13 +171,13 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
     assert %{
              "assets" => [
                %{
-                 "description" => nil,
+                 "description" => "Bitcoin Description",
                  "name" => "Bitcoin",
                  "slug" => "bitcoin",
                  "ticker" => "BTC"
                },
                %{
-                 "description" => nil,
+                 "description" => "Ethereum Description",
                  "name" => "Ethereum",
                  "slug" => "ethereum",
                  "ticker" => "ETH"
@@ -209,5 +307,125 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
              ],
              "metrics_count" => 23
            } = result
+  end
+
+  test "fetch metric with wrong asset name" do
+    result =
+      try_few_times(
+        fn ->
+          Sanbase.MCP.Client.call_tool("fetch_metric_data_tool", %{
+            slug: "not_supported_slug",
+            metric: "price_usd"
+          })
+        end,
+        attempts: 3,
+        sleep: 250
+      )
+
+    assert {
+             :ok,
+             %Hermes.MCP.Response{
+               id: _,
+               is_error: true,
+               method: "tools/call",
+               result: %{
+                 "content" => [
+                   %{
+                     "text" => "Slug 'not_supported_slug' mistyped or not supported.",
+                     "type" => "text"
+                   }
+                 ],
+                 "isError" => true
+               }
+             }
+           } = result
+  end
+
+  test "fetch metric with wrong metric name", context do
+    result =
+      try_few_times(
+        fn ->
+          Sanbase.MCP.Client.call_tool("fetch_metric_data_tool", %{
+            slug: context.p1.slug,
+            metric: "not_supported_metric"
+          })
+        end,
+        attempts: 3,
+        sleep: 250
+      )
+
+    assert {
+             :ok,
+             %Hermes.MCP.Response{
+               id: _,
+               is_error: true,
+               method: "tools/call",
+               result: %{
+                 "content" => [
+                   %{
+                     "text" => "Metric 'not_supported_metric' mistyped or not supported.",
+                     "type" => "text"
+                   }
+                 ],
+                 "isError" => true
+               }
+             }
+           } = result
+  end
+
+  test "fetch metric - success", context do
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.Metric.timeseries_data/5,
+      {:ok,
+       [
+         %{datetime: ~U[2020-01-01 00:00:00Z], value: 1.5},
+         %{datetime: ~U[2020-01-02 00:00:00Z], value: 2.2},
+         %{datetime: ~U[2020-01-03 00:00:00Z], value: 2.8},
+         %{datetime: ~U[2020-01-04 00:00:00Z], value: 5.8}
+       ]}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      result =
+        try_few_times(
+          fn ->
+            Sanbase.MCP.Client.call_tool("fetch_metric_data_tool", %{
+              slug: context.p1.slug,
+              metric: "daily_active_addresses"
+            })
+          end,
+          attempts: 3,
+          sleep: 250
+        )
+
+      assert {:ok,
+              %Hermes.MCP.Response{
+                id: _,
+                is_error: false,
+                method: "tools/call",
+                result: %{
+                  "content" => [
+                    %{
+                      "text" => json_text,
+                      "type" => "text"
+                    }
+                  ],
+                  "isError" => false
+                }
+              }} = result
+
+      assert %{
+               "data" => [
+                 %{"datetime" => "2020-01-01T00:00:00Z", "value" => 1.5},
+                 %{"datetime" => "2020-01-02T00:00:00Z", "value" => 2.2},
+                 %{"datetime" => "2020-01-03T00:00:00Z", "value" => 2.8},
+                 %{"datetime" => "2020-01-04T00:00:00Z", "value" => 5.8}
+               ],
+               "data_points" => 4,
+               "interval" => "1d",
+               "metric" => "daily_active_addresses",
+               "period" => "last_30_days",
+               "slug" => "bitcoin"
+             } == Jason.decode!(json_text)
+    end)
   end
 end

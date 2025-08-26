@@ -46,8 +46,7 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
     if DataCatalog.valid_metric?(metric) do
       {:ok, metric}
     else
-      {:error,
-       "Invalid metric: #{metric}. Available metrics: #{Enum.join(DataCatalog.get_metric_names(), ", ")}"}
+      {:error, "Metric '#{metric}' mistyped or not supported."}
     end
   end
 
@@ -55,8 +54,7 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
     if DataCatalog.valid_slug?(slug) do
       {:ok, slug}
     else
-      {:error,
-       "Invalid slug: #{slug}. Available slugs: #{Enum.join(DataCatalog.get_all_slugs(), ", ")}"}
+      {:error, "Slug '#{slug}' mistyped or not supported."}
     end
   end
 
@@ -81,7 +79,7 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
         {:ok, formatted_data}
 
       {:error, reason} ->
-        {:error, "Failed to fetch data: #{inspect(reason)}"}
+        {:error, "Failed to fetch #{metric} for #{slug}. Reason: #{reason}"}
 
       _ ->
         {:error, "Unexpected response from metric API"}

@@ -699,9 +699,10 @@ defmodule Sanbase.Project.List do
   defp order_by_rank(query, opts) do
     case Keyword.get(opts, :min_volume) do
       nil ->
+        # Put all the assets without CMC rank at the end, ordered alphabetically
         from(p in query,
           left_join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
-          order_by: [latest_cmc.rank, p.slug]
+          order_by: [asc_nulls_last: latest_cmc.rank, asc: p.slug]
         )
 
       _ ->

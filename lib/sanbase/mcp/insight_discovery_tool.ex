@@ -1,9 +1,9 @@
 defmodule Sanbase.MCP.InsightDiscoveryTool do
   @moduledoc "Discovery tool for santiment crypto insights with basic info (id, title, tags, link) in time period"
 
-  use Hermes.Server.Component, type: :tool
+  use Anubis.Server.Component, type: :tool
 
-  alias Hermes.Server.Response
+  alias Anubis.Server.Response
   alias Sanbase.Insight.Post
 
   schema do

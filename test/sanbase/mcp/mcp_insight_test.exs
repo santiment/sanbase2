@@ -68,7 +68,7 @@ defmodule SanbaseWeb.Graphql.MCPInsightTest do
       )
 
     assert {:ok,
-            %Hermes.MCP.Response{
+            %Anubis.MCP.Response{
               result: %{
                 "content" => [
                   %{
@@ -139,7 +139,7 @@ defmodule SanbaseWeb.Graphql.MCPInsightTest do
     # Check that both providing a list and a JSON list is understood
     assert result.result == result2.result
 
-    assert %Hermes.MCP.Response{
+    assert %Anubis.MCP.Response{
              result: %{
                "content" => [
                  %{

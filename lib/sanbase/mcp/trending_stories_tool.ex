@@ -28,9 +28,9 @@ defmodule Sanbase.MCP.TrendingStoriesTool do
   second part is the slug in Sanbase.
   """
 
-  use Hermes.Server.Component, type: :tool
+  use Anubis.Server.Component, type: :tool
 
-  alias Hermes.Server.Response
+  alias Anubis.Server.Response
 
   schema do
     field(:time_period, :string,

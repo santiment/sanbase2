@@ -32,8 +32,8 @@ defmodule SanbaseWeb.Graphql.MCPAuthTest do
       )
 
     # The MCP client sends a request to fetch the server capabilities.
-    # After the server response is processed, Hermes calls
-    # Hermes.Client.State.update_server_info/3 to set the server capabilities.
+    # After the server response is processed, Anubis calls
+    # Anubis.Client.State.update_server_info/3 to set the server capabilities.
     # The sleep is here so we wait for the response, otherwise the call_tool/2
     # is called while `server_capabilities` are `nil` and we get the error
     # `Server capabilities not set`
@@ -42,7 +42,7 @@ defmodule SanbaseWeb.Graphql.MCPAuthTest do
     assert %{"tools" => _} = Sanbase.MCP.Server.server_capabilities()
     assert client |> Process.alive?() == true
     assert Sanbase.MCP.Client |> Process.whereis() |> Process.alive?() == true
-    assert Hermes.Server.Registry |> Process.whereis() |> Process.alive?() == true
+    assert Anubis.Server.Registry |> Process.whereis() |> Process.alive?() == true
 
     result =
       try_few_times(fn -> Sanbase.MCP.Client.call_tool("check_authentication", %{}) end,
@@ -51,7 +51,7 @@ defmodule SanbaseWeb.Graphql.MCPAuthTest do
       )
 
     assert {:ok,
-            %Hermes.MCP.Response{
+            %Anubis.MCP.Response{
               result: %{
                 "content" => [
                   %{

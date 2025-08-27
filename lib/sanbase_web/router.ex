@@ -48,7 +48,7 @@ defmodule SanbaseWeb.Router do
     plug(:put_layout, html: {SanbaseWeb.Layouts, :admin})
   end
 
-  forward "/mcp", Hermes.Server.Transport.StreamableHTTP.Plug, server: Sanbase.MCP.Server
+  forward "/mcp", Anubis.Server.Transport.StreamableHTTP.Plug, server: Sanbase.MCP.Server
 
   scope "/auth", SanbaseWeb do
     pipe_through(:browser)

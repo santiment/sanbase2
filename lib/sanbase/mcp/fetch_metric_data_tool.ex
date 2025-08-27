@@ -1,9 +1,9 @@
 defmodule Sanbase.MCP.FetchMetricDataTool do
   @moduledoc "Fetch metric data for the last 30 days with daily resolution"
 
-  use Hermes.Server.Component, type: :tool
+  use Anubis.Server.Component, type: :tool
 
-  alias Hermes.Server.Response
+  alias Anubis.Server.Response
   alias Sanbase.MCP.DataCatalog
 
   schema do

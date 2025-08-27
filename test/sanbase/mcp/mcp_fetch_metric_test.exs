@@ -188,125 +188,217 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
              "metrics" => [
                %{
                  "description" => "Price in USD for cryptocurrencies",
+                 "documentation_urls" => [
+                   %{"url" => "https://academy.santiment.net/metrics/price"}
+                 ],
                  "name" => "price_usd",
                  "unit" => "USD"
                },
                %{
                  "description" => "Total market capitalization in USD",
+                 "documentation_urls" => [
+                   %{"url" => "https://academy.santiment.net/metrics/marketcap"}
+                 ],
                  "name" => "marketcap_usd",
                  "unit" => "USD"
                },
                %{
                  "description" => "Trading volume in USD",
+                 "documentation_urls" => [
+                   %{"url" => "https://academy.santiment.net/metrics/trading-volume"}
+                 ],
                  "name" => "volume_usd",
                  "unit" => "USD"
                },
                %{
                  "description" => "Asset price denominated in BTC",
+                 "documentation_urls" => [
+                   %{"url" => "https://academy.santiment.net/metrics/price"}
+                 ],
                  "name" => "price_btc",
                  "unit" => "BTC"
                },
                %{
                  "description" => "Realized price volatility over 1 day",
+                 "documentation_urls" => [
+                   %{"url" => "https://academy.santiment.net/metrics/price-volatility"}
+                 ],
                  "name" => "price_volatility_1d",
                  "unit" => "percent"
                },
                %{
                  "description" => "Fully diluted valuation in USD",
+                 "documentation_urls" => [
+                   %{
+                     "url" => "https://academy.santiment.net/metrics/fully-diluted-valuation"
+                   }
+                 ],
                  "name" => "fully_diluted_valuation_usd",
                  "unit" => "USD"
                },
                %{
                  "description" =>
                    "Development activity events on tracked repositories (commits, PRs, issues, etc.)",
+                 "documentation_urls" => [
+                   %{
+                     "url" =>
+                       "https://academy.santiment.net/metrics/development-activity/development-activity"
+                   }
+                 ],
                  "name" => "dev_activity",
                  "unit" => "count"
                },
                %{
                  "description" =>
                    "Number of unique developers contributing across tracked repositories",
+                 "documentation_urls" => [
+                   %{
+                     "url" =>
+                       "https://academy.santiment.net/metrics/development-activity/development-activity-contributors-count"
+                   }
+                 ],
                  "name" => "dev_activity_contributors_count",
                  "unit" => "count"
                },
                %{
                  "description" => "GitHub activity events for the project",
+                 "documentation_urls" => [
+                   %{
+                     "url" =>
+                       "https://academy.santiment.net/metrics/development-activity/github-activity"
+                   }
+                 ],
                  "name" => "github_activity",
                  "unit" => "count"
                },
                %{
                  "description" => "Unique GitHub contributors count",
+                 "documentation_urls" => [
+                   %{
+                     "url" =>
+                       "https://academy.santiment.net/metrics/development-activity/github-activity-contributors-count"
+                   }
+                 ],
                  "name" => "github_activity_contributors_count",
                  "unit" => "count"
                },
                %{
                  "description" => "Total social media mentions and discussions",
+                 "documentation_urls" => [
+                   %{"url" => "https://academy.santiment.net/metrics/social-volume"}
+                 ],
                  "name" => "social_volume_total",
                  "unit" => "count"
                },
                %{
                  "description" => "Share of total crypto social mentions attributed to the asset",
+                 "documentation_urls" => [
+                   %{"url" => "https://academy.santiment.net/metrics/social-dominance"}
+                 ],
                  "name" => "social_dominance_total",
                  "unit" => "percent"
                },
                %{
                  "description" => "Overall weighted social sentiment score",
+                 "documentation_urls" => [
+                   %{
+                     "url" =>
+                       "https://academy.santiment.net/metrics/sentiment-metrics/weighted-sentiment-metrics"
+                   }
+                 ],
                  "name" => "sentiment_weighted_total",
                  "unit" => "score"
                },
                %{
                  "description" =>
                    "Number of followers on the project's official Twitter/X account",
+                 "documentation_urls" => [],
                  "name" => "twitter_followers",
                  "unit" => "count"
                },
                %{
                  "description" => "Daily active addresses",
+                 "documentation_urls" => [
+                   %{
+                     "url" => "https://academy.santiment.net/metrics/daily-active-addresses"
+                   }
+                 ],
                  "name" => "daily_active_addresses",
                  "unit" => "count"
                },
                %{
                  "description" => "Number of on-chain transactions",
+                 "documentation_urls" => [
+                   %{"url" => "https://academy.santiment.net/metrics/transaction-count"}
+                 ],
                  "name" => "transactions_count",
                  "unit" => "count"
                },
                %{
                  "description" => "On-chain transaction volume in number of coins/tokens",
+                 "documentation_urls" => [
+                   %{"url" => "https://academy.santiment.net/metrics/transaction-volume"}
+                 ],
                  "name" => "transaction_volume",
                  "unit" => "count"
                },
                %{
                  "description" => "On-chain transaction volume in USD",
+                 "documentation_urls" => [
+                   %{"url" => "https://academy.santiment.net/metrics/transaction-volume"}
+                 ],
                  "name" => "transaction_volume_usd",
                  "unit" => "USD"
                },
                %{
                  "description" => "New addresses that made their first on-chain transaction",
+                 "documentation_urls" => [
+                   %{"url" => "https://academy.santiment.net/metrics/network-growth"}
+                 ],
                  "name" => "network_growth",
                  "unit" => "count"
                },
                %{
                  "description" => "Market Value to Realized Value ratio (USD terms)",
+                 "documentation_urls" => [
+                   %{"url" => "https://academy.santiment.net/metrics/mvrv"}
+                 ],
                  "name" => "mvrv_usd",
                  "unit" => "ratio"
                },
                %{
                  "description" => "Amount of tokens held on exchange addresses",
+                 "documentation_urls" => [
+                   %{
+                     "url" =>
+                       "https://academy.santiment.net/metrics/supply-on-or-outside-exchanges"
+                   }
+                 ],
                  "name" => "supply_on_exchanges",
                  "unit" => "tokens"
                },
                %{
                  "description" => "USD value of tokens deposited to exchange addresses",
+                 "documentation_urls" => [
+                   %{"url" => "https://academy.santiment.net/metrics/exchange-funds-flow"}
+                 ],
                  "name" => "exchange_inflow_usd",
                  "unit" => "USD"
                },
                %{
                  "description" => "USD value of tokens withdrawn from exchange addresses",
+                 "documentation_urls" => [
+                   %{"url" => "https://academy.santiment.net/metrics/exchange-funds-flow"}
+                 ],
                  "name" => "exchange_outflow_usd",
                  "unit" => "USD"
                }
              ],
              "metrics_count" => 23
-           } = result
+           } =
+             result
+
+    result |> dbg()
   end
 
   test "fetch metric with wrong asset name" do

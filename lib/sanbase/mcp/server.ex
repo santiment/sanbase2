@@ -1,7 +1,7 @@
 defmodule Sanbase.MCP.Server do
   @moduledoc "MCP server for Sanbase metrics access"
 
-  use Hermes.Server,
+  use Anubis.Server,
     name: "sanbase-metrics",
     version: "1.0.0",
     capabilities: [:tools]

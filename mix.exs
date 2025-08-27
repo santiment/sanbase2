@@ -156,7 +156,7 @@ defmodule Sanbase.Mixfile do
       {:websockex, "~> 0.4.3"},
       {:mox, "~> 1.2"},
       {:ex_audit, "~> 0.10.0"},
-      {:hermes_mcp, github: "cloudwalk/hermes-mcp"}
+      {:anubis_mcp, github: "zoedsoupe/anubis-mcp"}
     ]
   end
 

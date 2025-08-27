@@ -1,9 +1,9 @@
 defmodule Sanbase.MCP.FetchInsightsTool do
   @moduledoc "Fetch full text content for specific santiment crypto insights IDs"
 
-  use Hermes.Server.Component, type: :tool
+  use Anubis.Server.Component, type: :tool
 
-  alias Hermes.Server.Response
+  alias Anubis.Server.Response
   alias Sanbase.Insight.Post
 
   schema do

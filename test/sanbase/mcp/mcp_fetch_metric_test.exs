@@ -62,7 +62,7 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
         )
 
       assert {:ok,
-              %Hermes.MCP.Response{
+              %Anubis.MCP.Response{
                 result: %{
                   "content" => [
                     %{
@@ -102,7 +102,7 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
         )
 
       assert {:ok,
-              %Hermes.MCP.Response{
+              %Anubis.MCP.Response{
                 result: %{
                   "content" => [
                     %{
@@ -151,7 +151,7 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
       )
 
     assert {:ok,
-            %Hermes.MCP.Response{
+            %Anubis.MCP.Response{
               result: %{
                 "content" => [
                   %{
@@ -324,7 +324,7 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
 
     assert {
              :ok,
-             %Hermes.MCP.Response{
+             %Anubis.MCP.Response{
                id: _,
                is_error: true,
                method: "tools/call",
@@ -356,7 +356,7 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
 
     assert {
              :ok,
-             %Hermes.MCP.Response{
+             %Anubis.MCP.Response{
                id: _,
                is_error: true,
                method: "tools/call",
@@ -398,7 +398,7 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
         )
 
       assert {:ok,
-              %Hermes.MCP.Response{
+              %Anubis.MCP.Response{
                 id: _,
                 is_error: false,
                 method: "tools/call",

@@ -1,8 +1,8 @@
 defmodule Sanbase.MCP.CheckAuthentication do
   @moduledoc "Return information about the authenticated user, if any"
-  use Hermes.Server.Component, type: :tool
+  use Anubis.Server.Component, type: :tool
 
-  alias Hermes.Server.Response
+  alias Anubis.Server.Response
   alias Sanbase.Billing.Subscription
   alias Sanbase.MCP
 
@@ -11,7 +11,7 @@ defmodule Sanbase.MCP.CheckAuthentication do
   end
 
   @impl true
-  def execute(params, frame) do
+  def execute(_params, frame) do
     if user = frame.assigns[:current_user] do
       response_data = %{
         id: user.id,

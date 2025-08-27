@@ -89,7 +89,7 @@ defmodule SanbaseWeb.Graphql.MCPTrendingStoriesTest do
         )
 
       assert {:ok,
-              %Hermes.MCP.Response{
+              %Anubis.MCP.Response{
                 result: %{
                   "content" => [
                     %{
@@ -159,7 +159,7 @@ defmodule SanbaseWeb.Graphql.MCPTrendingStoriesTest do
         )
 
       assert {:ok,
-              %Hermes.MCP.Response{
+              %Anubis.MCP.Response{
                 result: %{
                   "content" => [
                     %{

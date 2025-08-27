@@ -161,6 +161,13 @@ defmodule Sanbase.MCP.DataCatalog do
 
   def available_metrics() do
     @available_metrics
+    |> Enum.map(fn m ->
+      nil
+      {:ok, metadata} = Sanbase.Metric.metadata(m.name)
+      # metatata.docs is a list of structs and structs cannot be serialized to JSON
+      docs = metadata.docs |> Enum.map(fn d -> %{url: d.link} end)
+      Map.put(m, :documentation_urls, docs)
+    end)
   end
 
   @doc "Get all available metrics"
@@ -225,7 +232,7 @@ defmodule Sanbase.MCP.DataCatalog do
         {:error, "Metric '#{metric}' mistyped or not supported."}
 
       true ->
-        metric_info = Enum.find(@available_metrics, &(&1.name == metric))
+        metric_info = Enum.find(available_metrics(), &(&1.name == metric))
         {:ok, metric_info}
     end
   end

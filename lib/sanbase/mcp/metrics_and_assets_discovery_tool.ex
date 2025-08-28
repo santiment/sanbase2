@@ -18,14 +18,18 @@ defmodule Sanbase.MCP.MetricsAndAssetsDiscoveryTool do
 
   ### Usage Guidance
 
-  - **`slug`**: The unique, lowercase, hyphen-separated identifier for a crypto asset
-    (e.g., `"bitcoin"`). Use this to focus results on a single asset.
-  - **`metric`**: The unique, lowercase, snake_case identifier for a metric
-    (e.g., `"price_usd"`). Use this to focus results on a single metric.
+  - **slug**: The unique, lowercase, hyphen-separated identifier for a crypto asset
+    (e.g., "bitcoin"). Use this to focus results on a single asset.
+  - **metric**: The unique, lowercase, snake_case identifier for a metric
+    (e.g., "price_usd"). Use this to focus results on a single metric.
+  - **interval**: The datetime interval between two data points in the result.
+    (e.g. 5m means 5 minutes, 1h means 1 hour, 2d means 2 days, etc.). Default is 1d.
+  - **time_period**: How far back in time to fetch data. Examples: "7d" (7 days),
+    "30d" (30 days), etc. Default is 30d.
 
   ### Example Parameters
 
-  - **Li st all metrics and assets:**
+  - **List all metrics and assets:**
     ```
     {}
     ```

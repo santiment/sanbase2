@@ -80,7 +80,24 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
       assert Jason.decode!(json_text) ==
                %{
                  "description" => "All metrics available for bitcoin",
-                 "metrics" => ["daily_active_addresses", "price_usd"],
+                 "metrics" => [
+                   %{
+                     "description" => "Daily active addresses",
+                     "documentation_urls" => [
+                       %{"url" => "https://academy.santiment.net/metrics/daily-active-addresses"}
+                     ],
+                     "name" => "daily_active_addresses",
+                     "unit" => "count"
+                   },
+                   %{
+                     "description" => "Price in USD for cryptocurrencies",
+                     "documentation_urls" => [
+                       %{"url" => "https://academy.santiment.net/metrics/price"}
+                     ],
+                     "name" => "price_usd",
+                     "unit" => "USD"
+                   }
+                 ],
                  "metrics_count" => 2,
                  "slug" => "bitcoin"
                }
@@ -398,7 +415,7 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
            } =
              result
 
-    result |> dbg()
+    result
   end
 
   test "fetch metric with wrong asset name" do

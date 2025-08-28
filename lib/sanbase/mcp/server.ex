@@ -4,7 +4,7 @@ defmodule Sanbase.MCP.Server do
   use Anubis.Server,
     name: "sanbase-metrics",
     version: "1.0.0",
-    capabilities: [:tools]
+    capabilities: [:tools, :prompts]
 
   def init(_client_info, frame) do
     user = Sanbase.MCP.Auth.headers_list_to_user(frame.transport.req_headers)
@@ -22,6 +22,9 @@ defmodule Sanbase.MCP.Server do
 
   # Register our social data tools
   component(Sanbase.MCP.TrendingStoriesTool)
+
+  # Register our prompts
+  component(Sanbase.MCP.MarketPulseCheckPrompt)
 
   if Application.compile_env(:sanbase, :env) in [:test, :dev] do
     IO.puts("Defining the extra MCP Server tools used in dev and test")

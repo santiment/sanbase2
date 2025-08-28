@@ -185,9 +185,16 @@ defmodule Sanbase.MCP.DataCatalog do
   @doc "Get available metrics for a specific slug"
   def get_available_metrics_for_slug(slug) do
     if valid_slug?(slug) do
-      metrics_intersection = fn metrics ->
-        MapSet.intersection(MapSet.new(metrics), MapSet.new(get_metric_names()))
-        |> Enum.to_list()
+      metrics_intersection = fn all_metrics_for_slug ->
+        all_metrics_for_slug_mapset = MapSet.new(all_metrics_for_slug)
+
+        Enum.reduce(available_metrics(), [], fn %{name: name} = metric, acc ->
+          if MapSet.member?(all_metrics_for_slug_mapset, name) do
+            [metric | acc]
+          else
+            acc
+          end
+        end)
       end
 
       case Sanbase.Metric.available_metrics_for_selector(%{slug: slug}) do

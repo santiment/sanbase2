@@ -12,7 +12,52 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
       description: "Metric name to fetch (e.g., 'price_usd')"
     )
 
-    field(:slug, :string, required: true, description: "Slug identifier (e.g., 'bitcoin')")
+    field(:slugs, {:list, :string},
+      required: true,
+      description: """
+      List of slug identifiers (e.g., ["bitcoin"], ["bitcoin", "ethereum"], etc.).
+
+      Accepts at most 10 slugs at a time.
+
+      Only metrics that are listed as `supports_many_slugs: true` can accept a list of more then
+      one slug at a time.
+
+      The tool returns data for one metric and one or many slugs.
+      """
+    )
+
+    field(:interval, :string,
+      required: false,
+      description: """
+      The interval between two data points in the timeseries data (e.g., '5m', '1h', '1d').
+
+      The format is: <number><suffix>, where:
+      - <number> is an integer
+      - <suffix> is one of:
+        - m (minutes)
+        - h (hours)
+        - d (days)
+        - w (weeks)
+        - y (years)
+
+      For example, 5m means that the data returned will have a 5 minute interval between two data points.
+
+      Each metric has predefined `min_interval`. It describes the lowest possible interval for which data is available.
+      If the metric has `min_interval=1d` it means that Santiment has one data point per day for that metric. For these
+      metrics `interval="5m"` won't work as 5 minutes is less than 1 day.
+      """
+    )
+
+    field(:time_period, :string,
+      required: false,
+      description: """
+      How far back in time to fetch the data for (e.g., '7d', '30d', '90d').
+      This parameter defines the range of metric data to fetch - from <time_period> time
+      ago up until now.
+
+      Defaults to 30d.
+      """
+    )
   end
 
   @impl true
@@ -22,17 +67,24 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
     do_execute(params, frame)
   end
 
-  defp do_execute(%{metric: metric, slug: slug}, frame) do
-    with {:ok, _metric} <- validate_metric(metric),
-         {:ok, _slug} <- validate_slug(slug),
-         {:ok, data} <- fetch_metric_data(metric, slug) do
+  defp do_execute(%{metric: metric, slugs: slugs} = params, frame) do
+    time_period_seconds =
+      Map.get(params, :time_period, "30d") |> Sanbase.DateTimeUtils.str_to_sec()
+
+    from = DateTime.add(DateTime.utc_now(), -time_period_seconds, :second)
+
+    to = DateTime.utc_now()
+    interval = Map.get(params, :interval, "1d")
+
+    with :ok <- validate_metric(metric),
+         :ok <- validate_slugs(slugs),
+         {:ok, data} <- fetch_metric_data(metric, slugs, from, to, interval) do
       response_data = %{
         metric: metric,
-        slug: slug,
+        slugs: slugs,
         data: data,
-        period: "last_30_days",
-        interval: "1d",
-        data_points: length(data)
+        period: "Since #{DateTime.to_iso8601(from)}",
+        interval: interval
       }
 
       {:reply, Response.json(Response.tool(), response_data), frame}
@@ -44,25 +96,32 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
 
   defp validate_metric(metric) do
     if DataCatalog.valid_metric?(metric) do
-      {:ok, metric}
+      :ok
     else
       {:error, "Metric '#{metric}' mistyped or not supported."}
     end
   end
 
-  defp validate_slug(slug) do
-    if DataCatalog.valid_slug?(slug) do
-      {:ok, slug}
-    else
-      {:error, "Slug '#{slug}' mistyped or not supported."}
-    end
+  defp validate_slugs([]) do
+    {:error, "The list of slugs provided is empty."}
   end
 
-  defp fetch_metric_data(metric, slug) do
-    to = DateTime.utc_now()
-    from = DateTime.add(to, -30, :day)
-    interval = "1d"
+  defp validate_slugs(slugs) when is_list(slugs) and length(slugs) > 10 do
+    {:error, "The list of slugs can contain at most 10 slugs"}
+  end
 
+  defp validate_slugs(slugs) when is_list(slugs) do
+    Enum.reduce_while(slugs, :ok, fn slug, _acc ->
+      if DataCatalog.valid_slug?(slug) do
+        {:cont, :ok}
+      else
+        {:halt, {:error, "Slug '#{slug}' mistyped or not supported."}}
+      end
+    end)
+  end
+
+  # Handle the case of single slug
+  defp fetch_metric_data(metric, [slug], from, to, interval) do
     selector = %{slug: slug}
 
     case Sanbase.Metric.timeseries_data(metric, selector, from, to, interval) do
@@ -76,13 +135,44 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
             }
           end)
 
-        {:ok, formatted_data}
+        # Return data in the format:
+        # %{"ethereum" => [%{datetime: ..., value: ...}, ...]}
+        # This way we can have the same format for single slug and many slugs
+        {:ok, %{slug => formatted_data}}
 
       {:error, reason} ->
         {:error, "Failed to fetch #{metric} for #{slug}. Reason: #{reason}"}
+    end
+  end
 
-      _ ->
-        {:error, "Unexpected response from metric API"}
+  # Handle the case of many slugs
+  defp fetch_metric_data(metric, [_, _ | _rest] = slugs, from, to, interval) do
+    selector = %{slug: slugs}
+
+    case Sanbase.Metric.timeseries_data_per_slug(metric, selector, from, to, interval) do
+      {:ok, data} ->
+        # Reshape the data so it's in the format
+        #  %{
+        #    "ethereum" => [%{datetime: ..., value: ...}, ...],
+        #    "bitcoin" => [%{datetime: ..., value: ...}, ...]
+        #  }
+
+        formatted_data =
+          data
+          |> Enum.reduce(%{}, fn %{datetime: datetime, data: data}, acc ->
+            Enum.reduce(data, acc, fn %{slug: slug, value: value}, acc_inner ->
+              data_point = %{datetime: datetime, value: value}
+              Map.update(acc_inner, slug, [data_point], &[data_point | &1])
+            end)
+          end)
+          |> Map.new(fn {slug, data_points} ->
+            {slug, Enum.sort_by(data_points, & &1.datetime, {:asc, DateTime})}
+          end)
+
+        {:ok, formatted_data}
+
+      {:error, reason} ->
+        {:error, "Failed to fetch #{metric} for #{Enum.join(slugs, ", ")}. Reason: #{reason}"}
     end
   end
 end

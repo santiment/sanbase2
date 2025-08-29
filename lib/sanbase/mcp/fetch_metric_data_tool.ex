@@ -10,6 +10,7 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
   alias Anubis.Server.Response
   alias Sanbase.MCP.DataCatalog
 
+  @slugs_per_call_limit 10
   schema do
     field(:metric, :string,
       required: true,
@@ -21,7 +22,7 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
       description: """
       List of slug identifiers (e.g., ["bitcoin"], ["bitcoin", "ethereum"], etc.).
 
-      Accepts at most 10 slugs at a time.
+      Accepts at most #{@slugs_per_call_limit} slugs at a time.
 
       Only metrics that are listed as `supports_many_slugs: true` can accept a list of more than
       one slug at a time.
@@ -107,10 +108,6 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
     end
   end
 
-  defp validate_many_slugs_supported(_metric, []) do
-    {:error, "The list of slugs provided is empty."}
-  end
-
   defp validate_many_slugs_supported(_metric, [_single_slug]), do: :ok
 
   defp validate_many_slugs_supported(metric, slugs) when is_list(slugs) do
@@ -125,11 +122,12 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
   end
 
   defp validate_slugs([]) do
-    {:error, "The list of slugs provided is empty."}
+    {:error,
+     "The provided list of slugs is empty. Provide between 1 and #{@slugs_per_call_limit} slugs."}
   end
 
-  defp validate_slugs(slugs) when is_list(slugs) and length(slugs) > 10 do
-    {:error, "The list of slugs can contain at most 10 slugs"}
+  defp validate_slugs(slugs) when is_list(slugs) and length(slugs) > @slugs_per_call_limit do
+    {:error, "The list of slugs can contain at most #{@slugs_per_call_limit} slugs"}
   end
 
   defp validate_slugs(slugs) when is_list(slugs) do

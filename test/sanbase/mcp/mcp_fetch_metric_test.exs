@@ -549,6 +549,37 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
     result
   end
 
+  test "fetch metric with empty slugs list" do
+    result =
+      try_few_times(
+        fn ->
+          Sanbase.MCP.Client.call_tool("fetch_metric_data_tool", %{
+            slugs: [],
+            metric: "price_usd"
+          })
+        end,
+        attempts: 3,
+        sleep: 250
+      )
+
+    assert {:ok,
+            %Anubis.MCP.Response{
+              id: _,
+              is_error: true,
+              method: "tools/call",
+              result: %{
+                "content" => [
+                  %{
+                    "text" =>
+                      "The provided list of slugs is empty. Provide between 1 and 10 slugs.",
+                    "type" => "text"
+                  }
+                ],
+                "isError" => true
+              }
+            }} = result
+  end
+
   test "fetch metric with wrong asset name" do
     result =
       try_few_times(

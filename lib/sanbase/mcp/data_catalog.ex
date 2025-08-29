@@ -1,124 +1,7 @@
 defmodule Sanbase.MCP.DataCatalog do
   @moduledoc "Centralized catalog of available metrics and slugs for MCP tools"
 
-  @available_metrics [
-    %{
-      name: "price_usd",
-      description: "Price in USD for cryptocurrencies",
-      unit: "USD"
-    },
-    %{
-      name: "marketcap_usd",
-      description: "Total market capitalization in USD",
-      unit: "USD"
-    },
-    %{
-      name: "volume_usd",
-      description: "Trading volume in USD",
-      unit: "USD"
-    },
-    %{
-      name: "price_btc",
-      description: "Asset price denominated in BTC",
-      unit: "BTC"
-    },
-    %{
-      name: "price_volatility_1d",
-      description: "Realized price volatility over 1 day",
-      unit: "percent"
-    },
-    %{
-      name: "fully_diluted_valuation_usd",
-      description: "Fully diluted valuation in USD",
-      unit: "USD"
-    },
-    %{
-      name: "dev_activity",
-      description:
-        "Development activity events on tracked repositories (commits, PRs, issues, etc.)",
-      unit: "count"
-    },
-    %{
-      name: "dev_activity_contributors_count",
-      description: "Number of unique developers contributing across tracked repositories",
-      unit: "count"
-    },
-    %{
-      name: "github_activity",
-      description: "GitHub activity events for the project",
-      unit: "count"
-    },
-    %{
-      name: "github_activity_contributors_count",
-      description: "Unique GitHub contributors count",
-      unit: "count"
-    },
-    %{
-      name: "social_volume_total",
-      description: "Total social media mentions and discussions",
-      unit: "count"
-    },
-    %{
-      name: "social_dominance_total",
-      description: "Share of total crypto social mentions attributed to the asset",
-      unit: "percent"
-    },
-    %{
-      name: "sentiment_weighted_total",
-      description: "Overall weighted social sentiment score",
-      unit: "score"
-    },
-    %{
-      name: "twitter_followers",
-      description: "Number of followers on the project's official Twitter/X account",
-      unit: "count"
-    },
-    %{
-      name: "daily_active_addresses",
-      description: "Daily active addresses",
-      unit: "count"
-    },
-    %{
-      name: "transactions_count",
-      description: "Number of on-chain transactions",
-      unit: "count"
-    },
-    %{
-      name: "transaction_volume",
-      description: "On-chain transaction volume in number of coins/tokens",
-      unit: "count"
-    },
-    %{
-      name: "transaction_volume_usd",
-      description: "On-chain transaction volume in USD",
-      unit: "USD"
-    },
-    %{
-      name: "network_growth",
-      description: "New addresses that made their first on-chain transaction",
-      unit: "count"
-    },
-    %{
-      name: "mvrv_usd",
-      description: "Market Value to Realized Value ratio (USD terms)",
-      unit: "ratio"
-    },
-    %{
-      name: "supply_on_exchanges",
-      description: "Amount of tokens held on exchange addresses",
-      unit: "tokens"
-    },
-    %{
-      name: "exchange_inflow_usd",
-      description: "USD value of tokens deposited to exchange addresses",
-      unit: "USD"
-    },
-    %{
-      name: "exchange_outflow_usd",
-      description: "USD value of tokens withdrawn from exchange addresses",
-      unit: "USD"
-    }
-  ]
+  @available_metrics Sanbase.MCP.DataCatalog.AvailableMetrics.list()
 
   @spec get_all_projects() :: list(map())
   def get_all_projects() do
@@ -161,6 +44,16 @@ defmodule Sanbase.MCP.DataCatalog do
 
   def available_metrics() do
     @available_metrics
+    |> Enum.map(fn m ->
+      {:ok, metadata} = Sanbase.Metric.metadata(m.name)
+      # metatata.docs is a list of structs and structs cannot be serialized to JSON
+      docs = metadata.docs |> Enum.map(fn d -> %{url: d.link} end)
+
+      m
+      |> Map.put(:documentation_urls, docs)
+      |> Map.put(:min_interval, metadata.min_interval)
+      |> Map.put(:default_aggregation, metadata.default_aggregation)
+    end)
   end
 
   @doc "Get all available metrics"
@@ -178,9 +71,17 @@ defmodule Sanbase.MCP.DataCatalog do
   @doc "Get available metrics for a specific slug"
   def get_available_metrics_for_slug(slug) do
     if valid_slug?(slug) do
-      metrics_intersection = fn metrics ->
-        MapSet.intersection(MapSet.new(metrics), MapSet.new(get_metric_names()))
-        |> Enum.to_list()
+      metrics_intersection = fn all_metrics_for_slug ->
+        all_metrics_for_slug_mapset =
+          MapSet.new(all_metrics_for_slug)
+
+        Enum.reduce(available_metrics(), [], fn %{name: name} = metric, acc ->
+          if MapSet.member?(all_metrics_for_slug_mapset, name) do
+            [metric | acc]
+          else
+            acc
+          end
+        end)
       end
 
       case Sanbase.Metric.available_metrics_for_selector(%{slug: slug}) do
@@ -225,7 +126,7 @@ defmodule Sanbase.MCP.DataCatalog do
         {:error, "Metric '#{metric}' mistyped or not supported."}
 
       true ->
-        metric_info = Enum.find(@available_metrics, &(&1.name == metric))
+        metric_info = Enum.find(available_metrics(), &(&1.name == metric))
         {:ok, metric_info}
     end
   end

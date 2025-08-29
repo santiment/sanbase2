@@ -45,7 +45,6 @@ defmodule Sanbase.MCP.DataCatalog do
   def available_metrics() do
     @available_metrics
     |> Enum.map(fn m ->
-      nil
       {:ok, metadata} = Sanbase.Metric.metadata(m.name)
       # metatata.docs is a list of structs and structs cannot be serialized to JSON
       docs = metadata.docs |> Enum.map(fn d -> %{url: d.link} end)

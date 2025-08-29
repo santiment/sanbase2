@@ -1,5 +1,9 @@
 defmodule Sanbase.MCP.FetchMetricDataTool do
-  @moduledoc "Fetch metric data for the last 30 days with daily resolution"
+  @moduledoc """
+  Fetch metric timeseries for one metric and one or many slugs.
+
+  Defaults: last 30 days (time_period="30d"), interval="1d".
+  """
 
   use Anubis.Server.Component, type: :tool
 
@@ -19,7 +23,7 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
 
       Accepts at most 10 slugs at a time.
 
-      Only metrics that are listed as `supports_many_slugs: true` can accept a list of more then
+      Only metrics that are listed as `supports_many_slugs: true` can accept a list of more than
       one slug at a time.
 
       The tool returns data for one metric and one or many slugs.
@@ -78,6 +82,7 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
 
     with :ok <- validate_metric(metric),
          :ok <- validate_slugs(slugs),
+         :ok <- validate_many_slugs_supported(metric, slugs),
          {:ok, data} <- fetch_metric_data(metric, slugs, from, to, interval) do
       response_data = %{
         metric: metric,
@@ -99,6 +104,23 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
       :ok
     else
       {:error, "Metric '#{metric}' mistyped or not supported."}
+    end
+  end
+
+  defp validate_many_slugs_supported(_metric, []) do
+    {:error, "The list of slugs provided is empty."}
+  end
+
+  defp validate_many_slugs_supported(_metric, [_single_slug]), do: :ok
+
+  defp validate_many_slugs_supported(metric, slugs) when is_list(slugs) do
+    case Enum.find(DataCatalog.available_metrics(), &(&1.name == metric)) do
+      %{supports_many_slugs: true} ->
+        :ok
+
+      _ ->
+        {:error,
+         "Metric '#{metric}' does not support multiple slugs. Pass a single slug instead."}
     end
   end
 
@@ -159,8 +181,8 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
 
         formatted_data =
           data
-          |> Enum.reduce(%{}, fn %{datetime: datetime, data: data}, acc ->
-            Enum.reduce(data, acc, fn %{slug: slug, value: value}, acc_inner ->
+          |> Enum.reduce(%{}, fn %{datetime: datetime, data: datapoints}, acc ->
+            Enum.reduce(datapoints, acc, fn %{slug: slug, value: value}, acc_inner ->
               data_point = %{datetime: datetime, value: value}
               Map.update(acc_inner, slug, [data_point], &[data_point | &1])
             end)

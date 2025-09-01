@@ -5,6 +5,7 @@ defmodule Sanbase.MCP.InsightDiscoveryTool do
 
   alias Anubis.Server.Response
   alias Sanbase.Insight.Post
+  alias Sanbase.MCP.Utils
 
   schema do
     field(:time_period, :string,
@@ -27,7 +28,7 @@ defmodule Sanbase.MCP.InsightDiscoveryTool do
   defp do_execute(params, frame) do
     time_period = params[:time_period] || "30d"
 
-    with {:ok, {from_datetime, to_datetime}} <- parse_time_period(time_period),
+    with {:ok, {from_datetime, to_datetime}} <- Utils.parse_time_period(time_period),
          {:ok, insights} <- fetch_insights(from_datetime, to_datetime) do
       response_data = %{
         insights: insights,
@@ -41,17 +42,6 @@ defmodule Sanbase.MCP.InsightDiscoveryTool do
     else
       {:error, reason} ->
         {:reply, Response.error(Response.tool(), reason), frame}
-    end
-  end
-
-  defp parse_time_period(time_period) do
-    if Sanbase.DateTimeUtils.valid_interval?(time_period) do
-      seconds = Sanbase.DateTimeUtils.str_to_sec(time_period)
-      to_datetime = DateTime.utc_now()
-      from_datetime = DateTime.add(to_datetime, -seconds, :second)
-      {:ok, {from_datetime, to_datetime}}
-    else
-      {:error, "Invalid time period format. Use format like '30d', '7d', '2w', '24h'"}
     end
   end
 

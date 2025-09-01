@@ -31,6 +31,7 @@ defmodule Sanbase.MCP.TrendingStoriesTool do
   use Anubis.Server.Component, type: :tool
 
   alias Anubis.Server.Response
+  alias Sanbase.MCP.Utils
 
   schema do
     field(:time_period, :string,
@@ -62,8 +63,8 @@ defmodule Sanbase.MCP.TrendingStoriesTool do
     time_period = params[:time_period] || "1h"
     size = params[:size] || 10
 
-    with {:ok, {from_datetime, to_datetime}} <- parse_time_period(time_period),
-         {:ok, validated_size} <- validate_size(size),
+    with {:ok, {from_datetime, to_datetime}} <- Utils.parse_time_period(time_period),
+         {:ok, validated_size} <- Utils.validate_size(size),
          {:ok, stories_data} <- fetch_trending_stories(from_datetime, to_datetime, validated_size) do
       response_data = %{
         trending_stories: stories_data,
@@ -79,29 +80,6 @@ defmodule Sanbase.MCP.TrendingStoriesTool do
       {:error, reason} ->
         {:reply, Response.error(Response.tool(), reason), frame}
     end
-  end
-
-  defp parse_time_period(time_period) do
-    if Sanbase.DateTimeUtils.valid_interval?(time_period) do
-      seconds = Sanbase.DateTimeUtils.str_to_sec(time_period)
-      to_datetime = DateTime.utc_now()
-      from_datetime = DateTime.add(to_datetime, -seconds, :second)
-      {:ok, {from_datetime, to_datetime}}
-    else
-      {:error, "Invalid time period format. Use format like '1h', '6h', '1d', '7d'"}
-    end
-  end
-
-  defp validate_size(size) when is_integer(size) and size > 0 and size <= 30 do
-    {:ok, size}
-  end
-
-  defp validate_size(size) when is_integer(size) do
-    {:error, "Size must be between 1 and 30, got: #{size}"}
-  end
-
-  defp validate_size(_) do
-    {:error, "Size must be an integer"}
   end
 
   defp fetch_trending_stories(from_datetime, to_datetime, size) do

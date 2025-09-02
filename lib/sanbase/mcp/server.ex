@@ -22,6 +22,7 @@ defmodule Sanbase.MCP.Server do
 
   # Register our social data tools
   component(Sanbase.MCP.TrendingStoriesTool)
+  component(Sanbase.MCP.CombinedTrendsTool)
 
   if Application.compile_env(:sanbase, :env) in [:test, :dev] do
     IO.puts("Defining the extra MCP Server tools used in dev and test")

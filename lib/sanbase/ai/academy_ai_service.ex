@@ -65,6 +65,34 @@ defmodule Sanbase.AI.AcademyAIService do
     end
   end
 
+  @doc """
+  Get autocomplete question suggestions for Academy Q&A based on a query string.
+
+  Returns a list of suggested questions with their titles.
+  """
+  @spec autocomplete_questions(String.t()) :: {:ok, list()} | {:error, String.t()}
+  def autocomplete_questions(query) do
+    url = "#{ai_server_url()}/academy/autocomplete-questions"
+
+    case Req.post(url,
+           json: %{query: query},
+           headers: %{"Content-Type" => "application/json"},
+           receive_timeout: 10_000,
+           connect_options: [timeout: 10_000]
+         ) do
+      {:ok, %Req.Response{status: 200, body: suggestions}} when is_list(suggestions) ->
+        {:ok, suggestions}
+
+      {:ok, %Req.Response{status: status}} ->
+        Logger.error("Academy autocomplete API error: status #{status}")
+        {:error, "Autocomplete service unavailable"}
+
+      {:error, error} ->
+        Logger.error("Academy autocomplete request failed: #{inspect(error)}")
+        {:error, "Failed to get question suggestions"}
+    end
+  end
+
   defp build_chat_history(chat_id) do
     case Sanbase.Chat.get_chat_messages(chat_id, limit: 20) do
       messages when is_list(messages) ->

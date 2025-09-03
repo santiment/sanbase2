@@ -271,6 +271,26 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChatResolver do
     end
   end
 
+  @doc "Get Academy Q&A question suggestions based on a search query"
+  def academy_autocomplete_questions(_root, %{query: query}, _context) do
+    case AcademyAIService.autocomplete_questions(query) do
+      {:ok, suggestions} ->
+        # Transform the string-keyed maps to atom-keyed maps for GraphQL
+        transformed_suggestions =
+          Enum.map(suggestions, fn suggestion ->
+            %{
+              title: Map.get(suggestion, "title"),
+              question: Map.get(suggestion, "question")
+            }
+          end)
+
+        {:ok, transformed_suggestions}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   # Helper functions
   defp convert_enum_to_string(:dyor_dashboard), do: "dyor_dashboard"
   defp convert_enum_to_string(:academy_qa), do: "academy_qa"

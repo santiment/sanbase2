@@ -111,4 +111,9 @@ defmodule SanbaseWeb.Graphql.ChatTypes do
     field(:messages_count, :integer)
     field(:latest_message, :chat_message)
   end
+
+  object :academy_question_suggestion do
+    field(:title, non_null(:string))
+    field(:question, non_null(:string))
+  end
 end

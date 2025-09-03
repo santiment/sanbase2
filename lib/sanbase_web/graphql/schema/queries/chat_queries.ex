@@ -35,6 +35,15 @@ defmodule SanbaseWeb.Graphql.Schema.ChatQueries do
 
       resolve(&ChatResolver.get_chat_messages/3)
     end
+
+    @desc "Get Academy Q&A question suggestions based on a search query"
+    field :academy_autocomplete_questions, list_of(:academy_question_suggestion) do
+      meta(access: :free)
+
+      arg(:query, non_null(:string))
+
+      resolve(&ChatResolver.academy_autocomplete_questions/3)
+    end
   end
 
   object :chat_mutations do

@@ -14,49 +14,54 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
   # Start Most Voted
 
   def get_most_voted(_root, args, _resolution) do
-    maybe_do_not_cache(args)
+    with :ok <- validate_arguments(args) do
+      maybe_do_not_cache(args)
 
-    {:ok, %{query: :get_most_voted, args: args}}
-  end
-
-  def get_most_voted_data(_root, _args, resolution) do
-    %{source: %{args: args}} = resolution
-    types = get_types(args)
-    opts = get_opts(args, resolution)
-
-    case early_return_empty?(opts) do
-      true ->
-        {:ok, []}
-
-      false ->
-        Sanbase.Entity.get_most_voted(types, opts)
-        |> maybe_extend_with_views_count(opts)
-        |> maybe_apply_function(&handle_result/1)
+      {:ok, %{query: :get_most_voted, args: args}}
     end
   end
 
-  def get_most_voted_stats(_root, _args, resolution) do
-    %{source: %{args: args}} = resolution
-    maybe_do_not_cache(args)
+  def get_most_voted_data(_root, _args, %{source: %{args: args}} = resolution) do
+    with :ok <- validate_arguments(args) do
+      types = get_types(args)
+      opts = get_opts(args, resolution)
 
-    types = get_types(args)
-    opts = get_opts(args, resolution)
+      case early_return_empty?(opts) do
+        true ->
+          {:ok, []}
 
-    case early_return_empty?(opts) do
-      true ->
-        {:ok, empty_stats()}
+        false ->
+          Sanbase.Entity.get_most_voted(types, opts)
+          |> maybe_extend_with_views_count(opts)
+          |> maybe_apply_function(&handle_result/1)
+      end
+    end
+  end
 
-      false ->
-        {:ok, total_entities_count} = Sanbase.Entity.get_most_voted_total_count(types, opts)
+  def get_most_voted_stats(_root, _args, %{source: %{args: args}} = resolution) do
+    with :ok <- validate_arguments(args) do
+      maybe_do_not_cache(args)
 
-        stats = %{
-          current_page: opts[:page],
-          current_page_size: opts[:page_size],
-          total_pages_count: (total_entities_count / opts[:page_size]) |> Float.ceil() |> trunc(),
-          total_entities_count: total_entities_count
-        }
+      types = get_types(args)
+      opts = get_opts(args, resolution)
 
-        {:ok, stats}
+      case early_return_empty?(opts) do
+        true ->
+          {:ok, empty_stats()}
+
+        false ->
+          {:ok, total_entities_count} = Sanbase.Entity.get_most_voted_total_count(types, opts)
+
+          stats = %{
+            current_page: opts[:page],
+            current_page_size: opts[:page_size],
+            total_pages_count:
+              (total_entities_count / opts[:page_size]) |> Float.ceil() |> trunc(),
+            total_entities_count: total_entities_count
+          }
+
+          {:ok, stats}
+      end
     end
   end
 
@@ -65,48 +70,55 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
   # Start Most Recent
 
   def get_most_recent_data(_root, _args, %{source: %{args: args}} = resolution) do
-    maybe_do_not_cache(args)
-    types = get_types(args)
-    opts = get_opts(args, resolution)
+    with :ok <- validate_arguments(args) do
+      maybe_do_not_cache(args)
+      types = get_types(args)
+      opts = get_opts(args, resolution)
 
-    case early_return_empty?(opts) do
-      true ->
-        {:ok, []}
+      case early_return_empty?(opts) do
+        true ->
+          {:ok, []}
 
-      false ->
-        Sanbase.Entity.get_most_recent(types, opts)
-        |> maybe_extend_with_views_count(opts)
-        |> maybe_apply_function(&handle_result/1)
+        false ->
+          Sanbase.Entity.get_most_recent(types, opts)
+          |> maybe_extend_with_views_count(opts)
+          |> maybe_apply_function(&handle_result/1)
+      end
     end
   end
 
   def get_most_recent_stats(_root, _args, %{source: %{args: args}} = resolution) do
-    maybe_do_not_cache(args)
+    with :ok <- validate_arguments(args) do
+      maybe_do_not_cache(args)
 
-    types = get_types(args)
-    opts = get_opts(args, resolution)
+      types = get_types(args)
+      opts = get_opts(args, resolution)
 
-    case early_return_empty?(opts) do
-      true ->
-        {:ok, empty_stats()}
+      case early_return_empty?(opts) do
+        true ->
+          {:ok, empty_stats()}
 
-      false ->
-        {:ok, total_entities_count} = Sanbase.Entity.get_most_recent_total_count(types, opts)
+        false ->
+          {:ok, total_entities_count} = Sanbase.Entity.get_most_recent_total_count(types, opts)
 
-        stats = %{
-          current_page: opts[:page],
-          current_page_size: opts[:page_size],
-          total_pages_count: (total_entities_count / opts[:page_size]) |> Float.ceil() |> trunc(),
-          total_entities_count: total_entities_count
-        }
+          stats = %{
+            current_page: opts[:page],
+            current_page_size: opts[:page_size],
+            total_pages_count:
+              (total_entities_count / opts[:page_size]) |> Float.ceil() |> trunc(),
+            total_entities_count: total_entities_count
+          }
 
-        {:ok, stats}
+          {:ok, stats}
+      end
     end
   end
 
   def get_most_recent(_root, args, _resolution) do
-    maybe_do_not_cache(args)
-    {:ok, %{query: :get_most_recent, args: args}}
+    with :ok <- validate_arguments(args) do
+      maybe_do_not_cache(args)
+      {:ok, %{query: :get_most_recent, args: args}}
+    end
   end
 
   # End Most Recent
@@ -114,48 +126,54 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
   # Start Most Used
 
   def get_most_used(_root, args, _resolution) do
-    maybe_do_not_cache(args)
-    {:ok, %{query: :get_most_used, args: args}}
-  end
-
-  def get_most_used_data(_root, _args, %{source: %{args: args}} = resolution) do
-    maybe_do_not_cache(args)
-    types = get_types(args)
-    opts = get_opts(args, resolution)
-
-    case early_return_empty?(opts) do
-      true ->
-        {:ok, []}
-
-      false ->
-        Sanbase.Entity.get_most_used(types, opts)
-        |> maybe_extend_with_views_count(opts)
-        |> maybe_apply_function(&handle_result/1)
+    with :ok <- validate_arguments(args) do
+      maybe_do_not_cache(args)
+      {:ok, %{query: :get_most_used, args: args}}
     end
   end
 
-  def get_most_used_stats(_root, _args, resolution) do
-    %{source: %{args: args}} = resolution
-    maybe_do_not_cache(args)
+  def get_most_used_data(_root, _args, %{source: %{args: args}} = resolution) do
+    with :ok <- validate_arguments(args) do
+      maybe_do_not_cache(args)
+      types = get_types(args)
+      opts = get_opts(args, resolution)
 
-    types = get_types(args)
-    opts = get_opts(args, resolution)
+      case early_return_empty?(opts) do
+        true ->
+          {:ok, []}
 
-    case early_return_empty?(opts) do
-      true ->
-        {:ok, empty_stats()}
+        false ->
+          Sanbase.Entity.get_most_used(types, opts)
+          |> maybe_extend_with_views_count(opts)
+          |> maybe_apply_function(&handle_result/1)
+      end
+    end
+  end
 
-      false ->
-        {:ok, total_entities_count} = Sanbase.Entity.get_most_used_total_count(types, opts)
+  def get_most_used_stats(_root, _args, %{source: %{args: args}} = resolution) do
+    with :ok <- validate_arguments(args) do
+      maybe_do_not_cache(args)
 
-        stats = %{
-          current_page: opts[:page],
-          current_page_size: opts[:page_size],
-          total_pages_count: (total_entities_count / opts[:page_size]) |> Float.ceil() |> trunc(),
-          total_entities_count: total_entities_count
-        }
+      types = get_types(args)
+      opts = get_opts(args, resolution)
 
-        {:ok, stats}
+      case early_return_empty?(opts) do
+        true ->
+          {:ok, empty_stats()}
+
+        false ->
+          {:ok, total_entities_count} = Sanbase.Entity.get_most_used_total_count(types, opts)
+
+          stats = %{
+            current_page: opts[:page],
+            current_page_size: opts[:page_size],
+            total_pages_count:
+              (total_entities_count / opts[:page_size]) |> Float.ceil() |> trunc(),
+            total_entities_count: total_entities_count
+          }
+
+          {:ok, stats}
+      end
     end
   end
 
@@ -273,5 +291,32 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
       total_pages_count: 0,
       total_entities_count: 0
     }
+  end
+
+  defp validate_arguments(args) do
+    current_user_data_only = Map.get(args, :current_user_data_only)
+
+    case args do
+      %{current_user_data_only: true, user_id_data_only: id} when is_integer(id) ->
+        {:error, "Cannot set both currentUserDataOnly: true and userIdDataOnly: <id>"}
+
+      %{current_user_data_only: true, user_role_data_only: role} when is_atom(role) ->
+        {:error, "Cannot set both currentUserDataOnly: true and userRoleDataOnly: <role>"}
+
+      %{user_id_data_only: id, user_role_data_only: role} when is_integer(id) and is_atom(role) ->
+        {:error, "Cannot set both userIdDataOnly: <id> and userRoleDataOnly: <role>"}
+
+      %{filter: %{public_status: :private}, user_id_data_only: id} when is_integer(id) ->
+        {:error, "Cannot set both filter: { publicStatus: PRIVATE } and userIdDataOnly: <id>"}
+
+      # If not provided it's nil. Check it like this as checking for not presence or presence
+      # of false is less readable
+      %{filter: %{public_status: :private}} and current_user_data_only != true ->
+        {:error,
+         "Cannot set both filter: { publicStatus: PRIVATE } and not set currentUserDataOnly: true"}
+
+      _ ->
+        :ok
+    end
   end
 end

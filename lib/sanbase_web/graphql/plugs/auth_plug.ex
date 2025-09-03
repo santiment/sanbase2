@@ -83,6 +83,11 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
       {:ok, %AuthStruct{} = auth_struct} ->
         auth_struct = augment_auth(auth_struct, conn)
 
+        case auth_struct do
+          %{auth: %{current_user: %{id: user_id}}} -> Logger.metadata(user_id: user_id)
+          _ -> Logger.metadata(user_id: "anonymous")
+        end
+
         conn
         |> maybe_put_new_access_token(auth_struct)
         |> put_private(:san_authentication, Map.from_struct(auth_struct))

@@ -78,7 +78,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     wrapped-dog
     wrapped-eeth
     wrapped-everscale
-    wrapped-fantom
     wrapped-iotex
     wrapped-islamic-coin
     wrapped-mantle
@@ -93,16 +92,26 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     # Fetch current coinmarketcap data for many tickers
     # It fetches data for the the first N projects, where N is specified in
     # the COINMARKETCAP_API_PROJECTS_NUMBER env var
-    {:ok, tickers} =
-      Ticker.fetch_data(opts)
+    tickers =
+      case Ticker.fetch_data(opts) do
+        {:ok, tickers} -> tickers
+        _ -> []
+      end
 
     fetched_slugs = MapSet.new(tickers, & &1.slug)
 
     # Handle separately tokens that might be out of top N.
     custom_cmc_slugs = @custom_cmc_slugs |> Enum.reject(&(&1 in fetched_slugs))
 
-    {:ok, custom_tickers} =
-      Ticker.fetch_data_by_slug(custom_cmc_slugs)
+    # Do not break when some of the handpicked assets is no longer supported.
+    # On 03.09.2025 we had an issue where wrapped-fantom started causing HTTP 400
+    # which in turn broke everything below {:ok, _} = fetch_data_by_slug
+    # and made the exporter fail and did not export the already fetched tickers
+    custom_tickers =
+      case Ticker.fetch_data_by_slug(custom_cmc_slugs) do
+        {:ok, custom_tickers} -> custom_tickers
+        _ -> []
+      end
 
     tickers = tickers ++ custom_tickers
 

@@ -530,8 +530,6 @@ defmodule Sanbase.Entity do
 
     query =
       Enum.reduce(entities, nil, fn type, query_acc ->
-        # TODO: Improve entities_ids_query/2. With these 2 options we include all of the
-        # user entities and exclude any other entities.
         entity_ids_query =
           entity_ids_query(type,
             include_all_user_entities: true,
@@ -544,7 +542,6 @@ defmodule Sanbase.Entity do
           # Remove the existing `entity.id` select and replace it with another
           # one
           |> exclude(:select)
-          # |> select([e], {^"#{type}", fragment("COUNT(*)")})
           |> select([e], {^"#{type}", fragment("COUNT(*)")})
 
         case query_acc do
@@ -774,6 +771,7 @@ defmodule Sanbase.Entity do
     :filter,
     :cursor,
     :user_ids,
+    :public_status,
     :is_featured_data_only,
     :is_moderator,
     :min_title_length,
@@ -946,16 +944,36 @@ defmodule Sanbase.Entity do
   end
 
   defp update_opts(opts) do
-    # TODO: Make it so it errors or combines the values
-    # when user_role_data_only is provided
+    # This will be used in combination with public_status.
+    # Only when `currentUserData` is set to true it will allow to fetch
+    # private entities of the user. Otherwise it is false by default.
+
+    opts = opts |> Keyword.put_new(:can_access_user_private_entities, false)
+    opts = opts |> Keyword.delete(:user_ids)
+
     opts =
       case Keyword.get(opts, :user_id_data_only) do
-        user_id when is_integer(user_id) -> Keyword.put(opts, :user_ids, [user_id])
-        _ -> opts
+        user_id when is_integer(user_id) ->
+          if Keyword.get(opts, :user_ids),
+            do: raise(ArgumentError, "Something has unexpectedly set :user_ids in opts")
+
+          opts
+          |> Keyword.put_new(:user_ids, [user_id])
+
+        _ ->
+          opts
+      end
+
+    opts =
+      case Keyword.get(opts, :public_status) do
+        value when value in [:all, :public, :private] -> opts
+        nil -> Keyword.put(opts, :public_status, :all)
+        value -> raise ArgumentError, "Invalid value for :public_status option: #{inspect(value)}"
       end
 
     opts =
       case Keyword.get(opts, :filter) do
+        # Filter only those entities (charts, etc.) which are about these slugs
         %{slugs: slugs} = filter ->
           ids = Sanbase.Project.List.ids_by_slugs(slugs, [])
           filter = Map.put(filter, :project_ids, ids)
@@ -968,12 +986,22 @@ defmodule Sanbase.Entity do
     opts =
       case Keyword.get(opts, :user_role_data_only) do
         :san_family ->
+          if Keyword.get(opts, :user_ids),
+            do: raise(ArgumentError, "Something has unexpectedly set :user_ids in opts")
+
           user_ids = Sanbase.Accounts.Role.san_family_ids()
-          Keyword.put(opts, :user_ids, user_ids)
+
+          opts
+          |> Keyword.put(:user_ids, user_ids)
 
         :san_team ->
+          if Keyword.get(opts, :user_ids),
+            do: raise(ArgumentError, "Something has unexpectedly set :user_ids in opts")
+
           user_ids = Sanbase.Accounts.Role.san_team_ids()
-          Keyword.put(opts, :user_ids, user_ids)
+
+          opts
+          |> Keyword.put(:user_ids, user_ids)
 
         _ ->
           opts
@@ -983,14 +1011,15 @@ defmodule Sanbase.Entity do
       case Keyword.get(opts, :current_user_data_only) do
         user_id when is_integer(user_id) ->
           opts
-          |> Keyword.put(:include_all_user_entities, true)
-          |> Keyword.put(:include_public_entities, false)
+          |> Keyword.put(:user_ids, [user_id])
+          |> Keyword.put(:can_access_user_private_entities, true)
 
         _ ->
           opts
-          |> Keyword.put(:include_all_user_entities, false)
-          |> Keyword.put(:include_public_entities, true)
       end
+
+    # Inlcude the status as-is.
+    opts = Keyword.put(opts, :public_status, public_status)
 
     opts
   end

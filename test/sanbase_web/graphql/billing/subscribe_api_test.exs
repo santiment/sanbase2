@@ -381,6 +381,27 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       assert response["plan"]["name"] == context.plans.plan_pro_sanbase.name
     end
 
+    test "subscribe to Sanbase MAX plan doesn't give free trial", context do
+      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
+      query = subscribe_mutation(context.plans.plan_max_sanbase.id)
+      response = execute_mutation(context.conn, query, "subscribe")
+
+      # The existing assert_called for PRO plan checks for trial_end being set
+      # For MAX plan, we verify trial_end is NOT called in the subscription
+      refute called(StripeApi.create_subscription(%{trial_end: :_}))
+      assert response["plan"]["name"] == context.plans.plan_max_sanbase.name
+    end
+
+    test "subscribe to Sanbase PRO_PLUS plan doesn't give free trial", context do
+      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
+      query = subscribe_mutation(context.plans.plan_pro_plus_sanbase.id)
+      response = execute_mutation(context.conn, query, "subscribe")
+
+      # Only PRO plans get trials, PRO_PLUS should not
+      refute called(StripeApi.create_subscription(%{trial_end: :_}))
+      assert response["plan"]["name"] == context.plans.plan_pro_plus_sanbase.name
+    end
+
     test "subscribe to SanAPI PRO plan doesn't give free trial", context do
       expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
       query = subscribe_mutation(context.plans.plan_pro.id)

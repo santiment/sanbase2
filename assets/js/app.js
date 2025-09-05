@@ -11,6 +11,83 @@ import { Sortable as SortableHook } from "./metric_hooks"
 import { InfiniteScroll } from "./infinite_scroll"
 import { TickerAutocomplete } from "./ticker_autocomplete"
 
+// Monaco Editor Hook
+const MonacoEditor = {
+  mounted() {
+    this.initializeMonaco()
+  },
+  initializeMonaco() {
+    const targetId = this.el.dataset.targetInput
+    const targetInput = document.getElementById(targetId)
+    const initialValue = targetInput ? targetInput.value : ''
+
+    // Load Monaco from CDN
+    const requireScriptId = 'monaco-require'
+    const loaderScriptId = 'monaco-loader'
+    const existingRequire = document.getElementById(requireScriptId)
+    const existingLoader = document.getElementById(loaderScriptId)
+
+    const startEditor = () => {
+      /* global require */
+      require.config({ paths: { vs: 'https://unpkg.com/monaco-editor@0.45.0/min/vs' } })
+      require(['vs/editor/editor.main'], () => {
+        /* global monaco */
+        this.editor = monaco.editor.create(this.el, {
+          value: initialValue,
+          language: 'markdown',
+          theme: 'vs',
+          automaticLayout: true,
+          minimap: { enabled: false },
+          scrollBeyondLastLine: false,
+          wordWrap: 'on',
+          fontSize: 14,
+          lineNumbers: 'on',
+          folding: true,
+          bracketMatching: 'always',
+          autoIndent: 'full',
+          cursorStyle: 'line',
+          cursorBlinking: 'smooth',
+          renderLineHighlight: 'all',
+          renderLineHighlightOnlyWhenFocus: false
+        })
+
+        // Sync changes to hidden input
+        this.editor.onDidChangeModelContent(() => {
+          if (targetInput) {
+            targetInput.value = this.editor.getValue()
+            targetInput.dispatchEvent(new Event('input', { bubbles: true }))
+          }
+        })
+      })
+    }
+
+    const ensureMonacoLoader = () => {
+      if (!existingRequire) {
+        const s = document.createElement('script')
+        s.id = requireScriptId
+        s.src = 'https://unpkg.com/monaco-editor@0.45.0/min/vs/loader.js'
+        s.onload = startEditor
+        document.head.appendChild(s)
+        return
+      }
+      // If loader already present, just start
+      startEditor()
+    }
+
+    // Some CDN builds require AMD loader. Ensure it's present
+    if (!window.require) {
+      ensureMonacoLoader()
+    } else {
+      startEditor()
+    }
+  },
+  destroyed() {
+    if (this.editor) {
+      this.editor.dispose()
+    }
+  }
+}
+
 // Make Sortable available globally
 window.Sortable = Sortable
 
@@ -21,7 +98,8 @@ const Hooks = {
   FocusInput: FocusInput,
   Sortable: SortableHook,
   InfiniteScroll: InfiniteScroll,
-  TickerAutocomplete: TickerAutocomplete
+  TickerAutocomplete: TickerAutocomplete,
+  MonacoEditor: MonacoEditor
 }
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")

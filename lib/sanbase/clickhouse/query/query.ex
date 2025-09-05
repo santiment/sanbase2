@@ -184,11 +184,8 @@ defmodule Sanbase.Clickhouse.Query do
         ", log_comment='#{Jason.encode!(log_comment)}'"
       end
 
-    sql =
-      sql <>
-        """
-        \nSETTINGS enable_analyzer=1 #{log_comment_str}
-        """
+    settings_str = "\nSETTINGS enable_analyzer=1" <> (log_comment_str || "")
+    sql = sql <> settings_str
 
     %{query | sql: sql}
   end

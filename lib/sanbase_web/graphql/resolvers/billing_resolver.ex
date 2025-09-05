@@ -197,8 +197,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
          amount_off: amount_off
        }}
     else
-      {:error, :too_many_attempts} ->
+      {:error, :too_many_burst_attempts} ->
         {:error, "Too many coupon attempts. Please try again later."}
+
+      {:error, :too_many_daily_attempts} ->
+        {:error, "Too many coupon attempts. Please try again tomorrow"}
 
       {:error, %Stripe.Error{message: message} = reason} ->
         log_error("Error checking coupon", reason)

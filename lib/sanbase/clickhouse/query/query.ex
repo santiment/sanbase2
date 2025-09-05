@@ -133,6 +133,10 @@ defmodule Sanbase.Clickhouse.Query do
              params: query.parameters,
              env: query.environment
            ) do
+      # The SQL builder, when some `maybe_<something>` function returns empty result
+      # can make the SQL query have a lot of blank rows. Replace them with single row
+      # new rows can have some spaces between them.
+      sql = sql |> String.replace(~r"(\n\s*\n)+", "\n")
       result = %{sql: sql, args: args}
       {:ok, result}
     end

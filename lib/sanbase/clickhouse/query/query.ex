@@ -177,7 +177,7 @@ defmodule Sanbase.Clickhouse.Query do
     log_comment =
       if user_id = Process.get(:__graphql_query_current_user_id__),
         do: Map.put_new(log_comment, :user_id, user_id),
-        else: log_comment
+        else: Map.put_new(log_comment, :user_id, 0)
 
     log_comment_str =
       if map_size(log_comment) > 0 do

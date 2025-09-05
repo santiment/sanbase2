@@ -22,8 +22,6 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   alias Sanbase.Clickhouse.MetricAdapter.Registry
 
   def timeseries_data_query(metric, selector, from, to, interval, aggregation, filters, opts) do
-    table = Map.get(Registry.table_map(), metric)
-
     params = %{
       interval: maybe_str_to_sec(interval),
       metric: Map.get(Registry.name_to_metric_map(), metric),
@@ -52,7 +50,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
           argMax(value, computed_at) AS value
         FROM {{table}}
         WHERE
-          #{finalized_data_filter_str(table, only_finalized_data)}
+          #{finalized_data_filter_str(params.table, only_finalized_data)}
           #{fixed_parameters_str}
           #{additional_filters}
           #{maybe_convert_to_date(:after, metric, "dt", "toDateTime({{from}})")} AND
@@ -61,7 +59,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
           #{metric_id_filter(metric, argument_name: "metric")}
           GROUP BY asset_id, dt
       )
-      WHERE isNotNull(value) AND NOT isNaN(value)
+      WHERE
+        #{maybe_add_is_not_nan_check(params.table, column_name: "value", trailing_and: true)}
+         isNotNull(value)
       GROUP BY t
       ORDER BY t
       """
@@ -139,15 +139,13 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         filters,
         opts
       ) do
-    table = Map.get(Registry.table_map(), metric)
-
     params = %{
       interval: maybe_str_to_sec(interval),
       metric: Map.get(Registry.name_to_metric_map(), metric),
       from: dt_to_unix(:from, from),
       to: dt_to_unix(:to, to),
       selector: slug_or_slugs,
-      table: table
+      table: Map.get(Registry.table_map(), metric)
     }
 
     only_finalized_data = Keyword.get(opts, :only_finalized_data, false)
@@ -165,13 +163,14 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         argMax(value, computed_at) AS value2
       FROM {{table}}
       WHERE
-        #{finalized_data_filter_str(table, only_finalized_data)}
+        #{finalized_data_filter_str(params.table, only_finalized_data)}
         #{additional_filters}
         #{maybe_convert_to_date(:after, metric, "dt", "toDateTime({{from}})")} AND
         #{maybe_convert_to_date(:before, metric, "dt", "toDateTime({{to}})")} AND
-        isNotNull(value) AND NOT isNaN(value) AND
         #{asset_id_filter(%{slug: slug_or_slugs}, argument_name: "selector")} AND
-        #{metric_id_filter(metric, argument_name: "metric")}
+        #{metric_id_filter(metric, argument_name: "metric")} AND
+        #{maybe_add_is_not_nan_check(params.table, column_name: "value", trailing_and: true)}
+      isNotNull(value)
       GROUP BY asset_id, dt
     )
     GROUP BY t, asset_id
@@ -194,15 +193,13 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         _ -> from
       end
 
-    table = Map.get(Registry.table_map(), metric)
-
     params = %{
       slugs: slugs,
       # Fetch internal metric name used. Fallback to the same name if missing.
       metric: Map.get(Registry.name_to_metric_map(), metric),
       from: dt_to_unix(:from, from),
       to: dt_to_unix(:to, to),
-      table: table
+      table: Map.get(Registry.table_map(), metric)
     }
 
     only_finalized_data = Keyword.get(opts, :only_finalized_data, false)
@@ -230,13 +227,14 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
           SELECT dt, asset_id, metric_id, value, computed_at
           FROM {{table}}
           WHERE
-            #{finalized_data_filter_str(table, only_finalized_data)}
+            #{finalized_data_filter_str(params.table, only_finalized_data)}
             #{additional_filters}
             #{asset_id_filter(%{slug: slugs}, argument_name: "slugs")} AND
             #{metric_id_filter(metric, argument_name: "metric")} AND
-            isNotNull(value) AND NOT isNaN(value) AND
             #{maybe_convert_to_date(:after, metric, "dt", "toDateTime({{from}})")} AND
-            #{maybe_convert_to_date(:before, metric, "dt", "toDateTime({{to}})")}
+            #{maybe_convert_to_date(:before, metric, "dt", "toDateTime({{to}})")} AND
+            #{maybe_add_is_not_nan_check(params.table, column_name: "value", trailing_and: true)}
+            isNotNull(value)
           )
           GROUP BY asset_id, dt
       )
@@ -300,6 +298,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     {additional_filters, params} =
       maybe_get_additional_filters(metric, filters, params, trailing_and: true)
 
+    # Table is interpolated in FROM as the caller of this function can also set
+    # `table` param
+    table = Map.get(Registry.table_map(), metric)
+
     sql = """
     SELECT
       dictGetString('asset_metadata_dict', 'name', asset_id) AS slug,
@@ -308,13 +310,14 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       SELECT asset_id, #{aggregation(aggregation, "value2", "dt")} AS value3
       FROM (
         SELECT asset_id, dt, argMax(value, computed_at) AS value2
-        FROM #{Map.get(Registry.table_map(), metric)}
+        FROM #{table}
         WHERE
           #{additional_filters}
           #{metric_id_filter(metric, argument_name: "metric")} AND
-          isNotNull(value) AND NOT isNaN(value) AND
           #{maybe_convert_to_date(:after, metric, "dt", "toDateTime({{from}})")} AND
-          #{maybe_convert_to_date(:before, metric, "dt", "toDateTime({{to}})")}
+          #{maybe_convert_to_date(:before, metric, "dt", "toDateTime({{to}})")} AND
+          #{maybe_add_is_not_nan_check(table, column_name: "value", trailing_and: true)}
+          isNotNull(value)
         GROUP BY asset_id, dt
       )
       GROUP BY asset_id
@@ -529,6 +532,15 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   end
 
   # Private functions
+
+  defp maybe_add_is_not_nan_check(table, opts) do
+    if table in ["distribution_deltas_5min"] do
+      ""
+    else
+      clause = "NOT isNaN(#{Keyword.fetch!(opts, :column_name)})"
+      if opts[:trailing_and], do: clause <> " AND", else: clause
+    end
+  end
 
   defp maybe_convert_to_date(:after, metric, dt_column, sql_dt_description) do
     table = Map.get(Registry.table_map(), metric)

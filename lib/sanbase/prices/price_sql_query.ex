@@ -22,7 +22,7 @@ defmodule Sanbase.Price.SqlQuery do
       #{aggregation(aggregation, "marketcap_usd", "dt")} AS marketcap_usd,
       #{aggregation(aggregation, "volume_usd", "dt")} AS volume_usd
     FROM #{@table}
-    PREWHERE
+    WHERE
       #{slug_filter(slug_or_slugs, argument_name: "slug")} AND
       source = cast({{source}}, 'LowCardinality(String)') AND
       dt >= toDateTime({{from}}) AND
@@ -48,7 +48,7 @@ defmodule Sanbase.Price.SqlQuery do
       #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS time,
       #{aggregation(aggregation, "#{metric}", "dt")}
     FROM #{@table}
-    PREWHERE
+    WHERE
       #{slug_filter(slug_or_slugs, argument_name: "slug")} AND
       NOT isNaN(#{metric}) AND isNotNull(#{metric})  AND
       #{if metric == "marketcap_usd", do: "marketcap_usd > 0 AND"}
@@ -85,7 +85,7 @@ defmodule Sanbase.Price.SqlQuery do
       slug,
       #{aggregation(aggregation, "#{metric}", "dt")}
     FROM #{@table} FINAL
-    PREWHERE
+    WHERE
       #{slug_filter(slug_or_slugs, argument_name: "slug")} AND
       NOT isNaN(#{metric}) AND isNotNull(#{metric})  AND
       #{if metric == "marketcap_usd", do: "marketcap_usd > 0 AND"}
@@ -133,7 +133,7 @@ defmodule Sanbase.Price.SqlQuery do
         #{aggregation(volume_aggr, "volume_usd", "dt")} AS volume_usd,
         toUInt32(1) AS has_changed
       FROM #{@table}
-        PREWHERE slug IN ({{slugs}}) AND
+        WHERE slug IN ({{slugs}}) AND
         dt >= toDateTime({{from}}) AND
         dt < toDateTime({{to}}) AND
         source = cast({{source}}, 'LowCardinality(String)')
@@ -173,7 +173,7 @@ defmodule Sanbase.Price.SqlQuery do
         #{aggregation(volume_aggr, "volume_usd", "dt")} AS volume_usd,
         toUInt32(1) AS has_changed
       FROM #{@table}
-      PREWHERE
+      WHERE
         slug IN ({{slugs}}) AND
         marketcap_usd > 0 AND
         dt >= toDateTime({{from}}) AND
@@ -210,7 +210,7 @@ defmodule Sanbase.Price.SqlQuery do
         #{aggregation(aggregation, "#{metric}", "dt")} AS value,
         toUInt32(1) AS has_changed
       FROM #{@table}
-      PREWHERE
+      WHERE
         NOT isNaN(#{metric}) AND isNotNull(#{metric}) AND
         #{if metric == "marketcap_usd", do: "marketcap_usd > 0 AND"}
         slug IN ({{slugs}}) AND
@@ -276,7 +276,7 @@ defmodule Sanbase.Price.SqlQuery do
         slug,
         #{aggregation(aggregation, "#{metric}", "dt")} AS value
       FROM #{@table}
-      PREWHERE
+      WHERE
         isNotNull(#{metric}) AND NOT isNaN(#{metric}) AND
         #{if metric == "marketcap_usd", do: "marketcap_usd > 0 AND"}
         dt >= toDateTime({{from}}) AND
@@ -318,7 +318,7 @@ defmodule Sanbase.Price.SqlQuery do
         argMax(price_usd, dt) AS close_price,
         toUInt32(1) AS has_changed
       FROM #{@table}
-      PREWHERE
+      WHERE
         slug = cast({{slug}}, 'LowCardinality(String)') AND
         source = cast({{ource}}, 'LowCardinality(String)') AND
         dt >= toDateTime({{from}}) AND
@@ -349,7 +349,7 @@ defmodule Sanbase.Price.SqlQuery do
       min(price_usd) AS low_price,
       argMax(price_usd, dt) AS close_price
     FROM #{@table}
-    PREWHERE
+    WHERE
       slug = cast({{slug}}, 'LowCardinality(String)') AND
       source = cast({{source}}, 'LowCardinality(String)') AND
       dt >= toDateTime({{from}}) AND
@@ -386,7 +386,7 @@ defmodule Sanbase.Price.SqlQuery do
         argMax(volume_usd, dt) AS volume_usd,
         toUInt32(1) AS has_changed
       FROM #{@table}
-      PREWHERE
+      WHERE
         slug IN ({{slugs}}) AND
         marketcap_usd > 0 AND
         source = cast({{source}}, 'LowCardinality(String)') AND
@@ -443,7 +443,7 @@ defmodule Sanbase.Price.SqlQuery do
     sql = """
     SELECT toUnixTimestamp(max(dt))
     FROM #{@table}
-    PREWHERE slug = cast({{slug}}, 'LowCardinality(String)')
+    WHERE slug = cast({{slug}}, 'LowCardinality(String)')
     """
 
     params = %{slug: slug}
@@ -455,7 +455,7 @@ defmodule Sanbase.Price.SqlQuery do
     sql = """
     SELECT any(dt)
     FROM #{@table}
-    PREWHERE slug = cast({{slug}}, 'LowCardinality(String)')
+    WHERE slug = cast({{slug}}, 'LowCardinality(String)')
     """
 
     params = %{slug: slug}
@@ -468,7 +468,7 @@ defmodule Sanbase.Price.SqlQuery do
     SELECT
       toUnixTimestamp(dt)
     FROM #{@table}
-    PREWHERE
+    WHERE
       slug = cast({{slug}}, 'LowCardinality(String)') AND
       source = cast({{source}}, 'LowCardinality(String)')
     ORDER BY dt ASC
@@ -484,7 +484,7 @@ defmodule Sanbase.Price.SqlQuery do
     sql = """
     SELECT distinct(slug)
     FROM #{@table}
-    PREWHERE source = cast({{source}}, 'LowCardinality(String)')
+    WHERE source = cast({{source}}, 'LowCardinality(String)')
     """
 
     params = %{source: source}
@@ -497,7 +497,7 @@ defmodule Sanbase.Price.SqlQuery do
     SELECT
       distinct(slug)
     FROM #{@table}
-    PREWHERE
+    WHERE
       dt >= toDateTime({{datetime}}) AND
       source = cast({{source}}, 'LowCardinality(String)') AND
       volume_usd >= {{volume_usd}}

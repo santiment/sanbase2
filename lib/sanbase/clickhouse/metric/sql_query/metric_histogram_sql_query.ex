@@ -26,7 +26,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
         FROM (
           SELECT dt, argMax(measure, computed_at) AS measure, value
           FROM distribution_deltas_5min
-          PREWHERE
+          WHERE
             #{metric_id_filter(metric, argument_name: "metric")} AND
             #{asset_id_filter(%{slug: slug}, argument_name: "slug")} AND
             dt < toDateTime({{to}})
@@ -43,7 +43,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
         FROM (
           SELECT dt, argMax(value, computed_at) AS value
           FROM intraday_metrics
-          PREWHERE
+          WHERE
             #{metric_id_filter("price_usd", argument_name: "price_metric")} AND
             #{asset_id_filter(%{slug: slug}, argument_name: "slug")} AND
           GROUP BY dt
@@ -87,7 +87,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
         FROM (
           SELECT dt, value, argMax(measure, computed_at) AS measure, value
           FROM distribution_deltas_5min
-          PREWHERE
+          WHERE
             #{metric_id_filter(metric, argument_name: "metric")} AND
             #{asset_id_filter(%{slug: slug}, argument_name: "slug")} AND
             dt >= toDateTime({{from}}) AND
@@ -107,7 +107,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
         FROM (
           SELECT dt, argMax(value, computed_at) AS value
           FROM intraday_metrics
-          PREWHERE
+          WHERE
             #{metric_id_filter("price_usd", argument_name: "price_metric")} AND
             #{asset_id_filter(%{slug: slug}, argument_name: "slug")}
           GROUP BY dt
@@ -701,7 +701,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
     FROM (
       SELECT value, argMax(measure, computed_at) AS measure
       FROM #{Map.get(Registry.table_map(), metric)}
-      PREWHERE
+      WHERE
         #{metric_id_filter(metric, argument_name: "metric")} AND
         #{asset_id_filter(%{slug: slug}, argument_name: "slug")} AND
         dt != value AND

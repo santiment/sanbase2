@@ -69,7 +69,7 @@ defmodule Sanbase.Ecosystem.Metric do
         FROM ecosystem_aggregated_metrics
         WHERE
           ecosystem IN ({{ecosystems}}) AND
-          metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = {{metric}} LIMIT 1 ) AND
+          metric_id = ( SELECT metric_id FROM metric_metadata FINAL WHERE name = {{metric}} LIMIT 1 ) AND
           dt >= toDateTime({{from}}) AND dt < toDateTime({{to}})
         )
         GROUP BY ecosystem, dt
@@ -100,9 +100,9 @@ defmodule Sanbase.Ecosystem.Metric do
         dt,
         argMax(value, computed_at) AS value
       FROM ecosystem_aggregated_metrics
-      PREWHERE
+      WHERE
         ecosystem IN ({{ecosystems}}) AND
-        metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = {{metric}} LIMIT 1 ) AND
+        metric_id = ( SELECT metric_id FROM metric_metadata FINAL WHERE name = {{metric}} LIMIT 1 ) AND
         dt >= toDateTime({{from}}) AND dt < toDateTime({{to}})
       GROUP BY ecosystem, dt
     )

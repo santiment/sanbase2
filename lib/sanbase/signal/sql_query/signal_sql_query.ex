@@ -30,11 +30,11 @@ defmodule Sanbase.Signal.SqlQuery do
     sql = """
     SELECT name
     FROM signal_metadata
-    PREWHERE signal_id in (
+    WHERE signal_id in (
       SELECT DISTINCT(signal_id)
       FROM #{@table}
       INNER JOIN (
-        SELECT * FROM asset_metadata FINAL PREWHERE name = {{slug}}
+        SELECT * FROM asset_metadata FINAL WHERE name = {{slug}}
     ) using(asset_id)
     )
     """
@@ -47,11 +47,11 @@ defmodule Sanbase.Signal.SqlQuery do
     sql = """
     SELECT DISTINCT(name)
     FROM asset_metadata
-    PREWHERE asset_id in (
+    WHERE asset_id in (
       SELECT DISTINCT(asset_id)
       FROM #{@table}
       INNER JOIN (
-        SELECT * FROM signal_metadata PREWHERE name = {{signal}}
+        SELECT * FROM signal_metadata WHERE name = {{signal}}
       ) USING(signal_id))
     """
 
@@ -66,7 +66,7 @@ defmodule Sanbase.Signal.SqlQuery do
     sql = """
     SELECT toUnixTimestamp(toDateTime(min(dt)))
     FROM #{@table}
-    PREWHERE
+    WHERE
       #{signal_id_filter(%{signal: signal}, argument_name: "signal")} AND
       #{asset_id_filter(%{slug: slug}, argument_name: "slug")}
     """
@@ -92,7 +92,7 @@ defmodule Sanbase.Signal.SqlQuery do
       ANY LEFT JOIN (
         SELECT argMax(signal_id, version) AS signal_id2, name AS signal FROM signal_metadata FINAL GROUP BY name
       ) USING signal_id2
-      PREWHERE
+      WHERE
         #{maybe_filter_signals(signals, argument_name: "signals", trailing_and: true)}
         dt >= toDateTime({{from}}) AND
         dt < toDateTime({{to}}) AND
@@ -119,7 +119,7 @@ defmodule Sanbase.Signal.SqlQuery do
       value,
       metadata
     FROM #{@table} FINAL
-    PREWHERE
+    WHERE
       dt >= toDateTime({{from}}) AND
       dt < toDateTime({{to}}) AND
       isNotNull(value) AND NOT isNaN(value) AND
@@ -151,7 +151,7 @@ defmodule Sanbase.Signal.SqlQuery do
         value,
         metadata
       FROM #{@table} FINAL
-      PREWHERE
+      WHERE
         dt >= toDateTime({{from}}) AND
         dt < toDateTime({{to}}) AND
         isNotNull(value) AND NOT isNaN(value) AND
@@ -184,7 +184,7 @@ defmodule Sanbase.Signal.SqlQuery do
         asset_id,
         value
       FROM #{@table}
-      PREWHERE
+      WHERE
         dt >= toDateTime({{from}}) AND
         dt < toDateTime({{to}}) AND
         #{asset_id_filter(%{slug: slug_or_slugs}, argument_name: "slugs")} AND
@@ -193,7 +193,7 @@ defmodule Sanbase.Signal.SqlQuery do
     INNER JOIN (
       SELECT asset_id, name
       FROM asset_metadata FINAL
-      PREWHERE name IN ({{slugs}})
+      WHERE name IN ({{slugs}})
     ) USING (asset_id)
     GROUP BY slug
     """
@@ -218,7 +218,7 @@ defmodule Sanbase.Signal.SqlQuery do
     signal_id IN (
       SELECT argMax(signal_id, version)
       FROM signal_metadata FINAL
-      PREWHERE name in ({{#{argument_name}}})
+      WHERE name in ({{#{argument_name}}})
       GROUP BY name
     )
     """ <> trailing_and

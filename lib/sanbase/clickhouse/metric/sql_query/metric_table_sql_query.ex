@@ -16,11 +16,11 @@ defmodule Sanbase.Clickhouse.MetricAdapter.TableSqlQuery do
       FROM (
         SELECT dt, label, owner, asset_id, value
         FROM #{Map.get(Registry.table_map(), metric)} FINAL
-        PREWHERE
+        WHERE
           dt >= toDateTime({{from}}) AND
           dt < toDateTime({{to}}) AND
-          asset_id IN (SELECT asset_id FROM asset_metadata FINAL PREWHERE name IN ({{slugs}})) AND
-          metric_id = (SELECT metric_id FROM metric_metadata PREWHERE (name = {{metric}}))
+          asset_id IN (SELECT asset_id FROM asset_metadata FINAL WHERE name IN ({{slugs}})) AND
+          metric_id = (SELECT metric_id FROM metric_metadata WHERE (name = {{metric}}))
       )
       GLOBAL ANY LEFT JOIN (
         SELECT asset_id, argMax(name, computed_at) AS name FROM asset_metadata FINAL GROUP BY asset_id

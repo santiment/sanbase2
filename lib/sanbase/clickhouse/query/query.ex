@@ -173,12 +173,23 @@ defmodule Sanbase.Clickhouse.Query do
     %{query | sql: new_sql}
   end
 
-  defp add_settings(%{log_comment: map} = struct) when map_size(map) == 0, do: struct
-
   defp add_settings(%{sql: sql, log_comment: log_comment} = query) do
-    settings = "log_comment='#{Jason.encode!(log_comment)}'"
+    log_comment =
+      if user_id = Process.get(:__graphql_query_current_user_id__),
+        do: Map.put_new(log_comment, :user_id, user_id),
+        else: log_comment
 
-    sql = sql <> "\nSETTINGS #{settings}"
+    log_comment_str =
+      if map_size(log_comment) > 0 do
+        ", log_comment='#{Jason.encode!(log_comment)}'"
+      end
+
+    sql =
+      sql <>
+        """
+        \nSETTINGS enable_analyzer=1 #{log_comment_str}
+        """
+
     %{query | sql: sql}
   end
 

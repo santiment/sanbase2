@@ -166,20 +166,20 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
   def asset_id_filter(%{slug: slug}, opts) when is_binary(slug) do
     arg_name = Keyword.fetch!(opts, :argument_name)
 
-    "asset_id IN ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name = {{#{arg_name}}} LIMIT 1 )"
+    "asset_id IN ( SELECT asset_id FROM asset_metadata FINAL WHERE name = {{#{arg_name}}} LIMIT 1 )"
   end
 
   def asset_id_filter(%{slug: slugs}, opts) when is_list(slugs) do
     arg_name = Keyword.fetch!(opts, :argument_name)
 
-    "asset_id IN ( SELECT DISTINCT(asset_id) FROM asset_metadata FINAL PREWHERE name IN ({{#{arg_name}}}) )"
+    "asset_id IN ( SELECT DISTINCT(asset_id) FROM asset_metadata FINAL WHERE name IN ({{#{arg_name}}}) )"
   end
 
   def asset_id_filter(%{contract_address: contract_address}, opts)
       when is_binary(contract_address) do
     arg_name = Keyword.fetch!(opts, :argument_name)
 
-    "asset_id IN ( SELECT asset_id FROM asset_metadata FINAL PREWHERE has(contract_addresses, {{#{arg_name}}}) LIMIT 1 )"
+    "asset_id IN ( SELECT asset_id FROM asset_metadata FINAL WHERE has(contract_addresses, {{#{arg_name}}}) LIMIT 1 )"
   end
 
   def asset_id_filter(%{ecosystems: ecosystems}, opts) when is_list(ecosystems) do
@@ -216,26 +216,26 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     arg_name = Keyword.fetch!(opts, :argument_name)
     metric_id_column = Keyword.get(opts, :metric_id_column, "metric_id")
 
-    "#{metric_id_column} = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = {{#{arg_name}}} LIMIT 1 )"
+    "#{metric_id_column} = ( SELECT metric_id FROM metric_metadata FINAL WHERE name = {{#{arg_name}}} LIMIT 1 )"
   end
 
   def metric_id_filter(metrics, opts) when is_list(metrics) do
     arg_name = Keyword.fetch!(opts, :argument_name)
     metric_id_column = Keyword.get(opts, :metric_id_column, "metric_id")
 
-    "#{metric_id_column} IN ( SELECT DISTINCT(metric_id) FROM metric_metadata FINAL PREWHERE name IN ({{#{arg_name}}}) )"
+    "#{metric_id_column} IN ( SELECT DISTINCT(metric_id) FROM metric_metadata FINAL WHERE name IN ({{#{arg_name}}}) )"
   end
 
   def signal_id_filter(%{signal: signal}, opts) when is_binary(signal) do
     arg_name = Keyword.fetch!(opts, :argument_name)
 
-    "signal_id = ( SELECT argMax(signal_id, version) FROM signal_metadata FINAL PREWHERE name = {{#{arg_name}}} LIMIT 1 )"
+    "signal_id = ( SELECT argMax(signal_id, version) FROM signal_metadata FINAL WHERE name = {{#{arg_name}}} LIMIT 1 )"
   end
 
   def signal_id_filter(%{signal: signals}, opts) when is_list(signals) do
     arg_name = Keyword.fetch!(opts, :argument_name)
 
-    "signal_id IN ( SELECT DISTINCT(signal_id) FROM ( SELECT argMax(signal_id, version) FROM signal_metadata FINAL PREWHERE name IN ({{#{arg_name}}}) ) )"
+    "signal_id IN ( SELECT DISTINCT(signal_id) FROM ( SELECT argMax(signal_id, version) FROM signal_metadata FINAL WHERE name IN ({{#{arg_name}}}) ) )"
   end
 
   def signal_id_filter(_, opts) do
@@ -264,13 +264,13 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
   def label_id_by_label_key_filter(label_key, opts) when is_binary(label_key) do
     arg_name = Keyword.fetch!(opts, :argument_name)
 
-    "label_id IN (SELECT label_id FROM label_metadata PREWHERE key = {{#{arg_name}}})"
+    "label_id IN (SELECT label_id FROM label_metadata WHERE key = {{#{arg_name}}})"
   end
 
   def label_id_by_label_key_filter(label_keys, opts) when is_list(label_keys) do
     arg_name = Keyword.fetch!(opts, :argument_name)
 
-    "label_id IN (SELECT label_id FROM label_metadata PREWHERE key IN ({{#{arg_name}}}))"
+    "label_id IN (SELECT label_id FROM label_metadata WHERE key IN ({{#{arg_name}}}))"
   end
 
   # Add additional `=`/`in` filters to the query. This is mostly used with labeled

@@ -51,7 +51,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
           dt,
           argMax(value, computed_at) AS value
         FROM {{table}}
-        PREWHERE
+        WHERE
           #{finalized_data_filter_str(table, only_finalized_data)}
           #{fixed_parameters_str}
           #{additional_filters}
@@ -164,7 +164,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         dt,
         argMax(value, computed_at) AS value2
       FROM {{table}}
-      PREWHERE
+      WHERE
         #{finalized_data_filter_str(table, only_finalized_data)}
         #{additional_filters}
         #{maybe_convert_to_date(:after, metric, "dt", "toDateTime({{from}})")} AND
@@ -229,7 +229,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         FROM (
           SELECT dt, asset_id, metric_id, value, computed_at
           FROM {{table}}
-          PREWHERE
+          WHERE
             #{finalized_data_filter_str(table, only_finalized_data)}
             #{additional_filters}
             #{asset_id_filter(%{slug: slugs}, argument_name: "slugs")} AND
@@ -309,7 +309,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       FROM (
         SELECT asset_id, dt, argMax(value, computed_at) AS value2
         FROM #{Map.get(Registry.table_map(), metric)}
-        PREWHERE
+        WHERE
           #{additional_filters}
           #{metric_id_filter(metric, argument_name: "metric")} AND
           isNotNull(value) AND NOT isNaN(value) AND
@@ -412,7 +412,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     sql = """
     SELECT DISTINCT(name)
     FROM asset_metadata FINAL
-    PREWHERE
+    WHERE
       asset_id GLOBAL IN (
         SELECT DISTINCT(asset_id)
         FROM available_metrics
@@ -453,7 +453,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     sql = """
     SELECT toUnixTimestamp(argMax(computed_at, dt))
     FROM #{Map.get(Registry.table_map(), metric)} FINAL
-    PREWHERE
+    WHERE
       #{metric_id_filter(metric, argument_name: "metric")} AND
       #{asset_id_filter(selector, argument_name: "selector")}
     """
@@ -471,7 +471,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     SELECT
       toUnixTimestamp(start_dt)
     FROM available_metrics FINAL
-    PREWHERE
+    WHERE
       #{metric_id_filter(metric, argument_name: "metric")}
     """
 
@@ -485,7 +485,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     SELECT
       toUnixTimestamp(argMax(start_dt, computed_at))
     FROM available_metrics
-    PREWHERE
+    WHERE
       #{asset_id_filter(selector, argument_name: "selector")} AND
       #{metric_id_filter(metric, argument_name: "metric")}
     """

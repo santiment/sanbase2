@@ -5,7 +5,7 @@ defmodule Sanbase.Contract.MetricAdapter.SqlQuery do
     sql = """
     SELECT min(dt)
     FROM eth_receipts
-    PREWHERE
+    WHERE
       to = {{contract_address}}
     """
 
@@ -18,7 +18,7 @@ defmodule Sanbase.Contract.MetricAdapter.SqlQuery do
     sql = """
     SELECT max(dt)
     FROM eth_receipts
-    PREWHERE
+    WHERE
       to = {{contract_address}}
     """
 
@@ -33,7 +33,7 @@ defmodule Sanbase.Contract.MetricAdapter.SqlQuery do
       #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS time,
       uniqExact(transactionHash)
     FROM eth_receipts
-    PREWHERE
+    WHERE
       dt >= toDateTime({{from}}) AND
       dt < toDateTime({{to}}) AND
       to = {{contract_address}}
@@ -63,7 +63,7 @@ defmodule Sanbase.Contract.MetricAdapter.SqlQuery do
       #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS time,
       uniqExact(from)
     FROM eth_receipts
-    PREWHERE
+    WHERE
       dt >= toDateTime({{from}}) AND
       dt < toDateTime({{to}}) AND
       to = {{contract_address}}

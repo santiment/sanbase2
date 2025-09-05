@@ -16,7 +16,7 @@ defmodule Sanbase.BlockchainAddress.BlockchainAddressLabelChange.SqlQuery do
       dictGetString('default.labels', 'fqn', label_id) AS label_fqn,
       sign
     FROM address_label_changes
-    PREWHERE
+    WHERE
       address = {{address}} AND
       blockchain = {{blockchain}} AND
       dt >= toDateTime({{from}}) AND

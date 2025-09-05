@@ -30,7 +30,7 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
     sql = """
     SELECT toUnixTimestamp(min(dt))
     FROM #{@table}
-    PREWHERE
+    WHERE
       owner IN ({{organizations}}) AND
       dt >= toDateTime('2005-01-01 00:00:00') AND
       dt <= now()
@@ -46,7 +46,7 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
     sql = """
     SELECT toUnixTimestamp(max(dt))
     FROM #{@table}
-    PREWHERE
+    WHERE
       owner IN ({{organizations}}) AND
       dt >= toDateTime('2005-01-01 00:00:00')
       AND dt <= now()
@@ -79,7 +79,7 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
           #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS time,
           uniqExact(actor) AS uniq_contributors
         FROM #{@table}
-        PREWHERE
+        WHERE
           owner IN ({{organizations}}) AND
           dt >= toDateTime({{from}}) AND
           dt < toDateTime({{to}}) AND
@@ -113,7 +113,7 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
           #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS time,
           uniqExact(actor) AS uniq_contributors
         FROM #{@table}
-        PREWHERE
+        WHERE
           owner IN ({{organizations}}) AND
           dt >= toDateTime({{from}}) AND
           dt < toDateTime({{to}})
@@ -148,7 +148,7 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
         FROM (
           SELECT any(event) AS events, dt
           FROM #{@table}
-          PREWHERE
+          WHERE
             owner IN ({{organizations}}) AND
             dt >= toDateTime({{from}}) AND
             dt < toDateTime({{to}}) AND
@@ -186,7 +186,7 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
         FROM (
           SELECT any(event) AS events, dt
           FROM #{@table}
-          PREWHERE
+          WHERE
             owner IN ({{organizations}}) AND
             dt >= toDateTime({{from}}) AND
             dt < toDateTime({{to}})
@@ -208,7 +208,7 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
       FROM(
         SELECT owner, COUNT(*)
         FROM #{@table}
-        PREWHERE
+        WHERE
           owner IN ({{organizations}}) AND
           dt >= toDateTime({{from}}) AND
           dt < toDateTime({{to}})
@@ -234,7 +234,7 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
       FROM(
         SELECT owner, COUNT(*)
         FROM #{@table}
-        PREWHERE
+        WHERE
           owner IN ({{organizations}}) AND
           dt >= toDateTime({{from}}) AND
           dt <= toDateTime({{to}}) AND
@@ -260,7 +260,7 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
       """
       SELECT owner, uniqExact(actor) AS value
       FROM #{@table}
-      PREWHERE
+      WHERE
         owner IN ({{organizations}}) AND
         dt >= toDateTime({{from}}) AND
         dt <= toDateTime({{to}}) AND
@@ -284,7 +284,7 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
       """
       SELECT owner, uniqExact(actor) AS value
       FROM #{@table}
-      PREWHERE
+      WHERE
         owner IN ({{organizations}}) AND
         dt >= toDateTime({{from}}) AND
         dt <= toDateTime({{to}})

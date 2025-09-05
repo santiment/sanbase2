@@ -152,7 +152,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
     sql = """
     SELECT balance
     FROM #{@table}
-    PREWHERE
+    WHERE
       address = {{address}} AND
       currency = {{currency}} AND
       assetRefId = cityHash64('XRP_' || {{issuer_currency}}) AND
@@ -175,7 +175,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
     sql = """
     SELECT address, argMax(value, dt)
     FROM #{@table}
-    PREWHERE
+    WHERE
       address = {{address}} AND
       currency = {{currency}} AND
       sign = 1
@@ -210,7 +210,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
         argMax(balance, dt) AS balance,
         toUInt8(1) AS has_changed
       FROM #{@table}
-      PREWHERE
+      WHERE
         address = {{address}} AND
         dt >= toDateTime({{from}}) AND
         dt < toDateTime({{to}}) AND
@@ -245,7 +245,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
       argMaxIf(balance, dt, dt <= {{to}}) AS end_balance,
       end_balance - start_balance AS diff
     FROM #{@table}
-    PREWHERE
+    WHERE
       address IN ({{addresses}}) AND
       currency = {{currency}} AND
       assetRefId = cityHash64('XRP_' || {{issuer_currency}})
@@ -289,7 +289,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
       FROM (
         SELECT dt, assetRefId, address, blockNumber, transactionIndex, (balance - oldBalance) AS change
         FROM xrp_balances
-        PREWHERE
+        WHERE
           address IN ({addresses}) AND
           currency = {{currency}} AND
           assetRefId = cityHash64('XRP_' || {{issuer_currency}}) AND

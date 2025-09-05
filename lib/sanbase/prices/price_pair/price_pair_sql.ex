@@ -24,7 +24,7 @@ defmodule Sanbase.Price.PricePairSql do
       toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), {{interval}}) * {{interval}}) AS time,
       #{aggregation(aggregation, "price", "dt")}
     FROM #{@table}
-    PREWHERE
+    WHERE
       #{slug_filter_map(slug_or_slugs, argument_name: "selector")} AND
       quote_asset = {{quote_asset}} AND
       source = {{source}} AND
@@ -73,7 +73,7 @@ defmodule Sanbase.Price.PricePairSql do
       #{aggregation(aggregation, "price", "dt")}
     FROM asset_price_pairs_only
     INNER JOIN wanted USING (base_asset)
-    PREWHERE
+    WHERE
       base_asset IN ( SELECT base_asset FROM wanted) AND
       quote_asset = {{quote_asset}} AND
       source = {{source}} AND
@@ -129,7 +129,7 @@ defmodule Sanbase.Price.PricePairSql do
         FROM san_to_cryptocompare_asset_mapping
         WHERE slug IN ({{slugs}})
       ) USING (base_asset)
-      PREWHERE
+      WHERE
         #{slug_filter_map(slugs, argument_name: "slugs")} AND
         quote_asset = {{quote_asset}} AND
         dt >= toDateTime({{from}}) AND
@@ -334,7 +334,7 @@ defmodule Sanbase.Price.PricePairSql do
     FROM (
       SELECT distinct(base_asset) AS base_asset
       FROM #{@table}
-      PREWHERE
+      WHERE
         dt >= toDateTime({{datetime}}) AND
         source = {{source}}
     )
@@ -355,7 +355,7 @@ defmodule Sanbase.Price.PricePairSql do
     FROM (
       SELECT distinct(base_asset) AS base_asset
       FROM #{@table}
-      PREWHERE
+      WHERE
         quote_asset = {{quote_asset}} AND
         dt >= toDateTime({{datetime}}) AND
         source = {{source}}

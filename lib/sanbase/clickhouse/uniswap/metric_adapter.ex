@@ -220,7 +220,7 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
         to,
         SUM(value)/1e18 AS amount
       FROM #{address_ordered_table()} FINAL
-      PREWHERE
+      WHERE
         assetRefId = (SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = 'uniswap' LIMIT 1) AND
         from = '0x090d4613473dee047c3f2706764f49e0821d256e' AND
         dt >= toDateTime({{from}}) AND

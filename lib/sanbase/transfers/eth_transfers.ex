@@ -139,7 +139,7 @@ defmodule Sanbase.Transfers.EthTransfers do
       transactionHash,
       (any(value) / #{@eth_decimals}) AS value
     FROM #{@table}
-    PREWHERE
+    WHERE
       #{top_wallet_transfers_address_clause(type, argument_name: "wallets", trailing_and: true)}
       dt >= toDateTime({{from}}) AND
       dt < toDateTime({{to}}) AND
@@ -173,7 +173,7 @@ defmodule Sanbase.Transfers.EthTransfers do
     FROM (
       SELECT dt, type, from, to, transactionHash, internalTxPosition, value
       FROM #{@table}
-      PREWHERE
+      WHERE
         type = 'call' AND
         dt >= toDateTime({{from}}) AND
         dt < toDateTime({{to}})
@@ -211,7 +211,7 @@ defmodule Sanbase.Transfers.EthTransfers do
     FROM (
       SELECT dt, from, to, transactionHash, any(value) AS value
       FROM eth_transfers
-      PREWHERE
+      WHERE
         #{address_clause} AND
         type = 'call'
       GROUP BY from, type, to, dt, transactionHash, internalTxPosition
@@ -240,7 +240,7 @@ defmodule Sanbase.Transfers.EthTransfers do
     FROM (
       SELECT dt, 0 AS incoming, any(value) AS outgoing
       FROM eth_transfers
-      PREWHERE
+      WHERE
         from IN ({{addresses}}) AND
         dt >= toDateTime({{from}}) AND
         dt < toDateTime({{to}})
@@ -250,7 +250,7 @@ defmodule Sanbase.Transfers.EthTransfers do
 
       SELECT dt, any(value) AS incoming, 0 AS outgoing
       FROM eth_transfers
-      PREWHERE
+      WHERE
         to in ({{addresses}}) AND
         dt >= toDateTime({{from}}) AND
         dt < toDateTime({{to}})

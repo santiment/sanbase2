@@ -286,6 +286,10 @@ defmodule Sanbase.Dashboards.Dashboard do
 
   def public?(dashboard), do: dashboard.is_public
 
+  def entity_ids_by_opts(opts) do
+    base_entity_ids_query(opts)
+  end
+
   # Private functions
 
   defp base_query() do
@@ -300,10 +304,8 @@ defmodule Sanbase.Dashboards.Dashboard do
     |> Sanbase.Entity.Query.maybe_filter_by_users(opts)
     |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
     |> Sanbase.Entity.Query.maybe_filter_min_title_length(opts, :name)
-    |> Sanbase.Entity.Query.maybe_filter_min_description_length(
-      opts,
-      :description
-    )
+    |> Sanbase.Entity.Query.maybe_filter_min_description_length(opts, :description)
+    |> Sanbase.Entity.Query.maybe_apply_public_status_and_private_access(opts)
     |> select([ul], ul.id)
   end
 

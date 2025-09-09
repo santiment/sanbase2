@@ -314,7 +314,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
 
       # If not provided it's nil. Check it like this as checking for not presence or presence
       # of false is less readable
-      %{filter: %{public_status: :private}} and current_user_data_only != true ->
+      %{filter: %{public_status: :private}} when current_user_data_only != true ->
         {:error,
          "Cannot set both filter: { publicStatus: PRIVATE } and not set currentUserDataOnly: true"}
 

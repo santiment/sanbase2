@@ -1,5 +1,6 @@
 defmodule Sanbase.Entity.Query do
   import Ecto.Query
+  import Sanbase.Alert.TriggerQuery
 
   @doc ~s"""
   Apply a datetime filter, if defined in the opts, to a query.
@@ -95,6 +96,58 @@ defmodule Sanbase.Entity.Query do
 
       _ ->
         query
+    end
+  end
+
+  def maybe_apply_public_status_and_private_access(query, opts) do
+    public_status = Keyword.get(opts, :public_status)
+    can_access_private = Keyword.get(opts, :can_access_user_private_entities)
+
+    cond do
+      is_nil(public_status) or is_nil(can_access_private) ->
+        query
+
+      match?({_, Sanbase.Insight.Post}, query.from.source) ->
+        case public_status do
+          :all when can_access_private ->
+            query
+
+          :private when can_access_private ->
+            query |> where([p], p.ready_state == ^Sanbase.Insight.Post.draft())
+
+          :public ->
+            query |> where([p], p.ready_state == ^Sanbase.Insight.Post.published())
+        end
+
+      match?({_, Sanbase.Alert.UserTrigger}, query.from.source) ->
+        case public_status do
+          :all when can_access_private ->
+            query
+
+          :private when can_access_private ->
+            query |> where([ut], private_trigger?())
+
+          :public ->
+            query |> where([ut], public_trigger?())
+        end
+
+      true ->
+        case public_status do
+          :all -> query
+          :public -> query |> where([ul], ul.is_public == true)
+          :private -> query |> where([ul], ul.is_public == false)
+        end
+    end
+  end
+
+  def force_apply_public_status_and_private_access(query, opts) do
+    public_status = Keyword.fetch!(opts, :public_status)
+    can_access_private = Keyword.fetch!(opts, :can_access_user_private_entities)
+
+    case public_status do
+      :all when can_access_private -> query
+      :private when can_access_private -> query |> where([ul], ul.is_public == false)
+      :public when can_access_private -> query |> where([ul], ul.is_public == true)
     end
   end
 

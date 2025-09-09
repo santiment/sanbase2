@@ -170,6 +170,47 @@ defmodule Sanbase.UserList do
     |> where([ul], ul.user_id == ^user_id)
   end
 
+  def entity_ids_by_opts(opts) do
+    # Which of the provided by the API opts are passed to the entity modules.
+    @passed_opts [
+      :filter,
+      :cursor,
+      :user_ids,
+      :is_featured_data_only,
+      :is_moderator,
+      :min_title_length,
+      :min_description_length
+    ]
+
+    entity_opts = 
+      Keyword.take(opts, @passed_opts)
+      |> add_type_specific_opts(opts)
+
+    current_user_id = Keyword.get(opts, :current_user_id)
+    include_all_user_entities = Keyword.fetch!(opts, :include_all_user_entities)
+    include_public_entities = Keyword.fetch!(opts, :include_public_entities)
+
+    case {include_all_user_entities, include_public_entities} do
+      {false, true} -> public_entity_ids_query(entity_opts)
+      {true, false} -> user_entity_ids_query(current_user_id, entity_opts)
+      {true, true} -> public_and_user_entity_ids_query(current_user_id, entity_opts)
+    end
+  end
+
+  defp add_type_specific_opts(entity_opts, opts) do
+    # Add type-specific options based on what's provided
+    entity_opts
+    |> maybe_add_opt(:is_screener, opts)
+    |> maybe_add_opt(:type, opts)
+  end
+
+  defp maybe_add_opt(entity_opts, key, opts) do
+    case Keyword.get(opts, key) do
+      nil -> entity_opts
+      value -> Keyword.put(entity_opts, key, value)
+    end
+  end
+
   def by_slug(slug) when is_binary(slug) do
     from(ul in base_query(), where: ul.slug == ^slug)
     |> Repo.one()

@@ -812,122 +812,34 @@ defmodule Sanbase.Entity do
   end
 
   defp entity_ids_query(:user_trigger, opts) do
-    # `ordered?: false` is important otherwise the default order will be applied
-    # and this will conflict with the distinct(true) check
-    entity_opts =
-      Keyword.take(opts, @passed_opts) ++
-        [preload?: false, distinct?: true, ordered?: false]
-
-    current_user_id = Keyword.get(opts, :current_user_id)
-    include_all_user_entities = Keyword.fetch!(opts, :include_all_user_entities)
-    include_public_entities = Keyword.fetch!(opts, :include_public_entities)
-
-    case {include_all_user_entities, include_public_entities} do
-      {false, true} -> UserTrigger.public_entity_ids_query(entity_opts)
-      {true, false} -> UserTrigger.user_entity_ids_query(current_user_id, entity_opts)
-      {true, true} -> UserTrigger.public_and_user_entity_ids_query(current_user_id, entity_opts)
-    end
+    UserTrigger.entity_ids_by_opts(opts)
   end
 
   defp entity_ids_query(:screener, opts) do
-    entity_opts = Keyword.take(opts, @passed_opts) ++ [is_screener: true]
-
-    current_user_id = Keyword.get(opts, :current_user_id)
-    include_all_user_entities = Keyword.fetch!(opts, :include_all_user_entities)
-    include_public_entities = Keyword.fetch!(opts, :include_public_entities)
-
-    case {include_all_user_entities, include_public_entities} do
-      {false, true} -> UserList.public_entity_ids_query(entity_opts)
-      {true, false} -> UserList.user_entity_ids_query(current_user_id, entity_opts)
-      {true, true} -> UserList.public_and_user_entity_ids_query(current_user_id, entity_opts)
-    end
+    opts = Keyword.put(opts, :is_screener, true)
+    UserList.entity_ids_by_opts(opts)
   end
 
   defp entity_ids_query(:project_watchlist, opts) do
-    entity_opts = Keyword.take(opts, @passed_opts) ++ [is_screener: false, type: :project]
-
-    current_user_id = Keyword.get(opts, :current_user_id)
-    include_all_user_entities = Keyword.fetch!(opts, :include_all_user_entities)
-    include_public_entities = Keyword.fetch!(opts, :include_public_entities)
-
-    case {include_all_user_entities, include_public_entities} do
-      {false, true} -> UserList.public_entity_ids_query(entity_opts)
-      {true, false} -> UserList.user_entity_ids_query(current_user_id, entity_opts)
-      {true, true} -> UserList.public_and_user_entity_ids_query(current_user_id, entity_opts)
-    end
+    opts = opts |> Keyword.put(:is_screener, false) |> Keyword.put(:type, :project)
+    UserList.entity_ids_by_opts(opts)
   end
 
   defp entity_ids_query(:address_watchlist, opts) do
-    entity_opts =
-      Keyword.take(opts, @passed_opts) ++
-        [is_screener: false, type: :blockchain_address]
-
-    current_user_id = Keyword.get(opts, :current_user_id)
-    include_all_user_entities = Keyword.fetch!(opts, :include_all_user_entities)
-    include_public_entities = Keyword.fetch!(opts, :include_public_entities)
-
-    case {include_all_user_entities, include_public_entities} do
-      {false, true} -> UserList.public_entity_ids_query(entity_opts)
-      {true, false} -> UserList.user_entity_ids_query(current_user_id, entity_opts)
-      {true, true} -> UserList.public_and_user_entity_ids_query(current_user_id, entity_opts)
-    end
+    opts = opts |> Keyword.put(:is_screener, false) |> Keyword.put(:type, :blockchain_address)
+    UserList.entity_ids_by_opts(opts)
   end
 
   defp entity_ids_query(:chart_configuration, opts) do
-    entity_opts = Keyword.take(opts, @passed_opts)
-
-    current_user_id = Keyword.get(opts, :current_user_id)
-    include_all_user_entities = Keyword.fetch!(opts, :include_all_user_entities)
-    include_public_entities = Keyword.fetch!(opts, :include_public_entities)
-
-    case {include_all_user_entities, include_public_entities} do
-      {false, true} ->
-        Chart.Configuration.public_entity_ids_query(entity_opts)
-
-      {true, false} ->
-        Chart.Configuration.user_entity_ids_query(current_user_id, entity_opts)
-
-      {true, true} ->
-        Chart.Configuration.public_and_user_entity_ids_query(current_user_id, entity_opts)
-    end
+    Chart.Configuration.entity_ids_by_opts(opts)
   end
 
   defp entity_ids_query(:dashboard, opts) do
-    entity_opts = Keyword.take(opts, @passed_opts)
-
-    current_user_id = Keyword.get(opts, :current_user_id)
-    include_all_user_entities = Keyword.fetch!(opts, :include_all_user_entities)
-    include_public_entities = Keyword.fetch!(opts, :include_public_entities)
-
-    case {include_all_user_entities, include_public_entities} do
-      {false, true} ->
-        Dashboard.public_entity_ids_query(entity_opts)
-
-      {true, false} ->
-        Dashboard.user_entity_ids_query(current_user_id, entity_opts)
-
-      {true, true} ->
-        Dashboard.public_and_user_entity_ids_query(current_user_id, entity_opts)
-    end
+    Dashboard.entity_ids_by_opts(opts)
   end
 
   defp entity_ids_query(:query, opts) do
-    entity_opts = Keyword.take(opts, @passed_opts)
-
-    current_user_id = Keyword.get(opts, :current_user_id)
-    include_all_user_entities = Keyword.fetch!(opts, :include_all_user_entities)
-    include_public_entities = Keyword.fetch!(opts, :include_public_entities)
-
-    case {include_all_user_entities, include_public_entities} do
-      {false, true} ->
-        Query.public_entity_ids_query(entity_opts)
-
-      {true, false} ->
-        Query.user_entity_ids_query(current_user_id, entity_opts)
-
-      {true, true} ->
-        Query.public_and_user_entity_ids_query(current_user_id, entity_opts)
-    end
+    Query.entity_ids_by_opts(opts)
   end
 
   defp deduce_entity_creation_time_field(:insight), do: {:published_at, :inserted_at}

@@ -158,6 +158,35 @@ defmodule Sanbase.Alert.UserTrigger do
     |> where([ul], ul.user_id == ^user_id)
   end
 
+  def entity_ids_by_opts(opts) do
+    # Which of the provided by the API opts are passed to the entity modules.
+    @passed_opts [
+      :filter,
+      :cursor,
+      :user_ids,
+      :is_featured_data_only,
+      :is_moderator,
+      :min_title_length,
+      :min_description_length
+    ]
+
+    # `ordered?: false` is important otherwise the default order will be applied
+    # and this will conflict with the distinct(true) check
+    entity_opts =
+      Keyword.take(opts, @passed_opts) ++
+        [preload?: false, distinct?: true, ordered?: false]
+
+    current_user_id = Keyword.get(opts, :current_user_id)
+    include_all_user_entities = Keyword.fetch!(opts, :include_all_user_entities)
+    include_public_entities = Keyword.fetch!(opts, :include_public_entities)
+
+    case {include_all_user_entities, include_public_entities} do
+      {false, true} -> public_entity_ids_query(entity_opts)
+      {true, false} -> user_entity_ids_query(current_user_id, entity_opts)
+      {true, true} -> public_and_user_entity_ids_query(current_user_id, entity_opts)
+    end
+  end
+
   @doc ~s"""
   Get all triggers for the user with id `user_id`
   The result is transformed so all trigger settings are loaded in their

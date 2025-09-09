@@ -302,7 +302,7 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
     Logger.info("📊 Collected documents for #{length(all_words_with_docs)} words")
 
     # Step 2: Batch summarize all words and documents in one OpenAI call
-    word_summaries = batch_summarize_documents_with_ai(all_words_with_docs) |> dbg()
+    word_summaries = batch_summarize_documents_with_ai(all_words_with_docs)
 
     # Step 3: Apply summaries back to the word data structure
     enriched_words =

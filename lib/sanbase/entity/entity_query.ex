@@ -30,13 +30,34 @@ defmodule Sanbase.Entity.Query do
 
   @spec maybe_filter_by_users(Ecto.Query.t(), Sanbase.Entity.opts()) :: Ecto.Query.t()
   def maybe_filter_by_users(query, opts) do
-    case Keyword.get(opts, :user_ids) do
-      nil ->
-        query
+    cond do
+      user_ids = Keyword.get(opts, :user_ids_and_all_other_public) ->
+        case query.from.source do
+          {_, Sanbase.Insight.Post} ->
+            query
+            |> where(
+              [e],
+              e.user_id in ^user_ids or e.ready_state == ^Sanbase.Insight.Post.published()
+            )
 
-      user_ids ->
+          {_, Sanbase.Alert.UserTrigger} ->
+            query
+            |> where(
+              [e],
+              e.user_id in ^user_ids or public_trigger?()
+            )
+
+          _ ->
+            query
+            |> where([e], e.user_id in ^user_ids or e.is_public == true)
+        end
+
+      user_ids = Keyword.get(opts, :user_ids) ->
         query
-        |> where([ul], ul.user_id in ^user_ids)
+        |> where([e], e.user_id in ^user_ids)
+
+      true ->
+        query
     end
   end
 

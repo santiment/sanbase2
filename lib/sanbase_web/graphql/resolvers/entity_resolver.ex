@@ -309,7 +309,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
       %{filter: %{public_status: :private}, user_id_data_only: id} when is_integer(id) ->
         {:error, "Cannot set both filter: { publicStatus: PRIVATE } and userIdDataOnly: <id>"}
 
-      %{filter: %{public_status: :private}, user_id_data_only: id} when is_integer(id) ->
+      %{filter: %{public_status: :all}, user_id_data_only: id} when is_integer(id) ->
         {:error, "Cannot set both filter: { publicStatus: ALL } and userIdDataOnly: <id>"}
 
       # If not provided it's nil. Check it like this as checking for not presence or presence

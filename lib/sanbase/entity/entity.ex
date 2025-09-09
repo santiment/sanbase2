@@ -556,14 +556,18 @@ defmodule Sanbase.Entity do
   end
 
   defp most_used_base_query(entities, opts) when is_list(entities) and entities != [] do
+    user_id = Keyword.fetch!(opts, :current_user_id)
+
+    # Craft the opts so it fetches all public entities and
+    # all private entities of the user
     opts =
       opts
-      |> Keyword.put(:include_public_entities, true)
-      |> Keyword.put(:include_all_user_entities, true)
+      |> Keyword.put(:user_ids_and_all_other_public, [user_id])
+      |> Keyword.put(:can_access_user_private_entities, true)
+      |> Keyword.put(:public_status, :all)
 
     query =
-      Keyword.fetch!(opts, :current_user_id)
-      |> Sanbase.Accounts.Interaction.get_user_most_used_query(entities, opts)
+      Sanbase.Accounts.Interaction.get_user_most_used_query(user_id, entities, opts)
 
     where_clause_query =
       Enum.reduce(entities, nil, fn type, query_acc ->
@@ -769,6 +773,7 @@ defmodule Sanbase.Entity do
   @passed_opts [
     :filter,
     :cursor,
+    :user_ids_and_all_other_public,
     :user_ids,
     :public_status,
     :can_access_user_private_entities,

@@ -797,16 +797,7 @@ defmodule Sanbase.Entity do
       |> Keyword.put(:is_paywall_required, is_paywall_required)
       |> Keyword.put(:tags, get_in(opts, [:filter, :insight, :tags]))
 
-    current_user_id = Keyword.get(opts, :current_user_id)
-
-    include_all_user_entities = Keyword.fetch!(opts, :include_all_user_entities)
-    include_public_entities = Keyword.fetch!(opts, :include_public_entities)
-
-    case {include_all_user_entities, include_public_entities} do
-      {false, true} -> Post.public_entity_ids_query(entity_opts)
-      {true, false} -> Post.user_entity_ids_query(current_user_id, entity_opts)
-      {true, true} -> Post.public_and_user_entity_ids_query(current_user_id, entity_opts)
-    end
+    Post.entity_ids_by_opts(entity_opts)
   end
 
   defp entity_ids_query(:user_trigger, opts) do
@@ -944,10 +935,20 @@ defmodule Sanbase.Entity do
   end
 
   defp update_opts(opts) do
+    # Transforms the API params into suitable params for the SQL query
+    # The EntityResolver validates the combination of params, for example
+    # user_id_data_only and current_user_data_only cannot be provided together,
+    # private data can be requested only if current_user_data_only is set, etc.
+
+    # At the end the following flags will be added:
+    # user_ids -- list of user ids to fetch
+    # public_status -- :public | :private | :all -- which entities to fetch
+    # can_access_user_private_entities -- If there is access to the private entities
+    # filter -- filter by project_ids
+
     # This will be used in combination with public_status.
     # Only when `currentUserData` is set to true it will allow to fetch
     # private entities of the user. Otherwise it is false by default.
-
     opts = opts |> Keyword.put_new(:can_access_user_private_entities, false)
     opts = opts |> Keyword.delete(:user_ids)
 
@@ -967,7 +968,7 @@ defmodule Sanbase.Entity do
     opts =
       case Keyword.get(opts, :public_status) do
         value when value in [:all, :public, :private] -> opts
-        nil -> Keyword.put(opts, :public_status, :all)
+        nil -> Keyword.put(opts, :public_status, :public)
         value -> raise ArgumentError, "Invalid value for :public_status option: #{inspect(value)}"
       end
 

@@ -111,29 +111,13 @@ defmodule Sanbase.Insight.Post do
 
   # The base of all the entity queries
   defp base_entity_ids_query(opts) do
-    public_status = Keyword.fetch!(opts, :public_status)
-    can_access_drafts = Keyword.fetch!(opts, :can_fetch_user_private_entities)
-
-    query =
-      base_insights_query(opts)
-      |> maybe_apply_projects_filter_query(opts)
-      |> Sanbase.Entity.Query.maybe_filter_is_hidden(opts)
-      |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :post_id)
-      |> Sanbase.Entity.Query.maybe_filter_by_users(opts)
-      |> Sanbase.Entity.Query.maybe_filter_by_cursor(:published_at, opts)
-      |> select([p], p.id)
-
-    query =
-      case public_status do
-        :all when can_access_drafts ->
-          query
-
-        :private when can_access_drafts ->
-          query |> where([p], p.ready_state == ^@draft)
-
-        :public ->
-          query |> where([p], p.ready_state == ^@published)
-      end
+    base_insights_query(opts)
+    |> maybe_apply_projects_filter_query(opts)
+    |> Sanbase.Entity.Query.maybe_filter_is_hidden(opts)
+    |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :post_id)
+    |> Sanbase.Entity.Query.maybe_filter_by_users(opts)
+    |> Sanbase.Entity.Query.maybe_filter_by_cursor(:published_at, opts)
+    |> select([p], p.id)
   end
 
   @impl Sanbase.Entity.Behaviour

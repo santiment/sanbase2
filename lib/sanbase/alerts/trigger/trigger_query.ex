@@ -45,6 +45,14 @@ defmodule Sanbase.Alert.TriggerQuery do
     end
   end
 
+  defmacro private_trigger?() do
+    quote do
+      fragment("""
+      trigger->>'is_public' != 'true'
+      """)
+    end
+  end
+
   defmacro slug_trigger_target?(slugs) do
     quote do
       fragment(

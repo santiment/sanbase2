@@ -908,8 +908,14 @@ defmodule Sanbase.Entity do
 
         _ ->
           if is_integer(Keyword.get(opts, :current_user_data_only)) do
+            # For backwards compatibility, when current_user_data_only is set
+            # previously we returned all public and private entities of the user.
+            # Now, if the `public_status` is not explicitly set, we do the same.
             Keyword.put(opts, :public_status, :all)
           else
+            # If current_user_data_only is provided then we can only fetch public
+            # entities. If the public_status is something else and current_user_data_only
+            # is not set, the resolver will reject the query and return a descriptive error
             Keyword.put(opts, :public_status, :public)
           end
       end

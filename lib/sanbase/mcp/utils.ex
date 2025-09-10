@@ -17,7 +17,7 @@ defmodule Sanbase.MCP.Utils do
   @spec parse_time_period(String.t(), DateTime.t()) ::
           {:ok, {DateTime.t(), DateTime.t()}} | {:error, String.t()}
   def parse_time_period(time_period, now \\ DateTime.utc_now()) do
-    # The second parameter with now is so we can write a test
+    # The now parameter allows for deterministic testing by providing a fixed reference time instead of using the current system time.
     if Sanbase.DateTimeUtils.valid_interval?(time_period) do
       seconds = Sanbase.DateTimeUtils.str_to_sec(time_period)
       to_datetime = now

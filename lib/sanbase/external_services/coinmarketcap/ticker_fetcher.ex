@@ -124,7 +124,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
 
     # Create a project if it's a new one in the top projects and we don't have it
     tickers
-    |> Enum.sort_by(& &1.rank, :asc)
     |> Enum.take(top_projects_to_follow())
     |> Enum.each(&insert_or_update_project/1)
 

@@ -48,7 +48,7 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
     result =
       get_most_recent(conn, [:insight],
         current_user_data_only: true,
-        filter: %{map_as_input_object: true, public_status: :all}
+        filter: %{map_as_input_object: true}
       )
 
     data = result["data"]
@@ -895,12 +895,10 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
         }
       }
       """
-      |> dbg()
 
     conn
     |> post("/graphql", query_skeleton(query))
     |> json_response(200)
-    |> IO.inspect()
     |> get_in(["data", "getMostRecent"])
   end
 end

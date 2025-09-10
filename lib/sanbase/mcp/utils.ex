@@ -42,7 +42,7 @@ defmodule Sanbase.MCP.Utils do
       iex> Sanbase.MCP.Utils.validate_size("invalid", 1, 10)
       {:error, "Size must be an integer"}
   """
-  @spec validate_size(integer(), integer(), integer()) ::
+  @spec validate_size(non_neg_integer(), non_neg_integer(), non_neg_integer()) ::
           {:ok, pos_integer()} | {:error, String.t()}
   def validate_size(size, min, max) when is_integer(size) and size >= min and size <= max do
     {:ok, size}

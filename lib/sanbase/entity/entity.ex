@@ -899,10 +899,19 @@ defmodule Sanbase.Entity do
       end
 
     opts =
-      case Keyword.get(opts, :public_status) do
-        value when value in [:all, :public, :private] -> opts
-        nil -> Keyword.put(opts, :public_status, :public)
-        value -> raise ArgumentError, "Invalid value for :public_status option: #{inspect(value)}"
+      case Keyword.get(opts, :filter) do
+        %{public_status: value} when value in [:all, :public, :private] ->
+          Keyword.put(opts, :public_status, value)
+
+        %{public_status: value} ->
+          raise ArgumentError, "Invalid value for :public_status option: #{inspect(value)}"
+
+        _ ->
+          if is_integer(Keyword.get(opts, :current_user_data_only)) do
+            Keyword.put(opts, :public_status, :all)
+          else
+            Keyword.put(opts, :public_status, :public)
+          end
       end
 
     opts =

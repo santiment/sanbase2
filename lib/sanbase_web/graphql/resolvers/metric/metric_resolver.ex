@@ -434,6 +434,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
          {:ok, result} <- fit_from_datetime(result, %{args | interval: interval}),
          {:ok, result} <- maybe_rename_fields(result, function, args) do
       result = result |> Enum.reject(&is_nil/1)
+
       {:ok, result}
     end
     |> maybe_handle_graphql_error(fn error ->

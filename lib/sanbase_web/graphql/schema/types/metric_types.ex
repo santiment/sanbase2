@@ -5,6 +5,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
 
   alias SanbaseWeb.Graphql.Complexity
   alias SanbaseWeb.Graphql.Middlewares.AccessControl
+  alias SanbaseWeb.Graphql.Middlewares.AfterCacheTransform
   alias SanbaseWeb.Graphql.Resolvers.MetricResolver
   alias SanbaseWeb.Graphql.Resolvers.MetricTransform
 
@@ -634,7 +635,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl, resolve_slugs_list: true)
 
-      cache_resolve(&MetricResolver.timeseries_data/3, ttl: 150, max_ttl_offset: 90)
+      cache_resolve(&MetricResolver.timeseries_data/3, ttl: 300, max_ttl_offset: 90)
     end
 
     field :timeseries_data_json, :json do
@@ -653,7 +654,8 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl, resolve_slugs_list: true)
 
-      cache_resolve(&MetricResolver.timeseries_data/3, ttl: 150, max_ttl_offset: 90)
+      cache_resolve(&MetricResolver.timeseries_data/3, ttl: 300, max_ttl_offset: 90)
+      middleware(AfterCacheTransform)
     end
 
     field :timeseries_data_per_slug_json, :json do
@@ -671,7 +673,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       complexity(&Complexity.from_to_interval_selector_weight/3)
       middleware(AccessControl, resolve_slugs_list: true)
 
-      cache_resolve(&MetricResolver.timeseries_data_per_slug/3, ttl: 150, max_ttl_offset: 90)
+      cache_resolve(&MetricResolver.timeseries_data_per_slug/3, ttl: 300, max_ttl_offset: 90)
     end
 
     field :timeseries_data_per_slug, list_of(:metric_data_per_slug) do
@@ -688,7 +690,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       complexity(&Complexity.from_to_interval_selector_weight/3)
       middleware(AccessControl, resolve_slugs_list: true)
 
-      cache_resolve(&MetricResolver.timeseries_data_per_slug/3, ttl: 150, max_ttl_offset: 90)
+      cache_resolve(&MetricResolver.timeseries_data_per_slug/3, ttl: 300, max_ttl_offset: 90)
     end
 
     @desc ~s"""
@@ -711,7 +713,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)
 
-      cache_resolve(&MetricResolver.aggregated_timeseries_data/3, ttl: 150, max_ttl_offset: 90)
+      cache_resolve(&MetricResolver.aggregated_timeseries_data/3, ttl: 300, max_ttl_offset: 90)
     end
 
     @desc ~s"""

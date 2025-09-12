@@ -1478,7 +1478,7 @@ ALTER SEQUENCE public.exchange_market_pair_mappings_id_seq OWNED BY public.excha
 
 CREATE TABLE public.faq_entries (
     id uuid NOT NULL,
-    question character varying(255) NOT NULL,
+    question text NOT NULL,
     answer_markdown text NOT NULL,
     answer_html text NOT NULL,
     source_url character varying(255),

@@ -121,10 +121,12 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
         <div>
           <.input
             field={@form[:question]}
-            type="text"
+            type="textarea"
             label="Question"
             placeholder="Enter the FAQ question..."
-            class="w-full"
+            rows="2"
+            autofocus
+            class="w-full text-xl font-semibold"
           />
         </div>
 

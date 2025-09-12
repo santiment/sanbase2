@@ -122,7 +122,7 @@ defmodule Sanbase.Clickhouse.ApiCallData do
     sql = """
     SELECT user_id, query, count(*) as count
     FROM api_call_data
-    PREWHERE auth_method = 'apikey' AND user_id != 0
+    WHERE auth_method = 'apikey' AND user_id != 0
     GROUP BY user_id, query
     ORDER BY count desc
     """
@@ -139,7 +139,7 @@ defmodule Sanbase.Clickhouse.ApiCallData do
       toUInt32(count())
     FROM
       #{@table}
-    PREWHERE
+    WHERE
       dt >= toDateTime({{from}}) AND
       dt < toDateTime({{to}}) AND
       user_id = {{user_id}}
@@ -164,7 +164,7 @@ defmodule Sanbase.Clickhouse.ApiCallData do
       toUInt32(count())
     FROM
       #{@table}
-    PREWHERE
+    WHERE
       dt >= toDateTime({{from}}) AND
       dt < toDateTime({{to}}) AND
       user_id = {{user_id}}
@@ -190,7 +190,7 @@ defmodule Sanbase.Clickhouse.ApiCallData do
     sql = """
     SELECT query, count(*) as count
     FROM api_call_data
-    PREWHERE auth_method = 'apikey' AND user_id != 0
+    WHERE auth_method = 'apikey' AND user_id != 0
     GROUP BY query
     ORDER BY count desc
     """
@@ -205,7 +205,7 @@ defmodule Sanbase.Clickhouse.ApiCallData do
       uniqExact(user_id)
     FROM
       #{@table}
-    PREWHERE
+    WHERE
       dt >= toDateTime({{from}}) AND
       dt < toDateTime({{to}})
     """
@@ -221,7 +221,7 @@ defmodule Sanbase.Clickhouse.ApiCallData do
       distinct(user_id)
     FROM
       #{@table}
-    PREWHERE
+    WHERE
       dt <= toDateTime({{datetime}}) AND
       auth_method = 'apikey' AND
       user_id != 0
@@ -237,7 +237,7 @@ defmodule Sanbase.Clickhouse.ApiCallData do
       distinct(user_id)
     FROM
       #{@table}
-    PREWHERE
+    WHERE
       dt <= toDateTime({{datetime}}) AND
       user_agent LIKE '%Google-Apps-Script%' AND
       user_id != 0
@@ -253,7 +253,7 @@ defmodule Sanbase.Clickhouse.ApiCallData do
       user_id, count(*) as count
     FROM
       #{@table}
-    PREWHERE
+    WHERE
     dt <= toDateTime({{datetime}}) AND
     auth_method = 'apikey' AND user_id != 0
     GROUP BY user_id

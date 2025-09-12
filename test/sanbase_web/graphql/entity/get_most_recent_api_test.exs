@@ -17,6 +17,50 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
     Timex.shift(DateTime.utc_now(), seconds: -seconds)
   end
 
+  test "get most recent insights for current user properly orders drafts and published",
+       context do
+    %{conn: conn, user: user} = context
+
+    i1 =
+      insert(:published_post,
+        inserted_at: seconds_ago(45),
+        published_at: seconds_ago(45),
+        title: "Title 1",
+        user: user
+      )
+
+    i2 =
+      insert(:post,
+        ready_state: "draft",
+        inserted_at: seconds_ago(40),
+        title: "Title 2",
+        user: user
+      )
+
+    i3 =
+      insert(:published_post,
+        inserted_at: seconds_ago(25),
+        published_at: seconds_ago(25),
+        title: "Title 1",
+        user: user
+      )
+
+    result =
+      get_most_recent(conn, [:insight],
+        current_user_data_only: true,
+        filter: %{map_as_input_object: true}
+      )
+
+    data = result["data"]
+    stats = result["stats"]
+
+    assert stats["totalEntitiesCount"] == 3
+    assert length(data) == 3
+    assert Enum.at(data, 0)["insight"]["id"] == i3.id
+    assert Enum.at(data, 1)["insight"]["id"] == i2.id
+    assert Enum.at(data, 2)["insight"]["id"] == i1.id
+  end
+
   test "get most recent insight with paywall and tags filter", %{conn: conn} do
     _ =
       insert(:published_post,
@@ -833,23 +877,24 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
         map -> map
       end
 
-    query = """
-    {
-      getMostRecent(#{map_to_args(args)}){
-        stats { currentPage currentPageSize totalPagesCount totalEntitiesCount }
-        data {
-          addressWatchlist{ id }
-          chartConfiguration{ id }
-          dashboard{ id }
-          query{ id }
-          insight{ id }
-          projectWatchlist{ id }
-          screener{ id views }
-          userTrigger{ trigger{ id } }
+    query =
+      """
+      {
+        getMostRecent(#{map_to_args(args)}){
+          stats { currentPage currentPageSize totalPagesCount totalEntitiesCount }
+          data {
+            addressWatchlist{ id insertedAt }
+            chartConfiguration{ id insertedAt }
+            dashboard{ id insertedAt }
+            query{ id insertedAt }
+            insight{ id insertedAt publishedAt }
+            projectWatchlist{ id insertedAt }
+            screener{ id views insertedAt }
+            userTrigger{ trigger{ id insertedAt } }
+          }
         }
       }
-    }
-    """
+      """
 
     conn
     |> post("/graphql", query_skeleton(query))

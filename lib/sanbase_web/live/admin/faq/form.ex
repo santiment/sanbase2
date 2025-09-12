@@ -15,7 +15,6 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
       |> assign(:form, to_form(changeset))
       |> assign(:action, :edit)
       |> assign(:page_title, "Edit FAQ Entry")
-      |> assign(:preview_html, entry.answer_html)
 
     {:ok, socket}
   end
@@ -31,7 +30,6 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
       |> assign(:form, to_form(changeset))
       |> assign(:action, :new)
       |> assign(:page_title, "New FAQ Entry")
-      |> assign(:preview_html, "")
 
     {:ok, socket}
   end
@@ -42,13 +40,10 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
       |> Faq.change_entry(faq_entry_params)
       |> Map.put(:action, :validate)
 
-    preview_html = generate_preview_html(faq_entry_params["answer_markdown"] || "")
-
     socket =
       socket
       |> assign(:changeset, changeset)
       |> assign(:form, to_form(changeset))
-      |> assign(:preview_html, preview_html)
 
     {:noreply, socket}
   end
@@ -97,19 +92,6 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
     end
   end
 
-  defp generate_preview_html(""), do: ""
-
-  defp generate_preview_html(markdown) when is_binary(markdown) do
-    case Earmark.as_html(markdown) do
-      {:ok, html} -> HtmlSanitizeEx.html5(html)
-      {:ok, html, _messages} -> HtmlSanitizeEx.html5(html)
-      {:error, html, _messages} -> HtmlSanitizeEx.html5(html)
-      {:error, _reason} -> "<p class=\"text-red-600\">Invalid markdown</p>"
-    end
-  end
-
-  defp generate_preview_html(_), do: ""
-
   def render(assigns) do
     ~H"""
     <div class="p-6 max-w-7xl mx-auto">
@@ -144,50 +126,30 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
           />
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Answer (Markdown)
-            </label>
-            <div
-              id="monaco-editor"
-              phx-hook="MonacoEditor"
-              phx-update="ignore"
-              data-target-input="faq_entry_answer_markdown"
-              class="border-2 border-gray-300 rounded-xl shadow-sm hover:border-blue-400 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-200 transition-all duration-200"
-              style="height: 600px;"
-            >
-            </div>
-            <input
-              type="hidden"
-              id="faq_entry_answer_markdown"
-              name={@form[:answer_markdown].name}
-              value={@form[:answer_markdown].value || ""}
-            />
-            <%= if @changeset.errors[:answer_markdown] do %>
-              <div class="mt-1 text-sm text-red-600">
-                {elem(@changeset.errors[:answer_markdown], 0)}
-              </div>
-            <% end %>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Answer (Markdown)
+          </label>
+          <div
+            id="easymde-container"
+            phx-hook="EasyMDEEditor"
+            phx-update="ignore"
+            data-target-input="faq_entry_answer_markdown"
+            class="w-full"
+          >
+            <textarea id="easymde-editor" class="w-full" style="min-height: 400px;"></textarea>
           </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Preview
-            </label>
-            <div
-              class="border-2 border-gray-200 rounded-xl p-6 bg-gray-50 shadow-sm"
-              style="height: 600px; overflow-y: auto;"
-            >
-              <%= if @preview_html == "" do %>
-                <p class="text-gray-500 italic">Preview will appear here as you type...</p>
-              <% else %>
-                <div class="prose max-w-none">
-                  {Phoenix.HTML.raw(@preview_html)}
-                </div>
-              <% end %>
+          <input
+            type="hidden"
+            id="faq_entry_answer_markdown"
+            name={@form[:answer_markdown].name}
+            value={@form[:answer_markdown].value || ""}
+          />
+          <%= if @changeset.errors[:answer_markdown] do %>
+            <div class="mt-1 text-sm text-red-600">
+              {elem(@changeset.errors[:answer_markdown], 0)}
             </div>
-          </div>
+          <% end %>
         </div>
 
         <div class="flex items-center justify-end space-x-3">

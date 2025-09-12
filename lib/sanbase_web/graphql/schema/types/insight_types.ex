@@ -82,6 +82,8 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
       end)
     end
 
+    field(:inserted_at, non_null(:datetime))
+
     field :created_at, non_null(:datetime) do
       resolve(fn %{inserted_at: inserted_at}, _, _ ->
         {:ok, inserted_at}

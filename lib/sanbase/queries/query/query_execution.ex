@@ -337,7 +337,7 @@ defmodule Sanbase.Queries.QueryExecution do
       result_rows,
       result_bytes / pow(2, 30) AS result_gb
     FROM system.query_log_distributed
-    PREWHERE
+    WHERE
       query_id = {{clickhouse_query_id}} AND
       type = 'QueryFinish' AND
       event_time >= toDateTime({{datetime}}) - INTERVAL 1 MINUTE AND

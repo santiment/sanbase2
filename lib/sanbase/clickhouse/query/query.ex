@@ -133,6 +133,10 @@ defmodule Sanbase.Clickhouse.Query do
              params: query.parameters,
              env: query.environment
            ) do
+      # The SQL builder, when some `maybe_<something>` function returns empty result
+      # can make the SQL query have a lot of blank rows. Replace them with single row
+      # new rows can have some spaces between them.
+      sql = sql |> String.replace(~r"(\n\s*\n)+", "\n")
       result = %{sql: sql, args: args}
       {:ok, result}
     end
@@ -169,12 +173,22 @@ defmodule Sanbase.Clickhouse.Query do
     %{query | sql: new_sql}
   end
 
-  defp add_settings(%{log_comment: map} = struct) when map_size(map) == 0, do: struct
-
   defp add_settings(%{sql: sql, log_comment: log_comment} = query) do
-    settings = "log_comment='#{Jason.encode!(log_comment)}'"
+    log_comment =
+      if user_id = Process.get(:__graphql_query_current_user_id__),
+        do: Map.put_new(log_comment, :user_id, user_id),
+        else: Map.put_new(log_comment, :user_id, 0)
 
-    sql = sql <> "\nSETTINGS #{settings}"
+    log_comment_str =
+      if map_size(log_comment) > 0 do
+        " log_comment='#{Jason.encode!(log_comment)}'"
+      end
+
+    settings_str =
+      if log_comment_str, do: "\nSETTINGS" <> log_comment_str, else: ""
+
+    sql = sql <> settings_str
+
     %{query | sql: sql}
   end
 

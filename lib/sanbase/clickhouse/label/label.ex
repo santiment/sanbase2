@@ -192,7 +192,7 @@ defmodule Sanbase.Clickhouse.Label do
     sql = """
     SELECT address, blockchain, dictGetString('default.labels', 'fqn', label_id) AS label_fqn
     FROM label_addresses
-    PREWHERE
+    WHERE
       #{label_id_by_label_fqn_filter(label_fqns, argument_name: "label_fqns")}
     GROUP BY address, blockchain, label_id
     LIMIT 20000
@@ -206,7 +206,7 @@ defmodule Sanbase.Clickhouse.Label do
     sql = """
     SELECT address, blockchain, dictGetString('default.labels', 'fqn', label_id) AS label_fqn
     FROM label_addresses
-    PREWHERE
+    WHERE
       #{label_id_by_label_fqn_filter(label_fqns, argument_name: "label_fqns")} AND
       blockchain = {{blockchain}}
     GROUP BY address, blockchain, label_id
@@ -221,7 +221,7 @@ defmodule Sanbase.Clickhouse.Label do
     sql = """
     SELECT address, blockchain, dictGetString('default.labels', 'fqn', label_id) AS label_fqn
     FROM label_addresses
-    PREWHERE
+    WHERE
       #{label_id_by_label_key_filter(label_keys, argument_name: "label_keys")}
     GROUP BY address, blockchain, label_id
     LIMIT 20000
@@ -235,7 +235,7 @@ defmodule Sanbase.Clickhouse.Label do
     sql = """
     SELECT address, blockchain, dictGetString('default.labels', 'fqn', label_id) AS label_fqn
     FROM label_addresses
-    PREWHERE
+    WHERE
       #{label_id_by_label_key_filter(label_keys, argument_name: "label_keys")} AND
       blockchain = {{blockchain}}
     GROUP BY address, blockchain, label_id

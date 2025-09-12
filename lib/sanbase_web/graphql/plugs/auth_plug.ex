@@ -84,8 +84,12 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
         auth_struct = augment_auth(auth_struct, conn)
 
         case auth_struct do
-          %{auth: %{current_user: %{id: user_id}}} -> Logger.metadata(user_id: user_id)
-          _ -> Logger.metadata(user_id: "anonymous")
+          %{auth: %{current_user: %{id: user_id}}} ->
+            Process.put(:__graphql_query_current_user_id__, user_id)
+            Logger.metadata(user_id: user_id)
+
+          _ ->
+            Logger.metadata(user_id: "anonymous")
         end
 
         conn

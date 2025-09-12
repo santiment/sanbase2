@@ -106,7 +106,7 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
     include_words = Map.get(params, :include_words, true)
 
     with {:ok, {from_datetime, to_datetime}} <- Utils.parse_time_period(time_period),
-         {:ok, validated_size} <- Utils.validate_size(size) do
+         {:ok, validated_size} <- Utils.validate_size(size, 1, 10) do
       # Fetch data in parallel with graceful error handling
       {trends_data, errors} =
         fetch_all_trends_data(
@@ -302,7 +302,7 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
     Logger.info("📊 Collected documents for #{length(all_words_with_docs)} words")
 
     # Step 2: Batch summarize all words and documents in one OpenAI call
-    word_summaries = batch_summarize_documents_with_ai(all_words_with_docs) |> dbg()
+    word_summaries = batch_summarize_documents_with_ai(all_words_with_docs)
 
     # Step 3: Apply summaries back to the word data structure
     enriched_words =

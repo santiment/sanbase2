@@ -117,6 +117,7 @@ defmodule Sanbase.Insight.Post do
     |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :post_id)
     |> Sanbase.Entity.Query.maybe_filter_by_users(opts)
     |> Sanbase.Entity.Query.maybe_filter_by_cursor(:published_at, opts)
+    |> Sanbase.Entity.Query.maybe_apply_public_status_and_private_access(opts)
     |> select([p], p.id)
   end
 
@@ -178,6 +179,10 @@ defmodule Sanbase.Insight.Post do
       [p],
       (p.ready_state == ^@published and p.state == ^@approved) or p.user_id == ^user_id
     )
+  end
+
+  def entity_ids_by_opts(opts) do
+    base_entity_ids_query(opts)
   end
 
   @impl Sanbase.Entity.Behaviour

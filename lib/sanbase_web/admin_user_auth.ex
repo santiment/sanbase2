@@ -70,6 +70,18 @@ defmodule SanbaseWeb.AdminUserAuth do
       To give a Viewer role: Sanbase.Accounts.UserRole.create(#{conn.assigns.current_user.id}, #{Sanbase.Accounts.Role.admin_panel_viewer_role_id()})
       To give a Editor role: Sanbase.Accounts.UserRole.create(#{conn.assigns.current_user.id}, #{Sanbase.Accounts.Role.admin_panel_editor_role_id()})
       To give a Owner  role: Sanbase.Accounts.UserRole.create(#{conn.assigns.current_user.id}, #{Sanbase.Accounts.Role.admin_panel_owner_role_id()})
+
+      #{if Application.get_env(:sanbase, :env) == :dev do
+        """
+        Since you are in the dev environment, you might need to create the role yourself by running the following commands in IEx:
+
+        Sanbase.Factory.insert(:role_admin_panel_viewer)
+        Sanbase.Factory.insert(:role_admin_panel_editor)
+        Sanbase.Factory.insert(:role_admin_panel_owner)
+        """
+      else
+        ""
+      end}
       """)
     end
   end

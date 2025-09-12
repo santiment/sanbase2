@@ -143,7 +143,7 @@ defmodule Sanbase.Transfers.BtcTransfers do
     FROM (
       SELECT dt, address, blockNumber, txPos, txID,  balance, oldBalance, balance - oldBalance AS amount
       FROM btc_balances
-      PREWHERE
+      WHERE
         amount >= {{amount_filter}} AND
         dt >= toDateTime({{from}}) AND
         dt < toDateTime({{to}})

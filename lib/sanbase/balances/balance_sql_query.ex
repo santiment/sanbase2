@@ -301,7 +301,7 @@ defmodule Sanbase.Balance.SqlQuery do
     FROM (
       SELECT address, argMax(balance, dt) / pow(10, {{decimals}}) AS balance
       FROM #{table}
-      PREWHERE
+      WHERE
         addressType = 'normal'
       GROUP BY address
     )
@@ -322,7 +322,7 @@ defmodule Sanbase.Balance.SqlQuery do
         address,
         argMax(balance, dt) / pow(10, {{decimals}}) AS balance
       FROM #{table}
-      PREWHERE
+      WHERE
         assetRefId = (SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = {{slug}} LIMIT 1) AND
         addressType = 'normal'
       GROUP BY address
@@ -396,7 +396,7 @@ defmodule Sanbase.Balance.SqlQuery do
     FROM (
       SELECT address, argMax(balance, dt) / {{decimals}} AS balance
       FROM #{table}
-      PREWHERE
+      WHERE
         assetRefId = (SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = {{slug}} LIMIT 1) AND
         addressType = 'normal' AND (dt > (now() - toIntervalDay(1)))
       GROUP BY address

@@ -5,7 +5,7 @@ defmodule Sanbase.MCP.TrendingStoriesTool do
   ## Parameters
 
   - `time_period` - Time period for trending stories (e.g., '1h', '6h', '1d', '7d'). Defaults to '1h' (last hour).
-  - `size` - Number of trending stories to return (max 30). Defaults to 10.
+  - `size` - Number of trending stories to return (max 10). Defaults to 10.
 
   ## Response
 
@@ -47,7 +47,7 @@ defmodule Sanbase.MCP.TrendingStoriesTool do
     field(:size, :integer,
       required: false,
       description: """
-      Number of trending stories to return (max 30).
+      Number of trending stories to return (max 10).
 
       Defaults to 10.
       """
@@ -64,7 +64,7 @@ defmodule Sanbase.MCP.TrendingStoriesTool do
     size = params[:size] || 10
 
     with {:ok, {from_datetime, to_datetime}} <- Utils.parse_time_period(time_period),
-         {:ok, validated_size} <- Utils.validate_size(size),
+         {:ok, validated_size} <- Utils.validate_size(size, 1, 10),
          {:ok, stories_data} <- fetch_trending_stories(from_datetime, to_datetime, validated_size) do
       response_data = %{
         trending_stories: stories_data,
@@ -120,9 +120,11 @@ defmodule Sanbase.MCP.TrendingStoriesTool do
 
     cond do
       diff_hours <= 24 -> "1h"
-      # 1 week
-      diff_hours <= 168 -> "6h"
-      true -> "1d"
+      diff_hours < 7 * 24 -> "6h"
+      diff_hours < 30 * 24 -> "1d"
+      diff_hours < 60 * 24 -> "7d"
+      diff_hours < 90 * 24 -> "14d"
+      true -> "30d"
     end
   end
 

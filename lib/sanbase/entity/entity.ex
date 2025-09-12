@@ -530,13 +530,10 @@ defmodule Sanbase.Entity do
 
     query =
       Enum.reduce(entities, nil, fn type, query_acc ->
-        # TODO: Improve entities_ids_query/2. With these 2 options we include all of the
-        # user entities and exclude any other entities.
         entity_ids_query =
           entity_ids_query(type,
-            include_all_user_entities: true,
-            current_user_id: user_id,
-            include_public_entities: false
+            user_ids: [user_id],
+            can_access_user_private_entities: true
           )
 
         entity_query =
@@ -544,7 +541,6 @@ defmodule Sanbase.Entity do
           # Remove the existing `entity.id` select and replace it with another
           # one
           |> exclude(:select)
-          # |> select([e], {^"#{type}", fragment("COUNT(*)")})
           |> select([e], {^"#{type}", fragment("COUNT(*)")})
 
         case query_acc do
@@ -560,14 +556,18 @@ defmodule Sanbase.Entity do
   end
 
   defp most_used_base_query(entities, opts) when is_list(entities) and entities != [] do
+    user_id = Keyword.fetch!(opts, :current_user_id)
+
+    # Craft the opts so it fetches all public entities and
+    # all private entities of the user
     opts =
       opts
-      |> Keyword.put(:include_public_entities, true)
-      |> Keyword.put(:include_all_user_entities, true)
+      |> Keyword.put(:user_ids_and_all_other_public, [user_id])
+      |> Keyword.put(:can_access_user_private_entities, true)
+      |> Keyword.put(:public_status, :all)
 
     query =
-      Keyword.fetch!(opts, :current_user_id)
-      |> Sanbase.Accounts.Interaction.get_user_most_used_query(entities, opts)
+      Sanbase.Accounts.Interaction.get_user_most_used_query(user_id, entities, opts)
 
     where_clause_query =
       Enum.reduce(entities, nil, fn type, query_acc ->
@@ -773,7 +773,10 @@ defmodule Sanbase.Entity do
   @passed_opts [
     :filter,
     :cursor,
+    :user_ids_and_all_other_public,
     :user_ids,
+    :public_status,
+    :can_access_user_private_entities,
     :is_featured_data_only,
     :is_moderator,
     :min_title_length,
@@ -799,16 +802,7 @@ defmodule Sanbase.Entity do
       |> Keyword.put(:is_paywall_required, is_paywall_required)
       |> Keyword.put(:tags, get_in(opts, [:filter, :insight, :tags]))
 
-    current_user_id = Keyword.get(opts, :current_user_id)
-
-    include_all_user_entities = Keyword.fetch!(opts, :include_all_user_entities)
-    include_public_entities = Keyword.fetch!(opts, :include_public_entities)
-
-    case {include_all_user_entities, include_public_entities} do
-      {false, true} -> Post.public_entity_ids_query(entity_opts)
-      {true, false} -> Post.user_entity_ids_query(current_user_id, entity_opts)
-      {true, true} -> Post.public_and_user_entity_ids_query(current_user_id, entity_opts)
-    end
+    Post.entity_ids_by_opts(entity_opts)
   end
 
   defp entity_ids_query(:user_trigger, opts) do
@@ -818,43 +812,18 @@ defmodule Sanbase.Entity do
       Keyword.take(opts, @passed_opts) ++
         [preload?: false, distinct?: true, ordered?: false]
 
-    current_user_id = Keyword.get(opts, :current_user_id)
-    include_all_user_entities = Keyword.fetch!(opts, :include_all_user_entities)
-    include_public_entities = Keyword.fetch!(opts, :include_public_entities)
-
-    case {include_all_user_entities, include_public_entities} do
-      {false, true} -> UserTrigger.public_entity_ids_query(entity_opts)
-      {true, false} -> UserTrigger.user_entity_ids_query(current_user_id, entity_opts)
-      {true, true} -> UserTrigger.public_and_user_entity_ids_query(current_user_id, entity_opts)
-    end
+    UserTrigger.entity_ids_by_opts(entity_opts)
   end
 
   defp entity_ids_query(:screener, opts) do
     entity_opts = Keyword.take(opts, @passed_opts) ++ [is_screener: true]
 
-    current_user_id = Keyword.get(opts, :current_user_id)
-    include_all_user_entities = Keyword.fetch!(opts, :include_all_user_entities)
-    include_public_entities = Keyword.fetch!(opts, :include_public_entities)
-
-    case {include_all_user_entities, include_public_entities} do
-      {false, true} -> UserList.public_entity_ids_query(entity_opts)
-      {true, false} -> UserList.user_entity_ids_query(current_user_id, entity_opts)
-      {true, true} -> UserList.public_and_user_entity_ids_query(current_user_id, entity_opts)
-    end
+    UserList.entity_ids_by_opts(entity_opts)
   end
 
   defp entity_ids_query(:project_watchlist, opts) do
     entity_opts = Keyword.take(opts, @passed_opts) ++ [is_screener: false, type: :project]
-
-    current_user_id = Keyword.get(opts, :current_user_id)
-    include_all_user_entities = Keyword.fetch!(opts, :include_all_user_entities)
-    include_public_entities = Keyword.fetch!(opts, :include_public_entities)
-
-    case {include_all_user_entities, include_public_entities} do
-      {false, true} -> UserList.public_entity_ids_query(entity_opts)
-      {true, false} -> UserList.user_entity_ids_query(current_user_id, entity_opts)
-      {true, true} -> UserList.public_and_user_entity_ids_query(current_user_id, entity_opts)
-    end
+    UserList.entity_ids_by_opts(entity_opts)
   end
 
   defp entity_ids_query(:address_watchlist, opts) do
@@ -862,72 +831,25 @@ defmodule Sanbase.Entity do
       Keyword.take(opts, @passed_opts) ++
         [is_screener: false, type: :blockchain_address]
 
-    current_user_id = Keyword.get(opts, :current_user_id)
-    include_all_user_entities = Keyword.fetch!(opts, :include_all_user_entities)
-    include_public_entities = Keyword.fetch!(opts, :include_public_entities)
-
-    case {include_all_user_entities, include_public_entities} do
-      {false, true} -> UserList.public_entity_ids_query(entity_opts)
-      {true, false} -> UserList.user_entity_ids_query(current_user_id, entity_opts)
-      {true, true} -> UserList.public_and_user_entity_ids_query(current_user_id, entity_opts)
-    end
+    UserList.entity_ids_by_opts(entity_opts)
   end
 
   defp entity_ids_query(:chart_configuration, opts) do
     entity_opts = Keyword.take(opts, @passed_opts)
 
-    current_user_id = Keyword.get(opts, :current_user_id)
-    include_all_user_entities = Keyword.fetch!(opts, :include_all_user_entities)
-    include_public_entities = Keyword.fetch!(opts, :include_public_entities)
-
-    case {include_all_user_entities, include_public_entities} do
-      {false, true} ->
-        Chart.Configuration.public_entity_ids_query(entity_opts)
-
-      {true, false} ->
-        Chart.Configuration.user_entity_ids_query(current_user_id, entity_opts)
-
-      {true, true} ->
-        Chart.Configuration.public_and_user_entity_ids_query(current_user_id, entity_opts)
-    end
+    Chart.Configuration.entity_ids_by_opts(entity_opts)
   end
 
   defp entity_ids_query(:dashboard, opts) do
     entity_opts = Keyword.take(opts, @passed_opts)
 
-    current_user_id = Keyword.get(opts, :current_user_id)
-    include_all_user_entities = Keyword.fetch!(opts, :include_all_user_entities)
-    include_public_entities = Keyword.fetch!(opts, :include_public_entities)
-
-    case {include_all_user_entities, include_public_entities} do
-      {false, true} ->
-        Dashboard.public_entity_ids_query(entity_opts)
-
-      {true, false} ->
-        Dashboard.user_entity_ids_query(current_user_id, entity_opts)
-
-      {true, true} ->
-        Dashboard.public_and_user_entity_ids_query(current_user_id, entity_opts)
-    end
+    Dashboard.entity_ids_by_opts(entity_opts)
   end
 
   defp entity_ids_query(:query, opts) do
     entity_opts = Keyword.take(opts, @passed_opts)
 
-    current_user_id = Keyword.get(opts, :current_user_id)
-    include_all_user_entities = Keyword.fetch!(opts, :include_all_user_entities)
-    include_public_entities = Keyword.fetch!(opts, :include_public_entities)
-
-    case {include_all_user_entities, include_public_entities} do
-      {false, true} ->
-        Query.public_entity_ids_query(entity_opts)
-
-      {true, false} ->
-        Query.user_entity_ids_query(current_user_id, entity_opts)
-
-      {true, true} ->
-        Query.public_and_user_entity_ids_query(current_user_id, entity_opts)
-    end
+    Query.entity_ids_by_opts(entity_opts)
   end
 
   defp deduce_entity_creation_time_field(:insight), do: {:published_at, :inserted_at}
@@ -946,16 +868,61 @@ defmodule Sanbase.Entity do
   end
 
   defp update_opts(opts) do
-    # TODO: Make it so it errors or combines the values
-    # when user_role_data_only is provided
+    # Transforms the API params into suitable params for the SQL query
+    # The EntityResolver validates the combination of params, for example
+    # user_id_data_only and current_user_data_only cannot be provided together,
+    # private data can be requested only if current_user_data_only is set, etc.
+
+    # At the end the following flags will be added:
+    # user_ids -- list of user ids to fetch
+    # public_status -- :public | :private | :all -- which entities to fetch
+    # can_access_user_private_entities -- If there is access to the private entities
+    # filter -- filter by project_ids
+
+    # This will be used in combination with public_status.
+    # Only when `currentUserData` is set to true it will allow to fetch
+    # private entities of the user. Otherwise it is false by default.
+    opts = opts |> Keyword.put_new(:can_access_user_private_entities, false)
+    opts = opts |> Keyword.delete(:user_ids)
+
     opts =
       case Keyword.get(opts, :user_id_data_only) do
-        user_id when is_integer(user_id) -> Keyword.put(opts, :user_ids, [user_id])
-        _ -> opts
+        user_id when is_integer(user_id) ->
+          if Keyword.get(opts, :user_ids),
+            do: raise(ArgumentError, "Something has unexpectedly set :user_ids in opts")
+
+          opts
+          |> Keyword.put_new(:user_ids, [user_id])
+
+        _ ->
+          opts
       end
 
     opts =
       case Keyword.get(opts, :filter) do
+        %{public_status: value} when value in [:all, :public, :private] ->
+          Keyword.put(opts, :public_status, value)
+
+        %{public_status: value} ->
+          raise ArgumentError, "Invalid value for :public_status option: #{inspect(value)}"
+
+        _ ->
+          if is_integer(Keyword.get(opts, :current_user_data_only)) do
+            # For backwards compatibility, when current_user_data_only is set
+            # previously we returned all public and private entities of the user.
+            # Now, if the `public_status` is not explicitly set, we do the same.
+            Keyword.put(opts, :public_status, :all)
+          else
+            # If current_user_data_only is provided then we can only fetch public
+            # entities. If the public_status is something else and current_user_data_only
+            # is not set, the resolver will reject the query and return a descriptive error
+            Keyword.put(opts, :public_status, :public)
+          end
+      end
+
+    opts =
+      case Keyword.get(opts, :filter) do
+        # Filter only those entities (charts, etc.) which are about these slugs
         %{slugs: slugs} = filter ->
           ids = Sanbase.Project.List.ids_by_slugs(slugs, [])
           filter = Map.put(filter, :project_ids, ids)
@@ -968,12 +935,22 @@ defmodule Sanbase.Entity do
     opts =
       case Keyword.get(opts, :user_role_data_only) do
         :san_family ->
+          if Keyword.get(opts, :user_ids),
+            do: raise(ArgumentError, "Something has unexpectedly set :user_ids in opts")
+
           user_ids = Sanbase.Accounts.Role.san_family_ids()
-          Keyword.put(opts, :user_ids, user_ids)
+
+          opts
+          |> Keyword.put(:user_ids, user_ids)
 
         :san_team ->
+          if Keyword.get(opts, :user_ids),
+            do: raise(ArgumentError, "Something has unexpectedly set :user_ids in opts")
+
           user_ids = Sanbase.Accounts.Role.san_team_ids()
-          Keyword.put(opts, :user_ids, user_ids)
+
+          opts
+          |> Keyword.put(:user_ids, user_ids)
 
         _ ->
           opts
@@ -983,14 +960,17 @@ defmodule Sanbase.Entity do
       case Keyword.get(opts, :current_user_data_only) do
         user_id when is_integer(user_id) ->
           opts
-          |> Keyword.put(:include_all_user_entities, true)
-          |> Keyword.put(:include_public_entities, false)
+          |> Keyword.put(:user_ids, [user_id])
+          |> Keyword.put(:can_access_user_private_entities, true)
 
         _ ->
           opts
-          |> Keyword.put(:include_all_user_entities, false)
-          |> Keyword.put(:include_public_entities, true)
       end
+
+    Enum.each([:public_status, :can_access_user_private_entities], fn key ->
+      if not Keyword.has_key?(opts, key),
+        do: raise(ArgumentError, "Key #{key} missing in the Entity opts")
+    end)
 
     opts
   end

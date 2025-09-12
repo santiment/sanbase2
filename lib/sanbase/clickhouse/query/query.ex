@@ -181,10 +181,12 @@ defmodule Sanbase.Clickhouse.Query do
 
     log_comment_str =
       if map_size(log_comment) > 0 do
-        ", log_comment='#{Jason.encode!(log_comment)}'"
+        " log_comment='#{Jason.encode!(log_comment)}'"
       end
 
-    settings_str = "\nSETTINGS enable_analyzer=1" <> (log_comment_str || "")
+    settings_str =
+      if log_comment_str, do: "\nSETTINGS" <> log_comment_str, else: ""
+
     sql = sql <> settings_str
 
     %{query | sql: sql}

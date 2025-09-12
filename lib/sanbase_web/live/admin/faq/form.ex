@@ -52,6 +52,18 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
     save_entry(socket, socket.assigns.action, faq_entry_params)
   end
 
+  def handle_event("render_markdown", %{"markdown" => markdown}, socket) do
+    html =
+      case Earmark.as_html(markdown || "") do
+        {:ok, html} -> HtmlSanitizeEx.html5(html)
+        {:ok, html, _} -> HtmlSanitizeEx.html5(html)
+        {:error, html, _} -> HtmlSanitizeEx.html5(html)
+        {:error, _} -> "<p class=\"text-gray-500\">Invalid markdown</p>"
+      end
+
+    {:reply, %{html: html}, socket}
+  end
+
   defp save_entry(socket, :edit, faq_entry_params) do
     case Faq.update_entry(socket.assigns.entry, faq_entry_params) do
       {:ok, entry} ->

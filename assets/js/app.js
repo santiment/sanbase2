@@ -25,6 +25,7 @@ const EasyMDEEditor = {
     textarea.value = initialValue
 
     // Load EasyMDE CSS and JS from CDN
+    const hook = this
     this.loadEasyMDE(() => {
       /* global EasyMDE */
       this.editor = new EasyMDE({
@@ -32,6 +33,23 @@ const EasyMDEEditor = {
         spellChecker: false,
         autofocus: false,
         placeholder: 'Enter your markdown here...',
+        previewRender: (plainText, previewEl) => {
+          // Defer to LiveView server-side rendering to match Earmark
+          if (!hook || !hook.pushEvent) return plainText
+          // show temporary content
+          if (previewEl) {
+            // Ensure Tailwind Typography styles are applied like on show page
+            previewEl.classList.add('prose', 'max-w-none')
+            previewEl.innerHTML = '<div class="text-gray-400">Rendering preview…</div>'
+          }
+          hook.pushEvent('render_markdown', { markdown: plainText }, (resp) => {
+            if (previewEl && resp && typeof resp.html === 'string') {
+              previewEl.innerHTML = resp.html
+            }
+          })
+          // EasyMDE will use the content we set asynchronously
+          return ''
+        },
         toolbar: [
           'bold', 'italic', 'heading', '|',
           'quote', 'unordered-list', 'ordered-list', '|',

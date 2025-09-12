@@ -131,6 +131,9 @@ defmodule SanbaseWeb do
 
       # Routes generation with the ~p sigil
       unquote(verified_routes())
+
+      # Allow using <Layouts.app> in templates
+      alias SanbaseWeb.Layouts, as: Layouts
     end
   end
 

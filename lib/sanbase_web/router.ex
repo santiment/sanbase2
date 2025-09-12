@@ -113,6 +113,16 @@ defmodule SanbaseWeb.Router do
       end
     end
 
+    scope "/faq" do
+      live_session :require_authenticated_user2,
+        on_mount: [{SanbaseWeb.AdminUserAuth, :ensure_authenticated}] do
+        live "/", Admin.FaqLive.Index, :index
+        live "/new", Admin.FaqLive.Form, :new
+        live "/:id", Admin.FaqLive.Show, :show
+        live "/:id/edit", Admin.FaqLive.Form, :edit
+      end
+    end
+
     scope "/tweets_prediction" do
       live_session :tweets_prediction_authenticated_user,
         on_mount: [

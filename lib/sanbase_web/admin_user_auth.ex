@@ -208,6 +208,18 @@ defmodule SanbaseWeb.AdminUserAuth do
     end
   end
 
+  def require_authenticated_user2(conn, _opts) do
+    if conn.assigns[:current_user] do
+      conn
+    else
+      conn
+      |> put_flash(:error, "You must log in to access this page.")
+      |> maybe_store_return_to()
+      |> redirect(to: ~p"/admin_auth/login")
+      |> halt()
+    end
+  end
+
   def tweets_prediction_authenticated_user(conn, _opts) do
     if conn.assigns[:current_user] do
       conn

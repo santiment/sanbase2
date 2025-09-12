@@ -10,6 +10,7 @@ import Sortable from 'sortablejs'
 import { Sortable as SortableHook } from "./metric_hooks"
 import { InfiniteScroll } from "./infinite_scroll"
 import { TickerAutocomplete } from "./ticker_autocomplete"
+import { EasyMDEEditor } from "./hooks/easymde_editor"
 
 // Make Sortable available globally
 window.Sortable = Sortable
@@ -21,7 +22,8 @@ const Hooks = {
   FocusInput: FocusInput,
   Sortable: SortableHook,
   InfiniteScroll: InfiniteScroll,
-  TickerAutocomplete: TickerAutocomplete
+  TickerAutocomplete: TickerAutocomplete,
+  EasyMDEEditor: EasyMDEEditor
 }
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")

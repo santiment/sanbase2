@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.10 (Homebrew)
--- Dumped by pg_dump version 15.10 (Homebrew)
+-- Dumped from database version 15.1 (Homebrew)
+-- Dumped by pg_dump version 15.1 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -813,8 +813,8 @@ CREATE TABLE public.chat_messages (
     sources jsonb[] DEFAULT ARRAY[]::jsonb[],
     suggestions text[] DEFAULT ARRAY[]::text[],
     feedback_type character varying(255),
-    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY (ARRAY[('thumbs_up'::character varying)::text, ('thumbs_down'::character varying)::text])) OR (feedback_type IS NULL))),
-    CONSTRAINT valid_role CHECK (((role)::text = ANY (ARRAY[('user'::character varying)::text, ('assistant'::character varying)::text])))
+    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY ((ARRAY['thumbs_up'::character varying, 'thumbs_down'::character varying])::text[])) OR (feedback_type IS NULL))),
+    CONSTRAINT valid_role CHECK (((role)::text = ANY ((ARRAY['user'::character varying, 'assistant'::character varying])::text[])))
 );
 
 
@@ -1470,6 +1470,21 @@ CREATE SEQUENCE public.exchange_market_pair_mappings_id_seq
 --
 
 ALTER SEQUENCE public.exchange_market_pair_mappings_id_seq OWNED BY public.exchange_market_pair_mappings.id;
+
+
+--
+-- Name: faq_entries; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.faq_entries (
+    id uuid NOT NULL,
+    question text NOT NULL,
+    answer_markdown text NOT NULL,
+    answer_html text NOT NULL,
+    source_url character varying(255),
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
 
 
 --
@@ -2170,9 +2185,9 @@ CREATE TABLE public.metric_registry (
     deprecation_note text,
     inserted_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
+    status character varying(255) DEFAULT 'released'::character varying NOT NULL,
     is_verified boolean DEFAULT true NOT NULL,
     sync_status character varying(255) DEFAULT 'synced'::character varying NOT NULL,
-    status character varying(255) DEFAULT 'released'::character varying NOT NULL,
     last_sync_datetime timestamp(0) without time zone,
     stabilization_period character varying(255),
     can_mutate boolean
@@ -6389,6 +6404,14 @@ ALTER TABLE ONLY public.exchange_market_pair_mappings
 
 
 --
+-- Name: faq_entries faq_entries_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.faq_entries
+    ADD CONSTRAINT faq_entries_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: featured_items featured_items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7642,6 +7665,20 @@ CREATE UNIQUE INDEX exchange_addresses_address_idx ON public.exchange_addresses 
 --
 
 CREATE UNIQUE INDEX exchange_market_pair_mappings_exchange_source_market_pair_index ON public.exchange_market_pair_mappings USING btree (exchange, source, market_pair);
+
+
+--
+-- Name: faq_entries_inserted_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX faq_entries_inserted_at_index ON public.faq_entries USING btree (inserted_at);
+
+
+--
+-- Name: faq_entries_updated_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX faq_entries_updated_at_index ON public.faq_entries USING btree (updated_at);
 
 
 --
@@ -10455,3 +10492,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250805131523);
 INSERT INTO public."schema_migrations" (version) VALUES (20250806103908);
 INSERT INTO public."schema_migrations" (version) VALUES (20250821111317);
 INSERT INTO public."schema_migrations" (version) VALUES (20250825074648);
+INSERT INTO public."schema_migrations" (version) VALUES (20250904142224);

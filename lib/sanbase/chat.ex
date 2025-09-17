@@ -327,7 +327,12 @@ defmodule Sanbase.Chat do
 
     ChatMessage
     |> where([cm], cm.chat_id == ^chat_id)
-    |> order_by([cm], asc: cm.inserted_at)
+    # Order by timestamp first, and when equal prefer user over assistant
+    |> order_by(
+      [cm],
+      asc: cm.inserted_at,
+      asc: fragment("CASE WHEN ?::text = 'user' THEN 0 ELSE 1 END", cm.role)
+    )
     |> limit(^limit)
     |> offset(^offset)
     |> Repo.all()

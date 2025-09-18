@@ -27,7 +27,7 @@ slaveTemplates.dockerTemplate { label ->
         sh "docker run \
             --rm --name test-postgres-${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${sanitizedBranchName}-${env.CHANGE_ID} \
             -e POSTGRES_PASSWORD=password \
-            -d postgres:12.7-alpine"
+            -d pgvector/pgvector:pg15"
 
         try {
           sh "docker run --rm \

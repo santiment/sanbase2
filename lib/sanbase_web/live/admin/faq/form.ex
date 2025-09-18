@@ -20,7 +20,7 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
   end
 
   def mount(_params, _session, socket) do
-    entry = %FaqEntry{}
+    entry = %FaqEntry{tags: []}
     changeset = Faq.change_entry(entry)
 
     socket =
@@ -166,6 +166,7 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
           <% end %>
         </div>
 
+        <.tags form={@form} />
         <div class="flex items-center justify-end space-x-3">
           <.link
             navigate={if @action == :edit, do: ~p"/admin/faq/#{@entry.id}", else: ~p"/admin/faq"}
@@ -181,6 +182,56 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
           </button>
         </div>
       </.form>
+    </div>
+    """
+  end
+
+  defp tags(assigns) do
+    ~H"""
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Tags</label>
+      <div class="flex gap-6 flex-wrap">
+        <label class="inline-flex items-center gap-2">
+          <input
+            type="checkbox"
+            name="faq_entry[tags][]"
+            value="code"
+            checked={Enum.member?(@form[:tags].value || [], "code")}
+          /> <span class="text-sm">code</span>
+        </label>
+        <label class="inline-flex items-center gap-2">
+          <input
+            type="checkbox"
+            name="faq_entry[tags][]"
+            value="subscription"
+            checked={Enum.member?(@form[:tags].value || [], "subscription")}
+          /> <span class="text-sm">subscription</span>
+        </label>
+        <label class="inline-flex items-center gap-2">
+          <input
+            type="checkbox"
+            name="faq_entry[tags][]"
+            value="api"
+            checked={Enum.member?(@form[:tags].value || [], "api")}
+          /> <span class="text-sm">api</span>
+        </label>
+        <label class="inline-flex items-center gap-2">
+          <input
+            type="checkbox"
+            name="faq_entry[tags][]"
+            value="sanbase"
+            checked={Enum.member?(@form[:tags].value || [], "sanbase")}
+          /> <span class="text-sm">sanbase</span>
+        </label>
+        <label class="inline-flex items-center gap-2">
+          <input
+            type="checkbox"
+            name="faq_entry[tags][]"
+            value="payment"
+            checked={Enum.member?(@form[:tags].value || [], "payment")}
+          /> <span class="text-sm">payment</span>
+        </label>
+      </div>
     </div>
     """
   end

@@ -6,11 +6,12 @@ defmodule Sanbase.Knowledge.Faq do
   def list_entries do
     FaqEntry
     |> order_by(desc: :updated_at)
+    |> preload([:tags])
     |> Repo.all()
   end
 
   def get_entry!(id) do
-    Repo.get!(FaqEntry, id)
+    Repo.get!(FaqEntry, id) |> Repo.preload(:tags)
   end
 
   def create_entry(attrs \\ %{}) do
@@ -32,6 +33,11 @@ defmodule Sanbase.Knowledge.Faq do
   end
 
   def change_entry(%FaqEntry{} = entry, attrs \\ %{}) do
+    entry =
+      if Map.get(entry, :tags) == %Ecto.Association.NotLoaded{},
+        do: %{entry | tags: []},
+        else: entry
+
     FaqEntry.changeset(entry, attrs)
   end
 

@@ -12,6 +12,12 @@ defmodule Sanbase.Knowledge.FaqEntry do
     field(:source_url, :string)
     field(:embedding, Pgvector.Ecto.Vector)
 
+    many_to_many(:tags, Sanbase.Tag,
+      join_through: "faq_entries_tags",
+      on_replace: :delete,
+      on_delete: :delete_all
+    )
+
     timestamps()
   end
 
@@ -21,28 +27,33 @@ defmodule Sanbase.Knowledge.FaqEntry do
     |> validate_required([:question, :answer_markdown])
     |> validate_url(:source_url)
     |> generate_html()
+    |> Sanbase.Tag.put_tags(attrs)
   end
 
   defp validate_url(changeset, field) do
     validate_change(changeset, field, fn field, value ->
-      case value do
-        nil ->
-          []
-
-        "" ->
-          []
-
-        url ->
-          case URI.parse(url) do
-            %URI{scheme: scheme, host: host}
-            when scheme in ["http", "https"] and is_binary(host) ->
-              []
-
-            _ ->
-              [{field, "must be a valid URL"}]
-          end
-      end
+      validate_url_format(field, value)
     end)
+  end
+
+  defp validate_url_format(field, value) do
+    case value do
+      nil ->
+        []
+
+      "" ->
+        []
+
+      url ->
+        case URI.parse(url) do
+          %URI{scheme: scheme, host: host}
+          when scheme in ["http", "https"] and is_binary(host) ->
+            []
+
+          _ ->
+            [{field, "must be a valid URL"}]
+        end
+    end
   end
 
   defp generate_html(changeset) do

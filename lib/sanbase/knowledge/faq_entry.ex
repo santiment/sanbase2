@@ -10,6 +10,7 @@ defmodule Sanbase.Knowledge.FaqEntry do
     field(:answer_markdown, :string)
     field(:answer_html, :string)
     field(:source_url, :string)
+    field(:embedding, Pgvector.Ecto.Vector)
 
     timestamps()
   end

@@ -1497,7 +1497,8 @@ CREATE TABLE public.faq_entries (
     answer_html text NOT NULL,
     source_url character varying(255),
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    embedding public.vector(1536)
 );
 
 
@@ -7682,10 +7683,24 @@ CREATE UNIQUE INDEX exchange_market_pair_mappings_exchange_source_market_pair_in
 
 
 --
+-- Name: faq_entities_embedding_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX faq_entities_embedding_index ON public.faq_entries USING hnsw (embedding public.vector_cosine_ops);
+
+
+--
 -- Name: faq_entries_inserted_at_index; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX faq_entries_inserted_at_index ON public.faq_entries USING btree (inserted_at);
+
+
+--
+-- Name: faq_entries_question_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX faq_entries_question_index ON public.faq_entries USING btree (question);
 
 
 --
@@ -10508,3 +10523,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250821111317);
 INSERT INTO public."schema_migrations" (version) VALUES (20250825074648);
 INSERT INTO public."schema_migrations" (version) VALUES (20250904142224);
 INSERT INTO public."schema_migrations" (version) VALUES (20250918083815);
+INSERT INTO public."schema_migrations" (version) VALUES (20250918093232);
+INSERT INTO public."schema_migrations" (version) VALUES (20250918110902);

@@ -121,6 +121,7 @@ config :sanbase, Sanbase.ClickhouseRepo.BusinessProUser, clickhouse_read_only_op
 config :sanbase, Sanbase.ClickhouseRepo.BusinessMaxUser, clickhouse_read_only_opts
 
 config :sanbase, Sanbase.Repo,
+  types: Sanbase.PostgrexTypes,
   loggers: [Ecto.LogEntry],
   adapter: Ecto.Adapters.Postgres,
   pool_size: {:system, "SANBASE_POOL_SIZE", "20"},

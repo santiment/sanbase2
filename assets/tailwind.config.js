@@ -24,6 +24,7 @@ module.exports = {
     require('flowbite/plugin'),
     require("@tailwindcss/forms"),
     require('@tailwindcss/typography'),
+    require("daisyui"),
     // Allows prefixing tailwind classes with LiveView classes to add rules
     // only when LiveView classes are applied, for example:
     //
@@ -37,7 +38,7 @@ module.exports = {
     // Embeds Hero Icons (https://heroicons.com) into your app.css bundle
     // See your `CoreComponents.icon/1` for more information.
     //
-    plugin(function({ matchComponents, theme }) {
+    plugin(function ({ matchComponents, theme }) {
       let iconsDir = path.join(__dirname, "./vendor/heroicons/optimized")
       let values = {}
       let icons = [

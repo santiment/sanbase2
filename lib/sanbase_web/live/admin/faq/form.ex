@@ -35,10 +35,13 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
   end
 
   def handle_event("validate", %{"faq_entry" => faq_entry_params}, socket) do
+    IO.inspect(faq_entry_params)
+
     changeset =
       socket.assigns.entry
       |> Faq.change_entry(faq_entry_params)
       |> Map.put(:action, :validate)
+      |> IO.inspect()
 
     socket =
       socket

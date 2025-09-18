@@ -4,7 +4,13 @@ defmodule SanbaseWeb.Admin.FaqLive.Index do
   alias Sanbase.Knowledge.Faq
 
   def mount(_params, _session, socket) do
-    entries = Faq.list_entries()
+    entries =
+      Faq.list_entries()
+      |> tap(fn entries ->
+        entries
+        |> Enum.map(fn e -> {e.question, e.tags} end)
+        |> IO.inspect()
+      end)
 
     socket =
       socket
@@ -76,6 +82,13 @@ defmodule SanbaseWeb.Admin.FaqLive.Index do
                   <h3 class="text-lg font-medium text-gray-900 truncate">
                     {entry.question}
                   </h3>
+                  <%= if entry.tags && length(entry.tags) > 0 do %>
+                    <div class="mt-2 flex flex-wrap gap-1">
+                      <span :for={tag <- entry.tags} class="badge badge-primary badge-sm">
+                        {tag.name}
+                      </span>
+                    </div>
+                  <% end %>
                   <div class="mt-1 flex items-center text-sm text-gray-500">
                     <time datetime={entry.updated_at}>
                       Updated {Calendar.strftime(entry.updated_at, "%B %d, %Y at %I:%M %p")}

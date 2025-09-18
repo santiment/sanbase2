@@ -108,7 +108,7 @@ defmodule SanbaseWeb.Admin.FaqLive.Index do
                   <button
                     phx-click="delete"
                     phx-value-id={entry.id}
-                    phx-confirm="Are you sure you want to delete this FAQ entry?"
+                    data-confirm="Are you sure you want to delete this FAQ entry?"
                     class="text-red-600 hover:text-red-800 font-medium text-sm"
                   >
                     Delete

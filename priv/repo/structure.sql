@@ -1503,6 +1503,36 @@ CREATE TABLE public.faq_entries (
 
 
 --
+-- Name: faq_entries_tags; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.faq_entries_tags (
+    id bigint NOT NULL,
+    faq_entry_id uuid,
+    tag_id bigint
+);
+
+
+--
+-- Name: faq_entries_tags_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.faq_entries_tags_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: faq_entries_tags_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.faq_entries_tags_id_seq OWNED BY public.faq_entries_tags.id;
+
+
+--
 -- Name: featured_items; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -5452,6 +5482,13 @@ ALTER TABLE ONLY public.exchange_market_pair_mappings ALTER COLUMN id SET DEFAUL
 
 
 --
+-- Name: faq_entries_tags id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.faq_entries_tags ALTER COLUMN id SET DEFAULT nextval('public.faq_entries_tags_id_seq'::regclass);
+
+
+--
 -- Name: featured_items id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6424,6 +6461,14 @@ ALTER TABLE ONLY public.exchange_market_pair_mappings
 
 ALTER TABLE ONLY public.faq_entries
     ADD CONSTRAINT faq_entries_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: faq_entries_tags faq_entries_tags_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.faq_entries_tags
+    ADD CONSTRAINT faq_entries_tags_pkey PRIMARY KEY (id);
 
 
 --
@@ -7704,6 +7749,13 @@ CREATE UNIQUE INDEX faq_entries_question_index ON public.faq_entries USING btree
 
 
 --
+-- Name: faq_entries_tags_faq_entry_id_tag_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX faq_entries_tags_faq_entry_id_tag_id_index ON public.faq_entries_tags USING btree (faq_entry_id, tag_id);
+
+
+--
 -- Name: faq_entries_updated_at_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8968,6 +9020,22 @@ ALTER TABLE ONLY public.eth_accounts
 
 ALTER TABLE ONLY public.exchange_addresses
     ADD CONSTRAINT exchange_addresses_infrastructure_id_fkey FOREIGN KEY (infrastructure_id) REFERENCES public.infrastructures(id);
+
+
+--
+-- Name: faq_entries_tags faq_entries_tags_faq_entry_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.faq_entries_tags
+    ADD CONSTRAINT faq_entries_tags_faq_entry_id_fkey FOREIGN KEY (faq_entry_id) REFERENCES public.faq_entries(id);
+
+
+--
+-- Name: faq_entries_tags faq_entries_tags_tag_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.faq_entries_tags
+    ADD CONSTRAINT faq_entries_tags_tag_id_fkey FOREIGN KEY (tag_id) REFERENCES public.tags(id);
 
 
 --
@@ -10525,3 +10593,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250904142224);
 INSERT INTO public."schema_migrations" (version) VALUES (20250918083815);
 INSERT INTO public."schema_migrations" (version) VALUES (20250918093232);
 INSERT INTO public."schema_migrations" (version) VALUES (20250918110902);
+INSERT INTO public."schema_migrations" (version) VALUES (20250918140930);

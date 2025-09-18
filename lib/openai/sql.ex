@@ -1,11 +1,11 @@
-defmodule Sanbase.OpenAI do
+defmodule Sanbase.OpenAI.SQL do
   require Logger
 
   @doc """
   Generates a title and description based on a given SQL query using GPT-4.
   """
-  @spec generate_from_sql(String.t()) :: {:ok, map()} | {:error, String.t()}
-  def generate_from_sql(sql) do
+  @spec generate_title_and_description_from_sql(String.t()) :: {:ok, map()} | {:error, String.t()}
+  def generate_title_and_description_from_sql(sql) do
     system_prompt =
       "You are a helpful assistant specialized in generating human-readable titles and descriptions based on ClickHouse SQL queries."
 

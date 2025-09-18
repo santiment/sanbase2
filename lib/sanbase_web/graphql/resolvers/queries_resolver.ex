@@ -581,7 +581,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
   end
 
   def generate_title_by_query(_root, %{sql_query_text: sql_query_text}, _resolution) do
-    Sanbase.OpenAI.generate_from_sql(sql_query_text)
+    Sanbase.OpenAI.SQL.generate_title_and_description_from_sql(sql_query_text)
   end
 
   # Private functions

@@ -6,8 +6,14 @@ defmodule Sanbase.Repo.Migrations.CreatePgvectorExtension do
     # If it was not, this would fail with insufficient permissions.
     # Creating a migration so it is recorded that this was done, even though
     # it was not done with this migration exactly
+    schema = schema()
+
+    unless schema in ["public", "extensions"] do
+      raise ArgumentError, "Invalid schema name: #{inspect(schema)}"
+    end
+
     execute("""
-    CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA #{schema()};
+    CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA #{schema};
     """)
   end
 

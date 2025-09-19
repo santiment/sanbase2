@@ -118,6 +118,7 @@ defmodule SanbaseWeb.Router do
         on_mount: [{SanbaseWeb.AdminUserAuth, :ensure_authenticated}] do
         live "/", Admin.FaqLive.Index, :index
         live "/new", Admin.FaqLive.Form, :new
+        live "/ask", AskLive, :index
         live "/:id", Admin.FaqLive.Show, :show
         live "/:id/edit", Admin.FaqLive.Form, :edit
       end

@@ -2783,6 +2783,36 @@ CREATE TABLE public.posts (
 
 
 --
+-- Name: posts_embeddings; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.posts_embeddings (
+    id bigint NOT NULL,
+    post_id bigint NOT NULL,
+    embedding public.vector(1536) NOT NULL
+);
+
+
+--
+-- Name: posts_embeddings_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.posts_embeddings_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: posts_embeddings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.posts_embeddings_id_seq OWNED BY public.posts_embeddings.id;
+
+
+--
 -- Name: posts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -5713,6 +5743,13 @@ ALTER TABLE ONLY public.posts ALTER COLUMN id SET DEFAULT nextval('public.posts_
 
 
 --
+-- Name: posts_embeddings id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.posts_embeddings ALTER COLUMN id SET DEFAULT nextval('public.posts_embeddings_id_seq'::regclass);
+
+
+--
 -- Name: posts_metrics id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6733,6 +6770,14 @@ ALTER TABLE ONLY public.post_comments_mapping
 
 ALTER TABLE ONLY public.post_images
     ADD CONSTRAINT post_images_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: posts_embeddings posts_embeddings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.posts_embeddings
+    ADD CONSTRAINT posts_embeddings_pkey PRIMARY KEY (id);
 
 
 --
@@ -8064,6 +8109,13 @@ CREATE INDEX post_images_post_id_index ON public.post_images USING btree (post_i
 
 
 --
+-- Name: posts_embeddings_post_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX posts_embeddings_post_id_index ON public.posts_embeddings USING btree (post_id);
+
+
+--
 -- Name: posts_metrics_post_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9343,6 +9395,14 @@ ALTER TABLE ONLY public.posts
 
 
 --
+-- Name: posts_embeddings posts_embeddings_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.posts_embeddings
+    ADD CONSTRAINT posts_embeddings_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.posts(id) ON DELETE CASCADE;
+
+
+--
 -- Name: posts_metrics posts_metrics_metric_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -10594,3 +10654,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250918083815);
 INSERT INTO public."schema_migrations" (version) VALUES (20250918093232);
 INSERT INTO public."schema_migrations" (version) VALUES (20250918110902);
 INSERT INTO public."schema_migrations" (version) VALUES (20250918140930);
+INSERT INTO public."schema_migrations" (version) VALUES (20250919145707);

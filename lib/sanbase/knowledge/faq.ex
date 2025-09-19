@@ -52,7 +52,8 @@ defmodule Sanbase.Knowledge.Faq do
   end
 
   def find_similar_entries(user_input, size \\ 5) do
-    with {:ok, user_embedding} <- Sanbase.OpenAI.Embedding.generate_embedding(user_input, 1536) do
+    with {:ok, [user_embedding]} <-
+           Sanbase.OpenAI.Embedding.generate_embedding([user_input], 1536) do
       query =
         from(
           e in FaqEntry,
@@ -157,8 +158,8 @@ defmodule Sanbase.Knowledge.Faq do
     Answer: #{entry.answer_markdown}
     """
 
-    case Sanbase.OpenAI.Embedding.generate_embedding(text, 1536) do
-      {:ok, embedding} ->
+    case Sanbase.OpenAI.Embedding.generate_embedding([text], 1536) do
+      {:ok, [embedding]} ->
         entry
         |> Ecto.Changeset.change(embedding: embedding)
         |> Repo.update()

@@ -159,6 +159,7 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
           <input
             type="hidden"
             id="faq_entry_answer_markdown"
+            class=" text-grey-900"
             name={@form[:answer_markdown].name}
             value={@form[:answer_markdown].value || ""}
           />

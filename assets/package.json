@@ -6,7 +6,6 @@
   },
   "dependencies": {
     "alpinejs": "^3.13.5",
-    "daisyui": "^5.1.13",
     "flowbite": "^2.3.0",
     "jquery": "^3.7.1",
     "moment": "^2.29.4",

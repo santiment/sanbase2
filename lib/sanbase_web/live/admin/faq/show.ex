@@ -60,7 +60,7 @@ defmodule SanbaseWeb.Admin.FaqLive.Show do
           <h3 class="text-lg font-medium text-gray-900">Answer</h3>
         </div>
         <div class="px-6 py-6">
-          <div class="prose max-w-none">
+          <div class="prose max-w-none text-gray-900">
             {Phoenix.HTML.raw(@entry.answer_html)}
           </div>
         </div>

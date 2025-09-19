@@ -37,6 +37,10 @@ defmodule Sanbase.Tag do
   `put_assoc` that works on the whole list of tags.
   """
   @spec put_tags(Ecto.Changeset.t(), map()) :: Ecto.Changeset.t()
+  def put_tags(changeset, %{"tags" => tags}) do
+    put_tags(changeset, %{tags: tags})
+  end
+
   def put_tags(%Ecto.Changeset{} = changeset, %{tags: tags})
       when is_list(tags) and length(tags) > 10 do
     Ecto.Changeset.add_error(changeset, :tags, "Cannot add more than 10 tags for a record")
@@ -47,6 +51,7 @@ defmodule Sanbase.Tag do
       tags
       |> Enum.filter(&is_binary/1)
       |> Enum.map(fn tag -> %{name: tag} end)
+      |> dbg()
 
     Repo.insert_all(__MODULE__, tags, on_conflict: :nothing, conflict_target: [:name])
 
@@ -59,6 +64,7 @@ defmodule Sanbase.Tag do
     tags =
       tag_names
       |> Enum.map(fn name -> Enum.find(tag_structures, &(&1.name == name)) end)
+      |> dbg()
 
     changeset
     |> put_assoc(:tags, tags)

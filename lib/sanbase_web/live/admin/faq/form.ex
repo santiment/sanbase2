@@ -32,6 +32,16 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
     {:ok, socket}
   end
 
+  def handle_event("check_similar", %{"question" => question}, socket) do
+    case Faq.find_similar_entries(question, 3) do
+      {:ok, entries} when entries != [] ->
+        {:reply, %{answer: formatted_answer}, socket}
+
+      _ ->
+        {:reply, %{answer: "Sorry, I don't have an answer for that question."}, socket}
+    end
+  end
+
   def handle_event("validate", %{"faq_entry" => faq_entry_params}, socket) do
     changeset =
       socket.assigns.entry

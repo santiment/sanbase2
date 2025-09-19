@@ -7,19 +7,43 @@ defmodule Sanbase.OpenAI.Embedding do
   @model "text-embedding-3-small"
 
   @doc """
-  Generates embeddings for the given text using OpenAI's text-embedding-3-small model.
+  Generates embeddings for the given text or list of texts using OpenAI's text-embedding-3-small model.
 
   ## Parameters
-  - text: The input text to embed
+  - text: The input text to embed (string) or list of texts (list of strings)
   - size: The size of the embedding vector (optional, model default is used if not provided)
 
   ## Returns
-  - {:ok, embedding} on success where embedding is a list of floats
+  - For single text: {:ok, embedding} on success where embedding is a list of floats
+  - For list of texts: {:ok, embeddings} on success where embeddings is a list of embedding lists
   - {:error, reason} on failure
   """
-  def generate_embedding(text, size) when is_integer(size) do
-    body = build_request_body(text, size)
+  def generate_embedding(texts, size) when is_binary(texts) and is_integer(size) do
+    body = build_request_body(texts, size)
 
+    case make_request(body) do
+      {:ok, %{"data" => embeddings}} ->
+        {:ok, embeddings}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  def generate_embedding(texts, size) when is_list(texts) and is_integer(size) do
+    body = build_request_body(texts, size)
+
+    case make_request(body) do
+      {:ok, %{"data" => data}} ->
+        embeddings = Enum.map(data, fn %{"embedding" => embedding} -> embedding end)
+        {:ok, embeddings}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp make_request(body) do
     case Req.post(@base_url,
            json: body,
            headers: [
@@ -27,8 +51,8 @@ defmodule Sanbase.OpenAI.Embedding do
              {"Content-Type", "application/json"}
            ]
          ) do
-      {:ok, %{status: 200, body: %{"data" => [%{"embedding" => embedding} | _]}}} ->
-        {:ok, embedding}
+      {:ok, %{status: 200, body: response_body}} ->
+        {:ok, response_body}
 
       {:ok, %{status: status, body: body}} ->
         {:error, "OpenAI API error: #{status} - #{inspect(body)}"}
@@ -38,9 +62,9 @@ defmodule Sanbase.OpenAI.Embedding do
     end
   end
 
-  defp build_request_body(text, size) do
+  defp build_request_body(text_or_texts, size) do
     %{
-      "input" => text,
+      "input" => text_or_texts,
       "model" => @model,
       "dimensions" => size
     }

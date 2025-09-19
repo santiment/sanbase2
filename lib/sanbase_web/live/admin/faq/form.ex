@@ -190,45 +190,16 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
     <div>
       <label class="block text-sm font-medium text-gray-700 mb-1">Tags</label>
       <div class="flex gap-6 flex-wrap">
-        <label class="inline-flex items-center gap-2">
+        <label
+          :for={tag <- ["code", "subscription", "api", "metrics", "payment", "sanbase"]}
+          class="inline-flex items-center gap-2"
+        >
           <input
             type="checkbox"
             name="faq_entry[tags][]"
-            value="code"
-            checked={Enum.member?(@tags, "code")}
-          /> <span class="text-sm">code</span>
-        </label>
-        <label class="inline-flex items-center gap-2">
-          <input
-            type="checkbox"
-            name="faq_entry[tags][]"
-            value="subscription"
-            checked={Enum.member?(@tags, "subscription")}
-          /> <span class="text-sm">subscription</span>
-        </label>
-        <label class="inline-flex items-center gap-2">
-          <input
-            type="checkbox"
-            name="faq_entry[tags][]"
-            value="api"
-            checked={Enum.member?(@tags, "api")}
-          /> <span class="text-sm">api</span>
-        </label>
-        <label class="inline-flex items-center gap-2">
-          <input
-            type="checkbox"
-            name="faq_entry[tags][]"
-            value="sanbase"
-            checked={Enum.member?(@tags, "sanbase")}
-          /> <span class="text-sm">sanbase</span>
-        </label>
-        <label class="inline-flex items-center gap-2">
-          <input
-            type="checkbox"
-            name="faq_entry[tags][]"
-            value="payment"
-            checked={Enum.member?(@tags, "payment")}
-          /> <span class="text-sm">payment</span>
+            value={tag}
+            checked={Enum.member?(@tags, tag)}
+          /> <span class="text-sm">{tag}</span>
         </label>
       </div>
     </div>

@@ -145,6 +145,7 @@ defmodule SanbaseWeb.Admin.FaqLive.Index do
         "payment" -> "text-yellow-400 bg-green-400/10"
         "api" -> "text-blue-400 bg-blue-400/10"
         "sanbase" -> "text-red-400 bg-red-400/10"
+        "metrics" -> "text-purple-400 bg-purple-400/10"
       end
 
     assigns = assign(assigns, :colors_class, colors_class)

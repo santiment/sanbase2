@@ -4,13 +4,7 @@ defmodule SanbaseWeb.Admin.FaqLive.Index do
   alias Sanbase.Knowledge.Faq
 
   def mount(_params, _session, socket) do
-    entries =
-      Faq.list_entries()
-      |> tap(fn entries ->
-        entries
-        |> Enum.map(fn e -> {e.question, e.tags} end)
-        |> IO.inspect()
-      end)
+    entries = Faq.list_entries()
 
     socket =
       socket
@@ -84,8 +78,8 @@ defmodule SanbaseWeb.Admin.FaqLive.Index do
                   </h3>
                   <%= if entry.tags && length(entry.tags) > 0 do %>
                     <div class="mt-2 flex flex-wrap gap-1">
-                      <span :for={tag <- entry.tags} class="badge badge-primary badge-sm">
-                        {tag.name}
+                      <span :for={tag <- entry.tags}>
+                        <.tag_badge tag={tag.name} />
                       </span>
                     </div>
                   <% end %>
@@ -133,6 +127,25 @@ defmodule SanbaseWeb.Admin.FaqLive.Index do
         </div>
       <% end %>
     </div>
+    """
+  end
+
+  defp tag_badge(assigns) do
+    colors_class =
+      case assigns.tag do
+        "code" -> "text-indigo-400 bg-indigo-400/10"
+        "subscription" -> "text-green-400 bg-green-400/10"
+        "payment" -> "text-yellow-400 bg-green-400/10"
+        "api" -> "text-blue-400 bg-blue-400/10"
+        "sanbase" -> "text-red-400 bg-red-400/10"
+      end
+
+    assigns = assign(assigns, :colors_class, colors_class)
+
+    ~H"""
+    <span class={["inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ", @colors_class]}>
+      {@tag}
+    </span>
     """
   end
 end

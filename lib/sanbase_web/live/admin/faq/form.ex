@@ -4,8 +4,20 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
   alias Sanbase.Knowledge.Faq
   alias Sanbase.Knowledge.FaqEntry
 
-  def mount(%{"id" => id}, _session, socket) do
-    entry = Faq.get_entry!(id)
+  def mount(params, _session, socket) do
+    action = if Map.has_key?(params, "id"), do: :edit, else: :new
+
+    {entry, tags} =
+      case params do
+        %{"id" => id} ->
+          entry = Faq.get_entry!(id)
+          tags = entry.tags |> Enum.map(& &1.name)
+          {entry, tags}
+
+        _ ->
+          {%FaqEntry{tags: []}, []}
+      end
+
     changeset = Faq.change_entry(entry)
 
     socket =
@@ -13,35 +25,18 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
       |> assign(:entry, entry)
       |> assign(:changeset, changeset)
       |> assign(:form, to_form(changeset))
-      |> assign(:action, :edit)
-      |> assign(:page_title, "Edit FAQ Entry")
-
-    {:ok, socket}
-  end
-
-  def mount(_params, _session, socket) do
-    entry = %FaqEntry{tags: []}
-    changeset = Faq.change_entry(entry)
-
-    socket =
-      socket
-      |> assign(:entry, entry)
-      |> assign(:changeset, changeset)
-      |> assign(:form, to_form(changeset))
-      |> assign(:action, :new)
+      |> assign(:action, action)
       |> assign(:page_title, "New FAQ Entry")
+      |> assign(:tags, tags)
 
     {:ok, socket}
   end
 
   def handle_event("validate", %{"faq_entry" => faq_entry_params}, socket) do
-    IO.inspect(faq_entry_params)
-
     changeset =
       socket.assigns.entry
-      |> Faq.change_entry(faq_entry_params)
+      |> Faq.change_entry(faq_entry_params |> Map.put("tags", socket.assigns.tags))
       |> Map.put(:action, :validate)
-      |> IO.inspect()
 
     socket =
       socket
@@ -170,7 +165,7 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
           <% end %>
         </div>
 
-        <.tags form={@form} />
+        <.tags form={@form} tags={@tags} />
         <div class="flex items-center justify-end space-x-3">
           <.link
             navigate={if @action == :edit, do: ~p"/admin/faq/#{@entry.id}", else: ~p"/admin/faq"}
@@ -200,7 +195,7 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
             type="checkbox"
             name="faq_entry[tags][]"
             value="code"
-            checked={Enum.member?(@form[:tags].value || [], "code")}
+            checked={Enum.member?(@tags, "code")}
           /> <span class="text-sm">code</span>
         </label>
         <label class="inline-flex items-center gap-2">
@@ -208,7 +203,7 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
             type="checkbox"
             name="faq_entry[tags][]"
             value="subscription"
-            checked={Enum.member?(@form[:tags].value || [], "subscription")}
+            checked={Enum.member?(@tags, "subscription")}
           /> <span class="text-sm">subscription</span>
         </label>
         <label class="inline-flex items-center gap-2">
@@ -216,7 +211,7 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
             type="checkbox"
             name="faq_entry[tags][]"
             value="api"
-            checked={Enum.member?(@form[:tags].value || [], "api")}
+            checked={Enum.member?(@tags, "api")}
           /> <span class="text-sm">api</span>
         </label>
         <label class="inline-flex items-center gap-2">
@@ -224,7 +219,7 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
             type="checkbox"
             name="faq_entry[tags][]"
             value="sanbase"
-            checked={Enum.member?(@form[:tags].value || [], "sanbase")}
+            checked={Enum.member?(@tags, "sanbase")}
           /> <span class="text-sm">sanbase</span>
         </label>
         <label class="inline-flex items-center gap-2">
@@ -232,7 +227,7 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
             type="checkbox"
             name="faq_entry[tags][]"
             value="payment"
-            checked={Enum.member?(@form[:tags].value || [], "payment")}
+            checked={Enum.member?(@tags, "payment")}
           /> <span class="text-sm">payment</span>
         </label>
       </div>

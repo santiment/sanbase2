@@ -47,7 +47,7 @@ defmodule SanbaseWeb.Admin.FaqLive.Show do
           </.link>
           <button
             phx-click="delete"
-            phx-confirm="Are you sure you want to delete this FAQ entry?"
+            data-confirm="Are you sure you want to delete this FAQ entry?"
             class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
           >
             Delete

@@ -135,7 +135,7 @@ defmodule SanbaseWeb.Admin.FaqLive.Index do
       case assigns.tag do
         "code" -> "text-indigo-400 bg-indigo-400/10"
         "subscription" -> "text-green-400 bg-green-400/10"
-        "payment" -> "text-yellow-400 bg-green-400/10"
+        "payment" -> "text-yellow-400 bg-yellow-400/10"
         "api" -> "text-blue-400 bg-blue-400/10"
         "sanbase" -> "text-red-400 bg-red-400/10"
       end

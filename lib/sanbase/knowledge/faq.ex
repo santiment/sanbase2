@@ -66,7 +66,7 @@ defmodule Sanbase.Knowledge.Faq do
           }
         )
 
-      result = Repo.all(query) |> Enum.filter(&(&1.similarity > 0.3))
+      result = Repo.all(query) |> Enum.filter(&(&1.similarity > 0.15))
       {:ok, result}
     else
       {:error, _} = error -> error

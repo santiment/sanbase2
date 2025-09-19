@@ -28,17 +28,20 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
       |> assign(:action, action)
       |> assign(:page_title, "New FAQ Entry")
       |> assign(:tags, tags)
+      |> assign(:similar_entries, [])
 
     {:ok, socket}
   end
 
   def handle_event("check_similar", %{"question" => question}, socket) do
-    case Faq.find_similar_entries(question, 3) do
+    case Faq.find_similar_entries(question || "", 5) do
       {:ok, entries} when entries != [] ->
-        {:reply, %{answer: formatted_answer}, socket}
+        socket = socket |> assign(:similar_entries, entries)
+        {:noreply, socket}
 
       _ ->
-        {:reply, %{answer: "Sorry, I don't have an answer for that question."}, socket}
+        socket = socket |> assign(:similar_entries, [])
+        {:noreply, socket}
     end
   end
 
@@ -52,6 +55,7 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
       socket
       |> assign(:changeset, changeset)
       |> assign(:form, to_form(changeset))
+      |> assign(:similar_entries, [])
 
     {:noreply, socket}
   end
@@ -136,6 +140,29 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
             autofocus
             class="w-full text-xl font-semibold"
           />
+        </div>
+        <button
+          :if={is_binary(@form[:question].value) and @form[:question].value != ""}
+          phx-click="check_similar"
+          phx-disable-with="Checking for similarity..."
+          phx-value-question={@form[:question].value}
+          class="bg-white hover:bg-gray-100 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded text-base"
+        >
+          Check for similar questions
+        </button>
+        <div :if={@similar_entries != []}>
+          <h3 class="font-medium text-gray-700 mb-2">Most Similar FAQ Entries</h3>
+          <div :for={entry <- @similar_entries}>
+            <span class="text-gray-800 mb-2">
+              {entry.similarity |> Float.round(2)} | {entry.question}
+            </span>
+            <.link
+              navigate={~p"/admin/faq/#{entry.id}"}
+              class="text-blue-600 hover:text-blue-800 font-medium text-sm"
+            >
+              Link
+            </.link>
+          </div>
         </div>
 
         <div>

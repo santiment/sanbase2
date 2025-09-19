@@ -28,6 +28,7 @@ defmodule Sanbase.Knowledge.FaqEntry do
     |> validate_url(:source_url)
     |> generate_html()
     |> Sanbase.Tag.put_tags(attrs)
+    |> IO.inspect()
   end
 
   defp validate_url(changeset, field) do

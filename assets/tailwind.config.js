@@ -24,7 +24,6 @@ module.exports = {
     require('flowbite/plugin'),
     require("@tailwindcss/forms"),
     require('@tailwindcss/typography'),
-    require("daisyui"),
     // Allows prefixing tailwind classes with LiveView classes to add rules
     // only when LiveView classes are applied, for example:
     //

@@ -47,7 +47,7 @@ defmodule Sanbase.OpenAI.Question do
         }
       ],
       "max_tokens" => 1500,
-      "temperature" => 0.7
+      "top_p" => 0.05
     }
   end
 

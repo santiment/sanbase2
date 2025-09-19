@@ -51,7 +51,6 @@ defmodule Sanbase.Tag do
       tags
       |> Enum.filter(&is_binary/1)
       |> Enum.map(fn tag -> %{name: tag} end)
-      |> dbg()
 
     Repo.insert_all(__MODULE__, tags, on_conflict: :nothing, conflict_target: [:name])
 
@@ -64,7 +63,6 @@ defmodule Sanbase.Tag do
     tags =
       tag_names
       |> Enum.map(fn name -> Enum.find(tag_structures, &(&1.name == name)) end)
-      |> dbg()
 
     changeset
     |> put_assoc(:tags, tags)

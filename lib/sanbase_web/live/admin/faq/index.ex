@@ -30,14 +30,21 @@ defmodule SanbaseWeb.Admin.FaqLive.Index do
 
   def render(assigns) do
     ~H"""
-    <div class="p-6 max-w-7xl mx-auto">
-      <div class="flex justify-between items-center mb-6">
-        <h1 class="text-3xl font-bold text-gray-900">FAQ Management</h1>
+    <h1 class="text-3xl font-bold text-gray-900">FAQ Management</h1>
+    <div class="p-6 max-w-7xl">
+      <div class="flex items-start gap-x-2 mb-6">
         <.link
           navigate={~p"/admin/faq/new"}
           class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
         >
           New FAQ Entry
+        </.link>
+
+        <.link
+          navigate={~p"/admin/faq/ask"}
+          class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+        >
+          Ask
         </.link>
       </div>
 
@@ -135,7 +142,7 @@ defmodule SanbaseWeb.Admin.FaqLive.Index do
       case assigns.tag do
         "code" -> "text-indigo-400 bg-indigo-400/10"
         "subscription" -> "text-green-400 bg-green-400/10"
-        "payment" -> "text-yellow-400 bg-yellow-400/10"
+        "payment" -> "text-yellow-400 bg-green-400/10"
         "api" -> "text-blue-400 bg-blue-400/10"
         "sanbase" -> "text-red-400 bg-red-400/10"
       end

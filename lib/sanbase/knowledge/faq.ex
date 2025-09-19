@@ -76,7 +76,7 @@ defmodule Sanbase.Knowledge.Faq do
 
     formatted_answer = """
     #{answer}
-    #{if similar_entries != [], do: used_faqs}
+    #{if false and similar_entries != [], do: used_faqs}
     """
 
     {:ok, formatted_answer}
@@ -100,6 +100,10 @@ defmodule Sanbase.Knowledge.Faq do
     possible way. Be brief, professional and on point. Skip and introduction, greetings, congratulations
     on the good question, and any other non-question related talking.
     If you are not able to find the answer in the provided questions and answers just answer "I cannot answer".
+
+    Format your answer in markdown. Use lists, headings, bold and italics if necessary.
+    When providing links, use the markdown syntax for links.
+    For code, use code blocks.
 
     #{faq_entries_text}
     """

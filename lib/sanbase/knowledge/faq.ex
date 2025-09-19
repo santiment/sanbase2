@@ -51,6 +51,28 @@ defmodule Sanbase.Knowledge.Faq do
     end
   end
 
+  def find_similar_entries(user_input, size \\ 5) do
+    with {:ok, user_embedding} <- Sanbase.OpenAI.Embedding.generate_embedding(user_input, 1536) do
+      query =
+        from(
+          e in FaqEntry,
+          order_by: fragment("embedding <=> ?", ^user_embedding),
+          limit: ^size,
+          select: %{
+            id: e.id,
+            question: e.question,
+            answer_markdown: e.answer_markdown,
+            similarity: fragment("1 - (embedding <=> ?)", ^user_embedding)
+          }
+        )
+
+      result = Repo.all(query) |> Enum.filter(&(&1.similarity > 0.3))
+      {:ok, result}
+    else
+      {:error, _} = error -> error
+    end
+  end
+
   # Private functions
   defp validate_similar_entries([_ | _]), do: :ok
 
@@ -109,28 +131,6 @@ defmodule Sanbase.Knowledge.Faq do
     """
 
     {:ok, combined_text}
-  end
-
-  defp find_similar_entries(user_input, size \\ 5) do
-    with {:ok, user_embedding} <- Sanbase.OpenAI.Embedding.generate_embedding(user_input, 1536) do
-      query =
-        from(
-          e in FaqEntry,
-          order_by: fragment("embedding <=> ?", ^user_embedding),
-          limit: ^size,
-          select: %{
-            id: e.id,
-            question: e.question,
-            answer_markdown: e.answer_markdown,
-            similarity: fragment("1 - (embedding <=> ?)", ^user_embedding)
-          }
-        )
-
-      result = Repo.all(query) |> Enum.filter(&(&1.similarity > 0.3))
-      {:ok, result}
-    else
-      {:error, _} = error -> error
-    end
   end
 
   defp maybe_update_embedding({:ok, %FaqEntry{} = entry} = result) do

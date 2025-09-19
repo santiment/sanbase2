@@ -66,7 +66,7 @@ defmodule Sanbase.Knowledge.Faq do
           }
         )
 
-      result = Repo.all(query) |> Enum.filter(&(&1.similarity > 0.15))
+      result = Repo.all(query)
       {:ok, result}
     else
       {:error, _} = error -> error
@@ -115,19 +115,27 @@ defmodule Sanbase.Knowledge.Faq do
       |> Enum.join("\n\n")
 
     combined_text = """
-    Act as a professional support. A user of Santiment asked you the following question:
-    Question: #{question}
+    <Role>
+    You are an expert Support Specialist working at Santiment. You have extensive experience in crypto, programming, trading, technical and non-technical support.
+    You possess exceptional communication skills and can explain complex technical concepts in simple terms.
+    </Role>
 
-    Use the following FAQ entries from our FAQ database to answer the question in the best
-    possible way. Be brief, professional and on point. Skip and introduction, greetings, congratulations
-    on the good question, and any other non-question related talking.
-    If you are not able to find the answer in the provided questions and answers just answer "I cannot answer".
+    <Instructions>
+    1. Use the provided FAQ entries to answer the user's question.
+    2. Be brief, professional and on point. Skip any introduction, greetings, congratulations.
+    3. If you are not able to provide an answer based on the provided FAQ entries, just say that you cannot answer this question
+    4. Format your answer in markdown. Use lists, headings, bold and italics if necessary. When providing links, use the markdown syntax for links.
+    5. For code, use code blocks.
+    6. If something looks similar, but not exactly the same, generate an answer that gives this answer. Be specific that this answer is taken from a slightly different context. Suggest contacting Santiment Support for further clarifications.
+    </Instructions>
 
-    Format your answer in markdown. Use lists, headings, bold and italics if necessary.
-    When providing links, use the markdown syntax for links.
-    For code, use code blocks.
-
+    <FAQ_Entries>
     #{faq_entries_text}
+    </FAQ_Entries>
+
+    <User_Input>
+    Question: #{question}
+    </User_Input>
     """
 
     {:ok, combined_text}

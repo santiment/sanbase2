@@ -53,7 +53,7 @@ defmodule Sanbase.OpenAI.Question do
 
   @doc """
   Returns the OpenAI API key.
-  Uses the same authentication mechanism as Sanbase.OpenAI.Embedding.
+  Uses the same authentication mechanism as Sanbase.AI.Embedding.
   """
   def openai_apikey do
     System.get_env("OPENAI_API_KEY")

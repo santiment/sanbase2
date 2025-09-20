@@ -114,7 +114,7 @@ defmodule Sanbase.Insight.Post do
 
   def find_most_similar_insights(user_question, size \\ 5) do
     with {:ok, [user_embedding]} <-
-           Sanbase.OpenAI.Embedding.generate_embedding([user_question], 1536) do
+           Sanbase.AI.Embedding.generate_embeddings([user_question], 1536) do
       query =
         from(
           e in PostEmbedding,

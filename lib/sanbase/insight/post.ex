@@ -18,6 +18,7 @@ defmodule Sanbase.Insight.Post do
   alias Sanbase.Metric.MetricPostgresData
   alias Sanbase.Chart.Configuration
   alias Sanbase.Utils.Config
+  alias Sanbase.Insight.PostEmbedding
 
   require Logger
 
@@ -80,6 +81,8 @@ defmodule Sanbase.Insight.Post do
 
     has_one(:featured_item, Sanbase.FeaturedItem, on_delete: :delete_all)
 
+    has_many(:embeddings, PostEmbedding)
+
     has_many(:chart_configurations, Configuration)
     has_many(:images, PostImage, on_delete: :delete_all)
     has_many(:timeline_events, TimelineEvent, on_delete: :delete_all)
@@ -107,6 +110,32 @@ defmodule Sanbase.Insight.Post do
     field(:is_featured, :boolean, virtual: true)
 
     timestamps()
+  end
+
+  def find_most_similar_insights(user_input, size \\ 5)
+
+  def find_most_similar_insights(user_input, size) when is_binary(user_input) do
+    with {:ok, [user_embedding]} <-
+           Sanbase.AI.Embedding.generate_embeddings([user_input], 1536) do
+      find_most_similar_insights(user_embedding, size)
+    end
+  end
+
+  def find_most_similar_insights(embedding, size) when is_list(embedding) do
+    query =
+      from(
+        e in PostEmbedding,
+        group_by: e.post_id,
+        select: %{
+          id: e.post_id,
+          similarity: fragment("MAX(1 - (embedding <=> ?))", ^embedding)
+        },
+        order_by: [desc: fragment("MAX(1 - (embedding <=> ?))", ^embedding)],
+        limit: ^size
+      )
+
+    result = Sanbase.Repo.all(query)
+    {:ok, result}
   end
 
   # The base of all the entity queries

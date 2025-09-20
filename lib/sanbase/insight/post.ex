@@ -112,24 +112,30 @@ defmodule Sanbase.Insight.Post do
     timestamps()
   end
 
-  def find_most_similar_insights(user_question, size \\ 5) do
-    with {:ok, [user_embedding]} <-
-           Sanbase.AI.Embedding.generate_embeddings([user_question], 1536) do
-      query =
-        from(
-          e in PostEmbedding,
-          group_by: e.post_id,
-          select: %{
-            id: e.post_id,
-            similarity: fragment("MAX(1 - (embedding <=> ?))", ^user_embedding)
-          },
-          order_by: [desc: fragment("MAX(1 - (embedding <=> ?))", ^user_embedding)],
-          limit: ^size
-        )
+  def find_most_similar_insights(user_input, size \\ 5)
 
-      result = Sanbase.Repo.all(query)
-      {:ok, result}
+  def find_most_similar_insights(user_input, size) when is_binary(user_input) do
+    with {:ok, [user_embedding]} <-
+           Sanbase.AI.Embedding.generate_embeddings([user_input], 1536) do
+      find_most_similar_insights(user_embedding, size)
     end
+  end
+
+  def find_most_similar_insights(embedding, size) when is_list(embedding) do
+    query =
+      from(
+        e in PostEmbedding,
+        group_by: e.post_id,
+        select: %{
+          id: e.post_id,
+          similarity: fragment("MAX(1 - (embedding <=> ?))", ^embedding)
+        },
+        order_by: [desc: fragment("MAX(1 - (embedding <=> ?))", ^embedding)],
+        limit: ^size
+      )
+
+    result = Sanbase.Repo.all(query)
+    {:ok, result}
   end
 
   # The base of all the entity queries

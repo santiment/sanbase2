@@ -42,39 +42,55 @@ defmodule Sanbase.Knowledge.Faq do
   end
 
   def answer_question(question) do
-    with {:ok, similar_entries} <- find_similar_entries(question),
+    with {:ok, embedding} <- Sanbase.AI.Embedding.generate_embeddings([user_input], 1536),
+         {:ok, similar_entries} <- find_similar_entries(embedding),
          :ok <- validate_similar_entries(similar_entries),
          {:ok, combined_text} <- combine_entries(question, similar_entries),
+         # {:ok, combined_text} <- add_similar_insight_to_context(embedding, combined_text),
          {:ok, answer} <- Sanbase.OpenAI.Question.ask(combined_text),
          {:ok, formatted_answer} <- format_answer(question, answer, similar_entries) do
       {:ok, formatted_answer}
     end
   end
 
-  def find_similar_entries(user_input, size \\ 5) do
-    with {:ok, [user_embedding]} <-
-           Sanbase.AI.Embedding.generate_embeddings([user_input], 1536) do
-      query =
-        from(
-          e in FaqEntry,
-          order_by: fragment("embedding <=> ?", ^user_embedding),
-          limit: ^size,
-          select: %{
-            id: e.id,
-            question: e.question,
-            answer_markdown: e.answer_markdown,
-            similarity: fragment("1 - (embedding <=> ?)", ^user_embedding)
-          }
-        )
+  def find_similar_entries(user_embedding, size \\ 5) do
+    query =
+      from(
+        e in FaqEntry,
+        order_by: fragment("embedding <=> ?", ^user_embedding),
+        limit: ^size,
+        select: %{
+          id: e.id,
+          question: e.question,
+          answer_markdown: e.answer_markdown,
+          similarity: fragment("1 - (embedding <=> ?)", ^user_embedding)
+        }
+      )
 
-      result = Repo.all(query)
-      {:ok, result}
-    else
-      {:error, _} = error -> error
-    end
+    result = Repo.all(query)
+    {:ok, result}
   end
 
   # Private functions
+
+  def add_similar_insight_to_context(embedding, combined_text) do
+    with {:ok, [%{id: similar_insight_id}]} <-
+           Sanbase.Insight.Post.find_most_similar_insights(embedding, 1) do
+      similar_insight = Sanbase.Insight.Post.by_id!(similar_insight_id, preload?: false)
+      insight_markdown_text = Htmd.convert!(similar_insight.text)
+
+      combined_text =
+        combined_text <>
+          """
+            <Most_Similar_Santiment_Insight>
+            #{insight_markdown_text}
+          </Most_Similar_Santiment_Insight>
+          """
+
+      {:ok, combined_text}
+    end
+  end
+
   defp validate_similar_entries([_ | _]), do: :ok
 
   defp validate_similar_entries([]) do

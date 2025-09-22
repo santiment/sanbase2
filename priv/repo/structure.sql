@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.10 (Homebrew)
--- Dumped by pg_dump version 15.10 (Homebrew)
+-- Dumped from database version 15.1 (Homebrew)
+-- Dumped by pg_dump version 15.1 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -827,8 +827,8 @@ CREATE TABLE public.chat_messages (
     sources jsonb[] DEFAULT ARRAY[]::jsonb[],
     suggestions text[] DEFAULT ARRAY[]::text[],
     feedback_type character varying(255),
-    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY (ARRAY[('thumbs_up'::character varying)::text, ('thumbs_down'::character varying)::text])) OR (feedback_type IS NULL))),
-    CONSTRAINT valid_role CHECK (((role)::text = ANY (ARRAY[('user'::character varying)::text, ('assistant'::character varying)::text])))
+    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY ((ARRAY['thumbs_up'::character varying, 'thumbs_down'::character varying])::text[])) OR (feedback_type IS NULL))),
+    CONSTRAINT valid_role CHECK (((role)::text = ANY ((ARRAY['user'::character varying, 'assistant'::character varying])::text[])))
 );
 
 

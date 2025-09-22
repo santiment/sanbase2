@@ -9,7 +9,9 @@ defmodule Sanbase.Application.Mcp do
       Anubis.Server.Registry,
 
       # MCP server for metrics access
-      {Sanbase.MCP.Server, [transport: {:streamable_http, start: true}]}
+      {Sanbase.MCP.Server, [transport: {:streamable_http, start: true}]},
+      # Dev MCP server for search docs
+      {Sanbase.MCP.DevServer, [transport: {:streamable_http, start: true}]}
     ]
 
     opts = [

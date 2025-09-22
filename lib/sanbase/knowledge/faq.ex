@@ -45,10 +45,8 @@ defmodule Sanbase.Knowledge.Faq do
     with {:ok, [embedding]} <- Sanbase.AI.Embedding.generate_embeddings([user_input], 1536),
          {:ok, prompt} <- build_prompt(user_input, embedding, options),
          {:ok, answer} <- Sanbase.OpenAI.Question.ask(prompt) do
-      IO.puts(answer)
       {:ok, answer}
     end
-    |> dbg()
   end
 
   defp build_prompt(user_input, embedding, options) do

@@ -106,8 +106,9 @@ defmodule SanbaseWeb.AskLive do
           <div class="mt-10 w-full flex flex-col items-center">
             <div class="bg-gray-100 rounded-lg shadow p-10 w-full max-w-3xl flex flex-col">
               <h3 class="text-2xl font-bold mb-6">Answer</h3>
-
-              {Phoenix.HTML.raw(Earmark.as_html!(@answer))}
+              <div class="prose prose-lg max-w-none">
+                {Phoenix.HTML.raw(Earmark.as_html!(@answer))}
+              </div>
             </div>
           </div>
         <% end %>

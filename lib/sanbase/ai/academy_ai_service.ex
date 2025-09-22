@@ -87,8 +87,8 @@ defmodule Sanbase.AI.AcademyAIService do
           Enum.map(results, fn item ->
             %{
               title: Map.get(item, "title"),
-              chunk: Map.get(item, "chunk"),
-              score: Map.get(item, "similarity") || Map.get(item, "score")
+              text_chunk: Map.get(item, "chunk"),
+              similarity: Map.get(item, "similarity") || Map.get(item, "score")
             }
           end)
 

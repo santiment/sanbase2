@@ -3,36 +3,18 @@ defmodule SanbaseWeb.Admin.FaqLive.Index do
 
   alias Sanbase.Knowledge.Faq
 
-  @default_page_size 20
+  @default_page_size 10
 
-  def mount(_params, _session, socket) do
+  def mount(params, _session, socket) do
     socket =
       socket
       |> assign(:page_title, "FAQ Management")
+      |> assign_pagination(params)
 
     {:ok, socket}
   end
 
-  def handle_params(params, _uri, socket) do
-    page = parse_int(Map.get(params, "page"), 1)
-    page_size = parse_int(Map.get(params, "page_size"), @default_page_size)
-
-    total_count = Faq.count_entries()
-    total_pages = max(1, div(total_count + page_size - 1, page_size))
-    page = page |> max(1) |> min(total_pages)
-
-    entries = Faq.list_entries(page, page_size)
-
-    socket =
-      socket
-      |> assign(:entries, entries)
-      |> assign(:page, page)
-      |> assign(:page_size, page_size)
-      |> assign(:total_count, total_count)
-      |> assign(:total_pages, total_pages)
-
-    {:noreply, socket}
-  end
+  def handle_params(params, _uri, socket), do: {:noreply, assign_pagination(socket, params)}
 
   def handle_event("delete", %{"id" => id}, socket) do
     entry = Faq.get_entry!(id)
@@ -49,6 +31,24 @@ defmodule SanbaseWeb.Admin.FaqLive.Index do
      socket
      |> put_flash(:info, "FAQ entry deleted successfully")
      |> push_patch(to: ~p"/admin/faq?#{[page: page, page_size: socket.assigns.page_size]}")}
+  end
+
+  defp assign_pagination(socket, params) do
+    page = parse_int(Map.get(params, "page"), 1)
+    page_size = parse_int(Map.get(params, "page_size"), @default_page_size)
+
+    total_count = Faq.count_entries()
+    total_pages = max(1, div(total_count + page_size - 1, page_size))
+    page = page |> max(1) |> min(total_pages)
+
+    entries = Faq.list_entries(page, page_size)
+
+    socket
+    |> assign(:entries, entries)
+    |> assign(:page, page)
+    |> assign(:page_size, page_size)
+    |> assign(:total_count, total_count)
+    |> assign(:total_pages, total_pages)
   end
 
   def render(assigns) do

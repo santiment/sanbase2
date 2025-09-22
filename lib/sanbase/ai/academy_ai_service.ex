@@ -121,8 +121,8 @@ defmodule Sanbase.AI.AcademyAIService do
             %{
               source: "academy",
               title: Map.get(item, :title) || Map.get(item, "title"),
-              score: Map.get(item, :score) || Map.get(item, "score"),
-              chunk: Map.get(item, :chunk) || Map.get(item, "chunk")
+              score: Map.get(item, :similarity) || Map.get(item, "score"),
+              chunk: Map.get(item, :text_chunk) || Map.get(item, "chunk")
             }
           end)
 

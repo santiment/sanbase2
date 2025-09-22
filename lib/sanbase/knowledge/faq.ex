@@ -41,30 +41,70 @@ defmodule Sanbase.Knowledge.Faq do
     FaqEntry.changeset(entry, attrs)
   end
 
-  def answer_question(user_input) do
+  def answer_question(user_input, options \\ []) do
     with {:ok, [embedding]} <- Sanbase.AI.Embedding.generate_embeddings([user_input], 1536),
-         {:ok, similar_entries} <- find_similar_entries(embedding),
-         :ok <- validate_similar_entries(similar_entries),
-         {:ok, combined_text} <- combine_entries(user_input, similar_entries),
-         {:ok, combined_text} <-
-           add_similar_insight_chunks_to_context(embedding, combined_text),
-         {:ok, answer} <- Sanbase.OpenAI.Question.ask(combined_text),
-         {:ok, formatted_answer} <- format_answer(user_input, answer, similar_entries) do
-      {:ok, formatted_answer}
+         {:ok, prompt} <- build_prompt(user_input, embedding, options),
+         {:ok, answer} <- generate_answer(prompt) do
+      {:ok, answer}
     end
   end
 
-  def find_similar_entries(user_embedding, size \\ 5) do
+  defp generate_answer(combined_text) do
+    Sanbase.OpenAI.Question.ask(combined_text)
+  end
+
+  defp build_prompt(user_input, embedding, options) do
+    with {:ok, prompt} <- generate_initial_prompt(user_input),
+         {:ok, prompt} <- maybe_add_similar_faqs(prompt, embedding, options),
+         {:ok, prompt} <- maybe_add_similar_insight_chunks(prompt, embedding, options),
+         {:ok, prompt} <- maybe_add_similar_academy_chunks(prompt, user_input, options) do
+      {:ok, prompt}
+    else
+      unexpected ->
+        raise(ArgumentError, "Got #{unexpected}")
+    end
+  end
+
+  def maybe_add_similar_faqs(prompt, embedding, options) do
+    if Keyword.get(options, :faq, true) do
+      {:ok, faq_entries} = find_most_similar_faqs(embedding, 5)
+
+      entries_text =
+        Enum.map(faq_entries, fn faq_entry ->
+          """
+          Question: #{faq_entry.question}
+          Answer: #{faq_entry.answer_markdown}
+          """
+        end)
+        |> Enum.join("\n")
+
+      prompt =
+        prompt <>
+          """
+          <Similar_FAQ_Entries>
+          #{entries_text}
+          </Similar_FAQ_Entries>
+          """
+
+      {:ok, prompt}
+    else
+      {:ok, prompt}
+    end
+  end
+
+  # Private functions
+
+  defp find_most_similar_faqs(embedding, size) do
     query =
       from(
         e in FaqEntry,
-        order_by: fragment("embedding <=> ?", ^user_embedding),
+        order_by: fragment("embedding <=> ?", ^embedding),
         limit: ^size,
         select: %{
           id: e.id,
           question: e.question,
           answer_markdown: e.answer_markdown,
-          similarity: fragment("1 - (embedding <=> ?)", ^user_embedding)
+          similarity: fragment("1 - (embedding <=> ?)", ^embedding)
         }
       )
 
@@ -72,55 +112,74 @@ defmodule Sanbase.Knowledge.Faq do
     {:ok, result}
   end
 
-  # Private functions
+  def maybe_add_similar_insight_chunks(prompt, embedding, options) do
+    if Keyword.get(options, :insights, true) do
+      with {:ok, post_embeddings} <-
+             Sanbase.Insight.Post.find_most_similar_insight_chunks(embedding, 5) do
+        text_chunks =
+          Enum.map(post_embeddings, & &1.text_chunk)
+          |> Enum.join("\n\n")
 
-  def add_similar_insight_chunks_to_context(embedding, combined_text) do
-    with {:ok, post_embeddings} <-
-           Sanbase.Insight.Post.find_most_similar_insight_chunks(embedding, 5) do
-      text_chunks =
-        Enum.map(post_embeddings, & &1.text_chunk)
-        |> Enum.join("\n\n")
+        prompt =
+          prompt <>
+            """
+            <Most_Similar_Santiment_Insight_Chunks>
+            #{text_chunks}
+            </Most_Similar_Santiment_Insight_Chunks>
+            """
 
-      combined_text =
-        combined_text <>
-          """
-          <Most_Similar_Santiment_Insight_Chunks>
-          #{text_chunks}
-          </Most_Similar_Santiment_Insight_Chunks>
-          """
-
-      {:ok, combined_text}
+        {:ok, prompt}
+      end
+    else
+      {:ok, prompt}
     end
   end
 
-  defp validate_similar_entries([_ | _]), do: :ok
+  def maybe_add_similar_academy_chunks(prompt, user_input, options \\ []) do
+    if Keyword.get(options, :academy, true) do
+      case Sanbase.AI.AcademyAIService.generate_standalone_response(user_input, nil, false) do
+        {:ok, %{answer: academy_answer, sources: _academy_sources}} ->
+          prompt =
+            prompt <>
+              """
+              <Academy_Content>
+              #{academy_answer}
+              </Academy_Content>
+              """
 
-  defp validate_similar_entries([]) do
-    # Returns :ok tuple which does not match the :ok in the with pipeline,
-    # so it's returned early
-    {:ok, "Not enough information in our database to answer this question."}
+          {:ok, prompt}
+
+        _ ->
+          {:ok, prompt}
+      end
+    else
+      {:ok, prompt}
+    end
   end
 
-  defp format_answer(_question, answer, similar_entries) do
-    faq_link_bullets =
-      Enum.map(similar_entries, fn faq ->
-        "- https://santiment.net/faq/#{faq.id}"
-      end)
+  defp generate_initial_prompt(question) do
+    prompt = """
+    <Role>
+    You are an expert Support Specialist working at Santiment. You have extensive experience in crypto, programming, trading, technical and non-technical support.
+    You possess exceptional communication skills and can explain complex technical concepts in simple terms.
+    Your goal is to give a clear and precise answer that best answers the User Input.
+    </Role>
 
-    used_faqs =
-      """
+    <Instructions>
+    1. Use the provided FAQ entries to answer the user's question.
+    2. Be brief, professional and on point. Skip any introduction, greetings, congratulations.
+    3. If you are not able to provide an answer based on the provided FAQ entries, just say that you cannot answer this question
+    4. Format your answer in markdown. Use lists, headings, bold and italics if necessary. When providing links, use the markdown syntax for links.
+    5. For code, use code blocks.
+    6. If something looks similar, but not exactly the same, generate an answer that gives this answer. Be specific that this answer is taken from a slightly different context. Suggest contacting Santiment Support for further clarifications.
+    </Instructions>
 
-      The answer was generated by using the following FAQs:
-      #{Enum.join(faq_link_bullets, "\n")}
-      end}
-      """
-
-    formatted_answer = """
-    #{answer}
-    #{if false and similar_entries != [], do: used_faqs}
+    <User_Input>
+    Question: #{question}
+    </User_Input>
     """
 
-    {:ok, formatted_answer}
+    {:ok, prompt}
   end
 
   defp combine_entries(question, similar_entries) do

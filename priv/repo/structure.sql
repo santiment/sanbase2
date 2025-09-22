@@ -2789,7 +2789,10 @@ CREATE TABLE public.posts (
 CREATE TABLE public.posts_embeddings (
     id bigint NOT NULL,
     post_id bigint NOT NULL,
-    embedding public.vector(1536) NOT NULL
+    embedding public.vector(1536) NOT NULL,
+    text_chunk text NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
 );
 
 

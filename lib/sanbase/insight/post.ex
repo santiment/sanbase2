@@ -112,7 +112,7 @@ defmodule Sanbase.Insight.Post do
     timestamps()
   end
 
-  def find_most_similar_insights(user_input, size \\ 5)
+  def find_most_similar_insights(user_input, size \\ 3)
 
   def find_most_similar_insights(user_input, size) when is_binary(user_input) do
     with {:ok, [user_embedding]} <-
@@ -131,6 +131,28 @@ defmodule Sanbase.Insight.Post do
           similarity: fragment("MAX(1 - (embedding <=> ?))", ^embedding)
         },
         order_by: [desc: fragment("MAX(1 - (embedding <=> ?))", ^embedding)],
+        limit: ^size
+      )
+
+    result = Sanbase.Repo.all(query)
+    {:ok, result}
+  end
+
+  def find_most_similar_insight_chunks(user_input, size \\ 3)
+
+  def find_most_similar_insight_chunks(user_input, size) when is_binary(user_input) do
+    with {:ok, [user_embedding]} <-
+           Sanbase.AI.Embedding.generate_embeddings([user_input], 1536) do
+      find_most_similar_insight_chunks(user_embedding, size)
+    end
+  end
+
+  def find_most_similar_insight_chunks(embedding, size) when is_list(embedding) do
+    query =
+      from(
+        e in PostEmbedding,
+        select: %{text_chunk: e.text_chunk},
+        order_by: [desc: fragment("1 - (embedding <=> ?)", ^embedding)],
         limit: ^size
       )
 

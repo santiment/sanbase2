@@ -10,6 +10,7 @@ defmodule Sanbase.Insight.PostEmbedding do
 
   schema "posts_embeddings" do
     field(:embedding, Pgvector.Ecto.Vector)
+    field(:text_chunk, :string)
     belongs_to(:post, Post)
 
     timestamps()
@@ -18,8 +19,8 @@ defmodule Sanbase.Insight.PostEmbedding do
   @doc false
   def changeset(post_embedding, attrs) do
     post_embedding
-    |> cast(attrs, [:post_id, :embedding])
-    |> validate_required([:post_id, :embedding])
+    |> cast(attrs, [:post_id, :embedding, :text_chunk])
+    |> validate_required([:post_id, :embedding, :text_chunk])
   end
 
   def embed_all_posts() do
@@ -45,7 +46,17 @@ defmodule Sanbase.Insight.PostEmbedding do
         chunks =
           TextChunker.split(markdown, chunk_size: 2000, chunk_overlap: 200, format: :markdown)
 
-        [{post.id, post.title}] ++ Enum.map(chunks, &{post.id, String.trim(&1.text)})
+        Enum.map(chunks, fn chunk ->
+          text_chunk = """
+          Insight Title:
+          #{post.title}
+
+          Chunk text from the insight:
+          #{String.trim(chunk.text)}
+          """
+
+          {post.id, text_chunk}
+        end)
       end)
 
     chunk_texts = Enum.map(chunks, fn {_post_id, text} -> text end)
@@ -56,8 +67,14 @@ defmodule Sanbase.Insight.PostEmbedding do
         Sanbase.Repo.delete_all(from(pe in __MODULE__, where: pe.post_id in ^post_ids))
 
         data =
-          Enum.zip_with(chunks, embeddings, fn {post_id, _text}, embedding ->
-            %{embedding: embedding, post_id: post_id}
+          Enum.zip_with(chunks, embeddings, fn {post_id, text_chunk}, embedding ->
+            %{
+              embedding: embedding,
+              post_id: post_id,
+              text_chunk: text_chunk,
+              inserted_at: NaiveDateTime.utc_now(:second),
+              updated_at: NaiveDateTime.utc_now(:second)
+            }
           end)
 
         Sanbase.Repo.insert_all(__MODULE__, data)

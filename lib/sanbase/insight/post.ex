@@ -885,7 +885,7 @@ defmodule Sanbase.Insight.Post do
   end
 
   defp async_embed_post(%__MODULE__{} = post) do
-    if Application.get_env(:sanbase, :env) == :prod do
+    if Application.get_env(:sanbase, :env) != :test do
       Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
         Sanbase.Insight.PostEmbedding.embed_post(post)
       end)

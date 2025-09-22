@@ -29,10 +29,14 @@ defmodule SanbaseWeb.AskLive do
             |> assign(:answer, formatted_answer)
             |> assign(:sources, sources)
 
-          _ ->
+          {:error, error} ->
             socket
             |> assign(:question, question)
-            |> assign(:answer, "Sorry, I don't have an answer for that question.")
+            # TODO: Do not log the error when making this public-facing
+            |> assign(
+              :answer,
+              "Sorry, I don't have an answer for that question. Got error: #{inspect(error)}"
+            )
             |> assign(:sources, sources)
         end
 

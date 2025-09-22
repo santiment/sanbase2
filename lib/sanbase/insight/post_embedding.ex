@@ -50,6 +50,15 @@ defmodule Sanbase.Insight.PostEmbedding do
     end)
   end
 
+  def drop_post_embeddings(%Sanbase.Insight.Post{id: post_id}) do
+    from(pe in __MODULE__, where: pe.post_id == ^post_id)
+    |> Sanbase.Repo.delete_all()
+  end
+
+  def embed_post(%Sanbase.Insight.Post{} = post) do
+    embed_posts_batch([post])
+  end
+
   def embed_posts_batch(posts) when is_list(posts) do
     chunks =
       posts

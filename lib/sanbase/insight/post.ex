@@ -394,12 +394,25 @@ defmodule Sanbase.Insight.Post do
         # and inserted again as the order needs to be preserved.
         maybe_drop_post_tags(post, args)
 
-        post
-        |> Repo.preload([:tags, :images])
-        |> update_changeset(args)
-        |> Repo.update()
-        |> case do
+        update_changeset =
+          post
+          |> Repo.preload([:tags, :images])
+          |> update_changeset(args)
+
+        case Repo.update(update_changeset) do
           {:ok, post} ->
+            # Update the embeddings only if the title or text changed and the post is published.
+            # On embed existing embeddings are deleted and the new one are created
+            published? = post.ready_state == @published
+
+            content_changed? =
+              Map.has_key?(update_changeset.changes, :text) or
+                Map.has_key?(update_changeset.changes, :title)
+
+            if published? and content_changed? do
+              async_embed_post(post)
+            end
+
             emit_event({:ok, post}, :update_insight, %{})
             :ok = Sanbase.Insight.Search.update_document_tokens(post.id)
             {:ok, post}
@@ -473,6 +486,9 @@ defmodule Sanbase.Insight.Post do
     with {:ok, post} <- by_id(post_id, preload?: false),
          %Post{ready_state: @published} <- post,
          {:ok, post} <- unpublish_post(post) do
+      # Delete embeddings
+      Sanbase.Insight.PostEmbedding.drop_post_embeddings(post)
+
       emit_event({:ok, post}, :unpublish_insight, %{})
       post = post |> Repo.preload(@preloads)
 
@@ -653,11 +669,16 @@ defmodule Sanbase.Insight.Post do
     |> Repo.update()
     |> case do
       {:ok, post} ->
+        # Send notification to discird
         Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
           post = Sanbase.Repo.preload(post, :user)
           Sanbase.Messaging.Insight.publish_in_discord(post)
         end)
 
+        # Update the embeddings
+        async_embed_post(post)
+
+        # Create a timeline event
         TimelineEvent.maybe_create_event_async(
           TimelineEvent.publish_insight_type(),
           post,
@@ -860,6 +881,14 @@ defmodule Sanbase.Insight.Post do
 
       _ ->
         query
+    end
+  end
+
+  defp async_embed_post(%__MODULE__{} = post) do
+    if Application.get_env(:sanbase, :env) == :prod do
+      Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+        Sanbase.Insight.PostEmbedding.embed_post(post)
+      end)
     end
   end
 end

@@ -30,6 +30,11 @@ WORKDIR /app
 # Add rust version 1.75.0 for better GLIBC compatibility
 RUN curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain=1.75.0 -y
 
+# The --allow-multiple-definition linker flag is required here to work around
+# duplicate symbol errors that occur when statically linking certain Rust crates
+# with Erlang NIFs or C dependencies. This flag prevents linker failures due to
+# multiple definitions, which can happen in this build context. See:
+# https://github.com/rust-lang/rust/issues/38281 for more details.
 ENV RUSTFLAGS="-C target-feature=-crt-static -C link-arg=-Wl,--allow-multiple-definition"
 
 ENV PATH=/root/.cargo/bin:$PATH

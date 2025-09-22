@@ -3,29 +3,52 @@ defmodule SanbaseWeb.Admin.FaqLive.Index do
 
   alias Sanbase.Knowledge.Faq
 
-  def mount(_params, _session, socket) do
-    entries = Faq.list_entries()
+  @default_page_size 10
 
+  def mount(params, _session, socket) do
     socket =
       socket
-      |> assign(:entries, entries)
       |> assign(:page_title, "FAQ Management")
+      |> assign_pagination(params)
 
     {:ok, socket}
   end
+
+  def handle_params(params, _uri, socket), do: {:noreply, assign_pagination(socket, params)}
 
   def handle_event("delete", %{"id" => id}, socket) do
     entry = Faq.get_entry!(id)
     {:ok, _} = Faq.delete_entry(entry)
 
-    entries = Faq.list_entries()
+    total_count = Faq.count_entries()
 
-    socket =
-      socket
-      |> assign(:entries, entries)
-      |> put_flash(:info, "FAQ entry deleted successfully")
+    total_pages =
+      max(1, div(total_count + socket.assigns.page_size - 1, socket.assigns.page_size))
 
-    {:noreply, socket}
+    page = socket.assigns.page |> min(total_pages)
+
+    {:noreply,
+     socket
+     |> put_flash(:info, "FAQ entry deleted successfully")
+     |> push_patch(to: ~p"/admin/faq?#{[page: page, page_size: socket.assigns.page_size]}")}
+  end
+
+  defp assign_pagination(socket, params) do
+    page = parse_int(Map.get(params, "page"), 1)
+    page_size = parse_int(Map.get(params, "page_size"), @default_page_size)
+
+    total_count = Faq.count_entries()
+    total_pages = max(1, div(total_count + page_size - 1, page_size))
+    page = page |> max(1) |> min(total_pages)
+
+    entries = Faq.list_entries(page, page_size)
+
+    socket
+    |> assign(:entries, entries)
+    |> assign(:page, page)
+    |> assign(:page_size, page_size)
+    |> assign(:total_count, total_count)
+    |> assign(:total_pages, total_pages)
   end
 
   def render(assigns) do
@@ -47,7 +70,37 @@ defmodule SanbaseWeb.Admin.FaqLive.Index do
           Ask
         </.link>
       </div>
-
+      <div class="mb-4 flex items-center justify-between text-sm text-gray-600">
+        <div>
+          <span class="font-medium">Total:</span> {@total_count}
+          <span class="mx-2">•</span>
+          <span>Page {@page} of {@total_pages}</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <.link
+            patch={~p"/admin/faq?#{[page: max(@page - 1, 1), page_size: @page_size]}"}
+            class={[
+              "px-3 py-1 rounded border transition-colors",
+              @page == 1 && "text-gray-400 border-gray-200 cursor-not-allowed",
+              @page > 1 && "text-gray-700 border-gray-300 hover:bg-gray-50"
+            ]}
+            aria-disabled={@page == 1}
+          >
+            Prev
+          </.link>
+          <.link
+            patch={~p"/admin/faq?#{[page: min(@page + 1, @total_pages), page_size: @page_size]}"}
+            class={[
+              "px-3 py-1 rounded border transition-colors",
+              @page == @total_pages && "text-gray-400 border-gray-200 cursor-not-allowed",
+              @page < @total_pages && "text-gray-700 border-gray-300 hover:bg-gray-50"
+            ]}
+            aria-disabled={@page == @total_pages}
+          >
+            Next
+          </.link>
+        </div>
+      </div>
       <%= if @entries == [] do %>
         <div class="text-center py-12 bg-gray-50 rounded-lg">
           <svg
@@ -132,9 +185,50 @@ defmodule SanbaseWeb.Admin.FaqLive.Index do
             </li>
           </ul>
         </div>
+        <div class="mt-4 flex items-center justify-between text-sm text-gray-600">
+          <div>
+            <span class="font-medium">Total:</span> {@total_count}
+            <span class="mx-2">•</span>
+            <span>Page {@page} of {@total_pages}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <.link
+              patch={~p"/admin/faq?#{[page: max(@page - 1, 1), page_size: @page_size]}"}
+              class={[
+                "px-3 py-1 rounded border transition-colors",
+                @page == 1 && "text-gray-400 border-gray-200 cursor-not-allowed",
+                @page > 1 && "text-gray-700 border-gray-300 hover:bg-gray-50"
+              ]}
+              aria-disabled={@page == 1}
+            >
+              Prev
+            </.link>
+            <.link
+              patch={~p"/admin/faq?#{[page: min(@page + 1, @total_pages), page_size: @page_size]}"}
+              class={[
+                "px-3 py-1 rounded border transition-colors",
+                @page == @total_pages && "text-gray-400 border-gray-200 cursor-not-allowed",
+                @page < @total_pages && "text-gray-700 border-gray-300 hover:bg-gray-50"
+              ]}
+              aria-disabled={@page == @total_pages}
+            >
+              Next
+            </.link>
+          </div>
+        </div>
       <% end %>
     </div>
     """
+  end
+
+  defp parse_int(nil, default), do: default
+  defp parse_int(value, default) when is_integer(value), do: value
+
+  defp parse_int(value, default) when is_binary(value) do
+    case Integer.parse(value) do
+      {int, _} -> int
+      :error -> default
+    end
   end
 
   defp tag_badge(assigns) do

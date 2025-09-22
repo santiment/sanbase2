@@ -11,6 +11,7 @@ defmodule Sanbase.Knowledge.FaqEntry do
     field(:answer_html, :string)
     field(:source_url, :string)
     field(:embedding, Pgvector.Ecto.Vector)
+    field(:is_deleted, :boolean, default: false)
 
     many_to_many(:tags, Sanbase.Tag,
       join_through: "faq_entries_tags",

@@ -15,6 +15,7 @@ defmodule Sanbase.Knowledge.Faq do
     offset = (page - 1) * page_size
 
     FaqEntry
+    |> where([fe], fe.is_deleted == false)
     |> order_by(desc: :updated_at)
     |> preload([:tags])
     |> limit(^page_size)
@@ -45,7 +46,8 @@ defmodule Sanbase.Knowledge.Faq do
   end
 
   def delete_entry(%FaqEntry{} = entry) do
-    Repo.delete(entry)
+    changeset = Ecto.Changeset.change(entry, is_deleted: true)
+    Repo.update(changeset)
   end
 
   def change_entry(%FaqEntry{} = entry, attrs \\ %{}) do

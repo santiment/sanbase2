@@ -1,6 +1,6 @@
-ARG ELIXIR_VERSION=1.18.1
-ARG OTP_VERSION=27.2
-ARG DEBIAN_VERSION=bullseye-20241223-slim
+ARG ELIXIR_VERSION=1.18.4
+ARG OTP_VERSION=27.0.1
+ARG DEBIAN_VERSION=bullseye-20250908-slim
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
@@ -9,34 +9,34 @@ FROM ${BUILDER_IMAGE} as builder
 
 # install build dependencies
 RUN apt-get update -y && apt-get install -y \
-	build-essential \
-	make \
-	g++ \
-	git \
-	nodejs \
-	npm \
-	openssl \
-	wget \
-	ca-certificates \
-	gcc \
-	libc6-dev \
-	curl \
-	&& apt-get clean && rm -f /var/lib/apt/lists/*_*
+  build-essential \
+  make \
+  g++ \
+  git \
+  nodejs \
+  npm \
+  openssl \
+  wget \
+  ca-certificates \
+  gcc \
+  libc6-dev \
+  curl \
+  && apt-get clean && rm -f /var/lib/apt/lists/*_*
 
 # prepare build dir
 RUN mkdir /app
 WORKDIR /app
 
-# Add rust version 1.69.0
-RUN curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain=1.69.0 -y
+# Add rust version 1.75.0 for better GLIBC compatibility
+RUN curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain=1.75.0 -y
 
-ENV RUSTFLAGS="-C target-feature=-crt-static"
+ENV RUSTFLAGS="-C target-feature=-crt-static -C link-arg=-Wl,--allow-multiple-definition"
 
 ENV PATH=/root/.cargo/bin:$PATH
 
 # install hex + rebar
 RUN mix local.hex --force && \
-	mix local.rebar --force
+  mix local.rebar --force
 
 # set build ENV
 ENV MIX_ENV="prod"
@@ -50,13 +50,13 @@ RUN mkdir config
 # to ensure any relevant config change will trigger the dependencies
 # to be re-compiled.
 COPY config/config.exs \
-	config/ueberauth_config.exs \
-	config/notifications_config.exs \
-	config/scheduler_config.exs \
-	config/scrapers_config.exs \
-	config/stripe_config.exs \
-	config/${MIX_ENV}.exs \
-	config/
+  config/ueberauth_config.exs \
+  config/notifications_config.exs \
+  config/scheduler_config.exs \
+  config/scrapers_config.exs \
+  config/stripe_config.exs \
+  config/${MIX_ENV}.exs \
+  config/
 
 RUN mix deps.compile
 
@@ -94,7 +94,7 @@ RUN mix release
 FROM ${RUNNER_IMAGE}
 
 RUN apt-get update -y && apt-get install -y libstdc++6 openssl libncurses5 locales imagemagick git curl \
-	&& apt-get clean && rm -f /var/lib/apt/lists/*_*
+  && apt-get clean && rm -f /var/lib/apt/lists/*_*
 
 # Set the locale
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen

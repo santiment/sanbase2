@@ -60,13 +60,9 @@ defmodule Sanbase.Knowledge.Faq do
   def answer_question(user_input, options \\ []) do
     with {:ok, [embedding]} <- Sanbase.AI.Embedding.generate_embeddings([user_input], 1536),
          {:ok, prompt} <- build_prompt(user_input, embedding, options),
-         {:ok, answer} <- generate_answer(prompt) do
+         {:ok, answer} <- Sanbase.OpenAI.Question.ask(prompt) do
       {:ok, answer}
     end
-  end
-
-  defp generate_answer(combined_text) do
-    Sanbase.OpenAI.Question.ask(combined_text)
   end
 
   defp build_prompt(user_input, embedding, options) do
@@ -108,9 +104,14 @@ defmodule Sanbase.Knowledge.Faq do
     end
   end
 
-  # Private functions
+  def find_most_similar_faqs(user_input, size) when is_binary(user_input) do
+    with {:ok, [embedding]} <- Sanbase.AI.Embedding.generate_embeddings([user_input], 1536),
+         {:ok, result} <- find_most_similar_faqs(embedding, size) do
+      {:ok, result}
+    end
+  end
 
-  defp find_most_similar_faqs(embedding, size) do
+  def find_most_similar_faqs(embedding, size) when is_list(embedding) do
     query =
       from(
         e in FaqEntry,
@@ -128,6 +129,7 @@ defmodule Sanbase.Knowledge.Faq do
     {:ok, result}
   end
 
+  # Private functions
   def maybe_add_similar_insight_chunks(prompt, embedding, options) do
     if Keyword.get(options, :insights, true) do
       with {:ok, post_embeddings} <-
@@ -153,13 +155,22 @@ defmodule Sanbase.Knowledge.Faq do
 
   def maybe_add_similar_academy_chunks(prompt, user_input, options \\ []) do
     if Keyword.get(options, :academy, true) do
-      case Sanbase.AI.AcademyAIService.generate_standalone_response(user_input, nil, false) do
-        {:ok, %{answer: academy_answer, sources: _academy_sources}} ->
+      case Sanbase.AI.AcademyAIService.search_academy_simple(user_input, 5) do
+        {:ok, academy_chunks} ->
+          academy_text_chunks =
+            Enum.map(academy_chunks, fn academy_chunk ->
+              """
+              Article title: #{academy_chunk.title}
+              Most relevant chunk from article: #{academy_chunk.text_chunk}
+              """
+            end)
+            |> Enum.join("\n")
+
           prompt =
             prompt <>
               """
               <Academy_Content>
-              #{academy_answer}
+              #{academy_text_chunks}
               </Academy_Content>
               """
 
@@ -196,43 +207,6 @@ defmodule Sanbase.Knowledge.Faq do
     """
 
     {:ok, prompt}
-  end
-
-  defp combine_entries(question, similar_entries) do
-    faq_entries_text =
-      Enum.map(similar_entries, fn faq ->
-        """
-        Question: #{faq.question}
-        Answer: #{faq.answer_markdown}
-        """
-      end)
-      |> Enum.join("\n\n")
-
-    combined_text = """
-    <Role>
-    You are an expert Support Specialist working at Santiment. You have extensive experience in crypto, programming, trading, technical and non-technical support.
-    You possess exceptional communication skills and can explain complex technical concepts in simple terms.
-    </Role>
-
-    <Instructions>
-    1. Use the provided FAQ entries to answer the user's question.
-    2. Be brief, professional and on point. Skip any introduction, greetings, congratulations.
-    3. If you are not able to provide an answer based on the provided FAQ entries, just say that you cannot answer this question
-    4. Format your answer in markdown. Use lists, headings, bold and italics if necessary. When providing links, use the markdown syntax for links.
-    5. For code, use code blocks.
-    6. If something looks similar, but not exactly the same, generate an answer that gives this answer. Be specific that this answer is taken from a slightly different context. Suggest contacting Santiment Support for further clarifications.
-    </Instructions>
-
-    <FAQ_Entries>
-    #{faq_entries_text}
-    </FAQ_Entries>
-
-    <User_Input>
-    Question: #{question}
-    </User_Input>
-    """
-
-    {:ok, combined_text}
   end
 
   defp maybe_update_embedding({:ok, %FaqEntry{} = entry} = result) do

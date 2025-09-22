@@ -112,7 +112,7 @@ defmodule Sanbase.AI.AcademyAIService do
   def search_docs(question, top_k \\ 5)
       when is_binary(question) and is_integer(top_k) and top_k >= 0 do
     academy_res = search_academy_simple(question, top_k)
-    faq_res = Faq.find_similar_entries(question, top_k)
+    faq_res = Faq.find_most_similar_faqs(question, top_k)
 
     academy_items =
       case academy_res do
@@ -136,13 +136,9 @@ defmodule Sanbase.AI.AcademyAIService do
           Enum.map(items, fn item ->
             %{
               source: "faq",
-              title: Map.get(item, :question) || Map.get(item, "question"),
-              score: Map.get(item, :similarity) || Map.get(item, "similarity"),
-              chunk:
-                Map.get(item, :answer_markdown) ||
-                  Map.get(item, "answer_markdown") ||
-                  Map.get(item, :answer_html) ||
-                  Map.get(item, "answer_html")
+              title: Map.get(item, :question),
+              score: Map.get(item, :similarity),
+              chunk: Map.get(item, :answer_markdown)
             }
           end)
 

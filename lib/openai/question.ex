@@ -24,7 +24,9 @@ defmodule Sanbase.OpenAI.Question do
            headers: [
              {"Authorization", "Bearer #{openai_apikey()}"},
              {"Content-Type", "application/json"}
-           ]
+           ],
+           receive_timeout: 30_000,
+           connect_options: [timeout: 30_000]
          ) do
       {:ok, %{status: 200, body: %{"choices" => [%{"message" => %{"content" => content}} | _]}}} ->
         {:ok, String.trim(content)}

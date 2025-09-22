@@ -44,13 +44,11 @@ defmodule Sanbase.Knowledge.Faq do
   def answer_question(user_input, options \\ []) do
     with {:ok, [embedding]} <- Sanbase.AI.Embedding.generate_embeddings([user_input], 1536),
          {:ok, prompt} <- build_prompt(user_input, embedding, options),
-         {:ok, answer} <- generate_answer(prompt) do
+         {:ok, answer} <- Sanbase.OpenAI.Question.ask(prompt) do
+      IO.puts(answer)
       {:ok, answer}
     end
-  end
-
-  defp generate_answer(combined_text) do
-    Sanbase.OpenAI.Question.ask(combined_text)
+    |> dbg()
   end
 
   defp build_prompt(user_input, embedding, options) do
@@ -143,13 +141,22 @@ defmodule Sanbase.Knowledge.Faq do
 
   def maybe_add_similar_academy_chunks(prompt, user_input, options \\ []) do
     if Keyword.get(options, :academy, true) do
-      case Sanbase.AI.AcademyAIService.generate_standalone_response(user_input, nil, false) do
-        {:ok, %{answer: academy_answer, sources: _academy_sources}} ->
+      case Sanbase.AI.AcademyAIService.search_academy_simple(user_input, 5) do
+        {:ok, academy_chunks} ->
+          academy_text_chunks =
+            Enum.map(academy_chunks, fn academy_chunk ->
+              """
+              Article title: #{academy_chunk.title}
+              Most relevant chunk from article: #{academy_chunk.text_chunk}
+              """
+            end)
+            |> Enum.join("\n")
+
           prompt =
             prompt <>
               """
               <Academy_Content>
-              #{academy_answer}
+              #{academy_text_chunks}
               </Academy_Content>
               """
 

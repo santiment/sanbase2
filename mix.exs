@@ -135,6 +135,7 @@ defmodule Sanbase.Mixfile do
       {:plug_cowboy, "~> 2.5"},
       {:postgrex, "~> 0.19"},
       {:prom_ex, "~> 1.8"},
+      {:req, "~> 0.5"},
       {:quantum, "~> 3.0"},
       {:remote_ip, "~> 1.0"},
       {:rexbug, ">= 1.0.0"},

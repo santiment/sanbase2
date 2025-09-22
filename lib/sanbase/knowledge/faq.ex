@@ -41,14 +41,15 @@ defmodule Sanbase.Knowledge.Faq do
     FaqEntry.changeset(entry, attrs)
   end
 
-  def answer_question(question) do
-    with {:ok, embedding} <- Sanbase.AI.Embedding.generate_embeddings([user_input], 1536),
+  def answer_question(user_input) do
+    with {:ok, [embedding]} <- Sanbase.AI.Embedding.generate_embeddings([user_input], 1536),
          {:ok, similar_entries} <- find_similar_entries(embedding),
          :ok <- validate_similar_entries(similar_entries),
-         {:ok, combined_text} <- combine_entries(question, similar_entries),
-         # {:ok, combined_text} <- add_similar_insight_to_context(embedding, combined_text),
+         {:ok, combined_text} <- combine_entries(user_input, similar_entries),
+         {:ok, combined_text} <-
+           add_similar_insight_chunks_to_context(embedding, combined_text),
          {:ok, answer} <- Sanbase.OpenAI.Question.ask(combined_text),
-         {:ok, formatted_answer} <- format_answer(question, answer, similar_entries) do
+         {:ok, formatted_answer} <- format_answer(user_input, answer, similar_entries) do
       {:ok, formatted_answer}
     end
   end
@@ -73,18 +74,19 @@ defmodule Sanbase.Knowledge.Faq do
 
   # Private functions
 
-  def add_similar_insight_to_context(embedding, combined_text) do
-    with {:ok, [%{id: similar_insight_id}]} <-
-           Sanbase.Insight.Post.find_most_similar_insights(embedding, 1) do
-      similar_insight = Sanbase.Insight.Post.by_id!(similar_insight_id, preload?: false)
-      insight_markdown_text = Htmd.convert!(similar_insight.text)
+  def add_similar_insight_chunks_to_context(embedding, combined_text) do
+    with {:ok, post_embeddings} <-
+           Sanbase.Insight.Post.find_most_similar_insight_chunks(embedding, 5) do
+      text_chunks =
+        Enum.map(post_embeddings, & &1.text_chunk)
+        |> Enum.join("\n\n")
 
       combined_text =
         combined_text <>
           """
-            <Most_Similar_Santiment_Insight>
-            #{insight_markdown_text}
-          </Most_Similar_Santiment_Insight>
+          <Most_Similar_Santiment_Insight_Chunks>
+          #{text_chunks}
+          </Most_Similar_Santiment_Insight_Chunks>
           """
 
       {:ok, combined_text}

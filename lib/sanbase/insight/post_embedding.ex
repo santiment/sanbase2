@@ -31,16 +31,30 @@ defmodule Sanbase.Insight.PostEmbedding do
       )
       |> Sanbase.Repo.all()
 
-    all_published_posts
-    |> Enum.chunk_every(50)
-    |> Enum.each(fn posts ->
+    published_posts_chunks =
+      all_published_posts
+      |> Enum.chunk_every(50)
+
+    chunks_count = length(published_posts_chunks)
+
+    published_posts_chunks
+    |> Enum.with_index()
+    |> Enum.each(fn {posts, index} ->
+      Logger.info(
+        "[PostEmbedding] Embedding batch ##{index}/#{chunks_count} consisting of #{length(posts)} posts"
+      )
+
       embed_posts_batch(posts)
+
+      Logger.info("[PostEmbedding] Finished embedding batch of #{length(posts)} posts")
     end)
   end
 
   def embed_posts_batch(posts) when is_list(posts) do
     chunks =
-      Enum.flat_map(posts, fn post ->
+      posts
+      |> Enum.reject(fn %{text: text} -> String.length(text || "") < 10 end)
+      |> Enum.flat_map(fn post ->
         markdown = Htmd.convert!(post.text)
 
         chunks =
@@ -61,23 +75,23 @@ defmodule Sanbase.Insight.PostEmbedding do
 
     chunk_texts = Enum.map(chunks, fn {_post_id, text} -> text end)
 
-    case Sanbase.AI.Embedding.generate_embeddings(chunk_texts, 1536) do
-      {:ok, embeddings} ->
-        post_ids = Enum.map(posts, & &1.id)
-        Sanbase.Repo.delete_all(from(pe in __MODULE__, where: pe.post_id in ^post_ids))
+    {:ok, embeddings} =
+      Sanbase.AI.Embedding.generate_embeddings(chunk_texts, 1536)
 
-        data =
-          Enum.zip_with(chunks, embeddings, fn {post_id, text_chunk}, embedding ->
-            %{
-              embedding: embedding,
-              post_id: post_id,
-              text_chunk: text_chunk,
-              inserted_at: NaiveDateTime.utc_now(:second),
-              updated_at: NaiveDateTime.utc_now(:second)
-            }
-          end)
+    post_ids = Enum.map(posts, & &1.id)
+    Sanbase.Repo.delete_all(from(pe in __MODULE__, where: pe.post_id in ^post_ids))
 
-        Sanbase.Repo.insert_all(__MODULE__, data)
-    end
+    data =
+      Enum.zip_with(chunks, embeddings, fn {post_id, text_chunk}, embedding ->
+        %{
+          embedding: embedding,
+          post_id: post_id,
+          text_chunk: text_chunk,
+          inserted_at: NaiveDateTime.utc_now(:second),
+          updated_at: NaiveDateTime.utc_now(:second)
+        }
+      end)
+
+    Sanbase.Repo.insert_all(__MODULE__, data)
   end
 end

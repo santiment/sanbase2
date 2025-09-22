@@ -10,6 +10,22 @@ defmodule Sanbase.Knowledge.Faq do
     |> Repo.all()
   end
 
+  def list_entries(page, page_size) when is_integer(page) and is_integer(page_size) do
+    page = if page < 1, do: 1, else: page
+    offset = (page - 1) * page_size
+
+    FaqEntry
+    |> order_by(desc: :updated_at)
+    |> preload([:tags])
+    |> limit(^page_size)
+    |> offset(^offset)
+    |> Repo.all()
+  end
+
+  def count_entries do
+    Repo.aggregate(FaqEntry, :count, :id)
+  end
+
   def get_entry!(id) do
     Repo.get!(FaqEntry, id) |> Repo.preload(:tags)
   end

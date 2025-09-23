@@ -2,6 +2,7 @@ defmodule Sanbase.Knowledge.QuestionAnswerLog do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @primary_key {:id, :binary_id, autogenerate: true}
   schema "question_answer_logs" do
     field(:question, :string)
     field(:answer, :string)
@@ -25,5 +26,9 @@ defmodule Sanbase.Knowledge.QuestionAnswerLog do
     %__MODULE__{}
     |> changeset(args)
     |> Sanbase.Repo.insert()
+  end
+
+  def by_id(id) do
+    Sanbase.Repo.get(__MODULE__, id)
   end
 end

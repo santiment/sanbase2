@@ -122,6 +122,8 @@ defmodule SanbaseWeb.Router do
         live "/", Admin.FaqLive.Index, :index
         live "/new", Admin.FaqLive.Form, :new
         live "/ask", AskLive, :index
+        live "/history", Admin.FaqLive.History, :index
+        live "/history/:id", Admin.FaqLive.HistoryShow, :show
         live "/:id", Admin.FaqLive.Show, :show
         live "/:id/edit", Admin.FaqLive.Form, :edit
       end

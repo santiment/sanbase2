@@ -1,5 +1,7 @@
 defmodule Sanbase.Knowledge.QuestionAnswerLog do
   use Ecto.Schema
+
+  import Ecto.Query
   import Ecto.Changeset
 
   @primary_key {:id, :binary_id, autogenerate: true}
@@ -29,7 +31,12 @@ defmodule Sanbase.Knowledge.QuestionAnswerLog do
   end
 
   def by_id(id) do
-    Sanbase.Repo.get(__MODULE__, id)
+    query = from(log in __MODULE__, where: log.id == ^id, preload: [:user])
+
+    case Sanbase.Repo.one(query) do
+      nil -> {:error, "No entry with id #{id} found"}
+      entry -> {:ok, entry}
+    end
   end
 
   def list_entries() do
@@ -48,6 +55,6 @@ defmodule Sanbase.Knowledge.QuestionAnswerLog do
     |> preload([:user])
     |> limit(^page_size)
     |> offset(^offset)
-    |> Repo.all()
+    |> Sanbase.Repo.all()
   end
 end

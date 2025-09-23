@@ -31,4 +31,23 @@ defmodule Sanbase.Knowledge.QuestionAnswerLog do
   def by_id(id) do
     Sanbase.Repo.get(__MODULE__, id)
   end
+
+  def list_entries() do
+    __MODULE__
+    |> order_by(desc: :inserted_at)
+    |> preload([:user])
+    |> Repo.all()
+  end
+
+  def list_entries(page, page_size) when is_integer(page) and is_integer(page_size) do
+    page = if page < 1, do: 1, else: page
+    offset = (page - 1) * page_size
+
+    __MODULE__
+    |> order_by(desc: :inserted_at)
+    |> preload([:user])
+    |> limit(^page_size)
+    |> offset(^offset)
+    |> Repo.all()
+  end
 end

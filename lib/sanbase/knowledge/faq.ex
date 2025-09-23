@@ -117,6 +117,7 @@ defmodule Sanbase.Knowledge.Faq do
     query =
       from(
         e in FaqEntry,
+        where: e.is_deleted == false,
         order_by: fragment("embedding <=> ?", ^embedding),
         limit: ^size,
         select: %{

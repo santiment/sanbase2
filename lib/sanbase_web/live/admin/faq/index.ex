@@ -57,7 +57,7 @@ defmodule SanbaseWeb.Admin.FaqLive.Index do
     <div class="p-6 max-w-7xl">
       <div class="flex items-start gap-x-2 mb-6">
         <.link
-          navigate={~p"/admin/faq/new"}
+          navigate={~p"/admin/faq/history"}
           class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
         >
           History

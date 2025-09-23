@@ -123,10 +123,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
       remove_not_valid_prices(tickers, cmc_id_to_slugs_mapping)
 
     # Create a project if it's a new one in the top projects and we don't have it
-    tickers
-    |> Enum.sort_by(& &1.rank, :asc)
-    |> Enum.take(top_projects_to_follow())
-    |> Enum.each(&insert_or_update_project/1)
+    if System.get_env("INSERT_CMC_TOP_N_PROJECTS_INTO_DB") == "1" do
+      tickers
+      |> Enum.sort_by(& &1.rank, :asc)
+      |> Enum.take(top_projects_to_follow())
+      |> Enum.each(&insert_or_update_project/1)
+    end
 
     # Store the data in LatestCoinmarketcapData in postgres
 

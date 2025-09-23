@@ -34,15 +34,16 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
     assert bitcoin_latest_cmc.coinmarketcap_integer_id == 1
   end
 
-  test "ticker fetcher inserts new projects" do
-    assert Project.List.projects() == []
-    assert Project.List.projects_with_source("coinmarketcap") == []
-
-    TickerFetcher.work()
-
-    assert length(Project.List.projects()) == 2
-    assert length(Project.List.projects_with_source("coinmarketcap")) == 2
-  end
+  # Disable the test as we've disabled the projects auto-insertion from cmc
+  # test "ticker fetcher inserts new projects" do
+  #   assert Project.List.projects() == []
+  #   assert Project.List.projects_with_source("coinmarketcap") == []
+  #
+  #   TickerFetcher.work()
+  #
+  #   assert length(Project.List.projects()) == 2
+  #   assert length(Project.List.projects_with_source("coinmarketcap")) == 2
+  # end
 
   test "ticker fetcher inserts new projects with correct coinmarketcap mapping" do
     TickerFetcher.work()

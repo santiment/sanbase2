@@ -34,7 +34,7 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
   end
 
   def handle_event("check_similar", %{"question" => question}, socket) do
-    case Faq.find_similar_entries(question || "", 5) do
+    case Faq.find_most_similar_faqs(question || "", 5) do
       {:ok, entries} when entries != [] ->
         socket = socket |> assign(:similar_entries, entries)
         {:noreply, socket}

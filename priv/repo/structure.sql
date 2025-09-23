@@ -3532,7 +3532,7 @@ ALTER SEQUENCE public.queries_id_seq OWNED BY public.queries.id;
 --
 
 CREATE TABLE public.question_answer_logs (
-    id bigint NOT NULL,
+    id uuid NOT NULL,
     question text NOT NULL,
     answer text NOT NULL,
     source character varying(255) NOT NULL,
@@ -3542,25 +3542,6 @@ CREATE TABLE public.question_answer_logs (
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );
-
-
---
--- Name: question_answer_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.question_answer_logs_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: question_answer_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.question_answer_logs_id_seq OWNED BY public.question_answer_logs.id;
 
 
 --
@@ -5927,13 +5908,6 @@ ALTER TABLE ONLY public.queries ALTER COLUMN id SET DEFAULT nextval('public.quer
 --
 
 ALTER TABLE ONLY public.queries_cache ALTER COLUMN id SET DEFAULT nextval('public.queries_cache_id_seq'::regclass);
-
-
---
--- Name: question_answer_logs id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.question_answer_logs ALTER COLUMN id SET DEFAULT nextval('public.question_answer_logs_id_seq'::regclass);
 
 
 --

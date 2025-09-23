@@ -117,7 +117,7 @@ defmodule SanbaseWeb.Router do
     end
 
     scope "/faq" do
-      live_session :require_authenticated_user2,
+      live_session :require_authenticated_user_faq,
         on_mount: [{SanbaseWeb.AdminUserAuth, :ensure_authenticated}] do
         live "/", Admin.FaqLive.Index, :index
         live "/new", Admin.FaqLive.Form, :new

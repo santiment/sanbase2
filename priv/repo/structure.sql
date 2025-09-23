@@ -3528,6 +3528,42 @@ ALTER SEQUENCE public.queries_id_seq OWNED BY public.queries.id;
 
 
 --
+-- Name: question_answer_logs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.question_answer_logs (
+    id bigint NOT NULL,
+    question text NOT NULL,
+    answer text NOT NULL,
+    source character varying(255) NOT NULL,
+    is_successful boolean NOT NULL,
+    errors text,
+    user_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: question_answer_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.question_answer_logs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: question_answer_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.question_answer_logs_id_seq OWNED BY public.question_answer_logs.id;
+
+
+--
 -- Name: questionnaire_answers; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -5894,6 +5930,13 @@ ALTER TABLE ONLY public.queries_cache ALTER COLUMN id SET DEFAULT nextval('publi
 
 
 --
+-- Name: question_answer_logs id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.question_answer_logs ALTER COLUMN id SET DEFAULT nextval('public.question_answer_logs_id_seq'::regclass);
+
+
+--
 -- Name: reports id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6950,6 +6993,14 @@ ALTER TABLE ONLY public.queries_cache
 
 ALTER TABLE ONLY public.queries
     ADD CONSTRAINT queries_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: question_answer_logs question_answer_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.question_answer_logs
+    ADD CONSTRAINT question_answer_logs_pkey PRIMARY KEY (id);
 
 
 --
@@ -9615,6 +9666,14 @@ ALTER TABLE ONLY public.queries
 
 
 --
+-- Name: question_answer_logs question_answer_logs_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.question_answer_logs
+    ADD CONSTRAINT question_answer_logs_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
 -- Name: questionnaire_answers questionnaire_answers_question_uuid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -10660,3 +10719,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250918110902);
 INSERT INTO public."schema_migrations" (version) VALUES (20250918140930);
 INSERT INTO public."schema_migrations" (version) VALUES (20250919145707);
 INSERT INTO public."schema_migrations" (version) VALUES (20250922144344);
+INSERT INTO public."schema_migrations" (version) VALUES (20250923082048);

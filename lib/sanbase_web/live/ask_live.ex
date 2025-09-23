@@ -24,12 +24,34 @@ defmodule SanbaseWeb.AskLive do
       socket =
         case Sanbase.Knowledge.Faq.answer_question(question, Keyword.new(sources)) do
           {:ok, formatted_answer} ->
+            Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+              Sanbase.Knowledge.QuestionAnswerLog.create(%{
+                question: question,
+                answer: formatted_answer,
+                source: Enum.filter(Map.keys(sources), &Map.get(sources, &1)) |> Enum.join(", "),
+                is_successful: true,
+                user_id: socket.assigns.current_user && socket.assigns.current_user.id,
+                errors: ""
+              })
+            end)
+
             socket
             |> assign(:question, question)
             |> assign(:answer, formatted_answer)
             |> assign(:sources, sources)
 
           {:error, error} ->
+            Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+              Sanbase.Knowledge.QuestionAnswerLog.create(%{
+                question: question,
+                answer: "<no answer>",
+                source: Enum.filter(Map.keys(sources), &Map.get(sources, &1)) |> Enum.join(", "),
+                is_successful: false,
+                user_id: socket.assigns.current_user && socket.assigns.current_user.id,
+                errors: inspect(error)
+              })
+            end)
+
             socket
             |> assign(:question, question)
             # TODO: Do not log the error when making this public-facing

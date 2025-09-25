@@ -212,7 +212,7 @@ defmodule Sanbase.AI.AcademyAIService do
     case Req.post(url,
            json: params,
            headers: %{"accept" => "application/json"},
-           receive_timeout: 30_000,
+           receive_timeout: 120_000,
            connect_options: [timeout: 30_000]
          ) do
       {:ok, %Req.Response{status: 200, body: response_body}} ->

@@ -148,7 +148,7 @@ defmodule Sanbase.MCP.FilterAssetsByMetricTool do
     )
 
     field(:sort, :enum,
-      type: :stirng,
+      type: :string,
       values: ~w(asc desc),
       required: true,
       description: """

@@ -43,7 +43,7 @@ defmodule Sanbase.Knowledge.QuestionAnswerLog do
     __MODULE__
     |> order_by(desc: :inserted_at)
     |> preload([:user])
-    |> Repo.all()
+    |> Sanbase.Repo.all()
   end
 
   def list_entries(page, page_size) when is_integer(page) and is_integer(page_size) do

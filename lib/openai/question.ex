@@ -4,7 +4,7 @@ defmodule Sanbase.OpenAI.Question do
   """
 
   @base_url "https://api.openai.com/v1/chat/completions"
-  @model "gpt-4.1"
+  @model "gpt-5-nano"
 
   @doc """
   Sends a question to OpenAI GPT-4.1 and returns the answer.
@@ -47,9 +47,7 @@ defmodule Sanbase.OpenAI.Question do
           "role" => "user",
           "content" => question
         }
-      ],
-      "max_tokens" => 1500,
-      "top_p" => 0.05
+      ]
     }
   end
 

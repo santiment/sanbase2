@@ -57,7 +57,7 @@ defmodule SanbaseWeb.Graphql.MCPFilterAssetsByMetricToolTest do
               threshold: 1000.0,
               page: 1,
               page_size: 3,
-              sort: "asc"
+              sort: "desc"
             })
           end,
           attempts: 3,

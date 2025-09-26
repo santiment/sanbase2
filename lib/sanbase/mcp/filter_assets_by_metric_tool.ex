@@ -91,7 +91,7 @@ defmodule Sanbase.MCP.FilterAssetsByMetricTool do
       """
     )
 
-    field(:threshold, :float,
+    field(:threshold, {:either, {:integer, :float}},
       required: true,
       description: """
       The numeric threshold value used for filtering projects. The meaning depends on the operator:

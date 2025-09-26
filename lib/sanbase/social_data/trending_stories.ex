@@ -76,7 +76,7 @@ defmodule Sanbase.SocialData.TrendingStories do
         dt < toDateTime({{to}}) AND
         source = {{source}} AND
         is_story = true AND
-        sumary != ''
+        summary != ''
     )
     WHERE dt = last_dt_in_group
     ORDER BY t, score DESC

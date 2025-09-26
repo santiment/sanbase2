@@ -11,6 +11,7 @@ defmodule Sanbase.Knowledge.QuestionAnswerLog do
     field(:source, :string)
     field(:is_successful, :boolean)
     field(:errors, :string)
+    field(:question_type, :string)
 
     belongs_to(:user, Sanbase.Accounts.User)
 
@@ -20,8 +21,17 @@ defmodule Sanbase.Knowledge.QuestionAnswerLog do
   @doc false
   def changeset(question_answer_log, attrs) do
     question_answer_log
-    |> cast(attrs, [:question, :answer, :source, :user_id, :is_successful, :errors])
-    |> validate_required([:question, :answer, :is_successful, :source])
+    |> cast(attrs, [
+      :question,
+      :answer,
+      :source,
+      :user_id,
+      :is_successful,
+      :errors,
+      :question_type
+    ])
+    |> validate_required([:question, :answer, :is_successful, :source, :question_type])
+    |> validate_inclusion(:question_type, ["ask_ai", "smart_search"])
   end
 
   def create(args) do

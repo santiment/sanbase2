@@ -21,7 +21,7 @@ defmodule SanbaseWeb.AskLive do
       function = if event == "ask_ai", do: :answer_question, else: :smart_search
 
       socket =
-        case apply(Sanbase.Knowledge.Faq, function, [question, Keyword.new(sources)]) do
+        case apply(Sanbase.Knowledge, function, [question, Keyword.new(sources)]) do
           {:ok, formatted_answer} ->
             log_async(
               _question_type = event,

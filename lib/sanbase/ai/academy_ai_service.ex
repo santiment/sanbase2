@@ -5,7 +5,7 @@ defmodule Sanbase.AI.AcademyAIService do
   """
 
   require Logger
-  alias Sanbase.Knowledge.Faq
+  alias Sanbase.Knowledge.{Academy, Faq}
 
   @doc """
   Generates an Academy Q&A response for a chat message.
@@ -112,7 +112,7 @@ defmodule Sanbase.AI.AcademyAIService do
   @spec search_docs(String.t(), non_neg_integer()) :: {:ok, list(map())} | {:error, String.t()}
   def search_docs(question, top_k \\ 5)
       when is_binary(question) and is_integer(top_k) and top_k >= 0 do
-    academy_res = search_academy_simple(question, top_k)
+    academy_res = Academy.search(question, top_k)
     faq_res = Faq.find_most_similar_faqs(question, top_k)
 
     academy_items =
@@ -121,9 +121,10 @@ defmodule Sanbase.AI.AcademyAIService do
           Enum.map(items, fn item ->
             %{
               source: "academy",
-              title: Map.get(item, :title) || Map.get(item, "title"),
-              score: Map.get(item, :similarity) || Map.get(item, "score"),
-              chunk: Map.get(item, :text_chunk) || Map.get(item, "chunk")
+              title: Map.get(item, :title),
+              score: Map.get(item, :score),
+              chunk: Map.get(item, :chunk),
+              url: Map.get(item, :url)
             }
           end)
 

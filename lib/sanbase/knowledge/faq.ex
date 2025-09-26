@@ -80,9 +80,12 @@ defmodule Sanbase.Knowledge.Faq do
 
   # Private functions
 
-  defp build_smart_search_result(user_input, faq_entries, academy_chunks, insight_chunks) do
-    format_similarity = fn float ->
-      :erlang.float_to_binary(float, decimals: 2)
+  defp build_smart_search_result(_user_input, faq_entries, academy_chunks, insight_chunks) do
+    format_similarity = fn
+      nil -> "N/A"
+      float when is_float(float) -> :erlang.float_to_binary(float, decimals: 2)
+      int when is_integer(int) -> :erlang.float_to_binary(int * 1.0, decimals: 2)
+      _ -> "N/A"
     end
 
     faqs_text =
@@ -99,11 +102,12 @@ defmodule Sanbase.Knowledge.Faq do
 
     academy_texts =
       Enum.map(academy_chunks, fn chunk ->
-        "- [#{format_similarity.(chunk.similarity)}] [#{chunk.title}](#{chunk.url})"
+        "- [#{format_similarity.(chunk.score)}] [#{chunk.title}](#{chunk.url})"
       end)
       |> Enum.join("\n")
 
     answer = """
+
     FAQs:
     #{faqs_text}
 
@@ -211,19 +215,20 @@ defmodule Sanbase.Knowledge.Faq do
     end
   end
 
-  def find_most_similar_academy_chunks(user_input, options) do
-    Sanbase.AI.AcademyAIService.search_academy_simple(user_input, 5)
+  def find_most_similar_academy_chunks(user_input, _options) do
+    Sanbase.Knowledge.Academy.search(user_input, 5)
   end
 
   def maybe_add_similar_academy_chunks(prompt, user_input, options \\ []) do
     if Keyword.get(options, :academy, true) do
-      case find_most_similar_academy_chunks(user_input, 5) do
+      case find_most_similar_academy_chunks(user_input, []) do
         {:ok, academy_chunks} ->
           academy_text_chunks =
             Enum.map(academy_chunks, fn academy_chunk ->
               """
               Article title: #{academy_chunk.title}
-              Most relevant chunk from article: #{academy_chunk.text_chunk}
+              Article URL: #{academy_chunk.url}
+              Most relevant chunk from article: #{academy_chunk.chunk}
               """
             end)
             |> Enum.join("\n")

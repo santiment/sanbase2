@@ -12,18 +12,19 @@ defmodule SanbaseWeb.AskLive do
   end
 
   @impl true
-  def handle_event(event, _params, socket) when event in ["ask", "smart_search"] do
+  def handle_event(event, _params, socket) when event in ["ask_ai", "smart_search"] do
     question = socket.assigns.question
     sources = socket.assigns.sources
     current_user = socket.assigns.current_user
 
     if Map.values(sources) |> Enum.any?(&(&1 == true)) do
-      function = if event == "ask", do: :answer_question, else: :smart_search
+      function = if event == "ask_ai", do: :answer_question, else: :smart_search
 
       socket =
         case apply(Sanbase.Knowledge.Faq, function, [question, Keyword.new(sources)]) do
           {:ok, formatted_answer} ->
             log_async(
+              _question_type = event,
               current_user,
               question,
               formatted_answer,
@@ -37,6 +38,7 @@ defmodule SanbaseWeb.AskLive do
 
           {:error, error} ->
             log_async(
+              _question_type = event,
               current_user,
               question,
               "<no answer> ",
@@ -132,7 +134,7 @@ defmodule SanbaseWeb.AskLive do
             </button>
             <button
               type="submit"
-              phx-click="ask"
+              phx-click="ask_ai"
               class="flex-1 bg-blue-600 hover:bg-blue-700 transition text-white text-xl px-6 py-4 rounded-lg font-semibold shadow"
               phx-disable-with="Answering..."
             >
@@ -155,10 +157,11 @@ defmodule SanbaseWeb.AskLive do
     """
   end
 
-  defp log_async(current_user, question, answer, sources, is_successful, errors) do
+  defp log_async(question_type, current_user, question, answer, sources, is_successful, errors) do
     Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
       Sanbase.Knowledge.QuestionAnswerLog.create(%{
         question: question,
+        question_type: question_type,
         answer: answer,
         source: Enum.filter(Map.keys(sources), &Map.get(sources, &1)) |> Enum.join(", "),
         is_successful: is_successful,

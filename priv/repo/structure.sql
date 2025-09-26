@@ -3540,7 +3540,8 @@ CREATE TABLE public.question_answer_logs (
     errors text,
     user_id bigint,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    question_type character varying(255)
 );
 
 
@@ -10694,3 +10695,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250918140930);
 INSERT INTO public."schema_migrations" (version) VALUES (20250919145707);
 INSERT INTO public."schema_migrations" (version) VALUES (20250922144344);
 INSERT INTO public."schema_migrations" (version) VALUES (20250923082048);
+INSERT INTO public."schema_migrations" (version) VALUES (20250926101337);
+INSERT INTO public."schema_migrations" (version) VALUES (20250926101756);

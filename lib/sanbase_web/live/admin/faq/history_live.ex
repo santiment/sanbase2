@@ -102,7 +102,13 @@ defmodule SanbaseWeb.Admin.FaqLive.History do
       <% else %>
         <div class="bg-white shadow overflow-hidden sm:rounded-md">
           <ul role="list" class="divide-y divide-gray-200">
-            <li :for={entry <- @entries} class="hover:bg-gray-50">
+            <li
+              :for={entry <- @entries}
+              class={[
+                "hover:bg-gray-50",
+                !entry.is_successful && "bg-red-50"
+              ]}
+            >
               <div class="px-4 py-4 flex items-center justify-between">
                 <div class="flex-1 min-w-0">
                   <h3 class="text-lg font-medium text-gray-900 truncate">
@@ -115,6 +121,20 @@ defmodule SanbaseWeb.Admin.FaqLive.History do
                     <%= if entry.user do %>
                       <span class="mx-2">•</span>
                       <span>By {entry.user.name || entry.user.email || "Anon"}</span>
+                    <% end %>
+                    <span class="mx-2">•</span>
+                    <span class={[
+                      "inline-flex items-center px-2 py-1 rounded-full text-xs font-medium",
+                      entry.question_type == "ask_ai" && "bg-blue-100 text-blue-800",
+                      entry.question_type == "smart_search" && "bg-green-100 text-green-800"
+                    ]}>
+                      {String.replace(entry.question_type, "_", " ")}
+                    </span>
+                    <%= if !entry.is_successful do %>
+                      <span class="mx-2">•</span>
+                      <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        Failed
+                      </span>
                     <% end %>
                   </div>
                 </div>

@@ -112,32 +112,6 @@ defmodule Sanbase.Insight.Post do
     timestamps()
   end
 
-  def find_most_similar_insights(user_input, size \\ 3)
-
-  def find_most_similar_insights(user_input, size) when is_binary(user_input) do
-    with {:ok, [user_embedding]} <-
-           Sanbase.AI.Embedding.generate_embeddings([user_input], 1536) do
-      find_most_similar_insights(user_embedding, size)
-    end
-  end
-
-  def find_most_similar_insights(embedding, size) when is_list(embedding) do
-    query =
-      from(
-        e in PostEmbedding,
-        group_by: e.post_id,
-        select: %{
-          id: e.post_id,
-          similarity: fragment("MAX(1 - (embedding <=> ?))", ^embedding)
-        },
-        order_by: [desc: fragment("MAX(1 - (embedding <=> ?))", ^embedding)],
-        limit: ^size
-      )
-
-    result = Sanbase.Repo.all(query)
-    {:ok, result}
-  end
-
   def find_most_similar_insight_chunks(user_input, size \\ 3)
 
   def find_most_similar_insight_chunks(user_input, size) when is_binary(user_input) do
@@ -151,8 +125,35 @@ defmodule Sanbase.Insight.Post do
     query =
       from(
         e in PostEmbedding,
-        select: %{text_chunk: e.text_chunk},
+        inner_join: p in Post,
+        on: e.post_id == p.id,
+        select: %{
+          post_id: e.post_id,
+          post_title: p.title,
+          text_chunk: e.text_chunk,
+          similarity: fragment("1 - (embedding <=> ?)", ^embedding)
+        },
         order_by: [desc: fragment("1 - (embedding <=> ?)", ^embedding)],
+        limit: ^size
+      )
+
+    result = Sanbase.Repo.all(query)
+    {:ok, result}
+  end
+
+  def find_most_similar_insights(embedding, size) when is_list(embedding) do
+    query =
+      from(
+        e in PostEmbedding,
+        inner_join: p in Post,
+        on: e.post_id == p.id,
+        group_by: [e.post_id, p.title],
+        select: %{
+          post_id: e.post_id,
+          post_title: p.title,
+          similarity: fragment("MAX(1 - (embedding <=> ?))", ^embedding)
+        },
+        order_by: [desc: fragment("MAX(1 - (embedding <=> ?))", ^embedding)],
         limit: ^size
       )
 

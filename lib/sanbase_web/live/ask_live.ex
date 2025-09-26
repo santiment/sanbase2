@@ -12,54 +12,42 @@ defmodule SanbaseWeb.AskLive do
   end
 
   @impl true
-  def handle_event("ask", %{"question" => question} = params, socket) do
-    sources =
-      %{
-        faq: Map.get(params, "faq") == "true",
-        academy: Map.get(params, "academy") == "true",
-        insights: Map.get(params, "insights") == "true"
-      }
+  def handle_event(event, _params, socket) when event in ["ask", "smart_search"] do
+    question = socket.assigns.question
+    sources = socket.assigns.sources
+    current_user = socket.assigns.current_user
 
     if Map.values(sources) |> Enum.any?(&(&1 == true)) do
+      function = if event == "ask", do: :answer_question, else: :smart_search
+
       socket =
-        case Sanbase.Knowledge.Faq.answer_question(question, Keyword.new(sources)) do
+        case apply(Sanbase.Knowledge.Faq, function, [question, Keyword.new(sources)]) do
           {:ok, formatted_answer} ->
-            Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
-              Sanbase.Knowledge.QuestionAnswerLog.create(%{
-                question: question,
-                answer: formatted_answer,
-                source: Enum.filter(Map.keys(sources), &Map.get(sources, &1)) |> Enum.join(", "),
-                is_successful: true,
-                user_id: socket.assigns.current_user && socket.assigns.current_user.id,
-                errors: ""
-              })
-            end)
+            log_async(
+              current_user,
+              question,
+              formatted_answer,
+              sources,
+              _is_successful = true,
+              _errors = ""
+            )
 
             socket
-            |> assign(:question, question)
             |> assign(:answer, formatted_answer)
-            |> assign(:sources, sources)
 
           {:error, error} ->
-            Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
-              Sanbase.Knowledge.QuestionAnswerLog.create(%{
-                question: question,
-                answer: "<no answer>",
-                source: Enum.filter(Map.keys(sources), &Map.get(sources, &1)) |> Enum.join(", "),
-                is_successful: false,
-                user_id: socket.assigns.current_user && socket.assigns.current_user.id,
-                errors: inspect(error)
-              })
-            end)
-
-            socket
-            |> assign(:question, question)
-            # TODO: Do not log the error when making this public-facing
-            |> assign(
-              :answer,
-              "Sorry, I don't have an answer for that question. Got error: #{inspect(error)}"
+            log_async(
+              current_user,
+              question,
+              "<no answer> ",
+              sources,
+              _is_successful = false,
+              _errors = error
             )
-            |> assign(:sources, sources)
+
+            # TODO: Do not log the error when making this public-facing
+            socket
+            |> assign(:answer, "Can't answer. Got error: #{inspect(error)}")
         end
 
       {:noreply, socket}
@@ -71,17 +59,30 @@ defmodule SanbaseWeb.AskLive do
   end
 
   @impl true
+  def handle_event("update_question", %{"question" => question}, socket) do
+    {:noreply, assign(socket, :question, question)}
+  end
+
+  @impl true
+  def handle_event("toggle_source", %{"source" => source}, socket) do
+    sources = socket.assigns.sources
+    updated_sources = Map.update!(sources, String.to_existing_atom(source), &(!&1))
+    {:noreply, assign(socket, :sources, updated_sources)}
+  end
+
+  @impl true
   def render(assigns) do
     ~H"""
     <div class="min-h-screen flex flex-col items-center justify-center bg-white">
       <div class="w-full max-w-3xl flex flex-col items-center mt-10">
-        <form phx-submit="ask" class="w-full">
+        <form class="w-full">
           <input
             name="question"
             type="text"
             autofocus
             value={@question}
             placeholder="Ask a question..."
+            phx-change="update_question"
             class="border border-gray-300 rounded-lg shadow w-full text-base px-8 py-6 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white max-w-3xl"
           />
 
@@ -120,13 +121,24 @@ defmodule SanbaseWeb.AskLive do
             </label>
           </div>
 
-          <button
-            type="submit"
-            class="w-full max-w-3xl bg-blue-600 hover:bg-blue-700 transition text-white text-xl px-6 py-4 rounded-lg font-semibold shadow"
-            phx-disable-with="Answering..."
-          >
-            Ask
-          </button>
+          <div class="flex gap-4">
+            <button
+              type="submit"
+              phx-click="smart_search"
+              class="flex-1 bg-green-600 hover:bg-green-700 transition text-white text-xl px-6 py-4 rounded-lg font-semibold shadow"
+              phx-disable-with="Searching..."
+            >
+              Smart Search
+            </button>
+            <button
+              type="submit"
+              phx-click="ask"
+              class="flex-1 bg-blue-600 hover:bg-blue-700 transition text-white text-xl px-6 py-4 rounded-lg font-semibold shadow"
+              phx-disable-with="Answering..."
+            >
+              Ask Santiment AI
+            </button>
+          </div>
         </form>
         <%= if @answer != "" do %>
           <div class="mt-10 w-full flex flex-col items-center">
@@ -141,5 +153,18 @@ defmodule SanbaseWeb.AskLive do
       </div>
     </div>
     """
+  end
+
+  defp log_async(current_user, question, answer, sources, is_successful, errors) do
+    Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+      Sanbase.Knowledge.QuestionAnswerLog.create(%{
+        question: question,
+        answer: answer,
+        source: Enum.filter(Map.keys(sources), &Map.get(sources, &1)) |> Enum.join(", "),
+        is_successful: is_successful,
+        user_id: current_user && current_user.id,
+        errors: inspect(errors)
+      })
+    end)
   end
 end

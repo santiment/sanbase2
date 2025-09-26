@@ -88,6 +88,7 @@ defmodule Sanbase.AI.AcademyAIService do
             %{
               title: Map.get(item, "title"),
               text_chunk: Map.get(item, "chunk"),
+              url: Map.get(item, "url"),
               similarity: Map.get(item, "similarity") || Map.get(item, "score")
             }
           end)

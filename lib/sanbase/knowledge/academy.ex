@@ -17,6 +17,8 @@ defmodule Sanbase.Knowledge.Academy do
   @embedding_size 1536
   @embedding_retry_attempts 3
   @embedding_retry_backoff_ms 2_000
+  @github_repo_owner "santiment"
+  @github_repo_name "academy"
 
   @excluded_paths MapSet.new([
                     "docs/GUIDE.md",
@@ -39,50 +41,22 @@ defmodule Sanbase.Knowledge.Academy do
   """
   @spec reindex_academy(index_options()) :: :ok | {:error, term()}
   def reindex_academy(opts \\ []) do
-    branch = Keyword.get(opts, :branch, "main")
+    branch = Keyword.get(opts, :branch, "master")
     dry_run? = Keyword.get(opts, :dry_run, false)
     started_at = System.monotonic_time(:millisecond)
+    log_tags = if dry_run?, do: ["dry run"], else: []
 
-    log_info("Starting Academy reindex for branch #{branch}")
+    log_info("Starting Academy reindex for branch #{branch}", log_tags)
 
-    if dry_run? do
-      with {:ok, tree_entries} <- fetch_repo_markdown_list(branch),
-           {:ok, _articles} <- process_markdown_entries(tree_entries, branch, true) do
-        duration_ms = System.monotonic_time(:millisecond) - started_at
-        duration_sec = Float.round(duration_ms / 1000, 2)
-        log_info("Finished Academy reindex (dry run) in #{duration_sec}s")
-        :ok
+    result =
+      if dry_run? do
+        perform_dry_run(branch)
       else
-        {:error, reason} = error ->
-          log_error("Academy reindex failed (dry run): #{inspect(reason)}")
-          error
+        do_reindex(branch)
       end
-    else
-      with {:ok, tree_entries} <- fetch_repo_markdown_list(branch),
-           {:ok, articles} <- process_markdown_entries(tree_entries, branch, false) do
-        transaction_result =
-          Repo.transaction(fn ->
-            mark_all_articles_stale()
-            finalize_indexing(articles)
-          end)
 
-        case transaction_result do
-          {:ok, :ok} ->
-            duration_ms = System.monotonic_time(:millisecond) - started_at
-            duration_sec = Float.round(duration_ms / 1000, 2)
-            log_info("Finished Academy reindex in #{duration_sec}s")
-            :ok
-
-          {:error, reason} ->
-            log_error("Academy reindex failed: #{inspect(reason)}")
-            {:error, reason}
-        end
-      else
-        {:error, reason} = error ->
-          log_error("Academy reindex failed: #{inspect(reason)}")
-          error
-      end
-    end
+    log_reindex_result(result, started_at, log_tags)
+    result
   end
 
   @doc """
@@ -116,14 +90,54 @@ defmodule Sanbase.Knowledge.Academy do
 
   def search(_query, _k), do: {:error, :invalid_arguments}
 
+  # Helper functions for reindex_academy
+
+  defp perform_dry_run(branch) do
+    with {:ok, tree_entries} <- fetch_repo_markdown_list(branch),
+         {:ok, _articles} <- process_markdown_entries(tree_entries, branch, true) do
+      :ok
+    end
+  end
+
+  defp do_reindex(branch) do
+    with {:ok, tree_entries} <- fetch_repo_markdown_list(branch),
+         {:ok, articles} <- process_markdown_entries(tree_entries, branch, false) do
+      Repo.transaction(fn ->
+        mark_all_articles_stale()
+        finalize_indexing(articles)
+      end)
+      |> case do
+        {:ok, :ok} -> :ok
+        {:error, reason} -> {:error, reason}
+      end
+    end
+  end
+
+  defp log_reindex_result(result, started_at, log_tags) do
+    duration_sec = calculate_duration_seconds(started_at)
+
+    case result do
+      :ok ->
+        log_info("Finished Academy reindex in #{duration_sec}s", log_tags)
+
+      {:error, reason} ->
+        log_error("Academy reindex failed: #{inspect(reason)} in #{duration_sec}s", log_tags)
+    end
+  end
+
+  defp calculate_duration_seconds(started_at) do
+    duration_ms = System.monotonic_time(:millisecond) - started_at
+    Float.round(duration_ms / 1000, 2)
+  end
+
   defp mark_all_articles_stale do
     Repo.update_all(AcademyArticle, set: [is_stale: true])
     Repo.update_all(AcademyArticleChunk, set: [is_stale: true])
   end
 
   defp fetch_repo_markdown_list(branch) do
-    owner = github_repo_owner()
-    repo = github_repo_name()
+    owner = @github_repo_owner
+    repo = @github_repo_name
 
     case github_api_request("/repos/#{owner}/#{repo}/git/trees/#{branch}?recursive=1") do
       {:ok, %{"tree" => entries}} when is_list(entries) ->
@@ -178,8 +192,8 @@ defmodule Sanbase.Knowledge.Academy do
 
   defp fetch_and_prepare_article(entry, branch, dry_run?) do
     path = entry.path
-    repo_owner = Map.get(entry, :repo_owner, github_repo_owner())
-    repo_name = Map.get(entry, :repo_name, github_repo_name())
+    repo_owner = Map.get(entry, :repo_owner, @github_repo_owner)
+    repo_name = Map.get(entry, :repo_name, @github_repo_name)
     ref = Map.get(entry, :ref, branch)
 
     case fetch_file_contents(path, ref, repo_owner, repo_name) do
@@ -527,24 +541,25 @@ defmodule Sanbase.Knowledge.Academy do
     log_info("Indexed #{current}/#{total} (#{percent}%) - #{path}")
   end
 
-  defp log_info(message) do
-    Logger.info("[AcademyIndex] #{message}")
+  defp log_info(message, tags \\ []) do
+    formatted_message = format_log_message(message, tags)
+    Logger.info("[AcademyIndex] #{formatted_message}")
   end
 
-  defp log_error(message) do
-    Logger.error("[AcademyIndex] #{message}")
+  defp log_error(message, tags \\ []) do
+    formatted_message = format_log_message(message, tags)
+    Logger.error("[AcademyIndex] #{formatted_message}")
   end
 
-  defp github_repo_owner do
-    System.get_env("GITHUB_REPO_OWNER") || "santiment"
-  end
+  defp format_log_message(message, []), do: message
 
-  defp github_repo_name do
-    System.get_env("GITHUB_REPO_NAME") || "academy"
+  defp format_log_message(message, tags) do
+    tag_string = tags |> Enum.map(&"(#{&1})") |> Enum.join(" ")
+    "#{tag_string} #{message}"
   end
 
   defp github_token do
-    System.get_env("GITHUB_TOKEN")
+    System.get_env("GITHUB_ACADEMY_SCRAPER_TOKEN")
   end
 
   defp build_entry(%{"path" => path, "sha" => sha}, owner, repo, branch) do

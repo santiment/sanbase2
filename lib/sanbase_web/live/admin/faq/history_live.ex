@@ -35,7 +35,7 @@ defmodule SanbaseWeb.Admin.FaqLive.History do
   end
 
   defp parse_int(nil, default), do: default
-  defp parse_int(value, default) when is_integer(value), do: value
+  defp parse_int(value, _default) when is_integer(value), do: value
 
   defp parse_int(value, default) when is_binary(value) do
     case Integer.parse(value) do

@@ -1,9 +1,4 @@
 defmodule Sanbase.Knowledge do
-  alias Sanbase.Repo
-  alias Sanbase.Knowledge.FaqEntry
-  alias Sanbase.Knowledge.Faq
-  import Ecto.Query
-
   def answer_question(user_input, options \\ []) do
     with {:ok, [embedding]} <- Sanbase.AI.Embedding.generate_embeddings([user_input], 1536),
          {:ok, prompt} <- build_prompt(user_input, embedding, options),

@@ -25,7 +25,7 @@ defmodule Sanbase.MCP.Server do
   component(Sanbase.MCP.CombinedTrendsTool)
 
   # Register Screener tool
-  component(Sanbase.MCP.FilterAssetsByMetricTool)
+  component(Sanbase.MCP.AssetsByMetricTool)
 
   if Application.compile_env(:sanbase, :env) in [:test, :dev] do
     IO.puts("Defining the extra MCP Server tools used in dev and test")

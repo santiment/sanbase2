@@ -1,25 +1,31 @@
-defmodule Sanbase.MCP.FilterAssetsByMetricTool do
+defmodule Sanbase.MCP.AssetsByMetricTool do
   @moduledoc """
-  A powerful metrics-based project screening tool that filters cryptocurrency projects
-  based on their performance metrics and allows for ordered, paginated results.
+  A powerful metrics-based project filtering and sorting tool that works with cryptocurrency assets
+  based on their metrics and allows for ordered, paginated results.
+
+  The tool allows for filtering assets by a metric and sorting them according to that same metric
+  in ascending or descending metric, or just to sort the assets by a metric without filtering.
 
   This tool allows you to discover projects that meet specific criteria by analyzing their
   metrics over time periods. You can filter projects by absolute values (greater_than/less_than thresholds)
-  or by percentage changes.
+  or by percentage changes, or just sort projects by some metric.
 
   ## Use Cases
-  - Find projects with price more than $10
+  - Get top 10 assets by marketcap, sorted in descending order
+  - Get top 50 assets with highest dev_activity_1d
+  - Find assets with price more than $10
   - Discover tokens whose price increased by more than 50% in the last 30 days
   - Screen for projects with market cap less than $100M
-  - Identify assets that have their dev_activity decline by more than 20% in the past month
+  - Identify assets that have dev_activity_1d decline by more than 20% in the past month
 
   ## Examples
-  - Get projects that have a price in the last 24 hours and it's greater_than $500:
-    `{metric: "price_usd", operator: :greater_than, threshold: 500.0, from: "utc_now-24h", to: "utc_now"}`
-  - Find projects whose price today is 25% higher than 7 days ago:
-    `{metric: "price_usd", operator: :percent_up, threshold: 25.0, from: "utc_now-7d", to: "utc_now"}`
-  - Projects with current market cap less_than $50M:
-    `{metric: "marketcap_usd", operator: :less_than, threshold: 50000000.0, from: "utc_now-1d", to: "utc_now"}`
+  - Get projects that have a price_usd in the last 24 hours and it's greater_than $500. Get the first 20
+    ordered by price_usd in descending order
+    `{metric: "price_usd", operator: :greater_than, threshold: 500.0, from: "utc_now-24h", to: "utc_now", sort: "desc, page: 1, page_size: 20}`
+  - Find projects whose price_usd today is 25% higher than 7 days ago, sorted by the highest percent increase in descending order. Get the first 100.
+    `{metric: "price_usd", operator: :percent_up, threshold: 25.0, from: "utc_now-7d", to: "utc_now", sort: "desc", page: 1, page_size: 100}`
+  - Projects with current market cap less_than $50M. Get 100 such projects, ordered by marketcap in descending order.
+    `{metric: "marketcap_usd", operator: :less_than, threshold: 50000000.0, from: "utc_now-1d", to: "utc_now", sort: "desc", page: 1, page_size: 100}`
 
   Here is how the filtering works:
   - For absolute value operators - `greater_than` and `less_than` - fetch the `metric` for each asset in the interval
@@ -49,6 +55,7 @@ defmodule Sanbase.MCP.FilterAssetsByMetricTool do
       The metric to use for screening projects. This determines what aspect of each project will be analyzed.
       Common metrics include: 'price_usd', 'marketcap_usd', 'volume_usd', 'dev_activity', 'social_volume', 'active_addresses'.
       Use the data catalog to discover all available metrics for comprehensive screening options.
+      Discover the supported metrics with the metrics_and_assets_discovery_tool.
       """
     )
 
@@ -75,7 +82,7 @@ defmodule Sanbase.MCP.FilterAssetsByMetricTool do
     field(:operator, :enum,
       type: :string,
       values: ~w(greater_than less_than percent_up percent_down),
-      required: true,
+      required: false,
       description: """
       Comparison operator that determines how projects are filtered based on the metric and threshold.
 
@@ -87,12 +94,16 @@ defmodule Sanbase.MCP.FilterAssetsByMetricTool do
       - `percent_up` - Include projects where the metric increased by more than the threshold percentage
       - `percent_down` - Include projects where the metric decreased by more than the threshold percentage
 
-      Example: operator=percent_up, threshold=25.0 finds projects that gained more than 25%
+
+      If this parameter is not provided, the threshold parameter also must not be provided. If they are
+      not provided, the tool will simply sort the assets and will do no filtering.
+
+      Example: operator=percent_up, threshold=25.0 finds projects that gained more than 25%.
       """
     )
 
     field(:threshold, {:either, {:integer, :float}},
-      required: true,
+      required: false,
       description: """
       The numeric threshold value used for filtering projects. The meaning depends on the operator:
 
@@ -103,6 +114,9 @@ defmodule Sanbase.MCP.FilterAssetsByMetricTool do
       For percentage operators (:percent_up, :percent_down):
       - The percentage change threshold (e.g., 25.0 for 25% change)
       - Always expressed as a positive number regardless of direction
+
+      If this parameter is not provided, the operator parameter also must not be provided. If they are
+      not provided, the tool will simply sort the assets and will do no filtering.
 
       Examples: threshold=50000000.0 with :less_than finds projects with market cap under $50M
       """
@@ -166,7 +180,7 @@ defmodule Sanbase.MCP.FilterAssetsByMetricTool do
   def execute(params, frame) do
     # Note: Do it like this so we can wrap it in an if can_execute?/3 clause
     # so the execute/2 function itself is not
-    with :ok <- validate_operator(params[:operator]),
+    with :ok <- validate_operator_threshold_pair(params[:operator], params[:threshold]),
          :ok <- validate_aggregation(params[:aggregation]),
          :ok <- validate_sort(params[:sort]) do
       do_execute(params, frame)
@@ -177,15 +191,7 @@ defmodule Sanbase.MCP.FilterAssetsByMetricTool do
   end
 
   defp do_execute(
-         %{
-           metric: metric,
-           from: from,
-           to: to,
-           page: page,
-           page_size: page_size,
-           operator: operator,
-           threshold: threshold
-         } = params,
+         %{metric: metric, from: from, to: to, page: page, page_size: page_size} = params,
          frame
        ) do
     with {:ok, metadata} <- Sanbase.Metric.metadata(metric) do
@@ -197,18 +203,29 @@ defmodule Sanbase.MCP.FilterAssetsByMetricTool do
           do: String.to_atom(aggregation),
           else: metadata.default_aggregation
 
-      filter = %{
-        name: "metric",
-        args: %{
-          metric: metric,
-          from: from,
-          to: to,
-          # credo:disable-for-next-line
-          operator: String.to_atom(operator),
-          threshold: threshold,
-          aggregation: aggregation
-        }
-      }
+      # credo:disable-for-next-line
+      operator = if operator = params[:operator], do: String.to_atom(operator)
+      threshold = params[:threshold]
+
+      # If there's no operator and threshold
+      filters =
+        if not is_nil(operator) and not is_nil(threshold) do
+          [
+            %{
+              name: "metric",
+              args: %{
+                metric: metric,
+                from: from,
+                to: to,
+                aggregation: aggregation,
+                operator: operator,
+                threshold: threshold
+              }
+            }
+          ]
+        else
+          []
+        end
 
       pagination = %{page: page, page_size: page_size}
 
@@ -216,7 +233,7 @@ defmodule Sanbase.MCP.FilterAssetsByMetricTool do
 
       args = %{
         selector: %{
-          filters: [filter],
+          filters: filters,
           pagination: pagination,
           order_by: order_by
         }
@@ -260,4 +277,24 @@ defmodule Sanbase.MCP.FilterAssetsByMetricTool do
   defp validate_sort(sort) when sort in ~w(asc desc), do: :ok
   defp validate_sort(nil), do: {:error, "Sort is required"}
   defp validate_sort(sort), do: {:error, "Invalid sort '#{sort}'. Must be one of: asc, desc"}
+
+  defp validate_operator_threshold_pair(nil, nil), do: :ok
+
+  defp validate_operator_threshold_pair(operator, threshold) do
+    case {operator, threshold} do
+      {nil, nil} ->
+        :ok
+
+      {bin, nil} when is_binary(bin) ->
+        {:error,
+         "Cannot provide `operator` threshold without also providing the `threshold` param"}
+
+      {nil, num} when is_number(num) ->
+        {:error,
+         "Cannot provide `threshold` threshold without also providing the `operator` param"}
+
+      _ ->
+        :ok
+    end
+  end
 end

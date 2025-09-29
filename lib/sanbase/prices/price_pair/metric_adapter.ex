@@ -2,8 +2,6 @@ defmodule Sanbase.PricePair.MetricAdapter do
   @behaviour Sanbase.Metric.Behaviour
   alias Sanbase.PricePair
 
-  import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
-
   @aggregations [:any, :sum, :avg, :min, :max, :last, :first, :median, :ohlc, :count]
   @default_aggregation :last
 

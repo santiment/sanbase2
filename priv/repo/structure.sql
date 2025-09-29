@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.10 (Homebrew)
--- Dumped by pg_dump version 15.10 (Homebrew)
+-- Dumped from database version 15.1 (Homebrew)
+-- Dumped by pg_dump version 15.1 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -284,6 +284,77 @@ $$;
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
+
+--
+-- Name: academy_article_chunks; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.academy_article_chunks (
+    id bigint NOT NULL,
+    article_id bigint NOT NULL,
+    chunk_index integer NOT NULL,
+    heading text,
+    content text NOT NULL,
+    embedding public.vector(1536) NOT NULL,
+    is_stale boolean DEFAULT false NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: academy_article_chunks_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.academy_article_chunks_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: academy_article_chunks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.academy_article_chunks_id_seq OWNED BY public.academy_article_chunks.id;
+
+
+--
+-- Name: academy_articles; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.academy_articles (
+    id bigint NOT NULL,
+    github_path text NOT NULL,
+    academy_url text NOT NULL,
+    title text NOT NULL,
+    content_sha character varying(255) NOT NULL,
+    is_stale boolean DEFAULT false NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: academy_articles_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.academy_articles_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: academy_articles_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.academy_articles_id_seq OWNED BY public.academy_articles.id;
+
 
 --
 -- Name: access_attempts; Type: TABLE; Schema: public; Owner: -
@@ -827,8 +898,8 @@ CREATE TABLE public.chat_messages (
     sources jsonb[] DEFAULT ARRAY[]::jsonb[],
     suggestions text[] DEFAULT ARRAY[]::text[],
     feedback_type character varying(255),
-    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY (ARRAY[('thumbs_up'::character varying)::text, ('thumbs_down'::character varying)::text])) OR (feedback_type IS NULL))),
-    CONSTRAINT valid_role CHECK (((role)::text = ANY (ARRAY[('user'::character varying)::text, ('assistant'::character varying)::text])))
+    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY ((ARRAY['thumbs_up'::character varying, 'thumbs_down'::character varying])::text[])) OR (feedback_type IS NULL))),
+    CONSTRAINT valid_role CHECK (((role)::text = ANY ((ARRAY['user'::character varying, 'assistant'::character varying])::text[])))
 );
 
 
@@ -5310,6 +5381,20 @@ ALTER SEQUENCE public.webinars_id_seq OWNED BY public.webinars.id;
 
 
 --
+-- Name: academy_article_chunks id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.academy_article_chunks ALTER COLUMN id SET DEFAULT nextval('public.academy_article_chunks_id_seq'::regclass);
+
+
+--
+-- Name: academy_articles id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.academy_articles ALTER COLUMN id SET DEFAULT nextval('public.academy_articles_id_seq'::regclass);
+
+
+--
 -- Name: access_attempts id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6224,6 +6309,22 @@ ALTER TABLE ONLY public.webinar_registrations ALTER COLUMN id SET DEFAULT nextva
 --
 
 ALTER TABLE ONLY public.webinars ALTER COLUMN id SET DEFAULT nextval('public.webinars_id_seq'::regclass);
+
+
+--
+-- Name: academy_article_chunks academy_article_chunks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.academy_article_chunks
+    ADD CONSTRAINT academy_article_chunks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: academy_articles academy_articles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.academy_articles
+    ADD CONSTRAINT academy_articles_pkey PRIMARY KEY (id);
 
 
 --
@@ -7408,6 +7509,41 @@ ALTER TABLE ONLY public.webinar_registrations
 
 ALTER TABLE ONLY public.webinars
     ADD CONSTRAINT webinars_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: academy_article_chunks_article_id_chunk_index_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX academy_article_chunks_article_id_chunk_index_index ON public.academy_article_chunks USING btree (article_id, chunk_index);
+
+
+--
+-- Name: academy_article_chunks_article_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX academy_article_chunks_article_id_index ON public.academy_article_chunks USING btree (article_id);
+
+
+--
+-- Name: academy_article_chunks_embedding_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX academy_article_chunks_embedding_index ON public.academy_article_chunks USING hnsw (embedding public.vector_cosine_ops) WHERE (is_stale = false);
+
+
+--
+-- Name: academy_articles_academy_url_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX academy_articles_academy_url_index ON public.academy_articles USING btree (academy_url);
+
+
+--
+-- Name: academy_articles_github_path_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX academy_articles_github_path_index ON public.academy_articles USING btree (github_path);
 
 
 --
@@ -8822,6 +8958,14 @@ CREATE INDEX webinar_registrations_webinar_id_index ON public.webinar_registrati
 --
 
 CREATE TRIGGER oban_notify AFTER INSERT ON public.oban_jobs FOR EACH ROW EXECUTE FUNCTION public.oban_jobs_notify();
+
+
+--
+-- Name: academy_article_chunks academy_article_chunks_article_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.academy_article_chunks
+    ADD CONSTRAINT academy_article_chunks_article_id_fkey FOREIGN KEY (article_id) REFERENCES public.academy_articles(id) ON DELETE CASCADE;
 
 
 --
@@ -10697,3 +10841,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250922144344);
 INSERT INTO public."schema_migrations" (version) VALUES (20250923082048);
 INSERT INTO public."schema_migrations" (version) VALUES (20250926101337);
 INSERT INTO public."schema_migrations" (version) VALUES (20250926101756);
+INSERT INTO public."schema_migrations" (version) VALUES (20250926115345);

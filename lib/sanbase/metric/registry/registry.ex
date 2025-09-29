@@ -1,6 +1,8 @@
 defmodule Sanbase.Metric.Registry do
   use Ecto.Schema
 
+  require Logger
+
   import Ecto.Query
   import Ecto.Changeset
   import Sanbase.Metric.Registry.EventEmitter, only: [emit_event: 3]

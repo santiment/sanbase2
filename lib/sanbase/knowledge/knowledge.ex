@@ -1,9 +1,4 @@
 defmodule Sanbase.Knowledge do
-  alias Sanbase.Repo
-  alias Sanbase.Knowledge.FaqEntry
-  alias Sanbase.Knowledge.Faq
-  import Ecto.Query
-
   def answer_question(user_input, options \\ []) do
     with {:ok, [embedding]} <- Sanbase.AI.Embedding.generate_embeddings([user_input], 1536),
          {:ok, prompt} <- build_prompt(user_input, embedding, options),
@@ -159,7 +154,7 @@ defmodule Sanbase.Knowledge do
   end
 
   def find_most_similar_academy_chunks(user_input, size) do
-    Sanbase.AI.AcademyAIService.search_academy_simple(user_input, size)
+    Sanbase.Knowledge.Academy.search(user_input, size)
   end
 
   def maybe_add_similar_academy_chunks(prompt, user_input, options \\ []) do
@@ -170,7 +165,8 @@ defmodule Sanbase.Knowledge do
             Enum.map(academy_chunks, fn academy_chunk ->
               """
               Article title: #{academy_chunk.title}
-              Most relevant chunk from article: #{academy_chunk.text_chunk}
+              Article URL: #{academy_chunk.url}
+              Most relevant chunk from article: #{academy_chunk.chunk}
               """
             end)
             |> Enum.join("\n")

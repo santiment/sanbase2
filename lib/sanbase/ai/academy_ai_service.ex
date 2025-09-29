@@ -5,7 +5,7 @@ defmodule Sanbase.AI.AcademyAIService do
   """
 
   require Logger
-  alias Sanbase.Knowledge.Faq
+  alias Sanbase.Knowledge.{Academy, Faq}
 
   @doc """
   Generates an Academy Q&A response for a chat message.
@@ -67,52 +67,13 @@ defmodule Sanbase.AI.AcademyAIService do
   end
 
   @doc """
-  Search Academy using the simple query endpoint and return a list of maps
-  with keys: `:title`, `:chunk`, and `:score`.
-  """
-  @spec search_academy_simple(String.t(), non_neg_integer()) ::
-          {:ok, list(map())} | {:error, String.t()}
-  def search_academy_simple(question, top_k \\ 5)
-      when is_binary(question) and is_integer(top_k) and top_k >= 0 do
-    url = "#{ai_server_url()}/academy/query-simple"
-
-    case Req.post(url,
-           json: %{question: question, top_k: top_k},
-           headers: %{"accept" => "application/json"},
-           receive_timeout: 30_000,
-           connect_options: [timeout: 30_000]
-         ) do
-      {:ok, %Req.Response{status: 200, body: %{"results" => results}}} when is_list(results) ->
-        items =
-          Enum.map(results, fn item ->
-            %{
-              title: Map.get(item, "title"),
-              text_chunk: Map.get(item, "chunk"),
-              url: Map.get(item, "url"),
-              similarity: Map.get(item, "similarity") || Map.get(item, "score")
-            }
-          end)
-
-        {:ok, items}
-
-      {:ok, %Req.Response{status: status}} ->
-        Logger.error("Academy simple query API error: status #{status}")
-        {:error, "Academy search unavailable"}
-
-      {:error, error} ->
-        Logger.error("Academy simple query request failed: #{inspect(error)}")
-        {:error, "Failed to search Academy"}
-    end
-  end
-
-  @doc """
   Search across Academy and FAQ entries and return a combined list of
   maps with keys: `:source`, `:title` (FAQ question is mapped to title), and `:score`.
   """
   @spec search_docs(String.t(), non_neg_integer()) :: {:ok, list(map())} | {:error, String.t()}
   def search_docs(question, top_k \\ 5)
       when is_binary(question) and is_integer(top_k) and top_k >= 0 do
-    academy_res = search_academy_simple(question, top_k)
+    academy_res = Academy.search(question, top_k)
     faq_res = Faq.find_most_similar_faqs(question, top_k)
 
     academy_items =
@@ -121,9 +82,10 @@ defmodule Sanbase.AI.AcademyAIService do
           Enum.map(items, fn item ->
             %{
               source: "academy",
-              title: Map.get(item, :title) || Map.get(item, "title"),
-              score: Map.get(item, :similarity) || Map.get(item, "score"),
-              chunk: Map.get(item, :text_chunk) || Map.get(item, "chunk")
+              title: Map.get(item, :title),
+              score: Map.get(item, :similarity),
+              chunk: Map.get(item, :chunk),
+              url: Map.get(item, :url)
             }
           end)
 

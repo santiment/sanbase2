@@ -122,7 +122,7 @@ defmodule Sanbase.AI.AcademyAIService do
             %{
               source: "academy",
               title: Map.get(item, :title),
-              score: Map.get(item, :score),
+              score: Map.get(item, :similarity),
               chunk: Map.get(item, :chunk),
               url: Map.get(item, :url)
             }

@@ -100,7 +100,7 @@ defmodule Sanbase.Knowledge.Academy do
           order_by: fragment("embedding <=> ?", ^embedding),
           limit: ^top_k,
           select: %{
-            score: fragment("1 - (embedding <=> ?)", ^embedding),
+            similarity: fragment("1 - (embedding <=> ?)", ^embedding),
             chunk: chunk.content,
             title: article.title,
             url: article.academy_url,

@@ -91,7 +91,7 @@ defmodule Sanbase.MCP.FilterAssetsByMetricTool do
       """
     )
 
-    field(:threshold, :float,
+    field(:threshold, {:either, {:integer, :float}},
       required: true,
       description: """
       The numeric threshold value used for filtering projects. The meaning depends on the operator:
@@ -148,16 +148,16 @@ defmodule Sanbase.MCP.FilterAssetsByMetricTool do
     )
 
     field(:sort, :enum,
-      type: :stirng,
+      type: :string,
       values: ~w(asc desc),
       required: true,
       description: """
       Sort order for the filtered results based on the aggregated metric values.
-      - "ASC" - Ascending order (lowest values first, e.g., cheapest prices first)
-      - "DESC" - Descending order (highest values first, e.g., most expensive prices first)
+      - "asc" - Ascending order (lowest values first, e.g., cheapest prices first)
+      - "desc" - Descending order (highest values first, e.g., most expensive prices first)
 
       Particularly useful when combined with pagination to get the top/bottom performers.
-      Example: sort="DESC" with price_usd shows highest-priced projects first.
+      Example: sort="desc" with price_usd shows highest-priced projects first.
       """
     )
   end
@@ -166,7 +166,14 @@ defmodule Sanbase.MCP.FilterAssetsByMetricTool do
   def execute(params, frame) do
     # Note: Do it like this so we can wrap it in an if can_execute?/3 clause
     # so the execute/2 function itself is not
-    do_execute(params, frame)
+    with :ok <- validate_operator(params[:operator]),
+         :ok <- validate_aggregation(params[:aggregation]),
+         :ok <- validate_sort(params[:sort]) do
+      do_execute(params, frame)
+    else
+      {:error, reason} ->
+        {:reply, Response.error(Response.tool(), reason), frame}
+    end
   end
 
   defp do_execute(
@@ -182,6 +189,14 @@ defmodule Sanbase.MCP.FilterAssetsByMetricTool do
          frame
        ) do
     with {:ok, metadata} <- Sanbase.Metric.metadata(metric) do
+      aggregation = Map.get(params, :aggregation)
+
+      aggregation =
+        if is_binary(aggregation),
+          # credo:disable-for-next-line
+          do: String.to_atom(aggregation),
+          else: metadata.default_aggregation
+
       filter = %{
         name: "metric",
         args: %{
@@ -191,7 +206,7 @@ defmodule Sanbase.MCP.FilterAssetsByMetricTool do
           # credo:disable-for-next-line
           operator: String.to_atom(operator),
           threshold: threshold,
-          aggregation: Map.get(params, :aggregation, metadata.default_aggregation)
+          aggregation: aggregation
         }
       }
 
@@ -220,4 +235,29 @@ defmodule Sanbase.MCP.FilterAssetsByMetricTool do
       end
     end
   end
+
+  defp validate_operator(operator)
+       when operator in ~w(greater_than less_than percent_up percent_down),
+       do: :ok
+
+  defp validate_operator(nil), do: {:error, "Operator is required"}
+
+  defp validate_operator(operator),
+    do:
+      {:error,
+       "Invalid operator '#{operator}'. Must be one of: greater_than, less_than, percent_up, percent_down"}
+
+  defp validate_aggregation(nil), do: :ok
+
+  defp validate_aggregation(aggregation) when aggregation in ~w(min max sum first last avg),
+    do: :ok
+
+  defp validate_aggregation(aggregation),
+    do:
+      {:error,
+       "Invalid aggregation '#{aggregation}'. Must be one of: min, max, sum, first, last, avg"}
+
+  defp validate_sort(sort) when sort in ~w(asc desc), do: :ok
+  defp validate_sort(nil), do: {:error, "Sort is required"}
+  defp validate_sort(sort), do: {:error, "Invalid sort '#{sort}'. Must be one of: asc, desc"}
 end

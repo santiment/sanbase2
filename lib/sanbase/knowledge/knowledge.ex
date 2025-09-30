@@ -12,14 +12,15 @@ defmodule Sanbase.Knowledge do
          {:ok, faq_entries} <- maybe_find_most_similar_faqs(embedding, options),
          {:ok, academy_articles} <- maybe_find_most_similar_academy_articles(embedding, options),
          {:ok, insights} <- maybe_find_most_similar_insights(embedding, options),
-         {:ok, answer} <- build_smart_search_result(faq_entries, academy_articles, insights) do
+         {:ok, answer} <-
+           build_smart_search_result(faq_entries, academy_articles, insights, options) do
       {:ok, answer}
     end
   end
 
   # Private functions
 
-  defp build_smart_search_result(faq_entries, academy_articles, insights) do
+  defp build_smart_search_result(faq_entries, academy_articles, insights, options) do
     format_similarity = fn similarity ->
       if is_float(similarity),
         do: :erlang.float_to_binary(similarity, decimals: 2),
@@ -32,27 +33,28 @@ defmodule Sanbase.Knowledge do
       end)
       |> Enum.join("\n")
 
-    insights_texts =
+    faqs_text = "FAQs:\n" <> faqs_text <> "\n"
+
+    insights_text =
       Enum.map(insights, fn insight ->
         "- [#{format_similarity.(insight.similarity)}] [#{insight.post_title}](#{SanbaseWeb.Endpoint.insight_url(insight.post_id)})"
       end)
       |> Enum.join("\n")
 
-    academy_texts =
+    insights_text = "Insights:\n" <> insights_text <> "\n"
+
+    academy_text =
       Enum.map(academy_articles, fn article ->
         "- [#{format_similarity.(article.similarity)}] [#{article.title}](#{article.url})"
       end)
       |> Enum.join("\n")
 
+    academy_text = "Academy:\n" <> academy_text <> "\n"
+
     answer = """
-    FAQs:
-    #{faqs_text}
-
-    Insights:
-    #{insights_texts}
-
-    Academy:
-    #{academy_texts}
+    #{if options[:faq], do: faqs_text}
+    #{if options[:insights], do: insights_text}
+    #{if options[:academy], do: academy_text}
     """
 
     {:ok, answer}

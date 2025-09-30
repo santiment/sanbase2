@@ -3,21 +3,46 @@ defmodule Sanbase.OpenAI.Question do
   OpenAI question client using the GPT-4.1 model.
   """
 
+  use Sanbase.OpenAI.Traced
+
   @base_url "https://api.openai.com/v1/chat/completions"
   @model "gpt-5-nano"
 
   @doc """
-  Sends a question to OpenAI GPT-4.1 and returns the answer.
+  Sends a question to OpenAI GPT and returns the answer.
 
   ## Parameters
-  - question: The question text to send to GPT-4.1
+  - question: The question text to send to GPT
+  - tracing_opts: Optional map with:
+    - `:model` - OpenAI model to use (defaults to @model)
+    - `:user_id` - User ID for Langfuse trace
+    - `:session_id` - Session ID for grouping traces
+    - `:trace_metadata` - Additional metadata for the trace
+    - `:generation_metadata` - Additional metadata for the generation
 
   ## Returns
   - {:ok, answer} on success where answer is the response text
   - {:error, reason} on failure
+
+  ## Examples
+
+      # Without tracing
+      Question.ask("What is Elixir?")
+
+      # With tracing
+      Question.ask("What is Elixir?", %{model: "gpt-4", user_id: "user123"})
   """
-  def ask(question) do
-    body = build_request_body(question)
+  deftraced ask(question) do
+    model = Map.get(tracing_opts, :model, @model)
+
+    with {:ok, %{content: content}} <- request_completion(question, %{model: model}) do
+      {:ok, content}
+    end
+  end
+
+  defp request_completion(question, opts) do
+    model = Map.get(opts, :model, @model)
+    body = build_request_body(question, model)
 
     case Req.post(@base_url,
            json: body,
@@ -28,8 +53,20 @@ defmodule Sanbase.OpenAI.Question do
            receive_timeout: 30_000,
            connect_options: [timeout: 30_000]
          ) do
-      {:ok, %{status: 200, body: %{"choices" => [%{"message" => %{"content" => content}} | _]}}} ->
-        {:ok, String.trim(content)}
+      {:ok,
+       %{
+         status: 200,
+         body: %{"choices" => [%{"message" => %{"content" => content}} | _]} = response
+       }} ->
+        trimmed = content |> to_string() |> String.trim()
+
+        {:ok,
+         %{
+           content: trimmed,
+           model: Map.get(response, "model", model),
+           usage: Map.get(response, "usage"),
+           response: response
+         }}
 
       {:ok, %{status: status, body: body}} ->
         {:error, "OpenAI API error: #{status} - #{inspect(body)}"}
@@ -39,9 +76,9 @@ defmodule Sanbase.OpenAI.Question do
     end
   end
 
-  defp build_request_body(question) do
+  defp build_request_body(question, model) do
     %{
-      "model" => @model,
+      "model" => model,
       "messages" => [
         %{
           "role" => "user",

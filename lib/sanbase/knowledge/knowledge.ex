@@ -1,7 +1,7 @@
 defmodule Sanbase.Knowledge do
   def answer_question(user_input, options \\ []) do
     with {:ok, [embedding]} <- Sanbase.AI.Embedding.generate_embeddings([user_input], 1536),
-         {:ok, prompt} <- build_prompt(user_input, embedding, options),
+         {:ok, prompt} <- build_question_answer_prompt(user_input, embedding, options),
          {:ok, answer} <- Sanbase.OpenAI.Question.ask(prompt) do
       {:ok, answer}
     end
@@ -10,16 +10,16 @@ defmodule Sanbase.Knowledge do
   def smart_search(user_input, options) do
     with {:ok, [embedding]} <- Sanbase.AI.Embedding.generate_embeddings([user_input], 1536),
          {:ok, faq_entries} <- maybe_find_most_similar_faqs(embedding, options),
-         {:ok, academy_chunks} <- maybe_find_most_similar_academy_chunks(user_input, options),
-         {:ok, insight_chunks} <- maybe_find_most_similar_insights(embedding, options),
-         {:ok, answer} <- build_smart_search_result(faq_entries, academy_chunks, insight_chunks) do
+         {:ok, academy_articles} <- maybe_find_most_similar_academy_articles(embedding, options),
+         {:ok, insights} <- maybe_find_most_similar_insights(embedding, options),
+         {:ok, answer} <- build_smart_search_result(faq_entries, academy_articles, insights) do
       {:ok, answer}
     end
   end
 
   # Private functions
 
-  defp build_smart_search_result(faq_entries, academy_chunks, insight_chunks) do
+  defp build_smart_search_result(faq_entries, academy_articles, insights) do
     format_similarity = fn similarity ->
       if is_float(similarity),
         do: :erlang.float_to_binary(similarity, decimals: 2),
@@ -27,20 +27,20 @@ defmodule Sanbase.Knowledge do
     end
 
     faqs_text =
-      Enum.map(faq_entries, fn chunk ->
-        "- [#{format_similarity.(chunk.similarity)}] [#{chunk.question}](#{SanbaseWeb.Endpoint.admin_url()}/admin/faq/#{chunk.id})"
+      Enum.map(faq_entries, fn entry ->
+        "- [#{format_similarity.(entry.similarity)}] [#{entry.question}](#{SanbaseWeb.Endpoint.admin_url()}/admin/faq/#{entry.id})"
       end)
       |> Enum.join("\n")
 
     insights_texts =
-      Enum.map(insight_chunks, fn chunk ->
-        "- [#{format_similarity.(chunk.similarity)}] [#{chunk.post_title}](#{SanbaseWeb.Endpoint.insight_url(chunk.post_id)})"
+      Enum.map(insights, fn insight ->
+        "- [#{format_similarity.(insight.similarity)}] [#{insight.post_title}](#{SanbaseWeb.Endpoint.insight_url(insight.post_id)})"
       end)
       |> Enum.join("\n")
 
     academy_texts =
-      Enum.map(academy_chunks, fn chunk ->
-        "- [#{format_similarity.(chunk.similarity)}] [#{chunk.title}](#{chunk.url})"
+      Enum.map(academy_articles, fn article ->
+        "- [#{format_similarity.(article.similarity)}] [#{article.title}](#{article.url})"
       end)
       |> Enum.join("\n")
 
@@ -58,11 +58,11 @@ defmodule Sanbase.Knowledge do
     {:ok, answer}
   end
 
-  defp build_prompt(user_input, embedding, options) do
+  defp build_question_answer_prompt(user_input, embedding, options) do
     with {:ok, prompt} <- generate_initial_prompt(user_input),
          {:ok, prompt} <- maybe_add_similar_faqs(prompt, embedding, options),
          {:ok, prompt} <- maybe_add_similar_insight_chunks(prompt, embedding, options),
-         {:ok, prompt} <- maybe_add_similar_academy_chunks(prompt, user_input, options) do
+         {:ok, prompt} <- maybe_add_similar_academy_chunks(prompt, embedding, options) do
       {:ok, prompt}
     else
       unexpected ->
@@ -145,21 +145,17 @@ defmodule Sanbase.Knowledge do
     end
   end
 
-  defp maybe_find_most_similar_academy_chunks(embedding, options) do
+  defp maybe_find_most_similar_academy_articles(embedding, options) do
     if Keyword.get(options, :academy, true) do
-      find_most_similar_academy_chunks(embedding, 5)
+      Sanbase.Knowledge.Academy.search_articles(embedding, 5)
     else
       {:ok, []}
     end
   end
 
-  def find_most_similar_academy_chunks(user_input, size) do
-    Sanbase.Knowledge.Academy.search(user_input, size)
-  end
-
-  def maybe_add_similar_academy_chunks(prompt, user_input, options \\ []) do
+  def maybe_add_similar_academy_chunks(prompt, embedding, options \\ []) do
     if Keyword.get(options, :academy, true) do
-      case find_most_similar_academy_chunks(user_input, 5) do
+      case Sanbase.Knowledge.Academy.search_chunks(embedding, 5) do
         {:ok, academy_chunks} ->
           academy_text_chunks =
             Enum.map(academy_chunks, fn academy_chunk ->

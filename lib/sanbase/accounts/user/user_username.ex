@@ -50,10 +50,15 @@ defmodule Sanbase.Accounts.User.Name do
     end
   end
 
+  @forbidden_characters ~w"> < / \\ & ; : # = { } ^ % , [ ] ( ) ?"
   defp has_forbidden_characters?(value, fieldname) do
-    case String.contains?(value, [">", "<", "/", "\\"]) do
-      false -> false
-      true -> {:error, "#{fieldname} must not contain the forbidden characters >, <, /, \\"}
+    case String.contains?(value, @forbidden_characters) do
+      false ->
+        false
+
+      true ->
+        {:error,
+         "#{fieldname} must not contain the forbidden characters #{@forbidden_characters |> Enum.join(", ")}"}
     end
   end
 

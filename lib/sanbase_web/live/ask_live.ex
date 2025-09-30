@@ -7,7 +7,8 @@ defmodule SanbaseWeb.AskLive do
      assign(socket,
        question: "",
        answer: "",
-       sources: %{faq: true, academy: true, insights: true}
+       sources: %{faq: true, academy: true, insights: true},
+       answer_log_link: nil
      )}
   end
 
@@ -155,6 +156,11 @@ defmodule SanbaseWeb.AskLive do
           <div class="mt-10 w-full flex flex-col items-center">
             <div class="bg-gray-100 rounded-lg shadow p-10 w-full max-w-3xl flex flex-col">
               <h3 class="text-2xl font-bold mb-6">Answer</h3>
+              <.link :if={@answer_log_link} href={@answer_log_link} class="text-blue-600 font-bold">
+                {@answer_log_link}
+              </.link>
+              <hr class="h-px my-8 bg-gray-400 border-0 " />
+
               <div class="prose prose-lg max-w-none">
                 {Phoenix.HTML.raw(Earmark.as_html!(@answer))}
               </div>
@@ -166,17 +172,29 @@ defmodule SanbaseWeb.AskLive do
     """
   end
 
+  def handle_info({:populate_answer_log_link, link}, socket) do
+    {:noreply,
+     socket
+     |> assign(:answer_log_link, link)}
+  end
+
   defp log_async(question_type, current_user, question, answer, sources, is_successful, errors) do
-    Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
-      Sanbase.Knowledge.QuestionAnswerLog.create(%{
-        question: question,
-        question_type: question_type,
-        answer: answer,
-        source: Enum.filter(Map.keys(sources), &Map.get(sources, &1)) |> Enum.join(", "),
-        is_successful: is_successful,
-        user_id: current_user && current_user.id,
-        errors: inspect(errors)
-      })
+    self = self()
+
+    Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
+      with {:ok, struct} <-
+             Sanbase.Knowledge.QuestionAnswerLog.create(%{
+               question: question,
+               question_type: question_type,
+               answer: answer,
+               source: Enum.filter(Map.keys(sources), &Map.get(sources, &1)) |> Enum.join(", "),
+               is_successful: is_successful,
+               user_id: current_user && current_user.id,
+               errors: inspect(errors)
+             }) do
+        url = Path.join([SanbaseWeb.Endpoint.admin_url(), "admin", "faq", "history", struct.id])
+        send(self, {:populate_answer_log_link, url})
+      end
     end)
   end
 end

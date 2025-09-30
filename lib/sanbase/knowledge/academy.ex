@@ -64,31 +64,72 @@ defmodule Sanbase.Knowledge.Academy do
 
   Returns a list of maps containing the chunk content, similarity score, and metadata.
   """
-  @spec search(String.t(), pos_integer()) :: {:ok, list(map())} | {:error, term()}
-  def search(query, top_k) when is_binary(query) and is_integer(top_k) and top_k > 0 do
+  @spec search_chunks(String.t() | list(float()), pos_integer()) ::
+          {:ok, list(map())} | {:error, term()}
+  def search_chunks(query, top_k) when is_binary(query) and is_integer(top_k) and top_k > 0 do
     with {:ok, [embedding]} <- Sanbase.AI.Embedding.generate_embeddings([query], @embedding_size) do
-      chunks =
-        from(chunk in AcademyArticleChunk,
-          join: article in assoc(chunk, :article),
-          where: chunk.is_stale == false and article.is_stale == false,
-          order_by: fragment("embedding <=> ?", ^embedding),
-          limit: ^top_k,
-          select: %{
-            similarity: fragment("1 - (embedding <=> ?)", ^embedding),
-            chunk: chunk.content,
-            title: article.title,
-            url: article.academy_url,
-            github_path: article.github_path,
-            heading: chunk.heading
-          }
-        )
-        |> Repo.all()
-
-      {:ok, chunks}
+      search_chunks(embedding, top_k)
     end
   end
 
-  def search(_query, _k), do: {:error, :invalid_arguments}
+  def search_chunks(embedding, top_k)
+      when is_list(embedding) and is_integer(top_k) and top_k > 0 do
+    chunks =
+      from(chunk in AcademyArticleChunk,
+        join: article in assoc(chunk, :article),
+        where: chunk.is_stale == false and article.is_stale == false,
+        order_by: [desc: fragment("1 - (embedding <=> ?)", ^embedding)],
+        limit: ^top_k,
+        select: %{
+          similarity: fragment("1 - (embedding <=> ?)", ^embedding),
+          chunk: chunk.content,
+          title: article.title,
+          url: article.academy_url,
+          github_path: article.github_path,
+          heading: chunk.heading
+        }
+      )
+      |> Repo.all()
+
+    {:ok, chunks}
+  end
+
+  def search_chunks(_query, _k), do: {:error, :invalid_arguments}
+
+  @doc """
+  Find the top `k` similar Academy articles
+
+  Returns a list of maps containing the academy article title, similarity score, and url
+  """
+  @spec search_articles(String.t() | list(float()), pos_integer()) ::
+          {:ok, list(map())} | {:error, term()}
+  def search_articles(query, top_k) when is_binary(query) and is_integer(top_k) and top_k > 0 do
+    with {:ok, [embedding]} <- Sanbase.AI.Embedding.generate_embeddings([query], @embedding_size) do
+      search_articles(embedding, top_k)
+    end
+  end
+
+  def search_articles(embedding, top_k)
+      when is_list(embedding) and is_integer(top_k) and top_k > 0 do
+    articles =
+      from(chunk in AcademyArticleChunk,
+        join: article in assoc(chunk, :article),
+        where: chunk.is_stale == false and article.is_stale == false,
+        select: %{
+          similarity: fragment("MAX(1 - (embedding <=> ?))", ^embedding),
+          title: article.title,
+          url: article.academy_url
+        },
+        group_by: [article.title, article.academy_url],
+        order_by: [desc: fragment("MAX(1 - (embedding <=> ?))", ^embedding)],
+        limit: ^top_k
+      )
+      |> Repo.all()
+
+    {:ok, articles}
+  end
+
+  def search_chunks(_query, _k), do: {:error, :invalid_arguments}
 
   # Helper functions for reindex_academy
 

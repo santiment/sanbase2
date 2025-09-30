@@ -68,7 +68,10 @@ defmodule SanbaseWeb.AskLive do
   @impl true
   def handle_event("toggle_source", %{"source" => source}, socket) do
     sources = socket.assigns.sources
-    updated_sources = Map.update!(sources, String.to_existing_atom(source), &(!&1))
+
+    updated_sources =
+      Map.update!(sources, String.to_existing_atom(source), &(!&1))
+
     {:noreply, assign(socket, :sources, updated_sources)}
   end
 
@@ -92,6 +95,8 @@ defmodule SanbaseWeb.AskLive do
             <label class="flex items-center space-x-2 cursor-pointer">
               <input
                 type="checkbox"
+                phx-click="toggle_source"
+                phx-value-source="faq"
                 name="faq"
                 value="true"
                 checked={@sources.faq}
@@ -103,6 +108,8 @@ defmodule SanbaseWeb.AskLive do
             <label class="flex items-center space-x-2 cursor-pointer">
               <input
                 type="checkbox"
+                phx-click="toggle_source"
+                phx-value-source="academy"
                 name="academy"
                 value="true"
                 checked={@sources.academy}
@@ -114,6 +121,8 @@ defmodule SanbaseWeb.AskLive do
             <label class="flex items-center space-x-2 cursor-pointer">
               <input
                 type="checkbox"
+                phx-click="toggle_source"
+                phx-value-source="insights"
                 name="insights"
                 value="true"
                 checked={@sources.insights}

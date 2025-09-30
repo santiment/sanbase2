@@ -114,6 +114,14 @@ defmodule SanbaseWeb.Router do
         live("/groups/new", GroupLive.Form, :new)
         live("/groups/edit/:id", GroupLive.Form, :edit)
         live("/changelog", MetricChangelogLive)
+
+        live("/categorization", CategorizationLive.Index)
+        live("/categorization/categories", Categorization.CategoryLive.Index)
+        live("/categorization/categories/new", Categorization.CategoryLive.Form, :new)
+        live("/categorization/categories/edit/:id", Categorization.CategoryLive.Form, :edit)
+        live("/categorization/groups", Categorization.GroupLive.Index)
+        live("/categorization/groups/new", Categorization.GroupLive.Form, :new)
+        live("/categorization/groups/edit/:id", Categorization.GroupLive.Form, :edit)
       end
     end
 

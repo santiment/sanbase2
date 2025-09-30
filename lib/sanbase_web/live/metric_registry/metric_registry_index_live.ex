@@ -520,6 +520,11 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
         />
 
         <AvailableMetricsComponents.available_metrics_button
+          icon="hero-tag"
+          text="Categorization"
+          href={~p"/admin/metric_registry/categorization"}
+        />
+        <AvailableMetricsComponents.available_metrics_button
           icon="hero-list-bullet"
           text="UI Display Order"
           href={~p"/admin/metric_registry/display_order"}

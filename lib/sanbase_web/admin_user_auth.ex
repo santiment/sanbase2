@@ -6,6 +6,8 @@ defmodule SanbaseWeb.AdminUserAuth do
 
   alias Sanbase.Accounts
 
+  require Logger
+
   def log_out_user(conn) do
     SanbaseWeb.Guardian.revoke_and_remove_jwt_tokens_from_conn_session(conn)
 
@@ -60,10 +62,7 @@ defmodule SanbaseWeb.AdminUserAuth do
     if has_admin_role? do
       conn
     else
-      conn
-      |> put_flash(:error, "You must have an Admin Panel role to access this page")
-      |> halt()
-      |> send_resp(401, """
+      error_msg = """
       Unauthorized. You must have an Admin Panel role to access this page
 
       In order to gain a role, a Backend Team member (ivan.i or tsvetozar.p) should execute one of these:
@@ -82,7 +81,14 @@ defmodule SanbaseWeb.AdminUserAuth do
       else
         ""
       end}
-      """)
+      """
+
+      Logger.info(error_msg)
+
+      conn
+      |> put_flash(:error, "You must have an Admin Panel role to access this page")
+      |> halt()
+      |> send_resp(401, error_msg)
     end
   end
 
@@ -144,18 +150,28 @@ defmodule SanbaseWeb.AdminUserAuth do
     if Enum.any?(roles, &String.starts_with?(&1, "Metric Registry")) do
       {:cont, socket}
     else
+      error_msg =
+        """
+        You must have a Metric Registry role in order to access this page.
+
+        To create a role:
+        Sanbase.Factory.insert(:role_metric_registry_viewer)
+        Sanbase.Factory.insert(:role_metric_registry_change_suggester)
+        Sanbase.Factory.insert(:role_metric_registry_change_approver)
+        Sanbase.Factory.insert(:role_metric_registry_owner)
+
+        To give the current user a role:
+        Viewer: Sanbase.Accounts.UserRole.create(#{socket.assigns.current_user.id}, #{Sanbase.Accounts.Role.metric_registry_viewer_role_id()})
+        ChangeSuggester: Sanbase.Accounts.UserRole.create(#{socket.assigns.current_user.id}, #{Sanbase.Accounts.Role.metric_registry_change_approver_role_id()})
+        ChangeApprover: Sanbase.Accounts.UserRole.create(#{socket.assigns.current_user.id}, #{Sanbase.Accounts.Role.metric_registry_change_suggester_role_id()})
+        Owner: Sanbase.Accounts.UserRole.create(#{socket.assigns.current_user.id}, #{Sanbase.Accounts.Role.metric_registry_owner_role_id()})
+        """
+
+      Logger.info(error_msg)
+
       socket =
         socket
-        |> Phoenix.LiveView.put_flash(
-          :error,
-          """
-          You must have a Metric Registry role in order to access this page.
-
-          To get a role:
-          Viewer: Sanbase.Accounts.UserRole.create(#{socket.assigns.current_user.id}, #{Sanbase.Accounts.Role.metric_registry_viewer_role_id()})
-          Owner: Sanbase.Accounts.UserRole.create(#{socket.assigns.current_user.id}, #{Sanbase.Accounts.Role.metric_registry_owner_role_id()})
-          """
-        )
+        |> Phoenix.LiveView.put_flash(:error, error_msg)
         |> Phoenix.LiveView.redirect(to: ~p"/admin")
 
       {:halt, socket}

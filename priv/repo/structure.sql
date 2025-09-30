@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.1 (Homebrew)
--- Dumped by pg_dump version 15.1 (Homebrew)
+-- Dumped from database version 15.10 (Homebrew)
+-- Dumped by pg_dump version 15.10 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -899,7 +899,7 @@ CREATE TABLE public.chat_messages (
     suggestions text[] DEFAULT ARRAY[]::text[],
     feedback_type character varying(255),
     CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY ((ARRAY['thumbs_up'::character varying, 'thumbs_down'::character varying])::text[])) OR (feedback_type IS NULL))),
-    CONSTRAINT valid_role CHECK (((role)::text = ANY ((ARRAY['user'::character varying, 'assistant'::character varying])::text[])))
+    CONSTRAINT valid_role CHECK (((role)::text = ANY (ARRAY[('user'::character varying)::text, ('assistant'::character varying)::text])))
 );
 
 
@@ -2231,7 +2231,6 @@ ALTER SEQUENCE public.menus_id_seq OWNED BY public.menus.id;
 CREATE TABLE public.metric_categories (
     id bigint NOT NULL,
     name character varying(255) NOT NULL,
-    slug character varying(255) NOT NULL,
     short_description text,
     description text,
     display_order integer,
@@ -2260,10 +2259,10 @@ ALTER SEQUENCE public.metric_categories_id_seq OWNED BY public.metric_categories
 
 
 --
--- Name: metric_categories_mapping; Type: TABLE; Schema: public; Owner: -
+-- Name: metric_category_mappings; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.metric_categories_mapping (
+CREATE TABLE public.metric_category_mappings (
     id bigint NOT NULL,
     metric_registry_id bigint,
     module character varying(255),
@@ -2277,10 +2276,10 @@ CREATE TABLE public.metric_categories_mapping (
 
 
 --
--- Name: metric_categories_mapping_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: metric_category_mappings_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.metric_categories_mapping_id_seq
+CREATE SEQUENCE public.metric_category_mappings_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -2289,10 +2288,10 @@ CREATE SEQUENCE public.metric_categories_mapping_id_seq
 
 
 --
--- Name: metric_categories_mapping_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: metric_category_mappings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.metric_categories_mapping_id_seq OWNED BY public.metric_categories_mapping.id;
+ALTER SEQUENCE public.metric_category_mappings_id_seq OWNED BY public.metric_category_mappings.id;
 
 
 --
@@ -2347,7 +2346,6 @@ ALTER SEQUENCE public.metric_display_order_id_seq OWNED BY public.metric_display
 CREATE TABLE public.metric_groups (
     id bigint NOT NULL,
     name character varying(255) NOT NULL,
-    slug character varying(255) NOT NULL,
     short_description text,
     description text,
     display_order integer,
@@ -5852,10 +5850,10 @@ ALTER TABLE ONLY public.metric_categories ALTER COLUMN id SET DEFAULT nextval('p
 
 
 --
--- Name: metric_categories_mapping id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: metric_category_mappings id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.metric_categories_mapping ALTER COLUMN id SET DEFAULT nextval('public.metric_categories_mapping_id_seq'::regclass);
+ALTER TABLE ONLY public.metric_category_mappings ALTER COLUMN id SET DEFAULT nextval('public.metric_category_mappings_id_seq'::regclass);
 
 
 --
@@ -6896,19 +6894,19 @@ ALTER TABLE ONLY public.menus
 
 
 --
--- Name: metric_categories_mapping metric_categories_mapping_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.metric_categories_mapping
-    ADD CONSTRAINT metric_categories_mapping_pkey PRIMARY KEY (id);
-
-
---
 -- Name: metric_categories metric_categories_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.metric_categories
     ADD CONSTRAINT metric_categories_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: metric_category_mappings metric_category_mappings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metric_category_mappings
+    ADD CONSTRAINT metric_category_mappings_pkey PRIMARY KEY (id);
 
 
 --
@@ -8287,20 +8285,6 @@ CREATE INDEX menus_user_id_index ON public.menus USING btree (user_id);
 
 
 --
--- Name: metric_categories_mapping_metric_registry_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX metric_categories_mapping_metric_registry_id_index ON public.metric_categories_mapping USING btree (metric_registry_id) WHERE (metric_registry_id IS NOT NULL);
-
-
---
--- Name: metric_categories_mapping_module_metric_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX metric_categories_mapping_module_metric_index ON public.metric_categories_mapping USING btree (module, metric) WHERE ((module IS NOT NULL) AND (metric IS NOT NULL));
-
-
---
 -- Name: metric_categories_name_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8308,10 +8292,17 @@ CREATE UNIQUE INDEX metric_categories_name_index ON public.metric_categories USI
 
 
 --
--- Name: metric_categories_slug_index; Type: INDEX; Schema: public; Owner: -
+-- Name: metric_category_mappings_metric_registry_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX metric_categories_slug_index ON public.metric_categories USING btree (slug);
+CREATE UNIQUE INDEX metric_category_mappings_metric_registry_id_index ON public.metric_category_mappings USING btree (metric_registry_id) WHERE (metric_registry_id IS NOT NULL);
+
+
+--
+-- Name: metric_category_mappings_module_metric_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX metric_category_mappings_module_metric_index ON public.metric_category_mappings USING btree (module, metric) WHERE ((module IS NOT NULL) AND (metric IS NOT NULL));
 
 
 --
@@ -8319,13 +8310,6 @@ CREATE UNIQUE INDEX metric_categories_slug_index ON public.metric_categories USI
 --
 
 CREATE UNIQUE INDEX metric_groups_name_index ON public.metric_groups USING btree (name);
-
-
---
--- Name: metric_groups_slug_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX metric_groups_slug_index ON public.metric_groups USING btree (slug);
 
 
 --
@@ -9659,27 +9643,27 @@ ALTER TABLE ONLY public.menus
 
 
 --
--- Name: metric_categories_mapping metric_categories_mapping_category_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: metric_category_mappings metric_category_mappings_category_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.metric_categories_mapping
-    ADD CONSTRAINT metric_categories_mapping_category_id_fkey FOREIGN KEY (category_id) REFERENCES public.metric_categories(id) ON DELETE CASCADE;
-
-
---
--- Name: metric_categories_mapping metric_categories_mapping_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.metric_categories_mapping
-    ADD CONSTRAINT metric_categories_mapping_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.metric_groups(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.metric_category_mappings
+    ADD CONSTRAINT metric_category_mappings_category_id_fkey FOREIGN KEY (category_id) REFERENCES public.metric_categories(id) ON DELETE CASCADE;
 
 
 --
--- Name: metric_categories_mapping metric_categories_mapping_metric_registry_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: metric_category_mappings metric_category_mappings_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.metric_categories_mapping
-    ADD CONSTRAINT metric_categories_mapping_metric_registry_id_fkey FOREIGN KEY (metric_registry_id) REFERENCES public.metric_registry(id);
+ALTER TABLE ONLY public.metric_category_mappings
+    ADD CONSTRAINT metric_category_mappings_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.metric_groups(id) ON DELETE CASCADE;
+
+
+--
+-- Name: metric_category_mappings metric_category_mappings_metric_registry_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metric_category_mappings
+    ADD CONSTRAINT metric_category_mappings_metric_registry_id_fkey FOREIGN KEY (metric_registry_id) REFERENCES public.metric_registry(id);
 
 
 --

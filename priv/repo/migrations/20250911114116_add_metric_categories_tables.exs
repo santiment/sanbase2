@@ -5,8 +5,6 @@ defmodule Sanbase.Repo.Migrations.AddMetricCategoriesTables do
     # Create categories
     create table(:metric_categories) do
       add(:name, :string, null: false)
-      # ID that won't change and can be used in URLs?
-      add(:slug, :string, null: false)
       add(:short_description, :text)
       add(:description, :text)
 
@@ -16,12 +14,10 @@ defmodule Sanbase.Repo.Migrations.AddMetricCategoriesTables do
     end
 
     create(unique_index(:metric_categories, [:name]))
-    create(unique_index(:metric_categories, [:slug]))
 
     # Create groups
     create table(:metric_groups) do
       add(:name, :string, null: false)
-      add(:slug, :string, null: false)
       add(:short_description, :text)
       add(:description, :text)
 
@@ -34,10 +30,9 @@ defmodule Sanbase.Repo.Migrations.AddMetricCategoriesTables do
     end
 
     create(unique_index(:metric_groups, [:name]))
-    create(unique_index(:metric_groups, [:slug]))
 
     # Create mappings
-    create table(:metric_categories_mapping) do
+    create table(:metric_category_mappings) do
       # There's a check constraint that allows either metric_registry_id to be set or module/metric,
       # but not both
       add(:metric_registry_id, references(:metric_registry))
@@ -56,7 +51,7 @@ defmodule Sanbase.Repo.Migrations.AddMetricCategoriesTables do
     # Create a check constraint that either metric_registry_id is set and module/metric are NULL
     # or metric_registry_id is NULL and module/metric are not NULL
     create(
-      constraint(:metric_categories_mapping, :only_one_metric_identifier,
+      constraint(:metric_category_mappings, :only_one_metric_identifier,
         check: """
         (metric_registry_id IS NOT NULL AND module IS NULL AND metric IS NULL)
         OR
@@ -67,7 +62,7 @@ defmodule Sanbase.Repo.Migrations.AddMetricCategoriesTables do
 
     # partial unique index
     create(
-      index(:metric_categories_mapping, [:metric_registry_id],
+      index(:metric_category_mappings, [:metric_registry_id],
         unique: true,
         where: "metric_registry_id IS NOT NULL"
       )
@@ -75,7 +70,7 @@ defmodule Sanbase.Repo.Migrations.AddMetricCategoriesTables do
 
     # partial unique index
     create(
-      index(:metric_categories_mapping, [:module, :metric],
+      index(:metric_category_mappings, [:module, :metric],
         unique: true,
         where: "module IS NOT NULL AND metric IS NOT NULL"
       )

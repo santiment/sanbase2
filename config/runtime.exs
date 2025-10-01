@@ -53,6 +53,11 @@ config :brod,
     ]
   ]
 
+config :langfuse_sdk,
+  host: System.get_env("LANGFUSE_HOST"),
+  secret_key: System.get_env("LANGFUSE_SECRET_KEY"),
+  public_key: System.get_env("LANGFUSE_PUBLIC_KEY")
+
 if config_env() == :prod do
   # The secret key base is used to sign/encrypt cookies and other secrets.
   # A default value is used in config/dev.exs and config/test.exs but you

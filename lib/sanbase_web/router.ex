@@ -51,7 +51,8 @@ defmodule SanbaseWeb.Router do
   forward "/mcp", Sanbase.MCP.StreamableHTTPPlug
 
   # Dev MCP server exposing search docs
-  forward "/mcp_dev", Sanbase.MCP.StreamableHTTPDevPlug
+  # TODO: Uncomment this to enable it
+  # forward "/mcp_dev", Sanbase.MCP.StreamableHTTPDevPlug
 
   scope "/auth", SanbaseWeb do
     pipe_through(:browser)

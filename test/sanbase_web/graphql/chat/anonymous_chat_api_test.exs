@@ -62,6 +62,13 @@ defmodule SanbaseWeb.Graphql.AnonymousChatApiTest do
         assert is_list(sources)
         assert length(sources) == 1
 
+        assert hd(sources) == %{
+                 "number" => 1,
+                 "title" => "DeFi Fundamentals",
+                 "url" => "https://academy.santiment.net/defi",
+                 "similarity" => 0.95
+               }
+
         # Verify chat exists in database as anonymous
         chat = Chat.get_chat(chat_id)
         assert chat.user_id == nil
@@ -323,9 +330,15 @@ defmodule SanbaseWeb.Graphql.AnonymousChatApiTest do
 
     test "handles Academy AI API error for anonymous user", %{conn: conn} do
       # Mock Academy AI service error
-      http_response = %Req.Response{status: 500, body: ""}
-
-      Sanbase.Mock.prepare_mock2(&Req.post/2, {:ok, http_response})
+      Sanbase.Mock.prepare_mock(
+        MapSet.new(),
+        Sanbase.AI.AcademyAIService,
+        :generate_local_response,
+        fn _question, _chat_id, _user_id, _include_suggestions ->
+          {:error, "Failed to generate Academy response"}
+        end,
+        passthrough: false
+      )
       |> Sanbase.Mock.run_with_mocks(fn ->
         mutation = """
         mutation {
@@ -365,21 +378,30 @@ defmodule SanbaseWeb.Graphql.AnonymousChatApiTest do
 
   # Helper functions
   defp mock_academy_response do
-    mock_response = %{
-      "answer" =>
-        "DeFi stands for Decentralized Finance, which refers to financial services built on blockchain technology.",
-      "sources" => [
-        %{
-          "number" => 0,
-          "title" => "DeFi Fundamentals",
-          "url" => "https://academy.santiment.net/defi",
-          "similarity" => 0.95
-        }
-      ]
-    }
+    mock_answer =
+      "DeFi stands for Decentralized Finance, which refers to financial services built on blockchain technology. [1]"
 
-    http_response = %Req.Response{status: 200, body: mock_response}
-    Sanbase.Mock.prepare_mock2(&Req.post/2, {:ok, http_response})
+    Sanbase.Mock.prepare_mock(
+      MapSet.new(),
+      Sanbase.AI.AcademyAIService,
+      :generate_local_response,
+      fn _question, _chat_id, _user_id, _include_suggestions ->
+        {:ok,
+         %{
+           answer: mock_answer,
+           sources: [
+             %{
+               "number" => 1,
+               "title" => "DeFi Fundamentals",
+               "url" => "https://academy.santiment.net/defi",
+               "similarity" => 0.95
+             }
+           ],
+           suggestions: []
+         }}
+      end,
+      passthrough: false
+    )
   end
 
   defp mock_dyor_response do

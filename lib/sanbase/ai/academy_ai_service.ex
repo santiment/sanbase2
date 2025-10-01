@@ -273,8 +273,8 @@ defmodule Sanbase.AI.AcademyAIService do
         if String.trim(answer) == @dont_know_answer do
           {:ok, @dont_know_message, []}
         else
-          sources = extract_sources_from_chunks(chunks)
-          {:ok, answer, sources}
+          {updated_answer, sources} = extract_and_renumber_sources(answer, chunks)
+          {:ok, updated_answer, sources}
         end
 
       {:error, reason} ->
@@ -350,25 +350,54 @@ defmodule Sanbase.AI.AcademyAIService do
     "\n\nRecent conversation history:\n#{history_text}"
   end
 
-  defp extract_sources_from_chunks(chunks) do
-    chunks
-    |> Enum.reduce([], fn chunk, acc ->
-      existing = Enum.find(acc, fn source -> source["url"] == chunk.url end)
+  defp extract_and_renumber_sources(answer, chunks) do
+    citation_numbers = extract_citation_numbers(answer)
 
-      if existing do
-        acc
-      else
-        [
-          %{
+    {sources, mapping} =
+      chunks
+      |> Enum.with_index(1)
+      |> Enum.filter(fn {_chunk, index} -> index in citation_numbers end)
+      |> Enum.reduce({[], %{}, %{}}, fn {chunk, original_index}, {acc, mapping, seen_urls} ->
+        if Map.has_key?(seen_urls, chunk.url) do
+          existing_number = seen_urls[chunk.url]
+          {acc, Map.put(mapping, original_index, existing_number), seen_urls}
+        else
+          new_number = length(acc) + 1
+
+          source = %{
+            "number" => new_number,
             "title" => chunk.title,
             "url" => chunk.url,
             "similarity" => chunk.similarity
           }
-          | acc
-        ]
+
+          {acc ++ [source], Map.put(mapping, original_index, new_number),
+           Map.put(seen_urls, chunk.url, new_number)}
+        end
+      end)
+      |> then(fn {sources, mapping, _seen_urls} -> {sources, mapping} end)
+
+    updated_answer = renumber_citations_in_answer(answer, mapping)
+
+    {updated_answer, sources}
+  end
+
+  defp extract_citation_numbers(answer) do
+    Regex.scan(~r/\[(\d+)\]/, answer)
+    |> Enum.map(fn [_, num] -> String.to_integer(num) end)
+    |> Enum.uniq()
+    |> Enum.sort()
+  end
+
+  defp renumber_citations_in_answer(answer, mapping) do
+    Regex.replace(~r/\[(\d+)\]/, answer, fn _, num_str ->
+      original_num = String.to_integer(num_str)
+
+      case Map.get(mapping, original_num) do
+        nil -> "[#{num_str}]"
+        new_num -> "[#{new_num}]"
       end
     end)
-    |> Enum.reverse()
   end
 
   defp generate_suggestions(question, answer, sources, user_id, session_id) do

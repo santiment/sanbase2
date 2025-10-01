@@ -21,7 +21,7 @@ The Chat system provides a complete conversation interface where both authentica
 - `content` (text, required) - Message content
 - `role` (enum: :user, :assistant) - Message author role
 - `context` (map) - Contextual metadata (dashboard_id, asset, metrics)
-- `sources` (array of maps) - Academy QA source references with title, URL, similarity
+- `sources` (array of maps) - Academy QA source references with number, title, URL, similarity (only includes sources cited in answer)
 - `inserted_at`, `updated_at` (timestamps)
 
 ### Indexes
@@ -326,7 +326,11 @@ query {
 
 ### Sources Support
 - Academy QA chat type returns structured sources alongside AI responses
-- Sources field contains array of maps with title, URL, similarity, and other metadata
+- Sources field contains array of maps with number, title, URL, and similarity
+- Only sources actually cited in the answer are included (e.g., if answer uses [1], [2], [4] but not [3], only those three are returned)
+- Sources are automatically renumbered sequentially without gaps (e.g., [1], [2], [4] becomes [1], [2], [3])
+- Citations in the answer text are updated to match the renumbered sources
+- Duplicate URLs are deduplicated - only the first occurrence is kept
 - Sources are stored separately from assistant response content for frontend flexibility
 - Available through GraphQL API as JSON field on ChatMessage type
 

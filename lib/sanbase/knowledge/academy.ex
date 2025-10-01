@@ -23,7 +23,8 @@ defmodule Sanbase.Knowledge.Academy do
   @excluded_paths MapSet.new([
                     "docs/GUIDE.md",
                     "pull_request_template.md",
-                    "src/docs/changelog/index.md"
+                    "src/docs/changelog/index.md",
+                    "README.md"
                   ])
 
   @type index_options :: [branch: String.t(), dry_run: boolean()]

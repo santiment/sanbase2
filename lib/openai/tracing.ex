@@ -73,6 +73,19 @@ defmodule Sanbase.OpenAI.Tracing do
   end
 
   defp ensure_trace(opts, input) do
+    # If environment is provided in opts, we need to create the trace via ingestion API
+    # to support the environment field (not available in Trace struct)
+    environment =
+      Map.get(opts, :environment) || Map.get(opts, :trace_metadata, %{})["environment"]
+
+    if environment do
+      create_trace_with_environment(opts, input, environment)
+    else
+      create_trace_without_environment(opts, input)
+    end
+  end
+
+  defp create_trace_without_environment(opts, input) do
     trace_attrs =
       opts
       |> Map.get(:trace, %{})
@@ -91,6 +104,48 @@ defmodule Sanbase.OpenAI.Tracing do
         audit_trace(updated_trace)
         maybe_update_trace(updated_trace, trace)
         {:ok, updated_trace}
+
+      {:error, reason} ->
+        Logger.warning("Langfuse trace create failed: #{inspect(reason)}")
+        {:error, {:trace_create_failed, reason}}
+    end
+  end
+
+  defp create_trace_with_environment(opts, input, environment) do
+    trace_id = Map.get(opts, :trace_id) || UUID.uuid4()
+
+    trace_event = %{
+      "type" => "trace-create",
+      "id" => UUID.uuid4(),
+      "timestamp" => DateTime.utc_now(),
+      "body" => %{
+        "id" => trace_id,
+        "name" => Map.get(opts, :trace_name, @default_trace_name),
+        "sessionId" => Map.get(opts, :session_id),
+        "userId" => opts[:user_id],
+        "input" => Map.get(opts, :trace_input, input),
+        "metadata" => Map.get(opts, :trace_metadata),
+        "tags" => Map.get(opts, :trace_tags),
+        "environment" => environment,
+        "timestamp" => DateTime.utc_now()
+      }
+    }
+
+    case Ingestor.ingest_payload(trace_event) do
+      {:ok, _} ->
+        # Return a minimal Trace struct for compatibility
+        trace = %Trace{
+          id: trace_id,
+          name: Map.get(opts, :trace_name, @default_trace_name),
+          user_id: opts[:user_id],
+          session_id: Map.get(opts, :session_id),
+          input: Map.get(opts, :trace_input, input),
+          metadata: Map.get(opts, :trace_metadata),
+          tags: Map.get(opts, :trace_tags)
+        }
+
+        audit_trace(trace)
+        {:ok, trace}
 
       {:error, reason} ->
         Logger.warning("Langfuse trace create failed: #{inspect(reason)}")

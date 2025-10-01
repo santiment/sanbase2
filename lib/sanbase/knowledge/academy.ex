@@ -246,12 +246,15 @@ defmodule Sanbase.Knowledge.Academy do
 
         academy_url = Map.get(entry, :academy_url) || to_academy_url(path)
         github_path = Map.get(entry, :github_path, path)
+        # Only the sanpy additional source has predefined title at the moment.
+        # All of the academy articles' titles will be extracted
+        title = Map.get(entry, :title)
 
         article_attrs =
           %{
             github_path: github_path,
             academy_url: academy_url,
-            title: extract_title(markdown),
+            title: title || extract_title(markdown),
             content_sha: content_sha,
             is_stale: false
           }
@@ -666,6 +669,7 @@ defmodule Sanbase.Knowledge.Academy do
       %{
         repo_owner: "santiment",
         repo_name: "sanpy",
+        title: "Sanpy - Santiment Python library for API access",
         ref: "master",
         path: "README.md",
         github_path: "sanpy/README.md",

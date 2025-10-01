@@ -154,7 +154,8 @@ defmodule Sanbase.Mixfile do
       {:timex, "~> 3.7"},
       {:ueberauth_google, "~> 0.10"},
       {:ueberauth_twitter, "~> 0.4"},
-      {:uuid, "~> 1.1"},
+      # uuid was renamed to elixir_uuid
+      {:elixir_uuid, "~> 1.2", override: true},
       {:vex, "~> 0.9", override: true},
       {:waffle, "~> 1.1"},
       {:websockex, "~> 0.4.3"},

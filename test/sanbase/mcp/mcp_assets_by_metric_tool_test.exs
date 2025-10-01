@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.MCPFilterAssetsByMetricToolTest do
+defmodule SanbaseWeb.Graphql.MCPAssetsByMetricToolTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory
@@ -36,7 +36,54 @@ defmodule SanbaseWeb.Graphql.MCPFilterAssetsByMetricToolTest do
     %{user: user, apikey: apikey}
   end
 
-  test "filter assets by price_usd", _context do
+  test "just order assets by price_usd", _context do
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.Metric.slugs_order/5,
+      {:ok, ["bitcoin", "solana", "ethereum", "maker", "santiment"]}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      result =
+        try_few_times(
+          fn ->
+            Sanbase.MCP.Client.call_tool("assets_by_metric_tool", %{
+              metric: "price_usd",
+              from: "utc_now-1d",
+              to: "utc_now",
+              page: 1,
+              page_size: 5,
+              sort: "desc"
+            })
+          end,
+          attempts: 3,
+          sleep: 250
+        )
+
+      assert {:ok,
+              %Anubis.MCP.Response{
+                result: %{
+                  "content" => [
+                    %{
+                      "text" => json_text,
+                      "type" => "text"
+                    }
+                  ],
+                  "isError" => false
+                },
+                id: "req_" <> _,
+                method: "tools/call",
+                is_error: false
+              }} = result
+
+      assert Jason.decode!(json_text) == %{
+               "assets" => ["bitcoin", "solana", "ethereum", "maker", "santiment"],
+               "page" => 1,
+               "page_size" => 5,
+               "total_assets" => 5
+             }
+    end)
+  end
+
+  test "filter and order assets by price_usd", _context do
     Sanbase.Mock.prepare_mock2(
       &Sanbase.Metric.slugs_by_filter/6,
       {:ok, ["ethereum", "bitcoin", "solana", "maker"]}
@@ -49,7 +96,7 @@ defmodule SanbaseWeb.Graphql.MCPFilterAssetsByMetricToolTest do
       result =
         try_few_times(
           fn ->
-            Sanbase.MCP.Client.call_tool("filter_assets_by_metric_tool", %{
+            Sanbase.MCP.Client.call_tool("assets_by_metric_tool", %{
               metric: "price_usd",
               from: "utc_now-1d",
               to: "utc_now",

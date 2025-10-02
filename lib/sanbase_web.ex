@@ -53,8 +53,7 @@ defmodule SanbaseWeb do
 
   def live_view do
     quote do
-      use Phoenix.LiveView,
-        layout: {SanbaseWeb.Layouts, :app}
+      use Phoenix.LiveView
 
       unquote(html_helpers())
     end

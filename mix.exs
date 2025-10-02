@@ -18,7 +18,8 @@ defmodule Sanbase.Mixfile do
       xref: [exclude: [Oban]],
       dialyzer: [
         plt_ignore_apps: [:stripity_stripe]
-      ]
+      ],
+      listeners: [Phoenix.CodeReloader]
     ]
   end
 
@@ -124,13 +125,13 @@ defmodule Sanbase.Mixfile do
       {:oban, "~> 2.7"},
       {:observer_cli, "~> 1.3"},
       {:pgvector, "~> 0.3"},
-      {:phoenix, "~> 1.7.0"},
+      {:phoenix, "~> 1.8.0"},
       {:phoenix_ecto, "~> 4.1"},
       {:phoenix_html, "~> 4.0"},
       {:phoenix_html_helpers, "~> 1.0"},
       {:phoenix_live_dashboard, "~> 0.3"},
       {:phoenix_live_reload, "~> 1.6", only: :dev},
-      {:phoenix_live_view, "~> 1.0.1", override: true},
+      {:phoenix_live_view, "~> 1.1", override: true},
       {:phoenix_pubsub, "~> 2.0"},
       {:phoenix_view, "~> 2.0"},
       {:plug_cowboy, "~> 2.5"},

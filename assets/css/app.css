@@ -1,7 +1,7 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
+@import "tailwindcss" source(none);
+@source "../css";
+@source "../js";
+@source "../../lib/sanbase_web";
 
 .table-responsive {
   display: block;

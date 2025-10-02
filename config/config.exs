@@ -190,6 +190,8 @@ config :hammer,
   }
 
 config :tesla,
+  # `use Tesla` will be deprecated, we need to migrate to runtime config
+  disable_deprecated_builder_warning: true,
   adapter: {Tesla.Adapter.Hackney, recv_timeout: 30_000}
 
 config :sanbase, Sanbase.ApiCallLimit,

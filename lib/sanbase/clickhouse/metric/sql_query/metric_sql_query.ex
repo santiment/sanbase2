@@ -22,13 +22,16 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   alias Sanbase.Clickhouse.MetricAdapter.Registry
 
   def timeseries_data_query(metric, selector, from, to, interval, aggregation, filters, opts) do
+    version = Keyword.get(opts, :version)
+
     params = %{
       interval: maybe_str_to_sec(interval),
       metric: Map.get(Registry.name_to_metric_map(), metric),
       from: dt_to_unix(:from, from),
       to: dt_to_unix(:to, to),
       selector: asset_filter_value(selector),
-      table: Map.get(Registry.table_map(), metric)
+      table: Map.get(Registry.table_map(), metric),
+      version: version
     }
 
     only_finalized_data = Keyword.get(opts, :only_finalized_data, false)
@@ -38,6 +41,14 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
     {fixed_parameters_str, params} =
       maybe_get_fixed_parameters(metric, selector, params, opts ++ [trailing_and: true])
+
+    metric_filter_opts =
+      [
+        argument_name: "metric",
+        version: version,
+        # The name of the version argument from the SQL params
+        version_arg_name: "version"
+      ]
 
     sql =
       """
@@ -56,7 +67,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
           #{maybe_convert_to_date(:after, metric, "dt", "toDateTime({{from}})")} AND
           #{maybe_convert_to_date(:before, metric, "dt", "toDateTime({{to}})")} AND
           #{asset_id_filter(selector, argument_name: "selector", allow_missing_slug: true)} AND
-          #{metric_id_filter(metric, argument_name: "metric")}
+          #{metric_id_filter(metric, metric_filter_opts)}
           GROUP BY asset_id, dt
       )
       WHERE
@@ -529,6 +540,24 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   def available_metrics_for_slug_query(slug) do
     selector = %{slug: slug}
     available_metrics_for_selector_query(selector)
+  end
+
+  def available_versions_query(metric) do
+    sql = """
+    SELECT version
+    FROM (
+      SELECT
+        -- rewrite old versions like 2019-11-01 to 1.0
+        if(match(version, '\\d{4}-\\d{2}-\\d{2}'), '1.0', version) AS version
+      FROM metric_metadata_versioned FINAL
+      WHERE name = {{metric}}
+    )
+    -- will be ordered in the app code
+    """
+
+    params = %{metric: Map.get(Registry.name_to_metric_map(), metric, metric)}
+
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   # Private functions

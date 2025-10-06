@@ -195,6 +195,8 @@ defmodule SanbaseWeb.Graphql.Cache do
 
   defp generate_source_args(source) do
     case source do
+      # Make sure to use both metric and version when using version
+      %{metric: _, version: _} = source -> source
       %{id: id} -> id
       %{slug: slug} -> slug
       %{word: word} -> word

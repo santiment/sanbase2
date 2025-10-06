@@ -213,10 +213,50 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
   end
 
   def metric_id_filter(metric, opts) when is_binary(metric) do
-    arg_name = Keyword.fetch!(opts, :argument_name)
+    # In the spikes table the column is called calculated_on_metric_id
     metric_id_column = Keyword.get(opts, :metric_id_column, "metric_id")
+    arg_name = Keyword.fetch!(opts, :argument_name)
+    version_arg_name = Keyword.get(opts, :version_arg_name)
 
-    "#{metric_id_column} = ( SELECT metric_id FROM metric_metadata FINAL WHERE name = {{#{arg_name}}} LIMIT 1 )"
+    """
+    #{metric_id_column} = (
+      SELECT metric_id
+      FROM metric_metadata_external FINAL
+      WHERE name = {{#{arg_name}}} AND version = {{#{version_arg_name}}}
+      LIMIT 1
+    )
+    """
+  end
+
+  def metric_id_filter_old(metric, opts) when is_binary(metric) do
+    # In the spikes table the column is called calculated_on_metric_id
+    metric_id_column = Keyword.get(opts, :metric_id_column, "metric_id")
+    arg_name = Keyword.fetch!(opts, :argument_name)
+    version = Keyword.get(opts, :version)
+
+    if version = Keyword.get(opts, :version) do
+      version_arg_name = Keyword.get(opts, :version_arg_name)
+
+      version_where_clause =
+        case version do
+          "1.0" ->
+            "match(version, ''\\d{4}-\\d{2}-\\d{2}'')"
+
+          _ ->
+            "version = {{#{version_arg_name}}}"
+        end
+
+      """
+      #{metric_id_column} = (
+        SELECT metric_id
+        FROM metric_metadata_versioned FINAL
+        WHERE name = {{#{arg_name}}} AND #{version_where_clause}
+        LIMIT 1
+      )
+      """
+    else
+      "#{metric_id_column} = ( SELECT metric_id FROM metric_metadata FINAL WHERE name = {{#{arg_name}}} LIMIT 1 )"
+    end
   end
 
   def metric_id_filter(metrics, opts) when is_list(metrics) do

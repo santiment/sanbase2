@@ -255,6 +255,21 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     end
   end
 
+  def available_versions(metric, _selector, _opts) do
+    available_versions_query(metric)
+    |> ClickhouseRepo.query_transform(fn [version] -> version end)
+    |> maybe_apply_function(fn versions ->
+      versions
+      |> Enum.reject(&(&1 in [nil, ""]))
+      |> Enum.uniq()
+      # "1.2" < "1.15". Lists are compared element by element, so 15 > 2
+      |> Enum.sort_by(
+        fn ver -> String.split(ver, ".") |> Enum.map(&String.to_integer/1) end,
+        :asc
+      )
+    end)
+  end
+
   @impl Sanbase.Metric.Behaviour
   def available_slugs(), do: get_available_slugs()
   @impl Sanbase.Metric.Behaviour

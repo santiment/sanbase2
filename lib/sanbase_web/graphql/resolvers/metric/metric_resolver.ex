@@ -25,7 +25,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     with false <- Metric.hard_deprecated?(metric),
          true <- Metric.has_metric?(metric) do
       maybe_enable_clickhouse_sql_storage(args)
-      {:ok, %{metric: metric}}
+
+      # TODO: Check that the version is also deprecated
+      version = Map.get(args, :version, "1.0")
+      {:ok, %{metric: metric, version: version}}
     end
   end
 
@@ -103,6 +106,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
         {:nocache, {:ok, metrics}}
     end
+  end
+
+  def get_available_versions(_root, args, %{source: %{metric: metric}}) do
+    with {:ok, versions} <- Metric.available_versions(metric) do
+      {:ok, versions}
+    end
+    |> maybe_handle_graphql_error(fn error ->
+      handle_graphql_error(
+        "Available Versions",
+        %{metric: metric, selector: args_to_raw_selector(args)},
+        error
+      )
+    end)
   end
 
   def get_available_slugs(_root, _args, %{source: %{metric: metric}}),
@@ -238,9 +254,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end)
   end
 
-  def timeseries_data(_root, args, %{source: %{metric: metric}} = resolution) do
+  def timeseries_data(_root, args, %{source: %{metric: metric, version: version}} = resolution) do
     requested_fields = requested_fields(resolution)
-    fetch_timeseries_data(metric, args, requested_fields, :timeseries_data)
+    fetch_timeseries_data(metric, version, args, requested_fields, :timeseries_data)
   rescue
     e in [Sanbase.Metric.CatchableError] -> {:error, Exception.message(e)}
     e -> reraise(e, __STACKTRACE__)
@@ -249,13 +265,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   def timeseries_data_per_slug(
         _root,
         args,
-        %{source: %{metric: metric}} = resolution
+        %{source: %{metric: metric, version: version}} = resolution
       ) do
     Process.flag(:max_heap_size, @max_heap_size_in_words)
     requested_fields = requested_fields(resolution)
 
     fetch_timeseries_data(
       metric,
+      version,
       args,
       requested_fields,
       :timeseries_data_per_slug
@@ -268,7 +285,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   def aggregated_timeseries_data(
         _root,
         %{from: from, to: to} = args,
-        %{source: %{metric: metric}}
+        %{source: %{metric: metric, version: version}}
       ) do
     include_incomplete_data = Map.get(args, :include_incomplete_data, false)
     only_finalized_data = Map.get(args, :only_finalized_data, false)
@@ -278,17 +295,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
          true <- valid_metric_selector_pair?(metric, selector),
          true <- valid_owners_labels_selection?(args),
          {:ok, opts} <- selector_args_to_opts(args),
-         opts <- Keyword.put(opts, :only_finalized_data, only_finalized_data),
+         opts = Keyword.put(opts, :only_finalized_data, only_finalized_data),
+         opts = Keyword.put(opts, :version, version),
          {:ok, from, to} <-
-           calibrate_incomplete_data_params(
-             include_incomplete_data,
-             Metric,
-             metric,
-             from,
-             to
-           ),
-         {:ok, result} <-
-           Metric.aggregated_timeseries_data(metric, selector, from, to, opts) do
+           calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to),
+         {:ok, result} <- Metric.aggregated_timeseries_data(metric, selector, from, to, opts) do
       {:ok, Map.values(result) |> List.first()}
     end
     |> maybe_handle_graphql_error(fn error ->
@@ -412,7 +423,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   # timeseries_data and timeseries_data_per_slug are processed and fetched in
   # exactly the same way. The only difference is the function that is called
   # from the Metric module.
-  defp fetch_timeseries_data(metric, args, requested_fields, function)
+  defp fetch_timeseries_data(metric, version, args, requested_fields, function)
        when function in [:timeseries_data, :timeseries_data_per_slug] do
     only_finalized_data = Map.get(args, :only_finalized_data, false)
 
@@ -424,6 +435,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
          true <- valid_timeseries_selection?(requested_fields, args),
          {:ok, opts} <- selector_args_to_opts(args),
          opts <- Keyword.put(opts, :only_finalized_data, only_finalized_data),
+         opts <- Keyword.put(opts, :version, version),
          {:ok, from, to, interval} <-
            transform_datetime_params(selector, metric, transform, args),
          {:ok, result} <-

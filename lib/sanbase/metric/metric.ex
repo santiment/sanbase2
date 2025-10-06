@@ -646,6 +646,21 @@ defmodule Sanbase.Metric do
     end
   end
 
+  @spec available_versions(metric) :: {:ok, list(map())} | {:error, String.t()}
+  def available_versions(metric) do
+    case get_module(metric) do
+      nil ->
+        metric_not_available_error(metric)
+
+      module when is_atom(module) ->
+        if Map.fetch!(Helper.implemented_optional_functions(), {module, :available_versions, 1}) do
+          module.available_versions(metric)
+        else
+          {:ok, [%{vsn: "1.0"}]}
+        end
+    end
+  end
+
   @doc ~s"""
   Get all available aggregations
   """

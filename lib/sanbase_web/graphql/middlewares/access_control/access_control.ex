@@ -191,19 +191,24 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
 
   defp check_experimental_metric_access(%Resolution{} = resolution), do: resolution
 
-  defp do_check_experimental_metric(current_user, metric, status, %Resolution{} = resolution) do
+  defp do_check_experimental_metric(
+         current_user,
+         metric,
+         metric_status,
+         %Resolution{} = resolution
+       ) do
     cond do
-      user_can_access_metric?(current_user, status) ->
+      user_can_access_metric?(current_user, metric_status) ->
         resolution
 
-      "alpha" == status ->
+      "alpha" == metric_status ->
         Resolution.put_result(
           resolution,
           {:error,
            "The metric #{metric} is currently in alpha phase and is exclusively available to alpha users."}
         )
 
-      "beta" == status ->
+      "beta" == metric_status ->
         Resolution.put_result(
           resolution,
           {:error,
@@ -214,7 +219,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
         raise(
           ArgumentError,
           "Should not have reached here. The status is neither alpha nor beta, \
-          but #{inspect(status)} and the user does not have access to it."
+          but #{inspect(metric_status)} and the user does not have access to it."
         )
     end
   end

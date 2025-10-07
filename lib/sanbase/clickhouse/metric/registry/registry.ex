@@ -112,7 +112,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   end
 
   def refresh_stored_terms() do
-    Logger.info("Refreshing stored terms in the #{__MODULE__}")
+    Logger.info("Refreshing stored terms in the #{__MODULE__} module")
     # First clear the registry cache so the new data can be fetched
     # from the DB, otherwise the changes that triggered this refresh won't
     # be reflected here

@@ -9,7 +9,8 @@ defmodule Sanbase.Billing.Plan.CustomPlanTest do
     # the plans_id_seq will generate id 1, which will cause a constraint error
     Sanbase.Repo.query!("ALTER SEQUENCE plans_id_seq RESTART WITH 1001")
     {:ok, plan} = create_custom_api_plan(context)
-    user = insert(:user)
+    # TODO: Sometimes the daily_active_addresses being beta access bleeds in here
+    user = insert(:user, metric_access_level: "alpha")
     _sub = insert(:subscription, user: user, plan_id: plan.id)
     {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(user)
     conn = setup_apikey_auth(build_conn(), apikey)

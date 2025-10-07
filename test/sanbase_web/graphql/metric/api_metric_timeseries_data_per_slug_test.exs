@@ -5,7 +5,9 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataPerSlugTest do
   import SanbaseWeb.Graphql.TestHelpers
 
   setup do
-    %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
+    %{user: user} =
+      insert(:subscription_pro_sanbase, user: insert(:user, metric_access_level: "alpha"))
+
     project1 = insert(:random_project, slug: "aaaaa")
     project2 = insert(:random_project, slug: "bbbbb")
     conn = setup_jwt_auth(build_conn(), user)

@@ -67,7 +67,7 @@ defmodule SanbaseWeb.Graphql.AvailableMetricsApiTest do
     setup do
       # Set up test metrics with different status levels
       {:ok, alpha_metric} = Sanbase.Metric.Registry.by_name("price_usd_5m", "timeseries")
-      {:ok, beta_metric} = Sanbase.Metric.Registry.by_name("daily_active_addresses", "timeseries")
+      {:ok, beta_metric} = Sanbase.Metric.Registry.by_name("gini_index", "timeseries")
 
       # Update metrics status
       {:ok, _} = Sanbase.Metric.Registry.update(alpha_metric, %{status: "alpha"})
@@ -75,6 +75,42 @@ defmodule SanbaseWeb.Graphql.AvailableMetricsApiTest do
 
       # Refresh registry to ensure changes are visible
       Sanbase.Metric.Registry.refresh_stored_terms()
+
+      # Clear the Sanbase.Cache entries that cache metric status
+      # These caches are used by get_metrics_by_status which is called by alpha_metrics(), beta_metrics(), etc.
+      Sanbase.Cache.clear(
+        {Sanbase.Metric, :get_metrics_by_status, ["alpha"]}
+        |> Sanbase.Cache.hash()
+      )
+
+      Sanbase.Cache.clear(
+        {Sanbase.Metric, :get_metrics_by_status, ["beta"]}
+        |> Sanbase.Cache.hash()
+      )
+
+      Sanbase.Cache.clear(
+        {Sanbase.Metric, :get_metrics_by_status, ["alpha", "beta"]}
+        |> Sanbase.Cache.hash()
+      )
+
+      on_exit(fn ->
+        # Clear the Sanbase.Cache entries to prevent leaking to other tests
+        # We don't need to revert database changes as Ecto.SQL.Sandbox handles that automatically
+        Sanbase.Cache.clear(
+          {Sanbase.Metric, :get_metrics_by_status, ["alpha"]}
+          |> Sanbase.Cache.hash()
+        )
+
+        Sanbase.Cache.clear(
+          {Sanbase.Metric, :get_metrics_by_status, ["beta"]}
+          |> Sanbase.Cache.hash()
+        )
+
+        Sanbase.Cache.clear(
+          {Sanbase.Metric, :get_metrics_by_status, ["alpha", "beta"]}
+          |> Sanbase.Cache.hash()
+        )
+      end)
 
       :ok
     end
@@ -88,7 +124,7 @@ defmodule SanbaseWeb.Graphql.AvailableMetricsApiTest do
 
       # Alpha users should see all metrics including alpha and beta ones
       assert "price_usd_5m" in metrics
-      assert "daily_active_addresses" in metrics
+      assert "gini_index" in metrics
     end
 
     test "beta users can see released and beta metrics" do
@@ -101,7 +137,7 @@ defmodule SanbaseWeb.Graphql.AvailableMetricsApiTest do
       # Beta users should not see alpha metrics
       refute "price_usd_5m" in metrics
       # But should see beta and released metrics
-      assert "daily_active_addresses" in metrics
+      assert "gini_index" in metrics
       assert "price_usd" in metrics
     end
 
@@ -114,7 +150,7 @@ defmodule SanbaseWeb.Graphql.AvailableMetricsApiTest do
 
       # Regular users should only see released metrics
       refute "price_usd_5m" in metrics
-      refute "daily_active_addresses" in metrics
+      refute "gini_index" in metrics
       assert "price_usd" in metrics
     end
 
@@ -125,7 +161,7 @@ defmodule SanbaseWeb.Graphql.AvailableMetricsApiTest do
 
       # Unauthenticated users should only see released metrics
       refute "price_usd_5m" in metrics
-      refute "daily_active_addresses" in metrics
+      refute "gini_index" in metrics
       assert "price_usd" in metrics
     end
   end

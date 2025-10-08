@@ -7,6 +7,8 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
   alias Sanbase.Metric.Registry.Permissions
   alias SanbaseWeb.AvailableMetricsComponents
 
+  require Logger
+
   @impl true
   def mount(_params, _session, socket) do
     # Load the metrics only when connected
@@ -14,6 +16,11 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     # if someone is fast to click on Verified Status toggle, the action
     # gets discarded on the connection
     metrics = if connected?(socket), do: Sanbase.Metric.Registry.all(), else: []
+
+    {:ok, metric_ids_with_changes} =
+      if connected?(socket),
+        do: Sanbase.Metric.Registry.Changelog.metric_registry_ids_with_changes(),
+        else: {:ok, MapSet.new()}
 
     {:ok,
      socket
@@ -24,6 +31,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
        not_synced_metric_registry: nil,
        visible_metrics_ids: Enum.map(metrics, & &1.id),
        metrics: metrics,
+       metric_ids_with_changes: metric_ids_with_changes,
        changed_metrics_ids: [],
        verified_metrics_updates_map: %{},
        filter: %{},
@@ -125,7 +133,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           popover_target="popover-sync-status"
           popover_target_text={get_popover_text(%{key: "Sync Status"})}
         >
-          <.sync_status row={row} />
+          <.sync_status row={row} metric_ids_with_changes={@metric_ids_with_changes} />
         </:col>
         <:col :let={row} label="Dates">
           <.dates inserted_at={row.inserted_at} updated_at={row.updated_at} />
@@ -347,7 +355,16 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
       <div>{@html_safe_changes}</div>
       """
     else
-      _err ->
+      err ->
+        Logger.error("""
+        Error in metric registry diff.
+        Metric registry:
+        #{Jason.encode!(assigns.metric_registry)}
+
+        Error:
+        #{inspect(err)}
+        """)
+
         ~H"""
         <div>
           <div>
@@ -448,11 +465,18 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
       </span>
 
       <div
-        :if={@row.sync_status == "not_synced"}
+        :if={@row.sync_status == "not_synced" and @row.id in @metric_ids_with_changes}
         class="text-gray-400 text-sm font-semibold cursor-pointer"
         phx-click={JS.push("show_not_synced_diff", value: %{metric_registry_id: @row.id})}
       >
         (click to see diff)
+      </div>
+
+      <div
+        :if={@row.sync_status == "not_synced" and @row.id not in @metric_ids_with_changes}
+        class="text-gray-400 text-sm font-semibold cursor-pointer"
+      >
+        (New metric, no previous changes to compare with)
       </div>
     </div>
     """

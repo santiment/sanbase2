@@ -14,7 +14,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ReportResolver do
   end
 
   def get_reports(_root, _args, %{context: %{auth: %{current_user: user}}}) do
-    plan = Subscription.current_subscription_plan(user.id, Product.product_sanbase())
+    plan = get_user_plan(user.id)
 
     reports = Report.get_published_reports(%{is_logged_in: true, plan_name: plan})
 
@@ -26,7 +26,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ReportResolver do
   end
 
   def get_reports_by_tags(_root, %{tags: tags}, %{context: %{auth: %{current_user: user}}}) do
-    plan = Subscription.current_subscription_plan(user.id, Product.product_sanbase())
+    plan = get_user_plan(user.id)
 
     reports = Report.get_by_tags(tags, %{is_logged_in: true, plan_name: plan})
 
@@ -35,5 +35,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ReportResolver do
 
   def get_reports_by_tags(_root, %{tags: tags}, _resolution) do
     {:ok, Report.get_by_tags(tags, %{is_logged_in: false})}
+  end
+
+  defp get_user_plan(user_id) do
+    case Subscription.current_subscription_plan(user_id, Product.product_sanbase()) do
+      "FREE" -> Subscription.current_subscription_plan(user_id, Product.product_api())
+      sanbase_plan -> sanbase_plan
+    end
   end
 end

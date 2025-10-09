@@ -24,7 +24,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
   end
 
   setup do
-    user = insert(:user)
+    user = insert(:user, metric_access_level: "alpha")
     project = insert(:random_erc20_project)
     {:ok, apikey} = Apikey.generate_apikey(user)
     conn = setup_apikey_auth(build_conn(), apikey)

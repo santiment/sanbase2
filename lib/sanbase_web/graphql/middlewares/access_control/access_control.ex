@@ -176,16 +176,23 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   end
 
   defp check_experimental_metric_access(
-         %Resolution{
-           context: %{__metric__: metric_name, auth: %{current_user: current_user}}
-         } = resolution
+         %Resolution{context: %{__metric__: metric_name} = context} = resolution
        )
        when is_binary(metric_name) do
-    # Have to get from cache
-    with %Sanbase.Metric.Registry{} = metric <-
-           Sanbase.Clickhouse.MetricAdapter.Registry.by_name(metric_name),
-         true <- metric.status in ["alpha", "beta"] do
-      do_check_experimental_metric(current_user, metric, resolution)
+    user_metric_access_level =
+      case context do
+        %{auth: %{current_user: current_user}} -> current_user.metric_access_level
+        _ -> "released"
+      end
+
+    with {:ok, metadata} <- Sanbase.Metric.metadata(metric_name),
+         true <- metadata.status in ["alpha", "beta"] do
+      do_check_experimental_metric(
+        user_metric_access_level,
+        metric_name,
+        metadata.status,
+        resolution
+      )
     else
       _ -> resolution
     end
@@ -193,32 +200,40 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
 
   defp check_experimental_metric_access(%Resolution{} = resolution), do: resolution
 
-  defp do_check_experimental_metric(current_user, metric, %Resolution{} = resolution) do
-    if user_can_access_metric?(current_user, metric.status) do
-      resolution
-    else
-      case metric.status do
-        "alpha" ->
-          Resolution.put_result(
-            resolution,
-            {:error,
-             "The metric #{metric.metric} is currently in alpha phase and is exclusively available to alpha users."}
-          )
+  defp do_check_experimental_metric(
+         user_metric_access_level,
+         metric,
+         metric_status,
+         %Resolution{} = resolution
+       ) do
+    cond do
+      user_can_access_metric?(user_metric_access_level, metric_status) ->
+        resolution
 
-        "beta" ->
-          Resolution.put_result(
-            resolution,
-            {:error,
-             "The metric #{metric.metric} is currently in beta phase and is exclusively available to alpha and beta users."}
-          )
-      end
+      "alpha" == metric_status ->
+        Resolution.put_result(
+          resolution,
+          {:error,
+           "The metric #{metric} is currently in alpha phase and is exclusively available to alpha users."}
+        )
+
+      "beta" == metric_status ->
+        Resolution.put_result(
+          resolution,
+          {:error,
+           "The metric #{metric} is currently in beta phase and is exclusively available to alpha and beta users."}
+        )
+
+      true ->
+        raise(
+          ArgumentError,
+          "Should not have reached here. The status is neither alpha nor beta, \
+          but #{inspect(metric_status)} and the user does not have access to it."
+        )
     end
   end
 
-  defp user_can_access_metric?(
-         %Sanbase.Accounts.User{metric_access_level: user_metric_access_level},
-         metric_status
-       ) do
+  defp user_can_access_metric?(user_metric_access_level, metric_status) do
     case metric_status do
       "alpha" -> user_metric_access_level == "alpha"
       "beta" -> user_metric_access_level in ["alpha", "beta"]

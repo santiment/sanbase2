@@ -19,6 +19,16 @@ defmodule Sanbase.Metric.Registry.Changelog do
     timestamps()
   end
 
+  def metric_registry_ids_with_changes() do
+    query =
+      __MODULE__
+      |> select([changelog], changelog.metric_registry_id)
+      |> distinct(true)
+
+    result = Sanbase.Repo.all(query) |> MapSet.new()
+    {:ok, result}
+  end
+
   def changeset(%__MODULE__{} = changelog, attrs) do
     changelog
     |> cast(attrs, [:old, :new, :metric_registry_id, :change_trigger])

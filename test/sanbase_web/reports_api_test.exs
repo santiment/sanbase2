@@ -44,10 +44,16 @@ defmodule SanbaseWeb.Graphql.ReportsApiTest do
 
       pro_user = insert(:user)
       basic_user = insert(:user)
+      business_pro_user = insert(:user)
+      business_max_user = insert(:user)
       insert(:subscription_pro_sanbase, user: pro_user)
       insert(:subscription_basic_sanbase, user: basic_user)
+      insert(:subscription_business_pro_monthly, user: business_pro_user)
+      insert(:subscription_business_max_monthly, user: business_max_user)
       pro_conn = setup_jwt_auth(build_conn(), pro_user)
       basic_conn = setup_jwt_auth(build_conn(), basic_user)
+      business_pro_conn = setup_jwt_auth(build_conn(), business_pro_user)
+      business_max_conn = setup_jwt_auth(build_conn(), business_max_user)
 
       {
         :ok,
@@ -56,7 +62,9 @@ defmodule SanbaseWeb.Graphql.ReportsApiTest do
         pro_report: pro_report,
         free_conn: free_conn,
         basic_conn: basic_conn,
-        pro_conn: pro_conn
+        pro_conn: pro_conn,
+        business_pro_conn: business_pro_conn,
+        business_max_conn: business_max_conn
       }
     end
 
@@ -110,6 +118,34 @@ defmodule SanbaseWeb.Graphql.ReportsApiTest do
                context.free_report.url
              ]
     end
+
+    test "with business pro API user list all published reports", context do
+      res = get_reports(context.business_pro_conn)
+
+      assert Enum.map(res["data"]["getReports"], & &1["name"]) == [
+               context.pro_report.name,
+               context.free_report.name
+             ]
+
+      assert Enum.map(res["data"]["getReports"], & &1["url"]) == [
+               context.pro_report.url,
+               context.free_report.url
+             ]
+    end
+
+    test "with business max API user list all published reports", context do
+      res = get_reports(context.business_max_conn)
+
+      assert Enum.map(res["data"]["getReports"], & &1["name"]) == [
+               context.pro_report.name,
+               context.free_report.name
+             ]
+
+      assert Enum.map(res["data"]["getReports"], & &1["url"]) == [
+               context.pro_report.url,
+               context.free_report.url
+             ]
+    end
   end
 
   describe "get reports by tags" do
@@ -131,12 +167,26 @@ defmodule SanbaseWeb.Graphql.ReportsApiTest do
       user = insert(:user)
       conn = setup_jwt_auth(build_conn(), user)
 
-      {:ok, conn: conn, r1: r1, r2: r2}
+      business_user = insert(:user)
+      insert(:subscription_business_pro_monthly, user: business_user)
+      business_conn = setup_jwt_auth(build_conn(), business_user)
+
+      {:ok, conn: conn, business_conn: business_conn, r1: r1, r2: r2}
     end
 
     test "fetch only reports with intersecting tags", context do
       get_reports(context.conn)
       res = get_reports_by_tags(context.conn, ["t2", "t3"])
+
+      assert Enum.map(res["data"]["getReportsByTags"], & &1["url"]) == [
+               context.r2.url,
+               context.r1.url
+             ]
+    end
+
+    test "fetch only reports with intersecting tags - business API user", context do
+      get_reports(context.business_conn)
+      res = get_reports_by_tags(context.business_conn, ["t2", "t3"])
 
       assert Enum.map(res["data"]["getReportsByTags"], & &1["url"]) == [
                context.r2.url,

@@ -207,7 +207,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     ```
     """
     field :available_metrics, list_of(:string) do
-      cache_resolve(&ProjectMetricsResolver.available_metrics/3, ttl: 600)
+      cache_resolve(&ProjectMetricsResolver.available_metrics/3,
+        ttl: 600,
+        include_user_details_in_key: true
+      )
     end
 
     @desc ~s"""
@@ -217,7 +220,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     documentation without the need to call getMetric's metadata to get the docs links.
     """
     field :available_metrics_extended, list_of(:metric_metadata_subset) do
-      cache_resolve(&ProjectMetricsResolver.available_metrics_extended/3, ttl: 600)
+      cache_resolve(&ProjectMetricsResolver.available_metrics_extended/3,
+        ttl: 600,
+        include_user_details_in_key: true
+      )
     end
 
     field :available_label_fqns, list_of(:label_fqn) do
@@ -243,7 +249,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     ```
     """
     field :available_timeseries_metrics, list_of(:string) do
-      cache_resolve(&ProjectMetricsResolver.available_timeseries_metrics/3, ttl: 300)
+      cache_resolve(&ProjectMetricsResolver.available_timeseries_metrics/3,
+        ttl: 300,
+        include_user_details_in_key: true
+      )
     end
 
     @desc ~s"""
@@ -266,11 +275,17 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     ```
     """
     field :available_histogram_metrics, list_of(:string) do
-      cache_resolve(&ProjectMetricsResolver.available_histogram_metrics/3, ttl: 300)
+      cache_resolve(&ProjectMetricsResolver.available_histogram_metrics/3,
+        ttl: 300,
+        include_user_details_in_key: true
+      )
     end
 
     field :available_table_metrics, list_of(:string) do
-      cache_resolve(&ProjectMetricsResolver.available_table_metrics/3, ttl: 300)
+      cache_resolve(&ProjectMetricsResolver.available_table_metrics/3,
+        ttl: 300,
+        include_user_details_in_key: true
+      )
     end
 
     @desc ~s"""

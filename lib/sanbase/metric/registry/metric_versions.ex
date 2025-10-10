@@ -65,20 +65,30 @@ defmodule Sanbase.Metric.Registry.MetricVersions do
   end
 
   defp apply_search_filter(creation_events_query, deprecation_events_query, search_term) do
+    creation_events_query =
+      from(v in creation_events_query,
+        join: m in MetricRegistry,
+        on: v.entity_id == m.id,
+        where: m.status == "released"
+      )
+
+    deprecation_events_query =
+      from(v in deprecation_events_query,
+        join: m in MetricRegistry,
+        on: v.entity_id == m.id,
+        where: m.status == "released"
+      )
+
     if search_term && search_term != "" do
       search_term = "%#{search_term}%"
 
       creation_events_query =
-        from(v in creation_events_query,
-          join: m in MetricRegistry,
-          on: v.entity_id == m.id,
+        from([v, m] in creation_events_query,
           where: ilike(m.metric, ^search_term) or ilike(m.human_readable_name, ^search_term)
         )
 
       deprecation_events_query =
-        from(v in deprecation_events_query,
-          join: m in MetricRegistry,
-          on: v.entity_id == m.id,
+        from([v, m] in deprecation_events_query,
           where: ilike(m.metric, ^search_term) or ilike(m.human_readable_name, ^search_term)
         )
 

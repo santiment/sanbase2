@@ -11,6 +11,8 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
   alias Sanbase.Metric.UIMetadata.Category
   alias Sanbase.Metric.UIMetadata.Group
   alias Sanbase.Metric.UIMetadata.MetricsImporter
+  alias Sanbase.Metric.Category.MetricCategory
+  alias Sanbase.Metric.Category.MetricGroup
 
   @allowed_chart_styles ["filledLine", "greenRedBar", "bar", "line", "area", "reference"]
   @allowed_unit_formats ["", "usd", "percent"]
@@ -57,6 +59,9 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
     belongs_to(:group, Group)
     belongs_to(:metric_registry, Sanbase.Metric.Registry)
 
+    belongs_to(:new_category, MetricCategory, foreign_key: :new_category_id)
+    belongs_to(:new_group, MetricGroup, foreign_key: :new_group_id)
+
     timestamps()
   end
 
@@ -67,6 +72,8 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
       :registry_metric,
       :category_id,
       :group_id,
+      :new_category_id,
+      :new_group_id,
       :display_order,
       :source_type,
       :code_module,
@@ -79,9 +86,153 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
       :args,
       :type
     ])
-    |> validate_required([:category_id, :display_order])
+    |> validate_required([:display_order])
+    |> validate_category_requirement()
     |> validate_inclusion(:source_type, ["registry", "code"])
     |> validate_inclusion(:type, @allowed_metric_types)
+  end
+
+  defp validate_category_requirement(changeset) do
+    category_id = get_field(changeset, :category_id)
+    new_category_id = get_field(changeset, :new_category_id)
+
+    if is_nil(category_id) and is_nil(new_category_id) do
+      add_error(changeset, :category_id, "either category_id or new_category_id must be set")
+    else
+      changeset
+    end
+  end
+
+  @doc """
+  Get all variants of a metric (multiple display order entries with different args).
+  """
+  def get_metric_variants(metric) when is_binary(metric) do
+    query =
+      from(m in __MODULE__,
+        where: m.metric == ^metric,
+        order_by: [asc: m.display_order],
+        preload: [:category, :group, :new_category, :new_group, :metric_registry]
+      )
+
+    Repo.all(query)
+  end
+
+  @doc """
+  Check if a metric has multiple variants.
+  """
+  def has_variants?(metric) when is_binary(metric) do
+    count =
+      Repo.one(
+        from(m in __MODULE__,
+          where: m.metric == ^metric,
+          select: count(m.id)
+        )
+      )
+
+    count > 1
+  end
+
+  @doc """
+  Create a new variant of an existing metric by copying and modifying its display order entry.
+  """
+  def create_variant(metric, new_args, opts \\ []) do
+    case by_metric(metric) do
+      nil ->
+        {:error, "Base metric not found"}
+
+      base_metric ->
+        new_ui_key = Keyword.get(opts, :ui_key) || generate_variant_ui_key(metric, new_args)
+
+        if ui_key_exists?(new_ui_key) do
+          {:error, "UI key #{new_ui_key} already exists"}
+        else
+          variant_attrs = %{
+            metric: base_metric.metric,
+            registry_metric: base_metric.registry_metric,
+            category_id: base_metric.category_id,
+            group_id: base_metric.group_id,
+            new_category_id: base_metric.new_category_id,
+            new_group_id: base_metric.new_group_id,
+            display_order: base_metric.display_order,
+            source_type: base_metric.source_type,
+            code_module: base_metric.code_module,
+            metric_registry_id: base_metric.metric_registry_id,
+            ui_human_readable_name:
+              Keyword.get(opts, :ui_human_readable_name, base_metric.ui_human_readable_name),
+            ui_key: new_ui_key,
+            chart_style: Keyword.get(opts, :chart_style, base_metric.chart_style),
+            unit: Keyword.get(opts, :unit, base_metric.unit),
+            description: Keyword.get(opts, :description, base_metric.description),
+            args: new_args,
+            type: base_metric.type
+          }
+
+          create(variant_attrs)
+        end
+    end
+  end
+
+  defp ui_key_exists?(ui_key) do
+    Repo.exists?(from(m in __MODULE__, where: m.ui_key == ^ui_key))
+  end
+
+  defp generate_variant_ui_key(metric, args) do
+    args_hash =
+      args
+      |> Jason.encode!()
+      |> then(&:crypto.hash(:md5, &1))
+      |> Base.encode16(case: :lower)
+      |> String.slice(0..7)
+
+    "#{metric}_#{args_hash}"
+  end
+
+  @doc """
+  Auto-populate category and group from metric_category_mappings if available.
+  Returns the attrs map with new_category_id and new_group_id added if found.
+  """
+  def auto_populate_from_categorization(attrs) do
+    alias Sanbase.Metric.Category.MetricCategoryMapping
+
+    mapping =
+      cond do
+        attrs[:metric_registry_id] ->
+          MetricCategoryMapping.get_by_metric_registry_id(attrs[:metric_registry_id])
+          |> List.first()
+
+        attrs[:code_module] && attrs[:metric] ->
+          MetricCategoryMapping.get_by_module_and_metric(
+            attrs[:code_module],
+            attrs[:metric]
+          )
+          |> List.first()
+
+        true ->
+          nil
+      end
+
+    if mapping do
+      attrs
+      |> Map.put(:new_category_id, mapping.category_id)
+      |> Map.put(:new_group_id, mapping.group_id)
+    else
+      attrs
+    end
+  end
+
+  @doc """
+  Check if a metric is categorized in the new categorization system.
+  """
+  def is_categorized?(metric_or_registry_id) do
+    alias Sanbase.Metric.Category.MetricCategoryMapping
+
+    case metric_or_registry_id do
+      id when is_integer(id) ->
+        MetricCategoryMapping.get_by_metric_registry_id(id) != []
+
+      metric when is_binary(metric) ->
+        MetricCategoryMapping.get_by_module_and_metric("", metric) != []
+    end
   end
 
   def create(attrs) do

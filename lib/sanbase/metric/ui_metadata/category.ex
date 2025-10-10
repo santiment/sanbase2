@@ -1,7 +1,23 @@
 defmodule Sanbase.Metric.UIMetadata.Category do
+  @moduledoc """
+  DEPRECATED: This module is deprecated in favor of Sanbase.Metric.Category.MetricCategory.
+
+  The ui_metadata_categories table is being phased out. Please use the new metric_categories
+  table and Sanbase.Metric.Category module for all new code.
+
+  Migration path:
+  1. Use Sanbase.Metric.Category.MetricCategory for new categories
+  2. Existing data will be migrated gradually
+  3. This module will be removed in a future release
+
+  Target deprecation date: Q2 2025
+  """
+
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
+
+  require Logger
 
   alias Sanbase.Repo
   alias Sanbase.Metric.UIMetadata.Group
@@ -23,6 +39,14 @@ defmodule Sanbase.Metric.UIMetadata.Category do
     timestamps()
   end
 
+  defp log_deprecation_warning(function_name) do
+    Logger.warning("""
+    DEPRECATED: #{__MODULE__}.#{function_name} is deprecated.
+    Please use Sanbase.Metric.Category module instead.
+    This function will be removed in a future release.
+    """)
+  end
+
   def changeset(%__MODULE__{} = category, attrs) do
     category
     |> cast(attrs, [:name, :display_order])
@@ -32,8 +56,12 @@ defmodule Sanbase.Metric.UIMetadata.Category do
 
   @doc """
   Create a new category.
+
+  DEPRECATED: Use Sanbase.Metric.Category.create_category/1 instead.
   """
   def create(attrs) do
+    log_deprecation_warning("create/1")
+
     %__MODULE__{}
     |> changeset(attrs)
     |> Repo.insert()

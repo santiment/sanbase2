@@ -196,19 +196,24 @@ defmodule Sanbase.Metric.Category do
   @doc """
   Creates a mapping by metric registry ID.
   """
-  @spec create_mapping_by_metric_registry_id(integer(), integer()) ::
+  @spec create_mapping_by_metric_registry_id(integer(), integer() | nil, integer() | nil) ::
           {:ok, MetricCategoryMapping.t()} | {:error, Ecto.Changeset.t()}
-  def create_mapping_by_metric_registry_id(metric_registry_id, group_id) do
-    MetricCategoryMapping.create_by_metric_registry_id(metric_registry_id, group_id)
+  def create_mapping_by_metric_registry_id(metric_registry_id, category_id, group_id) do
+    MetricCategoryMapping.create_by_metric_registry_id(metric_registry_id, category_id, group_id)
   end
 
   @doc """
   Creates a mapping by module and metric.
   """
-  @spec create_mapping_by_module_and_metric(String.t(), String.t(), integer()) ::
+  @spec create_mapping_by_module_and_metric(
+          String.t(),
+          String.t(),
+          integer() | nil,
+          integer() | nil
+        ) ::
           {:ok, MetricCategoryMapping.t()} | {:error, Ecto.Changeset.t()}
-  def create_mapping_by_module_and_metric(module, metric, group_id) do
-    MetricCategoryMapping.create_by_module_and_metric(module, metric, group_id)
+  def create_mapping_by_module_and_metric(module, metric, category_id, group_id) do
+    MetricCategoryMapping.create_by_module_and_metric(module, metric, category_id, group_id)
   end
 
   @doc """

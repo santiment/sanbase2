@@ -88,6 +88,13 @@ defmodule SanbaseWeb.Categorization.GroupLive.Index do
             >
               Group Name
             </th>
+
+            <th
+              scope="col"
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Group Display Order (within category)
+            </th>
             <th
               scope="col"
               class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
@@ -136,6 +143,9 @@ defmodule SanbaseWeb.Categorization.GroupLive.Index do
       </td>
       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
         {@group.name}
+      </td>
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        {@group.display_order}
       </td>
       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
         <.group_actions group={@group} />
@@ -194,14 +204,9 @@ defmodule SanbaseWeb.Categorization.GroupLive.Index do
     ~H"""
     <div class="my-4 flex flex-row space-x-2">
       <AvailableMetricsComponents.available_metrics_button
-        text="Back to Metric Registry"
-        href={~p"/admin/metric_registry"}
-        icon="hero-home"
-      />
-      <AvailableMetricsComponents.available_metrics_button
-        text="Display Order"
-        href={~p"/admin/metric_registry/display_order"}
-        icon="hero-list-bullet"
+        text="Back to Categorization"
+        href={~p"/admin/metric_registry/categorization"}
+        icon="hero-arrow-left"
       />
       <AvailableMetricsComponents.available_metrics_button
         text="Manage Categories"

@@ -159,7 +159,7 @@ defmodule Sanbase.Metric.Category do
   Reorders groups by display order.
   """
   @spec reorder_groups([%{id: integer(), display_order: integer()}]) ::
-          {:ok, :ok} | {:error, any()}
+          :ok | {:error, any()}
   def reorder_groups(new_order), do: MetricGroup.reorder(new_order)
 
   # Mapping operations

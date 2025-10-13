@@ -59,9 +59,6 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
     belongs_to(:group, Group)
     belongs_to(:metric_registry, Sanbase.Metric.Registry)
 
-    belongs_to(:new_category, MetricCategory, foreign_key: :new_category_id)
-    belongs_to(:new_group, MetricGroup, foreign_key: :new_group_id)
-
     timestamps()
   end
 
@@ -72,8 +69,6 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
       :registry_metric,
       :category_id,
       :group_id,
-      :new_category_id,
-      :new_group_id,
       :display_order,
       :source_type,
       :code_module,
@@ -86,21 +81,9 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
       :args,
       :type
     ])
-    |> validate_required([:display_order])
-    |> validate_category_requirement()
+    |> validate_required([:display_order, :category_id])
     |> validate_inclusion(:source_type, ["registry", "code"])
     |> validate_inclusion(:type, @allowed_metric_types)
-  end
-
-  defp validate_category_requirement(changeset) do
-    category_id = get_field(changeset, :category_id)
-    new_category_id = get_field(changeset, :new_category_id)
-
-    if is_nil(category_id) and is_nil(new_category_id) do
-      add_error(changeset, :category_id, "either category_id or new_category_id must be set")
-    else
-      changeset
-    end
   end
 
   @doc """
@@ -111,7 +94,7 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
       from(m in __MODULE__,
         where: m.metric == ^metric,
         order_by: [asc: m.display_order],
-        preload: [:category, :group, :new_category, :new_group, :metric_registry]
+        preload: [:category, :group, :metric_registry]
       )
 
     Repo.all(query)
@@ -151,8 +134,6 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
             registry_metric: base_metric.registry_metric,
             category_id: base_metric.category_id,
             group_id: base_metric.group_id,
-            new_category_id: base_metric.new_category_id,
-            new_group_id: base_metric.new_group_id,
             display_order: base_metric.display_order,
             source_type: base_metric.source_type,
             code_module: base_metric.code_module,
@@ -223,7 +204,7 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
   @doc """
   Check if a metric is categorized in the new categorization system.
   """
-  def is_categorized?(metric_or_registry_id) do
+  def categorized?(metric_or_registry_id) do
     alias Sanbase.Metric.Category.MetricCategoryMapping
 
     case metric_or_registry_id do

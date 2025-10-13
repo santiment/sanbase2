@@ -155,7 +155,8 @@ defmodule Sanbase.Metric.Category.MetricCategory do
       multi
       |> Ecto.Multi.run({:update_display_order_of, id}, fn _repo, _changes ->
         query = from(mc in __MODULE__, where: mc.id == ^id)
-        Sanbase.Repo.update_all(query, set: [display_order: display_order])
+        {1, nil} = Sanbase.Repo.update_all(query, set: [display_order: display_order])
+        {:ok, "Success updating order of metric category id #{id}"}
       end)
     end)
     |> Sanbase.Repo.transaction()

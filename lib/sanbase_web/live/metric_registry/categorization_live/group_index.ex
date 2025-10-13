@@ -2,6 +2,7 @@ defmodule SanbaseWeb.Categorization.GroupLive.Index do
   use SanbaseWeb, :live_view
 
   import SanbaseWeb.CoreComponents
+  import SanbaseWeb.Categorization.ReorderComponents
   alias Sanbase.Metric.Category
   alias SanbaseWeb.AvailableMetricsComponents
 
@@ -21,7 +22,10 @@ defmodule SanbaseWeb.Categorization.GroupLive.Index do
 
   @impl true
   def handle_params(params, _url, socket) do
-    category_id = params["category_id"] && String.to_integer(params["category_id"])
+    category_id =
+      if params["category_id"] in [nil, ""],
+        do: nil,
+        else: String.to_integer(params["category_id"])
 
     {:noreply, socket |> assign(selected_category_id: category_id)}
   end
@@ -73,56 +77,56 @@ defmodule SanbaseWeb.Categorization.GroupLive.Index do
   def groups_table(assigns) do
     ~H"""
     <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
-          <tr>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Category
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Group Name
-            </th>
+      <div :for={category <- @categories} class="mb-8">
+        <div
+          :if={!Enum.empty?(category.groups)}
+          class="bg-gray-100 px-4 py-2 font-semibold text-gray-700"
+        >
+          {category.name}
+        </div>
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Order
+              </th>
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Group Name
+              </th>
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody
+            :if={!Enum.empty?(category.groups)}
+            id={"groups-category-#{category.id}"}
+            phx-hook="Sortable"
+            class="bg-white divide-y divide-gray-200"
+          >
+            <.group_row
+              :for={{group, index} <- Enum.with_index(category.groups)}
+              group={group}
+              category={category}
+              index={index}
+              category_groups_count={length(category.groups)}
+            />
+          </tbody>
+        </table>
+        <.empty_category_row :if={Enum.empty?(category.groups)} category={category} />
 
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Group Display Order (within category)
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Actions
-            </th>
-          </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-          <.category_groups :for={category <- @categories} category={category} />
-        </tbody>
-      </table>
+        <.add_group_button category_id={category.id} />
+      </div>
     </div>
-    """
-  end
-
-  attr :category, :map, required: true
-
-  def category_groups(assigns) do
-    ~H"""
-    <.group_row
-      :for={{group, index} <- Enum.with_index(@category.groups)}
-      group={group}
-      category={@category}
-      index={index}
-      category_groups_count={length(@category.groups)}
-    />
-    <.empty_category_row :if={Enum.empty?(@category.groups)} category={@category} />
     """
   end
 
@@ -133,19 +137,18 @@ defmodule SanbaseWeb.Categorization.GroupLive.Index do
 
   def group_row(assigns) do
     ~H"""
-    <tr class="hover:bg-gray-50">
-      <td
-        :if={@index == 0}
-        class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
-        rowspan={@category_groups_count}
-      >
-        {@category.name}
+    <tr id={"group-#{@group.id}"} data-id={@group.id} class="hover:bg-gray-50">
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        <.reorder_controls
+          index={@index}
+          total_count={@category_groups_count}
+          item_id={@group.id}
+          display_order={@group.display_order}
+          event_prefix="group-"
+        />
       </td>
       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
         {@group.name}
-      </td>
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        {@group.display_order}
       </td>
       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
         <.group_actions group={@group} />
@@ -158,22 +161,21 @@ defmodule SanbaseWeb.Categorization.GroupLive.Index do
 
   def empty_category_row(assigns) do
     ~H"""
-    <tr class="hover:bg-gray-50">
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        {@category.name}
-      </td>
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 italic">
-        No groups
-      </td>
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        <.link
-          navigate={~p"/admin/metric_registry/categorization/groups/new?category_id=#{@category.id}"}
-          class="text-blue-600 hover:text-blue-900"
-        >
-          Add Group
-        </.link>
-      </td>
-    </tr>
+    <div class="bg-white p-6 text-center border border-gray-200 rounded">
+      <p class="text-gray-500 italic mb-2">No groups in {@category.name}</p>
+    </div>
+    """
+  end
+
+  def add_group_button(assigns) do
+    ~H"""
+    <div class="mt-4">
+      <AvailableMetricsComponents.link_button
+        href={~p"/admin/metric_registry/categorization/groups/new?category_id=#{@category_id}"}
+        text="Add Group"
+        icon="hero-plus"
+      />
+    </div>
     """
   end
 
@@ -233,6 +235,62 @@ defmodule SanbaseWeb.Categorization.GroupLive.Index do
      )}
   end
 
+  def handle_event("reorder", %{"ids" => ids}, socket) do
+    # Invoked by the reorder_controls component
+    new_order = parse_reorder_ids(ids, "group")
+
+    case Category.reorder_groups(new_order) do
+      :ok ->
+        categories_with_groups = Category.list_categories_with_groups()
+
+        {:noreply,
+         socket
+         |> assign(categories_with_groups: categories_with_groups)
+         |> put_flash(:info, "Groups reordered successfully.")}
+
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, "Failed to reorder groups: #{inspect(reason)}")}
+    end
+  end
+
+  def handle_event("group-move-up", %{"id" => id}, socket) do
+    id = String.to_integer(id)
+    categories = socket.assigns.categories_with_groups
+
+    case find_group_and_category(categories, id) do
+      {group, category, index} when index > 0 ->
+        prev_group = Enum.at(category.groups, index - 1)
+
+        {:ok, _} = Category.swap_groups_display_orders(group, prev_group)
+
+        categories_with_groups = Category.list_categories_with_groups()
+
+        {:noreply, assign(socket, categories_with_groups: categories_with_groups)}
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("group-move-down", %{"id" => id}, socket) do
+    id = String.to_integer(id)
+    categories = socket.assigns.categories_with_groups
+
+    case find_group_and_category(categories, id) do
+      {group, category, index} when index < length(category.groups) - 1 ->
+        next_group = Enum.at(category.groups, index + 1)
+
+        {:ok, _} = Category.swap_groups_display_orders(group, next_group)
+
+        categories_with_groups = Category.list_categories_with_groups()
+
+        {:noreply, assign(socket, categories_with_groups: categories_with_groups)}
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
   def handle_event("delete", %{"id" => id}, socket) do
     id = String.to_integer(id)
 
@@ -255,7 +313,19 @@ defmodule SanbaseWeb.Categorization.GroupLive.Index do
     end
   end
 
-  # Filter categories based on selected category_id
+  defp find_group_and_category(categories, group_id) do
+    Enum.find_value(categories, fn category ->
+      case Enum.find_index(category.groups, &(&1.id == group_id)) do
+        nil ->
+          nil
+
+        index ->
+          group = Enum.at(category.groups, index)
+          {group, category, index}
+      end
+    end)
+  end
+
   defp filter_categories(categories, nil), do: categories
 
   defp filter_categories(categories, category_id) do

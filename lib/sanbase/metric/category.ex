@@ -69,8 +69,13 @@ defmodule Sanbase.Metric.Category do
   @doc """
   Gets a metric category by ID.
   """
-  @spec get_category(integer()) :: MetricCategory.t() | nil
-  def get_category(id), do: MetricCategory.get(id)
+  @spec get_category(integer()) :: {:ok, MetricCategory.t()} | {:error, String.t()}
+  def get_category(id) do
+    case MetricCategory.get(id) do
+      %MetricCategory{} = struct -> {:ok, struct}
+      nil -> {:error, "Metric Category with id #{id} does not exist"}
+    end
+  end
 
   @doc """
   Lists all metric categories ordered by display order.
@@ -121,8 +126,13 @@ defmodule Sanbase.Metric.Category do
   @doc """
   Gets a metric group by ID.
   """
-  @spec get_group(integer()) :: MetricGroup.t() | nil
-  def get_group(id), do: MetricGroup.get(id)
+  @spec get_group(integer()) :: {:ok, MetricGroup.t()} | {:error, String.t()}
+  def get_group(id) do
+    case MetricGroup.get(id) do
+      %MetricGroup{} = struct -> {:ok, struct}
+      nil -> {:error, "Metric Group with id #{id} does not exist"}
+    end
+  end
 
   @doc """
   Lists all metric groups for a specific category.

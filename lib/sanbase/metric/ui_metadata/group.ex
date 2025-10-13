@@ -1,18 +1,4 @@
 defmodule Sanbase.Metric.UIMetadata.Group do
-  @moduledoc """
-  DEPRECATED: This module is deprecated in favor of Sanbase.Metric.Category.MetricGroup.
-
-  The ui_metadata_groups table is being phased out. Please use the new metric_groups
-  table and Sanbase.Metric.Category module for all new code.
-
-  Migration path:
-  1. Use Sanbase.Metric.Category.MetricGroup for new groups
-  2. Existing data will be migrated gradually
-  3. This module will be removed in a future release
-
-  Target deprecation date: Q2 2025
-  """
-
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
@@ -21,14 +7,6 @@ defmodule Sanbase.Metric.UIMetadata.Group do
 
   alias Sanbase.Repo
   alias Sanbase.Metric.UIMetadata.Category
-
-  defp log_deprecation_warning(function_name) do
-    Logger.warning("""
-    DEPRECATED: #{__MODULE__}.#{function_name} is deprecated.
-    Please use Sanbase.Metric.Category module instead.
-    This function will be removed in a future release.
-    """)
-  end
 
   @type t :: %__MODULE__{
           id: integer(),

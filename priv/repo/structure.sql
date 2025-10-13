@@ -8292,6 +8292,13 @@ CREATE UNIQUE INDEX metric_categories_name_index ON public.metric_categories USI
 
 
 --
+-- Name: metric_category_mappings_category_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX metric_category_mappings_category_id_index ON public.metric_category_mappings USING btree (category_id);
+
+
+--
 -- Name: metric_category_mappings_metric_registry_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8306,10 +8313,10 @@ CREATE UNIQUE INDEX metric_category_mappings_module_metric_index ON public.metri
 
 
 --
--- Name: metric_groups_name_index; Type: INDEX; Schema: public; Owner: -
+-- Name: metric_groups_name_category_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX metric_groups_name_index ON public.metric_groups USING btree (name);
+CREATE UNIQUE INDEX metric_groups_name_category_id_index ON public.metric_groups USING btree (name, category_id);
 
 
 --
@@ -11053,3 +11060,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250923082048);
 INSERT INTO public."schema_migrations" (version) VALUES (20250926101337);
 INSERT INTO public."schema_migrations" (version) VALUES (20250926101756);
 INSERT INTO public."schema_migrations" (version) VALUES (20250926115345);
+INSERT INTO public."schema_migrations" (version) VALUES (20251013121803);

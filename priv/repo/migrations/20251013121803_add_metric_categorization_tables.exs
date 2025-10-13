@@ -1,4 +1,4 @@
-defmodule Sanbase.Repo.Migrations.AddMetricCategoriesTables do
+defmodule Sanbase.Repo.Migrations.AddMetricCategorizationTables do
   use Ecto.Migration
 
   def change do
@@ -29,7 +29,8 @@ defmodule Sanbase.Repo.Migrations.AddMetricCategoriesTables do
       timestamps()
     end
 
-    create(unique_index(:metric_groups, [:name]))
+    # Allow the same name of group but in different categories
+    create(unique_index(:metric_groups, [:name, :category_id]))
 
     # Create mappings
     create table(:metric_category_mappings) do
@@ -47,6 +48,8 @@ defmodule Sanbase.Repo.Migrations.AddMetricCategoriesTables do
 
       timestamps()
     end
+
+    create(index(:metric_category_mappings, [:category_id]))
 
     # Create a check constraint that either metric_registry_id is set and module/metric are NULL
     # or metric_registry_id is NULL and module/metric are not NULL

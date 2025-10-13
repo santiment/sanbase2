@@ -133,7 +133,7 @@ defmodule Sanbase.Metric.Category.MetricCategory do
     |> Ecto.Multi.run(:put_lhs, fn _repo, _changes ->
       __MODULE__.update(lhs, %{display_order: rhs_order})
     end)
-    |> Ecto.Multi.run(:put_lhs, fn _repo, _changes ->
+    |> Ecto.Multi.run(:put_rhs, fn _repo, _changes ->
       __MODULE__.update(rhs, %{display_order: lhs_order})
     end)
     |> Sanbase.Repo.transaction()

@@ -161,16 +161,39 @@ defmodule Sanbase.Metric.Category.MetricGroup do
   end
 
   @doc """
+  Swap the display orders of both groups
+  """
+  @spec swap_display_orders(t(), t()) :: {:ok, [t()]} | {:error, String.t()}
+  def swap_display_orders(
+        %__MODULE__{display_order: lhs_order} = lhs,
+        %__MODULE__{display_order: rhs_order} = rhs
+      ) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:put_lhs, fn _repo, _changes ->
+      __MODULE__.update(lhs, %{display_order: rhs_order})
+    end)
+    |> Ecto.Multi.run(:put_rhs, fn _repo, _changes ->
+      __MODULE__.update(rhs, %{display_order: lhs_order})
+    end)
+    |> Sanbase.Repo.transaction()
+    |> case do
+      {:ok, %{put_lhs: new_lhs, put_rhs: new_rhs}} -> {:ok, [new_lhs, new_rhs]}
+      {:error, _name, reason, _changes_so_far} -> {:error, reason}
+    end
+  end
+
+  @doc """
   Updates the display order of groups.
 
   The new_order parameter should be a list of maps with group ID and display_order keys.
   """
   @spec reorder([%{id: integer(), display_order: integer()}]) :: {:ok, :ok} | {:error, any()}
   def reorder(new_order) when is_list(new_order) do
-    Repo.transaction(fn ->
-      Enum.each(new_order, &update_group_order/1)
-      :ok
-    end)
+    Repo.transaction(fn -> Enum.each(new_order, &update_group_order/1) end)
+    |> case do
+      {:ok, _} -> :ok
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   defp update_group_order(%{id: id, display_order: display_order}) do

@@ -27,6 +27,17 @@ defmodule Sanbase.Metric.Category do
     MetricCategory.swap_display_orders(lhs, rhs)
   end
 
+  @doc """
+  Atomically swaps the `display_order` of two metric groups in a single SQL statement.
+
+  Returns `{:ok, [lhs, rhs]}` with the updated groups, or `{:error, reason}` on failure.
+  """
+  @spec swap_groups_display_orders(MetricGroup.t(), MetricGroup.t()) ::
+          {:ok, [MetricGroup.t()]} | {:error, any()}
+  def swap_groups_display_orders(%MetricGroup{} = lhs, %MetricGroup{} = rhs) do
+    MetricGroup.swap_display_orders(lhs, rhs)
+  end
+
   # Category operations
 
   @doc """

@@ -2,6 +2,7 @@ defmodule SanbaseWeb.Categorization.CategoryLive.Index do
   use SanbaseWeb, :live_view
 
   import SanbaseWeb.CoreComponents
+  import SanbaseWeb.Categorization.ReorderComponents
   alias Sanbase.Metric.Category
   alias SanbaseWeb.AvailableMetricsComponents
 
@@ -96,20 +97,12 @@ defmodule SanbaseWeb.Categorization.CategoryLive.Index do
     ~H"""
     <tr id={"category-#{@category.id}"} data-id={@category.id} class="hover:bg-gray-50">
       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        <div class="flex items-center">
-          <button phx-click="move-up" phx-value-id={@category.id} class="mr-2" disabled={@index == 0}>
-            <.icon name="hero-arrow-up" class="w-4 h-4" />
-          </button>
-          <span>{@category.display_order}</span>
-          <button
-            phx-click="move-down"
-            phx-value-id={@category.id}
-            class="ml-2"
-            disabled={@index == @total_count - 1}
-          >
-            <.icon name="hero-arrow-down" class="w-4 h-4" />
-          </button>
-        </div>
+        <.reorder_controls
+          index={@index}
+          total_count={@total_count}
+          item_id={@category.id}
+          display_order={@category.display_order}
+        />
       </td>
       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
         {@category.name}
@@ -216,22 +209,12 @@ defmodule SanbaseWeb.Categorization.CategoryLive.Index do
     categories = socket.assigns.categories
 
     if length(categories) > 0 do
-      # Update the display order for each category
-      new_order =
-        ids
-        |> Enum.with_index(1)
-        |> Enum.map(fn {id, index} ->
-          # Extract the category id from the id (format: "category-{id}")
-          category_id = id |> String.replace("category-", "") |> String.to_integer()
-          %{id: category_id, display_order: index}
-        end)
+      new_order = parse_reorder_ids(ids, "category")
 
-      # Save the new order
       socket = assign(socket, reordering: true)
 
       case Category.reorder_categories(new_order) do
-        {:ok, _} ->
-          # Refresh the categories list
+        :ok ->
           categories = Category.all_ordered()
 
           {:noreply,

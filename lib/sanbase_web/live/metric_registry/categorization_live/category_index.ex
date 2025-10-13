@@ -8,7 +8,7 @@ defmodule SanbaseWeb.Categorization.CategoryLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    categories = Category.all_ordered()
+    categories = Category.list_categories_with_groups()
 
     {:ok,
      socket
@@ -66,7 +66,7 @@ defmodule SanbaseWeb.Categorization.CategoryLive.Index do
               scope="col"
               class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
             >
-              Group Count
+              Groups Count
             </th>
             <th
               scope="col"
@@ -108,7 +108,7 @@ defmodule SanbaseWeb.Categorization.CategoryLive.Index do
         {@category.name}
       </td>
       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        {length(Sanbase.Metric.UIMetadata.Group.by_category(@category.id))}
+        {length(@category.groups)}
       </td>
       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
         <.category_actions category={@category} />

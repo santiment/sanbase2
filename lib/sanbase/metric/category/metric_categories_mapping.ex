@@ -184,7 +184,7 @@ defmodule Sanbase.Metric.Category.MetricCategoryMapping do
     create(%{
       module: module,
       metric: metric,
-      category: category_id,
+      category_id: category_id,
       group_id: group_id
     })
   end

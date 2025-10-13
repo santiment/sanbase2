@@ -148,7 +148,7 @@ defmodule Sanbase.Metric.Category.MetricCategory do
 
   The new_order parameter should be a list of maps with category ID and display_order keys.
   """
-  @spec reorder([%{id: integer(), display_order: integer()}]) :: {:ok, :ok} | {:error, any()}
+  @spec reorder([%{id: integer(), display_order: integer()}]) :: :ok | {:error, any()}
   def reorder(new_order) do
     new_order
     |> Enum.reduce(Ecto.Multi.new(), fn %{id: id, display_order: display_order}, multi ->

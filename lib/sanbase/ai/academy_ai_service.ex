@@ -10,7 +10,7 @@ defmodule Sanbase.AI.AcademyAIService do
   alias Sanbase.AI.AcademyTracing, as: Tracing
 
   @dont_know_answer "DK"
-  @dont_know_message "This one's not in my shell of knowledge yet 🐢📚. I only know what's written in the Academy scrolls, you can rephrase and try again — or swim over to Discord to chat with the humans\n👉 Ask on Discord: https://discord.gg/GEPZtyap"
+  @dont_know_message "This one's not in my shell of knowledge yet 🐢📚. I only know what's written in the Academy scrolls, you can rephrase and try again — or swim over to Discord to chat with the humans\n👉 Ask on Discord: https://discord.gg/EJrZR8GHZU"
   @model "gpt-5-nano"
   @suggestions_model "gpt-5-nano"
   @similarity_threshold 0.5

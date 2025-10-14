@@ -2,6 +2,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricDisplayOrderResolver do
   alias Sanbase.Metric.UIMetadata.DisplayOrder
   alias Sanbase.Repo
 
+  def deduce_source(%{} = metric_data, _args, _resolution) do
+    source =
+      case metric_data do
+        %{code_module: module} when is_binary(module) -> "CodeModule"
+        %{metric_registry_id: id} when is_integer(id) -> "MetricRegistry"
+        _ -> nil
+      end
+
+    {:ok, source}
+  end
+
   def get_ordered_metrics(_root, _args, _resolution) do
     ordered_data = DisplayOrder.get_ordered_metrics()
 

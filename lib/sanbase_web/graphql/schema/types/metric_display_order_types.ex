@@ -17,6 +17,11 @@ defmodule SanbaseWeb.Graphql.MetricDisplayOrderTypes do
     field(:description, :string)
     field(:args, :json)
     field(:is_new, :boolean)
+
+    field :source, :string do
+      resolve(&MetricDisplayOrderResolver.deduce_source/3)
+    end
+
     field(:display_order, :integer)
     field(:inserted_at, :datetime)
     field(:updated_at, :datetime)

@@ -176,7 +176,7 @@ defmodule SanbaseWeb.Categorization.CategoryLive.Index do
       {:ok, _} = Category.swap_categories_display_orders(current_category, prev_category)
 
       # Refresh categories
-      categories = Category.all_ordered()
+      categories = Category.list_categories_with_groups()
 
       {:noreply, assign(socket, categories: categories)}
     else
@@ -215,7 +215,7 @@ defmodule SanbaseWeb.Categorization.CategoryLive.Index do
 
       case Category.reorder_categories(new_order) do
         :ok ->
-          categories = Category.all_ordered()
+          categories = Category.list_categories_with_groups()
 
           {:noreply,
            socket
@@ -245,7 +245,7 @@ defmodule SanbaseWeb.Categorization.CategoryLive.Index do
 
         {:ok, _} = Category.delete_category(category)
 
-        categories = Category.all_ordered()
+        categories = Category.list_categories_with_groups()
 
         {:noreply,
          socket

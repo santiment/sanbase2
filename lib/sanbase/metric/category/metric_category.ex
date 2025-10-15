@@ -61,6 +61,23 @@ defmodule Sanbase.Metric.Category.MetricCategory do
   end
 
   @doc """
+  Creates a metric group if it doesn't exist already.
+  """
+  @spec create_if_not_exists(map()) :: {:ok, t()}
+  def create_if_not_exists(attrs) do
+    case get_by_name(Map.fetch!(attrs, :name)) do
+      nil ->
+        case create(attrs) do
+          {:ok, category} -> {:ok, category}
+          {:error, changeset} -> {:error, changeset}
+        end
+
+      existing ->
+        {:ok, existing}
+    end
+  end
+
+  @doc """
   Updates a metric category.
   """
   @spec update(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}

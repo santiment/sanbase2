@@ -18,11 +18,14 @@ defmodule Sanbase.Metric.Category.MetricCategoryMapping do
   @type t :: %__MODULE__{
           id: integer(),
           metric_registry_id: integer() | nil,
+          metric_registry: Registry.t() | nil,
           module: String.t() | nil,
           metric: String.t() | nil,
-          group_id: integer() | nil,
+          category: MetricCategory.t(),
+          category_id: integer(),
           group: MetricGroup.t() | nil,
-          metric_registry: Registry.t() | nil,
+          group_id: integer() | nil,
+          display_order: integer() | nil,
           inserted_at: DateTime.t(),
           updated_at: DateTime.t()
         }
@@ -38,6 +41,8 @@ defmodule Sanbase.Metric.Category.MetricCategoryMapping do
     belongs_to(:category, MetricCategory, foreign_key: :category_id)
     belongs_to(:group, MetricGroup, foreign_key: :group_id)
 
+    field(:display_order, :integer)
+
     timestamps()
   end
 
@@ -47,12 +52,25 @@ defmodule Sanbase.Metric.Category.MetricCategoryMapping do
   @spec changeset(t(), map()) :: Ecto.Changeset.t()
   def changeset(%__MODULE__{} = mapping, attrs) do
     mapping
-    |> cast(attrs, [:metric_registry_id, :module, :metric, :category_id, :group_id])
+    |> cast(attrs, [
+      :metric_registry_id,
+      :module,
+      :metric,
+      :category_id,
+      :group_id,
+      :display_order
+    ])
     |> validate_metric_reference()
     |> validate_length(:module, max: 255)
     |> validate_length(:metric, max: 255)
+    |> validate_required([:category_id])
+    |> foreign_key_constraint(:category_id)
     |> foreign_key_constraint(:metric_registry_id)
     |> foreign_key_constraint(:group_id)
+    # The unique constaints don't apply when the field is nil.
+    # Either metric_registry_id or module/metric is set.
+    |> unique_constraint(:metric_registry_id)
+    |> unique_constraint([:module, :metric])
   end
 
   @doc """

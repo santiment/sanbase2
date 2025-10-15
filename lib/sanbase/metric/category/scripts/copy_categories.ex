@@ -15,7 +15,7 @@ defmodule Sanbase.Metric.Category.Scripts.CopyCategories do
 
   defp assign_metrics_to_categories(%{category_map: category_map, group_map: group_map}) do
     DisplayOrder.get_ordered_metrics()
-    |> Map.get(:metrics)
+    |> Map.fetch!(:metrics)
     |> Enum.reduce(%{}, fn map, acc ->
       %{group_name: group_name, category_name: category_name} = map
 
@@ -113,23 +113,24 @@ defmodule Sanbase.Metric.Category.Scripts.CopyCategories do
 
   defp get_ordered_groups_per_category() do
     DisplayOrder.get_ordered_metrics()
-    |> Map.get(:metrics)
+    |> Map.fetch!(:metrics)
     |> Enum.reduce(%{}, fn map, acc ->
       %{group_name: group_name, category_name: category_name} = map
 
-      case Map.get(acc, category_name) do
-        nil ->
+      groups_list = Map.get(acc, category_name)
+
+      cond do
+        nil == groups_list ->
           # If this is the first time we encoutner this category,
           # the group is the first one in that category
           Map.put(acc, category_name, [group_name])
 
-        groups_list ->
-          if group_name in groups_list do
-            acc
-          else
-            # There will be < 50 groups, so it's ok to append at the en
-            Map.put(acc, category_name, groups_list ++ [group_name])
-          end
+        group_name in groups_list ->
+          acc
+
+        true ->
+          # There will be < 50 groups, so it's ok to append at the en
+          Map.put(acc, category_name, groups_list ++ [group_name])
       end
     end)
   end

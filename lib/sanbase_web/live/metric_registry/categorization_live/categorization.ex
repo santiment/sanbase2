@@ -217,6 +217,14 @@ defmodule SanbaseWeb.CategorizationLive.Index do
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Group
               </th>
+              <th class="px-6 text-xs text-left tracking-wider">
+                <div class="pt-3 font-medium text-gray-500 uppercase">
+                  Display order
+                </div>
+                <div class="pt-1 pb-3 font-normal text-gray-500">
+                  (within category/group)
+                </div>
+              </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
@@ -272,6 +280,10 @@ defmodule SanbaseWeb.CategorizationLive.Index do
         <div :if={!@metric.group_name} class="text-sm text-gray-400 italic">
           -
         </div>
+      </td>
+
+      <td class="px-6 py-4 whitespace-nowrap text-sm">
+        {@metric.display_order || "-"}
       </td>
       <td class="px-6 py-4 whitespace-nowrap text-sm">
         <.link
@@ -388,6 +400,7 @@ defmodule SanbaseWeb.CategorizationLive.Index do
         category_name: mapping && mapping.category && mapping.category.name,
         group_id: mapping && mapping.group_id,
         group_name: mapping && mapping.group && mapping.group.name,
+        display_order: mapping && mapping.display_order,
         categorized?: not is_nil(mapping)
       }
     end)
@@ -421,6 +434,7 @@ defmodule SanbaseWeb.CategorizationLive.Index do
         category_name: mapping && mapping.category && mapping.category.name,
         group_id: mapping && mapping.group_id,
         group_name: mapping && mapping.group && mapping.group.name,
+        display_order: mapping && mapping.display_order,
         categorized?: not is_nil(mapping)
       }
     end)

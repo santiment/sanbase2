@@ -11,8 +11,6 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
   alias Sanbase.Metric.UIMetadata.Category
   alias Sanbase.Metric.UIMetadata.Group
   alias Sanbase.Metric.UIMetadata.MetricsImporter
-  alias Sanbase.Metric.Category.MetricCategory
-  alias Sanbase.Metric.Category.MetricGroup
 
   @allowed_chart_styles ["filledLine", "greenRedBar", "bar", "line", "area", "reference"]
   @allowed_unit_formats ["", "usd", "percent"]

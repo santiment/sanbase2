@@ -224,6 +224,30 @@ defmodule Sanbase.Metric.Category do
   end
 
   @doc """
+  Gets metrics for a specific category and group, ordered by display_order.
+  """
+  @spec get_metrics_for_group(integer(), integer()) :: [MetricCategoryMapping.t()]
+  def get_metrics_for_group(category_id, group_id) do
+    MetricCategoryMapping.get_by_category_and_group(category_id, group_id)
+  end
+
+  @doc """
+  Gets ungrouped metrics for a category, ordered by display_order.
+  """
+  @spec get_ungrouped_metrics(integer()) :: [MetricCategoryMapping.t()]
+  def get_ungrouped_metrics(category_id) do
+    MetricCategoryMapping.get_ungrouped_by_category(category_id)
+  end
+
+  @doc """
+  Reorders metric category mappings.
+  """
+  @spec reorder_mappings([%{id: integer(), display_order: integer()}]) :: :ok | {:error, any()}
+  def reorder_mappings(new_order) do
+    MetricCategoryMapping.reorder_mappings(new_order)
+  end
+
+  @doc """
   Creates a mapping if it doesn't exist.
   """
   @spec create_mapping_if_not_exists(map()) ::

@@ -27,6 +27,7 @@ defmodule SanbaseWeb.AvailableMetricsComponents do
   attr :text, :string, required: true
   attr :icon, :string, required: false, default: nil
   attr :target, :string, default: "_self"
+  attr(:rest, :global, doc: "the arbitrary HTML attributes to add to the flash container")
 
   def link_button(assigns) do
     ~H"""
@@ -35,6 +36,7 @@ defmodule SanbaseWeb.AvailableMetricsComponents do
       class="text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center gap-x-2"
       target={@target}
       rel="noreferrer noopener"
+      {@rest}
     >
       <CoreComponents.icon :if={@icon} name={@icon} />
       {@text}

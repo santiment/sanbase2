@@ -12,6 +12,7 @@ defmodule Sanbase.Metric.Category.MetricCategory do
 
   alias Sanbase.Repo
   alias Sanbase.Metric.Category.MetricGroup
+  alias Sanbase.Metric.Category.MetricCategoryMapping
 
   @type t :: %__MODULE__{
           id: integer(),
@@ -31,6 +32,7 @@ defmodule Sanbase.Metric.Category.MetricCategory do
     field(:display_order, :integer)
 
     has_many(:groups, MetricGroup, foreign_key: :category_id)
+    has_many(:mappings, MetricCategoryMapping, foreign_key: :category_id)
 
     timestamps()
   end
@@ -131,7 +133,14 @@ defmodule Sanbase.Metric.Category.MetricCategory do
   def list_with_groups do
     query =
       from(c in __MODULE__,
-        preload: [groups: ^from(g in MetricGroup, order_by: [asc: g.display_order, asc: g.name])],
+        preload: [
+          mappings: ^from(m in MetricCategoryMapping, order_by: [asc: m.display_order]),
+          groups:
+            ^from(g in MetricGroup,
+              order_by: [asc: g.display_order, asc: g.name],
+              preload: [:mappings]
+            )
+        ],
         order_by: [asc: c.display_order, asc: c.name]
       )
 

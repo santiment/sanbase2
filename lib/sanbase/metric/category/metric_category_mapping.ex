@@ -166,6 +166,37 @@ defmodule Sanbase.Metric.Category.MetricCategoryMapping do
   end
 
   @doc """
+  Gets mappings for a specific category and group, ordered by display_order.
+  """
+  @spec get_by_category_and_group(integer(), integer()) :: [t()]
+  def get_by_category_and_group(category_id, group_id)
+      when is_integer(category_id) and is_integer(group_id) do
+    query =
+      from(m in __MODULE__,
+        where: m.category_id == ^category_id and m.group_id == ^group_id,
+        preload: [:category, :group, :metric_registry],
+        order_by: [asc: m.display_order, asc: m.id]
+      )
+
+    Repo.all(query)
+  end
+
+  @doc """
+  Gets ungrouped mappings for a category (where group_id is nil), ordered by display_order.
+  """
+  @spec get_ungrouped_by_category(integer()) :: [t()]
+  def get_ungrouped_by_category(category_id) when is_integer(category_id) do
+    query =
+      from(m in __MODULE__,
+        where: m.category_id == ^category_id and is_nil(m.group_id),
+        preload: [:category, :group, :metric_registry],
+        order_by: [asc: m.display_order, asc: m.id]
+      )
+
+    Repo.all(query)
+  end
+
+  @doc """
   Lists all metric categories mappings with their related data.
   """
   @spec list_all() :: [t()]
@@ -218,7 +249,34 @@ defmodule Sanbase.Metric.Category.MetricCategoryMapping do
     end
   end
 
+  @doc """
+  Reorders metric category mappings by updating their display_order.
+
+  The new_order parameter should be a list of maps with mapping ID and display_order keys.
+  """
+  @spec reorder_mappings([%{id: integer(), display_order: integer()}]) :: :ok | {:error, any()}
+  def reorder_mappings(new_order) when is_list(new_order) do
+    Repo.transaction(fn -> Enum.each(new_order, &update_mapping_order/1) end)
+    |> case do
+      {:ok, _} -> :ok
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
   # Private functions
+
+  defp update_mapping_order(%{id: id, display_order: display_order}) do
+    case get(id) do
+      nil ->
+        Repo.rollback("Mapping with ID #{id} not found")
+
+      mapping ->
+        case __MODULE__.update(mapping, %{display_order: display_order}) do
+          {:ok, _} -> :ok
+          {:error, error} -> Repo.rollback(error)
+        end
+    end
+  end
 
   defp validate_metric_reference(changeset) do
     metric_registry_id = get_field(changeset, :metric_registry_id)

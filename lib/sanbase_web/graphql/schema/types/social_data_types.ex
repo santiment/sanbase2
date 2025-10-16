@@ -24,7 +24,7 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
 
   enum :trending_words_source do
     value(:telegram)
-    value(:twitter)
+    value(:twitter_crypto)
     value(:reddit)
     value(:all)
   end

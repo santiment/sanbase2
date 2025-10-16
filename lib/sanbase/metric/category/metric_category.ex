@@ -63,7 +63,7 @@ defmodule Sanbase.Metric.Category.MetricCategory do
   end
 
   @doc """
-  Creates a metric group if it doesn't exist already.
+  Creates a metric category if it doesn't exist already.
   """
   @spec create_if_not_exists(map()) :: {:ok, t()}
   def create_if_not_exists(attrs) do

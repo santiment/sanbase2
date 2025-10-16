@@ -121,7 +121,7 @@ defmodule Sanbase.Metric.Category.Scripts.CopyCategories do
 
       cond do
         nil == groups_list ->
-          # If this is the first time we encoutner this category,
+          # If this is the first time we encounter this category,
           # the group is the first one in that category
           Map.put(acc, category_name, [group_name])
 
@@ -129,7 +129,7 @@ defmodule Sanbase.Metric.Category.Scripts.CopyCategories do
           acc
 
         true ->
-          # There will be < 50 groups, so it's ok to append at the en
+          # There will be < 50 groups, so it's ok to append at the end
           Map.put(acc, category_name, groups_list ++ [group_name])
       end
     end)

@@ -1,4 +1,4 @@
-defmodule Sanbase.Repo.Migrations.RemoveUniqueConstaintSourceSlug do
+defmodule Sanbase.Repo.Migrations.RemoveUniqueConstraintSourceSlug do
   use Ecto.Migration
   @table "source_slug_mappings"
 

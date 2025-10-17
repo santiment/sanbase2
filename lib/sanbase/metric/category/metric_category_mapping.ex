@@ -14,6 +14,7 @@ defmodule Sanbase.Metric.Category.MetricCategoryMapping do
   alias Sanbase.Metric.Registry
   alias Sanbase.Metric.Category.MetricCategory
   alias Sanbase.Metric.Category.MetricGroup
+  alias Sanbase.Metric.UIMetadata
 
   @type t :: %__MODULE__{
           id: integer(),
@@ -40,6 +41,9 @@ defmodule Sanbase.Metric.Category.MetricCategoryMapping do
 
     belongs_to(:category, MetricCategory, foreign_key: :category_id)
     belongs_to(:group, MetricGroup, foreign_key: :group_id)
+
+    has_many(:ui_metadata_list, UIMetadata, foreign_key: :metric_category_mapping_id)
+    has_one(:ui_metadata, UIMetadata, foreign_key: :metric_category_mapping_id)
 
     field(:display_order, :integer)
 
@@ -117,7 +121,7 @@ defmodule Sanbase.Metric.Category.MetricCategoryMapping do
     query =
       from(m in __MODULE__,
         where: m.metric_registry_id == ^metric_registry_id,
-        preload: [:group, :metric_registry]
+        preload: [:category, :group, :metric_registry, :ui_metadata]
       )
 
     Repo.all(query)
@@ -131,7 +135,7 @@ defmodule Sanbase.Metric.Category.MetricCategoryMapping do
     query =
       from(m in __MODULE__,
         where: m.module == ^module and m.metric == ^metric,
-        preload: [:category, :group, :metric_registry]
+        preload: [:category, :group, :metric_registry, :ui_metadata]
       )
 
     Repo.all(query)
@@ -145,7 +149,7 @@ defmodule Sanbase.Metric.Category.MetricCategoryMapping do
     query =
       from(m in __MODULE__,
         where: m.category_id == ^category_id,
-        preload: [:category, :group, :metric_registry]
+        preload: [:category, :group, :metric_registry, :ui_metadata]
       )
 
     Repo.all(query)
@@ -159,7 +163,7 @@ defmodule Sanbase.Metric.Category.MetricCategoryMapping do
     query =
       from(m in __MODULE__,
         where: m.group_id == ^group_id,
-        preload: [:category, :group, :metric_registry]
+        preload: [:category, :group, :metric_registry, :ui_metadata]
       )
 
     Repo.all(query)
@@ -174,7 +178,7 @@ defmodule Sanbase.Metric.Category.MetricCategoryMapping do
     query =
       from(m in __MODULE__,
         where: m.category_id == ^category_id and m.group_id == ^group_id,
-        preload: [:category, :group, :metric_registry],
+        preload: [:category, :group, :metric_registry, :ui_metadata],
         order_by: [asc: m.display_order, asc: m.id]
       )
 
@@ -189,7 +193,7 @@ defmodule Sanbase.Metric.Category.MetricCategoryMapping do
     query =
       from(m in __MODULE__,
         where: m.category_id == ^category_id and is_nil(m.group_id),
-        preload: [:category, :group, :metric_registry],
+        preload: [:category, :group, :metric_registry, :ui_metadata],
         order_by: [asc: m.display_order, asc: m.id]
       )
 
@@ -203,7 +207,7 @@ defmodule Sanbase.Metric.Category.MetricCategoryMapping do
   def list_all do
     query =
       from(m in __MODULE__,
-        preload: [:category, :group, :metric_registry]
+        preload: [:category, :group, :metric_registry, :ui_metadata]
       )
 
     Repo.all(query)

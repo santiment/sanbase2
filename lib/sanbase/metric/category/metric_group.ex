@@ -145,7 +145,7 @@ defmodule Sanbase.Metric.Category.MetricGroup do
   @doc """
   Creates a metric group if it doesn't exist already.
   """
-  @spec create_if_not_exists(map()) :: {:ok, t()}
+  @spec create_if_not_exists(map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def create_if_not_exists(attrs) do
     case get_by_name_and_category(Map.fetch!(attrs, :name), Map.fetch!(attrs, :category_id)) do
       nil ->

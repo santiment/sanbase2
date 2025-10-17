@@ -41,6 +41,15 @@ defmodule Sanbase.Metric.Category.Scripts.CopyCategories do
             group_id: group_id,
             display_order: next_display_order
           })
+
+        %{metric: metric} when is_binary(metric) ->
+          Sanbase.Metric.Category.create_mapping(%{
+            module: "__none__",
+            metric: metric,
+            category_id: category_id,
+            group_id: group_id,
+            display_order: next_display_order
+          })
       end
 
       Map.put(acc, {category_name, group_name}, next_display_order)

@@ -70,7 +70,11 @@ defmodule SanbaseWeb.CategorizationLive.Index do
 
       <.metrics_stats metrics={@metrics} filtered_metrics={@filtered_metrics} />
 
-      <.metrics_table :if={!@loading} filtered_metrics={@filtered_metrics} />
+      <.metrics_table
+        :if={!@loading}
+        filtered_metrics={@filtered_metrics}
+        categories_colors={@categories_colors}
+      />
 
       <div :if={@loading} class="flex justify-center items-center py-12">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
@@ -231,7 +235,11 @@ defmodule SanbaseWeb.CategorizationLive.Index do
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
-            <.metric_row :for={metric <- @filtered_metrics} metric={metric} />
+            <.metric_row
+              :for={metric <- @filtered_metrics}
+              metric={metric}
+              categories_colors={@categories_colors}
+            />
           </tbody>
         </table>
       </div>
@@ -247,7 +255,7 @@ defmodule SanbaseWeb.CategorizationLive.Index do
 
   def metric_row(assigns) do
     ~H"""
-    <tr class="hover:bg-gray-50">
+    <tr class={Map.get(@categories_colors, @metric.category_name)}>
       <td class="px-6 py-4 whitespace-nowrap">
         <div class="flex flex-col">
           <div class="text-sm font-medium text-gray-900">{@metric.metric}</div>
@@ -374,10 +382,28 @@ defmodule SanbaseWeb.CategorizationLive.Index do
 
     all_metrics = registry_metrics ++ code_metrics
 
+    all_metrics =
+      Enum.sort_by(
+        all_metrics,
+        fn m -> {m.category_display_order, m.group_display_order, m.display_order} end,
+        :asc
+      )
+
+    categories_colors =
+      Enum.with_index(categories)
+      |> Map.new(fn {category, index} ->
+        {category.name,
+         if(rem(index, 2) == 0,
+           do: "bg-white hover:bg-neutral-200",
+           else: "bg-neutral-100 hover:bg-neutral-200"
+         )}
+      end)
+
     socket
     |> assign(
       metrics: all_metrics,
       categories: categories,
+      categories_colors: categories_colors,
       loading: false
     )
   end
@@ -398,8 +424,11 @@ defmodule SanbaseWeb.CategorizationLive.Index do
         mapping_id: mapping && mapping.id,
         category_id: mapping && mapping.category_id,
         category_name: mapping && mapping.category && mapping.category.name,
+        category_display_order: mapping && mapping.category && mapping.category.display_order,
         group_id: mapping && mapping.group_id,
         group_name: mapping && mapping.group && mapping.group.name,
+        # The ungrouped metrics should appear first
+        group_display_order: (mapping && mapping.group && mapping.group.display_order) || -1,
         display_order: mapping && mapping.display_order,
         categorized?: not is_nil(mapping)
       }
@@ -432,8 +461,11 @@ defmodule SanbaseWeb.CategorizationLive.Index do
         mapping_id: mapping && mapping.id,
         category_id: mapping && mapping.category_id,
         category_name: mapping && mapping.category && mapping.category.name,
+        category_display_order: mapping && mapping.category && mapping.category.display_order,
         group_id: mapping && mapping.group_id,
         group_name: mapping && mapping.group && mapping.group.name,
+        # The ungrouped metrics should appear first
+        group_display_order: (mapping && mapping.group && mapping.group.display_order) || -1,
         display_order: mapping && mapping.display_order,
         categorized?: not is_nil(mapping)
       }
@@ -455,7 +487,6 @@ defmodule SanbaseWeb.CategorizationLive.Index do
       |> filter_by_source(filter_source)
       |> filter_by_status(filter_status)
       |> filter_by_category(selected_category_id)
-      |> Enum.sort_by(& &1.metric)
 
     assign(socket, filtered_metrics: filtered_metrics)
   end

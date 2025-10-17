@@ -302,6 +302,23 @@ defmodule Sanbase.Metric.Category do
   end
 
   @doc """
+  Lists all UI metadata for a given mapping ID, ordered by display_order_in_mapping.
+  """
+  @spec list_ui_metadata_by_mapping_id(integer()) :: [UIMetadata.t()]
+  def list_ui_metadata_by_mapping_id(mapping_id) do
+    UIMetadata.list_by_mapping_id(mapping_id)
+  end
+
+  @doc """
+  Reorders UI metadata records within a mapping.
+  """
+  @spec reorder_ui_metadata([%{id: integer(), display_order_in_mapping: integer()}]) ::
+          :ok | {:error, any()}
+  def reorder_ui_metadata(new_order) do
+    UIMetadata.reorder(new_order)
+  end
+
+  @doc """
   Lists all UI metadata.
   """
   @spec list_all_ui_metadata() :: [UIMetadata.t()]

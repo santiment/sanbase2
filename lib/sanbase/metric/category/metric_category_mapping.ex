@@ -42,6 +42,7 @@ defmodule Sanbase.Metric.Category.MetricCategoryMapping do
     belongs_to(:category, MetricCategory, foreign_key: :category_id)
     belongs_to(:group, MetricGroup, foreign_key: :group_id)
 
+    has_many(:ui_metadata_list, UIMetadata, foreign_key: :metric_category_mapping_id)
     has_one(:ui_metadata, UIMetadata, foreign_key: :metric_category_mapping_id)
 
     field(:display_order, :integer)

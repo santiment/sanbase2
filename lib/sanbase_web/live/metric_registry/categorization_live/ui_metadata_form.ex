@@ -16,7 +16,8 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataForm do
 
   @impl true
   def handle_params(params, _url, socket) do
-    {:noreply, setup_form(socket, params)}
+    mode = Map.get(params, "id", "new")
+    {:noreply, setup_form(socket, params, mode)}
   end
 
   @impl true
@@ -27,7 +28,7 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataForm do
         {@page_title}
       </div>
 
-      <.navigation />
+      <.navigation metric_info={@metric_info} mapping={@mapping} />
 
       <div :if={@metric_info} class="mb-6 p-4 bg-gray-50 rounded-lg">
         <div class="text-sm font-medium text-gray-700 mb-1">Metric</div>
@@ -52,7 +53,7 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataForm do
             type="text"
             label="UI Human Readable Name"
             field={@form[:ui_human_readable_name]}
-            placeholder="e.g., Daily Active Addresses. If empty, the metric's human readable name will be used."
+            placeholder={"e.g., #{@metric_info.human_readable_name}. If empty, the metric's human readable name will be used."}
           />
 
           <.input
@@ -89,7 +90,7 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataForm do
           <div class="flex justify-between items-center mt-6">
             <div class="flex space-x-2">
               <.link
-                navigate={~p"/admin/metric_registry/categorization"}
+                navigate={~p"/admin/metric_registry/categorization/ui_metadata/list/#{@mapping.id}"}
                 class="text-gray-600 hover:text-gray-900"
               >
                 Cancel
@@ -124,6 +125,11 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataForm do
         href={~p"/admin/metric_registry/categorization"}
         icon="hero-arrow-left"
       />
+      <AvailableMetricsComponents.available_metrics_button
+        text="Back to UI Metadata List"
+        href={~p"/admin/metric_registry/categorization/ui_metadata/list/#{@mapping.id}"}
+        icon="hero-list-bullet"
+      />
     </div>
     """
   end
@@ -138,12 +144,16 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataForm do
   end
 
   def handle_event("save", %{"ui_metadata" => params}, socket) do
+    mapping_id = socket.assigns.mapping.id
+
     case save_ui_metadata(socket.assigns.ui_metadata, params) do
       {:ok, _ui_metadata} ->
         {:noreply,
          socket
          |> put_flash(:info, "UI metadata saved successfully")
-         |> push_navigate(to: ~p"/admin/metric_registry/categorization")}
+         |> push_navigate(
+           to: ~p"/admin/metric_registry/categorization/ui_metadata/list/#{mapping_id}"
+         )}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply,
@@ -157,38 +167,82 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataForm do
   end
 
   def handle_event("delete", _params, socket) do
+    mapping_id = socket.assigns.mapping.id
+
     case Category.delete_ui_metadata(socket.assigns.ui_metadata) do
       {:ok, _} ->
         {:noreply,
          socket
          |> put_flash(:info, "UI metadata deleted successfully")
-         |> push_navigate(to: ~p"/admin/metric_registry/categorization")}
+         |> push_navigate(
+           to: ~p"/admin/metric_registry/categorization/ui_metadata/list/#{mapping_id}"
+         )}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Failed to delete UI metadata")}
     end
   end
 
-  defp setup_form(socket, %{"mapping_id" => mapping_id_str}) do
-    mapping_id = String.to_integer(mapping_id_str)
-    mapping = MetricCategoryMapping.get(mapping_id)
+  defp setup_form(socket, %{"id" => ui_metadata_id_str}, "edit") do
+    ui_metadata_id = String.to_integer(ui_metadata_id_str)
+    ui_metadata = Category.get_ui_metadata(ui_metadata_id)
 
-    if mapping do
+    if ui_metadata do
+      ui_metadata = Sanbase.Repo.preload(ui_metadata, [:metric_category_mapping])
+      mapping = ui_metadata.metric_category_mapping
       mapping = Sanbase.Repo.preload(mapping, [:metric_registry, :category, :group])
-      ui_metadata = Category.get_ui_metadata_by_mapping_id(mapping_id)
       metric_info = build_metric_info(mapping)
 
-      ui_metadata = ui_metadata || %UIMetadata{metric_category_mapping_id: mapping_id}
       changeset = build_changeset(ui_metadata, %{})
-
-      page_title = if ui_metadata.id, do: "Edit UI Metadata", else: "New UI Metadata"
 
       socket
       |> assign(mapping: mapping)
       |> assign(ui_metadata: ui_metadata)
       |> assign(form: to_form(changeset))
       |> assign(metric_info: metric_info)
-      |> assign(page_title: page_title)
+      |> assign(page_title: "Edit UI Metadata")
+    else
+      socket
+      |> put_flash(:error, "UI metadata not found")
+      |> push_navigate(to: ~p"/admin/metric_registry/categorization")
+    end
+  end
+
+  defp setup_form(socket, %{"mapping_id" => mapping_id_str}, "new") do
+    mapping_id = String.to_integer(mapping_id_str)
+    mapping = MetricCategoryMapping.get(mapping_id)
+
+    if mapping do
+      mapping = Sanbase.Repo.preload(mapping, [:metric_registry, :category, :group])
+      metric_info = build_metric_info(mapping)
+
+      ui_metadata_list = Category.list_ui_metadata_by_mapping_id(mapping_id)
+
+      next_display_order =
+        if ui_metadata_list == [] do
+          1
+        else
+          max_order =
+            ui_metadata_list
+            |> Enum.map(& &1.display_order_in_mapping)
+            |> Enum.max()
+
+          max_order + 1
+        end
+
+      ui_metadata = %UIMetadata{
+        metric_category_mapping_id: mapping_id,
+        display_order_in_mapping: next_display_order
+      }
+
+      changeset = build_changeset(ui_metadata, %{})
+
+      socket
+      |> assign(mapping: mapping)
+      |> assign(ui_metadata: ui_metadata)
+      |> assign(form: to_form(changeset))
+      |> assign(metric_info: metric_info)
+      |> assign(page_title: "New UI Metadata")
     else
       socket
       |> put_flash(:error, "Mapping not found")
@@ -196,37 +250,48 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataForm do
     end
   end
 
-  defp setup_form(socket, _params) do
+  defp setup_form(socket, _params, _mode) do
     socket
-    |> put_flash(:error, "Mapping ID is required")
+    |> put_flash(:error, "Invalid parameters")
     |> push_navigate(to: ~p"/admin/metric_registry/categorization")
   end
 
   defp build_metric_info(mapping) do
     cond do
-      mapping.metric_registry_id && mapping.metric_registry ->
-        %{
-          metric: mapping.metric_registry.metric,
-          human_readable_name: mapping.metric_registry.human_readable_name,
-          source_display: "Registry",
-          source_type: "registry",
-          category_name: mapping.category && mapping.category.name,
-          group_name: mapping.group && mapping.group.name
-        }
-
-      mapping.module && mapping.metric ->
-        %{
-          metric: mapping.metric,
-          human_readable_name: nil,
-          source_display: format_module_name(mapping.module),
-          source_type: "code",
-          category_name: mapping.category && mapping.category.name,
-          group_name: mapping.group && mapping.group.name
-        }
-
-      true ->
-        nil
+      has_registry_metric?(mapping) -> build_registry_metric_info(mapping)
+      has_code_metric?(mapping) -> build_code_metric_info(mapping)
+      true -> nil
     end
+  end
+
+  defp has_registry_metric?(mapping) do
+    mapping.metric_registry_id && mapping.metric_registry
+  end
+
+  defp has_code_metric?(mapping) do
+    mapping.module && mapping.metric
+  end
+
+  defp build_registry_metric_info(mapping) do
+    %{
+      metric: mapping.metric_registry.metric,
+      human_readable_name: mapping.metric_registry.human_readable_name,
+      source_display: "Registry",
+      source_type: "registry",
+      category_name: mapping.category && mapping.category.name,
+      group_name: mapping.group && mapping.group.name
+    }
+  end
+
+  defp build_code_metric_info(mapping) do
+    %{
+      metric: mapping.metric,
+      human_readable_name: nil,
+      source_display: format_module_name(mapping.module),
+      source_type: "code",
+      category_name: mapping.category && mapping.category.name,
+      group_name: mapping.group && mapping.group.name
+    }
   end
 
   defp build_changeset(ui_metadata, params) do
@@ -239,6 +304,7 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataForm do
       unit: :string,
       args: :string,
       show_on_sanbase: :boolean,
+      display_order_in_mapping: :integer,
       metric_category_mapping_id: :integer
     }
 
@@ -299,6 +365,7 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataForm do
       :unit,
       :args,
       :show_on_sanbase,
+      :display_order_in_mapping,
       :metric_category_mapping_id
     ]
 

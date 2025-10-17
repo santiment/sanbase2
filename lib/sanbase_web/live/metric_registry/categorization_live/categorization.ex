@@ -370,12 +370,11 @@ defmodule SanbaseWeb.CategorizationLive.Index do
           <.link
             :if={@metric.mapping_id}
             navigate={
-              ~p"/admin/metric_registry/categorization/ui_metadata/edit/#{@metric.mapping_id}"
+              ~p"/admin/metric_registry/categorization/ui_metadata/list/#{@metric.mapping_id}"
             }
             class="text-purple-600 hover:text-purple-900"
           >
-            <span :if={is_nil(@metric.mapping.ui_metadata)}> Add UI Metadata </span>
-            <span :if={@metric.mapping.ui_metadata}> Update UI Metadata </span>
+            Manage UI Metadata
           </.link>
 
           <.link
@@ -450,7 +449,7 @@ defmodule SanbaseWeb.CategorizationLive.Index do
 
     ui_metadata_by_mapping_id =
       ui_metadata_list
-      |> Map.new(&{&1.metric_category_mapping_id, &1})
+      |> Enum.group_by(& &1.metric_category_mapping_id)
 
     mappings_by_registry_id =
       mappings
@@ -498,7 +497,10 @@ defmodule SanbaseWeb.CategorizationLive.Index do
     |> Registry.resolve()
     |> Enum.map(fn registry ->
       mapping = Map.get(mappings_by_registry_id, registry.id)
-      ui_metadata = mapping && Map.get(ui_metadata_by_mapping_id, mapping.id)
+      ui_metadata_list = mapping && Map.get(ui_metadata_by_mapping_id, mapping.id, [])
+
+      has_ui_metadata? = ui_metadata_list != [] && ui_metadata_list != nil
+      shown_on_sanbase? = has_ui_metadata? && Enum.any?(ui_metadata_list, & &1.show_on_sanbase)
 
       %{
         metric: registry.metric,
@@ -518,8 +520,8 @@ defmodule SanbaseWeb.CategorizationLive.Index do
         group_display_order: (mapping && mapping.group && mapping.group.display_order) || -1,
         display_order: mapping && mapping.display_order,
         categorized?: not is_nil(mapping),
-        has_ui_metadata?: not is_nil(ui_metadata),
-        shown_on_sanbase?: ui_metadata && ui_metadata.show_on_sanbase
+        has_ui_metadata?: has_ui_metadata?,
+        shown_on_sanbase?: shown_on_sanbase?
       }
     end)
   end
@@ -538,8 +540,11 @@ defmodule SanbaseWeb.CategorizationLive.Index do
     |> Enum.map(fn {metric, module} ->
       module_str = inspect(module)
       mapping = Map.get(mappings_by_module_metric, {module_str, metric})
-      ui_metadata = mapping && Map.get(ui_metadata_by_mapping_id, mapping.id)
+      ui_metadata_list = mapping && Map.get(ui_metadata_by_mapping_id, mapping.id, [])
       {:ok, human_readable_name} = Sanbase.Metric.human_readable_name(metric)
+
+      has_ui_metadata? = ui_metadata_list != [] && ui_metadata_list != nil
+      shown_on_sanbase? = has_ui_metadata? && Enum.any?(ui_metadata_list, & &1.show_on_sanbase)
 
       %{
         metric: metric,
@@ -559,8 +564,8 @@ defmodule SanbaseWeb.CategorizationLive.Index do
         group_display_order: (mapping && mapping.group && mapping.group.display_order) || -1,
         display_order: mapping && mapping.display_order,
         categorized?: not is_nil(mapping),
-        has_ui_metadata?: not is_nil(ui_metadata),
-        shown_on_sanbase?: ui_metadata && ui_metadata.show_on_sanbase
+        has_ui_metadata?: has_ui_metadata?,
+        shown_on_sanbase?: shown_on_sanbase?
       }
     end)
   end

@@ -11,6 +11,8 @@ defmodule Sanbase.Repo.Migrations.CreateMetricsUiMetadataTable do
 
       add(:show_on_sanbase, :boolean, default: true)
 
+      add(:display_order_in_mapping, :integer)
+
       add(
         :metric_category_mapping_id,
         references(:metric_category_mappings, on_delete: :delete_all),
@@ -19,7 +21,5 @@ defmodule Sanbase.Repo.Migrations.CreateMetricsUiMetadataTable do
 
       timestamps()
     end
-
-    create(unique_index(:metric_ui_metadata, [:metric_category_mapping_id]))
   end
 end

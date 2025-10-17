@@ -2555,6 +2555,7 @@ CREATE TABLE public.metric_ui_metadata (
     unit character varying(255) DEFAULT ''::character varying,
     args jsonb DEFAULT '{}'::jsonb,
     show_on_sanbase boolean DEFAULT true,
+    display_order_in_mapping integer,
     metric_category_mapping_id bigint NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
@@ -8391,13 +8392,6 @@ CREATE UNIQUE INDEX metric_registry_composite_unique_index ON public.metric_regi
 --
 
 CREATE UNIQUE INDEX metric_registry_sync_runs_uuid_sync_type_index ON public.metric_registry_sync_runs USING btree (uuid, sync_type);
-
-
---
--- Name: metric_ui_metadata_metric_category_mapping_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX metric_ui_metadata_metric_category_mapping_id_index ON public.metric_ui_metadata USING btree (metric_category_mapping_id);
 
 
 --

@@ -125,6 +125,7 @@ defmodule SanbaseWeb.Router do
         live("/categorization/metrics_order", CategorizationLive.MetricsOrder)
         live("/categorization/mappings/new", CategorizationLive.MappingForm, :new)
         live("/categorization/mappings/edit/:id", CategorizationLive.MappingForm, :edit)
+        live("/categorization/ui_metadata/edit/:mapping_id", CategorizationLive.UIMetadataForm)
       end
     end
 

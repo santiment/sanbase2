@@ -10,6 +10,7 @@ defmodule Sanbase.Metric.Category do
   alias Sanbase.Metric.Category.MetricCategory
   alias Sanbase.Metric.Category.MetricGroup
   alias Sanbase.Metric.Category.MetricCategoryMapping
+  alias Sanbase.Metric.UIMetadata
 
   def all_ordered() do
     query = from(c in MetricCategory, order_by: [asc: c.display_order])
@@ -172,6 +173,16 @@ defmodule Sanbase.Metric.Category do
   def reorder_groups(new_order), do: MetricGroup.reorder(new_order)
 
   # Mapping operations
+  @doc """
+  Gets a metric category mapping by ID.
+  """
+  @spec get_mapping(integer()) :: {:ok, MetricCategoryMapping.t()} | {:error, String.t()}
+  def get_mapping(id) do
+    case MetricCategoryMapping.get(id) do
+      %MetricCategoryMapping{} = mapping -> {:ok, mapping}
+      nil -> {:error, "MetricCategoryMapping with id #{id} does not exist"}
+    end
+  end
 
   @doc """
   Creates a new metric categories mapping.
@@ -254,6 +265,75 @@ defmodule Sanbase.Metric.Category do
           {:ok, MetricCategoryMapping.t()} | {:error, Ecto.Changeset.t()}
   def create_mapping_if_not_exists(attrs) do
     MetricCategoryMapping.create_if_not_exists(attrs)
+  end
+
+  # UI Metadata operations
+
+  @doc """
+  Creates new UI metadata for a metric.
+  """
+  @spec create_ui_metadata(map()) :: {:ok, UIMetadata.t()} | {:error, Ecto.Changeset.t()}
+  def create_ui_metadata(attrs) do
+    UIMetadata.create(attrs)
+  end
+
+  @doc """
+  Updates UI metadata for a metric.
+  """
+  @spec update_ui_metadata(UIMetadata.t(), map()) ::
+          {:ok, UIMetadata.t()} | {:error, Ecto.Changeset.t()}
+  def update_ui_metadata(%UIMetadata{} = ui_metadata, attrs) do
+    UIMetadata.update(ui_metadata, attrs)
+  end
+
+  @doc """
+  Deletes UI metadata for a metric.
+  """
+  @spec delete_ui_metadata(UIMetadata.t()) ::
+          {:ok, UIMetadata.t()} | {:error, Ecto.Changeset.t()}
+  def delete_ui_metadata(%UIMetadata{} = ui_metadata) do
+    UIMetadata.delete(ui_metadata)
+  end
+
+  @doc """
+  Gets UI metadata by ID.
+  """
+  @spec get_ui_metadata(integer()) :: UIMetadata.t() | nil
+  def get_ui_metadata(id) do
+    UIMetadata.get(id)
+  end
+
+  @doc """
+  Gets UI metadata by metric category mapping ID.
+  """
+  @spec get_ui_metadata_by_mapping_id(integer()) :: UIMetadata.t() | nil
+  def get_ui_metadata_by_mapping_id(mapping_id) do
+    UIMetadata.get_by_mapping_id(mapping_id)
+  end
+
+  @doc """
+  Lists all UI metadata for a given mapping ID, ordered by display_order_in_mapping.
+  """
+  @spec list_ui_metadata_by_mapping_id(integer()) :: [UIMetadata.t()]
+  def list_ui_metadata_by_mapping_id(mapping_id) do
+    UIMetadata.list_by_mapping_id(mapping_id)
+  end
+
+  @doc """
+  Reorders UI metadata records within a mapping.
+  """
+  @spec reorder_ui_metadata([%{id: integer(), display_order_in_mapping: integer()}]) ::
+          :ok | {:error, any()}
+  def reorder_ui_metadata(new_order) do
+    UIMetadata.reorder(new_order)
+  end
+
+  @doc """
+  Lists all UI metadata.
+  """
+  @spec list_all_ui_metadata() :: [UIMetadata.t()]
+  def list_all_ui_metadata do
+    UIMetadata.list_all()
   end
 
   # High-level operations

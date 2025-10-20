@@ -51,6 +51,16 @@ defmodule Sanbase.DiscordBot.Utils do
     })
   end
 
+  @spec interaction_ack_ephemeral(Nostrum.Struct.Interaction.t()) :: {:ok} | {:error, any()}
+  def interaction_ack_ephemeral(interaction) do
+    Nostrum.Api.create_interaction_response(interaction, %{
+      # DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE
+      type: 5,
+      # EPHEMERAL flag
+      data: %{flags: @ephemeral_message_flags}
+    })
+  end
+
   @spec trim_message(String.t(), pos_integer()) :: String.t()
   def trim_message(message, max_length \\ 1950) do
     end_message =

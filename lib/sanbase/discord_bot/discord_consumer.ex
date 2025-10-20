@@ -57,6 +57,19 @@ defmodule Sanbase.DiscordConsumer do
           autocomplete: true
         }
       ]
+    },
+    %{
+      name: "verify",
+      description: "Verify your Santiment subscription to get PRO role",
+      options: [
+        %{
+          # STRING type
+          type: 3,
+          name: "code",
+          description: "Your verification code (e.g., PRO-AB12CD)",
+          required: true
+        }
+      ]
     }
   ]
 
@@ -83,6 +96,17 @@ defmodule Sanbase.DiscordConsumer do
 
   def handle_event({:READY, _data, _ws_state}) do
     Nostrum.Api.bulk_overwrite_global_application_commands(@commands)
+  end
+
+  def handle_event({
+        :INTERACTION_CREATE,
+        %Interaction{data: %ApplicationCommandInteractionData{name: "verify"}} = interaction,
+        _ws_state
+      }) do
+    warm_up(interaction)
+
+    CommandHandler.handle_interaction("verify", interaction, %{})
+    |> handle_response("verify", interaction, %{}, retry: false)
   end
 
   def handle_event({

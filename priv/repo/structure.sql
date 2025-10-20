@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.10 (Homebrew)
--- Dumped by pg_dump version 15.10 (Homebrew)
+-- Dumped from database version 15.1 (Homebrew)
+-- Dumped by pg_dump version 15.1 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -899,7 +899,7 @@ CREATE TABLE public.chat_messages (
     suggestions text[] DEFAULT ARRAY[]::text[],
     feedback_type character varying(255),
     CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY ((ARRAY['thumbs_up'::character varying, 'thumbs_down'::character varying])::text[])) OR (feedback_type IS NULL))),
-    CONSTRAINT valid_role CHECK (((role)::text = ANY (ARRAY[('user'::character varying)::text, ('assistant'::character varying)::text])))
+    CONSTRAINT valid_role CHECK (((role)::text = ANY ((ARRAY['user'::character varying, 'assistant'::character varying])::text[])))
 );
 
 
@@ -1377,6 +1377,44 @@ CREATE SEQUENCE public.discord_dashboards_id_seq
 --
 
 ALTER SEQUENCE public.discord_dashboards_id_seq OWNED BY public.discord_dashboards.id;
+
+
+--
+-- Name: discord_verification_codes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.discord_verification_codes (
+    id bigint NOT NULL,
+    code character varying(255) NOT NULL,
+    user_id bigint NOT NULL,
+    subscription_tier character varying(255) NOT NULL,
+    discord_user_id character varying(255),
+    discord_username character varying(255),
+    verified_at timestamp(0) without time zone,
+    expires_at timestamp(0) without time zone NOT NULL,
+    used boolean DEFAULT false,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: discord_verification_codes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.discord_verification_codes_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: discord_verification_codes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.discord_verification_codes_id_seq OWNED BY public.discord_verification_codes.id;
 
 
 --
@@ -5689,6 +5727,13 @@ ALTER TABLE ONLY public.discord_dashboards ALTER COLUMN id SET DEFAULT nextval('
 
 
 --
+-- Name: discord_verification_codes id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.discord_verification_codes ALTER COLUMN id SET DEFAULT nextval('public.discord_verification_codes_id_seq'::regclass);
+
+
+--
 -- Name: ecosystems id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6691,6 +6736,14 @@ ALTER TABLE ONLY public.classified_tweets
 
 ALTER TABLE ONLY public.discord_dashboards
     ADD CONSTRAINT discord_dashboards_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: discord_verification_codes discord_verification_codes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.discord_verification_codes
+    ADD CONSTRAINT discord_verification_codes_pkey PRIMARY KEY (id);
 
 
 --
@@ -8037,6 +8090,27 @@ CREATE INDEX discord_dashboards_dashboard_id_index ON public.discord_dashboards 
 --
 
 CREATE INDEX discord_dashboards_user_id_index ON public.discord_dashboards USING btree (user_id);
+
+
+--
+-- Name: discord_verification_codes_code_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX discord_verification_codes_code_index ON public.discord_verification_codes USING btree (code);
+
+
+--
+-- Name: discord_verification_codes_discord_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX discord_verification_codes_discord_user_id_index ON public.discord_verification_codes USING btree (discord_user_id);
+
+
+--
+-- Name: discord_verification_codes_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX discord_verification_codes_user_id_index ON public.discord_verification_codes USING btree (user_id);
 
 
 --
@@ -9415,6 +9489,14 @@ ALTER TABLE ONLY public.discord_dashboards
 
 ALTER TABLE ONLY public.discord_dashboards
     ADD CONSTRAINT discord_dashboards_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: discord_verification_codes discord_verification_codes_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.discord_verification_codes
+    ADD CONSTRAINT discord_verification_codes_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -11049,7 +11131,6 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250806103908);
 INSERT INTO public."schema_migrations" (version) VALUES (20250821111317);
 INSERT INTO public."schema_migrations" (version) VALUES (20250825074648);
 INSERT INTO public."schema_migrations" (version) VALUES (20250904142224);
-INSERT INTO public."schema_migrations" (version) VALUES (20250911114116);
 INSERT INTO public."schema_migrations" (version) VALUES (20250918083815);
 INSERT INTO public."schema_migrations" (version) VALUES (20250918093232);
 INSERT INTO public."schema_migrations" (version) VALUES (20250918110902);
@@ -11061,3 +11142,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250926101337);
 INSERT INTO public."schema_migrations" (version) VALUES (20250926101756);
 INSERT INTO public."schema_migrations" (version) VALUES (20250926115345);
 INSERT INTO public."schema_migrations" (version) VALUES (20251013121803);
+INSERT INTO public."schema_migrations" (version) VALUES (20251015073648);

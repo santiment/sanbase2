@@ -238,6 +238,9 @@ defmodule Sanbase.SocialData.MetricAdapter do
         "social_dominance_" <> _source ->
           Project.List.projects_slugs(preload?: false)
 
+        "sentiment_" <> _type_source ->
+          Project.List.projects_slugs(preload?: false)
+
         "community_messages_count_" <> _source ->
           Project.List.projects_by_non_null_field(:telegram_link) |> Enum.map(& &1.slug)
 

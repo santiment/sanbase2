@@ -18,11 +18,14 @@ defmodule Sanbase.Metric.Category.MetricCategoryMapping do
   @type t :: %__MODULE__{
           id: integer(),
           metric_registry_id: integer() | nil,
+          metric_registry: Registry.t() | nil,
           module: String.t() | nil,
           metric: String.t() | nil,
-          group_id: integer() | nil,
+          category: MetricCategory.t(),
+          category_id: integer(),
           group: MetricGroup.t() | nil,
-          metric_registry: Registry.t() | nil,
+          group_id: integer() | nil,
+          display_order: integer() | nil,
           inserted_at: DateTime.t(),
           updated_at: DateTime.t()
         }
@@ -38,6 +41,8 @@ defmodule Sanbase.Metric.Category.MetricCategoryMapping do
     belongs_to(:category, MetricCategory, foreign_key: :category_id)
     belongs_to(:group, MetricGroup, foreign_key: :group_id)
 
+    field(:display_order, :integer)
+
     timestamps()
   end
 
@@ -47,12 +52,25 @@ defmodule Sanbase.Metric.Category.MetricCategoryMapping do
   @spec changeset(t(), map()) :: Ecto.Changeset.t()
   def changeset(%__MODULE__{} = mapping, attrs) do
     mapping
-    |> cast(attrs, [:metric_registry_id, :module, :metric, :category_id, :group_id])
+    |> cast(attrs, [
+      :metric_registry_id,
+      :module,
+      :metric,
+      :category_id,
+      :group_id,
+      :display_order
+    ])
     |> validate_metric_reference()
     |> validate_length(:module, max: 255)
     |> validate_length(:metric, max: 255)
+    |> validate_required([:category_id])
+    |> foreign_key_constraint(:category_id)
     |> foreign_key_constraint(:metric_registry_id)
     |> foreign_key_constraint(:group_id)
+    # The unique constraints don't apply when the field is nil.
+    # Either metric_registry_id or module/metric is set.
+    |> unique_constraint(:metric_registry_id)
+    |> unique_constraint([:module, :metric])
   end
 
   @doc """
@@ -148,6 +166,37 @@ defmodule Sanbase.Metric.Category.MetricCategoryMapping do
   end
 
   @doc """
+  Gets mappings for a specific category and group, ordered by display_order.
+  """
+  @spec get_by_category_and_group(integer(), integer()) :: [t()]
+  def get_by_category_and_group(category_id, group_id)
+      when is_integer(category_id) and is_integer(group_id) do
+    query =
+      from(m in __MODULE__,
+        where: m.category_id == ^category_id and m.group_id == ^group_id,
+        preload: [:category, :group, :metric_registry],
+        order_by: [asc: m.display_order, asc: m.id]
+      )
+
+    Repo.all(query)
+  end
+
+  @doc """
+  Gets ungrouped mappings for a category (where group_id is nil), ordered by display_order.
+  """
+  @spec get_ungrouped_by_category(integer()) :: [t()]
+  def get_ungrouped_by_category(category_id) when is_integer(category_id) do
+    query =
+      from(m in __MODULE__,
+        where: m.category_id == ^category_id and is_nil(m.group_id),
+        preload: [:category, :group, :metric_registry],
+        order_by: [asc: m.display_order, asc: m.id]
+      )
+
+    Repo.all(query)
+  end
+
+  @doc """
   Lists all metric categories mappings with their related data.
   """
   @spec list_all() :: [t()]
@@ -200,7 +249,34 @@ defmodule Sanbase.Metric.Category.MetricCategoryMapping do
     end
   end
 
+  @doc """
+  Reorders metric category mappings by updating their display_order.
+
+  The new_order parameter should be a list of maps with mapping ID and display_order keys.
+  """
+  @spec reorder_mappings([%{id: integer(), display_order: integer()}]) :: :ok | {:error, any()}
+  def reorder_mappings(new_order) when is_list(new_order) do
+    Repo.transaction(fn -> Enum.each(new_order, &update_mapping_order/1) end)
+    |> case do
+      {:ok, _} -> :ok
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
   # Private functions
+
+  defp update_mapping_order(%{id: id, display_order: display_order}) do
+    case get(id) do
+      nil ->
+        Repo.rollback("Mapping with ID #{id} not found")
+
+      mapping ->
+        case __MODULE__.update(mapping, %{display_order: display_order}) do
+          {:ok, _} -> :ok
+          {:error, error} -> Repo.rollback(error)
+        end
+    end
+  end
 
   defp validate_metric_reference(changeset) do
     metric_registry_id = get_field(changeset, :metric_registry_id)

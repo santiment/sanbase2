@@ -103,6 +103,12 @@ defmodule SanbaseWeb.Categorization.GroupLive.Index do
                 scope="col"
                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
               >
+                Metrics Count
+              </th>
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
                 Actions
               </th>
             </tr>
@@ -124,7 +130,10 @@ defmodule SanbaseWeb.Categorization.GroupLive.Index do
         </table>
         <.empty_category_row :if={Enum.empty?(category.groups)} category={category} />
 
-        <.add_group_button category_id={category.id} />
+        <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4 mt-4">
+          <.add_group_button category_id={category.id} />
+          <.button_reorder_ungrouped_metrics category={category} />
+        </div>
       </div>
     </div>
     """
@@ -150,6 +159,10 @@ defmodule SanbaseWeb.Categorization.GroupLive.Index do
       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
         {@group.name}
       </td>
+
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        {length(@group.mappings)}
+      </td>
       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
         <.group_actions group={@group} />
       </td>
@@ -169,11 +182,32 @@ defmodule SanbaseWeb.Categorization.GroupLive.Index do
 
   def add_group_button(assigns) do
     ~H"""
-    <div class="mt-4">
+    <div>
       <AvailableMetricsComponents.link_button
         href={~p"/admin/metric_registry/categorization/groups/new?category_id=#{@category_id}"}
         text="Add Group"
         icon="hero-plus"
+      />
+    </div>
+    """
+  end
+
+  attr :category, :map, required: true
+
+  def button_reorder_ungrouped_metrics(assigns) do
+    ungrouped_metrics_count =
+      assigns.category.mappings
+      |> Enum.filter(&is_nil(&1.group_id))
+      |> length()
+
+    assigns = assign(assigns, ungrouped_metrics_count: ungrouped_metrics_count)
+
+    ~H"""
+    <div class="mt-4">
+      <AvailableMetricsComponents.link_button
+        href={~p"/admin/metric_registry/categorization/metrics_order?category_id=#{@category.id}"}
+        text={"Reorder Ungrouped Metrics (#{@ungrouped_metrics_count})"}
+        icon="hero-arrows-up-down"
       />
     </div>
     """
@@ -184,6 +218,14 @@ defmodule SanbaseWeb.Categorization.GroupLive.Index do
   def group_actions(assigns) do
     ~H"""
     <div class="flex space-x-2">
+      <.link
+        navigate={
+          ~p"/admin/metric_registry/categorization/metrics_order?category_id=#{@group.category_id}&group_id=#{@group.id}"
+        }
+        class="text-green-600 hover:text-green-900"
+      >
+        Reorder Metrics in Group
+      </.link>
       <.link
         navigate={~p"/admin/metric_registry/categorization/groups/edit/#{@group.id}"}
         class="text-blue-600 hover:text-blue-900"

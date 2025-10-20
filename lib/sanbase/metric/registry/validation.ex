@@ -109,7 +109,7 @@ defmodule Sanbase.Metric.Registry.Validation do
         changeset,
         :parameters,
         """
-        There provided parameters have invalid values in the metric #{metric}. Different parameters have different constaints (interval, number, etc.)
+        There provided parameters have invalid values in the metric #{metric}. Different parameters have different constraints (interval, number, etc.)
         Invalid parameters: #{Enum.join(invalid_parameters, ", ")}
         """
       )

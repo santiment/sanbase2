@@ -49,6 +49,15 @@ defmodule Sanbase.Metric.Category do
   end
 
   @doc """
+  Creates a metric category if it doesn't exist.
+  """
+  @spec create_category_if_not_exists(map()) ::
+          {:ok, MetricCategory.t()}
+  def create_category_if_not_exists(attrs) do
+    MetricCategory.create_if_not_exists(attrs)
+  end
+
+  @doc """
   Updates a metric category.
   """
   @spec update_category(MetricCategory.t(), map()) ::
@@ -149,10 +158,10 @@ defmodule Sanbase.Metric.Category do
   @doc """
   Creates a metric group if it doesn't exist.
   """
-  @spec create_group_if_not_exists(String.t(), integer(), integer()) ::
+  @spec create_group_if_not_exists(map()) ::
           {:ok, MetricGroup.t()}
-  def create_group_if_not_exists(name, display_order, category_id) do
-    MetricGroup.create_if_not_exists(name, display_order, category_id)
+  def create_group_if_not_exists(attrs) do
+    MetricGroup.create_if_not_exists(attrs)
   end
 
   @doc """
@@ -215,26 +224,27 @@ defmodule Sanbase.Metric.Category do
   end
 
   @doc """
-  Creates a mapping by metric registry ID.
+  Gets metrics for a specific category and group, ordered by display_order.
   """
-  @spec create_mapping_by_metric_registry_id(integer(), integer() | nil, integer() | nil) ::
-          {:ok, MetricCategoryMapping.t()} | {:error, Ecto.Changeset.t()}
-  def create_mapping_by_metric_registry_id(metric_registry_id, category_id, group_id) do
-    MetricCategoryMapping.create_by_metric_registry_id(metric_registry_id, category_id, group_id)
+  @spec get_metrics_for_group(integer(), integer()) :: [MetricCategoryMapping.t()]
+  def get_metrics_for_group(category_id, group_id) do
+    MetricCategoryMapping.get_by_category_and_group(category_id, group_id)
   end
 
   @doc """
-  Creates a mapping by module and metric.
+  Gets ungrouped metrics for a category, ordered by display_order.
   """
-  @spec create_mapping_by_module_and_metric(
-          String.t(),
-          String.t(),
-          integer() | nil,
-          integer() | nil
-        ) ::
-          {:ok, MetricCategoryMapping.t()} | {:error, Ecto.Changeset.t()}
-  def create_mapping_by_module_and_metric(module, metric, category_id, group_id) do
-    MetricCategoryMapping.create_by_module_and_metric(module, metric, category_id, group_id)
+  @spec get_ungrouped_metrics(integer()) :: [MetricCategoryMapping.t()]
+  def get_ungrouped_metrics(category_id) do
+    MetricCategoryMapping.get_ungrouped_by_category(category_id)
+  end
+
+  @doc """
+  Reorders metric category mappings.
+  """
+  @spec reorder_mappings([%{id: integer(), display_order: integer()}]) :: :ok | {:error, any()}
+  def reorder_mappings(new_order) do
+    MetricCategoryMapping.reorder_mappings(new_order)
   end
 
   @doc """

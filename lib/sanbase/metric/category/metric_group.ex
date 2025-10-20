@@ -145,12 +145,11 @@ defmodule Sanbase.Metric.Category.MetricGroup do
   @doc """
   Creates a metric group if it doesn't exist already.
   """
-  @spec create_if_not_exists(String.t(), integer(), integer()) :: {:ok, t()}
-  def create_if_not_exists(name, display_order, category_id)
-      when is_binary(name) and is_integer(display_order) and is_integer(category_id) do
-    case get_by_name_and_category(name, category_id) do
+  @spec create_if_not_exists(map()) :: {:ok, t()}
+  def create_if_not_exists(attrs) do
+    case get_by_name_and_category(Map.fetch!(attrs, :name), Map.fetch!(attrs, :category_id)) do
       nil ->
-        case create(%{name: name, display_order: display_order, category_id: category_id}) do
+        case create(attrs) do
           {:ok, group} -> {:ok, group}
           {:error, changeset} -> {:error, changeset}
         end

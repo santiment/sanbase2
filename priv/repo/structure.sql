@@ -2309,6 +2309,7 @@ CREATE TABLE public.metric_category_mappings (
     group_id bigint,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
+    display_order integer,
     CONSTRAINT only_one_metric_identifier CHECK ((((metric_registry_id IS NOT NULL) AND (module IS NULL) AND (metric IS NULL)) OR ((metric_registry_id IS NULL) AND (module IS NOT NULL) AND (metric IS NOT NULL))))
 );
 
@@ -11143,3 +11144,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250926101756);
 INSERT INTO public."schema_migrations" (version) VALUES (20250926115345);
 INSERT INTO public."schema_migrations" (version) VALUES (20251013121803);
 INSERT INTO public."schema_migrations" (version) VALUES (20251015073648);
+INSERT INTO public."schema_migrations" (version) VALUES (20251014144144);

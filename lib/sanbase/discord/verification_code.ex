@@ -59,36 +59,50 @@ defmodule Sanbase.Discord.VerificationCode do
         where: vc.code == ^code
       )
 
+    with {:ok, verification_code} <- find_code(query),
+         :ok <- check_not_used(verification_code),
+         :ok <- check_not_expired(verification_code) do
+      update_code_with_discord_user(verification_code, discord_user_id)
+    end
+  end
+
+  defp find_code(query) do
     case Repo.one(query) do
-      nil ->
-        {:error, :invalid_code}
+      nil -> {:error, :invalid_code}
+      code -> {:ok, code}
+    end
+  end
 
-      verification_code ->
-        # Check if already used
-        if verification_code.used do
-          {:error, :already_used}
-          # Check if expired
-        else
-          if DateTime.compare(verification_code.expires_at, DateTime.utc_now()) != :gt do
-            {:error, :expired}
-          else
-            # Get Discord username
-            discord_username = get_discord_username(discord_user_id)
+  defp check_not_used(verification_code) do
+    if verification_code.used do
+      {:error, :already_used}
+    else
+      :ok
+    end
+  end
 
-            verification_code
-            |> changeset(%{
-              discord_user_id: discord_user_id,
-              discord_username: discord_username,
-              verified_at: DateTime.utc_now(),
-              used: true
-            })
-            |> Repo.update()
-            |> case do
-              {:ok, updated_code} -> {:ok, updated_code}
-              {:error, _changeset} -> {:error, :verification_failed}
-            end
-          end
-        end
+  defp check_not_expired(verification_code) do
+    if DateTime.compare(verification_code.expires_at, DateTime.utc_now()) == :gt do
+      :ok
+    else
+      {:error, :expired}
+    end
+  end
+
+  defp update_code_with_discord_user(verification_code, discord_user_id) do
+    discord_username = get_discord_username(discord_user_id)
+
+    verification_code
+    |> changeset(%{
+      discord_user_id: discord_user_id,
+      discord_username: discord_username,
+      verified_at: DateTime.utc_now(),
+      used: true
+    })
+    |> Repo.update()
+    |> case do
+      {:ok, updated_code} -> {:ok, updated_code}
+      {:error, _changeset} -> {:error, :verification_failed}
     end
   end
 

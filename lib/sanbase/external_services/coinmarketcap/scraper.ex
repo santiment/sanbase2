@@ -43,6 +43,15 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
 
   def parse_project_page(html, project_info) do
     {:ok, html} = Floki.parse_document(html)
+    contract = main_contract_address(html)
+
+    if is_binary(contract) and is_binary(project_info.main_contract_address) and
+         String.downcase(contract) != String.downcase(project_info.main_contract_address) do
+      Logger.info("""
+      [CMCScraperDiscrepancyLog] Contract address mismatch for #{project_info.slug}.
+      Existing: #{project_info.main_contract_address}, New: #{contract}
+      """)
+    end
 
     %{
       project_info

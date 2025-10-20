@@ -19,6 +19,8 @@ defmodule SanbaseWeb.CategorizationLive.Index do
        search_query: "",
        filter_source: "all",
        filter_status: "all",
+       filter_ui_metadata: "all",
+       filter_sanbase_display: "all",
        selected_category_id: nil,
        loading: true
      )
@@ -30,6 +32,8 @@ defmodule SanbaseWeb.CategorizationLive.Index do
     search_query = params["search"] || ""
     filter_source = params["source"] || "all"
     filter_status = params["status"] || "all"
+    filter_ui_metadata = params["ui_metadata"] || "all"
+    filter_sanbase_display = params["sanbase_display"] || "all"
     selected_category_id = params["category_id"]
 
     {:noreply,
@@ -38,6 +42,8 @@ defmodule SanbaseWeb.CategorizationLive.Index do
        search_query: search_query,
        filter_source: filter_source,
        filter_status: filter_status,
+       filter_ui_metadata: filter_ui_metadata,
+       filter_sanbase_display: filter_sanbase_display,
        selected_category_id: selected_category_id
      )
      |> apply_filters()}
@@ -64,6 +70,8 @@ defmodule SanbaseWeb.CategorizationLive.Index do
         search_query={@search_query}
         filter_source={@filter_source}
         filter_status={@filter_status}
+        filter_ui_metadata={@filter_ui_metadata}
+        filter_sanbase_display={@filter_sanbase_display}
         selected_category_id={@selected_category_id}
         categories={@categories}
       />
@@ -109,6 +117,8 @@ defmodule SanbaseWeb.CategorizationLive.Index do
   attr :search_query, :string, required: true
   attr :filter_source, :string, required: true
   attr :filter_status, :string, required: true
+  attr :filter_ui_metadata, :string, required: true
+  attr :filter_sanbase_display, :string, required: true
   attr :selected_category_id, :any, required: true
   attr :categories, :list, required: true
 
@@ -160,6 +170,30 @@ defmodule SanbaseWeb.CategorizationLive.Index do
               | Enum.map(@categories, fn c -> {c.name, c.id} end)
             ]}
           />
+
+          <.input
+            type="select"
+            name="ui_metadata"
+            value={@filter_ui_metadata}
+            label="UI Metadata"
+            options={[
+              {"All", "all"},
+              {"Has UI Metadata", "has_metadata"},
+              {"No UI Metadata", "no_metadata"}
+            ]}
+          />
+
+          <.input
+            type="select"
+            name="sanbase_display"
+            value={@filter_sanbase_display}
+            label="Sanbase Display"
+            options={[
+              {"All", "all"},
+              {"Shown on Sanbase", "shown"},
+              {"Hidden from Sanbase", "hidden"}
+            ]}
+          />
         </div>
       </.simple_form>
     </div>
@@ -172,14 +206,18 @@ defmodule SanbaseWeb.CategorizationLive.Index do
   def metrics_stats(assigns) do
     categorized_count = Enum.count(assigns.filtered_metrics, & &1.categorized?)
     not_categorized_count = length(assigns.filtered_metrics) - categorized_count
+    has_ui_metadata_count = Enum.count(assigns.filtered_metrics, & &1.has_ui_metadata?)
+    shown_on_sanbase_count = Enum.count(assigns.filtered_metrics, & &1.shown_on_sanbase?)
 
     assigns =
       assigns
       |> assign(categorized_count: categorized_count)
       |> assign(not_categorized_count: not_categorized_count)
+      |> assign(has_ui_metadata_count: has_ui_metadata_count)
+      |> assign(shown_on_sanbase_count: shown_on_sanbase_count)
 
     ~H"""
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
       <div class="bg-white p-4 rounded-lg shadow">
         <div class="text-sm text-gray-600">Total Metrics</div>
         <div class="text-2xl font-bold text-gray-800">{length(@metrics)}</div>
@@ -196,11 +234,20 @@ defmodule SanbaseWeb.CategorizationLive.Index do
         <div class="text-sm text-gray-600">Not Categorized</div>
         <div class="text-2xl font-bold text-orange-600">{@not_categorized_count}</div>
       </div>
+      <div class="bg-white p-4 rounded-lg shadow">
+        <div class="text-sm text-gray-600">Has UI Metadata</div>
+        <div class="text-2xl font-bold text-blue-600">{@has_ui_metadata_count}</div>
+      </div>
+      <div class="bg-white p-4 rounded-lg shadow">
+        <div class="text-sm text-gray-600">Shown on Sanbase</div>
+        <div class="text-2xl font-bold text-purple-600">{@shown_on_sanbase_count}</div>
+      </div>
     </div>
     """
   end
 
   attr :filtered_metrics, :list, required: true
+  attr :categories_colors, :map, required: true
 
   def metrics_table(assigns) do
     ~H"""
@@ -229,6 +276,12 @@ defmodule SanbaseWeb.CategorizationLive.Index do
                   (within category/group)
                 </div>
               </th>
+              <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                UI
+              </th>
+              <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Sanbase
+              </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
@@ -252,6 +305,7 @@ defmodule SanbaseWeb.CategorizationLive.Index do
   end
 
   attr :metric, :map, required: true
+  attr :categories_colors, :map, required: true
 
   def metric_row(assigns) do
     ~H"""
@@ -293,32 +347,55 @@ defmodule SanbaseWeb.CategorizationLive.Index do
       <td class="px-6 py-4 whitespace-nowrap text-sm">
         {@metric.display_order || "-"}
       </td>
+
+      <td class="px-2 py-4 whitespace-nowrap text-center">
+        <.icon :if={@metric.has_ui_metadata?} name="hero-check-circle" class="w-5 h-5 text-green-600" />
+        <.icon :if={!@metric.has_ui_metadata?} name="hero-x-circle" class="w-5 h-5 text-red-400" />
+      </td>
+
+      <td class="px-2 py-4 whitespace-nowrap text-center">
+        <.icon :if={@metric.shown_on_sanbase?} name="hero-eye" class="w-5 h-5 text-green-600" />
+        <.icon :if={!@metric.shown_on_sanbase?} name="hero-eye-slash" class="w-5 h-5 text-gray-400" />
+      </td>
+
       <td class="px-6 py-4 whitespace-nowrap text-sm">
-        <.link
-          :if={@metric.mapping_id}
-          navigate={~p"/admin/metric_registry/categorization/mappings/edit/#{@metric.mapping_id}"}
-          class="text-blue-600 hover:text-blue-900 mr-3"
-        >
-          Edit
-        </.link>
-        <.link
-          :if={!@metric.mapping_id}
-          navigate={
-            ~p"/admin/metric_registry/categorization/mappings/new?#{build_new_params(@metric)}"
-          }
-          class="text-green-600 hover:text-green-900"
-        >
-          Assign
-        </.link>
-        <button
-          :if={@metric.mapping_id}
-          phx-click="delete_mapping"
-          phx-value-id={@metric.mapping_id}
-          class="text-red-600 hover:text-red-900"
-          data-confirm="Are you sure you want to remove this categorization?"
-        >
-          Remove
-        </button>
+        <div class="flex flex-col space-y-1">
+          <.link
+            :if={!@metric.mapping_id}
+            navigate={
+              ~p"/admin/metric_registry/categorization/mappings/new?#{build_new_params(@metric)}"
+            }
+            class="text-green-600 hover:text-green-900"
+          >
+            Assign to Category
+          </.link>
+          <.link
+            :if={@metric.mapping_id}
+            navigate={
+              ~p"/admin/metric_registry/categorization/ui_metadata/list/#{@metric.mapping_id}"
+            }
+            class="text-purple-600 hover:text-purple-900"
+          >
+            Manage UI Metadata
+          </.link>
+
+          <.link
+            :if={@metric.mapping_id}
+            navigate={~p"/admin/metric_registry/categorization/mappings/edit/#{@metric.mapping_id}"}
+            class="text-blue-600 hover:text-blue-900"
+          >
+            Edit Categorization
+          </.link>
+          <button
+            :if={@metric.mapping_id}
+            phx-click="delete_mapping"
+            phx-value-id={@metric.mapping_id}
+            class="text-red-600 hover:text-red-900 text-left"
+            data-confirm="Are you sure you want to remove this categorization?"
+          >
+            Remove Categorization
+          </button>
+        </div>
       </td>
     </tr>
     """
@@ -329,6 +406,8 @@ defmodule SanbaseWeb.CategorizationLive.Index do
     search_query = params["search"] || ""
     filter_source = params["source"] || "all"
     filter_status = params["status"] || "all"
+    filter_ui_metadata = params["ui_metadata"] || "all"
+    filter_sanbase_display = params["sanbase_display"] || "all"
     category_id = params["category_id"] || ""
 
     query_params =
@@ -336,6 +415,8 @@ defmodule SanbaseWeb.CategorizationLive.Index do
       |> maybe_add_param("search", search_query)
       |> maybe_add_param("source", filter_source, "all")
       |> maybe_add_param("status", filter_status, "all")
+      |> maybe_add_param("ui_metadata", filter_ui_metadata, "all")
+      |> maybe_add_param("sanbase_display", filter_sanbase_display, "all")
       |> maybe_add_param("category_id", category_id)
 
     {:noreply, push_patch(socket, to: ~p"/admin/metric_registry/categorization?#{query_params}")}
@@ -366,6 +447,11 @@ defmodule SanbaseWeb.CategorizationLive.Index do
   defp load_data(socket) do
     categories = Category.list_categories()
     mappings = MetricCategoryMapping.list_all()
+    ui_metadata_list = Category.list_all_ui_metadata()
+
+    ui_metadata_by_mapping_id =
+      ui_metadata_list
+      |> Enum.group_by(& &1.metric_category_mapping_id)
 
     mappings_by_registry_id =
       mappings
@@ -377,8 +463,8 @@ defmodule SanbaseWeb.CategorizationLive.Index do
       |> Enum.filter(&(&1.module && &1.metric))
       |> Map.new(&{{&1.module, &1.metric}, &1})
 
-    registry_metrics = get_registry_metrics(mappings_by_registry_id)
-    code_metrics = get_code_metrics(mappings_by_module_metric)
+    registry_metrics = get_registry_metrics(mappings_by_registry_id, ui_metadata_by_mapping_id)
+    code_metrics = get_code_metrics(mappings_by_module_metric, ui_metadata_by_mapping_id)
 
     all_metrics = registry_metrics ++ code_metrics
 
@@ -408,11 +494,15 @@ defmodule SanbaseWeb.CategorizationLive.Index do
     )
   end
 
-  defp get_registry_metrics(mappings_by_registry_id) do
+  defp get_registry_metrics(mappings_by_registry_id, ui_metadata_by_mapping_id) do
     Registry.all()
     |> Registry.resolve()
     |> Enum.map(fn registry ->
       mapping = Map.get(mappings_by_registry_id, registry.id)
+      ui_metadata_list = mapping && Map.get(ui_metadata_by_mapping_id, mapping.id, [])
+
+      has_ui_metadata? = ui_metadata_list != [] && ui_metadata_list != nil
+      shown_on_sanbase? = has_ui_metadata? && Enum.any?(ui_metadata_list, & &1.show_on_sanbase)
 
       %{
         metric: registry.metric,
@@ -421,6 +511,7 @@ defmodule SanbaseWeb.CategorizationLive.Index do
         source_display: "Registry",
         source_id: registry.id,
         module: nil,
+        mapping: mapping,
         mapping_id: mapping && mapping.id,
         category_id: mapping && mapping.category_id,
         category_name: mapping && mapping.category && mapping.category.name,
@@ -430,12 +521,14 @@ defmodule SanbaseWeb.CategorizationLive.Index do
         # The ungrouped metrics should appear first
         group_display_order: (mapping && mapping.group && mapping.group.display_order) || -1,
         display_order: mapping && mapping.display_order,
-        categorized?: not is_nil(mapping)
+        categorized?: not is_nil(mapping),
+        has_ui_metadata?: has_ui_metadata?,
+        shown_on_sanbase?: shown_on_sanbase?
       }
     end)
   end
 
-  defp get_code_metrics(mappings_by_module_metric) do
+  defp get_code_metrics(mappings_by_module_metric, ui_metadata_by_mapping_id) do
     registry_metrics_mapset =
       Registry.all()
       |> Registry.resolve()
@@ -449,7 +542,11 @@ defmodule SanbaseWeb.CategorizationLive.Index do
     |> Enum.map(fn {metric, module} ->
       module_str = inspect(module)
       mapping = Map.get(mappings_by_module_metric, {module_str, metric})
+      ui_metadata_list = mapping && Map.get(ui_metadata_by_mapping_id, mapping.id, [])
       {:ok, human_readable_name} = Sanbase.Metric.human_readable_name(metric)
+
+      has_ui_metadata? = ui_metadata_list != [] && ui_metadata_list != nil
+      shown_on_sanbase? = has_ui_metadata? && Enum.any?(ui_metadata_list, & &1.show_on_sanbase)
 
       %{
         metric: metric,
@@ -458,6 +555,7 @@ defmodule SanbaseWeb.CategorizationLive.Index do
         source_display: format_module_name(module),
         source_id: nil,
         module: module_str,
+        mapping: mapping,
         mapping_id: mapping && mapping.id,
         category_id: mapping && mapping.category_id,
         category_name: mapping && mapping.category && mapping.category.name,
@@ -467,7 +565,9 @@ defmodule SanbaseWeb.CategorizationLive.Index do
         # The ungrouped metrics should appear first
         group_display_order: (mapping && mapping.group && mapping.group.display_order) || -1,
         display_order: mapping && mapping.display_order,
-        categorized?: not is_nil(mapping)
+        categorized?: not is_nil(mapping),
+        has_ui_metadata?: has_ui_metadata?,
+        shown_on_sanbase?: shown_on_sanbase?
       }
     end)
   end
@@ -478,6 +578,8 @@ defmodule SanbaseWeb.CategorizationLive.Index do
       search_query: search_query,
       filter_source: filter_source,
       filter_status: filter_status,
+      filter_ui_metadata: filter_ui_metadata,
+      filter_sanbase_display: filter_sanbase_display,
       selected_category_id: selected_category_id
     } = socket.assigns
 
@@ -486,6 +588,8 @@ defmodule SanbaseWeb.CategorizationLive.Index do
       |> filter_by_search(search_query)
       |> filter_by_source(filter_source)
       |> filter_by_status(filter_status)
+      |> filter_by_ui_metadata(filter_ui_metadata)
+      |> filter_by_sanbase_display(filter_sanbase_display)
       |> filter_by_category(selected_category_id)
 
     assign(socket, filtered_metrics: filtered_metrics)
@@ -525,6 +629,22 @@ defmodule SanbaseWeb.CategorizationLive.Index do
   defp filter_by_category(metrics, category_id) when is_integer(category_id) do
     Enum.filter(metrics, &(&1.category_id == category_id))
   end
+
+  defp filter_by_ui_metadata(metrics, "all"), do: metrics
+
+  defp filter_by_ui_metadata(metrics, "has_metadata"),
+    do: Enum.filter(metrics, & &1.has_ui_metadata?)
+
+  defp filter_by_ui_metadata(metrics, "no_metadata"),
+    do: Enum.filter(metrics, &(not &1.has_ui_metadata?))
+
+  defp filter_by_sanbase_display(metrics, "all"), do: metrics
+
+  defp filter_by_sanbase_display(metrics, "shown"),
+    do: Enum.filter(metrics, & &1.shown_on_sanbase?)
+
+  defp filter_by_sanbase_display(metrics, "hidden"),
+    do: Enum.filter(metrics, &(not &1.shown_on_sanbase?))
 
   defp format_module_name(module) do
     module

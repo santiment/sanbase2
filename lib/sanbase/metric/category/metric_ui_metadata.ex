@@ -57,6 +57,8 @@ defmodule Sanbase.Metric.UIMetadata do
     |> validate_required([:metric_category_mapping_id])
     |> validate_json_args()
     |> foreign_key_constraint(:metric_category_mapping_id)
+    |> unique_constraint(:ui_human_readable_name)
+    |> unique_constraint(:ui_key)
   end
 
   @doc """

@@ -376,7 +376,7 @@ defmodule SanbaseWeb.CategorizationLive.Index do
             }
             class="text-purple-600 hover:text-purple-900"
           >
-            Manage UI Metadata
+            {"Manage UI Metadata (#{length(@metric.mapping.ui_metadata_list)})"}
           </.link>
 
           <.link

@@ -332,7 +332,7 @@ defmodule Sanbase.Accounts.UserStats do
     sql = """
     SELECT DISTINCT user_id
     FROM api_call_data
-    WHERE dt < toDateTime({{since_datetime}}) AND user_id != 0
+    WHERE user_id != 0
     GROUP BY user_id
     HAVING MAX(dt) < toDateTime({{since_datetime}})
     """

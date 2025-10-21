@@ -13,14 +13,13 @@ defmodule SanbaseWeb.UserStatsLive do
       |> assign(:total_count, 0)
       |> assign(:loading, false)
       |> assign(:error, nil)
-      |> assign(:csv_content, nil)
 
     {:ok, socket}
   end
 
   def handle_event("search", params, socket) do
-    inactive_days = String.to_integer(params["inactive_days"] || "14")
-    prior_activity_days = String.to_integer(params["prior_activity_days"] || "30")
+    inactive_days = parse_integer(params["inactive_days"], 14)
+    prior_activity_days = parse_integer(params["prior_activity_days"], 30)
     require_prior_activity = params["require_prior_activity"] == "true"
 
     socket =
@@ -50,21 +49,12 @@ defmodule SanbaseWeb.UserStatsLive do
            10_000
          ) do
       {:ok, users} ->
-        csv_result = generate_csv(users)
-
-        csv_content =
-          case csv_result do
-            {:ok, content} -> content
-            {:error, _} -> nil
-          end
-
         socket =
           socket
           |> assign(:inactive_users, users)
           |> assign(:total_count, length(users))
           |> assign(:loading, false)
           |> assign(:error, nil)
-          |> assign(:csv_content, csv_content)
 
         {:noreply, socket}
 
@@ -75,25 +65,9 @@ defmodule SanbaseWeb.UserStatsLive do
           |> assign(:total_count, 0)
           |> assign(:loading, false)
           |> assign(:error, reason)
-          |> assign(:csv_content, nil)
 
         {:noreply, socket}
     end
-  end
-
-  defp generate_csv(users) do
-    csv_content =
-      ["email,name"]
-      |> Enum.concat(
-        Enum.map(users, fn user ->
-          "#{user.email || ""},#{user.name || ""}"
-        end)
-      )
-      |> Enum.join("\n")
-
-    {:ok, csv_content}
-  rescue
-    _e in _ -> {:error, "Failed to generate CSV"}
   end
 
   def render(assigns) do
@@ -115,7 +89,9 @@ defmodule SanbaseWeb.UserStatsLive do
           :if={not @loading}
           inactive_users={@inactive_users}
           total_count={@total_count}
-          csv_content={@csv_content}
+          inactive_days={@inactive_days}
+          prior_activity_days={@prior_activity_days}
+          require_prior_activity={@require_prior_activity}
           filename={"inactive_users_#{DateTime.utc_now() |> DateTime.to_date()}.csv"}
         />
 
@@ -239,7 +215,9 @@ defmodule SanbaseWeb.UserStatsLive do
 
   attr :inactive_users, :list, required: true
   attr :total_count, :integer, required: true
-  attr :csv_content, :string, required: false
+  attr :inactive_days, :integer, required: true
+  attr :prior_activity_days, :integer, required: true
+  attr :require_prior_activity, :boolean, required: true
   attr :filename, :string, required: false
 
   defp results_section(assigns) do
@@ -254,8 +232,8 @@ defmodule SanbaseWeb.UserStatsLive do
         </div>
 
         <.link
-          :if={@csv_content && @inactive_users != []}
-          href={~p"/download_inactive_users_csv?data=#{@csv_content}"}
+          :if={@inactive_users != []}
+          href={"/download_inactive_users_csv?inactive_days=#{@inactive_days}&prior_activity_days=#{@prior_activity_days}&require_prior_activity=#{@require_prior_activity}"}
           download={@filename}
           class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
         >
@@ -321,4 +299,13 @@ defmodule SanbaseWeb.UserStatsLive do
     </div>
     """
   end
+
+  defp parse_integer(value, default) when is_binary(value) do
+    case Integer.parse(value) do
+      {num, _} -> num
+      :error -> default
+    end
+  end
+
+  defp parse_integer(nil, default), do: default
 end

@@ -119,6 +119,34 @@ defmodule Sanbase.Metric.Category.MetricCategoryMapping do
   end
 
   @doc """
+  Gets a metric categories mapping by metric_registry_id
+  """
+  @spec get_by_metric_registry_id(integer()) :: t() | nil
+  def get_by_metric_registry_id(metric_registry_id) when is_integer(metric_registry_id) do
+    query =
+      from(m in __MODULE__,
+        where: m.metric_registry_id == ^metric_registry_id,
+        preload: [:category, :group, :metric_registry, :ui_metadata_list]
+      )
+
+    Repo.one(query)
+  end
+
+  @doc """
+  Gets a metric categories mapping by module and metric
+  """
+  @spec get_by_module_and_metric(String.t(), String.t()) :: t() | nil
+  def get_by_module_and_metric(module, metric) when is_binary(module) and is_binary(module) do
+    query =
+      from(m in __MODULE__,
+        where: m.module == ^module and m.metric == ^metric,
+        preload: [:category, :group, :metric_registry, :ui_metadata_list]
+      )
+
+    Repo.one(query)
+  end
+
+  @doc """
   Gets mappings by metric registry ID.
   """
   @spec get_by_metric_registry_id(integer()) :: [t()]

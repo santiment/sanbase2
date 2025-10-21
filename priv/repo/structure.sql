@@ -8395,6 +8395,20 @@ CREATE UNIQUE INDEX metric_registry_sync_runs_uuid_sync_type_index ON public.met
 
 
 --
+-- Name: metric_ui_metadata_ui_human_readable_name_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX metric_ui_metadata_ui_human_readable_name_index ON public.metric_ui_metadata USING btree (ui_human_readable_name);
+
+
+--
+-- Name: metric_ui_metadata_ui_key_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX metric_ui_metadata_ui_key_index ON public.metric_ui_metadata USING btree (ui_key);
+
+
+--
 -- Name: metrics_name_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11126,3 +11140,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20251013121803);
 INSERT INTO public."schema_migrations" (version) VALUES (20251014144144);
 INSERT INTO public."schema_migrations" (version) VALUES (20251016133413);
 INSERT INTO public."schema_migrations" (version) VALUES (20251017100000);
+INSERT INTO public."schema_migrations" (version) VALUES (20251021133911);

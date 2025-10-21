@@ -25,7 +25,9 @@ defmodule Sanbase.Metric.Category.Scripts.CopyUIMetadata do
   end
 
   defp import_ui_metric_metadata(%{code_module: module, metric: metric} = map)
-       when is_binary(module) and is_binary(metric) do
+       when is_binary(metric) do
+    module = module || "__none__"
+
     with {:ok, mapping} <- Category.get_mapping_by_module_and_metric(module, metric) do
       params =
         Map.take(map, [:args, :ui_key, :ui_human_readable_name, :unit, :chart_style])

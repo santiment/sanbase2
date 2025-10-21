@@ -136,7 +136,7 @@ defmodule Sanbase.Metric.Category.MetricCategoryMapping do
   Gets a metric categories mapping by module and metric
   """
   @spec get_by_module_and_metric(String.t(), String.t()) :: t() | nil
-  def get_by_module_and_metric(module, metric) when is_binary(module) and is_binary(module) do
+  def get_by_module_and_metric(module, metric) when is_binary(module) and is_binary(metric) do
     query =
       from(m in __MODULE__,
         where: m.module == ^module and m.metric == ^metric,

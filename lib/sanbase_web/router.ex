@@ -189,6 +189,7 @@ defmodule SanbaseWeb.Router do
     resources("/generic", GenericAdminController)
 
     live("/user_stats", UserStatsLive)
+    get("/download_inactive_users_csv", InactiveUsersController, :download_csv)
   end
 
   scope "/" do

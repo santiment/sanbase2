@@ -25,6 +25,7 @@ defmodule Sanbase.Metric.UIMetadata do
         }
 
   schema "metric_ui_metadata" do
+    field(:metric, :string)
     field(:ui_human_readable_name, :string)
     field(:ui_key, :string)
     field(:chart_style, :string)
@@ -33,6 +34,9 @@ defmodule Sanbase.Metric.UIMetadata do
     field(:show_on_sanbase, :boolean, default: true)
     field(:display_order_in_mapping, :integer)
 
+    # We need metric in combination with metric_category_mapping as the mapping
+    # could point to a timebound parametrized metric like mvrv_usd_{{timebound}},
+    # so `metric` will specify which one it is (_7d, _30d, etc.)
     belongs_to(:metric_category_mapping, MetricCategoryMapping)
 
     timestamps()
@@ -52,11 +56,17 @@ defmodule Sanbase.Metric.UIMetadata do
       :args,
       :show_on_sanbase,
       :display_order_in_mapping,
+      :metric,
       :metric_category_mapping_id
     ])
     |> validate_required([:metric_category_mapping_id])
     |> validate_json_args()
     |> foreign_key_constraint(:metric_category_mapping_id)
+    |> unique_constraint([:metric, :args],
+      message: "The combination of metric and args must be unique"
+    )
+    # Both ui_key and ui_human_readable_name can be nil. If not set,
+    # they are not considered the same and don't trigger the constraint
     |> unique_constraint(:ui_human_readable_name)
     |> unique_constraint(:ui_key)
   end

@@ -17,6 +17,8 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataList do
        mapping: nil,
        metric_info: nil,
        ui_metadata_list: [],
+       available_metric_variants: [],
+       is_parametrized: false,
        reordering: false,
        editing_id: nil,
        edit_form: nil
@@ -33,13 +35,19 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataList do
 
       metric_info = build_metric_info(mapping)
 
+      resolved_variants = resolve_available_metric_variants(mapping)
+      available_variants = filter_available_variants(resolved_variants, ui_metadata_list)
+      is_parametrized = has_registry_metric?(mapping) && has_parameters?(mapping)
+
       {:noreply,
        socket
        |> assign(
          mapping: mapping,
          mapping_id: mapping_id,
          metric_info: metric_info,
-         ui_metadata_list: ui_metadata_list
+         ui_metadata_list: ui_metadata_list,
+         available_metric_variants: available_variants,
+         is_parametrized: is_parametrized
        )}
     else
       {:noreply,
@@ -97,6 +105,11 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataList do
         <p class="text-gray-500 italic mb-2">No UI metadata records yet.</p>
       </div>
 
+      <div :if={@is_parametrized and @available_metric_variants != []}>
+        <div class="mt-8 mb-4 text-lg font-semibold text-gray-800">Available Metric Variants</div>
+        <.available_variants_table mapping_id={@mapping_id} variants={@available_metric_variants} />
+      </div>
+
       <.modal :if={@reordering} id="reordering-modal" show>
         <.header>Reordering UI Metadata</.header>
         <div class="text-center py-4">
@@ -109,6 +122,7 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataList do
   end
 
   attr :ui_metadata_list, :list, required: true
+  attr :mapping_id, :integer, required: true
   attr :editing_id, :any, default: nil
 
   def ui_metadata_table(assigns) do
@@ -122,6 +136,13 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataList do
               class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
             >
               Order
+            </th>
+
+            <th
+              scope="col"
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Metric
             </th>
             <th
               scope="col"
@@ -176,6 +197,7 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataList do
   end
 
   attr :ui_metadata, :map, required: true
+  attr :mapping_id, :integer, required: true
   attr :index, :integer, required: true
   attr :total_count, :integer, required: true
 
@@ -189,6 +211,10 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataList do
           item_id={@ui_metadata.id}
           display_order={@ui_metadata.display_order_in_mapping}
         />
+      </td>
+
+      <td class="px-6 py-4 text-sm text-gray-500">
+        {@ui_metadata.metric}
       </td>
       <td class="px-6 py-4 text-sm text-gray-500">
         <div :if={@ui_metadata.ui_human_readable_name}>
@@ -271,6 +297,60 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataList do
         text="Add UI Metadata"
         href={~p"/admin/metric_registry/categorization/ui_metadata/new?mapping_id=#{@mapping_id}"}
       />
+    </div>
+    """
+  end
+
+  attr :mapping_id, :integer, required: true
+  attr :variants, :list, required: true
+
+  def available_variants_table(assigns) do
+    ~H"""
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th
+              scope="col"
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Metric Name
+            </th>
+            <th
+              scope="col"
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Human Readable Name
+            </th>
+            <th
+              scope="col"
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Actions
+            </th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <tr :for={variant <- @variants} class="hover:bg-gray-50">
+            <td class="px-6 py-4 text-sm font-medium text-gray-900">
+              {variant.metric}
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-500">
+              {variant.human_readable_name}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm">
+              <.link
+                navigate={
+                  ~p"/admin/metric_registry/categorization/ui_metadata/new?mapping_id=#{@mapping_id}&metric=#{variant.metric}"
+                }
+                class="text-blue-600 hover:text-blue-900 font-medium"
+              >
+                Add UI Metadata
+              </.link>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
     """
   end
@@ -380,9 +460,16 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataList do
             ui_metadata_list =
               Category.list_ui_metadata_by_mapping_id(socket.assigns.mapping_id)
 
+            mapping = socket.assigns.mapping
+            resolved_variants = resolve_available_metric_variants(mapping)
+            available_variants = filter_available_variants(resolved_variants, ui_metadata_list)
+
             {:noreply,
              socket
-             |> assign(ui_metadata_list: ui_metadata_list)
+             |> assign(
+               ui_metadata_list: ui_metadata_list,
+               available_metric_variants: available_variants
+             )
              |> put_flash(:info, "UI metadata deleted successfully")}
 
           {:error, _} ->
@@ -433,5 +520,36 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataList do
     module_name
     |> String.split(".")
     |> List.last()
+  end
+
+  defp resolve_available_metric_variants(mapping) do
+    if has_registry_metric?(mapping) && has_parameters?(mapping) do
+      case Sanbase.Metric.Registry.by_id(mapping.metric_registry_id) do
+        {:ok, registry} ->
+          {resolved_metrics, _errors} = Sanbase.Metric.Registry.resolve_safe([registry])
+          resolved_metrics
+
+        _ ->
+          []
+      end
+    else
+      []
+    end
+  end
+
+  defp has_parameters?(mapping) do
+    mapping.metric_registry &&
+      mapping.metric_registry.parameters != []
+  end
+
+  defp filter_available_variants(resolved_metrics, existing_ui_metadata) do
+    existing_metrics =
+      existing_ui_metadata
+      |> Enum.filter(& &1.metric)
+      |> MapSet.new(& &1.metric)
+
+    Enum.reject(resolved_metrics, fn variant ->
+      MapSet.member?(existing_metrics, variant.metric)
+    end)
   end
 end

@@ -310,7 +310,7 @@ defmodule SanbaseWeb.CategorizationLive.Index do
   def metric_row(assigns) do
     ~H"""
     <tr class={Map.get(@categories_colors, @metric.category_name)}>
-      <td class="px-6 py-4 whitespace-nowrap">
+      <td class="px-6 py-4 max-w-m break-words">
         <div class="flex flex-col">
           <div class="text-sm font-medium text-gray-900">{@metric.metric}</div>
           <div class="text-xs text-gray-500">
@@ -319,11 +319,19 @@ defmodule SanbaseWeb.CategorizationLive.Index do
         </div>
       </td>
       <td class="px-6 py-4 whitespace-nowrap">
-        <span class={[
-          "px-2 py-1 text-xs font-medium rounded",
-          @metric.source_type == "registry" && "bg-blue-100 text-blue-800",
-          @metric.source_type == "code" && "bg-purple-100 text-purple-800"
-        ]}>
+        <span
+          :if={@metric.source_type == "registry"}
+          class="px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-800"
+        >
+          <.link navigate={~p"/admin/metric_registry/show/#{@metric.source_id}"}>
+            {@metric.source_display}
+          </.link>
+        </span>
+
+        <span
+          :if={@metric.source_type == "code"}
+          class="px-2 py-1 text-xs font-medium rounded bg-purple-100 text-purple-800"
+        >
           {@metric.source_display}
         </span>
       </td>
@@ -496,7 +504,6 @@ defmodule SanbaseWeb.CategorizationLive.Index do
 
   defp get_registry_metrics(mappings_by_registry_id, ui_metadata_by_mapping_id) do
     Registry.all()
-    |> Registry.resolve()
     |> Enum.map(fn registry ->
       mapping = Map.get(mappings_by_registry_id, registry.id)
       ui_metadata_list = mapping && Map.get(ui_metadata_by_mapping_id, mapping.id, [])

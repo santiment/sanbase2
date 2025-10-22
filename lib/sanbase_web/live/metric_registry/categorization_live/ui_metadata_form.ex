@@ -11,7 +11,8 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataForm do
     {:ok,
      socket
      |> assign(mapping_id: mapping_id)
-     |> assign(page_title: "UI Metadata")}
+     |> assign(page_title: "UI Metadata")
+     |> assign(prefilled_metric: nil)}
   end
 
   @impl true
@@ -38,7 +39,7 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataForm do
         <div class="text-sm font-medium text-gray-700 mb-1">Metric</div>
         <div class="text-lg font-bold text-gray-900">{@metric_info.metric}</div>
         <div :if={@metric_info.human_readable_name} class="text-sm text-gray-600">
-          {@metric_info.human_readable_name} (Human Readable Name)
+          {@metric_info.human_readable_name}
         </div>
         <div class="text-xs text-gray-500 mt-1">
           Source: {@metric_info.source_display}
@@ -51,20 +52,56 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataForm do
         </div>
       </div>
 
+      <div
+        :if={@prefilled_metric && @mode == "new"}
+        class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200"
+      >
+        <div class="text-sm font-medium text-blue-700 mb-1">Creating UI Metadata for:</div>
+        <div class="text-lg font-bold text-blue-900">{@prefilled_metric}</div>
+        <div class="text-xs text-blue-600 mt-1">
+          The metric field is locked for this specific variant
+        </div>
+      </div>
+
       <div class="bg-white p-6 rounded-lg shadow">
         <.simple_form for={@form} id="ui-metadata-form" phx-submit="save" phx-change="validate">
+          <.input
+            :if={@metric_select_field == :hidden}
+            type="hidden"
+            field={@form[:metric]}
+            value={@metric_info.metric}
+          />
+
+          <span :if={@metric_select_field == :select}>
+            <.input
+              :if={@metric_select_field == :select}
+              type="select"
+              label="Metric"
+              field={@form[:metric]}
+              options={list_metric_variants(@mapping)}
+              value={@prefilled_metric || @metric_info.metric}
+            />
+
+            <div class="text-xs -mt-4  text-gray-500">
+              In case of parametrized metrics, the UI metadata applies only to one of the metric variants.
+            </div>
+          </span>
+
           <.input
             type="text"
             label="UI Human Readable Name"
             field={@form[:ui_human_readable_name]}
-            placeholder={"e.g., #{@metric_info.human_readable_name}. If empty, the metric's human readable name will be used, if it exists."}
+            placeholder={@metric_info.human_readable_name}
           />
+          <div class="text-xs -mt-4 text-gray-500">
+            If empty, the metric's human readable name will be used, if it exists.
+          </div>
 
           <.input
             type="text"
             field={@form[:ui_key]}
             label="UI Key"
-            placeholder="e.g., daily_active_addresses"
+            placeholder={@prefilled_metric || @metric_info.metric}
           />
 
           <.input
@@ -72,11 +109,13 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataForm do
             field={@form[:chart_style]}
             label="Chart Style"
             options={[
+              {"Not specified", nil},
               {"Line", "line"},
               {"Bar", "bar"},
               {"Area", "area"},
               {"Scatter", "scatter"}
             ]}
+            selected={nil}
           />
 
           <.input type="text" field={@form[:unit]} label="Unit" placeholder="e.g., USD, %" />
@@ -234,7 +273,7 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataForm do
     end
   end
 
-  defp setup_form(socket, %{"id" => ui_metadata_id_str}, "edit") do
+  defp setup_form(socket, %{"id" => ui_metadata_id_str} = _params, "edit") do
     ui_metadata_id = String.to_integer(ui_metadata_id_str)
 
     if ui_metadata = Category.get_ui_metadata(ui_metadata_id) do
@@ -246,6 +285,8 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataForm do
       |> assign(form: to_form(changeset))
       |> assign(metric_info: metric_info)
       |> assign(page_title: "Edit UI Metadata")
+      |> assign(prefilled_metric: nil)
+      |> assign(metric_select_field: :none)
     else
       socket
       |> put_flash(:error, "UI metadata not found")
@@ -253,25 +294,36 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataForm do
     end
   end
 
-  defp setup_form(socket, %{"mapping_id" => mapping_id_str}, "new") do
+  defp setup_form(socket, %{"mapping_id" => mapping_id_str} = params, "new") do
     mapping_id = String.to_integer(mapping_id_str)
 
     case Category.get_mapping(mapping_id) do
       {:ok, mapping} ->
         next_display_order = calculate_next_display_order(mapping_id)
+        prefilled_metric = Map.get(params, "metric")
+
+        metric_select_field =
+          case mapping do
+            %{metric_registry: %{parameters: parameters}}
+            when is_list(parameters) and parameters != [] ->
+              :select
+
+            _ ->
+              :hidden
+          end
 
         ui_metadata = %UIMetadata{}
-
-        changeset =
-          UIMetadata.changeset(ui_metadata, %{})
+        changeset = UIMetadata.changeset(ui_metadata, %{})
 
         socket
         |> assign(mapping: mapping)
         |> assign(ui_metadata: ui_metadata)
         |> assign(form: to_form(changeset))
-        |> assign(metric_info: build_metric_info(mapping))
+        |> assign(metric_info: build_metric_info(mapping, prefilled_metric))
         |> assign(page_title: "New UI Metadata")
         |> assign(next_display_order: next_display_order)
+        |> assign(prefilled_metric: prefilled_metric)
+        |> assign(metric_select_field: metric_select_field)
 
       _ ->
         socket
@@ -280,7 +332,7 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataForm do
     end
   end
 
-  defp setup_form(socket, params, _mode) do
+  defp setup_form(socket, _params, _mode) do
     socket
     |> put_flash(:error, "Invalid parameters")
     |> push_navigate(to: ~p"/admin/metric_registry/categorization")
@@ -322,11 +374,24 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataForm do
     Map.put(params, "args", args)
   end
 
-  defp build_metric_info(%{metric_registry_id: id, metric_registry: registry} = mapping)
+  defp build_metric_info(mapping, prefilled_metric \\ nil)
+
+  defp build_metric_info(
+         %{metric_registry_id: id, metric_registry: registry} = mapping,
+         prefilled_metric
+       )
        when not is_nil(id) and not is_nil(registry) do
+    human_readable =
+      if prefilled_metric do
+        {:ok, human_readble} = Sanbase.Metric.human_readable_name(prefilled_metric)
+        human_readble
+      else
+        registry.human_readable_name
+      end
+
     %{
       metric: registry.metric,
-      human_readable_name: registry.human_readable_name,
+      human_readable_name: human_readable,
       source_display: "Registry",
       source_type: "registry",
       category_name: mapping.category && mapping.category.name,
@@ -334,10 +399,10 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataForm do
     }
   end
 
-  defp build_metric_info(%{module: module, metric: metric} = mapping)
+  defp build_metric_info(%{module: module, metric: metric} = mapping, prefilled_metric)
        when not is_nil(module) and not is_nil(metric) do
     human_readable =
-      case Sanbase.Metric.human_readable_name(metric) do
+      case Sanbase.Metric.human_readable_name(prefilled_metric || metric) do
         {:ok, human_readable} -> human_readable
         _ -> nil
       end
@@ -352,7 +417,7 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataForm do
     }
   end
 
-  defp build_metric_info(_mapping), do: nil
+  defp build_metric_info(_mapping, _prefilled_metric), do: nil
 
   defp format_maybe_json_value(%{value: nil}), do: "{}"
 
@@ -360,6 +425,18 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataForm do
     case value do
       %{} = map -> Jason.encode!(map)
       _ -> value
+    end
+  end
+
+  defp list_metric_variants(mapping) do
+    case mapping do
+      %{metric_registry: %{} = registry} ->
+        Sanbase.Metric.Registry.resolve([registry])
+        |> Enum.map(& &1.metric)
+        |> Enum.map(fn m -> {m, m} end)
+
+      _ ->
+        []
     end
   end
 end

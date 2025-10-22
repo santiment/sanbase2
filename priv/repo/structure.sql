@@ -2558,7 +2558,8 @@ CREATE TABLE public.metric_ui_metadata (
     display_order_in_mapping integer,
     metric_category_mapping_id bigint NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    metric character varying(255) NOT NULL
 );
 
 
@@ -8395,6 +8396,13 @@ CREATE UNIQUE INDEX metric_registry_sync_runs_uuid_sync_type_index ON public.met
 
 
 --
+-- Name: metric_ui_metadata_metric_args_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX metric_ui_metadata_metric_args_index ON public.metric_ui_metadata USING btree (metric, args);
+
+
+--
 -- Name: metric_ui_metadata_ui_human_readable_name_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11141,3 +11149,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20251014144144);
 INSERT INTO public."schema_migrations" (version) VALUES (20251016133413);
 INSERT INTO public."schema_migrations" (version) VALUES (20251017100000);
 INSERT INTO public."schema_migrations" (version) VALUES (20251021133911);
+INSERT INTO public."schema_migrations" (version) VALUES (20251022075448);
+INSERT INTO public."schema_migrations" (version) VALUES (20251023083446);

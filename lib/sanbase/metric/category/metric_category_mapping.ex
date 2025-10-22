@@ -157,7 +157,7 @@ defmodule Sanbase.Metric.Category.MetricCategoryMapping do
         preload: [:category, :group, :metric_registry, :ui_metadata_list]
       )
 
-    Repo.all(query)
+    Repo.one(query)
   end
 
   @doc """
@@ -171,7 +171,7 @@ defmodule Sanbase.Metric.Category.MetricCategoryMapping do
         preload: [:category, :group, :metric_registry, :ui_metadata_list]
       )
 
-    Repo.all(query)
+    Repo.one(query)
   end
 
   @doc """

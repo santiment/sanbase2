@@ -14,7 +14,7 @@ defmodule Sanbase.Metric.Category.Scripts.CopyUIMetadata do
        when is_integer(metric_registry_id) do
     with {:ok, mapping} <- Category.get_mapping_by_metric_registry_id(metric_registry_id) do
       params =
-        Map.take(map, [:args, :ui_key, :ui_human_readable_name, :unit, :chart_style])
+        Map.take(map, [:metric, :args, :ui_key, :ui_human_readable_name, :unit, :chart_style])
         |> Map.merge(%{
           display_order_in_mapping: 1,
           metric_category_mapping_id: mapping.id
@@ -30,7 +30,7 @@ defmodule Sanbase.Metric.Category.Scripts.CopyUIMetadata do
 
     with {:ok, mapping} <- Category.get_mapping_by_module_and_metric(module, metric) do
       params =
-        Map.take(map, [:args, :ui_key, :ui_human_readable_name, :unit, :chart_style])
+        Map.take(map, [:metric, :args, :ui_key, :ui_human_readable_name, :unit, :chart_style])
         |> Map.merge(%{
           display_order_in_mapping: 1,
           metric_category_mapping_id: mapping.id

@@ -269,11 +269,11 @@ defmodule SanbaseWeb.CategorizationLive.Index do
                 Group
               </th>
               <th class="px-6 text-xs text-left tracking-wider">
-                <div class="pt-3 font-medium text-gray-500 uppercase">
+                <div class="pt-3 font-medium text-gray-500 uppercase max-w-[32px]">
                   Display order
                 </div>
                 <div class="pt-1 pb-3 font-normal text-gray-500">
-                  (within category/group)
+                  (in group)
                 </div>
               </th>
               <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -310,7 +310,7 @@ defmodule SanbaseWeb.CategorizationLive.Index do
   def metric_row(assigns) do
     ~H"""
     <tr class={Map.get(@categories_colors, @metric.category_name)}>
-      <td class="px-6 py-4 max-w-m break-words">
+      <td class="px-6 py-4 max-w-[320px] break-words">
         <div class="flex flex-col">
           <div class="text-sm font-medium text-gray-900">{@metric.metric}</div>
           <div class="text-xs text-gray-500">
@@ -343,7 +343,7 @@ defmodule SanbaseWeb.CategorizationLive.Index do
           Not assigned
         </div>
       </td>
-      <td class="px-6 py-4 whitespace-nowrap">
+      <td class="px-6 py-4 max-w-[144px] break-normal">
         <div :if={@metric.group_name} class="text-sm text-gray-900">
           {@metric.group_name}
         </div>

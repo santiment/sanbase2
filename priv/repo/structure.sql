@@ -8403,13 +8403,6 @@ CREATE UNIQUE INDEX metric_ui_metadata_metric_args_index ON public.metric_ui_met
 
 
 --
--- Name: metric_ui_metadata_ui_human_readable_name_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX metric_ui_metadata_ui_human_readable_name_index ON public.metric_ui_metadata USING btree (ui_human_readable_name);
-
-
---
 -- Name: metric_ui_metadata_ui_key_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11151,3 +11144,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20251017100000);
 INSERT INTO public."schema_migrations" (version) VALUES (20251021133911);
 INSERT INTO public."schema_migrations" (version) VALUES (20251022075448);
 INSERT INTO public."schema_migrations" (version) VALUES (20251023083446);
+INSERT INTO public."schema_migrations" (version) VALUES (20251023114153);

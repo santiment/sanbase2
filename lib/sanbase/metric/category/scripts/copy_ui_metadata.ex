@@ -20,7 +20,16 @@ defmodule Sanbase.Metric.Category.Scripts.CopyUIMetadata do
           metric_category_mapping_id: mapping.id
         })
 
-      Category.create_ui_metadata(params)
+      case Category.create_ui_metadata(params) do
+        {:ok, _} ->
+          :ok
+
+        {:error, changeset} ->
+          IO.puts("""
+          Failed to copy UI metadata for metric registry id #{metric_registry_id}
+          Reason: #{Sanbase.Utils.ErrorHandling.changeset_errors_string(changeset)}
+          """)
+      end
     end
   end
 
@@ -36,7 +45,16 @@ defmodule Sanbase.Metric.Category.Scripts.CopyUIMetadata do
           metric_category_mapping_id: mapping.id
         })
 
-      Category.create_ui_metadata(params)
+      case Category.create_ui_metadata(params) do
+        {:ok, _} ->
+          :ok
+
+        {:error, changeset} ->
+          IO.puts("""
+          Failed to copy UI metadata for module/metric #{module}/#{metric}
+          Reason: #{Sanbase.Utils.ErrorHandling.changeset_errors_string(changeset)}
+          """)
+      end
     end
   end
 end

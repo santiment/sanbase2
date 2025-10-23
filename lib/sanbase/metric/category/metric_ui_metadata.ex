@@ -160,7 +160,10 @@ defmodule Sanbase.Metric.UIMetadata do
   def list_all do
     query =
       from(u in __MODULE__,
-        preload: [:metric_category_mapping]
+        preload: [
+          :metric_category_mapping,
+          metric_category_mapping: [:metric_registry, :category, :group]
+        ]
       )
 
     Repo.all(query)

@@ -115,7 +115,7 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataForm do
               {"Area", "area"},
               {"Scatter", "scatter"}
             ]}
-            selected={nil}
+            value={nil}
           />
 
           <.input type="text" field={@form[:unit]} label="Unit" placeholder="e.g., USD, %" />

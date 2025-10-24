@@ -116,6 +116,7 @@ defmodule SanbaseWeb.Router do
         live("/changelog", MetricChangelogLive)
 
         live("/categorization", CategorizationLive.Index)
+        live("/categorization/preview_sidebar", CategorizationLive.PreviewSidebar)
         live("/categorization/categories", Categorization.CategoryLive.Index)
         live("/categorization/categories/new", Categorization.CategoryLive.Form, :new)
         live("/categorization/categories/edit/:id", Categorization.CategoryLive.Form, :edit)

@@ -107,6 +107,11 @@ defmodule SanbaseWeb.CategorizationLive.Index do
         href={~p"/admin/metric_registry/categorization/groups"}
         icon="hero-user-group"
       />
+      <AvailableMetricsComponents.available_metrics_button
+        text="Preview UI Metadata Sidebar"
+        href={~p"/admin/metric_registry/categorization/preview_sidebar"}
+        icon="hero-eye"
+      />
     </div>
     """
   end

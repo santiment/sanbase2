@@ -99,8 +99,12 @@ defmodule Sanbase.AI.AcademyAIService do
       suggestions =
         if include_suggestions and answer != @dont_know_message do
           case generate_suggestions(question, answer, sources, user_id, session_id) do
-            {:ok, suggestions} -> suggestions
-            _error -> []
+            {:ok, suggestions} ->
+              # Filter out suggestions longer than 255 characters
+              Enum.filter(suggestions, fn s -> String.length(s) <= 255 end)
+
+            _error ->
+              []
           end
         else
           []
@@ -494,6 +498,7 @@ defmodule Sanbase.AI.AcademyAIService do
     - Avoid questions that require external information not in Academy
     - Make questions conversational and engaging
     - Vary the question types (how-to, what-is, best-practices, etc.)
+    - Keep each question under 100 characters for brevity and clarity
 
     FORMAT: Return ONLY a JSON array of strings, nothing else. Example:
     ["How do I configure API rate limits in Sanbase?", "What are the benefits of holding SAN tokens?", "How can I export data from Sanbase?"]

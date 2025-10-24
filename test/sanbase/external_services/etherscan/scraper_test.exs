@@ -24,7 +24,6 @@ defmodule Sanbase.ExternalServices.Etherscan.ScraperTest do
              total_supply: 6_804_870_175,
              main_contract_address: "0x744d70fdbe2ba4cf95131626614a1763df805b9e",
              token_decimals: 18,
-             website_link: "https://status.im/",
              email: nil,
              reddit_link: "https://www.reddit.com/r/statusim/",
              twitter_link: "https://twitter.com/ethstatus",

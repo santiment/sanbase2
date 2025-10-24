@@ -176,7 +176,9 @@ defmodule SanbaseWeb.CategorizationLive.Index do
             label="UI Metadata"
             options={[
               {"All", "all"},
-              {"Has UI Metadata", "has_metadata"},
+              {"Has any UI Metadata", "has_metadata"},
+              {"All variants have UI Metadata", "has_metadata_all_variants"},
+              {"Only some variants have UI Metadata", "has_metadata_only_some_variants"},
               {"No UI Metadata", "no_metadata"}
             ]}
           />
@@ -500,6 +502,13 @@ defmodule SanbaseWeb.CategorizationLive.Index do
       has_ui_metadata? = ui_metadata_list != [] && ui_metadata_list != nil
       shown_on_sanbase? = has_ui_metadata? && Enum.any?(ui_metadata_list, & &1.show_on_sanbase)
 
+      all_variants_have_ui_metadata? =
+        if registry.parameters == [] do
+          has_ui_metadata?
+        else
+          has_ui_metadata? and length(ui_metadata_list) == length(registry.parameters)
+        end
+
       %{
         metric: registry.metric,
         human_readable_name: registry.human_readable_name,
@@ -519,6 +528,7 @@ defmodule SanbaseWeb.CategorizationLive.Index do
         display_order: mapping && mapping.display_order,
         categorized?: not is_nil(mapping),
         has_ui_metadata?: has_ui_metadata?,
+        all_variants_have_ui_metadata?: all_variants_have_ui_metadata?,
         shown_on_sanbase?: shown_on_sanbase?,
         variants_count: length(registry.parameters)
       }
@@ -564,6 +574,7 @@ defmodule SanbaseWeb.CategorizationLive.Index do
         display_order: mapping && mapping.display_order,
         categorized?: not is_nil(mapping),
         has_ui_metadata?: has_ui_metadata?,
+        all_variants_have_ui_metadata?: true,
         shown_on_sanbase?: shown_on_sanbase?,
         variants_count: 1
       }
@@ -636,6 +647,12 @@ defmodule SanbaseWeb.CategorizationLive.Index do
 
   defp filter_by_ui_metadata(metrics, "has_metadata"),
     do: Enum.filter(metrics, & &1.has_ui_metadata?)
+
+  defp filter_by_ui_metadata(metrics, "has_metadata_all_variants"),
+    do: Enum.filter(metrics, & &1.all_variants_have_ui_metadata?)
+
+  defp filter_by_ui_metadata(metrics, "has_metadata_only_some_variants"),
+    do: Enum.filter(metrics, &(&1.has_ui_metadata? and not &1.all_variants_have_ui_metadata?))
 
   defp filter_by_ui_metadata(metrics, "no_metadata"),
     do: Enum.filter(metrics, &(not &1.has_ui_metadata?))

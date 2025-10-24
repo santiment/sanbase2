@@ -59,8 +59,10 @@ defmodule SanbaseWeb.CategorizationLive.Index do
 
       <.navigation />
 
-      <div class="text-gray-600">
+      <div class="text-gray-600" phx-no-curly-interpolation>
         Assign metrics to categories and groups.
+        One metric can have a single variant, like `price_usd`.
+        One metric can generate many variants, like the single metric `mvrv_usd_{{timebound}}` generates mvrv_usd_1d, mvrv_usd_7d, mvrv_usd_30d, etc.
       </div>
 
       <.filters
@@ -209,7 +211,17 @@ defmodule SanbaseWeb.CategorizationLive.Index do
   attr :filtered_metrics, :list, required: true
 
   def metrics_stats(assigns) do
+    total_metrics = length(assigns.metrics)
+    total_variants = Enum.sum_by(assigns.metrics, & &1.variants_count)
+
+    total_filtered = length(assigns.filtered_metrics)
+    total_filtered_variants = Enum.sum_by(assigns.filtered_metrics, & &1.variants_count)
+
     categorized_count = Enum.count(assigns.filtered_metrics, & &1.categorized?)
+
+    categorized_variants_count =
+      Enum.filter(assigns.filtered_metrics, & &1.categorized?) |> Enum.sum_by(& &1.variants_count)
+
     not_categorized_count = length(assigns.filtered_metrics) - categorized_count
     has_ui_metadata_count = Enum.count(assigns.filtered_metrics, & &1.has_ui_metadata?)
     shown_on_sanbase_count = Enum.count(assigns.filtered_metrics, & &1.shown_on_sanbase?)
@@ -217,6 +229,11 @@ defmodule SanbaseWeb.CategorizationLive.Index do
     assigns =
       assigns
       |> assign(categorized_count: categorized_count)
+      |> assign(categorized_variants_count: categorized_variants_count)
+      |> assign(total_metrics: total_metrics)
+      |> assign(total_variants: total_variants)
+      |> assign(total_filtered: total_filtered)
+      |> assign(total_filtered_variants: total_filtered_variants)
       |> assign(not_categorized_count: not_categorized_count)
       |> assign(has_ui_metadata_count: has_ui_metadata_count)
       |> assign(shown_on_sanbase_count: shown_on_sanbase_count)
@@ -225,15 +242,18 @@ defmodule SanbaseWeb.CategorizationLive.Index do
     <div class="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
       <div class="bg-white p-4 rounded-lg shadow">
         <div class="text-sm text-gray-600">Total Metrics</div>
-        <div class="text-2xl font-bold text-gray-800">{length(@metrics)}</div>
+        <div class="text-2xl font-bold text-gray-800">{@total_metrics}</div>
+        <div class="text-xs text-gray-500">({@total_variants} variants)</div>
       </div>
       <div class="bg-white p-4 rounded-lg shadow">
         <div class="text-sm text-gray-600">Filtered</div>
-        <div class="text-2xl font-bold text-gray-800">{length(@filtered_metrics)}</div>
+        <div class="text-2xl font-bold text-gray-800">{@total_filtered}</div>
+        <div class="text-xs text-gray-500">({@total_filtered_variants} variants)</div>
       </div>
       <div class="bg-white p-4 rounded-lg shadow">
         <div class="text-sm text-gray-600">Categorized</div>
         <div class="text-2xl font-bold text-green-600">{@categorized_count}</div>
+        <div class="text-xs text-gray-500">({@categorized_variants_count} variants)</div>
       </div>
       <div class="bg-white p-4 rounded-lg shadow">
         <div class="text-sm text-gray-600">Not Categorized</div>
@@ -535,7 +555,7 @@ defmodule SanbaseWeb.CategorizationLive.Index do
         has_ui_metadata?: has_ui_metadata?,
         all_variants_have_ui_metadata?: all_variants_have_ui_metadata?,
         shown_on_sanbase?: shown_on_sanbase?,
-        variants_count: length(registry.parameters)
+        variants_count: max(1, length(registry.parameters))
       }
     end)
   end

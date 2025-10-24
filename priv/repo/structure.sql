@@ -2544,6 +2544,45 @@ ALTER SEQUENCE public.metric_registry_sync_runs_id_seq OWNED BY public.metric_re
 
 
 --
+-- Name: metric_ui_metadata; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.metric_ui_metadata (
+    id bigint NOT NULL,
+    ui_human_readable_name character varying(255),
+    ui_key character varying(255),
+    chart_style character varying(255) DEFAULT 'line'::character varying,
+    unit character varying(255) DEFAULT ''::character varying,
+    args jsonb DEFAULT '{}'::jsonb,
+    show_on_sanbase boolean DEFAULT true,
+    display_order_in_mapping integer,
+    metric_category_mapping_id bigint NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL,
+    metric character varying(255) NOT NULL
+);
+
+
+--
+-- Name: metric_ui_metadata_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.metric_ui_metadata_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: metric_ui_metadata_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.metric_ui_metadata_id_seq OWNED BY public.metric_ui_metadata.id;
+
+
+--
 -- Name: metrics; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -5900,6 +5939,13 @@ ALTER TABLE ONLY public.metric_registry_sync_runs ALTER COLUMN id SET DEFAULT ne
 
 
 --
+-- Name: metric_ui_metadata id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metric_ui_metadata ALTER COLUMN id SET DEFAULT nextval('public.metric_ui_metadata_id_seq'::regclass);
+
+
+--
 -- Name: metrics id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6956,6 +7002,14 @@ ALTER TABLE ONLY public.metric_registry
 
 ALTER TABLE ONLY public.metric_registry_sync_runs
     ADD CONSTRAINT metric_registry_sync_runs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: metric_ui_metadata metric_ui_metadata_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metric_ui_metadata
+    ADD CONSTRAINT metric_ui_metadata_pkey PRIMARY KEY (id);
 
 
 --
@@ -8342,6 +8396,20 @@ CREATE UNIQUE INDEX metric_registry_sync_runs_uuid_sync_type_index ON public.met
 
 
 --
+-- Name: metric_ui_metadata_metric_args_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX metric_ui_metadata_metric_args_index ON public.metric_ui_metadata USING btree (metric, args);
+
+
+--
+-- Name: metric_ui_metadata_ui_key_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX metric_ui_metadata_ui_key_index ON public.metric_ui_metadata USING btree (ui_key);
+
+
+--
 -- Name: metrics_name_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9723,6 +9791,14 @@ ALTER TABLE ONLY public.metric_registry_changelog
 
 
 --
+-- Name: metric_ui_metadata metric_ui_metadata_metric_category_mapping_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metric_ui_metadata
+    ADD CONSTRAINT metric_ui_metadata_metric_category_mapping_id_fkey FOREIGN KEY (metric_category_mapping_id) REFERENCES public.metric_category_mappings(id) ON DELETE CASCADE;
+
+
+--
 -- Name: monitored_twitter_handles monitored_twitter_handles_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -11063,3 +11139,9 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250926101756);
 INSERT INTO public."schema_migrations" (version) VALUES (20250926115345);
 INSERT INTO public."schema_migrations" (version) VALUES (20251013121803);
 INSERT INTO public."schema_migrations" (version) VALUES (20251014144144);
+INSERT INTO public."schema_migrations" (version) VALUES (20251016133413);
+INSERT INTO public."schema_migrations" (version) VALUES (20251017100000);
+INSERT INTO public."schema_migrations" (version) VALUES (20251021133911);
+INSERT INTO public."schema_migrations" (version) VALUES (20251022075448);
+INSERT INTO public."schema_migrations" (version) VALUES (20251023083446);
+INSERT INTO public."schema_migrations" (version) VALUES (20251023114153);

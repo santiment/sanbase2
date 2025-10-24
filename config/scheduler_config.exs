@@ -174,8 +174,11 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     renew_available_metrics_slugs: [
       schedule: "@daily",
       task: {Sanbase.AvailableMetrics, :update_all, []}
+    ],
+    sync_academy_chunks: [
+      schedule: "0 17 * * *",
+      task: {Sanbase.Knowledge.Academy, :reindex_academy, []}
     ]
-
     # ,
     # TODO: uncomment this when notifications are thoroughly tested
     # send_daily_digest_metric_created: [

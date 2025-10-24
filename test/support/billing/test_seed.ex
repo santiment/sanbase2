@@ -44,8 +44,20 @@ defmodule Sanbase.Billing.TestSeed do
         data
 
       _ ->
-        [{@key, data}] = :ets.lookup(ets_table, @key)
-        data
+        case :ets.lookup(ets_table, @key) do
+          [{@key, data}] -> data
+          [] -> seed_products_and_plans_from_db()
+        end
     end
+  end
+
+  defp seed_products_and_plans_from_db() do
+    product_api = Sanbase.Repo.get_by(Sanbase.Billing.Product, name: "API")
+    product_sanbase = Sanbase.Repo.get_by(Sanbase.Billing.Product, name: "Sanbase")
+
+    %{
+      product_api: product_api,
+      product_sanbase: product_sanbase
+    }
   end
 end

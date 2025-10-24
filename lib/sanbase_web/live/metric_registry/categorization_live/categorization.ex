@@ -60,10 +60,7 @@ defmodule SanbaseWeb.CategorizationLive.Index do
       <.navigation />
 
       <div class="text-gray-600">
-        <p>
-          Assign metrics to categories and groups. This is the layer between the metric definition
-          (in registry or code) and the UI display order.
-        </p>
+        Assign metrics to categories and groups.
       </div>
 
       <.filters
@@ -166,7 +163,8 @@ defmodule SanbaseWeb.CategorizationLive.Index do
             value={@selected_category_id}
             label="Category"
             options={[
-              {"All Categories", ""}
+              {"All Categories", "all"},
+              {"Not Categorized", "none"}
               | Enum.map(@categories, fn c -> {c.name, c.id} end)
             ]}
           />
@@ -178,7 +176,9 @@ defmodule SanbaseWeb.CategorizationLive.Index do
             label="UI Metadata"
             options={[
               {"All", "all"},
-              {"Has UI Metadata", "has_metadata"},
+              {"Has any UI Metadata", "has_metadata"},
+              {"All variants have UI Metadata", "has_metadata_all_variants"},
+              {"Only some variants have UI Metadata", "has_metadata_only_some_variants"},
               {"No UI Metadata", "no_metadata"}
             ]}
           />
@@ -268,14 +268,6 @@ defmodule SanbaseWeb.CategorizationLive.Index do
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Group
               </th>
-              <th class="px-6 text-xs text-left tracking-wider">
-                <div class="pt-3 font-medium text-gray-500 uppercase max-w-[32px]">
-                  Display order
-                </div>
-                <div class="pt-1 pb-3 font-normal text-gray-500">
-                  (in group)
-                </div>
-              </th>
               <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                 UI
               </th>
@@ -316,6 +308,10 @@ defmodule SanbaseWeb.CategorizationLive.Index do
           <div class="text-xs text-gray-500">
             {@metric.human_readable_name}
           </div>
+
+          <div :if={@metric.variants_count >= 2} class="text-xs text-purple-800">
+            (#{@metric.variants_count} variants)
+          </div>
         </div>
       </td>
       <td class="px-6 py-4 whitespace-nowrap">
@@ -351,11 +347,6 @@ defmodule SanbaseWeb.CategorizationLive.Index do
           -
         </div>
       </td>
-
-      <td class="px-6 py-4 whitespace-nowrap text-sm">
-        {@metric.display_order || "-"}
-      </td>
-
       <td class="px-2 py-4 whitespace-nowrap text-center">
         <.icon :if={@metric.has_ui_metadata?} name="hero-check-circle" class="w-5 h-5 text-green-600" />
         <.icon :if={!@metric.has_ui_metadata?} name="hero-x-circle" class="w-5 h-5 text-red-400" />
@@ -416,7 +407,7 @@ defmodule SanbaseWeb.CategorizationLive.Index do
     filter_status = params["status"] || "all"
     filter_ui_metadata = params["ui_metadata"] || "all"
     filter_sanbase_display = params["sanbase_display"] || "all"
-    category_id = params["category_id"] || ""
+    category_id = params["category_id"] || :all
 
     query_params =
       %{}
@@ -511,6 +502,13 @@ defmodule SanbaseWeb.CategorizationLive.Index do
       has_ui_metadata? = ui_metadata_list != [] && ui_metadata_list != nil
       shown_on_sanbase? = has_ui_metadata? && Enum.any?(ui_metadata_list, & &1.show_on_sanbase)
 
+      all_variants_have_ui_metadata? =
+        if registry.parameters == [] do
+          has_ui_metadata?
+        else
+          has_ui_metadata? and length(ui_metadata_list) == length(registry.parameters)
+        end
+
       %{
         metric: registry.metric,
         human_readable_name: registry.human_readable_name,
@@ -530,7 +528,9 @@ defmodule SanbaseWeb.CategorizationLive.Index do
         display_order: mapping && mapping.display_order,
         categorized?: not is_nil(mapping),
         has_ui_metadata?: has_ui_metadata?,
-        shown_on_sanbase?: shown_on_sanbase?
+        all_variants_have_ui_metadata?: all_variants_have_ui_metadata?,
+        shown_on_sanbase?: shown_on_sanbase?,
+        variants_count: length(registry.parameters)
       }
     end)
   end
@@ -574,7 +574,9 @@ defmodule SanbaseWeb.CategorizationLive.Index do
         display_order: mapping && mapping.display_order,
         categorized?: not is_nil(mapping),
         has_ui_metadata?: has_ui_metadata?,
-        shown_on_sanbase?: shown_on_sanbase?
+        all_variants_have_ui_metadata?: true,
+        shown_on_sanbase?: shown_on_sanbase?,
+        variants_count: 1
       }
     end)
   end
@@ -626,7 +628,11 @@ defmodule SanbaseWeb.CategorizationLive.Index do
     do: Enum.filter(metrics, &(not &1.categorized?))
 
   defp filter_by_category(metrics, nil), do: metrics
-  defp filter_by_category(metrics, ""), do: metrics
+  defp filter_by_category(metrics, "all"), do: metrics
+
+  defp filter_by_category(metrics, "none") do
+    Enum.filter(metrics, &is_nil(&1.category_id))
+  end
 
   defp filter_by_category(metrics, category_id) when is_binary(category_id) do
     category_id = String.to_integer(category_id)
@@ -641,6 +647,12 @@ defmodule SanbaseWeb.CategorizationLive.Index do
 
   defp filter_by_ui_metadata(metrics, "has_metadata"),
     do: Enum.filter(metrics, & &1.has_ui_metadata?)
+
+  defp filter_by_ui_metadata(metrics, "has_metadata_all_variants"),
+    do: Enum.filter(metrics, & &1.all_variants_have_ui_metadata?)
+
+  defp filter_by_ui_metadata(metrics, "has_metadata_only_some_variants"),
+    do: Enum.filter(metrics, &(&1.has_ui_metadata? and not &1.all_variants_have_ui_metadata?))
 
   defp filter_by_ui_metadata(metrics, "no_metadata"),
     do: Enum.filter(metrics, &(not &1.has_ui_metadata?))

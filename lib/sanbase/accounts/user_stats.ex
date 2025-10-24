@@ -113,6 +113,50 @@ defmodule Sanbase.Accounts.UserStats do
   end
 
   @doc """
+  Get users who have been inactive for a specified number of days.
+
+  Optionally requires that users were active in the prior_activity_days window.
+  Returns user details (id, email, name) up to a limit.
+  """
+  @spec inactive_users_with_activity(
+          non_neg_integer(),
+          non_neg_integer(),
+          boolean(),
+          non_neg_integer()
+        ) ::
+          {:ok, list(map())} | {:error, String.t()}
+  def inactive_users_with_activity(
+        inactive_days,
+        prior_activity_days \\ 30,
+        require_prior_activity \\ true,
+        limit \\ 10_000
+      ) do
+    cutoff_inactive = DateTime.utc_now() |> DateTime.add(-inactive_days, :day)
+
+    cutoff_prior =
+      DateTime.utc_now() |> DateTime.add(-(inactive_days + prior_activity_days), :day)
+
+    with {:ok, inactive_user_ids} <- get_inactive_users_since(cutoff_inactive) do
+      inactive_user_ids =
+        if require_prior_activity do
+          with {:ok, prior_active_users} <-
+                 get_active_users_between(cutoff_prior, cutoff_inactive) do
+            inactive_user_ids
+            |> MapSet.new()
+            |> MapSet.intersection(MapSet.new(prior_active_users))
+            |> MapSet.to_list()
+          else
+            {:error, _reason} -> inactive_user_ids
+          end
+        else
+          inactive_user_ids
+        end
+
+      get_user_details(inactive_user_ids, limit)
+    end
+  end
+
+  @doc """
   Get all stats together for efficient caching.
   """
   @spec get_all_stats() :: {:ok, map()} | {:error, String.t()}
@@ -264,5 +308,50 @@ defmodule Sanbase.Accounts.UserStats do
     )
     |> Repo.all()
     |> Enum.filter(& &1)
+  end
+
+  defp get_inactive_users_since(since_datetime) do
+    query_struct = inactive_users_since_query(since_datetime)
+
+    case Sanbase.ClickhouseRepo.query_transform(query_struct, fn [user_id] -> user_id end) do
+      {:ok, user_ids} -> {:ok, user_ids}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp get_active_users_between(from_datetime, to_datetime) do
+    query_struct = active_users_between_query(from_datetime, to_datetime)
+
+    case Sanbase.ClickhouseRepo.query_transform(query_struct, fn [user_id] -> user_id end) do
+      {:ok, user_ids} -> {:ok, user_ids}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp inactive_users_since_query(since_datetime) do
+    sql = """
+    SELECT DISTINCT user_id
+    FROM api_call_data
+    WHERE user_id != 0
+    GROUP BY user_id
+    HAVING MAX(dt) < toDateTime({{since_datetime}})
+    """
+
+    params = %{since_datetime: since_datetime}
+    Sanbase.Clickhouse.Query.new(sql, params)
+  end
+
+  defp get_user_details(user_ids, limit) when is_list(user_ids) do
+    users =
+      from(u in User,
+        where: u.id in ^user_ids,
+        select: %{id: u.id, email: u.email, name: u.name},
+        limit: ^limit
+      )
+      |> Repo.all()
+
+    {:ok, users}
+  rescue
+    _e in _ -> {:error, "Failed to fetch user details"}
   end
 end

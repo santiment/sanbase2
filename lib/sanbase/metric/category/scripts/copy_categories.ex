@@ -50,6 +50,7 @@ defmodule Sanbase.Metric.Category.Scripts.CopyCategories do
               """)
 
               Sanbase.Metric.Category.create_mapping(%{
+                metric: metric,
                 metric_registry_id: metric_registry_id,
                 category_id: category_id,
                 group_id: group_id,

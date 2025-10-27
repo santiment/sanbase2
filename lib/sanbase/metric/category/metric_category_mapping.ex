@@ -72,8 +72,12 @@ defmodule Sanbase.Metric.Category.MetricCategoryMapping do
     |> foreign_key_constraint(:group_id)
     # The unique constraints don't apply when the field is nil.
     # Either metric_registry_id or module/metric is set.
-    |> unique_constraint(:metric_registry_id)
-    |> unique_constraint([:module, :metric])
+    |> unique_constraint([:metric_registry_id, :category_id, :group_id],
+      name: :metric_category_mappings_metric_registry_id_category_id_group_i
+    )
+    |> unique_constraint([:module, :metric, :category_id, :group_id],
+      name: :metric_category_mappings_module_metric_category_id_group_id_ind
+    )
   end
 
   @doc """

@@ -8357,14 +8357,14 @@ CREATE INDEX metric_category_mappings_category_id_index ON public.metric_categor
 -- Name: metric_category_mappings_metric_registry_id_category_id_group_i; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX metric_category_mappings_metric_registry_id_category_id_group_i ON public.metric_category_mappings USING btree (metric_registry_id, category_id, group_id) WHERE (metric_registry_id IS NOT NULL);
+CREATE UNIQUE INDEX metric_category_mappings_metric_registry_id_category_id_group_i ON public.metric_category_mappings USING btree (metric_registry_id, category_id, group_id) NULLS NOT DISTINCT WHERE (metric_registry_id IS NOT NULL);
 
 
 --
 -- Name: metric_category_mappings_module_metric_category_id_group_id_ind; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX metric_category_mappings_module_metric_category_id_group_id_ind ON public.metric_category_mappings USING btree (module, metric, category_id, group_id) WHERE ((module IS NOT NULL) AND (metric IS NOT NULL));
+CREATE UNIQUE INDEX metric_category_mappings_module_metric_category_id_group_id_ind ON public.metric_category_mappings USING btree (module, metric, category_id, group_id) NULLS NOT DISTINCT WHERE ((module IS NOT NULL) AND (metric IS NOT NULL));
 
 
 --
@@ -11146,3 +11146,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20251022075448);
 INSERT INTO public."schema_migrations" (version) VALUES (20251023083446);
 INSERT INTO public."schema_migrations" (version) VALUES (20251023114153);
 INSERT INTO public."schema_migrations" (version) VALUES (20251027142731);
+INSERT INTO public."schema_migrations" (version) VALUES (20251027154645);

@@ -52,17 +52,6 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataForm do
         </div>
       </div>
 
-      <div
-        :if={@prefilled_metric && @mode == "new"}
-        class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200"
-      >
-        <div class="text-sm font-medium text-blue-700 mb-1">Creating UI Metadata for:</div>
-        <div class="text-lg font-bold text-blue-900">{@prefilled_metric}</div>
-        <div class="text-xs text-blue-600 mt-1">
-          The metric field is locked for this specific variant
-        </div>
-      </div>
-
       <div class="bg-white p-6 rounded-lg shadow">
         <.simple_form for={@form} id="ui-metadata-form" phx-submit="save" phx-change="validate">
           <.input
@@ -81,10 +70,6 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataForm do
               options={list_metric_variants(@mapping)}
               value={@prefilled_metric || @metric_info.metric}
             />
-
-            <div class="text-xs -mt-4  text-gray-500">
-              In case of parametrized metrics, the UI metadata applies only to one of the metric variants.
-            </div>
           </span>
 
           <.input

@@ -59,10 +59,11 @@ defmodule SanbaseWeb.CategorizationLive.Index do
 
       <.navigation />
 
-      <div class="text-gray-600" phx-no-curly-interpolation>
+      <div class="text-gray-600 whitespace-pre-line" phx-no-curly-interpolation>
         Assign metrics to categories and groups.
         One metric can have a single variant, like `price_usd`.
         One metric can generate many variants, like the single metric `mvrv_usd_{{timebound}}` generates mvrv_usd_1d, mvrv_usd_7d, mvrv_usd_30d, etc.
+        Here we display and count these parametrized metrics as a single metric with multiple variants. The total number of variants is show with smaller font.
       </div>
 
       <.filters
@@ -197,7 +198,7 @@ defmodule SanbaseWeb.CategorizationLive.Index do
             label="Sanbase Display"
             options={[
               {"All", "all"},
-              {"Shown on Sanbase", "shown"},
+              {"Shown on Sanbase?", "shown"},
               {"Hidden from Sanbase", "hidden"}
             ]}
           />
@@ -211,44 +212,60 @@ defmodule SanbaseWeb.CategorizationLive.Index do
   attr :filtered_metrics, :list, required: true
 
   def metrics_stats(assigns) do
-    total_metrics = length(assigns.metrics)
-    total_variants = Enum.sum_by(assigns.metrics, & &1.variants_count)
+    metrics_count = length(assigns.metrics)
+    variants_count = Enum.sum_by(assigns.metrics, & &1.variants_count)
 
-    total_filtered = length(assigns.filtered_metrics)
-    total_filtered_variants = Enum.sum_by(assigns.filtered_metrics, & &1.variants_count)
+    filtered_count = length(assigns.filtered_metrics)
+    filtered_variants_count = Enum.sum_by(assigns.filtered_metrics, & &1.variants_count)
 
     categorized_count = Enum.count(assigns.filtered_metrics, & &1.categorized?)
 
     categorized_variants_count =
       Enum.filter(assigns.filtered_metrics, & &1.categorized?) |> Enum.sum_by(& &1.variants_count)
 
-    not_categorized_count = length(assigns.filtered_metrics) - categorized_count
+    not_categorized_count = filtered_count - categorized_count
+    not_categorized_variants_count = filtered_variants_count - categorized_variants_count
+
     has_ui_metadata_count = Enum.count(assigns.filtered_metrics, & &1.has_ui_metadata?)
-    shown_on_sanbase_count = Enum.count(assigns.filtered_metrics, & &1.shown_on_sanbase?)
+
+    has_ui_metadata_variants_count =
+      Enum.filter(assigns.filtered_metrics, & &1.has_ui_metadata?)
+      |> Enum.sum_by(&length(&1.mapping.ui_metadata_list))
+
+    show_on_sanbase_count = Enum.count(assigns.filtered_metrics, & &1.show_on_sanbase?)
+
+    show_on_sanbase_variants_count =
+      Enum.filter(assigns.filtered_metrics, & &1.has_ui_metadata?)
+      |> Enum.flat_map(fn m -> m.mapping.ui_metadata_list || [] end)
+      |> Enum.filter(fn m -> m.show_on_sanbase end)
+      |> length()
 
     assigns =
       assigns
       |> assign(categorized_count: categorized_count)
       |> assign(categorized_variants_count: categorized_variants_count)
-      |> assign(total_metrics: total_metrics)
-      |> assign(total_variants: total_variants)
-      |> assign(total_filtered: total_filtered)
-      |> assign(total_filtered_variants: total_filtered_variants)
+      |> assign(metrics_count: metrics_count)
+      |> assign(variants_count: variants_count)
+      |> assign(filtered_count: filtered_count)
+      |> assign(filtered_variants_count: filtered_variants_count)
       |> assign(not_categorized_count: not_categorized_count)
+      |> assign(not_categorized_variants_count: not_categorized_variants_count)
       |> assign(has_ui_metadata_count: has_ui_metadata_count)
-      |> assign(shown_on_sanbase_count: shown_on_sanbase_count)
+      |> assign(has_ui_metadata_variants_count: has_ui_metadata_variants_count)
+      |> assign(show_on_sanbase_count: show_on_sanbase_count)
+      |> assign(show_on_sanbase_variants_count: show_on_sanbase_variants_count)
 
     ~H"""
     <div class="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
       <div class="bg-white p-4 rounded-lg shadow">
         <div class="text-sm text-gray-600">Total Metrics</div>
-        <div class="text-2xl font-bold text-gray-800">{@total_metrics}</div>
-        <div class="text-xs text-gray-500">({@total_variants} variants)</div>
+        <div class="text-2xl font-bold text-gray-800">{@metrics_count}</div>
+        <div class="text-xs text-gray-500">({@variants_count} variants)</div>
       </div>
       <div class="bg-white p-4 rounded-lg shadow">
         <div class="text-sm text-gray-600">Filtered</div>
-        <div class="text-2xl font-bold text-gray-800">{@total_filtered}</div>
-        <div class="text-xs text-gray-500">({@total_filtered_variants} variants)</div>
+        <div class="text-2xl font-bold text-gray-800">{@filtered_count}</div>
+        <div class="text-xs text-gray-500">({@filtered_variants_count} variants)</div>
       </div>
       <div class="bg-white p-4 rounded-lg shadow">
         <div class="text-sm text-gray-600">Categorized</div>
@@ -258,14 +275,17 @@ defmodule SanbaseWeb.CategorizationLive.Index do
       <div class="bg-white p-4 rounded-lg shadow">
         <div class="text-sm text-gray-600">Not Categorized</div>
         <div class="text-2xl font-bold text-orange-600">{@not_categorized_count}</div>
+        <div class="text-xs text-gray-500">({@not_categorized_variants_count} variants)</div>
       </div>
       <div class="bg-white p-4 rounded-lg shadow">
         <div class="text-sm text-gray-600">Has UI Metadata</div>
         <div class="text-2xl font-bold text-blue-600">{@has_ui_metadata_count}</div>
+        <div class="text-xs text-gray-500">({@has_ui_metadata_variants_count} variants)</div>
       </div>
       <div class="bg-white p-4 rounded-lg shadow">
-        <div class="text-sm text-gray-600">Shown on Sanbase</div>
-        <div class="text-2xl font-bold text-purple-600">{@shown_on_sanbase_count}</div>
+        <div class="text-sm text-gray-600">show on Sanbase</div>
+        <div class="text-2xl font-bold text-purple-600">{@show_on_sanbase_count}</div>
+        <div class="text-xs text-gray-500">({@show_on_sanbase_variants_count} variants)</div>
       </div>
     </div>
     """
@@ -378,8 +398,8 @@ defmodule SanbaseWeb.CategorizationLive.Index do
       </td>
 
       <td class="px-2 py-4 whitespace-nowrap text-center">
-        <.icon :if={@metric.shown_on_sanbase?} name="hero-eye" class="w-5 h-5 text-green-600" />
-        <.icon :if={!@metric.shown_on_sanbase?} name="hero-eye-slash" class="w-5 h-5 text-gray-400" />
+        <.icon :if={@metric.show_on_sanbase?} name="hero-eye" class="w-5 h-5 text-green-600" />
+        <.icon :if={!@metric.show_on_sanbase?} name="hero-eye-slash" class="w-5 h-5 text-gray-400" />
       </td>
 
       <td class="px-6 py-4 whitespace-nowrap text-sm">
@@ -525,7 +545,7 @@ defmodule SanbaseWeb.CategorizationLive.Index do
       ui_metadata_list = mapping && Map.get(ui_metadata_by_mapping_id, mapping.id, [])
 
       has_ui_metadata? = ui_metadata_list != [] && ui_metadata_list != nil
-      shown_on_sanbase? = has_ui_metadata? && Enum.any?(ui_metadata_list, & &1.show_on_sanbase)
+      show_on_sanbase? = has_ui_metadata? && Enum.any?(ui_metadata_list, & &1.show_on_sanbase)
 
       all_variants_have_ui_metadata? =
         if registry.parameters == [] do
@@ -554,7 +574,7 @@ defmodule SanbaseWeb.CategorizationLive.Index do
         categorized?: not is_nil(mapping),
         has_ui_metadata?: has_ui_metadata?,
         all_variants_have_ui_metadata?: all_variants_have_ui_metadata?,
-        shown_on_sanbase?: shown_on_sanbase?,
+        show_on_sanbase?: show_on_sanbase?,
         variants_count: max(1, length(registry.parameters))
       }
     end)
@@ -578,7 +598,7 @@ defmodule SanbaseWeb.CategorizationLive.Index do
       {:ok, human_readable_name} = Sanbase.Metric.human_readable_name(metric)
 
       has_ui_metadata? = ui_metadata_list != [] && ui_metadata_list != nil
-      shown_on_sanbase? = has_ui_metadata? && Enum.any?(ui_metadata_list, & &1.show_on_sanbase)
+      show_on_sanbase? = has_ui_metadata? && Enum.any?(ui_metadata_list, & &1.show_on_sanbase)
 
       %{
         metric: metric,
@@ -600,7 +620,7 @@ defmodule SanbaseWeb.CategorizationLive.Index do
         categorized?: not is_nil(mapping),
         has_ui_metadata?: has_ui_metadata?,
         all_variants_have_ui_metadata?: true,
-        shown_on_sanbase?: shown_on_sanbase?,
+        show_on_sanbase?: show_on_sanbase?,
         variants_count: 1
       }
     end)
@@ -685,10 +705,10 @@ defmodule SanbaseWeb.CategorizationLive.Index do
   defp filter_by_sanbase_display(metrics, "all"), do: metrics
 
   defp filter_by_sanbase_display(metrics, "shown"),
-    do: Enum.filter(metrics, & &1.shown_on_sanbase?)
+    do: Enum.filter(metrics, & &1.show_on_sanbase?)
 
   defp filter_by_sanbase_display(metrics, "hidden"),
-    do: Enum.filter(metrics, &(not &1.shown_on_sanbase?))
+    do: Enum.filter(metrics, &(not &1.show_on_sanbase?))
 
   defp format_module_name(module) do
     module

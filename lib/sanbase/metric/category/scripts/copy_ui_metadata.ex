@@ -5,9 +5,18 @@ defmodule Sanbase.Metric.Category.Scripts.CopyUIMetadata do
   def run() do
     available_metrics = Sanbase.Metric.available_metrics()
 
+    metric_to_registry_id_map =
+      Sanbase.Metric.Registry.all()
+      |> Sanbase.Metric.Registry.resolve()
+      |> Map.new(&{&1.metric, &1.id})
+
     DisplayOrder.get_ordered_metrics()
     |> Map.fetch!(:metrics)
     |> Enum.each(fn m ->
+      # In some case like price_volatility_1w, the metric is wrongly not linked to the registry, but it should be.
+      # With this Map.put we put the true registry_id, if it exists, so we'll enter the correct clause in the next function
+      # which checks not only if metric_registry_id is present, but also if it's an integer
+      m = Map.put(m, :metric_registry_id, Map.get(metric_to_registry_id_map, m.metric))
       import_ui_metric_metadata(m, available_metrics)
     end)
   end

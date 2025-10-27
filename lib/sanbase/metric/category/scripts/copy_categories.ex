@@ -5,6 +5,8 @@ defmodule Sanbase.Metric.Category.Scripts.CopyCategories do
 
   alias Sanbase.Metric.UIMetadata.DisplayOrder
 
+  require Logger
+
   def run(opts \\ []) do
     with :ok <- check_non_empty(opts),
          {:ok, metadata} <- create_categories_and_groups(),
@@ -14,6 +16,11 @@ defmodule Sanbase.Metric.Category.Scripts.CopyCategories do
   end
 
   defp assign_metrics_to_categories(%{category_map: category_map, group_map: group_map}) do
+    metric_to_registry_id_map =
+      Sanbase.Metric.Registry.all()
+      |> Sanbase.Metric.Registry.resolve()
+      |> Map.new(&{&1.metric, &1.id})
+
     DisplayOrder.get_ordered_metrics()
     |> Map.fetch!(:metrics)
     |> Enum.reduce(%{}, fn map, acc ->
@@ -34,13 +41,30 @@ defmodule Sanbase.Metric.Category.Scripts.CopyCategories do
           })
 
         %{code_module: module, metric: metric} when is_binary(module) and is_binary(metric) ->
-          Sanbase.Metric.Category.create_mapping(%{
-            module: module,
-            metric: metric,
-            category_id: category_id,
-            group_id: group_id,
-            display_order: next_display_order
-          })
+          case Map.get(metric_to_registry_id_map, metric) do
+            metric_registry_id when is_integer(metric_registry_id) ->
+              # In some cases like price_volatility_1w, the metric is wrongly not linked to the registry, but it should be
+              Logger.info("""
+              Metric #{metric} is a code module metric, but has a metric_registry_id #{metric_registry_id}.
+              Will use the metric registry id
+              """)
+
+              Sanbase.Metric.Category.create_mapping(%{
+                metric_registry_id: metric_registry_id,
+                category_id: category_id,
+                group_id: group_id,
+                display_order: next_display_order
+              })
+
+            nil ->
+              Sanbase.Metric.Category.create_mapping(%{
+                module: module,
+                metric: metric,
+                category_id: category_id,
+                group_id: group_id,
+                display_order: next_display_order
+              })
+          end
 
         %{metric: metric} when is_binary(metric) ->
           Sanbase.Metric.Category.create_mapping(%{

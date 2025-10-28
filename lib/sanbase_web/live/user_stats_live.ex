@@ -45,8 +45,7 @@ defmodule SanbaseWeb.UserStatsLive do
     case UserStats.inactive_users_with_activity(
            inactive_days,
            prior_activity_days,
-           require_prior_activity,
-           10_000
+           require_prior_activity
          ) do
       {:ok, users} ->
         socket =
@@ -233,7 +232,7 @@ defmodule SanbaseWeb.UserStatsLive do
 
         <.link
           :if={@inactive_users != []}
-          href={"/download_inactive_users_csv?inactive_days=#{@inactive_days}&prior_activity_days=#{@prior_activity_days}&require_prior_activity=#{@require_prior_activity}"}
+          href={"/admin/download_inactive_users_csv?inactive_days=#{@inactive_days}&prior_activity_days=#{@prior_activity_days}&require_prior_activity=#{@require_prior_activity}"}
           download={@filename}
           class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
         >

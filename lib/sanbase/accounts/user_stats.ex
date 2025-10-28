@@ -116,20 +116,18 @@ defmodule Sanbase.Accounts.UserStats do
   Get users who have been inactive for a specified number of days.
 
   Optionally requires that users were active in the prior_activity_days window.
-  Returns user details (id, email, name) up to a limit.
+  Returns user details (id, email, name) for all matching users.
   """
   @spec inactive_users_with_activity(
           non_neg_integer(),
           non_neg_integer(),
-          boolean(),
-          non_neg_integer()
+          boolean()
         ) ::
           {:ok, list(map())} | {:error, String.t()}
   def inactive_users_with_activity(
         inactive_days,
         prior_activity_days \\ 30,
-        require_prior_activity \\ true,
-        limit \\ 10_000
+        require_prior_activity \\ true
       ) do
     cutoff_inactive = DateTime.utc_now() |> DateTime.add(-inactive_days, :day)
 
@@ -152,7 +150,7 @@ defmodule Sanbase.Accounts.UserStats do
           inactive_user_ids
         end
 
-      get_user_details(inactive_user_ids, limit)
+      get_user_details(inactive_user_ids)
     end
   end
 
@@ -341,12 +339,11 @@ defmodule Sanbase.Accounts.UserStats do
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  defp get_user_details(user_ids, limit) when is_list(user_ids) do
+  defp get_user_details(user_ids) when is_list(user_ids) do
     users =
       from(u in User,
         where: u.id in ^user_ids,
-        select: %{id: u.id, email: u.email, name: u.name},
-        limit: ^limit
+        select: %{id: u.id, email: u.email, name: u.name}
       )
       |> Repo.all()
 

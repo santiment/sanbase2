@@ -208,8 +208,7 @@ defmodule Sanbase.Accounts.User.Email do
 
   def add_redirect_url(query_map, key, url) when is_binary(url) do
     with parsed <- URI.parse(url),
-         "https" <- parsed.scheme,
-         true <- allowed_url?(String.split(parsed.host, ".")) do
+         true <- valid_scheme_and_host?(parsed) do
       {:ok, Map.put(query_map, key, url)}
     else
       _ -> {:error, :invalid_redirect_url, "Invalid #{key}: #{url}"}
@@ -217,6 +216,14 @@ defmodule Sanbase.Accounts.User.Email do
   end
 
   def valid_redirect_url?(_), do: false
+
+  defp valid_scheme_and_host?(%URI{scheme: "sanbase"}), do: true
+
+  defp valid_scheme_and_host?(%URI{scheme: "https", host: host}) when is_binary(host) do
+    allowed_url?(String.split(host, "."))
+  end
+
+  defp valid_scheme_and_host?(_), do: false
 
   defp allowed_url?(["santiment", "net"]), do: true
   defp allowed_url?([_, "santiment", "net"]), do: true

@@ -192,9 +192,13 @@ defmodule SanbaseWeb.AuthController do
       @valid_redirect_hosts ["localhost" | @valid_redirect_hosts]
   end
 
-  defp validate_redirect_url(url) do
+  @doc false
+  def validate_redirect_url(url) do
     case URI.parse(url) do
-      %URI{host: host} when host in @valid_redirect_hosts ->
+      %URI{scheme: "sanbase"} ->
+        true
+
+      %URI{scheme: "https", host: host} when host in @valid_redirect_hosts ->
         true
 
       _ ->

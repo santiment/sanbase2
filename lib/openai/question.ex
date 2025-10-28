@@ -3,6 +3,8 @@ defmodule Sanbase.OpenAI.Question do
   OpenAI question client using the GPT-4.1 model.
   """
 
+  require Logger
+
   use Sanbase.OpenAI.Traced
 
   @base_url "https://api.openai.com/v1/chat/completions"
@@ -53,18 +55,18 @@ defmodule Sanbase.OpenAI.Question do
         {:ok, result}
 
       {:error, %Req.TransportError{reason: :closed}} ->
-        require Logger
         backoff_ms = round(@initial_backoff_ms * :math.pow(2, attempt))
 
-        Logger.warning(
-          "OpenAI connection closed, retrying",
-          %{
-            attempt: attempt + 1,
-            max_retries: @max_retries,
-            backoff_ms: backoff_ms,
-            question_length: String.length(question)
-          }
-        )
+        warning_info = %{
+          reason: :connection_closed,
+          attempt: attempt + 1,
+          max_retries: @max_retries,
+          backoff_ms: backoff_ms,
+          question_length: String.length(question),
+          model: model
+        }
+
+        Logger.warning("OpenAI connection closed, retrying: #{inspect(warning_info)}")
 
         Process.sleep(backoff_ms)
         request_with_retry(question, model, attempt + 1)
@@ -75,15 +77,13 @@ defmodule Sanbase.OpenAI.Question do
   end
 
   defp request_with_retry(question, _model, attempt) when attempt >= @max_retries do
-    require Logger
+    error_info = %{
+      max_retries: @max_retries,
+      question_length: String.length(question),
+      attempt: attempt
+    }
 
-    Logger.error(
-      "OpenAI request failed after max retries",
-      %{
-        max_retries: @max_retries,
-        question_length: String.length(question)
-      }
-    )
+    Logger.error("OpenAI request failed after max retries: #{inspect(error_info)}")
 
     {:error, "Max retries exceeded for OpenAI request"}
   end
@@ -116,32 +116,26 @@ defmodule Sanbase.OpenAI.Question do
          }}
 
       {:ok, %{status: status, body: body}} ->
-        require Logger
+        error_info = %{
+          status: status,
+          error: body,
+          model: model,
+          question_length: String.length(question)
+        }
 
-        Logger.error(
-          "OpenAI API error",
-          %{
-            status: status,
-            error: inspect(body),
-            model: model,
-            question_length: String.length(question)
-          }
-        )
+        Logger.error("OpenAI API error: #{inspect(error_info)}")
 
         {:error, "OpenAI API error: #{status} - #{inspect(body)}"}
 
       {:error, reason} ->
-        require Logger
+        error_info = %{
+          error: reason,
+          model: model,
+          question_length: String.length(question),
+          receive_timeout_ms: @receive_timeout_ms
+        }
 
-        Logger.error(
-          "OpenAI request failed",
-          %{
-            error: inspect(reason),
-            model: model,
-            question_length: String.length(question),
-            receive_timeout_ms: @receive_timeout_ms
-          }
-        )
+        Logger.error("OpenAI request failed: #{inspect(error_info)}")
 
         {:error, reason}
     end

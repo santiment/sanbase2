@@ -7,6 +7,9 @@ defmodule Sanbase.OpenAI.Question do
 
   @base_url "https://api.openai.com/v1/chat/completions"
   @model "gpt-5-nano"
+  @max_retries 3
+  @initial_backoff_ms 1_000
+  @receive_timeout_ms 60_000
 
   @doc """
   Sends a question to OpenAI GPT and returns the answer.
@@ -35,9 +38,54 @@ defmodule Sanbase.OpenAI.Question do
   deftraced ask(question) do
     model = Map.get(tracing_opts, :model, @model)
 
-    with {:ok, %{content: content}} <- request_completion(question, %{model: model}) do
-      {:ok, content}
+    case request_with_retry(question, model, 0) do
+      {:ok, %{content: content}} ->
+        {:ok, content}
+
+      {:error, reason} ->
+        {:error, reason}
     end
+  end
+
+  defp request_with_retry(question, model, attempt) when attempt < @max_retries do
+    case request_completion(question, %{model: model}) do
+      {:ok, result} ->
+        {:ok, result}
+
+      {:error, %Req.TransportError{reason: :closed}} ->
+        require Logger
+        backoff_ms = round(@initial_backoff_ms * :math.pow(2, attempt))
+
+        Logger.warning(
+          "OpenAI connection closed, retrying",
+          %{
+            attempt: attempt + 1,
+            max_retries: @max_retries,
+            backoff_ms: backoff_ms,
+            question_length: String.length(question)
+          }
+        )
+
+        Process.sleep(backoff_ms)
+        request_with_retry(question, model, attempt + 1)
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp request_with_retry(question, _model, attempt) when attempt >= @max_retries do
+    require Logger
+
+    Logger.error(
+      "OpenAI request failed after max retries",
+      %{
+        max_retries: @max_retries,
+        question_length: String.length(question)
+      }
+    )
+
+    {:error, "Max retries exceeded for OpenAI request"}
   end
 
   defp request_completion(question, opts) do
@@ -50,8 +98,7 @@ defmodule Sanbase.OpenAI.Question do
              {"Authorization", "Bearer #{openai_apikey()}"},
              {"Content-Type", "application/json"}
            ],
-           receive_timeout: 30_000,
-           connect_options: [timeout: 30_000]
+           receive_timeout: @receive_timeout_ms
          ) do
       {:ok,
        %{
@@ -69,10 +116,34 @@ defmodule Sanbase.OpenAI.Question do
          }}
 
       {:ok, %{status: status, body: body}} ->
+        require Logger
+
+        Logger.error(
+          "OpenAI API error",
+          %{
+            status: status,
+            error: inspect(body),
+            model: model,
+            question_length: String.length(question)
+          }
+        )
+
         {:error, "OpenAI API error: #{status} - #{inspect(body)}"}
 
       {:error, reason} ->
-        {:error, "Request failed: #{inspect(reason)}"}
+        require Logger
+
+        Logger.error(
+          "OpenAI request failed",
+          %{
+            error: inspect(reason),
+            model: model,
+            question_length: String.length(question),
+            receive_timeout_ms: @receive_timeout_ms
+          }
+        )
+
+        {:error, reason}
     end
   end
 

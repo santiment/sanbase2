@@ -18,8 +18,7 @@ defmodule SanbaseWeb.InactiveUsersController do
     case UserStats.inactive_users_with_activity(
            inactive_days,
            prior_activity_days,
-           require_prior_activity,
-           10_000
+           require_prior_activity
          ) do
       {:ok, users} ->
         csv_content = generate_csv(users)

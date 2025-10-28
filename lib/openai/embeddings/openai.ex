@@ -38,33 +38,38 @@ defmodule Sanbase.AI.Embedding.OpenAI do
       {:error, %Req.TransportError{reason: :closed}} ->
         backoff_ms = round(@initial_backoff_ms * :math.pow(2, attempt))
 
-        Logger.warning(
-          "OpenAI embeddings connection closed, retrying",
-          %{
-            attempt: attempt + 1,
-            max_retries: @max_retries,
-            backoff_ms: backoff_ms,
-            texts_count: length(texts)
-          }
-        )
+        warning_info = %{
+          reason: :connection_closed,
+          attempt: attempt + 1,
+          max_retries: @max_retries,
+          backoff_ms: backoff_ms,
+          texts_count: length(texts)
+        }
+
+        Logger.warning("OpenAI embeddings connection closed, retrying: #{inspect(warning_info)}")
 
         Process.sleep(backoff_ms)
         request_with_retry(texts, size, attempt + 1)
 
       {:error, reason} ->
-        Logger.error("OpenAI embedding request failed: #{inspect(reason)}")
+        error_info = %{
+          reason: reason,
+          texts_count: length(texts)
+        }
+
+        Logger.error("OpenAI embedding request failed: #{inspect(error_info)}")
         {:error, reason}
     end
   end
 
   defp request_with_retry(texts, _size, attempt) when attempt >= @max_retries do
-    Logger.error(
-      "OpenAI embeddings request failed after max retries",
-      %{
-        max_retries: @max_retries,
-        texts_count: length(texts)
-      }
-    )
+    error_info = %{
+      max_retries: @max_retries,
+      texts_count: length(texts),
+      attempt: attempt
+    }
+
+    Logger.error("OpenAI embeddings request failed after max retries: #{inspect(error_info)}")
 
     {:error, "Max retries exceeded for OpenAI embeddings request"}
   end
@@ -74,14 +79,43 @@ defmodule Sanbase.AI.Embedding.OpenAI do
   defp make_request(texts, size) do
     body = build_request_body(texts, size)
 
-    case Req.post(@base_url,
-           json: body,
-           headers: [
-             {"Authorization", "Bearer #{openai_apikey()}"},
-             {"Content-Type", "application/json"}
-           ],
-           receive_timeout: @receive_timeout_ms
-         ) do
+    req =
+      Req.new(
+        base_url: @base_url,
+        json: body,
+        headers: [
+          {"Authorization", "Bearer #{openai_apikey()}"},
+          {"Content-Type", "application/json"}
+        ],
+        receive_timeout: @receive_timeout_ms
+      )
+      |> Req.Request.append_request_steps(
+        debug_request: fn request ->
+          request_debug = %{
+            method: request.method,
+            url: request.url,
+            headers: redact_headers(request.headers),
+            body: request.body
+          }
+
+          Logger.debug("OpenAI Embedding Request: #{inspect(request_debug)}")
+          request
+        end
+      )
+      |> Req.Request.append_response_steps(
+        debug_response: fn {request, response} ->
+          response_debug = %{
+            status: response.status,
+            headers: redact_headers(response.headers),
+            body: response.body
+          }
+
+          Logger.debug("OpenAI Embedding Response: #{inspect(response_debug)}")
+          {request, response}
+        end
+      )
+
+    case Req.post(req) do
       {:ok, %{status: 200, body: response_body}} ->
         {:ok, response_body}
 
@@ -99,6 +133,17 @@ defmodule Sanbase.AI.Embedding.OpenAI do
       "model" => @model,
       "dimensions" => size
     }
+  end
+
+  defp redact_headers(headers) do
+    headers
+    |> Enum.map(fn {key, value} ->
+      if String.downcase(key) in ["authorization", "bearer"] do
+        {key, "REDACTED"}
+      else
+        {key, value}
+      end
+    end)
   end
 
   @doc """

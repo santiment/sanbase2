@@ -31,9 +31,12 @@ defmodule Sanbase.Queries.Refresh do
     Oban.insert!(@oban_conf_name, data)
   end
 
-  def refresh_query(%Query{} = query, %User{} = user) do
-    # Refresh by using the ReadOnly dynamic clickhouse repo
-    Process.put(:queries_dynamic_repo, Sanbase.ClickhouseRepo.ReadOnly)
+  def refresh_query(query_or_query_id, user_or_user_id, opts \\ [])
+
+  def refresh_query(%Query{} = query, %User{} = user, opts) do
+    # Refresh by using the specified dynamic clickhouse repo or default to ReadOnly
+    dynamic_repo = Keyword.get(opts, :dynamic_repo, Sanbase.ClickhouseRepo.ReadOnly)
+    Process.put(:queries_dynamic_repo, dynamic_repo)
 
     query_metadata = QueryMetadata.from_refresh_job(user.id)
 
@@ -46,10 +49,26 @@ defmodule Sanbase.Queries.Refresh do
     end
   end
 
-  def refresh_query(query_id, user_id) do
+  def refresh_query(query_id, user_id, opts) do
     {:ok, query} = Sanbase.Queries.get_query(query_id, user_id)
     user = Sanbase.Accounts.get_user!(user_id)
-    refresh_query(query, user)
+    refresh_query(query, user, opts)
+  end
+
+  def refresh_all_dashboard_queries(dashboard_id) do
+    queries = all_dashboard_queries(dashboard_id)
+
+    Enum.each(queries, fn {query, user} ->
+      refresh_query(query, user, dynamic_repo: Sanbase.ClickhouseRepo.BusinessMaxUser)
+    end)
+  end
+
+  def schedule_refresh_all_dashboard_queries(dashboard_id, next_refresh_in_seconds \\ 60 * 60) do
+    queries = all_dashboard_queries(dashboard_id)
+
+    Enum.each(queries, fn {query, user} ->
+      schedule_refresh_query(query.id, user.id, next_refresh_in_seconds)
+    end)
   end
 
   def refresh_query_dashboards_cache(query_result, user_id) do
@@ -77,6 +96,12 @@ defmodule Sanbase.Queries.Refresh do
       [] -> acc
       _ -> all_user_queries(user_id, page + 1, acc ++ queries)
     end
+  end
+
+  def all_dashboard_queries(dashboard_id) do
+    Sanbase.Dashboards.DashboardQueryMapping.dashboard_id_rows(dashboard_id)
+    |> Sanbase.Repo.all()
+    |> Enum.map(fn mapping -> {mapping.query, mapping.query.user} end)
   end
 
   defp tomorrow_1_am do

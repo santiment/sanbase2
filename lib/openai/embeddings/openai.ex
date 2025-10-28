@@ -98,7 +98,7 @@ defmodule Sanbase.AI.Embedding.OpenAI do
             body: request.body
           }
 
-          Logger.debug("OpenAI Embedding Request: #{inspect(request_debug)}")
+          Logger.warning("OpenAI Embedding Request: #{inspect(request_debug)}")
           request
         end
       )
@@ -110,7 +110,7 @@ defmodule Sanbase.AI.Embedding.OpenAI do
             body: response.body
           }
 
-          Logger.debug("OpenAI Embedding Response: #{inspect(response_debug)}")
+          Logger.warning("OpenAI Embedding Response: #{inspect(response_debug)}")
           {request, response}
         end
       )

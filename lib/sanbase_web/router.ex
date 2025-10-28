@@ -84,8 +84,6 @@ defmodule SanbaseWeb.Router do
     # Project Changelog routes
     live("/project_changelog", ProjectChangelogLive)
 
-    live("/academy_qa", AcademyQALive)
-
     scope "/metric_registry" do
       live_session :require_authenticated_user,
         on_mount: [

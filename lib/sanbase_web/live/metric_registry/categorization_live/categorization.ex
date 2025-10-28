@@ -349,7 +349,15 @@ defmodule SanbaseWeb.CategorizationLive.Index do
     <tr class={Map.get(@categories_colors, @metric.category_name)}>
       <td class="px-6 py-4 max-w-[320px] break-words">
         <div class="flex flex-col">
-          <div class="text-sm font-medium text-gray-900">{@metric.metric}</div>
+          <div class="flex items-center gap-2">
+            <div class="text-sm font-medium text-gray-900">{@metric.metric}</div>
+            <span
+              :if={@metric.is_multi_category?}
+              class="px-2 py-0.5 text-xs font-medium rounded bg-indigo-100 text-indigo-700"
+            >
+              MultiCategory
+            </span>
+          </div>
           <div class="text-xs text-gray-500">
             {@metric.human_readable_name}
           </div>
@@ -421,6 +429,16 @@ defmodule SanbaseWeb.CategorizationLive.Index do
             class="text-purple-600 hover:text-purple-900"
           >
             {"Manage UI Metadata (#{length(@metric.mapping.ui_metadata_list)})"}
+          </.link>
+
+          <.link
+            :if={@metric.mapping_id}
+            navigate={
+              ~p"/admin/metric_registry/categorization/mappings/new?#{build_new_params(@metric)}"
+            }
+            class="text-green-600 hover:text-green-900"
+          >
+            Assign extra category
           </.link>
 
           <.link
@@ -497,18 +515,45 @@ defmodule SanbaseWeb.CategorizationLive.Index do
       ui_metadata_list
       |> Enum.group_by(& &1.metric_category_mapping_id)
 
+    multi_category_registry_ids =
+      mappings
+      |> Enum.reject(&is_nil(&1.metric_registry_id))
+      |> Enum.group_by(& &1.metric_registry_id)
+      |> Enum.filter(fn {_id, mapping_list} -> length(mapping_list) > 1 end)
+      |> Enum.map(fn {id, _} -> id end)
+      |> MapSet.new()
+
+    multi_category_module_metrics =
+      mappings
+      |> Enum.reject(&(is_nil(&1.module) || &1.module == "__none__"))
+      |> Enum.group_by(&{&1.module, &1.metric})
+      |> Enum.filter(fn {_key, mapping_list} -> length(mapping_list) > 1 end)
+      |> Enum.map(fn {key, _} -> key end)
+      |> MapSet.new()
+
     mappings_by_registry_id =
       mappings
       |> Enum.filter(& &1.metric_registry_id)
-      |> Map.new(&{&1.metric_registry_id, &1})
+      |> Enum.group_by(& &1.metric_registry_id)
 
     mappings_by_module_metric =
       mappings
       |> Enum.filter(&(&1.module && &1.metric))
-      |> Map.new(&{{&1.module, &1.metric}, &1})
+      |> Enum.group_by(&{&1.module, &1.metric})
 
-    registry_metrics = get_registry_metrics(mappings_by_registry_id, ui_metadata_by_mapping_id)
-    code_metrics = get_code_metrics(mappings_by_module_metric, ui_metadata_by_mapping_id)
+    registry_metrics =
+      get_registry_metrics(
+        mappings_by_registry_id,
+        ui_metadata_by_mapping_id,
+        multi_category_registry_ids
+      )
+
+    code_metrics =
+      get_code_metrics(
+        mappings_by_module_metric,
+        ui_metadata_by_mapping_id,
+        multi_category_module_metrics
+      )
 
     all_metrics = registry_metrics ++ code_metrics
 
@@ -538,49 +583,88 @@ defmodule SanbaseWeb.CategorizationLive.Index do
     )
   end
 
-  defp get_registry_metrics(mappings_by_registry_id, ui_metadata_by_mapping_id) do
+  defp get_registry_metrics(
+         mappings_by_registry_id,
+         ui_metadata_by_mapping_id,
+         multi_category_registry_ids
+       ) do
     Registry.all()
-    |> Enum.map(fn registry ->
-      mapping = Map.get(mappings_by_registry_id, registry.id)
-      ui_metadata_list = mapping && Map.get(ui_metadata_by_mapping_id, mapping.id, [])
+    |> Enum.flat_map(fn registry ->
+      mappings = Map.get(mappings_by_registry_id, registry.id, [])
+      is_multi_category? = MapSet.member?(multi_category_registry_ids, registry.id)
 
-      has_ui_metadata? = ui_metadata_list != [] && ui_metadata_list != nil
-      show_on_sanbase? = has_ui_metadata? && Enum.any?(ui_metadata_list, & &1.show_on_sanbase)
+      case mappings do
+        [] ->
+          [
+            build_registry_metric_map(
+              registry,
+              nil,
+              ui_metadata_by_mapping_id,
+              is_multi_category?
+            )
+          ]
 
-      all_variants_have_ui_metadata? =
-        if registry.parameters == [] do
-          has_ui_metadata?
-        else
-          has_ui_metadata? and length(ui_metadata_list) == length(registry.parameters)
-        end
-
-      %{
-        metric: registry.metric,
-        human_readable_name: registry.human_readable_name,
-        source_type: "registry",
-        source_display: "Registry",
-        source_id: registry.id,
-        module: nil,
-        mapping: mapping,
-        mapping_id: mapping && mapping.id,
-        category_id: mapping && mapping.category_id,
-        category_name: mapping && mapping.category && mapping.category.name,
-        category_display_order: mapping && mapping.category && mapping.category.display_order,
-        group_id: mapping && mapping.group_id,
-        group_name: mapping && mapping.group && mapping.group.name,
-        # The ungrouped metrics should appear first
-        group_display_order: (mapping && mapping.group && mapping.group.display_order) || -1,
-        display_order: mapping && mapping.display_order,
-        categorized?: not is_nil(mapping),
-        has_ui_metadata?: has_ui_metadata?,
-        all_variants_have_ui_metadata?: all_variants_have_ui_metadata?,
-        show_on_sanbase?: show_on_sanbase?,
-        variants_count: max(1, length(registry.parameters))
-      }
+        mappings ->
+          Enum.map(mappings, fn mapping ->
+            build_registry_metric_map(
+              registry,
+              mapping,
+              ui_metadata_by_mapping_id,
+              is_multi_category?
+            )
+          end)
+      end
     end)
   end
 
-  defp get_code_metrics(mappings_by_module_metric, ui_metadata_by_mapping_id) do
+  defp build_registry_metric_map(
+         registry,
+         mapping,
+         ui_metadata_by_mapping_id,
+         is_multi_category?
+       ) do
+    ui_metadata_list = mapping && Map.get(ui_metadata_by_mapping_id, mapping.id, [])
+
+    has_ui_metadata? = ui_metadata_list != [] && ui_metadata_list != nil
+    show_on_sanbase? = has_ui_metadata? && Enum.any?(ui_metadata_list, & &1.show_on_sanbase)
+
+    all_variants_have_ui_metadata? =
+      if registry.parameters == [] do
+        has_ui_metadata?
+      else
+        has_ui_metadata? and length(ui_metadata_list) == length(registry.parameters)
+      end
+
+    %{
+      metric: registry.metric,
+      human_readable_name: registry.human_readable_name,
+      source_type: "registry",
+      source_display: "Registry",
+      source_id: registry.id,
+      module: nil,
+      mapping: mapping,
+      mapping_id: mapping && mapping.id,
+      category_id: mapping && mapping.category_id,
+      category_name: mapping && mapping.category && mapping.category.name,
+      category_display_order: mapping && mapping.category && mapping.category.display_order,
+      group_id: mapping && mapping.group_id,
+      group_name: mapping && mapping.group && mapping.group.name,
+      group_display_order: (mapping && mapping.group && mapping.group.display_order) || -1,
+      display_order: mapping && mapping.display_order,
+      categorized?: not is_nil(mapping),
+      has_ui_metadata?: has_ui_metadata?,
+      all_variants_have_ui_metadata?: all_variants_have_ui_metadata?,
+      show_on_sanbase?: show_on_sanbase?,
+      variants_count: max(1, length(registry.parameters)),
+      is_multi_category?: is_multi_category?
+    }
+  end
+
+  defp get_code_metrics(
+         mappings_by_module_metric,
+         ui_metadata_by_mapping_id,
+         multi_category_module_metrics
+       ) do
     registry_metrics_mapset =
       Registry.all()
       |> Registry.resolve()
@@ -591,39 +675,76 @@ defmodule SanbaseWeb.CategorizationLive.Index do
 
     metric_to_module_map
     |> Enum.reject(fn {metric, _module} -> metric in registry_metrics_mapset end)
-    |> Enum.map(fn {metric, module} ->
+    |> Enum.flat_map(fn {metric, module} ->
       module_str = inspect(module)
-      mapping = Map.get(mappings_by_module_metric, {module_str, metric})
-      ui_metadata_list = mapping && Map.get(ui_metadata_by_mapping_id, mapping.id, [])
-      {:ok, human_readable_name} = Sanbase.Metric.human_readable_name(metric)
+      mappings = Map.get(mappings_by_module_metric, {module_str, metric}, [])
+      is_multi_category? = MapSet.member?(multi_category_module_metrics, {module_str, metric})
 
-      has_ui_metadata? = ui_metadata_list != [] && ui_metadata_list != nil
-      show_on_sanbase? = has_ui_metadata? && Enum.any?(ui_metadata_list, & &1.show_on_sanbase)
+      case mappings do
+        [] ->
+          [
+            build_code_metric_map(
+              metric,
+              module,
+              module_str,
+              nil,
+              ui_metadata_by_mapping_id,
+              is_multi_category?
+            )
+          ]
 
-      %{
-        metric: metric,
-        human_readable_name: human_readable_name,
-        source_type: "code",
-        source_display: format_module_name(module),
-        source_id: nil,
-        module: module_str,
-        mapping: mapping,
-        mapping_id: mapping && mapping.id,
-        category_id: mapping && mapping.category_id,
-        category_name: mapping && mapping.category && mapping.category.name,
-        category_display_order: mapping && mapping.category && mapping.category.display_order,
-        group_id: mapping && mapping.group_id,
-        group_name: mapping && mapping.group && mapping.group.name,
-        # The ungrouped metrics should appear first
-        group_display_order: (mapping && mapping.group && mapping.group.display_order) || -1,
-        display_order: mapping && mapping.display_order,
-        categorized?: not is_nil(mapping),
-        has_ui_metadata?: has_ui_metadata?,
-        all_variants_have_ui_metadata?: true,
-        show_on_sanbase?: show_on_sanbase?,
-        variants_count: 1
-      }
+        mappings ->
+          Enum.map(mappings, fn mapping ->
+            build_code_metric_map(
+              metric,
+              module,
+              module_str,
+              mapping,
+              ui_metadata_by_mapping_id,
+              is_multi_category?
+            )
+          end)
+      end
     end)
+  end
+
+  defp build_code_metric_map(
+         metric,
+         module,
+         module_str,
+         mapping,
+         ui_metadata_by_mapping_id,
+         is_multi_category?
+       ) do
+    ui_metadata_list = mapping && Map.get(ui_metadata_by_mapping_id, mapping.id, [])
+    {:ok, human_readable_name} = Sanbase.Metric.human_readable_name(metric)
+
+    has_ui_metadata? = ui_metadata_list != [] && ui_metadata_list != nil
+    show_on_sanbase? = has_ui_metadata? && Enum.any?(ui_metadata_list, & &1.show_on_sanbase)
+
+    %{
+      metric: metric,
+      human_readable_name: human_readable_name,
+      source_type: "code",
+      source_display: format_module_name(module),
+      source_id: nil,
+      module: module_str,
+      mapping: mapping,
+      mapping_id: mapping && mapping.id,
+      category_id: mapping && mapping.category_id,
+      category_name: mapping && mapping.category && mapping.category.name,
+      category_display_order: mapping && mapping.category && mapping.category.display_order,
+      group_id: mapping && mapping.group_id,
+      group_name: mapping && mapping.group && mapping.group.name,
+      group_display_order: (mapping && mapping.group && mapping.group.display_order) || -1,
+      display_order: mapping && mapping.display_order,
+      categorized?: not is_nil(mapping),
+      has_ui_metadata?: has_ui_metadata?,
+      all_variants_have_ui_metadata?: true,
+      show_on_sanbase?: show_on_sanbase?,
+      variants_count: 1,
+      is_multi_category?: is_multi_category?
+    }
   end
 
   defp apply_filters(socket) do

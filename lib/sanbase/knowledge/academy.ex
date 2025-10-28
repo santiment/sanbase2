@@ -130,8 +130,6 @@ defmodule Sanbase.Knowledge.Academy do
     {:ok, articles}
   end
 
-  def search_articles(_query, _k), do: {:error, :invalid_arguments}
-
   # Helper functions for reindex_academy
 
   defp perform_dry_run(branch) do

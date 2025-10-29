@@ -68,15 +68,7 @@ defmodule SanbaseWeb.Categorization.GroupLive.Form do
 
       <.simple_form for={%{}} as={:group} phx-submit="save">
         <.input type="text" name="name" value={@group.name} label="Group Name" />
-        <.input
-          type="text"
-          name="short_description"
-          value={@group.short_description}
-          label="Short Description"
-        />
-        <.input type="text" name="description" value={@group.description} label="Description" />
 
-        <.input type="number" name="display_order" value={@group.display_order} label="Display Order" />
         <.input
           type="select"
           name="category_id"
@@ -84,6 +76,15 @@ defmodule SanbaseWeb.Categorization.GroupLive.Form do
           value={@group.category_id}
           options={Enum.map(@categories, fn category -> {category.name, category.id} end)}
         />
+        <.input
+          type="text"
+          name="short_description"
+          value={@group.short_description}
+          label="Short Description"
+        />
+        <.input type="textarea" name="description" value={@group.description} label="Description" />
+
+        <.input type="number" name="display_order" value={@group.display_order} label="Display Order" />
 
         <.button type="submit">Save</.button>
       </.simple_form>

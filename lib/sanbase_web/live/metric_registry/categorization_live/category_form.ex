@@ -75,6 +75,14 @@ defmodule SanbaseWeb.Categorization.CategoryLive.Form do
       <.simple_form for={%{}} as={:category} phx-submit="save">
         <.input type="text" name="name" value={@category.name} label="Category Name" />
         <.input
+          type="text"
+          name="short_description"
+          value={@category.short_description}
+          label="Short Description"
+        />
+        <.input type="textarea" name="description" value={@category.description} label="Description" />
+
+        <.input
           type="number"
           name="display_order"
           value={@category.display_order}
@@ -89,13 +97,21 @@ defmodule SanbaseWeb.Categorization.CategoryLive.Form do
 
   @impl true
   def handle_event("save", params, socket) do
-    %{"name" => name, "display_order" => display_order} = params
+    %{
+      "name" => name,
+      "display_order" => display_order,
+      "short_description" => short_description,
+      "description" => description
+    } = params
+
     display_order = String.to_integer(display_order)
     category = socket.assigns.category
 
     attrs = %{
       name: name,
-      display_order: display_order
+      display_order: display_order,
+      short_description: short_description,
+      description: description
     }
 
     result =
@@ -116,7 +132,13 @@ defmodule SanbaseWeb.Categorization.CategoryLive.Form do
          socket
          |> put_flash(:error, format_errors(changeset))
          |> assign(
-           category: %{socket.assigns.category | name: name, display_order: display_order}
+           category: %{
+             socket.assigns.category
+             | name: name,
+               display_order: display_order,
+               short_description: short_description,
+               description: description
+           }
          )}
     end
   end

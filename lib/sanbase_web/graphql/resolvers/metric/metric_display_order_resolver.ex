@@ -23,6 +23,29 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricDisplayOrderResolver do
      }}
   end
 
+  def get_ordered_metrics_v2(_root, _args, _resolution) do
+    ordered_data = Sanbase.Metric.Category.get_ordered_metrics()
+
+    # Update the dispaly_order based on category. All metrics inside the same category have
+    # display_order in ascending order without gaps starting from 1
+    {metrics, _} =
+      ordered_data.metrics
+      |> Enum.reduce({[], %{}}, fn map, {metrics_acc, display_order_map} ->
+        display_order = Map.get(display_order_map, map.category_name, 1)
+
+        {
+          [Map.put(map, :display_order, display_order) | metrics_acc],
+          Map.put(display_order_map, map.category_name, display_order + 1)
+        }
+      end)
+
+    {:ok,
+     %{
+       categories: ordered_data.categories |> Enum.map(& &1.name),
+       metrics: metrics |> Enum.reverse()
+     }}
+  end
+
   def get_metrics_by_category(_root, %{category: category}, _resolution) do
     # Find category by name
     case Sanbase.Metric.UIMetadata.Category.by_name(category) do

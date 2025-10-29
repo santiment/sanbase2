@@ -9,13 +9,7 @@ defmodule Sanbase.Project.ProjectVersions do
   alias Sanbase.Version
   alias Sanbase.Project
 
-  @doc """
-  Get changelog entries grouped by date.
-  Returns a list of maps with date, created_projects, and hidden_projects.
-  Supports pagination.
-  """
-  @spec get_changelog_by_date(integer(), integer(), String.t() | nil) ::
-          {:ok, list(map())} | {:error, String.t()}
+  @spec get_changelog_by_date(integer(), integer(), String.t() | nil) :: {list(map()), integer()}
   def get_changelog_by_date(page, page_size, search_term \\ nil) do
     {creation_events_query, hiding_events_query} = build_base_queries()
 

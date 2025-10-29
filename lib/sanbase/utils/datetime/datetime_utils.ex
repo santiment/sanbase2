@@ -242,13 +242,18 @@ defmodule Sanbase.DateTimeUtils do
 
     case Keyword.get(opts, :abbreviate, false) do
       true ->
-        str
-        |> String.replace(" minutes", "m")
-        |> String.replace(" minute", "m")
-        |> String.replace(" hours", "h")
-        |> String.replace(" hour", "h")
-        |> String.replace(" days", "d")
-        |> String.replace(" day", "d")
+        String.replace(
+          str,
+          ~r/\b(minutes?|hours?|days?)\b/,
+          fn
+            "minute" -> "m"
+            "minutes" -> "m"
+            "hour" -> "h"
+            "hours" -> "h"
+            "day" -> "d"
+            "days" -> "d"
+          end
+        )
 
       false ->
         str

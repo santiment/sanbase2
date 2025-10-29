@@ -5,22 +5,28 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
 
   alias Sanbase.Metric.Registry.Permissions
+  alias Sanbase.Metric.Category.MetricCategoryMapping
   alias SanbaseWeb.AvailableMetricsComponents
 
   require Logger
 
   @impl true
   def mount(_params, _session, socket) do
-    # Load the metrics only when connected
-    # We don't care about SEO here. Loadin on non-connected makes it so
-    # if someone is fast to click on Verified Status toggle, the action
-    # gets discarded on the connection
     metrics = if connected?(socket), do: Sanbase.Metric.Registry.all(), else: []
 
     {:ok, metric_ids_with_changes} =
       if connected?(socket),
         do: Sanbase.Metric.Registry.Changelog.metric_registry_ids_with_changes(),
         else: {:ok, MapSet.new()}
+
+    category_mapping_by_metric_id =
+      if connected?(socket) do
+        MetricCategoryMapping.list_all()
+        |> Enum.filter(& &1.metric_registry_id)
+        |> Map.new(&{&1.metric_registry_id, &1})
+      else
+        %{}
+      end
 
     {:ok,
      socket
@@ -35,7 +41,8 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
        changed_metrics_ids: [],
        verified_metrics_updates_map: %{},
        filter: %{},
-       sort_by: "ID ↑"
+       sort_by: "ID ↑",
+       category_mapping_by_metric_id: category_mapping_by_metric_id
      )}
   end
 
@@ -62,6 +69,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
       <.list_metrics_verified_status_changed
         changed_metrics_ids={@changed_metrics_ids}
         metrics={@metrics}
+        category_mapping_by_metric_id={@category_mapping_by_metric_id}
       />
     </.modal>
     <div class="flex flex-col items-start justify-evenly">
@@ -97,6 +105,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
             internal_metric={row.internal_metric}
             human_readable_name={row.human_readable_name}
             status={row.status}
+            category_mapping={Map.get(@category_mapping_by_metric_id, row.id)}
           />
         </:col>
         <:col :let={row} label="Docs"><.docs docs={row.docs} /></:col>
@@ -107,14 +116,6 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           popover_target_text={get_popover_text(%{key: "Clickhouse Table"})}
         >
           <.tables_and_interval tables={row.tables} min_interval={row.min_interval} />
-        </:col>
-        <:col
-          :let={row}
-          label="Access"
-          popover_target="popover-access"
-          popover_target_text={get_popover_text(%{key: "Access"})}
-        >
-          {if is_map(row.access), do: Jason.encode!(row.access), else: row.access}
         </:col>
         <:col
           :let={row}
@@ -143,21 +144,21 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           popover_target="popover-metric-details"
           popover_target_text={get_popover_text(%{key: "Metric Details"})}
         >
-          <AvailableMetricsComponents.link_button
-            text="Show"
-            href={~p"/admin/metric_registry/show/#{row.id}"}
-          />
-          <AvailableMetricsComponents.link_button
-            :if={Permissions.can?(:edit, roles: @current_user_role_names)}
-            text="Edit"
-            href={~p"/admin/metric_registry/edit/#{row.id}"}
-          />
-
-          <AvailableMetricsComponents.link_button
-            :if={Permissions.can?(:edit, roles: @current_user_role_names)}
-            text="Duplicate"
-            href={~p"/admin/metric_registry/new?#{%{duplicate_metric_registry_id: row.id}}"}
-          />
+          <div class="flex flex-col gap-1.5">
+            <.link
+              navigate={~p"/admin/metric_registry/show/#{row.id}"}
+              class="inline-flex items-center justify-center px-2.5 py-1 text-sm font-medium text-blue-700 bg-blue-50 rounded hover:bg-blue-100 border border-blue-200"
+            >
+              Show
+            </.link>
+            <.link
+              :if={Permissions.can?(:edit, roles: @current_user_role_names)}
+              navigate={~p"/admin/metric_registry/edit/#{row.id}"}
+              class="inline-flex items-center justify-center px-2.5 py-1 text-sm font-medium text-green-700 bg-green-50 rounded hover:bg-green-100 border border-green-200"
+            >
+              Edit
+            </.link>
+          </div>
         </:col>
       </AvailableMetricsComponents.table_with_popover_th>
     </div>
@@ -389,6 +390,10 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     end
   end
 
+  attr :changed_metrics_ids, :list, required: true
+  attr :metrics, :list, required: true
+  attr :category_mapping_by_metric_id, :map, required: true
+
   defp list_metrics_verified_status_changed(assigns) do
     ~H"""
     <div>
@@ -407,6 +412,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
               internal_metric={row.internal_metric}
               human_readable_name={row.human_readable_name}
               status={row.status}
+              category_mapping={Map.get(@category_mapping_by_metric_id, row.id)}
             />
           </:col>
           <:col :let={row} label="New Status">
@@ -447,8 +453,6 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
       />
       <div class="relative w-11 h-6 bg-red-500 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600">
       </div>
-      <span :if={@row.is_verified} class="ms-3 text-sm font-bold text-green-900">VERIFIED</span>
-      <span :if={!@row.is_verified} class="ms-3 text-sm font-bold text-red-700">UNVERIFIED</span>
     </label>
     """
   end
@@ -712,6 +716,12 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     """
   end
 
+  attr :metric, :string, required: true
+  attr :internal_metric, :string, required: true
+  attr :human_readable_name, :string, required: true
+  attr :status, :string, required: true
+  attr :category_mapping, :map, required: false, default: nil
+
   defp metric_names(assigns) do
     ~H"""
     <div class="flex flex-col break-normal">
@@ -726,6 +736,12 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
       </div>
       <div class="text-gray-900 text-sm">{@metric} (API)</div>
       <div class="text-gray-900 text-sm">{@internal_metric} (DB)</div>
+      <div :if={@category_mapping && @category_mapping.category} class="flex flex-wrap gap-1 mt-1">
+        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+          <.icon name="hero-tag" class="w-3 h-3 mr-1" />
+          {@category_mapping.category.name}<span :if={@category_mapping.group}>/{@category_mapping.group.name}</span>
+        </span>
+      </div>
     </div>
     """
   end

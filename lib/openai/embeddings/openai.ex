@@ -9,7 +9,7 @@ defmodule Sanbase.AI.Embedding.OpenAI do
 
   @base_url "https://api.openai.com/v1/embeddings"
   @model "text-embedding-3-small"
-  @max_retries 3
+  @max_retries 6
   @initial_backoff_ms 1_000
   @receive_timeout_ms 60_000
 

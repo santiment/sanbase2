@@ -21,7 +21,7 @@ defmodule Sanbase.Email.MailjetEventEmitter do
   end
 
   def handle_event({:ok, user_id}, event_type, data)
-      when event_type in [:is_subscribed_monthly_newsletter, :is_subscribed_weekly_newsletter] do
+      when event_type in [:is_subscribed_monthly_newsletter] do
     event_type =
       cond do
         event_type == :is_subscribed_monthly_newsletter and data[event_type] == true ->
@@ -29,12 +29,6 @@ defmodule Sanbase.Email.MailjetEventEmitter do
 
         event_type == :is_subscribed_monthly_newsletter and data[event_type] == false ->
           :unsubscribe_monthly_newsletter
-
-        event_type == :is_subscribed_weekly_newsletter and data[event_type] == true ->
-          :subscribe_weekly_newsletter
-
-        event_type == :is_subscribed_weekly_newsletter and data[event_type] == false ->
-          :unsubscribe_weekly_newsletter
       end
 
     %{

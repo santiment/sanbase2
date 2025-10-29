@@ -210,7 +210,6 @@ defmodule Sanbase.Accounts.UserSettings do
 
     email_lists_keys = [
       :is_subscribed_biweekly_report,
-      :is_subscribed_weekly_newsletter,
       :is_subscribed_monthly_newsletter,
       :is_subscribed_metric_updates
     ]

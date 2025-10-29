@@ -149,7 +149,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
         />
       </div>
       <div>
-        <span :if={@email}>Submit channges as: <span class="font-bold">{@email}</span></span>
+        <span :if={@email}>Submit changes as: <span class="font-bold">{@email}</span></span>
       </div>
       <.simple_form id="metric_registry_form" for={@form} phx-change="validate" phx-submit="save">
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">

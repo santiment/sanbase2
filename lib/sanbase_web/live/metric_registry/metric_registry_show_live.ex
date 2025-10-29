@@ -213,8 +213,7 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
   end
 
   defp get_mappings_for_registry(metric_registry_id) do
-    Sanbase.Metric.Category.MetricCategoryMapping.list_all()
-    |> Enum.filter(&(&1.metric_registry_id == metric_registry_id))
+    Sanbase.Metric.Category.MetricCategoryMapping.get_by_metric_registry_id(metric_registry_id)
   end
 
   defp get_rows(metric_registry) do

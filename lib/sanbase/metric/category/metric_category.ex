@@ -131,15 +131,30 @@ defmodule Sanbase.Metric.Category.MetricCategory do
   """
   @spec list_with_groups() :: [t()]
   def list_with_groups do
+    alias Sanbase.Metric.UIMetadata
+
+    ui_metadata_query =
+      from(u in UIMetadata,
+        order_by: [asc_nulls_last: u.display_order_in_mapping, asc: u.id]
+      )
+
+    mappings_query =
+      from(m in MetricCategoryMapping,
+        order_by: [asc: m.display_order, asc: m.id],
+        preload: [:metric_registry, ui_metadata_list: ^ui_metadata_query]
+      )
+
+    groups_query =
+      from(g in MetricGroup,
+        order_by: [asc: g.display_order, asc: g.name],
+        preload: [mappings: ^mappings_query]
+      )
+
     query =
       from(c in __MODULE__,
         preload: [
-          mappings: ^from(m in MetricCategoryMapping, order_by: [asc: m.display_order]),
-          groups:
-            ^from(g in MetricGroup,
-              order_by: [asc: g.display_order, asc: g.name],
-              preload: [:mappings]
-            )
+          mappings: ^mappings_query,
+          groups: ^groups_query
         ],
         order_by: [asc: c.display_order, asc: c.name]
       )

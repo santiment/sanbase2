@@ -100,6 +100,19 @@ defmodule Sanbase.Metric.Category do
   def list_categories_with_groups, do: MetricCategory.list_with_groups()
 
   @doc """
+  Get the ordered list of all metrics with their metadata.
+  Returns the same shape as DisplayOrder.get_ordered_metrics for compatibility.
+
+  The ordering follows: category order → ungrouped mappings → groups (by order) →
+  mappings within groups → ui_metadata within mappings.
+  """
+  @spec get_ordered_metrics() :: %{metrics: [map()], categories: [map()]}
+  def get_ordered_metrics do
+    categories = list_categories_with_groups()
+    Sanbase.Metric.Category.DisplayOrder.get_ordered_metrics(categories)
+  end
+
+  @doc """
   Reorders categories by display order.
   """
   @spec reorder_categories([%{id: integer(), display_order: integer()}]) ::

@@ -42,6 +42,14 @@ defmodule SanbaseWeb.Graphql.MetricDisplayOrderTypes do
     end
 
     @desc ~s"""
+    Get all metrics with their display order information, organized by categories.
+    """
+    field :get_ordered_metrics_v2, :metric_categories_and_metrics do
+      meta(access: :free)
+      cache_resolve(&MetricDisplayOrderResolver.get_ordered_metrics_v2/3, ttl: 300)
+    end
+
+    @desc ~s"""
     Get metrics for a specific category.
     """
     field :get_metrics_by_category, list_of(:metric_display_order) do

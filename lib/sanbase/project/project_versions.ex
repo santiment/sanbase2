@@ -30,8 +30,34 @@ defmodule Sanbase.Project.ProjectVersions do
     events_by_date = group_events_by_date(all_events)
 
     sorted_dates = get_sorted_dates(events_by_date)
-    total_dates = length(sorted_dates)
-    paginated_dates = paginate_dates(sorted_dates, page, page_size)
+
+    # Compute total dates based on dates that have at least one project with a non-nil slug
+    all_project_ids =
+      events_by_date
+      |> Map.values()
+      |> List.flatten()
+      |> Enum.map(& &1.entity_id)
+      |> Enum.uniq()
+
+    all_projects_by_id =
+      from(p in Project, where: p.id in ^all_project_ids)
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn p, acc -> Map.put(acc, p.id, p) end)
+
+    filtered_sorted_dates =
+      Enum.filter(sorted_dates, fn date ->
+        date_events = Map.get(events_by_date, date, [])
+
+        Enum.any?(date_events, fn event ->
+          case Map.get(all_projects_by_id, event.entity_id) do
+            %Project{slug: slug} when not is_nil(slug) -> true
+            _ -> false
+          end
+        end)
+      end)
+
+    total_dates = length(filtered_sorted_dates)
+    paginated_dates = paginate_dates(filtered_sorted_dates, page, page_size)
 
     projects_by_id = fetch_projects_for_dates(paginated_dates, events_by_date)
     changelog_entries = build_changelog_entries(paginated_dates, events_by_date, projects_by_id)

@@ -121,7 +121,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChangelogResolver do
 
   defp format_asset_events(asset_events, _type) do
     asset_events
-    |> Enum.filter(fn %{project: project} -> not is_nil(project.slug) end)
+    |> Enum.filter(fn
+      %{project: %Project{slug: slug}} when not is_nil(slug) -> true
+      _ -> false
+    end)
     |> Enum.map(fn %{project: project, event: event} ->
       %{
         asset: format_asset_info(project),
@@ -132,7 +135,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChangelogResolver do
 
   defp format_asset_hiding_events(hiding_events) do
     hiding_events
-    |> Enum.filter(fn %{project: project} -> not is_nil(project.slug) end)
+    |> Enum.filter(fn
+      %{project: %Project{slug: slug}} when not is_nil(slug) -> true
+      _ -> false
+    end)
     |> Enum.map(fn %{project: project, event: event, reason: reason} ->
       %{
         asset: format_asset_info(project),

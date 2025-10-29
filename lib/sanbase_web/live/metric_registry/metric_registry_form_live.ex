@@ -152,113 +152,150 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
         <span :if={@email}>Submit channges as: <span class="font-bold">{@email}</span></span>
       </div>
       <.simple_form id="metric_registry_form" for={@form} phx-change="validate" phx-submit="save">
-        <.input type="text" id="input-metric" field={@form[:metric]} label="Metric" />
-        <.input
-          type="text"
-          id="input-internal-metric"
-          field={@form[:internal_metric]}
-          label="Internal Metric"
-        />
-        <.input
-          type="text"
-          id="input-human-readable-name"
-          field={@form[:human_readable_name]}
-          label="Human Readable Name"
-        />
-        <.aliases_input form={@form} />
-        <.tables_input form={@form} />
-        <.min_plan_input form={@form} />
-        <.input
-          type="select"
-          id="input-access"
-          field={@form[:access]}
-          label="Access"
-          options={["free", "restricted"]}
-        />
-        <.input type="text" id="input-min-interval" field={@form[:min_interval]} label="Min Interval" />
-        <.input
-          type="select"
-          id="input-default-aggregation"
-          field={@form[:default_aggregation]}
-          label="Default Aggregation"
-          options={Registry.aggregations()}
-        />
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <.icon name="hero-identification" class="w-5 h-5 mr-2 text-blue-600" /> Basic Information
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <.input type="text" id="input-metric" field={@form[:metric]} label="Metric" />
+            <.input
+              type="text"
+              id="input-internal-metric"
+              field={@form[:internal_metric]}
+              label="Internal Metric"
+            />
+          </div>
+          <.input
+            type="text"
+            id="input-human-readable-name"
+            field={@form[:human_readable_name]}
+            label="Human Readable Name"
+          />
+        </div>
 
-        <.input
-          type="select"
-          id="input-has-incomplete-data"
-          field={@form[:has_incomplete_data]}
-          label="Has Incomplete Data"
-          options={[true, false]}
-        />
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <.icon name="hero-tag" class="w-5 h-5 mr-2 text-blue-600" /> References
+          </h3>
+          <.aliases_input form={@form} />
+          <.tables_input form={@form} />
+          <.docs_input form={@form} />
+        </div>
 
-        <.input
-          type="text"
-          id="input-stabilization-period"
-          field={@form[:stabilization_period]}
-          label="Stabilization Period"
-        />
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <.icon name="hero-cog-6-tooth" class="w-5 h-5 mr-2 text-blue-600" /> Configuration
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <.input
+              type="select"
+              id="input-access"
+              field={@form[:access]}
+              label="Access"
+              options={["free", "restricted"]}
+            />
+            <.input
+              type="select"
+              id="input-data-type"
+              field={@form[:data_type]}
+              label="Data Type"
+              options={["timeseries", "histogram", "table"]}
+            />
+            <.input
+              type="text"
+              id="input-min-interval"
+              field={@form[:min_interval]}
+              label="Min Interval"
+            />
+            <.input
+              type="select"
+              id="input-default-aggregation"
+              field={@form[:default_aggregation]}
+              label="Default Aggregation"
+              options={Registry.aggregations()}
+            />
+            <.input
+              type="select"
+              id="input-status"
+              field={@form[:status]}
+              label="Status"
+              options={Registry.allowed_statuses()}
+            />
+            <.input
+              type="select"
+              id="input-exposed-environments"
+              field={@form[:exposed_environments]}
+              label="Exposed on Environments"
+              options={["all", "none", "stage", "prod"]}
+            />
+          </div>
+        </div>
 
-        <.input
-          type="select"
-          id="input-can-mutate"
-          field={@form[:can_mutate]}
-          label="Can Mutate"
-          options={[true, false]}
-        />
-        <.input
-          type="select"
-          id="input-exposed-environments"
-          field={@form[:exposed_environments]}
-          label="Exposed on Environments"
-          options={["all", "none", "stage", "prod"]}
-        />
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <.icon name="hero-currency-dollar" class="w-5 h-5 mr-2 text-blue-600" /> Access Plans
+          </h3>
+          <.min_plan_input form={@form} />
+        </div>
 
-        <.input
-          type="select"
-          id="input-data-type"
-          field={@form[:data_type]}
-          label="Data Type"
-          options={["timeseries", "histogram", "table"]}
-        />
-        <.docs_input form={@form} />
-        <.selectors_input form={@form} />
-        <.required_selectors_input form={@form} />
-
-        <.input
-          type="select"
-          id="input-is-hidden"
-          field={@form[:is_hidden]}
-          label="Is Hidden"
-          options={[true, false]}
-        />
-        <.input
-          type="select"
-          id="input-is-timebound"
-          field={@form[:is_timebound]}
-          label="Is Timebound"
-          options={[true, false]}
-        />
-        <.input
-          type="select"
-          id="input-status"
-          field={@form[:status]}
-          label="Status"
-          options={Registry.allowed_statuses()}
-        />
-        <.input
-          type="textarea"
-          id="input-parameters"
-          field={@form[:parameters]}
-          value={Jason.encode!(@metric_registry.parameters)}
-          label="Parameters"
-        />
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <.icon name="hero-adjustments-horizontal" class="w-5 h-5 mr-2 text-blue-600" />
+            Advanced Settings
+          </h3>
+          <.selectors_input form={@form} />
+          <.required_selectors_input form={@form} />
+          <.input
+            type="textarea"
+            id="input-parameters"
+            field={@form[:parameters]}
+            value={Jason.encode!(@metric_registry.parameters)}
+            label="Parameters"
+          />
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+            <.input
+              type="select"
+              id="input-has-incomplete-data"
+              field={@form[:has_incomplete_data]}
+              label="Has Incomplete Data"
+              options={[true, false]}
+            />
+            <.input
+              type="select"
+              id="input-is-timebound"
+              field={@form[:is_timebound]}
+              label="Is Timebound"
+              options={[true, false]}
+            />
+            <.input
+              type="select"
+              id="input-can-mutate"
+              field={@form[:can_mutate]}
+              label="Can Mutate"
+              options={[true, false]}
+            />
+            <.input
+              type="select"
+              id="input-is-hidden"
+              field={@form[:is_hidden]}
+              label="Is Hidden"
+              options={[true, false]}
+            />
+            <.input
+              type="text"
+              id="input-stabilization-period"
+              field={@form[:stabilization_period]}
+              label="Stabilization Period"
+            />
+          </div>
+        </div>
 
         <.deprecation_input form={@form} />
-        <div class="border border-gray-200 rounded-lg px-3 py-6 flex-row space-y-5">
-          <span class="text-sm font-semibold leading-6 text-zinc-800">
-            Extra Change Request details
-          </span>
+        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg shadow-sm border-2 border-blue-200 p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <.icon name="hero-document-text" class="w-5 h-5 mr-2 text-blue-600" />
+            Change Request Details
+          </h3>
 
           <.input
             type="textarea"
@@ -267,7 +304,9 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
             label="Notes"
             placeholder="Explanation why the changes are submitted"
           />
-          <.button phx-disable-with="Submitting...">Submit Change Request</.button>
+          <.button class="mt-4 w-full md:w-auto" phx-disable-with="Submitting...">
+            <.icon name="hero-paper-airplane" class="w-4 h-4 mr-2 inline" /> Submit Change Request
+          </.button>
         </div>
         <.error :for={{field, [reason]} <- @save_errors}>
           {to_string(field) <> ": " <> inspect(reason)}
@@ -281,7 +320,10 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
     assigns = assign(assigns, disabled: assigns.form[:is_deprecated].value in [false, "false"])
 
     ~H"""
-    <div class="border border-gray-200 rounded-lg px-3 py-6">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+        <.icon name="hero-exclamation-triangle" class="w-5 h-5 mr-2 text-orange-600" /> Deprecation
+      </h3>
       <.input
         type="select"
         id="input-is-deprecated"
@@ -289,7 +331,13 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
         field={@form[:is_deprecated]}
         options={[true, false]}
       />
-      <div class={["rounded-b-lg px-3 py-6", if(@disabled, do: "bg-gray-100")]}>
+      <div class={[
+        "rounded-lg p-4 mt-4",
+        if(@disabled,
+          do: "bg-gray-50 border border-gray-200",
+          else: "bg-orange-50 border border-orange-200"
+        )
+      ]}>
         <.input
           type="datetime-local"
           id="input-hard-deprecate-after"
@@ -316,21 +364,23 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
 
   def min_plan_input(assigns) do
     ~H"""
-    <.input
-      type="select"
-      id="input-sanbase-min-plan"
-      field={@form[:sanbase_min_plan]}
-      label="Sanbase Min Plan"
-      options={["free", "pro", "max"]}
-    />
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <.input
+        type="select"
+        id="input-sanbase-min-plan"
+        field={@form[:sanbase_min_plan]}
+        label="Sanbase Min Plan"
+        options={["free", "pro", "max"]}
+      />
 
-    <.input
-      type="select"
-      id="input-sanapi-min-plan"
-      field={@form[:sanapi_min_plan]}
-      label="Sanapi Min Plan"
-      options={["free", "pro", "max"]}
-    />
+      <.input
+        type="select"
+        id="input-sanapi-min-plan"
+        field={@form[:sanapi_min_plan]}
+        label="Sanapi Min Plan"
+        options={["free", "pro", "max"]}
+      />
+    </div>
     """
   end
 
@@ -341,12 +391,12 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
     ~H"""
     <button
       type="button"
-      class="mt-2.5 mr-2 bg-white border border-gray-300 hover:bg-gray-50  rounded-xl text-sm px-3 py-2.5 inline-flex items-center"
+      class="mt-2.5 mr-2 bg-red-50 border border-red-200 hover:bg-red-100 hover:border-red-300 rounded-lg text-sm px-3 py-2.5 inline-flex items-center transition-colors"
       name={@name}
       value={@ef.index}
       phx-click={JS.dispatch("change")}
     >
-      <.icon name="hero-x-mark" class="w-4 h-4 text-red-700" />
+      <.icon name="hero-x-mark" class="w-4 h-4 text-red-600" />
     </button>
     """
   end
@@ -361,11 +411,9 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
         name={@name}
         value="new"
         phx-click={JS.dispatch("change")}
-        class="mt-4 mr-2 bg-white border border-gray-300 hover:bg-gray-50 hover:text-gray-700 text-gray-600 font-semibold rounded-xl text-sm px-5 py-2.5 inline-flex items-center "
+        class="bg-blue-50 border border-blue-200 hover:bg-blue-100 hover:border-blue-300 text-blue-700 font-semibold rounded-lg text-sm px-5 py-2.5 inline-flex items-center transition-colors"
       >
-        <.icon name="hero-plus-circle" class="w-4 h-4 text-gray-500 mr-2" />
-        <!-- Update icon to 'plus' for 'Add' -->
-      Add
+        <.icon name="hero-plus-circle" class="w-5 h-5 mr-2" /> Add
       </button>
     </div>
     """
@@ -382,13 +430,13 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
 
   def embeds_input(assigns) do
     ~H"""
-    <div class="border border-gray-200 rounded-lg px-3 py-6">
-      <span class="text-sm font-semibold leading-6 text-zinc-800">
+    <div class="bg-gray-50 rounded-lg px-4 py-4 mb-4 border border-gray-200">
+      <span class="text-sm font-semibold leading-6 text-gray-800 block mb-3">
         {Inflex.camelize(@plural)}
       </span>
       <.inputs_for :let={ef} field={@form[@form_field]}>
         <input type="hidden" name={"registry[#{@sort_param}][]"} value={ef.index} />
-        <div class="flex flex-grow min-w-0 items-start">
+        <div class="flex flex-grow min-w-0 items-start mb-2">
           <.inputs_for_drop_button ef={ef} name={"registry[#{@drop_param}][]"} />
           <.input
             type="text"

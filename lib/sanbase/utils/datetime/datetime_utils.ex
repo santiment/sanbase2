@@ -218,25 +218,40 @@ defmodule Sanbase.DateTimeUtils do
     |> maybe_pluralize_interval(int_interval)
   end
 
-  def rough_duration_since(datetime) do
+  def rough_duration_since(datetime, opts \\ []) do
     seconds =
       case datetime do
         %NaiveDateTime{} -> NaiveDateTime.diff(NaiveDateTime.utc_now(), datetime, :second)
         %DateTime{} -> DateTime.diff(DateTime.utc_now(), datetime, :second)
       end
 
-    cond do
-      seconds < 3600 ->
-        minutes = div(seconds, 60)
-        "#{minutes} #{if(minutes == 1, do: "minute", else: "minutes")}"
+    str =
+      cond do
+        seconds < 3600 ->
+          minutes = div(seconds, 60)
+          "#{minutes} #{if(minutes == 1, do: "minute", else: "minutes")}"
 
-      seconds < 86_400 ->
-        hours = div(seconds, 3600)
-        "#{hours} #{if(hours == 1, do: "hour", else: "hours")}"
+        seconds < 86_400 ->
+          hours = div(seconds, 3600)
+          "#{hours} #{if(hours == 1, do: "hour", else: "hours")}"
 
+        true ->
+          days = div(seconds, 86_400)
+          "#{days} #{if(days == 1, do: "day", else: "days")}"
+      end
+
+    case Keyword.get(opts, :abbreviate, false) do
       true ->
-        days = div(seconds, 86_400)
-        "#{days} #{if(days == 1, do: "day", else: "days")}"
+        str
+        |> String.replace(" minutes", "m")
+        |> String.replace(" minute", "m")
+        |> String.replace(" hours", "h")
+        |> String.replace(" hour", "h")
+        |> String.replace(" days", "d")
+        |> String.replace(" day", "d")
+
+      false ->
+        str
     end
   end
 

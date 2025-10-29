@@ -284,17 +284,24 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
   end
 
   defp dates(assigns) do
+    inserted_duration =
+      Sanbase.DateTimeUtils.rough_duration_since(assigns.inserted_at, abbreviate: true)
+
+    updated_duration =
+      Sanbase.DateTimeUtils.rough_duration_since(assigns.updated_at, abbreviate: true)
+
+    assigns =
+      assign(assigns, inserted_duration: inserted_duration, updated_duration: updated_duration)
+
     ~H"""
-    <div class="flex flex-col">
-      <div class="text-nowrap">
-        <span class="text-green-600 font-bold">Created</span> {Sanbase.DateTimeUtils.rough_duration_since(
-          @inserted_at
-        )} ago
+    <div class="flex flex-col gap-1">
+      <div class="flex items-center gap-1.5 text-nowrap">
+        <.icon name="hero-plus-circle" class="w-4 h-4 text-green-600" />
+        <span class="text-gray-700 text-sm">{@inserted_duration} ago</span>
       </div>
-      <div :if={@inserted_at != @updated_at}>
-        <span class="text-amber-600 font-bold">Updated</span> {Sanbase.DateTimeUtils.rough_duration_since(
-          @updated_at
-        )} ago
+      <div :if={@inserted_at != @updated_at} class="flex items-center gap-1.5 text-nowrap">
+        <.icon name="hero-pencil-square" class="w-4 h-4 text-amber-600" />
+        <span class="text-gray-700 text-sm">{@updated_duration} ago</span>
       </div>
     </div>
     """

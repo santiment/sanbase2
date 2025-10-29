@@ -225,7 +225,6 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
 
     test "update newsletter settings", context do
       expect(Sanbase.Email.MockMailjetApi, :unsubscribe, fn _, _ -> :ok end)
-      expect(Sanbase.Email.MockMailjetApi, :unsubscribe, fn _, _ -> :ok end)
 
       query =
         update_user_settings(

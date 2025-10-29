@@ -19,11 +19,11 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
         do: Sanbase.Metric.Registry.Changelog.metric_registry_ids_with_changes(),
         else: {:ok, MapSet.new()}
 
-    category_mapping_by_metric_id =
+    category_mappings_by_metric_id =
       if connected?(socket) do
         MetricCategoryMapping.list_all()
         |> Enum.filter(& &1.metric_registry_id)
-        |> Map.new(&{&1.metric_registry_id, &1})
+        |> Enum.reduce(%{}, fn m, acc -> Map.update(acc, m.metric_registry_id, [m], &[m | &1]) end)
       else
         %{}
       end
@@ -42,7 +42,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
        verified_metrics_updates_map: %{},
        filter: %{},
        sort_by: "ID ↑",
-       category_mapping_by_metric_id: category_mapping_by_metric_id
+       category_mappings_by_metric_id: category_mappings_by_metric_id
      )}
   end
 
@@ -69,7 +69,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
       <.list_metrics_verified_status_changed
         changed_metrics_ids={@changed_metrics_ids}
         metrics={@metrics}
-        category_mapping_by_metric_id={@category_mapping_by_metric_id}
+        category_mappings_by_metric_id={@category_mappings_by_metric_id}
       />
     </.modal>
     <div class="flex flex-col items-start justify-evenly">
@@ -105,7 +105,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
             internal_metric={row.internal_metric}
             human_readable_name={row.human_readable_name}
             status={row.status}
-            category_mapping={Map.get(@category_mapping_by_metric_id, row.id)}
+            category_mappings={Map.get(@category_mappings_by_metric_id, row.id, [])}
           />
         </:col>
         <:col :let={row} label="Docs"><.docs docs={row.docs} /></:col>
@@ -399,7 +399,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
 
   attr :changed_metrics_ids, :list, required: true
   attr :metrics, :list, required: true
-  attr :category_mapping_by_metric_id, :map, required: true
+  attr :category_mappings_by_metric_id, :map, required: true
 
   defp list_metrics_verified_status_changed(assigns) do
     ~H"""
@@ -419,7 +419,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
               internal_metric={row.internal_metric}
               human_readable_name={row.human_readable_name}
               status={row.status}
-              category_mapping={Map.get(@category_mapping_by_metric_id, row.id)}
+              category_mappings={Map.get(@category_mappings_by_metric_id, row.id, [])}
             />
           </:col>
           <:col :let={row} label="New Status">
@@ -727,7 +727,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
   attr :internal_metric, :string, required: true
   attr :human_readable_name, :string, required: true
   attr :status, :string, required: true
-  attr :category_mapping, :map, required: false, default: nil
+  attr :category_mappings, :list, required: false, default: nil
 
   defp metric_names(assigns) do
     ~H"""
@@ -743,10 +743,13 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
       </div>
       <div class="text-gray-900 text-sm">{@metric} (API)</div>
       <div class="text-gray-900 text-sm">{@internal_metric} (DB)</div>
-      <div :if={@category_mapping && @category_mapping.category} class="flex flex-wrap gap-1 mt-1">
-        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+      <div :if={@category_mappings != []} class="flex flex-wrap gap-1 mt-1">
+        <span
+          :for={category_mapping <- @category_mappings}
+          class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"
+        >
           <.icon name="hero-tag" class="w-3 h-3 mr-1" />
-          {@category_mapping.category.name}<span :if={@category_mapping.group}>/{@category_mapping.group.name}</span>
+          {category_mapping.category.name}<span :if={category_mapping.group}>/{category_mapping.group.name}</span>
         </span>
       </div>
     </div>

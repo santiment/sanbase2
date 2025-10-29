@@ -478,9 +478,9 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
 
       <div
         :if={@row.sync_status == "not_synced" and @row.id not in @metric_ids_with_changes}
-        class="text-gray-400 text-sm font-semibold cursor-pointer"
+        class="text-gray-400 text-xs font-semibold "
       >
-        (New metric, no previous changes to compare with)
+        (New metric, no changes)
       </div>
     </div>
     """

@@ -138,6 +138,15 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
           }
           icon="hero-document-duplicate"
         />
+
+        <AvailableMetricsComponents.available_metrics_button
+          :if={Permissions.can?(:edit, roles: @current_user_role_names) and @live_action == :edit}
+          text="Assign to Category/Group"
+          href={
+            ~p"/admin/metric_registry/categorization/mappings/new?#{%{metric_registry_id: @metric_registry.id}}"
+          }
+          icon="hero-tag"
+        />
       </div>
       <div>
         <span :if={@email}>Submit channges as: <span class="font-bold">{@email}</span></span>

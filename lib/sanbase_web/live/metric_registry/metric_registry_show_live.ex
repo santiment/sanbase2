@@ -10,6 +10,7 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
   @impl true
   def mount(%{"id" => id}, _session, socket) do
     {:ok, metric_registry} = Sanbase.Metric.Registry.by_id(id)
+    mappings = get_mappings_for_registry(metric_registry.id)
     rows = get_rows(metric_registry)
 
     # The URL is nil if no slug is supported
@@ -22,6 +23,7 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
        page_title: "Metric Registry | Show #{metric_registry.metric}",
        metric_registry: metric_registry,
        metric_graphiql_url: metric_graphiql_url,
+       mappings: mappings,
        rows: rows
      )}
   end
@@ -103,6 +105,34 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
           <.formatted_value key={row.key} value={row.value} />
         </:col>
       </.table>
+
+      <div :if={@mappings != []} class="mt-8">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Categorization</h2>
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Category
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Group
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr :for={mapping <- @mappings}>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {mapping.category.name}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {if mapping.group, do: mapping.group.name, else: "-"}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
     """
   end
@@ -180,6 +210,11 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
     |> List.wrap()
     |> Enum.map(fn x -> x |> to_string() |> String.upcase() end)
     |> Enum.join(", ")
+  end
+
+  defp get_mappings_for_registry(metric_registry_id) do
+    Sanbase.Metric.Category.MetricCategoryMapping.list_all()
+    |> Enum.filter(&(&1.metric_registry_id == metric_registry_id))
   end
 
   defp get_rows(metric_registry) do

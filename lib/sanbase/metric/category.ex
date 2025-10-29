@@ -198,32 +198,6 @@ defmodule Sanbase.Metric.Category do
   end
 
   @doc """
-  Gets a metric category mapping by metric_registry_id
-  """
-  @spec get_mappings_by_metric_registry_id(integer()) ::
-          {:ok, [MetricCategoryMapping.t()]}
-  def get_mapping_by_metric_registry_id(metric_registry_id) do
-    list = MetricCategoryMapping.get_by_metric_registry_id(metric_registry_id)
-    {:ok, list}
-  end
-
-  @doc """
-  Gets a metric category mapping by module and metric
-  """
-  @spec get_mapping_by_module_and_metric(String.t(), String.t()) ::
-          {:ok, MetricCategoryMapping.t()} | {:error, String.t()}
-  def get_mapping_by_module_and_metric(module, metric) do
-    case MetricCategoryMapping.get_by_module_and_metric(module, metric) do
-      %MetricCategoryMapping{} = mapping ->
-        {:ok, mapping}
-
-      nil ->
-        {:error,
-         "MetricCategoryMapping with module #{module} and metric #{metric} does not exist"}
-    end
-  end
-
-  @doc """
   Creates a new metric categories mapping.
   """
   @spec create_mapping(map()) :: {:ok, MetricCategoryMapping.t()} | {:error, Ecto.Changeset.t()}

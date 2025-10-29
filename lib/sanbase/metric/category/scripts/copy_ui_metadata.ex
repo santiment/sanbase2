@@ -27,7 +27,7 @@ defmodule Sanbase.Metric.Category.Scripts.CopyUIMetadata do
        )
        when is_integer(metric_registry_id) do
     with {:ok, mappings} when is_list(mappings) and mappings != [] <-
-           Category.get_mapping_by_metric_registry_id(metric_registry_id) do
+           Category.get_mappings_by_metric_registry_id(metric_registry_id) do
       metric = Map.fetch!(map, :metric) |> maybe_fix_metric_name(available_metrics)
 
       # One metric_registry_id can produce many mappings (e.g. labelled_historical_balance is
@@ -64,7 +64,7 @@ defmodule Sanbase.Metric.Category.Scripts.CopyUIMetadata do
     module = module || "__none__"
 
     with {:ok, mapping} when not is_nil(mapping) <-
-           Category.get_mapping_by_module_and_metric(module, metric) do
+           Category.get_mappings_by_module_and_metric(module, metric) do
       params =
         Map.take(map, [:metric, :args, :ui_key, :ui_human_readable_name, :unit, :chart_style])
         |> Map.merge(%{

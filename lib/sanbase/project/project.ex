@@ -245,6 +245,8 @@ defmodule Sanbase.Project do
     SanbaseWeb.Endpoint.frontend_url() <> "/projects/#{slug}"
   end
 
+  def sanbase_link(%Project{}), do: nil
+
   @doc ~s"""
   Return a project with a matching ticker. `Repo.one` fails if there are more
   than one project with the same ticker.

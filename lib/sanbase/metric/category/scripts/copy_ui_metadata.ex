@@ -26,8 +26,17 @@ defmodule Sanbase.Metric.Category.Scripts.CopyUIMetadata do
          available_metrics
        )
        when is_integer(metric_registry_id) do
-    with {:ok, mapping} <- Category.get_mapping_by_metric_registry_id(metric_registry_id) do
+    with {:ok, mappings} when is_list(mappings) and mappings != [] <-
+           Category.get_mapping_by_metric_registry_id(metric_registry_id) do
       metric = Map.fetch!(map, :metric) |> maybe_fix_metric_name(available_metrics)
+
+      # One metric_registry_id can produce many mappings (e.g. labelled_historical_balance is
+      # categoried under both "Funds" and "Miners" on-chain groups)
+      mapping =
+        Enum.find(mappings, fn m ->
+          m.category.name == map.category_name and
+            (is_nil(m.group) or m.group.name == map.group_name)
+        end)
 
       params =
         Map.take(map, [:args, :ui_key, :ui_human_readable_name, :unit, :chart_style])
@@ -54,7 +63,8 @@ defmodule Sanbase.Metric.Category.Scripts.CopyUIMetadata do
        when is_binary(metric) do
     module = module || "__none__"
 
-    with {:ok, mapping} <- Category.get_mapping_by_module_and_metric(module, metric) do
+    with {:ok, mapping} when not is_nil(mapping) <-
+           Category.get_mapping_by_module_and_metric(module, metric) do
       params =
         Map.take(map, [:metric, :args, :ui_key, :ui_human_readable_name, :unit, :chart_style])
         |> Map.merge(%{

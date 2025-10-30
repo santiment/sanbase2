@@ -125,7 +125,7 @@ defmodule Sanbase.Metric.Category.MetricCategoryMapping do
   @doc """
   Gets a metric categories mapping by metric_registry_id
   """
-  @spec get_by_metric_registry_id(integer()) :: t() | nil
+  @spec get_by_metric_registry_id(integer()) :: [t()]
   def get_by_metric_registry_id(metric_registry_id) when is_integer(metric_registry_id) do
     query =
       from(m in __MODULE__,
@@ -133,7 +133,7 @@ defmodule Sanbase.Metric.Category.MetricCategoryMapping do
         preload: [:category, :group, :metric_registry, :ui_metadata_list]
       )
 
-    Repo.one(query)
+    Repo.all(query)
   end
 
   @doc """

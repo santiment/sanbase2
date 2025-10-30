@@ -34,6 +34,7 @@ defmodule Sanbase.Metric.Category.Scripts.CopyCategories do
       case map do
         %{metric_registry_id: metric_registry_id} when is_integer(metric_registry_id) ->
           Sanbase.Metric.Category.create_mapping(%{
+            # metric: map.metric,
             metric_registry_id: metric_registry_id,
             category_id: category_id,
             group_id: group_id,

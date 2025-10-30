@@ -8343,7 +8343,7 @@ CREATE INDEX menus_user_id_index ON public.menus USING btree (user_id);
 -- Name: metric_categories_name_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX metric_categories_name_index ON public.metric_categories USING btree (name);
+CREATE UNIQUE INDEX metric_categories_name_index ON public.metric_categories USING btree (lower((name)::text));
 
 
 --
@@ -8371,7 +8371,7 @@ CREATE UNIQUE INDEX metric_category_mappings_module_metric_category_id_group_id_
 -- Name: metric_groups_name_category_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX metric_groups_name_category_id_index ON public.metric_groups USING btree (name, category_id);
+CREATE UNIQUE INDEX metric_groups_name_category_id_index ON public.metric_groups USING btree (lower((name)::text), category_id);
 
 
 --
@@ -11147,3 +11147,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20251023083446);
 INSERT INTO public."schema_migrations" (version) VALUES (20251023114153);
 INSERT INTO public."schema_migrations" (version) VALUES (20251027142731);
 INSERT INTO public."schema_migrations" (version) VALUES (20251027154645);
+INSERT INTO public."schema_migrations" (version) VALUES (20251030132017);

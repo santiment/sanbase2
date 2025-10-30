@@ -200,17 +200,11 @@ defmodule Sanbase.Metric.Category do
   @doc """
   Gets a metric category mapping by metric_registry_id
   """
-  @spec get_mapping_by_metric_registry_id(integer()) ::
-          {:ok, MetricCategoryMapping.t()} | {:error, String.t()}
+  @spec get_mappings_by_metric_registry_id(integer()) ::
+          {:ok, [MetricCategoryMapping.t()]}
   def get_mapping_by_metric_registry_id(metric_registry_id) do
-    case MetricCategoryMapping.get_by_metric_registry_id(metric_registry_id) do
-      %MetricCategoryMapping{} = mapping ->
-        {:ok, mapping}
-
-      nil ->
-        {:error,
-         "MetricCategoryMapping with metric_registry_id #{metric_registry_id} does not exist"}
-    end
+    list = MetricCategoryMapping.get_by_metric_registry_id(metric_registry_id)
+    {:ok, list}
   end
 
   @doc """

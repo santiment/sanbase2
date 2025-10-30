@@ -59,10 +59,8 @@ defmodule SanbaseWeb.Graphql.Schema.EntityQueries do
       arg(:cursor, :cursor_input_no_order, default_value: nil)
       arg(:filter, :entity_filter)
 
-      # Set the default values to 3/20. This can be reverted once the
-      # frontend sets the limits
-      arg(:min_title_length, :integer, default_value: 3)
-      arg(:min_description_length, :integer, default_value: 20)
+      arg(:min_title_length, :integer, default_value: 0)
+      arg(:min_description_length, :integer, default_value: 0)
 
       cache_resolve(&EntityResolver.get_most_recent/3,
         ttl: 30,

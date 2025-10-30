@@ -5,6 +5,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChatResolver do
 
   import Absinthe.Resolution.Helpers, warn: false
 
+  require Logger
+
   alias Sanbase.Chat
   alias Sanbase.AI.ChatAIService
   alias Sanbase.AI.AcademyAIService
@@ -99,118 +101,95 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChatResolver do
   end
 
   @doc "Send a user message - creates new chat if chatId not provided, adds to existing chat otherwise"
-  def send_chat_message(_root, args, %{context: %{auth: %{current_user: current_user}}}) do
-    context = parse_context_input(Map.get(args, :context, %{}))
-    chat_type = convert_enum_to_string(Map.get(args, :type, :dyor_dashboard))
+  def send_chat_message(
+        _root,
+        args,
+        %{context: %{auth: %{current_user: current_user}}} = resolution
+      ) do
+    log_graphql_request("sendChatMessage", args, resolution)
+    start_time = System.monotonic_time()
 
-    result =
-      case Map.get(args, :chat_id) do
-        nil ->
-          # Create new chat with the user message
-          case Chat.create_chat_with_message(current_user.id, args.content, context, chat_type) do
-            {:ok, chat} ->
-              # Get the initial user message ID (first message in a new chat)
-              user_message = List.first(chat.chat_messages)
+    result = do_send_chat_message(args, current_user.id)
 
-              # For new chats, generate AI title and response synchronously
-              maybe_generate_ai_response(chat, args.content, context, current_user.id,
-                is_new_chat: true,
-                message_id: user_message.id
-              )
-
-              # Return the updated chat with AI response
-              {:ok, Chat.get_chat_with_messages(chat.id)}
-
-            {:error, changeset} ->
-              {:error, format_changeset_errors(changeset)}
-          end
-
-        chat_id ->
-          # Add user message to existing chat
-          case Chat.get_chat(chat_id) do
-            nil ->
-              {:error, "Chat not found"}
-
-            chat ->
-              if chat.user_id == current_user.id do
-                case Chat.add_message_to_chat(chat_id, args.content, :user, context) do
-                  {:ok, message} ->
-                    # Generate AI response for existing chat synchronously
-                    maybe_generate_ai_response(chat, args.content, context, current_user.id,
-                      is_new_chat: false,
-                      message_id: message.id
-                    )
-
-                    # Return the updated chat with AI response
-                    {:ok, Chat.get_chat_with_messages(chat_id)}
-
-                  {:error, changeset} ->
-                    {:error, format_changeset_errors(changeset)}
-                end
-              else
-                {:error, "Access denied"}
-              end
-          end
-      end
+    duration_ms = div(System.monotonic_time() - start_time, 1_000_000)
+    log_graphql_response("sendChatMessage", result, duration_ms)
 
     result
   end
 
-  def send_chat_message(_root, args, _context) do
+  def send_chat_message(_root, args, resolution) do
+    log_graphql_request("sendChatMessage", args, resolution)
+    start_time = System.monotonic_time()
+
+    result = do_send_chat_message(args, nil)
+
+    duration_ms = div(System.monotonic_time() - start_time, 1_000_000)
+    log_graphql_response("sendChatMessage", result, duration_ms)
+
+    result
+  end
+
+  defp do_send_chat_message(args, user_id) do
     context = parse_context_input(Map.get(args, :context, %{}))
     chat_type = convert_enum_to_string(Map.get(args, :type, :dyor_dashboard))
 
-    result =
-      case Map.get(args, :chat_id) do
-        nil ->
-          # Create new anonymous chat with the user message
-          case Chat.create_chat_with_message(nil, args.content, context, chat_type) do
-            {:ok, chat} ->
-              # Get the initial user message ID (first message in a new chat)
-              user_message = List.first(chat.chat_messages)
+    case Map.get(args, :chat_id) do
+      nil ->
+        create_new_chat_with_message(user_id, args.content, context, chat_type)
 
-              # For new chats, generate AI response synchronously (no title generation for anonymous)
-              maybe_generate_ai_response(chat, args.content, context, nil,
-                is_new_chat: true,
-                message_id: user_message.id
+      chat_id ->
+        add_message_to_existing_chat(chat_id, args.content, context, user_id)
+    end
+  end
+
+  defp create_new_chat_with_message(user_id, content, context, chat_type) do
+    case Chat.create_chat_with_message(user_id, content, context, chat_type) do
+      {:ok, chat} ->
+        user_message = List.first(chat.chat_messages)
+
+        maybe_generate_ai_response(chat, content, context, user_id,
+          is_new_chat: true,
+          message_id: user_message.id
+        )
+
+        {:ok, Chat.get_chat_with_messages(chat.id)}
+
+      {:error, changeset} ->
+        {:error, format_changeset_errors(changeset)}
+    end
+  end
+
+  defp add_message_to_existing_chat(chat_id, content, context, user_id) do
+    case Chat.get_chat(chat_id) do
+      nil ->
+        {:error, "Chat not found"}
+
+      chat ->
+        if can_modify_chat?(chat, user_id) do
+          case Chat.add_message_to_chat(chat_id, content, :user, context) do
+            {:ok, message} ->
+              maybe_generate_ai_response(chat, content, context, user_id,
+                is_new_chat: false,
+                message_id: message.id
               )
 
-              # Return the updated chat with AI response
-              {:ok, Chat.get_chat_with_messages(chat.id)}
+              {:ok, Chat.get_chat_with_messages(chat_id)}
 
             {:error, changeset} ->
               {:error, format_changeset_errors(changeset)}
           end
+        else
+          {:error, "Access denied"}
+        end
+    end
+  end
 
-        chat_id ->
-          # Add user message to existing anonymous chat
-          case Chat.get_chat(chat_id) do
-            nil ->
-              {:error, "Chat not found"}
+  defp can_modify_chat?(chat, user_id) when is_integer(user_id) do
+    chat.user_id == user_id
+  end
 
-            chat ->
-              if can_access_chat?(chat, nil) do
-                case Chat.add_message_to_chat(chat_id, args.content, :user, context) do
-                  {:ok, message} ->
-                    # Generate AI response for existing chat synchronously
-                    maybe_generate_ai_response(chat, args.content, context, nil,
-                      is_new_chat: false,
-                      message_id: message.id
-                    )
-
-                    # Return the updated chat with AI response
-                    {:ok, Chat.get_chat_with_messages(chat_id)}
-
-                  {:error, changeset} ->
-                    {:error, format_changeset_errors(changeset)}
-                end
-              else
-                {:error, "Access denied"}
-              end
-          end
-      end
-
-    result
+  defp can_modify_chat?(chat, nil) do
+    can_access_chat?(chat, nil)
   end
 
   @doc "Delete a chat"
@@ -394,4 +373,67 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChatResolver do
       true -> false
     end
   end
+
+  defp log_graphql_request(query_name, args, resolution) do
+    user_id = extract_user_id(resolution)
+    sanitized_args = sanitize_args_for_logging(args)
+
+    Logger.warning(
+      "GraphQL request: query=#{query_name}, user_id=#{inspect(user_id)}, args=#{inspect(sanitized_args)}"
+    )
+  end
+
+  defp log_graphql_response(query_name, result, duration_ms) do
+    case result do
+      {:ok, data} ->
+        sanitized_data = sanitize_response_for_logging(data)
+
+        Logger.warning(
+          "GraphQL response: query=#{query_name}, status=success, duration_ms=#{duration_ms}, data=#{inspect(sanitized_data)}"
+        )
+
+      {:error, reason} ->
+        Logger.warning(
+          "GraphQL response: query=#{query_name}, status=error, duration_ms=#{duration_ms}, error=#{inspect(reason)}"
+        )
+    end
+  end
+
+  defp extract_user_id(%{context: %{auth: %{current_user: %{id: user_id}}}}), do: user_id
+  defp extract_user_id(_), do: nil
+
+  defp sanitize_args_for_logging(args) do
+    args
+    |> Map.update(:content, nil, fn content ->
+      if is_binary(content) && String.length(content) > 200 do
+        String.slice(content, 0, 200) <> "... (truncated)"
+      else
+        content
+      end
+    end)
+    |> Map.update(:context, nil, fn context ->
+      if is_map(context) && map_size(context) > 10 do
+        "context with #{map_size(context)} keys"
+      else
+        context
+      end
+    end)
+  end
+
+  defp sanitize_response_for_logging(data) when is_map(data) do
+    case Map.get(data, :chat_messages) do
+      messages when is_list(messages) ->
+        messages_count = length(messages)
+        data |> Map.put(:chat_messages, "#{messages_count} messages")
+
+      _ ->
+        if map_size(data) > 5 do
+          "response with #{map_size(data)} keys"
+        else
+          data
+        end
+    end
+  end
+
+  defp sanitize_response_for_logging(data), do: data
 end

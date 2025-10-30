@@ -9,8 +9,8 @@ defmodule Sanbase.AI.Embedding.OpenAI do
 
   @base_url "https://api.openai.com/v1/embeddings"
   @model "text-embedding-3-small"
-  @max_retries 6
-  @initial_backoff_ms 1_000
+  @max_retries 12
+  @initial_backoff_ms 100
   @receive_timeout_ms 60_000
 
   @doc """
@@ -25,18 +25,34 @@ defmodule Sanbase.AI.Embedding.OpenAI do
   - For list of texts: {:ok, embeddings} on success where embeddings is a list of embedding lists
   - {:error, reason} on failure
   """
-  def generate_embeddings(texts, size) when is_list(texts) and is_integer(size) do
-    request_with_retry(texts, size, 0)
+  def generate_embeddings(texts, _size) when is_list(texts) do
+    request_with_retry(texts, 0)
   end
 
-  defp request_with_retry(texts, size, attempt) when attempt < @max_retries do
-    case make_request(texts, size) do
+  @doc """
+  Generates embeddings without retry logic. Useful for testing and debugging.
+
+  Returns the same format as `generate_embeddings/2` but without automatic retries.
+  """
+  def generate_embeddings_without_retry(texts, _size) when is_list(texts) do
+    case make_request(texts) do
+      {:ok, %{"data" => data}} ->
+        embeddings = Enum.map(data, fn %{"embedding" => embedding} -> embedding end)
+        {:ok, embeddings}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp request_with_retry(texts, attempt) when attempt < @max_retries do
+    case make_request(texts) do
       {:ok, %{"data" => data}} ->
         embeddings = Enum.map(data, fn %{"embedding" => embedding} -> embedding end)
         {:ok, embeddings}
 
       {:error, %Req.TransportError{reason: :closed}} ->
-        backoff_ms = round(@initial_backoff_ms * :math.pow(2, attempt))
+        backoff_ms = @initial_backoff_ms + attempt * 100
 
         warning_info = %{
           reason: :connection_closed,
@@ -49,7 +65,7 @@ defmodule Sanbase.AI.Embedding.OpenAI do
         Logger.warning("OpenAI embeddings connection closed, retrying: #{inspect(warning_info)}")
 
         Process.sleep(backoff_ms)
-        request_with_retry(texts, size, attempt + 1)
+        request_with_retry(texts, attempt + 1)
 
       {:error, reason} ->
         error_info = %{
@@ -62,7 +78,7 @@ defmodule Sanbase.AI.Embedding.OpenAI do
     end
   end
 
-  defp request_with_retry(texts, _size, attempt) when attempt >= @max_retries do
+  defp request_with_retry(texts, attempt) when attempt >= @max_retries do
     error_info = %{
       max_retries: @max_retries,
       texts_count: length(texts),
@@ -74,15 +90,47 @@ defmodule Sanbase.AI.Embedding.OpenAI do
     {:error, "Max retries exceeded for OpenAI embeddings request"}
   end
 
-  # Private functions
+  @doc """
+  Makes an embedding request and returns both the result and response headers.
 
-  defp make_request(texts, size) do
-    body = build_request_body(texts, size)
+  Returns `{:ok, response_body, headers}` on success or `{:error, reason, headers}` on failure.
+  Headers may be empty if the request failed before receiving a response.
+  """
+  def make_request_with_headers(texts) do
+    params = build_request_body(texts)
 
     req =
       Req.new(
         base_url: @base_url,
-        json: body,
+        json: params,
+        headers: [
+          {"Authorization", "Bearer #{openai_apikey()}"},
+          {"Content-Type", "application/json"}
+        ],
+        receive_timeout: @receive_timeout_ms
+      )
+
+    case Req.post(req) do
+      {:ok, %{status: 200, body: response_body, headers: headers}} ->
+        {:ok, response_body, headers}
+
+      {:ok, %{status: status, body: body, headers: headers}} ->
+        {:error, "OpenAI API error: #{status} - #{inspect(body)}", headers}
+
+      {:error, reason} ->
+        {:error, reason, []}
+    end
+  end
+
+  # Private functions
+
+  defp make_request(texts) do
+    params = build_request_body(texts)
+
+    req =
+      Req.new(
+        base_url: @base_url,
+        json: params,
         headers: [
           {"Authorization", "Bearer #{openai_apikey()}"},
           {"Content-Type", "application/json"}
@@ -94,8 +142,7 @@ defmodule Sanbase.AI.Embedding.OpenAI do
           request_debug = %{
             method: request.method,
             url: request.url,
-            headers: redact_headers(request.headers),
-            body: request.body
+            params: request.options
           }
 
           Logger.warning("OpenAI Embedding Request: #{inspect(request_debug)}")
@@ -106,8 +153,7 @@ defmodule Sanbase.AI.Embedding.OpenAI do
         debug_response: fn {request, response} ->
           response_debug = %{
             status: response.status,
-            headers: redact_headers(response.headers),
-            body: response.body
+            headers: extract_debugging_headers(response.headers)
           }
 
           Logger.warning("OpenAI Embedding Response: #{inspect(response_debug)}")
@@ -127,23 +173,48 @@ defmodule Sanbase.AI.Embedding.OpenAI do
     end
   end
 
-  defp build_request_body(text_or_texts, size) do
+  defp build_request_body(text_or_texts) do
+    input =
+      if is_list(text_or_texts) and length(text_or_texts) == 1 do
+        hd(text_or_texts)
+      else
+        text_or_texts
+      end
+
     %{
-      "input" => text_or_texts,
-      "model" => @model,
-      "dimensions" => size
+      input: input,
+      model: @model,
+      encoding_format: "float"
     }
   end
 
-  defp redact_headers(headers) do
-    headers
-    |> Enum.map(fn {key, value} ->
-      if String.downcase(key) in ["authorization", "bearer"] do
-        {key, "REDACTED"}
-      else
-        {key, value}
-      end
-    end)
+  @doc """
+  Extracts debugging headers from OpenAI API responses.
+
+  Returns a map with relevant debugging information including:
+  - x-request-id
+  - openai-organization
+  - openai-processing-ms
+  - openai-version
+  - Rate limiting headers (limit, remaining, reset for requests and tokens)
+  """
+  def extract_debugging_headers(headers) do
+    header_map =
+      headers
+      |> Enum.into(%{}, fn {key, value} -> {String.downcase(key), value} end)
+
+    %{
+      request_id: header_map["x-request-id"],
+      organization: header_map["openai-organization"],
+      processing_ms: header_map["openai-processing-ms"],
+      version: header_map["openai-version"],
+      rate_limit_limit_requests: header_map["x-ratelimit-limit-requests"],
+      rate_limit_limit_tokens: header_map["x-ratelimit-limit-tokens"],
+      rate_limit_remaining_requests: header_map["x-ratelimit-remaining-requests"],
+      rate_limit_remaining_tokens: header_map["x-ratelimit-remaining-tokens"],
+      rate_limit_reset_requests: header_map["x-ratelimit-reset-requests"],
+      rate_limit_reset_tokens: header_map["x-ratelimit-reset-tokens"]
+    }
   end
 
   @doc """

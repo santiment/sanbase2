@@ -512,6 +512,8 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     """
     field(:required_selectors, list_of(list_of(:selector_name)))
 
+    field(:available_versions, list_of(:string))
+
     @desc ~s"""
     A metric can be marked as deprecated. If this is the case, the metric
     should not be used anymore as it is going to be removed in the future.

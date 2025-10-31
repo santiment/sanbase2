@@ -343,9 +343,21 @@ defmodule Sanbase.Accounts.UserStats do
     users =
       from(u in User,
         where: u.id in ^user_ids,
-        select: %{id: u.id, email: u.email, name: u.name}
+        select: %{id: u.id, email: u.email, name: u.name, username: u.username}
       )
       |> Repo.all()
+      |> Enum.map(fn user ->
+        display_name =
+          cond do
+            user.name && user.name != "" -> user.name
+            user.username && user.username != "" -> user.username
+            true -> nil
+          end
+
+        user
+        |> Map.put(:name, display_name)
+        |> Map.delete(:username)
+      end)
 
     {:ok, users}
   rescue

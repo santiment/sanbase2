@@ -62,7 +62,8 @@ defmodule SanbaseWeb.InactiveUsersController do
     ["email,name"]
     |> Enum.concat(
       Enum.map(users, fn user ->
-        "#{user.email || ""},#{user.name || ""}"
+        display_name = user.name || "friend"
+        "#{user.email || ""},#{display_name}"
       end)
     )
     |> Enum.join("\n")

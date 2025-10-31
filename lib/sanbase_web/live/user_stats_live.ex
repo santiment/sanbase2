@@ -262,7 +262,7 @@ defmodule SanbaseWeb.UserStatsLive do
                     {user.email}
                   </td>
                   <td class="px-4 py-2 text-sm text-gray-600">
-                    {user.name}
+                    {user.name || "friend"}
                   </td>
                 </tr>
               <% end %>

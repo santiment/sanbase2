@@ -1,0 +1,25 @@
+# Hide many assets
+
+## Section
+
+
+
+```elixir
+assets =
+  File.read!("/Users/ivanivanov/Downloads/assets_wo_prices.csv")
+  |> NimbleCSV.RFC4180.parse_string()
+  |> Enum.map(&hd/1)
+
+length(assets)
+```
+
+```elixir
+import Ecto.Query
+
+query =
+  from(p in Sanbase.Project,
+    where: p.slug in ^assets
+  )
+
+Sanbase.Repo.update_all(query, set: [is_hidden: true])
+```

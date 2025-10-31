@@ -41,7 +41,8 @@ defmodule Sanbase.EventBus.BillingEventSubscriber do
     :update_api_call_limit_table,
     :send_discord_notification,
     :unfreeze_user_frozen_alerts,
-    :sanbase_pro_started
+    :sanbase_pro_started,
+    :generate_discord_verification_code
   ]
 
   @doc false
@@ -123,6 +124,20 @@ defmodule Sanbase.EventBus.BillingEventSubscriber do
     end
   end
 
+  defp do_handle(:generate_discord_verification_code, event_type, event)
+       when event_type == :create_subscription do
+    subscription = Subscription.by_id(event.data.subscription_id)
+
+    # Generate code for any active paid subscription
+    if active_paid_subscription?(subscription) do
+      tier = subscription_tier_name(subscription)
+
+      if tier do
+        Sanbase.Discord.VerificationCode.generate_code(subscription.user_id, tier)
+      end
+    end
+  end
+
   defp do_handle(_type, _event_type, _event) do
     :ok
   end
@@ -135,6 +150,21 @@ defmodule Sanbase.EventBus.BillingEventSubscriber do
 
       _ ->
         :ok
+    end
+  end
+
+  defp active_paid_subscription?(subscription) do
+    subscription && subscription.status == :active
+  end
+
+  defp subscription_tier_name(%Subscription{plan: plan}) do
+    # Map plan to tier name for tracking purposes
+    cond do
+      plan.name =~ ~r/BUSINESS.*PRO/i -> "BUSINESS_PRO"
+      plan.name =~ ~r/BUSINESS.*MAX/i -> "BUSINESS_MAX"
+      plan.name =~ ~r/PRO/i -> "PRO"
+      plan.name =~ ~r/MAX/i -> "MAX"
+      true -> nil
     end
   end
 end

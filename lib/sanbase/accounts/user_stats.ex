@@ -342,7 +342,11 @@ defmodule Sanbase.Accounts.UserStats do
   defp get_user_details(user_ids) when is_list(user_ids) do
     users =
       from(u in User,
-        where: u.id in ^user_ids,
+        where:
+          u.id in ^user_ids and
+            not is_nil(u.email) and
+            u.email != "" and
+            (is_nil(u.username) or not like(u.username, "0x%")),
         select: %{id: u.id, email: u.email, name: u.name, username: u.username}
       )
       |> Repo.all()

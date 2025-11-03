@@ -203,7 +203,8 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
 
   describe "Email login" do
     setup_with_mocks([
-      {Sanbase.TemplateMailer, [], [send: fn _, _, _ -> {:ok, %{}} end]}
+      {Sanbase.TemplateMailer, [], [send: fn _, _, _ -> {:ok, %{}} end]},
+      {Sanbase.Accounts.Turnstile, [], [validate: fn _, _ -> :ok end]}
     ]) do
       []
     end
@@ -228,7 +229,7 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       error_msg =
         context.conn
         |> Plug.Conn.put_req_header("origin", "https://app.not-santiment.net")
-        |> email_login(%{email: "john@example.com"})
+        |> email_login(%{email: "john@example.com", token: "test-token"})
         |> get_in(["errors", Access.at(0), "message"])
 
       assert error_msg == "Can't login"
@@ -238,7 +239,7 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       result =
         context.conn
         |> Plug.Conn.put_req_header("origin", "https://santiment.net")
-        |> email_login(%{email: "john@example.com"})
+        |> email_login(%{email: "john@example.com", token: "test-token"})
         |> get_in(["data", "emailLogin"])
 
       assert {:ok, %User{}} = User.by_email("john@example.com")
@@ -249,7 +250,7 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       result =
         context.conn
         |> Plug.Conn.put_req_header("origin", "https://app.santiment.net")
-        |> email_login(%{email: "john@example.com"})
+        |> email_login(%{email: "john@example.com", token: "test-token"})
         |> get_in(["data", "emailLogin"])
 
       assert {:ok, %User{}} = User.by_email("john@example.com")
@@ -265,7 +266,7 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       result =
         context.conn
         |> Plug.Conn.put_req_header("origin", "https://app.santiment.net")
-        |> email_login(%{email: "john@example.com"})
+        |> email_login(%{email: "john@example.com", token: "test-token"})
         |> get_in(["data", "emailLogin"])
 
       assert result["success"]
@@ -278,6 +279,7 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
         |> Plug.Conn.put_req_header("origin", "https://santiment.net")
         |> email_login(%{
           email: "john@example.com",
+          token: "test-token",
           success_redirect_url: "https://app.santiment.net/success",
           fail_redirect_url: "https://app.santiment.net/fail"
         })
@@ -304,6 +306,7 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
         |> Plug.Conn.put_req_header("origin", "https://santiment.net")
         |> email_login(%{
           email: "john@example.com",
+          token: "test-token",
           success_redirect_url: "https://example.com/success",
           fail_redirect_url: "https://example.com/fail"
         })
@@ -335,7 +338,7 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       result =
         context.conn
         |> Plug.Conn.put_req_header("origin", "https://app.santiment.net")
-        |> email_login(%{email: "john@example.com"})
+        |> email_login(%{email: "john@example.com", token: "test-token"})
         |> get_in(["data", "emailLogin"])
 
       assert result["success"]
@@ -352,7 +355,7 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       msg =
         context.conn
         |> Plug.Conn.put_req_header("origin", "https://app.santiment.net")
-        |> email_login(%{email: "john@example.com"})
+        |> email_login(%{email: "john@example.com", token: "test-token"})
         |> Map.get("errors")
         |> hd()
         |> Map.get("message")
@@ -374,7 +377,7 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       msg =
         context.conn
         |> Plug.Conn.put_req_header("origin", "https://app.santiment.net")
-        |> email_login(%{email: "john@example.com"})
+        |> email_login(%{email: "john@example.com", token: "test-token"})
         |> Map.get("errors")
         |> hd()
         |> Map.get("message")

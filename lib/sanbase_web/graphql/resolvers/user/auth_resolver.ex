@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
 
   alias Sanbase.InternalServices.Ethauth
   alias Sanbase.Accounts
-  alias Sanbase.Accounts.{User, EthAccount, EmailLoginAttempt, AccessAttempt}
+  alias Sanbase.Accounts.{User, EthAccount, EmailLoginAttempt, AccessAttempt, Turnstile}
 
   require Logger
 
@@ -85,7 +85,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
       }) do
     remote_ip = Sanbase.Utils.IP.ip_tuple_to_string(remote_ip)
 
-    with true <- allowed_email_domain?(email),
+    # The token is optional until the Frontend is updated to use the new Turnstile token
+    # First we need to add support in the backend, then in the frontend.
+    # Conditionally validate the token only when it's present so the old flow is not broken
+    token = Map.get(args, :token)
+
+    valid_token =
+      if is_binary(token), do: Turnstile.validate(token, remote_ip), else: :ok
+
+    with :ok <- valid_token,
+         true <- allowed_email_domain?(email),
          true <- allowed_origin?(origin_host_parts, origin_url),
          {:ok, %{first_login: first_login} = user} <-
            User.find_or_insert_by(:email, email, %{username: args[:username]}),

@@ -105,6 +105,7 @@ defmodule SanbaseWeb.Graphql.Schema.AuthQueries do
     """
     field :email_login, :email_login_request do
       arg(:email, non_null(:string))
+      arg(:token, :string)
       arg(:username, :string)
       arg(:consent, :string)
       arg(:subscribe_to_weekly_newsletter, :boolean)

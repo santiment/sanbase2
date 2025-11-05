@@ -84,7 +84,7 @@ defmodule Sanbase.AI.Embedding.BatchTest do
     end
   end
 
-  defp make_request_with_tracking(text, size) do
+  defp make_request_with_tracking(text, _size) do
     texts = [text]
 
     case Sanbase.AI.Embedding.OpenAI.make_request_with_headers(texts) do

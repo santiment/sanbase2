@@ -172,6 +172,7 @@ defmodule SanbaseWeb.AskLive do
     """
   end
 
+  @impl true
   def handle_info({:populate_answer_log_link, link}, socket) do
     {:noreply,
      socket

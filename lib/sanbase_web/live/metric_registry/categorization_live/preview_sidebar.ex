@@ -3,7 +3,7 @@ defmodule SanbaseWeb.CategorizationLive.PreviewSidebar do
 
   import SanbaseWeb.CoreComponents
   alias Sanbase.Metric.Category
-  alias Sanbase.Metric.Category.{MetricCategory, MetricGroup, MetricCategoryMapping}
+  alias Sanbase.Metric.Category.MetricCategoryMapping
   alias SanbaseWeb.AvailableMetricsComponents
 
   @impl true

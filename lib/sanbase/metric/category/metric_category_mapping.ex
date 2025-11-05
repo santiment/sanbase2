@@ -151,34 +151,6 @@ defmodule Sanbase.Metric.Category.MetricCategoryMapping do
   end
 
   @doc """
-  Gets mappings by metric registry ID.
-  """
-  @spec get_by_metric_registry_id(integer()) :: [t()]
-  def get_by_metric_registry_id(metric_registry_id) when is_integer(metric_registry_id) do
-    query =
-      from(m in __MODULE__,
-        where: m.metric_registry_id == ^metric_registry_id,
-        preload: [:category, :group, :metric_registry, :ui_metadata_list]
-      )
-
-    Repo.one(query)
-  end
-
-  @doc """
-  Gets mappings by module and metric.
-  """
-  @spec get_by_module_and_metric(String.t(), String.t()) :: [t()]
-  def get_by_module_and_metric(module, metric) when is_binary(module) and is_binary(metric) do
-    query =
-      from(m in __MODULE__,
-        where: m.module == ^module and m.metric == ^metric,
-        preload: [:category, :group, :metric_registry, :ui_metadata_list]
-      )
-
-    Repo.one(query)
-  end
-
-  @doc """
   Gets mappings by group ID.
   """
   @spec get_by_category_id(integer()) :: [t()]

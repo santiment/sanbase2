@@ -114,6 +114,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
 
         {:error, message: "Too many login attempts, try again after a few minutes"}
 
+      {:error, error} when is_binary(error) ->
+        Logger.error(
+          "Login failed: #{error}. Email: #{email}, IP Address: #{remote_ip}, Origin URL: #{origin_url}"
+        )
+
+        {:error, message: error}
+
       error ->
         Logger.error(
           "Login failed: unknown error #{inspect(error)}. Email: #{email}, IP Address: #{remote_ip}, Origin URL: #{origin_url}"

@@ -232,7 +232,7 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
         |> email_login(%{email: "john@example.com", token: "test-token"})
         |> get_in(["errors", Access.at(0), "message"])
 
-      assert error_msg == "Can't login"
+      assert error_msg =~ "Origin header https://app.not-santiment.net is not supported"
     end
 
     test "emailLogin returns true with santiment.net origin", context do

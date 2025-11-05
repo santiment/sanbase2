@@ -73,8 +73,11 @@ defmodule SanbaseWeb.AuthController do
                SanbaseWeb.Guardian.get_jwt_tokens(user, device_data) do
           emit_event({:ok, user}, :login_user, args)
 
-          redirect_url = get_session(conn, :__san_success_redirect_url)
-          redirect_url = extend_if_first_login(redirect_url, first_login)
+          redirect_url =
+            conn
+            |> get_session(:__san_success_redirect_url)
+            |> extend_if_first_login(first_login)
+            |> extend_with_jwt_tokens(jwt_tokens_map)
 
           conn
           |> SanbaseWeb.Guardian.add_jwt_tokens_to_conn_session(jwt_tokens_map)
@@ -103,8 +106,11 @@ defmodule SanbaseWeb.AuthController do
              {:ok, %{} = jwt_tokens_map} <- SanbaseWeb.Guardian.get_jwt_tokens(user, device_data) do
           emit_event({:ok, user}, :login_user, args)
 
-          redirect_url = get_session(conn, :__san_success_redirect_url)
-          redirect_url = extend_if_first_login(redirect_url, first_login)
+          redirect_url =
+            conn
+            |> get_session(:__san_success_redirect_url)
+            |> extend_if_first_login(first_login)
+            |> extend_with_jwt_tokens(jwt_tokens_map)
 
           conn
           |> SanbaseWeb.Guardian.add_jwt_tokens_to_conn_session(jwt_tokens_map)
@@ -130,6 +136,15 @@ defmodule SanbaseWeb.AuthController do
       false ->
         redirect_url
     end
+  end
+
+  defp extend_with_jwt_tokens(redirect_url, jwt_tokens_map) do
+    redirect_url
+    |> URI.parse()
+    |> URI.append_query(
+      "access_token=#{jwt_tokens_map.access_token}&refresh_token=#{jwt_tokens_map.refresh_token}"
+    )
+    |> URI.to_string()
   end
 
   defp twitter_login(email, twitter_id)

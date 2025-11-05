@@ -180,7 +180,8 @@ defmodule Sanbase.MCP.AssetsByMetricTool do
   def execute(params, frame) do
     # Note: Do it like this so we can wrap it in an if can_execute?/3 clause
     # so the execute/2 function itself is not
-    with :ok <- validate_operator_threshold_pair(params[:operator], params[:threshold]),
+    with :ok <- validate_operator(params[:operator]),
+         :ok <- validate_operator_threshold_pair(params[:operator], params[:threshold]),
          :ok <- validate_aggregation(params[:aggregation]),
          :ok <- validate_sort(params[:sort]) do
       do_execute(params, frame)

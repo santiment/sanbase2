@@ -33,11 +33,11 @@ defmodule SanbaseWeb.AuthController do
     origin_url =
       referer_url |> URI.parse() |> Map.merge(%{fragment: nil, path: nil}) |> URI.to_string()
 
-    include_jwt_tokens_in_redirect_url =
-      Map.get(params, "include_jwt_tokens_in_redirect_url", "false") == "true"
+    include_jwt_in_redirect_url =
+      Map.get(params, "include_jwt_in_redirect_url", "false") == "true"
 
     conn
-    |> put_session(:__san_include_jwt_tokens_in_redirect_url, include_jwt_tokens_in_redirect_url)
+    |> put_session(:__san_include_jwt_in_redirect_url, include_jwt_in_redirect_url)
     |> put_session(:__san_success_redirect_url, success_redirect_url)
     |> put_session(:__san_fail_redirect_url, fail_redirect_url)
     |> put_session(:__san_origin_url, origin_url)
@@ -76,14 +76,14 @@ defmodule SanbaseWeb.AuthController do
                SanbaseWeb.Guardian.get_jwt_tokens(user, device_data) do
           emit_event({:ok, user}, :login_user, args)
 
-          include_jwt_tokens_in_redirect_url =
-            get_session(conn, :__san_include_jwt_tokens_in_redirect_url)
+          include_jwt_in_redirect_url =
+            get_session(conn, :__san_include_jwt_in_redirect_url)
 
           redirect_url =
             conn
             |> get_session(:__san_success_redirect_url)
             |> extend_if_first_login(first_login)
-            |> maybe_extend_with_jwt_tokens(jwt_tokens_map, include_jwt_tokens_in_redirect_url)
+            |> maybe_extend_with_jwt_tokens(jwt_tokens_map, include_jwt_in_redirect_url)
 
           conn
           |> SanbaseWeb.Guardian.add_jwt_tokens_to_conn_session(jwt_tokens_map)
@@ -112,14 +112,14 @@ defmodule SanbaseWeb.AuthController do
              {:ok, %{} = jwt_tokens_map} <- SanbaseWeb.Guardian.get_jwt_tokens(user, device_data) do
           emit_event({:ok, user}, :login_user, args)
 
-          include_jwt_tokens_in_redirect_url =
-            get_session(conn, :__san_include_jwt_tokens_in_redirect_url)
+          include_jwt_in_redirect_url =
+            get_session(conn, :__san_include_jwt_in_redirect_url)
 
           redirect_url =
             conn
             |> get_session(:__san_success_redirect_url)
             |> extend_if_first_login(first_login)
-            |> maybe_extend_with_jwt_tokens(jwt_tokens_map, include_jwt_tokens_in_redirect_url)
+            |> maybe_extend_with_jwt_tokens(jwt_tokens_map, include_jwt_in_redirect_url)
 
           conn
           |> SanbaseWeb.Guardian.add_jwt_tokens_to_conn_session(jwt_tokens_map)
@@ -150,9 +150,9 @@ defmodule SanbaseWeb.AuthController do
   defp maybe_extend_with_jwt_tokens(
          redirect_url,
          jwt_tokens_map,
-         include_jwt_tokens_in_redirect_url
+         include_jwt_in_redirect_url
        ) do
-    if include_jwt_tokens_in_redirect_url do
+    if include_jwt_in_redirect_url do
       redirect_url
       |> URI.parse()
       |> URI.append_query(

@@ -444,7 +444,6 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
 
         {:error, reason} ->
           Logger.warning("Failed to generate batch AI summaries: #{reason}")
-          #
           # Return fallback summaries
           words_with_docs
           |> Enum.map(fn {word, docs} ->

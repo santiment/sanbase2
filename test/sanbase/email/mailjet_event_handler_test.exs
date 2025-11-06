@@ -5,7 +5,6 @@ defmodule Sanbase.Email.MailjetEventHandlerTest do
 
   alias Sanbase.Email.MailjetEventHandler
   alias Sanbase.Accounts.UserSettings
-  alias Sanbase.Repo
 
   describe "handle_unsubscribe/2" do
     setup do

@@ -3,9 +3,7 @@ defmodule Sanbase.AI.AcademyAIServiceTest do
 
   import Sanbase.Factory
   import Mox
-  import ExUnit.CaptureLog
 
-  alias Sanbase.AI.AcademyAIService
   alias Sanbase.Chat
 
   setup :verify_on_exit!

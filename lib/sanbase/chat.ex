@@ -160,20 +160,7 @@ defmodule Sanbase.Chat do
         context \\ %{}
       ) do
     Repo.transaction(fn ->
-      # Insert the message with sources and suggestions
-      message_result =
-        %{
-          chat_id: chat_id,
-          content: content,
-          role: :assistant,
-          context: context,
-          sources: sources,
-          suggestions: suggestions
-        }
-        |> ChatMessage.create_changeset()
-        |> Repo.insert()
-
-      case message_result do
+      case insert_chat_message(chat_id, content, context, sources, suggestions) do
         {:ok, message} ->
           # Update the chat's updated_at timestamp
           case get_chat(chat_id) do
@@ -356,5 +343,18 @@ defmodule Sanbase.Chat do
       NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
     )
     |> Repo.update()
+  end
+
+  defp insert_chat_message(chat_id, content, context, sources, suggestions) do
+    %{
+      chat_id: chat_id,
+      content: content,
+      role: :assistant,
+      context: context,
+      sources: sources,
+      suggestions: suggestions
+    }
+    |> ChatMessage.create_changeset()
+    |> Repo.insert()
   end
 end

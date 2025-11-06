@@ -669,6 +669,23 @@ defmodule SanbaseWeb.ApiCallLimitTest do
   #     assert error_msg =~ "The last reset was less than 90 days ago on"
   #   end
   # end
+  #
+  # defp self_reset_api_calls(conn) do
+  #   mutation = """
+  #    mutation {
+  #      selfResetApiRateLimits {
+  #        id
+  #        settings {
+  #          selfApiRateLimitsResetAt
+  #        }
+  #      }
+  #    }
+  #   """
+  #
+  #   conn
+  #   |> post("/graphql", mutation_skeleton(mutation))
+  #   |> json_response(200)
+  # end
 
   defp make_api_call(conn, extra_headers) do
     query = """
@@ -678,22 +695,5 @@ defmodule SanbaseWeb.ApiCallLimitTest do
     conn
     |> Sanbase.Utils.Conn.put_extra_req_headers(extra_headers)
     |> post("/graphql", query_skeleton(query))
-  end
-
-  defp self_reset_api_calls(conn) do
-    mutation = """
-     mutation {
-       selfResetApiRateLimits {
-         id
-         settings {
-           selfApiRateLimitsResetAt
-         }
-       }
-     }
-    """
-
-    conn
-    |> post("/graphql", mutation_skeleton(mutation))
-    |> json_response(200)
   end
 end

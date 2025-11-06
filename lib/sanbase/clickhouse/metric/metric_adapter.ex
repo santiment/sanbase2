@@ -277,27 +277,23 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def first_datetime(metric, selector) do
-    cond do
-      metric in Registry.metrics_mapset_with_data_type(:histogram) ->
-        HistogramMetric.first_datetime(metric, selector)
-
-      true ->
-        first_datetime_query(metric, selector)
-        |> ClickhouseRepo.query_transform(fn [datetime] -> DateTime.from_unix!(datetime) end)
-        |> maybe_unwrap_ok_value()
+    if metric in Registry.metrics_mapset_with_data_type(:histogram) do
+      HistogramMetric.first_datetime(metric, selector)
+    else
+      first_datetime_query(metric, selector)
+      |> ClickhouseRepo.query_transform(fn [datetime] -> DateTime.from_unix!(datetime) end)
+      |> maybe_unwrap_ok_value()
     end
   end
 
   @impl Sanbase.Metric.Behaviour
   def last_datetime_computed_at(metric, selector) do
-    cond do
-      metric in Registry.metrics_mapset_with_data_type(:histogram) ->
-        HistogramMetric.last_datetime_computed_at(metric, selector)
-
-      true ->
-        last_datetime_computed_at_query(metric, selector)
-        |> ClickhouseRepo.query_transform(fn [datetime] -> DateTime.from_unix!(datetime) end)
-        |> maybe_unwrap_ok_value()
+    if metric in Registry.metrics_mapset_with_data_type(:histogram) do
+      HistogramMetric.last_datetime_computed_at(metric, selector)
+    else
+      last_datetime_computed_at_query(metric, selector)
+      |> ClickhouseRepo.query_transform(fn [datetime] -> DateTime.from_unix!(datetime) end)
+      |> maybe_unwrap_ok_value()
     end
   end
 

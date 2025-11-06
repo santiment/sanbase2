@@ -63,21 +63,18 @@ defmodule Sanbase.DiscordConsumer do
   def commands, do: @commands
 
   def handle_event({:MESSAGE_CREATE, msg, _ws_state}) do
-    cond do
-      msg_contains_bot_mention?(msg) ->
-        warm_up(msg)
+    if msg_contains_bot_mention?(msg) do
+      warm_up(msg)
 
-        CommandHandler.handle_command("mention", msg)
-        |> case do
-          {:ok, _} -> log(msg, "MENTION COMMAND SUCCESS")
-          :ok -> log(msg, "MENTION COMMAND SUCCESS")
-          result -> log(msg, "MENTION COMMAND RESULT #{inspect(result)}")
-        end
+      case CommandHandler.handle_command("mention", msg) do
+        {:ok, _} -> log(msg, "MENTION COMMAND SUCCESS")
+        :ok -> log(msg, "MENTION COMMAND SUCCESS")
+        result -> log(msg, "MENTION COMMAND RESULT #{inspect(result)}")
+      end
 
-        :ok
-
-      true ->
-        :ignore
+      :ok
+    else
+      :ignore
     end
   end
 
@@ -118,15 +115,12 @@ defmodule Sanbase.DiscordConsumer do
         _ws_state
       }) do
     warm_up(interaction)
-    [command, id] = String.split(custom_id, "_")
+    [command, thread_id] = String.split(custom_id, "_")
 
-    cond do
-      command in ["up", "down"] ->
-        thread_id = id
-        CommandHandler.handle_interaction(command, interaction, thread_id)
-
-      true ->
-        :noop
+    if command in ["up", "down"] do
+      CommandHandler.handle_interaction(command, interaction, thread_id)
+    else
+      :noop
     end
   end
 

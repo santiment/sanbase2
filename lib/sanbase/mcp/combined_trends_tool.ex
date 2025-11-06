@@ -382,60 +382,7 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
     batch_start_time = System.monotonic_time(:millisecond)
     Logger.info("🚀 Starting batch AI summarization for #{length(words_with_docs)} words...")
 
-    result =
-      if length(words_with_docs) == 0 do
-        %{}
-      else
-        # Build a structured prompt for batch processing
-        batch_content = build_batch_summary_prompt(words_with_docs)
-
-        if String.trim(batch_content) == "" do
-          %{}
-        else
-          system_prompt = """
-          You are a helpful assistant that summarizes social media discussions about trending cryptocurrency words.
-          You will receive multiple trending words with their associated social media posts.
-          For each word, provide a concise summary of the discussions.
-
-          Format your response as a JSON object where each key is the trending word and the value is the summary.
-          Example: {"bitcoin": "Summary of bitcoin discussions...", "ethereum": "Summary of ethereum discussions..."}
-          """
-
-          start_time = System.monotonic_time(:millisecond)
-
-          openai_result =
-            openai_client().chat_completion(system_prompt, batch_content,
-              max_tokens: 1000,
-              temperature: 0.3
-            )
-
-          end_time = System.monotonic_time(:millisecond)
-          duration_ms = end_time - start_time
-
-          Logger.info(
-            "⏱️  OpenAI API call took: #{duration_ms}ms (#{Float.round(duration_ms / 1000, 2)}s)"
-          )
-
-          case openai_result do
-            {:ok, response} ->
-              parse_batch_summary_response(response, words_with_docs)
-
-            {:error, reason} ->
-              Logger.warning("Failed to generate batch AI summaries: #{reason}")
-              # Return fallback summaries
-              words_with_docs
-              |> Enum.map(fn {word, docs} ->
-                doc_count =
-                  String.split(docs, "\n") |> Enum.count(fn line -> String.trim(line) != "" end)
-
-                {word,
-                 "AI summarization temporarily unavailable. #{doc_count} documents found discussing this trending word."}
-              end)
-              |> Map.new()
-          end
-        end
-      end
-
+    result = do_batch_summarize_documents_with_ai(words_with_docs)
     batch_end_time = System.monotonic_time(:millisecond)
     total_duration_ms = batch_end_time - batch_start_time
 
@@ -456,6 +403,60 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
          "Error generating summary. #{doc_count} documents found discussing this trending word."}
       end)
       |> Map.new()
+  end
+
+  defp do_batch_summarize_documents_with_ai([]), do: %{}
+
+  defp do_batch_summarize_documents_with_ai(words_with_docs) when is_list(words_with_docs) do
+    # Build a structured prompt for batch processing
+    batch_content = build_batch_summary_prompt(words_with_docs)
+
+    if String.trim(batch_content) == "" do
+      %{}
+    else
+      system_prompt = """
+      You are a helpful assistant that summarizes social media discussions about trending cryptocurrency words.
+      You will receive multiple trending words with their associated social media posts.
+      For each word, provide a concise summary of the discussions.
+
+      Format your response as a JSON object where each key is the trending word and the value is the summary.
+      Example: {"bitcoin": "Summary of bitcoin discussions...", "ethereum": "Summary of ethereum discussions..."}
+      """
+
+      start_time = System.monotonic_time(:millisecond)
+
+      openai_result =
+        openai_client().chat_completion(system_prompt, batch_content,
+          max_tokens: 1000,
+          temperature: 0.3
+        )
+
+      end_time = System.monotonic_time(:millisecond)
+      duration_ms = end_time - start_time
+
+      Logger.info(
+        "⏱️  OpenAI API call took: #{duration_ms}ms (#{Float.round(duration_ms / 1000, 2)}s)"
+      )
+
+      case openai_result do
+        {:ok, response} ->
+          parse_batch_summary_response(response, words_with_docs)
+
+        {:error, reason} ->
+          Logger.warning("Failed to generate batch AI summaries: #{reason}")
+          #
+          # Return fallback summaries
+          words_with_docs
+          |> Enum.map(fn {word, docs} ->
+            doc_count =
+              String.split(docs, "\n") |> Enum.count(fn line -> String.trim(line) != "" end)
+
+            {word,
+             "AI summarization temporarily unavailable. #{doc_count} documents found discussing this trending word."}
+          end)
+          |> Map.new()
+      end
+    end
   end
 
   defp build_batch_summary_prompt(words_with_docs) do

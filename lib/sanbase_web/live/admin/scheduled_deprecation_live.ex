@@ -407,25 +407,23 @@ defmodule SanbaseWeb.ScheduledDeprecationLive do
   end
 
   defp validate_scheduled_at_data(scheduled_at_str) do
-    cond do
-      is_nil_or_empty?(scheduled_at_str) ->
-        %{scheduled_at: ["cannot be blank"]}
+    if is_nil_or_empty?(scheduled_at_str) do
+      %{scheduled_at: ["cannot be blank"]}
+    else
+      case Date.from_iso8601(scheduled_at_str) do
+        {:ok, scheduled_date} ->
+          today = Date.utc_today()
+          min_date = Date.add(today, 5)
 
-      true ->
-        case Date.from_iso8601(scheduled_at_str) do
-          {:ok, scheduled_date} ->
-            today = Date.utc_today()
-            min_date = Date.add(today, 5)
+          if Date.compare(scheduled_date, min_date) == :lt do
+            %{scheduled_at: ["Deprecation date must be at least 5 days in the future"]}
+          else
+            %{}
+          end
 
-            if Date.compare(scheduled_date, min_date) == :lt do
-              %{scheduled_at: ["Deprecation date must be at least 5 days in the future"]}
-            else
-              %{}
-            end
-
-          {:error, _} ->
-            %{scheduled_at: ["is not a valid date"]}
-        end
+        {:error, _} ->
+          %{scheduled_at: ["is not a valid date"]}
+      end
     end
   end
 
@@ -438,27 +436,25 @@ defmodule SanbaseWeb.ScheduledDeprecationLive do
   end
 
   defp validate_links_data(links_str) do
-    cond do
-      is_nil_or_empty?(links_str) ->
+    if is_nil_or_empty?(links_str) do
+      %{}
+    else
+      invalid_links =
+        links_str
+        |> String.split(~r/\s*,\s*/, trim: true)
+        |> Enum.reject(fn link ->
+          case Validation.valid_url?(link, require_path: false) do
+            :ok -> true
+            {:error, _reason} -> false
+          end
+        end)
+
+      if Enum.empty?(invalid_links) do
         %{}
-
-      true ->
-        invalid_links =
-          links_str
-          |> String.split(~r/\s*,\s*/, trim: true)
-          |> Enum.reject(fn link ->
-            case Validation.valid_url?(link, require_path: false) do
-              :ok -> true
-              {:error, _reason} -> false
-            end
-          end)
-
-        if Enum.empty?(invalid_links) do
-          %{}
-        else
-          error_msg = "Invalid URL(s): #{Enum.join(invalid_links, ", ")}"
-          %{links: [error_msg]}
-        end
+      else
+        error_msg = "Invalid URL(s): #{Enum.join(invalid_links, ", ")}"
+        %{links: [error_msg]}
+      end
     end
   end
 

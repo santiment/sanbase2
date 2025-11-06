@@ -112,6 +112,7 @@ defmodule Sanbase.Billing.Invoices.Download do
     if length(manual_filtered) > 0 do
       first_invoice = List.first(manual_filtered)
       IO.puts("\n=== FULL MANUAL FILTERED INVOICE STRUCTURE ===")
+      # credo:disable-for-next-line
       IO.inspect(first_invoice, pretty: true, limit: :infinity)
       IO.puts("=== END INVOICE STRUCTURE ===")
     end
@@ -266,6 +267,7 @@ defmodule Sanbase.Billing.Invoices.Download do
           IO.puts("\n=== RAW INVOICE FIELDS ===")
           IO.puts("Available fields: #{inspect(Map.keys(first_invoice))}")
           IO.puts("\n=== FULL RAW INVOICE ===")
+          # credo:disable-for-next-line
           IO.inspect(first_invoice, pretty: true, limit: :infinity)
           IO.puts("=== END RAW INVOICE ===")
         end

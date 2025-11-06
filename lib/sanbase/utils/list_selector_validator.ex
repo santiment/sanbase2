@@ -206,20 +206,7 @@ defmodule Sanbase.Utils.ListSelector.Validator do
        "The #{inspect(type)} filter #{inspect(filter)} is not supported or has mistyped fields."}
 
   def metric_filter(metric, filter) do
-    filter_schema =
-      schema(%{
-        name: spec(is_binary()),
-        metric: spec(is_binary()),
-        from: spec(&match?(%DateTime{}, &1)),
-        to: spec(&match?(%DateTime{}, &1)),
-        dynamic_from: spec(is_binary()),
-        dynamic_to: spec(is_binary()),
-        operator: spec(is_atom()),
-        threshold: spec(is_number() or is_list()),
-        aggregation: spec(is_atom())
-      })
-
-    with {:ok, _} <- conform(filter, filter_schema),
+    with {:ok, _} <- conform(filter, filter_schema()),
          true <- Sanbase.Metric.has_metric?(metric) do
       missing_fields =
         [:metric, :from, :to, :operator, :threshold, :aggregation] -- Map.keys(filter)
@@ -229,5 +216,19 @@ defmodule Sanbase.Utils.ListSelector.Validator do
         _ -> {:error, "A metric filter has missing fields: #{inspect(missing_fields)}."}
       end
     end
+  end
+
+  defp filter_schema do
+    schema(%{
+      name: spec(is_binary()),
+      metric: spec(is_binary()),
+      from: spec(&match?(%DateTime{}, &1)),
+      to: spec(&match?(%DateTime{}, &1)),
+      dynamic_from: spec(is_binary()),
+      dynamic_to: spec(is_binary()),
+      operator: spec(is_atom()),
+      threshold: spec(is_number() or is_list()),
+      aggregation: spec(is_atom())
+    })
   end
 end

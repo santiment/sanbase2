@@ -127,8 +127,7 @@ defmodule Sanbase.Metric.UIMetadata.MetricsImporter do
   defp extract_unique_groups(metrics) do
     metrics
     |> Enum.map(fn metric -> Map.get(metric, "group") end)
-    |> Enum.reject(&is_nil/1)
-    |> Enum.reject(fn group -> group == "" end)
+    |> Enum.reject(fn group -> is_nil(group) or group == "" end)
     |> Enum.uniq()
   end
 

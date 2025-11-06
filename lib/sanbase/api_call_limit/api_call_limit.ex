@@ -377,18 +377,12 @@ defmodule Sanbase.ApiCallLimit do
   defp check_result_size_limits(_acl), do: :ok
 
   defp check_api_calls_limits(%__MODULE__{} = acl) do
-    {
-      %{month: _, hour: _, minute: _} = api_calls_remaining,
-      %{month: _, hour: _, minute: _} = api_calls_limits
-    } = get_api_calls_maps(acl)
+    {api_calls_remaining, api_calls_limits} = get_api_calls_maps(acl)
 
     # The min remaining calls among the minute, hour and values
     min_remaining = api_calls_remaining |> Map.values() |> Enum.min()
-    # Randomize the quota size so when the API calls are distributed among all
-    # API pods the quotas don't expire at the same time
-    quota_size = @quota_size_base + :rand.uniform(@quota_size_max_offset)
 
-    case Enum.min([quota_size, min_remaining]) do
+    case Enum.min([get_quota(), min_remaining]) do
       0 ->
         now = DateTime.utc_now()
 
@@ -417,6 +411,12 @@ defmodule Sanbase.ApiCallLimit do
            api_calls_responses_size_mb: get_response_sizes_in_mb_map(acl)
          }}
     end
+  end
+
+  defp get_quota() do
+    # Randomize the quota size so when the API calls are distributed among all
+    # API pods the quotas don't expire at the same time
+    @quota_size_base + :rand.uniform(@quota_size_max_offset)
   end
 
   defp get_api_calls_maps(%__MODULE__{api_calls_limit_plan: plan, api_calls: api_calls_made}) do

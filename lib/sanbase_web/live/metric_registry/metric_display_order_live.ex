@@ -602,8 +602,7 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
     groups =
       filtered_metrics
       |> Enum.map(& &1.group_name)
-      |> Enum.reject(&is_nil/1)
-      |> Enum.reject(&(&1 == ""))
+      |> Enum.reject(fn group_name -> is_nil(group_name) or "" == group_name end)
       |> Enum.uniq()
       |> Enum.sort()
 

@@ -82,8 +82,10 @@ defmodule Sanbase.OpenAI.Traced do
   defmacro deftraced(call, do: block) do
     {name, _meta, args} = call
     arg_names = extract_arg_names(args)
-    impl_name = :"#{name}_impl"
-    traced_name = :"#{name}_traced"
+    # credo:disable-for-next-line
+    impl_name = String.to_atom("#{name}_impl")
+    # credo:disable-for-next-line
+    traced_name = String.to_atom("#{name}_traced")
 
     quote do
       @doc false

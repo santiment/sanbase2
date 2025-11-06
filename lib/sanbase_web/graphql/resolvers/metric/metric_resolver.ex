@@ -560,10 +560,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   defp valid_owners_labels_selection?(%{selector: selector} = _args) do
     cond do
-      Map.has_key?(selector, :label) and Map.has_key?(selector, :labels) ->
+      map_size(Map.take(selector, [:label, :labels])) >= 2 ->
         {:error, "Cannot use both 'label' and 'labels' fields at the same time."}
 
-      Map.has_key?(selector, :owner) and Map.has_key?(selector, :owners) ->
+      map_size(Map.take(selector, [:owner, :owners])) >= 2 ->
         {:error, "Cannot use both 'owner' and 'owners' fields at the same time."}
 
       Map.has_key?(selector, :labels) and selector.labels == [] ->

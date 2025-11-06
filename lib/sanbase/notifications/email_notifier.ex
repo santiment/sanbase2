@@ -95,10 +95,10 @@ defmodule Sanbase.Notifications.EmailNotifier do
   end
 
   defp fetch_registries(metric_registry_ids) do
-    if not Enum.empty?(metric_registry_ids) do
-      Sanbase.Metric.Registry.by_ids(metric_registry_ids)
-    else
+    if Enum.empty?(metric_registry_ids) do
       []
+    else
+      Sanbase.Metric.Registry.by_ids(metric_registry_ids)
     end
   end
 

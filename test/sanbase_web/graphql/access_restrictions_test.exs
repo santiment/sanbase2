@@ -170,16 +170,6 @@ defmodule SanbaseWeb.Graphql.AccessRestrictionsTest do
     |> get_in(["data", "getAccessRestrictions"])
   end
 
-  # filter all the metrics that are restricted and lest than 5 years
-  defp restricted_metrics(conn) do
-    get_access_restrictions_for_metrics(conn)
-    |> Enum.filter(fn restriction -> restriction["isRestricted"] end)
-    |> Enum.filter(fn restriction ->
-      not is_nil(restriction["restrictedFrom"]) &&
-        not iso_datetime_older_than_years(restriction["restrictedFrom"], 5)
-    end)
-  end
-
   def iso_datetime_older_than_years(iso_datetime, years) do
     datetime = Sanbase.DateTimeUtils.from_iso8601!(iso_datetime)
 

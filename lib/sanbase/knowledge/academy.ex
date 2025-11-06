@@ -505,6 +505,7 @@ defmodule Sanbase.Knowledge.Academy do
               key = String.trim(key)
               value = String.trim(value)
               value = value |> String.trim_leading("\"") |> String.trim_trailing("\"")
+              # credo:disable-for-next-line
               {:cont, Map.put(acc, String.to_atom(key), value)}
 
             _ ->

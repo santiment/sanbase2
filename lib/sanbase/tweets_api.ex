@@ -14,15 +14,13 @@ defmodule Sanbase.TweetsApi do
   """
   @spec fetch_tweets(String.t() | nil) :: {:ok, list(map())} | {:error, any()}
   def fetch_tweets(email \\ nil) do
-    cond do
-      email in ["maksim.b@santiment.net", "tsvetozar.p@santiment.net"] ->
-        with {:ok, maksim_tweets} <- fetch_from_endpoint("/tweets/maksim", 100),
-             {:ok, recent_tweets} <- fetch_from_endpoint("/tweets/recent", 1000) do
-          {:ok, maksim_tweets ++ recent_tweets}
-        end
-
-      true ->
-        fetch_from_endpoint("/tweets/recent", 1000)
+    if email in ["maksim.b@santiment.net", "tsvetozar.p@santiment.net"] do
+      with {:ok, maksim_tweets} <- fetch_from_endpoint("/tweets/maksim", 100),
+           {:ok, recent_tweets} <- fetch_from_endpoint("/tweets/recent", 1000) do
+        {:ok, maksim_tweets ++ recent_tweets}
+      end
+    else
+      fetch_from_endpoint("/tweets/recent", 1000)
     end
   end
 

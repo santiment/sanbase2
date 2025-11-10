@@ -114,7 +114,7 @@ defmodule SanbaseWeb.AuthControllerTest do
     end
 
     test "handles HTTPS URLs with encoded query params", %{conn: conn} do
-      # This tests that already-encoded query params don't break
+      # This tests that already-encoded query params are preserved
       # URL with space encoded as %20
       url_with_encoded_space = "https://app.santiment.net/path?query=hello%20world"
 
@@ -125,8 +125,8 @@ defmodule SanbaseWeb.AuthControllerTest do
 
       stored_url = get_session(conn, :__san_success_redirect_url)
 
-      # After URI.decode(), the %20 becomes a space
-      assert stored_url == "https://app.santiment.net/path?query=hello world"
+      # The %20 should be preserved (not decoded to a space)
+      assert stored_url == "https://app.santiment.net/path?query=hello%20world"
     end
 
     test "normal HTTPS URLs are not affected by decoding", %{conn: conn} do

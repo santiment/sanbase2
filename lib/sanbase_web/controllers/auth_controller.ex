@@ -225,13 +225,21 @@ defmodule SanbaseWeb.AuthController do
   defp get_redirect_url(params, url_key, referer_url) do
     url = params[url_key] || referer_url || SanbaseWeb.Endpoint.website_url()
 
-    # URL-decode the parameter in case it comes in encoded
-    # (e.g., "sanbase%3A%2F%2F..." instead of "sanbase://...")
-    decoded_url = URI.decode(url)
+    # Phoenix/Plug already decodes URL parameters once. However, in some cases
+    # (particularly with mobile deep links), the scheme itself might come
+    # double-encoded (e.g., "sanbase%3A%2F%2F..." instead of "sanbase://...").
+    # We only decode if we detect an encoded scheme, to avoid breaking
+    # legitimately encoded characters in query parameters.
+    processed_url =
+      if String.starts_with?(url, "sanbase%3A") do
+        URI.decode(url)
+      else
+        url
+      end
 
     # In case the provided redirect URL is not valid, simply redirect to sanbase
-    case validate_redirect_url(decoded_url) do
-      true -> decoded_url
+    case validate_redirect_url(processed_url) do
+      true -> processed_url
       _ -> SanbaseWeb.Endpoint.website_url()
     end
   end

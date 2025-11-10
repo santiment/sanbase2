@@ -225,9 +225,13 @@ defmodule SanbaseWeb.AuthController do
   defp get_redirect_url(params, url_key, referer_url) do
     url = params[url_key] || referer_url || SanbaseWeb.Endpoint.website_url()
 
+    # URL-decode the parameter in case it comes in encoded
+    # (e.g., "sanbase%3A%2F%2F..." instead of "sanbase://...")
+    decoded_url = URI.decode(url)
+
     # In case the provided redirect URL is not valid, simply redirect to sanbase
-    case validate_redirect_url(url) do
-      true -> url
+    case validate_redirect_url(decoded_url) do
+      true -> decoded_url
       _ -> SanbaseWeb.Endpoint.website_url()
     end
   end

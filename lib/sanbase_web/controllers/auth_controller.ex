@@ -30,6 +30,12 @@ defmodule SanbaseWeb.AuthController do
     success_redirect_url = get_redirect_url(params, "success_redirect_url", referer_url)
     fail_redirect_url = get_redirect_url(params, "fail_redirect_url", referer_url)
 
+    Logger.info(
+      "OAuth request: provider=#{provider}, " <>
+        "success_redirect_url_param=#{inspect(params["success_redirect_url"])}, " <>
+        "success_redirect_url_stored=#{success_redirect_url}"
+    )
+
     origin_url =
       referer_url |> URI.parse() |> Map.merge(%{fragment: nil, path: nil}) |> URI.to_string()
 
@@ -79,11 +85,19 @@ defmodule SanbaseWeb.AuthController do
           include_jwt_in_redirect_url =
             get_session(conn, :__san_include_jwt_in_redirect_url)
 
+          success_redirect_from_session = get_session(conn, :__san_success_redirect_url)
+
+          Logger.info(
+            "OAuth callback: provider=google, " <>
+              "success_redirect_from_session=#{inspect(success_redirect_from_session)}"
+          )
+
           redirect_url =
-            conn
-            |> get_session(:__san_success_redirect_url)
+            success_redirect_from_session
             |> extend_if_first_login(first_login)
             |> maybe_extend_with_jwt_tokens(jwt_tokens_map, include_jwt_in_redirect_url)
+
+          Logger.info("OAuth callback: final redirect_url=#{redirect_url}")
 
           conn
           |> SanbaseWeb.Guardian.add_jwt_tokens_to_conn_session(jwt_tokens_map)
@@ -115,11 +129,19 @@ defmodule SanbaseWeb.AuthController do
           include_jwt_in_redirect_url =
             get_session(conn, :__san_include_jwt_in_redirect_url)
 
+          success_redirect_from_session = get_session(conn, :__san_success_redirect_url)
+
+          Logger.info(
+            "OAuth callback: provider=twitter, " <>
+              "success_redirect_from_session=#{inspect(success_redirect_from_session)}"
+          )
+
           redirect_url =
-            conn
-            |> get_session(:__san_success_redirect_url)
+            success_redirect_from_session
             |> extend_if_first_login(first_login)
             |> maybe_extend_with_jwt_tokens(jwt_tokens_map, include_jwt_in_redirect_url)
+
+          Logger.info("OAuth callback: final redirect_url=#{redirect_url}")
 
           conn
           |> SanbaseWeb.Guardian.add_jwt_tokens_to_conn_session(jwt_tokens_map)

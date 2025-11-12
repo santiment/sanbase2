@@ -235,11 +235,16 @@ defmodule Sanbase.Accounts.UserStats do
 
   defp active_users_between_query(from_datetime, to_datetime, user_ids) do
     user_ids_filter =
-      if user_ids && user_ids != [] do
-        user_ids_str = user_ids |> Enum.join(",")
-        "AND user_id IN (#{user_ids_str})"
-      else
-        ""
+      cond do
+        is_nil(user_ids) ->
+          ""
+
+        user_ids == [] ->
+          "AND user_id IN (0)"
+
+        true ->
+          user_ids_str = user_ids |> Enum.join(",")
+          "AND user_id IN (#{user_ids_str})"
       end
 
     sql = """
@@ -360,11 +365,11 @@ defmodule Sanbase.Accounts.UserStats do
 
   defp inactive_users_since_query(since_datetime, user_ids) do
     user_ids_filter =
-      if user_ids && user_ids != [] do
+      if user_ids == [] do
+        "AND user_id IN (0)"
+      else
         user_ids_str = user_ids |> Enum.join(",")
         "AND user_id IN (#{user_ids_str})"
-      else
-        ""
       end
 
     sql = """

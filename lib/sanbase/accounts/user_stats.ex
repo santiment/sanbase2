@@ -134,11 +134,13 @@ defmodule Sanbase.Accounts.UserStats do
     cutoff_prior =
       DateTime.utc_now() |> DateTime.add(-(inactive_days + prior_activity_days), :day)
 
-    with {:ok, inactive_user_ids} <- get_inactive_users_since(cutoff_inactive) do
+    with {:ok, pro_max_user_ids} <- get_sanbase_pro_max_user_ids(),
+         {:ok, inactive_user_ids} <-
+           get_inactive_users_since(cutoff_inactive, pro_max_user_ids) do
       inactive_user_ids =
         if require_prior_activity do
           with {:ok, prior_active_users} <-
-                 get_active_users_between(cutoff_prior, cutoff_inactive) do
+                 get_active_users_between(cutoff_prior, cutoff_inactive, pro_max_user_ids) do
             inactive_user_ids
             |> MapSet.new()
             |> MapSet.intersection(MapSet.new(prior_active_users))
@@ -212,7 +214,7 @@ defmodule Sanbase.Accounts.UserStats do
   end
 
   defp get_previously_active_users(from_datetime, to_datetime) do
-    query_struct = active_users_between_query(from_datetime, to_datetime)
+    query_struct = active_users_between_query(from_datetime, to_datetime, nil)
 
     case Sanbase.ClickhouseRepo.query_transform(query_struct, fn [user_id] -> user_id end) do
       {:ok, user_ids} -> {:ok, user_ids}
@@ -231,13 +233,27 @@ defmodule Sanbase.Accounts.UserStats do
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  defp active_users_between_query(from_datetime, to_datetime) do
+  defp active_users_between_query(from_datetime, to_datetime, user_ids) do
+    user_ids_filter =
+      cond do
+        is_nil(user_ids) ->
+          ""
+
+        user_ids == [] ->
+          "AND user_id IN (0)"
+
+        true ->
+          user_ids_str = user_ids |> Enum.join(",")
+          "AND user_id IN (#{user_ids_str})"
+      end
+
     sql = """
     SELECT DISTINCT user_id
     FROM api_call_data
     WHERE dt >= toDateTime({{from_datetime}})
       AND dt < toDateTime({{to_datetime}})
       AND user_id != 0
+      #{user_ids_filter}
     """
 
     params = %{from_datetime: from_datetime, to_datetime: to_datetime}
@@ -286,6 +302,27 @@ defmodule Sanbase.Accounts.UserStats do
     {:ok, active_customers}
   end
 
+  defp get_sanbase_pro_max_user_ids do
+    query =
+      from(s in Subscription,
+        join: p in assoc(s, :plan),
+        join: u in User,
+        on: s.user_id == u.id,
+        where:
+          p.product_id == ^Product.product_sanbase() and
+            s.status == :active and
+            p.name in ["PRO", "PRO_PLUS", "MAX"] and
+            not is_nil(u.email) and
+            u.email != "" and
+            not like(u.email, "%@santiment.net"),
+        select: s.user_id,
+        distinct: s.user_id
+      )
+
+    user_ids = Repo.all(query)
+    {:ok, user_ids}
+  end
+
   defp api_active_users_since_query(since_datetime) do
     sql = """
     SELECT DISTINCT user_id
@@ -308,8 +345,8 @@ defmodule Sanbase.Accounts.UserStats do
     |> Enum.filter(& &1)
   end
 
-  defp get_inactive_users_since(since_datetime) do
-    query_struct = inactive_users_since_query(since_datetime)
+  defp get_inactive_users_since(since_datetime, user_ids) do
+    query_struct = inactive_users_since_query(since_datetime, user_ids)
 
     case Sanbase.ClickhouseRepo.query_transform(query_struct, fn [user_id] -> user_id end) do
       {:ok, user_ids} -> {:ok, user_ids}
@@ -317,8 +354,8 @@ defmodule Sanbase.Accounts.UserStats do
     end
   end
 
-  defp get_active_users_between(from_datetime, to_datetime) do
-    query_struct = active_users_between_query(from_datetime, to_datetime)
+  defp get_active_users_between(from_datetime, to_datetime, user_ids) do
+    query_struct = active_users_between_query(from_datetime, to_datetime, user_ids)
 
     case Sanbase.ClickhouseRepo.query_transform(query_struct, fn [user_id] -> user_id end) do
       {:ok, user_ids} -> {:ok, user_ids}
@@ -326,11 +363,20 @@ defmodule Sanbase.Accounts.UserStats do
     end
   end
 
-  defp inactive_users_since_query(since_datetime) do
+  defp inactive_users_since_query(since_datetime, user_ids) do
+    user_ids_filter =
+      if user_ids == [] do
+        "AND user_id IN (0)"
+      else
+        user_ids_str = user_ids |> Enum.join(",")
+        "AND user_id IN (#{user_ids_str})"
+      end
+
     sql = """
     SELECT DISTINCT user_id
     FROM api_call_data
     WHERE user_id != 0
+    #{user_ids_filter}
     GROUP BY user_id
     HAVING MAX(dt) < toDateTime({{since_datetime}})
     """
@@ -346,6 +392,7 @@ defmodule Sanbase.Accounts.UserStats do
           u.id in ^user_ids and
             not is_nil(u.email) and
             u.email != "" and
+            not like(u.email, "%@santiment.net") and
             (is_nil(u.username) or not like(u.username, "0x%")),
         select: %{id: u.id, email: u.email, name: u.name, username: u.username}
       )

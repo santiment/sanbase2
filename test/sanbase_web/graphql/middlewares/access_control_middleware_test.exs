@@ -462,5 +462,362 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
         refute Map.has_key?(result, "errors")
       end)
     end
+
+    test "released metric with allow_early_access=true is accessible by alpha user", context do
+      alpha_user = insert(:user, metric_access_level: "alpha")
+      conn = setup_jwt_auth(build_conn(), alpha_user)
+
+      {:ok, metric} = Sanbase.Metric.Registry.by_name("price_usd_5m", "timeseries")
+
+      {:ok, _} =
+        Sanbase.Metric.Registry.update(metric, %{status: "released", allow_early_access: true})
+
+      Sanbase.Metric.Registry.refresh_stored_terms()
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.ClickhouseRepo.query/2,
+        {:ok, context.mock_result}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          conn
+          |> post("/graphql", query_skeleton(context.query.("price_usd_5m")))
+          |> json_response(200)
+
+        assert Map.has_key?(result, "data")
+        refute Map.has_key?(result, "errors")
+      end)
+    end
+
+    test "released metric with allow_early_access=true is NOT accessible by regular user",
+         context do
+      regular_user = insert(:user, metric_access_level: "released")
+      conn = setup_jwt_auth(build_conn(), regular_user)
+
+      {:ok, metric} = Sanbase.Metric.Registry.by_name("price_usd_5m", "timeseries")
+
+      {:ok, _} =
+        Sanbase.Metric.Registry.update(metric, %{status: "released", allow_early_access: true})
+
+      Sanbase.Metric.Registry.refresh_stored_terms()
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.ClickhouseRepo.query/2,
+        {:ok, context.mock_result}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          conn
+          |> post("/graphql", query_skeleton(context.query.("price_usd_5m")))
+          |> json_response(200)
+
+        # Regular users can still access released metrics regardless of allow_early_access
+        # The flag only grants additional access to alpha users, it doesn't restrict others
+        assert Map.has_key?(result, "data")
+        refute Map.has_key?(result, "errors")
+      end)
+    end
+
+    test "released metric with allow_early_access=false is NOT accessible by alpha user (default behavior)",
+         context do
+      alpha_user = insert(:user, metric_access_level: "alpha")
+      conn = setup_jwt_auth(build_conn(), alpha_user)
+
+      {:ok, metric} = Sanbase.Metric.Registry.by_name("price_usd_5m", "timeseries")
+
+      {:ok, _} =
+        Sanbase.Metric.Registry.update(metric, %{status: "released", allow_early_access: false})
+
+      Sanbase.Metric.Registry.refresh_stored_terms()
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.ClickhouseRepo.query/2,
+        {:ok, context.mock_result}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          conn
+          |> post("/graphql", query_skeleton(context.query.("price_usd_5m")))
+          |> json_response(200)
+
+        # Released metrics are accessible by everyone, including alpha users
+        assert Map.has_key?(result, "data")
+        refute Map.has_key?(result, "errors")
+      end)
+    end
+
+    test "alpha metric with allow_early_access=false still accessible by alpha user", context do
+      alpha_user = insert(:user, metric_access_level: "alpha")
+      conn = setup_jwt_auth(build_conn(), alpha_user)
+
+      {:ok, metric} = Sanbase.Metric.Registry.by_name("price_usd_5m", "timeseries")
+
+      {:ok, _} =
+        Sanbase.Metric.Registry.update(metric, %{status: "alpha", allow_early_access: false})
+
+      Sanbase.Metric.Registry.refresh_stored_terms()
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.ClickhouseRepo.query/2,
+        {:ok, context.mock_result}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          conn
+          |> post("/graphql", query_skeleton(context.query.("price_usd_5m")))
+          |> json_response(200)
+
+        # Alpha status metrics are still accessible by alpha users
+        assert Map.has_key?(result, "data")
+        refute Map.has_key?(result, "errors")
+      end)
+    end
+
+    test "alpha user CAN access released metric with allow_early_access=true regardless of plan",
+         context do
+      # Demonstrates that allow_early_access=true grants access to alpha users
+      # even for metrics that would normally require a higher plan
+      alpha_user = insert(:user, metric_access_level: "alpha")
+      %{user: _user} = insert(:subscription_pro_sanbase, user: alpha_user)
+      conn = setup_jwt_auth(build_conn(), alpha_user)
+
+      {:ok, metric} = Sanbase.Metric.Registry.by_name("mean_realized_price_usd", "timeseries")
+
+      {:ok, _} =
+        Sanbase.Metric.Registry.update(metric, %{
+          status: "released",
+          sanbase_min_plan: "max",
+          access: "restricted",
+          allow_early_access: true
+        })
+
+      Sanbase.Metric.Registry.refresh_stored_terms()
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.ClickhouseRepo.query/2,
+        {:ok, context.mock_result}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          conn
+          |> post("/graphql", query_skeleton(context.query.("mean_realized_price_usd")))
+          |> json_response(200)
+
+        # Alpha user can access metric when allow_early_access=true
+        assert Map.has_key?(result, "data")
+        refute Map.has_key?(result, "errors")
+      end)
+    end
+
+    test "alpha user accesses released metric normally with allow_early_access=false", context do
+      # Demonstrates that allow_early_access=false doesn't break normal access
+      # PRO users should be blocked from MAX-level metrics
+      alpha_user = insert(:user, metric_access_level: "alpha")
+      %{user: _user} = insert(:subscription_pro_sanbase, user: alpha_user)
+      conn = setup_jwt_auth(build_conn(), alpha_user)
+
+      {:ok, metric} = Sanbase.Metric.Registry.by_name("mean_realized_price_usd", "timeseries")
+
+      {:ok, _} =
+        Sanbase.Metric.Registry.update(metric, %{
+          status: "released",
+          sanbase_min_plan: "max",
+          access: "restricted",
+          allow_early_access: false
+        })
+
+      Sanbase.Metric.Registry.refresh_stored_terms()
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.ClickhouseRepo.query/2,
+        {:ok, context.mock_result}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          conn
+          |> post("/graphql", query_skeleton(context.query.("mean_realized_price_usd")))
+          |> json_response(200)
+
+        # PRO user cannot access MAX-level metrics without allow_early_access
+        assert Map.has_key?(result, "errors")
+        error_message = hd(result["errors"])["message"]
+        assert error_message =~ "upgrade"
+      end)
+    end
+
+    test "regular PRO user CANNOT access MAX metric even with allow_early_access=true", context do
+      # Verifies that allow_early_access only works for alpha users, not regular users
+      regular_user = insert(:user, metric_access_level: "released")
+      %{user: _user} = insert(:subscription_pro_sanbase, user: regular_user)
+      conn = setup_jwt_auth(build_conn(), regular_user)
+
+      {:ok, metric} = Sanbase.Metric.Registry.by_name("mean_realized_price_usd", "timeseries")
+
+      {:ok, _} =
+        Sanbase.Metric.Registry.update(metric, %{
+          status: "released",
+          sanbase_min_plan: "max",
+          access: "restricted",
+          allow_early_access: true
+        })
+
+      Sanbase.Metric.Registry.refresh_stored_terms()
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.ClickhouseRepo.query/2,
+        {:ok, context.mock_result}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          conn
+          |> post("/graphql", query_skeleton(context.query.("mean_realized_price_usd")))
+          |> json_response(200)
+
+        # Regular PRO user still blocked from MAX metrics even with allow_early_access=true
+        assert Map.has_key?(result, "errors")
+        error_message = hd(result["errors"])["message"]
+        assert error_message =~ "upgrade"
+      end)
+    end
+
+    test "beta user CANNOT access MAX metric even with allow_early_access=true", context do
+      # Verifies that allow_early_access only works for alpha users, not beta users
+      beta_user = insert(:user, metric_access_level: "beta")
+      %{user: _user} = insert(:subscription_pro_sanbase, user: beta_user)
+      conn = setup_jwt_auth(build_conn(), beta_user)
+
+      {:ok, metric} = Sanbase.Metric.Registry.by_name("mean_realized_price_usd", "timeseries")
+
+      {:ok, _} =
+        Sanbase.Metric.Registry.update(metric, %{
+          status: "released",
+          sanbase_min_plan: "max",
+          access: "restricted",
+          allow_early_access: true
+        })
+
+      Sanbase.Metric.Registry.refresh_stored_terms()
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.ClickhouseRepo.query/2,
+        {:ok, context.mock_result}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          conn
+          |> post("/graphql", query_skeleton(context.query.("mean_realized_price_usd")))
+          |> json_response(200)
+
+        # Beta user still blocked from MAX metrics even with allow_early_access=true
+        assert Map.has_key?(result, "errors")
+        error_message = hd(result["errors"])["message"]
+        assert error_message =~ "upgrade"
+      end)
+    end
+
+    test "MAX user can access MAX metric with allow_early_access=false (normal behavior)",
+         context do
+      # Verifies that MAX users can access MAX metrics regardless of allow_early_access flag
+      max_user = insert(:user, metric_access_level: "released")
+      %{user: _user} = insert(:subscription_max_sanbase, user: max_user)
+      conn = setup_jwt_auth(build_conn(), max_user)
+
+      {:ok, metric} = Sanbase.Metric.Registry.by_name("mean_realized_price_usd", "timeseries")
+
+      {:ok, _} =
+        Sanbase.Metric.Registry.update(metric, %{
+          status: "released",
+          sanbase_min_plan: "max",
+          access: "restricted",
+          allow_early_access: false
+        })
+
+      Sanbase.Metric.Registry.refresh_stored_terms()
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.ClickhouseRepo.query/2,
+        {:ok, context.mock_result}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          conn
+          |> post("/graphql", query_skeleton(context.query.("mean_realized_price_usd")))
+          |> json_response(200)
+
+        # MAX user can access MAX metrics normally
+        assert Map.has_key?(result, "data")
+        refute Map.has_key?(result, "errors")
+      end)
+    end
+
+    test "FREE user CANNOT access PRO metric with allow_early_access=false (default behavior)",
+         context do
+      # Verifies that default behavior is unchanged - FREE users still blocked from PRO metrics
+      free_user = insert(:user, metric_access_level: "released")
+      conn = setup_jwt_auth(build_conn(), free_user)
+
+      {:ok, metric} = Sanbase.Metric.Registry.by_name("mean_realized_price_usd", "timeseries")
+
+      {:ok, _} =
+        Sanbase.Metric.Registry.update(metric, %{
+          status: "released",
+          sanbase_min_plan: "pro",
+          access: "restricted",
+          allow_early_access: false
+        })
+
+      Sanbase.Metric.Registry.refresh_stored_terms()
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.ClickhouseRepo.query/2,
+        {:ok, context.mock_result}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          conn
+          |> post("/graphql", query_skeleton(context.query.("mean_realized_price_usd")))
+          |> json_response(200)
+
+        # FREE user blocked from PRO metrics as expected
+        assert Map.has_key?(result, "errors")
+        error_message = hd(result["errors"])["message"]
+        assert error_message =~ "upgrade"
+      end)
+    end
+
+    test "PRO user CAN access PRO metric with allow_early_access=false (default behavior)",
+         context do
+      # Verifies that default behavior is unchanged - PRO users can access PRO metrics
+      pro_user = insert(:user, metric_access_level: "released")
+      %{user: _user} = insert(:subscription_pro_sanbase, user: pro_user)
+      conn = setup_jwt_auth(build_conn(), pro_user)
+
+      {:ok, metric} = Sanbase.Metric.Registry.by_name("mean_realized_price_usd", "timeseries")
+
+      {:ok, _} =
+        Sanbase.Metric.Registry.update(metric, %{
+          status: "released",
+          sanbase_min_plan: "pro",
+          access: "restricted",
+          allow_early_access: false
+        })
+
+      Sanbase.Metric.Registry.refresh_stored_terms()
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.ClickhouseRepo.query/2,
+        {:ok, context.mock_result}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          conn
+          |> post("/graphql", query_skeleton(context.query.("mean_realized_price_usd")))
+          |> json_response(200)
+
+        # PRO user can access PRO metrics normally
+        assert Map.has_key?(result, "data")
+        refute Map.has_key?(result, "errors")
+      end)
+    end
   end
 end

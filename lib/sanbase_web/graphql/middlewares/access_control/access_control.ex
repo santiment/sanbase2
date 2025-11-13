@@ -185,14 +185,26 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
         _ -> "released"
       end
 
-    with {:ok, metadata} <- Sanbase.Metric.metadata(metric_name),
-         true <- metadata.status in ["alpha", "beta"] do
-      do_check_experimental_metric(
-        user_metric_access_level,
-        metric_name,
-        metadata.status,
-        resolution
-      )
+    with {:ok, metadata} <- Sanbase.Metric.metadata(metric_name) do
+      cond do
+        # If metric allows early access and user is alpha, grant access and skip plan check
+        Map.get(metadata, :allow_early_access, false) and user_metric_access_level == "alpha" ->
+          # Mark that early access was granted so plan check can be bypassed
+          %{resolution | context: Map.put(resolution.context, :__early_access_granted__, true)}
+
+        # Otherwise, check if metric is experimental (alpha/beta) and apply normal rules
+        metadata.status in ["alpha", "beta"] ->
+          do_check_experimental_metric(
+            user_metric_access_level,
+            metric_name,
+            metadata.status,
+            resolution
+          )
+
+        # Released metric without early access flag - no restrictions
+        true ->
+          resolution
+      end
     else
       _ -> resolution
     end
@@ -248,6 +260,11 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   #
   # The shared access token is checked first and if it gives access to the
   # request, the user plan access is bypassed
+  defp check_plan_has_access(%Resolution{context: %{__early_access_granted__: true}} = resolution) do
+    # Early access was granted, skip plan check
+    resolution
+  end
+
   defp check_plan_has_access(%Resolution{} = resolution) do
     case check_shared_access_token_has_access?(resolution) do
       true -> resolution
@@ -285,6 +302,13 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
       _ ->
         false
     end
+  end
+
+  defp check_user_plan_has_access(
+         %Resolution{context: %{__early_access_granted__: true}} = resolution
+       ) do
+    # Early access was granted, skip plan check
+    resolution
   end
 
   defp check_user_plan_has_access(%Resolution{} = resolution) do

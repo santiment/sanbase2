@@ -77,6 +77,7 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
       "FREE" -> true
       "BASIC" -> plan_name != "FREE"
       "PRO" -> plan_name not in ["FREE", "BASIC"]
+      "MAX" -> plan_name not in ["FREE", "BASIC", "PRO"]
       "CUSTOM" -> plan_name == "CUSTOM"
       _ -> true
     end

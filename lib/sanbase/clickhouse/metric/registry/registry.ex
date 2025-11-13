@@ -33,6 +33,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
   def stabilization_period_map(), do: get(:stabilization_period_map)
   def name_to_metric_map(), do: get(:name_to_metric_map)
   def name_to_status_map(), do: get(:name_to_status_map)
+  def allow_early_access_map(), do: get(:allow_early_access_map)
   def required_selectors_map(), do: get(:required_selectors_map)
   def selectors_map(), do: get(:selectors_map)
   def soft_deprecated_metrics_map(), do: get(:soft_deprecated_metrics_map)
@@ -47,6 +48,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
     {:aggregation_map, []},
     {:aggregations, []},
     {:aggregations_with_nil, []},
+    {:allow_early_access_map, []},
     {:deprecated_metrics_map, []},
     {:docs_links_map, []},
     {:fixed_labels_parameters_metrics_list, []},
@@ -350,6 +352,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter.Registry do
 
   defp compute(:name_to_status_map, []) do
     get_metrics([]) |> Map.new(&{&1.metric, &1.status})
+  end
+
+  defp compute(:allow_early_access_map, []) do
+    get_metrics([]) |> Map.new(&{&1.metric, &1.allow_early_access})
   end
 
   defp compute(:metric_to_names_map, []) do

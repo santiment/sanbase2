@@ -404,6 +404,13 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
         value: metric_registry.status,
         popover_target: "popover-status",
         popover_target_text: get_popover_text(%{key: "Status"})
+      },
+      %{
+        key: "Allow Early Access",
+        value: if(metric_registry.allow_early_access, do: "Yes", else: "No"),
+        popover_target: "popover-allow-early-access",
+        popover_target_text:
+          "When enabled, alpha users can access this metric even after it's released"
       }
     ]
   end

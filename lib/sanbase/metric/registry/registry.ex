@@ -58,6 +58,7 @@ defmodule Sanbase.Metric.Registry do
           data_type: String.t(),
           docs: [%Doc{}],
           status: String.t(),
+          allow_early_access: boolean(),
           is_verified: boolean(),
           sync_status: String.t(),
           last_sync_datetime: DateTime.t(),
@@ -118,6 +119,7 @@ defmodule Sanbase.Metric.Registry do
     field(:data_type, :string, default: "timeseries")
 
     field(:status, :string, default: "released")
+    field(:allow_early_access, :boolean, default: false)
     # Sync-related fields
     field(:is_verified, :boolean)
     field(:sync_status, :string)
@@ -142,6 +144,7 @@ defmodule Sanbase.Metric.Registry do
     metric_registry
     |> cast(attrs, [
       :access,
+      :allow_early_access,
       :default_aggregation,
       :data_type,
       :deprecation_note,

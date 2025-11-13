@@ -223,6 +223,16 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
             />
             <.input
               type="select"
+              id="input-allow-early-access"
+              field={@form[:allow_early_access]}
+              label="Allow Early Access"
+              options={[
+                {"No - Default behavior", false},
+                {"Yes - Alpha users can access even when released", true}
+              ]}
+            />
+            <.input
+              type="select"
               id="input-exposed-environments"
               field={@form[:exposed_environments]}
               label="Exposed on Environments"

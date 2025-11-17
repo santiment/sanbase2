@@ -3977,6 +3977,79 @@ ALTER SEQUENCE public.san_burn_credit_transactions_id_seq OWNED BY public.san_bu
 
 
 --
+-- Name: sanbase_notification_user_reads; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.sanbase_notification_user_reads (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    notification_id bigint NOT NULL,
+    read_at timestamp(0) without time zone NOT NULL
+);
+
+
+--
+-- Name: sanbase_notification_user_reads_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.sanbase_notification_user_reads_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: sanbase_notification_user_reads_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.sanbase_notification_user_reads_id_seq OWNED BY public.sanbase_notification_user_reads.id;
+
+
+--
+-- Name: sanbase_notifications; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.sanbase_notifications (
+    id bigint NOT NULL,
+    type character varying(255) NOT NULL,
+    title text,
+    content text,
+    user_id bigint,
+    actor_user_id bigint,
+    entity_type character varying(255),
+    entity_id integer,
+    is_system_generated boolean DEFAULT false NOT NULL,
+    is_broadcast boolean DEFAULT false NOT NULL,
+    grouping_key character varying(255),
+    json_data jsonb,
+    is_deleted boolean DEFAULT false NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: sanbase_notifications_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.sanbase_notifications_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: sanbase_notifications_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.sanbase_notifications_id_seq OWNED BY public.sanbase_notifications.id;
+
+
+--
 -- Name: sanr_emails; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -6272,6 +6345,20 @@ ALTER TABLE ONLY public.san_burn_credit_transactions ALTER COLUMN id SET DEFAULT
 
 
 --
+-- Name: sanbase_notification_user_reads id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sanbase_notification_user_reads ALTER COLUMN id SET DEFAULT nextval('public.sanbase_notification_user_reads_id_seq'::regclass);
+
+
+--
+-- Name: sanbase_notifications id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sanbase_notifications ALTER COLUMN id SET DEFAULT nextval('public.sanbase_notifications_id_seq'::regclass);
+
+
+--
 -- Name: sanr_emails id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -7430,6 +7517,22 @@ ALTER TABLE ONLY public.san_burn_credit_transactions
 
 
 --
+-- Name: sanbase_notification_user_reads sanbase_notification_user_reads_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sanbase_notification_user_reads
+    ADD CONSTRAINT sanbase_notification_user_reads_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: sanbase_notifications sanbase_notifications_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sanbase_notifications
+    ADD CONSTRAINT sanbase_notifications_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: sanr_emails sanr_emails_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8475,7 +8578,7 @@ CREATE INDEX menus_user_id_index ON public.menus USING btree (user_id);
 -- Name: metric_categories_name_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX metric_categories_name_index ON public.metric_categories USING btree (name);
+CREATE UNIQUE INDEX metric_categories_name_index ON public.metric_categories USING btree (lower((name)::text));
 
 
 --
@@ -8503,7 +8606,7 @@ CREATE UNIQUE INDEX metric_category_mappings_module_metric_category_id_group_id_
 -- Name: metric_groups_name_category_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX metric_groups_name_category_id_index ON public.metric_groups USING btree (name, category_id);
+CREATE UNIQUE INDEX metric_groups_name_category_id_index ON public.metric_groups USING btree (lower((name)::text), category_id);
 
 
 --
@@ -8833,6 +8936,13 @@ CREATE UNIQUE INDEX questionnaire_answers_question_uuid_user_id_index ON public.
 --
 
 CREATE INDEX san_burn_credit_transactions_trx_hash_index ON public.san_burn_credit_transactions USING btree (trx_hash);
+
+
+--
+-- Name: sanbase_notification_user_reads_user_id_notification_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX sanbase_notification_user_reads_user_id_notification_id_index ON public.sanbase_notification_user_reads USING btree (user_id, notification_id);
 
 
 --
@@ -10267,6 +10377,38 @@ ALTER TABLE ONLY public.san_burn_credit_transactions
 
 
 --
+-- Name: sanbase_notification_user_reads sanbase_notification_user_reads_notification_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sanbase_notification_user_reads
+    ADD CONSTRAINT sanbase_notification_user_reads_notification_id_fkey FOREIGN KEY (notification_id) REFERENCES public.sanbase_notifications(id) ON DELETE CASCADE;
+
+
+--
+-- Name: sanbase_notification_user_reads sanbase_notification_user_reads_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sanbase_notification_user_reads
+    ADD CONSTRAINT sanbase_notification_user_reads_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: sanbase_notifications sanbase_notifications_actor_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sanbase_notifications
+    ADD CONSTRAINT sanbase_notifications_actor_user_id_fkey FOREIGN KEY (actor_user_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: sanbase_notifications sanbase_notifications_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sanbase_notifications
+    ADD CONSTRAINT sanbase_notifications_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: schedule_rescrape_prices schedule_rescrape_prices_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -11298,3 +11440,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20251202143216);
 INSERT INTO public."schema_migrations" (version) VALUES (20251202143217);
 INSERT INTO public."schema_migrations" (version) VALUES (20251215114741);
 INSERT INTO public."schema_migrations" (version) VALUES (20251216081737);
+INSERT INTO public."schema_migrations" (version) VALUES (20251104131955);

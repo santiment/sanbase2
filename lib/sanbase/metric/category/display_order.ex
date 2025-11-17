@@ -16,56 +16,92 @@ defmodule Sanbase.Metric.Category.DisplayOrder do
   Returns the same shape as DisplayOrder.get_ordered_metrics for compatibility.
   The ordering follows: category order → ungrouped mappings → groups (by order) →
   mappings within groups → ui_metadata within mappings.
+  Pass `true` as the second argument to include metrics without UI metadata.
   """
-  @spec get_ordered_metrics([MetricCategory.t()]) :: %{metrics: [map()], categories: [map()]}
-  def get_ordered_metrics(categories) do
+  @spec get_ordered_metrics([MetricCategory.t()], boolean()) :: %{
+          metrics: [map()],
+          categories: [map()]
+        }
+  def get_ordered_metrics(categories \\ nil, include_without_ui_metadata \\ false) do
+    # The returned metrics are taken from the mappings preloads in the categories.
+    # Make sure to preload the necessary associations when calling this function.
+    categories = categories || MetricCategory.list_ordered()
+    categories = Enum.sort_by(categories, & &1.display_order, :asc)
+
+    raise_if_no_preloads(categories)
+
     ordered_category_data = Enum.map(categories, fn cat -> %{id: cat.id, name: cat.name} end)
 
+    # This map is used to enrich the output with registry metric data
+    # It it is not used to generate the list of metrics.
+    # The list of metrics
     registry_metrics = build_registry_map()
 
     metrics =
       categories
-      |> Enum.flat_map(&flatten_category/1)
+      |> Enum.flat_map(&flatten_category(&1, include_without_ui_metadata))
       |> Enum.map(&transform_to_output_format(&1, registry_metrics))
 
-    %{
-      metrics: metrics,
-      categories: ordered_category_data
-    }
+    %{metrics: metrics, categories: ordered_category_data}
   end
 
-  defp flatten_category(category) do
-    ungrouped_metrics = flatten_mappings(category.mappings, category, nil)
+  defp raise_if_no_preloads(categories) do
+    if Enum.any?(categories, fn cat -> not Ecto.assoc_loaded?(cat.mappings) end),
+      do: raise("Mappings must be preloaded for all categories")
+
+    if Enum.any?(categories, fn cat ->
+         Enum.any?(cat.mappings, fn mapping ->
+           not Ecto.assoc_loaded?(mapping.metric_registry) or
+             not Ecto.assoc_loaded?(mapping.ui_metadata_list)
+         end)
+       end),
+       do: raise("Groups must be preloaded for all categories")
+  end
+
+  defp flatten_category(category, include_without_ui_metadata) do
+    ungrouped_metrics =
+      flatten_mappings(category.mappings, category, _group = nil, include_without_ui_metadata)
 
     grouped_metrics =
       category.groups
       |> Enum.flat_map(fn group ->
-        flatten_mappings(group.mappings, category, group)
+        flatten_mappings(group.mappings, category, group, include_without_ui_metadata)
       end)
 
     ungrouped_metrics ++ grouped_metrics
   end
 
-  defp flatten_mappings(mappings, category, group) do
+  defp flatten_mappings(mappings, category, group, include_without_ui_metadata) do
     mappings
     |> Enum.filter(&mapping_belongs_to_group?(&1, group))
-    |> Enum.flat_map(&expand_mapping_with_ui_metadata(&1, category, group))
+    |> Enum.flat_map(&expand_mapping(&1, category, group, include_without_ui_metadata))
   end
 
-  defp mapping_belongs_to_group?(mapping, nil), do: is_nil(mapping.group_id)
+  defp mapping_belongs_to_group?(mapping, _group = nil), do: is_nil(mapping.group_id)
   defp mapping_belongs_to_group?(mapping, group), do: mapping.group_id == group.id
 
-  defp expand_mapping_with_ui_metadata(mapping, category, group) do
-    if mapping.ui_metadata_list == [] do
-      [{mapping, nil, category, group}]
-    else
-      Enum.map(mapping.ui_metadata_list, fn ui_metadata ->
-        {mapping, ui_metadata, category, group}
-      end)
+  defp expand_mapping(mapping, category, group, include_without_ui_metadata) do
+    cond do
+      mapping.ui_metadata_list == [] and false == include_without_ui_metadata ->
+        []
+
+      mapping.ui_metadata_list == [] and true == include_without_ui_metadata ->
+        [{mapping, nil, category, group}]
+
+      true ->
+        Enum.map(mapping.ui_metadata_list, fn ui_metadata ->
+          {mapping, ui_metadata, category, group}
+        end)
     end
   end
 
   defp transform_to_output_format({mapping, ui_metadata, category, group}, registry_metrics) do
+    # Determine the metric name (not the human readable name) of the metric.
+    # In case of mapping with ui_metadata, the metric name comes from it.
+    # The mapping can be linked to a registry metric, or to a code metric.
+    # In case of include_without_ui_metadata=true, there is no ui_metadata,
+    # so the metric name comes from the mapping.
+    # Such records without ui_metadata will be used only locally for tests
     metric_name = determine_metric_name(mapping, ui_metadata)
     registry_metric = Map.get(registry_metrics, metric_name)
 
@@ -110,10 +146,16 @@ defmodule Sanbase.Metric.Category.DisplayOrder do
     }
   end
 
-  defp get_ui_human_readable_name(nil, metric_name), do: metric_name
-
   defp get_ui_human_readable_name(ui_metadata, metric_name) do
-    ui_metadata.ui_human_readable_name || metric_name
+    if ui_metadata && ui_metadata.ui_human_readable_name do
+      ui_metadata.ui_human_readable_name
+    else
+      with {:ok, human_readable_name} <- Sanbase.Metric.human_readable_name(metric_name) do
+        human_readable_name
+      else
+        _ -> metric_name
+      end
+    end
   end
 
   defp ui_metadata_or_mapping_field(nil, mapping, field), do: Map.get(mapping, field)

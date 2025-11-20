@@ -50,7 +50,8 @@ defmodule Sanbase.EventBus do
     __MODULE__.UserEventsSubscriber,
     __MODULE__.BillingEventSubscriber,
     __MODULE__.MetricRegistrySubscriber,
-    __MODULE__.NotificationsSubscriber
+    __MODULE__.NotificationsSubscriber,
+    __MODULE__.AppNotificationsSubscriber
   ]
 
   def children(), do: @subscribers

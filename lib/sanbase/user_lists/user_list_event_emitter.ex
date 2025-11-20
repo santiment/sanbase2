@@ -8,7 +8,12 @@ defmodule Sanbase.UserList.EventEmitter do
 
   def handle_event({:ok, watchlist}, event_type, _extra_args)
       when event_type in [:create_watchlist, :delete_watchlist] do
-    %{event_type: event_type, user_id: watchlist.user_id, watchlist_id: watchlist.id}
+    %{
+      event_type: event_type,
+      user_id: watchlist.user_id,
+      watchlist_id: watchlist.id,
+      is_public: watchlist.is_public
+    }
     |> notify()
   end
 

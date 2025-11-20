@@ -5008,7 +5008,8 @@ CREATE TABLE public.user_lists (
     type public.watchlist_type DEFAULT 'project'::public.watchlist_type NOT NULL,
     is_screener boolean DEFAULT false,
     is_deleted boolean DEFAULT false,
-    is_hidden boolean DEFAULT false
+    is_hidden boolean DEFAULT false,
+    is_public_updated_at timestamp(0) without time zone
 );
 
 
@@ -11441,3 +11442,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20251202143217);
 INSERT INTO public."schema_migrations" (version) VALUES (20251215114741);
 INSERT INTO public."schema_migrations" (version) VALUES (20251216081737);
 INSERT INTO public."schema_migrations" (version) VALUES (20251104131955);
+INSERT INTO public."schema_migrations" (version) VALUES (20251125102415);

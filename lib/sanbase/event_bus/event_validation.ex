@@ -92,7 +92,11 @@ defmodule Sanbase.EventBus.EventValidation do
   ## Watchlist Events
   #############################################################################
   def valid?(%{event_type: event_type, user_id: user_id, watchlist_id: watchlist_id})
-      when event_type in [:create_watchlist, :delete_watchlist],
+      when event_type in [
+             :create_watchlist,
+             :update_watchlist,
+             :delete_watchlist
+           ],
       do: valid_integer_id?(user_id) and valid_integer_id?(watchlist_id)
 
   #############################################################################

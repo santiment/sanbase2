@@ -132,6 +132,28 @@ defmodule Sanbase.Price do
   @spec changeset(any(), any()) :: no_return()
   def changeset(_, _), do: raise("Cannot change the asset_prices table")
 
+  def price_for_timestamps(_slug, [] = _datetimes_list, _source), do: {:ok, []}
+
+  def price_for_timestamps(slug, datetimes_list, source) do
+    timestamps_list = Enum.map(datetimes_list, &DateTime.to_unix/1)
+    query_struct = price_for_timestamps_query(slug, timestamps_list, source)
+
+    ClickhouseRepo.query_transform(
+      query_struct,
+      fn [timestamp, _slug, price_usd, price_btc, marketcap_usd, volume_usd] ->
+        %{
+          datetime: DateTime.from_unix!(timestamp),
+          price_usd: price_usd,
+          price_btc: price_btc,
+          marketcap_usd: marketcap_usd,
+          marketcap: marketcap_usd,
+          volume_usd: volume_usd,
+          volume: volume_usd
+        }
+      end
+    )
+  end
+
   @doc ~s"""
   Return timeseries data for the given time period where every point consists
   of price in USD, price in BTC, marketcap in USD and volume in USD

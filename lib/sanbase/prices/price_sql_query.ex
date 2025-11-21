@@ -13,6 +13,58 @@ defmodule Sanbase.Price.SqlQuery do
       timerange_parameters: 3
     ]
 
+  def price_for_timestamps_query(slug, timestamp_array, source)
+      when is_binary(slug) do
+    sql = """
+    SELECT
+      toUnixTimestamp(requested.requested_time),
+      requested.slug,
+      prices.price_usd,
+      prices.price_btc,
+      prices.marketcap_usd,
+      prices.volume_usd
+    FROM (
+      SELECT
+        toDateTime(ts) AS requested_time,
+        cast({{slug}}, 'String') AS slug
+      FROM (
+        SELECT
+          ts_array,
+          arrayEnumerate([{{timestamp_array}}]) AS ts_idx_array
+        FROM (SELECT [{{timestamp_array}}] AS ts_array)
+      ) AS data
+      ARRAY JOIN
+        data.ts_idx_array AS ts_idx,
+        data.ts_array AS ts
+      ORDER BY slug, requested_time
+    ) AS requested
+    ANY LEFT ASOF JOIN (
+      SELECT
+        cast(slug, 'String') AS slug,
+        dt,
+        price_usd,
+        price_btc,
+        marketcap_usd,
+        volume_usd
+      FROM #{@table}
+      WHERE
+        slug = cast({{slug}}, 'LowCardinality(String)') AND
+        source = cast({{source}}, 'LowCardinality(String)')
+      ORDER BY slug, dt
+    ) AS prices
+    ON requested.slug = prices.slug AND requested.requested_time <= prices.dt
+    ORDER BY requested.requested_time ASC
+    """
+
+    params = %{
+      slug: slug,
+      source: source,
+      timestamp_array: timestamp_array
+    }
+
+    Sanbase.Clickhouse.Query.new(sql, params)
+  end
+
   def timeseries_data_query(slug_or_slugs, from, to, interval, source, aggregation) do
     sql = """
     SELECT
@@ -529,7 +581,6 @@ defmodule Sanbase.Price.SqlQuery do
       LIMIT {{limit_per_slug}} BY slug
     )
     GROUP BY slug
-
     """
 
     params = %{slugs: slugs, source: source, limit_per_slug: limit_per_slug}

@@ -9,6 +9,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   @total_market "TOTAL_MARKET"
   @total_erc20 "TOTAL_ERC20"
 
+  def price_for_timestamps(
+        _root,
+        %{slug: slug, datetimes_list: datetimes_list} = args,
+        _resolution
+      ) do
+    source = Map.get(args, :source, "coinmarketcap")
+
+    case Price.price_for_timestamps(slug, datetimes_list, source) do
+      {:ok, result} ->
+        {:ok, result}
+
+      {:error, error} ->
+        {:error, "Cannot fetch price for timestamps for #{slug}. Reason: #{inspect(error)}"}
+    end
+  end
+
   @doc """
   Returns a list of price points for the given ticker. Optimizes the number of queries
   to the DB by inspecting the requested fields.

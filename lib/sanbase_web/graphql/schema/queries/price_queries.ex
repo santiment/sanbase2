@@ -8,6 +8,18 @@ defmodule SanbaseWeb.Graphql.Schema.PriceQueries do
   alias SanbaseWeb.Graphql.Middlewares.AccessControl
 
   object :price_queries do
+    field :price_for_timestamps, list_of(:price_point) do
+      meta(access: :free)
+
+      arg(:slug, non_null(:string))
+      arg(:datetimes_list, non_null(list_of(non_null(:datetime))))
+      arg(:source, :string)
+
+      # complexity(&Complexity.list_size/3)
+      middleware(AccessControl)
+      cache_resolve(&PriceResolver.price_for_timestamps/3)
+    end
+
     @desc "Fetch price history for a given slug and time interval."
     field :history_price, list_of(:price_point) do
       meta(access: :free)

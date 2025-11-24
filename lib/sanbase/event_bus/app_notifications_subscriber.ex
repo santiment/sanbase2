@@ -66,6 +66,22 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
     state
   end
 
+  defp handle_event(
+         %{data: %{event_type: event_type, user_id: user_id, watchlist_id: watchlist_id} = data},
+         event_shadow,
+         state
+       )
+       when event_type in [:create_watchlist, :update_watchlist] do
+    create_notification(
+      event_type,
+      followers_user_ids(user_id),
+      Map.put(data, :author_id, user_id)
+    )
+
+    EventBus.mark_as_completed({__MODULE__, event_shadow})
+    state
+  end
+
   defp handle_event(_event, event_shadow, state) do
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
@@ -73,10 +89,16 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
 
   #
   defp followers_user_ids(user_id) do
-    Sanbase.Follower.followed_by_user_ids(user_id)
+    Sanbase.Accounts.UserFollower.followed_by_user_ids(user_id)
   end
 
   ## Insight notifications
+
+  defp create_notification(_type, _user_ids, %{is_public: false}) do
+    # No notifications for private insights
+    :ok
+  end
+
   defp create_notification(:publish_insight, user_ids, %{
          insight_id: insight_id,
          author_id: author_id
@@ -116,6 +138,21 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
     end
 
     multi_insert_notifications(user_ids, user_id_to_notification_fun)
+  end
+
+  defp create_notification(
+         :update_watchlist,
+         _user_ids,
+         %{is_public: true, extra_in_memory_data: %{changes: changes}} = params
+       ) do
+    IO.inspect(params, label: "Update watchlist notification params")
+    # Notify in case of chaning the function?
+    #
+    changed_fields = if changes[:is_public], do: [:is_public], else: []
+    changed_fields = if changes[:function], do: [:function | changed_fields], else: changed_fields
+
+    changed_fields =
+      if changes[:list_items], do: [:list_items | changed_fields], else: changed_fields
   end
 
   defp multi_insert_notifications(user_ids, user_id_to_notification_fun) do

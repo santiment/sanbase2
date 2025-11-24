@@ -17,6 +17,17 @@ defmodule Sanbase.UserList.EventEmitter do
     |> notify()
   end
 
+  def handle_event({:ok, watchlist}, :update_watchlist, changes) do
+    %{
+      event_type: :update_watchlist,
+      user_id: watchlist.user_id,
+      watchlist_id: watchlist.id,
+      is_public: watchlist.is_public,
+      extra_in_memory_data: %{changes: changes}
+    }
+    |> notify()
+  end
+
   defp notify(data) do
     Sanbase.EventBus.notify(%{topic: @topic, data: data})
 

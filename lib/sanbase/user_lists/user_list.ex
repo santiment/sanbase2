@@ -30,6 +30,8 @@ defmodule Sanbase.UserList do
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.BlockchainAddress.BlockchainAddressUserPair
 
+  @preloads [:featured_item, :list_items, :user]
+
   schema "user_lists" do
     field(:type, WatchlistType, default: :project)
     field(:name, :string)
@@ -103,9 +105,10 @@ defmodule Sanbase.UserList do
   def by_id!(id, opts), do: by_id(id, opts) |> to_bang()
 
   @impl Sanbase.Entity.Behaviour
-  def by_id(id, _opts) when is_integer(id) or is_binary(id) do
+  def by_id(id, opts) when is_integer(id) or is_binary(id) do
     result =
       from(ul in base_query(), where: ul.id == ^id)
+      |> maybe_preload(opts)
       |> Repo.one()
 
     case result do
@@ -312,20 +315,31 @@ defmodule Sanbase.UserList do
 
     changeset =
       user_list_id
-      |> by_id!([])
-      |> Repo.preload(:list_items)
+      |> by_id!(preload?: true, preload: [:list_items])
       |> update_changeset(params)
 
     Repo.update(changeset)
     |> maybe_create_event(changeset, TimelineEvent.update_watchlist_type())
+    |> maybe_emit_event(:update_watchlist, changeset.changes)
   end
 
   def add_user_list_items(user, %{id: id, list_items: _} = params) do
     %{list_items: list_items} = update_list_items_params(params, user)
 
-    case ListItem.create(list_items) do
-      {:ok, _} -> by_id(id, [])
-      {:error, error} -> {:error, error}
+    with {:ok, pre_update_watchlist} <- by_id(id, preload?: true, preload: [:list_items]),
+         {:ok, _} <- ListItem.create(list_items),
+         {:ok, watchlist} <- by_id(id, preload?: true, preload: [:list_items]) do
+      added_items_count = length(watchlist.list_items) - length(pre_update_watchlist.list_items)
+
+      if added_items_count == 0 do
+        {:ok, watchlist}
+      else
+        {:ok, watchlist}
+        |> maybe_emit_event(:update_watchlist, %{
+          list_items: "added",
+          affected_list_items_count: added_items_count
+        })
+      end
     end
   end
 
@@ -333,9 +347,22 @@ defmodule Sanbase.UserList do
     %{list_items: list_items} = update_list_items_params(params, user)
 
     case ListItem.delete(list_items) do
-      {nil, _} -> by_id(id, [])
-      {num, _} when is_integer(num) -> by_id(id, [])
-      {:error, error} -> {:error, error}
+      {nil, _} ->
+        by_id(id, [])
+
+      # Do not emit an event if no items were removed
+      {0, _} ->
+        by_id(id, [])
+
+      {num, _} when is_integer(num) ->
+        by_id(id, [])
+        |> maybe_emit_event(:update_watchlist, %{
+          list_items: "removed",
+          affected_list_items_count: num
+        })
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 
@@ -398,6 +425,10 @@ defmodule Sanbase.UserList do
   end
 
   defp maybe_create_event(error_result, _, _), do: error_result
+
+  defp maybe_emit_event({:ok, watchlist}, :update_watchlist, changes) do
+    emit_event({:ok, watchlist}, :update_watchlist, %{extra_in_memory_data: changes})
+  end
 
   defp user_list_query_by_user_id(%User{id: user_id})
        when is_integer(user_id) and user_id > 0 do
@@ -576,5 +607,16 @@ defmodule Sanbase.UserList do
 
     blockchain_addresses
     |> Map.new(fn %{address: address, id: id} -> {address, id} end)
+  end
+
+  defp maybe_preload(query, opts) do
+    case Keyword.get(opts, :preload?, true) do
+      true ->
+        preloads = Keyword.get(opts, :preload, @preloads)
+        query |> preload(^preloads)
+
+      false ->
+        query
+    end
   end
 end

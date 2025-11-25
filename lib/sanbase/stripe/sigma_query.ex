@@ -111,6 +111,41 @@ defmodule Sanbase.Stripe.SigmaQuery do
   end
 
   @doc """
+  Fetch all results from a Stripe Sigma scheduled query run.
+
+  Similar to fetch_query_results/1 but returns all rows instead of just the first 10.
+
+  ## Parameters
+  - query_run_id: The Stripe Sigma scheduled query run ID (e.g., "sqr_123456")
+
+  ## Returns
+  - `{:ok, rows}` where rows is a list of all maps from the CSV
+  - `{:error, reason}` if any step fails
+
+  ## Example
+      iex> Sanbase.Stripe.SigmaQuery.fetch_all_query_results("sqr_123456")
+      {:ok, [
+        %{"customer_email" => "user@example.com", "stripe_customer_id" => "cus_123"},
+        ...
+      ]}
+  """
+  @spec fetch_all_query_results(String.t()) :: {:ok, list(map())} | {:error, String.t()}
+  def fetch_all_query_results(query_run_id) do
+    Logger.info("Starting Stripe Sigma query fetch (all rows) for query_run_id: #{query_run_id}")
+
+    with {:ok, file_url} <- get_query_run_file_url(query_run_id),
+         {:ok, csv_content} <- download_csv(file_url),
+         {:ok, rows} <- parse_csv_all(csv_content) do
+      Logger.info("Successfully fetched #{length(rows)} rows from Stripe Sigma query")
+      {:ok, rows}
+    else
+      {:error, reason} = error ->
+        Logger.error("Failed to fetch Stripe Sigma query results: #{inspect(reason)}")
+        error
+    end
+  end
+
+  @doc """
   Retrieve a scheduled query run and extract the file URL.
 
   ## Parameters
@@ -130,6 +165,9 @@ defmodule Sanbase.Stripe.SigmaQuery do
     ]
 
     case Req.get(url, req_opts) do
+      {:ok, %Req.Response{status: 200, body: %{"object" => "scheduled_query_run"} = query_run}} ->
+        handle_query_run_response(query_run, query_run_id)
+
       {:ok, %Req.Response{status: 200, body: %{"data" => [query_run | _]}}} ->
         handle_query_run_response(query_run, query_run_id)
 
@@ -205,7 +243,8 @@ defmodule Sanbase.Stripe.SigmaQuery do
     stripe_api_key = get_stripe_api_key()
 
     req_opts = [
-      auth: {:bearer, stripe_api_key}
+      auth: {:bearer, stripe_api_key},
+      raw: true
     ]
 
     case Req.get(file_url, req_opts) do
@@ -238,9 +277,34 @@ defmodule Sanbase.Stripe.SigmaQuery do
     rows =
       csv_content
       |> String.trim()
-      |> NimbleCSV.RFC4180.parse_string()
+      |> NimbleCSV.RFC4180.parse_string(skip_headers: false)
       |> rows_to_maps()
       |> Enum.take(@preview_limit)
+
+    {:ok, rows}
+  rescue
+    error ->
+      Logger.error("Error parsing CSV: #{inspect(error)}")
+      {:error, "Failed to parse CSV: #{inspect(error)}"}
+  end
+
+  @doc """
+  Parse CSV content and return all rows as list of maps.
+
+  ## Parameters
+  - csv_content: Raw CSV content as string
+
+  ## Returns
+  - `{:ok, rows}` - List of all maps
+  - `{:error, reason}` - Parsing error
+  """
+  @spec parse_csv_all(String.t()) :: {:ok, list(map())} | {:error, any()}
+  def parse_csv_all(csv_content) do
+    rows =
+      csv_content
+      |> String.trim()
+      |> NimbleCSV.RFC4180.parse_string(skip_headers: false)
+      |> rows_to_maps()
 
     {:ok, rows}
   rescue

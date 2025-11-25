@@ -234,17 +234,17 @@ defmodule Sanbase.Accounts.UserStats do
   end
 
   defp active_users_between_query(from_datetime, to_datetime, user_ids) do
-    user_ids_filter =
+    {user_ids_filter, params} =
       cond do
         is_nil(user_ids) ->
-          ""
+          {"", %{from_datetime: from_datetime, to_datetime: to_datetime}}
 
         user_ids == [] ->
-          "AND user_id IN (0)"
+          {"AND user_id IN (0)", %{from_datetime: from_datetime, to_datetime: to_datetime}}
 
         true ->
-          user_ids_str = user_ids |> Enum.join(",")
-          "AND user_id IN (#{user_ids_str})"
+          {"AND user_id IN {{user_ids}}",
+           %{from_datetime: from_datetime, to_datetime: to_datetime, user_ids: user_ids}}
       end
 
     sql = """
@@ -256,7 +256,6 @@ defmodule Sanbase.Accounts.UserStats do
       #{user_ids_filter}
     """
 
-    params = %{from_datetime: from_datetime, to_datetime: to_datetime}
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
@@ -303,24 +302,24 @@ defmodule Sanbase.Accounts.UserStats do
   end
 
   defp get_sanbase_pro_max_user_ids do
-    query =
-      from(s in Subscription,
-        join: p in assoc(s, :plan),
-        join: u in User,
-        on: s.user_id == u.id,
-        where:
-          p.product_id == ^Product.product_sanbase() and
-            s.status == :active and
-            p.name in ["PRO", "PRO_PLUS", "MAX"] and
-            not is_nil(u.email) and
-            u.email != "" and
-            not like(u.email, "%@santiment.net"),
-        select: s.user_id,
-        distinct: s.user_id
-      )
+    with {:ok, rows} <-
+           Sanbase.Stripe.SigmaQuery.fetch_all_query_results("sqr_1SXCToCA0hGU8IEV1B26ckI5") do
+      customer_ids = Enum.map(rows, & &1["customer_id"])
 
-    user_ids = Repo.all(query)
-    {:ok, user_ids}
+      user_ids =
+        from(u in User,
+          where:
+            u.stripe_customer_id in ^customer_ids and
+              not is_nil(u.email) and
+              u.email != "" and
+              not like(u.email, "%@santiment.net"),
+          select: u.id,
+          distinct: u.id
+        )
+        |> Repo.all()
+
+      {:ok, user_ids}
+    end
   end
 
   defp api_active_users_since_query(since_datetime) do
@@ -364,12 +363,11 @@ defmodule Sanbase.Accounts.UserStats do
   end
 
   defp inactive_users_since_query(since_datetime, user_ids) do
-    user_ids_filter =
+    {user_ids_filter, params} =
       if user_ids == [] do
-        "AND user_id IN (0)"
+        {"AND user_id IN (0)", %{since_datetime: since_datetime}}
       else
-        user_ids_str = user_ids |> Enum.join(",")
-        "AND user_id IN (#{user_ids_str})"
+        {"AND user_id IN {{user_ids}}", %{since_datetime: since_datetime, user_ids: user_ids}}
       end
 
     sql = """
@@ -381,7 +379,6 @@ defmodule Sanbase.Accounts.UserStats do
     HAVING MAX(dt) < toDateTime({{since_datetime}})
     """
 
-    params = %{since_datetime: since_datetime}
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 

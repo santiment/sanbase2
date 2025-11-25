@@ -20,7 +20,10 @@ defmodule Sanbase.Accounts.Turnstile do
       iex> validate("invalid-token")
       {:error, "Turnstile verification failed"}
   """
-  @spec validate(String.t(), String.t()) :: :ok | {:error, String.t()}
+  @spec validate(String.t() | nil, String.t()) :: :ok | {:error, String.t()}
+
+  def validate(nil, _remote_ip), do: {:error, "Turnstile token is missing"}
+
   def validate(token, remote_ip) when is_binary(token) do
     secret = System.get_env("CLOUDFLARE_TURNSTILE_SECRET_KEY")
 

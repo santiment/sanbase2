@@ -40,10 +40,11 @@ defmodule Sanbase.UserList do
     field(:description, :string)
     field(:function, WatchlistFunction, default: %WatchlistFunction{})
     field(:is_monitored, :boolean, default: false)
-    field(:is_public, :boolean, default: false)
     field(:is_screener, :boolean, default: false)
     field(:is_deleted, :boolean, default: false)
     field(:is_hidden, :boolean, default: false)
+    field(:is_public, :boolean, default: false)
+    field(:is_public_updated_at, :utc_datetime)
 
     belongs_to(:user, User)
     belongs_to(:table_configuration, Sanbase.TableConfiguration)
@@ -309,18 +310,23 @@ defmodule Sanbase.UserList do
     end
   end
 
-  def update_user_list(user, params) do
-    %{id: user_list_id} = params
+  def update_user_list(user, %{id: user_list_id} = params) do
+    user_list = by_id!(user_list_id, preload?: true, preload: [:list_items])
     params = update_list_items_params(params, user)
+    changeset = update_changeset(user_list, params)
 
     changeset =
-      user_list_id
-      |> by_id!(preload?: true, preload: [:list_items])
-      |> update_changeset(params)
+      if changeset.changes[:is_public],
+        do: changeset |> Ecto.Changeset.change(is_public_updated_at: DateTime.utc_now(:utc_now)),
+        else: changeset
+
+    changes =
+      changeset.changes
+      |> Map.put(:old_is_public_updated_at, user_list.is_public_updated_at)
 
     Repo.update(changeset)
     |> maybe_create_event(changeset, TimelineEvent.update_watchlist_type())
-    |> maybe_emit_event(:update_watchlist, changeset.changes)
+    |> maybe_emit_event(:update_watchlist, changes)
   end
 
   def add_user_list_items(user, %{id: id, list_items: _} = params) do
@@ -427,7 +433,7 @@ defmodule Sanbase.UserList do
   defp maybe_create_event(error_result, _, _), do: error_result
 
   defp maybe_emit_event({:ok, watchlist}, :update_watchlist, changes) do
-    emit_event({:ok, watchlist}, :update_watchlist, %{extra_in_memory_data: changes})
+    emit_event({:ok, watchlist}, :update_watchlist, changes)
   end
 
   defp user_list_query_by_user_id(%User{id: user_id})

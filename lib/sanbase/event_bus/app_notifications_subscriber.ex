@@ -52,14 +52,16 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
   end
 
   defp handle_event(
-         %{data: %{event_type: :publish_insight, user_id: user_id, insight_id: insight_id}},
+         %{
+           data: %{event_type: :publish_insight, user_id: user_id, insight_id: insight_id} = data
+         },
          event_shadow,
          state
        ) do
     create_notification(
       :publish_insight,
       followers_user_ids(user_id),
-      %{insight_id: insight_id, author_id: user_id}
+      data
     )
 
     EventBus.mark_as_completed({__MODULE__, event_shadow})
@@ -67,7 +69,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
   end
 
   defp handle_event(
-         %{data: %{event_type: event_type, user_id: user_id, watchlist_id: watchlist_id} = data},
+         %{data: %{event_type: event_type, user_id: user_id} = data},
          event_shadow,
          state
        )
@@ -75,7 +77,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
     create_notification(
       event_type,
       followers_user_ids(user_id),
-      Map.put(data, :author_id, user_id)
+      data
     )
 
     EventBus.mark_as_completed({__MODULE__, event_shadow})
@@ -101,7 +103,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
 
   defp create_notification(:publish_insight, user_ids, %{
          insight_id: insight_id,
-         author_id: author_id
+         user_id: author_id
        }) do
     user_id_to_notification_fun = fn user_id ->
       %Sanbase.AppNotifications.Notification{
@@ -123,7 +125,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
          # Only public watchlists generate notifications
          is_public: true,
          watchlist_id: watchlist_id,
-         author_id: author_id
+         user_id: author_id
        }) do
     user_id_to_notification_fun = fn user_id ->
       %Sanbase.AppNotifications.Notification{
@@ -142,17 +144,61 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
 
   defp create_notification(
          :update_watchlist,
-         _user_ids,
-         %{is_public: true, extra_in_memory_data: %{changes: changes}} = params
+         user_ids,
+         %{
+           is_public: true,
+           watchlsit_id: watchlist_id,
+           user_id: author_id,
+           extra_in_memory_data: %{changes: changes}
+         } =
+           params
        ) do
     IO.inspect(params, label: "Update watchlist notification params")
-    # Notify in case of chaning the function?
-    #
+
     changed_fields = if changes[:is_public], do: [:is_public], else: []
     changed_fields = if changes[:function], do: [:function | changed_fields], else: changed_fields
 
     changed_fields =
       if changes[:list_items], do: [:list_items | changed_fields], else: changed_fields
+
+    # If the public status was changed private -> public, but the watchlist has been made public
+    # not that long ago, do not notify about it. An example is someone clicking the public/private toggle
+    # multiple times in a short period - this should not spam followers with notifications.
+    old_dt = changes[:old_is_public_updated_at]
+
+    changed_fields =
+      if old_dt && changes[:is_public] && DateTime.diff(DateTime.utc_now(), old_dt, :day) < 2,
+        do: changed_fields -- [:is_public],
+        else: changed_fields
+
+    additional_json_data =
+      if changes[:list_items],
+        do: %{
+          list_items_action: changes[:list_items],
+          affected_list_items_count: changes[:list_items_affected_count]
+        },
+        else: %{}
+
+    if changed_fields != [] do
+      json_data = Map.merge(%{changed_fields: changed_fields}, additional_json_data)
+
+      user_id_to_notification_fun = fn user_id ->
+        %Sanbase.AppNotifications.Notification{
+          type: "update_watchlist",
+          user_id: user_id,
+          actor_user_id: author_id,
+          entity_type: "watchlist",
+          entity_id: watchlist_id,
+          is_broadcast: false,
+          is_system_generated: false,
+          json_data: %{
+            changed_fields: changed_fields
+          }
+        }
+      end
+
+      multi_insert_notifications(user_ids, user_id_to_notification_fun)
+    end
   end
 
   defp multi_insert_notifications(user_ids, user_id_to_notification_fun) do

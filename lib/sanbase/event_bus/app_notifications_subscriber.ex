@@ -91,7 +91,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
 
   #
   defp followers_user_ids(user_id) do
-    Sanbase.Accounts.UserFollower.followed_by_user_ids(user_id)
+    [user_id] ++ Sanbase.Accounts.UserFollower.followed_by_user_ids(user_id)
   end
 
   ## Insight notifications
@@ -147,14 +147,12 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
          user_ids,
          %{
            is_public: true,
-           watchlsit_id: watchlist_id,
+           watchlist_id: watchlist_id,
            user_id: author_id,
            extra_in_memory_data: %{changes: changes}
          } =
            params
        ) do
-    IO.inspect(params, label: "Update watchlist notification params")
-
     changed_fields = if changes[:is_public], do: [:is_public], else: []
     changed_fields = if changes[:function], do: [:function | changed_fields], else: changed_fields
 
@@ -172,15 +170,24 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
         else: changed_fields
 
     additional_json_data =
-      if changes[:list_items],
+      if(changes[:list_items],
         do: %{
-          list_items_action: changes[:list_items],
-          affected_list_items_count: changes[:list_items_affected_count]
+          changes: [
+            %{
+              field: :list_items,
+              action_type: changes[:list_items],
+              action_count: changes[:affected_list_items_count]
+            }
+          ]
         },
         else: %{}
+      )
+      |> dbg()
 
     if changed_fields != [] do
-      json_data = Map.merge(%{changed_fields: changed_fields}, additional_json_data)
+      json_data =
+        Map.merge(%{changed_fields: changed_fields}, additional_json_data)
+        |> dbg()
 
       user_id_to_notification_fun = fn user_id ->
         %Sanbase.AppNotifications.Notification{
@@ -191,9 +198,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
           entity_id: watchlist_id,
           is_broadcast: false,
           is_system_generated: false,
-          json_data: %{
-            changed_fields: changed_fields
-          }
+          json_data: json_data
         }
       end
 

@@ -315,18 +315,19 @@ defmodule Sanbase.UserList do
     params = update_list_items_params(params, user)
     changeset = update_changeset(user_list, params)
 
+    # If is_public is being changed, update the is_public_updated_at timestamp as well
     changeset =
       if changeset.changes[:is_public],
-        do: changeset |> Ecto.Changeset.change(is_public_updated_at: DateTime.utc_now(:utc_now)),
+        do: changeset |> Ecto.Changeset.change(is_public_updated_at: DateTime.utc_now(:second)),
         else: changeset
 
-    changes =
+    event_data =
       changeset.changes
       |> Map.put(:old_is_public_updated_at, user_list.is_public_updated_at)
 
     Repo.update(changeset)
     |> maybe_create_event(changeset, TimelineEvent.update_watchlist_type())
-    |> maybe_emit_event(:update_watchlist, changes)
+    |> maybe_emit_event(:update_watchlist, event_data)
   end
 
   def add_user_list_items(user, %{id: id, list_items: _} = params) do
@@ -432,8 +433,8 @@ defmodule Sanbase.UserList do
 
   defp maybe_create_event(error_result, _, _), do: error_result
 
-  defp maybe_emit_event({:ok, watchlist}, :update_watchlist, changes) do
-    emit_event({:ok, watchlist}, :update_watchlist, changes)
+  defp maybe_emit_event({:ok, watchlist}, :update_watchlist, data) do
+    emit_event({:ok, watchlist}, :update_watchlist, data)
   end
 
   defp user_list_query_by_user_id(%User{id: user_id})

@@ -63,7 +63,7 @@ defmodule Sanbase.Accounts do
   def create_user_with_eth_address(address) when is_binary(address) do
     multi_result =
       Ecto.Multi.new()
-      |> Ecto.Multi.run(:add_user, fn _, _ -> User.create(%{username: address}) end)
+      |> Ecto.Multi.run(:add_user, fn _, _ -> User.create(%{}) end)
       |> Ecto.Multi.run(:add_eth_account, fn _repo, %{add_user: %User{} = user} ->
         EthAccount.create(user.id, address)
       end)

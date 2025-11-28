@@ -613,11 +613,11 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
 
     Incomplete data can still be useful. Here are two examples:
     Daily Active Addresses: The number is only going to increase during the day,
-    so if the intention is to see when they reach over a threhsold the incomplete
+    so if the intention is to see when they reach over a threshold the incomplete
     data gives more timely signal.
 
     NVT: Due to the way it is computed, the value is only going to decrease
-    during the day, so if the intention is to see when it falls below a threhsold,
+    during the day, so if the intention is to see when it falls below a threshold,
     the incomplete gives more timely signal.
     """
     field :timeseries_data, list_of(:metric_data) do

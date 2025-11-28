@@ -315,6 +315,11 @@ defmodule Sanbase.Insight.Post do
     |> validate_length(:title, max: 140)
   end
 
+  def changeset(%Post{} = post, attrs) do
+    # Do this so we can edit the post via the admin panel
+    update_changeset(post, attrs)
+  end
+
   def update_changeset(%Post{} = post, attrs) do
     attrs = Sanbase.DateTimeUtils.truncate_datetimes(attrs)
 
@@ -353,7 +358,7 @@ defmodule Sanbase.Insight.Post do
     naive_now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
 
     post
-    |> cast(attrs, [:ready_state, :published_at])
+    |> cast(attrs, [:state, :ready_state, :published_at])
     |> change(published_at: naive_now)
   end
 
@@ -459,9 +464,8 @@ defmodule Sanbase.Insight.Post do
   def publish(post_id, user_id) do
     post_id = Sanbase.Math.to_integer(post_id)
 
-    with {:ok, post} <- by_id(post_id, preload?: false),
-         %Post{user_id: ^user_id} <- post,
-         %Post{ready_state: @draft} <- post,
+    with {:ok, post} <- by_id(post_id, preload?: true, preload: [:user]),
+         %Post{user_id: ^user_id, ready_state: @draft} <- post,
          {:ok, post} <- publish_post(post) do
       emit_event({:ok, post}, :publish_insight, %{})
       post = post |> Repo.preload(@preloads)
@@ -664,7 +668,20 @@ defmodule Sanbase.Insight.Post do
   end
 
   defp publish_post(post) do
-    publish_changeset = publish_changeset(post, %{ready_state: Post.published()})
+    # Automatically approve insights of santiment users.
+    # Otherwise set to awaiting_approval and require a moderator to approve it
+    # before other people see it
+    state =
+      case post do
+        %{user: %{email: email}} when is_binary(email) ->
+          if String.ends_with?(email, "@santiment.net"), do: @approved, else: @awaiting_approval
+
+        _ ->
+          @awaiting_approval
+      end
+
+    publish_changeset =
+      publish_changeset(post, %{ready_state: Post.published(), state: state})
 
     publish_changeset
     |> Repo.update()

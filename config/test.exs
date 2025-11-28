@@ -25,6 +25,8 @@ config :sanbase, Sanbase.PresignedS3Url.S3,
   access_key_id: "test_id",
   secret_access_key: "test_secret"
 
+config :sanbase, Sanbase.Messaging.Insight, enabled: "false"
+
 # Print only warnings and errors during test. Do not log JSON in tests.
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",

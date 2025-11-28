@@ -11,6 +11,28 @@ defmodule Sanbase.Insight.PostTest do
     assert post.state == Post.approved_state()
   end
 
+  test "publish insight by santiment user auto-approves the post" do
+    user = insert(:user, email: "author@santiment.net")
+
+    post =
+      insert(:post, user: user, ready_state: Post.draft(), state: Post.awaiting_approval_state())
+
+    assert {:ok, %Post{} = published_post} = Post.publish(post.id, user.id)
+    assert published_post.state == Post.approved_state()
+    assert published_post.ready_state == Post.published()
+  end
+
+  test "publish insight by gmail user awaits approval" do
+    user = insert(:user, email: "author@gmail.com")
+
+    post =
+      insert(:post, user: user, ready_state: Post.draft(), state: Post.awaiting_approval_state())
+
+    assert {:ok, %Post{} = published_post} = Post.publish(post.id, user.id)
+    assert published_post.state == Post.awaiting_approval_state()
+    assert published_post.ready_state == Post.published()
+  end
+
   test "changes the owner to the fallback user" do
     fallback_user = insert(:insights_fallback_user)
     post = insert(:post)

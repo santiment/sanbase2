@@ -784,6 +784,7 @@ defmodule Sanbase.Entity do
   ]
 
   defp entity_ids_query(:insight, opts) do
+    IO.inspect(opts, label: "INSIGHT OPTS")
     # `ordered?: false` is important otherwise the default order will be applied
     # and this will conflict with the distinct(true) check
     entity_opts =

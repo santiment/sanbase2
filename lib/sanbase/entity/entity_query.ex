@@ -137,7 +137,12 @@ defmodule Sanbase.Entity.Query do
             query |> where([p], p.ready_state == ^Sanbase.Insight.Post.draft())
 
           :public ->
-            query |> where([p], p.ready_state == ^Sanbase.Insight.Post.published())
+            query
+            |> where(
+              [p],
+              p.ready_state == ^Sanbase.Insight.Post.published() and
+                p.state == ^Sanbase.Insight.Post.approved_state()
+            )
         end
 
       match?({_, Sanbase.Alert.UserTrigger}, query.from.source) ->

@@ -258,7 +258,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
   end
 
   test "Getting an insight by id for anon user", %{user: user} do
-    post = insert(:post, user: user, state: Post.approved_state())
+    post = insert(:published_post, user: user, state: Post.approved_state())
 
     query = """
     {
@@ -308,10 +308,9 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
   test "Getting all insights as anon user", %{user: user} do
     post =
-      insert(:post,
+      insert(:published_post,
         user: user,
-        state: Post.approved_state(),
-        ready_state: Post.published()
+        state: Post.approved_state()
       )
 
     query = """

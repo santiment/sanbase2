@@ -45,8 +45,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     Post.related_projects(post)
   end
 
-  def post(_root, %{id: post_id}, _resolution) do
-    Post.by_id(post_id, [])
+  def post(_root, %{id: post_id}, %{context: context} = _resolution) do
+    user = get_in(context, [:auth, :current_user]) || %User{id: nil}
+    user_id = user.id
+
+    case Post.by_id(post_id, []) do
+      {:ok, %Post{state: "approved", ready_state: "published"} = post} ->
+        {:ok, post}
+
+      {:ok, %Post{user_id: ^user_id} = post} ->
+        {:ok, post}
+
+      {:ok, _} ->
+        {:error,
+         "Insight with id #{post_id} does not exist, is not published, or is not approved"}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   def all_insights(_root, %{tags: tags, page: page, page_size: page_size} = args, _context)

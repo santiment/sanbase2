@@ -78,7 +78,7 @@ defmodule Sanbase.Metric.UIMetadata do
   def create(attrs) do
     %__MODULE__{}
     |> changeset(attrs)
-    |> Repo.insert()
+    |> Repo.insert(on_conflict: :nothing)
   end
 
   @doc """

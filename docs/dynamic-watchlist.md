@@ -163,7 +163,7 @@ A function that returns all projects with a given market segment. The function i
 
 A function that returns all projects with trading volume over a given threshold. The function is identified with by the name `min_volume` and accepts one arugment:
 
-- min_volume (required) - A number representing the minimal trading threhsold.
+- min_volume (required) - A number representing the minimal trading threshold.
 
 ```json
 {

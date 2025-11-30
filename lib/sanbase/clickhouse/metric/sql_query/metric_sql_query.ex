@@ -22,13 +22,16 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   alias Sanbase.Clickhouse.MetricAdapter.Registry
 
   def timeseries_data_query(metric, selector, from, to, interval, aggregation, filters, opts) do
+    version = Keyword.get(opts, :version)
+
     params = %{
       interval: maybe_str_to_sec(interval),
       metric: Map.get(Registry.name_to_metric_map(), metric),
       from: dt_to_unix(:from, from),
       to: dt_to_unix(:to, to),
       selector: asset_filter_value(selector),
-      table: Map.get(Registry.table_map(), metric)
+      table: Map.get(Registry.table_map(), metric),
+      version: version
     }
 
     only_finalized_data = Keyword.get(opts, :only_finalized_data, false)
@@ -38,6 +41,15 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
     {fixed_parameters_str, params} =
       maybe_get_fixed_parameters(metric, selector, params, opts ++ [trailing_and: true])
+
+    metric_filter_opts =
+      [
+        argument_name: "metric",
+        # Version will be checked only if version is not nil
+        use_version: not is_nil(version),
+        # The name of the version argument from the SQL params
+        version_arg_name: "version"
+      ]
 
     sql =
       """
@@ -56,7 +68,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
           #{maybe_convert_to_date(:after, metric, "dt", "toDateTime({{from}})")} AND
           #{maybe_convert_to_date(:before, metric, "dt", "toDateTime({{to}})")} AND
           #{asset_id_filter(selector, argument_name: "selector", allow_missing_slug: true)} AND
-          #{metric_id_filter(metric, argument_name: "metric")}
+          #{metric_id_filter(metric, metric_filter_opts)}
           GROUP BY asset_id, dt
       )
       WHERE

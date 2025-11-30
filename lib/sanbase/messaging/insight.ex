@@ -12,7 +12,7 @@ defmodule Sanbase.Messaging.Insight do
     end
   end
 
-  def do_publish_in_discord(post) do
+  def do_publish_in_discord(%{ready_state: "approved"} = post) do
     post
     |> create_discord_payload()
     |> publish(%{is_pulse: post.is_pulse})
@@ -29,6 +29,8 @@ defmodule Sanbase.Messaging.Insight do
         {:error, "Can't publish insight creation notification to Discord"}
     end
   end
+
+  def do_publish_in_discord(_post), do: :ok
 
   defp create_discord_payload(
          %Post{id: id, title: title, user: user, published_at: published_at} = _post

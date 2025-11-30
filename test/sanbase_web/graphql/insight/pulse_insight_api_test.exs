@@ -106,8 +106,8 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
   end
 
   test "getting pulse insight by id for anon user", %{user: user} do
-    _ignored_non_pulse = insert(:post, user: user, state: Post.approved_state())
-    post = insert(:post, user: user, is_pulse: true, state: Post.approved_state())
+    _ignored_non_pulse = insert(:published_post, user: user, state: Post.approved_state())
+    post = insert(:published_post, user: user, is_pulse: true, state: Post.approved_state())
 
     query = """
     {

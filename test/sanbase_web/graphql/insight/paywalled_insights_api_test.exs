@@ -21,7 +21,7 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
       author = insert(:user)
 
       post =
-        insert(:post,
+        insert(:published_post,
           text: text,
           user: author,
           state: Post.approved_state(),

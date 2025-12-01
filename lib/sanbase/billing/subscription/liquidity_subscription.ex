@@ -110,8 +110,45 @@ defmodule Sanbase.Billing.Subscription.LiquiditySubscription do
   # Helpers
 
   defp user_ids_with_enough_staked() do
+    v2_user_ids = fetch_v2_user_ids_with_enough_staked()
+    v3_user_ids = fetch_v3_user_ids_with_enough_staked()
+
+    (v2_user_ids ++ v3_user_ids) |> Enum.uniq()
+  end
+
+  defp fetch_v2_user_ids_with_enough_staked() do
     User.UniswapStaking.fetch_all_uniswap_staked_users()
     |> Enum.filter(&(&1.san_staked >= @san_stake_required_liquidity_sub))
     |> Enum.map(& &1.user_id)
+  end
+
+  def fetch_v3_user_ids_with_enough_staked() do
+    positions = Sanbase.SmartContracts.UniswapV3.get_all_deposited_san_tokens()
+
+    address_to_san_map =
+      Enum.reduce(positions, %{}, fn p, acc ->
+        token0 = Sanbase.Math.to_float(p["depositedToken0"])
+        owner = String.downcase(p["owner"])
+
+        Map.update(acc, owner, token0, &(&1 + token0))
+      end)
+
+    addresses = Map.keys(address_to_san_map)
+    address_to_user_id = Sanbase.Accounts.EthAccount.address_to_user_id_map(addresses)
+
+    address_to_san_map
+    |> Enum.reduce(%{}, fn {address, san_staked}, acc ->
+      case Map.get(address_to_user_id, address) do
+        nil ->
+          acc
+
+        user_id ->
+          Map.update(acc, user_id, san_staked, &(&1 + san_staked))
+      end
+    end)
+    |> Enum.filter(fn {_user_id, san_staked} ->
+      san_staked >= @san_stake_required_liquidity_sub_v3
+    end)
+    |> Enum.map(fn {user_id, _san_staked} -> user_id end)
   end
 end

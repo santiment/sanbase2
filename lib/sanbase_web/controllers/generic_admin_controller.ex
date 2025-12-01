@@ -259,7 +259,7 @@ defmodule SanbaseWeb.GenericAdminController do
         GenericAdmin.call_module_function_or_default(
           admin_module,
           :after_filter,
-          [response_resource, changes],
+          [response_resource, changeset, changes],
           :ok
         )
         |> case do
@@ -300,7 +300,7 @@ defmodule SanbaseWeb.GenericAdminController do
         GenericAdmin.call_module_function_or_default(
           admin_module,
           :after_filter,
-          [response_resource, changes],
+          [response_resource, changeset, changes],
           :ok
         )
         |> case do

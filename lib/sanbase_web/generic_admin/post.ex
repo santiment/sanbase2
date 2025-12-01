@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.GenericAdmin.Post do
   import Ecto.Query
   alias Sanbase.Insight.Post
+
+  require Logger
   def schema_module, do: Post
 
   @index_fields ~w(id title is_featured is_pulse state ready_state moderation_comment user_id)a
@@ -67,9 +69,20 @@ defmodule SanbaseWeb.GenericAdmin.Post do
     %{post | is_featured: is_featured}
   end
 
-  def after_filter(post, params) do
+  def after_filter(post, changeset, params) do
     is_featured = params["is_featured"] |> String.to_existing_atom()
     Sanbase.FeaturedItem.update_item(post, is_featured)
+
+    if changeset.changes[:state] == Post.approved_state() and post.ready_state == Post.published() do
+      Logger.info("Publishing insight #{post.id} in discord")
+      # If the change is from awaiting_approval/declined to approved and the post is published,
+      # send notification in discord.
+      # By default, posts are published in awaiting_approval state and only after approval
+      # by a moderator they become visible to the public.
+      # Posts by santiment team members are auto-approved on publishing and the notification
+      # for that is sent from the Post.publish/1 function
+      Sanbase.Messaging.Insight.publish_in_discord(post)
+    end
   end
 
   def post_link(row) do
@@ -277,7 +290,7 @@ defmodule SanbaseWeb.GenericAdmin.UserTrigger do
   end
 
   # TODO propagate errors from before/after filters to users
-  def after_filter(trigger, params) do
+  def after_filter(trigger, _changeset, params) do
     trigger =
       Sanbase.Alert.UserTrigger.update_changeset(trigger, %{
         trigger: %{is_public: params["is_public"] |> String.to_existing_atom()}

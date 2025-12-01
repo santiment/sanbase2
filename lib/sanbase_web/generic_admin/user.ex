@@ -295,7 +295,7 @@ defmodule SanbaseWeb.GenericAdmin.UserList do
     %{user_list | is_featured: is_featured}
   end
 
-  def after_filter(user_list, params) do
+  def after_filter(user_list, _changeset, params) do
     is_featured = params["is_featured"] |> String.to_existing_atom()
     Sanbase.FeaturedItem.update_item(user_list, is_featured)
   end

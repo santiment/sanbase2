@@ -48,7 +48,14 @@ defmodule Sanbase.SmartContracts.UniswapV3 do
   end
 
   def fetch(variables) do
-    url = "https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3"
+    # Url for the Uniswap V3 subgraph changed to the gateway.thegraph.com and needs an API key
+    # https://thegraph.com/studio/apikeys/ - create an API key for the subgraph
+    # Free plan has 100K requests per month
+    thegraph_api_key = System.get_env("THEGRAPH_API_KEY")
+
+    url =
+      "https://gateway.thegraph.com/api/#{thegraph_api_key}/subgraphs/id/5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV"
+
     headers = [{"Content-Type", "application/json"}]
     body = Jason.encode!(%{"query" => @query, "variables" => variables})
 

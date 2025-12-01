@@ -138,7 +138,7 @@ defmodule SanbaseWeb.GenericAdmin.PromoTrial do
     }
   end
 
-  def after_filter(_promo_trial, params) do
+  def after_filter(_promo_trial, _changeset, params) do
     PromoTrial.create_promo_trial(params)
   end
 end

@@ -12,7 +12,9 @@ defmodule Sanbase.Messaging.Insight do
     end
   end
 
-  def do_publish_in_discord(%{ready_state: "approved"} = post) do
+  def do_publish_in_discord(%{ready_state: "approved", state: "published"} = post) do
+    Logger.info("Publishing insight #{post.id} in discord")
+
     post
     |> create_discord_payload()
     |> publish(%{is_pulse: post.is_pulse})

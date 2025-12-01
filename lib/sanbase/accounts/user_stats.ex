@@ -243,7 +243,7 @@ defmodule Sanbase.Accounts.UserStats do
           {"AND user_id IN (0)", %{from_datetime: from_datetime, to_datetime: to_datetime}}
 
         true ->
-          {"AND user_id IN {{user_ids}}",
+          {"AND user_id IN ({{user_ids}})",
            %{from_datetime: from_datetime, to_datetime: to_datetime, user_ids: user_ids}}
       end
 
@@ -367,7 +367,7 @@ defmodule Sanbase.Accounts.UserStats do
       if user_ids == [] do
         {"AND user_id IN (0)", %{since_datetime: since_datetime}}
       else
-        {"AND user_id IN {{user_ids}}", %{since_datetime: since_datetime, user_ids: user_ids}}
+        {"AND user_id IN ({{user_ids}})", %{since_datetime: since_datetime, user_ids: user_ids}}
       end
 
     sql = """

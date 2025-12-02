@@ -71,8 +71,16 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
   end
 
   def from_project(%Project{} = project) do
+    main_contract_address = Project.get_main_contract_address(project)
+
+    map_fields_as_list =
+      project
+      |> Map.from_struct()
+      |> Map.put(:main_contract_address, main_contract_address)
+      |> Map.to_list()
+
     project_info =
-      struct(__MODULE__, Map.to_list(project))
+      struct(__MODULE__, map_fields_as_list)
       |> struct(Map.to_list(find_or_create_initial_ico(project)))
 
     case Project.coinmarketcap_id(project) do

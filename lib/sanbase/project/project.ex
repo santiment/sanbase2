@@ -462,6 +462,25 @@ defmodule Sanbase.Project do
     end
   end
 
+  def get_main_contract_address(project) do
+    project =
+      project
+      |> Repo.preload([:contract_addresses])
+
+    main_contract_address =
+      project
+      |> Map.get(:contract_addresses, [])
+      |> Enum.find(&(&1.label == "main"))
+
+    case main_contract_address do
+      nil ->
+        if project.contract_addresses == [], do: nil, else: hd(project.contract_addresses).address
+
+      %Project.ContractAddress{address: address} ->
+        address
+    end
+  end
+
   defp preload_query(query, opts) do
     case Keyword.get(opts, :preload?, true) do
       false ->

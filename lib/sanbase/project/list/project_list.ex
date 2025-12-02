@@ -197,7 +197,7 @@ defmodule Sanbase.Project.List do
 
   def projects_with_source(source, opts) do
     projects_query(opts)
-    |> preload([:source_slug_mappings])
+    |> preload([:source_slug_mappings, :contract_addresses])
     |> Repo.all()
     |> Enum.filter(fn project ->
       source in Enum.map(project.source_slug_mappings, & &1.source)

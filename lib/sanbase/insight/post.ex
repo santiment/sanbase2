@@ -13,7 +13,7 @@ defmodule Sanbase.Insight.Post do
   alias Sanbase.Repo
   alias Sanbase.Accounts.User
   alias Sanbase.Project
-  alias Sanbase.Insight.{Post, PostImage}
+  alias Sanbase.Insight.{Post, PostImage, Category}
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.Metric.MetricPostgresData
   alias Sanbase.Chart.Configuration
@@ -101,6 +101,11 @@ defmodule Sanbase.Insight.Post do
       join_keys: [post_id: :id, metric_id: :id],
       on_replace: :delete,
       on_delete: :delete_all
+    )
+
+    many_to_many(:categories, Category,
+      join_through: "insight_category_mapping",
+      on_replace: :delete
     )
 
     field(:published_at, :naive_datetime)
@@ -696,6 +701,9 @@ defmodule Sanbase.Insight.Post do
         # Update the embeddings
         async_embed_post(post)
 
+        # Auto-categorize the insight (only if no human categories exist)
+        async_categorize_post(post)
+
         # Create a timeline event
         TimelineEvent.maybe_create_event_async(
           TimelineEvent.publish_insight_type(),
@@ -906,6 +914,23 @@ defmodule Sanbase.Insight.Post do
     if Application.get_env(:sanbase, :env) != :test do
       Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
         Sanbase.Insight.PostEmbedding.embed_post(post)
+      end)
+    end
+  end
+
+  defp async_categorize_post(%__MODULE__{} = post) do
+    if Application.get_env(:sanbase, :env) != :test do
+      Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+        # Only categorize if no human-sourced categories exist
+        unless Sanbase.Insight.PostCategory.has_human_categories?(post.id) do
+          case Sanbase.Insight.Categorizer.categorize_insight(post.id, save: true, force: false) do
+            {:ok, _categories} ->
+              Logger.debug("Auto-categorized insight #{post.id}")
+
+            {:error, reason} ->
+              Logger.warning("Failed to auto-categorize insight #{post.id}: #{inspect(reason)}")
+          end
+        end
       end)
     end
   end

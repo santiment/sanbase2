@@ -23,19 +23,23 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.MetadataV2Exporter do
     "Optimism" => "Optimism"
   }
 
+  @store_file "/tmp/cmc_metadata_v2.json"
+
   def save_cmc_metadata() do
     with {:ok, data} <-
            Sanbase.Project.List.projects(preload: [:latest_coinmarketcap_data])
            |> Enum.filter(& &1.coinmarketcap_id)
            |> Enum.map(& &1.coinmarketcap_id)
-           |> Enum.take(100)
-           |> get() do
-      File.write!("/tmp/cmc_metadata_v2.json", Jason.encode!(data))
+           |> Enum.chunk_every(200)
+           |> Enum.map(&get/1)
+           |> Enum.reduce(%{}, &Map.merge(&1, &2)) do
+      IO.puts("Storing data to " <> @store_file)
+      File.write!(@store_file, Jason.encode!(data))
     end
   end
 
   def get_cmc_metadata() do
-    File.read()
+    File.read!(@store_file) |> Jason.decode!()
   end
 
   def run() do

@@ -470,7 +470,11 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
     field :contract_addresses, list_of(:contract_address) do
       cache_resolve(
-        dataloader(SanbaseRepo),
+        dataloader(SanbaseRepo, :contract_addresses,
+          callback: fn contract_addresses, _project, _args ->
+            {:ok, contract_addresses |> Enum.reject(&is_nil(&1.decimals))}
+          end
+        ),
         fun_name: :project_contract_addresses
       )
     end

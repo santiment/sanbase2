@@ -1,6 +1,7 @@
 defmodule Sanbase.Project.ContractAddress do
   use Ecto.Schema
 
+  import Ecto.Query
   import Ecto.Changeset
 
   alias Sanbase.Project
@@ -11,6 +12,8 @@ defmodule Sanbase.Project.ContractAddress do
     field(:label, :string)
     field(:description, :string)
 
+    field(:decimals_scrape_attempted_at, :utc_datetime)
+
     belongs_to(:project, Project)
 
     timestamps()
@@ -18,7 +21,14 @@ defmodule Sanbase.Project.ContractAddress do
 
   def changeset(%__MODULE__{} = contract, attrs \\ %{}) do
     contract
-    |> cast(attrs, [:address, :decimals, :label, :description, :project_id])
+    |> cast(attrs, [
+      :address,
+      :decimals,
+      :label,
+      :description,
+      :project_id,
+      :decimals_scrape_attempted_at
+    ])
     |> validate_required([:address, :project_id])
     |> unique_constraint([:project_id, :address],
       message: "The combination of project and contract address must be unique."
@@ -42,7 +52,7 @@ defmodule Sanbase.Project.ContractAddress do
     map = %{
       address: Map.get(attrs, :address),
       decimals: Map.get(attrs, :decimals),
-      label: Map.get(attrs, :label, "main"),
+      label: Map.get(attrs, :label),
       description: Map.get(attrs, :description),
       project_id: project_id
     }
@@ -56,12 +66,26 @@ defmodule Sanbase.Project.ContractAddress do
   end
 
   def list_to_main_contract_address(list) when is_list(list) do
-    Enum.find(list, &(&1.label == "main")) || List.first(list)
+    list
+    |> Enum.reject(&is_nil(&1.decimals))
+    |> Enum.find(&(&1.label == "main")) || List.first(list)
   end
 
   def list_to_latest_onchain_contract_address(list) when is_list(list) do
+    list = list |> Enum.reject(&is_nil(&1.decimals))
+
     Enum.find(list, &(&1.label == "latest_onchain_contract")) ||
       Enum.find(list, &(&1.label == "main")) ||
       List.first(list)
+  end
+
+  def all_with_infrastructure() do
+    from(ca in __MODULE__,
+      where: not is_nil(ca.decimals),
+      join: p in assoc(ca, :project),
+      join: i in assoc(p, :infrastructure),
+      preload: [:project, project: [:infrastructure]]
+    )
+    |> Sanbase.Repo.all()
   end
 end

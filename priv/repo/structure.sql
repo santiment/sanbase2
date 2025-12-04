@@ -1067,12 +1067,13 @@ ALTER SEQUENCE public.comments_id_seq OWNED BY public.comments.id;
 CREATE TABLE public.contract_addresses (
     id bigint NOT NULL,
     address character varying(255) NOT NULL,
-    decimals integer DEFAULT 0,
+    decimals integer,
     label character varying(255),
     description text,
     project_id bigint,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    decimals_scrape_attempted_at timestamp(0) without time zone
 );
 
 
@@ -11295,3 +11296,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20251027142731);
 INSERT INTO public."schema_migrations" (version) VALUES (20251027154645);
 INSERT INTO public."schema_migrations" (version) VALUES (20251202143216);
 INSERT INTO public."schema_migrations" (version) VALUES (20251202143217);
+INSERT INTO public."schema_migrations" (version) VALUES (20251215114741);
+INSERT INTO public."schema_migrations" (version) VALUES (20251216081737);

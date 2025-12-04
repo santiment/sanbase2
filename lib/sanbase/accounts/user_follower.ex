@@ -61,6 +61,15 @@ defmodule Sanbase.Accounts.UserFollower do
     end
   end
 
+  def followed_by_user_ids(user_id) do
+    from(
+      uf in __MODULE__,
+      where: uf.follower_id == ^user_id,
+      select: uf.user_id
+    )
+    |> Repo.all()
+  end
+
   @doc """
   Returns all user ids of users that are followed by certain user
   """

@@ -62,7 +62,7 @@ defmodule Sanbase.Metric.Category.MetricGroup do
   def create(attrs) do
     %__MODULE__{}
     |> changeset(attrs)
-    |> Repo.insert()
+    |> Repo.insert(on_conflict: :nothing)
   end
 
   @doc """

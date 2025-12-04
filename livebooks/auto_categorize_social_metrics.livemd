@@ -1,0 +1,159 @@
+# Auto-categorize Social Registry metrics
+
+## Section
+
+```elixir
+drop_existing_categories_and_groups = true
+add_social_metrics_new_categories = true
+add_social_metrics_ui_metadata = false
+```
+
+```elixir
+all_metrics = Sanbase.Metric.available_metrics()
+length(all_metrics)
+```
+
+```elixir
+categorized_metrics =
+  Sanbase.Metric.Category.MetricCategoryMapping.list_all()
+  |> Enum.flat_map(fn
+    %{metric_registry: %{} = registry} ->
+      [registry] |> Sanbase.Metric.Registry.resolve() |> Enum.map(& &1.metric)
+
+    %{metric: metric} when is_binary(metric) ->
+      [metric]
+  end)
+
+not_categorized_metrics = all_metrics -- categorized_metrics
+
+IO.puts("""
+Categorized: #{length(categorized_metrics)}
+Not Categorized: #{length(not_categorized_metrics)}
+""")
+```
+
+```elixir
+category_name_to_id = Sanbase.Metric.Category.list_categories() |> Map.new(&{&1.name, &1.id})
+```
+
+```elixir
+# Social groups
+social_groups = Sanbase.Metric.Category.list_groups_by_category(category_name_to_id["Social"])
+
+max_display_order =
+  case social_groups do
+    [] ->
+      1
+
+    [_ | _] = list ->
+      Enum.max_by(list, & &1.display_order).display_order
+  end
+
+groups = ["Sentiment", "Social Volume", "Social Dominance"]
+
+Enum.with_index(groups, max_display_order)
+|> Enum.map(fn {group_name, display_order} ->
+  category_id = category_name_to_id["Social"]
+  group = Sanbase.Metric.Category.MetricGroup.get_by_name_and_category(group_name, category_id)
+  group && Sanbase.Metric.Category.delete_group(group)
+
+  Sanbase.Metric.Category.create_group(%{
+    name: group_name,
+    category_id: category_id,
+    display_order: display_order
+  })
+end)
+
+group_name_to_id =
+  Sanbase.Metric.Category.list_groups_with_category() |> Map.new(&{&1.name, &1.id})
+```
+
+```elixir
+group_name_to_id =
+  Sanbase.Metric.Category.list_groups_with_category() |> Map.new(&{&1.name, &1.id})
+```
+
+```elixir
+deduce_category = fn m ->
+  cond do
+    String.contains?(m, [
+      "_change_",
+      "_1h",
+      "_v2",
+      "_1d",
+      "_5m",
+      "moving_average",
+      "volume_consumed"
+    ]) ->
+      nil
+
+    # Sentiment
+    m =~ "sentiment" and
+        String.contains?(m, ["positive", "negative", "neutral", "bullish", "bearish"]) ->
+      {"Social", "Sentiment"}
+
+    # Social Volume
+    m =~ "social_volume" ->
+      {"Social", "Social Volume"}
+
+    # Social Dominance
+    m =~ "social_dominance" ->
+      {"Social", "Social Dominance"}
+
+    true ->
+      nil
+  end
+end
+```
+
+```elixir
+metric_registry_name_to_id =
+  Sanbase.Metric.Registry.all()
+  |> Sanbase.Metric.Registry.resolve()
+  |> Map.new(&{&1.metric, &1.id})
+
+all_metrics
+|> Enum.filter(&String.contains?(&1, "social_dominance"))
+|> Enum.filter(&Map.has_key?(metric_registry_name_to_id, &1))
+|> IO.inspect()
+|> Enum.map(fn m ->
+  registry_id = metric_registry_name_to_id[m]
+
+  case deduce_category.(m) do
+    nil ->
+      :ok
+
+    {category, group} ->
+      # Drop existing mapping
+      case Sanbase.Metric.Category.get_mapping_by_metric_registry_id(registry_id) do
+        {:ok, [existing_mapping]} ->
+          Sanbase.Metric.Category.delete_mapping(existing_mapping)
+
+        _ ->
+          :ok
+      end
+
+      # Create new mapping
+      {:ok, mapping} =
+        Sanbase.Metric.Category.create_mapping(%{
+          metric_registry_id: registry_id,
+          category_id: category_name_to_id[category],
+          group_id: group_name_to_id[group],
+          display_order: 1
+        })
+
+      # Create UI Metadata
+      {:ok, _} =
+        Sanbase.Metric.Category.create_ui_metadata(%{
+          metric: m,
+          display_order_in_mapping: 1,
+          metric_category_mapping_id: mapping.id,
+          chart_style: "line"
+        })
+  end
+end)
+```
+
+```elixir
+group_name_to_id["Social Dominance"]
+```

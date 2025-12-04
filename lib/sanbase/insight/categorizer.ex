@@ -231,7 +231,10 @@ defmodule Sanbase.Insight.Categorizer do
         category_ids = Enum.map(categories, & &1.id)
 
         if force? do
-          PostCategory.override_with_human_categories(post_id, category_ids)
+          # When forcing, delete ALL existing categories (both AI and human)
+          # then assign new AI-sourced categories
+          PostCategory.delete_all_categories(post_id)
+          PostCategory.assign_categories(post_id, category_ids, "ai")
         else
           # Delete only AI categories, then assign new ones
           PostCategory.delete_ai_categories(post_id)

@@ -96,4 +96,9 @@ defmodule Sanbase.Insight.PostCategory do
     from(m in __MODULE__, where: m.post_id == ^post_id and m.source == "ai")
     |> Repo.delete_all()
   end
+
+  def delete_all_categories(post_id) do
+    from(m in __MODULE__, where: m.post_id == ^post_id)
+    |> Repo.delete_all()
+  end
 end

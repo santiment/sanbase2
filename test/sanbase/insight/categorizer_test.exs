@@ -72,6 +72,30 @@ defmodule Sanbase.Insight.CategorizerTest do
       assert Enum.at(categories, 0).source == "human"
     end
 
+    test "delete_all_categories removes both ai and human categories" do
+      user = insert(:user)
+      post = insert(:post, user: user)
+
+      # Add human category
+      human_category = Repo.get_by(Category, name: "On-chain market analysis")
+      PostCategory.assign_categories(post.id, [human_category.id], "human")
+
+      # Add AI category
+      ai_category = Repo.get_by(Category, name: "Social Trends market analysis")
+      PostCategory.assign_categories(post.id, [ai_category.id], "ai")
+
+      # Verify both exist
+      categories = PostCategory.get_post_categories(post.id)
+      assert length(categories) == 2
+
+      # Delete all categories
+      PostCategory.delete_all_categories(post.id)
+
+      # Verify all are gone
+      categories = PostCategory.get_post_categories(post.id)
+      assert length(categories) == 0
+    end
+
     test "validates category names exist in database" do
       user = insert(:user)
       _post = insert(:post, user: user, title: "Test", text: "Test content")

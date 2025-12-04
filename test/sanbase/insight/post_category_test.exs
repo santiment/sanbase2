@@ -175,4 +175,28 @@ defmodule Sanbase.Insight.PostCategoryTest do
       assert Enum.at(categories, 0).source == "human"
     end
   end
+
+  describe "delete_all_categories/1" do
+    test "deletes all categories regardless of source" do
+      user = insert(:user)
+      post = insert(:post, user: user)
+
+      category1 = Repo.get_by(Category, name: "On-chain market analysis")
+      category2 = Repo.get_by(Category, name: "Social Trends market analysis")
+      category3 = Repo.get_by(Category, name: "Education on using Santiment")
+
+      PostCategory.assign_categories(post.id, [category1.id], "human")
+      PostCategory.assign_categories(post.id, [category2.id, category3.id], "ai")
+
+      # Verify all exist
+      categories = PostCategory.get_post_categories(post.id)
+      assert length(categories) == 3
+
+      PostCategory.delete_all_categories(post.id)
+
+      # Verify all are deleted
+      categories = PostCategory.get_post_categories(post.id)
+      assert length(categories) == 0
+    end
+  end
 end

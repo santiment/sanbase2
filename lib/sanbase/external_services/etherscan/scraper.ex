@@ -73,7 +73,8 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
     %{
       project_info
       | total_supply: total_supply(html) || project_info.total_supply,
-        main_contract_address: project_info.main_contract_address || main_contract_address(html),
+        # Temporarily disable the contract address scraping
+        # main_contract_address: project_info.main_contract_address || main_contract_address(html),
         token_decimals: project_info.token_decimals || token_decimals(html),
         website_link: project_info.website_link || website_link(html),
         email: project_info.email || official_link(html, "Email") |> email(),

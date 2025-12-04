@@ -303,10 +303,14 @@ defmodule SanbaseWeb.Admin.InsightCategorizationLive do
               phx-value-post_id={post.id}
             >
               <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm font-medium text-gray-900">
+                <.link
+                  navigate={~p"/admin/generic/#{post.id}?resource=posts"}
+                  class="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                  phx-click="noop"
+                >
                   {String.slice(post.title || "", 0..50)}
                   {if String.length(post.title || "") > 50, do: "..."}
-                </div>
+                </.link>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="text-sm text-gray-900">{post.user.email}</div>

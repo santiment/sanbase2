@@ -71,8 +71,8 @@ defmodule Sanbase.Insight.Categorizer do
   end
 
   @doc """
-  Categorizes all published insights that don't have human-sourced categories.
-  Skips insights that already have human overrides.
+  Categorizes all published insights that don't have any categories.
+  Skips insights that already have categories (human or AI).
   """
   def categorize_all_uncategorized(opts \\ []) do
     limit = Keyword.get(opts, :limit, 100)
@@ -80,12 +80,12 @@ defmodule Sanbase.Insight.Categorizer do
     query =
       from(
         p in Post,
-        left_join: m in PostCategory,
-        on: p.id == m.post_id and m.source == "human",
+        left_join: pc in PostCategory,
+        on: pc.post_id == p.id,
         where:
           p.ready_state == "published" and
             p.state == "approved" and
-            is_nil(m.id),
+            is_nil(pc.id),
         limit: ^limit,
         order_by: [desc: p.published_at]
       )
@@ -180,6 +180,9 @@ defmodule Sanbase.Insight.Categorizer do
 
           {:ok, _} ->
             {:error, "LLM returned invalid format: expected array"}
+
+          {:error, _} ->
+            {:error, "Could not parse LLM response as JSON"}
         end
 
       _ ->
@@ -234,6 +237,8 @@ defmodule Sanbase.Insight.Categorizer do
           PostCategory.delete_ai_categories(post_id)
           PostCategory.assign_categories(post_id, category_ids, "ai")
         end
+
+        {:ok, category_names}
       end
     end
   end

@@ -40,7 +40,17 @@ defmodule SanbaseWeb.GenericAdmin.Post do
   def has_many(post) do
     post =
       post
-      |> Sanbase.Repo.preload([:tags, :votes, :comments])
+      |> Sanbase.Repo.preload([:tags, :votes, :comments, :categories])
+
+    # Get category mappings with source information
+    category_mappings = Sanbase.Insight.PostCategory.get_post_categories(post.id)
+
+    # Enrich categories with source information
+    enriched_categories =
+      Enum.map(post.categories, fn category ->
+        mapping = Enum.find(category_mappings, &(&1.category_id == category.id))
+        Map.put(category, :source, mapping && mapping.source)
+      end)
 
     [
       %{
@@ -50,6 +60,14 @@ defmodule SanbaseWeb.GenericAdmin.Post do
         fields: [:name],
         funcs: %{},
         create_link_kv: [linked_resource: :post, linked_resource_id: post.id]
+      },
+      %{
+        resource: "insight_categories",
+        resource_name: "Categories",
+        rows: enriched_categories,
+        fields: [:name, :source],
+        funcs: %{},
+        create_link_kv: []
       },
       %{
         resource: "post_comments",

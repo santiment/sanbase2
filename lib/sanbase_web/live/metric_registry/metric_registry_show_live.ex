@@ -213,10 +213,6 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
     |> Enum.join(", ")
   end
 
-  defp get_mappings_for_registry(metric_registry_id) do
-    Sanbase.Metric.Category.get_mappings_by_metric_registry_id(metric_registry_id)
-  end
-
   defp get_rows(metric_registry) do
     [
       %{

@@ -23,4 +23,13 @@ defmodule Sanbase.Accounts.UserRole do
     |> changeset(%{user_id: user_id, role_id: role_id})
     |> Sanbase.Repo.insert()
   end
+
+  def delete(user_id, role_id) do
+    import Ecto.Query
+
+    from(ur in __MODULE__,
+      where: ur.user_id == ^user_id and ur.role_id == ^role_id
+    )
+    |> Sanbase.Repo.delete_all()
+  end
 end

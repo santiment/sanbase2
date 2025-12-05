@@ -143,6 +143,13 @@ defmodule SanbaseWeb.Router do
       end
     end
 
+    scope "/insight_categorization" do
+      live_session :insight_categorization_authenticated_user,
+        on_mount: [{SanbaseWeb.AdminUserAuth, :ensure_authenticated}] do
+        live("/", Admin.InsightCategorizationLive)
+      end
+    end
+
     scope "/tweets_prediction" do
       live_session :tweets_prediction_authenticated_user,
         on_mount: [

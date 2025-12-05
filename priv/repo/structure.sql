@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.10 (Homebrew)
--- Dumped by pg_dump version 15.10 (Homebrew)
+-- Dumped from database version 15.1 (Homebrew)
+-- Dumped by pg_dump version 15.1 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -899,7 +899,7 @@ CREATE TABLE public.chat_messages (
     suggestions text[] DEFAULT ARRAY[]::text[],
     feedback_type character varying(255),
     CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY ((ARRAY['thumbs_up'::character varying, 'thumbs_down'::character varying])::text[])) OR (feedback_type IS NULL))),
-    CONSTRAINT valid_role CHECK (((role)::text = ANY (ARRAY[('user'::character varying)::text, ('assistant'::character varying)::text])))
+    CONSTRAINT valid_role CHECK (((role)::text = ANY ((ARRAY['user'::character varying, 'assistant'::character varying])::text[])))
 );
 
 
@@ -1960,6 +1960,71 @@ ALTER SEQUENCE public.infrastructures_id_seq OWNED BY public.infrastructures.id;
 
 
 --
+-- Name: insight_categories; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.insight_categories (
+    id bigint NOT NULL,
+    name character varying(255) NOT NULL,
+    description text,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: insight_categories_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.insight_categories_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: insight_categories_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.insight_categories_id_seq OWNED BY public.insight_categories.id;
+
+
+--
+-- Name: insight_category_mapping; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.insight_category_mapping (
+    id bigint NOT NULL,
+    post_id bigint NOT NULL,
+    category_id bigint NOT NULL,
+    source character varying(255) DEFAULT 'ai'::character varying NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: insight_category_mapping_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.insight_category_mapping_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: insight_category_mapping_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.insight_category_mapping_id_seq OWNED BY public.insight_category_mapping.id;
+
+
+--
 -- Name: latest_coinmarketcap_data; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2413,7 +2478,8 @@ CREATE TABLE public.metric_registry (
     sync_status character varying(255) DEFAULT 'synced'::character varying NOT NULL,
     last_sync_datetime timestamp(0) without time zone,
     stabilization_period character varying(255),
-    can_mutate boolean
+    can_mutate boolean,
+    allow_early_access boolean DEFAULT false NOT NULL
 );
 
 
@@ -2559,7 +2625,7 @@ CREATE TABLE public.metric_ui_metadata (
     metric_category_mapping_id bigint NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    metric character varying(255) NOT NULL
+    metric character varying(255)
 );
 
 
@@ -5834,6 +5900,20 @@ ALTER TABLE ONLY public.infrastructures ALTER COLUMN id SET DEFAULT nextval('pub
 
 
 --
+-- Name: insight_categories id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.insight_categories ALTER COLUMN id SET DEFAULT nextval('public.insight_categories_id_seq'::regclass);
+
+
+--
+-- Name: insight_category_mapping id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.insight_category_mapping ALTER COLUMN id SET DEFAULT nextval('public.insight_category_mapping_id_seq'::regclass);
+
+
+--
 -- Name: latest_coinmarketcap_data id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6882,6 +6962,22 @@ ALTER TABLE ONLY public.images
 
 ALTER TABLE ONLY public.infrastructures
     ADD CONSTRAINT infrastructures_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: insight_categories insight_categories_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.insight_categories
+    ADD CONSTRAINT insight_categories_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: insight_category_mapping insight_category_mapping_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.insight_category_mapping
+    ADD CONSTRAINT insight_category_mapping_pkey PRIMARY KEY (id);
 
 
 --
@@ -8291,6 +8387,41 @@ CREATE UNIQUE INDEX infrastructures_code_index ON public.infrastructures USING b
 
 
 --
+-- Name: insight_categories_name_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX insight_categories_name_index ON public.insight_categories USING btree (name);
+
+
+--
+-- Name: insight_category_mapping_category_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX insight_category_mapping_category_id_index ON public.insight_category_mapping USING btree (category_id);
+
+
+--
+-- Name: insight_category_mapping_post_id_category_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX insight_category_mapping_post_id_category_id_index ON public.insight_category_mapping USING btree (post_id, category_id);
+
+
+--
+-- Name: insight_category_mapping_post_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX insight_category_mapping_post_id_index ON public.insight_category_mapping USING btree (post_id);
+
+
+--
+-- Name: insight_category_mapping_source_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX insight_category_mapping_source_index ON public.insight_category_mapping USING btree (source);
+
+
+--
 -- Name: latest_coinmarketcap_data_coinmarketcap_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9612,6 +9743,22 @@ ALTER TABLE ONLY public.icos
 
 ALTER TABLE ONLY public.icos
     ADD CONSTRAINT icos_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(id) ON DELETE CASCADE;
+
+
+--
+-- Name: insight_category_mapping insight_category_mapping_category_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.insight_category_mapping
+    ADD CONSTRAINT insight_category_mapping_category_id_fkey FOREIGN KEY (category_id) REFERENCES public.insight_categories(id) ON DELETE CASCADE;
+
+
+--
+-- Name: insight_category_mapping insight_category_mapping_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.insight_category_mapping
+    ADD CONSTRAINT insight_category_mapping_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.posts(id) ON DELETE CASCADE;
 
 
 --
@@ -11126,7 +11273,6 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250806103908);
 INSERT INTO public."schema_migrations" (version) VALUES (20250821111317);
 INSERT INTO public."schema_migrations" (version) VALUES (20250825074648);
 INSERT INTO public."schema_migrations" (version) VALUES (20250904142224);
-INSERT INTO public."schema_migrations" (version) VALUES (20250911114116);
 INSERT INTO public."schema_migrations" (version) VALUES (20250918083815);
 INSERT INTO public."schema_migrations" (version) VALUES (20250918093232);
 INSERT INTO public."schema_migrations" (version) VALUES (20250918110902);
@@ -11147,3 +11293,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20251023083446);
 INSERT INTO public."schema_migrations" (version) VALUES (20251023114153);
 INSERT INTO public."schema_migrations" (version) VALUES (20251027142731);
 INSERT INTO public."schema_migrations" (version) VALUES (20251027154645);
+INSERT INTO public."schema_migrations" (version) VALUES (20251202143216);
+INSERT INTO public."schema_migrations" (version) VALUES (20251202143217);

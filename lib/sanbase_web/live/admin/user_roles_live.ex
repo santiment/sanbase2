@@ -272,6 +272,7 @@ defmodule SanbaseWeb.Admin.UserRolesLive do
       |> assign(:email_query, query)
       |> assign(:email_suggestions, suggestions)
       |> assign(:show_email_suggestions, byte_size(query) >= 2 and suggestions != [])
+      |> assign(:selected_user_id, nil)
 
     {:noreply, socket}
   end
@@ -327,7 +328,7 @@ defmodule SanbaseWeb.Admin.UserRolesLive do
   end
 
   @impl true
-  def handle_event("search_users", %{"value" => query}, socket) do
+  def handle_event("search_users", %{"search_query" => query}, socket) do
     users = load_users_with_roles(query)
 
     socket =

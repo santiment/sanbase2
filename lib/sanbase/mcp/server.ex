@@ -27,6 +27,9 @@ defmodule Sanbase.MCP.Server do
   # Register Screener tool
   component(Sanbase.MCP.AssetsByMetricTool)
 
+  # Register Use Cases Catalog tool
+  component(Sanbase.MCP.UseCasesCatalogTool)
+
   if Application.compile_env(:sanbase, :env) in [:test, :dev] do
     IO.puts("Defining the extra MCP Server tools used in dev and test")
     # Some tools are enabled only in dev mode so we can test things during development

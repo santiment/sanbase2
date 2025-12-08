@@ -2,16 +2,15 @@ defmodule SanbaseWeb.Admin.InsightCategorizationLive do
   use SanbaseWeb, :live_view
 
   alias Sanbase.Insight.{Post, Category, PostCategory, Categorizer}
-  alias Sanbase.Repo
-  import Ecto.Query
 
-  @default_page_size 20
+  @default_page_size 50
 
   def mount(_params, _session, socket) do
     socket =
       socket
       |> assign(:page_title, "Insight Categorization")
       |> assign(:search_term, "")
+      |> assign(:search_mode, "keyword")
       |> assign(:sort_by, "published_at")
       |> assign(:sort_order, "desc")
       |> assign(:selected_post, nil)
@@ -24,18 +23,46 @@ defmodule SanbaseWeb.Admin.InsightCategorizationLive do
   end
 
   def handle_params(params, _uri, socket) do
-    {:noreply,
-     socket
-     |> assign(:search_term, Map.get(params, "search_term", socket.assigns[:search_term] || ""))
-     |> assign(:sort_by, Map.get(params, "sort_by", socket.assigns[:sort_by] || "published_at"))
-     |> assign(:sort_order, Map.get(params, "sort_order", socket.assigns[:sort_order] || "desc"))
-     |> assign_pagination(params)}
+    search_mode = socket.assigns[:search_mode] || "keyword"
+    search_term = Map.get(params, "search_term", socket.assigns[:search_term] || "")
+
+    socket =
+      socket
+      |> assign(:search_term, search_term)
+      |> assign(:sort_by, Map.get(params, "sort_by", socket.assigns[:sort_by] || "published_at"))
+      |> assign(:sort_order, Map.get(params, "sort_order", socket.assigns[:sort_order] || "desc"))
+
+    socket =
+      if search_mode == "semantic" and search_term != "" do
+        assign_semantic_results(socket, search_term)
+      else
+        assign_pagination(socket, params)
+      end
+
+    {:noreply, socket}
   end
 
   def handle_event("search", %{"search_term" => search_term}, socket) do
+    socket =
+      socket
+      |> assign(:search_term, search_term)
+      |> assign(:page, 1)
+
+    socket =
+      if socket.assigns.search_mode == "semantic" do
+        assign_semantic_results(socket, search_term)
+      else
+        assign_pagination(socket, %{})
+      end
+
+    {:noreply, socket}
+  end
+
+  def handle_event("toggle_search_mode", %{"mode" => mode}, socket) do
     {:noreply,
      socket
-     |> assign(:search_term, search_term)
+     |> assign(:search_mode, mode)
+     |> assign(:search_term, "")
      |> assign(:page, 1)
      |> assign_pagination(%{})}
   end
@@ -174,20 +201,13 @@ defmodule SanbaseWeb.Admin.InsightCategorizationLive do
     sort_by = socket.assigns[:sort_by] || "published_at"
     sort_order = socket.assigns[:sort_order] || "desc"
 
-    query = build_query(search_term, sort_by, sort_order)
-
-    total_count = Repo.aggregate(query, :count, :id)
-    total_pages = max(1, div(total_count + page_size - 1, page_size))
-    page = page |> max(1) |> min(total_pages)
-
-    offset = (page - 1) * page_size
-
-    posts =
-      query
-      |> limit(^page_size)
-      |> offset(^offset)
-      |> preload([:user, :categories])
-      |> Repo.all()
+    {posts, total_count, total_pages, page} =
+      Post.admin_keyword_search(search_term,
+        page: page,
+        page_size: page_size,
+        sort_by: sort_by,
+        sort_order: sort_order
+      )
 
     post_ids = Enum.map(posts, & &1.id)
     categories_by_post_id = PostCategory.get_categories_for_posts(post_ids)
@@ -209,36 +229,24 @@ defmodule SanbaseWeb.Admin.InsightCategorizationLive do
     |> assign(:sort_order, sort_order)
   end
 
-  defp build_query(search_term, sort_by, sort_order) do
-    query =
-      from(
-        p in Post,
-        where: p.ready_state == "published" and p.state == "approved" and p.is_deleted != true,
-        preload: [:user]
-      )
+  defp assign_semantic_results(socket, search_term) do
+    {posts, total_count} = Post.admin_semantic_search(search_term, 50)
 
-    query =
-      if search_term != "" do
-        search_pattern = "%#{search_term}%"
+    post_ids = Enum.map(posts, & &1.id)
+    categories_by_post_id = PostCategory.get_categories_for_posts(post_ids)
 
-        from(
-          p in query,
-          where: ilike(p.title, ^search_pattern) or ilike(p.text, ^search_pattern)
-        )
-      else
-        query
-      end
+    posts =
+      Enum.map(posts, fn post ->
+        categories = Map.get(categories_by_post_id, post.id, [])
+        Map.put(post, :category_mappings, categories)
+      end)
 
-    order_by_clause =
-      case {sort_by, sort_order} do
-        {"published_at", "asc"} -> [asc: :published_at]
-        {"published_at", "desc"} -> [desc: :published_at]
-        {"title", "asc"} -> [asc: :title]
-        {"title", "desc"} -> [desc: :title]
-        _ -> [desc: :published_at]
-      end
-
-    from(p in query, order_by: ^order_by_clause)
+    socket
+    |> assign(:posts, posts)
+    |> assign(:total_count, total_count)
+    |> assign(:total_pages, 1)
+    |> assign(:page, 1)
+    |> assign(:page_size, 50)
   end
 
   defp parse_int(nil, default), do: default
@@ -251,24 +259,58 @@ defmodule SanbaseWeb.Admin.InsightCategorizationLive do
       <h1 class="text-3xl font-bold text-gray-900 mb-6">Insight Categorization</h1>
 
       <div class="mb-6 flex items-center gap-4">
+        <div class="flex gap-2 mr-2">
+          <button
+            phx-click="toggle_search_mode"
+            phx-value-mode="keyword"
+            class={[
+              "px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+              if(@search_mode == "keyword",
+                do: "bg-blue-600 text-white",
+                else: "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              )
+            ]}
+          >
+            Keyword
+          </button>
+          <button
+            phx-click="toggle_search_mode"
+            phx-value-mode="semantic"
+            class={[
+              "px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+              if(@search_mode == "semantic",
+                do: "bg-blue-600 text-white",
+                else: "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              )
+            ]}
+          >
+            Semantic
+          </button>
+        </div>
+
         <form phx-submit="search" class="flex-1">
           <input
             type="text"
             name="search_term"
             value={@search_term}
-            placeholder="Search insights by title or content..."
+            placeholder={
+              if(@search_mode == "semantic",
+                do: "Search insights semantically...",
+                else: "Search insights by title or content..."
+              )
+            }
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </form>
 
-        <form phx-change="sort" id="sort-by-form">
+        <form :if={@search_mode == "keyword"} phx-change="sort" id="sort-by-form">
           <select name="sort_by" class="px-4 py-2 border border-gray-300 rounded-lg">
             <option value="published_at" selected={@sort_by == "published_at"}>Published Date</option>
             <option value="title" selected={@sort_by == "title"}>Title</option>
           </select>
         </form>
 
-        <form phx-change="sort" id="sort-order-form">
+        <form :if={@search_mode == "keyword"} phx-change="sort" id="sort-order-form">
           <select name="sort_order" class="px-4 py-2 border border-gray-300 rounded-lg">
             <option value="desc" selected={@sort_order == "desc"}>Descending</option>
             <option value="asc" selected={@sort_order == "asc"}>Ascending</option>
@@ -279,8 +321,12 @@ defmodule SanbaseWeb.Admin.InsightCategorizationLive do
       <div class="mb-4 flex items-center justify-between text-sm text-gray-600">
         <div>
           <span class="font-medium">Total:</span> {@total_count}
-          <span class="mx-2">•</span>
-          <span>Page {@page} of {@total_pages}</span>
+          <span :if={@search_mode == "keyword"} class="mx-2">•</span>
+          <span :if={@search_mode == "keyword"}>Page {@page} of {@total_pages}</span>
+          <span :if={@search_mode == "semantic"} class="mx-2">•</span>
+          <span :if={@search_mode == "semantic"} class="text-blue-600 font-medium">
+            Semantic Search
+          </span>
         </div>
         <button
           phx-click="load_stats"
@@ -386,7 +432,7 @@ defmodule SanbaseWeb.Admin.InsightCategorizationLive do
         </table>
       </div>
 
-      <div class="mt-4 flex items-center justify-between">
+      <div :if={@search_mode == "keyword"} class="mt-4 flex items-center justify-between">
         <button
           phx-click="prev_page"
           disabled={@page == 1}

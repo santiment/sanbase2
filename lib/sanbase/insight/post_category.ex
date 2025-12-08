@@ -101,4 +101,32 @@ defmodule Sanbase.Insight.PostCategory do
     from(m in __MODULE__, where: m.post_id == ^post_id)
     |> Repo.delete_all()
   end
+
+  def get_categorization_stats do
+    published_posts_query =
+      from(p in Post,
+        where: p.ready_state == "published" and p.state == "approved" and p.is_deleted != true,
+        select: p.id
+      )
+
+    total_categorized =
+      from(m in __MODULE__,
+        where: m.post_id in subquery(published_posts_query),
+        select: count(m.post_id, :distinct)
+      )
+      |> Repo.one()
+
+    by_category =
+      from(m in __MODULE__,
+        where: m.post_id in subquery(published_posts_query),
+        join: c in Category,
+        on: m.category_id == c.id,
+        group_by: [c.id, c.name],
+        select: %{category_name: c.name, count: count(m.post_id, :distinct)},
+        order_by: [desc: count(m.post_id, :distinct)]
+      )
+      |> Repo.all()
+
+    %{total_categorized: total_categorized, by_category: by_category}
+  end
 end

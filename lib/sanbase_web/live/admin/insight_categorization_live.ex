@@ -16,6 +16,8 @@ defmodule SanbaseWeb.Admin.InsightCategorizationLive do
       |> assign(:sort_order, "desc")
       |> assign(:selected_post, nil)
       |> assign(:all_categories, Category.all())
+      |> assign(:stats, nil)
+      |> assign(:show_stats, false)
       |> assign_pagination(%{})
 
     {:ok, socket}
@@ -126,6 +128,15 @@ defmodule SanbaseWeb.Admin.InsightCategorizationLive do
      |> assign(:selected_post, post)
      |> assign(:post_categories, categories)
      |> assign_pagination(%{})}
+  end
+
+  def handle_event("load_stats", _, socket) do
+    stats = PostCategory.get_categorization_stats()
+
+    {:noreply,
+     socket
+     |> assign(:stats, stats)
+     |> assign(:show_stats, true)}
   end
 
   def handle_event("auto_categorize", %{"post_id" => post_id}, socket) do
@@ -270,6 +281,30 @@ defmodule SanbaseWeb.Admin.InsightCategorizationLive do
           <span class="font-medium">Total:</span> {@total_count}
           <span class="mx-2">•</span>
           <span>Page {@page} of {@total_pages}</span>
+        </div>
+        <button
+          phx-click="load_stats"
+          phx-disable-with="Loading..."
+          class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm"
+        >
+          Load Stats
+        </button>
+      </div>
+
+      <div :if={@show_stats && @stats} class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-900 mb-3">Categorization Stats</h3>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div class="bg-white p-3 rounded-lg shadow-sm border border-gray-100">
+            <div class="text-2xl font-bold text-purple-600">{@stats.total_categorized}</div>
+            <div class="text-sm text-gray-600">Total Categorized</div>
+          </div>
+          <div
+            :for={cat <- @stats.by_category}
+            class="bg-white p-3 rounded-lg shadow-sm border border-gray-100"
+          >
+            <div class="text-2xl font-bold text-blue-600">{cat.count}</div>
+            <div class="text-sm text-gray-600">{cat.category_name}</div>
+          </div>
         </div>
       </div>
 

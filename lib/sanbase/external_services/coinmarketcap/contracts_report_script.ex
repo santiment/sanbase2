@@ -1,4 +1,4 @@
-defmodule Sanbase.ExternalServices.Coinmarketcap.MetadataV2Exporter do
+defmodule Sanbase.ExternalServices.Coinmarketcap.ContractsReportScript do
   @moduledoc """
   Exports the CoinMarketCap metadata v2 to a JSON file.
   """
@@ -9,6 +9,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.MetadataV2Exporter do
   alias Sanbase.Utils.Config
 
   import Ecto.Query
+
+  import Sanbase.ExternalServices.Coinmarketcap.Utils,
+    only: [san_contract_to_project_map: 0, cmc_contract_to_cmc_id_map: 0]
 
   @url "/v2/cryptocurrency/info"
 
@@ -108,7 +111,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.MetadataV2Exporter do
   end
 
   defp report_wrong_santiment_infrastructure() do
-    san_contracts = contract_to_project_map()
+    san_contracts = san_contract_to_project_map()
 
     cmc_contracts_maps = cmc_contract_to_cmc_id_map()
 
@@ -185,7 +188,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.MetadataV2Exporter do
                       "platform" => %{"name" => platform_name}
                     } ->
       if santiment_supported_platform?(%{"platform" => %{"name" => platform_name}}) do
-        if not Map.has_key?(contract_to_project_map(), String.downcase(address)) do
+        if not Map.has_key?(san_contract_to_project_map(), String.downcase(address)) do
           IO.puts(
             "CMC data: #{String.pad_trailing(platform_name, 25)} addr for #{String.pad_trailing(slug, 30)}: #{String.pad_trailing(address, 45)} but not on santiment"
           )
@@ -211,7 +214,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.MetadataV2Exporter do
       map["contract_address"]
       |> Enum.filter(&santiment_supported_platform?/1)
       |> Enum.filter(fn %{"contract_address" => address} ->
-        Map.has_key?(contract_to_project_map(), String.downcase(address))
+        Map.has_key?(san_contract_to_project_map(), String.downcase(address))
       end)
 
     if contract_addresses == [] do
@@ -220,7 +223,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.MetadataV2Exporter do
       Enum.map(
         contract_addresses,
         fn %{"contract_address" => address, "platform" => %{"name" => platform_name}} ->
-          existing_project = Map.get(contract_to_project_map(), String.downcase(address))
+          existing_project = Map.get(san_contract_to_project_map(), String.downcase(address))
           cmc_infr = @cmc_platform_name_to_infrastructure[platform_name]
 
           cond do
@@ -286,92 +289,5 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.MetadataV2Exporter do
 
   defp santiment_supported_platform?(%{"platform" => %{"name" => platform_name}}) do
     not is_nil(Map.get(@cmc_platform_name_to_infrastructure, platform_name))
-  end
-
-  defp contract_to_project_map() do
-    case :persistent_term.get(:contract_to_project_map, nil) do
-      nil ->
-        contract_to_project = compute_contract_to_project_map()
-        :persistent_term.put(:contract_to_project_map, {contract_to_project, DateTime.utc_now()})
-
-        contract_to_project
-
-      {contract_to_project, added_at} ->
-        if DateTime.diff(DateTime.utc_now(), added_at, :minute) > 10 do
-          contract_to_project = compute_contract_to_project_map()
-
-          :persistent_term.put(
-            :contract_to_project_map,
-            {contract_to_project, DateTime.utc_now()}
-          )
-
-          contract_to_project
-        else
-          contract_to_project
-        end
-    end
-  end
-
-  defp compute_contract_to_project_map() do
-    Sanbase.Project.List.projects(preload: [:contract_addresses, :infrastructure])
-    |> Enum.flat_map(fn project ->
-      project.contract_addresses |> Enum.map(fn ca -> {String.downcase(ca.address), project} end)
-    end)
-    |> Map.new()
-  end
-
-  def cmc_contract_to_cmc_id_map() do
-    case :persistent_term.get(:cmc_contract_to_cmc_id_map, nil) do
-      nil ->
-        contract_to_project = compute_cmc_contract_to_cmc_id_map()
-
-        :persistent_term.put(
-          :cmc_contract_to_cmc_id_map,
-          {contract_to_project, DateTime.utc_now()}
-        )
-
-        contract_to_project
-
-      {contract_to_project, added_at} ->
-        if DateTime.diff(DateTime.utc_now(), added_at, :minute) > 10 do
-          contract_to_project = compute_cmc_contract_to_cmc_id_map()
-
-          :persistent_term.put(
-            :cmc_contract_to_cmc_id_map,
-            {contract_to_project, DateTime.utc_now()}
-          )
-
-          contract_to_project
-        else
-          contract_to_project
-        end
-    end
-  end
-
-  defp compute_cmc_contract_to_cmc_id_map() do
-    json = read_cmc_metadata()
-
-    json
-    |> Enum.flat_map(fn {_integer_id, map} ->
-      map["contract_address"]
-      |> Enum.map(fn %{"contract_address" => address, "platform" => %{"name" => platform_name}} ->
-        {String.downcase(address),
-         %{
-           "platform_name" => platform_name,
-           "infrastructure" => @cmc_platform_name_to_infrastructure[map["platform"]["name"]],
-           "slug" => map["slug"]
-         }}
-      end)
-    end)
-    |> IO.inspect()
-    |> Enum.reject(fn {_addr, %{"infrastructure" => infr}} -> is_nil(infr) end)
-    |> Enum.reduce(%{}, fn {addr, m}, acc ->
-      Map.update(
-        acc,
-        addr,
-        [m],
-        &[m | &1]
-      )
-    end)
   end
 end

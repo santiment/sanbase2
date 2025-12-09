@@ -76,14 +76,20 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     :current_user_address_details,
     :infrastructure,
     :insights_count_per_user,
-    :market_segment,
+    :market_segments,
     :project_by_slug,
     :traded_on_exchanges_count,
     :traded_on_exchanges,
+    :social_volume_query,
     # Users
     :users_by_id,
     # Founders
-    :available_founders_per_slug
+    :available_founders_per_slug,
+    # Contract addresses
+    :main_contract_address,
+    :contract_addresses,
+    :eth_addresses,
+    :source_slug_mappings
     # Trending Words
   ]
 

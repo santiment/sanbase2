@@ -3,7 +3,12 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
 
   alias Sanbase.Repo
   alias Sanbase.Comment
-  alias Sanbase.Model.{MarketSegment, Infrastructure}
+  alias Sanbase.Model.MarketSegment
+  alias Sanbase.Model.Infrastructure
+  alias Sanbase.Project
+  alias Sanbase.Project.ContractAddress
+  alias Sanbase.Project.SourceSlugMapping
+  alias Sanbase.ProjectEthAddress
 
   def data() do
     Dataloader.KV.new(&query/2)
@@ -62,15 +67,26 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
     Map.new(users, &{&1.id, &1})
   end
 
-  def query(:market_segment, market_segment_ids) do
-    market_segment_ids = Enum.to_list(market_segment_ids)
+  def query(:market_segments, project_ids) do
+    project_ids = Enum.to_list(project_ids)
 
     from(ms in MarketSegment,
-      where: ms.id in ^market_segment_ids
+      join: p in assoc(ms, :projects),
+      where: p.id in ^project_ids,
+      select: {p.id, ms.name}
     )
     |> Repo.all()
-    |> Enum.map(fn %MarketSegment{id: id, name: name} -> {id, name} end)
+    |> Enum.group_by(fn {project_id, _segment} -> project_id end, fn {_project_id, segment} ->
+      segment
+    end)
     |> Map.new()
+  end
+
+  def query(:social_volume_query, project_ids) do
+    project_ids = Enum.to_list(project_ids)
+
+    Sanbase.Project.SocialVolumeQuery.by_project_ids(project_ids)
+    |> Map.new(&{&1.project_id, &1})
   end
 
   def query(:infrastructure, infrastructure_ids) do
@@ -185,6 +201,54 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
     |> Enum.to_list()
     |> Sanbase.Project.List.by_slugs()
     |> Enum.into(%{}, fn %{slug: slug} = project -> {slug, project} end)
+  end
+
+  def query(:main_contract_address, project_ids) do
+    project_ids = Enum.to_list(project_ids)
+
+    from(ca in ContractAddress,
+      where: ca.project_id in ^project_ids,
+      select: {ca.project_id, ca}
+    )
+    |> Repo.all()
+    |> Enum.group_by(fn {project_id, _} -> project_id end, fn {_, ca} -> ca end)
+    |> Map.new(fn {project_id, contract_addresses} ->
+      main = ContractAddress.list_to_main_contract_address(contract_addresses)
+      {project_id, main.address}
+    end)
+  end
+
+  def query(:contract_addresses, project_ids) do
+    project_ids = Enum.to_list(project_ids)
+
+    from(ca in ContractAddress,
+      where: ca.project_id in ^project_ids,
+      select: {ca.project_id, ca}
+    )
+    |> Repo.all()
+    |> Enum.group_by(fn {project_id, _} -> project_id end, fn {_, ca} -> ca end)
+  end
+
+  def query(:eth_addresses, project_ids) do
+    project_ids = Enum.to_list(project_ids)
+
+    from(ea in ProjectEthAddress,
+      where: ea.project_id in ^project_ids,
+      select: {ea.project_id, ea}
+    )
+    |> Repo.all()
+    |> Enum.group_by(fn {project_id, _} -> project_id end, fn {_, ea} -> ea end)
+  end
+
+  def query(:source_slug_mappings, project_ids) do
+    project_ids = Enum.to_list(project_ids)
+
+    from(ssm in SourceSlugMapping,
+      where: ssm.project_id in ^project_ids,
+      select: {ssm.project_id, ssm}
+    )
+    |> Repo.all()
+    |> Enum.group_by(fn {project_id, _} -> project_id end, fn {_, ssm} -> ssm end)
   end
 
   # Private functions

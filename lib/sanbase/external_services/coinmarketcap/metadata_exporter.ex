@@ -11,41 +11,48 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.MetadataExporter do
     only: [
       san_contract_to_project_map: 0,
       cmc_contract_to_cmc_id_map: 0,
-      cmc_id_to_project_map: 0,
+      cmc_id_to_projects_map: 0,
       cmc_platform_name_to_infrastructure: 0,
-      get_cmc_metadata: 1
+      save_cmc_metadata: 0,
+      read_cmc_metadata: 0,
+      special_contracts_lowercased: 0
     ]
 
   @url "/v2/cryptocurrency/info"
 
-  def work() do
-    get_slugs()
-    |> Enum.chunk_every(100)
-    |> Enum.each(fn slugs -> do_work(slugs) end)
-  end
-
-  def do_work(slugs) do
-    case get_cmc_metadata(slugs) do
-      {:ok, body} -> {:ok, process_body(body)}
-      {:error, reason} -> {:error, reason}
+  def work(opts \\ []) do
+    if Keyword.get(opts, :fetch_fresh_data, false) do
+      save_cmc_metadata()
     end
+
+    read_cmc_metadata()
+    |> Enum.each(fn {_cmc_id, map} -> do_work(map) end)
   end
 
-  def process_body(body) do
-    body["data"]
-    |> Enum.map(fn {_slug, data} ->
-      %{"slug" => cmc_id, "contract_address" => contracts} = data
-      project = cmc_id_to_project_map()[cmc_id]
-      process_project_data(project, contracts)
+  @special_contracts_lowercased special_contracts_lowercased()
+  def do_work(%{"slug" => cmc_id, "contract_address" => contracts}) do
+    projects = cmc_id_to_projects_map()[cmc_id] || []
+
+    Enum.each(projects, fn project ->
+      cmc_has_contracts? = contracts != []
+      project_has_infrastructure? = project && not is_nil(project.infrastructure)
+
+      project_has_special_contract? =
+        Enum.any?(project.contract_addresses, fn ca ->
+          String.downcase(ca.address) in @special_contracts_lowercased
+        end)
+
+      if project_has_infrastructure? and cmc_has_contracts? and not project_has_special_contract? do
+        process_project_data(project, contracts)
+      end
     end)
   end
 
-  def process_project_data(nil, []), do: :ok
-  def process_project_data(_cmc_id, []), do: :ok
-  def process_project_data(%{infrastructure: nil}, []), do: :ok
-
   @supported_infrastructures cmc_platform_name_to_infrastructure() |> Map.values()
-  def process_project_data(%{infrastructure: %{code: project_infr}} = project, contracts)
+  def process_project_data(
+        %{infrastructure: %{code: project_infr}} = project,
+        [_ | _] = contracts
+      )
       when project_infr in @supported_infrastructures do
     cmc_contracts_for_project =
       Enum.map(contracts, fn contract ->
@@ -83,12 +90,18 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.MetadataExporter do
 
     if new_addresses != [] or extra_addresses != [] do
       IO.puts("============================================")
-      IO.puts("Project Name: #{project.name}")
-      IO.puts("New addresses to be added to Santiment:")
-      Enum.each(new_addresses, fn addr -> IO.puts("  - #{addr}") end)
 
-      IO.puts("Addresses present in Santiment but missing from CMC:")
-      Enum.each(extra_addresses, fn addr -> IO.puts("  - #{addr}") end)
+      IO.puts(
+        "Project Name: #{project.name} (cmc id: #{project.coinmarketcap_id}, infr: #{project.infrastructure.code})"
+      )
+
+      Enum.each(new_addresses, fn addr ->
+        if addr, do: IO.puts(IO.ANSI.green() <> "(+) #{addr}" <> IO.ANSI.reset())
+      end)
+
+      Enum.each(extra_addresses, fn addr ->
+        if addr, do: IO.puts(IO.ANSI.red() <> "(-) #{addr}" <> IO.ANSI.reset())
+      end)
     end
   end
 

@@ -83,8 +83,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Utils do
     get_or_compute_function(:san_contract_to_project_map, &compute_contract_to_project_map/0, 600)
   end
 
-  def cmc_id_to_project_map() do
-    get_or_compute_function(:cmc_contract_to_cmc_id_map, &compute_cmc_id_to_project_map/0, 600)
+  def cmc_id_to_projects_map() do
+    get_or_compute_function(:cmc_contract_to_cmc_id_map, &compute_cmc_id_to_projects_map/0, 600)
   end
 
   def cmc_platform_name_to_infrastructure() do
@@ -98,6 +98,60 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Utils do
       "Tron" => "Tron",
       "Optimism" => "Optimism"
     }
+  end
+
+  def special_contracts_lowercased() do
+    ~w(
+      eosio.token/eos
+      xrp
+      btc
+      bch
+      bnb
+      ltc
+      matic
+      ada
+      doge
+      icp
+      sol
+      adex_contract
+      aergo_contract
+      aleph_contract
+      antimatter_contract
+      aragon_contract
+      archer_dao_governance_contract
+      reputation_contract
+      axie_contract
+      chromia_contract
+      cover_contract
+      dapptoken_contract
+      digitex_contract
+      easyfi_contract
+      encrypgen_contract
+      golem_contract
+      kai_contract
+      kucoin_contract
+      kyber_contract
+      loom_contract
+      mantradao_contract
+      morpheus_contract
+      mysterium_contract
+      noia_contract
+      ocean_contract
+      ohm_contract
+      orn_contract
+      reserve_rights_contract
+      rocket_pool_contract
+      seelen_contract
+      shido_contract
+      singularity_contract
+      sonm_contract
+      susd_contract
+      snx_contract
+      tellor_contract
+      utrust_contract
+      vidt_contract
+      verasity_contract
+    )
   end
 
   def santiment_supported_platform?(%{"platform" => %{"name" => platform_name}}) do
@@ -114,19 +168,24 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Utils do
     |> Map.new()
   end
 
-  defp compute_cmc_id_to_project_map() do
+  defp compute_cmc_id_to_projects_map() do
     Sanbase.Project.List.projects(
       preload: [:latest_coinmarketcap_data, :infrastructure, :contract_addresses]
     )
     |> Enum.filter(& &1.coinmarketcap_id)
     |> Enum.map(&{&1.coinmarketcap_id, &1})
-    |> Map.new()
+    |> Enum.reduce(%{}, fn {cmc_id, project}, acc ->
+      Map.update(
+        acc,
+        cmc_id,
+        [project],
+        &[project | &1]
+      )
+    end)
   end
 
   defp compute_cmc_contract_to_cmc_id_map() do
-    json = read_cmc_metadata()
-
-    json
+    read_cmc_metadata()
     |> Enum.flat_map(fn {_integer_id, map} ->
       map["contract_address"]
       |> Enum.map(fn %{"contract_address" => address, "platform" => %{"name" => platform_name}} ->

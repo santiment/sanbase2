@@ -1,4 +1,10 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.Utils do
+  @store_file "/tmp/cmc_metadata_v2.json"
+
+  @metadata_url "/v2/cryptocurrency/info"
+  alias Sanbase.Utils.Config
+  alias Sanbase.ExternalServices.Coinmarketcap
+
   # After invocation of this function the process should execute `Process.exit(self(), :normal)`
   # There is no meaningful result to be returned here. If it does not exit
   # this case should return a special case and it should be handeled so the
@@ -14,8 +20,55 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Utils do
     Sanbase.ExternalServices.RateLimiting.Server.wait_until(rate_limiting_server, wait_until)
   end
 
-  def san_contract_to_project_map() do
-    get_or_compute_function(:san_contract_to_project_map, &compute_contract_to_project_map/0, 600)
+  def save_cmc_metadata() do
+    data =
+      Sanbase.Project.List.projects(preload: [:latest_coinmarketcap_data])
+      |> Enum.filter(& &1.coinmarketcap_id)
+      |> Enum.map(& &1.coinmarketcap_id)
+      |> Enum.chunk_every(200)
+      |> Enum.map(&get_cmc_metadata/1)
+      |> Enum.map(fn {:ok, body} -> body["data"] end)
+      |> Enum.reduce(%{}, &Map.merge(&1, &2))
+
+    IO.puts("Storing data to " <> @store_file)
+    IO.puts("Storing map size: #{map_size(data)}")
+    File.write!(@store_file, Jason.encode!(data))
+  end
+
+  def read_cmc_metadata() do
+    File.read!(@store_file)
+    |> Jason.decode!()
+    |> Enum.map(fn {cmc_id, map} ->
+      map = %{
+        map
+        | "contract_address" =>
+            Enum.filter(map["contract_address"], fn ca_map ->
+              santiment_supported_platform?(ca_map)
+            end)
+      }
+
+      {cmc_id, map}
+    end)
+    |> Map.new()
+  end
+
+  def get_cmc_metadata(cmc_slugs) when is_binary(cmc_slugs) or is_list(cmc_slugs) do
+    slugs_param = cmc_slugs |> List.wrap() |> Enum.join(",")
+
+    case Req.get(url(), headers: headers(), params: %{slug: slugs_param}) do
+      {:ok, %{status: 200, body: body}} ->
+        {:ok, body}
+
+      {:ok, %{status: status, body: body}} ->
+        error_msg = "CoinMarketCap API error: status #{status} - #{inspect(body)}"
+        Logger.error("[CMC MetadataV2] #{error_msg}")
+        {:error, error_msg}
+
+      {:error, reason} ->
+        error_msg = "CoinMarketCap API request failed: #{inspect(reason)}"
+        Logger.error("[CMC MetadataV2] #{error_msg}")
+        {:error, error_msg}
+    end
   end
 
   def cmc_contract_to_cmc_id_map() do
@@ -26,8 +79,29 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Utils do
     )
   end
 
+  def san_contract_to_project_map() do
+    get_or_compute_function(:san_contract_to_project_map, &compute_contract_to_project_map/0, 600)
+  end
+
   def cmc_id_to_project_map() do
     get_or_compute_function(:cmc_contract_to_cmc_id_map, &compute_cmc_id_to_project_map/0, 600)
+  end
+
+  def cmc_platform_name_to_infrastructure() do
+    %{
+      "Ethereum" => "ETH",
+      "Solana" => "Solana",
+      "BNB Smart Chain (BEP20)" => "BEP20",
+      "Polygon" => "Polygon",
+      "Base" => "Base",
+      "Arbitrum" => "Arbitrum",
+      "Tron" => "Tron",
+      "Optimism" => "Optimism"
+    }
+  end
+
+  def santiment_supported_platform?(%{"platform" => %{"name" => platform_name}}) do
+    not is_nil(Map.get(cmc_platform_name_to_infrastructure(), platform_name))
   end
 
   # Private functions
@@ -41,7 +115,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Utils do
   end
 
   defp compute_cmc_id_to_project_map() do
-    Sanbase.Project.List.projects(preload: [:latest_coinmarketcap_data, :infrastructure])
+    Sanbase.Project.List.projects(
+      preload: [:latest_coinmarketcap_data, :infrastructure, :contract_addresses]
+    )
     |> Enum.filter(& &1.coinmarketcap_id)
     |> Enum.map(&{&1.coinmarketcap_id, &1})
     |> Map.new()
@@ -79,7 +155,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Utils do
       nil ->
         data = function.()
 
-        :persistent_term.put(key, {contract_to_project, DateTime.utc_now()})
+        :persistent_term.put(key, {data, DateTime.utc_now()})
 
         data
 
@@ -97,5 +173,18 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Utils do
           data
         end
     end
+  end
+
+  def api_key() do
+    Config.module_get(Coinmarketcap, :api_key)
+  end
+
+  def url() do
+    base_url = Config.module_get(Coinmarketcap, :api_url)
+    Path.join(base_url, @metadata_url)
+  end
+
+  def headers() do
+    headers = [{"X-CMC_PRO_API_KEY", api_key()}]
   end
 end

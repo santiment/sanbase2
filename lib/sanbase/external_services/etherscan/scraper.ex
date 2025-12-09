@@ -76,7 +76,6 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
         # Temporarily disable the contract address scraping
         # main_contract_address: project_info.main_contract_address || main_contract_address(html),
         token_decimals: project_info.token_decimals || token_decimals(html),
-        website_link: project_info.website_link || website_link(html),
         email: project_info.email || official_link(html, "Email") |> email(),
         reddit_link: project_info.reddit_link || official_link(html, "Reddit"),
         twitter_link: project_info.twitter_link || official_link(html, "Twitter"),
@@ -90,16 +89,67 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
     }
   end
 
-  defp website_link(html) do
-    Floki.find(html, ~s/#ContentPlaceHolder1_tr_officialsite_1 > div > div.col-md-8 > a/)
-    |> Floki.attribute("href")
-    |> List.first()
-  end
-
   defp official_link(html, media) do
-    Floki.find(html, ~s/a[data-original-title^="#{media}:"]/)
-    |> Floki.attribute("href")
-    |> List.first()
+    case media do
+      "Reddit" ->
+        Floki.find(html, "a[href*='reddit.com']")
+        |> Floki.attribute("href")
+        |> List.first()
+
+      "Twitter" ->
+        Floki.find(html, "a[href*='twitter.com'], a[href*='x.com']")
+        |> Floki.attribute("href")
+        |> List.first()
+
+      "Bitcointalk" ->
+        Floki.find(html, "a[href*='bitcointalk.org']")
+        |> Floki.attribute("href")
+        |> List.first()
+
+      "Blog" ->
+        Floki.find(html, "a[href*='blog'], a[href*='medium.com'], a[href*='substack.com']")
+        |> Enum.find(fn link ->
+          href = Floki.attribute(link, "href") |> List.first()
+          href && !String.contains?(href, "etherscan-blog")
+        end)
+        |> case do
+          nil -> nil
+          link -> Floki.attribute(link, "href") |> List.first()
+        end
+
+      "Github" ->
+        Floki.find(html, "a[href*='github.com']")
+        |> Floki.attribute("href")
+        |> List.first()
+
+      "Telegram" ->
+        Floki.find(html, "a[href*='t.me'], a[href*='telegram.me']")
+        |> Floki.attribute("href")
+        |> List.first()
+
+      "Slack" ->
+        Floki.find(html, "a[href*='slack.com'], a[href*='slack.']")
+        |> Floki.attribute("href")
+        |> List.first()
+
+      "Facebook" ->
+        Floki.find(html, "a[href*='facebook.com']")
+        |> Floki.attribute("href")
+        |> List.first()
+
+      "Whitepaper" ->
+        Floki.find(html, "a[href*='whitepaper'], a[href*='.pdf']")
+        |> Floki.attribute("href")
+        |> List.first()
+
+      "Email" ->
+        Floki.find(html, "a[href^='mailto:']")
+        |> Floki.attribute("href")
+        |> List.first()
+
+      _ ->
+        nil
+    end
   end
 
   defp email("mailto:" <> email), do: email
@@ -118,17 +168,16 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
   end
 
   defp total_supply(html) do
-    # TODO: 21.05.2018 Lyudmil Lesinksi
-    # The real css selector shoul be "#ContentPlaceHolder1_divSummary > div:first-child  tr:first-child > td + td"
-    # but for some reason Floki doesn't recognize that as the valid selector so we have to use Enum.at
-    Floki.find(html, ~s/#ContentPlaceHolder1_divSummary > div:first-child  div > div + div/)
-    |> Enum.at(0)
+    # Look for the total supply in the hidden input field
+    Floki.find(html, "input[id*='TotalSupply']")
+    |> Floki.attribute("value")
+    |> List.first()
     |> case do
       nil ->
         nil
 
-      match ->
-        Floki.text(match)
+      value ->
+        value
         |> parse_total_supply()
         |> Decimal.round()
         |> Decimal.to_integer()
@@ -136,20 +185,39 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
   end
 
   defp main_contract_address(html) do
-    Floki.find(html, ~s/div:fl-contains('Contract') + div/)
+    Floki.find(html, "i[aria-label=\"Contract\"] + a[href*='/address/']")
     |> List.first()
     |> case do
+      nil ->
+        Floki.find(html, "h4:contains('Token Contract') + div a[href*='/address/']")
+        |> List.first()
+
+      match ->
+        match
+    end
+    |> case do
       nil -> nil
-      match -> Floki.text(match)
+      match -> Floki.text(match) |> String.trim()
     end
   end
 
   defp token_decimals(html) do
-    Floki.find(html, ~s/div:fl-contains('Decimals') + div/)
-    |> List.first()
+    html
+    |> Floki.find("h4")
+    |> Enum.find(fn h4 ->
+      Floki.text(h4) |> String.contains?("Token Contract")
+    end)
     |> case do
-      nil -> nil
-      match -> Floki.text(match) |> parse_token_decimals()
+      nil ->
+        nil
+
+      h4 ->
+        Floki.find(h4, "b")
+        |> List.first()
+        |> case do
+          nil -> nil
+          b -> Floki.text(b) |> parse_token_decimals()
+        end
     end
   end
 
@@ -163,13 +231,12 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
 
   defp parse_total_supply(""), do: nil
 
-  defp parse_total_supply(total_supply) do
+  defp parse_total_supply(total_supply) when is_binary(total_supply) do
     total_supply
     |> String.trim()
     |> String.replace(",", "")
-    |> String.split()
-    |> Enum.find(fn x -> String.starts_with?(x, "Supply") end)
-    |> (fn supply -> String.trim(supply, "Supply:") end).()
     |> Decimal.new()
   end
+
+  defp parse_total_supply(_), do: nil
 end

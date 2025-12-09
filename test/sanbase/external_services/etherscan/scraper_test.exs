@@ -23,7 +23,6 @@ defmodule Sanbase.ExternalServices.Etherscan.ScraperTest do
            }) == %ProjectInfo{
              total_supply: 6_804_870_175,
              token_decimals: 18,
-             website_link: "https://status.im/",
              email: nil,
              reddit_link: "https://www.reddit.com/r/statusim/",
              twitter_link: "https://twitter.com/ethstatus",

@@ -152,6 +152,7 @@ defmodule Sanbase.Insight.Post do
         e in PostEmbedding,
         inner_join: p in Post,
         on: e.post_id == p.id,
+        where: p.ready_state == ^@published and p.state == ^@approved and p.is_deleted != true,
         group_by: [e.post_id, p.title],
         select: %{
           post_id: e.post_id,
@@ -164,6 +165,81 @@ defmodule Sanbase.Insight.Post do
 
     result = Sanbase.Repo.all(query)
     {:ok, result}
+  end
+
+  def admin_keyword_search(search_term, opts \\ []) do
+    page = Keyword.get(opts, :page, 1)
+    page_size = Keyword.get(opts, :page_size, 50)
+    sort_by = Keyword.get(opts, :sort_by, "published_at")
+    sort_order = Keyword.get(opts, :sort_order, "desc")
+
+    query =
+      base_query()
+      |> filter_published_and_approved()
+      |> apply_keyword_filter(search_term)
+      |> apply_admin_sort(sort_by, sort_order)
+
+    total_count = Repo.aggregate(query, :count, :id)
+    total_pages = max(1, div(total_count + page_size - 1, page_size))
+    page = page |> max(1) |> min(total_pages)
+
+    offset = (page - 1) * page_size
+
+    posts =
+      query
+      |> limit(^page_size)
+      |> offset(^offset)
+      |> preload([:user, :categories])
+      |> Repo.all()
+
+    {posts, total_count, total_pages, page}
+  end
+
+  def admin_semantic_search(search_term, size \\ 50) do
+    with {:ok, [embedding]} <- Sanbase.AI.Embedding.generate_embeddings([search_term], 1536),
+         {:ok, results} <- find_most_similar_insights(embedding, size) do
+      post_ids = Enum.map(results, & &1.post_id)
+
+      if post_ids == [] do
+        {[], 0}
+      else
+        posts =
+          from(p in Post,
+            where: p.id in ^post_ids,
+            preload: [:user, :categories]
+          )
+          |> Repo.all()
+          |> Enum.sort_by(fn post -> Enum.find_index(post_ids, &(&1 == post.id)) end)
+
+        {posts, length(posts)}
+      end
+    else
+      _ -> {[], 0}
+    end
+  end
+
+  defp apply_keyword_filter(query, ""), do: query
+
+  defp apply_keyword_filter(query, search_term) when is_binary(search_term) do
+    search_pattern = "%#{search_term}%"
+
+    from(
+      p in query,
+      where: ilike(p.title, ^search_pattern) or ilike(p.text, ^search_pattern)
+    )
+  end
+
+  defp apply_admin_sort(query, sort_by, sort_order) do
+    order_by_clause =
+      case {sort_by, sort_order} do
+        {"published_at", "asc"} -> [asc: :published_at]
+        {"published_at", "desc"} -> [desc: :published_at]
+        {"title", "asc"} -> [asc: :title]
+        {"title", "desc"} -> [desc: :title]
+        _ -> [desc: :published_at]
+      end
+
+    from(p in query, order_by: ^order_by_clause)
   end
 
   # The base of all the entity queries

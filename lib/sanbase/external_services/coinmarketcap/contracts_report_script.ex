@@ -185,9 +185,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ContractsReportScript do
 
           cond do
             is_nil(existing_project.infrastructure) ->
-              # IO.puts(
-              #   "Contract #{address} on platform #{cmc_infr} is associated with proejct #{existing_project.slug} but it has no infrastructure set"
-              # )
               :ok
 
             map["slug"] != existing_project.coinmarketcap_id and

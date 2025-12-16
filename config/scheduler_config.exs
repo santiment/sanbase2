@@ -181,8 +181,7 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     ],
     fetch_contract_addresses: [
       schedule: "0 6 * * *",
-      task:
-        {Sanbase.ExternalServices.Coinmarketcap.MetadataExporter, :work, [fetch_fresh_data: true]}
+      task: {Sanbase.ExternalServices.Coinmarketcap.MetadataExporter, :work, []}
     ],
     fetch_allium_contract_decimals: [
       # Run it 30 minutes after fetching the contract addresses

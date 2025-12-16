@@ -52,7 +52,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.MetadataExporter do
   @supported_infrastructures cmc_platform_name_to_infrastructure() |> Map.values()
   def process_project_data(
         %{infrastructure: %{code: project_infr}} = project,
-        [_ | _] = contracts
+        [_ | _] = contracts,
+        opts
       )
       when project_infr in @supported_infrastructures do
     cmc_contracts_for_project =
@@ -104,8 +105,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.MetadataExporter do
 
         Sanbase.Project.ContractAddress.add_contract(project, %{
           address: address,
-          decimals: nil,
-          is_usble: false
+          decimals: nil
         })
       end)
 
@@ -124,7 +124,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.MetadataExporter do
     end
   end
 
-  def process_project_data(_project_with_not_tracked_infr, _contracts), do: :ok
+  def process_project_data(_project_with_not_tracked_infr, _contracts, _opts), do: :ok
 
   def get_slugs() do
     Sanbase.Project.List.projects(preload: [:latest_coinmarketcap_data])

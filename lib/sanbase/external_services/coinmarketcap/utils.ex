@@ -25,8 +25,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Utils do
     Sanbase.Project.List.projects(preload: [:latest_coinmarketcap_data])
     |> Enum.filter(& &1.coinmarketcap_id)
     |> Enum.map(& &1.coinmarketcap_id)
-    |> Enum.chunk_every(500)
-    |> Enum.map(&get_cmc_metadata/1)
+    |> Enum.chunk_every(50)
+    |> Enum.map(&get_cmc_metadata_for_slugs/1)
     |> Enum.map(fn
       {:ok, body} ->
         body["data"]
@@ -63,17 +63,19 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Utils do
     |> Map.new()
   end
 
-  def get_cmc_metadata(cmc_slugs) when is_binary(cmc_slugs) or is_list(cmc_slugs) do
-    # TODO: Improve this.
-    Process.sleep(5000)
+  def get_cmc_metadata_for_slugs(cmc_slugs) when is_binary(cmc_slugs) or is_list(cmc_slugs) do
+    # TODO: Improve this sleep
+    Process.sleep(1000)
     slugs_param = cmc_slugs |> List.wrap() |> Enum.join(",")
 
-    case Req.get(url(), headers: headers(), params: %{slug: slugs_param}) do
+    # skip_invalid=true seems to not work
+    case Req.get(url(), headers: headers(), params: %{skip_invalid: "true", slug: slugs_param}) do
       {:ok, %{status: 200, body: body}} ->
         {:ok, body}
 
       {:ok, %{status: status, body: body}} ->
         error_msg = "CoinMarketCap API error: status #{status} - #{inspect(body)}"
+        handle_cmc_api_error(body)
         Logger.error("[CMC MetadataV2] #{error_msg}")
         {:error, error_msg}
 
@@ -264,16 +266,40 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Utils do
     end
   end
 
-  def api_key() do
+  defp handle_cmc_api_error(body) do
+    case body do
+      %{"status" => %{"error_message" => error_message}} ->
+        if error_message =~ "Invalid values for \"slug\"" or
+             error_message =~ "Invalid value for \"slug\"" do
+          regex = ~r/"slug":\s*"([^"]+)"/
+
+          extracted_slugs =
+            case Regex.run(regex, error_message) do
+              [_, slugs] ->
+                String.split(slugs, ",")
+
+              _ ->
+                []
+            end
+
+          Sanbase.Project.nullify_coinmarketcap_ids(extracted_slugs)
+        end
+
+      _ ->
+        :ok
+    end
+  end
+
+  defp api_key() do
     Config.module_get(Coinmarketcap, :api_key)
   end
 
-  def url() do
+  defp url() do
     base_url = Config.module_get(Coinmarketcap, :api_url)
     Path.join(base_url, @metadata_url)
   end
 
-  def headers() do
+  defp headers() do
     [{"X-CMC_PRO_API_KEY", api_key()}]
   end
 end

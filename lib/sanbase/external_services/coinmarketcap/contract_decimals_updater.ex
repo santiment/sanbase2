@@ -11,6 +11,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ContractDecimalsUpdater do
   # The query IDs do not need to be secret
   @solana_allium_query_id "dYNjPaB3Rk8kaRuNv18O"
   @erc20_any_chain_allium_query_id "L7Bn640totHX3wgz0TXy"
+
   def work() do
     get_contracts_without_decimals()
     |> group_by_infrastructure()

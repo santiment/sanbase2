@@ -9,7 +9,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.MetadataExporter do
     only: [
       cmc_id_to_projects_map: 0,
       cmc_platform_name_to_infrastructure: 0,
-      get_cmc_metadata: 0,
+      get_cmc_metadata: 1,
       save_cmc_metadata: 0,
       read_cmc_metadata: 0,
       special_contracts_lowercased: 0,
@@ -17,8 +17,27 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.MetadataExporter do
     ]
 
   def work(opts \\ []) do
-    get_cmc_metadata()
+    get_cmc_metadata(coinmarketcap_ids: top_cmc_ids())
     |> Enum.each(fn {_cmc_id, map} -> do_work(map, opts) end)
+  end
+
+  def top_cmc_ids() do
+    seven_days_ago =
+      NaiveDateTime.add(NaiveDateTime.utc_now(), -7, :day)
+
+    Sanbase.Project.List.projects(preload: [:latest_coinmarketcap_data, :source_slug_mappings])
+    |> Enum.filter(
+      &(&1.latest_coinmarketcap_data &&
+          &1.latest_coinmarketcap_data.rank <= 1000 &&
+          NaiveDateTime.after?(&1.latest_coinmarketcap_data.update_time, seven_days_ago))
+    )
+    |> Enum.flat_map(fn
+      %{source_slug_mappings: ssm} when is_list(ssm) ->
+        Enum.filter(ssm, &(&1.source == "coinmarketcap")) |> Enum.map(& &1.slug)
+
+      _ ->
+        []
+    end)
   end
 
   def work_from_file(opts \\ []) do
@@ -110,14 +129,16 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.MetadataExporter do
       end)
 
       if Keyword.get(opts, :drop_contracts_missing_on_cmc, false) do
-        Enum.each(remove_addresses, fn addr ->
-          added_on = san_contract_to_inserted_at_map()[addr] |> NaiveDateTime.to_date()
+        Enum.each(remove_addresses, fn %{"original_contract_address" => address} ->
+          added_on =
+            if ndt = san_contract_to_inserted_at_map()[address],
+              do: ndt |> NaiveDateTime.to_date()
 
-          IO.puts(IO.ANSI.red() <> "(-) #{addr} (added on #{added_on})" <> IO.ANSI.reset())
+          IO.puts(IO.ANSI.red() <> "(-) #{address} (added on #{added_on})" <> IO.ANSI.reset())
 
           Sanbase.Project.ContractAddress.delete_by_project_id_and_address(
             project.id,
-            addr["original_contract_address"]
+            address
           )
         end)
       end

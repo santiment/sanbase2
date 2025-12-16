@@ -481,6 +481,15 @@ defmodule Sanbase.Project do
     end
   end
 
+  def nullify_coinmarketcap_ids(coinmarketcap_ids) do
+    query =
+      from(p in __MODULE__,
+        where: p.coinmarketcap_id in ^coinmarketcap_ids
+      )
+
+    Repo.update_all(query, set: [coinmarketcap_id: nil])
+  end
+
   defp preload_query(query, opts) do
     case Keyword.get(opts, :preload?, true) do
       false ->

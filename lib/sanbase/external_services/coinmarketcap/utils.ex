@@ -27,7 +27,14 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Utils do
     |> Enum.map(& &1.coinmarketcap_id)
     |> Enum.chunk_every(500)
     |> Enum.map(&get_cmc_metadata/1)
-    |> Enum.map(fn {:ok, body} -> body["data"] end)
+    |> Enum.map(fn
+      {:ok, body} ->
+        body["data"]
+
+      {:error, error} ->
+        Logger.error("[CMC MetadataV2] Failed to fetch metadata chunk: #{error}")
+        %{}
+    end)
     |> Enum.reduce(%{}, &Map.merge(&1, &2))
   end
 
@@ -57,6 +64,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Utils do
   end
 
   def get_cmc_metadata(cmc_slugs) when is_binary(cmc_slugs) or is_list(cmc_slugs) do
+    # TODO: Improve this.
     Process.sleep(5000)
     slugs_param = cmc_slugs |> List.wrap() |> Enum.join(",")
 
@@ -97,7 +105,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Utils do
   end
 
   def cmc_id_to_projects_map() do
-    get_or_compute_function(:cmc_contract_to_cmc_id_map, &compute_cmc_id_to_projects_map/0, 600)
+    get_or_compute_function(:cmc_id_to_projects_map, &compute_cmc_id_to_projects_map/0, 600)
   end
 
   def cmc_platform_name_to_infrastructure() do
@@ -241,7 +249,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Utils do
         data
 
       {data, added_at} ->
-        if DateTime.diff(DateTime.utc_now(), added_at, :minute) > 10 do
+        if DateTime.diff(DateTime.utc_now(), added_at, :second) > ttl_seconds do
           data = function.()
 
           :persistent_term.put(

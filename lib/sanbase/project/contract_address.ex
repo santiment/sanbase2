@@ -66,9 +66,13 @@ defmodule Sanbase.Project.ContractAddress do
   end
 
   def list_to_main_contract_address(list) when is_list(list) do
-    list
-    |> Enum.reject(&is_nil(&1.decimals))
-    |> Enum.find(&(&1.label == "main")) || List.first(list)
+    list = Enum.reject(list, &is_nil(&1.decimals))
+
+    if Enum.empty?(list) do
+      nil
+    else
+      Enum.find(list, &(&1.label == "main")) || List.first(list)
+    end
   end
 
   def list_to_latest_onchain_contract_address(list) when is_list(list) do
@@ -88,7 +92,6 @@ defmodule Sanbase.Project.ContractAddress do
 
   def all_with_infrastructure() do
     from(ca in __MODULE__,
-      where: not is_nil(ca.decimals),
       join: p in assoc(ca, :project),
       join: i in assoc(p, :infrastructure),
       preload: [:project, project: [:infrastructure]]

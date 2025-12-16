@@ -74,7 +74,6 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
       project_info
       | total_supply: total_supply(html) || project_info.total_supply,
         # Temporarily disable the contract address scraping
-        # main_contract_address: project_info.main_contract_address || main_contract_address(html),
         token_decimals: project_info.token_decimals || token_decimals(html),
         website_link: project_info.website_link || website_link(html),
         email: project_info.email || official_link(html, "Email") |> email(),
@@ -132,15 +131,6 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
         |> parse_total_supply()
         |> Decimal.round()
         |> Decimal.to_integer()
-    end
-  end
-
-  defp main_contract_address(html) do
-    Floki.find(html, ~s/div:fl-contains('Contract') + div/)
-    |> List.first()
-    |> case do
-      nil -> nil
-      match -> Floki.text(match)
     end
   end
 

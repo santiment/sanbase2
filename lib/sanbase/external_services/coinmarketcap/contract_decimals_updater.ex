@@ -5,9 +5,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ContractDecimalsUpdater do
 
   alias Sanbase.Project.ContractAddress
 
-  import Ecto.Query
   require Logger
 
+  @allium_api_base_url "https://api.allium.so/api/v1/explorer/queries"
+  # The query IDs do not need to be secret
+  @solana_allium_query_id "dYNjPaB3Rk8kaRuNv18O"
+  @erc20_any_chain_allium_query_id "L7Bn640totHX3wgz0TXy"
   def work() do
     get_contracts_without_decimals()
     |> group_by_infrastructure()
@@ -105,6 +108,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ContractDecimalsUpdater do
   def allium_get_decimals(addresses, chain) when is_list(addresses) and is_binary(chain) do
     api_key = System.get_env("ALLIUM_API_KEY")
 
+    if is_nil(api_key) or api_key == "" do
+      raise(
+        "Missing ALLIUM_API_KEY environment variable. Cannot fetch contract decimals from Allium API."
+      )
+    end
+
     # Allium seems to lowercase all case-insensitive addresses.
     addresses =
       if chain in ["solana"], do: addresses, else: Enum.map(addresses, &String.downcase/1)
@@ -134,7 +143,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ContractDecimalsUpdater do
   end
 
   defp url(chain) do
-    query = if chain == "solana", do: "dYNjPaB3Rk8kaRuNv18O", else: "L7Bn640totHX3wgz0TXy"
-    "https://api.allium.so/api/v1/explorer/queries/#{query}/run"
+    query =
+      if chain == "solana", do: @solana_allium_query_id, else: @erc20_any_chain_allium_query_id
+
+    Path.join([@allium_api_base_url, query, "run"])
   end
 end

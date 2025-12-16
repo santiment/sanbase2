@@ -43,21 +43,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
 
   def parse_project_page(html, project_info) do
     {:ok, html} = Floki.parse_document(html)
-    contract = main_contract_address(html)
-
-    if is_binary(contract) and is_binary(project_info.main_contract_address) and
-         String.downcase(contract) != String.downcase(project_info.main_contract_address) do
-      Logger.info("""
-      [CMCScraperDiscrepancyLog] Contract address mismatch for #{project_info.slug}.
-      Existing: #{project_info.main_contract_address}, New: #{contract}
-      """)
-    end
 
     %{
       project_info
       | name: project_info.name || name(html),
         ticker: project_info.ticker || ticker(html),
-        # main_contract_address: project_info.main_contract_address || main_contract_address(html),
         website_link: project_info.website_link || website_link(html),
         github_link: project_info.github_link || github_link(html),
         etherscan_token_name: project_info.etherscan_token_name || etherscan_token_name(html)
@@ -130,62 +120,5 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
       nil -> nil
       list -> List.last(list)
     end
-  end
-
-  defp main_contract_address(html) do
-    # Look for contract address in __NEXT_DATA__ script tag first
-    _contract_address =
-      Floki.find(html, "script#__NEXT_DATA__")
-      |> List.first()
-      |> case do
-        nil ->
-          nil
-
-        script ->
-          script_content =
-            script
-            |> Floki.raw_html()
-
-          case Regex.run(~r/"contractAddress":"(0x[a-fA-F0-9]{40})"/, script_content) do
-            [_, address] -> address
-            _ -> nil
-          end
-      end
-
-    # # If not found in __NEXT_DATA__, search in head section
-    # contract_address ||
-    #   Floki.find(html, "head")
-    #   |> Floki.text()
-    #   |> String.trim()
-    #   |> then(fn text ->
-    #     case Regex.run(~r/"contractAddress":"(0x[a-fA-F0-9]{40})"/, text) do
-    #       [_, address] -> address
-    #       _ -> nil
-    #     end
-    #   end)
-    #
-    # # If not found in head, search in body section
-    # contract_address ||
-    #   Floki.find(html, "body")
-    #   |> Floki.text()
-    #   |> String.trim()
-    #   |> then(fn text ->
-    #     case Regex.run(~r/"contractAddress":"(0x[a-fA-F0-9]{40})"/, text) do
-    #       [_, address] -> address
-    #       _ -> nil
-    #     end
-    #   end)
-    #
-    # # Fallback: look for any 0x address in the entire document
-    # contract_address ||
-    #   Floki.find(html, "html")
-    #   |> Floki.text()
-    #   |> String.trim()
-    #   |> then(fn text ->
-    #     case Regex.run(~r/0x[a-fA-F0-9]{40}/, text) do
-    #       [address] -> address
-    #       _ -> nil
-    #     end
-    #   end)
   end
 end

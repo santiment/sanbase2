@@ -457,7 +457,8 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
             case contract_addresses do
               [_ | _] ->
                 main = Project.ContractAddress.list_to_main_contract_address(contract_addresses)
-                {:ok, main.address}
+                address = if main, do: main.address
+                {:ok, address}
 
               _ ->
                 {:ok, nil}

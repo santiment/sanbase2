@@ -79,6 +79,13 @@ defmodule Sanbase.Project.ContractAddress do
       List.first(list)
   end
 
+  def delete_by_project_id_and_address(project_id, address) do
+    from(ca in __MODULE__,
+      where: ca.project_id == ^project_id and ca.address == ^address
+    )
+    |> Sanbase.Repo.delete_all()
+  end
+
   def all_with_infrastructure() do
     from(ca in __MODULE__,
       where: not is_nil(ca.decimals),

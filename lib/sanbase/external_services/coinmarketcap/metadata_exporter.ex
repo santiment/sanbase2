@@ -16,9 +16,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.MetadataExporter do
       san_contract_to_inserted_at_map: 0
     ]
 
-  def work() do
+  def work(opts \\ []) do
     get_cmc_metadata()
-    |> Enum.each(fn {_cmc_id, map} -> do_work(map) end)
+    |> Enum.each(fn {_cmc_id, map} -> do_work(map, opts) end)
   end
 
   def work_from_file(opts \\ []) do
@@ -27,11 +27,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.MetadataExporter do
     end
 
     read_cmc_metadata()
-    |> Enum.each(fn {_cmc_id, map} -> do_work(map) end)
+    |> Enum.each(fn {_cmc_id, map} -> do_work(map, opts) end)
   end
 
   @special_contracts_lowercased special_contracts_lowercased()
-  def do_work(%{"slug" => cmc_id, "contract_address" => contracts}) do
+  def do_work(%{"slug" => cmc_id, "contract_address" => contracts}, opts) do
     projects = cmc_id_to_projects_map()[cmc_id] || []
 
     Enum.each(projects, fn project ->
@@ -44,7 +44,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.MetadataExporter do
         end)
 
       if project_has_infrastructure? and cmc_has_contracts? and not project_has_special_contract? do
-        process_project_data(project, contracts)
+        process_project_data(project, contracts, opts)
       end
     end)
   end
@@ -109,11 +109,18 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.MetadataExporter do
         })
       end)
 
-      Enum.each(remove_addresses, fn addr ->
-        added_on = san_contract_to_inserted_at_map()[addr] |> NaiveDateTime.to_date()
+      if Keyword.get(opts, :drop_contracts_missing_on_cmc, false) do
+        Enum.each(remove_addresses, fn addr ->
+          added_on = san_contract_to_inserted_at_map()[addr] |> NaiveDateTime.to_date()
 
-        IO.puts(IO.ANSI.red() <> "(-) #{addr} (added on #{added_on})" <> IO.ANSI.reset())
-      end)
+          IO.puts(IO.ANSI.red() <> "(-) #{addr} (added on #{added_on})" <> IO.ANSI.reset())
+
+          Sanbase.Project.ContractAddress.delete_by_project_id_and_address(
+            project.id,
+            addr["original_contract_address"]
+          )
+        end)
+      end
     end
   end
 

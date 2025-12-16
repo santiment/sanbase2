@@ -38,6 +38,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ContractDecimalsUpdater do
           decimals = Map.get(decimals_map, address_downcased)
 
           if is_integer(decimals) and decimals != ca.decimals do
+            Sanbase.Project.ContractAddress.changeset(ca, %{
+              decimals: decimals,
+              decimals_scrape_attempted_at: DateTime.utc_now(:second)
+            })
+            |> Sanbase.Repo.update()
+
             Logger.info(
               "Discrepancy found for contract address (id: #{ca.id}) #{ca.address} on chain #{chain}: existing decimals #{ca.decimals}, Allium decimals #{decimals}"
             )

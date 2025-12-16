@@ -108,24 +108,24 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Utils do
     get_or_compute_function(
       :cmc_contract_to_cmc_id_map,
       &compute_cmc_contract_to_cmc_id_map/0,
-      600
+      5
     )
   end
 
   def san_contract_to_project_map() do
-    get_or_compute_function(:san_contract_to_project_map, &compute_contract_to_project_map/0, 600)
+    get_or_compute_function(:san_contract_to_project_map, &compute_contract_to_project_map/0, 5)
   end
 
   def san_contract_to_inserted_at_map() do
     get_or_compute_function(
       :san_contract_to_inserted_at_map,
       &compute_contract_to_inserted_at_map/0,
-      600
+      5
     )
   end
 
   def cmc_id_to_projects_map() do
-    get_or_compute_function(:cmc_id_to_projects_map, &compute_cmc_id_to_projects_map/0, 600)
+    get_or_compute_function(:cmc_id_to_projects_map, &compute_cmc_id_to_projects_map/0, 5)
   end
 
   def cmc_platform_name_to_infrastructure() do
@@ -301,6 +301,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Utils do
             end
 
           Sanbase.Project.nullify_coinmarketcap_ids(extracted_slugs)
+
+          Sanbase.Project.SourceSlugMapping.delete_mappings_for_source_and_slugs(
+            "coinmarketcap",
+            extracted_slugs
+          )
         end
 
       _ ->

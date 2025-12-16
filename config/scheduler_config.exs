@@ -178,16 +178,18 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     sync_academy_chunks: [
       schedule: "0 17 * * *",
       task: {Sanbase.Knowledge.Academy, :reindex_academy, []}
-    ],
-    fetch_contract_addresses: [
-      schedule: "0 6 * * *",
-      task: {Sanbase.ExternalServices.Coinmarketcap.MetadataExporter, :work, []}
-    ],
-    fetch_allium_contract_decimals: [
-      # Run it 30 minutes after fetching the contract addresses
-      schedule: "30 6 * * *",
-      task: {Sanbase.ExternalServices.Coinmarketcap.ContractDecimalsUpdater, :work, []}
     ]
+    # Temporarily disabled jobs for CMC metadata fetching and contract decimals updating
+    # until they are fully tested
+    # fetch_contract_addresses: [
+    #   schedule: "0 6 * * *",
+    #   task: {Sanbase.ExternalServices.Coinmarketcap.MetadataExporter, :work, []}
+    # ],
+    # fetch_allium_contract_decimals: [
+    #   # Run it 30 minutes after fetching the contract addresses
+    #   schedule: "30 6 * * *",
+    #   task: {Sanbase.ExternalServices.Coinmarketcap.ContractDecimalsUpdater, :work, []}
+    # ]
     # ,
     # TODO: uncomment this when notifications are thoroughly tested
     # send_daily_digest_metric_created: [

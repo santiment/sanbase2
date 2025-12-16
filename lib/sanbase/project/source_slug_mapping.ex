@@ -52,4 +52,12 @@ defmodule Sanbase.Project.SourceSlugMapping do
     )
     |> Repo.one()
   end
+
+  def delete_mappings_for_source_and_slugs(source, slugs) do
+    from(
+      ssm in __MODULE__,
+      where: ssm.source == ^source and ssm.slug in ^slugs
+    )
+    |> Repo.delete_all()
+  end
 end

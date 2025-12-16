@@ -28,9 +28,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.MetadataExporter do
     Sanbase.Project.List.projects(preload: [:latest_coinmarketcap_data, :source_slug_mappings])
     |> Enum.filter(
       &(&1.latest_coinmarketcap_data &&
-          &1.latest_coinmarketcap_data.rank <= 1000 &&
+          &1.latest_coinmarketcap_data.rank <= 2000 &&
           NaiveDateTime.after?(&1.latest_coinmarketcap_data.update_time, seven_days_ago))
     )
+    |> Enum.sort_by(& &1.latest_coinmarketcap_data.rank, :asc)
     |> Enum.flat_map(fn
       %{source_slug_mappings: ssm} when is_list(ssm) ->
         Enum.filter(ssm, &(&1.source == "coinmarketcap")) |> Enum.map(& &1.slug)

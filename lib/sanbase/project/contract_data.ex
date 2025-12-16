@@ -41,8 +41,13 @@ defmodule Sanbase.Project.ContractData do
   def contract_info(%Project{} = project, opts) do
     case Repo.preload(project, [:contract_addresses]) do
       %Project{contract_addresses: [_ | _] = list} ->
-        contract = contracts_list_to_contract(list, opts)
-        {:ok, String.downcase(contract.address), contract.decimals || 0}
+        if contract = contracts_list_to_contract(list, opts) do
+          {:ok, String.downcase(contract.address), contract.decimals || 0}
+        else
+          {:error,
+           {:missing_contract,
+            "Can't find contract address of #{Project.describe(project)}. Or if there is a contract, the decimals are missing"}}
+        end
 
       _ ->
         {:error,
@@ -67,8 +72,13 @@ defmodule Sanbase.Project.ContractData do
   def contract_info_by_slug(slug, opts) do
     case contract_addresses(slug) do
       [_ | _] = list ->
-        contract = contracts_list_to_contract(list, opts)
-        {:ok, String.downcase(contract.address), contract.decimals || 0}
+        if contract = contracts_list_to_contract(list, opts) do
+          {:ok, String.downcase(contract.address), contract.decimals || 0}
+        else
+          {:error,
+           {:missing_contract,
+            "Can't find contract address of project with slug: #{slug}. Or if there is a contract, the decimals are missing"}}
+        end
 
       _ ->
         {:error, {:missing_contract, "Can't find contract address of project with slug: #{slug}"}}
@@ -98,8 +108,13 @@ defmodule Sanbase.Project.ContractData do
     )
     |> case do
       %Project{contract_addresses: [_ | _] = list, infrastructure: %{code: infr_code}} ->
-        contract = contracts_list_to_contract(list, opts)
-        {:ok, String.downcase(contract.address), contract.decimals || 0, infr_code}
+        if contract = contracts_list_to_contract(list, opts) do
+          {:ok, String.downcase(contract.address), contract.decimals || 0, infr_code}
+        else
+          {:error,
+           {:missing_contract,
+            "Can't find contract address or infrastructure of project with slug: #{slug}. Or if there is a contract, the decimals are missing"}}
+        end
 
       _ ->
         {:error,

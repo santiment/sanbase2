@@ -21,11 +21,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Utils do
     Sanbase.ExternalServices.RateLimiting.Server.wait_until(rate_limiting_server, wait_until)
   end
 
-  def get_cmc_metadata() do
-    Sanbase.Project.List.projects(preload: [:latest_coinmarketcap_data])
-    |> Enum.filter(& &1.coinmarketcap_id)
-    |> Enum.map(& &1.coinmarketcap_id)
-    |> Enum.chunk_every(50)
+  def get_cmc_metadata(opts \\ []) do
+    get_coinmarketcap_ids(opts)
+    |> Enum.chunk_every(500)
     |> Enum.map(&get_cmc_metadata_for_slugs/1)
     |> Enum.map(fn
       {:ok, body} ->
@@ -36,6 +34,26 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Utils do
         %{}
     end)
     |> Enum.reduce(%{}, &Map.merge(&1, &2))
+  end
+
+  defp get_coinmarketcap_ids(opts) do
+    case Keyword.get(opts, :coinmarketcap_ids, :all) do
+      :all ->
+        Sanbase.Project.List.projects(preload: [:source_slug_mappings])
+        |> Enum.flat_map(fn
+          %{source_slug_mappings: ssm} when is_list(ssm) ->
+            Enum.filter(ssm, &(&1.source == "coinmarketcap")) |> Enum.map(& &1.slug)
+
+          _ ->
+            []
+        end)
+
+      cmc_ids when is_list(cmc_ids) ->
+        cmc_ids
+
+      cmc_id_function when is_function(cmc_id_function, 0) ->
+        cmc_id_function.()
+    end
   end
 
   def save_cmc_metadata() do

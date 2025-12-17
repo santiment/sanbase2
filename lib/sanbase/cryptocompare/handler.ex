@@ -124,7 +124,7 @@ defmodule Sanbase.Cryptocompare.Handler do
     end
   end
 
-  @markets ~w[binance bitfinex bitmex bybit coinbase cryptodotcom kraken okex]
+  @markets ~w[binance bitfinex bitmex bybit coinbase cryptodotcom kraken okex hyperliquid]
   defp parse_markets_instruments_response(json_body) do
     json_body
     |> Jason.decode!()

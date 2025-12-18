@@ -23,11 +23,29 @@ defmodule Sanbase.SmartContracts.SanbaseNFT do
         0..(tokens_count - 1)
         |> Enum.map(fn idx ->
           address = format_address(address)
-          execute("tokenOfOwnerByIndex", [address, idx]) |> List.first()
+
+          case execute("tokenOfOwnerByIndex", [address, idx]) do
+            {:error, reason} ->
+              Logger.warning("Failed to fetch token ID at index #{idx}: #{inspect(reason)}")
+              nil
+
+            result when is_list(result) ->
+              List.first(result)
+          end
         end)
+        |> Enum.filter(&(&1 != nil))
 
       valid_token_ids =
-        Enum.filter(token_ids, fn token_id -> execute("isValid", [token_id]) |> hd() end)
+        Enum.filter(token_ids, fn token_id ->
+          case execute("isValid", [token_id]) do
+            {:error, reason} ->
+              Logger.warning("Failed to check validity for token #{token_id}: #{inspect(reason)}")
+              false
+
+            result when is_list(result) ->
+              hd(result)
+          end
+        end)
 
       non_valid_token_ids = token_ids -- valid_token_ids
       %{valid: valid_token_ids, non_valid: non_valid_token_ids}
@@ -39,20 +57,32 @@ defmodule Sanbase.SmartContracts.SanbaseNFT do
   def balances_of(addresses) do
     addresses_args = Enum.map(addresses, &format_address/1) |> Enum.map(&List.wrap/1)
 
-    execute_batch("balanceOf", addresses_args)
-    |> Enum.map(fn
-      [balance] -> balance
-      _ -> 0
-    end)
+    case execute_batch("balanceOf", addresses_args) do
+      {:error, reason} ->
+        Logger.warning("Failed to fetch NFT balances: #{inspect(reason)}")
+        List.duplicate(0, length(addresses))
+
+      result when is_list(result) ->
+        Enum.map(result, fn
+          [balance] -> balance
+          _ -> 0
+        end)
+    end
   end
 
   def balance_of(address) do
     address = format_address(address)
 
-    execute("balanceOf", [address])
-    |> case do
-      [balance] -> balance
-      _ -> 0
+    case execute("balanceOf", [address]) do
+      [balance] ->
+        balance
+
+      {:error, reason} ->
+        Logger.warning("Failed to fetch NFT balance for address: #{inspect(reason)}")
+        0
+
+      _ ->
+        0
     end
   end
 

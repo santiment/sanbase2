@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.Graphql.ChatAIIntegrationTest do
   use SanbaseWeb.ConnCase, async: false
 
+  @moduletag :capture_log
+
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.TestHelpers

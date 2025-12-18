@@ -70,6 +70,6 @@ defmodule Sanbase.Metric.Registry.Doc do
     struct
     |> cast(attrs, [:link])
     |> validate_required([:link])
-    |> validate_format(:link, ~r|https://academy.santiment.net|)
+    |> validate_format(:link, ~r|^https://academy.santiment.net|)
   end
 end

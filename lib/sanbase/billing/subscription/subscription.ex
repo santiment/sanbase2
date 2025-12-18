@@ -20,6 +20,7 @@ defmodule Sanbase.Billing.Subscription do
 
   require Logger
 
+  # SAN balance discount only applies to Sanbase plans
   @percent_discount_1000_san 20
   @generic_error_message """
 
@@ -596,12 +597,18 @@ defmodule Sanbase.Billing.Subscription do
     end
   end
 
-  # When user doesn't provide coupon - check if he has SAN staked
-  defp create_stripe_subscription(user, plan, nil) do
+  # When user doesn't provide coupon - check if he has SAN staked (only for Sanbase plans)
+  defp create_stripe_subscription(user, %Plan{product_id: product_id} = plan, nil) do
     percent_off =
-      user
-      |> User.san_balance_or_zero()
-      |> percent_discount()
+      case product_id == @product_sanbase do
+        true ->
+          user
+          |> User.san_balance_or_zero()
+          |> percent_discount()
+
+        false ->
+          nil
+      end
 
     # recalc percent off if customer buys annual subscription and is within 30 days from trial start date
     # comment temporarily until we decide to bring the annual discounts back

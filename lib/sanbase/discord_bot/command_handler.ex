@@ -17,6 +17,9 @@ defmodule Sanbase.DiscordBot.CommandHandler do
   @stage_bot_id 1_039_177_602_197_372_989
   @prod_bot_id 1_039_814_526_708_764_742
 
+  @local_pro_channel_id 852_836_291_116_138_507
+  @prod_pro_channel_id 527_833_463_185_735_690
+
   @max_message_length 1950
 
   @team_role_id 409_637_386_012_721_155
@@ -110,6 +113,69 @@ defmodule Sanbase.DiscordBot.CommandHandler do
     discord_user = interaction.user.username <> interaction.user.discriminator
     AiContext.add_vote(context_id, %{discord_user => -1})
     respond_to_component_interaction(interaction, context_id)
+  end
+
+  def handle_interaction("verify", interaction, _metadata) do
+    Utils.interaction_ack_ephemeral(interaction)
+
+    code = get_option_value(interaction.data.options, "code")
+    discord_user_id = to_string(interaction.user.id)
+
+    case Sanbase.Discord.VerificationCode.verify_code(code, discord_user_id) do
+      {:ok, %{subscription_tier: _tier}} ->
+        # All paid tiers get PRO role
+        role_id = pro_role_id()
+        guild_id = santiment_guild_id()
+
+        case Nostrum.Api.add_guild_member_role(guild_id, interaction.user.id, role_id) do
+          {:ok} ->
+            content = """
+            ✅ Verification successful! You've been granted the PRO role.
+            """
+
+            Utils.edit_interaction_response(interaction, content, [])
+            send_welcome_message(interaction.user)
+
+          {:error, error} ->
+            Logger.error(
+              "Failed to assign PRO role - Guild: #{guild_id}, User: #{interaction.user.id}, Role: #{role_id}, Error: #{inspect(error)}"
+            )
+
+            Utils.edit_interaction_response(
+              interaction,
+              "✅ Verification successful but failed to assign role. Please contact support.",
+              []
+            )
+
+          unexpected ->
+            Logger.error(
+              "Unexpected return from add_guild_member_role: #{inspect(unexpected)} - Guild: #{guild_id}, User: #{interaction.user.id}, Role: #{role_id}"
+            )
+
+            Utils.edit_interaction_response(
+              interaction,
+              "✅ Verification successful but failed to assign role. Please contact support.",
+              []
+            )
+        end
+
+      {:error, :invalid_code} ->
+        Utils.edit_interaction_response(
+          interaction,
+          "❌ Invalid verification code. Please check and try again.",
+          []
+        )
+
+      {:error, :already_used} ->
+        Utils.edit_interaction_response(interaction, "❌ This code has already been used.", [])
+
+      {:error, :expired} ->
+        Utils.edit_interaction_response(
+          interaction,
+          "❌ This code has expired. Please contact support.",
+          []
+        )
+    end
   end
 
   def access_denied(interaction) do
@@ -636,5 +702,40 @@ defmodule Sanbase.DiscordBot.CommandHandler do
     """
 
     Utils.handle_interaction_response(interaction, content, [])
+  end
+
+  defp pro_role_id() do
+    # Returns first PRO role ID based on environment
+    case Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) do
+      "dev" -> @local_pro_roles |> List.first()
+      _ -> @prod_pro_roles |> List.first()
+    end
+  end
+
+  defp send_welcome_message(discord_user) do
+    channel_id = pro_channel_id()
+
+    if channel_id do
+      Nostrum.Api.create_message(channel_id,
+        content: "Welcome <@#{to_string(discord_user.id)}> to the exclusive PRO channel! 🎉"
+      )
+    end
+  end
+
+  defp pro_channel_id() do
+    env = Sanbase.Utils.Config.module_get(Sanbase, :deployment_env)
+    config_key = if env == "dev", do: @local_pro_channel_id, else: @prod_pro_channel_id
+  end
+
+  defp parse_channel_id(nil), do: nil
+  defp parse_channel_id(id) when is_binary(id), do: String.to_integer(id)
+
+  defp get_option_value(options, name) do
+    options
+    |> Enum.find(&(&1.name == name))
+    |> case do
+      nil -> nil
+      option -> option.value
+    end
   end
 end

@@ -272,6 +272,10 @@ config :sanbase, Sanbase.Affiliate.FirstPromoterApi,
   api_id: {:system, "FIRST_PROMOTER_API_ID"},
   api_key: {:system, "FIRST_PROMOTER_API_KEY"}
 
+config :sanbase, Sanbase.Discord,
+  invite_url: {:system, "DISCORD_INVITE_URL", "https://discord.gg/EJrZR8GHZU"},
+  verification_code_expiry_days: {:system, "DISCORD_VERIFICATION_EXPIRY_DAYS", "7"}
+
 config :sanbase, Oban.Web,
   repo: Sanbase.Repo,
   queues: [

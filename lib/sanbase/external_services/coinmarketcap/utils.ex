@@ -24,7 +24,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Utils do
   def get_cmc_metadata(opts \\ []) do
     get_coinmarketcap_ids(opts)
     |> Enum.chunk_every(500)
-    |> Enum.map(&get_cmc_metadata_for_slugs/1)
+    |> Enum.map(&get_cmc_metadata_for_slugs(&1, opts))
     |> Enum.map(fn
       {:ok, body} ->
         body["data"]
@@ -81,7 +81,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Utils do
     |> Map.new()
   end
 
-  def get_cmc_metadata_for_slugs(cmc_slugs) when is_binary(cmc_slugs) or is_list(cmc_slugs) do
+  def get_cmc_metadata_for_slugs(cmc_slugs, opts)
+      when is_binary(cmc_slugs) or is_list(cmc_slugs) do
     # TODO: Improve this sleep
     Process.sleep(1000)
     slugs_param = cmc_slugs |> List.wrap() |> Enum.join(",")
@@ -93,7 +94,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Utils do
 
       {:ok, %{status: status, body: body}} ->
         error_msg = "CoinMarketCap API error: status #{status} - #{inspect(body)}"
-        handle_cmc_api_error(body)
+        handle_cmc_api_error(body, opts)
         Logger.error("[CMC MetadataV2] #{error_msg}")
         {:error, error_msg}
 
@@ -284,32 +285,24 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Utils do
     end
   end
 
-  defp handle_cmc_api_error(body) do
-    case body do
-      %{"status" => %{"error_message" => error_message}} ->
-        if error_message =~ "Invalid values for \"slug\"" or
-             error_message =~ "Invalid value for \"slug\"" do
-          regex = ~r/"slug":\s*"([^"]+)"/
+  defp handle_cmc_api_error(body, opts) do
+    with true <- Keyword.get(opts, :remove_invalid_mappings, false),
+         %{"status" => %{"error_message" => error_message}} <- body,
+         true <- Regex.match?(~r/Invalid values? for "slug"/, error_message) do
+      regex = ~r/"slug":\s*"([^"]+)"/
 
-          extracted_slugs =
-            case Regex.run(regex, error_message) do
-              [_, slugs] ->
-                String.split(slugs, ",")
-
-              _ ->
-                []
-            end
-
-          Sanbase.Project.nullify_coinmarketcap_ids(extracted_slugs)
-
-          Sanbase.Project.SourceSlugMapping.delete_mappings_for_source_and_slugs(
-            "coinmarketcap",
-            extracted_slugs
-          )
+      extracted_slugs =
+        case Regex.run(regex, error_message) do
+          [_, slugs] -> String.split(slugs, ",")
+          _ -> []
         end
 
-      _ ->
-        :ok
+      Sanbase.Project.nullify_coinmarketcap_ids(extracted_slugs)
+
+      Sanbase.Project.SourceSlugMapping.delete_mappings_for_source_and_slugs(
+        "coinmarketcap",
+        extracted_slugs
+      )
     end
   end
 

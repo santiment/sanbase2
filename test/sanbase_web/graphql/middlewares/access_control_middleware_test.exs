@@ -209,6 +209,53 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
     end)
   end
 
+  test "returns success when sansheets user with new User-Agent and API key is Pro" do
+    %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
+    {:ok, apikey} = Apikey.generate_apikey(user)
+
+    conn =
+      setup_apikey_auth(build_conn(), apikey)
+      |> put_req_header("user-agent", "Sansheets/1.0")
+
+    from = ~U[2019-01-01 00:00:00Z]
+    to = ~U[2019-01-02 00:00:00Z]
+
+    result = %{
+      rows: [
+        [DateTime.to_unix(from), 100],
+        [DateTime.to_unix(to), 150]
+      ]
+    }
+
+    query = """
+     {
+      getMetric(metric: "daily_active_addresses") {
+        timeseriesData(
+          slug: "santiment",
+          from: "#{from}",
+          to: "#{to}",
+          interval: "1d") {
+          datetime
+          value
+        }
+      }
+    }
+    """
+
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.ClickhouseRepo.query/2,
+      {:ok, result}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      result =
+        conn
+        |> post("/graphql", query_skeleton(query))
+        |> json_response(200)
+
+      assert Map.has_key?(result, "data") && !Map.has_key?(result, "error")
+    end)
+  end
+
   test "returns error when sansheets user with API key is not Pro" do
     user = insert(:user, email: "a@example.com")
     {:ok, apikey} = Apikey.generate_apikey(user)
@@ -219,6 +266,41 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
         "user-agent",
         "Mozilla/5.0 (compatible; Google-Apps-Script)"
       )
+
+    query = """
+     {
+      getMetric(metric: "social_volume_telegram") {
+        timeseriesData(
+          slug: "santiment",
+          from: "#{Timex.shift(Timex.now(), days: -10)}",
+          to: "#{Timex.now()}",
+          interval: "1d") {
+          datetime
+          value
+        }
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query))
+      |> json_response(401)
+
+    assert result["errors"]["details"] ==
+             """
+             You need to upgrade Sanbase Pro in order to use SanSheets.
+             If you already have Sanbase Pro, please make sure that a correct API key is provided.
+             """
+  end
+
+  test "returns error when sansheets user with new User-Agent and API key is not Pro" do
+    user = insert(:user, email: "b@example.com")
+    {:ok, apikey} = Apikey.generate_apikey(user)
+
+    conn =
+      setup_apikey_auth(build_conn(), apikey)
+      |> put_req_header("user-agent", "Sansheets/1.0")
 
     query = """
      {

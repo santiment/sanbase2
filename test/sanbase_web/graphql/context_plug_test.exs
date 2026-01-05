@@ -252,7 +252,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
       assert conn_context.subscription_product == "SANAPI"
     end
 
-    test "when Apikey and User-Agent is from sheets - product is sanbase" do
+    test "when Apikey and User-Agent is from sheets (legacy) - product is sanbase" do
       user = insert(:user)
       insert(:subscription_pro_sanbase, user: user)
       {:ok, apikey} = Apikey.generate_apikey(user)
@@ -264,6 +264,26 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
           "user-agent",
           "Mozilla/5.0 (compatible; Google-Apps-Script)"
         )
+
+      conn = setup_apikey_auth(conn, apikey) |> AuthPlug.call(%{}) |> ContextPlug.call(%{})
+
+      conn_context = conn.private.absinthe.context
+
+      assert conn_context.requested_product_id == Product.product_sanbase()
+      assert conn_context.requested_product == "SANBASE"
+      assert conn_context.subscription_product_id == Product.product_sanbase()
+      assert conn_context.subscription_product == "SANBASE"
+    end
+
+    test "when Apikey and User-Agent is from Sansheets (new pattern) - product is sanbase" do
+      user = insert(:user)
+      insert(:subscription_pro_sanbase, user: user)
+      {:ok, apikey} = Apikey.generate_apikey(user)
+
+      conn =
+        build_conn()
+        |> get("/get_routed_conn")
+        |> put_req_header("user-agent", "Sansheets/1.0")
 
       conn = setup_apikey_auth(conn, apikey) |> AuthPlug.call(%{}) |> ContextPlug.call(%{})
 

@@ -239,7 +239,7 @@ defmodule Sanbase.Clickhouse.ApiCallData do
       #{@table}
     WHERE
       dt <= toDateTime({{datetime}}) AND
-      (user_agent LIKE '%Sansheets/%' OR user_agent LIKE '%Google-Apps-Script%') AND
+      match(user_agent, 'Sansheets/|Google-Apps-Script') AND
       user_id != 0
     """
 

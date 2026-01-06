@@ -64,8 +64,8 @@ defmodule Sanbase.Accounts.UserFollower do
   def followed_by_user_ids(user_id) do
     from(
       uf in __MODULE__,
-      where: uf.follower_id == ^user_id,
-      select: uf.user_id
+      where: uf.user_id == ^user_id,
+      select: uf.follower_id
     )
     |> Repo.all()
   end

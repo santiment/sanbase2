@@ -433,9 +433,11 @@ defmodule Sanbase.UserList do
 
   defp maybe_create_event(error_result, _, _), do: error_result
 
-  defp maybe_emit_event({:ok, watchlist}, :update_watchlist, data) do
-    emit_event({:ok, watchlist}, :update_watchlist, data)
+  defp maybe_emit_event({:ok, watchlist}, event_type, data) do
+    emit_event({:ok, watchlist}, event_type, data)
   end
+
+  defp maybe_emit_event(error_result, _, _), do: error_result
 
   defp user_list_query_by_user_id(%User{id: user_id})
        when is_integer(user_id) and user_id > 0 do

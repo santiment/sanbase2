@@ -49,12 +49,8 @@ defmodule Sanbase.AppNotifications do
   def mark_notification_as_read(user_id, notification_id)
       when is_integer(user_id) and is_integer(notification_id) do
     with %Notification{} <- fetch_notification_for_user(user_id, notification_id),
-         changeset <-
-           NotificationUserRead.changeset(%NotificationUserRead{}, %{
-             user_id: user_id,
-             notification_id: notification_id,
-             read_at: DateTime.utc_now()
-           }),
+         args = %{user_id: user_id, notification_id: notification_id, read_at: DateTime.utc_now()},
+         changeset <- NotificationUserRead.changeset(%NotificationUserRead{}, args),
          {:ok, result} <- upsert_user_read(changeset) do
       {:ok, result}
     else

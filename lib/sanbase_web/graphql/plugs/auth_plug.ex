@@ -442,9 +442,8 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
     end
   end
 
-  # FIXME - maybe treat sansheets as still API
   defp get_apikey_product_id([user_agent]) do
-    case String.contains?(user_agent, "Google-Apps-Script") do
+    case SanbaseWeb.Graphql.SansheetsHelper.sansheets_user_agent?(user_agent) do
       true -> @product_id_sanbase
       false -> @product_id_api
     end

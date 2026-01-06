@@ -190,10 +190,7 @@ defmodule SanbaseWeb.Graphql.RequestHaltPlug do
   defguard no_auth_header(header) when header in [[], ["null"], [""], nil]
 
   defp sansheets_request?(conn) do
-    case Plug.Conn.get_req_header(conn, "user-agent") do
-      [user_agent] -> String.contains?(user_agent, "Google-Apps-Script")
-      _ -> false
-    end
+    SanbaseWeb.Graphql.SansheetsHelper.sansheets_request?(conn)
   end
 
   defp get_quota_error_to_error_map(

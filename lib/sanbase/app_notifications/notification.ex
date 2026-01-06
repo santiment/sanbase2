@@ -27,7 +27,7 @@ defmodule Sanbase.AppNotifications.Notification do
   @type t :: %__MODULE__{
           id: pos_integer(),
           type: String.t(),
-          title: String.t(),
+          title: String.t() | nil,
           content: String.t() | nil,
           user_id: pos_integer() | nil,
           actor_user_id: pos_integer() | nil,

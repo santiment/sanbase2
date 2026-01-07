@@ -1,9 +1,27 @@
 defmodule Sanbase.EventBus.AppNotificationsSubscriber do
   @moduledoc """
+  Create Sanbase App Notifications based on various events in the system.
+
+  To create a notification from an event, write a handle_event/3 function clause
+  that matches the event type you want to create a notification from.
+  From the handle_event/3 function you can call the create_notification/3 function,
+  passing the notification type, the list of user ids that should receive the notification
+  and the event data itself.
+
+  The create_notification/3 function should follow the convetion that it:
+  - creates the Notification record for this notification
+  - creates an anonyoumous function that takes a user_id and returns a NotificationReadStatus struct
+  - calls the multi_insert_notifications/2 function, passing the list of user ids and the anonymous function
+    which will create the NotificaitonUserRead struct for each user.
+
+
   """
   use GenServer
 
   alias Sanbase.Utils.Config
+  alias Sanbase.AppNotifications
+  alias Sanbase.AppNotifications.NotificationReadStatus
+  alias Sanbase.AppNotifications.Notification
 
   require Logger
 
@@ -58,11 +76,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
          event_shadow,
          state
        ) do
-    create_notification(
-      :publish_insight,
-      followers_user_ids(user_id),
-      data
-    )
+    create_notification(:publish_insight, followers_user_ids(user_id), data)
 
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
@@ -74,11 +88,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
          state
        )
        when event_type in [:create_watchlist, :update_watchlist] do
-    create_notification(
-      event_type,
-      followers_user_ids(user_id),
-      data
-    )
+    create_notification(event_type, followers_user_ids(user_id), data)
 
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
@@ -105,19 +115,17 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
          insight_id: insight_id,
          user_id: author_id
        }) do
-    user_id_to_notification_fun = fn user_id ->
-      %Sanbase.AppNotifications.Notification{
+    {:ok, notification} =
+      AppNotifications.create_notification(%{
         type: "publish_insight",
-        user_id: user_id,
-        actor_user_id: author_id,
+        user_id: author_id,
         entity_type: "insight",
         entity_id: insight_id,
         is_broadcast: false,
         is_system_generated: false
-      }
-    end
+      })
 
-    multi_insert_notifications(user_ids, user_id_to_notification_fun)
+    multi_insert_notification_read_status(user_ids, notification.id)
   end
 
   ## Watchlist notifications
@@ -127,32 +135,20 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
          watchlist_id: watchlist_id,
          user_id: author_id
        }) do
-    user_id_to_notification_fun = fn user_id ->
-      %Sanbase.AppNotifications.Notification{
+    {:ok, notification} =
+      AppNotifications.create_notification(%{
         type: "create_watchlist",
-        user_id: user_id,
-        actor_user_id: author_id,
+        user_id: author_id,
         entity_type: "watchlist",
         entity_id: watchlist_id,
         is_broadcast: false,
         is_system_generated: false
-      }
-    end
+      })
 
-    multi_insert_notifications(user_ids, user_id_to_notification_fun)
+    multi_insert_notification_read_status(user_ids, notification.id)
   end
 
-  defp create_notification(
-         :update_watchlist,
-         user_ids,
-         %{
-           is_public: true,
-           watchlist_id: watchlist_id,
-           user_id: author_id,
-           extra_in_memory_data: %{changes: changes}
-         } =
-           params
-       ) do
+  defp update_watchlist_changed_fields(changes) do
     changed_fields = if changes[:is_public], do: [:is_public], else: []
     changed_fields = if changes[:function], do: [:function | changed_fields], else: changed_fields
 
@@ -168,45 +164,68 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
       if old_dt && changes[:is_public] && DateTime.diff(DateTime.utc_now(), old_dt, :day) < 2,
         do: changed_fields -- [:is_public],
         else: changed_fields
+  end
 
+  defp update_watchlist_list_additional_json_data(changes) do
     # If list_items have been added/removed, include the count in the json_data
-    additional_json_data =
-      if changes[:list_items],
-        do: %{
-          changes: [
-            %{
-              field: :list_items,
-              change_type: changes[:list_items],
-              changes_count: changes[:affected_list_items_count]
-            }
-          ]
-        },
-        else: %{}
+    if changes[:list_items],
+      do: %{
+        changes: [
+          %{
+            field: :list_items,
+            change_type: changes[:list_items],
+            changes_count: changes[:affected_list_items_count]
+          }
+        ]
+      },
+      else: %{}
+  end
+
+  defp create_notification(
+         :update_watchlist,
+         user_ids,
+         %{
+           is_public: true,
+           watchlist_id: watchlist_id,
+           user_id: author_id,
+           extra_in_memory_data: %{changes: changes}
+         } =
+           params
+       ) do
+    changed_fields = update_watchlist_changed_fields(changes)
 
     if changed_fields != [] do
-      json_data = Map.merge(%{changed_fields: changed_fields}, additional_json_data)
+      json_data =
+        update_watchlist_list_additional_json_data(changes)
+        |> Map.merge(%{changed_fields: changed_fields})
 
-      user_id_to_notification_fun = fn user_id ->
-        %Sanbase.AppNotifications.Notification{
+      {:ok, notification} =
+        AppNotifications.create_notification(%{
           type: "update_watchlist",
-          user_id: user_id,
-          actor_user_id: author_id,
+          user_id: author_id,
           entity_type: "watchlist",
           entity_id: watchlist_id,
           is_broadcast: false,
           is_system_generated: false,
           json_data: json_data
-        }
-      end
+        })
 
-      multi_insert_notifications(user_ids, user_id_to_notification_fun)
+      multi_insert_notification_read_status(user_ids, notification.id)
     end
   end
 
-  defp multi_insert_notifications(user_ids, user_id_to_notification_fun) do
+  defp multi_insert_notification_read_status(user_ids, notification_id) do
     user_ids
     |> Enum.reduce(Ecto.Multi.new(), fn user_id, multi ->
-      Ecto.Multi.insert(multi, {:notification, user_id}, user_id_to_notification_fun.(user_id))
+      Ecto.Multi.insert(
+        multi,
+        {:notification, user_id, notification_id},
+        AppNotifications.notification_read_satatus_changeset(%{
+          notification_id: notification_id,
+          user_id: user_id,
+          read_at: nil
+        })
+      )
     end)
     |> Sanbase.Repo.transaction()
     |> case do

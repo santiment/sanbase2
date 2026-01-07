@@ -3,7 +3,7 @@ defmodule Sanbase.AppNotifications.Notification do
   import Ecto.Changeset
 
   alias Sanbase.Accounts.User
-  alias Sanbase.AppNotifications.NotificationUserRead
+  alias Sanbase.AppNotifications.NotificationReadStatus
 
   @required_fields [:type]
 
@@ -11,7 +11,6 @@ defmodule Sanbase.AppNotifications.Notification do
     :title,
     :content,
     :user_id,
-    :actor_user_id,
     :entity_type,
     :entity_id,
     :is_system_generated,
@@ -30,7 +29,6 @@ defmodule Sanbase.AppNotifications.Notification do
           title: String.t() | nil,
           content: String.t() | nil,
           user_id: pos_integer() | nil,
-          actor_user_id: pos_integer() | nil,
           entity_type: String.t() | nil,
           entity_id: integer() | nil,
           is_system_generated: boolean(),
@@ -57,13 +55,7 @@ defmodule Sanbase.AppNotifications.Notification do
     field(:json_data, :map)
     field(:is_deleted, :boolean, default: false)
 
-    # Virtual field populated when we join the user reads
-    field(:read_at, :utc_datetime, virtual: true)
-
     belongs_to(:user, User)
-    belongs_to(:actor_user, User)
-
-    has_many(:user_reads, NotificationUserRead)
 
     timestamps(type: :utc_datetime)
   end
@@ -77,6 +69,5 @@ defmodule Sanbase.AppNotifications.Notification do
     |> cast(attrs, @required_fields ++ @optional_fields)
     |> validate_required(@required_fields)
     |> foreign_key_constraint(:user_id)
-    |> foreign_key_constraint(:actor_user_id)
   end
 end

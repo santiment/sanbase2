@@ -1,4 +1,4 @@
-defmodule Sanbase.AppNotifications.NotificationUserRead do
+defmodule Sanbase.AppNotifications.NotificationReadStatus do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -14,7 +14,7 @@ defmodule Sanbase.AppNotifications.NotificationUserRead do
           read_at: DateTime.t()
         }
 
-  schema "sanbase_notification_user_reads" do
+  schema "sanbase_notifications_read_status" do
     belongs_to(:user, User)
     belongs_to(:notification, Notification)
 
@@ -32,7 +32,7 @@ defmodule Sanbase.AppNotifications.NotificationUserRead do
     |> foreign_key_constraint(:user_id)
     |> foreign_key_constraint(:notification_id)
     |> unique_constraint([:user_id, :notification_id],
-      name: :sanbase_notification_user_reads_user_id_notification_id_index
+      name: :sanbase_notifications_read_status_user_id_notification_id_index
     )
   end
 end

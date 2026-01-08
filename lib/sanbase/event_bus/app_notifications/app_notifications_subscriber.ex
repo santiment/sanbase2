@@ -18,10 +18,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
   """
   use GenServer
 
-  alias Sanbase.Utils.Config
   alias Sanbase.AppNotifications
-  alias Sanbase.AppNotifications.NotificationReadStatus
-  alias Sanbase.AppNotifications.Notification
 
   require Logger
 
@@ -71,7 +68,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
 
   defp handle_event(
          %{
-           data: %{event_type: :publish_insight, user_id: user_id, insight_id: insight_id} = data
+           data: %{event_type: :publish_insight, user_id: user_id} = data
          },
          event_shadow,
          state
@@ -99,7 +96,6 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
     state
   end
 
-  #
   defp followers_user_ids(user_id) do
     Sanbase.Accounts.UserFollower.followed_by_user_ids(user_id)
   end
@@ -148,39 +144,6 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
     multi_insert_notification_read_status(user_ids, notification.id)
   end
 
-  defp update_watchlist_changed_fields(changes) do
-    changed_fields = if changes[:is_public], do: [:is_public], else: []
-    changed_fields = if changes[:function], do: [:function | changed_fields], else: changed_fields
-
-    changed_fields =
-      if changes[:list_items], do: [:list_items | changed_fields], else: changed_fields
-
-    # If the public status was changed private -> public, but the watchlist has been made public
-    # not that long ago, do not notify about it. An example is someone clicking the public/private toggle
-    # multiple times in a short period - this should not spam followers with notifications.
-    old_dt = changes[:old_is_public_updated_at]
-
-    changed_fields =
-      if old_dt && changes[:is_public] && DateTime.diff(DateTime.utc_now(), old_dt, :day) < 2,
-        do: changed_fields -- [:is_public],
-        else: changed_fields
-  end
-
-  defp update_watchlist_list_additional_json_data(changes) do
-    # If list_items have been added/removed, include the count in the json_data
-    if changes[:list_items],
-      do: %{
-        changes: [
-          %{
-            field: :list_items,
-            change_type: changes[:list_items],
-            changes_count: changes[:affected_list_items_count]
-          }
-        ]
-      },
-      else: %{}
-  end
-
   defp create_notification(
          :update_watchlist,
          user_ids,
@@ -189,8 +152,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
            watchlist_id: watchlist_id,
            user_id: author_id,
            extra_in_memory_data: %{changes: changes}
-         } =
-           params
+         }
        ) do
     changed_fields = update_watchlist_changed_fields(changes)
 
@@ -232,5 +194,37 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
       {:ok, result} -> {:ok, result}
       {:error, _operation, reason, _changes_so_far} -> {:error, reason}
     end
+  end
+
+  defp update_watchlist_changed_fields(changes) do
+    changed_fields = if changes[:is_public], do: [:is_public], else: []
+    changed_fields = if changes[:function], do: [:function | changed_fields], else: changed_fields
+
+    changed_fields =
+      if changes[:list_items], do: [:list_items | changed_fields], else: changed_fields
+
+    # If the public status was changed private -> public, but the watchlist has been made public
+    # not that long ago, do not notify about it. An example is someone clicking the public/private toggle
+    # multiple times in a short period - this should not spam followers with notifications.
+    old_dt = changes[:old_is_public_updated_at]
+
+    if old_dt && changes[:is_public] && DateTime.diff(DateTime.utc_now(), old_dt, :day) < 2,
+      do: changed_fields -- [:is_public],
+      else: changed_fields
+  end
+
+  defp update_watchlist_list_additional_json_data(changes) do
+    # If list_items have been added/removed, include the count in the json_data
+    if changes[:list_items],
+      do: %{
+        changes: [
+          %{
+            field: :list_items,
+            change_type: changes[:list_items],
+            changes_count: changes[:affected_list_items_count]
+          }
+        ]
+      },
+      else: %{}
   end
 end

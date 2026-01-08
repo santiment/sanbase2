@@ -215,16 +215,17 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
 
   defp update_watchlist_list_additional_json_data(changes) do
     # If list_items have been added/removed, include the count in the json_data
-    if changes[:list_items],
-      do: %{
-        changes: [
-          %{
-            field: :list_items,
-            change_type: changes[:list_items],
-            changes_count: changes[:affected_list_items_count]
-          }
-        ]
-      },
-      else: %{}
+    if is_integer(changes[:affected_list_items_count]) and
+         changes[:affected_list_items_count] > 0,
+       do: %{
+         changes: [
+           %{
+             field: :list_items,
+             change_type: changes[:list_items],
+             changes_count: changes[:affected_list_items_count]
+           }
+         ]
+       },
+       else: %{}
   end
 end

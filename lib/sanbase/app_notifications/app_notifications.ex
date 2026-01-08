@@ -53,6 +53,17 @@ defmodule Sanbase.AppNotifications do
     |> Repo.insert()
   end
 
+  @doc """
+  Creates a notification read status entry linking a user to a notification.
+  """
+  @spec create_notification_read_status(map()) ::
+          {:ok, NotificationReadStatus.t()} | {:error, Ecto.Changeset.t()}
+  def create_notification_read_status(attrs) when is_map(attrs) do
+    %NotificationReadStatus{}
+    |> NotificationReadStatus.changeset(attrs)
+    |> Repo.insert()
+  end
+
   @spec notification_read_satatus_changeset(map()) :: Ecto.Changeset.t()
   def notification_read_satatus_changeset(attrs) when is_map(attrs) do
     NotificationReadStatus.changeset(%NotificationReadStatus{}, attrs)

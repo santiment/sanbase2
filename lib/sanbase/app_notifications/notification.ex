@@ -3,7 +3,6 @@ defmodule Sanbase.AppNotifications.Notification do
   import Ecto.Changeset
 
   alias Sanbase.Accounts.User
-  alias Sanbase.AppNotifications.NotificationReadStatus
 
   @required_fields [:type]
 

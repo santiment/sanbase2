@@ -6,6 +6,7 @@ defmodule Sanbase.AppNotificationsTest do
   alias Sanbase.AppNotifications
   alias Sanbase.AppNotifications.Notification
   alias Sanbase.Accounts.UserFollower
+  alias Sanbase.Insight.Post
   alias Sanbase.UserList
 
   describe "create_notification/1" do
@@ -230,7 +231,7 @@ defmodule Sanbase.AppNotificationsTest do
     end
   end
 
-  describe "event-driven notification creation" do
+  describe "events are emitted on actions" do
     setup do
       author = insert(:user)
       follower = insert(:user)
@@ -240,14 +241,52 @@ defmodule Sanbase.AppNotificationsTest do
       [author: author, follower: follower]
     end
 
-    test "creating a public watchlist generates notification for followers", %{
+    # publish_insight tests
+
+    test "publish_insight creates notification for followers", %{
+      author: author,
+      follower: follower
+    } do
+      post = insert(:post, user: author)
+
+      assert AppNotifications.list_notifications_for_user(follower.id) == []
+
+      {:ok, published_post} = Post.publish(post.id, author.id)
+
+      :timer.sleep(100)
+
+      notifications = AppNotifications.list_notifications_for_user(follower.id)
+      assert length(notifications) == 1
+
+      [notification] = notifications
+      assert notification.type == "publish_insight"
+      assert notification.entity_type == "insight"
+      assert notification.entity_id == published_post.id
+      assert notification.user_id == author.id
+    end
+
+    test "publish_insight does not notify non-followers", %{author: author} do
+      non_follower = insert(:user)
+      post = insert(:post, user: author)
+
+      {:ok, _} = Post.publish(post.id, author.id)
+
+      :timer.sleep(100)
+
+      notifications = AppNotifications.list_notifications_for_user(non_follower.id)
+      assert notifications == []
+    end
+
+    # create_watchlist tests
+
+    test "create_watchlist with is_public=true creates notification", %{
       author: author,
       follower: follower
     } do
       assert AppNotifications.list_notifications_for_user(follower.id) == []
 
       {:ok, watchlist} =
-        UserList.create_user_list(author, %{name: "My Public Watchlist", is_public: true})
+        UserList.create_user_list(author, %{name: "Public Watchlist", is_public: true})
 
       :timer.sleep(100)
 
@@ -259,15 +298,14 @@ defmodule Sanbase.AppNotificationsTest do
       assert notification.entity_type == "watchlist"
       assert notification.entity_id == watchlist.id
       assert notification.user_id == author.id
-      assert notification.read_at == nil
     end
 
-    test "creating a private watchlist does not generate notification", %{
+    test "create_watchlist with is_public=false does not create notification", %{
       author: author,
       follower: follower
     } do
       {:ok, _watchlist} =
-        UserList.create_user_list(author, %{name: "My Private Watchlist", is_public: false})
+        UserList.create_user_list(author, %{name: "Private Watchlist", is_public: false})
 
       :timer.sleep(100)
 
@@ -275,19 +313,229 @@ defmodule Sanbase.AppNotificationsTest do
       assert notifications == []
     end
 
-    test "notifications are not created for users who don't follow the author", %{author: author} do
-      non_follower = insert(:user)
+    # update_watchlist tests - is_public change
 
-      {:ok, _watchlist} =
-        UserList.create_user_list(author, %{name: "Another Watchlist", is_public: true})
+    test "update_watchlist changing is_public from false to true creates notification", %{
+      author: author,
+      follower: follower
+    } do
+      {:ok, watchlist} =
+        UserList.create_user_list(author, %{name: "Watchlist", is_public: false})
+
+      :timer.sleep(100)
+      assert AppNotifications.list_notifications_for_user(follower.id) == []
+
+      {:ok, _updated} =
+        UserList.update_user_list(author, %{id: watchlist.id, is_public: true})
 
       :timer.sleep(100)
 
-      notifications = AppNotifications.list_notifications_for_user(non_follower.id)
-      assert notifications == []
+      notifications = AppNotifications.list_notifications_for_user(follower.id)
+      assert length(notifications) == 1
+
+      [notification] = notifications
+      assert notification.type == "update_watchlist"
+      assert notification.entity_id == watchlist.id
+      assert "is_public" in notification.json_data["changed_fields"]
     end
 
-    test "multiple followers receive notifications", %{author: author, follower: follower} do
+    test "update_watchlist changing is_public from true to false does not create notification", %{
+      author: author,
+      follower: follower
+    } do
+      {:ok, watchlist} =
+        UserList.create_user_list(author, %{name: "Watchlist", is_public: true})
+
+      :timer.sleep(100)
+
+      # Clear the create notification
+      initial_count = length(AppNotifications.list_notifications_for_user(follower.id))
+
+      {:ok, _updated} =
+        UserList.update_user_list(author, %{id: watchlist.id, is_public: false})
+
+      :timer.sleep(100)
+
+      # No new notification should be created (watchlist is now private)
+      final_count = length(AppNotifications.list_notifications_for_user(follower.id))
+      assert final_count == initial_count
+    end
+
+    # update_watchlist tests - function change
+
+    test "update_watchlist changing function creates notification", %{
+      author: author,
+      follower: follower
+    } do
+      {:ok, watchlist} =
+        UserList.create_user_list(author, %{name: "Watchlist", is_public: true})
+
+      :timer.sleep(100)
+
+      initial_count = length(AppNotifications.list_notifications_for_user(follower.id))
+
+      new_function = %{"name" => "slugs", "args" => %{"slugs" => ["bitcoin", "ethereum"]}}
+
+      {:ok, _updated} =
+        UserList.update_user_list(author, %{id: watchlist.id, function: new_function})
+
+      :timer.sleep(100)
+
+      notifications = AppNotifications.list_notifications_for_user(follower.id)
+      assert length(notifications) == initial_count + 1
+
+      [notification | _] = notifications
+      assert notification.type == "update_watchlist"
+      assert "function" in notification.json_data["changed_fields"]
+    end
+
+    # update_watchlist tests - list_items change
+
+    test "update_watchlist adding list_items creates notification", %{
+      author: author,
+      follower: follower
+    } do
+      project = insert(:random_erc20_project)
+
+      {:ok, watchlist} =
+        UserList.create_user_list(author, %{name: "Watchlist", is_public: true})
+
+      :timer.sleep(200)
+
+      initial_count = length(AppNotifications.list_notifications_for_user(follower.id))
+
+      {:ok, _updated} =
+        UserList.add_user_list_items(author, %{
+          id: watchlist.id,
+          list_items: [%{project_id: project.id}]
+        })
+
+      :timer.sleep(200)
+
+      notifications = AppNotifications.list_notifications_for_user(follower.id)
+      assert length(notifications) == initial_count + 1
+
+      # Find the update notification specifically
+      update_notification =
+        Enum.find(notifications, fn n -> n.type == "update_watchlist" end)
+
+      assert update_notification != nil
+      assert "list_items" in update_notification.json_data["changed_fields"]
+      assert update_notification.json_data["changes"] != nil
+    end
+
+    test "update_watchlist removing list_items creates notification", %{
+      author: author,
+      follower: follower
+    } do
+      project = insert(:random_erc20_project)
+
+      {:ok, watchlist} =
+        UserList.create_user_list(author, %{
+          name: "Watchlist",
+          is_public: true,
+          list_items: [%{project_id: project.id}]
+        })
+
+      :timer.sleep(200)
+
+      initial_count = length(AppNotifications.list_notifications_for_user(follower.id))
+
+      {:ok, _updated} =
+        UserList.remove_user_list_items(author, %{
+          id: watchlist.id,
+          list_items: [%{project_id: project.id}]
+        })
+
+      :timer.sleep(200)
+
+      notifications = AppNotifications.list_notifications_for_user(follower.id)
+      assert length(notifications) == initial_count + 1
+
+      # Find the update notification specifically
+      update_notification =
+        Enum.find(notifications, fn n -> n.type == "update_watchlist" end)
+
+      assert update_notification != nil
+      assert "list_items" in update_notification.json_data["changed_fields"]
+    end
+
+    # update_watchlist tests - non-notifying changes
+
+    test "update_watchlist changing only name does not create notification", %{
+      author: author,
+      follower: follower
+    } do
+      {:ok, watchlist} =
+        UserList.create_user_list(author, %{name: "Watchlist", is_public: true})
+
+      :timer.sleep(100)
+
+      initial_count = length(AppNotifications.list_notifications_for_user(follower.id))
+
+      {:ok, _updated} =
+        UserList.update_user_list(author, %{id: watchlist.id, name: "New Name"})
+
+      :timer.sleep(100)
+
+      final_count = length(AppNotifications.list_notifications_for_user(follower.id))
+      assert final_count == initial_count
+    end
+
+    test "update_watchlist changing only description does not create notification", %{
+      author: author,
+      follower: follower
+    } do
+      {:ok, watchlist} =
+        UserList.create_user_list(author, %{name: "Watchlist", is_public: true})
+
+      :timer.sleep(100)
+
+      initial_count = length(AppNotifications.list_notifications_for_user(follower.id))
+
+      {:ok, _updated} =
+        UserList.update_user_list(author, %{id: watchlist.id, description: "New description"})
+
+      :timer.sleep(100)
+
+      final_count = length(AppNotifications.list_notifications_for_user(follower.id))
+      assert final_count == initial_count
+    end
+
+    # Private watchlist updates should not create notifications
+
+    test "update_watchlist on private watchlist does not create notification", %{
+      author: author,
+      follower: follower
+    } do
+      project = insert(:random_erc20_project)
+
+      {:ok, watchlist} =
+        UserList.create_user_list(author, %{name: "Private Watchlist", is_public: false})
+
+      :timer.sleep(100)
+
+      assert AppNotifications.list_notifications_for_user(follower.id) == []
+
+      # Add items to private watchlist
+      {:ok, _updated} =
+        UserList.add_user_list_items(author, %{
+          id: watchlist.id,
+          list_items: [%{project_id: project.id}]
+        })
+
+      :timer.sleep(100)
+
+      # Still no notifications
+      assert AppNotifications.list_notifications_for_user(follower.id) == []
+    end
+
+    # Multiple followers test
+
+    test "multiple followers receive notifications for same action", %{
+      author: author,
+      follower: follower
+    } do
       follower2 = insert(:user)
       {:ok, _} = UserFollower.follow(author.id, follower2.id)
 

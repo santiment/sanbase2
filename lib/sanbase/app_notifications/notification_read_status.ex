@@ -28,7 +28,7 @@ defmodule Sanbase.AppNotifications.NotificationReadStatus do
   def changeset(notification_user_read, attrs) do
     notification_user_read
     |> cast(attrs, [:user_id, :notification_id, :read_at])
-    |> validate_required([:user_id, :notification_id, :read_at])
+    |> validate_required([:user_id, :notification_id])
     |> foreign_key_constraint(:user_id)
     |> foreign_key_constraint(:notification_id)
     |> unique_constraint([:user_id, :notification_id],

@@ -35,6 +35,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   # End of custom types
   import_types(Graphql.AggregationTypes)
   import_types(Graphql.AlertsHistoricalActivityTypes)
+  import_types(Graphql.AppNotificationTypes)
   import_types(Graphql.AuthTypes)
   import_types(Graphql.BillingTypes)
   import_types(Graphql.BlockchainAddressType)
@@ -86,6 +87,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.ChangelogTypes)
 
   # Queries and mutations
+  import_types(Graphql.Schema.AppNotificationQueries)
   import_types(Graphql.Schema.AuthQueries)
   import_types(Graphql.Schema.BillingQueries)
   import_types(Graphql.Schema.BlockchainAddressQueries)
@@ -152,6 +154,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
   query do
     import_fields(:alert_queries)
+    import_fields(:app_notification_queries)
     import_fields(:auth_queries)
     import_fields(:billing_queries)
     import_fields(:blockchain_address_queries)
@@ -199,6 +202,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
   mutation do
     import_fields(:alert_mutations)
+    import_fields(:app_notification_mutations)
     import_fields(:auth_mutations)
     import_fields(:billing_mutations)
     import_fields(:blockchain_address_mutations)

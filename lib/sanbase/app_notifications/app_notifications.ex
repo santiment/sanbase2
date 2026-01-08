@@ -66,57 +66,110 @@ defmodule Sanbase.AppNotifications do
   @doc """
   Returns the latest notifications that are visible to the provided user.
 
+  A user has a notification if there is a NotificationReadStatus record for that user_id and notification_id.
+
   By default returns the latest #{@default_limit} notifications.
+  Supports cursor-based pagination via the `:cursor` option.
   """
   @spec list_notifications_for_user(pos_integer(), keyword()) :: [Notification.t()]
   def list_notifications_for_user(user_id, opts \\ []) when is_integer(user_id) do
     limit = Keyword.get(opts, :limit, @default_limit)
+    cursor = Keyword.get(opts, :cursor)
 
-    Notification
-    |> accessible_notifications_query(user_id)
-    |> join(:left, [n], nur in NotificationReadStatus,
-      on: nur.notification_id == n.id and nur.user_id == ^user_id
+    from(n in Notification,
+      join: nrs in NotificationReadStatus,
+      on: nrs.notification_id == n.id and nrs.user_id == ^user_id,
+      where: n.is_deleted == false
     )
-    |> preload([n, _nur], [:user, :actor_user])
+    |> maybe_apply_cursor(cursor)
+    |> preload([_n, _nrs], [:user])
     |> order_by([n], desc: n.inserted_at)
     |> limit(^limit)
-    |> select_merge([_n, nur], %{read_at: nur.read_at})
+    |> select_merge([_n, nrs], %{read_at: nrs.read_at})
     |> Repo.all()
   end
 
   @doc """
-  Marks a notification as read for the given user.
+  Fetches a single notification for the given user with read status.
+
+  A user has a notification if there is a NotificationReadStatus record for that user_id and notification_id.
   """
-  @spec mark_notification_as_read(pos_integer(), pos_integer()) ::
-          {:ok, NotificationReadStatus.t()} | {:error, term()}
-  def mark_notification_as_read(user_id, notification_id)
+  @spec get_notification_for_user(pos_integer(), pos_integer()) ::
+          {:ok, Notification.t()} | {:error, :not_found}
+  def get_notification_for_user(user_id, notification_id)
       when is_integer(user_id) and is_integer(notification_id) do
-    with %Notification{} <- fetch_notification_for_user(user_id, notification_id),
-         args = %{user_id: user_id, notification_id: notification_id, read_at: DateTime.utc_now()},
-         changeset <- NotificationReadStatus.changeset(%NotificationReadStatus{}, args),
-         {:ok, result} <- upsert_user_read(changeset) do
-      {:ok, result}
-    else
+    from(n in Notification,
+      join: nrs in NotificationReadStatus,
+      on: nrs.notification_id == n.id and nrs.user_id == ^user_id,
+      where: n.id == ^notification_id and n.is_deleted == false
+    )
+    |> preload([_n, _nrs], [:user])
+    |> select_merge([_n, nrs], %{read_at: nrs.read_at})
+    |> Repo.one()
+    |> case do
       nil -> {:error, :not_found}
-      {:error, reason} -> {:error, reason}
+      notification -> {:ok, notification}
     end
   end
 
-  defp accessible_notifications_query(query, user_id) do
-    from(n in query,
-      where: n.is_deleted == false,
-      where: n.user_id == ^user_id or n.is_broadcast
-    )
+  @doc """
+  Sets the read status of a notification for the given user.
+  If is_read is true, sets read_at to now. If false, sets read_at to nil.
+  """
+  @spec set_read_status(pos_integer(), pos_integer(), boolean()) ::
+          {:ok, :updated} | {:error, term()}
+  def set_read_status(user_id, notification_id, is_read)
+      when is_integer(user_id) and is_integer(notification_id) and is_boolean(is_read) do
+    read_at = if is_read, do: DateTime.utc_now(:second), else: nil
+
+    with %Notification{} <- fetch_notification_for_user(user_id, notification_id) do
+      from(nrs in NotificationReadStatus,
+        where: nrs.user_id == ^user_id and nrs.notification_id == ^notification_id
+      )
+      |> Repo.update_all(set: [read_at: read_at])
+
+      {:ok, :updated}
+    else
+      nil -> {:error, :not_found}
+    end
+  end
+
+  @doc """
+  Wraps a list of notifications with cursor information for pagination.
+  """
+  @spec wrap_with_cursor([Notification.t()]) :: {:ok, map()}
+  def wrap_with_cursor([]), do: {:ok, %{notifications: [], cursor: %{}}}
+
+  def wrap_with_cursor(notifications) when is_list(notifications) do
+    before_datetime = notifications |> List.last() |> Map.get(:inserted_at)
+    after_datetime = notifications |> List.first() |> Map.get(:inserted_at)
+
+    {:ok,
+     %{
+       notifications: notifications,
+       cursor: %{
+         before: before_datetime,
+         after: after_datetime
+       }
+     }}
+  end
+
+  defp maybe_apply_cursor(query, nil), do: query
+
+  defp maybe_apply_cursor(query, %{type: :before, datetime: datetime}) do
+    from(n in query, where: n.inserted_at < ^datetime)
+  end
+
+  defp maybe_apply_cursor(query, %{type: :after, datetime: datetime}) do
+    from(n in query, where: n.inserted_at > ^datetime)
   end
 
   defp fetch_notification_for_user(user_id, notification_id) do
-    Notification
-    |> accessible_notifications_query(user_id)
-    |> where([n], n.id == ^notification_id)
+    from(n in Notification,
+      join: nrs in NotificationReadStatus,
+      on: nrs.notification_id == n.id and nrs.user_id == ^user_id,
+      where: n.id == ^notification_id and n.is_deleted == false
+    )
     |> Repo.one()
-  end
-
-  defp upsert_user_read(changeset) do
-    Repo.insert(changeset, on_conflict: :nothing)
   end
 end

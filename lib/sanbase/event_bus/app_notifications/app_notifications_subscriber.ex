@@ -101,7 +101,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
 
   #
   defp followers_user_ids(user_id) do
-    [user_id] ++ Sanbase.Accounts.UserFollower.followed_by_user_ids(user_id)
+    Sanbase.Accounts.UserFollower.followed_by_user_ids(user_id)
   end
 
   ## Insight notifications

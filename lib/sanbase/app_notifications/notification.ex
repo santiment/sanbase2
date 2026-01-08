@@ -36,7 +36,9 @@ defmodule Sanbase.AppNotifications.Notification do
           json_data: map() | nil,
           is_deleted: boolean(),
           inserted_at: DateTime.t(),
-          updated_at: DateTime.t()
+          updated_at: DateTime.t(),
+          # virtual fields, filled for the quering user
+          read_at: DateTime.t() | nil
         }
 
   schema "sanbase_notifications" do
@@ -55,6 +57,9 @@ defmodule Sanbase.AppNotifications.Notification do
     field(:is_deleted, :boolean, default: false)
 
     belongs_to(:user, User)
+
+    # Virtual fields to hold read status info for a specific user
+    field(:read_at, :utc_datetime, virtual: true)
 
     timestamps(type: :utc_datetime)
   end

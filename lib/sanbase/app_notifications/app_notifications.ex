@@ -82,7 +82,6 @@ defmodule Sanbase.AppNotifications do
       where: n.is_deleted == false
     )
     |> maybe_apply_cursor(cursor)
-    |> preload([_n, _nrs], [:user])
     |> order_by([n], desc: n.inserted_at)
     |> limit(^limit)
     |> select_merge([_n, nrs], %{read_at: nrs.read_at})
@@ -120,9 +119,11 @@ defmodule Sanbase.AppNotifications do
           {:ok, :updated} | {:error, term()}
   def set_read_status(user_id, notification_id, is_read)
       when is_integer(user_id) and is_integer(notification_id) and is_boolean(is_read) do
-    read_at = if is_read, do: DateTime.utc_now(:second), else: nil
+    with %Notification{} = notification <- fetch_notification_for_user(user_id, notification_id) do
+      # Do not update read_at if it is already set. The read_at is a virutal field
+      # populated by fetch_notification_for_user/2
+      read_at = if is_read, do: notification.read_at || DateTime.utc_now(:second), else: nil
 
-    with %Notification{} <- fetch_notification_for_user(user_id, notification_id) do
       from(nrs in NotificationReadStatus,
         where: nrs.user_id == ^user_id and nrs.notification_id == ^notification_id
       )
@@ -141,6 +142,7 @@ defmodule Sanbase.AppNotifications do
   def wrap_with_cursor([]), do: {:ok, %{notifications: [], cursor: %{}}}
 
   def wrap_with_cursor(notifications) when is_list(notifications) do
+    # The notifications are sorted in descending order by inserted_at
     before_datetime = notifications |> List.last() |> Map.get(:inserted_at)
     after_datetime = notifications |> List.first() |> Map.get(:inserted_at)
 
@@ -168,7 +170,8 @@ defmodule Sanbase.AppNotifications do
     from(n in Notification,
       join: nrs in NotificationReadStatus,
       on: nrs.notification_id == n.id and nrs.user_id == ^user_id,
-      where: n.id == ^notification_id and n.is_deleted == false
+      where: n.id == ^notification_id and n.is_deleted == false,
+      select_merge: %{read_at: nrs.read_at}
     )
     |> Repo.one()
   end

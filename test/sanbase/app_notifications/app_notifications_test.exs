@@ -4,10 +4,9 @@ defmodule Sanbase.AppNotificationsTest do
   import Sanbase.Factory
 
   alias Sanbase.AppNotifications
-  alias Sanbase.AppNotifications.{Notification, NotificationReadStatus}
+  alias Sanbase.AppNotifications.Notification
   alias Sanbase.Accounts.UserFollower
   alias Sanbase.UserList
-  alias Sanbase.Repo
 
   describe "create_notification/1" do
     test "creates notification with valid attrs" do
@@ -56,11 +55,11 @@ defmodule Sanbase.AppNotificationsTest do
               entity_id: watchlist.id
             })
 
-          Repo.insert!(%NotificationReadStatus{
-            notification_id: notification.id,
-            user_id: follower.id,
-            read_at: nil
-          })
+          {:ok, _} =
+            AppNotifications.create_notification_read_status(%{
+              notification_id: notification.id,
+              user_id: follower.id
+            })
 
           notification
         end
@@ -110,11 +109,11 @@ defmodule Sanbase.AppNotificationsTest do
           entity_id: watchlist.id
         })
 
-      Repo.insert!(%NotificationReadStatus{
-        notification_id: notification.id,
-        user_id: follower.id,
-        read_at: nil
-      })
+      {:ok, _} =
+        AppNotifications.create_notification_read_status(%{
+          notification_id: notification.id,
+          user_id: follower.id
+        })
 
       [follower: follower, author: author, watchlist: watchlist, notification: notification]
     end
@@ -156,11 +155,11 @@ defmodule Sanbase.AppNotificationsTest do
           entity_id: watchlist.id
         })
 
-      Repo.insert!(%NotificationReadStatus{
-        notification_id: notification.id,
-        user_id: follower.id,
-        read_at: nil
-      })
+      {:ok, _} =
+        AppNotifications.create_notification_read_status(%{
+          notification_id: notification.id,
+          user_id: follower.id
+        })
 
       [follower: follower, notification: notification]
     end

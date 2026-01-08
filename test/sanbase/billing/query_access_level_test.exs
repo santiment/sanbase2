@@ -180,7 +180,9 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :get_metrics_by_category_and_group,
           :get_ordered_metrics,
           :get_ordered_metrics_v2,
-          :get_recently_added_metrics
+          :get_recently_added_metrics,
+          # Notifications APIs
+          :get_current_user_notifications
         ]
         |> Enum.sort()
 

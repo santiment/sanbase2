@@ -93,7 +93,7 @@ defmodule Sanbase.AppNotifications do
       where: n.is_deleted == false
     )
     |> maybe_apply_cursor(cursor)
-    |> order_by([n], desc: n.inserted_at)
+    |> order_by([n], desc: n.inserted_at, desc: n.id)
     |> limit(^limit)
     |> select_merge([_n, nrs], %{read_at: nrs.read_at})
     |> Repo.all()

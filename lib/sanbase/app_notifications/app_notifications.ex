@@ -64,14 +64,9 @@ defmodule Sanbase.AppNotifications do
     |> Repo.insert()
   end
 
-  @spec notification_read_satatus_changeset(map()) :: Ecto.Changeset.t()
-  def notification_read_satatus_changeset(attrs) when is_map(attrs) do
+  @spec notification_read_status_changeset(map()) :: Ecto.Changeset.t()
+  def notification_read_status_changeset(attrs) when is_map(attrs) do
     NotificationReadStatus.changeset(%NotificationReadStatus{}, attrs)
-  end
-
-  @spec notification_changeset(map()) :: Ecto.Changeset.t()
-  def notification_changeset(attrs) when is_map(attrs) do
-    Notification.changeset(%NotificationReadStatus{}, attrs)
   end
 
   @doc """

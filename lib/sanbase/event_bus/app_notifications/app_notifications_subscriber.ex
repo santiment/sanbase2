@@ -182,7 +182,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
       Ecto.Multi.insert(
         multi,
         {:notification, user_id, notification_id},
-        AppNotifications.notification_read_satatus_changeset(%{
+        AppNotifications.notification_read_status_changeset(%{
           notification_id: notification_id,
           user_id: user_id,
           read_at: nil

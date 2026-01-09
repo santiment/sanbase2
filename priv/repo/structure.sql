@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.1 (Homebrew)
--- Dumped by pg_dump version 15.1 (Homebrew)
+-- Dumped from database version 15.10 (Homebrew)
+-- Dumped by pg_dump version 15.10 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -898,8 +898,8 @@ CREATE TABLE public.chat_messages (
     sources jsonb[] DEFAULT ARRAY[]::jsonb[],
     suggestions text[] DEFAULT ARRAY[]::text[],
     feedback_type character varying(255),
-    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY ((ARRAY['thumbs_up'::character varying, 'thumbs_down'::character varying])::text[])) OR (feedback_type IS NULL))),
-    CONSTRAINT valid_role CHECK (((role)::text = ANY ((ARRAY['user'::character varying, 'assistant'::character varying])::text[])))
+    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY (ARRAY[('thumbs_up'::character varying)::text, ('thumbs_down'::character varying)::text])) OR (feedback_type IS NULL))),
+    CONSTRAINT valid_role CHECK (((role)::text = ANY (ARRAY[('user'::character varying)::text, ('assistant'::character varying)::text])))
 );
 
 
@@ -3977,6 +3977,78 @@ ALTER SEQUENCE public.san_burn_credit_transactions_id_seq OWNED BY public.san_bu
 
 
 --
+-- Name: sanbase_notifications; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.sanbase_notifications (
+    id bigint NOT NULL,
+    type character varying(255) NOT NULL,
+    title text,
+    content text,
+    user_id bigint,
+    entity_type character varying(255),
+    entity_id integer,
+    is_system_generated boolean DEFAULT false NOT NULL,
+    is_broadcast boolean DEFAULT false NOT NULL,
+    grouping_key character varying(255),
+    json_data jsonb,
+    is_deleted boolean DEFAULT false NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: sanbase_notifications_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.sanbase_notifications_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: sanbase_notifications_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.sanbase_notifications_id_seq OWNED BY public.sanbase_notifications.id;
+
+
+--
+-- Name: sanbase_notifications_read_status; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.sanbase_notifications_read_status (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    notification_id bigint NOT NULL,
+    read_at timestamp(0) without time zone DEFAULT NULL::timestamp without time zone
+);
+
+
+--
+-- Name: sanbase_notifications_read_status_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.sanbase_notifications_read_status_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: sanbase_notifications_read_status_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.sanbase_notifications_read_status_id_seq OWNED BY public.sanbase_notifications_read_status.id;
+
+
+--
 -- Name: sanr_emails; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -4935,7 +5007,8 @@ CREATE TABLE public.user_lists (
     type public.watchlist_type DEFAULT 'project'::public.watchlist_type NOT NULL,
     is_screener boolean DEFAULT false,
     is_deleted boolean DEFAULT false,
-    is_hidden boolean DEFAULT false
+    is_hidden boolean DEFAULT false,
+    is_public_updated_at timestamp(0) without time zone
 );
 
 
@@ -6272,6 +6345,20 @@ ALTER TABLE ONLY public.san_burn_credit_transactions ALTER COLUMN id SET DEFAULT
 
 
 --
+-- Name: sanbase_notifications id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sanbase_notifications ALTER COLUMN id SET DEFAULT nextval('public.sanbase_notifications_id_seq'::regclass);
+
+
+--
+-- Name: sanbase_notifications_read_status id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sanbase_notifications_read_status ALTER COLUMN id SET DEFAULT nextval('public.sanbase_notifications_read_status_id_seq'::regclass);
+
+
+--
 -- Name: sanr_emails id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -7427,6 +7514,22 @@ ALTER TABLE ONLY public.roles
 
 ALTER TABLE ONLY public.san_burn_credit_transactions
     ADD CONSTRAINT san_burn_credit_transactions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: sanbase_notifications sanbase_notifications_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sanbase_notifications
+    ADD CONSTRAINT sanbase_notifications_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: sanbase_notifications_read_status sanbase_notifications_read_status_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sanbase_notifications_read_status
+    ADD CONSTRAINT sanbase_notifications_read_status_pkey PRIMARY KEY (id);
 
 
 --
@@ -8833,6 +8936,13 @@ CREATE UNIQUE INDEX questionnaire_answers_question_uuid_user_id_index ON public.
 --
 
 CREATE INDEX san_burn_credit_transactions_trx_hash_index ON public.san_burn_credit_transactions USING btree (trx_hash);
+
+
+--
+-- Name: sanbase_notifications_read_status_user_id_notification_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX sanbase_notifications_read_status_user_id_notification_id_index ON public.sanbase_notifications_read_status USING btree (user_id, notification_id);
 
 
 --
@@ -10267,6 +10377,30 @@ ALTER TABLE ONLY public.san_burn_credit_transactions
 
 
 --
+-- Name: sanbase_notifications_read_status sanbase_notifications_read_status_notification_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sanbase_notifications_read_status
+    ADD CONSTRAINT sanbase_notifications_read_status_notification_id_fkey FOREIGN KEY (notification_id) REFERENCES public.sanbase_notifications(id) ON DELETE CASCADE;
+
+
+--
+-- Name: sanbase_notifications_read_status sanbase_notifications_read_status_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sanbase_notifications_read_status
+    ADD CONSTRAINT sanbase_notifications_read_status_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: sanbase_notifications sanbase_notifications_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sanbase_notifications
+    ADD CONSTRAINT sanbase_notifications_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: schedule_rescrape_prices schedule_rescrape_prices_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -11298,3 +11432,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20251202143216);
 INSERT INTO public."schema_migrations" (version) VALUES (20251202143217);
 INSERT INTO public."schema_migrations" (version) VALUES (20251215114741);
 INSERT INTO public."schema_migrations" (version) VALUES (20251216081737);
+INSERT INTO public."schema_migrations" (version) VALUES (20260106131955);
+INSERT INTO public."schema_migrations" (version) VALUES (20260106141954);

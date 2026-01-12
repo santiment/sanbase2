@@ -8,6 +8,17 @@ defmodule SanbaseWeb.Graphql.AppNotificationApiTest do
   alias Sanbase.Accounts.UserFollower
   alias Sanbase.UserList
 
+  setup_all do
+    subscriber = Sanbase.EventBus.AppNotificationsSubscriber
+
+    EventBus.subscribe({subscriber, subscriber.topics()})
+
+    on_exit(fn ->
+      Sanbase.EventBus.drain_topics(subscriber.topics(), 10_000)
+      EventBus.unsubscribe(subscriber)
+    end)
+  end
+
   setup do
     follower = insert(:user)
     author = insert(:user)

@@ -69,7 +69,11 @@ defmodule Sanbase.Comments.EntityComment do
       {:ok, %{create_comment: comment}} -> {:ok, comment}
       {:error, _name, error, _} -> {:error, error}
     end
-    |> emit_event(:create_comment, %{entity: entity_type})
+    |> emit_event(:create_comment, %{
+      entity: entity_type,
+      entity_id: entity_id,
+      parent_id: parent_id
+    })
   end
 
   @spec link(entity_type, entity_id, comment_id :: non_neg_integer()) ::

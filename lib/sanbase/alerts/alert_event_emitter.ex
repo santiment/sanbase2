@@ -12,6 +12,15 @@ defmodule Sanbase.Alert.EventEmitter do
     |> notify()
   end
 
+  def handle_event({:ok, user_trigger}, :alert_triggered, _args) do
+    %{
+      event_type: :alert_triggered,
+      user_id: user_trigger.user_id,
+      alert_id: user_trigger.id
+    }
+    |> notify()
+  end
+
   defp notify(data) do
     Sanbase.EventBus.notify(%{topic: @topic, data: data})
     :ok

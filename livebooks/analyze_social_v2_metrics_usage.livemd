@@ -1,0 +1,82 @@
+# Analyze v2 social metrics usage
+
+## Section
+
+```elixir
+metrics_list = [
+  "sentiment_balance_4chan_v2",
+  "sentiment_balance_bitcointalk_v2",
+  "sentiment_balance_reddit_v2",
+  "sentiment_balance_telegram_v2",
+  "sentiment_balance_total_v2",
+  "sentiment_balance_twitter_v2",
+  "sentiment_balance_youtube_videos_v2",
+  "sentiment_weighted_4chan_1d_v2",
+  "sentiment_weighted_4chan_1h_v2",
+  "sentiment_weighted_4chan_v2",
+  "sentiment_weighted_bitcointalk_1d_v2",
+  "sentiment_weighted_bitcointalk_1h_v2",
+  "sentiment_weighted_bitcointalk_v2",
+  "sentiment_weighted_reddit_1d_v2",
+  "sentiment_weighted_reddit_1h_v2",
+  "sentiment_weighted_reddit_v2",
+  "sentiment_weighted_telegram_1d_v2",
+  "sentiment_weighted_telegram_1h_v2",
+  "sentiment_weighted_telegram_v2",
+  "sentiment_weighted_total_1d_v2",
+  "sentiment_weighted_total_1h_v2",
+  "sentiment_weighted_total_v2",
+  "sentiment_weighted_twitter_1d_v2",
+  "sentiment_weighted_twitter_1h_v2",
+  "sentiment_weighted_twitter_v2",
+  "sentiment_weighted_youtube_videos_1d_v2",
+  "sentiment_weighted_youtube_videos_1h_v2",
+  "sentiment_weighted_youtube_videos_v2"
+]
+```
+
+```elixir
+metrics = Enum.map(metrics_list, fn m -> "getMetric|#{m}" end)
+
+sql = """
+WITH san_team_user_ids AS ( select id from santiment_team_members ) 
+SELECT
+  distinct(user_id),
+  count(*) AS calls_count
+FROM api_call_data
+WHERE
+  dt >= now() - interval 60 day
+  AND user_id NOT IN san_team_user_ids
+  AND user_id != 0
+  AND query IN ({{metrics}})
+GROUP BY user_id
+ORDER BY calls_count DESC
+"""
+
+params = %{metrics: metrics}
+struct = Sanbase.Clickhouse.Query.new(sql, params)
+
+{:ok, result} =
+  Sanbase.ClickhouseRepo.query_transform(struct, fn [id, calls] ->
+    %{user_id: id, calls_count: calls}
+  end)
+```
+
+```elixir
+import Ecto.Query
+user_ids = Enum.map(result, & &1.user_id)
+
+users =
+  from(u in Sanbase.Accounts.User, where: u.id in ^user_ids)
+  |> Sanbase.Repo.all()
+  |> Map.new(&{&1.id, &1})
+
+Enum.map(result, fn map ->
+  user = users[map.user_id]
+  subscriptions = Sanbase.Billing.Subscription.user_subscription_names(user)
+
+  map
+  |> Map.put(:subscriptions, subscriptions)
+  |> Map.put(:email, user.email)
+end)
+```

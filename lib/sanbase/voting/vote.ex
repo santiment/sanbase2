@@ -6,6 +6,7 @@ defmodule Sanbase.Vote do
 
   import Ecto.Query
   import Ecto.Changeset
+  import Sanbase.Vote.EventEmitter, only: [emit_event: 3]
 
   alias Sanbase.Repo
   alias Sanbase.Accounts.User
@@ -112,8 +113,12 @@ defmodule Sanbase.Vote do
     end)
     |> Repo.transaction()
     |> case do
-      {:ok, %{create_or_increase_count: vote}} -> {:ok, vote}
-      {:error, _name, error, _} -> {:error, error}
+      {:ok, %{create_or_increase_count: vote}} ->
+        {:ok, vote}
+        |> emit_event(:create_vote, extract_entity_info(vote))
+
+      {:error, _name, error, _} ->
+        {:error, error}
     end
   end
 
@@ -143,8 +148,14 @@ defmodule Sanbase.Vote do
     end)
     |> Repo.transaction()
     |> case do
-      {:ok, %{decrease_count_or_destroy: vote}} -> {:ok, vote}
-      {:error, _name, error, _} -> {:error, error}
+      {:ok, %{select_if_exists: old_vote, decrease_count_or_destroy: vote}} ->
+        # When deleted, everything in vote will be all nils, so use old_vote
+        # If downvoting before upvoding previously, there is no old_vote
+        if old_vote, do: emit_event({:ok, old_vote}, :remove_vote, extract_entity_info(old_vote))
+        {:ok, vote}
+
+      {:error, _name, error, _} ->
+        {:error, error}
     end
   end
 
@@ -208,6 +219,45 @@ defmodule Sanbase.Vote do
   end
 
   # Private functions
+
+  @entity_id_fields [
+    {:post_id, :insight, Post},
+    {:watchlist_id, :watchlist, UserList},
+    {:timeline_event_id, :timeline_event, TimelineEvent},
+    {:chart_configuration_id, :chart_configuration, Chart.Configuration},
+    {:user_trigger_id, :user_trigger, UserTrigger},
+    {:dashboard_id, :dashboard, Sanbase.Dashboards.Dashboard},
+    {:query_id, :query, Sanbase.Queries.Query}
+  ]
+
+  defp extract_entity_info(attrs) do
+    vote_attrs = Map.from_struct(attrs)
+
+    Enum.find_value(@entity_id_fields, %{}, fn {field, entity_type, schema} ->
+      case Map.get(vote_attrs, field) do
+        nil ->
+          nil
+
+        entity_id ->
+          # Try to fetch one by one the firleds post_id, dashboard_id, etc.
+          # The one that is not nil is the entity type
+          entity_owner_user_id = get_entity_owner_user_id(schema, entity_id)
+
+          %{
+            entity_type: entity_type,
+            entity_id: entity_id,
+            entity_owner_user_id: entity_owner_user_id
+          }
+      end
+    end)
+  end
+
+  defp get_entity_owner_user_id(schema, entity_id) do
+    case Repo.get(schema, entity_id) do
+      nil -> nil
+      entity -> entity.user_id
+    end
+  end
 
   defp total_votes_query(entity_type, entity_ids, user_id) do
     # Override nil with -1 so the checks for current user

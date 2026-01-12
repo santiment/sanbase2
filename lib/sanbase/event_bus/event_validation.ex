@@ -195,6 +195,22 @@ defmodule Sanbase.EventBus.EventValidation do
   end
 
   #############################################################################
+  ## Vote Events
+  #############################################################################
+  def valid?(%{
+        event_type: vote_event,
+        user_id: user_id,
+        entity_id: entity_id,
+        entity_type: entity_type,
+        entity_owner_user_id: entity_owner_user_id
+      })
+      when vote_event in [:create_vote, :remove_vote] do
+    valid_integer_id?(user_id) and
+      valid_integer_id?(entity_owner_user_id) and
+      valid_integer_id?(entity_id) and is_atom(entity_type)
+  end
+
+  #############################################################################
   ## Promoter Events
   #############################################################################
   def valid?(%{

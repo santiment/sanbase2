@@ -42,7 +42,8 @@ defmodule Sanbase.EventBus do
     :invalid_events,
     :user_events,
     :watchlist_events,
-    :metric_registry_events
+    :metric_registry_events,
+    :vote_events
   ]
 
   @subscribers [
@@ -54,11 +55,26 @@ defmodule Sanbase.EventBus do
     __MODULE__.AppNotificationsSubscriber
   ]
 
+  @register_at_start_subscribers @subscribers
+                                 |> then(fn list ->
+                                   if true ==
+                                        Application.compile_env(
+                                          :sanbase,
+                                          [Sanbase.EventBus, :disable_app_notification_subscriber]
+                                        ) do
+                                     List.delete(list, __MODULE__.AppNotificationsSubscriber)
+                                   else
+                                     list
+                                   end
+                                 end)
+
   def children(), do: @subscribers
 
   def init() do
     for topic <- @topics, do: EventBus.register_topic(topic)
-    for subscriber <- @subscribers, do: EventBus.subscribe({subscriber, subscriber.topics()})
+
+    for subscriber <- @register_at_start_subscribers,
+        do: EventBus.subscribe({subscriber, subscriber.topics()})
   end
 
   def notify(params) do
@@ -170,5 +186,38 @@ defmodule Sanbase.EventBus do
           message: "Invalid event submitted: #{inspect(params)}"
         )
       end
+  end
+
+  def drain_topics(topics, try_for_ms \\ 5000) do
+    # Drain the topics by checking the events in the ETS table.
+    # When they become [], consider the table drained.
+    # Invoke this only from async: false tests!
+    Enum.each(topics, fn
+      ".*" ->
+        drain_topics(@topics, try_for_ms)
+
+      topic ->
+        ets_table = String.to_existing_atom("eb_ew_#{topic}")
+
+        do_drain_ets_table_until(
+          ets_table,
+          DateTime.add(DateTime.utc_now(), try_for_ms, :millisecond)
+        )
+    end)
+  end
+
+  defp do_drain_ets_table_until(ets_table, until) when is_struct(until, DateTime) do
+    if DateTime.before?(until, DateTime.utc_now()) do
+      :ok
+    else
+      case :ets.tab2list(ets_table) do
+        [] ->
+          :ok
+
+        _events ->
+          Process.sleep(100)
+          do_drain_ets_table_until(ets_table, until)
+      end
+    end
   end
 end

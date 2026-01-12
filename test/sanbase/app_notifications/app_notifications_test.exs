@@ -9,6 +9,17 @@ defmodule Sanbase.AppNotificationsTest do
   alias Sanbase.Insight.Post
   alias Sanbase.UserList
 
+  setup_all do
+    subscriber = Sanbase.EventBus.AppNotificationsSubscriber
+
+    EventBus.subscribe({subscriber, subscriber.topics()})
+
+    on_exit(fn ->
+      Sanbase.EventBus.drain_topics(subscriber.topics(), 10_000)
+      EventBus.unsubscribe(subscriber)
+    end)
+  end
+
   describe "create_notification/1" do
     test "creates notification with valid attrs" do
       user = insert(:user)

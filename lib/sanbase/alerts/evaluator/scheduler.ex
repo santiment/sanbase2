@@ -15,6 +15,8 @@ defmodule Sanbase.Alert.Scheduler do
   alias Sanbase.Alert.Evaluator
   alias Sanbase.Alert
 
+  import Sanbase.Alert.EventEmitter, only: [emit_event: 3]
+
   require Logger
 
   defguard is_non_empty_map(map) when is_map(map) and map != %{}
@@ -316,6 +318,8 @@ defmodule Sanbase.Alert.Scheduler do
           {:ok, %{last_triggered: last_triggered}} = handle_send_results_list(user_trigger, list)
 
           user_trigger = update_trigger_last_triggered(user_trigger, last_triggered)
+
+          emit_event({:ok, user_trigger}, :alert_triggered, %{})
 
           {user_trigger, list}
       end

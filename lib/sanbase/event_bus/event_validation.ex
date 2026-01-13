@@ -61,11 +61,16 @@ defmodule Sanbase.EventBus.EventValidation do
   #############################################################################
   def valid?(%{
         event_type: :create_comment,
-        user_id: user_id,
         comment_id: comment_id,
-        entity: entity
+        user_id: user_id,
+        entity_type: entity_type,
+        entity_name: entity_name,
+        entity_owner_user_id: entity_owner_user_id
       }),
-      do: valid_integer_id?(user_id) and valid_integer_id?(comment_id) and is_atom(entity)
+      do:
+        valid_integer_id?(user_id) and valid_integer_id?(comment_id) and is_atom(entity_type) and
+          (is_nil(entity_name) or is_binary(entity_name)) and
+          valid_integer_id?(entity_owner_user_id)
 
   def valid?(%{
         event_type: event_type,
@@ -78,7 +83,7 @@ defmodule Sanbase.EventBus.EventValidation do
   #############################################################################
   ## Insight Events
   #############################################################################
-  def valid?(%{event_type: event_type, user_id: user_id, insight_id: insight_id})
+  def valid?(%{event_type: event_type, user_id: user_id, insight_id: insight_id, title: title})
       when event_type in [
              :create_insight,
              :update_insight,
@@ -86,18 +91,18 @@ defmodule Sanbase.EventBus.EventValidation do
              :publish_insight,
              :unpublish_insight
            ],
-      do: valid_integer_id?(user_id) and valid_integer_id?(insight_id)
+      do: valid_integer_id?(user_id) and valid_integer_id?(insight_id) and is_binary(title)
 
   #############################################################################
   ## Watchlist Events
   #############################################################################
-  def valid?(%{event_type: event_type, user_id: user_id, watchlist_id: watchlist_id})
+  def valid?(%{event_type: event_type, user_id: user_id, name: name, watchlist_id: watchlist_id})
       when event_type in [
              :create_watchlist,
              :update_watchlist,
              :delete_watchlist
            ],
-      do: valid_integer_id?(user_id) and valid_integer_id?(watchlist_id)
+      do: valid_integer_id?(user_id) and valid_integer_id?(watchlist_id) and is_binary(name)
 
   #############################################################################
   ## Apikey Events
@@ -202,12 +207,14 @@ defmodule Sanbase.EventBus.EventValidation do
         user_id: user_id,
         entity_id: entity_id,
         entity_type: entity_type,
+        entity_name: entity_name,
         entity_owner_user_id: entity_owner_user_id
       })
       when vote_event in [:create_vote, :remove_vote] do
     valid_integer_id?(user_id) and
       valid_integer_id?(entity_owner_user_id) and
-      valid_integer_id?(entity_id) and is_atom(entity_type)
+      valid_integer_id?(entity_id) and is_atom(entity_type) and
+      (is_nil(entity_name) or is_binary(entity_name))
   end
 
   #############################################################################

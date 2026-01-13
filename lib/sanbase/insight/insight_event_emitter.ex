@@ -18,6 +18,7 @@ defmodule Sanbase.Insight.EventEmitter do
       event_type: event_type,
       insight_id: insight.id,
       user_id: insight.user_id,
+      title: insight.title,
       insight_ready_state: insight.ready_state
     }
     |> notify()

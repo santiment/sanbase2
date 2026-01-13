@@ -109,6 +109,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
 
   defp create_notification(:publish_insight, user_ids, %{
          insight_id: insight_id,
+         title: title,
          user_id: author_id
        }) do
     {:ok, notification} =
@@ -118,7 +119,8 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
         entity_type: "insight",
         entity_id: insight_id,
         is_broadcast: false,
-        is_system_generated: false
+        is_system_generated: false,
+        json_data: %{title: title}
       })
 
     multi_insert_notification_read_status(user_ids, notification.id)
@@ -129,6 +131,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
          # Only public watchlists generate notifications
          is_public: true,
          watchlist_id: watchlist_id,
+         name: name,
          user_id: author_id
        }) do
     {:ok, notification} =
@@ -138,7 +141,8 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
         entity_type: "watchlist",
         entity_id: watchlist_id,
         is_broadcast: false,
-        is_system_generated: false
+        is_system_generated: false,
+        json_data: %{name: name}
       })
 
     multi_insert_notification_read_status(user_ids, notification.id)
@@ -150,6 +154,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
          %{
            is_public: true,
            watchlist_id: watchlist_id,
+           name: name,
            user_id: author_id,
            extra_in_memory_data: %{changes: changes}
          }
@@ -159,7 +164,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
     if changed_fields != [] do
       json_data =
         update_watchlist_list_additional_json_data(changes)
-        |> Map.merge(%{changed_fields: changed_fields})
+        |> Map.merge(%{name: name, changed_fields: changed_fields})
 
       {:ok, notification} =
         AppNotifications.create_notification(%{

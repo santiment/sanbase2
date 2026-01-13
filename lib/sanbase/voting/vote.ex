@@ -114,8 +114,7 @@ defmodule Sanbase.Vote do
     |> Repo.transaction()
     |> case do
       {:ok, %{create_or_increase_count: vote}} ->
-        {:ok, vote}
-        |> emit_event(:create_vote, extract_entity_info(vote))
+        {:ok, vote} |> maybe_emit_event(:create_vote)
 
       {:error, _name, error, _} ->
         {:error, error}
@@ -151,7 +150,8 @@ defmodule Sanbase.Vote do
       {:ok, %{select_if_exists: old_vote, decrease_count_or_destroy: vote}} ->
         # When deleted, everything in vote will be all nils, so use old_vote
         # If downvoting before upvoding previously, there is no old_vote
-        if old_vote, do: emit_event({:ok, old_vote}, :remove_vote, extract_entity_info(old_vote))
+        entity_info = extract_entity_info(old_vote)
+        if old_vote && entity_info, do: emit_event({:ok, old_vote}, :remove_vote, entity_info)
         {:ok, vote}
 
       {:error, _name, error, _} ->
@@ -221,41 +221,61 @@ defmodule Sanbase.Vote do
   # Private functions
 
   @entity_id_fields [
-    {:post_id, :insight, Post},
-    {:watchlist_id, :watchlist, UserList},
-    {:timeline_event_id, :timeline_event, TimelineEvent},
-    {:chart_configuration_id, :chart_configuration, Chart.Configuration},
-    {:user_trigger_id, :user_trigger, UserTrigger},
-    {:dashboard_id, :dashboard, Sanbase.Dashboards.Dashboard},
-    {:query_id, :query, Sanbase.Queries.Query}
+    {:post_id, :insight},
+    {:watchlist_id, :watchlist},
+    {:chart_configuration_id, :chart_configuration},
+    {:user_trigger_id, :user_trigger},
+    {:dashboard_id, :dashboard},
+    {:query_id, :query}
   ]
+  defp extract_entity_info(nil), do: nil
 
-  defp extract_entity_info(attrs) do
-    vote_attrs = Map.from_struct(attrs)
+  defp extract_entity_info(%__MODULE__{} = vote) do
+    # Find which entity_id_field is present in the vote_attrs
+    # and is not nil. There should be exactly one such
+    {entity_type, entity_id} =
+      Enum.find_value(@entity_id_fields, {nil, nil}, fn {entity_id_field, entity_type} ->
+        case Map.get(vote, entity_id_field) do
+          nil ->
+            nil
 
-    Enum.find_value(@entity_id_fields, %{}, fn {field, entity_type, schema} ->
-      case Map.get(vote_attrs, field) do
-        nil ->
-          nil
+          entity_id when is_integer(entity_id) ->
+            {entity_type, entity_id}
+        end
+      end)
 
-        entity_id ->
-          # Try to fetch one by one the firleds post_id, dashboard_id, etc.
-          # The one that is not nil is the entity type
-          entity_owner_user_id = get_entity_owner_user_id(schema, entity_id)
-
-          %{
-            entity_type: entity_type,
-            entity_id: entity_id,
-            entity_owner_user_id: entity_owner_user_id
-          }
-      end
-    end)
+    with false <- is_nil(entity_type),
+         false <- is_nil(entity_id),
+         %{user_id: _, name: _} = entity_data <- get_entity_data(entity_type, entity_id) do
+      %{
+        entity_type: entity_type,
+        entity_id: entity_id,
+        entity_name: entity_data.name,
+        entity_owner_user_id: entity_data.user_id
+      }
+    else
+      _ ->
+        nil
+    end
   end
 
-  defp get_entity_owner_user_id(schema, entity_id) do
-    case Repo.get(schema, entity_id) do
-      nil -> nil
-      entity -> entity.user_id
+  defp get_entity_data(entity_type, entity_id) do
+    case Sanbase.Entity.by_id(entity_type, entity_id) do
+      {:ok, entity} ->
+        user_id = entity.user_id
+
+        name =
+          case entity do
+            %{name: name} -> name
+            %{title: title} -> title
+            %{trigger: %{title: title}} -> title
+            _ -> nil
+          end
+
+        %{user_id: user_id, name: name}
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 
@@ -302,5 +322,15 @@ defmodule Sanbase.Vote do
       vote in __MODULE__,
       where: field(vote, ^entity_field) in ^entity_ids
     )
+  end
+
+  defp maybe_emit_event({:ok, vote}, event_type) do
+    if entity_info = extract_entity_info(vote) do
+      # For timeline_event_vote, we don't emit events. Timeline events       # For timeline_event_vote, we don't emit events. Timeline events are
+      # going to be derpecated and removed from code
+      emit_event({:ok, vote}, event_type, entity_info)
+    end
+
+    {:ok, vote}
   end
 end

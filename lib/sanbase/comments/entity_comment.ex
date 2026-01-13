@@ -69,11 +69,7 @@ defmodule Sanbase.Comments.EntityComment do
       {:ok, %{create_comment: comment}} -> {:ok, comment}
       {:error, _name, error, _} -> {:error, error}
     end
-    |> emit_event(:create_comment, %{
-      entity: entity_type,
-      entity_id: entity_id,
-      parent_id: parent_id
-    })
+    |> maybe_emit_event(:create_comment, entity_type, entity_id, parent_id)
   end
 
   @spec link(entity_type, entity_id, comment_id :: non_neg_integer()) ::
@@ -164,6 +160,26 @@ defmodule Sanbase.Comments.EntityComment do
   end
 
   # Private Functions
+
+  defp maybe_emit_event({:ok, comment}, event_type, entity_type, entity_id, parent_id) do
+    with false <- entity_type in [:timeline_event, :blockchain_address],
+         %{entity_owner_user_id: _, entity_name: _} = entity_data <-
+           get_entity_data(entity_type, entity_id) do
+      args =
+        Map.merge(entity_data, %{
+          entity_type: entity_type,
+          entity_id: entity_id,
+          parent_id: parent_id
+        })
+
+      emit_event({:ok, comment}, event_type, args)
+    end
+
+    {:ok, comment}
+  end
+
+  defp maybe_emit_event({:error, error}, _event_type, _entity_type, _entity_id, _parent_id),
+    do: {:error, error}
 
   defp maybe_add_entity_id_clause(query, _field, nil), do: query
 
@@ -318,4 +334,24 @@ defmodule Sanbase.Comments.EntityComment do
   end
 
   defp apply_cursor(query, _), do: query
+
+  defp get_entity_data(entity_type, entity_id) do
+    case Sanbase.Entity.by_id(entity_type, entity_id) do
+      {:ok, entity} ->
+        user_id = entity.user_id
+
+        name =
+          case entity do
+            %{name: name} -> name
+            %{title: title} -> title
+            %{trigger: %{title: title}} -> title
+            _ -> nil
+          end
+
+        %{entity_owner_user_id: user_id, entity_name: name}
+
+      _ ->
+        %{}
+    end
+  end
 end

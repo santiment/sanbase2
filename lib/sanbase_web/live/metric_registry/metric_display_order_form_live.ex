@@ -73,6 +73,8 @@ defmodule SanbaseWeb.MetricDisplayOrderFormLive do
 
   # Create a form with the display order data
   defp create_form(display_order, category_name, group_name) do
+    args_json = serialize_args_to_json(display_order.args)
+
     to_form(%{
       "ui_human_readable_name" => display_order.ui_human_readable_name,
       "category_id" => display_order.category_id,
@@ -81,8 +83,16 @@ defmodule SanbaseWeb.MetricDisplayOrderFormLive do
       "group_name" => group_name,
       "chart_style" => display_order.chart_style,
       "unit" => display_order.unit,
-      "description" => display_order.description
+      "description" => display_order.description,
+      "args" => args_json
     })
+  end
+
+  defp serialize_args_to_json(nil), do: ""
+  defp serialize_args_to_json(args) when args == %{}, do: ""
+
+  defp serialize_args_to_json(args) do
+    Jason.encode!(args, pretty: true)
   end
 
   @impl true
@@ -163,6 +173,13 @@ defmodule SanbaseWeb.MetricDisplayOrderFormLive do
         placeholder="Detailed description of what this metric measures and how it can be used"
       />
 
+      <.input
+        type="textarea"
+        field={@form[:args]}
+        label="Args (JSON)"
+        placeholder={~s|{"selector": {"slug": "ethereum"}}|}
+      />
+
       <.button phx-disable-with="Saving...">Save Changes</.button>
     </.simple_form>
     """
@@ -203,26 +220,46 @@ defmodule SanbaseWeb.MetricDisplayOrderFormLive do
         do: String.to_integer(params["group_id"]),
         else: nil
 
-    attrs = %{
-      ui_human_readable_name: params["ui_human_readable_name"],
-      category_id: category_id,
-      group_id: group_id,
-      chart_style: params["chart_style"],
-      unit: params["unit"],
-      description: params["description"]
-    }
+    case parse_args_json(params["args"]) do
+      {:ok, args} ->
+        attrs = %{
+          ui_human_readable_name: params["ui_human_readable_name"],
+          category_id: category_id,
+          group_id: group_id,
+          chart_style: params["chart_style"],
+          unit: params["unit"],
+          description: params["description"],
+          args: args
+        }
 
-    case DisplayOrder.do_update(display_order, attrs) do
-      {:ok, _updated} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "Metric display order updated successfully")
-         |> push_navigate(to: ~p"/admin/metric_registry/display_order/show/#{display_order.id}")}
+        case DisplayOrder.do_update(display_order, attrs) do
+          {:ok, _updated} ->
+            {:noreply,
+             socket
+             |> put_flash(:info, "Metric display order updated successfully")
+             |> push_navigate(
+               to: ~p"/admin/metric_registry/display_order/show/#{display_order.id}"
+             )}
 
-      {:error, changeset} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "Error updating metric: #{inspect(changeset.errors)}")}
+          {:error, changeset} ->
+            {:noreply,
+             socket
+             |> put_flash(:error, "Error updating metric: #{inspect(changeset.errors)}")}
+        end
+
+      {:error, reason} ->
+        {:noreply, socket |> put_flash(:error, "Invalid JSON in Args field: #{reason}")}
+    end
+  end
+
+  defp parse_args_json(nil), do: {:ok, %{}}
+  defp parse_args_json(""), do: {:ok, %{}}
+
+  defp parse_args_json(json_string) do
+    case Jason.decode(json_string) do
+      {:ok, args} when is_map(args) -> {:ok, args}
+      {:ok, _} -> {:error, "Args must be a JSON object"}
+      {:error, %Jason.DecodeError{} = error} -> {:error, Jason.DecodeError.message(error)}
     end
   end
 end

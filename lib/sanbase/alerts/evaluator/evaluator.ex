@@ -79,7 +79,6 @@ defmodule Sanbase.Alert.Evaluator do
     case result do
       {:ok, evaluated_trigger} ->
         fill_user_trigger_from_cached(user_trigger, evaluated_trigger)
-        |> emit_event(Trigger.triggered?(evaluated_trigger), :alert_triggered)
 
       {:error, {:disable_alert, reason}} ->
         Logger.info("Auto disable alert with id #{user_trigger.id}. Reason: #{inspect(reason)}")

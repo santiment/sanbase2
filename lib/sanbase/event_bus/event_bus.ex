@@ -57,11 +57,10 @@ defmodule Sanbase.EventBus do
 
   @register_at_start_subscribers @subscribers
                                  |> then(fn list ->
-                                   if true ==
-                                        Application.compile_env(
-                                          :sanbase,
-                                          [Sanbase.EventBus, :disable_app_notification_subscriber]
-                                        ) do
+                                   if Application.compile_env(
+                                        :sanbase,
+                                        [Sanbase.EventBus, :disable_app_notification_subscriber]
+                                      ) do
                                      List.delete(list, __MODULE__.AppNotificationsSubscriber)
                                    else
                                      list

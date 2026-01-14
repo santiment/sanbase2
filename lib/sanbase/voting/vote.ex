@@ -149,7 +149,7 @@ defmodule Sanbase.Vote do
     |> case do
       {:ok, %{select_if_exists: old_vote, decrease_count_or_destroy: vote}} ->
         # When deleted, everything in vote will be all nils, so use old_vote
-        # If downvoting before upvoding previously, there is no old_vote
+        # If downvoting before upvoting previously, there is no old_vote
         entity_info = extract_entity_info(old_vote)
         if old_vote && entity_info, do: emit_event({:ok, old_vote}, :remove_vote, entity_info)
         {:ok, vote}
@@ -326,8 +326,8 @@ defmodule Sanbase.Vote do
 
   defp maybe_emit_event({:ok, vote}, event_type) do
     if entity_info = extract_entity_info(vote) do
-      # For timeline_event_vote, we don't emit events. Timeline events       # For timeline_event_vote, we don't emit events. Timeline events are
-      # going to be derpecated and removed from code
+      # For timeline_event_vote, we don't emit events.
+      # Timeline events are going to be deprecated and removed from code
       emit_event({:ok, vote}, event_type, entity_info)
     end
 

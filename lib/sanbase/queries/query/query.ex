@@ -63,7 +63,7 @@ defmodule Sanbase.Queries.Query do
     # multiple times and the dashboard_query_mappings table has an id
     # which can be used to uniquely identify between the different instances
     # of the query. Each instance can have a different set of parameters overrides.
-    # Support a virutal field, so we can add this id to the query struct.
+    # Support a virtual field, so we can add this id to the query struct.
     field(:dashboard_query_mapping_id, :string, virtual: true)
 
     # Virtual fields

@@ -19,14 +19,14 @@ defmodule Sanbase.AppNotifications do
 
   Events are handled by all event subscribers, one of which is the
   Sanbase.EventBus.AppNotificationsSubscriber module. This module listens for all events
-  acrross the system and creates notifications when needed.
+  across the system and creates notifications when needed.
 
   To handle an event and create a notification from it, handling for that event needs
   to be added in the Sanbase.EventBus.AppNotificationsSubscriber.handle_event/3 function.
   Read the subscriber module documentation for more details how to create a notification.
 
   Notification creation process involves creating two separate record types:
-  - The notification itself - stored in the `sanbaes_notifications` table, handled by the
+  - The notification itself - stored in the `sanbase_notifications` table, handled by the
     Sanbase.AppNotifications.Notification module
   - One record per user that receives the notification (possibly hundreds/thousands) -
     stored in the `sanbase_notification_user_reads` table, handled by the
@@ -82,15 +82,16 @@ defmodule Sanbase.AppNotifications do
     limit = Keyword.get(opts, :limit, @default_limit)
     cursor = Keyword.get(opts, :cursor)
 
-    from(n in Notification,
-      join: nrs in NotificationReadStatus,
-      on: nrs.notification_id == n.id and nrs.user_id == ^user_id,
-      where: n.is_deleted == false
+    from(nrs in NotificationReadStatus,
+      join: n in Notification,
+      on: n.id == nrs.notification_id and n.is_deleted == false,
+      where: nrs.user_id == ^user_id
     )
+    |> order_by([nrs, n], desc: n.inserted_at, desc: n.id)
     |> maybe_apply_cursor(cursor)
-    |> order_by([n], desc: n.inserted_at, desc: n.id)
+    |> select([_nrs, notification], notification)
+    |> select_merge([nrs, _notification], %{read_at: nrs.read_at})
     |> limit(^limit)
-    |> select_merge([_n, nrs], %{read_at: nrs.read_at})
     |> Repo.all()
   end
 
@@ -149,8 +150,15 @@ defmodule Sanbase.AppNotifications do
 
   def wrap_with_cursor(notifications) when is_list(notifications) do
     # The notifications are sorted in descending order by inserted_at
-    before_datetime = notifications |> List.last() |> Map.get(:inserted_at)
-    after_datetime = notifications |> List.first() |> Map.get(:inserted_at)
+    before_datetime =
+      notifications
+      |> Enum.min_by(& &1.inserted_at, DateTime)
+      |> Map.get(:inserted_at)
+
+    after_datetime =
+      notifications
+      |> Enum.max_by(& &1.inserted_at, DateTime)
+      |> Map.get(:inserted_at)
 
     {:ok,
      %{
@@ -165,11 +173,13 @@ defmodule Sanbase.AppNotifications do
   defp maybe_apply_cursor(query, nil), do: query
 
   defp maybe_apply_cursor(query, %{type: :before, datetime: datetime}) do
-    from(n in query, where: n.inserted_at < ^datetime)
+    query
+    |> where([_notification_read_status, notification], notification.inserted_at < ^datetime)
   end
 
   defp maybe_apply_cursor(query, %{type: :after, datetime: datetime}) do
-    from(n in query, where: n.inserted_at > ^datetime)
+    query
+    |> where([_notification_read_status, notification], notification.inserted_at > ^datetime)
   end
 
   defp fetch_notification_for_user(user_id, notification_id) do

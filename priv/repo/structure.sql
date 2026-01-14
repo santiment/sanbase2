@@ -4026,7 +4026,9 @@ CREATE TABLE public.sanbase_notifications_read_status (
     id bigint NOT NULL,
     user_id bigint NOT NULL,
     notification_id bigint NOT NULL,
-    read_at timestamp(0) without time zone DEFAULT NULL::timestamp without time zone
+    read_at timestamp(0) without time zone DEFAULT NULL::timestamp without time zone,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
 );
 
 

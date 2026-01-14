@@ -10,8 +10,10 @@ defmodule Sanbase.AppNotificationsTest do
   alias Sanbase.UserList
 
   setup_all do
+    # The GenServer is already running (started by supervision tree)
+    # but not subscribed to EventBus (disabled in test.exs config).
+    # We only need to subscribe it to EventBus topics.
     subscriber = Sanbase.EventBus.AppNotificationsSubscriber
-
     EventBus.subscribe({subscriber, subscriber.topics()})
 
     on_exit(fn ->

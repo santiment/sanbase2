@@ -8942,6 +8942,20 @@ CREATE INDEX san_burn_credit_transactions_trx_hash_index ON public.san_burn_cred
 
 
 --
+-- Name: sanbase_notifications_inserted_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX sanbase_notifications_inserted_at_index ON public.sanbase_notifications USING btree (inserted_at);
+
+
+--
+-- Name: sanbase_notifications_read_status_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX sanbase_notifications_read_status_user_id_index ON public.sanbase_notifications_read_status USING btree (user_id);
+
+
+--
 -- Name: sanbase_notifications_read_status_user_id_notification_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11438,3 +11452,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20251216081737);
 INSERT INTO public."schema_migrations" (version) VALUES (20260106131955);
 INSERT INTO public."schema_migrations" (version) VALUES (20260106141954);
 INSERT INTO public."schema_migrations" (version) VALUES (20260114142311);
+INSERT INTO public."schema_migrations" (version) VALUES (20260114173809);

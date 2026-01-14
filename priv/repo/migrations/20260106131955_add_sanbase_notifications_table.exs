@@ -12,8 +12,9 @@ defmodule Sanbase.Repo.Migrations.AddSanbaseNotificationsTable do
       add(:user_id, references(:users, on_delete: :delete_all))
 
       # Entity reference (flexible, no explicit foreign keys)
+      add(:entity_id, :bigint)
+      add(:entity_name, :text)
       add(:entity_type, :string)
-      add(:entity_id, :integer)
 
       # Notification management
       add(:is_system_generated, :boolean, default: false, null: false)

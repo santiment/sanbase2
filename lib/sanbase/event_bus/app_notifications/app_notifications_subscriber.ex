@@ -117,10 +117,10 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
         type: "publish_insight",
         user_id: author_id,
         entity_type: "insight",
+        entity_name: title,
         entity_id: insight_id,
         is_broadcast: false,
-        is_system_generated: false,
-        json_data: %{title: title}
+        is_system_generated: false
       })
 
     multi_insert_notification_read_status(user_ids, notification.id)
@@ -140,9 +140,9 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
         user_id: author_id,
         entity_type: "watchlist",
         entity_id: watchlist_id,
+        entity_name: name,
         is_broadcast: false,
-        is_system_generated: false,
-        json_data: %{name: name}
+        is_system_generated: false
       })
 
     multi_insert_notification_read_status(user_ids, notification.id)
@@ -164,13 +164,14 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
     if changed_fields != [] do
       json_data =
         update_watchlist_list_additional_json_data(changes)
-        |> Map.merge(%{name: name, changed_fields: changed_fields})
+        |> Map.merge(%{changed_fields: changed_fields})
 
       {:ok, notification} =
         AppNotifications.create_notification(%{
           type: "update_watchlist",
           user_id: author_id,
           entity_type: "watchlist",
+          entity_name: name,
           entity_id: watchlist_id,
           is_broadcast: false,
           is_system_generated: false,

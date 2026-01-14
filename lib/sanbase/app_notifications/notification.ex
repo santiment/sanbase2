@@ -10,6 +10,7 @@ defmodule Sanbase.AppNotifications.Notification do
     :title,
     :content,
     :user_id,
+    :entity_name,
     :entity_type,
     :entity_id,
     :is_system_generated,
@@ -28,6 +29,7 @@ defmodule Sanbase.AppNotifications.Notification do
           title: String.t() | nil,
           content: String.t() | nil,
           user_id: pos_integer() | nil,
+          entity_name: String.t() | nil,
           entity_type: String.t() | nil,
           entity_id: integer() | nil,
           is_system_generated: boolean(),
@@ -46,6 +48,7 @@ defmodule Sanbase.AppNotifications.Notification do
     field(:title, :string)
     field(:content, :string)
 
+    field(:entity_name, :string)
     field(:entity_type, :string)
     field(:entity_id, :integer)
 

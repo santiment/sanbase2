@@ -3986,8 +3986,9 @@ CREATE TABLE public.sanbase_notifications (
     title text,
     content text,
     user_id bigint,
+    entity_id bigint,
+    entity_name text,
     entity_type character varying(255),
-    entity_id integer,
     is_system_generated boolean DEFAULT false NOT NULL,
     is_broadcast boolean DEFAULT false NOT NULL,
     grouping_key character varying(255),
@@ -11434,3 +11435,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20251215114741);
 INSERT INTO public."schema_migrations" (version) VALUES (20251216081737);
 INSERT INTO public."schema_migrations" (version) VALUES (20260106131955);
 INSERT INTO public."schema_migrations" (version) VALUES (20260106141954);
+INSERT INTO public."schema_migrations" (version) VALUES (20260114142311);

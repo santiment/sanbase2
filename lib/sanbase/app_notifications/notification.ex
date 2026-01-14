@@ -39,7 +39,7 @@ defmodule Sanbase.AppNotifications.Notification do
           is_deleted: boolean(),
           inserted_at: DateTime.t(),
           updated_at: DateTime.t(),
-          # virtual fields, filled for the quering user
+          # virtual fields, filled for the querying user
           read_at: DateTime.t() | nil
         }
 

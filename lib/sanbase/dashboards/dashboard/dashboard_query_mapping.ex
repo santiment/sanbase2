@@ -53,7 +53,7 @@ defmodule Sanbase.Dashboards.DashboardQueryMapping do
   Get all rows for a dashboard by its id.
 
   When fetcing a dashboard and its queries, the queries are not preloaded directly.
-  This is because we need to populate the dashboard_query_mapping_id virutal field
+  This is because we need to populate the dashboard_query_mapping_id virtual field
   for each query by using the id of the mapping here. This cannot be done via preload,
   so instead of this we are fetching all the rows for that dashboard from the mapping table
   here, building the `queries` list and putting it in the dashboard studcture.

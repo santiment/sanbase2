@@ -11,7 +11,7 @@ defmodule Sanbase.AppNotifications.NotificationReadStatus do
           id: pos_integer(),
           user_id: pos_integer(),
           notification_id: pos_integer(),
-          read_at: DateTime.t()
+          read_at: DateTime.t() | nil
         }
 
   schema "sanbase_notifications_read_status" do

@@ -46,7 +46,7 @@ defmodule Sanbase.EventBus.NotificationsSubscriber do
   end
 
   def handle_info({:DOWN, ref, :process, _pid, reason}, state) when is_reference(ref) do
-    Logger.error("Metric registry notification task failed with reason: #{inspect(reason)}")
+    Logger.error("AppNotifications notification task failed with reason: #{inspect(reason)}")
     {:noreply, state}
   end
 

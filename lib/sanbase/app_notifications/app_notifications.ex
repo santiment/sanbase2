@@ -127,7 +127,7 @@ defmodule Sanbase.AppNotifications do
   def set_read_status(user_id, notification_id, is_read)
       when is_integer(user_id) and is_integer(notification_id) and is_boolean(is_read) do
     with %Notification{} = notification <- fetch_notification_for_user(user_id, notification_id) do
-      # Do not update read_at if it is already set. The read_at is a virutal field
+      # Do not update read_at if it is already set. The read_at is a virtual field
       # populated by fetch_notification_for_user/2
       read_at = if is_read, do: notification.read_at || DateTime.utc_now(:second), else: nil
 

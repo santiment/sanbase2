@@ -1,14 +1,20 @@
 defmodule Sanbase.Repo.Migrations.AddSanbaseNotificationsTable do
   use Ecto.Migration
 
+  @notifications_table :sanbase_notifications
   def change do
-    create table(:sanbase_notifications) do
+    create table(@notifications_table) do
       # Core notification fields
       add(:type, :string, null: false)
       add(:title, :text)
       add(:content, :text)
 
-      # User relationships
+      # Who created the notification (nullable for broadcast notifications)
+      # This is not who the notification will be shown to. This is the user
+      # who made the action (comment, vote, publish) that sparked the notification.
+      # The receiver of the notification is stored in the sanbase_notifications_read_status
+      # table, one row per receiver (mostly the followers of the user who made the action).
+      # So it's more important to have index on that other table for querying notifications for a user.
       add(:user_id, references(:users, on_delete: :delete_all))
 
       # Entity reference (flexible, no explicit foreign keys)
@@ -46,6 +52,8 @@ defmodule Sanbase.Repo.Migrations.AddSanbaseNotificationsTable do
 
       # By default it is nil, meaning the notification is unread.
       add(:read_at, :utc_datetime, null: true, default: nil)
+
+      timestamps()
     end
 
     create(unique_index(:sanbase_notifications_read_status, [:user_id, :notification_id]))

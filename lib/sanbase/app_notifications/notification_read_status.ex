@@ -19,6 +19,8 @@ defmodule Sanbase.AppNotifications.NotificationReadStatus do
     belongs_to(:notification, Notification)
 
     field(:read_at, :utc_datetime)
+
+    timestamps(type: :utc_datetime)
   end
 
   @doc """

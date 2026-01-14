@@ -63,6 +63,7 @@ defmodule SanbaseWeb.Graphql.AppNotificationApiTest do
           type: "create_watchlist",
           user_id: author.id,
           entity_type: "watchlist",
+          entity_name: watchlist.name,
           entity_id: watchlist.id
         })
 
@@ -116,6 +117,7 @@ defmodule SanbaseWeb.Graphql.AppNotificationApiTest do
             type: "create_watchlist",
             user_id: author.id,
             entity_type: "watchlist",
+            entity_name: watchlist.name,
             entity_id: watchlist.id
           })
 
@@ -141,14 +143,18 @@ defmodule SanbaseWeb.Graphql.AppNotificationApiTest do
     end
 
     test "supports cursor pagination", %{conn: conn, follower: follower, author: author} do
-      for i <- 1..5 do
-        watchlist = insert(:watchlist, user: author, name: "Watchlist #{i}")
+      watchlists =
+        for i <- 1..5 do
+          insert(:watchlist, user: author, name: "Watchlist #{i}")
+        end
 
+      for {watchlist, i} <- Enum.with_index(watchlists, 1) do
         {:ok, notification} =
           AppNotifications.create_notification(%{
             type: "create_watchlist",
             user_id: author.id,
             entity_type: "watchlist",
+            entity_name: watchlist.name,
             entity_id: watchlist.id
           })
 
@@ -167,10 +173,18 @@ defmodule SanbaseWeb.Graphql.AppNotificationApiTest do
           })
       end
 
+      Process.sleep(100)
+      #
+      # There are 5 notifications:
+      # n5, n4, n3, n2, n1 (n5 is the most recent, with inserted_at the closest to now)
+      # The first query will fetch without cursor n5 and n4
+      # The `cursor` values contain the first and last inserted_at timestamps of the fetched notifications
+      #
+      # The second query will fetch all with BEFORE the inserted_at of n4, which are n3, n2 and n1
       first_query = """
       {
         getCurrentUserNotifications(limit: 2) {
-          notifications { id }
+          notifications { id entityName entityType entityId insertedAt }
           cursor { before after }
         }
       }
@@ -182,18 +196,27 @@ defmodule SanbaseWeb.Graphql.AppNotificationApiTest do
 
       second_query = """
       {
-        getCurrentUserNotifications(limit: 2, cursor: {type: BEFORE, datetime: "#{cursor_before}"}) {
-          notifications { id }
+        getCurrentUserNotifications(cursor: {type: BEFORE, datetime: "#{cursor_before}"}) {
+          notifications { id entityName entityType entityId insertedAt }
         }
       }
       """
 
       second_result = execute_query(conn, second_query, "getCurrentUserNotifications")
-      assert length(second_result["notifications"]) == 2
+      assert length(second_result["notifications"]) == 3
 
       first_ids = Enum.map(first_result["notifications"], & &1["id"])
       second_ids = Enum.map(second_result["notifications"], & &1["id"])
+
       assert MapSet.disjoint?(MapSet.new(first_ids), MapSet.new(second_ids))
+
+      first_entity_ids = Enum.map(first_result["notifications"], & &1["entityId"])
+      second_entity_ids = Enum.map(second_result["notifications"], & &1["entityId"])
+
+      assert MapSet.equal?(
+               MapSet.new(first_entity_ids ++ second_entity_ids),
+               MapSet.new(Enum.map(watchlists, & &1.id))
+             )
     end
 
     test "requires authentication" do
@@ -221,6 +244,7 @@ defmodule SanbaseWeb.Graphql.AppNotificationApiTest do
           type: "create_watchlist",
           user_id: author.id,
           entity_type: "watchlist",
+          entity_name: watchlist.name,
           entity_id: watchlist.id
         })
 

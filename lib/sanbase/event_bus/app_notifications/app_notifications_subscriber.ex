@@ -8,11 +8,11 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
   passing the notification type, the list of user ids that should receive the notification
   and the event data itself.
 
-  The create_notification/3 function should follow the convetion that it:
+  The create_notification/3 function should follow the convention that it:
   - creates the Notification record for this notification
-  - creates an anonyoumous function that takes a user_id and returns a NotificationReadStatus struct
+  - creates an anonymous function that takes a user_id and returns a NotificationReadStatus struct
   - calls the multi_insert_notifications/2 function, passing the list of user ids and the anonymous function
-    which will create the NotificaitonUserRead struct for each user.
+    which will create the NotificationUserRead struct for each user.
 
 
   """
@@ -97,7 +97,8 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
   end
 
   defp followers_user_ids(user_id) do
-    Sanbase.Accounts.UserFollower.followed_by_user_ids(user_id)
+    Sanbase.Accounts.UserFollower.followers_of(user_id)
+    |> Enum.map(& &1.id)
   end
 
   ## Insight notifications

@@ -5,7 +5,7 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
-  require Sanbase.Utils.Config
+  alias Sanbase.Utils.Config
 
   setup do
     project1 = insert(:random_erc20_project)

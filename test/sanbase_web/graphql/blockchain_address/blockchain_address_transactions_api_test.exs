@@ -4,8 +4,6 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressTransactionsApiTest do
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
 
-  require Sanbase.Utils.Config
-
   setup do
     project = insert(:random_project)
     {:ok, project: project}

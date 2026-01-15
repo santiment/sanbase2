@@ -1,7 +1,7 @@
 defmodule Elixir.Sanbase.Repo.Migrations.MigrateObanV11 do
   use Ecto.Migration
 
-  require Sanbase.Utils.Config
+  alias Sanbase.Utils.Config
 
   def up do
     Oban.Migrations.up(prefix: get_prefix())

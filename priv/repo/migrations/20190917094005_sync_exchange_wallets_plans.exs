@@ -6,8 +6,6 @@ defmodule Sanbase.Repo.Migrations.SyncExchangeWalletsPlans do
   alias Sanbase.Billing.{Product, Plan}
   alias Sanbase.Repo
 
-  require Sanbase.Utils.Config
-
   def up do
     setup()
     stripe_api_key = stripe_api_key()

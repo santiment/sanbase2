@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.RepoReaderControllerTest do
   use SanbaseWeb.ConnCase, async: false
 
-  require Sanbase.Utils.Config
+  alias Sanbase.Utils.Config
 
   setup do
     secret = Config.module_get(Sanbase.RepoReader, :projects_data_endpoint_secret)

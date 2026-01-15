@@ -355,7 +355,7 @@ defmodule Sanbase.SentimentTest do
                  "volume_consumed"
                )
              end) =~
-               "Error status 404 fetching sentiment volume_consumed for %{slug: \"santiment\"}\n"
+               "Error status 404 fetching sentiment volume_consumed for %{slug: \"santiment\"}"
     end
 
     test "response with slug: error" do

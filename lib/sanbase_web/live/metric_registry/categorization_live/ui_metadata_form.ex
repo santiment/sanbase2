@@ -342,18 +342,13 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataForm do
 
   defp convert_json_args(%{"args" => args_string} = params) when is_binary(args_string) do
     args =
-      cond do
-        "" == args_string ->
-          %{}
-
-        is_binary(args_string) ->
-          case Jason.decode(args_string) do
-            {:ok, json_map} -> json_map
-            {:error, _} -> args_string
-          end
-
-        true ->
-          args_string
+      if args_string == "" do
+        %{}
+      else
+        case Jason.decode(args_string) do
+          {:ok, json_map} -> json_map
+          {:error, _} -> args_string
+        end
       end
 
     Map.put(params, "args", args)

@@ -1,8 +1,6 @@
 defmodule Sanbase.Mailer do
   use Oban.Worker, queue: :email_queue
 
-  require Logger
-
   import Sanbase.Email.Template
 
   alias Sanbase.Accounts.User

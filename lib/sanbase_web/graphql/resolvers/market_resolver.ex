@@ -1,6 +1,4 @@
 defmodule SanbaseWeb.Graphql.Resolvers.MarketResolver do
-  require Logger
-
   import Sanbase.Utils.ErrorHandling,
     only: [maybe_handle_graphql_error: 2, handle_graphql_error: 3]
 

@@ -1,6 +1,4 @@
 defmodule SanbaseWeb.Graphql.Resolvers.SheetsTemplateResolver do
-  require Logger
-
   alias Sanbase.SheetsTemplate
   alias Sanbase.Billing.{Subscription, Product}
 

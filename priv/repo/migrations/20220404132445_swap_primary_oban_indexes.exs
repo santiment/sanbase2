@@ -1,7 +1,7 @@
 defmodule Sanbase.Repo.Migrations.SwapPrimaryObanIndexes do
   use Ecto.Migration
 
-  require Sanbase.Utils.Config, as: Config
+  require Sanbase.Utils.Config
 
   @disable_ddl_transaction true
   @disable_migration_lock true

@@ -1,6 +1,4 @@
 defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
-  require Logger
-
   import Absinthe.Resolution.Helpers, except: [async: 1]
 
   import Sanbase.Project, only: [infrastructure_to_blockchain: 1]

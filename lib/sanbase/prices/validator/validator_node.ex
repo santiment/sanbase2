@@ -8,8 +8,7 @@ defmodule Sanbase.Price.Validator.Node do
 
   alias Sanbase.Project
   alias Sanbase.Price
-
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   def child_spec(opts) do
     name = Keyword.fetch!(opts, :name)

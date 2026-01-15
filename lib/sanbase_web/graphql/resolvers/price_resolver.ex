@@ -1,6 +1,4 @@
 defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
-  require Logger
-
   import SanbaseWeb.Graphql.Helpers.CalibrateInterval, only: [calibrate: 6]
 
   alias Sanbase.Price

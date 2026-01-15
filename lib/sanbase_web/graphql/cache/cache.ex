@@ -9,8 +9,6 @@ defmodule SanbaseWeb.Graphql.Cache do
   # alias SanbaseWeb.Graphql.ConCacheProvider, as: CacheProvider
   alias SanbaseWeb.Graphql.CachexProvider, as: CacheProvider
 
-  require Logger
-
   @ttl 300
   @max_ttl_offset 120
   @cache_name :graphql_cache

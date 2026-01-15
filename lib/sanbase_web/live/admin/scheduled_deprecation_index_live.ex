@@ -1,6 +1,5 @@
 defmodule SanbaseWeb.ScheduledDeprecationIndexLive do
   use SanbaseWeb, :live_view
-  require Logger
 
   alias Sanbase.Notifications
   import SanbaseWeb.CoreComponents

@@ -8,8 +8,6 @@ defmodule SanbaseWeb.ConnectionDrainer do
   """
   use GenServer
 
-  require Logger
-
   def child_spec(options) when is_list(options) do
     ranch_ref = Keyword.fetch!(options, :ranch_ref)
     shutdown = Keyword.fetch!(options, :shutdown)

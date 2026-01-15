@@ -9,8 +9,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
   alias Sanbase.Clickhouse.TopHolders
 
-  require Logger
-
   alias SanbaseWeb.Graphql.Resolvers.MetricResolver
 
   def realtime_top_holders(_root, %{slug: slug, page: page, page_size: page_size}, _resolution) do

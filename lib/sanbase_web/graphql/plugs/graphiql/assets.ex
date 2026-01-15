@@ -73,13 +73,8 @@ defmodule SanbaseWeb.Graphql.GraphiQL.Assets do
   ]
 
   def assets_config do
-    case @config do
-      nil ->
-        @default_config
-
-      config ->
-        Keyword.merge(@default_config, Keyword.get(config, :assets, []))
-    end
+    config = @config || []
+    Keyword.merge(@default_config, Keyword.get(config, :assets, []))
   end
 
   def get_assets do

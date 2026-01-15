@@ -6,8 +6,6 @@ defmodule Sanbase.SheetsTemplate do
 
   import Ecto.Changeset
 
-  require Logger
-
   alias Sanbase.Repo
 
   schema "sheets_templates" do

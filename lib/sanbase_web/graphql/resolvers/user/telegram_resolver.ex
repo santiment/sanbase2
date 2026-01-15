@@ -1,6 +1,4 @@
 defmodule SanbaseWeb.Graphql.Resolvers.TelegramResolver do
-  require Logger
-
   alias Sanbase.Telegram
 
   def is_telegram_chat_id_valid(_root, %{chat_id: chat_id}, _resolution) do

@@ -1,6 +1,4 @@
 defmodule Sanbase.Math do
-  require Integer
-
   @epsilon 1.0e-6
 
   defguard float_eq?(l, r) when abs(l - r) <= @epsilon

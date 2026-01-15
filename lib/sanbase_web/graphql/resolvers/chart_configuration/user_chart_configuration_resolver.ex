@@ -1,6 +1,4 @@
 defmodule SanbaseWeb.Graphql.Resolvers.UserChartConfigurationResolver do
-  require Logger
-
   alias Sanbase.Accounts.User
 
   def chart_configurations(%User{} = user, _args, _context) do

@@ -10,7 +10,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
   alias Sanbase.Cache.RehydratingCache
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
-  require Logger
   @ttl 7200
   @refresh_time_delta 1800
   @refresh_time_max_offset 1800

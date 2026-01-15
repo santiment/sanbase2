@@ -1,5 +1,4 @@
 defmodule Sanbase.Comments.Notification do
-  require Logger
   import Ecto.Query
 
   alias Sanbase.Comment.{

@@ -3,8 +3,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ContractsReportScript do
   Exports the CoinMarketCap metadata v2 to a JSON file.
   """
 
-  require Logger
-
   import Sanbase.ExternalServices.Coinmarketcap.Utils,
     only: [
       san_contract_to_project_map: 0,

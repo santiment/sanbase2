@@ -12,6 +12,8 @@ defmodule Sanbase.ClickhouseRepo.ReadOnly do
   ClickhouseRepo functions, but the connection pool used is the one configured
   by this module
   """
+  alias Sanbase.Utils.Config
+
   env = Mix.env()
 
   default_dynamic_repo =
@@ -24,8 +26,6 @@ defmodule Sanbase.ClickhouseRepo.ReadOnly do
     adapter: adapter,
     read_only: true,
     default_dynamic_repo: default_dynamic_repo
-
-  require Sanbase.Utils.Config, as: Config
 
   def init(_, opts) do
     pool_size = Config.module_get(__MODULE__, :pool_size) |> Sanbase.Math.to_integer()

@@ -1,6 +1,4 @@
 defmodule SanbaseWeb.Graphql.Resolvers.UserFollowerResolver do
-  require Logger
-
   alias Sanbase.Accounts.UserFollower
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1]
 

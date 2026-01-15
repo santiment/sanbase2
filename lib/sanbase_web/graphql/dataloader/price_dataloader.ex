@@ -1,8 +1,6 @@
 defmodule SanbaseWeb.Graphql.PriceDataloader do
   alias SanbaseWeb.Graphql.Cache
 
-  require Logger
-
   @max_concurrency 30
 
   def data() do

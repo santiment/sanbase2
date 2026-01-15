@@ -21,8 +21,6 @@ defmodule Sanbase.Clickhouse.Github do
   alias Sanbase.ClickhouseRepo
   alias Sanbase.Math
 
-  require Logger
-
   @doc ~s"""
   Return the number of all github events for a given organization and time period
   """

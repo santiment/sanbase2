@@ -1,6 +1,5 @@
 defmodule Sanbase.Application.Web do
   import Sanbase.ApplicationUtils
-  require Logger
 
   def init() do
     :ok

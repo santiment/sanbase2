@@ -1,9 +1,8 @@
 defmodule Sanbase.Clickhouse.Exchanges do
+  alias Sanbase.ClickhouseRepo, as: ClickhouseRepo
   alias Sanbase.Clickhouse.MetricAdapter.Registry
 
   import Sanbase.Metric.SqlQuery.Helper, only: [asset_id_filter: 2]
-
-  require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
   def top_exchanges_by_balance(%{slug: slug}, limit, _opts \\ []) when is_binary(slug) do
     query_struct = top_exchanges_by_balance_query(slug, limit)

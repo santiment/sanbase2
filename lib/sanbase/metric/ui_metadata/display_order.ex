@@ -1,8 +1,6 @@
 defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
   use Ecto.Schema
 
-  require Logger
-
   import Ecto.Changeset
   import Ecto.Query
 

@@ -1,6 +1,4 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ProjectSignalsResolver do
-  require Logger
-
   alias Sanbase.Project
   alias Sanbase.Signal
 

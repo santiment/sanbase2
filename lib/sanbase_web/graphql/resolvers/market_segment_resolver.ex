@@ -1,6 +1,4 @@
 defmodule SanbaseWeb.Graphql.Resolvers.MarketSegmentResolver do
-  require Logger
-
   alias Sanbase.Project
   alias Sanbase.Model.MarketSegment
 

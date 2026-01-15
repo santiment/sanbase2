@@ -8,8 +8,6 @@ defmodule Sanbase.Transfers.EthTransfers do
 
   alias Sanbase.ClickhouseRepo
 
-  require Logger
-
   @type wallets :: list(String.t())
 
   @table "eth_transfers"

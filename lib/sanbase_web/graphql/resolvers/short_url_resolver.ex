@@ -1,8 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ShortUrlResolver do
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
 
-  require Logger
-
   def create_short_url(_root, %{} = args, %{
         context: %{auth: %{current_user: current_user}}
       }) do

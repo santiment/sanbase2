@@ -2,8 +2,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.TableConfigurationResolver do
   alias Sanbase.TableConfiguration
   alias Sanbase.Accounts.User
 
-  require Logger
-
   # Queries
 
   def table_configuration(_root, %{id: id}, resolution) do

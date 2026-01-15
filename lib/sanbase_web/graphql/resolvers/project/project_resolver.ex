@@ -1,7 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   require Logger
 
-  import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3]
   import Absinthe.Resolution.Helpers, except: [async: 1]
   import SanbaseWeb.Graphql.Helpers.Async
 
@@ -251,25 +250,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   defp calculate_average_github_activity(%Project{} = project, %{days: days}) do
-    case Project.github_organizations(project) do
-      {:ok, organizations} ->
-        month_ago = Timex.shift(Timex.now(), days: -days)
+    {:ok, organizations} = Project.github_organizations(project)
+    month_ago = Timex.shift(Timex.now(), days: -days)
 
-        case Sanbase.Clickhouse.Github.total_github_activity(
-               organizations,
-               month_ago,
-               Timex.now()
-             ) do
-          {:ok, organizations_activity_map} ->
-            total_activity = organizations_activity_map |> Map.values() |> Enum.sum()
-            {:ok, total_activity / days}
+    case Sanbase.Clickhouse.Github.total_github_activity(
+           organizations,
+           month_ago,
+           Timex.now()
+         ) do
+      {:ok, organizations_activity_map} ->
+        total_activity = organizations_activity_map |> Map.values() |> Enum.sum()
+        {:ok, total_activity / days}
 
-          _ ->
-            {:ok, 0}
-        end
-
-      {:error, error} ->
-        {:error, handle_graphql_error("average github activity", project.slug, error)}
+      _ ->
+        {:ok, 0}
     end
   rescue
     e ->

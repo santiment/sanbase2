@@ -1,6 +1,4 @@
 defmodule SanbaseWeb.Graphql.Resolvers.UserSettingsResolver do
-  require Logger
-
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1, changeset_errors_string: 1]
 
   alias Sanbase.Accounts.{User, UserSettings}

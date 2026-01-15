@@ -941,10 +941,10 @@ defmodule Sanbase.RunExamples do
 
     Sanbase.Ecosystem.Metric.aggregated_timeseries_data(
       ["ethereum"],
+      args.metric,
       args.from,
       args.to,
-      args.metric,
-      :sum
+      aggregation: :sum
     )
   end
 end

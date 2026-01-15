@@ -1,8 +1,8 @@
 defmodule SanbaseWeb.RepoReaderController do
   use SanbaseWeb, :controller
 
-  require Sanbase.Utils.Config, as: Config
   require Logger
+  alias Sanbase.Utils.Config
 
   def validator_webhook(conn, params) do
     Logger.info(

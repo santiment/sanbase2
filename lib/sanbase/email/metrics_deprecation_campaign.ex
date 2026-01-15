@@ -17,8 +17,10 @@ defmodule Sanbase.Email.MetricsDeprecationCampaign do
   :ok = Sanbase.Email.MetricsDeprecationCampaign.send_simple_initial_campaign(10328716)
   """
 
-  require Logger
   import Ecto.Query
+
+  require Logger
+  alias Sanbase.Utils.Config
 
   alias Sanbase.Billing.Subscription
   alias Sanbase.Accounts.User
@@ -512,8 +514,6 @@ defmodule Sanbase.Email.MetricsDeprecationCampaign do
   end
 
   defp has_mailjet_params?() do
-    require Sanbase.Utils.Config, as: Config
-
     has? =
       not is_nil(Config.module_get(Sanbase.TemplateMailer, :api_key)) and
         not is_nil(Config.module_get(Sanbase.TemplateMailer, :secret))
@@ -569,8 +569,6 @@ defmodule Sanbase.Email.MetricsDeprecationCampaign do
   end
 
   defp mailjet_basic_auth do
-    require Sanbase.Utils.Config, as: Config
-
     Base.encode64(
       Config.module_get!(Sanbase.TemplateMailer, :api_key) <>
         ":" <> Config.module_get!(Sanbase.TemplateMailer, :secret)

@@ -3,8 +3,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.AlertsHistoricalActivityResolver do
 
   alias Sanbase.Alert.HistoricalActivity
 
-  require Logger
-
   def fetch_historical_activity_for(_root, args, %{
         context: %{auth: %{current_user: current_user}}
       }) do

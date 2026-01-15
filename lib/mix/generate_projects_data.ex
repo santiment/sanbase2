@@ -3,8 +3,6 @@ defmodule Sanbase.Mix.GenerateProjectsData do
   import Ecto.Query
   import Sanbase.BlockchainAddress, only: [ethereum_regex: 0, bitcoin_regex: 0]
 
-  require Jason.Helpers
-
   @min_marketcap 100_000_000
 
   def run(path) do

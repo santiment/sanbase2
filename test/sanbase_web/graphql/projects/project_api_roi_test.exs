@@ -6,8 +6,6 @@ defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
-  require Sanbase.Mock
-
   setup do
     insert(:project, %{slug: "ethereum", ticker: "ETH"})
 

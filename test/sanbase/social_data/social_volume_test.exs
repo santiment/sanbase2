@@ -55,7 +55,7 @@ defmodule Sanbase.SocialVolumeTest do
       assert capture_log(fn ->
                SocialVolume.social_volume(%{slug: "santiment"}, from, to, "1h", :telegram)
              end) =~
-               "Error status 404 fetching social volume for %{slug: \"santiment\"}\n"
+               "Error status 404 fetching social volume for %{slug: \"santiment\"}"
     end
 
     test "response with slug: error" do
@@ -67,7 +67,7 @@ defmodule Sanbase.SocialVolumeTest do
       assert capture_log(fn ->
                SocialVolume.social_volume(%{slug: "santiment"}, from, to, "1h", :telegram)
              end) =~
-               "Cannot fetch social volume data for %{slug: \"santiment\"}: :econnrefused\n"
+               "Cannot fetch social volume data for %{slug: \"santiment\"}: :econnrefused"
     end
 
     test "response with text: success" do
@@ -103,7 +103,7 @@ defmodule Sanbase.SocialVolumeTest do
       assert capture_log(fn ->
                SocialVolume.social_volume(%{text: "btc moon"}, from, to, "6h", :reddit)
              end) =~
-               "Error status 404 fetching social volume for %{text: \"btc moon\"}\n"
+               "Error status 404 fetching social volume for %{text: \"btc moon\"}"
     end
 
     test "response with text: error" do
@@ -115,7 +115,7 @@ defmodule Sanbase.SocialVolumeTest do
       assert capture_log(fn ->
                SocialVolume.social_volume(%{text: "btc moon"}, from, to, "6h", :discord)
              end) =~
-               "Cannot fetch social volume data for %{text: \"btc moon\"}: :econnrefused\n"
+               "Cannot fetch social volume data for %{text: \"btc moon\"}: :econnrefused"
     end
 
     test "all sources in total" do

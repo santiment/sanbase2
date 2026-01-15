@@ -54,7 +54,7 @@ defmodule Sanbase.SocialDominanceTest do
         end
 
         assert capture_log(result) =~
-                 "Error status 404 fetching social dominance for project with slug \"santiment\"}\n"
+                 "Error status 404 fetching social dominance for project with slug \"santiment\"}"
       end)
     end
 
@@ -75,7 +75,7 @@ defmodule Sanbase.SocialDominanceTest do
         end
 
         assert capture_log(result) =~
-                 "Cannot fetch social dominance data for project with slug \"santiment\"}: :econnrefused\n"
+                 "Cannot fetch social dominance data for project with slug \"santiment\"}: :econnrefused"
       end)
     end
   end

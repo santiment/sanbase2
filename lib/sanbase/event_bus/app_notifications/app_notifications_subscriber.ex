@@ -94,6 +94,34 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
     state
   end
 
+  defp handle_event(
+         %{
+           data: %{event_type: :create_comment, entity_owner_user_id: entity_owner_user_id} = data
+         },
+         event_shadow,
+         state
+       )
+       when is_integer(entity_owner_user_id) do
+    create_notification(:create_comment, [entity_owner_user_id], data)
+
+    EventBus.mark_as_completed({__MODULE__, event_shadow})
+    state
+  end
+
+  defp handle_event(
+         %{
+           data: %{event_type: :create_vote, entity_owner_user_id: entity_owner_user_id} = data
+         },
+         event_shadow,
+         state
+       )
+       when is_integer(entity_owner_user_id) do
+    create_notification(:create_vote, [entity_owner_user_id], data)
+
+    EventBus.mark_as_completed({__MODULE__, event_shadow})
+    state
+  end
+
   defp handle_event(_event, event_shadow, state) do
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
@@ -184,6 +212,66 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
 
       multi_insert_notification_read_status(user_ids, notification.id)
     end
+  end
+
+  defp create_notification(:create_comment, [], _data), do: :ok
+
+  defp create_notification(
+         :create_comment,
+         user_ids,
+         %{
+           comment_id: comment_id,
+           entity_type: entity_type,
+           entity_id: entity_id,
+           entity_name: entity_name,
+           user_id: author_id
+         }
+       ) do
+    with %Sanbase.Comment{content: content} <- Sanbase.Comment.by_id(comment_id) do
+      comment_preview = String.slice(content, 0, 150)
+
+      {:ok, notification} =
+        AppNotifications.create_notification(%{
+          type: "create_comment",
+          user_id: author_id,
+          # A comment can be attached to an entity of any type - watchlist, insight, chart, etc.
+          entity_type: to_string(entity_type),
+          entity_name: entity_name,
+          entity_id: entity_id,
+          is_broadcast: false,
+          is_system_generated: false,
+          json_data: %{"comment_preview" => comment_preview}
+        })
+
+      # There's one receiver - the owner of the entity - but we can reuse
+      # the multi_insert_notification_read_status function to insert the notification read status
+      multi_insert_notification_read_status(user_ids, notification.id)
+    end
+  end
+
+  defp create_notification(
+         :create_vote,
+         user_ids,
+         %{
+           entity_type: entity_type,
+           entity_id: entity_id,
+           entity_name: entity_name,
+           user_id: author_id
+         }
+       ) do
+    {:ok, notification} =
+      AppNotifications.create_notification(%{
+        type: "create_vote",
+        user_id: author_id,
+        entity_type: to_string(entity_type),
+        entity_name: entity_name,
+        entity_id: entity_id,
+        is_broadcast: false,
+        is_system_generated: false,
+        json_data: %{}
+      })
+
+    multi_insert_notification_read_status(user_ids, notification.id)
   end
 
   defp multi_insert_notification_read_status(user_ids, notification_id) do

@@ -6,8 +6,10 @@ defmodule Sanbase.AppNotificationsTest do
   alias Sanbase.AppNotifications
   alias Sanbase.AppNotifications.Notification
   alias Sanbase.Accounts.UserFollower
+  alias Sanbase.Comments.EntityComment
   alias Sanbase.Insight.Post
   alias Sanbase.UserList
+  alias Sanbase.Vote
 
   setup_all do
     # The GenServer is already running (started by supervision tree)
@@ -541,6 +543,61 @@ defmodule Sanbase.AppNotificationsTest do
 
       # Still no notifications
       assert AppNotifications.list_notifications_for_user(follower.id) == []
+    end
+
+    test "create_comment notifies only entity owner with preview", %{
+      author: author
+    } do
+      commenter = insert(:user)
+      other_user = insert(:user)
+      post = insert(:post, user: author)
+
+      {:ok, published_post} = Post.publish(post.id, author.id)
+
+      content = String.duplicate("a", 160)
+
+      {:ok, _comment} =
+        EntityComment.create_and_link(:insight, published_post.id, commenter.id, nil, content)
+
+      :timer.sleep(100)
+
+      owner_notifications = AppNotifications.list_notifications_for_user(author.id)
+      assert length(owner_notifications) == 1
+
+      [notification] = owner_notifications
+      assert notification.type == "create_comment"
+      assert notification.entity_type == "insight"
+      assert notification.entity_id == published_post.id
+      assert notification.user_id == commenter.id
+      assert notification.json_data["comment_preview"] == String.slice(content, 0, 150)
+
+      assert AppNotifications.list_notifications_for_user(commenter.id) == []
+      assert AppNotifications.list_notifications_for_user(other_user.id) == []
+    end
+
+    test "create_vote notifies only entity owner", %{author: author} do
+      voter = insert(:user)
+      other_user = insert(:user)
+
+      {:ok, watchlist} =
+        UserList.create_user_list(author, %{name: "Vote target", is_public: true})
+
+      {:ok, _vote} = Vote.create(%{user_id: voter.id, watchlist_id: watchlist.id})
+
+      :timer.sleep(100)
+
+      owner_notifications = AppNotifications.list_notifications_for_user(author.id)
+      assert length(owner_notifications) == 1
+
+      [notification] = owner_notifications
+      assert notification.type == "create_vote"
+      assert notification.entity_type == "watchlist"
+      assert notification.entity_id == watchlist.id
+      assert notification.user_id == voter.id
+      assert notification.json_data == %{}
+
+      assert AppNotifications.list_notifications_for_user(voter.id) == []
+      assert AppNotifications.list_notifications_for_user(other_user.id) == []
     end
 
     # Multiple followers test

@@ -5,8 +5,6 @@ defmodule SanbaseWeb.Graphql.ProjectApiCombinedStatsTest do
   import ExUnit.CaptureLog
   import SanbaseWeb.Graphql.TestHelpers
 
-  require Sanbase.Mock
-
   setup do
     p1 = insert(:random_erc20_project)
     p2 = insert(:random_erc20_project)

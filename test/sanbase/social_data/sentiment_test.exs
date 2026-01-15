@@ -53,7 +53,7 @@ defmodule Sanbase.SentimentTest do
       assert capture_log(fn ->
                Sentiment.sentiment(%{slug: "santiment"}, from, to, "1h", "telegram", "positive")
              end) =~
-               "Error status 404 fetching sentiment positive for %{slug: \"santiment\"}\n"
+               "Error status 404 fetching sentiment positive for %{slug: \"santiment\"}"
     end
 
     test "response with slug: error" do
@@ -65,7 +65,7 @@ defmodule Sanbase.SentimentTest do
       assert capture_log(fn ->
                Sentiment.sentiment(%{slug: "santiment"}, from, to, "1h", "telegram", "positive")
              end) =~
-               "Cannot fetch sentiment positive data for %{slug: \"santiment\"}: :econnrefused\n"
+               "Cannot fetch sentiment positive data for %{slug: \"santiment\"}: :econnrefused"
     end
 
     test "response with text: success" do
@@ -101,7 +101,7 @@ defmodule Sanbase.SentimentTest do
       assert capture_log(fn ->
                Sentiment.sentiment(%{text: "btc moon"}, from, to, "6h", "reddit", "positive")
              end) =~
-               "Error status 404 fetching sentiment positive for %{text: \"btc moon\"}\n"
+               "Error status 404 fetching sentiment positive for %{text: \"btc moon\"}"
     end
 
     test "response with text: error" do
@@ -113,7 +113,7 @@ defmodule Sanbase.SentimentTest do
       assert capture_log(fn ->
                Sentiment.sentiment(%{text: "btc moon"}, from, to, "6h", "twitter", "positive")
              end) =~
-               "Cannot fetch sentiment positive data for %{text: \"btc moon\"}: :econnrefused\n"
+               "Cannot fetch sentiment positive data for %{text: \"btc moon\"}: :econnrefused"
     end
   end
 
@@ -151,7 +151,7 @@ defmodule Sanbase.SentimentTest do
       assert capture_log(fn ->
                Sentiment.sentiment(%{slug: "santiment"}, from, to, "1h", "telegram", "negative")
              end) =~
-               "Error status 404 fetching sentiment negative for %{slug: \"santiment\"}\n"
+               "Error status 404 fetching sentiment negative for %{slug: \"santiment\"}"
     end
 
     test "response with slug: error" do
@@ -163,7 +163,7 @@ defmodule Sanbase.SentimentTest do
       assert capture_log(fn ->
                Sentiment.sentiment(%{slug: "santiment"}, from, to, "1h", "telegram", "negative")
              end) =~
-               "Cannot fetch sentiment negative data for %{slug: \"santiment\"}: :econnrefused\n"
+               "Cannot fetch sentiment negative data for %{slug: \"santiment\"}: :econnrefused"
     end
 
     test "response with text: success" do
@@ -199,7 +199,7 @@ defmodule Sanbase.SentimentTest do
       assert capture_log(fn ->
                Sentiment.sentiment(%{text: "btc moon"}, from, to, "6h", "reddit", "negative")
              end) =~
-               "Error status 404 fetching sentiment negative for %{text: \"btc moon\"}\n"
+               "Error status 404 fetching sentiment negative for %{text: \"btc moon\"}"
     end
 
     test "response with text: error" do
@@ -211,7 +211,7 @@ defmodule Sanbase.SentimentTest do
       assert capture_log(fn ->
                Sentiment.sentiment(%{text: "btc moon"}, from, to, "6h", "twitter", "negative")
              end) =~
-               "Cannot fetch sentiment negative data for %{text: \"btc moon\"}: :econnrefused\n"
+               "Cannot fetch sentiment negative data for %{text: \"btc moon\"}: :econnrefused"
     end
   end
 
@@ -249,7 +249,7 @@ defmodule Sanbase.SentimentTest do
       assert capture_log(fn ->
                Sentiment.sentiment(%{slug: "santiment"}, from, to, "1h", "telegram", "balance")
              end) =~
-               "Error status 404 fetching sentiment balance for %{slug: \"santiment\"}\n"
+               "Error status 404 fetching sentiment balance for %{slug: \"santiment\"}"
     end
 
     test "response with slug: error" do
@@ -261,7 +261,7 @@ defmodule Sanbase.SentimentTest do
       assert capture_log(fn ->
                Sentiment.sentiment(%{slug: "santiment"}, from, to, "1h", "telegram", "balance")
              end) =~
-               "Cannot fetch sentiment balance data for %{slug: \"santiment\"}: :econnrefused\n"
+               "Cannot fetch sentiment balance data for %{slug: \"santiment\"}: :econnrefused"
     end
 
     test "response with text: success" do
@@ -297,7 +297,7 @@ defmodule Sanbase.SentimentTest do
       assert capture_log(fn ->
                Sentiment.sentiment(%{text: "btc moon"}, from, to, "6h", "reddit", "balance")
              end) =~
-               "Error status 404 fetching sentiment balance for %{text: \"btc moon\"}\n"
+               "Error status 404 fetching sentiment balance for %{text: \"btc moon\"}"
     end
 
     test "response with text: error" do
@@ -309,7 +309,7 @@ defmodule Sanbase.SentimentTest do
       assert capture_log(fn ->
                Sentiment.sentiment(%{text: "btc moon"}, from, to, "6h", "twitter", "balance")
              end) =~
-               "Cannot fetch sentiment balance data for %{text: \"btc moon\"}: :econnrefused\n"
+               "Cannot fetch sentiment balance data for %{text: \"btc moon\"}: :econnrefused"
     end
   end
 
@@ -374,7 +374,7 @@ defmodule Sanbase.SentimentTest do
                  "volume_consumed"
                )
              end) =~
-               "Cannot fetch sentiment volume_consumed data for %{slug: \"santiment\"}: :econnrefused\n"
+               "Cannot fetch sentiment volume_consumed data for %{slug: \"santiment\"}: :econnrefused"
     end
 
     test "response with text: success" do
@@ -418,7 +418,7 @@ defmodule Sanbase.SentimentTest do
                  "volume_consumed"
                )
              end) =~
-               "Error status 404 fetching sentiment volume_consumed for %{text: \"btc moon\"}\n"
+               "Error status 404 fetching sentiment volume_consumed for %{text: \"btc moon\"}"
     end
 
     test "response with text: error" do
@@ -437,7 +437,7 @@ defmodule Sanbase.SentimentTest do
                  "volume_consumed"
                )
              end) =~
-               "Cannot fetch sentiment volume_consumed data for %{text: \"btc moon\"}: :econnrefused\n"
+               "Cannot fetch sentiment volume_consumed data for %{text: \"btc moon\"}: :econnrefused"
     end
   end
 end

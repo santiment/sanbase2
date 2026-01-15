@@ -4,8 +4,6 @@ defmodule SanbaseWeb.Graphql.ProjectApiTokenTopTransactionsTest do
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
-  require Sanbase.Utils.Config
-
   setup do
     %{
       project: insert(:random_erc20_project),

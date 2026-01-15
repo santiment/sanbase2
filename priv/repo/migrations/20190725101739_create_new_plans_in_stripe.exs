@@ -1,7 +1,7 @@
 defmodule Sanbase.Repo.Migrations.CreateNewPlansInStripe do
   use Ecto.Migration
 
-  require Sanbase.Utils.Config
+  alias Sanbase.Utils.Config
 
   alias Sanbase.Utils.Config
   alias Sanbase.Billing.{Product, Plan}

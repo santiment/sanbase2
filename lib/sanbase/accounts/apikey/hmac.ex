@@ -36,7 +36,6 @@ defmodule Sanbase.Accounts.Hmac do
   """
 
   alias Sanbase.Utils.Config
-  require Logger
 
   @rand_bytes_length 32
   @apikey_length 16

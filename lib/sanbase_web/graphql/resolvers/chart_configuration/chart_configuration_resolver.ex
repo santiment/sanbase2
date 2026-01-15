@@ -5,8 +5,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChartConfigurationResolver do
   alias Sanbase.Accounts.User
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
-  require Logger
-
   # Queries
 
   def chart_configuration(_root, %{id: id}, resolution) do

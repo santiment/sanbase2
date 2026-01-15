@@ -171,19 +171,4 @@ defmodule Sanbase.Alert.Evaluator do
       )
     end)
   end
-
-  defp emit_event(user_trigger, false, _), do: user_trigger
-
-  defp emit_event(user_trigger, true, :alert_triggered) do
-    Sanbase.EventBus.notify(%{
-      topic: :alert_events,
-      data: %{
-        event_type: :alert_triggered,
-        alert_id: user_trigger.id,
-        user_id: user_trigger.user_id
-      }
-    })
-
-    user_trigger
-  end
 end

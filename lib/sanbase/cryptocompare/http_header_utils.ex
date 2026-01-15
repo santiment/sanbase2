@@ -22,8 +22,6 @@ defmodule Sanbase.Cryptocompare.HTTPHeaderUtils do
     defparsec(:list_of_values, leading_integer |> repeat(pair))
   end
 
-  require Logger
-
   @doc ~s"""
   Parse the X-RateLimit-Reset-All header value returned by cryptocompare.
   The list of values is parsed into a list of maps, each of which has the time

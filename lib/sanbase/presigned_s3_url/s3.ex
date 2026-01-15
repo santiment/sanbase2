@@ -1,5 +1,5 @@
 defmodule Sanbase.PresignedS3Url.S3 do
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   @doc ~s"""
   Generate a presigned S3 URL to share a S3 object in the given bucket.

@@ -42,9 +42,7 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
   alias Sanbase.Accounts.User
   alias Sanbase.Billing.{Subscription, Product}
   alias Sanbase.Chart.Configuration.SharedAccessToken
-
-  require Logger
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   defguard no_auth_header(header) when header in [[], ["null"], [""], nil]
 

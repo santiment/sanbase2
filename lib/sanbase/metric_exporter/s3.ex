@@ -1,7 +1,7 @@
 defmodule Sanbase.MetricExporter.S3 do
   use Waffle.Definition
 
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   def bucket, do: Config.module_get(__MODULE__, :bucket)
 

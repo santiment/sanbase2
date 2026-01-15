@@ -4,8 +4,6 @@ defmodule Sanbase.Accounts.User.Email do
 
   import Sanbase.Accounts.EventEmitter, only: [emit_event: 3]
 
-  require Mockery.Macro
-
   @token_valid_window_minutes 60
   @email_token_length 64
 

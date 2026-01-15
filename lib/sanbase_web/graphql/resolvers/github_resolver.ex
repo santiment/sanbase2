@@ -1,6 +1,4 @@
 defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
-  require Logger
-
   import SanbaseWeb.Graphql.Helpers.CalibrateInterval
   import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3, handle_graphql_error: 4]
 

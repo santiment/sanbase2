@@ -5,7 +5,6 @@ defmodule Sanbase.Application.Admin do
   to when the admin dashboard was part of the web pod
   """
   import Sanbase.ApplicationUtils
-  require Logger
 
   def init() do
     :ok

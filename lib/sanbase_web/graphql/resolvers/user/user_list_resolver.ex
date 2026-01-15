@@ -1,6 +1,4 @@
 defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
-  require Logger
-
   import Absinthe.Resolution.Helpers, except: [async: 1]
   import SanbaseWeb.Graphql.Helpers.Async, only: [async: 1]
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1]

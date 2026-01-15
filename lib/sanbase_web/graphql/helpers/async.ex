@@ -1,6 +1,4 @@
 defmodule SanbaseWeb.Graphql.Helpers.Async do
-  require Absinthe.Resolution.Helpers
-
   @doc ~s"""
   Macro to be used instead of `Absinthe.Resolution.Helpers.async`.
   This macro falls back to the Absinthe's async in `:dev` and `:prod` but in

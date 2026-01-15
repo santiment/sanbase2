@@ -6,8 +6,6 @@ defmodule Sanbase.ProjectEthAddress do
   alias __MODULE__
   alias Sanbase.Project
 
-  require Logger
-
   schema "project_eth_address" do
     field(:address, :string)
     belongs_to(:project, Project)

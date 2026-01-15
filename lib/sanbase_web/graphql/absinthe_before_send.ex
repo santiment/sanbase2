@@ -25,8 +25,6 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   Only queries with many resolvers are included in the list of allowed queries.
   """
 
-  require Logger
-
   alias SanbaseWeb.Graphql.Cache
   alias Sanbase.Utils.IP
 

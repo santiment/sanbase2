@@ -3,8 +3,6 @@ defmodule Sanbase.Metric.UIMetadata.Group do
   import Ecto.Changeset
   import Ecto.Query
 
-  require Logger
-
   alias Sanbase.Repo
   alias Sanbase.Metric.UIMetadata.Category
 

@@ -2,10 +2,10 @@ defmodule Sanbase.SocialData.ActiveUsers do
   import Sanbase.Utils.ErrorHandling
   import Sanbase.SocialData.Utils, only: [maybe_add_and_rename_field: 4]
 
-  require Logger
+  require Mockery.Macro
+
   alias Sanbase.Utils.Config
 
-  require Mockery.Macro
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 
   @recv_timeout 25_000

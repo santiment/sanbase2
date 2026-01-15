@@ -3,8 +3,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.MetadataExporter do
   Exports the CoinMarketCap metadata v2 to a JSON file.
   """
 
-  require Logger
-
   import Sanbase.ExternalServices.Coinmarketcap.Utils,
     only: [
       cmc_id_to_projects_map: 0,

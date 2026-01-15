@@ -10,8 +10,6 @@ defmodule Sanbase.Alert.History.EthWalletTriggerHistory do
   alias Sanbase.Clickhouse.HistoricalBalance
   alias Sanbase.Alert.Trigger.EthWalletTriggerSettings
 
-  require Logger
-
   @historical_days_from 365
   @historical_interval "1h"
 

@@ -1,6 +1,4 @@
 defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
-  require Logger
-
   import Absinthe.Resolution.Helpers, except: [async: 1]
 
   alias SanbaseWeb.Graphql.SanbaseDataloader
@@ -11,8 +9,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
   alias Sanbase.Alert.UserTrigger
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.UserList
-
-  require Logger
 
   @doc ~s"""
   Returns a tuple `{total_votes, total_san_votes}` where:

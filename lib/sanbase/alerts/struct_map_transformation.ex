@@ -87,10 +87,8 @@ defmodule Sanbase.Alert.StructMapTransformation do
         Map.put(acc, atomize(key), atomize_keys(val))
       rescue
         ArgumentError ->
-          [{:erlang, :binary_to_existing_atom, [str | _], _} | _] = __STACKTRACE__
-
           errors = Process.get(@unsupported_fields_error, [])
-          field = if is_binary(str), do: str, else: inspect(str)
+          field = if is_binary(key), do: key, else: inspect(key)
 
           Process.put(@unsupported_fields_error, [
             ~s/The trigger contains unsupported or mistyped field "#{field}"/ | errors

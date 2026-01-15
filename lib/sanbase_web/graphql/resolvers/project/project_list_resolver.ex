@@ -1,6 +1,4 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ProjectListResolver do
-  require Logger
-
   alias Sanbase.Project
 
   @spec all_projects(any, map, any) :: {:ok, any}

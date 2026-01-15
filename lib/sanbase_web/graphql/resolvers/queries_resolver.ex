@@ -7,8 +7,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
 
   import Absinthe.Resolution.Helpers, except: [async: 1]
 
-  require Logger
-
   # Query CRUD operations
 
   def get_query(_root, %{id: id}, resolution) do

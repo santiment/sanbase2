@@ -4,7 +4,6 @@ defmodule Sanbase.Project.AvailableQueries do
   """
 
   alias Sanbase.Project
-  require SanbaseWeb.Graphql.Schema
 
   @doc ~s"""
   Return a list of all GraphQL query names that have an argument `slug`

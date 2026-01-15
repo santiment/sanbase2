@@ -1,6 +1,4 @@
 defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
-  require Logger
-
   import Absinthe.Resolution.Helpers, except: [async: 1]
 
   alias SanbaseWeb.Graphql.SanbaseDataloader
@@ -8,8 +6,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   alias Sanbase.Insight.Post
   alias Sanbase.Insight.PopularAuthor
   alias Sanbase.Comments.EntityComment
-
-  require Logger
 
   def popular_insight_authors(_root, _args, _resolution) do
     PopularAuthor.get()

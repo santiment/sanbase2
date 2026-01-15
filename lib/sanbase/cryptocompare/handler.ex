@@ -1,7 +1,7 @@
 defmodule Sanbase.Cryptocompare.Handler do
   alias Sanbase.Cryptocompare.HTTPHeaderUtils
   alias Sanbase.Cryptocompare.ExporterProgress
-  alias Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   require Logger
 

@@ -8,8 +8,8 @@ end
 defmodule Sanbase.Email.MailjetApi do
   @behaviour Sanbase.Email.MailjetApiBehaviour
 
-  require Sanbase.Utils.Config, as: Config
   require Logger
+  alias Sanbase.Utils.Config
 
   @base_url "https://api.mailjet.com/v3/REST/"
   @bi_weekly_list_id -1

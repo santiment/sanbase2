@@ -1,6 +1,4 @@
 defmodule SanbaseWeb.Graphql.Resolvers.TimelineEventResolver do
-  require Logger
-
   import Absinthe.Resolution.Helpers, except: [async: 1]
 
   import SanbaseWeb.Graphql.Helpers.Utils,

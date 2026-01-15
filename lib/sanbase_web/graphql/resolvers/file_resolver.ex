@@ -1,6 +1,4 @@
 defmodule SanbaseWeb.Graphql.Resolvers.FileResolver do
-  require Logger
-
   alias Sanbase.FileStore
   alias Sanbase.Insight.PostImage
   alias Sanbase.Utils.FileHash

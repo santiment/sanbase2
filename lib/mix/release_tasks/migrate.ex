@@ -22,16 +22,16 @@ defmodule Sanbase.ReleaseTasks.Migrate do
     Enum.each(repos(), &run_migrations_for/1)
   end
 
-  defp run_migrations_for(repo) do
-    app = Keyword.get(repo.config, :otp_app)
+  defp run_migrations_for(repo) when is_atom(repo) do
+    app = Keyword.get(repo.config(), :otp_app)
     IO.puts("Running migrations for #{app}")
     Ecto.Migrator.run(repo, migrations_path(repo), :up, all: true)
   end
 
   defp migrations_path(repo), do: priv_path_for(repo, "migrations")
 
-  defp priv_path_for(repo, filename) do
-    app = Keyword.get(repo.config, :otp_app)
+  defp priv_path_for(repo, filename) when is_atom(repo) do
+    app = Keyword.get(repo.config(), :otp_app)
     repo_underscore = repo |> Module.split() |> List.last() |> Macro.underscore()
     Path.join([priv_dir(app), repo_underscore, filename])
   end

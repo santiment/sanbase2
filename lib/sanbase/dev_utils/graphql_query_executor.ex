@@ -2,7 +2,6 @@ defmodule Sanbase.DevUtils.GraphQLQueryExecutor do
   @moduledoc """
   A helper module for executing GraphQL queries in elixir shell and livebooks.
   """
-  require SanbaseWeb.Guardian
   import Plug.Test
   alias SanbaseWeb.Graphql.AuthPlug
   alias SanbaseWeb.Graphql.ContextPlug

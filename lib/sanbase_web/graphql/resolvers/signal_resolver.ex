@@ -12,8 +12,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
   alias SanbaseWeb.Graphql.SanbaseDataloader
   alias Sanbase.Billing.Plan.Restrictions
 
-  require Logger
-
   @datapoints 300
 
   def project(%{slug: slug}, _args, %{context: %{loader: loader}}) do

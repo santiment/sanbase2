@@ -1,6 +1,4 @@
 defmodule SanbaseWeb.Graphql.Resolvers.IcoResolver do
-  require Logger
-
   import Ecto.Query, warn: false
   import Absinthe.Resolution.Helpers
 

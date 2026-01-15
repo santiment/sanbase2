@@ -25,8 +25,6 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
   alias Sanbase.Cryptocompare.ExporterProgress
   alias Sanbase.Cryptocompare.Handler
 
-  require Logger
-
   @url "https://data-api.cryptocompare.com/futures/v1/historical/open-interest/minutes"
   @default_limit 2000
   @oban_conf_name :oban_scrapers

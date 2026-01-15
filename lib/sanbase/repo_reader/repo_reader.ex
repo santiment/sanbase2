@@ -19,7 +19,6 @@ defmodule Sanbase.RepoReader do
       repository_url: 0
     ]
 
-  require Logger
   @repository repository()
   @repository_url repository_url()
 

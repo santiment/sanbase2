@@ -1,6 +1,4 @@
 defmodule SanbaseWeb.Graphql.Resolvers.WebinarResolver do
-  require Logger
-
   alias Sanbase.Webinar
   alias Sanbase.Webinars.Registration
   alias Sanbase.Billing.{Subscription, Product}

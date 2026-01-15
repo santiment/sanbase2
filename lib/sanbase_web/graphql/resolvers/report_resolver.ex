@@ -1,6 +1,4 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ReportResolver do
-  require Logger
-
   alias Sanbase.Report
   alias Sanbase.Billing.{Subscription, Product}
 

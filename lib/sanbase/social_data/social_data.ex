@@ -3,10 +3,10 @@ defmodule Sanbase.SocialData do
   import Sanbase.Utils.Transform, only: [wrap_ok: 1]
   alias Sanbase.SocialData.{SocialVolume, SocialDominance, Community, Sentiment, ActiveUsers}
 
-  require Logger
+  require Mockery.Macro
+
   alias Sanbase.Utils.Config
 
-  require Mockery.Macro
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 
   @recv_timeout 15_000

@@ -12,7 +12,7 @@ defmodule Sanbase.Telegram do
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
   import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1]
 
-  alias Sanbase.Accounts.{User, Settings, UserSettings}
+  alias Sanbase.Accounts.{User, UserSettings}
   alias Sanbase.Telegram.UserToken
 
   @type message :: String.t() | iolist()
@@ -83,10 +83,10 @@ defmodule Sanbase.Telegram do
   @spec send_message(%User{}, message) :: :ok | {:error, String.t()}
   def send_message(%User{} = user, text) do
     case UserSettings.settings_for(user) do
-      %Settings{telegram_chat_id: chat_id} when is_integer(chat_id) ->
+      %{telegram_chat_id: chat_id} when is_integer(chat_id) ->
         send_message_to_chat_id(chat_id, text, user)
 
-      %Settings{telegram_chat_id: chat_id} ->
+      %{telegram_chat_id: chat_id} ->
         {:error,
          """
          Cannot send message to user with id #{user.id}. Reason: There is no telegram_chat id for that user.

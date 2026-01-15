@@ -14,7 +14,8 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   @compile {:inline, conn_to_jwt_tokens: 1}
 
   import Plug.Conn
-  require Sanbase.Utils.Config, as: Config
+
+  alias Sanbase.Utils.Config
 
   def init(opts), do: opts
 

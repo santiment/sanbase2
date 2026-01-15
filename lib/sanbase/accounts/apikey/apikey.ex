@@ -17,8 +17,6 @@ defmodule Sanbase.Accounts.Apikey do
     User
   }
 
-  require Logger
-
   defguard is_non_empty_string(str) when is_binary(str) and str != ""
 
   @doc ~s"""

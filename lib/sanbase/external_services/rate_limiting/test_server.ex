@@ -2,8 +2,6 @@ defmodule Sanbase.ExternalServices.RateLimiting.TestServer do
   use GenServer, restart: :permanent, shutdown: 5_000
   @behaviour Sanbase.ExternalServices.RateLimiting.Behavior
 
-  require Logger
-
   def child_spec(name, options \\ []) do
     %{
       id: name,

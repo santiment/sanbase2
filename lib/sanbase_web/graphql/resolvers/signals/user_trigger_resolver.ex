@@ -1,6 +1,4 @@
 defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
-  require Logger
-
   import SanbaseWeb.Graphql.Helpers.Utils, only: [transform_user_trigger: 1]
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1]
   import Absinthe.Resolution.Helpers, only: [on_load: 2]

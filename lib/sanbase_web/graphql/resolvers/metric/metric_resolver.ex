@@ -15,8 +15,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   alias Sanbase.Billing.Plan.AccessChecker
   alias SanbaseWeb.Graphql.Resolvers.MetricTransform
 
-  require Logger
-
   @datapoints 300
 
   @wordsize 8

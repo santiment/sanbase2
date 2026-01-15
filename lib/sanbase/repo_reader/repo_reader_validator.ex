@@ -1,6 +1,4 @@
 defmodule Sanbase.RepoReader.Validator do
-  require Logger
-
   @external_resource json_file = Path.join([__DIR__, "jsonschema.json"])
   @jsonschema File.read!(json_file)
               |> Jason.decode!()

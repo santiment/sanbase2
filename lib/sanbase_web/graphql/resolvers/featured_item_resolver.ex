@@ -1,6 +1,4 @@
 defmodule SanbaseWeb.Graphql.Resolvers.FeaturedItemResolver do
-  require Logger
-
   import SanbaseWeb.Graphql.Helpers.Utils, only: [transform_user_trigger: 1]
 
   alias Sanbase.FeaturedItem

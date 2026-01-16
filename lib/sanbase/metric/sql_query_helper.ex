@@ -216,7 +216,19 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     arg_name = Keyword.fetch!(opts, :argument_name)
     metric_id_column = Keyword.get(opts, :metric_id_column, "metric_id")
 
-    "#{metric_id_column} = ( SELECT metric_id FROM metric_metadata FINAL WHERE name = {{#{arg_name}}} LIMIT 1 )"
+    if Keyword.get(opts, :use_version, false) do
+      version_arg_name = Keyword.get(opts, :version_arg_name, nil)
+
+      """
+      #{metric_id_column} = (
+        SELECT metric_id
+        FROM metric_metadata FINAL
+        WHERE name = {{#{arg_name}}} and version = {{#{version_arg_name}}} LIMIT 1
+      )
+      """
+    else
+      "#{metric_id_column} = ( SELECT metric_id FROM metric_metadata FINAL WHERE name = {{#{arg_name}}} LIMIT 1 )"
+    end
   end
 
   def metric_id_filter(metrics, opts) when is_list(metrics) do

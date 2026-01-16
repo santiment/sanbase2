@@ -22,10 +22,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   @max_heap_size_in_words div(@max_heap_size_in_mbs * 1024 * 1024, @wordsize)
 
   def get_metric(_root, %{metric: metric} = args, _resolution) do
+    # TODO: Check that the version is also deprecated
     with false <- Metric.hard_deprecated?(metric),
          true <- Metric.has_metric?(metric) do
       maybe_enable_clickhouse_sql_storage(args)
-      {:ok, %{metric: metric}}
+
+      # If not provided it is set to `nil`, so the SQL will get the latest rolling version
+      version = Map.get(args, :version)
+      {:ok, %{metric: metric, version: version}}
     end
   end
 
@@ -238,9 +242,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end)
   end
 
-  def timeseries_data(_root, args, %{source: %{metric: metric}} = resolution) do
+  def timeseries_data(_root, args, %{source: %{metric: metric, version: version}} = resolution) do
     requested_fields = requested_fields(resolution)
-    fetch_timeseries_data(metric, args, requested_fields, :timeseries_data)
+    fetch_timeseries_data(metric, version, args, requested_fields, :timeseries_data)
   rescue
     e in [Sanbase.Metric.CatchableError] -> {:error, Exception.message(e)}
     e -> reraise(e, __STACKTRACE__)
@@ -249,13 +253,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   def timeseries_data_per_slug(
         _root,
         args,
-        %{source: %{metric: metric}} = resolution
+        %{source: %{metric: metric, version: version}} = resolution
       ) do
     Process.flag(:max_heap_size, @max_heap_size_in_words)
     requested_fields = requested_fields(resolution)
 
     fetch_timeseries_data(
       metric,
+      version,
       args,
       requested_fields,
       :timeseries_data_per_slug
@@ -412,7 +417,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   # timeseries_data and timeseries_data_per_slug are processed and fetched in
   # exactly the same way. The only difference is the function that is called
   # from the Metric module.
-  defp fetch_timeseries_data(metric, args, requested_fields, function)
+  defp fetch_timeseries_data(metric, version, args, requested_fields, function)
        when function in [:timeseries_data, :timeseries_data_per_slug] do
     only_finalized_data = Map.get(args, :only_finalized_data, false)
 
@@ -424,6 +429,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
          true <- valid_timeseries_selection?(requested_fields, args),
          {:ok, opts} <- selector_args_to_opts(args),
          opts <- Keyword.put(opts, :only_finalized_data, only_finalized_data),
+         opts <- Keyword.put(opts, :version, version),
          {:ok, from, to, interval} <-
            transform_datetime_params(selector, metric, transform, args),
          {:ok, result} <-

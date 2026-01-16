@@ -77,6 +77,7 @@ defmodule SanbaseWeb.MetricDisplayOrderFormLive do
 
     to_form(%{
       "ui_human_readable_name" => display_order.ui_human_readable_name,
+      "short_label" => display_order.short_label,
       "category_id" => display_order.category_id,
       "category_name" => category_name,
       "group_id" => display_order.group_id,
@@ -145,6 +146,7 @@ defmodule SanbaseWeb.MetricDisplayOrderFormLive do
     ~H"""
     <.simple_form for={@form} phx-change="validate" phx-submit="save">
       <.input type="text" field={@form[:ui_human_readable_name]} label="Label" />
+      <.input type="text" field={@form[:short_label]} label="Short Label" />
 
       <.input
         type="select"
@@ -224,6 +226,7 @@ defmodule SanbaseWeb.MetricDisplayOrderFormLive do
       {:ok, args} ->
         attrs = %{
           ui_human_readable_name: params["ui_human_readable_name"],
+          short_label: params["short_label"],
           category_id: category_id,
           group_id: group_id,
           chart_style: params["chart_style"],

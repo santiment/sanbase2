@@ -32,6 +32,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricDisplayOrderTest do
         category1.id,
         group1.id,
         ui_human_readable_name: "Price USD",
+        short_label: "Price",
         chart_style: "line",
         unit: "usd",
         description: "USD price of the asset",
@@ -95,6 +96,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricDisplayOrderTest do
           metric
           type
           uiHumanReadableName
+          shortLabel
           categoryName
           groupName
           chartStyle
@@ -129,6 +131,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricDisplayOrderTest do
     price_btc = Enum.find(metrics, &(&1["metric"] == "price_btc"))
 
     assert price_usd["uiHumanReadableName"] == "Price USD"
+    assert price_usd["shortLabel"] == "Price"
     assert price_usd["groupName"] == "Price"
     assert price_usd["chartStyle"] == "line"
     assert price_usd["unit"] == "usd"

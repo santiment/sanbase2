@@ -102,6 +102,7 @@ defmodule SanbaseWeb.MetricDisplayOrderFormLiveTest do
 
       form_data = %{
         "ui_human_readable_name" => "Test Metric",
+        "short_label" => "",
         "category_id" => to_string(updated_metric.category_id),
         "group_id" => "",
         "chart_style" => "line",
@@ -116,6 +117,38 @@ defmodule SanbaseWeb.MetricDisplayOrderFormLiveTest do
 
       cleared = DisplayOrder.by_id(updated_metric.id)
       assert cleared.args == %{}
+    end
+
+    test "saves short_label", %{conn: conn, metric: metric} do
+      {:ok, view, _html} = live(conn, "/admin/metric_registry/display_order/edit/#{metric.id}")
+
+      form_data = %{
+        "ui_human_readable_name" => "Test Metric",
+        "short_label" => "TM",
+        "category_id" => to_string(metric.category_id),
+        "group_id" => "",
+        "chart_style" => "line",
+        "unit" => "usd",
+        "description" => "A test metric",
+        "args" => ""
+      }
+
+      view
+      |> form("form", form_data)
+      |> render_submit()
+
+      updated = DisplayOrder.by_id(metric.id)
+      assert updated.short_label == "TM"
+    end
+
+    test "displays existing short_label", %{conn: conn, metric: metric} do
+      {:ok, updated_metric} = DisplayOrder.do_update(metric, %{short_label: "Short"})
+
+      {:ok, _view, html} =
+        live(conn, "/admin/metric_registry/display_order/edit/#{updated_metric.id}")
+
+      assert html =~ "Short Label"
+      assert html =~ "Short"
     end
   end
 end

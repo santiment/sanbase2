@@ -28,7 +28,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       from: dt_to_unix(:from, from),
       to: dt_to_unix(:to, to),
       selector: asset_filter_value(selector),
-      table: Map.get(Registry.table_map(), metric)
+      table: deduce_table(metric, opts)
     }
 
     only_finalized_data = Keyword.get(opts, :only_finalized_data, false)
@@ -592,7 +592,17 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   defp asset_filter_value(%{slug: slug_or_slugs}), do: slug_or_slugs
   defp asset_filter_value(_), do: nil
 
-  defp finalized_data_filter_str("intraday_metrics", true), do: "is_finalized = true AND"
-  defp finalized_data_filter_str("daily_metrics_v2", true), do: "is_finalized = true AND"
+  defp finalized_data_filter_str("intraday_metrics" <> _, true), do: "is_finalized = true AND"
+  defp finalized_data_filter_str("daily_metrics_v2" <> _, true), do: "is_finalized = true AND"
   defp finalized_data_filter_str(_, _), do: ""
+
+  defp deduce_table(metric, opts) do
+    table = Map.get(Registry.table_map(), metric)
+
+    if Keyword.get(opts, :is_experimental) && table in ["intraday_metrics", "daily_metrics_v2"] do
+      table <> "_experimental"
+    else
+      table
+    end
+  end
 end

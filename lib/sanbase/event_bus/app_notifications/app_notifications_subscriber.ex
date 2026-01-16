@@ -132,12 +132,17 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
     |> Enum.map(& &1.id)
   end
 
-  ## Insight notifications
-
-  defp create_notification(_type, _user_ids, %{is_public: false}) do
-    # No notifications for private insights
+  defp create_notification(_type, _user_ids = [], _data) do
+    # No recepients, so no notifications
     :ok
   end
+
+  defp create_notification(_type, _user_ids, %{is_public: false}) do
+    # No notifications for private entities
+    :ok
+  end
+
+  ## Insight notifications
 
   defp create_notification(:publish_insight, user_ids, %{
          insight_id: insight_id,
@@ -213,8 +218,6 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
       multi_insert_notification_read_status(user_ids, notification.id)
     end
   end
-
-  defp create_notification(:create_comment, [], _data), do: :ok
 
   defp create_notification(
          :create_comment,

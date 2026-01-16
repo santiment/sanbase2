@@ -24,8 +24,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   def get_metric(_root, %{metric: metric} = args, _resolution) do
     with false <- Metric.hard_deprecated?(metric),
          true <- Metric.has_metric?(metric) do
+      is_experimental = Map.get(args, :is_experimental, false)
       maybe_enable_clickhouse_sql_storage(args)
-      {:ok, %{metric: metric}}
+      {:ok, %{metric: metric, is_experimental: is_experimental}}
     end
   end
 
@@ -238,9 +239,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end)
   end
 
-  def timeseries_data(_root, args, %{source: %{metric: metric}} = resolution) do
+  def timeseries_data(
+        _root,
+        args,
+        %{source: %{metric: metric, is_experimental: is_experimental}} = resolution
+      ) do
     requested_fields = requested_fields(resolution)
-    fetch_timeseries_data(metric, args, requested_fields, :timeseries_data)
+    fetch_timeseries_data(metric, args, requested_fields, :timeseries_data, is_experimental)
   rescue
     e in [Sanbase.Metric.CatchableError] -> {:error, Exception.message(e)}
     e -> reraise(e, __STACKTRACE__)
@@ -412,7 +417,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   # timeseries_data and timeseries_data_per_slug are processed and fetched in
   # exactly the same way. The only difference is the function that is called
   # from the Metric module.
-  defp fetch_timeseries_data(metric, args, requested_fields, function)
+  defp fetch_timeseries_data(metric, args, requested_fields, function, is_experimental \\ false)
        when function in [:timeseries_data, :timeseries_data_per_slug] do
     only_finalized_data = Map.get(args, :only_finalized_data, false)
 
@@ -423,6 +428,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
          true <- valid_owners_labels_selection?(args),
          true <- valid_timeseries_selection?(requested_fields, args),
          {:ok, opts} <- selector_args_to_opts(args),
+         opts = Keyword.put(opts, :is_experimental, is_experimental),
          opts <- Keyword.put(opts, :only_finalized_data, only_finalized_data),
          {:ok, from, to, interval} <-
            transform_datetime_params(selector, metric, transform, args),

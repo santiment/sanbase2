@@ -68,6 +68,7 @@ defmodule SanbaseWeb.MetricDisplayOrderNewLive do
   defp create_form do
     to_form(%{
       "ui_human_readable_name" => "",
+      "short_label" => "",
       "ui_key" => "",
       "category_id" => "",
       "group_id" => "",
@@ -257,6 +258,7 @@ defmodule SanbaseWeb.MetricDisplayOrderNewLive do
     ~H"""
     <.simple_form for={@form} phx-change="validate" phx-submit="save">
       <.input type="text" field={@form[:ui_human_readable_name]} label="Label" />
+      <.input type="text" field={@form[:short_label]} label="Short Label" />
       <.input
         type="text"
         field={@form[:ui_key]}
@@ -397,6 +399,7 @@ defmodule SanbaseWeb.MetricDisplayOrderNewLive do
               category_id,
               group_id,
               ui_human_readable_name: params["ui_human_readable_name"],
+              short_label: params["short_label"],
               ui_key: params["ui_key"],
               chart_style: params["chart_style"],
               unit: params["unit"],
@@ -420,6 +423,7 @@ defmodule SanbaseWeb.MetricDisplayOrderNewLive do
               category_id,
               group_id,
               ui_human_readable_name: params["ui_human_readable_name"],
+              short_label: params["short_label"],
               ui_key: params["ui_key"],
               chart_style: params["chart_style"],
               unit: params["unit"],

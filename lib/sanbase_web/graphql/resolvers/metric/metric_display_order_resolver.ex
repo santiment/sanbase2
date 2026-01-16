@@ -110,6 +110,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricDisplayOrderResolver do
       metric: display_order.metric,
       type: display_order.type,
       ui_human_readable_name: display_order.ui_human_readable_name,
+      short_label: display_order.short_label,
       ui_key: display_order.ui_key,
       category_name: category_name,
       group_name: group_name,

@@ -25,6 +25,7 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
           code_module: String.t(),
           metric_registry_id: integer(),
           ui_human_readable_name: String.t(),
+          short_label: String.t(),
           ui_key: String.t(),
           chart_style: String.t(),
           unit: String.t(),
@@ -39,6 +40,7 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
     field(:metric, :string)
     field(:registry_metric, :string)
     field(:ui_human_readable_name, :string)
+    field(:short_label, :string)
     field(:ui_key, :string)
     field(:chart_style, :string, default: "line")
     field(:unit, :string, default: "")
@@ -70,6 +72,7 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
       :code_module,
       :metric_registry_id,
       :ui_human_readable_name,
+      :short_label,
       :ui_key,
       :chart_style,
       :unit,
@@ -136,6 +139,7 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
             metric_registry_id: base_metric.metric_registry_id,
             ui_human_readable_name:
               Keyword.get(opts, :ui_human_readable_name, base_metric.ui_human_readable_name),
+            short_label: Keyword.get(opts, :short_label, base_metric.short_label),
             ui_key: new_ui_key,
             chart_style: Keyword.get(opts, :chart_style, base_metric.chart_style),
             unit: Keyword.get(opts, :unit, base_metric.unit),
@@ -416,6 +420,7 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
           metric: metric,
           registry_metric: registry_metric,
           ui_human_readable_name: display_order.ui_human_readable_name || metric,
+          short_label: display_order.short_label,
           ui_key: display_order.ui_key,
           category_id: display_order.category_id,
           category_name: category_name,
@@ -448,6 +453,7 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
   """
   def add_metric(metric_name, category_id, group_id \\ nil, opts \\ []) do
     ui_human_readable_name = Keyword.get(opts, :ui_human_readable_name, metric_name)
+    short_label = Keyword.get(opts, :short_label)
     ui_key = Keyword.get(opts, :ui_key)
     chart_style = Keyword.get(opts, :chart_style, "line")
     unit = Keyword.get(opts, :unit, "")
@@ -504,6 +510,7 @@ defmodule Sanbase.Metric.UIMetadata.DisplayOrder do
       metric_registry_id: metric_registry_id,
       registry_metric: registry_metric,
       ui_human_readable_name: ui_human_readable_name,
+      short_label: short_label,
       ui_key: ui_key,
       chart_style: chart_style,
       unit: unit,

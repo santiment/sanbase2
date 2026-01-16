@@ -2,8 +2,10 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.10 (Homebrew)
--- Dumped by pg_dump version 15.10 (Homebrew)
+\restrict 3dzUreUDjziwY2IKc58D4hCUduffZO35MBWmMB6dynPLndtBmP70IhwbCeJNPTd
+
+-- Dumped from database version 15.15 (Homebrew)
+-- Dumped by pg_dump version 15.15 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -2383,7 +2385,8 @@ CREATE TABLE public.metric_display_order (
     type character varying(255) DEFAULT 'metric'::character varying,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    ui_key character varying(255)
+    ui_key character varying(255),
+    short_label character varying(255)
 );
 
 
@@ -10917,6 +10920,8 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
+\unrestrict 3dzUreUDjziwY2IKc58D4hCUduffZO35MBWmMB6dynPLndtBmP70IhwbCeJNPTd
+
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008204451);
@@ -11451,5 +11456,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20251215114741);
 INSERT INTO public."schema_migrations" (version) VALUES (20251216081737);
 INSERT INTO public."schema_migrations" (version) VALUES (20260106131955);
 INSERT INTO public."schema_migrations" (version) VALUES (20260106141954);
-INSERT INTO public."schema_migrations" (version) VALUES (20260114142311);
 INSERT INTO public."schema_migrations" (version) VALUES (20260114173809);
+INSERT INTO public."schema_migrations" (version) VALUES (20260116093636);

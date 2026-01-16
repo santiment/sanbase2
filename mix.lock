@@ -14,7 +14,7 @@
   "cidr": {:hex, :cidr, "1.2.0", "a872a23d74ae9aaae1a3d677515e7ab0e86378fff30e02e6e005ebdc712a9398", [:mix], [], "hexpm", "ec053c45add51a798497e2ff329c45cc3ead9b390b8d712dec04eb7b20801c11"},
   "circular_buffer": {:hex, :circular_buffer, "1.0.0", "25c004da0cba7bd8bc1bdabded4f9a902d095e20600fd15faf1f2ffbaea18a07", [:mix], [], "hexpm", "c829ec31c13c7bafd1f546677263dff5bfb006e929f25635878ac3cfba8749e5"},
   "clickhouse_ecto": {:git, "https://github.com/santiment/clickhouse_ecto.git", "9518142275534f040edb19c61646fc3aed889040", [branch: "migrate-ecto-3"]},
-  "clickhousex": {:git, "https://github.com/santiment/clickhousex.git", "899d39382d29eed21d6d9b818115548974ed520f", []},
+  "clickhousex": {:git, "https://github.com/santiment/clickhousex.git", "9e44427a879c1ea8da4c6f518a7d3de5e2c935f0", []},
   "combine": {:hex, :combine, "0.10.0", "eff8224eeb56498a2af13011d142c5e7997a80c8f5b97c499f84c841032e429f", [:mix], [], "hexpm", "1b1dbc1790073076580d0d1d64e42eae2366583e7aecd455d1215b0d16f2451b"},
   "con_cache": {:hex, :con_cache, "1.1.1", "9f47a68dfef5ac3bbff8ce2c499869dbc5ba889dadde6ac4aff8eb78ddaf6d82", [:mix], [{:telemetry, "~> 1.0", [hex: :telemetry, repo: "hexpm", optional: false]}], "hexpm", "1def4d1bec296564c75b5bbc60a19f2b5649d81bfa345a2febcc6ae380e8ae15"},
   "cowboy": {:hex, :cowboy, "2.14.2", "4008be1df6ade45e4f2a4e9e2d22b36d0b5aba4e20b0a0d7049e28d124e34847", [:make, :rebar3], [{:cowlib, ">= 2.16.0 and < 3.0.0", [hex: :cowlib, repo: "hexpm", optional: false]}, {:ranch, ">= 1.8.0 and < 3.0.0", [hex: :ranch, repo: "hexpm", optional: false]}], "hexpm", "569081da046e7b41b5df36aa359be71a0c8874e5b9cff6f747073fc57baf1ab9"},

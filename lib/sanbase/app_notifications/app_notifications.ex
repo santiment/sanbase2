@@ -202,7 +202,7 @@ defmodule Sanbase.AppNotifications do
   # end
 
   defp do_async_broadcast_websocket_notifications(notification_read_status_list) do
-    Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+    Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
       Enum.each(notification_read_status_list, fn
         %NotificationReadStatus{user_id: user_id, notification_id: notification_id} ->
           SanbaseWeb.Endpoint.broadcast(

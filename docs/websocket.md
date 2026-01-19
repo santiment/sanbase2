@@ -156,3 +156,27 @@ channel
     })
 ```
 
+
+### The `notifications:<user id>` channels
+
+Authenticated users can join `notifications:<current user id>`. The join succeeds
+only if the user id in the topic matches the authenticated socket user id.
+Anonymous users cannot join this channel.
+
+This channel is server-push only and emits a `notification` event whenever a new
+app notification is created for the user. The payload includes the notification
+id and the recipient user id (the current user). The user id is mostly useful for
+the server side to verify that the notification is sent to the correct user. On the
+client side, the user id is known already.
+
+```js
+const channel = socket.channel(`notifications:${user.id}`, {})
+channel.join()
+    .receive('ok', () => { console.log("Success") })
+    .receive('error', () => { console.log("Error") })
+    .receive('timeout', () => { console.log("Timeout") })
+
+channel.on("notification", ({ notification_id, user_id }) => {
+    console.log(`New notification ${notification_id} for user ${user_id}`)
+})
+```

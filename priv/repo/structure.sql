@@ -2,8 +2,6 @@
 -- PostgreSQL database dump
 --
 
-\restrict 3dzUreUDjziwY2IKc58D4hCUduffZO35MBWmMB6dynPLndtBmP70IhwbCeJNPTd
-
 -- Dumped from database version 15.15 (Homebrew)
 -- Dumped by pg_dump version 15.15 (Homebrew)
 
@@ -10919,8 +10917,6 @@ ALTER TABLE ONLY public.webinar_registrations
 --
 -- PostgreSQL database dump complete
 --
-
-\unrestrict 3dzUreUDjziwY2IKc58D4hCUduffZO35MBWmMB6dynPLndtBmP70IhwbCeJNPTd
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);

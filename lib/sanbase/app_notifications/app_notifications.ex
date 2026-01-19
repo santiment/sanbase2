@@ -175,6 +175,20 @@ defmodule Sanbase.AppNotifications do
      }}
   end
 
+  def async_broadcast_websocket_notifications(notification_read_status_list)
+      when is_list(notification_read_status_list) do
+    Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+      Enum.each(notification_read_status_list, fn
+        %NotificationReadStatus{user_id: user_id, notification_id: notification_id} ->
+          SanbaseWeb.Endpoint.broadcast(
+            "notifications:#{user_id}",
+            "notification",
+            %{notification_id: notification_id, user_id: user_id}
+          )
+      end)
+    end)
+  end
+
   defp maybe_apply_cursor(query, nil), do: query
 
   defp maybe_apply_cursor(query, %{type: :before, datetime: datetime}) do

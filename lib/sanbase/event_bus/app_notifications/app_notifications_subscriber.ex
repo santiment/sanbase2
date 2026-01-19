@@ -19,6 +19,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
   use GenServer
 
   alias Sanbase.AppNotifications
+  alias Sanbase.AppNotifications.NotificationReadStatus
 
   require Logger
 
@@ -292,9 +293,20 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
     end)
     |> Sanbase.Repo.transaction()
     |> case do
-      {:ok, result} -> {:ok, result}
-      {:error, _operation, reason, _changes_so_far} -> {:error, reason}
+      {:ok, result} ->
+        async_broadcast_websocket_notifications(result)
+
+        {:ok, result}
+
+      {:error, _operation, reason, _changes_so_far} ->
+        {:error, reason}
     end
+  end
+
+  defp async_broadcast_websocket_notifications(result) do
+    result
+    |> Enum.map(fn {_key, %NotificationReadStatus{} = nrs} -> nrs end)
+    |> AppNotifications.async_broadcast_websocket_notifications()
   end
 
   defp update_watchlist_changed_fields(changes) do

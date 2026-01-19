@@ -7,6 +7,7 @@ defmodule SanbaseWeb.UserSocket do
   # User-related channels
   channel("users:*", SanbaseWeb.UserChannel)
   channel("open_restricted_tabs:*", SanbaseWeb.OpenRestrictedTabChannel)
+  channel("notifications:*", SanbaseWeb.NotificationsChannel)
 
   def connect(params, socket)
       when is_map_key(params, "jti") or is_map_key(params, "access_token") do

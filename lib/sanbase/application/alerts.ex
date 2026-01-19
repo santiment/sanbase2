@@ -32,6 +32,16 @@ defmodule Sanbase.Application.Alerts do
       start_if(
         fn -> {Sanbase.Alerts.Scheduler, []} end,
         fn -> Sanbase.Alerts.Scheduler.enabled?() end
+      ),
+
+      # Start libcluster in alerts so we can broadcast to web pods
+      start_in(
+        {Cluster.Supervisor,
+         [
+           Application.get_env(:libcluster, :topologies),
+           [name: Sanbase.ClusterSupervisor]
+         ]},
+        [:dev, :prod]
       )
     ]
 

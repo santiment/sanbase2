@@ -36,6 +36,7 @@ defmodule SanbaseWeb.DataController do
     "name": "Ethereum",
     "ticker": "ETH",
     "rank": 2,
+    "rank_updated_at": "2026-01-20T15:22:00Z",
     "contract": "ETH",
     "slug": "ethereum",
     "infrastructure": "ETH",
@@ -267,6 +268,8 @@ defmodule SanbaseWeb.DataController do
   end
 
   defp get_projects_data() do
+    cmc_update_after_dt_filter = NaiveDateTime.add(NaiveDateTime.utc_now(), -7, :day)
+
     data =
       Project.List.projects(
         preload?: true,
@@ -282,7 +285,7 @@ defmodule SanbaseWeb.DataController do
         {:ok, github_organizations} = Project.github_organizations(project)
         infrastructure_code = project_to_infrastructure_code(project)
         {contract, decimals} = project_to_contract_decimals(project)
-        rank = project_to_rank(project)
+        {rank, updated_at} = project_to_rank(project, cmc_update_after_dt_filter)
         social_volume_query = project_to_social_volume_query(project)
 
         twitter_handle =
@@ -302,6 +305,7 @@ defmodule SanbaseWeb.DataController do
             decimals: decimals,
             social_volume_query: social_volume_query,
             rank: rank,
+            rank_updated_at: updated_at,
             telegram_chat_id: project.telegram_chat_id,
             telegram_chat_name: project.telegram_chat_name,
             coinmarketcap_id: project.coinmarketcap_id,
@@ -329,10 +333,14 @@ defmodule SanbaseWeb.DataController do
     end
   end
 
-  defp project_to_rank(project) do
-    case project.latest_coinmarketcap_data do
-      %{} = lcd -> lcd.rank
-      nil -> nil
+  defp project_to_rank(project, dt_threshold) do
+    lcd = project.latest_coinmarketcap_data
+
+    if lcd && is_struct(lcd.update_time, NaiveDateTime) &&
+         NaiveDateTime.after?(lcd.update_time, dt_threshold) do
+      {lcd.rank, DateTime.from_naive!(lcd.update_time, "Etc/UTC")}
+    else
+      {nil, nil}
     end
   end
 

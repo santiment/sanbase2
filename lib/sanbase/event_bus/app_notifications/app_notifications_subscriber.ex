@@ -117,7 +117,9 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
          state
        )
        when is_integer(entity_owner_user_id) do
-    create_notification(:create_vote, [entity_owner_user_id], data)
+    if not in_cooldown_period?(:create_vote, data) do
+      create_notification(:create_vote, [entity_owner_user_id], data)
+    end
 
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
@@ -341,4 +343,26 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
        },
        else: %{}
   end
+
+  defp in_cooldown_period?(:create_vote, %{
+         entity_type: entity_type,
+         entity_id: entity_id,
+         user_id: voter_id
+       }) do
+    case AppNotifications.last_notification_created_by(
+           :create_vote,
+           entity_type,
+           entity_id,
+           voter_id
+         ) do
+      {:ok, notification} ->
+        minutes_diff = DateTime.diff(DateTime.utc_now(), notification.inserted_at, :minute)
+        abs(minutes_diff) <= 5
+
+      _ ->
+        false
+    end
+  end
+
+  defp in_cooldown_period?(_type, _data), do: false
 end

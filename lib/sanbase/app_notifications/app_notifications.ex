@@ -70,6 +70,29 @@ defmodule Sanbase.AppNotifications do
   end
 
   @doc """
+  Return the most recently created notification of `type` for `entity_type`/`entity_id`,
+  created by `user_id`.
+  """
+  @spec last_notification_created_by(atom(), atom() | String.t(), integer(), pos_integer()) ::
+          {:ok, Notification.t()} | {:error, :not_found}
+  def last_notification_created_by(type, entity_type, entity_id, user_id) do
+    query =
+      from(n in Notification,
+        where:
+          n.type == ^to_string(type) and n.entity_type == ^to_string(entity_type) and
+            n.entity_id == ^entity_id and
+            n.user_id == ^user_id and n.is_deleted == false,
+        order_by: [desc: n.inserted_at, desc: n.id],
+        limit: 1
+      )
+
+    case Repo.one(query) do
+      %Notification{} = notification -> {:ok, notification}
+      _ -> {:error, :not_found}
+    end
+  end
+
+  @doc """
   Returns the latest notifications that are visible to the provided user.
 
   A user has a notification if there is a NotificationReadStatus record for that user_id and notification_id.
@@ -182,24 +205,6 @@ defmodule Sanbase.AppNotifications do
     # TODO: If it works, inline the function and delete the commented code below
     do_async_broadcast_websocket_notifications(notification_read_status_list)
   end
-
-  # Delete later if not needed.
-  # def async_broadcast_websocket_notifications(notification_read_status_list)
-  #     when is_list(notification_read_status_list) do
-  #   if System.get_env("CONTAINER_TYPE") in ["web", "all"] do
-  #     do_async_broadcast_websocket_notifications(notification_read_status_list)
-  #   else
-  #     web_node = Node.list() |> Enum.find(fn node -> to_string(node) =~ "sanbase-web" end)
-  #     web_node = web_node || List.first(Node.list())
-  #
-  #     IO.puts("WILL PUSH THE NOTIF TO #{web_node}")
-  #
-  #     Node.spawn(web_node, fn ->
-  #       IO.puts("BROADCASTING YOOO from #{Node.self()}")
-  #       do_async_broadcast_websocket_notifications(notification_read_status_list)
-  #     end)
-  #   end
-  # end
 
   defp do_async_broadcast_websocket_notifications(notification_read_status_list) do
     Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->

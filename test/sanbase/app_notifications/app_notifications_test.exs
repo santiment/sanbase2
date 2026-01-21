@@ -600,6 +600,29 @@ defmodule Sanbase.AppNotificationsTest do
       assert AppNotifications.list_notifications_for_user(other_user.id) == []
     end
 
+    test "creating multiple votes quickly emits only one notification", %{author: author} do
+      voter = insert(:user)
+
+      {:ok, watchlist} =
+        UserList.create_user_list(author, %{name: "Vote target", is_public: true})
+
+      {:ok, _vote} = Vote.create(%{user_id: voter.id, watchlist_id: watchlist.id})
+      {:ok, _vote} = Vote.create(%{user_id: voter.id, watchlist_id: watchlist.id})
+      {:ok, _vote} = Vote.create(%{user_id: voter.id, watchlist_id: watchlist.id})
+
+      subscriber = Sanbase.EventBus.AppNotificationsSubscriber
+      Sanbase.EventBus.drain_topics(subscriber.topics(), 10_000)
+
+      owner_notifications = AppNotifications.list_notifications_for_user(author.id, limit: 20)
+
+      create_vote_notifications =
+        Enum.filter(owner_notifications, fn n ->
+          n.type == "create_vote" and n.entity_type == "watchlist" and n.entity_id == watchlist.id
+        end)
+
+      assert length(create_vote_notifications) == 1
+    end
+
     # Multiple followers test
 
     test "multiple followers receive notifications for same action", %{

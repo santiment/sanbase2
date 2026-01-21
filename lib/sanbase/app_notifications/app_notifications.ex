@@ -118,7 +118,12 @@ defmodule Sanbase.AppNotifications do
     )
     |> maybe_apply_cursor(cursor)
     |> select([_nrs, notification, _user], notification)
-    |> select_merge([nrs, _notification, user], %{read_at: nrs.read_at, user: user})
+    |> select_merge([nrs, notification, user], %{
+      read_at: nrs.read_at,
+      user: user,
+      # Some past  notifications might have nil, replace it with empty map
+      json_data: fragment("COALESCE(?, '{}')", notification.json_data)
+    })
     |> limit(^limit)
     |> Repo.all()
   end

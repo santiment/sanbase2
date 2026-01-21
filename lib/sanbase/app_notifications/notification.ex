@@ -56,7 +56,7 @@ defmodule Sanbase.AppNotifications.Notification do
     field(:is_broadcast, :boolean, default: false)
     field(:grouping_key, :string)
 
-    field(:json_data, :map)
+    field(:json_data, :map, default: %{})
     field(:is_deleted, :boolean, default: false)
 
     belongs_to(:user, User)

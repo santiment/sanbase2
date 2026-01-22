@@ -108,24 +108,22 @@ defmodule Sanbase.AppNotifications do
     from(nrs in NotificationReadStatus,
       join: n in Notification,
       on: n.id == nrs.notification_id and n.is_deleted == false,
-      join: u in Sanbase.Accounts.User,
-      on: n.user_id == u.id,
-      where: nrs.user_id == ^user_id
-    )
-    |> order_by([_nrs, notification, _user],
-      desc: notification.inserted_at,
-      desc: notification.id
+      where: nrs.user_id == ^user_id,
+      order_by: [desc: n.inserted_at, desc: n.id],
+      select: n,
+      select_merge: %{
+        read_at: nrs.read_at,
+        json_data: fragment("COALESCE(?, '{}')", n.json_data)
+      },
+      limit: ^limit
     )
     |> maybe_apply_cursor(cursor)
-    |> select([_nrs, notification, _user], notification)
-    |> select_merge([nrs, notification, user], %{
-      read_at: nrs.read_at,
-      user: user,
-      # Some past  notifications might have nil, replace it with empty map
-      json_data: fragment("COALESCE(?, '{}')", notification.json_data)
-    })
-    |> limit(^limit)
     |> Repo.all()
+    # Two-phase load to preload the user and their roles.
+    # We select from NotificationReadStatus, but preload the user from Notification
+    # Ecto is not happy if you don't select the binding from `from` when there's
+    # a preload
+    |> Repo.preload(user: [:roles])
   end
 
   @doc """
@@ -140,9 +138,9 @@ defmodule Sanbase.AppNotifications do
     from(n in Notification,
       join: nrs in NotificationReadStatus,
       on: nrs.notification_id == n.id and nrs.user_id == ^user_id,
-      where: n.id == ^notification_id and n.is_deleted == false
+      where: n.id == ^notification_id and n.is_deleted == false,
+      preload: [user: [:roles]]
     )
-    |> preload([_n, _nrs], [:user])
     |> select_merge([_n, nrs], %{read_at: nrs.read_at})
     |> Repo.one()
     |> case do

@@ -53,8 +53,15 @@ defmodule Sanbase.EventBus.EventValidation do
       when event_type in [:create_alert, :delete_alert],
       do: valid_integer_id?(user_id) and valid_integer_id?(alert_id)
 
-  def valid?(%{event_type: :alert_triggered, user_id: user_id, alert_id: alert_id}),
-    do: valid_integer_id?(user_id) and valid_integer_id?(alert_id)
+  def valid?(%{
+        event_type: :alert_triggered,
+        user_id: user_id,
+        alert_id: alert_id,
+        alert_title: alert_title
+      }),
+      do:
+        valid_integer_id?(user_id) and valid_integer_id?(alert_id) and
+          (is_nil(alert_title) or is_binary(alert_title))
 
   #############################################################################
   ## Comments Events

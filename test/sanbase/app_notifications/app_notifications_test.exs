@@ -623,6 +623,51 @@ defmodule Sanbase.AppNotificationsTest do
       assert length(create_vote_notifications) == 1
     end
 
+    test "alert_triggered notifies alert owner", %{} do
+      user = insert(:user)
+      alert_title = "Price Alert"
+
+      user_trigger =
+        insert(:user_trigger,
+          user: user,
+          trigger: %{
+            title: alert_title,
+            is_public: false,
+            settings: %{
+              "type" => "metric_signal",
+              "metric" => "price_usd",
+              "target" => %{"slug" => "santiment"},
+              "channel" => "telegram",
+              "time_window" => "1d",
+              "operation" => %{"percent_up" => 20.0}
+            }
+          }
+        )
+
+      Sanbase.EventBus.notify(%{
+        topic: :alert_events,
+        data: %{
+          event_type: :alert_triggered,
+          user_id: user.id,
+          alert_id: user_trigger.id,
+          alert_title: alert_title
+        }
+      })
+
+      :timer.sleep(200)
+
+      notifications = AppNotifications.list_notifications_for_user(user.id)
+      assert length(notifications) == 1
+
+      [notification] = notifications
+      assert notification.type == "alert_triggered"
+      assert notification.entity_type == "user_trigger"
+      assert notification.entity_id == user_trigger.id
+      assert notification.entity_name == alert_title
+      assert notification.user_id == user.id
+      assert notification.json_data == %{}
+    end
+
     # Multiple followers test
 
     test "multiple followers receive notifications for same action", %{

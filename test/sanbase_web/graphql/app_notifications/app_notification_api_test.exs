@@ -184,7 +184,18 @@ defmodule SanbaseWeb.Graphql.AppNotificationApiTest do
       first_query = """
       {
         getCurrentUserNotifications(limit: 2) {
-          notifications { id entityName entityType entityId insertedAt }
+          notifications {
+            id
+            entityName
+            entityType
+            entityId
+            insertedAt
+            user {
+              id
+              username
+              isSantimentTeamMember
+            }
+          }
           cursor { before after }
         }
       }
@@ -196,8 +207,20 @@ defmodule SanbaseWeb.Graphql.AppNotificationApiTest do
 
       second_query = """
       {
-        getCurrentUserNotifications(cursor: {type: BEFORE, datetime: "#{cursor_before}"}) {
-          notifications { id entityName entityType entityId insertedAt }
+        getCurrentUserNotifications(limit: 20, cursor: {type: BEFORE, datetime: "#{cursor_before}"}) {
+          notifications {
+            id
+            entityName
+            entityType
+            entityId
+            insertedAt
+            user {
+              id
+              username
+              isSantimentTeamMember
+            }
+          }
+          cursor { before after }
         }
       }
       """

@@ -1,5 +1,5 @@
 defmodule Sanbase.Metric.MetricReplace do
-  @slugs_with_changed_price_metric ~w(gold s-and-p-500 crude-oil dxy)
+  @slugs_with_changed_price_metric ~w(gold silver s-and-p-500 crude-oil dxy)
   @slugs_with_changed_volume_metric ~w(fbtc btco hodl gbtc arkb bitb ibit)
 
   @slugs_with_changed_metric @slugs_with_changed_price_metric ++

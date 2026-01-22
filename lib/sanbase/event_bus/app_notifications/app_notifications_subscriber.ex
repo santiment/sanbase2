@@ -125,6 +125,22 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
     state
   end
 
+  defp handle_event(
+         %{
+           data:
+             %{event_type: :alert_triggered, user_id: user_id, alert_id: alert_id, alert_title: _} =
+               data
+         },
+         event_shadow,
+         state
+       )
+       when is_integer(user_id) and is_integer(alert_id) do
+    create_notification(:alert_triggered, [user_id], data)
+
+    EventBus.mark_as_completed({__MODULE__, event_shadow})
+    state
+  end
+
   defp handle_event(_event, event_shadow, state) do
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
@@ -272,6 +288,30 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
         entity_type: to_string(entity_type),
         entity_name: entity_name,
         entity_id: entity_id,
+        is_broadcast: false,
+        is_system_generated: false,
+        json_data: %{}
+      })
+
+    multi_insert_notification_read_status(user_ids, notification.id)
+  end
+
+  defp create_notification(
+         :alert_triggered,
+         user_ids,
+         %{
+           user_id: user_id,
+           alert_id: alert_id,
+           alert_title: alert_title
+         }
+       ) do
+    {:ok, notification} =
+      AppNotifications.create_notification(%{
+        type: "alert_triggered",
+        user_id: user_id,
+        entity_type: "user_trigger",
+        entity_name: alert_title || "Alert #{alert_id}",
+        entity_id: alert_id,
         is_broadcast: false,
         is_system_generated: false,
         json_data: %{}

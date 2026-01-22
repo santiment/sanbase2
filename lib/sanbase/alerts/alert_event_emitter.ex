@@ -16,7 +16,8 @@ defmodule Sanbase.Alert.EventEmitter do
     %{
       event_type: :alert_triggered,
       user_id: user_trigger.user_id,
-      alert_id: user_trigger.id
+      alert_id: user_trigger.id,
+      alert_title: user_trigger.trigger.title
     }
     |> notify()
   end

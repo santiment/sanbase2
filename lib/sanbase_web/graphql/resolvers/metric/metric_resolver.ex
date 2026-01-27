@@ -110,7 +110,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   def get_available_versions(_root, args, %{source: %{metric: metric}}) do
     with {:ok, versions} <- Metric.available_versions(metric) do
-      {:ok, versions}
+      versions_maps = Enum.map(versions, fn ver -> %{version: ver} end)
+      {:ok, versions_maps}
     end
     |> maybe_handle_graphql_error(fn error ->
       handle_graphql_error(
@@ -124,8 +125,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   def get_available_slugs(_root, _args, %{source: %{metric: metric, version: version}}),
     do: Metric.available_slugs(metric, version: version)
 
-  def get_available_projects(_root, _args, %{source: %{metric: metric}}) do
-    with {:ok, slugs} <- Metric.available_slugs(metric) do
+  def get_available_projects(_root, _args, %{source: %{metric: metric, version: version}}) do
+    with {:ok, slugs} <- Metric.available_slugs(metric, version: version) do
       slugs = Enum.sort(slugs, :asc)
       {:ok, Sanbase.Project.List.by_slugs(slugs)}
     end
@@ -166,7 +167,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   def get_human_readable_name(_root, _args, %{source: %{metric: metric}}),
     do: Metric.human_readable_name(metric)
 
-  def get_metadata(%{}, _args, %{source: %{metric: metric}} = resolution) do
+  def get_metadata(%{}, _args, %{source: %{metric: metric, version: version}} = resolution) do
     %{
       context: %{
         requested_product: requested_product,
@@ -180,7 +181,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         access_restrictions =
           Restrictions.get({:metric, metric}, requested_product, subcription_product, plan_name)
 
-        {:ok, Map.merge(access_restrictions, metadata)}
+        {:ok,
+         metadata
+         |> Map.merge(access_restrictions)
+         # TODO: Make the Metric.metadata accept version and return it?
+         |> Map.merge(%{version: version})}
 
       {:error, error} ->
         {:error, handle_graphql_error("metadata", %{metric: metric}, error)}
@@ -392,23 +397,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
             "The metric '#{metric}' must have at least one of the following fields in the selector: #{selectors_str}"}}
       end
     end)
-  end
-
-  # This is used when a list of slugs and a list of metrics is provided
-  # Every metric is fetched for every slug and the result length can get too big
-  defp check_metrics_slugs_cartesian_limit(
-         metrics,
-         %{slug: slug_or_slugs},
-         limit
-       ) do
-    slugs = List.wrap(slug_or_slugs)
-    cartesian_product_length = length(metrics) * length(slugs)
-
-    case cartesian_product_length <= limit do
-      true -> :ok
-      false -> {:error, "The length of the metrics multiplied by the length of\
-      the slugs must not exceed #{limit}."}
-    end
   end
 
   # timeseries_data and timeseries_data_per_slug are processed and fetched in

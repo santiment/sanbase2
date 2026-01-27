@@ -145,7 +145,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         filters,
         opts
       ) do
-    version = Keyword.get(opts, :version, @deafault_version)
+    version = Keyword.get(opts, :version, @default_version)
 
     params = %{
       interval: maybe_str_to_sec(interval),
@@ -442,7 +442,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  def available_slugs_for_metric_query(metric) do
+  def available_slugs_for_metric_query(metric, opts) do
+    version = Keyword.get(opts, :version, @default_version)
+
     sql = """
     SELECT DISTINCT(name)
     FROM asset_metadata FINAL
@@ -451,7 +453,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         SELECT DISTINCT(asset_id)
         FROM available_metrics
         WHERE
-          #{versioned_metric_id_filter(metric, argument_name: "metric")} AND
+          #{versioned_metric_id_filter(metric, argument_name: "metric", version: version, version_arg_name: "version")} AND
           end_dt > now() - INTERVAL 14 DAY
       ) AND
       asset_id NOT IN (
@@ -462,7 +464,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       )
     """
 
-    params = %{metric: Map.get(Registry.name_to_metric_map(), metric)}
+    params = %{metric: Map.get(Registry.name_to_metric_map(), metric), version: version}
 
     Sanbase.Clickhouse.Query.new(sql, params)
   end
@@ -549,13 +551,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   def available_versions_query(metric) do
     sql = """
     SELECT version
-    FROM (
-      SELECT
-        -- rewrite old versions like 2019-11-01 to 1.0
-        if(match(version, '\\d{4}-\\d{2}-\\d{2}'), '1.0', version) AS version
-      FROM metric_metadata_versioned FINAL
-      WHERE name = {{metric}}
-    )
+    FROM metric_metadata_external FINAL
+    WHERE name = {{metric}}
     -- will be ordered in the app code
     """
 

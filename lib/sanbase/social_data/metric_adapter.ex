@@ -229,7 +229,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
     do: {:ok, Project.List.projects_slugs(preload?: false)}
 
   @impl Sanbase.Metric.Behaviour
-  def available_slugs(metric) do
+  def available_slugs(metric, _opts) do
     slugs =
       case metric do
         "social_volume_" <> _source ->

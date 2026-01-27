@@ -255,7 +255,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     end
   end
 
-  def available_versions(metric, _selector, _opts) do
+  @impl Sanbase.Metric.Behaviour
+  def available_versions(metric) do
     available_versions_query(metric)
     |> ClickhouseRepo.query_transform(fn [version] -> version end)
     |> maybe_apply_function(fn versions ->
@@ -272,18 +273,19 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def available_slugs(), do: get_available_slugs()
+
   @impl Sanbase.Metric.Behaviour
-  def available_slugs(metric) do
+  def available_slugs(metric, opts) do
     cond do
       metric == "age_distribution" ->
         # avoid infinite loop if it goes into HistogramMetric
-        get_available_slugs(metric)
+        get_available_slugs(metric, opts)
 
       metric in Registry.metrics_mapset_with_data_type(:histogram) ->
-        HistogramMetric.available_slugs(metric)
+        HistogramMetric.available_slugs(metric, opts)
 
       true ->
-        get_available_slugs(metric)
+        get_available_slugs(metric, opts)
     end
   end
 
@@ -321,8 +323,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     |> ClickhouseRepo.query_transform(fn [slug] -> slug end)
   end
 
-  defp get_available_slugs(metric) do
-    available_slugs_for_metric_query(metric)
+  defp get_available_slugs(metric, opts) do
+    available_slugs_for_metric_query(metric, opts)
     |> ClickhouseRepo.query_transform(fn [slug] -> slug end)
   end
 

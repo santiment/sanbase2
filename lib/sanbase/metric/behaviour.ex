@@ -84,10 +84,10 @@ defmodule Sanbase.Metric.Behaviour do
           actions_to_fix: String.t()
         }
 
-  @type timeseries_data_point :: %{datetime: Datetime.t(), value: float()}
+  @type timeseries_data_point :: %{datetime: DateTime.t(), value: float()}
 
   @type timeseries_data_per_slug_point :: %{
-          datetime: Datetime.t(),
+          datetime: DateTime.t(),
           data: list(slug_float_value_pair())
         }
 
@@ -120,6 +120,8 @@ defmodule Sanbase.Metric.Behaviour do
   @type last_datetime_computed_at_result :: {:ok, DateTime.t()} | {:error, String.t()}
 
   @type metadata_result :: {:ok, metadata()} | {:error, String.t()}
+
+  @type available_versions_result :: {:ok, list(String.t())} | {:error, String.t()}
 
   @type available_slugs_result :: {:ok, list(slug)} | {:error, String.t()}
 
@@ -239,7 +241,9 @@ defmodule Sanbase.Metric.Behaviour do
 
   @callback available_slugs() :: available_slugs_result
 
-  @callback available_slugs(metric) :: available_slugs_result
+  @callback available_slugs(metric, opts) :: available_slugs_result
+
+  @callback available_versions(metric) :: available_versions_result()
 
   @callback available_metrics() :: list(metric)
 
@@ -286,6 +290,8 @@ defmodule Sanbase.Metric.Behaviour do
     # If the adapter exposes metrics that accept label_fqn as a metric
     # the following 2 callbacks are implemented
     available_label_fqns: 1,
-    available_label_fqns: 2
+    available_label_fqns: 2,
+    # Non-ch metrics don't have versioning yet
+    available_versions: 1
   ]
 end

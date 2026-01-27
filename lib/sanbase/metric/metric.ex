@@ -656,7 +656,7 @@ defmodule Sanbase.Metric do
         if Map.fetch!(Helper.implemented_optional_functions(), {module, :available_versions, 1}) do
           module.available_versions(metric)
         else
-          {:ok, [%{vsn: "1.0"}]}
+          {:ok, ["1.0"]}
         end
     end
   end

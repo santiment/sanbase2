@@ -153,6 +153,10 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:project, :project)
   end
 
+  object :metric_version do
+    field(:version, :string)
+  end
+
   object :broken_data do
     field(:from, non_null(:datetime))
     field(:to, non_null(:datetime))
@@ -504,7 +508,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     """
     field(:required_selectors, list_of(list_of(:selector_name)))
 
-    field :available_versions, list_of(:string) do
+    field :available_versions, list_of(:metric_version) do
       cache_resolve(&MetricResolver.get_available_versions/3, ttl: 120)
     end
 

@@ -123,7 +123,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     MetricResolver.timeseries_data(
       root,
       args,
-      Map.put(resolution, :source, %{metric: "percent_of_total_supply_on_exchanges"})
+      Map.put(resolution, :source, %{
+        metric: "percent_of_total_supply_on_exchanges",
+        version: "1.0"
+      })
     )
     |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :percent_on_exchanges)
   end

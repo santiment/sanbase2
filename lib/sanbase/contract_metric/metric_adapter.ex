@@ -168,7 +168,7 @@ defmodule Sanbase.Contract.MetricAdapter do
   def available_slugs(), do: {:ok, []}
 
   @impl Sanbase.Metric.Behaviour
-  def available_slugs(_metric), do: available_slugs()
+  def available_slugs(_metric, _opts), do: available_slugs()
 
   # Private functions
 

@@ -26,7 +26,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiAggregatedTimeseriesDataTest do
       end
     )
     |> Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.MetricAdapter.available_slugs/1,
+      &Sanbase.Clickhouse.MetricAdapter.available_slugs/2,
       {:ok, slugs}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->

@@ -182,15 +182,15 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
     |> maybe_unwrap_ok_value()
   end
 
-  def available_slugs("age_distribution") do
-    Sanbase.Clickhouse.MetricAdapter.available_slugs("age_distribution")
+  def available_slugs("age_distribution", _opts) do
+    Sanbase.Clickhouse.MetricAdapter.available_slugs("age_distribution", [])
   end
 
-  def available_slugs(metric) when metric in @spent_coins_cost_histograms do
-    Metric.available_slugs("price_usd")
+  def available_slugs(metric, _opts) when metric in @spent_coins_cost_histograms do
+    Metric.available_slugs("price_usd", [])
   end
 
-  def available_slugs(metric) when metric in @eth2_metrics do
+  def available_slugs(metric, _opts) when metric in @eth2_metrics do
     {:ok, ["ethereum"]}
   end
 

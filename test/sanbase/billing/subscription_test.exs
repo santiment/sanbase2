@@ -12,6 +12,120 @@ defmodule Sanbase.Billing.SubscriptionTest do
     %{user: insert(:user)}
   end
 
+  describe "#maybe_validate_san_holder_coupon" do
+    setup_with_mocks(
+      [
+        {StripeApi, [:passthrough],
+         [create_product: fn _ -> StripeApiTestResponse.create_product_resp() end]},
+        {StripeApi, [:passthrough],
+         [create_plan: fn _ -> StripeApiTestResponse.create_plan_resp() end]},
+        {StripeApi, [:passthrough],
+         [
+           create_customer_with_card: fn _, _ ->
+             StripeApiTestResponse.create_or_update_customer_resp()
+           end
+         ]},
+        {StripeApi, [:passthrough],
+         [create_coupon: fn _ -> StripeApiTestResponse.create_coupon_resp() end]},
+        {StripeApi, [:passthrough],
+         [
+           retrieve_coupon: fn coupon ->
+             {:ok, %Stripe.Coupon{id: coupon, percent_off: 20}}
+           end
+         ]},
+        {StripeApi, [:passthrough],
+         [create_subscription: fn _ -> StripeApiTestResponse.create_subscription_resp() end]},
+        {Sanbase.Messaging.Discord, [:passthrough], [send_notification: fn _, _, _ -> :ok end]},
+        {Sanbase.TemplateMailer, [:passthrough],
+         send: fn _, _, _ -> {:ok, %{"status" => "sent"}} end}
+      ],
+      context
+    ) do
+      {:ok, context}
+    end
+
+    test "SAN_HOLDER_1000 coupon with sufficient balance retrieves Stripe coupon", context do
+      user = insert(:staked_user, email: "test@example.com")
+      plan = context.plans.plan_pro_sanbase
+
+      {:ok, subscription} = Subscription.subscribe(user, plan, "card_token", "SAN_HOLDER_1000")
+
+      assert subscription.status == :active
+      assert_called(StripeApi.retrieve_coupon("SAN_HOLDER_1000"))
+    end
+
+    test "SAN_HOLDER_1000 coupon with insufficient balance returns error", context do
+      user = insert(:user, email: "test@example.com")
+      plan = context.plans.plan_pro_sanbase
+
+      result = Subscription.subscribe(user, plan, "card_token", "SAN_HOLDER_1000")
+
+      assert {:error, "You need at least 1000 SAN tokens to use this discount code"} = result
+      refute called(StripeApi.retrieve_coupon("SAN_HOLDER_1000"))
+    end
+
+    test "automatic discount (no coupon) with sufficient balance creates coupon", context do
+      user = insert(:staked_user, email: "test@example.com")
+      plan = context.plans.plan_pro_sanbase
+
+      {:ok, subscription} = Subscription.subscribe(user, plan, "card_token", nil)
+
+      assert subscription.status == :active
+      assert_called(StripeApi.create_coupon(%{percent_off: 20, duration: "forever"}))
+    end
+
+    test "automatic discount (no coupon) with insufficient balance applies no discount",
+         context do
+      user = insert(:user, email: "test@example.com")
+      plan = context.plans.plan_pro_sanbase
+
+      {:ok, subscription} = Subscription.subscribe(user, plan, "card_token", nil)
+
+      assert subscription.status == :active
+      refute called(StripeApi.create_coupon(:_))
+    end
+
+    test "user with exactly 1000 SAN qualifies for SAN_HOLDER_1000 coupon", context do
+      user = insert(:user, email: "test@example.com", san_balance: Decimal.new(1000))
+      plan = context.plans.plan_pro_sanbase
+
+      {:ok, subscription} = Subscription.subscribe(user, plan, "card_token", "SAN_HOLDER_1000")
+
+      assert subscription.status == :active
+      assert_called(StripeApi.retrieve_coupon("SAN_HOLDER_1000"))
+    end
+
+    test "user with 999 SAN does not qualify for SAN_HOLDER_1000 coupon", context do
+      user = insert(:user, email: "test@example.com", san_balance: Decimal.new(999))
+      plan = context.plans.plan_pro_sanbase
+
+      result = Subscription.subscribe(user, plan, "card_token", "SAN_HOLDER_1000")
+
+      assert {:error, "You need at least 1000 SAN tokens to use this discount code"} = result
+    end
+
+    test "other coupons pass through unchanged", context do
+      user = insert(:user, email: "test@example.com")
+      plan = context.plans.plan_pro_sanbase
+
+      with_mocks([
+        {StripeApi, [:passthrough],
+         [
+           create_customer_with_card: fn _, _ ->
+             StripeApiTestResponse.create_or_update_customer_resp()
+           end,
+           retrieve_coupon: fn "OTHER_COUPON" -> {:ok, %Stripe.Coupon{id: "OTHER_COUPON"}} end,
+           create_subscription: fn _ -> StripeApiTestResponse.create_subscription_resp() end
+         ]}
+      ]) do
+        {:ok, subscription} = Subscription.subscribe(user, plan, "card_token", "OTHER_COUPON")
+
+        assert subscription.status == :active
+        assert_called(StripeApi.retrieve_coupon("OTHER_COUPON"))
+      end
+    end
+  end
+
   describe "#sync_subscription_with_stripe" do
     setup(context) do
       stripe_base_subscription =

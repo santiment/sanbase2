@@ -217,7 +217,6 @@ defmodule Sanbase.Billing.Plan.Restrictions do
 
   defp additional_data("query", query)
        when query in [
-              "dailyActiveDeposits",
               "historyTwitterData",
               "percentOfTokenSupplyOnExchanges"
             ],
@@ -226,12 +225,9 @@ defmodule Sanbase.Billing.Plan.Restrictions do
   defp additional_data("query", query)
        when query in [
               "gasUsed",
-              "devActivity",
-              "githubActivity",
               "historicalBalance",
               "historyPrice",
               "socialDominance",
-              "githubActivity",
               "minersBalance",
               "ohlc",
               "getProjectTrendingHistory",

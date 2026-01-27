@@ -1,6 +1,5 @@
 defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
   import SanbaseWeb.Graphql.Helpers.Async
-  import SanbaseWeb.Graphql.Helpers.CalibrateInterval
 
   alias Sanbase.Project
 
@@ -25,37 +24,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
     else
       _error ->
         {:ok, nil}
-    end
-  end
-
-  def history_twitter_data(
-        root,
-        %{ticker: ticker} = args,
-        resolution
-      ) do
-    slug = Project.slug_by_ticker(ticker)
-    args = args |> Map.delete(:ticker) |> Map.put(:slug, slug)
-    history_twitter_data(root, args, resolution)
-  end
-
-  def history_twitter_data(
-        _root,
-        %{slug: slug, from: from, to: to, interval: interval},
-        _resolution
-      ) do
-    with %Project{} = project <- Project.by_slug(slug),
-         {:ok, twitter_name} <- Project.twitter_handle(project),
-         {:ok, from, to, interval} <-
-           calibrate(Sanbase.Twitter, twitter_name, from, to, interval, 60 * 60),
-         {:ok, data} <-
-           Sanbase.Twitter.timeseries_data(twitter_name, from, to, interval) do
-      {:ok, data}
-    else
-      {:error, reason} ->
-        {:error, "Cannot fetch twitter history data for slug #{slug}: #{reason}"}
-
-      error ->
-        {:error, "Cannot fetch twitter history data for slug #{slug}: #{inspect(error)}"}
     end
   end
 end

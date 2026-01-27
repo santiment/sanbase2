@@ -5,7 +5,6 @@ defmodule SanbaseWeb.Graphql.Schema.MetricQueries do
 
   alias SanbaseWeb.Graphql.Resolvers.MetricResolver
   alias SanbaseWeb.Graphql.Middlewares.TransformResolution
-  alias SanbaseWeb.Graphql.Middlewares.AccessControl
 
   object :metric_queries do
     @desc ~s"""

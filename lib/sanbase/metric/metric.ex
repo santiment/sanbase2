@@ -596,7 +596,7 @@ defmodule Sanbase.Metric do
         metric_not_available_error(metric, type: :timeseries)
 
       module when is_atom(module) ->
-        case module.available_slugs(metric) do
+        case module.available_slugs(metric, opts) do
           {:ok, slugs} ->
             supported_slugs = Sanbase.Project.List.projects_slugs()
 

@@ -133,7 +133,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
     filters = Keyword.get(opts, :additional_filters, [])
 
-    slugs_by_filter_query(metric, from, to, operator, threshold, aggregation, filters)
+    slugs_by_filter_query(metric, from, to, operator, threshold, aggregation, filters, opts)
     |> ClickhouseRepo.query_transform(fn [slug, _value] -> slug end)
   end
 
@@ -144,7 +144,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
     filters = Keyword.get(opts, :additional_filters, [])
 
-    slugs_order_query(metric, from, to, direction, aggregation, filters)
+    slugs_order_query(metric, from, to, direction, aggregation, filters, opts)
     |> ClickhouseRepo.query_transform(fn [slug, _value] -> slug end)
   end
 

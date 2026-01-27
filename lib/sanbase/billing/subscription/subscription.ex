@@ -31,6 +31,7 @@ defmodule Sanbase.Billing.Subscription do
   @sanbase_basic_plan_id 205
   @preload_fields [:user, plan: [:product]]
   @trial_days 14
+  @san_holder_coupon "SAN_HOLDER_1000"
 
   # Unused due to disabling of annual discounts
   # @one_month_discount_days 30
@@ -154,7 +155,8 @@ defmodule Sanbase.Billing.Subscription do
   @spec subscribe(%User{}, %Plan{}, string_or_nil, string_or_nil) ::
           {:ok, %__MODULE__{}} | {:error, %Stripe.Error{} | String.t()}
   def subscribe(user, plan, card_token \\ nil, coupon \\ nil) do
-    with :ok <- has_active_subscriptions(user, plan),
+    with {:ok, coupon} <- maybe_validate_san_holder_coupon(user, coupon),
+         :ok <- has_active_subscriptions(user, plan),
          {:ok, user} <- Billing.create_or_update_stripe_customer(user, card_token),
          {:ok, stripe_subscription} <- create_stripe_subscription(user, plan, coupon),
          {:ok, db_subscription} <- create_subscription_db(stripe_subscription, user, plan) do
@@ -170,7 +172,8 @@ defmodule Sanbase.Billing.Subscription do
   Subscribe user with payment_method_id to a plan.
   """
   def subscribe2(user, plan, payment_method_id, coupon \\ nil) do
-    with :ok <- has_active_subscriptions(user, plan),
+    with {:ok, coupon} <- maybe_validate_san_holder_coupon(user, coupon),
+         :ok <- has_active_subscriptions(user, plan),
          {:ok, user} <- StripeApi.attach_payment_method_to_customer(user, payment_method_id),
          {:ok, stripe_subscription} <- create_stripe_subscription(user, plan, coupon),
          {:ok, db_subscription} <- create_subscription_db(stripe_subscription, user, plan) do
@@ -674,6 +677,16 @@ defmodule Sanbase.Billing.Subscription do
 
   defp percent_discount(balance) when balance >= 1000, do: @percent_discount_1000_san
   defp percent_discount(_), do: nil
+
+  defp maybe_validate_san_holder_coupon(user, @san_holder_coupon) do
+    if User.san_balance_or_zero(user) >= 1000 do
+      {:ok, @san_holder_coupon}
+    else
+      {:error, "You need at least 1000 SAN tokens to use this discount code"}
+    end
+  end
+
+  defp maybe_validate_san_holder_coupon(_user, coupon), do: {:ok, coupon}
 
   defp fetch_current_subscription(user_id, product_id) do
     __MODULE__

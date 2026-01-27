@@ -216,6 +216,21 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     # In the spikes table the column is called calculated_on_metric_id
     metric_id_column = Keyword.get(opts, :metric_id_column, "metric_id")
     arg_name = Keyword.fetch!(opts, :argument_name)
+
+    """
+    #{metric_id_column} = (
+      SELECT metric_id
+      FROM metric_metadata_external FINAL
+      WHERE name = {{#{arg_name}}} AND version = '1.0'
+      LIMIT 1
+    )
+    """
+  end
+
+  def versioned_metric_id_filter(metric, opts) when is_binary(metric) do
+    # In the spikes table the column is called calculated_on_metric_id
+    metric_id_column = Keyword.get(opts, :metric_id_column, "metric_id")
+    arg_name = Keyword.fetch!(opts, :argument_name)
     version_arg_name = Keyword.get(opts, :version_arg_name)
 
     """
@@ -226,13 +241,6 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
       LIMIT 1
     )
     """
-  end
-
-  def metric_id_filter(metrics, opts) when is_list(metrics) do
-    arg_name = Keyword.fetch!(opts, :argument_name)
-    metric_id_column = Keyword.get(opts, :metric_id_column, "metric_id")
-
-    "#{metric_id_column} IN ( SELECT DISTINCT(metric_id) FROM metric_metadata FINAL WHERE name IN ({{#{arg_name}}}) )"
   end
 
   def signal_id_filter(%{signal: signal}, opts) when is_binary(signal) do

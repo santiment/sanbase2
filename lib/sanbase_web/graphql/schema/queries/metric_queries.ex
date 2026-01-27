@@ -14,6 +14,7 @@ defmodule SanbaseWeb.Graphql.Schema.MetricQueries do
     field :get_metric, :metric do
       meta(access: :free)
       arg(:metric, non_null(:string))
+      arg(:is_experimental, :boolean, default_value: false)
       arg(:store_executed_clickhouse_sql, :boolean, default_value: false)
 
       middleware(TransformResolution)

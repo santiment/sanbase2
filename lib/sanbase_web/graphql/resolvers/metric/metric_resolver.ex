@@ -354,15 +354,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end)
   end
 
-  def latest_metrics_data(_root, %{metrics: metrics} = args, _resolution) do
-    with {:ok, selector} <- args_to_selector(args, use_process_dictionary: true),
-         :ok <- check_metrics_slugs_cartesian_limit(metrics, selector, 20_000),
-         {:ok, data} <-
-           Metric.LatestMetric.latest_metrics_data(metrics, selector) do
-      {:ok, data}
-    end
-  end
-
   # Private functions
 
   # required_selectors is a list of lists like [["slug"], ["label_fqn", "label_fqns"]]

@@ -53,20 +53,5 @@ defmodule SanbaseWeb.Graphql.Schema.MetricQueries do
 
       cache_resolve(&MetricResolver.get_available_metrics_for_selector/3, ttl: 300)
     end
-
-    field :get_latest_metric_data, list_of(:latest_metric_data) do
-      deprecate("""
-      This API is not intended for widespread use. \
-      It will be deprecated once Websocket Subscriptions are added
-      """)
-
-      meta(access: :restricted, min_plan: [sanapi: "PRO", sanbase: "PRO"])
-
-      arg(:selector, :metric_target_selector_input_object)
-      arg(:metrics, list_of(:string))
-
-      middleware(AccessControl)
-      cache_resolve(&MetricResolver.latest_metrics_data/3, ttl: 30)
-    end
   end
 end

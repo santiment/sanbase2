@@ -115,22 +115,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     end
   end
 
-  def percent_of_token_supply_on_exchanges(
-        root,
-        %{slug: _, from: _, to: _, interval: _} = args,
-        resolution
-      ) do
-    MetricResolver.timeseries_data(
-      root,
-      args,
-      Map.put(resolution, :source, %{
-        metric: "percent_of_total_supply_on_exchanges",
-        version: "1.0"
-      })
-    )
-    |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :percent_on_exchanges)
-  end
-
   def eth_fees_distribution(_root, %{from: from, to: to, limit: limit}, _res) do
     case Sanbase.Clickhouse.Fees.eth_fees_distribution(from, to, limit) do
       {:ok, fees} ->

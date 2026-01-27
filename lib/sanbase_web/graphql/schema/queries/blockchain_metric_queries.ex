@@ -10,20 +10,6 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainMetricQueries do
   alias SanbaseWeb.Graphql.Middlewares.AccessControl
 
   object :blockchain_metric_queries do
-    @desc "Returns what percent of token supply is on exchanges"
-    field :percent_of_token_supply_on_exchanges, list_of(:percent_of_token_supply_on_exchanges) do
-      meta(access: :restricted)
-
-      arg(:slug, non_null(:string))
-      arg(:from, non_null(:datetime))
-      arg(:to, non_null(:datetime))
-      arg(:interval, :interval, default_value: "1d")
-
-      complexity(&Complexity.from_to_interval/3)
-      middleware(AccessControl)
-      cache_resolve(&ClickhouseResolver.percent_of_token_supply_on_exchanges/3)
-    end
-
     @desc """
     Returns used Gas by a blockchain.
     When you send tokens, interact with a contract or do anything else on the blockchain,

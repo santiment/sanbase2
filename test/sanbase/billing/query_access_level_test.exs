@@ -206,7 +206,6 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :get_trending_stories,
           :get_word_trending_history,
           :miners_balance,
-          :percent_of_token_supply_on_exchanges,
           :realtime_top_holders,
           :top_exchanges_by_balance,
           :top_holders,

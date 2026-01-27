@@ -15,11 +15,6 @@ defmodule SanbaseWeb.Graphql.ClickhouseTypes do
     field(:gas_used, :float)
   end
 
-  object :percent_of_token_supply_on_exchanges do
-    field(:datetime, non_null(:datetime))
-    field(:percent_on_exchanges, :float)
-  end
-
   object :top_holders do
     field(:datetime, non_null(:datetime))
     field(:address, :string)

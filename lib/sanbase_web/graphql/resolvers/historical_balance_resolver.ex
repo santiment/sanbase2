@@ -86,7 +86,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
     MetricResolver.timeseries_data(
       root,
       args,
-      Map.put(resolution, :source, %{metric: "miners_balance"})
+      # TODO: Deprecate all APIs that redirect to MetricResolver
+      Map.put(resolution, :source, %{metric: "miners_balance", version: "1.0"})
     )
     |> Sanbase.Utils.Transform.rename_map_keys(
       old_key: :value,

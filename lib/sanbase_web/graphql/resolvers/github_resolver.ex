@@ -177,7 +177,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
         SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
           root,
           %{args | selector: %{slug: slugs}},
-          Map.put(resolution, :source, %{metric: "dev_activity_1d"})
+          Map.put(resolution, :source, %{metric: "dev_activity_1d", version: "1.0"})
         )
       end)
 

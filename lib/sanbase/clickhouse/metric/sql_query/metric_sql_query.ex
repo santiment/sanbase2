@@ -34,6 +34,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       version: version
     }
 
+    metric_filter_opts = [argument_name: "metric", version: version, version_arg_name: "version"]
+
     only_finalized_data = Keyword.get(opts, :only_finalized_data, false)
 
     {additional_filters, params} =
@@ -41,14 +43,6 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
     {fixed_parameters_str, params} =
       maybe_get_fixed_parameters(metric, selector, params, opts ++ [trailing_and: true])
-
-    metric_filter_opts =
-      [
-        argument_name: "metric",
-        version: version,
-        # The name of the version argument from the SQL params
-        version_arg_name: "version"
-      ]
 
     sql =
       """
@@ -150,14 +144,19 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         filters,
         opts
       ) do
+    version = Keyword.get(opts, :version)
+
     params = %{
       interval: maybe_str_to_sec(interval),
       metric: Map.get(Registry.name_to_metric_map(), metric),
       from: dt_to_unix(:from, from),
       to: dt_to_unix(:to, to),
       selector: slug_or_slugs,
-      table: Map.get(Registry.table_map(), metric)
+      table: Map.get(Registry.table_map(), metric),
+      version: version
     }
+
+    metric_filter_opts = [argument_name: "metric", version: version, version_arg_name: "version"]
 
     only_finalized_data = Keyword.get(opts, :only_finalized_data, false)
     {additional_filters, params} = additional_filters(filters, params, trailing_and: true)
@@ -179,7 +178,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         #{maybe_convert_to_date(:after, metric, "dt", "toDateTime({{from}})")} AND
         #{maybe_convert_to_date(:before, metric, "dt", "toDateTime({{to}})")} AND
         #{asset_id_filter(%{slug: slug_or_slugs}, argument_name: "selector")} AND
-        #{metric_id_filter(metric, argument_name: "metric")} AND
+        #{metric_id_filter(metric, metric_filter_opts)} AND
         #{maybe_add_is_not_nan_check(params.table, column_name: "value", trailing_and: true)}
       isNotNull(value)
       GROUP BY asset_id, dt

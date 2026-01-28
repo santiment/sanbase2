@@ -486,33 +486,41 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  def first_datetime_query(metric, nil) do
+  def first_datetime_query(metric, nil, opts) do
+    version = Keyword.get(opts, :version, @default_version)
+
     sql = """
     SELECT
       toUnixTimestamp(start_dt)
     FROM available_metrics FINAL
     WHERE
-      #{metric_id_filter(metric, argument_name: "metric")}
+      #{versioned_metric_id_filter(metric, argument_name: "metric", version: version, version_arg_name: "version")}
     """
 
-    params = %{metric: Map.get(Registry.name_to_metric_map(), metric)}
+    params = %{
+      metric: Map.get(Registry.name_to_metric_map(), metric),
+      version: version
+    }
 
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  def first_datetime_query(metric, selector) do
+  def first_datetime_query(metric, selector, opts) do
+    version = Keyword.get(opts, :version, @default_version)
+
     sql = """
     SELECT
       toUnixTimestamp(argMax(start_dt, computed_at))
     FROM available_metrics
     WHERE
       #{asset_id_filter(selector, argument_name: "selector")} AND
-      #{metric_id_filter(metric, argument_name: "metric")}
+      #{versioned_metric_id_filter(metric, argument_name: "metric", version: version, version_arg_name: "version")}
     """
 
     params = %{
       metric: Map.get(Registry.name_to_metric_map(), metric),
-      selector: asset_filter_value(selector)
+      selector: asset_filter_value(selector),
+      version: version
     }
 
     Sanbase.Clickhouse.Query.new(sql, params)

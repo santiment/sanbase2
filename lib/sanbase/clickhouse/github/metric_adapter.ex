@@ -163,11 +163,12 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def first_datetime(_metric, %{organization: organization}) when is_binary(organization) do
+  def first_datetime(_metric, %{organization: organization}, _opts)
+      when is_binary(organization) do
     first_datetime_for_organizations([organization])
   end
 
-  def first_datetime(_metric, %{slug: slug}) when is_binary(slug) do
+  def first_datetime(_metric, %{slug: slug}, _opts) when is_binary(slug) do
     case Project.github_organizations(slug) do
       {:ok, organizations} when is_list(organizations) ->
         first_datetime_for_organizations(organizations)

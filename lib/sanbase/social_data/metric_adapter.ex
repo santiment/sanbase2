@@ -350,11 +350,11 @@ defmodule Sanbase.SocialData.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def first_datetime("nft_social_volume", _selector) do
+  def first_datetime("nft_social_volume", _selector, _opts) do
     {:ok, ~U[2009-01-01 00:00:00Z]}
   end
 
-  def first_datetime(metric, _selector) do
+  def first_datetime(metric, _selector, _opts) do
     {_metric, source} = SocialHelper.split_by_source(metric)
     source |> source_first_datetime()
   end

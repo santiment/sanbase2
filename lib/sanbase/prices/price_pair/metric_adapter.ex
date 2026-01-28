@@ -73,7 +73,7 @@ defmodule Sanbase.PricePair.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def first_datetime(metric, %{slug: slug}) do
+  def first_datetime(metric, %{slug: slug}, _opts) do
     quote_asset = metric_to_quote_asset(metric)
     opts = update_opts([])
     PricePair.first_datetime(slug, quote_asset, opts)

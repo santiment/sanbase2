@@ -90,7 +90,7 @@ defmodule Sanbase.BlockchainAddress.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def first_datetime(metric, %{slug: slug, blockchain_address: %{address: address}})
+  def first_datetime(metric, %{slug: slug, blockchain_address: %{address: address}}, _opts)
       when metric in @metrics do
     Balance.first_datetime(address, slug)
   end

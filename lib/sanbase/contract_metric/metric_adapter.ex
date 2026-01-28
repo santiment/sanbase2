@@ -77,7 +77,7 @@ defmodule Sanbase.Contract.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def first_datetime(_metric, %{contract_address: contract_address})
+  def first_datetime(_metric, %{contract_address: contract_address}, _opts)
       when is_binary(contract_address) do
     query_struct = first_datetime_query(contract_address)
 

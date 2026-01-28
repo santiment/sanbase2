@@ -64,7 +64,7 @@ defmodule Sanbase.Price.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def first_datetime(_metric, %{slug: slug}) do
+  def first_datetime(_metric, %{slug: slug}, _opts) do
     Price.first_datetime(slug)
   end
 

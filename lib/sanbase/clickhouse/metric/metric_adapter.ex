@@ -302,11 +302,11 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   def available_aggregations(), do: Registry.aggregations_with_nil()
 
   @impl Sanbase.Metric.Behaviour
-  def first_datetime(metric, selector) do
+  def first_datetime(metric, selector, opts) do
     if metric in Registry.metrics_mapset_with_data_type(:histogram) do
-      HistogramMetric.first_datetime(metric, selector)
+      HistogramMetric.first_datetime(metric, selector, opts)
     else
-      first_datetime_query(metric, selector)
+      first_datetime_query(metric, selector, opts)
       |> ClickhouseRepo.query_transform(fn [datetime] -> DateTime.from_unix!(datetime) end)
       |> maybe_unwrap_ok_value()
     end

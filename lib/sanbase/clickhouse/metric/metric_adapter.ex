@@ -265,7 +265,16 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
       |> Enum.uniq()
       # "1.2" < "1.15". Lists are compared element by element, so 15 > 2
       |> Enum.sort_by(
-        fn ver -> String.split(ver, ".") |> Enum.map(&String.to_integer/1) end,
+        fn ver ->
+          String.split(ver, ".")
+          |> Enum.map(fn segment ->
+            # Handle things like 1.0-beta, etc.
+            case Integer.parse(segment) do
+              {int, _} -> int
+              :error -> 0
+            end
+          end)
+        end,
         :asc
       )
     end)

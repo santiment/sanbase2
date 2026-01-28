@@ -231,7 +231,7 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     # In the spikes table the column is called calculated_on_metric_id
     metric_id_column = Keyword.get(opts, :metric_id_column, "metric_id")
     arg_name = Keyword.fetch!(opts, :argument_name)
-    version_arg_name = Keyword.get(opts, :version_arg_name)
+    version_arg_name = Keyword.fetch!(opts, :version_arg_name)
 
     """
     #{metric_id_column} = (

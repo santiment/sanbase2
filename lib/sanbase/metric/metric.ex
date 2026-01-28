@@ -646,7 +646,7 @@ defmodule Sanbase.Metric do
     end
   end
 
-  @spec available_versions(metric) :: {:ok, list(map())} | {:error, String.t()}
+  @spec available_versions(metric) :: {:ok, list(String.t())} | {:error, String.t()}
   def available_versions(metric) do
     case get_module(metric) do
       nil ->

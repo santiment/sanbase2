@@ -88,7 +88,7 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def first_datetime(_metric, _slug) do
+  def first_datetime(_metric, _slug, _opts) do
     {:ok, ~U[2020-09-14 00:00:00Z]}
   end
 

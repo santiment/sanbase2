@@ -214,10 +214,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     {:ok, complexity}
   end
 
-  def available_since(_root, args, %{source: %{metric: metric}}) do
+  def available_since(_root, args, %{source: %{metric: metric, version: version}}) do
     with {:ok, selector} <- args_to_selector(args, use_process_dictionary: true),
          true <- all_required_selectors_present?(metric, selector),
          {:ok, opts} <- selector_args_to_opts(args),
+         opts = Keyword.put(opts, :version, version),
          {:ok, first_datetime} <- Metric.first_datetime(metric, selector, opts) do
       {:ok, first_datetime}
     end

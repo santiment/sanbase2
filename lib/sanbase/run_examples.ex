@@ -245,7 +245,8 @@ defmodule Sanbase.RunExamples do
       {:ok, _} =
         Sanbase.Clickhouse.TopHolders.MetricAdapter.first_datetime(
           metric,
-          %{slug: "ethereum"}
+          %{slug: "ethereum"},
+          []
         )
 
       {:ok, _} =

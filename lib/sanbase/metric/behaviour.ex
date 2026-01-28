@@ -229,7 +229,7 @@ defmodule Sanbase.Metric.Behaviour do
 
   @callback complexity_weight(metric :: metric) :: complexity_weight_result
 
-  @callback first_datetime(metric, selector) :: first_datetime_result
+  @callback first_datetime(metric, selector, opts) :: first_datetime_result
 
   @callback last_datetime_computed_at(metric, selector) :: last_datetime_computed_at_result
 

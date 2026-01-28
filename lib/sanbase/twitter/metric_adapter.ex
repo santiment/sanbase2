@@ -82,7 +82,7 @@ defmodule Sanbase.Twitter.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def first_datetime("twitter_followers", %{slug: slug}) do
+  def first_datetime("twitter_followers", %{slug: slug}, _opts) do
     with %Project{} = project <- Project.by_slug(slug),
          {:ok, twitter_name} <- Project.twitter_handle(project) do
       Sanbase.Twitter.first_datetime(twitter_name)

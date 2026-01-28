@@ -188,7 +188,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def first_datetime(metric, %{slug: slug}) do
+  def first_datetime(metric, %{slug: slug}, _opts) do
     with {:ok, contract, _decimals, infr} <- Project.contract_info_infrastructure_by_slug(slug),
          true <- chain_supported?(infr, slug, metric) do
       table = to_table(contract, infr)

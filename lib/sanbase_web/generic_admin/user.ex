@@ -91,7 +91,7 @@ defmodule SanbaseWeb.GenericAdmin.User do
         rows: user.eth_accounts,
         fields: [:id, :address, :san_balance],
         funcs: %{
-          plan: fn eth_account ->
+          san_balance: fn eth_account ->
             case Sanbase.Accounts.EthAccount.san_balance(eth_account) do
               :error -> +0.0
               san_balance -> san_balance

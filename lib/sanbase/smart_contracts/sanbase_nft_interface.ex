@@ -45,13 +45,13 @@ defmodule Sanbase.SmartContracts.SanbaseNFTInterface do
 
   defp has_valid_nft?(data) do
     data
-    |> Enum.filter(fn %{token_ids: token_ids} -> length(token_ids) > 0 end)
+    |> Enum.filter(fn %{token_ids: token_ids} -> token_ids != [] end)
     |> Enum.any?()
   end
 
   defp has_non_valid_nft?(data) do
     data
-    |> Enum.filter(fn %{non_valid_token_ids: token_ids} -> length(token_ids) > 0 end)
+    |> Enum.filter(fn %{non_valid_token_ids: token_ids} -> token_ids != [] end)
     |> Enum.any?()
   end
 

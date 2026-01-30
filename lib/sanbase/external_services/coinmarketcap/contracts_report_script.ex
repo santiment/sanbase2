@@ -19,7 +19,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ContractsReportScript do
     |> Enum.filter(fn {_, map} -> map["slug"] in List.wrap(cmc_id_or_ids) end)
     |> Enum.map(fn {_cmc_id, map} ->
       map
-      |> Map.get("contract_address")
+      |> Map.get("contract_address", [])
       |> Enum.map(&{&1["contract_address"], &1["platform"]["name"]})
     end)
   end

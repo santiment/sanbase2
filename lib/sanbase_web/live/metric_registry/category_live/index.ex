@@ -224,7 +224,7 @@ defmodule SanbaseWeb.CategoryLive.Index do
   def handle_event("reorder", %{"ids" => ids}, socket) do
     categories = socket.assigns.categories
 
-    if length(categories) > 0 do
+    if categories != [] do
       # Update the display order for each category
       new_order =
         ids

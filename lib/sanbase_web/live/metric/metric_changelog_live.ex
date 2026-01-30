@@ -335,7 +335,7 @@ defmodule SanbaseWeb.MetricChangelogLive do
   end
 
   defp has_docs?(metric) do
-    metric.docs && length(metric.docs) > 0
+    metric.docs && metric.docs != []
   end
 
   defp get_first_doc_link(metric) do

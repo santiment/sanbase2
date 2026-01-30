@@ -150,7 +150,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChangelogResolver do
 
   defp format_metric_info(metric) do
     docs =
-      if metric.docs && length(metric.docs) > 0 do
+      if metric.docs && metric.docs != [] do
         Enum.map(metric.docs, fn doc -> %{link: doc.link} end)
       else
         []

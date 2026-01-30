@@ -1040,7 +1040,7 @@ defmodule SanbaseWeb.AdminComponents do
         |> Map.to_list()
         |> Enum.map(fn {_key, filter} -> filter end)
 
-      filters when is_list(filters) and length(filters) > 0 ->
+      filters when is_list(filters) and filters != [] ->
         filters
 
       _ ->

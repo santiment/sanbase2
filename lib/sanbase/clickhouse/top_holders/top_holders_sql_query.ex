@@ -12,10 +12,10 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
   defguard has_labels(map)
            when (is_map_key(map, :include_labels) and
                    is_list(:erlang.map_get(:include_labels, map)) and
-                   length(:erlang.map_get(:include_labels, map)) > 0) or
+                   :erlang.map_get(:include_labels, map) != []) or
                   (is_map_key(map, :exclude_labels) and
                      is_list(:erlang.map_get(:exclude_labels, map)) and
-                     length(:erlang.map_get(:exclude_labels, map)) > 0)
+                     :erlang.map_get(:exclude_labels, map) != [])
 
   def timeseries_data_query("amount_in_top_holders", %{} = params) when has_labels(params) do
     {include_labels_str, included_labels_params} =

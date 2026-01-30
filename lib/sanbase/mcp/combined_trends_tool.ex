@@ -354,9 +354,9 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
 
   defp fetch_word_documents(word) do
     case word.top_documents_ids do
-      ids when is_list(ids) and length(ids) > 0 ->
+      ids when is_list(ids) and ids != [] ->
         case SocialDocument.get_documents(ids) do
-          {:ok, documents} when is_list(documents) and length(documents) > 0 ->
+          {:ok, documents} when is_list(documents) and documents != [] ->
             document_texts =
               documents
               |> Enum.map(& &1.text)

@@ -161,7 +161,7 @@ defmodule Sanbase.Utils.ListSelector.Validator do
         slug: spec(is_binary()),
         page: spec(is_integer() and (&(&1 > 0))),
         page_size: spec(is_integer() and (&(&1 > 0))),
-        labels: spec(is_list() and (&(length(&1) > 0)))
+        labels: spec(is_list() and (&(&1 != [])))
       })
 
     with {:ok, _} <- conform(filter, filter_schema) do
@@ -177,7 +177,7 @@ defmodule Sanbase.Utils.ListSelector.Validator do
       schema(%{
         blockchain: spec(is_binary()),
         labels_combinator: spec(is_binary()),
-        label_fqns: spec(is_list() and (&(length(&1) > 0)))
+        label_fqns: spec(is_list() and (&(&1 != [])))
       })
 
     with {:ok, _} <- conform(filter, filter_schema) do
@@ -192,7 +192,7 @@ defmodule Sanbase.Utils.ListSelector.Validator do
     filter_schema =
       schema(%{
         blockchain: spec(is_binary()),
-        label_keys: spec(is_list() and (&(length(&1) > 0)))
+        label_keys: spec(is_list() and (&(&1 != [])))
       })
 
     with {:ok, _} <- conform(filter, filter_schema) do

@@ -276,7 +276,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
          %{list_items: list_items},
          %{event_type: @update_watchlist_type} = params
        )
-       when is_list(list_items) and length(list_items) > 0 do
+       when is_list(list_items) and list_items != [] do
     create_event(:user_list_id, id, params)
   end
 

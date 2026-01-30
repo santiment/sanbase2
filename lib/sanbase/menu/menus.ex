@@ -394,8 +394,6 @@ defmodule Sanbase.Menus do
         }
 
       %{id: menu_item_id, dashboard: %{} = map, position: position} ->
-        Map.take(map, [:name, :description])
-
         %{
           "name" => map.name,
           "description" => map.description,

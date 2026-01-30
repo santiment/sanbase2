@@ -71,14 +71,14 @@ defmodule Sanbase.Timeline.Filter do
   end
 
   defp filter_by_watchlists_query(query, %{watchlists: watchlists})
-       when is_list(watchlists) and length(watchlists) > 0 do
+       when is_list(watchlists) and watchlists != [] do
     from(event in query, where: event.user_list_id in ^watchlists)
   end
 
   defp filter_by_watchlists_query(query, _), do: query
 
   defp filter_by_assets_query(query, %{assets: assets} = filter_by, user_id)
-       when is_list(assets) and length(assets) > 0 do
+       when is_list(assets) and assets != [] do
     {slugs, tickers} = get_slugs_and_tickers_by_asset_list(assets)
     watchlist_ids = get_watchlist_ids_by_asset_list(assets, filter_by, user_id)
     insight_ids = get_insight_ids_by_asset_list({slugs, tickers}, filter_by, user_id)

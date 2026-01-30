@@ -415,7 +415,7 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataList do
   def handle_event("reorder", %{"ids" => ids}, socket) do
     ui_metadata_list = socket.assigns.ui_metadata_list
 
-    if length(ui_metadata_list) > 0 do
+    if ui_metadata_list != [] do
       new_order =
         ids
         |> parse_reorder_ids("ui-metadata")

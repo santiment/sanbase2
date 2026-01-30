@@ -109,7 +109,7 @@ defmodule Sanbase.Billing.Invoices.Download do
     end)
 
     # Print full structure of first manually filtered invoice
-    if length(manual_filtered) > 0 do
+    if manual_filtered != [] do
       first_invoice = List.first(manual_filtered)
       IO.puts("\n=== FULL MANUAL FILTERED INVOICE STRUCTURE ===")
       # credo:disable-for-next-line
@@ -260,9 +260,10 @@ defmodule Sanbase.Billing.Invoices.Download do
       {:ok, response} ->
         IO.puts("Response keys: #{inspect(Map.keys(response))}")
         IO.puts("Has more: #{Map.get(response, :has_more, false)}")
-        IO.puts("Data length: #{length(Map.get(response, :data, []))}")
+        data = Map.get(response, :data, [])
+        IO.puts("Data length: #{length(data)}")
 
-        if length(Map.get(response, :data, [])) > 0 do
+        if Map.get(response, :data, []) != [] do
           first_invoice = List.first(Map.get(response, :data, []))
           IO.puts("\n=== RAW INVOICE FIELDS ===")
           IO.puts("Available fields: #{inspect(Map.keys(first_invoice))}")

@@ -2,7 +2,9 @@ defmodule Sanbase.Queries do
   @moduledoc ~s"""
   Boundary module for Santiment Queries.
 
-  TODO: Add more documentation
+  Handles query CRUD, execution against Clickhouse, and association with dashboards.
+  Use `run_query/4` to execute a query, `get_query/2` and `create_query/2` for lookup and creation,
+  and the dashboard-related functions for mapping queries to dashboards.
   """
   alias Sanbase.Repo
   alias Sanbase.Queries

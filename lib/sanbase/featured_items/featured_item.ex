@@ -119,7 +119,7 @@ defmodule Sanbase.FeaturedItem do
     queries_query()
     |> join(:inner, [fi], fi in assoc(fi, :query), as: :query)
     |> order_by([fi, _], desc: fi.inserted_at, desc: fi.id)
-    # TODO: If we name the binding here `query`, it gives a strange error
+    # Binding cannot be named `query` (conflicts with Ecto).
     |> select([_fi, query: q], q)
     |> Repo.all()
     |> Repo.preload([:user])

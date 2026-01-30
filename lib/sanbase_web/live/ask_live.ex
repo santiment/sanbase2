@@ -48,9 +48,11 @@ defmodule SanbaseWeb.AskLive do
               _errors = error
             )
 
-            # TODO: Do not log the error when making this public-facing
+            require Logger
+            Logger.debug("Ask error: #{inspect(error)}")
+
             socket
-            |> assign(:answer, "Can't answer. Got error: #{inspect(error)}")
+            |> assign(:answer, "Can't answer. Please try again.")
         end
 
       {:noreply, socket}

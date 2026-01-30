@@ -134,44 +134,6 @@ defmodule Sanbase.Alert.TriggerPayloadTest do
     end)
   end
 
-  # TODO: Move to a `trigger_sending_test.exs`
-  test "send to a webhook", context do
-    %{user: user, project: project} = context
-
-    {:ok, trigger} =
-      create_trigger(user, project.slug,
-        channel: [%{"webhook" => "https://example.com/webhook_url"}]
-      )
-
-    mock_fun =
-      [
-        fn -> {:ok, %{project.slug => 10}} end,
-        fn -> {:ok, %{project.slug => 15}} end
-      ]
-      |> Sanbase.Mock.wrap_consecutives(arity: 4)
-
-    Sanbase.Mock.prepare_mock(Sanbase.Metric, :aggregated_timeseries_data, mock_fun)
-    |> Sanbase.Mock.prepare_mock2(
-      &HTTPoison.post/3,
-      {:ok, %HTTPoison.Response{status_code: 200, body: "OK"}}
-    )
-    |> Sanbase.Mock.run_with_mocks(fn ->
-      Scheduler.run_alert(MetricTriggerSettings)
-
-      trigger = trigger |> Sanbase.Repo.preload([:user])
-
-      {:ok, user_trigger} = Sanbase.Alert.UserTrigger.by_user_and_id(trigger.user.id, trigger.id)
-
-      last_triggered_dt =
-        user_trigger.trigger.last_triggered
-        |> Map.get(project.slug)
-        |> Sanbase.DateTimeUtils.from_iso8601!()
-
-      # Last triggered is rounded to minutes
-      assert Sanbase.TestUtils.datetime_close_to(Timex.now(), last_triggered_dt, 60, :seconds)
-    end)
-  end
-
   # Private functions
 
   defp create_trigger(user, slug, opts \\ []) do

@@ -1,5 +1,6 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.Utils do
   @store_file "/tmp/cmc_metadata_v2.json"
+  @cmc_request_delay_ms 1000
 
   @metadata_url "/v2/cryptocurrency/info"
   alias Sanbase.Utils.Config
@@ -83,8 +84,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Utils do
 
   def get_cmc_metadata_for_slugs(cmc_slugs, opts)
       when is_binary(cmc_slugs) or is_list(cmc_slugs) do
-    # TODO: Improve this sleep
-    Process.sleep(1000)
+    Process.sleep(@cmc_request_delay_ms)
     slugs_param = cmc_slugs |> List.wrap() |> Enum.join(",")
 
     # skip_invalid=true seems to not work

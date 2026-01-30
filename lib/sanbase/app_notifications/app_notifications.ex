@@ -202,14 +202,6 @@ defmodule Sanbase.AppNotifications do
   end
 
   def async_broadcast_websocket_notifications(notification_read_status_list) do
-    # Broadcasting from the alerts pod should properly broadcast to the web pod
-    # where the users are connected via websockets.
-    # Phoenix.Channel is build on top of PubSub, which is distributed
-    # TODO: If it works, inline the function and delete the commented code below
-    do_async_broadcast_websocket_notifications(notification_read_status_list)
-  end
-
-  defp do_async_broadcast_websocket_notifications(notification_read_status_list) do
     Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
       Enum.each(notification_read_status_list, fn
         %NotificationReadStatus{user_id: user_id, notification_id: notification_id} ->

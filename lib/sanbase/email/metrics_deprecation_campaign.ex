@@ -497,7 +497,7 @@ defmodule Sanbase.Email.MetricsDeprecationCampaign do
   end
 
   # Helper function to extract draft ID from response
-  defp get_draft_id(data) when is_list(data) and length(data) > 0 do
+  defp get_draft_id(data) when is_list(data) and data != [] do
     case Enum.at(data, 0) do
       %{"ID" => id} when is_integer(id) ->
         id

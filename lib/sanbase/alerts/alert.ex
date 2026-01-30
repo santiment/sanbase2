@@ -372,7 +372,7 @@ defimpl Sanbase.Alert, for: Any do
       "[maybe_extend_payload_telegram_channel_#{user_trigger.id}] [user_trigger: #{inspect(user_trigger.id)}]]"
     )
 
-    if length(slugs) > 0 do
+    if slugs != [] do
       slug = hd(slugs)
 
       {sanbase_link, short_url_id} =

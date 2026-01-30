@@ -208,7 +208,7 @@ defmodule SanbaseWeb.Categorization.CategoryLive.Index do
   def handle_event("reorder", %{"ids" => ids}, socket) do
     categories = socket.assigns.categories
 
-    if length(categories) > 0 do
+    if categories != [] do
       new_order = parse_reorder_ids(ids, "category")
 
       socket = assign(socket, reordering: true)

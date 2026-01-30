@@ -12,7 +12,7 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
     categories = ordered_data.categories
 
     # Get the name of the first category if available
-    first_category_name = if length(categories) > 0, do: List.first(categories).name, else: nil
+    first_category_name = if categories != [], do: List.first(categories).name, else: nil
 
     {:ok,
      socket
@@ -162,7 +162,7 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
   # Add this helper function to determine if there are active filters
   defp has_active_filters?(assigns) do
     default_category =
-      if length(assigns.categories) > 0, do: List.first(assigns.categories).name, else: nil
+      if assigns.categories != [], do: List.first(assigns.categories).name, else: nil
 
     assigns.selected_category != default_category ||
       assigns.selected_group != nil ||
@@ -577,7 +577,7 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
   @impl true
   def handle_event("reset_filters", _params, socket) do
     first_category_name =
-      if length(socket.assigns.categories) > 0,
+      if socket.assigns.categories != [],
         do: List.first(socket.assigns.categories).name,
         else: nil
 

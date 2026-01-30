@@ -157,7 +157,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
     |> Enum.map(& &1.id)
   end
 
-  defp create_notification(_type, _user_ids = [], _data) do
+  defp create_notification(_type, [] = _user_ids, _data) do
     # No recepients, so no notifications
     :ok
   end

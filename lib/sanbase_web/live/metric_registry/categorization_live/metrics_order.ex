@@ -296,7 +296,7 @@ defmodule SanbaseWeb.CategorizationLive.MetricsOrder do
   def handle_event("reorder", %{"ids" => ids}, socket) do
     mappings = socket.assigns.mappings
 
-    if length(mappings) > 0 do
+    if mappings != [] do
       new_order = parse_reorder_ids(ids, "mapping")
 
       socket = assign(socket, reordering: true)

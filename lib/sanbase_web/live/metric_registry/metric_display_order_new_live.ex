@@ -15,7 +15,7 @@ defmodule SanbaseWeb.MetricDisplayOrderNewLive do
 
     # Get initial groups for the first category (if any)
     groups_for_category =
-      if length(categories) > 0 do
+      if categories != [] do
         first_category = List.first(categories)
         Map.get(groups_by_category, first_category.id, [])
       else

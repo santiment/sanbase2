@@ -280,6 +280,29 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     end)
   end
 
+  def available_versions() do
+    names_map = Sanbase.Clickhouse.MetricAdapter.Registry.metric_to_names_map()
+
+    available_versions_all_metrics_query()
+    |> ClickhouseRepo.query_transform(fn [name, version] -> {name, version} end)
+    |> maybe_apply_function(fn results ->
+      # Handle metrics with aliases. Use all known public names for each internal metric here,
+      # so the caller of this function can get the versions for whichever public name they use.
+      Enum.flat_map(
+        results,
+        fn {internal_metric, version} ->
+          metric_public_names = Map.get(names_map, internal_metric, [])
+
+          metric_public_names
+          |> Enum.map(fn public_name -> {public_name, version} end)
+        end
+      )
+      |> Enum.group_by(fn {name, _version} -> name end, fn {_name, version} -> version end)
+      |> Enum.map(fn {name, versions} -> {name, Sanbase.Metric.Utils.sort_versions(versions)} end)
+      |> Map.new()
+    end)
+  end
+
   @impl Sanbase.Metric.Behaviour
   def available_slugs(), do: get_available_slugs()
 

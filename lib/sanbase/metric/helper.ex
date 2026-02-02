@@ -168,6 +168,7 @@ defmodule Sanbase.Metric.Helper do
   defp compute(:implemented_optional_functions, []) do
     Enum.reduce(@modules, %{}, fn module, acc ->
       acc
+      |> put_if_implemented(module, :available_versions, 0)
       |> put_if_implemented(module, :available_versions, 1)
       |> put_if_implemented(module, :available_label_fqns, 1)
       |> put_if_implemented(module, :available_label_fqns, 2)

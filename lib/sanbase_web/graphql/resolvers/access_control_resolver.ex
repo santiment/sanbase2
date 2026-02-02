@@ -1,6 +1,9 @@
 defmodule SanbaseWeb.Graphql.Resolvers.AccessControlResolver do
+  import Absinthe.Resolution.Helpers, only: [on_load: 2]
+
   alias Sanbase.Billing.Product
   alias SanbaseWeb.Graphql.Cache
+  alias SanbaseWeb.Graphql.SanbaseDataloader
 
   def get_access_restrictions(_root, args, %{context: context}) do
     plan_name = Map.get(args, :plan) || context[:auth][:plan] || "FREE"
@@ -22,6 +25,25 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccessControlResolver do
       {:get_access_restrictions, plan_name, product_code, filter}
     ).()
   end
+
+  def available_versions(%{type: "metric"} = restriction, _args, %{context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(SanbaseDataloader, :available_metric_versions, restriction.name)
+    |> on_load(fn loader ->
+      versions =
+        Dataloader.get(
+          loader,
+          SanbaseDataloader,
+          :available_metric_versions,
+          restriction.name
+        ) || []
+
+      versions_maps = Enum.map(versions, fn version -> %{version: version} end)
+      {:ok, versions_maps}
+    end)
+  end
+
+  def available_versions(%{type: _}, _args, _resolution), do: {:ok, []}
 
   def get_access_control(_root, _args, _resolution) do
     {:error, "The query does not have a product key in the context."}

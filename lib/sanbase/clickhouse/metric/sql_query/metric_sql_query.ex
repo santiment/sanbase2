@@ -569,6 +569,17 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
+  def available_versions_all_metrics_query() do
+    sql = """
+    SELECT name, version
+    FROM metric_metadata_external FINAL
+    """
+
+    params = %{}
+
+    Sanbase.Clickhouse.Query.new(sql, params)
+  end
+
   # Private functions
 
   defp maybe_add_is_not_nan_check(table, opts) do

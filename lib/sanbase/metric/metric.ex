@@ -661,6 +661,29 @@ defmodule Sanbase.Metric do
     end
   end
 
+  def available_versions() do
+    known_versions =
+      Helper.metric_modules()
+      |> Enum.map(fn module ->
+        if Map.fetch!(Helper.implemented_optional_functions(), {module, :available_versions, 0}) do
+          case module.available_versions() do
+            {:ok, versions_map} -> versions_map
+            {:error, _} -> %{}
+          end
+        end
+      end)
+      |> Enum.reject(&is_nil/1)
+      |> Enum.reduce(%{}, &Map.merge/2)
+
+    versions_map =
+      available_metrics()
+      |> Map.new(fn metric ->
+        {metric, Map.get(known_versions, metric, ["1.0"])}
+      end)
+
+    {:ok, versions_map}
+  end
+
   @doc ~s"""
   Get all available aggregations
   """

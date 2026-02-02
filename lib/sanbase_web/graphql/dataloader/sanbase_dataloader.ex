@@ -24,7 +24,8 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     :average_dev_activity,
     :eth_spent,
     :aggregated_metric,
-    :project_info
+    :project_info,
+    :available_metric_versions
   ]
 
   @balance_dataloader [

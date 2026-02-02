@@ -98,6 +98,11 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
     |> Map.new()
   end
 
+  def query(:available_metric_versions, _data) do
+    {:ok, versions_map} = Metric.available_versions()
+    versions_map
+  end
+
   defp average_daily_active_addresses(args, from, to) do
     slugs =
       args

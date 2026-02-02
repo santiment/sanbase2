@@ -200,12 +200,14 @@ defmodule Sanbase.StripeApi do
 
   def upgrade_downgrade(db_subscription, plan) do
     with {:ok, params} <- get_upgrade_downgrade_subscription_params(db_subscription, plan),
+         {:ok, stripe_subscription} <- retrieve_subscription(db_subscription.stripe_id),
          # Remove coupon for free basic API subscription
-         {:ok, params} <- maybe_remove_coupon(params, db_subscription, plan),
+         {:ok, params} <- maybe_remove_coupon(params, db_subscription, plan, stripe_subscription),
          # Add SAN holder coupon if user has 1000+ SAN and no existing discount
-         {:ok, params} <- maybe_add_san_coupon(params, db_subscription),
-         {:ok, stripe_subscription} <- update_subscription(db_subscription.stripe_id, params) do
-      {:ok, stripe_subscription}
+         {:ok, params} <- maybe_add_san_coupon(params, db_subscription, stripe_subscription),
+         {:ok, updated_stripe_subscription} <-
+           update_subscription(db_subscription.stripe_id, params) do
+      {:ok, updated_stripe_subscription}
     end
   end
 
@@ -259,38 +261,34 @@ defmodule Sanbase.StripeApi do
 
   # Helpers
 
-  defp maybe_remove_coupon(params, db_subscription, _plan) do
-    with {:ok, stripe_subscription} <- retrieve_subscription(db_subscription.stripe_id) do
-      percent_off =
-        get_in(stripe_subscription, [
-          Access.key!(:discount),
-          Access.key!(:coupon),
-          Access.key!(:percent_off)
-        ])
+  defp maybe_remove_coupon(params, db_subscription, _plan, stripe_subscription) do
+    percent_off =
+      get_in(stripe_subscription, [
+        Access.key(:discount),
+        Access.key(:coupon),
+        Access.key(:percent_off)
+      ])
 
-      is_basic_plan? = fn plan_id ->
-        plan_id in Sanbase.Billing.Subscription.ProPlus.basic_api_plans()
-      end
+    is_basic_plan? = fn plan_id ->
+      plan_id in Sanbase.Billing.Subscription.ProPlus.basic_api_plans()
+    end
 
-      if is_basic_plan?.(db_subscription.plan_id) and percent_off == 100.0 do
-        {:ok, Map.put(params, :coupon, nil)}
-      else
-        {:ok, params}
-      end
+    if is_basic_plan?.(db_subscription.plan_id) and percent_off == 100.0 do
+      {:ok, Map.put(params, :coupon, nil)}
+    else
+      {:ok, params}
     end
   end
 
-  defp maybe_add_san_coupon(params, db_subscription) do
-    with {:ok, stripe_subscription} <- retrieve_subscription(db_subscription.stripe_id) do
-      has_discount? = not is_nil(stripe_subscription.discount)
-      user = db_subscription.user
-      san_balance = User.san_balance_or_zero(user)
+  defp maybe_add_san_coupon(params, db_subscription, stripe_subscription) do
+    has_discount? = not is_nil(stripe_subscription.discount)
+    user = db_subscription.user
+    san_balance = User.san_balance_or_zero(user)
 
-      if not has_discount? and san_balance >= 1000 do
-        {:ok, Map.put(params, :coupon, "SAN_HOLDER_1000")}
-      else
-        {:ok, params}
-      end
+    if not has_discount? and san_balance >= 1000 do
+      {:ok, Map.put(params, :coupon, "SAN_HOLDER_1000")}
+    else
+      {:ok, params}
     end
   end
 

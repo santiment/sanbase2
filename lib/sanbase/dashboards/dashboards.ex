@@ -873,15 +873,7 @@ defmodule Sanbase.Dashboards do
   def remove_query_from_dashboard(dashboard_id, dashboard_query_mapping_id, querying_user_id) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(:get_mapping, fn _repo, _changes ->
-      query = DashboardQueryMapping.by_id(dashboard_query_mapping_id)
-
-      case Repo.one(query) do
-        %DashboardQueryMapping{dashboard: %{id: ^dashboard_id, user_id: ^querying_user_id}} = dqm ->
-          {:ok, dqm}
-
-        _ ->
-          {:error, mapping_error(dashboard_query_mapping_id, dashboard_id, querying_user_id)}
-      end
+      fetch_dashboard_query_mapping(dashboard_id, dashboard_query_mapping_id, querying_user_id)
     end)
     |> Ecto.Multi.run(:remove_dashboard_query_mapping, fn _repo, %{get_mapping: struct} ->
       Repo.delete(struct)
@@ -913,15 +905,7 @@ defmodule Sanbase.Dashboards do
       ) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(:get_mapping, fn _repo, _changes ->
-      query = DashboardQueryMapping.by_id(dashboard_query_mapping_id)
-
-      case Repo.one(query) do
-        %DashboardQueryMapping{dashboard: %{id: ^dashboard_id, user_id: ^querying_user_id}} = dqm ->
-          {:ok, dqm}
-
-        _ ->
-          {:error, mapping_error(dashboard_query_mapping_id, dashboard_id, querying_user_id)}
-      end
+      fetch_dashboard_query_mapping(dashboard_id, dashboard_query_mapping_id, querying_user_id)
     end)
     |> Ecto.Multi.run(:update_mapping, fn _repo, %{get_mapping: struct} ->
       changeset = DashboardQueryMapping.changeset(struct, %{settings: settings})
@@ -1054,6 +1038,18 @@ defmodule Sanbase.Dashboards do
 
   defp process_transaction_result({:error, _, error, _}, _ok_field),
     do: {:error, error}
+
+  defp fetch_dashboard_query_mapping(dashboard_id, dashboard_query_mapping_id, querying_user_id) do
+    query = DashboardQueryMapping.by_id(dashboard_query_mapping_id)
+
+    case Repo.one(query) do
+      %DashboardQueryMapping{dashboard: %{id: ^dashboard_id, user_id: ^querying_user_id}} = dqm ->
+        {:ok, dqm}
+
+      _ ->
+        {:error, mapping_error(dashboard_query_mapping_id, dashboard_id, querying_user_id)}
+    end
+  end
 
   defp mapping_error(dashboard_query_mapping_id, dashboard_id, querying_user_id) do
     """

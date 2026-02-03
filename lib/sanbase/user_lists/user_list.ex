@@ -123,17 +123,8 @@ defmodule Sanbase.UserList do
 
   @impl Sanbase.Entity.Behaviour
   def by_ids(ids, opts) when is_list(ids) do
-    preload = Keyword.get(opts, :preload, [:featured_item])
-
-    result =
-      from(ul in base_query(),
-        where: ul.id in ^ids,
-        preload: ^preload,
-        order_by: fragment("array_position(?, ?::int)", ^ids, ul.id)
-      )
-      |> Repo.all()
-
-    {:ok, result}
+    opts = Keyword.put_new(opts, :preload, [:featured_item])
+    Sanbase.Entity.Query.by_ids_with_order(base_query(), ids, opts)
   end
 
   def entity_ids_by_opts(opts) do

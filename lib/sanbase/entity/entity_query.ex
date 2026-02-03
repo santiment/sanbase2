@@ -177,6 +177,46 @@ defmodule Sanbase.Entity.Query do
     end
   end
 
+  @doc """
+  Fetch entities by ids preserving the order of the given ids list.
+  Used by entities that implement the Entity.Behaviour by_ids callback with the same pattern.
+  """
+  @spec by_ids_with_order(Ecto.Query.t(), [integer()], Keyword.t()) ::
+          {:ok, list()}
+  def by_ids_with_order(base_query, ids, opts) do
+    result =
+      from(entity in base_query,
+        where: entity.id in ^ids,
+        order_by: fragment("array_position(?, ?::int)", ^ids, entity.id)
+      )
+      |> maybe_preload(opts)
+      |> maybe_apply_is_public_or_owned_by_user(opts)
+      |> Sanbase.Repo.all()
+
+    {:ok, result}
+  end
+
+  defp maybe_apply_is_public_or_owned_by_user(query, opts) do
+    case Keyword.get(opts, :is_public_or_owned_by_user) do
+      user_id when is_integer(user_id) ->
+        query |> where([entity], entity.user_id == ^user_id or entity.is_public == true)
+
+      _ ->
+        query
+    end
+  end
+
+  defp maybe_preload(query, opts) do
+    case Keyword.get(opts, :preload?, true) do
+      true ->
+        preload = Keyword.get(opts, :preload, [])
+        query |> preload(^preload)
+
+      false ->
+        query
+    end
+  end
+
   def default_get_visibility_data(base_query, entity_type, entity_id) do
     query =
       from(entity in base_query,

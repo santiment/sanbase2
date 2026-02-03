@@ -112,18 +112,11 @@ defmodule Sanbase.Alert.UserTrigger do
 
   @impl Sanbase.Entity.Behaviour
   def by_ids(ids, opts) when is_list(ids) do
-    preload = Keyword.get(opts, :preload, [:featured_item, :tags])
+    opts = Keyword.put_new(opts, :preload, [:featured_item, :tags])
 
-    result =
-      from(ul in base_query(),
-        where: ul.id in ^ids,
-        preload: ^preload,
-        order_by: fragment("array_position(?, ?::int)", ^ids, ul.id)
-      )
-      |> Repo.all()
-      |> Enum.map(&trigger_in_struct/1)
-
-    {:ok, result}
+    with {:ok, result} <- Sanbase.Entity.Query.by_ids_with_order(base_query(), ids, opts) do
+      {:ok, result |> Enum.map(&trigger_in_struct/1)}
+    end
   end
 
   def entity_ids_by_opts(opts) do

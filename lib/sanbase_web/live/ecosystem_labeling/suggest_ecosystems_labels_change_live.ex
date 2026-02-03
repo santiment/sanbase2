@@ -1,6 +1,7 @@
 defmodule SanbaseWeb.SuggestEcosystemLabelsChangeLive do
   use SanbaseWeb, :live_view
   alias SanbaseWeb.UserFormsComponents
+  alias SanbaseWeb.SuggestLiveHelpers
 
   @impl true
   def mount(_params, _session, socket) do
@@ -96,23 +97,8 @@ defmodule SanbaseWeb.SuggestEcosystemLabelsChangeLive do
 
   @impl true
   def handle_event("search_project", %{"value" => search}, socket) do
-    search = search |> String.downcase() |> String.trim()
-
     search_result =
-      case search do
-        "" ->
-          socket.assigns.projects
-
-        _ ->
-          Enum.filter(socket.assigns.projects, fn p ->
-            String.downcase(p.name) =~ search or String.downcase(p.ticker) =~ search or
-              String.downcase(p.slug) =~ search
-          end)
-          |> Enum.sort_by(
-            fn p -> String.jaro_distance(String.downcase(p.name), search) end,
-            :desc
-          )
-      end
+      SuggestLiveHelpers.filter_projects_by_search(socket.assigns.projects, search)
 
     {:noreply, assign(socket, search_result: search_result)}
   end

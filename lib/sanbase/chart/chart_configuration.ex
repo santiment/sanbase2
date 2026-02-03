@@ -90,19 +90,11 @@ defmodule Sanbase.Chart.Configuration do
 
   @impl Sanbase.Entity.Behaviour
   def by_ids(config_ids, opts) do
-    preload = Keyword.get(opts, :preload, [:chart_events, :featured_item])
+    opts = opts |> Keyword.put_new(:preload, [:chart_events, :featured_item])
 
-    result =
-      from(
-        conf in base_query(),
-        where: conf.id in ^config_ids,
-        preload: ^preload,
-        order_by: fragment("array_position(?, ?::int)", ^config_ids, conf.id)
-      )
-      |> maybe_apply_only_with_user_access(opts)
-      |> Repo.all()
-
-    {:ok, result}
+    with {:ok, result} <- Sanbase.Entity.Query.by_ids_with_order(base_query(), config_ids, opts) do
+      {:ok, result}
+    end
   end
 
   def entity_ids_by_opts(opts) do
@@ -267,16 +259,6 @@ defmodule Sanbase.Chart.Configuration do
       %{project_ids: project_ids} ->
         query
         |> where([config], config.project_id in ^project_ids)
-
-      _ ->
-        query
-    end
-  end
-
-  defp maybe_apply_only_with_user_access(query, opts) do
-    case Keyword.get(opts, :user_id_has_access) do
-      user_id when is_integer(user_id) ->
-        query |> where([config], config.user_id == ^user_id or config.is_public == true)
 
       _ ->
         query

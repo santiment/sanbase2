@@ -292,17 +292,8 @@ defmodule Sanbase.Insight.Post do
 
   @impl Sanbase.Entity.Behaviour
   def by_ids(post_ids, opts) when is_list(post_ids) do
-    preload = Keyword.get(opts, :preload, @preloads)
-
-    result =
-      from(p in base_query(),
-        where: p.id in ^post_ids,
-        preload: ^preload,
-        order_by: fragment("array_position(?, ?::int)", ^post_ids, p.id)
-      )
-      |> Repo.all()
-
-    {:ok, result}
+    opts = Keyword.put_new(opts, :preload, @preloads)
+    Sanbase.Entity.Query.by_ids_with_order(base_query(), post_ids, opts)
   end
 
   @impl Sanbase.Entity.Behaviour

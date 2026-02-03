@@ -19,7 +19,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChartConfigurationResolver do
       case args do
         %{chart_configuration_ids: chart_configuration_ids} ->
           # TODO: Improve the response format consistency of the Configuration functions.
-          Configuration.by_ids(chart_configuration_ids, user_id_has_access: user.id)
+          Configuration.by_ids(chart_configuration_ids, is_public_or_owned_by_user: user.id)
 
         %{user_id: user_id, project_id: project_id}
         when not is_nil(user_id) and not is_nil(project_id) ->

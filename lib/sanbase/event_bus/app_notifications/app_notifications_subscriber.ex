@@ -103,7 +103,10 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
          state
        )
        when is_integer(entity_owner_user_id) do
-    create_notification(:create_comment, [entity_owner_user_id], data)
+    # Do not notify the author of a comment when they comment on their own entity
+    if not same_author_and_receiver?(:create_comment, data) do
+      create_notification(:create_comment, [entity_owner_user_id], data)
+    end
 
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
@@ -117,7 +120,10 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
          state
        )
        when is_integer(entity_owner_user_id) do
-    if not in_cooldown_period?(:create_vote, data) do
+    # Do not notify the author of a comment when they vote on their own entity
+    # or when the same voter votes many times in a short period of time
+    if not in_cooldown_period?(:create_vote, data) and
+         not same_author_and_receiver?(:create_vote, data) do
       create_notification(:create_vote, [entity_owner_user_id], data)
     end
 
@@ -405,4 +411,22 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
   end
 
   defp in_cooldown_period?(_type, _data), do: false
+
+  defp same_author_and_receiver?(:create_vote, %{
+         user_id: voter_id,
+         entity_owner_user_id: entity_owner_user_id
+       }) do
+    voter_id == entity_owner_user_id
+  end
+
+  defp same_author_and_receiver?(:create_comment, %{
+         user_id: voter_id,
+         entity_owner_user_id: entity_owner_user_id
+       }) do
+    voter_id == entity_owner_user_id
+  end
+
+  defp same_author_and_receiver?(_type, data) do
+    false
+  end
 end

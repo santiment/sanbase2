@@ -545,6 +545,23 @@ defmodule Sanbase.AppNotificationsTest do
       assert AppNotifications.list_notifications_for_user(follower.id) == []
     end
 
+    test "create_comment does not emit notification when user comments their own entity",
+         _context do
+      author = insert(:user)
+      post = insert(:post, user: author)
+      {:ok, published_post} = Post.publish(post.id, author.id)
+
+      content = String.duplicate("a", 160)
+
+      {:ok, _comment} =
+        EntityComment.create_and_link(:insight, published_post.id, author.id, nil, content)
+
+      :timer.sleep(100)
+
+      owner_notifications = AppNotifications.list_notifications_for_user(author.id)
+      assert length(owner_notifications) == 0
+    end
+
     test "create_comment notifies only entity owner with preview", %{
       author: author
     } do
@@ -573,6 +590,20 @@ defmodule Sanbase.AppNotificationsTest do
 
       assert AppNotifications.list_notifications_for_user(commenter.id) == []
       assert AppNotifications.list_notifications_for_user(other_user.id) == []
+    end
+
+    test "create_vote does not notify when user votes on their own entity" do
+      author = insert(:user)
+
+      {:ok, watchlist} =
+        UserList.create_user_list(author, %{name: "Vote target", is_public: true})
+
+      {:ok, _vote} = Vote.create(%{user_id: author.id, watchlist_id: watchlist.id})
+
+      :timer.sleep(100)
+
+      owner_notifications = AppNotifications.list_notifications_for_user(author.id)
+      assert length(owner_notifications) == 0
     end
 
     test "create_vote notifies only entity owner", %{author: author} do

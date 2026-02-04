@@ -854,7 +854,6 @@ defmodule SanbaseWeb.CategorizationLive.Index do
   end
 
   defp maybe_add_param(params, _key, ""), do: params
-  defp maybe_add_param(params, _key, nil), do: params
   defp maybe_add_param(params, key, value), do: Map.put(params, key, value)
 
   defp maybe_add_param(params, _key, value, default) when value == default, do: params

@@ -22,28 +22,25 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChangelogResolver do
     limit = page_size
     offset = (page - 1) * page_size
 
-    case MetricVersions.get_changelog_by_date(limit, offset, search_term) do
-      {changelog_entries, has_more, total_dates} ->
-        entries = format_metrics_changelog_entries(changelog_entries)
-        total_pages = calculate_total_pages(total_dates, page_size)
+    {changelog_entries, has_more, total_dates} =
+      MetricVersions.get_changelog_by_date(limit, offset, search_term)
 
-        pagination = %{
-          has_more: has_more,
-          total_dates: total_dates,
-          current_page: page,
-          total_pages: total_pages
-        }
+    entries = format_metrics_changelog_entries(changelog_entries)
+    total_pages = calculate_total_pages(total_dates, page_size)
 
-        result = %{
-          entries: entries,
-          pagination: pagination
-        }
+    pagination = %{
+      has_more: has_more,
+      total_dates: total_dates,
+      current_page: page,
+      total_pages: total_pages
+    }
 
-        {:ok, result}
+    result = %{
+      entries: entries,
+      pagination: pagination
+    }
 
-      error ->
-        {:error, "Failed to fetch metrics changelog: #{inspect(error)}"}
-    end
+    {:ok, result}
   end
 
   @doc """
@@ -54,28 +51,25 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChangelogResolver do
     page_size = Map.get(args, :page_size, @default_page_size)
     search_term = Map.get(args, :search_term)
 
-    case ProjectVersions.get_changelog_by_date(page, page_size, search_term) do
-      {changelog_entries, total_dates} ->
-        entries = format_assets_changelog_entries(changelog_entries)
-        total_pages = calculate_total_pages(total_dates, page_size)
+    {changelog_entries, total_dates} =
+      ProjectVersions.get_changelog_by_date(page, page_size, search_term)
 
-        pagination = %{
-          has_more: page < total_pages,
-          total_dates: total_dates,
-          current_page: page,
-          total_pages: total_pages
-        }
+    entries = format_assets_changelog_entries(changelog_entries)
+    total_pages = calculate_total_pages(total_dates, page_size)
 
-        result = %{
-          entries: entries,
-          pagination: pagination
-        }
+    pagination = %{
+      has_more: page < total_pages,
+      total_dates: total_dates,
+      current_page: page,
+      total_pages: total_pages
+    }
 
-        {:ok, result}
+    result = %{
+      entries: entries,
+      pagination: pagination
+    }
 
-      error ->
-        {:error, "Failed to fetch assets changelog: #{inspect(error)}"}
-    end
+    {:ok, result}
   end
 
   # Private helper functions

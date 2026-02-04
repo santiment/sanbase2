@@ -426,7 +426,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
     voter_id == entity_owner_user_id
   end
 
-  defp same_author_and_receiver?(_type, data) do
+  defp same_author_and_receiver?(_type, _data) do
     false
   end
 end

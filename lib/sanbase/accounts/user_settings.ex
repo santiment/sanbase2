@@ -39,7 +39,7 @@ defmodule Sanbase.Accounts.UserSettings do
   higher plan. Both things might take some to fix/upgrade, so having the option to unblock yourself
   until the issues are resolved is required.k
   """
-  def can_self_reset_api_rate_limits?(user) do
+  def can_self_reset_api_rate_limits?(%User{} = user) do
     %{self_api_rate_limits_reset_at: last_self_reset_at} = settings_for(user)
 
     case do_can_self_reset_api_rate_limits?(last_self_reset_at) do
@@ -53,6 +53,22 @@ defmodule Sanbase.Accounts.UserSettings do
          The last reset was less than #{@self_reset_api_rate_limits_cooldown} days ago on #{last_self_reset_at}.
          """}
     end
+  end
+
+  def can_self_reset_api_rate_limits_at(%User{} = user) do
+    %{self_api_rate_limits_reset_at: last_self_reset_at} = settings_for(user)
+
+    case last_self_reset_at do
+      nil ->
+        {:ok, DateTime.utc_now()}
+
+      %DateTime{} ->
+        {:ok, DateTime.add(last_self_reset_at, @self_reset_api_rate_limits_cooldown, :day)}
+    end
+  end
+
+  def next_self_reset_api_calls_rate_limits_dt(%DateTime{} = last_self_reset_at) do
+    DateTime.add(last_self_reset_at, @self_reset_api_rate_limits_cooldown, :day)
   end
 
   def disconnect_telegram_bot(user) do
@@ -238,17 +254,11 @@ defmodule Sanbase.Accounts.UserSettings do
           map
       end
 
-    can_self_reset_limits? =
-      do_can_self_reset_api_rate_limits?(us.settings.self_api_rate_limits_reset_at)
-
-    can_self_reset_limits_at =
-      next_self_reset_api_calls_rate_limits_dt(us.settings.self_api_rate_limits_reset_at)
-
-    us.settings
-    |> Map.put(:has_telegram_connected, us.settings.telegram_chat_id != nil)
-    |> Map.put(:alerts_per_day_limit, alerts_per_day_limit)
-    |> Map.put(:can_self_reset_api_rate_limits, can_self_reset_limits?)
-    |> Map.put(:can_self_reset_api_rate_limits_at, can_self_reset_limits_at)
+    %{
+      us.settings
+      | has_telegram_connected: us.settings.telegram_chat_id != nil,
+        alerts_per_day_limit: alerts_per_day_limit
+    }
   end
 
   defp user_settings_for(%{user_settings: %{settings: _}} = user, opts) do
@@ -278,11 +288,5 @@ defmodule Sanbase.Accounts.UserSettings do
     dt_threshold = DateTime.utc_now() |> DateTime.add(-@self_reset_api_rate_limits_cooldown, :day)
 
     DateTime.compare(last_self_reset_at, dt_threshold) != :gt
-  end
-
-  defp next_self_reset_api_calls_rate_limits_dt(nil), do: DateTime.utc_now()
-
-  defp next_self_reset_api_calls_rate_limits_dt(%DateTime{} = last_self_reset_at) do
-    DateTime.add(last_self_reset_at, @self_reset_api_rate_limits_cooldown, :day)
   end
 end

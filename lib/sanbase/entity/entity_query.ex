@@ -190,20 +190,9 @@ defmodule Sanbase.Entity.Query do
         order_by: fragment("array_position(?, ?::int)", ^ids, entity.id)
       )
       |> maybe_preload(opts)
-      |> maybe_apply_is_public_or_owned_by_user(opts)
       |> Sanbase.Repo.all()
 
     {:ok, result}
-  end
-
-  defp maybe_apply_is_public_or_owned_by_user(query, opts) do
-    case Keyword.get(opts, :is_public_or_owned_by_user) do
-      user_id when is_integer(user_id) ->
-        query |> where([entity], entity.user_id == ^user_id or entity.is_public == true)
-
-      _ ->
-        query
-    end
   end
 
   defp maybe_preload(query, opts) do

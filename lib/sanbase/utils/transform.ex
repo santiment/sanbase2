@@ -20,12 +20,12 @@ defmodule Sanbase.Utils.Transform do
 
   """
   def combine_mapsets(mapsets_list, opts) do
-    case Keyword.fetch!(opts, :combinator) do
-      c when c in ["or", :or] ->
+    case Keyword.fetch!(opts, :combinator) |> to_string() do
+      "or" ->
         mapsets_list
         |> Enum.reduce(&MapSet.union(&1, &2))
 
-      c when c in ["and", :and] ->
+      "and" ->
         mapsets_list
         |> Enum.reduce(&MapSet.intersection(&1, &2))
     end

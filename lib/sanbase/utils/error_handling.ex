@@ -53,11 +53,7 @@ defmodule Sanbase.Utils.ErrorHandling do
           {UUID.uuid4(), reason}
       end
 
-    target_str =
-      case target_description do
-        nil -> ""
-        _ -> "for #{target_description} "
-      end
+    target_str = "for #{target_description}"
 
     error_msg = "[#{uuid}] Can't fetch #{metric} #{target_str}#{identifier_to_string(identifier)}"
 

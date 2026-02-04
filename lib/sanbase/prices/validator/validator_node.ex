@@ -108,8 +108,6 @@ defmodule Sanbase.Price.Validator.Node do
 
   # If there are no prices to compare against it means that we are just starting
   # to export this asset. Consider the price valid.
-  defp price_outlier?(_slug, _quote_asset, _price, [], _opts), do: false
-
   defp price_outlier?(slug, quote_asset, nil, _prices, _opts) do
     {:error, "The #{slug} #{quote_asset} price is nil and so it must not be considered"}
   end

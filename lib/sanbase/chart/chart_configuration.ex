@@ -91,8 +91,9 @@ defmodule Sanbase.Chart.Configuration do
   @impl Sanbase.Entity.Behaviour
   def by_ids(config_ids, opts) do
     opts = opts |> Keyword.put_new(:preload, [:chart_events, :featured_item])
+    query = base_query() |> maybe_apply_is_public_or_owned_by_user(opts)
 
-    with {:ok, result} <- Sanbase.Entity.Query.by_ids_with_order(base_query(), config_ids, opts) do
+    with {:ok, result} <- Sanbase.Entity.Query.by_ids_with_order(query, config_ids, opts) do
       {:ok, result}
     end
   end
@@ -102,6 +103,17 @@ defmodule Sanbase.Chart.Configuration do
   end
 
   # The base of all the entity queries
+  #
+  defp maybe_apply_is_public_or_owned_by_user(query, opts) do
+    case Keyword.get(opts, :is_public_or_owned_by_user) do
+      user_id when is_integer(user_id) ->
+        query |> where([entity], entity.user_id == ^user_id or entity.is_public == true)
+
+      _ ->
+        query
+    end
+  end
+
   defp base_entity_ids_query(opts) do
     base_query()
     |> maybe_apply_projects_filter(opts)

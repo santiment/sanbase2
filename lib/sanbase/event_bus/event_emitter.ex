@@ -53,38 +53,28 @@ defmodule Sanbase.EventBus.EventEmitter do
       end
 
       def emit_event(arg, event_type, args) do
-        case __MODULE__.handle_event(arg, event_type, args) do
-          :ok ->
-            maybe_wait(__MODULE__, event_type)
-            arg
-
-          error ->
-            raise(
-              ReturnResultError,
-              """
-              The handle_event/3 implementation for the event type :#{event_type} \
-              returned an error: #{inspect(error)}.
-              """
-            )
-        end
+        :ok = __MODULE__.handle_event(arg, event_type, args)
+        maybe_wait(__MODULE__, event_type)
+        arg
       end
 
       # In test enviroment, if the test ends before the subscribers successfully
       # handled the event, there will be errors.
+      @wait_count 5
       case Application.compile_env(:sanbase, :env) do
         :test ->
-          defp maybe_wait(module, event_type, count \\ 5) do
+          defp maybe_wait(module, event_type, count \\ 0) do
             ets_table = String.to_existing_atom("eb_ew_#{module.topic()}")
             # Until a better solution is present, introduce some milliseconds
             # sleep after the event is emitted so there's time for the subcribers
             # to pick it up and do the work.
-            Process.sleep(10)
+            Process.sleep(10 * (1 + count))
 
             try do
               events = :ets.tab2list(ets_table)
 
-              if count > 0 and events != [] do
-                maybe_wait(module, event_type, count - 1)
+              if count < @wait_count and events != [] do
+                maybe_wait(module, event_type, count + 1)
               end
             rescue
               _ ->

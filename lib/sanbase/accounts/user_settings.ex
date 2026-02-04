@@ -39,9 +39,9 @@ defmodule Sanbase.Accounts.UserSettings do
   higher plan. Both things might take some to fix/upgrade, so having the option to unblock yourself
   until the issues are resolved is required.k
   """
-  def can_self_reset_api_rate_limits?(%User{} = user) do
-    %{self_api_rate_limits_reset_at: last_self_reset_at} = settings_for(user)
-
+  def can_self_reset_api_rate_limits?(%Settings{
+        self_api_rate_limits_reset_at: last_self_reset_at
+      }) do
     case do_can_self_reset_api_rate_limits?(last_self_reset_at) do
       true ->
         true
@@ -55,9 +55,9 @@ defmodule Sanbase.Accounts.UserSettings do
     end
   end
 
-  def can_self_reset_api_rate_limits_at(%User{} = user) do
-    %{self_api_rate_limits_reset_at: last_self_reset_at} = settings_for(user)
-
+  def can_self_reset_api_rate_limits_at(%Settings{
+        self_api_rate_limits_reset_at: last_self_reset_at
+      }) do
     case last_self_reset_at do
       nil ->
         {:ok, DateTime.utc_now()}

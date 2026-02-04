@@ -318,9 +318,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   end
 
   def self_reset_api_rate_limits(_root, _args, %{context: %{auth: %{current_user: user}}}) do
-    user = Sanbase.Repo.preload(user, :user_settings)
-
-    with true <- UserSettings.can_self_reset_api_rate_limits?(user),
+    with settings <- UserSettings.settings_for(user),
+         true <- UserSettings.can_self_reset_api_rate_limits?(settings),
          {:ok, _acl} <- Sanbase.ApiCallLimit.reset(user),
          {:ok, _settings} <-
            UserSettings.update_self_reset_api_rate_limits_datetime(user, DateTime.utc_now()) do

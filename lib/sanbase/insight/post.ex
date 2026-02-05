@@ -588,11 +588,6 @@ defmodule Sanbase.Insight.Post do
     |> Enum.map(& &1.post)
   end
 
-  @spec search_published_insights_highglight(String.t(), opts) :: [%{}]
-  def search_published_insights_highglight(search_term, opts) do
-    public_insights_query(opts) |> Sanbase.Insight.Search.run(search_term, opts)
-  end
-
   def related_projects(%Post{} = post) do
     tags =
       post

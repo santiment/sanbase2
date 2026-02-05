@@ -1,24 +1,4 @@
 defmodule Sanbase.Insight.Search.Macro do
-  defmacro websearch_to_tsquery_highlight_fragment(field, search_term) do
-    quote do
-      fragment(
-        "ts_headline(?, websearch_to_tsquery(?), 'StartSel=<__internal_highlight__>, StopSel=</__internal_highlight__>')",
-        unquote(field),
-        unquote(search_term)
-      )
-    end
-  end
-
-  defmacro to_tsquery_highlight_fragment(field, search_term) do
-    quote do
-      fragment(
-        "ts_headline(?, to_tsquery(?), 'StartSel=<__internal_highlight__>, StopSel=</__internal_highlight__>')",
-        unquote(field),
-        unquote(search_term)
-      )
-    end
-  end
-
   defmacro websearch_to_tsquery_search_insights_fragment(search_term, limit, offset) do
     quote do
       fragment(

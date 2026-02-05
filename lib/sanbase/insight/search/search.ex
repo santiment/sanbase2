@@ -40,19 +40,12 @@ defmodule Sanbase.Insight.Search do
       on: post.id == map.id,
       select: %{
         post: post,
-        rank: map.rank,
-        highlights: %{
-          title: to_tsquery_highlight_fragment(post.title, ^search_term),
-          text: to_tsquery_highlight_fragment(post.text, ^search_term),
-          tags: to_tsquery_highlight_fragment(map.tags_str, ^search_term),
-          metrics: to_tsquery_highlight_fragment(map.metrics_str, ^search_term)
-        }
+        rank: map.rank
       },
       order_by: [desc: map.rank],
       limit: 10
     )
     |> Sanbase.Repo.all()
-    |> transform_highlights()
   end
 
   defp websearch_to_tsquery_complete_search(query, search_term, opts) do
@@ -64,18 +57,11 @@ defmodule Sanbase.Insight.Search do
       on: post.id == map.id,
       select: %{
         post: post,
-        rank: map.rank,
-        highlights: %{
-          title: websearch_to_tsquery_highlight_fragment(post.title, ^search_term),
-          text: websearch_to_tsquery_highlight_fragment(post.text, ^search_term),
-          tags: websearch_to_tsquery_highlight_fragment(map.tags_str, ^search_term),
-          metrics: websearch_to_tsquery_highlight_fragment(map.metrics_str, ^search_term)
-        }
+        rank: map.rank
       },
       order_by: [desc: map.rank]
     )
     |> Sanbase.Repo.all()
-    |> transform_highlights()
   end
 
   def update_document_tokens(post_id) do
@@ -143,27 +129,5 @@ defmodule Sanbase.Insight.Search do
       true -> search_term
       false -> search_term <> ":*"
     end
-  end
-
-  defp transform_highlights(list) do
-    list
-    |> Enum.map(fn %{highlights: highlights} = map ->
-      highlights = highlights |> Map.new(fn {k, v} -> {k, split_highlight_response(v)} end)
-      Map.put(map, :highlights, highlights)
-    end)
-  end
-
-  defp split_highlight_response(response) when is_binary(response) do
-    starts_with_tag? = String.starts_with?(response, "<__internal_highlight__>")
-
-    response
-    |> String.split("<__internal_highlight__>", trim: true)
-    |> Enum.flat_map(&String.split(&1, "</__internal_highlight__>", trim: true))
-    |> Enum.reduce({[], starts_with_tag?}, fn text, {acc, highlight} ->
-      acc = [%{highlight: highlight, text: text} | acc]
-      {acc, !highlight}
-    end)
-    |> elem(0)
-    |> Enum.reverse()
   end
 end

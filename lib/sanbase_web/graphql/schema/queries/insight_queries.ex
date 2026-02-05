@@ -130,25 +130,6 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       middleware(PostPaywallFilter)
     end
 
-    field :all_insights_by_search_term_highlighted, list_of(:post_search) do
-      meta(access: :free)
-
-      arg(:search_term, non_null(:string))
-      arg(:is_pulse, :boolean)
-      arg(:is_paywall_required, :boolean)
-      arg(:from, :datetime)
-      arg(:to, :datetime)
-      arg(:page, :integer, default_value: 1)
-      arg(:page_size, :integer, default_value: 10)
-
-      cache_resolve(&InsightResolver.all_insights_by_search_term_highlighted/3,
-        ttl: 5,
-        max_ttl_offset: 5
-      )
-
-      middleware(PostPaywallFilter)
-    end
-
     @desc "Fetch a list of all tags used for posts/insights. This query also returns tags that are not yet in use."
     field :all_tags, list_of(:tag) do
       meta(access: :free)

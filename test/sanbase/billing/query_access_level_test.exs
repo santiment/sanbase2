@@ -19,7 +19,6 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :all_currency_projects,
           :all_erc20_projects,
           :all_exchanges,
-          :all_insights_by_search_term_highlighted,
           :all_insights_by_search_term,
           :all_insights_by_tag,
           :all_insights_for_user,

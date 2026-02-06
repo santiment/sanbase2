@@ -319,7 +319,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
     # Table is interpolated in FROM as the caller of this function can also set
     # `table` param
-    table = deduce_table(version, opts)
+    table = deduce_table(metric, opts)
 
     sql = """
     SELECT

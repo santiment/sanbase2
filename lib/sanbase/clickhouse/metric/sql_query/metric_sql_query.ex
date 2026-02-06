@@ -33,8 +33,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       from: dt_to_unix(:from, from),
       to: dt_to_unix(:to, to),
       selector: asset_filter_value(selector),
-      table: Map.get(Registry.table_map(), metric),
-      version: version
+      version: version,
+      table: deduce_table(metric, opts)
     }
 
     only_finalized_data = Keyword.get(opts, :only_finalized_data, false)
@@ -153,7 +153,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       from: dt_to_unix(:from, from),
       to: dt_to_unix(:to, to),
       selector: slug_or_slugs,
-      table: Map.get(Registry.table_map(), metric),
+      table: deduce_table(metric, opts),
       version: version
     }
 
@@ -210,7 +210,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       metric: Map.get(Registry.name_to_metric_map(), metric),
       from: dt_to_unix(:from, from),
       to: dt_to_unix(:to, to),
-      table: Map.get(Registry.table_map(), metric),
+      table: deduce_table(metric, opts),
       version: version
     }
 
@@ -264,7 +264,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
   def slugs_by_filter_query(metric, from, to, operation, threshold, aggregation, filters, opts) do
     version = Keyword.get(opts, :version, @default_version)
-    query_struct = aggregated_slugs_base_query(metric, version, from, to, aggregation, filters)
+
+    query_struct =
+      aggregated_slugs_base_query(metric, version, from, to, aggregation, filters, opts)
 
     sql =
       query_struct.sql <>
@@ -278,7 +280,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   def slugs_order_query(metric, from, to, direction, aggregation, filters, opts)
       when direction in [:asc, :desc] do
     version = Keyword.get(opts, :version, @default_version)
-    query_struct = aggregated_slugs_base_query(metric, version, from, to, aggregation, filters)
+
+    query_struct =
+      aggregated_slugs_base_query(metric, version, from, to, aggregation, filters, opts)
 
     sql =
       query_struct.sql <>
@@ -289,7 +293,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     Sanbase.Clickhouse.Query.put_sql(query_struct, sql)
   end
 
-  defp aggregated_slugs_base_query(metric, version, from, to, aggregation, filters) do
+  defp aggregated_slugs_base_query(metric, version, from, to, aggregation, filters, opts) do
     # In case of `:last` aggregation, scanning big intervals of data leads to
     # unnecessarily increased resources consumption as we're getting only the
     # last value. We rewrite the `from` parameter to be closer to `to`. This
@@ -315,7 +319,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
     # Table is interpolated in FROM as the caller of this function can also set
     # `table` param
-    table = Map.get(Registry.table_map(), metric)
+    table = deduce_table(version, opts)
 
     sql = """
     SELECT
@@ -561,7 +565,6 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     SELECT version
     FROM metric_metadata_external FINAL
     WHERE name = {{metric}}
-    -- will be ordered in the app code
     """
 
     params = %{metric: Map.get(Registry.name_to_metric_map(), metric, metric)}
@@ -577,6 +580,16 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
     params = %{}
 
+    Sanbase.Clickhouse.Query.new(sql, params)
+  end
+
+  def metrics_with_weighted_age_implementation_query() do
+    sql = """
+    SELECT dictGet('metrics', 'name', metric_id)
+    FROM available_metrics_experimental
+    """
+
+    params = %{}
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
@@ -641,7 +654,18 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   defp asset_filter_value(%{slug: slug_or_slugs}), do: slug_or_slugs
   defp asset_filter_value(_), do: nil
 
-  defp finalized_data_filter_str("intraday_metrics", true), do: "is_finalized = true AND"
-  defp finalized_data_filter_str("daily_metrics_v2", true), do: "is_finalized = true AND"
+  defp finalized_data_filter_str("intraday_metrics" <> _, true), do: "is_finalized = true AND"
+  defp finalized_data_filter_str("daily_metrics_v2" <> _, true), do: "is_finalized = true AND"
   defp finalized_data_filter_str(_, _), do: ""
+
+  defp deduce_table(metric, opts) do
+    table = Map.get(Registry.table_map(), metric)
+    version = Keyword.get(opts, :version, @default_version)
+
+    if version =~ "Experimental" do
+      table <> "_experimental"
+    else
+      table
+    end
+  end
 end

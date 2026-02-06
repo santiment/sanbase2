@@ -232,15 +232,27 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     metric_id_column = Keyword.get(opts, :metric_id_column, "metric_id")
     arg_name = Keyword.fetch!(opts, :argument_name)
     version_arg_name = Keyword.fetch!(opts, :version_arg_name)
+    version = Keyword.fetch!(opts, :version)
 
-    """
-    #{metric_id_column} = (
-      SELECT metric_id
-      FROM metric_metadata_external FINAL
-      WHERE name = {{#{arg_name}}} AND version = {{#{version_arg_name}}}
-      LIMIT 1
-    )
-    """
+    if version =~ "Experimental" do
+      """
+      #{metric_id_column} = (
+        SELECT metric_id
+        FROM metric_metadata_external FINAL
+        WHERE name = {{#{arg_name}}} AND version = '1.0'
+        LIMIT 1
+      )
+      """
+    else
+      """
+      #{metric_id_column} = (
+        SELECT metric_id
+        FROM metric_metadata_external FINAL
+        WHERE name = {{#{arg_name}}} AND version = {{#{version_arg_name}}}
+        LIMIT 1
+      )
+      """
+    end
   end
 
   def signal_id_filter(%{signal: signal}, opts) when is_binary(signal) do

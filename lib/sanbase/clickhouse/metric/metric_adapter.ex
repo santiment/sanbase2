@@ -277,6 +277,12 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
         end,
         :asc
       )
+      |> Kernel.++(
+        if(metric in has_weighted_age_implementation_mapset(),
+          do: ["Experimental (Weighted Age)"],
+          else: []
+        )
+      )
     end)
   end
 
@@ -298,7 +304,18 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
         end
       )
       |> Enum.group_by(fn {name, _version} -> name end, fn {_name, version} -> version end)
-      |> Enum.map(fn {name, versions} -> {name, Sanbase.Metric.Utils.sort_versions(versions)} end)
+      |> Enum.map(fn {name, versions} ->
+        versions =
+          Sanbase.Metric.Utils.sort_versions(versions)
+          |> Kernel.++(
+            if(name in has_weighted_age_implementation_mapset(),
+              do: ["Experimental (Weighted Age)"],
+              else: []
+            )
+          )
+
+        {name, versions}
+      end)
       |> Map.new()
     end)
   end
@@ -405,5 +422,51 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     else
       opts
     end
+  end
+
+  # TODO: Remove after introducing a better way to handle metrics with queue implementation
+  defp has_weighted_age_implementation_mapset() do
+    key = :metrics_mapset_with_weighted_age_implementation
+
+    case :persistent_term.get(key, nil) do
+      nil ->
+        case metrics_mapset_with_weighted_age_implementation() do
+          {:ok, data} ->
+            :persistent_term.put(key, {data, DateTime.utc_now()})
+
+            data
+
+          _ ->
+            # In case of error, return empty set to avoid breaking the callers
+            # but also don't store anything in persistent term, so it can be attempted to be
+            # be computed again
+            MapSet.new()
+        end
+
+      {data, added_at} ->
+        if DateTime.diff(DateTime.utc_now(), added_at, :minute) > 60 do
+          {:ok, data} = metrics_mapset_with_weighted_age_implementation()
+
+          :persistent_term.put(
+            key,
+            {data, DateTime.utc_now()}
+          )
+
+          data
+        else
+          data
+        end
+    end
+  end
+
+  defp metrics_mapset_with_weighted_age_implementation() do
+    query_struct = metrics_with_weighted_age_implementation_query()
+
+    ClickhouseRepo.query_transform(query_struct, fn [metric] -> metric end)
+    |> maybe_apply_function(fn list ->
+      list
+      |> Enum.flat_map(&Map.get(Registry.metric_to_names_map(), &1, []))
+      |> MapSet.new()
+    end)
   end
 end

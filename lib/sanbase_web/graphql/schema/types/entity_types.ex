@@ -98,4 +98,14 @@ defmodule SanbaseWeb.Graphql.EntityTypes do
       resolve(&EntityResolver.get_most_used_stats/3)
     end
   end
+
+  object :most_similar_entity_result do
+    field :data, list_of(:single_entity_result) do
+      resolve(&EntityResolver.get_most_similar_data/3)
+    end
+
+    field :stats, :entity_stats do
+      resolve(&EntityResolver.get_most_similar_stats/3)
+    end
+  end
 end

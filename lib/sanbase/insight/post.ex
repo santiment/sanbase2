@@ -167,6 +167,83 @@ defmodule Sanbase.Insight.Post do
     {:ok, result}
   end
 
+  def find_most_similar_insights_with_scores(embedding, entity_ids_query, opts \\ [])
+      when is_list(embedding) do
+    limit = Keyword.get(opts, :limit, 100)
+
+    query =
+      from(
+        e in PostEmbedding,
+        inner_join: p in Post,
+        on: e.post_id == p.id,
+        where: p.id in subquery(entity_ids_query),
+        group_by: [e.post_id],
+        select: %{
+          post_id: e.post_id,
+          similarity: fragment("MAX(1 - (embedding <=> ?))", ^embedding)
+        },
+        order_by: [desc: fragment("MAX(1 - (embedding <=> ?))", ^embedding)],
+        limit: ^limit
+      )
+
+    db_result = Sanbase.Repo.all(query)
+
+    post_ids = Enum.map(db_result, & &1.post_id)
+
+    {:ok, posts} = by_ids(post_ids, [])
+
+    posts_map = Map.new(posts, fn post -> {post.id, post} end)
+
+    similarity_map =
+      db_result
+      |> Enum.map(fn %{post_id: post_id, similarity: similarity} ->
+        {post_id, similarity}
+      end)
+      |> Map.new()
+
+    results =
+      db_result
+      |> Enum.map(fn %{post_id: post_id} ->
+        post = Map.get(posts_map, post_id)
+        if post, do: %{insight: post}, else: nil
+      end)
+      |> Enum.reject(&is_nil/1)
+
+    {results, similarity_map}
+  end
+
+  def find_similar_insights_count(embedding, entity_ids_query) when is_list(embedding) do
+    query =
+      from(
+        e in PostEmbedding,
+        inner_join: p in Post,
+        on: e.post_id == p.id,
+        where: p.id in subquery(entity_ids_query),
+        select: fragment("COUNT(DISTINCT ?)", e.post_id)
+      )
+
+    Sanbase.Repo.one(query) || 0
+  end
+
+  def similar_insights_query(embedding, entity_ids_query, opts \\ [])
+      when is_list(embedding) do
+    limit = Keyword.get(opts, :limit, 1000)
+
+    from(
+      e in PostEmbedding,
+      inner_join: p in Post,
+      on: e.post_id == p.id,
+      where: p.id in subquery(entity_ids_query),
+      group_by: [e.post_id],
+      select: %{
+        post_id: e.post_id,
+        similarity: fragment("MAX(1 - (embedding <=> ?))", ^embedding)
+      },
+      order_by: [desc: fragment("MAX(1 - (embedding <=> ?))", ^embedding)],
+      limit: ^limit
+    )
+  end
+
   def admin_keyword_search(search_term, opts \\ []) do
     page = Keyword.get(opts, :page, 1)
     page_size = Keyword.get(opts, :page_size, 50)

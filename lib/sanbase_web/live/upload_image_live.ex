@@ -1,6 +1,7 @@
 defmodule SanbaseWeb.UploadImageLive do
   use SanbaseWeb, :live_view
 
+  @max_file_size 10_000_000
   @impl true
   def mount(_params, _session, socket) do
     socket =
@@ -9,7 +10,7 @@ defmodule SanbaseWeb.UploadImageLive do
         :images,
         accept: ~w(.png .jpg .jpeg .mp4),
         max_entries: 1,
-        max_file_size: 10_000_000
+        max_file_size: @max_file_size
       )
       |> assign(
         form: to_form(%{}),
@@ -185,7 +186,9 @@ defmodule SanbaseWeb.UploadImageLive do
     {:ok, filepath}
   end
 
-  defp error_to_string(:too_large), do: "Gulp! File too large (max 10 MB)."
-  defp error_to_string(:too_many_files), do: "Whoa, too many files."
+  defp error_to_string(:too_large),
+    do: "File too large (max #{div(@max_file_size, 1024 * 1024)} MB)."
+
+  defp error_to_string(:too_many_files), do: "Too many files."
   defp error_to_string(:not_accepted), do: "Sorry, that's not an acceptable file type."
 end

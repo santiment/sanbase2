@@ -21,13 +21,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   @max_heap_size_in_mbs 500
   @max_heap_size_in_words div(@max_heap_size_in_mbs * 1024 * 1024, @wordsize)
 
-  def get_metric(_root, %{metric: metric} = args, _resolution) do
+  def get_metric(_root, %{metric: metric} = args, resolution) do
+    # TODO: Check that the version is also deprecated
+    version = Map.get(args, :version, "1.0")
+
     with false <- Metric.hard_deprecated?(metric),
-         true <- Metric.has_metric?(metric) do
+         true <- Metric.has_metric?(metric),
+         true <- user_can_access_version?(version, resolution) do
       maybe_enable_clickhouse_sql_storage(args)
 
-      # TODO: Check that the version is also deprecated
-      version = Map.get(args, :version, "1.0")
       {:ok, %{metric: metric, version: version}}
     end
   end
@@ -53,16 +55,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     product_code = product |> Atom.to_string() |> String.upcase()
     plan_name = plan |> to_string() |> String.upcase()
 
-    user_metric_access_level =
-      get_in(resolution.context, [:auth, :current_user, Access.key(:metric_access_level)]) ||
-        "released"
+    user_metric_access_level = resolution_to_metric_access_level(resolution)
 
     metrics =
       AccessChecker.get_available_metrics_for_plan(plan_name, product_code)
       |> maybe_filter_incomplete_metrics(args[:has_incomplete_data])
       |> maybe_apply_regex_filter(args[:name_regex_filter])
       |> remove_hidden_metrics()
-      |> maybe_remove_experimental_metrics(user_metric_access_level)
+      |> maybe_remove_alpha_and_beta_metrics(user_metric_access_level)
       |> Enum.uniq()
       |> Enum.sort(:asc)
 
@@ -70,16 +70,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   end
 
   def get_available_metrics(_root, args, resolution) do
-    user_metric_access_level =
-      get_in(resolution.context, [:auth, :current_user, Access.key(:metric_access_level)]) ||
-        "released"
+    user_metric_access_level = resolution_to_metric_access_level(resolution)
 
     metrics =
       Metric.available_metrics()
       |> maybe_filter_incomplete_metrics(args[:has_incomplete_data])
       |> maybe_apply_regex_filter(args[:name_regex_filter])
       |> remove_hidden_metrics()
-      |> maybe_remove_experimental_metrics(user_metric_access_level)
+      |> maybe_remove_alpha_and_beta_metrics(user_metric_access_level)
       |> Enum.uniq()
       |> Enum.sort(:asc)
 
@@ -87,9 +85,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   end
 
   def get_available_metrics_for_selector(_root, args, resolution) do
-    user_metric_access_level =
-      get_in(resolution.context, [:auth, :current_user, Access.key(:metric_access_level)]) ||
-        "released"
+    user_metric_access_level = resolution_to_metric_access_level(resolution)
 
     case Metric.available_metrics_for_selector(args.selector,
            user_metric_access_level: user_metric_access_level
@@ -108,9 +104,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end
   end
 
-  def get_available_versions(_root, args, %{source: %{metric: metric}}) do
+  def get_available_versions(_root, args, %{source: %{metric: metric}} = resolution) do
+    user_metric_access_level = resolution_to_metric_access_level(resolution)
+
     with {:ok, versions} <- Metric.available_versions(metric) do
-      versions_maps = Enum.map(versions, fn ver -> %{version: ver} end)
+      versions_maps =
+        versions
+        |> maybe_remove_experimental_versions(user_metric_access_level)
+        |> Enum.map(fn ver -> %{version: ver} end)
+
       {:ok, versions_maps}
     end
     |> maybe_handle_graphql_error(fn error ->
@@ -634,20 +636,45 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     |> Enum.reject(&(&1 in hidden_metrics))
   end
 
-  defp maybe_remove_experimental_metrics(metrics, "alpha") do
+  defp maybe_remove_experimental_versions(versions, "alpha") do
+    versions
+  end
+
+  defp maybe_remove_experimental_versions(versions, _access_level) do
+    # Only alpha users have access to Experimental versions
+    versions |> Enum.reject(&(&1 =~ "Experimental"))
+  end
+
+  defp maybe_remove_alpha_and_beta_metrics(metrics, "alpha") do
     # alpha users have access to alpha, beta and released metrics
     metrics
   end
 
-  defp maybe_remove_experimental_metrics(metrics, "beta") do
+  defp maybe_remove_alpha_and_beta_metrics(metrics, "beta") do
     # beta users have access to beta and released metrics, but not alpha
     metrics
     |> Enum.reject(&(&1 in Sanbase.Metric.alpha_metrics()))
   end
 
-  defp maybe_remove_experimental_metrics(metrics, _) do
+  defp maybe_remove_alpha_and_beta_metrics(metrics, _) do
     # normal users have access to released metrics only, and not alpha and beta
     metrics
     |> Enum.reject(&(&1 in Sanbase.Metric.experimental_metrics()))
+  end
+
+  defp resolution_to_metric_access_level(resolution) do
+    get_in(resolution.context, [:auth, :current_user, Access.key(:metric_access_level)]) ||
+      "released"
+  end
+
+  defp user_can_access_version?(version, resolution) do
+    metric_access_level = resolution_to_metric_access_level(resolution)
+
+    if version =~ "Experimental" and metric_access_level != "alpha" do
+      {:error,
+       "The requested version is Experimental and only users with alpha access can access it."}
+    else
+      true
+    end
   end
 end

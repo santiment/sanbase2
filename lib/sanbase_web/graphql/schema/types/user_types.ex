@@ -445,7 +445,9 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field(:status, :string)
 
     field :available_versions, list_of(:metric_version) do
-      cache_resolve(&SanbaseWeb.Graphql.Resolvers.AccessControlResolver.available_versions/3)
+      cache_resolve(&SanbaseWeb.Graphql.Resolvers.AccessControlResolver.available_versions/3,
+        include_user_details_in_key: true
+      )
     end
   end
 

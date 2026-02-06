@@ -509,7 +509,10 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:required_selectors, list_of(list_of(:selector_name)))
 
     field :available_versions, list_of(:metric_version) do
-      cache_resolve(&MetricResolver.get_available_versions/3, ttl: 120)
+      cache_resolve(&MetricResolver.get_available_versions/3,
+        ttl: 120,
+        include_user_details_in_key: true
+      )
     end
 
     @desc ~s"""

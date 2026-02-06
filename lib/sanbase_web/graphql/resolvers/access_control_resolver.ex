@@ -26,7 +26,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccessControlResolver do
     ).()
   end
 
-  def available_versions(%{type: "metric"} = restriction, _args, %{context: %{loader: loader}}) do
+  def available_versions(
+        %{type: "metric"} = restriction,
+        _args,
+        %{context: %{loader: loader}} = resolution
+      ) do
     loader
     |> Dataloader.load(SanbaseDataloader, :available_metric_versions, restriction.name)
     |> on_load(fn loader ->
@@ -38,7 +42,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccessControlResolver do
           restriction.name
         ) || []
 
-      versions_maps = Enum.map(versions, fn version -> %{version: version} end)
+      metric_access_level = resolution_to_metric_access_level(resolution)
+
+      versions_maps =
+        versions
+        |> Enum.reject(fn ver -> ver =~ "Experimental" and metric_access_level != "alpha" end)
+        |> Enum.map(fn version -> %{version: version} end)
+
       {:ok, versions_maps}
     end)
   end
@@ -47,5 +57,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccessControlResolver do
 
   def get_access_control(_root, _args, _resolution) do
     {:error, "The query does not have a product key in the context."}
+  end
+
+  defp resolution_to_metric_access_level(resolution) do
+    get_in(resolution.context, [:auth, :current_user, Access.key(:metric_access_level)]) ||
+      "released"
   end
 end

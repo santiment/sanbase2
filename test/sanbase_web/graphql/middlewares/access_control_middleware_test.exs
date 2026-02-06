@@ -6,6 +6,8 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
 
   alias Sanbase.Accounts.Apikey
 
+  @moduletag capture_log: true
+
   setup do
     contract = "0x132123"
     # Both projects use the have same contract address for easier testing.
@@ -543,6 +545,188 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
         assert Map.has_key?(result, "data")
         refute Map.has_key?(result, "errors")
       end)
+    end
+  end
+
+  describe "experimental metric versions (alpha metric_access_level only)" do
+    @experimental_version "Experimental (Weighted Age)"
+    @metric_name "daily_active_addresses"
+
+    test "alpha user sees Experimental versions in availableVersions" do
+      alpha_user = insert(:user, metric_access_level: "alpha")
+      conn = setup_jwt_auth(build_conn(), alpha_user)
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Metric.available_versions/1,
+        {:ok, ["1.0", @experimental_version]}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        query = """
+        {
+          getMetric(metric: "#{@metric_name}") {
+            metadata{ availableVersions { version } }
+          }
+        }
+        """
+
+        result =
+          conn
+          |> post("/graphql", query_skeleton(query))
+          |> json_response(200)
+
+        versions =
+          result
+          |> get_in(["data", "getMetric", "metadata", "availableVersions"])
+          |> Enum.map(& &1["version"])
+          |> Enum.sort()
+
+        assert "1.0" in versions
+        assert @experimental_version in versions
+      end)
+    end
+
+    test "non-alpha user does not see Experimental versions in availableVersions" do
+      beta_user = insert(:user, metric_access_level: "beta")
+      conn = setup_jwt_auth(build_conn(), beta_user)
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Metric.available_versions/1,
+        {:ok, ["1.0", @experimental_version]}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        query = """
+        {
+          getMetric(metric: "#{@metric_name}") {
+            metadata{ availableVersions { version } }
+          }
+        }
+        """
+
+        result =
+          conn
+          |> post("/graphql", query_skeleton(query))
+          |> json_response(200)
+
+        versions =
+          result
+          |> get_in(["data", "getMetric", "metadata", "availableVersions"])
+          |> Enum.map(& &1["version"])
+
+        assert "1.0" in versions
+        refute @experimental_version in versions
+      end)
+    end
+
+    test "released user does not see Experimental versions in availableVersions" do
+      released_user = insert(:user, metric_access_level: "released")
+      conn = setup_jwt_auth(build_conn(), released_user)
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Metric.available_versions/1,
+        {:ok, ["1.0", @experimental_version]}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        query = """
+        {
+          getMetric(metric: "#{@metric_name}") {
+            metadata{ availableVersions { version } }
+          }
+        }
+        """
+
+        result =
+          conn
+          |> post("/graphql", query_skeleton(query))
+          |> json_response(200)
+
+        versions =
+          result
+          |> get_in(["data", "getMetric", "metadata", "availableVersions"])
+          |> Enum.map(& &1["version"])
+
+        assert "1.0" in versions
+        refute @experimental_version in versions
+      end)
+    end
+
+    test "alpha user can query getMetric with Experimental version" do
+      alpha_user = insert(:user, metric_access_level: "alpha")
+      conn = setup_jwt_auth(build_conn(), alpha_user)
+
+      query = """
+      {
+        getMetric(metric: "#{@metric_name}", version: "#{@experimental_version}") {
+          metadata { metric }
+        }
+      }
+      """
+
+      result =
+        conn
+        |> post("/graphql", query_skeleton(query))
+        |> json_response(200)
+
+      assert Map.has_key?(result, "data")
+      refute Map.has_key?(result, "errors")
+      assert get_in(result, ["data", "getMetric", "metadata", "metric"]) == @metric_name
+    end
+
+    test "non-alpha user cannot query getMetric with Experimental version" do
+      beta_user = insert(:user, metric_access_level: "beta")
+      conn = setup_jwt_auth(build_conn(), beta_user)
+
+      query = """
+      {
+        getMetric(metric: "#{@metric_name}", version: "#{@experimental_version}") {
+          metadata { metric }
+        }
+      }
+      """
+
+      result =
+        conn
+        |> post("/graphql", query_skeleton(query))
+        |> json_response(200)
+
+      assert %{
+               "errors" => [
+                 %{
+                   "message" => error_message
+                 }
+               ]
+             } = result
+
+      assert error_message ==
+               "The requested version is Experimental and only users with alpha access can access it."
+    end
+
+    test "released user cannot query getMetric with Experimental version" do
+      released_user = insert(:user, metric_access_level: "released")
+      conn = setup_jwt_auth(build_conn(), released_user)
+
+      query = """
+      {
+        getMetric(metric: "#{@metric_name}", version: "#{@experimental_version}") {
+          metadata { metric }
+        }
+      }
+      """
+
+      result =
+        conn
+        |> post("/graphql", query_skeleton(query))
+        |> json_response(200)
+
+      assert %{
+               "errors" => [
+                 %{
+                   "message" => error_message
+                 }
+               ]
+             } = result
+
+      assert error_message ==
+               "The requested version is Experimental and only users with alpha access can access it."
     end
   end
 end

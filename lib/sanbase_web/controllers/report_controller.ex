@@ -28,6 +28,27 @@ defmodule SanbaseWeb.ReportController do
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "new.html", changeset: changeset)
+
+      {:error, "invalid_extension"} ->
+        conn
+        |> put_flash(
+          :error,
+          "Invalid file type. Allowed: #{Sanbase.FileStore.allowed_extensions() |> Enum.join(", ")}"
+        )
+        |> redirect(to: Routes.report_path(conn, :new))
+
+      {:error, "file_too_large"} ->
+        conn
+        |> put_flash(
+          :error,
+          "File too large. Maximum size is #{Sanbase.FileStore.allowed_file_size()} MB."
+        )
+        |> redirect(to: Routes.report_path(conn, :new))
+
+      {:error, _reason} ->
+        conn
+        |> put_flash(:error, "Could not save file. Please try again.")
+        |> redirect(to: Routes.report_path(conn, :new))
     end
   end
 

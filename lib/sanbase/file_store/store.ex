@@ -5,12 +5,25 @@ defmodule Sanbase.FileStore do
   @acl :public_read
   @extension_whitelist ~w(.jpg .jpeg .gif .png .pdf .csv .mp4)
   @max_file_size 10 * 1024 * 1024
+  @admin_max_file_size 20 * 1024 * 1024
   @cache_max_age 2_592_000
+
+  def allowed_extensions(), do: @extension_whitelist
+  def allowed_file_size(), do: div(max_file_size(), 1024 * 1024)
+
   @doc ~s"""
-    Whitelist file extensions. Now allowing only images.
+  Validate the file size and extension.
+
+  On the admin pod the allowed file size is bigger to uploading
+  bigger reports while not allowing users to upload too big images.
   """
   def validate({file, _}) do
-    allowed_extenstion?(file) && (in_memory_file?(file) || allowed_size?(file))
+    cond do
+      not allowed_extension?(file) -> {:error, "invalid_extension"}
+      in_memory_file?(file) -> true
+      not allowed_size?(file) -> {:error, "file_too_large"}
+      true -> true
+    end
   end
 
   @doc ~s"""
@@ -29,18 +42,25 @@ defmodule Sanbase.FileStore do
 
   # Helper functions
 
-  defp allowed_extenstion?(file) do
-    @extension_whitelist
-    |> Enum.member?(Path.extname(file.file_name |> String.downcase()))
+  defp allowed_extension?(file) do
+    extension = file.file_name |> Path.extname() |> String.downcase()
+    Enum.member?(@extension_whitelist, extension)
+  end
+
+  defp max_file_size() do
+    if System.get_env("CONTAINER_TYPE") in ["all", "admin"] do
+      @admin_max_file_size
+    else
+      @max_file_size
+    end
   end
 
   defp allowed_size?(file) do
-    case File.stat(file.path) do
-      {:ok, %{size: size}} when size <= @max_file_size ->
-        true
+    max_file_size = max_file_size()
 
-      _ ->
-        false
+    case File.stat(file.path) do
+      {:ok, %{size: size}} when size <= max_file_size -> true
+      _ -> false
     end
   end
 

@@ -57,11 +57,18 @@ defmodule SanbaseWeb.Endpoint do
   # request body and it can be read only once and if used anywhere else should be stored
   plug(SanbaseWeb.Plug.VerifyStripeWebhook)
 
+  parser_length =
+    if System.get_env("CONTAINER_TYPE") in ["admin", "all"], do: 20_000_000, else: 8_000_000
+
   plug(
     Plug.Parsers,
     parsers: [:urlencoded, :multipart, :json, Absinthe.Plug.Parser],
     pass: ["*/*"],
-    json_decoder: Jason
+    json_decoder: Jason,
+    # To accomodate bigger files for reports uploaded via admin panel
+    # The file store is configured to allow bigger files for the admin pod
+    # and lower for the web pod
+    length: parser_length
   )
 
   plug(Sentry.PlugContext)

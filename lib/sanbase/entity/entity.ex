@@ -202,6 +202,64 @@ defmodule Sanbase.Entity do
     do: do_get_most_used_total_count(List.wrap(type_or_types), opts)
 
   @doc ~s"""
+  Get a list of the most similar entities of a given type or types based on
+  semantic similarity using embeddings. The ordering is done by taking into
+  consideration the similarity score for insights and creation time for other
+  entity types.
+
+  ## Options
+
+  See the ["Shared options"](#module-shared-options) section at the module
+  documentation for more options.
+
+  Requires `:ai_search_term` option to generate embeddings for similarity search.
+  """
+  @spec get_most_similar(entity_type | [entity_type], opts) ::
+          {:ok, list(result_map)} | {:error, String.t()}
+  def get_most_similar(type_or_types, opts) do
+    with ai_search_term when is_binary(ai_search_term) <- Keyword.get(opts, :ai_search_term),
+         {:ok, [embedding]} <-
+           Sanbase.AI.Embedding.generate_embeddings([ai_search_term], 1536) do
+      opts = Keyword.put(opts, :embedding, embedding)
+      do_get_most_similar(List.wrap(type_or_types), opts)
+    else
+      {:error, reason} ->
+        {:error, "Failed to generate embeddings: #{inspect(reason)}"}
+
+      _ ->
+        {:error, "The ai_search_term must be a string"}
+    end
+  end
+
+  @doc ~s"""
+  Get the total count of similar entities of a given type or types.
+  A cursor can be applied, but pagination cannot.
+
+  ## Options
+
+  See the ["Shared options"](#module-shared-options) section at the module
+  documentation for more options.
+
+  Requires `:ai_search_term` option to generate embeddings for similarity search.
+  """
+  @spec get_most_similar_total_count(entity_type | [entity_type], opts) ::
+          {:ok, non_neg_integer()} | {:error, String.t()}
+  def get_most_similar_total_count(type_or_types, opts) do
+    with ai_search_term when is_binary(ai_search_term) <- Keyword.get(opts, :ai_search_term),
+         {:ok, [embedding]} <-
+           Sanbase.AI.Embedding.generate_embeddings([ai_search_term], 1536) do
+      opts = Keyword.put(opts, :embedding, embedding)
+      do_get_most_similar_total_count(List.wrap(type_or_types), opts)
+    else
+      {:error, reason} ->
+        {:error, "Failed to generate embeddings: #{inspect(reason)}"}
+
+      _ ->
+        {:error, "The ai_search_term must be a string"}
+    end
+  end
+
+  @doc ~s"""
   Map the entity type to the corresponding field in the votes table
   """
   def deduce_entity_vote_field(:user_trigger), do: :user_trigger_id
@@ -514,6 +572,99 @@ defmodule Sanbase.Entity do
       |> Sanbase.Repo.one()
 
     {:ok, total_count}
+  end
+
+  defp do_get_most_similar(entities, opts) when is_list(entities) and entities != [] do
+    opts = update_opts(opts)
+    {:ok, query} = most_similar_base_query(entities, opts)
+
+    query =
+      from(
+        entity in subquery(query),
+        order_by: [desc: entity.similarity, desc: entity.entity_id]
+      )
+      |> paginate(opts)
+
+    db_result = Sanbase.Repo.all(query)
+
+    result = fetch_entities_by_ids(db_result)
+
+    similarity_map =
+      db_result
+      |> Enum.map(fn %{entity_id: entity_id, entity_type: entity_type, similarity: similarity} ->
+        {{String.to_existing_atom(entity_type), entity_id}, similarity}
+      end)
+      |> Map.new()
+
+    sorted_result =
+      Enum.sort_by(
+        result,
+        fn elem ->
+          [{type, entity}] = Map.to_list(elem)
+          key = {type, entity.id}
+          similarity = Map.get(similarity_map, key, 0.0)
+          {0, -similarity}
+        end,
+        :asc
+      )
+
+    {:ok, sorted_result}
+  end
+
+  defp do_get_most_similar_total_count(entities, opts)
+       when is_list(entities) and entities != [] do
+    opts = update_opts(opts)
+    {:ok, query} = most_similar_base_query(entities, opts)
+
+    total_count =
+      from(entity in subquery(query),
+        select: fragment("COUNT(DISTINCT(?, ?))", entity.entity_id, entity.entity_type)
+      )
+      |> Sanbase.Repo.one()
+
+    {:ok, total_count || 0}
+  end
+
+  defp most_similar_base_query(entities, opts) when is_list(entities) and entities != [] do
+    embedding = Keyword.fetch!(opts, :embedding)
+
+    query =
+      Enum.reduce(entities, nil, fn type, query_acc ->
+        entity_ids_query = entity_ids_query(type, opts)
+
+        entity_query =
+          case type do
+            :insight ->
+              opts = Keyword.put(opts, :limit, 10)
+              similarity_query = Post.similar_insights_query(embedding, entity_ids_query, opts)
+
+              from(
+                s in subquery(similarity_query),
+                select: %{
+                  entity_id: s.post_id,
+                  entity_type: ^"insight",
+                  similarity: s.similarity
+                }
+              )
+
+            _ ->
+              nil
+          end
+
+        case query_acc do
+          nil ->
+            entity_query
+
+          query_acc ->
+            if entity_query do
+              query_acc |> union(^entity_query)
+            else
+              query_acc
+            end
+        end
+      end)
+
+    {:ok, query}
   end
 
   defp by_user_id_base_query(user_id, _opts) when is_integer(user_id) do

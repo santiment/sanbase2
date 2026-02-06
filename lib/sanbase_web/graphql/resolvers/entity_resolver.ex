@@ -179,6 +179,66 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
 
   # End Most Used
 
+  # Start Most Similar
+
+  def get_most_similar(_root, args, _resolution) do
+    with :ok <- validate_arguments(args) do
+      maybe_do_not_cache(args)
+      {:ok, %{query: :get_most_similar, args: args}}
+    end
+  end
+
+  def get_most_similar_data(_root, _args, %{source: %{args: args}} = resolution) do
+    with :ok <- validate_arguments(args) do
+      maybe_do_not_cache(args)
+      types = get_types(args)
+      opts = get_opts(args, resolution)
+
+      case early_return_empty?(opts) do
+        true ->
+          {:ok, []}
+
+        false ->
+          Sanbase.Entity.get_most_similar(types, opts)
+          |> maybe_extend_with_views_count(opts)
+          |> maybe_apply_function(&handle_result/1)
+      end
+    end
+  end
+
+  def get_most_similar_stats(_root, _args, %{source: %{args: args}} = resolution) do
+    with :ok <- validate_arguments(args) do
+      maybe_do_not_cache(args)
+
+      types = get_types(args)
+      opts = get_opts(args, resolution)
+
+      case early_return_empty?(opts) do
+        true ->
+          {:ok, empty_stats()}
+
+        false ->
+          case Sanbase.Entity.get_most_similar_total_count(types, opts) do
+            {:ok, total_entities_count} ->
+              stats = %{
+                current_page: opts[:page],
+                current_page_size: opts[:page_size],
+                total_pages_count:
+                  (total_entities_count / opts[:page_size]) |> Float.ceil() |> trunc(),
+                total_entities_count: total_entities_count
+              }
+
+              {:ok, stats}
+
+            {:error, reason} = error ->
+              error
+          end
+      end
+    end
+  end
+
+  # End Most Similar
+
   defp handle_result(list) do
     Enum.map(list, fn map ->
       case Map.to_list(map) do
@@ -207,6 +267,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
     |> maybe_add_value_option(:is_featured_data_only, args)
     |> maybe_add_value_option(:min_title_length, args)
     |> maybe_add_value_option(:min_description_length, args)
+    |> maybe_add_value_option(:ai_search_term, args)
     |> add_is_moderator_option(resolution)
     |> temp_maybe_rewrite_min_length_args(args)
   end

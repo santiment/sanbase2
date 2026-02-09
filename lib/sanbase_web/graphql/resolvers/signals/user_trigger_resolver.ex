@@ -54,7 +54,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
 
       false ->
         {:error,
-         "You have reached the limit of alerts for your plan (#{SanbaseAccessChecker.alerts_limit(plan_name)}).Please upgrade your plan to create more alerts."}
+         """
+         You have reached the limit of alerts for your plan (#{SanbaseAccessChecker.alerts_limit(plan_name)}).
+         Please upgrade your plan to create more alerts.
+         """}
     end
   end
 

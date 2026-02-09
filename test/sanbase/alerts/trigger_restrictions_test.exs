@@ -64,7 +64,7 @@ defmodule Sanbase.Alert.TriggerRestrictionsTest do
     error_msg = create_trigger(conn) |> get_in(["errors", Access.at(0), "message"])
 
     assert error_msg =~
-             "You have reached the limit of alerts for your plan (3).Please upgrade your plan to create more alerts."
+             "You have reached the limit of alerts for your plan (3).\nPlease upgrade your plan to create more alerts."
   end
 
   test "sanbase pro user has a limit of 20 alerts" do
@@ -81,7 +81,7 @@ defmodule Sanbase.Alert.TriggerRestrictionsTest do
     error_msg = create_trigger(conn) |> get_in(["errors", Access.at(0), "message"])
 
     assert error_msg =~
-             "You have reached the limit of alerts for your plan (20).Please upgrade your plan to create more alerts."
+             "You have reached the limit of alerts for your plan (20).\nPlease upgrade your plan to create more alerts."
   end
 
   test "sanbase pro+ user has no limits" do
@@ -94,5 +94,56 @@ defmodule Sanbase.Alert.TriggerRestrictionsTest do
     for _ <- 1..49 do
       assert %{"data" => %{"createTrigger" => _}} = create_trigger(conn)
     end
+  end
+
+  test "business_pro user has a limit of 50 alerts" do
+    user = insert(:user)
+    _ = insert(:subscription_business_pro_monthly, user: user)
+    conn = setup_jwt_auth(build_conn(), user)
+
+    assert Sanbase.Billing.Plan.SanbaseAccessChecker.alerts_limit("BUSINESS_PRO") == 50
+
+    for _ <- 1..50 do
+      assert %{"data" => %{"createTrigger" => _}} = create_trigger(conn)
+    end
+
+    error_msg = create_trigger(conn) |> get_in(["errors", Access.at(0), "message"])
+
+    assert error_msg =~
+             "You have reached the limit of alerts for your plan (50).\nPlease upgrade your plan to create more alerts."
+  end
+
+  test "business_max user has a limit of 50 alerts" do
+    user = insert(:user)
+    _ = insert(:subscription_business_max_monthly, user: user)
+    conn = setup_jwt_auth(build_conn(), user)
+
+    assert Sanbase.Billing.Plan.SanbaseAccessChecker.alerts_limit("BUSINESS_MAX") == 50
+
+    for _ <- 1..50 do
+      assert %{"data" => %{"createTrigger" => _}} = create_trigger(conn)
+    end
+
+    error_msg = create_trigger(conn) |> get_in(["errors", Access.at(0), "message"])
+
+    assert error_msg =~
+             "You have reached the limit of alerts for your plan (50).\nPlease upgrade your plan to create more alerts."
+  end
+
+  test "sanbase max user has a limit of 50 alerts" do
+    user = insert(:user)
+    _ = insert(:subscription_max_sanbase, user: user)
+    conn = setup_jwt_auth(build_conn(), user)
+
+    assert Sanbase.Billing.Plan.SanbaseAccessChecker.alerts_limit("MAX") == 50
+
+    for _ <- 1..50 do
+      assert %{"data" => %{"createTrigger" => _}} = create_trigger(conn)
+    end
+
+    error_msg = create_trigger(conn) |> get_in(["errors", Access.at(0), "message"])
+
+    assert error_msg =~
+             "You have reached the limit of alerts for your plan (50).\nPlease upgrade your plan to create more alerts."
   end
 end

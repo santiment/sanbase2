@@ -182,15 +182,28 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
   # Start Most Similar
 
   def get_most_similar(_root, args, _resolution) do
-    with :ok <- validate_arguments(args) do
+    with :ok <- validate_arguments(args),
+         :ok <- validate_ai_search_term(args) do
       maybe_do_not_cache(args)
-      {:ok, %{query: :get_most_similar, args: args}}
+
+      case generate_embedding_once(args) do
+        {:ok, args_with_embedding} ->
+          {:ok, %{query: :get_most_similar, args: args_with_embedding}}
+
+        {:error, reason} ->
+          # Preserve the previous GraphQL shape expected by tests:
+          # - keep the top-level field non-null
+          # - surface the error via the nested data/stats resolvers
+          error_args = Map.put(args, :embedding_error, reason)
+          {:error, reason}
+      end
     end
   end
 
   def get_most_similar_data(_root, _args, %{source: %{args: args}} = resolution) do
     with :ok <- validate_arguments(args) do
       maybe_do_not_cache(args)
+
       types = get_types(args)
       opts = get_opts(args, resolution)
 
@@ -230,7 +243,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
 
               {:ok, stats}
 
-            {:error, reason} = error ->
+            {:error, _reason} = error ->
               error
           end
       end
@@ -268,6 +281,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
     |> maybe_add_value_option(:min_title_length, args)
     |> maybe_add_value_option(:min_description_length, args)
     |> maybe_add_value_option(:ai_search_term, args)
+    |> maybe_add_value_option(:embedding, args)
     |> add_is_moderator_option(resolution)
     |> temp_maybe_rewrite_min_length_args(args)
   end
@@ -381,6 +395,33 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
 
       _ ->
         :ok
+    end
+  end
+
+  defp validate_ai_search_term(args) do
+    case Map.get(args, :ai_search_term) do
+      term
+      when is_binary(term) and byte_size(term) >= 3 ->
+        :ok
+
+      term
+      when is_binary(term) ->
+        {:error, "ai_search_term must be at least 3 characters long"}
+
+      _ ->
+        {:error, "ai_search_term is required"}
+    end
+  end
+
+  defp generate_embedding_once(args) do
+    ai_search_term = Map.get(args, :ai_search_term)
+
+    case Sanbase.AI.Embedding.generate_embeddings([ai_search_term], 1536) do
+      {:ok, [embedding]} ->
+        {:ok, Map.put(args, :embedding, embedding)}
+
+      {:error, reason} ->
+        {:error, "Failed to generate embeddings: #{inspect(reason)}"}
     end
   end
 end

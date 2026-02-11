@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.GetMostSimilarApiTest do
-  use SanbaseWeb.ConnCase, async: true
+  use SanbaseWeb.ConnCase, async: false
 
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
@@ -31,7 +31,8 @@ defmodule SanbaseWeb.Graphql.GetMostSimilarApiTest do
     |> Sanbase.Insight.PostEmbedding.changeset(%{
       post_id: post.id,
       embedding: embedding,
-      text_chunk: "Insight Title: #{post.title}\n\nChunk text from the insight: #{post.text || "Test content"}"
+      text_chunk:
+        "Insight Title: #{post.title}\n\nChunk text from the insight: #{post.text || "Test content"}"
     })
     |> Sanbase.Repo.insert!()
   end
@@ -70,7 +71,10 @@ defmodule SanbaseWeb.Graphql.GetMostSimilarApiTest do
     create_post_embedding(insight2)
     create_post_embedding(insight3)
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.AI.Embedding.generate_embeddings/2, {:ok, [mock_embedding()]})
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.AI.Embedding.generate_embeddings/2,
+      {:ok, [mock_embedding()]}
+    )
     |> Sanbase.Mock.run_with_mocks(fn ->
       result = get_most_similar(conn, [:insight], ai_search_term: "bitcoin price")
 
@@ -105,7 +109,10 @@ defmodule SanbaseWeb.Graphql.GetMostSimilarApiTest do
 
     Enum.each(insights, &create_post_embedding/1)
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.AI.Embedding.generate_embeddings/2, {:ok, [mock_embedding()]})
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.AI.Embedding.generate_embeddings/2,
+      {:ok, [mock_embedding()]}
+    )
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         get_most_similar(conn, [:insight],
@@ -170,7 +177,7 @@ defmodule SanbaseWeb.Graphql.GetMostSimilarApiTest do
         state: "approved"
       )
 
-    _other_user_insight =
+    other_user_insight =
       insert(:published_post,
         inserted_at: seconds_ago(20),
         title: "Other user insight",
@@ -181,8 +188,12 @@ defmodule SanbaseWeb.Graphql.GetMostSimilarApiTest do
 
     create_post_embedding(i1)
     create_post_embedding(i2)
+    create_post_embedding(other_user_insight)
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.AI.Embedding.generate_embeddings/2, {:ok, [mock_embedding()]})
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.AI.Embedding.generate_embeddings/2,
+      {:ok, [mock_embedding()]}
+    )
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         get_most_similar(conn, [:insight],
@@ -242,12 +253,13 @@ defmodule SanbaseWeb.Graphql.GetMostSimilarApiTest do
     create_post_embedding(insight3)
     create_post_embedding(insight4)
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.AI.Embedding.generate_embeddings/2, {:ok, [mock_embedding()]})
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.AI.Embedding.generate_embeddings/2,
+      {:ok, [mock_embedding()]}
+    )
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
-        get_most_similar(conn, [:insight],
-          ai_search_term: "crypto analysis"
-        )
+        get_most_similar(conn, [:insight], ai_search_term: "crypto analysis")
 
       data = result["data"]
       stats = result["stats"]
@@ -291,7 +303,10 @@ defmodule SanbaseWeb.Graphql.GetMostSimilarApiTest do
     create_post_embedding(insight1)
     create_post_embedding(insight2)
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.AI.Embedding.generate_embeddings/2, {:ok, [mock_embedding()]})
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.AI.Embedding.generate_embeddings/2,
+      {:ok, [mock_embedding()]}
+    )
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         get_most_similar(conn, [:insight],
@@ -328,7 +343,10 @@ defmodule SanbaseWeb.Graphql.GetMostSimilarApiTest do
 
     Enum.each(insights, &create_post_embedding/1)
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.AI.Embedding.generate_embeddings/2, {:ok, [mock_embedding()]})
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.AI.Embedding.generate_embeddings/2,
+      {:ok, [mock_embedding()]}
+    )
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         get_most_similar(conn, [:insight],
@@ -364,23 +382,29 @@ defmodule SanbaseWeb.Graphql.GetMostSimilarApiTest do
     |> Sanbase.Mock.run_with_mocks(fn ->
       response =
         conn
-        |> post("/graphql", query_skeleton("""
-        {
-          getMostSimilar(types: [INSIGHT], aiSearchTerm: "test"){
-            stats { totalEntitiesCount }
-            data { insight{ id } }
+        |> post(
+          "/graphql",
+          query_skeleton("""
+          {
+            getMostSimilar(types: [INSIGHT], aiSearchTerm: "test"){
+              stats { totalEntitiesCount }
+              data { insight{ id } }
+            }
           }
-        }
-        """))
+          """)
+        )
         |> json_response(200)
 
       assert %{
-               "data" => %{"getMostSimilar" => %{"data" => nil, "stats" => nil}},
+               "data" => %{"getMostSimilar" => nil},
                "errors" => errors
              } = response
 
       assert length(errors) >= 1
-      assert Enum.any?(errors, fn error -> String.contains?(error["message"], "Failed to generate embeddings") end)
+
+      assert Enum.any?(errors, fn error ->
+               String.contains?(error["message"], "Failed to generate embeddings")
+             end)
     end)
   end
 

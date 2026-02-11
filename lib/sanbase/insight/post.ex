@@ -167,64 +167,33 @@ defmodule Sanbase.Insight.Post do
     {:ok, result}
   end
 
-  def find_most_similar_insights_with_scores(embedding, entity_ids_query, opts \\ [])
-      when is_list(embedding) do
-    limit = Keyword.get(opts, :limit, 100)
+  @doc ~s"""
+  Builds an Ecto query that finds insights similar to the given embedding vector.
 
-    query =
-      from(
-        e in PostEmbedding,
-        inner_join: p in Post,
-        on: e.post_id == p.id,
-        where: p.id in subquery(entity_ids_query),
-        group_by: [e.post_id],
-        select: %{
-          post_id: e.post_id,
-          similarity: fragment("MAX(1 - (embedding <=> ?))", ^embedding)
-        },
-        order_by: [desc: fragment("MAX(1 - (embedding <=> ?))", ^embedding)],
-        limit: ^limit
-      )
+  The query joins PostEmbedding with Post, filters by entity_ids_query, groups by post_id,
+  and calculates similarity scores using the cosine distance operator (<=>).
 
-    db_result = Sanbase.Repo.all(query)
+  ## Parameters
 
-    post_ids = Enum.map(db_result, & &1.post_id)
+    * `embedding` - A list of floats representing the embedding vector (typically 1536 dimensions)
+    * `entity_ids_query` - An Ecto query that returns post IDs to filter by
+    * `opts` - Keyword list of options:
+      * `:limit` - Maximum number of results to return (default: 1000)
 
-    {:ok, posts} = by_ids(post_ids, [])
+  ## Returns
 
-    posts_map = Map.new(posts, fn post -> {post.id, post} end)
+    An Ecto query that can be executed to get insights with similarity scores.
 
-    similarity_map =
-      db_result
-      |> Enum.map(fn %{post_id: post_id, similarity: similarity} ->
-        {post_id, similarity}
-      end)
-      |> Map.new()
+  ## Example
 
-    results =
-      db_result
-      |> Enum.map(fn %{post_id: post_id} ->
-        post = Map.get(posts_map, post_id)
-        if post, do: %{insight: post}, else: nil
-      end)
-      |> Enum.reject(&is_nil/1)
+      iex> embedding = List.duplicate(0.1, 1536)
+      iex> entity_ids_query = from(p in Post, where: p.ready_state == "published", select: p.id)
+      iex> query = Post.similar_insights_query(embedding, entity_ids_query, limit: 10)
+      iex> Sanbase.Repo.all(query)
+      [%{post_id: 1, similarity: 0.95}, ...]
 
-    {results, similarity_map}
-  end
-
-  def find_similar_insights_count(embedding, entity_ids_query) when is_list(embedding) do
-    query =
-      from(
-        e in PostEmbedding,
-        inner_join: p in Post,
-        on: e.post_id == p.id,
-        where: p.id in subquery(entity_ids_query),
-        select: fragment("COUNT(DISTINCT ?)", e.post_id)
-      )
-
-    Sanbase.Repo.one(query) || 0
-  end
-
+  """
+  @spec similar_insights_query([float()], Ecto.Query.t(), Keyword.t()) :: Ecto.Query.t()
   def similar_insights_query(embedding, entity_ids_query, opts \\ [])
       when is_list(embedding) do
     limit = Keyword.get(opts, :limit, 1000)

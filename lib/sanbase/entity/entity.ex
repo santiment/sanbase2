@@ -217,17 +217,12 @@ defmodule Sanbase.Entity do
   @spec get_most_similar(entity_type | [entity_type], opts) ::
           {:ok, list(result_map)} | {:error, String.t()}
   def get_most_similar(type_or_types, opts) do
-    with ai_search_term when is_binary(ai_search_term) <- Keyword.get(opts, :ai_search_term),
-         {:ok, [embedding]} <-
-           Sanbase.AI.Embedding.generate_embeddings([ai_search_term], 1536) do
-      opts = Keyword.put(opts, :embedding, embedding)
-      do_get_most_similar(List.wrap(type_or_types), opts)
-    else
-      {:error, reason} ->
-        {:error, "Failed to generate embeddings: #{inspect(reason)}"}
+    case put_new_embedding_opts(opts) do
+      {:ok, opts} ->
+        do_get_most_similar(List.wrap(type_or_types), opts)
 
-      _ ->
-        {:error, "The ai_search_term must be a string"}
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -245,17 +240,12 @@ defmodule Sanbase.Entity do
   @spec get_most_similar_total_count(entity_type | [entity_type], opts) ::
           {:ok, non_neg_integer()} | {:error, String.t()}
   def get_most_similar_total_count(type_or_types, opts) do
-    with ai_search_term when is_binary(ai_search_term) <- Keyword.get(opts, :ai_search_term),
-         {:ok, [embedding]} <-
-           Sanbase.AI.Embedding.generate_embeddings([ai_search_term], 1536) do
-      opts = Keyword.put(opts, :embedding, embedding)
-      do_get_most_similar_total_count(List.wrap(type_or_types), opts)
-    else
-      {:error, reason} ->
-        {:error, "Failed to generate embeddings: #{inspect(reason)}"}
+    case put_new_embedding_opts(opts) do
+      {:ok, opts} ->
+        do_get_most_similar_total_count(List.wrap(type_or_types), opts)
 
-      _ ->
-        {:error, "The ai_search_term must be a string"}
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -576,53 +566,78 @@ defmodule Sanbase.Entity do
 
   defp do_get_most_similar(entities, opts) when is_list(entities) and entities != [] do
     opts = update_opts(opts)
-    {:ok, query} = most_similar_base_query(entities, opts)
 
-    query =
-      from(
-        entity in subquery(query),
-        order_by: [desc: entity.similarity, desc: entity.entity_id]
-      )
-      |> paginate(opts)
-
-    db_result = Sanbase.Repo.all(query)
-
-    result = fetch_entities_by_ids(db_result)
-
-    similarity_map =
-      db_result
-      |> Enum.map(fn %{entity_id: entity_id, entity_type: entity_type, similarity: similarity} ->
-        {{String.to_existing_atom(entity_type), entity_id}, similarity}
-      end)
-      |> Map.new()
-
-    sorted_result =
-      Enum.sort_by(
-        result,
-        fn elem ->
-          [{type, entity}] = Map.to_list(elem)
-          key = {type, entity.id}
-          similarity = Map.get(similarity_map, key, 0.0)
-          {0, -similarity}
-        end,
-        :asc
+    # For the paginated data query we want to limit the number of rows that the
+    # expensive similarity subquery returns. Use page * page_size here while the
+    # total count query below deliberately does not pass a limit, so it can see
+    # the full result set.
+    opts =
+      Keyword.put_new(
+        opts,
+        :limit,
+        Keyword.fetch!(opts, :page) * Keyword.fetch!(opts, :page_size)
       )
 
-    {:ok, sorted_result}
+    case most_similar_base_query(entities, opts) do
+      {:ok, query} ->
+        query =
+          from(
+            entity in subquery(query),
+            order_by: [desc: entity.similarity, desc: entity.entity_id]
+          )
+          |> paginate(opts)
+
+        db_result = Sanbase.Repo.all(query)
+
+        result = fetch_entities_by_ids(db_result)
+
+        similarity_map =
+          db_result
+          |> Enum.map(fn %{entity_id: entity_id, entity_type: entity_type, similarity: similarity} ->
+            {{String.to_existing_atom(entity_type), entity_id}, similarity}
+          end)
+          |> Map.new()
+
+        sorted_result =
+          Enum.sort_by(
+            result,
+            fn elem ->
+              [{type, entity}] = Map.to_list(elem)
+              key = {type, entity.id}
+              similarity = Map.get(similarity_map, key, 0.0)
+              {0, -similarity}
+            end,
+            :asc
+          )
+
+        {:ok, sorted_result}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   defp do_get_most_similar_total_count(entities, opts)
        when is_list(entities) and entities != [] do
     opts = update_opts(opts)
-    {:ok, query} = most_similar_base_query(entities, opts)
 
-    total_count =
-      from(entity in subquery(query),
-        select: fragment("COUNT(DISTINCT(?, ?))", entity.entity_id, entity.entity_type)
-      )
-      |> Sanbase.Repo.one()
+    # IMPORTANT: Do NOT pass any limit option here. The total count must reflect
+    # the full number of matching entities, independent of pagination.
+    opts = Keyword.delete(opts, :limit)
 
-    {:ok, total_count || 0}
+    case most_similar_base_query(entities, opts) do
+      {:ok, query} ->
+        total_count =
+          from(entity in subquery(query),
+            select: fragment("COUNT(DISTINCT(?, ?))", entity.entity_id, entity.entity_type)
+          )
+          |> Sanbase.Repo.one()
+
+        {:ok, total_count || 0}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   defp most_similar_base_query(entities, opts) when is_list(entities) and entities != [] do
@@ -635,8 +650,8 @@ defmodule Sanbase.Entity do
         entity_query =
           case type do
             :insight ->
-              opts = Keyword.put(opts, :limit, 10)
-              similarity_query = Post.similar_insights_query(embedding, entity_ids_query, opts)
+              similarity_query =
+                Post.similar_insights_query(embedding, entity_ids_query, opts)
 
               from(
                 s in subquery(similarity_query),
@@ -664,7 +679,14 @@ defmodule Sanbase.Entity do
         end
       end)
 
-    {:ok, query}
+    case query do
+      nil ->
+        {:error,
+         "No supported entity types for similarity search. Only :insight is currently supported."}
+
+      query ->
+        {:ok, query}
+    end
   end
 
   defp by_user_id_base_query(user_id, _opts) when is_integer(user_id) do
@@ -1124,5 +1146,31 @@ defmodule Sanbase.Entity do
     end)
 
     opts
+  end
+
+  defp put_new_embedding_opts(opts) do
+    # If opts has :embedding, just return the opts
+    # If it does not have :embedding, check if it has :ai_search_term and generate the embedding from it.
+    # If it does not have :ai_search_term or if the generation fails, return an error
+    case Keyword.get(opts, :embedding) do
+      [_ | _] ->
+        {:ok, opts}
+
+      nil ->
+        case Keyword.get(opts, :ai_search_term) do
+          ai_search_term when is_binary(ai_search_term) ->
+            case Sanbase.AI.Embedding.generate_embeddings([ai_search_term], 1536) do
+              {:ok, [embedding]} ->
+                opts = Keyword.put(opts, :embedding, embedding)
+                {:ok, opts}
+
+              {:error, reason} ->
+                {:error, "Failed to generate embeddings: #{inspect(reason)}"}
+            end
+
+          _ ->
+            {:error, "The ai_search_term must be a string"}
+        end
+    end
   end
 end

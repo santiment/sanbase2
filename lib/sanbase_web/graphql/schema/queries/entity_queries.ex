@@ -127,6 +127,8 @@ defmodule SanbaseWeb.Graphql.Schema.EntityQueries do
       arg(:min_title_length, :integer, default_value: 0)
       arg(:min_description_length, :integer, default_value: 0)
 
+      middleware(JWTAuth)
+
       cache_resolve(&EntityResolver.get_most_similar/3,
         ttl: 30,
         max_ttl_offset: 30,

@@ -102,6 +102,8 @@ defmodule Sanbase.Alert.Trigger.ScreenerTriggerSettings do
   end
 
   defimpl Sanbase.Alert.Settings, for: ScreenerTriggerSettings do
+    require Logger
+
     alias Sanbase.Alert.Trigger.ScreenerTriggerSettings
     alias Sanbase.Alert.ResultBuilder
 
@@ -115,10 +117,12 @@ defmodule Sanbase.Alert.Trigger.ScreenerTriggerSettings do
         {:error, {:disable_alert, _reason}} = error ->
           error
 
+        {:error, reason} ->
+          Logger.warning("Error evaluating screener_signal alert: #{inspect(reason)}")
+          {:ok, %{settings | triggered?: false}}
+
         _ ->
-          # {:error, _} or {:ok, []}
-          settings = %{settings | triggered?: false}
-          {:ok, settings}
+          {:ok, %{settings | triggered?: false}}
       end
     end
 

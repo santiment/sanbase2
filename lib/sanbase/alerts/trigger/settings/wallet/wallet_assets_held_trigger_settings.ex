@@ -122,6 +122,8 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
   defimpl Sanbase.Alert.Settings, for: WalletAssetsHeldTriggerSettings do
     import Sanbase.Alert.Utils
 
+    require Logger
+
     alias Sanbase.Alert.ResultBuilder
 
     def triggered?(%WalletAssetsHeldTriggerSettings{triggered?: triggered}),
@@ -132,10 +134,15 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
         {:ok, data} when is_list(data) and data != [] ->
           build_result(data, settings)
 
+        {:error, {:disable_alert, _}} = error ->
+          error
+
+        {:error, reason} ->
+          Logger.warning("Error evaluating wallet_assets_held alert: #{inspect(reason)}")
+          {:ok, %{settings | triggered?: false}}
+
         _ ->
-          # TODO: Handle errror case
-          settings = %{settings | triggered?: false}
-          {:ok, settings}
+          {:ok, %{settings | triggered?: false}}
       end
     end
 

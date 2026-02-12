@@ -155,6 +155,8 @@ defmodule Sanbase.Alert.Trigger.EthWalletTriggerSettings do
   end
 
   defimpl Sanbase.Alert.Settings, for: EthWalletTriggerSettings do
+    require Logger
+
     def triggered?(%EthWalletTriggerSettings{triggered?: triggered}), do: triggered
 
     def evaluate(%EthWalletTriggerSettings{} = settings, _trigger) do
@@ -162,10 +164,15 @@ defmodule Sanbase.Alert.Trigger.EthWalletTriggerSettings do
         {:ok, list} when is_list(list) and list != [] ->
           build_result(list, settings)
 
+        {:error, {:disable_alert, _}} = error ->
+          error
+
+        {:error, reason} ->
+          Logger.warning("Error evaluating eth_wallet alert: #{inspect(reason)}")
+          {:ok, %{settings | triggered?: false}}
+
         _ ->
-          # TODO: Handle error case
-          settings = %{settings | triggered?: false}
-          {:ok, settings}
+          {:ok, %{settings | triggered?: false}}
       end
     end
 

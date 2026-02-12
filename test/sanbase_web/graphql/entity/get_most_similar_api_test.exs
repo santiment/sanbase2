@@ -366,6 +366,62 @@ defmodule SanbaseWeb.Graphql.GetMostSimilarApiTest do
     end)
   end
 
+  test "get most similar with custom similarity_threshold", %{conn: conn} do
+    insight1 =
+      insert(:published_post,
+        inserted_at: seconds_ago(30),
+        title: "Bitcoin price analysis",
+        text: "Bitcoin price analysis content",
+        ready_state: "published",
+        state: "approved"
+      )
+
+    insight2 =
+      insert(:published_post,
+        inserted_at: seconds_ago(25),
+        title: "Ethereum trends",
+        text: "Ethereum trends content",
+        ready_state: "published",
+        state: "approved"
+      )
+
+    create_post_embedding(insight1)
+    create_post_embedding(insight2)
+
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.AI.Embedding.generate_embeddings/2,
+      {:ok, [mock_embedding()]}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      # With the default threshold (0.4), both insights should be returned
+      # since identical embeddings produce similarity = 1.0
+      result =
+        get_most_similar(conn, [:insight], ai_search_term: "bitcoin")
+
+      assert length(result["data"]) == 2
+
+      # With a very high threshold, all results should still be included
+      # because identical embeddings produce similarity = 1.0
+      result =
+        get_most_similar(conn, [:insight],
+          ai_search_term: "bitcoin",
+          similarity_threshold: 0.99
+        )
+
+      assert length(result["data"]) == 2
+
+      # With a threshold above 1.0, no results should be returned
+      result =
+        get_most_similar(conn, [:insight],
+          ai_search_term: "bitcoin",
+          similarity_threshold: 1.01
+        )
+
+      assert result["data"] == []
+      assert result["stats"]["totalEntitiesCount"] == 0
+    end)
+  end
+
   test "get most similar returns error when embedding generation fails", %{conn: conn} do
     insight =
       insert(:published_post,

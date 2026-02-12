@@ -280,6 +280,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
     |> maybe_add_value_option(:is_featured_data_only, args)
     |> maybe_add_value_option(:min_title_length, args)
     |> maybe_add_value_option(:min_description_length, args)
+    |> maybe_add_value_option(:similarity_threshold, args)
     |> maybe_add_value_option(:ai_search_term, args)
     |> maybe_add_value_option(:embedding, args)
     |> add_is_moderator_option(resolution)

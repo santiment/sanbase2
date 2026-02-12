@@ -59,8 +59,8 @@ defmodule Sanbase.Entity do
   ]
 
   @most_similar_max_results 20
-  @most_similar_min_similarity 0.4
   @most_similar_drop_off_threshold 0.2
+  @default_similarity_threshold 0.4
 
   @type user_id :: non_neg_integer()
   @type entity_id :: non_neg_integer() | String.t()
@@ -570,11 +570,11 @@ defmodule Sanbase.Entity do
 
   defp do_get_most_similar(entities, opts) when is_list(entities) and entities != [] do
     opts = update_opts(opts)
+    similarity_threshold = Keyword.get(opts, :similarity_threshold, @default_similarity_threshold)
 
     # For the paginated data query we want to limit the number of rows that the
-    # expensive similarity subquery returns. Use page * page_size here while the
-    # total count query below deliberately does not pass a limit, so it can see
-    # the full result set.
+    # expensive similarity subquery returns. Use a small internal cap here to
+    # avoid fetching thousands of rows when we only need the top matches.
     opts = Keyword.put_new(opts, :limit, @most_similar_max_results)
 
     case most_similar_base_query(entities, opts) do
@@ -588,7 +588,7 @@ defmodule Sanbase.Entity do
 
         db_result = Sanbase.Repo.all(query)
         result = fetch_entities_by_ids(db_result)
-        pruned_result = prune_similarity_result(db_result, result)
+        pruned_result = prune_similarity_result(db_result, result, similarity_threshold)
 
         {:ok, pruned_result}
 
@@ -600,6 +600,7 @@ defmodule Sanbase.Entity do
   defp do_get_most_similar_total_count(entities, opts)
        when is_list(entities) and entities != [] do
     opts = update_opts(opts)
+    similarity_threshold = Keyword.get(opts, :similarity_threshold, @default_similarity_threshold)
     opts = Keyword.put_new(opts, :limit, @most_similar_max_results)
 
     case most_similar_base_query(entities, opts) do
@@ -612,7 +613,7 @@ defmodule Sanbase.Entity do
 
         db_result = Sanbase.Repo.all(query)
         result = fetch_entities_by_ids(db_result)
-        pruned_result = prune_similarity_result(db_result, result)
+        pruned_result = prune_similarity_result(db_result, result, similarity_threshold)
 
         {:ok, length(pruned_result)}
 
@@ -621,7 +622,7 @@ defmodule Sanbase.Entity do
     end
   end
 
-  defp prune_similarity_result(db_result, result) do
+  defp prune_similarity_result(db_result, result, similarity_threshold) do
     similarity_map =
       db_result
       |> Enum.map(fn %{entity_id: entity_id, entity_type: entity_type, similarity: similarity} ->
@@ -637,7 +638,7 @@ defmodule Sanbase.Entity do
         {elem, similarity}
       end)
       |> Enum.sort_by(fn {_elem, similarity} -> {0, similarity} end, :desc)
-      |> Enum.filter(fn {_elem, similarity} -> similarity >= @most_similar_min_similarity end)
+      |> Enum.filter(fn {_elem, similarity} -> similarity >= similarity_threshold end)
       |> Enum.take(@most_similar_max_results)
 
     pruned_result =

@@ -58,6 +58,10 @@ defmodule Sanbase.Entity do
     :query
   ]
 
+  @most_similar_max_results 20
+  @most_similar_min_similarity 0.4
+  @most_similar_drop_off_threshold 0.2
+
   @type user_id :: non_neg_integer()
   @type entity_id :: non_neg_integer() | String.t()
 
@@ -571,12 +575,7 @@ defmodule Sanbase.Entity do
     # expensive similarity subquery returns. Use page * page_size here while the
     # total count query below deliberately does not pass a limit, so it can see
     # the full result set.
-    opts =
-      Keyword.put_new(
-        opts,
-        :limit,
-        Keyword.fetch!(opts, :page) * Keyword.fetch!(opts, :page_size)
-      )
+    opts = Keyword.put_new(opts, :limit, @most_similar_max_results)
 
     case most_similar_base_query(entities, opts) do
       {:ok, query} ->
@@ -588,29 +587,10 @@ defmodule Sanbase.Entity do
           |> paginate(opts)
 
         db_result = Sanbase.Repo.all(query)
-
         result = fetch_entities_by_ids(db_result)
+        pruned_result = prune_similarity_result(db_result, result)
 
-        similarity_map =
-          db_result
-          |> Enum.map(fn %{entity_id: entity_id, entity_type: entity_type, similarity: similarity} ->
-            {{String.to_existing_atom(entity_type), entity_id}, similarity}
-          end)
-          |> Map.new()
-
-        sorted_result =
-          Enum.sort_by(
-            result,
-            fn elem ->
-              [{type, entity}] = Map.to_list(elem)
-              key = {type, entity.id}
-              similarity = Map.get(similarity_map, key, 0.0)
-              {0, -similarity}
-            end,
-            :asc
-          )
-
-        {:ok, sorted_result}
+        {:ok, pruned_result}
 
       {:error, reason} ->
         {:error, reason}
@@ -620,24 +600,66 @@ defmodule Sanbase.Entity do
   defp do_get_most_similar_total_count(entities, opts)
        when is_list(entities) and entities != [] do
     opts = update_opts(opts)
-
-    # IMPORTANT: Do NOT pass any limit option here. The total count must reflect
-    # the full number of matching entities, independent of pagination.
-    opts = Keyword.delete(opts, :limit)
+    opts = Keyword.put_new(opts, :limit, @most_similar_max_results)
 
     case most_similar_base_query(entities, opts) do
       {:ok, query} ->
-        total_count =
-          from(entity in subquery(query),
-            select: fragment("COUNT(DISTINCT(?, ?))", entity.entity_id, entity.entity_type)
+        query =
+          from(
+            entity in subquery(query),
+            order_by: [desc: entity.similarity, desc: entity.entity_id]
           )
-          |> Sanbase.Repo.one()
 
-        {:ok, total_count || 0}
+        db_result = Sanbase.Repo.all(query)
+        result = fetch_entities_by_ids(db_result)
+        pruned_result = prune_similarity_result(db_result, result)
+
+        {:ok, length(pruned_result)}
 
       {:error, reason} ->
         {:error, reason}
     end
+  end
+
+  defp prune_similarity_result(db_result, result) do
+    similarity_map =
+      db_result
+      |> Enum.map(fn %{entity_id: entity_id, entity_type: entity_type, similarity: similarity} ->
+        {{String.to_existing_atom(entity_type), entity_id}, similarity}
+      end)
+      |> Map.new()
+
+    scored_result =
+      Enum.map(result, fn elem ->
+        [{type, entity}] = Map.to_list(elem)
+        key = {type, entity.id}
+        similarity = Map.get(similarity_map, key, 0.0)
+        {elem, similarity}
+      end)
+      |> Enum.sort_by(fn {_elem, similarity} -> {0, similarity} end, :desc)
+      |> Enum.filter(fn {_elem, similarity} -> similarity >= @most_similar_min_similarity end)
+      |> Enum.take(@most_similar_max_results)
+
+    pruned_result =
+      case scored_result do
+        [] ->
+          []
+
+        _ ->
+          scored_result
+          |> Enum.reduce({[], nil, 0}, fn
+            {_elem, similarity}, {acc, prev_similarity, count}
+            when prev_similarity != nil and
+                   prev_similarity - similarity >= @most_similar_drop_off_threshold ->
+              {acc, prev_similarity, count}
+
+            {elem, similarity}, {acc, _prev_similarity, count} ->
+              {[elem | acc], similarity, count + 1}
+          end)
+          |> then(fn {acc, _prev_similarity, _count} -> Enum.reverse(acc) end)
+      end
+
+    pruned_result
   end
 
   defp most_similar_base_query(entities, opts) when is_list(entities) and entities != [] do

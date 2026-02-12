@@ -72,6 +72,8 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
   # private functions
 
   defimpl Sanbase.Alert.Settings, for: TrendingWordsTriggerSettings do
+    require Logger
+
     @default_explanation "A coin's appearance in trending words may suggest an increased risk of local tops and short-term price correction."
 
     alias Sanbase.Project
@@ -88,9 +90,15 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
         {:ok, top_words} when is_list(top_words) and top_words != [] ->
           build_result(top_words, settings)
 
+        {:error, {:disable_alert, _}} = error ->
+          error
+
+        {:error, reason} ->
+          Logger.warning("Error evaluating trending_words alert: #{inspect(reason)}")
+          {:ok, %{settings | triggered?: false}}
+
         _ ->
-          settings = %{settings | triggered?: false}
-          {:ok, settings}
+          {:ok, %{settings | triggered?: false}}
       end
     end
 

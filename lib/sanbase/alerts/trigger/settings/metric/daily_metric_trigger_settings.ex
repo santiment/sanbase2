@@ -4,31 +4,25 @@ defmodule Sanbase.Alert.Trigger.DailyMetricTriggerSettings do
 
   The metric we're following is configured via the 'metric' parameter
   """
-  @behaviour Sanbase.Alert.Trigger.Settings.Behaviour
-
   use Vex.Struct
+  use Sanbase.Alert.Trigger.Settings.TriggerSettingsBase, trigger_type: "daily_metric_signal"
 
   import Sanbase.{Validation, Alert.Validation}
 
   alias __MODULE__
   alias Sanbase.Alert.Type
 
-  @trigger_type "daily_metric_signal"
-  @derive {Jason.Encoder, except: [:filtered_target, :triggered?, :payload, :template_kv]}
   @enforce_keys [:type, :metric, :target, :channel, :operation]
-  defstruct type: @trigger_type,
-            metric: nil,
-            target: nil,
-            channel: nil,
-            time_window: "1d",
-            operation: nil,
-            # Private fields, not stored in DB.
-            filtered_target: %{list: []},
-            triggered?: false,
-            extra_explanation: nil,
-            template: nil,
-            payload: %{},
-            template_kv: %{}
+  defstruct [
+              type: @trigger_type,
+              metric: nil,
+              target: nil,
+              channel: nil,
+              time_window: "1d",
+              operation: nil,
+              extra_explanation: nil,
+              template: nil
+            ] ++ TriggerSettingsBase.private_struct_fields()
 
   validates(:metric, &valid_metric?/1)
   validates(:metric, &valid_above_5m_min_interval_metric?/1)
@@ -52,14 +46,6 @@ defmodule Sanbase.Alert.Trigger.DailyMetricTriggerSettings do
           payload: Type.payload(),
           template_kv: Type.template_kv()
         }
-
-  @spec type() :: Type.trigger_type()
-  def type(), do: @trigger_type
-
-  def post_create_process(_trigger), do: :nochange
-  def post_update_process(_trigger), do: :nochange
-
-  alias Sanbase.Alert.Trigger.DailyMetricTriggerSettings
 
   defimpl Sanbase.Alert.Settings, for: DailyMetricTriggerSettings do
     alias Sanbase.Alert.Trigger.MetricTriggerHelper

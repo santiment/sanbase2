@@ -7,9 +7,8 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
   or a watchlist. When a watchlist is provided it is converted by the Trigger module
   to a list of addresses and that is all the alert sees.
   """
-  @behaviour Sanbase.Alert.Trigger.Settings.Behaviour
-
   use Vex.Struct
+  use Sanbase.Alert.Trigger.Settings.TriggerSettingsBase, trigger_type: "wallet_assets_held"
 
   import Sanbase.Alert.Validation
   import Sanbase.DateTimeUtils, only: [round_datetime: 1]
@@ -18,26 +17,20 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
   alias Sanbase.Alert.Type
   alias Sanbase.Clickhouse.HistoricalBalance
 
-  @derive {Jason.Encoder, except: [:filtered_target, :triggered?, :payload, :template_kv]}
-  @trigger_type "wallet_assets_held"
-
   @enforce_keys [:type, :channel, :target]
-  defstruct type: @trigger_type,
-            channel: nil,
-            selector: nil,
-            target: nil,
-            operation: nil,
-            time_window: "1d",
-            # State keeps the list of assets that the address has held
-            # during the last check. On every run the newly generated
-            # list of assets is compared against the one stored in the
-            # state. If there is a difference, the alert is triggered.
-            state: %{},
-            # Private fields, not stored in DB.
-            filtered_target: %{list: []},
-            triggered?: false,
-            payload: %{},
-            template_kv: %{}
+  defstruct [
+              type: @trigger_type,
+              channel: nil,
+              selector: nil,
+              target: nil,
+              operation: nil,
+              time_window: "1d",
+              # State keeps the list of assets that the address has held
+              # during the last check. On every run the newly generated
+              # list of assets is compared against the one stored in the
+              # state. If there is a difference, the alert is triggered.
+              state: %{}
+            ] ++ TriggerSettingsBase.private_struct_fields()
 
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
@@ -54,9 +47,6 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
   validates(:channel, &valid_notification_channel?/1)
   validates(:target, &valid_crypto_address?/1)
   validates(:selector, &valid_infrastructure_selector?/1)
-
-  @spec type() :: String.t()
-  def type(), do: @trigger_type
 
   def post_create_process(%Sanbase.Alert.Trigger{} = trigger), do: fill_current_state(trigger)
   def post_update_process(%Sanbase.Alert.Trigger{} = trigger), do: fill_current_state(trigger)
@@ -122,28 +112,16 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
   defimpl Sanbase.Alert.Settings, for: WalletAssetsHeldTriggerSettings do
     import Sanbase.Alert.Utils
 
-    require Logger
-
     alias Sanbase.Alert.ResultBuilder
+    alias Sanbase.Alert.Trigger.Settings.TriggerSettingsBase
 
     def triggered?(%WalletAssetsHeldTriggerSettings{triggered?: triggered}),
       do: triggered
 
     def evaluate(%WalletAssetsHeldTriggerSettings{} = settings, _trigger) do
-      case WalletAssetsHeldTriggerSettings.get_data(settings) do
-        {:ok, data} when is_list(data) and data != [] ->
-          build_result(data, settings)
-
-        {:error, {:disable_alert, _}} = error ->
-          error
-
-        {:error, reason} ->
-          Logger.warning("Error evaluating wallet_assets_held alert: #{inspect(reason)}")
-          {:ok, %{settings | triggered?: false}}
-
-        _ ->
-          {:ok, %{settings | triggered?: false}}
-      end
+      TriggerSettingsBase.default_evaluate(WalletAssetsHeldTriggerSettings, settings, fn data ->
+        build_result(data, settings)
+      end)
     end
 
     def build_result(current_slugs, %WalletAssetsHeldTriggerSettings{} = settings) do

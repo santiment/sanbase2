@@ -6,9 +6,8 @@ defmodule Sanbase.Alert.Trigger.ScreenerTriggerSettings do
   is fired that the project has entered the list. When a project no longer fulfills
   the filters, an alert is fired that the project exits the list.
   """
-  @behaviour Sanbase.Alert.Trigger.Settings.Behaviour
-
   use Vex.Struct
+  use Sanbase.Alert.Trigger.Settings.TriggerSettingsBase, trigger_type: "screener_signal"
 
   import Sanbase.Alert.Validation
 
@@ -16,24 +15,19 @@ defmodule Sanbase.Alert.Trigger.ScreenerTriggerSettings do
   alias Sanbase.Alert.Type
   alias Sanbase.Project
 
-  @trigger_type "screener_signal"
-  @derive {Jason.Encoder, except: [:filtered_target, :triggered?, :payload, :template_kv]}
   @enforce_keys [:type, :channel, :operation]
 
-  defstruct type: @trigger_type,
-            target: "default",
-            channel: nil,
-            operation: nil,
-            # State keeps the list of assets the screener has had
-            # during the last check. On every run the newly generated
-            # list of assets is compared against the one stored in the
-            # state. If there is a difference, the alert is triggered.
-            state: %{},
-            # Private fields, not stored
-            filtered_target: %{list: []},
-            triggered?: false,
-            payload: %{},
-            template_kv: %{}
+  defstruct [
+              type: @trigger_type,
+              target: "default",
+              channel: nil,
+              operation: nil,
+              # State keeps the list of assets the screener has had
+              # during the last check. On every run the newly generated
+              # list of assets is compared against the one stored in the
+              # state. If there is a difference, the alert is triggered.
+              state: %{}
+            ] ++ TriggerSettingsBase.private_struct_fields()
 
   validates(:channel, &valid_notification_channel?/1)
   validates(:operation, &valid_operation?/1)
@@ -50,9 +44,6 @@ defmodule Sanbase.Alert.Trigger.ScreenerTriggerSettings do
           payload: Type.payload(),
           template_kv: Type.template_kv()
         }
-
-  @spec type() :: Type.trigger_type()
-  def type(), do: @trigger_type
 
   def post_create_process(trigger), do: fill_current_state(trigger)
   def post_update_process(trigger), do: fill_current_state(trigger)
@@ -102,28 +93,16 @@ defmodule Sanbase.Alert.Trigger.ScreenerTriggerSettings do
   end
 
   defimpl Sanbase.Alert.Settings, for: ScreenerTriggerSettings do
-    require Logger
-
     alias Sanbase.Alert.Trigger.ScreenerTriggerSettings
     alias Sanbase.Alert.ResultBuilder
+    alias Sanbase.Alert.Trigger.Settings.TriggerSettingsBase
 
     def triggered?(%ScreenerTriggerSettings{triggered?: triggered}), do: triggered
 
     def evaluate(%ScreenerTriggerSettings{} = settings, trigger) do
-      case ScreenerTriggerSettings.get_data(settings) do
-        {:ok, data} when is_list(data) and data != [] ->
-          build_result(data, settings, trigger)
-
-        {:error, {:disable_alert, _reason}} = error ->
-          error
-
-        {:error, reason} ->
-          Logger.warning("Error evaluating screener_signal alert: #{inspect(reason)}")
-          {:ok, %{settings | triggered?: false}}
-
-        _ ->
-          {:ok, %{settings | triggered?: false}}
-      end
+      TriggerSettingsBase.default_evaluate(ScreenerTriggerSettings, settings, fn data ->
+        build_result(data, settings, trigger)
+      end)
     end
 
     def build_result(current_slugs, settings, trigger) do

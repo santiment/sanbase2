@@ -77,3 +77,6 @@ npm-debug.log
 .aider.ident.cache.v1/
 .aider.tags.cache.v1/
 .aider.input.history
+
+# claude
+/.claude/

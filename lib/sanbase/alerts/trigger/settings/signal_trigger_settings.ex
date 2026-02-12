@@ -6,6 +6,7 @@ defmodule Sanbase.Alert.Trigger.SignalTriggerSettings do
   """
 
   use Vex.Struct
+  use Sanbase.Alert.Trigger.Settings.TriggerSettingsBase, trigger_type: "signal_data"
 
   import Sanbase.{Validation, Alert.Validation}
   import Sanbase.DateTimeUtils, only: [round_datetime: 1, str_to_sec: 1]
@@ -16,22 +17,16 @@ defmodule Sanbase.Alert.Trigger.SignalTriggerSettings do
   alias Sanbase.Cache
   alias Sanbase.Signal
 
-  @derive {Jason.Encoder, except: [:filtered_target, :triggered?, :payload, :template_kv]}
-  @trigger_type "signal_data"
-
   @enforce_keys [:type, :channel, :target]
-  defstruct type: @trigger_type,
-            signal: nil,
-            channel: nil,
-            selector: nil,
-            target: nil,
-            operation: nil,
-            time_window: "1d",
-            # Private fields, not stored in DB.
-            filtered_target: %{list: []},
-            triggered?: false,
-            payload: %{},
-            template_kv: %{}
+  defstruct [
+              type: @trigger_type,
+              signal: nil,
+              channel: nil,
+              selector: nil,
+              target: nil,
+              operation: nil,
+              time_window: "1d"
+            ] ++ TriggerSettingsBase.private_struct_fields()
 
   @type t :: %__MODULE__{
           signal: Type.signal(),
@@ -51,12 +46,6 @@ defmodule Sanbase.Alert.Trigger.SignalTriggerSettings do
   validates(:signal, &valid_signal?/1)
   validates(:operation, &valid_operation?/1)
   validates(:time_window, &valid_time_window?/1)
-
-  @spec type() :: String.t()
-  def type(), do: @trigger_type
-
-  def post_create_process(_trigger), do: :nochange
-  def post_update_process(_trigger), do: :nochange
 
   def get_data(%{} = settings) do
     %{filtered_target: %{list: target_list, type: type}} = settings
@@ -121,27 +110,15 @@ defmodule Sanbase.Alert.Trigger.SignalTriggerSettings do
   defimpl Sanbase.Alert.Settings, for: SignalTriggerSettings do
     import Sanbase.Alert.Utils
 
-    require Logger
-
     alias Sanbase.Alert.{OperationText, ResultBuilder}
+    alias Sanbase.Alert.Trigger.Settings.TriggerSettingsBase
 
     def triggered?(%SignalTriggerSettings{triggered?: triggered}), do: triggered
 
     def evaluate(%SignalTriggerSettings{} = settings, _trigger) do
-      case SignalTriggerSettings.get_data(settings) do
-        {:ok, data} when is_list(data) and data != [] ->
-          build_result(data, settings)
-
-        {:error, {:disable_alert, _}} = error ->
-          error
-
-        {:error, reason} ->
-          Logger.warning("Error evaluating signal_data alert: #{inspect(reason)}")
-          {:ok, %{settings | triggered?: false}}
-
-        _ ->
-          {:ok, %{settings | triggered?: false}}
-      end
+      TriggerSettingsBase.default_evaluate(SignalTriggerSettings, settings, fn data ->
+        build_result(data, settings)
+      end)
     end
 
     def build_result(data, %SignalTriggerSettings{} = settings) do

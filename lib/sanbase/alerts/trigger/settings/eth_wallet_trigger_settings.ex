@@ -8,9 +8,8 @@ defmodule Sanbase.Alert.Trigger.EthWalletTriggerSettings do
   are considered to be owned by a single entity and the transfers between them
   are excluded.
   """
-  @behaviour Sanbase.Alert.Trigger.Settings.Behaviour
-
   use Vex.Struct
+  use Sanbase.Alert.Trigger.Settings.TriggerSettingsBase, trigger_type: "eth_wallet"
 
   import Sanbase.Validation
   import Sanbase.Alert.Validation
@@ -22,20 +21,15 @@ defmodule Sanbase.Alert.Trigger.EthWalletTriggerSettings do
   alias Sanbase.Project
   alias Sanbase.Clickhouse.HistoricalBalance
 
-  @trigger_type "eth_wallet"
-  @derive {Jason.Encoder, except: [:filtered_target, :triggered?, :payload, :template_kv]}
   @enforce_keys [:type, :channel, :target, :asset]
-  defstruct type: @trigger_type,
-            channel: nil,
-            target: nil,
-            asset: nil,
-            operation: nil,
-            time_window: "1d",
-            # Private fields, not stored in DB.
-            filtered_target: %{list: []},
-            triggered?: false,
-            payload: %{},
-            template_kv: %{}
+  defstruct [
+              type: @trigger_type,
+              channel: nil,
+              target: nil,
+              asset: nil,
+              operation: nil,
+              time_window: "1d"
+            ] ++ TriggerSettingsBase.private_struct_fields()
 
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
@@ -56,12 +50,6 @@ defmodule Sanbase.Alert.Trigger.EthWalletTriggerSettings do
   validates(:asset, &valid_slug?/1)
   validates(:operation, &valid_absolute_change_operation?/1)
   validates(:time_window, &valid_time_window?/1)
-
-  @spec type() :: String.t()
-  def type(), do: @trigger_type
-
-  def post_create_process(_trigger), do: :nochange
-  def post_update_process(_trigger), do: :nochange
 
   def get_data(
         %__MODULE__{
@@ -155,25 +143,14 @@ defmodule Sanbase.Alert.Trigger.EthWalletTriggerSettings do
   end
 
   defimpl Sanbase.Alert.Settings, for: EthWalletTriggerSettings do
-    require Logger
+    alias Sanbase.Alert.Trigger.Settings.TriggerSettingsBase
 
     def triggered?(%EthWalletTriggerSettings{triggered?: triggered}), do: triggered
 
     def evaluate(%EthWalletTriggerSettings{} = settings, _trigger) do
-      case EthWalletTriggerSettings.get_data(settings) do
-        {:ok, list} when is_list(list) and list != [] ->
-          build_result(list, settings)
-
-        {:error, {:disable_alert, _}} = error ->
-          error
-
-        {:error, reason} ->
-          Logger.warning("Error evaluating eth_wallet alert: #{inspect(reason)}")
-          {:ok, %{settings | triggered?: false}}
-
-        _ ->
-          {:ok, %{settings | triggered?: false}}
-      end
+      TriggerSettingsBase.default_evaluate(EthWalletTriggerSettings, settings, fn data ->
+        build_result(data, settings)
+      end)
     end
 
     # The result heavily depends on `last_triggered`, so just the settings are not enough

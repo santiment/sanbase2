@@ -110,6 +110,13 @@ defmodule SanbaseWeb.Graphql.Schema.EntityQueries do
       arg(:user_role_data_only, :user_role)
 
       @desc ~s"""
+      Minimum similarity score that a result must have in order to be included.
+      Results are sorted by similarity and scanning stops when the score drops below this threshold
+      or when a significant drop-off between consecutive items is detected. Defaults to 0.4.
+      """
+      arg(:similarity_threshold, :float, default_value: 0.4)
+
+      @desc ~s"""
       If true, return only entities created by the current user that
       executes this query
       """

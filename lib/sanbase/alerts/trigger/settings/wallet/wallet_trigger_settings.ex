@@ -162,6 +162,8 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
   defimpl Sanbase.Alert.Settings, for: WalletTriggerSettings do
     import Sanbase.Alert.Utils
 
+    require Logger
+
     alias Sanbase.Alert.{OperationText, ResultBuilder}
 
     def triggered?(%WalletTriggerSettings{triggered?: triggered}), do: triggered
@@ -171,9 +173,15 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
         data when is_list(data) and data != [] ->
           build_result(data, settings)
 
+        {:error, {:disable_alert, _}} = error ->
+          error
+
+        {:error, reason} ->
+          Logger.warning("Error evaluating wallet_movement alert: #{inspect(reason)}")
+          {:ok, %{settings | triggered?: false}}
+
         _ ->
-          settings = %{settings | triggered?: false}
-          {:ok, settings}
+          {:ok, %{settings | triggered?: false}}
       end
     end
 

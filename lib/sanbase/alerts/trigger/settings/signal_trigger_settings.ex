@@ -121,6 +121,8 @@ defmodule Sanbase.Alert.Trigger.SignalTriggerSettings do
   defimpl Sanbase.Alert.Settings, for: SignalTriggerSettings do
     import Sanbase.Alert.Utils
 
+    require Logger
+
     alias Sanbase.Alert.{OperationText, ResultBuilder}
 
     def triggered?(%SignalTriggerSettings{triggered?: triggered}), do: triggered
@@ -130,10 +132,15 @@ defmodule Sanbase.Alert.Trigger.SignalTriggerSettings do
         {:ok, data} when is_list(data) and data != [] ->
           build_result(data, settings)
 
+        {:error, {:disable_alert, _}} = error ->
+          error
+
+        {:error, reason} ->
+          Logger.warning("Error evaluating signal_data alert: #{inspect(reason)}")
+          {:ok, %{settings | triggered?: false}}
+
         _ ->
-          # TODO: Handle error
-          settings = %{settings | triggered?: false}
-          {:ok, settings}
+          {:ok, %{settings | triggered?: false}}
       end
     end
 

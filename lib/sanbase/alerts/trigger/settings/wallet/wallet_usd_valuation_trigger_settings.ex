@@ -132,6 +132,8 @@ defmodule Sanbase.Alert.Trigger.WalletUsdValuationTriggerSettings do
   defimpl Sanbase.Alert.Settings, for: WalletUsdValuationTriggerSettings do
     import Sanbase.Alert.Utils
 
+    require Logger
+
     alias Sanbase.Alert.{OperationText, ResultBuilder}
 
     def triggered?(%WalletUsdValuationTriggerSettings{triggered?: triggered}),
@@ -142,9 +144,15 @@ defmodule Sanbase.Alert.Trigger.WalletUsdValuationTriggerSettings do
         data when is_list(data) and data != [] ->
           build_result(data, settings)
 
+        {:error, {:disable_alert, _}} = error ->
+          error
+
+        {:error, reason} ->
+          Logger.warning("Error evaluating wallet_usd_valuation alert: #{inspect(reason)}")
+          {:ok, %{settings | triggered?: false}}
+
         _ ->
-          settings = %{settings | triggered?: false}
-          {:ok, settings}
+          {:ok, %{settings | triggered?: false}}
       end
     end
 

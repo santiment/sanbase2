@@ -7,9 +7,8 @@ defmodule Sanbase.Alert.Trigger.WalletUsdValuationTriggerSettings do
   or a watchlist. When a watchlist is provided it is converted by the Trigger module
   to a list of addresses and that is all the alert sees.
   """
-  @behaviour Sanbase.Alert.Trigger.Settings.Behaviour
-
   use Vex.Struct
+  use Sanbase.Alert.Trigger.Settings.TriggerSettingsBase, trigger_type: "wallet_usd_valuation"
 
   import Sanbase.{Validation, Alert.Validation}
   import Sanbase.DateTimeUtils, only: [round_datetime: 1, str_to_sec: 1]
@@ -18,21 +17,15 @@ defmodule Sanbase.Alert.Trigger.WalletUsdValuationTriggerSettings do
   alias Sanbase.Alert.Type
   alias Sanbase.Clickhouse.HistoricalBalance
 
-  @derive {Jason.Encoder, except: [:filtered_target, :triggered?, :payload, :template_kv]}
-  @trigger_type "wallet_usd_valuation"
-
   @enforce_keys [:type, :channel, :target]
-  defstruct type: @trigger_type,
-            channel: nil,
-            selector: nil,
-            target: nil,
-            operation: nil,
-            time_window: "1d",
-            # Private fields, not stored in DB.
-            filtered_target: %{list: []},
-            triggered?: false,
-            payload: %{},
-            template_kv: %{}
+  defstruct [
+              type: @trigger_type,
+              channel: nil,
+              selector: nil,
+              target: nil,
+              operation: nil,
+              time_window: "1d"
+            ] ++ TriggerSettingsBase.private_struct_fields()
 
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
@@ -53,12 +46,6 @@ defmodule Sanbase.Alert.Trigger.WalletUsdValuationTriggerSettings do
   validates(:selector, &valid_infrastructure_selector?/1)
   validates(:operation, &valid_operation?/1)
   validates(:time_window, &valid_time_window?/1)
-
-  @spec type() :: String.t()
-  def type(), do: @trigger_type
-
-  def post_create_process(_trigger), do: :nochange
-  def post_update_process(_trigger), do: :nochange
 
   @doc ~s"""
   Return a list of the `settings.metric` values for the necessary time range

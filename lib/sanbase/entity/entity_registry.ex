@@ -76,10 +76,8 @@ defmodule Sanbase.Entity.Registry do
     }
   }
 
-  # Additional vote field mappings for types that aren't full entity types
-  # but need vote field lookup (e.g. :watchlist, :post, :timeline_event)
   # Additional vote field mappings for types that aren't in @entities
-  # but need vote field lookup
+  # but still need vote field lookup (e.g. :post, :timeline_event)
   @extra_vote_fields %{
     post: :post_id,
     timeline_event: :timeline_event_id
@@ -142,7 +140,7 @@ defmodule Sanbase.Entity.Registry do
   def entity_creation_time_fields(type) do
     case Map.fetch(@entities, type) do
       {:ok, %{creation_time: fields}} -> fields
-      :error -> {:inserted_at, :inserted_at}
+      :error -> raise ArgumentError, "Unknown entity type: #{inspect(type)}"
     end
   end
 

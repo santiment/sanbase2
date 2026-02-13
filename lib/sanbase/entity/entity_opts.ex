@@ -21,7 +21,6 @@ defmodule Sanbase.Entity.Opts do
     # Only when `currentUserData` is set to true it will allow to fetch
     # private entities of the user. Otherwise it is false by default.
     opts = opts |> Keyword.put_new(:can_access_user_private_entities, false)
-    opts = opts |> Keyword.delete(:user_ids)
 
     opts =
       case Keyword.get(opts, :user_id_data_only) do
@@ -29,11 +28,10 @@ defmodule Sanbase.Entity.Opts do
           if Keyword.get(opts, :user_ids),
             do: raise(ArgumentError, "Something has unexpectedly set :user_ids in opts")
 
-          opts
-          |> Keyword.put_new(:user_ids, [user_id])
+          opts |> Keyword.put(:user_ids, [user_id])
 
         _ ->
-          opts
+          opts |> Keyword.delete(:user_ids)
       end
 
     opts =

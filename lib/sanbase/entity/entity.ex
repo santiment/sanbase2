@@ -27,39 +27,16 @@ defmodule Sanbase.Entity do
   import Ecto.Query
   import Sanbase.Entity.Query, only: [entity_id_selection: 0, entity_type_selection: 0]
 
-  alias Sanbase.Chart
+  alias Sanbase.Entity.Registry
+  alias Sanbase.Entity.Opts, as: EntityOpts
+  alias Sanbase.Entity.Fetcher
   alias Sanbase.Insight.Post
-  alias Sanbase.UserList
+  alias Sanbase.Chart
   alias Sanbase.Queries.Query
   alias Sanbase.Dashboards.Dashboard
   alias Sanbase.Alert.UserTrigger
-  alias Sanbase.Accounts.Interaction
-
-  # The list of supported entitiy types. In order to add a new entity type, the
-  # following steps must be taken:
-  # 1. Implement the Sanbase.Entity behaviour in the entity module. It forces
-  # implementation of functions that generate the SQL query and fetch entities
-  # by ids in a given order.`
-  # 2. Implement the public function deduce_entity_type/1 in this module
-  # 3. Implement the private functions entity_ids_query/2 and
-  #    deduce_entity_module/1 in this module
-  # 4. Extend the CASE blocks and the group_by clause in the do_get_most_voted/2
-  # 5. Check if extending the deduce_entity_creation_time_field/1 is necessary.
-  #    It is necessary if the new entity needs to use a different than
-  #    inserted_at field to check its creation time. For example, insights have
-  #    their published_at time taken, not inserted_at
-  @supported_entity_type [
-    :insight,
-    :watchlist,
-    :screener,
-    :chart_configuration,
-    :user_trigger,
-    :dashboard,
-    :query
-  ]
 
   @most_similar_max_results 20
-  @most_similar_drop_off_threshold 0.2
   @default_similarity_threshold 0.4
 
   @type user_id :: non_neg_integer()
@@ -221,7 +198,7 @@ defmodule Sanbase.Entity do
   @spec get_most_similar(entity_type | [entity_type], opts) ::
           {:ok, list(result_map)} | {:error, String.t()}
   def get_most_similar(type_or_types, opts) do
-    case put_new_embedding_opts(opts) do
+    case EntityOpts.put_new_embedding_opts(opts) do
       {:ok, opts} ->
         do_get_most_similar(List.wrap(type_or_types), opts)
 
@@ -244,7 +221,7 @@ defmodule Sanbase.Entity do
   @spec get_most_similar_total_count(entity_type | [entity_type], opts) ::
           {:ok, non_neg_integer()} | {:error, String.t()}
   def get_most_similar_total_count(type_or_types, opts) do
-    case put_new_embedding_opts(opts) do
+    case EntityOpts.put_new_embedding_opts(opts) do
       {:ok, opts} ->
         do_get_most_similar_total_count(List.wrap(type_or_types), opts)
 
@@ -256,32 +233,9 @@ defmodule Sanbase.Entity do
   @doc ~s"""
   Map the entity type to the corresponding field in the votes table
   """
-  def deduce_entity_vote_field(:user_trigger), do: :user_trigger_id
-  def deduce_entity_vote_field(:insight), do: :post_id
-  def deduce_entity_vote_field(:post), do: :post_id
-  def deduce_entity_vote_field(:watchlist), do: :watchlist_id
-  def deduce_entity_vote_field(:project_watchlist), do: :watchlist_id
-  def deduce_entity_vote_field(:address_watchlist), do: :watchlist_id
-  def deduce_entity_vote_field(:screener), do: :watchlist_id
-  def deduce_entity_vote_field(:chart_configuration), do: :chart_configuration_id
-  def deduce_entity_vote_field(:dashboard), do: :dashboard_id
-  def deduce_entity_vote_field(:query), do: :query_id
-  def deduce_entity_vote_field(:timeline_event), do: :timeline_event_id
+  def deduce_entity_vote_field(type), do: Registry.entity_vote_field(type)
 
-  # This needs to stay here even though it's not a supported entity type by the
-  # API. This is because internally all watchlist/screener types are stored as
-  # watchlists and we need to be able to know from which module to call by_ids/2
-  # so the objects can be fetched. Only when the full object is fetched we can
-  # call rewrite_keys/1 and put the proper key
-  def deduce_entity_module(:watchlist), do: UserList
-  def deduce_entity_module(:project_watchlist), do: UserList
-  def deduce_entity_module(:address_watchlist), do: UserList
-  def deduce_entity_module(:screener), do: UserList
-  def deduce_entity_module(:user_trigger), do: UserTrigger
-  def deduce_entity_module(:insight), do: Post
-  def deduce_entity_module(:chart_configuration), do: Chart.Configuration
-  def deduce_entity_module(:dashboard), do: Dashboard
-  def deduce_entity_module(:query), do: Query
+  def deduce_entity_module(type), do: Registry.entity_module(type)
 
   def by_id(entity_type, entity_id) do
     module = deduce_entity_module(entity_type)
@@ -306,59 +260,12 @@ defmodule Sanbase.Entity do
     |> offset(^offset)
   end
 
-  def extend_with_views_count(type_entity_list) do
-    # The type_entity_list is a list of maps like %{screener: %UserList{id: 1}}
-    # The function returns the same list of entities, with each
-    # entity now having the virtual ecto field :views populated
-    entity_views_query = entity_views_query(type_entity_list)
-
-    entity_count_map =
-      Sanbase.Repo.all(entity_views_query)
-      |> Enum.into(%{}, fn {entity_type, entity_id, views_count} ->
-        {{entity_type, entity_id}, views_count}
-      end)
-
-    Enum.map(type_entity_list, fn type_entity ->
-      [{type, entity}] = Map.to_list(type_entity)
-      key = {Interaction.deduce_entity_column_name(type), entity.id}
-      entity = %{entity | views: entity_count_map[key] || 0}
-      %{type => entity}
-    end)
-  end
+  defdelegate extend_with_views_count(type_entity_list), to: Fetcher
 
   # Private functions
 
-  defp entity_views_query(type_entity_list) do
-    entity_type_id_conditions = views_count_entity_type_id_conditions(type_entity_list)
-    # When executed, the query returns a list of 3-element tuples
-    # {entity_type, entity_id, views_count}
-
-    from(row in Interaction,
-      where: ^entity_type_id_conditions,
-      select: {row.entity_type, row.entity_id, fragment("COUNT(*)")},
-      group_by: [row.entity_type, row.entity_id]
-    )
-  end
-
-  defp views_count_entity_type_id_conditions(type_entity_list) do
-    # Build the ecto where clause that gets the rows for each of the entities.
-    # It will look like: (row.entity_type == "screener" and row.entity_id = 1) or ( ... )
-    dynamic_query =
-      Enum.reduce(type_entity_list, false, fn type_entity, dynamic_query ->
-        [{type, %{id: entity_id}}] = Map.to_list(type_entity)
-        type = Interaction.deduce_entity_column_name(type)
-
-        dynamic(
-          [row],
-          ^dynamic_query or (row.entity_type == ^type and row.entity_id == ^entity_id)
-        )
-      end)
-
-    dynamic([row], row.interaction_type == "view" and ^dynamic_query)
-  end
-
   defp do_get_most_recent_total_count(entities, opts) when is_list(entities) and entities != [] do
-    opts = update_opts(opts)
+    opts = EntityOpts.update_opts(opts)
     {:ok, query} = most_recent_base_query(entities, opts)
 
     total_count =
@@ -371,7 +278,7 @@ defmodule Sanbase.Entity do
   end
 
   defp do_get_most_voted_total_count(entities, opts) when is_list(entities) and entities != [] do
-    opts = update_opts(opts)
+    opts = EntityOpts.update_opts(opts)
     {:ok, query} = most_voted_base_query(entities, opts)
 
     # Convert the rows to a list of entity_id and entity_type. This is because otherwise
@@ -394,7 +301,7 @@ defmodule Sanbase.Entity do
   end
 
   defp do_get_most_recent(entities, opts) when is_list(entities) and entities != [] do
-    opts = update_opts(opts)
+    opts = EntityOpts.update_opts(opts)
     {:ok, query} = most_recent_base_query(entities, opts)
 
     # Add pagination to the query. This uses the new map of arguments built by
@@ -410,7 +317,7 @@ defmodule Sanbase.Entity do
 
     db_result = Sanbase.Repo.all(query)
 
-    result = fetch_entities_by_ids(db_result)
+    result = Fetcher.fetch_entities_by_ids(db_result)
 
     # Order the full list of entities by the creation time in descending order.
     # The end result is a list like: [%{project_watchlist: w}, %{insight: i},
@@ -422,7 +329,7 @@ defmodule Sanbase.Entity do
           [{type, entity}] = Map.to_list(elem)
 
           {creation_time_field, creation_time_field_backup} =
-            deduce_entity_creation_time_field(type)
+            Registry.entity_creation_time_fields(type)
 
           # In all cases the fields are the same except for insights. When
           # fetching user own insights, some of them might be drafts so they
@@ -444,7 +351,7 @@ defmodule Sanbase.Entity do
   end
 
   defp do_get_most_voted(entities, opts) when is_list(entities) and entities != [] do
-    opts = update_opts(opts)
+    opts = EntityOpts.update_opts(opts)
     {:ok, query} = most_voted_base_query(entities, opts)
 
     # Add ordering and pagination. The group by is required so we can count all
@@ -492,44 +399,9 @@ defmodule Sanbase.Entity do
     result =
       query
       |> Sanbase.Repo.all()
-      |> fetch_entities_by_ids_preserve_order_rewrite_keys()
+      |> Fetcher.fetch_entities_by_ids_preserve_order_rewrite_keys()
 
     {:ok, result}
-  end
-
-  defp fetch_entities_by_ids_preserve_order_rewrite_keys(db_result) do
-    # The result is returned in descending order based on votes. This order will
-    # be lost once we split the result into different entity type groups is
-    # order to fetch them. In order to preserve the order, we need to record it
-    # beforehand. This is done by making a map where the keys are {entity_type,
-    # entity_id} and the value is the position in the original result.
-    # NOTE 1:
-    # As we are recording the position in the original result, we need to sort
-    # the result in ASCENDING order at the end.
-    # NOTE 2:
-    # The db_result from here includes only the entity id and entity type.
-    # This is not enough to distinguish between screener and watchlist. This will
-    # be done once the full objects are returned.
-    ordering =
-      db_result
-      |> Enum.with_index()
-      |> Map.new(fn {elem, pos} ->
-        {{String.to_existing_atom(elem.entity_type), elem.entity_id}, pos}
-      end)
-
-    result = fetch_entities_by_ids(db_result)
-
-    # Sort in ascending order according to the ordering map
-    result =
-      result
-      |> Enum.sort_by(fn map ->
-        [{key, value}] = Map.to_list(map)
-        Map.get(ordering, {key, value.id})
-      end)
-
-    result = rewrite_keys(result)
-
-    result
   end
 
   defp do_get_most_used(entities, opts) when is_list(entities) and entities != [] do
@@ -539,19 +411,19 @@ defmodule Sanbase.Entity do
     # used entities. It should include both the public entities and the user's own
     # private entities. This is controlled by setting both `include_public_entities`
     # and `include_all_user_entities` to true
-    opts = update_opts(opts)
+    opts = EntityOpts.update_opts(opts)
 
     query = most_used_base_query(entities, opts)
 
     result =
       Sanbase.Repo.all(query)
-      |> fetch_entities_by_ids_preserve_order_rewrite_keys()
+      |> Fetcher.fetch_entities_by_ids_preserve_order_rewrite_keys()
 
     {:ok, result}
   end
 
   defp do_get_most_used_total_count(entities, opts) when is_list(entities) and entities != [] do
-    opts = update_opts(opts)
+    opts = EntityOpts.update_opts(opts)
     query = most_used_base_query(entities, opts)
 
     from(entity in subquery(query),
@@ -569,7 +441,7 @@ defmodule Sanbase.Entity do
   end
 
   defp do_get_most_similar(entities, opts) when is_list(entities) and entities != [] do
-    opts = update_opts(opts)
+    opts = EntityOpts.update_opts(opts)
     similarity_threshold = Keyword.get(opts, :similarity_threshold, @default_similarity_threshold)
 
     # For the paginated data query we want to limit the number of rows that the
@@ -587,8 +459,8 @@ defmodule Sanbase.Entity do
           |> paginate(opts)
 
         db_result = Sanbase.Repo.all(query)
-        result = fetch_entities_by_ids(db_result)
-        pruned_result = prune_similarity_result(db_result, result, similarity_threshold)
+        result = Fetcher.fetch_entities_by_ids(db_result)
+        pruned_result = Fetcher.prune_similarity_result(db_result, result, similarity_threshold)
 
         {:ok, pruned_result}
 
@@ -599,7 +471,7 @@ defmodule Sanbase.Entity do
 
   defp do_get_most_similar_total_count(entities, opts)
        when is_list(entities) and entities != [] do
-    opts = update_opts(opts)
+    opts = EntityOpts.update_opts(opts)
     similarity_threshold = Keyword.get(opts, :similarity_threshold, @default_similarity_threshold)
     opts = Keyword.put_new(opts, :limit, @most_similar_max_results)
 
@@ -612,8 +484,8 @@ defmodule Sanbase.Entity do
           )
 
         db_result = Sanbase.Repo.all(query)
-        result = fetch_entities_by_ids(db_result)
-        pruned_result = prune_similarity_result(db_result, result, similarity_threshold)
+        result = Fetcher.fetch_entities_by_ids(db_result)
+        pruned_result = Fetcher.prune_similarity_result(db_result, result, similarity_threshold)
 
         {:ok, length(pruned_result)}
 
@@ -622,53 +494,12 @@ defmodule Sanbase.Entity do
     end
   end
 
-  defp prune_similarity_result(db_result, result, similarity_threshold) do
-    similarity_map =
-      db_result
-      |> Enum.map(fn %{entity_id: entity_id, entity_type: entity_type, similarity: similarity} ->
-        {{String.to_existing_atom(entity_type), entity_id}, similarity}
-      end)
-      |> Map.new()
-
-    scored_result =
-      Enum.map(result, fn elem ->
-        [{type, entity}] = Map.to_list(elem)
-        key = {type, entity.id}
-        similarity = Map.get(similarity_map, key, 0.0)
-        {elem, similarity}
-      end)
-      |> Enum.sort_by(fn {_elem, similarity} -> {0, similarity} end, :desc)
-      |> Enum.filter(fn {_elem, similarity} -> similarity >= similarity_threshold end)
-      |> Enum.take(@most_similar_max_results)
-
-    pruned_result =
-      case scored_result do
-        [] ->
-          []
-
-        _ ->
-          scored_result
-          |> Enum.reduce({[], nil, 0}, fn
-            {_elem, similarity}, {acc, prev_similarity, count}
-            when prev_similarity != nil and
-                   prev_similarity - similarity >= @most_similar_drop_off_threshold ->
-              {acc, prev_similarity, count}
-
-            {elem, similarity}, {acc, _prev_similarity, count} ->
-              {[elem | acc], similarity, count + 1}
-          end)
-          |> then(fn {acc, _prev_similarity, _count} -> Enum.reverse(acc) end)
-      end
-
-    pruned_result
-  end
-
   defp most_similar_base_query(entities, opts) when is_list(entities) and entities != [] do
     embedding = Keyword.fetch!(opts, :embedding)
 
     query =
       Enum.reduce(entities, nil, fn type, query_acc ->
-        entity_ids_query = entity_ids_query(type, opts)
+        entity_ids_query = Registry.entity_ids_query(type, opts)
 
         entity_query =
           case type do
@@ -727,7 +558,7 @@ defmodule Sanbase.Entity do
     query =
       Enum.reduce(entities, nil, fn type, query_acc ->
         entity_ids_query =
-          entity_ids_query(type,
+          Registry.entity_ids_query(type,
             user_ids: [user_id],
             can_access_user_private_entities: true
           )
@@ -767,7 +598,7 @@ defmodule Sanbase.Entity do
 
     where_clause_query =
       Enum.reduce(entities, nil, fn type, query_acc ->
-        entity_ids_query = entity_ids_query(type, opts)
+        entity_ids_query = Registry.entity_ids_query(type, opts)
         entity_type_name = Sanbase.Accounts.Interaction.deduce_entity_column_name(type)
 
         case query_acc do
@@ -803,10 +634,10 @@ defmodule Sanbase.Entity do
     # with different schemas.
     query =
       Enum.reduce(entities, nil, fn type, query_acc ->
-        entity_ids_query = entity_ids_query(type, opts)
+        entity_ids_query = Registry.entity_ids_query(type, opts)
 
         {creation_time_field, creation_time_field_backup} =
-          deduce_entity_creation_time_field(type)
+          Registry.entity_creation_time_fields(type)
 
         entity_query =
           from(entity in entity_ids_query)
@@ -855,8 +686,8 @@ defmodule Sanbase.Entity do
     # share ids.
     query =
       Enum.reduce(entities, query, fn entity, query_acc ->
-        entity_ids_query = entity_ids_query(entity, opts)
-        field = deduce_entity_vote_field(entity)
+        entity_ids_query = Registry.entity_ids_query(entity, opts)
+        field = Registry.entity_vote_field(entity)
 
         query_acc
         |> or_where([v], field(v, ^field) in subquery(entity_ids_query))
@@ -904,153 +735,6 @@ defmodule Sanbase.Entity do
     )
   end
 
-  defp fetch_entities_by_ids(list) do
-    # Group the results by entity type and fetch the full entities from the
-    # database. Every entity is then represented as a map with the entity as
-    # value and its type as a key. This is required as the GraphQL API needs to
-    # match every different type to a GraphQL type. The end result is a list
-    # like [%{project_watchlist: w}, %{insight: i}, %{chart_configuration: c},
-    # %{screener: s}, %{address_watchlist: a}]
-    list
-    |> Enum.group_by(&String.to_existing_atom(&1.entity_type), & &1.entity_id)
-    |> Enum.flat_map(fn {type, ids} ->
-      entity_module = deduce_entity_module(type)
-
-      {:ok, data} = entity_module.by_ids(ids, [])
-
-      Enum.map(data, fn entity ->
-        %{type => transform_entity(entity)}
-      end)
-    end)
-  end
-
-  defp transform_entity(%{featured_item: featured_item} = entity) do
-    # Populate the `is_featured` boolean value from the `featured_item` assoc
-    is_featured = if featured_item, do: true, else: false
-
-    %{entity | is_featured: is_featured}
-  end
-
-  defp transform_entity(entity) do
-    entity
-  end
-
-  # Used to rename the more general watchlist to specific type
-  # of watchlists -- screener, project_watchlist or address_watchlist
-  defp rewrite_keys(list) do
-    Enum.map(list, fn elem ->
-      case Map.to_list(elem) do
-        # Check if the watchlist is a screener so we can rewrite its name.
-        # Screeners are watchlists so in the votes table their votes are stored
-        # in the watchlist_id column
-        [{:watchlist, watchlist}] ->
-          case {UserList.screener?(watchlist), UserList.type(watchlist)} do
-            {true, _type} ->
-              %{screener: watchlist}
-
-            {false, :project} ->
-              %{project_watchlist: watchlist}
-
-            {false, :blockchain_address} ->
-              %{address_watchlist: watchlist}
-          end
-
-        # Check if the argument is in the right format. If this was a catch-all
-        # case then wrong arugment types would still be passed through here
-        # without any changes.
-        [{type, entity}] when type in @supported_entity_type ->
-          %{type => entity}
-      end
-    end)
-  end
-
-  # Which of the provided by the API opts are passed to the entity modules.
-
-  @passed_opts [
-    :filter,
-    :cursor,
-    :user_ids_and_all_other_public,
-    :user_ids,
-    :public_status,
-    :can_access_user_private_entities,
-    :is_featured_data_only,
-    :is_moderator,
-    :min_title_length,
-    :min_description_length
-  ]
-
-  defp entity_ids_query(:insight, opts) do
-    # `ordered?: false` is important otherwise the default order will be applied
-    # and this will conflict with the distinct(true) check
-    entity_opts =
-      Keyword.take(opts, @passed_opts) ++
-        [preload?: false, distinct?: true, ordered?: false]
-
-    is_paywall_required =
-      case get_in(opts, [:filter, :insight, :paywall]) do
-        :paywalled_only -> true
-        :non_paywalled_only -> false
-        _ -> nil
-      end
-
-    entity_opts =
-      entity_opts
-      |> Keyword.put(:is_paywall_required, is_paywall_required)
-      |> Keyword.put(:tags, get_in(opts, [:filter, :insight, :tags]))
-
-    Post.entity_ids_by_opts(entity_opts)
-  end
-
-  defp entity_ids_query(:user_trigger, opts) do
-    # `ordered?: false` is important otherwise the default order will be applied
-    # and this will conflict with the distinct(true) check
-    entity_opts =
-      Keyword.take(opts, @passed_opts) ++
-        [preload?: false, distinct?: true, ordered?: false]
-
-    UserTrigger.entity_ids_by_opts(entity_opts)
-  end
-
-  defp entity_ids_query(:screener, opts) do
-    entity_opts = Keyword.take(opts, @passed_opts) ++ [is_screener: true]
-
-    UserList.entity_ids_by_opts(entity_opts)
-  end
-
-  defp entity_ids_query(:project_watchlist, opts) do
-    entity_opts = Keyword.take(opts, @passed_opts) ++ [is_screener: false, type: :project]
-    UserList.entity_ids_by_opts(entity_opts)
-  end
-
-  defp entity_ids_query(:address_watchlist, opts) do
-    entity_opts =
-      Keyword.take(opts, @passed_opts) ++
-        [is_screener: false, type: :blockchain_address]
-
-    UserList.entity_ids_by_opts(entity_opts)
-  end
-
-  defp entity_ids_query(:chart_configuration, opts) do
-    entity_opts = Keyword.take(opts, @passed_opts)
-
-    Chart.Configuration.entity_ids_by_opts(entity_opts)
-  end
-
-  defp entity_ids_query(:dashboard, opts) do
-    entity_opts = Keyword.take(opts, @passed_opts)
-
-    Dashboard.entity_ids_by_opts(entity_opts)
-  end
-
-  defp entity_ids_query(:query, opts) do
-    entity_opts = Keyword.take(opts, @passed_opts)
-
-    Query.entity_ids_by_opts(entity_opts)
-  end
-
-  defp deduce_entity_creation_time_field(:insight), do: {:published_at, :inserted_at}
-  defp deduce_entity_creation_time_field(_), do: {:inserted_at, :inserted_at}
-
   defp get_entity_votes_for_user(user_id) do
     from(v in Sanbase.Vote,
       where: v.user_id == ^user_id,
@@ -1061,139 +745,5 @@ defmodule Sanbase.Entity do
       }
     )
     |> Sanbase.Repo.all()
-  end
-
-  defp update_opts(opts) do
-    # Transforms the API params into suitable params for the SQL query
-    # The EntityResolver validates the combination of params, for example
-    # user_id_data_only and current_user_data_only cannot be provided together,
-    # private data can be requested only if current_user_data_only is set, etc.
-
-    # At the end the following flags will be added:
-    # user_ids -- list of user ids to fetch
-    # public_status -- :public | :private | :all -- which entities to fetch
-    # can_access_user_private_entities -- If there is access to the private entities
-    # filter -- filter by project_ids
-
-    # This will be used in combination with public_status.
-    # Only when `currentUserData` is set to true it will allow to fetch
-    # private entities of the user. Otherwise it is false by default.
-    opts = opts |> Keyword.put_new(:can_access_user_private_entities, false)
-    opts = opts |> Keyword.delete(:user_ids)
-
-    opts =
-      case Keyword.get(opts, :user_id_data_only) do
-        user_id when is_integer(user_id) ->
-          if Keyword.get(opts, :user_ids),
-            do: raise(ArgumentError, "Something has unexpectedly set :user_ids in opts")
-
-          opts
-          |> Keyword.put_new(:user_ids, [user_id])
-
-        _ ->
-          opts
-      end
-
-    opts =
-      case Keyword.get(opts, :filter) do
-        %{public_status: value} when value in [:all, :public, :private] ->
-          Keyword.put(opts, :public_status, value)
-
-        %{public_status: value} ->
-          raise ArgumentError, "Invalid value for :public_status option: #{inspect(value)}"
-
-        _ ->
-          if is_integer(Keyword.get(opts, :current_user_data_only)) do
-            # For backwards compatibility, when current_user_data_only is set
-            # previously we returned all public and private entities of the user.
-            # Now, if the `public_status` is not explicitly set, we do the same.
-            Keyword.put(opts, :public_status, :all)
-          else
-            # If current_user_data_only is provided then we can only fetch public
-            # entities. If the public_status is something else and current_user_data_only
-            # is not set, the resolver will reject the query and return a descriptive error
-            Keyword.put(opts, :public_status, :public)
-          end
-      end
-
-    opts =
-      case Keyword.get(opts, :filter) do
-        # Filter only those entities (charts, etc.) which are about these slugs
-        %{slugs: slugs} = filter ->
-          ids = Sanbase.Project.List.ids_by_slugs(slugs, [])
-          filter = Map.put(filter, :project_ids, ids)
-          Keyword.put(opts, :filter, filter)
-
-        _ ->
-          opts
-      end
-
-    opts =
-      case Keyword.get(opts, :user_role_data_only) do
-        :san_family ->
-          if Keyword.get(opts, :user_ids),
-            do: raise(ArgumentError, "Something has unexpectedly set :user_ids in opts")
-
-          user_ids = Sanbase.Accounts.Role.san_family_ids()
-
-          opts
-          |> Keyword.put(:user_ids, user_ids)
-
-        :san_team ->
-          if Keyword.get(opts, :user_ids),
-            do: raise(ArgumentError, "Something has unexpectedly set :user_ids in opts")
-
-          user_ids = Sanbase.Accounts.Role.san_team_ids()
-
-          opts
-          |> Keyword.put(:user_ids, user_ids)
-
-        _ ->
-          opts
-      end
-
-    opts =
-      case Keyword.get(opts, :current_user_data_only) do
-        user_id when is_integer(user_id) ->
-          opts
-          |> Keyword.put(:user_ids, [user_id])
-          |> Keyword.put(:can_access_user_private_entities, true)
-
-        _ ->
-          opts
-      end
-
-    Enum.each([:public_status, :can_access_user_private_entities], fn key ->
-      if not Keyword.has_key?(opts, key),
-        do: raise(ArgumentError, "Key #{key} missing in the Entity opts")
-    end)
-
-    opts
-  end
-
-  defp put_new_embedding_opts(opts) do
-    # If opts has :embedding, just return the opts
-    # If it does not have :embedding, check if it has :ai_search_term and generate the embedding from it.
-    # If it does not have :ai_search_term or if the generation fails, return an error
-    case Keyword.get(opts, :embedding) do
-      [_ | _] ->
-        {:ok, opts}
-
-      nil ->
-        case Keyword.get(opts, :ai_search_term) do
-          ai_search_term when is_binary(ai_search_term) ->
-            case Sanbase.AI.Embedding.generate_embeddings([ai_search_term], 1536) do
-              {:ok, [embedding]} ->
-                opts = Keyword.put(opts, :embedding, embedding)
-                {:ok, opts}
-
-              {:error, reason} ->
-                {:error, "Failed to generate embeddings: #{inspect(reason)}"}
-            end
-
-          _ ->
-            {:error, "The ai_search_term must be a string"}
-        end
-    end
   end
 end

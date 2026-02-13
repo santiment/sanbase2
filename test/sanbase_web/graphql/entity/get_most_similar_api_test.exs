@@ -422,6 +422,155 @@ defmodule SanbaseWeb.Graphql.GetMostSimilarApiTest do
     end)
   end
 
+  describe "draft insights visibility" do
+    test "without currentUserDataOnly neither user sees any draft insights (only public)",
+         %{conn: conn, user: user1} do
+      user2 = insert(:user)
+
+      draft_user1 =
+        insert(:post,
+          user: user1,
+          ready_state: "draft",
+          title: "User1 draft insight",
+          text: "User1 draft content",
+          inserted_at: seconds_ago(30)
+        )
+
+      draft_user2 =
+        insert(:post,
+          user: user2,
+          ready_state: "draft",
+          title: "User2 draft insight",
+          text: "User2 draft content",
+          inserted_at: seconds_ago(25)
+        )
+
+      create_post_embedding(draft_user1)
+      create_post_embedding(draft_user2)
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.AI.Embedding.generate_embeddings/2,
+        {:ok, [mock_embedding()]}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          get_most_similar(conn, [:insight], ai_search_term: "draft insight") ||
+            %{"data" => []}
+
+        data = result["data"] || []
+
+        insight_ids =
+          Enum.map(data, fn item -> item["insight"]["id"] end) |> Enum.reject(&is_nil/1)
+
+        refute draft_user1.id in insight_ids,
+               "User1 must not see their own draft when not using currentUserDataOnly"
+
+        refute draft_user2.id in insight_ids,
+               "User1 must not see user2's draft when not using currentUserDataOnly"
+      end)
+    end
+
+    test "without currentUserDataOnly with filter publicStatus ALL still does not show drafts (only public)",
+         %{conn: conn, user: user1} do
+      user2 = insert(:user)
+
+      draft_user1 =
+        insert(:post,
+          user: user1,
+          ready_state: "draft",
+          title: "User1 draft insight",
+          text: "User1 draft content",
+          inserted_at: seconds_ago(30)
+        )
+
+      draft_user2 =
+        insert(:post,
+          user: user2,
+          ready_state: "draft",
+          title: "User2 draft insight",
+          text: "User2 draft content",
+          inserted_at: seconds_ago(25)
+        )
+
+      create_post_embedding(draft_user1)
+      create_post_embedding(draft_user2)
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.AI.Embedding.generate_embeddings/2,
+        {:ok, [mock_embedding()]}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          get_most_similar(conn, [:insight],
+            ai_search_term: "draft insight",
+            filter: %{public_status: :all}
+          ) || %{"data" => []}
+
+        data = result["data"] || []
+
+        insight_ids =
+          Enum.map(data, fn item -> item["insight"]["id"] end) |> Enum.reject(&is_nil/1)
+
+        refute draft_user1.id in insight_ids,
+               "With filter publicStatus ALL but no currentUserDataOnly, must not show own draft"
+
+        refute draft_user2.id in insight_ids,
+               "With filter publicStatus ALL but no currentUserDataOnly, must not show other user draft"
+      end)
+    end
+
+    test "with currentUserDataOnly user sees only their own draft insight", %{
+      conn: conn,
+      user: user1
+    } do
+      user2 = insert(:user)
+
+      draft_user1 =
+        insert(:post,
+          user: user1,
+          ready_state: "draft",
+          title: "User1 draft insight",
+          text: "User1 draft content",
+          inserted_at: seconds_ago(30)
+        )
+
+      draft_user2 =
+        insert(:post,
+          user: user2,
+          ready_state: "draft",
+          title: "User2 draft insight",
+          text: "User2 draft content",
+          inserted_at: seconds_ago(25)
+        )
+
+      create_post_embedding(draft_user1)
+      create_post_embedding(draft_user2)
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.AI.Embedding.generate_embeddings/2,
+        {:ok, [mock_embedding()]}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          get_most_similar(conn, [:insight],
+            ai_search_term: "draft insight",
+            current_user_data_only: true
+          ) || %{"data" => []}
+
+        data = result["data"] || []
+
+        insight_ids =
+          Enum.map(data, fn item -> item["insight"]["id"] end) |> Enum.reject(&is_nil/1)
+
+        assert draft_user1.id in insight_ids,
+               "User1 must see their own draft when using currentUserDataOnly"
+
+        refute draft_user2.id in insight_ids,
+               "User1 must not see user2's draft when using currentUserDataOnly"
+      end)
+    end
+  end
+
   test "get most similar returns error when embedding generation fails", %{conn: conn} do
     insight =
       insert(:published_post,

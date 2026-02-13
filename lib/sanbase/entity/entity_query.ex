@@ -130,6 +130,14 @@ defmodule Sanbase.Entity.Query do
           :all when can_access_private ->
             query
 
+          :all ->
+            query
+            |> where(
+              [p],
+              p.ready_state == ^Sanbase.Insight.Post.published() and
+                p.state == ^Sanbase.Insight.Post.approved_state()
+            )
+
           :private when can_access_private ->
             query |> where([p], p.ready_state == ^Sanbase.Insight.Post.draft())
 

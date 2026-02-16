@@ -7,6 +7,8 @@ defmodule Sanbase.Entity.Fetcher do
   and handles view count enrichment.
   """
 
+  require Logger
+
   import Ecto.Query
 
   alias Sanbase.Entity.Registry
@@ -26,11 +28,16 @@ defmodule Sanbase.Entity.Fetcher do
     |> Enum.flat_map(fn {type, ids} ->
       entity_module = Registry.entity_module(type)
 
-      {:ok, data} = entity_module.by_ids(ids, [])
+      case entity_module.by_ids(ids, []) do
+        {:ok, data} ->
+          Enum.map(data, fn entity ->
+            %{type => transform_entity(entity)}
+          end)
 
-      Enum.map(data, fn entity ->
-        %{type => transform_entity(entity)}
-      end)
+        {:error, reason} ->
+          Logger.warning("Failed to fetch #{type} entities: #{inspect(reason)}")
+          []
+      end
     end)
   end
 
@@ -61,8 +68,6 @@ defmodule Sanbase.Entity.Fetcher do
     rewrite_keys(result)
   end
 
-  @supported_entity_types Registry.supported_entity_types()
-
   @doc """
   Rewrites generic :watchlist keys to specific types (:screener,
   :project_watchlist, :address_watchlist) based on the watchlist properties.
@@ -82,7 +87,7 @@ defmodule Sanbase.Entity.Fetcher do
               %{address_watchlist: watchlist}
           end
 
-        [{type, entity}] when type in @supported_entity_types ->
+        [{type, entity}] ->
           %{type => entity}
       end
     end)

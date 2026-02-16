@@ -61,9 +61,9 @@ defmodule Sanbase.Entity do
   @type opts :: [option]
   @type result_map :: %{
           optional(:insight) => %Post{},
-          optional(:screener) => %UserTrigger{},
-          optional(:project_watchlist) => %UserTrigger{},
-          optional(:address_watchlist) => %UserTrigger{},
+          optional(:screener) => %Sanbase.UserList{},
+          optional(:project_watchlist) => %Sanbase.UserList{},
+          optional(:address_watchlist) => %Sanbase.UserList{},
           optional(:chart_configuration) => %Chart.Configuration{},
           optional(:user_trigger) => %UserTrigger{},
           optional(:dashboard) => %Dashboard{},
@@ -260,7 +260,8 @@ defmodule Sanbase.Entity do
     |> offset(^offset)
   end
 
-  defdelegate extend_with_views_count(type_entity_list), to: Fetcher
+  def extend_with_views_count(type_entity_list),
+    do: Fetcher.extend_with_views_count(type_entity_list)
 
   # Private functions
 
@@ -317,7 +318,10 @@ defmodule Sanbase.Entity do
 
     db_result = Sanbase.Repo.all(query)
 
-    result = Fetcher.fetch_entities_by_ids(db_result)
+    result =
+      db_result
+      |> Fetcher.fetch_entities_by_ids()
+      |> Fetcher.rewrite_keys()
 
     # Order the full list of entities by the creation time in descending order.
     # The end result is a list like: [%{project_watchlist: w}, %{insight: i},
@@ -425,11 +429,6 @@ defmodule Sanbase.Entity do
   defp do_get_most_used_total_count(entities, opts) when is_list(entities) and entities != [] do
     opts = EntityOpts.update_opts(opts)
     query = most_used_base_query(entities, opts)
-
-    from(entity in subquery(query),
-      select: {entity.entity_id, entity.entity_type}
-    )
-    |> Sanbase.Repo.all()
 
     total_count =
       from(entity in subquery(query),
@@ -667,7 +666,7 @@ defmodule Sanbase.Entity do
     {:ok, query}
   end
 
-  def most_voted_base_query(entities, opts) when is_list(entities) and entities != [] do
+  defp most_voted_base_query(entities, opts) when is_list(entities) and entities != [] do
     # The most voted entity could have been  made private at some point after
     # getting votes. For this reasonlook only at entities that are public. In
     # the case where the user is fetching their own entities that are with most

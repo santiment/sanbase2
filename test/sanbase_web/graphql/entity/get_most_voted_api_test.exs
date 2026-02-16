@@ -125,6 +125,35 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApiTest do
              watchlist2.id
   end
 
+  test "getMostVoted with currentUserVotedForOnly returns only entities the current user voted for",
+       %{conn: conn} do
+    other_user = insert(:user)
+    conn_other = setup_jwt_auth(build_conn(), other_user)
+
+    insight_voted_by_current = insert(:published_post)
+    insight_voted_by_current_only = insert(:published_post)
+    insight_voted_by_other_only = insert(:published_post)
+
+    vote(conn, "insightId", insight_voted_by_current.id)
+    vote(conn, "insightId", insight_voted_by_current_only.id)
+    for _ <- 1..5, do: vote(conn_other, "insightId", insight_voted_by_other_only.id)
+    vote(conn_other, "insightId", insight_voted_by_current.id)
+
+    result_all = get_most_voted(conn, :insight)
+    data_all = result_all["data"]
+    result_voted_only = get_most_voted(conn, :insight, current_user_voted_for_only: true)
+    data_voted_only = result_voted_only["data"]
+
+    insight_ids_all = Enum.map(data_all, fn d -> d["insight"]["id"] end)
+    insight_ids_voted_only = Enum.map(data_voted_only, fn d -> d["insight"]["id"] end)
+
+    assert insight_voted_by_other_only.id in insight_ids_all
+    refute insight_voted_by_other_only.id in insight_ids_voted_only
+    assert result_voted_only["stats"]["totalEntitiesCount"] == 2
+    assert insight_voted_by_current.id in insight_ids_voted_only
+    assert insight_voted_by_current_only.id in insight_ids_voted_only
+  end
+
   test "get most voted project watchlist", %{conn: conn} do
     # The screener should not be in the result
     screener0 = insert(:screener, type: :project, is_public: true)

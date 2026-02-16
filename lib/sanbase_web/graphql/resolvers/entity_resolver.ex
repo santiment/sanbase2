@@ -194,7 +194,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
           # Preserve the previous GraphQL shape expected by tests:
           # - keep the top-level field non-null
           # - surface the error via the nested data/stats resolvers
-          error_args = Map.put(args, :embedding_error, reason)
           {:error, reason}
       end
     end

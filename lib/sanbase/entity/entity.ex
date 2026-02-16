@@ -507,16 +507,18 @@ defmodule Sanbase.Entity do
               nil
           end
 
-        case query_acc do
-          nil ->
+        cond do
+          not is_nil(entity_query) and not is_nil(query_acc) ->
+            query_acc |> union(^entity_query)
+
+          is_nil(query_acc) and not is_nil(entity_query) ->
             entity_query
 
-          query_acc ->
-            if entity_query do
-              query_acc |> union(^entity_query)
-            else
-              query_acc
-            end
+          is_nil(entity_query) and not is_nil(query_acc) ->
+            query_acc
+
+          true ->
+            nil
         end
       end)
 
@@ -526,6 +528,7 @@ defmodule Sanbase.Entity do
          "No supported entity types for similarity search. Only :insight is currently supported."}
 
       query ->
+        query = maybe_filter_current_user_voted_for_only(query, opts, :entity)
         {:ok, query}
     end
   end
@@ -604,7 +607,8 @@ defmodule Sanbase.Entity do
         end
       end)
 
-    query |> where(^where_clause_query)
+    query
+    |> where(^where_clause_query)
   end
 
   defp most_recent_base_query(entities, opts) when is_list(entities) and entities != [] do
@@ -651,6 +655,8 @@ defmodule Sanbase.Entity do
         end
       end)
 
+    query = maybe_filter_current_user_voted_for_only(query, opts, :entity)
+
     {:ok, query}
   end
 
@@ -680,16 +686,33 @@ defmodule Sanbase.Entity do
         |> or_where([v], field(v, ^field) in subquery(entity_ids_query))
       end)
 
-    query =
-      case Keyword.get(opts, :current_user_voted_for_only) do
-        user_id when is_integer(user_id) ->
-          filter_user_voted_for_entities(query, user_id)
-
-        _ ->
-          query
-      end
+    query = maybe_filter_current_user_voted_for_only(query, opts, :vote)
 
     {:ok, query}
+  end
+
+  defp maybe_filter_current_user_voted_for_only(query, opts, :vote) do
+    case Keyword.get(opts, :current_user_voted_for_only) do
+      user_id when is_integer(user_id) ->
+        # Here `query` is a query on top of the Sanbase.Vote table, so
+        # the fields of the query are post_id, watchlist_id, query_id, etc.
+        filter_user_voted_for_entities(query, user_id)
+
+      _ ->
+        query
+    end
+  end
+
+  defp maybe_filter_current_user_voted_for_only(query, opts, :entity) do
+    case Keyword.get(opts, :current_user_voted_for_only) do
+      user_id when is_integer(user_id) ->
+        # Here `query` is a query that has `entity_id` and `entity_type`
+        # fields, so we can filter accordingly
+        filter_entity_query_to_user_voted_only(query, user_id)
+
+      _ ->
+        query
+    end
   end
 
   defp filter_user_voted_for_entities(query, user_id) do
@@ -719,6 +742,20 @@ defmodule Sanbase.Entity do
           v.user_trigger_id in ^user_trigger_ids or
           v.dashboard_id in ^dashboard_ids or
           v.query_id in ^query_ids
+    )
+  end
+
+  defp filter_entity_query_to_user_voted_only(query, user_id) do
+    user_voted_subquery =
+      from(v in Sanbase.Vote,
+        where: v.user_id == ^user_id,
+        distinct: true,
+        select: %{entity_id: entity_id_selection(), entity_type: entity_type_selection()}
+      )
+
+    from(row in subquery(query),
+      join: v in subquery(user_voted_subquery),
+      on: row.entity_id == v.entity_id and row.entity_type == v.entity_type
     )
   end
 

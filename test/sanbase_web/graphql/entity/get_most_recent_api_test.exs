@@ -61,6 +61,25 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
     assert Enum.at(data, 2)["insight"]["id"] == i1.id
   end
 
+  test "getMostRecent with currentUserVotedForOnly returns only entities the current user voted for",
+       %{conn: conn} do
+    i1 = insert(:published_post, inserted_at: seconds_ago(60), published_at: seconds_ago(60))
+    i2 = insert(:published_post, inserted_at: seconds_ago(40), published_at: seconds_ago(40))
+    i3 = insert(:published_post, inserted_at: seconds_ago(20), published_at: seconds_ago(20))
+
+    vote(conn, "insightId", i1.id)
+    vote(conn, "insightId", i3.id)
+
+    result = get_most_recent(conn, [:insight], current_user_voted_for_only: true)
+    data = result["data"]
+
+    assert result["stats"]["totalEntitiesCount"] == 2
+    insight_ids = Enum.map(data, fn d -> d["insight"]["id"] end)
+    assert i1.id in insight_ids
+    assert i3.id in insight_ids
+    refute i2.id in insight_ids
+  end
+
   test "get most recent insight with paywall and tags filter", %{conn: conn} do
     _ =
       insert(:published_post,
@@ -860,6 +879,24 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
       |> Sanbase.Repo.update!()
 
     created_trigger
+  end
+
+  defp vote(conn, entity_key, entity_id) do
+    mutation = """
+    mutation {
+      vote(#{entity_key}: #{entity_id}) {
+        votes{
+          totalVotes totalVoters currentUserVotes
+        }
+      }
+    }
+    """
+
+    %{} =
+      conn
+      |> post("/graphql", mutation_skeleton(mutation))
+      |> json_response(200)
+      |> get_in(["data", "vote"])
   end
 
   defp get_most_recent(conn, entity_or_entities, opts \\ []) do

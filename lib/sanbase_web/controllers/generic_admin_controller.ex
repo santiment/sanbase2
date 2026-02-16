@@ -39,6 +39,7 @@ defmodule SanbaseWeb.GenericAdminController do
       {"User Forms", ~p"/forms"},
       {"Admin Forms", ~p"/admin/admin_forms"},
       {"Metric Registry", ~p"/admin/metric_registry"},
+      {"SES Events", ~p"/admin/ses_events"},
       {"User Roles", ~p"/admin/user_roles"}
     ]
   end

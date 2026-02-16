@@ -197,6 +197,7 @@ defmodule SanbaseWeb.Router do
     get("/generic/show_action", GenericAdminController, :show_action)
     resources("/generic", GenericAdminController)
 
+    live("/ses_events", Admin.SesEventsLive)
     live("/user_stats", UserStatsLive)
     live("/user_roles", Admin.UserRolesLive, :index)
     get("/download_inactive_users_csv", InactiveUsersController, :download_csv)
@@ -335,6 +336,7 @@ defmodule SanbaseWeb.Router do
     get("/cryptocompare_asset_mapping", CryptocompareAssetMappingController, :data)
     post("/stripe_webhook", StripeController, :webhook)
     post("/mailjet/webhook", MailjetController, :webhook)
+    post("/ses/webhook/:secret", SESController, :webhook)
 
     post("/projects_data_validator_webhook", RepoReaderController, :validator_webhook)
     post("/projects_data_reader_webhook/:secret", RepoReaderController, :reader_webhook)

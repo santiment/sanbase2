@@ -10,12 +10,25 @@ defmodule Sanbase.SimpleMailer do
       Logger.info("Email #{rcpt_email} is excluded from receiving emails")
       {:ok, :excluded}
     else
-      new()
-      |> from({"Santiment", "support@santiment.net"})
-      |> to(rcpt_email)
-      |> subject(subject)
-      |> text_body(body)
-      |> deliver()
+      email =
+        new()
+        |> from({"Santiment", "support@santiment.net"})
+        |> to(rcpt_email)
+        |> subject(subject)
+        |> text_body(body)
+        |> maybe_add_configuration_set()
+
+      deliver(email)
+    end
+  end
+
+  defp maybe_add_configuration_set(email) do
+    case Application.get_env(:sanbase, :ses_configuration_set) do
+      config_set when is_binary(config_set) and config_set != "" ->
+        put_provider_option(email, :configuration_set_name, config_set)
+
+      _ ->
+        email
     end
   end
 end

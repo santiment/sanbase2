@@ -21,19 +21,21 @@ defmodule Sanbase.Entity.Opts do
     # Only when `currentUserData` is set to true it will allow to fetch
     # private entities of the user. Otherwise it is false by default.
     opts = opts |> Keyword.put_new(:can_access_user_private_entities, false)
-    opts = opts |> Keyword.delete(:user_ids)
 
     opts =
       case Keyword.get(opts, :user_id_data_only) do
         user_id when is_integer(user_id) ->
           if Keyword.get(opts, :user_ids),
-            do: raise(ArgumentError, "Something has unexpectedly set :user_ids in opts")
+            do:
+              raise(
+                ArgumentError,
+                "Something has unexpectedly set :user_ids in opts while trying to put user_id_data_only"
+              )
 
-          opts
-          |> Keyword.put_new(:user_ids, [user_id])
+          opts |> Keyword.put(:user_ids, [user_id])
 
         _ ->
-          opts
+          opts |> Keyword.delete(:user_ids)
       end
 
     opts =
@@ -74,7 +76,11 @@ defmodule Sanbase.Entity.Opts do
       case Keyword.get(opts, :user_role_data_only) do
         :san_family ->
           if Keyword.get(opts, :user_ids),
-            do: raise(ArgumentError, "Something has unexpectedly set :user_ids in opts")
+            do:
+              raise(
+                ArgumentError,
+                "Something has unexpectedly set :user_ids in opts while setting user_role_data_only"
+              )
 
           user_ids = Sanbase.Accounts.Role.san_family_ids()
 
@@ -83,7 +89,11 @@ defmodule Sanbase.Entity.Opts do
 
         :san_team ->
           if Keyword.get(opts, :user_ids),
-            do: raise(ArgumentError, "Something has unexpectedly set :user_ids in opts")
+            do:
+              raise(
+                ArgumentError,
+                "Something has unexpectedly set :user_ids in opts while setting user_role_data_only"
+              )
 
           user_ids = Sanbase.Accounts.Role.san_team_ids()
 
@@ -97,6 +107,13 @@ defmodule Sanbase.Entity.Opts do
     opts =
       case Keyword.get(opts, :current_user_data_only) do
         user_id when is_integer(user_id) ->
+          if Keyword.get(opts, :user_ids),
+            do:
+              raise(
+                ArgumentError,
+                "Something has unexpectedly set :user_ids in opts while setting current_user_data_only"
+              )
+
           opts
           |> Keyword.put(:user_ids, [user_id])
           |> Keyword.put(:can_access_user_private_entities, true)

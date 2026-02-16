@@ -4,6 +4,7 @@ defmodule Sanbase.Email do
   """
 
   alias Sanbase.Email.EmailExclusionList
+  alias Sanbase.Email.SesEmailEvent
 
   @doc """
   Checks if an email address is excluded from receiving emails.
@@ -54,4 +55,28 @@ defmodule Sanbase.Email do
   def update_email_exclusion(exclusion, attrs) do
     EmailExclusionList.update_exclusion(exclusion, attrs)
   end
+
+  @doc """
+  Creates an SES email event record.
+  """
+  @spec create_ses_event(map()) :: {:ok, SesEmailEvent.t()} | {:error, Ecto.Changeset.t()}
+  defdelegate create_ses_event(attrs), to: SesEmailEvent, as: :create
+
+  @doc """
+  Lists SES email events with optional filters and pagination.
+  """
+  @spec list_ses_events(keyword()) :: [SesEmailEvent.t()]
+  defdelegate list_ses_events(opts \\ []), to: SesEmailEvent, as: :list_events
+
+  @doc """
+  Counts SES email events matching the given filters.
+  """
+  @spec count_ses_events(keyword()) :: non_neg_integer()
+  defdelegate count_ses_events(opts \\ []), to: SesEmailEvent, as: :count_events
+
+  @doc """
+  Returns event type counts since the given datetime.
+  """
+  @spec ses_event_stats_since(DateTime.t()) :: map()
+  defdelegate ses_event_stats_since(since), to: SesEmailEvent, as: :stats_since
 end

@@ -2,6 +2,8 @@
 -- PostgreSQL database dump
 --
 
+\restrict Cx98k3bcTspSpxNz54JgM1RgKdZt2E765VFeR2kr93odcBIiuHbJthDdMvXxy4Z
+
 -- Dumped from database version 15.15 (Homebrew)
 -- Dumped by pg_dump version 15.15 (Homebrew)
 
@@ -898,8 +900,8 @@ CREATE TABLE public.chat_messages (
     sources jsonb[] DEFAULT ARRAY[]::jsonb[],
     suggestions text[] DEFAULT ARRAY[]::text[],
     feedback_type character varying(255),
-    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY (ARRAY[('thumbs_up'::character varying)::text, ('thumbs_down'::character varying)::text])) OR (feedback_type IS NULL))),
-    CONSTRAINT valid_role CHECK (((role)::text = ANY (ARRAY[('user'::character varying)::text, ('assistant'::character varying)::text])))
+    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY ((ARRAY['thumbs_up'::character varying, 'thumbs_down'::character varying])::text[])) OR (feedback_type IS NULL))),
+    CONSTRAINT valid_role CHECK (((role)::text = ANY ((ARRAY['user'::character varying, 'assistant'::character varying])::text[])))
 );
 
 
@@ -4216,6 +4218,47 @@ ALTER SEQUENCE public.seen_timeline_events_id_seq OWNED BY public.seen_timeline_
 
 
 --
+-- Name: ses_email_events; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ses_email_events (
+    id bigint NOT NULL,
+    message_id character varying(255) NOT NULL,
+    email character varying(255) NOT NULL,
+    event_type character varying(255) NOT NULL,
+    bounce_type character varying(255),
+    bounce_sub_type character varying(255),
+    complaint_feedback_type character varying(255),
+    reject_reason character varying(255),
+    delay_type character varying(255),
+    smtp_response character varying(255),
+    "timestamp" timestamp(0) without time zone NOT NULL,
+    raw_data jsonb,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: ses_email_events_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.ses_email_events_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: ses_email_events_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.ses_email_events_id_seq OWNED BY public.ses_email_events.id;
+
+
+--
 -- Name: shared_access_tokens; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -6391,6 +6434,13 @@ ALTER TABLE ONLY public.seen_timeline_events ALTER COLUMN id SET DEFAULT nextval
 
 
 --
+-- Name: ses_email_events id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ses_email_events ALTER COLUMN id SET DEFAULT nextval('public.ses_email_events_id_seq'::regclass);
+
+
+--
 -- Name: shared_access_tokens id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -7574,6 +7624,14 @@ ALTER TABLE ONLY public.schema_migrations
 
 ALTER TABLE ONLY public.seen_timeline_events
     ADD CONSTRAINT seen_timeline_events_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: ses_email_events ses_email_events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ses_email_events
+    ADD CONSTRAINT ses_email_events_pkey PRIMARY KEY (id);
 
 
 --
@@ -8996,6 +9054,41 @@ CREATE INDEX scheduled_deprecation_notifications_status_index ON public.schedule
 --
 
 CREATE UNIQUE INDEX seen_timeline_events_user_id_event_id_index ON public.seen_timeline_events USING btree (user_id, event_id);
+
+
+--
+-- Name: ses_email_events_email_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ses_email_events_email_index ON public.ses_email_events USING btree (email);
+
+
+--
+-- Name: ses_email_events_event_type_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ses_email_events_event_type_index ON public.ses_email_events USING btree (event_type);
+
+
+--
+-- Name: ses_email_events_inserted_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ses_email_events_inserted_at_index ON public.ses_email_events USING btree (inserted_at);
+
+
+--
+-- Name: ses_email_events_message_id_email_event_type_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX ses_email_events_message_id_email_event_type_index ON public.ses_email_events USING btree (message_id, email, event_type);
+
+
+--
+-- Name: ses_email_events_message_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ses_email_events_message_id_index ON public.ses_email_events USING btree (message_id);
 
 
 --
@@ -10918,6 +11011,8 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
+\unrestrict Cx98k3bcTspSpxNz54JgM1RgKdZt2E765VFeR2kr93odcBIiuHbJthDdMvXxy4Z
+
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008204451);
@@ -11438,6 +11533,7 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250926101756);
 INSERT INTO public."schema_migrations" (version) VALUES (20250926115345);
 INSERT INTO public."schema_migrations" (version) VALUES (20251013121803);
 INSERT INTO public."schema_migrations" (version) VALUES (20251014144144);
+INSERT INTO public."schema_migrations" (version) VALUES (20251015073648);
 INSERT INTO public."schema_migrations" (version) VALUES (20251016133413);
 INSERT INTO public."schema_migrations" (version) VALUES (20251017100000);
 INSERT INTO public."schema_migrations" (version) VALUES (20251021133911);
@@ -11446,6 +11542,7 @@ INSERT INTO public."schema_migrations" (version) VALUES (20251023083446);
 INSERT INTO public."schema_migrations" (version) VALUES (20251023114153);
 INSERT INTO public."schema_migrations" (version) VALUES (20251027142731);
 INSERT INTO public."schema_migrations" (version) VALUES (20251027154645);
+INSERT INTO public."schema_migrations" (version) VALUES (20251113070559);
 INSERT INTO public."schema_migrations" (version) VALUES (20251202143216);
 INSERT INTO public."schema_migrations" (version) VALUES (20251202143217);
 INSERT INTO public."schema_migrations" (version) VALUES (20251215114741);
@@ -11454,3 +11551,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260106131955);
 INSERT INTO public."schema_migrations" (version) VALUES (20260106141954);
 INSERT INTO public."schema_migrations" (version) VALUES (20260114173809);
 INSERT INTO public."schema_migrations" (version) VALUES (20260116093636);
+INSERT INTO public."schema_migrations" (version) VALUES (20260216103643);

@@ -95,6 +95,63 @@ defmodule SanbaseWeb.Graphql.GetMostSimilarApiTest do
     end)
   end
 
+  test "getMostSimilar with currentUserVotedForOnly returns only entities the current user voted for",
+       %{conn: conn} do
+    insight1 =
+      insert(:published_post,
+        inserted_at: seconds_ago(30),
+        title: "Bitcoin analysis",
+        text: "Bitcoin content",
+        ready_state: "published",
+        state: "approved"
+      )
+
+    insight2 =
+      insert(:published_post,
+        inserted_at: seconds_ago(25),
+        title: "Ethereum analysis",
+        text: "Ethereum content",
+        ready_state: "published",
+        state: "approved"
+      )
+
+    insight3 =
+      insert(:published_post,
+        inserted_at: seconds_ago(20),
+        title: "Crypto overview",
+        text: "Crypto content",
+        ready_state: "published",
+        state: "approved"
+      )
+
+    create_post_embedding(insight1)
+    create_post_embedding(insight2)
+    create_post_embedding(insight3)
+
+    vote(conn, "insightId", insight1.id)
+    vote(conn, "insightId", insight3.id)
+
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.AI.Embedding.generate_embeddings/2,
+      {:ok, [mock_embedding()]}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      result =
+        get_most_similar(conn, [:insight],
+          ai_search_term: "bitcoin",
+          current_user_voted_for_only: true
+        )
+
+      data = result["data"]
+
+      assert result["stats"]["totalEntitiesCount"] == 2
+      insight_ids = Enum.map(data, fn d -> d["insight"]["id"] end)
+      assert insight1.id in insight_ids
+      assert insight3.id in insight_ids
+      refute insight2.id in insight_ids
+    end)
+  end
+
   test "get most similar insights with pagination", %{conn: conn} do
     insights =
       for i <- 1..10 do
@@ -611,6 +668,24 @@ defmodule SanbaseWeb.Graphql.GetMostSimilarApiTest do
                String.contains?(error["message"], "Failed to generate embeddings")
              end)
     end)
+  end
+
+  defp vote(conn, entity_key, entity_id) do
+    mutation = """
+    mutation {
+      vote(#{entity_key}: #{entity_id}) {
+        votes{
+          totalVotes totalVoters currentUserVotes
+        }
+      }
+    }
+    """
+
+    %{} =
+      conn
+      |> post("/graphql", mutation_skeleton(mutation))
+      |> json_response(200)
+      |> get_in(["data", "vote"])
   end
 
   defp get_most_similar(conn, entity_or_entities, opts) do

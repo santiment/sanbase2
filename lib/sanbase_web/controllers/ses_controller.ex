@@ -6,7 +6,7 @@ defmodule SanbaseWeb.SESController do
   alias Sanbase.Email.SesEmailEvent
 
   def webhook(conn, %{"secret" => secret} = params) do
-    expected_secret = Application.get_env(:sanbase, :ses_webhook_secret)
+    expected_secret = Application.get_env(:sanbase, SanbaseWeb.SESController)[:webhook_secret]
 
     if is_binary(expected_secret) and Plug.Crypto.secure_compare(secret, expected_secret) do
       handle_sns_message(params)

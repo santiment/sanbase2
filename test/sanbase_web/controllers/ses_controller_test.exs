@@ -8,10 +8,10 @@ defmodule SanbaseWeb.SESControllerTest do
   @secret "test_webhook_secret_123"
 
   setup do
-    Application.put_env(:sanbase, :ses_webhook_secret, @secret)
+    Application.put_env(:sanbase, SanbaseWeb.SESController, webhook_secret: @secret)
 
     on_exit(fn ->
-      Application.delete_env(:sanbase, :ses_webhook_secret)
+      Application.delete_env(:sanbase, SanbaseWeb.SESController)
     end)
 
     :ok
@@ -24,7 +24,7 @@ defmodule SanbaseWeb.SESControllerTest do
     end
 
     test "rejects requests when no secret is configured", %{conn: conn} do
-      Application.delete_env(:sanbase, :ses_webhook_secret)
+      Application.delete_env(:sanbase, SanbaseWeb.SESController)
 
       conn = post(conn, ~p"/ses/webhook/any_secret", %{"Type" => "Notification"})
       assert response(conn, 403) == "Forbidden"

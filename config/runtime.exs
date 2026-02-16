@@ -23,11 +23,10 @@ config :sanbase, Sanbase.SimpleMailer,
   adapter: Swoosh.Adapters.AmazonSES,
   region: "eu-west-1",
   access_key: System.get_env("AWS_SES_ACCESS_KEY_ID"),
-  secret: System.get_env("AWS_SES_SECRET_ACCESS_KEY")
+  secret: System.get_env("AWS_SES_SECRET_ACCESS_KEY"),
+  configuration_set: System.get_env("AWS_SES_CONFIGURATION_SET")
 
-config :sanbase,
-  ses_webhook_secret: System.get_env("SES_WEBHOOK_SECRET"),
-  ses_configuration_set: System.get_env("AWS_SES_CONFIGURATION_SET")
+config :sanbase, SanbaseWeb.SESController, webhook_secret: System.get_env("SES_WEBHOOK_SECRET")
 
 config :sanbase, Sanbase.SmartContracts.SanrNFT,
   alchemy_api_key: System.get_env("ALCHEMY_API_KEY")

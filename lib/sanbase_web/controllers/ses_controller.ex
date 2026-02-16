@@ -9,7 +9,10 @@ defmodule SanbaseWeb.SESController do
     expected_secret = Application.get_env(:sanbase, SanbaseWeb.SESController)[:webhook_secret]
 
     if is_binary(expected_secret) and Plug.Crypto.secure_compare(secret, expected_secret) do
-      handle_sns_message(params)
+      Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
+        handle_sns_message(params)
+      end)
+
       send_resp(conn, 200, "")
     else
       Logger.warning("Invalid SES webhook secret")

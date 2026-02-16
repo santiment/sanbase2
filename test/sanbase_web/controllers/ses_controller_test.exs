@@ -6,6 +6,7 @@ defmodule SanbaseWeb.SESControllerTest do
   alias Sanbase.Email.SesEmailEvent
 
   @secret "test_webhook_secret_123"
+  @task_supervisor Sanbase.TaskSupervisor
 
   setup do
     Application.put_env(:sanbase, SanbaseWeb.SESController, webhook_secret: @secret)
@@ -66,6 +67,7 @@ defmodule SanbaseWeb.SESControllerTest do
         })
 
       assert response(conn, 200) == ""
+      flush_task_supervisor()
 
       events = SesEmailEvent.list_events(email_search: "bounced@example.com")
       assert length(events) == 1
@@ -96,6 +98,7 @@ defmodule SanbaseWeb.SESControllerTest do
         "Message" => Jason.encode!(ses_event)
       })
 
+      flush_task_supervisor()
       refute Sanbase.Email.email_excluded?("hard-bounced@example.com")
     end
   end
@@ -121,6 +124,7 @@ defmodule SanbaseWeb.SESControllerTest do
         })
 
       assert response(conn, 200) == ""
+      flush_task_supervisor()
 
       events = SesEmailEvent.list_events(email_search: "complainer@example.com")
       assert length(events) == 1
@@ -146,6 +150,7 @@ defmodule SanbaseWeb.SESControllerTest do
         "Message" => Jason.encode!(ses_event)
       })
 
+      flush_task_supervisor()
       refute Sanbase.Email.email_excluded?("spam-report@example.com")
     end
   end
@@ -169,6 +174,7 @@ defmodule SanbaseWeb.SESControllerTest do
         })
 
       assert response(conn, 200) == ""
+      flush_task_supervisor()
 
       events = SesEmailEvent.list_events(email_search: "delivered@example.com")
       assert length(events) == 1
@@ -198,6 +204,7 @@ defmodule SanbaseWeb.SESControllerTest do
         })
 
       assert response(conn, 200) == ""
+      flush_task_supervisor()
 
       events = SesEmailEvent.list_events(email_search: "sent@example.com")
       assert length(events) == 1
@@ -224,6 +231,7 @@ defmodule SanbaseWeb.SESControllerTest do
         })
 
       assert response(conn, 200) == ""
+      flush_task_supervisor()
 
       events = SesEmailEvent.list_events(email_search: "rejected@example.com")
       assert length(events) == 1
@@ -255,6 +263,7 @@ defmodule SanbaseWeb.SESControllerTest do
         })
 
       assert response(conn, 200) == ""
+      flush_task_supervisor()
 
       events = SesEmailEvent.list_events(email_search: "delayed@example.com")
       assert length(events) == 1
@@ -286,6 +295,7 @@ defmodule SanbaseWeb.SESControllerTest do
         "Message" => Jason.encode!(ses_event)
       })
 
+      flush_task_supervisor()
       assert SesEmailEvent.count_events(event_type: "Bounce") == 2
     end
   end
@@ -316,9 +326,19 @@ defmodule SanbaseWeb.SESControllerTest do
         })
 
       assert response(conn, 200) == ""
+      flush_task_supervisor()
 
       events = SesEmailEvent.list_events(email_search: "parsed@example.com")
       assert length(events) == 1
     end
+  end
+
+  defp flush_task_supervisor do
+    @task_supervisor
+    |> Task.Supervisor.children()
+    |> Enum.each(fn pid ->
+      ref = Process.monitor(pid)
+      receive do: ({:DOWN, ^ref, :process, ^pid, _} -> :ok)
+    end)
   end
 end

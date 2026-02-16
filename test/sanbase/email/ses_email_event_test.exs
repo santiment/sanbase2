@@ -69,6 +69,16 @@ defmodule Sanbase.Email.SesEmailEventTest do
       assert {:error, changeset} = SesEmailEvent.create(%{})
       refute changeset.valid?
     end
+
+    test "ignores duplicate (message_id, email, event_type) on SNS retry" do
+      assert {:ok, first} = SesEmailEvent.create(@valid_attrs)
+      assert first.id
+
+      assert {:ok, duplicate} = SesEmailEvent.create(@valid_attrs)
+      assert is_nil(duplicate.id)
+
+      assert SesEmailEvent.count_events() == 1
+    end
   end
 
   describe "list_events/1" do

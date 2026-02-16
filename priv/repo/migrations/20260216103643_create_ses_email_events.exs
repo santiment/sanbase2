@@ -22,5 +22,6 @@ defmodule Sanbase.Repo.Migrations.CreateSesEmailEvents do
     create(index(:ses_email_events, [:event_type]))
     create(index(:ses_email_events, [:message_id]))
     create(index(:ses_email_events, [:inserted_at]))
+    create(unique_index(:ses_email_events, [:message_id, :email, :event_type]))
   end
 end

@@ -52,7 +52,7 @@ defmodule SanbaseWeb.SESController do
   end
 
   defp handle_ses_event(%{"eventType" => "Bounce", "bounce" => bounce, "mail" => mail}) do
-    Enum.each(bounce["bouncedRecipients"], fn recipient ->
+    Enum.each(List.wrap(bounce["bouncedRecipients"]), fn recipient ->
       create_event(%{
         message_id: mail["messageId"],
         email: recipient["emailAddress"],
@@ -66,7 +66,7 @@ defmodule SanbaseWeb.SESController do
   end
 
   defp handle_ses_event(%{"eventType" => "Complaint", "complaint" => complaint, "mail" => mail}) do
-    Enum.each(complaint["complainedRecipients"], fn recipient ->
+    Enum.each(List.wrap(complaint["complainedRecipients"]), fn recipient ->
       create_event(%{
         message_id: mail["messageId"],
         email: recipient["emailAddress"],
@@ -79,7 +79,7 @@ defmodule SanbaseWeb.SESController do
   end
 
   defp handle_ses_event(%{"eventType" => "Delivery", "delivery" => delivery, "mail" => mail}) do
-    Enum.each(delivery["recipients"], fn email ->
+    Enum.each(List.wrap(delivery["recipients"]), fn email ->
       create_event(%{
         message_id: mail["messageId"],
         email: email,
@@ -92,7 +92,7 @@ defmodule SanbaseWeb.SESController do
   end
 
   defp handle_ses_event(%{"eventType" => "Send", "mail" => mail}) do
-    Enum.each(mail["destination"], fn email ->
+    Enum.each(List.wrap(mail["destination"]), fn email ->
       create_event(%{
         message_id: mail["messageId"],
         email: email,
@@ -104,7 +104,7 @@ defmodule SanbaseWeb.SESController do
   end
 
   defp handle_ses_event(%{"eventType" => "Reject", "reject" => reject, "mail" => mail}) do
-    Enum.each(mail["destination"], fn email ->
+    Enum.each(List.wrap(mail["destination"]), fn email ->
       create_event(%{
         message_id: mail["messageId"],
         email: email,
@@ -121,7 +121,7 @@ defmodule SanbaseWeb.SESController do
          "deliveryDelay" => delay,
          "mail" => mail
        }) do
-    Enum.each(delay["delayedRecipients"], fn recipient ->
+    Enum.each(List.wrap(delay["delayedRecipients"]), fn recipient ->
       create_event(%{
         message_id: mail["messageId"],
         email: recipient["emailAddress"],
@@ -139,6 +139,11 @@ defmodule SanbaseWeb.SESController do
 
   defp create_event(attrs) do
     case SesEmailEvent.create(attrs) do
+      {:ok, %{id: nil}} ->
+        Logger.debug(
+          "Duplicate SES #{attrs.event_type} ignored for message_id: #{attrs.message_id}"
+        )
+
       {:ok, _event} ->
         Logger.info("SES #{attrs.event_type} recorded for message_id: #{attrs.message_id}")
 

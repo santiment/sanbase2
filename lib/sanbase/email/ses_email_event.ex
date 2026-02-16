@@ -60,13 +60,14 @@ defmodule Sanbase.Email.SesEmailEvent do
     |> cast(attrs, @fields)
     |> validate_required([:message_id, :email, :event_type, :timestamp])
     |> validate_inclusion(:event_type, @event_types)
+    |> unique_constraint([:message_id, :email, :event_type])
   end
 
   @spec create(map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def create(attrs) do
     %__MODULE__{}
     |> changeset(attrs)
-    |> Repo.insert()
+    |> Repo.insert(on_conflict: :nothing, conflict_target: [:message_id, :email, :event_type])
   end
 
   @spec list_events(keyword()) :: [t()]

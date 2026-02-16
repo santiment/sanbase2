@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict jptyVslC8hvpGOiz5y13QKl5ooUHJpdqymZEP5yEGJkmjnx1Md4vKbTWBYJ85im
+\restrict Cx98k3bcTspSpxNz54JgM1RgKdZt2E765VFeR2kr93odcBIiuHbJthDdMvXxy4Z
 
 -- Dumped from database version 15.15 (Homebrew)
 -- Dumped by pg_dump version 15.15 (Homebrew)
@@ -900,8 +900,8 @@ CREATE TABLE public.chat_messages (
     sources jsonb[] DEFAULT ARRAY[]::jsonb[],
     suggestions text[] DEFAULT ARRAY[]::text[],
     feedback_type character varying(255),
-    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY (ARRAY[('thumbs_up'::character varying)::text, ('thumbs_down'::character varying)::text])) OR (feedback_type IS NULL))),
-    CONSTRAINT valid_role CHECK (((role)::text = ANY (ARRAY[('user'::character varying)::text, ('assistant'::character varying)::text])))
+    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY ((ARRAY['thumbs_up'::character varying, 'thumbs_down'::character varying])::text[])) OR (feedback_type IS NULL))),
+    CONSTRAINT valid_role CHECK (((role)::text = ANY ((ARRAY['user'::character varying, 'assistant'::character varying])::text[])))
 );
 
 
@@ -9078,6 +9078,13 @@ CREATE INDEX ses_email_events_inserted_at_index ON public.ses_email_events USING
 
 
 --
+-- Name: ses_email_events_message_id_email_event_type_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX ses_email_events_message_id_email_event_type_index ON public.ses_email_events USING btree (message_id, email, event_type);
+
+
+--
 -- Name: ses_email_events_message_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11004,7 +11011,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict jptyVslC8hvpGOiz5y13QKl5ooUHJpdqymZEP5yEGJkmjnx1Md4vKbTWBYJ85im
+\unrestrict Cx98k3bcTspSpxNz54JgM1RgKdZt2E765VFeR2kr93odcBIiuHbJthDdMvXxy4Z
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);

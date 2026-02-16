@@ -121,13 +121,10 @@ defmodule Sanbase.Entity.Query do
   end
 
   def maybe_apply_public_status_and_private_access(query, opts) do
-    public_status = Keyword.get(opts, :public_status)
-    can_access_private = Keyword.get(opts, :can_access_user_private_entities)
+    public_status = Keyword.get(opts, :public_status, :public)
+    can_access_private = Keyword.get(opts, :can_access_user_private_entities, false)
 
     cond do
-      is_nil(public_status) or is_nil(can_access_private) ->
-        query
-
       match?({_, Sanbase.Insight.Post}, query.from.source) ->
         case public_status do
           :all when can_access_private ->
@@ -136,7 +133,8 @@ defmodule Sanbase.Entity.Query do
           :private when can_access_private ->
             query |> where([p], p.ready_state == ^Sanbase.Insight.Post.draft())
 
-          :public ->
+          status when status in [:public, :all] ->
+            # Handle :all without private access
             query
             |> where(
               [p],
@@ -153,15 +151,22 @@ defmodule Sanbase.Entity.Query do
           :private when can_access_private ->
             query |> where([ut], private_trigger?())
 
-          :public ->
+          status when status in [:public, :all] ->
+            # Handle :all without private access
             query |> where([ut], public_trigger?())
         end
 
       true ->
         case public_status do
-          :all -> query
-          :public -> query |> where([ul], ul.is_public == true)
-          :private -> query |> where([ul], ul.is_public == false)
+          :all when can_access_private ->
+            query
+
+          :private when can_access_private ->
+            query |> where([ul], ul.is_public == false)
+
+          status when status in [:public, :all] ->
+            # Handle :all without private access
+            query |> where([ul], ul.is_public == true)
         end
     end
   end
@@ -171,9 +176,15 @@ defmodule Sanbase.Entity.Query do
     can_access_private = Keyword.fetch!(opts, :can_access_user_private_entities)
 
     case public_status do
-      :all when can_access_private -> query
-      :private when can_access_private -> query |> where([ul], ul.is_public == false)
-      :public when can_access_private -> query |> where([ul], ul.is_public == true)
+      :all when can_access_private ->
+        query
+
+      :private when can_access_private ->
+        query |> where([ul], ul.is_public == false)
+
+      status when status in [:public, :all] ->
+        # Handle :all without private access
+        query |> where([ul], ul.is_public == true)
     end
   end
 

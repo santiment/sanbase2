@@ -374,19 +374,7 @@ defmodule Sanbase.Entity do
         ]
       )
       |> paginate(opts)
-
-    query =
-      case Keyword.get(opts, :current_user_voted_for_only) do
-        user_id when is_integer(user_id) ->
-          query
-          |> order_by([_v],
-            desc: fragment("MAX(updated_at) FILTER (WHERE user_id = ?)", ^user_id)
-          )
-
-        _ ->
-          query
-          |> order_by([v], desc: coalesce(sum(v.count), 0))
-      end
+      |> order_by([v], desc: coalesce(sum(v.count), 0))
 
     # For simplicity include all the known in the query here. The ones that are
     # not wanted have their rows excluded in the above build where clause and

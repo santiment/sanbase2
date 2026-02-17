@@ -25,7 +25,6 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
 
   describe "firstLogin" do
     test "firstLogin when state is waiting for login to finish registration" do
-      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
       user = insert(:user_registration_not_finished)
       conn = setup_jwt_auth(build_conn(), user)
 

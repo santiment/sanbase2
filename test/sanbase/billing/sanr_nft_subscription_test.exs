@@ -28,7 +28,6 @@ defmodule Sanbase.Billing.SanrNFTSubscriptionTest do
   end
 
   test "create subscription", context do
-    expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
     %{user: user, address: address, start_date: start_date, end_date: end_date} = context
 
     Sanbase.Mock.prepare_mock(
@@ -59,7 +58,6 @@ defmodule Sanbase.Billing.SanrNFTSubscriptionTest do
   end
 
   test "remove subscription", %{user: user} do
-    expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
     end_date = DateTime.shift(DateTime.utc_now(), month: 12) |> DateTime.truncate(:second)
     Subscription.NFTSubscription.create_nft_subscription(user.id, :sanr_points_nft, end_date)
 

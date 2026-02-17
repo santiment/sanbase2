@@ -45,8 +45,6 @@ defmodule Sanbase.EmailsTest do
 
   describe "schedule emails" do
     test "on Sanbase PRO trial started", context do
-      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
-
       Subscription.create(%{
         stripe_id: "123",
         user_id: context.user.id,
@@ -82,7 +80,6 @@ defmodule Sanbase.EmailsTest do
     end
 
     test "on Sanbase PRO subscription started", context do
-      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
       query = subscribe_mutation(context.plans.plan_pro_sanbase.id)
 
       execute_mutation(context.conn, query)
@@ -102,7 +99,6 @@ defmodule Sanbase.EmailsTest do
     end
 
     test "on API PRO subscription started", context do
-      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
       query = subscribe_mutation(context.plans.plan_pro.id)
 
       execute_mutation(context.conn, query)

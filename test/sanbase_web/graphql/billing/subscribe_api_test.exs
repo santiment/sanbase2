@@ -158,8 +158,6 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
 
   describe "subscribe mutation" do
     test "successful subscribe returns subscription", context do
-      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
-
       query = subscribe_mutation(context.plans.plan_essential.id)
       response = execute_mutation(context.conn, query, "subscribe")
 
@@ -168,8 +166,6 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     end
 
     test "successful subscribe when user has stripe_customer_id", context do
-      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
-
       context.user |> User.changeset(%{stripe_customer_id: "alabala"}) |> Sanbase.Repo.update!()
 
       query = subscribe_mutation(context.plans.plan_essential.id)
@@ -179,8 +175,6 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     end
 
     test "when subscribing to Sanbase/API, the user is subscribed to metric updates", context do
-      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
-
       query = subscribe_mutation(context.plans.plan_pro_sanbase.id)
       execute_mutation(context.conn, query, "subscribe")
 
@@ -189,7 +183,6 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     end
 
     test "annual subscription gets discounted", context do
-      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
       context.user |> User.changeset(%{stripe_customer_id: "alabala"}) |> Sanbase.Repo.update!()
 
       insert(:subscription_pro_sanbase,
@@ -284,7 +277,6 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     end
 
     test "subscribe with coupon works", context do
-      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
       query = subscribe_with_coupon_mutation(context.plans.plan_essential.id, @coupon_code)
       response = execute_mutation(context.conn, query, "subscribe")
 
@@ -294,7 +286,6 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     end
 
     test "subscribe to Sanbase PRO plan gives 14 days free trial", context do
-      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
       query = subscribe_mutation(context.plans.plan_pro_sanbase.id)
       response = execute_mutation(context.conn, query, "subscribe")
 
@@ -303,7 +294,6 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     end
 
     test "subscribe to Sanbase MAX plan doesn't give free trial", context do
-      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
       query = subscribe_mutation(context.plans.plan_max_sanbase.id)
       response = execute_mutation(context.conn, query, "subscribe")
 
@@ -314,7 +304,6 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     end
 
     test "subscribe to Sanbase PRO_PLUS plan doesn't give free trial", context do
-      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
       query = subscribe_mutation(context.plans.plan_pro_plus_sanbase.id)
       response = execute_mutation(context.conn, query, "subscribe")
 
@@ -324,7 +313,6 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     end
 
     test "subscribe to SanAPI PRO plan doesn't give free trial", context do
-      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
       query = subscribe_mutation(context.plans.plan_pro.id)
       response = execute_mutation(context.conn, query, "subscribe")
 

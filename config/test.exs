@@ -8,7 +8,9 @@ config :phoenix, :stacktrace_depth, 20
 config :sanbase,
   available_slugs_module: Sanbase.DirectAvailableSlugs
 
-config :sanbase, Sanbase.EventBus, disable_app_notification_subscriber: true
+config :sanbase, Sanbase.EventBus,
+  disable_app_notification_subscriber: true,
+  disable_user_events_subscriber: true
 
 config :sanbase, Sanbase, url: {:system, "SANBASE_URL", ""}
 

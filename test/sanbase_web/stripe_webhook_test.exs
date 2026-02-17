@@ -181,8 +181,6 @@ defmodule SanbaseWeb.StripeWebhookTest do
 
   describe "customer.subscription.created event" do
     test "successfully create subscription" do
-      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
-
       {:ok, %Stripe.Subscription{customer: stripe_customer_id}} =
         StripeApiTestResponse.retrieve_subscription_resp()
 

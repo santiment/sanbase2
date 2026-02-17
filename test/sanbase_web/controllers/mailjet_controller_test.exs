@@ -7,6 +7,16 @@ defmodule SanbaseWeb.MailjetControllerTest do
 
   setup :verify_on_exit!
 
+  setup_all do
+    subscriber = Sanbase.EventBus.UserEventsSubscriber
+    EventBus.subscribe({subscriber, subscriber.topics()})
+
+    on_exit(fn ->
+      Sanbase.EventBus.drain_topics(subscriber.topics(), 10_000)
+      EventBus.unsubscribe(subscriber)
+    end)
+  end
+
   describe "webhook/2" do
     setup do
       user = insert(:user, email: "test@example.com")

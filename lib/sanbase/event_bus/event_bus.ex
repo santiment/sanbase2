@@ -66,6 +66,16 @@ defmodule Sanbase.EventBus do
                                      list
                                    end
                                  end)
+                                 |> then(fn list ->
+                                   if Application.compile_env(
+                                        :sanbase,
+                                        [Sanbase.EventBus, :disable_user_events_subscriber]
+                                      ) do
+                                     List.delete(list, __MODULE__.UserEventsSubscriber)
+                                   else
+                                     list
+                                   end
+                                 end)
 
   def children(), do: @subscribers
 

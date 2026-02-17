@@ -13,6 +13,16 @@ defmodule Sanbase.TelegramTest do
 
   @telegram_chat_id 12_315
 
+  setup_all do
+    subscriber = Sanbase.EventBus.UserEventsSubscriber
+    EventBus.subscribe({subscriber, subscriber.topics()})
+
+    on_exit(fn ->
+      Sanbase.EventBus.drain_topics(subscriber.topics(), 10_000)
+      EventBus.unsubscribe(subscriber)
+    end)
+  end
+
   setup do
     Tesla.Mock.mock(fn
       %{method: :post} ->

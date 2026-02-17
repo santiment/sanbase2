@@ -22,8 +22,6 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
 
   describe "Email login verify" do
     test "with a valid email token, succeeds login", %{conn: conn} do
-      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
-
       {:ok, user} =
         insert(:user_registration_not_finished, email: "example@santiment.net")
         |> User.Email.update_email_token()

@@ -86,8 +86,6 @@ defmodule Sanbase.Billing.SanrNftSubscriptionsApiTest do
   end
 
   test "obtainSanrNftSubscription", context do
-    expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
-
     mutation = """
     mutation{
       obtainSanrNftSubscription {

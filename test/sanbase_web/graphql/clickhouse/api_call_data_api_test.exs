@@ -281,7 +281,7 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
     # so casing unification is tested
     query = """
     {
-      get_metric(metric: "#{metric}") {
+      getMetric(metric: "#{metric}") {
         timeseriesDataJson(slug: "#{slug}", from: "#{from}", to: "#{to}", interval: "#{interval}")      }
     }
     """

@@ -1,5 +1,5 @@
 defmodule KafkaExporterTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   setup do
     topic = :crypto.strong_rand_bytes(12) |> Base.encode64()

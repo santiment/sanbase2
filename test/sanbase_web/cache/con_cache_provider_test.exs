@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.ConCacheProviderTest do
-  use SanbaseWeb.ConnCase, async: false
+  use SanbaseWeb.ConnCase, async: true
 
   alias SanbaseWeb.Graphql.ConCacheProvider, as: CacheProvider
 

@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.ProjectApiTest do
-  use SanbaseWeb.ConnCase, async: false
+  use SanbaseWeb.ConnCase, async: true
 
   alias Sanbase.Utils.Config
 

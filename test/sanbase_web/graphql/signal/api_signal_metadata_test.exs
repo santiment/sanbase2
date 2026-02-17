@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalMetadataTest do
-  use SanbaseWeb.ConnCase, async: false
+  use SanbaseWeb.ConnCase, async: true
 
   import Sanbase.Factory, only: [rand_str: 0]
   import SanbaseWeb.Graphql.TestHelpers

@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.DataControllerTest do
-  use SanbaseWeb.ConnCase, async: false
+  use SanbaseWeb.ConnCase, async: true
 
   import Sanbase.Factory
 

@@ -1,5 +1,5 @@
 defmodule Sanbase.Timeline.TimelineEventTest do
-  use Sanbase.DataCase, async: false
+  use Sanbase.DataCase, async: true
 
   import Sanbase.Factory
   import Sanbase.TestHelpers

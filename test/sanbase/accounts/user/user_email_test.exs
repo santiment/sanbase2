@@ -1,5 +1,5 @@
 defmodule Sanbase.Accounts.User.EmailTest do
-  use SanbaseWeb.ConnCase, async: false
+  use SanbaseWeb.ConnCase, async: true
 
   alias Sanbase.Accounts.User.Email
 

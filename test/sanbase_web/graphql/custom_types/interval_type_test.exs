@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.CustomTypes.IntervalTypeTest do
-  use SanbaseWeb.ConnCase, async: false
+  use SanbaseWeb.ConnCase, async: true
 
   import SanbaseWeb.Graphql.TestHelpers
 

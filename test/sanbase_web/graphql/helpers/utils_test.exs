@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.Helpers.UtilsTest do
-  use SanbaseWeb.ConnCase, async: false
+  use SanbaseWeb.ConnCase, async: true
 
   alias SanbaseWeb.Graphql.Helpers.CalibrateInterval
 

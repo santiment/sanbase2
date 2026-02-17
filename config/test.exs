@@ -45,8 +45,8 @@ config :logger, :console,
 config :sanbase, Sanbase.RepoReader, projects_data_endpoint_secret: "no_secret"
 
 config :sanbase, Sanbase.ApiCallLimit,
-  quota_size: 10,
-  quota_size_max_offset: 10
+  quota_size: 5,
+  quota_size_max_offset: 5
 
 config :sanbase, Sanbase.Accounts.Interaction,
   interaction_cooldown_seconds: 0,
@@ -80,7 +80,7 @@ config :sanbase, Sanbase.Repo,
   username: "postgres",
   password: "postgres",
   database: "sanbase_test#{System.get_env("MIX_TEST_PARTITION")}",
-  pool_size: 10,
+  pool_size: 5,
   ssl: false,
   ssl_opts: []
 

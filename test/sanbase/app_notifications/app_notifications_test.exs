@@ -641,8 +641,8 @@ defmodule Sanbase.AppNotificationsTest do
       {:ok, _vote} = Vote.create(%{user_id: voter.id, watchlist_id: watchlist.id})
       {:ok, _vote} = Vote.create(%{user_id: voter.id, watchlist_id: watchlist.id})
 
-      subscriber = Sanbase.EventBus.AppNotificationsSubscriber
-      Sanbase.EventBus.drain_topics(subscriber.topics(), 10_000)
+      Sanbase.EventBus.AppNotificationsSubscriber.topics()
+      |> Sanbase.EventBus.drain_topics(1_000)
 
       owner_notifications = AppNotifications.list_notifications_for_user(author.id, limit: 20)
 

@@ -30,7 +30,6 @@ defmodule Sanbase.Accounts.UserTest do
       {StripeApi, [:passthrough],
        [create_subscription: fn _ -> StripeApiTestResponse.create_subscription_resp() end]}
     ]) do
-      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
       user = insert(:user, stripe_customer_id: "test")
 
       # UserToken

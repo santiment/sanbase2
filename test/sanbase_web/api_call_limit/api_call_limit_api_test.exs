@@ -590,8 +590,6 @@ defmodule SanbaseWeb.ApiCallLimitTest do
     alias Sanbase.StripeApiTestResponse, as: SATR
 
     test "subscribe while rate limited", context do
-      expect(Sanbase.Email.MockMailjetApi, :subscribe, fn _, _ -> :ok end)
-
       Sanbase.Mock.prepare_mocks2([
         {&StripeApi.create_customer_with_card/2, SATR.create_or_update_customer_resp()},
         {&StripeApi.create_subscription/1, SATR.create_subscription_resp()}

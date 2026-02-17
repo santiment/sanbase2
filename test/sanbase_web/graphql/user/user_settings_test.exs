@@ -214,6 +214,16 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
   end
 
   describe "email settings" do
+    setup do
+      subscriber = Sanbase.EventBus.UserEventsSubscriber
+      EventBus.subscribe({subscriber, subscriber.topics()})
+
+      on_exit(fn ->
+        Sanbase.EventBus.drain_topics(subscriber.topics(), 10_000)
+        EventBus.unsubscribe(subscriber)
+      end)
+    end
+
     test "get default email settings", context do
       result = execute_query(context.conn, current_user_query(), "currentUser")
 

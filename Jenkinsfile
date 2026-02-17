@@ -49,8 +49,33 @@ slaveTemplates.dockerTemplate { label ->
             sh "docker run \
               --rm --name test-postgres-${buildSuffix}-p${i} \
               -e POSTGRES_PASSWORD=password \
+              --health-cmd 'pg_isready -U postgres' \
+              --health-interval 2s \
+              --health-timeout 5s \
+              --health-retries 10 \
               -d pgvector/pgvector:pg15"
           }
+
+          // Wait for each Postgres container to be ready
+          sh """
+            set -e
+            for i in \$(seq 1 ${numPartitions}); do
+              name="test-postgres-${buildSuffix}-p\$i"
+              echo "Waiting for \$name to be ready..."
+              for attempt in \$(seq 1 30); do
+                if docker exec "\$name" pg_isready -U postgres 2>/dev/null; then
+                  echo "\$name is ready"
+                  break
+                fi
+                if [ \$attempt -eq 30 ]; then
+                  echo "ERROR: \$name did not become ready within 60 seconds"
+                  docker logs "\$name" 2>&1 || true
+                  exit 1
+                fi
+                sleep 2
+              done
+            done
+          """
 
           try {
             def partitions = [:]

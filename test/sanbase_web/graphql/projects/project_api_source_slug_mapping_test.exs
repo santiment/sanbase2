@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.ProjectApiSourceSlugMappingTest do
-  use SanbaseWeb.ConnCase, async: false
+  use SanbaseWeb.ConnCase, async: true
 
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers

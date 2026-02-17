@@ -1,7 +1,10 @@
 {:ok, _} = Application.ensure_all_started(:ex_machina)
 :erlang.system_flag(:backtrace_depth, 20)
 
-ExUnit.configure(exclude: [skip_suite: true])
+ExUnit.configure(
+  exclude: [skip_suite: true],
+  max_cases: System.schedulers_online() * 2
+)
 
 # Set test environment variable for OpenAI to prevent runtime errors
 System.put_env("OPENAI_API_KEY", "test-key-for-testing")

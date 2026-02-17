@@ -1,5 +1,5 @@
 defmodule Sanbase.Notifications.EmailNotifierTest do
-  use Sanbase.DataCase, async: false
+  use Sanbase.DataCase, async: true
 
   alias Sanbase.Notifications.{Notification, EmailNotifier}
   alias Sanbase.Metric.Registry

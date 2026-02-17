@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.ChangelogApiTest do
-  use SanbaseWeb.ConnCase, async: false
+  use SanbaseWeb.ConnCase, async: true
 
   test "get metrics changelog", context do
     query = """

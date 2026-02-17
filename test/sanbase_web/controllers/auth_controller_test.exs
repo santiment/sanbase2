@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.AuthControllerTest do
-  use SanbaseWeb.ConnCase, async: false
+  use SanbaseWeb.ConnCase, async: true
 
   alias SanbaseWeb.AuthController
   alias Sanbase.Factory

@@ -1,5 +1,5 @@
 defmodule Sanbase.Accounts.AccessAttemptTest do
-  use Sanbase.DataCase, async: false
+  use Sanbase.DataCase, async: true
   alias Sanbase.Accounts.{AccessAttempt, EmailLoginAttempt}
   alias Sanbase.Repo
   import Sanbase.Factory

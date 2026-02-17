@@ -1,5 +1,5 @@
 defmodule Sanbase.Accounts.ApiKeyTest do
-  use Sanbase.DataCase, async: false
+  use Sanbase.DataCase, async: true
 
   alias Sanbase.Accounts.{
     User,

@@ -1,5 +1,5 @@
 defmodule Sanbase.ExternalServices.ProjectInfoTest do
-  use Sanbase.DataCase, async: false
+  use Sanbase.DataCase, async: true
 
   import ExUnit.CaptureLog
   import Sanbase.Factory

@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Admin.SesEventsLiveTest do
-  use SanbaseWeb.ConnCase, async: false
+  use SanbaseWeb.ConnCase, async: true
 
   @moduletag capture_log: true
 

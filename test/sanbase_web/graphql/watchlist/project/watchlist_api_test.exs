@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.WatchlistApiTest do
-  use SanbaseWeb.ConnCase, async: false
+  use SanbaseWeb.ConnCase, async: true
 
   import Sanbase.TestHelpers
 

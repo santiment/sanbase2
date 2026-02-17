@@ -1,5 +1,5 @@
 defmodule Sanbase.Accounts.UserFollowerTest do
-  use Sanbase.DataCase, async: false
+  use Sanbase.DataCase, async: true
 
   import Sanbase.Factory
 

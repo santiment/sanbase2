@@ -1,5 +1,5 @@
 defmodule Sanbase.Metric.UIMetadata.DisplayOrder.ReorderTest do
-  use Sanbase.DataCase, async: false
+  use Sanbase.DataCase, async: true
 
   alias Sanbase.Metric.UIMetadata.DisplayOrder.Reorder
   alias Sanbase.Metric.UIMetadata.{Category, Group, DisplayOrder}

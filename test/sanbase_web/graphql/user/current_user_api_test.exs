@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.CurrentUserApiTest do
-  use SanbaseWeb.ConnCase, async: false
+  use SanbaseWeb.ConnCase, async: true
 
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory

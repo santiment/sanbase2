@@ -1,5 +1,5 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.WebApiTest do
-  use Sanbase.DataCase, async: true
+  use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
 

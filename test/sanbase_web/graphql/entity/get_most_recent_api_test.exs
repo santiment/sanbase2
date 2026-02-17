@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
-  use SanbaseWeb.ConnCase, async: true
+  use SanbaseWeb.ConnCase, async: false
 
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory

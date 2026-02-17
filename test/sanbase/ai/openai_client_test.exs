@@ -1,6 +1,5 @@
 defmodule Sanbase.AI.OpenAIClientTest do
   use ExUnit.Case, async: true
-  use SanbaseWeb.ConnCase
 
   import Mox
 

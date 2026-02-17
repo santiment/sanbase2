@@ -20,7 +20,8 @@ slaveTemplates.dockerTemplate { label ->
         def scmVars = checkout scm
         def gitHead = scmVars.GIT_COMMIT.substring(0, 7)
         def sanitizedBranchName = env.BRANCH_NAME.replaceAll('/', '-')
-        def imageTag = "sanbase-test:${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${sanitizedBranchName}-${env.CHANGE_ID}"
+        def changeId = env.CHANGE_ID ?: 'none'
+        def imageTag = "sanbase-test:${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${sanitizedBranchName}-${changeId}"
 
         sh "docker build \
           -t ${imageTag} \

@@ -63,6 +63,7 @@ defmodule SanbaseWeb.MailjetControllerTest do
       refute updated_settings.is_subscribed_metric_updates
     end
 
+    @tag capture_log: true
     test "returns 200 even for invalid events", %{conn: conn} do
       # Missing email
       params = %{
@@ -93,6 +94,7 @@ defmodule SanbaseWeb.MailjetControllerTest do
       assert response(conn, 200) == ""
     end
 
+    @tag capture_log: true
     test "handles non-existent user", %{conn: conn} do
       params = %{
         "event" => "unsub",
@@ -104,6 +106,7 @@ defmodule SanbaseWeb.MailjetControllerTest do
       assert response(conn, 200) == ""
     end
 
+    @tag capture_log: true
     test "handles unknown list ID", %{conn: conn} do
       params = %{
         "event" => "unsub",

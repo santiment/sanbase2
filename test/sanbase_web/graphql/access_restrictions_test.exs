@@ -24,6 +24,7 @@ defmodule SanbaseWeb.Graphql.AccessRestrictionsTest do
     end)
   end
 
+  @tag capture_log: true
   test "metrics have status", %{conn: conn} do
     {:ok, metric} = Sanbase.Metric.Registry.by_name("price_usd_5m", "timeseries")
     {:ok, _} = Sanbase.Metric.Registry.update(metric, %{status: "alpha"})

@@ -204,6 +204,7 @@ defmodule SanbaseWeb.ScheduledDeprecationLiveTest do
       )
     end
 
+    @tag capture_log: true
     test "handles Oban job scheduling errors gracefully", %{conn: conn} do
       # Using with_mock instead of Oban.Testing.stub_global which is private
       with_mock(Oban, [],

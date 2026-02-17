@@ -2,7 +2,9 @@ defmodule Sanbase.FailedTestFormatter do
   @moduledoc false
   use GenServer
 
-  ## Callbacks
+  @failures_dir "_build/test/failures"
+
+  def failures_dir, do: @failures_dir
 
   def init(_opts) do
     {:ok,
@@ -17,13 +19,9 @@ defmodule Sanbase.FailedTestFormatter do
       case test do
         %ExUnit.Test{state: {:failed, [{kind, error, _stacktrace}]}} = test
         when kind in [:error, :invalid, :exit] ->
-          # Add a leading dot so the file:line string can be copy-pasted in the
-          # terminal to directly execute it
           file = String.replace_leading(test.tags.file, File.cwd!() <> "/", "")
           line = test.tags.line
 
-          # In case of :exit, the error tuple can contain more info, like :timeout, etc.
-          # In case of :error, the error is not a tuple, but a struct
           reason = if kind == :exit and is_tuple(error), do: " (#{elem(error, 0)})", else: ""
 
           test_identifier = "#{file}:#{line}#{reason}"
@@ -33,7 +31,6 @@ defmodule Sanbase.FailedTestFormatter do
             map |> Map.update!(:counter, &(&1 + 1)) |> Map.update!(:list, &[test_identifier | &1])
           end)
 
-        # TODO: Support ExUnit.MultiError
         test ->
           IO.warn("Unexpected failed test format. Got: #{inspect(test)}")
           config
@@ -44,6 +41,7 @@ defmodule Sanbase.FailedTestFormatter do
 
   def handle_cast({:suite_finished, _times_us}, config) do
     print_suite(config)
+    write_failures_to_file(config)
     {:noreply, config}
   end
 
@@ -54,7 +52,6 @@ defmodule Sanbase.FailedTestFormatter do
   defp print_suite(config) do
     for kind <- Map.keys(config) do
       if (get_in(config, [kind, :counter]) || 0) > 0 do
-        # All tests that failed an assert will have `kind = :error`
         error_tests_message =
           get_in(config, [kind, :list]) |> Enum.map(&(" " <> &1)) |> Enum.join("\n")
 
@@ -65,6 +62,25 @@ defmodule Sanbase.FailedTestFormatter do
 
         IO.puts(formatted_message)
       end
+    end
+  end
+
+  defp write_failures_to_file(config) do
+    lines =
+      for kind <- Map.keys(config),
+          (get_in(config, [kind, :counter]) || 0) > 0,
+          test_id <- get_in(config, [kind, :list]) do
+        "#{kind}\t#{test_id}"
+      end
+
+    if lines != [] do
+      partition = System.get_env("MIX_TEST_PARTITION") || "0"
+      File.mkdir_p!(@failures_dir)
+
+      File.write!(
+        Path.join(@failures_dir, "partition_#{partition}.txt"),
+        Enum.join(lines, "\n") <> "\n"
+      )
     end
   end
 end

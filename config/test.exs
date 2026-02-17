@@ -14,11 +14,17 @@ config :sanbase, Sanbase.EventBus,
 
 config :sanbase, Sanbase, url: {:system, "SANBASE_URL", ""}
 
+test_port =
+  case System.get_env("MIX_TEST_PARTITION") do
+    nil -> 4001
+    partition -> 4001 + String.to_integer(partition)
+  end
+
 config :sanbase, SanbaseWeb.Endpoint,
-  http: [port: 4001],
+  http: [port: test_port],
   server: true,
-  website_url: {:system, "WEBSITE_URL", "http://localhost:4001"},
-  backend_url: {:system, "BACKEND_URL", "http://localhost:4001"}
+  website_url: {:system, "WEBSITE_URL", "http://localhost:#{test_port}"},
+  backend_url: {:system, "BACKEND_URL", "http://localhost:#{test_port}"}
 
 config :ex_aws,
   access_key_id: "test_id",
@@ -73,8 +79,8 @@ config :sanbase, Sanbase.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,
   username: "postgres",
   password: "postgres",
-  database: "sanbase_test",
-  pool_size: 5,
+  database: "sanbase_test#{System.get_env("MIX_TEST_PARTITION")}",
+  pool_size: 10,
   ssl: false,
   ssl_opts: []
 

@@ -22,9 +22,10 @@ defmodule Sanbase.FailedTestFormatter do
           file = String.replace_leading(test.tags.file, File.cwd!() <> "/", "")
           line = test.tags.line
 
-          reason = if kind == :exit and is_tuple(error), do: " (#{elem(error, 0)})", else: ""
+          # Do not add the reason for now
+          _reason = if kind == :exit and is_tuple(error), do: " (#{elem(error, 0)})", else: ""
 
-          test_identifier = "#{file}:#{line}#{reason}"
+          test_identifier = "#{file}:#{line}"
 
           config
           |> Map.update(kind, %{counter: 1, list: [test_identifier]}, fn map ->

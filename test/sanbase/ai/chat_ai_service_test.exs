@@ -149,6 +149,7 @@ defmodule Sanbase.AI.ChatAIServiceTest do
                )
     end
 
+    @tag capture_log: true
     test "handles dashboard access errors", %{user: user, chat: chat} do
       other_user = insert(:user)
 
@@ -227,6 +228,7 @@ defmodule Sanbase.AI.ChatAIServiceTest do
       assert updated_chat.title == mock_title
     end
 
+    @tag capture_log: true
     test "handles title generation errors gracefully", %{chat: chat} do
       first_message = "Test message"
 
@@ -267,6 +269,7 @@ defmodule Sanbase.AI.ChatAIServiceTest do
       assert db_chat.title == mock_title
     end
 
+    @tag capture_log: true
     test "handles title generation errors", %{chat: chat} do
       first_message = "Test message"
 

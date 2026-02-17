@@ -45,6 +45,7 @@ defmodule Sanbase.Email.MailjetEventHandlerTest do
       assert updated_settings.is_subscribed_biweekly_report
     end
 
+    @tag capture_log: true
     test "returns error for unknown list id" do
       assert {:error, :unknown_list_id} =
                MailjetEventHandler.handle_unsubscribe("test@example.com", "99999")
@@ -68,6 +69,7 @@ defmodule Sanbase.Email.MailjetEventHandlerTest do
                MailjetEventHandler.get_setting_key_for_list("10321582")
     end
 
+    @tag capture_log: true
     test "returns error for unknown list id" do
       assert {:error, :unknown_list_id} = MailjetEventHandler.get_setting_key_for_list("99999")
     end

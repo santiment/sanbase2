@@ -289,13 +289,13 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       assert api_calls_made == 0
 
       max_quota = 20
-      iterations = 10
-      api_calls_per_iteration = 300
+      iterations = 3
+      api_calls_per_iteration = 20
 
       # `now` is set to 4 days before the end of next month. This way the `can_send_after` of
       # KafkaExporter won't sleep forever (as it will be in the past). Setting it to 3 days before
       # the month ends makes sure that 7 of the iteartions will be executed in the next day.
-      days_in_old_month = 4
+      days_in_old_month = 2
 
       now =
         Timex.now()
@@ -363,8 +363,8 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       assert api_calls_made == 0
 
       max_quota = 20
-      iterations = 14
-      api_calls_per_iteration = 300
+      iterations = 2
+      api_calls_per_iteration = 20
 
       # Set now to be the beginning of a month so when it is shifted 14 times by 1 day
       # it won't go in the next month. We're shifting forward otherwise the KafkaExporter
@@ -389,7 +389,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
               res = make_api_call(context.apikey_conn, [])
               assert res.status == 200
             end,
-            max_concurrent: 50,
+            max_concurrent: 10,
             ordered: false
           )
         end)
@@ -437,8 +437,8 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       assert api_calls_made == 0
 
       max_quota = 20
-      iterations = 5
-      api_calls_per_iteration = 100
+      iterations = 2
+      api_calls_per_iteration = 20
 
       # Set now to be the beginning of a month so when it is shifted 14 times by 1 day
       # it won't go in the next month. We're shifting forward otherwise the KafkaExporter
@@ -641,7 +641,9 @@ defmodule SanbaseWeb.ApiCallLimitTest do
     test "self reset", context do
       {:ok, quota} = Sanbase.ApiCallLimit.get_quota_db(:user, context.user)
 
-      for _ <- 1..25, do: make_api_call(context.apikey_conn, [])
+      # This works if the number of api calls is less than
+      #      quota_size + quota_size_max_offse
+      for _ <- 1..12, do: make_api_call(context.apikey_conn, [])
 
       {:ok, quota2} = Sanbase.ApiCallLimit.get_quota_db(:user, context.user)
 

@@ -82,26 +82,28 @@ slaveTemplates.dockerTemplate { label ->
     }
 
     stage('Summarize Test Failures') {
-      def buildSuffix = "${env.GIT_COMMIT_FULL}-${env.BUILD_ID}"
-      def failuresDir = "${pwd()}/test_failures_${buildSuffix}"
+      container('docker') {
+        def buildSuffix = "${env.GIT_COMMIT_FULL}-${env.BUILD_ID}"
+        def failuresDir = "${pwd()}/test_failures_${buildSuffix}"
 
-      sh """
-        echo ''
-        echo '========================================'
-        echo '  Combined results from all partitions'
-        echo '========================================'
-        if ls ${failuresDir}/partition_*.txt 1>/dev/null 2>&1; then
-          echo 'Failing tests across all partitions:'
-          cat ${failuresDir}/partition_*.txt | cut -f2 | sort
+        sh """
           echo ''
-          echo 'Re-run with:'
-          echo "  mix test \$(cat ${failuresDir}/partition_*.txt | cut -f2 | tr '\\n' ' ')"
-        else
-          echo 'All partitions passed!'
-        fi
+          echo '========================================'
+          echo '  Combined results from all partitions'
+          echo '========================================'
+          if ls ${failuresDir}/partition_*.txt 1>/dev/null 2>&1; then
+            echo 'Failing tests across all partitions:'
+            cat ${failuresDir}/partition_*.txt | cut -f2 | sort
+            echo ''
+            echo 'Re-run with:'
+            echo "  mix test \$(cat ${failuresDir}/partition_*.txt | cut -f2 | tr '\\n' ' ')"
+          else
+            echo 'All partitions passed!'
+          fi
 
-        rm -rf ${failuresDir}
-      """
+          rm -rf ${failuresDir}
+        """
+      }
     }
 
     if (env.BRANCH_NAME == 'master') {

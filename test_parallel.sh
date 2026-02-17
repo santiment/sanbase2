@@ -21,14 +21,17 @@ rm -rf "$FAILURES_DIR"
 
 echo "==> Running $PARTITIONS test partitions in parallel"
 
-# Run each partition in parallel; pipefail ensures failed mix test propagates
+# Run each partition in parallel; subshell + pipefail so wait gets pipeline status
 pids=()
 for i in $(seq 1 "$PARTITIONS"); do
-  MIX_TEST_PARTITION=$i mix test --partitions "$PARTITIONS" \
-    --formatter Sanbase.FailedTestFormatter \
-    --formatter ExUnit.CLIFormatter \
-    --trace \
-    2>&1 | sed "s/^/[partition $i] /" &
+  (
+    set -euo pipefail
+    MIX_TEST_PARTITION=$i mix test --partitions "$PARTITIONS" \
+      --formatter Sanbase.FailedTestFormatter \
+      --formatter ExUnit.CLIFormatter \
+      --trace \
+      2>&1 | sed "s/^/[partition $i] /"
+  ) &
   pids+=($!)
 done
 

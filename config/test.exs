@@ -9,8 +9,10 @@ config :sanbase,
   available_slugs_module: Sanbase.DirectAvailableSlugs
 
 config :sanbase, Sanbase.EventBus,
-  disable_app_notification_subscriber: true,
-  disable_user_events_subscriber: true
+  disabled_subscribers: [
+    Sanbase.EventBus.AppNotificationsSubscriber,
+    Sanbase.EventBus.UserEventsSubscriber
+  ]
 
 config :sanbase, Sanbase, url: {:system, "SANBASE_URL", ""}
 

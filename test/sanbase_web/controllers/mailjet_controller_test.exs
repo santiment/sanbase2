@@ -9,11 +9,11 @@ defmodule SanbaseWeb.MailjetControllerTest do
 
   setup_all do
     subscriber = Sanbase.EventBus.UserEventsSubscriber
-    EventBus.subscribe({subscriber, subscriber.topics()})
+    Sanbase.EventBus.subscribe_subscriber(subscriber)
 
     on_exit(fn ->
       Sanbase.EventBus.drain_topics(subscriber.topics(), 10_000)
-      EventBus.unsubscribe(subscriber)
+      Sanbase.EventBus.unsubscribe_subscriber(subscriber)
     end)
   end
 

@@ -55,29 +55,23 @@ defmodule Sanbase.EventBus do
     __MODULE__.AppNotificationsSubscriber
   ]
 
-  @register_at_start_subscribers @subscribers
-                                 |> then(fn list ->
-                                   if Application.compile_env(
-                                        :sanbase,
-                                        [Sanbase.EventBus, :disable_app_notification_subscriber]
-                                      ) do
-                                     List.delete(list, __MODULE__.AppNotificationsSubscriber)
-                                   else
-                                     list
-                                   end
-                                 end)
-                                 |> then(fn list ->
-                                   if Application.compile_env(
-                                        :sanbase,
-                                        [Sanbase.EventBus, :disable_user_events_subscriber]
-                                      ) do
-                                     List.delete(list, __MODULE__.UserEventsSubscriber)
-                                   else
-                                     list
-                                   end
-                                 end)
+  @disabled_subscribers Application.compile_env(
+                          :sanbase,
+                          [Sanbase.EventBus, :disabled_subscribers],
+                          []
+                        )
+
+  @register_at_start_subscribers @subscribers -- @disabled_subscribers
 
   def children(), do: @subscribers
+
+  def subscribe_subscriber(subscriber) do
+    EventBus.subscribe({subscriber, subscriber.topics()})
+  end
+
+  def unsubscribe_subscriber(subscriber) do
+    EventBus.unsubscribe(subscriber)
+  end
 
   def init() do
     for topic <- @topics, do: EventBus.register_topic(topic)

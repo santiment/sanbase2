@@ -42,17 +42,20 @@ slaveTemplates.dockerTemplate { label ->
           def imageTag = env.TEST_IMAGE_TAG
           def runToken = UUID.randomUUID().toString().substring(0, 8)
           def buildSuffix = "${env.GIT_COMMIT_FULL}-${env.BUILD_ID}-${runToken}"
+          def networkName = "test-net-${buildSuffix}"
           env.TEST_RUN_SUFFIX = buildSuffix
           def failuresDir = "${pwd()}/test_failures_${buildSuffix}"
 
           sh "mkdir -p ${failuresDir}"
+          sh "docker network create ${networkName} >/dev/null 2>&1 || true"
 
-          // Start postgres containers for each partition
           for (int i = 1; i <= numPartitions; i++) {
             def postgresContainerName = "test-postgres-${buildSuffix}-p${i}"
             sh "docker rm -f ${postgresContainerName} >/dev/null 2>&1 || true"
             sh "docker run \
               --rm --name ${postgresContainerName} \
+              --network ${networkName} \
+              --network-alias test-db-p${i} \
               -e POSTGRES_PASSWORD=password \
               --health-cmd 'pg_isready -U postgres' \
               --health-interval 2s \
@@ -61,7 +64,6 @@ slaveTemplates.dockerTemplate { label ->
               -d pgvector/pgvector:pg15"
           }
 
-          // Wait for each Postgres container to be ready
           sh """
             set -e
             for i in \$(seq 1 ${numPartitions}); do
@@ -84,13 +86,13 @@ slaveTemplates.dockerTemplate { label ->
 
           try {
             def partitions = [:]
-
             for (int i = 1; i <= numPartitions; i++) {
               def partition = i
+              def dbHost = "test-db-p${partition}"
               partitions["Partition ${partition}"] = {
                 sh "docker run --rm \
-                  --link test-postgres-${buildSuffix}-p${partition}:test-db \
-                  --env DATABASE_URL=postgres://postgres:password@test-db:5432/postgres \
+                  --network ${networkName} \
+                  --env DATABASE_URL=postgres://postgres:password@${dbHost}:5432/postgres \
                   --env MIX_TEST_PARTITION=${partition} \
                   -v ${failuresDir}:/app/_build/test/failures \
                   -t ${imageTag} \
@@ -101,11 +103,16 @@ slaveTemplates.dockerTemplate { label ->
               }
             }
 
-            parallel partitions
-          } finally {
-            for (int i = 1; i <= numPartitions; i++) {
-              sh "docker kill test-postgres-${buildSuffix}-p${i} || true"
+            timeout(time: 25, unit: 'MINUTES') {
+              parallel partitions
             }
+          } finally {
+            sh """
+              for i in \$(seq 1 ${numPartitions}); do
+                docker rm -f test-postgres-${buildSuffix}-p\$i 2>/dev/null || true
+              done
+              docker network rm ${networkName} 2>/dev/null || true
+            """
           }
         }
       }

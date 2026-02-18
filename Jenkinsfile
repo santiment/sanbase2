@@ -117,20 +117,23 @@ slaveTemplates.dockerTemplate { label ->
         def failuresDir = "${pwd()}/test_failures_${buildSuffix}"
 
         sh """
+          set +x
           echo ''
           echo '========================================'
           echo '  Combined results from all partitions'
           echo '========================================'
+
           if ls ${failuresDir}/partition_*.txt 1>/dev/null 2>&1; then
             echo 'Failing tests across all partitions:'
-            cat ${failuresDir}/partition_*.txt | cut -f2 | sort
+            cut -f2 ${failuresDir}/partition_*.txt | sort
             echo ''
             echo 'Re-run with:'
-            echo "  mix test \$(cat ${failuresDir}/partition_*.txt | cut -f2 | tr '\\n' ' ')"
-          else
-            echo 'All partitions passed!'
+            echo "  mix test \$(cut -f2 ${failuresDir}/partition_*.txt | tr '\\n' ' ')"
+            rm -rf ${failuresDir}
+            exit 1
           fi
 
+          echo 'All partitions passed!'
           rm -rf ${failuresDir}
         """
       }

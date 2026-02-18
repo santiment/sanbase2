@@ -292,9 +292,10 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       iterations = 3
       api_calls_per_iteration = 20
 
-      # `now` is set to 4 days before the end of next month. This way the `can_send_after` of
-      # KafkaExporter won't sleep forever (as it will be in the past). Setting it to 3 days before
-      # the month ends makes sure that 7 of the iteartions will be executed in the next day.
+      # `now` is set to `days_in_old_month` days before the end of next month.
+      # This way the `can_send_after` of KafkaExporter won't sleep forever
+      # (as it will be in the past). Some iterations run in the old month,
+      # and (iterations - days_in_old_month) run in the new month.days_in_old_month = 2
       days_in_old_month = 2
 
       now =
@@ -642,7 +643,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       {:ok, quota} = Sanbase.ApiCallLimit.get_quota_db(:user, context.user)
 
       # This works if the number of api calls is less than
-      #      quota_size + quota_size_max_offse
+      #      quota_size + quota_size_max_offset
       for _ <- 1..12, do: make_api_call(context.apikey_conn, [])
 
       {:ok, quota2} = Sanbase.ApiCallLimit.get_quota_db(:user, context.user)

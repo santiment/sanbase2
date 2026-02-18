@@ -1,5 +1,6 @@
 @Library('podTemplateLib')
 import net.santiment.utils.podTemplates
+import java.util.UUID
 
 properties([
   buildDiscarder(
@@ -39,15 +40,19 @@ slaveTemplates.dockerTemplate { label ->
       container('docker') {
         catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
           def imageTag = env.TEST_IMAGE_TAG
-          def buildSuffix = "${env.GIT_COMMIT_FULL}-${env.BUILD_ID}"
+          def runToken = UUID.randomUUID().toString().substring(0, 8)
+          def buildSuffix = "${env.GIT_COMMIT_FULL}-${env.BUILD_ID}-${runToken}"
+          env.TEST_RUN_SUFFIX = buildSuffix
           def failuresDir = "${pwd()}/test_failures_${buildSuffix}"
 
           sh "mkdir -p ${failuresDir}"
 
           // Start postgres containers for each partition
           for (int i = 1; i <= numPartitions; i++) {
+            def postgresContainerName = "test-postgres-${buildSuffix}-p${i}"
+            sh "docker rm -f ${postgresContainerName} >/dev/null 2>&1 || true"
             sh "docker run \
-              --rm --name test-postgres-${buildSuffix}-p${i} \
+              --rm --name ${postgresContainerName} \
               -e POSTGRES_PASSWORD=password \
               --health-cmd 'pg_isready -U postgres' \
               --health-interval 2s \
@@ -108,7 +113,7 @@ slaveTemplates.dockerTemplate { label ->
 
     stage('Summarize Test Failures') {
       container('docker') {
-        def buildSuffix = "${env.GIT_COMMIT_FULL}-${env.BUILD_ID}"
+        def buildSuffix = env.TEST_RUN_SUFFIX ?: "${env.GIT_COMMIT_FULL}-${env.BUILD_ID}"
         def failuresDir = "${pwd()}/test_failures_${buildSuffix}"
 
         sh """

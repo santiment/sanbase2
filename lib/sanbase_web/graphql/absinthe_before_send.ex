@@ -430,7 +430,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
           {Inflex.camelize(alias, :lower), tuple}
       end)
 
-    # Rename aliases to the query name itself, or in case of getMetric and getSignal -- the the whole tuple.
+    # Rename aliases to the query name itself, or in case of getMetric and getSignal -- the whole tuple.
     # The tuple is used in export_api_call_data/1 to construct the query name (like getMetric|price_usd) and
     # the selector that has been provided (like {"slugs": ["bitcoin", "ethereum"]})
     rename_mapper = fn list ->

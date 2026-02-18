@@ -34,7 +34,7 @@ defmodule SanbaseWeb.Graphql.Schema.MenuQueries do
       If :parent_id is provided, position is used to determine the position of the menu
       is the parent menu. If not provided, it will be appended to the end of the list.
       If a position is provided, all menu items with the same or bigger position in the same
-      menu will get their position increased by 1 in order to accomodate the new menu item.
+      menu will get their position increased by 1 in order to accommodate the new menu item.
       """
       arg(:position, :integer, default_value: nil)
 

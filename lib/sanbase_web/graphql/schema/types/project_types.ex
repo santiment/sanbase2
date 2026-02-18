@@ -127,7 +127,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     Returns a list of available signals. Every one of the signals in the list
     can be passed as the `metric` argument of the `getMetric` query.
 
-    For example, any of of the signals from the query:
+    For example, any of the signals from the query:
     ```
     {
       projectBySlug(slug: "ethereum"){ availableSignals }
@@ -157,7 +157,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     Returns a list of available metrics. Every one of the metrics in the list
     can be passed as the `metric` argument of the `getMetric` query.
 
-    For example, any of of the metrics from the query:
+    For example, any of the metrics from the query:
     ```
     {
       projectBySlug(slug: "ethereum"){ availableMetrics }
@@ -431,7 +431,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     without duplicating the data (like computing the total marketcap of a watchlist that has
     a-tether, o-tether and arb-tether in it).
 
-    Assets like bitcoin and the the Ethereum token wrapped-bitcoin are not considered
+    Assets like bitcoin and the Ethereum token wrapped-bitcoin are not considered
     the same project/asset.
     """
     field(:multichain_project_group_key, :string)

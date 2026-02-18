@@ -194,7 +194,7 @@ defmodule Sanbase.Menus do
 
   Each item has a `position`. If no position is specified, it will be appended at the end.
   If a position is specified, all the positions bigger than it will be bumped by 1 in order
-  to accomodate the new item.
+  to accommodate the new item.
   """
   @spec create_menu_item(create_menu_item_params, user_id) ::
           {:ok, Menu.t()} | {:error, String.t()}

@@ -31,7 +31,7 @@ defmodule SanbaseWeb.TelegramController do
     ~s"""
     🤖Beep boop, Santiment Alerts bot here!
 
-    You've succesfully connected your Sanbase and Telegram accounts.
+    You've successfully connected your Sanbase and Telegram accounts.
 
     To receive alerts in this chat, enable the Telegram channel in an alert settings.
 

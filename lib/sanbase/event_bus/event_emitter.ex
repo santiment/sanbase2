@@ -38,7 +38,7 @@ defmodule Sanbase.EventBus.EventEmitter do
 
       @doc ~s"""
       Emit an event built from the provided arguments.
-      If no error, occured, the first argument is returned as-is, so the function
+      If no error occurred, the first argument is returned as-is, so the function
       can be used inside pipelines.
       If changeset param is passed in the args it emits event only if there are actual
       changes in the changeset.
@@ -58,7 +58,7 @@ defmodule Sanbase.EventBus.EventEmitter do
         arg
       end
 
-      # In test enviroment, if the test ends before the subscribers successfully
+      # In test environment, if the test ends before the subscribers successfully
       # handled the event, there will be errors.
       @wait_count 5
       case Application.compile_env(:sanbase, :env) do

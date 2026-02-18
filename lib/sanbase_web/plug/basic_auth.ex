@@ -1,6 +1,6 @@
 defmodule SanbaseWeb.Plug.BasicAuth do
   @moduledoc ~s"""
-  Checks the path if it is really comming from telegram. The endpoint is a secret
+  Checks the path if it is really coming from telegram. The endpoint is a secret
   and is only known by telegram.
   """
 

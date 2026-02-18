@@ -607,7 +607,7 @@ defmodule Sanbase.DiscordBot.CommandHandler do
   end
 
   def generic_error_message(interaction) do
-    content = "An errror occured. Please try again"
+    content = "An error occurred. Please try again"
     Utils.edit_interaction_response(interaction, content, [])
   end
 

@@ -5,7 +5,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.FileResolver do
 
   @doc ~s"""
     Receives a list of `%Plug.Upload{}` representing the images and uploads them.
-    The files are first uploaded to an AWS S3 bucket and then then the image url,
+    The files are first uploaded to an AWS S3 bucket and then the image url,
     the content hash and used hash algorithm are stored in postgres.
   """
   def upload_image(_root, %{images: images}, _resolution) do

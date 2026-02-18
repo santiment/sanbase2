@@ -167,7 +167,7 @@ defmodule Sanbase.Queries.Authorization do
 
       %{queries_executed_hour: count}
       when count >= query_executions_limit.hour ->
-        {:error, "The user with id #{user_id} has executed more queries than allowed in a hour."}
+        {:error, "The user with id #{user_id} has executed more queries than allowed in an hour."}
 
       %{queries_executed_day: count}
       when count >= query_executions_limit.day ->

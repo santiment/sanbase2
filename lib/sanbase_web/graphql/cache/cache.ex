@@ -48,7 +48,7 @@ defmodule SanbaseWeb.Graphql.Cache do
   2. If the function is anonymous or a different name should be used, a second
   parameter with that name must be passed.
 
-  Just like `resolve` comming from Absinthe, `cache_resolve` supports the `{:ok, value}`
+  Just like `resolve` coming from Absinthe, `cache_resolve` supports the `{:ok, value}`
   and `{:error, reason}` result tuples. The `:ok` tuples are cached while the `:error`
   tuples are not.
 

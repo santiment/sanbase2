@@ -2,6 +2,16 @@ defmodule Sanbase.MetricRegistyTest do
   use Sanbase.DataCase
   import ExUnit.CaptureLog
 
+  setup_all do
+    subscriber = Sanbase.EventBus.MetricRegistrySubscriber
+    Sanbase.EventBus.subscribe_subscriber(subscriber)
+
+    on_exit(fn ->
+      Sanbase.EventBus.drain_topics(subscriber.topics(), 10_000)
+      Sanbase.EventBus.unsubscribe_subscriber(subscriber)
+    end)
+  end
+
   test "creating a new metric" do
     log =
       capture_log(fn ->

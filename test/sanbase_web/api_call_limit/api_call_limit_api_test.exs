@@ -13,8 +13,13 @@ defmodule SanbaseWeb.ApiCallLimitTest do
   setup_all do
     Application.put_env(SanbaseWeb.Graphql.AbsintheBeforeSend, :api_call_exporting_enabled, true)
 
+    subscriber = Sanbase.EventBus.BillingEventSubscriber
+    Sanbase.EventBus.subscribe_subscriber(subscriber)
+
     on_exit(fn ->
       Application.delete_env(SanbaseWeb.Graphql.AbsintheBeforeSend, :api_call_exporting_enabled)
+      Sanbase.EventBus.drain_topics(subscriber.topics(), 10_000)
+      Sanbase.EventBus.unsubscribe_subscriber(subscriber)
     end)
   end
 

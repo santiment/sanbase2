@@ -17,6 +17,16 @@ defmodule Sanbase.EmailsTest do
   setup :set_mox_from_context
   setup :verify_on_exit!
 
+  setup_all do
+    subscriber = Sanbase.EventBus.BillingEventSubscriber
+    Sanbase.EventBus.subscribe_subscriber(subscriber)
+
+    on_exit(fn ->
+      Sanbase.EventBus.drain_topics(subscriber.topics(), 10_000)
+      Sanbase.EventBus.unsubscribe_subscriber(subscriber)
+    end)
+  end
+
   setup_with_mocks([
     {StripeApi, [:passthrough],
      [

@@ -125,7 +125,7 @@ defmodule Sanbase.AppNotifications do
     # We select from NotificationReadStatus, but preload the user from Notification
     # Ecto is not happy if you don't select the binding from `from` when there's
     # a preload
-    |> Repo.preload(user: [:roles, roles: :role])
+    |> Repo.preload(user: [:user_settings, :roles, [roles: :role]])
   end
 
   @doc """
@@ -157,7 +157,7 @@ defmodule Sanbase.AppNotifications do
       join: nrs in NotificationReadStatus,
       on: nrs.notification_id == n.id and nrs.user_id == ^user_id,
       where: n.id == ^notification_id and n.is_deleted == false,
-      preload: [user: [:roles, roles: :role]]
+      preload: [user: [:user_settings, :roles, [roles: :role]]]
     )
     |> select_merge([_n, nrs], %{read_at: nrs.read_at})
     |> Repo.one()

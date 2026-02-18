@@ -14,6 +14,7 @@ config :sanbase, Sanbase.EventBus,
   ],
   disabled_subscribers: [
     Sanbase.EventBus.KafkaExporterSubscriber,
+    Sanbase.EventBus.MetricRegistrySubscriber,
     Sanbase.EventBus.AppNotificationsSubscriber,
     Sanbase.EventBus.UserEventsSubscriber
   ]

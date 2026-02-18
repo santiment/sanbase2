@@ -465,8 +465,9 @@ defmodule SanbaseWeb.ApiCallLimitTest do
         |> Sanbase.Mock.run_with_mocks(fn ->
           Sanbase.Parallel.map(
             1..(api_calls_per_iteration - 1),
-            fn i ->
-              {:ok, _} = Sanbase.Accounts.User.change_username(context.user, "username_#{i}")
+            fn _i ->
+              {:ok, _} =
+                Sanbase.Accounts.User.change_username(context.user, "username_#{UUID.uuid4()}")
 
               res = make_api_call(context.apikey_conn, [])
               assert res.status == 200

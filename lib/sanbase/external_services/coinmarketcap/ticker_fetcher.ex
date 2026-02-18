@@ -90,7 +90,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
   def work(opts \\ []) do
     Logger.info("[CMC] Fetching realtime data from coinmarketcap")
     # Fetch current coinmarketcap data for many tickers
-    # It fetches data for the the first N projects, where N is specified in
+    # It fetches data for the first N projects, where N is specified in
     # the COINMARKETCAP_API_PROJECTS_NUMBER env var
     tickers =
       case Ticker.fetch_data(opts) do

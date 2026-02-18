@@ -85,7 +85,7 @@ defmodule Sanbase.Dashboards do
   end
 
   defp get_dashboard_queries_with_mapping_id(dashboard_id) do
-    # Get the queries for the dashboard and add the the mapping id
+    # Get the queries for the dashboard and add the mapping id
     # as dashboard_query_mapping_id Query virtual field
     DashboardQueryMapping.dashboard_id_rows(dashboard_id)
     |> Repo.all()

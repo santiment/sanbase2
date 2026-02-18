@@ -16,7 +16,7 @@ defmodule Sanbase.Transfers.EthTransfers do
   @doc ~s"""
   Return the biggest transfers for a list of wallets and time period.
 
-  The `type` argument control wheteher only incoming, outgoing or all transactions
+  The `type` argument controls whether only incoming, outgoing or all transactions
   are included.
   """
   @spec top_wallet_transfers(

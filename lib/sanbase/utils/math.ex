@@ -10,7 +10,7 @@ defmodule Sanbase.Math do
   def round_float(i) when is_integer(i), do: round(i * 1.0)
 
   @doc ~s"""
-  Calculate the % change that occured between the first and the second arguments
+  Calculate the % change that occurred between the first and the second arguments
 
     ## Examples
 
@@ -203,7 +203,7 @@ defmodule Sanbase.Math do
     mean = Enum.sum(values) / length(values)
 
     # In case the precision is not provided, round the according
-    # to some predfined rules (use more precision for smaller numbers)
+    # to some predefined rules (use more precision for smaller numbers)
     case Keyword.get(opts, :precision) do
       nil -> mean |> round_float()
       precision -> Float.round(mean, precision)
@@ -313,7 +313,7 @@ defmodule Sanbase.Math do
   @doc ~s"""
   Compute the Z score over the list of numbers. Returns error if the
   numbers have standard deviation of 0 as Z score is computed only on
-  data with a probablistic distribution (not all numbers are equal)
+  data with a probabilistic distribution (not all numbers are equal)
 
   ## Examples
     iex> Sanbase.Math.zscore([1,2,3,4,5,6,7,8,9,10])

@@ -1,6 +1,6 @@
 defmodule SanbaseWeb.Plug.BotLoginPlug do
   @moduledoc ~s"""
-  Checks the path if it is really comming from the sanbase bot. The endpoint is a secret
+  Checks the path if it is really coming from the sanbase bot. The endpoint is a secret
   and is only known by the bot.
   """
 

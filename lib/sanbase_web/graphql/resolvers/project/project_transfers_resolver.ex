@@ -252,7 +252,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
 
       error ->
         Logger.warning(
-          "Cannot calculate ETH spent over time for for #{Project.describe(project)}. Reason: #{inspect(error)}"
+          "Cannot calculate ETH spent over time for #{Project.describe(project)}. Reason: #{inspect(error)}"
         )
 
         {:nocache, {:ok, []}}

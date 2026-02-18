@@ -98,7 +98,7 @@ defmodule Sanbase.Metric do
     hard_deprecate_after = Map.get(Helper.deprecated_metrics_map(), metric)
 
     # The metric is deprecated if `hard_deprecate_after` is nil
-    # or if the the date is in the future
+    # or if the date is in the future
     case hard_deprecate_after do
       nil ->
         false

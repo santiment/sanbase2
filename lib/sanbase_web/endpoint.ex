@@ -65,7 +65,7 @@ defmodule SanbaseWeb.Endpoint do
     parsers: [:urlencoded, :multipart, :json, Absinthe.Plug.Parser],
     pass: ["*/*"],
     json_decoder: Jason,
-    # To accomodate bigger files for reports uploaded via admin panel
+    # To accommodate bigger files for reports uploaded via admin panel
     # The file store is configured to allow bigger files for the admin pod
     # and lower for the web pod
     length: parser_length

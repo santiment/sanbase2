@@ -135,10 +135,10 @@ defmodule Sanbase.Signal do
   for every signal are returned without combining them with the data of other signals.
 
   If the `signals` argument has the atom value :all, then all available signals
-  that occured in the given from-to interval are returned.
+  that occurred in the given from-to interval are returned.
 
   If the `signals` arguments has a list of signals as a value, then all of those
-  signals that occured in the given from-to interval are returned.
+  signals that occurred in the given from-to interval are returned.
   """
   @spec raw_data(signals, raw_signals_selector, datetime, datetime) :: Type.raw_data_result()
   def raw_data(signals, selector, from, to) do

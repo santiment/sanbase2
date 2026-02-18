@@ -378,7 +378,7 @@ defmodule Sanbase.Alert.Scheduler do
     # Update all triggered_at regardless if the send to the channel succeed
     # because the alert will be stored in the timeline events.
     # Keep count of the total alerts triggered and the number of alerts
-    # that were not sent succesfully. Reasons can be:
+    # that were not sent successfully. Reasons can be:
     # - missing email/telegram linked when such channel is chosen;
     # - webhook failed to be sent;
     # - daily alerts limit is reached;

@@ -26,5 +26,6 @@ defmodule SanbaseWeb.Graphql.AppNotificationTypes do
   object :app_notifications_paginated do
     field(:notifications, list_of(:app_notification))
     field(:cursor, :cursor)
+    field(:available_notification_types, list_of(:string))
   end
 end

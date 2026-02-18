@@ -108,6 +108,121 @@ defmodule Sanbase.AppNotificationsTest do
     end
   end
 
+  describe "list_notifications_for_user/2 with types filter" do
+    setup do
+      user = insert(:user)
+      author = insert(:user)
+
+      for {type, entity_type, entity_id} <- [
+            {"create_watchlist", "watchlist", 1},
+            {"publish_insight", "insight", 2},
+            {"create_comment", "insight", 2}
+          ] do
+        {:ok, notification} =
+          AppNotifications.create_notification(%{
+            type: type,
+            user_id: author.id,
+            entity_type: entity_type,
+            entity_id: entity_id
+          })
+
+        {:ok, _} =
+          AppNotifications.create_notification_read_status(%{
+            notification_id: notification.id,
+            user_id: user.id
+          })
+      end
+
+      [user: user]
+    end
+
+    test "filters by a single type", %{user: user} do
+      result = AppNotifications.list_notifications_for_user(user.id, types: ["create_watchlist"])
+      assert length(result) == 1
+      assert hd(result).type == "create_watchlist"
+    end
+
+    test "filters by multiple types", %{user: user} do
+      result =
+        AppNotifications.list_notifications_for_user(user.id,
+          types: ["create_watchlist", "publish_insight"]
+        )
+
+      assert length(result) == 2
+      returned_types = result |> Enum.map(& &1.type) |> MapSet.new()
+      assert returned_types == MapSet.new(["create_watchlist", "publish_insight"])
+    end
+
+    test "returns all notifications when no types filter given", %{user: user} do
+      result = AppNotifications.list_notifications_for_user(user.id)
+      assert length(result) == 3
+    end
+
+    test "returns empty list when no notifications match the given types", %{user: user} do
+      result =
+        AppNotifications.list_notifications_for_user(user.id, types: ["alert_triggered"])
+
+      assert result == []
+    end
+  end
+
+  describe "list_available_notification_types_for_user/1" do
+    test "returns distinct notification types for the user" do
+      user = insert(:user)
+      author = insert(:user)
+
+      for {type, entity_id} <- [
+            {"create_watchlist", 1},
+            {"publish_insight", 2},
+            {"create_watchlist", 3}
+          ] do
+        {:ok, notification} =
+          AppNotifications.create_notification(%{
+            type: type,
+            user_id: author.id,
+            entity_type: "watchlist",
+            entity_id: entity_id
+          })
+
+        {:ok, _} =
+          AppNotifications.create_notification_read_status(%{
+            notification_id: notification.id,
+            user_id: user.id
+          })
+      end
+
+      types = AppNotifications.list_available_notification_types_for_user(user.id)
+      assert Enum.sort(types) == ["create_watchlist", "publish_insight"]
+    end
+
+    test "returns empty list when user has no notifications" do
+      user = insert(:user)
+      assert AppNotifications.list_available_notification_types_for_user(user.id) == []
+    end
+
+    test "does not include types from deleted notifications" do
+      user = insert(:user)
+      author = insert(:user)
+
+      {:ok, notification} =
+        AppNotifications.create_notification(%{
+          type: "create_watchlist",
+          user_id: author.id,
+          entity_type: "watchlist",
+          entity_id: 1,
+          is_deleted: true
+        })
+
+      {:ok, _} =
+        AppNotifications.create_notification_read_status(%{
+          notification_id: notification.id,
+          user_id: user.id
+        })
+
+      assert AppNotifications.list_available_notification_types_for_user(user.id) == []
+    end
+  end
+
   describe "get_notification_for_user/2" do
     setup do
       follower = insert(:user)

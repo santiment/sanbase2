@@ -24,6 +24,7 @@ defmodule SanbaseWeb.Graphql.Schema.AppNotificationQueries do
 
       arg(:limit, :integer, default_value: 20)
       arg(:cursor, :cursor_input)
+      arg(:types, list_of(:string))
 
       middleware(JWTAuth)
       resolve(&AppNotificationResolver.get_notifications/3)

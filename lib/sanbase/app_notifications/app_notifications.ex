@@ -104,6 +104,7 @@ defmodule Sanbase.AppNotifications do
   def list_notifications_for_user(user_id, opts \\ []) when is_integer(user_id) do
     limit = Keyword.get(opts, :limit, @default_limit)
     cursor = Keyword.get(opts, :cursor)
+    types = Keyword.get(opts, :types)
 
     from(nrs in NotificationReadStatus,
       join: n in Notification,
@@ -118,12 +119,29 @@ defmodule Sanbase.AppNotifications do
       limit: ^limit
     )
     |> maybe_apply_cursor(cursor)
+    |> maybe_filter_by_types(types)
     |> Repo.all()
     # Two-phase load to preload the user and their roles.
     # We select from NotificationReadStatus, but preload the user from Notification
     # Ecto is not happy if you don't select the binding from `from` when there's
     # a preload
     |> Repo.preload(user: [:roles, roles: :role])
+  end
+
+  @doc """
+  Returns all distinct notification types that exist for the given user.
+  Useful for building filter UIs that show only types the user actually has.
+  """
+  @spec list_available_notification_types_for_user(pos_integer()) :: [String.t()]
+  def list_available_notification_types_for_user(user_id) when is_integer(user_id) do
+    from(nrs in NotificationReadStatus,
+      join: n in Notification,
+      on: n.id == nrs.notification_id and n.is_deleted == false,
+      where: nrs.user_id == ^user_id,
+      select: n.type,
+      distinct: true
+    )
+    |> Repo.all()
   end
 
   @doc """
@@ -224,6 +242,13 @@ defmodule Sanbase.AppNotifications do
   defp maybe_apply_cursor(query, %{type: :after, datetime: datetime}) do
     query
     |> where([_notification_read_status, notification], notification.inserted_at > ^datetime)
+  end
+
+  defp maybe_filter_by_types(query, nil), do: query
+  defp maybe_filter_by_types(query, []), do: query
+
+  defp maybe_filter_by_types(query, types) when is_list(types) do
+    where(query, [_notification_read_status, notification], notification.type in ^types)
   end
 
   defp fetch_notification_for_user(user_id, notification_id) do

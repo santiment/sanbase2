@@ -7,9 +7,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.AppNotificationResolver do
   def get_notifications(_root, args, %{context: %{auth: %{current_user: user}}}) do
     opts = build_opts(args)
 
-    user.id
-    |> AppNotifications.list_notifications_for_user(opts)
-    |> AppNotifications.wrap_with_cursor()
+    with {:ok, paginated} <-
+           user.id
+           |> AppNotifications.list_notifications_for_user(opts)
+           |> AppNotifications.wrap_with_cursor() do
+      available_types = AppNotifications.list_available_notification_types_for_user(user.id)
+      {:ok, Map.put(paginated, :available_notification_types, available_types)}
+    end
   end
 
   @doc """
@@ -35,9 +39,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.AppNotificationResolver do
   defp build_opts(args) do
     opts = [limit: Map.get(args, :limit, 20)]
 
-    case Map.get(args, :cursor) do
+    opts =
+      case Map.get(args, :cursor) do
+        nil -> opts
+        cursor -> Keyword.put(opts, :cursor, cursor)
+      end
+
+    case Map.get(args, :types) do
       nil -> opts
-      cursor -> Keyword.put(opts, :cursor, cursor)
+      [] -> opts
+      types -> Keyword.put(opts, :types, types)
     end
   end
 end

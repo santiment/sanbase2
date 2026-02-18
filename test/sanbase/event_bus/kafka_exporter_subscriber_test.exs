@@ -6,6 +6,16 @@ defmodule Sanbase.EventBus.KafkaExporterSubscriberTest do
   setup :set_mox_from_context
   setup :verify_on_exit!
 
+  setup_all do
+    subscriber = Sanbase.EventBus.KafkaExporterSubscriber
+    Sanbase.EventBus.subscribe_subscriber(subscriber)
+
+    on_exit(fn ->
+      Sanbase.EventBus.drain_topics(subscriber.topics(), 10_000)
+      Sanbase.EventBus.unsubscribe_subscriber(subscriber)
+    end)
+  end
+
   test "check kafka message format" do
     # NOTE: This test is consistently failing for unknown reasons. Remove it for
     # now to unblock the other PRs and it will be revised later

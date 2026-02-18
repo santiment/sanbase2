@@ -55,11 +55,22 @@ defmodule Sanbase.EventBus do
     __MODULE__.AppNotificationsSubscriber
   ]
 
+  @extra_subscribers Application.compile_env(
+                       :sanbase,
+                       [Sanbase.EventBus, :extra_subscribers],
+                       []
+                     )
+
   @disabled_subscribers Application.compile_env(
                           :sanbase,
                           [Sanbase.EventBus, :disabled_subscribers],
                           []
                         )
+
+  # Add the extra to the main @subscribers so they can be started at launch.
+  # All subscribers are started at launch, but the disabled ones are not
+  # registered
+  @subscribers @subscribers ++ @extra_subscribers
 
   @register_at_start_subscribers @subscribers -- @disabled_subscribers
 

@@ -9,7 +9,11 @@ config :sanbase,
   available_slugs_module: Sanbase.DirectAvailableSlugs
 
 config :sanbase, Sanbase.EventBus,
+  extra_subscribers: [
+    Sanbase.EventBus.NoopSubscriber
+  ],
   disabled_subscribers: [
+    Sanbase.EventBus.KafkaExporterSubscriber,
     Sanbase.EventBus.AppNotificationsSubscriber,
     Sanbase.EventBus.UserEventsSubscriber
   ]

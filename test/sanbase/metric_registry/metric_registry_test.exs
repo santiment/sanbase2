@@ -1,5 +1,5 @@
 defmodule Sanbase.MetricRegistyTest do
-  use Sanbase.DataCase
+  use Sanbase.DataCase, async: false
   import ExUnit.CaptureLog
 
   setup_all do

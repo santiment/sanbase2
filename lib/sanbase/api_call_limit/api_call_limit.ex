@@ -138,7 +138,16 @@ defmodule Sanbase.ApiCallLimit do
   def reset(%User{} = user) do
     if struct = Repo.get_by(__MODULE__, user_id: user.id), do: Repo.delete!(struct)
 
-    create(:user, user)
+    result = create(:user, user)
+
+    case result do
+      {:ok, _acl} ->
+        __MODULE__.ETS.clear_data(:user, user)
+        result
+
+      _ ->
+        result
+    end
   end
 
   # Private functions

@@ -650,19 +650,21 @@ defmodule SanbaseWeb.ApiCallLimitTest do
 
       # This works if the number of api calls is less than
       #      quota_size + quota_size_max_offset
-      for _ <- 1..12, do: make_api_call(context.apikey_conn, [])
+      for _ <- 1..30, do: make_api_call(context.apikey_conn, [])
 
       {:ok, quota2} = Sanbase.ApiCallLimit.get_quota_db(:user, context.user)
 
       assert quota2.api_calls_remaining.month < quota.api_calls_remaining.month
 
-      Process.sleep(250)
+      Process.sleep(50)
 
       result =
         self_reset_api_calls(context.apikey_conn)
         |> get_in(["data", "selfResetApiRateLimits"])
 
       assert result["id"] |> String.to_integer() == context.user.id
+
+      Process.sleep(50)
 
       {:ok, quota3} = Sanbase.ApiCallLimit.get_quota_db(:user, context.user)
 

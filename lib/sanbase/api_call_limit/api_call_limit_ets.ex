@@ -157,15 +157,22 @@ defmodule Sanbase.ApiCallLimit.ETS do
 
     case :ets.lookup(@ets_table, entity_key) do
       [] ->
-        update_usage_get_quota_from_db_and_update_ets(
-          entity_type,
-          entity,
-          entity_key,
-          count,
-          result_byte_size
-        )
+        # ETS has no entry (cold start or after ETS was cleared). Refresh from DB and
+        # apply only this request's usage in ETS; do not write to the DB. Writing to the
+        # DB here would let a late or out-of-order update overwrite the authoritative DB
+        # state (e.g. after a reset). The DB is updated only when the in-memory quota is
+        # exhausted and we flush via update_usage_get_quota_from_db_and_update_ets.
+        case get_quota_from_db_and_update_ets(entity_type, entity, entity_key) do
+          {:ok, %{quota: :infinity}} ->
+            :ok
 
-        :ok
+          {:ok, %{quota: quota} = metadata} ->
+            do_upate_ets_usage(entity_key, quota, count, result_byte_size, metadata)
+            :ok
+
+          {:error, _} ->
+            :ok
+        end
 
       [
         {^entity_key, _quota = :infinity, _api_calls_remaining = :infinity, _result_size,

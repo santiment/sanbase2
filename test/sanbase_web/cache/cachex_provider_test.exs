@@ -43,8 +43,7 @@ defmodule SanbaseWeb.Graphql.CachexProviderTest do
 
     for _ <- 1..10, do: spawn(get_or_store_fun)
 
-    Process.sleep(1050)
-    assert_receive("message from precalculation")
+    assert_receive("message from precalculation", 5000)
     refute_receive("message from precalculation")
   end
 

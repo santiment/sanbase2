@@ -241,6 +241,76 @@ defmodule SanbaseWeb.Graphql.AppNotificationApiTest do
              )
     end
 
+    test "returns per-type unread counts in stats, optionally filtered by cursor", %{
+      conn: conn,
+      follower: follower,
+      author: author
+    } do
+      watchlists = for i <- 1..3, do: insert(:watchlist, user: author, name: "Watchlist #{i}")
+
+      notifications =
+        for {watchlist, i} <- Enum.with_index(watchlists, 1) do
+          {:ok, notification} =
+            AppNotifications.create_notification(%{
+              type: if(i == 1, do: "create_watchlist", else: "update_watchlist"),
+              user_id: author.id,
+              entity_type: "watchlist",
+              entity_name: watchlist.name,
+              entity_id: watchlist.id
+            })
+
+          notification =
+            Ecto.Changeset.change(notification,
+              inserted_at:
+                DateTime.add(DateTime.utc_now(), -i * 60, :second) |> DateTime.truncate(:second)
+            )
+            |> Sanbase.Repo.update!()
+
+          {:ok, _} =
+            AppNotifications.create_notification_read_status(%{
+              notification_id: notification.id,
+              user_id: follower.id
+            })
+
+          notification
+        end
+
+      # Mark the create_watchlist notification (index 0, most recent) as read
+      AppNotifications.set_read_status(follower.id, hd(notifications).id, true)
+
+      # No cursor: all 3 notifications counted
+      # create_watchlist: 0 unread (1 read), update_watchlist: 2 unread
+      query = """
+      {
+        getCurrentUserNotifications {
+          stats { type unreadCount }
+        }
+      }
+      """
+
+      result = execute_query(conn, query, "getCurrentUserNotifications")
+      stats = result["stats"] |> Map.new(&{&1["type"], &1["unreadCount"]})
+      assert stats["create_watchlist"] == 0
+      assert stats["update_watchlist"] == 2
+
+      # Cursor BEFORE the second notification (index 1, second most recent update_watchlist):
+      # only the oldest notification (index 2, update_watchlist, unread) is counted
+      cursor_dt = Enum.at(notifications, 1).inserted_at |> DateTime.to_iso8601()
+
+      query_with_cursor = """
+      {
+        getCurrentUserNotifications(cursor: {type: BEFORE, datetime: "#{cursor_dt}"}) {
+          stats { type unreadCount }
+        }
+      }
+      """
+
+      result = execute_query(conn, query_with_cursor, "getCurrentUserNotifications")
+      stats = result["stats"] |> Map.new(&{&1["type"], &1["unreadCount"]})
+      assert stats["update_watchlist"] == 1
+      refute Map.has_key?(stats, "create_watchlist")
+    end
+
     test "requires authentication" do
       conn = build_conn()
 

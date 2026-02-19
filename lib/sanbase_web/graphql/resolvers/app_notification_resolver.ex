@@ -12,7 +12,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.AppNotificationResolver do
            |> AppNotifications.list_notifications_for_user(opts)
            |> AppNotifications.wrap_with_cursor() do
       available_types = AppNotifications.list_available_notification_types_for_user(user.id)
-      {:ok, Map.put(paginated, :available_notification_types, available_types)}
+      stats = AppNotifications.get_notifications_stats(user.id, opts)
+
+      {:ok,
+       paginated
+       |> Map.put(:available_notification_types, available_types)
+       |> Map.put(:stats, stats)}
     end
   end
 

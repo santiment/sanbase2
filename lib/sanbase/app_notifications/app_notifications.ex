@@ -192,6 +192,35 @@ defmodule Sanbase.AppNotifications do
   end
 
   @doc """
+  Returns unread notification counts per type for the given user.
+
+  Optionally filters by cursor (same semantics as `list_notifications_for_user/2`).
+  Returns one entry per type that the user has, with the count of unread notifications
+  of that type.
+  """
+  @spec get_notifications_stats(pos_integer(), keyword()) :: [
+          %{type: String.t(), unread_count: non_neg_integer()}
+        ]
+  def get_notifications_stats(user_id, opts \\ []) when is_integer(user_id) do
+    cursor = Keyword.get(opts, :cursor)
+
+    from(nrs in NotificationReadStatus,
+      join: n in Notification,
+      on: nrs.notification_id == n.id and nrs.user_id == ^user_id,
+      where: n.is_deleted == false,
+      group_by: n.type,
+      select: %{
+        type: n.type,
+        # This allows us to show `0` instead of no results for types that the user has,
+        # but has read all notifications of that type
+        unread_count: fragment("COUNT(*) FILTER (WHERE ? IS NULL)", nrs.read_at)
+      }
+    )
+    |> maybe_apply_cursor(cursor)
+    |> Repo.all()
+  end
+
+  @doc """
   Wraps a list of notifications with cursor information for pagination.
   """
   @spec wrap_with_cursor([Notification.t()]) :: {:ok, map()}

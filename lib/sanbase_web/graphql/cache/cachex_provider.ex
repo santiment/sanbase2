@@ -89,10 +89,11 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
             {:ignore, error}
 
           {:nocache, value} ->
+            Process.put(:do_not_cache_query, true)
             {:ignore, {:nocache, value}}
 
-          {:middleware, _, _} = tuple ->
-            {:ignore, {:middleware, cache_modify_middleware.(cache, key, tuple)}}
+          {:middleware, _middleware_module, _args} = tuple ->
+            {:ignore, cache_modify_middleware.(cache, key, tuple)}
         end
       end)
 
@@ -106,14 +107,17 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
         decompress_value(compressed)
 
       {:ignore, {:nocache, value}} ->
-        Process.put(:has_nocache_field, true)
+        IO.inspect("HERELKASJDLKASJDLASJD")
+        Process.put(:do_not_cache_query, true)
         value
 
-      {:ignore, {:middleware, value}} ->
+      {:nocache, value} ->
+        IO.inspect("HERELKASJDLKASJDLASJD =2222")
+        Process.put(:do_not_cache_query, true)
         value
 
-      {:ignore, {:error, _} = error} ->
-        error
+      {:ignore, value} ->
+        value
 
       {:error, _} = error ->
         error

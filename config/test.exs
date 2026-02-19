@@ -16,6 +16,7 @@ config :sanbase, Sanbase.EventBus,
     Sanbase.EventBus.KafkaExporterSubscriber,
     Sanbase.EventBus.BillingEventSubscriber,
     Sanbase.EventBus.MetricRegistrySubscriber,
+    Sanbase.EventBus.NotificationsSubscriber,
     Sanbase.EventBus.AppNotificationsSubscriber,
     Sanbase.EventBus.UserEventsSubscriber
   ]

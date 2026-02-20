@@ -62,7 +62,7 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
         :ok
 
       {:nocache, _} ->
-        Process.put(:has_nocache_field, true)
+        Process.put(:do_not_cache_query, true)
         :ok
 
       _ ->
@@ -102,25 +102,23 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
       {:ok, compressed} when is_binary(compressed) ->
         decompress_value(compressed)
 
+      {:nocache, value} ->
+        Process.put(:do_not_cache_query, true)
+        value
+
+      {:error, _} = error ->
+        error
+
       # The first caller that ran the fallback and committed the value
       {:commit, compressed} ->
         decompress_value(compressed)
 
       {:ignore, {:nocache, value}} ->
-        IO.inspect("HERELKASJDLKASJDLASJD")
-        Process.put(:do_not_cache_query, true)
-        value
-
-      {:nocache, value} ->
-        IO.inspect("HERELKASJDLKASJDLASJD =2222")
         Process.put(:do_not_cache_query, true)
         value
 
       {:ignore, value} ->
         value
-
-      {:error, _} = error ->
-        error
     end
   end
 

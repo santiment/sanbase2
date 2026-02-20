@@ -46,10 +46,10 @@ defmodule SanbaseWeb.Graphql.CachexProviderTest do
     assert nil == CacheProvider.get(@cache_name, "error_key")
   end
 
-  test "store does not cache nocache values and sets :has_nocache_field in the caller" do
-    CacheProvider.store(@cache_name, "nocache_key", {:nocache, "ignored"})
+  test "store does not cache nocache values and sets :do_not_cache_query in the caller" do
+    CacheProvider.store(@cache_name, "nocache_key", {:nocache, {:ok, "ignored"}})
     assert nil == CacheProvider.get(@cache_name, "nocache_key")
-    assert true == Process.get(:has_nocache_field)
+    assert true == Process.get(:do_not_cache_query)
   end
 
   test "complex Elixir terms survive the gzip + term_to_binary round-trip" do
@@ -105,17 +105,17 @@ defmodule SanbaseWeb.Graphql.CachexProviderTest do
     assert nil == CacheProvider.get(@cache_name, "err_key")
   end
 
-  test "get_or_store returns the raw value for nocache and does not cache it" do
+  test "get_or_store returns {:ok, value} for nocache and does not cache it" do
     result =
-      CacheProvider.get_or_store(@cache_name, "nc_key", fn -> {:nocache, "raw"} end, & &1)
+      CacheProvider.get_or_store(@cache_name, "nc_key", fn -> {:nocache, {:ok, "raw"}} end, & &1)
 
-    assert "raw" == result
+    assert {:ok, "raw"} == result
     assert nil == CacheProvider.get(@cache_name, "nc_key")
   end
 
-  test "get_or_store nocache sets :has_nocache_field in the calling process" do
-    CacheProvider.get_or_store(@cache_name, "nc_flag", fn -> {:nocache, "v"} end, & &1)
-    assert true == Process.get(:has_nocache_field)
+  test "get_or_store nocache sets :do_not_cache_query in the calling process" do
+    CacheProvider.get_or_store(@cache_name, "nc_flag", fn -> {:nocache, {:ok, "v"}} end, & &1)
+    assert true == Process.get(:do_not_cache_query)
   end
 
   test "get_or_store middleware tuple calls the second function and does not cache" do
@@ -377,7 +377,7 @@ defmodule SanbaseWeb.Graphql.CachexProviderTest do
   # get_or_store/4 — concurrent: nocache path
   # ---------------------------------------------------------------------------
 
-  test "when the computation returns nocache, all concurrent callers get the value but nothing is cached" do
+  test "when the computation returns nocache, all concurrent callers get {:ok, value} but nothing is cached" do
     test_pid = self()
     n = 5
 
@@ -390,7 +390,7 @@ defmodule SanbaseWeb.Graphql.CachexProviderTest do
             fn ->
               Process.sleep(100)
               send(test_pid, :computed)
-              {:nocache, "ephemeral"}
+              {:nocache, {:ok, "ephemeral"}}
             end,
             & &1
           )
@@ -408,7 +408,7 @@ defmodule SanbaseWeb.Graphql.CachexProviderTest do
         result
       end)
 
-    assert Enum.all?(results, &(&1 == "ephemeral"))
+    assert Enum.all?(results, &(&1 == {:ok, "ephemeral"}))
     assert nil == CacheProvider.get(@cache_name, :concurrent_nocache_key)
   end
 
@@ -423,7 +423,7 @@ defmodule SanbaseWeb.Graphql.CachexProviderTest do
           :retry_after_nocache_key,
           fn ->
             Process.sleep(100)
-            {:nocache, "skip me"}
+            {:nocache, {:ok, "skip me"}}
           end,
           & &1
         )

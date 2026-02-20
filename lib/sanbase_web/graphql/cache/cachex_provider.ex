@@ -94,24 +94,22 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
 
           {:middleware, _middleware_module, _args} = tuple ->
             {:ignore, cache_modify_middleware.(cache, key, tuple)}
+            |> dbg()
         end
       end)
 
     case result do
-      # Cache hit, or a subsequent caller that waited for the first computation
+      {:commit, compressed} when is_binary(compressed) ->
+        decompress_value(compressed)
+
       {:ok, compressed} when is_binary(compressed) ->
         decompress_value(compressed)
 
-      {:nocache, value} ->
-        Process.put(:do_not_cache_query, true)
-        value
+      {:error, %Cachex.Error{message: message}} ->
+        {:error, message}
 
       {:error, _} = error ->
         error
-
-      # The first caller that ran the fallback and committed the value
-      {:commit, compressed} ->
-        decompress_value(compressed)
 
       {:ignore, {:nocache, value}} ->
         Process.put(:do_not_cache_query, true)

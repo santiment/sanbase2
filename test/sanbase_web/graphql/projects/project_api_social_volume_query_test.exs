@@ -31,6 +31,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiSocialVolumeQueryTest do
     p2 = insert(:random_erc20_project)
     insert(:social_volume_query, %{project: p1, query: "something"})
     insert(:social_volume_query, %{project: p2, query: "something else"})
+
     result = execute_query(conn, all_projects_social_volume_query(), "allProjects")
 
     expected_result = [

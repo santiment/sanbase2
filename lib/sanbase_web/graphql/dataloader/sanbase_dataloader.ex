@@ -74,11 +74,16 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
   ]
 
   @postgres_dataloader [
+    :contract_addresses,
     :current_user_address_details,
+    :eth_addresses,
     :infrastructure,
     :insights_count_per_user,
     :market_segment,
+    :market_segments,
     :project_by_slug,
+    :social_volume_query,
+    :source_slug_mappings,
     :traded_on_exchanges_count,
     :traded_on_exchanges,
     # Users

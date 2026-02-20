@@ -1,6 +1,5 @@
 defmodule SanbaseWeb.Graphql.CachexProvider do
   @behaviour SanbaseWeb.Graphql.CacheProvider
-  @default_ttl_seconds 300
 
   import Cachex.Spec
 
@@ -14,13 +13,43 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
     Supervisor.child_spec({Cachex, opts(opts)}, id: Keyword.fetch!(opts, :id))
   end
 
+  @default_max_entries 2_000_000
+  @default_reclaim_ratio 0.3
+  @default_limit_check_interval_ms 5000
+  @default_ttl_seconds 300
+  @default_expiration_interval_seconds 10
+
   defp opts(opts) do
+    max_entries = Keyword.get(opts, :max_entries, @default_max_entries)
+    reclaim = Keyword.get(opts, :reclaim, @default_reclaim_ratio)
+
+    limit_interval_ms =
+      Keyword.get(opts, :limit_check_interval_ms, @default_limit_check_interval_ms)
+
+    default_ttl = Keyword.get(opts, :default_ttl_seconds, @default_ttl_seconds)
+
+    expiration_interval =
+      Keyword.get(opts, :expiration_interval_seconds, @default_expiration_interval_seconds)
+
+    ensure_opts_ets()
+    :ets.insert(:sanbase_graphql_cachex_opts, {Keyword.fetch!(opts, :name), default_ttl})
+
     [
       name: Keyword.fetch!(opts, :name),
+      hooks: [
+        hook(
+          module: Cachex.Limit.Scheduled,
+          args: {
+            max_entries,
+            [reclaim: reclaim],
+            [frequency: limit_interval_ms]
+          }
+        )
+      ],
       expiration:
         expiration(
-          default: :timer.seconds(@default_ttl_seconds),
-          interval: :timer.seconds(10),
+          default: :timer.seconds(default_ttl),
+          interval: :timer.seconds(expiration_interval),
           lazy: true
         )
     ]
@@ -73,7 +102,7 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
   @impl SanbaseWeb.Graphql.CacheProvider
   def get_or_store(cache, key, func, cache_modify_middleware) do
     true_key = true_key(key)
-    ttl = ttl_ms(key)
+    ttl = ttl_ms(cache, key)
 
     result =
       Cachex.fetch(cache, true_key, fn ->
@@ -115,15 +144,41 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
     end
   end
 
-  defp ttl_ms({_key, ttl}) when is_integer(ttl), do: :timer.seconds(ttl)
-  defp ttl_ms(_key), do: :timer.seconds(@default_ttl_seconds)
+  defp ttl_ms(_cache, {_key, ttl}) when is_integer(ttl), do: :timer.seconds(ttl)
+  defp ttl_ms(cache, _key), do: :timer.seconds(default_ttl_seconds(cache))
 
   defp cache_item(cache, {key, ttl}, value) when is_integer(ttl) do
     Cachex.put(cache, key, compress_value(value), expire: :timer.seconds(ttl))
   end
 
   defp cache_item(cache, key, value) do
-    Cachex.put(cache, key, compress_value(value), expire: :timer.seconds(@default_ttl_seconds))
+    Cachex.put(cache, key, compress_value(value),
+      expire: :timer.seconds(default_ttl_seconds(cache))
+    )
+  end
+
+  defp default_ttl_seconds(cache) do
+    case :ets.lookup(:sanbase_graphql_cachex_opts, cache) do
+      [{^cache, ttl}] -> ttl
+      [] -> @default_ttl_seconds
+    end
+  end
+
+  defp ensure_opts_ets() do
+    case :ets.whereis(:sanbase_graphql_cachex_opts) do
+      :undefined ->
+        try do
+          :ets.new(:sanbase_graphql_cachex_opts, [:named_table, :public, :set])
+        catch
+          :error, {:badarg, _} -> :ok
+          :error, %ArgumentError{} -> :ok
+        end
+
+      _ ->
+        :ok
+    end
+
+    :ok
   end
 
   defp true_key({key, ttl}) when is_integer(ttl), do: key

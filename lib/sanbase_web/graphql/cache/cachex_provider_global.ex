@@ -1,6 +1,7 @@
-defmodule SanbaseWeb.Graphql.CachexProvider do
+defmodule SanbaseWeb.Graphql.CachexProviderGlobal do
   @behaviour SanbaseWeb.Graphql.CacheProvider
   @default_ttl_seconds 300
+  @global_lock_nodes [node()]
 
   import Cachex.Spec
 
@@ -73,50 +74,59 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
   @impl SanbaseWeb.Graphql.CacheProvider
   def get_or_store(cache, key, func, cache_modify_middleware) do
     true_key = true_key(key)
-    ttl = ttl_ms(key)
+    # The self() is the LockRequesterId, the resource is uniquely
+    # identified by the first element of the tuple. Using the pid
+    # here DOES NOT make it so different callers execute the function
+    # at the same time.
+    lock_key = {{cache, true_key}, self()}
 
+    case Cachex.get(cache, true_key) do
+      {:ok, compressed_value} when is_binary(compressed_value) ->
+        decompress_value(compressed_value)
+
+      _ ->
+        :global.trans(
+          lock_key,
+          fn ->
+            case Cachex.get(cache, true_key) do
+              {:ok, compressed_value} when is_binary(compressed_value) ->
+                decompress_value(compressed_value)
+
+              _ ->
+                execute_cache_miss(cache, key, func, cache_modify_middleware)
+            end
+          end,
+          @global_lock_nodes
+        )
+    end
+  end
+
+  defp execute_cache_miss(cache, key, func, cache_modify_middleware) do
     result =
-      Cachex.fetch(cache, true_key, fn ->
-        case func.() do
-          {:ok, _} = ok_tuple ->
-            {:commit, compress_value(ok_tuple), [expire: ttl]}
-
-          {:error, _} = error ->
-            {:ignore, error}
-
-          {:nocache, value} ->
-            Process.put(:do_not_cache_query, true)
-            {:ignore, {:nocache, value}}
-
-          {:middleware, _middleware_module, _args} = tuple ->
-            {:ignore, cache_modify_middleware.(cache, key, tuple)}
-        end
-      end)
+      try do
+        func.()
+      rescue
+        e -> {:error, Exception.message(e)}
+      catch
+        kind, reason -> {:error, "#{kind}: #{inspect(reason)}"}
+      end
 
     case result do
-      {:commit, compressed} when is_binary(compressed) ->
-        decompress_value(compressed)
-
-      {:ok, compressed} when is_binary(compressed) ->
-        decompress_value(compressed)
-
-      {:error, %Cachex.Error{message: message}} ->
-        {:error, message}
+      {:ok, _} = ok_tuple ->
+        cache_item(cache, key, ok_tuple)
+        ok_tuple
 
       {:error, _} = error ->
         error
 
-      {:ignore, {:nocache, value}} ->
+      {:nocache, value} ->
         Process.put(:do_not_cache_query, true)
         value
 
-      {:ignore, value} ->
-        value
+      {:middleware, _middleware_module, _args} = tuple ->
+        cache_modify_middleware.(cache, key, tuple)
     end
   end
-
-  defp ttl_ms({_key, ttl}) when is_integer(ttl), do: :timer.seconds(ttl)
-  defp ttl_ms(_key), do: :timer.seconds(@default_ttl_seconds)
 
   defp cache_item(cache, {key, ttl}, value) when is_integer(ttl) do
     Cachex.put(cache, key, compress_value(value), expire: :timer.seconds(ttl))

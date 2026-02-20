@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
 
-  @moduletag skip: true
+  # @moduletag skip: true
   @moduletag capture_log: true
 
   setup_all do

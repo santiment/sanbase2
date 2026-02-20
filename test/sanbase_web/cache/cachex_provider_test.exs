@@ -517,4 +517,63 @@ defmodule SanbaseWeb.Graphql.CachexProviderTest do
     assert_receive :retried, 5000
     assert {:ok, "success after crash"} == result
   end
+
+  # ---------------------------------------------------------------------------
+  # configuration: default_ttl_seconds, reclaim, max_entries, limit_check_interval_ms
+  # ---------------------------------------------------------------------------
+
+  describe "configuration" do
+    test "uses custom default_ttl_seconds when provided and entry expires after TTL" do
+      name = :cachex_config_ttl_test
+      id = :cachex_config_ttl_id
+
+      {:ok, pid} =
+        CacheProvider.start_link(
+          name: name,
+          id: id,
+          default_ttl_seconds: 1
+        )
+
+      on_exit(fn -> Process.exit(pid, :normal) end)
+
+      CacheProvider.store(name, "expiring_key", {:ok, "v"})
+      assert {:ok, "v"} == CacheProvider.get(name, "expiring_key")
+
+      Process.sleep(2_000)
+      assert nil == CacheProvider.get(name, "expiring_key")
+    end
+
+    test "uses custom reclaim when provided and limit hook prunes to max_entries minus reclaim" do
+      name = :cachex_config_reclaim_test
+      id = :cachex_config_reclaim_id
+
+      {:ok, pid} =
+        CacheProvider.start_link(
+          name: name,
+          id: id,
+          max_entries: 5,
+          reclaim: 0.4,
+          limit_check_interval_ms: 100
+        )
+
+      on_exit(fn -> Process.exit(pid, :normal) end)
+
+      for i <- 1..15 do
+        CacheProvider.store(name, "key_#{i}", {:ok, i})
+      end
+
+      Process.sleep(250)
+
+      count = CacheProvider.count(name)
+      expected_after_reclaim = 5 - round(5 * 0.4)
+
+      assert count == expected_after_reclaim,
+             "expected count #{expected_after_reclaim} after reclaim 0.4, got #{count}"
+    end
+
+    test "uses defaults when no config params are provided" do
+      CacheProvider.store(@cache_name, "default_ttl_key", {:ok, "v"})
+      assert {:ok, "v"} == CacheProvider.get(@cache_name, "default_ttl_key")
+    end
+  end
 end

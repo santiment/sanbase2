@@ -115,7 +115,9 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
             {:ignore, error}
 
           {:nocache, value} ->
-            Process.put(:do_not_cache_query, true)
+            # Do not put the :do_not_cache_query flag here as is
+            # is executed inside a Courier process. Set it afterwards
+            # when handling the result
             {:ignore, {:nocache, value}}
 
           {:middleware, _middleware_module, _args} = tuple ->
@@ -132,11 +134,13 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
 
       {:error, error} ->
         # Transforms like :no_cache -> "Specified cache not running"
-        # Custom string errors are passed as they are
-        {:error, Cachex.Error.long_form(error)}
+        error_msg = if is_atom(error), do: Cachex.Error.long_form(error), else: error
+        {:error, error_msg}
 
       {:ignore, {:error, error}} ->
-        {:error, Cachex.Error.long_form(error)}
+        # Transforms like :no_cache -> "Specified cache not running"
+        error_msg = if is_atom(error), do: Cachex.Error.long_form(error), else: error
+        {:error, error_msg}
 
       {:ignore, {:nocache, value}} ->
         Process.put(:do_not_cache_query, true)

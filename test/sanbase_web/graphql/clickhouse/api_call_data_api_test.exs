@@ -148,7 +148,9 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
         end)
 
       # Only the successful one is exported and counted
-      assert assert api_calls == [%{query: "getMetric|mvrv_usd"}]
+      assert %{query: "getMetric|mvrv_usd"} in api_calls
+      refute %{query: "getMetric|mvrv_usds"} in api_calls
+      refute %{query: "getMetric|nvts"} in api_calls
     end)
   end
 

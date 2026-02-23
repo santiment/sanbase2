@@ -2,6 +2,7 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
   @behaviour SanbaseWeb.Graphql.CacheProvider
 
   import Cachex.Spec
+  require Logger
 
   @impl SanbaseWeb.Graphql.CacheProvider
   def start_link(opts) do
@@ -129,11 +130,13 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
       {:ok, compressed} when is_binary(compressed) ->
         decompress_value(compressed)
 
-      {:error, %Cachex.Error{message: message}} ->
-        {:error, message}
+      {:error, error} ->
+        # Transforms like :no_cache -> "Specified cache not running"
+        # Custom string errors are passed as they are
+        {:error, Cachex.Error.long_form(error)}
 
-      {:error, _} = error ->
-        error
+      {:ignore, {:error, error}} ->
+        {:error, Cachex.Error.long_form(error)}
 
       {:ignore, {:nocache, value}} ->
         Process.put(:do_not_cache_query, true)
@@ -162,6 +165,13 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
       [{^cache, ttl}] -> ttl
       [] -> @default_ttl_seconds
     end
+  rescue
+    _ ->
+      Logger.error(
+        "CachexProvider: Could not get default TTL from ETS for cache #{cache}, using default #{@default_ttl_seconds}"
+      )
+
+      @default_ttl_seconds
   end
 
   defp ensure_opts_ets() do
@@ -171,6 +181,7 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
           :ets.new(:sanbase_graphql_cachex_opts, [:named_table, :public, :set])
         catch
           :error, {:badarg, _} -> :ok
+          :error, :badarg -> :ok
           :error, %ArgumentError{} -> :ok
         end
 

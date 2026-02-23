@@ -1,7 +1,6 @@
 defmodule SanbaseWeb.Graphql.CachexProviderGlobal do
   @behaviour SanbaseWeb.Graphql.CacheProvider
   @default_ttl_seconds 300
-  @global_lock_nodes [node()]
 
   import Cachex.Spec
 
@@ -96,7 +95,7 @@ defmodule SanbaseWeb.Graphql.CachexProviderGlobal do
                 execute_cache_miss(cache, key, func, cache_modify_middleware)
             end
           end,
-          @global_lock_nodes
+          [node()]
         )
     end
   end

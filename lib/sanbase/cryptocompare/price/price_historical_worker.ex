@@ -137,9 +137,17 @@ defmodule Sanbase.Cryptocompare.Price.HistoricalWorker do
                 schedule_in: reset_after_seconds
               )
 
-            Oban.insert(@oban_conf_name, data)
+            case Oban.insert(@oban_conf_name, data) do
+              {:ok, _job} ->
+                {:error, :rate_limit}
 
-            {:error, :rate_limit}
+              {:error, reason} ->
+                Logger.error(
+                  "[Cryptocompare Historical] Failed to enqueue PauseResumeWorker after rate limit: #{inspect(reason)}"
+                )
+
+                {:error, :rate_limit}
+            end
         end
 
       {:error, error} ->

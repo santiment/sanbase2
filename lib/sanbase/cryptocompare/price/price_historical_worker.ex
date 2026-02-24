@@ -19,7 +19,7 @@ defmodule Sanbase.Cryptocompare.Price.HistoricalWorker do
     max_attempts: 20,
     unique: [period: 60 * 86_400]
 
-  import Sanbase.Cryptocompare.HTTPHeaderUtils, only: [parse_value_list: 1]
+  alias Sanbase.Cryptocompare.HTTPHeaderUtils
 
   require Logger
   alias Sanbase.Utils.Config
@@ -123,57 +123,28 @@ defmodule Sanbase.Cryptocompare.Price.HistoricalWorker do
 
     case HTTPoison.get(url, headers, recv_timeout: 15_000) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body} = resp} ->
-        case rate_limited?(resp) do
-          false -> csv_to_ohlcv_list(body)
-          biggest_rate_limited_window -> handle_rate_limit(resp, biggest_rate_limited_window)
+        case HTTPHeaderUtils.rate_limited?(resp) do
+          false ->
+            csv_to_ohlcv_list(body)
+
+          {:error_limited, _} ->
+            Sanbase.Cryptocompare.Price.HistoricalScheduler.pause()
+            reset_after_seconds = HTTPHeaderUtils.get_biggest_ratelimited_window(resp)
+
+            data =
+              %{"type" => "resume"}
+              |> Sanbase.Cryptocompare.Price.PauseResumeWorker.new(
+                schedule_in: reset_after_seconds
+              )
+
+            Oban.insert(@oban_conf_name, data)
+
+            {:error, :rate_limit}
         end
 
       {:error, error} ->
         {:error, error}
     end
-  end
-
-  defp rate_limited?(resp) do
-    zero_remainings =
-      get_header(resp, "X-RateLimit-Remaining-All")
-      |> elem(1)
-      |> parse_value_list()
-      |> Enum.filter(&(&1.value == 0))
-
-    case zero_remainings do
-      [] -> false
-      list -> Enum.max_by(list, & &1.time_period).time_period
-    end
-  end
-
-  defp handle_rate_limit(resp, biggest_rate_limited_window) do
-    Sanbase.Cryptocompare.Price.HistoricalScheduler.pause()
-
-    header_value =
-      get_header(resp, "X-RateLimit-Reset-All")
-      |> elem(1)
-
-    Logger.info(
-      "[Cryptocompare Historical] Rate limited. X-RateLimit-Reset-All header: #{header_value}"
-    )
-
-    reset_after_seconds =
-      header_value
-      |> parse_value_list()
-      |> Enum.find(&(&1.time_period == biggest_rate_limited_window))
-      |> Map.get(:value)
-
-    data =
-      %{"type" => "resume"}
-      |> Sanbase.Cryptocompare.Price.PauseResumeWorker.new(schedule_in: reset_after_seconds)
-
-    Oban.insert(@oban_conf_name, data)
-
-    {:error, :rate_limit}
-  end
-
-  defp get_header(%HTTPoison.Response{} = resp, header) do
-    Enum.find(resp.headers, &match?({^header, _}, &1))
   end
 
   defp csv_to_ohlcv_list(data) do

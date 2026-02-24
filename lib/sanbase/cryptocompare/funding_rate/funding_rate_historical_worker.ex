@@ -49,7 +49,8 @@ defmodule Sanbase.Cryptocompare.FundingRate.HistoricalWorker do
       instrument: instrument,
       limit: Map.get(args, "limit", @default_limit),
       timestamp: timestamp,
-      queue: @queue
+      queue: @queue,
+      module: __MODULE__
     ]
 
     case Handler.get_data(@url, &process_json_response/1, opts) do
@@ -129,7 +130,7 @@ defmodule Sanbase.Cryptocompare.FundingRate.HistoricalWorker do
         "instrument" => args["instrument"],
         "schedule_next_job" => true,
         "timestamp" => min_timestamp,
-        "limit" => @default_limit
+        "limit" => Map.get(args, "limit", @default_limit)
       }
       |> Sanbase.Cryptocompare.FundingRate.HistoricalWorker.new()
 

@@ -65,7 +65,8 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
       timestamp: timestamp,
       queue: @queue,
       exporter_progress_key: exporter_progress_key,
-      version: version
+      version: version,
+      module: __MODULE__
     ]
 
     case Handler.get_data(@url, &process_json_response/1, opts) do

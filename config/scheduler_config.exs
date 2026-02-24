@@ -149,12 +149,6 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       schedule: "@hourly",
       task: {Sanbase.Project.Jobs, :fill_coinmarketcap_id, []}
     ],
-    move_finished_oban_jobs: [
-      timeout: :infinity,
-      # run once every 6 hours
-      schedule: "0 */6 * * *",
-      task: {Sanbase.Cryptocompare.Jobs, :move_finished_jobs, []}
-    ],
     comments_notification: [
       schedule: "0 18 * * *",
       task: {Sanbase.Comments.Notification, :notify_users, []}

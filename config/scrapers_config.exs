@@ -35,6 +35,10 @@ config :sanbase, Oban.Scrapers,
   plugins: [
     # The default values of interval: 1000, limit: 5000 cause the stager to timeout
     {Oban.Plugins.Stager, interval: 5000, limit: 200},
+    # Prune completed/discarded jobs after 60 days. This keeps completed jobs
+    # available for the unique period (60 days) used by historical workers,
+    # replacing the old finished_oban_jobs archival mechanism.
+    {Oban.Plugins.Pruner, max_age: 60 * 86_400},
     {Oban.Plugins.Cron,
      crontab: [
        {"0 3 * * *", Sanbase.Cryptocompare.AddHistoricalJobsWorker,

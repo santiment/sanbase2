@@ -81,7 +81,7 @@ defmodule Sanbase.Cryptocompare.FundingRateHistoricalWorkerTest do
       assert_enqueued(
         worker: FundingRate.HistoricalWorker,
         args: %{
-          limit: 2000,
+          limit: limit,
           market: market,
           instrument: instrument,
           schedule_next_job: true,

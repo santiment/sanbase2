@@ -71,11 +71,6 @@ defmodule Sanbase.Cryptocompare.Price.HistoricalScheduler do
     query = """
     SELECT args->>'date', inserted_at FROM oban_jobs
     WHERE args->>'base_asset' = $1 AND args->>'quote_asset' = $2 AND queue = $3
-
-    UNION ALL
-
-    SELECT args->>'date', inserted_at FROM finished_oban_jobs
-    WHERE args->>'base_asset' = $1 AND args->>'quote_asset' = $2 AND queue = $3
     """
 
     {:ok, %{rows: rows}} =

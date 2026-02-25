@@ -1,0 +1,50 @@
+# Github orgs analysis
+
+## Section
+
+```elixir
+orgs_structs =
+  Sanbase.Repo.all(Sanbase.Project.GithubOrganization) |> Sanbase.Repo.preload(:project)
+
+orgs = orgs_structs |> Enum.map(& &1.organization)
+orgs = ["caffeinepub"] ++ orgs
+
+org_to_slug =
+  Map.new(orgs_structs, fn s -> {s.organization, s.project.slug} end)
+  |> Map.put("caffeinepub", "caffeinepub")
+```
+
+```elixir
+sql = """
+SELECT
+  owner,
+  count(*) AS all,
+  countIf(actor like '%[bot]') AS bots,
+  floor(bots / all, 2) AS bot_ratio
+FROM github_v2
+WHERE owner IN ({{orgs}}) and dt >= now() - interval 7 day
+GROUP BY owner
+ORDER BY bot_ratio DESC
+"""
+
+params = %{orgs: orgs}
+
+query_struct = Sanbase.Clickhouse.Query.new(sql, params)
+```
+
+```elixir
+{:ok, result} = Sanbase.ClickhouseRepo.query_transform(query_struct, & &1)
+```
+
+```elixir
+data = Enum.filter(result, fn [_org, total, _, _] -> total > 30 end)
+|> Enum.take(150)
+  |> Enum.map(fn [owner, all, bot, ratio] ->
+    [org_to_slug[owner], owner, all, bot, ratio]
+  end)
+```
+
+```elixir
+NimbleCSV.RFC4180.dump_to_iodata(data)
+|> IO.puts()
+```

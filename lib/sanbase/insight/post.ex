@@ -70,6 +70,7 @@ defmodule Sanbase.Insight.Post do
     field(:is_pulse, :boolean, default: false)
     field(:is_paywall_required, :boolean, default: false)
     field(:prediction, :string, default: "unspecified")
+    field(:ai_description, :string)
 
     # Chart events are insights connected to specific chart configuration and datetime
     field(:is_chart_event, :boolean, default: false)
@@ -461,7 +462,8 @@ defmodule Sanbase.Insight.Post do
       :prediction,
       :price_chart_project_id,
       :is_chart_event,
-      :chart_event_datetime
+      :chart_event_datetime,
+      :ai_description
     ])
     |> Tag.put_tags(attrs)
     |> MetricPostgresData.put_metrics(attrs)

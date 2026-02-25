@@ -18,6 +18,8 @@ defmodule Sanbase.Application.Admin do
   def children() do
     # Define workers and child supervisors to be supervised
     children = [
+      # Persistent GenServer for bulk AI description generation jobs
+      Sanbase.AI.DescriptionJob,
       {Oban, oban_admin_config()},
 
       # Start the libcluster in admin, so we can send messages to the web pods when some

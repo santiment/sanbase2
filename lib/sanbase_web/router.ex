@@ -150,6 +150,13 @@ defmodule SanbaseWeb.Router do
       end
     end
 
+    scope "/ai_descriptions" do
+      live_session :ai_descriptions_authenticated_user,
+        on_mount: [{SanbaseWeb.AdminUserAuth, :ensure_authenticated}] do
+        live("/", Admin.AiDescriptionLive)
+      end
+    end
+
     scope "/tweets_prediction" do
       live_session :tweets_prediction_authenticated_user,
         on_mount: [

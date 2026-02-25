@@ -69,8 +69,8 @@ defmodule Sanbase.Cryptocompare.AddHistoricalJobsWorker do
   @impl Oban.Worker
   def timeout(_job), do: :timer.minutes(60)
 
-  @impl Worker
-  def backoff(%Job{attempt: attempt}) do
+  @impl Oban.Worker
+  def backoff(%Oban.Job{attempt: attempt}) do
     # Use a linear backoff algorithm when scheduling jobs
     # This is so all the attempts can be made on the same day without
     # waiting too much. The max_attempts is also changed to 10

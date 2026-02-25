@@ -36,7 +36,8 @@ defmodule Sanbase.Cryptocompare.Handler do
           queue: opts[:queue],
           timestamps_key: timestamps_key,
           process_function: process_json_response_function,
-          remove_known_timestamps: true
+          remove_known_timestamps: true,
+          module: opts[:module]
         )
 
       {:ok, %{status_code: 404}} ->
@@ -55,8 +56,6 @@ defmodule Sanbase.Cryptocompare.Handler do
   def get_markets_and_instruments() do
     cache_key = {__MODULE__, :get_markets_and_instruments}
     Sanbase.Cache.get_or_store({cache_key, 600}, &do_get_markets_and_instruments/0)
-
-    do_get_markets_and_instruments()
   end
 
   # Private function

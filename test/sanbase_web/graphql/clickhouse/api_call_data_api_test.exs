@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
 
-  @moduletag skip: true
+  # @moduletag skip: true
   @moduletag capture_log: true
 
   setup_all do
@@ -16,9 +16,6 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
   end
 
   setup do
-    # The test suite is not asynchronous. Wait a little before cleaning the state
-    # so all other tests finish exporting their data and we can clean it.
-    Process.sleep(100)
     Sanbase.InMemoryKafka.Producer.clear_state()
 
     user = insert(:user)
@@ -59,12 +56,9 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
       # force the sending
       Sanbase.KafkaExporter.flush(:api_call_exporter)
 
-      %{"sanbase_api_call_data" => api_calls} = Sanbase.InMemoryKafka.Producer.get_state()
-
       api_calls =
-        Enum.map(api_calls, fn {_, data} ->
-          data = Jason.decode!(data)
-
+        get_exported_api_calls(apikey)
+        |> Enum.map(fn data ->
           %{
             query: data["query"],
             selector: data["selector"],
@@ -73,9 +67,7 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
           }
         end)
 
-      # There could be some test that exported api calls data and that happens async
-      # so something could happend even after the `clear_state` is called
-      assert length(api_calls) >= 5
+      assert length(api_calls) == 5
       slug_selector = [%{slug: slug}] |> Jason.encode!()
       slugs_selector = [%{slugs: [slug, slug2]}] |> Jason.encode!()
 
@@ -119,7 +111,7 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
   end
 
   test "nothing is exported when query returns error due to argument error", context do
-    %{conn: conn, project: %{slug: slug}} = context
+    %{conn: conn, apikey: apikey, project: %{slug: slug}} = context
     %{from: from, to: to} = context
 
     Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.MetricAdapter.timeseries_data/6, {:ok, []})
@@ -138,22 +130,19 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
       # force the sending
       Sanbase.KafkaExporter.flush(:api_call_exporter)
 
-      %{"sanbase_api_call_data" => api_calls} = Sanbase.InMemoryKafka.Producer.get_state()
-
       api_calls =
-        Enum.map(api_calls, fn {_, data} ->
-          data = Jason.decode!(data)
-
-          %{query: data["query"]}
-        end)
+        get_exported_api_calls(apikey)
+        |> Enum.map(fn data -> %{query: data["query"]} end)
 
       # Only the successful one is exported and counted
-      assert assert api_calls == [%{query: "getMetric|mvrv_usd"}]
+      assert %{query: "getMetric|mvrv_usd"} in api_calls
+      refute %{query: "getMetric|mvrv_usds"} in api_calls
+      refute %{query: "getMetric|nvts"} in api_calls
     end)
   end
 
   test "nothing is exported when query returns error due to graphql error", context do
-    %{conn: conn, project: %{slug: slug}} = context
+    %{conn: conn, apikey: apikey, project: %{slug: slug}} = context
     %{from: from, to: to} = context
 
     Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.MetricAdapter.timeseries_data/6, {:ok, []})
@@ -184,22 +173,17 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
       # force the sending
       Sanbase.KafkaExporter.flush(:api_call_exporter)
 
-      %{"sanbase_api_call_data" => api_calls} = Sanbase.InMemoryKafka.Producer.get_state()
-
       api_calls =
-        Enum.map(api_calls, fn {_, data} ->
-          data = Jason.decode!(data)
-
-          %{query: data["query"]}
-        end)
+        get_exported_api_calls(apikey)
+        |> Enum.map(fn data -> %{query: data["query"]} end)
 
       # Only the successful one is exported and counted
-      assert assert api_calls == [%{query: "getMetric|mvrv_usd"}]
+      assert api_calls == [%{query: "getMetric|mvrv_usd"}]
     end)
   end
 
   test "only some queries return data - export only successful api calls", context do
-    %{conn: conn, project: %{slug: slug}} = context
+    %{conn: conn, apikey: apikey, project: %{slug: slug}} = context
     %{from: from, to: to} = context
 
     Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.MetricAdapter.timeseries_data/6, {:ok, []})
@@ -228,16 +212,11 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
       # force the sending
       Sanbase.KafkaExporter.flush(:api_call_exporter)
 
-      %{"sanbase_api_call_data" => api_calls} = Sanbase.InMemoryKafka.Producer.get_state()
-
       api_calls =
-        Enum.map(api_calls, fn {_, data} ->
-          data = Jason.decode!(data)
+        get_exported_api_calls(apikey)
+        |> Enum.map(fn data -> %{query: data["query"]} end)
 
-          %{query: data["query"]}
-        end)
-
-      # Only the successful one is exported and counted
+      # Only the successful ones are exported and counted
       assert length(api_calls) == 2
       assert %{query: "getMetric|mvrv_usd"} in api_calls
       assert %{query: "getMetric|transaction_volume"} in api_calls
@@ -245,7 +224,7 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
   end
 
   test "no queries return due to critical error in one of them -- nothing is exported", context do
-    %{conn: conn, project: %{slug: slug}} = context
+    %{conn: conn, apikey: apikey, project: %{slug: slug}} = context
     %{from: from, to: to} = context
 
     Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.MetricAdapter.timeseries_data/6, {:ok, []})
@@ -270,10 +249,22 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
       # force the sending
       Sanbase.KafkaExporter.flush(:api_call_exporter)
 
-      state = Sanbase.InMemoryKafka.Producer.get_state()
-      api_calls = Map.get(state, "sanbase_api_call_data", %{})
+      api_calls = get_exported_api_calls(apikey)
       assert Enum.empty?(api_calls)
     end)
+  end
+
+  # InMemoryKafka.Producer is a global singleton Agent shared across all tests.
+  # Other concurrent test modules can produce api_call_data messages to it.
+  # Filter by api_token to isolate this test's messages from other tests' messages.
+  defp get_exported_api_calls(apikey) do
+    api_token = apikey |> String.split("_") |> hd()
+
+    state = Sanbase.InMemoryKafka.Producer.get_state()
+
+    Map.get(state, "sanbase_api_call_data", [])
+    |> Enum.map(fn {_, data} -> Jason.decode!(data) end)
+    |> Enum.filter(fn data -> data["api_token"] == api_token end)
   end
 
   defp get_metric(conn, metric, slug, from, to, interval) do

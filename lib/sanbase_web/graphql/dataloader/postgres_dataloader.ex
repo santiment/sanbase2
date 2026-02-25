@@ -4,6 +4,9 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
   alias Sanbase.Repo
   alias Sanbase.Comment
   alias Sanbase.Model.{MarketSegment, Infrastructure}
+  alias Sanbase.Project.{ContractAddress, ProjectMarketSegment, SourceSlugMapping}
+  alias Sanbase.Project.SocialVolumeQuery
+  alias Sanbase.ProjectEthAddress
 
   def data() do
     Dataloader.KV.new(&query/2)
@@ -78,6 +81,51 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
 
     Infrastructure.by_ids(infrastructure_ids)
     |> Map.new(fn %Infrastructure{id: id, code: code} -> {id, code} end)
+  end
+
+  def query(:contract_addresses, project_ids) do
+    project_ids = Enum.to_list(project_ids)
+
+    from(ca in ContractAddress, where: ca.project_id in ^project_ids)
+    |> Repo.all()
+    |> Enum.group_by(& &1.project_id, & &1)
+  end
+
+  def query(:eth_addresses, project_ids) do
+    project_ids = Enum.to_list(project_ids)
+
+    from(pea in ProjectEthAddress, where: pea.project_id in ^project_ids, order_by: [asc: pea.id])
+    |> Repo.all()
+    |> Enum.group_by(& &1.project_id, & &1)
+  end
+
+  def query(:social_volume_query, project_ids) do
+    project_ids = Enum.to_list(project_ids)
+
+    from(svq in SocialVolumeQuery, where: svq.project_id in ^project_ids)
+    |> Repo.all()
+    |> Map.new(&{&1.project_id, &1})
+  end
+
+  def query(:source_slug_mappings, project_ids) do
+    project_ids = Enum.to_list(project_ids)
+
+    from(ssm in SourceSlugMapping, where: ssm.project_id in ^project_ids)
+    |> Repo.all()
+    |> Enum.group_by(& &1.project_id, & &1)
+  end
+
+  def query(:market_segments, project_ids) do
+    project_ids = Enum.to_list(project_ids)
+
+    from(pms in ProjectMarketSegment,
+      join: ms in MarketSegment,
+      on: ms.id == pms.market_segment_id,
+      where: pms.project_id in ^project_ids,
+      select: {pms.project_id, ms}
+    )
+    |> Repo.all()
+    |> Enum.group_by(fn {project_id, _} -> project_id end, fn {_, ms} -> ms end)
   end
 
   def query(:traded_on_exchanges, slugs_mapset) do

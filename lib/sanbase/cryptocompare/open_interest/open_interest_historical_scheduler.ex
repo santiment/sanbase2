@@ -1,14 +1,9 @@
 defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler do
   @moduledoc ~s"""
-  Scrape the prices from Cryptocompare websocket API
-  https://min-api.cryptocompare.com/documentation/websockets
+  Schedule historical open interest data scraping jobs from Cryptocompare.
 
-  Use the cryptocompare API to fetch prices aggregated across many exchanges
-  in near-realtime. For every base/quote asset pairs fetch:
-    - price
-    - volume 24h (sliding window) - in number of tokens and in the quote asset currency
-    - top tier exchanges volume 24h (sliding window) - in number of tokens and
-      in the quote asset currency
+  Fetches open interest data for futures instruments across configured markets.
+  Jobs are scheduled via Oban and processed by the HistoricalWorker.
   """
 
   use GenServer

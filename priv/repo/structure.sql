@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict Cx98k3bcTspSpxNz54JgM1RgKdZt2E765VFeR2kr93odcBIiuHbJthDdMvXxy4Z
+\restrict mKBYfaqiCa9tciE22bSYpSzOSAfrexgbN21ZUNxQ7bc5DCX0ybU3o7AjPn3OHjx
 
 -- Dumped from database version 15.15 (Homebrew)
 -- Dumped by pg_dump version 15.15 (Homebrew)
@@ -862,7 +862,8 @@ CREATE TABLE public.chart_configurations (
     queries jsonb,
     metrics_json jsonb DEFAULT '{}'::jsonb,
     is_deleted boolean DEFAULT false,
-    is_hidden boolean DEFAULT false
+    is_hidden boolean DEFAULT false,
+    ai_description text
 );
 
 
@@ -3065,7 +3066,8 @@ CREATE TABLE public.posts (
     chart_event_datetime timestamp(0) without time zone,
     chart_configuration_for_event_id bigint,
     is_deleted boolean DEFAULT false,
-    is_hidden boolean DEFAULT false
+    is_hidden boolean DEFAULT false,
+    ai_description text
 );
 
 
@@ -5055,7 +5057,8 @@ CREATE TABLE public.user_lists (
     is_screener boolean DEFAULT false,
     is_deleted boolean DEFAULT false,
     is_hidden boolean DEFAULT false,
-    is_public_updated_at timestamp(0) without time zone
+    is_public_updated_at timestamp(0) without time zone,
+    ai_description text
 );
 
 
@@ -11011,7 +11014,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict Cx98k3bcTspSpxNz54JgM1RgKdZt2E765VFeR2kr93odcBIiuHbJthDdMvXxy4Z
+\unrestrict mKBYfaqiCa9tciE22bSYpSzOSAfrexgbN21ZUNxQ7bc5DCX0ybU3o7AjPn3OHjx
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -11552,3 +11555,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260106141954);
 INSERT INTO public."schema_migrations" (version) VALUES (20260114173809);
 INSERT INTO public."schema_migrations" (version) VALUES (20260116093636);
 INSERT INTO public."schema_migrations" (version) VALUES (20260216103643);
+INSERT INTO public."schema_migrations" (version) VALUES (20260224120000);

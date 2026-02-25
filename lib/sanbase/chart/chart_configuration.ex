@@ -15,6 +15,7 @@ defmodule Sanbase.Chart.Configuration do
     field(:is_deleted, :boolean, default: false)
     field(:is_hidden, :boolean, default: false)
 
+    field(:ai_description, :string)
     field(:metrics, {:array, :string}, default: [])
     field(:metrics_json, :map, default: %{})
     field(:anomalies, {:array, :string}, default: [])

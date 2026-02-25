@@ -38,6 +38,7 @@ defmodule Sanbase.UserList do
     field(:slug, :string)
     field(:color, ColorEnum, default: :none)
     field(:description, :string)
+    field(:ai_description, :string)
     field(:function, WatchlistFunction, default: %WatchlistFunction{})
     field(:is_monitored, :boolean, default: false)
     field(:is_screener, :boolean, default: false)
@@ -64,7 +65,14 @@ defmodule Sanbase.UserList do
     timestamps()
   end
 
-  @create_fields [:color, :description, :function, :is_monitored, :is_public, :is_screener] ++
+  @create_fields [
+                   :color,
+                   :description,
+                   :function,
+                   :is_monitored,
+                   :is_public,
+                   :is_screener
+                 ] ++
                    [:name, :slug, :table_configuration_id, :type, :user_id]
   def create_changeset(%__MODULE__{} = user_list, attrs \\ %{}) do
     user_list

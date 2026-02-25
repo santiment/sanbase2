@@ -23,16 +23,18 @@ defmodule Sanbase.AI.DescriptionJob do
 
   @pubsub Sanbase.PubSub
   @topic "ai_description_job"
+  @batch_size 50
 
   @idle_state %{
     status: :idle,
-    # :idle | :running | :done | :cancelled
+    # :idle | :running | :done | :cancelled | :failed
     user_id: nil,
     entity_type: nil,
     total: 0,
     done: 0,
     failed: 0,
-    errors: []
+    errors: [],
+    task_ref: nil
   }
 
   @system_prompt ~S"""
@@ -203,38 +205,57 @@ defmodule Sanbase.AI.DescriptionJob do
   end
 
   @impl true
-  def handle_call({:start_job, user_id, entity_type, entities, custom_prompt}, _from, _prev) do
+  def handle_call({:start_job, user_id, entity_type, id_type_pairs, custom_prompt}, _from, _prev) do
+    gen_pid = self()
+
+    {:ok, task_pid} =
+      Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
+        id_type_pairs
+        |> Enum.chunk_every(@batch_size)
+        |> Enum.each(fn batch ->
+          # Skip loading the batch entirely if already cancelled
+          if GenServer.call(gen_pid, :running?) do
+            batch
+            |> load_batch()
+            |> Enum.each(fn {entity, type} ->
+              if GenServer.call(gen_pid, :running?) do
+                result =
+                  try do
+                    case run_generation(entity, type, custom_prompt) do
+                      {:ok, text} ->
+                        save_ai_description(type, entity.id, text)
+                        :ok
+
+                      {:error, _} = error ->
+                        error
+                    end
+                  rescue
+                    e -> {:error, Exception.message(e)}
+                  catch
+                    kind, reason -> {:error, "#{kind}: #{inspect(reason)}"}
+                  end
+
+                send(gen_pid, {:item_done, result, entity.id, type})
+              end
+            end)
+          end
+        end)
+
+        send(gen_pid, :job_finished)
+      end)
+
+    task_ref = Process.monitor(task_pid)
+
     new_state = %{
       status: :running,
       user_id: user_id,
       entity_type: entity_type,
-      total: length(entities),
+      total: length(id_type_pairs),
       done: 0,
       failed: 0,
-      errors: []
+      errors: [],
+      task_ref: task_ref
     }
-
-    gen_pid = self()
-
-    Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
-      Enum.each(entities, fn {entity, type} ->
-        # Check cancellation before each item (one API call can still run after cancel)
-        if GenServer.call(gen_pid, :running?) do
-          result =
-            try do
-              run_generation(entity, type, custom_prompt)
-            rescue
-              e -> {:error, Exception.message(e)}
-            catch
-              kind, reason -> {:error, "#{kind}: #{inspect(reason)}"}
-            end
-
-          send(gen_pid, {:item_done, result, entity.id, type})
-        end
-      end)
-
-      send(gen_pid, :job_finished)
-    end)
 
     broadcast(new_state)
     {:reply, :ok, new_state}
@@ -242,7 +263,7 @@ defmodule Sanbase.AI.DescriptionJob do
 
   @impl true
   def handle_cast(:cancel, state) do
-    new_state = %{state | status: :cancelled}
+    new_state = %{state | status: :cancelled, task_ref: nil}
     broadcast(new_state)
     {:noreply, new_state}
   end
@@ -254,8 +275,7 @@ defmodule Sanbase.AI.DescriptionJob do
   end
 
   @impl true
-  def handle_info({:item_done, {:ok, text}, id, type}, state) do
-    save_ai_description(type, id, text)
+  def handle_info({:item_done, :ok, _id, _type}, state) do
     new_state = %{state | done: state.done + 1}
     broadcast(new_state)
     {:noreply, new_state}
@@ -275,7 +295,7 @@ defmodule Sanbase.AI.DescriptionJob do
 
   @impl true
   def handle_info(:job_finished, %{status: :running} = state) do
-    new_state = %{state | status: :done}
+    new_state = %{state | status: :done, task_ref: nil}
     broadcast(new_state)
     {:noreply, new_state}
   end
@@ -284,10 +304,18 @@ defmodule Sanbase.AI.DescriptionJob do
   @impl true
   def handle_info(:job_finished, state), do: {:noreply, state}
 
-  # Ignore Task supervisor ref/down messages
+  # Worker task crashed before sending :job_finished — transition to :failed.
   @impl true
-  def handle_info({ref, _}, state) when is_reference(ref), do: {:noreply, state}
+  def handle_info(
+        {:DOWN, ref, :process, _pid, _reason},
+        %{task_ref: ref, status: :running} = state
+      ) do
+    new_state = %{state | status: :failed, task_ref: nil}
+    broadcast(new_state)
+    {:noreply, new_state}
+  end
 
+  # Ignore all other DOWN messages (normal task exit, other monitors).
   @impl true
   def handle_info({:DOWN, _, :process, _, _}, state), do: {:noreply, state}
 
@@ -295,6 +323,28 @@ defmodule Sanbase.AI.DescriptionJob do
 
   defp broadcast(state) do
     Phoenix.PubSub.broadcast(@pubsub, @topic, {:job_update, state})
+  end
+
+  # Loads full records for a batch of {id, type} pairs, grouped by type to
+  # minimise the number of DB queries (one per type present in the batch).
+  defp load_batch(id_type_pairs) do
+    id_type_pairs
+    |> Enum.group_by(fn {_id, type} -> type end, fn {id, _type} -> id end)
+    |> Enum.flat_map(fn {type, ids} ->
+      fetch_by_ids(type, ids) |> Enum.map(&{&1, type})
+    end)
+  end
+
+  defp fetch_by_ids(:insights, ids) do
+    Repo.all(from(p in Post, where: p.id in ^ids))
+  end
+
+  defp fetch_by_ids(:charts, ids) do
+    Repo.all(from(c in Configuration, where: c.id in ^ids))
+  end
+
+  defp fetch_by_ids(type, ids) when type in [:screeners, :watchlists] do
+    Repo.all(from(ul in UserList, where: ul.id in ^ids))
   end
 
   defp do_build_user_message(%Post{} = post, :insights) do

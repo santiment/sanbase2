@@ -67,8 +67,7 @@ defmodule Sanbase.Chart.Configuration do
       :options,
       :user_id,
       :project_id,
-      :post_id,
-      :ai_description
+      :post_id
     ])
     |> validate_required([:user_id, :project_id])
   end

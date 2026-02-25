@@ -68,7 +68,6 @@ defmodule Sanbase.UserList do
   @create_fields [
                    :color,
                    :description,
-                   :ai_description,
                    :function,
                    :is_monitored,
                    :is_public,

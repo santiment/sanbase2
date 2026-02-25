@@ -80,9 +80,16 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
   end
 
   def handle_event("select_user", %{"user_id" => uid_str}, socket) do
-    user_id = String.to_integer(uid_str)
-    socket = assign(socket, :search_results, [])
-    {:noreply, push_patch(socket, to: ~p"/admin/ai_descriptions?#{[user_id: user_id, page: 1]}")}
+    case Integer.parse(uid_str) do
+      {user_id, ""} ->
+        socket = assign(socket, :search_results, [])
+
+        {:noreply,
+         push_patch(socket, to: ~p"/admin/ai_descriptions?#{[user_id: user_id, page: 1]}")}
+
+      _ ->
+        {:noreply, socket}
+    end
   end
 
   def handle_event("clear_user", _, socket) do
@@ -126,28 +133,34 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
   # Events — single generation
   # ---------------------------------------------------------------------------
 
-  def handle_event("generate", %{"id" => id}, socket) do
-    id = String.to_integer(id)
-    entity = Enum.find(socket.assigns.entities, fn e -> e.id == id end)
+  def handle_event("generate", %{"id" => id_str}, socket) do
+    case Integer.parse(id_str) do
+      {id, ""} ->
+        entity = Enum.find(socket.assigns.entities, fn e -> e.id == id end)
 
-    if entity do
-      loading_ids = MapSet.put(socket.assigns.loading_ids, id)
-      lv_pid = self()
-      entity_type = socket.assigns.entity_type
-      custom_prompt = socket.assigns.custom_prompt
+        if entity do
+          loading_ids = MapSet.put(socket.assigns.loading_ids, id)
+          lv_pid = self()
+          entity_type = socket.assigns.entity_type
+          custom_prompt = socket.assigns.custom_prompt
 
-      Task.start(fn ->
-        try do
-          result = DescriptionJob.run_generation(entity, entity_type, custom_prompt)
-          send(lv_pid, {:generation_done, entity_type, id, result})
-        rescue
-          e -> send(lv_pid, {:generation_done, entity_type, id, {:error, Exception.message(e)}})
+          Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
+            try do
+              result = DescriptionJob.run_generation(entity, entity_type, custom_prompt)
+              send(lv_pid, {:generation_done, entity_type, id, result})
+            rescue
+              e ->
+                send(lv_pid, {:generation_done, entity_type, id, {:error, Exception.message(e)}})
+            end
+          end)
+
+          {:noreply, assign(socket, :loading_ids, loading_ids)}
+        else
+          {:noreply, socket}
         end
-      end)
 
-      {:noreply, assign(socket, :loading_ids, loading_ids)}
-    else
-      {:noreply, socket}
+      _ ->
+        {:noreply, socket}
     end
   end
 
@@ -160,7 +173,7 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
       entity_type = socket.assigns.entity_type
       custom_prompt = socket.assigns.custom_prompt
 
-      Task.start(fn ->
+      Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
         try do
           result = DescriptionJob.run_generation(entity, entity_type, custom_prompt)
           send(lv_pid, {:generation_done, entity_type, entity.id, result})
@@ -334,6 +347,9 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
             "Bulk generation complete — #{job_state.done} done, #{job_state.failed} failed"
           )
 
+        :failed ->
+          put_flash(socket, :error, "Bulk generation job crashed unexpectedly")
+
         _ ->
           socket
       end
@@ -473,11 +489,13 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
     {entities, count}
   end
 
+  # Returns {id, type} pairs only — full records are loaded in batches inside DescriptionJob.
   defp fetch_all_pending(:insights, user_id) do
     Repo.all(
       from(p in Post,
         where: p.is_deleted == false and p.user_id == ^user_id and is_nil(p.ai_description),
-        order_by: [desc: p.inserted_at]
+        order_by: [desc: p.inserted_at],
+        select: p.id
       )
     )
     |> Enum.map(&{&1, :insights})
@@ -487,7 +505,8 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
     Repo.all(
       from(c in Configuration,
         where: c.is_deleted == false and c.user_id == ^user_id and is_nil(c.ai_description),
-        order_by: [desc: c.inserted_at]
+        order_by: [desc: c.inserted_at],
+        select: c.id
       )
     )
     |> Enum.map(&{&1, :charts})
@@ -499,7 +518,8 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
         where:
           ul.is_deleted == false and ul.is_screener == true and ul.user_id == ^user_id and
             is_nil(ul.ai_description),
-        order_by: [desc: ul.inserted_at]
+        order_by: [desc: ul.inserted_at],
+        select: ul.id
       )
     )
     |> Enum.map(&{&1, :screeners})
@@ -511,7 +531,8 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
         where:
           ul.is_deleted == false and ul.is_screener == false and ul.user_id == ^user_id and
             is_nil(ul.ai_description),
-        order_by: [desc: ul.inserted_at]
+        order_by: [desc: ul.inserted_at],
+        select: ul.id
       )
     )
     |> Enum.map(&{&1, :watchlists})
@@ -654,8 +675,16 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
   defp truncate(str, len), do: String.slice(str, 0, len) <> "…"
 
   defp parse_int(nil, default), do: default
-  defp parse_int(v, _) when is_binary(v), do: String.to_integer(v)
-  defp parse_int(v, _), do: v
+
+  defp parse_int(v, default) when is_binary(v) do
+    case Integer.parse(v) do
+      {n, ""} -> max(1, n)
+      _ -> default
+    end
+  end
+
+  defp parse_int(v, _) when is_integer(v), do: max(1, v)
+  defp parse_int(_, default), do: default
 
   defp parse_int_or_nil(nil), do: nil
 
@@ -696,7 +725,13 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
     else
       case Repo.get(User, user_id) do
         nil ->
-          put_flash(socket, :error, "User not found")
+          socket
+          |> assign(:selected_user, nil)
+          |> assign(:selected_entity, nil)
+          |> assign(:entities, [])
+          |> assign(:total_count, 0)
+          |> assign(:total_pages, 1)
+          |> put_flash(:error, "User not found")
 
         user ->
           socket

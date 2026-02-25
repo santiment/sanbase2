@@ -462,8 +462,7 @@ defmodule Sanbase.Insight.Post do
       :prediction,
       :price_chart_project_id,
       :is_chart_event,
-      :chart_event_datetime,
-      :ai_description
+      :chart_event_datetime
     ])
     |> Tag.put_tags(attrs)
     |> MetricPostgresData.put_metrics(attrs)

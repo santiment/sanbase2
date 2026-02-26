@@ -49,6 +49,32 @@ defmodule SanbaseWeb.Graphql.Resolvers.AppNotificationResolver do
     {:ok, not is_nil(read_at)}
   end
 
+  def mute_user(_root, %{user_id: muted_user_id}, %{
+        context: %{auth: %{current_user: user}}
+      }) do
+    muted_user_id = Sanbase.Math.to_integer(muted_user_id)
+
+    case AppNotifications.mute_user(user.id, muted_user_id) do
+      {:ok, _} -> {:ok, Sanbase.Accounts.get_user!(muted_user_id)}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  def unmute_user(_root, %{user_id: muted_user_id}, %{
+        context: %{auth: %{current_user: user}}
+      }) do
+    muted_user_id = Sanbase.Math.to_integer(muted_user_id)
+
+    case AppNotifications.unmute_user(user.id, muted_user_id) do
+      {:ok, _} -> {:ok, Sanbase.Accounts.get_user!(muted_user_id)}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  def list_muted_users(_root, _args, %{context: %{auth: %{current_user: user}}}) do
+    {:ok, AppNotifications.list_muted_users(user.id)}
+  end
+
   defp build_opts(args) do
     opts = [limit: Map.get(args, :limit, 20)]
 

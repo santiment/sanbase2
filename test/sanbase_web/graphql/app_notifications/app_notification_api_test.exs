@@ -558,7 +558,7 @@ defmodule SanbaseWeb.Graphql.AppNotificationApiTest do
       notif =
         Enum.find(
           result["notifications"],
-          &(&1["type"] == "follow_user" && &1["user"]["id"] == "#{new_follower.id}")
+          &(&1["type"] == "new_follower" && &1["user"]["id"] == "#{new_follower.id}")
         )
 
       assert notif["entityType"] == "user"

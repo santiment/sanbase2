@@ -853,7 +853,7 @@ defmodule Sanbase.AppNotificationsTest do
       assert length(notifications) == 1
 
       [notification] = notifications
-      assert notification.type == "follow_user"
+      assert notification.type == "new_follower"
       assert notification.entity_type == "user"
       assert notification.entity_id == user.id
       assert notification.user_id == follower.id

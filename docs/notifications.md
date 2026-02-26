@@ -247,7 +247,43 @@ All notifications share the following base structure:
 
 ---
 
-### 6. `alert_triggered`
+### 6. `new_follower`
+
+**Description:** Sent to a user when someone follows them.
+
+**Trigger:** When a user follows another user (`event_type: :follow_user`)
+
+**Recipients:** The user being followed
+
+**Note:** The follower does not receive a notification about their own action.
+
+**Standard Fields:**
+- `type`: `"new_follower"`
+- `entity_type`: `"user"`
+- `entity_id`: The ID of the user being followed
+- `user_id`: The follower's user ID
+
+**json_data:** `{}` (empty)
+
+**Example:**
+```json
+{
+  "id": 129,
+  "type": "new_follower",
+  "entity_type": "user",
+  "entity_id": 789,
+  "user_id": 999,
+  "is_broadcast": false,
+  "is_system_generated": false,
+  "json_data": {},
+  "inserted_at": "2026-02-03T14:00:00Z",
+  "read_at": null
+}
+```
+
+---
+
+### 7. `alert_triggered`
 
 **Description:** Sent to a user when one of their alerts is triggered.
 

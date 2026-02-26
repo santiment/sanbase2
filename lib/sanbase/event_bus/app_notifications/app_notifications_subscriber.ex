@@ -185,7 +185,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
         is_system_generated: false
       })
 
-    multi_insert_notification_read_status(user_ids, notification.id)
+    multi_insert_notification_read_status(user_ids, notification.id, author_id)
   end
 
   ## Watchlist notifications
@@ -207,7 +207,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
         is_system_generated: false
       })
 
-    multi_insert_notification_read_status(user_ids, notification.id)
+    multi_insert_notification_read_status(user_ids, notification.id, author_id)
   end
 
   defp create_notification(
@@ -240,7 +240,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
           json_data: json_data
         })
 
-      multi_insert_notification_read_status(user_ids, notification.id)
+      multi_insert_notification_read_status(user_ids, notification.id, author_id)
     end
   end
 
@@ -273,7 +273,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
 
       # There's one receiver - the owner of the entity - but we can reuse
       # the multi_insert_notification_read_status function to insert the notification read status
-      multi_insert_notification_read_status(user_ids, notification.id)
+      multi_insert_notification_read_status(user_ids, notification.id, author_id)
     end
   end
 
@@ -299,7 +299,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
         json_data: %{}
       })
 
-    multi_insert_notification_read_status(user_ids, notification.id)
+    multi_insert_notification_read_status(user_ids, notification.id, author_id)
   end
 
   defp create_notification(
@@ -323,31 +323,39 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
         json_data: %{}
       })
 
-    multi_insert_notification_read_status(user_ids, notification.id)
+    multi_insert_notification_read_status(user_ids, notification.id, user_id)
   end
 
-  defp multi_insert_notification_read_status(user_ids, notification_id) do
-    user_ids
-    |> Enum.reduce(Ecto.Multi.new(), fn user_id, multi ->
-      Ecto.Multi.insert(
-        multi,
-        {:notification, user_id, notification_id},
-        AppNotifications.notification_read_status_changeset(%{
-          notification_id: notification_id,
-          user_id: user_id,
-          read_at: nil
-        })
-      )
-    end)
-    |> Sanbase.Repo.transaction()
-    |> case do
-      {:ok, result} ->
-        async_broadcast_websocket_notifications(result)
+  defp multi_insert_notification_read_status(user_ids, notification_id, actor_user_id) do
+    muted_by = AppNotifications.user_ids_that_muted(actor_user_id)
 
-        {:ok, result}
+    user_ids = Enum.reject(user_ids, fn uid -> MapSet.member?(muted_by, uid) end)
 
-      {:error, _operation, reason, _changes_so_far} ->
-        {:error, reason}
+    if user_ids == [] do
+      {:ok, %{}}
+    else
+      user_ids
+      |> Enum.reduce(Ecto.Multi.new(), fn user_id, multi ->
+        Ecto.Multi.insert(
+          multi,
+          {:notification, user_id, notification_id},
+          AppNotifications.notification_read_status_changeset(%{
+            notification_id: notification_id,
+            user_id: user_id,
+            read_at: nil
+          })
+        )
+      end)
+      |> Sanbase.Repo.transaction()
+      |> case do
+        {:ok, result} ->
+          async_broadcast_websocket_notifications(result)
+
+          {:ok, result}
+
+        {:error, _operation, reason, _changes_so_far} ->
+          {:error, reason}
+      end
     end
   end
 

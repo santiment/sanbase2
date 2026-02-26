@@ -5,6 +5,7 @@ defmodule SanbaseWeb.Graphql.AppNotificationApiTest do
   import Sanbase.Factory
 
   alias Sanbase.AppNotifications
+  alias Sanbase.AppNotifications.NotificationMutedUser
   alias Sanbase.Accounts.UserFollower
   alias Sanbase.UserList
 
@@ -433,6 +434,87 @@ defmodule SanbaseWeb.Graphql.AppNotificationApiTest do
 
       error_msg = execute_mutation_with_error(conn, mutation)
       assert error_msg =~ "unauthorized"
+    end
+  end
+
+  describe "muteUserNotifications / unmuteUserNotifications / getNotificationMutedUsers" do
+    test "mute, list, and unmute a user", %{conn: conn, author: author} do
+      mute_mutation = """
+      mutation {
+        muteUserNotifications(userId: "#{author.id}") {
+          id
+        }
+      }
+      """
+
+      result = execute_mutation(conn, mute_mutation, "muteUserNotifications")
+      assert result["id"] == to_string(author.id)
+
+      list_query = """
+      {
+        getNotificationMutedUsers {
+          id
+        }
+      }
+      """
+
+      result = execute_query(conn, list_query, "getNotificationMutedUsers")
+      assert length(result) == 1
+      assert hd(result)["id"] == to_string(author.id)
+
+      unmute_mutation = """
+      mutation {
+        unmuteUserNotifications(userId: "#{author.id}") {
+          id
+        }
+      }
+      """
+
+      result = execute_mutation(conn, unmute_mutation, "unmuteUserNotifications")
+      assert result["id"] == to_string(author.id)
+
+      result = execute_query(conn, list_query, "getNotificationMutedUsers")
+      assert result == []
+    end
+
+    test "mute requires authentication", %{author: author} do
+      conn = build_conn()
+
+      mutation = """
+      mutation {
+        muteUserNotifications(userId: "#{author.id}") {
+          id
+        }
+      }
+      """
+
+      error_msg = execute_mutation_with_error(conn, mutation)
+      assert error_msg =~ "unauthorized"
+    end
+
+    test "muted user's notifications are not delivered via event", %{
+      conn: conn,
+      follower: follower,
+      author: author
+    } do
+      {:ok, _} = UserFollower.follow(author.id, follower.id)
+      {:ok, _} = NotificationMutedUser.mute(follower.id, author.id)
+
+      {:ok, _watchlist} =
+        UserList.create_user_list(author, %{name: "Muted API Watchlist", is_public: true})
+
+      :timer.sleep(100)
+
+      query = """
+      {
+        getCurrentUserNotifications {
+          notifications { id type }
+        }
+      }
+      """
+
+      result = execute_query(conn, query, "getCurrentUserNotifications")
+      assert result["notifications"] == []
     end
   end
 

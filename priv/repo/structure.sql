@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict Cx98k3bcTspSpxNz54JgM1RgKdZt2E765VFeR2kr93odcBIiuHbJthDdMvXxy4Z
+\restrict c36IM6gQeKazfKzpRe7YI2oVhtqI2hEdJSqWOOThUREujYmWqfEZeNB6mjklD5R
 
--- Dumped from database version 15.15 (Homebrew)
--- Dumped by pg_dump version 15.15 (Homebrew)
+-- Dumped from database version 15.16 (Homebrew)
+-- Dumped by pg_dump version 15.16 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -862,7 +862,8 @@ CREATE TABLE public.chart_configurations (
     queries jsonb,
     metrics_json jsonb DEFAULT '{}'::jsonb,
     is_deleted boolean DEFAULT false,
-    is_hidden boolean DEFAULT false
+    is_hidden boolean DEFAULT false,
+    ai_description text
 );
 
 
@@ -900,8 +901,8 @@ CREATE TABLE public.chat_messages (
     sources jsonb[] DEFAULT ARRAY[]::jsonb[],
     suggestions text[] DEFAULT ARRAY[]::text[],
     feedback_type character varying(255),
-    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY ((ARRAY['thumbs_up'::character varying, 'thumbs_down'::character varying])::text[])) OR (feedback_type IS NULL))),
-    CONSTRAINT valid_role CHECK (((role)::text = ANY ((ARRAY['user'::character varying, 'assistant'::character varying])::text[])))
+    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY (ARRAY[('thumbs_up'::character varying)::text, ('thumbs_down'::character varying)::text])) OR (feedback_type IS NULL))),
+    CONSTRAINT valid_role CHECK (((role)::text = ANY (ARRAY[('user'::character varying)::text, ('assistant'::character varying)::text])))
 );
 
 
@@ -2754,6 +2755,18 @@ ALTER SEQUENCE public.newsletter_tokens_id_seq OWNED BY public.newsletter_tokens
 
 
 --
+-- Name: notification_muted_users; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.notification_muted_users (
+    user_id bigint NOT NULL,
+    muted_user_id bigint NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    CONSTRAINT cannot_mute_self CHECK ((user_id <> muted_user_id))
+);
+
+
+--
 -- Name: notification_templates; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -3065,7 +3078,8 @@ CREATE TABLE public.posts (
     chart_event_datetime timestamp(0) without time zone,
     chart_configuration_for_event_id bigint,
     is_deleted boolean DEFAULT false,
-    is_hidden boolean DEFAULT false
+    is_hidden boolean DEFAULT false,
+    ai_description text
 );
 
 
@@ -5055,7 +5069,8 @@ CREATE TABLE public.user_lists (
     is_screener boolean DEFAULT false,
     is_deleted boolean DEFAULT false,
     is_hidden boolean DEFAULT false,
-    is_public_updated_at timestamp(0) without time zone
+    is_public_updated_at timestamp(0) without time zone,
+    ai_description text
 );
 
 
@@ -7272,6 +7287,14 @@ ALTER TABLE ONLY public.monitored_twitter_handles
 
 ALTER TABLE ONLY public.newsletter_tokens
     ADD CONSTRAINT newsletter_tokens_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: notification_muted_users notification_muted_users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notification_muted_users
+    ADD CONSTRAINT notification_muted_users_pkey PRIMARY KEY (user_id, muted_user_id);
 
 
 --
@@ -10176,6 +10199,22 @@ ALTER TABLE ONLY public.monitored_twitter_handles
 
 
 --
+-- Name: notification_muted_users notification_muted_users_muted_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notification_muted_users
+    ADD CONSTRAINT notification_muted_users_muted_user_id_fkey FOREIGN KEY (muted_user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: notification_muted_users notification_muted_users_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notification_muted_users
+    ADD CONSTRAINT notification_muted_users_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: notifications notifications_metric_registry_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -11011,7 +11050,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict Cx98k3bcTspSpxNz54JgM1RgKdZt2E765VFeR2kr93odcBIiuHbJthDdMvXxy4Z
+\unrestrict c36IM6gQeKazfKzpRe7YI2oVhtqI2hEdJSqWOOThUREujYmWqfEZeNB6mjklD5R
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -11533,7 +11572,6 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250926101756);
 INSERT INTO public."schema_migrations" (version) VALUES (20250926115345);
 INSERT INTO public."schema_migrations" (version) VALUES (20251013121803);
 INSERT INTO public."schema_migrations" (version) VALUES (20251014144144);
-INSERT INTO public."schema_migrations" (version) VALUES (20251015073648);
 INSERT INTO public."schema_migrations" (version) VALUES (20251016133413);
 INSERT INTO public."schema_migrations" (version) VALUES (20251017100000);
 INSERT INTO public."schema_migrations" (version) VALUES (20251021133911);
@@ -11542,13 +11580,15 @@ INSERT INTO public."schema_migrations" (version) VALUES (20251023083446);
 INSERT INTO public."schema_migrations" (version) VALUES (20251023114153);
 INSERT INTO public."schema_migrations" (version) VALUES (20251027142731);
 INSERT INTO public."schema_migrations" (version) VALUES (20251027154645);
-INSERT INTO public."schema_migrations" (version) VALUES (20251113070559);
 INSERT INTO public."schema_migrations" (version) VALUES (20251202143216);
 INSERT INTO public."schema_migrations" (version) VALUES (20251202143217);
 INSERT INTO public."schema_migrations" (version) VALUES (20251215114741);
 INSERT INTO public."schema_migrations" (version) VALUES (20251216081737);
 INSERT INTO public."schema_migrations" (version) VALUES (20260106131955);
 INSERT INTO public."schema_migrations" (version) VALUES (20260106141954);
+INSERT INTO public."schema_migrations" (version) VALUES (20260114142311);
 INSERT INTO public."schema_migrations" (version) VALUES (20260114173809);
 INSERT INTO public."schema_migrations" (version) VALUES (20260116093636);
 INSERT INTO public."schema_migrations" (version) VALUES (20260216103643);
+INSERT INTO public."schema_migrations" (version) VALUES (20260224120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260225120000);

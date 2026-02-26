@@ -19,6 +19,16 @@ defmodule SanbaseWeb.Graphql.Schema.AppNotificationQueries do
     For infinite scrolling, use BEFORE cursor type with the datetime
     from the last notification in the previous page.
     """
+    @desc """
+    Returns the list of users whose notifications the current user has muted.
+    """
+    field :get_notification_muted_users, list_of(:public_user) do
+      meta(access: :free)
+
+      middleware(JWTAuth)
+      resolve(&AppNotificationResolver.list_muted_users/3)
+    end
+
     field :get_current_user_notifications, :app_notifications_paginated do
       meta(access: :free)
 
@@ -42,6 +52,27 @@ defmodule SanbaseWeb.Graphql.Schema.AppNotificationQueries do
 
       middleware(JWTAuth)
       resolve(&AppNotificationResolver.set_read_status/3)
+    end
+
+    @desc """
+    Mute notifications from a specific user. Future notifications triggered
+    by the muted user's actions will be silently dropped.
+    """
+    field :mute_user_notifications, :public_user do
+      arg(:user_id, non_null(:id))
+
+      middleware(JWTAuth)
+      resolve(&AppNotificationResolver.mute_user/3)
+    end
+
+    @desc """
+    Unmute a previously muted user to resume receiving their notifications.
+    """
+    field :unmute_user_notifications, :public_user do
+      arg(:user_id, non_null(:id))
+
+      middleware(JWTAuth)
+      resolve(&AppNotificationResolver.unmute_user/3)
     end
   end
 end

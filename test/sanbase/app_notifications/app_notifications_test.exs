@@ -5,6 +5,7 @@ defmodule Sanbase.AppNotificationsTest do
 
   alias Sanbase.AppNotifications
   alias Sanbase.AppNotifications.Notification
+  alias Sanbase.AppNotifications.NotificationMutedUser
   alias Sanbase.Accounts.UserFollower
   alias Sanbase.Comments.EntityComment
   alias Sanbase.Insight.Post
@@ -809,6 +810,47 @@ defmodule Sanbase.AppNotificationsTest do
       assert notification.entity_name == alert_title
       assert notification.user_id == user.id
       assert notification.json_data == %{}
+    end
+
+    # Muted user tests
+
+    test "muted user does not receive notifications", %{
+      author: author,
+      follower: follower
+    } do
+      {:ok, _} = NotificationMutedUser.mute(follower.id, author.id)
+
+      {:ok, _watchlist} =
+        UserList.create_user_list(author, %{name: "Muted Watchlist", is_public: true})
+
+      :timer.sleep(100)
+
+      notifications = AppNotifications.list_notifications_for_user(follower.id)
+      assert notifications == []
+    end
+
+    test "unmuted user resumes receiving notifications", %{
+      author: author,
+      follower: follower
+    } do
+      {:ok, _} = NotificationMutedUser.mute(follower.id, author.id)
+
+      {:ok, _watchlist} =
+        UserList.create_user_list(author, %{name: "While Muted", is_public: true})
+
+      :timer.sleep(100)
+      assert AppNotifications.list_notifications_for_user(follower.id) == []
+
+      {:ok, _} = NotificationMutedUser.unmute(follower.id, author.id)
+
+      {:ok, _watchlist2} =
+        UserList.create_user_list(author, %{name: "After Unmute", is_public: true})
+
+      :timer.sleep(100)
+
+      notifications = AppNotifications.list_notifications_for_user(follower.id)
+      assert length(notifications) == 1
+      assert hd(notifications).entity_name == "After Unmute"
     end
 
     # Multiple followers test

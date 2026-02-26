@@ -43,5 +43,14 @@ defmodule SanbaseWeb.Graphql.Schema.AppNotificationQueries do
       middleware(JWTAuth)
       resolve(&AppNotificationResolver.set_read_status/3)
     end
+
+    @desc """
+    Mark all unread notifications as read for the current user.
+    Returns the number of notifications that were marked as read.
+    """
+    field :mark_all_notifications_as_read, :mark_all_notifications_as_read_result do
+      middleware(JWTAuth)
+      resolve(&AppNotificationResolver.mark_all_as_read/3)
+    end
   end
 end

@@ -240,6 +240,26 @@ defmodule Sanbase.AppNotifications do
   end
 
   @doc """
+  Marks all unread notifications as read for the given user.
+  Sets read_at to the current time for all NotificationReadStatus records
+  where read_at is nil.
+  """
+  @spec mark_all_as_read(pos_integer()) :: {:ok, non_neg_integer()}
+  def mark_all_as_read(user_id) when is_integer(user_id) do
+    now = DateTime.utc_now(:second)
+
+    {count, _} =
+      from(nrs in NotificationReadStatus,
+        join: n in Notification,
+        on: nrs.notification_id == n.id and n.is_deleted == false,
+        where: nrs.user_id == ^user_id and is_nil(nrs.read_at)
+      )
+      |> Repo.update_all(set: [read_at: now])
+
+    {:ok, count}
+  end
+
+  @doc """
   Returns unread notification counts per type for the given user.
 
   Optionally filters by cursor (same semantics as `list_notifications_for_user/2`).

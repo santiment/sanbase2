@@ -147,6 +147,22 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
     state
   end
 
+  defp handle_event(
+         %{
+           data: %{event_type: :follow_user, user_id: user_id, follower_id: follower_id} = data
+         },
+         event_shadow,
+         state
+       )
+       when is_integer(user_id) and is_integer(follower_id) do
+    # Notify the user that they have a new follower.
+    # user_id is the person being followed, follower_id is the person who followed.
+    create_notification(:follow_user, [user_id], data)
+
+    EventBus.mark_as_completed({__MODULE__, event_shadow})
+    state
+  end
+
   defp handle_event(_event, event_shadow, state) do
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
@@ -318,6 +334,28 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
         entity_type: "user_trigger",
         entity_name: alert_title || "Alert #{alert_id}",
         entity_id: alert_id,
+        is_broadcast: false,
+        is_system_generated: false,
+        json_data: %{}
+      })
+
+    multi_insert_notification_read_status(user_ids, notification.id)
+  end
+
+  defp create_notification(
+         :follow_user,
+         user_ids,
+         %{
+           user_id: user_id,
+           follower_id: follower_id
+         }
+       ) do
+    {:ok, notification} =
+      AppNotifications.create_notification(%{
+        type: "follow_user",
+        user_id: follower_id,
+        entity_type: "user",
+        entity_id: user_id,
         is_broadcast: false,
         is_system_generated: false,
         json_data: %{}

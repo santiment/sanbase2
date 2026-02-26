@@ -2,12 +2,23 @@
 # Fail fast on errors, undefined vars, and pipeline failures
 set -euo pipefail
 
-PARTITIONS=${1:-4}
+RECREATE_DB=false
+PARTITIONS=""
+
+for arg in "$@"; do
+  if [ "$arg" = "--recreate-db" ]; then
+    RECREATE_DB=true
+  elif [ -z "$PARTITIONS" ]; then
+    PARTITIONS="$arg"
+  fi
+done
+
+PARTITIONS=${PARTITIONS:-4}
 FAILURES_DIR="_build/test/failures"
 
 # Validate PARTITIONS is a positive integer
 if ! [[ "$PARTITIONS" =~ ^[0-9]+$ ]] || [ "$PARTITIONS" -lt 1 ]; then
-  echo "Usage: $0 [PARTITIONS]" >&2
+  echo "Usage: $0 [PARTITIONS] [--recreate-db]" >&2
   echo "PARTITIONS must be a positive integer (default: 4)" >&2
   exit 1
 fi
@@ -18,6 +29,22 @@ SECONDS=0
 echo "==> Running tests with $PARTITIONS partitions"
 
 rm -rf "$FAILURES_DIR"
+
+# Optionally recreate partition DBs from the latest structure.sql.
+# The `mix test` alias uses `ecto.load --skip-if-loaded` which won't reload
+# the schema if the DB already exists from a previous run. Use --recreate-db
+# after migrations or schema changes to ensure all partitions are up to date.
+# NOTE: Do not pass `-r Sanbase.Repo` — the mix aliases already include it,
+# and duplicating it causes double execution (structure loads twice and fails).
+if [ "$RECREATE_DB" = true ]; then
+  echo "==> Recreating test databases for $PARTITIONS partitions"
+  for i in $(seq 1 "$PARTITIONS"); do
+    echo "  Setting up partition $i database..."
+    MIX_ENV=test MIX_TEST_PARTITION=$i mix ecto.drop --quiet 2>/dev/null || true
+    MIX_ENV=test MIX_TEST_PARTITION=$i mix ecto.create --quiet
+    MIX_ENV=test MIX_TEST_PARTITION=$i mix ecto.load --force --quiet
+  done
+fi
 
 echo "==> Running $PARTITIONS test partitions in parallel"
 

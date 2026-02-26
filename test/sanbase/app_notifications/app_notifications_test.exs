@@ -683,6 +683,8 @@ defmodule Sanbase.AppNotificationsTest do
 
       {:ok, published_post} = Post.publish(post.id, author.id)
 
+      initial_count = length(AppNotifications.list_notifications_for_user(author.id))
+
       content = String.duplicate("a", 160)
 
       {:ok, _comment} =
@@ -691,10 +693,9 @@ defmodule Sanbase.AppNotificationsTest do
       :timer.sleep(100)
 
       owner_notifications = AppNotifications.list_notifications_for_user(author.id)
-      assert length(owner_notifications) == 1
+      assert length(owner_notifications) == initial_count + 1
 
-      [notification] = owner_notifications
-      assert notification.type == "create_comment"
+      notification = Enum.find(owner_notifications, &(&1.type == "create_comment"))
       assert notification.entity_type == "insight"
       assert notification.entity_id == published_post.id
       assert notification.user_id == commenter.id
@@ -725,15 +726,16 @@ defmodule Sanbase.AppNotificationsTest do
       {:ok, watchlist} =
         UserList.create_user_list(author, %{name: "Vote target", is_public: true})
 
+      initial_count = length(AppNotifications.list_notifications_for_user(author.id))
+
       {:ok, _vote} = Vote.create(%{user_id: voter.id, watchlist_id: watchlist.id})
 
       :timer.sleep(100)
 
       owner_notifications = AppNotifications.list_notifications_for_user(author.id)
-      assert length(owner_notifications) == 1
+      assert length(owner_notifications) == initial_count + 1
 
-      [notification] = owner_notifications
-      assert notification.type == "create_vote"
+      notification = Enum.find(owner_notifications, &(&1.type == "create_vote"))
       assert notification.entity_type == "watchlist"
       assert notification.entity_id == watchlist.id
       assert notification.user_id == voter.id
@@ -833,6 +835,142 @@ defmodule Sanbase.AppNotificationsTest do
 
       assert hd(notifications1).entity_id == watchlist.id
       assert hd(notifications2).entity_id == watchlist.id
+    end
+
+    # follow_user tests
+
+    test "follow_user creates notification for the followed user" do
+      user = insert(:user)
+      follower = insert(:user)
+
+      assert AppNotifications.list_notifications_for_user(user.id) == []
+
+      {:ok, _} = UserFollower.follow(user.id, follower.id)
+
+      :timer.sleep(100)
+
+      notifications = AppNotifications.list_notifications_for_user(user.id)
+      assert length(notifications) == 1
+
+      [notification] = notifications
+      assert notification.type == "follow_user"
+      assert notification.entity_type == "user"
+      assert notification.entity_id == user.id
+      assert notification.user_id == follower.id
+    end
+
+    test "follow_user does not create notification for the follower" do
+      user = insert(:user)
+      follower = insert(:user)
+
+      {:ok, _} = UserFollower.follow(user.id, follower.id)
+
+      :timer.sleep(100)
+
+      # The follower should not receive a notification about their own action
+      assert AppNotifications.list_notifications_for_user(follower.id) == []
+    end
+  end
+
+  describe "mark_all_as_read/1" do
+    test "marks all unread notifications as read" do
+      user = insert(:user)
+      author = insert(:user)
+
+      for i <- 1..3 do
+        {:ok, notification} =
+          AppNotifications.create_notification(%{
+            type: "create_watchlist",
+            user_id: author.id,
+            entity_type: "watchlist",
+            entity_id: i
+          })
+
+        {:ok, _} =
+          AppNotifications.create_notification_read_status(%{
+            notification_id: notification.id,
+            user_id: user.id
+          })
+      end
+
+      # All 3 should be unread
+      stats = AppNotifications.get_notifications_stats(user.id)
+      assert [%{type: "create_watchlist", unread_count: 3}] = stats
+
+      assert {:ok, 3} = AppNotifications.mark_all_as_read(user.id)
+
+      # All should be read now
+      stats = AppNotifications.get_notifications_stats(user.id)
+      assert [%{type: "create_watchlist", unread_count: 0}] = stats
+    end
+
+    test "does not affect already-read notifications" do
+      user = insert(:user)
+      author = insert(:user)
+
+      {:ok, notification} =
+        AppNotifications.create_notification(%{
+          type: "create_watchlist",
+          user_id: author.id,
+          entity_type: "watchlist",
+          entity_id: 1
+        })
+
+      {:ok, _} =
+        AppNotifications.create_notification_read_status(%{
+          notification_id: notification.id,
+          user_id: user.id
+        })
+
+      AppNotifications.set_read_status(user.id, notification.id, true)
+
+      {:ok, read_notif} = AppNotifications.get_notification_for_user(user.id, notification.id)
+      original_read_at = read_notif.read_at
+
+      :timer.sleep(100)
+
+      # mark_all_as_read should not change already-read notifications
+      assert {:ok, 0} = AppNotifications.mark_all_as_read(user.id)
+
+      {:ok, still_read} = AppNotifications.get_notification_for_user(user.id, notification.id)
+      assert still_read.read_at == original_read_at
+    end
+
+    test "returns zero when user has no unread notifications" do
+      user = insert(:user)
+      assert {:ok, 0} = AppNotifications.mark_all_as_read(user.id)
+    end
+  end
+
+  describe "create_broadcast_notification/1" do
+    test "creates notification and read statuses for all registered users" do
+      user1 = insert(:user)
+      user2 = insert(:user)
+      _unregistered = insert(:user_registration_not_finished)
+
+      attrs = %{
+        type: "system_notification",
+        title: "Maintenance Notice",
+        content: "We will be performing maintenance."
+      }
+
+      assert {:ok, %{notification: notification, recipients_count: count}} =
+               AppNotifications.create_broadcast_notification(attrs)
+
+      assert notification.is_broadcast == true
+      assert notification.is_system_generated == true
+      assert notification.title == "Maintenance Notice"
+      assert count == 2
+
+      # Both registered users should have the notification
+      notifications1 = AppNotifications.list_notifications_for_user(user1.id)
+      notifications2 = AppNotifications.list_notifications_for_user(user2.id)
+
+      assert length(notifications1) == 1
+      assert length(notifications2) == 1
+
+      assert hd(notifications1).type == "system_notification"
+      assert hd(notifications1).is_broadcast == true
     end
   end
 end

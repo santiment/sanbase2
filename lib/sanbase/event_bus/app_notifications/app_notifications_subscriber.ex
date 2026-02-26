@@ -352,7 +352,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
        ) do
     {:ok, notification} =
       AppNotifications.create_notification(%{
-        type: "follow_user",
+        type: "new_follower",
         user_id: follower_id,
         entity_type: "user",
         entity_id: user_id,

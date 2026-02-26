@@ -83,6 +83,15 @@ defmodule SanbaseWeb.AdminFormsLive do
           %{url: ~p"/admin/notifications/manual/discord", text: "Discord"},
           %{url: ~p"/admin/notifications/manual/email", text: "Email"}
         ]
+      },
+      %{
+        title: "Broadcast Sanbase Notification",
+        description: """
+        Broadcast an in-app notification to all registered Sanbase users
+        """,
+        buttons: [
+          %{url: ~p"/admin/notifications/broadcast", text: "Open"}
+        ]
       }
     ]
   end

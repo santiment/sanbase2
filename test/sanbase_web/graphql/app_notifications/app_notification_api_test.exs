@@ -436,10 +436,134 @@ defmodule SanbaseWeb.Graphql.AppNotificationApiTest do
     end
   end
 
+  describe "markAllNotificationsAsRead mutation" do
+    setup %{follower: follower, author: author} do
+      notifications =
+        for i <- 1..3 do
+          {:ok, notification} =
+            AppNotifications.create_notification(%{
+              type: "create_watchlist",
+              user_id: author.id,
+              entity_type: "watchlist",
+              entity_name: "Watchlist #{i}",
+              entity_id: i
+            })
+
+          {:ok, _} =
+            AppNotifications.create_notification_read_status(%{
+              notification_id: notification.id,
+              user_id: follower.id
+            })
+
+          notification
+        end
+
+      [notifications: notifications]
+    end
+
+    test "marks all unread notifications as read", %{conn: conn} do
+      mutation = """
+      mutation {
+        markAllNotificationsAsRead {
+          updatedCount
+        }
+      }
+      """
+
+      result = execute_mutation(conn, mutation, "markAllNotificationsAsRead")
+      assert result["updatedCount"] == 3
+
+      # Verify all are read
+      query = """
+      {
+        getCurrentUserNotifications {
+          stats { type unreadCount }
+        }
+      }
+      """
+
+      result = execute_query(conn, query, "getCurrentUserNotifications")
+      stats = result["stats"] |> Map.new(&{&1["type"], &1["unreadCount"]})
+      assert stats["create_watchlist"] == 0
+    end
+
+    test "returns zero when no unread notifications exist", %{
+      conn: conn,
+      follower: follower,
+      notifications: notifications
+    } do
+      # Mark all as read first
+      for n <- notifications do
+        AppNotifications.set_read_status(follower.id, n.id, true)
+      end
+
+      mutation = """
+      mutation {
+        markAllNotificationsAsRead {
+          updatedCount
+        }
+      }
+      """
+
+      result = execute_mutation(conn, mutation, "markAllNotificationsAsRead")
+      assert result["updatedCount"] == 0
+    end
+
+    test "requires authentication" do
+      conn = build_conn()
+
+      mutation = """
+      mutation {
+        markAllNotificationsAsRead {
+          updatedCount
+        }
+      }
+      """
+
+      error_msg = execute_mutation_with_error(conn, mutation)
+      assert error_msg =~ "unauthorized"
+    end
+  end
+
   describe "integration: event-driven notifications via GraphQL" do
     setup %{author: author, follower: follower} do
       {:ok, _} = UserFollower.follow(author.id, follower.id)
       :ok
+    end
+
+    test "user receives follow notification when followed", %{
+      author: author
+    } do
+      new_follower = insert(:user)
+      author_conn = setup_jwt_auth(build_conn(), author)
+
+      query = """
+      {
+        getCurrentUserNotifications {
+          notifications { id type entityType entityId isRead user { id } }
+        }
+      }
+      """
+
+      result = execute_query(author_conn, query, "getCurrentUserNotifications")
+      initial_count = length(result["notifications"])
+
+      {:ok, _} = UserFollower.follow(author.id, new_follower.id)
+
+      :timer.sleep(100)
+
+      result = execute_query(author_conn, query, "getCurrentUserNotifications")
+      assert length(result["notifications"]) == initial_count + 1
+
+      notif =
+        Enum.find(
+          result["notifications"],
+          &(&1["type"] == "follow_user" && &1["user"]["id"] == "#{new_follower.id}")
+        )
+
+      assert notif["entityType"] == "user"
+      assert notif["entityId"] == author.id
+      assert notif["isRead"] == false
     end
 
     test "follower receives notification after author creates public watchlist", %{

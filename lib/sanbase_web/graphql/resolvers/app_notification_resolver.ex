@@ -34,6 +34,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.AppNotificationResolver do
   end
 
   @doc """
+  Mark all unread notifications as read for the current user.
+  """
+  def mark_all_as_read(_root, _args, %{context: %{auth: %{current_user: user}}}) do
+    {:ok, count} = AppNotifications.mark_all_as_read(user.id)
+    {:ok, %{updated_count: count}}
+  end
+
+  @doc """
   Resolver for the is_read virtual field.
   Returns true if the notification has a read_at timestamp.
   """

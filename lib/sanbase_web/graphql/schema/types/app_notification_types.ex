@@ -28,6 +28,10 @@ defmodule SanbaseWeb.Graphql.AppNotificationTypes do
     field(:unread_count, non_null(:integer))
   end
 
+  object :mark_all_notifications_as_read_result do
+    field(:updated_count, non_null(:integer))
+  end
+
   object :app_notifications_paginated do
     field(:notifications, list_of(:app_notification))
     field(:cursor, :cursor)

@@ -8,6 +8,7 @@ defmodule Sanbase.FeaturedItem do
 
   import Ecto.Changeset
   import Ecto.Query
+  import Sanbase.Alert.TriggerQuery, only: [public_trigger?: 0]
 
   alias Sanbase.Repo
   alias Sanbase.Insight.Post
@@ -79,6 +80,7 @@ defmodule Sanbase.FeaturedItem do
     |> join(:inner, [fi], fi in assoc(fi, :user_list), as: :user_list)
     |> where([_fi, user_list: ul], ul.type == ^type)
     |> where([_fi, user_list: ul], ul.is_screener == ^is_screener)
+    |> where([_fi, user_list: ul], ul.is_public == true)
     |> select([_fi, user_list: ul], ul)
     |> Repo.all()
     |> Repo.preload([:user, :list_items])
@@ -87,6 +89,7 @@ defmodule Sanbase.FeaturedItem do
   def user_triggers() do
     user_triggers_query()
     |> join(:inner, [fi], fi in assoc(fi, :user_trigger), as: :user_trigger)
+    |> where([_fi, user_trigger: ut], public_trigger?())
     |> select([_fi, user_trigger: ut], ut)
     |> Repo.all()
     |> Repo.preload([:user, :tags])
@@ -95,6 +98,7 @@ defmodule Sanbase.FeaturedItem do
   def chart_configurations() do
     chart_configurations_query()
     |> join(:inner, [fi], fi in assoc(fi, :chart_configuration), as: :chart_configuration)
+    |> where([_fi, chart_configuration: config], config.is_public == true)
     |> select([_fi, chart_configuration: config], config)
     |> Repo.all()
   end
@@ -102,6 +106,7 @@ defmodule Sanbase.FeaturedItem do
   def table_configurations() do
     table_configurations_query()
     |> join(:inner, [fi], fi in assoc(fi, :table_configuration), as: :table_configuration)
+    |> where([_fi, table_configuration: config], config.is_public == true)
     |> select([_fi, table_configuration: config], config)
     |> Repo.all()
   end
@@ -109,6 +114,7 @@ defmodule Sanbase.FeaturedItem do
   def dashboards() do
     dashboards_query()
     |> join(:inner, [fi], fi in assoc(fi, :dashboard), as: :dashboard)
+    |> where([_fi, dashboard: d], d.is_public == true)
     |> order_by([fi, _], desc: fi.inserted_at, desc: fi.id)
     |> select([_fi, dashboard: dashboard], dashboard)
     |> Repo.all()
@@ -118,6 +124,7 @@ defmodule Sanbase.FeaturedItem do
   def queries() do
     queries_query()
     |> join(:inner, [fi], fi in assoc(fi, :query), as: :query)
+    |> where([_fi, query: q], q.is_public == true)
     |> order_by([fi, _], desc: fi.inserted_at, desc: fi.id)
     # Binding cannot be named `query` (conflicts with Ecto).
     |> select([_fi, query: q], q)

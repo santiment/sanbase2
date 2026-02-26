@@ -3,7 +3,9 @@ defmodule Sanbase.FeaturedItemApiTest do
 
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
+  import Ecto.Changeset, only: [change: 2]
 
+  alias Sanbase.Repo
   alias Sanbase.FeaturedItem
   alias Sanbase.Insight.Post
 
@@ -56,6 +58,17 @@ defmodule Sanbase.FeaturedItemApiTest do
                    }
                  ]
                }
+             }
+    end
+
+    test "featured chart configuration made private is not returned", context do
+      chart_configuration = insert(:chart_configuration, is_public: true)
+      :ok = FeaturedItem.update_item(chart_configuration, true)
+
+      chart_configuration |> change(is_public: false) |> Repo.update!()
+
+      assert chart_configurations(context.conn) == %{
+               "data" => %{"featuredChartConfigurations" => []}
              }
     end
 
@@ -256,6 +269,17 @@ defmodule Sanbase.FeaturedItemApiTest do
              }
     end
 
+    test "featured watchlist made private is not returned", context do
+      watchlist = insert(:watchlist, is_public: true)
+      :ok = FeaturedItem.update_item(watchlist, true)
+
+      watchlist |> change(is_public: false) |> Repo.update!()
+
+      assert fetch_watchlists(context.conn) == %{
+               "data" => %{"featuredWatchlists" => []}
+             }
+    end
+
     defp fetch_watchlists(conn) do
       query = """
       {
@@ -342,6 +366,20 @@ defmodule Sanbase.FeaturedItemApiTest do
              }
     end
 
+    test "featured user_trigger made private is not returned", context do
+      user_trigger = insert(:user_trigger, is_public: true)
+      :ok = FeaturedItem.update_item(user_trigger, true)
+
+      # Make the trigger private directly in the DB
+      user_trigger
+      |> Sanbase.Alert.UserTrigger.update_changeset(%{trigger: %{is_public: false}})
+      |> Repo.update!()
+
+      assert fetch_user_triggers(context.conn) == %{
+               "data" => %{"featuredUserTriggers" => []}
+             }
+    end
+
     defp fetch_user_triggers(conn) do
       query = """
       {
@@ -412,6 +450,17 @@ defmodule Sanbase.FeaturedItemApiTest do
              }
     end
 
+    test "featured dashboard made private is not returned", context do
+      dashboard = insert(:dashboard, is_public: true)
+      :ok = FeaturedItem.update_item(dashboard, true)
+
+      dashboard |> change(is_public: false) |> Repo.update!()
+
+      assert fetch_dashboards(context.conn) == %{
+               "data" => %{"featuredDashboards" => []}
+             }
+    end
+
     defp fetch_dashboards(conn) do
       query = """
       {
@@ -476,6 +525,17 @@ defmodule Sanbase.FeaturedItemApiTest do
                    }
                  ]
                }
+             }
+    end
+
+    test "featured query made private is not returned", context do
+      query = insert(:query, is_public: true)
+      :ok = FeaturedItem.update_item(query, true)
+
+      query |> change(is_public: false) |> Repo.update!()
+
+      assert fetch_queries(context.conn) == %{
+               "data" => %{"featuredQueries" => []}
              }
     end
 

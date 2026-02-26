@@ -41,7 +41,55 @@ defmodule Sanbase.AppNotifications do
   alias Sanbase.AppNotifications.Notification
   alias Sanbase.AppNotifications.NotificationReadStatus
 
+  import Sanbase.Accounts.User.Ecto, only: [is_registered: 0]
+
   @default_limit 20
+
+  @doc """
+  Creates a broadcast notification visible to all registered users.
+
+  Uses an INSERT ... SELECT to create NotificationReadStatus records for all
+  registered users in a single query, avoiding loading all user IDs into memory.
+  """
+  @spec create_broadcast_notification(map()) ::
+          {:ok, Notification.t()} | {:error, Ecto.Changeset.t()}
+  def create_broadcast_notification(attrs) when is_map(attrs) do
+    attrs =
+      attrs
+      |> Map.put(:is_broadcast, true)
+      |> Map.put(:is_system_generated, true)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:notification, Notification.changeset(%Notification{}, attrs))
+    |> Ecto.Multi.run(:read_statuses, fn _repo, %{notification: notification} ->
+      now = DateTime.utc_now(:second)
+
+      {count, _} =
+        Repo.insert_all(
+          NotificationReadStatus,
+          from(u in Sanbase.Accounts.User,
+            where: is_registered(),
+            select: %{
+              user_id: u.id,
+              notification_id: ^notification.id,
+              read_at: type(^nil, :utc_datetime),
+              inserted_at: type(^now, :utc_datetime),
+              updated_at: type(^now, :utc_datetime)
+            }
+          )
+        )
+
+      {:ok, count}
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{notification: notification, read_statuses: count}} ->
+        {:ok, %{notification: notification, recipients_count: count}}
+
+      {:error, _operation, reason, _changes} ->
+        {:error, reason}
+    end
+  end
 
   @doc """
   Creates a notification entry.

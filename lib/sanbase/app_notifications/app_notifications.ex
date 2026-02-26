@@ -52,7 +52,8 @@ defmodule Sanbase.AppNotifications do
   registered users in a single query, avoiding loading all user IDs into memory.
   """
   @spec create_broadcast_notification(map()) ::
-          {:ok, Notification.t()} | {:error, Ecto.Changeset.t()}
+          {:ok, %{notification: Notification.t(), recipients_count: non_neg_integer()}}
+          | {:error, Ecto.Changeset.t()}
   def create_broadcast_notification(attrs) when is_map(attrs) do
     attrs =
       attrs
@@ -244,8 +245,8 @@ defmodule Sanbase.AppNotifications do
   Sets read_at to the current time for all NotificationReadStatus records
   where read_at is nil.
   """
-  @spec mark_all_as_read(pos_integer()) :: {:ok, non_neg_integer()}
-  def mark_all_as_read(user_id) when is_integer(user_id) do
+  @spec mark_all_as_read(non_neg_integer()) :: {:ok, non_neg_integer()}
+  def mark_all_as_read(user_id) when is_integer(user_id) and user_id > 0 do
     now = DateTime.utc_now(:second)
 
     {count, _} =

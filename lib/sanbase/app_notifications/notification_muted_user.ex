@@ -13,6 +13,8 @@ defmodule Sanbase.AppNotifications.NotificationMutedUser do
   alias Sanbase.Accounts.User
   alias Sanbase.Repo
 
+  @self_mute_message "Cannot mute yourself"
+
   @primary_key false
   @timestamps_opts [updated_at: false]
   schema "notification_muted_users" do
@@ -28,14 +30,28 @@ defmodule Sanbase.AppNotifications.NotificationMutedUser do
     |> unique_constraint([:user_id, :muted_user_id],
       name: :notification_muted_users_pkey
     )
-    |> check_constraint(:user_id, name: :cannot_mute_self, message: "cannot mute yourself")
+    |> foreign_key_constraint(:user_id)
+    |> foreign_key_constraint(:muted_user_id)
+    |> validate_not_self_mute()
+    |> check_constraint(:user_id, name: :cannot_mute_self, message: @self_mute_message)
+  end
+
+  defp validate_not_self_mute(changeset) do
+    user_id = get_field(changeset, :user_id)
+    muted_user_id = get_field(changeset, :muted_user_id)
+
+    if user_id && muted_user_id && user_id == muted_user_id do
+      add_error(changeset, :user_id, @self_mute_message)
+    else
+      changeset
+    end
   end
 
   @doc """
   Mute notifications from `muted_user_id` for `user_id`.
   Returns `{:error, "Cannot mute yourself"}` if both IDs are equal.
   """
-  def mute(user_id, user_id), do: {:error, "Cannot mute yourself"}
+  def mute(user_id, user_id), do: {:error, @self_mute_message}
 
   def mute(user_id, muted_user_id) do
     %__MODULE__{}

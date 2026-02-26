@@ -55,7 +55,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AppNotificationResolver do
     muted_user_id = Sanbase.Math.to_integer(muted_user_id)
 
     case AppNotifications.mute_user(user.id, muted_user_id) do
-      {:ok, _} -> {:ok, Sanbase.Accounts.get_user!(muted_user_id)}
+      {:ok, _} -> Sanbase.Accounts.get_user(muted_user_id)
       {:error, reason} -> {:error, reason}
     end
   end
@@ -66,7 +66,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AppNotificationResolver do
     muted_user_id = Sanbase.Math.to_integer(muted_user_id)
 
     case AppNotifications.unmute_user(user.id, muted_user_id) do
-      {:ok, _} -> {:ok, Sanbase.Accounts.get_user!(muted_user_id)}
+      {:ok, _} -> Sanbase.Accounts.get_user(muted_user_id)
       {:error, reason} -> {:error, reason}
     end
   end

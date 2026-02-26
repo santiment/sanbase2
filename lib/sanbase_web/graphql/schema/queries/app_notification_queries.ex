@@ -9,6 +9,16 @@ defmodule SanbaseWeb.Graphql.Schema.AppNotificationQueries do
 
   object :app_notification_queries do
     @desc """
+    Returns the list of users whose notifications the current user has muted.
+    """
+    field :get_notification_muted_users, list_of(:public_user) do
+      meta(access: :free)
+
+      middleware(JWTAuth)
+      resolve(&AppNotificationResolver.list_muted_users/3)
+    end
+
+    @desc """
     Fetch notifications for the current logged-in user.
     Supports cursor-based pagination for infinite scrolling.
 
@@ -51,6 +61,27 @@ defmodule SanbaseWeb.Graphql.Schema.AppNotificationQueries do
     field :mark_all_notifications_as_read, :mark_all_notifications_as_read_result do
       middleware(JWTAuth)
       resolve(&AppNotificationResolver.mark_all_as_read/3)
+    end
+
+    @desc """
+    Mute notifications from a specific user. Future notifications triggered
+    by the muted user's actions will be silently dropped.
+    """
+    field :mute_user_notifications, :public_user do
+      arg(:user_id, non_null(:id))
+
+      middleware(JWTAuth)
+      resolve(&AppNotificationResolver.mute_user/3)
+    end
+
+    @desc """
+    Unmute a previously muted user to resume receiving their notifications.
+    """
+    field :unmute_user_notifications, :public_user do
+      arg(:user_id, non_null(:id))
+
+      middleware(JWTAuth)
+      resolve(&AppNotificationResolver.unmute_user/3)
     end
   end
 end

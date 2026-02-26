@@ -40,6 +40,7 @@ defmodule Sanbase.AppNotifications do
   alias Sanbase.Repo
   alias Sanbase.AppNotifications.Notification
   alias Sanbase.AppNotifications.NotificationReadStatus
+  alias Sanbase.AppNotifications.NotificationMutedUser
 
   import Sanbase.Accounts.User.Ecto, only: [is_registered: 0]
 
@@ -316,6 +317,13 @@ defmodule Sanbase.AppNotifications do
        }
      }}
   end
+
+  # Mute user notifications
+
+  defdelegate mute_user(user_id, muted_user_id), to: NotificationMutedUser, as: :mute
+  defdelegate unmute_user(user_id, muted_user_id), to: NotificationMutedUser, as: :unmute
+  defdelegate list_muted_users(user_id), to: NotificationMutedUser
+  defdelegate user_ids_that_muted(actor_user_id), to: NotificationMutedUser
 
   def async_broadcast_websocket_notifications(notification_read_status_list) do
     Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->

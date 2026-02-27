@@ -25,7 +25,7 @@ defmodule Sanbase.AppNotifications.NotificationMutedUser do
 
   def changeset(%__MODULE__{} = muted_user, attrs) do
     muted_user
-    |> cast(attrs, [:user_id, :muted_user_id])
+    |> cast(attrs, [:muted_user_id])
     |> validate_required([:user_id, :muted_user_id])
     |> unique_constraint([:user_id, :muted_user_id],
       name: :notification_muted_users_pkey
@@ -49,13 +49,11 @@ defmodule Sanbase.AppNotifications.NotificationMutedUser do
 
   @doc """
   Mute notifications from `muted_user_id` for `user_id`.
-  Returns `{:error, "Cannot mute yourself"}` if both IDs are equal.
+  Returns a changeset error if both IDs are equal.
   """
-  def mute(user_id, user_id), do: {:error, @self_mute_message}
-
   def mute(user_id, muted_user_id) do
-    %__MODULE__{}
-    |> changeset(%{user_id: user_id, muted_user_id: muted_user_id})
+    %__MODULE__{user_id: user_id}
+    |> changeset(%{muted_user_id: muted_user_id})
     |> Repo.insert()
   end
 

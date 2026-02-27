@@ -190,7 +190,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
          title: title,
          user_id: author_id
        }) do
-    {:ok, notification} =
+    multi_insert_notification_read_status(user_ids, author_id, fn ->
       AppNotifications.create_notification(%{
         type: "publish_insight",
         user_id: author_id,
@@ -200,8 +200,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
         is_broadcast: false,
         is_system_generated: false
       })
-
-    multi_insert_notification_read_status(user_ids, notification.id, author_id)
+    end)
   end
 
   ## Watchlist notifications
@@ -212,7 +211,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
          name: name,
          user_id: author_id
        }) do
-    {:ok, notification} =
+    multi_insert_notification_read_status(user_ids, author_id, fn ->
       AppNotifications.create_notification(%{
         type: "create_watchlist",
         user_id: author_id,
@@ -222,8 +221,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
         is_broadcast: false,
         is_system_generated: false
       })
-
-    multi_insert_notification_read_status(user_ids, notification.id, author_id)
+    end)
   end
 
   defp create_notification(
@@ -244,7 +242,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
         update_watchlist_list_additional_json_data(changes)
         |> Map.merge(%{changed_fields: changed_fields})
 
-      {:ok, notification} =
+      multi_insert_notification_read_status(user_ids, author_id, fn ->
         AppNotifications.create_notification(%{
           type: "update_watchlist",
           user_id: author_id,
@@ -255,8 +253,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
           is_system_generated: false,
           json_data: json_data
         })
-
-      multi_insert_notification_read_status(user_ids, notification.id, author_id)
+      end)
     end
   end
 
@@ -274,7 +271,9 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
     with %Sanbase.Comment{content: content} <- Sanbase.Comment.by_id(comment_id) do
       comment_preview = String.slice(content, 0, 150)
 
-      {:ok, notification} =
+      # There's one receiver - the owner of the entity - but we can reuse
+      # the multi_insert_notification_read_status function to insert the notification read status
+      multi_insert_notification_read_status(user_ids, author_id, fn ->
         AppNotifications.create_notification(%{
           type: "create_comment",
           user_id: author_id,
@@ -286,10 +285,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
           is_system_generated: false,
           json_data: %{"comment_preview" => comment_preview}
         })
-
-      # There's one receiver - the owner of the entity - but we can reuse
-      # the multi_insert_notification_read_status function to insert the notification read status
-      multi_insert_notification_read_status(user_ids, notification.id, author_id)
+      end)
     end
   end
 
@@ -303,7 +299,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
            user_id: author_id
          }
        ) do
-    {:ok, notification} =
+    multi_insert_notification_read_status(user_ids, author_id, fn ->
       AppNotifications.create_notification(%{
         type: "create_vote",
         user_id: author_id,
@@ -314,8 +310,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
         is_system_generated: false,
         json_data: %{}
       })
-
-    multi_insert_notification_read_status(user_ids, notification.id, author_id)
+    end)
   end
 
   defp create_notification(
@@ -327,7 +322,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
            alert_title: alert_title
          }
        ) do
-    {:ok, notification} =
+    multi_insert_notification_read_status(user_ids, user_id, fn ->
       AppNotifications.create_notification(%{
         type: "alert_triggered",
         user_id: user_id,
@@ -338,8 +333,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
         is_system_generated: false,
         json_data: %{}
       })
-
-    multi_insert_notification_read_status(user_ids, notification.id, user_id)
+    end)
   end
 
   defp create_notification(
@@ -350,7 +344,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
            follower_id: follower_id
          }
        ) do
-    {:ok, notification} =
+    multi_insert_notification_read_status(user_ids, follower_id, fn ->
       AppNotifications.create_notification(%{
         type: "new_follower",
         user_id: follower_id,
@@ -360,25 +354,26 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
         is_system_generated: false,
         json_data: %{}
       })
-
-    multi_insert_notification_read_status(user_ids, notification.id, follower_id)
+    end)
   end
 
-  defp multi_insert_notification_read_status(user_ids, notification_id, actor_user_id) do
+  defp multi_insert_notification_read_status(user_ids, actor_user_id, create_notification_fn) do
     muted_by = AppNotifications.user_ids_that_muted(actor_user_id)
-
     user_ids = Enum.reject(user_ids, fn uid -> MapSet.member?(muted_by, uid) end)
 
     if user_ids == [] do
       {:ok, %{}}
     else
+      # If no receivers left after filtering out the users that muted the actor, do not create the notification
+      {:ok, notification} = create_notification_fn.()
+
       user_ids
       |> Enum.reduce(Ecto.Multi.new(), fn user_id, multi ->
         Ecto.Multi.insert(
           multi,
-          {:notification, user_id, notification_id},
+          {:notification, user_id, notification.id},
           AppNotifications.notification_read_status_changeset(%{
-            notification_id: notification_id,
+            notification_id: notification.id,
             user_id: user_id,
             read_at: nil
           })

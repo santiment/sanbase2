@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict c36IM6gQeKazfKzpRe7YI2oVhtqI2hEdJSqWOOThUREujYmWqfEZeNB6mjklD5R
+\restrict lPrBCVGzfDAQrezJuUuvsvvIxIMIDCrQVbcCW2A0GafidncDVtkqtUHNwYPqA5k
 
 -- Dumped from database version 15.16 (Homebrew)
 -- Dumped by pg_dump version 15.16 (Homebrew)
@@ -8744,6 +8744,13 @@ CREATE UNIQUE INDEX monitored_twitter_handles_handle_index ON public.monitored_t
 
 
 --
+-- Name: notification_muted_users_muted_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX notification_muted_users_muted_user_id_index ON public.notification_muted_users USING btree (muted_user_id);
+
+
+--
 -- Name: notification_templates_action_step_channel_mime_type_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11050,7 +11057,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict c36IM6gQeKazfKzpRe7YI2oVhtqI2hEdJSqWOOThUREujYmWqfEZeNB6mjklD5R
+\unrestrict lPrBCVGzfDAQrezJuUuvsvvIxIMIDCrQVbcCW2A0GafidncDVtkqtUHNwYPqA5k
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);

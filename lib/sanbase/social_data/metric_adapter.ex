@@ -170,6 +170,10 @@ defmodule Sanbase.SocialData.MetricAdapter do
     Sanbase.SocialData.social_active_users(selector, from, to, interval)
   end
 
+  def timeseries_data(_metric, selector, _from, _to, _interval, _opts) when is_map(selector) do
+    {:error, unsupported_selector_error(selector)}
+  end
+
   @impl Sanbase.Metric.Behaviour
   def timeseries_data_per_slug(metric, _from, _to, _operator, _threshold, _opts) do
     not_implemented_function_for_metric_error("timeseries_data_per_slug", metric)
@@ -395,5 +399,15 @@ defmodule Sanbase.SocialData.MetricAdapter do
       end
 
     Enum.map(list, &Path.join(["https://academy.santiment.net", &1]))
+  end
+
+  defp unsupported_selector_error(selector) do
+    provided_keys =
+      selector
+      |> Map.keys()
+      |> Enum.map_join(", ", &inspect/1)
+
+    "The provided selector #{inspect(selector)} is not supported. " <>
+      "Provided selector fields: #{provided_keys}"
   end
 end

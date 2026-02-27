@@ -56,6 +56,10 @@ defmodule Sanbase.Contract.MetricAdapter do
     end)
   end
 
+  def timeseries_data(_metric, selector, _from, _to, _interval, _opts) when is_map(selector) do
+    {:error, unsupported_selector_error(selector)}
+  end
+
   @impl Sanbase.Metric.Behaviour
   def aggregated_timeseries_data(metric, _selector, _from, _to, _opts) do
     not_implemented_error("aggregated_timeseries_data", metric)
@@ -87,6 +91,10 @@ defmodule Sanbase.Contract.MetricAdapter do
     |> maybe_unwrap_ok_value()
   end
 
+  def first_datetime(_metric, selector, _opts) when is_map(selector) do
+    {:error, unsupported_selector_error(selector)}
+  end
+
   @impl Sanbase.Metric.Behaviour
   def last_datetime_computed_at(_metric, %{contract_address: contract_address})
       when is_binary(contract_address) do
@@ -94,6 +102,10 @@ defmodule Sanbase.Contract.MetricAdapter do
 
     ClickhouseRepo.query_transform(query_struct, fn [unix] -> DateTime.from_unix!(unix) end)
     |> maybe_unwrap_ok_value()
+  end
+
+  def last_datetime_computed_at(_metric, selector) when is_map(selector) do
+    {:error, unsupported_selector_error(selector)}
   end
 
   @impl Sanbase.Metric.Behaviour
@@ -171,6 +183,17 @@ defmodule Sanbase.Contract.MetricAdapter do
   def available_slugs(_metric, _opts), do: available_slugs()
 
   # Private functions
+
+  defp unsupported_selector_error(selector) do
+    provided_keys =
+      selector
+      |> Map.keys()
+      |> Enum.map_join(", ", &inspect/1)
+
+    "The provided selector #{inspect(selector)} is not supported. " <>
+      "The selector must have the following field: contractAddress. " <>
+      "Provided selector fields: #{provided_keys}"
+  end
 
   defp not_implemented_error(function, metric) do
     {:error, "The #{function} function is not implemented for #{metric}"}

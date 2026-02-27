@@ -82,6 +82,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     |> exec_timeseries_data_query()
   end
 
+  def timeseries_data(_metric, selector, _from, _to, _interval, _opts) when is_map(selector) do
+    {:error, unsupported_selector_error(selector)}
+  end
+
   @impl Sanbase.Metric.Behaviour
   def timeseries_data_per_slug(metric, %{slug: slug}, from, to, interval, opts) do
     aggregation =
@@ -104,6 +108,11 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     end)
   end
 
+  def timeseries_data_per_slug(_metric, selector, _from, _to, _interval, _opts)
+      when is_map(selector) do
+    {:error, unsupported_selector_error(selector)}
+  end
+
   @impl Sanbase.Metric.Behaviour
   defdelegate histogram_data(metric, slug, from, to, interval, limit), to: HistogramMetric
 
@@ -124,6 +133,11 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     filters = Keyword.get(opts, :additional_filters, [])
     slugs = List.wrap(slug_or_slugs)
     get_aggregated_timeseries_data(metric, slugs, from, to, aggregation, filters, opts)
+  end
+
+  def aggregated_timeseries_data(_metric, selector, _from, _to, _opts)
+      when is_map(selector) do
+    {:error, unsupported_selector_error(selector)}
   end
 
   @impl Sanbase.Metric.Behaviour
@@ -253,6 +267,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
       true ->
         {:ok, []}
     end
+  end
+
+  def available_label_fqns(_metric, selector) when is_map(selector) do
+    {:error, unsupported_selector_error(selector)}
   end
 
   @impl Sanbase.Metric.Behaviour
@@ -404,6 +422,17 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
       value = if has_changed == 1, do: value, else: nil
       Map.put(acc, slug, value)
     end)
+  end
+
+  defp unsupported_selector_error(selector) do
+    provided_keys =
+      selector
+      |> Map.keys()
+      |> Enum.map_join(", ", &inspect/1)
+
+    "The provided selector #{inspect(selector)} is not supported. " <>
+      "The selector must have at least one of the following fields: slug, address, contractAddress. " <>
+      "Provided selector fields: #{provided_keys}"
   end
 
   defp get_filters(metric, opts) do

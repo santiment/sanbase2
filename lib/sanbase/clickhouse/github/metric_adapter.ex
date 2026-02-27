@@ -90,6 +90,10 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
     end
   end
 
+  def timeseries_data(_metric, selector, _from, _to, _interval, _opts) when is_map(selector) do
+    {:error, unsupported_selector_error(selector)}
+  end
+
   @impl Sanbase.Metric.Behaviour
   def timeseries_data_per_slug(metric, _selector, _from, _to, _interval, _opts) do
     not_implemented_function_for_metric_error("timeseries_data_per_slug", metric)
@@ -135,6 +139,11 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
     end
   end
 
+  def aggregated_timeseries_data(_metric, selector, _from, _to, _opts)
+      when is_map(selector) do
+    {:error, unsupported_selector_error(selector)}
+  end
+
   defp github_organizatoins_of_projects(projects) do
     projects
     |> Enum.map(&Project.github_organizations/1)
@@ -178,6 +187,10 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
     end
   end
 
+  def first_datetime(_metric, selector, _opts) when is_map(selector) do
+    {:error, unsupported_selector_error(selector)}
+  end
+
   @impl Sanbase.Metric.Behaviour
   def last_datetime_computed_at(_metric, %{organization: organization})
       when is_binary(organization) do
@@ -192,6 +205,10 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
       {:error, error} ->
         {:error, error}
     end
+  end
+
+  def last_datetime_computed_at(_metric, selector) when is_map(selector) do
+    {:error, unsupported_selector_error(selector)}
   end
 
   @impl Sanbase.Metric.Behaviour
@@ -312,6 +329,17 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def min_plan_map(), do: @min_plan_map
+
+  defp unsupported_selector_error(selector) do
+    provided_keys =
+      selector
+      |> Map.keys()
+      |> Enum.map_join(", ", &inspect/1)
+
+    "The provided selector #{inspect(selector)} is not supported. " <>
+      "The selector must have at least one of the following fields: slug, organization, organizations. " <>
+      "Provided selector fields: #{provided_keys}"
+  end
 
   defp first_datetime_for_organizations([]), do: {:ok, nil}
   defp first_datetime_for_organizations(organizations), do: Github.first_datetime(organizations)

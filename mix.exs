@@ -49,7 +49,7 @@ defmodule Sanbase.Mixfile do
       {:absinthe, "~> 1.5"},
       {:brod, "~> 4.0"},
       {:browser, "~> 0.5"},
-      {:cachex, "~> 4.0"},
+      {:cachex, "~> 3.0"},
       {:cidr, "~> 1.1"},
       {:clickhouse_ecto, github: "santiment/clickhouse_ecto", branch: "migrate-ecto-3"},
       {:clickhousex, github: "santiment/clickhousex", override: true},

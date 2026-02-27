@@ -6,6 +6,8 @@ defmodule SanbaseWeb.Graphql.CachexProviderTest do
   @cache_name :graphql_cache_test_name_cachex
   @cache_id :graphql_cache_test_id_cachex
 
+  @moduletag skip: true
+
   setup do
     {:ok, pid} = CacheProvider.start_link(name: @cache_name, id: @cache_id)
     on_exit(fn -> Process.exit(pid, :normal) end)

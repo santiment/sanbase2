@@ -147,7 +147,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, :eth_addresses, id)
     |> on_load(fn loader ->
-      {:ok, Dataloader.get(loader, SanbaseDataloader, :eth_addresses, id)}
+      eth_addresses = Dataloader.get(loader, SanbaseDataloader, :eth_addresses, id) || []
+      {:ok, eth_addresses}
     end)
   end
 

@@ -88,7 +88,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     wrapped-xdc-network
     syrup-usdc
     syrup-usdt
-    saving-crvusd
+    savings-crvusd
   ]
   def work(opts \\ []) do
     Logger.info("[CMC] Fetching realtime data from coinmarketcap")

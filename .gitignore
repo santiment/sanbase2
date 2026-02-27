@@ -80,3 +80,6 @@ npm-debug.log
 
 # claude
 /.claude/
+
+# load test data
+load_test/data/apikeys.json

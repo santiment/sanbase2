@@ -52,7 +52,7 @@ export const options = {
   },
 };
 
-// --- Data ---
+// --- Static Data ---
 
 const SLUGS = [
   "bitcoin", "ethereum", "solana", "cardano", "chainlink",
@@ -65,7 +65,9 @@ const SLUGS = [
   "bitcoin-cash", "zcash", "hedera-hashgraph", "kaspa", "bittensor",
 ];
 
-// Slug-based on-chain / financial metrics
+// Slug-based on-chain / financial metrics (plain slug selector only).
+// NOTE: amount_in_top_holders needs holdersCount selector — handled
+// separately in queryGetMetricHolders. Do NOT add it here.
 const SLUG_METRICS = [
   "daily_active_addresses",
   "transaction_volume",
@@ -78,7 +80,6 @@ const SLUG_METRICS = [
   "mean_age",
   "active_deposits",
   "whale_transaction_count_100k_usd_to_inf",
-  "amount_in_top_holders",
   "percent_of_total_supply_on_exchanges",
   "supply_on_exchanges",
   "supply_outside_exchanges",
@@ -90,7 +91,7 @@ const SLUG_METRICS = [
   "dev_activity_1d",
 ];
 
-// Social metrics that use text selector
+// Social metrics — candidates for text selector (validated at warmup)
 const SOCIAL_METRICS = [
   "social_volume_total",
   "social_volume_telegram",
@@ -114,7 +115,7 @@ const SOCIAL_TEXT_QUERIES = [
   "whale",
 ];
 
-// GitHub metrics that use organization selector
+// GitHub metrics — candidates for organization selector (validated at warmup)
 const GITHUB_METRICS = [
   "dev_activity",
   "github_activity",
@@ -129,9 +130,12 @@ const GITHUB_ORGS = [
 
 // Day ranges and intervals for randomization
 const DAY_RANGES = [1, 2, 3, 7, 14, 30, 60, 90, 180, 365];
-const INTERVALS = ["5m", "15m", "30m", "1h", "2h", "4h", "8h", "1d", "7d"];
 
-const AGGREGATED_METRICS = [
+// Metrics safe to use on allProjects (available for nearly all slugs).
+// Do NOT include metrics with limited slug support here (e.g.
+// amount_in_top_holders, whale_transaction_count_*) because the query
+// applies the metric to every project in the page.
+const BROAD_METRICS = [
   "daily_active_addresses",
   "transaction_volume",
   "exchange_inflow",
@@ -141,6 +145,17 @@ const AGGREGATED_METRICS = [
   "network_growth",
   "mean_age",
   "circulation",
+];
+
+// All metrics we want to warm up (fetch availableSlugs + availableSelectors)
+const ALL_METRICS = [
+  ...new Set([
+    ...SLUG_METRICS,
+    ...SOCIAL_METRICS,
+    ...GITHUB_METRICS,
+    ...BROAD_METRICS,
+    "amount_in_top_holders",
+  ]),
 ];
 
 // --- Helpers ---
@@ -167,9 +182,76 @@ function intervalForDays(days) {
   return randomFrom(["1d", "7d"]);
 }
 
-// --- Query Definitions ---
+function gql(apikey, query) {
+  return http.post(GRAPHQL_URL, JSON.stringify({ query }), {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Apikey ${apikey}`,
+    },
+  });
+}
 
-function queryAllProjects() {
+// --- Setup: fetch availableSlugs + availableSelectors per metric ---
+
+export function setup() {
+  const apikey = apikeys[0];
+  // metric -> list of slugs (only for metrics that support slug selector)
+  const metricSlugs = {};
+  // metric -> set of supported selector names (e.g. ["slug", "text", "organization"])
+  const metricSelectors = {};
+
+  console.log(`Warmup: fetching metadata for ${ALL_METRICS.length} metrics...`);
+
+  for (const metric of ALL_METRICS) {
+    const query = `{
+      getMetric(metric: "${metric}") {
+        metadata {
+          availableSlugs
+          availableSelectors
+        }
+      }
+    }`;
+
+    const res = gql(apikey, query);
+
+    try {
+      const body = JSON.parse(res.body);
+      const metadata = body.data?.getMetric?.metadata;
+
+      if (!metadata) {
+        console.log(`  ${metric}: no metadata (skipped)`);
+        continue;
+      }
+
+      // Store available selectors
+      const selectors = metadata.availableSelectors || [];
+      metricSelectors[metric] = selectors;
+
+      // Store available slugs (intersected with our known set)
+      const slugs = metadata.availableSlugs;
+      if (slugs && slugs.length > 0) {
+        const known = new Set(SLUGS);
+        const available = slugs.filter((s) => known.has(s));
+        if (available.length > 0) {
+          metricSlugs[metric] = available;
+        }
+      }
+
+      const slugCount = metricSlugs[metric] ? metricSlugs[metric].length : 0;
+      console.log(`  ${metric}: ${slugCount} slugs, selectors=[${selectors.join(",")}]`);
+    } catch (_e) {
+      console.log(`  ${metric}: error fetching metadata (skipped)`);
+    }
+  }
+
+  console.log("Warmup complete.");
+  return { metricSlugs, metricSelectors };
+}
+
+// --- Query Definitions ---
+// Each function takes `data` (setup output) so it can look up valid slugs/selectors
+
+function queryAllProjects(_data) {
   const page = randomInt(1, 5);
   const pageSize = randomFrom([10, 20, 50]);
   return {
@@ -185,8 +267,14 @@ function queryAllProjects() {
   };
 }
 
-function queryAllProjectsWithAggregated() {
-  const metric = randomFrom(AGGREGATED_METRICS);
+function queryAllProjectsWithAggregated(data) {
+  // Only use metrics confirmed to have slug selector and broad slug coverage
+  const available = BROAD_METRICS.filter(
+    (m) => data.metricSlugs[m] && hasSelector(data, m, "slug"),
+  );
+  if (available.length === 0) return queryCurrentUser(data);
+
+  const metric = randomFrom(available);
   const days = randomFrom([7, 30, 90]);
   return {
     name: "allProjects_aggregated",
@@ -205,7 +293,7 @@ function queryAllProjectsWithAggregated() {
   };
 }
 
-function queryProjectBySlug() {
+function queryProjectBySlug(_data) {
   const slug = randomFrom(SLUGS);
   return {
     name: "projectBySlug",
@@ -223,7 +311,7 @@ function queryProjectBySlug() {
   };
 }
 
-function queryGetMetricMetadata() {
+function queryGetMetricMetadata(_data) {
   const metric = randomFrom([...SLUG_METRICS, ...SOCIAL_METRICS, ...GITHUB_METRICS]);
   return {
     name: "getMetric_metadata",
@@ -240,9 +328,14 @@ function queryGetMetricMetadata() {
   };
 }
 
-function queryGetMetricTimeseries() {
-  const slug = randomFrom(SLUGS);
-  const metric = randomFrom(SLUG_METRICS);
+function queryGetMetricTimeseries(data) {
+  const available = SLUG_METRICS.filter(
+    (m) => data.metricSlugs[m] && hasSelector(data, m, "slug"),
+  );
+  if (available.length === 0) return queryCurrentUser(data);
+
+  const metric = randomFrom(available);
+  const slug = randomFrom(data.metricSlugs[metric]);
   const days = randomFrom(DAY_RANGES);
   const interval = intervalForDays(days);
   return {
@@ -263,9 +356,14 @@ function queryGetMetricTimeseries() {
   };
 }
 
-function queryGetMetricAggregated() {
-  const slug = randomFrom(SLUGS);
-  const metric = randomFrom(SLUG_METRICS);
+function queryGetMetricAggregated(data) {
+  const available = SLUG_METRICS.filter(
+    (m) => data.metricSlugs[m] && hasSelector(data, m, "slug"),
+  );
+  if (available.length === 0) return queryCurrentUser(data);
+
+  const metric = randomFrom(available);
+  const slug = randomFrom(data.metricSlugs[metric]);
   const days = randomFrom(DAY_RANGES);
   return {
     name: "getMetric_aggregated",
@@ -281,8 +379,11 @@ function queryGetMetricAggregated() {
   };
 }
 
-function queryGetMetricSocial() {
-  const metric = randomFrom(SOCIAL_METRICS);
+function queryGetMetricSocial(data) {
+  const available = SOCIAL_METRICS.filter((m) => hasSelector(data, m, "text"));
+  if (available.length === 0) return queryCurrentUser(data);
+
+  const metric = randomFrom(available);
   const text = randomFrom(SOCIAL_TEXT_QUERIES);
   const days = randomFrom([1, 3, 7, 14, 30]);
   const interval = intervalForDays(days);
@@ -304,8 +405,11 @@ function queryGetMetricSocial() {
   };
 }
 
-function queryGetMetricGithub() {
-  const metric = randomFrom(GITHUB_METRICS);
+function queryGetMetricGithub(data) {
+  const available = GITHUB_METRICS.filter((m) => hasSelector(data, m, "organization"));
+  if (available.length === 0) return queryCurrentUser(data);
+
+  const metric = randomFrom(available);
   const org = randomFrom(GITHUB_ORGS);
   const days = randomFrom([7, 30, 90, 180, 365]);
   const interval = intervalForDays(days);
@@ -327,8 +431,13 @@ function queryGetMetricGithub() {
   };
 }
 
-function queryGetMetricHolders() {
-  const slug = randomFrom(SLUGS.slice(0, 15));
+function queryGetMetricHolders(data) {
+  if (!hasSelector(data, "amount_in_top_holders", "slug")) return queryCurrentUser(data);
+
+  const slugs = data.metricSlugs["amount_in_top_holders"];
+  if (!slugs || slugs.length === 0) return queryCurrentUser(data);
+
+  const slug = randomFrom(slugs);
   const holdersCount = randomFrom([10, 50, 100]);
   const days = randomFrom([7, 30, 90, 180]);
   const interval = intervalForDays(days);
@@ -350,11 +459,17 @@ function queryGetMetricHolders() {
   };
 }
 
-function queryCurrentUser() {
+function queryCurrentUser(_data) {
   return {
     name: "currentUser",
     query: `{ currentUser { id email username } }`,
   };
+}
+
+// Check if a metric supports a given selector based on warmup data
+function hasSelector(data, metric, selectorName) {
+  const selectors = data.metricSelectors[metric];
+  return selectors && selectors.includes(selectorName);
 }
 
 // Weighted query selection — currentUser gets extra weight, metric queries dominate
@@ -385,12 +500,12 @@ const queryFunctions = [
 
 // --- Main Test ---
 
-export default function () {
+export default function (data) {
   // Round-robin API key by VU id
   const apikey = apikeys[(__VU - 1) % apikeys.length];
 
-  // Pick a random query (weighted)
-  const { name, query } = randomFrom(queryFunctions)();
+  // Pick a random query (weighted), passing setup data for slug lookup
+  const { name, query } = randomFrom(queryFunctions)(data);
 
   const params = {
     headers: {

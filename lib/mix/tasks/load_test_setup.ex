@@ -8,9 +8,11 @@ defmodule Mix.Tasks.LoadTest.Setup do
   then writes the API keys to a JSON file for k6.
 
       mix load_test.setup --users 20
+      mix load_test.setup --users 20 --no-rate-limits
 
   Options:
-    --users  Number of users to create (default: 20)
+    --users           Number of users to create (default: 20)
+    --no-rate-limits  Disable API rate limits for all load test users
 
   Each user gets:
     - An email like `loadtest_N@sanload.test`
@@ -24,6 +26,7 @@ defmodule Mix.Tasks.LoadTest.Setup do
   """
 
   @business_pro_monthly_plan_id 107
+  @sanapi_product_id 1
 
   @impl Mix.Task
   def run(args) do
@@ -31,8 +34,13 @@ defmodule Mix.Tasks.LoadTest.Setup do
 
     opts = parse_args(args)
     count = Keyword.get(opts, :users, 20)
+    no_rate_limits = Keyword.get(opts, :no_rate_limits, false)
 
-    Mix.shell().info("Creating #{count} load test users with Business Pro subscriptions...")
+    label = if no_rate_limits, do: " (no rate limits)", else: ""
+
+    Mix.shell().info(
+      "Creating #{count} load test users with Business Pro subscriptions#{label}..."
+    )
 
     apikeys =
       Enum.map(1..count, fn i ->
@@ -45,10 +53,11 @@ defmodule Mix.Tasks.LoadTest.Setup do
           })
 
         ensure_subscription(user)
+        if no_rate_limits, do: disable_rate_limits(user)
 
         {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(user)
 
-        Mix.shell().info("  User #{i}: #{email} -> apikey + Business Pro")
+        Mix.shell().info("  User #{i}: #{email} -> apikey + Business Pro#{label}")
         apikey
       end)
 
@@ -57,8 +66,6 @@ defmodule Mix.Tasks.LoadTest.Setup do
 
     Mix.shell().info("\nDone! #{count} API keys written to #{output_path}")
   end
-
-  @sanapi_product_id 1
 
   defp ensure_subscription(user) do
     case Sanbase.Billing.Subscription.current_subscription(user, @sanapi_product_id) do
@@ -76,8 +83,27 @@ defmodule Mix.Tasks.LoadTest.Setup do
     end
   end
 
+  defp disable_rate_limits(user) do
+    alias Sanbase.ApiCallLimit
+    alias Sanbase.Repo
+
+    case Repo.get_by(ApiCallLimit, user_id: user.id) do
+      nil ->
+        # Trigger creation of the record, then update it
+        ApiCallLimit.get_quota_db(:user, user)
+        disable_rate_limits(user)
+
+      %ApiCallLimit{} = acl ->
+        acl
+        |> ApiCallLimit.changeset(%{has_limits: false, has_limits_no_matter_plan: false})
+        |> Repo.update!()
+    end
+  end
+
   defp parse_args(args) do
-    {opts, _, _} = OptionParser.parse(args, strict: [users: :integer])
+    {opts, _, _} =
+      OptionParser.parse(args, strict: [users: :integer, no_rate_limits: :boolean])
+
     opts
   end
 end

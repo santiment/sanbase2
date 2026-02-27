@@ -16,8 +16,8 @@ All commands require the app's DB to be running.
 # 1. Seed projects (contract addresses, github orgs)
 mix load_test.seed_projects
 
-# 2. Create users with API keys + Business Pro subscriptions
-mix load_test.setup --users 20
+# 2. Create users with API keys + Business Pro subscriptions (no rate limits)
+mix load_test.setup --users 20 --no-rate-limits
 ```
 
 ## Run Tests

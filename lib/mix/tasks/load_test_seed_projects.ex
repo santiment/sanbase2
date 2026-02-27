@@ -37,7 +37,12 @@ defmodule Mix.Tasks.LoadTest.SeedProjects do
       end
     end)
 
+    slugs = Enum.map(projects(), & &1.slug)
+    output_path = Path.join([File.cwd!(), "load_test", "data", "slugs.json"])
+    File.write!(output_path, Jason.encode!(slugs, pretty: true))
+
     Mix.shell().info("\nDone! #{length(projects())} projects seeded.")
+    Mix.shell().info("Slugs written to #{output_path}")
   end
 
   defp insert_project(proj_data, eth_infra) do

@@ -83,3 +83,4 @@ npm-debug.log
 
 # load test data
 load_test/data/apikeys.json
+load_test/data/slugs.json

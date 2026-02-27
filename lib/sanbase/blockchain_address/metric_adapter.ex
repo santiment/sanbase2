@@ -95,11 +95,19 @@ defmodule Sanbase.BlockchainAddress.MetricAdapter do
     Balance.first_datetime(address, slug)
   end
 
+  def first_datetime(_metric, selector, _opts) when is_map(selector) do
+    {:error, unsupported_selector_error(selector)}
+  end
+
   @impl Sanbase.Metric.Behaviour
   def last_datetime_computed_at(metric, %{slug: _slug, blockchain_address: %{address: _address}})
       when metric in @metrics do
     # There is no nice value we can put here
     {:ok, DateTime.utc_now()}
+  end
+
+  def last_datetime_computed_at(_metric, selector) when is_map(selector) do
+    {:error, unsupported_selector_error(selector)}
   end
 
   @impl Sanbase.Metric.Behaviour
@@ -119,6 +127,7 @@ defmodule Sanbase.BlockchainAddress.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def human_readable_name(metric), do: {:ok, Map.get(@human_readable_name_map, metric)}
+
   @impl Sanbase.Metric.Behaviour
   def metadata(metric) do
     {:ok,
@@ -186,6 +195,10 @@ defmodule Sanbase.BlockchainAddress.MetricAdapter do
     |> rename_map_keys(old_key: :balance, new_key: :value)
   end
 
+  def timeseries_data(_metric, selector, _from, _to, _interval, _opts) when is_map(selector) do
+    {:error, unsupported_selector_error(selector)}
+  end
+
   @impl Sanbase.Metric.Behaviour
   def timeseries_data_per_slug(metric, _selector, _from, _to, _interval, _opts) do
     not_implemented_function_for_metric_error("timeseries_data_per_slug", metric)
@@ -196,7 +209,17 @@ defmodule Sanbase.BlockchainAddress.MetricAdapter do
     not_implemented_function_for_metric_error("aggregated_timeseries_data", metric)
   end
 
-  @impl Sanbase.Metric.Behaviour
+  defp unsupported_selector_error(selector) do
+    provided_keys =
+      selector
+      |> Map.keys()
+      |> Enum.map_join(", ", &inspect/1)
+
+    "The provided selector #{inspect(selector)} is not supported. " <>
+      "The selector must have the following fields: slug, blockchainAddress. " <>
+      "Provided selector fields: #{provided_keys}"
+  end
+
   def addresses_by_filter("historical_balance", %{slug: slug}, operator, threshold, opts) do
     Sanbase.Balance.addresses_by_filter(slug, operator, threshold, opts)
   end

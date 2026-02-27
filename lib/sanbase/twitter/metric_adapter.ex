@@ -53,6 +53,10 @@ defmodule Sanbase.Twitter.MetricAdapter do
     end
   end
 
+  def timeseries_data(_metric, selector, _from, _to, _interval, _opts) when is_map(selector) do
+    {:error, unsupported_selector_error(selector)}
+  end
+
   @impl Sanbase.Metric.Behaviour
   def timeseries_data_per_slug(
         "twitter_followers",
@@ -89,12 +93,20 @@ defmodule Sanbase.Twitter.MetricAdapter do
     end
   end
 
+  def first_datetime(_metric, selector, _opts) when is_map(selector) do
+    {:error, unsupported_selector_error(selector)}
+  end
+
   @impl Sanbase.Metric.Behaviour
   def last_datetime_computed_at("twitter_followers", %{slug: slug}) do
     with %Project{} = project <- Project.by_slug(slug),
          {:ok, twitter_name} <- Project.twitter_handle(project) do
       Sanbase.Twitter.last_datetime(twitter_name)
     end
+  end
+
+  def last_datetime_computed_at(_metric, selector) when is_map(selector) do
+    {:error, unsupported_selector_error(selector)}
   end
 
   @impl Sanbase.Metric.Behaviour
@@ -194,4 +206,15 @@ defmodule Sanbase.Twitter.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def min_plan_map(), do: @min_plan_map
+
+  defp unsupported_selector_error(selector) do
+    provided_keys =
+      selector
+      |> Map.keys()
+      |> Enum.map_join(", ", &inspect/1)
+
+    "The provided selector #{inspect(selector)} is not supported. " <>
+      "The selector must have the following field: slug. " <>
+      "Provided selector fields: #{provided_keys}"
+  end
 end

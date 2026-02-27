@@ -16,7 +16,10 @@ defmodule Sanbase.AppNotifications.NotificationMutedUserTest do
     test "returns error when muting self" do
       user = insert(:user)
 
-      assert {:error, "Cannot mute yourself"} = NotificationMutedUser.mute(user.id, user.id)
+      assert {:error, %Ecto.Changeset{errors: errors}} =
+               NotificationMutedUser.mute(user.id, user.id)
+
+      assert {"Cannot mute yourself", []} = errors[:user_id]
     end
 
     test "returns error when muting same user twice" do

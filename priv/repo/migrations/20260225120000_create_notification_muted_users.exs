@@ -12,5 +12,7 @@ defmodule Sanbase.Repo.Migrations.CreateNotificationMutedUsers do
     end
 
     create(constraint(@table, :cannot_mute_self, check: "user_id != muted_user_id"))
+
+    create(index(@table, [:muted_user_id]))
   end
 end

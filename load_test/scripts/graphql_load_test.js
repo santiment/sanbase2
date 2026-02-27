@@ -12,6 +12,12 @@ const apikeys = new SharedArray("apikeys", function () {
   return JSON.parse(open("../data/apikeys.json"));
 });
 
+if (!Array.isArray(apikeys) || apikeys.length === 0) {
+  throw new Error(
+    "No API keys found in load_test/data/apikeys.json. Run `mix load_test.setup` first.",
+  );
+}
+
 // Configuration
 const BASE_URL = __ENV.BASE_URL || "http://localhost:4000";
 const GRAPHQL_URL = `${BASE_URL}/graphql`;
@@ -41,12 +47,17 @@ const scenarios = {
 };
 
 const selectedScenario = __ENV.SCENARIO || "smoke";
+if (!Object.prototype.hasOwnProperty.call(scenarios, selectedScenario)) {
+  throw new Error(
+    `Invalid SCENARIO="${selectedScenario}". Valid values: ${Object.keys(scenarios).join(", ")}`,
+  );
+}
+
 
 export const options = {
   scenarios: {
     default: scenarios[selectedScenario],
-  },
-  thresholds: {
+  },  thresholds: {
     http_req_duration: ["p(95)<5000"],
     graphql_errors: ["rate<0.1"],
   },

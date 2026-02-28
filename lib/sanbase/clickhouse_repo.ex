@@ -54,25 +54,40 @@ defmodule Sanbase.ClickhouseRepo do
     end
   end
 
+  @include_stacktrace_in_ch_queries System.get_env("CLICKHOUSE_INCLUDE_STACKTRACE", "false") ==
+                                      "true"
+
   defp add_metadata_to_query(query) do
     type = System.get_env("CONTAINER_TYPE") || "all"
 
     request_id = (Process.get(:"$logger_metadata$") || %{}) |> Map.get(:request_id)
-    {_, [_process_info_call | rest_stacktrace]} = Process.info(self(), :current_stacktrace)
 
-    stacktrace =
-      Enum.take(rest_stacktrace, 5) |> :erlang.term_to_binary() |> :zlib.gzip() |> Base.encode64()
-
-    query
-    |> Sanbase.Clickhouse.Query.add_leading_comment("sanbase_container_type #{type}")
-    |> Sanbase.Clickhouse.Query.extend_log_comment(%{
+    log_comment = %{
       sanbase_container_type: type,
       owner: "backend",
       team: "backend",
       repo: "sanbase2",
-      graphql_request_log_id: request_id,
-      stacktrace: stacktrace
-    })
+      graphql_request_log_id: request_id
+    }
+
+    log_comment =
+      if @include_stacktrace_in_ch_queries do
+        {_, [_process_info_call | rest_stacktrace]} = Process.info(self(), :current_stacktrace)
+
+        stacktrace =
+          Enum.take(rest_stacktrace, 5)
+          |> :erlang.term_to_binary()
+          |> :zlib.gzip()
+          |> Base.encode64()
+
+        Map.put(log_comment, :stacktrace, stacktrace)
+      else
+        log_comment
+      end
+
+    query
+    |> Sanbase.Clickhouse.Query.add_leading_comment("sanbase_container_type #{type}")
+    |> Sanbase.Clickhouse.Query.extend_log_comment(log_comment)
   end
 
   def query_transform(query, args, transform_fn) do

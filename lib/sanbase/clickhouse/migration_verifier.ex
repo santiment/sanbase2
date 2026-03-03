@@ -99,8 +99,9 @@ defmodule Sanbase.Clickhouse.MigrationVerifier do
     query = Sanbase.Clickhouse.Query.new("SELECTTTT INVALID SYNTAX", %{})
 
     case ClickhouseRepo.query_transform(query, & &1) do
-      {:error, error_msg} when is_binary(error_msg) ->
-        {:ok, "Error handling works, got error: #{String.slice(error_msg, 0, 80)}..."}
+      {:error, error_msg} ->
+        msg = if is_binary(error_msg), do: error_msg, else: inspect(error_msg)
+        {:ok, "Error handling works, got error: #{String.slice(msg, 0, 80)}..."}
 
       {:ok, _} ->
         {:error, "Expected error for invalid SQL, but got success"}

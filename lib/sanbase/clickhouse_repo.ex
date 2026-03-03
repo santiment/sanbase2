@@ -299,15 +299,17 @@ defmodule Sanbase.ClickhouseRepo do
       defp maybe_print_interpolated_query(_query, _params), do: :ok
   end
 
+  @placeholder_regex ~r/\{\$(\d+):[^}]+\}/
+
   defp get_interpolated_query(query, []), do: query
 
   defp get_interpolated_query(query, params) do
     query_str = IO.iodata_to_binary(query)
+    params_by_index = params |> Enum.with_index() |> Map.new(fn {v, i} -> {i, v} end)
 
-    Enum.with_index(params)
-    |> Enum.reduce(query_str, fn {value, idx}, acc ->
-      # Replace typed placeholders like {$0:Int64} with the actual value
-      Regex.replace(~r/\{\$#{idx}:[^}]+\}/, acc, inspect_param(value))
+    Regex.replace(@placeholder_regex, query_str, fn _full, idx_str ->
+      idx = String.to_integer(idx_str)
+      inspect_param(Map.fetch!(params_by_index, idx))
     end)
   end
 
@@ -323,8 +325,8 @@ defmodule Sanbase.ClickhouseRepo do
 
   defp inspect_param(other), do: inspect(other)
 
-  # Extract metadata from Ch.Result headers or fall back to direct map access
-  # (the latter works in tests where mocks return plain maps)
+  # In tests, mocks are plain maps with :query_id/:summary keys (checked first).
+  # In production, Ch.Result has these in HTTP response headers (fallback path).
   defp extract_query_id(result) do
     Map.get(result, :query_id) || get_header(result, "x-clickhouse-query-id")
   end
@@ -342,6 +344,9 @@ defmodule Sanbase.ClickhouseRepo do
     end
   end
 
+  # TODO: Ch.Result does not expose column_types. In production this returns nil.
+  # Column types are parsed from RowBinaryWithNamesAndTypes but discarded after decoding.
+  # This only affects the Queries Executor feature. Test mocks include :column_types directly.
   defp extract_column_types(result) do
     Map.get(result, :column_types)
   end

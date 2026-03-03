@@ -13,50 +13,32 @@ defmodule Sanbase.Clickhouse.MigrationVerifier do
 
   @doc "SELECT 1 — basic connectivity check"
   def verify_basic_select do
-    query = Sanbase.Clickhouse.Query.new("SELECT 1 AS val", %{})
-
-    case ClickhouseRepo.query_transform(query, fn [val] -> val end) do
-      {:ok, [1]} -> {:ok, "SELECT 1 returned [1]"}
-      {:ok, other} -> {:error, "Expected [1], got #{inspect(other)}"}
-      {:error, err} -> {:error, "Query failed: #{inspect(err)}"}
-    end
+    verify_query("SELECT 1 AS val", %{}, [1], "SELECT 1 returned [1]")
   end
 
   @doc "String parameter binding"
   def verify_string_param do
-    query = Sanbase.Clickhouse.Query.new("SELECT {{str}} AS val", %{str: "hello"})
-
-    case ClickhouseRepo.query_transform(query, fn [val] -> val end) do
-      {:ok, ["hello"]} -> {:ok, "String param returned 'hello'"}
-      {:ok, other} -> {:error, "Expected ['hello'], got #{inspect(other)}"}
-      {:error, err} -> {:error, "Query failed: #{inspect(err)}"}
-    end
+    verify_query(
+      "SELECT {{str}} AS val",
+      %{str: "hello"},
+      ["hello"],
+      "String param returned 'hello'"
+    )
   end
 
   @doc "Integer parameter binding"
   def verify_integer_param do
-    query = Sanbase.Clickhouse.Query.new("SELECT {{num}} AS val", %{num: 42})
-
-    case ClickhouseRepo.query_transform(query, fn [val] -> val end) do
-      {:ok, [42]} -> {:ok, "Integer param returned 42"}
-      {:ok, other} -> {:error, "Expected [42], got #{inspect(other)}"}
-      {:error, err} -> {:error, "Query failed: #{inspect(err)}"}
-    end
+    verify_query("SELECT {{num}} AS val", %{num: 42}, [42], "Integer param returned 42")
   end
 
-  @doc "List parameter binding with IN clause"
+  @doc "List parameter binding with arrayJoin"
   def verify_list_param do
-    query =
-      Sanbase.Clickhouse.Query.new(
-        "SELECT arrayJoin({{values}}) AS val ORDER BY val",
-        %{values: [1, 2, 3]}
-      )
-
-    case ClickhouseRepo.query_transform(query, fn [val] -> val end) do
-      {:ok, [1, 2, 3]} -> {:ok, "List param returned [1, 2, 3]"}
-      {:ok, other} -> {:error, "Expected [1, 2, 3], got #{inspect(other)}"}
-      {:error, err} -> {:error, "Query failed: #{inspect(err)}"}
-    end
+    verify_query(
+      "SELECT arrayJoin({{values}}) AS val ORDER BY val",
+      %{values: [1, 2, 3]},
+      [1, 2, 3],
+      "List param returned [1, 2, 3]"
+    )
   end
 
   @doc "DateTime parameter binding"
@@ -65,48 +47,34 @@ defmodule Sanbase.Clickhouse.MigrationVerifier do
     query = Sanbase.Clickhouse.Query.new("SELECT {{dt}} AS val", %{dt: dt})
 
     case ClickhouseRepo.query_transform(query, fn [val] -> val end) do
-      {:ok, [result]} ->
-        # ch may return DateTime or NaiveDateTime depending on timezone settings
-        {:ok, "DateTime param returned #{inspect(result)}"}
-
-      {:error, err} ->
-        {:error, "Query failed: #{inspect(err)}"}
+      {:ok, [result]} -> {:ok, "DateTime param returned #{inspect(result)}"}
+      {:error, err} -> {:error, "Query failed: #{inspect(err)}"}
     end
   end
 
   @doc "Inline parameter (table name substitution)"
   def verify_inline_param do
-    query =
-      Sanbase.Clickhouse.Query.new(
-        "SELECT count() AS cnt FROM {{table:inline}}",
-        %{table: "system.one"}
-      )
-
-    case ClickhouseRepo.query_transform(query, fn [val] -> val end) do
-      {:ok, [1]} -> {:ok, "Inline param: SELECT count() FROM system.one returned [1]"}
-      {:ok, other} -> {:error, "Expected [1], got #{inspect(other)}"}
-      {:error, err} -> {:error, "Query failed: #{inspect(err)}"}
-    end
+    verify_query(
+      "SELECT count() AS cnt FROM {{table:inline}}",
+      %{table: "system.one"},
+      [1],
+      "Inline param: SELECT count() FROM system.one returned [1]"
+    )
   end
 
   @doc "Explicit type override"
   def verify_type_override do
-    query = Sanbase.Clickhouse.Query.new("SELECT {{num:UInt8}} AS val", %{num: 255})
-
-    case ClickhouseRepo.query_transform(query, fn [val] -> val end) do
-      {:ok, [255]} -> {:ok, "Type override UInt8 returned 255"}
-      {:ok, other} -> {:error, "Expected [255], got #{inspect(other)}"}
-      {:error, err} -> {:error, "Query failed: #{inspect(err)}"}
-    end
+    verify_query(
+      "SELECT {{num:UInt8}} AS val",
+      %{num: 255},
+      [255],
+      "Type override UInt8 returned 255"
+    )
   end
 
   @doc "query_transform_with_metadata returns columns and query_id"
   def verify_metadata do
-    query =
-      Sanbase.Clickhouse.Query.new(
-        "SELECT 1 AS a, 'test' AS b",
-        %{}
-      )
+    query = Sanbase.Clickhouse.Query.new("SELECT 1 AS a, 'test' AS b", %{})
 
     case ClickhouseRepo.query_transform_with_metadata(query, & &1) do
       {:ok, %{column_names: columns, query_id: query_id, rows: rows}} ->
@@ -183,5 +151,16 @@ defmodule Sanbase.Clickhouse.MigrationVerifier do
     IO.puts("\n  #{passed} passed, #{failed} failed out of #{length(results)} checks\n")
 
     if failed == 0, do: :ok, else: {:error, "#{failed} checks failed"}
+  end
+
+  # Shared helper for simple single-value-per-row query verification
+  defp verify_query(sql, params, expected, success_msg) do
+    query = Sanbase.Clickhouse.Query.new(sql, params)
+
+    case ClickhouseRepo.query_transform(query, fn [val] -> val end) do
+      {:ok, ^expected} -> {:ok, success_msg}
+      {:ok, other} -> {:error, "Expected #{inspect(expected)}, got #{inspect(other)}"}
+      {:error, err} -> {:error, "Query failed: #{inspect(err)}"}
+    end
   end
 end

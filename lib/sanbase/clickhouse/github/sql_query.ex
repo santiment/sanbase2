@@ -306,7 +306,7 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
     SELECT owner, SUM(value)
     FROM (
       SELECT
-      arrayJoin([{{organizations}}]) AS owner,
+      arrayJoin({{organizations}}) AS owner,
       toUInt64(0) AS value
 
       UNION ALL

@@ -8,7 +8,7 @@ defmodule Sanbase.Clickhouse.Query do
   """
   alias Sanbase.Clickhouse.Query.Environment
 
-  defstruct [:sql, :parameters, :log_comment, :leading_comments, :format, :environment]
+  defstruct [:sql, :parameters, :log_comment, :leading_comments, :environment]
 
   @type sql :: String.t()
   @type parameters :: Map.t()
@@ -18,29 +18,24 @@ defmodule Sanbase.Clickhouse.Query do
           parameters: parameters(),
           log_comment: map() | nil,
           leading_comments: [],
-          environment: Environment.t(),
-          format: String.t()
+          environment: Environment.t()
         }
 
-  @default_format "JSONCompact"
-
   @doc ~s"""
-  Create a new query by providing the SQL, positional parameters
-  represented as a map and an optional list of options - settings and format.
+  Create a new query by providing the SQL, named parameters
+  represented as a map and an optional list of options - settings, etc.
 
   The SQL is parametrized by templating and named parameters.
 
     ## Examples
     iex> Sanbase.Clickhouse.Query.new(
     ...    "SELECT * FROM intraday_metrics WHERE asset_id = get_asset_id({{slug}})) LIMIT 5",
-    ...    %{slug: "bitcoin"},
-    ...    format: "JSONCompact"
+    ...    %{slug: "bitcoin"}
     ...  )
 
     %Sanbase.Clickhouse.Query{
       sql: "SELECT * FROM intraday_metrics WHERE asset_id = get_asset_id({{slug}})) LIMIT 5",
-      parameters: %{slug: "bitcoin"},
-      format: "JSONCompact"
+      parameters: %{slug: "bitcoin"}
     }
   """
   @spec new(sql, parameters, Keyword.t()) :: t()
@@ -49,7 +44,6 @@ defmodule Sanbase.Clickhouse.Query do
       sql: sql,
       parameters: parameters,
       log_comment: Keyword.get(opts, :log_comment, %{}),
-      format: Keyword.get(opts, :format, @default_format),
       environment: Keyword.get(opts, :environment, Environment.empty()),
       leading_comments: Keyword.get(opts, :leading_comments, [])
     }
@@ -117,8 +111,8 @@ defmodule Sanbase.Clickhouse.Query do
 
   @doc ~s"""
   Process the SQL query and named parameters and return a map with keys:
-  - sql: The SQL query string transformed to use positional parameters, so the
-    clickhousex library can use it.
+  - sql: The SQL query string transformed to use typed positional parameters
+    (`{$0:Type}`, `{$1:Type}`, etc.) for the `ch` driver.
   - args: The parameters transformed to a list of arguments, positionally ordered.
     Adding/removing/reordering elements in this list will cause a database error, as
     the order is specific for the sql query.
@@ -147,7 +141,6 @@ defmodule Sanbase.Clickhouse.Query do
   defp preprocess_query(query) do
     query
     |> trim_trailing_semicolon()
-    |> add_format()
     |> add_settings()
     |> prepend_leading_comments()
   end
@@ -189,11 +182,6 @@ defmodule Sanbase.Clickhouse.Query do
 
     sql = sql <> settings_str
 
-    %{query | sql: sql}
-  end
-
-  defp add_format(%{sql: sql, format: format} = query) do
-    sql = sql <> "\nFORMAT #{format}"
     %{query | sql: sql}
   end
 end

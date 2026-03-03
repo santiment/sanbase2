@@ -64,7 +64,7 @@ defmodule Sanbase.Price.PricePairSql do
         dictGetString('san_to_cryptocompare_asset_mapping', 'base_asset', tuple(slug)) AS base_asset,
         slug
       FROM system.one
-      ARRAY JOIN [{{slugs}}] AS slug
+      ARRAY JOIN {{slugs}} AS slug
       HAVING base_asset != ''
     )
     SELECT
@@ -111,7 +111,7 @@ defmodule Sanbase.Price.PricePairSql do
     SELECT slug, SUM(value), toUInt32(SUM(has_changed))
     FROM (
       SELECT
-        arrayJoin([{{slugs}}]) AS slug,
+        arrayJoin({{slugs}}) AS slug,
         toFloat64(0) AS value,
         toUInt32(0) AS has_changed
 
@@ -399,7 +399,7 @@ defmodule Sanbase.Price.PricePairSql do
     base_asset IN (
       SELECT dictGetString('san_to_cryptocompare_asset_mapping', 'base_asset', tuple(slug)) AS base_asset
       FROM system.one
-      ARRAY JOIN [{{#{arg_name}}}] AS slug
+      ARRAY JOIN {{#{arg_name}}} AS slug
       HAVING base_asset != ''
     )
     """

@@ -149,11 +149,11 @@ defmodule Sanbase.TemplateEngine do
               {:ok, value, type_or_nil} ->
                 # Extract the base key (without modifier) for deduplication
                 base_key = extract_base_key(capture_map.inner_content)
+                ch_type = resolve_ch_type(value, type_or_nil)
 
                 case Map.get(key_positions, base_key) do
                   nil ->
                     # First occurrence of this key
-                    ch_type = resolve_ch_type(value, type_or_nil)
                     placeholder = "{$#{position}:#{ch_type}}"
                     template_acc = String.replace(template_acc, capture_map.key, placeholder)
                     args_acc = [value | args_acc]
@@ -161,7 +161,15 @@ defmodule Sanbase.TemplateEngine do
                     {template_acc, args_acc, errors, position + 1, key_positions}
 
                   {existing_position, existing_type} ->
-                    # Reuse the existing position
+                    if type_or_nil != nil and ch_type != existing_type do
+                      raise TemplateEngineError,
+                        message:
+                          "Conflicting type overrides for '#{base_key}': " <>
+                            "first occurrence used #{existing_type}, " <>
+                            "but later occurrence specifies #{ch_type}"
+                    end
+
+                    # Reuse the existing position and type
                     placeholder = "{$#{existing_position}:#{existing_type}}"
                     template_acc = String.replace(template_acc, capture_map.key, placeholder)
                     {template_acc, args_acc, errors, position, key_positions}

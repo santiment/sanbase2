@@ -208,10 +208,8 @@ defmodule Sanbase.TemplateEngine do
   end
 
   defp extract_base_key(inner_content) do
-    case String.split(inner_content, ":", parts: 2) do
-      [key, _] -> key
-      [key] -> key
-    end
+    {key, _modifier} = split_key_modifier(inner_content)
+    key
   end
 
   defp resolve_ch_type(value, nil) do
@@ -304,18 +302,11 @@ defmodule Sanbase.TemplateEngine do
     end
   end
 
-  defp maybe_apply_modifier(value, _key, "human_readable"), do: human_readable(value)
-  defp maybe_apply_modifier(value, _key, "inline"), do: value
-  defp maybe_apply_modifier(value, _key, nil), do: value
-
   defp maybe_apply_modifier(value, _key, modifier) do
-    # If it's a known CH type, it's valid but has no effect in the run/2 path
-    if Sanbase.Clickhouse.Type.known_ch_type?(modifier) do
-      value
-    else
-      raise(TemplateEngineError,
-        message: "Unsupported or mistyped modifier '#{modifier}'"
-      )
+    case classify_suffix(modifier) do
+      :human_readable -> human_readable(value)
+      # :inline, {:ch_type, _}, nil — no transformation in the run/2 path
+      _ -> value
     end
   end
 end

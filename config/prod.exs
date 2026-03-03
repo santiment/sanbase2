@@ -1,9 +1,9 @@
 import Config
 
-# Clickhousex does not support `:system` tuples. The configuration is done
-# by defining defining `:url` in the ClickhouseRepo `init` function.
+# The ClickHouse configuration is done by defining `:url` in the
+# ClickhouseRepo `init` function.
 config :sanbase, Sanbase.ClickhouseRepo,
-  adapter: ClickhouseEcto,
+  adapter: Ecto.Adapters.ClickHouse,
   loggers: [Ecto.LogEntry],
   hostname: "clickhouse",
   port: 8123,
@@ -14,7 +14,7 @@ config :sanbase, Sanbase.ClickhouseRepo,
   max_overflow: 5
 
 clickhouse_read_only_opts = [
-  adapter: ClickhouseEcto,
+  adapter: Ecto.Adapters.ClickHouse,
   loggers: [Ecto.LogEntry, Sanbase.Prometheus.EctoInstrumenter],
   hostname: "clickhouse",
   port: 8123,

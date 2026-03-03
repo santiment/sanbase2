@@ -30,8 +30,8 @@ defmodule Sanbase.Price.SqlQuery do
       FROM (
         SELECT
           ts_array,
-          arrayEnumerate([{{timestamp_array}}]) AS ts_idx_array
-        FROM (SELECT [{{timestamp_array}}] AS ts_array)
+          arrayEnumerate({{timestamp_array}}) AS ts_idx_array
+        FROM (SELECT {{timestamp_array}} AS ts_array)
       ) AS data
       ARRAY JOIN
         data.ts_idx_array AS ts_idx,
@@ -168,7 +168,7 @@ defmodule Sanbase.Price.SqlQuery do
     SELECT slugString, SUM(price_usd), SUM(price_btc), SUM(marketcap_usd), SUM(volume_usd), toUInt32(SUM(has_changed))
     FROM (
       SELECT
-        arrayJoin([{{slugs}}]) AS slugString,
+        arrayJoin({{slugs}}) AS slugString,
         toFloat64(0) AS price_usd,
         toFloat64(0) AS price_btc,
         toFloat64(0) AS marketcap_usd,
@@ -212,7 +212,7 @@ defmodule Sanbase.Price.SqlQuery do
     SELECT slugString, SUM(marketcap_usd2), SUM(volume_usd), toUInt32(SUM(has_changed))
     FROM (
       SELECT
-        arrayJoin([{{slugs}}]) AS slugString,
+        arrayJoin({{slugs}}) AS slugString,
         toFloat64(0) AS marketcap_usd2,
         toFloat64(0) AS volume_usd,
         toUInt32(0) AS has_changed
@@ -251,7 +251,7 @@ defmodule Sanbase.Price.SqlQuery do
     SELECT slugString, SUM(value), toUInt32(SUM(has_changed))
     FROM (
       SELECT
-        arrayJoin([{{slugs}}]) AS slugString,
+        arrayJoin({{slugs}}) AS slugString,
         toFloat64(0) AS value,
         toUInt32(0) AS has_changed
 

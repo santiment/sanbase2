@@ -104,6 +104,15 @@ defmodule Sanbase.Clickhouse.Label do
 
   def add_labels(slug, maps) when is_list(maps) do
     addresses = get_list_of_addresses(maps)
+
+    if addresses == [] do
+      {:ok, maps}
+    else
+      add_labels_for_addresses(slug, maps, addresses)
+    end
+  end
+
+  defp add_labels_for_addresses(slug, maps, addresses) do
     blockchain = slug_to_blockchain(slug)
     query_struct = addresses_labels_query(slug, blockchain, addresses)
 

@@ -12,6 +12,10 @@ defmodule Sanbase.Clickhouse.Type do
   @min_int128 -0x80000000000000000000000000000000
   @min_int64 -0x8000000000000000
 
+  # ClickHouse type names recognized for the `{{key:Type}}` override syntax.
+  # This is intentionally an allowlist (not a blocklist) so that typos like
+  # `{{key:huamn_readable}}` are caught at template expansion time rather than
+  # silently treated as a CH type. Add new types here as needed.
   @known_ch_types MapSet.new([
                     "UInt8",
                     "UInt16",
@@ -48,7 +52,12 @@ defmodule Sanbase.Clickhouse.Type do
                     "Array",
                     "Map",
                     "Tuple",
-                    "Nothing"
+                    "Nothing",
+                    "SimpleAggregateFunction",
+                    "AggregateFunction",
+                    "Nested",
+                    "JSON",
+                    "Object"
                   ])
 
   @doc """
@@ -101,7 +110,6 @@ defmodule Sanbase.Clickhouse.Type do
   @spec infer(term()) :: iodata()
   def infer(s) when is_binary(s), do: "String"
 
-  # Boolean must come before integer since booleans are integers in Erlang
   def infer(b) when is_boolean(b), do: "Bool"
 
   def infer(i) when is_integer(i) do
@@ -139,7 +147,8 @@ defmodule Sanbase.Clickhouse.Type do
   def infer([v | vs]) do
     el_type = infer(v)
 
-    if IO.iodata_to_binary(el_type) != "Array(Nothing)" or vs == [] do
+    # infer([]) returns the plain string "Array(Nothing)", so direct comparison works
+    if el_type != "Array(Nothing)" or vs == [] do
       ["Array(", el_type, ?)]
     else
       infer(vs)

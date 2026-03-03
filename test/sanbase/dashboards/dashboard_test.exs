@@ -256,7 +256,7 @@ defmodule Sanbase.DashboardsTest do
   end
 
   defp result_mock() do
-    %Clickhousex.Result{
+    %{
       query_id: "1774C4BC91E05698",
       summary: %{
         "read_bytes" => "408534",

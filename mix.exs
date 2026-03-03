@@ -29,7 +29,6 @@ defmodule Sanbase.Mixfile do
         :logger,
         :runtime_tools,
         :sasl,
-        :clickhousex,
         :os_mon,
         :event_bus
       ],
@@ -54,6 +53,8 @@ defmodule Sanbase.Mixfile do
       {:clickhouse_ecto, github: "santiment/clickhouse_ecto", branch: "migrate-ecto-3"},
       {:clickhousex,
        github: "santiment/clickhousex", branch: "fix-type-system-error", override: true},
+      {:ecto_ch, "~> 0.8"},
+      {:ch, "~> 0.7"},
       {:con_cache, "~> 1.0"},
       {:cowboy, "~> 2.0"},
       {:cowlib, ">= 2.16.0 and < 3.0.0", override: true},

@@ -364,7 +364,7 @@ defmodule Sanbase.Clickhouse.Label do
                     FROM
                         current_label_addresses
                     WHERE
-                        address IN [{{addresses}}] AND blockchain = {{blockchain}}
+                        address IN ({{addresses}}) AND blockchain = {{blockchain}}
                 ) AS a
             LEFT JOIN
               (

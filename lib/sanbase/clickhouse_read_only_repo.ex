@@ -19,11 +19,11 @@ defmodule Sanbase.ClickhouseRepo.ReadOnly do
   default_dynamic_repo =
     if env == :test, do: Sanbase.ClickhouseRepo, else: Sanbase.ClickhouseRepo.ReadOnly
 
-  adapter = if env == :test, do: Ecto.Adapters.Postgres, else: ClickhouseEcto
+  @adapter if env == :test, do: Ecto.Adapters.Postgres, else: Ecto.Adapters.ClickHouse
 
   use Ecto.Repo,
     otp_app: :sanbase,
-    adapter: adapter,
+    adapter: @adapter,
     read_only: true,
     default_dynamic_repo: default_dynamic_repo
 
@@ -41,7 +41,9 @@ defmodule Sanbase.ClickhouseRepo.ReadOnly do
 end
 
 defmodule Sanbase.ClickhouseRepo.FreeUser do
-  use Ecto.Repo, otp_app: :sanbase, adapter: ClickhouseEcto, read_only: true
+  env = Mix.env()
+  @adapter if env == :test, do: Ecto.Adapters.Postgres, else: Ecto.Adapters.ClickHouse
+  use Ecto.Repo, otp_app: :sanbase, adapter: @adapter, read_only: true
 
   def init(do_init, opts) do
     {:ok, default_opts} = Sanbase.ClickhouseRepo.ReadOnly.init(do_init, opts)
@@ -51,7 +53,9 @@ defmodule Sanbase.ClickhouseRepo.FreeUser do
 end
 
 defmodule Sanbase.ClickhouseRepo.SanbaseProUser do
-  use Ecto.Repo, otp_app: :sanbase, adapter: ClickhouseEcto, read_only: true
+  env = Mix.env()
+  @adapter if env == :test, do: Ecto.Adapters.Postgres, else: Ecto.Adapters.ClickHouse
+  use Ecto.Repo, otp_app: :sanbase, adapter: @adapter, read_only: true
 
   def init(do_init, opts) do
     {:ok, default_opts} = Sanbase.ClickhouseRepo.ReadOnly.init(do_init, opts)
@@ -61,7 +65,9 @@ defmodule Sanbase.ClickhouseRepo.SanbaseProUser do
 end
 
 defmodule Sanbase.ClickhouseRepo.SanbaseMaxUser do
-  use Ecto.Repo, otp_app: :sanbase, adapter: ClickhouseEcto, read_only: true
+  env = Mix.env()
+  @adapter if env == :test, do: Ecto.Adapters.Postgres, else: Ecto.Adapters.ClickHouse
+  use Ecto.Repo, otp_app: :sanbase, adapter: @adapter, read_only: true
 
   def init(do_init, opts) do
     {:ok, default_opts} = Sanbase.ClickhouseRepo.ReadOnly.init(do_init, opts)
@@ -71,7 +77,9 @@ defmodule Sanbase.ClickhouseRepo.SanbaseMaxUser do
 end
 
 defmodule Sanbase.ClickhouseRepo.BusinessProUser do
-  use Ecto.Repo, otp_app: :sanbase, adapter: ClickhouseEcto, read_only: true
+  env = Mix.env()
+  @adapter if env == :test, do: Ecto.Adapters.Postgres, else: Ecto.Adapters.ClickHouse
+  use Ecto.Repo, otp_app: :sanbase, adapter: @adapter, read_only: true
 
   def init(do_init, opts) do
     {:ok, default_opts} = Sanbase.ClickhouseRepo.ReadOnly.init(do_init, opts)
@@ -81,7 +89,9 @@ defmodule Sanbase.ClickhouseRepo.BusinessProUser do
 end
 
 defmodule Sanbase.ClickhouseRepo.BusinessMaxUser do
-  use Ecto.Repo, otp_app: :sanbase, adapter: ClickhouseEcto, read_only: true
+  env = Mix.env()
+  @adapter if env == :test, do: Ecto.Adapters.Postgres, else: Ecto.Adapters.ClickHouse
+  use Ecto.Repo, otp_app: :sanbase, adapter: @adapter, read_only: true
 
   def init(do_init, opts) do
     {:ok, default_opts} = Sanbase.ClickhouseRepo.ReadOnly.init(do_init, opts)

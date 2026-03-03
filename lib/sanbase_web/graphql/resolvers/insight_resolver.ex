@@ -217,12 +217,28 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
           ~r{https://[a-zA-Z0-9\-\.]*sanbase-images.s3\.amazonaws\.com/[^\s"<>]+(?:\.jpg|\.png|\.gif|\.jpeg)}
   end
 
-  def extract_images_from_text(%Post{text: text}, _args, _resolution) do
-    image_urls =
-      Regex.scan(image_url_regex(), text)
-      |> Enum.map(fn [url] -> url end)
+  def extract_images_from_text(%Post{text: text, images: images}, _args, _resolution) do
+    # Images from DB (PostImage records linked to this post)
+    db_images =
+      case images do
+        images when is_list(images) ->
+          Enum.map(images, fn %{image_url: image_url} -> %{image_url: image_url} end)
 
-    {:ok, Enum.map(image_urls, fn image_url -> %{image_url: image_url} end)}
+        _ ->
+          []
+      end
+
+    # Images extracted from the post text via regex (for old insights without DB records)
+    regex_images =
+      Regex.scan(image_url_regex(), text || "")
+      |> Enum.map(fn [url] -> %{image_url: url} end)
+
+    # Union of both sources, deduplicated by image_url
+    all_images =
+      (db_images ++ regex_images)
+      |> Enum.uniq_by(fn %{image_url: url} -> url end)
+
+    {:ok, all_images}
   end
 
   def insights_count(%User{id: id}, _args, %{context: %{loader: loader}}) do

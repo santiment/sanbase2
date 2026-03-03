@@ -498,6 +498,7 @@ defmodule Sanbase.Insight.Post do
     |> Repo.insert()
     |> case do
       {:ok, post} ->
+        auto_link_images(post)
         emit_event({:ok, post}, :create_insight, %{})
         :ok = Sanbase.Insight.Search.update_document_tokens(post.id)
         {:ok, post}
@@ -526,6 +527,8 @@ defmodule Sanbase.Insight.Post do
 
         case Repo.update(update_changeset) do
           {:ok, post} ->
+            auto_link_images(post)
+
             # Update the embeddings only if the title or text changed and the post is published.
             # On embed existing embeddings are deleted and the new one are created
             published? = post.ready_state == @published
@@ -980,16 +983,35 @@ defmodule Sanbase.Insight.Post do
 
   defp images_cast(changeset, _), do: changeset
 
-  defp extract_image_url_from_post(%Post{} = post) do
-    post
-    |> Repo.preload(:images)
-    |> Map.get(:images, [])
-    |> Enum.map(fn %{image_url: image_url} -> image_url end)
+  @doc """
+  Delete S3 files for a post's images, but only when:
+  1. The image was uploaded by the post's author (image.user_id == post.user_id)
+  2. The image URL is not used in any other post's text
+
+  The PostImage DB records are cascade-deleted when the post is deleted,
+  so this only controls S3 file cleanup.
+  """
+  def delete_post_images(%Post{} = post) do
+    post = Repo.preload(post, :images)
+
+    Enum.each(post.images, fn image ->
+      owner_uploaded? = image.user_id == post.user_id
+      used_elsewhere? = image_used_in_other_posts?(image.image_url, post.id)
+
+      if owner_uploaded? and not used_elsewhere? do
+        Sanbase.FileStore.delete(image.image_url)
+      end
+    end)
   end
 
-  def delete_post_images(%Post{} = post) do
-    extract_image_url_from_post(post)
-    |> Enum.map(&Sanbase.FileStore.delete/1)
+  defp image_used_in_other_posts?(image_url, post_id) do
+    pattern = "%#{image_url}%"
+
+    from(p in __MODULE__,
+      where: p.id != ^post_id and p.is_deleted != true,
+      where: like(p.text, ^pattern)
+    )
+    |> Repo.exists?()
   end
 
   defp maybe_drop_post_tags(post, %{tags: tags}) when is_list(tags),
@@ -1017,6 +1039,49 @@ defmodule Sanbase.Insight.Post do
       _ ->
         query
     end
+  end
+
+  @doc """
+  Scan the post text for image URLs matching existing unlinked PostImage records
+  uploaded by the same user, and link them to this post.
+  """
+  def auto_link_images(%__MODULE__{id: post_id, user_id: user_id, text: text})
+      when is_binary(text) do
+    image_urls = extract_image_urls_from_text(text)
+
+    if image_urls != [] do
+      from(pi in PostImage,
+        where: pi.image_url in ^image_urls,
+        where: pi.user_id == ^user_id,
+        where: is_nil(pi.post_id) or pi.post_id == ^post_id
+      )
+      |> Repo.update_all(set: [post_id: post_id])
+    end
+
+    :ok
+  end
+
+  def auto_link_images(_post), do: :ok
+
+  case Application.compile_env(:sanbase, :env) do
+    :test ->
+      defp extract_image_urls_from_text(text) do
+        storage_dir = Application.get_env(:waffle, :storage_dir)
+
+        storage_dir =
+          if String.last(storage_dir) != "/", do: storage_dir <> "/", else: storage_dir
+
+        regex = Regex.compile!(~s{#{storage_dir}[^\s"<>]+(?:\\.jpg|\\.png|\\.gif|\\.jpeg)})
+        Regex.scan(regex, text) |> Enum.map(fn [url] -> url end)
+      end
+
+    _ ->
+      defp extract_image_urls_from_text(text) do
+        regex =
+          ~r{https://[a-zA-Z0-9\-\.]*sanbase-images.s3\.amazonaws\.com/[^\s"<>]+(?:\.jpg|\.png|\.gif|\.jpeg)}
+
+        Regex.scan(regex, text) |> Enum.map(fn [url] -> url end)
+      end
   end
 
   defp async_embed_post(%__MODULE__{} = post) do

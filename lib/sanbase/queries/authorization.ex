@@ -1,6 +1,17 @@
 defmodule Sanbase.Queries.Authorization do
   alias Sanbase.Accounts.User
 
+  require Logger
+
+  @repo_access_level %{
+    Sanbase.ClickhouseRepo.FreeUser => 0,
+    Sanbase.ClickhouseRepo.ReadOnly => 1,
+    Sanbase.ClickhouseRepo.SanbaseProUser => 2,
+    Sanbase.ClickhouseRepo.SanbaseMaxUser => 3,
+    Sanbase.ClickhouseRepo.BusinessProUser => 4,
+    Sanbase.ClickhouseRepo.BusinessMaxUser => 5
+  }
+
   @doc ~s"""
   Returns the dynamic repo whose credentials have the least restrictions.
   This is used to execute queries when basic auth is used
@@ -8,6 +19,32 @@ defmodule Sanbase.Queries.Authorization do
   @spec max_access_dynamic_repo() :: module()
   def max_access_dynamic_repo() do
     Sanbase.ClickhouseRepo.BusinessMaxUser
+  end
+
+  @doc ~s"""
+  Fetch all active subscriptions for the user in a single DB query,
+  map each to a dynamic repo, and return the most permissive one.
+
+  This ensures that a user with multiple subscriptions (e.g., SANBASE PRO
+  and SANAPI BUSINESS_MAX) always gets the broadest table access.
+  """
+  @spec best_dynamic_repo_for_user(non_neg_integer()) :: module()
+  def best_dynamic_repo_for_user(user_id) do
+    subscriptions = Sanbase.Billing.Subscription.user_subscriptions(%User{id: user_id})
+
+    case subscriptions do
+      [] ->
+        Sanbase.ClickhouseRepo.FreeUser
+
+      subscriptions ->
+        subscriptions
+        |> Enum.map(fn sub ->
+          product_code = Sanbase.Billing.Product.code_by_id(sub.plan.product_id)
+          plan_name = Sanbase.Billing.Plan.plan_name(sub.plan)
+          user_plan_to_dynamic_repo(product_code, plan_name)
+        end)
+        |> Enum.max_by(fn repo -> Map.get(@repo_access_level, repo, 0) end)
+    end
   end
 
   @doc ~s"""
@@ -61,6 +98,9 @@ defmodule Sanbase.Queries.Authorization do
 
       {"SANAPI", "CUSTOM_" <> _ = custom_plan} ->
         user_plan_to_dynamic_repo("SANAPI", fetch_base_plan_for_custom(custom_plan))
+
+      _ ->
+        Sanbase.ClickhouseRepo.FreeUser
     end
   end
 

@@ -348,6 +348,42 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
       end)
     end
 
+    test "picks most permissive dynamic repo when user has both SANBASE and SANAPI subscriptions",
+         context do
+      insert(:subscription_pro_sanbase, user: context.user)
+      insert(:subscription_business_max_monthly, user: context.user)
+
+      Application.put_env(:__sanbase_queries__, :__store_execution_details__, false)
+
+      on_exit(fn ->
+        Application.delete_env(:__sanbase_queries__, :__store_execution_details__)
+      end)
+
+      mock_fun =
+        Sanbase.Mock.wrap_consecutives(
+          [
+            fn -> {:ok, mocked_clickhouse_result()} end,
+            fn -> {:ok, mocked_execution_details_result()} end
+          ],
+          arity: 2
+        )
+
+      Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        args = %{
+          sql_query_text: "SELECT * FROM intraday_metrics LIMIT {{limit}}",
+          sql_query_parameters: %{limit: 2}
+        }
+
+        response = run_sql_query(context.conn, :run_raw_sql_query, args)
+
+        # The SANAPI BUSINESS_MAX subscription should win over SANBASE PRO
+        assert Process.get(:queries_dynamic_repo) == Sanbase.ClickhouseRepo.BusinessMaxUser
+        assert get_in(response, ["errors"]) in [nil, []]
+        assert get_in(response, ["data", "runRawSqlQuery", "clickhouseQueryId"]) != nil
+      end)
+    end
+
     defp get_current_user_credits_stats(conn) do
       conn
       |> post(

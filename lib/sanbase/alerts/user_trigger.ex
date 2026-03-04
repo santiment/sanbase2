@@ -91,7 +91,28 @@ defmodule Sanbase.Alert.UserTrigger do
 
   @impl Sanbase.Entity.Behaviour
   def get_visibility_data(id) do
-    Sanbase.Entity.Query.default_get_visibility_data(__MODULE__, :user_trigger, id)
+    # is_public is a virtual field computed from the embedded trigger,
+    # so we can't use default_get_visibility_data which tries to select it directly.
+    query =
+      from(ut in base_query(),
+        where: ut.id == ^id,
+        select: %{user_id: ut.user_id, is_hidden: ut.is_hidden}
+      )
+
+    case Repo.one(query) do
+      nil ->
+        {:error, "UserTrigger with id #{id} does not exist."}
+
+      %{user_id: user_id, is_hidden: is_hidden} = result ->
+        # Load the full record to check trigger.is_public
+        case by_id(id, []) do
+          {:ok, ut} ->
+            {:ok, %{user_id: user_id, is_hidden: is_hidden, is_public: ut.trigger.is_public}}
+
+          _ ->
+            {:ok, Map.put(result, :is_public, false)}
+        end
+    end
   end
 
   @impl Sanbase.Entity.Behaviour

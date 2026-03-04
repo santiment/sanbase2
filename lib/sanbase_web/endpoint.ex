@@ -15,7 +15,17 @@ defmodule SanbaseWeb.Endpoint do
     signing_salt: "grT-As16"
   ]
 
-  socket("/socket", SanbaseWeb.UserSocket, websocket: true, check_origin: false)
+  @websocket_allowed_origins [
+    "//*.santiment.net",
+    "//*.santiment.network",
+    "//*.sanr.app",
+    "//localhost"
+  ]
+
+  socket("/socket", SanbaseWeb.UserSocket,
+    websocket: true,
+    check_origin: @websocket_allowed_origins
+  )
 
   socket("/live", Phoenix.LiveView.Socket,
     websocket: [
@@ -23,7 +33,7 @@ defmodule SanbaseWeb.Endpoint do
         session: {SanbaseWeb.LiveViewUtils, :session_options, [@session_options]}
       ]
     ],
-    check_origin: false
+    check_origin: @websocket_allowed_origins
   )
 
   # Serve at "/" the static files from "priv/static" directory.

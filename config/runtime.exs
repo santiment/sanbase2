@@ -28,6 +28,10 @@ config :sanbase, Sanbase.SimpleMailer,
 
 config :sanbase, SanbaseWeb.SESController, webhook_secret: System.get_env("SES_WEBHOOK_SECRET")
 
+if mailjet_webhook_secret = System.get_env("MAILJET_WEBHOOK_SECRET") do
+  config :sanbase, SanbaseWeb.MailjetController, webhook_secret: mailjet_webhook_secret
+end
+
 config :sanbase, Sanbase.SmartContracts.SanrNFT,
   alchemy_api_key: System.get_env("ALCHEMY_API_KEY")
 

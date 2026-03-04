@@ -21,17 +21,21 @@ defmodule SanbaseWeb.SESController do
   end
 
   defp handle_sns_message(%{"Type" => "SubscriptionConfirmation", "SubscribeURL" => url}) do
-    Logger.info("Confirming SNS subscription")
+    if valid_sns_url?(url) do
+      Logger.info("Confirming SNS subscription")
 
-    case Req.get(url) do
-      {:ok, %{status: 200}} ->
-        Logger.info("SNS subscription confirmed")
+      case Req.get(url, redirect: false, receive_timeout: 5_000) do
+        {:ok, %{status: 200}} ->
+          Logger.info("SNS subscription confirmed")
 
-      {:ok, %{status: status}} ->
-        Logger.error("SNS subscription confirmation failed with status: #{status}")
+        {:ok, %{status: status}} ->
+          Logger.error("SNS subscription confirmation failed with status: #{status}")
 
-      {:error, reason} ->
-        Logger.error("Failed to confirm SNS subscription: #{inspect(reason)}")
+        {:error, reason} ->
+          Logger.error("Failed to confirm SNS subscription: #{inspect(reason)}")
+      end
+    else
+      Logger.warning("Rejected SNS SubscribeURL with non-AWS domain: #{url}")
     end
   end
 
@@ -165,4 +169,14 @@ defmodule SanbaseWeb.SESController do
   end
 
   defp parse_timestamp(_), do: DateTime.utc_now()
+
+  defp valid_sns_url?(url) do
+    case URI.parse(url) do
+      %URI{scheme: "https", host: host} when is_binary(host) ->
+        String.ends_with?(host, ".amazonaws.com")
+
+      _ ->
+        false
+    end
+  end
 end

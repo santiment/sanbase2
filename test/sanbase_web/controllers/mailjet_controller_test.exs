@@ -17,6 +17,20 @@ defmodule SanbaseWeb.MailjetControllerTest do
     end)
   end
 
+  describe "webhook authentication" do
+    @tag capture_log: true
+    test "rejects requests without a valid secret", %{conn: conn} do
+      params = %{
+        "event" => "unsub",
+        "email" => "test@example.com",
+        "mj_list_id" => 10_327_883
+      }
+
+      conn = post(conn, ~p"/mailjet/webhook/wrong_secret", params)
+      assert response(conn, 403) == "Forbidden"
+    end
+  end
+
   describe "webhook/2" do
     setup do
       user = insert(:user, email: "test@example.com")
@@ -50,7 +64,7 @@ defmodule SanbaseWeb.MailjetControllerTest do
         "CustomID" => "helloworld"
       }
 
-      conn = post(conn, ~p"/mailjet/webhook", params)
+      conn = post(conn, ~p"/mailjet/webhook/test_mailjet_secret", params)
 
       # Check that we got a 200 OK response
       assert response(conn, 200) == ""
@@ -71,7 +85,7 @@ defmodule SanbaseWeb.MailjetControllerTest do
         "mj_list_id" => 10_327_883
       }
 
-      conn = post(conn, ~p"/mailjet/webhook", params)
+      conn = post(conn, ~p"/mailjet/webhook/test_mailjet_secret", params)
       assert response(conn, 200) == ""
 
       # Missing event type
@@ -80,7 +94,7 @@ defmodule SanbaseWeb.MailjetControllerTest do
         "mj_list_id" => 10_327_883
       }
 
-      conn = post(conn, ~p"/mailjet/webhook", params)
+      conn = post(conn, ~p"/mailjet/webhook/test_mailjet_secret", params)
       assert response(conn, 200) == ""
 
       # Wrong event type
@@ -90,7 +104,7 @@ defmodule SanbaseWeb.MailjetControllerTest do
         "mj_list_id" => 10_327_883
       }
 
-      conn = post(conn, ~p"/mailjet/webhook", params)
+      conn = post(conn, ~p"/mailjet/webhook/test_mailjet_secret", params)
       assert response(conn, 200) == ""
     end
 
@@ -102,7 +116,7 @@ defmodule SanbaseWeb.MailjetControllerTest do
         "mj_list_id" => 10_327_883
       }
 
-      conn = post(conn, ~p"/mailjet/webhook", params)
+      conn = post(conn, ~p"/mailjet/webhook/test_mailjet_secret", params)
       assert response(conn, 200) == ""
     end
 
@@ -114,7 +128,7 @@ defmodule SanbaseWeb.MailjetControllerTest do
         "mj_list_id" => 99999
       }
 
-      conn = post(conn, ~p"/mailjet/webhook", params)
+      conn = post(conn, ~p"/mailjet/webhook/test_mailjet_secret", params)
       assert response(conn, 200) == ""
     end
   end

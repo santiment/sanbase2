@@ -11,7 +11,9 @@ defmodule SanbaseWeb.DataController do
   This contains information about santiment team users, so it cannot be publicly freely available
   """
   def santiment_team_members(conn, %{"secret" => secret}) do
-    case santiment_team_members_secret() == secret do
+    expected = santiment_team_members_secret()
+
+    case is_binary(expected) and Plug.Crypto.secure_compare(secret, expected) do
       true ->
         {:ok, data} = get_santiment_team_members()
 
@@ -67,7 +69,9 @@ defmodule SanbaseWeb.DataController do
   end
 
   def monitored_twitter_handles(conn, %{"secret" => secret}) do
-    case santiment_team_members_secret() == secret do
+    expected = santiment_team_members_secret()
+
+    case is_binary(expected) and Plug.Crypto.secure_compare(secret, expected) do
       true ->
         cache_key = {__MODULE__, __ENV__.function} |> Sanbase.Cache.hash()
         {:ok, data} = Sanbase.Cache.get_or_store(cache_key, &get_monitored_twitter_handles_list/0)

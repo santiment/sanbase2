@@ -8,9 +8,10 @@ defmodule Sanbase.AvailableSlugs do
   """
   @behaviour Sanbase.AvailableSlugs.Behaviour
 
-  # There are 2 special cases that are not a project slug but refer to big groups
+  # There are special cases that are not a project slug but refer to big groups
   # of projects and there is marketcap and volume data for them
-  @group_of_slugs ["TOTAL_MARKET", "crypto_market", "TOTAL_ERC20"]
+  # TOTAL_MARKET comes from cmc, total_market is our own creation, they are different
+  @group_of_slugs ["TOTAL_MARKET", "total_market", "crypto_market", "TOTAL_ERC20"]
   @non_project_slugs ~w(s-and-p-500 gold silver crude-oil dxy gbtc ibit fbtc arkb btco bitb hodl m2-money)
 
   def non_project_slugs(), do: @non_project_slugs

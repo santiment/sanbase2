@@ -68,10 +68,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     with :ok <-
            Queries.user_can_execute_query(user, context.subscription_product, context.auth.plan),
          {:ok, query} <- Queries.get_query(query_id, user.id) do
-      Process.put(
-        :queries_dynamic_repo,
-        Queries.user_plan_to_dynamic_repo(context.subscription_product, context.auth.plan)
-      )
+      Process.put(:queries_dynamic_repo, Queries.best_dynamic_repo_for_user(user.id))
 
       query_metadata = QueryMetadata.from_resolution(resolution)
       Queries.run_query(query, user, query_metadata)
@@ -107,10 +104,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
 
     with :ok <-
            Queries.user_can_execute_query(user, context.subscription_product, context.auth.plan) do
-      Process.put(
-        :queries_dynamic_repo,
-        Queries.user_plan_to_dynamic_repo(context.subscription_product, context.auth.plan)
-      )
+      Process.put(:queries_dynamic_repo, Queries.best_dynamic_repo_for_user(user.id))
 
       query_metadata = QueryMetadata.from_resolution(resolution)
       query = Queries.get_ephemeral_query_struct(query_text, query_parameters, user)
@@ -140,7 +134,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
              parameters_override,
              force_parameters_override
            ),
-         :ok <- Queries.process_put_dynamic_repo(product, plan),
+         :ok <- Queries.process_put_best_dynamic_repo(user.id),
          {:ok, result} <- Queries.run_query(query, user, query_metadata),
          :ok <-
            maybe_cache_execution(

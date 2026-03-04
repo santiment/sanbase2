@@ -162,6 +162,15 @@ defmodule Sanbase.Queries do
     :ok
   end
 
+  def best_dynamic_repo_for_user(user_id) do
+    Queries.Authorization.best_dynamic_repo_for_user(user_id)
+  end
+
+  def process_put_best_dynamic_repo(user_id) do
+    Process.put(:queries_dynamic_repo, best_dynamic_repo_for_user(user_id))
+    :ok
+  end
+
   @doc ~s"""
   Get a query in order to read or run it.
   This can be done by owner or by anyone if the query is public.

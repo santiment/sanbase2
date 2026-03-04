@@ -1,14 +1,11 @@
 defmodule Sanbase.Cryptocompare.Price.HistoricalScheduler do
   @moduledoc ~s"""
-  Scrape the prices from Cryptocompare websocket API
-  https://min-api.cryptocompare.com/documentation/websockets
+  Schedule historical OHLCV price data scraping jobs from Cryptocompare.
 
-  Use the cryptocompare API to fetch prices aggregated across many exchanges
-  in near-realtime. For every base/quote asset pairs fetch:
-    - price
-    - volume 24h (sliding window) - in number of tokens and in the quote asset currency
-    - top tier exchanges volume 24h (sliding window) - in number of tokens and
-      in the quote asset currency
+  Manages scheduling of Oban jobs that fetch minute-level OHLCV price data
+  for base/quote asset pairs via the Cryptocompare CCCAGG API.
+  Jobs are deduplicated using a combination of Oban uniqueness constraints
+  and querying existing job dates.
   """
 
   use GenServer

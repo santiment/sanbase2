@@ -58,6 +58,14 @@ defmodule Sanbase.Cryptocompare.Price.HistoricalWorker do
             log_time_spent(t1, t2, t3)
             result
 
+          {:snooze, seconds} ->
+            Logger.info(
+              "[Cryptocompare Historical] Rate limited for #{base_asset}/#{quote_asset} date #{date}. " <>
+                "Snoozing job for #{seconds}s."
+            )
+
+            {:snooze, seconds}
+
           :snooze ->
             if attempt > 30 do
               Logger.info(
@@ -139,15 +147,17 @@ defmodule Sanbase.Cryptocompare.Price.HistoricalWorker do
 
             case Oban.insert(@oban_conf_name, data) do
               {:ok, _job} ->
-                {:error, :rate_limit}
+                :ok
 
               {:error, reason} ->
                 Logger.error(
-                  "[Cryptocompare Historical] Failed to enqueue PauseResumeWorker after rate limit: #{inspect(reason)}"
+                  "[Cryptocompare Historical] Failed to enqueue PauseResumeWorker: #{inspect(reason)}. " <>
+                    "Queue will remain paused until next restart."
                 )
-
-                {:error, :rate_limit}
             end
+
+            # Snooze instead of error to avoid wasting a retry attempt
+            {:snooze, reset_after_seconds}
         end
 
       {:error, error} ->

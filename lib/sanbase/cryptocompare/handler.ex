@@ -182,8 +182,19 @@ defmodule Sanbase.Cryptocompare.Handler do
 
     data = pause_resume_worker.new(%{"type" => "resume"}, schedule_in: rate_limited_seconds)
 
-    Oban.insert(oban_conf_name, data)
+    case Oban.insert(oban_conf_name, data) do
+      {:ok, _job} ->
+        :ok
 
-    {:error, :rate_limit}
+      {:error, reason} ->
+        Logger.warning(
+          "[Cryptocompare] Failed to enqueue PauseResumeWorker: #{inspect(reason)}. " <>
+            "Queue will remain paused until next restart."
+        )
+    end
+
+    # Return snooze instead of error so the job doesn't waste a retry attempt.
+    # The job will be re-executed after the rate limit window passes.
+    {:snooze, rate_limited_seconds}
   end
 end

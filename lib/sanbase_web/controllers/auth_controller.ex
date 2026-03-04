@@ -264,7 +264,7 @@ defmodule SanbaseWeb.AuthController do
       %URI{scheme: "sanbase"} ->
         true
 
-      %URI{scheme: "https", host: host} when host in @valid_redirect_hosts ->
+      %URI{scheme: "https", host: host, userinfo: nil} when host in @valid_redirect_hosts ->
         true
 
       _ ->

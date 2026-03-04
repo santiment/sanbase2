@@ -35,6 +35,23 @@ defmodule SanbaseWeb.Graphql.WatchlistSettingsApiTest do
     assert settings == nil
   end
 
+  test "cannot update settings of another user's private watchlist", %{
+    conn: conn,
+    conn2: conn2
+  } do
+    %{"id" => watchlist_id} = create_watchlist(conn, title: rand_str(), is_public: false)
+
+    result =
+      update_watchlist_settings(conn2, watchlist_id,
+        page_size: 50,
+        time_window: "60d",
+        table_columns: %{}
+      )
+
+    assert %{"errors" => [%{"message" => message}]} = result
+    assert message =~ "private watchlist"
+  end
+
   test "validate page size", %{conn: conn} do
     %{"id" => watchlist_id} = create_watchlist(conn, title: rand_str())
 

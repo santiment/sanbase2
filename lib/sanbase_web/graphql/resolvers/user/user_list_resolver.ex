@@ -357,14 +357,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   def update_watchlist_settings(_root, %{id: watchlist_id, settings: settings}, %{
         context: %{auth: %{current_user: current_user}}
       }) do
-    UserList.Settings.update_or_create_settings(watchlist_id, current_user.id, settings)
-    |> case do
-      {:ok, %{settings: settings}} ->
-        {:ok, settings}
+    with {:ok, watchlist} <- UserList.by_id(watchlist_id, []),
+         true <- watchlist.is_public or watchlist.user_id == current_user.id do
+      UserList.Settings.update_or_create_settings(watchlist_id, current_user.id, settings)
+      |> case do
+        {:ok, %{settings: settings}} ->
+          {:ok, settings}
 
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:error,
-         message: "Cannot update watchlist settings", details: changeset_errors(changeset)}
+        {:error, %Ecto.Changeset{} = changeset} ->
+          {:error,
+           message: "Cannot update watchlist settings", details: changeset_errors(changeset)}
+      end
+    else
+      {:error, reason} -> {:error, reason}
+      false -> {:error, "Cannot update settings for a private watchlist you do not own"}
     end
   end
 

@@ -4,7 +4,9 @@ defmodule SanbaseWeb.MetricRegistryController do
   require Logger
 
   def sync(conn, %{"secret" => secret} = params) do
-    case secret == get_sync_secret() do
+    expected = get_sync_secret()
+
+    case is_binary(expected) and Plug.Crypto.secure_compare(secret, expected) do
       true ->
         try do
           case Sanbase.Metric.Registry.Sync.apply_sync(
@@ -51,7 +53,9 @@ defmodule SanbaseWeb.MetricRegistryController do
         "actual_changes" => actual_changes,
         "secret" => secret
       }) do
-    case secret == get_sync_secret() do
+    expected = get_sync_secret()
+
+    case is_binary(expected) and Plug.Crypto.secure_compare(secret, expected) do
       true ->
         # The code fetches the sync by the UUID and checks there if the sync is dry run or not
         case Sanbase.Metric.Registry.Sync.mark_sync_as_completed(sync_uuid, actual_changes) do

@@ -4,28 +4,44 @@ defmodule SanbaseWeb.RepoReaderController do
   require Logger
   alias Sanbase.Utils.Config
 
-  def validator_webhook(conn, params) do
-    Logger.info(
-      "[RepoReaderController] Received validator webhook with params: #{inspect(Map.delete(params, "secret"))}"
-    )
+  def validator_webhook(conn, %{"secret" => secret} = params) do
+    expected = endpoint_secret()
 
-    changed_files = Map.get(params, "changed_files", [])
-    branch = Map.fetch!(params, "branch")
-    fork_repo = Map.fetch!(params, "fork_repo")
+    case is_binary(expected) and Plug.Crypto.secure_compare(secret, expected) do
+      true ->
+        Logger.info(
+          "[RepoReaderController] Received validator webhook with params: #{inspect(Map.delete(params, "secret"))}"
+        )
 
-    case Sanbase.RepoReader.validate_changes(fork_repo, branch, changed_files) do
-      :ok ->
+        changed_files = Map.get(params, "changed_files", [])
+        branch = Map.fetch!(params, "branch")
+        fork_repo = Map.fetch!(params, "fork_repo")
+
+        case Sanbase.RepoReader.validate_changes(fork_repo, branch, changed_files) do
+          :ok ->
+            conn
+            |> put_resp_header("content-type", "application/json; charset=utf-8")
+            |> put_status(200)
+            |> json(%{result: "OK"})
+
+          {:error, error} ->
+            conn
+            |> put_resp_header("content-type", "application/json; charset=utf-8")
+            |> put_status(400)
+            |> json(%{error: error})
+        end
+
+      false ->
         conn
-        |> put_resp_header("content-type", "application/json; charset=utf-8")
-        |> put_status(200)
-        |> json(%{result: "OK"})
-
-      {:error, error} ->
-        conn
-        |> put_resp_header("content-type", "application/json; charset=utf-8")
-        |> put_status(400)
-        |> json(%{error: error})
+        |> send_resp(403, "Unauthorized")
+        |> halt()
     end
+  end
+
+  def validator_webhook(conn, _params) do
+    conn
+    |> send_resp(403, "Unauthorized")
+    |> halt()
   end
 
   def reader_webhook(conn, %{"secret" => secret} = params) do
@@ -33,7 +49,9 @@ defmodule SanbaseWeb.RepoReaderController do
       "[RepoReaderController] Received reader webhook with params: #{inspect(Map.delete(params, "secret"))}"
     )
 
-    case endpoint_secret() == secret do
+    expected = endpoint_secret()
+
+    case is_binary(expected) and Plug.Crypto.secure_compare(secret, expected) do
       true ->
         changed_files = Map.get(params, "changed_files", [])
 

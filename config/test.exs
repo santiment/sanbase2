@@ -142,6 +142,7 @@ config :waffle,
   storage_dir_prefix: "/"
 
 config :sanbase, SanbaseWeb.Plug.VerifyStripeWebhook, webhook_secret: "stripe_webhook_secret"
+config :sanbase, SanbaseWeb.MailjetController, webhook_secret: "test_mailjet_secret"
 
 config :sanbase, Sanbase.Alert, email_channel_enabled: {:system, "EMAIL_CHANNEL_ENABLED", "true"}
 

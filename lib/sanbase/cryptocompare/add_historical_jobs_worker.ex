@@ -4,17 +4,10 @@ defmodule Sanbase.Cryptocompare.AddHistoricalJobsWorker do
 
   Handles three types of scheduling:
   - Price: schedules daily OHLCV price jobs via CCCAGGPairData
-  - Open Interest: schedules hourly OI jobs and daily backfills
-  - Funding Rate: schedules hourly FR jobs and daily backfills
-
-  The backfill job runs daily and re-schedules jobs for the past 7 days
-  to fill any gaps caused by rate limiting, API outages, or transient errors.
   """
   use Oban.Worker, queue: :cryptocompare_historical_add_jobs_queue
 
   require Logger
-
-  @backfill_days 7
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"type" => "schedule_historical_price_jobs"}}) do
@@ -74,40 +67,6 @@ defmodule Sanbase.Cryptocompare.AddHistoricalJobsWorker do
 
     Logger.info(
       "[Cryptocompare.AddHistoricalJobsWorker] Finished adding historical funding rate jobs."
-    )
-
-    :ok
-  end
-
-  @impl Oban.Worker
-  def perform(%Oban.Job{
-        args: %{"type" => "schedule_derivatives_backfill_jobs"}
-      }) do
-    Logger.info(
-      "[Cryptocompare.AddHistoricalJobsWorker] Start scheduling derivatives backfill jobs " <>
-        "for the past #{@backfill_days} days."
-    )
-
-    # Schedule previous day jobs for each of the last N days.
-    # This fills gaps caused by rate limiting, API outages, or transient failures.
-    # Oban uniqueness prevents duplicate jobs — completed jobs allow re-insertion,
-    # so only genuinely missing windows get new jobs.
-    for days_back <- 1..@backfill_days do
-      datetime = DateTime.utc_now() |> DateTime.add(-days_back * 86_400)
-
-      Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler.schedule_previous_day_jobs(
-        datetime: datetime,
-        limit: 2000
-      )
-
-      Sanbase.Cryptocompare.FundingRate.HistoricalScheduler.schedule_previous_day_jobs(
-        datetime: datetime,
-        limit: 2000
-      )
-    end
-
-    Logger.info(
-      "[Cryptocompare.AddHistoricalJobsWorker] Finished scheduling derivatives backfill jobs."
     )
 
     :ok

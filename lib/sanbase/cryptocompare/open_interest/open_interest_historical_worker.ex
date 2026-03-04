@@ -25,6 +25,8 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
   alias Sanbase.Cryptocompare.ExporterProgress
   alias Sanbase.Cryptocompare.Handler
 
+  require Logger
+
   @url "https://data-api.cryptocompare.com/futures/v1/historical/open-interest/minutes"
   @default_limit 2000
   @oban_conf_name :oban_scrapers
@@ -74,6 +76,11 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
         :ok = maybe_schedule_next_job(min_timestamp, args)
 
       {:ok, _min_timestamp, []} ->
+        Logger.info(
+          "[Cryptocompare OpenInterest] Empty data for #{market}/#{instrument} " <>
+            "v#{version} at timestamp #{timestamp}. Data may not be available."
+        )
+
         :ok
 
       {:ok, min_timestamp, data} ->
@@ -81,10 +88,28 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
         :ok
 
       {:error, :first_timestamp_reached} ->
-        # This is the earliest record; do not return error and do not schedule another jobs
         :ok
 
+      {:snooze, seconds} ->
+        Logger.info(
+          "[Cryptocompare OpenInterest] Rate limited for #{market}/#{instrument}. " <>
+            "Snoozing job for #{seconds}s."
+        )
+
+        {:snooze, seconds}
+
+      {:error, :service_unavailable} ->
+        Logger.warning(
+          "[Cryptocompare OpenInterest] Service unavailable for #{market}/#{instrument}. Will retry."
+        )
+
+        {:error, :service_unavailable}
+
       {:error, error} ->
+        Logger.warning(
+          "[Cryptocompare OpenInterest] Error for #{market}/#{instrument}: #{inspect(error)}"
+        )
+
         {:error, error}
     end
   end
@@ -116,27 +141,35 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
   end
 
   defp process_json_response(http_response_body) do
-    data =
-      http_response_body
-      |> Jason.decode!()
-      |> get_in(["Data"])
-      |> Enum.map(fn map ->
-        %{
-          timestamp: map["TIMESTAMP"],
-          market: map["MARKET"],
-          instrument: map["INSTRUMENT"],
-          mapped_instrument: map["MAPPED_INSTRUMENT"],
-          quote_currency: map["QUOTE_CURRENCY"],
-          settlement_currency: map["SETTLEMENT_CURRENCY"],
-          contract_currency: map["CONTRACT_CURRENCY"],
-          close_settlement: map["CLOSE_SETTLEMENT"],
-          close_mark_price: map["CLOSE_MARK_PRICE"],
-          close_quote: map["CLOSE_QUOTE"]
-        }
-      end)
+    case Jason.decode(http_response_body) do
+      {:ok, %{"Data" => data_list}} when is_list(data_list) ->
+        data =
+          Enum.map(data_list, fn map ->
+            %{
+              timestamp: map["TIMESTAMP"],
+              market: map["MARKET"],
+              instrument: map["INSTRUMENT"],
+              mapped_instrument: map["MAPPED_INSTRUMENT"],
+              quote_currency: map["QUOTE_CURRENCY"],
+              settlement_currency: map["SETTLEMENT_CURRENCY"],
+              contract_currency: map["CONTRACT_CURRENCY"],
+              close_settlement: map["CLOSE_SETTLEMENT"],
+              close_mark_price: map["CLOSE_MARK_PRICE"],
+              close_quote: map["CLOSE_QUOTE"]
+            }
+          end)
 
-    # Create a new job with `first_timetamp`
-    {:ok, data}
+        {:ok, data}
+
+      {:ok, %{"Response" => "Error", "Message" => message}} ->
+        {:error, "API error: #{message}"}
+
+      {:ok, unexpected} ->
+        {:error, "Unexpected API response format: #{inspect(Map.keys(unexpected))}"}
+
+      {:error, decode_error} ->
+        {:error, "JSON decode error: #{inspect(decode_error)}"}
+    end
   end
 
   defp maybe_schedule_next_job(

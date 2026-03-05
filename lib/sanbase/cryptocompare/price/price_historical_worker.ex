@@ -138,30 +138,31 @@ defmodule Sanbase.Cryptocompare.Price.HistoricalWorker do
           {:error_limited, _} ->
             Sanbase.Cryptocompare.Price.HistoricalScheduler.pause()
             reset_after_seconds = HTTPHeaderUtils.get_biggest_ratelimited_window(resp)
-
-            data =
-              %{"type" => "resume"}
-              |> Sanbase.Cryptocompare.Price.PauseResumeWorker.new(
-                schedule_in: reset_after_seconds
-              )
-
-            case Oban.insert(@oban_conf_name, data) do
-              {:ok, _job} ->
-                :ok
-
-              {:error, reason} ->
-                Logger.error(
-                  "[Cryptocompare Historical] Failed to enqueue PauseResumeWorker: #{inspect(reason)}. " <>
-                    "Queue will remain paused until next restart."
-                )
-            end
-
-            # Snooze instead of error to avoid wasting a retry attempt
+            enqueue_resume_worker(reset_after_seconds)
             {:snooze, reset_after_seconds}
         end
 
       {:error, error} ->
         {:error, error}
+    end
+  end
+
+  defp enqueue_resume_worker(reset_after_seconds) do
+    data =
+      %{"type" => "resume"}
+      |> Sanbase.Cryptocompare.Price.PauseResumeWorker.new(schedule_in: reset_after_seconds)
+
+    case Oban.insert(@oban_conf_name, data) do
+      {:ok, _job} ->
+        :ok
+
+      {:error, reason} ->
+        Logger.error(
+          "[Cryptocompare Historical] Failed to enqueue PauseResumeWorker: #{inspect(reason)}. " <>
+            "Resuming queue immediately to avoid permanent pause."
+        )
+
+        Sanbase.Cryptocompare.Price.HistoricalScheduler.resume()
     end
   end
 

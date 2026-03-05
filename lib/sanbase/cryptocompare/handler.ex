@@ -19,10 +19,15 @@ defmodule Sanbase.Cryptocompare.Handler do
   - limit
   - queue -- the oban queue
   """
-  @spec get_data(String.t(), (String.t() -> {:ok, map()}), Keyword.t()) ::
+  @spec get_data(
+          String.t(),
+          (String.t() -> {:ok, list()} | {:error, term()}),
+          Keyword.t()
+        ) ::
           {:error, HTTPoison.Error.t()}
           | {:error, :first_timestamp_reached}
-          | {:error, :rate_limit}
+          | {:error, :service_unavailable}
+          | {:snooze, non_neg_integer()}
           | {:ok, min_timestamp :: non_neg_integer(), data_list :: list()}
   def get_data(url, process_json_response_function, opts)
       when is_function(process_json_response_function, 1) do
@@ -189,12 +194,12 @@ defmodule Sanbase.Cryptocompare.Handler do
       {:error, reason} ->
         Logger.warning(
           "[Cryptocompare] Failed to enqueue PauseResumeWorker: #{inspect(reason)}. " <>
-            "Queue will remain paused until next restart."
+            "Resuming queue immediately to avoid permanent pause."
         )
+
+        historical_scheduler.resume()
     end
 
-    # Return snooze instead of error so the job doesn't waste a retry attempt.
-    # The job will be re-executed after the rate limit window passes.
     {:snooze, rate_limited_seconds}
   end
 end

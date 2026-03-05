@@ -78,7 +78,7 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
       {:ok, _min_timestamp, []} ->
         Logger.info(
           "[Cryptocompare OpenInterest] Empty data for #{market}/#{instrument} " <>
-            "v#{version} at timestamp #{timestamp}. Data may not be available."
+            "#{version} at timestamp #{timestamp}. Data may not be available."
         )
 
         :ok
@@ -164,8 +164,11 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
       {:ok, %{"Response" => "Error", "Message" => message}} ->
         {:error, "API error: #{message}"}
 
-      {:ok, unexpected} ->
+      {:ok, unexpected} when is_map(unexpected) ->
         {:error, "Unexpected API response format: #{inspect(Map.keys(unexpected))}"}
+
+      {:ok, unexpected} ->
+        {:error, "Unexpected API response: #{inspect(unexpected)}"}
 
       {:error, decode_error} ->
         {:error, "JSON decode error: #{inspect(decode_error)}"}

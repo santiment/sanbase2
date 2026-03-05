@@ -165,6 +165,7 @@ defmodule Sanbase.Entity.Registry do
     entity_opts
     |> Keyword.put(:is_paywall_required, is_paywall_required)
     |> Keyword.put(:tags, get_in(opts, [:filter, :insight, :tags]))
+    |> Keyword.put(:categories, get_in(opts, [:filter, :insight, :categories]))
   end
 
   defp maybe_add_insight_opts(_type, entity_opts, _opts), do: entity_opts

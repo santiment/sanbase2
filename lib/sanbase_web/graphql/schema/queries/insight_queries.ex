@@ -59,6 +59,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:page, :integer, default_value: 1)
       arg(:page_size, :integer, default_value: 20)
       arg(:tags, list_of(:string))
+      arg(:categories, list_of(:string))
       arg(:is_pulse, :boolean)
       arg(:is_paywall_required, :boolean)
       arg(:from, :datetime)
@@ -73,6 +74,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       meta(access: :free)
 
       arg(:user_id, non_null(:integer))
+      arg(:categories, list_of(:string))
       arg(:is_pulse, :boolean)
       arg(:is_paywall_required, :boolean)
       arg(:from, :datetime)
@@ -135,6 +137,13 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       meta(access: :free)
 
       cache_resolve(&InsightResolver.all_tags/3)
+    end
+
+    @desc "Fetch a list of all insight categories with the number of published insights in each category."
+    field :all_insight_categories, list_of(:insight_category_with_count) do
+      meta(access: :free)
+
+      cache_resolve(&InsightResolver.all_insight_categories/3)
     end
 
     field :insight_comments, list_of(:comment) do

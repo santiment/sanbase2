@@ -162,17 +162,30 @@ defmodule Sanbase.TemplateEngine do
 
                   {existing_position, existing_type} ->
                     if type_or_nil != nil and ch_type != existing_type do
-                      raise TemplateEngineError,
-                        message:
-                          "Conflicting type overrides for '#{base_key}': " <>
-                            "first occurrence used #{existing_type}, " <>
-                            "but later occurrence specifies #{ch_type}"
-                    end
+                      # Later explicit type override wins: update all prior placeholders,
+                      # the arg entry, and key_positions to use the new type.
+                      old_placeholder = "{$#{existing_position}:#{existing_type}}"
+                      new_placeholder = "{$#{existing_position}:#{ch_type}}"
 
-                    # Reuse the existing position and type
-                    placeholder = "{$#{existing_position}:#{existing_type}}"
-                    template_acc = String.replace(template_acc, capture_map.key, placeholder)
-                    {template_acc, args_acc, errors, position, key_positions}
+                      template_acc =
+                        String.replace(template_acc, old_placeholder, new_placeholder)
+
+                      template_acc =
+                        String.replace(template_acc, capture_map.key, new_placeholder)
+
+                      reverse_index = length(args_acc) - 1 - existing_position
+                      args_acc = List.replace_at(args_acc, reverse_index, value)
+
+                      key_positions =
+                        Map.put(key_positions, base_key, {existing_position, ch_type})
+
+                      {template_acc, args_acc, errors, position, key_positions}
+                    else
+                      # Reuse the existing position and type
+                      placeholder = "{$#{existing_position}:#{existing_type}}"
+                      template_acc = String.replace(template_acc, capture_map.key, placeholder)
+                      {template_acc, args_acc, errors, position, key_positions}
+                    end
                 end
 
               :no_value ->

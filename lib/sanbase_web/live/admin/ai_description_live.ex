@@ -8,6 +8,7 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
   alias Sanbase.Insight.Post
   alias Sanbase.Chart.Configuration
   alias Sanbase.UserList
+  alias Sanbase.Accounts.UserSettings
   alias Sanbase.AI.DescriptionJob
 
   @default_page_size 20
@@ -30,6 +31,9 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
       |> assign(:selected_user, nil)
       |> assign(:entity_type, :charts)
       |> assign(:custom_prompt, "")
+      |> assign(:custom_prompt_error, nil)
+      |> assign(:global_refinement_prompt, DescriptionJob.default_refinement_prompt())
+      |> assign(:form, to_form(%{"custom_prompt" => ""}, as: :custom_prompt))
       |> assign(:loading_ids, MapSet.new())
       |> assign(:selected_entity, nil)
       |> assign(:page, 1)
@@ -125,8 +129,62 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
 
   def handle_event("select_tab", _, socket), do: {:noreply, socket}
 
+  def handle_event(
+        "update_custom_prompt",
+        %{"custom_prompt" => %{"custom_prompt" => value}},
+        socket
+      ) do
+    socket =
+      socket
+      |> assign(:custom_prompt, value)
+      |> assign(:custom_prompt_error, nil)
+      |> assign_custom_prompt_form(value)
+
+    {:noreply, socket}
+  end
+
   def handle_event("update_custom_prompt", %{"custom_prompt" => value}, socket) do
-    {:noreply, assign(socket, :custom_prompt, value)}
+    socket =
+      socket
+      |> assign(:custom_prompt, value)
+      |> assign(:custom_prompt_error, nil)
+      |> assign_custom_prompt_form(value)
+
+    {:noreply, socket}
+  end
+
+  def handle_event("save_custom_prompt", params, socket) do
+    prompt = extract_custom_prompt_param(params)
+
+    case socket.assigns.selected_user do
+      nil ->
+        {:noreply, put_flash(socket, :error, "No user selected")}
+
+      user ->
+        case UserSettings.set_ai_refinement_prompt(user.id, prompt) do
+          {:ok, _} ->
+            socket =
+              socket
+              |> assign(:custom_prompt, prompt)
+              |> assign_custom_prompt_form(prompt)
+              |> assign(:custom_prompt_error, nil)
+              |> put_flash(:info, "Custom refinement prompt saved")
+
+            {:noreply, socket}
+
+          {:error, reason} ->
+            error = inspect(reason)
+
+            socket =
+              socket
+              |> assign(:custom_prompt, prompt)
+              |> assign_custom_prompt_form(prompt)
+              |> assign(:custom_prompt_error, error)
+              |> put_flash(:error, "Failed to save custom refinement prompt")
+
+            {:noreply, socket}
+        end
+    end
   end
 
   # ---------------------------------------------------------------------------
@@ -711,6 +769,9 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
       socket
       |> assign(:selected_user, nil)
       |> assign(:search_query, "")
+      |> assign(:custom_prompt, "")
+      |> assign(:custom_prompt_error, nil)
+      |> assign_custom_prompt_form("")
       |> assign(:entities, [])
       |> assign(:total_count, 0)
       |> assign(:total_pages, 1)
@@ -734,13 +795,29 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
           |> put_flash(:error, "User not found")
 
         user ->
+          prompt = DescriptionJob.effective_refinement_prompt(user.id)
+
           socket
           |> assign(:selected_user, user)
           |> assign(:search_query, user_display_name(user))
           |> assign(:selected_entity, nil)
+          |> assign(:custom_prompt, prompt)
+          |> assign(:custom_prompt_error, nil)
+          |> assign_custom_prompt_form(prompt)
       end
     end
   end
+
+  defp assign_custom_prompt_form(socket, prompt) do
+    assign(socket, :form, to_form(%{"custom_prompt" => prompt || ""}, as: :custom_prompt))
+  end
+
+  defp extract_custom_prompt_param(%{"custom_prompt" => %{"custom_prompt" => value}})
+       when is_binary(value),
+       do: value
+
+  defp extract_custom_prompt_param(%{"custom_prompt" => value}) when is_binary(value), do: value
+  defp extract_custom_prompt_param(_), do: ""
 
   defp bulk_progress_pct(%{total: 0}), do: 0
 
@@ -862,22 +939,55 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
 
       <%!-- ── Main UI (user selected) ────────────────────────────── --%>
       <div :if={@selected_user} class="space-y-5">
-        <%!-- Custom prompt --%>
-        <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
-          <label class="block text-sm font-medium text-amber-900 mb-2">
-            Refinement pass
-            <span class="font-normal text-amber-700">
-              (generated per base rules, then rewritten through this adjustment — single call)
-            </span>
+        <%!-- Global prompt (read-only) --%>
+        <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+          <label class="block text-sm font-medium text-slate-900 mb-2">
+            Global refinement prompt
+            <span class="font-normal text-slate-600">(read-only default prompt)</span>
           </label>
           <textarea
-            name="custom_prompt"
+            readonly
+            rows="4"
+            class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-slate-100 text-slate-700 resize-none cursor-not-allowed"
+          >{@global_refinement_prompt}</textarea>
+        </div>
+
+        <%!-- Custom prompt --%>
+        <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <div class="mb-2">
+            <span class="block text-sm font-medium text-amber-900">Refinement pass</span>
+            <ul class="list-disc list-inside mt-1 space-y-0.5 text-sm font-normal text-amber-700">
+              <li>saved per user</li>
+              <li>overrides Global refinement prompt</li>
+              <li>leave empty if Global refinement prompt works ok</li>
+            </ul>
+          </div>
+          <.form
+            for={@form}
             phx-change="update_custom_prompt"
-            phx-debounce="300"
-            rows="2"
-            placeholder="e.g. Focus on DeFi context. Use simpler language for beginners."
-            class="w-full px-3 py-2 border border-amber-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 focus:border-transparent bg-white resize-none"
-          ><%= @custom_prompt %></textarea>
+            phx-submit="save_custom_prompt"
+            class="contents"
+          >
+            <.input
+              type="textarea"
+              field={@form[:custom_prompt]}
+              phx-debounce="300"
+              rows="2"
+              placeholder="e.g. Focus on DeFi context. Use simpler language for beginners."
+              class="w-full px-3 py-2 border border-amber-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 focus:border-transparent bg-white resize-none"
+            />
+            <div class="mt-2 flex justify-end">
+              <button
+                type="submit"
+                class="px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-600 text-white hover:bg-amber-700 transition-colors"
+              >
+                Save refinement pass
+              </button>
+            </div>
+          </.form>
+          <p :if={@custom_prompt_error} class="mt-2 text-sm text-red-700">
+            {@custom_prompt_error}
+          </p>
         </div>
 
         <%!-- Tabs + Bulk actions --%>

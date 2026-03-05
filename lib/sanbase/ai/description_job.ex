@@ -156,23 +156,68 @@ defmodule Sanbase.AI.DescriptionJob do
   @doc "Build the user message sent to the LLM for a given entity."
   def build_user_message(entity, entity_type), do: do_build_user_message(entity, entity_type)
 
-  @doc "Run generation for a single entity. Returns `{:ok, text}` or `{:error, reason}`."
-  def run_generation(entity, entity_type, custom_prompt \\ "") do
+  @default_refinement_prompt """
+  Keep the structured fields (Measures, Tags, Context, etc.) intact, \
+  but rewrite the lead sentence and the Interpretation/Reflects/Behavior \
+  fields to sound casual, friendly, and useful to a retail trader. Write \
+  like an experienced trader explaining a chart to a friend — plain \
+  language, no academic jargon like "narrative rotation", "liquidity \
+  conditions", or "holder conviction". If a concept needs a technical \
+  term, briefly explain it in parentheses.\
+  """
+
+  @doc """
+  Returns the global default refinement prompt (module constant).
+
+  ## Examples
+
+      iex> Sanbase.AI.DescriptionJob.default_refinement_prompt() |> is_binary()
+      true
+  """
+  @spec default_refinement_prompt() :: String.t()
+  def default_refinement_prompt, do: @default_refinement_prompt
+
+  @doc """
+  Resolves the effective refinement prompt for a user.
+
+  - `nil` (never set) -> global default
+  - `""` (explicitly cleared) -> no refinement
+  - any other string -> per-user override
+  """
+  @spec effective_refinement_prompt(non_neg_integer()) :: String.t()
+  def effective_refinement_prompt(user_id) do
+    case Sanbase.Accounts.UserSettings.get_ai_refinement_prompt(user_id) do
+      nil -> @default_refinement_prompt
+      override -> override
+    end
+  end
+
+  @doc """
+  Run generation for a single entity. Uses a two-pass approach when a
+  refinement prompt is provided: pass 1 generates the base description,
+  pass 2 rewrites it through the refinement instructions.
+
+  ## Examples
+
+      iex> result = Sanbase.AI.DescriptionJob.run_generation(%{title: "Funding Rate", description: "Tracks perpetuals funding"}, :charts, "")
+      iex> case result do
+      ...>   {:ok, _} -> true
+      ...>   {:error, _} -> true
+      ...> end
+      true
+  """
+  @spec run_generation(map() | struct(), atom() | String.t(), String.t()) ::
+          {:ok, String.t()} | {:error, term()}
+  def run_generation(entity, entity_type, refinement_prompt \\ "") do
     user_message = do_build_user_message(entity, entity_type)
 
-    system_prompt =
-      if custom_prompt && custom_prompt != "" do
-        @system_prompt <>
-          "\n\n## REFINEMENT PASS\n\n" <>
-          "After producing the description per the rules above, rewrite it by applying " <>
-          "the following adjustment. Return only the final adjusted description — do not " <>
-          "show intermediate steps.\n\n" <>
-          custom_prompt
+    with {:ok, base_description} <- OpenAIClient.chat_completion(@system_prompt, user_message) do
+      if refinement_prompt && String.trim(refinement_prompt) != "" do
+        refine(base_description, refinement_prompt)
       else
-        @system_prompt
+        {:ok, base_description}
       end
-
-    OpenAIClient.chat_completion(system_prompt, user_message, max_tokens: 400, temperature: 0.4)
+    end
   end
 
   @doc "Persist `ai_description` for a single entity."
@@ -186,6 +231,28 @@ defmodule Sanbase.AI.DescriptionJob do
 
   def save_ai_description(type, id, text) when type in [:screeners, :watchlists] do
     Repo.update_all(from(ul in UserList, where: ul.id == ^id), set: [ai_description: text])
+  end
+
+  @refinement_system_prompt ~S"""
+  You are a text refinement assistant for Santiment entity descriptions.
+  Rewrite the description below according to the user's refinement instructions.
+  Preserve the structured format (lead sentence + labeled fields + tags) unless
+  the instructions explicitly ask to change it.
+  Return ONLY the refined description.
+  """
+
+  defp refine(base_description, refinement_instructions) do
+    user_message = """
+    ## Original description
+
+    #{base_description}
+
+    ## Refinement instructions
+
+    #{refinement_instructions}
+    """
+
+    OpenAIClient.chat_completion(@refinement_system_prompt, user_message)
   end
 
   # ─── GenServer callbacks ───────────────────────────────────────────────────

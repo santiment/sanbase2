@@ -199,6 +199,47 @@ defmodule Sanbase.Accounts.UserSettings do
     settings_update(user_id, %{telegram_chat_id: chat_id})
   end
 
+  @doc "Returns the stored refinement prompt for a user, or nil if not set."
+  @spec get_ai_refinement_prompt(non_neg_integer()) :: String.t() | nil
+  def get_ai_refinement_prompt(user_id) do
+    case Repo.get_by(__MODULE__, user_id: user_id) do
+      nil ->
+        nil
+
+      %__MODULE__{settings: settings} when is_map(settings) ->
+        Map.get(
+          settings,
+          :ai_description_refinement_prompt,
+          Map.get(settings, "ai_description_refinement_prompt")
+        )
+
+      _ ->
+        nil
+    end
+  end
+
+  @doc """
+  Stores a user's AI description refinement prompt.
+
+  Delegates persistence to `settings_update/2`.
+  Passing `nil` normalizes to an empty string before persisting.
+
+  Returns `{:ok, term()}` on success and `{:error, term()}` on validation/persistence errors.
+
+  ## Examples
+
+      iex> Sanbase.Accounts.UserSettings.set_ai_refinement_prompt(42, "Focus on DeFi context")
+      {:ok, _}
+
+      iex> Sanbase.Accounts.UserSettings.set_ai_refinement_prompt(42, nil)
+      {:ok, _}
+  """
+  @spec set_ai_refinement_prompt(non_neg_integer(), String.t() | nil) ::
+          {:ok, term()} | {:error, term()}
+  def set_ai_refinement_prompt(user_id, prompt) do
+    settings_update(user_id, %{ai_description_refinement_prompt: prompt || ""})
+  end
+
   defp settings_update(user_id, params) do
     changeset =
       Repo.get_by(__MODULE__, user_id: user_id)

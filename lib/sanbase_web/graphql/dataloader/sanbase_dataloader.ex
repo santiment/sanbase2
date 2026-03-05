@@ -81,6 +81,7 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     :insights_count_per_user,
     :market_segment,
     :market_segments,
+    :post_categories,
     :project_by_slug,
     :social_volume_query,
     :source_slug_mappings,

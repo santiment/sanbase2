@@ -153,16 +153,20 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
     {:noreply, socket}
   end
 
-  def handle_event("save_custom_prompt", _, socket) do
+  def handle_event("save_custom_prompt", params, socket) do
+    prompt = extract_custom_prompt_param(params)
+
     case socket.assigns.selected_user do
       nil ->
         {:noreply, put_flash(socket, :error, "No user selected")}
 
       user ->
-        case UserSettings.set_ai_refinement_prompt(user.id, socket.assigns.custom_prompt) do
+        case UserSettings.set_ai_refinement_prompt(user.id, prompt) do
           {:ok, _} ->
             socket =
               socket
+              |> assign(:custom_prompt, prompt)
+              |> assign_custom_prompt_form(prompt)
               |> assign(:custom_prompt_error, nil)
               |> put_flash(:info, "Custom refinement prompt saved")
 
@@ -173,6 +177,8 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
 
             socket =
               socket
+              |> assign(:custom_prompt, prompt)
+              |> assign_custom_prompt_form(prompt)
               |> assign(:custom_prompt_error, error)
               |> put_flash(:error, "Failed to save custom refinement prompt")
 
@@ -806,6 +812,13 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
     assign(socket, :form, to_form(%{"custom_prompt" => prompt || ""}, as: :custom_prompt))
   end
 
+  defp extract_custom_prompt_param(%{"custom_prompt" => %{"custom_prompt" => value}})
+       when is_binary(value),
+       do: value
+
+  defp extract_custom_prompt_param(%{"custom_prompt" => value}) when is_binary(value), do: value
+  defp extract_custom_prompt_param(_), do: ""
+
   defp bulk_progress_pct(%{total: 0}), do: 0
 
   defp bulk_progress_pct(%{total: total, done: done, failed: failed}),
@@ -949,7 +962,12 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
               <li>leave empty if Global refinement prompt works ok</li>
             </ul>
           </div>
-          <.form for={@form} phx-change="update_custom_prompt" phx-submit="noop" class="contents">
+          <.form
+            for={@form}
+            phx-change="update_custom_prompt"
+            phx-submit="save_custom_prompt"
+            class="contents"
+          >
             <.input
               type="textarea"
               field={@form[:custom_prompt]}
@@ -958,19 +976,18 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
               placeholder="e.g. Focus on DeFi context. Use simpler language for beginners."
               class="w-full px-3 py-2 border border-amber-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 focus:border-transparent bg-white resize-none"
             />
+            <div class="mt-2 flex justify-end">
+              <button
+                type="submit"
+                class="px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-600 text-white hover:bg-amber-700 transition-colors"
+              >
+                Save refinement pass
+              </button>
+            </div>
           </.form>
           <p :if={@custom_prompt_error} class="mt-2 text-sm text-red-700">
             {@custom_prompt_error}
           </p>
-          <div class="mt-2 flex justify-end">
-            <button
-              type="button"
-              phx-click="save_custom_prompt"
-              class="px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-600 text-white hover:bg-amber-700 transition-colors"
-            >
-              Save refinement pass
-            </button>
-          </div>
         </div>
 
         <%!-- Tabs + Bulk actions --%>

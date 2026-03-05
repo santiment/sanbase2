@@ -8,6 +8,7 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
   alias Sanbase.Insight.Post
   alias Sanbase.Chart.Configuration
   alias Sanbase.UserList
+  alias Sanbase.Accounts.UserSettings
   alias Sanbase.AI.DescriptionJob
 
   @default_page_size 20
@@ -126,6 +127,10 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
   def handle_event("select_tab", _, socket), do: {:noreply, socket}
 
   def handle_event("update_custom_prompt", %{"custom_prompt" => value}, socket) do
+    if socket.assigns.selected_user do
+      UserSettings.set_ai_refinement_prompt(socket.assigns.selected_user.id, value)
+    end
+
     {:noreply, assign(socket, :custom_prompt, value)}
   end
 
@@ -734,10 +739,13 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
           |> put_flash(:error, "User not found")
 
         user ->
+          prompt = DescriptionJob.effective_refinement_prompt(user.id)
+
           socket
           |> assign(:selected_user, user)
           |> assign(:search_query, user_display_name(user))
           |> assign(:selected_entity, nil)
+          |> assign(:custom_prompt, prompt)
       end
     end
   end
@@ -867,17 +875,18 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
           <label class="block text-sm font-medium text-amber-900 mb-2">
             Refinement pass
             <span class="font-normal text-amber-700">
-              (generated per base rules, then rewritten through this adjustment — single call)
+              (base description generated first, then refined in a second LLM pass — saved per user)
             </span>
           </label>
-          <textarea
-            name="custom_prompt"
-            phx-change="update_custom_prompt"
-            phx-debounce="300"
-            rows="2"
-            placeholder="e.g. Focus on DeFi context. Use simpler language for beginners."
-            class="w-full px-3 py-2 border border-amber-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 focus:border-transparent bg-white resize-none"
-          ><%= @custom_prompt %></textarea>
+          <form phx-change="update_custom_prompt" phx-submit="noop" class="contents">
+            <textarea
+              name="custom_prompt"
+              phx-debounce="300"
+              rows="2"
+              placeholder="e.g. Focus on DeFi context. Use simpler language for beginners."
+              class="w-full px-3 py-2 border border-amber-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 focus:border-transparent bg-white resize-none"
+            ><%= @custom_prompt %></textarea>
+          </form>
         </div>
 
         <%!-- Tabs + Bulk actions --%>

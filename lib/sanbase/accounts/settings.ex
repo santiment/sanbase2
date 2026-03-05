@@ -48,6 +48,9 @@ defmodule Sanbase.Accounts.Settings do
     # Rate Limits Settings
     field(:self_api_rate_limits_reset_at, :utc_datetime, default: nil)
 
+    # AI Description settings
+    field(:ai_description_refinement_prompt, :string, default: nil)
+
     field(:sanbase_version, :string)
   end
 
@@ -76,7 +79,8 @@ defmodule Sanbase.Accounts.Settings do
       :is_subscribed_comments_emails,
       :is_subscribed_likes_emails,
       :sanbase_version,
-      :self_api_rate_limits_reset_at
+      :self_api_rate_limits_reset_at,
+      :ai_description_refinement_prompt
     ])
   end
 

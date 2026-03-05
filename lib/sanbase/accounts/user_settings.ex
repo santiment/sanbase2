@@ -199,6 +199,21 @@ defmodule Sanbase.Accounts.UserSettings do
     settings_update(user_id, %{telegram_chat_id: chat_id})
   end
 
+  @doc "Returns the stored refinement prompt for a user, or nil if not set."
+  @spec get_ai_refinement_prompt(non_neg_integer()) :: String.t() | nil
+  def get_ai_refinement_prompt(user_id) do
+    case Repo.get_by(__MODULE__, user_id: user_id) do
+      nil -> nil
+      %__MODULE__{settings: %{ai_description_refinement_prompt: prompt}} -> prompt
+    end
+  end
+
+  @spec set_ai_refinement_prompt(non_neg_integer(), String.t() | nil) ::
+          {:ok, term()} | {:error, term()}
+  def set_ai_refinement_prompt(user_id, prompt) do
+    settings_update(user_id, %{ai_description_refinement_prompt: prompt || ""})
+  end
+
   defp settings_update(user_id, params) do
     changeset =
       Repo.get_by(__MODULE__, user_id: user_id)

@@ -222,7 +222,7 @@ defmodule Sanbase.Accounts.UserSettings do
   Stores a user's AI description refinement prompt.
 
   Delegates persistence to `settings_update/2`.
-  Passing `nil` normalizes to an empty string before persisting.
+  Passing `nil` or an empty string clears the per-user override.
 
   Returns `{:ok, term()}` on success and `{:error, term()}` on validation/persistence errors.
 
@@ -237,7 +237,18 @@ defmodule Sanbase.Accounts.UserSettings do
   @spec set_ai_refinement_prompt(non_neg_integer(), String.t() | nil) ::
           {:ok, term()} | {:error, term()}
   def set_ai_refinement_prompt(user_id, prompt) do
-    settings_update(user_id, %{ai_description_refinement_prompt: prompt || ""})
+    settings_update(user_id, %{
+      ai_description_refinement_prompt: normalize_refinement_prompt(prompt)
+    })
+  end
+
+  defp normalize_refinement_prompt(nil), do: nil
+
+  defp normalize_refinement_prompt(prompt) when is_binary(prompt) do
+    case String.trim(prompt) do
+      "" -> nil
+      trimmed -> trimmed
+    end
   end
 
   defp settings_update(user_id, params) do

@@ -69,7 +69,7 @@ defmodule Sanbase.Cryptocompare.FundingRate.HistoricalWorker do
         :ok
 
       {:error, :first_timestamp_reached} ->
-        :ok
+        {:cancel, "No data available before this timestamp"}
 
       {:snooze, seconds} ->
         Logger.info(
@@ -136,8 +136,11 @@ defmodule Sanbase.Cryptocompare.FundingRate.HistoricalWorker do
       {:ok, %{"Response" => "Error", "Message" => message}} ->
         {:error, "API error: #{message}"}
 
-      {:ok, unexpected} ->
+      {:ok, unexpected} when is_map(unexpected) ->
         {:error, "Unexpected API response format: #{inspect(Map.keys(unexpected))}"}
+
+      {:ok, unexpected} ->
+        {:error, "Unexpected API response: #{inspect(unexpected)}"}
 
       {:error, decode_error} ->
         {:error, "JSON decode error: #{inspect(decode_error)}"}

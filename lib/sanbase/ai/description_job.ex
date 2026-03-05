@@ -181,13 +181,14 @@ defmodule Sanbase.AI.DescriptionJob do
   Resolves the effective refinement prompt for a user.
 
   - `nil` (never set) -> global default
-  - `""` (explicitly cleared) -> no refinement
+  - `""` (legacy cleared value) -> global default
   - any other string -> per-user override
   """
   @spec effective_refinement_prompt(non_neg_integer()) :: String.t()
   def effective_refinement_prompt(user_id) do
     case Sanbase.Accounts.UserSettings.get_ai_refinement_prompt(user_id) do
       nil -> @default_refinement_prompt
+      "" -> @default_refinement_prompt
       override -> override
     end
   end

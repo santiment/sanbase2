@@ -200,7 +200,7 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
           loading_ids = MapSet.put(socket.assigns.loading_ids, id)
           lv_pid = self()
           entity_type = socket.assigns.entity_type
-          custom_prompt = socket.assigns.custom_prompt
+          custom_prompt = effective_custom_prompt(socket.assigns.custom_prompt)
 
           Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
             try do
@@ -229,7 +229,7 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
       loading_ids = MapSet.put(socket.assigns.loading_ids, entity.id)
       lv_pid = self()
       entity_type = socket.assigns.entity_type
-      custom_prompt = socket.assigns.custom_prompt
+      custom_prompt = effective_custom_prompt(socket.assigns.custom_prompt)
 
       Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
         try do
@@ -267,7 +267,7 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
       if pending == [] do
         {:noreply, put_flash(socket, :info, "All entities already have AI descriptions")}
       else
-        custom_prompt = socket.assigns.custom_prompt
+        custom_prompt = effective_custom_prompt(socket.assigns.custom_prompt)
 
         case DescriptionJob.start_job(user.id, :all, pending, custom_prompt) do
           :ok ->
@@ -795,7 +795,7 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
           |> put_flash(:error, "User not found")
 
         user ->
-          prompt = DescriptionJob.effective_refinement_prompt(user.id)
+          prompt = UserSettings.get_ai_refinement_prompt(user.id) || ""
 
           socket
           |> assign(:selected_user, user)
@@ -818,6 +818,15 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
 
   defp extract_custom_prompt_param(%{"custom_prompt" => value}) when is_binary(value), do: value
   defp extract_custom_prompt_param(_), do: ""
+
+  defp effective_custom_prompt(prompt) when is_binary(prompt) do
+    case String.trim(prompt) do
+      "" -> DescriptionJob.default_refinement_prompt()
+      _ -> prompt
+    end
+  end
+
+  defp effective_custom_prompt(_), do: DescriptionJob.default_refinement_prompt()
 
   defp bulk_progress_pct(%{total: 0}), do: 0
 

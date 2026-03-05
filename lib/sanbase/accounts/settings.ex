@@ -82,6 +82,11 @@ defmodule Sanbase.Accounts.Settings do
       :self_api_rate_limits_reset_at,
       :ai_description_refinement_prompt
     ])
+    |> update_change(:ai_description_refinement_prompt, fn
+      nil -> nil
+      prompt -> String.trim(prompt)
+    end)
+    |> validate_length(:ai_description_refinement_prompt, max: 4000)
   end
 
   def get_alerts_limit_per_day(%__MODULE__{} = settings, channel) do

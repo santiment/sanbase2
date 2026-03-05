@@ -31,6 +31,8 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
       |> assign(:selected_user, nil)
       |> assign(:entity_type, :charts)
       |> assign(:custom_prompt, "")
+      |> assign(:custom_prompt_error, nil)
+      |> assign(:form, to_form(%{"custom_prompt" => ""}, as: :custom_prompt))
       |> assign(:loading_ids, MapSet.new())
       |> assign(:selected_entity, nil)
       |> assign(:page, 1)
@@ -126,12 +128,56 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
 
   def handle_event("select_tab", _, socket), do: {:noreply, socket}
 
-  def handle_event("update_custom_prompt", %{"custom_prompt" => value}, socket) do
-    if socket.assigns.selected_user do
-      UserSettings.set_ai_refinement_prompt(socket.assigns.selected_user.id, value)
-    end
+  def handle_event(
+        "update_custom_prompt",
+        %{"custom_prompt" => %{"custom_prompt" => value}},
+        socket
+      ) do
+    socket =
+      socket
+      |> assign(:custom_prompt, value)
+      |> assign(:custom_prompt_error, nil)
+      |> assign_custom_prompt_form(value)
 
-    {:noreply, assign(socket, :custom_prompt, value)}
+    {:noreply, socket}
+  end
+
+  def handle_event("update_custom_prompt", %{"custom_prompt" => value}, socket) do
+    socket =
+      socket
+      |> assign(:custom_prompt, value)
+      |> assign(:custom_prompt_error, nil)
+      |> assign_custom_prompt_form(value)
+
+    {:noreply, socket}
+  end
+
+  def handle_event("save_custom_prompt", _, socket) do
+    case socket.assigns.selected_user do
+      nil ->
+        {:noreply, put_flash(socket, :error, "No user selected")}
+
+      user ->
+        case UserSettings.set_ai_refinement_prompt(user.id, socket.assigns.custom_prompt) do
+          {:ok, _} ->
+            socket =
+              socket
+              |> assign(:custom_prompt_error, nil)
+              |> put_flash(:info, "Custom refinement prompt saved")
+
+            {:noreply, socket}
+
+          {:error, reason} ->
+            error = inspect(reason)
+
+            socket =
+              socket
+              |> assign(:custom_prompt_error, error)
+              |> put_flash(:error, "Failed to save custom refinement prompt")
+
+            {:noreply, socket}
+        end
+    end
   end
 
   # ---------------------------------------------------------------------------
@@ -716,6 +762,9 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
       socket
       |> assign(:selected_user, nil)
       |> assign(:search_query, "")
+      |> assign(:custom_prompt, "")
+      |> assign(:custom_prompt_error, nil)
+      |> assign_custom_prompt_form("")
       |> assign(:entities, [])
       |> assign(:total_count, 0)
       |> assign(:total_pages, 1)
@@ -746,8 +795,14 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
           |> assign(:search_query, user_display_name(user))
           |> assign(:selected_entity, nil)
           |> assign(:custom_prompt, prompt)
+          |> assign(:custom_prompt_error, nil)
+          |> assign_custom_prompt_form(prompt)
       end
     end
+  end
+
+  defp assign_custom_prompt_form(socket, prompt) do
+    assign(socket, :form, to_form(%{"custom_prompt" => prompt || ""}, as: :custom_prompt))
   end
 
   defp bulk_progress_pct(%{total: 0}), do: 0
@@ -878,15 +933,28 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
               (base description generated first, then refined in a second LLM pass — saved per user)
             </span>
           </label>
-          <form phx-change="update_custom_prompt" phx-submit="noop" class="contents">
-            <textarea
-              name="custom_prompt"
+          <.form for={@form} phx-change="update_custom_prompt" phx-submit="noop" class="contents">
+            <.input
+              type="textarea"
+              field={@form[:custom_prompt]}
               phx-debounce="300"
               rows="2"
               placeholder="e.g. Focus on DeFi context. Use simpler language for beginners."
               class="w-full px-3 py-2 border border-amber-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 focus:border-transparent bg-white resize-none"
-            ><%= @custom_prompt %></textarea>
-          </form>
+            />
+          </.form>
+          <p :if={@custom_prompt_error} class="mt-2 text-sm text-red-700">
+            {@custom_prompt_error}
+          </p>
+          <div class="mt-2 flex justify-end">
+            <button
+              type="button"
+              phx-click="save_custom_prompt"
+              class="px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-600 text-white hover:bg-amber-700 transition-colors"
+            >
+              Save prompt
+            </button>
+          </div>
         </div>
 
         <%!-- Tabs + Bulk actions --%>

@@ -166,7 +166,15 @@ defmodule Sanbase.AI.DescriptionJob do
   term, briefly explain it in parentheses.\
   """
 
-  @doc "Returns the global default refinement prompt (module constant)."
+  @doc """
+  Returns the global default refinement prompt (module constant).
+
+  ## Examples
+
+      iex> Sanbase.AI.DescriptionJob.default_refinement_prompt() |> is_binary()
+      true
+  """
+  @spec default_refinement_prompt() :: String.t()
   def default_refinement_prompt, do: @default_refinement_prompt
 
   @doc """
@@ -188,12 +196,23 @@ defmodule Sanbase.AI.DescriptionJob do
   Run generation for a single entity. Uses a two-pass approach when a
   refinement prompt is provided: pass 1 generates the base description,
   pass 2 rewrites it through the refinement instructions.
+
+  ## Examples
+
+      iex> result = Sanbase.AI.DescriptionJob.run_generation(%{title: "Funding Rate", description: "Tracks perpetuals funding"}, :charts, "")
+      iex> case result do
+      ...>   {:ok, _} -> true
+      ...>   {:error, _} -> true
+      ...> end
+      true
   """
+  @spec run_generation(map() | struct(), atom() | String.t(), String.t()) ::
+          {:ok, String.t()} | {:error, term()}
   def run_generation(entity, entity_type, refinement_prompt \\ "") do
     user_message = do_build_user_message(entity, entity_type)
 
     with {:ok, base_description} <- OpenAIClient.chat_completion(@system_prompt, user_message) do
-      if refinement_prompt && refinement_prompt != "" do
+      if refinement_prompt && String.trim(refinement_prompt) != "" do
         refine(base_description, refinement_prompt)
       else
         {:ok, base_description}

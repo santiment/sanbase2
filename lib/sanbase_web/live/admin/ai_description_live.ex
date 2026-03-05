@@ -32,6 +32,7 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
       |> assign(:entity_type, :charts)
       |> assign(:custom_prompt, "")
       |> assign(:custom_prompt_error, nil)
+      |> assign(:global_refinement_prompt, DescriptionJob.default_refinement_prompt())
       |> assign(:form, to_form(%{"custom_prompt" => ""}, as: :custom_prompt))
       |> assign(:loading_ids, MapSet.new())
       |> assign(:selected_entity, nil)
@@ -925,14 +926,29 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
 
       <%!-- ── Main UI (user selected) ────────────────────────────── --%>
       <div :if={@selected_user} class="space-y-5">
+        <%!-- Global prompt (read-only) --%>
+        <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+          <label class="block text-sm font-medium text-slate-900 mb-2">
+            Global refinement prompt
+            <span class="font-normal text-slate-600">(read-only default prompt)</span>
+          </label>
+          <textarea
+            readonly
+            rows="4"
+            class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-slate-100 text-slate-700 resize-none cursor-not-allowed"
+          >{@global_refinement_prompt}</textarea>
+        </div>
+
         <%!-- Custom prompt --%>
         <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
-          <label class="block text-sm font-medium text-amber-900 mb-2">
-            Refinement pass
-            <span class="font-normal text-amber-700">
-              (base description generated first, then refined in a second LLM pass — saved per user)
-            </span>
-          </label>
+          <div class="mb-2">
+            <span class="block text-sm font-medium text-amber-900">Refinement pass</span>
+            <ul class="list-disc list-inside mt-1 space-y-0.5 text-sm font-normal text-amber-700">
+              <li>saved per user</li>
+              <li>overrides Global refinement prompt</li>
+              <li>leave empty if Global refinement prompt works ok</li>
+            </ul>
+          </div>
           <.form for={@form} phx-change="update_custom_prompt" phx-submit="noop" class="contents">
             <.input
               type="textarea"
@@ -952,7 +968,7 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
               phx-click="save_custom_prompt"
               class="px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-600 text-white hover:bg-amber-700 transition-colors"
             >
-              Save prompt
+              Save refinement pass
             </button>
           </div>
         </div>

@@ -38,6 +38,13 @@ defmodule Sanbase.Insight.Category do
     |> Repo.all()
   end
 
+  @doc """
+  Returns all insight categories ordered by the number of published, approved,
+  non-deleted insights in each category.
+  """
+  @spec all_with_insight_count() ::
+          {:ok,
+           [%{name: String.t(), description: String.t() | nil, insights_count: non_neg_integer()}]}
   def all_with_insight_count do
     result =
       from(c in __MODULE__,

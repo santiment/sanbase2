@@ -142,6 +142,10 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
     |> Map.new()
   end
 
+  def query(:post_categories, post_ids) do
+    Sanbase.Insight.PostCategory.get_categories_for_posts(Enum.to_list(post_ids))
+  end
+
   def query(:insights_count_per_user, _user_ids) do
     {:ok, map} = Sanbase.Insight.Post.insights_count_map()
     map

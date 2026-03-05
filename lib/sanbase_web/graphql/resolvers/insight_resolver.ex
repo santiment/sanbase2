@@ -201,18 +201,25 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     {:ok, Sanbase.Tag.all()}
   end
 
+  @doc "Returns all insight categories with the count of published insights in each."
+  @spec all_insight_categories(any(), map(), any()) :: {:ok, list(map())}
   def all_insight_categories(_root, _args, _context) do
     Sanbase.Insight.Category.all_with_insight_count()
   end
 
-  def post_categories(%Post{id: id}, _args, _resolution) do
-    categories =
-      Sanbase.Insight.PostCategory.get_post_categories(id)
-      |> Enum.map(fn %{category_name: name} ->
-        %{name: name}
-      end)
+  @doc "Returns the categories assigned to a given post via dataloader."
+  @spec post_categories(%Post{}, map(), Absinthe.Resolution.t()) :: any()
+  def post_categories(%Post{id: id}, _args, %{context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(SanbaseDataloader, :post_categories, id)
+    |> on_load(fn loader ->
+      categories =
+        Dataloader.get(loader, SanbaseDataloader, :post_categories, id)
+        |> List.wrap()
+        |> Enum.map(fn %{category_name: name} -> %{name: name} end)
 
-    {:ok, categories}
+      {:ok, categories}
+    end)
   end
 
   case Application.compile_env(:sanbase, :env) do

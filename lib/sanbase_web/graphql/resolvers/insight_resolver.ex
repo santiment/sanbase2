@@ -66,6 +66,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     opts = [
       is_pulse: Map.get(args, :is_pulse),
       is_paywall_required: Map.get(args, :is_paywall_required),
+      categories: Map.get(args, :categories),
       from: Map.get(args, :from),
       to: Map.get(args, :to),
       page: page,
@@ -81,6 +82,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     opts = [
       is_pulse: Map.get(args, :is_pulse),
       is_paywall_required: Map.get(args, :is_paywall_required),
+      categories: Map.get(args, :categories),
       from: Map.get(args, :from),
       to: Map.get(args, :to),
       page: page,
@@ -100,6 +102,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     opts = [
       is_pulse: Map.get(args, :is_pulse),
       is_paywall_required: Map.get(args, :is_paywall_required),
+      categories: Map.get(args, :categories),
       from: Map.get(args, :from),
       to: Map.get(args, :to),
       page: page,
@@ -196,6 +199,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
 
   def all_tags(_root, _args, _context) do
     {:ok, Sanbase.Tag.all()}
+  end
+
+  def all_insight_categories(_root, _args, _context) do
+    Sanbase.Insight.Category.all_with_insight_count()
+  end
+
+  def post_categories(%Post{id: id}, _args, _resolution) do
+    categories =
+      Sanbase.Insight.PostCategory.get_post_categories(id)
+      |> Enum.map(fn %{category_name: name} ->
+        %{name: name}
+      end)
+
+    {:ok, categories}
   end
 
   case Application.compile_env(:sanbase, :env) do

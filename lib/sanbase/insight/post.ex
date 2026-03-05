@@ -652,6 +652,7 @@ defmodule Sanbase.Insight.Post do
     |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
     |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
     |> maybe_filter_by_tags(Keyword.get(opts, :tags, nil))
+    |> maybe_filter_by_categories(Keyword.get(opts, :categories, nil))
     |> by_from_to_datetime(opts)
     |> maybe_distinct(opts)
     |> maybe_order_by_published_at(opts)
@@ -876,6 +877,16 @@ defmodule Sanbase.Insight.Post do
     query
     |> join(:left, [p], t in assoc(p, :tags))
     |> where([_p, t], t.name in ^tags)
+  end
+
+  defp maybe_filter_by_categories(query, nil), do: query
+  defp maybe_filter_by_categories(query, []), do: query
+
+  defp maybe_filter_by_categories(query, categories) when is_list(categories) do
+    query
+    |> join(:inner, [p], cm in Sanbase.Insight.PostCategory, on: cm.post_id == p.id)
+    |> join(:inner, [p, ..., cm], c in Category, on: cm.category_id == c.id)
+    |> where([p, ..., _cm, c], c.name in ^categories)
   end
 
   defp by_tags(query, tags) do

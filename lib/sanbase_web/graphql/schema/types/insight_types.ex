@@ -6,6 +6,17 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
   alias SanbaseWeb.Graphql.Resolvers.{InsightResolver, VoteResolver, UserResolver}
   alias SanbaseWeb.Graphql.SanbaseRepo
 
+  object :insight_category do
+    field(:name, non_null(:string))
+    field(:description, :string)
+  end
+
+  object :insight_category_with_count do
+    field(:name, non_null(:string))
+    field(:description, :string)
+    field(:insights_count, non_null(:integer))
+  end
+
   object :metric_short_description do
     field(:name, non_null(:string))
   end
@@ -85,6 +96,10 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
 
     field :votes, :vote do
       resolve(&VoteResolver.votes/3)
+    end
+
+    field :categories, list_of(:insight_category) do
+      resolve(&InsightResolver.post_categories/3)
     end
   end
 end

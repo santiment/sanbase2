@@ -238,18 +238,30 @@ defmodule Sanbase.TemplateEngineTest do
       end
     end
 
-    test "Run generate positional params -- conflicting type overrides raise" do
+    test "Run generate positional params -- later explicit type override wins" do
       params = %{num: 42}
       opts = [params: params]
 
-      # First occurrence uses UInt8, second uses UInt64 — conflict
+      # First occurrence uses UInt8, second uses UInt64 — later override wins
       template = "SELECT {{num:UInt8}}, {{num:UInt64}}"
 
-      assert_raise Sanbase.TemplateEngine.TemplateEngineError,
-                   ~r/Conflicting type overrides/,
-                   fn ->
-                     Sanbase.TemplateEngine.run_generate_positional_params(template, opts)
-                   end
+      {:ok, {sql, args}} = Sanbase.TemplateEngine.run_generate_positional_params(template, opts)
+
+      assert sql == "SELECT {$0:UInt64}, {$0:UInt64}"
+      assert args == [42]
+    end
+
+    test "Run generate positional params -- later explicit type overrides inferred type" do
+      params = %{num: 42}
+      opts = [params: params]
+
+      # First occurrence infers Int64, second explicitly sets UInt8
+      template = "SELECT {{num}}, {{num:UInt8}}"
+
+      {:ok, {sql, args}} = Sanbase.TemplateEngine.run_generate_positional_params(template, opts)
+
+      assert sql == "SELECT {$0:UInt8}, {$0:UInt8}"
+      assert args == [42]
     end
 
     test "Run generate positional params -- same type override deduplicates" do

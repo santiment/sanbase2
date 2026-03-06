@@ -3,6 +3,9 @@ defmodule Sanbase.Cache do
   @cache_name :sanbase_cache
   @max_cache_ttl 86_400
 
+  # This is 2^32, so the hashing functions return everything in 0..2^32 range
+  @phash_upper_bound 4_294_967_296
+
   @compile {:inline, get_or_store_isolated: 4}
 
   @impl Sanbase.Cache.Behaviour
@@ -21,8 +24,13 @@ defmodule Sanbase.Cache do
 
   @impl Sanbase.Cache.Behaviour
   def hash(data) do
-    :crypto.hash(:sha256, :erlang.term_to_binary(data))
-    |> Base.encode64()
+    # Use two phash2 calls for a 64-bit hash space (negligible collision risk)
+    # instead of SHA256 + term_to_binary + Base64. phash2 operates directly on
+    # Erlang terms without serialization, making it orders of magnitude faster.
+    # Slightly change the input to h2 so it returns a different result
+    h1 = :erlang.phash2(data, @phash_upper_bound)
+    h2 = :erlang.phash2({:salted, data}, @phash_upper_bound)
+    <<h1::unsigned-32, h2::unsigned-32>> |> Base.encode16(case: :lower)
   end
 
   def name, do: @cache_name

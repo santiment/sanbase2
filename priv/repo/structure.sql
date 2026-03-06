@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict lPrBCVGzfDAQrezJuUuvsvvIxIMIDCrQVbcCW2A0GafidncDVtkqtUHNwYPqA5k
+\restrict D6tIxYMizWBarY7UY5Vw2vV7lR6dxVzT8Y0sbdLlB5d7PcuhASx5fPAf54gNRco
 
 -- Dumped from database version 15.16 (Homebrew)
 -- Dumped by pg_dump version 15.16 (Homebrew)
@@ -3028,7 +3028,8 @@ CREATE TABLE public.post_images (
     image_url text NOT NULL,
     content_hash text NOT NULL,
     hash_algorithm text NOT NULL,
-    post_id bigint
+    post_id bigint,
+    user_id bigint
 );
 
 
@@ -8744,13 +8745,6 @@ CREATE UNIQUE INDEX monitored_twitter_handles_handle_index ON public.monitored_t
 
 
 --
--- Name: notification_muted_users_muted_user_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX notification_muted_users_muted_user_id_index ON public.notification_muted_users USING btree (muted_user_id);
-
-
---
 -- Name: notification_templates_action_step_channel_mime_type_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10270,6 +10264,14 @@ ALTER TABLE ONLY public.post_images
 
 
 --
+-- Name: post_images post_images_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.post_images
+    ADD CONSTRAINT post_images_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: posts posts_chart_configuration_for_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -11057,7 +11059,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict lPrBCVGzfDAQrezJuUuvsvvIxIMIDCrQVbcCW2A0GafidncDVtkqtUHNwYPqA5k
+\unrestrict D6tIxYMizWBarY7UY5Vw2vV7lR6dxVzT8Y0sbdLlB5d7PcuhASx5fPAf54gNRco
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -11555,6 +11557,7 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250611104342);
 INSERT INTO public."schema_migrations" (version) VALUES (20250612090655);
 INSERT INTO public."schema_migrations" (version) VALUES (20250612131900);
 INSERT INTO public."schema_migrations" (version) VALUES (20250612133320);
+INSERT INTO public."schema_migrations" (version) VALUES (20250630112632);
 INSERT INTO public."schema_migrations" (version) VALUES (20250703133723);
 INSERT INTO public."schema_migrations" (version) VALUES (20250703144448);
 INSERT INTO public."schema_migrations" (version) VALUES (20250709132930);
@@ -11599,3 +11602,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260116093636);
 INSERT INTO public."schema_migrations" (version) VALUES (20260216103643);
 INSERT INTO public."schema_migrations" (version) VALUES (20260224120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260225120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260303194227);

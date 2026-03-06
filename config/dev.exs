@@ -71,8 +71,8 @@ config :sanbase, Sanbase.Repo,
   hostname: "localhost",
   show_sensitive_data_on_connection_error: true
 
-# Clickhousex does not support `:system` tuples. The configuration is done
-# by defining defining `:url` in the ClickhouseRepo `init` function.
+# The ClickHouse configuration is done by defining `:url` in the
+# ClickhouseRepo `init` function.
 # These values are default values that are used locally when developing.
 # These are not the values that are used in production. They are set to some
 # default values that clickhouse is intialized with. When running the app locally
@@ -80,7 +80,7 @@ config :sanbase, Sanbase.Repo,
 # which are ignored by git and not published in the repository.
 # Please do not report these as security issues.
 config :sanbase, Sanbase.ClickhouseRepo,
-  adapter: ClickhouseEcto,
+  adapter: Ecto.Adapters.ClickHouse,
   loggers: [Ecto.LogEntry],
   hostname: "clickhouse",
   port: 8123,
@@ -92,7 +92,7 @@ config :sanbase, Sanbase.ClickhouseRepo,
   show_sensitive_data_on_connection_error: true
 
 clickhouse_read_only_opts = [
-  adapter: ClickhouseEcto,
+  adapter: Ecto.Adapters.ClickHouse,
   loggers: [Ecto.LogEntry, Sanbase.Prometheus.EctoInstrumenter],
   hostname: "clickhouse",
   port: 8123,

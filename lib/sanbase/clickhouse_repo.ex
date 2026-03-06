@@ -9,7 +9,7 @@ defmodule Sanbase.ClickhouseRepo do
   """
 
   env = Application.compile_env(:sanbase, :env)
-  @adapter if env == :test, do: Ecto.Adapters.Postgres, else: ClickhouseEcto
+  @adapter if env == :test, do: Ecto.Adapters.Postgres, else: Ecto.Adapters.ClickHouse
 
   use Ecto.Repo, otp_app: :sanbase, adapter: @adapter
 
@@ -112,9 +112,9 @@ defmodule Sanbase.ClickhouseRepo do
          %{
            rows: Enum.map(result.rows, transform_fn),
            column_names: result.columns,
-           column_types: result.column_types,
-           query_id: result.query_id,
-           summary: result.summary
+           column_types: extract_column_types(result),
+           query_id: extract_query_id(result),
+           summary: extract_summary(result)
          }}
 
       {:error, error} ->
@@ -146,13 +146,10 @@ defmodule Sanbase.ClickhouseRepo do
   end
 
   def query_reduce(query, args, init, reducer) do
-    ordered_params = order_params(query, args)
-    sanitized_query = sanitize_query(query)
+    maybe_store_executed_clickhouse_sql(query, args)
+    maybe_print_interpolated_query(query, args)
 
-    maybe_store_executed_clickhouse_sql(sanitized_query, ordered_params)
-    maybe_print_interpolated_query(sanitized_query, ordered_params)
-
-    case __MODULE__.query(sanitized_query, ordered_params) do
+    case __MODULE__.query(query, args) do
       {:ok, result} ->
         {:ok, Enum.reduce(result.rows, init, reducer)}
 
@@ -165,13 +162,10 @@ defmodule Sanbase.ClickhouseRepo do
   end
 
   defp execute_query_transform(query, args, opts \\ []) do
-    ordered_params = order_params(query, args)
-    sanitized_query = sanitize_query(query)
+    maybe_store_executed_clickhouse_sql(query, args)
+    maybe_print_interpolated_query(query, args)
 
-    maybe_store_executed_clickhouse_sql(sanitized_query, ordered_params)
-    maybe_print_interpolated_query(sanitized_query, ordered_params)
-
-    case __MODULE__.query(sanitized_query, ordered_params) do
+    case __MODULE__.query(query, args) do
       {:ok, result} ->
         {:ok, result}
 
@@ -215,47 +209,6 @@ defmodule Sanbase.ClickhouseRepo do
     {:error, "[#{log_id}] #{if propagate_error, do: error_message, else: @masked_error_message}"}
   end
 
-  @doc ~s"""
-  Replace positional params denoted as `?1`, `?2`, etc. with just `?` as they
-  are not supported by ClickHouse. A complex regex is used as such character
-  sequences can apear inside strings in which case they should not be removed.
-  """
-  def sanitize_query(query) do
-    query
-    |> IO.iodata_to_binary()
-    |> String.replace(~r/(\?([0-9]+))(?=(?:[^\\"']|[\\"'][^\\"']*[\\"'])*$)/, "?")
-  end
-
-  @doc ~s"""
-  Add artificial support for positional parameters. Extract all occurences of `?1`,
-  `?2`, etc. in the query and reorder and duplicate the params so every param
-  in the list appears in order as if every positional param is just `?`
-  """
-  def order_params(query, params) do
-    sanitised =
-      Regex.replace(~r/(([^\\]|^))["'].*?[^\\]['"]/, IO.iodata_to_binary(query), "\\g{1}")
-
-    ordering =
-      Regex.scan(~r/\?([0-9]+)/, sanitised)
-      |> Enum.map(fn [_, x] -> String.to_integer(x) end)
-
-    ordering_count = Enum.max_by(ordering, fn x -> x end, fn -> 0 end)
-
-    if ordering_count != length(params) do
-      raise "\nError: number of params received (#{length(params)}) does not match expected (#{ordering_count})"
-    end
-
-    ordered_params =
-      ordering
-      |> Enum.reduce([], fn ix, acc -> [Enum.at(params, ix - 1) | acc] end)
-      |> Enum.reverse()
-
-    case ordered_params do
-      [] -> params
-      _ -> ordered_params
-    end
-  end
-
   defp extract_error_from_stacktrace(stacktrace) do
     line_with_exception =
       Enum.find_value(stacktrace, fn
@@ -272,7 +225,6 @@ defmodule Sanbase.ClickhouseRepo do
     end
   end
 
-  # %Clickhousex.Error{} is causing some errors
   defp extract_error_from_error(%_{message: message}) do
     transform_error_string(message)
   end
@@ -347,14 +299,68 @@ defmodule Sanbase.ClickhouseRepo do
       defp maybe_print_interpolated_query(_query, _params), do: :ok
   end
 
+  @placeholder_regex ~r/\{\$(\d+):[^}]+\}/
+
   defp get_interpolated_query(query, []), do: query
 
   defp get_interpolated_query(query, params) do
-    Clickhousex.Codec.Values.encode(
-      %Clickhousex.Query{param_count: length(params)},
-      query,
-      params
-    )
-    |> to_string()
+    query_str = IO.iodata_to_binary(query)
+    params_by_index = params |> Enum.with_index() |> Map.new(fn {v, i} -> {i, v} end)
+
+    Regex.replace(@placeholder_regex, query_str, fn _full, idx_str ->
+      idx = String.to_integer(idx_str)
+      inspect_param(Map.fetch!(params_by_index, idx))
+    end)
+  end
+
+  defp inspect_param(s) when is_binary(s), do: "'#{String.replace(s, "'", "\\\\'")}'"
+  defp inspect_param(n) when is_number(n), do: to_string(n)
+  defp inspect_param(b) when is_boolean(b), do: to_string(b)
+  defp inspect_param(%DateTime{} = dt), do: "'#{DateTime.to_iso8601(dt)}'"
+  defp inspect_param(%NaiveDateTime{} = dt), do: "'#{NaiveDateTime.to_iso8601(dt)}'"
+  defp inspect_param(%Date{} = d), do: "'#{Date.to_iso8601(d)}'"
+
+  defp inspect_param(list) when is_list(list),
+    do: "[#{Enum.map_join(list, ",", &inspect_param/1)}]"
+
+  defp inspect_param(other), do: inspect(other)
+
+  # In tests, mocks are plain maps with :query_id/:summary keys (checked first).
+  # In production, Ch.Result has these in HTTP response headers (fallback path).
+  defp extract_query_id(result) do
+    Map.get(result, :query_id) || get_header(result, "x-clickhouse-query-id")
+  end
+
+  defp extract_summary(result) do
+    case Map.get(result, :summary) do
+      nil ->
+        case get_header(result, "x-clickhouse-summary") do
+          nil -> %{}
+          json_str -> Jason.decode!(json_str)
+        end
+
+      summary ->
+        summary
+    end
+  end
+
+  # TODO: Ch.Result does not expose column_types. In production this returns nil.
+  # Column types are parsed from RowBinaryWithNamesAndTypes but discarded after decoding.
+  # This only affects the Queries Executor feature. Test mocks include :column_types directly.
+  defp extract_column_types(result) do
+    Map.get(result, :column_types)
+  end
+
+  defp get_header(result, header_name) do
+    case Map.get(result, :headers) do
+      headers when is_list(headers) ->
+        Enum.find_value(headers, fn
+          {^header_name, value} -> value
+          _ -> nil
+        end)
+
+      _ ->
+        nil
+    end
   end
 end

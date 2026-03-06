@@ -644,7 +644,7 @@ defmodule Sanbase.QueriesTest do
   end
 
   defp ch_result_mock() do
-    %Clickhousex.Result{
+    %{
       query_id: "1774C4BC91E05698",
       summary: %{
         "read_bytes" => "408534",
@@ -667,7 +667,7 @@ defmodule Sanbase.QueriesTest do
   end
 
   defp execution_details_mock() do
-    %Clickhousex.Result{
+    %{
       query_id: "1774C4BC91E058D4",
       summary: %{
         "read_bytes" => "5069080",

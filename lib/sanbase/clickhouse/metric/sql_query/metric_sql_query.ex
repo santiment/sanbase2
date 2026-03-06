@@ -54,7 +54,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         SELECT
           dt,
           argMax(value, computed_at) AS value
-        FROM {{table}}
+        FROM {{table:inline}}
         WHERE
           #{finalized_data_filter_str(params.table, only_finalized_data)}
           #{fixed_parameters_str}
@@ -170,7 +170,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         asset_id,
         dt,
         argMax(value, computed_at) AS value2
-      FROM {{table}}
+      FROM {{table:inline}}
       WHERE
         #{finalized_data_filter_str(params.table, only_finalized_data)}
         #{additional_filters}
@@ -223,7 +223,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     SELECT slug, SUM(value), toUInt32(SUM(has_changed))
     FROM (
       SELECT
-        arrayJoin([{{slugs}}]) AS slug,
+        arrayJoin({{slugs}}) AS slug,
         toFloat64(0) AS value,
         toUInt32(0) AS has_changed
 
@@ -237,7 +237,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         SELECT dt, asset_id, argMax(value, computed_at) AS value
         FROM (
           SELECT dt, asset_id, metric_id, value, computed_at
-          FROM {{table}}
+          FROM {{table:inline}}
           WHERE
             #{finalized_data_filter_str(params.table, only_finalized_data)}
             #{additional_filters}

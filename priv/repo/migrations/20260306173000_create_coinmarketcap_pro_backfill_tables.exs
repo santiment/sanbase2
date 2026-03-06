@@ -33,7 +33,7 @@ defmodule Sanbase.Repo.Migrations.CreateCoinmarketcapProBackfillTables do
         null: false
       )
 
-      add(:project_id, :integer, null: false)
+      add(:project_id, references(:project, on_delete: :delete_all), null: false)
       add(:slug, :string, null: false)
       add(:cmc_integer_id, :integer, null: false)
       add(:rank, :integer)

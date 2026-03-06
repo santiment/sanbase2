@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict I447unzUT38VGe1TaAIEfbfvTAt6dTKePqGVvKvFlrxNEqeeecU6SitFSsv21ot
+\restrict rEumk3or3c8G96Hxf37AhoShjhR5C9TGx5myvsAuvbIk1ywnIRepGcrCCCkez28
 
 -- Dumped from database version 15.15 (Homebrew)
 -- Dumped by pg_dump version 15.15 (Homebrew)
@@ -997,7 +997,7 @@ ALTER SEQUENCE public.clickhouse_query_executions_id_seq OWNED BY public.clickho
 CREATE TABLE public.coinmarketcap_pro_backfill_assets (
     id bigint NOT NULL,
     run_id bigint NOT NULL,
-    project_id integer NOT NULL,
+    project_id bigint NOT NULL,
     slug character varying(255) NOT NULL,
     cmc_integer_id integer NOT NULL,
     rank integer,
@@ -9923,6 +9923,14 @@ ALTER TABLE ONLY public.clickhouse_query_executions
 
 
 --
+-- Name: coinmarketcap_pro_backfill_assets coinmarketcap_pro_backfill_assets_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.coinmarketcap_pro_backfill_assets
+    ADD CONSTRAINT coinmarketcap_pro_backfill_assets_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(id) ON DELETE CASCADE;
+
+
+--
 -- Name: coinmarketcap_pro_backfill_assets coinmarketcap_pro_backfill_assets_run_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -11230,7 +11238,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict I447unzUT38VGe1TaAIEfbfvTAt6dTKePqGVvKvFlrxNEqeeecU6SitFSsv21ot
+\unrestrict rEumk3or3c8G96Hxf37AhoShjhR5C9TGx5myvsAuvbIk1ywnIRepGcrCCCkez28
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -11774,3 +11782,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260216103643);
 INSERT INTO public."schema_migrations" (version) VALUES (20260224120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260225120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260306173000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260306190000);

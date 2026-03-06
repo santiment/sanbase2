@@ -76,20 +76,40 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
           |> String.to_integer()
       end
 
-    Logger.info("[CMC] Fetching the realtime data for top #{projects_number} projects")
+    datetime = Keyword.get(opts, :datetime)
 
-    "v1/cryptocurrency/listings/latest?start=1&sort=market_cap&limit=#{projects_number}&cryptocurrency_type=all&convert=USD,BTC"
+    base_params = "start=1&sort=market_cap&limit=#{projects_number}&cryptocurrency_type=all&convert=USD,BTC"
+
+    {url, label} =
+      case datetime do
+        %DateTime{} ->
+          date_str =
+            datetime
+            |> DateTime.truncate(:second)
+            |> DateTime.to_iso8601()
+
+          {"v1/cryptocurrency/listings/historical?date=#{date_str}&#{base_params}",
+           "historical (#{date_str})"}
+
+        _ ->
+          {"v1/cryptocurrency/listings/latest?#{base_params}", "realtime"}
+      end
+
+    Logger.info("[CMC] Fetching #{label} data for top #{projects_number} projects")
+
+    url
     |> get()
     |> case do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         Logger.info(
-          "[CMC] Successfully fetched the realtime data for top #{projects_number} projects."
+          "[CMC] Successfully fetched #{label} data for top #{projects_number} projects."
         )
 
         {:ok, parse_json(body)}
 
-      {:ok, %Tesla.Env{status: status}} ->
-        error = "Failed fetching top #{projects_number} projects' information. Status: #{status}"
+      {:ok, %Tesla.Env{status: status, body: body}} ->
+        error =
+          "Failed fetching top #{projects_number} projects' information. Status: #{status}. Body: #{inspect(body)}"
 
         Logger.warning(error)
         {:error, error}

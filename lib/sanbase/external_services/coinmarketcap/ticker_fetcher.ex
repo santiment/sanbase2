@@ -91,59 +91,99 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     savings-crvusd
   ]
   def work(opts \\ []) do
-    Logger.info("[CMC] Fetching realtime data from coinmarketcap")
-    # Fetch current coinmarketcap data for many tickers
-    # It fetches data for the first N projects, where N is specified in
-    # the COINMARKETCAP_API_PROJECTS_NUMBER env var
-    tickers =
-      case Ticker.fetch_data(opts) do
-        {:ok, tickers} -> tickers
-        _ -> []
-      end
+    datetime = Keyword.get(opts, :datetime)
+    historical? = match?(%DateTime{}, datetime)
 
-    fetched_slugs = MapSet.new(tickers, & &1.slug)
-
-    # Handle separately tokens that might be out of top N.
-    custom_cmc_slugs = @custom_cmc_slugs |> Enum.reject(&(&1 in fetched_slugs))
-
-    # Do not break when some of the handpicked assets is no longer supported.
-    # On 03.09.2025 we had an issue where wrapped-fantom started causing HTTP 400
-    # which in turn broke everything below {:ok, _} = fetch_data_by_slug
-    # and made the exporter fail and did not export the already fetched tickers
-    custom_tickers =
-      case Ticker.fetch_data_by_slug(custom_cmc_slugs) do
-        {:ok, custom_tickers} -> custom_tickers
-        _ -> []
-      end
-
-    tickers = tickers ++ custom_tickers
-
-    # Create a map where the coinmarketcap_id is key and the values is the list of
-    # santiment slugs that have that coinmarketcap_id
-    cmc_id_to_slugs_mapping = coinmarketcap_to_santiment_slug_map()
-
-    tickers =
-      remove_not_valid_prices(tickers, cmc_id_to_slugs_mapping)
-
-    # Create a project if it's a new one in the top projects and we don't have it
-    if System.get_env("INSERT_CMC_TOP_N_PROJECTS_INTO_DB") == "1" do
-      tickers
-      |> Enum.sort_by(& &1.rank, :asc)
-      |> Enum.take(top_projects_to_follow())
-      |> Enum.each(&insert_or_update_project/1)
+    if historical? do
+      Logger.info(
+        "[CMC] Fetching historical data from coinmarketcap for #{DateTime.to_iso8601(datetime)}"
+      )
+    else
+      Logger.info("[CMC] Fetching realtime data from coinmarketcap")
     end
 
-    # Store the data in LatestCoinmarketcapData in postgres
+    # Fetch coinmarketcap data for many tickers.
+    # For historical mode, fail early if the API returns an error.
+    # For realtime mode, continue with empty list (original behavior).
+    tickers =
+      case Ticker.fetch_data(opts) do
+        {:ok, tickers} ->
+          tickers
 
-    tickers
-    |> Enum.each(&store_latest_coinmarketcap_data!/1)
+        {:error, error} when historical? ->
+          {:error, error}
 
-    tickers
-    |> export_to_kafka(cmc_id_to_slugs_mapping)
+        _ ->
+          []
+      end
 
-    Logger.info(
-      "[CMC] Fetching realtime data from coinmarketcap done. The data is imported in the database."
-    )
+    # Early return on historical fetch failure
+    if match?({:error, _}, tickers) do
+      tickers
+    else
+      # Custom slugs are only fetched for realtime data.
+      # The listings/historical endpoint covers the top N projects;
+      # quotes/historical has a different response format and is not used here.
+      tickers =
+        if historical? do
+          tickers
+        else
+          fetched_slugs = MapSet.new(tickers, & &1.slug)
+
+          # Handle separately tokens that might be out of top N.
+          custom_cmc_slugs = @custom_cmc_slugs |> Enum.reject(&(&1 in fetched_slugs))
+
+          # Do not break when some of the handpicked assets is no longer supported.
+          # On 03.09.2025 we had an issue where wrapped-fantom started causing HTTP 400
+          # which in turn broke everything below {:ok, _} = fetch_data_by_slug
+          # and made the exporter fail and did not export the already fetched tickers
+          custom_tickers =
+            case Ticker.fetch_data_by_slug(custom_cmc_slugs) do
+              {:ok, custom_tickers} -> custom_tickers
+              _ -> []
+            end
+
+          tickers ++ custom_tickers
+        end
+
+      # Create a map where the coinmarketcap_id is key and the values is the list of
+      # santiment slugs that have that coinmarketcap_id
+      cmc_id_to_slugs_mapping = coinmarketcap_to_santiment_slug_map()
+
+      tickers =
+        remove_not_valid_prices(tickers, cmc_id_to_slugs_mapping)
+
+      # Create a project if it's a new one in the top projects and we don't have it.
+      # Skip for historical data.
+      if not historical? and System.get_env("INSERT_CMC_TOP_N_PROJECTS_INTO_DB") == "1" do
+        tickers
+        |> Enum.sort_by(& &1.rank, :asc)
+        |> Enum.take(top_projects_to_follow())
+        |> Enum.each(&insert_or_update_project/1)
+      end
+
+      # Store the data in LatestCoinmarketcapData in postgres.
+      # Skip for historical data to avoid overwriting latest values.
+      if not historical? do
+        tickers
+        |> Enum.each(&store_latest_coinmarketcap_data!/1)
+      end
+
+      tickers
+      |> export_to_kafka(cmc_id_to_slugs_mapping)
+
+      if historical? do
+        Logger.info(
+          "[CMC] Fetching historical data from coinmarketcap for #{DateTime.to_iso8601(datetime)} done. #{length(tickers)} tickers exported."
+        )
+      else
+        Logger.info(
+          "[CMC] Fetching realtime data from coinmarketcap done. The data is imported in the database."
+        )
+      end
+
+      :ok
+    end
   end
 
   defp coinmarketcap_to_santiment_slug_map() do

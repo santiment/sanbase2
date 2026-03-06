@@ -2,6 +2,7 @@ defmodule Sanbase.Application.Scrapers do
   import Sanbase.ApplicationUtils
 
   alias Sanbase.ExternalServices.RateLimiting
+  alias Sanbase.Utils.Config
 
   def init(), do: :ok
 
@@ -37,6 +38,10 @@ defmodule Sanbase.Application.Scrapers do
         scale: 60_000,
         limit: 5,
         time_between_requests: 2000
+      ),
+      RateLimiting.Server.child_spec(
+        :api_coinmarketcap_backfill_rate_limiter,
+        backfill_rate_limiter_opts()
       ),
 
       # Coinmarketcap http rate limiter
@@ -99,5 +104,31 @@ defmodule Sanbase.Application.Scrapers do
       true -> Keyword.put(config, :prefix, "sanbase2")
       false -> config
     end
+  end
+
+  defp backfill_rate_limiter_opts() do
+    [
+      scale:
+        Config.module_get(
+          Sanbase.ExternalServices.Coinmarketcap.ProBackfill,
+          :rate_limiter_scale,
+          "60000"
+        )
+        |> Sanbase.Math.to_integer(),
+      limit:
+        Config.module_get(
+          Sanbase.ExternalServices.Coinmarketcap.ProBackfill,
+          :rate_limiter_limit,
+          "30"
+        )
+        |> Sanbase.Math.to_integer(),
+      time_between_requests:
+        Config.module_get(
+          Sanbase.ExternalServices.Coinmarketcap.ProBackfill,
+          :rate_limiter_time_between_requests,
+          "1000"
+        )
+        |> Sanbase.Math.to_integer()
+    ]
   end
 end

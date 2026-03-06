@@ -12,6 +12,12 @@ config :sanbase, Sanbase.ExternalServices.Coinmarketcap.TickerFetcher,
   sync_enabled: {:system, "COINMARKETCAP_TICKER_FETCHER_ENABLED", false},
   top_projects_to_follow: {:system, "TOP_PROJECTS_TO_FOLLOW", "25"}
 
+config :sanbase, Sanbase.ExternalServices.Coinmarketcap.ProBackfill,
+  rate_limiter_scale: {:system, "CMC_PRO_BACKFILL_RATE_LIMITER_SCALE_MS", "60000"},
+  rate_limiter_limit: {:system, "CMC_PRO_BACKFILL_RATE_LIMITER_LIMIT", "30"},
+  rate_limiter_time_between_requests:
+    {:system, "CMC_PRO_BACKFILL_RATE_LIMITER_TIME_BETWEEN_REQUESTS_MS", "1000"}
+
 config :sanbase, Sanbase.ExternalServices.Etherscan.Requests,
   apikey: {:system, "ETHERSCAN_APIKEY", ""}
 
@@ -30,7 +36,9 @@ config :sanbase, Oban.Scrapers,
     cryptocompare_funding_rate_historical_jobs_queue: [limit: 10, paused: true],
     cryptocompare_funding_rate_historical_jobs_pause_resume_queue: 1,
     # Twitter queues
-    twitter_followers_migration_queue: [limit: 25, paused: true]
+    twitter_followers_migration_queue: [limit: 25, paused: true],
+    coinmarketcap_pro_backfill_jobs: [limit: 10, paused: false],
+    coinmarketcap_pro_backfill_control: 2
   ],
   plugins: [
     # The default values of interval: 1000, limit: 5000 cause the stager to timeout

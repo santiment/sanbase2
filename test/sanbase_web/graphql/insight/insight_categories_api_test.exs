@@ -43,13 +43,14 @@ defmodule SanbaseWeb.Graphql.InsightCategoriesApiTest do
       result = all_insight_categories(conn)
       assert length(result) == 3
 
-      ta = Enum.find(result, &(&1["name"] == "Technical Analysis"))
-      mo = Enum.find(result, &(&1["name"] == "Market Overview"))
-      oc = Enum.find(result, &(&1["name"] == "On-Chain Analysis"))
+      # Assert ordering by insights_count descending
+      assert Enum.map(result, & &1["name"]) == [
+               "Technical Analysis",
+               "Market Overview",
+               "On-Chain Analysis"
+             ]
 
-      assert ta["insightsCount"] == 2
-      assert mo["insightsCount"] == 1
-      assert oc["insightsCount"] == 0
+      assert Enum.map(result, & &1["insightsCount"]) == [2, 1, 0]
     end
 
     test "does not count draft or unapproved insights", context do
@@ -137,6 +138,45 @@ defmodule SanbaseWeb.Graphql.InsightCategoriesApiTest do
       _i1 = insert(:published_post, published_at: seconds_ago(10), title: "Insight 1")
 
       result = all_insights_with_categories(conn, ["Technical Analysis"])
+      assert result == []
+    end
+  end
+
+  describe "allInsightsForUser with categories filter" do
+    test "filters user insights by category", context do
+      %{conn: conn, user: user, cat1: cat1, cat2: cat2} = context
+
+      i1 = insert(:published_post, user: user, published_at: seconds_ago(30), title: "Insight 1")
+      i2 = insert(:published_post, user: user, published_at: seconds_ago(20), title: "Insight 2")
+      _i3 = insert(:published_post, user: user, published_at: seconds_ago(10), title: "Insight 3")
+
+      PostCategory.assign_categories(i1.id, [cat1.id], "ai")
+      PostCategory.assign_categories(i2.id, [cat1.id, cat2.id], "human")
+
+      result = all_insights_for_user_with_categories(conn, user.id, ["Technical Analysis"])
+      assert length(result) == 2
+      ids = Enum.map(result, & &1["id"])
+      assert i1.id in ids
+      assert i2.id in ids
+    end
+
+    test "returns empty list when no user insights match category", context do
+      %{conn: conn, user: user} = context
+
+      _i1 = insert(:published_post, user: user, published_at: seconds_ago(10), title: "Insight 1")
+
+      result = all_insights_for_user_with_categories(conn, user.id, ["Technical Analysis"])
+      assert result == []
+    end
+
+    test "does not return insights from other users", context do
+      %{conn: conn, user: user, cat1: cat1} = context
+
+      other_user = insert(:user)
+      i1 = insert(:published_post, user: other_user, published_at: seconds_ago(30))
+      PostCategory.assign_categories(i1.id, [cat1.id], "ai")
+
+      result = all_insights_for_user_with_categories(conn, user.id, ["Technical Analysis"])
       assert result == []
     end
   end
@@ -289,6 +329,24 @@ defmodule SanbaseWeb.Graphql.InsightCategoriesApiTest do
     |> post("/graphql", query_skeleton(query))
     |> json_response(200)
     |> get_in(["data", "allInsights"])
+  end
+
+  defp all_insights_for_user_with_categories(conn, user_id, categories) do
+    categories_str = Enum.map(categories, &"\"#{&1}\"") |> Enum.join(", ")
+
+    query = """
+    {
+      allInsightsForUser(userId: #{user_id}, categories: [#{categories_str}]) {
+        id
+        title
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", query_skeleton(query))
+    |> json_response(200)
+    |> get_in(["data", "allInsightsForUser"])
   end
 
   defp get_most_recent(conn, entity_or_entities, opts) do

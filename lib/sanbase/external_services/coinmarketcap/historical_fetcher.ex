@@ -57,7 +57,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.HistoricalFetcher do
         timestamps
         |> Enum.with_index(1)
         |> Enum.reduce({0, 0}, fn {datetime, index}, {ok_count, err_count} ->
-          Logger.info("[CMC Historical] Request #{index}/#{total}: #{DateTime.to_iso8601(datetime)}")
+          Logger.info(
+            "[CMC Historical] Request #{index}/#{total}: #{DateTime.to_iso8601(datetime)}"
+          )
 
           result =
             try do

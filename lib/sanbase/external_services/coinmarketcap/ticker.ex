@@ -78,7 +78,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
 
     datetime = Keyword.get(opts, :datetime)
 
-    base_params = "start=1&sort=market_cap&limit=#{projects_number}&cryptocurrency_type=all&convert=USD,BTC"
+    base_params =
+      "start=1&sort=market_cap&limit=#{projects_number}&cryptocurrency_type=all&convert=USD,BTC"
 
     {url, label} =
       case datetime do

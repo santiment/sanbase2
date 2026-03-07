@@ -58,7 +58,7 @@ defmodule SanbaseWeb.Endpoint do
   plug(SanbaseWeb.Plug.VerifyStripeWebhook)
 
   parser_length =
-    if System.get_env("CONTAINER_TYPE") in ["admin", "all"], do: 20_000_000, else: 8_000_000
+    if System.get_env("CONTAINER_TYPE") in ["admin", "all"], do: 50_000_000, else: 8_000_000
 
   plug(
     Plug.Parsers,

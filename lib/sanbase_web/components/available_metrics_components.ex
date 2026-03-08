@@ -153,5 +153,4 @@ defmodule SanbaseWeb.AvailableMetricsComponents do
     </div>
     """
   end
-
 end

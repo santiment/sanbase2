@@ -48,5 +48,4 @@ defmodule SanbaseWeb.AdminFormsComponents do
     </div>
     """
   end
-
 end

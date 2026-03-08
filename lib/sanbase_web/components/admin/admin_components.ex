@@ -278,29 +278,7 @@ defmodule SanbaseWeb.AdminComponents do
                   <.td_show
                     class="px-3 py-2 border-b border-gray-200 whitespace-pre-wrap break-words"
                     value={
-                      result =
-                        if @assocs[@data.id][field],
-                          do: @assocs[@data.id][field],
-                          else: Map.get(@data, field)
-
-                      result =
-                        if @funcs[field] != nil, do: @funcs[field].(@data), else: result
-
-                      case Map.get(@field_type_map, field) do
-                        :map ->
-                          if is_binary(result), do: result, else: Jason.encode!(result)
-
-                        :list ->
-                          if is_binary(result), do: result, else: Jason.encode!(result)
-
-                        :boolean ->
-                          if result == true,
-                            do: ~H|<span class="hero-check-circle text-green-500" />|,
-                            else: ~H|<span class="hero-x-circle text-red-500" />|
-
-                        _ ->
-                          result
-                      end
+                      resolve_field_value(@data, field, @assocs[@data.id], @funcs, @field_type_map)
                     }
                   />
                 </tr>
@@ -513,23 +491,7 @@ defmodule SanbaseWeb.AdminComponents do
               </td>
             <% else %>
               <.td_index value={
-                result =
-                  if @assocs[row.id][field],
-                    do: @assocs[row.id][field],
-                    else: Map.get(row, field)
-
-                result =
-                  if @funcs[field] != nil, do: @funcs[field].(row), else: result
-
-                case Map.get(@field_type_map, field) do
-                  :boolean ->
-                    if result == true,
-                      do: ~H|<span class="hero-check-circle text-green-500" />|,
-                      else: ~H|<span class="hero-x-circle text-red-500" />|
-
-                  _ ->
-                    result
-                end
+                resolve_field_value(row, field, @assocs[row.id], @funcs, @field_type_map)
               } />
             <% end %>
           <% end %>
@@ -558,41 +520,33 @@ defmodule SanbaseWeb.AdminComponents do
   def btn(assigns) do
     ~H"""
     <.link href={@href}>
-      <button
-        type={@type}
-        class={
-          classes = %{
-            blue: %{
-              small:
-                "text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-xs px-4 py-2 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800",
-              normal:
-                "text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-            },
-            yellow: %{
-              small:
-                "focus:outline-none text-white bg-yellow-400 hover:bg-yellow-500 focus:ring-4 focus:ring-yellow-300 font-medium rounded-lg text-xs px-4 py-2 me-2 mb-2 dark:focus:ring-yellow-900",
-              normal:
-                "focus:outline-none text-white bg-yellow-400 hover:bg-yellow-500 focus:ring-4 focus:ring-yellow-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:focus:ring-yellow-900"
-            },
-            red: %{
-              small:
-                "focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-xs px-4 py-2 me-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900",
-              normal:
-                "focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900"
-            },
-            white: %{
-              normal:
-                "py-2.5 px-5 me-2 mb-2 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
-            }
-          }
-
-          classes[@color][@size]
-        }
-      >
+      <button type={@type} class={btn_classes(@color, @size)}>
         {@label}
       </button>
     </.link>
     """
+  end
+
+  defp btn_classes(color, size) do
+    base = "font-medium rounded-lg me-2 mb-2 focus:ring-4"
+    size_classes = if size == :small, do: "text-xs px-4 py-2", else: "text-sm px-5 py-2.5"
+
+    color_classes =
+      case color do
+        :blue ->
+          "text-white bg-blue-700 hover:bg-blue-800 focus:ring-blue-300"
+
+        :yellow ->
+          "focus:outline-none text-white bg-yellow-400 hover:bg-yellow-500 focus:ring-yellow-300"
+
+        :red ->
+          "focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-red-300"
+
+        :white ->
+          "text-gray-900 focus:outline-none bg-white border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:ring-gray-100"
+      end
+
+    "#{base} #{size_classes} #{color_classes}"
   end
 
   @doc """
@@ -1038,6 +992,25 @@ defmodule SanbaseWeb.AdminComponents do
 
   defp generic_admin_action_path(:edit, row, resource),
     do: ~p"/admin/generic/#{row}/edit?resource=#{resource}"
+
+  defp resolve_field_value(record, field, assocs, funcs, field_type_map) do
+    result = if assocs[field], do: assocs[field], else: Map.get(record, field)
+    result = if funcs[field], do: funcs[field].(record), else: result
+
+    case Map.get(field_type_map, field) do
+      type when type in [:map, :list] ->
+        if is_binary(result), do: result, else: Jason.encode!(result)
+
+      :boolean ->
+        if result == true,
+          do: Phoenix.HTML.raw(~s(<span class="hero-check-circle text-green-500"></span>)),
+          else: Phoenix.HTML.raw(~s(<span class="hero-x-circle text-red-500"></span>))
+
+      _ ->
+        result
+    end
+  end
+
 
   defp normalize_filters(search) do
     (Map.get(search || %{}, "filters") || [])

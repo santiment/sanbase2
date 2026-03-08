@@ -3,47 +3,6 @@ defmodule SanbaseWeb.AvailableMetricsComponents do
 
   alias SanbaseWeb.CoreComponents
 
-  attr(:phx_click, :string, required: true)
-  attr(:display_text, :string, required: true)
-  attr(:class, :string, required: false, default: nil)
-  attr(:rest, :global, doc: "the arbitrary HTML attributes to add to the flash container")
-
-  def event_button(assigns) do
-    ~H"""
-    <button
-      phx-click={@phx_click}
-      class={[
-        "phx-submit-loading:opacity-75 rounded-lg my-1 py-2 px-3 text-sm font-semibold leading-6 text-white",
-        @class
-      ]}
-      {@rest}
-    >
-      {@display_text}
-    </button>
-    """
-  end
-
-  attr :href, :string, required: true
-  attr :text, :string, required: true
-  attr :icon, :string, required: false, default: nil
-  attr :target, :string, default: "_self"
-  attr(:rest, :global, doc: "the arbitrary HTML attributes to add to the flash container")
-
-  def link_button(assigns) do
-    ~H"""
-    <.link
-      href={@href}
-      class="text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center gap-x-2"
-      target={@target}
-      rel="noreferrer noopener"
-      {@rest}
-    >
-      <CoreComponents.icon :if={@icon} name={@icon} />
-      {@text}
-    </.link>
-    """
-  end
-
   @doc ~s"""
   The styled button is used to link to documentation and
   to link to the details page. Supports icons on the left side.
@@ -195,17 +154,4 @@ defmodule SanbaseWeb.AvailableMetricsComponents do
     """
   end
 
-  def th(assigns) do
-    ~H"""
-    <th class="px-5 py-3 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">
-      {@field}
-    </th>
-    """
-  end
-
-  def td(assigns) do
-    ~H"""
-    <td class="px-5 py-5 text-sm bg-white border-b border-gray-200">{@value}</td>
-    """
-  end
 end

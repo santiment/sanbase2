@@ -205,13 +205,6 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
     """
   end
 
-  defp stringify(ll) do
-    ll
-    |> List.wrap()
-    |> Enum.map(fn x -> x |> to_string() |> String.upcase() end)
-    |> Enum.join(", ")
-  end
-
   defp get_rows(metric_registry) do
     [
       %{
@@ -300,7 +293,7 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
       },
       %{
         key: "Default Aggregation",
-        value: stringify(metric_registry.default_aggregation),
+        value: metric_registry.default_aggregation |> to_string() |> String.upcase(),
         popover_target: "popover-default-aggregation",
         popover_target_text: get_popover_text(%{key: "Default Aggregation"})
       },

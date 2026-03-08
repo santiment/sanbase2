@@ -1,4 +1,53 @@
 defmodule SanbaseWeb.GenericAdmin do
+  @moduledoc """
+  Central registry and shared helpers for the GenericAdmin CRUD framework.
+
+  GenericAdmin provides a configuration-driven admin interface for Ecto schemas
+  that don't need custom LiveView pages. Each resource is defined by a module
+  under `SanbaseWeb.GenericAdmin.*` that declares a `schema_module/0` callback
+  and an optional `resource/0` configuration map.
+
+  ## How it works
+
+  1. **Discovery** — `custom_defined_modules/0` scans `:sanbase` application modules
+     for any module whose name starts with `SanbaseWeb.GenericAdmin.`.
+
+  2. **Configuration** — `resource_module_map/1` calls each discovered module's
+     `schema_module/0` and `resource/0` to build a map of resource configs keyed
+     by pluralized, underscored resource names (e.g. `"subscriptions"`).
+
+  3. **Routing** — The `GenericAdminController` uses the `?resource=` query param
+     to look up the config and render the appropriate CRUD page.
+
+  ## Resource module callbacks
+
+  Each `SanbaseWeb.GenericAdmin.*` module can implement:
+
+  | Callback               | Required? | Description |
+  |------------------------|-----------|-------------|
+  | `schema_module/0`      | **yes**   | Returns the Ecto schema module (e.g. `Sanbase.Billing.Subscription`) |
+  | `resource_name/0`      | no        | Override the auto-derived resource name |
+  | `resource/0`           | no        | Map with `:actions`, `:index_fields`, `:new_fields`, `:edit_fields`, `:fields_override`, `:belongs_to_fields`, `:preloads`, `:custom_index_actions` |
+  | `before_filter/1`      | no        | Transform a record before display (receives and returns struct) |
+  | `after_filter/3`       | no        | Hook called after create/update (receives `record, changeset, changes`) |
+  | `has_many/1`           | no        | Return list of has_many table definitions for the show page |
+  | `belongs_to/1`         | no        | Return list of belongs_to detail sections for the show page |
+
+  ## fields_override options
+
+  The `:fields_override` map keys are field atoms and values are maps with:
+
+  - `:value_modifier` — `(record -> any)` function to customize display value
+  - `:collection` — list of `{label, value}` tuples for select dropdowns
+  - `:type` — override the Ecto field type (e.g. `:multiselect`)
+  - `:search_query` — custom search query builder for this field
+  """
+
+  @doc """
+  Returns all modules under the `SanbaseWeb.GenericAdmin.*` namespace.
+
+  Uses `:application.get_key/2` to scan loaded modules at runtime.
+  """
   def custom_defined_modules() do
     case :application.get_key(:sanbase, :modules) do
       {:ok, modules} ->
@@ -12,6 +61,15 @@ defmodule SanbaseWeb.GenericAdmin do
     end
   end
 
+  @doc """
+  Builds a map of all resource configurations, keyed by resource name.
+
+  Each entry contains the schema module, admin module, field lists, actions
+  (filtered by the current user's roles from `conn`), and any overrides.
+
+  When `conn` is not provided (e.g. during search routing), role-based
+  action filtering is skipped.
+  """
   def resource_module_map(%Plug.Conn{} = conn \\ %Plug.Conn{}) do
     Enum.reduce(custom_defined_modules(), %{}, fn admin_module, acc ->
       Map.merge(acc, generate_resource(conn, admin_module))
@@ -67,11 +125,19 @@ defmodule SanbaseWeb.GenericAdmin do
     }
   end
 
+  @doc """
+  Returns a list of all resource name strings (e.g. `["subscriptions", "users", ...]`).
+  Used by the controller to generate navigation routes.
+  """
   def resources do
     custom_defined_modules()
     |> Enum.map(&schema_to_resource_name/1)
   end
 
+  @doc """
+  Safely calls a function on a resource module, falling back to `default_value`
+  if the function is not exported. Used to make all resource callbacks optional.
+  """
   def call_module_function_or_default(module, function, data, default_value) do
     if function_exported?(module, function, length(data)) do
       apply(module, function, data)
@@ -80,6 +146,14 @@ defmodule SanbaseWeb.GenericAdmin do
     end
   end
 
+  @doc """
+  Derives a URL-friendly resource name from an Ecto schema module.
+
+  ## Example
+
+      iex> schema_to_resource_name(Sanbase.Billing.Subscription)
+      "subscriptions"
+  """
   def schema_to_resource_name(schema_module) do
     schema_module
     |> to_string()

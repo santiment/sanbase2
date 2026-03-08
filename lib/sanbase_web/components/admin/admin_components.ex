@@ -1,4 +1,20 @@
 defmodule SanbaseWeb.AdminComponents do
+  @moduledoc """
+  Phoenix function components for the GenericAdmin CRUD interface.
+
+  Provides the full set of UI building blocks used by GenericAdmin templates:
+
+  - **Form components** — `form_input`, `form_select`, `form_error`, `form_bottom_nav`
+  - **Table components** — `table` (index), `show_table` (detail), `has_many_table`,
+    `thead`, `tbody`, `td_index`, `td_show`
+  - **Navigation** — `btn`, `new_resource_button`, `index_action_btn`, `back_btn`,
+    `action_btn`, `a`, `pagination`, `pagination_buttons`
+  - **Search** — `search` (multi-filter search with AlpineJS dropdown)
+  - **Display** — `resource_title`, `custom_index_actions`
+
+  These components are used in the HEEx templates under
+  `lib/sanbase_web/templates/generic_admin_html/`.
+  """
   use Phoenix.Component, global_prefixes: ~w(x-)
 
   use PhoenixHTMLHelpers

@@ -1,4 +1,32 @@
 defmodule SanbaseWeb.GenericAdminController do
+  @moduledoc """
+  Phoenix controller that provides CRUD operations for GenericAdmin resources.
+
+  All actions receive the resource name via the `?resource=` query parameter and
+  look up the corresponding configuration from `SanbaseWeb.GenericAdmin.resource_module_map/1`.
+
+  ## Actions
+
+  | Action        | Verb   | Path                    | Description |
+  |---------------|--------|-------------------------|-------------|
+  | `home`        | GET    | `/admin/generic`        | Admin home page with navigation |
+  | `index`       | GET    | `/admin/generic?resource=X` | Paginated listing |
+  | `show`        | GET    | `/admin/generic/:id?resource=X` | Detail view with belongs_to/has_many |
+  | `new`         | GET    | `/admin/generic/new?resource=X` | Render create form |
+  | `create`      | POST   | `/admin/generic?resource=X` | Insert new record |
+  | `edit`        | GET    | `/admin/generic/:id/edit?resource=X` | Render edit form |
+  | `update`      | PATCH  | `/admin/generic/:id?resource=X` | Update existing record |
+  | `delete`      | DELETE | `/admin/generic/:id?resource=X` | Delete record |
+  | `search`      | GET    | `/admin/generic/search?resource=X&search[...]` | Filtered listing |
+  | `show_action` | GET    | `/admin/generic/show_action?resource=X&id=Y&action=Z` | Custom action |
+
+  ## Request lifecycle
+
+  1. The `resource` param selects the config from `GenericAdmin.resource_module_map/1`
+  2. `resource_params/4` computes fields, types, overrides, and belongs_to for the action
+  3. The appropriate template is rendered with computed assigns
+  4. On create/update, `save_and_redirect/8` handles insert/update, `after_filter`, and flash messages
+  """
   use SanbaseWeb, :controller
 
   import Ecto.Query
@@ -7,7 +35,7 @@ defmodule SanbaseWeb.GenericAdminController do
   alias Sanbase.Repo
   alias SanbaseWeb.GenericAdmin
 
-  def resource_module_map(%Plug.Conn{} = conn) do
+  defp resource_module_map(%Plug.Conn{} = conn) do
     SanbaseWeb.GenericAdmin.resource_module_map(conn)
   end
 
@@ -569,6 +597,19 @@ defmodule SanbaseWeb.GenericAdminController do
 end
 
 defmodule SanbaseWeb.GenericAdminController.LinkBuilder do
+  @moduledoc """
+  Builds HTML links for belongs_to associations on a record.
+
+  Given an Ecto schema module and a record, introspects the schema's
+  associations and generates clickable links to the related GenericAdmin
+  show pages. Used by the index and show views to render foreign key
+  fields as navigable links instead of raw IDs.
+  """
+
+  @doc """
+  Returns a map of `{field_name, link}` pairs for all belongs_to
+  associations on the given record.
+  """
   def build_link(module, record) do
     module.__schema__(:associations)
     |> Enum.reduce(%{}, fn assoc_name, acc ->

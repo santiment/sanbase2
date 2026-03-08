@@ -7,32 +7,7 @@ defmodule SanbaseWeb.MetricRegistryComponents do
   """
   use Phoenix.Component
 
-  alias SanbaseWeb.AdminSharedComponents
   alias SanbaseWeb.CoreComponents
-
-  # ---------------------------------------------------------------------------
-  # User Details — now delegates to AdminSharedComponents.page_header
-  # Kept for backward compatibility during migration
-  # ---------------------------------------------------------------------------
-
-  attr :current_user, :map, required: true
-  attr :current_user_role_names, :list, required: true
-
-  def user_details(assigns) do
-    ~H"""
-    <div class="my-2 flex flex-row space-x-2">
-      <span class="text-blue-800 font-bold">
-        {@current_user.email}
-      </span>
-      <span>|</span>
-      <span class="text-gray-700">
-        {@current_user_role_names
-        |> Enum.map(&String.trim_leading(&1, "Metric Registry "))
-        |> Enum.join(", ")}
-      </span>
-    </div>
-    """
-  end
 
   # ---------------------------------------------------------------------------
   # Metric Names — displays metric/internal_metric/human_readable_name
@@ -72,25 +47,4 @@ defmodule SanbaseWeb.MetricRegistryComponents do
     """
   end
 
-  # ---------------------------------------------------------------------------
-  # Metric Registry Navigation — shared navigation bar
-  # Used on: history, diff, sync, sync_runs, show, form pages
-  # ---------------------------------------------------------------------------
-
-  attr :buttons, :list, required: true
-
-  def navigation(assigns) do
-    ~H"""
-    <div class="my-4">
-      <AdminSharedComponents.nav_button
-        :for={btn <- @buttons}
-        text={btn.text}
-        href={btn.href}
-        icon={Map.get(btn, :icon)}
-        target={Map.get(btn, :target, "_self")}
-        disabled={Map.get(btn, :disabled, false)}
-      />
-    </div>
-    """
-  end
 end

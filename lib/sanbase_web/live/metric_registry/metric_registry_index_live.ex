@@ -444,7 +444,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     """
   end
 
-  def sync_status(assigns) do
+  defp sync_status(assigns) do
     ~H"""
     <div>
       <span :if={@row.sync_status == "synced"} class="text-green-900 ms-3 text-sm font-bold">

@@ -1,10 +1,9 @@
 defmodule SanbaseWeb.CategorizationLive.PreviewSidebar do
   use SanbaseWeb, :live_view
 
-  import SanbaseWeb.CoreComponents
   alias Sanbase.Metric.Category
   alias Sanbase.Metric.Category.MetricCategoryMapping
-  alias SanbaseWeb.AvailableMetricsComponents
+  alias SanbaseWeb.AdminSharedComponents
 
   @impl true
   def mount(_params, _session, socket) do
@@ -33,7 +32,7 @@ defmodule SanbaseWeb.CategorizationLive.PreviewSidebar do
     <div class="flex flex-row h-screen">
       <div class="p-3 border-b bg-white">
         <h1 class="text-lg font-bold text-gray-800">UI Metadata Sidebar Preview</h1>
-        <AvailableMetricsComponents.available_metrics_button
+        <AdminSharedComponents.nav_button
           text="Back"
           href={~p"/admin/metric_registry/categorization"}
           icon="hero-arrow-left"

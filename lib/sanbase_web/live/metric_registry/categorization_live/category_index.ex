@@ -1,10 +1,9 @@
 defmodule SanbaseWeb.Categorization.CategoryLive.Index do
   use SanbaseWeb, :live_view
 
-  import SanbaseWeb.CoreComponents
   import SanbaseWeb.Categorization.ReorderComponents
   alias Sanbase.Metric.Category
-  alias SanbaseWeb.AvailableMetricsComponents
+  alias SanbaseWeb.AdminSharedComponents
 
   @impl true
   def mount(_params, _session, socket) do
@@ -143,17 +142,17 @@ defmodule SanbaseWeb.Categorization.CategoryLive.Index do
   def navigation(assigns) do
     ~H"""
     <div class="my-4 flex flex-row space-x-2">
-      <AvailableMetricsComponents.available_metrics_button
+      <AdminSharedComponents.nav_button
         text="Back to Categorization"
         href={~p"/admin/metric_registry/categorization"}
         icon="hero-arrow-left"
       />
-      <AvailableMetricsComponents.available_metrics_button
+      <AdminSharedComponents.nav_button
         text="Manage Groups"
         href={~p"/admin/metric_registry/categorization/groups"}
         icon="hero-user-group"
       />
-      <AvailableMetricsComponents.link_button
+      <AdminSharedComponents.nav_button
         icon="hero-plus"
         text="Create New Category"
         href={~p"/admin/metric_registry/categorization/categories/new"}

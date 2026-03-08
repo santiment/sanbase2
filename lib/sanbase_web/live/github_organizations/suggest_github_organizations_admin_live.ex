@@ -1,8 +1,11 @@
 defmodule SanbaseWeb.SuggestGithubOrganizationsAdminLive do
   use SanbaseWeb, :live_view
 
+  import SanbaseWeb.AdminLiveHelpers,
+    only: [order_records_by_status: 1, update_row_by_id: 3, put_changeset_error_flash: 3]
+
   alias SanbaseWeb.UserFormsComponents
-  alias SanbaseWeb.AdminFormsComponents
+  alias SanbaseWeb.AdminSharedComponents
 
   @impl true
   def mount(_params, _session, socket) do
@@ -19,7 +22,7 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsAdminLive do
       <div class="flex-1 p:2 sm:p-6 justify-evenly">
         <.table id="github_organizations_changes_suggestions" rows={@rows}>
           <:col :let={row} label="Status">
-            <AdminFormsComponents.status status={row.status} />
+            <AdminSharedComponents.status_badge status={row.status} />
           </:col>
           <:col :let={row} label="Asset">
             <.link
@@ -44,46 +47,7 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsAdminLive do
           </:col>
           <:col :let={row} label="Notes">{row.notes}</:col>
           <:action :let={row}>
-            <.form
-              for={@form}
-              phx-submit="update_status"
-              class="flex flex-col lg:flex-row space-y-2 lg:space-y-0 md:space-x-2"
-            >
-              <input type="hidden" name="record_id" value={row.id} />
-              <AdminFormsComponents.button
-                name="status"
-                value="approved"
-                class={
-                  if row.status == "pending_approval",
-                    do: "bg-green-600 hover:bg-green-800",
-                    else: "bg-gray-300"
-                }
-                disabled={row.status != "pending_approval"}
-                display_text="Approve"
-              />
-              <AdminFormsComponents.button
-                name="status"
-                value="declined"
-                class={
-                  if row.status == "pending_approval",
-                    do: "bg-red-600 hover:bg-red-800",
-                    else: "bg-gray-300"
-                }
-                disabled={row.status != "pending_approval"}
-                display_text="Decline"
-              />
-              <AdminFormsComponents.button
-                name="status"
-                value="undo"
-                class={
-                  if row.status != "pending_approval",
-                    do: "bg-yellow-400 hover:bg-yellow-800",
-                    else: "bg-gray-300"
-                }
-                disabled={row.status == "pending_approval"}
-                display_text="Undo"
-              />
-            </.form>
+            <AdminSharedComponents.approval_buttons form={@form} row_id={row.id} status={row.status} />
           </:action>
         </.table>
       </div>
@@ -98,7 +62,7 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsAdminLive do
     case Sanbase.Project.GithubOrganization.ChangeSuggestion.undo_suggestion(record_id) do
       {:ok, record} ->
         rows =
-          update_assigns_row(socket.assigns.rows, record_id, record.status)
+          update_row_by_id(socket.assigns.rows, record_id, %{status: record.status})
 
         socket =
           socket
@@ -108,7 +72,8 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsAdminLive do
         {:noreply, socket}
 
       {:error, changeset} ->
-        {:noreply, add_changeset_error_flash(socket, changeset)}
+        {:noreply,
+         put_changeset_error_flash(socket, changeset, "Error accepting the suggested changes")}
     end
   end
 
@@ -123,7 +88,7 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsAdminLive do
 
     case Sanbase.Project.GithubOrganization.ChangeSuggestion.update_status(record_id, status) do
       {:ok, _} ->
-        rows = update_assigns_row(socket.assigns.rows, record_id, status)
+        rows = update_row_by_id(socket.assigns.rows, record_id, %{status: status})
 
         socket =
           socket
@@ -133,35 +98,9 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsAdminLive do
         {:noreply, socket}
 
       {:error, changeset} ->
-        {:noreply, add_changeset_error_flash(socket, changeset)}
+        {:noreply,
+         put_changeset_error_flash(socket, changeset, "Error accepting the suggested changes")}
     end
-  end
-
-  defp add_changeset_error_flash(socket, changeset_or_error) do
-    error_msg =
-      case changeset_or_error do
-        %Ecto.Changeset{} = changeset ->
-          Sanbase.Utils.ErrorHandling.changeset_errors_string(changeset)
-
-        error when is_binary(error) ->
-          error
-      end
-
-    socket
-    |> put_flash(:error, "Error accepting the suggested changes.\n Reason: #{error_msg}!")
-  end
-
-  defp update_assigns_row(rows, record_id, status) do
-    rows
-    |> Enum.map(fn
-      %{id: ^record_id} = record ->
-        record
-        |> Map.put(:status, status)
-
-      record ->
-        record
-    end)
-    |> order_records()
   end
 
   defp list_all_submissions() do
@@ -178,20 +117,6 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsAdminLive do
         removed_organizations: struct.removed_organizations
       }
     end)
-    |> order_records()
-  end
-
-  defp order_records(handles) do
-    handles
-    |> Enum.sort_by(
-      fn record ->
-        case record.status do
-          "pending_approval" -> 1
-          "approved" -> 2
-          "declined" -> 3
-        end
-      end,
-      :asc
-    )
+    |> order_records_by_status()
   end
 end

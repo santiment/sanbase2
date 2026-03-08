@@ -1,9 +1,8 @@
 defmodule SanbaseWeb.MetricDisplayOrderFormLive do
   use SanbaseWeb, :live_view
 
-  import SanbaseWeb.CoreComponents
   alias Sanbase.Metric.UIMetadata.DisplayOrder
-  alias SanbaseWeb.AvailableMetricsComponents
+  alias SanbaseWeb.AdminSharedComponents
 
   @impl true
   def mount(%{"metric_id" => metric_id}, _session, socket) do
@@ -121,13 +120,13 @@ defmodule SanbaseWeb.MetricDisplayOrderFormLive do
   def action_buttons(assigns) do
     ~H"""
     <div class="my-4">
-      <AvailableMetricsComponents.available_metrics_button
+      <AdminSharedComponents.nav_button
         text="Back to Display Order"
         href={~p"/admin/metric_registry/display_order"}
         icon="hero-arrow-uturn-left"
       />
 
-      <AvailableMetricsComponents.available_metrics_button
+      <AdminSharedComponents.nav_button
         text="View Metric"
         href={~p"/admin/metric_registry/display_order/show/#{@display_order.id}"}
         icon="hero-eye"

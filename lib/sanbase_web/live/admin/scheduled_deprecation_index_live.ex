@@ -2,7 +2,6 @@ defmodule SanbaseWeb.ScheduledDeprecationIndexLive do
   use SanbaseWeb, :live_view
 
   alias Sanbase.Notifications
-  import SanbaseWeb.CoreComponents
   import Sanbase.DateTimeUtils, only: [rough_duration_since: 1]
 
   @impl true

@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.MetricRegistryHistoryLive do
   use SanbaseWeb, :live_view
 
-  alias SanbaseWeb.AvailableMetricsComponents
+  alias SanbaseWeb.AdminSharedComponents
 
   @impl true
   def mount(%{"id" => metric_registry_id}, _session, socket) do
@@ -21,21 +21,20 @@ defmodule SanbaseWeb.MetricRegistryHistoryLive do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col space-y-8 ">
-      <h1 class="text-blue-700 text-2xl mb-4">
-        Metric Registry History
-      </h1>
-      <SanbaseWeb.MetricRegistryComponents.user_details
+      <AdminSharedComponents.page_header
+        title="Metric Registry History"
         current_user={@current_user}
         current_user_role_names={@current_user_role_names}
+        trim_role_prefix="Metric Registry "
       />
       <div class="my-4">
-        <AvailableMetricsComponents.available_metrics_button
+        <AdminSharedComponents.nav_button
           text="Back to Metric Registry"
           href={~p"/admin/metric_registry"}
           icon="hero-home"
         />
 
-        <AvailableMetricsComponents.available_metrics_button
+        <AdminSharedComponents.nav_button
           text="List Sync Runs"
           href={~p"/admin/metric_registry/sync_runs"}
           icon="hero-list-bullet"

@@ -1,9 +1,8 @@
 defmodule SanbaseWeb.Categorization.GroupLive.Form do
   use SanbaseWeb, :live_view
 
-  import SanbaseWeb.CoreComponents
   alias Sanbase.Metric.Category
-  alias SanbaseWeb.AvailableMetricsComponents
+  alias SanbaseWeb.AdminSharedComponents
 
   @impl true
   def mount(_params, _session, socket) do
@@ -59,7 +58,7 @@ defmodule SanbaseWeb.Categorization.GroupLive.Form do
       </div>
 
       <div class="my-4">
-        <AvailableMetricsComponents.available_metrics_button
+        <AdminSharedComponents.nav_button
           text="Back to Groups"
           href={~p"/admin/metric_registry/categorization/groups"}
           icon="hero-arrow-uturn-left"

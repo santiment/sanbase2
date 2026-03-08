@@ -80,12 +80,13 @@ defmodule SanbaseWeb.GenericAdminController do
     args =
       %{
         changeset: changeset,
-        data: %{}
+        data: %{},
+        type: "new"
       }
       |> Map.merge(resource_params(conn, resource, :new, params))
       |> Keyword.new()
 
-    render(conn, "new.html", args)
+    render(conn, "form.html", args)
   end
 
   def create(%Plug.Conn{} = conn, %{"resource" => resource} = params) do
@@ -102,7 +103,7 @@ defmodule SanbaseWeb.GenericAdminController do
 
     changeset = apply(module, changeset_function, [struct(module), changes])
 
-    create_and_redirect(conn, changeset, params, changes, resource, admin_module)
+    save_and_redirect(conn, :create, changeset, %{}, changes, params, resource, admin_module)
   end
 
   def search(
@@ -202,12 +203,13 @@ defmodule SanbaseWeb.GenericAdminController do
     args =
       %{
         changeset: changeset,
-        data: data
+        data: data,
+        type: "edit"
       }
       |> Map.merge(resource_params(conn, resource, :edit, params))
       |> Keyword.new()
 
-    render(conn, "edit.html", args)
+    render(conn, "form.html", args)
   end
 
   def update(%Plug.Conn{} = conn, %{"id" => id, "resource" => resource} = params) do
@@ -224,7 +226,7 @@ defmodule SanbaseWeb.GenericAdminController do
 
     changeset = apply(module, changeset_function, [data, changes])
 
-    update_and_redirect(conn, changeset, data, params, changes, resource, admin_module)
+    save_and_redirect(conn, :update, changeset, data, changes, params, resource, admin_module)
   end
 
   def delete(%Plug.Conn{} = conn, %{"id" => id, "resource" => resource}) do
@@ -255,8 +257,20 @@ defmodule SanbaseWeb.GenericAdminController do
 
   # private
 
-  defp create_and_redirect(conn, changeset, params, changes, resource, admin_module) do
-    case Sanbase.Repo.insert(changeset) do
+  defp save_and_redirect(
+         conn,
+         operation,
+         changeset,
+         data,
+         changes,
+         params,
+         resource,
+         admin_module
+       ) do
+    repo_fn = if operation == :create, do: &Repo.insert/1, else: &Repo.update/1
+    action_label = if operation == :create, do: "created", else: "updated"
+
+    case repo_fn.(changeset) do
       {:ok, response_resource} ->
         GenericAdmin.call_module_function_or_default(
           admin_module,
@@ -267,83 +281,56 @@ defmodule SanbaseWeb.GenericAdminController do
         |> case do
           {:error, error} ->
             conn
-            |> put_flash(
-              :error,
-              "#{resource} created successfully. There was some error after creation: #{error}"
-            )
+            |> put_flash(:error, "#{resource} #{action_label}, but after_filter error: #{error}")
             |> redirect(
               to: Routes.generic_admin_path(conn, :show, response_resource, resource: resource)
             )
 
           _ ->
             conn
-            |> put_flash(:info, "#{resource} created successfully.")
+            |> put_flash(:info, "#{resource} #{action_label} successfully.")
             |> redirect(
               to: Routes.generic_admin_path(conn, :show, response_resource, resource: resource)
             )
         end
 
       {:error, %Ecto.Changeset{} = changeset} ->
+        type = if operation == :create, do: "new", else: "edit"
+
         args =
           %{
             changeset: changeset,
-            data: %{}
+            data: data,
+            type: type
           }
-          |> Map.merge(resource_params(conn, resource, :create, params))
+          |> Map.merge(resource_params(conn, resource, operation, params))
           |> Keyword.new()
 
-        render(conn, "new.html", args)
-    end
-  end
-
-  defp update_and_redirect(conn, changeset, data, params, changes, resource, admin_module) do
-    case Sanbase.Repo.update(changeset) do
-      {:ok, response_resource} ->
-        GenericAdmin.call_module_function_or_default(
-          admin_module,
-          :after_filter,
-          [response_resource, changeset, changes],
-          :ok
-        )
-        |> case do
-          {:error, error} ->
-            conn
-            |> put_flash(:error, "Some of the fields were not updated: #{error}")
-            |> redirect(
-              to: Routes.generic_admin_path(conn, :show, response_resource, resource: resource)
-            )
-
-          _ ->
-            conn
-            |> put_flash(:info, "#{resource} updated successfully.")
-            |> redirect(
-              to: Routes.generic_admin_path(conn, :show, response_resource, resource: resource)
-            )
-        end
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        args =
-          %{
-            changeset: changeset,
-            data: data
-          }
-          |> Map.merge(resource_params(conn, resource, :update, params))
-          |> Keyword.new()
-
-        render(conn, "edit.html", args)
+        render(conn, "form.html", args)
     end
   end
 
   defp transform_changes(changes, field_type_map) do
     Enum.map(changes, fn {field, value} ->
       case Map.get(field_type_map, String.to_existing_atom(field)) do
-        :map -> {field, Jason.decode!(value)}
-        {:array, :string} -> {field, Jason.decode!(value)}
-        _ -> {field, value}
+        type when type in [:map, {:array, :string}] ->
+          {field, decode_json(value)}
+
+        _ ->
+          {field, value}
       end
     end)
     |> Enum.into(%{})
   end
+
+  defp decode_json(value) when is_binary(value) do
+    case Jason.decode(value) do
+      {:ok, decoded} -> decoded
+      {:error, _} -> value
+    end
+  end
+
+  defp decode_json(value), do: value
 
   defp module_from_resource(%Plug.Conn{} = conn, resource) when is_binary(resource),
     do: resource_module_map(conn)[resource][:module]
@@ -613,15 +600,7 @@ defmodule SanbaseWeb.GenericAdminController.LinkBuilder do
   end
 
   defp href(resource, id, label) do
-    relative_url =
-      SanbaseWeb.Router.Helpers.generic_admin_path(SanbaseWeb.Endpoint, :show, id,
-        resource: resource
-      )
-
-    PhoenixHTMLHelpers.Link.link(label,
-      to: relative_url,
-      class: "text-blue-600 hover:text-blue-800"
-    )
+    SanbaseWeb.GenericAdmin.resource_link(resource, id, label)
   end
 
   defp module_to_resource_name(module) do

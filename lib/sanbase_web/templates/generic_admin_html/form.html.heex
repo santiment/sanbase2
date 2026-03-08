@@ -1,13 +1,16 @@
 <div class="mt-6 p-4">
   <h3 class="text-3xl font-medium text-gray-700">
-    <% type = "edit" %>
-    {"#{String.capitalize(type)} #{@resource}"}
+    {"#{String.capitalize(@type)} #{@resource}"}
   </h3>
   <.form
-    method={if type == "new", do: "post", else: "patch"}
+    method={if @type == "new", do: "post", else: "patch"}
     for={@changeset}
     as={@resource}
-    action={Routes.generic_admin_path(@conn, :update, @data, resource: @resource)}
+    action={
+      if @type == "new",
+        do: Routes.generic_admin_path(@conn, :create, resource: @resource),
+        else: Routes.generic_admin_path(@conn, :update, @data, resource: @resource)
+    }
   >
     <%= if @changeset.action do %>
       <SanbaseWeb.AdminComponents.form_error changeset={@changeset} />
@@ -17,22 +20,30 @@
       <div class="m-4">
         <%= if @belongs_to_fields[field] do %>
           <%= if @belongs_to_fields[field][:type] == :live_select do %>
-            <% field_id = :"#{to_string(field)}_id" %>
             <% initial_value =
-              Map.get(@changeset.changes, field_id) || Map.get(@changeset.data, field_id) ||
-                Map.get(@data, field_id) %>
+              if @type == "edit" do
+                field_id = :"#{to_string(field)}_id"
+
+                Map.get(@changeset.changes, field_id) || Map.get(@changeset.data, field_id) ||
+                  Map.get(@data, field_id)
+              end %>
             {live_render(@conn, SanbaseWeb.LiveSelect,
-              session: %{
-                "initial_value" => initial_value,
-                "parent_resource" => @resource,
-                "field" => field,
-                "resource" => @belongs_to_fields[field][:resource],
-                "search_fields" => @belongs_to_fields[field][:search_fields]
-              }
+              session:
+                %{
+                  "parent_resource" => @resource,
+                  "field" => field,
+                  "resource" => @belongs_to_fields[field][:resource],
+                  "search_fields" => @belongs_to_fields[field][:search_fields]
+                }
+                |> then(fn session ->
+                  if initial_value,
+                    do: Map.put(session, "initial_value", initial_value),
+                    else: session
+                end)
             )}
           <% else %>
             <SanbaseWeb.AdminComponents.form_select
-              type={type}
+              type={@type}
               resource={@resource}
               field={field}
               changeset={@changeset}
@@ -44,7 +55,7 @@
         <% else %>
           <%= if @collections[field] do %>
             <SanbaseWeb.AdminComponents.form_select
-              type={type}
+              type={@type}
               resource={@resource}
               field={field}
               changeset={@changeset}
@@ -54,7 +65,7 @@
             />
           <% else %>
             <SanbaseWeb.AdminComponents.form_input
-              type={type}
+              type={@type}
               resource={@resource}
               field={field}
               changeset={@changeset}
@@ -66,6 +77,6 @@
       </div>
     <% end %>
 
-    <SanbaseWeb.AdminComponents.form_bottom_nav type={type} resource={@resource} />
+    <SanbaseWeb.AdminComponents.form_bottom_nav type={@type} resource={@resource} />
   </.form>
 </div>

@@ -46,5 +46,4 @@ defmodule SanbaseWeb.MetricRegistryComponents do
     </div>
     """
   end
-
 end

@@ -1,10 +1,12 @@
 defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
   use SanbaseWeb, :live_view
 
-  alias SanbaseWeb.AdminFormsComponents
+  import SanbaseWeb.AdminLiveHelpers,
+    only: [order_records_by_status: 1, put_changeset_error_flash: 3]
+
+  alias SanbaseWeb.AdminSharedComponents
   alias Sanbase.Metric.Registry.Permissions
   alias Sanbase.Metric.Registry.ChangeSuggestion
-  alias SanbaseWeb.AvailableMetricsComponents
 
   @impl true
   def mount(_params, _session, socket) do
@@ -29,14 +31,13 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
   def render(assigns) do
     ~H"""
     <div>
-      <h1 class="text-blue-700 text-2xl mb-4">
-        Metric Registry Change Requests
-      </h1>
-      <SanbaseWeb.MetricRegistryComponents.user_details
+      <AdminSharedComponents.page_header
+        title="Metric Registry Change Requests"
         current_user={@current_user}
         current_user_role_names={@current_user_role_names}
+        trim_role_prefix="Metric Registry "
       />
-      <AvailableMetricsComponents.available_metrics_button
+      <AdminSharedComponents.nav_button
         text="Back to Metric Registry"
         href={~p"/admin/metric_registry"}
         icon="hero-home"
@@ -49,7 +50,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
           rows={visible_rows(@rows, @selected_tab, @filters)}
         >
           <:col :let={row} label="Status">
-            <AdminFormsComponents.status status={row.status} />
+            <AdminSharedComponents.status_badge status={row.status} />
           </:col>
           <:col :let={row} label="Metric" col_class="max-w-[320px] break-words">
             <.link
@@ -154,7 +155,8 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
         {:noreply, socket}
 
       {:error, changeset} ->
-        {:noreply, add_changeset_error_flash(socket, changeset)}
+        {:noreply,
+         put_changeset_error_flash(socket, changeset, "Error accepting the suggested changes")}
     end
   end
 
@@ -185,7 +187,8 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
         {:noreply, socket}
 
       {:error, changeset} ->
-        {:noreply, add_changeset_error_flash(socket, changeset)}
+        {:noreply,
+         put_changeset_error_flash(socket, changeset, "Error accepting the suggested changes")}
     end
   end
 
@@ -305,19 +308,22 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
       <input type="hidden" name="metric_registry_id" value={@row.metric_registry_id} />
       <input type="hidden" name="change_request_submitter_email" value={@row.submitted_by} />
 
-      <.action_button
+      <AdminSharedComponents.approval_button
+        name="action"
         value="approve"
         text="Approve"
         disabled={@row.status != "pending_approval"}
         colors="bg-green-600 hover:bg-green-800"
       />
-      <.action_button
+      <AdminSharedComponents.approval_button
+        name="action"
         value="decline"
         text="Decline"
         disabled={@row.status != "pending_approval"}
         colors="bg-red-600 hover:bg-red-800"
       />
-      <.action_button
+      <AdminSharedComponents.approval_button
+        name="action"
         value="undo"
         text={undo_text(@row.status)}
         disabled={
@@ -330,7 +336,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
         colors="bg-amber-600 hover:bg-amber-800"
       />
 
-      <.action_button
+      <AdminSharedComponents.approval_button
         :if={
           @row.status == "pending_approval" and
             Permissions.can?(:edit_change_suggestion,
@@ -339,6 +345,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
               submitter_email: @row.submitted_by
             )
         }
+        name="action"
         disabled={false}
         value="edit"
         text="Edit"
@@ -352,39 +359,13 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
   defp undo_text("declined"), do: "Undo Refusal"
   defp undo_text("pending_approval"), do: "Undo"
 
-  defp action_button(assigns) do
-    ~H"""
-    <AdminFormsComponents.button
-      name="action"
-      value={@value}
-      class={if @disabled, do: "bg-gray-300", else: @colors}
-      disabled={@disabled}
-      display_text={@text}
-    />
-    """
-  end
-
-  defp add_changeset_error_flash(socket, changeset_or_error) do
-    error_msg =
-      case changeset_or_error do
-        %Ecto.Changeset{} = changeset ->
-          Sanbase.Utils.ErrorHandling.changeset_errors_string(changeset)
-
-        error when is_binary(error) ->
-          error
-      end
-
-    socket
-    |> put_flash(:error, "Error accepting the suggested changes.\n Reason: #{error_msg}!")
-  end
-
   defp update_assigns_row(rows, record_id, status) do
     rows
     |> Enum.map(fn
       %{id: ^record_id} = record -> Map.put(record, :status, status)
       record -> record
     end)
-    |> order_records()
+    |> order_records_by_status()
   end
 
   defp list_all_submissions() do
@@ -393,12 +374,6 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
     |> Enum.map(
       &Map.update!(&1, :changes, fn encoded -> ChangeSuggestion.decode_changes(encoded) end)
     )
-    |> order_records()
-  end
-
-  @status_order %{"pending_approval" => 3, "approved" => 2, "declined" => 1}
-  defp order_records(handles) do
-    handles
-    |> Enum.sort_by(&{@status_order[&1.status], &1.id}, :desc)
+    |> order_records_by_status()
   end
 end

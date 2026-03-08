@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
   use SanbaseWeb, :live_view
 
-  alias SanbaseWeb.AvailableMetricsComponents
+  alias SanbaseWeb.AdminSharedComponents
 
   @pubsub_topic "sanbase_metric_registry_sync"
   @impl true
@@ -19,24 +19,23 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col items-start justify-evenly">
-      <h1 class="text-blue-700 text-2xl mb-4">
-        Metric Registry Sync Runs
-      </h1>
-      <SanbaseWeb.MetricRegistryComponents.user_details
+      <AdminSharedComponents.page_header
+        title="Metric Registry Sync Runs"
         current_user={@current_user}
         current_user_role_names={@current_user_role_names}
+        trim_role_prefix="Metric Registry "
       />
       <div class="text-gray-400 text-sm py-2">
         Showing the last {length(@syncs)} syncs
       </div>
       <div class="my-4">
-        <AvailableMetricsComponents.available_metrics_button
+        <AdminSharedComponents.nav_button
           text="Back to Metric Registry"
           href={~p"/admin/metric_registry"}
           icon="hero-home"
         />
 
-        <AvailableMetricsComponents.available_metrics_button
+        <AdminSharedComponents.nav_button
           text="Back to Sync View"
           href={~p"/admin/metric_registry/sync"}
           icon="hero-arrow-uturn-left"
@@ -86,17 +85,17 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
         </:col>
 
         <:col :let={row}>
-          <AvailableMetricsComponents.link_button
+          <AdminSharedComponents.nav_button
             text="Details"
             href={~p"/admin/metric_registry/sync/#{row.sync_type}/#{row.uuid}"}
           />
           <span :if={execution_too_long?(row.status, row.inserted_at)}>
-            <AvailableMetricsComponents.event_button
+            <AdminSharedComponents.action_button
               phx_click="cancel_run"
               class="bg-amber-600 hover:bg-amber-800"
+              text="Cancel Run"
               phx-value-sync-uuid={row.uuid}
               phx-value-sync-type={row.sync_type}
-              display_text="Cancel Run"
             />
           </span>
         </:col>
@@ -144,6 +143,7 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
   attr :id, :any, required: true
   attr :status, :string, required: true
   attr :inserted_at, :any, required: true
+
 
   defp formatted_completed_status(assigns) do
     ~H"""

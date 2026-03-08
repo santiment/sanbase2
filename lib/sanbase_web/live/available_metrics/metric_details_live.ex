@@ -1,7 +1,6 @@
 defmodule SanbaseWeb.MetricDetailsLive do
   use SanbaseWeb, :live_view
 
-  import SanbaseWeb.CoreComponents
   import SanbaseWeb.AvailableMetricsDescription
 
   alias SanbaseWeb.AvailableMetricsComponents

@@ -1,10 +1,9 @@
 defmodule SanbaseWeb.Categorization.GroupLive.Index do
   use SanbaseWeb, :live_view
 
-  import SanbaseWeb.CoreComponents
   import SanbaseWeb.Categorization.ReorderComponents
   alias Sanbase.Metric.Category
-  alias SanbaseWeb.AvailableMetricsComponents
+  alias SanbaseWeb.AdminSharedComponents
 
   @impl true
   def mount(_params, _session, socket) do
@@ -183,7 +182,7 @@ defmodule SanbaseWeb.Categorization.GroupLive.Index do
   def add_group_button(assigns) do
     ~H"""
     <div>
-      <AvailableMetricsComponents.link_button
+      <AdminSharedComponents.nav_button
         href={~p"/admin/metric_registry/categorization/groups/new?category_id=#{@category_id}"}
         text="Add Group"
         icon="hero-plus"
@@ -204,7 +203,7 @@ defmodule SanbaseWeb.Categorization.GroupLive.Index do
 
     ~H"""
     <div class="mt-4">
-      <AvailableMetricsComponents.link_button
+      <AdminSharedComponents.nav_button
         href={~p"/admin/metric_registry/categorization/metrics_order?category_id=#{@category.id}"}
         text={"Reorder Ungrouped Metrics (#{@ungrouped_metrics_count})"}
         icon="hero-arrows-up-down"
@@ -247,17 +246,17 @@ defmodule SanbaseWeb.Categorization.GroupLive.Index do
   def navigation(assigns) do
     ~H"""
     <div class="my-4 flex flex-row space-x-2">
-      <AvailableMetricsComponents.available_metrics_button
+      <AdminSharedComponents.nav_button
         text="Back to Categorization"
         href={~p"/admin/metric_registry/categorization"}
         icon="hero-arrow-left"
       />
-      <AvailableMetricsComponents.available_metrics_button
+      <AdminSharedComponents.nav_button
         text="Manage Categories"
         href={~p"/admin/metric_registry/categorization/categories"}
         icon="hero-rectangle-group"
       />
-      <AvailableMetricsComponents.link_button
+      <AdminSharedComponents.nav_button
         icon="hero-plus"
         text="Create New Group"
         href={~p"/admin/metric_registry/categorization/groups/new"}

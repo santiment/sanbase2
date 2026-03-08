@@ -2,6 +2,7 @@ defmodule SanbaseWeb.Admin.FaqLive.Index do
   use SanbaseWeb, :live_view
 
   alias Sanbase.Knowledge.Faq
+  import SanbaseWeb.AdminLiveHelpers, only: [parse_int: 2]
 
   @default_page_size 10
 
@@ -76,37 +77,12 @@ defmodule SanbaseWeb.Admin.FaqLive.Index do
           Ask
         </.link>
       </div>
-      <div class="mb-4 flex items-center justify-between text-sm text-gray-600">
-        <div>
-          <span class="font-medium">Total:</span> {@total_count}
-          <span class="mx-2">•</span>
-          <span>Page {@page} of {@total_pages}</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <.link
-            patch={~p"/admin/faq?#{[page: max(@page - 1, 1), page_size: @page_size]}"}
-            class={[
-              "px-3 py-1 rounded border transition-colors",
-              @page == 1 && "text-gray-400 border-gray-200 cursor-not-allowed",
-              @page > 1 && "text-gray-700 border-gray-300 hover:bg-gray-50"
-            ]}
-            aria-disabled={@page == 1}
-          >
-            Prev
-          </.link>
-          <.link
-            patch={~p"/admin/faq?#{[page: min(@page + 1, @total_pages), page_size: @page_size]}"}
-            class={[
-              "px-3 py-1 rounded border transition-colors",
-              @page == @total_pages && "text-gray-400 border-gray-200 cursor-not-allowed",
-              @page < @total_pages && "text-gray-700 border-gray-300 hover:bg-gray-50"
-            ]}
-            aria-disabled={@page == @total_pages}
-          >
-            Next
-          </.link>
-        </div>
-      </div>
+      <.pagination
+        page={@page}
+        page_size={@page_size}
+        total_count={@total_count}
+        total_pages={@total_pages}
+      />
       <%= if @entries == [] do %>
         <div class="text-center py-12 bg-gray-50 rounded-lg">
           <svg
@@ -191,50 +167,58 @@ defmodule SanbaseWeb.Admin.FaqLive.Index do
             </li>
           </ul>
         </div>
-        <div class="mt-4 flex items-center justify-between text-sm text-gray-600">
-          <div>
-            <span class="font-medium">Total:</span> {@total_count}
-            <span class="mx-2">•</span>
-            <span>Page {@page} of {@total_pages}</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <.link
-              patch={~p"/admin/faq?#{[page: max(@page - 1, 1), page_size: @page_size]}"}
-              class={[
-                "px-3 py-1 rounded border transition-colors",
-                @page == 1 && "text-gray-400 border-gray-200 cursor-not-allowed",
-                @page > 1 && "text-gray-700 border-gray-300 hover:bg-gray-50"
-              ]}
-              aria-disabled={@page == 1}
-            >
-              Prev
-            </.link>
-            <.link
-              patch={~p"/admin/faq?#{[page: min(@page + 1, @total_pages), page_size: @page_size]}"}
-              class={[
-                "px-3 py-1 rounded border transition-colors",
-                @page == @total_pages && "text-gray-400 border-gray-200 cursor-not-allowed",
-                @page < @total_pages && "text-gray-700 border-gray-300 hover:bg-gray-50"
-              ]}
-              aria-disabled={@page == @total_pages}
-            >
-              Next
-            </.link>
-          </div>
-        </div>
+        <.pagination
+          page={@page}
+          page_size={@page_size}
+          total_count={@total_count}
+          total_pages={@total_pages}
+          class="mt-4"
+        />
       <% end %>
     </div>
     """
   end
 
-  defp parse_int(nil, default), do: default
-  defp parse_int(value, _default) when is_integer(value), do: value
+  attr :page, :integer, required: true
+  attr :page_size, :integer, required: true
+  attr :total_count, :integer, required: true
+  attr :total_pages, :integer, required: true
+  attr :class, :string, default: "mb-4"
 
-  defp parse_int(value, default) when is_binary(value) do
-    case Integer.parse(value) do
-      {int, _} -> int
-      :error -> default
-    end
+  defp pagination(assigns) do
+    ~H"""
+    <div class={["flex items-center justify-between text-sm text-gray-600", @class]}>
+      <div>
+        <span class="font-medium">Total:</span> {@total_count}
+        <span class="mx-2">•</span>
+        <span>Page {@page} of {@total_pages}</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <.link
+          patch={~p"/admin/faq?#{[page: max(@page - 1, 1), page_size: @page_size]}"}
+          class={[
+            "px-3 py-1 rounded border transition-colors",
+            @page == 1 && "text-gray-400 border-gray-200 cursor-not-allowed",
+            @page > 1 && "text-gray-700 border-gray-300 hover:bg-gray-50"
+          ]}
+          aria-disabled={@page == 1}
+        >
+          Prev
+        </.link>
+        <.link
+          patch={~p"/admin/faq?#{[page: min(@page + 1, @total_pages), page_size: @page_size]}"}
+          class={[
+            "px-3 py-1 rounded border transition-colors",
+            @page == @total_pages && "text-gray-400 border-gray-200 cursor-not-allowed",
+            @page < @total_pages && "text-gray-700 border-gray-300 hover:bg-gray-50"
+          ]}
+          aria-disabled={@page == @total_pages}
+        >
+          Next
+        </.link>
+      </div>
+    </div>
+    """
   end
 
   defp tag_badge(assigns) do

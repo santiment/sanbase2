@@ -3,7 +3,7 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
 
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
 
-  alias SanbaseWeb.AvailableMetricsComponents
+  alias SanbaseWeb.AdminSharedComponents
   alias Sanbase.Metric.Registry.Permissions
 
   @pubsub_topic "sanbase_metric_registry_sync"
@@ -29,12 +29,11 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col items-start justify-evenly">
-      <h1 class="text-blue-700 text-2xl mb-4">
-        Metric Registry Sync
-      </h1>
-      <SanbaseWeb.MetricRegistryComponents.user_details
+      <AdminSharedComponents.page_header
+        title="Metric Registry Sync"
         current_user={@current_user}
         current_user_role_names={@current_user_role_names}
+        trim_role_prefix="Metric Registry "
       />
       <div class="text-gray-400 text-sm py-2">
         <div>
@@ -45,13 +44,13 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
         </div>
       </div>
       <div class="my-4">
-        <AvailableMetricsComponents.available_metrics_button
+        <AdminSharedComponents.nav_button
           text="Back to Metric Registry"
           href={~p"/admin/metric_registry"}
           icon="hero-home"
         />
 
-        <AvailableMetricsComponents.available_metrics_button
+        <AdminSharedComponents.nav_button
           text="List Sync Runs"
           href={~p"/admin/metric_registry/sync_runs"}
           icon="hero-list-bullet"
@@ -72,12 +71,12 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
       </div>
 
       <div class="flex flex-col space-y-2 md:flex-row md:space-x-2 md:space-y-0">
-        <.phx_click_button
+        <AdminSharedComponents.action_button
           text="Select All"
           phx_click="select_all"
           class="bg-white hover:bg-gray-100 text-zync-900"
         />
-        <.phx_click_button
+        <AdminSharedComponents.action_button
           text="Deselect All"
           phx_click="deselect_all"
           class="bg-white hover:bg-gray-100 text-zync-900"
@@ -91,14 +90,14 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
           {row.id}
         </:col>
         <:col :let={row} label="Metric Names" col_class="max-w-[720px] break-all">
-          <.metric_names
+          <SanbaseWeb.MetricRegistryComponents.metric_names
             metric={row.metric}
             internal_metric={row.internal_metric}
             human_readable_name={row.human_readable_name}
           />
         </:col>
       </.table>
-      <.phx_click_button
+      <AdminSharedComponents.action_button
         :if={Permissions.can?(:start_sync, roles: @current_user_role_names)}
         text="Sync Metrics"
         phx_click="sync"
@@ -107,29 +106,6 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
         phx_disable_with="Syncing..."
       />
     </div>
-    """
-  end
-
-  attr :phx_click, :string, required: true
-  attr :text, :string, required: true
-  attr :count, :integer, required: false, default: nil
-  attr :class, :string, required: true
-  attr :phx_disable_with, :string, required: false, default: nil
-
-  defp phx_click_button(assigns) do
-    ~H"""
-    <button
-      type="button"
-      phx-click={@phx_click}
-      class={[
-        "border border-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center gap-x-2",
-        @class
-      ]}
-      phx-disable-with={@phx_disable_with}
-    >
-      {@text}
-      <span :if={@count} class="text-gray-400">({@count})</span>
-    </button>
     """
   end
 
@@ -221,16 +197,6 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
       |> Enum.filter(&(&1.sync_status == "not_synced" and &1.is_verified == false))
 
     {syncable_metrics, not_syncable_metrics}
-  end
-
-  defp metric_names(assigns) do
-    ~H"""
-    <div class="flex flex-col">
-      <div class="text-black text-base">{@human_readable_name}</div>
-      <div class="text-gray-900 text-sm">{@metric} (API)</div>
-      <div class="text-gray-900 text-sm">{@internal_metric} (DB)</div>
-    </div>
-    """
   end
 
   defp checkbox(assigns) do

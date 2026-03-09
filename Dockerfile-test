@@ -1,5 +1,4 @@
-FROM hexpm/elixir:1.18.4-erlang-27.0.1-debian-bookworm-20250908-slim
-
+FROM hexpm/elixir:1.19.4-erlang-28.4-debian-bookworm-20260223-slim
 RUN apt-get update -y && apt-get install -y curl
 
 RUN curl https://sh.rustup.rs -sSf | \

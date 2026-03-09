@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict lPrBCVGzfDAQrezJuUuvsvvIxIMIDCrQVbcCW2A0GafidncDVtkqtUHNwYPqA5k
+\restrict tpxwTYRfcKC8PysdQ2eC5Aq4518wffcmJ5sgwcqm0mdmu1Yx326ndg2ZFXKg41Z
 
--- Dumped from database version 15.16 (Homebrew)
--- Dumped by pg_dump version 15.16 (Homebrew)
+-- Dumped from database version 15.15 (Homebrew)
+-- Dumped by pg_dump version 15.15 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -901,8 +901,8 @@ CREATE TABLE public.chat_messages (
     sources jsonb[] DEFAULT ARRAY[]::jsonb[],
     suggestions text[] DEFAULT ARRAY[]::text[],
     feedback_type character varying(255),
-    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY (ARRAY[('thumbs_up'::character varying)::text, ('thumbs_down'::character varying)::text])) OR (feedback_type IS NULL))),
-    CONSTRAINT valid_role CHECK (((role)::text = ANY (ARRAY[('user'::character varying)::text, ('assistant'::character varying)::text])))
+    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY ((ARRAY['thumbs_up'::character varying, 'thumbs_down'::character varying])::text[])) OR (feedback_type IS NULL))),
+    CONSTRAINT valid_role CHECK (((role)::text = ANY ((ARRAY['user'::character varying, 'assistant'::character varying])::text[])))
 );
 
 
@@ -988,6 +988,36 @@ CREATE SEQUENCE public.clickhouse_query_executions_id_seq
 --
 
 ALTER SEQUENCE public.clickhouse_query_executions_id_seq OWNED BY public.clickhouse_query_executions.id;
+
+
+--
+-- Name: oauth_clients_scopes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.oauth_clients_scopes (
+    id bigint NOT NULL,
+    client_id uuid,
+    scope_id uuid
+);
+
+
+--
+-- Name: clients_scopes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.clients_scopes_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: clients_scopes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.clients_scopes_id_seq OWNED BY public.oauth_clients_scopes.id;
 
 
 --
@@ -2840,6 +2870,83 @@ CREATE SEQUENCE public.notifications_id_seq
 --
 
 ALTER SEQUENCE public.notifications_id_seq OWNED BY public.notifications.id;
+
+
+--
+-- Name: oauth_clients; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.oauth_clients (
+    id uuid NOT NULL,
+    name character varying(255) DEFAULT ''::character varying NOT NULL,
+    secret character varying(255) NOT NULL,
+    redirect_uris character varying(255)[] DEFAULT ARRAY[]::character varying[] NOT NULL,
+    scope character varying(255),
+    authorize_scope boolean DEFAULT false NOT NULL,
+    supported_grant_types character varying(255)[] DEFAULT ARRAY['client_credentials'::text, 'password'::text, 'authorization_code'::text, 'refresh_token'::text, 'implicit'::text, 'revoke'::text, 'introspect'::text] NOT NULL,
+    authorization_code_ttl integer NOT NULL,
+    access_token_ttl integer NOT NULL,
+    pkce boolean DEFAULT false NOT NULL,
+    public_key text,
+    private_key text NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL,
+    id_token_ttl integer DEFAULT 3600,
+    public_refresh_token boolean DEFAULT false NOT NULL,
+    refresh_token_ttl integer DEFAULT 2592000 NOT NULL,
+    public_revoke boolean DEFAULT false NOT NULL,
+    id_token_signature_alg character varying(255) DEFAULT 'RS512'::character varying,
+    confidential boolean DEFAULT false NOT NULL,
+    jwt_public_key text,
+    token_endpoint_auth_methods character varying(255)[] DEFAULT ARRAY['client_secret_basic'::character varying, 'client_secret_post'::character varying] NOT NULL,
+    token_endpoint_jwt_auth_alg character varying(255) DEFAULT 'HS256'::character varying NOT NULL,
+    userinfo_signed_response_alg character varying(255),
+    jwks_uri character varying(255),
+    id_token_kid character varying(255),
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    logo_uri character varying(255)
+);
+
+
+--
+-- Name: oauth_scopes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.oauth_scopes (
+    id uuid NOT NULL,
+    label character varying(255),
+    name character varying(255) DEFAULT ''::character varying,
+    public boolean DEFAULT false NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: oauth_tokens; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.oauth_tokens (
+    id uuid NOT NULL,
+    type character varying(255),
+    value character varying(255),
+    refresh_token character varying(255),
+    expires_at integer,
+    redirect_uri character varying(255),
+    state character varying(255),
+    scope character varying(255) DEFAULT ''::character varying,
+    revoked_at timestamp without time zone,
+    code_challenge_hash character varying(255),
+    code_challenge_method character varying(255),
+    client_id uuid,
+    sub character varying(255),
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL,
+    nonce character varying(255),
+    previous_token character varying(255),
+    refresh_token_revoked_at timestamp without time zone,
+    previous_code character varying(255)
+);
 
 
 --
@@ -6197,6 +6304,13 @@ ALTER TABLE ONLY public.notifications ALTER COLUMN id SET DEFAULT nextval('publi
 
 
 --
+-- Name: oauth_clients_scopes id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oauth_clients_scopes ALTER COLUMN id SET DEFAULT nextval('public.clients_scopes_id_seq'::regclass);
+
+
+--
 -- Name: oban_jobs id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6879,6 +6993,22 @@ ALTER TABLE ONLY public.chats
 
 ALTER TABLE ONLY public.clickhouse_query_executions
     ADD CONSTRAINT clickhouse_query_executions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: oauth_clients clients_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oauth_clients
+    ADD CONSTRAINT clients_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: oauth_clients_scopes clients_scopes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oauth_clients_scopes
+    ADD CONSTRAINT clients_scopes_pkey PRIMARY KEY (id);
 
 
 --
@@ -7642,6 +7772,14 @@ ALTER TABLE ONLY public.schema_migrations
 
 
 --
+-- Name: oauth_scopes scopes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oauth_scopes
+    ADD CONSTRAINT scopes_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: seen_timeline_events seen_timeline_events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7775,6 +7913,14 @@ ALTER TABLE ONLY public.timeline_event_comments_mapping
 
 ALTER TABLE ONLY public.timeline_events
     ADD CONSTRAINT timeline_events_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: oauth_tokens tokens_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oauth_tokens
+    ADD CONSTRAINT tokens_pkey PRIMARY KEY (id);
 
 
 --
@@ -8790,6 +8936,41 @@ CREATE INDEX notifications_notification_template_id_index ON public.notification
 --
 
 CREATE INDEX notifications_status_index ON public.notifications USING btree (status);
+
+
+--
+-- Name: oauth_clients_id_secret_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX oauth_clients_id_secret_index ON public.oauth_clients USING btree (id, secret);
+
+
+--
+-- Name: oauth_scopes_name_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX oauth_scopes_name_index ON public.oauth_scopes USING btree (name);
+
+
+--
+-- Name: oauth_tokens_client_id_refresh_token_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX oauth_tokens_client_id_refresh_token_index ON public.oauth_tokens USING btree (client_id, refresh_token);
+
+
+--
+-- Name: oauth_tokens_client_id_value_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX oauth_tokens_client_id_value_index ON public.oauth_tokens USING btree (client_id, value);
+
+
+--
+-- Name: oauth_tokens_value_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX oauth_tokens_value_index ON public.oauth_tokens USING btree (value);
 
 
 --
@@ -10238,6 +10419,30 @@ ALTER TABLE ONLY public.notifications
 
 
 --
+-- Name: oauth_clients_scopes oauth_clients_scopes_client_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oauth_clients_scopes
+    ADD CONSTRAINT oauth_clients_scopes_client_id_fkey FOREIGN KEY (client_id) REFERENCES public.oauth_clients(id) ON DELETE CASCADE;
+
+
+--
+-- Name: oauth_clients_scopes oauth_clients_scopes_scope_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oauth_clients_scopes
+    ADD CONSTRAINT oauth_clients_scopes_scope_id_fkey FOREIGN KEY (scope_id) REFERENCES public.oauth_scopes(id) ON DELETE CASCADE;
+
+
+--
+-- Name: oauth_tokens oauth_tokens_client_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oauth_tokens
+    ADD CONSTRAINT oauth_tokens_client_id_fkey FOREIGN KEY (client_id) REFERENCES public.oauth_clients(id) ON DELETE SET NULL;
+
+
+--
 -- Name: plans plans_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -11057,7 +11262,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict lPrBCVGzfDAQrezJuUuvsvvIxIMIDCrQVbcCW2A0GafidncDVtkqtUHNwYPqA5k
+\unrestrict tpxwTYRfcKC8PysdQ2eC5Aq4518wffcmJ5sgwcqm0mdmu1Yx326ndg2ZFXKg41Z
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -11593,9 +11798,23 @@ INSERT INTO public."schema_migrations" (version) VALUES (20251215114741);
 INSERT INTO public."schema_migrations" (version) VALUES (20251216081737);
 INSERT INTO public."schema_migrations" (version) VALUES (20260106131955);
 INSERT INTO public."schema_migrations" (version) VALUES (20260106141954);
-INSERT INTO public."schema_migrations" (version) VALUES (20260114142311);
 INSERT INTO public."schema_migrations" (version) VALUES (20260114173809);
 INSERT INTO public."schema_migrations" (version) VALUES (20260116093636);
 INSERT INTO public."schema_migrations" (version) VALUES (20260216103643);
 INSERT INTO public."schema_migrations" (version) VALUES (20260224120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260225120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260309140140);
+INSERT INTO public."schema_migrations" (version) VALUES (20260309140141);
+INSERT INTO public."schema_migrations" (version) VALUES (20260309140142);
+INSERT INTO public."schema_migrations" (version) VALUES (20260309140143);
+INSERT INTO public."schema_migrations" (version) VALUES (20260309140144);
+INSERT INTO public."schema_migrations" (version) VALUES (20260309140145);
+INSERT INTO public."schema_migrations" (version) VALUES (20260309140146);
+INSERT INTO public."schema_migrations" (version) VALUES (20260309140147);
+INSERT INTO public."schema_migrations" (version) VALUES (20260309140148);
+INSERT INTO public."schema_migrations" (version) VALUES (20260309140149);
+INSERT INTO public."schema_migrations" (version) VALUES (20260309140150);
+INSERT INTO public."schema_migrations" (version) VALUES (20260309140151);
+INSERT INTO public."schema_migrations" (version) VALUES (20260309140152);
+INSERT INTO public."schema_migrations" (version) VALUES (20260309140153);
+INSERT INTO public."schema_migrations" (version) VALUES (20260309140154);

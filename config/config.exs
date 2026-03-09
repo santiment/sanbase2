@@ -287,6 +287,13 @@ config :sanbase, Oban.Admin,
   queues: [],
   name: :oban_admin
 
+config :boruta, Boruta.Oauth,
+  repo: Sanbase.Repo,
+  issuer: "http://localhost:4000",
+  contexts: [
+    resource_owners: Sanbase.OAuth.ResourceOwners
+  ]
+
 config :nostrum,
   token: {:system, "DISCORD_BOT_QUERY_TOKEN"},
   gateway_intents: [

@@ -48,6 +48,39 @@ defmodule SanbaseWeb.Router do
     plug(:put_layout, html: {SanbaseWeb.Layouts, :admin})
   end
 
+  pipeline :oauth_api do
+    plug(:accepts, ["json"])
+  end
+
+  # OAuth 2.0 metadata and protected resource discovery
+  scope "/.well-known" do
+    get("/oauth-authorization-server", SanbaseWeb.OAuthController, :metadata)
+    get("/oauth-protected-resource", SanbaseWeb.OAuthController, :protected_resource)
+    options("/oauth-authorization-server", SanbaseWeb.OAuthController, :preflight)
+    options("/oauth-protected-resource", SanbaseWeb.OAuthController, :preflight)
+  end
+
+  # OAuth 2.0 browser flow (authorize, consent, dev login)
+  scope "/oauth", SanbaseWeb do
+    pipe_through(:browser)
+
+    get("/authorize", OAuthController, :authorize)
+    post("/authorize", OAuthController, :authorize_consent)
+
+    if Mix.env() in [:dev, :test] do
+      get("/dev_login", OAuthDevLoginController, :show)
+      post("/dev_login", OAuthDevLoginController, :submit)
+    end
+  end
+
+  # OAuth 2.0 token endpoint (machine-to-machine, no GraphQL plugs)
+  scope "/oauth", SanbaseWeb do
+    pipe_through(:oauth_api)
+
+    post("/token", OAuthController, :token)
+    options("/token", OAuthController, :preflight)
+  end
+
   forward "/mcp", Sanbase.MCP.StreamableHTTPPlug
 
   # Dev MCP server exposing search docs

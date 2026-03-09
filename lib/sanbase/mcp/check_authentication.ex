@@ -7,7 +7,6 @@ defmodule Sanbase.MCP.CheckAuthentication do
   alias Sanbase.MCP
 
   schema do
-    # No arguments
   end
 
   @impl true
@@ -17,7 +16,7 @@ defmodule Sanbase.MCP.CheckAuthentication do
         id: user.id,
         email: user.email,
         subscriptions: Subscription.user_subscription_names(user),
-        apikey: MCP.Auth.get_apikey(frame.transport.req_headers) |> obfuscate_apikey()
+        auth_method: "oauth"
       }
 
       {:reply, Response.json(Response.tool(), response_data), frame}
@@ -29,10 +28,10 @@ defmodule Sanbase.MCP.CheckAuthentication do
 
   defp unauthorized_error_msg(frame) do
     specific_error =
-      if MCP.Auth.get_header(frame.transport.req_headers, "authorization") do
-        "Authorization header is present, but invalid."
+      if MCP.Auth.has_authorization_header?(frame.transport.req_headers) do
+        "Authorization header is present, but the OAuth token is invalid or expired."
       else
-        "No Authorization header provided"
+        "No Authorization header provided."
       end
 
     """
@@ -40,19 +39,8 @@ defmodule Sanbase.MCP.CheckAuthentication do
 
     #{specific_error}
 
-    The header value must be one of:
-    Apikey <your api key>
-    Bearer <your api key>
-
-    Keep in mind that the MCP Inspector automatically prepends the value with Bearer
+    Authenticate via OAuth 2.0 to obtain a Bearer token.
+    The header must be: Authorization: Bearer <your_oauth_token>
     """
-  end
-
-  defp obfuscate_apikey(nil), do: nil
-
-  defp obfuscate_apikey(apikey) do
-    String.duplicate("*", String.length(apikey))
-    |> String.replace_prefix("***", String.slice(apikey, 0, 3))
-    |> String.replace_suffix("***", String.slice(apikey, -3, 3))
   end
 end

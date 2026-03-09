@@ -158,7 +158,7 @@ defmodule Sanbase.TemplateEngineTest do
 
       {:ok, {sql, args}} = Sanbase.TemplateEngine.run_generate_positional_params(template, opts)
 
-      assert sql == "a is {$0:Int64}, b is {$1:Int64}\n"
+      assert sql == "a is {$0:Int32}, b is {$1:Int32}\n"
       assert args == [1, 2]
     end
 
@@ -223,7 +223,7 @@ defmodule Sanbase.TemplateEngineTest do
 
       {:ok, {sql, args}} = Sanbase.TemplateEngine.run_generate_positional_params(template, opts)
 
-      assert sql == "SELECT * FROM balances WHERE slug = {$0:String} LIMIT {$1:Int64}"
+      assert sql == "SELECT * FROM balances WHERE slug = {$0:String} LIMIT {$1:Int32}"
       assert args == ["bitcoin", 10]
     end
 
@@ -255,7 +255,7 @@ defmodule Sanbase.TemplateEngineTest do
       params = %{num: 42}
       opts = [params: params]
 
-      # First occurrence infers Int64, second explicitly sets UInt8
+      # First occurrence infers Int32, second explicitly sets UInt8
       template = "SELECT {{num}}, {{num:UInt8}}"
 
       {:ok, {sql, args}} = Sanbase.TemplateEngine.run_generate_positional_params(template, opts)

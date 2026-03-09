@@ -111,10 +111,10 @@ defmodule Sanbase.TemplateEngine do
       {:ok, {"My name is {$0:String}", ["San"]}}
 
       iex> run_generate_positional_params("{{name}} is {% 20 + 8 %} years old", params: %{name: "Tom"})
-      {:ok, {"{$0:String} is {$1:Int64} years old", ["Tom", 28]}}
+      {:ok, {"{$0:String} is {$1:Int32} years old", ["Tom", 28]}}
 
       iex> run_generate_positional_params("param name is reused {{name}} {{name}} is {% 20 + 8 %} years old {{name}}", params: %{name: "Tom"})
-      {:ok, {"param name is reused {$0:String} {$0:String} is {$1:Int64} years old {$0:String}", ["Tom", 28]}}
+      {:ok, {"param name is reused {$0:String} {$0:String} is {$1:Int32} years old {$0:String}", ["Tom", 28]}}
   """
   @spec run_generate_positional_params(String.t(), opts) :: {String.t(), list(any())}
   def run_generate_positional_params(template, opts) do
@@ -130,8 +130,6 @@ defmodule Sanbase.TemplateEngine do
   # Private
 
   defp do_run_generate_positional_params(template, captures, params, env) do
-    # key_positions tracks already-seen param keys to their position index
-    # so the same {{key}} reused multiple times maps to the same {$N:Type}
     {sql, args, errors, _position, _key_positions} =
       Enum.reduce(
         captures,
@@ -147,23 +145,19 @@ defmodule Sanbase.TemplateEngine do
                 {template_acc, args_acc, errors, position, key_positions}
 
               {:ok, value, type_or_nil} ->
-                # Extract the base key (without modifier) for deduplication
-                base_key = extract_base_key(capture_map.inner_content)
+                dedup_key = extract_dedup_key(capture_map.inner_content)
                 ch_type = resolve_ch_type(value, type_or_nil)
 
-                case Map.get(key_positions, base_key) do
+                case Map.get(key_positions, dedup_key) do
                   nil ->
-                    # First occurrence of this key
                     placeholder = "{$#{position}:#{ch_type}}"
                     template_acc = String.replace(template_acc, capture_map.key, placeholder)
                     args_acc = [value | args_acc]
-                    key_positions = Map.put(key_positions, base_key, {position, ch_type})
+                    key_positions = Map.put(key_positions, dedup_key, {position, ch_type})
                     {template_acc, args_acc, errors, position + 1, key_positions}
 
                   {existing_position, existing_type} ->
                     if type_or_nil != nil and ch_type != existing_type do
-                      # Later explicit type override wins: update all prior placeholders,
-                      # the arg entry, and key_positions to use the new type.
                       old_placeholder = "{$#{existing_position}:#{existing_type}}"
                       new_placeholder = "{$#{existing_position}:#{ch_type}}"
 
@@ -177,11 +171,10 @@ defmodule Sanbase.TemplateEngine do
                       args_acc = List.replace_at(args_acc, reverse_index, value)
 
                       key_positions =
-                        Map.put(key_positions, base_key, {existing_position, ch_type})
+                        Map.put(key_positions, dedup_key, {existing_position, ch_type})
 
                       {template_acc, args_acc, errors, position, key_positions}
                     else
-                      # Reuse the existing position and type
                       placeholder = "{$#{existing_position}:#{existing_type}}"
                       template_acc = String.replace(template_acc, capture_map.key, placeholder)
                       {template_acc, args_acc, errors, position, key_positions}
@@ -228,9 +221,18 @@ defmodule Sanbase.TemplateEngine do
     end
   end
 
-  defp extract_base_key(inner_content) do
-    {key, _modifier} = split_key_modifier(inner_content)
-    key
+  defp extract_dedup_key(inner_content) do
+    {base_key, suffix} = split_key_modifier(inner_content)
+
+    mode =
+      case classify_suffix(suffix) do
+        :human_readable -> :human_readable
+        :inline -> :inline
+        {:ch_type, _} -> :value
+        nil -> :value
+      end
+
+    {base_key, mode}
   end
 
   defp resolve_ch_type(value, nil) do
@@ -272,28 +274,23 @@ defmodule Sanbase.TemplateEngine do
     String.replace(template, capture.key, stringify_value(execution_result))
   end
 
-  # Used by `run/2` (plain string substitution, no positional params).
-  # Returns {:ok, value} or :no_value.
   defp get_value_from_params(key, params) when is_binary(key) do
     {key, modifier} = split_key_modifier(key)
 
-    case Map.get(params, key) do
-      nil -> :no_value
-      value -> {:ok, maybe_apply_modifier(value, key, modifier)}
+    case Map.fetch(params, key) do
+      :error -> :no_value
+      {:ok, value} -> {:ok, maybe_apply_modifier(value, key, modifier)}
     end
   end
 
-  # Used by `run_generate_positional_params/2`.
-  # Returns {:ok, value, type_or_modifier} or :no_value.
-  # type_or_modifier is one of: nil, :inline, or a CH type string like "UInt64".
   defp get_value_with_type_info(key, params) when is_binary(key) do
     {key, suffix} = split_key_modifier(key)
 
-    case Map.get(params, key) do
-      nil ->
+    case Map.fetch(params, key) do
+      :error ->
         :no_value
 
-      value ->
+      {:ok, value} ->
         case classify_suffix(suffix) do
           :human_readable -> {:ok, human_readable(value), nil}
           :inline -> {:ok, value, :inline}
@@ -326,7 +323,6 @@ defmodule Sanbase.TemplateEngine do
   defp maybe_apply_modifier(value, _key, modifier) do
     case classify_suffix(modifier) do
       :human_readable -> human_readable(value)
-      # :inline, {:ch_type, _}, nil — no transformation in the run/2 path
       _ -> value
     end
   end

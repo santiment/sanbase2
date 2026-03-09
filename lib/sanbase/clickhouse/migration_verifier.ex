@@ -11,12 +11,16 @@ defmodule Sanbase.Clickhouse.MigrationVerifier do
 
   alias Sanbase.ClickhouseRepo
 
+  @type verify_result :: {:ok, String.t()} | {:error, String.t()}
+
   @doc "SELECT 1 — basic connectivity check"
+  @spec verify_basic_select() :: verify_result()
   def verify_basic_select do
     verify_query("SELECT 1 AS val", %{}, [1], "SELECT 1 returned [1]")
   end
 
   @doc "String parameter binding"
+  @spec verify_string_param() :: verify_result()
   def verify_string_param do
     verify_query(
       "SELECT {{str}} AS val",
@@ -27,11 +31,13 @@ defmodule Sanbase.Clickhouse.MigrationVerifier do
   end
 
   @doc "Integer parameter binding"
+  @spec verify_integer_param() :: verify_result()
   def verify_integer_param do
     verify_query("SELECT {{num}} AS val", %{num: 42}, [42], "Integer param returned 42")
   end
 
   @doc "List parameter binding with arrayJoin"
+  @spec verify_list_param() :: verify_result()
   def verify_list_param do
     verify_query(
       "SELECT arrayJoin({{values}}) AS val ORDER BY val",
@@ -42,6 +48,7 @@ defmodule Sanbase.Clickhouse.MigrationVerifier do
   end
 
   @doc "DateTime parameter binding"
+  @spec verify_datetime_param() :: verify_result()
   def verify_datetime_param do
     dt = ~U[2024-01-15 12:00:00Z]
     query = Sanbase.Clickhouse.Query.new("SELECT {{dt}} AS val", %{dt: dt})
@@ -53,6 +60,7 @@ defmodule Sanbase.Clickhouse.MigrationVerifier do
   end
 
   @doc "Inline parameter (table name substitution)"
+  @spec verify_inline_param() :: verify_result()
   def verify_inline_param do
     verify_query(
       "SELECT count() AS cnt FROM {{table:inline}}",
@@ -63,6 +71,7 @@ defmodule Sanbase.Clickhouse.MigrationVerifier do
   end
 
   @doc "Explicit type override"
+  @spec verify_type_override() :: verify_result()
   def verify_type_override do
     verify_query(
       "SELECT {{num:UInt8}} AS val",
@@ -73,6 +82,7 @@ defmodule Sanbase.Clickhouse.MigrationVerifier do
   end
 
   @doc "query_transform_with_metadata returns columns and query_id"
+  @spec verify_metadata() :: verify_result()
   def verify_metadata do
     query = Sanbase.Clickhouse.Query.new("SELECT 1 AS a, 'test' AS b", %{})
 
@@ -95,6 +105,7 @@ defmodule Sanbase.Clickhouse.MigrationVerifier do
   end
 
   @doc "Error handling for invalid SQL"
+  @spec verify_error_handling() :: verify_result()
   def verify_error_handling do
     query = Sanbase.Clickhouse.Query.new("SELECTTTT INVALID SYNTAX", %{})
 
@@ -109,6 +120,7 @@ defmodule Sanbase.Clickhouse.MigrationVerifier do
   end
 
   @doc "Run all verification checks and print a summary"
+  @spec verify_all() :: {:ok, :all_checks_passed} | {:error, String.t()}
   def verify_all do
     checks = [
       {"basic_select", &verify_basic_select/0},
@@ -151,7 +163,7 @@ defmodule Sanbase.Clickhouse.MigrationVerifier do
 
     IO.puts("\n  #{passed} passed, #{failed} failed out of #{length(results)} checks\n")
 
-    if failed == 0, do: :ok, else: {:error, "#{failed} checks failed"}
+    if failed == 0, do: {:ok, :all_checks_passed}, else: {:error, "#{failed} checks failed"}
   end
 
   # Shared helper for simple single-value-per-row query verification

@@ -299,34 +299,10 @@ defmodule Sanbase.ClickhouseRepo do
       defp maybe_print_interpolated_query(_query, _params), do: :ok
   end
 
-  @placeholder_regex ~r/\{\$(\d+):[^}]+\}/
-
-  defp get_interpolated_query(query, []), do: query
-
   defp get_interpolated_query(query, params) do
-    query_str = IO.iodata_to_binary(query)
-    params_by_index = params |> Enum.with_index() |> Map.new(fn {v, i} -> {i, v} end)
-
-    Regex.replace(@placeholder_regex, query_str, fn _full, idx_str ->
-      idx = String.to_integer(idx_str)
-      inspect_param(Map.fetch!(params_by_index, idx))
-    end)
+    Sanbase.Clickhouse.Query.interpolate(query, params)
   end
 
-  defp inspect_param(s) when is_binary(s), do: "'#{String.replace(s, "'", "\\\\'")}'"
-  defp inspect_param(n) when is_number(n), do: to_string(n)
-  defp inspect_param(b) when is_boolean(b), do: to_string(b)
-  defp inspect_param(%DateTime{} = dt), do: "'#{DateTime.to_iso8601(dt)}'"
-  defp inspect_param(%NaiveDateTime{} = dt), do: "'#{NaiveDateTime.to_iso8601(dt)}'"
-  defp inspect_param(%Date{} = d), do: "'#{Date.to_iso8601(d)}'"
-
-  defp inspect_param(list) when is_list(list),
-    do: "[#{Enum.map_join(list, ",", &inspect_param/1)}]"
-
-  defp inspect_param(other), do: inspect(other)
-
-  # In tests, mocks are plain maps with :query_id/:summary keys (checked first).
-  # In production, Ch.Result has these in HTTP response headers (fallback path).
   defp extract_query_id(result) do
     Map.get(result, :query_id) || get_header(result, "x-clickhouse-query-id")
   end
@@ -335,8 +311,18 @@ defmodule Sanbase.ClickhouseRepo do
     case Map.get(result, :summary) do
       nil ->
         case get_header(result, "x-clickhouse-summary") do
-          nil -> %{}
-          json_str -> Jason.decode!(json_str)
+          nil ->
+            %{}
+
+          json_str ->
+            case Jason.decode(json_str) do
+              {:ok, summary} ->
+                summary
+
+              {:error, error} ->
+                Logger.error("Failed to decode x-clickhouse-summary header: #{inspect(error)}")
+                %{}
+            end
         end
 
       summary ->
@@ -344,9 +330,6 @@ defmodule Sanbase.ClickhouseRepo do
     end
   end
 
-  # TODO: Ch.Result does not expose column_types. In production this returns nil.
-  # Column types are parsed from RowBinaryWithNamesAndTypes but discarded after decoding.
-  # This only affects the Queries Executor feature. Test mocks include :column_types directly.
   defp extract_column_types(result) do
     Map.get(result, :column_types)
   end
@@ -354,8 +337,10 @@ defmodule Sanbase.ClickhouseRepo do
   defp get_header(result, header_name) do
     case Map.get(result, :headers) do
       headers when is_list(headers) ->
+        downcased = String.downcase(header_name)
+
         Enum.find_value(headers, fn
-          {^header_name, value} -> value
+          {name, value} -> if String.downcase(name) == downcased, do: value
           _ -> nil
         end)
 

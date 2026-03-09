@@ -201,8 +201,8 @@ defmodule Sanbase.Clickhouse.NftTrade do
       SELECT slug, price_usd, dt
       FROM asset_prices_v3
       WHERE
-        dt >= toDateTime(?2) - INTERVAL '4' HOUR AND
-        dt < toDateTime(?2)
+        dt >= toDateTime({{to}}) - INTERVAL '4' HOUR AND
+        dt < toDateTime({{to}})
       ORDER BY dt desc, source desc
     ) AS current_prices
     ON prices.price_usd = 0 AND toStartOfFiveMinute(trades.dt) = toStartOfFiveMinute(current_prices.dt) AND assets.name = current_prices.slug

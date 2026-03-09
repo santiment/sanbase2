@@ -41,10 +41,19 @@ defmodule Sanbase.ClickhouseRepo do
 
   @doc ~s"""
   Execute a query and apply `transform_fn/1` on each row of the result.
+
+  ## Example
+
+      query = Sanbase.Clickhouse.Query.new(
+        "SELECT slug, price FROM metrics WHERE slug = {{slug}}",
+        %{slug: "bitcoin"}
+      )
+
+      {:ok, results} = ClickhouseRepo.query_transform(query, fn [slug, price] -> {slug, price} end)
   """
   @spec query_transform(Sanbase.Clickhouse.Query.t(), (list() -> any())) ::
           {:ok, any()} | {:error, String.t()}
-  @spec query_transform(String.t(), list(), (list() -> any())) ::
+  @spec query_transform(String.t(), list() | map(), (list() -> any())) ::
           {:ok, any()} | {:error, String.t()}
   def query_transform(%Sanbase.Clickhouse.Query{} = query, transform_fn) do
     query = add_metadata_to_query(query)
@@ -76,6 +85,10 @@ defmodule Sanbase.ClickhouseRepo do
   end
 
   def query_transform(query, args, transform_fn) do
+    IO.inspect("Running")
+    IO.puts(query)
+    IO.inspect(args)
+
     case execute_query_transform(query, args) do
       {:ok, result} ->
         {:ok, Enum.map(result.rows, transform_fn)}
@@ -95,7 +108,7 @@ defmodule Sanbase.ClickhouseRepo do
   """
   @spec query_transform_with_metadata(Sanbase.Clickhouse.Query.t(), (list() -> list())) ::
           {:ok, Map.t()} | {:error, String.t()}
-  @spec query_transform_with_metadata(String.t(), list(), (list() -> list())) ::
+  @spec query_transform_with_metadata(String.t(), list() | map(), (list() -> list())) ::
           {:ok, Map.t()} | {:error, String.t()}
   def query_transform_with_metadata(%Sanbase.Clickhouse.Query{} = query, transform_fn) do
     query = add_metadata_to_query(query)
@@ -129,12 +142,21 @@ defmodule Sanbase.ClickhouseRepo do
 
   @doc ~s"""
   Execute a query and reduce all the rows, starting with `init` as initial accumulator
-  and using `reduce` for every row
+  and using `reducer` for every row.
+
+  ## Example
+
+      query = Sanbase.Clickhouse.Query.new(
+        "SELECT price FROM metrics WHERE slug = {{slug}}",
+        %{slug: "bitcoin"}
+      )
+
+      {:ok, sum} = ClickhouseRepo.query_reduce(query, 0, fn [price], acc -> acc + price end)
   """
   @spec query_reduce(Sanbase.Clickhouse.Query.t(), acc, (list(), acc -> acc)) ::
           {:ok, Map.t()} | {:error, String.t()}
         when acc: any
-  @spec query_reduce(String.t(), list(), acc, (list(), acc -> acc)) ::
+  @spec query_reduce(String.t(), list() | map(), acc, (list(), acc -> acc)) ::
           {:ok, Map.t()} | {:error, String.t()}
         when acc: any
   def query_reduce(%Sanbase.Clickhouse.Query{} = query, init, reducer) do
@@ -229,7 +251,12 @@ defmodule Sanbase.ClickhouseRepo do
     transform_error_string(message)
   end
 
-  defp extract_error_from_error(error), do: error
+  defp extract_error_from_error(error) when is_list(error) do
+    Enum.join(error) |> transform_error_string()
+  end
+
+  defp extract_error_from_error(error) when is_binary(error), do: transform_error_string(error)
+  defp extract_error_from_error(error), do: inspect(error)
 
   defp transform_error_string(error_str) do
     case String.split(error_str, "DB::Exception: ") do

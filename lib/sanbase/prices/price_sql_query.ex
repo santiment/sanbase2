@@ -30,8 +30,8 @@ defmodule Sanbase.Price.SqlQuery do
       FROM (
         SELECT
           ts_array,
-          arrayEnumerate({{timestamp_array}}) AS ts_idx_array
-        FROM (SELECT {{timestamp_array}} AS ts_array)
+          arrayEnumerate({{timestamp_array:Array(Int64)}}) AS ts_idx_array
+        FROM (SELECT {{timestamp_array:Array(Int64)}} AS ts_array)
       ) AS data
       ARRAY JOIN
         data.ts_idx_array AS ts_idx,

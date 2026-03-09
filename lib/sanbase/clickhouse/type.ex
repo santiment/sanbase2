@@ -4,61 +4,38 @@ defmodule Sanbase.Clickhouse.Type do
   typed placeholder syntax `{$N:Type}`.
 
   The inference rules mirror `ecto_ch`'s `param_type/1`.
+
+  The `@known_ch_types` allowlist controls which type names are recognized for
+  the `{{key:Type}}` override syntax. This is intentionally not a blocklist so
+  that typos like `{{key:huamn_readable}}` are caught at template expansion time
+  rather than silently treated as a CH type.
   """
 
-  @max_uint128 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-  @max_uint64 0xFFFFFFFFFFFFFFFF
-  @max_int64 0x7FFFFFFFFFFFFFFF
-  @min_int128 -0x80000000000000000000000000000000
-  @min_int64 -0x8000000000000000
+  @max_int32 Integer.pow(2, 31) - 1
+  @max_int64 Integer.pow(2, 63) - 1
+  @max_uint64 Integer.pow(2, 64) - 1
+  @max_uint128 Integer.pow(2, 128) - 1
+  @max_uint256 Integer.pow(2, 256) - 1
 
-  # ClickHouse type names recognized for the `{{key:Type}}` override syntax.
-  # This is intentionally an allowlist (not a blocklist) so that typos like
-  # `{{key:huamn_readable}}` are caught at template expansion time rather than
-  # silently treated as a CH type. Add new types here as needed.
-  @known_ch_types MapSet.new([
-                    "UInt8",
-                    "UInt16",
-                    "UInt32",
-                    "UInt64",
-                    "UInt128",
-                    "UInt256",
-                    "Int8",
-                    "Int16",
-                    "Int32",
-                    "Int64",
-                    "Int128",
-                    "Int256",
-                    "Float32",
-                    "Float64",
-                    "Bool",
-                    "String",
-                    "Date",
-                    "Date32",
-                    "DateTime",
-                    "DateTime64",
-                    "Decimal32",
-                    "Decimal64",
-                    "Decimal128",
-                    "Decimal256",
-                    "UUID",
-                    "IPv4",
-                    "IPv6",
-                    "Enum8",
-                    "Enum16",
-                    "FixedString",
-                    "LowCardinality",
-                    "Nullable",
-                    "Array",
-                    "Map",
-                    "Tuple",
-                    "Nothing",
-                    "SimpleAggregateFunction",
-                    "AggregateFunction",
-                    "Nested",
-                    "JSON",
-                    "Object"
-                  ])
+  @min_int32 -Integer.pow(2, 31)
+  @min_int64 -Integer.pow(2, 63)
+  @min_int128 -Integer.pow(2, 127)
+  @min_int256 -Integer.pow(2, 255)
+
+  @known_ch_types MapSet.new(~w(
+    UInt8 UInt16 UInt32 UInt64 UInt128 UInt256
+    Int8 Int16 Int32 Int64 Int128 Int256
+    Float32 Float64
+    Decimal32 Decimal64 Decimal128 Decimal256
+    Bool String FixedString LowCardinality
+    Date Date32 DateTime DateTime64
+    UUID IPv4 IPv6
+    Enum8 Enum16
+    Nullable Nothing
+    Array Map Tuple Nested
+    SimpleAggregateFunction AggregateFunction
+    JSON Object
+  ))
 
   @doc """
   Return `true` if `type_str` is a known ClickHouse type name (or starts with one).
@@ -79,7 +56,6 @@ defmodule Sanbase.Clickhouse.Type do
   """
   @spec known_ch_type?(String.t()) :: boolean()
   def known_ch_type?(type_str) when is_binary(type_str) do
-    # Handle parameterized types like "Array(String)", "DateTime64(3)", etc.
     base_type =
       case String.split(type_str, "(", parts: 2) do
         [base | _] -> base
@@ -99,7 +75,7 @@ defmodule Sanbase.Clickhouse.Type do
       "String"
 
       iex> Sanbase.Clickhouse.Type.infer(42) |> IO.iodata_to_binary()
-      "Int64"
+      "Int32"
 
       iex> Sanbase.Clickhouse.Type.infer(1.5) |> IO.iodata_to_binary()
       "Float64"
@@ -112,14 +88,24 @@ defmodule Sanbase.Clickhouse.Type do
 
   def infer(b) when is_boolean(b), do: "Bool"
 
-  def infer(i) when is_integer(i) do
+  def infer(i) when is_integer(i) and i >= 0 do
     cond do
-      i > @max_uint128 -> "UInt256"
-      i > @max_uint64 -> "UInt128"
-      i > @max_int64 -> "UInt64"
-      i < @min_int128 -> "Int256"
-      i < @min_int64 -> "Int128"
-      true -> "Int64"
+      i <= @max_int32 -> "Int32"
+      i <= @max_int64 -> "Int64"
+      i <= @max_uint64 -> "UInt64"
+      i <= @max_uint128 -> "UInt128"
+      i <= @max_uint256 -> "UInt256"
+      true -> raise ArgumentError, "Integer #{i} exceeds ClickHouse UInt256 maximum"
+    end
+  end
+
+  def infer(i) when is_integer(i) and i < 0 do
+    cond do
+      i >= @min_int32 -> "Int32"
+      i >= @min_int64 -> "Int64"
+      i >= @min_int128 -> "Int128"
+      i >= @min_int256 -> "Int256"
+      true -> raise ArgumentError, "Integer #{i} exceeds ClickHouse Int256 minimum"
     end
   end
 
@@ -139,20 +125,34 @@ defmodule Sanbase.Clickhouse.Type do
 
   def infer(%Decimal{exp: exp}) do
     scale = if exp < 0, do: abs(exp), else: 0
-    ["Decimal64(", Integer.to_string(scale), ?)]
+
+    decimal_type =
+      cond do
+        scale <= 9 -> "Decimal32"
+        scale <= 18 -> "Decimal64"
+        scale <= 38 -> "Decimal128"
+        scale <= 76 -> "Decimal256"
+        true -> raise ArgumentError, "Decimal scale #{scale} is not supported in ClickHouse"
+      end
+
+    [decimal_type, "(", Integer.to_string(scale), ?)]
   end
 
   def infer([]), do: "Array(Nothing)"
 
-  def infer([v | vs]) do
-    el_type = infer(v)
+  def infer([first | rest]) do
+    el_type = infer(first) |> IO.iodata_to_binary()
 
-    # infer([]) returns the plain string "Array(Nothing)", so direct comparison works
-    if el_type != "Array(Nothing)" or vs == [] do
-      ["Array(", el_type, ?)]
-    else
-      infer(vs)
-    end
+    Enum.each(rest, fn elem ->
+      elem_type = infer(elem) |> IO.iodata_to_binary()
+
+      if elem_type != el_type do
+        raise ArgumentError,
+              "Mixed element types in Array: expected #{el_type}, got #{elem_type}"
+      end
+    end)
+
+    ["Array(", el_type, ?)]
   end
 
   def infer(%{__struct__: s}) do
@@ -160,10 +160,27 @@ defmodule Sanbase.Clickhouse.Type do
   end
 
   def infer(m) when is_map(m) do
-    case Map.keys(m) do
-      [k | _] ->
-        [v | _] = Map.values(m)
-        ["Map(", infer(k), ?,, infer(v), ?)]
+    case Map.to_list(m) do
+      [{k, v} | rest] ->
+        key_type = infer(k) |> IO.iodata_to_binary()
+        val_type = infer(v) |> IO.iodata_to_binary()
+
+        Enum.each(rest, fn {rk, rv} ->
+          rk_type = infer(rk) |> IO.iodata_to_binary()
+          rv_type = infer(rv) |> IO.iodata_to_binary()
+
+          if rk_type != key_type do
+            raise ArgumentError,
+                  "Mixed key types in Map: expected #{key_type}, got #{rk_type}"
+          end
+
+          if rv_type != val_type do
+            raise ArgumentError,
+                  "Mixed value types in Map: expected #{val_type}, got #{rv_type}"
+          end
+        end)
+
+        ["Map(", key_type, ?,, val_type, ?)]
 
       [] ->
         "Map(Nothing,Nothing)"

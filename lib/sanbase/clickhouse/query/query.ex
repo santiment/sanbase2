@@ -136,6 +136,39 @@ defmodule Sanbase.Clickhouse.Query do
     end
   end
 
+  @doc """
+  Interpolate positional parameters into a query string for display/debugging.
+
+  Replaces typed placeholders like `{$0:Int64}` with their actual values,
+  producing a copy-pasteable SQL string.
+  """
+  @spec interpolate(iodata(), list()) :: String.t()
+  def interpolate(query, []), do: IO.iodata_to_binary(query)
+
+  def interpolate(query, params) when is_list(params) do
+    query_str = IO.iodata_to_binary(query)
+    params_by_index = params |> Enum.with_index() |> Map.new(fn {v, i} -> {i, v} end)
+
+    Regex.replace(@placeholder_regex, query_str, fn _full, idx_str ->
+      idx = String.to_integer(idx_str)
+      inspect_param(Map.fetch!(params_by_index, idx))
+    end)
+  end
+
+  @placeholder_regex ~r/\{\$(\d+):[^}]+\}/
+
+  defp inspect_param(s) when is_binary(s), do: "'#{String.replace(s, "'", "\\\\'")}'"
+  defp inspect_param(n) when is_number(n), do: to_string(n)
+  defp inspect_param(b) when is_boolean(b), do: to_string(b)
+  defp inspect_param(%DateTime{} = dt), do: "'#{DateTime.to_iso8601(dt)}'"
+  defp inspect_param(%NaiveDateTime{} = dt), do: "'#{NaiveDateTime.to_iso8601(dt)}'"
+  defp inspect_param(%Date{} = d), do: "'#{Date.to_iso8601(d)}'"
+
+  defp inspect_param(list) when is_list(list),
+    do: "[#{Enum.map_join(list, ",", &inspect_param/1)}]"
+
+  defp inspect_param(other), do: inspect(other)
+
   # Private functions
 
   defp preprocess_query(query) do

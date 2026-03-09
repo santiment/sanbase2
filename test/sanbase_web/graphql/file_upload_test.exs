@@ -66,8 +66,8 @@ defmodule SanbaseWeb.Graphql.FileUploadTest do
       mutation {
         uploadImage(images: ["img"]){
           fileName
-          contentHash,
-          imageUrl,
+          contentHash
+          imageUrl
           error
         }
       }
@@ -134,7 +134,7 @@ defmodule SanbaseWeb.Graphql.FileUploadTest do
     assert image2["imageUrl"] != nil
   end
 
-  test "upload metadata is correctly stored in postgres", %{conn: conn} do
+  test "upload metadata is correctly stored in postgres", %{conn: conn, user: user} do
     mutation = """
       mutation {
         uploadImage(images: ["img"]){
@@ -165,5 +165,6 @@ defmodule SanbaseWeb.Graphql.FileUploadTest do
     assert String.ends_with?(image_meta_data.file_name, @test_file_name)
     assert image_meta_data.content_hash == @test_file_hash
     assert image_meta_data.hash_algorithm == @test_file_hash_algorithm
+    assert image_meta_data.user_id == user.id
   end
 end

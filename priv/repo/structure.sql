@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict lPrBCVGzfDAQrezJuUuvsvvIxIMIDCrQVbcCW2A0GafidncDVtkqtUHNwYPqA5k
+\restrict rEumk3or3c8G96Hxf37AhoShjhR5C9TGx5myvsAuvbIk1ywnIRepGcrCCCkez28
 
--- Dumped from database version 15.16 (Homebrew)
--- Dumped by pg_dump version 15.16 (Homebrew)
+-- Dumped from database version 15.15 (Homebrew)
+-- Dumped by pg_dump version 15.15 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -901,8 +901,8 @@ CREATE TABLE public.chat_messages (
     sources jsonb[] DEFAULT ARRAY[]::jsonb[],
     suggestions text[] DEFAULT ARRAY[]::text[],
     feedback_type character varying(255),
-    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY (ARRAY[('thumbs_up'::character varying)::text, ('thumbs_down'::character varying)::text])) OR (feedback_type IS NULL))),
-    CONSTRAINT valid_role CHECK (((role)::text = ANY (ARRAY[('user'::character varying)::text, ('assistant'::character varying)::text])))
+    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY ((ARRAY['thumbs_up'::character varying, 'thumbs_down'::character varying])::text[])) OR (feedback_type IS NULL))),
+    CONSTRAINT valid_role CHECK (((role)::text = ANY ((ARRAY['user'::character varying, 'assistant'::character varying])::text[])))
 );
 
 
@@ -988,6 +988,99 @@ CREATE SEQUENCE public.clickhouse_query_executions_id_seq
 --
 
 ALTER SEQUENCE public.clickhouse_query_executions_id_seq OWNED BY public.clickhouse_query_executions.id;
+
+
+--
+-- Name: coinmarketcap_pro_backfill_assets; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.coinmarketcap_pro_backfill_assets (
+    id bigint NOT NULL,
+    run_id bigint NOT NULL,
+    project_id bigint NOT NULL,
+    slug character varying(255) NOT NULL,
+    cmc_integer_id integer NOT NULL,
+    rank integer,
+    status character varying(255) DEFAULT 'pending'::character varying NOT NULL,
+    missing_ranges jsonb DEFAULT '{}'::jsonb NOT NULL,
+    points_exported integer DEFAULT 0 NOT NULL,
+    api_credits_used double precision DEFAULT 0.0 NOT NULL,
+    api_calls_total integer DEFAULT 0 NOT NULL,
+    rate_limited_calls_total integer DEFAULT 0 NOT NULL,
+    usage_precision character varying(255) DEFAULT 'exact'::character varying NOT NULL,
+    last_error text,
+    started_at timestamp(0) without time zone,
+    finished_at timestamp(0) without time zone,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: coinmarketcap_pro_backfill_assets_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.coinmarketcap_pro_backfill_assets_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: coinmarketcap_pro_backfill_assets_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.coinmarketcap_pro_backfill_assets_id_seq OWNED BY public.coinmarketcap_pro_backfill_assets.id;
+
+
+--
+-- Name: coinmarketcap_pro_backfill_runs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.coinmarketcap_pro_backfill_runs (
+    id bigint NOT NULL,
+    source character varying(255) DEFAULT 'coinmarketcap'::character varying NOT NULL,
+    scope character varying(255) NOT NULL,
+    status character varying(255) DEFAULT 'pending'::character varying NOT NULL,
+    "interval" character varying(255) DEFAULT '5m'::character varying NOT NULL,
+    time_start timestamp(0) without time zone NOT NULL,
+    time_end timestamp(0) without time zone NOT NULL,
+    dry_run boolean DEFAULT false NOT NULL,
+    total_assets integer DEFAULT 0 NOT NULL,
+    done_assets integer DEFAULT 0 NOT NULL,
+    failed_assets integer DEFAULT 0 NOT NULL,
+    pending_assets integer DEFAULT 0 NOT NULL,
+    api_credits_used_total double precision DEFAULT 0.0 NOT NULL,
+    api_calls_total integer DEFAULT 0 NOT NULL,
+    rate_limited_calls_total integer DEFAULT 0 NOT NULL,
+    usage_precision character varying(255) DEFAULT 'exact'::character varying NOT NULL,
+    last_error text,
+    started_at timestamp(0) without time zone,
+    finished_at timestamp(0) without time zone,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: coinmarketcap_pro_backfill_runs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.coinmarketcap_pro_backfill_runs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: coinmarketcap_pro_backfill_runs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.coinmarketcap_pro_backfill_runs_id_seq OWNED BY public.coinmarketcap_pro_backfill_runs.id;
 
 
 --
@@ -5861,6 +5954,20 @@ ALTER TABLE ONLY public.clickhouse_query_executions ALTER COLUMN id SET DEFAULT 
 
 
 --
+-- Name: coinmarketcap_pro_backfill_assets id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.coinmarketcap_pro_backfill_assets ALTER COLUMN id SET DEFAULT nextval('public.coinmarketcap_pro_backfill_assets_id_seq'::regclass);
+
+
+--
+-- Name: coinmarketcap_pro_backfill_runs id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.coinmarketcap_pro_backfill_runs ALTER COLUMN id SET DEFAULT nextval('public.coinmarketcap_pro_backfill_runs_id_seq'::regclass);
+
+
+--
 -- Name: comment_notifications id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6879,6 +6986,22 @@ ALTER TABLE ONLY public.chats
 
 ALTER TABLE ONLY public.clickhouse_query_executions
     ADD CONSTRAINT clickhouse_query_executions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: coinmarketcap_pro_backfill_assets coinmarketcap_pro_backfill_assets_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.coinmarketcap_pro_backfill_assets
+    ADD CONSTRAINT coinmarketcap_pro_backfill_assets_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: coinmarketcap_pro_backfill_runs coinmarketcap_pro_backfill_runs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.coinmarketcap_pro_backfill_runs
+    ADD CONSTRAINT coinmarketcap_pro_backfill_runs_pkey PRIMARY KEY (id);
 
 
 --
@@ -8272,6 +8395,48 @@ CREATE INDEX classified_tweets_review_required_index ON public.classified_tweets
 --
 
 CREATE INDEX clickhouse_query_executions_query_id_index ON public.clickhouse_query_executions USING btree (query_id);
+
+
+--
+-- Name: coinmarketcap_pro_backfill_assets_run_id_project_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX coinmarketcap_pro_backfill_assets_run_id_project_id_index ON public.coinmarketcap_pro_backfill_assets USING btree (run_id, project_id);
+
+
+--
+-- Name: coinmarketcap_pro_backfill_assets_run_id_rank_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX coinmarketcap_pro_backfill_assets_run_id_rank_index ON public.coinmarketcap_pro_backfill_assets USING btree (run_id, rank);
+
+
+--
+-- Name: coinmarketcap_pro_backfill_assets_run_id_status_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX coinmarketcap_pro_backfill_assets_run_id_status_index ON public.coinmarketcap_pro_backfill_assets USING btree (run_id, status);
+
+
+--
+-- Name: coinmarketcap_pro_backfill_assets_slug_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX coinmarketcap_pro_backfill_assets_slug_index ON public.coinmarketcap_pro_backfill_assets USING btree (slug);
+
+
+--
+-- Name: coinmarketcap_pro_backfill_runs_inserted_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX coinmarketcap_pro_backfill_runs_inserted_at_index ON public.coinmarketcap_pro_backfill_runs USING btree (inserted_at);
+
+
+--
+-- Name: coinmarketcap_pro_backfill_runs_status_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX coinmarketcap_pro_backfill_runs_status_index ON public.coinmarketcap_pro_backfill_runs USING btree (status);
 
 
 --
@@ -9758,6 +9923,22 @@ ALTER TABLE ONLY public.clickhouse_query_executions
 
 
 --
+-- Name: coinmarketcap_pro_backfill_assets coinmarketcap_pro_backfill_assets_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.coinmarketcap_pro_backfill_assets
+    ADD CONSTRAINT coinmarketcap_pro_backfill_assets_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(id) ON DELETE CASCADE;
+
+
+--
+-- Name: coinmarketcap_pro_backfill_assets coinmarketcap_pro_backfill_assets_run_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.coinmarketcap_pro_backfill_assets
+    ADD CONSTRAINT coinmarketcap_pro_backfill_assets_run_id_fkey FOREIGN KEY (run_id) REFERENCES public.coinmarketcap_pro_backfill_runs(id) ON DELETE CASCADE;
+
+
+--
 -- Name: comments comments_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -11057,7 +11238,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict lPrBCVGzfDAQrezJuUuvsvvIxIMIDCrQVbcCW2A0GafidncDVtkqtUHNwYPqA5k
+\unrestrict rEumk3or3c8G96Hxf37AhoShjhR5C9TGx5myvsAuvbIk1ywnIRepGcrCCCkez28
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -11579,6 +11760,7 @@ INSERT INTO public."schema_migrations" (version) VALUES (20250926101756);
 INSERT INTO public."schema_migrations" (version) VALUES (20250926115345);
 INSERT INTO public."schema_migrations" (version) VALUES (20251013121803);
 INSERT INTO public."schema_migrations" (version) VALUES (20251014144144);
+INSERT INTO public."schema_migrations" (version) VALUES (20251015073648);
 INSERT INTO public."schema_migrations" (version) VALUES (20251016133413);
 INSERT INTO public."schema_migrations" (version) VALUES (20251017100000);
 INSERT INTO public."schema_migrations" (version) VALUES (20251021133911);
@@ -11587,15 +11769,17 @@ INSERT INTO public."schema_migrations" (version) VALUES (20251023083446);
 INSERT INTO public."schema_migrations" (version) VALUES (20251023114153);
 INSERT INTO public."schema_migrations" (version) VALUES (20251027142731);
 INSERT INTO public."schema_migrations" (version) VALUES (20251027154645);
+INSERT INTO public."schema_migrations" (version) VALUES (20251113070559);
 INSERT INTO public."schema_migrations" (version) VALUES (20251202143216);
 INSERT INTO public."schema_migrations" (version) VALUES (20251202143217);
 INSERT INTO public."schema_migrations" (version) VALUES (20251215114741);
 INSERT INTO public."schema_migrations" (version) VALUES (20251216081737);
 INSERT INTO public."schema_migrations" (version) VALUES (20260106131955);
 INSERT INTO public."schema_migrations" (version) VALUES (20260106141954);
-INSERT INTO public."schema_migrations" (version) VALUES (20260114142311);
 INSERT INTO public."schema_migrations" (version) VALUES (20260114173809);
 INSERT INTO public."schema_migrations" (version) VALUES (20260116093636);
 INSERT INTO public."schema_migrations" (version) VALUES (20260216103643);
 INSERT INTO public."schema_migrations" (version) VALUES (20260224120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260225120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260306173000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260306190000);

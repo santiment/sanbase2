@@ -1,7 +1,7 @@
 defmodule Sanbase.Clickhouse.Type do
   @moduledoc """
   Infer ClickHouse types from Elixir values for use with the `ch` driver's
-  typed placeholder syntax `{$N:Type}`.
+  typed placeholder syntax `{name:Type}`.
 
   The inference rules mirror `ecto_ch`'s `param_type/1`.
 
@@ -26,7 +26,7 @@ defmodule Sanbase.Clickhouse.Type do
     UInt8 UInt16 UInt32 UInt64 UInt128 UInt256
     Int8 Int16 Int32 Int64 Int128 Int256
     Float32 Float64
-    Decimal32 Decimal64 Decimal128 Decimal256
+    Decimal Decimal32 Decimal64 Decimal128 Decimal256
     Bool String FixedString LowCardinality
     Date Date32 DateTime DateTime64
     UUID IPv4 IPv6
@@ -123,19 +123,11 @@ defmodule Sanbase.Clickhouse.Type do
 
   def infer(%Date{}), do: "Date"
 
-  def infer(%Decimal{exp: exp}) do
-    scale = if exp < 0, do: abs(exp), else: 0
+  def infer(%Decimal{coef: coef, exp: exp}) do
+    scale = max(-exp, 0)
+    precision = max(integer_digits(coef), scale)
 
-    decimal_type =
-      cond do
-        scale <= 9 -> "Decimal32"
-        scale <= 18 -> "Decimal64"
-        scale <= 38 -> "Decimal128"
-        scale <= 76 -> "Decimal256"
-        true -> raise ArgumentError, "Decimal scale #{scale} is not supported in ClickHouse"
-      end
-
-    [decimal_type, "(", Integer.to_string(scale), ?)]
+    [decimal_family(precision), "(", Integer.to_string(scale), ?)]
   end
 
   def infer([]), do: "Array(Nothing)"
@@ -193,5 +185,26 @@ defmodule Sanbase.Clickhouse.Type do
 
   def infer(a) when is_atom(a), do: "String"
 
-  def infer(t) when is_tuple(t), do: "String"
+  def infer(t) when is_tuple(t) do
+    ["Tuple(", t |> Tuple.to_list() |> Enum.map(&infer/1) |> Enum.intersperse(", "), ?)]
+  end
+
+  defp decimal_family(precision) do
+    cond do
+      precision <= 9 -> "Decimal32"
+      precision <= 18 -> "Decimal64"
+      precision <= 38 -> "Decimal128"
+      precision <= 76 -> "Decimal256"
+      true -> raise ArgumentError, "Decimal precision #{precision} is not supported in ClickHouse"
+    end
+  end
+
+  defp integer_digits(0), do: 1
+
+  defp integer_digits(int) when is_integer(int) do
+    int
+    |> abs()
+    |> Integer.digits()
+    |> length()
+  end
 end

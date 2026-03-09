@@ -131,7 +131,7 @@ defmodule Sanbase.Clickhouse.Query do
     query = preprocess_query(query)
 
     with {:ok, {sql, args}} <-
-           Sanbase.TemplateEngine.run_generate_positional_params(
+           Sanbase.TemplateEngine.run_generate_clickhouse_params(
              query.sql,
              params: query.parameters,
              env: query.environment

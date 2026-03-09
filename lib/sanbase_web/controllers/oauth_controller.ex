@@ -187,7 +187,7 @@ defmodule SanbaseWeb.OAuthController do
         frontend_url = Config.module_get(SanbaseWeb.Endpoint, :frontend_url)
 
         login_url =
-          "#{frontend_url}/login?return_to=#{URI.encode_www_form("#{backend_url}#{resume_url}")}"
+          "#{frontend_url}/login?from=#{URI.encode_www_form("#{backend_url}#{resume_url}")}"
 
         redirect(conn, external: login_url)
 

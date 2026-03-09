@@ -111,13 +111,22 @@ defmodule Sanbase.Clickhouse.Query do
 
   @doc ~s"""
   Process the SQL query and named parameters and return a map with keys:
-  - sql: The SQL query string transformed to use typed positional parameters
-    (`{$0:Type}`, `{$1:Type}`, etc.) for the `ch` driver.
-  - args: The parameters transformed to a list of arguments, positionally ordered.
-    Adding/removing/reordering elements in this list will cause a database error, as
-    the order is specific for the sql query.
+  - sql: The SQL query string with `{{key}}` placeholders replaced by typed
+    named parameters (`{slug:String}`, `{from:DateTime}`, etc.) for the `ch` driver.
+  - args: A string-keyed params map matching the generated placeholders.
+
+  ## Example
+
+      query = Query.new(
+        "SELECT * FROM metrics WHERE slug = {{slug}} AND dt > {{from}}",
+        %{slug: "bitcoin", from: ~U[2024-01-01 00:00:00Z]}
+      )
+
+      {:ok, %{sql: sql, args: args}} = Query.get_sql_args(query)
+      # sql  => "SELECT * FROM metrics WHERE slug = {slug:String} AND dt > {from:DateTime}"
+      # args => %{"slug" => "bitcoin", "from" => ~U[2024-01-01 00:00:00Z]}
   """
-  @spec get_sql_args(t()) :: {:ok, %{sql: String.t(), args: list()}} | {:error, String.t()}
+  @spec get_sql_args(t()) :: {:ok, %{sql: String.t(), args: map()}} | {:error, String.t()}
   def get_sql_args(%__MODULE__{} = query) do
     query = preprocess_query(query)
 
@@ -137,25 +146,37 @@ defmodule Sanbase.Clickhouse.Query do
   end
 
   @doc """
-  Interpolate positional parameters into a query string for display/debugging.
+  Interpolate parameters into a query string for display/debugging.
 
-  Replaces typed placeholders like `{$0:Int64}` with their actual values,
+  Replaces typed placeholders like `{limit:UInt8}` or `{$0:Int64}` with their actual values,
   producing a copy-pasteable SQL string.
   """
-  @spec interpolate(iodata(), list()) :: String.t()
+  @named_placeholder_regex ~r/\{([a-zA-Z_][a-zA-Z0-9_]*):[^}]+\}/
+  @positional_placeholder_regex ~r/\{\$(\d+):[^}]+\}/
+
+  @spec interpolate(iodata(), list() | map()) :: String.t()
   def interpolate(query, []), do: IO.iodata_to_binary(query)
+
+  def interpolate(query, params) when is_map(params) and map_size(params) == 0,
+    do: IO.iodata_to_binary(query)
 
   def interpolate(query, params) when is_list(params) do
     query_str = IO.iodata_to_binary(query)
     params_by_index = params |> Enum.with_index() |> Map.new(fn {v, i} -> {i, v} end)
 
-    Regex.replace(@placeholder_regex, query_str, fn _full, idx_str ->
+    Regex.replace(@positional_placeholder_regex, query_str, fn _full, idx_str ->
       idx = String.to_integer(idx_str)
       inspect_param(Map.fetch!(params_by_index, idx))
     end)
   end
 
-  @placeholder_regex ~r/\{\$(\d+):[^}]+\}/
+  def interpolate(query, params) when is_map(params) do
+    query_str = IO.iodata_to_binary(query)
+
+    Regex.replace(@named_placeholder_regex, query_str, fn _full, key ->
+      inspect_param(Map.fetch!(params, key))
+    end)
+  end
 
   defp inspect_param(s) when is_binary(s), do: "'#{String.replace(s, "'", "\\\\'")}'"
   defp inspect_param(n) when is_number(n), do: to_string(n)

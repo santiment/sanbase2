@@ -93,12 +93,12 @@ defmodule Sanbase.TemplateEngine do
   end
 
   @doc ~s"""
-  Run the template engine and generate a new template and a list of positional params
+  Run the template engine and generate a new template and a map of named params
   that can be used in Clickhouse queries.
 
   The templates are replaced not with the actual value, but with a typed placeholder
-  like `{$0:Int64}`, `{$1:String}`, etc. which correspond to the position of the value
-  in the list of positional params. The indexes start from 0.
+  like `{limit:UInt8}`, `{slug:String}`, etc. which correspond to the values
+  in the returned params map.
 
   Supports:
   - `{{key:inline}}` — direct string substitution (no placeholder, validated for safety)
@@ -108,15 +108,17 @@ defmodule Sanbase.TemplateEngine do
 
     Examples:
       iex> run_generate_positional_params("My name is {{name}}", params: %{name: "San"})
-      {:ok, {"My name is {$0:String}", ["San"]}}
+      {:ok, {"My name is {name:String}", %{"name" => "San"}}}
 
       iex> run_generate_positional_params("{{name}} is {% 20 + 8 %} years old", params: %{name: "Tom"})
-      {:ok, {"{$0:String} is {$1:Int32} years old", ["Tom", 28]}}
+      {:ok, {"{name:String} is {expr_1:Int32} years old", %{"name" => "Tom", "expr_1" => 28}}}
 
       iex> run_generate_positional_params("param name is reused {{name}} {{name}} is {% 20 + 8 %} years old {{name}}", params: %{name: "Tom"})
-      {:ok, {"param name is reused {$0:String} {$0:String} is {$1:Int32} years old {$0:String}", ["Tom", 28]}}
+      {:ok,
+       {"param name is reused {name:String} {name:String} is {expr_1:Int32} years old {name:String}",
+        %{"name" => "Tom", "expr_1" => 28}}}
   """
-  @spec run_generate_positional_params(String.t(), opts) :: {String.t(), list(any())}
+  @spec run_generate_positional_params(String.t(), opts) :: {String.t(), map()}
   def run_generate_positional_params(template, opts) do
     params = Keyword.get(opts, :params, %{}) |> Map.new(fn {k, v} -> {to_string(k), v} end)
     env = Keyword.get(opts, :env, Sanbase.SanLang.Environment.new())
@@ -129,56 +131,89 @@ defmodule Sanbase.TemplateEngine do
 
   # Private
 
+  # Transform a template with `{{key}}` placeholders into a ClickHouse query with
+  # typed named parameters (`{from:Int32}`, `{slug:String}`, etc.) and a matching
+  # parameter map.
+  #
+  # ## Placeholder modes
+  #
+  # Each `{{key}}` placeholder is classified into one of these modes:
+  #
+  #   - **Inline** (`{{key:inline}}`) — the value is substituted directly into the SQL
+  #     string (no positional param). Only alphanumeric, underscore, and dot characters
+  #     are allowed (validated to prevent injection).
+  #
+  #   - **Value** (`{{key}}` or `{{key:UInt64}}`) — the value becomes a positional
+  #     parameter. The ClickHouse type is either inferred from the Elixir value or
+  #     taken from the explicit override.
+  #
+  #   - **Human-readable** (`{{key:human_readable}}`) — the value is formatted for
+  #     display (e.g., `100000` → `"100,000.00"`) and then treated as a positional
+  #     String parameter.
+  #
+  #   - **Code** (`{% expr %}`) — the expression is evaluated and the result becomes
+  #     a positional parameter with an inferred type. Code captures are never deduplicated.
+  #
+  # ## Deduplication
+  #
+  # When the same key appears multiple times, we want to reuse the same named
+  # parameter instead of creating duplicates. The dedup key is a tuple of
+  # `{base_key, mode, ch_type}`:
+  #
+  #   - `{{slug}}` twice → same dedup key `{"slug", :value, "String"}` → reuses `{slug:String}`
+  #   - `{{slug}}` and `{{slug:human_readable}}` → different modes → separate parameters
+  #   - `{{num}}` and `{{num:UInt8}}` → same mode `:value` but different ch_type →
+  #     separate parameters
+  #   - `{{num:UInt8}}` twice → same dedup key → reuses the same parameter name
+  #
+  # ## Accumulator
+  #
+  # The reduce accumulator is a 6-tuple:
+  # `{sql, args, errors, position, key_positions, used_param_names}`
+  #
+  #   - `sql` — the template string being progressively rewritten
+  #   - `args` — string-keyed argument map
+  #   - `errors` — collected missing-parameter errors
+  #   - `position` — next available index for generated expression names
+  #   - `key_positions` — map from dedup key to `{param_name, ch_type}` for reuse
+  #   - `used_param_names` — set of already allocated parameter names
   defp do_run_generate_positional_params(template, captures, params, env) do
-    {sql, args, errors, _position, _key_positions} =
+    {sql, args, errors, _position, _key_positions, _used_param_names} =
       Enum.reduce(
         captures,
-        {template, _args = [], _errors = [], _position = 0, _key_positions = %{}},
+        {template, _args = %{}, _errors = [], _position = 0, _key_positions = %{},
+         _used_param_names = MapSet.new()},
         fn
           %{code?: false} = capture_map,
-          {template_acc, args_acc, errors, position, key_positions} ->
+          {template_acc, args_acc, errors, position, key_positions, used_param_names} ->
             case get_value_with_type_info(capture_map.inner_content, params) do
               {:ok, value, :inline} ->
                 inline_value = to_string(value)
                 validate_inline_value!(inline_value, capture_map.key)
                 template_acc = String.replace(template_acc, capture_map.key, inline_value)
-                {template_acc, args_acc, errors, position, key_positions}
+                {template_acc, args_acc, errors, position, key_positions, used_param_names}
 
               {:ok, value, type_or_nil} ->
-                dedup_key = extract_dedup_key(capture_map.inner_content)
                 ch_type = resolve_ch_type(value, type_or_nil)
+                dedup_key = extract_dedup_key(capture_map.inner_content, ch_type)
 
                 case Map.get(key_positions, dedup_key) do
                   nil ->
-                    placeholder = "{$#{position}:#{ch_type}}"
+                    {base_key, _suffix} = split_key_modifier(capture_map.inner_content)
+                    param_name = next_param_name(base_key, used_param_names, position)
+                    placeholder = "{#{param_name}:#{ch_type}}"
                     template_acc = String.replace(template_acc, capture_map.key, placeholder)
-                    args_acc = [value | args_acc]
-                    key_positions = Map.put(key_positions, dedup_key, {position, ch_type})
-                    {template_acc, args_acc, errors, position + 1, key_positions}
+                    args_acc = Map.put(args_acc, param_name, value)
+                    key_positions = Map.put(key_positions, dedup_key, {param_name, ch_type})
+                    used_param_names = MapSet.put(used_param_names, param_name)
 
-                  {existing_position, existing_type} ->
-                    if type_or_nil != nil and ch_type != existing_type do
-                      old_placeholder = "{$#{existing_position}:#{existing_type}}"
-                      new_placeholder = "{$#{existing_position}:#{ch_type}}"
+                    {template_acc, args_acc, errors, position + 1, key_positions,
+                     used_param_names}
 
-                      template_acc =
-                        String.replace(template_acc, old_placeholder, new_placeholder)
-
-                      template_acc =
-                        String.replace(template_acc, capture_map.key, new_placeholder)
-
-                      reverse_index = length(args_acc) - 1 - existing_position
-                      args_acc = List.replace_at(args_acc, reverse_index, value)
-
-                      key_positions =
-                        Map.put(key_positions, dedup_key, {existing_position, ch_type})
-
-                      {template_acc, args_acc, errors, position, key_positions}
-                    else
-                      placeholder = "{$#{existing_position}:#{existing_type}}"
-                      template_acc = String.replace(template_acc, capture_map.key, placeholder)
-                      {template_acc, args_acc, errors, position, key_positions}
-                    end
+                  {existing_param_name, existing_type} ->
+                    placeholder = "{#{existing_param_name}:#{existing_type}}"
+                    template_acc = String.replace(template_acc, capture_map.key, placeholder)
+                    {template_acc, args_acc, errors, position, key_positions, used_param_names}
                 end
 
               :no_value ->
@@ -188,23 +223,25 @@ defmodule Sanbase.TemplateEngine do
                 }
 
                 errors = [error | errors]
-                {template_acc, args_acc, errors, position, key_positions}
+                {template_acc, args_acc, errors, position, key_positions, used_param_names}
             end
 
           %{code?: true} = capture_map,
-          {template_acc, args_acc, errors, position, key_positions} ->
+          {template_acc, args_acc, errors, position, key_positions, used_param_names} ->
             execution_result = CodeEvaluation.eval(capture_map, env)
             ch_type = resolve_ch_type(execution_result, nil)
-            placeholder = "{$#{position}:#{ch_type}}"
+            param_name = next_param_name("expr_#{position}", used_param_names, position)
+            placeholder = "{#{param_name}:#{ch_type}}"
             template_acc = String.replace(template_acc, capture_map.key, placeholder)
-            args_acc = [execution_result | args_acc]
-            {template_acc, args_acc, errors, position + 1, key_positions}
+            args_acc = Map.put(args_acc, param_name, execution_result)
+            used_param_names = MapSet.put(used_param_names, param_name)
+            {template_acc, args_acc, errors, position + 1, key_positions, used_param_names}
         end
       )
 
     case errors do
       [] ->
-        {:ok, {sql, Enum.reverse(args)}}
+        {:ok, {sql, args}}
 
       _ ->
         missing_keys = Enum.map(errors, & &1.key) |> Enum.join(", ")
@@ -221,7 +258,7 @@ defmodule Sanbase.TemplateEngine do
     end
   end
 
-  defp extract_dedup_key(inner_content) do
+  defp extract_dedup_key(inner_content, ch_type) do
     {base_key, suffix} = split_key_modifier(inner_content)
 
     mode =
@@ -232,7 +269,7 @@ defmodule Sanbase.TemplateEngine do
         nil -> :value
       end
 
-    {base_key, mode}
+    {base_key, mode, ch_type}
   end
 
   defp resolve_ch_type(value, nil) do
@@ -324,6 +361,32 @@ defmodule Sanbase.TemplateEngine do
     case classify_suffix(modifier) do
       :human_readable -> human_readable(value)
       _ -> value
+    end
+  end
+
+  defp next_param_name(base_name, used_param_names, suffix) do
+    candidate = sanitize_param_name(base_name)
+
+    cond do
+      not MapSet.member?(used_param_names, candidate) ->
+        candidate
+
+      true ->
+        next_param_name("#{candidate}_#{suffix}", used_param_names, suffix + 1)
+    end
+  end
+
+  defp sanitize_param_name(name) do
+    sanitized =
+      name
+      |> to_string()
+      |> String.replace(~r/[^a-zA-Z0-9_]/, "_")
+      |> String.trim("_")
+
+    cond do
+      sanitized == "" -> "param"
+      String.match?(sanitized, ~r/^[0-9]/) -> "param_#{sanitized}"
+      true -> sanitized
     end
   end
 end

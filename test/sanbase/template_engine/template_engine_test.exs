@@ -158,8 +158,8 @@ defmodule Sanbase.TemplateEngineTest do
 
       {:ok, {sql, args}} = Sanbase.TemplateEngine.run_generate_positional_params(template, opts)
 
-      assert sql == "a is {$0:Int32}, b is {$1:Int32}\n"
-      assert args == [1, 2]
+      assert sql == "a is {a:Int32}, b is {b:Int32}\n"
+      assert args == %{"a" => 1, "b" => 2}
     end
 
     test "Run generate positional params -- missing keys" do
@@ -187,8 +187,8 @@ defmodule Sanbase.TemplateEngineTest do
 
       {:ok, {sql, args}} = Sanbase.TemplateEngine.run_generate_positional_params(template, opts)
 
-      assert sql == "SELECT * FROM my_table WHERE slug = {$0:String}"
-      assert args == ["bitcoin"]
+      assert sql == "SELECT * FROM my_table WHERE slug = {slug:String}"
+      assert args == %{"slug" => "bitcoin"}
     end
 
     test "Run generate positional params -- type override" do
@@ -199,8 +199,8 @@ defmodule Sanbase.TemplateEngineTest do
 
       {:ok, {sql, args}} = Sanbase.TemplateEngine.run_generate_positional_params(template, opts)
 
-      assert sql == "SELECT {$0:UInt8}"
-      assert args == [42]
+      assert sql == "SELECT {num:UInt8}"
+      assert args == %{"num" => 42}
     end
 
     test "Run generate positional params -- deduplication" do
@@ -211,8 +211,8 @@ defmodule Sanbase.TemplateEngineTest do
 
       {:ok, {sql, args}} = Sanbase.TemplateEngine.run_generate_positional_params(template, opts)
 
-      assert sql == "{$0:String} and {$0:String} and {$0:String}"
-      assert args == ["Tom"]
+      assert sql == "{name:String} and {name:String} and {name:String}"
+      assert args == %{"name" => "Tom"}
     end
 
     test "Run generate positional params -- mixed inline and parameterized" do
@@ -223,8 +223,8 @@ defmodule Sanbase.TemplateEngineTest do
 
       {:ok, {sql, args}} = Sanbase.TemplateEngine.run_generate_positional_params(template, opts)
 
-      assert sql == "SELECT * FROM balances WHERE slug = {$0:String} LIMIT {$1:Int32}"
-      assert args == ["bitcoin", 10]
+      assert sql == "SELECT * FROM balances WHERE slug = {slug:String} LIMIT {limit:Int32}"
+      assert args == %{"slug" => "bitcoin", "limit" => 10}
     end
 
     test "Run generate positional params -- inline validation rejects bad characters" do
@@ -238,43 +238,52 @@ defmodule Sanbase.TemplateEngineTest do
       end
     end
 
-    test "Run generate positional params -- later explicit type override wins" do
+    test "Run generate positional params -- different type overrides keep separate placeholders" do
       params = %{num: 42}
       opts = [params: params]
 
-      # First occurrence uses UInt8, second uses UInt64 — later override wins
       template = "SELECT {{num:UInt8}}, {{num:UInt64}}"
 
       {:ok, {sql, args}} = Sanbase.TemplateEngine.run_generate_positional_params(template, opts)
 
-      assert sql == "SELECT {$0:UInt64}, {$0:UInt64}"
-      assert args == [42]
+      assert sql == "SELECT {num:UInt8}, {num_1:UInt64}"
+      assert args == %{"num" => 42, "num_1" => 42}
     end
 
-    test "Run generate positional params -- later explicit type overrides inferred type" do
+    test "Run generate positional params -- inferred and explicit types keep separate placeholders" do
       params = %{num: 42}
       opts = [params: params]
 
-      # First occurrence infers Int32, second explicitly sets UInt8
       template = "SELECT {{num}}, {{num:UInt8}}"
 
       {:ok, {sql, args}} = Sanbase.TemplateEngine.run_generate_positional_params(template, opts)
 
-      assert sql == "SELECT {$0:UInt8}, {$0:UInt8}"
-      assert args == [42]
+      assert sql == "SELECT {num:Int32}, {num_1:UInt8}"
+      assert args == %{"num" => 42, "num_1" => 42}
     end
 
     test "Run generate positional params -- same type override deduplicates" do
       params = %{num: 42}
       opts = [params: params]
 
-      # Both use UInt8 — no conflict, should deduplicate
       template = "SELECT {{num:UInt8}}, {{num:UInt8}}"
 
       {:ok, {sql, args}} = Sanbase.TemplateEngine.run_generate_positional_params(template, opts)
 
-      assert sql == "SELECT {$0:UInt8}, {$0:UInt8}"
-      assert args == [42]
+      assert sql == "SELECT {num:UInt8}, {num:UInt8}"
+      assert args == %{"num" => 42}
+    end
+
+    test "Run generate positional params -- inferred and explicit matching type deduplicate" do
+      params = %{num: 42}
+      opts = [params: params]
+
+      template = "SELECT {{num}}, {{num:Int32}}"
+
+      {:ok, {sql, args}} = Sanbase.TemplateEngine.run_generate_positional_params(template, opts)
+
+      assert sql == "SELECT {num:Int32}, {num:Int32}"
+      assert args == %{"num" => 42}
     end
   end
 end

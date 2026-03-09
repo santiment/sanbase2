@@ -85,10 +85,6 @@ defmodule Sanbase.ClickhouseRepo do
   end
 
   def query_transform(query, args, transform_fn) do
-    IO.inspect("Running")
-    IO.puts(query)
-    IO.inspect(args)
-
     case execute_query_transform(query, args) do
       {:ok, result} ->
         {:ok, Enum.map(result.rows, transform_fn)}
@@ -119,15 +115,15 @@ defmodule Sanbase.ClickhouseRepo do
   end
 
   def query_transform_with_metadata(query, args, transform_fn) do
-    case execute_query_transform(query, args, propagate_error: true) do
-      {:ok, result} ->
+    case execute_query_transform_with_metadata(query, args, propagate_error: true) do
+      {:ok, metadata} ->
         {:ok,
          %{
-           rows: Enum.map(result.rows, transform_fn),
-           column_names: result.columns,
-           column_types: extract_column_types(result),
-           query_id: extract_query_id(result),
-           summary: extract_summary(result)
+           rows: Enum.map(metadata.rows, transform_fn),
+           column_names: metadata.column_names,
+           column_types: metadata.column_types,
+           query_id: metadata.query_id,
+           summary: metadata.summary
          }}
 
       {:error, error} ->
@@ -193,6 +189,19 @@ defmodule Sanbase.ClickhouseRepo do
 
       {:error, error} ->
         log_and_return_error(error, "query_transform/3", opts)
+    end
+  end
+
+  defp execute_query_transform_with_metadata(query, args, opts) do
+    maybe_store_executed_clickhouse_sql(query, args)
+    maybe_print_interpolated_query(query, args)
+
+    case __MODULE__.query(query, args, decode: false) do
+      {:ok, result} ->
+        {:ok, decode_result_with_metadata(result)}
+
+      {:error, error} ->
+        log_and_return_error(error, "query_transform_with_metadata/3", opts)
     end
   end
 
@@ -330,6 +339,42 @@ defmodule Sanbase.ClickhouseRepo do
     Sanbase.Clickhouse.Query.interpolate(query, params)
   end
 
+  defp decode_result_with_metadata(result) do
+    base_metadata = %{
+      query_id: extract_query_id(result),
+      summary: extract_summary(result)
+    }
+
+    case decode_row_binary_result(result) do
+      {:ok, decoded} ->
+        Map.merge(base_metadata, decoded)
+
+      :error ->
+        %{
+          rows: Map.get(result, :rows, []),
+          column_names: Map.get(result, :columns),
+          column_types: extract_column_types(result)
+        }
+        |> Map.merge(base_metadata)
+    end
+  end
+
+  defp decode_row_binary_result(result) do
+    with "RowBinaryWithNamesAndTypes" <- get_header(result, "x-clickhouse-format"),
+         data when not is_nil(data) <- Map.get(result, :data),
+         {:ok, column_names, column_types, rows_binary} <-
+           Ch.RowBinary.decode_header(IO.iodata_to_binary(data)) do
+      {:ok,
+       %{
+         rows: Ch.RowBinary.decode_rows(rows_binary, column_types),
+         column_names: column_names,
+         column_types: normalize_column_types(column_types)
+       }}
+    else
+      _ -> :error
+    end
+  end
+
   defp extract_query_id(result) do
     Map.get(result, :query_id) || get_header(result, "x-clickhouse-query-id")
   end
@@ -358,7 +403,17 @@ defmodule Sanbase.ClickhouseRepo do
   end
 
   defp extract_column_types(result) do
-    Map.get(result, :column_types)
+    case Map.get(result, :column_types) do
+      nil -> nil
+      column_types -> normalize_column_types(column_types)
+    end
+  end
+
+  defp normalize_column_types(column_types) do
+    Enum.map(column_types, fn
+      type when is_binary(type) -> type
+      type -> Ch.Types.encode(type) |> IO.iodata_to_binary()
+    end)
   end
 
   defp get_header(result, header_name) do

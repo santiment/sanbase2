@@ -156,7 +156,7 @@ defmodule Sanbase.TemplateEngineTest do
       a is {{a}}, b is {{b}}
       """
 
-      {:ok, {sql, args}} = Sanbase.TemplateEngine.run_generate_positional_params(template, opts)
+      {:ok, {sql, args}} = Sanbase.TemplateEngine.run_generate_clickhouse_params(template, opts)
 
       assert sql == "a is {a:Int32}, b is {b:Int32}\n"
       assert args == %{"a" => 1, "b" => 2}
@@ -170,7 +170,7 @@ defmodule Sanbase.TemplateEngineTest do
       a is {{a}}, b is {{b}}, c is {{c}}, d is {{d}}, a is again {{a}}
       """
 
-      {:error, error_msg} = Sanbase.TemplateEngine.run_generate_positional_params(template, opts)
+      {:error, error_msg} = Sanbase.TemplateEngine.run_generate_clickhouse_params(template, opts)
 
       assert error_msg =~
                "One or more of the {{<key>}} templates in the query text do not correspond to any of the parameters."
@@ -185,7 +185,7 @@ defmodule Sanbase.TemplateEngineTest do
 
       template = "SELECT * FROM {{table:inline}} WHERE slug = {{slug}}"
 
-      {:ok, {sql, args}} = Sanbase.TemplateEngine.run_generate_positional_params(template, opts)
+      {:ok, {sql, args}} = Sanbase.TemplateEngine.run_generate_clickhouse_params(template, opts)
 
       assert sql == "SELECT * FROM my_table WHERE slug = {slug:String}"
       assert args == %{"slug" => "bitcoin"}
@@ -197,7 +197,7 @@ defmodule Sanbase.TemplateEngineTest do
 
       template = "SELECT {{num:UInt8}}"
 
-      {:ok, {sql, args}} = Sanbase.TemplateEngine.run_generate_positional_params(template, opts)
+      {:ok, {sql, args}} = Sanbase.TemplateEngine.run_generate_clickhouse_params(template, opts)
 
       assert sql == "SELECT {num:UInt8}"
       assert args == %{"num" => 42}
@@ -209,7 +209,7 @@ defmodule Sanbase.TemplateEngineTest do
 
       template = "{{name}} and {{name}} and {{name}}"
 
-      {:ok, {sql, args}} = Sanbase.TemplateEngine.run_generate_positional_params(template, opts)
+      {:ok, {sql, args}} = Sanbase.TemplateEngine.run_generate_clickhouse_params(template, opts)
 
       assert sql == "{name:String} and {name:String} and {name:String}"
       assert args == %{"name" => "Tom"}
@@ -221,7 +221,7 @@ defmodule Sanbase.TemplateEngineTest do
 
       template = "SELECT * FROM {{table:inline}} WHERE slug = {{slug}} LIMIT {{limit}}"
 
-      {:ok, {sql, args}} = Sanbase.TemplateEngine.run_generate_positional_params(template, opts)
+      {:ok, {sql, args}} = Sanbase.TemplateEngine.run_generate_clickhouse_params(template, opts)
 
       assert sql == "SELECT * FROM balances WHERE slug = {slug:String} LIMIT {limit:Int32}"
       assert args == %{"slug" => "bitcoin", "limit" => 10}
@@ -234,7 +234,7 @@ defmodule Sanbase.TemplateEngineTest do
       template = "SELECT * FROM {{table:inline}}"
 
       assert_raise Sanbase.TemplateEngine.TemplateEngineError, ~r/invalid characters/, fn ->
-        Sanbase.TemplateEngine.run_generate_positional_params(template, opts)
+        Sanbase.TemplateEngine.run_generate_clickhouse_params(template, opts)
       end
     end
 
@@ -244,7 +244,7 @@ defmodule Sanbase.TemplateEngineTest do
 
       template = "SELECT {{num:UInt8}}, {{num:UInt64}}"
 
-      {:ok, {sql, args}} = Sanbase.TemplateEngine.run_generate_positional_params(template, opts)
+      {:ok, {sql, args}} = Sanbase.TemplateEngine.run_generate_clickhouse_params(template, opts)
 
       assert sql == "SELECT {num:UInt8}, {num_1:UInt64}"
       assert args == %{"num" => 42, "num_1" => 42}
@@ -256,7 +256,7 @@ defmodule Sanbase.TemplateEngineTest do
 
       template = "SELECT {{num}}, {{num:UInt8}}"
 
-      {:ok, {sql, args}} = Sanbase.TemplateEngine.run_generate_positional_params(template, opts)
+      {:ok, {sql, args}} = Sanbase.TemplateEngine.run_generate_clickhouse_params(template, opts)
 
       assert sql == "SELECT {num:Int32}, {num_1:UInt8}"
       assert args == %{"num" => 42, "num_1" => 42}
@@ -268,7 +268,7 @@ defmodule Sanbase.TemplateEngineTest do
 
       template = "SELECT {{num:UInt8}}, {{num:UInt8}}"
 
-      {:ok, {sql, args}} = Sanbase.TemplateEngine.run_generate_positional_params(template, opts)
+      {:ok, {sql, args}} = Sanbase.TemplateEngine.run_generate_clickhouse_params(template, opts)
 
       assert sql == "SELECT {num:UInt8}, {num:UInt8}"
       assert args == %{"num" => 42}
@@ -280,7 +280,7 @@ defmodule Sanbase.TemplateEngineTest do
 
       template = "SELECT {{num}}, {{num:Int32}}"
 
-      {:ok, {sql, args}} = Sanbase.TemplateEngine.run_generate_positional_params(template, opts)
+      {:ok, {sql, args}} = Sanbase.TemplateEngine.run_generate_clickhouse_params(template, opts)
 
       assert sql == "SELECT {num:Int32}, {num:Int32}"
       assert args == %{"num" => 42}

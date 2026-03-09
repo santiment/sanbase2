@@ -107,26 +107,32 @@ defmodule Sanbase.TemplateEngine do
   - `{% code %}` — code evaluation, auto-inferred type
 
     Examples:
-      iex> run_generate_positional_params("My name is {{name}}", params: %{name: "San"})
+      iex> run_generate_clickhouse_params("My name is {{name}}", params: %{name: "San"})
       {:ok, {"My name is {name:String}", %{"name" => "San"}}}
 
-      iex> run_generate_positional_params("{{name}} is {% 20 + 8 %} years old", params: %{name: "Tom"})
+      iex> run_generate_clickhouse_params("{{name}} is {% 20 + 8 %} years old", params: %{name: "Tom"})
       {:ok, {"{name:String} is {expr_1:Int32} years old", %{"name" => "Tom", "expr_1" => 28}}}
 
-      iex> run_generate_positional_params("param name is reused {{name}} {{name}} is {% 20 + 8 %} years old {{name}}", params: %{name: "Tom"})
+      iex> run_generate_clickhouse_params("param name is reused {{name}} {{name}} is {% 20 + 8 %} years old {{name}}", params: %{name: "Tom"})
       {:ok,
        {"param name is reused {name:String} {name:String} is {expr_1:Int32} years old {name:String}",
         %{"name" => "Tom", "expr_1" => 28}}}
   """
-  @spec run_generate_positional_params(String.t(), opts) :: {String.t(), map()}
-  def run_generate_positional_params(template, opts) do
+  @spec run_generate_clickhouse_params(String.t(), opts) :: {String.t(), map()}
+  def run_generate_clickhouse_params(template, opts) do
     params = Keyword.get(opts, :params, %{}) |> Map.new(fn {k, v} -> {to_string(k), v} end)
     env = Keyword.get(opts, :env, Sanbase.SanLang.Environment.new())
 
     with {:ok, captures} <- TemplateEngine.Captures.extract_captures(template),
-         {:ok, result} <- do_run_generate_positional_params(template, captures, params, env) do
+         {:ok, result} <- do_run_generate_clickhouse_params(template, captures, params, env) do
       {:ok, result}
     end
+  end
+
+  @deprecated "Use run_generate_clickhouse_params/2 instead"
+  @spec run_generate_positional_params(String.t(), opts) :: {String.t(), map()}
+  def run_generate_positional_params(template, opts) do
+    run_generate_clickhouse_params(template, opts)
   end
 
   # Private
@@ -140,19 +146,19 @@ defmodule Sanbase.TemplateEngine do
   # Each `{{key}}` placeholder is classified into one of these modes:
   #
   #   - **Inline** (`{{key:inline}}`) — the value is substituted directly into the SQL
-  #     string (no positional param). Only alphanumeric, underscore, and dot characters
+  #     string (no placeholder). Only alphanumeric, underscore, and dot characters
   #     are allowed (validated to prevent injection).
   #
-  #   - **Value** (`{{key}}` or `{{key:UInt64}}`) — the value becomes a positional
+  #   - **Value** (`{{key}}` or `{{key:UInt64}}`) — the value becomes a named
   #     parameter. The ClickHouse type is either inferred from the Elixir value or
   #     taken from the explicit override.
   #
   #   - **Human-readable** (`{{key:human_readable}}`) — the value is formatted for
-  #     display (e.g., `100000` → `"100,000.00"`) and then treated as a positional
+  #     display (e.g., `100000` → `"100,000.00"`) and then treated as a named
   #     String parameter.
   #
   #   - **Code** (`{% expr %}`) — the expression is evaluated and the result becomes
-  #     a positional parameter with an inferred type. Code captures are never deduplicated.
+  #     a named parameter with an inferred type. Code captures are never deduplicated.
   #
   # ## Deduplication
   #
@@ -177,7 +183,7 @@ defmodule Sanbase.TemplateEngine do
   #   - `position` — next available index for generated expression names
   #   - `key_positions` — map from dedup key to `{param_name, ch_type}` for reuse
   #   - `used_param_names` — set of already allocated parameter names
-  defp do_run_generate_positional_params(template, captures, params, env) do
+  defp do_run_generate_clickhouse_params(template, captures, params, env) do
     {sql, args, errors, _position, _key_positions, _used_param_names} =
       Enum.reduce(
         captures,

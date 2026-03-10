@@ -27,6 +27,11 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
         protocol_version: "2025-03-26"
       )
 
+    # Wait for the MCP client <> server initialization handshake to complete.
+    # The client's initialize request blocks its GenServer, so call_tool
+    # requests can't be processed until the handshake finishes.
+    Process.sleep(300)
+
     p1 =
       insert(:project,
         ticker: "BTC",

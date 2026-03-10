@@ -27,6 +27,9 @@ defmodule SanbaseWeb.Graphql.MCPInsightTest do
         protocol_version: "2025-03-26"
       )
 
+    # Wait for the MCP client <> server initialization handshake to complete.
+    Process.sleep(300)
+
     tag1 = insert(:tag, name: "TAG1")
     tag2 = insert(:tag, name: "TAG2")
 

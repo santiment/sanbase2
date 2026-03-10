@@ -128,6 +128,8 @@ config :sanbase, SanbaseWeb.Graphql.AuthPlug,
   basic_auth_username: "user",
   basic_auth_password: "pass"
 
+config :sanbase, Sanbase.InternalServices.Ethauth, url: "http://localhost"
+
 config :waffle,
   storage: Waffle.Storage.Local,
   storage_dir: "/tmp/sanbase/filestore-test/",

@@ -337,7 +337,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
       }
 
       Sanbase.Mock.prepare_mock2(
-        &Sanbase.ClickhouseRepo.query/2,
+        &Sanbase.ClickhouseRepo.query/3,
         {:ok, %{rows: addresses_by_labels_result()}}
       )
       |> Sanbase.Mock.prepare_mock2(
@@ -410,7 +410,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
       }
 
       Sanbase.Mock.prepare_mock2(
-        &Sanbase.ClickhouseRepo.query/2,
+        &Sanbase.ClickhouseRepo.query/3,
         {:ok, %{rows: addresses_by_labels_result()}}
       )
       |> Sanbase.Mock.prepare_mock2(
@@ -465,7 +465,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
       }
 
       Sanbase.Mock.prepare_mock2(
-        &Sanbase.ClickhouseRepo.query/2,
+        &Sanbase.ClickhouseRepo.query/3,
         {:ok, %{rows: addresses_by_labels_result()}}
       )
       |> Sanbase.Mock.prepare_mock2(

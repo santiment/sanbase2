@@ -21,7 +21,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
   test "fetch blockchain address labels with getBlockchainAddressLabels API", context do
     rows = [["santiment/miner:v1", "Miner"], ["santiment/owner->Coinbase:v1", "owner->Coinbase"]]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         get_blockchain_address_labels(context.conn)

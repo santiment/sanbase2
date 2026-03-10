@@ -13,7 +13,7 @@ defmodule Sanbase.Project.InfoTest do
       ["ethereum", "ethereum full info", "short eth info"]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result = get_projects_info(context.conn) |> get_in(["data", "allProjects"])
       assert length(result) == 2

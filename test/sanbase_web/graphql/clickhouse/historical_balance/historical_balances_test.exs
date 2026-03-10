@@ -57,7 +57,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
       [dt4 |> DateTime.to_unix(), 1800, 1]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       from = dt1
       to = dt4
@@ -104,7 +104,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
       [dt10, 0, 0]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       selector = %{infrastructure: "ETH", slug: "ethereum"}
 
@@ -149,7 +149,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
       [dt3, 1400, 1]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       from = ~U[2017-05-13T00:00:00Z]
       to = ~U[2017-05-18T00:00:00Z]
@@ -174,7 +174,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
   test "historical balances when query returns error", context do
     error = "Something went wrong"
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, error})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:error, error})
     |> Sanbase.Mock.run_with_mocks(fn ->
       selector = %{infrastructure: "ETH", slug: "ethereum"}
 
@@ -206,7 +206,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
   end
 
   test "historical balances when query returns no rows", context do
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: []}})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: []}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       selector = %{infrastructure: "ETH", slug: "ethereum"}
 
@@ -246,7 +246,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
       [dt10, 0, 0]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       selector = %{infrastructure: "ETH", slug: context.project_with_contract.slug}
 
@@ -315,7 +315,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
   test "historical balances when clickhouse returns error", context do
     error = "Something bad happened"
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, error})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:error, error})
     |> Sanbase.Mock.run_with_mocks(fn ->
       selector = %{infrastructure: "ETH", slug: context.project_with_contract.slug}
 

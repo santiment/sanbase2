@@ -28,7 +28,7 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
 
       rows = trending_words_rows(context)
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
       |> Sanbase.Mock.prepare_mock2(&Req.get/2, req_response())
       |> Sanbase.Mock.run_with_mocks(fn ->
         args = %{from: dt1, to: dt3, interval: "1d", size: 2}
@@ -166,7 +166,7 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
 
       rows = trending_words_rows(context)
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
       |> Sanbase.Mock.prepare_mock2(&Req.get/2, req_response())
       |> Sanbase.Mock.run_with_mocks(fn ->
         args = %{from: from, to: now, interval: "1d", size: 2}

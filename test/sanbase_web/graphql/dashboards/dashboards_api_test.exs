@@ -323,7 +323,7 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
             fn -> {:ok, mocked_clickhouse_result()} end,
             fn -> {:ok, mocked_execution_details_result()} end
           ],
-          arity: 2
+          arity: 3
         )
 
       # Run a dashboard query. Expect the dashboard parameter to override
@@ -340,9 +340,16 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
         assert "errors" not in Map.keys(result)
         assert is_map(get_in(result, ["data", "runDashboardSqlQuery"]))
 
-        # Check that the used argument is the one provided in the API
-        refute called(Sanbase.ClickhouseRepo.query(:_, ["new_value_from_query_bitcoin", 10]))
-        assert_called(Sanbase.ClickhouseRepo.query(:_, ["bitcoin", 10]))
+        # Check that the used argument is the one provided in the API (named params map)
+        refute called(
+                 Sanbase.ClickhouseRepo.query(
+                   :_,
+                   %{"slug" => "new_value_from_query_bitcoin", "limit" => 10},
+                   :_
+                 )
+               )
+
+        assert_called(Sanbase.ClickhouseRepo.query(:_, %{"slug" => "bitcoin", "limit" => 10}, :_))
 
         result =
           run_sql_query(context.conn, :run_dashboard_sql_query, %{
@@ -355,8 +362,14 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
         assert "errors" not in Map.keys(result)
         assert is_map(get_in(result, ["data", "runDashboardSqlQuery"]))
 
-        # Check that the used argument is the one provided in the API
-        assert_called(Sanbase.ClickhouseRepo.query(:_, ["new_value_from_query_bitcoin", 10]))
+        # Check that the used argument is the one provided in the API (named params map)
+        assert_called(
+          Sanbase.ClickhouseRepo.query(
+            :_,
+            %{"slug" => "new_value_from_query_bitcoin", "limit" => 10},
+            :_
+          )
+        )
       end)
     end
 
@@ -410,7 +423,7 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
             fn -> {:ok, mocked_clickhouse_result()} end,
             fn -> {:ok, mocked_execution_details_result()} end
           ],
-          arity: 2
+          arity: 3
         )
 
       # Run a dashboard query. Expect the dashboard parameter to override
@@ -428,8 +441,14 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
         assert "errors" not in Map.keys(result)
         assert is_map(get_in(result, ["data", "runDashboardSqlQuery"]))
 
-        # Check that the used argument is the one provided in the API
-        assert_called(Sanbase.ClickhouseRepo.query(:_, ["new_value_from_query_bitcoin", 10]))
+        # Check that the used argument is the one provided in the API (named params map)
+        assert_called(
+          Sanbase.ClickhouseRepo.query(
+            :_,
+            %{"slug" => "new_value_from_query_bitcoin", "limit" => 10},
+            :_
+          )
+        )
       end)
     end
 
@@ -505,7 +524,7 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
             fn -> {:ok, mocked_clickhouse_result()} end,
             fn -> {:ok, mocked_execution_details_result()} end
           ],
-          arity: 2
+          arity: 3
         )
 
       # Run a dashboard query. Expect the dashboard parameter to override
@@ -610,7 +629,7 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
             fn -> {:ok, mocked_clickhouse_result()} end,
             fn -> {:ok, mocked_execution_details_result()} end
           ],
-          arity: 2
+          arity: 3
         )
 
       # Run a dashboard query. Expect the dashboard parameter to override
@@ -744,7 +763,7 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
             fn -> {:ok, mocked_clickhouse_result()} end,
             fn -> {:ok, mocked_execution_details_result()} end
           ],
-          arity: 2
+          arity: 3
         )
 
       # Run a dashboard query. Expect the dashboard parameter to override
@@ -842,7 +861,7 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
             fn -> {:ok, mocked_clickhouse_result()} end,
             fn -> {:ok, mocked_execution_details_result()} end
           ],
-          arity: 2
+          arity: 3
         )
 
       Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
@@ -962,7 +981,7 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
             fn -> {:ok, mocked_execution_details_result()} end,
             fn -> {:ok, mocked_execution_details_result()} end
           ],
-          arity: 2
+          arity: 3
         )
 
       # Run a dashboard query. Expect the dashboard parameter to override
@@ -986,8 +1005,11 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
         assert "errors" not in Map.keys(result1)
         assert is_map(get_in(result1, ["data", "runDashboardSqlQuery"]))
 
-        assert_called(Sanbase.ClickhouseRepo.query(:_, ["bitcoin", 10]))
-        refute called(Sanbase.ClickhouseRepo.query(:_, ["santiment", 10]))
+        assert_called(Sanbase.ClickhouseRepo.query(:_, %{"slug" => "bitcoin", "limit" => 10}, :_))
+
+        refute called(
+                 Sanbase.ClickhouseRepo.query(:_, %{"slug" => "santiment", "limit" => 10}, :_)
+               )
 
         result2 =
           run_sql_query(context.conn, :run_dashboard_sql_query, %{
@@ -1000,7 +1022,9 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
         assert [_, _] = Sanbase.Repo.all(Sanbase.Dashboards.DashboardCache)
 
         # No parameters_override, so the original param is used
-        assert_called(Sanbase.ClickhouseRepo.query(:_, ["santiment", 10]))
+        assert_called(
+          Sanbase.ClickhouseRepo.query(:_, %{"slug" => "santiment", "limit" => 10}, :_)
+        )
 
         assert "errors" not in Map.keys(result2)
         assert is_map(get_in(result2, ["data", "runDashboardSqlQuery"]))

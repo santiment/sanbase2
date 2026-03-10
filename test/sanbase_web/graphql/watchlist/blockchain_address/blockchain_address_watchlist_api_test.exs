@@ -65,7 +65,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
       ]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: labels_rows}})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: labels_rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         conn
@@ -105,7 +105,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
   end
 
   test "update blockchain address watchlist", %{user: user, conn: conn} do
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: []}})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: []}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       {:ok, watchlist} =
         UserList.create_user_list(user, %{name: "My Test List", type: :blockchain_address})
@@ -206,7 +206,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
   end
 
   test "update blockchain address watchlist - remove list items", %{user: user, conn: conn} do
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: []}})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: []}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       {:ok, watchlist} =
         UserList.create_user_list(user, %{name: "My Test List", type: :blockchain_address})
@@ -268,7 +268,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
   end
 
   test "update blockchain address watchlist - without list items", %{user: user, conn: conn} do
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: []}})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: []}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       {:ok, watchlist} =
         UserList.create_user_list(user, %{name: "My Test List", type: :blockchain_address})

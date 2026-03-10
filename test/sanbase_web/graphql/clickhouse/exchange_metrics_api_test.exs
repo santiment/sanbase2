@@ -27,7 +27,8 @@ defmodule SanbaseWeb.Graphql.ExchangeMetricsApiTest do
   setup do
     user = insert(:user)
     conn = setup_jwt_auth(build_conn(), user)
-    project = insert(:random_project)
+    infrastructure = insert(:infrastructure)
+    project = insert(:random_project, infrastructure: infrastructure)
 
     [
       exchange: "Binance",
@@ -79,7 +80,7 @@ defmodule SanbaseWeb.Graphql.ExchangeMetricsApiTest do
         ]
       ]
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
       |> Sanbase.Mock.run_with_mocks(fn ->
         result = execute_query(context.conn, query, "topExchangesByBalance")
 

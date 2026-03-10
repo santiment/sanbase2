@@ -74,7 +74,7 @@ defmodule Sanbase.Billing.Plan.CustomPlanTest do
 
     project = insert(:random_project)
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: []}})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: []}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       # mvrv_usd metrics are not accessible because of the pattern
       assert %{"errors" => [error]} = get_metric(conn, "mvrv_usd")

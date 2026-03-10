@@ -36,7 +36,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiEthSpentOverTimeTest do
       [dt6, 5500, 1]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       query = """
       {

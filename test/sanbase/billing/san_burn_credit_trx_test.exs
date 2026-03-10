@@ -18,7 +18,7 @@ defmodule Sanbase.Billing.SanBurnCreditTransactionTest do
     data = %{price_usd: 4, price_btc: 0.03, marketcap: 100, volume: 100}
 
     Sanbase.Mock.prepare_mock2(&Sanbase.Price.last_record_before/2, {:ok, data})
-    |> Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    |> Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
     |> Sanbase.Mock.prepare_mock2(&Sanbase.StripeApi.add_credit/3, {:ok, %{}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       SanBurnCreditTransaction.run()

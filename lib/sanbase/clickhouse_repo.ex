@@ -167,7 +167,7 @@ defmodule Sanbase.ClickhouseRepo do
     maybe_store_executed_clickhouse_sql(query, args)
     maybe_print_interpolated_query(query, args)
 
-    case __MODULE__.query(query, args) do
+    case __MODULE__.query(query, args, []) do
       {:ok, result} ->
         {:ok, Enum.reduce(result.rows, init, reducer)}
 
@@ -183,7 +183,7 @@ defmodule Sanbase.ClickhouseRepo do
     maybe_store_executed_clickhouse_sql(query, args)
     maybe_print_interpolated_query(query, args)
 
-    case __MODULE__.query(query, args) do
+    case __MODULE__.query(query, args, []) do
       {:ok, result} ->
         {:ok, result}
 
@@ -196,6 +196,11 @@ defmodule Sanbase.ClickhouseRepo do
     maybe_store_executed_clickhouse_sql(query, args)
     maybe_print_interpolated_query(query, args)
 
+    # Pass decode: false so the `ch` driver returns the raw RowBinary
+    # response (binary data + HTTP headers) instead of decoded rows.
+    # We then decode manually in decode_result_with_metadata/1 to
+    # extract column_types, query_id, and summary — metadata that the
+    # driver's default decode path discards.
     case __MODULE__.query(query, args, decode: false) do
       {:ok, result} ->
         {:ok, decode_result_with_metadata(result)}

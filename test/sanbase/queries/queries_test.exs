@@ -193,7 +193,7 @@ defmodule Sanbase.QueriesTest do
             fn -> {:ok, ch_result_mock()} end,
             fn -> {:ok, execution_details_mock()} end
           ],
-          arity: 2
+          arity: 3
         )
 
       Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
@@ -277,7 +277,7 @@ defmodule Sanbase.QueriesTest do
         user: user
       } = context
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, ch_result_mock()})
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, ch_result_mock()})
       |> Sanbase.Mock.run_with_mocks(fn ->
         query =
           Sanbase.Queries.get_ephemeral_query_struct(sql_query_text, sql_query_parameters, user)
@@ -332,7 +332,7 @@ defmodule Sanbase.QueriesTest do
         query_metadata: query_metadata
       } = context
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, ch_result_mock()})
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, ch_result_mock()})
       |> Sanbase.Mock.run_with_mocks(fn ->
         {:ok, result} =
           Sanbase.Queries.run_query(query, user, query_metadata, store_execution_details: false)
@@ -384,7 +384,7 @@ defmodule Sanbase.QueriesTest do
         query_metadata: query_metadata
       } = context
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, ch_result_mock()})
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, ch_result_mock()})
       |> Sanbase.Mock.run_with_mocks(fn ->
         {:ok, %{id: query_id} = query} =
           Sanbase.Queries.get_dashboard_query(
@@ -459,7 +459,7 @@ defmodule Sanbase.QueriesTest do
           dashboard_parameter_key: "slug"
         )
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, ch_result_mock()})
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, ch_result_mock()})
       |> Sanbase.Mock.run_with_mocks(fn ->
         {:ok, standalone_query} =
           Sanbase.Queries.get_query(dashboard_query_mapping.query_id, user.id)
@@ -485,9 +485,10 @@ defmodule Sanbase.QueriesTest do
           Sanbase.ClickhouseRepo.query(
             :_,
             :meck.is(fn args ->
-              # Assert that the query is executed with `ethereum` and not with `bitcoin`
-              args == ["bitcoin_from_global", 20]
-            end)
+              # Assert that the query is executed with `bitcoin_from_global` and not with `ethereum`
+              args == %{"slug" => "bitcoin_from_global", "limit" => 20}
+            end),
+            :_
           )
         )
       end)

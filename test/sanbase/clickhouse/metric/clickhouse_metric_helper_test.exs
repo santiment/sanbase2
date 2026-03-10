@@ -7,7 +7,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HelperTest do
       [2, "nvt"]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       {:ok, map} = Sanbase.Clickhouse.MetadataHelper.metric_name_to_metric_id_map()
 

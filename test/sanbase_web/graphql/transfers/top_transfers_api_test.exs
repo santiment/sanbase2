@@ -19,7 +19,7 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
   @address4 "0xbbb61c88bb59a1f6dfe63ed4fe036466b3a328d1"
 
   setup_all_with_mocks([
-    {Sanbase.ClickhouseRepo, [:passthrough], [query: fn _, _ -> {:ok, %{rows: []}} end]}
+    {Sanbase.ClickhouseRepo, [:passthrough], [query: fn _, _, _ -> {:ok, %{rows: []}} end]}
   ]) do
     []
   end

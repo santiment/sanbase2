@@ -27,6 +27,9 @@ defmodule SanbaseWeb.Graphql.MCPAssetsByMetricToolTest do
         protocol_version: "2025-03-26"
       )
 
+    # Wait for the MCP client <> server initialization handshake to complete.
+    Process.sleep(300)
+
     _p = insert(:project, ticker: "BTC", slug: "bitcoin", name: "Bitcoin")
     _p = insert(:project, ticker: "ETH", slug: "ethereum", name: "Ethereum")
     _p = insert(:project, ticker: "SAN", slug: "santiment", name: "Santiment")

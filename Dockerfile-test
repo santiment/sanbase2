@@ -9,6 +9,7 @@ ENV RUSTFLAGS="-C target-feature=-crt-static"
 ENV PATH=/root/.cargo/bin:$PATH
 
 RUN apt-get install -y make \
+  cmake \
   g++ \
   git \
   postgresql-client \
@@ -16,7 +17,7 @@ RUN apt-get install -y make \
   openssl \
   wget
 
-ENV MIX_ENV test
+ENV MIX_ENV=test
 
 RUN mix local.hex --force
 RUN mix local.rebar --force

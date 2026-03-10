@@ -372,7 +372,7 @@ defmodule Sanbase.Price.SqlQuery do
       FROM #{@table}
       WHERE
         slug = cast({{slug}}, 'LowCardinality(String)') AND
-        source = cast({{ource}}, 'LowCardinality(String)') AND
+        source = cast({{source}}, 'LowCardinality(String)') AND
         dt >= toDateTime({{from}}) AND
         dt < toDateTime({{to}})
       GROUP BY slug

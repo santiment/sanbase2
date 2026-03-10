@@ -256,7 +256,7 @@ defmodule Sanbase.ClickhouseRepo do
     end
   end
 
-  defp extract_error_from_error(%_{message: message}) do
+  defp extract_error_from_error(%{message: message}) do
     transform_error_string(message)
   end
 

@@ -4,7 +4,7 @@ defmodule Sanbase.Clickhouse.Query do
 
   This struct can be used to build the string representation of an SQL query by
   using named parameters and a template. It also provides options for adding
-  the Clickhous specific SETTINGS and FORMAT fragments to the query.
+  the ClickHouse specific SETTINGS to the query.
   """
   alias Sanbase.Clickhouse.Query.Environment
 
@@ -75,13 +75,13 @@ defmodule Sanbase.Clickhouse.Query do
   def get_sql_text(%__MODULE__{} = query), do: query.sql
   def get_sql_parameters(%__MODULE__{} = query), do: query.parameters
 
-  @spec put_sql(t(), parameters) :: t()
+  @spec put_parameters(t(), parameters) :: t()
   def put_parameters(%__MODULE__{} = struct, parameters) when is_map(parameters) do
     %{struct | parameters: parameters}
   end
 
   @doc ~s"""
-
+  Add a single key-value pair to the query's parameters map.
   """
   @spec add_parameter(t(), any(), any()) :: t()
   def add_parameter(%__MODULE__{} = struct, key, value) do
@@ -178,7 +178,7 @@ defmodule Sanbase.Clickhouse.Query do
     end)
   end
 
-  defp inspect_param(s) when is_binary(s), do: "'#{String.replace(s, "'", "\\\\'")}'"
+  defp inspect_param(s) when is_binary(s), do: "'#{String.replace(s, "'", "\\'")}'"
   defp inspect_param(n) when is_number(n), do: to_string(n)
   defp inspect_param(b) when is_boolean(b), do: to_string(b)
   defp inspect_param(%DateTime{} = dt), do: "'#{DateTime.to_iso8601(dt)}'"

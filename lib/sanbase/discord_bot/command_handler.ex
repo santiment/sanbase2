@@ -55,7 +55,7 @@ defmodule Sanbase.DiscordBot.CommandHandler do
   # command handlers
 
   def handle_command("mention", msg) do
-    Nostrum.Api.get_channel(msg.channel_id)
+    Nostrum.Api.Channel.get(msg.channel_id)
     |> case do
       {:ok, channel} ->
         channel_or_thread = maybe_create_thread(msg, channel)
@@ -137,7 +137,7 @@ defmodule Sanbase.DiscordBot.CommandHandler do
   defp create_new_thread(msg) do
     thread_name = extract_thread_name(msg)
 
-    Nostrum.Api.start_thread_with_message(msg.channel_id, msg.id, %{
+    Nostrum.Api.Thread.create_with_message(msg.channel_id, msg.id, %{
       name: thread_name,
       auto_archive_duration: 1440
     })
@@ -164,24 +164,24 @@ defmodule Sanbase.DiscordBot.CommandHandler do
         |> Enum.each(fn {msg, index} ->
           last_message? = index == length(msgs) - 1
           message_components = if last_message?, do: components, else: []
-          Nostrum.Api.create_message(thread.id, content: msg, components: message_components)
+          Nostrum.Api.Message.create(thread.id, content: msg, components: message_components)
         end)
 
         feedback_row_message(msg, thread, ai_context)
 
       {:error, :eserverlimit, time_left} ->
-        Nostrum.Api.create_message(thread.id,
+        Nostrum.Api.Message.create(thread.id,
           content: "Server limit reached for today. Limit will be reset in #{time_left}."
         )
 
       {:error, :eprolimit, time_left} ->
-        Nostrum.Api.create_message(thread.id,
+        Nostrum.Api.Message.create(thread.id,
           content: "Pro user limit reached for today. Limit will be reset in #{time_left}"
         )
 
       {:error, _} ->
         content = "Couldn't fetch information to answer your question"
-        Nostrum.Api.create_message(thread.id, content: content)
+        Nostrum.Api.Message.create(thread.id, content: content)
     end
   end
 
@@ -235,7 +235,7 @@ defmodule Sanbase.DiscordBot.CommandHandler do
     discord_user = msg.author.username <> msg.author.discriminator
 
     channel_name =
-      case Nostrum.Api.get_channel(thread.parent_id) do
+      case Nostrum.Api.Channel.get(thread.parent_id) do
         {:ok, parent_channel} -> parent_channel.name
         _ -> nil
       end
@@ -243,7 +243,7 @@ defmodule Sanbase.DiscordBot.CommandHandler do
     {guild_name, _channel_name} = get_guild_channel(msg.guild_id, msg.channel_id)
 
     user_is_pro =
-      Nostrum.Api.get_guild_member(santiment_guild_id(), msg.author.id)
+      Nostrum.Api.Guild.member(santiment_guild_id(), msg.author.id)
       |> case do
         {:ok, member} ->
           pro?(member.roles)
@@ -279,7 +279,7 @@ defmodule Sanbase.DiscordBot.CommandHandler do
       )
 
     user_is_team_member =
-      Nostrum.Api.get_guild_member(
+      Nostrum.Api.Guild.member(
         santiment_guild_id(),
         interaction.user.id
       )
@@ -304,7 +304,7 @@ defmodule Sanbase.DiscordBot.CommandHandler do
   end
 
   defp respond_to_component_interaction(interaction, context_id) do
-    Nostrum.Api.create_interaction_response(interaction.id, interaction.token, %{
+    Nostrum.Api.Interaction.create_response(interaction.id, interaction.token, %{
       # interaction response type: UPDATE_MESSAGE*	7	for components, edit the message the component was attached to
       type: 7,
       data: %{
@@ -362,22 +362,16 @@ defmodule Sanbase.DiscordBot.CommandHandler do
           guild.name
 
         _ ->
-          case Nostrum.Api.get_guild(guild_id) do
+          case Nostrum.Api.Guild.get(guild_id) do
             {:ok, guild} -> guild.name
             _ -> nil
           end
       end
 
     channel_name =
-      case Nostrum.Cache.ChannelCache.get(channel_id) do
-        {:ok, channel} ->
-          channel.name
-
-        _ ->
-          case Nostrum.Api.get_channel(channel_id) do
-            {:ok, channel} -> channel.name
-            _ -> nil
-          end
+      case Nostrum.Api.Channel.get(channel_id) do
+        {:ok, channel} -> channel.name
+        _ -> nil
       end
 
     {guild_name, channel_name}
@@ -433,7 +427,7 @@ defmodule Sanbase.DiscordBot.CommandHandler do
       }
     ]
 
-    Nostrum.Api.create_message(thread.id,
+    Nostrum.Api.Message.create(thread.id,
       content: "",
       embeds: embeds,
       components: [ai_context_action_row(ai_context)]
@@ -466,7 +460,7 @@ defmodule Sanbase.DiscordBot.CommandHandler do
   end
 
   defp loop_typing(thread_id) do
-    Nostrum.Api.start_typing(thread_id)
+    Nostrum.Api.Channel.start_typing(thread_id)
     :timer.sleep(7000)
     loop_typing(thread_id)
   end
@@ -537,7 +531,7 @@ defmodule Sanbase.DiscordBot.CommandHandler do
   end
 
   def metadata_from_options(options_map) do
-    {:ok, channel} = Nostrum.Api.get_channel(options_map["channel_or_thread"])
+    {:ok, channel} = Nostrum.Api.Channel.get(options_map["channel_or_thread"])
     from_dt = text_to_datetime(options_map["from_dt"])
     to_dt = text_to_datetime(options_map["to_dt"])
 
@@ -603,7 +597,7 @@ defmodule Sanbase.DiscordBot.CommandHandler do
       }
     }
 
-    Nostrum.Api.create_interaction_response(interaction, response)
+    Nostrum.Api.Interaction.create_response(interaction, response)
   end
 
   def generic_error_message(interaction) do

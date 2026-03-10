@@ -14,7 +14,7 @@ defmodule Sanbase.TemplateEngine do
   @typedoc ~s"""
   The TemplateEngine function can accept the following options:
     - params: A map of key-value pairs that will be used to replace the simple keys in the template.
-      The simple keys are the onces that are in the format {{<param_name}}.
+      The simple keys are the ones that are in the format {{<param_name>}}.
     - env: A SanLang environment that will be used to evaluate the code templates in the template.
   """
   @type opts :: [option()]
@@ -118,7 +118,8 @@ defmodule Sanbase.TemplateEngine do
        {"param name is reused {name:String} {name:String} is {expr_1:Int32} years old {name:String}",
         %{"name" => "Tom", "expr_1" => 28}}}
   """
-  @spec run_generate_clickhouse_params(String.t(), opts) :: {String.t(), map()}
+  @spec run_generate_clickhouse_params(String.t(), opts) ::
+          {:ok, {String.t(), map()}} | {:error, String.t()}
   def run_generate_clickhouse_params(template, opts) do
     params = Keyword.get(opts, :params, %{}) |> Map.new(fn {k, v} -> {to_string(k), v} end)
     env = Keyword.get(opts, :env, Sanbase.SanLang.Environment.new())
@@ -130,7 +131,8 @@ defmodule Sanbase.TemplateEngine do
   end
 
   @deprecated "Use run_generate_clickhouse_params/2 instead"
-  @spec run_generate_positional_params(String.t(), opts) :: {String.t(), map()}
+  @spec run_generate_positional_params(String.t(), opts) ::
+          {:ok, {String.t(), map()}} | {:error, String.t()}
   def run_generate_positional_params(template, opts) do
     run_generate_clickhouse_params(template, opts)
   end
@@ -363,11 +365,14 @@ defmodule Sanbase.TemplateEngine do
     end
   end
 
-  defp maybe_apply_modifier(value, _key, modifier) do
-    case classify_suffix(modifier) do
-      :human_readable -> human_readable(value)
-      _ -> value
-    end
+  defp maybe_apply_modifier(value, _key, nil), do: value
+  defp maybe_apply_modifier(value, _key, "human_readable"), do: human_readable(value)
+
+  defp maybe_apply_modifier(_value, key, modifier) do
+    raise TemplateEngineError,
+      message:
+        "Modifier '#{modifier}' on key '#{key}' is only supported in ClickHouse param " <>
+          "generation (run_generate_clickhouse_params/2), not in run/2"
   end
 
   defp next_param_name(base_name, used_param_names, suffix) do
@@ -395,7 +400,7 @@ defmodule Sanbase.TemplateEngine do
 
     cond do
       sanitized == "" -> "param"
-      # If the santized name starts with a number, put `param_` prefix
+      # If the sanitized name starts with a number, put `param_` prefix
       String.match?(sanitized, ~r/^[0-9]/) -> "param_#{sanitized}"
       true -> sanitized
     end

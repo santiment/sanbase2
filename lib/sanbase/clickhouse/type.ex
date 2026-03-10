@@ -123,9 +123,15 @@ defmodule Sanbase.Clickhouse.Type do
 
   def infer(%Date{}), do: "Date"
 
+  def infer(%Decimal{coef: coef}) when coef in [:NaN, :inf] do
+    raise ArgumentError,
+          "Decimal special value #{inspect(coef)} is not supported in ClickHouse params"
+  end
+
   def infer(%Decimal{coef: coef, exp: exp}) do
     scale = max(-exp, 0)
-    precision = max(integer_digits(coef), scale)
+    total_digits = integer_digits(coef) + max(exp, 0)
+    precision = max(total_digits, scale)
 
     [decimal_family(precision), "(", Integer.to_string(scale), ?)]
   end
@@ -135,16 +141,24 @@ defmodule Sanbase.Clickhouse.Type do
   def infer([first | rest]) do
     el_type = infer(first) |> IO.iodata_to_binary()
 
-    Enum.each(rest, fn elem ->
-      elem_type = infer(elem) |> IO.iodata_to_binary()
+    widest_type =
+      Enum.reduce(rest, el_type, fn elem, acc_type ->
+        elem_type = infer(elem) |> IO.iodata_to_binary()
 
-      if elem_type != el_type do
-        raise ArgumentError,
-              "Mixed element types in Array: expected #{el_type}, got #{elem_type}"
-      end
-    end)
+        cond do
+          elem_type == acc_type ->
+            acc_type
 
-    ["Array(", el_type, ?)]
+          widenable_integer_types?(acc_type, elem_type) ->
+            wider_integer_type(acc_type, elem_type)
+
+          true ->
+            raise ArgumentError,
+                  "Mixed element types in Array: expected #{acc_type}, got #{elem_type}"
+        end
+      end)
+
+    ["Array(", widest_type, ?)]
   end
 
   def infer(%{__struct__: s}) do
@@ -183,7 +197,14 @@ defmodule Sanbase.Clickhouse.Type do
     "Nullable(Nothing)"
   end
 
-  def infer(a) when is_atom(a), do: "String"
+  # Atoms (other than nil and booleans which are matched above) are not
+  # directly encodable by the ch driver. Callers should convert atoms to
+  # strings before placing them in the params map.
+  def infer(a) when is_atom(a) do
+    raise ArgumentError,
+          "Atom #{inspect(a)} is not directly supported as a ClickHouse param. " <>
+            "Convert it to a string with Atom.to_string/1 or to_string/1 before passing."
+  end
 
   def infer(t) when is_tuple(t) do
     ["Tuple(", t |> Tuple.to_list() |> Enum.map(&infer/1) |> Enum.intersperse(", "), ?)]
@@ -196,6 +217,48 @@ defmodule Sanbase.Clickhouse.Type do
       precision <= 38 -> "Decimal128"
       precision <= 76 -> "Decimal256"
       true -> raise ArgumentError, "Decimal precision #{precision} is not supported in ClickHouse"
+    end
+  end
+
+  @signed_int_types ~w(Int8 Int16 Int32 Int64 Int128 Int256)
+  @unsigned_int_types ~w(UInt8 UInt16 UInt32 UInt64 UInt128 UInt256)
+  @all_int_types MapSet.new(@signed_int_types ++ @unsigned_int_types)
+
+  # The widening order: signed and unsigned can widen among themselves.
+  # When mixing signed and unsigned, widen to the next signed type that
+  # can hold both ranges.
+  @int_rank_signed @signed_int_types |> Enum.with_index() |> Map.new()
+  @int_rank_unsigned @unsigned_int_types |> Enum.with_index() |> Map.new()
+
+  defp widenable_integer_types?(a, b) do
+    MapSet.member?(@all_int_types, a) and MapSet.member?(@all_int_types, b)
+  end
+
+  defp wider_integer_type(a, b) do
+    cond do
+      # Both signed
+      Map.has_key?(@int_rank_signed, a) and Map.has_key?(@int_rank_signed, b) ->
+        if @int_rank_signed[a] >= @int_rank_signed[b], do: a, else: b
+
+      # Both unsigned
+      Map.has_key?(@int_rank_unsigned, a) and Map.has_key?(@int_rank_unsigned, b) ->
+        if @int_rank_unsigned[a] >= @int_rank_unsigned[b], do: a, else: b
+
+      # Mixed: pick the larger signed type that can hold the unsigned range
+      true ->
+        {signed, unsigned} =
+          if Map.has_key?(@int_rank_signed, a),
+            do: {a, b},
+            else: {b, a}
+
+        # Unsigned UIntN needs at least Int(2N) to hold its full range.
+        # We pick whichever signed type is wider.
+        unsigned_needs_signed_rank =
+          min(@int_rank_unsigned[unsigned] + 1, length(@signed_int_types) - 1)
+
+        signed_rank = @int_rank_signed[signed]
+        needed_rank = max(signed_rank, unsigned_needs_signed_rank)
+        Enum.at(@signed_int_types, needed_rank)
     end
   end
 

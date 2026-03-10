@@ -148,7 +148,7 @@ defmodule Sanbase.TemplateEngineTest do
              """
     end
 
-    test "Run generate positional params -- success" do
+    test "Run generate clickhouse params -- success" do
       params = %{a: 1, b: 2}
       opts = [params: params]
 
@@ -162,7 +162,7 @@ defmodule Sanbase.TemplateEngineTest do
       assert args == %{"a" => 1, "b" => 2}
     end
 
-    test "Run generate positional params -- missing keys" do
+    test "Run generate clickhouse params -- missing keys" do
       params = %{a: 1, b: 2}
       opts = [params: params]
 
@@ -179,7 +179,7 @@ defmodule Sanbase.TemplateEngineTest do
       assert error_msg =~ "Parameters' keys defined: a, b"
     end
 
-    test "Run generate positional params -- inline substitution" do
+    test "Run generate clickhouse params -- inline substitution" do
       params = %{table: "my_table", slug: "bitcoin"}
       opts = [params: params]
 
@@ -191,7 +191,7 @@ defmodule Sanbase.TemplateEngineTest do
       assert args == %{"slug" => "bitcoin"}
     end
 
-    test "Run generate positional params -- type override" do
+    test "Run generate clickhouse params -- type override" do
       params = %{num: 42}
       opts = [params: params]
 
@@ -203,7 +203,7 @@ defmodule Sanbase.TemplateEngineTest do
       assert args == %{"num" => 42}
     end
 
-    test "Run generate positional params -- deduplication" do
+    test "Run generate clickhouse params -- deduplication" do
       params = %{name: "Tom"}
       opts = [params: params]
 
@@ -215,7 +215,7 @@ defmodule Sanbase.TemplateEngineTest do
       assert args == %{"name" => "Tom"}
     end
 
-    test "Run generate positional params -- mixed inline and parameterized" do
+    test "Run generate clickhouse params -- mixed inline and parameterized" do
       params = %{table: "balances", slug: "bitcoin", limit: 10}
       opts = [params: params]
 
@@ -227,7 +227,7 @@ defmodule Sanbase.TemplateEngineTest do
       assert args == %{"slug" => "bitcoin", "limit" => 10}
     end
 
-    test "Run generate positional params -- inline validation rejects bad characters" do
+    test "Run generate clickhouse params -- inline validation rejects bad characters" do
       params = %{table: "DROP TABLE; --"}
       opts = [params: params]
 
@@ -238,7 +238,7 @@ defmodule Sanbase.TemplateEngineTest do
       end
     end
 
-    test "Run generate positional params -- different type overrides keep separate placeholders" do
+    test "Run generate clickhouse params -- different type overrides keep separate placeholders" do
       params = %{num: 42}
       opts = [params: params]
 
@@ -250,7 +250,7 @@ defmodule Sanbase.TemplateEngineTest do
       assert args == %{"num" => 42, "num_1" => 42}
     end
 
-    test "Run generate positional params -- inferred and explicit types keep separate placeholders" do
+    test "Run generate clickhouse params -- inferred and explicit types keep separate placeholders" do
       params = %{num: 42}
       opts = [params: params]
 
@@ -262,7 +262,7 @@ defmodule Sanbase.TemplateEngineTest do
       assert args == %{"num" => 42, "num_1" => 42}
     end
 
-    test "Run generate positional params -- same type override deduplicates" do
+    test "Run generate clickhouse params -- same type override deduplicates" do
       params = %{num: 42}
       opts = [params: params]
 
@@ -274,7 +274,7 @@ defmodule Sanbase.TemplateEngineTest do
       assert args == %{"num" => 42}
     end
 
-    test "Run generate positional params -- inferred and explicit matching type deduplicate" do
+    test "Run generate clickhouse params -- inferred and explicit matching type deduplicate" do
       params = %{num: 42}
       opts = [params: params]
 

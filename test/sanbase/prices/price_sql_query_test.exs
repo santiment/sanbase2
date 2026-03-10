@@ -10,8 +10,13 @@ defmodule Sanbase.Price.SqlQueryTest do
     query = SqlQuery.price_for_timestamps_query("bitcoin", timestamp_array, "cryptocompare")
 
     assert {:ok, %{sql: sql, args: args}} = Query.get_sql_args(query)
-    assert sql =~ "arrayEnumerate({$1:Array(Int64)})"
-    assert sql =~ "FROM (SELECT {$1:Array(Int64)} AS ts_array)"
-    assert args == ["bitcoin", timestamp_array, "cryptocompare"]
+    assert sql =~ "arrayEnumerate({timestamp_array:Array(Int64)})"
+    assert sql =~ "FROM (SELECT {timestamp_array:Array(Int64)} AS ts_array)"
+
+    assert args == %{
+             "slug" => "bitcoin",
+             "timestamp_array" => timestamp_array,
+             "source" => "cryptocompare"
+           }
   end
 end

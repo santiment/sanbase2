@@ -26,6 +26,8 @@ config :tailwind,
 # Disable the autoupdate until it is fixed
 config :tzdata, :autoupdate, :disabled
 
+config :tesla, disable_deprecated_builder_warning: true
+
 config :ethereumex,
   url: "https://ethereum.santiment.net",
   http_options: [timeout: 25_000, recv_timeout: 25_000],

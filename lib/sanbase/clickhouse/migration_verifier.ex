@@ -84,10 +84,13 @@ defmodule Sanbase.Clickhouse.MigrationVerifier do
   @spec verify_datetime_param() :: verify_result()
   def verify_datetime_param do
     dt = ~U[2024-01-15 12:00:00Z]
+    # ch driver returns ClickHouse DateTime as NaiveDateTime (no timezone info)
+    expected = ~N[2024-01-15 12:00:00]
     query = Sanbase.Clickhouse.Query.new("SELECT {{dt}} AS val", %{dt: dt})
 
     case ClickhouseRepo.query_transform(query, fn [val] -> val end) do
-      {:ok, [result]} -> {:ok, "DateTime param returned #{inspect(result)}"}
+      {:ok, [^expected]} -> {:ok, "DateTime param returned #{inspect(expected)}"}
+      {:ok, [other]} -> {:error, "Expected #{inspect(expected)}, got #{inspect(other)}"}
       {:error, err} -> {:error, "Query failed: #{inspect(err)}"}
     end
   end
@@ -114,22 +117,42 @@ defmodule Sanbase.Clickhouse.MigrationVerifier do
     )
   end
 
-  @doc "query_transform_with_metadata returns columns and query_id"
+  @doc "query_transform_with_metadata returns columns, types, query_id and summary"
   @spec verify_metadata() :: verify_result()
   def verify_metadata do
     query = Sanbase.Clickhouse.Query.new("SELECT 1 AS a, 'test' AS b", %{})
 
     case ClickhouseRepo.query_transform_with_metadata(query, & &1) do
-      {:ok, %{column_names: columns, query_id: query_id, rows: rows}} ->
+      {:ok,
+       %{
+         column_names: columns,
+         column_types: column_types,
+         query_id: query_id,
+         rows: rows,
+         summary: summary
+       }} ->
         checks = [
-          columns == ["a", "b"] || {:error, "columns: #{inspect(columns)}"},
-          is_binary(query_id) || {:error, "query_id not a string: #{inspect(query_id)}"},
-          length(rows) == 1 || {:error, "expected 1 row, got #{length(rows)}"}
+          columns == ["a", "b"] ||
+            {:error, "columns: expected [\"a\", \"b\"], got #{inspect(columns)}"},
+          (is_list(column_types) and length(column_types) == 2) ||
+            {:error, "column_types: expected list of 2 types, got #{inspect(column_types)}"},
+          (is_list(column_types) and Enum.all?(column_types, &is_binary/1)) ||
+            {:error, "column_types: expected all string types, got #{inspect(column_types)}"},
+          (is_binary(query_id) and byte_size(query_id) > 0) ||
+            {:error, "query_id: expected non-empty string, got #{inspect(query_id)}"},
+          is_map(summary) ||
+            {:error, "summary: expected a map, got #{inspect(summary)}"},
+          rows == [[1, "test"]] ||
+            {:error, "rows: expected [[1, \"test\"]], got #{inspect(rows)}"}
         ]
 
         case Enum.find(checks, &match?({:error, _}, &1)) do
-          nil -> {:ok, "Metadata: columns=#{inspect(columns)}, query_id=#{query_id}"}
-          {:error, detail} -> {:error, "Metadata check failed: #{detail}"}
+          nil ->
+            {:ok,
+             "Metadata: columns=#{inspect(columns)}, types=#{inspect(column_types)}, query_id=#{query_id}"}
+
+          {:error, detail} ->
+            {:error, "Metadata check failed: #{detail}"}
         end
 
       {:error, err} ->
@@ -142,10 +165,30 @@ defmodule Sanbase.Clickhouse.MigrationVerifier do
   def verify_error_handling do
     query = Sanbase.Clickhouse.Query.new("SELECTTTT INVALID SYNTAX", %{})
 
+    # query_transform does not propagate errors, so the error should be
+    # a masked message with a UUID prefix: "[<uuid>] Cannot execute database query..."
     case ClickhouseRepo.query_transform(query, & &1) do
-      {:error, error_msg} ->
-        msg = if is_binary(error_msg), do: error_msg, else: inspect(error_msg)
-        {:ok, "Error handling works, got error: #{String.slice(msg, 0, 80)}..."}
+      {:error, error_msg} when is_binary(error_msg) ->
+        uuid_prefix_pattern =
+          ~r/^\[[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\] /
+
+        masked_suffix =
+          "Cannot execute database query. If issue persists please contact Santiment Support."
+
+        checks = [
+          Regex.match?(uuid_prefix_pattern, error_msg) ||
+            {:error, "Error missing UUID prefix: #{inspect(error_msg)}"},
+          String.contains?(error_msg, masked_suffix) ||
+            {:error, "Error missing masked message, got: #{inspect(error_msg)}"}
+        ]
+
+        case Enum.find(checks, &match?({:error, _}, &1)) do
+          nil -> {:ok, "Error handling: got UUID-prefixed masked error"}
+          {:error, detail} -> {:error, "Error shape check failed: #{detail}"}
+        end
+
+      {:error, other} ->
+        {:error, "Expected binary error message, got: #{inspect(other)}"}
 
       {:ok, _} ->
         {:error, "Expected error for invalid SQL, but got success"}
@@ -336,6 +379,93 @@ defmodule Sanbase.Clickhouse.MigrationVerifier do
     )
   end
 
+  # -- Sanbase.Metric integration checks --
+  # Use daily_active_addresses for bitcoin — a pure ClickHouse on-chain metric
+  # that bypasses SocialData/MetricsHub/Price adapters.
+
+  @metric "daily_active_addresses"
+  @selector %{slug: "bitcoin"}
+
+  @doc "Sanbase.Metric.timeseries_data returns data points with datetime and value"
+  @spec verify_metric_timeseries_data() :: verify_result()
+  def verify_metric_timeseries_data do
+    to = DateTime.utc_now()
+    from = DateTime.add(to, -7, :day)
+
+    case Sanbase.Metric.timeseries_data(@metric, @selector, from, to, "1d") do
+      {:ok, [%{datetime: %DateTime{}, value: v} | _] = data} when is_number(v) ->
+        {:ok, "timeseries_data returned #{length(data)} data points"}
+
+      {:ok, []} ->
+        {:error, "timeseries_data returned empty list for #{@metric}/bitcoin in last 7 days"}
+
+      {:ok, [first | _]} ->
+        {:error, "Unexpected data point shape: #{inspect(first)}"}
+
+      {:error, err} ->
+        {:error, "timeseries_data failed: #{inspect(err)}"}
+    end
+  end
+
+  @doc "Sanbase.Metric.aggregated_timeseries_data returns a map with slug keys"
+  @spec verify_metric_aggregated_timeseries_data() :: verify_result()
+  def verify_metric_aggregated_timeseries_data do
+    to = DateTime.utc_now()
+    from = DateTime.add(to, -7, :day)
+
+    case Sanbase.Metric.aggregated_timeseries_data(@metric, @selector, from, to) do
+      {:ok, %{"bitcoin" => value}} when is_number(value) ->
+        {:ok, "aggregated_timeseries_data returned bitcoin=#{value}"}
+
+      {:ok, %{"bitcoin" => nil}} ->
+        {:error, "aggregated_timeseries_data returned nil for bitcoin"}
+
+      {:ok, other} ->
+        {:error, "Unexpected result shape: #{inspect(other)}"}
+
+      {:error, err} ->
+        {:error, "aggregated_timeseries_data failed: #{inspect(err)}"}
+    end
+  end
+
+  @doc "Sanbase.Metric.timeseries_data_per_slug returns per-slug data points"
+  @spec verify_metric_timeseries_data_per_slug() :: verify_result()
+  def verify_metric_timeseries_data_per_slug do
+    to = DateTime.utc_now()
+    from = DateTime.add(to, -7, :day)
+    selector = %{slug: ["bitcoin", "ethereum"]}
+
+    case Sanbase.Metric.timeseries_data_per_slug(@metric, selector, from, to, "1d") do
+      {:ok, [%{datetime: %DateTime{}, data: [%{slug: s, value: v} | _]} | _] = data}
+      when is_binary(s) and is_number(v) ->
+        {:ok, "timeseries_data_per_slug returned #{length(data)} data points"}
+
+      {:ok, []} ->
+        {:error, "timeseries_data_per_slug returned empty list"}
+
+      {:ok, [first | _]} ->
+        {:error, "Unexpected data point shape: #{inspect(first)}"}
+
+      {:error, err} ->
+        {:error, "timeseries_data_per_slug failed: #{inspect(err)}"}
+    end
+  end
+
+  @doc "Sanbase.Metric.first_datetime returns a DateTime for a known metric/slug"
+  @spec verify_metric_first_datetime() :: verify_result()
+  def verify_metric_first_datetime do
+    case Sanbase.Metric.first_datetime(@metric, @selector, []) do
+      {:ok, %DateTime{} = dt} ->
+        {:ok, "first_datetime returned #{DateTime.to_iso8601(dt)}"}
+
+      {:ok, other} ->
+        {:error, "Expected DateTime, got: #{inspect(other)}"}
+
+      {:error, err} ->
+        {:error, "first_datetime failed: #{inspect(err)}"}
+    end
+  end
+
   @doc "Run all verification checks and print a summary"
   @spec verify_all() :: {:ok, :all_checks_passed} | {:error, String.t()}
   def verify_all do
@@ -422,7 +552,11 @@ defmodule Sanbase.Clickhouse.MigrationVerifier do
       {"empty_result", &verify_empty_result/0},
       {"query_reduce", &verify_query_reduce/0},
       {"metadata", &verify_metadata/0},
-      {"error_handling", &verify_error_handling/0}
+      {"error_handling", &verify_error_handling/0},
+      {"metric_timeseries_data", &verify_metric_timeseries_data/0},
+      {"metric_aggregated_timeseries_data", &verify_metric_aggregated_timeseries_data/0},
+      {"metric_timeseries_data_per_slug", &verify_metric_timeseries_data_per_slug/0},
+      {"metric_first_datetime", &verify_metric_first_datetime/0}
     ]
   end
 end

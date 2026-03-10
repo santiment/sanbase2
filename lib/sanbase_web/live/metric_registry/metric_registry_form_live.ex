@@ -1,11 +1,9 @@
 defmodule SanbaseWeb.MetricRegistryFormLive do
   use SanbaseWeb, :live_view
 
-  import SanbaseWeb.CoreComponents
-
   alias Sanbase.Metric.Registry
   alias Sanbase.Metric.Registry.Permissions
-  alias SanbaseWeb.AvailableMetricsComponents
+  alias SanbaseWeb.AdminSharedComponents
 
   @impl true
   def mount(params, _session, socket) do
@@ -112,25 +110,30 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
         </div>
       </div>
 
-      <SanbaseWeb.MetricRegistryComponents.user_details
-        current_user={@current_user}
-        current_user_role_names={@current_user_role_names}
-      />
+      <div class="my-2 flex flex-row space-x-2">
+        <span class="text-blue-800 font-bold">{@current_user.email}</span>
+        <span>|</span>
+        <span class="text-gray-700">
+          {@current_user_role_names
+          |> Enum.map(&String.trim_leading(&1, "Metric Registry "))
+          |> Enum.join(", ")}
+        </span>
+      </div>
       <div class="my-4">
-        <AvailableMetricsComponents.available_metrics_button
+        <AdminSharedComponents.nav_button
           text="Back to Metric Registry"
           href={~p"/admin/metric_registry"}
           icon="hero-home"
         />
 
-        <AvailableMetricsComponents.available_metrics_button
+        <AdminSharedComponents.nav_button
           :if={@live_action == :edit}
           text="See Metric"
           href={~p"/admin/metric_registry/show/#{@metric_registry}"}
           icon="hero-arrow-right-circle"
         />
 
-        <AvailableMetricsComponents.available_metrics_button
+        <AdminSharedComponents.nav_button
           :if={Permissions.can?(:edit, roles: @current_user_role_names) and @live_action == :edit}
           text="Duplicate Metric"
           href={
@@ -139,7 +142,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
           icon="hero-document-duplicate"
         />
 
-        <AvailableMetricsComponents.available_metrics_button
+        <AdminSharedComponents.nav_button
           :if={Permissions.can?(:edit, roles: @current_user_role_names) and @live_action == :edit}
           text="Assign to Category/Group"
           href={
@@ -695,7 +698,6 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
 
           {:error, changeset} ->
             errors = Sanbase.Utils.ErrorHandling.changeset_errors(changeset)
-            require(IEx).pry
 
             {:noreply,
              socket

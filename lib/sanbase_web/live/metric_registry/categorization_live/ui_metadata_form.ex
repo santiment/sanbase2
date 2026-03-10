@@ -1,10 +1,9 @@
 defmodule SanbaseWeb.CategorizationLive.UIMetadataForm do
   use SanbaseWeb, :live_view
 
-  import SanbaseWeb.CoreComponents
   alias Sanbase.Metric.Category
   alias Sanbase.Metric.UIMetadata
-  alias SanbaseWeb.AvailableMetricsComponents
+  alias SanbaseWeb.AdminSharedComponents
 
   @impl true
   def mount(%{"mapping_id" => mapping_id}, _session, socket) do
@@ -152,12 +151,12 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataForm do
   def navigation(assigns) do
     ~H"""
     <div class="my-4 flex flex-row space-x-2">
-      <AvailableMetricsComponents.available_metrics_button
+      <AdminSharedComponents.nav_button
         text="Back to Categorization"
         href={~p"/admin/metric_registry/categorization"}
         icon="hero-arrow-left"
       />
-      <AvailableMetricsComponents.available_metrics_button
+      <AdminSharedComponents.nav_button
         text="Back to UI Metadata List"
         href={~p"/admin/metric_registry/categorization/ui_metadata/list/#{@mapping_id}"}
         icon="hero-list-bullet"

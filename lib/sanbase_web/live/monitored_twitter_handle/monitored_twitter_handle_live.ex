@@ -1,8 +1,10 @@
 defmodule SanbaseWeb.MonitoredTwitterHandleLive do
   use SanbaseWeb, :live_view
 
+  import SanbaseWeb.AdminLiveHelpers, only: [order_records_by_status: 1]
+
   alias Sanbase.MonitoredTwitterHandle
-  alias SanbaseWeb.AdminFormsComponents
+  alias SanbaseWeb.AdminSharedComponents
 
   @impl true
   def render(assigns) do
@@ -11,7 +13,7 @@ defmodule SanbaseWeb.MonitoredTwitterHandleLive do
       <div class="flex-1 p:2 sm:p-6 justify-evenly flex flex-col-reverse scrolling-auto">
         <.table id="monitored_twitter_handles" rows={@handles}>
           <:col :let={row} label="Status">
-            <AdminFormsComponents.status status={row.status} />
+            <AdminSharedComponents.status_badge status={row.status} />
           </:col>
           <:col :let={row} label="Twitter Handle (Clickable link)">
             <.link class="underline text-blue-600" href={"https://x.com/#{row.handle}"}>
@@ -27,17 +29,19 @@ defmodule SanbaseWeb.MonitoredTwitterHandleLive do
             <.form for={@form} phx-submit="update_status">
               <.input type="text" class="" field={@form[:comment]} placeholder="Comment..." />
               <input type="hidden" name="record_id" value={row.id} />
-              <AdminFormsComponents.button
+              <AdminSharedComponents.approval_button
                 name="status"
                 value="approved"
-                class="bg-green-600 hover:bg-green-800"
-                display_text="Approve"
+                text="Approve"
+                disabled={false}
+                colors="bg-green-600 hover:bg-green-800"
               />
-              <AdminFormsComponents.button
+              <AdminSharedComponents.approval_button
                 name="status"
                 value="declined"
-                class="bg-red-600 hover:bg-red-800"
-                display_text="Decline"
+                text="Decline"
+                disabled={false}
+                colors="bg-red-600 hover:bg-red-800"
               />
             </.form>
           </:action>
@@ -83,7 +87,7 @@ defmodule SanbaseWeb.MonitoredTwitterHandleLive do
       record ->
         record
     end)
-    |> order_records()
+    |> order_records_by_status()
   end
 
   defp list_handles() do
@@ -101,20 +105,6 @@ defmodule SanbaseWeb.MonitoredTwitterHandleLive do
         user_email: struct.user.email
       }
     end)
-    |> order_records()
-  end
-
-  defp order_records(handles) do
-    handles
-    |> Enum.sort_by(
-      fn record ->
-        case record.status do
-          "pending_approval" -> 1
-          "approved" -> 2
-          "declined" -> 3
-        end
-      end,
-      :asc
-    )
+    |> order_records_by_status()
   end
 end

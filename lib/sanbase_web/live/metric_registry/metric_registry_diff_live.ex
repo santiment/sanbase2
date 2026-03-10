@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.MetricRegistryDiffLive do
   use SanbaseWeb, :live_view
 
-  alias SanbaseWeb.AvailableMetricsComponents
+  alias SanbaseWeb.AdminSharedComponents
   alias Sanbase.Metric.Registry
   @impl true
   def mount(%{"id" => metric_registry_id}, _session, socket) do
@@ -49,21 +49,20 @@ defmodule SanbaseWeb.MetricRegistryDiffLive do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col ">
-      <h1 class="text-blue-700 text-2xl mb-4">
-        Metric Registry Diff Since Last Sync | {@metric_registry.metric}
-      </h1>
-      <SanbaseWeb.MetricRegistryComponents.user_details
+      <AdminSharedComponents.page_header
+        title={"Metric Registry Diff Since Last Sync | #{@metric_registry.metric}"}
         current_user={@current_user}
         current_user_role_names={@current_user_role_names}
+        trim_role_prefix="Metric Registry "
       />
       <div class="my-4">
-        <AvailableMetricsComponents.available_metrics_button
+        <AdminSharedComponents.nav_button
           text="Back to Metric Registry"
           href={~p"/admin/metric_registry"}
           icon="hero-home"
         />
 
-        <AvailableMetricsComponents.available_metrics_button
+        <AdminSharedComponents.nav_button
           text="Back to Metric Page"
           href={~p"/admin/metric_registry/show/#{@metric_registry.id}"}
           icon="hero-list-bullet"

@@ -105,7 +105,7 @@ defmodule SanbaseWeb.GenericAdmin.Post do
 
   def post_link(row) do
     if row.post_id do
-      SanbaseWeb.GenericAdmin.Subscription.href(
+      SanbaseWeb.GenericAdmin.resource_link(
         "posts",
         row.post_id,
         row.post.title
@@ -209,12 +209,7 @@ defmodule SanbaseWeb.GenericAdmin.Comment do
       new_fields: [:user, :content],
       edit_fields: [:content, :edited_at, :parent_id, :root_parent_id, :subcomments_count, :user],
       belongs_to_fields: %{
-        user: %{
-          query: from(u in Sanbase.Accounts.User, order_by: [desc: u.id]),
-          transform: fn rows -> Enum.map(rows, &{&1.email, &1.id}) end,
-          resource: "users",
-          search_fields: [:email, :username]
-        },
+        user: SanbaseWeb.GenericAdmin.belongs_to_user(),
         parent_id: %{
           query: from(c in Sanbase.Comment, where: is_nil(c.parent_id), order_by: [desc: c.id]),
           transform: fn rows -> Enum.map(rows, &{&1.content, &1.id}) end,
@@ -241,7 +236,7 @@ defmodule SanbaseWeb.GenericAdmin.Comment do
 
   def comment_link(comment) do
     if comment.comment do
-      SanbaseWeb.GenericAdmin.Subscription.href(
+      SanbaseWeb.GenericAdmin.resource_link(
         "comments",
         comment.comment_id,
         comment.comment.content
@@ -264,12 +259,7 @@ defmodule SanbaseWeb.GenericAdmin.UserTrigger do
       index_fields: [:id, :user_id, :trigger],
       edit_fields: [:user, :is_public, :is_featured],
       belongs_to_fields: %{
-        user: %{
-          query: from(u in Sanbase.Accounts.User, order_by: [desc: u.id]),
-          transform: fn rows -> Enum.map(rows, &{&1.email, &1.id}) end,
-          resource: "users",
-          search_fields: [:email, :username]
-        }
+        user: SanbaseWeb.GenericAdmin.belongs_to_user()
       },
       fields_override: %{
         user_id: %{

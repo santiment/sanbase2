@@ -26,24 +26,12 @@ defmodule SanbaseWeb.GenericAdmin.Subscription do
 
   def plan_func(row) do
     link_content = "#{row.plan.product.name}/#{row.plan.name}"
-    href("plans", row.plan_id, link_content)
+    SanbaseWeb.GenericAdmin.resource_link("plans", row.plan_id, link_content)
   end
 
   def user_func(row) do
     link_content = row.user.email || row.user.username || row.user.id
-    href("users", row.user_id, link_content)
-  end
-
-  def href(resource, id, label) do
-    relative_url =
-      SanbaseWeb.Router.Helpers.generic_admin_path(SanbaseWeb.Endpoint, :show, id,
-        resource: resource
-      )
-
-    PhoenixHTMLHelpers.Link.link(label,
-      to: relative_url,
-      class: "text-blue-600 hover:text-blue-800"
-    )
+    SanbaseWeb.GenericAdmin.resource_link("users", row.user_id, link_content)
   end
 end
 
@@ -94,13 +82,11 @@ defmodule SanbaseWeb.GenericAdmin.Product do
   end
 
   def product_link(row) do
-    SanbaseWeb.GenericAdmin.Subscription.href("products", row.product_id, row.product.name)
+    SanbaseWeb.GenericAdmin.resource_link("products", row.product_id, row.product.name)
   end
 end
 
 defmodule SanbaseWeb.GenericAdmin.PromoTrial do
-  import Ecto.Query
-
   alias Sanbase.Billing.Subscription.PromoTrial
 
   def schema_module, do: PromoTrial
@@ -112,12 +98,7 @@ defmodule SanbaseWeb.GenericAdmin.PromoTrial do
       new_fields: [:user, :trial_days, :plans],
       index_fields: [:id, :user_id, :plans, :trial_days, :created_at, :updated_at],
       belongs_to_fields: %{
-        user: %{
-          query: from(u in Sanbase.Accounts.User, order_by: [desc: u.id]),
-          transform: fn rows -> Enum.map(rows, &{&1.email, &1.id}) end,
-          resource: "users",
-          search_fields: [:email, :username]
-        }
+        user: SanbaseWeb.GenericAdmin.belongs_to_user()
       },
       fields_override: %{
         user_id: %{

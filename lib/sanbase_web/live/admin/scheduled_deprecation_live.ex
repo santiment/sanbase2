@@ -1,7 +1,6 @@
 defmodule SanbaseWeb.ScheduledDeprecationLive do
   use SanbaseWeb, :live_view
   require Logger
-  import SanbaseWeb.CoreComponents
   import PhoenixHTMLHelpers.Tag
 
   alias Sanbase.Notifications.DeprecationTemplates

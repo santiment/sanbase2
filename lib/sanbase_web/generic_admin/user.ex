@@ -212,7 +212,7 @@ defmodule SanbaseWeb.GenericAdmin.User do
 
   def user_link(row) do
     if row.user_id do
-      SanbaseWeb.GenericAdmin.Subscription.href(
+      SanbaseWeb.GenericAdmin.resource_link(
         "users",
         row.user_id,
         row.user.email || row.user.username
@@ -302,7 +302,7 @@ defmodule SanbaseWeb.GenericAdmin.UserList do
 
   def user_list_link(row) do
     if row.user_list_id do
-      SanbaseWeb.GenericAdmin.Subscription.href(
+      SanbaseWeb.GenericAdmin.resource_link(
         "user_lists",
         row.user_list_id,
         row.user_list.name

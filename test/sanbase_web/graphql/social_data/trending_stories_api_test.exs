@@ -25,7 +25,7 @@ defmodule SanbaseWeb.Graphql.TrendingStoriesApiTest do
 
       rows = trending_stories_rows(context)
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
       |> Sanbase.Mock.run_with_mocks(fn ->
         args = %{from: dt1, to: dt3, interval: "1d", size: 2}
 
@@ -101,7 +101,7 @@ defmodule SanbaseWeb.Graphql.TrendingStoriesApiTest do
 
       rows = trending_stories_rows(context)
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
       |> Sanbase.Mock.run_with_mocks(fn ->
         args = %{from: from, to: now, interval: "1d", size: 2}
 

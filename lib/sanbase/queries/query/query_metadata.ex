@@ -63,16 +63,4 @@ defmodule Sanbase.Queries.QueryMetadata do
   def system_user do
     %Sanbase.Accounts.User{id: -1}
   end
-
-  def sanitize(map) do
-    Map.new(map, fn {key, value} ->
-      case is_binary(value) do
-        # Remove questionmarks and single-quotes. Having them in the query
-        # causes the query to fail because of the positional parameters and string
-        # variables
-        true -> {key, String.replace(value, ~r/['?]/, "")}
-        false -> {key, value}
-      end
-    end)
-  end
 end

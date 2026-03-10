@@ -151,7 +151,7 @@ defmodule Sanbase.DashboardsTest do
         query_metadata: query_metadata
       } = context
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, result_mock()})
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, result_mock()})
       |> Sanbase.Mock.run_with_mocks(fn ->
         {:ok, result} =
           Queries.run_query(query, user, query_metadata, store_execution_details: false)
@@ -233,7 +233,7 @@ defmodule Sanbase.DashboardsTest do
         query_metadata: query_metadata
       } = context
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, result_mock()})
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, result_mock()})
       |> Sanbase.Mock.run_with_mocks(fn ->
         assert {:ok, result} =
                  Sanbase.Queries.run_query(query, user2, query_metadata,
@@ -256,7 +256,7 @@ defmodule Sanbase.DashboardsTest do
   end
 
   defp result_mock() do
-    %Clickhousex.Result{
+    %{
       query_id: "1774C4BC91E05698",
       summary: %{
         "read_bytes" => "408534",

@@ -39,7 +39,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressLabelChangesApiTest do
           fn -> {:ok, %{rows: label_changes_rows}} end,
           fn -> {:ok, %{rows: label_rows}} end
         ],
-        arity: 2
+        arity: 3
       )
 
     Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)

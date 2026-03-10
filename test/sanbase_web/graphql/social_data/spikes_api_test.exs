@@ -25,7 +25,7 @@ defmodule SanbaseWeb.Graphql.SocialDataSpikesApiTest do
       ]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       query =
         get_metric_spike_explanations_query(%{
@@ -62,7 +62,7 @@ defmodule SanbaseWeb.Graphql.SocialDataSpikesApiTest do
       [DateTime.to_unix(~U[2024-01-02 10:00:00Z]), 8]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       query =
         get_metric_spike_explanations_count_query(%{
@@ -89,7 +89,7 @@ defmodule SanbaseWeb.Graphql.SocialDataSpikesApiTest do
   test "get metric spike explanations metadata count", context do
     insert(:project, slug: "bitcoin", ticker: "BTC", name: "Bitcoin")
 
-    Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, fn query, _ ->
+    Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, fn query, _, _ ->
       if String.contains?(query, "DISTINCT get_metric_name(calculated_on_metric_id)") do
         # That's the internal name in the DB
         {:ok, %{rows: [["social_dominance_1h"]]}}

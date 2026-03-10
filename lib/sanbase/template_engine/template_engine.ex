@@ -14,7 +14,7 @@ defmodule Sanbase.TemplateEngine do
   @typedoc ~s"""
   The TemplateEngine function can accept the following options:
     - params: A map of key-value pairs that will be used to replace the simple keys in the template.
-      The simple keys are the onces that are in the format {{<param_name}}.
+      The simple keys are the ones that are in the format {{<param_name>}}.
     - env: A SanLang environment that will be used to evaluate the code templates in the template.
   """
   @type opts :: [option()]
@@ -93,48 +93,136 @@ defmodule Sanbase.TemplateEngine do
   end
 
   @doc ~s"""
-  Run the template engine and generate a new template and a list of positional params
+  Run the template engine and generate a new template and a map of named params
   that can be used in Clickhouse queries.
 
-  The templates are replaced not with the actual value, but with a placeholder like ?1, ?2, etc.
-  which correspond to the position of the value in the list of positional params.
-  The indexes start from 1.
+  The templates are replaced not with the actual value, but with a typed placeholder
+  like `{limit:UInt8}`, `{slug:String}`, etc. which correspond to the values
+  in the returned params map.
+
+  Supports:
+  - `{{key:inline}}` — direct string substitution (no placeholder, validated for safety)
+  - `{{key:UInt64}}` — explicit CH type override (any known CH type)
+  - `{{key}}` — auto-inferred type from the Elixir value
+  - `{% code %}` — code evaluation, auto-inferred type
 
     Examples:
-      iex> run_generate_positional_params("My name is {{name}}", params: %{name: "San"})
-      {:ok, {"My name is ?1", ["San"]}}
+      iex> run_generate_clickhouse_params("My name is {{name}}", params: %{name: "San"})
+      {:ok, {"My name is {name:String}", %{"name" => "San"}}}
 
-      iex> run_generate_positional_params("{{name}} is {% 20 + 8 %} years old", params: %{name: "Tom"})
-      {:ok, {"?1 is ?2 years old", ["Tom", 28]}}
+      iex> run_generate_clickhouse_params("{{name}} is {% 20 + 8 %} years old", params: %{name: "Tom"})
+      {:ok, {"{name:String} is {expr_1:Int32} years old", %{"name" => "Tom", "expr_1" => 28}}}
 
-      iex> run_generate_positional_params("param name is reused {{name}} {{name}} is {% 20 + 8 %} years old {{name}}", params: %{name: "Tom"})
-      {:ok, {"param name is reused ?1 ?1 is ?2 years old ?1", ["Tom", 28]}}
+      iex> run_generate_clickhouse_params("param name is reused {{name}} {{name}} is {% 20 + 8 %} years old {{name}}", params: %{name: "Tom"})
+      {:ok,
+       {"param name is reused {name:String} {name:String} is {expr_1:Int32} years old {name:String}",
+        %{"name" => "Tom", "expr_1" => 28}}}
   """
-  @spec run_generate_positional_params(String.t(), opts) :: {String.t(), list(any())}
-  def run_generate_positional_params(template, opts) do
+  @spec run_generate_clickhouse_params(String.t(), opts) ::
+          {:ok, {String.t(), map()}} | {:error, String.t()}
+  def run_generate_clickhouse_params(template, opts) do
     params = Keyword.get(opts, :params, %{}) |> Map.new(fn {k, v} -> {to_string(k), v} end)
     env = Keyword.get(opts, :env, Sanbase.SanLang.Environment.new())
 
     with {:ok, captures} <- TemplateEngine.Captures.extract_captures(template),
-         {:ok, result} <- do_run_generate_positional_params(template, captures, params, env) do
+         {:ok, result} <- do_run_generate_clickhouse_params(template, captures, params, env) do
       {:ok, result}
     end
   end
 
+  @deprecated "Use run_generate_clickhouse_params/2 instead"
+  @spec run_generate_positional_params(String.t(), opts) ::
+          {:ok, {String.t(), map()}} | {:error, String.t()}
+  def run_generate_positional_params(template, opts) do
+    run_generate_clickhouse_params(template, opts)
+  end
+
   # Private
 
-  defp do_run_generate_positional_params(template, captures, params, env) do
-    {sql, args, errors, _position} =
+  # Transform a template with `{{key}}` placeholders into a ClickHouse query with
+  # typed named parameters (`{from:Int32}`, `{slug:String}`, etc.) and a matching
+  # parameter map.
+  #
+  # ## Placeholder modes
+  #
+  # Each `{{key}}` placeholder is classified into one of these modes:
+  #
+  #   - **Inline** (`{{key:inline}}`) — the value is substituted directly into the SQL
+  #     string (no placeholder). Only alphanumeric, underscore, and dot characters
+  #     are allowed (validated to prevent injection).
+  #
+  #   - **Value** (`{{key}}` or `{{key:UInt64}}`) — the value becomes a named
+  #     parameter. The ClickHouse type is either inferred from the Elixir value or
+  #     taken from the explicit override.
+  #
+  #   - **Human-readable** (`{{key:human_readable}}`) — the value is formatted for
+  #     display (e.g., `100000` → `"100,000.00"`) and then treated as a named
+  #     String parameter.
+  #
+  #   - **Code** (`{% expr %}`) — the expression is evaluated and the result becomes
+  #     a named parameter with an inferred type. Code captures are never deduplicated.
+  #
+  # ## Deduplication
+  #
+  # When the same key appears multiple times, we want to reuse the same named
+  # parameter instead of creating duplicates. The dedup key is a tuple of
+  # `{base_key, mode, ch_type}`:
+  #
+  #   - `{{slug}}` twice → same dedup key `{"slug", :value, "String"}` → reuses `{slug:String}`
+  #   - `{{slug}}` and `{{slug:human_readable}}` → different modes → separate parameters
+  #   - `{{num}}` and `{{num:UInt8}}` → same mode `:value` but different ch_type →
+  #     separate parameters
+  #   - `{{num:UInt8}}` twice → same dedup key → reuses the same parameter name
+  #
+  # ## Accumulator
+  #
+  # The reduce accumulator is a 6-tuple:
+  # `{sql, args, errors, position, key_positions, used_param_names}`
+  #
+  #   - `sql` — the template string being progressively rewritten
+  #   - `args` — string-keyed argument map
+  #   - `errors` — collected missing-parameter errors
+  #   - `position` — next available index for generated expression names
+  #   - `key_positions` — map from dedup key to `{param_name, ch_type}` for reuse
+  #   - `used_param_names` — set of already allocated parameter names
+  defp do_run_generate_clickhouse_params(template, captures, params, env) do
+    {sql, args, errors, _position, _key_positions, _used_param_names} =
       Enum.reduce(
         captures,
-        {template, _args = [], _errors = [], _position = 1},
+        {template, _args = %{}, _errors = [], _position = 0, _key_positions = %{},
+         _used_param_names = MapSet.new()},
         fn
-          %{code?: false} = capture_map, {template_acc, args_acc, errors, position} ->
-            case get_value_from_params(capture_map.inner_content, params) do
-              {:ok, value} ->
-                template_acc = String.replace(template_acc, capture_map.key, "?#{position}")
-                args_acc = [value | args_acc]
-                {template_acc, args_acc, errors, position + 1}
+          %{code?: false} = capture_map,
+          {template_acc, args_acc, errors, position, key_positions, used_param_names} ->
+            case get_value_with_type_info(capture_map.inner_content, params) do
+              {:ok, value, :inline} ->
+                inline_value = to_string(value)
+                validate_inline_value!(inline_value, capture_map.key)
+                template_acc = String.replace(template_acc, capture_map.key, inline_value)
+                {template_acc, args_acc, errors, position, key_positions, used_param_names}
+
+              {:ok, value, type_or_nil} ->
+                ch_type = resolve_ch_type(value, type_or_nil)
+                dedup_key = extract_dedup_key(capture_map.inner_content, ch_type)
+
+                case Map.get(key_positions, dedup_key) do
+                  nil ->
+                    {base_key, _suffix} = split_key_modifier(capture_map.inner_content)
+                    param_name = next_param_name(base_key, used_param_names, position)
+                    placeholder = "{#{param_name}:#{ch_type}}"
+                    template_acc = String.replace(template_acc, capture_map.key, placeholder)
+                    args_acc = Map.put(args_acc, param_name, value)
+                    key_positions = Map.put(key_positions, dedup_key, {param_name, ch_type})
+                    used_param_names = MapSet.put(used_param_names, param_name)
+
+                    {template_acc, args_acc, errors, position + 1, key_positions,
+                     used_param_names}
+
+                  {existing_param_name, existing_type} ->
+                    placeholder = "{#{existing_param_name}:#{existing_type}}"
+                    template_acc = String.replace(template_acc, capture_map.key, placeholder)
+                    {template_acc, args_acc, errors, position, key_positions, used_param_names}
+                end
 
               :no_value ->
                 error = %{
@@ -143,20 +231,25 @@ defmodule Sanbase.TemplateEngine do
                 }
 
                 errors = [error | errors]
-                {template_acc, args_acc, errors, position + 1}
+                {template_acc, args_acc, errors, position, key_positions, used_param_names}
             end
 
-          %{code?: true} = capture_map, {template_acc, args_acc, errors, position} ->
+          %{code?: true} = capture_map,
+          {template_acc, args_acc, errors, position, key_positions, used_param_names} ->
             execution_result = CodeEvaluation.eval(capture_map, env)
-            template_acc = String.replace(template_acc, capture_map.key, "?#{position}")
-            args_acc = [execution_result | args_acc]
-            {template_acc, args_acc, errors, position + 1}
+            ch_type = resolve_ch_type(execution_result, nil)
+            param_name = next_param_name("expr_#{position}", used_param_names, position)
+            placeholder = "{#{param_name}:#{ch_type}}"
+            template_acc = String.replace(template_acc, capture_map.key, placeholder)
+            args_acc = Map.put(args_acc, param_name, execution_result)
+            used_param_names = MapSet.put(used_param_names, param_name)
+            {template_acc, args_acc, errors, position + 1, key_positions, used_param_names}
         end
       )
 
     case errors do
       [] ->
-        {:ok, {sql, Enum.reverse(args)}}
+        {:ok, {sql, args}}
 
       _ ->
         missing_keys = Enum.map(errors, & &1.key) |> Enum.join(", ")
@@ -170,6 +263,37 @@ defmodule Sanbase.TemplateEngine do
           """
 
         {:error, error_str}
+    end
+  end
+
+  defp extract_dedup_key(inner_content, ch_type) do
+    {base_key, suffix} = split_key_modifier(inner_content)
+
+    mode =
+      case classify_suffix(suffix) do
+        :human_readable -> :human_readable
+        :inline -> :inline
+        {:ch_type, _} -> :value
+        nil -> :value
+      end
+
+    {base_key, mode, ch_type}
+  end
+
+  defp resolve_ch_type(value, nil) do
+    Sanbase.Clickhouse.Type.infer(value) |> IO.iodata_to_binary()
+  end
+
+  defp resolve_ch_type(_value, type_override) when is_binary(type_override) do
+    type_override
+  end
+
+  defp validate_inline_value!(value, key) do
+    unless Regex.match?(~r/^[a-zA-Z0-9_.]+$/, value) do
+      raise TemplateEngineError,
+        message:
+          "Inline value for #{key} contains invalid characters. " <>
+            "Only alphanumeric characters, underscores, and dots are allowed. Got: #{value}"
     end
   end
 
@@ -196,26 +320,89 @@ defmodule Sanbase.TemplateEngine do
   end
 
   defp get_value_from_params(key, params) when is_binary(key) do
-    {key, modifier} =
-      case String.split(key, ":") do
-        [key] -> {key, nil}
-        [key, modifier] -> {key, modifier}
-      end
+    {key, modifier} = split_key_modifier(key)
 
-    case Map.get(params, key) do
-      nil -> :no_value
-      value -> {:ok, maybe_apply_modifier(value, key, modifier)}
+    case Map.fetch(params, key) do
+      :error -> :no_value
+      {:ok, value} -> {:ok, maybe_apply_modifier(value, key, modifier)}
     end
   end
 
-  defp maybe_apply_modifier(value, _key, "human_readable"), do: human_readable(value)
-  defp maybe_apply_modifier(value, _key, nil), do: value
+  defp get_value_with_type_info(key, params) when is_binary(key) do
+    {key, suffix} = split_key_modifier(key)
 
-  defp maybe_apply_modifier(_, key, modifier),
-    do:
-      raise(TemplateEngineError,
-        message: """
-        Unsupported or mistyped modifier '#{modifier}' for key '#{key}'
-        """
-      )
+    case Map.fetch(params, key) do
+      :error ->
+        :no_value
+
+      {:ok, value} ->
+        case classify_suffix(suffix) do
+          :human_readable -> {:ok, human_readable(value), nil}
+          :inline -> {:ok, value, :inline}
+          {:ch_type, type} -> {:ok, value, type}
+          nil -> {:ok, value, nil}
+        end
+    end
+  end
+
+  defp split_key_modifier(key) do
+    case String.split(key, ":", parts: 2) do
+      [key] -> {key, nil}
+      [key, modifier] -> {key, modifier}
+    end
+  end
+
+  defp classify_suffix(nil), do: nil
+  defp classify_suffix("human_readable"), do: :human_readable
+  defp classify_suffix("inline"), do: :inline
+
+  defp classify_suffix(suffix) do
+    if Sanbase.Clickhouse.Type.known_ch_type?(suffix) do
+      {:ch_type, suffix}
+    else
+      raise TemplateEngineError,
+        message: "Unsupported or mistyped modifier '#{suffix}'"
+    end
+  end
+
+  defp maybe_apply_modifier(value, _key, nil), do: value
+  defp maybe_apply_modifier(value, _key, "human_readable"), do: human_readable(value)
+
+  defp maybe_apply_modifier(_value, key, modifier) do
+    raise TemplateEngineError,
+      message:
+        "Modifier '#{modifier}' on key '#{key}' is only supported in ClickHouse param " <>
+          "generation (run_generate_clickhouse_params/2), not in run/2"
+  end
+
+  defp next_param_name(base_name, used_param_names, suffix) do
+    candidate = sanitize_param_name(base_name)
+
+    cond do
+      not MapSet.member?(used_param_names, candidate) ->
+        candidate
+
+      true ->
+        # If some params need sanitization, or come from code templates,
+        # their sanitized name can be duplicated, so we add a suffix here.
+        next_param_name("#{candidate}_#{suffix}", used_param_names, suffix + 1)
+    end
+  end
+
+  defp sanitize_param_name(name) do
+    sanitized =
+      name
+      |> to_string()
+      # Replace all non-alphanum/underscore with underscore as Clickhouse accepts only that
+      # my-metric.name will become my_metric_name
+      |> String.replace(~r/[^a-zA-Z0-9_]/, "_")
+      |> String.trim("_")
+
+    cond do
+      sanitized == "" -> "param"
+      # If the sanitized name starts with a number, put `param_` prefix
+      String.match?(sanitized, ~r/^[0-9]/) -> "param_#{sanitized}"
+      true -> sanitized
+    end
+  end
 end

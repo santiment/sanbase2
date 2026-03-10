@@ -81,7 +81,7 @@ defmodule SanbaseWeb.Graphql.WatchlistHistoricalStatsApiTest do
       }
     }
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: data}})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: data}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result = get_watchlist_historical_stats(conn, from, to, watchlist)
       assert result == expected_result
@@ -102,7 +102,7 @@ defmodule SanbaseWeb.Graphql.WatchlistHistoricalStatsApiTest do
 
     error_msg = "Clickhouse error"
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, error_msg})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:error, error_msg})
     |> Sanbase.Mock.run_with_mocks(fn ->
       assert capture_log(fn ->
                %{"errors" => [error]} = get_watchlist_historical_stats(conn, from, to, watchlist)

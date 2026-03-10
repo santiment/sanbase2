@@ -66,7 +66,7 @@ defmodule SanbaseWeb.Graphql.EcosystemsApiTest do
       ["ethereum", 1_712_793_600, 1126.0]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       data =
         get_ecosystems_timeseries_data(context.conn, ["ethereum"], %{
@@ -104,7 +104,7 @@ defmodule SanbaseWeb.Graphql.EcosystemsApiTest do
       ["ethereum", 1_712_793_600, 1126.0]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       data =
         get_ecosystems_timeseries_data(context.conn, ["ethereum"], %{
@@ -139,7 +139,7 @@ defmodule SanbaseWeb.Graphql.EcosystemsApiTest do
       ["bitcoin", 1212.4]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       data =
         get_ecosystems_aggregated_timeseries_data(

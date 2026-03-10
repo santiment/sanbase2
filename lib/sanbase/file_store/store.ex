@@ -5,7 +5,7 @@ defmodule Sanbase.FileStore do
   @acl :public_read
   @extension_whitelist ~w(.jpg .jpeg .gif .png .pdf .csv .mp4)
   @max_file_size 10 * 1024 * 1024
-  @admin_max_file_size 20 * 1024 * 1024
+  @admin_max_file_size 50 * 1024 * 1024
   @cache_max_age 2_592_000
 
   def allowed_extensions(), do: @extension_whitelist

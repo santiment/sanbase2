@@ -47,7 +47,7 @@ defmodule SanbaseWeb.Graphql.NftTradesApiTest do
       ]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       from = ~U[2021-11-01 00:00:00Z]
       to = ~U[2021-12-15 00:00:00Z]
@@ -124,7 +124,7 @@ defmodule SanbaseWeb.Graphql.NftTradesApiTest do
 
     rows = [["BAYC"]]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       assert execute_query(context.conn, query, "getNftCollectionByContract")["nftCollection"] ==
                "BAYC"

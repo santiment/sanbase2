@@ -15,7 +15,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressTransactionsApiTest do
         fn -> {:ok, %{rows: eth_recent_transactions_result()}} end,
         fn -> {:ok, %{rows: labels_rows()}} end
       ]
-      |> Sanbase.Mock.wrap_consecutives(arity: 2)
+      |> Sanbase.Mock.wrap_consecutives(arity: 3)
 
     Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -31,7 +31,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressTransactionsApiTest do
         fn -> {:ok, %{rows: token_recent_transactions_result(context.project)}} end,
         fn -> {:ok, %{rows: labels_rows()}} end
       ]
-      |> Sanbase.Mock.wrap_consecutives(arity: 2)
+      |> Sanbase.Mock.wrap_consecutives(arity: 3)
 
     Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -45,7 +45,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressTransactionsApiTest do
   @tag capture_log: true
   test "error when fetching recent transactions", context do
     Sanbase.Mock.prepare_mock2(
-      &Sanbase.ClickhouseRepo.query/2,
+      &Sanbase.ClickhouseRepo.query/3,
       {:error, "Internal error message"}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->

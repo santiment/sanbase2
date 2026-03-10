@@ -43,7 +43,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.TableSqlQuery do
 
   defp generate_query_and_params(slugs) do
     # Build as string part of the query so that it can be interpolated in the full query.
-    # It is built with positional parameters so the user input can be passed as
+    # It is built with named parameters so the user input can be passed as
     # parameters and not directly interpolated in the string. This allows for an
     # arbitrary number of slugs and to control their order.
     {slug_params, query_str} =

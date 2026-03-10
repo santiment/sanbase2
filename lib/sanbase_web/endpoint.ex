@@ -57,8 +57,11 @@ defmodule SanbaseWeb.Endpoint do
   # request body and it can be read only once and if used anywhere else should be stored
   plug(SanbaseWeb.Plug.VerifyStripeWebhook)
 
+  # The parser lenght is bigger than the FileStore limit intentionally.
+  # Plug.Parsers.length applies to the full multipart body before Sanbase.FileStore.validate/1 runs
+  # and it will include headers, and possibly other parts of the request
   parser_length =
-    if System.get_env("CONTAINER_TYPE") in ["admin", "all"], do: 20_000_000, else: 8_000_000
+    if System.get_env("CONTAINER_TYPE") in ["admin", "all"], do: 60_000_000, else: 15_000_000
 
   plug(
     Plug.Parsers,

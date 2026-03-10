@@ -174,7 +174,7 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
             fn -> {:ok, mocked_clickhouse_result()} end,
             fn -> {:ok, mocked_execution_details_result()} end
           ],
-          arity: 2
+          arity: 3
         )
 
       Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
@@ -224,7 +224,7 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
             fn -> {:ok, mocked_clickhouse_result()} end,
             fn -> {:ok, mocked_execution_details_result()} end
           ],
-          arity: 2
+          arity: 3
         )
 
       Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
@@ -268,7 +268,7 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
             fn -> {:ok, mocked_clickhouse_result()} end,
             fn -> {:ok, mocked_execution_details_result()} end
           ],
-          arity: 2
+          arity: 3
         )
 
       Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
@@ -315,7 +315,7 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
             fn -> {:ok, mocked_clickhouse_result()} end,
             fn -> {:ok, mocked_execution_details_result()} end
           ],
-          arity: 2
+          arity: 3
         )
 
       Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
@@ -365,7 +365,7 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
             fn -> {:ok, mocked_clickhouse_result()} end,
             fn -> {:ok, mocked_execution_details_result()} end
           ],
-          arity: 2
+          arity: 3
         )
 
       Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
@@ -425,7 +425,7 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
       {:ok, query} = create_query(context.user.id)
 
       Sanbase.Mock.prepare_mock2(
-        &Sanbase.ClickhouseRepo.query/2,
+        &Sanbase.ClickhouseRepo.query/3,
         {:ok, mocked_clickhouse_result()}
       )
       |> Sanbase.Mock.run_with_mocks(fn ->
@@ -586,7 +586,7 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
              }}
           end
         ]
-        |> Sanbase.Mock.wrap_consecutives(arity: 2)
+        |> Sanbase.Mock.wrap_consecutives(arity: 3)
 
       Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
       |> Sanbase.Mock.run_with_mocks(fn ->

@@ -1,6 +1,6 @@
 defmodule Sanbase.QueriesMocks do
   def mocked_clickhouse_result(slug \\ "bitcoin") do
-    %Clickhousex.Result{
+    %{
       columns: ["asset_id", "metric_id", "dt", "value", "computed_at"],
       column_types: ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
       command: :selected,
@@ -21,7 +21,7 @@ defmodule Sanbase.QueriesMocks do
   end
 
   def mocked_execution_details_result() do
-    %Clickhousex.Result{
+    %{
       query_id: "1774C4BC91E058D4",
       summary: %{
         "read_bytes" => "5069080",

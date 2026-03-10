@@ -104,6 +104,12 @@ defmodule Sanbase.Clickhouse.Label do
 
   def add_labels(slug, maps) when is_list(maps) do
     addresses = get_list_of_addresses(maps)
+    add_labels_for_addresses(slug, maps, addresses)
+  end
+
+  defp add_labels_for_addresses(_slug, maps, []), do: {:ok, maps}
+
+  defp add_labels_for_addresses(slug, maps, addresses) do
     blockchain = slug_to_blockchain(slug)
     query_struct = addresses_labels_query(slug, blockchain, addresses)
 
@@ -364,7 +370,7 @@ defmodule Sanbase.Clickhouse.Label do
                     FROM
                         current_label_addresses
                     WHERE
-                        address IN [{{addresses}}] AND blockchain = {{blockchain}}
+                        address IN ({{addresses}}) AND blockchain = {{blockchain}}
                 ) AS a
             LEFT JOIN
               (

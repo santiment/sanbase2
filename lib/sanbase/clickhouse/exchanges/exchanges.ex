@@ -5,26 +5,32 @@ defmodule Sanbase.Clickhouse.Exchanges do
   import Sanbase.Metric.SqlQuery.Helper, only: [asset_id_filter: 2]
 
   def top_exchanges_by_balance(%{slug: slug}, limit, _opts \\ []) when is_binary(slug) do
-    query_struct = top_exchanges_by_balance_query(slug, limit)
+    case top_exchanges_by_balance_query(slug, limit) do
+      {:error, _} = error ->
+        error
 
-    ClickhouseRepo.query_transform(
-      query_struct,
-      fn [owner, label, balance, change_1d, change_7d, change_30d, first_seen_ts] ->
-        first_seen_dt = if first_seen_ts, do: DateTime.from_unix!(first_seen_ts)
+      %Sanbase.Clickhouse.Query{} = query_struct ->
+        ClickhouseRepo.query_transform(
+          query_struct,
+          fn [owner, label, balance, change_1d, change_7d, change_30d, first_seen_ts] ->
+            first_seen_dt = if first_seen_ts, do: DateTime.from_unix!(first_seen_ts)
 
-        %{
-          owner: owner,
-          label: label,
-          balance: balance,
-          balance_change1d: change_1d,
-          balance_change7d: change_7d,
-          balance_change30d: change_30d,
-          datetime_of_first_transfer: first_seen_dt,
-          days_since_first_transfer:
-            if(first_seen_dt, do: DateTime.diff(DateTime.utc_now(), first_seen_dt, :day) |> abs())
-        }
-      end
-    )
+            %{
+              owner: owner,
+              label: label,
+              balance: balance,
+              balance_change1d: change_1d,
+              balance_change7d: change_7d,
+              balance_change30d: change_30d,
+              datetime_of_first_transfer: first_seen_dt,
+              days_since_first_transfer:
+                if(first_seen_dt,
+                  do: DateTime.diff(DateTime.utc_now(), first_seen_dt, :day) |> abs()
+                )
+            }
+          end
+        )
+    end
   end
 
   def owners_by_slug_and_metric(metric, slug) do
@@ -61,10 +67,17 @@ defmodule Sanbase.Clickhouse.Exchanges do
   end
 
   defp top_exchanges_by_balance_query(slug, limit) do
+    case Sanbase.Project.slug_to_blockchain(slug) do
+      {:error, _} = error -> error
+      blockchain -> do_top_exchanges_by_balance_query(slug, limit, blockchain)
+    end
+  end
+
+  defp do_top_exchanges_by_balance_query(slug, limit, blockchain) do
     params = %{
       slug: slug,
       limit: limit,
-      blockchain: Sanbase.Project.slug_to_blockchain(slug)
+      blockchain: blockchain
     }
 
     sql = """

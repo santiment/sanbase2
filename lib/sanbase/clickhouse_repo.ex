@@ -9,7 +9,7 @@ defmodule Sanbase.ClickhouseRepo do
   """
 
   env = Application.compile_env(:sanbase, :env)
-  @adapter if env == :test, do: Ecto.Adapters.Postgres, else: ClickhouseEcto
+  @adapter if env == :test, do: Ecto.Adapters.Postgres, else: Ecto.Adapters.ClickHouse
 
   use Ecto.Repo, otp_app: :sanbase, adapter: @adapter
 
@@ -41,10 +41,19 @@ defmodule Sanbase.ClickhouseRepo do
 
   @doc ~s"""
   Execute a query and apply `transform_fn/1` on each row of the result.
+
+  ## Example
+
+      query = Sanbase.Clickhouse.Query.new(
+        "SELECT slug, price FROM metrics WHERE slug = {{slug}}",
+        %{slug: "bitcoin"}
+      )
+
+      {:ok, results} = ClickhouseRepo.query_transform(query, fn [slug, price] -> {slug, price} end)
   """
   @spec query_transform(Sanbase.Clickhouse.Query.t(), (list() -> any())) ::
           {:ok, any()} | {:error, String.t()}
-  @spec query_transform(String.t(), list(), (list() -> any())) ::
+  @spec query_transform(String.t(), list() | map(), (list() -> any())) ::
           {:ok, any()} | {:error, String.t()}
   def query_transform(%Sanbase.Clickhouse.Query{} = query, transform_fn) do
     query = add_metadata_to_query(query)
@@ -95,7 +104,7 @@ defmodule Sanbase.ClickhouseRepo do
   """
   @spec query_transform_with_metadata(Sanbase.Clickhouse.Query.t(), (list() -> list())) ::
           {:ok, Map.t()} | {:error, String.t()}
-  @spec query_transform_with_metadata(String.t(), list(), (list() -> list())) ::
+  @spec query_transform_with_metadata(String.t(), list() | map(), (list() -> list())) ::
           {:ok, Map.t()} | {:error, String.t()}
   def query_transform_with_metadata(%Sanbase.Clickhouse.Query{} = query, transform_fn) do
     query = add_metadata_to_query(query)
@@ -106,15 +115,15 @@ defmodule Sanbase.ClickhouseRepo do
   end
 
   def query_transform_with_metadata(query, args, transform_fn) do
-    case execute_query_transform(query, args, propagate_error: true) do
-      {:ok, result} ->
+    case execute_query_transform_with_metadata(query, args, propagate_error: true) do
+      {:ok, metadata} ->
         {:ok,
          %{
-           rows: Enum.map(result.rows, transform_fn),
-           column_names: result.columns,
-           column_types: result.column_types,
-           query_id: result.query_id,
-           summary: result.summary
+           rows: Enum.map(metadata.rows, transform_fn),
+           column_names: metadata.column_names,
+           column_types: metadata.column_types,
+           query_id: metadata.query_id,
+           summary: metadata.summary
          }}
 
       {:error, error} ->
@@ -129,12 +138,21 @@ defmodule Sanbase.ClickhouseRepo do
 
   @doc ~s"""
   Execute a query and reduce all the rows, starting with `init` as initial accumulator
-  and using `reduce` for every row
+  and using `reducer` for every row.
+
+  ## Example
+
+      query = Sanbase.Clickhouse.Query.new(
+        "SELECT price FROM metrics WHERE slug = {{slug}}",
+        %{slug: "bitcoin"}
+      )
+
+      {:ok, sum} = ClickhouseRepo.query_reduce(query, 0, fn [price], acc -> acc + price end)
   """
   @spec query_reduce(Sanbase.Clickhouse.Query.t(), acc, (list(), acc -> acc)) ::
           {:ok, Map.t()} | {:error, String.t()}
         when acc: any
-  @spec query_reduce(String.t(), list(), acc, (list(), acc -> acc)) ::
+  @spec query_reduce(String.t(), list() | map(), acc, (list(), acc -> acc)) ::
           {:ok, Map.t()} | {:error, String.t()}
         when acc: any
   def query_reduce(%Sanbase.Clickhouse.Query{} = query, init, reducer) do
@@ -146,13 +164,10 @@ defmodule Sanbase.ClickhouseRepo do
   end
 
   def query_reduce(query, args, init, reducer) do
-    ordered_params = order_params(query, args)
-    sanitized_query = sanitize_query(query)
+    maybe_store_executed_clickhouse_sql(query, args)
+    maybe_print_interpolated_query(query, args)
 
-    maybe_store_executed_clickhouse_sql(sanitized_query, ordered_params)
-    maybe_print_interpolated_query(sanitized_query, ordered_params)
-
-    case __MODULE__.query(sanitized_query, ordered_params) do
+    case __MODULE__.query(query, args, []) do
       {:ok, result} ->
         {:ok, Enum.reduce(result.rows, init, reducer)}
 
@@ -165,18 +180,33 @@ defmodule Sanbase.ClickhouseRepo do
   end
 
   defp execute_query_transform(query, args, opts \\ []) do
-    ordered_params = order_params(query, args)
-    sanitized_query = sanitize_query(query)
+    maybe_store_executed_clickhouse_sql(query, args)
+    maybe_print_interpolated_query(query, args)
 
-    maybe_store_executed_clickhouse_sql(sanitized_query, ordered_params)
-    maybe_print_interpolated_query(sanitized_query, ordered_params)
-
-    case __MODULE__.query(sanitized_query, ordered_params) do
+    case __MODULE__.query(query, args, []) do
       {:ok, result} ->
         {:ok, result}
 
       {:error, error} ->
         log_and_return_error(error, "query_transform/3", opts)
+    end
+  end
+
+  defp execute_query_transform_with_metadata(query, args, opts) do
+    maybe_store_executed_clickhouse_sql(query, args)
+    maybe_print_interpolated_query(query, args)
+
+    # Pass decode: false so the `ch` driver returns the raw RowBinary
+    # response (binary data + HTTP headers) instead of decoded rows.
+    # We then decode manually in decode_result_with_metadata/1 to
+    # extract column_types, query_id, and summary — metadata that the
+    # driver's default decode path discards.
+    case __MODULE__.query(query, args, decode: false) do
+      {:ok, result} ->
+        {:ok, decode_result_with_metadata(result)}
+
+      {:error, error} ->
+        log_and_return_error(error, "query_transform_with_metadata/3", opts)
     end
   end
 
@@ -215,47 +245,6 @@ defmodule Sanbase.ClickhouseRepo do
     {:error, "[#{log_id}] #{if propagate_error, do: error_message, else: @masked_error_message}"}
   end
 
-  @doc ~s"""
-  Replace positional params denoted as `?1`, `?2`, etc. with just `?` as they
-  are not supported by ClickHouse. A complex regex is used as such character
-  sequences can apear inside strings in which case they should not be removed.
-  """
-  def sanitize_query(query) do
-    query
-    |> IO.iodata_to_binary()
-    |> String.replace(~r/(\?([0-9]+))(?=(?:[^\\"']|[\\"'][^\\"']*[\\"'])*$)/, "?")
-  end
-
-  @doc ~s"""
-  Add artificial support for positional parameters. Extract all occurences of `?1`,
-  `?2`, etc. in the query and reorder and duplicate the params so every param
-  in the list appears in order as if every positional param is just `?`
-  """
-  def order_params(query, params) do
-    sanitised =
-      Regex.replace(~r/(([^\\]|^))["'].*?[^\\]['"]/, IO.iodata_to_binary(query), "\\g{1}")
-
-    ordering =
-      Regex.scan(~r/\?([0-9]+)/, sanitised)
-      |> Enum.map(fn [_, x] -> String.to_integer(x) end)
-
-    ordering_count = Enum.max_by(ordering, fn x -> x end, fn -> 0 end)
-
-    if ordering_count != length(params) do
-      raise "\nError: number of params received (#{length(params)}) does not match expected (#{ordering_count})"
-    end
-
-    ordered_params =
-      ordering
-      |> Enum.reduce([], fn ix, acc -> [Enum.at(params, ix - 1) | acc] end)
-      |> Enum.reverse()
-
-    case ordered_params do
-      [] -> params
-      _ -> ordered_params
-    end
-  end
-
   defp extract_error_from_stacktrace(stacktrace) do
     line_with_exception =
       Enum.find_value(stacktrace, fn
@@ -272,12 +261,16 @@ defmodule Sanbase.ClickhouseRepo do
     end
   end
 
-  # %Clickhousex.Error{} is causing some errors
-  defp extract_error_from_error(%_{message: message}) do
+  defp extract_error_from_error(%{message: message}) do
     transform_error_string(message)
   end
 
-  defp extract_error_from_error(error), do: error
+  defp extract_error_from_error(error) when is_list(error) do
+    Enum.join(error) |> transform_error_string()
+  end
+
+  defp extract_error_from_error(error) when is_binary(error), do: transform_error_string(error)
+  defp extract_error_from_error(error), do: inspect(error)
 
   defp transform_error_string(error_str) do
     case String.split(error_str, "DB::Exception: ") do
@@ -347,14 +340,109 @@ defmodule Sanbase.ClickhouseRepo do
       defp maybe_print_interpolated_query(_query, _params), do: :ok
   end
 
-  defp get_interpolated_query(query, []), do: query
-
   defp get_interpolated_query(query, params) do
-    Clickhousex.Codec.Values.encode(
-      %Clickhousex.Query{param_count: length(params)},
-      query,
-      params
-    )
-    |> to_string()
+    Sanbase.Clickhouse.Query.interpolate(query, params)
+  end
+
+  defp decode_result_with_metadata(result) do
+    base_metadata = %{
+      query_id: extract_query_id(result),
+      summary: extract_summary(result)
+    }
+
+    case decode_row_binary_result(result) do
+      {:ok, decoded} ->
+        Map.merge(base_metadata, decoded)
+
+      :error ->
+        %{
+          rows: Map.get(result, :rows, []),
+          column_names: Map.get(result, :columns),
+          column_types: extract_column_types(result)
+        }
+        |> Map.merge(base_metadata)
+    end
+  end
+
+  defp decode_row_binary_result(result) do
+    with "RowBinaryWithNamesAndTypes" <- get_header(result, "x-clickhouse-format"),
+         data when not is_nil(data) <- Map.get(result, :data),
+         {:ok, column_names, column_types, rows_binary} <-
+           Ch.RowBinary.decode_header(IO.iodata_to_binary(data)) do
+      {:ok,
+       %{
+         rows: Ch.RowBinary.decode_rows(rows_binary, column_types),
+         column_names: column_names,
+         column_types: normalize_column_types(column_types)
+       }}
+    else
+      _ -> :error
+    end
+  end
+
+  defp extract_query_id(result) do
+    Map.get(result, :query_id) || get_header(result, "x-clickhouse-query-id")
+  end
+
+  defp extract_summary(result) do
+    case Map.get(result, :summary) do
+      nil ->
+        case get_header(result, "x-clickhouse-summary") do
+          nil ->
+            %{}
+
+          json_str ->
+            case Jason.decode(json_str) do
+              {:ok, summary} ->
+                summary
+
+              {:error, error} ->
+                Logger.error("Failed to decode x-clickhouse-summary header: #{inspect(error)}")
+                %{}
+            end
+        end
+
+      summary ->
+        summary
+    end
+  end
+
+  defp extract_column_types(result) do
+    case Map.get(result, :column_types) do
+      nil -> nil
+      column_types -> normalize_column_types(column_types)
+    end
+  end
+
+  defp normalize_column_types(column_types) do
+    Enum.map(column_types, &normalize_column_type/1)
+  end
+
+  defp normalize_column_type(type) when is_binary(type), do: type
+  # Ch.Types.encode handles {:datetime, tz} only when tz is a binary,
+  # but RowBinary.decode_header returns {:datetime, nil} for plain DateTime.
+  # Same for {:datetime64, precision, nil}.
+  defp normalize_column_type({:datetime, nil}), do: "DateTime"
+  defp normalize_column_type({:datetime64, p, nil}), do: "DateTime64(#{p})"
+
+  defp normalize_column_type(type) do
+    Ch.Types.encode(type) |> IO.iodata_to_binary()
+  rescue
+    _ -> inspect(type)
+  end
+
+  defp get_header(result, header_name) do
+    case Map.get(result, :headers) do
+      headers when is_list(headers) ->
+        downcased = String.downcase(header_name)
+
+        Enum.find_value(headers, fn
+          {name, value} -> if String.downcase(name) == downcased, do: value
+          _ -> nil
+        end)
+
+      _ ->
+        nil
+    end
   end
 end

@@ -286,7 +286,7 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     "label_id IN (
       SELECT dictGetUInt64('default.labels_by_fqn', 'label_id', tuple(fqn)) AS label_id
       FROM system.one
-      ARRAY JOIN [{{#{arg_name}}}] AS fqn
+      ARRAY JOIN {{#{arg_name}}} AS fqn
     )"
   end
 
@@ -361,7 +361,7 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     str = "label_id IN (
       SELECT dictGetUInt64('default.labels_by_fqn', 'label_id', tuple(fqn)) AS label_id
       FROM system.one
-      ARRAY JOIN [{{#{label_fqn_key}}}] AS fqn
+      ARRAY JOIN {{#{label_fqn_key}}} AS fqn
     )"
     {str, Map.put(params, label_fqn_key, list)}
   end

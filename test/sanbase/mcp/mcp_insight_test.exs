@@ -2,7 +2,7 @@ defmodule SanbaseWeb.Graphql.MCPInsightTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory
-  import Sanbase.TestHelpers, only: [try_few_times: 2]
+  import Sanbase.TestHelpers, only: [try_few_times: 2, wait_for_mcp_initialization: 0]
 
   setup do
     user = insert(:user, username: "santiment_user")
@@ -27,8 +27,7 @@ defmodule SanbaseWeb.Graphql.MCPInsightTest do
         protocol_version: "2025-03-26"
       )
 
-    # Wait for the MCP client <> server initialization handshake to complete.
-    Process.sleep(300)
+    wait_for_mcp_initialization()
 
     tag1 = insert(:tag, name: "TAG1")
     tag2 = insert(:tag, name: "TAG2")

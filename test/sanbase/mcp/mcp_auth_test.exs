@@ -2,6 +2,7 @@ defmodule SanbaseWeb.Graphql.MCPAuthTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory
+  import Sanbase.TestHelpers, only: [try_few_times: 2, wait_for_mcp_initialization: 0]
 
   setup do
     user = insert(:user)
@@ -37,19 +38,6 @@ defmodule SanbaseWeb.Graphql.MCPAuthTest do
     %{user: user, bearer_token: token.value}
   end
 
-  defp wait_for_initialization(attempts \\ 10) do
-    if Sanbase.MCP.Client.get_server_capabilities() do
-      :ok
-    else
-      if attempts > 0 do
-        Process.sleep(100)
-        wait_for_initialization(attempts - 1)
-      else
-        flunk("MCP client did not initialize in time")
-      end
-    end
-  end
-
   test "authentication", context do
     port = Sanbase.Utils.Config.module_get(SanbaseWeb.Endpoint, [:http, :port])
 
@@ -71,18 +59,12 @@ defmodule SanbaseWeb.Graphql.MCPAuthTest do
       )
 
     assert client |> Process.alive?() == true
-    wait_for_initialization()
+    wait_for_mcp_initialization()
 
     assert Sanbase.MCP.Client |> Process.whereis() |> Process.alive?() == true
 
     registry_name = Anubis.Server.Registry.registry_name(Sanbase.MCP.Server)
     assert registry_name |> Process.whereis() |> Process.alive?() == true
-
-    result =
-      try_few_times(fn -> Sanbase.MCP.Client.call_tool("check_authentication", %{}) end,
-        attempts: 3,
-        sleep: 250
-      )
 
     assert {:ok,
             %Anubis.MCP.Response{
@@ -98,7 +80,11 @@ defmodule SanbaseWeb.Graphql.MCPAuthTest do
               id: "req_" <> _,
               method: "tools/call",
               is_error: false
-            }} = Sanbase.MCP.Client.call_tool("check_authentication", %{})
+            }} =
+             try_few_times(fn -> Sanbase.MCP.Client.call_tool("check_authentication", %{}) end,
+               attempts: 3,
+               sleep: 250
+             )
 
     assert {:ok,
             %{
@@ -132,7 +118,7 @@ defmodule SanbaseWeb.Graphql.MCPAuthTest do
       )
 
     assert client |> Process.alive?() == true
-    wait_for_initialization()
+    wait_for_mcp_initialization()
 
     assert {:ok,
             %Anubis.MCP.Response{
@@ -144,7 +130,7 @@ defmodule SanbaseWeb.Graphql.MCPAuthTest do
             }} = Sanbase.MCP.Client.call_tool("check_authentication", %{})
 
     assert text =~ "Unauthorized"
-    assert text =~ "No Authorization header provided."
+    assert text =~ "No Authorization header provided"
   end
 
   test "unauthenticated - invalid bearer token", _context do
@@ -168,7 +154,7 @@ defmodule SanbaseWeb.Graphql.MCPAuthTest do
       )
 
     assert client |> Process.alive?() == true
-    wait_for_initialization()
+    wait_for_mcp_initialization()
 
     assert {:ok,
             %Anubis.MCP.Response{

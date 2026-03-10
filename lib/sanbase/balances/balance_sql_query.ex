@@ -670,11 +670,6 @@ defmodule Sanbase.Balance.SqlQuery do
     "address = {{#{arg_name}}}"
   end
 
-  defp address_clause([address], opts) when is_binary(address) do
-    arg_name = Keyword.fetch!(opts, :argument_name)
-    "address = {{#{arg_name}}}"
-  end
-
   defp address_clause(addresses, opts) when is_list(addresses) do
     arg_name = Keyword.fetch!(opts, :argument_name)
     "address IN ({{#{arg_name}}})"

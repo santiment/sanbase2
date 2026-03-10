@@ -466,6 +466,124 @@ defmodule Sanbase.Clickhouse.MigrationVerifier do
     end
   end
 
+  # -- Sanbase.Queries integration checks --
+  # Uses ephemeral queries only (no DB persistence). All go through
+  # query_transform_with_metadata which is the core CH execution path.
+
+  @doc "Run an ephemeral query with named params through the Queries pipeline"
+  @spec verify_sanbase_query_named_params() :: verify_result()
+  def verify_sanbase_query_named_params do
+    run_ephemeral_query(
+      "SELECT {{slug}} AS slug, {{num}} AS num",
+      %{slug: "bitcoin", num: 42},
+      fn result ->
+        checks = [
+          result.columns == ["slug", "num"] ||
+            {:error, "columns: expected [\"slug\", \"num\"], got #{inspect(result.columns)}"},
+          result.rows == [["bitcoin", 42]] ||
+            {:error, "rows: expected [[\"bitcoin\", 42]], got #{inspect(result.rows)}"},
+          (is_list(result.column_types) and length(result.column_types) == 2) ||
+            {:error, "column_types: expected 2 types, got #{inspect(result.column_types)}"},
+          (is_binary(result.clickhouse_query_id) and byte_size(result.clickhouse_query_id) > 0) ||
+            {:error, "clickhouse_query_id missing"},
+          is_map(result.summary) ||
+            {:error, "summary: expected a map, got #{inspect(result.summary)}"}
+        ]
+
+        check_all(checks, "named params query returned slug=bitcoin, num=42")
+      end
+    )
+  end
+
+  @doc "Run an ephemeral query against a real table with named params"
+  @spec verify_sanbase_query_real_table() :: verify_result()
+  def verify_sanbase_query_real_table do
+    sql = """
+    SELECT dt, value
+    FROM intraday_metrics
+    WHERE
+      asset_id = (SELECT asset_id FROM asset_metadata WHERE name == {{slug}} LIMIT 1) AND
+      metric_id = (SELECT metric_id FROM metric_metadata WHERE name == {{metric}} LIMIT 1)
+    LIMIT 2
+    """
+
+    run_ephemeral_query(sql, %{slug: "bitcoin", metric: "active_addresses_24h"}, fn result ->
+      checks = [
+        is_list(result.rows) ||
+          {:error, "rows: expected a list, got #{inspect(result.rows)}"},
+        result.columns == ["dt", "value"] ||
+          {:error, "columns: expected [\"dt\", \"value\"], got #{inspect(result.columns)}"},
+        is_binary(result.clickhouse_query_id) ||
+          {:error, "clickhouse_query_id missing"}
+      ]
+
+      check_all(checks, "real table query returned #{length(result.rows)} rows")
+    end)
+  end
+
+  @doc "Run an ephemeral query with human_readable modifier"
+  @spec verify_sanbase_query_human_readable() :: verify_result()
+  def verify_sanbase_query_human_readable do
+    run_ephemeral_query(
+      "SELECT {{big_num:human_readable}} AS formatted, {{big_num}} AS raw",
+      %{big_num: 2_123_801_239_123},
+      fn result ->
+        checks = [
+          result.columns == ["formatted", "raw"] ||
+            {:error, "columns: expected [\"formatted\", \"raw\"], got #{inspect(result.columns)}"},
+          match?([["2.12 Trillion", 2_123_801_239_123]], result.rows) ||
+            {:error, "rows: expected human_readable + raw, got #{inspect(result.rows)}"}
+        ]
+
+        check_all(checks, "human_readable returned formatted=2.12 Trillion, raw=2123801239123")
+      end
+    )
+  end
+
+  @doc "Run invalid SQL through Sanbase.Queries and verify error propagation"
+  @spec verify_sanbase_query_error_propagation() :: verify_result()
+  def verify_sanbase_query_error_propagation do
+    case run_ephemeral_query_raw("SELECTTTT INVALID SYNTAX", %{}) do
+      {:error, error_msg} when is_binary(error_msg) ->
+        uuid_pattern = ~r/^\[[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\] /
+
+        if Regex.match?(uuid_pattern, error_msg) do
+          {:ok, "Error propagated with UUID prefix"}
+        else
+          {:error, "Error missing UUID prefix: #{String.slice(error_msg, 0, 80)}"}
+        end
+
+      {:ok, _} ->
+        {:error, "Expected error for invalid SQL, but got success"}
+
+      {:error, other} ->
+        {:error, "Unexpected error type: #{inspect(other)}"}
+    end
+  end
+
+  defp run_ephemeral_query(sql, params, validate_fn) do
+    case run_ephemeral_query_raw(sql, params) do
+      {:ok, result} -> validate_fn.(result)
+      {:error, err} -> {:error, "Query failed: #{inspect(err)}"}
+    end
+  end
+
+  defp run_ephemeral_query_raw(sql, params) do
+    # Run in a separate Task to avoid polluting the caller's process
+    # dictionary. The Queries executor calls put_dynamic_repo which
+    # switches the ClickhouseRepo connection pool for the process.
+    task =
+      Task.async(fn ->
+        user = %Sanbase.Accounts.User{id: -1}
+        query = Sanbase.Queries.get_ephemeral_query_struct(sql, params, user)
+        query_metadata = Sanbase.Queries.QueryMetadata.from_local_dev(user.id)
+        Process.put(:queries_dynamic_repo, Sanbase.ClickhouseRepo.FreeUser)
+        Sanbase.Queries.run_query(query, user, query_metadata, store_execution_details: false)
+      end)
+
+    Task.await(task, :timer.seconds(30))
+  end
+
   @doc "Run all verification checks and print a summary"
   @spec verify_all() :: {:ok, :all_checks_passed} | {:error, String.t()}
   def verify_all do
@@ -514,6 +632,13 @@ defmodule Sanbase.Clickhouse.MigrationVerifier do
     if failed == 0, do: {:ok, :all_checks_passed}, else: {:error, "#{failed} checks failed"}
   end
 
+  defp check_all(checks, success_msg) do
+    case Enum.find(checks, &match?({:error, _}, &1)) do
+      nil -> {:ok, success_msg}
+      {:error, detail} -> {:error, detail}
+    end
+  end
+
   # Shared helper for simple single-value-per-row query verification
   defp verify_query(sql, params, expected, success_msg) do
     query = Sanbase.Clickhouse.Query.new(sql, params)
@@ -556,7 +681,11 @@ defmodule Sanbase.Clickhouse.MigrationVerifier do
       {"metric_timeseries_data", &verify_metric_timeseries_data/0},
       {"metric_aggregated_timeseries_data", &verify_metric_aggregated_timeseries_data/0},
       {"metric_timeseries_data_per_slug", &verify_metric_timeseries_data_per_slug/0},
-      {"metric_first_datetime", &verify_metric_first_datetime/0}
+      {"metric_first_datetime", &verify_metric_first_datetime/0},
+      {"sanbase_query_named_params", &verify_sanbase_query_named_params/0},
+      {"sanbase_query_real_table", &verify_sanbase_query_real_table/0},
+      {"sanbase_query_human_readable", &verify_sanbase_query_human_readable/0},
+      {"sanbase_query_error_propagation", &verify_sanbase_query_error_propagation/0}
     ]
   end
 end

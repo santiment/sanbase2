@@ -118,6 +118,7 @@ defmodule Sanbase.Mixfile do
       {:norm, "~> 0.12"},
       {:nostrum, "~> 0.10"},
       {:number, "~> 1.0"},
+      {:boruta, "~> 2.3"},
       {:oauther, "~> 1.3"},
       {:oban, "~> 2.7"},
       {:observer_cli, "~> 1.3"},

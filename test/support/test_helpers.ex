@@ -9,6 +9,19 @@ defmodule Sanbase.TestHelpers do
   In case of success, it is immedately returned.
   In case of `attempts` number of errors, the error is returned.
   """
+  def wait_for_mcp_initialization(attempts \\ 10) do
+    if Sanbase.MCP.Client.get_server_capabilities() do
+      :ok
+    else
+      if attempts > 0 do
+        Process.sleep(100)
+        wait_for_mcp_initialization(attempts - 1)
+      else
+        raise "MCP client did not initialize in time"
+      end
+    end
+  end
+
   def try_few_times(function, opts) when is_function(function, 0) do
     attempts = Keyword.fetch!(opts, :attempts)
     sleep = Keyword.fetch!(opts, :sleep)

@@ -39,7 +39,7 @@ defmodule Sanbase.RunExamples do
   @to ~U[2023-01-03 00:00:00Z]
   @null_address "0x0000000000000000000000000000000000000000"
 
-  def run(queries \\ :all) do
+  def run(queries \\ :all, opts \\ []) do
     break_if_production()
 
     original_level = Application.get_env(:logger, :level)
@@ -54,8 +54,9 @@ defmodule Sanbase.RunExamples do
     """)
 
     try do
-      IO.puts("Configure the log level to :warning")
-      Logger.configure(level: :warning)
+      logger_level = Keyword.get(opts, :logger_level, :warning)
+      IO.puts("Configure the log level to #{logger_level}")
+      Logger.configure(level: logger_level)
 
       queries = if queries == :all, do: @queries, else: queries
 
@@ -637,8 +638,8 @@ defmodule Sanbase.RunExamples do
     SELECT dt, value
     FROM intraday_metrics
     WHERE
-      asset_id = (SELECT asset_id FROM asset_metadata WHERE name == {{slug}} LIMIT 1) AND
-      metric_id = (SELECT metric_id FROM metric_metadata WHERE name == {{metric}} LIMIT 1)
+      asset_id = (SELECT asset_id FROM asset_metadata WHERE name = {{slug}} LIMIT 1) AND
+      metric_id = (SELECT metric_id FROM metric_metadata WHERE name = {{metric}} LIMIT 1)
     LIMIT 2
     """
 

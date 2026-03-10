@@ -415,10 +415,20 @@ defmodule Sanbase.ClickhouseRepo do
   end
 
   defp normalize_column_types(column_types) do
-    Enum.map(column_types, fn
-      type when is_binary(type) -> type
-      type -> Ch.Types.encode(type) |> IO.iodata_to_binary()
-    end)
+    Enum.map(column_types, &normalize_column_type/1)
+  end
+
+  defp normalize_column_type(type) when is_binary(type), do: type
+  # Ch.Types.encode handles {:datetime, tz} only when tz is a binary,
+  # but RowBinary.decode_header returns {:datetime, nil} for plain DateTime.
+  # Same for {:datetime64, precision, nil}.
+  defp normalize_column_type({:datetime, nil}), do: "DateTime"
+  defp normalize_column_type({:datetime64, p, nil}), do: "DateTime64(#{p})"
+
+  defp normalize_column_type(type) do
+    Ch.Types.encode(type) |> IO.iodata_to_binary()
+  rescue
+    _ -> inspect(type)
   end
 
   defp get_header(result, header_name) do

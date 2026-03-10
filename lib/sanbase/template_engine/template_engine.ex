@@ -378,6 +378,8 @@ defmodule Sanbase.TemplateEngine do
         candidate
 
       true ->
+        # If some params need sanitization, or come from code templates,
+        # their sanitized name can be duplicated, so we add a suffix here.
         next_param_name("#{candidate}_#{suffix}", used_param_names, suffix + 1)
     end
   end
@@ -386,11 +388,14 @@ defmodule Sanbase.TemplateEngine do
     sanitized =
       name
       |> to_string()
+      # Replace all non-alphanum/underscore with underscore as Clickhouse accepts only that
+      # my-metric.name will become my_metric_name
       |> String.replace(~r/[^a-zA-Z0-9_]/, "_")
       |> String.trim("_")
 
     cond do
       sanitized == "" -> "param"
+      # If the santized name starts with a number, put `param_` prefix
       String.match?(sanitized, ~r/^[0-9]/) -> "param_#{sanitized}"
       true -> sanitized
     end

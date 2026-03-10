@@ -5,9 +5,6 @@ defmodule Sanbase.Application.Mcp do
 
   def children() do
     children = [
-      # MCP server registry
-      Anubis.Server.Registry,
-
       # MCP server for metrics access
       {Sanbase.MCP.Server, [transport: {:streamable_http, start: true}]},
       # Dev MCP server for search docs

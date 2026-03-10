@@ -73,6 +73,17 @@ defmodule SanbaseWeb.Graphql.MCPAuthTest do
     assert client |> Process.alive?() == true
     wait_for_initialization()
 
+    assert Sanbase.MCP.Client |> Process.whereis() |> Process.alive?() == true
+
+    registry_name = Anubis.Server.Registry.registry_name(Sanbase.MCP.Server)
+    assert registry_name |> Process.whereis() |> Process.alive?() == true
+
+    result =
+      try_few_times(fn -> Sanbase.MCP.Client.call_tool("check_authentication", %{}) end,
+        attempts: 3,
+        sleep: 250
+      )
+
     assert {:ok,
             %Anubis.MCP.Response{
               result: %{

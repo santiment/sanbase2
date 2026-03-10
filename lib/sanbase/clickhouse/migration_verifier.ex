@@ -466,6 +466,48 @@ defmodule Sanbase.Clickhouse.MigrationVerifier do
     end
   end
 
+  @doc "Sanbase.Metric.slugs_by_filter returns slugs matching a threshold filter"
+  @spec verify_metric_slugs_by_filter() :: verify_result()
+  def verify_metric_slugs_by_filter do
+    to = DateTime.utc_now()
+    from = DateTime.add(to, -7, :day)
+
+    case Sanbase.Metric.slugs_by_filter(@metric, from, to, :greater_than, 0) do
+      {:ok, [slug | _] = slugs} when is_binary(slug) ->
+        {:ok, "slugs_by_filter returned #{length(slugs)} slugs"}
+
+      {:ok, []} ->
+        {:error, "slugs_by_filter returned empty list for #{@metric} > 0 in last 7 days"}
+
+      {:ok, other} ->
+        {:error, "Unexpected result shape: #{inspect(other)}"}
+
+      {:error, err} ->
+        {:error, "slugs_by_filter failed: #{inspect(err)}"}
+    end
+  end
+
+  @doc "Sanbase.Metric.slugs_order returns slugs ordered by metric value"
+  @spec verify_metric_slugs_order() :: verify_result()
+  def verify_metric_slugs_order do
+    to = DateTime.utc_now()
+    from = DateTime.add(to, -7, :day)
+
+    case Sanbase.Metric.slugs_order(@metric, from, to, :desc) do
+      {:ok, [slug | _] = slugs} when is_binary(slug) ->
+        {:ok, "slugs_order returned #{length(slugs)} slugs in desc order"}
+
+      {:ok, []} ->
+        {:error, "slugs_order returned empty list for #{@metric} desc in last 7 days"}
+
+      {:ok, other} ->
+        {:error, "Unexpected result shape: #{inspect(other)}"}
+
+      {:error, err} ->
+        {:error, "slugs_order failed: #{inspect(err)}"}
+    end
+  end
+
   # -- Sanbase.Queries integration checks --
   # Uses ephemeral queries only (no DB persistence). All go through
   # query_transform_with_metadata which is the core CH execution path.
@@ -682,6 +724,8 @@ defmodule Sanbase.Clickhouse.MigrationVerifier do
       {"metric_aggregated_timeseries_data", &verify_metric_aggregated_timeseries_data/0},
       {"metric_timeseries_data_per_slug", &verify_metric_timeseries_data_per_slug/0},
       {"metric_first_datetime", &verify_metric_first_datetime/0},
+      {"metric_slugs_by_filter", &verify_metric_slugs_by_filter/0},
+      {"metric_slugs_order", &verify_metric_slugs_order/0},
       {"sanbase_query_named_params", &verify_sanbase_query_named_params/0},
       {"sanbase_query_real_table", &verify_sanbase_query_real_table/0},
       {"sanbase_query_human_readable", &verify_sanbase_query_human_readable/0},

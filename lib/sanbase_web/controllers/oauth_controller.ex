@@ -73,13 +73,35 @@ defmodule SanbaseWeb.OAuthController do
     end
   end
 
-  def authorize_consent(%Plug.Conn{} = conn, %{"decision" => "deny"}) do
-    request_path = get_session(conn, :user_return_to) || "/oauth/authorize"
+  def authorize_consent(%Plug.Conn{} = conn, %{"decision" => "deny"} = params) do
+    with redirect_uri when is_binary(redirect_uri) <- params["redirect_uri"],
+         client_id when is_binary(client_id) <- params["client_id"],
+         %Boruta.Ecto.Client{redirect_uris: uris} <-
+           Sanbase.Repo.get(Boruta.Ecto.Client, client_id),
+         true <- redirect_uri in uris do
+      error_params = %{
+        "error" => "access_denied",
+        "error_description" => "The user denied the request"
+      }
 
-    conn
-    |> put_status(403)
-    |> put_resp_content_type("text/html")
-    |> send_resp(403, denied_html(request_path))
+      error_params =
+        case params["state"] do
+          state when is_binary(state) and state != "" -> Map.put(error_params, "state", state)
+          _ -> error_params
+        end
+
+      redirect_url = redirect_uri <> "?" <> URI.encode_query(error_params)
+      redirect(conn, external: redirect_url)
+    else
+      _ ->
+        request_path = get_session(conn, :user_return_to) || "/oauth/authorize"
+
+        conn
+        |> put_resp_header("x-frame-options", "DENY")
+        |> put_status(403)
+        |> put_resp_content_type("text/html")
+        |> send_resp(403, denied_html(request_path))
+    end
   end
 
   # --- Token ---
@@ -120,6 +142,7 @@ defmodule SanbaseWeb.OAuthController do
     {:ok, user} = current_user_from_session(conn)
 
     conn
+    |> put_resp_header("x-frame-options", "DENY")
     |> put_resp_content_type("text/html")
     |> send_resp(200, consent_html(user, conn))
   end

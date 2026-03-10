@@ -1,10 +1,11 @@
 alias Boruta.Ecto.Admin.Clients
 
-client_id = System.get_env("MCP_OAUTH_CLIENT_ID", Ecto.UUID.generate())
-client_secret = System.get_env("MCP_OAUTH_CLIENT_SECRET", SecureRandom.hex(64))
-
-case Sanbase.Repo.get(Boruta.Ecto.Client, client_id) do
+# Look up existing client by name first for idempotency
+case Sanbase.Repo.get_by(Boruta.Ecto.Client, name: "Sanbase MCP") do
   nil ->
+    client_id = System.get_env("MCP_OAUTH_CLIENT_ID", Ecto.UUID.generate())
+    client_secret = System.get_env("MCP_OAUTH_CLIENT_SECRET", SecureRandom.hex(64))
+
     private_key = JOSE.JWK.generate_key({:rsa, 2048, 65_537})
     public_key = JOSE.JWK.to_public(private_key)
     {_type, public_pem} = JOSE.JWK.to_pem(public_key)
@@ -33,11 +34,7 @@ case Sanbase.Repo.get(Boruta.Ecto.Client, client_id) do
         private_key: private_pem
       })
 
-    IO.puts("Created MCP OAuth client:")
-    IO.puts("  client_id:     #{client.id}")
-    IO.puts("  client_secret: #{client_secret}")
-    IO.puts("")
-    IO.puts("Use these when connecting MCP Inspector or Claude Code.")
+    IO.puts("Created MCP OAuth client: #{client.id}")
 
   existing ->
     IO.puts("MCP OAuth client already exists: #{existing.id}")

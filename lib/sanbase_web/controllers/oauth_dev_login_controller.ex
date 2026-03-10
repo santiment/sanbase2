@@ -24,7 +24,10 @@ defmodule SanbaseWeb.OAuthDevLoginController do
             |> SanbaseWeb.Guardian.add_jwt_tokens_to_conn_session(jwt_tokens_map)
             |> redirect(to: safe_return_to(return_to))
 
-          _ ->
+          {:error, reason} ->
+            require Logger
+            Logger.error("OAuth dev login: failed to create JWT session: #{inspect(reason)}")
+
             conn
             |> put_resp_content_type("text/html")
             |> send_resp(500, "Failed to create session")

@@ -141,11 +141,9 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
       NaiveDateTime.diff(NaiveDateTime.utc_now(), inserted_at, :second) > 60
   end
 
-  attr :phx_click, :string, required: true
-  attr :text, :string, required: true
-  attr :count, :integer, required: false, default: nil
-  attr :class, :string, required: true
-  attr :phx_disable_with, :string, required: false, default: nil
+  attr :id, :any, required: true
+  attr :status, :string, required: true
+  attr :inserted_at, :any, required: true
 
   defp formatted_completed_status(assigns) do
     ~H"""

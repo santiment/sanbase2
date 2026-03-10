@@ -11,7 +11,7 @@ defmodule Sanbase.DiscordBot.Utils do
           list()
         ) :: {:ok, Nostrum.Struct.Message.t()} | {:error, any()}
   def edit_interaction_response(interaction, content, components) do
-    Nostrum.Api.edit_interaction_response(interaction, %{
+    Nostrum.Api.Interaction.edit_response(interaction, %{
       content: trim_message(content, 1950),
       components: components
     })
@@ -23,14 +23,14 @@ defmodule Sanbase.DiscordBot.Utils do
     case messages do
       [first_message | remaining_messages] ->
         # Send the initial interaction response
-        Nostrum.Api.edit_interaction_response(interaction, %{
+        Nostrum.Api.Interaction.edit_response(interaction, %{
           content: first_message,
           components: components
         })
 
         # Send the follow-up messages
         Enum.each(remaining_messages, fn message ->
-          Nostrum.Api.create_followup_message(interaction.token, %{
+          Nostrum.Api.Interaction.create_followup_message(interaction.token, %{
             content: message,
             components: components
           })
@@ -40,12 +40,12 @@ defmodule Sanbase.DiscordBot.Utils do
 
   @spec interaction_ack_visible(Nostrum.Struct.Interaction.t()) :: {:ok} | {:error, any()}
   def interaction_ack_visible(interaction) do
-    Nostrum.Api.create_interaction_response(interaction, %{type: 5})
+    Nostrum.Api.Interaction.create_response(interaction, %{type: 5})
   end
 
   @spec interaction_ack(Nostrum.Struct.Interaction.t()) :: {:ok} | {:error, any()}
   def interaction_ack(interaction) do
-    Nostrum.Api.create_interaction_response(interaction, %{
+    Nostrum.Api.Interaction.create_response(interaction, %{
       type: 5,
       data: %{flags: @ephemeral_message_flags}
     })

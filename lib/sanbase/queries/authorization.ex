@@ -1,8 +1,6 @@
 defmodule Sanbase.Queries.Authorization do
   alias Sanbase.Accounts.User
 
-  require Logger
-
   @repo_access_level %{
     Sanbase.ClickhouseRepo.FreeUser => 0,
     Sanbase.ClickhouseRepo.ReadOnly => 1,

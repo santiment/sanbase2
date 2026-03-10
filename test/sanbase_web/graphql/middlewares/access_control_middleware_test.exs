@@ -148,7 +148,7 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
     """
 
     Sanbase.Mock.prepare_mock2(
-      &Sanbase.ClickhouseRepo.query/2,
+      &Sanbase.ClickhouseRepo.query/3,
       {:ok, result}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -198,7 +198,7 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
     """
 
     Sanbase.Mock.prepare_mock2(
-      &Sanbase.ClickhouseRepo.query/2,
+      &Sanbase.ClickhouseRepo.query/3,
       {:ok, result}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -245,7 +245,7 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
     """
 
     Sanbase.Mock.prepare_mock2(
-      &Sanbase.ClickhouseRepo.query/2,
+      &Sanbase.ClickhouseRepo.query/3,
       {:ok, result}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -414,7 +414,7 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
       Sanbase.Metric.Registry.refresh_stored_terms()
 
       Sanbase.Mock.prepare_mock2(
-        &Sanbase.ClickhouseRepo.query/2,
+        &Sanbase.ClickhouseRepo.query/3,
         {:ok, context.mock_result}
       )
       |> Sanbase.Mock.run_with_mocks(fn ->
@@ -437,7 +437,7 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
       Sanbase.Metric.Registry.refresh_stored_terms()
 
       Sanbase.Mock.prepare_mock2(
-        &Sanbase.ClickhouseRepo.query/2,
+        &Sanbase.ClickhouseRepo.query/3,
         {:ok, context.mock_result}
       )
       |> Sanbase.Mock.run_with_mocks(fn ->
@@ -510,7 +510,7 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
       Sanbase.Metric.Registry.refresh_stored_terms()
 
       Sanbase.Mock.prepare_mock2(
-        &Sanbase.ClickhouseRepo.query/2,
+        &Sanbase.ClickhouseRepo.query/3,
         {:ok, context.mock_result}
       )
       |> Sanbase.Mock.run_with_mocks(fn ->
@@ -533,7 +533,7 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
       Sanbase.Metric.Registry.refresh_stored_terms()
 
       Sanbase.Mock.prepare_mock2(
-        &Sanbase.ClickhouseRepo.query/2,
+        &Sanbase.ClickhouseRepo.query/3,
         {:ok, context.mock_result}
       )
       |> Sanbase.Mock.run_with_mocks(fn ->

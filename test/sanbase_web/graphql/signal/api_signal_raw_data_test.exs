@@ -40,7 +40,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalRawDataTest do
       ]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         get_raw_signals(conn, :all, :all, from, to)
@@ -95,7 +95,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalRawDataTest do
       ]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         get_raw_signals(conn, ["dai_mint", "large_transactions"], :all, from, to)
@@ -154,7 +154,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalRawDataTest do
       ]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         get_raw_signals(conn, :all, ["multi-collateral-dai"], from, to)
@@ -198,7 +198,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalRawDataTest do
       ]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         get_raw_signals(free_conn, :all, :all, from, to)
@@ -254,7 +254,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalRawDataTest do
       ]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         get_raw_signals(conn, :all, :all, from, to)

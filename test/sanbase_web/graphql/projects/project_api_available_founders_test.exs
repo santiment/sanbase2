@@ -18,7 +18,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiAvailableFoundersTest do
     ]
 
     Sanbase.Mock.prepare_mock2(
-      &Sanbase.ClickhouseRepo.query/2,
+      &Sanbase.ClickhouseRepo.query/3,
       {:ok, %{rows: rows}}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->

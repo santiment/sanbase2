@@ -19,7 +19,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricComputedAtTest do
     clickhouse_response = {:ok, %{rows: [[datetime |> DateTime.to_unix()]]}}
 
     Sanbase.Mock.prepare_mock2(
-      &Sanbase.ClickhouseRepo.query/2,
+      &Sanbase.ClickhouseRepo.query/3,
       clickhouse_response
     )
     |> Sanbase.Mock.prepare_mock2(

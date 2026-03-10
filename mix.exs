@@ -15,6 +15,7 @@ defmodule Sanbase.Mixfile do
       # source_url: "https://github.com/santiment/sanbase2/",
       homepage_url: "https://app.santiment.net/projects",
       # Supress errors that should not be shown
+      test_ignore_filters: [~r/test_seeds\.exs$/],
       xref: [exclude: [Oban]],
       dialyzer: [
         plt_ignore_apps: [:stripity_stripe]

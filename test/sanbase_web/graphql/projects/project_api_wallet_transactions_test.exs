@@ -20,7 +20,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
   setup_all_with_mocks([
     {Sanbase.ClickhouseRepo, [:passthrough],
      [
-       query: fn _, _ ->
+       query: fn _, _, _ ->
          {:ok, %{rows: [[@exchange_wallet, "CEX", "{\"owner\": \"binance\"}"]]}}
        end
      ]}

@@ -30,7 +30,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiCombinedStatsTest do
     fn ->
       result = get_history_stats(conn, from, to, slugs)
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: data}})
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: data}})
       |> Sanbase.Mock.run_with_mocks(fn ->
         assert result == %{
                  "data" => %{
@@ -56,7 +56,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiCombinedStatsTest do
   test "the database returns no data", context do
     %{conn: conn, from: from, to: to, slugs: slugs} = context
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: []}})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: []}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result = get_history_stats(conn, from, to, slugs)
       assert result == %{"data" => %{"projectsListHistoryStats" => []}}
@@ -68,7 +68,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiCombinedStatsTest do
 
     error_msg = "Database error"
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, error_msg})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:error, error_msg})
     |> Sanbase.Mock.run_with_mocks(fn ->
       assert capture_log(fn ->
                %{"errors" => [error]} = get_history_stats(conn, from, to, slugs)

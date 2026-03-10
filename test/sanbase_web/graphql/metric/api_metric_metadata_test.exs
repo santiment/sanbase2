@@ -35,7 +35,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
       """
     end
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       for metric <- metrics_with_founders do
         result =
@@ -88,7 +88,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
       }
       """
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         conn

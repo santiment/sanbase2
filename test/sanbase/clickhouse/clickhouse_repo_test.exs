@@ -7,7 +7,7 @@ defmodule Sanbase.Clickhouse.ClickhouseRepoTest do
   test "error handling when clickhouse repo returns error" do
     error_msg = "something went wrong with the connection"
 
-    Sanbase.Mock.prepare_mock2(&ClickhouseRepo.query/2, {:error, error_msg})
+    Sanbase.Mock.prepare_mock2(&ClickhouseRepo.query/3, {:error, error_msg})
     |> Sanbase.Mock.run_with_mocks(fn ->
       log =
         capture_log(fn ->
@@ -31,7 +31,7 @@ defmodule Sanbase.Clickhouse.ClickhouseRepoTest do
   test "error handling when clickhouse throws exception" do
     error_msg = "something went wrong with the connection"
 
-    Sanbase.Mock.prepare_mock(ClickhouseRepo, :query, fn _, _ -> raise(error_msg) end)
+    Sanbase.Mock.prepare_mock(ClickhouseRepo, :query, fn _, _, _ -> raise(error_msg) end)
     |> Sanbase.Mock.run_with_mocks(fn ->
       log =
         capture_log(fn ->

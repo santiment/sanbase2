@@ -23,7 +23,7 @@ defmodule Sanbase.Clickhouse.ApiCallDataTest do
       [DateTime.to_unix(dt3), 200]
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result = ApiCallData.api_call_history(context.user.id, dt1, dt3, "1d", :apikey)
 
@@ -41,7 +41,7 @@ defmodule Sanbase.Clickhouse.ApiCallDataTest do
     from = ~U[2019-01-01 00:00:00Z]
     to = ~U[2019-01-02 00:00:00Z]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: [[100]]}})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: [[100]]}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       assert ApiCallData.api_call_count(context.user.id, from, to, :all) == {:ok, 100}
     end)
@@ -51,7 +51,7 @@ defmodule Sanbase.Clickhouse.ApiCallDataTest do
     dt1 = ~U[2019-01-01 00:00:00Z]
     dt2 = ~U[2019-01-03 00:00:00Z]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: []}})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: []}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result = ApiCallData.api_call_history(context.user.id, dt1, dt2, "1d", :all)
 
@@ -65,7 +65,7 @@ defmodule Sanbase.Clickhouse.ApiCallDataTest do
 
     error_msg = "Something went wrong"
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, error_msg})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:error, error_msg})
     |> Sanbase.Mock.run_with_mocks(fn ->
       assert capture_log(fn ->
                {:error, error} =

@@ -56,7 +56,7 @@ defmodule Sanbase.Mixfile do
       {:con_cache, "~> 1.0"},
       {:cowboy, "~> 2.0"},
       {:cowlib, ">= 2.16.0 and < 3.0.0", override: true},
-      {:crc32cer, github: "zmstone/crc32cer", override: true},
+      {:crc32cer, github: "zmstone/crc32cer", submodules: true, override: true},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dataloader, "~> 2.0.0"},
       {:db_connection, "~> 2.2", override: true},

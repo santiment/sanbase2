@@ -96,11 +96,13 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
       when metric in @eth2_datetime_staking_pools_integer_valuation_list do
     query_struct = histogram_data_query(metric, slug, from, to, interval, limit)
 
+    # Ch returns groupArray((label, value)) AS groupArr
+    # which is transformed to list of tuples in Elixir
     ClickhouseRepo.query_transform(query_struct, fn [timestamp, value] ->
       %{
         datetime: DateTime.from_unix!(timestamp),
         value:
-          Enum.map(value, fn [pool, int] ->
+          Enum.map(value, fn {pool, int} ->
             %{staking_pool: pool, valuation: int}
           end)
       }

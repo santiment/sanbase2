@@ -14,8 +14,8 @@ defmodule Sanbase.AvailableSlugs do
   @group_of_slugs [
     "TOTAL_MARKET",
     "total_market",
-    "total_market2",
-    "total_market3",
+    "total_market_2",
+    "total_market_3",
     "crypto_market",
     "TOTAL_ERC20"
   ]

@@ -366,8 +366,8 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
         "summary1",
         "bullish_summary1",
         "bearish_summary1",
-        [0.2, 0.3, 0.5],
-        [0.2, 0.3, 0.5]
+        {0.2, 0.3, 0.5},
+        {0.2, 0.3, 0.5}
       ],
       [
         dt1_unix,
@@ -379,8 +379,8 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
         "summary2",
         "bullish_summary2",
         "bearish_summary2",
-        [0.2, 0.3, 0.5],
-        [0.2, 0.3, 0.5]
+        {0.2, 0.3, 0.5},
+        {0.2, 0.3, 0.5}
       ],
       [
         dt2_unix,
@@ -392,8 +392,8 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
         "summary3",
         "bullish_summary3",
         "bearish_summary3",
-        [0.4, 0.1, 0.5],
-        [0.4, 0.1, 0.5]
+        {0.4, 0.1, 0.5},
+        {0.4, 0.1, 0.5}
       ],
       [
         dt2_unix,
@@ -405,8 +405,8 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
         "summary4",
         "bullish_summary4",
         "bearish_summary4",
-        [0.2, 0.1, 0.7],
-        [0.2, 0.1, 0.7]
+        {0.2, 0.1, 0.7},
+        {0.2, 0.1, 0.7}
       ],
       [
         dt3_unix,
@@ -418,8 +418,8 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
         "summary5",
         "bullish_summary5",
         "bearish_summary5",
-        [0.2, 0.3, 0.5],
-        [0.2, 0.3, 0.5]
+        {0.2, 0.3, 0.5},
+        {0.2, 0.3, 0.5}
       ],
       [
         dt3_unix,
@@ -431,8 +431,8 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
         "summary6",
         "bullish_summary6",
         "bearish_summary6",
-        [0.2, 0.3, 0.5],
-        [0.2, 0.3, 0.5]
+        {0.2, 0.3, 0.5},
+        {0.2, 0.3, 0.5}
       ]
     ]
   end

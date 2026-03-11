@@ -91,8 +91,8 @@ defmodule Sanbase.SocialData.TrendingWords do
         # The percentage of the documents that mention the word that have
         # postive, negative or netural sentiment. The values are in the range [0, 1]
         # and add up to 1
-        [positive_sentiment, neutral_sentiment, negative_sentiment] = sentiment_ratios
-        [positive_bb_sentiment, neutral_bb_sentiment, negative_bb_sentiment] = bb_sentiment_ratios
+        {positive_sentiment, neutral_sentiment, negative_sentiment} = sentiment_ratios
+        {positive_bb_sentiment, neutral_bb_sentiment, negative_bb_sentiment} = bb_sentiment_ratios
 
         summaries = [%{source: source, datetime: datetime, summary: summary}]
         context = transform_context(context)

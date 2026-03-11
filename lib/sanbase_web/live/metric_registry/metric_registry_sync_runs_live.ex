@@ -141,28 +141,9 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
       NaiveDateTime.diff(NaiveDateTime.utc_now(), inserted_at, :second) > 60
   end
 
-  attr :phx_click, :string, required: true
-  attr :text, :string, required: true
-  attr :count, :integer, required: false, default: nil
-  attr :class, :string, required: true
-  attr :phx_disable_with, :string, required: false, default: nil
-
-  defp phx_click_button(assigns) do
-    ~H"""
-    <button
-      type="button"
-      phx-click={@phx_click}
-      class={[
-        "border border-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center gap-x-2",
-        @class
-      ]}
-      phx-disable-with={@phx_disable_with}
-    >
-      {@text}
-      <span :if={@count} class="text-gray-400">({@count})</span>
-    </button>
-    """
-  end
+  attr :id, :any, required: true
+  attr :status, :string, required: true
+  attr :inserted_at, :any, required: true
 
   defp formatted_completed_status(assigns) do
     ~H"""

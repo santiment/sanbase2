@@ -79,7 +79,7 @@ defmodule Sanbase.DiscordConsumer do
   end
 
   def handle_event({:READY, _data, _ws_state}) do
-    Nostrum.Api.bulk_overwrite_global_application_commands(@commands)
+    Nostrum.Api.ApplicationCommand.bulk_overwrite_global_commands(@commands)
   end
 
   def handle_event({
@@ -227,7 +227,7 @@ defmodule Sanbase.DiscordConsumer do
     t1 = System.monotonic_time(:millisecond)
     log(msg_or_interaction, "WARM UP STARTING...")
 
-    task = Task.async(fn -> Nostrum.Api.get_current_user() end)
+    task = Task.async(fn -> Nostrum.Api.Self.get() end)
 
     case Task.yield(task, 2000) || Task.shutdown(task) do
       nil ->

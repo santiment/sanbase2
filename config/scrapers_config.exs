@@ -18,6 +18,7 @@ config :sanbase, Sanbase.ExternalServices.Etherscan.Requests,
 config :sanbase, Oban.Scrapers,
   repo: Sanbase.Repo,
   name: :oban_scrapers,
+  stage_interval: 5_000,
   queues: [
     # Cryptocompare OHLCV price/volume queues
     cryptocompare_historical_jobs_queue: [limit: 25, paused: true],
@@ -33,8 +34,6 @@ config :sanbase, Oban.Scrapers,
     twitter_followers_migration_queue: [limit: 25, paused: true]
   ],
   plugins: [
-    # The default values of interval: 1000, limit: 5000 cause the stager to timeout
-    {Oban.Plugins.Stager, interval: 5000, limit: 200},
     # Prune completed/discarded jobs after 60 days. This keeps completed jobs
     # available for the unique period (60 days) used by historical workers,
     # replacing the old finished_oban_jobs archival mechanism.

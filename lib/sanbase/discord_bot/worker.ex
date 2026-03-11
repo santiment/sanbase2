@@ -16,7 +16,7 @@ defmodule Sanbase.DiscordBot.Worker do
 
   def handle_info(:work, state) do
     Logger.info("Warming up...")
-    result = Nostrum.Api.get_current_user()
+    result = Nostrum.Api.Self.get()
     Logger.info("Warming up result: #{inspect(result)}")
 
     schedule_work()

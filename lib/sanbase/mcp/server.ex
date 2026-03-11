@@ -6,10 +6,17 @@ defmodule Sanbase.MCP.Server do
     version: "1.0.0",
     capabilities: [:tools]
 
-  def init(_client_info, frame) do
-    user = Sanbase.MCP.Auth.headers_list_to_user(frame.transport.req_headers)
+  @impl true
+  def init(_client_info, %Anubis.Server.Frame{} = frame) do
+    user = Sanbase.MCP.Auth.headers_list_to_user(frame.context.headers)
     frame = assign(frame, :current_user, user)
     {:ok, frame |> assign(:is_authenticated, not is_nil(user))}
+  end
+
+  @impl true
+  def handle_request(request, %Anubis.Server.Frame{} = frame) do
+    frame = assign_current_user(frame)
+    Anubis.Server.Handlers.handle(request, __MODULE__, frame)
   end
 
   # Register our metrics tools
@@ -31,5 +38,22 @@ defmodule Sanbase.MCP.Server do
     IO.puts("Defining the extra MCP Server tools used in dev and test")
     # Some tools are enabled only in dev mode so we can test things during development
     component(Sanbase.MCP.CheckAuthentication)
+  end
+
+  defp assign_current_user(%Anubis.Server.Frame{} = frame) do
+    headers = frame.context.headers || %{}
+
+    user =
+      frame.assigns[:current_user] ||
+        Sanbase.MCP.Auth.headers_list_to_user(headers)
+
+    frame =
+      if user do
+        assign(frame, :current_user, user)
+      else
+        frame
+      end
+
+    assign(frame, :is_authenticated, not is_nil(user))
   end
 end

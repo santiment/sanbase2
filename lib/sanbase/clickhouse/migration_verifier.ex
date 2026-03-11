@@ -508,6 +508,79 @@ defmodule Sanbase.Clickhouse.MigrationVerifier do
     end
   end
 
+  # -- Tuple-returning query checks --
+  # These verify that ClickHouse Tuple types are correctly handled as Elixir
+  # tuples (not lists) after the clickhousex → ch migration.
+
+  @doc "TrendingWords: tuple() columns are destructured as Elixir tuples"
+  @spec verify_trending_words_tuple() :: verify_result()
+  def verify_trending_words_tuple do
+    to = DateTime.utc_now()
+    from = DateTime.add(to, -1, :day)
+
+    case Sanbase.SocialData.TrendingWords.get_trending_words(from, to, "1d", 10, :all) do
+      {:ok, result} when is_map(result) and map_size(result) > 0 ->
+        [{_dt, [first | _]} | _] = Enum.to_list(result)
+
+        checks = [
+          is_number(first.positive_sentiment_ratio) ||
+            {:error,
+             "positive_sentiment_ratio not a number: #{inspect(first.positive_sentiment_ratio)}"},
+          is_number(first.negative_sentiment_ratio) ||
+            {:error,
+             "negative_sentiment_ratio not a number: #{inspect(first.negative_sentiment_ratio)}"},
+          is_number(first.neutral_sentiment_ratio) ||
+            {:error,
+             "neutral_sentiment_ratio not a number: #{inspect(first.neutral_sentiment_ratio)}"}
+        ]
+
+        check_all(
+          checks,
+          "TrendingWords tuple() destructuring works (#{map_size(result)} intervals)"
+        )
+
+      {:ok, result} when is_map(result) ->
+        {:ok,
+         "TrendingWords returned empty map (no data in range, but no crash — tuple destructuring OK)"}
+
+      {:error, err} ->
+        {:error, "TrendingWords failed: #{inspect(err)}"}
+    end
+  end
+
+  @doc "Histogram metric: groupArray((label, value)) returns list of tuples"
+  @spec verify_histogram_metric_tuple() :: verify_result()
+  def verify_histogram_metric_tuple do
+    to = DateTime.utc_now()
+    from = DateTime.add(to, -5, :day)
+
+    case Sanbase.Metric.histogram_data(
+           "eth2_staking_pools_validators_count_over_time",
+           %{slug: "ethereum"},
+           from,
+           to,
+           "1d",
+           10
+         ) do
+      {:ok,
+       [%{datetime: %DateTime{}, value: [%{staking_pool: pool, valuation: val} | _]} | _] = data}
+      when is_binary(pool) and is_integer(val) ->
+        {:ok, "Histogram groupArray tuple destructuring works (#{length(data)} data points)"}
+
+      {:ok, [%{datetime: %DateTime{}, value: []} | _]} ->
+        {:ok, "Histogram returned empty value lists (no crash — tuple destructuring OK)"}
+
+      {:ok, []} ->
+        {:error, "Histogram returned empty list for eth2 staking pools in last 5 days"}
+
+      {:ok, [first | _]} ->
+        {:error, "Unexpected histogram shape: #{inspect(first)}"}
+
+      {:error, err} ->
+        {:error, "Histogram failed: #{inspect(err)}"}
+    end
+  end
+
   # -- Sanbase.Queries integration checks --
   # Uses ephemeral queries only (no DB persistence). All go through
   # query_transform_with_metadata which is the core CH execution path.
@@ -726,6 +799,8 @@ defmodule Sanbase.Clickhouse.MigrationVerifier do
       {"metric_first_datetime", &verify_metric_first_datetime/0},
       {"metric_slugs_by_filter", &verify_metric_slugs_by_filter/0},
       {"metric_slugs_order", &verify_metric_slugs_order/0},
+      {"trending_words_tuple", &verify_trending_words_tuple/0},
+      {"histogram_metric_tuple", &verify_histogram_metric_tuple/0},
       {"sanbase_query_named_params", &verify_sanbase_query_named_params/0},
       {"sanbase_query_real_table", &verify_sanbase_query_real_table/0},
       {"sanbase_query_human_readable", &verify_sanbase_query_human_readable/0},

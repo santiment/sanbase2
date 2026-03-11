@@ -419,8 +419,8 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
         "The summary",
         "Bullish summary",
         "Bearish summary",
-        [0.2, 0.3, 0.5],
-        [0.2, 0.3, 0.5]
+        {0.2, 0.3, 0.5},
+        {0.2, 0.3, 0.5}
       ],
       [
         DateTime.to_unix(context.dt1),
@@ -438,8 +438,8 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
         "Another summary",
         "Bullish summary",
         "Bearish summary",
-        [0.8, 0.1, 0.1],
-        [0.8, 0.1, 0.1]
+        {0.8, 0.1, 0.1},
+        {0.8, 0.1, 0.1}
       ],
       [
         DateTime.to_unix(context.dt1),
@@ -454,8 +454,8 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
         "Third summary",
         "Bullish summary",
         "Bearish summary",
-        [0.5, 0.15, 0.35],
-        [0.5, 0.15, 0.35]
+        {0.5, 0.15, 0.35},
+        {0.5, 0.15, 0.35}
       ],
       [
         DateTime.to_unix(context.dt1),
@@ -470,8 +470,8 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
         "Third summary",
         "Bullish summary",
         "Bearish summary",
-        [0.5, 0.15, 0.35],
-        [0.5, 0.15, 0.35]
+        {0.5, 0.15, 0.35},
+        {0.5, 0.15, 0.35}
       ]
     ]
   end

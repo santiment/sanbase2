@@ -91,8 +91,8 @@ defmodule Sanbase.SocialData.TrendingWords do
         # The percentage of the documents that mention the word that have
         # postive, negative or netural sentiment. The values are in the range [0, 1]
         # and add up to 1
-        [positive_sentiment, neutral_sentiment, negative_sentiment] = sentiment_ratios
-        [positive_bb_sentiment, neutral_bb_sentiment, negative_bb_sentiment] = bb_sentiment_ratios
+        {positive_sentiment, neutral_sentiment, negative_sentiment} = sentiment_ratios
+        {positive_bb_sentiment, neutral_bb_sentiment, negative_bb_sentiment} = bb_sentiment_ratios
 
         summaries = [%{source: source, datetime: datetime, summary: summary}]
         context = transform_context(context)
@@ -151,10 +151,10 @@ defmodule Sanbase.SocialData.TrendingWords do
     query_struct = get_trending_words_query(from, to, interval, size, source, :all)
 
     ClickhouseRepo.query_reduce(query_struct, %{}, fn
-      [_dt, _word, nil, _score], acc ->
+      [_dt, _word, nil, _score | _rest], acc ->
         acc
 
-      [dt, _word, project, score], acc ->
+      [dt, _word, project, score | _rest], acc ->
         datetime = DateTime.from_unix!(dt)
         [_ticker, slug] = String.split(project, "_")
         elem = %{slug: slug, score: score}

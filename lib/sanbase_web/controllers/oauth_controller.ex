@@ -48,14 +48,23 @@ defmodule SanbaseWeb.OAuthController do
   # --- Authorize (GET) - preauthorize then show consent ---
 
   def authorize(%Plug.Conn{} = conn, _params) do
-    conn = store_oauth_return_to(conn)
-
     case current_user_from_session(conn) do
       {:ok, user} ->
-        resource_owner = %ResourceOwner{sub: to_string(user.id), username: user.email}
-        Boruta.Oauth.preauthorize(conn, resource_owner, __MODULE__)
+        # If we arrived here after login redirect (no OAuth params), but the
+        # session has the original full URL, redirect to it to restore params.
+        case {conn.params["client_id"], get_session(conn, :user_return_to)} do
+          {nil, return_to} when is_binary(return_to) ->
+            conn
+            |> delete_session(:user_return_to)
+            |> redirect(to: return_to)
+
+          _ ->
+            resource_owner = %ResourceOwner{sub: to_string(user.id), username: user.email}
+            Boruta.Oauth.preauthorize(conn, resource_owner, __MODULE__)
+        end
 
       :error ->
+        conn = store_oauth_return_to(conn)
         redirect_to_login(conn)
     end
   end
@@ -138,13 +147,13 @@ defmodule SanbaseWeb.OAuthController do
   end
 
   @impl Boruta.Oauth.AuthorizeApplication
-  def preauthorize_success(conn, _response) do
+  def preauthorize_success(conn, response) do
     {:ok, user} = current_user_from_session(conn)
 
     conn
     |> put_resp_header("x-frame-options", "DENY")
     |> put_resp_content_type("text/html")
-    |> send_resp(200, consent_html(user, conn))
+    |> send_resp(200, consent_html(user, conn, response))
   end
 
   @impl Boruta.Oauth.AuthorizeApplication
@@ -202,20 +211,22 @@ defmodule SanbaseWeb.OAuthController do
   end
 
   defp redirect_to_login(conn) do
-    backend_url = Config.module_get(SanbaseWeb.Endpoint, :backend_url)
-    resume_url = request_path_with_query(conn)
-
     case Application.get_env(:sanbase, :env) do
       :prod ->
+        backend_url = Config.module_get(SanbaseWeb.Endpoint, :backend_url)
         frontend_url = Config.module_get(SanbaseWeb.Endpoint, :frontend_url)
 
+        # Pass only the short base path as `from` — the full OAuth query string
+        # is already stored in the session (:user_return_to) and will be restored
+        # when the user returns after login. This avoids very long URLs that get
+        # mangled by Cloudflare challenges.
         login_url =
-          "#{frontend_url}/login?from=#{URI.encode_www_form("#{backend_url}#{resume_url}")}"
+          "#{frontend_url}/login?from=#{URI.encode_www_form("#{backend_url}/oauth/authorize")}"
 
         redirect(conn, external: login_url)
 
       _ ->
-        redirect(conn, to: "/oauth/dev_login?return_to=#{URI.encode_www_form(resume_url)}")
+        redirect(conn, to: "/oauth/dev_login")
     end
   end
 
@@ -235,10 +246,10 @@ defmodule SanbaseWeb.OAuthController do
     "#{conn.request_path}#{query}"
   end
 
-  defp consent_html(user, conn) do
+  defp consent_html(user, conn, response) do
     user_display = Sanbase.Accounts.User.get_name(user)
-    client_id = conn.params["client_id"] || "Unknown"
-    scope = conn.params["scope"] || "default"
+    client_name = response.client.name || conn.params["client_id"] || "Unknown"
+    scope = response.scope || conn.params["scope"] || "default"
     csrf_token = Plug.CSRFProtection.get_csrf_token()
     query_string = conn.query_string
 
@@ -267,7 +278,7 @@ defmodule SanbaseWeb.OAuthController do
       <p>An application is requesting access to your Santiment account.</p>
       <dl class="card">
         <dt>Signed in as</dt><dd>#{Phoenix.HTML.html_escape(user_display) |> Phoenix.HTML.safe_to_string()}</dd>
-        <dt>Client</dt><dd>#{Phoenix.HTML.html_escape(client_id) |> Phoenix.HTML.safe_to_string()}</dd>
+        <dt>Client</dt><dd>#{Phoenix.HTML.html_escape(client_name) |> Phoenix.HTML.safe_to_string()}</dd>
         <dt>Scope</dt><dd>#{Phoenix.HTML.html_escape(scope) |> Phoenix.HTML.safe_to_string()}</dd>
       </dl>
       <form method="post" action="/oauth/authorize?#{Phoenix.HTML.html_escape(query_string) |> Phoenix.HTML.safe_to_string()}">

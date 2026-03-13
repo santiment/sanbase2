@@ -6,6 +6,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
   import Absinthe.Resolution.Helpers, except: [async: 1]
+  import SanbaseWeb.Graphql.Helpers.UserPublicIdHelper, only: [resolve_optional_user_id: 1]
 
   # Query CRUD operations
 
@@ -35,18 +36,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
         resolution
       ) do
     querying_user_id = get_in(resolution.context.auth, [:current_user, Access.key(:id)])
-    queried_user_id = Map.get(args, :user_id, querying_user_id)
 
-    if is_nil(queried_user_id) do
-      {:error,
-       "Error getting user queries: neither userId is provided, nor the query is executed by a logged in user."}
-    else
-      Queries.get_user_queries(
-        queried_user_id,
-        querying_user_id,
-        page: page,
-        page_size: page_size
-      )
+    with {:ok, resolved_user_id} <- resolve_optional_user_id(args) do
+      queried_user_id = resolved_user_id || querying_user_id
+
+      if is_nil(queried_user_id) do
+        {:error,
+         "Error getting user queries: neither userId/userPublicId is provided, nor the query is executed by a logged in user."}
+      else
+        Queries.get_user_queries(
+          queried_user_id,
+          querying_user_id,
+          page: page,
+          page_size: page_size
+        )
+      end
     end
   end
 
@@ -183,18 +187,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
         resolution
       ) do
     querying_user_id = get_in(resolution.context.auth, [:current_user, Access.key(:id)])
-    queried_user_id = Map.get(args, :user_id, querying_user_id)
 
-    if is_nil(queried_user_id) do
-      {:error,
-       "Error getting user dashboards: neither userId is provided, nor the query is executed by a logged in user."}
-    else
-      Dashboards.user_dashboards(
-        queried_user_id,
-        querying_user_id,
-        page: page,
-        page_size: page_size
-      )
+    with {:ok, resolved_user_id} <- resolve_optional_user_id(args) do
+      queried_user_id = resolved_user_id || querying_user_id
+
+      if is_nil(queried_user_id) do
+        {:error,
+         "Error getting user dashboards: neither userId/userPublicId is provided, nor the query is executed by a logged in user."}
+      else
+        Dashboards.user_dashboards(
+          queried_user_id,
+          querying_user_id,
+          page: page,
+          page_size: page_size
+        )
+      end
     end
   end
 

@@ -73,7 +73,8 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
     field :all_insights_for_user, list_of(:post) do
       meta(access: :free)
 
-      arg(:user_id, non_null(:integer))
+      arg(:user_id, :integer, deprecate: "Use userPublicId instead")
+      arg(:user_public_id, :string)
       arg(:categories, list_of(:string))
       arg(:is_pulse, :boolean)
       arg(:is_paywall_required, :boolean)
@@ -90,7 +91,8 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
     field :all_insights_user_voted, list_of(:post) do
       meta(access: :free)
 
-      arg(:user_id, non_null(:integer))
+      arg(:user_id, :integer, deprecate: "Use userPublicId instead")
+      arg(:user_public_id, :string)
       arg(:is_pulse, :boolean)
       arg(:is_paywall_required, :boolean)
       arg(:from, :datetime)

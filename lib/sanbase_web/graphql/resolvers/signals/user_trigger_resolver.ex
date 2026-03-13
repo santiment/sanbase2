@@ -4,6 +4,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
 
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1]
   import Absinthe.Resolution.Helpers, only: [on_load: 2]
+  import SanbaseWeb.Graphql.Helpers.UserPublicIdHelper, only: [resolve_user_id: 1]
 
   alias Sanbase.Accounts.User
   alias Sanbase.Alert.{Trigger, UserTrigger}
@@ -134,13 +135,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
   end
 
   def public_triggers_for_user(_root, args, _resolution) do
-    public_triggers =
-      args.user_id
-      |> UserTrigger.public_triggers_for()
-      |> Enum.map(&transform_user_trigger/1)
-      |> Enum.map(&sanitize_user_trigger_settings/1)
+    with {:ok, user_id} <- resolve_user_id(args) do
+      public_triggers =
+        user_id
+        |> UserTrigger.public_triggers_for()
+        |> Enum.map(&transform_user_trigger/1)
+        |> Enum.map(&sanitize_user_trigger_settings/1)
 
-    {:ok, public_triggers}
+      {:ok, public_triggers}
+    end
   end
 
   def all_public_triggers(_root, _args, _resolution) do

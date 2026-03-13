@@ -1,6 +1,7 @@
 defmodule SanbaseWeb.Graphql.Resolvers.TableConfigurationResolver do
   alias Sanbase.TableConfiguration
   alias Sanbase.Accounts.User
+  import SanbaseWeb.Graphql.Helpers.UserPublicIdHelper, only: [resolve_optional_user_id: 1]
 
   # Queries
 
@@ -12,14 +13,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.TableConfigurationResolver do
   def table_configurations(_root, args, resolution) do
     user = get_in(resolution.context, [:auth, :current_user]) || %User{}
 
-    case args do
-      %{user_id: user_id} when not is_nil(user_id) ->
-        # All table configurations of user_id accessible by the current user
-        {:ok, TableConfiguration.user_table_configurations(user_id, user.id)}
+    with {:ok, resolved_user_id} <- resolve_optional_user_id(args) do
+      args = if resolved_user_id, do: Map.put(args, :user_id, resolved_user_id), else: args
 
-      %{} ->
-        # All table configurations accessible by the current user
-        {:ok, TableConfiguration.table_configurations(user.id)}
+      case args do
+        %{user_id: user_id} when not is_nil(user_id) ->
+          # All table configurations of user_id accessible by the current user
+          {:ok, TableConfiguration.user_table_configurations(user_id, user.id)}
+
+        %{} ->
+          # All table configurations accessible by the current user
+          {:ok, TableConfiguration.table_configurations(user.id)}
+      end
     end
   end
 

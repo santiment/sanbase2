@@ -53,12 +53,14 @@ defmodule SanbaseWeb.Graphql.UserTypes do
 
   input_object :user_selector_input_object do
     field(:id, :id)
+    field(:public_id, :string)
     field(:email, :string)
     field(:username, :string)
   end
 
   object :public_user do
-    field(:id, non_null(:id))
+    field(:id, non_null(:id), deprecate: "Use publicId instead")
+    field(:public_id, non_null(:string))
 
     field :email, :string do
       resolve(&UserResolver.email/3)
@@ -172,7 +174,8 @@ defmodule SanbaseWeb.Graphql.UserTypes do
   end
 
   object :user do
-    field(:id, non_null(:id))
+    field(:id, non_null(:id), deprecate: "Use publicId instead")
+    field(:public_id, non_null(:string))
     field(:email, :string)
     field(:name, :string)
     field(:username, :string)
@@ -499,8 +502,27 @@ defmodule SanbaseWeb.Graphql.UserTypes do
   end
 
   object :user_follower do
-    field(:user_id, non_null(:id))
-    field(:follower_id, non_null(:id))
+    field(:user_id, non_null(:id), deprecate: "Use userPublicId")
+    field(:follower_id, non_null(:id), deprecate: "Use followerPublicId")
+
+    field :user_public_id, :string do
+      resolve(fn parent, _, _ ->
+        case Sanbase.Accounts.User.by_id(parent.user_id) do
+          {:ok, user} -> {:ok, user.public_id}
+          _ -> {:ok, nil}
+        end
+      end)
+    end
+
+    field :follower_public_id, :string do
+      resolve(fn parent, _, _ ->
+        case Sanbase.Accounts.User.by_id(parent.follower_id) do
+          {:ok, user} -> {:ok, user.public_id}
+          _ -> {:ok, nil}
+        end
+      end)
+    end
+
     field(:is_notification_disabled, :boolean)
     field(:user, :public_user)
   end

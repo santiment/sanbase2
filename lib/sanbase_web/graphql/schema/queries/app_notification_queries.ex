@@ -68,7 +68,8 @@ defmodule SanbaseWeb.Graphql.Schema.AppNotificationQueries do
     by the muted user's actions will be silently dropped.
     """
     field :mute_user_notifications, :public_user do
-      arg(:user_id, non_null(:id))
+      arg(:user_id, :id, deprecate: "Use userPublicId instead")
+      arg(:user_public_id, :string)
 
       middleware(JWTAuth)
       resolve(&AppNotificationResolver.mute_user/3)
@@ -78,7 +79,8 @@ defmodule SanbaseWeb.Graphql.Schema.AppNotificationQueries do
     Unmute a previously muted user to resume receiving their notifications.
     """
     field :unmute_user_notifications, :public_user do
-      arg(:user_id, non_null(:id))
+      arg(:user_id, :id, deprecate: "Use userPublicId instead")
+      arg(:user_public_id, :string)
 
       middleware(JWTAuth)
       resolve(&AppNotificationResolver.unmute_user/3)

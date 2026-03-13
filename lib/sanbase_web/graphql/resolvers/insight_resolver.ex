@@ -1,5 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   import Absinthe.Resolution.Helpers, except: [async: 1]
+  import SanbaseWeb.Graphql.Helpers.UserPublicIdHelper, only: [resolve_user_id: 1]
 
   alias SanbaseWeb.Graphql.SanbaseDataloader
   alias Sanbase.Accounts.User
@@ -96,35 +97,39 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
 
   def all_insights_for_user(
         _root,
-        %{user_id: user_id, page: page, page_size: page_size} = args,
+        %{page: page, page_size: page_size} = args,
         _context
       ) do
-    opts = [
-      is_pulse: Map.get(args, :is_pulse),
-      is_paywall_required: Map.get(args, :is_paywall_required),
-      categories: Map.get(args, :categories),
-      from: Map.get(args, :from),
-      to: Map.get(args, :to),
-      page: page,
-      page_size: page_size
-    ]
+    with {:ok, user_id} <- resolve_user_id(args) do
+      opts = [
+        is_pulse: Map.get(args, :is_pulse),
+        is_paywall_required: Map.get(args, :is_paywall_required),
+        categories: Map.get(args, :categories),
+        from: Map.get(args, :from),
+        to: Map.get(args, :to),
+        page: page,
+        page_size: page_size
+      ]
 
-    posts = Post.user_public_insights(user_id, opts)
+      posts = Post.user_public_insights(user_id, opts)
 
-    {:ok, posts}
+      {:ok, posts}
+    end
   end
 
-  def all_insights_user_voted_for(_root, %{user_id: user_id} = args, _context) do
-    opts = [
-      is_pulse: Map.get(args, :is_pulse),
-      is_paywall_required: Map.get(args, :is_paywall_required),
-      from: Map.get(args, :from),
-      to: Map.get(args, :to)
-    ]
+  def all_insights_user_voted_for(_root, args, _context) do
+    with {:ok, user_id} <- resolve_user_id(args) do
+      opts = [
+        is_pulse: Map.get(args, :is_pulse),
+        is_paywall_required: Map.get(args, :is_paywall_required),
+        from: Map.get(args, :from),
+        to: Map.get(args, :to)
+      ]
 
-    posts = Post.all_insights_user_voted_for(user_id, opts)
+      posts = Post.all_insights_user_voted_for(user_id, opts)
 
-    {:ok, posts}
+      {:ok, posts}
+    end
   end
 
   def all_insights_by_tag(_root, %{tag: tag} = args, _context) do

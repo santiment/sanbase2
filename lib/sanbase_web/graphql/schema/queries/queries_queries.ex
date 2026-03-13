@@ -41,7 +41,8 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
       The id of the user whose queries are being fetched.
       If the argument is not provided, fetch the current user queries.
       """
-      arg(:user_id, :integer)
+      arg(:user_id, :integer, deprecate: "Use userPublicId instead")
+      arg(:user_public_id, :string)
 
       arg(:page, non_null(:integer))
       arg(:page_size, non_null(:integer))
@@ -511,7 +512,8 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
       The id of the user whose queries are being fetched.
       If the argument is not provided, fetch the current user queries.
       """
-      arg(:user_id, :integer)
+      arg(:user_id, :integer, deprecate: "Use userPublicId instead")
+      arg(:user_public_id, :string)
 
       arg(:page, non_null(:integer))
       arg(:page_size, non_null(:integer))

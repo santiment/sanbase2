@@ -7,7 +7,16 @@ defmodule SanbaseWeb.Graphql.UserTriggerTypes do
   alias SanbaseWeb.Graphql.Resolvers.VoteResolver
 
   object :user_trigger do
-    field(:user_id, :integer)
+    field(:user_id, :integer, deprecate: "Use userPublicId or the nested user { publicId }")
+
+    field :user_public_id, :string do
+      resolve(fn parent, _, _ ->
+        case Sanbase.Accounts.User.by_id(parent.user_id) do
+          {:ok, user} -> {:ok, user.public_id}
+          _ -> {:ok, nil}
+        end
+      end)
+    end
 
     field :user, :public_user do
       cache_resolve(&SanbaseWeb.Graphql.Resolvers.UserResolver.user_no_preloads/3,
@@ -54,7 +63,16 @@ defmodule SanbaseWeb.Graphql.UserTriggerTypes do
   end
 
   object :public_user_trigger do
-    field(:user_id, :integer)
+    field(:user_id, :integer, deprecate: "Use userPublicId or the nested user { publicId }")
+
+    field :user_public_id, :string do
+      resolve(fn parent, _, _ ->
+        case Sanbase.Accounts.User.by_id(parent.user_id) do
+          {:ok, user} -> {:ok, user.public_id}
+          _ -> {:ok, nil}
+        end
+      end)
+    end
 
     field :user, :public_user do
       cache_resolve(&SanbaseWeb.Graphql.Resolvers.UserResolver.user_no_preloads/3,

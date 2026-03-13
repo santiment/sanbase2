@@ -26,7 +26,8 @@ defmodule SanbaseWeb.Graphql.Schema.LinkedUserQueries do
     field :generate_linked_user_token, :string do
       meta(access: :free)
 
-      arg(:secondary_user_id, non_null(:integer))
+      arg(:secondary_user_id, :integer, deprecate: "Use secondaryUserPublicId instead")
+      arg(:secondary_user_public_id, :string)
 
       middleware(JWTAuth)
       resolve(&LinkedUserResolver.generate_linked_users_token/3)
@@ -44,7 +45,8 @@ defmodule SanbaseWeb.Graphql.Schema.LinkedUserQueries do
     field :remove_primary_user, :boolean do
       meta(access: :free)
 
-      arg(:primary_user_id, non_null(:id))
+      arg(:primary_user_id, :id, deprecate: "Use primaryUserPublicId instead")
+      arg(:primary_user_public_id, :string)
 
       middleware(JWTAuth)
       resolve(&LinkedUserResolver.remove_primary_user/3)
@@ -53,7 +55,8 @@ defmodule SanbaseWeb.Graphql.Schema.LinkedUserQueries do
     field :remove_secondary_user, :boolean do
       meta(access: :free)
 
-      arg(:secondary_user_id, non_null(:id))
+      arg(:secondary_user_id, :id, deprecate: "Use secondaryUserPublicId instead")
+      arg(:secondary_user_public_id, :string)
 
       middleware(JWTAuth)
       resolve(&LinkedUserResolver.remove_secondary_user/3)

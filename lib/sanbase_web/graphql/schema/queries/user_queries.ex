@@ -173,7 +173,8 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
 
     @desc "Follow a chosen user"
     field :follow, :user do
-      arg(:user_id, non_null(:id))
+      arg(:user_id, :id, deprecate: "Use userPublicId instead")
+      arg(:user_public_id, :string)
 
       middleware(JWTAuth)
       resolve(&UserFollowerResolver.follow/3)
@@ -181,14 +182,16 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
 
     @desc "Unfollow a chosen user"
     field :unfollow, :user do
-      arg(:user_id, non_null(:id))
+      arg(:user_id, :id, deprecate: "Use userPublicId instead")
+      arg(:user_public_id, :string)
 
       middleware(JWTAuth)
       resolve(&UserFollowerResolver.unfollow/3)
     end
 
     field :following_toggle_notification, :user do
-      arg(:user_id, non_null(:id))
+      arg(:user_id, :id, deprecate: "Use userPublicId instead")
+      arg(:user_public_id, :string)
       arg(:disable_notifications, :boolean, default_value: false)
 
       middleware(JWTAuth)

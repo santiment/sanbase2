@@ -22,7 +22,8 @@ defmodule SanbaseWeb.Graphql.Schema.ChartConfigurationQueries do
       meta(access: :free)
 
       arg(:chart_configuration_ids, list_of(:integer))
-      arg(:user_id, :integer)
+      arg(:user_id, :integer, deprecate: "Use userPublicId instead")
+      arg(:user_public_id, :string)
       arg(:project_id, :integer)
       arg(:project_slug, :string)
 

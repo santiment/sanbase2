@@ -1,5 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ChartConfigurationResolver do
   import Absinthe.Resolution.Helpers, except: [async: 1]
+  import SanbaseWeb.Graphql.Helpers.UserPublicIdHelper, only: [resolve_optional_user_id: 1]
 
   alias Sanbase.Chart.Configuration
   alias Sanbase.Accounts.User
@@ -15,7 +16,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChartConfigurationResolver do
   def chart_configurations(_root, args, resolution) do
     with %User{} = user <- get_in(resolution.context, [:auth, :current_user]) || %User{},
          {:ok, args} <- transform_project_slug_to_id(args),
-         :ok <- validate_only_one_selector(args) do
+         :ok <- validate_only_one_selector(args),
+         {:ok, resolved_user_id} <- resolve_optional_user_id(args) do
+      args = if resolved_user_id, do: Map.put(args, :user_id, resolved_user_id), else: args
+
       case args do
         %{chart_configuration_ids: chart_configuration_ids} ->
           # TODO: Improve the response format consistency of the Configuration functions.

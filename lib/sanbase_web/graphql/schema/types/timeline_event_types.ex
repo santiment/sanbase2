@@ -54,7 +54,16 @@ defmodule SanbaseWeb.Graphql.TimelineEventTypes do
   end
 
   object :upvote do
-    field(:user_id, :integer)
+    field(:user_id, :integer, deprecate: "Use userPublicId")
+
+    field :user_public_id, :string do
+      resolve(fn parent, _, _ ->
+        case Sanbase.Accounts.User.by_id(parent.user_id) do
+          {:ok, user} -> {:ok, user.public_id}
+          _ -> {:ok, nil}
+        end
+      end)
+    end
   end
 
   object :seen_event do

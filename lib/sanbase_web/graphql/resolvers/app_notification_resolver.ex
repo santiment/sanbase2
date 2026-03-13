@@ -1,5 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.AppNotificationResolver do
   alias Sanbase.AppNotifications
+  import SanbaseWeb.Graphql.Helpers.UserPublicIdHelper, only: [resolve_user_id: 1]
 
   @doc """
   Fetch notifications for the current user with cursor-based pagination.
@@ -49,25 +50,25 @@ defmodule SanbaseWeb.Graphql.Resolvers.AppNotificationResolver do
     {:ok, not is_nil(read_at)}
   end
 
-  def mute_user(_root, %{user_id: muted_user_id}, %{
+  def mute_user(_root, args, %{
         context: %{auth: %{current_user: user}}
       }) do
-    muted_user_id = Sanbase.Math.to_integer(muted_user_id)
-
-    case AppNotifications.mute_user(user.id, muted_user_id) do
-      {:ok, _} -> Sanbase.Accounts.get_user(muted_user_id)
-      {:error, reason} -> {:error, reason}
+    with {:ok, muted_user_id} <- resolve_user_id(args) do
+      case AppNotifications.mute_user(user.id, muted_user_id) do
+        {:ok, _} -> Sanbase.Accounts.get_user(muted_user_id)
+        {:error, reason} -> {:error, reason}
+      end
     end
   end
 
-  def unmute_user(_root, %{user_id: muted_user_id}, %{
+  def unmute_user(_root, args, %{
         context: %{auth: %{current_user: user}}
       }) do
-    muted_user_id = Sanbase.Math.to_integer(muted_user_id)
-
-    case AppNotifications.unmute_user(user.id, muted_user_id) do
-      {:ok, _} -> Sanbase.Accounts.get_user(muted_user_id)
-      {:error, reason} -> {:error, reason}
+    with {:ok, muted_user_id} <- resolve_user_id(args) do
+      case AppNotifications.unmute_user(user.id, muted_user_id) do
+        {:ok, _} -> Sanbase.Accounts.get_user(muted_user_id)
+        {:error, reason} -> {:error, reason}
+      end
     end
   end
 

@@ -21,7 +21,8 @@ defmodule SanbaseWeb.Graphql.Schema.TableConfigurationQueries do
     field :table_configurations, list_of(:table_configuration) do
       meta(access: :free)
 
-      arg(:user_id, :integer)
+      arg(:user_id, :integer, deprecate: "Use userPublicId instead")
+      arg(:user_public_id, :string)
       arg(:project_id, :integer)
 
       resolve(&TableConfigurationResolver.table_configurations/3)

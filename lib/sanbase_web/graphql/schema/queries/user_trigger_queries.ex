@@ -27,7 +27,8 @@ defmodule SanbaseWeb.Graphql.Schema.UserTriggerQueries do
     field :public_triggers_for_user, list_of(:public_user_trigger) do
       meta(access: :free)
 
-      arg(:user_id, non_null(:id))
+      arg(:user_id, :id, deprecate: "Use userPublicId instead")
+      arg(:user_public_id, :string)
 
       resolve(&UserTriggerResolver.public_triggers_for_user/3)
     end

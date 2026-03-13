@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict tpxwTYRfcKC8PysdQ2eC5Aq4518wffcmJ5sgwcqm0mdmu1Yx326ndg2ZFXKg41Z
+\restrict WjQJ1nZBOLvtFH2HY9ofwtHp0H1kbwd2ZkiABu8l5meUFhfrWL6EExjph9zaKT3
 
--- Dumped from database version 15.15 (Homebrew)
--- Dumped by pg_dump version 15.15 (Homebrew)
+-- Dumped from database version 15.16 (Homebrew)
+-- Dumped by pg_dump version 15.16 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -901,8 +901,8 @@ CREATE TABLE public.chat_messages (
     sources jsonb[] DEFAULT ARRAY[]::jsonb[],
     suggestions text[] DEFAULT ARRAY[]::text[],
     feedback_type character varying(255),
-    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY ((ARRAY['thumbs_up'::character varying, 'thumbs_down'::character varying])::text[])) OR (feedback_type IS NULL))),
-    CONSTRAINT valid_role CHECK (((role)::text = ANY ((ARRAY['user'::character varying, 'assistant'::character varying])::text[])))
+    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY (ARRAY[('thumbs_up'::character varying)::text, ('thumbs_down'::character varying)::text])) OR (feedback_type IS NULL))),
+    CONSTRAINT valid_role CHECK (((role)::text = ANY (ARRAY[('user'::character varying)::text, ('assistant'::character varying)::text])))
 );
 
 
@@ -5416,7 +5416,8 @@ CREATE TABLE public.users (
     description text,
     website_url character varying(255),
     twitter_handle character varying(255),
-    feature_access_level character varying(255) DEFAULT 'released'::character varying NOT NULL
+    feature_access_level character varying(255) DEFAULT 'released'::character varying NOT NULL,
+    public_id uuid DEFAULT gen_random_uuid()
 );
 
 
@@ -11262,7 +11263,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict tpxwTYRfcKC8PysdQ2eC5Aq4518wffcmJ5sgwcqm0mdmu1Yx326ndg2ZFXKg41Z
+\unrestrict WjQJ1nZBOLvtFH2HY9ofwtHp0H1kbwd2ZkiABu8l5meUFhfrWL6EExjph9zaKT3
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -11818,3 +11819,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260309140151);
 INSERT INTO public."schema_migrations" (version) VALUES (20260309140152);
 INSERT INTO public."schema_migrations" (version) VALUES (20260309140153);
 INSERT INTO public."schema_migrations" (version) VALUES (20260309140154);
+INSERT INTO public."schema_migrations" (version) VALUES (20260313114332);

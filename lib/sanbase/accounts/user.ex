@@ -86,6 +86,7 @@ defmodule Sanbase.Accounts.User do
     field(:registration_state, :map)
     field(:is_superuser, :boolean, default: false)
     field(:twitter_id, :string)
+    field(:public_id, Ecto.UUID, autogenerate: false)
 
     field(:description, :string)
     field(:website_url, :string)
@@ -192,6 +193,7 @@ defmodule Sanbase.Accounts.User do
     |> unique_constraint(:twitter_id)
     |> validate_inclusion(:metric_access_level, @allowed_access_levels)
     |> validate_inclusion(:feature_access_level, @allowed_access_levels)
+    |> maybe_put_public_id()
   end
 
   def san_balance(user), do: __MODULE__.SanBalance.san_balance(user)
@@ -478,6 +480,13 @@ defmodule Sanbase.Accounts.User do
   end
 
   # Private functions
+
+  defp maybe_put_public_id(changeset) do
+    case get_field(changeset, :public_id) do
+      nil -> put_change(changeset, :public_id, Uniq.UUID.uuid7())
+      _ -> changeset
+    end
+  end
 
   defp maybe_preload(query, opts) do
     case Keyword.get(opts, :preload?, true) do

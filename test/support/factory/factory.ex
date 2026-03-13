@@ -38,6 +38,7 @@ defmodule Sanbase.Factory do
       username: :crypto.strong_rand_bytes(16) |> Base.encode16(),
       email: (:crypto.strong_rand_bytes(16) |> Base.encode16()) <> "@santiment.net",
       salt: User.generate_salt(),
+      public_id: Uniq.UUID.uuid7(),
       privacy_policy_accepted: true,
       registration_state: %{
         "state" => "finished",
@@ -54,6 +55,7 @@ defmodule Sanbase.Factory do
       username: :crypto.strong_rand_bytes(16) |> Base.encode16(),
       email: (:crypto.strong_rand_bytes(16) |> Base.encode16()) <> "@santiment.net",
       salt: User.generate_salt(),
+      public_id: Uniq.UUID.uuid7(),
       privacy_policy_accepted: true,
       registration_state: %{"state" => "init"},
       san_balance: Decimal.new(0),

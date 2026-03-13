@@ -67,7 +67,7 @@ defmodule SanbaseWeb.Graphql.EntityTypes do
     field(:insight, :post)
     field(:project_watchlist, :user_list)
     field(:screener, :user_list)
-    field(:user_trigger, :user_trigger)
+    field(:user_trigger, :public_user_trigger)
   end
 
   object :most_voted_entity_result do

@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
   import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
-  import SanbaseWeb.Graphql.Helpers.Utils, only: [transform_user_trigger: 1]
+
+  import SanbaseWeb.Graphql.Helpers.Utils,
+    only: [transform_user_trigger: 1, sanitize_trigger_settings: 1]
 
   def store_user_entity_interaction(_root, args, %{context: %{auth: %{current_user: user}}}) do
     args = Map.take(args, [:entity_id, :entity_type, :interaction_type])
@@ -251,8 +253,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
   defp handle_result(list) do
     Enum.map(list, fn map ->
       case Map.to_list(map) do
-        [{:user_trigger, entity}] -> %{:user_trigger => transform_user_trigger(entity)}
-        _ -> map
+        [{:user_trigger, entity}] ->
+          ut = transform_user_trigger(entity)
+          trigger = Map.update!(ut.trigger, :settings, &sanitize_trigger_settings/1)
+          %{:user_trigger => %{ut | trigger: trigger}}
+
+        _ ->
+          map
       end
     end)
   end

@@ -24,7 +24,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserTriggerQueries do
     end
 
     @desc "Get public alert triggers by user_id"
-    field :public_triggers_for_user, list_of(:user_trigger) do
+    field :public_triggers_for_user, list_of(:public_user_trigger) do
       meta(access: :free)
 
       arg(:user_id, non_null(:id))
@@ -33,7 +33,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserTriggerQueries do
     end
 
     @desc "Get all public alert triggers"
-    field :all_public_triggers, list_of(:user_trigger) do
+    field :all_public_triggers, list_of(:public_user_trigger) do
       meta(access: :free)
 
       resolve(&UserTriggerResolver.all_public_triggers/3)

@@ -155,7 +155,6 @@ defmodule Sanbase.Mixfile do
       {:ueberauth_twitter, "~> 0.4"},
       # uuid was renamed to elixir_uuid
       {:elixir_uuid, "~> 1.2", override: true},
-      {:uniq, "~> 0.6"},
       {:vex, "~> 0.9", override: true},
       {:waffle, "~> 1.1"},
       {:websockex, "~> 0.5.1"},

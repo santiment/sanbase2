@@ -361,7 +361,17 @@ defmodule Sanbase.Accounts.User do
     end
   end
 
+  def by_public_id(public_id, opts \\ []) when is_binary(public_id) do
+    query = from(u in __MODULE__, where: u.public_id == ^public_id) |> maybe_preload(opts)
+
+    case Repo.one(query) do
+      nil -> {:error, "Cannot fetch user with public_id #{public_id}"}
+      %__MODULE__{} = user -> {:ok, user}
+    end
+  end
+
   def by_selector(selector, opts \\ [])
+  def by_selector(%{public_id: public_id}, opts), do: by_public_id(public_id, opts)
   def by_selector(%{id: id}, opts), do: by_id(Sanbase.Math.to_integer(id), opts)
   def by_selector(%{email: email}, opts), do: by_email(email, opts)
   def by_selector(%{username: username}, opts), do: by_username(username, opts)
@@ -483,7 +493,7 @@ defmodule Sanbase.Accounts.User do
 
   defp maybe_put_public_id(changeset) do
     case get_field(changeset, :public_id) do
-      nil -> put_change(changeset, :public_id, Uniq.UUID.uuid7())
+      nil -> put_change(changeset, :public_id, Ecto.UUID.generate())
       _ -> changeset
     end
   end

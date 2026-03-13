@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict WjQJ1nZBOLvtFH2HY9ofwtHp0H1kbwd2ZkiABu8l5meUFhfrWL6EExjph9zaKT3
+\restrict XyPqUKOY4NFzbmowVAoxBnUjLYTk50maJJTRv7cR4YCT4jFHZV1C33qYkaumFEo
 
 -- Dumped from database version 15.16 (Homebrew)
 -- Dumped by pg_dump version 15.16 (Homebrew)
@@ -5417,7 +5417,7 @@ CREATE TABLE public.users (
     website_url character varying(255),
     twitter_handle character varying(255),
     feature_access_level character varying(255) DEFAULT 'released'::character varying NOT NULL,
-    public_id uuid DEFAULT gen_random_uuid()
+    public_id uuid DEFAULT gen_random_uuid() NOT NULL
 );
 
 
@@ -9598,6 +9598,13 @@ CREATE UNIQUE INDEX users_email_token_index ON public.users USING btree (email_t
 
 
 --
+-- Name: users_public_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX users_public_id_index ON public.users USING btree (public_id);
+
+
+--
 -- Name: users_stripe_customer_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11263,7 +11270,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict WjQJ1nZBOLvtFH2HY9ofwtHp0H1kbwd2ZkiABu8l5meUFhfrWL6EExjph9zaKT3
+\unrestrict XyPqUKOY4NFzbmowVAoxBnUjLYTk50maJJTRv7cR4YCT4jFHZV1C33qYkaumFEo
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -11820,3 +11827,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260309140152);
 INSERT INTO public."schema_migrations" (version) VALUES (20260309140153);
 INSERT INTO public."schema_migrations" (version) VALUES (20260309140154);
 INSERT INTO public."schema_migrations" (version) VALUES (20260313114332);
+INSERT INTO public."schema_migrations" (version) VALUES (20260313114333);
+INSERT INTO public."schema_migrations" (version) VALUES (20260313114334);

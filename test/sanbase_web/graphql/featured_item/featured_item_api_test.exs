@@ -393,14 +393,14 @@ defmodule Sanbase.FeaturedItemApiTest do
       assert Map.has_key?(trigger, "description")
       assert Map.has_key?(trigger, "settings")
       assert Map.has_key?(trigger, "isPublic")
+      assert Map.has_key?(trigger, "isActive")
+      assert Map.has_key?(trigger, "isRepeating")
+      assert Map.has_key?(trigger, "isFrozen")
       assert Map.has_key?(trigger, "insertedAt")
       assert Map.has_key?(trigger, "updatedAt")
 
       # Private trigger-level fields are NOT present
       refute Map.has_key?(trigger, "cooldown")
-      refute Map.has_key?(trigger, "isActive")
-      refute Map.has_key?(trigger, "isRepeating")
-      refute Map.has_key?(trigger, "isFrozen")
       refute Map.has_key?(trigger, "isHidden")
     end
 
@@ -466,6 +466,9 @@ defmodule Sanbase.FeaturedItemApiTest do
             description
             settings
             isPublic
+            isActive
+            isRepeating
+            isFrozen
             insertedAt
             updatedAt
           }

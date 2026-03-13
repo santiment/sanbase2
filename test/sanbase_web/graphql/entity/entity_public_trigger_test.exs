@@ -197,11 +197,13 @@ defmodule SanbaseWeb.Graphql.EntityPublicTriggerTest do
     assert Map.has_key?(trigger, "description")
     assert Map.has_key?(trigger, "iconUrl")
 
+    # Trigger-level fields that are now public
+    assert Map.has_key?(trigger, "isActive")
+    assert Map.has_key?(trigger, "isRepeating")
+    assert Map.has_key?(trigger, "isFrozen")
+
     # Trigger-level private fields are NOT queryable (not in schema)
     refute Map.has_key?(trigger, "cooldown")
-    refute Map.has_key?(trigger, "isActive")
-    refute Map.has_key?(trigger, "isRepeating")
-    refute Map.has_key?(trigger, "isFrozen")
     refute Map.has_key?(trigger, "isHidden")
     # Settings public fields are present
     settings = trigger["settings"]
@@ -247,6 +249,9 @@ defmodule SanbaseWeb.Graphql.EntityPublicTriggerTest do
               iconUrl
               settings
               isPublic
+              isActive
+              isRepeating
+              isFrozen
               isFeatured
               insertedAt
               updatedAt
@@ -279,6 +284,9 @@ defmodule SanbaseWeb.Graphql.EntityPublicTriggerTest do
               iconUrl
               settings
               isPublic
+              isActive
+              isRepeating
+              isFrozen
               isFeatured
               insertedAt
               updatedAt

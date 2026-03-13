@@ -78,9 +78,8 @@ defmodule SanbaseWeb.Graphql.UserTriggerTypes do
 
   @desc ~s"""
   A public-safe representation of a trigger. Same shape as :trigger but
-  with private fields removed: no cooldown, is_active, is_repeating,
-  is_frozen, is_hidden. The settings JSON has private keys
-  (channel, template, extra_explanation) stripped out.
+  with private fields removed: no cooldown, is_hidden. The settings JSON
+  has private keys (channel, template, extra_explanation) stripped out.
   """
   object :public_trigger do
     field(:id, non_null(:integer))
@@ -95,6 +94,9 @@ defmodule SanbaseWeb.Graphql.UserTriggerTypes do
 
     field(:settings, non_null(:json))
     field(:is_public, non_null(:boolean))
+    field(:is_active, non_null(:boolean))
+    field(:is_repeating, non_null(:boolean))
+    field(:is_frozen, non_null(:boolean))
     field(:is_featured, :boolean)
     field(:inserted_at, :datetime)
     field(:updated_at, :datetime)

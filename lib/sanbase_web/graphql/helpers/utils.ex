@@ -103,6 +103,9 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
       last_triggered: trigger.last_triggered,
       settings: settings,
       is_public: trigger.is_public,
+      is_active: trigger.is_active,
+      is_repeating: trigger.is_repeating,
+      is_frozen: trigger.is_frozen,
       is_featured: trigger.is_featured,
       inserted_at: trigger.inserted_at,
       updated_at: trigger.updated_at

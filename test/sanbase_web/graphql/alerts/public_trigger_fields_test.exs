@@ -59,14 +59,14 @@ defmodule SanbaseWeb.Graphql.PublicTriggerFieldsTest do
       assert Map.has_key?(trigger, "description")
       assert Map.has_key?(trigger, "settings")
       assert Map.has_key?(trigger, "isPublic")
+      assert Map.has_key?(trigger, "isActive")
+      assert Map.has_key?(trigger, "isRepeating")
+      assert Map.has_key?(trigger, "isFrozen")
       assert Map.has_key?(trigger, "insertedAt")
       assert Map.has_key?(trigger, "updatedAt")
 
       # Private trigger-level fields are NOT present
       refute Map.has_key?(trigger, "cooldown")
-      refute Map.has_key?(trigger, "isActive")
-      refute Map.has_key?(trigger, "isRepeating")
-      refute Map.has_key?(trigger, "isFrozen")
       refute Map.has_key?(trigger, "isHidden")
     end
 
@@ -143,7 +143,8 @@ defmodule SanbaseWeb.Graphql.PublicTriggerFieldsTest do
       [public_trigger] = public_user_all_fields(conn, user)
 
       # Non-settings shared fields have identical values
-      for field <- ~w(id title description isPublic insertedAt updatedAt iconUrl) do
+      for field <-
+            ~w(id title description isPublic isActive isRepeating isFrozen insertedAt updatedAt iconUrl) do
         assert Map.get(private_trigger, field) == Map.get(public_trigger, field),
                "Field #{field} differs: private=#{inspect(Map.get(private_trigger, field))}, public=#{inspect(Map.get(public_trigger, field))}"
       end
@@ -164,13 +165,13 @@ defmodule SanbaseWeb.Graphql.PublicTriggerFieldsTest do
       end
 
       # Private-only fields are present on currentUser trigger
-      for field <- ~w(cooldown isActive isRepeating isFrozen isHidden lastTriggeredDatetime) do
+      for field <- ~w(cooldown isHidden lastTriggeredDatetime) do
         assert Map.has_key?(private_trigger, field),
                "Expected currentUser trigger to have field #{field}"
       end
 
       # Private-only fields are absent on getUser trigger
-      for field <- ~w(cooldown isActive isRepeating isFrozen isHidden lastTriggeredDatetime) do
+      for field <- ~w(cooldown isHidden lastTriggeredDatetime) do
         refute Map.has_key?(public_trigger, field),
                "Expected getUser trigger NOT to have field #{field}"
       end
@@ -218,6 +219,9 @@ defmodule SanbaseWeb.Graphql.PublicTriggerFieldsTest do
           iconUrl
           settings
           isPublic
+          isActive
+          isRepeating
+          isFrozen
           insertedAt
           updatedAt
         }
@@ -265,6 +269,9 @@ defmodule SanbaseWeb.Graphql.PublicTriggerFieldsTest do
           description
           settings
           isPublic
+          isActive
+          isRepeating
+          isFrozen
           insertedAt
           updatedAt
         }

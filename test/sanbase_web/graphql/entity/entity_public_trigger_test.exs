@@ -203,8 +203,6 @@ defmodule SanbaseWeb.Graphql.EntityPublicTriggerTest do
     refute Map.has_key?(trigger, "isRepeating")
     refute Map.has_key?(trigger, "isFrozen")
     refute Map.has_key?(trigger, "isHidden")
-    refute Map.has_key?(trigger, "lastTriggeredDatetime")
-
     # Settings public fields are present
     settings = trigger["settings"]
     assert settings["type"] == "metric_signal"

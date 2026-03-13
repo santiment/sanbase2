@@ -5,6 +5,17 @@ defmodule Sanbase.MCP.FetchInsightsTool do
 
   alias Anubis.Server.Response
   alias Sanbase.Insight.Post
+  alias Sanbase.MCP.Utils
+
+  @impl true
+  def annotations do
+    %{
+      "title" => "Fetch Insights",
+      "readOnlyHint" => true,
+      "destructiveHint" => false,
+      "openWorldHint" => false
+    }
+  end
 
   schema do
     field(:insight_ids, :any,
@@ -21,11 +32,13 @@ defmodule Sanbase.MCP.FetchInsightsTool do
   defp do_execute(%{insight_ids: insight_ids}, frame) do
     with {:ok, parsed_ids} <- parse_insight_ids(insight_ids),
          {:ok, insights} <- fetch_insight_details(parsed_ids) do
-      response_data = %{
-        insights: insights,
-        total_count: length(insights),
-        requested_ids: parsed_ids
-      }
+      response_data =
+        %{
+          insights: insights,
+          total_count: length(insights),
+          requested_ids: parsed_ids
+        }
+        |> Utils.truncate_response()
 
       {:reply, Response.json(Response.tool(), response_data), frame}
     else

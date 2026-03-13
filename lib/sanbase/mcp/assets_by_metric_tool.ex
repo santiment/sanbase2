@@ -48,6 +48,16 @@ defmodule Sanbase.MCP.AssetsByMetricTool do
 
   alias Anubis.Server.Response
 
+  @impl true
+  def annotations do
+    %{
+      "title" => "Screen Assets by Metric",
+      "readOnlyHint" => true,
+      "destructiveHint" => false,
+      "openWorldHint" => false
+    }
+  end
+
   schema do
     field(:metric, :string,
       required: true,

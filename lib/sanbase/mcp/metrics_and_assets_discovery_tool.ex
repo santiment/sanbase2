@@ -50,7 +50,17 @@ defmodule Sanbase.MCP.MetricsAndAssetsDiscoveryTool do
   use Anubis.Server.Component, type: :tool
 
   alias Anubis.Server.Response
-  alias Sanbase.MCP.DataCatalog
+  alias Sanbase.MCP.{DataCatalog, Utils}
+
+  @impl true
+  def annotations do
+    %{
+      "title" => "Metrics and Assets Discovery",
+      "readOnlyHint" => true,
+      "destructiveHint" => false,
+      "openWorldHint" => false
+    }
+  end
 
   schema do
     field(:slug, :string,
@@ -91,7 +101,7 @@ defmodule Sanbase.MCP.MetricsAndAssetsDiscoveryTool do
         {slug, metric} when is_binary(slug) and is_binary(metric) -> get_data(slug, metric)
       end
 
-    {:reply, Response.json(Response.tool(), response_data), frame}
+    {:reply, Response.json(Response.tool(), Utils.truncate_response(response_data)), frame}
   end
 
   defp get_data(nil = _slug, nil = _metric) do

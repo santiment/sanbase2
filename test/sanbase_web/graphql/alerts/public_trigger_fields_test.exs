@@ -68,7 +68,6 @@ defmodule SanbaseWeb.Graphql.PublicTriggerFieldsTest do
       refute Map.has_key?(trigger, "isRepeating")
       refute Map.has_key?(trigger, "isFrozen")
       refute Map.has_key?(trigger, "isHidden")
-      refute Map.has_key?(trigger, "lastTriggeredDatetime")
     end
 
     test "settings have private fields stripped", context do

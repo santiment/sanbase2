@@ -100,6 +100,7 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
       description: trigger.description,
       icon_url: trigger.icon_url,
       tags: trigger.tags,
+      last_triggered: trigger.last_triggered,
       settings: settings,
       is_public: trigger.is_public,
       is_featured: trigger.is_featured,

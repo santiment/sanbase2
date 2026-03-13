@@ -1,5 +1,7 @@
 defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
-  import SanbaseWeb.Graphql.Helpers.Utils, only: [transform_user_trigger: 1]
+  import SanbaseWeb.Graphql.Helpers.Utils,
+    only: [transform_user_trigger: 1, to_public_trigger: 1, sanitize_trigger_settings: 1]
+
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1]
   import Absinthe.Resolution.Helpers, only: [on_load: 2]
 
@@ -30,6 +32,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
       |> UserTrigger.public_triggers_for()
       |> Enum.map(&transform_user_trigger/1)
       |> Enum.map(& &1.trigger)
+
+    {:ok, public_triggers}
+  end
+
+  def public_triggers_public_user(%User{} = user, _args, _resolution) do
+    public_triggers =
+      user.id
+      |> UserTrigger.public_triggers_for()
+      |> Enum.map(&transform_user_trigger/1)
+      |> Enum.map(fn %{trigger: trigger} -> to_public_trigger(trigger) end)
 
     {:ok, public_triggers}
   end
@@ -126,12 +138,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
       args.user_id
       |> UserTrigger.public_triggers_for()
       |> Enum.map(&transform_user_trigger/1)
+      |> Enum.map(&sanitize_user_trigger_settings/1)
 
     {:ok, public_triggers}
   end
 
   def all_public_triggers(_root, _args, _resolution) do
-    {:ok, UserTrigger.all_public_triggers() |> Enum.map(&transform_user_trigger/1)}
+    {:ok,
+     UserTrigger.all_public_triggers()
+     |> Enum.map(&transform_user_trigger/1)
+     |> Enum.map(&sanitize_user_trigger_settings/1)}
+  end
+
+  defp sanitize_user_trigger_settings(%{trigger: trigger} = ut) do
+    %{ut | trigger: Map.update!(trigger, :settings, &sanitize_trigger_settings/1)}
   end
 
   def historical_trigger_points(_root, args, _) do

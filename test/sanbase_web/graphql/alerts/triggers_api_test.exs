@@ -405,7 +405,19 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     triggers = result["data"]["allPublicTriggers"]
     assert length(triggers) == 1
     user_trigger = triggers |> List.first()
-    assert user_trigger["trigger"]["settings"] == trigger_settings
+    settings = user_trigger["trigger"]["settings"]
+
+    # Public settings fields are present
+    assert settings["type"] == trigger_settings["type"]
+    assert settings["metric"] == trigger_settings["metric"]
+    assert settings["target"] == trigger_settings["target"]
+    assert settings["time_window"] == trigger_settings["time_window"]
+
+    # Private settings fields are stripped
+    refute Map.has_key?(settings, "channel")
+    refute Map.has_key?(settings, "template")
+    refute Map.has_key?(settings, "extra_explanation")
+
     assert user_trigger["trigger"]["tags"] == []
   end
 
@@ -448,7 +460,19 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       triggers = result["data"]["publicTriggersForUser"]
       assert length(triggers) == 1
       trigger = triggers |> List.first()
-      assert trigger["trigger"]["settings"] == trigger_settings
+      settings = trigger["trigger"]["settings"]
+
+      # Public settings fields are present
+      assert settings["type"] == trigger_settings["type"]
+      assert settings["metric"] == trigger_settings["metric"]
+      assert settings["target"] == trigger_settings["target"]
+      assert settings["time_window"] == trigger_settings["time_window"]
+
+      # Private settings fields are stripped
+      refute Map.has_key?(settings, "channel")
+      refute Map.has_key?(settings, "template")
+      refute Map.has_key?(settings, "extra_explanation")
+
       assert trigger["trigger"]["tags"] == []
     end)
   end

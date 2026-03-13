@@ -264,8 +264,7 @@ defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
                  %{
                    "userTrigger" => %{
                      "trigger" => %{
-                       "id" => ^user_trigger_id,
-                       "isHidden" => false
+                       "id" => ^user_trigger_id
                      }
                    }
                  }
@@ -526,7 +525,7 @@ defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
           addressWatchlist{ id isHidden isFeatured }
           screener{ id isHidden isFeatured }
           chartConfiguration{ id isHidden isFeatured }
-          userTrigger{ trigger{ id isHidden isFeatured } }
+          userTrigger{ trigger{ id isFeatured } }
         }
       }
     }

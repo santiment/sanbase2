@@ -380,6 +380,63 @@ defmodule Sanbase.FeaturedItemApiTest do
              }
     end
 
+    test "private trigger-level fields are not exposed", context do
+      user_trigger = insert(:user_trigger, is_public: true)
+      :ok = FeaturedItem.update_item(user_trigger, true)
+
+      [result] = fetch_featured_triggers_all_fields(context.conn)
+      trigger = result["trigger"]
+
+      # Public fields are present
+      assert Map.has_key?(trigger, "id")
+      assert Map.has_key?(trigger, "title")
+      assert Map.has_key?(trigger, "description")
+      assert Map.has_key?(trigger, "settings")
+      assert Map.has_key?(trigger, "isPublic")
+      assert Map.has_key?(trigger, "insertedAt")
+      assert Map.has_key?(trigger, "updatedAt")
+
+      # Private trigger-level fields are NOT present
+      refute Map.has_key?(trigger, "cooldown")
+      refute Map.has_key?(trigger, "isActive")
+      refute Map.has_key?(trigger, "isRepeating")
+      refute Map.has_key?(trigger, "isFrozen")
+      refute Map.has_key?(trigger, "isHidden")
+    end
+
+    test "settings have private fields stripped", context do
+      webhook_settings = %{
+        "type" => "metric_signal",
+        "metric" => "daily_active_addresses",
+        "target" => %{"slug" => "santiment"},
+        "channel" => [%{"webhook" => "https://example.com/secret_webhook"}],
+        "time_window" => "1d",
+        "operation" => %{"percent_up" => 300.0}
+      }
+
+      user_trigger =
+        insert(:user_trigger,
+          is_public: true,
+          trigger: %{title: "Webhook trigger", is_public: true, settings: webhook_settings}
+        )
+
+      :ok = FeaturedItem.update_item(user_trigger, true)
+
+      [result] = fetch_featured_triggers_all_fields(context.conn)
+      settings = result["trigger"]["settings"]
+
+      # Public settings fields are present
+      assert Map.has_key?(settings, "type")
+      assert Map.has_key?(settings, "metric")
+      assert Map.has_key?(settings, "target")
+      assert Map.has_key?(settings, "operation")
+
+      # Private settings fields are NOT present
+      refute Map.has_key?(settings, "channel")
+      refute Map.has_key?(settings, "template")
+      refute Map.has_key?(settings, "extra_explanation")
+    end
+
     defp fetch_user_triggers(conn) do
       query = """
       {
@@ -396,6 +453,30 @@ defmodule Sanbase.FeaturedItemApiTest do
       conn
       |> post("/graphql", query_skeleton(query))
       |> json_response(200)
+    end
+
+    defp fetch_featured_triggers_all_fields(conn) do
+      query = """
+      {
+        featuredUserTriggers{
+          userId
+          trigger{
+            id
+            title
+            description
+            settings
+            isPublic
+            insertedAt
+            updatedAt
+          }
+        }
+      }
+      """
+
+      conn
+      |> post("/graphql", query_skeleton(query))
+      |> json_response(200)
+      |> get_in(["data", "featuredUserTriggers"])
     end
   end
 

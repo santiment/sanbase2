@@ -29,7 +29,7 @@ defmodule SanbaseWeb.Graphql.Schema.FeaturedQueries do
       cache_resolve(&FeaturedItemResolver.screeners/3)
     end
 
-    field :featured_user_triggers, list_of(:user_trigger) do
+    field :featured_user_triggers, list_of(:public_user_trigger) do
       meta(access: :free)
       cache_resolve(&FeaturedItemResolver.user_triggers/3)
     end

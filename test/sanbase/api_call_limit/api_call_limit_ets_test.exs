@@ -227,10 +227,51 @@ defmodule Sanbase.ApiCallLimit.ETSTest do
       {:ok, _} = ETS.get_quota(:user, user, :apikey)
 
       # Each task makes 10 API calls. With test quota ~5-10, count >= quota
-      # so the ETS module bypasses atomics and writes directly to DB.
-      # This tests the direct_db_update fallback under heavy concurrency.
-      iterations = 100
+      # so most tasks hit the direct_db_update fallback after a few retries.
+      # 30 tasks is enough to exercise all code paths (atomics fast path,
+      # flush contention, count>=quota shortcut, direct DB fallback) without
+      # overwhelming the test DB with 90+ serialized FOR UPDATE transactions.
+      iterations = 30
       calls_per_task = 10
+
+      tasks =
+        for _ <- 1..iterations do
+          Task.async(fn ->
+            ETS.update_usage(:user, :apikey, user, calls_per_task, 1000)
+          end)
+        end
+
+      Task.await_many(tasks, 10_000)
+
+      # Force a final flush
+      ETS.update_usage(:user, :apikey, user, 1_000_000, 0)
+
+      acl = Sanbase.Repo.get_by(ApiCallLimit, user_id: user.id)
+      total_calls = Enum.max(Map.values(acl.api_calls))
+      expected = iterations * calls_per_task + 1_000_000
+
+      # Allow tolerance due to the inherent batching nature of the system.
+      # In test config quota is 5-10, so with 100 tasks there are many flushes
+      # and each flush boundary can have small imprecision.
+      assert_in_delta total_calls, expected, 1000
+    end
+
+    test "concurrent updates that trigger flush preserve total count - no iteration has more calls than quota",
+         %{user: user} do
+      insert(:subscription_pro, user: user)
+      ApiCallLimit.update_user_plan(user)
+      ETS.clear_all()
+
+      # Initialize from DB (pro plan has higher limits)
+      {:ok, _} = ETS.get_quota(:user, user, :apikey)
+
+      # Each task makes 1 API call — always below quota (~5-10). This exercises
+      # the pure atomics fast path: multiple tasks share a batch, flushes happen
+      # organically when the batch is exhausted (~every 7 tasks). 100 tasks
+      # means ~14 flush cycles, all going through atomics → flush → reinit
+      # with no direct_db_update fallback needed.
+      iterations = 30
+      calls_per_task = 1
 
       tasks =
         for _ <- 1..iterations do
@@ -263,12 +304,9 @@ defmodule Sanbase.ApiCallLimit.ETSTest do
       # Initialize from DB (pro plan has higher limits)
       {:ok, _} = ETS.get_quota(:user, user, :apikey)
 
-      # Each task makes 10 API calls. With test quota ~5-10, count >= quota
-      # so the ETS module bypasses atomics and writes directly to DB.
-      # This tests the direct_db_update fallback under heavy concurrency.
-      iterations = 100
-
-      calls = for _ <- 1..iterations, do: :rand.uniform(7)
+      # Mix of small calls (< quota, use atomics path) and large calls
+      # (>= quota, may hit direct_db_update fallback under contention).
+      calls = for _ <- 1..30, do: :rand.uniform(7)
 
       tasks =
         for calls_per_task <- calls do

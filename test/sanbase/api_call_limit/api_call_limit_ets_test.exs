@@ -217,7 +217,8 @@ defmodule Sanbase.ApiCallLimit.ETSTest do
              end)
     end
 
-    test "concurrent updates that trigger flush preserve total count", %{user: user} do
+    test "concurrent updates that trigger flush preserve total count - each itearation has more calls than quota",
+         %{user: user} do
       insert(:subscription_pro, user: user)
       ApiCallLimit.update_user_plan(user)
       ETS.clear_all()
@@ -225,10 +226,11 @@ defmodule Sanbase.ApiCallLimit.ETSTest do
       # Initialize from DB (pro plan has higher limits)
       {:ok, _} = ETS.get_quota(:user, user, :apikey)
 
-      # Each task makes 5 API calls. With 100 tasks, 500 total.
-      # This will trigger multiple flushes (quota ~100-200).
+      # Each task makes 10 API calls. With test quota ~5-10, count >= quota
+      # so the ETS module bypasses atomics and writes directly to DB.
+      # This tests the direct_db_update fallback under heavy concurrency.
       iterations = 100
-      calls_per_task = 5
+      calls_per_task = 10
 
       tasks =
         for _ <- 1..iterations do
@@ -245,6 +247,44 @@ defmodule Sanbase.ApiCallLimit.ETSTest do
       acl = Sanbase.Repo.get_by(ApiCallLimit, user_id: user.id)
       total_calls = Enum.max(Map.values(acl.api_calls))
       expected = iterations * calls_per_task + 1_000_000
+
+      # Allow tolerance due to the inherent batching nature of the system.
+      # In test config quota is 5-10, so with 100 tasks there are many flushes
+      # and each flush boundary can have small imprecision.
+      assert_in_delta total_calls, expected, 1000
+    end
+
+    test "concurrent updates that trigger flush preserve total count - some iterations have more calls than quota",
+         %{user: user} do
+      insert(:subscription_pro, user: user)
+      ApiCallLimit.update_user_plan(user)
+      ETS.clear_all()
+
+      # Initialize from DB (pro plan has higher limits)
+      {:ok, _} = ETS.get_quota(:user, user, :apikey)
+
+      # Each task makes 10 API calls. With test quota ~5-10, count >= quota
+      # so the ETS module bypasses atomics and writes directly to DB.
+      # This tests the direct_db_update fallback under heavy concurrency.
+      iterations = 100
+
+      calls = for _ <- 1..iterations, do: :rand.uniform(7)
+
+      tasks =
+        for calls_per_task <- calls do
+          Task.async(fn ->
+            ETS.update_usage(:user, :apikey, user, calls_per_task, :rand.uniform(50_000))
+          end)
+        end
+
+      Task.await_many(tasks, 10_000)
+
+      # Force a final flush
+      ETS.update_usage(:user, :apikey, user, 1_000_000, 0)
+
+      acl = Sanbase.Repo.get_by(ApiCallLimit, user_id: user.id)
+      total_calls = Enum.max(Map.values(acl.api_calls))
+      expected = Enum.sum(calls) + 1_000_000
 
       # Allow tolerance due to the inherent batching nature of the system.
       # In test config quota is 5-10, so with 100 tasks there are many flushes
@@ -335,6 +375,98 @@ defmodule Sanbase.ApiCallLimit.ETSTest do
 
         assert total_calls == expected_total
       end
+    end
+  end
+
+  describe "byte_size accumulation through flush" do
+    test "byte_size is flushed to DB and reset", %{user: user} do
+      {:ok, %{quota: quota}} = ETS.get_quota(:user, user, :apikey)
+
+      # Use enough to trigger a flush, with non-trivial byte sizes
+      ETS.update_usage(:user, :apikey, user, quota + 10, 50_000)
+
+      acl = Sanbase.Repo.get_by(ApiCallLimit, user_id: user.id)
+      # At least one time window should have a non-zero response size
+      assert Enum.any?(Map.values(acl.api_calls_responses_size_mb), fn v -> v > 0 end)
+    end
+  end
+
+  describe "subscription upgrade clears ETS" do
+    test "upgrading plan clears ETS and applies new limits", %{user: user} do
+      # Start as free user
+      {:ok, %{api_calls_limits: free_limits}} = ETS.get_quota(:user, user, :apikey)
+
+      # Upgrade to pro
+      insert(:subscription_pro, user: user)
+      ApiCallLimit.update_user_plan(user)
+
+      # ETS should have been cleared by update_user_plan
+      {:ok, %{api_calls_limits: pro_limits}} = ETS.get_quota(:user, user, :apikey)
+
+      assert pro_limits.month > free_limits.month
+      assert pro_limits.hour > free_limits.hour
+      assert pro_limits.minute > free_limits.minute
+    end
+  end
+
+  describe "concurrent cold starts" do
+    test "concurrent cold starts for the same user all succeed", %{user: user} do
+      # No prior initialization — all tasks will cold-start
+      tasks =
+        for _ <- 1..30 do
+          Task.async(fn -> ETS.get_quota(:user, user, :apikey) end)
+        end
+
+      results = Task.await_many(tasks, 10_000)
+
+      assert Enum.all?(results, fn
+               {:ok, %{quota: q}} when is_integer(q) and q > 0 -> true
+               _ -> false
+             end)
+    end
+
+    test "concurrent cold start updates all succeed", %{user: user} do
+      tasks =
+        for _ <- 1..30 do
+          Task.async(fn -> ETS.update_usage(:user, :apikey, user, 1, 100) end)
+        end
+
+      results = Task.await_many(tasks, 10_000)
+      assert Enum.all?(results, &(&1 == :ok))
+    end
+  end
+
+  describe "infinity entities" do
+    test "update_usage is a no-op for unlimited users", _context do
+      san_user = insert(:user, email: "unlimited@santiment.net")
+
+      # Initialize as infinity
+      {:ok, %{quota: :infinity}} = ETS.get_quota(:user, san_user, :apikey)
+
+      # update_usage should be a no-op
+      assert :ok = ETS.update_usage(:user, :apikey, san_user, 999_999, 999_999)
+
+      # Still infinity
+      assert {:ok, %{quota: :infinity}} = ETS.get_quota(:user, san_user, :apikey)
+    end
+  end
+
+  describe "error entry lifecycle" do
+    test "rate limited error includes blocked_until and blocked_for_seconds", %{user: user} do
+      ETS.update_usage(:user, :apikey, user, 200, 100)
+
+      {:error, error} = ETS.get_quota(:user, user, :apikey)
+
+      assert error.reason == :rate_limited
+      assert %DateTime{} = error.blocked_until
+      assert is_integer(error.blocked_for_seconds) and error.blocked_for_seconds >= 0
+    end
+
+    test "api_calls_limits are present in error response", %{user: user} do
+      ETS.update_usage(:user, :apikey, user, 200, 100)
+
+      {:error, error} = ETS.get_quota(:user, user, :apikey)
+      assert %{month: _, hour: _, minute: _} = error.api_calls_limits
     end
   end
 

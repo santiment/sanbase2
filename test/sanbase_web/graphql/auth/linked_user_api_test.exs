@@ -109,7 +109,67 @@ defmodule SanbaseWeb.Graphql.LinkedUserApiTest do
     assert length(data) > 0
   end
 
+  # -- publicId tests (Phase 2) --
+
+  describe "linked users via publicId" do
+    test "link and unlink two users via publicId", context do
+      token = generate_linked_user_token_by_public_id(context.pro_conn, context.user)
+      assert <<_::binary>> = token
+
+      assert confirm_linked_user_token(context.conn, token) == true
+
+      assert current_user(context.pro_conn) |> get_in(["secondaryUsers"]) |> length() == 1
+
+      true = remove_secondary_user_by_public_id(context.pro_conn, context.user.public_id)
+
+      assert current_user(context.pro_conn) |> get_in(["secondaryUsers"]) == []
+    end
+
+    test "secondary removes primary via publicId", context do
+      token = generate_linked_user_token(context.pro_conn, context.user)
+      true = confirm_linked_user_token(context.conn, token)
+
+      true = remove_primary_user_by_public_id(context.conn, context.pro_user.public_id)
+
+      assert current_user(context.conn) |> get_in(["primaryUser", "id"]) == nil
+      assert current_user(context.pro_conn) |> get_in(["secondaryUsers"]) == []
+    end
+  end
+
   # Private functions
+
+  defp generate_linked_user_token_by_public_id(conn, secondary_user) do
+    mutation = """
+    mutation{
+      generateLinkedUserToken(secondaryUserPublicId: "#{secondary_user.public_id}")
+    }
+    """
+
+    conn
+    |> post("/graphql", mutation_skeleton(mutation))
+    |> json_response(200)
+    |> get_in(["data", "generateLinkedUserToken"])
+  end
+
+  defp remove_secondary_user_by_public_id(conn, public_id) do
+    mutation =
+      "mutation{ removeSecondaryUser(secondaryUserPublicId: \"#{public_id}\") }"
+
+    conn
+    |> post("/graphql", mutation_skeleton(mutation))
+    |> json_response(200)
+    |> get_in(["data", "removeSecondaryUser"])
+  end
+
+  defp remove_primary_user_by_public_id(conn, public_id) do
+    mutation =
+      "mutation{ removePrimaryUser(primaryUserPublicId: \"#{public_id}\") }"
+
+    conn
+    |> post("/graphql", mutation_skeleton(mutation))
+    |> json_response(200)
+    |> get_in(["data", "removePrimaryUser"])
+  end
 
   defp generate_linked_user_token(conn, secondary_user) do
     mutation = """

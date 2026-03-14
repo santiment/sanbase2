@@ -456,6 +456,65 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     assert result |> hd() |> Map.get("text") == post.text
   end
 
+  # -- publicId tests (Phase 2) --
+
+  describe "allInsightsForUser via userPublicId" do
+    test "Getting all insights for given user by publicId", %{
+      user: user,
+      conn: conn
+    } do
+      insert(:post,
+        user: user,
+        ready_state: Post.published(),
+        state: Post.approved_state(),
+        published_at: Timex.now()
+      )
+
+      query = """
+      {
+        allInsightsForUser(userPublicId: "#{user.public_id}", page: 1, pageSize: 10) {
+          id
+        }
+      }
+      """
+
+      result = execute_query(conn, query, "allInsightsForUser")
+      assert length(result) == 1
+    end
+  end
+
+  describe "allInsightsUserVoted via userPublicId" do
+    test "Getting all insights user voted for by publicId", %{
+      user: user,
+      conn: conn
+    } do
+      post =
+        insert(:post,
+          user: user,
+          ready_state: Post.published(),
+          state: Post.approved_state()
+        )
+
+      Vote.create(%{post_id: post.id, user_id: user.id})
+
+      query = """
+      {
+        allInsightsUserVoted(userPublicId: "#{user.public_id}") {
+          id
+        }
+      }
+      """
+
+      result =
+        conn
+        |> post("/graphql", query_skeleton(query, "allInsightsUserVoted"))
+        |> json_response(200)
+        |> get_in(["data", "allInsightsUserVoted"])
+
+      assert length(result) == 1
+    end
+  end
+
   test "Getting all insights ordered", %{
     user: user,
     staked_user: staked_user,

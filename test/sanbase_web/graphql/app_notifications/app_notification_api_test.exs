@@ -607,6 +607,32 @@ defmodule SanbaseWeb.Graphql.AppNotificationApiTest do
     end
   end
 
+  describe "muteUserNotifications / unmuteUserNotifications via userPublicId" do
+    test "mute and unmute a user by publicId", %{conn: conn, author: author} do
+      mute_mutation = """
+      mutation {
+        muteUserNotifications(userPublicId: "#{author.public_id}") {
+          publicId
+        }
+      }
+      """
+
+      result = execute_mutation(conn, mute_mutation, "muteUserNotifications")
+      assert result["publicId"] == author.public_id
+
+      unmute_mutation = """
+      mutation {
+        unmuteUserNotifications(userPublicId: "#{author.public_id}") {
+          publicId
+        }
+      }
+      """
+
+      result = execute_mutation(conn, unmute_mutation, "unmuteUserNotifications")
+      assert result["publicId"] == author.public_id
+    end
+  end
+
   describe "integration: event-driven notifications via GraphQL" do
     setup %{author: author, follower: follower} do
       {:ok, _} = UserFollower.follow(author.id, follower.id)

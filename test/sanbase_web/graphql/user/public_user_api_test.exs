@@ -256,6 +256,40 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
            }
   end
 
+  # -- publicId tests (Phase 2) --
+
+  describe "getUser via publicId selector" do
+    test "fetch user by publicId returns same data as by id", context do
+      %{conn: conn, user: user} = context
+      public_id = user.public_id
+
+      result = get_user_by_public_id(conn, user)
+
+      assert %{
+               "data" => %{
+                 "getUser" => %{
+                   "publicId" => ^public_id,
+                   "username" => _
+                 }
+               }
+             } = result
+    end
+
+    test "fetch public watchlists via publicId selector", context do
+      %{conn: conn, user: user} = context
+
+      watchlist = insert(:watchlist, %{user: user, is_public: true})
+
+      result = get_user_by_public_id(conn, user)
+
+      get_user = result["data"]["getUser"]
+      assert get_user["publicId"] == user.public_id
+      assert get_user["watchlists"] == [%{"id" => "#{watchlist.id}"}]
+    end
+  end
+
+  # -- helpers --
+
   defp get_user(conn, user) do
     query = """
     {
@@ -274,6 +308,33 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
         dashboards{ id }
         followers{ count users { id } }
         following{ count users { id } }
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", query_skeleton(query, "getUser"))
+    |> json_response(200)
+  end
+
+  defp get_user_by_public_id(conn, user) do
+    query = """
+    {
+      getUser(selector: { publicId: "#{user.public_id}" }) {
+        publicId
+        email
+        username
+        insightsCount{ totalCount paywallCount pulseCount }
+        insights{ id }
+        triggers{ id }
+        watchlists{ id }
+        subscriptions{ planName productName }
+        isModerator
+        isSantimentTeamMember
+        chartConfigurations{ id }
+        dashboards{ id }
+        followers{ count users { publicId } }
+        following{ count users { publicId } }
       }
     }
     """

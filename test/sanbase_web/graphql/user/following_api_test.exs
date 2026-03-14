@@ -283,6 +283,147 @@ defmodule SanbaseWeb.Graphql.User.FollowingApiTest do
     """
   end
 
+  # -- publicId tests (Phase 2) --
+
+  describe "#follow via userPublicId" do
+    test "can follow user by publicId", %{conn: conn} do
+      user_to_follow = insert(:user)
+
+      result =
+        execute_mutation(conn, follow_by_public_id_mutation(user_to_follow.public_id), "follow")
+
+      assert result == %{
+               "followers2" => %{"count" => 0, "users" => []},
+               "following2" => %{
+                 "count" => 1,
+                 "users" => [
+                   %{
+                     "isNotificationDisabled" => false,
+                     "user" => %{"publicId" => user_to_follow.public_id}
+                   }
+                 ]
+               }
+             }
+    end
+  end
+
+  describe "#unfollow via userPublicId" do
+    test "can unfollow user by publicId", %{conn: conn, current_user: current_user} do
+      user_to_follow = insert(:user)
+      UserFollower.follow(user_to_follow.id, current_user.id)
+
+      result =
+        execute_mutation(
+          conn,
+          unfollow_by_public_id_mutation(user_to_follow.public_id),
+          "unfollow"
+        )
+
+      assert result == %{
+               "followers2" => %{"count" => 0, "users" => []},
+               "following2" => %{"count" => 0, "users" => []}
+             }
+    end
+  end
+
+  describe "#followingToggleNotification via userPublicId" do
+    test "disable notification by publicId", %{conn: conn, current_user: current_user} do
+      user_to_follow = insert(:user)
+      UserFollower.follow(user_to_follow.id, current_user.id)
+
+      result =
+        execute_mutation(
+          conn,
+          following_toggle_notification_by_public_id(user_to_follow.public_id, true),
+          "followingToggleNotification"
+        )
+
+      assert result == %{
+               "followers2" => %{"count" => 0, "users" => []},
+               "following2" => %{
+                 "count" => 1,
+                 "users" => [
+                   %{
+                     "isNotificationDisabled" => true,
+                     "user" => %{"publicId" => user_to_follow.public_id}
+                   }
+                 ]
+               }
+             }
+    end
+  end
+
+  # -- helpers --
+
+  defp follow_by_public_id_mutation(public_id) do
+    """
+    mutation {
+      follow(userPublicId: "#{public_id}") {
+        following2 {
+          count
+          users {
+            user { publicId }
+            isNotificationDisabled
+          }
+        }
+        followers2 {
+          count
+          users {
+            user { publicId }
+            isNotificationDisabled
+          }
+        }
+      }
+    }
+    """
+  end
+
+  defp unfollow_by_public_id_mutation(public_id) do
+    """
+    mutation {
+      unfollow(userPublicId: "#{public_id}") {
+        following2 {
+          count
+          users {
+            user { publicId }
+            isNotificationDisabled
+          }
+        }
+        followers2 {
+          count
+          users {
+            user { publicId }
+            isNotificationDisabled
+          }
+        }
+      }
+    }
+    """
+  end
+
+  defp following_toggle_notification_by_public_id(public_id, disable_notifications) do
+    """
+    mutation {
+      followingToggleNotification(userPublicId: "#{public_id}", disable_notifications: #{disable_notifications}) {
+        following2 {
+          count
+          users {
+            user { publicId }
+            isNotificationDisabled
+          }
+        }
+        followers2 {
+          count
+          users {
+            user { publicId }
+            isNotificationDisabled
+          }
+        }
+      }
+    }
+    """
+  end
+
   defp current_user_query2() do
     """
     {

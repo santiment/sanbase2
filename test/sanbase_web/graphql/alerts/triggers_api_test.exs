@@ -477,6 +477,47 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     end)
   end
 
+  # -- publicId tests (Phase 2) --
+
+  describe "publicTriggersForUser via userPublicId" do
+    test "fetches public user triggers by publicId", %{conn: conn} do
+      user = insert(:user)
+      trigger_settings = default_trigger_settings_string_keys()
+
+      insert(:user_trigger,
+        user: user,
+        trigger: %{is_public: true, settings: trigger_settings}
+      )
+
+      insert(:user_trigger,
+        user: user,
+        trigger: %{is_public: false, settings: trigger_settings}
+      )
+
+      query = """
+      {
+        publicTriggersForUser(userPublicId: "#{user.public_id}") {
+          trigger{
+            id
+            settings
+          }
+        }
+      }
+      """
+
+      Sanbase.Mock.prepare_mock2(&Sanbase.Telegram.send_message/2, {:ok, "OK"})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          conn
+          |> post("/graphql", query_skeleton(query, "publicTriggersForUser"))
+          |> json_response(200)
+
+        triggers = result["data"]["publicTriggersForUser"]
+        assert length(triggers) == 1
+      end)
+    end
+  end
+
   test "create trending words trigger", %{conn: conn} do
     trigger_settings = %{
       "type" => "trending_words",

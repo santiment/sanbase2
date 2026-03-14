@@ -329,6 +329,62 @@ defmodule Sanbase.ApiCallLimit.ETSTest do
       # and each flush boundary can have small imprecision.
       assert_in_delta total_calls, expected, 1000
     end
+
+    test "concurrent updates with production-like quota (100) and high concurrency",
+         %{user: user} do
+      insert(:subscription_pro, user: user)
+      ApiCallLimit.update_user_plan(user)
+      ETS.clear_all()
+
+      # Temporarily bump quota to production-like values so we can stress-test
+      # without hitting the count>=quota direct_db_update shortcut. With
+      # quota ~100-150, each task's count (1-3) fits within a batch and
+      # flushes happen organically every ~100 calls.
+      original_config = Application.get_env(:sanbase, Sanbase.ApiCallLimit)
+
+      Application.put_env(
+        :sanbase,
+        Sanbase.ApiCallLimit,
+        Keyword.merge(original_config, quota_size: 100, quota_size_max_offset: 50)
+      )
+
+      # Clear so the next get_quota fetches a fresh batch with the new quota
+      ETS.clear_all()
+      {:ok, _} = ETS.get_quota(:user, user, :apikey)
+
+      # Use Task.async_stream with max_concurrency: 20 to simulate realistic
+      # server load (20 concurrent connections per user) rather than launching
+      # all 200 tasks at once. This avoids overwhelming the BEAM scheduler
+      # while still generating real flush contention.
+      calls = for _ <- 1..200, do: :rand.uniform(3)
+
+      calls
+      |> Task.async_stream(
+        fn calls_per_task ->
+          ETS.update_usage(:user, :apikey, user, calls_per_task, 1000)
+        end,
+        max_concurrency: 20,
+        timeout: 1_000,
+        ordered: false
+      )
+      |> Stream.run()
+
+      # Force a final flush. We can't use a huge count like 1_000_000 because
+      # that would push the user past the pro plan minute limit (600), causing
+      # the flush's fetch_and_store_quota to return :rate_limited and replace
+      # the ETS entry with an error — dropping any unflushed batch counts.
+      force_flush_count = 200
+      ETS.update_usage(:user, :apikey, user, force_flush_count, 0)
+
+      # Restore original config
+      Application.put_env(:sanbase, Sanbase.ApiCallLimit, original_config)
+
+      acl = Sanbase.Repo.get_by(ApiCallLimit, user_id: user.id)
+      total_calls = Enum.max(Map.values(acl.api_calls))
+      expected = Enum.sum(calls) + force_flush_count
+
+      assert_in_delta total_calls, expected, 1000
+    end
   end
 
   describe "flush contention" do

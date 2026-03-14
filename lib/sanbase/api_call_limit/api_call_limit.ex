@@ -11,8 +11,11 @@ defmodule Sanbase.ApiCallLimit do
 
   require Logger
 
-  @quota_size_base Application.compile_env(:sanbase, [__MODULE__, :quota_size])
-  @quota_size_max_offset Application.compile_env(:sanbase, [__MODULE__, :quota_size_max_offset])
+  @default_quota_size Application.compile_env(:sanbase, [__MODULE__, :quota_size])
+  @default_quota_size_max_offset Application.compile_env(:sanbase, [
+                                   __MODULE__,
+                                   :quota_size_max_offset
+                                 ])
 
   # So we can use them in pattern matching in case
   @product_api_id Product.product_api()
@@ -424,8 +427,15 @@ defmodule Sanbase.ApiCallLimit do
 
   defp get_quota() do
     # Randomize the quota size so when the API calls are distributed among all
-    # API pods the quotas don't expire at the same time
-    @quota_size_base + :rand.uniform(@quota_size_max_offset)
+    # API pods the quotas don't expire at the same time.
+    # Uses runtime config so tests can override via Application.put_env.
+    base = Application.get_env(:sanbase, __MODULE__)[:quota_size] || @default_quota_size
+
+    offset =
+      Application.get_env(:sanbase, __MODULE__)[:quota_size_max_offset] ||
+        @default_quota_size_max_offset
+
+    base + :rand.uniform(offset)
   end
 
   defp get_api_calls_maps(%__MODULE__{api_calls_limit_plan: plan, api_calls: api_calls_made}) do

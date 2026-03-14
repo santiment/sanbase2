@@ -4,7 +4,8 @@ defmodule Sanbase.MCP.DataCatalog.AvailableMetrics do
       financial_metrics() ++
         development_activity_metrics() ++
         social_metrics() ++
-        on_chain_metrics()
+        on_chain_metrics() ++
+        derivatives_metrics()
 
     List.flatten(list)
   end
@@ -163,6 +164,13 @@ defmodule Sanbase.MCP.DataCatalog.AvailableMetrics do
         supports_many_slugs: true
       },
       %{
+        name: "exchange_balance",
+        description:
+          "Net balance of tokens on exchange addresses (inflow minus outflow over time)",
+        unit: "tokens",
+        supports_many_slugs: true
+      },
+      %{
         name: "exchange_inflow_usd",
         description: "USD value of tokens deposited to exchange addresses",
         unit: "USD",
@@ -173,6 +181,31 @@ defmodule Sanbase.MCP.DataCatalog.AvailableMetrics do
         description: "USD value of tokens withdrawn from exchange addresses",
         unit: "USD",
         supports_many_slugs: true
+      },
+      %{
+        name: "whale_transaction_count_100k_usd_to_inf",
+        description:
+          "Number of on-chain transactions with value exceeding $100k USD, indicating whale activity",
+        unit: "count",
+        supports_many_slugs: true
+      },
+      %{
+        name: "whale_transaction_count_1m_usd_to_inf",
+        description:
+          "Number of on-chain transactions with value exceeding $1M USD, indicating large whale activity",
+        unit: "count",
+        supports_many_slugs: true
+      }
+    ]
+  end
+
+  def derivatives_metrics() do
+    [
+      %{
+        name: "total_funding_rates_aggregated_per_asset",
+        description:
+          "Aggregated funding rate across all exchanges for a given asset, reflecting overall market sentiment in perpetual futures",
+        unit: "rate"
       }
     ]
   end

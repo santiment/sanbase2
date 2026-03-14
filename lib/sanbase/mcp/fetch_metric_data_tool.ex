@@ -8,7 +8,17 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
   use Anubis.Server.Component, type: :tool
 
   alias Anubis.Server.Response
-  alias Sanbase.MCP.DataCatalog
+  alias Sanbase.MCP.{DataCatalog, Utils}
+
+  @impl true
+  def annotations do
+    %{
+      "title" => "Fetch Metric Data",
+      "readOnlyHint" => true,
+      "destructiveHint" => false,
+      "openWorldHint" => false
+    }
+  end
 
   @slugs_per_call_limit 10
   schema do
@@ -85,13 +95,15 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
          :ok <- validate_slugs(slugs),
          :ok <- validate_many_slugs_supported(metric, slugs),
          {:ok, data} <- fetch_metric_data(metric, slugs, from, to, interval) do
-      response_data = %{
-        metric: metric,
-        slugs: slugs,
-        data: data,
-        period: "Since #{DateTime.to_iso8601(from)}",
-        interval: interval
-      }
+      response_data =
+        %{
+          metric: metric,
+          slugs: slugs,
+          data: data,
+          period: "Since #{DateTime.to_iso8601(from)}",
+          interval: interval
+        }
+        |> Utils.truncate_response()
 
       {:reply, Response.json(Response.tool(), response_data), frame}
     else

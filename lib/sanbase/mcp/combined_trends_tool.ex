@@ -55,6 +55,16 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
 
   require Logger
 
+  @impl true
+  def annotations do
+    %{
+      "title" => "Combined Trends",
+      "readOnlyHint" => true,
+      "destructiveHint" => false,
+      "openWorldHint" => false
+    }
+  end
+
   schema do
     field(:time_period, :string,
       required: false,
@@ -117,17 +127,19 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
           include_words
         )
 
-      response_data = %{
-        trends: trends_data,
-        metadata: %{
-          time_period: time_period,
-          size: validated_size,
-          period_start: DateTime.to_iso8601(from_datetime),
-          period_end: DateTime.to_iso8601(to_datetime),
-          included_data_types: build_included_types(include_stories, include_words)
-        },
-        errors: errors
-      }
+      response_data =
+        %{
+          trends: trends_data,
+          metadata: %{
+            time_period: time_period,
+            size: validated_size,
+            period_start: DateTime.to_iso8601(from_datetime),
+            period_end: DateTime.to_iso8601(to_datetime),
+            included_data_types: build_included_types(include_stories, include_words)
+          },
+          errors: errors
+        }
+        |> Utils.truncate_response()
 
       {:reply, Response.json(Response.tool(), response_data), frame}
     else

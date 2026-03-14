@@ -33,6 +33,16 @@ defmodule Sanbase.MCP.TrendingStoriesTool do
   alias Anubis.Server.Response
   alias Sanbase.MCP.Utils
 
+  @impl true
+  def annotations do
+    %{
+      "title" => "Trending Stories",
+      "readOnlyHint" => true,
+      "destructiveHint" => false,
+      "openWorldHint" => false
+    }
+  end
+
   schema do
     field(:time_period, :string,
       required: false,

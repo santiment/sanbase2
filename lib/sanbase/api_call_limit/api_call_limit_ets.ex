@@ -8,10 +8,11 @@ defmodule Sanbase.ApiCallLimit.ETS do
   the API calls count is updated in the central DB and a new quota is fetched.
 
   Concurrency is handled lock-free using :atomics for per-entity counters.
-  Each entity (user or IP) gets an :atomics ref with 3 slots:
+  Each entity (user or IP) gets an :atomics ref with 4 slots:
     - Slot 1: api_calls_remaining (decremented atomically per request)
     - Slot 2: acc_result_byte_size (incremented atomically per request)
     - Slot 3: flush_lock (CAS gate — 0=free, 1=flushing)
+    - Slot 4: writers_inflight (guards flush snapshot correctness)
 
   The fast path (decrementing remaining, adding byte size) uses atomic operations
   with zero synchronization. The slow path (flushing to DB when quota is exhausted)
@@ -36,9 +37,13 @@ defmodule Sanbase.ApiCallLimit.ETS do
   @remaining_slot 1
   @byte_size_slot 2
   @flush_lock_slot 3
+  @writers_inflight_slot 4
 
+  @max_update_retries 50
   @max_flush_retries 3
   @flush_retry_sleep_ms 5
+  @max_wait_for_writers_retries 200
+  @wait_for_writers_sleep_ms 1
 
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name, __MODULE__))
@@ -99,7 +104,10 @@ defmodule Sanbase.ApiCallLimit.ETS do
     case :ets.lookup(@ets_table, entity_key) do
       [] ->
         # No data stored yet. Initialize by checking postgres.
-        get_quota_from_db_and_update_ets(entity_type, entity, entity_key)
+        case get_quota_from_db_and_update_ets(entity_type, entity, entity_key, :insert_new) do
+          :already_exists -> do_get_quota(entity_type, entity, entity_key, retries)
+          result -> result
+        end
 
       [{^entity_key, :error, reason, error_map}]
       when reason in [:rate_limited, :response_size_limit_exceeded] ->
@@ -185,7 +193,14 @@ defmodule Sanbase.ApiCallLimit.ETS do
     end
   end
 
-  defp do_update_usage(entity_type, entity, entity_key, count, result_byte_size) do
+  defp do_update_usage(
+         entity_type,
+         entity,
+         entity_key,
+         count,
+         result_byte_size,
+         retries \\ @max_update_retries
+       ) do
     case :ets.lookup(@ets_table, entity_key) do
       [] ->
         # ETS has no entry (cold start or after ETS was cleared). Refresh from DB and
@@ -193,13 +208,18 @@ defmodule Sanbase.ApiCallLimit.ETS do
         # DB here would let a late or out-of-order update overwrite the authoritative DB
         # state (e.g. after a reset). The DB is updated only when the in-memory quota is
         # exhausted and we flush via try_flush_and_reinit.
-        case get_quota_from_db_and_update_ets(entity_type, entity, entity_key) do
+        case get_quota_from_db_and_update_ets(entity_type, entity, entity_key, :insert_new) do
+          :already_exists when retries > 0 ->
+            do_update_usage(entity_type, entity, entity_key, count, result_byte_size, retries - 1)
+
+          :already_exists ->
+            do_direct_db_update(entity_type, entity, count, result_byte_size)
+
           {:ok, %{quota: :infinity}} ->
             :ok
 
           {:ok, _metadata} ->
-            apply_atomics_usage(entity_key, count, result_byte_size)
-            :ok
+            do_update_usage(entity_type, entity, entity_key, count, result_byte_size, retries)
 
           {:error, _} ->
             :ok
@@ -213,63 +233,100 @@ defmodule Sanbase.ApiCallLimit.ETS do
         :ok
 
       [{^entity_key, :active, ref, quota, _base_metadata, _refresh_after}] ->
-        # Atomically decrement remaining and add byte size. Lock-free.
-        new_remaining = :atomics.sub_get(ref, @remaining_slot, count)
-        :atomics.add(ref, @byte_size_slot, result_byte_size)
+        case apply_usage_to_active_ref(ref, count, result_byte_size) do
+          {:applied, new_remaining} ->
+            if new_remaining <= 0 do
+              # Quota exhausted. One process flushes and re-initializes.
+              # Others will retry on the refreshed ETS entry.
+              _ = try_flush_and_reinit(entity_type, entity, entity_key, ref, quota)
+            end
 
-        if new_remaining <= 0 do
-          # Quota exhausted. Try to flush to DB. If another process is already
-          # flushing, our decrement is captured because the flushing process reads
-          # the atomic counter after our sub_get.
-          try_flush_and_reinit(entity_type, entity, entity_key, ref, quota)
+            :ok
+
+          :flushing when retries > 0 ->
+            Process.sleep(@flush_retry_sleep_ms)
+            do_update_usage(entity_type, entity, entity_key, count, result_byte_size, retries - 1)
+
+          :flushing ->
+            # Last-resort fallback so this request's usage is not dropped under
+            # prolonged contention/flush.
+            do_direct_db_update(entity_type, entity, count, result_byte_size)
         end
-
-        :ok
     end
   end
 
-  defp apply_atomics_usage(entity_key, count, result_byte_size) do
-    case :ets.lookup(@ets_table, entity_key) do
-      [{^entity_key, :active, ref, _quota, _meta, _refresh}] ->
-        :atomics.sub(ref, @remaining_slot, count)
-        :atomics.add(ref, @byte_size_slot, result_byte_size)
+  defp apply_usage_to_active_ref(ref, count, result_byte_size) do
+    # Reserve a writer slot first. Flusher sets lock=1 then waits for this
+    # counter to drain before taking a snapshot.
+    :atomics.add(ref, @writers_inflight_slot, 1)
 
-      _ ->
-        :ok
+    try do
+      case :atomics.get(ref, @flush_lock_slot) do
+        0 ->
+          new_remaining = :atomics.sub_get(ref, @remaining_slot, count)
+          :atomics.add(ref, @byte_size_slot, result_byte_size)
+          {:applied, new_remaining}
+
+        _ ->
+          :flushing
+      end
+    after
+      :atomics.sub(ref, @writers_inflight_slot, 1)
+    end
+  end
+
+  defp do_direct_db_update(entity_type, entity, count, result_byte_size) do
+    _ = ApiCallLimit.update_usage_db(entity_type, entity, count, result_byte_size)
+    :ok
+  end
+
+  defp wait_for_writers_to_drain(_ref, 0), do: :timeout
+
+  defp wait_for_writers_to_drain(ref, retries) do
+    if :atomics.get(ref, @writers_inflight_slot) == 0 do
+      :ok
+    else
+      Process.sleep(@wait_for_writers_sleep_ms)
+      wait_for_writers_to_drain(ref, retries - 1)
     end
   end
 
   defp try_flush_and_reinit(entity_type, entity, entity_key, ref, quota) do
     case :atomics.compare_exchange(ref, @flush_lock_slot, 0, 1) do
       :ok ->
-        # Won the flush race. Read final counter state from the atomics ref.
-        # Other processes may still be decrementing — that's fine, their
-        # decrements either land before our read (captured in this flush)
-        # or after (captured in the next flush via the new ETS entry).
-        remaining = :atomics.get(ref, @remaining_slot)
-        acc_byte_size = :atomics.get(ref, @byte_size_slot)
-        api_calls_made = max(quota - remaining, 0)
+        case wait_for_writers_to_drain(ref, @max_wait_for_writers_retries) do
+          :ok ->
+            # Snapshot only after in-flight writers have drained.
+            remaining = :atomics.get(ref, @remaining_slot)
+            acc_byte_size = :atomics.get(ref, @byte_size_slot)
+            api_calls_made = max(quota - remaining, 0)
 
-        # Clear ETS before DB write so concurrent processes cold-start from DB
-        # rather than continuing to use the stale entry. This also means if the
-        # DB write fails, usage won't be double-counted.
-        clear_data(entity_type, entity)
+            case ApiCallLimit.update_usage_db(
+                   entity_type,
+                   entity,
+                   api_calls_made,
+                   max(acc_byte_size, 0)
+                 ) do
+              {:ok, _} ->
+                # Replace ETS record with freshly fetched quota/error state.
+                get_quota_from_db_and_update_ets(entity_type, entity, entity_key, :replace)
 
-        {:ok, _} =
-          ApiCallLimit.update_usage_db(
-            entity_type,
-            entity,
-            api_calls_made,
-            max(acc_byte_size, 0)
-          )
+              {:error, _} = error ->
+                # DB update failed; reopen this ref so requests can continue and
+                # another flush can retry later.
+                :atomics.put(ref, @flush_lock_slot, 0)
+                error
+            end
 
-        # Old atomics ref is now unreachable from ETS. No need to release the
-        # flush lock — the ref will be garbage collected when no process holds it.
-        get_quota_from_db_and_update_ets(entity_type, entity, entity_key)
+          :timeout ->
+            # Could not get a stable snapshot within the wait budget.
+            # Release the flush lock and let future requests retry.
+            :atomics.put(ref, @flush_lock_slot, 0)
+            :contended
+        end
 
       _current ->
-        # Another process is flushing. Our atomic decrements on the old ref are
-        # already visible to the flushing process (it reads after our sub_get).
+        # Another process is flushing.
         :contended
     end
   end
@@ -290,32 +347,33 @@ defmodule Sanbase.ApiCallLimit.ETS do
     }
   end
 
-  defp get_quota_from_db_and_update_ets(entity_type, entity, entity_key) do
+  defp get_quota_from_db_and_update_ets(entity_type, entity, entity_key, insert_mode \\ :replace) do
     now = DateTime.utc_now()
-
-    # Clear any stale ETS entry before fetching new quota. This prevents
-    # double-counting if the DB read fails partway through.
-    clear_data(entity_type, entity)
 
     case ApiCallLimit.get_quota_db(entity_type, entity) do
       {:ok, %{quota: :infinity} = metadata} ->
-        :ets.insert(@ets_table, {entity_key, :infinity})
-        {:ok, metadata}
+        case put_record(entity_key, {entity_key, :infinity}, insert_mode) do
+          :ok -> {:ok, metadata}
+          :already_exists -> :already_exists
+        end
 
       {:ok, %{quota: quota} = metadata} ->
-        ref = :atomics.new(3, signed: true)
+        ref = :atomics.new(4, signed: true)
         :atomics.put(ref, @remaining_slot, quota)
         :atomics.put(ref, @byte_size_slot, 0)
         :atomics.put(ref, @flush_lock_slot, 0)
+        :atomics.put(ref, @writers_inflight_slot, 0)
 
         refresh_after_datetime = Timex.shift(now, seconds: 60 - now.second)
 
-        :ets.insert(
-          @ets_table,
-          {entity_key, :active, ref, quota, metadata, refresh_after_datetime}
-        )
-
-        {:ok, metadata}
+        case put_record(
+               entity_key,
+               {entity_key, :active, ref, quota, metadata, refresh_after_datetime},
+               insert_mode
+             ) do
+          :ok -> {:ok, metadata}
+          :already_exists -> :already_exists
+        end
 
       {:error, %{reason: reason, blocked_until: _} = error_map}
       when reason in [:rate_limited, :response_size_limit_exceeded] ->
@@ -327,9 +385,22 @@ defmodule Sanbase.ApiCallLimit.ETS do
 
         error_map = Map.put(error_map, :retry_again_after, retry_again_after)
 
-        :ets.insert(@ets_table, {entity_key, :error, reason, error_map})
+        case put_record(entity_key, {entity_key, :error, reason, error_map}, insert_mode) do
+          :ok -> {:error, error_map}
+          :already_exists -> :already_exists
+        end
+    end
+  end
 
-        {:error, error_map}
+  defp put_record(_entity_key, record, :replace) do
+    :ets.insert(@ets_table, record)
+    :ok
+  end
+
+  defp put_record(_entity_key, record, :insert_new) do
+    case :ets.insert_new(@ets_table, record) do
+      true -> :ok
+      false -> :already_exists
     end
   end
 end

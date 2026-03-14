@@ -300,4 +300,75 @@ defmodule Sanbase.ApiCallLimit.ETSTest do
       assert error2.blocked_for_seconds <= error1.blocked_for_seconds
     end
   end
+
+  describe "concurrent flush regression checks" do
+    test "concurrent one-call updates around the flush boundary preserve exact totals" do
+      runs = 3
+      concurrent_updates = 50
+      forced_flush_count = 100_000
+
+      for run <- 1..runs do
+        run_user =
+          insert(:user,
+            email: "flush_regression_#{run}_#{System.unique_integer([:positive])}@test"
+          )
+
+        {total_calls, expected_total} =
+          run_flush_boundary_scenario(run_user, concurrent_updates, forced_flush_count)
+
+        assert total_calls == expected_total
+      end
+    end
+
+    test "exact accounting is preserved for different contention levels" do
+      forced_flush_count = 100_000
+
+      for concurrent_updates <- [2, 10, 20, 50] do
+        user =
+          insert(
+            :user,
+            email: "flush_levels_#{concurrent_updates}_#{System.unique_integer([:positive])}@test"
+          )
+
+        {total_calls, expected_total} =
+          run_flush_boundary_scenario(user, concurrent_updates, forced_flush_count)
+
+        assert total_calls == expected_total
+      end
+    end
+  end
+
+  defp run_flush_boundary_scenario(user, concurrent_updates, forced_flush_count) do
+    ETS.clear_data(:user, user)
+
+    {:ok, %{quota: quota}} = ETS.get_quota(:user, user, :apikey)
+    pre_flush_usage = max(quota - 1, 0)
+
+    if pre_flush_usage > 0 do
+      ETS.update_usage(:user, :apikey, user, pre_flush_usage, 0)
+    end
+
+    tasks =
+      for _ <- 1..concurrent_updates do
+        Task.async(fn ->
+          receive do
+            :go -> :ok
+          end
+
+          ETS.update_usage(:user, :apikey, user, 1, 0)
+        end)
+      end
+
+    Enum.each(tasks, fn task -> send(task.pid, :go) end)
+    Task.await_many(tasks, 10_000)
+
+    # Force any pending in-memory usage to be flushed to DB.
+    ETS.update_usage(:user, :apikey, user, forced_flush_count, 0)
+
+    acl = Sanbase.Repo.get_by(ApiCallLimit, user_id: user.id)
+    total_calls = Enum.max(Map.values(acl.api_calls))
+    expected_total = pre_flush_usage + concurrent_updates + forced_flush_count
+
+    {total_calls, expected_total}
+  end
 end

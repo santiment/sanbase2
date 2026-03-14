@@ -1,27 +1,50 @@
 defmodule Sanbase.ApiCallLimit.ETS do
   @moduledoc ~s"""
-  Track the API Call quotas (get and update) of the user and remote IPs.
+  In-memory API quota tracking backed by ETS + `:atomics`.
 
-  The quota is fetched from the central database and the progress of using it is
-  tracked in-memory in an ETS table. When API calls are made, the progress is
-  updated in the ETS table until `quota` number of API calls are made. Then
-  the API calls count is updated in the central DB and a new quota is fetched.
+  `Sanbase.ApiCallLimit` stores the authoritative counters in Postgres.
+  This module keeps short-lived per-entity quota buckets in ETS so requests can
+  do lock-free, low-latency usage accounting on each web node and flush usage to
+  Postgres in batches.
 
-  Concurrency is handled lock-free using :atomics for per-entity counters.
-  Each entity (user or IP) gets an :atomics ref with 4 slots:
-    - Slot 1: api_calls_remaining (decremented atomically per request)
-    - Slot 2: acc_result_byte_size (incremented atomically per request)
-    - Slot 3: flush_lock (CAS gate — 0=free, 1=flushing)
-    - Slot 4: writers_inflight (guards flush snapshot correctness)
+  ## Storage model
 
-  The fast path (decrementing remaining, adding byte size) uses atomic operations
-  with zero synchronization. The slow path (flushing to DB when quota is exhausted)
-  uses compare_exchange as a CAS gate so only one process flushes at a time.
+  ETS stores one record per entity (`user_id` or `remote_ip`) with 3 shapes:
 
-  ETS entry shapes:
-    Active:  {entity_key, :active, atomics_ref, quota, base_metadata, refresh_after_datetime}
-    No limits: {entity_key, :infinity}
-    Error:   {entity_key, :error, reason, error_map}
+  - Active:
+    `{entity_key, :active, atomics_ref, quota, base_metadata, refresh_after_datetime}`
+  - Unlimited:
+    `{entity_key, :infinity}`
+  - Cached error:
+    `{entity_key, :error, reason, error_map}`
+
+  ## Atomics layout (active records)
+
+  Each entity uses one atomics ref with 4 slots:
+
+  - Slot 1 (`@remaining_slot`): in-memory calls remaining in the current batch.
+  - Slot 2 (`@byte_size_slot`): accumulated response size in bytes for the batch.
+  - Slot 3 (`@flush_lock_slot`): flush ownership gate (`0` free, `1` flushing).
+  - Slot 4 (`@writers_inflight_slot`): number of writers currently updating slots 1/2.
+
+  ## Concurrency protocol
+
+  Fast path (`update_usage/5`):
+
+  - Writer increments `writers_inflight`.
+  - Writer checks `flush_lock`.
+  - If lock is free, writer updates remaining/bytes atomically.
+  - Writer decrements `writers_inflight`.
+
+  Flush path (quota exhausted or timed refresh):
+
+  - One process acquires `flush_lock` via CAS.
+  - Flusher waits until `writers_inflight == 0`.
+  - Flusher snapshots counters and persists them to Postgres.
+  - ETS record is replaced with a fresh DB snapshot (new atomics ref).
+
+  This prevents losing increments that happen around flush boundaries and avoids
+  the global mutex previously used for per-entity serialization.
   """
   use GenServer
 
@@ -67,14 +90,26 @@ defmodule Sanbase.ApiCallLimit.ETS do
     {:ok, %{ets_table: ets_table}}
   end
 
+  @doc """
+  Clears all in-memory quota records from ETS.
+
+  Useful in tests and for operational resets.
+  """
   def clear_all(), do: :ets.delete_all_objects(@ets_table)
 
+  @doc """
+  Clears one entity's in-memory quota record.
+
+  The next request for that entity cold-starts from Postgres.
+  """
   def clear_data(:user, %User{id: user_id}), do: :ets.delete(@ets_table, user_id)
   def clear_data(:remote_ip, remote_ip), do: :ets.delete(@ets_table, remote_ip)
 
   @doc ~s"""
-  Get a quota that represent the number of API calls that can be made and tracked
-  in-memory in an ETS table before checking the postgres database again.
+  Returns currently available quota for the entity.
+
+  For limited entities this value is served from ETS most of the time and only
+  refreshes from Postgres when the in-memory bucket is exhausted or expired.
 
   A special case is when the authentication is Basic Authentication. It is used
   exclusively from internal services and there will be no limit imposed.
@@ -86,9 +121,13 @@ defmodule Sanbase.ApiCallLimit.ETS do
   def get_quota(:remote_ip, ip, _auth_method), do: do_get_quota(:remote_ip, ip, ip)
 
   @doc ~s"""
-  Updates the number of api calls made by a user or an ip address. The number of
-  API calls is tracked in-memory in an ETS table and after a certain number of
-  API calls is made, the number is updated in the centralized database.
+  Records API usage for a user or remote IP.
+
+  Usage is applied to the per-entity atomics counters in ETS and eventually
+  flushed to Postgres in batches.
+
+  Under heavy flush contention, this function retries and can fall back to a
+  direct DB update to avoid dropping usage.
   """
   def update_usage(_type, :basic, _user_or_remote_ip, _count, _result_byte_size), do: :ok
 
@@ -263,6 +302,7 @@ defmodule Sanbase.ApiCallLimit.ETS do
     try do
       case :atomics.get(ref, @flush_lock_slot) do
         0 ->
+          # The lock is free; apply this request's usage to the current ref.
           new_remaining = :atomics.sub_get(ref, @remaining_slot, count)
           :atomics.add(ref, @byte_size_slot, result_byte_size)
           {:applied, new_remaining}
@@ -308,7 +348,8 @@ defmodule Sanbase.ApiCallLimit.ETS do
                    max(acc_byte_size, 0)
                  ) do
               {:ok, _} ->
-                # Replace ETS record with freshly fetched quota/error state.
+                # Replace the current ETS record with freshly fetched quota/error state.
+                # This swaps to a new atomics ref and detaches the flushed one.
                 get_quota_from_db_and_update_ets(entity_type, entity, entity_key, :replace)
 
               {:error, _} = error ->
@@ -393,11 +434,13 @@ defmodule Sanbase.ApiCallLimit.ETS do
   end
 
   defp put_record(_entity_key, record, :replace) do
+    # Used by the flusher that owns the CAS lock.
     :ets.insert(@ets_table, record)
     :ok
   end
 
   defp put_record(_entity_key, record, :insert_new) do
+    # Used by cold starts so concurrent initializers do not clobber each other.
     case :ets.insert_new(@ets_table, record) do
       true -> :ok
       false -> :already_exists

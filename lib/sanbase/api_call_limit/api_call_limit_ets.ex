@@ -1,30 +1,51 @@
 defmodule Sanbase.ApiCallLimit.ETS do
   @moduledoc ~s"""
-  Track the API Call quotas (get and update) of the user and remote IPs.
+  In-memory API quota tracking backed by ETS + `ApiCallLimit.Counters`.
 
-  The quota is fetched from the central database and the progress of using it is
-  tracked in-memory in an ETS table. When API calls are made, the progress is
-  updated in the ETS table until `quota` number of API calls are made. Then
-  the API calls count is updated in the central DB and a new quota is fetched.
+  `Sanbase.ApiCallLimit` stores the authoritative counters in Postgres.
+  This module keeps short-lived per-entity quota buckets in ETS so requests can
+  do lock-free, low-latency usage accounting on each web node and flush usage to
+  Postgres in batches.
+
+  ## Storage model
+
+  ETS stores one record per entity (`user_id` or `remote_ip`) with 3 shapes:
+
+  - Active:
+    `{entity_key, :active, bucket_ref, quota, base_metadata, refresh_after_datetime}`
+  - Unlimited:
+    `{entity_key, :infinity}`
+  - Cached error:
+    `{entity_key, :error, reason, error_map}`
+
+  ## Concurrency
+
+  See `ApiCallLimit.Counters` for the per-bucket writer/flusher protocol.
+  This module handles ETS record lifecycle (cold start, replace, error caching)
+  and retry/fallback logic.
   """
   use GenServer
 
   alias Sanbase.ApiCallLimit
+  alias Sanbase.ApiCallLimit.Counters
   alias Sanbase.Accounts.User
+
+  require Logger
 
   @type entity_type :: :remote_ip | :user
   @type remote_ip :: String.t()
   @type entity :: remote_ip | %User{}
   @ets_table :api_call_limit_ets_table
 
+  @max_update_retries 50
+  @max_flush_retries 10
+  @flush_retry_sleep_ms 5
+  @update_retry_sleep_ms 5
+
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name, __MODULE__))
   end
 
-  @doc ~s"""
-  Start the ETS table that holds the in-memory api call limit data.
-  Such a table is used on every sanbase-web pod
-  """
   @impl true
   def init(_opts) do
     ets_table =
@@ -41,15 +62,47 @@ defmodule Sanbase.ApiCallLimit.ETS do
 
   def clear_all(), do: :ets.delete_all_objects(@ets_table)
 
-  def clear_data(:user, %User{id: user_id}), do: :ets.delete(@ets_table, user_id)
-  def clear_data(:remote_ip, remote_ip), do: :ets.delete(@ets_table, remote_ip)
+  def clear_data(:user, %User{id: user_id} = user),
+    do: flush_and_delete(:user, user, user_id)
+
+  def clear_data(:remote_ip, remote_ip),
+    do: flush_and_delete(:remote_ip, remote_ip, remote_ip)
+
+  defp flush_and_delete(entity_type, entity, entity_key) do
+    case :ets.lookup(@ets_table, entity_key) do
+      [{^entity_key, :active, ref, quota, _, _}] ->
+        case Counters.acquire_flush_lock(ref) do
+          :acquired ->
+            case Counters.wait_for_writers(ref) do
+              :drained ->
+                %{api_calls_made: calls, acc_byte_size: bytes} = Counters.snapshot(ref, quota)
+
+                if calls > 0 do
+                  ApiCallLimit.update_usage_db(entity_type, entity, calls, bytes)
+                end
+
+              :timeout ->
+                :ok
+            end
+
+          :contended ->
+            # Another process is already flushing — it will persist the usage
+            :ok
+        end
+
+      _ ->
+        :ok
+    end
+
+    :ets.delete(@ets_table, entity_key)
+  end
 
   @doc ~s"""
-  Get a quota that represent the number of API calls that can be made and tracked
-  in-memory in an ETS table before checking the postgres database again.
+  Returns currently available quota for the entity.
 
-  A special case is when the authentication is Basic Authentication. It is used
-  exclusievly from internal services and there will be no limit imposed.
+  Served from ETS on the fast path; refreshes from Postgres when the in-memory
+  bucket is exhausted or expired. Returns `{:ok, %{quota: :infinity}}` for
+  basic auth and unlimited entities.
   """
   @spec get_quota(entity_type, entity, atom()) ::
           {:ok, :infinity} | {:ok, map()} | {:error, map()}
@@ -58,9 +111,11 @@ defmodule Sanbase.ApiCallLimit.ETS do
   def get_quota(:remote_ip, ip, _auth_method), do: do_get_quota(:remote_ip, ip, ip)
 
   @doc ~s"""
-  Updates the number of api calls made by a user or an ip address. The number of
-  API calls is tracked in-memory in an ETS table and after a certain number of
-  API calls is made, the number is updated in the centralized database.
+  Records API usage for a user or remote IP.
+
+  Usage is applied to the per-entity Counters atomics counters and eventually
+  flushed to Postgres in batches. Under heavy flush contention, retries and
+  falls back to a direct DB update to avoid dropping usage.
   """
   def update_usage(_type, :basic, _user_or_remote_ip, _count, _result_byte_size), do: :ok
 
@@ -70,239 +125,350 @@ defmodule Sanbase.ApiCallLimit.ETS do
   def update_usage(:remote_ip, _auth_method, remote_ip, count, result_byte_size),
     do: do_update_usage(:remote_ip, remote_ip, remote_ip, count, result_byte_size)
 
-  # Private functions
+  # ---------------------------------------------------------------------------
+  # get_quota dispatch
+  # ---------------------------------------------------------------------------
 
-  defp do_get_quota(entity_type, entity, entity_key) do
-    lock = Mutex.await(Sanbase.ApiCallLimitMutex, {entity_type, entity_key}, 5_000)
-
-    result =
-      case :ets.lookup(@ets_table, entity_key) do
-        [] ->
-          # No data stored yet. Initialize by checking the postgres
-          get_quota_from_db_and_update_ets(entity_type, entity, entity_key)
-
-        [{^entity_key, reason, error_map}]
-        when reason in [:rate_limited, :response_size_limit_exceeded] ->
-          # Try again after `retry_again_after` datetime in case something changed.
-          # This handles cases where the data changed without a plan upgrade, for
-          # example changing the `has_limits` in the admin panel manually.
-          # User plan upgrades are handled separately by clearing the ETS records
-          # for the user.
-          now = DateTime.utc_now()
-
-          case DateTime.compare(now, error_map.retry_again_after) do
-            :lt ->
-              # Update the `blocked_for_seconds` field in order to properly return
-              # the report the time left until unblocked
-              blocked_for_seconds = DateTime.diff(error_map.blocked_until, now) |> abs()
-              error_map = Map.put(error_map, :blocked_for_seconds, blocked_for_seconds)
-
-              {:error, error_map}
-
-            _ ->
-              get_quota_from_db_and_update_ets(entity_type, entity, entity_key)
-          end
-
-        [{^entity_key, :infinity, :infinity, _result_size, metadata, _refresh_after_datetime}] ->
-          # The entity does not have rate limits applied
-          {:ok, %{metadata | quota: :infinity}}
-
-        [
-          {^entity_key, quota, api_calls_remaining, acc_result_byte_size, _metadata,
-           _refresh_after_datetime}
-        ]
-        when api_calls_remaining <= 0 ->
-          # The in-memory quota has been exhausted. The api calls made are
-          # recorded in postgres and a new quota is obtained. api_calls_remaing
-          # is subtracted as it's negative and
-          api_calls_made = quota - api_calls_remaining
-
-          update_usage_get_quota_from_db_and_update_ets(
-            entity_type,
-            entity,
-            entity_key,
-            api_calls_made,
-            acc_result_byte_size
-          )
-
-        [
-          {^entity_key, quota, api_calls_remaining, acc_result_byte_size, metadata,
-           refresh_after_datetime}
-        ] ->
-          # The in-memory quota is not exhausted.
-          case DateTime.compare(DateTime.utc_now(), refresh_after_datetime) do
-            :gt ->
-              api_calls_made = quota - api_calls_remaining
-
-              update_usage_get_quota_from_db_and_update_ets(
-                entity_type,
-                entity,
-                entity_key,
-                api_calls_made,
-                acc_result_byte_size
-              )
-
-            _ ->
-              {:ok, %{metadata | quota: api_calls_remaining}}
-          end
-      end
-
-    Mutex.release(Sanbase.ApiCallLimitMutex, lock)
-
-    result
-  end
-
-  defp do_update_usage(entity_type, entity, entity_key, count, result_byte_size) do
-    lock = Mutex.await(Sanbase.ApiCallLimitMutex, {entity_type, entity_key}, 5_000)
-
+  defp do_get_quota(entity_type, entity, entity_key, retries \\ @max_flush_retries) do
     case :ets.lookup(@ets_table, entity_key) do
       [] ->
-        # ETS has no entry (cold start or after ETS was cleared). Refresh from DB and
-        # apply only this request's usage in ETS; do not write to the DB. Writing to the
-        # DB here would let a late or out-of-order update overwrite the authoritative DB
-        # state (e.g. after a reset). The DB is updated only when the in-memory quota is
-        # exhausted and we flush via update_usage_get_quota_from_db_and_update_ets.
-        case get_quota_from_db_and_update_ets(entity_type, entity, entity_key) do
-          {:ok, %{quota: :infinity}} ->
-            :ok
+        handle_cold_start_get_quota(entity_type, entity, entity_key, retries)
 
-          {:ok, %{quota: quota} = metadata} ->
-            do_upate_ets_usage(entity_key, quota, count, result_byte_size, metadata)
-            :ok
-
-          {:error, _} ->
-            :ok
-        end
-
-      [
-        {^entity_key, _quota = :infinity, _api_calls_remaining = :infinity, _result_size,
-         _metadata, _refresh_after_datetime}
-      ] ->
-        :ok
-
-      [{^entity_key, reason, _error_map}]
+      [{^entity_key, :error, reason, error_map}]
       when reason in [:rate_limited, :response_size_limit_exceeded] ->
-        :ok
+        handle_cached_error(entity_type, entity, entity_key, error_map)
 
-      [
-        {^entity_key, quota, api_calls_remaining, acc_result_byte_size, _metadata,
-         _refresh_after_datetime}
-      ]
-      when api_calls_remaining <= count ->
-        # The remaining calls in the quota are less than the number of calls made now.
-        # Update the central DB, get a new quota and put in ETS.
+      [{^entity_key, :infinity}] ->
+        {:ok, %{quota: :infinity}}
 
-        # This is the total amount of calls by which the central DB counter will be
-        # updated. This value is equal or greater than the aquired quota.
-        api_calls_made = quota - api_calls_remaining + count
-
-        update_usage_get_quota_from_db_and_update_ets(
+      [{^entity_key, :active, ref, quota, base_metadata, refresh_after}] ->
+        handle_active_get_quota(
           entity_type,
           entity,
           entity_key,
-          api_calls_made,
-          acc_result_byte_size + result_byte_size
+          ref,
+          quota,
+          base_metadata,
+          refresh_after,
+          retries
         )
-
-      [
-        {^entity_key, _quota, api_calls_remaining, _acc_result_byte_size, metadata,
-         _refresh_after_datetime}
-      ] ->
-        # The results size is stored as ETS counter where we atomically just add result_byte_size
-        true =
-          do_upate_ets_usage(entity_key, api_calls_remaining, count, result_byte_size, metadata)
-
-        :ok
     end
-
-    Mutex.release(Sanbase.ApiCallLimitMutex, lock)
   end
 
-  defp do_upate_ets_usage(entity_key, api_calls_remaining, count, result_byte_size, metadata) do
-    remaining = metadata.api_calls_remaining
+  defp handle_cold_start_get_quota(entity_type, entity, entity_key, retries) do
+    case fetch_and_store_quota(entity_type, entity, entity_key, :insert_new) do
+      :already_exists -> do_get_quota(entity_type, entity, entity_key, retries)
+      result -> result
+    end
+  end
 
-    # This metadata is used for the HTTP headers only. The values here
-    # represent how many API calls are left for the current minute/hour/month.
-    # If the value is negative, it is increased to 0, which is the correct
-    # way to show that the limit is exhausted.
-    metadata =
-      Map.put(metadata, :api_calls_remaining, %{
-        month: Enum.max([remaining.month - count, 0]),
-        hour: Enum.max([remaining.hour - count, 0]),
-        minute: Enum.max([remaining.minute - count, 0])
-      })
+  defp handle_cached_error(entity_type, entity, entity_key, error_map) do
+    now = DateTime.utc_now()
 
-    true =
-      :ets.update_element(
-        @ets_table,
+    if DateTime.compare(now, error_map.retry_again_after) == :lt do
+      blocked_for_seconds = DateTime.diff(error_map.blocked_until, now) |> abs()
+      {:error, Map.put(error_map, :blocked_for_seconds, blocked_for_seconds)}
+    else
+      fetch_and_store_quota(entity_type, entity, entity_key)
+    end
+  end
+
+  defp handle_active_get_quota(
+         entity_type,
+         entity,
+         entity_key,
+         ref,
+         quota,
+         base_metadata,
+         refresh_after,
+         retries
+       ) do
+    remaining = Counters.remaining(ref)
+    needs_flush = remaining <= 0 or DateTime.compare(DateTime.utc_now(), refresh_after) == :gt
+
+    if needs_flush do
+      flush_or_retry_get_quota(
+        entity_type,
+        entity,
         entity_key,
-        {3, api_calls_remaining - count}
+        ref,
+        quota,
+        base_metadata,
+        retries
       )
-
-    _ = :ets.update_counter(@ets_table, entity_key, {4, result_byte_size})
-
-    true = :ets.update_element(@ets_table, entity_key, {5, metadata})
+    else
+      {:ok, compute_quota_data(ref, quota, base_metadata)}
+    end
   end
 
-  defp update_usage_get_quota_from_db_and_update_ets(
+  defp flush_or_retry_get_quota(
+         entity_type,
+         entity,
+         entity_key,
+         ref,
+         quota,
+         base_metadata,
+         retries
+       ) do
+    case try_flush_and_reinit(entity_type, entity, entity_key, ref, quota) do
+      {:ok, _} = result ->
+        result
+
+      {:error, _} = result ->
+        result
+
+      :contended when retries > 0 ->
+        # Process.sleep(@flush_retry_sleep_ms + 10 * (@max_flush_retries - retries))
+        Process.sleep(@flush_retry_sleep_ms)
+        do_get_quota(entity_type, entity, entity_key, retries - 1)
+
+      :contended ->
+        # Exhausted retries. Fall back to DB if remaining is exhausted,
+        # otherwise return what we have from the current bucket.
+        if Counters.remaining(ref) <= 0 do
+          ApiCallLimit.get_quota_db(entity_type, entity)
+        else
+          {:ok, compute_quota_data(ref, quota, base_metadata)}
+        end
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # update_usage dispatch
+  # ---------------------------------------------------------------------------
+
+  defp do_update_usage(
          entity_type,
          entity,
          entity_key,
          count,
-         result_byte_size
+         result_byte_size,
+         retries \\ @max_update_retries
        ) do
-    {:ok, _} =
-      ApiCallLimit.update_usage_db(
-        entity_type,
-        entity,
-        count,
-        result_byte_size
-      )
+    case :ets.lookup(@ets_table, entity_key) do
+      [] ->
+        handle_cold_start_update(
+          entity_type,
+          entity,
+          entity_key,
+          count,
+          result_byte_size,
+          retries
+        )
 
-    # Adding clearing of the ETS record before fetching a new quota and
-    # putting it in the ETS help alleviate the situation where the quota
-    # fetching fails. This way the ETS record is cleared and the usage
-    # cannot be recorded twice in the database.
-    clear_data(entity_type, entity)
+      [{^entity_key, :infinity}] ->
+        :ok
 
-    get_quota_from_db_and_update_ets(entity_type, entity, entity_key)
+      [{^entity_key, :error, reason, _}]
+      when reason in [:rate_limited, :response_size_limit_exceeded] ->
+        :ok
+
+      [{^entity_key, :active, ref, quota, _base_metadata, _refresh_after}] ->
+        handle_active_update(
+          entity_type,
+          entity,
+          entity_key,
+          ref,
+          quota,
+          count,
+          result_byte_size,
+          retries
+        )
+    end
   end
 
-  defp get_quota_from_db_and_update_ets(entity_type, entity, entity_key) do
+  defp handle_cold_start_update(
+         entity_type,
+         entity,
+         entity_key,
+         count,
+         result_byte_size,
+         retries
+       ) do
+    case fetch_and_store_quota(entity_type, entity, entity_key, :insert_new) do
+      :already_exists when retries > 0 ->
+        do_update_usage(entity_type, entity, entity_key, count, result_byte_size, retries - 1)
+
+      :already_exists ->
+        direct_db_update(entity_type, entity, count, result_byte_size)
+
+      {:ok, %{quota: :infinity}} ->
+        :ok
+
+      {:ok, _metadata} ->
+        # Entry now exists in ETS. Recurse to apply the usage to it.
+        do_update_usage(entity_type, entity, entity_key, count, result_byte_size, retries)
+
+      {:error, _} ->
+        :ok
+    end
+  end
+
+  defp handle_active_update(
+         entity_type,
+         entity,
+         entity_key,
+         ref,
+         quota,
+         count,
+         result_byte_size,
+         retries
+       ) do
+    case Counters.update_usage(ref, count, result_byte_size) do
+      {:updated, new_remaining} ->
+        if new_remaining <= 0 do
+          _ = try_flush_and_reinit(entity_type, entity, entity_key, ref, quota)
+        end
+
+        if retries < 30 do
+          # Will remove after a few weeks of observation
+          Logger.warning("""
+          Succeeded running Counters.update_usage/3, but had to retry multiple times
+          due to ongoing flushing. Retries until success: #{@max_update_retries - retries}
+          """)
+        end
+
+        :ok
+
+      :flushing when retries > 0 ->
+        # When count >= quota and we've already retried a few times, every
+        # successful write would immediately exhaust the batch and trigger yet
+        # another flush, creating a serial convoy. Go straight to DB.
+        already_retried = @max_update_retries - retries
+
+        if count >= quota and already_retried >= 3 do
+          direct_db_update(entity_type, entity, count, result_byte_size)
+        else
+          Process.sleep(@update_retry_sleep_ms)
+          do_update_usage(entity_type, entity, entity_key, count, result_byte_size, retries - 1)
+        end
+
+      :flushing ->
+        Logger.warning("""
+        After #{@max_update_retries} retries, Counters.update_usage/3 still gets :flushing
+        meaning something might be stuck. Investigate.
+        Data: #{entity_type}, #{entity_key}, #{quota}
+        """)
+
+        direct_db_update(entity_type, entity, count, result_byte_size)
+    end
+  end
+
+  defp direct_db_update(entity_type, entity, count, result_byte_size) do
+    # Use increment_usage_db (single atomic UPDATE) instead of update_usage_db
+    # (SELECT FOR UPDATE + UPDATE). The row lock is held for microseconds
+    # instead of milliseconds, so concurrent direct-DB writers don't pile up.
+    case ApiCallLimit.increment_usage_db(entity_type, entity, count, result_byte_size) do
+      {:ok, :incremented} ->
+        :ok
+
+      {:error, reason} ->
+        Logger.error(
+          "direct_db_update failed for #{entity_type}: #{inspect(reason)}. " <>
+            "count=#{count}, result_byte_size=#{result_byte_size}"
+        )
+
+        {:error, reason}
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # Flush
+  # ---------------------------------------------------------------------------
+
+  defp try_flush_and_reinit(entity_type, entity, entity_key, ref, quota) do
+    case Counters.acquire_flush_lock(ref) do
+      :acquired ->
+        do_flush(entity_type, entity, entity_key, ref, quota)
+
+      :contended ->
+        :contended
+    end
+  end
+
+  defp do_flush(entity_type, entity, entity_key, ref, quota) do
+    case Counters.wait_for_writers(ref) do
+      :drained ->
+        %{api_calls_made: calls, acc_byte_size: bytes} = Counters.snapshot(ref, quota)
+
+        case ApiCallLimit.update_usage_db(entity_type, entity, calls, bytes) do
+          {:ok, _} ->
+            fetch_and_store_quota(entity_type, entity, entity_key, :replace)
+
+          {:error, _} = error ->
+            Counters.release_flush_lock(ref)
+            error
+        end
+
+      :timeout ->
+        Counters.release_flush_lock(ref)
+        :contended
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # Metadata derivation
+  # ---------------------------------------------------------------------------
+
+  defp compute_quota_data(ref, quota, base_metadata) do
+    remaining_counter = Counters.remaining(ref)
+    calls_used = max(quota - remaining_counter, 0)
+    base_remaining = base_metadata.api_calls_remaining
+
+    %{
+      base_metadata
+      | quota: max(remaining_counter, 0),
+        api_calls_remaining: %{
+          month: max(base_remaining.month - calls_used, 0),
+          hour: max(base_remaining.hour - calls_used, 0),
+          minute: max(base_remaining.minute - calls_used, 0)
+        }
+    }
+  end
+
+  # ---------------------------------------------------------------------------
+  # DB fetch + ETS storage
+  # ---------------------------------------------------------------------------
+
+  defp fetch_and_store_quota(entity_type, entity, entity_key, insert_mode \\ :replace) do
     now = DateTime.utc_now()
 
-    # Adding clearing of the ETS record before fetching a new quota and
-    # putting it in the ETS help alleviate the situation where the quota
-    # fetching fails. This way the ETS record is cleared and the usage
-    # cannot be recorded twice in the database.
-    clear_data(entity_type, entity)
-
     case ApiCallLimit.get_quota_db(entity_type, entity) do
+      {:ok, %{quota: :infinity} = metadata} ->
+        put_and_return(entity_key, {entity_key, :infinity}, insert_mode, {:ok, metadata})
+
       {:ok, %{quota: quota} = metadata} ->
-        refresh_after_datetime = Timex.shift(now, seconds: 60 - now.second)
-
-        true =
-          :ets.insert(
-            @ets_table,
-            {entity_key, quota, _api_calls_remaining = quota, _acc_result_byte_size = 0, metadata,
-             refresh_after_datetime}
-          )
-
-        {:ok, metadata}
+        ref = Counters.new(quota)
+        # Jitter the refresh interval between 60-120s to avoid thundering herds
+        # at minute boundaries when many entities refresh simultaneously.
+        refresh_seconds = 60 + :rand.uniform(60)
+        refresh_after = DateTime.add(now, refresh_seconds, :second)
+        record = {entity_key, :active, ref, quota, metadata, refresh_after}
+        put_and_return(entity_key, record, insert_mode, {:ok, metadata})
 
       {:error, %{reason: reason, blocked_until: _} = error_map}
       when reason in [:rate_limited, :response_size_limit_exceeded] ->
-        retry_again_after =
-          Enum.min(
-            [error_map.blocked_until, DateTime.add(now, 60, :second)],
-            DateTime
-          )
+        retry_after =
+          Enum.min([error_map.blocked_until, DateTime.add(now, 60, :second)], DateTime)
 
-        error_map = Map.put(error_map, :retry_again_after, retry_again_after)
+        error_map = Map.put(error_map, :retry_again_after, retry_after)
+        record = {entity_key, :error, reason, error_map}
+        put_and_return(entity_key, record, insert_mode, {:error, error_map})
 
-        true = :ets.insert(@ets_table, {entity_key, reason, error_map})
+      {:error, error} ->
+        {:error, error}
+    end
+  end
 
-        {:error, error_map}
+  defp put_and_return(_entity_key, record, :replace, result) do
+    :ets.insert(@ets_table, record)
+    result
+  end
+
+  defp put_and_return(_entity_key, record, :insert_new, result) do
+    case :ets.insert_new(@ets_table, record) do
+      true -> result
+      false -> :already_exists
     end
   end
 end

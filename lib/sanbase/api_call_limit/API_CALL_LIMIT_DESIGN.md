@@ -94,7 +94,7 @@ processes, etc. It's garbage-collected when nothing points to it.
 
 ## Architecture Overview
 
-```
+```text
                    ┌─────────────────────────────────────────────┐
    HTTP Request    │             Web Node (one pod)              │
   ──────────────►  │                                             │
@@ -144,7 +144,7 @@ The system has two layers:
 When a request completes successfully, `ETS.update_usage/5` is called.
 Here's what happens when 10 processes call it for the same user:
 
-```
+```text
 Process 1 ──┐
 Process 2 ──┤
 Process 3 ──┤     :ets.lookup(user_42)
@@ -168,7 +168,7 @@ Process 10 ─┘     All 10 get the SAME ref (pointer to the same atomics array
 The critical operation is `sub_get` in step 2. All 10 processes call it on the
 same atomics ref. The hardware guarantees each one gets a unique decremented value:
 
-```
+```text
 Initial remaining = 10
 
 Process A: sub_get(ref, remaining, 1) → 9
@@ -223,7 +223,7 @@ But we wait to be safe.
 
 This is the subtle part. Consider what would happen WITHOUT the writers counter:
 
-```
+```text
 Timeline WITHOUT writers_inflight:
 ────────────────────────────────────────────────────────────────
 Process A (writer):       Process F (flusher):
@@ -244,7 +244,7 @@ Process A's decrement landed on an orphaned ref that nobody will ever read.
 
 Now with the writers counter:
 
-```
+```text
 Timeline WITH writers_inflight:
 ────────────────────────────────────────────────────────────────
 Process A (writer):       Process F (flusher):
@@ -304,7 +304,7 @@ Important: `Counters.update_usage` returns AFTER the `after` block runs, so
 `writers` is always decremented before the caller sees the result. The process
 that triggers the flush is NOT counted as an in-flight writer when it flushes.
 
-```
+```text
 Time  Process  Action                                           remaining  writers
 ─────────────────────────────────────────────────────────────────────────────────────
  t1   P1       Counters.update_usage: writers 0→1, sub_get,      2         0

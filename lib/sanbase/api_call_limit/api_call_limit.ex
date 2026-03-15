@@ -449,7 +449,7 @@ defmodule Sanbase.ApiCallLimit do
     # The min remaining calls among the minute, hour and values
     min_remaining = api_calls_remaining |> Map.values() |> Enum.min()
 
-    case Enum.min([get_quota(), min_remaining]) do
+    case min(get_quota(), min_remaining) do
       0 ->
         now = DateTime.utc_now()
 

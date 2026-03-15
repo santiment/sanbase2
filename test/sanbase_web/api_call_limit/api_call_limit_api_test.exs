@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.ApiCallLimitTest do
   use SanbaseWeb.ConnCase, async: false
 
+  @moduletag :api_call_counting
+
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
   import Mox

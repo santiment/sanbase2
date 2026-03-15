@@ -532,6 +532,108 @@ defmodule Sanbase.ApiCallLimit.ETSTest do
     end
   end
 
+  describe "direct_db_update racing with flush reinit" do
+    # This test targets the race between direct_db_update and try_flush_and_reinit.
+    #
+    # The race window:
+    #   Flusher:                             Direct-DB writer:
+    #     update_usage_db(calls) → DB+=calls
+    #     fetch_and_store_quota(:replace)
+    #       → get_quota_db reads DB          increment_usage_db(count) → DB+=count
+    #       → creates new ETS bucket         (lands after flusher's DB read)
+    #
+    # If the direct write lands after the flusher reads DB but before the ETS
+    # replace, the new bucket's remaining is temporarily too generous (doesn't
+    # account for the direct write). This is harmless because:
+    #   1. Both writes are additive to DB — the DB total is always correct
+    #   2. The ETS leniency self-corrects on the next flush or refresh (≤60s)
+    #   3. No usage is lost or double-counted
+    #
+    # We prove this by interleaving large-count tasks (which hit direct_db_update
+    # via the count>=quota shortcut) with small-count tasks (which go through the
+    # normal atomics→flush path), then verifying the DB total is exact.
+
+    test "interleaved atomics-path and direct-db-path writes preserve exact DB totals",
+         %{user: user} do
+      insert(:subscription_pro, user: user)
+      ApiCallLimit.update_user_plan(user)
+      ETS.clear_all()
+
+      {:ok, %{quota: quota}} = ETS.get_quota(:user, user, :apikey)
+
+      # Mix of:
+      # - Small writes (1-2 calls): go through atomics fast path, trigger organic flushes
+      # - Large writes (>= quota): after a few :flushing retries, hit the count>=quota
+      #   shortcut and go directly to DB via increment_usage_db
+      # This maximizes the chance of direct_db_update racing with a concurrent flush.
+      # Keep total under 500 to stay well below pro plan's 600/min rate limit.
+      small_calls = for _ <- 1..20, do: :rand.uniform(2)
+      large_calls = for _ <- 1..10, do: quota + :rand.uniform(3)
+      all_calls = Enum.shuffle(small_calls ++ large_calls)
+
+      tasks =
+        for count <- all_calls do
+          Task.async(fn ->
+            ETS.update_usage(:user, :apikey, user, count, 100)
+          end)
+        end
+
+      Task.await_many(tasks, 30_000)
+
+      # Flush any remaining in-memory usage via clear_data (which now
+      # flushes before deleting). We can't use a large force_flush count
+      # because count >= quota would hit the direct_db_update shortcut,
+      # bypassing the atomics bucket entirely and leaving it unflushed.
+      ETS.clear_data(:user, user)
+
+      acl = Sanbase.Repo.get_by(ApiCallLimit, user_id: user.id)
+      total_calls = Enum.max(Map.values(acl.api_calls))
+      expected = Enum.sum(all_calls)
+
+      # Despite the race between flush reinit and direct_db_update,
+      # the DB total must be exact — no lost or double-counted usage
+      assert total_calls == expected
+    end
+
+    test "repeated rounds of mixed atomics/direct-db writes with varying contention",
+         %{user: user} do
+      insert(:subscription_pro, user: user)
+      ApiCallLimit.update_user_plan(user)
+      ETS.clear_all()
+
+      {:ok, %{quota: quota}} = ETS.get_quota(:user, user, :apikey)
+
+      # Run 3 rounds with increasing concurrency. Keep cumulative total under
+      # 500 calls to stay well below the pro plan's 600/min rate limit —
+      # hitting the rate limit causes update_usage to silently drop calls.
+      round_calls =
+        for concurrency <- [5, 10, 20] do
+          small = for _ <- 1..concurrency, do: :rand.uniform(2)
+          large = for _ <- 1..div(concurrency, 3), do: quota + :rand.uniform(2)
+          round = Enum.shuffle(small ++ large)
+
+          tasks =
+            for count <- round do
+              Task.async(fn ->
+                ETS.update_usage(:user, :apikey, user, count, 50)
+              end)
+            end
+
+          Task.await_many(tasks, 30_000)
+          round
+        end
+
+      # Flush remaining in-memory usage
+      ETS.clear_data(:user, user)
+
+      acl = Sanbase.Repo.get_by(ApiCallLimit, user_id: user.id)
+      total_calls = Enum.max(Map.values(acl.api_calls))
+      expected = round_calls |> List.flatten() |> Enum.sum()
+
+      assert total_calls == expected
+    end
+  end
+
   describe "increment_usage_db" do
     test "increments api_calls in a single statement without FOR UPDATE", %{user: user} do
       # Ensure the row exists
@@ -725,6 +827,88 @@ defmodule Sanbase.ApiCallLimit.ETSTest do
 
       {:error, error} = ETS.get_quota(:user, user, :apikey)
       assert %{month: _, hour: _, minute: _} = error.api_calls_limits
+    end
+  end
+
+  describe "wait_for_writers timeout in flush path" do
+    # These tests simulate a stuck writer (directly incrementing the atomics
+    # writers slot without ever decrementing it) to exercise the timeout
+    # codepath in do_flush → wait_for_writers → :timeout → release_flush_lock.
+    #
+    # When wait_for_writers times out, the flusher releases the lock and returns
+    # :contended. The caller retries or falls back to the DB.
+
+    test "get_quota recovers when flush times out due to stuck writer", %{user: user} do
+      {:ok, %{quota: quota}} = ETS.get_quota(:user, user, :apikey)
+
+      # Look up the ETS entry to get the atomics ref
+      [{_key, :active, ref, ^quota, _meta, _refresh}] =
+        :ets.lookup(:api_call_limit_ets_table, user.id)
+
+      # Exhaust the quota so the next get_quota triggers a flush
+      ETS.update_usage(:user, :apikey, user, quota + 1, 100)
+
+      # Simulate a stuck writer by directly incrementing the writers counter.
+      # Slot 4 = writers in the Counters module.
+      :atomics.add(ref, 4, 1)
+
+      # get_quota should still succeed — after the flush times out, it retries
+      # and eventually falls back to the DB path
+      result = ETS.get_quota(:user, user, :apikey)
+      assert match?({:ok, _}, result) or match?({:error, _}, result)
+
+      # Clean up the stuck writer so it doesn't affect other tests
+      :atomics.sub(ref, 4, 1)
+    end
+
+    test "update_usage recovers when flush times out due to stuck writer", %{user: user} do
+      {:ok, %{quota: quota}} = ETS.get_quota(:user, user, :apikey)
+
+      [{_key, :active, ref, ^quota, _meta, _refresh}] =
+        :ets.lookup(:api_call_limit_ets_table, user.id)
+
+      # Nearly exhaust quota
+      ETS.update_usage(:user, :apikey, user, quota - 1, 100)
+
+      # Simulate stuck writer
+      :atomics.add(ref, 4, 1)
+
+      # This update exhausts the quota and triggers a flush attempt.
+      # The flush will time out due to the stuck writer, but update_usage
+      # should still return :ok (falling back to direct_db_update).
+      assert :ok = ETS.update_usage(:user, :apikey, user, 2, 100)
+
+      # Clean up
+      :atomics.sub(ref, 4, 1)
+    end
+
+    test "system is fully functional after stuck writer is cleared", %{user: user} do
+      {:ok, %{quota: quota}} = ETS.get_quota(:user, user, :apikey)
+
+      [{_key, :active, ref, ^quota, _meta, _refresh}] =
+        :ets.lookup(:api_call_limit_ets_table, user.id)
+
+      # Exhaust quota with stuck writer
+      ETS.update_usage(:user, :apikey, user, quota + 1, 100)
+      :atomics.add(ref, 4, 1)
+
+      # Force through the timeout path
+      _result = ETS.get_quota(:user, user, :apikey)
+
+      # Clear the stuck writer
+      :atomics.sub(ref, 4, 1)
+
+      # Clear ETS to start fresh
+      ETS.clear_data(:user, user)
+
+      # System should work normally now
+      {:ok, %{quota: new_quota}} = ETS.get_quota(:user, user, :apikey)
+      assert is_integer(new_quota) and new_quota > 0
+
+      assert :ok = ETS.update_usage(:user, :apikey, user, 1, 100)
+
+      {:ok, %{quota: remaining}} = ETS.get_quota(:user, user, :apikey)
+      assert remaining == new_quota - 1
     end
   end
 

@@ -323,8 +323,21 @@ defmodule Sanbase.ApiCallLimit.ETS do
   end
 
   defp direct_db_update(entity_type, entity, count, result_byte_size) do
-    _ = ApiCallLimit.update_usage_db(entity_type, entity, count, result_byte_size)
-    :ok
+    # Use increment_usage_db (single atomic UPDATE) instead of update_usage_db
+    # (SELECT FOR UPDATE + UPDATE). The row lock is held for microseconds
+    # instead of milliseconds, so concurrent direct-DB writers don't pile up.
+    case ApiCallLimit.increment_usage_db(entity_type, entity, count, result_byte_size) do
+      {:ok, :incremented} ->
+        :ok
+
+      {:error, reason} ->
+        Logger.error(
+          "direct_db_update failed for #{entity_type}: #{inspect(reason)}. " <>
+            "count=#{count}, result_byte_size=#{result_byte_size}"
+        )
+
+        {:error, reason}
+    end
   end
 
   # ---------------------------------------------------------------------------

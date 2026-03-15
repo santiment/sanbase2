@@ -138,6 +138,66 @@ defmodule Sanbase.ApiCallLimit do
     end
   end
 
+  @doc """
+  Atomically increments API call counters with a single UPDATE statement.
+
+  Unlike `update_usage_db/4` which uses SELECT FOR UPDATE (holding a row lock
+  for the full transaction round-trip), this uses a single UPDATE with JSONB
+  expressions so the row lock is held only for the statement execution
+  (microseconds vs milliseconds). Use this for the direct-DB fallback path
+  where many concurrent processes may be writing to the same row.
+  """
+  def increment_usage_db(:user, %User{id: user_id}, count, result_byte_size) do
+    do_increment_usage_db({"user_id", user_id}, count, result_byte_size)
+  end
+
+  def increment_usage_db(:remote_ip, remote_ip, count, result_byte_size) do
+    do_increment_usage_db({"remote_ip", remote_ip}, count, result_byte_size)
+  end
+
+  defp do_increment_usage_db({where_col, where_val}, count, acc_byte_size)
+       when is_integer(count) and count >= 0 and is_integer(acc_byte_size) and acc_byte_size >= 0 do
+    %{month_str: month_str, hour_str: hour_str, minute_str: minute_str} = get_time_str_keys()
+    result_mb = acc_byte_size |> Kernel./(1024 * 1024) |> Float.round(6)
+
+    # Use separate parameters for JSONB keys ($1-$3) and COALESCE lookups ($4-$6)
+    # to avoid Postgres "ambiguous parameter" error (42P08) — jsonb_build_object
+    # and ->> both expect text, and reusing the same $N for both confuses type resolution.
+    sql = """
+    UPDATE api_call_limits
+    SET
+      api_calls = jsonb_build_object(
+        $1::text, COALESCE((api_calls->>$4::text)::bigint, 0) + $7::bigint,
+        $2::text, COALESCE((api_calls->>$5::text)::bigint, 0) + $7::bigint,
+        $3::text, COALESCE((api_calls->>$6::text)::bigint, 0) + $7::bigint
+      ),
+      api_calls_responses_size_mb = jsonb_build_object(
+        $1::text, COALESCE((api_calls_responses_size_mb->>$4::text)::float, 0) + $8::float,
+        $2::text, COALESCE((api_calls_responses_size_mb->>$5::text)::float, 0) + $8::float,
+        $3::text, COALESCE((api_calls_responses_size_mb->>$6::text)::float, 0) + $8::float
+      )
+    WHERE #{where_col} = $9
+    """
+
+    params = [
+      month_str,
+      hour_str,
+      minute_str,
+      month_str,
+      hour_str,
+      minute_str,
+      count,
+      result_mb,
+      where_val
+    ]
+
+    case Repo.query(sql, params) do
+      {:ok, %{num_rows: 1}} -> {:ok, :incremented}
+      {:ok, %{num_rows: 0}} -> {:error, :not_found}
+      {:error, _} = error -> error
+    end
+  end
+
   def reset(%User{} = user) do
     if struct = Repo.get_by(__MODULE__, user_id: user.id), do: Repo.delete!(struct)
 

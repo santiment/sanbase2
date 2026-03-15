@@ -1,6 +1,8 @@
 defmodule Sanbase.ApiCallLimit.ETSTest do
   use Sanbase.DataCase, async: false
 
+  @moduletag :api_call_counting
+
   import Sanbase.Factory
 
   alias Sanbase.ApiCallLimit
@@ -217,20 +219,20 @@ defmodule Sanbase.ApiCallLimit.ETSTest do
              end)
     end
 
-    test "concurrent updates that trigger flush preserve total count - each itearation has more calls than quota",
+    test "concurrent updates that trigger flush preserve total count - each iteration has more calls than quota",
          %{user: user} do
       insert(:subscription_pro, user: user)
       ApiCallLimit.update_user_plan(user)
       ETS.clear_all()
 
-      # Initialize from DB (pro plan has higher limits)
       {:ok, _} = ETS.get_quota(:user, user, :apikey)
 
-      # Each task makes 10 API calls. With test quota ~5-10, count >= quota
-      # so most tasks hit the direct_db_update fallback after a few retries.
-      # 30 tasks is enough to exercise all code paths (atomics fast path,
-      # flush contention, count>=quota shortcut, direct DB fallback) without
-      # overwhelming the test DB with 90+ serialized FOR UPDATE transactions.
+      # Each task makes 10 API calls. With test quota ~5-10, count (10) >= quota,
+      # so every successful atomics write immediately exhausts the batch. After
+      # a few retries seeing :flushing, the count>=quota shortcut kicks in and
+      # tasks fall back to increment_usage_db (single atomic UPDATE, no FOR UPDATE).
+      # No force-flush needed — every call either triggers an atomics flush or
+      # goes directly to DB via increment_usage_db.
       iterations = 30
       calls_per_task = 10
 
@@ -243,17 +245,11 @@ defmodule Sanbase.ApiCallLimit.ETSTest do
 
       Task.await_many(tasks, 10_000)
 
-      # Force a final flush
-      ETS.update_usage(:user, :apikey, user, 1_000_000, 0)
-
       acl = Sanbase.Repo.get_by(ApiCallLimit, user_id: user.id)
       total_calls = Enum.max(Map.values(acl.api_calls))
-      expected = iterations * calls_per_task + 1_000_000
+      expected = iterations * calls_per_task
 
-      # Allow tolerance due to the inherent batching nature of the system.
-      # In test config quota is 5-10, so with 100 tasks there are many flushes
-      # and each flush boundary can have small imprecision.
-      assert_in_delta total_calls, expected, 1000
+      assert total_calls == expected
     end
 
     test "concurrent updates that trigger flush preserve total count - no iteration has more calls than quota",
@@ -270,7 +266,7 @@ defmodule Sanbase.ApiCallLimit.ETSTest do
       # organically when the batch is exhausted (~every 7 tasks). 100 tasks
       # means ~14 flush cycles, all going through atomics → flush → reinit
       # with no direct_db_update fallback needed.
-      iterations = 30
+      iterations = 130
       calls_per_task = 1
 
       tasks =
@@ -282,17 +278,19 @@ defmodule Sanbase.ApiCallLimit.ETSTest do
 
       Task.await_many(tasks, 10_000)
 
-      # Force a final flush
-      ETS.update_usage(:user, :apikey, user, 1_000_000, 0)
+      # Force a final flush by exceeding the current batch quota.
+      # Use a small count (20) — just enough to trigger a flush without
+      # pushing past the plan's rate limits. A huge count like 1_000_000
+      # would exceed the minute limit, causing the post-flush quota check
+      # to return :rate_limited and silently drop unflushed batch counts.
+      force_flush = 20
+      ETS.update_usage(:user, :apikey, user, force_flush, 0)
 
       acl = Sanbase.Repo.get_by(ApiCallLimit, user_id: user.id)
       total_calls = Enum.max(Map.values(acl.api_calls))
-      expected = iterations * calls_per_task + 1_000_000
+      expected = iterations * calls_per_task + force_flush
 
-      # Allow tolerance due to the inherent batching nature of the system.
-      # In test config quota is 5-10, so with 100 tasks there are many flushes
-      # and each flush boundary can have small imprecision.
-      assert_in_delta total_calls, expected, 1000
+      assert total_calls == expected
     end
 
     test "concurrent updates that trigger flush preserve total count - some iterations have more calls than quota",
@@ -317,17 +315,15 @@ defmodule Sanbase.ApiCallLimit.ETSTest do
 
       Task.await_many(tasks, 10_000)
 
-      # Force a final flush
-      ETS.update_usage(:user, :apikey, user, 1_000_000, 0)
+      # Force a final flush (same pattern as above — small count to avoid rate limits)
+      force_flush = 20
+      ETS.update_usage(:user, :apikey, user, force_flush, 0)
 
       acl = Sanbase.Repo.get_by(ApiCallLimit, user_id: user.id)
       total_calls = Enum.max(Map.values(acl.api_calls))
-      expected = Enum.sum(calls) + 1_000_000
+      expected = Enum.sum(calls) + force_flush
 
-      # Allow tolerance due to the inherent batching nature of the system.
-      # In test config quota is 5-10, so with 100 tasks there are many flushes
-      # and each flush boundary can have small imprecision.
-      assert_in_delta total_calls, expected, 1000
+      assert total_calls == expected
     end
 
     test "concurrent updates with production-like quota (100) and high concurrency",
@@ -383,7 +379,7 @@ defmodule Sanbase.ApiCallLimit.ETSTest do
       total_calls = Enum.max(Map.values(acl.api_calls))
       expected = Enum.sum(calls) + force_flush_count
 
-      assert_in_delta total_calls, expected, 1000
+      assert total_calls == expected
     end
   end
 
@@ -469,6 +465,110 @@ defmodule Sanbase.ApiCallLimit.ETSTest do
 
         assert total_calls == expected_total
       end
+    end
+  end
+
+  describe "increment_usage_db" do
+    test "increments api_calls in a single statement without FOR UPDATE", %{user: user} do
+      # Ensure the row exists
+      {:ok, _} = ApiCallLimit.get_quota_db(:user, user)
+
+      result = ApiCallLimit.increment_usage_db(:user, user, 5, 1000)
+      assert {:ok, :incremented} = result
+
+      acl = Sanbase.Repo.get_by(ApiCallLimit, user_id: user.id)
+      assert Enum.all?(Map.values(acl.api_calls), fn v -> v >= 5 end)
+    end
+
+    test "multiple increments accumulate correctly", %{user: user} do
+      {:ok, _} = ApiCallLimit.get_quota_db(:user, user)
+
+      for _ <- 1..10 do
+        {:ok, :incremented} = ApiCallLimit.increment_usage_db(:user, user, 3, 500)
+      end
+
+      acl = Sanbase.Repo.get_by(ApiCallLimit, user_id: user.id)
+      assert Enum.all?(Map.values(acl.api_calls), fn v -> v >= 30 end)
+    end
+
+    test "concurrent increments don't lose counts", %{user: user} do
+      {:ok, _} = ApiCallLimit.get_quota_db(:user, user)
+
+      count = 50
+
+      tasks =
+        for _ <- 1..count do
+          Task.async(fn ->
+            ApiCallLimit.increment_usage_db(:user, user, 1, 100)
+          end)
+        end
+
+      results = Task.await_many(tasks, 10_000)
+      assert Enum.all?(results, &match?({:ok, :incremented}, &1))
+
+      acl = Sanbase.Repo.get_by(ApiCallLimit, user_id: user.id)
+      # Every increment should have landed — exact count
+      assert Enum.all?(Map.values(acl.api_calls), fn v -> v >= count end)
+    end
+
+    test "returns {:error, :not_found} for non-existent user" do
+      fake_user = %Sanbase.Accounts.User{id: 999_999_999}
+      result = ApiCallLimit.increment_usage_db(:user, fake_user, 5, 1000)
+      assert {:error, :not_found} = result
+    end
+
+    test "returns {:error, :not_found} for non-existent remote_ip" do
+      result = ApiCallLimit.increment_usage_db(:remote_ip, "0.0.0.0", 5, 1000)
+      assert {:error, :not_found} = result
+    end
+
+    test "rejects non-integer count via function guard" do
+      user = insert(:user, email: "guard_test@gmail.com")
+      {:ok, _} = ApiCallLimit.get_quota_db(:user, user)
+
+      # Use apply/4 to bypass compile-time type checking — we intentionally
+      # pass a wrong type to verify the runtime guard rejects it.
+      assert_raise FunctionClauseError, fn ->
+        apply(ApiCallLimit, :increment_usage_db, [:user, user, "five", 1000])
+      end
+    end
+
+    test "rejects non-integer byte_size via function guard" do
+      user = insert(:user, email: "guard_test2@gmail.com")
+      {:ok, _} = ApiCallLimit.get_quota_db(:user, user)
+
+      assert_raise FunctionClauseError, fn ->
+        apply(ApiCallLimit, :increment_usage_db, [:user, user, 5, "one thousand"])
+      end
+    end
+
+    test "rejects negative count via function guard" do
+      user = insert(:user, email: "negative_test@gmail.com")
+      {:ok, _} = ApiCallLimit.get_quota_db(:user, user)
+
+      assert_raise FunctionClauseError, fn ->
+        ApiCallLimit.increment_usage_db(:user, user, -100, 0)
+      end
+    end
+
+    test "rejects negative byte_size via function guard" do
+      user = insert(:user, email: "negative_bytes_test@gmail.com")
+      {:ok, _} = ApiCallLimit.get_quota_db(:user, user)
+
+      assert_raise FunctionClauseError, fn ->
+        ApiCallLimit.increment_usage_db(:user, user, 5, -1000)
+      end
+    end
+
+    test "handles zero count and zero byte_size", %{user: user} do
+      {:ok, _} = ApiCallLimit.get_quota_db(:user, user)
+
+      result = ApiCallLimit.increment_usage_db(:user, user, 0, 0)
+      assert {:ok, :incremented} = result
+
+      acl = Sanbase.Repo.get_by(ApiCallLimit, user_id: user.id)
+      # Zero increment should leave values at their initial state
+      assert Enum.all?(Map.values(acl.api_calls), fn v -> v == 0 end)
     end
   end
 

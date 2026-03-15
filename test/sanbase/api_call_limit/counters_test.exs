@@ -1,6 +1,8 @@
 defmodule Sanbase.ApiCallLimit.CountersTest do
   use ExUnit.Case, async: true
 
+  @moduletag :api_call_counting
+
   alias Sanbase.ApiCallLimit.Counters
 
   describe "new/1" do

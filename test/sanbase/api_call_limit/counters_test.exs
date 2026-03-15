@@ -185,10 +185,10 @@ defmodule Sanbase.ApiCallLimit.CountersTest do
       assert %{api_calls_made: 40, acc_byte_size: 1300} = Counters.snapshot(ref, 100)
     end
 
-    test "concurrent writers that start before lock are captured" do
+    test "concurrent writers racing with flush lock are correctly partitioned" do
       ref = Counters.new(10_000)
 
-      # Start many writers simultaneously
+      # Start many writers that will race with flush lock acquisition
       writer_tasks =
         for _ <- 1..50 do
           Task.async(fn ->
@@ -200,6 +200,11 @@ defmodule Sanbase.ApiCallLimit.CountersTest do
           end)
         end
 
+      # Acquire the flush lock BEFORE releasing writers — some writers will
+      # see the lock and return :flushing, others may slip through before
+      # the lock becomes visible to them.
+      :acquired = Counters.acquire_flush_lock(ref)
+
       # Unleash all writers at once
       Enum.each(writer_tasks, fn t -> send(t.pid, :go) end)
 
@@ -208,12 +213,13 @@ defmodule Sanbase.ApiCallLimit.CountersTest do
       applied = Enum.count(writer_results, &match?({:updated, _}, &1))
       flushing = Enum.count(writer_results, &(&1 == :flushing))
 
-      # Without acquiring the flush lock, all should be :applied
       assert applied + flushing == 50
-      # Since we didn't acquire the lock, all should have applied
-      assert applied == 50
+      # With the lock held, all writers should see :flushing
+      assert flushing == 50
+      assert applied == 0
 
-      assert %{api_calls_made: 50, acc_byte_size: 5000} = Counters.snapshot(ref, 10_000)
+      # Snapshot should show zero usage since all writers were blocked
+      assert %{api_calls_made: 0, acc_byte_size: 0} = Counters.snapshot(ref, 10_000)
     end
   end
 end

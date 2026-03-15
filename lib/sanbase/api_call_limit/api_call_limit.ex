@@ -199,18 +199,13 @@ defmodule Sanbase.ApiCallLimit do
   end
 
   def reset(%User{} = user) do
+    # Flush any in-memory usage to the OLD row before deleting it,
+    # so clear_data doesn't accidentally write stale usage into the new row.
+    __MODULE__.ETS.clear_data(:user, user)
+
     if struct = Repo.get_by(__MODULE__, user_id: user.id), do: Repo.delete!(struct)
 
-    result = create(:user, user)
-
-    case result do
-      {:ok, _acl} ->
-        __MODULE__.ETS.clear_data(:user, user)
-        result
-
-      _ ->
-        result
-    end
+    create(:user, user)
   end
 
   # Private functions
@@ -495,7 +490,11 @@ defmodule Sanbase.ApiCallLimit do
       Application.get_env(:sanbase, __MODULE__)[:quota_size_max_offset] ||
         @default_quota_size_max_offset
 
-    base + :rand.uniform(offset)
+    if is_integer(offset) and offset > 0 do
+      base + :rand.uniform(offset)
+    else
+      base
+    end
   end
 
   defp get_api_calls_maps(%__MODULE__{api_calls_limit_plan: plan, api_calls: api_calls_made}) do

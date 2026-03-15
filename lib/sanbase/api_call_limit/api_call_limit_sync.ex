@@ -13,6 +13,8 @@ defmodule Sanbase.ApiCallLimit.Sync do
   alias Sanbase.Repo
   alias Sanbase.ApiCallLimit
 
+  require Logger
+
   @batch_size 500
 
   def run() do
@@ -34,7 +36,17 @@ defmodule Sanbase.ApiCallLimit.Sync do
         :ok
 
       records ->
-        Enum.each(records, fn acl -> ApiCallLimit.update_user_plan(acl.user) end)
+        Enum.each(records, fn acl ->
+          try do
+            ApiCallLimit.update_user_plan(acl.user)
+          rescue
+            e ->
+              Logger.error(
+                "Failed to update plan for user #{acl.user_id}: #{Exception.message(e)}"
+              )
+          end
+        end)
+
         sync_in_batches(List.last(records).id)
     end
   end

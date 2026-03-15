@@ -104,23 +104,86 @@ defmodule Sanbase.ApiCallLimit.ETSTest do
 
   describe "clear_data/2" do
     test "clears user entry and forces re-fetch from DB", %{user: user} do
-      {:ok, %{quota: _}} = ETS.get_quota(:user, user, :apikey)
+      {:ok, %{quota: initial_quota}} = ETS.get_quota(:user, user, :apikey)
 
-      # Consume some quota
-      ETS.update_usage(:user, :apikey, user, 10, 100)
+      # Decrement by 5 — with test config (quota 6-10), this leaves remaining
+      # at 1-5, which is below the minimum fresh quota (6). This guarantees
+      # that after clear_data a fresh fetch always returns a higher quota.
+      decrement = 5
+      ETS.update_usage(:user, :apikey, user, decrement, 100)
+      {:ok, %{quota: cached_quota}} = ETS.get_quota(:user, user, :apikey)
+      assert cached_quota == initial_quota - decrement
 
-      # Clear and re-fetch
       ETS.clear_data(:user, user)
 
-      {:ok, %{quota: quota}} = ETS.get_quota(:user, user, :apikey)
-      # Quota should be freshly fetched (no local decrements)
-      assert is_integer(quota) and quota > 0
+      {:ok, %{quota: refreshed_quota}} = ETS.get_quota(:user, user, :apikey)
+      # After clear, the local decrements are gone — fresh quota from DB
+      assert refreshed_quota > cached_quota
     end
 
-    test "clears remote IP entry" do
-      {:ok, _} = ETS.get_quota(:remote_ip, @remote_ip, :apikey)
+    test "clears remote IP entry and forces re-fetch from DB" do
+      {:ok, %{quota: initial_quota}} = ETS.get_quota(:remote_ip, @remote_ip, :apikey)
+
+      decrement = 5
+      ETS.update_usage(:remote_ip, :unauthorized, @remote_ip, decrement, 100)
+      {:ok, %{quota: cached_quota}} = ETS.get_quota(:remote_ip, @remote_ip, :apikey)
+      assert cached_quota == initial_quota - decrement
+
       ETS.clear_data(:remote_ip, @remote_ip)
-      {:ok, _} = ETS.get_quota(:remote_ip, @remote_ip, :apikey)
+
+      {:ok, %{quota: refreshed_quota}} = ETS.get_quota(:remote_ip, @remote_ip, :apikey)
+      # Fresh fetch — no local decrements carried over
+      assert refreshed_quota > cached_quota
+    end
+
+    test "clear_data flushes usage to DB before deleting", %{user: user} do
+      {:ok, %{quota: quota}} = ETS.get_quota(:user, user, :apikey)
+
+      # Use some quota but don't exhaust it (no automatic flush)
+      usage = max(quota - 2, 1)
+      ETS.update_usage(:user, :apikey, user, usage, 500)
+
+      # clear_data should flush the accumulated usage before deleting
+      ETS.clear_data(:user, user)
+
+      acl = Sanbase.Repo.get_by(ApiCallLimit, user_id: user.id)
+      total_calls = Enum.max(Map.values(acl.api_calls))
+      assert total_calls >= usage
+    end
+
+    test "clear_data during active concurrent requests preserves all usage", %{user: user} do
+      insert(:subscription_pro, user: user)
+      ApiCallLimit.update_user_plan(user)
+
+      # Simulate realistic pattern: bursts of requests interleaved with
+      # clear_data calls (e.g. plan changes during active usage).
+      # 5 rounds × (10 tasks × 5 usage each + clear) = 250 total calls
+      rounds = 5
+      tasks_per_round = 10
+      usage_per_task = 5
+      expected_per_round = tasks_per_round * usage_per_task
+
+      for _ <- 1..rounds do
+        {:ok, _} = ETS.get_quota(:user, user, :apikey)
+
+        tasks =
+          for _ <- 1..tasks_per_round do
+            Task.async(fn ->
+              ETS.update_usage(:user, :apikey, user, usage_per_task, 100)
+            end)
+          end
+
+        Task.await_many(tasks, 10_000)
+
+        # clear_data flushes the accumulated in-memory usage before deleting
+        ETS.clear_data(:user, user)
+      end
+
+      acl = Sanbase.Repo.get_by(ApiCallLimit, user_id: user.id)
+      total_calls = Enum.max(Map.values(acl.api_calls))
+      expected_total = rounds * expected_per_round
+
+      assert total_calls == expected_total
     end
   end
 
@@ -338,6 +401,10 @@ defmodule Sanbase.ApiCallLimit.ETSTest do
       # flushes happen organically every ~100 calls.
       original_config = Application.get_env(:sanbase, Sanbase.ApiCallLimit)
 
+      on_exit(fn ->
+        Application.put_env(:sanbase, Sanbase.ApiCallLimit, original_config)
+      end)
+
       Application.put_env(
         :sanbase,
         Sanbase.ApiCallLimit,
@@ -371,9 +438,6 @@ defmodule Sanbase.ApiCallLimit.ETSTest do
       # the ETS entry with an error — dropping any unflushed batch counts.
       force_flush_count = 200
       ETS.update_usage(:user, :apikey, user, force_flush_count, 0)
-
-      # Restore original config
-      Application.put_env(:sanbase, Sanbase.ApiCallLimit, original_config)
 
       acl = Sanbase.Repo.get_by(ApiCallLimit, user_id: user.id)
       total_calls = Enum.max(Map.values(acl.api_calls))

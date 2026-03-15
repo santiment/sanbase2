@@ -439,7 +439,10 @@ defmodule Sanbase.ApiCallLimit.ETS do
 
       {:ok, %{quota: quota} = metadata} ->
         ref = Counters.new(quota)
-        refresh_after = Timex.shift(now, seconds: 60 - now.second)
+        # Jitter the refresh interval between 60-120s to avoid thundering herds
+        # at minute boundaries when many entities refresh simultaneously.
+        refresh_seconds = 60 + :rand.uniform(60)
+        refresh_after = DateTime.add(now, refresh_seconds, :second)
         record = {entity_key, :active, ref, quota, metadata, refresh_after}
         put_and_return(entity_key, record, insert_mode, {:ok, metadata})
 

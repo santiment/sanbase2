@@ -62,8 +62,40 @@ defmodule Sanbase.ApiCallLimit.ETS do
 
   def clear_all(), do: :ets.delete_all_objects(@ets_table)
 
-  def clear_data(:user, %User{id: user_id}), do: :ets.delete(@ets_table, user_id)
-  def clear_data(:remote_ip, remote_ip), do: :ets.delete(@ets_table, remote_ip)
+  def clear_data(:user, %User{id: user_id} = user),
+    do: flush_and_delete(:user, user, user_id)
+
+  def clear_data(:remote_ip, remote_ip),
+    do: flush_and_delete(:remote_ip, remote_ip, remote_ip)
+
+  defp flush_and_delete(entity_type, entity, entity_key) do
+    case :ets.lookup(@ets_table, entity_key) do
+      [{^entity_key, :active, ref, quota, _, _}] ->
+        case Counters.acquire_flush_lock(ref) do
+          :acquired ->
+            case Counters.wait_for_writers(ref) do
+              :drained ->
+                %{api_calls_made: calls, acc_byte_size: bytes} = Counters.snapshot(ref, quota)
+
+                if calls > 0 do
+                  ApiCallLimit.update_usage_db(entity_type, entity, calls, bytes)
+                end
+
+              :timeout ->
+                :ok
+            end
+
+          :contended ->
+            # Another process is already flushing — it will persist the usage
+            :ok
+        end
+
+      _ ->
+        :ok
+    end
+
+    :ets.delete(@ets_table, entity_key)
+  end
 
   @doc ~s"""
   Returns currently available quota for the entity.
@@ -419,6 +451,9 @@ defmodule Sanbase.ApiCallLimit.ETS do
         error_map = Map.put(error_map, :retry_again_after, retry_after)
         record = {entity_key, :error, reason, error_map}
         put_and_return(entity_key, record, insert_mode, {:error, error_map})
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 

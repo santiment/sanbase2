@@ -88,22 +88,10 @@ defmodule Sanbase.ApiCallLimit.Sync do
           Enum.find(subs, &(&1.plan.product_id == @product_sanbase_id)) ||
           hd(subs)
 
-      plan_name = subscription_to_plan_name(sub)
+      plan_name = ApiCallLimit.subscription_to_plan_name(sub)
       {user_id, {plan_name, to_string(sub.status)}}
     end)
   end
-
-  defp subscription_to_plan_name(%Subscription{plan: %{product: %{id: @product_api_id}}} = sub) do
-    "sanapi_#{Subscription.plan_name(sub)}" |> String.downcase()
-  end
-
-  defp subscription_to_plan_name(
-         %Subscription{plan: %{product: %{id: @product_sanbase_id}}} = sub
-       ) do
-    "sanbase_#{Subscription.plan_name(sub)}" |> String.downcase()
-  end
-
-  defp subscription_to_plan_name(_sub), do: "sanapi_free"
 
   defp non_free_acl_plans do
     from(acl in ApiCallLimit,

@@ -337,6 +337,15 @@ defmodule Sanbase.ApiCallLimit.ETS do
         already_retried = @max_update_retries - retries
 
         if count >= quota and already_retried >= 3 do
+          # Direct DB write bypasses the ETS bucket — the in-memory remaining
+          # counter won't reflect this usage until the next refresh (60-120s).
+          # During that window, get_quota may return a slightly too-generous
+          # remaining count. This is acceptable because:
+          #   1. The DB total is always correct (both paths are additive).
+          #   2. The ETS bucket self-corrects on the next refresh_after flush.
+          #   3. Triggering this requires a single GraphQL document with count
+          #      >= quota (100+ queries), which would almost certainly timeout
+          #      before completing in production.
           direct_db_update(entity_type, entity, count, result_byte_size)
         else
           Process.sleep(@update_retry_sleep_ms)

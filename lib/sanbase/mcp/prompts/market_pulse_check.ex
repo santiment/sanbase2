@@ -60,7 +60,7 @@ defmodule Sanbase.MCP.Prompts.MarketPulseCheck do
 
     response =
       Response.prompt()
-      |> Response.user_message(message)
+      |> Response.user_message(%{"type" => "text", "text" => message})
 
     {:reply, response, frame}
   end

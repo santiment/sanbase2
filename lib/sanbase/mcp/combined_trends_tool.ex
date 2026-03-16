@@ -55,6 +55,8 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
 
   require Logger
 
+  @max_trend_periods 2
+
   @impl true
   def annotations do
     %{
@@ -126,6 +128,8 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
           include_stories,
           include_words
         )
+
+      trends_data = limit_trend_periods(trends_data)
 
       response_data =
         %{
@@ -564,6 +568,22 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
     types = if include_stories, do: ["stories" | types], else: types
     types = if include_words, do: ["words" | types], else: types
     types
+  end
+
+  defp limit_trend_periods(trends_data) do
+    trends_data
+    |> maybe_take_recent(:trending_stories, @max_trend_periods)
+    |> maybe_take_recent(:trending_words, @max_trend_periods)
+  end
+
+  defp maybe_take_recent(data, key, max) do
+    case Map.get(data, key) do
+      list when is_list(list) and length(list) > max ->
+        Map.put(data, key, Enum.take(list, -max))
+
+      _ ->
+        data
+    end
   end
 
   defp openai_client do

@@ -21,6 +21,7 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
   end
 
   @slugs_per_call_limit 10
+  @max_total_datapoints 1000
   schema do
     field(:metric, :string,
       required: true,
@@ -95,6 +96,8 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
          :ok <- validate_slugs(slugs),
          :ok <- validate_many_slugs_supported(metric, slugs),
          {:ok, data} <- fetch_metric_data(metric, slugs, from, to, interval) do
+      {data, limited} = limit_datapoints(data)
+
       response_data =
         %{
           metric: metric,
@@ -103,6 +106,7 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
           period: "Since #{DateTime.to_iso8601(from)}",
           interval: interval
         }
+        |> maybe_add_limit_notice(limited)
         |> Utils.truncate_response()
 
       {:reply, Response.json(Response.tool(), response_data), frame}
@@ -110,6 +114,31 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
       {:error, reason} ->
         {:reply, Response.error(Response.tool(), reason), frame}
     end
+  end
+
+  defp limit_datapoints(data) do
+    total = data |> Map.values() |> Enum.map(&length/1) |> Enum.sum()
+
+    if total <= @max_total_datapoints do
+      {data, false}
+    else
+      per_slug = max(div(@max_total_datapoints, map_size(data)), 1)
+
+      limited_data =
+        Map.new(data, fn {slug, points} -> {slug, Enum.take(points, -per_slug)} end)
+
+      {limited_data, true}
+    end
+  end
+
+  defp maybe_add_limit_notice(data, false), do: data
+
+  defp maybe_add_limit_notice(data, true) do
+    Map.put(
+      data,
+      :notice,
+      "Datapoints limited to #{@max_total_datapoints} total (most recent kept). Use a coarser interval or shorter time_period for complete data."
+    )
   end
 
   defp validate_metric(metric) do

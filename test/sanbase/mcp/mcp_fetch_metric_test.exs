@@ -146,20 +146,19 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
       assert Jason.decode!(json_text) == %{
                "assets" => [
                  %{
-                   "description" => "Bitcoin Description",
                    "name" => "Bitcoin",
                    "slug" => "bitcoin",
                    "ticker" => "BTC"
                  },
                  %{
-                   "description" => "Ethereum Description",
                    "name" => "Ethereum",
                    "slug" => "ethereum",
                    "ticker" => "ETH"
                  }
                ],
                "assets_count" => 2,
-               "description" => "All slugs available for daily_active_addresses metric",
+               "description" =>
+                 "All slugs available for daily_active_addresses metric. Use slug filter for full asset details.",
                "metric" => "daily_active_addresses"
              }
     end)
@@ -197,20 +196,19 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
     assert %{
              "assets" => [
                %{
-                 "description" => "Bitcoin Description",
                  "name" => "Bitcoin",
                  "slug" => "bitcoin",
                  "ticker" => "BTC"
                },
                %{
-                 "description" => "Ethereum Description",
                  "name" => "Ethereum",
                  "slug" => "ethereum",
                  "ticker" => "ETH"
                }
              ],
              "assets_count" => 2,
-             "description" => "All available metrics and slugs",
+             "description" =>
+               "All available metrics and slugs. Use slug filter for full asset details.",
              "metrics" => [
                %{
                  "description" => "Price in USD for cryptocurrencies",
@@ -523,6 +521,18 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
                  "supports_many_slugs" => true
                },
                %{
+                 "description" =>
+                   "Net balance of tokens on exchange addresses (inflow minus outflow over time)",
+                 "documentation_urls" => [
+                   %{"url" => "https://academy.santiment.net/metrics/exchange-funds-flow"}
+                 ],
+                 "name" => "exchange_balance",
+                 "unit" => "tokens",
+                 "default_aggregation" => "sum",
+                 "min_interval" => "5m",
+                 "supports_many_slugs" => true
+               },
+               %{
                  "description" => "USD value of tokens deposited to exchange addresses",
                  "documentation_urls" => [
                    %{"url" => "https://academy.santiment.net/metrics/exchange-funds-flow"}
@@ -543,9 +553,44 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
                  "default_aggregation" => "sum",
                  "min_interval" => "5m",
                  "supports_many_slugs" => true
+               },
+               %{
+                 "description" =>
+                   "Number of on-chain transactions with value exceeding $100k USD, indicating whale activity",
+                 "documentation_urls" => [
+                   %{"url" => "https://academy.santiment.net/metrics/whale-transaction-count"}
+                 ],
+                 "name" => "whale_transaction_count_100k_usd_to_inf",
+                 "unit" => "count",
+                 "default_aggregation" => "sum",
+                 "min_interval" => "5m",
+                 "supports_many_slugs" => true
+               },
+               %{
+                 "description" =>
+                   "Number of on-chain transactions with value exceeding $1M USD, indicating large whale activity",
+                 "documentation_urls" => [
+                   %{"url" => "https://academy.santiment.net/metrics/whale-transaction-count"}
+                 ],
+                 "name" => "whale_transaction_count_1m_usd_to_inf",
+                 "unit" => "count",
+                 "default_aggregation" => "sum",
+                 "min_interval" => "5m",
+                 "supports_many_slugs" => true
+               },
+               %{
+                 "description" =>
+                   "Aggregated funding rate across all exchanges for a given asset, reflecting overall market sentiment in perpetual futures",
+                 "documentation_urls" => [
+                   %{"url" => "https://academy.santiment.net/metrics/funding-rates-aggregated"}
+                 ],
+                 "name" => "total_funding_rates_aggregated_per_asset",
+                 "unit" => "rate",
+                 "default_aggregation" => "last",
+                 "min_interval" => "5m"
                }
              ],
-             "metrics_count" => 30
+             "metrics_count" => 34
            } = result
 
     result

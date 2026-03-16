@@ -80,26 +80,25 @@ defmodule Sanbase.MCP.Utils do
   def truncate_response(data), do: data
 
   defp do_truncate_map(data) do
-    data =
-      data
-      |> shrink_to_fit(@max_response_chars, [:list, :string])
-      |> shrink_to_fit(@max_response_chars, [:map])
+    primary_key = primary_list_key(data)
 
     data =
       data
-      |> sync_relationship_fields()
-      |> sync_count_fields()
+      |> shrink_to_fit(@max_response_chars, [:list, :string], primary_key)
+      |> shrink_to_fit(@max_response_chars, [:map], primary_key)
 
     data
+    |> sync_relationship_fields()
+    |> sync_count_fields(primary_key)
   end
 
-  defp shrink_to_fit(data, max_chars, candidate_types, attempts \\ 0)
+  defp shrink_to_fit(data, max_chars, candidate_types, primary_key, attempts \\ 0)
 
-  defp shrink_to_fit(data, _max_chars, _candidate_types, attempts)
+  defp shrink_to_fit(data, _max_chars, _candidate_types, _primary_key, attempts)
        when attempts >= @max_truncation_attempts,
        do: data
 
-  defp shrink_to_fit(data, max_chars, candidate_types, attempts) do
+  defp shrink_to_fit(data, max_chars, candidate_types, primary_key, attempts) do
     if byte_size(Jason.encode!(data)) <= max_chars do
       data
     else
@@ -112,12 +111,12 @@ defmodule Sanbase.MCP.Utils do
             data
             |> truncate_at_path(path)
             |> sync_relationship_fields()
-            |> sync_count_fields()
+            |> sync_count_fields(primary_key)
 
           if updated_data == data do
             data
           else
-            shrink_to_fit(updated_data, max_chars, candidate_types, attempts + 1)
+            shrink_to_fit(updated_data, max_chars, candidate_types, primary_key, attempts + 1)
           end
       end
     end
@@ -290,10 +289,10 @@ defmodule Sanbase.MCP.Utils do
     end
   end
 
-  defp sync_count_fields(data) do
+  defp sync_count_fields(data, primary_key) do
     data
     |> sync_named_count_fields()
-    |> sync_total_count()
+    |> sync_total_count(primary_key)
   end
 
   defp sync_named_count_fields(data) do
@@ -312,16 +311,16 @@ defmodule Sanbase.MCP.Utils do
     end)
   end
 
-  defp sync_total_count(data) do
-    case total_count_key(data) do
-      nil ->
+  defp sync_total_count(data, primary_key) do
+    case {total_count_key(data), primary_key} do
+      {nil, _} ->
         data
 
-      count_key ->
-        case primary_list_key(data) do
-          nil -> data
-          list_key -> Map.put(data, count_key, data |> Map.fetch!(list_key) |> length())
-        end
+      {_, nil} ->
+        data
+
+      {count_key, list_key} ->
+        Map.put(data, count_key, data |> Map.fetch!(list_key) |> length())
     end
   end
 

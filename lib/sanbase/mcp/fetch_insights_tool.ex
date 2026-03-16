@@ -7,6 +7,9 @@ defmodule Sanbase.MCP.FetchInsightsTool do
   alias Sanbase.Insight.Post
   alias Sanbase.MCP.Utils
 
+  @max_insights 10
+  @max_text_length 5000
+
   @impl true
   def annotations do
     %{
@@ -20,7 +23,7 @@ defmodule Sanbase.MCP.FetchInsightsTool do
   schema do
     field(:insight_ids, :any,
       required: true,
-      description: "Array of santiment crypto insights IDs to fetch full content for"
+      description: "Array of santiment crypto insights IDs to fetch full content for (max 10)"
     )
   end
 
@@ -48,8 +51,13 @@ defmodule Sanbase.MCP.FetchInsightsTool do
   end
 
   defp parse_insight_ids(insight_ids) when is_list(insight_ids) do
-    parsed = Enum.map(insight_ids, &ensure_integer/1)
-    {:ok, parsed}
+    if length(insight_ids) > @max_insights do
+      {:error,
+       "At most #{@max_insights} insight IDs can be fetched at once. Got: #{length(insight_ids)}"}
+    else
+      parsed = Enum.map(insight_ids, &ensure_integer/1)
+      {:ok, parsed}
+    end
   rescue
     _ -> {:error, "Invalid insight IDs format. Expected array of integers."}
   end
@@ -85,12 +93,22 @@ defmodule Sanbase.MCP.FetchInsightsTool do
       {:error, "Failed to fetch insight details: #{inspect(error)}"}
   end
 
+  defp truncate_text(nil), do: nil
+
+  defp truncate_text(text) do
+    if String.length(text) <= @max_text_length do
+      text
+    else
+      String.slice(text, 0, @max_text_length) <> "... [truncated]"
+    end
+  end
+
   defp format_insight_detail(post) do
     %{
       id: post.id,
       title: post.title,
       short_desc: post.short_desc,
-      text: post.text,
+      text: truncate_text(post.text),
       published_at: Sanbase.DateTimeUtils.to_iso8601(post.published_at),
       author: %{
         username: post.user.username || "Unnamed"

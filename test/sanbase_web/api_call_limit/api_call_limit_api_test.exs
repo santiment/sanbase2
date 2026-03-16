@@ -260,7 +260,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       Sanbase.Parallel.map(
         1..iterations,
         fn _ ->
-          {:ok, _updated} =
+          {:ok, :updated} =
             Sanbase.ApiCallLimit.update_usage_db(
               :user,
               context.user,

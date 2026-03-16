@@ -33,6 +33,18 @@ defmodule Sanbase.MCP.TrendingStoriesTool do
   alias Anubis.Server.Response
   alias Sanbase.MCP.Utils
 
+  @max_periods 8
+
+  @impl true
+  def annotations do
+    %{
+      "title" => "Trending Stories",
+      "readOnlyHint" => true,
+      "destructiveHint" => false,
+      "openWorldHint" => false
+    }
+  end
+
   schema do
     field(:time_period, :string,
       required: false,
@@ -96,6 +108,7 @@ defmodule Sanbase.MCP.TrendingStoriesTool do
         formatted_stories =
           stories_map
           |> Enum.sort_by(fn {datetime, _} -> datetime end, {:asc, DateTime})
+          |> Enum.take(-@max_periods)
           |> Enum.map(fn {datetime, top_stories} ->
             %{
               datetime: DateTime.to_iso8601(datetime),

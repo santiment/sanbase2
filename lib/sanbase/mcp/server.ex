@@ -4,7 +4,7 @@ defmodule Sanbase.MCP.Server do
   use Anubis.Server,
     name: "sanbase-metrics",
     version: "1.0.0",
-    capabilities: [:tools]
+    capabilities: [:tools, :prompts]
 
   @impl true
   def init(_client_info, %Anubis.Server.Frame{} = frame) do
@@ -33,6 +33,11 @@ defmodule Sanbase.MCP.Server do
 
   # Register Screener tool
   component(Sanbase.MCP.AssetsByMetricTool)
+
+  # Register prompts
+  component(Sanbase.MCP.Prompts.MarketAnalysis)
+  component(Sanbase.MCP.Prompts.MarketPulseCheck)
+  component(Sanbase.MCP.Prompts.MarketThesisValidation)
 
   if Application.compile_env(:sanbase, :env) in [:test, :dev] do
     IO.puts("Defining the extra MCP Server tools used in dev and test")

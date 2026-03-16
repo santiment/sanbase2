@@ -55,6 +55,18 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
 
   require Logger
 
+  @max_trend_periods 2
+
+  @impl true
+  def annotations do
+    %{
+      "title" => "Combined Trends",
+      "readOnlyHint" => true,
+      "destructiveHint" => false,
+      "openWorldHint" => false
+    }
+  end
+
   schema do
     field(:time_period, :string,
       required: false,
@@ -117,17 +129,21 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
           include_words
         )
 
-      response_data = %{
-        trends: trends_data,
-        metadata: %{
-          time_period: time_period,
-          size: validated_size,
-          period_start: DateTime.to_iso8601(from_datetime),
-          period_end: DateTime.to_iso8601(to_datetime),
-          included_data_types: build_included_types(include_stories, include_words)
-        },
-        errors: errors
-      }
+      trends_data = limit_trend_periods(trends_data)
+
+      response_data =
+        %{
+          trends: trends_data,
+          metadata: %{
+            time_period: time_period,
+            size: validated_size,
+            period_start: DateTime.to_iso8601(from_datetime),
+            period_end: DateTime.to_iso8601(to_datetime),
+            included_data_types: build_included_types(include_stories, include_words)
+          },
+          errors: errors
+        }
+        |> Utils.truncate_response()
 
       {:reply, Response.json(Response.tool(), response_data), frame}
     else
@@ -552,6 +568,22 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
     types = if include_stories, do: ["stories" | types], else: types
     types = if include_words, do: ["words" | types], else: types
     types
+  end
+
+  defp limit_trend_periods(trends_data) do
+    trends_data
+    |> maybe_take_recent(:trending_stories, @max_trend_periods)
+    |> maybe_take_recent(:trending_words, @max_trend_periods)
+  end
+
+  defp maybe_take_recent(data, key, max) do
+    case Map.get(data, key) do
+      list when is_list(list) and length(list) > max ->
+        Map.put(data, key, Enum.take(list, -max))
+
+      _ ->
+        data
+    end
   end
 
   defp openai_client do

@@ -47,6 +47,19 @@ defmodule Sanbase.MCP.AssetsByMetricTool do
   use Anubis.Server.Component, type: :tool
 
   alias Anubis.Server.Response
+  alias Sanbase.MCP.Utils
+
+  @impl true
+  def annotations do
+    %{
+      "title" => "Screen Assets by Metric",
+      "readOnlyHint" => true,
+      "destructiveHint" => false,
+      "openWorldHint" => false
+    }
+  end
+
+  @max_page_size 100
 
   schema do
     field(:metric, :string,
@@ -156,8 +169,7 @@ defmodule Sanbase.MCP.AssetsByMetricTool do
     field(:page_size, :integer,
       required: true,
       description: """
-      Number of projects to return per page. Controls the size of each paginated response.
-      Typical values range from 10-100 depending on your needs.
+      Number of projects to return per page (max 100). Controls the size of each paginated response.
       """
     )
 
@@ -182,7 +194,9 @@ defmodule Sanbase.MCP.AssetsByMetricTool do
     # so the execute/2 function itself is not
     with :ok <- validate_operator_threshold_pair(params[:operator], params[:threshold]),
          :ok <- validate_aggregation(params[:aggregation]),
-         :ok <- validate_sort(params[:sort]) do
+         :ok <- validate_sort(params[:sort]),
+         :ok <- validate_page(params[:page]),
+         {:ok, _} <- Utils.validate_size(params[:page_size], 1, @max_page_size) do
       do_execute(params, frame)
     else
       {:error, reason} ->
@@ -266,6 +280,10 @@ defmodule Sanbase.MCP.AssetsByMetricTool do
   defp validate_sort(sort) when sort in ~w(asc desc), do: :ok
   defp validate_sort(nil), do: {:error, "Sort is required"}
   defp validate_sort(sort), do: {:error, "Invalid sort '#{sort}'. Must be one of: asc, desc"}
+
+  defp validate_page(page) when is_integer(page) and page >= 1, do: :ok
+  defp validate_page(nil), do: {:error, "Page is required"}
+  defp validate_page(_page), do: {:error, "Page must be an integer greater than or equal to 1"}
 
   defp validate_operator_threshold_pair(nil, nil), do: :ok
 

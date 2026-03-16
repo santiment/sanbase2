@@ -7,6 +7,16 @@ defmodule Sanbase.MCP.InsightDiscoveryTool do
   alias Sanbase.Insight.Post
   alias Sanbase.MCP.Utils
 
+  @impl true
+  def annotations do
+    %{
+      "title" => "Discover Insights",
+      "readOnlyHint" => true,
+      "destructiveHint" => false,
+      "openWorldHint" => false
+    }
+  end
+
   schema do
     field(:time_period, :string,
       required: false,

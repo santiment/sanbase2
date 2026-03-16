@@ -102,8 +102,8 @@ defmodule SanbaseWeb.Graphql.UserTypes do
       resolve(&UserResolver.entities_stats/3)
     end
 
-    field :triggers, list_of(:trigger) do
-      cache_resolve(&UserTriggerResolver.public_triggers/3, ttl: 60)
+    field :triggers, list_of(:public_trigger) do
+      cache_resolve(&UserTriggerResolver.public_triggers_public_user/3, ttl: 60)
     end
 
     field :chart_configurations, list_of(:chart_configuration) do

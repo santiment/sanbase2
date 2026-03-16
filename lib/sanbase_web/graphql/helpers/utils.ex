@@ -82,6 +82,48 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
     }
   end
 
+  @doc ~s"""
+  Strip private fields from a trigger map, keeping only public-safe fields.
+  Settings are sanitized to remove channels, webhooks, templates, etc.
+  """
+  @private_settings_keys ~w(channel template extra_explanation filtered_target triggered? payload template_kv)a
+  @private_settings_string_keys Enum.map(@private_settings_keys, &to_string/1)
+
+  def to_public_trigger(trigger) do
+    settings =
+      trigger.settings
+      |> sanitize_trigger_settings()
+
+    %{
+      id: trigger.id,
+      title: trigger.title,
+      description: trigger.description,
+      icon_url: trigger.icon_url,
+      tags: trigger.tags,
+      last_triggered: trigger.last_triggered,
+      settings: settings,
+      is_public: trigger.is_public,
+      is_active: trigger.is_active,
+      is_repeating: trigger.is_repeating,
+      is_frozen: trigger.is_frozen,
+      is_featured: trigger.is_featured,
+      inserted_at: trigger.inserted_at,
+      updated_at: trigger.updated_at
+    }
+  end
+
+  def sanitize_trigger_settings(settings) when is_struct(settings) do
+    settings
+    |> Map.from_struct()
+    |> Map.drop(@private_settings_keys)
+  end
+
+  def sanitize_trigger_settings(settings) when is_map(settings) do
+    settings
+    |> Map.drop(@private_settings_keys)
+    |> Map.drop(@private_settings_string_keys)
+  end
+
   def replace_user_trigger_with_trigger(data) when is_map(data) do
     case data do
       %{user_trigger: ut} = elem when not is_nil(ut) ->

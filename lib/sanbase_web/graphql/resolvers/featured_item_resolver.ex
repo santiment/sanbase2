@@ -1,5 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.FeaturedItemResolver do
-  import SanbaseWeb.Graphql.Helpers.Utils, only: [transform_user_trigger: 1]
+  import SanbaseWeb.Graphql.Helpers.Utils,
+    only: [transform_user_trigger: 1, sanitize_trigger_settings: 1]
 
   alias Sanbase.FeaturedItem
 
@@ -16,7 +17,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.FeaturedItemResolver do
   end
 
   def user_triggers(_root, _args, _context) do
-    {:ok, FeaturedItem.user_triggers() |> Enum.map(&transform_user_trigger/1)}
+    {:ok,
+     FeaturedItem.user_triggers()
+     |> Enum.map(&transform_user_trigger/1)
+     |> Enum.map(&sanitize_user_trigger_settings/1)}
+  end
+
+  defp sanitize_user_trigger_settings(%{trigger: trigger} = ut) do
+    %{ut | trigger: Map.update!(trigger, :settings, &sanitize_trigger_settings/1)}
   end
 
   def chart_configurations(_root, _args, _context) do

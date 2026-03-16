@@ -123,39 +123,21 @@ defmodule Sanbase.ApiCallLimit do
     end
   end
 
-  def update_usage_db(type, entity, count, result_byte_size) do
-    Ecto.Multi.new()
-    |> Ecto.Multi.run(:get_acl, fn _repo, _changes ->
-      {:ok, get_by_and_lock(type, entity)}
-    end)
-    |> Ecto.Multi.run(:update_quota, fn _repo, %{get_acl: acl} ->
-      do_update_usage_db(acl, count, result_byte_size)
-    end)
-    |> Repo.transaction()
-    |> case do
-      {:ok, %{update_quota: quota}} -> {:ok, quota}
-      {:error, _name, error, _} -> {:error, error}
-    end
-  end
-
   @doc """
   Atomically increments API call counters with a single UPDATE statement.
 
-  Unlike `update_usage_db/4` which uses SELECT FOR UPDATE (holding a row lock
-  for the full transaction round-trip), this uses a single UPDATE with JSONB
-  expressions so the row lock is held only for the statement execution
-  (microseconds vs milliseconds). Use this for the direct-DB fallback path
-  where many concurrent processes may be writing to the same row.
+  Uses JSONB expressions so the row lock is held only for the statement
+  execution (microseconds), avoiding the SELECT FOR UPDATE round-trip.
   """
-  def increment_usage_db(:user, %User{id: user_id}, count, result_byte_size) do
-    do_increment_usage_db({"user_id", user_id}, count, result_byte_size)
+  def update_usage_db(:user, %User{id: user_id}, count, result_byte_size) do
+    do_update_usage_db({"user_id", user_id}, count, result_byte_size)
   end
 
-  def increment_usage_db(:remote_ip, remote_ip, count, result_byte_size) do
-    do_increment_usage_db({"remote_ip", remote_ip}, count, result_byte_size)
+  def update_usage_db(:remote_ip, remote_ip, count, result_byte_size) do
+    do_update_usage_db({"remote_ip", remote_ip}, count, result_byte_size)
   end
 
-  defp do_increment_usage_db({where_col, where_val}, count, acc_byte_size)
+  defp do_update_usage_db({where_col, where_val}, count, acc_byte_size)
        when is_integer(count) and count >= 0 and is_integer(acc_byte_size) and acc_byte_size >= 0 do
     %{month_str: month_str, hour_str: hour_str, minute_str: minute_str} = get_time_str_keys()
     result_mb = acc_byte_size |> Kernel./(1024 * 1024) |> Float.round(6)
@@ -192,7 +174,7 @@ defmodule Sanbase.ApiCallLimit do
     ]
 
     case Repo.query(sql, params) do
-      {:ok, %{num_rows: 1}} -> {:ok, :incremented}
+      {:ok, %{num_rows: 1}} -> {:ok, :updated}
       {:ok, %{num_rows: 0}} -> {:error, :not_found}
       {:error, _} = error -> error
     end
@@ -527,34 +509,6 @@ defmodule Sanbase.ApiCallLimit do
       hour: Map.get(api_calls_responses_size_mb, keys.hour_str, 0),
       minute: Map.get(api_calls_responses_size_mb, keys.minute_str, 0)
     }
-  end
-
-  defp do_update_usage_db(%__MODULE__{} = acl, count, acc_results_byte_size)
-       when is_integer(count) and is_integer(acc_results_byte_size) do
-    %{month_str: month_str, hour_str: hour_str, minute_str: minute_str} = get_time_str_keys()
-    %{api_calls: api_calls, api_calls_responses_size_mb: api_calls_responses_size_mb} = acl
-
-    new_api_calls = %{
-      month_str => count + Map.get(api_calls, month_str, 0),
-      hour_str => count + Map.get(api_calls, hour_str, 0),
-      minute_str => count + Map.get(api_calls, minute_str, 0)
-    }
-
-    # Store in mb instead of bytes so the value reached by accumulating results for
-    # a whole month is easier to work with
-    result_mb = acc_results_byte_size |> Kernel./(1024 * 1024) |> Float.round(6)
-
-    new_api_responses_size_mb = %{
-      month_str => result_mb + Map.get(api_calls_responses_size_mb, month_str, 0),
-      hour_str => result_mb + Map.get(api_calls_responses_size_mb, hour_str, 0),
-      minute_str => result_mb + Map.get(api_calls_responses_size_mb, minute_str, 0)
-    }
-
-    changeset(acl, %{
-      api_calls: new_api_calls,
-      api_calls_responses_size_mb: new_api_responses_size_mb
-    })
-    |> Repo.update()
   end
 
   defp plan_has_limits?(plan) do

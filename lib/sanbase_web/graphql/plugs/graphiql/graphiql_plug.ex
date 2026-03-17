@@ -128,8 +128,18 @@ defmodule SanbaseWeb.Graphql.GraphiqlPlug do
   """
 
   require EEx
+  import Phoenix.Controller, only: [put_secure_browser_headers: 2]
 
   @graphiql_template_path Path.join(__DIR__, "templates")
+
+  @graphiql_csp "default-src 'self'; " <>
+                  "script-src 'self'; " <>
+                  "style-src 'self' 'unsafe-inline'; " <>
+                  "font-src 'self' data:; " <>
+                  "img-src 'self' data:; " <>
+                  "connect-src 'self'; " <>
+                  "worker-src 'self' blob:; " <>
+                  "frame-ancestors 'self'"
 
   EEx.function_from_file(
     :defp,
@@ -409,14 +419,16 @@ defmodule SanbaseWeb.Graphql.GraphiqlPlug do
   @spec rendered(String.t(), Plug.Conn.t()) :: Plug.Conn.t()
   defp rendered(html, conn) do
     conn
+    |> put_secure_browser_headers(%{"content-security-policy" => @graphiql_csp})
     |> put_resp_content_type("text/html")
     |> send_resp(200, html)
   end
 
   defp js_escape(string) do
     string
-    |> String.replace(~r/\n/, "\\n")
-    |> String.replace(~r/'/, "\\'")
+    |> String.replace("\\", "\\\\")
+    |> String.replace("\n", "\\n")
+    |> String.replace("'", "\\'")
     |> String.replace("<", "&lt;")
     |> String.replace(">", "&gt;")
   end

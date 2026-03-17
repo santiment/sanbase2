@@ -27,6 +27,28 @@ import "../css/graphiql.css";
 // GraphiQL lazily loads Monaco then defines "graphiql-LIGHT" and "graphiql-DARK".
 // We poll for globalThis.__MONACO (set by @graphiql/react's monaco store)
 // and then define our custom theme on top.
+// Shared theme definition — used for both "santiment-light" and "graphiql-LIGHT"
+const LIGHT_THEME_RULES = [
+  { token: "keyword.gql",                    foreground: "1565c0" },  // blue — query/mutation/fragment
+  { token: "type.identifier.gql",            foreground: "b71c1c" },  // deep red — type/field names
+  { token: "argument.identifier.gql",        foreground: "6a1b9a" },  // purple — argument names
+  { token: "key.identifier.gql",             foreground: "6a1b9a" },  // purple — argument names
+  { token: "string.gql",                     foreground: "2e7d32" },  // green — string values
+  { token: "string.invalid.gql",             foreground: "2e7d32" },
+  { token: "number.gql",                     foreground: "e65100" },  // orange — numbers
+  { token: "number.float.gql",               foreground: "e65100" },
+  { token: "comment.gql",                    foreground: "757575" },  // grey — comments
+  { token: "delimiter.gql",                  foreground: "37474f" },  // dark grey — braces
+  { token: "delimiter.curly.gql",            foreground: "37474f" },
+  { token: "delimiter.parenthesis.gql",      foreground: "37474f" },
+  { token: "delimiter.square.gql",           foreground: "37474f" },
+];
+
+const LIGHT_THEME_COLORS = {
+  "editor.background": "#ffffff00",
+  "scrollbar.shadow": "#ffffff00",
+};
+
 function registerSantimentTheme() {
   var m = globalThis.__MONACO;
   if (!m) {
@@ -34,55 +56,10 @@ function registerSantimentTheme() {
     return;
   }
 
-  m.editor.defineTheme("santiment-light", {
-    base: "vs",
-    inherit: true,
-    rules: [
-      // GraphQL tokens (suffixed .gql by monaco-graphql)
-      { token: "keyword.gql",                    foreground: "1565c0" },  // blue — query/mutation/fragment
-      { token: "type.identifier.gql",            foreground: "b71c1c" },  // deep red — type/field names
-      { token: "argument.identifier.gql",        foreground: "6a1b9a" },  // purple — argument names
-      { token: "key.identifier.gql",             foreground: "6a1b9a" },  // purple — argument names
-      { token: "string.gql",                     foreground: "2e7d32" },  // green — string values
-      { token: "string.invalid.gql",             foreground: "2e7d32" },
-      { token: "number.gql",                     foreground: "e65100" },  // orange — numbers
-      { token: "number.float.gql",               foreground: "e65100" },
-      { token: "comment.gql",                    foreground: "757575" },  // grey — comments
-      { token: "delimiter.gql",                  foreground: "37474f" },  // dark grey — braces
-      { token: "delimiter.curly.gql",            foreground: "37474f" },
-      { token: "delimiter.parenthesis.gql",      foreground: "37474f" },
-      { token: "delimiter.square.gql",           foreground: "37474f" },
-    ],
-    colors: {
-      "editor.background": "#ffffff00",
-      "scrollbar.shadow": "#ffffff00",
-    },
-  });
-
-  // Also override the graphiql-LIGHT theme that GraphiQL uses
-  m.editor.defineTheme("graphiql-LIGHT", {
-    base: "vs",
-    inherit: true,
-    rules: [
-      { token: "keyword.gql",                    foreground: "1565c0" },
-      { token: "type.identifier.gql",            foreground: "b71c1c" },
-      { token: "argument.identifier.gql",        foreground: "6a1b9a" },
-      { token: "key.identifier.gql",             foreground: "6a1b9a" },
-      { token: "string.gql",                     foreground: "2e7d32" },
-      { token: "string.invalid.gql",             foreground: "2e7d32" },
-      { token: "number.gql",                     foreground: "e65100" },
-      { token: "number.float.gql",               foreground: "e65100" },
-      { token: "comment.gql",                    foreground: "757575" },
-      { token: "delimiter.gql",                  foreground: "37474f" },
-      { token: "delimiter.curly.gql",            foreground: "37474f" },
-      { token: "delimiter.parenthesis.gql",      foreground: "37474f" },
-      { token: "delimiter.square.gql",           foreground: "37474f" },
-    ],
-    colors: {
-      "editor.background": "#ffffff00",
-      "scrollbar.shadow": "#ffffff00",
-    },
-  });
+  var themeData = { base: "vs", inherit: true, rules: LIGHT_THEME_RULES, colors: LIGHT_THEME_COLORS };
+  m.editor.defineTheme("santiment-light", themeData);
+  // Override the graphiql-LIGHT theme that GraphiQL uses internally
+  m.editor.defineTheme("graphiql-LIGHT", themeData);
 
   // Re-apply if currently in light mode
   if (!document.body.classList.contains("graphiql-dark")) {
@@ -93,41 +70,40 @@ function registerSantimentTheme() {
 registerSantimentTheme();
 
 // --- URL Parameter Handling ---
-// Preserves the existing URL format: ?query=...&variables=...&headers=...
+// Preserves the existing URL format: ?query=...&variables=...
 // This ensures all existing shared links continue to work.
+// NOTE: Headers are intentionally NOT synced to URL to avoid leaking
+// credentials (tokens, API keys) into browser history, referrer headers, and logs.
 const urlParams = new URLSearchParams(window.location.search);
 const initialQuery = urlParams.get("query") || "";
 const initialVariables = urlParams.get("variables") || "";
 const initialHeaders = urlParams.get("headers") || "";
 
-function onEditQuery(query) {
-  const params = new URLSearchParams(window.location.search);
-  if (query) {
-    params.set("query", query);
+// Strip headers from URL after reading — prevents credential persistence in browser history
+if (initialHeaders) {
+  urlParams.delete("headers");
+  var qs = urlParams.toString();
+  history.replaceState(null, null, qs ? "?" + qs : window.location.pathname);
+}
+
+function syncUrlParam(key, value, isEmpty) {
+  var params = new URLSearchParams(window.location.search);
+  if (value && !(isEmpty && isEmpty(value))) {
+    params.set(key, value);
   } else {
-    params.delete("query");
+    params.delete(key);
   }
   history.replaceState(null, null, "?" + params.toString());
+}
+
+function onEditQuery(query) {
+  syncUrlParam("query", query);
 }
 
 function onEditVariables(variables) {
-  const params = new URLSearchParams(window.location.search);
-  if (variables && variables.trim() !== "" && variables.trim() !== "{}") {
-    params.set("variables", variables);
-  } else {
-    params.delete("variables");
-  }
-  history.replaceState(null, null, "?" + params.toString());
-}
-
-function onEditHeaders(headers) {
-  const params = new URLSearchParams(window.location.search);
-  if (headers && headers.trim() !== "" && headers.trim() !== "{}") {
-    params.set("headers", headers);
-  } else {
-    params.delete("headers");
-  }
-  history.replaceState(null, null, "?" + params.toString());
+  syncUrlParam("variables", variables, function(v) {
+    return v.trim() === "" || v.trim() === "{}";
+  });
 }
 
 // --- HTTP Fetcher ---
@@ -242,8 +218,20 @@ graphiqlRoot.addEventListener("dblclick", function(e) {
   }
 });
 
-const tabObserver = new MutationObserver(renameUntitledTabs);
-tabObserver.observe(graphiqlRoot, { childList: true, subtree: true, characterData: true });
+// Observe only the session header (tab bar) rather than the entire GraphiQL tree,
+// to avoid firing renameUntitledTabs on every Monaco keystroke or result render.
+var tabObserver = new MutationObserver(renameUntitledTabs);
+function observeTabBar() {
+  var header = graphiqlRoot.querySelector(".graphiql-session-header");
+  if (header) {
+    tabObserver.observe(header, { childList: true, subtree: true, characterData: true });
+    // Handle tabs already rendered before observer connected
+    renameUntitledTabs();
+  } else {
+    setTimeout(observeTabBar, 200);
+  }
+}
+observeTabBar();
 
 // --- Plugins ---
 const explorer = explorerPlugin();
@@ -261,6 +249,5 @@ root.render(
     defaultEditorToolsVisibility: true,
     onEditQuery: onEditQuery,
     onEditVariables: onEditVariables,
-    onEditHeaders: onEditHeaders,
   })
 );

@@ -14,8 +14,15 @@ defmodule SanbaseWeb.Plug.SessionPlug do
       opts
       |> Keyword.put(:domain, Config.module_get(__MODULE__, :domain))
       |> Keyword.put(:key, Config.module_get(__MODULE__, :session_key))
+      |> Keyword.put(:same_site, "Lax")
+      |> Keyword.put(:secure, secure_cookie?())
+      |> Keyword.put(:http_only, true)
       |> Plug.Session.init()
 
     Plug.Session.call(conn, runtime_opts)
+  end
+
+  defp secure_cookie? do
+    Config.module_get(Sanbase, :deployment_env) in ["stage", "prod"]
   end
 end

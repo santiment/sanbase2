@@ -19,13 +19,27 @@ function ChartModal({ onClose }) {
     return state.responseEditor;
   });
 
+  // Track editor content so series recompute when the response changes,
+  // not just when the editor instance is created.
+  const [responseText, setResponseText] = useState(function () {
+    return responseEditor ? responseEditor.getValue() : "";
+  });
+
+  useEffect(function () {
+    if (!responseEditor) return;
+    setResponseText(responseEditor.getValue());
+    const disposable = responseEditor.onDidChangeModelContent(function () {
+      setResponseText(responseEditor.getValue());
+    });
+    return function () { disposable.dispose(); };
+  }, [responseEditor]);
+
   const series = React.useMemo(
     function () {
-      if (!responseEditor) return [];
-      const text = responseEditor.getValue();
-      return extractTimeseries(text);
+      if (!responseText) return [];
+      return extractTimeseries(responseText);
     },
-    [responseEditor]
+    [responseText]
   );
 
   useEffect(

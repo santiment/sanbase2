@@ -268,13 +268,30 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
 
     if Registry.lookup(Sanbase.Registry, key) == [] do
       Registry.register(Sanbase.Registry, key, :running)
-      Logger.info("Fetch and process prices for #{project.slug}")
+      Logger.info("[CMC] Fetch and process prices for #{project.slug}")
 
-      with {:ok, datetime} <- last_price_datetime(project),
-           :ok <- WebApi.fetch_and_store_prices(project, datetime) do
-        :ok = Registry.unregister(Sanbase.Registry, key)
-      else
-        error -> error
+      try do
+        with {:ok, datetime} <- last_price_datetime(project),
+             :ok <- WebApi.fetch_and_store_prices(project, datetime) do
+          :ok = Registry.unregister(Sanbase.Registry, key)
+        else
+          error ->
+            Logger.error("[CMC] Error fetching prices for #{project.slug}: #{inspect(error)}")
+
+            Registry.unregister(Sanbase.Registry, key)
+            error
+        end
+      rescue
+        e ->
+          Logger.error("[CMC] Crash fetching prices for #{project.slug}: #{Exception.message(e)}")
+
+          Sentry.capture_exception(e,
+            stacktrace: __STACKTRACE__,
+            extra: %{module: "Coinmarketcap", slug: project.slug}
+          )
+
+          Registry.unregister(Sanbase.Registry, key)
+          {:error, e}
       end
     else
       Logger.info(
@@ -320,7 +337,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
          :ok <- WebApi.fetch_and_store_prices("TOTAL_MARKET", datetime) do
       :ok
     else
-      error -> error
+      error ->
+        Logger.error("[CMC] Error fetching TOTAL_MARKET data: #{inspect(error)}")
+        error
     end
   end
 

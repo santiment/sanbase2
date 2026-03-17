@@ -97,8 +97,23 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     # the COINMARKETCAP_API_PROJECTS_NUMBER env var
     tickers =
       case Ticker.fetch_data(opts) do
-        {:ok, tickers} -> tickers
-        _ -> []
+        {:ok, tickers} ->
+          tickers
+
+        {:error, {:auth_error, status, msg}} ->
+          Logger.error(
+            "[CMC] TickerFetcher: Auth/subscription error (HTTP #{status}). " <>
+              "Realtime prices will not be updated. Details: #{msg}"
+          )
+
+          []
+
+        {:error, reason} ->
+          Logger.error(
+            "[CMC] TickerFetcher: Failed to fetch ticker data. Reason: #{inspect(reason)}"
+          )
+
+          []
       end
 
     fetched_slugs = MapSet.new(tickers, & &1.slug)
@@ -112,11 +127,29 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     # and made the exporter fail and did not export the already fetched tickers
     custom_tickers =
       case Ticker.fetch_data_by_slug(custom_cmc_slugs) do
-        {:ok, custom_tickers} -> custom_tickers
-        _ -> []
+        {:ok, custom_tickers} ->
+          custom_tickers
+
+        {:error, {:auth_error, _status, _msg}} ->
+          # Auth error already reported by the main Ticker.fetch_data call above
+          []
+
+        {:error, reason} ->
+          Logger.warning(
+            "[CMC] TickerFetcher: Failed to fetch custom slug data. Reason: #{inspect(reason)}"
+          )
+
+          []
       end
 
     tickers = tickers ++ custom_tickers
+
+    if tickers == [] do
+      Logger.error(
+        "[CMC] TickerFetcher: No tickers fetched from any source. " <>
+          "Realtime prices will not be updated. Check API key and subscription status."
+      )
+    end
 
     # Create a map where the coinmarketcap_id is key and the values is the list of
     # santiment slugs that have that coinmarketcap_id
@@ -214,14 +247,33 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
   rescue
     e ->
       Logger.error(
-        "[CMC] Realtime exporter failed to export to Kafka. Reason: #{Exception.message(e)}"
+        "[CMC] TickerFetcher: Failed to export to Kafka. Reason: #{Exception.message(e)}"
+      )
+
+      Sentry.capture_exception(e,
+        stacktrace: __STACKTRACE__,
+        extra: %{module: "TickerFetcher", operation: "export_to_kafka"}
       )
   end
 
   # Helper functions
 
   def handle_info(:sync, %{update_interval: update_interval} = state) do
-    work()
+    try do
+      work()
+    rescue
+      e ->
+        Logger.error(
+          "[CMC] TickerFetcher.work() crashed: #{Exception.message(e)}\n" <>
+            Exception.format_stacktrace(__STACKTRACE__)
+        )
+
+        Sentry.capture_exception(e,
+          stacktrace: __STACKTRACE__,
+          extra: %{module: "TickerFetcher"}
+        )
+    end
+
     Process.send_after(self(), :sync, update_interval * 1000)
 
     {:noreply, state}

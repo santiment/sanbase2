@@ -80,65 +80,77 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
 
     "v1/cryptocurrency/listings/latest?start=1&sort=market_cap&limit=#{projects_number}&cryptocurrency_type=all&convert=USD,BTC"
     |> get()
-    |> case do
-      {:ok, %Tesla.Env{status: 200, body: body}} ->
-        Logger.info(
-          "[CMC] Successfully fetched the realtime data for top #{projects_number} projects."
-        )
-
-        {:ok, parse_json(body)}
-
-      {:ok, %Tesla.Env{status: status}} ->
-        error = "Failed fetching top #{projects_number} projects' information. Status: #{status}"
-
-        Logger.warning(error)
-        {:error, error}
-
-      {:error, error} ->
-        error_msg =
-          "Error fetching top #{projects_number} projects' information. Error message #{inspect(error)}"
-
-        Logger.error(error_msg)
-
-        {:error, error_msg}
-    end
+    |> handle_api_response("listings for top #{projects_number} projects")
   end
 
-  # Fetch quotes for single project
   @spec fetch_data_by_slug([String.t()]) :: {:error, String.t()} | {:ok, [%__MODULE__{}]}
   def fetch_data_by_slug(slugs) when is_list(slugs) do
     slug_str = Enum.join(slugs, ",")
 
     "v1/cryptocurrency/quotes/latest?slug=#{slug_str}&convert=USD,BTC"
     |> get()
-    |> case do
+    |> handle_api_response("quotes for #{length(slugs)} slugs")
+  end
+
+  defp handle_api_response(response, context) do
+    case response do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
-        {:ok, parse_json(body)}
+        case parse_json(body) do
+          {:ok, tickers} ->
+            Logger.info("[CMC] Successfully fetched #{context} (#{length(tickers)} tickers).")
+            {:ok, tickers}
 
-      {:ok, %Tesla.Env{status: status, body: body}} ->
-        error =
-          "Failed fetching data for #{length(slugs)} slugs. Status: #{status}. Body: #{inspect(body)}"
+          {:error, reason} ->
+            error_msg = "[CMC] Failed to parse response for #{context}: #{reason}"
+            Logger.error(error_msg)
+            {:error, error_msg}
+        end
 
-        Logger.warning(error)
-        {:error, error}
-
-      {:error, error} ->
+      {:ok, %Tesla.Env{status: status, body: body}} when status in [401, 402, 403] ->
         error_msg =
-          "Error fetching data for #{length(slugs)} information. Error message #{inspect(error)}"
+          "[CMC] Auth/subscription error fetching #{context}. " <>
+            "Status: #{status}. " <>
+            "The API key may be invalid or the subscription may have been downgraded."
 
         Logger.error(error_msg)
 
+        Sentry.capture_message("CMC API auth/subscription error",
+          level: :error,
+          extra: %{status: status, context: context, body: inspect(body, limit: 500)}
+        )
+
+        {:error, {:auth_error, status, error_msg}}
+
+      {:ok, %Tesla.Env{status: 429, body: body}} ->
+        error_msg = "[CMC] Rate limited fetching #{context}. Body: #{inspect(body, limit: 500)}"
+        Logger.warning(error_msg)
+        {:error, {:rate_limited, error_msg}}
+
+      {:ok, %Tesla.Env{status: status, body: body}} when status >= 500 ->
+        error_msg =
+          "[CMC] Server error fetching #{context}. Status: #{status}. Body: #{inspect(body, limit: 500)}"
+
+        Logger.error(error_msg)
+        {:error, {:server_error, status, error_msg}}
+
+      {:ok, %Tesla.Env{status: status, body: body}} ->
+        error_msg =
+          "[CMC] Unexpected status #{status} fetching #{context}. Body: #{inspect(body, limit: 500)}"
+
+        Logger.warning(error_msg)
+        {:error, error_msg}
+
+      {:error, error} ->
+        error_msg = "[CMC] HTTP error fetching #{context}. Reason: #{inspect(error)}"
+        Logger.error(error_msg)
         {:error, error_msg}
     end
   end
 
-  @spec parse_json(String.t()) :: [%__MODULE__{}] | no_return
   defp parse_json(json) do
-    %{"data" => data} =
-      json
-      |> Jason.decode!()
+    %{"data" => data} = Jason.decode!(json)
 
-    data =
+    tickers =
       data
       |> Enum.map(fn project_data ->
         project_data =
@@ -217,7 +229,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
         last_updated
       end)
 
-    data
+    {:ok, tickers}
+  rescue
+    e ->
+      {:error, "Failed to parse CMC JSON response: #{Exception.message(e)}"}
   end
 
   # Convert a Ticker to a PricePoint

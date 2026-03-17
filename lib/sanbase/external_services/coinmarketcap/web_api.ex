@@ -20,6 +20,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
 
   @source "coinmarketcap"
   @prices_exporter :prices_exporter
+  @max_rate_limit_retries 10
 
   @doc ~s"""
   Return the first datetime for which a given asset (a projct or the whole market)
@@ -70,9 +71,20 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
             {:error, "Cannot parse the response from coinmarketcap for #{id}"}
         end
 
-      error ->
-        Logger.warning("[CMC] Error fetching first datetime for #{id}. Reason: #{inspect(error)}")
-        {:error, "[CMC] Error fetching first datetime for #{id}"}
+      {:ok, %Tesla.Env{status: status, body: body}} ->
+        error_msg =
+          "[CMC] Error fetching first datetime for id #{id}. " <>
+            "Status: #{status}. Body: #{inspect(body, limit: 500)}"
+
+        Logger.warning(error_msg)
+        {:error, error_msg}
+
+      {:error, error} ->
+        error_msg =
+          "[CMC] Error fetching first datetime for id #{id}. Reason: #{inspect(error)}"
+
+        Logger.warning(error_msg)
+        {:error, error_msg}
     end
   end
 
@@ -197,7 +209,24 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
 
       {:ok, result, interval}
     else
-      _ -> {:error, "Error converting JSON for TOTAL_MARKET to price points"}
+      {:error, %Jason.DecodeError{} = error} ->
+        error_msg =
+          "[CMC] Failed to decode JSON for TOTAL_MARKET: #{Exception.message(error)}"
+
+        Logger.error(error_msg)
+        {:error, error_msg}
+
+      %{"status" => %{"error_code" => code, "error_message" => msg}} ->
+        error_msg = "[CMC] API error for TOTAL_MARKET: code=#{code}, message=#{msg}"
+        Logger.error(error_msg)
+        {:error, error_msg}
+
+      other ->
+        error_msg =
+          "[CMC] Unexpected response for TOTAL_MARKET: #{inspect(other, limit: 500)}"
+
+        Logger.error(error_msg)
+        {:error, error_msg}
     end
   end
 
@@ -223,10 +252,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
               }
 
             data ->
-              Logger.info("""
-              [#{__MODULE__}] No price points found when getting prices for #{identifier} and interval #{inspect(interval)}.
-              Instead got: #{inspect(data)}
-              """)
+              Logger.warning(
+                "[CMC] No price points found for #{identify(identifier)}, " <>
+                  "interval #{inspect(interval)}. Got: #{inspect(data, limit: 200)}"
+              )
 
               nil
           end
@@ -235,74 +264,117 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
 
       {:ok, result, interval}
     else
-      _ -> {:error, "Error converting JSON for #{identifier} to price points"}
+      {:error, %Jason.DecodeError{} = error} ->
+        error_msg =
+          "[CMC] Failed to decode JSON for #{identify(identifier)}: #{Exception.message(error)}"
+
+        Logger.error(error_msg)
+        {:error, error_msg}
+
+      %{"status" => %{"error_code" => code, "error_message" => msg}} ->
+        error_msg =
+          "[CMC] API error for #{identify(identifier)}: code=#{code}, message=#{msg}"
+
+        Logger.error(error_msg)
+        {:error, error_msg}
+
+      other ->
+        error_msg =
+          "[CMC] Unexpected response for #{identify(identifier)}: #{inspect(other, limit: 500)}"
+
+        Logger.error(error_msg)
+        {:error, error_msg}
     end
   end
 
-  defp extract_price_points_for_interval(
+  defp extract_price_points_for_interval(identifier, interval) do
+    do_extract_price_points(identifier, interval, _retries = 0)
+  end
+
+  defp do_extract_price_points(identifier, interval, retries)
+       when retries >= @max_rate_limit_retries do
+    error_msg =
+      "[CMC] Max rate limit retries (#{@max_rate_limit_retries}) exceeded " <>
+        "for #{identify(identifier)}, interval #{inspect(interval)}"
+
+    Logger.error(error_msg)
+
+    Sentry.capture_message("CMC scraper max rate limit retries exceeded",
+      level: :error,
+      extra: %{identifier: identifier, interval: interval, retries: retries}
+    )
+
+    {:error, error_msg}
+  end
+
+  defp do_extract_price_points(
          "TOTAL_MARKET" = total_market,
-         {from_unix, to_unix} = interval
+         {from_unix, to_unix} = interval,
+         retries
        ) do
     "https://api.coinmarketcap.com/data-api/v3/global-metrics/quotes/historical?format=chart&interval=5m&timeEnd=#{to_unix}&timeStart=#{from_unix}"
     |> get()
     |> case do
       {:ok, %Tesla.Env{status: 429} = resp} ->
         wait_rate_limit(resp, @rate_limiting_server)
-        extract_price_points_for_interval(total_market, interval)
+        do_extract_price_points(total_market, interval, retries + 1)
 
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         json_to_price_points(body, total_market, interval)
 
-      {:ok, %Tesla.Env{status: status}} ->
-        error_msg = "[CMC] Error fetching data for #{total_market}. Status code: #{status}"
+      {:ok, %Tesla.Env{status: status, body: body}} ->
+        error_msg =
+          "[CMC] Error fetching data for TOTAL_MARKET. " <>
+            "Status: #{status}. Body: #{inspect(body, limit: 500)}"
+
         Logger.error(error_msg)
         {:error, error_msg}
 
       {:error, error} ->
-        error_msg = "[CMC] Error fetching data for #{total_market}. Reason: #{inspect(error)}"
+        error_msg =
+          "[CMC] Error fetching data for TOTAL_MARKET. Reason: #{inspect(error)}"
+
         Logger.error(error_msg)
         {:error, error_msg}
     end
   end
 
-  # 26 July 2023: CMC API v1 doesn't work anymore. We need to use v3
-  # Check format here: https://api.coinmarketcap.com/data-api/v3/cryptocurrency/detail/chart?id=1807&range=1689724800~1689984000
-
-  defp extract_price_points_for_interval(id, {from_unix, to_unix} = interval)
+  defp do_extract_price_points(id, {from_unix, to_unix} = interval, retries)
        when is_integer(id) do
-    Logger.info("""
-      [CMC] Extracting price points for coinmarketcap integer id #{id} and interval [#{DateTime.from_unix!(from_unix)} - #{DateTime.from_unix!(to_unix)}]
-    """)
+    Logger.info(
+      "[CMC] Extracting price points for CMC id #{id}, " <>
+        "interval [#{DateTime.from_unix!(from_unix)} - #{DateTime.from_unix!(to_unix)}]"
+    )
 
     "https://api.coinmarketcap.com/data-api/v3/cryptocurrency/detail/chart?id=#{id}&range=#{from_unix}~#{to_unix}"
     |> get()
     |> case do
       {:ok, %Tesla.Env{status: 429} = resp} ->
         wait_rate_limit(resp, @rate_limiting_server)
-        extract_price_points_for_interval(id, interval)
+        do_extract_price_points(id, interval, retries + 1)
 
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         json_to_price_points(body, id, interval)
 
-      {:ok, %Tesla.Env{status: status}} ->
-        error_msg = """
-        [CMC] Error fetching data for project with coinmarketcap integer id #{id}. Status code: #{status}
-        """
+      {:ok, %Tesla.Env{status: status, body: body}} ->
+        error_msg =
+          "[CMC] Error fetching data for CMC id #{id}. " <>
+            "Status: #{status}. Body: #{inspect(body, limit: 500)}"
 
         Logger.error(error_msg)
-
         {:error, error_msg}
 
       {:error, error} ->
-        error_msg = """
-        [CMC] Error fetching data for coinmarketcap integer id #{id}. Reason: #{inspect(error)}
-        """
+        error_msg =
+          "[CMC] Error fetching data for CMC id #{id}. Reason: #{inspect(error)}"
 
         Logger.error(error_msg)
-
         {:error, error_msg}
     end
   end
+
+  defp identify(id) when is_integer(id), do: "CMC id #{id}"
+  defp identify(str) when is_binary(str), do: str
 
   # Return a stream of intervals in the from {from_unix, to_unix} for the
   # time between from and two with opts[:days_step] intervals

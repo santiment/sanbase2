@@ -152,6 +152,13 @@ defmodule SanbaseWeb.Graphql.GraphiqlPlug do
     [:default_url, :socket_url, :assets]
   )
 
+  EEx.function_from_file(
+    :defp,
+    :graphiql_santiment_html,
+    Path.join(@graphiql_template_path, "graphiql_santiment.html.eex"),
+    []
+  )
+
   @behaviour Plug
 
   import Plug.Conn
@@ -162,7 +169,7 @@ defmodule SanbaseWeb.Graphql.GraphiqlPlug do
           path: binary,
           context: map,
           json_codec: atom | {atom, Keyword.t()},
-          interface: :playground | :advanced | :simple,
+          interface: :playground | :advanced | :simple | :santiment,
           default_headers: {module, atom},
           default_url: binary,
           assets: Keyword.t(),
@@ -205,6 +212,12 @@ defmodule SanbaseWeb.Graphql.GraphiqlPlug do
       _ ->
         false
     end
+  end
+
+  # The :santiment interface is fully client-side (GraphiQL 5 with ESM CDN).
+  # No server-side query execution needed — just render the template.
+  defp do_call(conn, %{interface: :santiment} = config) do
+    conn |> render_interface(:santiment, config)
   end
 
   defp do_call(conn, %{interface: interface} = config) do
@@ -337,9 +350,14 @@ defmodule SanbaseWeb.Graphql.GraphiqlPlug do
 
   @render_defaults %{var_string: "", results: ""}
 
-  @spec render_interface(Plug.Conn.t(), :advanced | :simple | :playground, map()) ::
+  @spec render_interface(Plug.Conn.t(), :advanced | :simple | :playground | :santiment, map()) ::
           Plug.Conn.t()
   defp render_interface(conn, interface, opts)
+
+  defp render_interface(conn, :santiment, _opts) do
+    graphiql_santiment_html()
+    |> rendered(conn)
+  end
 
   defp render_interface(conn, :simple, opts) do
     opts = opts_with_default(opts)

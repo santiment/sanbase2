@@ -1,0 +1,205 @@
+/*
+ * Santiment GraphiQL — CSS customizations.
+ * All overrides prefixed with #graphiql for higher specificity
+ * than the base GraphiQL styles, so no !important needed.
+ */
+
+/* --- Theme-aware custom properties --- */
+:root {
+  --san-border: rgba(0, 0, 0, 0.15);
+  --san-bg-panel: #fff;
+  --san-bg-surface: #f4f5f6;
+  --san-bg-header: #fafafa;
+}
+
+.graphiql-container.graphiql-dark,
+.graphiql-dark {
+  --san-border: rgba(255, 255, 255, 0.12);
+  --san-bg-panel: #1e1e1e;
+  --san-bg-surface: #161616;
+  --san-bg-header: #252525;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(:has(.graphiql-light)) {
+    --san-border: rgba(255, 255, 255, 0.12);
+    --san-bg-panel: #1e1e1e;
+    --san-bg-surface: #161616;
+    --san-bg-header: #252525;
+  }
+}
+
+/* --- Flat, minimal look --- */
+#graphiql .graphiql-container button,
+#graphiql .graphiql-container [class*="editor"],
+#graphiql .graphiql-dialog,
+#graphiql .graphiql-dropdown {
+  border-radius: 2px;
+}
+
+#graphiql .graphiql-dialog,
+#graphiql .graphiql-dropdown,
+#graphiql .graphiql-toolbar button,
+#graphiql .graphiql-execute-button,
+#graphiql .graphiql-editors {
+  box-shadow: none;
+}
+
+/* --- Session header / tab bar --- */
+#graphiql .graphiql-session-header {
+  padding: 4px 8px;
+  min-height: unset;
+  border-bottom: 1px solid var(--san-border);
+  background: var(--san-bg-header);
+}
+
+#graphiql .graphiql-tab {
+  padding: 4px 10px;
+  font-size: 13px;
+}
+
+#graphiql .graphiql-tab-add {
+  padding: 4px 8px;
+  font-size: 13px;
+}
+
+/* --- Toolbar --- */
+#graphiql .graphiql-toolbar {
+  padding: 2px;
+  gap: 4px;
+  align-items: center;
+}
+
+#graphiql .graphiql-toolbar button:not(.graphiql-execute-button) {
+  width: 28px;
+  height: 28px;
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#graphiql .graphiql-toolbar button:not(.graphiql-execute-button) svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Execute button */
+#graphiql .graphiql-execute-button {
+  box-shadow: none;
+  border-radius: 2px;
+  width: 28px;
+  height: 28px;
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#graphiql .graphiql-execute-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* --- Sidebar --- */
+#graphiql .graphiql-sidebar {
+  overflow-x: hidden;
+  overflow-y: auto;
+  min-width: 0;
+  width: 36px;
+  padding: 2px;
+}
+
+#graphiql .graphiql-sidebar button {
+  width: 28px;
+  height: 28px;
+  padding: 4px;
+}
+
+#graphiql .graphiql-sidebar button svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* --- Editor tools tabs (Variables / Headers) --- */
+#graphiql .graphiql-editor-tools-tabs button {
+  padding: 4px 10px;
+  font-size: 13px;
+}
+
+/* --- Dialogs / dropdowns --- */
+#graphiql .graphiql-dialog,
+#graphiql .graphiql-dropdown {
+  border: 1px solid var(--san-border);
+}
+
+/* --- Panel borders --- */
+#graphiql .graphiql-plugin {
+  border-right: 1px solid var(--san-border);
+}
+
+/* --- Layout: surface background with bordered panels --- */
+#graphiql .graphiql-container {
+  background: var(--san-bg-surface);
+}
+
+#graphiql .graphiql-editors {
+  background: var(--san-bg-panel);
+  border: 1px solid var(--san-border);
+  border-radius: 3px;
+  margin: 8px 4px 8px 8px;
+  overflow: hidden;
+}
+
+#graphiql .graphiql-sessions {
+  background: var(--san-bg-panel);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+#graphiql .graphiql-editor-tools {
+  border-top: 1px solid var(--san-border);
+}
+
+/* --- Hide default logo --- */
+#graphiql .graphiql-logo {
+  display: none;
+}
+
+/* --- Response panel --- */
+#graphiql .graphiql-response {
+  background: var(--san-bg-panel);
+  border: 1px solid var(--san-border);
+  border-radius: 3px;
+  margin: 8px 8px 8px 4px;
+  overflow: hidden;
+}
+
+/* --- Tab rename input --- */
+#graphiql .graphiql-tab-button input {
+  all: unset;
+  font: inherit;
+  cursor: text;
+  min-width: 50px;
+  text-align: center;
+  border-bottom: 1px solid var(--san-border);
+}
+
+/* --- Loading state --- */
+.graphiql-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  font-family: system-ui, -apple-system, sans-serif;
+  color: #555;
+  font-size: 16px;
+  background: #f5f5f5;
+}
+
+.graphiql-loading-error {
+  color: #c33;
+  display: none;
+  margin-top: 12px;
+  font-size: 14px;
+}

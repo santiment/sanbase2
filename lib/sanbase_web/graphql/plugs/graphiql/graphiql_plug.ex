@@ -419,7 +419,10 @@ defmodule SanbaseWeb.Graphql.GraphiqlPlug do
   @spec rendered(String.t(), Plug.Conn.t()) :: Plug.Conn.t()
   defp rendered(html, conn) do
     conn
-    |> put_secure_browser_headers(%{"content-security-policy" => @graphiql_csp})
+    |> put_secure_browser_headers(%{
+      "content-security-policy" => @graphiql_csp,
+      "strict-transport-security" => "max-age=31536000; includeSubDomains"
+    })
     |> put_resp_content_type("text/html")
     |> send_resp(200, html)
   end

@@ -39,7 +39,7 @@ faqs = [
     question: "How do I explore the API?",
     answer: """
     The main tool for exploring the API is to use the
-    [GraphiQL visual tool](https://api.santiment.net/graphiql_advanced).
+    [GraphiQL visual tool](https://api.santiment.net/graphiql).
 
     More information on how to explore and understand the API can be found on the
     [Academy developer's page](https://academy.santiment.net/for-developers).

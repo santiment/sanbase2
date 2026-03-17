@@ -24,11 +24,28 @@ function TableModal(props) {
     return state.responseEditor;
   });
 
-  var datasets = useMemo(function () {
-    if (!responseEditor) return [];
-    var text = responseEditor.getValue();
-    return extractTables(text);
+  // Track editor content so datasets recompute when the response changes,
+  // not just when the editor instance is created.
+  var _responseText = useState(function () {
+    return responseEditor ? responseEditor.getValue() : "";
+  });
+  var responseText = _responseText[0];
+  var setResponseText = _responseText[1];
+
+  useEffect(function () {
+    if (!responseEditor) return;
+    // Sync initial value in case editor was already populated before mount
+    setResponseText(responseEditor.getValue());
+    var disposable = responseEditor.onDidChangeModelContent(function () {
+      setResponseText(responseEditor.getValue());
+    });
+    return function () { disposable.dispose(); };
   }, [responseEditor]);
+
+  var datasets = useMemo(function () {
+    if (!responseText) return [];
+    return extractTables(responseText);
+  }, [responseText]);
 
   var _activeTab = useState(0);
   var activeTab = _activeTab[0];

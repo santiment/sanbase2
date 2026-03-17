@@ -50,7 +50,7 @@ function walkNode(node, path, series) {
         series.push({
           label: label,
           data: node.map(function (p) {
-            return { time: toUnix(p.datetime), value: Number(p[nk]) };
+            return { time: toUnix(p.datetime), value: p[nk] === null ? NaN : Number(p[nk]) };
           }).filter(function (p) { return !isNaN(p.time) && !isNaN(p.value); }),
         });
       }
@@ -117,7 +117,7 @@ function tryParseJsonString(str, path, series) {
         series.push({
           label: pkLabel,
           data: parsed.map(function (p) {
-            return { time: toUnix(p.datetime), value: Number(p[pk]) };
+            return { time: toUnix(p.datetime), value: p[pk] === null ? NaN : Number(p[pk]) };
           }).filter(function (p) { return !isNaN(p.time) && !isNaN(p.value); }),
         });
       }

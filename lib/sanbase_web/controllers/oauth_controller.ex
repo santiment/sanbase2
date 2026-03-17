@@ -1,6 +1,7 @@
 defmodule SanbaseWeb.OAuthController do
   @behaviour Boruta.Oauth.AuthorizeApplication
   @behaviour Boruta.Oauth.TokenApplication
+  @behaviour Boruta.Openid.DynamicRegistrationApplication
 
   use SanbaseWeb, :controller
 
@@ -19,6 +20,7 @@ defmodule SanbaseWeb.OAuthController do
       issuer: backend_url,
       authorization_endpoint: "#{backend_url}/oauth/authorize",
       token_endpoint: "#{backend_url}/oauth/token",
+      registration_endpoint: "#{backend_url}/oauth/register",
       response_types_supported: ["code"],
       grant_types_supported: ["authorization_code", "refresh_token"],
       code_challenge_methods_supported: ["S256"],
@@ -120,6 +122,27 @@ defmodule SanbaseWeb.OAuthController do
     Boruta.Oauth.token(conn, __MODULE__)
   end
 
+  # --- Dynamic Client Registration (RFC 7591) ---
+
+  def register(%Plug.Conn{} = conn, params) do
+    registration_params =
+      %{
+        redirect_uris: params["redirect_uris"] || [],
+        supported_grant_types: params["grant_types"] || ["authorization_code"],
+        pkce: true,
+        public_refresh_token: true,
+        confidential: false,
+        access_token_ttl: 3600,
+        authorization_code_ttl: 60,
+        refresh_token_ttl: 30 * 86_400
+      }
+      |> maybe_put(:client_name, params["client_name"])
+      |> maybe_put(:token_endpoint_auth_method, params["token_endpoint_auth_method"])
+
+    conn = put_cors_headers(conn)
+    Boruta.Openid.register_client(conn, registration_params, __MODULE__)
+  end
+
   # --- Boruta AuthorizeApplication callbacks ---
 
   @impl Boruta.Oauth.AuthorizeApplication
@@ -197,6 +220,40 @@ defmodule SanbaseWeb.OAuthController do
     conn
     |> put_status(status)
     |> json(%{error: error, error_description: error_description})
+  end
+
+  # --- Boruta DynamicRegistrationApplication callbacks ---
+
+  @impl Boruta.Openid.DynamicRegistrationApplication
+  def client_registered(conn, client) do
+    response = %{
+      client_id: client.id,
+      client_secret: client.secret,
+      client_name: client.name,
+      redirect_uris: client.redirect_uris,
+      grant_types: client.supported_grant_types,
+      response_types: ["code"],
+      token_endpoint_auth_method:
+        List.first(client.token_endpoint_auth_methods || ["client_secret_post"])
+    }
+
+    conn
+    |> put_status(201)
+    |> json(response)
+  end
+
+  @impl Boruta.Openid.DynamicRegistrationApplication
+  def registration_failure(conn, changeset) do
+    errors =
+      Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
+        Enum.reduce(opts, msg, fn {key, value}, acc ->
+          String.replace(acc, "%{#{key}}", to_string(value))
+        end)
+      end)
+
+    conn
+    |> put_status(400)
+    |> json(%{error: "invalid_client_metadata", error_description: inspect(errors)})
   end
 
   # --- Private ---
@@ -312,4 +369,7 @@ defmodule SanbaseWeb.OAuthController do
     </html>
     """
   end
+
+  defp maybe_put(map, _key, nil), do: map
+  defp maybe_put(map, key, value), do: Map.put(map, key, value)
 end

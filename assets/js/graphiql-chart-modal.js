@@ -121,6 +121,8 @@ function ChartModal({ onClose }) {
           "button",
           {
             onClick: onClose,
+            type: "button",
+            "aria-label": "Close chart",
             style: {
               background: "none",
               border: "none",

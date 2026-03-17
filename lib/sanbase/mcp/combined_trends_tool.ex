@@ -63,7 +63,7 @@ defmodule Sanbase.MCP.CombinedTrendsTool do
       "title" => "Combined Trends",
       "readOnlyHint" => true,
       "destructiveHint" => false,
-      "openWorldHint" => false
+      "openWorldHint" => true
     }
   end
 

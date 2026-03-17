@@ -1,3 +1,64 @@
+defmodule Sanbase.MCP.AuthPlug do
+  @moduledoc """
+  Plug that enforces OAuth Bearer token authentication for MCP endpoints.
+  Rejects unauthenticated requests with 401 before they reach the MCP server.
+  """
+  @behaviour Plug
+
+  import Plug.Conn
+
+  alias Boruta.Oauth.Authorization
+
+  @impl Plug
+  def init(opts), do: opts
+
+  @impl Plug
+  def call(conn, _opts) do
+    case get_bearer_token(conn) do
+      nil ->
+        reject(conn, "Bearer token required")
+
+      bearer ->
+        case Authorization.AccessToken.authorize(value: bearer) do
+          {:ok, token} ->
+            case Sanbase.Accounts.User.by_id(Sanbase.Math.to_integer(token.sub)) do
+              {:ok, _user} -> conn
+              _ -> reject(conn, "Invalid user")
+            end
+
+          _ ->
+            reject(conn, "Invalid or expired token")
+        end
+    end
+  end
+
+  defp get_bearer_token(conn) do
+    case get_req_header(conn, "authorization") do
+      [value | _] ->
+        case String.split(value, " ", parts: 2) do
+          [scheme, token] when byte_size(token) > 0 ->
+            if String.downcase(scheme) == "bearer", do: token, else: nil
+
+          _ ->
+            nil
+        end
+
+      _ ->
+        nil
+    end
+  end
+
+  defp reject(conn, description) do
+    body = Jason.encode!(%{error: "unauthorized", error_description: description})
+
+    conn
+    |> put_resp_content_type("application/json")
+    |> put_resp_header("www-authenticate", "Bearer")
+    |> send_resp(401, body)
+    |> halt()
+  end
+end
+
 defmodule Sanbase.MCP.StreamableHTTPPlug do
   @moduledoc "Wrapper plug to expose Sanbase.MCP.Server via forward"
   @behaviour Plug

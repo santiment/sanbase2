@@ -98,8 +98,11 @@ defmodule SanbaseWeb.Graphql.MCPAuthTest do
     assert email == context.user.email
   end
 
-  test "unauthenticated - no authorization header", _context do
+  test "unauthenticated - no authorization header returns 401", _context do
     port = Sanbase.Utils.Config.module_get(SanbaseWeb.Endpoint, [:http, :port])
+
+    # The client process starts but crashes when the initialize request gets 401
+    Process.flag(:trap_exit, true)
 
     {:ok, client} =
       Sanbase.MCP.Client.start_link(
@@ -117,24 +120,14 @@ defmodule SanbaseWeb.Graphql.MCPAuthTest do
         protocol_version: "2025-03-26"
       )
 
-    assert client |> Process.alive?() == true
-    wait_for_mcp_initialization()
-
-    assert {:ok,
-            %Anubis.MCP.Response{
-              result: %{
-                "content" => [%{"text" => text, "type" => "text"}],
-                "isError" => true
-              },
-              is_error: true
-            }} = Sanbase.MCP.Client.call_tool("check_authentication", %{})
-
-    assert text =~ "Unauthorized"
-    assert text =~ "No Authorization header provided"
+    # The client should shut down because the 401 prevents initialization
+    assert_receive {:EXIT, ^client, :shutdown}, 5000
   end
 
-  test "unauthenticated - invalid bearer token", _context do
+  test "unauthenticated - invalid bearer token returns 401", _context do
     port = Sanbase.Utils.Config.module_get(SanbaseWeb.Endpoint, [:http, :port])
+
+    Process.flag(:trap_exit, true)
 
     {:ok, client} =
       Sanbase.MCP.Client.start_link(
@@ -153,19 +146,7 @@ defmodule SanbaseWeb.Graphql.MCPAuthTest do
         protocol_version: "2025-03-26"
       )
 
-    assert client |> Process.alive?() == true
-    wait_for_mcp_initialization()
-
-    assert {:ok,
-            %Anubis.MCP.Response{
-              result: %{
-                "content" => [%{"text" => text, "type" => "text"}],
-                "isError" => true
-              },
-              is_error: true
-            }} = Sanbase.MCP.Client.call_tool("check_authentication", %{})
-
-    assert text =~ "Unauthorized"
-    assert text =~ "OAuth token is invalid or expired"
+    # The client should shut down because the 401 prevents initialization
+    assert_receive {:EXIT, ^client, :shutdown}, 5000
   end
 end

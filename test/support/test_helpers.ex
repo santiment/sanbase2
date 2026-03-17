@@ -1,14 +1,6 @@
 defmodule Sanbase.TestHelpers do
   @moduledoc false
 
-  @doc ~s"""
-  `function/0` should return either {:ok, result} or {:error, reason}.
-
-  If the function returns an error, it will be retried `attempts` times, sleeping
-  for `sleep` ms in between attempts.
-  In case of success, it is immedately returned.
-  In case of `attempts` number of errors, the error is returned.
-  """
   def wait_for_mcp_initialization(attempts \\ 10) do
     if Sanbase.MCP.Client.get_server_capabilities() do
       :ok
@@ -21,6 +13,36 @@ defmodule Sanbase.TestHelpers do
       end
     end
   end
+
+  def setup_mcp_oauth_client(user) do
+    {:ok, oauth_client} =
+      %Boruta.Ecto.Client{}
+      |> Boruta.Ecto.Client.create_changeset(%{
+        redirect_uris: ["http://localhost:4000/callback"]
+      })
+      |> Sanbase.Repo.insert()
+
+    {:ok, token} =
+      %Boruta.Ecto.Token{}
+      |> Boruta.Ecto.Token.changeset(%{
+        client_id: oauth_client.id,
+        sub: to_string(user.id),
+        scope: "",
+        access_token_ttl: oauth_client.access_token_ttl
+      })
+      |> Sanbase.Repo.insert()
+
+    token.value
+  end
+
+  @doc ~s"""
+  `function/0` should return either {:ok, result} or {:error, reason}.
+
+  If the function returns an error, it will be retried `attempts` times, sleeping
+  for `sleep` ms in between attempts.
+  In case of success, it is immedately returned.
+  In case of `attempts` number of errors, the error is returned.
+  """
 
   def try_few_times(function, opts) when is_function(function, 0) do
     attempts = Keyword.fetch!(opts, :attempts)

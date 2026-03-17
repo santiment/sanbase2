@@ -6,7 +6,7 @@ defmodule SanbaseWeb.Graphql.MCPInsightTest do
 
   setup do
     user = insert(:user, username: "santiment_user")
-    {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(user)
+    bearer_token = Sanbase.TestHelpers.setup_mcp_oauth_client(user)
 
     port = Sanbase.Utils.Config.module_get(SanbaseWeb.Endpoint, [:http, :port])
 
@@ -17,7 +17,7 @@ defmodule SanbaseWeb.Graphql.MCPInsightTest do
            [
              base_url: "http://localhost:#{port}",
              headers: %{
-               "authorization" => "Apikey #{apikey}",
+               "authorization" => "Bearer #{bearer_token}",
                "content-type" => "application/json",
                "host" => "localhost:#{port}"
              }
@@ -58,7 +58,7 @@ defmodule SanbaseWeb.Graphql.MCPInsightTest do
       published_at: DateTime.utc_now() |> DateTime.add(-10, :day)
     )
 
-    %{user: user, apikey: apikey, insight1: i1, insight2: i2}
+    %{user: user, insight1: i1, insight2: i2}
   end
 
   test "insights_discovery", _context do

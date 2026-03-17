@@ -6,7 +6,7 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
 
   setup do
     user = insert(:user, username: "santiment_user")
-    {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(user)
+    bearer_token = Sanbase.TestHelpers.setup_mcp_oauth_client(user)
 
     port = Sanbase.Utils.Config.module_get(SanbaseWeb.Endpoint, [:http, :port])
 
@@ -17,7 +17,7 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
            [
              base_url: "http://localhost:#{port}",
              headers: %{
-               "authorization" => "Apikey #{apikey}",
+               "authorization" => "Bearer #{bearer_token}",
                "content-type" => "application/json",
                "host" => "localhost:#{port}"
              }
@@ -45,7 +45,7 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
         description: "Ethereum Description"
       )
 
-    %{user: user, apikey: apikey, p1: p1, p2: p2}
+    %{user: user, p1: p1, p2: p2}
   end
 
   test "assets and metrics discovery tool - available metrics for slug", _context do

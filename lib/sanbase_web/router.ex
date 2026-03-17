@@ -81,7 +81,14 @@ defmodule SanbaseWeb.Router do
     options("/token", OAuthController, :preflight)
   end
 
-  forward "/mcp", Sanbase.MCP.StreamableHTTPPlug
+  pipeline :mcp_auth do
+    plug(Sanbase.MCP.AuthPlug)
+  end
+
+  scope "/mcp" do
+    pipe_through(:mcp_auth)
+    forward("/", Sanbase.MCP.StreamableHTTPPlug)
+  end
 
   # Dev MCP server exposing search docs
   # TODO: Uncomment this to enable it

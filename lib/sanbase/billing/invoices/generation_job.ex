@@ -70,40 +70,41 @@ defmodule Sanbase.Billing.Invoices.GenerationJob do
   end
 
   @impl true
-  def handle_call({:start_job, year, month, user_id}, _from, _prev) do
+  def handle_call({:start_job, year, month, user_id}, _from, prev) do
     gen_pid = self()
 
-    # Create or update the DB record to "generating"
-    {:ok, archive} =
-      InvoiceArchive.create_or_update(%{
+    with {:ok, archive} <-
+           InvoiceArchive.create_or_update(%{
+             year: year,
+             month: month,
+             status: "generating",
+             generated_by: user_id,
+             error_message: nil
+           }),
+         {:ok, task_pid} <-
+           Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
+             do_generate(gen_pid, archive, year, month)
+           end) do
+      task_ref = Process.monitor(task_pid)
+
+      new_state = %{
+        status: :running,
         year: year,
         month: month,
-        status: "generating",
-        generated_by: user_id,
-        error_message: nil
-      })
+        total: 0,
+        done: 0,
+        failed: 0,
+        errors: [],
+        task_ref: task_ref,
+        phase: :fetching_invoices
+      }
 
-    {:ok, task_pid} =
-      Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
-        do_generate(gen_pid, archive, year, month)
-      end)
-
-    task_ref = Process.monitor(task_pid)
-
-    new_state = %{
-      status: :running,
-      year: year,
-      month: month,
-      total: 0,
-      done: 0,
-      failed: 0,
-      errors: [],
-      task_ref: task_ref,
-      phase: :fetching_invoices
-    }
-
-    broadcast(new_state)
-    {:reply, :ok, new_state}
+      broadcast(new_state)
+      {:reply, :ok, new_state}
+    else
+      {:error, reason} ->
+        {:reply, {:error, reason}, prev}
+    end
   end
 
   @impl true
@@ -225,26 +226,27 @@ defmodule Sanbase.Billing.Invoices.GenerationJob do
         return_early()
       end
 
-      # Phase 2: Download each PDF
-      pdf_entries =
+      # Phase 2: Download each PDF, tracking successful invoices for total_amount
+      {pdf_entries, successful_invoices} =
         invoices
         |> Enum.with_index()
-        |> Enum.reduce([], fn {invoice, index}, acc ->
+        |> Enum.reduce({[], []}, fn {invoice, index}, {entries, ok_invoices} ->
           if GenServer.call(gen_pid, :running?) do
             case Download.download_pdf(invoice) do
               {:ok, entry} ->
                 send(gen_pid, {:item_done, :ok, index})
-                [entry | acc]
+                {[entry | entries], [invoice | ok_invoices]}
 
               {:error, reason} ->
                 send(gen_pid, {:item_done, {:error, reason}, index})
-                acc
+                {entries, ok_invoices}
             end
           else
-            acc
+            {entries, ok_invoices}
           end
         end)
-        |> Enum.reverse()
+
+      pdf_entries = Enum.reverse(pdf_entries)
 
       # Check if still running (might have been cancelled)
       unless GenServer.call(gen_pid, :running?) do
@@ -268,7 +270,8 @@ defmodule Sanbase.Billing.Invoices.GenerationJob do
 
       case S3Storage.upload_zip(zip_binary, year, month) do
         {:ok, s3_key} ->
-          total_amount = Enum.reduce(invoices, 0, fn inv, acc -> acc + (inv[:total] || 0) end)
+          total_amount =
+            Enum.reduce(successful_invoices, 0, fn inv, acc -> acc + (inv[:total] || 0) end)
 
           InvoiceArchive.mark_completed(archive, %{
             s3_key: s3_key,

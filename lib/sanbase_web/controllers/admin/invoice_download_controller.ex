@@ -8,8 +8,15 @@ defmodule SanbaseWeb.Admin.InvoiceDownloadController do
       %{status: "completed", s3_key: s3_key} = archive when not is_nil(s3_key) ->
         if S3Storage.local_storage?() do
           local_path = S3Storage.local_file_path(s3_key)
-          filename = "#{archive.year}_#{String.pad_leading(to_string(archive.month), 2, "0")}.zip"
-          send_download(conn, {:file, local_path}, filename: filename)
+
+          if File.exists?(local_path) do
+            filename =
+              "#{archive.year}_#{String.pad_leading(to_string(archive.month), 2, "0")}.zip"
+
+            send_download(conn, {:file, local_path}, filename: filename)
+          else
+            send_resp(conn, 404, "Archive file not found on disk")
+          end
         else
           case S3Storage.presigned_download_url(s3_key) do
             {:ok, url} -> redirect(conn, external: url)

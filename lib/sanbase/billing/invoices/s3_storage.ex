@@ -66,15 +66,23 @@ defmodule Sanbase.Billing.Invoices.S3Storage do
 
   defp local_upload(s3_key, data) do
     path = Path.join(@local_storage_dir, Path.basename(s3_key))
-    File.mkdir_p!(@local_storage_dir)
-    binary = IO.iodata_to_binary(data)
-    File.write!(path, binary)
-    {:ok, s3_key}
+
+    with :ok <- File.mkdir_p(@local_storage_dir),
+         binary = IO.iodata_to_binary(data),
+         :ok <- File.write(path, binary) do
+      {:ok, s3_key}
+    else
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   defp local_delete(s3_key) do
     path = Path.join(@local_storage_dir, Path.basename(s3_key))
-    File.rm(path)
-    :ok
+
+    case File.rm(path) do
+      :ok -> :ok
+      {:error, :enoent} -> :ok
+      {:error, reason} -> {:error, reason}
+    end
   end
 end

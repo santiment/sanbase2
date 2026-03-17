@@ -15,7 +15,7 @@ globalThis.MonacoEnvironment = {
 
 import React, { useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
-import { GraphiQL } from "graphiql";
+import { GraphiQL, HISTORY_PLUGIN } from "graphiql";
 import { useMonaco } from "@graphiql/react";
 import { explorerPlugin } from "@graphiql/plugin-explorer";
 import { examplesPlugin } from "./graphiql-examples-plugin.js";
@@ -243,7 +243,7 @@ root.render(
     GraphiQL,
     {
       fetcher: fetcher,
-      plugins: [explorer, examples],
+      plugins: [explorer, examples, HISTORY_PLUGIN],
       initialQuery: initialQuery || undefined,
       initialVariables: initialVariables || undefined,
       shouldPersistHeaders: false,

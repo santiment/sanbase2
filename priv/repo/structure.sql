@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict tpxwTYRfcKC8PysdQ2eC5Aq4518wffcmJ5sgwcqm0mdmu1Yx326ndg2ZFXKg41Z
+\restrict g4uGTuk9pGPf9rhdQkBivPRNa1Vu15P3bIHVFtpukIxTQHqvtu4BLET8dWAIQa4
 
 -- Dumped from database version 15.15 (Homebrew)
 -- Dumped by pg_dump version 15.15 (Homebrew)
@@ -2056,6 +2056,45 @@ CREATE SEQUENCE public.insight_category_mapping_id_seq
 --
 
 ALTER SEQUENCE public.insight_category_mapping_id_seq OWNED BY public.insight_category_mapping.id;
+
+
+--
+-- Name: invoice_archives; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.invoice_archives (
+    id bigint NOT NULL,
+    year integer NOT NULL,
+    month integer NOT NULL,
+    status character varying(255) DEFAULT 'pending'::character varying NOT NULL,
+    s3_key character varying(255),
+    invoice_count integer DEFAULT 0,
+    total_amount integer DEFAULT 0,
+    file_size integer,
+    error_message character varying(255),
+    generated_by bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: invoice_archives_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.invoice_archives_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: invoice_archives_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.invoice_archives_id_seq OWNED BY public.invoice_archives.id;
 
 
 --
@@ -6157,6 +6196,13 @@ ALTER TABLE ONLY public.insight_category_mapping ALTER COLUMN id SET DEFAULT nex
 
 
 --
+-- Name: invoice_archives id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.invoice_archives ALTER COLUMN id SET DEFAULT nextval('public.invoice_archives_id_seq'::regclass);
+
+
+--
 -- Name: latest_coinmarketcap_data id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -7265,6 +7311,14 @@ ALTER TABLE ONLY public.insight_categories
 
 ALTER TABLE ONLY public.insight_category_mapping
     ADD CONSTRAINT insight_category_mapping_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: invoice_archives invoice_archives_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.invoice_archives
+    ADD CONSTRAINT invoice_archives_pkey PRIMARY KEY (id);
 
 
 --
@@ -8757,6 +8811,13 @@ CREATE INDEX insight_category_mapping_source_index ON public.insight_category_ma
 
 
 --
+-- Name: invoice_archives_year_month_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX invoice_archives_year_month_index ON public.invoice_archives USING btree (year, month);
+
+
+--
 -- Name: latest_coinmarketcap_data_coinmarketcap_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10195,6 +10256,14 @@ ALTER TABLE ONLY public.insight_category_mapping
 
 
 --
+-- Name: invoice_archives invoice_archives_generated_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.invoice_archives
+    ADD CONSTRAINT invoice_archives_generated_by_fkey FOREIGN KEY (generated_by) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
 -- Name: linked_users_candidates linked_users_candidates_primary_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -11262,7 +11331,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict tpxwTYRfcKC8PysdQ2eC5Aq4518wffcmJ5sgwcqm0mdmu1Yx326ndg2ZFXKg41Z
+\unrestrict g4uGTuk9pGPf9rhdQkBivPRNa1Vu15P3bIHVFtpukIxTQHqvtu4BLET8dWAIQa4
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -11818,3 +11887,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260309140151);
 INSERT INTO public."schema_migrations" (version) VALUES (20260309140152);
 INSERT INTO public."schema_migrations" (version) VALUES (20260309140153);
 INSERT INTO public."schema_migrations" (version) VALUES (20260309140154);
+INSERT INTO public."schema_migrations" (version) VALUES (20260317111739);

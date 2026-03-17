@@ -1,4 +1,42 @@
 defmodule Sanbase.Billing.Invoices.Download do
+  # ─── Reusable functions (used by GenerationJob and IEx) ─────────────────
+
+  @doc "Fetch paid invoices from Stripe for a given year/month. Returns a list of invoice maps."
+  def fetch_paid_invoices(year, month) do
+    from = Timex.beginning_of_month(year, month) |> Timex.to_datetime() |> DateTime.to_unix()
+    to = Timex.end_of_month(year, month) |> Timex.to_datetime() |> DateTime.to_unix()
+
+    all_invoices = list_invoices([], %{created: %{gte: from, lte: to}, limit: 100})
+    paid_invoices = Enum.filter(all_invoices, &(&1.status == "paid"))
+    Enum.filter(paid_invoices, &(&1.total > 0 or abs(&1.starting_balance) > 0))
+  end
+
+  @doc "Download a single invoice PDF. Returns `{:ok, {charlist_filename, binary}}` or `{:error, reason}`."
+  def download_pdf(invoice) do
+    url = invoice.invoice_pdf
+
+    response =
+      HTTPoison.get!(url, [],
+        follow_redirect: true,
+        hackney: [{:force_redirect, true}],
+        timeout: 20_000,
+        recv_timeout: 20_000
+      )
+
+    filename = extract_filename(response)
+    filedata = Map.get(response, :body)
+    {:ok, {to_charlist(filename), filedata}}
+  rescue
+    e -> {:error, Exception.message(e)}
+  end
+
+  @doc "Create a ZIP file in memory from a list of `{charlist_filename, binary}` entries."
+  def create_zip_in_memory(pdf_entries, zip_name) do
+    :zip.create(to_charlist(zip_name), pdf_entries, [:memory])
+  end
+
+  # ─── IEx-friendly wrappers (backward compatible) ────────────────────────
+
   def run() do
     now = DateTime.utc_now()
 
@@ -12,45 +50,23 @@ defmodule Sanbase.Billing.Invoices.Download do
   end
 
   def get({month, year}) do
-    from = Timex.beginning_of_month(year, month) |> Timex.to_datetime() |> DateTime.to_unix()
-    to = Timex.end_of_month(year, month) |> Timex.to_datetime() |> DateTime.to_unix()
+    IO.puts("Fetching invoices for #{year}_#{month}")
 
-    IO.puts("Fetching invoices for #{year}_#{month} from #{from} to #{to}")
+    invoices = fetch_paid_invoices(year, month)
+    IO.puts("Found #{length(invoices)} paid invoices")
 
-    # WORKAROUND: Remove status filter since it's not working, fetch all and filter manually
-    all_invoices = list_invoices([], %{created: %{gte: from, lte: to}, limit: 100})
-    IO.puts("Total invoices retrieved from Stripe: #{length(all_invoices)}")
+    pdf_entries =
+      Enum.map(invoices, fn inv ->
+        IO.puts("#{year}_#{month} fetching url: #{inv.invoice_pdf}")
 
-    # Filter for paid status manually
-    paid_invoices = Enum.filter(all_invoices, &(&1.status == "paid"))
-    IO.puts("Paid invoices after manual filtering: #{length(paid_invoices)}")
-
-    # Apply the existing business logic filter
-    invoices = Enum.filter(paid_invoices, &(&1.total > 0 or abs(&1.starting_balance) > 0))
-    IO.puts("Final invoices after business logic filtering: #{length(invoices)}")
-
-    invoices =
-      invoices
-      |> Enum.map(fn inv ->
-        # label = if inv.starting_balance == 0, do: "fiat", else: "crypto"
-        url = inv.invoice_pdf
-        IO.puts("#{year}_#{month} fetching url: #{url}")
-
-        response =
-          HTTPoison.get!(url, [],
-            follow_redirect: true,
-            hackney: [{:force_redirect, true}],
-            timeout: 20_000,
-            recv_timeout: 20_000
-          )
-
-        filename = extract_filename(response)
-        filedata = Map.get(response, :body)
-        {to_charlist(filename), filedata}
+        case download_pdf(inv) do
+          {:ok, entry} -> entry
+          {:error, reason} -> raise "Failed to download PDF: #{reason}"
+        end
       end)
 
     zipname = "#{year}_#{month}.zip"
-    {:ok, _zipfile} = :zip.create(zipname |> to_charlist(), invoices)
+    {:ok, _zipfile} = :zip.create(zipname |> to_charlist(), pdf_entries)
     IO.puts("***************** result zipfile: #{zipname}")
 
     zipname

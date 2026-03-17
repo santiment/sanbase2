@@ -20,6 +20,8 @@ defmodule Sanbase.Application.Admin do
     children = [
       # Persistent GenServer for bulk AI description generation jobs
       Sanbase.AI.DescriptionJob,
+      # Persistent GenServer for invoice archive generation jobs
+      Sanbase.Billing.Invoices.GenerationJob,
       {Oban, oban_admin_config()},
 
       # Start the libcluster in admin, so we can send messages to the web pods when some

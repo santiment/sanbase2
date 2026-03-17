@@ -73,12 +73,14 @@ defmodule SanbaseWeb.Router do
     end
   end
 
-  # OAuth 2.0 token endpoint (machine-to-machine, no GraphQL plugs)
+  # OAuth 2.0 token endpoint and dynamic client registration (machine-to-machine, no GraphQL plugs)
   scope "/oauth", SanbaseWeb do
     pipe_through(:oauth_api)
 
     post("/token", OAuthController, :token)
+    post("/register", OAuthController, :register)
     options("/token", OAuthController, :preflight)
+    options("/register", OAuthController, :preflight)
   end
 
   pipeline :mcp_auth do

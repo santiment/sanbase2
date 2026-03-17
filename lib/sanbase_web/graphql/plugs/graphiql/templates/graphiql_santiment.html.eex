@@ -1,0 +1,35 @@
+<!--
+Santiment GraphiQL — powered by GraphiQL 5 with Monaco Editor.
+Query and variables can be passed via URL parameters: ?query=...&variables=...
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Santiment GraphiQL</title>
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="stylesheet" href="/assets/graphiql.css" />
+  <style>
+    html, body, #graphiql {
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div id="graphiql">
+    <div class="graphiql-loading">
+      <div style="text-align:center">
+        <div>Loading Santiment GraphiQL...</div>
+        <div class="graphiql-loading-error" id="load-error">
+          Failed to load. Check your network connection and try refreshing.
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="/assets/graphiql.js"></script>
+</body>
+</html>

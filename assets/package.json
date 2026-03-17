@@ -5,13 +5,18 @@
     "tailwindcss": "^3.3.5"
   },
   "dependencies": {
+    "@graphiql/react": "^0.37.3",
     "alpinejs": "^3.13.5",
     "flowbite": "^2.3.0",
+    "graphiql": "^5.2.2",
+    "graphql": "^16.13.1",
     "jquery": "^3.7.1",
     "moment": "^2.29.4",
     "phoenix": "file:../deps/phoenix",
     "phoenix_html": "file:../deps/phoenix_html",
     "phoenix_live_view": "file:../deps/phoenix_live_view",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
     "sortablejs": "^1.15.6"
   }
 }

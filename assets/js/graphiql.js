@@ -18,6 +18,7 @@ import { createRoot } from "react-dom/client";
 import { GraphiQL } from "graphiql";
 import { explorerPlugin } from "@graphiql/plugin-explorer";
 import { examplesPlugin } from "./graphiql-examples-plugin.js";
+import { ChartButton } from "./graphiql-chart-modal.js";
 
 // CSS: base GraphiQL styles, explorer plugin styles, then our customizations
 import "graphiql/style.css";
@@ -241,15 +242,33 @@ const examples = examplesPlugin();
 // --- Render ---
 const root = createRoot(document.getElementById("graphiql"));
 root.render(
-  React.createElement(GraphiQL, {
-    fetcher: fetcher,
-    plugins: [explorer, examples],
-    initialQuery: initialQuery || undefined,
-    initialVariables: initialVariables || undefined,
-    initialHeaders: initialHeaders || undefined,
-    shouldPersistHeaders: true,
-    defaultEditorToolsVisibility: true,
-    onEditQuery: onEditQuery,
-    onEditVariables: onEditVariables,
-  })
+  React.createElement(
+    GraphiQL,
+    {
+      fetcher: fetcher,
+      plugins: [explorer, examples],
+      initialQuery: initialQuery || undefined,
+      initialVariables: initialVariables || undefined,
+      initialHeaders: initialHeaders || undefined,
+      shouldPersistHeaders: false,
+      defaultEditorToolsVisibility: true,
+      onEditQuery: onEditQuery,
+      onEditVariables: onEditVariables,
+    },
+    // Toolbar: render prop receives default buttons, we append the chart button
+    React.createElement(
+      GraphiQL.Toolbar,
+      null,
+      function (props) {
+        return React.createElement(
+          React.Fragment,
+          null,
+          props.prettify,
+          props.merge,
+          props.copy,
+          React.createElement(ChartButton)
+        );
+      }
+    )
+  )
 );

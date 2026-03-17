@@ -20,6 +20,7 @@ import { useMonaco } from "@graphiql/react";
 import { explorerPlugin } from "@graphiql/plugin-explorer";
 import { examplesPlugin } from "./graphiql-examples-plugin.js";
 import { ChartButton } from "./graphiql-chart-modal.js";
+import { isEffectivelyDark } from "./graphiql-theme.js";
 
 // CSS: base GraphiQL styles, explorer plugin styles, then our customizations
 import "graphiql/style.css";
@@ -63,7 +64,9 @@ function SantimentTheme() {
     monaco.editor.defineTheme("santiment-light", LIGHT_THEME_DATA);
     monaco.editor.defineTheme("graphiql-LIGHT", LIGHT_THEME_DATA);
 
-    if (!document.body.classList.contains("graphiql-dark")) {
+    // Only force the custom light theme when the effective theme is light.
+    // When dark, let GraphiQL's built-in dark theme remain active.
+    if (!isEffectivelyDark()) {
       monaco.editor.setTheme("graphiql-LIGHT");
     }
   }, [monaco]);

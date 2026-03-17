@@ -5,6 +5,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useGraphiQL } from "@graphiql/react";
 import { extractTimeseries, renderChart } from "./graphiql-chart.js";
+import { isEffectivelyDark } from "./graphiql-theme.js";
 
 // ─── Chart Modal ────────────────────────────────────────────────
 
@@ -16,11 +17,7 @@ function ChartModal({ onClose }) {
     return state.responseEditor;
   });
 
-  const isDark =
-    document.body.classList.contains("graphiql-dark") ||
-    (window.matchMedia &&
-      window.matchMedia("(prefers-color-scheme: dark)").matches &&
-      !document.body.classList.contains("graphiql-light"));
+  const isDark = isEffectivelyDark();
 
   const series = React.useMemo(
     function () {

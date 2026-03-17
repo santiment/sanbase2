@@ -19,9 +19,6 @@ defmodule Sanbase.MCP.DevServer do
     Anubis.Server.Handlers.handle(request, __MODULE__, frame)
   end
 
-  # Expose only the search docs tool
-  component(Sanbase.MCP.SearchDocsTool)
-
   defp assign_current_user(%Anubis.Server.Frame{} = frame) do
     headers = frame.context.headers || %{}
 

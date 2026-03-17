@@ -6,7 +6,7 @@ defmodule SanbaseWeb.Graphql.MCPAssetsByMetricToolTest do
 
   setup do
     user = insert(:user, username: "santiment_user")
-    {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(user)
+    bearer_token = Sanbase.TestHelpers.setup_mcp_oauth_client(user)
 
     port = Sanbase.Utils.Config.module_get(SanbaseWeb.Endpoint, [:http, :port])
 
@@ -17,7 +17,7 @@ defmodule SanbaseWeb.Graphql.MCPAssetsByMetricToolTest do
            [
              base_url: "http://localhost:#{port}",
              headers: %{
-               "authorization" => "Apikey #{apikey}",
+               "authorization" => "Bearer #{bearer_token}",
                "content-type" => "application/json",
                "host" => "localhost:#{port}"
              }
@@ -35,7 +35,7 @@ defmodule SanbaseWeb.Graphql.MCPAssetsByMetricToolTest do
     _p = insert(:project, ticker: "MKR", slug: "maker", name: "Maker")
     _p = insert(:project, ticker: "SOL", slug: "solana", name: "Solana")
 
-    %{user: user, apikey: apikey}
+    %{user: user}
   end
 
   test "just order assets by price_usd", _context do

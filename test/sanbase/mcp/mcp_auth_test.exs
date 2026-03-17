@@ -25,6 +25,9 @@ defmodule SanbaseWeb.Graphql.MCPAuthTest do
       })
       |> Sanbase.Repo.insert()
 
+    # Generate an API key for the same user
+    {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(user)
+
     on_exit(fn ->
       if pid = Process.whereis(Sanbase.MCP.Client) do
         try do
@@ -35,10 +38,10 @@ defmodule SanbaseWeb.Graphql.MCPAuthTest do
       end
     end)
 
-    %{user: user, bearer_token: token.value}
+    %{user: user, bearer_token: token.value, apikey: apikey}
   end
 
-  test "authentication", context do
+  test "OAuth authentication", context do
     port = Sanbase.Utils.Config.module_get(SanbaseWeb.Endpoint, [:http, :port])
 
     {:ok, client} =
@@ -91,6 +94,7 @@ defmodule SanbaseWeb.Graphql.MCPAuthTest do
               "id" => id,
               "email" => email,
               "auth_method" => "oauth",
+              "apikey" => nil,
               "subscriptions" => _subscriptions
             }} = Jason.decode(json)
 
@@ -98,8 +102,178 @@ defmodule SanbaseWeb.Graphql.MCPAuthTest do
     assert email == context.user.email
   end
 
-  test "unauthenticated - no authorization header", _context do
+  test "API key authentication with Apikey scheme", context do
     port = Sanbase.Utils.Config.module_get(SanbaseWeb.Endpoint, [:http, :port])
+
+    {:ok, client} =
+      Sanbase.MCP.Client.start_link(
+        transport:
+          {:streamable_http,
+           [
+             base_url: "http://localhost:#{port}",
+             headers: %{
+               "authorization" => "Apikey #{context.apikey}",
+               "content-type" => "application/json",
+               "host" => "localhost:#{port}"
+             }
+           ]},
+        client_info: %{"name" => "SanbaseTestMCPClient", "version" => "1.0.0"},
+        capabilities: %{"tools" => %{}},
+        protocol_version: "2025-03-26"
+      )
+
+    assert client |> Process.alive?() == true
+    wait_for_mcp_initialization()
+
+    assert {:ok,
+            %Anubis.MCP.Response{
+              result: %{
+                "content" => [
+                  %{
+                    "text" => json,
+                    "type" => "text"
+                  }
+                ],
+                "isError" => false
+              },
+              id: "req_" <> _,
+              method: "tools/call",
+              is_error: false
+            }} =
+             try_few_times(fn -> Sanbase.MCP.Client.call_tool("check_authentication", %{}) end,
+               attempts: 3,
+               sleep: 250
+             )
+
+    assert {:ok,
+            %{
+              "id" => id,
+              "email" => email,
+              "auth_method" => "apikey",
+              "apikey" => obfuscated_apikey,
+              "subscriptions" => _subscriptions
+            }} = Jason.decode(json)
+
+    assert id == context.user.id
+    assert email == context.user.email
+    # Obfuscated apikey preserves first 3 and last 3 chars
+    assert String.slice(obfuscated_apikey, 0, 3) == String.slice(context.apikey, 0, 3)
+    assert String.slice(obfuscated_apikey, -3, 3) == String.slice(context.apikey, -3, 3)
+    assert String.contains?(obfuscated_apikey, "***")
+  end
+
+  test "API key authentication with Bearer Apikey scheme", context do
+    port = Sanbase.Utils.Config.module_get(SanbaseWeb.Endpoint, [:http, :port])
+
+    {:ok, client} =
+      Sanbase.MCP.Client.start_link(
+        transport:
+          {:streamable_http,
+           [
+             base_url: "http://localhost:#{port}",
+             headers: %{
+               "authorization" => "Bearer Apikey #{context.apikey}",
+               "content-type" => "application/json",
+               "host" => "localhost:#{port}"
+             }
+           ]},
+        client_info: %{"name" => "SanbaseTestMCPClient", "version" => "1.0.0"},
+        capabilities: %{"tools" => %{}},
+        protocol_version: "2025-03-26"
+      )
+
+    assert client |> Process.alive?() == true
+    wait_for_mcp_initialization()
+
+    assert {:ok,
+            %Anubis.MCP.Response{
+              result: %{
+                "content" => [
+                  %{
+                    "text" => json,
+                    "type" => "text"
+                  }
+                ],
+                "isError" => false
+              },
+              id: "req_" <> _,
+              method: "tools/call",
+              is_error: false
+            }} =
+             try_few_times(fn -> Sanbase.MCP.Client.call_tool("check_authentication", %{}) end,
+               attempts: 3,
+               sleep: 250
+             )
+
+    assert {:ok,
+            %{
+              "id" => id,
+              "auth_method" => "apikey"
+            }} = Jason.decode(json)
+
+    assert id == context.user.id
+  end
+
+  test "API key authentication with Bearer scheme", context do
+    port = Sanbase.Utils.Config.module_get(SanbaseWeb.Endpoint, [:http, :port])
+
+    {:ok, client} =
+      Sanbase.MCP.Client.start_link(
+        transport:
+          {:streamable_http,
+           [
+             base_url: "http://localhost:#{port}",
+             headers: %{
+               "authorization" => "Bearer #{context.apikey}",
+               "content-type" => "application/json",
+               "host" => "localhost:#{port}"
+             }
+           ]},
+        client_info: %{"name" => "SanbaseTestMCPClient", "version" => "1.0.0"},
+        capabilities: %{"tools" => %{}},
+        protocol_version: "2025-03-26"
+      )
+
+    assert client |> Process.alive?() == true
+    wait_for_mcp_initialization()
+
+    assert {:ok,
+            %Anubis.MCP.Response{
+              result: %{
+                "content" => [
+                  %{
+                    "text" => json,
+                    "type" => "text"
+                  }
+                ],
+                "isError" => false
+              },
+              id: "req_" <> _,
+              method: "tools/call",
+              is_error: false
+            }} =
+             try_few_times(fn -> Sanbase.MCP.Client.call_tool("check_authentication", %{}) end,
+               attempts: 3,
+               sleep: 250
+             )
+
+    assert {:ok,
+            %{
+              "id" => id,
+              "auth_method" => "apikey",
+              "apikey" => obfuscated_apikey
+            }} = Jason.decode(json)
+
+    assert id == context.user.id
+    assert String.slice(obfuscated_apikey, 0, 3) == String.slice(context.apikey, 0, 3)
+    assert String.slice(obfuscated_apikey, -3, 3) == String.slice(context.apikey, -3, 3)
+  end
+
+  test "unauthenticated - no authorization header returns 401", _context do
+    port = Sanbase.Utils.Config.module_get(SanbaseWeb.Endpoint, [:http, :port])
+
+    # The client process starts but crashes when the initialize request gets 401
+    Process.flag(:trap_exit, true)
 
     {:ok, client} =
       Sanbase.MCP.Client.start_link(
@@ -117,24 +291,14 @@ defmodule SanbaseWeb.Graphql.MCPAuthTest do
         protocol_version: "2025-03-26"
       )
 
-    assert client |> Process.alive?() == true
-    wait_for_mcp_initialization()
-
-    assert {:ok,
-            %Anubis.MCP.Response{
-              result: %{
-                "content" => [%{"text" => text, "type" => "text"}],
-                "isError" => true
-              },
-              is_error: true
-            }} = Sanbase.MCP.Client.call_tool("check_authentication", %{})
-
-    assert text =~ "Unauthorized"
-    assert text =~ "No Authorization header provided"
+    # The client should shut down because the 401 prevents initialization
+    assert_receive {:EXIT, ^client, :shutdown}, 5000
   end
 
-  test "unauthenticated - invalid bearer token", _context do
+  test "unauthenticated - invalid bearer token returns 401", _context do
     port = Sanbase.Utils.Config.module_get(SanbaseWeb.Endpoint, [:http, :port])
+
+    Process.flag(:trap_exit, true)
 
     {:ok, client} =
       Sanbase.MCP.Client.start_link(
@@ -153,19 +317,33 @@ defmodule SanbaseWeb.Graphql.MCPAuthTest do
         protocol_version: "2025-03-26"
       )
 
-    assert client |> Process.alive?() == true
-    wait_for_mcp_initialization()
+    # The client should shut down because the 401 prevents initialization
+    assert_receive {:EXIT, ^client, :shutdown}, 5000
+  end
 
-    assert {:ok,
-            %Anubis.MCP.Response{
-              result: %{
-                "content" => [%{"text" => text, "type" => "text"}],
-                "isError" => true
-              },
-              is_error: true
-            }} = Sanbase.MCP.Client.call_tool("check_authentication", %{})
+  test "unauthenticated - invalid apikey returns 401", _context do
+    port = Sanbase.Utils.Config.module_get(SanbaseWeb.Endpoint, [:http, :port])
 
-    assert text =~ "Unauthorized"
-    assert text =~ "OAuth token is invalid or expired"
+    Process.flag(:trap_exit, true)
+
+    {:ok, client} =
+      Sanbase.MCP.Client.start_link(
+        transport:
+          {:streamable_http,
+           [
+             base_url: "http://localhost:#{port}",
+             headers: %{
+               "authorization" => "Apikey invalid_apikey_value",
+               "content-type" => "application/json",
+               "host" => "localhost:#{port}"
+             }
+           ]},
+        client_info: %{"name" => "SanbaseTestMCPClient", "version" => "1.0.0"},
+        capabilities: %{"tools" => %{}},
+        protocol_version: "2025-03-26"
+      )
+
+    # The client should shut down because the 401 prevents initialization
+    assert_receive {:EXIT, ^client, :shutdown}, 5000
   end
 end

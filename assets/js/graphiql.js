@@ -2,12 +2,25 @@
  * Santiment GraphiQL — entry point.
  * Bundled with esbuild into a single file served at /assets/graphiql.js
  */
+
+// --- Monaco Web Workers ---
+// Must be defined before Monaco loads. Workers are built as separate esbuild entry points.
+globalThis.MonacoEnvironment = {
+  getWorkerUrl(_workerId, label) {
+    if (label === "json") return "/assets/graphiql-json.worker.js";
+    if (label === "graphql") return "/assets/graphiql-graphql.worker.js";
+    return "/assets/graphiql-editor.worker.js";
+  },
+};
+
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { GraphiQL } from "graphiql";
+import { explorerPlugin } from "@graphiql/plugin-explorer";
 
-// CSS: base GraphiQL styles, then our customizations
+// CSS: base GraphiQL styles, explorer plugin styles, then our customizations
 import "graphiql/style.css";
+import "@graphiql/plugin-explorer/style.css";
 import "../css/graphiql.css";
 
 // --- Register custom Monaco light theme after GraphiQL initializes Monaco ---
@@ -232,11 +245,15 @@ graphiqlRoot.addEventListener("dblclick", function(e) {
 const tabObserver = new MutationObserver(renameUntitledTabs);
 tabObserver.observe(graphiqlRoot, { childList: true, subtree: true, characterData: true });
 
+// --- Plugins ---
+const explorer = explorerPlugin();
+
 // --- Render ---
 const root = createRoot(document.getElementById("graphiql"));
 root.render(
   React.createElement(GraphiQL, {
     fetcher: fetcher,
+    plugins: [explorer],
     initialQuery: initialQuery || undefined,
     initialVariables: initialVariables || undefined,
     initialHeaders: initialHeaders || undefined,

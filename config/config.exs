@@ -11,7 +11,7 @@ config :esbuild,
   ],
   graphiql: [
     args:
-      ~w(js/graphiql.js --bundle --minify --target=es2020 --outdir=../priv/static/assets --loader:.css=css --loader:.svg=dataurl --loader:.ttf=file --loader:.woff=file --loader:.woff2=file),
+      ~w(js/graphiql.js js/graphiql-editor.worker.js js/graphiql-json.worker.js js/graphiql-graphql.worker.js --bundle --minify --target=es2020 --outdir=../priv/static/assets --loader:.css=css --loader:.svg=dataurl --loader:.ttf=file --loader:.woff=file --loader:.woff2=file),
     cd: Path.expand("../assets", __DIR__),
     env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
   ]

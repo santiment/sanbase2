@@ -5,6 +5,7 @@
     "tailwindcss": "^3.3.5"
   },
   "dependencies": {
+    "@graphiql/plugin-explorer": "^5.1.1",
     "@graphiql/react": "^0.37.3",
     "alpinejs": "^3.13.5",
     "flowbite": "^2.3.0",

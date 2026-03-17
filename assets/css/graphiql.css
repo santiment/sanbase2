@@ -133,9 +133,10 @@
   border: 1px solid var(--san-border);
 }
 
-/* --- Panel borders --- */
+/* --- Plugin panel --- */
 #graphiql .graphiql-plugin {
   border-right: 1px solid var(--san-border);
+  min-width: 200px;
 }
 
 /* --- Layout: surface background with bordered panels --- */
@@ -202,4 +203,10 @@
   display: none;
   margin-top: 12px;
   font-size: 14px;
+}
+
+/* --- Example Queries plugin --- */
+#graphiql .graphiql-example-item:hover {
+  background: hsla(var(--color-neutral-20), 0.5);
+  border-color: var(--san-border);
 }

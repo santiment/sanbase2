@@ -14,6 +14,8 @@ defmodule Sanbase.TestHelpers do
     end
   end
 
+  @doc "Creates a Boruta OAuth client and access token for the given user, returning the token string."
+  @spec setup_mcp_oauth_client(map()) :: String.t()
   def setup_mcp_oauth_client(user) do
     {:ok, oauth_client} =
       %Boruta.Ecto.Client{}

@@ -1,6 +1,7 @@
 defmodule Sanbase.MCP.AuthPlug do
   @moduledoc """
-  Plug that enforces OAuth Bearer token authentication for MCP endpoints.
+  Plug that enforces authentication for MCP endpoints.
+  Supports both OAuth Bearer tokens and API key authentication.
   Rejects unauthenticated requests with 401 before they reach the MCP server.
   """
   @behaviour Plug
@@ -9,42 +10,69 @@ defmodule Sanbase.MCP.AuthPlug do
 
   alias Boruta.Oauth.Authorization
 
+  @doc "Returns the given options unchanged."
+  @spec init(opts :: term()) :: term()
   @impl Plug
   def init(opts), do: opts
 
+  @doc "Authenticates via OAuth Bearer token or API key and assigns the user to the conn."
+  @spec call(conn :: Plug.Conn.t(), opts :: term()) :: Plug.Conn.t()
   @impl Plug
   def call(conn, _opts) do
-    case get_bearer_token(conn) do
+    case get_authorization_value(conn) do
       nil ->
-        reject(conn, "Bearer token required")
+        reject(conn, "Authorization header required")
 
-      bearer ->
-        case Authorization.AccessToken.authorize(value: bearer) do
-          {:ok, token} ->
-            case Sanbase.Accounts.User.by_id(Sanbase.Math.to_integer(token.sub)) do
-              {:ok, _user} -> conn
-              _ -> reject(conn, "Invalid user")
-            end
-
-          _ ->
-            reject(conn, "Invalid or expired token")
+      header_value ->
+        case try_oauth(header_value) || try_apikey(header_value) do
+          {:ok, user} -> assign(conn, :current_user, user)
+          nil -> reject(conn, "Invalid credentials")
         end
     end
   end
 
-  defp get_bearer_token(conn) do
+  defp get_authorization_value(conn) do
     case get_req_header(conn, "authorization") do
-      [value | _] ->
-        case String.split(value, " ", parts: 2) do
-          [scheme, token] when byte_size(token) > 0 ->
-            if String.downcase(scheme) == "bearer", do: token, else: nil
+      [value | _] when byte_size(value) > 0 -> value
+      _ -> nil
+    end
+  end
 
-          _ ->
-            nil
-        end
+  defp try_oauth("Bearer " <> token) do
+    if String.starts_with?(token, "Apikey ") do
+      nil
+    else
+      with {:ok, oauth_token} <- Authorization.AccessToken.authorize(value: token),
+           {:ok, user} <-
+             Sanbase.Accounts.User.by_id(Sanbase.Math.to_integer(oauth_token.sub)) do
+        {:ok, user}
+      else
+        _ -> nil
+      end
+    end
+  end
 
-      _ ->
+  defp try_oauth(_), do: nil
+
+  defp try_apikey(header_value) do
+    case extract_apikey(header_value) do
+      nil ->
         nil
+
+      apikey ->
+        case Sanbase.Accounts.Apikey.apikey_to_user(apikey) do
+          {:ok, %Sanbase.Accounts.User{} = user} -> {:ok, user}
+          _ -> nil
+        end
+    end
+  end
+
+  defp extract_apikey(header_value) do
+    case header_value do
+      "Bearer Apikey " <> apikey -> apikey
+      "Apikey " <> apikey -> apikey
+      "Bearer " <> apikey -> apikey
+      _ -> nil
     end
   end
 

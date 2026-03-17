@@ -34,7 +34,8 @@ defmodule SanbaseWeb.Endpoint do
     at: "/",
     from: :sanbase,
     gzip: false,
-    only: SanbaseWeb.static_paths()
+    only: SanbaseWeb.static_paths(),
+    cache_control_for_etags: "public, max-age=86400, immutable"
   )
 
   # Prometheus /metrics endpoint

@@ -33,7 +33,7 @@ defmodule SanbaseWeb.Graphql.GraphiqlPlug do
     :defp,
     :graphiql_santiment_html,
     Path.join(@graphiql_template_path, "graphiql_santiment.html.eex"),
-    []
+    [:assigns]
   )
 
   @behaviour Plug
@@ -52,12 +52,21 @@ defmodule SanbaseWeb.Graphql.GraphiqlPlug do
   def call(conn, config) do
     case html?(conn) do
       true ->
-        graphiql_santiment_html()
+        assigns = %{
+          js_path: static_path("/assets/graphiql.js"),
+          css_path: static_path("/assets/graphiql.css")
+        }
+
+        graphiql_santiment_html(assigns)
         |> rendered(conn)
 
       _ ->
         Absinthe.Plug.call(conn, config)
     end
+  end
+
+  defp static_path(path) do
+    SanbaseWeb.Endpoint.static_path(path)
   end
 
   defp html?(conn) do

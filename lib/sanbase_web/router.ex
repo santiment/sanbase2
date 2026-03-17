@@ -197,6 +197,15 @@ defmodule SanbaseWeb.Router do
       end
     end
 
+    scope "/invoices" do
+      live_session :invoices_authenticated_user,
+        on_mount: [{SanbaseWeb.AdminUserAuth, :ensure_authenticated}] do
+        live("/", Admin.InvoicesLive)
+      end
+
+      get("/download/:id", Admin.InvoiceDownloadController, :download)
+    end
+
     scope "/tweets_prediction" do
       live_session :tweets_prediction_authenticated_user,
         on_mount: [

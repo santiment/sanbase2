@@ -72,21 +72,12 @@ function registerSantimentTheme() {
 registerSantimentTheme();
 
 // --- URL Parameter Handling ---
-// Preserves the existing URL format: ?query=...&variables=...
-// This ensures all existing shared links continue to work.
-// NOTE: Headers are intentionally NOT synced to URL to avoid leaking
-// credentials (tokens, API keys) into browser history, referrer headers, and logs.
+// Supports ?query=...&variables=... for sharing queries.
+// Headers are NEVER read from or synced to the URL — use the headers editor panel instead.
+// This prevents credentials from leaking into browser history, server logs, and referrer headers.
 const urlParams = new URLSearchParams(window.location.search);
 const initialQuery = urlParams.get("query") || "";
 const initialVariables = urlParams.get("variables") || "";
-const initialHeaders = urlParams.get("headers") || "";
-
-// Strip headers from URL after reading — prevents credential persistence in browser history
-if (initialHeaders) {
-  urlParams.delete("headers");
-  const qs = urlParams.toString();
-  history.replaceState(null, null, qs ? "?" + qs : window.location.pathname);
-}
 
 function syncUrlParam(key, value, isEmpty) {
   const params = new URLSearchParams(window.location.search);
@@ -112,10 +103,9 @@ function onEditVariables(variables) {
 const graphqlEndpoint = window.location.origin + "/graphql";
 
 function fetcher(graphQLParams, fetcherOpts) {
-  const headers = {
-    "Accept": "application/json",
-    "Content-Type": "application/json",
-  };
+  const headers = Object.create(null);
+  headers["Accept"] = "application/json";
+  headers["Content-Type"] = "application/json";
 
   // Merge headers from the headers editor
   if (fetcherOpts && fetcherOpts.headers) {
@@ -123,7 +113,9 @@ function fetcher(graphQLParams, fetcherOpts) {
       const editorHeaders = typeof fetcherOpts.headers === "string"
         ? JSON.parse(fetcherOpts.headers)
         : fetcherOpts.headers;
-      Object.assign(headers, editorHeaders);
+      for (const key of Object.keys(editorHeaders)) {
+        headers[key] = editorHeaders[key];
+      }
     } catch (e) {
       // Invalid JSON in headers editor — ignore
     }
@@ -249,7 +241,6 @@ root.render(
       plugins: [explorer, examples],
       initialQuery: initialQuery || undefined,
       initialVariables: initialVariables || undefined,
-      initialHeaders: initialHeaders || undefined,
       shouldPersistHeaders: false,
       defaultEditorToolsVisibility: true,
       onEditQuery: onEditQuery,

@@ -1,11 +1,11 @@
 /**
  * GraphiQL "Example Queries" plugin.
  * Shows a permanent, non-clearable list of curated example queries
- * that help developers discover the Santiment API.
+ * organized into collapsible sections that help developers discover the Santiment API.
  */
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { useGraphiQL } from "@graphiql/react";
-import examples from "./graphiql-examples.js";
+import sections from "./graphiql-examples.js";
 
 // --- Icon: a book/guide icon ---
 var BookIcon = function () {
@@ -53,6 +53,27 @@ var styles = {
     color: "hsl(var(--color-neutral-50))",
     margin: "0 0 12px 0",
   },
+  sectionHeader: {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    padding: "6px 4px",
+    marginTop: "8px",
+    marginBottom: "2px",
+    cursor: "pointer",
+    userSelect: "none",
+    fontSize: "11px",
+    fontWeight: 700,
+    textTransform: "uppercase",
+    letterSpacing: "0.6px",
+    color: "hsl(var(--color-neutral-50))",
+  },
+  sectionArrow: {
+    fontSize: "9px",
+    width: "12px",
+    textAlign: "center",
+    transition: "transform 0.15s",
+  },
   item: {
     padding: "8px 10px",
     marginBottom: "4px",
@@ -78,6 +99,11 @@ function ExamplesContent() {
     return { queryEditor: state.queryEditor, variableEditor: state.variableEditor };
   });
 
+  // All sections start expanded
+  var _collapsed = useState({});
+  var collapsed = _collapsed[0];
+  var setCollapsed = _collapsed[1];
+
   var handleClick = useCallback(
     function (example) {
       if (editors.queryEditor) {
@@ -90,36 +116,70 @@ function ExamplesContent() {
     [editors]
   );
 
-  return React.createElement(
-    "div",
-    { style: styles.container },
-    React.createElement("p", { style: styles.heading }, "Example Queries"),
-    React.createElement(
-      "p",
-      { style: styles.subtitle },
-      "Click to load into the editor"
-    ),
-    examples.map(function (example, i) {
-      return React.createElement(
+  function toggleSection(idx) {
+    setCollapsed(function (prev) {
+      var next = Object.assign({}, prev);
+      next[idx] = !prev[idx];
+      return next;
+    });
+  }
+
+  var elements = [];
+
+  elements.push(
+    React.createElement("p", { key: "h", style: styles.heading }, "Example Queries")
+  );
+  elements.push(
+    React.createElement("p", { key: "s", style: styles.subtitle }, "Click to load into the editor")
+  );
+
+  sections.forEach(function (section, si) {
+    var isCollapsed = !!collapsed[si];
+
+    // Section header
+    elements.push(
+      React.createElement(
         "div",
         {
-          key: i,
-          style: styles.item,
-          className: "graphiql-example-item",
-          onClick: function () {
-            handleClick(example);
-          },
+          key: "sec-" + si,
+          style: styles.sectionHeader,
+          onClick: function () { toggleSection(si); },
         },
-        React.createElement("div", { style: styles.itemName }, example.name),
-        example.description &&
+        React.createElement(
+          "span",
+          {
+            style: Object.assign({}, styles.sectionArrow, {
+              transform: isCollapsed ? "rotate(-90deg)" : "rotate(0deg)",
+            }),
+          },
+          "\u25BC"
+        ),
+        section.title
+      )
+    );
+
+    // Section items
+    if (!isCollapsed) {
+      section.items.forEach(function (example, ei) {
+        elements.push(
           React.createElement(
             "div",
-            { style: styles.itemDesc },
-            example.description
+            {
+              key: "ex-" + si + "-" + ei,
+              style: styles.item,
+              className: "graphiql-example-item",
+              onClick: function () { handleClick(example); },
+            },
+            React.createElement("div", { style: styles.itemName }, example.name),
+            example.description &&
+              React.createElement("div", { style: styles.itemDesc }, example.description)
           )
-      );
-    })
-  );
+        );
+      });
+    }
+  });
+
+  return React.createElement("div", { style: styles.container }, elements);
 }
 
 // --- Plugin factory ---

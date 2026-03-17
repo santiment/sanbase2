@@ -80,11 +80,12 @@ function registerSantimentTheme() {
 registerSantimentTheme();
 
 // --- URL Parameter Handling ---
-// Preserves the existing URL format: ?query=...&variables=...&operationName=...
+// Preserves the existing URL format: ?query=...&variables=...&headers=...
 // This ensures all existing shared links continue to work.
 const urlParams = new URLSearchParams(window.location.search);
 const initialQuery = urlParams.get("query") || "";
 const initialVariables = urlParams.get("variables") || "";
+const initialHeaders = urlParams.get("headers") || "";
 
 function onEditQuery(query) {
   const params = new URLSearchParams(window.location.search);
@@ -102,6 +103,16 @@ function onEditVariables(variables) {
     params.set("variables", variables);
   } else {
     params.delete("variables");
+  }
+  history.replaceState(null, null, "?" + params.toString());
+}
+
+function onEditHeaders(headers) {
+  const params = new URLSearchParams(window.location.search);
+  if (headers && headers.trim() !== "" && headers.trim() !== "{}") {
+    params.set("headers", headers);
+  } else {
+    params.delete("headers");
   }
   history.replaceState(null, null, "?" + params.toString());
 }
@@ -228,8 +239,11 @@ root.render(
     fetcher: fetcher,
     initialQuery: initialQuery || undefined,
     initialVariables: initialVariables || undefined,
+    initialHeaders: initialHeaders || undefined,
+    shouldPersistHeaders: true,
     defaultEditorToolsVisibility: true,
     onEditQuery: onEditQuery,
     onEditVariables: onEditVariables,
+    onEditHeaders: onEditHeaders,
   })
 );

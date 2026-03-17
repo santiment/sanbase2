@@ -45,7 +45,7 @@ function walkNode(node, path, series) {
         label: pathToLabel(path),
         data: node.map(function (p) {
           return { time: toUnix(p.datetime), value: Number(p.value) };
-        }).filter(function (p) { return !isNaN(p.value); }),
+        }).filter(function (p) { return !isNaN(p.time) && !isNaN(p.value); }),
       });
       return;
     }
@@ -59,7 +59,7 @@ function walkNode(node, path, series) {
           const slug = entry.slug;
           if (!bySlug[slug]) bySlug[slug] = [];
           const v = Number(entry.value);
-          if (!isNaN(v)) bySlug[slug].push({ time: t, value: v });
+          if (!isNaN(t) && !isNaN(v)) bySlug[slug].push({ time: t, value: v });
         }
       }
       for (const slug of Object.keys(bySlug)) {
@@ -97,7 +97,7 @@ function tryParseJsonString(str, path, series) {
         label: pathToLabel(path),
         data: parsed.map(function (p) {
           return { time: toUnix(p[0]), value: Number(p[1]) };
-        }).filter(function (p) { return !isNaN(p.value); }),
+        }).filter(function (p) { return !isNaN(p.time) && !isNaN(p.value); }),
       });
       return;
     }
@@ -107,7 +107,7 @@ function tryParseJsonString(str, path, series) {
         label: pathToLabel(path),
         data: parsed.map(function (p) {
           return { time: toUnix(p.datetime), value: Number(p.value) };
-        }).filter(function (p) { return !isNaN(p.value); }),
+        }).filter(function (p) { return !isNaN(p.time) && !isNaN(p.value); }),
       });
       return;
     }
@@ -120,7 +120,7 @@ function tryParseJsonString(str, path, series) {
           const slug = entry.slug;
           if (!bySlug[slug]) bySlug[slug] = [];
           const v = Number(entry.value);
-          if (!isNaN(v)) bySlug[slug].push({ time: t, value: v });
+          if (!isNaN(t) && !isNaN(v)) bySlug[slug].push({ time: t, value: v });
         }
       }
       for (const slug of Object.keys(bySlug)) {
@@ -139,7 +139,7 @@ function tryParseJsonString(str, path, series) {
           label: key,
           data: val.map(function (p) {
             return { time: toUnix(p[0]), value: Number(p[1]) };
-          }).filter(function (p) { return !isNaN(p.value); }),
+          }).filter(function (p) { return !isNaN(p.time) && !isNaN(p.value); }),
         });
       }
     }

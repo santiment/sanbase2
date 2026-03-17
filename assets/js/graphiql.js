@@ -13,9 +13,10 @@ globalThis.MonacoEnvironment = {
   },
 };
 
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import { GraphiQL } from "graphiql";
+import { useMonaco } from "@graphiql/react";
 import { explorerPlugin } from "@graphiql/plugin-explorer";
 import { examplesPlugin } from "./graphiql-examples-plugin.js";
 import { ChartButton } from "./graphiql-chart-modal.js";
@@ -25,11 +26,9 @@ import "graphiql/style.css";
 import "@graphiql/plugin-explorer/style.css";
 import "../css/graphiql.css";
 
-// --- Register custom Monaco light theme after GraphiQL initializes Monaco ---
-// GraphiQL lazily loads Monaco then defines "graphiql-LIGHT" and "graphiql-DARK".
-// We poll for globalThis.__MONACO (set by @graphiql/react's monaco store)
-// and then define our custom theme on top.
-// Shared theme definition — used for both "santiment-light" and "graphiql-LIGHT"
+// --- Custom Monaco light theme ---
+// Registered via the public useMonaco() hook from @graphiql/react.
+// Rendered as an invisible child component inside <GraphiQL>.
 const LIGHT_THEME_RULES = [
   { token: "keyword.gql",                    foreground: "1565c0" },  // blue — query/mutation/fragment
   { token: "type.identifier.gql",            foreground: "b71c1c" },  // deep red — type/field names
@@ -51,25 +50,26 @@ const LIGHT_THEME_COLORS = {
   "scrollbar.shadow": "#ffffff00",
 };
 
-function registerSantimentTheme() {
-  const m = globalThis.__MONACO;
-  if (!m) {
-    setTimeout(registerSantimentTheme, 200);
-    return;
-  }
+const LIGHT_THEME_DATA = { base: "vs", inherit: true, rules: LIGHT_THEME_RULES, colors: LIGHT_THEME_COLORS };
 
-  const themeData = { base: "vs", inherit: true, rules: LIGHT_THEME_RULES, colors: LIGHT_THEME_COLORS };
-  m.editor.defineTheme("santiment-light", themeData);
-  // Override the graphiql-LIGHT theme that GraphiQL uses internally
-  m.editor.defineTheme("graphiql-LIGHT", themeData);
+function SantimentTheme() {
+  const monaco = useMonaco(function (state) { return state.monaco; });
+  const registered = useRef(false);
 
-  // Re-apply if currently in light mode
-  if (!document.body.classList.contains("graphiql-dark")) {
-    m.editor.setTheme("graphiql-LIGHT");
-  }
+  useEffect(function () {
+    if (!monaco || registered.current) return;
+    registered.current = true;
+
+    monaco.editor.defineTheme("santiment-light", LIGHT_THEME_DATA);
+    monaco.editor.defineTheme("graphiql-LIGHT", LIGHT_THEME_DATA);
+
+    if (!document.body.classList.contains("graphiql-dark")) {
+      monaco.editor.setTheme("graphiql-LIGHT");
+    }
+  }, [monaco]);
+
+  return null;
 }
-
-registerSantimentTheme();
 
 // --- URL Parameter Handling ---
 // Supports ?query=...&variables=... for sharing queries.
@@ -128,6 +128,8 @@ function fetcher(graphQLParams, fetcherOpts) {
     credentials: "same-origin",
   }).then(function(response) {
     return response.json();
+  }).catch(function(error) {
+    return { errors: [{ message: error.message }] };
   });
 }
 
@@ -203,6 +205,9 @@ function startEditing(btn) {
 
 // Attach double-click handler via event delegation
 const graphiqlRoot = document.getElementById("graphiql");
+if (!graphiqlRoot) {
+  throw new Error("GraphiQL mount point #graphiql not found");
+}
 graphiqlRoot.addEventListener("dblclick", function(e) {
   const btn = e.target.closest(".graphiql-tab-button");
   if (btn) {
@@ -246,6 +251,8 @@ root.render(
       onEditQuery: onEditQuery,
       onEditVariables: onEditVariables,
     },
+    // Custom Monaco theme — must be inside GraphiQL to access useMonaco hook
+    React.createElement(SantimentTheme),
     // Toolbar: render prop receives default buttons, we append the chart button
     React.createElement(
       GraphiQL.Toolbar,

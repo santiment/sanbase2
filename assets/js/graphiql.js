@@ -17,6 +17,7 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { GraphiQL } from "graphiql";
 import { explorerPlugin } from "@graphiql/plugin-explorer";
+import { examplesPlugin } from "./graphiql-examples-plugin.js";
 
 // CSS: base GraphiQL styles, explorer plugin styles, then our customizations
 import "graphiql/style.css";
@@ -50,13 +51,13 @@ const LIGHT_THEME_COLORS = {
 };
 
 function registerSantimentTheme() {
-  var m = globalThis.__MONACO;
+  const m = globalThis.__MONACO;
   if (!m) {
     setTimeout(registerSantimentTheme, 200);
     return;
   }
 
-  var themeData = { base: "vs", inherit: true, rules: LIGHT_THEME_RULES, colors: LIGHT_THEME_COLORS };
+  const themeData = { base: "vs", inherit: true, rules: LIGHT_THEME_RULES, colors: LIGHT_THEME_COLORS };
   m.editor.defineTheme("santiment-light", themeData);
   // Override the graphiql-LIGHT theme that GraphiQL uses internally
   m.editor.defineTheme("graphiql-LIGHT", themeData);
@@ -82,12 +83,12 @@ const initialHeaders = urlParams.get("headers") || "";
 // Strip headers from URL after reading — prevents credential persistence in browser history
 if (initialHeaders) {
   urlParams.delete("headers");
-  var qs = urlParams.toString();
+  const qs = urlParams.toString();
   history.replaceState(null, null, qs ? "?" + qs : window.location.pathname);
 }
 
 function syncUrlParam(key, value, isEmpty) {
-  var params = new URLSearchParams(window.location.search);
+  const params = new URLSearchParams(window.location.search);
   if (value && !(isEmpty && isEmpty(value))) {
     params.set(key, value);
   } else {
@@ -220,9 +221,9 @@ graphiqlRoot.addEventListener("dblclick", function(e) {
 
 // Observe only the session header (tab bar) rather than the entire GraphiQL tree,
 // to avoid firing renameUntitledTabs on every Monaco keystroke or result render.
-var tabObserver = new MutationObserver(renameUntitledTabs);
+const tabObserver = new MutationObserver(renameUntitledTabs);
 function observeTabBar() {
-  var header = graphiqlRoot.querySelector(".graphiql-session-header");
+  const header = graphiqlRoot.querySelector(".graphiql-session-header");
   if (header) {
     tabObserver.observe(header, { childList: true, subtree: true, characterData: true });
     // Handle tabs already rendered before observer connected
@@ -235,13 +236,14 @@ observeTabBar();
 
 // --- Plugins ---
 const explorer = explorerPlugin();
+const examples = examplesPlugin();
 
 // --- Render ---
 const root = createRoot(document.getElementById("graphiql"));
 root.render(
   React.createElement(GraphiQL, {
     fetcher: fetcher,
-    plugins: [explorer],
+    plugins: [explorer, examples],
     initialQuery: initialQuery || undefined,
     initialVariables: initialVariables || undefined,
     initialHeaders: initialHeaders || undefined,

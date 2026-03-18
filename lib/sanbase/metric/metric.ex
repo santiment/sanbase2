@@ -346,6 +346,11 @@ defmodule Sanbase.Metric do
           Type.slugs_by_filter_result()
   def slugs_by_filter(metric, from, to, operation, threshold, opts \\ [])
 
+  @percent_filter_modules [
+    Sanbase.Clickhouse.MetricAdapter,
+    Sanbase.Price.MetricAdapter
+  ]
+
   def slugs_by_filter(metric, from, to, operation, threshold, opts) do
     # In case of metrics like social_dominance_total that can be fetched
     # from 2 modules, make sure that the module that supports slug is preferred
@@ -356,20 +361,27 @@ defmodule Sanbase.Metric do
         metric_not_available_error(metric, type: :timeseries)
 
       module when is_atom(module) ->
-        aggregation = Keyword.get(opts, :aggregation, nil)
+        if operation in [:percent_up, :percent_down] and
+             module not in @percent_filter_modules do
+          {:error,
+           "The #{operation} operator is not supported for the metric #{metric}. " <>
+             "Use greater_than or less_than instead."}
+        else
+          aggregation = Keyword.get(opts, :aggregation, nil)
 
-        fun = fn ->
-          module.slugs_by_filter(
-            metric,
-            from,
-            to,
-            operation,
-            threshold,
-            opts
-          )
+          fun = fn ->
+            module.slugs_by_filter(
+              metric,
+              from,
+              to,
+              operation,
+              threshold,
+              opts
+            )
+          end
+
+          execute_if_aggregation_valid(fun, metric, aggregation)
         end
-
-        execute_if_aggregation_valid(fun, metric, aggregation)
     end
   end
 

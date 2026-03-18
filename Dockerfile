@@ -75,6 +75,7 @@ COPY src src
 # install npm dependencies first (cached unless package.json/lock changes)
 ENV NODE_ENV=production
 COPY assets/package.json assets/package-lock.json assets/
+COPY assets/graphiql/patch-monaco.sh assets/graphiql/patch-monaco.sh
 RUN cd assets && npm install
 
 COPY assets assets

@@ -26,7 +26,7 @@ import { isEffectivelyDark } from "./graphiql-theme.js";
 // CSS: base GraphiQL styles, explorer plugin styles, then our customizations
 import "graphiql/style.css";
 import "@graphiql/plugin-explorer/style.css";
-import "../css/graphiql.css";
+import "./graphiql.css";
 
 // --- Custom Monaco light theme ---
 // Registered via the public useMonaco() hook from @graphiql/react.

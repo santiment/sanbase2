@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { extractTables, sortRows, toCSV } from "../graphiql-table.js";
+import { extractTables, sortRows, toCSV } from "./graphiql-table.js";
 
 // ─── extractTables ───────────────────────────────────────────────
 

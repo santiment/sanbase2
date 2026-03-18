@@ -224,7 +224,7 @@ defmodule Sanbase.Mixfile do
         "assets.deploy": [
           "tailwind default --minify",
           "esbuild default --minify",
-          "esbuild graphiql",
+          "esbuild graphiql --minify",
           "phx.digest"
         ]
       ]

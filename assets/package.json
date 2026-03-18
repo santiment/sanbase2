@@ -1,5 +1,6 @@
 {
   "scripts": {
+    "postinstall": "sh graphiql/patch-monaco.sh",
     "test": "vitest run",
     "test:watch": "vitest"
   },

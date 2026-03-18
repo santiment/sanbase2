@@ -11,7 +11,8 @@ config :esbuild,
   ],
   graphiql: [
     args:
-      ~w(js/graphiql.js js/graphiql-editor.worker.js js/graphiql-json.worker.js js/graphiql-graphql.worker.js --bundle --minify --target=es2020 --outdir=../priv/static/assets --loader:.css=css --loader:.svg=dataurl --loader:.ttf=file --loader:.woff=file --loader:.woff2=file --log-override:css-syntax-error=silent),
+      ~w(graphiql/graphiql.js graphiql/graphiql-editor.worker.js graphiql/graphiql-json.worker.js graphiql/graphiql-graphql.worker.js --bundle --target=es2020 --outdir=../priv/static/assets --loader:.css=css --loader:.svg=dataurl --loader:.ttf=file --loader:.woff=file --loader:.woff2=file --log-override:css-syntax-error=silent) ++
+        ["--define:process.env.NODE_ENV=\"#{System.get_env("NODE_ENV", "development")}\""],
     cd: Path.expand("../assets", __DIR__),
     env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
   ]

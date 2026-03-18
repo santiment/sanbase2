@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { extractTimeseries } from "../graphiql-chart.js";
+import { extractTimeseries } from "./graphiql-chart.js";
 
 describe("extractTimeseries", function () {
   it("returns empty array for invalid JSON", function () {

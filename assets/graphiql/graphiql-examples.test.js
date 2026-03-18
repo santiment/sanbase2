@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import sections from "../graphiql-examples.js";
+import sections from "./graphiql-examples.js";
 
 describe("graphiql-examples", function () {
   it("exports an array of sections", function () {

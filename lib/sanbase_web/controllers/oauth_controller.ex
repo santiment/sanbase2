@@ -5,6 +5,8 @@ defmodule SanbaseWeb.OAuthController do
 
   use SanbaseWeb, :controller
 
+  require Logger
+
   alias Boruta.Oauth.AuthorizeResponse
   alias Boruta.Oauth.Error
   alias Boruta.Oauth.ResourceOwner
@@ -14,6 +16,7 @@ defmodule SanbaseWeb.OAuthController do
   # --- Metadata ---
 
   def metadata(conn, _params) do
+    Logger.info("[OAuth] metadata discovery hit")
     backend_url = Config.module_get(SanbaseWeb.Endpoint, :backend_url)
 
     metadata = %{
@@ -23,6 +26,7 @@ defmodule SanbaseWeb.OAuthController do
       registration_endpoint: "#{backend_url}/oauth/register",
       response_types_supported: ["code"],
       grant_types_supported: ["authorization_code", "refresh_token"],
+      scopes_supported: ["openid", "profile", "email", "offline_access", "read", "write", "mcp"],
       code_challenge_methods_supported: ["S256"],
       token_endpoint_auth_methods_supported: ["none", "client_secret_post", "client_secret_basic"]
     }
@@ -50,6 +54,8 @@ defmodule SanbaseWeb.OAuthController do
   # --- Authorize (GET) - preauthorize then show consent ---
 
   def authorize(%Plug.Conn{} = conn, _params) do
+    Logger.info("[OAuth] authorize — all params: #{inspect(conn.params)}")
+
     case current_user_from_session(conn) do
       {:ok, user} ->
         # If we arrived here after login redirect (no OAuth params), but the
@@ -118,6 +124,10 @@ defmodule SanbaseWeb.OAuthController do
   # --- Token ---
 
   def token(%Plug.Conn{} = conn, _params) do
+    Logger.info(
+      "[OAuth] token — grant_type: #{inspect(conn.params["grant_type"])}, client_id: #{inspect(conn.params["client_id"])}"
+    )
+
     conn = put_cors_headers(conn)
     Boruta.Oauth.token(conn, __MODULE__)
   end
@@ -125,6 +135,8 @@ defmodule SanbaseWeb.OAuthController do
   # --- Dynamic Client Registration (RFC 7591) ---
 
   def register(%Plug.Conn{} = conn, params) do
+    Logger.info("[OAuth] register — all params: #{inspect(params)}")
+
     registration_params =
       %{
         redirect_uris: params["redirect_uris"] || [],
@@ -156,6 +168,10 @@ defmodule SanbaseWeb.OAuthController do
   end
 
   def authorize_error(conn, %Error{format: format} = error) when not is_nil(format) do
+    Logger.warning(
+      "[OAuth] authorize_error (redirect) — error: #{inspect(error.error)}, desc: #{inspect(error.error_description)}"
+    )
+
     redirect(conn, external: Error.redirect_to_url(error))
   end
 
@@ -164,6 +180,10 @@ defmodule SanbaseWeb.OAuthController do
         error: error,
         error_description: error_description
       }) do
+    Logger.warning(
+      "[OAuth] authorize_error (json) — status: #{inspect(status)}, error: #{inspect(error)}, desc: #{inspect(error_description)}"
+    )
+
     conn
     |> put_status(status)
     |> json(%{error: error, error_description: error_description})
@@ -185,6 +205,10 @@ defmodule SanbaseWeb.OAuthController do
   end
 
   def preauthorize_error(conn, %Error{format: format} = error) when not is_nil(format) do
+    Logger.warning(
+      "[OAuth] preauthorize_error (redirect) — error: #{inspect(error.error)}, desc: #{inspect(error.error_description)}"
+    )
+
     redirect(conn, external: Error.redirect_to_url(error))
   end
 
@@ -193,6 +217,10 @@ defmodule SanbaseWeb.OAuthController do
         error: error,
         error_description: error_description
       }) do
+    Logger.warning(
+      "[OAuth] preauthorize_error (json) — status: #{inspect(status)}, error: #{inspect(error)}, desc: #{inspect(error_description)}"
+    )
+
     conn
     |> put_status(status)
     |> json(%{error: error, error_description: error_description})
@@ -217,6 +245,10 @@ defmodule SanbaseWeb.OAuthController do
 
   @impl Boruta.Oauth.TokenApplication
   def token_error(conn, %Error{status: status, error: error, error_description: error_description}) do
+    Logger.warning(
+      "[OAuth] token_error — status: #{inspect(status)}, error: #{inspect(error)}, desc: #{inspect(error_description)}"
+    )
+
     conn
     |> put_status(status)
     |> json(%{error: error, error_description: error_description})
@@ -226,6 +258,10 @@ defmodule SanbaseWeb.OAuthController do
 
   @impl Boruta.Openid.DynamicRegistrationApplication
   def client_registered(conn, client) do
+    Logger.info(
+      "[OAuth] client_registered — id: #{client.id}, name: #{inspect(client.name)}, redirect_uris: #{inspect(client.redirect_uris)}"
+    )
+
     response = %{
       client_id: client.id,
       client_secret: client.secret,
@@ -244,6 +280,8 @@ defmodule SanbaseWeb.OAuthController do
 
   @impl Boruta.Openid.DynamicRegistrationApplication
   def registration_failure(conn, changeset) do
+    Logger.warning("[OAuth] registration_failure — #{inspect(changeset.errors)}")
+
     errors =
       Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
         Enum.reduce(opts, msg, fn {key, value}, acc ->

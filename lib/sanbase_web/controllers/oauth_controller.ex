@@ -24,7 +24,7 @@ defmodule SanbaseWeb.OAuthController do
       response_types_supported: ["code"],
       grant_types_supported: ["authorization_code", "refresh_token"],
       code_challenge_methods_supported: ["S256"],
-      token_endpoint_auth_methods_supported: ["client_secret_post", "client_secret_basic"]
+      token_endpoint_auth_methods_supported: ["none", "client_secret_post", "client_secret_basic"]
     }
 
     conn |> put_cors_headers() |> json(metadata)
@@ -137,7 +137,7 @@ defmodule SanbaseWeb.OAuthController do
         refresh_token_ttl: 30 * 86_400
       }
       |> maybe_put(:client_name, params["client_name"])
-      |> maybe_put(:token_endpoint_auth_method, params["token_endpoint_auth_method"])
+      |> maybe_put_auth_method(params["token_endpoint_auth_method"])
 
     conn = put_cors_headers(conn)
     Boruta.Openid.register_client(conn, registration_params, __MODULE__)
@@ -306,7 +306,6 @@ defmodule SanbaseWeb.OAuthController do
   defp consent_html(user, conn, response) do
     user_display = Sanbase.Accounts.User.get_name(user)
     client_name = response.client.name || conn.params["client_id"] || "Unknown"
-    scope = response.scope || conn.params["scope"] || "default"
     csrf_token = Plug.CSRFProtection.get_csrf_token()
     query_string = conn.query_string
 
@@ -315,19 +314,19 @@ defmodule SanbaseWeb.OAuthController do
     <html>
     <head><title>Authorize MCP Access</title>
     <style>
-      body { font-family: system-ui, -apple-system, sans-serif; max-width: 480px; margin: 80px auto; padding: 0 20px; color: #1a1a1a; }
-      h1 { font-size: 1.4em; margin-bottom: 8px; }
-      p { color: #555; line-height: 1.5; }
-      .card { background: #f8f9fa; padding: 20px; border-radius: 10px; margin: 24px 0; border: 1px solid #e9ecef; }
-      .card dt { font-weight: 600; font-size: 0.85em; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 12px; }
+      body { font-family: system-ui, -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 0 20px; color: #2f354a; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
+      h1 { font-size: 1.5em; font-weight: 700; margin-bottom: 8px; text-align: center; }
+      p { color: #9faac4; line-height: 1.5; text-align: center; }
+      .card { background: #fff; padding: 24px; border-radius: 8px; margin: 24px 0; border: 1px solid #e7eaf3; width: 100%; }
+      .card dt { font-weight: 500; font-size: 0.75em; color: #9faac4; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 16px; }
       .card dt:first-child { margin-top: 0; }
-      .card dd { margin: 4px 0 0 0; font-size: 1.05em; }
-      .actions { display: flex; gap: 12px; margin-top: 28px; }
-      button { padding: 11px 28px; border-radius: 8px; border: 1px solid #d1d5db; cursor: pointer; font-size: 1em; font-weight: 500; transition: all 0.15s; }
-      .approve { background: #2563eb; color: white; border-color: #2563eb; }
-      .approve:hover { background: #1d4ed8; }
-      .deny { background: white; color: #374151; }
-      .deny:hover { background: #f3f4f6; }
+      .card dd { margin: 4px 0 0 0; font-size: 1.05em; color: #2f354a; }
+      .actions { display: flex; gap: 12px; margin-top: 28px; width: 100%; }
+      button { padding: 12px 32px; border-radius: 8px; border: 1px solid #e7eaf3; cursor: pointer; font-size: 1em; font-weight: 500; transition: all 0.15s; }
+      .approve { background: #14c393; color: white; border-color: #14c393; }
+      .approve:hover { background: #10a87e; }
+      .deny { background: white; color: #2f354a; }
+      .deny:hover { background: #f4f6fa; }
     </style>
     </head>
     <body>
@@ -336,7 +335,6 @@ defmodule SanbaseWeb.OAuthController do
       <dl class="card">
         <dt>Signed in as</dt><dd>#{Phoenix.HTML.html_escape(user_display) |> Phoenix.HTML.safe_to_string()}</dd>
         <dt>Client</dt><dd>#{Phoenix.HTML.html_escape(client_name) |> Phoenix.HTML.safe_to_string()}</dd>
-        <dt>Scope</dt><dd>#{Phoenix.HTML.html_escape(scope) |> Phoenix.HTML.safe_to_string()}</dd>
       </dl>
       <form method="post" action="/oauth/authorize?#{Phoenix.HTML.html_escape(query_string) |> Phoenix.HTML.safe_to_string()}">
         <input type="hidden" name="_csrf_token" value="#{csrf_token}" />
@@ -369,6 +367,12 @@ defmodule SanbaseWeb.OAuthController do
     </html>
     """
   end
+
+  # RFC 7591 allows "none" for public clients, but Boruta doesn't recognise it.
+  # Since we already set confidential: false + pkce: true, just drop "none".
+  defp maybe_put_auth_method(map, "none"), do: map
+  defp maybe_put_auth_method(map, nil), do: map
+  defp maybe_put_auth_method(map, method), do: Map.put(map, :token_endpoint_auth_method, method)
 
   defp maybe_put(map, _key, nil), do: map
   defp maybe_put(map, key, value), do: Map.put(map, key, value)

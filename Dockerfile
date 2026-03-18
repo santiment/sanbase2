@@ -72,6 +72,12 @@ COPY lib lib
 
 COPY src src
 
+# install npm dependencies first (cached unless package.json/lock changes)
+ENV NODE_ENV=production
+COPY assets/package.json assets/package-lock.json assets/
+COPY assets/graphiql/patch-monaco.sh assets/graphiql/patch-monaco.sh
+RUN cd assets && npm install
+
 COPY assets assets
 
 # check that the code is formatted
@@ -79,7 +85,6 @@ COPY .formatter.exs ./
 RUN mix format --check-formatted
 
 # compile assets
-RUN cd assets && npm install
 RUN mix assets.setup
 RUN mix assets.deploy
 
@@ -99,15 +104,15 @@ RUN mix release
 # the compiled release and other runtime necessities
 FROM ${RUNNER_IMAGE}
 
-RUN apt-get update -y && apt-get install -y libstdc++6 openssl libncurses5 locales imagemagick git curl \
+RUN apt-get update -y && apt-get install -y libstdc++6 openssl libncurses5 locales imagemagick \
   && apt-get clean && rm -f /var/lib/apt/lists/*_*
 
 # Set the locale
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
 
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
 
 WORKDIR "/app"
 

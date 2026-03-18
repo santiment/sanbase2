@@ -474,6 +474,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     do: to_datetime
 
   defp restrict_to(to_datetime, _, nil), do: to_datetime
+  defp restrict_to(to_datetime, _, 0), do: to_datetime
 
   defp restrict_to(to_datetime, _, days) do
     restrict_to = Timex.shift(Timex.now(), days: -days)

@@ -1,0 +1,493 @@
+/*
+ * Santiment GraphiQL — CSS customizations.
+ * All overrides prefixed with #graphiql for higher specificity
+ * than the base GraphiQL styles, so no !important needed.
+ */
+
+/* --- Theme-aware custom properties --- */
+:root {
+  --san-border: rgba(0, 0, 0, 0.15);
+  --san-bg-panel: #fff;
+  --san-bg-surface: #f4f5f6;
+  --san-bg-header: #fafafa;
+  --san-text: #1a1a2e;
+  --san-text-muted: #7b7b8e;
+  --san-table-row-alt: #f9fafb;
+  --san-table-sort: #1565c0;
+  --san-table-hover: rgba(41, 98, 255, 0.07);
+  --san-overlay-shadow: rgba(0, 0, 0, 0.18);
+  --san-chart-grid: rgba(0, 0, 0, 0.06);
+}
+
+.graphiql-container.graphiql-dark,
+.graphiql-dark {
+  --san-border: rgba(255, 255, 255, 0.12);
+  --san-bg-panel: #1e1e1e;
+  --san-bg-surface: #161616;
+  --san-bg-header: #252525;
+  --san-text: #d4d4d4;
+  --san-text-muted: #888;
+  --san-table-row-alt: rgba(255, 255, 255, 0.02);
+  --san-table-sort: #5B9BFF;
+  --san-table-hover: rgba(91, 155, 255, 0.08);
+  --san-overlay-shadow: rgba(0, 0, 0, 0.4);
+  --san-chart-grid: rgba(255, 255, 255, 0.06);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(:has(.graphiql-light)) {
+    --san-border: rgba(255, 255, 255, 0.12);
+    --san-bg-panel: #1e1e1e;
+    --san-bg-surface: #161616;
+    --san-bg-header: #252525;
+    --san-text: #d4d4d4;
+    --san-text-muted: #888;
+    --san-table-row-alt: rgba(255, 255, 255, 0.02);
+    --san-table-sort: #5B9BFF;
+    --san-table-hover: rgba(91, 155, 255, 0.08);
+    --san-overlay-shadow: rgba(0, 0, 0, 0.4);
+    --san-chart-grid: rgba(255, 255, 255, 0.06);
+  }
+}
+
+/* --- Flat, minimal look --- */
+#graphiql .graphiql-container button,
+#graphiql .graphiql-container [class*="editor"],
+#graphiql .graphiql-dialog,
+#graphiql .graphiql-dropdown {
+  border-radius: 2px;
+}
+
+#graphiql .graphiql-dialog,
+#graphiql .graphiql-dropdown,
+#graphiql .graphiql-toolbar button,
+#graphiql .graphiql-execute-button,
+#graphiql .graphiql-editors {
+  box-shadow: none;
+}
+
+/* --- Session header / tab bar --- */
+#graphiql .graphiql-session-header {
+  padding: 4px 8px;
+  min-height: unset;
+  border-bottom: 1px solid var(--san-border);
+  background: var(--san-bg-header);
+}
+
+#graphiql .graphiql-tab {
+  padding: 4px 10px;
+  font-size: 13px;
+}
+
+#graphiql .graphiql-tab-add {
+  padding: 4px 8px;
+  font-size: 13px;
+}
+
+/* --- Toolbar --- */
+#graphiql .graphiql-toolbar {
+  padding: 2px;
+  gap: 4px;
+  align-items: center;
+}
+
+#graphiql .graphiql-toolbar button:not(.graphiql-execute-button) {
+  width: 28px;
+  height: 28px;
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#graphiql .graphiql-toolbar button:not(.graphiql-execute-button) svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Execute button */
+#graphiql .graphiql-execute-button {
+  box-shadow: none;
+  border-radius: 2px;
+  width: 28px;
+  height: 28px;
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#graphiql .graphiql-execute-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* --- Sidebar --- */
+#graphiql .graphiql-sidebar {
+  overflow-x: hidden;
+  overflow-y: auto;
+  min-width: 0;
+  width: 36px;
+  padding: 2px;
+}
+
+#graphiql .graphiql-sidebar button {
+  width: 28px;
+  height: 28px;
+  padding: 4px;
+}
+
+#graphiql .graphiql-sidebar button svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* --- Editor tools tabs (Variables / Headers) --- */
+#graphiql .graphiql-editor-tools-tabs button {
+  padding: 4px 10px;
+  font-size: 13px;
+}
+
+/* --- Dialogs / dropdowns --- */
+#graphiql .graphiql-dialog,
+#graphiql .graphiql-dropdown {
+  border: 1px solid var(--san-border);
+}
+
+/* --- Plugin panel --- */
+#graphiql .graphiql-plugin {
+  border-right: 1px solid var(--san-border);
+  min-width: 200px;
+}
+
+/* --- Layout: surface background with bordered panels --- */
+#graphiql .graphiql-container {
+  background: var(--san-bg-surface);
+}
+
+#graphiql .graphiql-editors {
+  background: var(--san-bg-panel);
+  border: 1px solid var(--san-border);
+  border-radius: 3px;
+  margin: 8px 4px 8px 8px;
+  overflow: hidden;
+}
+
+#graphiql .graphiql-sessions {
+  background: var(--san-bg-panel);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+#graphiql .graphiql-editor-tools {
+  border-top: 1px solid var(--san-border);
+}
+
+/* --- Hide default logo --- */
+#graphiql .graphiql-logo {
+  display: none;
+}
+
+/* --- Response panel --- */
+#graphiql .graphiql-response {
+  background: var(--san-bg-panel);
+  border: 1px solid var(--san-border);
+  border-radius: 3px;
+  margin: 8px 8px 8px 4px;
+  overflow: hidden;
+}
+
+/* --- Tab rename input --- */
+#graphiql .graphiql-tab-button input {
+  all: unset;
+  font: inherit;
+  cursor: text;
+  min-width: 50px;
+  text-align: center;
+  border-bottom: 1px solid var(--san-border);
+}
+
+/* --- Loading state --- */
+.graphiql-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  font-family: system-ui, -apple-system, sans-serif;
+  color: #555;
+  font-size: 16px;
+  background: #f5f5f5;
+}
+
+.graphiql-loading-error {
+  color: #c33;
+  display: none;
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+/* --- Example Queries plugin --- */
+#graphiql .graphiql-example-item:hover {
+  background: hsla(var(--color-neutral-20), 0.5);
+  border-color: var(--san-border);
+}
+
+/* --- Chart modal --- */
+.san-chart-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+}
+
+.san-chart-modal {
+  width: 90vw;
+  height: 75vh;
+  max-width: 1400px;
+  max-height: 900px;
+  background: var(--san-bg-panel);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px var(--san-overlay-shadow);
+}
+
+.san-chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--san-border);
+}
+
+.san-chart-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--san-text);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.san-chart-close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--san-text-muted);
+  padding: 4px 8px;
+  line-height: 1;
+}
+
+.san-chart-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--san-text-muted);
+  font-size: 14px;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.san-chart-container {
+  flex: 1;
+}
+
+/* --- Table modal --- */
+.san-table-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+}
+
+.san-table-modal {
+  width: 92vw;
+  height: 80vh;
+  max-width: 1500px;
+  max-height: 950px;
+  background: var(--san-bg-panel);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px var(--san-overlay-shadow);
+}
+
+.san-table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--san-border);
+  flex-shrink: 0;
+}
+
+.san-table-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow: auto;
+  flex: 1;
+  min-width: 0;
+}
+
+.san-table-tab {
+  border-radius: 3px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: system-ui, -apple-system, sans-serif;
+  white-space: nowrap;
+  background: transparent;
+  color: var(--san-text);
+  border: 1px solid var(--san-border);
+  font-weight: 400;
+}
+
+.san-table-tab[data-active="true"] {
+  background: #2962FF;
+  color: #fff;
+  border-color: #2962FF;
+  font-weight: 600;
+}
+
+.san-table-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 12px;
+  flex-shrink: 0;
+}
+
+.san-table-export-btn {
+  background: var(--san-bg-surface);
+  border: 1px solid var(--san-border);
+  border-radius: 3px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: system-ui, -apple-system, sans-serif;
+  color: var(--san-text);
+}
+
+.san-table-export-btn:hover {
+  background: var(--san-bg-header);
+}
+
+.san-table-close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--san-text-muted);
+  padding: 4px 8px;
+  line-height: 1;
+}
+
+.san-table-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--san-text-muted);
+  font-size: 14px;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.san-table-scroll {
+  flex: 1;
+  overflow: auto;
+}
+
+.san-table-scroll table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+}
+
+.san-table-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--san-bg-header);
+  border-bottom: 2px solid var(--san-border);
+  padding: 0;
+  text-align: left;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--san-text);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.san-table-scroll thead th[data-sorted="true"] {
+  color: var(--san-table-sort);
+}
+
+.san-table-sort-btn {
+  all: unset;
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.san-table-sort-btn:focus-visible {
+  outline: 2px solid var(--san-table-sort);
+  outline-offset: -2px;
+  border-radius: 2px;
+}
+
+.san-table-scroll thead th.san-table-rownum {
+  text-align: right;
+  color: var(--san-text-muted);
+  cursor: default;
+  width: 40px;
+}
+
+.san-table-scroll tbody td {
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--san-border);
+  color: var(--san-text);
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.san-table-scroll tbody td.san-table-rownum {
+  text-align: right;
+  color: var(--san-text-muted);
+  font-size: 11px;
+}
+
+.san-table-scroll tbody tr:nth-child(even) {
+  background: var(--san-table-row-alt);
+}
+
+.san-table-scroll tbody tr:hover td {
+  background: var(--san-table-hover);
+}
+
+.san-table-truncated {
+  padding: 10px;
+  text-align: center;
+  color: var(--san-text-muted);
+  font-size: 12px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-style: italic;
+}

@@ -1,11 +1,13 @@
 /**
  * Chart modal overlay for GraphiQL.
  * Shows an interactive timeseries chart over the response data.
+ *
+ * Theme is handled via CSS custom properties (--san-*) defined in graphiql.css,
+ * so it follows GraphiQL's light/dark toggle automatically.
  */
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useGraphiQL } from "@graphiql/react";
 import { extractTimeseries, renderChart } from "./graphiql-chart.js";
-import { isEffectivelyDark } from "./graphiql-theme.js";
 
 // ─── Chart Modal ────────────────────────────────────────────────
 
@@ -17,31 +19,64 @@ function ChartModal({ onClose }) {
     return state.responseEditor;
   });
 
-  const isDark = isEffectivelyDark();
+  // Track editor content so series recompute when the response changes,
+  // not just when the editor instance is created.
+  const [responseText, setResponseText] = useState(function () {
+    return responseEditor ? responseEditor.getValue() : "";
+  });
+
+  useEffect(function () {
+    if (!responseEditor) return;
+    setResponseText(responseEditor.getValue());
+    const disposable = responseEditor.onDidChangeModelContent(function () {
+      setResponseText(responseEditor.getValue());
+    });
+    return function () { disposable.dispose(); };
+  }, [responseEditor]);
 
   const series = React.useMemo(
     function () {
-      if (!responseEditor) return [];
-      const text = responseEditor.getValue();
-      return extractTimeseries(text);
+      if (!responseText) return [];
+      return extractTimeseries(responseText);
     },
-    [responseEditor]
+    [responseText]
   );
 
   useEffect(
     function () {
       if (!containerRef.current || series.length === 0) return;
-      // Clean up previous chart
-      if (cleanupRef.current) cleanupRef.current();
-      cleanupRef.current = renderChart(containerRef.current, series, isDark);
+
+      function doRender() {
+        if (cleanupRef.current) cleanupRef.current();
+        var style = getComputedStyle(containerRef.current);
+        var chartColors = {
+          bg: style.getPropertyValue("--san-bg-panel").trim() || "#ffffff",
+          text: style.getPropertyValue("--san-text").trim() || "#333333",
+          grid: style.getPropertyValue("--san-chart-grid").trim() || "rgba(0,0,0,0.06)",
+        };
+        cleanupRef.current = renderChart(containerRef.current, series, chartColors);
+      }
+
+      doRender();
+
+      // Re-render chart when theme toggles (class change on .graphiql-container)
+      var themeTarget = document.querySelector(".graphiql-container");
+      var observer = themeTarget
+        ? new MutationObserver(function () { doRender(); })
+        : null;
+      if (observer) {
+        observer.observe(themeTarget, { attributes: true, attributeFilter: ["class"] });
+      }
+
       return function () {
+        if (observer) observer.disconnect();
         if (cleanupRef.current) {
           cleanupRef.current();
           cleanupRef.current = null;
         }
       };
     },
-    [series, isDark]
+    [series]
   );
 
   // Close on Escape
@@ -58,58 +93,21 @@ function ChartModal({ onClose }) {
   return React.createElement(
     "div",
     {
-      style: {
-        position: "fixed",
-        inset: 0,
-        zIndex: 10000,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "rgba(0,0,0,0.5)",
-        backdropFilter: "blur(2px)",
-      },
+      className: "san-chart-overlay",
       onClick: function (e) {
         if (e.target === e.currentTarget) onClose();
       },
     },
     React.createElement(
       "div",
-      {
-        style: {
-          width: "90vw",
-          height: "75vh",
-          maxWidth: 1400,
-          maxHeight: 900,
-          background: isDark ? "#1e1e1e" : "#ffffff",
-          borderRadius: 8,
-          overflow: "hidden",
-          display: "flex",
-          flexDirection: "column",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
-        },
-      },
+      { className: "san-chart-modal" },
       // Header
       React.createElement(
         "div",
-        {
-          style: {
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "10px 16px",
-            borderBottom: "1px solid " + (isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"),
-          },
-        },
+        { className: "san-chart-header" },
         React.createElement(
           "span",
-          {
-            style: {
-              fontWeight: 600,
-              fontSize: 14,
-              color: isDark ? "#d4d4d4" : "#333",
-              fontFamily: "system-ui, -apple-system, sans-serif",
-            },
-          },
+          { className: "san-chart-title" },
           series.length > 0
             ? series.map(function (s) { return s.label; }).join(", ")
             : "Chart"
@@ -117,18 +115,10 @@ function ChartModal({ onClose }) {
         React.createElement(
           "button",
           {
+            className: "san-chart-close-btn",
             onClick: onClose,
             type: "button",
             "aria-label": "Close chart",
-            style: {
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              fontSize: 18,
-              color: isDark ? "#999" : "#666",
-              padding: "4px 8px",
-              lineHeight: 1,
-            },
           },
           "\u2715"
         )
@@ -137,22 +127,12 @@ function ChartModal({ onClose }) {
       series.length === 0
         ? React.createElement(
             "div",
-            {
-              style: {
-                flex: 1,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: isDark ? "#666" : "#999",
-                fontSize: 14,
-                fontFamily: "system-ui, -apple-system, sans-serif",
-              },
-            },
+            { className: "san-chart-empty" },
             "No timeseries data found in the response. Run a query with timeseriesData or timeseriesDataJson first."
           )
         : React.createElement("div", {
             ref: containerRef,
-            style: { flex: 1 },
+            className: "san-chart-container",
           })
     )
   );

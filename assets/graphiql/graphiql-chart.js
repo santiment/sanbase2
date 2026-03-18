@@ -39,14 +39,21 @@ function walkNode(node, path, series) {
 
   // Case 2: Array — check for various timeseries shapes
   if (Array.isArray(node) && node.length > 0) {
-    // 2a: [{datetime, value}, ...] — simple timeseries
-    if (isDatetimeValueArray(node)) {
-      series.push({
-        label: pathToLabel(path),
-        data: node.map(function (p) {
-          return { time: toUnix(p.datetime), value: Number(p.value) };
-        }).filter(function (p) { return !isNaN(p.time) && !isNaN(p.value); }),
-      });
+    // 2a: [{datetime, <numeric_field>}, ...] — simple timeseries
+    // Detects any array of objects with a `datetime` key and at least one numeric field.
+    // This handles {datetime, value}, {datetime, balance}, {datetime, price}, etc.
+    var numericKeys = getDatetimeNumericKeys(node);
+    if (numericKeys.length > 0) {
+      for (var ki = 0; ki < numericKeys.length; ki++) {
+        var nk = numericKeys[ki];
+        var label = numericKeys.length === 1 ? pathToLabel(path) : pathToLabel(path.concat(nk));
+        series.push({
+          label: label,
+          data: node.map(function (p) {
+            return { time: toUnix(p.datetime), value: p[nk] === null ? NaN : Number(p[nk]) };
+          }).filter(function (p) { return !isNaN(p.time) && !isNaN(p.value); }),
+        });
+      }
       return;
     }
     // 2b: [{datetime, data: [{slug, value}, ...]}, ...] — per-slug timeseries
@@ -101,14 +108,19 @@ function tryParseJsonString(str, path, series) {
       });
       return;
     }
-    // Array of {datetime, value} objects (some endpoints return this as JSON string)
-    if (isDatetimeValueArray(parsed)) {
-      series.push({
-        label: pathToLabel(path),
-        data: parsed.map(function (p) {
-          return { time: toUnix(p.datetime), value: Number(p.value) };
-        }).filter(function (p) { return !isNaN(p.time) && !isNaN(p.value); }),
-      });
+    // Array of {datetime, <numeric>} objects (some endpoints return this as JSON string)
+    var parsedNumKeys = getDatetimeNumericKeys(parsed);
+    if (parsedNumKeys.length > 0) {
+      for (var pki = 0; pki < parsedNumKeys.length; pki++) {
+        var pk = parsedNumKeys[pki];
+        var pkLabel = parsedNumKeys.length === 1 ? pathToLabel(path) : pathToLabel(path.concat(pk));
+        series.push({
+          label: pkLabel,
+          data: parsed.map(function (p) {
+            return { time: toUnix(p.datetime), value: p[pk] === null ? NaN : Number(p[pk]) };
+          }).filter(function (p) { return !isNaN(p.time) && !isNaN(p.value); }),
+        });
+      }
       return;
     }
     // Array of {datetime, data: [{slug, value}, ...]} — per-slug as JSON string
@@ -146,10 +158,26 @@ function tryParseJsonString(str, path, series) {
   }
 }
 
-function isDatetimeValueArray(arr) {
-  if (arr.length === 0) return false;
-  const first = arr[0];
-  return first && typeof first === "object" && "datetime" in first && "value" in first;
+/**
+ * Check if an array looks like [{datetime, <numeric_field>}, ...].
+ * Returns the list of numeric field names (excluding "datetime"),
+ * or an empty array if not a datetime-keyed timeseries.
+ */
+function getDatetimeNumericKeys(arr) {
+  if (arr.length === 0) return [];
+  var first = arr[0];
+  if (!first || typeof first !== "object" || !("datetime" in first)) return [];
+  var keys = Object.keys(first);
+  var numeric = [];
+  for (var i = 0; i < keys.length; i++) {
+    if (keys[i] === "datetime") continue;
+    // Skip nested objects/arrays — only scalar numeric fields
+    var v = first[keys[i]];
+    if (v !== null && typeof v !== "object" && !isNaN(Number(v))) {
+      numeric.push(keys[i]);
+    }
+  }
+  return numeric;
 }
 
 function isPerSlugArray(arr) {
@@ -190,12 +218,15 @@ const COLORS = [
 
 /**
  * Render a lightweight-charts instance into a container element.
+ * @param {HTMLElement} container
+ * @param {Array} seriesList
+ * @param {{bg: string, text: string, grid: string}} colors — resolved CSS color strings
  * Returns a cleanup function.
  */
-export function renderChart(container, seriesList, isDark) {
-  const bgColor = isDark ? "#1e1e1e" : "#ffffff";
-  const textColor = isDark ? "#d4d4d4" : "#333333";
-  const gridColor = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)";
+export function renderChart(container, seriesList, colors) {
+  const bgColor = colors.bg;
+  const textColor = colors.text;
+  const gridColor = colors.grid;
 
   const chart = createChart(container, {
     width: container.clientWidth,

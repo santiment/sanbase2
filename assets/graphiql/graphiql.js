@@ -20,12 +20,13 @@ import { useMonaco } from "@graphiql/react";
 import { explorerPlugin } from "@graphiql/plugin-explorer";
 import { examplesPlugin } from "./graphiql-examples-plugin.js";
 import { ChartButton } from "./graphiql-chart-modal.js";
+import { TableButton } from "./graphiql-table-modal.js";
 import { isEffectivelyDark } from "./graphiql-theme.js";
 
 // CSS: base GraphiQL styles, explorer plugin styles, then our customizations
 import "graphiql/style.css";
 import "@graphiql/plugin-explorer/style.css";
-import "../css/graphiql.css";
+import "./graphiql.css";
 
 // --- Custom Monaco light theme ---
 // Registered via the public useMonaco() hook from @graphiql/react.
@@ -267,7 +268,8 @@ root.render(
           props.prettify,
           props.merge,
           props.copy,
-          React.createElement(ChartButton)
+          React.createElement(ChartButton),
+          React.createElement(TableButton)
         );
       }
     )

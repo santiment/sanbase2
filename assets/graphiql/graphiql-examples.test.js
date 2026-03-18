@@ -30,6 +30,8 @@ describe("graphiql-examples", function () {
       expect(section.title.toLowerCase()).not.toContain("raw sql");
       section.items.forEach(function (example) {
         expect(example.name.toLowerCase()).not.toContain("raw sql");
+        expect(example.query).not.toContain("runRawSqlQuery");
+        expect(example.query).not.toContain("sqlQueryText");
       });
     });
   });

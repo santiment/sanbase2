@@ -172,6 +172,22 @@ describe("extractTables", function () {
     expect(labels).toContain("metrics");
   });
 
+  // ─── Late-appearing columns ────────────────────────────────
+
+  it("discovers columns that first appear after row 50", function () {
+    var rows = [];
+    for (var i = 0; i < 55; i++) {
+      var row = { id: i, name: "item-" + i };
+      if (i >= 51) row.extra = "late-" + i;
+      rows.push(row);
+    }
+    var response = { data: { items: rows } };
+    var result = extractTables(JSON.stringify(response));
+    expect(result).toHaveLength(1);
+    expect(result[0].columns).toContain("extra");
+    expect(result[0].rows[52].extra).toBe("late-52");
+  });
+
   // ─── Null values handled ───────────────────────────────────
 
   it("handles null values in objects", function () {

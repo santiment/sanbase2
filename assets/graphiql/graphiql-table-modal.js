@@ -66,7 +66,9 @@ function TableModal(props) {
     setSortDir(SORT_ASC);
   }, []);
 
-  var currentDataset = datasets[activeTab] || null;
+  // Clamp tab index if datasets shrinks (e.g. new query with fewer result sets)
+  var resolvedTab = datasets.length === 0 ? 0 : Math.min(activeTab, datasets.length - 1);
+  var currentDataset = datasets[resolvedTab] || null;
 
   var sortedRows = useMemo(function () {
     if (!currentDataset) return [];
@@ -119,7 +121,12 @@ function TableModal(props) {
     },
     React.createElement(
       "div",
-      { className: "san-table-modal" },
+      {
+        className: "san-table-modal",
+        role: "dialog",
+        "aria-modal": "true",
+        "aria-label": "Query results table",
+      },
       // ─── Header bar ───
       React.createElement(
         "div",
@@ -138,7 +145,7 @@ function TableModal(props) {
                   {
                     key: i,
                     className: "san-table-tab",
-                    "data-active": String(i === activeTab),
+                    "data-active": String(i === resolvedTab),
                     onClick: function () { handleTabChange(i); },
                     type: "button",
                   },
@@ -197,9 +204,19 @@ function TableModal(props) {
                       {
                         key: col,
                         "data-sorted": String(isSorted),
-                        onClick: function () { handleSort(col); },
+                        "aria-sort": isSorted
+                          ? (sortDir === SORT_ASC ? "ascending" : "descending")
+                          : "none",
                       },
-                      col + arrow
+                      React.createElement(
+                        "button",
+                        {
+                          type: "button",
+                          className: "san-table-sort-btn",
+                          onClick: function () { handleSort(col); },
+                        },
+                        col + arrow
+                      )
                     );
                   })
                 )
@@ -285,6 +302,7 @@ export function TableButton() {
       {
         className: "graphiql-toolbar-button",
         title: "Show Table",
+        "aria-label": "Show table",
         onClick: toggle,
         type: "button",
         style: {

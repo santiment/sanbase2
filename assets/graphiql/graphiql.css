@@ -411,7 +411,7 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 12px;
-  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
 }
 
 .san-table-scroll thead th {
@@ -420,9 +420,8 @@
   z-index: 1;
   background: var(--san-bg-header);
   border-bottom: 2px solid var(--san-border);
-  padding: 6px 10px;
+  padding: 0;
   text-align: left;
-  cursor: pointer;
   font-family: system-ui, -apple-system, sans-serif;
   font-size: 11px;
   font-weight: 600;
@@ -433,6 +432,24 @@
 
 .san-table-scroll thead th[data-sorted="true"] {
   color: var(--san-table-sort);
+}
+
+.san-table-sort-btn {
+  all: unset;
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.san-table-sort-btn:focus-visible {
+  outline: 2px solid var(--san-table-sort);
+  outline-offset: -2px;
+  border-radius: 2px;
 }
 
 .san-table-scroll thead th.san-table-rownum {

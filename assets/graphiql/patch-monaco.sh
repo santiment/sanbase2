@@ -1,4 +1,6 @@
 #!/bin/sh
+set -eu
+
 # Patch monaco-graphql to use a slim Monaco build instead of the full editor.
 #
 # monaco-graphql/esm/monaco-editor.js re-exports from edcore.main.js which
@@ -14,8 +16,11 @@ if [ ! -f "$SHIM" ]; then
   exit 0
 fi
 
-cat > "$SHIM" << 'EOF'
-// Patched by scripts/patch-monaco.sh — slim build for GraphiQL
+TMP_SHIM="${SHIM}.tmp"
+trap 'rm -f "$TMP_SHIM"' EXIT INT TERM
+
+cat > "$TMP_SHIM" << 'EOF'
+// Patched by graphiql/patch-monaco.sh — slim build for GraphiQL
 import 'monaco-editor/esm/vs/basic-languages/graphql/graphql.contribution.js';
 import 'monaco-editor/esm/vs/language/json/monaco.contribution.js';
 
@@ -36,4 +41,6 @@ import 'monaco-editor/esm/vs/base/browser/ui/codicons/codiconStyles.js';
 export * from 'monaco-editor/esm/vs/editor/editor.api.js';
 EOF
 
+mv "$TMP_SHIM" "$SHIM"
+trap - EXIT INT TERM
 echo "patch-monaco: patched $SHIM (slim build)"

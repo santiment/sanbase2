@@ -54,12 +54,18 @@ var styles = {
     margin: "0 0 12px 0",
   },
   sectionHeader: {
+    appearance: "none",
+    border: "none",
+    background: "transparent",
+    margin: 0,
+    padding: "6px 4px",
     display: "flex",
     alignItems: "center",
     gap: "6px",
-    padding: "6px 4px",
     marginTop: "8px",
     marginBottom: "2px",
+    width: "100%",
+    boxSizing: "border-box",
     cursor: "pointer",
     userSelect: "none",
     fontSize: "11px",
@@ -67,6 +73,7 @@ var styles = {
     textTransform: "uppercase",
     letterSpacing: "0.6px",
     color: "hsl(var(--color-neutral-50))",
+    font: "inherit",
   },
   sectionArrow: {
     fontSize: "9px",
@@ -75,12 +82,20 @@ var styles = {
     transition: "transform 0.15s",
   },
   item: {
+    appearance: "none",
+    background: "transparent",
+    font: "inherit",
+    color: "inherit",
+    display: "block",
+    width: "100%",
+    boxSizing: "border-box",
     padding: "8px 10px",
     marginBottom: "4px",
     borderRadius: "4px",
     cursor: "pointer",
     border: "1px solid transparent",
     transition: "background 0.15s, border-color 0.15s",
+    textAlign: "left",
   },
   itemName: {
     fontWeight: 500,
@@ -139,15 +154,19 @@ function ExamplesContent() {
     // Section header
     elements.push(
       React.createElement(
-        "div",
+        "button",
         {
           key: "sec-" + si,
+          type: "button",
           style: styles.sectionHeader,
+          "aria-expanded": String(!isCollapsed),
+          "aria-label": (isCollapsed ? "Expand" : "Collapse") + " " + section.title,
           onClick: function () { toggleSection(si); },
         },
         React.createElement(
           "span",
           {
+            "aria-hidden": "true",
             style: Object.assign({}, styles.sectionArrow, {
               transform: isCollapsed ? "rotate(-90deg)" : "rotate(0deg)",
             }),
@@ -163,11 +182,13 @@ function ExamplesContent() {
       section.items.forEach(function (example, ei) {
         elements.push(
           React.createElement(
-            "div",
+            "button",
             {
               key: "ex-" + si + "-" + ei,
+              type: "button",
               style: styles.item,
               className: "graphiql-example-item",
+              "aria-label": "Load example: " + example.name,
               onClick: function () { handleClick(example); },
             },
             React.createElement("div", { style: styles.itemName }, example.name),

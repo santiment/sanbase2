@@ -38,7 +38,8 @@ function walkNode(node, path, datasets) {
   // Array of objects → candidate table
   if (Array.isArray(node) && node.length > 0) {
     if (isObjectArray(node)) {
-      var flat = flattenRows(node);
+      var objectRows = node.filter(function (row) { return row != null; });
+      var flat = flattenRows(objectRows);
       if (flat.columns.length > 0) {
         datasets.push({
           label: pathToLabel(path),
@@ -65,12 +66,14 @@ function walkNode(node, path, datasets) {
       return Array.isArray(node[k]) || (node[k] && typeof node[k] === "object" && !Array.isArray(node[k]) && hasNestedArray(node[k]));
     });
 
+    var datasetsBefore = datasets.length;
+
     for (var j = 0; j < keys.length; j++) {
       walkNode(node[keys[j]], path.concat(keys[j]), datasets);
     }
 
     // If no child arrays were found and this object has scalar fields, add as single-row table
-    if (!hasChildArrays && datasets.length === 0 && path.length > 0) {
+    if (!hasChildArrays && datasets.length === datasetsBefore && path.length > 0) {
       var scalars = extractScalars(node);
       if (scalars.columns.length >= 2) {
         datasets.push({
@@ -140,8 +143,14 @@ function tryParseJsonString(str, path, datasets) {
 // ─── Helpers ─────────────────────────────────────────────────────
 
 function isObjectArray(arr) {
-  var first = arr[0];
-  return first !== null && typeof first === "object" && !Array.isArray(first);
+  var hasObject = false;
+  for (var i = 0; i < arr.length; i++) {
+    var item = arr[i];
+    if (item == null) continue;
+    if (typeof item !== "object" || Array.isArray(item)) return false;
+    hasObject = true;
+  }
+  return hasObject;
 }
 
 function isArrayOfPairs(arr) {
@@ -181,20 +190,14 @@ function extractScalars(obj) {
  * Arrays/objects beyond one level of nesting are JSON-stringified.
  */
 function flattenRows(rows) {
-  // Collect all column names from first N rows to discover all keys
-  var sampleSize = Math.min(rows.length, 50);
   var columnSet = {};
   var columnOrder = [];
-
-  for (var i = 0; i < sampleSize; i++) {
-    collectColumns(rows[i], "", columnSet, columnOrder);
-  }
-
-  // Build flat rows
   var flatRows = [];
-  for (var j = 0; j < rows.length; j++) {
+
+  for (var i = 0; i < rows.length; i++) {
     var flat = {};
-    flattenObject(rows[j], "", flat);
+    flattenObject(rows[i], "", flat);
+    collectColumns(flat, "", columnSet, columnOrder);
     flatRows.push(flat);
   }
 
@@ -304,7 +307,12 @@ export function toCSV(columns, rows) {
 }
 
 function csvEscape(value) {
-  if (value.indexOf(",") !== -1 || value.indexOf('"') !== -1 || value.indexOf("\n") !== -1) {
+  if (
+    value.indexOf(",") !== -1 ||
+    value.indexOf('"') !== -1 ||
+    value.indexOf("\n") !== -1 ||
+    value.indexOf("\r") !== -1
+  ) {
     return '"' + value.replace(/"/g, '""') + '"';
   }
   return value;

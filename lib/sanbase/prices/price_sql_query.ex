@@ -284,6 +284,60 @@ defmodule Sanbase.Price.SqlQuery do
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
+  def slugs_by_filter_query(metric, from, to, operation, threshold, aggregation, source)
+      when operation in [:percent_up, :percent_down] do
+    prev_from = DateTime.add(from, -DateTime.diff(to, from))
+    threshold = threshold / 1.0
+
+    comparison =
+      case operation do
+        :percent_up -> "value >= #{threshold}"
+        :percent_down -> "value <= #{-threshold}"
+      end
+
+    sql = """
+    SELECT slug, value
+    FROM (
+      SELECT
+        curr.slug AS slug,
+        ((curr.value - prev.value) / prev.value) * 100 AS value
+      FROM (
+        SELECT slug, #{aggregation(aggregation, "#{metric}", "dt")} AS value
+        FROM #{@table}
+        WHERE
+          isNotNull(#{metric}) AND NOT isNaN(#{metric}) AND
+          #{if metric == "marketcap_usd", do: "marketcap_usd > 0 AND"}
+          dt >= toDateTime({{from}}) AND
+          dt < toDateTime({{to}}) AND
+          source = cast({{source}}, 'LowCardinality(String)')
+        GROUP BY slug
+      ) curr
+      INNER JOIN (
+        SELECT slug, #{aggregation(aggregation, "#{metric}", "dt")} AS value
+        FROM #{@table}
+        WHERE
+          isNotNull(#{metric}) AND NOT isNaN(#{metric}) AND
+          #{if metric == "marketcap_usd", do: "marketcap_usd > 0 AND"}
+          dt >= toDateTime({{prev_from}}) AND
+          dt < toDateTime({{from}}) AND
+          source = cast({{source}}, 'LowCardinality(String)')
+        GROUP BY slug
+      ) prev ON curr.slug = prev.slug
+      WHERE prev.value != 0
+    )
+    WHERE #{comparison}
+    """
+
+    params = %{
+      prev_from: dt_to_unix(:from, prev_from),
+      from: dt_to_unix(:from, from),
+      to: dt_to_unix(:to, to),
+      source: source
+    }
+
+    Sanbase.Clickhouse.Query.new(sql, params)
+  end
+
   def slugs_by_filter_query(metric, from, to, operation, threshold, aggregation, source) do
     query_struct = filter_order_base_query(metric, from, to, aggregation, source)
 

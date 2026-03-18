@@ -292,6 +292,9 @@ config :sanbase, Oban.Web,
     notifications_queue: 1,
     reminder_notifications_queue: 1
   ],
+  plugins: [
+    {Oban.Plugins.Pruner, max_age: 7 * 86_400}
+  ],
   name: :oban_web
 
 config :sanbase, Oban.Admin,

@@ -17,7 +17,7 @@ defmodule Sanbase.Cryptocompare.Price.HistoricalWorker do
   use Oban.Worker,
     queue: :cryptocompare_historical_jobs_queue,
     max_attempts: 20,
-    unique: [period: 60 * 86_400]
+    unique: [period: 7 * 86_400]
 
   alias Sanbase.Cryptocompare.HTTPHeaderUtils
 

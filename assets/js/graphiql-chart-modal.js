@@ -45,17 +45,31 @@ function ChartModal({ onClose }) {
   useEffect(
     function () {
       if (!containerRef.current || series.length === 0) return;
-      // Clean up previous chart
-      if (cleanupRef.current) cleanupRef.current();
-      // Read resolved CSS variable values so lightweight-charts gets real color strings
-      var style = getComputedStyle(containerRef.current);
-      var chartColors = {
-        bg: style.getPropertyValue("--san-bg-panel").trim() || "#ffffff",
-        text: style.getPropertyValue("--san-text").trim() || "#333333",
-        grid: style.getPropertyValue("--san-chart-grid").trim() || "rgba(0,0,0,0.06)",
-      };
-      cleanupRef.current = renderChart(containerRef.current, series, chartColors);
+
+      function doRender() {
+        if (cleanupRef.current) cleanupRef.current();
+        var style = getComputedStyle(containerRef.current);
+        var chartColors = {
+          bg: style.getPropertyValue("--san-bg-panel").trim() || "#ffffff",
+          text: style.getPropertyValue("--san-text").trim() || "#333333",
+          grid: style.getPropertyValue("--san-chart-grid").trim() || "rgba(0,0,0,0.06)",
+        };
+        cleanupRef.current = renderChart(containerRef.current, series, chartColors);
+      }
+
+      doRender();
+
+      // Re-render chart when theme toggles (class change on .graphiql-container)
+      var themeTarget = document.querySelector(".graphiql-container");
+      var observer = themeTarget
+        ? new MutationObserver(function () { doRender(); })
+        : null;
+      if (observer) {
+        observer.observe(themeTarget, { attributes: true, attributeFilter: ["class"] });
+      }
+
       return function () {
+        if (observer) observer.disconnect();
         if (cleanupRef.current) {
           cleanupRef.current();
           cleanupRef.current = null;

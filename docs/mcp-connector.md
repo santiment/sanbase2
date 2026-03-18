@@ -23,18 +23,13 @@ Santiment's MCP (Model Context Protocol) connector gives Claude direct access to
 
 ### Claude Code
 
-Add to your MCP configuration:
+Run:
 
-```json
-{
-  "mcpServers": {
-    "santiment": {
-      "type": "streamable-http",
-      "url": "https://api.santiment.net/mcp"
-    }
-  }
-}
+```bash
+claude mcp add santiment --transport streamable-http https://api.santiment.net/mcp
 ```
+
+You'll be prompted to authorize via OAuth on first use.
 
 ## Authentication
 

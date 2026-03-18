@@ -262,6 +262,57 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
+  def slugs_by_filter_query(metric, from, to, operation, threshold, aggregation, filters, opts)
+      when operation in [:percent_up, :percent_down] do
+    prev_from = DateTime.add(from, -DateTime.diff(to, from))
+    threshold = threshold / 1.0
+    version = Keyword.get(opts, :version, @default_version)
+
+    comparison =
+      case operation do
+        :percent_up -> "value >= #{threshold}"
+        :percent_down -> "value <= #{-threshold}"
+      end
+
+    curr_query =
+      aggregated_slugs_base_query(metric, version, from, to, aggregation, filters, opts)
+
+    prev_query =
+      aggregated_slugs_base_query(metric, version, prev_from, from, aggregation, filters, opts)
+
+    # Rename param references in the previous-period query to avoid collisions
+    # with the current-period query. Use the prev_query's actual param values
+    # (which include any :last aggregation optimization).
+    prev_sql =
+      prev_query.sql
+      |> String.replace("{{from}}", "{{prev_from}}")
+      |> String.replace("{{to}}", "{{prev_to}}")
+
+    sql = """
+    SELECT slug, value
+    FROM (
+      SELECT
+        curr.slug AS slug,
+        ((curr.value - prev.value) / prev.value) * 100 AS value
+      FROM (
+        #{curr_query.sql}
+      ) curr
+      INNER JOIN (
+        #{prev_sql}
+      ) prev ON curr.slug = prev.slug
+      WHERE prev.value != 0
+    )
+    WHERE #{comparison}
+    """
+
+    params =
+      curr_query.parameters
+      |> Map.put(:prev_from, prev_query.parameters[:from])
+      |> Map.put(:prev_to, prev_query.parameters[:to])
+
+    Sanbase.Clickhouse.Query.new(sql, params)
+  end
+
   def slugs_by_filter_query(metric, from, to, operation, threshold, aggregation, filters, opts) do
     version = Keyword.get(opts, :version, @default_version)
 

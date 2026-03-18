@@ -32,7 +32,13 @@ defmodule Sanbase.OAuth.ResourceOwners do
   end
 
   @impl Boruta.Oauth.ResourceOwners
-  def authorized_scopes(%ResourceOwner{}), do: []
+  def authorized_scopes(%ResourceOwner{}) do
+    # Return a broad set of scopes so that any scope requested by MCP clients
+    # (Claude Desktop, Claude Code, etc.) is accepted. The actual access control
+    # is enforced at the MCP tool level, not via OAuth scopes.
+    ~w(openid profile email offline_access read write mcp)
+    |> Enum.map(fn name -> %Boruta.Oauth.Scope{name: name} end)
+  end
 
   @impl Boruta.Oauth.ResourceOwners
   def claims(_resource_owner, _scope), do: %{}

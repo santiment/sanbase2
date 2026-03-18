@@ -23,6 +23,7 @@ case Sanbase.Repo.get_by(Boruta.Ecto.Client, name: "Sanbase MCP") do
           "http://localhost:6274/oauth/callback",
           "http://localhost:6274/oauth/callback/debug",
           "https://claude.ai/api/mcp/auth_callback",
+          "https://claude.ai/api/auth/callback",
           "https://claude.com/api/mcp/auth_callback"
         ],
         supported_grant_types: ["authorization_code", "refresh_token"],

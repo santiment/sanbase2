@@ -201,6 +201,9 @@ config :hammer,
 config :tesla,
   adapter: {Tesla.Adapter.Hackney, recv_timeout: 30_000}
 
+config :oauth2,
+  adapter: {Tesla.Adapter.Hackney, recv_timeout: 30_000}
+
 config :sanbase, Sanbase.ApiCallLimit,
   quota_size: 100,
   quota_size_max_offset: 100

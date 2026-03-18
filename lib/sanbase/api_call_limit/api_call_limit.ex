@@ -213,14 +213,17 @@ defmodule Sanbase.ApiCallLimit do
         api_calls_responses_size_mb: response_sizes
       })
 
-    case Repo.insert(changeset) do
-      {:ok, acl} ->
+    # Use on_conflict: :nothing to avoid aborting a surrounding transaction
+    # when a concurrent INSERT wins the race. Without this, the unique-constraint
+    # violation poisons the Postgres transaction and every subsequent statement
+    # (including the fallback SELECT) fails with
+    # "current transaction is aborted, commands ignored until end of transaction block".
+    case Repo.insert(changeset, on_conflict: :nothing, conflict_target: :user_id) do
+      {:ok, %{id: id} = acl} when not is_nil(id) ->
         {:ok, acl}
 
-      {:error, %Ecto.Changeset{errors: [user_id: {"does not exist", _}]}} ->
-        {:error, "User with id #{user.id} does not exist"}
-
-      {:error, %Ecto.Changeset{errors: [user_id: {"has already been taken", _}]}} ->
+      {:ok, %{id: nil}} ->
+        # ON CONFLICT DO NOTHING fired — row already exists, fetch it
         case Repo.get_by(__MODULE__, user_id: user.id) do
           nil ->
             {:error, "Could not create or fetch existing API call limit for user.id #{user.id}"}
@@ -228,6 +231,9 @@ defmodule Sanbase.ApiCallLimit do
           acl ->
             {:ok, acl}
         end
+
+      {:error, %Ecto.Changeset{errors: [user_id: {"does not exist", _}]}} ->
+        {:error, "User with id #{user.id} does not exist"}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:error,
@@ -254,11 +260,12 @@ defmodule Sanbase.ApiCallLimit do
         api_calls_responses_size_mb: response_sizes
       })
 
-    case Repo.insert(changeset) do
-      {:ok, acl} ->
+    case Repo.insert(changeset, on_conflict: :nothing, conflict_target: :remote_ip) do
+      {:ok, %{id: id} = acl} when not is_nil(id) ->
         {:ok, acl}
 
-      {:error, %Ecto.Changeset{errors: [remote_ip: {"has already been taken", _}]}} ->
+      {:ok, %{id: nil}} ->
+        # ON CONFLICT DO NOTHING fired — row already exists, fetch it
         case Repo.get_by(__MODULE__, remote_ip: remote_ip) do
           nil ->
             {:error,

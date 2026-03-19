@@ -16,7 +16,7 @@ defmodule Sanbase.Cryptocompare.Price.HistoricalScheduler do
   alias Sanbase.Utils.Config
 
   @oban_conf_name :oban_scrapers
-  @unique_peroid 60 * 86_400
+  @unique_peroid 7 * 86_400
   @oban_queue :cryptocompare_historical_jobs_queue
 
   def start_link(opts \\ []) do

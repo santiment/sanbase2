@@ -23,6 +23,7 @@ defmodule SanbaseWeb.Plug.SessionPlug do
   end
 
   defp secure_cookie? do
-    Config.module_get(Sanbase, :deployment_env) in ["stage", "prod"]
+    Config.module_get(Sanbase, :deployment_env) in ["stage", "prod"] and
+      Sanbase.ApplicationUtils.container_type() != "admin"
   end
 end

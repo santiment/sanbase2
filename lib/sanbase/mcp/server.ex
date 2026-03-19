@@ -66,7 +66,7 @@ defmodule Sanbase.MCP.Server do
           {:reply, %{"isError" => true, "content" => content}, _frame} ->
             error_msg =
               content
-              |> Enum.map_join("\n", fn %{"text" => text} -> text end)
+              |> Enum.map_join("\n", fn item -> item["text"] || "" end)
 
             size = response_size_bytes(content)
             {false, error_msg, size}

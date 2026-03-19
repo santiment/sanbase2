@@ -82,7 +82,7 @@ defmodule Sanbase.MCP.ToolInvocation do
     |> Repo.all()
   end
 
-  def extract_metrics_and_slugs(attrs) do
+  defp extract_metrics_and_slugs(attrs) do
     params = Map.get(attrs, :params) || Map.get(attrs, "params") || %{}
     tool_name = Map.get(attrs, :tool_name) || Map.get(attrs, "tool_name") || ""
 
@@ -93,19 +93,19 @@ defmodule Sanbase.MCP.ToolInvocation do
     |> Map.put(:slugs, slugs)
   end
 
-  defp do_extract("FetchMetricDataTool", params) do
-    metrics = List.wrap(params["metric"] || params[:metric])
-    slugs = List.wrap(params["slugs"] || params[:slugs] || params["slug"] || params[:slug])
+  defp do_extract("fetch_metric_data_tool", params) do
+    metrics = List.wrap(params["metric"])
+    slugs = List.wrap(params["slugs"] || params["slug"])
     {metrics, slugs}
   end
 
-  defp do_extract("AssetsByMetricTool", params) do
-    metrics = List.wrap(params["metric"] || params[:metric])
+  defp do_extract("assets_by_metric_tool", params) do
+    metrics = List.wrap(params["metric"])
     {metrics, []}
   end
 
-  defp do_extract("MetricsAndAssetsDiscoveryTool", params) do
-    metric = params["metric_name"] || params[:metric_name]
+  defp do_extract("metrics_and_assets_discovery_tool", params) do
+    metric = params["metric"]
     metrics = if metric, do: List.wrap(metric), else: []
     {metrics, []}
   end
@@ -150,7 +150,7 @@ defmodule Sanbase.MCP.ToolInvocation do
   defp maybe_filter_metric(query, ""), do: query
 
   defp maybe_filter_metric(query, metric) do
-    where(query, [i], fragment("? @> ?", i.metrics, ^[metric]))
+    where(query, [i], fragment("? @> ?", i.metrics, type(^[metric], {:array, :string})))
   end
 
   defp apply_pagination(query, opts) do

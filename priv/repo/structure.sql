@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict g4uGTuk9pGPf9rhdQkBivPRNa1Vu15P3bIHVFtpukIxTQHqvtu4BLET8dWAIQa4
+\restrict 8Cf3fo7z42HUi8ANnGz6ujwRZhN9dswmvQ0uwNbZT0xcy767rNFqDiGxa6coMfO
 
 -- Dumped from database version 15.15 (Homebrew)
 -- Dumped by pg_dump version 15.15 (Homebrew)
@@ -901,8 +901,8 @@ CREATE TABLE public.chat_messages (
     sources jsonb[] DEFAULT ARRAY[]::jsonb[],
     suggestions text[] DEFAULT ARRAY[]::text[],
     feedback_type character varying(255),
-    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY ((ARRAY['thumbs_up'::character varying, 'thumbs_down'::character varying])::text[])) OR (feedback_type IS NULL))),
-    CONSTRAINT valid_role CHECK (((role)::text = ANY ((ARRAY['user'::character varying, 'assistant'::character varying])::text[])))
+    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY (ARRAY[('thumbs_up'::character varying)::text, ('thumbs_down'::character varying)::text])) OR (feedback_type IS NULL))),
+    CONSTRAINT valid_role CHECK (((role)::text = ANY (ARRAY[('user'::character varying)::text, ('assistant'::character varying)::text])))
 );
 
 
@@ -2277,6 +2277,46 @@ CREATE SEQUENCE public.market_segments_id_seq
 --
 
 ALTER SEQUENCE public.market_segments_id_seq OWNED BY public.market_segments.id;
+
+
+--
+-- Name: mcp_tool_invocations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.mcp_tool_invocations (
+    id bigint NOT NULL,
+    user_id bigint,
+    tool_name character varying(255) NOT NULL,
+    params jsonb DEFAULT '{}'::jsonb,
+    metrics character varying(255)[] DEFAULT ARRAY[]::character varying[],
+    slugs character varying(255)[] DEFAULT ARRAY[]::character varying[],
+    response_size_bytes integer,
+    is_successful boolean NOT NULL,
+    error_message text,
+    duration_ms integer NOT NULL,
+    auth_method character varying(255),
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: mcp_tool_invocations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.mcp_tool_invocations_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: mcp_tool_invocations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.mcp_tool_invocations_id_seq OWNED BY public.mcp_tool_invocations.id;
 
 
 --
@@ -6238,6 +6278,13 @@ ALTER TABLE ONLY public.market_segments ALTER COLUMN id SET DEFAULT nextval('pub
 
 
 --
+-- Name: mcp_tool_invocations id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.mcp_tool_invocations ALTER COLUMN id SET DEFAULT nextval('public.mcp_tool_invocations_id_seq'::regclass);
+
+
+--
 -- Name: menu_items id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -7359,6 +7406,14 @@ ALTER TABLE ONLY public.list_items
 
 ALTER TABLE ONLY public.market_segments
     ADD CONSTRAINT market_segments_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: mcp_tool_invocations mcp_tool_invocations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.mcp_tool_invocations
+    ADD CONSTRAINT mcp_tool_invocations_pkey PRIMARY KEY (id);
 
 
 --
@@ -8860,6 +8915,34 @@ CREATE UNIQUE INDEX market_segments_name_index ON public.market_segments USING b
 
 
 --
+-- Name: mcp_tool_invocations_inserted_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX mcp_tool_invocations_inserted_at_index ON public.mcp_tool_invocations USING btree (inserted_at);
+
+
+--
+-- Name: mcp_tool_invocations_metrics_gin; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX mcp_tool_invocations_metrics_gin ON public.mcp_tool_invocations USING gin (metrics);
+
+
+--
+-- Name: mcp_tool_invocations_tool_name_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX mcp_tool_invocations_tool_name_index ON public.mcp_tool_invocations USING btree (tool_name);
+
+
+--
+-- Name: mcp_tool_invocations_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX mcp_tool_invocations_user_id_index ON public.mcp_tool_invocations USING btree (user_id);
+
+
+--
 -- Name: menus_user_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10320,6 +10403,14 @@ ALTER TABLE ONLY public.list_items
 
 
 --
+-- Name: mcp_tool_invocations mcp_tool_invocations_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.mcp_tool_invocations
+    ADD CONSTRAINT mcp_tool_invocations_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
 -- Name: menu_items menu_items_dashboard_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -11331,7 +11422,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict g4uGTuk9pGPf9rhdQkBivPRNa1Vu15P3bIHVFtpukIxTQHqvtu4BLET8dWAIQa4
+\unrestrict 8Cf3fo7z42HUi8ANnGz6ujwRZhN9dswmvQ0uwNbZT0xcy767rNFqDiGxa6coMfO
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -11888,3 +11979,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260309140152);
 INSERT INTO public."schema_migrations" (version) VALUES (20260309140153);
 INSERT INTO public."schema_migrations" (version) VALUES (20260309140154);
 INSERT INTO public."schema_migrations" (version) VALUES (20260317111739);
+INSERT INTO public."schema_migrations" (version) VALUES (20260319144952);

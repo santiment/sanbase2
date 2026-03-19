@@ -84,17 +84,13 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
   end
 
   defp do_execute(%{metric: metric, slugs: slugs} = params, frame) do
-    time_period_seconds =
-      Map.get(params, :time_period, "30d") |> Sanbase.DateTimeUtils.str_to_sec()
-
-    from = DateTime.add(DateTime.utc_now(), -time_period_seconds, :second)
-
-    to = DateTime.utc_now()
+    time_period = Map.get(params, :time_period, "30d")
     interval = Map.get(params, :interval, "1d")
 
     with :ok <- validate_metric(metric),
          :ok <- validate_slugs(slugs),
          :ok <- validate_many_slugs_supported(metric, slugs),
+         {:ok, {from, to}} <- Utils.parse_time_period(time_period),
          {:ok, data} <- fetch_metric_data(metric, slugs, from, to, interval) do
       {data, limited} = limit_datapoints(data)
 

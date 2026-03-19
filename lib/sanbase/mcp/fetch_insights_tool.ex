@@ -21,7 +21,7 @@ defmodule Sanbase.MCP.FetchInsightsTool do
   end
 
   schema do
-    field(:insight_ids, :any,
+    field(:insight_ids, {:either, {{:list, :integer}, :string}},
       required: true,
       description: "Array of santiment crypto insights IDs to fetch full content for (max 10)"
     )

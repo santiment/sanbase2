@@ -32,12 +32,13 @@ defmodule Sanbase.Cryptocompare.Price.CCCAGGPairData do
   def schedule_previous_day_jobs() do
     Logger.info("[CCCAGG Pair Data] Start scheduling cryptocompare previous day oban jobs")
     # Make the scrape not just for the previous day, but for a few days before
-    # that too. This is to handle some cases where some CSV becoomes available
-    # later than we run this code. The uniqueness checkk will handle the overlapping
+    # that too. This is to handle some cases where some CSV becomes available
+    # later than we run this code. The uniqueness check will handle the overlapping
     # jobs.
+    # The lookback window must stay within the Oban Pruner's max_age (7 days)
+    # so that completed jobs are still present and deduplication works correctly.
     supported_base_assets = supported_base_assets()
     days_ago_7 = Date.utc_today() |> Date.add(-7)
-    days_ago_60 = Date.utc_today() |> Date.add(-60)
     today = Date.utc_today()
 
     list =
@@ -57,7 +58,7 @@ defmodule Sanbase.Cryptocompare.Price.CCCAGGPairData do
           chunk
           |> Enum.each(fn elem ->
             elem = %{
-              start_date: days_ago_60,
+              start_date: days_ago_7,
               end_date: elem.end_date,
               base_asset: elem.base_asset,
               quote_asset: elem.quote_asset

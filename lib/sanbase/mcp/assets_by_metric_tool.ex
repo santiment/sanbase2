@@ -47,7 +47,7 @@ defmodule Sanbase.MCP.AssetsByMetricTool do
   use Anubis.Server.Component, type: :tool
 
   alias Anubis.Server.Response
-  alias Sanbase.MCP.Utils
+  alias Sanbase.MCP.{DataCatalog, Utils}
 
   @impl true
   def annotations do
@@ -192,11 +192,13 @@ defmodule Sanbase.MCP.AssetsByMetricTool do
   def execute(params, frame) do
     # Note: Do it like this so we can wrap it in an if can_execute?/3 clause
     # so the execute/2 function itself is not
-    with :ok <- validate_operator_threshold_pair(params[:operator], params[:threshold]),
+    with :ok <- validate_metric(params[:metric]),
+         :ok <- validate_operator_threshold_pair(params[:operator], params[:threshold]),
          :ok <- validate_aggregation(params[:aggregation]),
          :ok <- validate_sort(params[:sort]),
          :ok <- validate_page(params[:page]),
-         {:ok, _} <- Utils.validate_size(params[:page_size], 1, @max_page_size) do
+         {:ok, _} <- Utils.validate_size(params[:page_size], 1, @max_page_size),
+         :ok <- validate_time_range(params[:from], params[:to]) do
       do_execute(params, frame)
     else
       {:error, reason} ->
@@ -284,6 +286,47 @@ defmodule Sanbase.MCP.AssetsByMetricTool do
   defp validate_page(page) when is_integer(page) and page >= 1, do: :ok
   defp validate_page(nil), do: {:error, "Page is required"}
   defp validate_page(_page), do: {:error, "Page must be an integer greater than or equal to 1"}
+
+  defp validate_metric(metric) do
+    if DataCatalog.valid_metric?(metric),
+      do: :ok,
+      else:
+        {:error,
+         "Metric '#{metric}' mistyped or not supported. Use metrics_and_assets_discovery_tool to list available metrics."}
+  end
+
+  defp validate_time_range(from, to) do
+    with :ok <- validate_time_string(from, "from"),
+         :ok <- validate_time_string(to, "to") do
+      :ok
+    end
+  end
+
+  defp validate_time_string("utc_now" <> _ = value, name) do
+    case Sanbase.DateTimeUtils.utc_now_string_to_datetime(value) do
+      {:ok, _dt} ->
+        :ok
+
+      {:error, _} ->
+        {:error,
+         "Invalid '#{name}' value: '#{value}'. Use 'utc_now' or 'utc_now-<interval>' (e.g., 'utc_now-30d')."}
+    end
+  end
+
+  defp validate_time_string(value, name) when is_binary(value) do
+    case DateTime.from_iso8601(value) do
+      {:ok, _dt, _} ->
+        :ok
+
+      _ ->
+        {:error,
+         "Invalid '#{name}' value: '#{value}'. Use ISO 8601 (e.g., '2024-01-01T00:00:00Z') or relative expressions (e.g., 'utc_now-30d')."}
+    end
+  end
+
+  defp validate_time_string(_, name) do
+    {:error, "'#{name}' is required and must be a string."}
+  end
 
   defp validate_operator_threshold_pair(nil, nil), do: :ok
 

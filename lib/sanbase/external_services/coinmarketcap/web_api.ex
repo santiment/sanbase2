@@ -155,12 +155,24 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
   # In case there is gap in the data store the end of the interval. This is done
   # because in case of gaps the scraper can get stuck and rescrape the same
   # interval over and over again.
-  defp store_price_points(%Project{slug: slug}, [], {_, to}) do
+  defp store_price_points(%Project{slug: slug}, [], {from, to}) do
+    Logger.warning(
+      "[CMC] No price points returned for #{slug}, " <>
+        "interval [#{DateTime.from_unix!(from)} - #{DateTime.from_unix!(to)}]. " <>
+        "Advancing progress to avoid getting stuck."
+    )
+
     to = max_dt_or_now(to)
     PriceScrapingProgress.store_progress(slug, @source, DateTime.from_unix!(to))
   end
 
-  defp store_price_points("TOTAL_MARKET", [], {_, to}) do
+  defp store_price_points("TOTAL_MARKET", [], {from, to}) do
+    Logger.warning(
+      "[CMC] No price points returned for TOTAL_MARKET, " <>
+        "interval [#{DateTime.from_unix!(from)} - #{DateTime.from_unix!(to)}]. " <>
+        "Advancing progress to avoid getting stuck."
+    )
+
     to = max_dt_or_now(to)
     PriceScrapingProgress.store_progress("TOTAL_MARKET", @source, DateTime.from_unix!(to))
   end
@@ -194,9 +206,20 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
     |> Sanbase.KafkaExporter.persist_sync(@prices_exporter)
   end
 
-  def price_stream(identifier, from_datetime, to_datetime) do
-    intervals_stream(from_datetime, to_datetime, days_step: 1)
-    |> Stream.map(&extract_price_points_for_interval(identifier, &1))
+  def price_stream(identifier, %DateTime{} = from_datetime, %DateTime{} = to_datetime) do
+    diff_seconds = DateTime.diff(to_datetime, from_datetime, :second)
+
+    if diff_seconds < 3600 do
+      Logger.info(
+        "[CMC] Skipping price stream for #{identify(identifier)}, " <>
+          "time range too short (#{diff_seconds}s)"
+      )
+
+      []
+    else
+      intervals_stream(from_datetime, to_datetime, days_step: 1)
+      |> Stream.map(&extract_price_points_for_interval(identifier, &1))
+    end
   end
 
   defp json_to_price_points(json, "TOTAL_MARKET", interval) do
@@ -314,6 +337,17 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
     {:error, error_msg}
   end
 
+  defp do_extract_price_points("TOTAL_MARKET", {from_unix, to_unix}, _retries)
+       when to_unix - from_unix < 3600 do
+    Logger.info(
+      "[CMC] Skipping price points extraction for TOTAL_MARKET, " <>
+        "interval too short (#{to_unix - from_unix}s): " <>
+        "[#{DateTime.from_unix!(from_unix)} - #{DateTime.from_unix!(to_unix)}]"
+    )
+
+    {:ok, [], {from_unix, to_unix}}
+  end
+
   defp do_extract_price_points(
          "TOTAL_MARKET" = total_market,
          {from_unix, to_unix} = interval,
@@ -344,6 +378,17 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
         Logger.error(error_msg)
         {:error, error_msg}
     end
+  end
+
+  defp do_extract_price_points(id, {from_unix, to_unix}, _retries)
+       when is_integer(id) and to_unix - from_unix < 3600 do
+    Logger.info(
+      "[CMC] Skipping price points extraction for CMC id #{id}, " <>
+        "interval too short (#{to_unix - from_unix}s): " <>
+        "[#{DateTime.from_unix!(from_unix)} - #{DateTime.from_unix!(to_unix)}]"
+    )
+
+    {:ok, [], {from_unix, to_unix}}
   end
 
   defp do_extract_price_points(id, {from_unix, to_unix} = interval, retries)
@@ -394,10 +439,15 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
     to_unix = Enum.min([to_unix, now_unix])
 
     Stream.unfold(from_unix, fn start_unix ->
-      if start_unix <= to_unix do
+      if start_unix < to_unix do
         end_unix = start_unix + 86_400 * days_step
         end_unix = Enum.min([end_unix, now_unix])
-        {{start_unix, end_unix}, end_unix}
+
+        if end_unix - start_unix < 60 do
+          nil
+        else
+          {{start_unix, end_unix}, end_unix}
+        end
       else
         nil
       end

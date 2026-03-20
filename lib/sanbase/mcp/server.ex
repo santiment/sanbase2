@@ -14,6 +14,20 @@ defmodule Sanbase.MCP.Server do
   end
 
   @impl true
+  def handle_request(%{"method" => "tools/call"} = request, %Anubis.Server.Frame{} = frame) do
+    frame = assign_current_user(frame)
+    tool_name = get_in(request, ["params", "name"])
+    params = get_in(request, ["params", "arguments"]) || %{}
+    start_time = System.monotonic_time(:millisecond)
+
+    result = Anubis.Server.Handlers.handle(request, __MODULE__, frame)
+
+    duration_ms = System.monotonic_time(:millisecond) - start_time
+    track_tool_invocation(result, frame, tool_name, params, duration_ms)
+
+    result
+  end
+
   def handle_request(request, %Anubis.Server.Frame{} = frame) do
     frame = assign_current_user(frame)
     Anubis.Server.Handlers.handle(request, __MODULE__, frame)
@@ -43,6 +57,52 @@ defmodule Sanbase.MCP.Server do
     IO.puts("Defining the extra MCP Server tools used in dev and test")
     # Some tools are enabled only in dev mode so we can test things during development
     component(Sanbase.MCP.CheckAuthentication)
+  end
+
+  defp track_tool_invocation(result, frame, tool_name, params, duration_ms) do
+    Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
+      {is_successful, error_message, response_size_bytes} =
+        case result do
+          {:reply, %{"isError" => true, "content" => content}, _frame} ->
+            error_msg =
+              content
+              |> Enum.map_join("\n", fn item -> item["text"] || "" end)
+
+            size = response_size_bytes(content)
+            {false, error_msg, size}
+
+          {:reply, %{"content" => content}, _frame} ->
+            size = response_size_bytes(content)
+            {true, nil, size}
+
+          {:error, %{message: message}, _frame} ->
+            {false, message, nil}
+
+          _ ->
+            {false, "Unknown error", nil}
+        end
+
+      user = frame.assigns[:current_user]
+      headers = frame.context.headers || []
+      auth_method = Sanbase.MCP.Auth.get_auth_method(headers)
+
+      Sanbase.MCP.ToolInvocation.create(%{
+        user_id: if(user, do: user.id),
+        tool_name: tool_name,
+        params: params,
+        is_successful: is_successful,
+        error_message: error_message,
+        response_size_bytes: response_size_bytes,
+        duration_ms: duration_ms,
+        auth_method: auth_method
+      })
+    end)
+  end
+
+  defp response_size_bytes(content) do
+    Jason.encode!(content) |> byte_size()
+  rescue
+    _ -> nil
   end
 
   defp assign_current_user(%Anubis.Server.Frame{} = frame) do

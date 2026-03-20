@@ -57,7 +57,7 @@ defmodule SanbaseWeb.OAuthController do
     Logger.info("[OAuth] authorize — all params: #{inspect(conn.params)}")
 
     case current_user_from_session(conn) do
-      {:ok, user} ->
+      {:ok, user, conn} ->
         # If we arrived here after login redirect (no OAuth params), but the
         # session has the original full URL, redirect to it to restore params.
         case {conn.params["client_id"], get_session(conn, :user_return_to)} do
@@ -81,7 +81,7 @@ defmodule SanbaseWeb.OAuthController do
 
   def authorize_consent(%Plug.Conn{} = conn, %{"decision" => "approve"}) do
     case current_user_from_session(conn) do
-      {:ok, user} ->
+      {:ok, user, conn} ->
         resource_owner = %ResourceOwner{sub: to_string(user.id), username: user.email}
         Boruta.Oauth.authorize(conn, resource_owner, __MODULE__)
 
@@ -191,7 +191,7 @@ defmodule SanbaseWeb.OAuthController do
 
   @impl Boruta.Oauth.AuthorizeApplication
   def preauthorize_success(conn, response) do
-    {:ok, user} = current_user_from_session(conn)
+    {:ok, user, conn} = current_user_from_session(conn)
 
     conn
     |> put_resp_header("x-frame-options", "DENY")
@@ -300,7 +300,29 @@ defmodule SanbaseWeb.OAuthController do
     access_token = get_session(conn, :access_token)
 
     case access_token && SanbaseWeb.Guardian.resource_from_token(access_token) do
-      {:ok, %Sanbase.Accounts.User{} = user, _claims} -> {:ok, user}
+      {:ok, %Sanbase.Accounts.User{} = user, _claims} ->
+        {:ok, user, conn}
+
+      {:error, :token_expired} ->
+        try_refresh_session_token(conn)
+
+      _ ->
+        :error
+    end
+  end
+
+  defp try_refresh_session_token(conn) do
+    refresh_token = get_session(conn, :refresh_token)
+
+    with true <- is_binary(refresh_token),
+         opts = [ttl: SanbaseWeb.Guardian.access_token_ttl()],
+         {:ok, _old, {new_access_token, _claims}} <-
+           SanbaseWeb.Guardian.exchange(refresh_token, "refresh", "access", opts),
+         {:ok, %Sanbase.Accounts.User{} = user, _} <-
+           SanbaseWeb.Guardian.resource_from_token(new_access_token) do
+      conn = put_session(conn, :access_token, new_access_token)
+      {:ok, user, conn}
+    else
       _ -> :error
     end
   end

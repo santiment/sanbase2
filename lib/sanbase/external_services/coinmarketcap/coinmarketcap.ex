@@ -270,34 +270,26 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
       Registry.register(Sanbase.Registry, key, :running)
       Logger.info("[CMC] Fetch and process prices for #{project.slug}")
 
-      try do
-        with {:ok, datetime} <- last_price_datetime(project),
-             :ok <- WebApi.fetch_and_store_prices(project, datetime) do
-          :ok = Registry.unregister(Sanbase.Registry, key)
-        else
-          error ->
-            Logger.error("[CMC] Error fetching prices for #{project.slug}: #{inspect(error)}")
-
-            Registry.unregister(Sanbase.Registry, key)
-            error
-        end
-      rescue
-        e ->
-          Logger.error("[CMC] Crash fetching prices for #{project.slug}: #{Exception.message(e)}")
-
-          Sentry.capture_exception(e,
-            stacktrace: __STACKTRACE__,
-            extra: %{module: "Coinmarketcap", slug: project.slug}
-          )
-
-          Registry.unregister(Sanbase.Registry, key)
-          {:error, e}
-      end
+      fetch_and_store_prices_and_unregister(project, key)
     else
       Logger.info(
         "[CMC] Fetch and process job for project #{project.slug} is already running. Won't start it again"
       )
     end
+  end
+
+  defp fetch_and_store_prices_and_unregister(project, key) do
+    with {:ok, datetime} <- last_price_datetime(project),
+         :ok <- WebApi.fetch_and_store_prices(project, datetime) do
+      :ok
+    else
+      error ->
+        Logger.error("[CMC] Error fetching prices for #{project.slug}: #{inspect(error)}")
+        error
+    end
+  after
+    # Run the unregister both in cases of no-exception and exception
+    Registry.unregister(Sanbase.Registry, key)
   end
 
   defp price_scraping_registry_key(project) do
@@ -311,6 +303,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
           "[CMC] Last CMC history datetime scraped for project with slug #{project.slug} not found in the database."
         )
 
+        # If we have not scraped this project, then we should start from the beginning.
         WebApi.first_datetime(project)
 
       %DateTime{} = datetime ->

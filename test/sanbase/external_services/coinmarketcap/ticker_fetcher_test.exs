@@ -81,4 +81,18 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
 
     assert expected_record2 in prices
   end
+
+  test "ticker fetcher does not try custom slugs after auth error" do
+    parent = self()
+
+    Tesla.Mock.mock(fn %{method: :get, url: url} ->
+      send(parent, {:cmc_request, url})
+      %Tesla.Env{status: 401, body: ~s({"status":{"error_code":1002}})}
+    end)
+
+    TickerFetcher.work()
+
+    assert_received {:cmc_request, _url}
+    refute_received {:cmc_request, _url}
+  end
 end

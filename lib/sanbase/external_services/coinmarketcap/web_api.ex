@@ -20,7 +20,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
 
   @source "coinmarketcap"
   @prices_exporter :prices_exporter
-  @max_rate_limit_retries 10
+  @max_rate_limit_retries 5
 
   @doc ~s"""
   Return the first datetime for which a given asset (a projct or the whole market)
@@ -40,15 +40,33 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
 
   def first_datetime("TOTAL_MARKET"), do: {:ok, ~U[2013-04-28T18:47:21.000Z]}
 
-  defp get_first_datetime(nil), do: {:error, "Project does not have coinmarketcap integer id"}
+  defp get_first_datetime(id, retries \\ 0)
 
-  defp get_first_datetime(id) do
+  defp get_first_datetime(id, retries) when retries >= @max_rate_limit_retries do
+    error_msg =
+      "[CMC] Max rate limit retries (#{@max_rate_limit_retries}) exceeded " <>
+        "for get_first_datetime, CMC id #{id}"
+
+    Logger.error(error_msg)
+
+    # This should not really happen because we have wait_rate_limit/2.
+    # If we reach here (retries exceeded) then probably there's some issue
+    # with out rate limit waits
+    Sentry.capture_message("CMC scraper max rate limit retries exceeded",
+      level: :error,
+      extra: %{identifier: id, operation: "get_first_datetime", retries: retries}
+    )
+
+    {:error, error_msg}
+  end
+
+  defp get_first_datetime(id, retries) do
     "https://api.coinmarketcap.com/data-api/v3/cryptocurrency/detail/chart?id=#{id}&range=ALL"
     |> get()
     |> case do
       {:ok, %Tesla.Env{status: 429} = resp} ->
         wait_rate_limit(resp, @rate_limiting_server)
-        get_first_datetime(id)
+        get_first_datetime(id, retries + 1)
 
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         json_decoded_body = body |> Jason.decode!()
@@ -209,24 +227,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
 
       {:ok, result, interval}
     else
-      {:error, %Jason.DecodeError{} = error} ->
-        error_msg =
-          "[CMC] Failed to decode JSON for TOTAL_MARKET: #{Exception.message(error)}"
-
-        Logger.error(error_msg)
-        {:error, error_msg}
-
-      %{"status" => %{"error_code" => code, "error_message" => msg}} ->
-        error_msg = "[CMC] API error for TOTAL_MARKET: code=#{code}, message=#{msg}"
-        Logger.error(error_msg)
-        {:error, error_msg}
-
-      other ->
-        error_msg =
-          "[CMC] Unexpected response for TOTAL_MARKET: #{inspect(other, limit: 500)}"
-
-        Logger.error(error_msg)
-        {:error, error_msg}
+      error -> handle_json_conversion_error("TOTAL_MARKET", error)
     end
   end
 
@@ -264,9 +265,15 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
 
       {:ok, result, interval}
     else
-      {:error, %Jason.DecodeError{} = error} ->
+      error -> handle_json_conversion_error(identifier, error)
+    end
+  end
+
+  defp handle_json_conversion_error(identifier, error) do
+    case error do
+      {:error, %Jason.DecodeError{} = decode_error} ->
         error_msg =
-          "[CMC] Failed to decode JSON for #{identify(identifier)}: #{Exception.message(error)}"
+          "[CMC] Failed to decode JSON for #{identify(identifier)}: #{Exception.message(decode_error)}"
 
         Logger.error(error_msg)
         {:error, error_msg}

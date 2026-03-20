@@ -95,26 +95,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     # Fetch current coinmarketcap data for many tickers
     # It fetches data for the first N projects, where N is specified in
     # the COINMARKETCAP_API_PROJECTS_NUMBER env var
-    tickers =
-      case Ticker.fetch_data(opts) do
-        {:ok, tickers} ->
-          tickers
-
-        {:error, {:auth_error, status, msg}} ->
-          Logger.error(
-            "[CMC] TickerFetcher: Auth/subscription error (HTTP #{status}). " <>
-              "Realtime prices will not be updated. Details: #{msg}"
-          )
-
-          []
-
-        {:error, reason} ->
-          Logger.error(
-            "[CMC] TickerFetcher: Failed to fetch ticker data. Reason: #{inspect(reason)}"
-          )
-
-          []
-      end
+    {tickers, main_fetch_status} = fetch_main_tickers(opts)
 
     fetched_slugs = MapSet.new(tickers, & &1.slug)
 
@@ -125,26 +106,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     # On 03.09.2025 we had an issue where wrapped-fantom started causing HTTP 400
     # which in turn broke everything below {:ok, _} = fetch_data_by_slug
     # and made the exporter fail and did not export the already fetched tickers
-    custom_tickers =
-      case Ticker.fetch_data_by_slug(custom_cmc_slugs) do
-        {:ok, custom_tickers} ->
-          custom_tickers
-
-        {:error, {:auth_error, _status, _msg}} ->
-          # Auth error already reported by the main Ticker.fetch_data call above
-          []
-
-        {:error, reason} ->
-          Logger.warning(
-            "[CMC] TickerFetcher: Failed to fetch custom slug data. Reason: #{inspect(reason)}"
-          )
-
-          []
-      end
+    {custom_tickers, custom_fetch_status} =
+      fetch_custom_tickers(custom_cmc_slugs, main_fetch_status)
 
     tickers = tickers ++ custom_tickers
 
-    if tickers == [] do
+    if tickers == [] and (main_fetch_status != :ok or custom_fetch_status != :ok) do
       Logger.error(
         "[CMC] TickerFetcher: No tickers fetched from any source. " <>
           "Realtime prices will not be updated. Check API key and subscription status."
@@ -254,29 +221,115 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
         stacktrace: __STACKTRACE__,
         extra: %{module: "TickerFetcher", operation: "export_to_kafka"}
       )
+
+      reraise e, __STACKTRACE__
   end
 
   # Helper functions
 
-  def handle_info(:sync, %{update_interval: update_interval} = state) do
-    try do
-      work()
-    rescue
-      e ->
-        Logger.error(
-          "[CMC] TickerFetcher.work() crashed: #{Exception.message(e)}\n" <>
-            Exception.format_stacktrace(__STACKTRACE__)
-        )
+  @max_consecutive_failures 10
 
-        Sentry.capture_exception(e,
-          stacktrace: __STACKTRACE__,
-          extra: %{module: "TickerFetcher"}
-        )
-    end
+  def handle_info(:sync, %{update_interval: update_interval} = state) do
+    consecutive_failures = Map.get(state, :consecutive_failures, 0)
+
+    state =
+      try do
+        work()
+        Map.put(state, :consecutive_failures, 0)
+      rescue
+        e ->
+          new_failures = consecutive_failures + 1
+
+          Logger.error(
+            "[CMC] TickerFetcher.work() crashed (#{new_failures}/#{@max_consecutive_failures}): " <>
+              "#{Exception.message(e)}\n" <>
+              Exception.format_stacktrace(__STACKTRACE__)
+          )
+
+          Sentry.capture_exception(e,
+            stacktrace: __STACKTRACE__,
+            extra: %{module: "TickerFetcher", consecutive_failures: new_failures}
+          )
+
+          if new_failures >= @max_consecutive_failures do
+            Logger.error(
+              "[CMC] TickerFetcher: #{@max_consecutive_failures} consecutive failures, " <>
+                "crashing to let the supervisor restart."
+            )
+
+            raise "TickerFetcher exceeded #{@max_consecutive_failures} consecutive failures"
+          end
+
+          Map.put(state, :consecutive_failures, new_failures)
+      end
 
     Process.send_after(self(), :sync, update_interval * 1000)
 
     {:noreply, state}
+  end
+
+  defp fetch_main_tickers(opts) do
+    case Ticker.fetch_data(opts) do
+      {:ok, tickers} ->
+        {tickers, :ok}
+
+      {:error, {:auth_error, status, msg}} ->
+        Logger.error(
+          "[CMC] TickerFetcher: Auth/subscription error (HTTP #{status}). " <>
+            "Realtime prices will not be updated. Details: #{msg}"
+        )
+
+        {[], :auth_error}
+
+      {:error, {:rate_limited, msg}} ->
+        Logger.warning(
+          "[CMC] TickerFetcher: Rate limited while fetching ticker data. Details: #{msg}"
+        )
+
+        {[], :rate_limited}
+
+      {:error, reason} ->
+        Logger.error(
+          "[CMC] TickerFetcher: Failed to fetch ticker data. Reason: #{inspect(reason)}"
+        )
+
+        {[], :error}
+    end
+  end
+
+  defp fetch_custom_tickers([], _main_fetch_status), do: {[], :ok}
+
+  defp fetch_custom_tickers(_slugs, :auth_error) do
+    Logger.warning(
+      "[CMC] TickerFetcher: Skipping custom slug fetch because the main request failed with an auth/subscription error."
+    )
+
+    {[], :skipped}
+  end
+
+  defp fetch_custom_tickers(_slugs, :rate_limited) do
+    Logger.warning(
+      "[CMC] TickerFetcher: Skipping custom slug fetch because the main request was rate limited."
+    )
+
+    {[], :skipped}
+  end
+
+  defp fetch_custom_tickers(slugs, _main_fetch_status) do
+    case Ticker.fetch_data_by_slug(slugs) do
+      {:ok, custom_tickers} ->
+        {custom_tickers, :ok}
+
+      {:error, {:auth_error, _status, _msg}} ->
+        {[], :auth_error}
+
+      {:error, reason} ->
+        Logger.warning(
+          "[CMC] TickerFetcher: Failed to fetch custom slug data. Reason: #{inspect(reason)}"
+        )
+
+        {[], :error}
+    end
   end
 
   defp store_latest_coinmarketcap_data!(%Ticker{} = ticker) do

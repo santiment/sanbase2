@@ -86,6 +86,7 @@ defmodule SanbaseWeb.OAuthController do
         Boruta.Oauth.authorize(conn, resource_owner, __MODULE__)
 
       :error ->
+        conn = store_oauth_return_to(conn)
         redirect_to_login(conn)
     end
   end

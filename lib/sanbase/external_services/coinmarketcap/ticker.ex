@@ -64,7 +64,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
   Fetch the current data for all top N projects.
   Parse the binary received from the CMC response to a list of tickers
   """
-  @spec fetch_data() :: {:error, String.t()} | {:ok, [%__MODULE__{}]}
+  @type api_error ::
+          {:auth_error, integer(), String.t()}
+          | {:rate_limited, String.t()}
+          | {:server_error, integer(), String.t()}
+
+  @spec fetch_data(keyword()) :: {:ok, [%__MODULE__{}]} | {:error, String.t() | api_error()}
   def fetch_data(opts \\ []) do
     projects_number =
       case Keyword.get(opts, :projects_number) do
@@ -83,7 +88,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
     |> handle_api_response("listings for top #{projects_number} projects")
   end
 
-  @spec fetch_data_by_slug([String.t()]) :: {:error, String.t()} | {:ok, [%__MODULE__{}]}
+  @spec fetch_data_by_slug([String.t()]) ::
+          {:ok, [%__MODULE__{}]} | {:error, String.t() | api_error()}
+  def fetch_data_by_slug([]), do: {:ok, []}
+
   def fetch_data_by_slug(slugs) when is_list(slugs) do
     slug_str = Enum.join(slugs, ",")
 
@@ -148,91 +156,114 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
   end
 
   defp parse_json(json) do
-    %{"data" => data} = Jason.decode!(json)
+    with {:ok, %{"data" => data}} <- Jason.decode(json),
+         {:ok, tickers} <-
+           Enum.reduce_while(data, {:ok, []}, fn project_data, {:ok, acc} ->
+             case build_ticker(project_data) do
+               {:ok, %__MODULE__{last_updated: nil}} ->
+                 {:cont, {:ok, acc}}
 
-    tickers =
-      data
-      |> Enum.map(fn project_data ->
-        project_data =
-          case project_data do
-            {_, %{"id" => _id} = data} -> data
-            %{"id" => _id} = data -> data
-          end
+               {:ok, ticker} ->
+                 {:cont, {:ok, [ticker | acc]}}
 
-        %{
-          "id" => id,
-          "name" => name,
-          "symbol" => symbol,
-          "slug" => slug,
-          "cmc_rank" => rank,
-          "circulating_supply" => reported_circulating_supply,
-          "self_reported_circulating_supply" => self_reported_circulating_supply,
-          "self_reported_market_cap" => self_reported_marketcap,
-          "total_supply" => total_supply,
-          "max_supply" => _max_supply,
-          "last_updated" => last_updated,
-          "quote" => %{
-            "USD" => %{
-              "price" => price_usd,
-              "volume_24h" => volume_24h_usd,
-              "market_cap" => reported_mcap_usd,
-              "percent_change_1h" => percent_change_1h_usd,
-              "percent_change_24h" => percent_change_24h_usd,
-              "percent_change_7d" => percent_change_7d_usd
-            },
-            "BTC" => %{
-              "price" => price_btc,
-              "volume_24h" => _volume_btc,
-              "market_cap" => _mcap_btc,
-              "percent_change_1h" => _percent_change_1h_btc,
-              "percent_change_24h" => _percent_change_24h_btc,
-              "percent_change_7d" => _percent_change_7d_btc
-            }
-          }
-        } = project_data
+               {:error, reason} ->
+                 {:halt, {:error, reason}}
+             end
+           end) do
+      {:ok, Enum.reverse(tickers)}
+    else
+      {:ok, decoded} ->
+        {:error, "Unexpected CMC JSON response: #{inspect(decoded, limit: 200)}"}
 
-        # For now, override the values only for santiment. At the moment of writing
-        # this code, more than 970 out of 3100 have 0 for marketcap and circulating supply.
-        # Using self reported values for those projects would potentially introduce
-        # less reliable data.
-        {mcap_usd, circulating_supply, is_self_reported} =
-          if slug == "santiment" and reported_mcap_usd == 0 do
-            {self_reported_marketcap, self_reported_circulating_supply, true}
-          else
-            {reported_mcap_usd, reported_circulating_supply, false}
-          end
+      {:error, %Jason.DecodeError{} = error} ->
+        {:error, "Failed to decode CMC JSON response: #{Exception.message(error)}"}
 
-        %__MODULE__{
-          id: id,
-          slug: slug,
-          name: name,
-          symbol: symbol,
-          is_self_reported: is_self_reported,
-          price_usd: price_usd,
-          price_btc: price_btc,
-          rank: rank,
-          volume_usd: volume_24h_usd,
-          market_cap_usd: mcap_usd,
-          reported_market_cap_usd: reported_mcap_usd,
-          self_reported_market_cap_usd: self_reported_marketcap,
-          last_updated: last_updated,
-          available_supply: circulating_supply,
-          reported_available_supply: reported_circulating_supply,
-          self_reported_available_supply: self_reported_circulating_supply,
-          total_supply: total_supply,
-          percent_change_1h: percent_change_1h_usd,
-          percent_change_24h: percent_change_24h_usd,
-          percent_change_7d: percent_change_7d_usd
-        }
-      end)
-      |> Enum.filter(fn %__MODULE__{last_updated: last_updated} ->
-        last_updated
-      end)
+      {:error, _reason} = error ->
+        error
+    end
+  end
 
-    {:ok, tickers}
-  rescue
-    e ->
-      {:error, "Failed to parse CMC JSON response: #{Exception.message(e)}"}
+  defp build_ticker(project_data) do
+    with {:ok, project_data} <- normalize_project_data(project_data),
+         %{
+           "id" => id,
+           "name" => name,
+           "symbol" => symbol,
+           "slug" => slug,
+           "cmc_rank" => rank,
+           "circulating_supply" => reported_circulating_supply,
+           "self_reported_circulating_supply" => self_reported_circulating_supply,
+           "self_reported_market_cap" => self_reported_marketcap,
+           "total_supply" => total_supply,
+           "max_supply" => _max_supply,
+           "last_updated" => last_updated,
+           "quote" => %{
+             "USD" => %{
+               "price" => price_usd,
+               "volume_24h" => volume_24h_usd,
+               "market_cap" => reported_mcap_usd,
+               "percent_change_1h" => percent_change_1h_usd,
+               "percent_change_24h" => percent_change_24h_usd,
+               "percent_change_7d" => percent_change_7d_usd
+             },
+             "BTC" => %{
+               "price" => price_btc,
+               "volume_24h" => _volume_btc,
+               "market_cap" => _mcap_btc,
+               "percent_change_1h" => _percent_change_1h_btc,
+               "percent_change_24h" => _percent_change_24h_btc,
+               "percent_change_7d" => _percent_change_7d_btc
+             }
+           }
+         } <- project_data do
+      # For now, override the values only for santiment. At the moment of writing
+      # this code, more than 970 out of 3100 have 0 for marketcap and circulating supply.
+      # Using self reported values for those projects would potentially introduce
+      # less reliable data.
+      {mcap_usd, circulating_supply, is_self_reported} =
+        if slug == "santiment" and reported_mcap_usd == 0 do
+          {self_reported_marketcap, self_reported_circulating_supply, true}
+        else
+          {reported_mcap_usd, reported_circulating_supply, false}
+        end
+
+      {:ok,
+       %__MODULE__{
+         id: id,
+         slug: slug,
+         name: name,
+         symbol: symbol,
+         is_self_reported: is_self_reported,
+         price_usd: price_usd,
+         price_btc: price_btc,
+         rank: rank,
+         volume_usd: volume_24h_usd,
+         market_cap_usd: mcap_usd,
+         reported_market_cap_usd: reported_mcap_usd,
+         self_reported_market_cap_usd: self_reported_marketcap,
+         last_updated: last_updated,
+         available_supply: circulating_supply,
+         reported_available_supply: reported_circulating_supply,
+         self_reported_available_supply: self_reported_circulating_supply,
+         total_supply: total_supply,
+         percent_change_1h: percent_change_1h_usd,
+         percent_change_24h: percent_change_24h_usd,
+         percent_change_7d: percent_change_7d_usd
+       }}
+    else
+      {:error, _reason} = error ->
+        error
+
+      other ->
+        {:error, "Unexpected ticker payload: #{inspect(other, limit: 200)}"}
+    end
+  end
+
+  defp normalize_project_data({_, %{"id" => _id} = data}), do: {:ok, data}
+  defp normalize_project_data(%{"id" => _id} = data), do: {:ok, data}
+
+  defp normalize_project_data(other) do
+    {:error, "Unexpected ticker payload: #{inspect(other, limit: 200)}"}
   end
 
   # Convert a Ticker to a PricePoint

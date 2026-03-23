@@ -2,7 +2,7 @@ defmodule Sanbase.MCP.Client do
   @moduledoc "Thin wrapper around Anubis.Client for the Sanbase MCP test client"
 
   def start_link(opts) do
-    opts = Keyword.put_new(opts, :name, __MODULE__)
+    opts = Keyword.put(opts, :name, __MODULE__)
     Anubis.Client.Supervisor.start_link(opts)
   end
 

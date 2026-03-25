@@ -402,12 +402,6 @@ defmodule Sanbase.SocialData.MetricAdapter do
   end
 
   defp unsupported_selector_error(selector) do
-    provided_keys =
-      selector
-      |> Map.keys()
-      |> Enum.map_join(", ", &inspect/1)
-
-    "The provided selector #{inspect(selector)} is not supported. " <>
-      "Provided selector fields: #{provided_keys}"
+    Sanbase.Metric.Utils.unsupported_selector_error(selector)
   end
 end

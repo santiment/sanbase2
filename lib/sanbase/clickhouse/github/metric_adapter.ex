@@ -91,7 +91,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   end
 
   def timeseries_data(_metric, selector, _from, _to, _interval, _opts) when is_map(selector) do
-    {:error, unsupported_selector_error(selector)}
+    {:error, Sanbase.Metric.Utils.unsupported_selector_error(selector, "at least one of slug, organization, organizations")}
   end
 
   @impl Sanbase.Metric.Behaviour
@@ -141,7 +141,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
 
   def aggregated_timeseries_data(_metric, selector, _from, _to, _opts)
       when is_map(selector) do
-    {:error, unsupported_selector_error(selector)}
+    {:error, Sanbase.Metric.Utils.unsupported_selector_error(selector, "at least one of slug, organization, organizations")}
   end
 
   defp github_organizatoins_of_projects(projects) do
@@ -188,7 +188,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   end
 
   def first_datetime(_metric, selector, _opts) when is_map(selector) do
-    {:error, unsupported_selector_error(selector)}
+    {:error, Sanbase.Metric.Utils.unsupported_selector_error(selector, "at least one of slug, organization, organizations")}
   end
 
   @impl Sanbase.Metric.Behaviour
@@ -208,7 +208,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   end
 
   def last_datetime_computed_at(_metric, selector) when is_map(selector) do
-    {:error, unsupported_selector_error(selector)}
+    {:error, Sanbase.Metric.Utils.unsupported_selector_error(selector, "at least one of slug, organization, organizations")}
   end
 
   @impl Sanbase.Metric.Behaviour
@@ -330,16 +330,6 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   @impl Sanbase.Metric.Behaviour
   def min_plan_map(), do: @min_plan_map
 
-  defp unsupported_selector_error(selector) do
-    provided_keys =
-      selector
-      |> Map.keys()
-      |> Enum.map_join(", ", &inspect/1)
-
-    "The provided selector #{inspect(selector)} is not supported. " <>
-      "The selector must have at least one of the following fields: slug, organization, organizations. " <>
-      "Provided selector fields: #{provided_keys}"
-  end
 
   defp first_datetime_for_organizations([]), do: {:ok, nil}
   defp first_datetime_for_organizations(organizations), do: Github.first_datetime(organizations)

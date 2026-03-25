@@ -1,9 +1,10 @@
 defmodule Sanbase.MCP.Prompts.MarketAnalysis do
   @moduledoc """
-  MCP prompt for KOLs and analysts to generate structured market analysis content.
+  Create content with live market data.
 
-  Fetches on-chain activity, exchange flows, social dominance, and price data
-  for a given asset, then frames it as a narrative ready for publishing.
+  Built for KOLs and analysts, this prompt fetches on-chain activity,
+  exchange flows, social data, and price context for a given asset, then
+  frames it as a narrative ready for publishing.
   """
 
   use Anubis.Server.Component, type: :prompt
@@ -45,6 +46,8 @@ defmodule Sanbase.MCP.Prompts.MarketAnalysis do
     - `social_dominance_total` (interval: 1d)
     - `social_volume_total` (interval: 1d)
     - `sentiment_weighted_total` (interval: 1d)
+
+    Note: today's `social_volume_total` datapoint may be partial, so compare completed days more heavily when analyzing the trend.
 
     Also fetch the latest trending stories and words using the combined trends tool.
 

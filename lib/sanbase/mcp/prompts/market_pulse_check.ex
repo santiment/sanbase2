@@ -1,10 +1,10 @@
 defmodule Sanbase.MCP.Prompts.MarketPulseCheck do
   @moduledoc """
-  MCP prompt for retail traders to quickly assess whether a token's move
-  is backed by real activity or just social noise.
+  Find a trade idea.
 
-  Fetches social volume, sentiment, whale transactions, and exchange flows
-  and translates them into a simple, actionable read.
+  Built for retail traders, this prompt checks whether a token's move is
+  backed by real activity or just social noise by combining social,
+  whale, exchange flow, and price signals into a simple read.
   """
 
   use Anubis.Server.Component, type: :prompt
@@ -30,6 +30,8 @@ defmodule Sanbase.MCP.Prompts.MarketPulseCheck do
     - `social_volume_total` (interval: 1d) — are people talking about it?
     - `sentiment_weighted_total` (interval: 1d) — what's the mood?
     - `social_dominance_total` (interval: 1d) — how much attention vs other assets?
+
+    Note: today's `social_volume_total` datapoint may be partial, so weigh completed daily datapoints more heavily when judging spikes.
 
     **Whale Activity:**
     - `whale_transaction_count_100k_usd_to_inf` (interval: 1d) — are whales moving?

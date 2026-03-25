@@ -1,10 +1,10 @@
 defmodule Sanbase.MCP.Prompts.MarketThesisValidation do
   @moduledoc """
-  MCP prompt for expert traders to validate a market thesis using on-chain
-  divergence detection.
+  Validate a trade idea.
 
-  Fetches whale accumulation data, exchange netflow, funding rates, and sentiment
-  to confirm or kill a trader's thesis with hard data.
+  Built for expert traders, this prompt uses on-chain divergence,
+  exchange flows, derivatives data, and sentiment to confirm or kill
+  a market thesis with hard data.
   """
 
   use Anubis.Server.Component, type: :prompt
@@ -48,6 +48,8 @@ defmodule Sanbase.MCP.Prompts.MarketThesisValidation do
     **Social Sentiment:**
     - `sentiment_weighted_total` (interval: 1d)
     - `social_volume_total` (interval: 1d)
+
+    Note: today's `social_volume_total` datapoint may be partial, so compare completed days more heavily when evaluating changes in attention.
 
     **Price Context:**
     - `price_usd` (interval: 1d)

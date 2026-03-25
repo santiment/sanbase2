@@ -160,7 +160,7 @@ defmodule Sanbase.Mixfile do
       {:websockex, "~> 0.5.1"},
       {:mox, "~> 1.2"},
       {:ex_audit, "~> 0.10.0"},
-      {:anubis_mcp, github: "zoedsoupe/anubis-mcp"},
+      {:anubis_mcp, "~> 1.0"},
       {:langfuse_sdk, github: "workera-ai/langfuse_sdk"}
     ]
   end

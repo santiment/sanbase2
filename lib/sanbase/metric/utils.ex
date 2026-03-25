@@ -2,8 +2,9 @@ defmodule Sanbase.Metric.Utils do
   @doc ~s"""
   Build an error message for an unsupported selector.
 
-  Takes the selector map and an optional string describing which fields
-  are required. The message always includes the provided selector fields.
+  Takes the selector map and an optional hint sentence that is inserted
+  between the "not supported" preamble and the "Provided selector fields"
+  suffix. The hint should be a complete sentence (without trailing period).
 
   ## Examples
 
@@ -11,9 +12,9 @@ defmodule Sanbase.Metric.Utils do
       "The provided selector %{foo: 1} is not supported. " <>
         "Provided selector fields: :foo"
 
-      iex> Sanbase.Metric.Utils.unsupported_selector_error(%{foo: 1}, "slug")
+      iex> Sanbase.Metric.Utils.unsupported_selector_error(%{foo: 1}, "The selector must have the following field: slug")
       "The provided selector %{foo: 1} is not supported. " <>
-        "The selector must have the following fields: slug. " <>
+        "The selector must have the following field: slug. " <>
         "Provided selector fields: :foo"
 
   """
@@ -27,7 +28,7 @@ defmodule Sanbase.Metric.Utils do
 
     hint =
       if required_fields_hint,
-        do: "The selector must have the following fields: #{required_fields_hint}. ",
+        do: "#{required_fields_hint}. ",
         else: ""
 
     base <> hint <> "Provided selector fields: #{provided_keys}"

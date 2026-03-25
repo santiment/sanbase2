@@ -112,6 +112,20 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainMetricQueries do
       cache_resolve(&ExchangeResolver.get_label_based_metric_owners/3)
     end
 
+    @desc ~s"""
+    Returns available labels for a given label-based metric.
+    Optionally filter by slug and/or owner. If owner is omitted, all possible labels are returned.
+    """
+    field :get_label_based_metric_labels, list_of(:string) do
+      meta(access: :free)
+
+      arg(:metric, non_null(:string))
+      arg(:slug, :string)
+      arg(:owner, :string)
+
+      cache_resolve(&ExchangeResolver.get_label_based_metric_labels/3)
+    end
+
     @desc "List all exchanges"
     field :all_exchanges, list_of(:string) do
       meta(access: :free)

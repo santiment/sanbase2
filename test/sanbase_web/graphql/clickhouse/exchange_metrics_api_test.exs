@@ -109,6 +109,128 @@ defmodule SanbaseWeb.Graphql.ExchangeMetricsApiTest do
     end
   end
 
+  describe "get label based metric owners" do
+    test "returns owners for a label-based metric", context do
+      rows = [["binance"], ["bitfinex"], ["kraken"]]
+
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          execute_query(
+            context.conn,
+            ~s|{ getLabelBasedMetricOwners(metric: "active_deposits_per_exchange") }|,
+            "getLabelBasedMetricOwners"
+          )
+
+        assert Enum.sort(result) == ["binance", "bitfinex", "kraken"]
+      end)
+    end
+
+    test "returns owners filtered by slug", context do
+      rows = [["binance"], ["bitfinex"]]
+
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          execute_query(
+            context.conn,
+            ~s|{ getLabelBasedMetricOwners(metric: "active_deposits_per_exchange" slug: "bitcoin") }|,
+            "getLabelBasedMetricOwners"
+          )
+
+        assert Enum.sort(result) == ["binance", "bitfinex"]
+      end)
+    end
+
+    test "returns error for non-label-based metric", context do
+      error_msg =
+        execute_query_with_error(
+          context.conn,
+          ~s|{ getLabelBasedMetricOwners(metric: "exchange_inflow") }|,
+          "getLabelBasedMetricOwners"
+        )
+
+      assert error_msg =~ "is not a label-based metric"
+    end
+  end
+
+  describe "get label based metric labels" do
+    test "returns labels for a label-based metric", context do
+      rows = [["centralized_exchange"], ["decentralized_exchange"]]
+
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          execute_query(
+            context.conn,
+            ~s|{ getLabelBasedMetricLabels(metric: "active_deposits_per_exchange") }|,
+            "getLabelBasedMetricLabels"
+          )
+
+        assert Enum.sort(result) == ["centralized_exchange", "decentralized_exchange"]
+      end)
+    end
+
+    test "returns labels filtered by slug", context do
+      rows = [["centralized_exchange"]]
+
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          execute_query(
+            context.conn,
+            ~s|{ getLabelBasedMetricLabels(metric: "active_deposits_per_exchange" slug: "bitcoin") }|,
+            "getLabelBasedMetricLabels"
+          )
+
+        assert result == ["centralized_exchange"]
+      end)
+    end
+
+    test "returns labels filtered by owner", context do
+      rows = [["centralized_exchange"]]
+
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          execute_query(
+            context.conn,
+            ~s|{ getLabelBasedMetricLabels(metric: "active_deposits_per_exchange" owner: "binance") }|,
+            "getLabelBasedMetricLabels"
+          )
+
+        assert result == ["centralized_exchange"]
+      end)
+    end
+
+    test "returns labels filtered by both slug and owner", context do
+      rows = [["centralized_exchange"]]
+
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          execute_query(
+            context.conn,
+            ~s|{ getLabelBasedMetricLabels(metric: "active_deposits_per_exchange" slug: "bitcoin" owner: "binance") }|,
+            "getLabelBasedMetricLabels"
+          )
+
+        assert result == ["centralized_exchange"]
+      end)
+    end
+
+    test "returns error for non-label-based metric", context do
+      error_msg =
+        execute_query_with_error(
+          context.conn,
+          ~s|{ getLabelBasedMetricLabels(metric: "exchange_inflow") }|,
+          "getLabelBasedMetricLabels"
+        )
+
+      assert error_msg =~ "is not a label-based metric"
+    end
+  end
+
   defp top_exchanges_by_balance(slug, limit) do
     """
     {

@@ -86,6 +86,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :get_ecosystems,
           :get_events_for_users,
           :get_full_url,
+          :get_label_based_metric_labels,
           :get_label_based_metric_owners,
           :get_market_exchanges,
           :get_menu,

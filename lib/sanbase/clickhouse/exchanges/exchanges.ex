@@ -47,6 +47,20 @@ defmodule Sanbase.Clickhouse.Exchanges do
     end
   end
 
+  def labels_by_slug_metric_and_owner(metric, slug, owner) do
+    table = Map.get(Registry.table_map(), metric)
+
+    case not is_nil(table) && table =~ "label" do
+      true ->
+        query_struct = labels_by_slug_metric_and_owner_query(metric, slug, owner)
+
+        ClickhouseRepo.query_transform(query_struct, fn [label] -> label end)
+
+      false ->
+        {:error, "The provided metric #{metric} is not a label-based metric"}
+    end
+  end
+
   # Private functions
 
   defp owners_by_slug_and_metric_query(metric, slug) do
@@ -61,6 +75,25 @@ defmodule Sanbase.Clickhouse.Exchanges do
     WHERE
       metric_id = get_metric_id({{metric}})
       #{if slug, do: "AND asset_id = get_asset_id({{slug}})"}
+    """
+
+    Sanbase.Clickhouse.Query.new(sql, params)
+  end
+
+  defp labels_by_slug_metric_and_owner_query(metric, slug, owner) do
+    params = %{
+      metric: Map.get(Registry.name_to_metric_map(), metric),
+      slug: slug,
+      owner: owner
+    }
+
+    sql = """
+    SELECT DISTINCT label
+    FROM #{Map.get(Registry.table_map(), metric)}
+    WHERE
+      metric_id = get_metric_id({{metric}})
+      #{if slug, do: "AND asset_id = get_asset_id({{slug}})"}
+      #{if owner, do: "AND owner = {{owner}}"}
     """
 
     Sanbase.Clickhouse.Query.new(sql, params)

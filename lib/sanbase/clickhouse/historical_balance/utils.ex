@@ -61,19 +61,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Utils do
   end
 
   def maybe_fill_gaps_last_seen_balance({:ok, values}) do
-    result =
-      values
-      |> Enum.reduce({[], 0}, fn
-        %{has_changed: 0, datetime: dt}, {acc, last_seen} ->
-          {[%{balance: last_seen, datetime: dt} | acc], last_seen}
-
-        %{balance: balance, datetime: dt}, {acc, _last_seen} ->
-          {[%{balance: balance, datetime: dt} | acc], balance}
-      end)
-      |> elem(0)
-      |> Enum.reverse()
-
-    {:ok, result}
+    {:ok, fill_gaps_last_seen_balance(values)}
   end
 
   def maybe_fill_gaps_last_seen_balance({:error, error}), do: {:error, error}

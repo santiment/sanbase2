@@ -427,7 +427,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   defp unsupported_selector_error(selector) do
     Sanbase.Metric.Utils.unsupported_selector_error(
       selector,
-      "at least one of slug, address, contractAddress"
+      "The selector must have at least one of the following fields: slug, address, contractAddress"
     )
   end
 

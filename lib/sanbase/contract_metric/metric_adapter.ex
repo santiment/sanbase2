@@ -185,7 +185,7 @@ defmodule Sanbase.Contract.MetricAdapter do
   # Private functions
 
   defp unsupported_selector_error(selector) do
-    Sanbase.Metric.Utils.unsupported_selector_error(selector, "contractAddress")
+    Sanbase.Metric.Utils.unsupported_selector_error(selector, "The selector must have the following field: contractAddress")
   end
 
   defp not_implemented_error(function, metric) do

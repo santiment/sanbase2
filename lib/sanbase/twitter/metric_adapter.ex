@@ -208,6 +208,6 @@ defmodule Sanbase.Twitter.MetricAdapter do
   def min_plan_map(), do: @min_plan_map
 
   defp unsupported_selector_error(selector) do
-    Sanbase.Metric.Utils.unsupported_selector_error(selector, "slug")
+    Sanbase.Metric.Utils.unsupported_selector_error(selector, "The selector must have the following field: slug")
   end
 end

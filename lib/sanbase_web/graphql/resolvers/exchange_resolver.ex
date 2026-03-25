@@ -14,6 +14,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ExchangeResolver do
     Exchanges.owners_by_slug_and_metric(metric, args[:slug])
   end
 
+  def get_label_based_metric_labels(_root, %{metric: metric} = args, _resolution) do
+    Exchanges.labels_by_slug_metric_and_owner(metric, args[:slug], args[:owner])
+  end
+
   def top_exchanges_by_balance(
         _root,
         args,

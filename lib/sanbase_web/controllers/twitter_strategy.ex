@@ -53,7 +53,7 @@ defmodule Sanbase.Ueberauth.Strategy.Twitter do
     uid_field =
       conn
       |> option(:uid_field)
-      |> to_string
+      |> to_string()
 
     twitter_user = conn.private.twitter_user
 
@@ -128,7 +128,7 @@ defmodule Sanbase.Ueberauth.Strategy.Twitter do
     default = Keyword.get(default_options(), key)
 
     conn
-    |> options
+    |> options()
     |> Keyword.get(key, default)
   end
 end

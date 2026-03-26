@@ -210,7 +210,10 @@ defmodule Sanbase.BlockchainAddress.MetricAdapter do
   end
 
   defp unsupported_selector_error(selector) do
-    Sanbase.Metric.Utils.unsupported_selector_error(selector, "The selector must have the following fields: slug, blockchainAddress")
+    Sanbase.Metric.Utils.unsupported_selector_error(
+      selector,
+      "The selector must have the following fields: slug, blockchainAddress"
+    )
   end
 
   def addresses_by_filter("historical_balance", %{slug: slug}, operator, threshold, opts) do

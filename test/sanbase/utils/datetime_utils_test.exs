@@ -174,9 +174,17 @@ defmodule Sanbase.DateTimeUtilsTest do
   describe "truncate_datetimes/2" do
     test "truncates DateTime values in map" do
       dt = %DateTime{
-        year: 2024, month: 1, day: 1, hour: 12, minute: 0, second: 0,
-        microsecond: {123456, 6}, zone_abbr: "UTC", utc_offset: 0,
-        std_offset: 0, time_zone: "Etc/UTC"
+        year: 2024,
+        month: 1,
+        day: 1,
+        hour: 12,
+        minute: 0,
+        second: 0,
+        microsecond: {123_456, 6},
+        zone_abbr: "UTC",
+        utc_offset: 0,
+        std_offset: 0,
+        time_zone: "Etc/UTC"
       }
 
       result = DateTimeUtils.truncate_datetimes(%{time: dt, name: "test"})

@@ -5,6 +5,7 @@ defmodule Sanbase.MCP.ToolInvocation do
 
   alias Sanbase.Repo
   alias Sanbase.Accounts.User
+  alias Sanbase.Utils.Config
 
   schema "mcp_tool_invocations" do
     belongs_to(:user, User)
@@ -80,6 +81,92 @@ defmodule Sanbase.MCP.ToolInvocation do
       order_by: i.tool_name
     )
     |> Repo.all()
+  end
+
+  @doc """
+  Check global rate limits for a user across all MCP tool invocations.
+  Returns {:ok, true} if under limits, {:error, message} if rate limited.
+  """
+  def check_rate_limit(user_id) do
+    limits = %{
+      minute: Config.module_get(__MODULE__, :global_rate_limit_minute, 25),
+      hour: Config.module_get(__MODULE__, :global_rate_limit_hour, 100),
+      day: Config.module_get(__MODULE__, :global_rate_limit_day, 500)
+    }
+
+    do_check_rate_limit(user_id, nil, limits)
+  end
+
+  @doc """
+  Check per-tool rate limits. Only `combined_trends_tool` has specific limits.
+  Other tools return {:ok, true} immediately.
+  """
+  def check_tool_rate_limit(user_id, "combined_trends_tool") do
+    limits = %{
+      minute: Config.module_get(__MODULE__, :combined_trends_rate_limit_minute, 3),
+      hour: Config.module_get(__MODULE__, :combined_trends_rate_limit_hour, 20),
+      day: Config.module_get(__MODULE__, :combined_trends_rate_limit_day, 50)
+    }
+
+    do_check_rate_limit(user_id, "combined_trends_tool", limits)
+  end
+
+  def check_tool_rate_limit(_user_id, _tool_name), do: {:ok, true}
+
+  defp do_check_rate_limit(user_id, tool_name, limits) do
+    entity_name = if tool_name, do: "#{tool_name} calls", else: "MCP tool calls"
+    now = NaiveDateTime.utc_now()
+
+    query =
+      from(i in __MODULE__,
+        where: i.user_id == ^user_id,
+        select: %{
+          day:
+            fragment(
+              "COUNT(*) FILTER (WHERE inserted_at >= ?)",
+              ^NaiveDateTime.add(now, -86_400, :second)
+            ),
+          hour:
+            fragment(
+              "COUNT(*) FILTER (WHERE inserted_at >= ?)",
+              ^NaiveDateTime.add(now, -3600, :second)
+            ),
+          minute:
+            fragment(
+              "COUNT(*) FILTER (WHERE inserted_at >= ?)",
+              ^NaiveDateTime.add(now, -60, :second)
+            )
+        }
+      )
+
+    query =
+      if tool_name do
+        where(query, [i], i.tool_name == ^tool_name)
+      else
+        query
+      end
+
+    counts = Repo.one(query)
+
+    cond do
+      counts.minute >= limits.minute ->
+        {:error,
+         "Rate limit exceeded: #{counts.minute}/#{limits.minute} #{entity_name} per minute. " <>
+           "Please wait up to 60 seconds before trying again."}
+
+      counts.hour >= limits.hour ->
+        {:error,
+         "Rate limit exceeded: #{counts.hour}/#{limits.hour} #{entity_name} per hour. " <>
+           "Please wait before trying again."}
+
+      counts.day >= limits.day ->
+        {:error,
+         "Rate limit exceeded: #{counts.day}/#{limits.day} #{entity_name} per day. " <>
+           "Daily limit resets after 24 hours from your earliest call."}
+
+      true ->
+        {:ok, true}
+    end
   end
 
   defp extract_metrics_and_slugs(attrs) do

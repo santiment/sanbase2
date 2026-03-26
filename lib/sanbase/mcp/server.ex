@@ -33,7 +33,9 @@ defmodule Sanbase.MCP.Server do
           |> Anubis.Server.Response.error(error_message)
           |> Anubis.Server.Response.to_protocol()
 
-        {:reply, error_response, frame}
+        result = {:reply, error_response, frame}
+        track_tool_invocation(result, frame, tool_name, params, 0)
+        result
     end
   end
 

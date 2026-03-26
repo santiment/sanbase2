@@ -177,6 +177,21 @@ defmodule Sanbase.MCP.ToolInvocationTest do
     error_text = get_in(response.result, ["content", Access.at(0), "text"])
     assert error_text =~ "Rate limit exceeded"
 
+    # Give the async tracking task time to insert
+    Process.sleep(500)
+
+    # Verify the rate-limited call was tracked
+    invocations = ToolInvocation.list_invocations([])
+
+    rate_limited_inv =
+      Enum.find(invocations, fn i ->
+        i.tool_name == "metrics_and_assets_discovery_tool" && i.is_successful == false
+      end)
+
+    assert rate_limited_inv != nil
+    assert rate_limited_inv.error_message =~ "Rate limit exceeded"
+    assert rate_limited_inv.duration_ms == 0
+
     Application.put_env(:sanbase, Sanbase.MCP.ToolInvocation, original)
   end
 

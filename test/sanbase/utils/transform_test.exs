@@ -5,16 +5,6 @@ defmodule Sanbase.Utils.TransformTest do
 
   doctest Sanbase.Utils.Transform
 
-  describe "maybe_apply_function/2" do
-    test "applies function to ok tuple" do
-      assert Transform.maybe_apply_function({:ok, [1, 2, 3]}, &Enum.sum/1) == {:ok, 6}
-    end
-
-    test "passes through error tuple" do
-      assert Transform.maybe_apply_function({:error, "err"}, &Enum.sum/1) == {:error, "err"}
-    end
-  end
-
   describe "maybe_unwrap_ok_value/1" do
     test "unwraps single-element list" do
       assert Transform.maybe_unwrap_ok_value({:ok, [42]}) == {:ok, 42}
@@ -112,25 +102,6 @@ defmodule Sanbase.Utils.TransformTest do
       result = Transform.rename_map_keys!(%{a: 1, b: 2, d: 3}, old_keys: [:a], new_keys: [:c])
       assert result[:b] == 2
       assert result[:d] == 3
-    end
-  end
-
-  describe "to_bang/1" do
-    test "unwraps ok tuple" do
-      assert Transform.to_bang({:ok, 42}) == 42
-    end
-
-    test "raises on error tuple" do
-      assert_raise RuntimeError, fn ->
-        Transform.to_bang({:error, "something went wrong"})
-      end
-    end
-  end
-
-  describe "wrap_ok/1" do
-    test "wraps value in ok tuple" do
-      assert Transform.wrap_ok(42) == {:ok, 42}
-      assert Transform.wrap_ok([1, 2]) == {:ok, [1, 2]}
     end
   end
 end

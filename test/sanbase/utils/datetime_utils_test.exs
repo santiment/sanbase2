@@ -92,6 +92,11 @@ defmodule Sanbase.DateTimeUtilsTest do
       assert DateTimeUtils.interval_to_str("30m") == "30 minutes"
     end
 
+    test "converts hour intervals" do
+      assert DateTimeUtils.interval_to_str("1h") == "1 hour"
+      assert DateTimeUtils.interval_to_str("5h") == "5 hours"
+    end
+
     test "converts day intervals" do
       assert DateTimeUtils.interval_to_str("1d") == "1 day"
       assert DateTimeUtils.interval_to_str("7d") == "7 days"
@@ -243,7 +248,7 @@ defmodule Sanbase.DateTimeUtilsTest do
     end
 
     test "converts Date to DateTime at given time" do
-      result = DateTimeUtils.date_to_datetime(~D[2024-01-01], time: ~T[12:30:00Z])
+      result = DateTimeUtils.date_to_datetime(~D[2024-01-01], time: ~T[12:30:00])
       assert result == ~U[2024-01-01 12:30:00Z]
     end
   end

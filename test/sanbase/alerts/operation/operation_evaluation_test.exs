@@ -56,7 +56,7 @@ defmodule Sanbase.Alert.OperationEvaluationTest do
       assert OperationEvaluation.operation_triggered?(5, %{below_or_equal: 5})
     end
 
-    test "does not trigger when value is below threshold (triggers)" do
+    test "triggers when value is below threshold" do
       assert OperationEvaluation.operation_triggered?(3, %{below_or_equal: 5})
     end
 

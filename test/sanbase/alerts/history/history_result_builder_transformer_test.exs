@@ -23,6 +23,8 @@ defmodule Sanbase.Alert.History.ResultBuilder.TransformerTest do
 
       assert second.current == 200
       assert second.absolute_change == 50
+      assert second.percent_change == 33.33
+      assert second.datetime == ~U[2024-01-03 00:00:00Z]
     end
 
     test "handles custom value key" do
@@ -63,6 +65,8 @@ defmodule Sanbase.Alert.History.ResultBuilder.TransformerTest do
       result = Transformer.transform(data, "1d", :value)
       assert [first, _second] = result
       assert first.absolute_change == 100
+      # percent_change(0, 100) returns +0.0 per Sanbase.Math
+      assert first.percent_change == +0.0
     end
   end
 end

@@ -34,7 +34,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolverPureTest do
       assert UserResolver.format_activity_bucket(now, activity) == "More than 3 days ago"
     end
 
-    test "boundary: exactly 5 minutes ago still counts as last 5 minutes" do
+    test "boundary: exactly 5 minutes ago returns 'Last hour' (exclusive)" do
       now = ~U[2024-01-01 12:05:00Z]
       # Exactly 300 seconds ago — NOT < 300, so should be "Last hour"
       activity = ~U[2024-01-01 12:00:00Z]

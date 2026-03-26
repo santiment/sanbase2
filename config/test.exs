@@ -177,6 +177,16 @@ config :sanbase, Sanbase.Insight.Post,
   creation_limit_day: 1000,
   creation_limit_minute: 1000
 
+# Increase the limits in test env so they are not hit unless
+# the limit is intentionally lowered by using Application.put_env
+config :sanbase, Sanbase.MCP.ToolInvocation,
+  global_rate_limit_minute: 10000,
+  global_rate_limit_hour: 10000,
+  global_rate_limit_day: 10000,
+  combined_trends_rate_limit_minute: 10000,
+  combined_trends_rate_limit_hour: 10000,
+  combined_trends_rate_limit_day: 10000
+
 # Configure test environment for OpenAI client mocking
 config :sanbase, :openai_client, Sanbase.AI.MockOpenAIClient
 

@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 8Cf3fo7z42HUi8ANnGz6ujwRZhN9dswmvQ0uwNbZT0xcy767rNFqDiGxa6coMfO
+\restrict bxOjVbSva4meUk6nwZghTgchybjNgokKNazPAuDMt0bqEDQqdfv89M3CUWOI4fR
 
 -- Dumped from database version 15.15 (Homebrew)
 -- Dumped by pg_dump version 15.15 (Homebrew)
@@ -901,8 +901,8 @@ CREATE TABLE public.chat_messages (
     sources jsonb[] DEFAULT ARRAY[]::jsonb[],
     suggestions text[] DEFAULT ARRAY[]::text[],
     feedback_type character varying(255),
-    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY (ARRAY[('thumbs_up'::character varying)::text, ('thumbs_down'::character varying)::text])) OR (feedback_type IS NULL))),
-    CONSTRAINT valid_role CHECK (((role)::text = ANY (ARRAY[('user'::character varying)::text, ('assistant'::character varying)::text])))
+    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY ((ARRAY['thumbs_up'::character varying, 'thumbs_down'::character varying])::text[])) OR (feedback_type IS NULL))),
+    CONSTRAINT valid_role CHECK (((role)::text = ANY ((ARRAY['user'::character varying, 'assistant'::character varying])::text[])))
 );
 
 
@@ -8943,6 +8943,20 @@ CREATE INDEX mcp_tool_invocations_user_id_index ON public.mcp_tool_invocations U
 
 
 --
+-- Name: mcp_tool_invocations_user_id_inserted_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX mcp_tool_invocations_user_id_inserted_at_index ON public.mcp_tool_invocations USING btree (user_id, inserted_at);
+
+
+--
+-- Name: mcp_tool_invocations_user_id_tool_name_inserted_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX mcp_tool_invocations_user_id_tool_name_inserted_at_index ON public.mcp_tool_invocations USING btree (user_id, tool_name, inserted_at);
+
+
+--
 -- Name: menus_user_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11422,7 +11436,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 8Cf3fo7z42HUi8ANnGz6ujwRZhN9dswmvQ0uwNbZT0xcy767rNFqDiGxa6coMfO
+\unrestrict bxOjVbSva4meUk6nwZghTgchybjNgokKNazPAuDMt0bqEDQqdfv89M3CUWOI4fR
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -11980,3 +11994,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260309140153);
 INSERT INTO public."schema_migrations" (version) VALUES (20260309140154);
 INSERT INTO public."schema_migrations" (version) VALUES (20260317111739);
 INSERT INTO public."schema_migrations" (version) VALUES (20260319144952);
+INSERT INTO public."schema_migrations" (version) VALUES (20260326120000);

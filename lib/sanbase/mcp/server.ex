@@ -18,14 +18,23 @@ defmodule Sanbase.MCP.Server do
     frame = assign_current_user(frame)
     tool_name = get_in(request, ["params", "name"])
     params = get_in(request, ["params", "arguments"]) || %{}
-    start_time = System.monotonic_time(:millisecond)
 
-    result = Anubis.Server.Handlers.handle(request, __MODULE__, frame)
+    case check_rate_limits(frame, tool_name) do
+      {:ok, _} ->
+        start_time = System.monotonic_time(:millisecond)
+        result = Anubis.Server.Handlers.handle(request, __MODULE__, frame)
+        duration_ms = System.monotonic_time(:millisecond) - start_time
+        track_tool_invocation(result, frame, tool_name, params, duration_ms)
+        result
 
-    duration_ms = System.monotonic_time(:millisecond) - start_time
-    track_tool_invocation(result, frame, tool_name, params, duration_ms)
+      {:error, error_message} ->
+        error_response =
+          Anubis.Server.Response.tool()
+          |> Anubis.Server.Response.error(error_message)
+          |> Anubis.Server.Response.to_protocol()
 
-    result
+        {:reply, error_response, frame}
+    end
   end
 
   def handle_request(request, %Anubis.Server.Frame{} = frame) do
@@ -57,6 +66,20 @@ defmodule Sanbase.MCP.Server do
     IO.puts("Defining the extra MCP Server tools used in dev and test")
     # Some tools are enabled only in dev mode so we can test things during development
     component(Sanbase.MCP.CheckAuthentication)
+  end
+
+  defp check_rate_limits(frame, tool_name) do
+    case frame.assigns[:current_user] do
+      nil ->
+        {:error,
+         "Authentication required to use MCP tools. Please provide a valid API key or OAuth token."}
+
+      user ->
+        with {:ok, _} <- Sanbase.MCP.ToolInvocation.check_rate_limit(user.id),
+             {:ok, _} <- Sanbase.MCP.ToolInvocation.check_tool_rate_limit(user.id, tool_name) do
+          {:ok, true}
+        end
+    end
   end
 
   defp track_tool_invocation(result, frame, tool_name, params, duration_ms) do

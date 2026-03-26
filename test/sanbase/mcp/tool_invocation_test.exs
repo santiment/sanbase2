@@ -140,6 +140,46 @@ defmodule Sanbase.MCP.ToolInvocationTest do
     end)
   end
 
+  test "returns rate limit error when global limit is exceeded", context do
+    original = Application.get_env(:sanbase, Sanbase.MCP.ToolInvocation)
+
+    Application.put_env(
+      :sanbase,
+      Sanbase.MCP.ToolInvocation,
+      Keyword.merge(original, global_rate_limit_minute: 2)
+    )
+
+    # Pre-insert invocations to reach the limit
+    for _ <- 1..2 do
+      {:ok, _} =
+        ToolInvocation.create(%{
+          user_id: context.user.id,
+          tool_name: "fetch_metric_data_tool",
+          params: %{},
+          is_successful: true,
+          duration_ms: 100
+        })
+    end
+
+    # This call should hit the rate limit
+    result =
+      try_few_times(
+        fn ->
+          Sanbase.MCP.Client.call_tool("metrics_and_assets_discovery_tool", %{
+            metric: "price_usd"
+          })
+        end,
+        attempts: 3,
+        sleep: 250
+      )
+
+    assert {:ok, %Anubis.MCP.Response{is_error: true} = response} = result
+    error_text = get_in(response.result, ["content", Access.at(0), "text"])
+    assert error_text =~ "Rate limit exceeded"
+
+    Application.put_env(:sanbase, Sanbase.MCP.ToolInvocation, original)
+  end
+
   test "filters work correctly", context do
     # Insert test records directly
     {:ok, _} =

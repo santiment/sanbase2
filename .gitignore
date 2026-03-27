@@ -87,6 +87,7 @@ load_test/data/apikeys.json
 load_test/data/slugs.json
 
 .worktrees
+memory/
 
 PLAN.md
 PLAN_PROGRESS.md

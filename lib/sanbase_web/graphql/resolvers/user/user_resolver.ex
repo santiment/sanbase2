@@ -87,18 +87,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
     # in the database by bumping the `last_exchanged_at` field
     # API calls with apikey does is not reflected here
     with {:ok, datetime} <- SanbaseWeb.Guardian.Token.user_id_last_activity(user.id) do
-      now = DateTime.utc_now()
+      {:ok, format_activity_bucket(DateTime.utc_now(), datetime)}
+    end
+  end
 
-      last_activity_str =
-        cond do
-          DateTime.diff(now, datetime, :second) < 300 -> "Last 5 minutes"
-          DateTime.diff(now, datetime, :second) < 3600 -> "Last hour"
-          DateTime.diff(now, datetime, :hour) < 24 -> "Last 24 hours"
-          DateTime.diff(now, datetime, :day) < 3 -> "Last 3 days"
-          true -> "More than 3 days ago"
-        end
-
-      {:ok, last_activity_str}
+  @doc false
+  def format_activity_bucket(now, datetime) do
+    cond do
+      DateTime.diff(now, datetime, :second) < 300 -> "Last 5 minutes"
+      DateTime.diff(now, datetime, :second) < 3600 -> "Last hour"
+      DateTime.diff(now, datetime, :hour) < 24 -> "Last 24 hours"
+      DateTime.diff(now, datetime, :day) < 3 -> "Last 3 days"
+      true -> "More than 3 days ago"
     end
   end
 
@@ -122,19 +122,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
 
   def entities_stats(%User{} = user, _args, _resolution) do
     with {:ok, map} <- Sanbase.Entity.get_user_entities_stats(user.id) do
-      result = %{
-        insights_created: Map.get(map, :insight, 0),
-        chart_configurations_created: Map.get(map, :chart_configuration, 0),
-        queries_created: Map.get(map, :query, 0),
-        dashboards_created: Map.get(map, :dashboard, 0),
-        alerts_created: Map.get(map, :user_trigger, 0),
-        screeners_created: Map.get(map, :screener, 0),
-        project_watchlists_created: Map.get(map, :project_watchlist, 0),
-        address_watchlists_created: Map.get(map, :address_watchlist, 0)
-      }
-
-      {:ok, result}
+      {:ok, transform_entities_stats(map)}
     end
+  end
+
+  @doc false
+  def transform_entities_stats(map) when is_map(map) do
+    %{
+      insights_created: Map.get(map, :insight, 0),
+      chart_configurations_created: Map.get(map, :chart_configuration, 0),
+      queries_created: Map.get(map, :query, 0),
+      dashboards_created: Map.get(map, :dashboard, 0),
+      alerts_created: Map.get(map, :user_trigger, 0),
+      screeners_created: Map.get(map, :screener, 0),
+      project_watchlists_created: Map.get(map, :project_watchlist, 0),
+      address_watchlists_created: Map.get(map, :address_watchlist, 0)
+    }
   end
 
   def api_calls_history(

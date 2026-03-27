@@ -2,14 +2,15 @@
 -- PostgreSQL database dump
 --
 
-\restrict 8Cf3fo7z42HUi8ANnGz6ujwRZhN9dswmvQ0uwNbZT0xcy767rNFqDiGxa6coMfO
+\restrict eUjvvhyd9RE0yh9uwLqEJ8y6xFMPZhtBIDhpI0cmZOhawlTLaDar84frMwvsQkm
 
--- Dumped from database version 15.15 (Homebrew)
--- Dumped by pg_dump version 15.15 (Homebrew)
+-- Dumped from database version 17.9 (Homebrew)
+-- Dumped by pg_dump version 17.9 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
@@ -4198,7 +4199,8 @@ CREATE TABLE public.sanbase_notifications (
     json_data jsonb,
     is_deleted boolean DEFAULT false NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    entity_description text
 );
 
 
@@ -11422,7 +11424,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 8Cf3fo7z42HUi8ANnGz6ujwRZhN9dswmvQ0uwNbZT0xcy767rNFqDiGxa6coMfO
+\unrestrict eUjvvhyd9RE0yh9uwLqEJ8y6xFMPZhtBIDhpI0cmZOhawlTLaDar84frMwvsQkm
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -11980,3 +11982,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260309140153);
 INSERT INTO public."schema_migrations" (version) VALUES (20260309140154);
 INSERT INTO public."schema_migrations" (version) VALUES (20260317111739);
 INSERT INTO public."schema_migrations" (version) VALUES (20260319144952);
+INSERT INTO public."schema_migrations" (version) VALUES (20260327120000);

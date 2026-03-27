@@ -57,11 +57,13 @@ defmodule Sanbase.EventBus.EventValidation do
         event_type: :alert_triggered,
         user_id: user_id,
         alert_id: alert_id,
-        alert_title: alert_title
+        alert_title: alert_title,
+        alert_description: alert_description
       }),
       do:
         valid_integer_id?(user_id) and valid_integer_id?(alert_id) and
-          (is_nil(alert_title) or is_binary(alert_title))
+          (is_nil(alert_title) or is_binary(alert_title)) and
+          (is_nil(alert_description) or is_binary(alert_description))
 
   #############################################################################
   ## Comments Events

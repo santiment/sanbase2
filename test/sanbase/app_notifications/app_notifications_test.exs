@@ -797,7 +797,8 @@ defmodule Sanbase.AppNotificationsTest do
           user_id: user.id,
           alert_id: user_trigger.id,
           alert_title: alert_title,
-          alert_description: "Triggers when price goes up 20%"
+          alert_description: "Triggers when price goes up 20%",
+          alert_is_active: true
         }
       })
 
@@ -813,7 +814,7 @@ defmodule Sanbase.AppNotificationsTest do
       assert notification.entity_name == alert_title
       assert notification.entity_description == "Triggers when price goes up 20%"
       assert notification.user_id == user.id
-      assert notification.json_data == %{}
+      assert notification.json_data == %{"alert_is_active" => true}
     end
 
     # Muted user tests

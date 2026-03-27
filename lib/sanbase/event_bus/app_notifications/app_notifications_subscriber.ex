@@ -134,7 +134,13 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
   defp handle_event(
          %{
            data:
-             %{event_type: :alert_triggered, user_id: user_id, alert_id: alert_id, alert_title: _} =
+             %{
+               event_type: :alert_triggered,
+               user_id: user_id,
+               alert_id: alert_id,
+               alert_title: _,
+               alert_description: _
+             } =
                data
          },
          event_shadow,
@@ -319,7 +325,8 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
          %{
            user_id: user_id,
            alert_id: alert_id,
-           alert_title: alert_title
+           alert_title: alert_title,
+           alert_description: alert_description
          }
        ) do
     multi_insert_notification_read_status(user_ids, user_id, fn ->
@@ -328,6 +335,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
         user_id: user_id,
         entity_type: "user_trigger",
         entity_name: alert_title || "Alert #{alert_id}",
+        entity_description: alert_description,
         entity_id: alert_id,
         is_broadcast: false,
         is_system_generated: false,

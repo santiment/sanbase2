@@ -796,7 +796,8 @@ defmodule Sanbase.AppNotificationsTest do
           event_type: :alert_triggered,
           user_id: user.id,
           alert_id: user_trigger.id,
-          alert_title: alert_title
+          alert_title: alert_title,
+          alert_description: "Triggers when price goes up 20%"
         }
       })
 
@@ -810,6 +811,7 @@ defmodule Sanbase.AppNotificationsTest do
       assert notification.entity_type == "user_trigger"
       assert notification.entity_id == user_trigger.id
       assert notification.entity_name == alert_title
+      assert notification.entity_description == "Triggers when price goes up 20%"
       assert notification.user_id == user.id
       assert notification.json_data == %{}
     end

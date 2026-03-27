@@ -126,6 +126,113 @@ defmodule Sanbase.Billing.SubscriptionTest do
     end
   end
 
+  describe "#update_subscription - SAN discount on upgrade" do
+    test "applies SAN discount when user has 1000+ SAN and no existing coupon", context do
+      user = insert(:user, email: "test@example.com", san_balance: Decimal.new(1000))
+      subscription = insert(:subscription_pro_sanbase, user: user, stripe_id: "sub_test_upgrade")
+      new_plan = context.plans.plan_pro_sanbase_yearly
+
+      stripe_sub_no_discount =
+        StripeApiTestResponse.retrieve_subscription_resp(stripe_id: "sub_test_upgrade") |> elem(1)
+
+      test_pid = self()
+
+      with_mocks([
+        {Stripe.Subscription, [],
+         [
+           retrieve: fn _stripe_id, _opts -> {:ok, stripe_sub_no_discount} end,
+           update: fn _stripe_id, params, _opts ->
+             send(test_pid, {:update_params, params})
+             StripeApiTestResponse.update_subscription_resp()
+           end
+         ]}
+      ]) do
+        {:ok, _updated} = Subscription.update_subscription(subscription, new_plan)
+
+        assert_receive {:update_params, params}
+        assert params[:coupon] == "SAN_HOLDER_1000"
+      end
+    end
+
+    test "does not apply coupon when subscription already has a discount", context do
+      user = insert(:staked_user, email: "test@example.com")
+      subscription = insert(:subscription_pro_sanbase, user: user, stripe_id: "sub_test_upgrade")
+      new_plan = context.plans.plan_pro_sanbase_yearly
+
+      stripe_sub_with_discount =
+        StripeApiTestResponse.retrieve_subscription_resp(stripe_id: "sub_test_upgrade")
+        |> elem(1)
+        |> Map.put(:discount, %{coupon: %{id: "existing_coupon", percent_off: 10}})
+
+      test_pid = self()
+
+      with_mocks([
+        {Stripe.Subscription, [],
+         [
+           retrieve: fn _stripe_id, _opts -> {:ok, stripe_sub_with_discount} end,
+           update: fn _stripe_id, params, _opts ->
+             send(test_pid, {:update_params, params})
+             StripeApiTestResponse.update_subscription_resp()
+           end
+         ]}
+      ]) do
+        {:ok, _updated} = Subscription.update_subscription(subscription, new_plan)
+
+        assert_receive {:update_params, params}
+        refute Map.has_key?(params, :coupon)
+      end
+    end
+
+    test "does not apply coupon when user has less than 1000 SAN", context do
+      user = insert(:user, email: "test@example.com", san_balance: Decimal.new(500))
+      subscription = insert(:subscription_pro_sanbase, user: user, stripe_id: "sub_test_upgrade")
+      new_plan = context.plans.plan_pro_sanbase_yearly
+
+      stripe_sub_no_discount =
+        StripeApiTestResponse.retrieve_subscription_resp(stripe_id: "sub_test_upgrade") |> elem(1)
+
+      test_pid = self()
+
+      with_mocks([
+        {Stripe.Subscription, [],
+         [
+           retrieve: fn _stripe_id, _opts -> {:ok, stripe_sub_no_discount} end,
+           update: fn _stripe_id, params, _opts ->
+             send(test_pid, {:update_params, params})
+             StripeApiTestResponse.update_subscription_resp()
+           end
+         ]}
+      ]) do
+        {:ok, _updated} = Subscription.update_subscription(subscription, new_plan)
+
+        assert_receive {:update_params, params}
+        refute Map.has_key?(params, :coupon)
+      end
+    end
+
+    test "upgrade works for user without SAN balance (no regression)", context do
+      user = insert(:user, email: "test@example.com")
+      subscription = insert(:subscription_pro_sanbase, user: user, stripe_id: "sub_test_upgrade")
+      new_plan = context.plans.plan_pro_sanbase_yearly
+
+      stripe_sub_no_discount =
+        StripeApiTestResponse.retrieve_subscription_resp(stripe_id: "sub_test_upgrade") |> elem(1)
+
+      with_mocks([
+        {Stripe.Subscription, [],
+         [
+           retrieve: fn _stripe_id, _opts -> {:ok, stripe_sub_no_discount} end,
+           update: fn _stripe_id, _params, _opts ->
+             StripeApiTestResponse.update_subscription_resp()
+           end
+         ]}
+      ]) do
+        result = Subscription.update_subscription(subscription, new_plan)
+        assert {:ok, _updated} = result
+      end
+    end
+  end
+
   describe "#sync_subscription_with_stripe" do
     setup(context) do
       stripe_base_subscription =

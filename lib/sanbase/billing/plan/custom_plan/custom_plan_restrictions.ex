@@ -73,6 +73,7 @@ defmodule Sanbase.Billing.Plan.CustomPlan.Restrictions do
 
   defp validate_access_map(field_name, %{} = access_map) do
     with true <- valid_accessible(access_map),
+         true <- valid_accessible_patterns(access_map),
          true <- valid_not_accessible(access_map),
          true <- valid_not_accessible_patterns(access_map) do
       []
@@ -84,9 +85,28 @@ defmodule Sanbase.Billing.Plan.CustomPlan.Restrictions do
 
   defp valid_accessible(%{"accessible" => "all"}), do: true
   defp valid_accessible(%{"accessible" => list}), do: Enum.all?(list, &is_binary/1)
+  defp valid_accessible(%{}), do: true
+
+  # accessible_patterns is optional (backward compatible) - defaults to []
+  defp valid_accessible_patterns(%{"accessible_patterns" => list}) when is_list(list) do
+    Enum.all?(list, fn pattern ->
+      is_binary(pattern) and match?({:ok, _}, Regex.compile(pattern))
+    end)
+  end
+
+  defp valid_accessible_patterns(%{"accessible_patterns" => _}), do: false
+  defp valid_accessible_patterns(%{}), do: true
+
   defp valid_not_accessible(%{"not_accessible" => "all"}), do: true
   defp valid_not_accessible(%{"not_accessible" => list}), do: Enum.all?(list, &is_binary/1)
+  defp valid_not_accessible(%{}), do: true
 
-  defp valid_not_accessible_patterns(%{"not_accessible_patterns" => list}),
-    do: Enum.all?(list, &is_binary/1)
+  defp valid_not_accessible_patterns(%{"not_accessible_patterns" => list}) when is_list(list) do
+    Enum.all?(list, fn pattern ->
+      is_binary(pattern) and match?({:ok, _}, Regex.compile(pattern))
+    end)
+  end
+
+  defp valid_not_accessible_patterns(%{"not_accessible_patterns" => _}), do: false
+  defp valid_not_accessible_patterns(%{}), do: true
 end

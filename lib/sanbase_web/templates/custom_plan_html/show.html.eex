@@ -1,39 +1,84 @@
-<h1 class="text-4xl font-black mb-4">Show Custom Plan</h1>
+<div class="max-w-4xl mx-auto py-8">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-3xl font-bold text-gray-800"><%= @custom_plan.name %></h1>
+    <div class="flex gap-3">
+      <%= link "Edit", to: Routes.custom_plan_path(@conn, :edit, @custom_plan), class: "px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium" %>
+      <%= link "Back to Plans", to: Routes.custom_plan_path(@conn, :index), class: "px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-medium" %>
+    </div>
+  </div>
 
-<table class="table-auto border-collapse w-full mb-4">
-  <tbody>
-    <tr><td class="border px-4 py-2">ID</td> <td class="border px-4 py-2"><%= @custom_plan.id %></td></tr>
-    <tr><td class="border px-4 py-2">Name</td> <td class="border px-4 py-2"><%= @custom_plan.name %></td></tr>
-    <tr><td class="border px-4 py-2">Stripe ID</td> <td class="border px-4 py-2"><%= @custom_plan.stripe_id %></td></tr>
-    <tr><td class="border px-4 py-2">API Call Limits</td> <td class="border px-4 py-2"><%= Jason.encode!(@custom_plan.restrictions.api_call_limits) %></td></tr>
-    <tr><td class="border px-4 py-2">Metric Access</td> <td class="border px-4 py-2"><%= Jason.encode!(@custom_plan.restrictions.metric_access) %></td></tr>
-    <tr><td class="border px-4 py-2">Query Access</td> <td class="border px-4 py-2"><%= Jason.encode!(@custom_plan.restrictions.query_access) %></td></tr>
-    <tr><td class="border px-4 py-2">Signal Access</td> <td class="border px-4 py-2"><%= Jason.encode!(@custom_plan.restrictions.signal_access) %></td></tr>
-    <tr><td class="border px-4 py-2">Accessible Historical Days</td> <td class="border px-4 py-2"><%= Jason.encode!(@custom_plan.restrictions.historical_data_in_days) %></td></tr>
-    <tr><td class="border px-4 py-2">Restricted Realtime Days</td> <td class="border px-4 py-2"><%= Jason.encode!(@custom_plan.restrictions.realtime_data_cut_off_in_days) %></td></tr>
-  </tbody>
-</table>
+  <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
+    <table class="w-full">
+      <tbody>
+        <tr class="border-b border-gray-100">
+          <td class="px-6 py-3 text-sm font-medium text-gray-500 w-1/4">ID</td>
+          <td class="px-6 py-3 text-sm text-gray-900"><%= @custom_plan.id %></td>
+        </tr>
+        <tr class="border-b border-gray-100 bg-gray-50">
+          <td class="px-6 py-3 text-sm font-medium text-gray-500">Name</td>
+          <td class="px-6 py-3 text-sm text-gray-900 font-mono"><%= @custom_plan.name %></td>
+        </tr>
+        <tr class="border-b border-gray-100">
+          <td class="px-6 py-3 text-sm font-medium text-gray-500">Stripe ID</td>
+          <td class="px-6 py-3 text-sm text-gray-900 font-mono"><%= @custom_plan.stripe_id %></td>
+        </tr>
+        <tr class="border-b border-gray-100 bg-gray-50">
+          <td class="px-6 py-3 text-sm font-medium text-gray-500">API Call Limits</td>
+          <td class="px-6 py-3 text-sm text-gray-900 font-mono"><%= Jason.encode!(@custom_plan.restrictions.api_call_limits, pretty: true) %></td>
+        </tr>
+        <tr class="border-b border-gray-100">
+          <td class="px-6 py-3 text-sm font-medium text-gray-500">Metric Access</td>
+          <td class="px-6 py-3 text-sm text-gray-900 font-mono whitespace-pre-wrap break-all"><%= Jason.encode!(@custom_plan.restrictions.metric_access, pretty: true) %></td>
+        </tr>
+        <tr class="border-b border-gray-100 bg-gray-50">
+          <td class="px-6 py-3 text-sm font-medium text-gray-500">Query Access</td>
+          <td class="px-6 py-3 text-sm text-gray-900 font-mono whitespace-pre-wrap break-all"><%= Jason.encode!(@custom_plan.restrictions.query_access, pretty: true) %></td>
+        </tr>
+        <tr class="border-b border-gray-100">
+          <td class="px-6 py-3 text-sm font-medium text-gray-500">Signal Access</td>
+          <td class="px-6 py-3 text-sm text-gray-900 font-mono whitespace-pre-wrap break-all"><%= Jason.encode!(@custom_plan.restrictions.signal_access, pretty: true) %></td>
+        </tr>
+        <tr class="border-b border-gray-100 bg-gray-50">
+          <td class="px-6 py-3 text-sm font-medium text-gray-500">Historical Data (days)</td>
+          <td class="px-6 py-3 text-sm text-gray-900"><%= @custom_plan.restrictions.historical_data_in_days || "No restriction" %></td>
+        </tr>
+        <tr class="border-b border-gray-100">
+          <td class="px-6 py-3 text-sm font-medium text-gray-500">Realtime Data Cut-off (days)</td>
+          <td class="px-6 py-3 text-sm text-gray-900"><%= @custom_plan.restrictions.realtime_data_cut_off_in_days || "No restriction" %></td>
+        </tr>
+        <tr class="bg-gray-50">
+          <td class="px-6 py-3 text-sm font-medium text-gray-500">Restricted Access As Plan</td>
+          <td class="px-6 py-3 text-sm text-gray-900 font-mono"><%= @custom_plan.restrictions.restricted_access_as_plan %></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 
-<span><%= link "Edit", to: Routes.custom_plan_path(@conn, :edit, @custom_plan), class: "flex-shrink-0 border-4 text-teal-500 hover:text-teal-800 py-1 px-2 rounded"%></span>
-<span><%= link "Back", to: Routes.custom_plan_path(@conn, :index), class: "flex-shrink-0 border-4 text-teal-500 hover:text-teal-800 py-1 px-2 rounded" %></span>
-
-
-<h1 class="text-4xl font-black mb-4">Users on this custom_plan</h1>
-<table class="table-auto border-collapse w-full mb-4">
-  <thead>
-    <tr class="rounded-lg text-sm font-medium text-gray-700 text-left" style="font-size: 0.9674rem">
-      <th class="px-4 py-2">ID</th>
-      <th class="px-4 py-2">Email</th>
-      <th class="px-4 py-2">Username</th>
-    </tr>
-  </thead>
-  <tbody class="text-sm font-normal text-gray-700">
-    <%= for user <- @custom_plan_users do %>
-      <tr class="hover:bg-gray-100 border-b border-gray-200 py-4">
-        <td class="border px-4 py-2"><%= link user.id, to: ~p"/admin/generic/#{user}?resource=users", class: "flex-shrink-0 border-4 text-teal-500 hover:text-teal-800 py-1 px-2 rounded"%></td>
-        <td class="border px-4 py-2"><%= user.email %></td>
-        <td class="border px-4 py-2"><%= user.username %></td>
-      </tr>
+  <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200">
+      <h2 class="text-xl font-bold text-gray-800">Users on this plan</h2>
+    </div>
+    <%= if @custom_plan_users == [] do %>
+      <div class="px-6 py-8 text-center text-gray-400">No users subscribed to this plan</div>
+    <% else %>
+      <table class="w-full">
+        <thead>
+          <tr class="border-b border-gray-200 bg-gray-50">
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
+          </tr>
+        </thead>
+        <tbody>
+          <%= for user <- @custom_plan_users do %>
+            <tr class="hover:bg-gray-50 border-b border-gray-100">
+              <td class="px-6 py-3 text-sm"><%= link user.id, to: ~p"/admin/generic/#{user}?resource=users", class: "text-indigo-600 hover:text-indigo-800 font-medium" %></td>
+              <td class="px-6 py-3 text-sm text-gray-900"><%= user.email %></td>
+              <td class="px-6 py-3 text-sm text-gray-900"><%= user.username %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
     <% end %>
-  </tbody>
-</table>
+  </div>
+</div>

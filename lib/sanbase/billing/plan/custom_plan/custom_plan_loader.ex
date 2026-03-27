@@ -111,32 +111,43 @@ defmodule Sanbase.Billing.Plan.CustomPlan.Loader do
   end
 
   defp resolve_accessible_list(access_map, get_all_function) do
-    %{
-      "accessible" => accessible,
-      "not_accessible" => not_accessible,
-      "not_accessible_patterns" => not_accessible_patterns
-    } = access_map
+    accessible = Map.get(access_map, "accessible", [])
+    accessible_patterns = Map.get(access_map, "accessible_patterns", [])
+    not_accessible = Map.get(access_map, "not_accessible", [])
+    not_accessible_patterns = Map.get(access_map, "not_accessible_patterns", [])
 
-    accessible =
+    all_items = get_all_function.()
+
+    # Step 1: Build the accessible list from explicit items + pattern matches
+    accessible_list =
       case accessible do
         "all" ->
-          get_all_function.()
+          all_items
 
-        _ ->
-          accessible
+        list when is_list(list) ->
+          accessible_by_pattern = get_matching_by_patterns(all_items, accessible_patterns)
+          Enum.uniq(list ++ accessible_by_pattern)
       end
 
-    not_accessible_by_pattern =
-      get_not_accessible_by_patterns(accessible, not_accessible_patterns)
+    # Step 2: Remove not_accessible items (not_accessible has HIGHER priority)
+    not_accessible_list =
+      case not_accessible do
+        "all" -> all_items
+        list when is_list(list) -> list
+      end
 
-    accessible -- (not_accessible ++ not_accessible_by_pattern)
+    not_accessible_by_pattern = get_matching_by_patterns(accessible_list, not_accessible_patterns)
+
+    accessible_list -- (not_accessible_list ++ not_accessible_by_pattern)
   end
 
-  # From the accessible list, return those which are not accessible because they
-  # match one of the provided patterns.
-  # Example: If all MVRV metrics need to be excluded, instead of listing them all
-  # one by one, the pattern "mvrv_" can be provided
-  defp get_not_accessible_by_patterns(list, patterns) do
+  # From the given list, return those items that match at least one of the
+  # provided regex patterns.
+  # Example: pattern "mvrv_" matches all MVRV metrics; pattern "^social_"
+  # matches all metrics starting with "social_".
+  defp get_matching_by_patterns(_list, []), do: []
+
+  defp get_matching_by_patterns(list, patterns) do
     regex_list = Enum.map(patterns, &Regex.compile!/1)
 
     Enum.filter(list, fn elem ->

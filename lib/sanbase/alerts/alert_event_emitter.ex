@@ -18,7 +18,8 @@ defmodule Sanbase.Alert.EventEmitter do
       user_id: user_trigger.user_id,
       alert_id: user_trigger.id,
       alert_title: user_trigger.trigger.title,
-      alert_description: user_trigger.trigger.description
+      alert_description: user_trigger.trigger.description,
+      alert_is_active: user_trigger.trigger.is_active
     }
     |> notify()
   end

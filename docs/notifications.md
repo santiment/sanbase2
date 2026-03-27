@@ -11,6 +11,7 @@ All notifications share the following base structure:
 - `entity_type` (string): Type of entity the notification relates to (e.g., "insight", "watchlist", "user_trigger")
 - `entity_id` (integer): ID of the entity the notification relates to
 - `entity_name` (string): Name/title of the entity
+- `entity_description` (string | null): Description of the entity (e.g., alert description). Currently populated for `alert_triggered` notifications.
 - `user_id` (integer): ID of the user who triggered the notification (the actor, not the receiver)
 - `is_broadcast` (boolean): Always `false` for these notifications
 - `is_system_generated` (boolean): Always `false` for these notifications
@@ -182,11 +183,12 @@ All notifications share the following base structure:
 **json_data:**
 ```json
 {
-  "comment_preview": "This is the first 150 characters of the comment content..."
+  "comment_preview": "This is the first 150 characters of the comment content...",
+  "alert_is_active": true  // Only present when entity_type is "user_trigger"
 }
 ```
 
-**Example:**
+**Example (comment on an insight):**
 ```json
 {
   "id": 126,
@@ -199,6 +201,26 @@ All notifications share the following base structure:
   "is_system_generated": false,
   "json_data": {
     "comment_preview": "Great analysis! I think you're right about the trend..."
+  },
+  "inserted_at": "2026-02-03T12:00:00Z",
+  "read_at": null
+}
+```
+
+**Example (comment on an alert):**
+```json
+{
+  "id": 126,
+  "type": "create_comment",
+  "entity_type": "user_trigger",
+  "entity_id": 555,
+  "entity_name": "BTC Price Above $50k",
+  "user_id": 999,
+  "is_broadcast": false,
+  "is_system_generated": false,
+  "json_data": {
+    "comment_preview": "Nice alert setup!",
+    "alert_is_active": true
   },
   "inserted_at": "2026-02-03T12:00:00Z",
   "read_at": null
@@ -226,9 +248,11 @@ All notifications share the following base structure:
 - `entity_name`: The name/title of the entity
 - `user_id`: The voter's user ID
 
-**json_data:** `{}` (empty)
+**json_data:**
+- `{}` (empty) for most entity types
+- `{"alert_is_active": true/false}` when `entity_type` is `"user_trigger"`
 
-**Example:**
+**Example (vote on an insight):**
 ```json
 {
   "id": 127,
@@ -240,6 +264,25 @@ All notifications share the following base structure:
   "is_broadcast": false,
   "is_system_generated": false,
   "json_data": {},
+  "inserted_at": "2026-02-03T12:15:00Z",
+  "read_at": null
+}
+```
+
+**Example (vote on an alert):**
+```json
+{
+  "id": 127,
+  "type": "create_vote",
+  "entity_type": "user_trigger",
+  "entity_id": 555,
+  "entity_name": "BTC Price Above $50k",
+  "user_id": 888,
+  "is_broadcast": false,
+  "is_system_generated": false,
+  "json_data": {
+    "alert_is_active": false
+  },
   "inserted_at": "2026-02-03T12:15:00Z",
   "read_at": null
 }
@@ -296,9 +339,15 @@ All notifications share the following base structure:
 - `entity_type`: `"user_trigger"`
 - `entity_id`: The alert ID
 - `entity_name`: The alert title, or `"Alert {alert_id}"` if no title is provided
+- `entity_description`: The alert description (from `trigger.description`), or `null` if not set
 - `user_id`: The alert owner's user ID
 
-**json_data:** `{}` (empty)
+**json_data:**
+```json
+{
+  "alert_is_active": true  // Whether the alert is currently active
+}
+```
 
 **Example:**
 ```json
@@ -308,10 +357,13 @@ All notifications share the following base structure:
   "entity_type": "user_trigger",
   "entity_id": 555,
   "entity_name": "BTC Price Above $50k",
+  "entity_description": "Triggers when BTC price crosses $50,000",
   "user_id": 789,
   "is_broadcast": false,
   "is_system_generated": false,
-  "json_data": {},
+  "json_data": {
+    "alert_is_active": true
+  },
   "inserted_at": "2026-02-03T13:00:00Z",
   "read_at": null
 }

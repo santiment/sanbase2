@@ -139,7 +139,8 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
                user_id: user_id,
                alert_id: alert_id,
                alert_title: _,
-               alert_description: _
+               alert_description: _,
+               alert_is_active: _
              } =
                data
          },
@@ -277,6 +278,10 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
     with %Sanbase.Comment{content: content} <- Sanbase.Comment.by_id(comment_id) do
       comment_preview = String.slice(content, 0, 150)
 
+      json_data =
+        %{"comment_preview" => comment_preview}
+        |> maybe_put_alert_is_active(entity_type, entity_id)
+
       # There's one receiver - the owner of the entity - but we can reuse
       # the multi_insert_notification_read_status function to insert the notification read status
       multi_insert_notification_read_status(user_ids, author_id, fn ->
@@ -289,7 +294,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
           entity_id: entity_id,
           is_broadcast: false,
           is_system_generated: false,
-          json_data: %{"comment_preview" => comment_preview}
+          json_data: json_data
         })
       end)
     end
@@ -305,6 +310,8 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
            user_id: author_id
          }
        ) do
+    json_data = maybe_put_alert_is_active(%{}, entity_type, entity_id)
+
     multi_insert_notification_read_status(user_ids, author_id, fn ->
       AppNotifications.create_notification(%{
         type: "create_vote",
@@ -314,7 +321,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
         entity_id: entity_id,
         is_broadcast: false,
         is_system_generated: false,
-        json_data: %{}
+        json_data: json_data
       })
     end)
   end
@@ -326,7 +333,8 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
            user_id: user_id,
            alert_id: alert_id,
            alert_title: alert_title,
-           alert_description: alert_description
+           alert_description: alert_description,
+           alert_is_active: alert_is_active
          }
        ) do
     multi_insert_notification_read_status(user_ids, user_id, fn ->
@@ -339,7 +347,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
         entity_id: alert_id,
         is_broadcast: false,
         is_system_generated: false,
-        json_data: %{}
+        json_data: %{"alert_is_active" => alert_is_active}
       })
     end)
   end
@@ -478,4 +486,14 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
   defp same_author_and_receiver?(_type, _data) do
     false
   end
+
+  defp maybe_put_alert_is_active(json_data, entity_type, entity_id)
+       when entity_type in [:user_trigger, "user_trigger"] do
+    case Sanbase.Alert.UserTrigger.by_id(entity_id, []) do
+      {:ok, ut} -> Map.put(json_data, "alert_is_active", ut.trigger.is_active)
+      _ -> json_data
+    end
+  end
+
+  defp maybe_put_alert_is_active(json_data, _entity_type, _entity_id), do: json_data
 end

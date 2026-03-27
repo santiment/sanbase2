@@ -58,12 +58,14 @@ defmodule Sanbase.EventBus.EventValidation do
         user_id: user_id,
         alert_id: alert_id,
         alert_title: alert_title,
-        alert_description: alert_description
+        alert_description: alert_description,
+        alert_is_active: alert_is_active
       }),
       do:
         valid_integer_id?(user_id) and valid_integer_id?(alert_id) and
           (is_nil(alert_title) or is_binary(alert_title)) and
-          (is_nil(alert_description) or is_binary(alert_description))
+          (is_nil(alert_description) or is_binary(alert_description)) and
+          is_boolean(alert_is_active)
 
   #############################################################################
   ## Comments Events

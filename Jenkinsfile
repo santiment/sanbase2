@@ -61,7 +61,7 @@ slaveTemplates.dockerTemplate { label ->
               --health-interval 2s \
               --health-timeout 5s \
               --health-retries 10 \
-              -d pgvector/pgvector:pg15"
+              -d pgvector/pgvector:pg17"
           }
 
           sh """

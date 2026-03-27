@@ -25,11 +25,13 @@ defmodule Sanbase.Accounts.Apikey do
   user tokens for that ID and check if the apikey is generated from any of the
   tokens
   """
+  @apikey_user_cache_ttl 60
+
   @spec apikey_to_user(String.t()) :: {:ok, %User{}} | {:error, String.t()}
   def apikey_to_user(apikey) do
     with {:ok, {token, _rest}} <- Hmac.split_apikey(apikey),
          {_, true} <- {:valid?, Hmac.apikey_valid?(token, apikey)},
-         {_, {:ok, user}} <- {:user?, User.by_apikey_token(token)} do
+         {_, {:ok, user}} <- {:user?, fetch_user_by_token_cached(token)} do
       {:ok, user}
     else
       {:valid?, _} ->
@@ -41,6 +43,16 @@ defmodule Sanbase.Accounts.Apikey do
       {:error, error} ->
         {:error, error}
     end
+  end
+
+  defp fetch_user_by_token_cached(token) do
+    cache_key =
+      {__MODULE__, :apikey_user, token}
+      |> Sanbase.Cache.hash()
+
+    Sanbase.Cache.get_or_store({cache_key, @apikey_user_cache_ttl}, fn ->
+      User.by_apikey_token(token)
+    end)
   end
 
   def mask_apikey(apikey) do

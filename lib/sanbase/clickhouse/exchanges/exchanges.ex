@@ -140,7 +140,7 @@ defmodule Sanbase.Clickhouse.Exchanges do
             AND dictGet('labels', 'value', label_id) != ''
     ),
     interesting_metrics AS (
-        SELECT *
+        SELECT label_id, dt, value
         FROM labeled_intraday_metrics_v2
         WHERE
             label_id IN (SELECT label_id FROM exchange_label_ids)
@@ -148,49 +148,27 @@ defmodule Sanbase.Clickhouse.Exchanges do
             AND #{asset_id_filter(%{slug: slug}, argument_name: "slug")}
             AND metric_id = dictGet(metrics_by_name, 'metric_id', 'combined_labeled_balance')
     ),
-    latest_balance AS (
-        SELECT label_id, argMax(value, dt) AS latest_balance
-        FROM interesting_metrics
-        WHERE dt >= today() - INTERVAL 7 DAY
-        GROUP BY label_id
-    ),
-    balance_1d AS (
-        SELECT label_id, argMin(value, dt) AS balance_1d
-        FROM interesting_metrics
-        WHERE dt >= today() - INTERVAL 1 DAY
-        GROUP BY label_id
-    ),
-    balance_7d AS (
-        SELECT label_id, argMin(value, dt) AS balance_7d
-        FROM interesting_metrics
-        WHERE dt >= today() - INTERVAL 7 DAY
-        GROUP BY label_id
-    ),
-    balance_30d AS (
-        SELECT label_id, argMin(value, dt) AS balance_30d
-        FROM interesting_metrics
-        WHERE dt >= today() - INTERVAL 30 DAY
-        GROUP BY label_id
-    ),
-    first_seen AS (
-        SELECT label_id, min(dt) AS first_seen
+    all_balances AS (
+        SELECT
+            label_id,
+            argMax(value, dt) AS latest_balance,
+            argMinIf(value, dt, dt >= today() - INTERVAL 1 DAY) AS balance_1d,
+            argMinIf(value, dt, dt >= today() - INTERVAL 7 DAY) AS balance_7d,
+            argMinIf(value, dt, dt >= today() - INTERVAL 30 DAY) AS balance_30d,
+            min(dt) AS first_seen
         FROM interesting_metrics
         GROUP BY label_id
     )
     SELECT DISTINCT
-        dictGet(labels, 'value', latest_balance.label_id) AS owner,
+        dictGet(labels, 'value', all_balances.label_id) AS owner,
         exchange_label_ids.cex_or_dex_label,
-        latest_balance.latest_balance,
-        balance_1d.balance_1d - latest_balance AS balance_change_1d,
-        balance_7d.balance_7d - latest_balance AS balance_change_7d,
-        balance_30d.balance_30d - latest_balance AS balance_change_30d,
-        toUnixTimestamp(first_seen.first_seen) AS first_seen_ts
-    FROM latest_balance
-    LEFT JOIN balance_1d ON (balance_1d.label_id = latest_balance.label_id)
-    LEFT JOIN balance_7d ON (balance_7d.label_id = latest_balance.label_id)
-    LEFT JOIN balance_30d ON (balance_30d.label_id = latest_balance.label_id)
-    LEFT JOIN first_seen ON (first_seen.label_id = latest_balance.label_id)
-    LEFT JOIN exchange_label_ids ON (exchange_label_ids.label_id = latest_balance.label_id)
+        all_balances.latest_balance,
+        all_balances.balance_1d - all_balances.latest_balance AS balance_change_1d,
+        all_balances.balance_7d - all_balances.latest_balance AS balance_change_7d,
+        all_balances.balance_30d - all_balances.latest_balance AS balance_change_30d,
+        toUnixTimestamp(all_balances.first_seen) AS first_seen_ts
+    FROM all_balances
+    LEFT JOIN exchange_label_ids ON (exchange_label_ids.label_id = all_balances.label_id)
     ORDER BY latest_balance DESC
     LIMIT {{limit}}
     """

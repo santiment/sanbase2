@@ -171,7 +171,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
       addressType = 'normal'
     GROUP BY address
     ORDER BY balance2 DESC
-    LIMIT {{limit}} OFFSET {{ofset}}
+    LIMIT {{limit}} OFFSET {{offset}}
     """
 
     params = %{
@@ -253,33 +253,29 @@ defmodule Sanbase.Clickhouse.TopHolders do
 
     table = if slug == "ethereum", do: @eth_table, else: @erc20_table
 
-    # Select the raw data and combine it with the partOfTotal by a UNION
+    # Read the table once via CTE, then split into holder rows and totals
     inner_sql = """
-    SELECT
-      dt, contract, address, rank, value / pow(10, {{decimals}}) AS value,
-      multiIf(valueTotal > 0, value / (valueTotal / pow(10, {{decimals}})), 0) AS partOfTotal
-    FROM (
-      SELECT *
+    WITH data AS (
+      SELECT dt, contract, address, rank, value
       FROM #{table} FINAL
       WHERE
         contract = {{contract}}
-        AND rank > 0
-        AND address NOT IN ('TOTAL', 'freeze')
         AND dt >= toStartOfDay(toDateTime({{from}}))
         AND dt <= toStartOfDay(toDateTime({{to}}))
-    )
-    GLOBAL ANY LEFT JOIN (
-      SELECT
-        dt,
-        sum(value) AS valueTotal
-      FROM #{table} FINAL
-      WHERE
-        contract = {{contract}}
-        AND address IN ('TOTAL','freeze') AND rank < 0
-        AND dt >= toStartOfDay(toDateTime({{from}}))
-        AND dt <= toStartOfDay(toDateTime({{to}}))
+    ),
+    totals AS (
+      SELECT dt, sum(value) AS valueTotal
+      FROM data
+      WHERE address IN ('TOTAL', 'freeze') AND rank < 0
       GROUP BY dt
-    ) USING (dt)
+    )
+    SELECT
+      data.dt, data.contract, data.address, data.rank,
+      data.value / pow(10, {{decimals}}) AS value,
+      multiIf(totals.valueTotal > 0, data.value / (totals.valueTotal / pow(10, {{decimals}})), 0) AS partOfTotal
+    FROM data
+    LEFT JOIN totals ON data.dt = totals.dt
+    WHERE data.rank > 0 AND data.address NOT IN ('TOTAL', 'freeze')
     """
 
     # Order the data by value in descending order and select one row per address

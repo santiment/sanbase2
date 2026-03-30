@@ -369,9 +369,9 @@ defmodule Sanbase.Application do
 
       # Drain the running connections before closing. This will allow the
       # currently executing API calls to finish. The drainer first makes
-      # the TCP acceptor to stop accepting new connections and then waits
+      # the server stop accepting new connections and then waits
       # until there are no connections or 30 seconds pass.
-      {SanbaseWeb.ConnectionDrainer, shutdown: 30_000, ranch_ref: SanbaseWeb.Endpoint.HTTP},
+      {SanbaseWeb.ConnectionDrainer, shutdown: 30_000, endpoint: SanbaseWeb.Endpoint},
 
       # Process that starts test-only deps
       start_in(Sanbase.TestSetupService, [:test]),

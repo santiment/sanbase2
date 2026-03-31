@@ -82,6 +82,12 @@ if config_env() == :prod do
   port = String.to_integer(System.get_env("PORT") || "4000")
   parity_url = System.get_env("PARITY_URL")
 
+  # MCP tool calls (e.g. combined_trends_tool) can run long due to document
+  # collection + AI summarization. The timeout chain must be ordered:
+  # Cowboy idle_timeout (180s) > Anubis request_timeout (150s) > task work (120s)
+  idle_timeout =
+    if System.get_env("CONTAINER_TYPE") == "mcp", do: 180_000, else: 100_000
+
   config :sanbase, SanbaseWeb.Endpoint,
     url: [host: host, port: port],
     http: [
@@ -92,7 +98,7 @@ if config_env() == :prod do
         max_header_value_length: 8192,
         max_request_line_length: 16_384,
         max_headers: 100,
-        idle_timeout: 100_000
+        idle_timeout: idle_timeout
       ]
     ],
     secret_key_base: secret_key_base,

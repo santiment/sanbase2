@@ -102,7 +102,10 @@ defmodule Sanbase.MCP.StreamableHTTPPlug do
 
     Anubis.Server.Transport.StreamableHTTP.Plug.call(
       conn,
-      Anubis.Server.Transport.StreamableHTTP.Plug.init(server: Sanbase.MCP.Server)
+      Anubis.Server.Transport.StreamableHTTP.Plug.init(
+        server: Sanbase.MCP.Server,
+        request_timeout: 150_000
+      )
     )
   end
 
@@ -142,7 +145,10 @@ defmodule Sanbase.MCP.StreamableHTTPDevPlug do
 
     Anubis.Server.Transport.StreamableHTTP.Plug.call(
       conn,
-      Anubis.Server.Transport.StreamableHTTP.Plug.init(server: Sanbase.MCP.DevServer)
+      Anubis.Server.Transport.StreamableHTTP.Plug.init(
+        server: Sanbase.MCP.DevServer,
+        request_timeout: 150_000
+      )
     )
   end
 

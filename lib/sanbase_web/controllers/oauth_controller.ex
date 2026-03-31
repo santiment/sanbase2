@@ -145,7 +145,7 @@ defmodule SanbaseWeb.OAuthController do
         pkce: true,
         public_refresh_token: true,
         confidential: false,
-        access_token_ttl: 3600,
+        access_token_ttl: 86_400,
         authorization_code_ttl: 60,
         refresh_token_ttl: 30 * 86_400
       }

@@ -1,0 +1,3 @@
+# Copy .env.dev, _build/, and deps/ into new worktrees
+# Uses post-create (blocking) so files are ready before --execute runs
+post-create = "wt step copy-ignored"

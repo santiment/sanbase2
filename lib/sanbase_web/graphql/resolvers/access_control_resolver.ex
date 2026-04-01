@@ -5,8 +5,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccessControlResolver do
   alias SanbaseWeb.Graphql.Cache
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
+  def get_access_restrictions(_root, %{plan: _, plan_name: _}, _resolution) do
+    {:error, "Both 'plan' and 'plan_name' arguments are provided. Please use only one of them."}
+  end
+
   def get_access_restrictions(_root, args, %{context: context}) do
-    plan_name = Map.get(args, :plan) || context[:auth][:plan] || "FREE"
+    plan_name =
+      Map.get(args, :plan_name) || Map.get(args, :plan) || context[:auth][:plan] || "FREE"
+
     plan_name = plan_name |> to_string() |> String.upcase()
 
     product_id =

@@ -343,6 +343,7 @@ defmodule SanbaseWeb.CoreComponents do
         name={@name}
         class="mt-2 block w-full rounded-md border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 sm:text-sm"
         multiple={@multiple}
+        size={if @multiple, do: 12}
         {@rest}
       >
         <option :if={@prompt} value="">{@prompt}</option>

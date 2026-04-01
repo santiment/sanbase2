@@ -59,6 +59,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
 
       arg(:product, :products_enum)
       arg(:plan, :plans_enum)
+      arg(:plan_name, :string)
       arg(:filter, :access_restriction_filter_enum)
 
       resolve(&AccessControlResolver.get_access_restrictions/3)

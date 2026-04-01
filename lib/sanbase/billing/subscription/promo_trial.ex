@@ -6,20 +6,11 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
   alias Sanbase.Billing
   alias Sanbase.StripeApi
   alias Sanbase.Accounts.User
-  alias Sanbase.Billing.{Subscription, Plan}
+  alias Sanbase.Billing.{Subscription, Plan, Product}
+
+  import Ecto.Query
 
   require Logger
-
-  @plan_id_name_map %{
-    "3" => "SanAPI by Santiment / PRO",
-    "5" => "SanAPI by Santiment / CUSTOM",
-    "107" => "Sanapi by Santiment / BUSINESS_PRO",
-    "109" => "Sanapi by Santiment / BUSINESS_MAX",
-    "201" => "Sanbase by Santiment / PRO",
-    "210" => "Sanbase by Santiment / MAX"
-  }
-
-  @promo_trial_plans [3, 5, 107, 109, 201, 210]
 
   schema "promo_trials" do
     field(:trial_days, :integer)
@@ -39,8 +30,46 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
     |> stringify_plans(attrs)
   end
 
-  def plan_id_name_map, do: @plan_id_name_map
-  def promo_trial_plans, do: @promo_trial_plans
+  @doc """
+  Return a map of plan_id (as string) => "Product Name / Plan Name" for all
+  non-deprecated plans in the database.
+  """
+  def plan_id_name_map do
+    Map.new(plan_id_name_list(), fn {name, id} -> {id, name} end)
+  end
+
+  @doc """
+  Return an ordered list of {name, id} tuples for all eligible promo trial plans,
+  grouped by product (SanAPI first, then Sanbase).
+  """
+  def plan_id_name_list do
+    promo_trial_plans_query()
+    |> select([p, prod], {p.id, prod.name, p.name, p.interval})
+    |> Sanbase.Repo.all()
+    |> Enum.map(fn {id, product_name, plan_name, interval} ->
+      {"#{product_name} / #{plan_name} (#{interval})", Integer.to_string(id)}
+    end)
+  end
+
+  @doc """
+  Return a list of all non-deprecated, non-free plan IDs
+  for products that support promo trials (SANAPI and Sanbase).
+  """
+  def promo_trial_plans do
+    promo_trial_plans_query()
+    |> select([p], p.id)
+    |> Sanbase.Repo.all()
+  end
+
+  defp promo_trial_plans_query do
+    from(p in Plan,
+      join: prod in assoc(p, :product),
+      where: not p.is_deprecated,
+      where: p.name != "FREE",
+      where: prod.id in ^[Product.product_api(), Product.product_sanbase()],
+      order_by: [asc: prod.id, asc: p.id]
+    )
+  end
 
   def create_promo_trial(%{"plans" => plans, "trial_days" => trial_days, "user_id" => user_id}) do
     create_promo_trial(%{plans: plans, trial_days: trial_days, user_id: user_id})
@@ -144,7 +173,8 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
   end
 
   defp stringify_plans(changeset, %{plans: plans}) do
-    put_change(changeset, :plans, Enum.map(plans, &@plan_id_name_map[&1]))
+    id_name_map = plan_id_name_map()
+    put_change(changeset, :plans, Enum.map(plans, &(id_name_map[&1] || &1)))
   end
 
   defp stringify_plans(changeset, _), do: changeset

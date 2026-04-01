@@ -254,6 +254,66 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
     end)
   end
 
+  test "export version defaults to 1.0 when version is not provided", context do
+    %{conn: conn, apikey: apikey, project: %{slug: slug}} = context
+    %{from: from, to: to} = context
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.MetricAdapter.timeseries_data/6, {:ok, []})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      get_metric(conn, "mvrv_usd", slug, from, to, "1d")
+
+      Sanbase.KafkaExporter.flush(:api_call_exporter)
+
+      api_calls =
+        get_exported_api_calls(apikey)
+        |> Enum.map(fn data ->
+          %{query: data["query"], version: data["version"]}
+        end)
+
+      assert %{query: "getMetric|mvrv_usd", version: "1.0"} in api_calls
+    end)
+  end
+
+  test "export version when version is explicitly set to 1.0", context do
+    %{conn: conn, apikey: apikey, project: %{slug: slug}} = context
+    %{from: from, to: to} = context
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.MetricAdapter.timeseries_data/6, {:ok, []})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      get_metric_with_version(conn, "mvrv_usd", "1.0", slug, from, to, "1d")
+
+      Sanbase.KafkaExporter.flush(:api_call_exporter)
+
+      api_calls =
+        get_exported_api_calls(apikey)
+        |> Enum.map(fn data ->
+          %{query: data["query"], version: data["version"]}
+        end)
+
+      assert %{query: "getMetric|mvrv_usd", version: "1.0"} in api_calls
+    end)
+  end
+
+  test "export version when version is explicitly set to 2.0", context do
+    %{conn: conn, apikey: apikey, project: %{slug: slug}} = context
+    %{from: from, to: to} = context
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.MetricAdapter.timeseries_data/6, {:ok, []})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      get_metric_with_version(conn, "mvrv_usd", "2.0", slug, from, to, "1d")
+
+      Sanbase.KafkaExporter.flush(:api_call_exporter)
+
+      api_calls =
+        get_exported_api_calls(apikey)
+        |> Enum.map(fn data ->
+          %{query: data["query"], version: data["version"]}
+        end)
+
+      assert %{query: "getMetric|mvrv_usd", version: "2.0"} in api_calls
+    end)
+  end
+
   # InMemoryKafka.Producer is a global singleton Agent shared across all tests.
   # Other concurrent test modules can produce api_call_data messages to it.
   # Filter by api_token to isolate this test's messages from other tests' messages.
@@ -274,6 +334,20 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
     {
       getMetric(metric: "#{metric}") {
         timeseriesDataJson(slug: "#{slug}", from: "#{from}", to: "#{to}", interval: "#{interval}")      }
+    }
+    """
+
+    conn
+    |> post("/graphql", query_skeleton(query))
+    |> json_response(200)
+  end
+
+  defp get_metric_with_version(conn, metric, version, slug, from, to, interval) do
+    query = """
+    {
+      getMetric(metric: "#{metric}", version: "#{version}") {
+        timeseriesDataJson(slug: "#{slug}", from: "#{from}", to: "#{to}", interval: "#{interval}")
+      }
     }
     """
 

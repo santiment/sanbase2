@@ -131,7 +131,7 @@ defmodule SanbaseWeb.GenericAdmin.PromoTrial do
             |> Enum.map(fn plan -> id_name_map[plan] || plan end)
             |> Enum.join(",")
           end,
-          collection: PromoTrial.plan_id_name_map() |> Enum.map(fn {id, name} -> {name, id} end),
+          collection: PromoTrial.plan_id_name_list(),
           type: :multiselect
         }
       }

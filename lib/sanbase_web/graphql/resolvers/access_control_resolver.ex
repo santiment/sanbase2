@@ -15,22 +15,33 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccessControlResolver do
 
     plan_name = plan_name |> to_string() |> String.upcase()
 
-    product_id =
-      Product.id_by_code(Map.get(args, :product)) || context[:requested_product_id] ||
-        context[:subscription_product_id] || Product.product_api()
+    case valid_plan_name?(plan_name) do
+      false ->
+        {:error, "Invalid plan name: #{plan_name}"}
 
-    product_code = Product.code_by_id(product_id)
+      true ->
+        product_id =
+          Product.id_by_code(Map.get(args, :product)) || context[:requested_product_id] ||
+            context[:subscription_product_id] || Product.product_api()
 
-    filter = Map.get(args, :filter)
+        product_code = Product.code_by_id(product_id)
 
-    Cache.wrap(
-      fn ->
-        restrictions = Sanbase.Billing.Plan.Restrictions.get_all(plan_name, product_code, filter)
-        {:ok, restrictions}
-      end,
-      {:get_access_restrictions, plan_name, product_code, filter}
-    ).()
+        filter = Map.get(args, :filter)
+
+        Cache.wrap(
+          fn ->
+            restrictions =
+              Sanbase.Billing.Plan.Restrictions.get_all(plan_name, product_code, filter)
+
+            {:ok, restrictions}
+          end,
+          {:get_access_restrictions, plan_name, product_code, filter}
+        ).()
+    end
   end
+
+  defp valid_plan_name?("CUSTOM_" <> _), do: true
+  defp valid_plan_name?(plan_name), do: plan_name in Sanbase.Billing.Plan.existing_plan_names()
 
   def available_versions(
         %{type: "metric"} = restriction,

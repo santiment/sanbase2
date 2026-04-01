@@ -19,6 +19,11 @@ defmodule Sanbase.Billing.Plan do
   def plans(), do: @plans
   def plans_order(), do: @plans_order
 
+  def existing_plan_names do
+    from(p in __MODULE__, select: p.name, distinct: true)
+    |> Repo.all()
+  end
+
   def sort_plans(plans),
     do: Enum.sort_by(plans, fn plan -> Keyword.get(@plans_order, plan) end)
 

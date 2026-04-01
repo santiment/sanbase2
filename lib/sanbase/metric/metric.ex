@@ -50,6 +50,9 @@ defmodule Sanbase.Metric do
   @type available_metrics_with_nocache_result ::
           {:ok, list(metric)} | {:nocache, {:ok, list(metric)}}
 
+  @default_version "1.0"
+  def default_version(), do: @default_version
+
   @doc ~s"""
   Check if `metric` is a valid metric name.
   """

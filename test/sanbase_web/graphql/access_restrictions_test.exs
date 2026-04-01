@@ -123,6 +123,133 @@ defmodule SanbaseWeb.Graphql.AccessRestrictionsTest do
     end
   end
 
+  describe "plan_name argument" do
+    test "using plan_name with a standard plan works", %{conn: conn} do
+      result = get_access_restrictions_with_plan_name(conn, "PRO")
+      assert is_list(result)
+      assert length(result) > 0
+    end
+
+    test "using plan_name returns different restrictions than FREE", %{conn: conn} do
+      free_restrictions = get_access_restrictions_with_plan_name(conn, "FREE")
+      pro_restrictions = get_access_restrictions_with_plan_name(conn, "PRO")
+
+      free_accessible_count =
+        Enum.count(free_restrictions, fn r -> r["isAccessible"] end)
+
+      pro_accessible_count =
+        Enum.count(pro_restrictions, fn r -> r["isAccessible"] end)
+
+      assert pro_accessible_count >= free_accessible_count
+    end
+
+    test "using plan_name with a custom plan works", %{conn: conn} = context do
+      plan_name = "CUSTOM_TEST_#{System.unique_integer([:positive])}"
+
+      {:ok, plan} =
+        %Sanbase.Billing.Plan{
+          id: System.unique_integer([:positive]) + 100_000,
+          name: plan_name,
+          product_id: context.product_api.id,
+          stripe_id: context.product_api.stripe_id,
+          amount: 10_000,
+          currency: "USD",
+          interval: "month",
+          is_deprecated: false,
+          is_private: true,
+          has_custom_restrictions: true,
+          restrictions: %Sanbase.Billing.Plan.CustomPlan.Restrictions{
+            restricted_access_as_plan: "PRO",
+            api_call_limits: %{"minute" => 100, "hour" => 1000, "month" => 10_000},
+            metric_access: %{
+              "accessible" => ["price_usd"],
+              "not_accessible" => [],
+              "not_accessible_patterns" => []
+            },
+            query_access: %{
+              "accessible" => "all",
+              "not_accessible" => [],
+              "not_accessible_patterns" => []
+            },
+            signal_access: %{
+              "accessible" => "all",
+              "not_accessible" => [],
+              "not_accessible_patterns" => []
+            }
+          }
+        }
+        |> Sanbase.Repo.insert()
+
+      product_code = Sanbase.Billing.Product.code_by_id(plan.product_id)
+
+      on_exit(fn ->
+        :persistent_term.erase({Sanbase.Billing.Plan.CustomPlan.Loader, plan.name, product_code})
+      end)
+
+      restrictions =
+        get_access_restrictions_with_plan_name(conn, plan_name, product: "SANAPI")
+
+      metric_restrictions =
+        Enum.filter(restrictions, fn r -> r["type"] == "metric" end)
+
+      accessible_metrics =
+        metric_restrictions
+        |> Enum.filter(fn r -> r["isAccessible"] end)
+        |> Enum.map(fn r -> r["name"] end)
+
+      assert "price_usd" in accessible_metrics
+
+      not_accessible_metrics =
+        metric_restrictions
+        |> Enum.reject(fn r -> r["isAccessible"] end)
+        |> Enum.map(fn r -> r["name"] end)
+
+      assert "daily_active_addresses" in not_accessible_metrics
+    end
+
+    test "providing both plan and plan_name returns an error", %{conn: conn} do
+      query = """
+      {
+        getAccessRestrictions(plan: PRO, planName: "MAX") {
+          type
+          name
+          isRestricted
+          isAccessible
+        }
+      }
+      """
+
+      result =
+        conn
+        |> post("/graphql", query_skeleton(query))
+        |> json_response(200)
+
+      assert %{"errors" => [error]} = result
+      assert error["message"] =~ "Both 'plan' and 'plan_name' arguments are provided"
+    end
+
+    test "invalid plan_name returns an error", %{conn: conn} do
+      query = """
+      {
+        getAccessRestrictions(planName: "GARBAGE") {
+          type
+          name
+          isRestricted
+          isAccessible
+        }
+      }
+      """
+
+      result =
+        conn
+        |> post("/graphql", query_skeleton(query))
+        |> json_response(200)
+
+      assert %{"errors" => [error]} = result
+      assert error["message"] =~ "Invalid plan name: GARBAGE"
+    end
+  end
+
   defp get_access_restrictions(conn) do
     query = """
     {
@@ -157,6 +284,34 @@ defmodule SanbaseWeb.Graphql.AccessRestrictionsTest do
         minInterval
         internalName
         isRestricted
+        restrictedFrom
+        restrictedTo
+        isDeprecated
+        hardDeprecateAfter
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", query_skeleton(query))
+    |> json_response(200)
+    |> get_in(["data", "getAccessRestrictions"])
+  end
+
+  defp get_access_restrictions_with_plan_name(conn, plan_name, opts \\ []) do
+    product_arg =
+      case Keyword.get(opts, :product) do
+        nil -> ""
+        product -> ", product: #{product}"
+      end
+
+    query = """
+    {
+      getAccessRestrictions(planName: "#{plan_name}"#{product_arg}) {
+        type
+        name
+        isRestricted
+        isAccessible
         restrictedFrom
         restrictedTo
         isDeprecated

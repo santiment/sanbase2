@@ -82,11 +82,22 @@ defmodule Sanbase.AppNotifications do
     |> Ecto.Multi.run(:read_statuses, fn _repo, %{notification: notification} ->
       now = DateTime.utc_now(:second)
 
+      # Insert a NotificationReadStatus for every registered user who has NOT
+      # disabled this notification type. Left join so users without a
+      # user_settings row are included (default: all types enabled).
       {count, _} =
         Repo.insert_all(
           NotificationReadStatus,
           from(u in Sanbase.Accounts.User,
+            left_join: us in Sanbase.Accounts.UserSettings,
+            on: us.user_id == u.id,
             where: is_registered(),
+            where:
+              fragment(
+                "NOT COALESCE((? -> 'disabled_notification_types') \\? ?, false)",
+                us.settings,
+                ^notification.type
+              ),
             select: %{
               user_id: u.id,
               notification_id: ^notification.id,

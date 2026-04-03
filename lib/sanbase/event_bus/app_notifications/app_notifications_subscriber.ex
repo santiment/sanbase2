@@ -197,7 +197,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
          title: title,
          user_id: author_id
        }) do
-    multi_insert_notification_read_status(user_ids, author_id, fn ->
+    multi_insert_notification_read_status(user_ids, author_id, "publish_insight", fn ->
       AppNotifications.create_notification(%{
         type: "publish_insight",
         user_id: author_id,
@@ -218,7 +218,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
          name: name,
          user_id: author_id
        }) do
-    multi_insert_notification_read_status(user_ids, author_id, fn ->
+    multi_insert_notification_read_status(user_ids, author_id, "create_watchlist", fn ->
       AppNotifications.create_notification(%{
         type: "create_watchlist",
         user_id: author_id,
@@ -249,7 +249,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
         update_watchlist_list_additional_json_data(changes)
         |> Map.merge(%{changed_fields: changed_fields})
 
-      multi_insert_notification_read_status(user_ids, author_id, fn ->
+      multi_insert_notification_read_status(user_ids, author_id, "update_watchlist", fn ->
         AppNotifications.create_notification(%{
           type: "update_watchlist",
           user_id: author_id,
@@ -284,7 +284,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
 
       # There's one receiver - the owner of the entity - but we can reuse
       # the multi_insert_notification_read_status function to insert the notification read status
-      multi_insert_notification_read_status(user_ids, author_id, fn ->
+      multi_insert_notification_read_status(user_ids, author_id, "create_comment", fn ->
         AppNotifications.create_notification(%{
           type: "create_comment",
           user_id: author_id,
@@ -312,7 +312,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
        ) do
     json_data = maybe_put_alert_is_active(%{}, entity_type, entity_id)
 
-    multi_insert_notification_read_status(user_ids, author_id, fn ->
+    multi_insert_notification_read_status(user_ids, author_id, "create_vote", fn ->
       AppNotifications.create_notification(%{
         type: "create_vote",
         user_id: author_id,
@@ -337,7 +337,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
            alert_is_active: alert_is_active
          }
        ) do
-    multi_insert_notification_read_status(user_ids, user_id, fn ->
+    multi_insert_notification_read_status(user_ids, user_id, "alert_triggered", fn ->
       AppNotifications.create_notification(%{
         type: "alert_triggered",
         user_id: user_id,
@@ -360,7 +360,7 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
            follower_id: follower_id
          }
        ) do
-    multi_insert_notification_read_status(user_ids, follower_id, fn ->
+    multi_insert_notification_read_status(user_ids, follower_id, "new_follower", fn ->
       AppNotifications.create_notification(%{
         type: "new_follower",
         user_id: follower_id,
@@ -373,9 +373,21 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
     end)
   end
 
-  defp multi_insert_notification_read_status(user_ids, actor_user_id, create_notification_fn) do
+  defp multi_insert_notification_read_status(
+         user_ids,
+         actor_user_id,
+         notification_type,
+         create_notification_fn
+       ) do
     muted_by = AppNotifications.user_ids_that_muted(actor_user_id)
-    user_ids = Enum.reject(user_ids, fn uid -> MapSet.member?(muted_by, uid) end)
+
+    disabled_by =
+      AppNotifications.user_ids_with_notification_type_disabled(notification_type)
+
+    user_ids =
+      Enum.reject(user_ids, fn uid ->
+        MapSet.member?(muted_by, uid) or MapSet.member?(disabled_by, uid)
+      end)
 
     if user_ids == [] do
       {:ok, %{}}

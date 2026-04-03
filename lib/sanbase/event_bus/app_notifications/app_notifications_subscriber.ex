@@ -18,10 +18,14 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
   """
   use GenServer
 
+  import Ecto.Query
+
   alias Sanbase.AppNotifications
   alias Sanbase.AppNotifications.NotificationReadStatus
 
   require Logger
+
+  @insert_all_chunk_size 500
 
   def topics(), do: [".*"]
 
@@ -379,51 +383,62 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
          notification_type,
          create_notification_fn
        ) do
-    muted_by = AppNotifications.user_ids_that_muted(actor_user_id)
-
-    disabled_by =
-      AppNotifications.user_ids_with_notification_type_disabled(notification_type)
-
-    user_ids =
-      Enum.reject(user_ids, fn uid ->
-        MapSet.member?(muted_by, uid) or MapSet.member?(disabled_by, uid)
-      end)
-
     if user_ids == [] do
       {:ok, %{}}
     else
-      # If no receivers left after filtering out the users that muted the actor, do not create the notification
-      {:ok, notification} = create_notification_fn.()
+      with {:ok, notification} <- create_notification_fn.() do
+        read_statuses =
+          bulk_insert_read_statuses(user_ids, notification, actor_user_id, notification_type)
 
-      user_ids
-      |> Enum.reduce(Ecto.Multi.new(), fn user_id, multi ->
-        Ecto.Multi.insert(
-          multi,
-          {:notification, user_id, notification.id},
-          AppNotifications.notification_read_status_changeset(%{
-            notification_id: notification.id,
-            user_id: user_id,
-            read_at: nil
-          })
-        )
-      end)
-      |> Sanbase.Repo.transaction()
-      |> case do
-        {:ok, result} ->
-          async_broadcast_websocket_notifications(result)
+        if read_statuses != [] do
+          AppNotifications.async_broadcast_websocket_notifications(read_statuses)
+        end
 
-          {:ok, result}
-
-        {:error, _operation, reason, _changes_so_far} ->
-          {:error, reason}
+        {:ok, %{notification: notification, read_statuses: read_statuses}}
       end
     end
   end
 
-  defp async_broadcast_websocket_notifications(result) do
-    result
-    |> Enum.map(fn {_key, %NotificationReadStatus{} = nrs} -> nrs end)
-    |> AppNotifications.async_broadcast_websocket_notifications()
+  # INSERT...SELECT in chunks to avoid large result sets from returning.
+  # Each chunk filters out muted users and users who disabled the notification
+  # type via left joins in the DB.
+  defp bulk_insert_read_statuses(user_ids, notification, actor_user_id, notification_type) do
+    now = DateTime.utc_now(:second)
+
+    user_ids
+    |> Enum.chunk_every(@insert_all_chunk_size)
+    |> Enum.flat_map(fn chunk_ids ->
+      {_count, chunk_results} =
+        Sanbase.Repo.insert_all(
+          NotificationReadStatus,
+          from(u in Sanbase.Accounts.User,
+            left_join: us in Sanbase.Accounts.UserSettings,
+            on: us.user_id == u.id,
+            left_join: nmu in Sanbase.AppNotifications.NotificationMutedUser,
+            on: nmu.user_id == u.id and nmu.muted_user_id == ^actor_user_id,
+            where: u.id in ^chunk_ids,
+            where: is_nil(nmu.user_id),
+            # \\? is the jsonb "contains key" operator (?), escaped because
+            # ? is Ecto's placeholder character in fragments.
+            where:
+              fragment(
+                "NOT COALESCE((? -> 'disabled_notification_types') \\? ?, false)",
+                us.settings,
+                ^notification_type
+              ),
+            select: %{
+              user_id: u.id,
+              notification_id: ^notification.id,
+              read_at: type(^nil, :utc_datetime),
+              inserted_at: type(^now, :utc_datetime),
+              updated_at: type(^now, :utc_datetime)
+            }
+          ),
+          returning: [:user_id, :notification_id]
+        )
+
+      chunk_results
+    end)
   end
 
   defp update_watchlist_changed_fields(changes) do

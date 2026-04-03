@@ -92,6 +92,8 @@ defmodule Sanbase.AppNotifications do
             left_join: us in Sanbase.Accounts.UserSettings,
             on: us.user_id == u.id,
             where: is_registered(),
+            # \\? is the jsonb "contains key" operator (?), escaped because
+            # ? is Ecto's placeholder character in fragments.
             where:
               fragment(
                 "NOT COALESCE((? -> 'disabled_notification_types') \\? ?, false)",
@@ -367,6 +369,8 @@ defmodule Sanbase.AppNotifications do
   def user_ids_with_notification_type_disabled(notification_type)
       when is_binary(notification_type) do
     from(us in Sanbase.Accounts.UserSettings,
+      # \\? is the jsonb "contains key" operator (?), escaped because
+      # ? is Ecto's placeholder character in fragments.
       where:
         fragment(
           "(? -> 'disabled_notification_types') \\? ?",

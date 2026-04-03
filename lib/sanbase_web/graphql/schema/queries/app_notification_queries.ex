@@ -83,5 +83,29 @@ defmodule SanbaseWeb.Graphql.Schema.AppNotificationQueries do
       middleware(JWTAuth)
       resolve(&AppNotificationResolver.unmute_user/3)
     end
+
+    @desc """
+    Enable the given notification types for the current user.
+    Types that are already enabled are unchanged.
+    Returns the full list of notification type settings after the update.
+    """
+    field :enable_notification_types, list_of(:notification_type_setting) do
+      arg(:types, non_null(list_of(non_null(:string))))
+
+      middleware(JWTAuth)
+      resolve(&AppNotificationResolver.enable_notification_types/3)
+    end
+
+    @desc """
+    Disable the given notification types for the current user.
+    Types that are already disabled are unchanged.
+    Returns the full list of notification type settings after the update.
+    """
+    field :disable_notification_types, list_of(:notification_type_setting) do
+      arg(:types, non_null(list_of(non_null(:string))))
+
+      middleware(JWTAuth)
+      resolve(&AppNotificationResolver.disable_notification_types/3)
+    end
   end
 end

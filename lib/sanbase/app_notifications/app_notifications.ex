@@ -38,6 +38,7 @@ defmodule Sanbase.AppNotifications do
   import Ecto.Query
 
   alias Sanbase.Repo
+  alias Sanbase.Accounts.UserSettings
   alias Sanbase.AppNotifications.Notification
   alias Sanbase.AppNotifications.NotificationReadStatus
   alias Sanbase.AppNotifications.NotificationMutedUser
@@ -45,6 +46,21 @@ defmodule Sanbase.AppNotifications do
   import Sanbase.Accounts.User.Ecto, only: [is_registered: 0]
 
   @default_limit 20
+
+  @supported_notification_types [
+    "publish_insight",
+    "create_watchlist",
+    "update_watchlist",
+    "create_comment",
+    "create_vote",
+    "alert_triggered",
+    "new_follower",
+    "system_notification"
+  ]
+
+  @doc "Returns the list of all supported notification types."
+  @spec supported_notification_types() :: [String.t()]
+  def supported_notification_types, do: @supported_notification_types
 
   @doc """
   Creates a broadcast notification visible to all registered users.
@@ -66,11 +82,24 @@ defmodule Sanbase.AppNotifications do
     |> Ecto.Multi.run(:read_statuses, fn _repo, %{notification: notification} ->
       now = DateTime.utc_now(:second)
 
+      # Insert a NotificationReadStatus for every registered user who has NOT
+      # disabled this notification type. Left join so users without a
+      # user_settings row are included (default: all types enabled).
       {count, _} =
         Repo.insert_all(
           NotificationReadStatus,
           from(u in Sanbase.Accounts.User,
+            left_join: us in Sanbase.Accounts.UserSettings,
+            on: us.user_id == u.id,
             where: is_registered(),
+            # \\? is the jsonb "contains key" operator (?), escaped because
+            # ? is Ecto's placeholder character in fragments.
+            where:
+              fragment(
+                "NOT COALESCE((? -> 'disabled_notification_types') \\? ?, false)",
+                us.settings,
+                ^notification.type
+              ),
             select: %{
               user_id: u.id,
               notification_id: ^notification.id,
@@ -96,11 +125,19 @@ defmodule Sanbase.AppNotifications do
   @doc """
   Creates a notification entry.
   """
-  @spec create_notification(map()) :: {:ok, Notification.t()} | {:error, Ecto.Changeset.t()}
+  @spec create_notification(map()) ::
+          {:ok, Notification.t()} | {:error, Ecto.Changeset.t() | String.t()}
   def create_notification(attrs) when is_map(attrs) do
-    %Notification{}
-    |> Notification.changeset(attrs)
-    |> Repo.insert()
+    type = attrs[:type] || attrs["type"]
+
+    if type in @supported_notification_types do
+      %Notification{}
+      |> Notification.changeset(attrs)
+      |> Repo.insert()
+    else
+      {:error,
+       "Unsupported notification type: #{inspect(type)}. Supported types: #{Enum.join(@supported_notification_types, ", ")}"}
+    end
   end
 
   @doc """
@@ -325,6 +362,27 @@ defmodule Sanbase.AppNotifications do
   defdelegate list_muted_users(user_id), to: NotificationMutedUser
   defdelegate user_ids_that_muted(actor_user_id), to: NotificationMutedUser
 
+  @doc """
+  Returns a MapSet of all user_ids that have disabled the given notification type.
+  """
+  @spec user_ids_with_notification_type_disabled(String.t()) :: MapSet.t(pos_integer())
+  def user_ids_with_notification_type_disabled(notification_type)
+      when is_binary(notification_type) do
+    from(us in Sanbase.Accounts.UserSettings,
+      # \\? is the jsonb "contains key" operator (?), escaped because
+      # ? is Ecto's placeholder character in fragments.
+      where:
+        fragment(
+          "(? -> 'disabled_notification_types') \\? ?",
+          us.settings,
+          ^notification_type
+        ),
+      select: us.user_id
+    )
+    |> Repo.all()
+    |> MapSet.new()
+  end
+
   def async_broadcast_websocket_notifications(notification_read_status_list) do
     Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
       Enum.each(notification_read_status_list, fn
@@ -348,6 +406,93 @@ defmodule Sanbase.AppNotifications do
   defp maybe_apply_cursor(query, %{type: :after, datetime: datetime}) do
     query
     |> where([_notification_read_status, notification], notification.inserted_at > ^datetime)
+  end
+
+  # Notification type settings
+
+  @doc """
+  Returns the notification type settings for the given user.
+  Each supported notification type is returned with its enabled/disabled status.
+  """
+  @spec notification_type_settings(%Sanbase.Accounts.User{}) :: [
+          %{type: String.t(), is_enabled: boolean()}
+        ]
+  def notification_type_settings(user) do
+    settings = UserSettings.settings_for(user)
+    disabled = settings.disabled_notification_types || []
+    build_notification_type_settings(disabled)
+  end
+
+  @doc """
+  Enables the given notification types for the user (removes them from the disabled list).
+  Returns the full list of notification type settings after the update.
+  """
+  @spec enable_notification_types(%Sanbase.Accounts.User{}, [String.t()]) ::
+          {:ok, [%{type: String.t(), is_enabled: boolean()}]} | {:error, String.t()}
+  def enable_notification_types(user, types) when is_list(types) do
+    with :ok <- validate_notification_types(types) do
+      update_disabled_notification_types(user, fn current -> current -- types end)
+    end
+  end
+
+  @doc """
+  Disables the given notification types for the user (adds them to the disabled list).
+  Returns the full list of notification type settings after the update.
+  """
+  @spec disable_notification_types(%Sanbase.Accounts.User{}, [String.t()]) ::
+          {:ok, [%{type: String.t(), is_enabled: boolean()}]} | {:error, String.t()}
+  def disable_notification_types(user, types) when is_list(types) do
+    with :ok <- validate_notification_types(types) do
+      update_disabled_notification_types(user, fn current -> Enum.uniq(current ++ types) end)
+    end
+  end
+
+  # Atomically read-modify-write disabled_notification_types under a row lock
+  # to prevent concurrent requests from clobbering each other.
+  defp update_disabled_notification_types(user, update_fn) do
+    Repo.transaction(fn ->
+      # Lock the user_settings row to serialize concurrent modifications
+      locked_settings =
+        from(us in Sanbase.Accounts.UserSettings,
+          where: us.user_id == ^user.id,
+          lock: "FOR UPDATE"
+        )
+        |> Repo.one()
+
+      current_disabled =
+        case locked_settings do
+          %{settings: %{disabled_notification_types: types}} when is_list(types) -> types
+          _ -> []
+        end
+
+      new_disabled = update_fn.(current_disabled)
+
+      case UserSettings.update_settings(user, %{disabled_notification_types: new_disabled}) do
+        {:ok, %{settings: updated_settings}} ->
+          disabled = updated_settings.disabled_notification_types || []
+          build_notification_type_settings(disabled)
+
+        {:error, error} ->
+          Repo.rollback(error)
+      end
+    end)
+  end
+
+  defp build_notification_type_settings(disabled_types) do
+    Enum.map(@supported_notification_types, fn type ->
+      %{type: type, is_enabled: type not in disabled_types}
+    end)
+  end
+
+  defp validate_notification_types(types) do
+    invalid = Enum.reject(types, &(&1 in @supported_notification_types))
+
+    if invalid == [] do
+      :ok
+    else
+      {:error,
+       "Unsupported notification types: #{Enum.join(invalid, ", ")}. Supported: #{Enum.join(@supported_notification_types, ", ")}"}
+    end
   end
 
   defp maybe_filter_by_types(query, nil), do: query

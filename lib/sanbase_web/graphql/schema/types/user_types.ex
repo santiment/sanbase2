@@ -19,7 +19,8 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     UserTriggerResolver,
     SanbaseNFTResolver,
     UserAffiliateDetailsResolver,
-    QueriesResolver
+    QueriesResolver,
+    AppNotificationResolver
   }
 
   enum :user_role do
@@ -363,6 +364,10 @@ defmodule SanbaseWeb.Graphql.UserTypes do
 
     field :joined_at, :datetime do
       resolve(&UserResolver.joined_at/3)
+    end
+
+    field :notification_type_settings, list_of(:notification_type_setting) do
+      resolve(&AppNotificationResolver.notification_type_settings/3)
     end
   end
 

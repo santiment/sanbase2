@@ -43,9 +43,23 @@ defmodule Sanbase.AppNotificationsTest do
       assert notification.entity_id == watchlist.id
     end
 
-    test "returns error with missing required fields" do
-      assert {:error, changeset} = AppNotifications.create_notification(%{})
-      assert "can't be blank" in errors_on(changeset).type
+    test "returns error with missing type" do
+      assert {:error, msg} = AppNotifications.create_notification(%{})
+      assert msg =~ "Unsupported notification type"
+    end
+
+    test "rejects unsupported notification type" do
+      user = insert(:user)
+
+      assert {:error, msg} =
+               AppNotifications.create_notification(%{
+                 type: "unsupported_type",
+                 user_id: user.id,
+                 entity_type: "watchlist",
+                 entity_id: 1
+               })
+
+      assert msg =~ "Unsupported notification type"
     end
   end
 
@@ -817,6 +831,63 @@ defmodule Sanbase.AppNotificationsTest do
       assert notification.json_data == %{"alert_is_active" => true}
     end
 
+    # Disabled notification type tests
+
+    test "user with disabled type does not receive notifications of that type", %{
+      author: author,
+      follower: follower
+    } do
+      AppNotifications.disable_notification_types(follower, ["create_watchlist"])
+
+      {:ok, _watchlist} =
+        UserList.create_user_list(author, %{name: "Disabled Type Watchlist", is_public: true})
+
+      :timer.sleep(100)
+
+      notifications = AppNotifications.list_notifications_for_user(follower.id)
+      assert notifications == []
+    end
+
+    test "user with disabled type still receives other types", %{
+      author: author,
+      follower: follower
+    } do
+      AppNotifications.disable_notification_types(follower, ["create_watchlist"])
+
+      post = insert(:post, user: author)
+      {:ok, _} = Post.publish(post.id, author.id)
+
+      :timer.sleep(100)
+
+      notifications = AppNotifications.list_notifications_for_user(follower.id)
+      assert length(notifications) == 1
+      assert hd(notifications).type == "publish_insight"
+    end
+
+    test "re-enabling a type allows future notifications but does not create past ones", %{
+      author: author,
+      follower: follower
+    } do
+      AppNotifications.disable_notification_types(follower, ["create_watchlist"])
+
+      {:ok, _watchlist} =
+        UserList.create_user_list(author, %{name: "While Disabled", is_public: true})
+
+      :timer.sleep(100)
+      assert AppNotifications.list_notifications_for_user(follower.id) == []
+
+      AppNotifications.enable_notification_types(follower, ["create_watchlist"])
+
+      {:ok, _watchlist2} =
+        UserList.create_user_list(author, %{name: "After Enabled", is_public: true})
+
+      :timer.sleep(100)
+
+      notifications = AppNotifications.list_notifications_for_user(follower.id)
+      assert length(notifications) == 1
+      assert hd(notifications).entity_name == "After Enabled"
+    end
+
     # Muted user tests
 
     test "muted user does not receive notifications", %{
@@ -987,6 +1058,133 @@ defmodule Sanbase.AppNotificationsTest do
     end
   end
 
+  describe "notification_type_settings/1" do
+    test "returns all types as enabled by default" do
+      user = insert(:user)
+      settings = AppNotifications.notification_type_settings(user)
+
+      assert length(settings) == length(AppNotifications.supported_notification_types())
+      assert Enum.all?(settings, & &1.is_enabled)
+    end
+
+    test "marks disabled types as not enabled" do
+      user = insert(:user)
+
+      Sanbase.Accounts.UserSettings.update_settings(user, %{
+        disabled_notification_types: ["create_vote", "new_follower"]
+      })
+
+      settings = AppNotifications.notification_type_settings(user)
+
+      vote = Enum.find(settings, &(&1.type == "create_vote"))
+      follower = Enum.find(settings, &(&1.type == "new_follower"))
+      insight = Enum.find(settings, &(&1.type == "publish_insight"))
+
+      assert vote.is_enabled == false
+      assert follower.is_enabled == false
+      assert insight.is_enabled == true
+    end
+  end
+
+  describe "enable_notification_types/2" do
+    test "enables previously disabled types" do
+      user = insert(:user)
+
+      Sanbase.Accounts.UserSettings.update_settings(user, %{
+        disabled_notification_types: ["create_vote", "new_follower"]
+      })
+
+      {:ok, settings} = AppNotifications.enable_notification_types(user, ["create_vote"])
+
+      vote = Enum.find(settings, &(&1.type == "create_vote"))
+      follower = Enum.find(settings, &(&1.type == "new_follower"))
+
+      assert vote.is_enabled == true
+      assert follower.is_enabled == false
+    end
+
+    test "is a no-op for already enabled types" do
+      user = insert(:user)
+
+      {:ok, settings} = AppNotifications.enable_notification_types(user, ["create_vote"])
+
+      vote = Enum.find(settings, &(&1.type == "create_vote"))
+      assert vote.is_enabled == true
+    end
+
+    test "returns error for unsupported types" do
+      user = insert(:user)
+
+      assert {:error, msg} = AppNotifications.enable_notification_types(user, ["invalid_type"])
+      assert msg =~ "Unsupported notification types"
+    end
+  end
+
+  describe "disable_notification_types/2" do
+    test "disables given types" do
+      user = insert(:user)
+
+      {:ok, settings} =
+        AppNotifications.disable_notification_types(user, ["create_vote", "new_follower"])
+
+      vote = Enum.find(settings, &(&1.type == "create_vote"))
+      follower = Enum.find(settings, &(&1.type == "new_follower"))
+      insight = Enum.find(settings, &(&1.type == "publish_insight"))
+
+      assert vote.is_enabled == false
+      assert follower.is_enabled == false
+      assert insight.is_enabled == true
+    end
+
+    test "is idempotent for already disabled types" do
+      user = insert(:user)
+
+      Sanbase.Accounts.UserSettings.update_settings(user, %{
+        disabled_notification_types: ["create_vote"]
+      })
+
+      {:ok, settings} = AppNotifications.disable_notification_types(user, ["create_vote"])
+
+      vote = Enum.find(settings, &(&1.type == "create_vote"))
+      assert vote.is_enabled == false
+    end
+
+    test "returns error for unsupported types" do
+      user = insert(:user)
+
+      assert {:error, msg} = AppNotifications.disable_notification_types(user, ["invalid_type"])
+      assert msg =~ "Unsupported notification types"
+    end
+  end
+
+  describe "user_ids_with_notification_type_disabled/1" do
+    test "returns all user ids that have disabled the given type" do
+      user1 = insert(:user)
+      user2 = insert(:user)
+      _user3 = insert(:user)
+
+      Sanbase.Accounts.UserSettings.update_settings(user1, %{
+        disabled_notification_types: ["create_watchlist", "create_vote"]
+      })
+
+      Sanbase.Accounts.UserSettings.update_settings(user2, %{
+        disabled_notification_types: ["create_vote"]
+      })
+
+      disabled = AppNotifications.user_ids_with_notification_type_disabled("create_vote")
+      assert MapSet.member?(disabled, user1.id)
+      assert MapSet.member?(disabled, user2.id)
+
+      disabled = AppNotifications.user_ids_with_notification_type_disabled("create_watchlist")
+      assert MapSet.member?(disabled, user1.id)
+      refute MapSet.member?(disabled, user2.id)
+
+      disabled = AppNotifications.user_ids_with_notification_type_disabled("publish_insight")
+      refute MapSet.member?(disabled, user1.id)
+      refute MapSet.member?(disabled, user2.id)
+    end
+  end
+
   describe "create_broadcast_notification/1" do
     test "creates notification and read statuses for all registered users" do
       user1 = insert(:user)
@@ -1016,6 +1214,25 @@ defmodule Sanbase.AppNotificationsTest do
 
       assert hd(notifications1).type == "system_notification"
       assert hd(notifications1).is_broadcast == true
+    end
+
+    test "excludes users who disabled the broadcast notification type" do
+      user1 = insert(:user)
+      user2 = insert(:user)
+
+      AppNotifications.disable_notification_types(user2, ["system_notification"])
+
+      assert {:ok, %{recipients_count: count}} =
+               AppNotifications.create_broadcast_notification(%{
+                 type: "system_notification",
+                 title: "Maintenance",
+                 content: "Downtime soon."
+               })
+
+      assert count == 1
+
+      assert length(AppNotifications.list_notifications_for_user(user1.id)) == 1
+      assert length(AppNotifications.list_notifications_for_user(user2.id)) == 0
     end
   end
 end

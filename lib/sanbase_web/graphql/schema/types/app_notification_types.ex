@@ -24,6 +24,11 @@ defmodule SanbaseWeb.Graphql.AppNotificationTypes do
     field(:user, :public_user)
   end
 
+  object :notification_type_setting do
+    field(:type, non_null(:string))
+    field(:is_enabled, non_null(:boolean))
+  end
+
   object :app_notification_type_stats do
     field(:type, non_null(:string))
     field(:unread_count, non_null(:integer))

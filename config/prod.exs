@@ -35,6 +35,9 @@ config :sanbase, Sanbase.ClickhouseRepo.BusinessMaxUser, clickhouse_read_only_op
 # Do not print debug messages in production
 config :logger, level: :info
 
+# Disable Swoosh local in-memory storage in production
+config :swoosh, local: false
+
 config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
   scale: 1000,
   limit: 5,

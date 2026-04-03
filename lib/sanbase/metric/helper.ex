@@ -190,24 +190,15 @@ defmodule Sanbase.Metric.Helper do
   end
 
   defp compute(:free_metrics, []) do
-    Enum.map(@modules, & &1.free_metrics())
-    |> List.flatten()
-    |> Enum.uniq()
+    collect_unique(@modules, :free_metrics)
   end
 
   defp compute(:restricted_metrics, []) do
-    Enum.map(@modules, & &1.restricted_metrics())
-    |> List.flatten()
-    |> Enum.uniq()
+    collect_unique(@modules, :restricted_metrics)
   end
 
   defp compute(:metric_to_module_map, []) do
-    for module <- @modules,
-        metric <- module.available_metrics(),
-        reduce: %{} do
-      acc ->
-        Map.put(acc, metric, module)
-    end
+    build_metric_to_module_map(@modules, :available_metrics)
   end
 
   defp compute(:metric_to_modules_map, []) do
@@ -220,9 +211,7 @@ defmodule Sanbase.Metric.Helper do
   end
 
   defp compute(:metrics, []) do
-    Enum.map(@modules, & &1.available_metrics())
-    |> List.flatten()
-    |> Enum.uniq()
+    collect_unique(@modules, :available_metrics)
   end
 
   defp compute(:metrics_mapset, []) do
@@ -230,18 +219,11 @@ defmodule Sanbase.Metric.Helper do
   end
 
   defp compute(:timeseries_metric_to_module_map, []) do
-    for module <- @modules,
-        metric <- module.available_timeseries_metrics(),
-        reduce: %{} do
-      acc ->
-        Map.put(acc, metric, module)
-    end
+    build_metric_to_module_map(@modules, :available_timeseries_metrics)
   end
 
   defp compute(:timeseries_metrics, []) do
-    Enum.map(@modules, & &1.available_timeseries_metrics())
-    |> List.flatten()
-    |> Enum.uniq()
+    collect_unique(@modules, :available_timeseries_metrics)
   end
 
   defp compute(:timeseries_metrics_mapset, []) do
@@ -249,18 +231,11 @@ defmodule Sanbase.Metric.Helper do
   end
 
   defp compute(:histogram_metric_to_module_map, []) do
-    for module <- @modules,
-        metric <- module.available_histogram_metrics(),
-        reduce: %{} do
-      acc ->
-        Map.put(acc, metric, module)
-    end
+    build_metric_to_module_map(@modules, :available_histogram_metrics)
   end
 
   defp compute(:histogram_metrics, []) do
-    Enum.map(@modules, & &1.available_histogram_metrics())
-    |> List.flatten()
-    |> Enum.uniq()
+    collect_unique(@modules, :available_histogram_metrics)
   end
 
   defp compute(:histogram_metrics_mapset, []) do
@@ -268,18 +243,11 @@ defmodule Sanbase.Metric.Helper do
   end
 
   defp compute(:table_metric_to_module_map, []) do
-    for module <- @modules,
-        metric <- module.available_table_metrics(),
-        reduce: %{} do
-      acc ->
-        Map.put(acc, metric, module)
-    end
+    build_metric_to_module_map(@modules, :available_table_metrics)
   end
 
   defp compute(:table_metrics, []) do
-    Enum.map(@modules, & &1.available_table_metrics())
-    |> List.flatten()
-    |> Enum.uniq()
+    collect_unique(@modules, :available_table_metrics)
   end
 
   defp compute(:table_metrics_mapset, []) do
@@ -287,9 +255,7 @@ defmodule Sanbase.Metric.Helper do
   end
 
   defp compute(:incomplete_metrics, []) do
-    Enum.map(@modules, & &1.incomplete_metrics())
-    |> List.flatten()
-    |> Enum.uniq()
+    collect_unique(@modules, :incomplete_metrics)
   end
 
   defp compute(:min_plan_map, []) do
@@ -325,6 +291,21 @@ defmodule Sanbase.Metric.Helper do
   end
 
   defp compute(_function, _arguments), do: :not_implemented
+
+  # Build a map from metric -> module (last module wins for duplicates)
+  defp build_metric_to_module_map(modules, getter_fun) do
+    for module <- modules,
+        metric <- apply(module, getter_fun, []),
+        reduce: %{} do
+      acc -> Map.put(acc, metric, module)
+    end
+  end
+
+  # Collect all values from calling getter_fun/0 on each module, flatten & deduplicate
+  defp collect_unique(modules, getter_fun) do
+    Enum.flat_map(modules, &apply(&1, getter_fun, []))
+    |> Enum.uniq()
+  end
 
   # Helper for :implemented_optional_functions
   defp put_if_implemented(acc, module, fun, arity) when is_integer(arity) do

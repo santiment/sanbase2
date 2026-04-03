@@ -1042,7 +1042,7 @@ defmodule Sanbase.Insight.Post do
     if Application.get_env(:sanbase, :env) != :test do
       Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
         # Only categorize if no human-sourced categories exist
-        unless Sanbase.Insight.PostCategory.has_human_categories?(post.id) do
+        if !Sanbase.Insight.PostCategory.has_human_categories?(post.id) do
           case Sanbase.Insight.Categorizer.categorize_insight(post.id, save: true, force: false) do
             {:ok, _categories} ->
               Logger.debug("Auto-categorized insight #{post.id}")

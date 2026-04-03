@@ -185,14 +185,10 @@ defmodule Sanbase.Contract.MetricAdapter do
   # Private functions
 
   defp unsupported_selector_error(selector) do
-    provided_keys =
-      selector
-      |> Map.keys()
-      |> Enum.map_join(", ", &inspect/1)
-
-    "The provided selector #{inspect(selector)} is not supported. " <>
-      "The selector must have the following field: contractAddress. " <>
-      "Provided selector fields: #{provided_keys}"
+    Sanbase.Metric.Utils.unsupported_selector_error(
+      selector,
+      "The selector must have the following field: contractAddress"
+    )
   end
 
   defp not_implemented_error(function, metric) do

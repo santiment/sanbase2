@@ -1,4 +1,39 @@
 defmodule Sanbase.Metric.Utils do
+  @doc ~s"""
+  Build an error message for an unsupported selector.
+
+  Takes the selector map and an optional hint sentence that is inserted
+  between the "not supported" preamble and the "Provided selector fields"
+  suffix. The hint should be a complete sentence (without trailing period).
+
+  ## Examples
+
+      iex> Sanbase.Metric.Utils.unsupported_selector_error(%{foo: 1})
+      "The provided selector %{foo: 1} is not supported. " <>
+        "Provided selector fields: :foo"
+
+      iex> Sanbase.Metric.Utils.unsupported_selector_error(%{foo: 1}, "The selector must have the following field: slug")
+      "The provided selector %{foo: 1} is not supported. " <>
+        "The selector must have the following field: slug. " <>
+        "Provided selector fields: :foo"
+
+  """
+  def unsupported_selector_error(selector, required_fields_hint \\ nil) do
+    provided_keys =
+      selector
+      |> Map.keys()
+      |> Enum.map_join(", ", &inspect/1)
+
+    base = "The provided selector #{inspect(selector)} is not supported. "
+
+    hint =
+      if required_fields_hint,
+        do: "#{required_fields_hint}. ",
+        else: ""
+
+    base <> hint <> "Provided selector fields: #{provided_keys}"
+  end
+
   def available_metrics_for_contract(module, contract_address) do
     Sanbase.Project.List.by_contracts(List.wrap(contract_address))
     |> Enum.map(& &1.slug)

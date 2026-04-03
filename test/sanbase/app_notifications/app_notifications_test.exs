@@ -1215,5 +1215,24 @@ defmodule Sanbase.AppNotificationsTest do
       assert hd(notifications1).type == "system_notification"
       assert hd(notifications1).is_broadcast == true
     end
+
+    test "excludes users who disabled the broadcast notification type" do
+      user1 = insert(:user)
+      user2 = insert(:user)
+
+      AppNotifications.disable_notification_types(user2, ["system_notification"])
+
+      assert {:ok, %{recipients_count: count}} =
+               AppNotifications.create_broadcast_notification(%{
+                 type: "system_notification",
+                 title: "Maintenance",
+                 content: "Downtime soon."
+               })
+
+      assert count == 1
+
+      assert length(AppNotifications.list_notifications_for_user(user1.id)) == 1
+      assert length(AppNotifications.list_notifications_for_user(user2.id)) == 0
+    end
   end
 end

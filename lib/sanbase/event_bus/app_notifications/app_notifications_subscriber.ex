@@ -424,6 +424,9 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
             where: is_nil(nmu.user_id),
             # \\? is the jsonb "contains key" operator (?), escaped because
             # ? is Ecto's placeholder character in fragments.
+            # COALESCE handles users without a user_settings row (left join NULL):
+            # NULL -> '...' => NULL, NULL ? type => NULL, COALESCE(NULL, false) => false,
+            # NOT false => true — so users without settings receive all notifications.
             where:
               fragment(
                 "NOT COALESCE((? -> 'disabled_notification_types') \\? ?, false)",

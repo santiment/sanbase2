@@ -431,14 +431,7 @@ defmodule Sanbase.AppNotifications do
           {:ok, [%{type: String.t(), is_enabled: boolean()}]} | {:error, String.t()}
   def enable_notification_types(user, types) when is_list(types) do
     with :ok <- validate_notification_types(types) do
-      settings = UserSettings.settings_for(user)
-      current_disabled = settings.disabled_notification_types || []
-      new_disabled = current_disabled -- types
-
-      case UserSettings.update_settings(user, %{disabled_notification_types: new_disabled}) do
-        {:ok, _} -> {:ok, build_notification_type_settings(new_disabled)}
-        {:error, _} = error -> error
-      end
+      update_disabled_notification_types(user, fn current -> current -- types end)
     end
   end
 
@@ -450,15 +443,43 @@ defmodule Sanbase.AppNotifications do
           {:ok, [%{type: String.t(), is_enabled: boolean()}]} | {:error, String.t()}
   def disable_notification_types(user, types) when is_list(types) do
     with :ok <- validate_notification_types(types) do
-      settings = UserSettings.settings_for(user)
-      current_disabled = settings.disabled_notification_types || []
-      new_disabled = Enum.uniq(current_disabled ++ types)
+      update_disabled_notification_types(user, fn current -> Enum.uniq(current ++ types) end)
+    end
+  end
+
+  # Atomically read-modify-write disabled_notification_types under a row lock
+  # to prevent concurrent requests from clobbering each other.
+  defp update_disabled_notification_types(user, update_fn) do
+    Repo.transaction(fn ->
+      # Ensure a user_settings row exists so FOR UPDATE has something to lock.
+      # settings_for creates the record with defaults if it doesn't exist.
+      UserSettings.settings_for(user, force: true)
+
+      # Lock the user_settings row to serialize concurrent modifications
+      locked_settings =
+        from(us in Sanbase.Accounts.UserSettings,
+          where: us.user_id == ^user.id,
+          lock: "FOR UPDATE"
+        )
+        |> Repo.one()
+
+      current_disabled =
+        case locked_settings do
+          %{settings: %{disabled_notification_types: types}} when is_list(types) -> types
+          _ -> []
+        end
+
+      new_disabled = update_fn.(current_disabled)
 
       case UserSettings.update_settings(user, %{disabled_notification_types: new_disabled}) do
-        {:ok, _} -> {:ok, build_notification_type_settings(new_disabled)}
-        {:error, _} = error -> error
+        {:ok, %{settings: updated_settings}} ->
+          disabled = updated_settings.disabled_notification_types || []
+          build_notification_type_settings(disabled)
+
+        {:error, error} ->
+          Repo.rollback(error)
       end
-    end
+    end)
   end
 
   defp build_notification_type_settings(disabled_types) do

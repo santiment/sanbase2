@@ -390,7 +390,11 @@ defmodule Sanbase.EventBus.AppNotificationsSubscriber do
         read_statuses =
           bulk_insert_read_statuses(user_ids, notification, actor_user_id, notification_type)
 
-        if read_statuses != [] do
+        if read_statuses == [] do
+          # All recipients were filtered out (muted or disabled type).
+          # Clean up the orphaned notification.
+          Sanbase.Repo.delete(notification)
+        else
           AppNotifications.async_broadcast_websocket_notifications(read_statuses)
         end
 

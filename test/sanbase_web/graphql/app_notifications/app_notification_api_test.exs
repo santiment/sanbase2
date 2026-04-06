@@ -741,7 +741,6 @@ defmodule SanbaseWeb.Graphql.AppNotificationApiTest do
 
     test "disabled type notifications are not created by events", %{
       conn: conn,
-      follower: follower,
       author: author
     } do
       # Disable create_watchlist

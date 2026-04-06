@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict eUjvvhyd9RE0yh9uwLqEJ8y6xFMPZhtBIDhpI0cmZOhawlTLaDar84frMwvsQkm
+\restrict 8MjILc1IXXZYeBTcgHqXaTfeYg7JO0pUglQ31TL1JZBs3iMlDVoTyYaWmClBfAA
 
 -- Dumped from database version 17.9 (Homebrew)
 -- Dumped by pg_dump version 17.9 (Homebrew)
@@ -230,35 +230,6 @@ BEGIN
   RETURN result;
 END;
 $$;
-
-
---
--- Name: movefinishedobanjobs(character varying, bigint); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.movefinishedobanjobs(queue_arg character varying, limit_arg bigint) RETURNS bigint
-    LANGUAGE plpgsql
-    AS $_$
- DECLARE
-   rows_count numeric;
- BEGIN
-   WITH finished_job_ids_cte AS (
-     SELECT id from oban_jobs
-     WHERE queue = $1 AND completed_at IS NOT NULL
-     LIMIT $2
-   ),
-   moved_rows AS (
-     DELETE FROM oban_jobs a
-     WHERE a.id IN (SELECT id FROM finished_job_ids_cte)
-     RETURNING a.queue, a.worker, a.args, a.inserted_at, a.completed_at
-   )
-   INSERT INTO finished_oban_jobs(queue, worker, args, inserted_at, completed_at)
-   SELECT * FROM moved_rows;
-
-   GET DIAGNOSTICS rows_count = ROW_COUNT;
-   RETURN rows_count;
- END;
- $_$;
 
 
 --
@@ -1703,39 +1674,6 @@ CREATE SEQUENCE public.featured_items_id_seq
 --
 
 ALTER SEQUENCE public.featured_items_id_seq OWNED BY public.featured_items.id;
-
-
---
--- Name: finished_oban_jobs; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.finished_oban_jobs (
-    id bigint NOT NULL,
-    queue character varying(255),
-    worker character varying(255),
-    args jsonb,
-    inserted_at timestamp(0) without time zone,
-    completed_at timestamp(0) without time zone
-);
-
-
---
--- Name: finished_oban_jobs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.finished_oban_jobs_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: finished_oban_jobs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.finished_oban_jobs_id_seq OWNED BY public.finished_oban_jobs.id;
 
 
 --
@@ -6168,13 +6106,6 @@ ALTER TABLE ONLY public.featured_items ALTER COLUMN id SET DEFAULT nextval('publ
 
 
 --
--- Name: finished_oban_jobs id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.finished_oban_jobs ALTER COLUMN id SET DEFAULT nextval('public.finished_oban_jobs_id_seq'::regclass);
-
-
---
 -- Name: geoip_data id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -7272,14 +7203,6 @@ ALTER TABLE ONLY public.faq_entries_tags
 
 ALTER TABLE ONLY public.featured_items
     ADD CONSTRAINT featured_items_pkey PRIMARY KEY (id);
-
-
---
--- Name: finished_oban_jobs finished_oban_jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.finished_oban_jobs
-    ADD CONSTRAINT finished_oban_jobs_pkey PRIMARY KEY (id);
 
 
 --
@@ -8767,27 +8690,6 @@ CREATE UNIQUE INDEX featured_items_user_list_id_index ON public.featured_items U
 --
 
 CREATE UNIQUE INDEX featured_items_user_trigger_id_index ON public.featured_items USING btree (user_trigger_id);
-
-
---
--- Name: finished_oban_jobs_args_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX finished_oban_jobs_args_index ON public.finished_oban_jobs USING gin (args);
-
-
---
--- Name: finished_oban_jobs_inserted_at_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX finished_oban_jobs_inserted_at_index ON public.finished_oban_jobs USING btree (inserted_at);
-
-
---
--- Name: finished_oban_jobs_queue_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX finished_oban_jobs_queue_index ON public.finished_oban_jobs USING btree (queue);
 
 
 --
@@ -11424,7 +11326,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict eUjvvhyd9RE0yh9uwLqEJ8y6xFMPZhtBIDhpI0cmZOhawlTLaDar84frMwvsQkm
+\unrestrict 8MjILc1IXXZYeBTcgHqXaTfeYg7JO0pUglQ31TL1JZBs3iMlDVoTyYaWmClBfAA
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -11983,3 +11885,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260309140154);
 INSERT INTO public."schema_migrations" (version) VALUES (20260317111739);
 INSERT INTO public."schema_migrations" (version) VALUES (20260319144952);
 INSERT INTO public."schema_migrations" (version) VALUES (20260327120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260331120000);

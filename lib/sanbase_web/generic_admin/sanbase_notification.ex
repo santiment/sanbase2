@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.GenericAdmin.SanbaseNotification do
   def schema_module, do: Sanbase.AppNotifications.Notification
 
+  def resource_name, do: "sanbase_notifications"
+
   def resource() do
     %{
       index_fields: [

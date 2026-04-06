@@ -94,6 +94,9 @@ defmodule Sanbase.AppNotifications do
             where: is_registered(),
             # \\? is the jsonb "contains key" operator (?), escaped because
             # ? is Ecto's placeholder character in fragments.
+            # COALESCE handles users without a user_settings row (left join NULL):
+            # NULL -> '...' => NULL, NULL ? type => NULL, COALESCE(NULL, false) => false,
+            # NOT false => true — so users without settings receive all notifications.
             where:
               fragment(
                 "NOT COALESCE((? -> 'disabled_notification_types') \\? ?, false)",
@@ -361,27 +364,6 @@ defmodule Sanbase.AppNotifications do
   defdelegate unmute_user(user_id, muted_user_id), to: NotificationMutedUser, as: :unmute
   defdelegate list_muted_users(user_id), to: NotificationMutedUser
   defdelegate user_ids_that_muted(actor_user_id), to: NotificationMutedUser
-
-  @doc """
-  Returns a MapSet of all user_ids that have disabled the given notification type.
-  """
-  @spec user_ids_with_notification_type_disabled(String.t()) :: MapSet.t(pos_integer())
-  def user_ids_with_notification_type_disabled(notification_type)
-      when is_binary(notification_type) do
-    from(us in Sanbase.Accounts.UserSettings,
-      # \\? is the jsonb "contains key" operator (?), escaped because
-      # ? is Ecto's placeholder character in fragments.
-      where:
-        fragment(
-          "(? -> 'disabled_notification_types') \\? ?",
-          us.settings,
-          ^notification_type
-        ),
-      select: us.user_id
-    )
-    |> Repo.all()
-    |> MapSet.new()
-  end
 
   def async_broadcast_websocket_notifications(notification_read_status_list) do
     Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->

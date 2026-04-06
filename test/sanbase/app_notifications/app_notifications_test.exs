@@ -833,6 +833,43 @@ defmodule Sanbase.AppNotificationsTest do
 
     # Disabled notification type tests
 
+    test "user with 2 disabled types receives only non-disabled event types", %{
+      author: author,
+      follower: follower
+    } do
+      AppNotifications.disable_notification_types(follower, [
+        "create_watchlist",
+        "publish_insight"
+      ])
+
+      # Trigger 4 events: create_watchlist (disabled), publish_insight (disabled),
+      # update_watchlist (enabled), new_follower (enabled)
+      {:ok, watchlist} =
+        UserList.create_user_list(author, %{name: "WL", is_public: true})
+
+      post = insert(:post, user: author)
+      {:ok, _} = Post.publish(post.id, author.id)
+
+      new_function = %{"name" => "slugs", "args" => %{"slugs" => ["bitcoin"]}}
+
+      {:ok, _} =
+        UserList.update_user_list(author, %{id: watchlist.id, function: new_function})
+
+      new_follower = insert(:user)
+      {:ok, _} = UserFollower.follow(follower.id, new_follower.id)
+
+      Sanbase.EventBus.AppNotificationsSubscriber.topics()
+      |> Sanbase.EventBus.drain_topics()
+
+      notifications = AppNotifications.list_notifications_for_user(follower.id)
+      received_types = Enum.map(notifications, & &1.type) |> Enum.sort()
+
+      assert "update_watchlist" in received_types
+      assert "new_follower" in received_types
+      refute "create_watchlist" in received_types
+      refute "publish_insight" in received_types
+    end
+
     test "user with disabled type does not receive notifications of that type", %{
       author: author,
       follower: follower
@@ -1162,34 +1199,6 @@ defmodule Sanbase.AppNotificationsTest do
     end
   end
 
-  describe "user_ids_with_notification_type_disabled/1" do
-    test "returns all user ids that have disabled the given type" do
-      user1 = insert(:user)
-      user2 = insert(:user)
-      _user3 = insert(:user)
-
-      Sanbase.Accounts.UserSettings.update_settings(user1, %{
-        disabled_notification_types: ["create_watchlist", "create_vote"]
-      })
-
-      Sanbase.Accounts.UserSettings.update_settings(user2, %{
-        disabled_notification_types: ["create_vote"]
-      })
-
-      disabled = AppNotifications.user_ids_with_notification_type_disabled("create_vote")
-      assert MapSet.member?(disabled, user1.id)
-      assert MapSet.member?(disabled, user2.id)
-
-      disabled = AppNotifications.user_ids_with_notification_type_disabled("create_watchlist")
-      assert MapSet.member?(disabled, user1.id)
-      refute MapSet.member?(disabled, user2.id)
-
-      disabled = AppNotifications.user_ids_with_notification_type_disabled("publish_insight")
-      refute MapSet.member?(disabled, user1.id)
-      refute MapSet.member?(disabled, user2.id)
-    end
-  end
-
   describe "create_broadcast_notification/1" do
     test "creates notification and read statuses for all registered users" do
       user1 = insert(:user)
@@ -1238,6 +1247,33 @@ defmodule Sanbase.AppNotificationsTest do
 
       assert length(AppNotifications.list_notifications_for_user(user1.id)) == 1
       assert length(AppNotifications.list_notifications_for_user(user2.id)) == 0
+    end
+
+    test "user with 2 disabled types receives only non-disabled broadcast types" do
+      user = insert(:user)
+
+      AppNotifications.disable_notification_types(user, [
+        "system_notification",
+        "create_watchlist"
+      ])
+
+      for {type, title} <- [
+            {"system_notification", "System alert"},
+            {"create_watchlist", "New watchlist"},
+            {"publish_insight", "New insight"},
+            {"alert_triggered", "Alert fired"}
+          ] do
+        AppNotifications.create_broadcast_notification(%{
+          type: type,
+          title: title,
+          content: "test"
+        })
+      end
+
+      notifications = AppNotifications.list_notifications_for_user(user.id)
+      received_types = Enum.map(notifications, & &1.type) |> Enum.sort()
+
+      assert received_types == ["alert_triggered", "publish_insight"]
     end
   end
 end

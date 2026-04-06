@@ -69,7 +69,14 @@ defmodule SanbaseWeb.GenericAdmin do
 
   def resources do
     custom_defined_modules()
-    |> Enum.map(&schema_to_resource_name/1)
+    |> Enum.map(fn admin_module ->
+      call_module_function_or_default(
+        admin_module,
+        :resource_name,
+        [],
+        schema_to_resource_name(admin_module.schema_module())
+      )
+    end)
   end
 
   def call_module_function_or_default(module, function, data, default_value) do

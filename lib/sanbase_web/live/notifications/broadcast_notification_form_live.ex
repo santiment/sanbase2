@@ -18,12 +18,23 @@ defmodule SanbaseWeb.NotificationsLive.BroadcastNotificationFormLive do
     ~H"""
     <div class="max-w-2xl mx-auto">
       <div class="flex items-center justify-between mb-4">
-        <.link
-          navigate={~p"/admin/generic?resource=sanbase_notifications"}
-          class="text-sm text-gray-600 hover:text-gray-900"
-        >
-          ← Back to Notifications
-        </.link>
+        <div class="flex gap-4">
+          <.link navigate={~p"/admin/admin_forms"} class="text-sm text-gray-600 hover:text-gray-900">
+            ← Admin Forms
+          </.link>
+          <.link
+            navigate={~p"/admin/generic?resource=sanbase_notifications"}
+            class="text-sm text-gray-600 hover:text-gray-900"
+          >
+            ← Notifications
+          </.link>
+          <.link
+            navigate={~p"/admin/generic?resource=sanbase_notification_read_statuses"}
+            class="text-sm text-gray-600 hover:text-gray-900"
+          >
+            ← Read Statuses
+          </.link>
+        </div>
         <h2 class="text-xl font-bold">Broadcast App Notification</h2>
       </div>
 

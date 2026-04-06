@@ -91,3 +91,4 @@ load_test/data/slugs.json
 PLAN.md
 PLAN_PROGRESS.md
 .mix/
+.hex/

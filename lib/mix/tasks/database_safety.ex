@@ -14,11 +14,7 @@ defmodule Mix.Tasks.DatabaseSafety do
 
   @impl Mix.Task
   def run(_args) do
-    if Code.ensure_loaded?(Envy) do
-      Envy.auto_load()
-    else
-      raise(Mix.Error, "Cannot load Envy")
-    end
+    Sanbase.EnvConfigLoader.auto_load()
 
     env = Config.module_get(Sanbase, :env)
 

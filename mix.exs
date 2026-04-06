@@ -67,7 +67,6 @@ defmodule Sanbase.Mixfile do
       {:ecto_psql_extras, "~> 0.3"},
       {:ecto_sql, "~> 3.12"},
       {:ecto, "~> 3.12"},
-      {:envy, "~> 1.1.1", only: [:dev, :test]},
       {:erlex, "~> 0.2.6"},
       {:ethereumex, "~> 0.9"},
       {:esbuild, "~> 0.7", runtime: Mix.env() == :dev},

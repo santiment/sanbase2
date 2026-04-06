@@ -9,7 +9,7 @@ defmodule Sanbase.Application do
   alias Sanbase.EventBus.KafkaExporterSubscriber
 
   def start(_type, _args) do
-    Code.ensure_loaded?(Envy) && Envy.auto_load()
+    # .env files are loaded in config/runtime.exs via Sanbase.EnvConfigLoader.auto_load/0
 
     # Container type is one of: web, scrapers, signals, all
     container_type = container_type()

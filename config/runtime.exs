@@ -3,7 +3,7 @@ import Config
 if config_env() in [:dev, :test] do
   # In order to properly work while developing locally,
   # load the .env file before doing the configuration
-  Code.ensure_loaded?(Envy) && Envy.auto_load()
+  Sanbase.EnvConfigLoader.auto_load()
 end
 
 config :ueberauth, Ueberauth.Strategy.Google.OAuth,

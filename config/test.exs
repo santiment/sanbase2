@@ -90,8 +90,7 @@ config :sanbase, Sanbase.Repo,
   password: "postgres",
   database: "sanbase_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool_size: 5,
-  ssl: false,
-  ssl_opts: []
+  ssl: false
 
 config :sanbase, Sanbase.ClickhouseRepo,
   clickhouse_repo_enabled?: false,

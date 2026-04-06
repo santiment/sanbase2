@@ -842,7 +842,8 @@ defmodule Sanbase.AppNotificationsTest do
       {:ok, _watchlist} =
         UserList.create_user_list(author, %{name: "Disabled Type Watchlist", is_public: true})
 
-      :timer.sleep(100)
+      Sanbase.EventBus.AppNotificationsSubscriber.topics()
+      |> Sanbase.EventBus.drain_topics()
 
       notifications = AppNotifications.list_notifications_for_user(follower.id)
       assert notifications == []
@@ -857,7 +858,8 @@ defmodule Sanbase.AppNotificationsTest do
       post = insert(:post, user: author)
       {:ok, _} = Post.publish(post.id, author.id)
 
-      :timer.sleep(100)
+      Sanbase.EventBus.AppNotificationsSubscriber.topics()
+      |> Sanbase.EventBus.drain_topics()
 
       notifications = AppNotifications.list_notifications_for_user(follower.id)
       assert length(notifications) == 1
@@ -873,7 +875,9 @@ defmodule Sanbase.AppNotificationsTest do
       {:ok, _watchlist} =
         UserList.create_user_list(author, %{name: "While Disabled", is_public: true})
 
-      :timer.sleep(100)
+      Sanbase.EventBus.AppNotificationsSubscriber.topics()
+      |> Sanbase.EventBus.drain_topics()
+
       assert AppNotifications.list_notifications_for_user(follower.id) == []
 
       AppNotifications.enable_notification_types(follower, ["create_watchlist"])
@@ -881,7 +885,8 @@ defmodule Sanbase.AppNotificationsTest do
       {:ok, _watchlist2} =
         UserList.create_user_list(author, %{name: "After Enabled", is_public: true})
 
-      :timer.sleep(100)
+      Sanbase.EventBus.AppNotificationsSubscriber.topics()
+      |> Sanbase.EventBus.drain_topics()
 
       notifications = AppNotifications.list_notifications_for_user(follower.id)
       assert length(notifications) == 1

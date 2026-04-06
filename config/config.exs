@@ -265,7 +265,6 @@ config :libcluster,
         port: 5432,
         parameters: [],
         ssl: false,
-        ssl_opts: nil,
         channel_name: "sanbase_cluster"
       ]
     ]

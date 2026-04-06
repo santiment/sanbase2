@@ -116,9 +116,7 @@ if config_env() == :prod do
       "//*.sanbase-admin.production.san"
     ]
 
-  config :sanbase, Sanbase.Repo,
-    ssl: true,
-    ssl_opts: [verify: :verify_none]
+  config :sanbase, Sanbase.Repo, ssl: [verify: :verify_none]
 
   db_url = System.get_env("DATABASE_URL")
   uri = URI.parse(db_url)
@@ -136,8 +134,7 @@ if config_env() == :prod do
           database: database,
           port: 5432,
           parameters: [],
-          ssl: true,
-          ssl_opts: [verify: :verify_none],
+          ssl: [verify: :verify_none],
           channel_name: "sanbase_cluster"
         ]
       ]

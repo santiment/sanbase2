@@ -1206,7 +1206,7 @@ defmodule Sanbase.AppNotificationsTest do
       _unregistered = insert(:user_registration_not_finished)
 
       attrs = %{
-        type: "system_notification",
+        type: "santiment_broadcast",
         title: "Maintenance Notice",
         content: "We will be performing maintenance."
       }
@@ -1226,7 +1226,7 @@ defmodule Sanbase.AppNotificationsTest do
       assert length(notifications1) == 1
       assert length(notifications2) == 1
 
-      assert hd(notifications1).type == "system_notification"
+      assert hd(notifications1).type == "santiment_broadcast"
       assert hd(notifications1).is_broadcast == true
     end
 
@@ -1234,11 +1234,11 @@ defmodule Sanbase.AppNotificationsTest do
       user1 = insert(:user)
       user2 = insert(:user)
 
-      AppNotifications.disable_notification_types(user2, ["system_notification"])
+      AppNotifications.disable_notification_types(user2, ["santiment_broadcast"])
 
       assert {:ok, %{recipients_count: count}} =
                AppNotifications.create_broadcast_notification(%{
-                 type: "system_notification",
+                 type: "santiment_broadcast",
                  title: "Maintenance",
                  content: "Downtime soon."
                })
@@ -1253,12 +1253,12 @@ defmodule Sanbase.AppNotificationsTest do
       user = insert(:user)
 
       AppNotifications.disable_notification_types(user, [
-        "system_notification",
+        "santiment_broadcast",
         "create_watchlist"
       ])
 
       for {type, title} <- [
-            {"system_notification", "System alert"},
+            {"santiment_broadcast", "System alert"},
             {"create_watchlist", "New watchlist"},
             {"publish_insight", "New insight"},
             {"alert_triggered", "Alert fired"}

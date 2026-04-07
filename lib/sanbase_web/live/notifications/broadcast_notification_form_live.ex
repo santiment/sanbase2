@@ -4,12 +4,17 @@ defmodule SanbaseWeb.NotificationsLive.BroadcastNotificationFormLive do
   alias Sanbase.AppNotifications
 
   def mount(_params, _session, socket) do
+    broadcast_types = AppNotifications.broadcast_notification_types()
+    {default_type, _label} = List.first(broadcast_types)
+
     {:ok,
      assign(socket,
+       broadcast_types: broadcast_types,
        form:
          to_form(%{
            "title" => "",
-           "content" => ""
+           "content" => "",
+           "type" => default_type
          })
      )}
   end
@@ -47,6 +52,15 @@ defmodule SanbaseWeb.NotificationsLive.BroadcastNotificationFormLive do
         <div class="space-y-4">
           <div>
             <.input
+              field={@form[:type]}
+              type="select"
+              label="Notification Type"
+              options={Enum.map(@broadcast_types, fn {value, label} -> {label, value} end)}
+            />
+          </div>
+
+          <div>
+            <.input
               field={@form[:title]}
               type="text"
               label="Title"
@@ -76,20 +90,26 @@ defmodule SanbaseWeb.NotificationsLive.BroadcastNotificationFormLive do
     """
   end
 
-  def handle_event("send_broadcast", %{"title" => title, "content" => content}, socket) do
+  def handle_event(
+        "send_broadcast",
+        %{"title" => title, "content" => content, "type" => type},
+        socket
+      ) do
     if String.trim(title) == "" or String.trim(content) == "" do
       {:noreply, put_flash(socket, :error, "Title and content are required")}
     else
       case AppNotifications.create_broadcast_notification(%{
-             type: "system_notification",
+             type: type,
              title: title,
              content: content
            }) do
         {:ok, %{recipients_count: count}} ->
+          {default_type, _label} = List.first(socket.assigns.broadcast_types)
+
           {:noreply,
            socket
            |> put_flash(:info, "Notification broadcast to #{count} users successfully!")
-           |> assign(form: to_form(%{"title" => "", "content" => ""}))}
+           |> assign(form: to_form(%{"title" => "", "content" => "", "type" => default_type}))}
 
         {:error, reason} ->
           {:noreply,

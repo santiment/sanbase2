@@ -61,6 +61,98 @@ defmodule Sanbase.AppNotificationsTest do
 
       assert msg =~ "Unsupported notification type"
     end
+
+    test "accepts notification with a valid absolute URL" do
+      assert {:ok, %Notification{url: "https://academy.santiment.net/article"}} =
+               AppNotifications.create_notification(%{
+                 type: "santiment_broadcast",
+                 title: "New Article",
+                 content: "Check out our new article",
+                 url: "https://academy.santiment.net/article"
+               })
+    end
+
+    test "accepts notification with a valid relative path" do
+      assert {:ok, %Notification{url: "/charts"}} =
+               AppNotifications.create_notification(%{
+                 type: "santiment_broadcast",
+                 title: "New Charts",
+                 content: "Check out the new charts",
+                 url: "/charts"
+               })
+    end
+
+    test "accepts notification without a URL" do
+      assert {:ok, %Notification{url: nil}} =
+               AppNotifications.create_notification(%{
+                 type: "santiment_broadcast",
+                 title: "Hello there",
+                 content: "Some broadcast content"
+               })
+    end
+
+    test "rejects notification with invalid URL (no scheme/host)" do
+      assert {:error, changeset} =
+               AppNotifications.create_notification(%{
+                 type: "santiment_broadcast",
+                 title: "Hello there",
+                 content: "Some broadcast content",
+                 url: "not-a-url"
+               })
+
+      assert {"must be a valid URL (https://...) or a relative path (/...)", _} =
+               changeset.errors[:url]
+    end
+
+    test "rejects notification with invalid relative path" do
+      assert {:error, changeset} =
+               AppNotifications.create_notification(%{
+                 type: "santiment_broadcast",
+                 title: "Hello there",
+                 content: "Some broadcast content",
+                 url: "/invalid path with spaces"
+               })
+
+      assert {"is not a valid relative path", _} = changeset.errors[:url]
+    end
+
+    test "rejects broadcast with title shorter than 6 characters" do
+      assert {:error, changeset} =
+               AppNotifications.create_notification(%{
+                 type: "santiment_broadcast",
+                 title: "Short",
+                 content: "Some broadcast content"
+               })
+
+      assert {"should be at least %{count} character(s)",
+              [count: 6, validation: :length, kind: :min, type: :string]} =
+               changeset.errors[:title]
+    end
+
+    test "rejects broadcast with content shorter than 10 characters" do
+      assert {:error, changeset} =
+               AppNotifications.create_notification(%{
+                 type: "santiment_broadcast",
+                 title: "Valid Title",
+                 content: "Too short"
+               })
+
+      assert {"should be at least %{count} character(s)",
+              [count: 10, validation: :length, kind: :min, type: :string]} =
+               changeset.errors[:content]
+    end
+
+    test "does not enforce min lengths for non-broadcast notifications" do
+      user = insert(:user)
+
+      assert {:ok, %Notification{}} =
+               AppNotifications.create_notification(%{
+                 type: "create_watchlist",
+                 user_id: user.id,
+                 title: "Hi",
+                 content: "Short"
+               })
+    end
   end
 
   describe "list_notifications_for_user/2" do

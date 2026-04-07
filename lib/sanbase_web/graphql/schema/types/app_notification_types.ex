@@ -8,6 +8,7 @@ defmodule SanbaseWeb.Graphql.AppNotificationTypes do
     field(:type, non_null(:string))
     field(:title, :string)
     field(:content, :string)
+    field(:url, :string)
     field(:entity_type, :string)
     field(:entity_id, :integer)
     field(:entity_name, :string)

@@ -23,6 +23,12 @@ defmodule SanbaseWeb.NotificationsLive.BroadcastNotificationFormLive do
             ← Admin Forms
           </.link>
           <.link
+            navigate={~p"/admin/notifications/broadcast/overview"}
+            class="text-sm text-gray-600 hover:text-gray-900"
+          >
+            ← Broadcast Overview
+          </.link>
+          <.link
             navigate={~p"/admin/generic?resource=sanbase_notifications"}
             class="text-sm text-gray-600 hover:text-gray-900"
           >

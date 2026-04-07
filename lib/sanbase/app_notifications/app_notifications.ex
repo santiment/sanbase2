@@ -126,6 +126,31 @@ defmodule Sanbase.AppNotifications do
   end
 
   @doc """
+  Returns all broadcast notifications with aggregated recipient statistics.
+  Each result includes the total recipient count and unread count.
+  """
+  @spec list_broadcast_notifications() :: [map()]
+  def list_broadcast_notifications do
+    from(n in Notification,
+      left_join: nrs in NotificationReadStatus,
+      on: nrs.notification_id == n.id,
+      where: n.is_broadcast == true and n.is_deleted == false,
+      group_by: [n.id, n.title, n.content, n.type, n.inserted_at],
+      order_by: [desc: n.inserted_at],
+      select: %{
+        id: n.id,
+        title: n.title,
+        content: n.content,
+        type: n.type,
+        inserted_at: n.inserted_at,
+        recipients_count: count(nrs.id),
+        unread_count: filter(count(nrs.id), is_nil(nrs.read_at))
+      }
+    )
+    |> Repo.all()
+  end
+
+  @doc """
   Creates a notification entry.
   """
   @spec create_notification(map()) ::

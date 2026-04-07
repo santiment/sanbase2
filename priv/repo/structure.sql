@@ -2,15 +2,14 @@
 -- PostgreSQL database dump
 --
 
-\restrict 8MjILc1IXXZYeBTcgHqXaTfeYg7JO0pUglQ31TL1JZBs3iMlDVoTyYaWmClBfAA
+\restrict WLWFJIMyr6OGcjQSPVRM7eSTiskufSffxDak0MXfVniqkIalIzbaf4NlIF1MNCt
 
--- Dumped from database version 17.9 (Homebrew)
--- Dumped by pg_dump version 17.9 (Homebrew)
+-- Dumped from database version 15.15 (Homebrew)
+-- Dumped by pg_dump version 15.15 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
-SET transaction_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
@@ -873,8 +872,8 @@ CREATE TABLE public.chat_messages (
     sources jsonb[] DEFAULT ARRAY[]::jsonb[],
     suggestions text[] DEFAULT ARRAY[]::text[],
     feedback_type character varying(255),
-    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY (ARRAY[('thumbs_up'::character varying)::text, ('thumbs_down'::character varying)::text])) OR (feedback_type IS NULL))),
-    CONSTRAINT valid_role CHECK (((role)::text = ANY (ARRAY[('user'::character varying)::text, ('assistant'::character varying)::text])))
+    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY ((ARRAY['thumbs_up'::character varying, 'thumbs_down'::character varying])::text[])) OR (feedback_type IS NULL))),
+    CONSTRAINT valid_role CHECK (((role)::text = ANY ((ARRAY['user'::character varying, 'assistant'::character varying])::text[])))
 );
 
 
@@ -8847,6 +8846,20 @@ CREATE INDEX mcp_tool_invocations_user_id_index ON public.mcp_tool_invocations U
 
 
 --
+-- Name: mcp_tool_invocations_user_id_inserted_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX mcp_tool_invocations_user_id_inserted_at_index ON public.mcp_tool_invocations USING btree (user_id, inserted_at);
+
+
+--
+-- Name: mcp_tool_invocations_user_id_tool_name_inserted_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX mcp_tool_invocations_user_id_tool_name_inserted_at_index ON public.mcp_tool_invocations USING btree (user_id, tool_name, inserted_at);
+
+
+--
 -- Name: menus_user_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9264,6 +9277,13 @@ CREATE INDEX san_burn_credit_transactions_trx_hash_index ON public.san_burn_cred
 --
 
 CREATE INDEX sanbase_notifications_inserted_at_index ON public.sanbase_notifications USING btree (inserted_at);
+
+
+--
+-- Name: sanbase_notifications_read_status_notification_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX sanbase_notifications_read_status_notification_id_index ON public.sanbase_notifications_read_status USING btree (notification_id);
 
 
 --
@@ -11326,7 +11346,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 8MjILc1IXXZYeBTcgHqXaTfeYg7JO0pUglQ31TL1JZBs3iMlDVoTyYaWmClBfAA
+\unrestrict WLWFJIMyr6OGcjQSPVRM7eSTiskufSffxDak0MXfVniqkIalIzbaf4NlIF1MNCt
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -11884,5 +11904,7 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260309140153);
 INSERT INTO public."schema_migrations" (version) VALUES (20260309140154);
 INSERT INTO public."schema_migrations" (version) VALUES (20260317111739);
 INSERT INTO public."schema_migrations" (version) VALUES (20260319144952);
+INSERT INTO public."schema_migrations" (version) VALUES (20260326120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260327120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260331120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260407090744);

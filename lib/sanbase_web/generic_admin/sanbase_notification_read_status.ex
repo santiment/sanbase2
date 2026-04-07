@@ -12,6 +12,12 @@ defmodule SanbaseWeb.GenericAdmin.SanbaseNotificationReadStatus do
         :read_at,
         :inserted_at,
         :updated_at
+      ],
+      custom_index_actions: [
+        %{
+          name: "Broadcast Overview",
+          path: "/admin/notifications/broadcast/overview"
+        }
       ]
     }
   end

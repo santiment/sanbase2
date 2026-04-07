@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 8MjILc1IXXZYeBTcgHqXaTfeYg7JO0pUglQ31TL1JZBs3iMlDVoTyYaWmClBfAA
+\restrict 0T7OuqXkFrObsTdfo2sZrj02N3NEwIf2LOYT2kThLrMBnCoCt02Aj9Y5x7fSy17
 
 -- Dumped from database version 17.9 (Homebrew)
 -- Dumped by pg_dump version 17.9 (Homebrew)
@@ -4138,7 +4138,8 @@ CREATE TABLE public.sanbase_notifications (
     is_deleted boolean DEFAULT false NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    entity_description text
+    entity_description text,
+    url text
 );
 
 
@@ -11326,7 +11327,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 8MjILc1IXXZYeBTcgHqXaTfeYg7JO0pUglQ31TL1JZBs3iMlDVoTyYaWmClBfAA
+\unrestrict 0T7OuqXkFrObsTdfo2sZrj02N3NEwIf2LOYT2kThLrMBnCoCt02Aj9Y5x7fSy17
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -11886,3 +11887,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260317111739);
 INSERT INTO public."schema_migrations" (version) VALUES (20260319144952);
 INSERT INTO public."schema_migrations" (version) VALUES (20260327120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260331120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260407120000);

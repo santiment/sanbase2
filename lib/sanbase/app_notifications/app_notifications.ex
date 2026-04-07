@@ -55,8 +55,28 @@ defmodule Sanbase.AppNotifications do
     "create_vote",
     "alert_triggered",
     "new_follower",
-    "system_notification"
+    "santiment_broadcast",
+    "santiment_broadcast_new_features",
+    "santiment_broadcast_tutorials",
+    "santiment_broadcast_youtube_video",
+    "santiment_broadcast_social_trends"
   ]
+
+  @broadcast_notification_type_labels %{
+    "santiment_broadcast" => "General Broadcast",
+    "santiment_broadcast_new_features" => "New Features & Updates",
+    "santiment_broadcast_tutorials" => "Tutorials",
+    "santiment_broadcast_youtube_video" => "YouTube Videos & Streams",
+    "santiment_broadcast_social_trends" => "Social Trends"
+  }
+
+  @doc "Returns the list of notification types available for broadcasting as {value, label} tuples."
+  @spec broadcast_notification_types() :: [{String.t(), String.t()}]
+  def broadcast_notification_types do
+    @supported_notification_types
+    |> Enum.filter(&String.starts_with?(&1, "santiment_broadcast"))
+    |> Enum.map(fn type -> {type, Map.fetch!(@broadcast_notification_type_labels, type)} end)
+  end
 
   @doc "Returns the list of all supported notification types."
   @spec supported_notification_types() :: [String.t()]

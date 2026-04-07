@@ -7,11 +7,12 @@ defmodule SanbaseWeb.NotificationsLive.BroadcastOverviewLive do
   def mount(_params, _session, socket) do
     broadcasts = AppNotifications.list_broadcast_notifications()
 
-    {:ok,
-     assign(socket,
-       page_title: "Broadcast Notifications Overview",
-       broadcasts: broadcasts
-     )}
+    socket =
+      socket
+      |> assign(:page_title, "Broadcast Notifications Overview")
+      |> stream(:broadcasts, broadcasts)
+
+    {:ok, socket}
   end
 
   @impl true
@@ -50,8 +51,17 @@ defmodule SanbaseWeb.NotificationsLive.BroadcastOverviewLive do
               <th scope="col" class="px-4 py-3">Actions</th>
             </tr>
           </thead>
-          <tbody>
-            <tr :for={b <- @broadcasts} class="bg-white border-b hover:bg-gray-50">
+          <tbody id="broadcasts" phx-update="stream">
+            <tr class="hidden only:block">
+              <td colspan="8" class="px-4 py-8 text-center text-gray-400">
+                No broadcast notifications found. Use the "New Broadcast" button to create one.
+              </td>
+            </tr>
+            <tr
+              :for={{id, b} <- @streams.broadcasts}
+              id={id}
+              class="bg-white border-b hover:bg-gray-50"
+            >
               <td class="px-4 py-3 font-medium text-gray-900">
                 <.link
                   href={~p"/admin/generic/#{b.id}?resource=sanbase_notifications"}
@@ -88,11 +98,6 @@ defmodule SanbaseWeb.NotificationsLive.BroadcastOverviewLive do
                 >
                   <.icon name="hero-users" class="w-3.5 h-3.5 mr-1.5" /> View Recipients
                 </.link>
-              </td>
-            </tr>
-            <tr :if={@broadcasts == []}>
-              <td colspan="8" class="px-4 py-8 text-center text-gray-400">
-                No broadcast notifications found. Use the "New Broadcast" button to create one.
               </td>
             </tr>
           </tbody>

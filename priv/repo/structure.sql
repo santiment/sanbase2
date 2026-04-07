@@ -8846,20 +8846,6 @@ CREATE INDEX mcp_tool_invocations_user_id_index ON public.mcp_tool_invocations U
 
 
 --
--- Name: mcp_tool_invocations_user_id_inserted_at_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX mcp_tool_invocations_user_id_inserted_at_index ON public.mcp_tool_invocations USING btree (user_id, inserted_at);
-
-
---
--- Name: mcp_tool_invocations_user_id_tool_name_inserted_at_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX mcp_tool_invocations_user_id_tool_name_inserted_at_index ON public.mcp_tool_invocations USING btree (user_id, tool_name, inserted_at);
-
-
---
 -- Name: menus_user_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11904,7 +11890,6 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260309140153);
 INSERT INTO public."schema_migrations" (version) VALUES (20260309140154);
 INSERT INTO public."schema_migrations" (version) VALUES (20260317111739);
 INSERT INTO public."schema_migrations" (version) VALUES (20260319144952);
-INSERT INTO public."schema_migrations" (version) VALUES (20260326120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260327120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260331120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260407090744);

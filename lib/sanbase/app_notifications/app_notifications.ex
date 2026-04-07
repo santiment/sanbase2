@@ -90,58 +90,15 @@ defmodule Sanbase.AppNotifications do
   """
   @spec create_broadcast_notification(map()) ::
           {:ok, %{notification: Notification.t(), recipients_count: non_neg_integer()}}
-          | {:error, Ecto.Changeset.t()}
+          | {:error, Ecto.Changeset.t() | String.t()}
   def create_broadcast_notification(attrs) when is_map(attrs) do
-    attrs =
-      attrs
-      |> Map.put(:is_broadcast, true)
-      |> Map.put(:is_system_generated, true)
+    type = attrs[:type] || attrs["type"]
 
-    Ecto.Multi.new()
-    |> Ecto.Multi.insert(:notification, Notification.changeset(%Notification{}, attrs))
-    |> Ecto.Multi.run(:read_statuses, fn _repo, %{notification: notification} ->
-      now = DateTime.utc_now(:second)
-
-      # Insert a NotificationReadStatus for every registered user who has NOT
-      # disabled this notification type. Left join so users without a
-      # user_settings row are included (default: all types enabled).
-      {count, _} =
-        Repo.insert_all(
-          NotificationReadStatus,
-          from(u in Sanbase.Accounts.User,
-            left_join: us in Sanbase.Accounts.UserSettings,
-            on: us.user_id == u.id,
-            where: is_registered(),
-            # \\? is the jsonb "contains key" operator (?), escaped because
-            # ? is Ecto's placeholder character in fragments.
-            # COALESCE handles users without a user_settings row (left join NULL):
-            # NULL -> '...' => NULL, NULL ? type => NULL, COALESCE(NULL, false) => false,
-            # NOT false => true — so users without settings receive all notifications.
-            where:
-              fragment(
-                "NOT COALESCE((? -> 'disabled_notification_types') \\? ?, false)",
-                us.settings,
-                ^notification.type
-              ),
-            select: %{
-              user_id: u.id,
-              notification_id: ^notification.id,
-              read_at: type(^nil, :utc_datetime),
-              inserted_at: type(^now, :utc_datetime),
-              updated_at: type(^now, :utc_datetime)
-            }
-          )
-        )
-
-      {:ok, count}
-    end)
-    |> Repo.transaction()
-    |> case do
-      {:ok, %{notification: notification, read_statuses: count}} ->
-        {:ok, %{notification: notification, recipients_count: count}}
-
-      {:error, _operation, reason, _changes} ->
-        {:error, reason}
+    if type in @supported_notification_types do
+      do_create_broadcast_notification(attrs)
+    else
+      {:error,
+       "Unsupported notification type: #{inspect(type)}. Supported types: #{Enum.join(@supported_notification_types, ", ")}"}
     end
   end
 
@@ -471,6 +428,63 @@ defmodule Sanbase.AppNotifications do
   def disable_notification_types(user, types) when is_list(types) do
     with :ok <- validate_notification_types(types) do
       update_disabled_notification_types(user, fn current -> Enum.uniq(current ++ types) end)
+    end
+  end
+
+  ## Private functions
+
+  # Do the actual creation of broadcast notifications
+  defp do_create_broadcast_notification(attrs) when is_map(attrs) do
+    attrs =
+      attrs
+      |> Map.put(:is_broadcast, true)
+      |> Map.put(:is_system_generated, true)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:notification, Notification.changeset(%Notification{}, attrs))
+    |> Ecto.Multi.run(:read_statuses, fn _repo, %{notification: notification} ->
+      now = DateTime.utc_now(:second)
+
+      # Insert a NotificationReadStatus for every registered user who has NOT
+      # disabled this notification type. Left join so users without a
+      # user_settings row are included (default: all types enabled).
+      {count, _} =
+        Repo.insert_all(
+          NotificationReadStatus,
+          from(u in Sanbase.Accounts.User,
+            left_join: us in Sanbase.Accounts.UserSettings,
+            on: us.user_id == u.id,
+            where: is_registered(),
+            # \\? is the jsonb "contains key" operator (?), escaped because
+            # ? is Ecto's placeholder character in fragments.
+            # COALESCE handles users without a user_settings row (left join NULL):
+            # NULL -> '...' => NULL, NULL ? type => NULL, COALESCE(NULL, false) => false,
+            # NOT false => true — so users without settings receive all notifications.
+            where:
+              fragment(
+                "NOT COALESCE((? -> 'disabled_notification_types') \\? ?, false)",
+                us.settings,
+                ^notification.type
+              ),
+            select: %{
+              user_id: u.id,
+              notification_id: ^notification.id,
+              read_at: type(^nil, :utc_datetime),
+              inserted_at: type(^now, :utc_datetime),
+              updated_at: type(^now, :utc_datetime)
+            }
+          )
+        )
+
+      {:ok, count}
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{notification: notification, read_statuses: count}} ->
+        {:ok, %{notification: notification, recipients_count: count}}
+
+      {:error, _operation, reason, _changes} ->
+        {:error, reason}
     end
   end
 

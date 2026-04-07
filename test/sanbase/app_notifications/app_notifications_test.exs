@@ -1373,11 +1373,11 @@ defmodule Sanbase.AppNotificationsTest do
     test "reports zero unread notifications when a broadcast has no recipients" do
       user = insert(:user)
 
-      AppNotifications.disable_notification_types(user, ["system_notification"])
+      assert {:ok, _} = AppNotifications.disable_notification_types(user, ["santiment_broadcast"])
 
       assert {:ok, %{notification: notification, recipients_count: 0}} =
                AppNotifications.create_broadcast_notification(%{
-                 type: "system_notification",
+                 type: "santiment_broadcast",
                  title: "Maintenance",
                  content: "Downtime soon."
                })

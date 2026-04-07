@@ -2,15 +2,20 @@ defmodule SanbaseWeb.NotificationsLive.BroadcastNotificationFormLive do
   use SanbaseWeb, :live_view
 
   alias Sanbase.AppNotifications
+  alias Sanbase.AppNotifications.Notification
 
   def mount(_params, _session, socket) do
+    broadcast_types = AppNotifications.broadcast_notification_types()
+    {default_type, _label} = List.first(broadcast_types)
+
+    changeset =
+      Notification.changeset(%Notification{}, %{type: default_type})
+      |> Map.put(:action, :validate)
+
     {:ok,
      assign(socket,
-       form:
-         to_form(%{
-           "title" => "",
-           "content" => ""
-         })
+       broadcast_types: broadcast_types,
+       form: to_form(changeset, as: "notification")
      )}
   end
 
@@ -49,8 +54,17 @@ defmodule SanbaseWeb.NotificationsLive.BroadcastNotificationFormLive do
         The notification will appear in their notification feed.
       </p>
 
-      <.form for={@form} phx-submit="send_broadcast">
+      <.form for={@form} phx-change="validate" phx-submit="send_broadcast">
         <div class="space-y-4">
+          <div>
+            <.input
+              field={@form[:type]}
+              type="select"
+              label="Notification Type"
+              options={Enum.map(@broadcast_types, fn {value, label} -> {label, value} end)}
+            />
+          </div>
+
           <div>
             <.input
               field={@form[:title]}
@@ -72,6 +86,16 @@ defmodule SanbaseWeb.NotificationsLive.BroadcastNotificationFormLive do
           </div>
 
           <div>
+            <.input
+              field={@form[:url]}
+              type="text"
+              label="URL (optional)"
+              placeholder="e.g. /charts or https://academy.santiment.net/..."
+              phx-debounce="300"
+            />
+          </div>
+
+          <div>
             <.button type="submit" phx-disable-with="Broadcasting...">
               Broadcast to All Users
             </.button>
@@ -82,20 +106,38 @@ defmodule SanbaseWeb.NotificationsLive.BroadcastNotificationFormLive do
     """
   end
 
-  def handle_event("send_broadcast", %{"title" => title, "content" => content}, socket) do
-    if String.trim(title) == "" or String.trim(content) == "" do
+  def handle_event("validate", %{"notification" => params}, socket) do
+    changeset =
+      Notification.changeset(%Notification{}, params)
+      |> Map.put(:action, :validate)
+
+    {:noreply, assign(socket, form: to_form(changeset, as: "notification"))}
+  end
+
+  def handle_event("send_broadcast", %{"notification" => params}, socket) do
+    title = params["title"] |> to_string() |> String.trim()
+    content = params["content"] |> to_string() |> String.trim()
+
+    if title == "" or content == "" do
       {:noreply, put_flash(socket, :error, "Title and content are required")}
     else
-      case AppNotifications.create_broadcast_notification(%{
-             type: "system_notification",
-             title: title,
-             content: content
-           }) do
+      url = params["url"] |> to_string() |> String.trim()
+
+      attrs = %{type: params["type"], title: title, content: content}
+      attrs = if url != "", do: Map.put(attrs, :url, url), else: attrs
+
+      case AppNotifications.create_broadcast_notification(attrs) do
         {:ok, %{recipients_count: count}} ->
+          {default_type, _label} = List.first(socket.assigns.broadcast_types)
+
+          changeset =
+            Notification.changeset(%Notification{}, %{type: default_type})
+            |> Map.put(:action, :validate)
+
           {:noreply,
            socket
            |> put_flash(:info, "Notification broadcast to #{count} users successfully!")
-           |> assign(form: to_form(%{"title" => "", "content" => ""}))}
+           |> assign(form: to_form(changeset, as: "notification"))}
 
         {:error, reason} ->
           {:noreply,

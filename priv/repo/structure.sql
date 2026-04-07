@@ -4137,7 +4137,8 @@ CREATE TABLE public.sanbase_notifications (
     is_deleted boolean DEFAULT false NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    entity_description text
+    entity_description text,
+    url text
 );
 
 
@@ -11893,3 +11894,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260319144952);
 INSERT INTO public."schema_migrations" (version) VALUES (20260327120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260331120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260407090744);
+INSERT INTO public."schema_migrations" (version) VALUES (20260407120000);

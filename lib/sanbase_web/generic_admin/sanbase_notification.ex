@@ -19,6 +19,16 @@ defmodule SanbaseWeb.GenericAdmin.SanbaseNotification do
         :grouping_key,
         :is_deleted,
         :inserted_at
+      ],
+      custom_index_actions: [
+        %{
+          name: "Broadcast Overview",
+          path: "/admin/notifications/broadcast/overview"
+        },
+        %{
+          name: "New Broadcast",
+          path: "/admin/notifications/broadcast"
+        }
       ]
     }
   end

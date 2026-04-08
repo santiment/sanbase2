@@ -91,22 +91,52 @@ defmodule Sanbase.MCP.StreamableHTTPPlug do
   @moduledoc "Wrapper plug to expose Sanbase.MCP.Server via forward"
   @behaviour Plug
 
-  import Plug.Conn, only: [get_req_header: 2, put_req_header: 3]
+  import Plug.Conn,
+    only: [get_req_header: 2, put_req_header: 3, put_resp_content_type: 2, send_resp: 3]
+
+  @server Sanbase.MCP.Server
 
   @impl Plug
   def init(opts), do: opts
 
   @impl Plug
+  def call(%Plug.Conn{method: "DELETE"} = conn, _opts) do
+    # Handle DELETE ourselves to support cross-pod session termination.
+    # Anubis uses DynamicSupervisor.terminate_child which only works on the
+    # local node. We stop the session process directly, which works across
+    # distributed Erlang nodes.
+    handle_delete(conn)
+  end
+
   def call(conn, _opts) do
     conn = normalize_post_accept_header(conn)
 
     Anubis.Server.Transport.StreamableHTTP.Plug.call(
       conn,
       Anubis.Server.Transport.StreamableHTTP.Plug.init(
-        server: Sanbase.MCP.Server,
+        server: @server,
         request_timeout: 150_000
       )
     )
+  end
+
+  defp handle_delete(conn) do
+    registry_name = Anubis.Server.Registry.registry_name(@server)
+
+    case get_req_header(conn, "mcp-session-id") do
+      [session_id] when session_id != "" ->
+        case Sanbase.MCP.Registry.Pg.lookup_session(registry_name, session_id) do
+          {:ok, pid} -> GenServer.stop(pid, :normal)
+          _ -> :ok
+        end
+
+        conn |> put_resp_content_type("application/json") |> send_resp(200, "{}")
+
+      _ ->
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(400, ~s({"error":"Session ID required"}))
+    end
   end
 
   # When both JSON and SSE are advertised on POST, Anubis can choose SSE
@@ -134,22 +164,48 @@ defmodule Sanbase.MCP.StreamableHTTPDevPlug do
   @moduledoc "Wrapper plug to expose Sanbase.MCP.DevServer via forward"
   @behaviour Plug
 
-  import Plug.Conn, only: [get_req_header: 2, put_req_header: 3]
+  import Plug.Conn,
+    only: [get_req_header: 2, put_req_header: 3, put_resp_content_type: 2, send_resp: 3]
+
+  @server Sanbase.MCP.DevServer
 
   @impl Plug
   def init(opts), do: opts
 
   @impl Plug
+  def call(%Plug.Conn{method: "DELETE"} = conn, _opts) do
+    handle_delete(conn)
+  end
+
   def call(conn, _opts) do
     conn = normalize_post_accept_header(conn)
 
     Anubis.Server.Transport.StreamableHTTP.Plug.call(
       conn,
       Anubis.Server.Transport.StreamableHTTP.Plug.init(
-        server: Sanbase.MCP.DevServer,
+        server: @server,
         request_timeout: 150_000
       )
     )
+  end
+
+  defp handle_delete(conn) do
+    registry_name = Anubis.Server.Registry.registry_name(@server)
+
+    case get_req_header(conn, "mcp-session-id") do
+      [session_id] when session_id != "" ->
+        case Sanbase.MCP.Registry.Pg.lookup_session(registry_name, session_id) do
+          {:ok, pid} -> GenServer.stop(pid, :normal)
+          _ -> :ok
+        end
+
+        conn |> put_resp_content_type("application/json") |> send_resp(200, "{}")
+
+      _ ->
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(400, ~s({"error":"Session ID required"}))
+    end
   end
 
   defp normalize_post_accept_header(%Plug.Conn{method: "POST"} = conn) do

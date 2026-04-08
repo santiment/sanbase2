@@ -66,8 +66,8 @@ defmodule SanbaseWeb.Graphql.MCPAuthTest do
 
     assert Sanbase.MCP.Client |> Process.whereis() |> Process.alive?() == true
 
-    registry_name = Anubis.Server.Registry.registry_name(Sanbase.MCP.Server)
-    assert registry_name |> Process.whereis() |> Process.alive?() == true
+    # Verify the :pg scope for the distributed session registry is running
+    assert :pg.which_groups(Sanbase.MCP.Registry.Pg.scope()) |> is_list()
 
     assert {:ok,
             %Anubis.MCP.Response{

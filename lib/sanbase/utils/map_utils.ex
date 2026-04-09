@@ -1,4 +1,4 @@
-defmodule Sanbase.MapUtils do
+defmodule Sanbase.Utils.Map do
   def rename_key(map, old_key, new_key) do
     case Map.has_key?(map, old_key) do
       true ->
@@ -21,19 +21,19 @@ defmodule Sanbase.MapUtils do
   Return a subset of `left` map that has only the keys that are also present in `right`.
 
   #### Examples:
-    iex> Sanbase.MapUtils.drop_diff_keys(%{}, %{})
+    iex> Sanbase.Utils.Map.drop_diff_keys(%{}, %{})
     %{}
 
-    iex> Sanbase.MapUtils.drop_diff_keys(%{a: 1}, %{a: 1})
+    iex> Sanbase.Utils.Map.drop_diff_keys(%{a: 1}, %{a: 1})
     %{a: 1}
 
-    iex> Sanbase.MapUtils.drop_diff_keys(%{a: 1, b: 2}, %{a: 1})
+    iex> Sanbase.Utils.Map.drop_diff_keys(%{a: 1, b: 2}, %{a: 1})
     %{a: 1}
 
-    iex> Sanbase.MapUtils.drop_diff_keys(%{a: 1}, %{a: "ASDASDASDA"})
+    iex> Sanbase.Utils.Map.drop_diff_keys(%{a: 1}, %{a: "ASDASDASDA"})
     %{a: 1}
 
-    iex> Sanbase.MapUtils.drop_diff_keys(%{a: 1, d: 555, e: "string"}, %{b: 2, c: 3, f: 19})
+    iex> Sanbase.Utils.Map.drop_diff_keys(%{a: 1, d: 555, e: "string"}, %{b: 2, c: 3, f: 19})
     %{}
   """
   def drop_diff_keys(left, right) do
@@ -45,25 +45,25 @@ defmodule Sanbase.MapUtils do
   structures.
 
   #### Examples:
-    iex> %{a: %{b: %{"name" => "ivan"}}} |> Sanbase.MapUtils.find_pair_path("name", "ivan")
+    iex> %{a: %{b: %{"name" => "ivan"}}} |> Sanbase.Utils.Map.find_pair_path("name", "ivan")
     [[:a, :b, "name"]]
 
-    iex> %{a: %{b: [%{"name" => "ivan"}]}} |> Sanbase.MapUtils.find_pair_path("name", "ivan")
+    iex> %{a: %{b: [%{"name" => "ivan"}]}} |> Sanbase.Utils.Map.find_pair_path("name", "ivan")
     [[:a, :b, {:at, 0}, "name"]]
 
-    iex> %{a: [%{b: [%{"name" => "ivan"}]}]} |> Sanbase.MapUtils.find_pair_path("name", "ivan")
+    iex> %{a: [%{b: [%{"name" => "ivan"}]}]} |> Sanbase.Utils.Map.find_pair_path("name", "ivan")
     [[:a, {:at, 0}, :b, {:at, 0}, "name"]]
 
     iex>%{
     ...> "foo" => %{"last" => [%{b: [%{"name" => "ivan"}]}]},
     ...> a: %{"some" => %{a: 2, c: 12}, "key" => [1, 2, 3, 4, 5, 6]}
-    ...> } |> Sanbase.MapUtils.find_pair_path("name", "ivan")
+    ...> } |> Sanbase.Utils.Map.find_pair_path("name", "ivan")
     [["foo", "last", {:at, 0}, :b, {:at, 0}, "name"]]
 
-    iex> %{a: %{b: [%{"name" => ""}]}} |> Sanbase.MapUtils.find_pair_path("name", "not_existing")
+    iex> %{a: %{b: [%{"name" => ""}]}} |> Sanbase.Utils.Map.find_pair_path("name", "not_existing")
     []
 
-    iex> %{a: %{b: [%{"name" => ""}]}} |> Sanbase.MapUtils.find_pair_path("not_existing", "ivan")
+    iex> %{a: %{b: [%{"name" => ""}]}} |> Sanbase.Utils.Map.find_pair_path("not_existing", "ivan")
     []
   """
   def find_pair_path(map, key, value) when is_map(map) do
@@ -76,20 +76,20 @@ defmodule Sanbase.MapUtils do
   Atomize the string keys of a map or list of maps.
 
   #### Examples:
-    iex> %{"a" => %{"b" => %{"name" => "ivan"}}} |> Sanbase.MapUtils.atomize_keys()
+    iex> %{"a" => %{"b" => %{"name" => "ivan"}}} |> Sanbase.Utils.Map.atomize_keys()
     %{a: %{b: %{name: "ivan"}}}
 
-    iex> [%{"a" => 1}, %{"b" => [%{"c" => %{"d" => 12}}]}] |> Sanbase.MapUtils.atomize_keys()
+    iex> [%{"a" => 1}, %{"b" => [%{"c" => %{"d" => 12}}]}] |> Sanbase.Utils.Map.atomize_keys()
     [%{a: 1}, %{b: [%{c: %{d: 12}}]}]
 
-    iex> %{} |> Sanbase.MapUtils.atomize_keys()
+    iex> %{} |> Sanbase.Utils.Map.atomize_keys()
     %{}
 
-    iex> [%{}, %{}] |> Sanbase.MapUtils.atomize_keys()
+    iex> [%{}, %{}] |> Sanbase.Utils.Map.atomize_keys()
     [%{}, %{}]
 
 
-    iex> %{already: %{atom: :atom}} |> Sanbase.MapUtils.atomize_keys()
+    iex> %{already: %{atom: :atom}} |> Sanbase.Utils.Map.atomize_keys()
     %{already: %{atom: :atom}}
   """
   def atomize_keys(list) when is_list(list) do
@@ -134,7 +134,7 @@ defmodule Sanbase.MapUtils do
     ...>     }
     ...>   }
     ...> }
-    iex> Sanbase.MapUtils.merge_deep(map1, map2)
+    iex> Sanbase.Utils.Map.merge_deep(map1, map2)
     %{
       a: 2,
       b: %{
@@ -164,7 +164,7 @@ defmodule Sanbase.MapUtils do
     ...>     }
     ...>   }
     ...> }
-    iex> Sanbase.MapUtils.merge_deep(map1, map2)
+    iex> Sanbase.Utils.Map.merge_deep(map1, map2)
     %{
       a: 2,
       b: %{

@@ -76,12 +76,12 @@ defmodule Sanbase.Notifications.TemplateRenderer do
 
   defp format_datetime(value) when is_binary(value) do
     case DateTime.from_iso8601(value) do
-      {:ok, datetime, _offset} -> Sanbase.DateTimeUtils.to_human_readable(datetime)
-      _ -> Sanbase.DateTimeUtils.to_human_readable(value)
+      {:ok, datetime, _offset} -> Sanbase.Utils.DateTime.to_human_readable(datetime)
+      _ -> Sanbase.Utils.DateTime.to_human_readable(value)
     end
   end
 
   defp format_datetime(value) do
-    Sanbase.DateTimeUtils.to_human_readable(value)
+    Sanbase.Utils.DateTime.to_human_readable(value)
   end
 end

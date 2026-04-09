@@ -126,7 +126,7 @@ defmodule Sanbase.Alert.History.EthWalletTriggerHistory do
       [%{balance: first_balance} | _] = data
       %{operation: operation} = settings
 
-      cooldown_in_hours = Sanbase.DateTimeUtils.str_to_hours(cooldown)
+      cooldown_in_hours = Sanbase.Utils.DateTime.str_to_hours(cooldown)
 
       {acc, _, _} =
         data

@@ -12,7 +12,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
   require Logger
 
   alias Sanbase.Repo
-  alias Sanbase.DateTimeUtils
   alias Sanbase.Project
   alias Sanbase.Model.LatestCoinmarketcapData
   alias Sanbase.ExternalServices.Coinmarketcap.{Ticker, PricePoint}
@@ -349,7 +348,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
       percent_change_1h: ticker.percent_change_1h,
       percent_change_24h: ticker.percent_change_24h,
       percent_change_7d: ticker.percent_change_7d,
-      update_time: DateTimeUtils.from_iso8601!(ticker.last_updated)
+      update_time: Sanbase.Utils.DateTime.from_iso8601!(ticker.last_updated)
     })
     |> Repo.insert_or_update!()
   end

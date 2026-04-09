@@ -9,7 +9,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
 
   import Sanbase.Metric.SqlQuery.Helper
   import Sanbase.Utils.Transform, only: [opts_to_limit_offset: 1]
-  import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
+  import Sanbase.Utils.DateTime, only: [str_to_sec: 1]
 
   @eth_table "eth_top_holders_daily"
   @erc20_table "erc20_top_holders_daily"

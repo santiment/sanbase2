@@ -39,7 +39,7 @@ defmodule SanbaseWeb.Graphql.CustomTypes.DateTime do
   @spec parse_datetime(Input.String.t()) :: {:ok, DateTime.t()} | :error
   @spec parse_datetime(Input.Null.t()) :: {:ok, nil}
   defp parse_datetime(%Input.String{value: "utc_now" <> _rest = value}) do
-    case Sanbase.DateTimeUtils.utc_now_string_to_datetime(value) do
+    case Sanbase.Utils.DateTime.utc_now_string_to_datetime(value) do
       {:ok, value} -> {:ok, value}
       {:error, _} -> :error
     end

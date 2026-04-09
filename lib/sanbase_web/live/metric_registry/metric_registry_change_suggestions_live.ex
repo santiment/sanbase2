@@ -224,12 +224,12 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
     ~H"""
     <div class="flex flex-col">
       <div class="text-nowrap">
-        <span class="text-green-600 font-bold">Created</span> {Sanbase.DateTimeUtils.rough_duration_since(
+        <span class="text-green-600 font-bold">Created</span> {Sanbase.Utils.DateTime.rough_duration_since(
           @inserted_at
         )} ago
       </div>
       <div :if={@inserted_at != @updated_at}>
-        <span class="text-amber-600 font-bold">Updated</span> {Sanbase.DateTimeUtils.rough_duration_since(
+        <span class="text-amber-600 font-bold">Updated</span> {Sanbase.Utils.DateTime.rough_duration_since(
           @updated_at
         )} ago
       </div>

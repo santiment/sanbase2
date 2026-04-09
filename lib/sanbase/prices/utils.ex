@@ -1,5 +1,5 @@
 defmodule Sanbase.Price.Utils do
-  import Sanbase.DateTimeUtils, only: [round_datetime: 1]
+  import Sanbase.Utils.DateTime, only: [round_datetime: 1]
 
   defguard is_zero(price)
            when is_number(price) and price >= -1.0e-7 and price <= 1.0e-7

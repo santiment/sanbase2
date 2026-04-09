@@ -1072,13 +1072,13 @@ defmodule Sanbase.Metric do
   end
 
   defp filter_metrics_by_min_interval(metrics, interval, compare_fun) do
-    interval_to_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
+    interval_to_sec = Sanbase.Utils.DateTime.str_to_sec(interval)
 
     metrics
     |> Enum.filter(fn metric ->
       {:ok, %{min_interval: min_interval}} = metadata(metric)
 
-      min_interval_sec = Sanbase.DateTimeUtils.str_to_sec(min_interval)
+      min_interval_sec = Sanbase.Utils.DateTime.str_to_sec(min_interval)
 
       compare_fun.(min_interval_sec, interval_to_sec)
     end)

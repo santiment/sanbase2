@@ -38,7 +38,7 @@ defmodule Sanbase.Repo.Migrations.FillStabilizationRegistryData do
         end
 
       stabilization_period =
-        if Sanbase.DateTimeUtils.valid_compound_duration?(stabilization_period),
+        if Sanbase.Utils.DateTime.valid_compound_duration?(stabilization_period),
           do: stabilization_period,
           else: nil
 

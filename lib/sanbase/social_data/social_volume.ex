@@ -213,7 +213,7 @@ defmodule Sanbase.SocialData.SocialVolume do
   defp social_volume_result(map) do
     Enum.map(map, fn {datetime, value} ->
       %{
-        datetime: Sanbase.DateTimeUtils.from_iso8601!(datetime),
+        datetime: Sanbase.Utils.DateTime.from_iso8601!(datetime),
         mentions_count: value
       }
     end)

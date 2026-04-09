@@ -3,7 +3,7 @@ defmodule SanbaseWeb.ScheduledDeprecationIndexLive do
 
   alias Sanbase.Notifications
   import SanbaseWeb.CoreComponents
-  import Sanbase.DateTimeUtils, only: [rough_duration_since: 1]
+  import Sanbase.Utils.DateTime, only: [rough_duration_since: 1]
 
   @impl true
   def mount(_params, _session, socket) do

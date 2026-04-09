@@ -264,8 +264,8 @@ defmodule Sanbase.Dashboards.DashboardCache do
       rows: rows,
       updated_at: updated_at,
       id: query_cache["id"],
-      query_start_time: Sanbase.DateTimeUtils.from_iso8601!(start_dt),
-      query_end_time: Sanbase.DateTimeUtils.from_iso8601!(query_end_dt)
+      query_start_time: Sanbase.Utils.DateTime.from_iso8601!(start_dt),
+      query_end_time: Sanbase.Utils.DateTime.from_iso8601!(query_end_dt)
     })
   end
 

@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.GenericAdmin.Post do
+  @behaviour SanbaseWeb.GenericAdmin
   import Ecto.Query
   alias Sanbase.Insight.Post
 
@@ -119,6 +120,7 @@ defmodule SanbaseWeb.GenericAdmin.Post do
 end
 
 defmodule SanbaseWeb.GenericAdmin.PostTags do
+  @behaviour SanbaseWeb.GenericAdmin
   import Ecto.Query
   def schema_module, do: Sanbase.Insight.PostTag
   def resource_name, do: "post_tags"
@@ -150,6 +152,7 @@ defmodule SanbaseWeb.GenericAdmin.PostTags do
 end
 
 defmodule SanbaseWeb.GenericAdmin.Tag do
+  @behaviour SanbaseWeb.GenericAdmin
   alias Sanbase.Tag
   def schema_module, do: Tag
   def resource_name, do: "tags"
@@ -167,6 +170,7 @@ defmodule SanbaseWeb.GenericAdmin.Tag do
 end
 
 defmodule SanbaseWeb.GenericAdmin.PostComment do
+  @behaviour SanbaseWeb.GenericAdmin
   import Ecto.Query
   def schema_module, do: Sanbase.Comment.PostComment
   def resource_name, do: "post_comments"
@@ -206,6 +210,7 @@ defmodule SanbaseWeb.GenericAdmin.PostComment do
 end
 
 defmodule SanbaseWeb.GenericAdmin.Comment do
+  @behaviour SanbaseWeb.GenericAdmin
   import Ecto.Query
   def schema_module, do: Sanbase.Comment
   def resource_name, do: "comments"
@@ -263,6 +268,7 @@ defmodule SanbaseWeb.GenericAdmin.Comment do
 end
 
 defmodule SanbaseWeb.GenericAdmin.UserTrigger do
+  @behaviour SanbaseWeb.GenericAdmin
   import Ecto.Query
 
   def schema_module, do: Sanbase.Alert.UserTrigger
@@ -333,6 +339,7 @@ defmodule SanbaseWeb.GenericAdmin.UserTrigger do
 end
 
 defmodule SanbaseWeb.GenericAdmin.ChartConfiguration do
+  @behaviour SanbaseWeb.GenericAdmin
   def schema_module, do: Sanbase.Chart.Configuration
   def resource_name, do: "chart_configurations"
   def singular_resource_name, do: "chart_configuration"
@@ -357,6 +364,7 @@ defmodule SanbaseWeb.GenericAdmin.ChartConfiguration do
 end
 
 defmodule SanbaseWeb.GenericAdmin.TableConfiguration do
+  @behaviour SanbaseWeb.GenericAdmin
   def schema_module, do: Sanbase.TableConfiguration
   def resource_name, do: "table_configurations"
   def singular_resource_name, do: "table_configuration"

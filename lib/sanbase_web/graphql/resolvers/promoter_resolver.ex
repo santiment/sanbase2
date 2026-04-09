@@ -59,7 +59,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PromoterResolver do
           ])
         end)
       end)
-      |> Sanbase.MapUtils.atomize_keys()
+      |> Sanbase.Utils.Map.atomize_keys()
 
     promoter =
       promoter

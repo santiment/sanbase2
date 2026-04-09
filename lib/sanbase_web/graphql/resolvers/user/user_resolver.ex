@@ -113,7 +113,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   defp do_get_joined_at(%User{} = user) do
     case user do
       %{registration_state: %{"state" => "finished", "datetime" => datetime_iso8601}} ->
-        {:ok, Sanbase.DateTimeUtils.from_iso8601!(datetime_iso8601)}
+        {:ok, Sanbase.Utils.DateTime.from_iso8601!(datetime_iso8601)}
 
       %{inserted_at: %NaiveDateTime{} = naive_datetime} ->
         {:ok, DateTime.from_naive!(naive_datetime, "Etc/UTC")}

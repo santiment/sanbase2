@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.GenericAdmin.Subscription do
+  @behaviour SanbaseWeb.GenericAdmin
   def schema_module, do: Sanbase.Billing.Subscription
   def resource_name, do: "subscriptions"
   def singular_resource_name, do: "subscription"
@@ -50,6 +51,7 @@ defmodule SanbaseWeb.GenericAdmin.Subscription do
 end
 
 defmodule SanbaseWeb.GenericAdmin.Plan do
+  @behaviour SanbaseWeb.GenericAdmin
   def schema_module, do: Sanbase.Billing.Plan
   def resource_name, do: "plans"
   def singular_resource_name, do: "plan"
@@ -89,6 +91,7 @@ defmodule SanbaseWeb.GenericAdmin.Plan do
 end
 
 defmodule SanbaseWeb.GenericAdmin.Product do
+  @behaviour SanbaseWeb.GenericAdmin
   def schema_module, do: Sanbase.Billing.Product
   def resource_name, do: "products"
   def singular_resource_name, do: "product"
@@ -105,6 +108,7 @@ defmodule SanbaseWeb.GenericAdmin.Product do
 end
 
 defmodule SanbaseWeb.GenericAdmin.PromoTrial do
+  @behaviour SanbaseWeb.GenericAdmin
   import Ecto.Query
 
   alias Sanbase.Billing.Subscription.PromoTrial

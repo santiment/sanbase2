@@ -1,5 +1,5 @@
 defmodule Sanbase.Accounts.EmailJobs do
-  import Sanbase.DateTimeUtils, only: [days_after: 1, seconds_after: 1]
+  import Sanbase.Utils.DateTime, only: [days_after: 1, seconds_after: 1]
   import Sanbase.Email.Template
 
   @oban_conf_name :oban_web

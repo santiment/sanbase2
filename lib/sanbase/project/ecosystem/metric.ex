@@ -1,5 +1,5 @@
 defmodule Sanbase.Ecosystem.Metric do
-  import Sanbase.DateTimeUtils, only: [maybe_str_to_sec: 1]
+  import Sanbase.Utils.DateTime, only: [maybe_str_to_sec: 1]
 
   import Sanbase.Metric.SqlQuery.Helper,
     only: [

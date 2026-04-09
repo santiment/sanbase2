@@ -502,8 +502,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   defp interval_no_smaller_than_min_interval(metric, interval) do
     {:ok, metadata} = Metric.metadata(metric)
 
-    if Sanbase.DateTimeUtils.str_to_sec(interval) <
-         Sanbase.DateTimeUtils.str_to_sec(metadata.min_interval) do
+    if Sanbase.Utils.DateTime.str_to_sec(interval) <
+         Sanbase.Utils.DateTime.str_to_sec(metadata.min_interval) do
       {:ok, metadata.min_interval}
     else
       {:ok, interval}
@@ -530,7 +530,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   defp maybe_enrich_with_labels(_metric, data), do: {:ok, data}
 
   defp transform_interval("all_spent_coins_cost", interval) do
-    Enum.max([Sanbase.DateTimeUtils.str_to_days(interval), 1])
+    Enum.max([Sanbase.Utils.DateTime.str_to_days(interval), 1])
     |> to_string()
     |> Kernel.<>("d")
   end

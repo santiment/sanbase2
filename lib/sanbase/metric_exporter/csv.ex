@@ -194,12 +194,12 @@ defmodule Sanbase.MetricExporter.CSV do
   end
 
   def export_history(from, to) do
-    Sanbase.DateTimeUtils.generate_dates_inclusive(from, to)
+    Sanbase.Utils.DateTime.generate_dates_inclusive(from, to)
     |> Enum.each(&export/1)
   end
 
   def export_dicts_history(from, to) do
-    Sanbase.DateTimeUtils.generate_dates_inclusive(from, to)
+    Sanbase.Utils.DateTime.generate_dates_inclusive(from, to)
     |> Enum.each(fn date -> upload_dictionaries_s3(date |> to_string()) end)
   end
 
@@ -388,9 +388,9 @@ defmodule Sanbase.MetricExporter.CSV do
     from = Timex.beginning_of_day(from)
 
     count =
-      (Timex.diff(to, from, :seconds) / Sanbase.DateTimeUtils.str_to_sec(interval)) |> round()
+      (Timex.diff(to, from, :seconds) / Sanbase.Utils.DateTime.str_to_sec(interval)) |> round()
 
-    interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
+    interval_sec = Sanbase.Utils.DateTime.str_to_sec(interval)
 
     0..(count - 1)
     |> Enum.map(fn offset -> Timex.shift(from, seconds: interval_sec * offset) end)

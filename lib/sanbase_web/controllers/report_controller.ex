@@ -18,7 +18,7 @@ defmodule SanbaseWeb.ReportController do
         "report" => %{"report" => report} = params
       }) do
     {params, _} = Map.split(params, ~w(name description is_published is_pro tags))
-    params = Sanbase.MapUtils.atomize_keys(params)
+    params = Sanbase.Utils.Map.atomize_keys(params)
 
     case Report.save_report(report, params) do
       {:ok, report} ->

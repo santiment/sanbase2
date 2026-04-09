@@ -7,7 +7,7 @@ defmodule Sanbase.Alert.History.WalletTriggerHistory do
   alias Sanbase.Alert.Trigger.WalletTriggerSettings
 
   defimpl Sanbase.Alert.History, for: WalletTriggerSettings do
-    import Sanbase.DateTimeUtils, only: [str_to_days: 1]
+    import Sanbase.Utils.DateTime, only: [str_to_days: 1]
 
     alias Sanbase.Alert.History.ResultBuilder
     alias Sanbase.Project

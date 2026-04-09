@@ -26,7 +26,7 @@ defmodule Sanbase.Accounts.User.Alert do
     user = Sanbase.Repo.preload(user, :user_settings)
     settings = UserSettings.settings_for(user)
 
-    valid_webhook_url? = match?(:ok, Sanbase.Validation.valid_url?(webhook_url))
+    valid_webhook_url? = match?(:ok, Sanbase.Utils.Validation.valid_url?(webhook_url))
     alert_limit_reached? = daily_limit_reached?(settings, "webhook")
 
     valid_webhook_url? and not alert_limit_reached?

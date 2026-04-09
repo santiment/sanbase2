@@ -1,5 +1,5 @@
 defmodule Sanbase.Project.ListSelector.Transform do
-  import Sanbase.DateTimeUtils
+  import Sanbase.Utils.DateTime
   import Sanbase.Utils.ListSelector.Transform, only: [atomize_values: 1]
 
   def args_to_filters_combinator(args) do

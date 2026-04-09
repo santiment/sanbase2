@@ -1,4 +1,4 @@
-defmodule Sanbase.MapUtilsTest do
+defmodule Sanbase.Utils.MapTest do
   use ExUnit.Case, async: true
-  doctest Sanbase.MapUtils
+  doctest Sanbase.Utils.Map
 end

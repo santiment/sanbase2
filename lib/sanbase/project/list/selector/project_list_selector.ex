@@ -84,7 +84,7 @@ defmodule Sanbase.Project.ListSelector do
   }
   """
   def args_to_opts(args) do
-    args = Sanbase.MapUtils.atomize_keys(args)
+    args = Sanbase.Utils.Map.atomize_keys(args)
 
     filters = Transform.args_to_filters(args)
     base_projects_selector = Transform.args_to_base_projects(args)

@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.GenericAdmin.FeaturedItem do
+  @behaviour SanbaseWeb.GenericAdmin
   import Ecto.Query
 
   def schema_module, do: Sanbase.FeaturedItem

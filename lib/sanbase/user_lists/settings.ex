@@ -56,7 +56,7 @@ defmodule Sanbase.UserList.Settings do
     # Private functions
 
     defp valid_time_window?(:time_window, time_window) do
-      case Sanbase.Validation.valid_time_window?(time_window) do
+      case Sanbase.Utils.Validation.valid_time_window?(time_window) do
         :ok -> []
         {:error, error} -> [time_window: error]
       end

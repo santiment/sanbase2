@@ -1,4 +1,13 @@
 defmodule SanbaseWeb.GenericAdmin do
+  @doc "The Ecto schema module backing this admin resource."
+  @callback schema_module() :: module()
+
+  @doc "Plural resource name used in URLs and index pages (e.g. \"projects\")."
+  @callback resource_name() :: String.t()
+
+  @doc "Singular resource name used in labels and show pages (e.g. \"project\")."
+  @callback singular_resource_name() :: String.t()
+
   def custom_defined_modules() do
     case :application.get_key(:sanbase, :modules) do
       {:ok, modules} ->

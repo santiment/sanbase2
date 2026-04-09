@@ -1,12 +1,12 @@
 defmodule SanbaseWeb.Graphql.Resolvers.IntercomResolver do
   import Norm
-  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
+  import Sanbase.Utils.DateTime, only: [from_iso8601!: 1]
 
   alias Sanbase.Intercom.UserEvent
   alias Sanbase.Clickhouse.ApiCallData
 
   def get_events_for_users(_, %{users: users, days: days} = args, _) do
-    from = Map.get(args, :from, Sanbase.DateTimeUtils.days_ago(days))
+    from = Map.get(args, :from, Sanbase.Utils.DateTime.days_ago(days))
     to = Map.get(args, :to, Timex.now())
 
     {:ok, UserEvent.get_events_for_users(users, from, to)}

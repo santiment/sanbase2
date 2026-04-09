@@ -2,11 +2,11 @@ defmodule Sanbase.Signal.FileHandler do
   @moduledoc false
 
   defmodule Helper do
-    import Sanbase.DateTimeUtils, only: [interval_to_str: 1]
+    import Sanbase.Utils.DateTime, only: [interval_to_str: 1]
 
     alias Sanbase.TemplateEngine
 
-    require Sanbase.Break, as: Break
+    require Sanbase.Utils.Break, as: Break
 
     # The selected field is required by default
     # A missing required field will result in a compile time error

@@ -153,7 +153,7 @@ defmodule SanbaseWeb.DataController do
           public_name: metric,
           name: metadata.internal_metric,
           min_interval: metadata.min_interval,
-          min_interval_seconds: Sanbase.DateTimeUtils.str_to_sec(metadata.min_interval),
+          min_interval_seconds: Sanbase.Utils.DateTime.str_to_sec(metadata.min_interval),
           table: Map.get(table_map, metric)
         }
         |> Jason.encode!()

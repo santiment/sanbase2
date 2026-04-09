@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.GenericAdmin.Notification do
+  @behaviour SanbaseWeb.GenericAdmin
   use SanbaseWeb, :live_component
 
   def schema_module, do: Sanbase.Notifications.Notification

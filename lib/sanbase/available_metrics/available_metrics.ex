@@ -101,7 +101,7 @@ defmodule Sanbase.AvailableMetrics do
         frequency: m.min_interval,
         stabilization_period: Map.get(m, :stabilization_period, nil),
         can_mutate: Map.get(m, :can_mutate, nil),
-        frequency_seconds: Sanbase.DateTimeUtils.str_to_sec(m.min_interval),
+        frequency_seconds: Sanbase.Utils.DateTime.str_to_sec(m.min_interval),
         sanbase_access: "free",
         sanapi_access: "free",
         available_selectors: available_selectors,

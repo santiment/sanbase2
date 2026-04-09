@@ -31,7 +31,7 @@ defmodule Sanbase.Alert.TriggerVotingTest do
     result = get_votes(conn, user_trigger.id)
 
     assert result["votedAt"] == vote["votedAt"]
-    voted_at = vote["votedAt"] |> Sanbase.DateTimeUtils.from_iso8601!()
+    voted_at = vote["votedAt"] |> Sanbase.Utils.DateTime.from_iso8601!()
     assert Sanbase.TestUtils.datetime_close_to(voted_at, Timex.now(), seconds: 2)
     assert vote["votes"] == result["votes"]
     assert vote["votes"] == %{"currentUserVotes" => 1, "totalVoters" => 1, "totalVotes" => 1}

@@ -838,7 +838,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       assert result["data"]["updateInsight"]["text"] == "Example body2"
 
       updated_at =
-        Sanbase.DateTimeUtils.from_iso8601!(result["data"]["updateInsight"]["updatedAt"])
+        Sanbase.Utils.DateTime.from_iso8601!(result["data"]["updateInsight"]["updatedAt"])
         |> DateTime.to_naive()
 
       assert NaiveDateTime.compare(updated_at, post.updated_at) == :gt

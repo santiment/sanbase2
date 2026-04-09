@@ -1,5 +1,5 @@
-defmodule Sanbase.Validation do
-  import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
+defmodule Sanbase.Utils.Validation do
+  import Sanbase.Utils.DateTime, only: [str_to_sec: 1]
   defguard is_valid_price(price) when is_number(price) and price >= 0
   defguard is_valid_percent(percent) when is_number(percent) and percent >= -100
   defguard is_valid_percent_change(percent) when is_number(percent) and percent > 0
@@ -75,7 +75,7 @@ defmodule Sanbase.Validation do
   def valid_5m_min_interval_metric?(metric) do
     with {:ok, %{min_interval: min_interval}} <- Sanbase.Metric.metadata(metric),
          interval_sec when is_number(interval_sec) and interval_sec <= 300 <-
-           Sanbase.DateTimeUtils.str_to_sec(min_interval) do
+           Sanbase.Utils.DateTime.str_to_sec(min_interval) do
       :ok
     else
       _ ->
@@ -87,7 +87,7 @@ defmodule Sanbase.Validation do
   def valid_above_5m_min_interval_metric?(metric) do
     with {:ok, %{min_interval: min_interval}} <- Sanbase.Metric.metadata(metric),
          interval_sec when is_number(interval_sec) and interval_sec > 300 <-
-           Sanbase.DateTimeUtils.str_to_sec(min_interval) do
+           Sanbase.Utils.DateTime.str_to_sec(min_interval) do
       :ok
     else
       _ ->

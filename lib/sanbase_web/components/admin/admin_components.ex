@@ -342,6 +342,7 @@ defmodule SanbaseWeb.AdminComponents do
   attr(:actions, :list, required: false, default: [])
   attr(:resource, :string, required: true)
   attr(:resource_name, :string, required: true)
+  attr(:singular, :string, required: false)
   attr(:create_link_kv, :list, required: false, default: [])
   attr(:fields, :list, required: true)
   attr(:rows, :list, required: true)
@@ -353,7 +354,11 @@ defmodule SanbaseWeb.AdminComponents do
       <div class="m-4 flex flex-col gap-x-10">
         <h3 class="text-3xl font-medium text-gray-700 mb-2">{@resource_name}</h3>
         <%= if @create_link_kv != [] do %>
-          <.new_resource_button resource={@resource} create_link_kv={@create_link_kv} />
+          <.new_resource_button
+            resource={@resource}
+            singular={@singular}
+            create_link_kv={@create_link_kv}
+          />
         <% end %>
       </div>
       <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
@@ -425,6 +430,7 @@ defmodule SanbaseWeb.AdminComponents do
   attr(:page_size, :integer, required: false, default: 0)
   attr(:current_page, :integer, required: false, default: 1)
   attr(:action, :atom, required: false, default: :index)
+  attr(:singular, :string, required: false, default: nil)
   attr(:custom_index_actions, :list, required: false, default: nil)
 
   def table(assigns) do
@@ -432,7 +438,7 @@ defmodule SanbaseWeb.AdminComponents do
     <div class="table-responsive flex-1 flex flex-col min-h-0">
       <div class="m-4 flex flex-row items-center">
         <%= if :new in @actions do %>
-          <.new_resource_button resource={@resource} />
+          <.new_resource_button resource={@resource} singular={@singular} />
         <% end %>
 
         <div class="flex-1"></div>
@@ -604,12 +610,16 @@ defmodule SanbaseWeb.AdminComponents do
   """
 
   attr(:resource, :string, required: true)
-  attr(:singular, :string, required: false, default: nil)
+  attr(:singular, :string, required: false)
   attr(:create_link_kv, :list, required: false, default: [])
 
   def new_resource_button(assigns) do
     assigns =
-      assign_new(assigns, :singular, fn -> String.trim_trailing(assigns.resource, "s") end)
+      if assigns[:singular] do
+        assigns
+      else
+        assign(assigns, :singular, assigns.resource)
+      end
 
     ~H"""
     <button

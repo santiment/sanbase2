@@ -124,7 +124,7 @@ defmodule SanbaseWeb.UploadImageLive do
         # Create a destination folder and file name
         filename = gen_filename(name, entry)
 
-        dest = Temp.mkdir!("image_upload_live")
+        dest = Sanbase.Utils.Temp.mkdir!("image_upload_live")
         filepath = Path.join(dest, filename)
 
         # If the transform_to_logo checkbox is checked, transform the image

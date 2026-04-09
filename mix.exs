@@ -140,7 +140,6 @@ defmodule Sanbase.Mixfile do
       {:swoosh, "~> 1.7"},
       {:table_rex, "~> 4.0"},
       {:telemetry, "~> 1.1", override: true},
-      {:temp, "~> 0.4"},
       {:tesla, "~> 1.0"},
       {:text_chunker, "~> 0.6"},
       {:timex, "~> 3.7"},

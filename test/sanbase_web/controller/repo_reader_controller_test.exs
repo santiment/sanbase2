@@ -5,7 +5,7 @@ defmodule SanbaseWeb.RepoReaderControllerTest do
 
   setup do
     secret = Config.module_get(Sanbase.RepoReader, :projects_data_endpoint_secret)
-    {:ok, path} = Temp.mkdir("projects_data")
+    {:ok, path} = Sanbase.Utils.Temp.mkdir("projects_data")
     on_exit(fn -> File.rm_rf!(path) end)
     %{path: path, secret: secret}
   end

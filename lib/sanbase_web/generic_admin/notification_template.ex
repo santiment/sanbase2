@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.GenericAdmin.NotificationTemplate do
+  @behaviour SanbaseWeb.GenericAdmin
   alias Sanbase.Notifications.Notification
   def schema_module, do: Sanbase.Notifications.NotificationTemplate
   def resource_name, do: "notification_templates"

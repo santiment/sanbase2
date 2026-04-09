@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.GenericAdmin.SanbaseNotificationReadStatus do
+  @behaviour SanbaseWeb.GenericAdmin
   def schema_module, do: Sanbase.AppNotifications.NotificationReadStatus
 
   def resource_name, do: "sanbase_notification_read_statuses"

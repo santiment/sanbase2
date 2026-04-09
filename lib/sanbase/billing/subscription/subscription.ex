@@ -654,7 +654,7 @@ defmodule Sanbase.Billing.Subscription do
       off_session: true
     }
 
-    trial_end_unix = Sanbase.DateTimeUtils.days_after(@trial_days) |> DateTime.to_unix()
+    trial_end_unix = Sanbase.Utils.DateTime.days_after(@trial_days) |> DateTime.to_unix()
 
     cond do
       product_id == @product_sanbase and Billing.eligible_for_sanbase_trial?(user.id, plan) ->

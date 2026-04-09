@@ -321,11 +321,11 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       result = execute_mutation(context.conn, mutation, "vote")
 
       assert result["votes"] == %{"currentUserVotes" => 1, "totalVoters" => 1, "totalVotes" => 1}
-      voted_at = result["votedAt"] |> Sanbase.DateTimeUtils.from_iso8601!()
+      voted_at = result["votedAt"] |> Sanbase.Utils.DateTime.from_iso8601!()
 
       assert Sanbase.TestUtils.datetime_close_to(
                Timex.now(),
-               Sanbase.DateTimeUtils.from_iso8601!(voted_at),
+               Sanbase.Utils.DateTime.from_iso8601!(voted_at),
                2,
                :seconds
              )
@@ -339,11 +339,11 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
 
       result1 = execute_mutation(context.conn, upvote_mutation, "vote")
       assert result1["votes"] == %{"currentUserVotes" => 1, "totalVoters" => 1, "totalVotes" => 1}
-      voted_at = result1["votedAt"] |> Sanbase.DateTimeUtils.from_iso8601!()
+      voted_at = result1["votedAt"] |> Sanbase.Utils.DateTime.from_iso8601!()
 
       assert Sanbase.TestUtils.datetime_close_to(
                Timex.now(),
-               Sanbase.DateTimeUtils.from_iso8601!(voted_at),
+               Sanbase.Utils.DateTime.from_iso8601!(voted_at),
                2,
                :seconds
              )

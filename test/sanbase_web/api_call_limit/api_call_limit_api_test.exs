@@ -335,7 +335,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
         api_calls_this_minute =
           acl.api_calls
           |> Enum.max_by(fn {k, _v} ->
-            Sanbase.DateTimeUtils.from_iso8601!(k) |> DateTime.to_unix()
+            Sanbase.Utils.DateTime.from_iso8601!(k) |> DateTime.to_unix()
           end)
           |> elem(1)
 
@@ -407,7 +407,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
         api_calls_this_minute =
           acl.api_calls
           |> Enum.max_by(fn {k, _v} ->
-            Sanbase.DateTimeUtils.from_iso8601!(k) |> DateTime.to_unix()
+            Sanbase.Utils.DateTime.from_iso8601!(k) |> DateTime.to_unix()
           end)
           |> elem(1)
 
@@ -484,7 +484,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
         api_calls_this_minute =
           acl.api_calls
           |> Enum.max_by(fn {k, _v} ->
-            Sanbase.DateTimeUtils.from_iso8601!(k) |> DateTime.to_unix()
+            Sanbase.Utils.DateTime.from_iso8601!(k) |> DateTime.to_unix()
           end)
           |> elem(1)
 

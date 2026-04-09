@@ -402,7 +402,7 @@ defmodule Sanbase.Insight.Post do
       minute: Config.module_get(__MODULE__, :creation_limit_minute, 3)
     }
 
-    Sanbase.Ecto.Common.has_not_reached_rate_limits?(__MODULE__, user_id,
+    Sanbase.Utils.EctoCommon.has_not_reached_rate_limits?(__MODULE__, user_id,
       limits: limits,
       entity_singular: "insight",
       entity_plural: "insights"
@@ -410,7 +410,7 @@ defmodule Sanbase.Insight.Post do
   end
 
   def create_changeset(%Post{} = post, attrs) do
-    attrs = Sanbase.DateTimeUtils.truncate_datetimes(attrs)
+    attrs = Sanbase.Utils.DateTime.truncate_datetimes(attrs)
 
     post
     |> cast(attrs, [
@@ -440,7 +440,7 @@ defmodule Sanbase.Insight.Post do
   end
 
   def update_changeset(%Post{} = post, attrs) do
-    attrs = Sanbase.DateTimeUtils.truncate_datetimes(attrs)
+    attrs = Sanbase.Utils.DateTime.truncate_datetimes(attrs)
 
     preloads =
       if(attrs[:tags], do: [:tags], else: []) ++
@@ -473,7 +473,7 @@ defmodule Sanbase.Insight.Post do
   end
 
   def publish_changeset(%Post{} = post, attrs) do
-    attrs = Sanbase.DateTimeUtils.truncate_datetimes(attrs)
+    attrs = Sanbase.Utils.DateTime.truncate_datetimes(attrs)
     naive_now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
 
     post

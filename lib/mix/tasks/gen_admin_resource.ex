@@ -104,19 +104,28 @@ defmodule Mix.Tasks.Gen.Admin.Resource do
   defp generate_belongs_to_fields_map(schema_module) do
     belongs_to_fields(schema_module)
     |> Enum.map(fn assoc_name ->
+      related_module = schema_module.__schema__(:association, assoc_name).related
+      resource = find_admin_resource_name(related_module)
+
       {
         assoc_name,
         %{
-          resource:
-            assoc_name
-            |> to_string()
-            |> Sanbase.Utils.Inflect.underscore(),
+          resource: resource,
           # TODO: add search fields from the associated module
           search_fields: []
         }
       }
     end)
     |> Enum.into(%{})
+  end
+
+  defp find_admin_resource_name(schema_module) do
+    SanbaseWeb.GenericAdmin.custom_defined_modules()
+    |> Enum.find(fn admin_module -> admin_module.schema_module() == schema_module end)
+    |> case do
+      nil -> "TODO: no admin module for #{inspect(schema_module)}"
+      admin_module -> admin_module.resource_name()
+    end
   end
 
   defp get_index_fields(schema_module) do

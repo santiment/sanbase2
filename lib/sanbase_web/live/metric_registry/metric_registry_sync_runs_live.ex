@@ -50,7 +50,7 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
           <div>
             <div>{Timex.format!(row.inserted_at, "%F %T%:z", :strftime)}</div>
             <div class="text-gray-500">
-              ({Sanbase.DateTimeUtils.rough_duration_since(row.inserted_at)} ago)
+              ({Sanbase.Utils.DateTime.rough_duration_since(row.inserted_at)} ago)
             </div>
           </div>
         </:col>
@@ -165,7 +165,7 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
         data-popover-target={"popover-executing-too-long-#{@id}"}
       >
         <.icon name="hero-exclamation-circle" /> Executing for too long!
-        ({Sanbase.DateTimeUtils.rough_duration_since(@inserted_at)})
+        ({Sanbase.Utils.DateTime.rough_duration_since(@inserted_at)})
       </span>
     </div>
     """

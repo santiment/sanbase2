@@ -41,7 +41,7 @@ defmodule Sanbase.Accounts.User.Validation do
   end
 
   def validate_url_change(field, url, opts \\ []) do
-    case Sanbase.Validation.valid_url?(url, opts) do
+    case Sanbase.Utils.Validation.valid_url?(url, opts) do
       :ok -> []
       {:error, msg} -> [{field, msg}]
     end

@@ -6,7 +6,7 @@ defmodule SanbaseWeb.ScheduledDeprecationLive do
 
   alias Sanbase.Notifications.DeprecationTemplates
   alias Sanbase.TemplateEngine
-  alias Sanbase.Validation
+  alias Sanbase.Utils.Validation
   alias Timex
 
   @contact_lists ["API Users Only", "API & Sanbase Users - Metric Updates"]

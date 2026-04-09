@@ -1,4 +1,4 @@
-defmodule Sanbase.DateTimeUtils do
+defmodule Sanbase.Utils.DateTime do
   def utc_now_string_to_datetime!("utc_now" <> _ = value) do
     case utc_now_string_to_datetime(value) do
       {:ok, value} -> value
@@ -83,7 +83,7 @@ defmodule Sanbase.DateTimeUtils do
   end
 
   def generate_datetimes_list(from, interval, count) do
-    interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
+    interval_sec = Sanbase.Utils.DateTime.str_to_sec(interval)
 
     0..(count - 1) |> Enum.map(fn offset -> Timex.shift(from, seconds: interval_sec * offset) end)
   end

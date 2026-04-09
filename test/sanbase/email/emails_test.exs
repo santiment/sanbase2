@@ -8,7 +8,7 @@ defmodule Sanbase.EmailsTest do
   import Sanbase.Factory
   import Sanbase.Email.Template
 
-  import Sanbase.DateTimeUtils, only: [days_after: 1]
+  import Sanbase.Utils.DateTime, only: [days_after: 1]
 
   alias Sanbase.Billing.Subscription
   alias Sanbase.StripeApi

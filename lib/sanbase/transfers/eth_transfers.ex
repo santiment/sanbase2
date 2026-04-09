@@ -258,7 +258,7 @@ defmodule Sanbase.Transfers.EthTransfers do
     """
 
     params = %{
-      interval: Sanbase.DateTimeUtils.str_to_sec(interval),
+      interval: Sanbase.Utils.DateTime.str_to_sec(interval),
       addresses: addresses,
       from: DateTime.to_unix(from),
       to: DateTime.to_unix(to)

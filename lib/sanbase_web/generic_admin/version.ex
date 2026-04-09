@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.GenericAdmin.Version do
+  @behaviour SanbaseWeb.GenericAdmin
   def schema_module, do: Sanbase.Version
   def resource_name, do: "versions"
   def singular_resource_name, do: "version"

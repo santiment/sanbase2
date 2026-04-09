@@ -18,7 +18,7 @@ defmodule Sanbase.Alert.History.MetricHistory do
         }
 
   defimpl Sanbase.Alert.History, for: [MetricTriggerSettings, DailyMetricTriggerSettings] do
-    import Sanbase.DateTimeUtils, only: [str_to_days: 1]
+    import Sanbase.Utils.DateTime, only: [str_to_days: 1]
 
     alias Sanbase.Alert.History.ResultBuilder
     alias Sanbase.Alert.History.MetricHistory

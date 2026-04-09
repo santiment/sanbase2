@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.GenericAdmin.Ecosystem do
+  @behaviour SanbaseWeb.GenericAdmin
   def schema_module, do: Sanbase.Ecosystem
   def resource_name, do: "ecosystems"
   def singular_resource_name, do: "ecosystem"

@@ -6,7 +6,7 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
       to_unix_timestamp_from_number: 2
     ]
 
-  import Sanbase.DateTimeUtils, only: [maybe_str_to_sec: 1]
+  import Sanbase.Utils.DateTime, only: [maybe_str_to_sec: 1]
 
   @non_dev_events [
     "IssueCommentEvent",

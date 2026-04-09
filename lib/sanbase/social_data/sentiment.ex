@@ -69,7 +69,7 @@ defmodule Sanbase.SocialData.Sentiment do
     map =
       Enum.map(map, fn {datetime, value} ->
         %{
-          datetime: Sanbase.DateTimeUtils.from_iso8601!(datetime),
+          datetime: Sanbase.Utils.DateTime.from_iso8601!(datetime),
           value: value
         }
       end)

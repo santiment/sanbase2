@@ -285,10 +285,10 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
 
   defp dates(assigns) do
     inserted_duration =
-      Sanbase.DateTimeUtils.rough_duration_since(assigns.inserted_at, abbreviate: true)
+      Sanbase.Utils.DateTime.rough_duration_since(assigns.inserted_at, abbreviate: true)
 
     updated_duration =
-      Sanbase.DateTimeUtils.rough_duration_since(assigns.updated_at, abbreviate: true)
+      Sanbase.Utils.DateTime.rough_duration_since(assigns.updated_at, abbreviate: true)
 
     assigns =
       assign(assigns, inserted_duration: inserted_duration, updated_duration: updated_duration)

@@ -2,6 +2,13 @@ defmodule Sanbase.Utils.Inflect do
   @moduledoc """
   Minimal string inflection utilities (camelize, underscore).
   Vendored from the `inflex` package to remove an unmaintained dependency.
+
+  Note: splits on `(?=[A-Z])` (before every uppercase letter), whereas Inflex
+  split on `(?=[A-Z][a-z])` (only before uppercase followed by lowercase).
+  The results are identical for standard snake_case and camelCase inputs.
+  They differ only for consecutive-uppercase tokens like "getHTTPResponse"
+  (ours: "getHTTPResponse", Inflex: "gethttpResponse") — this pattern does
+  not appear in the codebase.
   """
 
   @doc """

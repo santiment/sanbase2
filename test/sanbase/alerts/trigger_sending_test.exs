@@ -53,7 +53,7 @@ defmodule Sanbase.Alert.TriggerSendingTest do
       last_triggered_dt =
         user_trigger.trigger.last_triggered
         |> Map.get(project.slug)
-        |> Sanbase.DateTimeUtils.from_iso8601!()
+        |> Sanbase.Utils.DateTime.from_iso8601!()
 
       assert Sanbase.TestUtils.datetime_close_to(Timex.now(), last_triggered_dt, 60, :seconds)
     end)

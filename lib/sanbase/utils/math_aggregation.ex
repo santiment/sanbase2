@@ -1,4 +1,4 @@
-defmodule Sanbase.MathAggregation do
+defmodule Sanbase.Utils.MathAggregation do
   def compute(list, aggregation, fun \\ & &1)
   def compute(list, :max, fun), do: Enum.map(list, fun) |> Enum.max()
   def compute(list, :min, fun), do: Enum.map(list, fun) |> Enum.min()

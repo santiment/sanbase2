@@ -61,7 +61,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
   def trigger_fired(), do: @trigger_fired
 
   def create_changeset(%__MODULE__{} = timeline_events, attrs \\ %{}) do
-    attrs = Sanbase.DateTimeUtils.truncate_datetimes(attrs)
+    attrs = Sanbase.Utils.DateTime.truncate_datetimes(attrs)
 
     timeline_events
     |> cast(attrs, [

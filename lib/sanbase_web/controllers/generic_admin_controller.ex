@@ -606,12 +606,17 @@ defmodule SanbaseWeb.GenericAdminController.LinkBuilder do
     field_name = String.to_atom("#{assoc_name}_id")
     field_value = Map.get(record, field_name)
 
-    if is_nil(field_value) do
-      {to_string(assoc_name), nil}
-    else
-      resource = module_to_resource_name(related_module)
-      link = href(resource, field_value, "#{field_name}: #{field_value}")
-      {field_name, link}
+    cond do
+      is_nil(field_value) ->
+        {to_string(assoc_name), nil}
+
+      resource = module_to_resource_name(related_module) ->
+        link = href(resource, field_value, "#{field_name}: #{field_value}")
+        {field_name, link}
+
+      true ->
+        # No admin module registered for this schema — show plain text
+        {field_name, "#{field_name}: #{field_value}"}
     end
   end
 

@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.GenericAdmin.EmailExclusionList do
+  @behaviour SanbaseWeb.GenericAdmin
   alias Sanbase.Email.EmailExclusionList
 
   @schema_module EmailExclusionList

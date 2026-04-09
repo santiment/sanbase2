@@ -80,8 +80,8 @@ defmodule Sanbase.SmartContracts.SanrNFT do
           Map.new(body, fn m ->
             {m["id"],
              %{
-               start_date: Sanbase.DateTimeUtils.from_iso8601!(m["subscription_start_date"]),
-               end_date: Sanbase.DateTimeUtils.from_iso8601!(m["subscription_end_date"])
+               start_date: Sanbase.Utils.DateTime.from_iso8601!(m["subscription_start_date"]),
+               end_date: Sanbase.Utils.DateTime.from_iso8601!(m["subscription_end_date"])
              }}
           end)
 

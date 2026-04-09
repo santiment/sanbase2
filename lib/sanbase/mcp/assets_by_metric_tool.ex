@@ -303,7 +303,7 @@ defmodule Sanbase.MCP.AssetsByMetricTool do
   end
 
   defp validate_time_string("utc_now" <> _ = value, name) do
-    case Sanbase.DateTimeUtils.utc_now_string_to_datetime(value) do
+    case Sanbase.Utils.DateTime.utc_now_string_to_datetime(value) do
       {:ok, _dt} ->
         :ok
 

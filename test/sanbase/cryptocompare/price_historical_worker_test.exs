@@ -3,7 +3,7 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker.OHLCVPriceTest do
   use Oban.Testing, repo: Sanbase.Repo
 
   import Sanbase.Factory
-  import Sanbase.DateTimeUtils, only: [generate_dates_inclusive: 2]
+  import Sanbase.Utils.DateTime, only: [generate_dates_inclusive: 2]
   import Sanbase.Cryptocompare.HistoricalDataStub, only: [ohlcv_price_data: 3]
 
   setup do

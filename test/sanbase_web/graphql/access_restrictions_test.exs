@@ -54,11 +54,11 @@ defmodule SanbaseWeb.Graphql.AccessRestrictionsTest do
       to = restriction["restrictedTo"]
 
       assert is_nil(from) ||
-               Sanbase.DateTimeUtils.from_iso8601!(from)
+               Sanbase.Utils.DateTime.from_iso8601!(from)
                |> DateTime.compare(over_two_years_ago) == :gt
 
       assert is_nil(to) ||
-               Sanbase.DateTimeUtils.from_iso8601!(to)
+               Sanbase.Utils.DateTime.from_iso8601!(to)
                |> DateTime.compare(days_ago) == :lt
     end
   end
@@ -327,13 +327,13 @@ defmodule SanbaseWeb.Graphql.AccessRestrictionsTest do
   end
 
   def iso_datetime_older_than_years(iso_datetime, years) do
-    datetime = Sanbase.DateTimeUtils.from_iso8601!(iso_datetime)
+    datetime = Sanbase.Utils.DateTime.from_iso8601!(iso_datetime)
 
     DateTime.compare(datetime, Timex.shift(Timex.now(), days: -(years * 365 + 1))) == :lt
   end
 
   def iso_datetime_newer_than_hours(iso_datetime, hours) do
-    datetime = Sanbase.DateTimeUtils.from_iso8601!(iso_datetime)
+    datetime = Sanbase.Utils.DateTime.from_iso8601!(iso_datetime)
 
     DateTime.compare(datetime, Timex.shift(Timex.now(), hours: hours)) == :gt
   end

@@ -13,7 +13,7 @@ defmodule Sanbase.Insight.Post do
   alias Sanbase.Repo
   alias Sanbase.Accounts.User
   alias Sanbase.Project
-  alias Sanbase.Insight.{Post, PostImage, Category}
+  alias Sanbase.Insight.{Post, PostImage, ImageUrl, Category}
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.Metric.MetricPostgresData
   alias Sanbase.Chart.Configuration
@@ -974,10 +974,29 @@ defmodule Sanbase.Insight.Post do
     end
   end
 
-  defp images_cast(changeset, %{image_urls: image_urls}) do
-    images = PostImage |> where([i], i.image_url in ^image_urls) |> Repo.all()
+  defp images_cast(changeset, _attrs) do
+    case get_field(changeset, :text) do
+      text when is_binary(text) and text != "" ->
+        image_urls = ImageUrl.extract_from_text(text)
+        do_images_cast(changeset, image_urls)
 
-    if Enum.any?(images, fn %{post_id: post_id} -> not is_nil(post_id) end) do
+      _ ->
+        changeset
+    end
+  end
+
+  defp do_images_cast(changeset, []), do: changeset
+
+  defp do_images_cast(changeset, image_urls) do
+    images = PostImage |> where([i], i.image_url in ^image_urls) |> Repo.all()
+    current_post_id = changeset.data.id
+
+    reused? =
+      Enum.any?(images, fn %{post_id: post_id} ->
+        not is_nil(post_id) and post_id != current_post_id
+      end)
+
+    if reused? do
       changeset
       |> Ecto.Changeset.add_error(
         :images,
@@ -988,8 +1007,6 @@ defmodule Sanbase.Insight.Post do
       |> put_assoc(:images, images)
     end
   end
-
-  defp images_cast(changeset, _), do: changeset
 
   defp extract_image_url_from_post(%Post{} = post) do
     post

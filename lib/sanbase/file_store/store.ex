@@ -1,12 +1,15 @@
 defmodule Sanbase.FileStore do
   use Waffle.Definition
 
-  @versions [:original]
+  @versions [:original, :w400, :w800, :w1200, :w2000]
   @acl :public_read
   @extension_whitelist ~w(.jpg .jpeg .gif .png .pdf .csv .mp4)
+  @image_extensions ~w(.jpg .jpeg .gif .png)
   @max_file_size 10 * 1024 * 1024
   @admin_max_file_size 50 * 1024 * 1024
   @cache_max_age 2_592_000
+
+  @variant_versions [:w400, :w800, :w1200, :w2000]
 
   def allowed_extensions(), do: @extension_whitelist
   def allowed_file_size(), do: div(max_file_size(), 1024 * 1024)
@@ -26,14 +29,41 @@ defmodule Sanbase.FileStore do
     end
   end
 
+  def transform(version, {file, _scope}) when version in @variant_versions do
+    ext = file.file_name |> Path.extname() |> String.downcase()
+
+    if ext in @image_extensions do
+      width = version |> Atom.to_string() |> String.trim_leading("w")
+      {:convert, "-strip -resize #{width}x> -quality 85"}
+    else
+      :noaction
+    end
+  end
+
+  def transform(_version, _file_and_scope), do: :noaction
+
+  def filter(version, {file, _scope}) when version in @variant_versions do
+    ext = file.file_name |> Path.extname() |> String.downcase()
+    if ext in @image_extensions, do: :ok, else: {:error, :skip}
+  end
+
+  def filter(_, _), do: :ok
+
   @doc ~s"""
     Generate a filename. The generated file name is in the format `scope_timestamp_name`
     where scope is explicitly passed from outside. That can be some randomly generated
     string, the hash of the file or something else.
+
+    For variant versions (w400, w800, etc.), the version is prepended to the filename.
   """
-  def filename(_version, {file, scope}) do
+  def filename(:original, {file, scope}) do
     file_name = Path.basename(file.file_name, Path.extname(file.file_name))
     "#{scope}_#{file_name}"
+  end
+
+  def filename(version, {file, scope}) do
+    file_name = Path.basename(file.file_name, Path.extname(file.file_name))
+    "#{version}_#{scope}_#{file_name}"
   end
 
   def s3_object_headers(_version, {_file, _scope}) do

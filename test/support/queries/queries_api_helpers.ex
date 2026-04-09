@@ -15,7 +15,7 @@ defmodule SanbaseWeb.QueriesApiHelpers do
           settings: %{"some_key" => [0, 1, 2, 3]}
         }
 
-    mutation_name = mutation |> Inflex.camelize(:lower)
+    mutation_name = mutation |> Sanbase.Utils.Inflect.camelize(:lower)
 
     mutation = """
     mutation {
@@ -72,7 +72,7 @@ defmodule SanbaseWeb.QueriesApiHelpers do
   end
 
   def run_sql_query(conn, query, args) do
-    query_name = query |> Inflex.camelize(:lower)
+    query_name = query |> Sanbase.Utils.Inflect.camelize(:lower)
 
     mutation = """
     {

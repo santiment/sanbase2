@@ -96,7 +96,6 @@ defmodule Sanbase.Mixfile do
       {:htmd, "~> 0.2.0"},
       {:html_sanitize_ex, "~> 1.4"},
       {:httpoison, "~> 2.0", override: true},
-      {:inflex, "~> 2.0"},
       {:jason, "~> 1.4"},
       {:jose, "~> 1.11"},
       {:kino_db, "~> 0.2.2", only: :dev},

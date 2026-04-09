@@ -392,7 +392,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
           selectors_str =
             list
             |> Enum.map(&Atom.to_string/1)
-            |> Enum.map(&Inflex.camelize(&1, :lower))
+            |> Enum.map(&Sanbase.Utils.Inflect.camelize(&1, :lower))
             |> Enum.join(", ")
 
           {:halt,

@@ -1,5 +1,7 @@
 defmodule SanbaseWeb.GenericAdmin.ProjectEcosystemMapping do
   def schema_module, do: Sanbase.ProjectEcosystemMapping
+  def resource_name, do: "project_ecosystem_mappings"
+  def singular_resource_name, do: "project_ecosystem_mapping"
 
   def resource() do
     %{

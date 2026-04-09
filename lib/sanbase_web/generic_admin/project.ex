@@ -2,6 +2,8 @@ defmodule SanbaseWeb.GenericAdmin.Project do
   import Ecto.Query
 
   def schema_module, do: Sanbase.Project
+  def resource_name, do: "projects"
+  def singular_resource_name, do: "project"
 
   def resource() do
     %{
@@ -237,6 +239,8 @@ end
 
 defmodule SanbaseWeb.GenericAdmin.Infrastructure do
   def schema_module, do: Sanbase.Model.Infrastructure
+  def resource_name, do: "infrastructures"
+  def singular_resource_name, do: "infrastructure"
 
   def resource() do
     %{
@@ -250,6 +254,8 @@ end
 defmodule SanbaseWeb.GenericAdmin.ContractAddress do
   import Ecto.Query
   def schema_module, do: Sanbase.Project.ContractAddress
+  def resource_name, do: "contract_addresses"
+  def singular_resource_name, do: "contract_address"
 
   def resource() do
     %{
@@ -280,6 +286,8 @@ end
 defmodule SanbaseWeb.GenericAdmin.GithubOrganization do
   import Ecto.Query
   def schema_module, do: Sanbase.Project.GithubOrganization
+  def resource_name, do: "github_organizations"
+  def singular_resource_name, do: "github_organization"
 
   def resource() do
     %{
@@ -307,6 +315,8 @@ end
 defmodule SanbaseWeb.GenericAdmin.ProjectEthAddress do
   import Ecto.Query
   def schema_module, do: Sanbase.ProjectEthAddress
+  def resource_name, do: "project_eth_addresses"
+  def singular_resource_name, do: "project_eth_address"
 
   def resource() do
     %{
@@ -332,6 +342,8 @@ end
 defmodule SanbaseWeb.GenericAdmin.ProjectMarketSegments do
   import Ecto.Query
   def schema_module, do: Sanbase.Project.ProjectMarketSegment
+  def resource_name, do: "project_market_segments"
+  def singular_resource_name, do: "project_market_segment"
 
   def resource() do
     %{
@@ -376,6 +388,8 @@ end
 defmodule SanbaseWeb.GenericAdmin.MarketSegments do
   import Ecto.Query
   def schema_module, do: Sanbase.Model.MarketSegment
+  def resource_name, do: "market_segments"
+  def singular_resource_name, do: "market_segment"
 
   def resource() do
     %{
@@ -390,6 +404,8 @@ end
 defmodule SanbaseWeb.GenericAdmin.SourceSlugMapping do
   import Ecto.Query
   def schema_module, do: Sanbase.Project.SourceSlugMapping
+  def resource_name, do: "source_slug_mappings"
+  def singular_resource_name, do: "source_slug_mapping"
 
   def resource() do
     %{
@@ -421,6 +437,8 @@ end
 defmodule SanbaseWeb.GenericAdmin.Ico do
   import Ecto.Query
   def schema_module, do: Sanbase.Model.Ico
+  def resource_name, do: "icos"
+  def singular_resource_name, do: "ico"
 
   def resource() do
     %{
@@ -488,6 +506,8 @@ end
 
 defmodule SanbaseWeb.GenericAdmin.Currency do
   def schema_module, do: Sanbase.Model.Currency
+  def resource_name, do: "currencies"
+  def singular_resource_name, do: "currency"
 
   def resource() do
     %{
@@ -498,6 +518,8 @@ end
 
 defmodule SanbaseWeb.GenericAdmin.LatestCoinmarketcapData do
   def schema_module, do: Sanbase.Model.LatestCoinmarketcapData
+  def resource_name, do: "latest_coinmarketcap_data"
+  def singular_resource_name, do: "latest_coinmarketcap_data"
 
   def resource() do
     %{
@@ -510,6 +532,7 @@ defmodule SanbaseWeb.GenericAdmin.SocialVolumeQuery do
   import Ecto.Query
   def schema_module, do: Sanbase.Project.SocialVolumeQuery
   def resource_name, do: "social_volume_queries"
+  def singular_resource_name, do: "social_volume_query"
 
   def resource() do
     %{

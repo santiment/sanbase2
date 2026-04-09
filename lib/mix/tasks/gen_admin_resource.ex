@@ -110,8 +110,7 @@ defmodule Mix.Tasks.Gen.Admin.Resource do
           resource:
             assoc_name
             |> to_string()
-            |> Macro.underscore()
-            |> Inflex.pluralize(),
+            |> Sanbase.Utils.Inflect.underscore(),
           # TODO: add search fields from the associated module
           search_fields: []
         }

@@ -254,6 +254,7 @@ defmodule SanbaseWeb.AdminComponents do
   """
 
   attr(:resource, :string, required: true)
+  attr(:singular, :string, required: true)
   attr(:fields, :list, required: true)
   attr(:assocs, :map, required: false, default: %{})
   attr(:data, :map, required: true)
@@ -264,7 +265,7 @@ defmodule SanbaseWeb.AdminComponents do
     ~H"""
     <div class="mt-4">
       <h3 class="text-2xl font-medium text-gray-700 mb-2">
-        Show {Inflex.singularize(@resource)}
+        Show {@singular}
       </h3>
       <div class="relative shadow-md sm:rounded-lg">
         <div class="overflow-x-auto">
@@ -603,9 +604,13 @@ defmodule SanbaseWeb.AdminComponents do
   """
 
   attr(:resource, :string, required: true)
+  attr(:singular, :string, required: false, default: nil)
   attr(:create_link_kv, :list, required: false, default: [])
 
   def new_resource_button(assigns) do
+    assigns =
+      assign_new(assigns, :singular, fn -> String.trim_trailing(assigns.resource, "s") end)
+
     ~H"""
     <button
       type="button"
@@ -618,7 +623,7 @@ defmodule SanbaseWeb.AdminComponents do
           Keyword.merge([resource: @resource], @create_link_kv)
         )
       }>
-        <.icon name="hero-plus-circle" /> Add new {Inflex.singularize(@resource)}
+        <.icon name="hero-plus-circle" /> Add new {@singular}
       </.link>
     </button>
     """
@@ -1004,7 +1009,7 @@ defmodule SanbaseWeb.AdminComponents do
   def resource_title(assigns) do
     ~H"""
     <h1 class="text-2xl font-bold">
-      {Inflex.camelize(@resource)}
+      {Sanbase.Utils.Inflect.camelize(@resource)}
     </h1>
     """
   end

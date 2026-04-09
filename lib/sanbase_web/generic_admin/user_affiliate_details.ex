@@ -9,5 +9,7 @@ defmodule SanbaseWeb.GenericAdmin.UserAffiliateDetails do
   }
 
   def schema_module, do: @schema_module
+  def resource_name, do: "user_affiliate_details"
+  def singular_resource_name, do: "user_affiliate_details"
   def resource, do: @resource
 end

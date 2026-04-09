@@ -1,5 +1,7 @@
 defmodule SanbaseWeb.GenericAdmin.EthAccount do
   def schema_module, do: Sanbase.Accounts.EthAccount
+  def resource_name, do: "eth_accounts"
+  def singular_resource_name, do: "eth_account"
 
   def resource() do
     %{

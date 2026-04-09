@@ -195,12 +195,12 @@ defmodule Sanbase.MapUtils do
       defp atomize(value) when is_atom(value) or is_binary(value) do
         # In :test env we can safely ignore this error
         # credo:disable-for-next-line
-        value |> Inflex.underscore() |> String.to_atom()
+        value |> Sanbase.Utils.Inflect.underscore() |> String.to_atom()
       end
 
     false ->
       defp atomize(value) when is_atom(value) or is_binary(value) do
-        value |> Inflex.underscore() |> String.to_existing_atom()
+        value |> Sanbase.Utils.Inflect.underscore() |> String.to_existing_atom()
       end
   end
 

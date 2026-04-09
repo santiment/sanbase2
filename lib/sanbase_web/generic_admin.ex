@@ -21,20 +21,15 @@ defmodule SanbaseWeb.GenericAdmin do
   defp generate_resource(conn, admin_module) when is_atom(admin_module) do
     schema_module = admin_module.schema_module()
 
-    resource_name =
-      call_module_function_or_default(
-        admin_module,
-        :resource_name,
-        [],
-        schema_to_resource_name(schema_module)
-      )
+    resource_name = admin_module.resource_name()
+    singular = admin_module.singular_resource_name()
 
     %{
       resource_name =>
         %{
           module: schema_module,
           admin_module: admin_module,
-          singular: Inflex.singularize(resource_name),
+          singular: singular,
           actions: [],
           index_fields: :all,
           new_fields: [],
@@ -69,14 +64,7 @@ defmodule SanbaseWeb.GenericAdmin do
 
   def resources do
     custom_defined_modules()
-    |> Enum.map(fn admin_module ->
-      call_module_function_or_default(
-        admin_module,
-        :resource_name,
-        [],
-        schema_to_resource_name(admin_module.schema_module())
-      )
-    end)
+    |> Enum.map(fn admin_module -> admin_module.resource_name() end)
   end
 
   def call_module_function_or_default(module, function, data, default_value) do
@@ -85,14 +73,5 @@ defmodule SanbaseWeb.GenericAdmin do
     rescue
       UndefinedFunctionError -> default_value
     end
-  end
-
-  def schema_to_resource_name(schema_module) do
-    schema_module
-    |> to_string()
-    |> String.split(".")
-    |> List.last()
-    |> Inflex.underscore()
-    |> Inflex.pluralize()
   end
 end

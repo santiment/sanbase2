@@ -16,7 +16,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricTransform do
     transform =
       args
       |> Map.get(:transform, %{type: "none"})
-      |> Map.update!(:type, &Inflex.underscore/1)
+      |> Map.update!(:type, &Sanbase.Utils.Inflect.underscore/1)
 
     case transform.type in @transform_types do
       true ->

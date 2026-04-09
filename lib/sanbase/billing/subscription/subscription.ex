@@ -44,9 +44,25 @@ defmodule Sanbase.Billing.Subscription do
     field(:stripe_id, :string)
     field(:current_period_end, :utc_datetime)
     field(:cancel_at_period_end, :boolean, default: false)
-    field(:status, SubscriptionStatusEnum)
+
+    field(:status, Ecto.Enum,
+      values: [
+        :initial,
+        :incomplete,
+        :incomplete_expired,
+        :trialing,
+        :active,
+        :past_due,
+        :canceled,
+        :unpaid
+      ]
+    )
+
     field(:trial_end, :utc_datetime)
-    field(:type, SubscriptionType)
+
+    field(:type, Ecto.Enum,
+      values: [:fiat, :liquidity, :burning_regular, :burning_nft, :sanr_points_nft]
+    )
 
     field(:payment_intent, :map, virtual: true)
 

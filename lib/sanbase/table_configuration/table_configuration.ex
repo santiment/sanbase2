@@ -6,7 +6,7 @@ defmodule Sanbase.TableConfiguration do
   alias Sanbase.Repo
 
   schema "table_configurations" do
-    field(:type, TableConfigurationType)
+    field(:type, Ecto.Enum, values: [:project, :blockchain_address])
     field(:title, :string)
     field(:description, :string)
     field(:is_public, :boolean, default: false)

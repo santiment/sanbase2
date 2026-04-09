@@ -33,10 +33,15 @@ defmodule Sanbase.UserList do
   @preloads [:featured_item, :list_items, :user]
 
   schema "user_lists" do
-    field(:type, WatchlistType, default: :project)
+    field(:type, Ecto.Enum, values: [:project, :blockchain_address], default: :project)
     field(:name, :string)
     field(:slug, :string)
-    field(:color, ColorEnum, default: :none)
+
+    field(:color, Ecto.Enum,
+      values: [:none, :blue, :red, :green, :yellow, :grey, :black],
+      default: :none
+    )
+
     field(:description, :string)
     field(:ai_description, :string)
     field(:function, WatchlistFunction, default: %WatchlistFunction{})

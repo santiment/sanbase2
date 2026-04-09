@@ -63,7 +63,6 @@ defmodule Sanbase.Mixfile do
       {:decimal, "~> 2.1"},
       {:dialyxir, "~> 1.1", only: [:dev], runtime: false},
       {:earmark, "~> 1.2"},
-      {:ecto_enum, "~> 1.4"},
       {:ecto_psql_extras, "~> 0.3"},
       {:ecto_sql, "~> 3.12"},
       {:ecto, "~> 3.12"},

@@ -257,19 +257,19 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
 
   def active_subscriptions(subscriptions) do
     Enum.filter(subscriptions, fn subscription ->
-      subscription.status in ["active", "past_due"]
+      subscription.status in [:active, :past_due]
     end)
     |> non_team_members()
   end
 
   def trialing_subscriptions(subscriptions) do
-    Enum.filter(subscriptions, fn subscription -> subscription.status == "trialing" end)
+    Enum.filter(subscriptions, fn subscription -> subscription.status == :trialing end)
     |> non_team_members()
   end
 
   def other_status_subscriptions(subscriptions) do
     Enum.filter(subscriptions, fn subscription ->
-      subscription.status not in ["active", "trialing"]
+      subscription.status not in [:active, :trialing]
     end)
   end
 

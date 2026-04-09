@@ -255,7 +255,8 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
         # to the underlaying GraphQL query. If there is no alias, use the query
         # name as key. In a document if two or more of the same queries are used,
         # all but one need to have an alias so there would be no name conflicts.
-        {Inflex.camelize(alias || name, :lower), Inflex.camelize(name, :lower)}
+        {Sanbase.Utils.Inflect.camelize(alias || name, :lower),
+         Sanbase.Utils.Inflect.camelize(name, :lower)}
       end)
     end)
     |> Map.new()
@@ -372,7 +373,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
         error_queries =
           errors
           |> Enum.flat_map(fn
-            %{path: [name | _]} -> [Inflex.camelize(name, :lower)]
+            %{path: [name | _]} -> [Sanbase.Utils.Inflect.camelize(name, :lower)]
             %{path: []} -> []
             %{path: nil} -> []
             _ -> []
@@ -425,10 +426,10 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
       Map.get(blueprint.execution.context, :__get_query_name_arg__, [])
       |> Map.new(fn
         {:get_metric, alias, _metric, _selector, _version} = tuple ->
-          {Inflex.camelize(alias, :lower), tuple}
+          {Sanbase.Utils.Inflect.camelize(alias, :lower), tuple}
 
         {:get_signal, alias, _signal, _selector} = tuple ->
-          {Inflex.camelize(alias, :lower), tuple}
+          {Sanbase.Utils.Inflect.camelize(alias, :lower), tuple}
       end)
 
     # Rename aliases to the query name itself, or in case of getMetric and getSignal -- the whole tuple.
@@ -436,7 +437,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     # the selector that has been provided (like {"slugs": ["bitcoin", "ethereum"]})
     rename_mapper = fn list ->
       Enum.map(list, fn alias ->
-        alias = alias |> Inflex.camelize(:lower)
+        alias = alias |> Sanbase.Utils.Inflect.camelize(:lower)
         Map.get(alias_to_get_query_tuple_map, alias) || Map.fetch!(alias_to_query_name_map, alias)
       end)
     end

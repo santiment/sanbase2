@@ -2,6 +2,8 @@ defmodule SanbaseWeb.GenericAdmin.Notification do
   use SanbaseWeb, :live_component
 
   def schema_module, do: Sanbase.Notifications.Notification
+  def resource_name, do: "notifications"
+  def singular_resource_name, do: "notification"
 
   def resource() do
     %{

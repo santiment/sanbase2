@@ -432,6 +432,7 @@ defmodule SanbaseWeb.GenericAdminController do
     %{
       resource: resource,
       resource_name: resource_name,
+      singular: resource_config[:singular] || resource,
       fields: fields,
       funcs: funcs,
       actions: resource_config[:actions],
@@ -627,11 +628,9 @@ defmodule SanbaseWeb.GenericAdminController.LinkBuilder do
   end
 
   defp module_to_resource_name(module) do
-    module
-    |> Atom.to_string()
-    |> String.split(".")
-    |> List.last()
-    |> Macro.underscore()
-    |> Inflex.pluralize()
+    SanbaseWeb.GenericAdmin.resource_module_map()
+    |> Enum.find_value(fn {resource_name, config} ->
+      if config[:module] == module, do: resource_name
+    end)
   end
 end

@@ -418,7 +418,7 @@ defmodule Sanbase.MetricExporter.CSV do
   end
 
   def camelize(name) do
-    Inflex.camelize(name, :lower)
+    Sanbase.Utils.Inflect.camelize(name, :lower)
   end
 
   def rename_column(numbers) when is_list(numbers) do

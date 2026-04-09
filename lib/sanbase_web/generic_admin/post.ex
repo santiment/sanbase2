@@ -4,6 +4,8 @@ defmodule SanbaseWeb.GenericAdmin.Post do
 
   require Logger
   def schema_module, do: Post
+  def resource_name, do: "posts"
+  def singular_resource_name, do: "post"
 
   @index_fields ~w(id title is_featured is_pulse state ready_state moderation_comment user_id)a
   @edit_fields ~w(is_featured is_pulse is_paywall_required ready_state prediction state moderation_comment)a
@@ -119,6 +121,8 @@ end
 defmodule SanbaseWeb.GenericAdmin.PostTags do
   import Ecto.Query
   def schema_module, do: Sanbase.Insight.PostTag
+  def resource_name, do: "post_tags"
+  def singular_resource_name, do: "post_tag"
 
   def resource do
     %{
@@ -148,6 +152,8 @@ end
 defmodule SanbaseWeb.GenericAdmin.Tag do
   alias Sanbase.Tag
   def schema_module, do: Tag
+  def resource_name, do: "tags"
+  def singular_resource_name, do: "tag"
 
   def resource do
     %{
@@ -163,6 +169,8 @@ end
 defmodule SanbaseWeb.GenericAdmin.PostComment do
   import Ecto.Query
   def schema_module, do: Sanbase.Comment.PostComment
+  def resource_name, do: "post_comments"
+  def singular_resource_name, do: "post_comment"
 
   def resource do
     %{
@@ -200,6 +208,8 @@ end
 defmodule SanbaseWeb.GenericAdmin.Comment do
   import Ecto.Query
   def schema_module, do: Sanbase.Comment
+  def resource_name, do: "comments"
+  def singular_resource_name, do: "comment"
 
   def resource do
     %{
@@ -256,6 +266,8 @@ defmodule SanbaseWeb.GenericAdmin.UserTrigger do
   import Ecto.Query
 
   def schema_module, do: Sanbase.Alert.UserTrigger
+  def resource_name, do: "user_triggers"
+  def singular_resource_name, do: "user_trigger"
 
   def resource do
     %{
@@ -323,6 +335,7 @@ end
 defmodule SanbaseWeb.GenericAdmin.ChartConfiguration do
   def schema_module, do: Sanbase.Chart.Configuration
   def resource_name, do: "chart_configurations"
+  def singular_resource_name, do: "chart_configuration"
 
   def resource do
     %{
@@ -345,6 +358,8 @@ end
 
 defmodule SanbaseWeb.GenericAdmin.TableConfiguration do
   def schema_module, do: Sanbase.TableConfiguration
+  def resource_name, do: "table_configurations"
+  def singular_resource_name, do: "table_configuration"
 
   def resource do
     %{

@@ -1,5 +1,7 @@
 defmodule SanbaseWeb.GenericAdmin.Subscription do
   def schema_module, do: Sanbase.Billing.Subscription
+  def resource_name, do: "subscriptions"
+  def singular_resource_name, do: "subscription"
 
   def resource do
     %{
@@ -49,6 +51,8 @@ end
 
 defmodule SanbaseWeb.GenericAdmin.Plan do
   def schema_module, do: Sanbase.Billing.Plan
+  def resource_name, do: "plans"
+  def singular_resource_name, do: "plan"
 
   def resource do
     %{
@@ -86,6 +90,8 @@ end
 
 defmodule SanbaseWeb.GenericAdmin.Product do
   def schema_module, do: Sanbase.Billing.Product
+  def resource_name, do: "products"
+  def singular_resource_name, do: "product"
 
   def resource do
     %{
@@ -104,6 +110,8 @@ defmodule SanbaseWeb.GenericAdmin.PromoTrial do
   alias Sanbase.Billing.Subscription.PromoTrial
 
   def schema_module, do: PromoTrial
+  def resource_name, do: "promo_trials"
+  def singular_resource_name, do: "promo_trial"
 
   def resource do
     %{

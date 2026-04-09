@@ -14,7 +14,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
 
   @trending_words_size 10
   @trending_fields [:trending_slugs, :trending_tickers, :trending_names, :trending_projects]
-                   |> Enum.map(&Inflex.camelize(&1, :lower))
+                   |> Enum.map(&Sanbase.Utils.Inflect.camelize(&1, :lower))
 
   ###########################
   #         Queries         #

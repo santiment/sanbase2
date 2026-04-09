@@ -37,7 +37,7 @@ defmodule Sanbase.WatchlistFunction do
   def valid_function?(fun, opts \\ [])
 
   def valid_function?(%__MODULE__{name: "address_selector", args: args} = fun, opts) do
-    args = Map.new(args, fn {k, v} -> {Inflex.underscore(k), v} end)
+    args = Map.new(args, fn {k, v} -> {Sanbase.Utils.Inflect.underscore(k), v} end)
 
     with {selector, unsupported_keys} when map_size(unsupported_keys) == 0 <-
            Map.split(args, @address_selector_fields),
@@ -61,7 +61,7 @@ defmodule Sanbase.WatchlistFunction do
     "base_projects"
   ]
   def valid_function?(%__MODULE__{name: "selector", args: args} = fun, opts) do
-    args = Enum.into(args, %{}, fn {k, v} -> {Inflex.underscore(k), v} end)
+    args = Enum.into(args, %{}, fn {k, v} -> {Sanbase.Utils.Inflect.underscore(k), v} end)
 
     with {selector, empty_map} when map_size(empty_map) == 0 <-
            Map.split(args, @project_selector_fields),
@@ -184,7 +184,7 @@ defmodule Sanbase.WatchlistFunction do
   def evaluate(watchlist_function)
 
   def evaluate(%__MODULE__{name: "address_selector", args: args}) do
-    args = Enum.into(args, %{}, fn {k, v} -> {Inflex.underscore(k), v} end)
+    args = Enum.into(args, %{}, fn {k, v} -> {Sanbase.Utils.Inflect.underscore(k), v} end)
 
     case Map.split(args, @address_selector_fields) do
       {selector, empty_map} when map_size(empty_map) == 0 ->
@@ -197,7 +197,7 @@ defmodule Sanbase.WatchlistFunction do
   end
 
   def evaluate(%__MODULE__{name: "selector", args: args}) do
-    args = Enum.into(args, %{}, fn {k, v} -> {Inflex.underscore(k), v} end)
+    args = Enum.into(args, %{}, fn {k, v} -> {Sanbase.Utils.Inflect.underscore(k), v} end)
 
     case Map.split(args, @project_selector_fields) do
       {selector, empty_map} when map_size(empty_map) == 0 ->
@@ -353,7 +353,7 @@ defmodule Sanbase.WatchlistFunction do
     atomized_fun =
       for {key, val} <- function, into: %{} do
         if is_binary(key) do
-          {key |> Inflex.underscore() |> String.to_existing_atom(), val}
+          {key |> Sanbase.Utils.Inflect.underscore() |> String.to_existing_atom(), val}
         else
           {key, val}
         end

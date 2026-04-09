@@ -163,8 +163,8 @@ defmodule Sanbase.Chart.Configuration.SharedAccessToken do
       # `slug_MC_ticker_MC_metric` to represent that a metric of another
       # asset should be displayed on the chart configuration.
       case String.split(entry, ["-CC-", "_MC_"]) do
-        [slug, _ticker, metric] -> %{metric: Inflex.underscore(metric), slug: slug}
-        [metric] -> %{metric: Inflex.underscore(metric), slug: project_slug}
+        [slug, _ticker, metric] -> %{metric: Sanbase.Utils.Inflect.underscore(metric), slug: slug}
+        [metric] -> %{metric: Sanbase.Utils.Inflect.underscore(metric), slug: project_slug}
       end
     end)
     |> Enum.uniq()

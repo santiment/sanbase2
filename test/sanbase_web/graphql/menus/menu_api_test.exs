@@ -357,7 +357,7 @@ defmodule SanbaseWeb.Graphql.MenuApiTest do
   end
 
   defp menu_mutation(conn, mutation, params) do
-    mutation_name = Inflex.camelize(mutation, :lower)
+    mutation_name = Sanbase.Utils.Inflect.camelize(mutation, :lower)
 
     mutation = """
       mutation {

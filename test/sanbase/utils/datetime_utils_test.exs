@@ -3,7 +3,19 @@ defmodule Sanbase.DateTimeUtilsTest do
 
   alias Sanbase.DateTimeUtils
 
+  describe "to_human_readable/1" do
+    test "formats datetime as human readable string" do
+      assert DateTimeUtils.to_human_readable(~U[2021-01-12 12:45:56Z]) == "12 Jan 2021 12:45 UTC"
+      assert DateTimeUtils.to_human_readable(~U[1992-11-10 04:41:12Z]) == "10 Nov 1992 04:41 UTC"
+      assert DateTimeUtils.to_human_readable(~U[2012-12-31 22:12:12Z]) == "31 Dec 2012 22:12 UTC"
+    end
+  end
+
   describe "str_to_sec/1" do
+    test "parses nanoseconds" do
+      assert DateTimeUtils.str_to_sec("10000000000ns") == 10
+    end
+
     test "parses seconds" do
       assert DateTimeUtils.str_to_sec("30s") == 30
     end

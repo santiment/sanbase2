@@ -448,7 +448,7 @@ defmodule Sanbase.AppNotifications do
       # Insert a NotificationReadStatus for every registered user who has NOT
       # disabled this notification type. Left join so users without a
       # user_settings row are included (default: all types enabled).
-      {count, _} =
+      {count, read_statuses} =
         Repo.insert_all(
           NotificationReadStatus,
           from(u in Sanbase.Accounts.User,
@@ -473,14 +473,17 @@ defmodule Sanbase.AppNotifications do
               inserted_at: type(^now, :utc_datetime),
               updated_at: type(^now, :utc_datetime)
             }
-          )
+          ),
+          returning: [:user_id, :notification_id]
         )
 
-      {:ok, count}
+      {:ok, %{count: count, read_statuses: read_statuses}}
     end)
     |> Repo.transaction()
     |> case do
-      {:ok, %{notification: notification, read_statuses: count}} ->
+      {:ok,
+       %{notification: notification, read_statuses: %{count: count, read_statuses: read_statuses}}} ->
+        async_broadcast_websocket_notifications(read_statuses)
         {:ok, %{notification: notification, recipients_count: count}}
 
       {:error, _operation, reason, _changes} ->

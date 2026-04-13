@@ -364,14 +364,17 @@ defmodule Sanbase.Application do
       # Start the Presence
       SanbaseWeb.Presence,
 
-      # Start the endpoint when the application starts
+      # Start the endpoint when the application starts.
+      # Bandit/ThousandIsland has built-in connection draining on shutdown
+      # (configured via thousand_island_options.shutdown_timeout: 30s in runtime.exs).
+      # When the supervisor stops the endpoint, ThousandIsland will:
+      # 1. Close the listening socket (reject new connections)
+      # 2. Wait up to 30s for in-flight requests to complete
+      # 3. Forcibly terminate any remaining connections after the timeout
+      # Cowboy had no connection draining — on shutdown all connections were
+      # killed immediately, so we needed a custom ConnectionDrainer GenServer.
+      # Bandit handles this natively, so the custom drainer was removed.
       SanbaseWeb.Endpoint,
-
-      # Drain the running connections before closing. This will allow the
-      # currently executing API calls to finish. The drainer first makes
-      # the TCP acceptor to stop accepting new connections and then waits
-      # until there are no connections or 30 seconds pass.
-      {SanbaseWeb.ConnectionDrainer, shutdown: 30_000, ranch_ref: SanbaseWeb.Endpoint.HTTP},
 
       # Process that starts test-only deps
       start_in(Sanbase.TestSetupService, [:test]),

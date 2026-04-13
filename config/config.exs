@@ -144,7 +144,16 @@ config :sanbase, Sanbase.Accounts.Hmac, secret_key: {:system, "APIKEY_HMAC_SECRE
 
 # Configures the endpoint
 config :sanbase, SanbaseWeb.Endpoint,
-  http: [protocol_options: [max_request_line_length: 16_384, max_header_value_length: 8192]],
+  adapter: Bandit.PhoenixAdapter,
+  http: [
+    http_1_options: [
+      max_request_line_length: 16_384,
+      max_header_count: 100,
+      # Cookies can be large; Bandit's max_header_length covers the full
+      # header line (name + value). Cowboy had max_header_value_length: 8192.
+      max_header_length: 16_384
+    ]
+  ],
   url: [host: "localhost"],
   secret_key_base:
     "not_secret_please_do_not_report_Vq7Rfo0T4EfiLX2/ryYal3O0l9ebBNhyh58cfWdTAUHxEJGu2p9u1WTQ31Ki4Phj",

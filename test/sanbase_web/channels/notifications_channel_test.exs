@@ -58,6 +58,45 @@ defmodule SanbaseWeb.NotificationsChannelTest do
     refute_push("notification", %{user_id: ^user2_id, notification_id: _notification_id})
   end
 
+  test "user receives broadcast notification via websocket", %{user: user} = context do
+    # joins the notifications:#{user_id} channel
+    _socket = get_socket(context)
+
+    assert {:ok, %{notification: notification, recipients_count: 1}} =
+             Sanbase.AppNotifications.create_broadcast_notification(%{
+               type: "santiment_broadcast",
+               title: "Maintenance Notice",
+               content: "We will be performing maintenance."
+             })
+
+    user_id = user.id
+    notification_id = notification.id
+
+    assert_push("notification", %{
+      user_id: ^user_id,
+      notification_id: ^notification_id
+    })
+  end
+
+  test "user who disabled the broadcast type does NOT receive it via websocket",
+       %{user: user} = context do
+    assert {:ok, _} =
+             Sanbase.AppNotifications.disable_notification_types(user, ["santiment_broadcast"])
+
+    # joins the notifications:#{user_id} channel
+    _socket = get_socket(context)
+
+    assert {:ok, %{recipients_count: 0}} =
+             Sanbase.AppNotifications.create_broadcast_notification(%{
+               type: "santiment_broadcast",
+               title: "Maintenance Notice",
+               content: "We will be performing maintenance."
+             })
+
+    user_id = user.id
+    refute_push("notification", %{user_id: ^user_id, notification_id: _notification_id})
+  end
+
   defp get_socket(context) do
     {:ok, socket} =
       connect(

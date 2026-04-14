@@ -57,5 +57,6 @@ defmodule Sanbase.Utils.HtmlSubsetScrubber do
   Meta.allow_tag_with_these_attributes("figure", ["class", "id"])
   Meta.allow_tag_with_these_attributes("figcaption", ["class", "id"])
 
-  Meta.strip_everything_not_covered()
+  # strip_everything_not_covered() is no longer needed as of html_sanitize_ex 1.5.0 —
+  # the scrubber compiler now automatically strips uncovered tags/attributes at compile time.
 end

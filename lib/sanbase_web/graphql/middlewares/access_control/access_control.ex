@@ -303,23 +303,54 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
         resolution
 
       false ->
-        min_plan = AccessChecker.min_plan(query_or_argument, requested_product)
         {argument, argument_name} = query_or_argument
 
-        Resolution.put_result(
-          resolution,
-          {:error,
-           """
-           The #{argument} #{argument_name} is not accessible with the currently used \
-           #{subscription_product || requested_product} #{plan_name} subscription. Please upgrade to #{requested_product} #{min_plan} subscription \
-           or a Custom Plan that has access to it.
+        error_message =
+          build_access_error_message(
+            argument,
+            argument_name,
+            plan_name,
+            requested_product,
+            subscription_product
+          )
 
-           If you have a subscription for one product but attempt to fetch data using \
-           another product, this error will still be shown. The data on SANBASE cannot \
-           be fetched with a SANAPI subscription and vice versa.
-           """}
-        )
+        Resolution.put_result(resolution, {:error, error_message})
     end
+  end
+
+  defp build_access_error_message(
+         argument,
+         argument_name,
+         "CUSTOM_" <> _ = plan_name,
+         requested_product,
+         subscription_product
+       ) do
+    """
+    The #{argument} #{argument_name} is not included in the currently used \
+    #{subscription_product || requested_product} #{plan_name} plan. \
+    To get access, please contact Santiment to update your custom plan \
+    or upgrade to a standard plan that includes it.
+    """
+  end
+
+  defp build_access_error_message(
+         argument,
+         argument_name,
+         plan_name,
+         requested_product,
+         subscription_product
+       ) do
+    min_plan = AccessChecker.min_plan({argument, argument_name}, requested_product)
+
+    """
+    The #{argument} #{argument_name} is not accessible with the currently used \
+    #{subscription_product || requested_product} #{plan_name} subscription. Please upgrade to #{requested_product} #{min_plan} subscription \
+    or a Custom Plan that has access to it.
+
+    If you have a subscription for one product but attempt to fetch data using \
+    another product, this error will still be shown. The data on SANBASE cannot \
+    be fetched with a SANAPI subscription and vice versa.
+    """
   end
 
   # If the query is marked as having free realtime and historical data

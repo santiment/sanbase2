@@ -92,7 +92,7 @@ defmodule Sanbase.Mixfile do
       {:guardian, "~> 2.3"},
       {:gun, "~> 2.0", override: true},
       {:hackney, "~> 1.17", override: true},
-      {:hammer, "~> 6.0"},
+      {:hammer, "~> 7.0"},
       {:htmd, "~> 0.2.0"},
       {:html_sanitize_ex, "~> 1.4"},
       {:httpoison, "~> 2.0", override: true},

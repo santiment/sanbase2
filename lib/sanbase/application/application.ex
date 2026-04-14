@@ -324,6 +324,9 @@ defmodule Sanbase.Application do
       # Star the API call service
       Sanbase.ApiCallLimit.ETS,
 
+      # Start the Hammer rate limiter backend (ETS)
+      {Sanbase.RateLimit, [clean_period: :timer.minutes(10), key_older_than: :timer.hours(4)]},
+
       # Start telegram rate limiter. Used both in web and alerts
       Sanbase.ExternalServices.RateLimiting.Server.child_spec(
         :telegram_bot_rate_limiting_server,

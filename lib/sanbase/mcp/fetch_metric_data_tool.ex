@@ -25,7 +25,13 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
   schema do
     field(:metric, :string,
       required: true,
-      description: "Metric name to fetch (e.g., 'price_usd')"
+      description: """
+      Metric name to fetch (e.g., 'price_usd').
+
+      IMPORTANT: Before fetching data, verify metric names by calling the
+      metrics_and_assets_discovery_tool first. Only metrics listed there are supported.
+      Do not guess or infer metric names — they may differ from what you expect.
+      """
     )
 
     field(:slugs, {:list, :string},
@@ -35,8 +41,10 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
 
       Accepts at most #{@slugs_per_call_limit} slugs at a time.
 
-      Only metrics that are listed as `supports_many_slugs: true` can accept a list of more than
-      one slug at a time.
+      Only metrics that have `supports_many_slugs: true` can accept more than one slug.
+      Check the `supports_many_slugs` field in the metrics_and_assets_discovery_tool response
+      before passing multiple slugs. Financial and on-chain metrics generally support multiple
+      slugs; social, sentiment, and derivatives metrics generally do not.
 
       The tool returns data for one metric and one or many slugs.
       """
@@ -141,7 +149,7 @@ defmodule Sanbase.MCP.FetchMetricDataTool do
     if DataCatalog.valid_metric?(metric) do
       :ok
     else
-      {:error, "Metric '#{metric}' mistyped or not supported."}
+      {:error, DataCatalog.metric_not_found_error(metric)}
     end
   end
 

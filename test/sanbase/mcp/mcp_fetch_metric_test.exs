@@ -314,7 +314,8 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
                  "name" => "social_volume_total",
                  "unit" => "count",
                  "default_aggregation" => "sum",
-                 "min_interval" => "5m"
+                 "min_interval" => "5m",
+                 "supports_many_slugs" => false
                },
                %{
                  "description" => "Share of total crypto social mentions attributed to the asset",
@@ -324,7 +325,8 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
                  "name" => "social_dominance_total",
                  "unit" => "percent",
                  "default_aggregation" => "avg",
-                 "min_interval" => "5m"
+                 "min_interval" => "5m",
+                 "supports_many_slugs" => false
                },
                %{
                  "description" => "Overall weighted social sentiment score",
@@ -337,7 +339,51 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
                  "name" => "sentiment_weighted_total",
                  "unit" => "score",
                  "default_aggregation" => "avg",
-                 "min_interval" => "5m"
+                 "min_interval" => "5m",
+                 "supports_many_slugs" => false
+               },
+               %{
+                 "description" =>
+                   "Overall social sentiment balance score (positive minus negative)",
+                 "documentation_urls" => [
+                   %{
+                     "url" =>
+                       "https://academy.santiment.net/metrics/sentiment-metrics/positive-negative-sentiment-metrics"
+                   }
+                 ],
+                 "name" => "sentiment_balance_total",
+                 "unit" => "score",
+                 "default_aggregation" => "sum",
+                 "min_interval" => "5m",
+                 "supports_many_slugs" => false
+               },
+               %{
+                 "description" => "Total positive social sentiment mentions",
+                 "documentation_urls" => [
+                   %{
+                     "url" =>
+                       "https://academy.santiment.net/metrics/sentiment-metrics/positive-negative-sentiment-metrics"
+                   }
+                 ],
+                 "name" => "sentiment_positive_total",
+                 "unit" => "count",
+                 "default_aggregation" => "sum",
+                 "min_interval" => "5m",
+                 "supports_many_slugs" => false
+               },
+               %{
+                 "description" => "Total negative social sentiment mentions",
+                 "documentation_urls" => [
+                   %{
+                     "url" =>
+                       "https://academy.santiment.net/metrics/sentiment-metrics/positive-negative-sentiment-metrics"
+                   }
+                 ],
+                 "name" => "sentiment_negative_total",
+                 "unit" => "count",
+                 "default_aggregation" => "sum",
+                 "min_interval" => "5m",
+                 "supports_many_slugs" => false
                },
                %{
                  "default_aggregation" => "avg",
@@ -580,6 +626,30 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
                },
                %{
                  "description" =>
+                   "Mean coin age in days — average number of days since each coin was last moved on-chain",
+                 "documentation_urls" => [
+                   %{"url" => "https://academy.santiment.net/metrics/mean-coin-age"}
+                 ],
+                 "name" => "mean_age",
+                 "unit" => "days",
+                 "default_aggregation" => "last",
+                 "min_interval" => "1d",
+                 "supports_many_slugs" => true
+               },
+               %{
+                 "description" =>
+                   "Mean dollar invested age — average number of days each dollar has been invested in the asset",
+                 "documentation_urls" => [
+                   %{"url" => "https://academy.santiment.net/metrics/mean-coin-age"}
+                 ],
+                 "name" => "mean_dollar_invested_age",
+                 "unit" => "days",
+                 "default_aggregation" => "last",
+                 "min_interval" => "1d",
+                 "supports_many_slugs" => true
+               },
+               %{
+                 "description" =>
                    "Aggregated funding rate across all exchanges for a given asset, reflecting overall market sentiment in perpetual futures",
                  "documentation_urls" => [
                    %{"url" => "https://academy.santiment.net/metrics/funding-rates-aggregated"}
@@ -587,10 +657,11 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
                  "name" => "total_funding_rates_aggregated_per_asset",
                  "unit" => "rate",
                  "default_aggregation" => "last",
-                 "min_interval" => "5m"
+                 "min_interval" => "5m",
+                 "supports_many_slugs" => false
                }
              ],
-             "metrics_count" => 34
+             "metrics_count" => 39
            } = result
 
     result
@@ -681,7 +752,7 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
                result: %{
                  "content" => [
                    %{
-                     "text" => "Metric 'not_supported_metric' mistyped or not supported.",
+                     "text" => error_text,
                      "type" => "text"
                    }
                  ],
@@ -689,6 +760,9 @@ defmodule SanbaseWeb.Graphql.MCPFetchMetricTest do
                }
              }
            } = result
+
+    assert error_text =~ "Metric 'not_supported_metric' is not supported."
+    assert error_text =~ "metrics_and_assets_discovery_tool"
   end
 
   test "fetch metric with single slug - success", _context do

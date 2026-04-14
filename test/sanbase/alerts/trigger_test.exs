@@ -4,7 +4,7 @@ defmodule Sanbase.Alert.TriggersTest do
   import Sanbase.Factory
   import ExUnit.CaptureLog
   import Sanbase.TestHelpers
-  import Sanbase.MapUtils
+  import Sanbase.Utils.Map
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1]
 
   alias Sanbase.Alert.UserTrigger

@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.Helpers.Utils do
-  import Sanbase.DateTimeUtils, only: [round_datetime: 2, str_to_sec: 1]
+  import Sanbase.Utils.DateTime, only: [round_datetime: 2, str_to_sec: 1]
 
   def resolution_to_user_id_or_nil(resolution) do
     case resolution do
@@ -143,7 +143,7 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
   @spec requested_fields(%Absinthe.Resolution{}) :: MapSet.t()
   def requested_fields(%Absinthe.Resolution{} = resolution) do
     resolution.definition.selections
-    |> Enum.map(fn %{name: name} -> Inflex.camelize(name, :lower) end)
+    |> Enum.map(fn %{name: name} -> Sanbase.Utils.Inflect.camelize(name, :lower) end)
     |> MapSet.new()
   end
 

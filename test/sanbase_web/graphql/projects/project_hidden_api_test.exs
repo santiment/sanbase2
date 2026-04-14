@@ -61,7 +61,7 @@ defmodule SanbaseWeb.Graphql.ProjectHiddenApiTest do
 
     assert Sanbase.TestUtils.datetime_close_to(
              DateTime.utc_now(),
-             Sanbase.DateTimeUtils.from_iso8601!(dt),
+             Sanbase.Utils.DateTime.from_iso8601!(dt),
              1,
              :seconds
            )

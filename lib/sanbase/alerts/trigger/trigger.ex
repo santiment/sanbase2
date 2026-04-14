@@ -41,7 +41,6 @@ defmodule Sanbase.Alert.Trigger do
   import Ecto.Changeset
 
   alias __MODULE__
-  alias Sanbase.DateTimeUtils
 
   embedded_schema do
     field(:settings, :map)
@@ -96,7 +95,7 @@ defmodule Sanbase.Alert.Trigger do
   end
 
   defp validate_url(:icon_url, url) do
-    case Sanbase.Validation.valid_url?(url) do
+    case Sanbase.Utils.Validation.valid_url?(url) do
       :ok -> []
       {:error, reason} -> [icon_url: reason]
     end
@@ -153,7 +152,7 @@ defmodule Sanbase.Alert.Trigger do
   def last_triggered(%Trigger{last_triggered: lt}, target) do
     case Map.get(lt, target) do
       nil -> nil
-      last_triggered -> last_triggered |> DateTimeUtils.from_iso8601!()
+      last_triggered -> last_triggered |> Sanbase.Utils.DateTime.from_iso8601!()
     end
   end
 
@@ -164,7 +163,7 @@ defmodule Sanbase.Alert.Trigger do
 
       %DateTime{} = target_last_triggered ->
         DateTime.compare(
-          DateTimeUtils.after_interval(trigger.cooldown, target_last_triggered),
+          Sanbase.Utils.DateTime.after_interval(trigger.cooldown, target_last_triggered),
           Timex.now()
         ) == :gt
     end

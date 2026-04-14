@@ -7,7 +7,8 @@ defmodule Sanbase.Alert.Trigger.DailyMetricTriggerSettings do
   use Vex.Struct
   use Sanbase.Alert.Trigger.Settings.TriggerSettingsBase, trigger_type: "daily_metric_signal"
 
-  import Sanbase.{Validation, Alert.Validation}
+  import Sanbase.Utils.Validation
+  import Sanbase.Alert.Validation
 
   alias __MODULE__
   alias Sanbase.Alert.Type

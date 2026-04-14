@@ -1,7 +1,7 @@
-defmodule Sanbase.ValidationTest do
+defmodule Sanbase.Utils.ValidationTest do
   use ExUnit.Case, async: true
 
-  alias Sanbase.Validation
+  alias Sanbase.Utils.Validation
 
   describe "valid_percent?/1" do
     test "accepts valid percentages" do

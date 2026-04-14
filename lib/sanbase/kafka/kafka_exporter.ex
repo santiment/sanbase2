@@ -168,7 +168,7 @@ defmodule Sanbase.KafkaExporter do
   end
 
   defp send_data(data, %{topic: topic, can_send_after: can_send_after, size: size}) do
-    Sanbase.DateTimeUtils.sleep_until(can_send_after)
+    Sanbase.Utils.DateTime.sleep_until(can_send_after)
     Logger.info("Sending #{size} events to Kafka topic: #{topic}")
     @producer.produce_sync(topic, data)
   end

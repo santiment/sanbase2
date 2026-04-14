@@ -145,7 +145,7 @@ defmodule Sanbase.Accounts.User do
   end
 
   def changeset(%User{} = user, attrs \\ %{}) do
-    attrs = Sanbase.DateTimeUtils.truncate_datetimes(attrs)
+    attrs = Sanbase.Utils.DateTime.truncate_datetimes(attrs)
 
     user
     |> cast(attrs, [

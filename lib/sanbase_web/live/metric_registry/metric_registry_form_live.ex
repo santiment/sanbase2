@@ -432,7 +432,7 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
     ~H"""
     <div class="bg-gray-50 rounded-lg px-4 py-4 mb-4 border border-gray-200">
       <span class="text-sm font-semibold leading-6 text-gray-800 block mb-3">
-        {Inflex.camelize(@plural)}
+        {Sanbase.Utils.Inflect.camelize(@plural)}
       </span>
       <.inputs_for :let={ef} field={@form[@form_field]}>
         <input type="hidden" name={"registry[#{@sort_param}][]"} value={ef.index} />

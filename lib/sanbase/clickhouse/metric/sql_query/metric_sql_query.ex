@@ -6,7 +6,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   is defined by a `metric_id` and every project is defined by an `asset_id`.
   """
 
-  import Sanbase.DateTimeUtils, only: [maybe_str_to_sec: 1]
+  import Sanbase.Utils.DateTime, only: [maybe_str_to_sec: 1]
 
   @default_version "1.0"
 
@@ -658,7 +658,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   defp maybe_convert_to_date(:after, metric, dt_column, sql_dt_description) do
     table = Map.get(Registry.table_map(), metric)
     min_interval = Map.get(Registry.min_interval_map(), metric)
-    min_interval_seconds = Sanbase.DateTimeUtils.str_to_sec(min_interval)
+    min_interval_seconds = Sanbase.Utils.DateTime.str_to_sec(min_interval)
 
     cond do
       String.starts_with?(table, "daily") ->
@@ -676,7 +676,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   defp maybe_convert_to_date(:before, metric, dt_column, sql_dt_description) do
     table = Map.get(Registry.table_map(), metric)
     min_interval = Map.get(Registry.min_interval_map(), metric)
-    min_interval_seconds = Sanbase.DateTimeUtils.str_to_sec(min_interval)
+    min_interval_seconds = Sanbase.Utils.DateTime.str_to_sec(min_interval)
 
     cond do
       String.starts_with?(table, "daily") ->

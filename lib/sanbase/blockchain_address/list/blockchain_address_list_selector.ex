@@ -21,7 +21,7 @@ defmodule Sanbase.BlockchainAddress.ListSelector do
   end
 
   def args_to_opts(args) do
-    args = Sanbase.MapUtils.atomize_keys(args)
+    args = Sanbase.Utils.Map.atomize_keys(args)
 
     filters = Transform.args_to_filters(args)
     filters_combinator = Transform.args_to_filters_combinator(args)

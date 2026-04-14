@@ -82,7 +82,7 @@ defmodule Sanbase.MCP.InsightDiscoveryTool do
       title: post.title,
       tags: Enum.map(post.tags, & &1.name),
       link: SanbaseWeb.Endpoint.insight_url(post.id),
-      published_at: Sanbase.DateTimeUtils.to_iso8601(post.published_at),
+      published_at: Sanbase.Utils.DateTime.to_iso8601(post.published_at),
       author: post.user.username || "Anonymous",
       prediction: post.prediction
     }

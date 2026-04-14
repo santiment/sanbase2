@@ -3,7 +3,7 @@ defmodule Sanbase.Project.ListSelector.Validator do
   alias Sanbase.Project.ListSelector.Transform
 
   def valid_selector?(args) do
-    args = Sanbase.MapUtils.atomize_keys(args)
+    args = Sanbase.Utils.Map.atomize_keys(args)
     filters = Transform.args_to_filters(args)
 
     order_by = Transform.args_to_order_by(args) || %{}

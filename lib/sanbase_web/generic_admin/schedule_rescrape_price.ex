@@ -1,6 +1,9 @@
 defmodule SanbaseWeb.GenericAdmin.ScheduleRescrapePrice do
+  @behaviour SanbaseWeb.GenericAdmin
   import Ecto.Query
   def schema_module, do: Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePrice
+  def resource_name, do: "schedule_rescrape_prices"
+  def singular_resource_name, do: "schedule_rescrape_price"
 
   def resource() do
     %{

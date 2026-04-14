@@ -5,7 +5,7 @@ defmodule Sanbase.Billing.Subscription.Query do
 
   # only with status `active` and `past_due`
   def all_active_subscriptions(query) do
-    from(q in query, where: q.status in ["active", "past_due"])
+    from(q in query, where: q.status in [:active, :past_due])
   end
 
   def all_active_subscriptions_for_plan(query, plan_id) do
@@ -27,12 +27,12 @@ defmodule Sanbase.Billing.Subscription.Query do
 
   # with status `active`, `past_due`, `trialing`
   def all_active_and_trialing_subscriptions(query) do
-    from(q in query, where: q.status in ["active", "past_due", "trialing"])
+    from(q in query, where: q.status in [:active, :past_due, :trialing])
   end
 
   def all_active_and_trialing_incomplete_subscriptions(query) do
     from(q in query,
-      where: q.status in ["active", "past_due", "trialing", "incomplete", "incomplete_expired"]
+      where: q.status in [:active, :past_due, :trialing, :incomplete, :incomplete_expired]
     )
   end
 

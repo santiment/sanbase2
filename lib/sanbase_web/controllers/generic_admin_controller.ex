@@ -432,6 +432,7 @@ defmodule SanbaseWeb.GenericAdminController do
     %{
       resource: resource,
       resource_name: resource_name,
+      singular: resource_config[:singular] || resource,
       fields: fields,
       funcs: funcs,
       actions: resource_config[:actions],
@@ -605,12 +606,17 @@ defmodule SanbaseWeb.GenericAdminController.LinkBuilder do
     field_name = String.to_atom("#{assoc_name}_id")
     field_value = Map.get(record, field_name)
 
-    if is_nil(field_value) do
-      {to_string(assoc_name), nil}
-    else
-      resource = module_to_resource_name(related_module)
-      link = href(resource, field_value, "#{field_name}: #{field_value}")
-      {field_name, link}
+    cond do
+      is_nil(field_value) ->
+        {to_string(assoc_name), nil}
+
+      resource = module_to_resource_name(related_module) ->
+        link = href(resource, field_value, "#{field_name}: #{field_value}")
+        {field_name, link}
+
+      true ->
+        # No admin module registered for this schema — show plain text
+        {field_name, "#{field_name}: #{field_value}"}
     end
   end
 
@@ -627,11 +633,9 @@ defmodule SanbaseWeb.GenericAdminController.LinkBuilder do
   end
 
   defp module_to_resource_name(module) do
-    module
-    |> Atom.to_string()
-    |> String.split(".")
-    |> List.last()
-    |> Macro.underscore()
-    |> Inflex.pluralize()
+    SanbaseWeb.GenericAdmin.resource_module_map()
+    |> Enum.find_value(fn {resource_name, config} ->
+      if config[:module] == module, do: resource_name
+    end)
   end
 end

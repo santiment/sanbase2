@@ -100,7 +100,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
         last_triggered =
           map
           |> Map.values()
-          |> Enum.map(&Sanbase.DateTimeUtils.from_iso8601!/1)
+          |> Enum.map(&Sanbase.Utils.DateTime.from_iso8601!/1)
           |> Enum.max(DateTime)
 
         {:ok, last_triggered}

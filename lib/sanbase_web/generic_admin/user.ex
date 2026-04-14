@@ -1,10 +1,13 @@
 defmodule SanbaseWeb.GenericAdmin.User do
+  @behaviour SanbaseWeb.GenericAdmin
   alias Sanbase.Accounts.User
   alias SanbaseWeb.GenericAdminController
 
   @schema_module User
 
   def schema_module, do: @schema_module
+  def resource_name, do: "users"
+  def singular_resource_name, do: "user"
 
   def resource do
     %{
@@ -230,8 +233,11 @@ defmodule SanbaseWeb.GenericAdmin.User do
 end
 
 defmodule SanbaseWeb.GenericAdmin.UserSettings do
+  @behaviour SanbaseWeb.GenericAdmin
   @schema_module Sanbase.Accounts.UserSettings
   def schema_module(), do: @schema_module
+  def resource_name, do: "user_settings"
+  def singular_resource_name, do: "user_settings"
 
   def resource do
     %{
@@ -250,8 +256,11 @@ defmodule SanbaseWeb.GenericAdmin.UserSettings do
 end
 
 defmodule SanbaseWeb.GenericAdmin.UserList do
+  @behaviour SanbaseWeb.GenericAdmin
   import Ecto.Query
   def schema_module(), do: Sanbase.UserList
+  def resource_name, do: "user_lists"
+  def singular_resource_name, do: "user_list"
 
   def resource do
     %{

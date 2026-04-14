@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.AuthApiTest do
 
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
+  import Sanbase.Utils.DateTime, only: [from_iso8601!: 1]
 
   setup do
     user = insert(:user)

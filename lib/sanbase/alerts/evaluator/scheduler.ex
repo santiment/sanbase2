@@ -372,7 +372,7 @@ defmodule Sanbase.Alert.Scheduler do
     # all alerts will be different, sometimes only by a second
     now =
       Timex.now()
-      |> Sanbase.DateTimeUtils.round_datetime(second: 30)
+      |> Sanbase.Utils.DateTime.round_datetime(second: 30)
       |> Timex.set(microsecond: {0, 0})
 
     # Update all triggered_at regardless if the send to the channel succeed
@@ -504,7 +504,7 @@ defmodule Sanbase.Alert.Scheduler do
         dt
 
       datetime_str when is_binary(datetime_str) ->
-        Sanbase.DateTimeUtils.from_iso8601!(datetime_str)
+        Sanbase.Utils.DateTime.from_iso8601!(datetime_str)
     end)
     |> Enum.max_by(&DateTime.to_unix/1)
   end

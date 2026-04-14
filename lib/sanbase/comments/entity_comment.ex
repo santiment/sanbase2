@@ -42,6 +42,14 @@ defmodule Sanbase.Comments.EntityComment do
     :timeline_events
   ]
 
+  @entity_singular_map %{
+    blockchain_addresses: :blockchain_address,
+    chart_configurations: :chart_configuration,
+    dashboards: :dashboard,
+    insights: :insight,
+    timeline_events: :timeline_event
+  }
+
   @spec create_and_link(
           entity_type,
           entity_id,
@@ -270,7 +278,7 @@ defmodule Sanbase.Comments.EntityComment do
       |> Enum.reduce(comment, fn entity_type, acc ->
         value = Map.get(acc, entity_type) |> List.first()
 
-        singular_entity = Inflex.singularize(entity_type) |> String.to_existing_atom()
+        singular_entity = @entity_singular_map[entity_type]
 
         acc
         |> Map.delete(entity_type)

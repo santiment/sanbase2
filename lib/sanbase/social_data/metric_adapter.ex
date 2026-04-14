@@ -194,7 +194,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
             aggregation = Keyword.get(opts, :aggregation) || metadata.default_aggregation
 
             value =
-              Sanbase.MathAggregation.compute(result, aggregation, & &1.value)
+              Sanbase.Utils.MathAggregation.compute(result, aggregation, & &1.value)
               |> Sanbase.Math.round_float()
 
             {:ok, %{value: value}}

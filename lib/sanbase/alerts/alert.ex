@@ -57,7 +57,7 @@ defimpl Sanbase.Alert, for: Any do
     %{id: user_trigger_id} = trigger
 
     fun = fn identifier, payload ->
-      case Sanbase.Validation.valid_url?(webhook_url) do
+      case Sanbase.Utils.Validation.valid_url?(webhook_url) do
         :ok ->
           payload = transform_payload(payload, trigger.id, :webhook)
           do_send_webhook(webhook_url, identifier, payload, user_trigger_id)

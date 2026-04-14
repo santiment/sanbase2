@@ -39,7 +39,7 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
 
       result = get_watchlist_votes(conn, watchlist.id)
       assert result["votedAt"] == vote["votedAt"]
-      voted_at = vote["votedAt"] |> Sanbase.DateTimeUtils.from_iso8601!()
+      voted_at = vote["votedAt"] |> Sanbase.Utils.DateTime.from_iso8601!()
       assert Sanbase.TestUtils.datetime_close_to(voted_at, Timex.now(), seconds: 2)
       assert vote["votes"] == result["votes"]
       assert vote["votes"] == %{"currentUserVotes" => 1, "totalVoters" => 1, "totalVotes" => 1}

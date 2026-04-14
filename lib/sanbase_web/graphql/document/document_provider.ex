@@ -133,7 +133,7 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Execution.CacheDocument do
     operations
     |> Enum.flat_map(fn %{selections: selections} ->
       selections
-      |> Enum.map(fn %{name: name} -> Inflex.camelize(name, :lower) end)
+      |> Enum.map(fn %{name: name} -> Sanbase.Utils.Inflect.camelize(name, :lower) end)
     end)
   end
 
@@ -225,7 +225,7 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Complexity.Preprocess do
     selections
     |> Enum.flat_map(fn
       %{name: name, argument_data: %{metric: metric}} = struct ->
-        case Inflex.underscore(name) do
+        case Sanbase.Utils.Inflect.underscore(name) do
           "get_metric" ->
             get_metric_selections_to_metrics(struct.selections, metric)
 
@@ -241,7 +241,7 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Complexity.Preprocess do
   defp get_metric_selections_to_metrics(selections, metric) do
     selections =
       Enum.map(selections, fn
-        %{name: name} -> name |> Inflex.underscore()
+        %{name: name} -> name |> Sanbase.Utils.Inflect.underscore()
         _ -> nil
       end)
       |> Enum.reject(&is_nil/1)

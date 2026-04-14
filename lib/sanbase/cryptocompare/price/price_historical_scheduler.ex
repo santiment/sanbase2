@@ -10,7 +10,7 @@ defmodule Sanbase.Cryptocompare.Price.HistoricalScheduler do
 
   use GenServer
 
-  import Sanbase.DateTimeUtils, only: [generate_dates_inclusive: 2]
+  import Sanbase.Utils.DateTime, only: [generate_dates_inclusive: 2]
 
   require Logger
   alias Sanbase.Utils.Config

@@ -56,7 +56,7 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
 
         v =
           if k in [:start_date, :end_date, :trial_start, :trial_end] and not is_nil(v) do
-            Sanbase.DateTimeUtils.from_iso8601!(v)
+            Sanbase.Utils.DateTime.from_iso8601!(v)
           else
             v
           end
@@ -72,7 +72,7 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
   end
 
   def fill_history(subscriptions, start_date, end_date) do
-    Sanbase.DateTimeUtils.generate_dates_inclusive(start_date, end_date)
+    Sanbase.Utils.DateTime.generate_dates_inclusive(start_date, end_date)
     |> Enum.each(fn date ->
       dt = DateTime.new!(date, ~T[00:00:00])
       stats = stats(subscriptions, dt)
@@ -255,6 +255,8 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
       DateTime.compare(date, end_date) in [:lt, :eq]
   end
 
+  # These functions filter in-memory maps from the Stripe API where status is a string.
+  # The Ecto queries (get_active_*_count) use atom comparisons via Ecto.Enum.
   def active_subscriptions(subscriptions) do
     Enum.filter(subscriptions, fn subscription ->
       subscription.status in ["active", "past_due"]
@@ -269,7 +271,7 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
 
   def other_status_subscriptions(subscriptions) do
     Enum.filter(subscriptions, fn subscription ->
-      subscription.status not in ["active", "trialing"]
+      subscription.status not in ["active", "past_due", "trialing"]
     end)
   end
 

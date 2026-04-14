@@ -16,7 +16,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricTransform do
     transform =
       args
       |> Map.get(:transform, %{type: "none"})
-      |> Map.update!(:type, &Inflex.underscore/1)
+      |> Map.update!(:type, &Sanbase.Utils.Inflect.underscore/1)
 
     case transform.type in @transform_types do
       true ->
@@ -40,7 +40,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricTransform do
         _to,
         interval
       ) do
-    shift_by_sec = base * Sanbase.DateTimeUtils.str_to_sec(interval)
+    shift_by_sec = base * Sanbase.Utils.DateTime.str_to_sec(interval)
     from = Timex.shift(from, seconds: -shift_by_sec)
     {:ok, from}
   end
@@ -52,7 +52,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricTransform do
              "percent_change",
              "cumulative_percent_change"
            ] do
-    shift_by_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
+    shift_by_sec = Sanbase.Utils.DateTime.str_to_sec(interval)
     from = Timex.shift(from, seconds: -shift_by_sec)
     {:ok, from}
   end

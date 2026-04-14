@@ -536,7 +536,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
         get_trigger_by_id(context.conn, trigger_id)
         |> get_in(["data", "getTriggerById", "trigger", "lastTriggeredDatetime"])
 
-      datetime = Sanbase.DateTimeUtils.from_iso8601!(last_triggered_datetime)
+      datetime = Sanbase.Utils.DateTime.from_iso8601!(last_triggered_datetime)
 
       # Check the difference to be at most 11 seconds as the last_triggered_datetime
       # is used as part of a cache key and because of that it is rounded per 10 seconds.

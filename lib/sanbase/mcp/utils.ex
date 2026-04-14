@@ -18,8 +18,8 @@ defmodule Sanbase.MCP.Utils do
           {:ok, {DateTime.t(), DateTime.t()}} | {:error, String.t()}
   def parse_time_period(time_period, now \\ DateTime.utc_now()) do
     # The now parameter allows for deterministic testing by providing a fixed reference time instead of using the current system time.
-    if Sanbase.DateTimeUtils.valid_interval?(time_period) do
-      seconds = Sanbase.DateTimeUtils.str_to_sec(time_period)
+    if Sanbase.Utils.DateTime.valid_interval?(time_period) do
+      seconds = Sanbase.Utils.DateTime.str_to_sec(time_period)
       to_datetime = now
       from_datetime = DateTime.add(to_datetime, -seconds, :second)
       {:ok, {from_datetime, to_datetime}}

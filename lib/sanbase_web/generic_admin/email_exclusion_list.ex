@@ -1,9 +1,12 @@
 defmodule SanbaseWeb.GenericAdmin.EmailExclusionList do
+  @behaviour SanbaseWeb.GenericAdmin
   alias Sanbase.Email.EmailExclusionList
 
   @schema_module EmailExclusionList
 
   def schema_module, do: @schema_module
+  def resource_name, do: "email_exclusion_lists"
+  def singular_resource_name, do: "email_exclusion_list"
 
   def resource do
     %{

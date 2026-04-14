@@ -44,9 +44,25 @@ defmodule Sanbase.Billing.Subscription do
     field(:stripe_id, :string)
     field(:current_period_end, :utc_datetime)
     field(:cancel_at_period_end, :boolean, default: false)
-    field(:status, SubscriptionStatusEnum)
+
+    field(:status, Ecto.Enum,
+      values: [
+        :initial,
+        :incomplete,
+        :incomplete_expired,
+        :trialing,
+        :active,
+        :past_due,
+        :canceled,
+        :unpaid
+      ]
+    )
+
     field(:trial_end, :utc_datetime)
-    field(:type, SubscriptionType)
+
+    field(:type, Ecto.Enum,
+      values: [:fiat, :liquidity, :burning_regular, :burning_nft, :sanr_points_nft]
+    )
 
     field(:payment_intent, :map, virtual: true)
 
@@ -638,7 +654,7 @@ defmodule Sanbase.Billing.Subscription do
       off_session: true
     }
 
-    trial_end_unix = Sanbase.DateTimeUtils.days_after(@trial_days) |> DateTime.to_unix()
+    trial_end_unix = Sanbase.Utils.DateTime.days_after(@trial_days) |> DateTime.to_unix()
 
     cond do
       product_id == @product_sanbase and Billing.eligible_for_sanbase_trial?(user.id, plan) ->

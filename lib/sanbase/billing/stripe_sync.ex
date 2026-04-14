@@ -18,7 +18,7 @@ defmodule Sanbase.Billing.StripeSync do
     plan_map = plan_map()
     product_map = product_map()
 
-    Sanbase.DateTimeUtils.generate_datetimes_list(
+    Sanbase.Utils.DateTime.generate_datetimes_list(
       start_dt,
       "1d",
       Timex.diff(Timex.now(), start_dt, :days)

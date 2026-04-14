@@ -11,10 +11,10 @@ defmodule Sanbase.Alert.Trigger.EthWalletTriggerSettings do
   use Vex.Struct
   use Sanbase.Alert.Trigger.Settings.TriggerSettingsBase, trigger_type: "eth_wallet"
 
-  import Sanbase.Validation
+  import Sanbase.Utils.Validation
   import Sanbase.Alert.Validation
   import Sanbase.Alert.OperationEvaluation
-  import Sanbase.DateTimeUtils, only: [str_to_sec: 1, round_datetime: 2]
+  import Sanbase.Utils.DateTime, only: [str_to_sec: 1, round_datetime: 2]
 
   alias __MODULE__
   alias Sanbase.Alert.Type

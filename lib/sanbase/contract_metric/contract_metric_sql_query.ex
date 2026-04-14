@@ -42,7 +42,7 @@ defmodule Sanbase.Contract.MetricAdapter.SqlQuery do
     """
 
     params = %{
-      interval: Sanbase.DateTimeUtils.str_to_sec(interval),
+      interval: Sanbase.Utils.DateTime.str_to_sec(interval),
       from: DateTime.to_unix(from),
       to: DateTime.to_unix(to),
       contract_address: Sanbase.BlockchainAddress.to_internal_format(contract_address)
@@ -72,7 +72,7 @@ defmodule Sanbase.Contract.MetricAdapter.SqlQuery do
     """
 
     params = %{
-      interval: Sanbase.DateTimeUtils.str_to_sec(interval),
+      interval: Sanbase.Utils.DateTime.str_to_sec(interval),
       from: DateTime.to_unix(from),
       to: DateTime.to_unix(to),
       contract_address: Sanbase.BlockchainAddress.to_internal_format(contract_address)

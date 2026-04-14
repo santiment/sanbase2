@@ -2,7 +2,7 @@ defmodule Sanbase.Embed do
   def create_charts_link(metric, slug) do
     now =
       Timex.shift(Timex.now(), minutes: 10)
-      |> Sanbase.DateTimeUtils.round_datetime(second: 600)
+      |> Sanbase.Utils.DateTime.round_datetime(second: 600)
       |> Timex.set(microsecond: {0, 0})
 
     six_months_ago =

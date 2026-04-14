@@ -53,7 +53,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.TransformResolution do
   defp get_selectors(%Resolution{} = resolution) do
     resolution.definition.selections
     |> Enum.map(fn %{name: name} = field ->
-      case Inflex.camelize(name, :lower) do
+      case Sanbase.Utils.Inflect.camelize(name, :lower) do
         name when name in @fields_with_selector ->
           argument_data_to_selector(field.argument_data)
 

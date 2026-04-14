@@ -8,8 +8,9 @@ defmodule Sanbase.Alert.Trigger.SignalTriggerSettings do
   use Vex.Struct
   use Sanbase.Alert.Trigger.Settings.TriggerSettingsBase, trigger_type: "signal_data"
 
-  import Sanbase.{Validation, Alert.Validation}
-  import Sanbase.DateTimeUtils, only: [round_datetime: 1, str_to_sec: 1]
+  import Sanbase.Utils.Validation
+  import Sanbase.Alert.Validation
+  import Sanbase.Utils.DateTime, only: [round_datetime: 1, str_to_sec: 1]
 
   alias __MODULE__
   alias Sanbase.Project

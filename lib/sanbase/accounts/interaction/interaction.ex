@@ -96,7 +96,7 @@ defmodule Sanbase.Accounts.Interaction do
   def store_user_interaction(user_id, args) do
     inserted_at =
       @datetime_module.utc_now()
-      |> Sanbase.DateTimeUtils.round_datetime(
+      |> Sanbase.Utils.DateTime.round_datetime(
         second: @interaction_cooldown_seconds,
         rounding: :down
       )

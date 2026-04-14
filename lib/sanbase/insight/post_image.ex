@@ -10,13 +10,29 @@ defmodule Sanbase.Insight.PostImage do
 
     field(:file_name, :string)
     field(:image_url, :string)
+    field(:image_url_w400, :string)
+    field(:image_url_w800, :string)
+    field(:image_url_w1200, :string)
+    field(:image_url_w2000, :string)
     field(:content_hash, :string)
     field(:hash_algorithm, :string)
   end
 
+  @cast_fields [
+    :post_id,
+    :file_name,
+    :image_url,
+    :image_url_w400,
+    :image_url_w800,
+    :image_url_w1200,
+    :image_url_w2000,
+    :content_hash,
+    :hash_algorithm
+  ]
+
   def changeset(%PostImage{} = post_image, attrs \\ %{}) do
     post_image
-    |> cast(attrs, [:post_id, :file_name, :image_url, :content_hash, :hash_algorithm])
+    |> cast(attrs, @cast_fields)
     |> validate_required([:image_url, :content_hash, :hash_algorithm])
     |> update_change(:image_url, &String.downcase/1)
     |> unique_constraint(:image_url, name: :image_url_index)

@@ -13,7 +13,7 @@ defmodule Sanbase.Insight.Post do
   alias Sanbase.Repo
   alias Sanbase.Accounts.User
   alias Sanbase.Project
-  alias Sanbase.Insight.{Post, PostImage, Category}
+  alias Sanbase.Insight.{Post, PostImage, ImageUrl, Category}
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.Metric.MetricPostgresData
   alias Sanbase.Chart.Configuration
@@ -85,7 +85,7 @@ defmodule Sanbase.Insight.Post do
     has_many(:embeddings, PostEmbedding)
 
     has_many(:chart_configurations, Configuration)
-    has_many(:images, PostImage, on_delete: :delete_all)
+    has_many(:images, PostImage, on_delete: :nilify_all, on_replace: :nilify)
     has_many(:timeline_events, TimelineEvent, on_delete: :delete_all)
     has_many(:votes, Sanbase.Vote, on_delete: :delete_all)
 
@@ -443,7 +443,8 @@ defmodule Sanbase.Insight.Post do
     attrs = Sanbase.Utils.DateTime.truncate_datetimes(attrs)
 
     preloads =
-      if(attrs[:tags], do: [:tags], else: []) ++
+      [:images] ++
+        if(attrs[:tags], do: [:tags], else: []) ++
         if attrs[:metrics], do: [:metrics], else: []
 
     post
@@ -559,9 +560,6 @@ defmodule Sanbase.Insight.Post do
   def delete(post_id, %User{id: user_id}) do
     case by_id(post_id, preload?: false) do
       {:ok, %__MODULE__{user_id: ^user_id} = post} ->
-        # Delete the images from the S3/Local store.
-        delete_post_images(post)
-
         # Note: When ecto changeset middleware is implemented return just `Repo.delete(post)`
         case Repo.delete(post) do
           {:ok, post} ->
@@ -974,10 +972,29 @@ defmodule Sanbase.Insight.Post do
     end
   end
 
-  defp images_cast(changeset, %{image_urls: image_urls}) do
-    images = PostImage |> where([i], i.image_url in ^image_urls) |> Repo.all()
+  defp images_cast(changeset, _attrs) do
+    case get_field(changeset, :text) do
+      text when is_binary(text) and text != "" ->
+        image_urls = ImageUrl.extract_from_text(text)
+        do_images_cast(changeset, image_urls)
 
-    if Enum.any?(images, fn %{post_id: post_id} -> not is_nil(post_id) end) do
+      _ ->
+        changeset
+    end
+  end
+
+  defp do_images_cast(changeset, []), do: changeset
+
+  defp do_images_cast(changeset, image_urls) do
+    images = PostImage |> where([i], i.image_url in ^image_urls) |> Repo.all()
+    current_post_id = changeset.data.id
+
+    reused? =
+      Enum.any?(images, fn %{post_id: post_id} ->
+        not is_nil(post_id) and post_id != current_post_id
+      end)
+
+    if reused? do
       changeset
       |> Ecto.Changeset.add_error(
         :images,
@@ -987,20 +1004,6 @@ defmodule Sanbase.Insight.Post do
       changeset
       |> put_assoc(:images, images)
     end
-  end
-
-  defp images_cast(changeset, _), do: changeset
-
-  defp extract_image_url_from_post(%Post{} = post) do
-    post
-    |> Repo.preload(:images)
-    |> Map.get(:images, [])
-    |> Enum.map(fn %{image_url: image_url} -> image_url end)
-  end
-
-  def delete_post_images(%Post{} = post) do
-    extract_image_url_from_post(post)
-    |> Enum.map(&Sanbase.FileStore.delete/1)
   end
 
   defp maybe_drop_post_tags(post, %{tags: tags}) when is_list(tags),

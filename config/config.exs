@@ -189,15 +189,6 @@ config :earmark,
   timeout: nil,
   mapper: &Enum.map/2
 
-config :hammer,
-  backend: {
-    Hammer.Backend.ETS,
-    [
-      expiry_ms: 60_000 * 60 * 4,
-      cleanup_interval_ms: 60_000 * 10
-    ]
-  }
-
 config :tesla,
   adapter: {Tesla.Adapter.Hackney, recv_timeout: 30_000}
 

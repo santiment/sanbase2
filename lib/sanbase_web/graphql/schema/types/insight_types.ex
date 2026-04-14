@@ -52,7 +52,9 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
     field(:moderation_comment, :string)
     field(:ready_state, :string)
 
-    field(:images, list_of(:post_image_data))
+    field :images, list_of(:post_image_data) do
+      resolve(&InsightResolver.resolve_images/3)
+    end
 
     field(:tags, list_of(:tag))
     field(:metrics, list_of(:metric_short_description), resolve: dataloader(SanbaseRepo))

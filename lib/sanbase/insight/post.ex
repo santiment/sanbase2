@@ -85,7 +85,7 @@ defmodule Sanbase.Insight.Post do
     has_many(:embeddings, PostEmbedding)
 
     has_many(:chart_configurations, Configuration)
-    has_many(:images, PostImage, on_delete: :delete_all)
+    has_many(:images, PostImage, on_delete: :nilify_all, on_replace: :nilify)
     has_many(:timeline_events, TimelineEvent, on_delete: :delete_all)
     has_many(:votes, Sanbase.Vote, on_delete: :delete_all)
 
@@ -443,7 +443,8 @@ defmodule Sanbase.Insight.Post do
     attrs = Sanbase.DateTimeUtils.truncate_datetimes(attrs)
 
     preloads =
-      if(attrs[:tags], do: [:tags], else: []) ++
+      [:images] ++
+        if(attrs[:tags], do: [:tags], else: []) ++
         if attrs[:metrics], do: [:metrics], else: []
 
     post
@@ -559,9 +560,6 @@ defmodule Sanbase.Insight.Post do
   def delete(post_id, %User{id: user_id}) do
     case by_id(post_id, preload?: false) do
       {:ok, %__MODULE__{user_id: ^user_id} = post} ->
-        # Delete the images from the S3/Local store.
-        delete_post_images(post)
-
         # Note: When ecto changeset middleware is implemented return just `Repo.delete(post)`
         case Repo.delete(post) do
           {:ok, post} ->
@@ -1006,18 +1004,6 @@ defmodule Sanbase.Insight.Post do
       changeset
       |> put_assoc(:images, images)
     end
-  end
-
-  defp extract_image_url_from_post(%Post{} = post) do
-    post
-    |> Repo.preload(:images)
-    |> Map.get(:images, [])
-    |> Enum.map(fn %{image_url: image_url} -> image_url end)
-  end
-
-  def delete_post_images(%Post{} = post) do
-    extract_image_url_from_post(post)
-    |> Enum.map(&Sanbase.FileStore.delete/1)
   end
 
   defp maybe_drop_post_tags(post, %{tags: tags}) when is_list(tags),

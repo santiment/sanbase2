@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 6jn6AsGLU2VLAQ41cvLkuhfez7VtTLEngQD7nL3w6zKcd9yOwK4ncuGm9V6OQsu
+\restrict SKM90dGDC3tINIEevUDbzxKEfJoi9nG37VK9FovtlEdvWdboHOKoaL8RlOaIRXF
 
 -- Dumped from database version 15.15 (Homebrew)
 -- Dumped by pg_dump version 15.15 (Homebrew)
@@ -10546,7 +10546,7 @@ ALTER TABLE ONLY public.post_comments_mapping
 --
 
 ALTER TABLE ONLY public.post_images
-    ADD CONSTRAINT post_images_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.posts(id) ON DELETE CASCADE;
+    ADD CONSTRAINT post_images_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.posts(id) ON DELETE SET NULL;
 
 
 --
@@ -11337,7 +11337,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 6jn6AsGLU2VLAQ41cvLkuhfez7VtTLEngQD7nL3w6zKcd9yOwK4ncuGm9V6OQsu
+\unrestrict SKM90dGDC3tINIEevUDbzxKEfJoi9nG37VK9FovtlEdvWdboHOKoaL8RlOaIRXF
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -11900,3 +11900,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260331120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260407090744);
 INSERT INTO public."schema_migrations" (version) VALUES (20260407120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260409120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260409120001);

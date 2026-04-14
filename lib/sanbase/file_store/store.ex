@@ -36,18 +36,11 @@ defmodule Sanbase.FileStore do
       width = version |> Atom.to_string() |> String.trim_leading("w")
       {:convert, "-strip -resize #{width}x> -quality 85"}
     else
-      :noaction
+      :skip
     end
   end
 
   def transform(_version, _file_and_scope), do: :noaction
-
-  def filter(version, {file, _scope}) when version in @variant_versions do
-    ext = file.file_name |> Path.extname() |> String.downcase()
-    if ext in @image_extensions, do: :ok, else: {:error, :skip}
-  end
-
-  def filter(_, _), do: :ok
 
   @doc ~s"""
     Generate a filename. The generated file name is in the format `scope_timestamp_name`

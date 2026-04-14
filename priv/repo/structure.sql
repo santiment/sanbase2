@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict WLWFJIMyr6OGcjQSPVRM7eSTiskufSffxDak0MXfVniqkIalIzbaf4NlIF1MNCt
+\restrict SKM90dGDC3tINIEevUDbzxKEfJoi9nG37VK9FovtlEdvWdboHOKoaL8RlOaIRXF
 
 -- Dumped from database version 15.15 (Homebrew)
 -- Dumped by pg_dump version 15.15 (Homebrew)
@@ -872,8 +872,8 @@ CREATE TABLE public.chat_messages (
     sources jsonb[] DEFAULT ARRAY[]::jsonb[],
     suggestions text[] DEFAULT ARRAY[]::text[],
     feedback_type character varying(255),
-    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY ((ARRAY['thumbs_up'::character varying, 'thumbs_down'::character varying])::text[])) OR (feedback_type IS NULL))),
-    CONSTRAINT valid_role CHECK (((role)::text = ANY ((ARRAY['user'::character varying, 'assistant'::character varying])::text[])))
+    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY (ARRAY[('thumbs_up'::character varying)::text, ('thumbs_down'::character varying)::text])) OR (feedback_type IS NULL))),
+    CONSTRAINT valid_role CHECK (((role)::text = ANY (ARRAY[('user'::character varying)::text, ('assistant'::character varying)::text])))
 );
 
 
@@ -3152,7 +3152,11 @@ CREATE TABLE public.post_images (
     image_url text NOT NULL,
     content_hash text NOT NULL,
     hash_algorithm text NOT NULL,
-    post_id bigint
+    post_id bigint,
+    image_url_w400 text,
+    image_url_w800 text,
+    image_url_w1200 text,
+    image_url_w2000 text
 );
 
 
@@ -10542,7 +10546,7 @@ ALTER TABLE ONLY public.post_comments_mapping
 --
 
 ALTER TABLE ONLY public.post_images
-    ADD CONSTRAINT post_images_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.posts(id) ON DELETE CASCADE;
+    ADD CONSTRAINT post_images_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.posts(id) ON DELETE SET NULL;
 
 
 --
@@ -11333,7 +11337,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict WLWFJIMyr6OGcjQSPVRM7eSTiskufSffxDak0MXfVniqkIalIzbaf4NlIF1MNCt
+\unrestrict SKM90dGDC3tINIEevUDbzxKEfJoi9nG37VK9FovtlEdvWdboHOKoaL8RlOaIRXF
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -11895,3 +11899,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260327120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260331120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260407090744);
 INSERT INTO public."schema_migrations" (version) VALUES (20260407120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260409120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260409120001);

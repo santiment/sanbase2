@@ -4,6 +4,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   alias SanbaseWeb.Graphql.SanbaseDataloader
   alias Sanbase.Accounts.User
   alias Sanbase.Insight.Post
+  alias Sanbase.Insight.PostImage
+  alias Sanbase.Insight.ImageUrl
   alias Sanbase.Insight.PopularAuthor
   alias Sanbase.Comments.EntityComment
 
@@ -222,31 +224,40 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     end)
   end
 
-  case Application.compile_env(:sanbase, :env) do
-    :test ->
-      # In test env our file store stores images not in S3, but in /tmp
-      defp image_url_regex() do
-        storage_dir = Application.get_env(:waffle, :storage_dir)
+  @doc """
+  Resolve images for an insight by combining DB-linked images with
+  regex-extracted images from text. This ensures backward compatibility
+  for old insights where images were never properly linked in the DB.
+  """
+  def resolve_images(%Post{text: text, images: images}, _args, _resolution) do
+    db_images =
+      case images do
+        images when is_list(images) ->
+          Enum.map(images, &post_image_to_map/1)
 
-        # Properly append / at the end otherwise compiled regex wont' be  proper
-        storage_dir =
-          if String.last(storage_dir) != "/", do: storage_dir <> "/", else: storage_dir
-
-        Regex.compile!(~s{#{storage_dir}[^\s"<>]+(?:\.jpg|\.png|\.gif|\.jpeg)})
+        _ ->
+          []
       end
 
-    _ ->
-      defp image_url_regex(),
-        do:
-          ~r{https://[a-zA-Z0-9\-\.]*sanbase-images.s3\.amazonaws\.com/[^\s"<>]+(?:\.jpg|\.png|\.gif|\.jpeg)}
+    regex_images =
+      ImageUrl.extract_from_text(text)
+      |> Enum.map(fn url -> %{image_url: url} end)
+
+    all_images =
+      (db_images ++ regex_images)
+      |> Enum.uniq_by(fn %{image_url: url} -> String.downcase(url) end)
+
+    {:ok, all_images}
   end
 
-  def extract_images_from_text(%Post{text: text}, _args, _resolution) do
-    image_urls =
-      Regex.scan(image_url_regex(), text)
-      |> Enum.map(fn [url] -> url end)
-
-    {:ok, Enum.map(image_urls, fn image_url -> %{image_url: image_url} end)}
+  defp post_image_to_map(%PostImage{} = image) do
+    %{
+      image_url: image.image_url,
+      image_url_w400: image.image_url_w400,
+      image_url_w800: image.image_url_w800,
+      image_url_w1200: image.image_url_w1200,
+      image_url_w2000: image.image_url_w2000
+    }
   end
 
   def insights_count(%User{id: id}, _args, %{context: %{loader: loader}}) do

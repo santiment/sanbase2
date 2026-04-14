@@ -104,6 +104,9 @@ defmodule Sanbase.Insight.PostTest do
     assert [image] = updated_post.images
     assert image.id == new_image.id
     assert Repo.get!(PostImage, new_image.id).post_id == post.id
-    refute Repo.get(PostImage, old_image.id)
+    # Old image is unlinked (post_id set to NULL), not deleted
+    old_image_record = Repo.get(PostImage, old_image.id)
+    assert old_image_record
+    assert is_nil(old_image_record.post_id)
   end
 end

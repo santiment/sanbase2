@@ -98,7 +98,7 @@ defmodule Sanbase.MCP.DataCatalog do
     if metric in get_metric_names() do
       Sanbase.Metric.available_slugs(metric)
     else
-      {:error, "Metric '#{metric}' not supported or mistyped."}
+      {:error, metric_not_found_error(metric)}
     end
   end
 
@@ -113,6 +113,56 @@ defmodule Sanbase.MCP.DataCatalog do
   @doc "Validate if a metric exists"
   def valid_metric?(metric), do: metric in get_metric_names()
 
+  @doc """
+  Suggest the closest metric name using Jaro distance.
+
+  Returns `{:ok, name}` when a metric with Jaro distance >= 0.85 is found,
+  or `:none` otherwise.
+
+  ## Examples
+
+      iex> Sanbase.MCP.DataCatalog.suggest_metric("price_uds")
+      {:ok, "price_usd"}
+
+      iex> Sanbase.MCP.DataCatalog.suggest_metric("zzz_nonexistent")
+      :none
+  """
+  @spec suggest_metric(String.t()) :: {:ok, String.t()} | :none
+  def suggest_metric(metric) do
+    {best_name, best_distance} =
+      get_metric_names()
+      |> Enum.map(fn name -> {name, String.jaro_distance(metric, name)} end)
+      |> Enum.max_by(fn {_name, distance} -> distance end)
+
+    if best_distance >= 0.85, do: {:ok, best_name}, else: :none
+  end
+
+  @doc """
+  Build an error message for an unsupported metric, with a fuzzy suggestion if available.
+
+  ## Examples
+
+      iex> Sanbase.MCP.DataCatalog.metric_not_found_error("price_uds")
+      "Metric 'price_uds' is not supported. Did you mean 'price_usd'? Use the metrics_and_assets_discovery_tool to see all available metrics."
+
+      iex> Sanbase.MCP.DataCatalog.metric_not_found_error("zzz_nonexistent")
+      "Metric 'zzz_nonexistent' is not supported. Use the metrics_and_assets_discovery_tool to see all available metrics."
+  """
+  @spec metric_not_found_error(String.t()) :: String.t()
+  def metric_not_found_error(metric) do
+    base = "Metric '#{metric}' is not supported."
+
+    suggestion =
+      case suggest_metric(metric) do
+        {:ok, name} -> " Did you mean '#{name}'?"
+        :none -> ""
+      end
+
+    base <>
+      suggestion <>
+      " Use the metrics_and_assets_discovery_tool to see all available metrics."
+  end
+
   @doc "Validate if a slug exists"
   def valid_slug?(slug), do: slug in available_slugs()
 
@@ -123,7 +173,7 @@ defmodule Sanbase.MCP.DataCatalog do
         {:error, "Slug '#{slug}' mistyped or not supported."}
 
       not valid_metric?(metric) ->
-        {:error, "Metric '#{metric}' mistyped or not supported."}
+        {:error, metric_not_found_error(metric)}
 
       true ->
         metric_info = Enum.find(available_metrics(), &(&1.name == metric))

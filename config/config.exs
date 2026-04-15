@@ -50,6 +50,13 @@ config :sanbase,
   ecto_repos: [Sanbase.Repo],
   available_slugs_module: Sanbase.AvailableSlugs
 
+# Test-isolation switch for `SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver`.
+# When true (dev/prod default), the resolver routes through `Sanbase.Cache.RehydratingCache`.
+# When false (see config/test.exs), it falls back to `Sanbase.Cache.get_or_store/2`.
+# This flag does NOT start/stop the RehydratingCache.Supervisor — that is gated separately
+# in `lib/sanbase/application/web.ex`.
+config :sanbase, :use_rehydrating_cache, true
+
 config :sanbase, Sanbase.PromEx,
   disabled: false,
   manual_metrics_start_delay: :no_delay,

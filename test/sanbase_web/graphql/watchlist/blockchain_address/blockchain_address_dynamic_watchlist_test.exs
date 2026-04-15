@@ -146,7 +146,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
                    "address" => "0xa5409ec958c83c3f309868babaca7c86dcb077c1",
                    "infrastructure" => "ETH",
                    "labels" => [
-                     %{"name" => "CEX Trader", "origin" => "santiment"}
+                     %{"name" => "decentralized_exchange", "origin" => "santiment"}
                    ]
                  }
                } in user_list["listItems"]
@@ -232,7 +232,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
                  "blockchainAddress" => %{
                    "address" => "0xa5409ec958c83c3f309868babaca7c86dcb077c1",
                    "infrastructure" => "ETH",
-                   "labels" => [%{"name" => "CEX Trader", "origin" => "santiment"}]
+                   "labels" => [%{"name" => "decentralized_exchange", "origin" => "santiment"}]
                  }
                } in user_list["listItems"]
 
@@ -240,7 +240,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
                  "blockchainAddress" => %{
                    "address" => "0xeb2629a2734e272bcc07bda959863f316f4bd4cf",
                    "infrastructure" => "ETH",
-                   "labels" => [%{"name" => "CEX Trader", "origin" => "santiment"}]
+                   "labels" => [%{"name" => "centralized_exchange", "origin" => "santiment"}]
                  }
                } in user_list["listItems"]
       end)
@@ -371,7 +371,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
                  "blockchainAddress" => %{
                    "address" => "0xa5409ec958c83c3f309868babaca7c86dcb077c1",
                    "infrastructure" => "ETH",
-                   "labels" => [%{"name" => "CEX Trader", "origin" => "santiment"}]
+                   "labels" => [%{"name" => "decentralized_exchange", "origin" => "santiment"}]
                  }
                } in user_list["listItems"]
 
@@ -379,7 +379,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
                  "blockchainAddress" => %{
                    "address" => "0xeb2629a2734e272bcc07bda959863f316f4bd4cf",
                    "infrastructure" => "ETH",
-                   "labels" => [%{"name" => "CEX Trader", "origin" => "santiment"}]
+                   "labels" => [%{"name" => "centralized_exchange", "origin" => "santiment"}]
                  }
                } in user_list["listItems"]
       end)
@@ -436,7 +436,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
                  "blockchainAddress" => %{
                    "address" => "0xeb2629a2734e272bcc07bda959863f316f4bd4cf",
                    "infrastructure" => "ETH",
-                   "labels" => [%{"name" => "CEX Trader", "origin" => "santiment"}]
+                   "labels" => [%{"name" => "centralized_exchange", "origin" => "santiment"}]
                  }
                } in user_list["listItems"]
       end)
@@ -499,7 +499,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
                  "blockchainAddress" => %{
                    "address" => "0xa5409ec958c83c3f309868babaca7c86dcb077c1",
                    "infrastructure" => "ETH",
-                   "labels" => [%{"name" => "CEX Trader", "origin" => "santiment"}]
+                   "labels" => [%{"name" => "decentralized_exchange", "origin" => "santiment"}]
                  }
                } in user_list["listItems"]
 
@@ -507,7 +507,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
                  "blockchainAddress" => %{
                    "address" => "0xeb2629a2734e272bcc07bda959863f316f4bd4cf",
                    "infrastructure" => "ETH",
-                   "labels" => [%{"name" => "CEX Trader", "origin" => "santiment"}]
+                   "labels" => [%{"name" => "centralized_exchange", "origin" => "santiment"}]
                  }
                } in user_list["listItems"]
       end)

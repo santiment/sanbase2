@@ -198,9 +198,9 @@ defmodule SanbaseWeb.Graphql.Cache do
     case source do
       # Make sure to use both metric and version when using version
       %{metric: _, version: _} = source -> source
-      %{id: id} -> id
-      %{slug: slug} -> slug
-      %{word: word} -> word
+      %{id: id} when not is_nil(id) -> id
+      %{slug: slug} when not is_nil(slug) -> slug
+      %{word: word} when not is_nil(word) -> word
       _ -> source
     end
   end

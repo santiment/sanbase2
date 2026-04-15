@@ -191,14 +191,41 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
 
   # Get the available metrics from the rehydrating cache. If the function for computing it
   # is not register - register it and get the result after that.
-  # It can make 5 attempts with 5 seconds timeout, after which it returns an error
+  # It can make 5 attempts with 5 seconds timeout, after which it returns an error.
+  #
+  # In the test environment `:use_rehydrating_cache` defaults to `false` so the resolver
+  # takes the synchronous `Sanbase.Cache.get_or_store/2` fallback below. Rationale: the
+  # `RehydratingCache` GenServer periodically re-runs every registered closure, and a
+  # closure registered inside a `with_mocks` block can outlive that block and re-fire
+  # later against real code (e.g. Clickhouse adapters), producing intermittent
+  # "could not lookup Ecto repo Sanbase.ClickhouseRepo" warnings in unrelated tests.
+  # The supervisor is also not started in the test app boot path — see
+  # `Sanbase.Application.Web`. Tests that need to exercise the RC wiring end-to-end flip
+  # the flag back to `true` in their `setup` block and start a per-test
+  # `RehydratingCache.Supervisor` via `start_supervised!`.
   defp maybe_register_and_get(cache_key, fun, slug, query, attempts \\ 5)
 
-  defp maybe_register_and_get(_cache_key, _fun, slug, query, 0) do
+  defp maybe_register_and_get(cache_key, fun, slug, query, attempts) do
+    if rehydrating_cache_enabled?() do
+      register_and_get_via_rehydrating_cache(cache_key, fun, slug, query, attempts)
+    else
+      # Synchronous fallback used in test only. `Sanbase.Cache.get_or_store/2` unwraps
+      # `{:nocache, {:ok, value}}` to `{:ok, value}`, so full `:nocache` semantics are
+      # NOT preserved on this path. Tests that depend on `:nocache` propagation must opt
+      # back into the RC path.
+      Sanbase.Cache.get_or_store({cache_key, @ttl}, fun)
+    end
+  end
+
+  defp rehydrating_cache_enabled?() do
+    Application.get_env(:sanbase, :use_rehydrating_cache, true)
+  end
+
+  defp register_and_get_via_rehydrating_cache(_cache_key, _fun, slug, query, 0) do
     {:error, handle_graphql_error(query, slug, "timeout")}
   end
 
-  defp maybe_register_and_get(cache_key, fun, slug, query, attempts) do
+  defp register_and_get_via_rehydrating_cache(cache_key, fun, slug, query, attempts) do
     case RehydratingCache.get(cache_key, 5_000, return_nocache: true) do
       {:nocache, {:ok, value}} ->
         {:nocache, {:ok, value}}
@@ -219,12 +246,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
           description
         )
 
-        maybe_register_and_get(cache_key, fun, slug, query, attempts - 1)
+        register_and_get_via_rehydrating_cache(cache_key, fun, slug, query, attempts - 1)
 
       {:error, :timeout} ->
         # Recursively call itself. This is guaranteed to not continue forever
         # as the graphql request will timeout at some point and stop the recursion
-        maybe_register_and_get(cache_key, fun, slug, query, attempts - 1)
+        register_and_get_via_rehydrating_cache(cache_key, fun, slug, query, attempts - 1)
     end
   end
 

@@ -83,6 +83,12 @@ config :sanbase, Sanbase.ExternalServices.RateLimiting.Server,
 
 config :sanbase, Sanbase.Metric.Registry.ChangeSuggestion, debug_applying_changes: true
 
+# Default-off in test. Tests that need the real RehydratingCache path (e.g.
+# `project_available_metrics_test.exs`) flip this back to true in their `setup`
+# block and start a per-test `Sanbase.Cache.RehydratingCache.Supervisor` via
+# `start_supervised!`.
+config :sanbase, :use_rehydrating_cache, false
+
 # Configure postgres database
 config :sanbase, Sanbase.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,

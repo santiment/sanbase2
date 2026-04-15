@@ -80,13 +80,13 @@ defmodule Sanbase.Billing.Plan.CustomPlanTest do
       assert %{"errors" => [error]} = get_metric(conn, "mvrv_usd")
 
       assert error["message"] =~
-               "metric mvrv_usd is not accessible with the currently used SANAPI CUSTOM_API_PLAN subscription"
+               "metric mvrv_usd is not included in the currently used SANAPI CUSTOM_API_PLAN plan"
 
       assert %{"errors" => [error]} = get_metric(conn, "daily_active_addresses")
 
       # mvrv_usd metrics are not accessible because of the explicit list
       assert error["message"] =~
-               "metric daily_active_addresses is not accessible with the currently used SANAPI CUSTOM_API_PLAN subscription"
+               "metric daily_active_addresses is not included in the currently used SANAPI CUSTOM_API_PLAN plan"
 
       # nvt is accessible
       assert get_metric(conn, "nvt", slug: project.slug, from: "utc_now-300d", to: "utc_now") ==
@@ -108,7 +108,7 @@ defmodule Sanbase.Billing.Plan.CustomPlanTest do
     assert %{"errors" => [error]} = get_history_price(conn)
 
     assert error["message"] =~
-             "query history_price is not accessible with the currently used SANAPI CUSTOM_API_PLAN subscription."
+             "query history_price is not included in the currently used SANAPI CUSTOM_API_PLAN plan"
 
     assert %{"data" => %{"currentUser" => %{"id" => ^user_id}}} = get_current_user(conn)
 
@@ -116,6 +116,45 @@ defmodule Sanbase.Billing.Plan.CustomPlanTest do
              get_metric(conn, "nvt", from: "utc_now-370d", to: "utc_now-369d")
 
     assert error["message"] =~ "outside the allowed interval you can query"
+  end
+
+  test "alpha metric cannot be accessed by user without alpha access", context do
+    %{plan: plan} = context
+
+    # Create a user without alpha access and subscribe them to the custom plan
+    non_alpha_user = insert(:user, metric_access_level: "released")
+    _sub = insert(:subscription, user: non_alpha_user, plan_id: plan.id)
+    {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(non_alpha_user)
+    conn = setup_apikey_auth(build_conn(), apikey)
+
+    # Create a temporary metric with alpha status
+    {:ok, registry} =
+      Sanbase.Metric.Registry.create(%{
+        metric: "random_metric_alpha_access",
+        internal_metric: "random_metric_alpha_access",
+        human_readable_name: "Random Metric Alpha Access",
+        min_interval: "5m",
+        default_aggregation: "avg",
+        access: "free",
+        has_incomplete_data: false,
+        data_type: "timeseries",
+        status: "alpha",
+        sanbase_min_plan: "free",
+        sanapi_min_plan: "free",
+        tables: [%{name: "daily_metrics_v2"}]
+      })
+
+    Sanbase.Metric.Registry.refresh_stored_terms()
+
+    try do
+      assert %{"errors" => [error]} = get_metric(conn, "random_metric_alpha_access")
+
+      assert error["message"] ==
+               "The metric random_metric_alpha_access is currently in alpha phase and is exclusively available to alpha users."
+    after
+      {:ok, _} = Sanbase.Metric.Registry.delete(registry)
+      Sanbase.Metric.Registry.refresh_stored_terms()
+    end
   end
 
   describe "validation" do
@@ -400,7 +439,7 @@ defmodule Sanbase.Billing.Plan.CustomPlanTest do
         assert %{"errors" => [error]} = get_metric(conn, "price_usd")
 
         assert error["message"] =~
-                 "metric price_usd is not accessible"
+                 "metric price_usd is not included"
 
         # social_volume_total IS a social metric, should be allowed
         result =

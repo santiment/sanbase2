@@ -7,9 +7,11 @@ defmodule Sanbase.ClusterCase do
   plays the role of the `web` pod (channels live here); a peer node plays the
   role of the `signals`/`alerts` pod that originates the broadcast.
 
-  Tag tests with `@moduletag :distributed` — `test_helper.exs` excludes that
-  tag by default, so regular `mix test` stays fast. Run the cross-node tests
-  with `mix test --include distributed`.
+  Tag tests with `@moduletag :distributed` so they can be filtered on demand
+  (e.g. `mix test --exclude distributed` for a fast local run). By default
+  these tests run as part of the normal suite — both locally and in CI —
+  because `ensure_distributed!/0` below self-bootstraps EPMD and the test
+  node.
   """
 
   @cookie :sanbase_test_cookie
@@ -209,7 +211,32 @@ defmodule Sanbase.ClusterCase do
 
   defp ensure_distributed! do
     unless Node.alive?() do
-      {:ok, _} = :net_kernel.start([primary_name(), :longnames])
+      # EPMD is not started automatically when `mix test` runs without a
+      # `--name`/`--sname` kernel flag (the common case in CI containers
+      # that just execute `mix test`). `:net_kernel.start/1` will fail with
+      # `:nodistribution` if EPMD isn't reachable, so spawn it explicitly
+      # before trying to bring the distribution stack up.
+      _ = :os.cmd(~c"epmd -daemon")
+
+      case :net_kernel.start([primary_name(), :longnames]) do
+        {:ok, _} ->
+          :ok
+
+        {:error, {:already_started, _}} ->
+          :ok
+
+        {:error, reason} ->
+          raise """
+          Failed to start the distributed Erlang runtime for cluster tests.
+
+          `:net_kernel.start/1` returned: #{inspect(reason)}
+
+          This usually means EPMD could not be launched in the current
+          environment (e.g. a minimal CI container). Make sure the `epmd`
+          binary is available on PATH, or run the test with a pre-started
+          node via `elixir --name test@127.0.0.1 -S mix test ...`.
+          """
+      end
     end
 
     Node.set_cookie(@cookie)

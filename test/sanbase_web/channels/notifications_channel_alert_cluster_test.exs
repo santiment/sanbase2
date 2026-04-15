@@ -14,10 +14,9 @@ defmodule SanbaseWeb.NotificationsChannelAlertClusterTest do
   We still keep the DB work on the primary, so the test stays reasonably cheap
   while covering a real remote application boot.
 
-  Skipped by default. Run with:
-
-      mix test --include distributed \\
-        test/sanbase_web/channels/notifications_channel_alert_cluster_test.exs
+  Tagged `:distributed` so it can be opted out of a fast local run via
+  `mix test --exclude distributed`. It otherwise runs as part of the normal
+  suite in CI.
   """
 
   use SanbaseWeb.ChannelCase

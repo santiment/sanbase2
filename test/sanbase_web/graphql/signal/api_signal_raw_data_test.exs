@@ -98,7 +98,13 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalRawDataTest do
     Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
-        get_raw_signals(conn, ["anomaly_total_liquidations", "anomaly_project_in_trending_words"], :all, from, to)
+        get_raw_signals(
+          conn,
+          ["anomaly_total_liquidations", "anomaly_project_in_trending_words"],
+          :all,
+          from,
+          to
+        )
         |> get_in(["data", "getRawSignals"])
 
       assert result == [

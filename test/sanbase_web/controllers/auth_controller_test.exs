@@ -210,5 +210,58 @@ defmodule SanbaseWeb.AuthControllerTest do
       assert AuthController.validate_redirect_url("sanbase://user:pass@home") ==
                {:error, "Invalid redirect URL"}
     end
+
+    test "rejects non-binary input" do
+      assert AuthController.validate_redirect_url(nil) == {:error, "Invalid redirect URL"}
+      assert AuthController.validate_redirect_url(123) == {:error, "Invalid redirect URL"}
+      assert AuthController.validate_redirect_url(%{}) == {:error, "Invalid redirect URL"}
+    end
+
+    @tag capture_log: true
+    test "rejects oversized URLs" do
+      oversized = "https://app.santiment.net/" <> String.duplicate("a", 3000)
+
+      assert AuthController.validate_redirect_url(oversized) ==
+               {:error, "Invalid redirect URL"}
+    end
+
+    @tag capture_log: true
+    test "rejects URLs with control characters (CRLF / NUL / tab)" do
+      for payload <- [
+            "https://app.santiment.net/\r\nInjected-Header: x",
+            "https://app.santiment.net/\npath",
+            "sanbase://home\0",
+            "sanbase://home\t"
+          ] do
+        assert AuthController.validate_redirect_url(payload) ==
+                 {:error, "Invalid redirect URL"}
+      end
+    end
+
+    @tag capture_log: true
+    test "rejects empty-host sanbase URLs" do
+      assert AuthController.validate_redirect_url("sanbase://") ==
+               {:error, "Invalid redirect URL"}
+
+      assert AuthController.validate_redirect_url("sanbase:") ==
+               {:error, "Invalid redirect URL"}
+    end
+
+    @tag capture_log: true
+    test "rejects sanbase:// URLs with explicit port" do
+      assert AuthController.validate_redirect_url("sanbase://home:8080") ==
+               {:error, "Invalid redirect URL"}
+    end
+
+    @tag capture_log: true
+    test "rejects https URLs with non-default port" do
+      assert AuthController.validate_redirect_url("https://app.santiment.net:8080/path") ==
+               {:error, "Invalid redirect URL"}
+    end
+
+    test "accepts https URLs with explicit 443 port" do
+      assert AuthController.validate_redirect_url("https://app.santiment.net:443/dashboard") ==
+               true
+    end
   end
 end

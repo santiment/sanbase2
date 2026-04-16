@@ -41,14 +41,16 @@ defmodule SanbaseWeb.Endpoint do
   # Prometheus /metrics endpoint
   plug(PromEx.Plug, prom_ex_module: SanbaseWeb.Prometheus)
 
+  if Code.ensure_loaded?(Tidewave) do
+    plug Tidewave
+  end
+
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.
   if code_reloading? do
+    socket("/phoenix/live_reload/socket", Phoenix.LiveReloader.Socket)
     plug(Phoenix.CodeReloader)
-  end
-
-  if Code.ensure_loaded?(Tidewave) do
-    plug Tidewave
+    plug(Phoenix.LiveReloader)
   end
 
   plug(Plug.RequestId)

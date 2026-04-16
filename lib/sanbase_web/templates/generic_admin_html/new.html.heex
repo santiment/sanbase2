@@ -7,7 +7,7 @@
     method={if type == "new", do: "post", else: "patch"}
     for={@changeset}
     as={@resource}
-    action={Routes.generic_admin_path(@conn, :create, resource: @resource)}
+    action={~p"/admin/generic?resource=#{@resource}"}
   >
     <%= if @changeset.action do %>
       <SanbaseWeb.AdminComponents.form_error changeset={@changeset} />

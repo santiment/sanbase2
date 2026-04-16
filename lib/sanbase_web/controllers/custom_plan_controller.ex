@@ -2,7 +2,6 @@ defmodule SanbaseWeb.CustomPlanController do
   use SanbaseWeb, :controller
 
   alias Sanbase.Billing.Plan
-  alias SanbaseWeb.Router.Helpers, as: Routes
 
   def index(conn, _params) do
     {:ok, custom_plans} = Plan.list_custom_plans()
@@ -26,7 +25,7 @@ defmodule SanbaseWeb.CustomPlanController do
 
         conn
         |> put_flash(:info, "Custom Plan created successfully.")
-        |> redirect(to: Routes.custom_plan_path(conn, :show, custom_plan))
+        |> redirect(to: ~p"/admin/custom_plans/#{custom_plan}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "new.html", changeset: changeset)
@@ -56,7 +55,7 @@ defmodule SanbaseWeb.CustomPlanController do
       {:ok, custom_plan} ->
         conn
         |> put_flash(:info, "Custom Plan updated successfully.")
-        |> redirect(to: Routes.custom_plan_path(conn, :show, custom_plan))
+        |> redirect(to: ~p"/admin/custom_plans/#{custom_plan}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "edit.html", custom_plan: custom_plan, changeset: changeset)

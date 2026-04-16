@@ -1,0 +1,13 @@
+<h1 class="text-4xl font-black mb-4">New Report</h1>
+
+<SanbaseWeb.ReportHTML.form changeset={@changeset} action={~p"/admin/reports"} />
+
+<span>
+  <.link
+    href={~p"/admin/reports"}
+    class="flex-shrink-0 border-4 text-teal-500 hover:text-teal-800 py-1 px-2 rounded"
+    type="button"
+  >
+    Back
+  </.link>
+</span>

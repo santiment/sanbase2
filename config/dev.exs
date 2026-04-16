@@ -28,6 +28,13 @@ config :sanbase, SanbaseWeb.Endpoint,
     esbuild: {Esbuild, :install_and_run, [:default, ~w(--sourcemap=inline --watch)]},
     esbuild: {Esbuild, :install_and_run, [:graphiql, ~w(--sourcemap=inline --watch)]},
     tailwind: {Tailwind, :install_and_run, [:default, ~w(--watch)]}
+  ],
+  live_reload: [
+    patterns: [
+      ~r"priv/static/(?!uploads/).*(js|css|png|jpeg|jpg|gif|svg)$",
+      ~r"lib/sanbase_web/(controllers|live|components|views)/.*(ex|heex)$",
+      ~r"lib/sanbase_web/templates/.*(eex|heex)$"
+    ]
   ]
 
 config :logger,

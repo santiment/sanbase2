@@ -3,7 +3,6 @@ defmodule SanbaseWeb.GenericAdminController do
 
   import Ecto.Query
 
-  alias SanbaseWeb.Router.Helpers, as: Routes
   alias Sanbase.Repo
   alias SanbaseWeb.GenericAdmin
 
@@ -240,12 +239,12 @@ defmodule SanbaseWeb.GenericAdminController do
         {:ok, _} ->
           conn
           |> put_flash(:info, "#{resource} item deleted successfully.")
-          |> redirect(to: Routes.generic_admin_path(conn, :index, resource: resource))
+          |> redirect(to: ~p"/admin/generic?resource=#{resource}")
 
         {:error, changeset} ->
           conn
           |> put_flash(:error, "Error deleting #{resource}: #{inspect(changeset.errors)}")
-          |> redirect(to: Routes.generic_admin_path(conn, :show, id, resource: resource))
+          |> redirect(to: ~p"/admin/generic/#{id}?resource=#{resource}")
       end
     end
   end
@@ -273,16 +272,12 @@ defmodule SanbaseWeb.GenericAdminController do
               :error,
               "#{resource} created successfully. There was some error after creation: #{error}"
             )
-            |> redirect(
-              to: Routes.generic_admin_path(conn, :show, response_resource, resource: resource)
-            )
+            |> redirect(to: ~p"/admin/generic/#{response_resource}?resource=#{resource}")
 
           _ ->
             conn
             |> put_flash(:info, "#{resource} created successfully.")
-            |> redirect(
-              to: Routes.generic_admin_path(conn, :show, response_resource, resource: resource)
-            )
+            |> redirect(to: ~p"/admin/generic/#{response_resource}?resource=#{resource}")
         end
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -311,16 +306,12 @@ defmodule SanbaseWeb.GenericAdminController do
           {:error, error} ->
             conn
             |> put_flash(:error, "Some of the fields were not updated: #{error}")
-            |> redirect(
-              to: Routes.generic_admin_path(conn, :show, response_resource, resource: resource)
-            )
+            |> redirect(to: ~p"/admin/generic/#{response_resource}?resource=#{resource}")
 
           _ ->
             conn
             |> put_flash(:info, "#{resource} updated successfully.")
-            |> redirect(
-              to: Routes.generic_admin_path(conn, :show, response_resource, resource: resource)
-            )
+            |> redirect(to: ~p"/admin/generic/#{response_resource}?resource=#{resource}")
         end
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -585,6 +576,8 @@ defmodule SanbaseWeb.GenericAdminController do
 end
 
 defmodule SanbaseWeb.GenericAdminController.LinkBuilder do
+  use SanbaseWeb, :verified_routes
+
   def build_link(module, record) do
     module.__schema__(:associations)
     |> Enum.reduce(%{}, fn assoc_name, acc ->
@@ -621,10 +614,7 @@ defmodule SanbaseWeb.GenericAdminController.LinkBuilder do
   end
 
   defp href(resource, id, label) do
-    relative_url =
-      SanbaseWeb.Router.Helpers.generic_admin_path(SanbaseWeb.Endpoint, :show, id,
-        resource: resource
-      )
+    relative_url = ~p"/admin/generic/#{id}?resource=#{resource}"
 
     PhoenixHTMLHelpers.Link.link(label,
       to: relative_url,

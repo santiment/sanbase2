@@ -1,0 +1,83 @@
+<div class="max-w-6xl mx-auto py-8">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-3xl font-bold text-gray-800">Custom Plans</h1>
+    <.link
+      href={~p"/admin/custom_plans/new"}
+      class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium"
+    >
+      New Custom Plan
+    </.link>
+  </div>
+
+  <%= if @custom_plans == [] do %>
+    <div class="bg-white shadow-lg rounded-lg px-6 py-12 text-center text-gray-400">
+      No custom plans yet. Create one to get started.
+    </div>
+  <% else %>
+    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+      <table class="w-full">
+        <thead>
+          <tr class="border-b border-gray-200 bg-gray-50">
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              ID
+            </th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Name
+            </th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Restrictions As
+            </th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              API Limits
+            </th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Historical Days
+            </th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Realtime Days
+            </th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Actions
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <%= for custom_plan <- @custom_plans do %>
+            <tr class="hover:bg-gray-50 border-b border-gray-100">
+              <td class="px-4 py-3 text-sm text-gray-900">{custom_plan.id}</td>
+              <td class="px-4 py-3 text-sm font-medium text-gray-900 font-mono">
+                {custom_plan.name}
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-600">
+                {custom_plan.restrictions.restricted_access_as_plan}
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-600 font-mono text-xs">
+                {Jason.encode!(custom_plan.restrictions.api_call_limits)}
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-600">
+                {custom_plan.restrictions.historical_data_in_days || "-"}
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-600">
+                {custom_plan.restrictions.realtime_data_cut_off_in_days || "-"}
+              </td>
+              <td class="px-4 py-3 text-sm">
+                <.link
+                  href={~p"/admin/custom_plans/#{custom_plan}"}
+                  class="text-indigo-600 hover:text-indigo-800 font-medium mr-3"
+                >
+                  Show
+                </.link>
+                <.link
+                  href={~p"/admin/custom_plans/#{custom_plan}/edit"}
+                  class="text-indigo-600 hover:text-indigo-800 font-medium"
+                >
+                  Edit
+                </.link>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+</div>

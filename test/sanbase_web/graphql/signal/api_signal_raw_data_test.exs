@@ -26,7 +26,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalRawDataTest do
     rows = [
       [
         ~U[2019-01-01 00:00:00Z] |> DateTime.to_unix(),
-        "anomaly_total_liquidations",
+        "total_liquidations",
         "multi-collateral-dai",
         21_029,
         ~s|{"txHash": "0xecdeb8435aff6e18e08177bb94d52b2da6dd15b95aee7f442021911a7c9861e6", "address": "0x183c9077fb7b74f02d3badda6c85a19c92b1f648"}|
@@ -81,14 +81,14 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalRawDataTest do
     rows = [
       [
         ~U[2019-01-01 00:00:00Z] |> DateTime.to_unix(),
-        "anomaly_total_liquidations",
+        "total_liquidations",
         "multi-collateral-dai",
         21_029,
         ~s|{"txHash": "0xecdeb8435aff6e18e08177bb94d52b2da6dd15b95aee7f442021911a7c9861e6", "address": "0x183c9077fb7b74f02d3badda6c85a19c92b1f648"}|
       ],
       [
         ~U[2019-01-02 00:00:00Z] |> DateTime.to_unix(),
-        "anomaly_total_liquidations",
+        "total_liquidations",
         "multi-collateral-dai",
         12_308_120,
         ~s|{"txHash": "0x0bb27622fa4fcdf39344251e9b0776467eaa5d9dbf0f025d254f55093848f2bd", "address": "0x61c808d82a3ac53231750dadc13c777b59310bd9"}|
@@ -146,14 +146,14 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalRawDataTest do
     rows = [
       [
         ~U[2019-01-01 00:00:00Z] |> DateTime.to_unix(),
-        "anomaly_total_liquidations",
+        "total_liquidations",
         "multi-collateral-dai",
         21_029,
         ~s|{"txHash": "0xecdeb8435aff6e18e08177bb94d52b2da6dd15b95aee7f442021911a7c9861e6", "address": "0x183c9077fb7b74f02d3badda6c85a19c92b1f648"}|
       ],
       [
         ~U[2019-01-02 00:00:00Z] |> DateTime.to_unix(),
-        "anomaly_total_liquidations",
+        "total_liquidations",
         "not-dai",
         12_308_120,
         ~s|{"txHash": "0x0bb27622fa4fcdf39344251e9b0776467eaa5d9dbf0f025d254f55093848f2bd", "address": "0x61c808d82a3ac53231750dadc13c777b59310bd9"}|
@@ -190,14 +190,14 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalRawDataTest do
     rows = [
       [
         ~U[2019-01-01 00:00:00Z] |> DateTime.to_unix(),
-        "anomaly_project_in_trending_words",
+        "project_in_trends",
         "multi-collateral-dai",
         21_029,
         ~s|{"txHash": "0xecdeb8435aff6e18e08177bb94d52b2da6dd15b95aee7f442021911a7c9861e6", "address": "0x183c9077fb7b74f02d3badda6c85a19c92b1f648"}|
       ],
       [
         ~U[2019-01-02 00:00:00Z] |> DateTime.to_unix(),
-        "anomaly_total_liquidations",
+        "total_liquidations",
         "multi-collateral-dai",
         12_308_120,
         ~s|{"txHash": "0x0bb27622fa4fcdf39344251e9b0776467eaa5d9dbf0f025d254f55093848f2bd", "address": "0x61c808d82a3ac53231750dadc13c777b59310bd9"}|
@@ -246,14 +246,14 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalRawDataTest do
     rows = [
       [
         ~U[2019-01-01 00:00:00Z] |> DateTime.to_unix(),
-        "anomaly_project_in_trending_words",
+        "project_in_trends",
         "multi-collateral-dai",
         21_029,
         ~s|{"txHash": "0xecdeb8435aff6e18e08177bb94d52b2da6dd15b95aee7f442021911a7c9861e6", "address": "0x183c9077fb7b74f02d3badda6c85a19c92b1f648"}|
       ],
       [
         ~U[2019-01-02 00:00:00Z] |> DateTime.to_unix(),
-        "anomaly_total_liquidations",
+        "total_liquidations",
         "multi-collateral-dai",
         12_308_120,
         ~s|{"txHash": "0x0bb27622fa4fcdf39344251e9b0776467eaa5d9dbf0f025d254f55093848f2bd", "address": "0x61c808d82a3ac53231750dadc13c777b59310bd9"}|

@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Plug.VerifyStripeWebhook do
   Verify the events that Stripe sends to our webhook endpoint.
 
   This plug should be placed before Plug.Parsers because it needs to read the raw body.
-  IT only verifies signature if the `request_path=stripe_webhook_path` otherwise it skips.
+  It only verifies signature if the path matches the stripe webhook path, otherwise it skips.
   Upon succesfull verification of the signature the event map is preserved in conn.assigns[:stripe_event]
   which can be later used by the appropriate controller method.
 
@@ -16,15 +16,13 @@ defmodule SanbaseWeb.Plug.VerifyStripeWebhook do
   require Logger
   alias Sanbase.Utils.Config
 
-  @stripe_webhook_path "/stripe_webhook"
-
   def init(opts), do: opts
 
   def call(conn, _opts), do: verify_stripe_request(conn)
 
   defp verify_stripe_request(conn) do
-    case conn.request_path do
-      @stripe_webhook_path ->
+    case conn.path_info do
+      ["stripe_webhook"] ->
         {:ok, body, conn} = Plug.Conn.read_body(conn)
         do_verify(conn, body)
 

@@ -1,6 +1,6 @@
 <div class="max-w-4xl mx-auto">
-  <%= form_for @changeset, @action, [multipart: true], fn f -> %>
-    <%= if @changeset.action do %>
+  <.form :let={f} for={@form} action={@action} multipart id="new-custom-plan-form">
+    <%= if @form.source.action do %>
       <div class="text-white px-6 py-4 border-0 rounded-lg relative mb-6 bg-red-500">
         <p class="font-medium">Oops, something went wrong! Please check the errors below.</p>
       </div>
@@ -235,7 +235,7 @@
         </div>
       </details>
 
-      <%= inputs_for f, :restrictions, fn ff -> %>
+      <.inputs_for :let={ff} field={f[:restrictions]}>
         <div class="mb-5">
           <label for="metric_access" class="block text-sm font-medium text-gray-700 mb-1">
             Metric Access
@@ -362,7 +362,7 @@
           )}
           {error_tag(ff, :restricted_access_as_plan)}
         </div>
-      <% end %>
+      </.inputs_for>
     </div>
 
     <div class="flex justify-end">
@@ -371,5 +371,5 @@
           "px-6 py-2.5 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition"
       )}
     </div>
-  <% end %>
+  </.form>
 </div>

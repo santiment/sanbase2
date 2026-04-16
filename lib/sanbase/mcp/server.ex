@@ -96,7 +96,23 @@ defmodule Sanbase.MCP.Server do
       auth_method: auth_method
     }
 
-    Sanbase.MCP.ToolInvocation.create(attrs)
+    persist_tool_invocation(attrs)
+  end
+
+  # In test, Ecto SQL Sandbox ties DB connections to the test process.
+  # Async tasks that outlive the test process lose their connection,
+  # causing Postgrex disconnect errors. Run synchronously in test.
+  @env Application.compile_env(:sanbase, :env)
+  if @env == :test do
+    defp persist_tool_invocation(attrs) do
+      Sanbase.MCP.ToolInvocation.create(attrs)
+    end
+  else
+    defp persist_tool_invocation(attrs) do
+      Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
+        Sanbase.MCP.ToolInvocation.create(attrs)
+      end)
+    end
   end
 
   defp response_size_bytes(content) do

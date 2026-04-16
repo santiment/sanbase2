@@ -22,13 +22,13 @@ defmodule Sanbase.Insight.ImageUrl do
   end
 
   @doc """
-  Extract Sanbase-hosted image URLs from text. Returns downcased URLs.
+  Extract Sanbase-hosted image URLs from text.
   """
   def extract_from_text(nil), do: []
   def extract_from_text(""), do: []
 
   def extract_from_text(text) do
-    Regex.scan(regex(), text)
-    |> Enum.map(fn [url] -> String.downcase(url) end)
+    Regex.scan(regex(), text, capture: :first)
+    |> List.flatten()
   end
 end

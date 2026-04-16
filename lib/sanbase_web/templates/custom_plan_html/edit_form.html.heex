@@ -89,56 +89,77 @@
               <tr class="border-b border-gray-100">
                 <td class="py-1.5 pr-3 text-gray-600">All metrics</td>
                 <td class="py-1.5">
-                  <code class="bg-gray-50 px-1.5 py-0.5 rounded block whitespace-pre-wrap break-all font-mono">
-                    &#123;"&#123;"&#125;"accessible": "all", "not_accessible": [], "not_accessible_patterns": []&#125;
+                  <code
+                    phx-no-curly-interpolation
+                    class="bg-gray-50 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
+                  >
+                    {"accessible": "all", "not_accessible": [], "not_accessible_patterns": []}
                   </code>
                 </td>
               </tr>
               <tr class="border-b border-gray-100">
                 <td class="py-1.5 pr-3 text-gray-600">All except MVRV</td>
                 <td class="py-1.5">
-                  <code class="bg-gray-50 px-1.5 py-0.5 rounded block whitespace-pre-wrap break-all font-mono">
-                    &#123;"&#123;"&#125;"accessible": "all", "not_accessible": [], "not_accessible_patterns": ["mvrv_.*"]&#125;
+                  <code
+                    phx-no-curly-interpolation
+                    class="bg-gray-50 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
+                  >
+                    {"accessible": "all", "not_accessible": [], "not_accessible_patterns": ["mvrv_.*"]}
                   </code>
                 </td>
               </tr>
               <tr class="border-b border-gray-100">
                 <td class="py-1.5 pr-3 text-gray-600">Only social (via pattern)</td>
                 <td class="py-1.5">
-                  <code class="bg-gray-50 px-1.5 py-0.5 rounded block whitespace-pre-wrap break-all font-mono">
-                    &#123;"&#123;"&#125;"accessible": [], "accessible_patterns": ["social_.*", "sentiment_.*"], "not_accessible": [], "not_accessible_patterns": []&#125;
+                  <code
+                    phx-no-curly-interpolation
+                    class="bg-gray-50 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
+                  >
+                    {"accessible": [], "accessible_patterns": ["social_.*", "sentiment_.*"], "not_accessible": [], "not_accessible_patterns": []}
                   </code>
                 </td>
               </tr>
               <tr class="border-b border-gray-100">
                 <td class="py-1.5 pr-3 text-gray-600">Social + extras, minus some</td>
                 <td class="py-1.5">
-                  <code class="bg-gray-50 px-1.5 py-0.5 rounded block whitespace-pre-wrap break-all font-mono">
-                    &#123;"&#123;"&#125;"accessible": ["price_usd", "volume_usd"], "accessible_patterns": ["social_.*"], "not_accessible": ["social_active_users"], "not_accessible_patterns": []&#125;
+                  <code
+                    phx-no-curly-interpolation
+                    class="bg-gray-50 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
+                  >
+                    {"accessible": ["price_usd", "volume_usd"], "accessible_patterns": ["social_.*"], "not_accessible": ["social_active_users"], "not_accessible_patterns": []}
                   </code>
                 </td>
               </tr>
               <tr class="border-b border-gray-100">
                 <td class="py-1.5 pr-3 text-gray-600">Social, exclude dominance</td>
                 <td class="py-1.5">
-                  <code class="bg-gray-50 px-1.5 py-0.5 rounded block whitespace-pre-wrap break-all font-mono">
-                    &#123;"&#123;"&#125;"accessible": [], "accessible_patterns": ["social_.*", "sentiment_.*"], "not_accessible": [], "not_accessible_patterns": ["social_dominance_.*"]&#125;
+                  <code
+                    phx-no-curly-interpolation
+                    class="bg-gray-50 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
+                  >
+                    {"accessible": [], "accessible_patterns": ["social_.*", "sentiment_.*"], "not_accessible": [], "not_accessible_patterns": ["social_dominance_.*"]}
                   </code>
                 </td>
               </tr>
               <tr class="border-b border-gray-100">
                 <td class="py-1.5 pr-3 text-gray-600">Starts with "price"</td>
                 <td class="py-1.5">
-                  <code class="bg-gray-50 px-1.5 py-0.5 rounded block whitespace-pre-wrap break-all font-mono">
-                    &#123;"&#123;"&#125;"accessible": [], "accessible_patterns": ["^price"], "not_accessible": [], "not_accessible_patterns": []&#125;
+                  <code
+                    phx-no-curly-interpolation
+                    class="bg-gray-50 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
+                  >
+                    {"accessible": [], "accessible_patterns": ["^price"], "not_accessible": [], "not_accessible_patterns": []}
                   </code>
                 </td>
               </tr>
               <tr>
                 <td class="py-1.5 pr-3 text-gray-600">Ends with "_usd"</td>
                 <td class="py-1.5">
-                  <code class="bg-gray-50 px-1.5 py-0.5 rounded block whitespace-pre-wrap break-all font-mono">
-                    &#123;"&#123;"&#125;"accessible": [], "accessible_patterns": ["_usd$"], "not_accessible": [], "not_accessible_patterns": []&#125;
+                  <code
+                    phx-no-curly-interpolation
+                    class="bg-gray-50 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
+                  >
+                    {"accessible": [], "accessible_patterns": ["_usd$"], "not_accessible": [], "not_accessible_patterns": []}
                   </code>
                 </td>
               </tr>
@@ -159,32 +180,44 @@
               <tr class="border-b border-gray-100">
                 <td class="py-1.5 pr-3 text-gray-600">All queries</td>
                 <td class="py-1.5">
-                  <code class="bg-gray-50 px-1.5 py-0.5 rounded block whitespace-pre-wrap break-all font-mono">
-                    &#123;"&#123;"&#125;"accessible": "all", "not_accessible": [], "not_accessible_patterns": []&#125;
+                  <code
+                    phx-no-curly-interpolation
+                    class="bg-gray-50 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
+                  >
+                    {"accessible": "all", "not_accessible": [], "not_accessible_patterns": []}
                   </code>
                 </td>
               </tr>
               <tr class="border-b border-gray-100">
                 <td class="py-1.5 pr-3 text-gray-600">All except specific ones</td>
                 <td class="py-1.5">
-                  <code class="bg-gray-50 px-1.5 py-0.5 rounded block whitespace-pre-wrap break-all font-mono">
-                    &#123;"&#123;"&#125;"accessible": "all", "not_accessible": ["history_price"], "not_accessible_patterns": ["mvrv"]&#125;
+                  <code
+                    phx-no-curly-interpolation
+                    class="bg-gray-50 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
+                  >
+                    {"accessible": "all", "not_accessible": ["history_price"], "not_accessible_patterns": ["mvrv"]}
                   </code>
                 </td>
               </tr>
               <tr class="border-b border-gray-100">
                 <td class="py-1.5 pr-3 text-gray-600">Only specific + pattern</td>
                 <td class="py-1.5">
-                  <code class="bg-gray-50 px-1.5 py-0.5 rounded block whitespace-pre-wrap break-all font-mono">
-                    &#123;"&#123;"&#125;"accessible": ["current_user", "all_projects"], "accessible_patterns": ["get_metric"], "not_accessible": [], "not_accessible_patterns": []&#125;
+                  <code
+                    phx-no-curly-interpolation
+                    class="bg-gray-50 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
+                  >
+                    {"accessible": ["current_user", "all_projects"], "accessible_patterns": ["get_metric"], "not_accessible": [], "not_accessible_patterns": []}
                   </code>
                 </td>
               </tr>
               <tr>
                 <td class="py-1.5 pr-3 text-gray-600">No queries at all</td>
                 <td class="py-1.5">
-                  <code class="bg-gray-50 px-1.5 py-0.5 rounded block whitespace-pre-wrap break-all font-mono">
-                    &#123;"&#123;"&#125;"accessible": [], "not_accessible": [], "not_accessible_patterns": []&#125;
+                  <code
+                    phx-no-curly-interpolation
+                    class="bg-gray-50 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
+                  >
+                    {"accessible": [], "not_accessible": [], "not_accessible_patterns": []}
                   </code>
                 </td>
               </tr>
@@ -205,24 +238,33 @@
               <tr class="border-b border-gray-100">
                 <td class="py-1.5 pr-3 text-gray-600">All signals</td>
                 <td class="py-1.5">
-                  <code class="bg-gray-50 px-1.5 py-0.5 rounded block whitespace-pre-wrap break-all font-mono">
-                    &#123;"&#123;"&#125;"accessible": "all", "not_accessible": [], "not_accessible_patterns": []&#125;
+                  <code
+                    phx-no-curly-interpolation
+                    class="bg-gray-50 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
+                  >
+                    {"accessible": "all", "not_accessible": [], "not_accessible_patterns": []}
                   </code>
                 </td>
               </tr>
               <tr class="border-b border-gray-100">
                 <td class="py-1.5 pr-3 text-gray-600">Only DAI signals (via pattern)</td>
                 <td class="py-1.5">
-                  <code class="bg-gray-50 px-1.5 py-0.5 rounded block whitespace-pre-wrap break-all font-mono">
-                    &#123;"&#123;"&#125;"accessible": [], "accessible_patterns": ["dai_.*"], "not_accessible": [], "not_accessible_patterns": []&#125;
+                  <code
+                    phx-no-curly-interpolation
+                    class="bg-gray-50 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
+                  >
+                    {"accessible": [], "accessible_patterns": ["dai_.*"], "not_accessible": [], "not_accessible_patterns": []}
                   </code>
                 </td>
               </tr>
               <tr>
                 <td class="py-1.5 pr-3 text-gray-600">No signals at all</td>
                 <td class="py-1.5">
-                  <code class="bg-gray-50 px-1.5 py-0.5 rounded block whitespace-pre-wrap break-all font-mono">
-                    &#123;"&#123;"&#125;"accessible": [], "not_accessible": [], "not_accessible_patterns": []&#125;
+                  <code
+                    phx-no-curly-interpolation
+                    class="bg-gray-50 px-1.5 py-0.5 rounded block break-all font-mono whitespace-normal"
+                  >
+                    {"accessible": [], "not_accessible": [], "not_accessible_patterns": []}
                   </code>
                 </td>
               </tr>
@@ -279,12 +321,12 @@
             API Call Limits
           </label>
           <div class="text-xs text-gray-400 mb-1.5">
-            <code class="bg-gray-50 px-1 rounded font-mono">
-              &#123;"&#123;"&#125;"month": 3000000, "hour": 100000, "minute": 3000&#125;
+            <code phx-no-curly-interpolation class="bg-gray-50 px-1 rounded font-mono">
+              {"month": 3000000, "hour": 100000, "minute": 3000}
             </code>
             or
-            <code class="bg-gray-50 px-1 rounded font-mono">
-              &#123;"&#123;"&#125;"has_limits": false&#125;
+            <code phx-no-curly-interpolation class="bg-gray-50 px-1 rounded font-mono">
+              {"has_limits": false}
             </code>
           </div>
           {textarea(ff, :api_call_limits,
@@ -342,7 +384,10 @@
             Restricted Access As Plan
           </label>
           <div class="text-xs text-gray-400 mb-1.5">
-            Controls how <code class="bg-gray-50 px-1 rounded font-mono">min_plan</code>
+            Controls how
+            <code phx-no-curly-interpolation class="bg-gray-50 px-1 rounded font-mono">
+              min_plan
+            </code>
             field is applied. One of: FREE, BASIC, PRO, BUSINESS_PRO, BUSINESS_MAX
           </div>
           {text_input(ff, :restricted_access_as_plan,

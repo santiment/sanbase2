@@ -195,5 +195,20 @@ defmodule SanbaseWeb.AuthControllerTest do
       assert AuthController.validate_redirect_url("https://evil.com@app.santiment.net/callback") ==
                {:error, "Invalid redirect URL"}
     end
+
+    @tag capture_log: true
+    test "rejects sanbase:// URLs whose host looks like a real domain" do
+      assert AuthController.validate_redirect_url("sanbase://evil.com/steal-tokens") ==
+               {:error, "Invalid redirect URL"}
+
+      assert AuthController.validate_redirect_url("sanbase://attacker.example/x") ==
+               {:error, "Invalid redirect URL"}
+    end
+
+    @tag capture_log: true
+    test "rejects sanbase:// URLs with userinfo" do
+      assert AuthController.validate_redirect_url("sanbase://user:pass@home") ==
+               {:error, "Invalid redirect URL"}
+    end
   end
 end

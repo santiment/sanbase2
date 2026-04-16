@@ -261,8 +261,13 @@ defmodule SanbaseWeb.AuthController do
   @doc false
   def validate_redirect_url(url) do
     case URI.parse(url) do
-      %URI{scheme: "sanbase"} ->
-        true
+      %URI{scheme: "sanbase", userinfo: nil, host: host} ->
+        if valid_sanbase_deeplink_host?(host) do
+          true
+        else
+          Logger.warning("Rejecting sanbase:// redirect with suspicious host: #{url}")
+          {:error, "Invalid redirect URL"}
+        end
 
       %URI{scheme: "https", host: host, userinfo: nil} when host in @valid_redirect_hosts ->
         true
@@ -272,4 +277,18 @@ defmodule SanbaseWeb.AuthController do
         {:error, "Invalid redirect URL"}
     end
   end
+
+  # The sanbase:// deep-link scheme uses the host component as an "action"
+  # (e.g., sanbase://home, sanbase://portfolio/btc). Reject anything that
+  # looks like a real DNS host (contains a dot) or is otherwise non-empty
+  # nonsense — that prevents attackers from smuggling their own domain
+  # through the mobile app's deep-link handler.
+  defp valid_sanbase_deeplink_host?(nil), do: true
+  defp valid_sanbase_deeplink_host?(""), do: true
+
+  defp valid_sanbase_deeplink_host?(host) when is_binary(host) do
+    not String.contains?(host, ".") and String.match?(host, ~r/^[a-zA-Z0-9_-]+$/)
+  end
+
+  defp valid_sanbase_deeplink_host?(_), do: false
 end

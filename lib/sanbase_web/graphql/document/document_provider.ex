@@ -30,6 +30,10 @@ defmodule SanbaseWeb.Graphql.DocumentProvider do
     pipeline
     |> Absinthe.Pipeline.insert_before(
       Absinthe.Phase.Document.Complexity.Analysis,
+      SanbaseWeb.Graphql.Phase.Document.Validation.MaxDepth
+    )
+    |> Absinthe.Pipeline.insert_before(
+      Absinthe.Phase.Document.Complexity.Analysis,
       SanbaseWeb.Graphql.Phase.Document.Complexity.Preprocess
     )
     |> Absinthe.Pipeline.insert_before(
@@ -201,6 +205,53 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Execution.Idempotent do
   use Absinthe.Phase
   @spec run(Absinthe.Blueprint.t(), Keyword.t()) :: Absinthe.Phase.result_t()
   def run(bp_root, _), do: {:ok, bp_root}
+end
+
+defmodule SanbaseWeb.Graphql.Phase.Document.Validation.MaxDepth do
+  @moduledoc """
+  Rejects GraphQL documents whose selection nesting exceeds @max_depth.
+
+  The existing complexity analyzer bounds total cost but does not stop a
+  client from sending a deeply-nested query that hits a single expensive
+  resolver repeatedly or exploits cycles in the schema. An explicit depth
+  cap blocks introspection/DoS attempts that bypass complexity scoring.
+  """
+  use Absinthe.Phase
+
+  @max_depth 15
+
+  @spec run(Absinthe.Blueprint.t(), Keyword.t()) :: Absinthe.Phase.result_t()
+  def run(bp_root, _) do
+    max = bp_root.operations |> Enum.map(&operation_depth/1) |> Enum.max(fn -> 0 end)
+
+    if max > @max_depth do
+      error = %Absinthe.Phase.Error{
+        phase: __MODULE__,
+        message: "Query exceeds maximum nesting depth of #{@max_depth}"
+      }
+
+      {:error, Absinthe.Phase.put_error(bp_root, error)}
+    else
+      {:ok, bp_root}
+    end
+  end
+
+  defp operation_depth(%{selections: selections}), do: selections_depth(selections, 1)
+  defp operation_depth(_), do: 0
+
+  defp selections_depth([], depth), do: depth
+
+  defp selections_depth(selections, depth) do
+    selections
+    |> Enum.map(&node_depth(&1, depth))
+    |> Enum.max(fn -> depth end)
+  end
+
+  defp node_depth(%{selections: inner}, depth) when is_list(inner) and inner != [] do
+    selections_depth(inner, depth + 1)
+  end
+
+  defp node_depth(_, depth), do: depth
 end
 
 defmodule SanbaseWeb.Graphql.Phase.Document.Complexity.Preprocess do

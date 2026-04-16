@@ -10,7 +10,7 @@ defmodule SanbaseWeb.ReportController do
 
   def new(conn, _params) do
     changeset = Report.new_changeset(%Report{})
-    render(conn, "new.html", changeset: changeset)
+    render(conn, "new.html", form: Phoenix.Component.to_form(changeset))
   end
 
   def create(conn, %{
@@ -26,7 +26,7 @@ defmodule SanbaseWeb.ReportController do
         |> redirect(to: ~p"/admin/reports/#{report}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render(conn, "new.html", changeset: changeset)
+        render(conn, "new.html", form: Phoenix.Component.to_form(changeset))
 
       {:error, "invalid_extension"} ->
         conn
@@ -56,7 +56,10 @@ defmodule SanbaseWeb.ReportController do
       Report.changeset(%Report{}, params)
       |> Ecto.Changeset.add_error(:report, "No file uploaded!")
 
-    render(conn, "new.html", changeset: changeset, errors: [report: "No file uploaded!"])
+    render(conn, "new.html",
+      form: Phoenix.Component.to_form(changeset),
+      errors: [report: "No file uploaded!"]
+    )
   end
 
   def show(conn, %{"id" => id}) do
@@ -67,7 +70,7 @@ defmodule SanbaseWeb.ReportController do
   def edit(conn, %{"id" => id}) do
     report = Report.by_id(id) |> stringify_tags()
     changeset = Report.changeset(report, %{})
-    render(conn, "edit.html", report: report, changeset: changeset)
+    render(conn, "edit.html", report: report, form: Phoenix.Component.to_form(changeset))
   end
 
   def update(conn, %{"id" => id, "report" => report_params}) do
@@ -80,7 +83,7 @@ defmodule SanbaseWeb.ReportController do
         |> redirect(to: ~p"/admin/reports/#{report}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render(conn, "edit.html", report: report, changeset: changeset)
+        render(conn, "edit.html", report: report, form: Phoenix.Component.to_form(changeset))
     end
   end
 

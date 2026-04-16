@@ -10,7 +10,7 @@ defmodule SanbaseWeb.CustomPlanController do
 
   def new(conn, _params) do
     changeset = Plan.changeset(%Plan{})
-    render(conn, "new.html", changeset: changeset)
+    render(conn, "new.html", form: Phoenix.Component.to_form(changeset))
   end
 
   def create(conn, %{"plan" => params}) do
@@ -28,7 +28,7 @@ defmodule SanbaseWeb.CustomPlanController do
         |> redirect(to: ~p"/admin/custom_plans/#{custom_plan}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render(conn, "new.html", changeset: changeset)
+        render(conn, "new.html", form: Phoenix.Component.to_form(changeset))
     end
   end
 
@@ -44,7 +44,11 @@ defmodule SanbaseWeb.CustomPlanController do
   def edit(conn, %{"id" => id}) do
     custom_plan = Plan.by_id(id)
     changeset = Plan.changeset(custom_plan, %{})
-    render(conn, "edit.html", custom_plan: custom_plan, changeset: changeset)
+
+    render(conn, "edit.html",
+      custom_plan: custom_plan,
+      form: Phoenix.Component.to_form(changeset)
+    )
   end
 
   def update(conn, %{"id" => id, "plan" => params}) do
@@ -58,7 +62,10 @@ defmodule SanbaseWeb.CustomPlanController do
         |> redirect(to: ~p"/admin/custom_plans/#{custom_plan}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render(conn, "edit.html", custom_plan: custom_plan, changeset: changeset)
+        render(conn, "edit.html",
+          custom_plan: custom_plan,
+          form: Phoenix.Component.to_form(changeset)
+        )
     end
   end
 

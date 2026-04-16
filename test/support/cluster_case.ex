@@ -210,7 +210,7 @@ defmodule Sanbase.ClusterCase do
   end
 
   defp ensure_distributed! do
-    unless Node.alive?() do
+    if !Node.alive?() do
       # EPMD is not started automatically when `mix test` runs without a
       # `--name`/`--sname` kernel flag (the common case in CI containers
       # that just execute `mix test`). `:net_kernel.start/1` will fail with

@@ -258,10 +258,30 @@ defmodule SanbaseWeb.AuthController do
       @valid_redirect_hosts ["localhost" | @valid_redirect_hosts]
   end
 
+  @max_redirect_url_length 2048
+
   @doc false
-  def validate_redirect_url(url) do
+  def validate_redirect_url(url) when is_binary(url) do
+    cond do
+      byte_size(url) > @max_redirect_url_length ->
+        Logger.warning("Rejecting oversized redirect URL (#{byte_size(url)} bytes)")
+        {:error, "Invalid redirect URL"}
+
+      contains_control_chars?(url) ->
+        Logger.warning("Rejecting redirect URL with control characters")
+        {:error, "Invalid redirect URL"}
+
+      true ->
+        do_validate_redirect_url(url)
+    end
+  end
+
+  def validate_redirect_url(_), do: {:error, "Invalid redirect URL"}
+
+  defp do_validate_redirect_url(url) do
     case URI.parse(url) do
-      %URI{scheme: "sanbase", userinfo: nil, host: host} ->
+      %URI{scheme: "sanbase", userinfo: nil, host: host, port: nil}
+      when is_binary(host) and host != "" ->
         if valid_sanbase_deeplink_host?(host) do
           true
         else
@@ -269,7 +289,8 @@ defmodule SanbaseWeb.AuthController do
           {:error, "Invalid redirect URL"}
         end
 
-      %URI{scheme: "https", host: host, userinfo: nil} when host in @valid_redirect_hosts ->
+      %URI{scheme: "https", userinfo: nil, host: host, port: port}
+      when host in @valid_redirect_hosts and port in [nil, 443] ->
         true
 
       _ ->
@@ -278,15 +299,19 @@ defmodule SanbaseWeb.AuthController do
     end
   end
 
+  # Reject CR/LF/NUL/tab and any other ASCII control byte. These have no
+  # business in a URL and are classic vectors for log-injection and HTTP
+  # response splitting.
+  defp contains_control_chars?(url) do
+    String.match?(url, ~r/[\x00-\x1F\x7F]/)
+  end
+
   # The sanbase:// deep-link scheme uses the host component as an "action"
   # (e.g., sanbase://home, sanbase://portfolio/btc). Reject anything that
   # looks like a real DNS host (contains a dot) or is otherwise non-empty
   # nonsense — that prevents attackers from smuggling their own domain
   # through the mobile app's deep-link handler.
-  defp valid_sanbase_deeplink_host?(nil), do: true
-  defp valid_sanbase_deeplink_host?(""), do: true
-
-  defp valid_sanbase_deeplink_host?(host) when is_binary(host) do
+  defp valid_sanbase_deeplink_host?(host) when is_binary(host) and host != "" do
     not String.contains?(host, ".") and String.match?(host, ~r/^[a-zA-Z0-9_-]+$/)
   end
 

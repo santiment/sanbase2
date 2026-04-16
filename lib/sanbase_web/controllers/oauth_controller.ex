@@ -54,7 +54,9 @@ defmodule SanbaseWeb.OAuthController do
   # --- Authorize (GET) - preauthorize then show consent ---
 
   def authorize(%Plug.Conn{} = conn, _params) do
-    Logger.info("[OAuth] authorize — all params: #{inspect(conn.params)}")
+    Logger.info(
+      "[OAuth] authorize — client_id: #{inspect(conn.params["client_id"])}, response_type: #{inspect(conn.params["response_type"])}, scope: #{inspect(conn.params["scope"])}"
+    )
 
     case current_user_from_session(conn) do
       {:ok, user, conn} ->

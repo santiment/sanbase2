@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict SKM90dGDC3tINIEevUDbzxKEfJoi9nG37VK9FovtlEdvWdboHOKoaL8RlOaIRXF
+\restrict uKstdS80fFtfhzoQ8tiAHIVAXWZn0D4zg0va9HRGEbtL6l0amzylzgd2yF3chHq
 
 -- Dumped from database version 15.15 (Homebrew)
 -- Dumped by pg_dump version 15.15 (Homebrew)
@@ -872,8 +872,8 @@ CREATE TABLE public.chat_messages (
     sources jsonb[] DEFAULT ARRAY[]::jsonb[],
     suggestions text[] DEFAULT ARRAY[]::text[],
     feedback_type character varying(255),
-    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY (ARRAY[('thumbs_up'::character varying)::text, ('thumbs_down'::character varying)::text])) OR (feedback_type IS NULL))),
-    CONSTRAINT valid_role CHECK (((role)::text = ANY (ARRAY[('user'::character varying)::text, ('assistant'::character varying)::text])))
+    CONSTRAINT valid_feedback_type CHECK ((((feedback_type)::text = ANY ((ARRAY['thumbs_up'::character varying, 'thumbs_down'::character varying])::text[])) OR (feedback_type IS NULL))),
+    CONSTRAINT valid_role CHECK (((role)::text = ANY ((ARRAY['user'::character varying, 'assistant'::character varying])::text[])))
 );
 
 
@@ -11337,7 +11337,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict SKM90dGDC3tINIEevUDbzxKEfJoi9nG37VK9FovtlEdvWdboHOKoaL8RlOaIRXF
+\unrestrict uKstdS80fFtfhzoQ8tiAHIVAXWZn0D4zg0va9HRGEbtL6l0amzylzgd2yF3chHq
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);

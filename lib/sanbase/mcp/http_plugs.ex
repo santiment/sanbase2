@@ -71,6 +71,7 @@ defmodule Sanbase.MCP.AuthPlug do
     case header_value do
       "Bearer Apikey " <> apikey -> apikey
       "Apikey " <> apikey -> apikey
+      "Bearer " <> apikey -> apikey
       _ -> nil
     end
   end

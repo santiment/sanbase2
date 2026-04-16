@@ -77,9 +77,25 @@ defmodule SanbaseWeb.MetricRegistryController do
     end
   end
 
+  def export_json(conn, %{"secret" => secret}) do
+    expected = get_sync_secret()
+
+    case is_binary(expected) and Plug.Crypto.secure_compare(secret, expected) do
+      true ->
+        conn
+        |> resp(200, get_metric_registry_json())
+        |> send_resp()
+
+      false ->
+        conn
+        |> resp(403, "Unauthorized")
+        |> send_resp()
+    end
+  end
+
   def export_json(conn, _params) do
     conn
-    |> resp(200, get_metric_registry_json())
+    |> resp(403, "Unauthorized")
     |> send_resp()
   end
 

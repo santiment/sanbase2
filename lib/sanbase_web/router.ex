@@ -282,22 +282,24 @@ defmodule SanbaseWeb.Router do
       before_send: {SanbaseWeb.Graphql.AbsintheBeforeSend, :before_send}
     )
 
-    forward(
-      "/graphiql",
-      SanbaseWeb.Graphql.GraphiqlPlug,
-      json_codec: Jason,
-      schema: SanbaseWeb.Graphql.Schema,
-      socket: SanbaseWeb.UserSocket,
-      document_providers: [
-        SanbaseWeb.Graphql.DocumentProvider,
-        Absinthe.Plug.DocumentProvider.Default
-      ],
-      analyze_complexity: true,
-      max_complexity: 50_000,
-      interface: :santiment,
-      log_level: :info,
-      before_send: {SanbaseWeb.Graphql.AbsintheBeforeSend, :before_send}
-    )
+    if Mix.env() in [:dev, :test] do
+      forward(
+        "/graphiql",
+        SanbaseWeb.Graphql.GraphiqlPlug,
+        json_codec: Jason,
+        schema: SanbaseWeb.Graphql.Schema,
+        socket: SanbaseWeb.UserSocket,
+        document_providers: [
+          SanbaseWeb.Graphql.DocumentProvider,
+          Absinthe.Plug.DocumentProvider.Default
+        ],
+        analyze_complexity: true,
+        max_complexity: 50_000,
+        interface: :santiment,
+        log_level: :info,
+        before_send: {SanbaseWeb.Graphql.AbsintheBeforeSend, :before_send}
+      )
+    end
   end
 
   scope "/", SanbaseWeb do

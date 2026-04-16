@@ -60,9 +60,6 @@ defmodule Sanbase.MCP.ToolInvocationTest do
 
       assert {:ok, %Anubis.MCP.Response{is_error: false}} = result
 
-      # Give the async task time to insert
-      Process.sleep(500)
-
       invocations = ToolInvocation.list_invocations([])
       assert length(invocations) >= 1
 
@@ -95,8 +92,6 @@ defmodule Sanbase.MCP.ToolInvocationTest do
 
     assert {:ok, %Anubis.MCP.Response{is_error: true}} = result
 
-    Process.sleep(500)
-
     invocations = ToolInvocation.list_invocations([])
 
     inv =
@@ -128,8 +123,6 @@ defmodule Sanbase.MCP.ToolInvocationTest do
         )
 
       assert {:ok, %Anubis.MCP.Response{is_error: false}} = result
-
-      Process.sleep(500)
 
       invocations = ToolInvocation.list_invocations([])
 

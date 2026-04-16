@@ -60,43 +60,59 @@ defmodule Sanbase.MCP.Server do
   end
 
   defp track_tool_invocation(result, frame, tool_name, params, duration_ms) do
-    Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
-      {is_successful, error_message, response_size_bytes} =
-        case result do
-          {:reply, %{"isError" => true, "content" => content}, _frame} ->
-            error_msg =
-              content
-              |> Enum.map_join("\n", fn item -> item["text"] || "" end)
+    {is_successful, error_message, response_size_bytes} =
+      case result do
+        {:reply, %{"isError" => true, "content" => content}, _frame} ->
+          error_msg =
+            content
+            |> Enum.map_join("\n", fn item -> item["text"] || "" end)
 
-            size = response_size_bytes(content)
-            {false, error_msg, size}
+          size = response_size_bytes(content)
+          {false, error_msg, size}
 
-          {:reply, %{"content" => content}, _frame} ->
-            size = response_size_bytes(content)
-            {true, nil, size}
+        {:reply, %{"content" => content}, _frame} ->
+          size = response_size_bytes(content)
+          {true, nil, size}
 
-          {:error, %{message: message}, _frame} ->
-            {false, message, nil}
+        {:error, %{message: message}, _frame} ->
+          {false, message, nil}
 
-          _ ->
-            {false, "Unknown error", nil}
-        end
+        _ ->
+          {false, "Unknown error", nil}
+      end
 
-      user = frame.assigns[:current_user]
-      headers = frame.context.headers || []
-      auth_method = Sanbase.MCP.Auth.get_auth_method(headers)
+    user = frame.assigns[:current_user]
+    headers = frame.context.headers || []
+    auth_method = Sanbase.MCP.Auth.get_auth_method(headers)
 
-      Sanbase.MCP.ToolInvocation.create(%{
-        user_id: if(user, do: user.id),
-        tool_name: tool_name,
-        params: params,
-        is_successful: is_successful,
-        error_message: error_message,
-        response_size_bytes: response_size_bytes,
-        duration_ms: duration_ms,
-        auth_method: auth_method
-      })
-    end)
+    attrs = %{
+      user_id: if(user, do: user.id),
+      tool_name: tool_name,
+      params: params,
+      is_successful: is_successful,
+      error_message: error_message,
+      response_size_bytes: response_size_bytes,
+      duration_ms: duration_ms,
+      auth_method: auth_method
+    }
+
+    persist_tool_invocation(attrs)
+  end
+
+  # In test, Ecto SQL Sandbox ties DB connections to the test process.
+  # Async tasks that outlive the test process lose their connection,
+  # causing Postgrex disconnect errors. Run synchronously in test.
+  @env Application.compile_env(:sanbase, :env)
+  if @env == :test do
+    defp persist_tool_invocation(attrs) do
+      Sanbase.MCP.ToolInvocation.create(attrs)
+    end
+  else
+    defp persist_tool_invocation(attrs) do
+      Task.Supervisor.start_child(Sanbase.TaskSupervisor, fn ->
+        Sanbase.MCP.ToolInvocation.create(attrs)
+      end)
+    end
   end
 
   defp response_size_bytes(content) do

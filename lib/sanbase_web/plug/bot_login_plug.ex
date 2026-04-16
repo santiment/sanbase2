@@ -13,14 +13,15 @@ defmodule SanbaseWeb.Plug.BotLoginPlug do
   def init(opts), do: opts
 
   def call(%{params: %{"path" => path}} = conn, _) do
-    case path === bot_login_endpoint() do
-      true ->
-        conn
+    expected = bot_login_endpoint()
 
-      false ->
-        conn
-        |> send_resp(403, "Unauthorized")
-        |> halt()
+    if is_binary(expected) and is_binary(path) and
+         Plug.Crypto.secure_compare(path, expected) do
+      conn
+    else
+      conn
+      |> send_resp(403, "Unauthorized")
+      |> halt()
     end
   end
 

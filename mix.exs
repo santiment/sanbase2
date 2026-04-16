@@ -9,7 +9,7 @@ defmodule Sanbase.Mixfile do
       elixir: "~> 1.17",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:yecc, :leex] ++ Mix.compilers(),
-      listeners: [Phoenix.CodeReloader],
+      listeners: if(Mix.env() == :dev, do: [Phoenix.CodeReloader], else: []),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),

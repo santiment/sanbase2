@@ -34,7 +34,6 @@ defmodule Sanbase.Insight.PostImage do
     post_image
     |> cast(attrs, @cast_fields)
     |> validate_required([:image_url, :content_hash, :hash_algorithm])
-    |> update_change(:image_url, &String.downcase/1)
     |> unique_constraint(:image_url, name: :image_url_index)
   end
 

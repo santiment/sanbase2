@@ -2,10 +2,9 @@ defmodule SanbaseWeb.AdminComponents do
   use Phoenix.Component, global_prefixes: ~w(x-)
 
   use PhoenixHTMLHelpers
+  use SanbaseWeb, :verified_routes
 
   import SanbaseWeb.CoreComponents
-
-  alias SanbaseWeb.Router.Helpers, as: Routes
 
   @doc """
   Renders a bottom navigation for a form.
@@ -626,13 +625,7 @@ defmodule SanbaseWeb.AdminComponents do
       type="button"
       class="text-white w-fit p-2 bg-blue-500 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
     >
-      <.link href={
-        Routes.generic_admin_path(
-          SanbaseWeb.Endpoint,
-          :new,
-          Keyword.merge([resource: @resource], @create_link_kv)
-        )
-      }>
+      <.link href={~p"/admin/generic/new?#{Keyword.merge([resource: @resource], @create_link_kv)}"}>
         <.icon name="hero-plus-circle" /> Add new {@singular}
       </.link>
     </button>
@@ -663,7 +656,7 @@ defmodule SanbaseWeb.AdminComponents do
     ~H"""
     <.form
       for={%{}}
-      action={Routes.generic_admin_path(SanbaseWeb.Endpoint, @action, @row, resource: @resource)}
+      action={~p"/admin/generic/#{@row}?resource=#{@resource}"}
       method="post"
       class="inline-block"
       data-confirm="Are you sure you want to delete this?"
@@ -685,7 +678,7 @@ defmodule SanbaseWeb.AdminComponents do
         :show -> "text-blue-600 hover:text-blue-800"
       end
     ]}>
-      <.link href={Routes.generic_admin_path(SanbaseWeb.Endpoint, @action, @row, resource: @resource)}>
+      <.link href={generic_admin_action_path(@action, @row, @resource)}>
         <.icon
           name={
             case @action do
@@ -714,7 +707,7 @@ defmodule SanbaseWeb.AdminComponents do
   def action_btn(assigns) do
     ~H"""
     <.btn
-      href={Routes.generic_admin_path(SanbaseWeb.Endpoint, @action, resource: @resource)}
+      href={~p"/admin/generic?resource=#{@resource}"}
       label={@label}
       color={@color}
     />
@@ -750,7 +743,7 @@ defmodule SanbaseWeb.AdminComponents do
   def a(assigns) do
     ~H"""
     <.link
-      href={Routes.generic_admin_path(SanbaseWeb.Endpoint, @action, @row, resource: @resource)}
+      href={~p"/admin/generic/#{@row}?resource=#{@resource}"}
       class="underline"
     >
       {@label}
@@ -843,17 +836,10 @@ defmodule SanbaseWeb.AdminComponents do
   defp pagination_path(resource, action, search, page_number) do
     case action do
       :index ->
-        Routes.generic_admin_path(SanbaseWeb.Endpoint, action, %{
-          resource: resource,
-          page: page_number
-        })
+        ~p"/admin/generic?#{%{resource: resource, page: page_number}}"
 
       :search ->
-        Routes.generic_admin_path(SanbaseWeb.Endpoint, action, %{
-          "resource" => resource,
-          "page" => page_number,
-          "search" => search
-        })
+        ~p"/admin/generic/search?#{%{"resource" => resource, "page" => page_number, "search" => search}}"
     end
   end
 
@@ -891,7 +877,7 @@ defmodule SanbaseWeb.AdminComponents do
           for={%{}}
           as={:search}
           method="get"
-          action={Routes.generic_admin_path(SanbaseWeb.Endpoint, :search, resource: @resource)}
+          action={~p"/admin/generic/search?resource=#{@resource}"}
           class="max-w-lg md:w-96"
           x-on:submit.prevent="if (filters.some(f => f.field === 'Fields')) { showError = true; return false; } $el.submit();"
         >
@@ -992,7 +978,7 @@ defmodule SanbaseWeb.AdminComponents do
 
         <%= if @search["filters"] do %>
           <.link
-            href={Routes.generic_admin_path(SanbaseWeb.Endpoint, :index, resource: @resource)}
+            href={~p"/admin/generic?resource=#{@resource}"}
             class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:outline-none focus:ring-gray-100 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-gray-700"
           >
             <.icon name="hero-x-mark" class="w-4 h-4 mr-2" /> Reset Filters
@@ -1046,6 +1032,12 @@ defmodule SanbaseWeb.AdminComponents do
   end
 
   # private
+
+  defp generic_admin_action_path(:show, row, resource),
+    do: ~p"/admin/generic/#{row}?resource=#{resource}"
+
+  defp generic_admin_action_path(:edit, row, resource),
+    do: ~p"/admin/generic/#{row}/edit?resource=#{resource}"
 
   defp normalize_filters(search) do
     (Map.get(search || %{}, "filters") || [])

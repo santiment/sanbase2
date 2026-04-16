@@ -155,7 +155,7 @@ config :sanbase, SanbaseWeb.Endpoint,
   url: [host: "localhost"],
   secret_key_base:
     "not_secret_please_do_not_report_Vq7Rfo0T4EfiLX2/ryYal3O0l9ebBNhyh58cfWdTAUHxEJGu2p9u1WTQ31Ki4Phj",
-  render_errors: [view: SanbaseWeb.ErrorView, accepts: ~w(json)],
+  render_errors: [formats: [json: SanbaseWeb.ErrorJSON], layout: false],
   server: true,
   # should be removed after app.santiment.net migration
   website_url: {:system, "WEBSITE_URL", "http://localhost:4000"},

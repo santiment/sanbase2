@@ -1,0 +1,13 @@
+<div class="max-w-4xl mx-auto py-8">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-3xl font-bold text-gray-800">New Custom Plan</h1>
+    <.link
+      href={~p"/admin/custom_plans"}
+      class="text-indigo-600 hover:text-indigo-800 font-medium"
+    >
+      Back to Plans
+    </.link>
+  </div>
+
+  <SanbaseWeb.CustomPlanHTML.form changeset={@changeset} action={~p"/admin/custom_plans"} />
+</div>

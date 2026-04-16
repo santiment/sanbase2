@@ -16,17 +16,15 @@ defmodule SanbaseWeb.Plug.VerifyStripeWebhook do
   require Logger
   alias Sanbase.Utils.Config
 
-  alias SanbaseWeb.Router.Helpers, as: Routes
+  @stripe_webhook_path "/stripe_webhook"
 
   def init(opts), do: opts
 
   def call(conn, _opts), do: verify_stripe_request(conn)
 
   defp verify_stripe_request(conn) do
-    stripe_webhook_path = Routes.stripe_path(conn, :webhook)
-
     case conn.request_path do
-      ^stripe_webhook_path ->
+      @stripe_webhook_path ->
         {:ok, body, conn} = Plug.Conn.read_body(conn)
         do_verify(conn, body)
 

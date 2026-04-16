@@ -37,11 +37,10 @@ defmodule SanbaseWeb.GenericAdmin.Subscription do
     href("users", row.user_id, link_content)
   end
 
+  use SanbaseWeb, :verified_routes
+
   def href(resource, id, label) do
-    relative_url =
-      SanbaseWeb.Router.Helpers.generic_admin_path(SanbaseWeb.Endpoint, :show, id,
-        resource: resource
-      )
+    relative_url = ~p"/admin/generic/#{id}?resource=#{resource}"
 
     PhoenixHTMLHelpers.Link.link(label,
       to: relative_url,

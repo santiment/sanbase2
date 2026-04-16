@@ -1,3 +1,8 @@
 defmodule SanbaseWeb.CustomPlanHTML do
-  use SanbaseWeb, :view
+  use SanbaseWeb, :html
+
+  import SanbaseWeb.ErrorHelpers
+  use PhoenixHTMLHelpers
+
+  embed_templates "../templates/custom_plan_html/*"
 end

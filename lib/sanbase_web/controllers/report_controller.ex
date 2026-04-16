@@ -2,7 +2,6 @@ defmodule SanbaseWeb.ReportController do
   use SanbaseWeb, :controller
 
   alias Sanbase.Report
-  alias SanbaseWeb.Router.Helpers, as: Routes
 
   def index(conn, _params) do
     reports = Report.list_reports()
@@ -24,7 +23,7 @@ defmodule SanbaseWeb.ReportController do
       {:ok, report} ->
         conn
         |> put_flash(:info, "Report created successfully.")
-        |> redirect(to: Routes.report_path(conn, :show, report))
+        |> redirect(to: ~p"/admin/reports/#{report}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "new.html", changeset: changeset)
@@ -35,7 +34,7 @@ defmodule SanbaseWeb.ReportController do
           :error,
           "Invalid file type. Allowed: #{Sanbase.FileStore.allowed_extensions() |> Enum.join(", ")}"
         )
-        |> redirect(to: Routes.report_path(conn, :new))
+        |> redirect(to: ~p"/admin/reports/new")
 
       {:error, "file_too_large"} ->
         conn
@@ -43,12 +42,12 @@ defmodule SanbaseWeb.ReportController do
           :error,
           "File too large. Maximum size is #{Sanbase.FileStore.allowed_file_size()} MB."
         )
-        |> redirect(to: Routes.report_path(conn, :new))
+        |> redirect(to: ~p"/admin/reports/new")
 
       {:error, _reason} ->
         conn
         |> put_flash(:error, "Could not save file. Please try again.")
-        |> redirect(to: Routes.report_path(conn, :new))
+        |> redirect(to: ~p"/admin/reports/new")
     end
   end
 
@@ -78,7 +77,7 @@ defmodule SanbaseWeb.ReportController do
       {:ok, report} ->
         conn
         |> put_flash(:info, "Report updated successfully.")
-        |> redirect(to: Routes.report_path(conn, :show, report))
+        |> redirect(to: ~p"/admin/reports/#{report}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "edit.html", report: report, changeset: changeset)
@@ -91,7 +90,7 @@ defmodule SanbaseWeb.ReportController do
 
     conn
     |> put_flash(:info, "Report deleted successfully.")
-    |> redirect(to: Routes.report_path(conn, :index))
+    |> redirect(to: ~p"/admin/reports")
   end
 
   defp stringify_tags(%Report{tags: tags} = report) do

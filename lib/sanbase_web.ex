@@ -1,14 +1,14 @@
 defmodule SanbaseWeb do
   @moduledoc """
   The entrypoint for defining your web interface, such
-  as controllers, views, channels and so on.
+  as controllers, components, channels and so on.
 
   This can be used in your application as:
 
       use SanbaseWeb, :controller
-      use SanbaseWeb, :view
+      use SanbaseWeb, :html
 
-  The definitions below will be executed for every view,
+  The definitions below will be executed for every component,
   controller, etc, so keep them short and clean, focused
   on imports, uses and aliases.
 
@@ -78,43 +78,6 @@ defmodule SanbaseWeb do
 
       # Include general helpers for rendering HTML
       unquote(html_helpers())
-    end
-  end
-
-  def view do
-    quote do
-      use Phoenix.View,
-        root: "lib/sanbase_web/templates",
-        namespace: SanbaseWeb
-
-      # Import convenience functions from controllers
-      import Phoenix.Controller, only: [view_module: 1]
-
-      import Phoenix.HTML
-      import Phoenix.HTML.Form
-      use PhoenixHTMLHelpers
-      import Phoenix.View
-
-      unquote(view_helpers())
-    end
-  end
-
-  defp view_helpers do
-    quote do
-      # Use all HTML functionality (forms, tags, etc)
-
-      import Phoenix.HTML
-      import Phoenix.HTML.Form
-      use PhoenixHTMLHelpers
-
-      # Import basic rendering functionality (render, render_layout, etc)
-      import Phoenix.View
-
-      import SanbaseWeb.ErrorHelpers
-      use Gettext, backend: SanbaseWeb.Gettext
-      alias SanbaseWeb.Router.Helpers, as: Routes
-
-      unquote(verified_routes())
     end
   end
 

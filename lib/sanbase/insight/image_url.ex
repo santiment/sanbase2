@@ -29,6 +29,5 @@ defmodule Sanbase.Insight.ImageUrl do
 
   def extract_from_text(text) do
     Regex.scan(regex(), text)
-    |> Enum.map(fn [url] -> String.downcase(url) end)
   end
 end

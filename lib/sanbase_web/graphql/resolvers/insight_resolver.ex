@@ -245,7 +245,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
 
     all_images =
       (db_images ++ regex_images)
-      |> Enum.uniq_by(fn %{image_url: url} -> String.downcase(url) end)
+      |> Enum.uniq_by(fn %{image_url: url} -> url end)
 
     {:ok, all_images}
   end

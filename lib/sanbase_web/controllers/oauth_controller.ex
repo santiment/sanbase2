@@ -96,6 +96,7 @@ defmodule SanbaseWeb.OAuthController do
   def authorize_consent(%Plug.Conn{} = conn, %{"decision" => "deny"} = params) do
     with redirect_uri when is_binary(redirect_uri) <- params["redirect_uri"],
          client_id when is_binary(client_id) <- params["client_id"],
+         true <- valid_uuid?(client_id),
          %Boruta.Ecto.Client{redirect_uris: uris} <-
            Sanbase.Repo.get(Boruta.Ecto.Client, client_id),
          true <- redirect_uri in uris do
@@ -439,4 +440,13 @@ defmodule SanbaseWeb.OAuthController do
 
   defp maybe_put(map, _key, nil), do: map
   defp maybe_put(map, key, value), do: Map.put(map, key, value)
+
+  defp valid_uuid?(value) when is_binary(value) do
+    case Ecto.UUID.cast(value) do
+      {:ok, _} -> true
+      :error -> false
+    end
+  end
+
+  defp valid_uuid?(_), do: false
 end

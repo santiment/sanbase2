@@ -24,8 +24,8 @@ defmodule SanbaseWeb.BotLoginController do
     |> SanbaseWeb.Guardian.add_jwt_tokens_to_conn_session(jwt_tokens)
     |> put_resp_header("cache-control", "no-store")
     |> put_resp_header("pragma", "no-cache")
+    |> put_resp_content_type("text/plain")
     |> resp(200, jwt_tokens.access_token)
-    |> put_resp_content_type("application/json")
     |> send_resp()
   end
 end

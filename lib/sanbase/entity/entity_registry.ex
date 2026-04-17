@@ -122,6 +122,16 @@ defmodule Sanbase.Entity.Registry do
     end
   end
 
+  @doc """
+  Non-raising variant of `entity_module/1`.
+  """
+  def fetch_entity_module(type) do
+    case Map.fetch(@entities, type) do
+      {:ok, %{module: module}} -> {:ok, module}
+      :error -> :error
+    end
+  end
+
   @doc "Returns the vote table column for a given entity type."
   def entity_vote_field(type) do
     case Map.fetch(@entities, type) do

@@ -258,7 +258,9 @@ defmodule SanbaseWeb.AuthController do
       @valid_redirect_hosts ["localhost" | @valid_redirect_hosts]
   end
 
-  @max_redirect_url_length 2048
+  # Temporary headroom — real FE redirect URLs should fit in 2048, but until we
+  # audit every deep-link case we keep 4096 to avoid breaking login returns.
+  @max_redirect_url_length 4096
 
   @doc false
   def validate_redirect_url(url) when is_binary(url) do

@@ -219,7 +219,7 @@ defmodule SanbaseWeb.AuthControllerTest do
 
     @tag capture_log: true
     test "rejects oversized URLs" do
-      oversized = "https://app.santiment.net/" <> String.duplicate("a", 3000)
+      oversized = "https://app.santiment.net/" <> String.duplicate("a", 5000)
 
       assert AuthController.validate_redirect_url(oversized) ==
                {:error, "Invalid redirect URL"}

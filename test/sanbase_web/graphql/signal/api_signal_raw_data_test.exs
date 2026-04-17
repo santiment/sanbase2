@@ -26,17 +26,17 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalRawDataTest do
     rows = [
       [
         ~U[2019-01-01 00:00:00Z] |> DateTime.to_unix(),
-        "dai_mint",
-        "multi-collateral-dai",
-        21_029,
-        ~s|{"txHash": "0xecdeb8435aff6e18e08177bb94d52b2da6dd15b95aee7f442021911a7c9861e6", "address": "0x183c9077fb7b74f02d3badda6c85a19c92b1f648"}|
+        "project_in_trends",
+        "bitcoin",
+        217.437388,
+        ~s|{"rank": 6, "word": "bitcoin", "project": "BTC_bitcoin", "total_score": 217.43738810221353}|
       ],
       [
         ~U[2019-01-02 00:00:00Z] |> DateTime.to_unix(),
-        "dai_mint",
-        "multi-collateral-dai",
-        12_308_120,
-        ~s|{"txHash": "0x0bb27622fa4fcdf39344251e9b0776467eaa5d9dbf0f025d254f55093848f2bd", "address": "0x61c808d82a3ac53231750dadc13c777b59310bd9"}|
+        "project_in_trends",
+        "bitcoin",
+        150.535170,
+        ~s|{"rank": 9, "word": "bitcoin", "project": "BTC_bitcoin", "total_score": 150.5351702372233}|
       ]
     ]
 
@@ -50,25 +50,27 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalRawDataTest do
                %{
                  "datetime" => "2019-01-01T00:00:00Z",
                  "metadata" => %{
-                   "address" => "0x183c9077fb7b74f02d3badda6c85a19c92b1f648",
-                   "txHash" =>
-                     "0xecdeb8435aff6e18e08177bb94d52b2da6dd15b95aee7f442021911a7c9861e6"
+                   "rank" => 6,
+                   "word" => "bitcoin",
+                   "project" => "BTC_bitcoin",
+                   "total_score" => 217.43738810221353
                  },
-                 "value" => 21_029.0,
-                 "signal" => "dai_mint",
-                 "slug" => "multi-collateral-dai",
+                 "value" => 217.437388,
+                 "signal" => "anomaly_project_in_trending_words",
+                 "slug" => "bitcoin",
                  "isHidden" => false
                },
                %{
                  "datetime" => "2019-01-02T00:00:00Z",
                  "metadata" => %{
-                   "address" => "0x61c808d82a3ac53231750dadc13c777b59310bd9",
-                   "txHash" =>
-                     "0x0bb27622fa4fcdf39344251e9b0776467eaa5d9dbf0f025d254f55093848f2bd"
+                   "rank" => 9,
+                   "word" => "bitcoin",
+                   "project" => "BTC_bitcoin",
+                   "total_score" => 150.5351702372233
                  },
-                 "value" => 12_308_120.0,
-                 "signal" => "dai_mint",
-                 "slug" => "multi-collateral-dai",
+                 "value" => 150.535170,
+                 "signal" => "anomaly_project_in_trending_words",
+                 "slug" => "bitcoin",
                  "isHidden" => false
                }
              ]
@@ -81,49 +83,51 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalRawDataTest do
     rows = [
       [
         ~U[2019-01-01 00:00:00Z] |> DateTime.to_unix(),
-        "dai_mint",
-        "multi-collateral-dai",
-        21_029,
-        ~s|{"txHash": "0xecdeb8435aff6e18e08177bb94d52b2da6dd15b95aee7f442021911a7c9861e6", "address": "0x183c9077fb7b74f02d3badda6c85a19c92b1f648"}|
+        "project_in_trends",
+        "pepe",
+        572.494344,
+        ~s|{"rank": 1, "word": "pepe", "project": "PEPE_pepe", "total_score": 572.4943440755209}|
       ],
       [
         ~U[2019-01-02 00:00:00Z] |> DateTime.to_unix(),
-        "dai_mint",
-        "multi-collateral-dai",
-        12_308_120,
-        ~s|{"txHash": "0x0bb27622fa4fcdf39344251e9b0776467eaa5d9dbf0f025d254f55093848f2bd", "address": "0x61c808d82a3ac53231750dadc13c777b59310bd9"}|
+        "project_in_trends",
+        "pepe",
+        260.986816,
+        ~s|{"rank": 9, "word": "pepe", "project": "PEPE_pepe", "total_score": 260.98681640625}|
       ]
     ]
 
     Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/3, {:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
-        get_raw_signals(conn, ["dai_mint", "large_transactions"], :all, from, to)
+        get_raw_signals(conn, ["anomaly_project_in_trending_words", "anomaly_total_liquidations"], :all, from, to)
         |> get_in(["data", "getRawSignals"])
 
       assert result == [
                %{
                  "datetime" => "2019-01-01T00:00:00Z",
                  "metadata" => %{
-                   "address" => "0x183c9077fb7b74f02d3badda6c85a19c92b1f648",
-                   "txHash" =>
-                     "0xecdeb8435aff6e18e08177bb94d52b2da6dd15b95aee7f442021911a7c9861e6"
+                   "rank" => 1,
+                   "word" => "pepe",
+                   "project" => "PEPE_pepe",
+                   "total_score" => 572.4943440755209
                  },
-                 "value" => 21_029.0,
-                 "signal" => "dai_mint",
-                 "slug" => "multi-collateral-dai",
+                 "value" => 572.494344,
+                 "signal" => "anomaly_project_in_trending_words",
+                 "slug" => "pepe",
                  "isHidden" => false
                },
                %{
                  "datetime" => "2019-01-02T00:00:00Z",
                  "metadata" => %{
-                   "address" => "0x61c808d82a3ac53231750dadc13c777b59310bd9",
-                   "txHash" =>
-                     "0x0bb27622fa4fcdf39344251e9b0776467eaa5d9dbf0f025d254f55093848f2bd"
+                   "rank" => 9,
+                   "word" => "pepe",
+                   "project" => "PEPE_pepe",
+                   "total_score" => 260.98681640625
                  },
-                 "value" => 12_308_120.0,
-                 "signal" => "dai_mint",
-                 "slug" => "multi-collateral-dai",
+                 "value" => 260.986816,
+                 "signal" => "anomaly_project_in_trending_words",
+                 "slug" => "pepe",
                  "isHidden" => false
                }
              ]
@@ -140,17 +144,17 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalRawDataTest do
     rows = [
       [
         ~U[2019-01-01 00:00:00Z] |> DateTime.to_unix(),
-        "dai_mint",
+        "project_in_trends",
         "multi-collateral-dai",
-        21_029,
-        ~s|{"txHash": "0xecdeb8435aff6e18e08177bb94d52b2da6dd15b95aee7f442021911a7c9861e6", "address": "0x183c9077fb7b74f02d3badda6c85a19c92b1f648"}|
+        572.494344,
+        ~s|{"rank": 1, "word": "dai", "project": "DAI_multi-collateral-dai", "total_score": 572.4943440755209}|
       ],
       [
         ~U[2019-01-02 00:00:00Z] |> DateTime.to_unix(),
-        "dai_mint",
+        "project_in_trends",
         "not-dai",
-        12_308_120,
-        ~s|{"txHash": "0x0bb27622fa4fcdf39344251e9b0776467eaa5d9dbf0f025d254f55093848f2bd", "address": "0x61c808d82a3ac53231750dadc13c777b59310bd9"}|
+        169.057078,
+        ~s|{"rank": 10, "word": "not-dai", "project": "NOTDAI_not-dai", "total_score": 169.05707804361978}|
       ]
     ]
 
@@ -164,12 +168,13 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalRawDataTest do
                %{
                  "datetime" => "2019-01-01T00:00:00Z",
                  "metadata" => %{
-                   "address" => "0x183c9077fb7b74f02d3badda6c85a19c92b1f648",
-                   "txHash" =>
-                     "0xecdeb8435aff6e18e08177bb94d52b2da6dd15b95aee7f442021911a7c9861e6"
+                   "rank" => 1,
+                   "word" => "dai",
+                   "project" => "DAI_multi-collateral-dai",
+                   "total_score" => 572.4943440755209
                  },
-                 "value" => 21_029.0,
-                 "signal" => "dai_mint",
+                 "value" => 572.494344,
+                 "signal" => "anomaly_project_in_trending_words",
                  "slug" => "multi-collateral-dai",
                  "isHidden" => false
                }
@@ -184,14 +189,14 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalRawDataTest do
     rows = [
       [
         ~U[2019-01-01 00:00:00Z] |> DateTime.to_unix(),
-        "mcd_art_liquidations",
+        "total_liquidations",
         "multi-collateral-dai",
         21_029,
         ~s|{"txHash": "0xecdeb8435aff6e18e08177bb94d52b2da6dd15b95aee7f442021911a7c9861e6", "address": "0x183c9077fb7b74f02d3badda6c85a19c92b1f648"}|
       ],
       [
         ~U[2019-01-02 00:00:00Z] |> DateTime.to_unix(),
-        "dai_mint",
+        "total_liquidations",
         "multi-collateral-dai",
         12_308_120,
         ~s|{"txHash": "0x0bb27622fa4fcdf39344251e9b0776467eaa5d9dbf0f025d254f55093848f2bd", "address": "0x61c808d82a3ac53231750dadc13c777b59310bd9"}|
@@ -213,9 +218,9 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalRawDataTest do
                    "txHash" =>
                      "0xecdeb8435aff6e18e08177bb94d52b2da6dd15b95aee7f442021911a7c9861e6"
                  },
-                 "signal" => "mcd_art_liquidations",
+                 "signal" => "anomaly_total_liquidations",
                  "slug" => "multi-collateral-dai",
-                 "value" => 21029.0
+                 "value" => 21_029.0
                },
                %{
                  "datetime" => "2019-01-02T00:00:00Z",
@@ -225,7 +230,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalRawDataTest do
                      "0x0bb27622fa4fcdf39344251e9b0776467eaa5d9dbf0f025d254f55093848f2bd"
                  },
                  "value" => 12_308_120.0,
-                 "signal" => "dai_mint",
+                 "signal" => "anomaly_total_liquidations",
                  "slug" => "multi-collateral-dai",
                  "isHidden" => false
                }
@@ -240,14 +245,14 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalRawDataTest do
     rows = [
       [
         ~U[2019-01-01 00:00:00Z] |> DateTime.to_unix(),
-        "mcd_art_liquidations",
+        "total_liquidations",
         "multi-collateral-dai",
         21_029,
         ~s|{"txHash": "0xecdeb8435aff6e18e08177bb94d52b2da6dd15b95aee7f442021911a7c9861e6", "address": "0x183c9077fb7b74f02d3badda6c85a19c92b1f648"}|
       ],
       [
         ~U[2019-01-02 00:00:00Z] |> DateTime.to_unix(),
-        "dai_mint",
+        "total_liquidations",
         "multi-collateral-dai",
         12_308_120,
         ~s|{"txHash": "0x0bb27622fa4fcdf39344251e9b0776467eaa5d9dbf0f025d254f55093848f2bd", "address": "0x61c808d82a3ac53231750dadc13c777b59310bd9"}|
@@ -269,7 +274,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalRawDataTest do
                    "txHash" =>
                      "0xecdeb8435aff6e18e08177bb94d52b2da6dd15b95aee7f442021911a7c9861e6"
                  },
-                 "signal" => "mcd_art_liquidations",
+                 "signal" => "anomaly_total_liquidations",
                  "slug" => "multi-collateral-dai",
                  "value" => 21_029.0
                },
@@ -281,7 +286,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalRawDataTest do
                      "0x0bb27622fa4fcdf39344251e9b0776467eaa5d9dbf0f025d254f55093848f2bd"
                  },
                  "value" => 12_308_120.0,
-                 "signal" => "dai_mint",
+                 "signal" => "anomaly_total_liquidations",
                  "slug" => "multi-collateral-dai",
                  "isHidden" => false
                }

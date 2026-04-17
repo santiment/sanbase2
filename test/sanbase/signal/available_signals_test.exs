@@ -10,7 +10,6 @@ defmodule Sanbase.Signal.AvailableSignalsTest do
       [
         "anomaly_project_in_trending_words",
         "anomaly_total_liquidations",
-        "project_in_trending_words",
         "mvrv_usd_30d_upper_zone",
         "mvrv_usd_60d_upper_zone",
         "mvrv_usd_180d_upper_zone",

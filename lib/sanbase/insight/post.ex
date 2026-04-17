@@ -986,7 +986,12 @@ defmodule Sanbase.Insight.Post do
   defp do_images_cast(changeset, []), do: changeset
 
   defp do_images_cast(changeset, image_urls) do
-    images = PostImage |> where([i], i.image_url in ^image_urls) |> Repo.all()
+    # Match both original-case and downcased URLs to handle old records
+    # that were stored with downcased URLs before the downcase was removed.
+    downcased_urls = Enum.map(image_urls, &String.downcase/1)
+    all_candidate_urls = Enum.uniq(image_urls ++ downcased_urls)
+
+    images = PostImage |> where([i], i.image_url in ^all_candidate_urls) |> Repo.all()
     current_post_id = changeset.data.id
 
     reused? =

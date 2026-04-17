@@ -239,13 +239,32 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
           []
       end
 
+    # Build a case-insensitive lookup from DB images to get variant URLs
+    db_image_by_url =
+      Map.new(db_images, fn img -> {String.downcase(img.image_url), img} end)
+
+    # Regex images are in text-appearance order — use them as the primary source
     regex_images =
       ImageUrl.extract_from_text(text)
-      |> Enum.map(fn url -> %{image_url: url} end)
+      |> Enum.map(fn url ->
+        case Map.get(db_image_by_url, String.downcase(url)) do
+          nil -> %{image_url: url}
+          db_img -> %{db_img | image_url: url}
+        end
+      end)
+
+    # Append any DB-only images not found in the text
+    text_urls =
+      MapSet.new(regex_images, fn %{image_url: url} -> String.downcase(url) end)
+
+    orphan_db_images =
+      Enum.reject(db_images, fn %{image_url: url} ->
+        MapSet.member?(text_urls, String.downcase(url))
+      end)
 
     all_images =
-      (db_images ++ regex_images)
-      |> Enum.uniq_by(fn %{image_url: url} -> url end)
+      (regex_images ++ orphan_db_images)
+      |> Enum.uniq_by(fn %{image_url: url} -> String.downcase(url) end)
 
     {:ok, all_images}
   end

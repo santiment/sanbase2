@@ -357,6 +357,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   def update_watchlist_settings(_root, %{id: watchlist_id, settings: settings}, %{
         context: %{auth: %{current_user: current_user}}
       }) do
+    # Settings are per-(watchlist_id, user_id) — this mutates the caller's own
+    # view preferences for the watchlist, not the watchlist's global settings.
+    # Public watchlists are readable by anyone, so anyone may store their own
+    # per-user preferences; private watchlists only by the owner.
     with {:ok, watchlist} <- UserList.by_id(watchlist_id, []),
          true <- watchlist.is_public or watchlist.user_id == current_user.id do
       UserList.Settings.update_or_create_settings(watchlist_id, current_user.id, settings)

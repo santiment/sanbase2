@@ -22,18 +22,15 @@ defmodule SanbaseWeb.Endpoint do
     "//localhost"
   ]
 
-  socket("/socket", SanbaseWeb.UserSocket,
-    websocket: true,
-    check_origin: @websocket_allowed_origins
-  )
+  socket("/socket", SanbaseWeb.UserSocket, websocket: [check_origin: @websocket_allowed_origins])
 
   socket("/live", Phoenix.LiveView.Socket,
     websocket: [
       connect_info: [
         session: {SanbaseWeb.LiveViewUtils, :session_options, [@session_options]}
-      ]
-    ],
-    check_origin: @websocket_allowed_origins
+      ],
+      check_origin: @websocket_allowed_origins
+    ]
   )
 
   # Serve at "/" the static files from "priv/static" directory.

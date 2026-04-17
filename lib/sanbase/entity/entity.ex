@@ -78,11 +78,29 @@ defmodule Sanbase.Entity do
   """
   @spec get_visibility_data(entity_type, entity_id) ::
           {:ok, Sanbase.Entity.Behaviour.visibility_map()} | {:error, String.t()}
-  def get_visibility_data(entity_type, entity_id) do
-    module = deduce_entity_module(entity_type)
+  # Timeline events are always public — they are derived surface of other
+  # entities (insights, watchlists, triggers) and have no visibility flag
+  # of their own. `user_id` is intentionally nil here: no caller currently
+  # needs ownership for timeline events (they are read-only from the API
+  # perspective). If a future caller needs ownership checks, fetch the
+  # event separately — do not rely on this map.
+  def get_visibility_data(:timeline_event, _entity_id),
+    do: {:ok, %{is_public: true, user_id: nil}}
 
-    module.get_visibility_data(entity_id)
+  def get_visibility_data(entity_type, entity_id) do
+    case Registry.fetch_entity_module(entity_type) do
+      {:ok, module} -> module.get_visibility_data(entity_id)
+      :error -> {:error, "Unknown entity type: #{inspect(entity_type)}"}
+    end
   end
+
+  @doc """
+  Maps the vote-API entity name to the Entity-API type.
+  The Vote schema uses `:post` (column `post_id`) while the Entity API
+  exposes the same entity as `:insight`. Other types are identical.
+  """
+  def vote_entity_to_entity_type(:post), do: :insight
+  def vote_entity_to_entity_type(other), do: other
 
   @doc ~s"""
   Return information about the number of created entities by a given user

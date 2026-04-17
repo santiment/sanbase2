@@ -248,7 +248,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
 
   def vote(_root, args, %{context: %{auth: %{current_user: user}}}) do
     with {:ok, entity, entity_id} <- only_one_entity_id?(args),
-         :ok <- verify_entity_access(entity, entity_id, user.id),
+         :ok <- can_vote_for_entity(entity, entity_id, user.id),
          vote_args <- args_to_vote_args(args, user) do
       case Vote.create(vote_args) do
         {:ok, vote} ->
@@ -263,7 +263,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
 
   def unvote(_root, args, %{context: %{auth: %{current_user: user}}}) do
     with {:ok, entity, entity_id} <- only_one_entity_id?(args),
-         :ok <- verify_entity_access(entity, entity_id, user.id),
+         :ok <- can_vote_for_entity(entity, entity_id, user.id),
          vote_args <- args_to_vote_args(args, user) do
       case Vote.downvote(vote_args) do
         {:ok, vote} ->
@@ -276,14 +276,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
     end
   end
 
-  # Timeline events are always public, no access check needed
-  defp verify_entity_access(:timeline_event, _entity_id, _user_id), do: :ok
-
-  # For entity types that support visibility data, check that the entity
-  # is either public or owned by the user
-  defp verify_entity_access(entity, entity_id, user_id) do
-    # Map vote entity names to the entity types used by the Entity module
-    entity_type = vote_entity_to_entity_type(entity)
+  defp can_vote_for_entity(entity, entity_id, user_id) do
+    entity_type = Sanbase.Entity.vote_entity_to_entity_type(entity)
 
     case Sanbase.Entity.get_visibility_data(entity_type, entity_id) do
       {:ok, %{user_id: ^user_id}} ->
@@ -292,20 +286,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
       {:ok, %{is_public: true}} ->
         :ok
 
-      {:ok, _} ->
+      # Merge "private and not owned" and "does not exist" into one message
+      # so an attacker cannot probe private entity IDs.
+      _ ->
         {:error,
-         "The entity of type #{entity} with id #{entity_id} is private and not owned by you."}
-
-      {:error, _} ->
-        {:error, "The entity of type #{entity} with id #{entity_id} does not exist."}
+         "The entity of type #{entity} with id #{entity_id} does not exist, " <>
+           "or is private and not owned by you."}
     end
   end
-
-  defp vote_entity_to_entity_type(:post), do: :insight
-  defp vote_entity_to_entity_type(:watchlist), do: :watchlist
-  defp vote_entity_to_entity_type(:chart_configuration), do: :chart_configuration
-  defp vote_entity_to_entity_type(:dashboard), do: :dashboard
-  defp vote_entity_to_entity_type(:query), do: :query
-  defp vote_entity_to_entity_type(:user_trigger), do: :user_trigger
-  defp vote_entity_to_entity_type(other), do: other
 end

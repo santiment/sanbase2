@@ -176,14 +176,25 @@ defmodule SanbaseWeb.GenericAdminController do
     data =
       GenericAdmin.call_module_function_or_default(admin_module, :before_filter, [data], data)
 
+    has_many =
+      GenericAdmin.call_module_function_or_default(admin_module, :has_many, [data], [])
+      |> Enum.map(fn table ->
+        singular =
+          case resource_module_map(conn)[table.resource] do
+            %{singular: singular} -> singular
+            _ -> table.resource
+          end
+
+        Map.put_new(table, :singular, singular)
+      end)
+
     args =
       %{
         data: data,
         assocs: assocs,
         belongs_to:
           GenericAdmin.call_module_function_or_default(admin_module, :belongs_to, [data], []),
-        has_many:
-          GenericAdmin.call_module_function_or_default(admin_module, :has_many, [data], [])
+        has_many: has_many
       }
       |> Map.merge(resource_params(conn, resource, :show))
       |> Keyword.new()

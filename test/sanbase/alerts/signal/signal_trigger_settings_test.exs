@@ -39,7 +39,7 @@ defmodule Sanbase.Alert.SignalTriggerSettingsTest do
 
       trigger_settings = %{
         type: "signal_data",
-        signal: "dai_mint",
+        signal: "anomaly_total_liquidations",
         target: %{slug: project.slug},
         channel: "telegram",
         operation: %{above: 0}
@@ -82,7 +82,7 @@ defmodule Sanbase.Alert.SignalTriggerSettingsTest do
 
       trigger_settings = %{
         type: "signal_data",
-        signal: "dai_mint",
+        signal: "anomaly_total_liquidations",
         target: %{slug: project.slug},
         channel: "telegram",
         operation: %{above: 0}

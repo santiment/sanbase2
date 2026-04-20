@@ -78,11 +78,12 @@ defmodule SanbaseWeb.MetricRegistryController do
   end
 
   def export_json(conn, %{"secret" => secret}) do
-    expected = get_sync_secret()
+    expected = get_export_secret()
 
     case is_binary(expected) and Plug.Crypto.secure_compare(secret, expected) do
       true ->
         conn
+        |> put_resp_content_type("application/x-ndjson")
         |> resp(200, get_metric_registry_json())
         |> send_resp()
 
@@ -101,32 +102,28 @@ defmodule SanbaseWeb.MetricRegistryController do
 
   defp get_metric_registry_json() do
     Sanbase.Metric.Registry.all()
-    |> Enum.take(1)
     |> Enum.map(&transform/1)
-
-    # |> Enum.map(&Jason.encode!/1)
-    # |> Enum.intersperse("\n")
+    |> Enum.map(&Jason.encode!/1)
+    |> Enum.intersperse("\n")
   end
 
   defp transform(struct) when is_struct(struct) do
     struct
     |> Map.from_struct()
     |> Map.drop([:__meta__, :inserted_at, :updated_at, :change_suggestions])
-    |> Map.new(fn
-      {k, v} when is_list(v) ->
-        {k, Enum.map(v, &transform/1)}
-
-      {k, v} when is_map(v) ->
-        {k, transform(v)}
-
-      {k, v} ->
-        {k, v}
-    end)
+    |> Map.new(fn {k, v} -> {k, transform(v)} end)
   end
 
+  defp transform(list) when is_list(list), do: Enum.map(list, &transform/1)
+  defp transform(map) when is_map(map), do: Map.new(map, fn {k, v} -> {k, transform(v)} end)
+  defp transform(tuple) when is_tuple(tuple), do: tuple |> Tuple.to_list() |> transform()
   defp transform(data), do: data
 
   defp get_sync_secret() do
     Sanbase.Utils.Config.module_get(Sanbase.Metric.Registry.Sync, :sync_secret)
+  end
+
+  defp get_export_secret() do
+    Sanbase.Utils.Config.module_get(Sanbase.Metric.Registry.Sync, :export_secret)
   end
 end

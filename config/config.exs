@@ -325,7 +325,9 @@ config :ex_audit,
   ],
   primitive_structs: [DateTime, NaiveDateTime, Date]
 
-config :sanbase, Sanbase.Metric.Registry.Sync, sync_secret: "secret_only_on_prod"
+config :sanbase, Sanbase.Metric.Registry.Sync,
+  sync_secret: "secret_only_on_prod",
+  export_secret: "export_secret_only_on_prod"
 
 # Import configs
 import_config "ueberauth_config.exs"

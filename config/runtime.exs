@@ -170,5 +170,6 @@ if config_env() == :prod do
     ]
 
   config :sanbase, Sanbase.Metric.Registry.Sync,
-    sync_secret: System.get_env("METRIC_REGISTRY_SYNC_SECRET")
+    sync_secret: System.get_env("METRIC_REGISTRY_SYNC_SECRET"),
+    export_secret: System.get_env("METRIC_REGISTRY_EXPORT_SECRET")
 end

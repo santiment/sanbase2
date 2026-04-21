@@ -4,9 +4,7 @@ defmodule SanbaseWeb.MetricRegistryController do
   require Logger
 
   def sync(conn, %{"secret" => secret} = params) do
-    expected = get_sync_secret()
-
-    case is_binary(expected) and Plug.Crypto.secure_compare(secret, expected) do
+    case valid_secret?(secret, get_sync_secret()) do
       true ->
         try do
           case Sanbase.Metric.Registry.Sync.apply_sync(
@@ -53,9 +51,7 @@ defmodule SanbaseWeb.MetricRegistryController do
         "actual_changes" => actual_changes,
         "secret" => secret
       }) do
-    expected = get_sync_secret()
-
-    case is_binary(expected) and Plug.Crypto.secure_compare(secret, expected) do
+    case valid_secret?(secret, get_sync_secret()) do
       true ->
         # The code fetches the sync by the UUID and checks there if the sync is dry run or not
         case Sanbase.Metric.Registry.Sync.mark_sync_as_completed(sync_uuid, actual_changes) do
@@ -78,9 +74,7 @@ defmodule SanbaseWeb.MetricRegistryController do
   end
 
   def export_json(conn, %{"secret" => secret}) do
-    expected = get_export_secret()
-
-    case is_binary(expected) and Plug.Crypto.secure_compare(secret, expected) do
+    case valid_secret?(secret, get_export_secret()) do
       true ->
         conn
         |> put_resp_content_type("application/x-ndjson")
@@ -126,4 +120,10 @@ defmodule SanbaseWeb.MetricRegistryController do
   defp get_export_secret() do
     Sanbase.Utils.Config.module_get(Sanbase.Metric.Registry.Sync, :export_secret)
   end
+
+  defp valid_secret?(secret, expected) when is_binary(secret) and is_binary(expected) do
+    Plug.Crypto.secure_compare(secret, expected)
+  end
+
+  defp valid_secret?(_secret, _expected), do: false
 end

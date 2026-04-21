@@ -9,7 +9,7 @@ defmodule SanbaseWeb.MailjetController do
     expected_secret = webhook_secret()
 
     if is_binary(expected_secret) and Plug.Crypto.secure_compare(secret, expected_secret) do
-      handle_webhook(conn, params)
+      handle_webhook(conn, Map.delete(params, "secret"))
     else
       Logger.warning("Invalid Mailjet webhook secret")
 
@@ -42,7 +42,9 @@ defmodule SanbaseWeb.MailjetController do
       end
     else
       nil ->
-        Logger.warning("Missing required parameters in Mailjet webhook: #{inspect(params)}")
+        Logger.warning(
+          "Missing required parameters in Mailjet webhook event: #{Map.get(params, "event")}"
+        )
 
       unexpected ->
         Logger.warning("Unexpected data in Mailjet webhook: #{inspect(unexpected)}")

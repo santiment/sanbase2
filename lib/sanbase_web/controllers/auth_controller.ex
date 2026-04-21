@@ -292,13 +292,33 @@ defmodule SanbaseWeb.AuthController do
         end
 
       %URI{scheme: "https", userinfo: nil, host: host, port: port}
-      when host in @valid_redirect_hosts and port in [nil, 443] ->
-        true
+      when is_binary(host) and port in [nil, 443] ->
+        if String.downcase(host) in @valid_redirect_hosts do
+          true
+        else
+          Logger.warning(
+            "Attempt to redirect to an unsupported endpoint after login: #{redact_url(url)}"
+          )
+
+          {:error, "Invalid redirect URL"}
+        end
 
       _ ->
-        Logger.warning("Attempt to redirect to an unsupported endpoint after login: #{url}")
+        Logger.warning(
+          "Attempt to redirect to an unsupported endpoint after login: #{redact_url(url)}"
+        )
+
         {:error, "Invalid redirect URL"}
     end
+  end
+
+  defp redact_url(url) do
+    url
+    |> URI.parse()
+    |> Map.merge(%{userinfo: nil, query: nil, fragment: nil})
+    |> URI.to_string()
+  rescue
+    _ -> "<unparseable>"
   end
 
   # Reject CR/LF/NUL/tab and any other ASCII control byte. These have no

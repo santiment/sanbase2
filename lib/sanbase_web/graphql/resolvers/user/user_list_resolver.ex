@@ -373,8 +373,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
            message: "Cannot update watchlist settings", details: changeset_errors(changeset)}
       end
     else
-      {:error, reason} -> {:error, reason}
-      false -> {:error, "Cannot update settings for a private watchlist you do not own"}
+      # Same generic error for not-found and not-owned-private so callers can't
+      # distinguish absent IDs from private watchlists they don't own.
+      {:error, _reason} -> {:error, "Cannot update settings for this watchlist"}
+      false -> {:error, "Cannot update settings for this watchlist"}
     end
   end
 

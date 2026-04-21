@@ -45,14 +45,14 @@ defmodule SanbaseWeb.RepoReaderController do
   end
 
   def reader_webhook(conn, %{"secret" => secret} = params) do
-    Logger.info(
-      "[RepoReaderController] Received reader webhook with params: #{inspect(Map.delete(params, "secret"))}"
-    )
-
     expected = endpoint_secret()
 
     case is_binary(expected) and Plug.Crypto.secure_compare(secret, expected) do
       true ->
+        Logger.info(
+          "[RepoReaderController] Received reader webhook with params: #{inspect(Map.delete(params, "secret"))}"
+        )
+
         changed_files = Map.get(params, "changed_files", [])
 
         case Sanbase.RepoReader.update_projects(changed_files) do

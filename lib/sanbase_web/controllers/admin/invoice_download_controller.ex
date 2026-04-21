@@ -5,7 +5,10 @@ defmodule SanbaseWeb.Admin.InvoiceDownloadController do
 
   # Finance data: restrict download to Admin Panel Owners. Viewer/Editor
   # admins have no business-need for raw invoice archives.
-  @allowed_role_ids [Sanbase.Accounts.Role.admin_panel_owner_role_id()]
+  @allowed_role_ids [
+    Sanbase.Accounts.Role.admin_panel_editor_role_id(),
+    Sanbase.Accounts.Role.admin_panel_owner_role_id()
+  ]
 
   def download(conn, %{"id" => id}) do
     if authorized?(conn) do

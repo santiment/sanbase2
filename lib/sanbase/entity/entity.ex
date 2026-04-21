@@ -50,6 +50,7 @@ defmodule Sanbase.Entity do
           | :user_trigger
           | :dashboard
           | :query
+          | :timeline_event
 
   @type option ::
           {:page, non_neg_integer()}

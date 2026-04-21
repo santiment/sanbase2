@@ -29,7 +29,7 @@ defmodule SanbaseWeb.Graphql.DocumentProvider do
   def pipeline(%Absinthe.Plug.Request.Query{pipeline: pipeline}) do
     pipeline
     |> Absinthe.Pipeline.insert_before(
-      Absinthe.Phase.Document.Complexity.Analysis,
+      Absinthe.Phase.Document.Validation.Result,
       SanbaseWeb.Graphql.Phase.Document.Validation.MaxDepth
     )
     |> Absinthe.Pipeline.insert_before(
@@ -235,7 +235,7 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Validation.MaxDepth do
         message: "Query exceeds maximum nesting depth of #{@max_depth}"
       }
 
-      {:error, Absinthe.Phase.put_error(bp_root, error)}
+      {:ok, Absinthe.Phase.put_error(bp_root, error)}
     else
       {:ok, bp_root}
     end

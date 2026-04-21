@@ -54,6 +54,30 @@ defmodule SanbaseWeb.Graphql.EntityPublicTriggerTest do
 
       assert_public_trigger_shape(trigger, user_trigger)
     end
+
+    test "hidden triggers cannot be unvoted even if they were voted before hiding", context do
+      %{conn: conn, user_trigger: user_trigger} = context
+
+      vote(conn, user_trigger.id)
+
+      user_trigger
+      |> Ecto.Changeset.change(is_hidden: true)
+      |> Sanbase.Repo.update!()
+
+      mutation = """
+      mutation {
+        unvote(userTriggerId: #{user_trigger.id}) {
+          votes{ totalVotes }
+        }
+      }
+      """
+
+      error = execute_mutation_with_error(conn, mutation)
+
+      assert error ==
+               "The entity of type user_trigger with id #{user_trigger.id} does not exist, " <>
+                 "or is private and not owned by you."
+    end
   end
 
   describe "public_user_trigger does not leak private user data" do

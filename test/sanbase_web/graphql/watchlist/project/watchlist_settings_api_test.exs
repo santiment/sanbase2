@@ -49,7 +49,7 @@ defmodule SanbaseWeb.Graphql.WatchlistSettingsApiTest do
       )
 
     assert %{"errors" => [%{"message" => message}]} = result
-    assert message =~ "private watchlist"
+    assert message == "Cannot update settings for this watchlist"
   end
 
   test "validate page size", %{conn: conn} do

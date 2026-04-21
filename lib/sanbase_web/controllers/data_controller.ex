@@ -372,9 +372,8 @@ defmodule SanbaseWeb.DataController do
     end
   end
 
-  # On stage/prod the env var is set and is different from the default one.
+  # Fails closed: returns nil when the env var is missing so the
+  # is_binary(expected) guard at the call sites rejects all requests.
   defp santiment_team_members_secret(),
-    do:
-      System.get_env("SANTIMENT_TEAM_MEMBERS_ENDPOINT_SECRET") ||
-        "random_secret"
+    do: System.get_env("SANTIMENT_TEAM_MEMBERS_ENDPOINT_SECRET")
 end

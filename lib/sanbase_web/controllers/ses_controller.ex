@@ -173,7 +173,7 @@ defmodule SanbaseWeb.SESController do
   defp valid_sns_url?(url) do
     case URI.parse(url) do
       %URI{scheme: "https", host: host} when is_binary(host) ->
-        String.ends_with?(host, ".amazonaws.com")
+        String.starts_with?(host, "sns.") and String.ends_with?(host, ".amazonaws.com")
 
       _ ->
         false

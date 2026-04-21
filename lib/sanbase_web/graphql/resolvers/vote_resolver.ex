@@ -280,6 +280,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
     entity_type = Sanbase.Entity.vote_entity_to_entity_type(entity)
 
     case Sanbase.Entity.get_visibility_data(entity_type, entity_id) do
+      # Hidden entities (even public ones, and even those owned by the caller)
+      # are treated as if they don't exist — voting on them would bring them
+      # back into trending/leaderboard surfaces.
+      {:ok, %{is_hidden: true}} ->
+        not_visible_error(entity, entity_id)
+
       {:ok, %{user_id: ^user_id}} ->
         :ok
 
@@ -289,9 +295,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
       # Merge "private and not owned" and "does not exist" into one message
       # so an attacker cannot probe private entity IDs.
       _ ->
-        {:error,
-         "The entity of type #{entity} with id #{entity_id} does not exist, " <>
-           "or is private and not owned by you."}
+        not_visible_error(entity, entity_id)
     end
+  end
+
+  defp not_visible_error(entity, entity_id) do
+    {:error,
+     "The entity of type #{entity} with id #{entity_id} does not exist, " <>
+       "or is private and not owned by you."}
   end
 end

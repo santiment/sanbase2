@@ -441,11 +441,13 @@ defmodule SanbaseWeb.OAuthController do
   defp maybe_put(map, _key, nil), do: map
   defp maybe_put(map, key, value), do: Map.put(map, key, value)
 
-  defp valid_uuid?(value) when is_binary(value) do
-    case Ecto.UUID.cast(value) do
-      {:ok, _} -> true
-      :error -> false
-    end
+  # Only accept the canonical 8-4-4-4-12 UUID text form; Ecto.UUID.cast/1 also
+  # accepts raw 16-byte binaries, which are not valid request parameters.
+  defp valid_uuid?(
+         <<_::binary-size(8), "-", _::binary-size(4), "-", _::binary-size(4), "-",
+           _::binary-size(4), "-", _::binary-size(12)>> = value
+       ) do
+    match?({:ok, _}, Ecto.UUID.cast(value))
   end
 
   defp valid_uuid?(_), do: false

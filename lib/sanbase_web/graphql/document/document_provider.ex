@@ -222,7 +222,12 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Validation.MaxDepth do
 
   @spec run(Absinthe.Blueprint.t(), Keyword.t()) :: Absinthe.Phase.result_t()
   def run(bp_root, _) do
-    max = bp_root.operations |> Enum.map(&operation_depth/1) |> Enum.max(fn -> 0 end)
+    fragments = Map.new(bp_root.fragments || [], fn f -> {f.name, f} end)
+
+    max =
+      bp_root.operations
+      |> Enum.map(&operation_depth(&1, fragments))
+      |> Enum.max(fn -> 0 end)
 
     if max > @max_depth do
       error = %Absinthe.Phase.Error{
@@ -236,22 +241,47 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Validation.MaxDepth do
     end
   end
 
-  defp operation_depth(%{selections: selections}), do: selections_depth(selections, 1)
-  defp operation_depth(_), do: 0
+  defp operation_depth(%{selections: selections}, fragments),
+    do: selections_depth(selections, 1, fragments, MapSet.new())
 
-  defp selections_depth([], depth), do: depth
+  defp operation_depth(_, _), do: 0
 
-  defp selections_depth(selections, depth) do
+  defp selections_depth([], depth, _fragments, _seen), do: depth
+
+  defp selections_depth(selections, depth, fragments, seen) do
     selections
-    |> Enum.map(&node_depth(&1, depth))
+    |> Enum.map(&node_depth(&1, depth, fragments, seen))
     |> Enum.max(fn -> depth end)
   end
 
-  defp node_depth(%{selections: inner}, depth) when is_list(inner) and inner != [] do
-    selections_depth(inner, depth + 1)
+  # Named fragment spreads carry no inline selections; resolve them against
+  # bp_root.fragments and track visited names so a cyclic fragment graph can't
+  # make the walker loop. Without this, a query can chain spreads to reach
+  # arbitrary depth at runtime while this phase reports depth 0.
+  defp node_depth(
+         %Absinthe.Blueprint.Document.Fragment.Spread{name: name},
+         depth,
+         fragments,
+         seen
+       ) do
+    cond do
+      MapSet.member?(seen, name) ->
+        depth
+
+      fragment = Map.get(fragments, name) ->
+        selections_depth(fragment.selections, depth, fragments, MapSet.put(seen, name))
+
+      true ->
+        depth
+    end
   end
 
-  defp node_depth(_, depth), do: depth
+  defp node_depth(%{selections: inner}, depth, fragments, seen)
+       when is_list(inner) and inner != [] do
+    selections_depth(inner, depth + 1, fragments, seen)
+  end
+
+  defp node_depth(_, depth, _fragments, _seen), do: depth
 end
 
 defmodule SanbaseWeb.Graphql.Phase.Document.Complexity.Preprocess do

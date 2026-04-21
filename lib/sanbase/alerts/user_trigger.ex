@@ -90,17 +90,27 @@ defmodule Sanbase.Alert.UserTrigger do
   end
 
   @impl Sanbase.Entity.Behaviour
-  def get_visibility_data(id) do
-    # is_public is virtual (computed from the embedded trigger), so the default
-    # helper that selects it directly doesn't work here.
-    case by_id(id, []) do
-      {:ok, ut} ->
-        {:ok, %{user_id: ut.user_id, is_hidden: ut.is_hidden, is_public: ut.trigger.is_public}}
+  # is_public is virtual (computed from the embedded trigger), so the default
+  # helper that selects it directly doesn't work here.
+  def get_visibility_data(id) when is_integer(id) do
+    query =
+      from(ut in base_query(),
+        where: ut.id == ^id,
+        select: %{
+          user_id: ut.user_id,
+          is_hidden: ut.is_hidden,
+          is_public: fragment("?.trigger->>'is_public' = 'true'", ut)
+        }
+      )
 
-      _ ->
-        {:error, "UserTrigger with id #{id} does not exist."}
+    case Repo.one(query) do
+      %{} = map -> {:ok, map}
+      nil -> {:error, "UserTrigger with id #{id} does not exist."}
     end
   end
+
+  def get_visibility_data(id),
+    do: {:error, "Invalid UserTrigger id: #{inspect(id)}. Expected an integer."}
 
   @impl Sanbase.Entity.Behaviour
   def by_id!(id, opts) when is_integer(id), do: by_id(id, opts) |> to_bang()

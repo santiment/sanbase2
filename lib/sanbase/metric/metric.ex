@@ -1118,10 +1118,9 @@ defmodule Sanbase.Metric do
   end
 
   defp combine_metrics_in_modules(tagged_results, selector) do
-    # `tagged_results` is a list of `{module, result}` pairs from parallel_fun, or
-    # bare `{:exit, reason}` tuples when `Parallel.map` saw a process crash/timeout
-    # before `parallel_fun` returned. Combine the metrics and, in case any module
-    # returned a non-`:ok` result, wrap in `:nocache` so the next attempt retries.
+    # `tagged_results` is a list of `{module, result}` pairs from parallel_fun.
+    # Wrap in `:nocache` if any module returned a non-`:ok` result so the next
+    # attempt retries.
     hidden = hidden_metrics()
 
     available_metrics =
@@ -1135,11 +1134,7 @@ defmodule Sanbase.Metric do
       |> Enum.sort()
 
     failed_modules =
-      Enum.flat_map(tagged_results, fn
-        {_module, {:ok, _}} -> []
-        {module, result} -> [{module, result}]
-        other -> [{:unknown_module, other}]
-      end)
+      Enum.reject(tagged_results, fn {_module, result} -> match?({:ok, _}, result) end)
 
     case failed_modules do
       [] ->
@@ -1152,14 +1147,10 @@ defmodule Sanbase.Metric do
   end
 
   defp log_failed_modules(failed_modules, selector) do
-    summary =
-      failed_modules
-      |> Enum.map(fn {module, result} -> "#{inspect(module)}=#{inspect(result)}" end)
-      |> Enum.join(", ")
-
-    Logger.warning(
-      "available_metrics_for_selector: #{length(failed_modules)} module(s) failed for " <>
-        "selector #{inspect(selector)}: #{summary}"
+    Logger.warning("available_metrics_for_selector: modules failed",
+      failed_count: length(failed_modules),
+      selector: inspect(selector),
+      failures: Enum.map(failed_modules, fn {m, r} -> {inspect(m), inspect(r)} end)
     )
   end
 

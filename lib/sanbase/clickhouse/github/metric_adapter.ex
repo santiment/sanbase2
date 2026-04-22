@@ -296,12 +296,10 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   def available_metrics(), do: @metrics
 
   @impl Sanbase.Metric.Behaviour
-  def available_metrics(selector, opts \\ [])
-
   def available_metrics(%{address: _address}, _opts), do: []
 
-  def available_metrics(%{contract_address: contract_address}, _opts) do
-    available_metrics_for_contract(__MODULE__, contract_address)
+  def available_metrics(%{contract_address: contract_address}, opts) do
+    available_metrics_for_contract(__MODULE__, contract_address, opts)
   end
 
   def available_metrics(%{slug: slug}, _opts) when is_binary(slug) do

@@ -215,7 +215,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   def available_metrics(), do: Registry.metrics_list()
 
   @impl Sanbase.Metric.Behaviour
-  def available_metrics(selector, opts \\ []) do
+  def available_metrics(selector, opts) do
     available_metrics_for_selector_query(selector, opts)
     |> ClickhouseRepo.query_transform(fn [metric] ->
       Map.get(Registry.metric_to_names_map(), metric)

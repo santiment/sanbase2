@@ -18,28 +18,41 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
     Sanbase.Clickhouse.Label.label_fqns_with_asset(slug)
   end
 
-  def available_metrics(%Project{slug: slug}, _args, resolution) do
-    # TEMP 02.02.2023: Handle ripple -> xrp rename
-    with {:ok, %{slug: slug}} <- Sanbase.Project.Selector.args_to_selector(%{slug: slug}) do
-      user_metric_access_level = user_metric_access_level(resolution)
-      lookback_days = user_available_metrics_lookback_days(resolution)
+  def available_metrics(%Project{} = project, _args, resolution),
+    do:
+      resolve_available(
+        project,
+        resolution,
+        :available_metrics,
+        &Metric.available_metrics_for_selector/2
+      )
 
-      query = :available_metrics
+  def available_timeseries_metrics(%Project{} = project, _args, resolution),
+    do:
+      resolve_available(
+        project,
+        resolution,
+        :available_timeseries_metrics,
+        &Metric.available_timeseries_metrics_for_slug/2
+      )
 
-      cache_key =
-        {__MODULE__, query, slug, user_metric_access_level, lookback_days}
-        |> Sanbase.Cache.hash()
+  def available_histogram_metrics(%Project{} = project, _args, resolution),
+    do:
+      resolve_available(
+        project,
+        resolution,
+        :available_histogram_metrics,
+        &Metric.available_histogram_metrics_for_slug/2
+      )
 
-      fun = fn ->
-        Metric.available_metrics_for_selector(%{slug: slug},
-          user_metric_access_level: user_metric_access_level,
-          lookback_days: lookback_days
-        )
-      end
-
-      maybe_register_and_get(cache_key, fun, slug, query)
-    end
-  end
+  def available_table_metrics(%Project{} = project, _args, resolution),
+    do:
+      resolve_available(
+        project,
+        resolution,
+        :available_table_metrics,
+        &Metric.available_table_metrics_for_slug/2
+      )
 
   def available_metrics_extended(%Project{} = project, args, resolution) do
     case available_metrics(project, args, resolution) do
@@ -49,66 +62,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
     end
   end
 
-  def available_timeseries_metrics(%Project{slug: slug}, _args, resolution) do
+  defp resolve_available(%Project{slug: slug}, resolution, query, metric_fn) do
     # TEMP 02.02.2023: Handle ripple -> xrp rename
     with {:ok, %{slug: slug}} <- Sanbase.Project.Selector.args_to_selector(%{slug: slug}) do
       user_metric_access_level = user_metric_access_level(resolution)
       lookback_days = user_available_metrics_lookback_days(resolution)
-
-      query = :available_timeseries_metrics
 
       cache_key =
         {__MODULE__, query, slug, user_metric_access_level, lookback_days}
         |> Sanbase.Cache.hash()
 
       fun = fn ->
-        Metric.available_timeseries_metrics_for_slug(%{slug: slug},
-          user_metric_access_level: user_metric_access_level,
-          lookback_days: lookback_days
-        )
-      end
-
-      maybe_register_and_get(cache_key, fun, slug, query)
-    end
-  end
-
-  def available_histogram_metrics(%Project{slug: slug}, _args, resolution) do
-    # TEMP 02.02.2023: Handle ripple -> xrp rename
-    with {:ok, %{slug: slug}} <- Sanbase.Project.Selector.args_to_selector(%{slug: slug}) do
-      user_metric_access_level = user_metric_access_level(resolution)
-      lookback_days = user_available_metrics_lookback_days(resolution)
-
-      query = :available_histogram_metrics
-
-      cache_key =
-        {__MODULE__, query, slug, user_metric_access_level, lookback_days}
-        |> Sanbase.Cache.hash()
-
-      fun = fn ->
-        Metric.available_histogram_metrics_for_slug(%{slug: slug},
-          user_metric_access_level: user_metric_access_level,
-          lookback_days: lookback_days
-        )
-      end
-
-      maybe_register_and_get(cache_key, fun, slug, query)
-    end
-  end
-
-  def available_table_metrics(%Project{slug: slug}, _args, resolution) do
-    # TEMP 02.02.2023: Handle ripple -> xrp rename
-    with {:ok, %{slug: slug}} <- Sanbase.Project.Selector.args_to_selector(%{slug: slug}) do
-      user_metric_access_level = user_metric_access_level(resolution)
-      lookback_days = user_available_metrics_lookback_days(resolution)
-
-      query = :available_table_metrics
-
-      cache_key =
-        {__MODULE__, query, slug, user_metric_access_level, lookback_days}
-        |> Sanbase.Cache.hash()
-
-      fun = fn ->
-        Metric.available_table_metrics_for_slug(%{slug: slug},
+        metric_fn.(%{slug: slug},
           user_metric_access_level: user_metric_access_level,
           lookback_days: lookback_days
         )

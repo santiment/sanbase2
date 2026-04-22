@@ -61,14 +61,15 @@ defmodule Sanbase.BlockchainAddress.MetricAdapter do
   def available_metrics(), do: @metrics
 
   @impl Sanbase.Metric.Behaviour
+  def available_metrics(selector, opts \\ [])
 
-  def available_metrics(%{address: _address}), do: []
+  def available_metrics(%{address: _address}, _opts), do: []
 
-  def available_metrics(%{contract_address: contract_address}) do
+  def available_metrics(%{contract_address: contract_address}, _opts) do
     Sanbase.Metric.Utils.available_metrics_for_contract(__MODULE__, contract_address)
   end
 
-  def available_metrics(%{slug: slug}) do
+  def available_metrics(%{slug: slug}, _opts) do
     with {:ok, _, _, infrastructure} <- Project.contract_info_infrastructure_by_slug(slug),
          blockchain when is_binary(blockchain) <-
            BlockchainAddress.blockchain_from_infrastructure(infrastructure) do

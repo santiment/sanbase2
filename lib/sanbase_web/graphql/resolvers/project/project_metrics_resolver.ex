@@ -20,25 +20,25 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
 
   def available_metrics(%Project{slug: slug}, _args, resolution) do
     # TEMP 02.02.2023: Handle ripple -> xrp rename
-    {:ok, %{slug: slug}} = Sanbase.Project.Selector.args_to_selector(%{slug: slug})
+    with {:ok, %{slug: slug}} <- Sanbase.Project.Selector.args_to_selector(%{slug: slug}) do
+      user_metric_access_level = user_metric_access_level(resolution)
+      lookback_days = user_available_metrics_lookback_days(resolution)
 
-    user_metric_access_level = user_metric_access_level(resolution)
-    lookback_days = user_available_metrics_lookback_days(resolution)
+      query = :available_metrics
 
-    query = :available_metrics
+      cache_key =
+        {__MODULE__, query, slug, user_metric_access_level, lookback_days}
+        |> Sanbase.Cache.hash()
 
-    cache_key =
-      {__MODULE__, query, slug, user_metric_access_level, lookback_days}
-      |> Sanbase.Cache.hash()
+      fun = fn ->
+        Metric.available_metrics_for_selector(%{slug: slug},
+          user_metric_access_level: user_metric_access_level,
+          lookback_days: lookback_days
+        )
+      end
 
-    fun = fn ->
-      Metric.available_metrics_for_selector(%{slug: slug},
-        user_metric_access_level: user_metric_access_level,
-        lookback_days: lookback_days
-      )
+      maybe_register_and_get(cache_key, fun, slug, query)
     end
-
-    maybe_register_and_get(cache_key, fun, slug, query)
   end
 
   def available_metrics_extended(%Project{} = project, args, resolution) do
@@ -51,71 +51,71 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
 
   def available_timeseries_metrics(%Project{slug: slug}, _args, resolution) do
     # TEMP 02.02.2023: Handle ripple -> xrp rename
-    {:ok, %{slug: slug}} = Sanbase.Project.Selector.args_to_selector(%{slug: slug})
+    with {:ok, %{slug: slug}} <- Sanbase.Project.Selector.args_to_selector(%{slug: slug}) do
+      user_metric_access_level = user_metric_access_level(resolution)
+      lookback_days = user_available_metrics_lookback_days(resolution)
 
-    user_metric_access_level = user_metric_access_level(resolution)
-    lookback_days = user_available_metrics_lookback_days(resolution)
+      query = :available_timeseries_metrics
 
-    query = :available_timeseries_metrics
+      cache_key =
+        {__MODULE__, query, slug, user_metric_access_level, lookback_days}
+        |> Sanbase.Cache.hash()
 
-    cache_key =
-      {__MODULE__, query, slug, user_metric_access_level, lookback_days}
-      |> Sanbase.Cache.hash()
+      fun = fn ->
+        Metric.available_timeseries_metrics_for_slug(%{slug: slug},
+          user_metric_access_level: user_metric_access_level,
+          lookback_days: lookback_days
+        )
+      end
 
-    fun = fn ->
-      Metric.available_timeseries_metrics_for_slug(%{slug: slug},
-        user_metric_access_level: user_metric_access_level,
-        lookback_days: lookback_days
-      )
+      maybe_register_and_get(cache_key, fun, slug, query)
     end
-
-    maybe_register_and_get(cache_key, fun, slug, query)
   end
 
   def available_histogram_metrics(%Project{slug: slug}, _args, resolution) do
     # TEMP 02.02.2023: Handle ripple -> xrp rename
-    {:ok, %{slug: slug}} = Sanbase.Project.Selector.args_to_selector(%{slug: slug})
+    with {:ok, %{slug: slug}} <- Sanbase.Project.Selector.args_to_selector(%{slug: slug}) do
+      user_metric_access_level = user_metric_access_level(resolution)
+      lookback_days = user_available_metrics_lookback_days(resolution)
 
-    user_metric_access_level = user_metric_access_level(resolution)
-    lookback_days = user_available_metrics_lookback_days(resolution)
+      query = :available_histogram_metrics
 
-    query = :available_histogram_metrics
+      cache_key =
+        {__MODULE__, query, slug, user_metric_access_level, lookback_days}
+        |> Sanbase.Cache.hash()
 
-    cache_key =
-      {__MODULE__, query, slug, user_metric_access_level, lookback_days}
-      |> Sanbase.Cache.hash()
+      fun = fn ->
+        Metric.available_histogram_metrics_for_slug(%{slug: slug},
+          user_metric_access_level: user_metric_access_level,
+          lookback_days: lookback_days
+        )
+      end
 
-    fun = fn ->
-      Metric.available_histogram_metrics_for_slug(%{slug: slug},
-        user_metric_access_level: user_metric_access_level,
-        lookback_days: lookback_days
-      )
+      maybe_register_and_get(cache_key, fun, slug, query)
     end
-
-    maybe_register_and_get(cache_key, fun, slug, query)
   end
 
   def available_table_metrics(%Project{slug: slug}, _args, resolution) do
     # TEMP 02.02.2023: Handle ripple -> xrp rename
-    {:ok, %{slug: slug}} = Sanbase.Project.Selector.args_to_selector(%{slug: slug})
+    with {:ok, %{slug: slug}} <- Sanbase.Project.Selector.args_to_selector(%{slug: slug}) do
+      user_metric_access_level = user_metric_access_level(resolution)
+      lookback_days = user_available_metrics_lookback_days(resolution)
 
-    user_metric_access_level = user_metric_access_level(resolution)
-    lookback_days = user_available_metrics_lookback_days(resolution)
+      query = :available_table_metrics
 
-    query = :available_table_metrics
+      cache_key =
+        {__MODULE__, query, slug, user_metric_access_level, lookback_days}
+        |> Sanbase.Cache.hash()
 
-    cache_key =
-      {__MODULE__, query, slug, user_metric_access_level, lookback_days}
-      |> Sanbase.Cache.hash()
+      fun = fn ->
+        Metric.available_table_metrics_for_slug(%{slug: slug},
+          user_metric_access_level: user_metric_access_level,
+          lookback_days: lookback_days
+        )
+      end
 
-    fun = fn ->
-      Metric.available_table_metrics_for_slug(%{slug: slug},
-        user_metric_access_level: user_metric_access_level,
-        lookback_days: lookback_days
-      )
+      maybe_register_and_get(cache_key, fun, slug, query)
     end
-
-    maybe_register_and_get(cache_key, fun, slug, query)
   end
 
   defp user_metric_access_level(resolution) do
@@ -136,12 +136,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
         %{from: from, to: to, metric: metric} = args,
         %{context: %{loader: loader}}
       ) do
-    # TEMP 02.02.2023: Handle ripple -> xrp rename
-    {:ok, %{slug: slug}} = Sanbase.Project.Selector.args_to_selector(%{slug: slug})
-
     only_finalized_data = Map.get(args, :only_finalized_data, false)
 
-    with true <- Metric.has_metric?(metric),
+    # TEMP 02.02.2023: Handle ripple -> xrp rename
+    with {:ok, %{slug: slug}} <- Sanbase.Project.Selector.args_to_selector(%{slug: slug}),
+         true <- Metric.has_metric?(metric),
          false <- Metric.hard_deprecated?(metric),
          include_incomplete_data = Map.get(args, :include_incomplete_data, false),
          {:ok, from, to} <-
@@ -247,7 +246,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
   end
 
   defp register_and_get_via_rehydrating_cache(_cache_key, _fun, slug, query, 0) do
-    {:error, handle_graphql_error(query, slug, "timeout")}
+    {:error,
+     handle_graphql_error(
+       query,
+       slug,
+       "timeout after 5 attempts waiting on RehydratingCache " <>
+         "(upstream adapter(s) likely slow — see prior 'slow module' warnings)"
+     )}
   end
 
   defp register_and_get_via_rehydrating_cache(cache_key, fun, slug, query, attempts) do

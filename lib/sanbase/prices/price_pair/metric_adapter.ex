@@ -135,18 +135,21 @@ defmodule Sanbase.PricePair.MetricAdapter do
   def available_metrics(), do: @metrics
 
   @impl Sanbase.Metric.Behaviour
-  def available_metrics(%{address: _address}), do: []
+  def available_metrics(selector, opts \\ [])
 
-  def available_metrics(%{contract_address: contract_address}) do
+  def available_metrics(%{address: _address}, _opts), do: []
+
+  def available_metrics(%{contract_address: contract_address}, _opts) do
     Sanbase.Metric.Utils.available_metrics_for_contract(__MODULE__, contract_address)
   end
 
-  def available_metrics(%{slug: slug}) do
-    cache_key = {__MODULE__, :has_price_data?, slug} |> Sanbase.Cache.hash()
+  def available_metrics(%{slug: slug}, opts) do
+    lookback_days = Keyword.get(opts, :lookback_days)
+    cache_key = {__MODULE__, :has_price_data?, slug, lookback_days} |> Sanbase.Cache.hash()
     cache_key_with_ttl = {cache_key, 900}
 
     case Sanbase.Cache.get_or_store(cache_key_with_ttl, fn ->
-           PricePair.available_quote_assets(slug)
+           PricePair.available_quote_assets(slug, lookback_days: lookback_days)
          end) do
       {:ok, quote_assets} ->
         metrics =

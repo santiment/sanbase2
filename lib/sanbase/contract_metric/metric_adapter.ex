@@ -173,8 +173,10 @@ defmodule Sanbase.Contract.MetricAdapter do
   def available_metrics(), do: @metrics
 
   @impl Sanbase.Metric.Behaviour
-  def available_metrics(%{contract_address: _}), do: {:ok, @metrics}
-  def available_metrics(%{slug: _}), do: {:ok, []}
+  def available_metrics(selector, opts \\ [])
+
+  def available_metrics(%{contract_address: _}, _opts), do: {:ok, @metrics}
+  def available_metrics(%{slug: _}, _opts), do: {:ok, []}
 
   @impl Sanbase.Metric.Behaviour
   def available_slugs(), do: {:ok, []}

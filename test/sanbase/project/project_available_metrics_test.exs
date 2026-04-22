@@ -118,6 +118,24 @@ defmodule Sanbase.Project.AvailableMetricsTest do
       end)
     end
 
+    test "returns a GraphQL error (does not crash) when args_to_selector fails" do
+      project = insert(:random_erc20_project)
+      error_msg = "The slug #{inspect(project.slug)} is not an existing slug."
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Project.Selector.args_to_selector/1,
+        {:error, error_msg}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result = get_available_metrics(build_conn(), project)
+
+        assert %{
+                 "data" => %{"projectBySlug" => %{"availableMetrics" => nil}},
+                 "errors" => [%{"message" => ^error_msg} | _]
+               } = result
+      end)
+    end
+
     test "same user hits cache on repeat calls (facade invoked once)" do
       user = insert(:user, available_metrics_lookback_days: 90)
       project = insert(:random_erc20_project)

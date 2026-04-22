@@ -272,16 +272,18 @@ defmodule Sanbase.SocialData.MetricAdapter do
   def available_metrics(), do: @metrics
 
   @impl Sanbase.Metric.Behaviour
-  def available_metrics(%{address: _address}), do: []
+  def available_metrics(selector, opts \\ [])
 
-  def available_metrics(%{contract_address: contract_address}) do
+  def available_metrics(%{address: _address}, _opts), do: []
+
+  def available_metrics(%{contract_address: contract_address}, _opts) do
     metrics = Sanbase.Metric.Utils.available_metrics_for_contract(__MODULE__, contract_address)
 
     # The metric is available only for `source`, not for `slug`
     metrics -- ["social_active_users"]
   end
 
-  def available_metrics(%{slug: slug}) do
+  def available_metrics(%{slug: slug}, _opts) do
     with %Project{telegram_link: telegram_link} <- Project.by_slug(slug, preload?: false) do
       metrics =
         case is_binary(telegram_link) do

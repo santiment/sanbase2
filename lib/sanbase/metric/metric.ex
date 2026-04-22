@@ -13,6 +13,8 @@ defmodule Sanbase.Metric do
   by aggregating data fetched by multiple modules.
   """
 
+  require Logger
+
   import Sanbase.Metric.MetricReplace,
     only: [maybe_replace_metric: 2, maybe_replace_metrics: 2]
 
@@ -760,7 +762,17 @@ defmodule Sanbase.Metric do
   def available_metrics_for_selector(selector, opts) do
     user_metric_access_level = Keyword.get(opts, :user_metric_access_level, "released")
     lookback_days = Keyword.get(opts, :lookback_days)
-    parallel_opts = [ordered: false, max_concurrency: 8, timeout: 60_000]
+    # `ordered: true` so we can zip each result back to its module even when the
+    # task exits with `{:exit, :timeout}` (exit reasons carry no module reference).
+    # `on_timeout: :kill_task` — without it the stream crashes the caller on any
+    # task timeout; with it the slow task is killed and shows up as `{:exit, :timeout}`
+    # in the result stream, letting the rest of the batch complete normally.
+    parallel_opts = [
+      ordered: true,
+      max_concurrency: 10,
+      timeout: 60_000,
+      on_timeout: :kill_task
+    ]
 
     parallel_fun = fn module ->
       cache_key =
@@ -769,23 +781,20 @@ defmodule Sanbase.Metric do
         |> Sanbase.Cache.hash()
 
       Sanbase.Cache.get_or_store(cache_key, fn ->
-        call_module_available_metrics(module, selector, opts)
+        module.available_metrics(selector, opts)
         |> maybe_remove_experimental_metrics(user_metric_access_level)
       end)
     end
 
-    metrics_in_modules =
-      Sanbase.Parallel.map(Helper.metric_modules(), parallel_fun, parallel_opts)
+    modules = Helper.metric_modules()
 
-    combine_metrics_in_modules(metrics_in_modules, selector)
-  end
+    tagged_results =
+      modules
+      |> Sanbase.Parallel.map(parallel_fun, parallel_opts)
+      |> Enum.zip(modules)
+      |> Enum.map(fn {result, module} -> {module, result} end)
 
-  defp call_module_available_metrics(module, selector, opts) do
-    if function_exported?(module, :available_metrics, 2) do
-      module.available_metrics(selector, opts)
-    else
-      module.available_metrics(selector)
-    end
+    combine_metrics_in_modules(tagged_results, selector)
   end
 
   @doc ~s"""
@@ -1108,16 +1117,16 @@ defmodule Sanbase.Metric do
     end
   end
 
-  defp combine_metrics_in_modules(metrics_in_modules, selector) do
-    # Combine the results of the different metric modules. In case any of the
-    # metric modules returned an :error tuple, wrap the result in a :nocache
-    # tuple so the next attempt to fetch the data will try to fetch the metrics
-    # again.
+  defp combine_metrics_in_modules(tagged_results, selector) do
+    # `tagged_results` is a list of `{module, result}` pairs from parallel_fun, or
+    # bare `{:exit, reason}` tuples when `Parallel.map` saw a process crash/timeout
+    # before `parallel_fun` returned. Combine the metrics and, in case any module
+    # returned a non-`:ok` result, wrap in `:nocache` so the next attempt retries.
     hidden = hidden_metrics()
 
     available_metrics =
-      Enum.flat_map(metrics_in_modules, fn
-        {:ok, metrics} -> metrics
+      Enum.flat_map(tagged_results, fn
+        {_module, {:ok, metrics}} -> metrics
         _ -> []
       end)
       |> maybe_replace_metrics(selector)
@@ -1125,14 +1134,33 @@ defmodule Sanbase.Metric do
       |> Enum.reject(&(&1 in hidden))
       |> Enum.sort()
 
-    has_errors? =
-      metrics_in_modules
-      |> Enum.any?(&(not match?({:ok, _}, &1)))
+    failed_modules =
+      Enum.flat_map(tagged_results, fn
+        {_module, {:ok, _}} -> []
+        {module, result} -> [{module, result}]
+        other -> [{:unknown_module, other}]
+      end)
 
-    case has_errors? do
-      true -> {:nocache, {:ok, available_metrics}}
-      false -> {:ok, available_metrics}
+    case failed_modules do
+      [] ->
+        {:ok, available_metrics}
+
+      _ ->
+        log_failed_modules(failed_modules, selector)
+        {:nocache, {:ok, available_metrics}}
     end
+  end
+
+  defp log_failed_modules(failed_modules, selector) do
+    summary =
+      failed_modules
+      |> Enum.map(fn {module, result} -> "#{inspect(module)}=#{inspect(result)}" end)
+      |> Enum.join(", ")
+
+    Logger.warning(
+      "available_metrics_for_selector: #{length(failed_modules)} module(s) failed for " <>
+        "selector #{inspect(selector)}: #{summary}"
+    )
   end
 
   defp sort_data_field_by_slug_asc(list) do

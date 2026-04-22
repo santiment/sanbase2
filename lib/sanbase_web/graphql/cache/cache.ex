@@ -177,7 +177,8 @@ defmodule SanbaseWeb.Graphql.Cache do
 
       true ->
         [
-          access_to_experiemental_metrics: user.metric_access_level
+          access_to_experiemental_metrics: user.metric_access_level,
+          available_metrics_lookback_days: user.available_metrics_lookback_days
         ]
     end
   end

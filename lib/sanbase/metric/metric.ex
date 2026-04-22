@@ -759,16 +759,17 @@ defmodule Sanbase.Metric do
 
   def available_metrics_for_selector(selector, opts) do
     user_metric_access_level = Keyword.get(opts, :user_metric_access_level, "released")
+    lookback_days = Keyword.get(opts, :lookback_days)
     parallel_opts = [ordered: false, max_concurrency: 8, timeout: 60_000]
 
     parallel_fun = fn module ->
       cache_key =
         {__MODULE__, :available_metrics_for_selector_in_module, module, selector,
-         user_metric_access_level}
+         user_metric_access_level, lookback_days}
         |> Sanbase.Cache.hash()
 
       Sanbase.Cache.get_or_store(cache_key, fn ->
-        module.available_metrics(selector)
+        call_module_available_metrics(module, selector, opts)
         |> maybe_remove_experimental_metrics(user_metric_access_level)
       end)
     end
@@ -777,6 +778,14 @@ defmodule Sanbase.Metric do
       Sanbase.Parallel.map(Helper.metric_modules(), parallel_fun, parallel_opts)
 
     combine_metrics_in_modules(metrics_in_modules, selector)
+  end
+
+  defp call_module_available_metrics(module, selector, opts) do
+    if function_exported?(module, :available_metrics, 2) do
+      module.available_metrics(selector, opts)
+    else
+      module.available_metrics(selector)
+    end
   end
 
   @doc ~s"""
@@ -788,7 +797,7 @@ defmodule Sanbase.Metric do
   def available_timeseries_metrics_for_slug(selector, opts \\ []) do
     available_metrics =
       Sanbase.Cache.get_or_store(
-        {__MODULE__, :available_metrics_for_slug, selector} |> Sanbase.Cache.hash(),
+        {__MODULE__, :available_metrics_for_slug, selector, opts} |> Sanbase.Cache.hash(),
         fn -> available_metrics_for_selector(selector, opts) end
       )
 
@@ -810,7 +819,7 @@ defmodule Sanbase.Metric do
   def available_histogram_metrics_for_slug(selector, opts \\ []) do
     available_metrics =
       Sanbase.Cache.get_or_store(
-        {__MODULE__, :available_metrics_for_slug, selector} |> Sanbase.Cache.hash(),
+        {__MODULE__, :available_metrics_for_slug, selector, opts} |> Sanbase.Cache.hash(),
         fn -> available_metrics_for_selector(selector, opts) end
       )
 
@@ -832,7 +841,7 @@ defmodule Sanbase.Metric do
   def available_table_metrics_for_slug(selector, opts \\ []) do
     available_metrics =
       Sanbase.Cache.get_or_store(
-        {__MODULE__, :available_metrics_for_slug, selector} |> Sanbase.Cache.hash(),
+        {__MODULE__, :available_metrics_for_slug, selector, opts} |> Sanbase.Cache.hash(),
         fn -> available_metrics_for_selector(selector, opts) end
       )
 

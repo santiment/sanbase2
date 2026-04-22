@@ -22,16 +22,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
     # TEMP 02.02.2023: Handle ripple -> xrp rename
     {:ok, %{slug: slug}} = Sanbase.Project.Selector.args_to_selector(%{slug: slug})
 
-    user_metric_access_level =
-      get_in(resolution.context, [:auth, :current_user, Access.key(:metric_access_level)]) ||
-        "released"
+    user_metric_access_level = user_metric_access_level(resolution)
+    lookback_days = user_available_metrics_lookback_days(resolution)
 
     query = :available_metrics
-    cache_key = {__MODULE__, query, slug, user_metric_access_level} |> Sanbase.Cache.hash()
+
+    cache_key =
+      {__MODULE__, query, slug, user_metric_access_level, lookback_days}
+      |> Sanbase.Cache.hash()
 
     fun = fn ->
       Metric.available_metrics_for_selector(%{slug: slug},
-        user_metric_access_level: user_metric_access_level
+        user_metric_access_level: user_metric_access_level,
+        lookback_days: lookback_days
       )
     end
 
@@ -50,16 +53,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
     # TEMP 02.02.2023: Handle ripple -> xrp rename
     {:ok, %{slug: slug}} = Sanbase.Project.Selector.args_to_selector(%{slug: slug})
 
-    user_metric_access_level =
-      get_in(resolution.context, [:auth, :current_user, Access.key(:metric_access_level)]) ||
-        "released"
+    user_metric_access_level = user_metric_access_level(resolution)
+    lookback_days = user_available_metrics_lookback_days(resolution)
 
     query = :available_timeseries_metrics
-    cache_key = {__MODULE__, query, slug, user_metric_access_level} |> Sanbase.Cache.hash()
+
+    cache_key =
+      {__MODULE__, query, slug, user_metric_access_level, lookback_days}
+      |> Sanbase.Cache.hash()
 
     fun = fn ->
       Metric.available_timeseries_metrics_for_slug(%{slug: slug},
-        user_metric_access_level: user_metric_access_level
+        user_metric_access_level: user_metric_access_level,
+        lookback_days: lookback_days
       )
     end
 
@@ -70,16 +76,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
     # TEMP 02.02.2023: Handle ripple -> xrp rename
     {:ok, %{slug: slug}} = Sanbase.Project.Selector.args_to_selector(%{slug: slug})
 
-    user_metric_access_level =
-      get_in(resolution.context, [:auth, :current_user, Access.key(:metric_access_level)]) ||
-        "released"
+    user_metric_access_level = user_metric_access_level(resolution)
+    lookback_days = user_available_metrics_lookback_days(resolution)
 
     query = :available_histogram_metrics
-    cache_key = {__MODULE__, query, slug, user_metric_access_level} |> Sanbase.Cache.hash()
+
+    cache_key =
+      {__MODULE__, query, slug, user_metric_access_level, lookback_days}
+      |> Sanbase.Cache.hash()
 
     fun = fn ->
       Metric.available_histogram_metrics_for_slug(%{slug: slug},
-        user_metric_access_level: user_metric_access_level
+        user_metric_access_level: user_metric_access_level,
+        lookback_days: lookback_days
       )
     end
 
@@ -90,20 +99,36 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
     # TEMP 02.02.2023: Handle ripple -> xrp rename
     {:ok, %{slug: slug}} = Sanbase.Project.Selector.args_to_selector(%{slug: slug})
 
-    user_metric_access_level =
-      get_in(resolution.context, [:auth, :current_user, Access.key(:metric_access_level)]) ||
-        "released"
+    user_metric_access_level = user_metric_access_level(resolution)
+    lookback_days = user_available_metrics_lookback_days(resolution)
 
     query = :available_table_metrics
-    cache_key = {__MODULE__, query, slug, user_metric_access_level} |> Sanbase.Cache.hash()
+
+    cache_key =
+      {__MODULE__, query, slug, user_metric_access_level, lookback_days}
+      |> Sanbase.Cache.hash()
 
     fun = fn ->
       Metric.available_table_metrics_for_slug(%{slug: slug},
-        user_metric_access_level: user_metric_access_level
+        user_metric_access_level: user_metric_access_level,
+        lookback_days: lookback_days
       )
     end
 
     maybe_register_and_get(cache_key, fun, slug, query)
+  end
+
+  defp user_metric_access_level(resolution) do
+    get_in(resolution.context, [:auth, :current_user, Access.key(:metric_access_level)]) ||
+      "released"
+  end
+
+  defp user_available_metrics_lookback_days(resolution) do
+    get_in(resolution.context, [
+      :auth,
+      :current_user,
+      Access.key(:available_metrics_lookback_days)
+    ])
   end
 
   def aggregated_timeseries_data(

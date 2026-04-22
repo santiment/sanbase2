@@ -797,6 +797,29 @@ defmodule Sanbase.Metric do
     combine_metrics_in_modules(tagged_results, selector)
   end
 
+  # Opts that change the metric result and therefore must be part of the cache
+  # key. Anything not in this list is ignored when keying the cache. New opts
+  # that affect the output MUST be added here, otherwise stale results will be
+  # served. Hashing the raw `opts` keyword list is unsafe because key order
+  # affects the SHA, so two semantically-equivalent calls would split the cache.
+  @cached_opts [:user_metric_access_level, :lookback_days]
+
+  defp available_metrics_for_slug_cache_key(selector, opts) do
+    whitelisted = Enum.map(@cached_opts, &{&1, Keyword.get(opts, &1)})
+
+    {__MODULE__, :available_metrics_for_slug, selector, whitelisted}
+    |> Sanbase.Cache.hash()
+  end
+
+  # Note: callers (e.g. `SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver`)
+  # may wrap these functions in their own `Sanbase.Cache.get_or_store` and/or
+  # `RehydratingCache`. That layering is intentional — the outer cache lives in
+  # the request hot path and uses a per-query key, while the inner cache here
+  # serves non-resolver callers (e.g. `Sanbase.MCP.DataCatalog`,
+  # `live/.../preview_sidebar.ex`, `Sanbase.RunExamples`) that bypass the
+  # resolver. Both layers key on the same whitelist via
+  # `available_metrics_for_slug_cache_key/2` so they invalidate together.
+
   @doc ~s"""
   Get the available timeseries metrics for a given slug.
   The result is a subset of available_metrics_for_slug/1
@@ -806,7 +829,7 @@ defmodule Sanbase.Metric do
   def available_timeseries_metrics_for_slug(selector, opts \\ []) do
     available_metrics =
       Sanbase.Cache.get_or_store(
-        {__MODULE__, :available_metrics_for_slug, selector, opts} |> Sanbase.Cache.hash(),
+        available_metrics_for_slug_cache_key(selector, opts),
         fn -> available_metrics_for_selector(selector, opts) end
       )
 
@@ -828,7 +851,7 @@ defmodule Sanbase.Metric do
   def available_histogram_metrics_for_slug(selector, opts \\ []) do
     available_metrics =
       Sanbase.Cache.get_or_store(
-        {__MODULE__, :available_metrics_for_slug, selector, opts} |> Sanbase.Cache.hash(),
+        available_metrics_for_slug_cache_key(selector, opts),
         fn -> available_metrics_for_selector(selector, opts) end
       )
 
@@ -850,7 +873,7 @@ defmodule Sanbase.Metric do
   def available_table_metrics_for_slug(selector, opts \\ []) do
     available_metrics =
       Sanbase.Cache.get_or_store(
-        {__MODULE__, :available_metrics_for_slug, selector, opts} |> Sanbase.Cache.hash(),
+        available_metrics_for_slug_cache_key(selector, opts),
         fn -> available_metrics_for_selector(selector, opts) end
       )
 

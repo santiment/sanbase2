@@ -223,7 +223,7 @@ defmodule Sanbase.PricePair do
 
   def available_quote_assets(slug, opts) do
     source = Keyword.get(opts, :source, @default_source)
-    query_struct = available_quote_assets_query(slug, source)
+    query_struct = available_quote_assets_query(slug, source, opts)
 
     ClickhouseRepo.query_transform(query_struct, fn [quote_asset] -> quote_asset end)
   end

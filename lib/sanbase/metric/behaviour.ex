@@ -247,7 +247,7 @@ defmodule Sanbase.Metric.Behaviour do
 
   @callback available_metrics() :: list(metric)
 
-  @callback available_metrics(selector) :: available_metrics_result()
+  @callback available_metrics(selector, opts) :: available_metrics_result()
 
   @callback available_label_fqns(metric) :: available_label_fqns_result()
 

@@ -163,13 +163,15 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   def available_metrics(), do: @metrics
 
   @impl Sanbase.Metric.Behaviour
-  def available_metrics(%{address: _address}), do: []
+  def available_metrics(selector, opts \\ [])
 
-  def available_metrics(%{contract_address: contract_address}) do
+  def available_metrics(%{address: _address}, _opts), do: []
+
+  def available_metrics(%{contract_address: contract_address}, _opts) do
     Sanbase.Metric.Utils.available_metrics_for_contract(__MODULE__, contract_address)
   end
 
-  def available_metrics(%{slug: slug}) do
+  def available_metrics(%{slug: slug}, _opts) do
     with %Project{} = project <- Project.by_slug(slug, preload: [:infrastructure]),
          {:ok, infr} <- Project.infrastructure_real_code(project) do
       if infr in @supported_infrastructures and Project.has_contract_address?(project) do

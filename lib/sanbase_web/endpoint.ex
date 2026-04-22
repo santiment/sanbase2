@@ -19,6 +19,11 @@ defmodule SanbaseWeb.Endpoint do
     "//*.santiment.net",
     "//*.santiment.network",
     "//*.sanr.app",
+    "//*.sanitize.page",
+    "//*.sanbase-admin.stage.san",
+    "//sanbase-admin.stage.san",
+    "//*.sanbase-admin.production.san",
+    "//sanbase-admin.production.san",
     "//localhost"
   ]
 

@@ -27,7 +27,8 @@ defmodule SanbaseWeb.GenericAdmin.User do
         :email,
         :stripe_customer_id,
         :metric_access_level,
-        :feature_access_level
+        :feature_access_level,
+        :available_metrics_lookback_days
       ],
       fields_override: %{
         metric_access_level: %{

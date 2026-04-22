@@ -9,6 +9,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   import Sanbase.Utils.DateTime, only: [maybe_str_to_sec: 1]
 
   @default_version "1.0"
+  @default_lookback_days 14
 
   import Sanbase.Metric.SqlQuery.Helper,
     only: [
@@ -499,6 +500,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
   def available_slugs_for_metric_query(metric, opts) do
     version = Keyword.get(opts, :version, @default_version)
+    lookback_days = Keyword.get(opts, :lookback_days) || @default_lookback_days
 
     sql = """
     SELECT DISTINCT(name)
@@ -509,7 +511,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         FROM available_metrics
         WHERE
           #{versioned_metric_id_filter(metric, argument_name: "metric", version: version, version_arg_name: "version")} AND
-          end_dt > now() - INTERVAL 14 DAY
+          end_dt > now() - INTERVAL {{lookback_days}} DAY
       ) AND
       asset_id NOT IN (
         SELECT DISTINCT(asset_id)
@@ -519,7 +521,11 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       )
     """
 
-    params = %{metric: Map.get(Registry.name_to_metric_map(), metric), version: version}
+    params = %{
+      metric: Map.get(Registry.name_to_metric_map(), metric),
+      version: version,
+      lookback_days: lookback_days
+    }
 
     Sanbase.Clickhouse.Query.new(sql, params)
   end
@@ -581,19 +587,21 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  def available_metrics_for_selector_query(selector) do
+  def available_metrics_for_selector_query(selector, opts \\ []) do
     selector_value =
       case selector do
         %{slug: slug} -> slug
         %{contract_address: contract_address} -> contract_address
       end
 
+    lookback_days = Keyword.get(opts, :lookback_days) || @default_lookback_days
+
     sql = """
     SELECT dictGet('metrics', 'name', metric_id)
     FROM available_metrics FINAL
     WHERE
       #{asset_id_filter(selector, argument_name: "selector")} AND
-      end_dt > now() - INTERVAL 14 DAY AND
+      end_dt > now() - INTERVAL {{lookback_days}} DAY AND
       metric_id NOT IN (
         SELECT metric_id
         FROM publicly_disabled_metrics
@@ -602,13 +610,13 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       )
     """
 
-    params = %{selector: selector_value}
+    params = %{selector: selector_value, lookback_days: lookback_days}
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  def available_metrics_for_slug_query(slug) do
+  def available_metrics_for_slug_query(slug, opts \\ []) do
     selector = %{slug: slug}
-    available_metrics_for_selector_query(selector)
+    available_metrics_for_selector_query(selector, opts)
   end
 
   def available_versions_query(metric) do

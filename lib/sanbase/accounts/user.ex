@@ -97,6 +97,7 @@ defmodule Sanbase.Accounts.User do
 
     field(:metric_access_level, :string, default: "released")
     field(:feature_access_level, :string, default: "released")
+    field(:available_metrics_lookback_days, :integer)
 
     has_one(:user_settings, UserSettings, on_delete: :delete_all)
 
@@ -172,6 +173,7 @@ defmodule Sanbase.Accounts.User do
       :name,
       :metric_access_level,
       :feature_access_level,
+      :available_metrics_lookback_days,
       :registration_state,
       :description,
       :website_url,
@@ -192,6 +194,7 @@ defmodule Sanbase.Accounts.User do
     |> unique_constraint(:twitter_id)
     |> validate_inclusion(:metric_access_level, @allowed_access_levels)
     |> validate_inclusion(:feature_access_level, @allowed_access_levels)
+    |> validate_number(:available_metrics_lookback_days, greater_than: 0)
   end
 
   def san_balance(user), do: __MODULE__.SanBalance.san_balance(user)

@@ -194,7 +194,10 @@ defmodule Sanbase.Accounts.User do
     |> unique_constraint(:twitter_id)
     |> validate_inclusion(:metric_access_level, @allowed_access_levels)
     |> validate_inclusion(:feature_access_level, @allowed_access_levels)
-    |> validate_number(:available_metrics_lookback_days, greater_than: 0)
+    |> validate_number(:available_metrics_lookback_days,
+      greater_than: 0,
+      less_than_or_equal_to: 7300
+    )
   end
 
   def san_balance(user), do: __MODULE__.SanBalance.san_balance(user)

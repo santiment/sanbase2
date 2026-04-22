@@ -34,12 +34,12 @@ defmodule Sanbase.Metric.Utils do
     base <> hint <> "Provided selector fields: #{provided_keys}"
   end
 
-  def available_metrics_for_contract(module, contract_address) do
+  def available_metrics_for_contract(module, contract_address, opts \\ []) do
     Sanbase.Project.List.by_contracts(List.wrap(contract_address))
     |> Enum.map(& &1.slug)
     |> case do
       [] -> []
-      [slug | _rest] -> module.available_metrics(%{slug: slug})
+      [slug | _rest] -> module.available_metrics(%{slug: slug}, opts)
     end
   end
 

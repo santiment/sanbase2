@@ -830,7 +830,8 @@ defmodule Sanbase.Metric do
     available_metrics =
       Sanbase.Cache.get_or_store(
         available_metrics_for_slug_cache_key(selector, opts),
-        fn -> available_metrics_for_selector(selector, opts) end
+        fn -> available_metrics_for_selector(selector, opts) end,
+        return_nocache: true
       )
 
     case available_metrics do
@@ -852,7 +853,8 @@ defmodule Sanbase.Metric do
     available_metrics =
       Sanbase.Cache.get_or_store(
         available_metrics_for_slug_cache_key(selector, opts),
-        fn -> available_metrics_for_selector(selector, opts) end
+        fn -> available_metrics_for_selector(selector, opts) end,
+        return_nocache: true
       )
 
     case available_metrics do
@@ -874,7 +876,8 @@ defmodule Sanbase.Metric do
     available_metrics =
       Sanbase.Cache.get_or_store(
         available_metrics_for_slug_cache_key(selector, opts),
-        fn -> available_metrics_for_selector(selector, opts) end
+        fn -> available_metrics_for_selector(selector, opts) end,
+        return_nocache: true
       )
 
     case available_metrics do

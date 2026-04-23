@@ -89,6 +89,11 @@ config :sanbase, Sanbase.Metric.Registry.ChangeSuggestion, debug_applying_change
 # `start_supervised!`.
 config :sanbase, :use_rehydrating_cache, false
 
+# Run Subscription.maybe_cancel_async synchronously so the sandbox-owning test
+# process owns the DB checkout. Async Task outlives the test and crashes with
+# `owner ... exited` when it tries to query after sandbox teardown.
+config :sanbase, :subscribe_cancel_async?, false
+
 # Configure postgres database
 config :sanbase, Sanbase.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,

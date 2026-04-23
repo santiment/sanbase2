@@ -203,7 +203,7 @@ defmodule Sanbase.Billing.Subscription do
 
   # Cancel asynchronously to avoid blocking the request. If it fails it is ok but capture the error in sentry
   def maybe_cancel_async(user_id, plan) do
-    Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+    run = fn ->
       try do
         maybe_cancel_subscriptions(user_id, plan)
         maybe_cancel_trialing_subscriptions(user_id, plan)
@@ -216,7 +216,13 @@ defmodule Sanbase.Billing.Subscription do
             extra: %{user_id: user_id, plan: plan}
           )
       end
-    end)
+    end
+
+    if Application.get_env(:sanbase, :subscribe_cancel_async?, true) do
+      Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, run)
+    else
+      run.()
+    end
   end
 
   # We are upgrading. Cancel all active and trialing subscriptions for Sanbase plans

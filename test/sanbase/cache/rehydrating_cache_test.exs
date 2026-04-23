@@ -65,6 +65,7 @@ defmodule Sanbase.Cache.RehydratingCacheTest do
   end
 
   describe "failure handling" do
+    @tag capture_log: true
     test "task crash transitions progress to :failed and the function reruns on next :run" do
       key = {:rc_test, :fail_then_succeed}
       # Flip after the first crash so the retry succeeds.

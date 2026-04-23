@@ -213,7 +213,7 @@ lib/sanbase_web/
 │   ├── user.ex                               # Resource: User
 │   ├── project.ex                            # Resource: Project + related
 │   ├── post.ex                               # Resource: Post
-│   ├── ... (19 resource modules total)
+│   ├── ... (43 resource modules, one per file)
 │   └── version.ex                            # Resource: Version
 ├── controllers/
 │   └── generic_admin_controller.ex           # CRUD controller + LinkBuilder

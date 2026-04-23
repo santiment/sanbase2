@@ -272,14 +272,14 @@ defmodule Sanbase.SocialData.MetricAdapter do
   def available_metrics(), do: @metrics
 
   @impl Sanbase.Metric.Behaviour
-  def available_metrics(%{address: _address}, _opts), do: []
+  def available_metrics(%{address: _address}, _opts), do: {:ok, []}
 
   def available_metrics(%{contract_address: contract_address}, opts) do
-    metrics =
-      Sanbase.Metric.Utils.available_metrics_for_contract(__MODULE__, contract_address, opts)
-
-    # The metric is available only for `source`, not for `slug`
-    metrics -- ["social_active_users"]
+    case Sanbase.Metric.Utils.available_metrics_for_contract(__MODULE__, contract_address, opts) do
+      # The metric is available only for `source`, not for `slug`
+      {:ok, metrics} -> {:ok, metrics -- ["social_active_users"]}
+      {:error, _} = error -> error
+    end
   end
 
   def available_metrics(%{slug: slug}, _opts) do

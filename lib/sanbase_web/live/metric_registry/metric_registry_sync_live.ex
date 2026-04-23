@@ -74,12 +74,12 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
         <AdminSharedComponents.action_button
           text="Select All"
           phx_click="select_all"
-          class="bg-white hover:bg-gray-100 text-zync-900"
+          class="bg-white hover:bg-gray-100 text-zinc-900"
         />
         <AdminSharedComponents.action_button
           text="Deselect All"
           phx_click="deselect_all"
-          class="bg-white hover:bg-gray-100 text-zync-900"
+          class="bg-white hover:bg-gray-100 text-zinc-900"
         />
       </div>
       <.table id="metrics_registry" rows={@syncable_metrics}>

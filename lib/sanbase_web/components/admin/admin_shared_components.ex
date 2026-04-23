@@ -137,9 +137,12 @@ defmodule SanbaseWeb.AdminSharedComponents do
     """
   end
 
-  defp undo_text("approved"), do: "Undo Approval"
-  defp undo_text("declined"), do: "Undo Refusal"
-  defp undo_text(_), do: "Undo"
+  @doc """
+  Label for the Undo button, based on current record status.
+  """
+  def undo_text("approved"), do: "Undo Approval"
+  def undo_text("declined"), do: "Undo Refusal"
+  def undo_text(_), do: "Undo"
 
   # ---------------------------------------------------------------------------
   # Status Badge — formatted status display
@@ -162,23 +165,15 @@ defmodule SanbaseWeb.AdminSharedComponents do
   defp status_color(_), do: "text-gray-600"
 
   # ---------------------------------------------------------------------------
-  # Page Header — title + user details pattern used across metric registry pages
+  # User Details — email + role names block
   # ---------------------------------------------------------------------------
 
-  attr :title, :string, required: true
   attr :current_user, :map, required: true
   attr :current_user_role_names, :list, required: true
-  attr :subtitle, :string, default: nil
   attr :trim_role_prefix, :string, default: nil
 
-  def page_header(assigns) do
+  def user_details(assigns) do
     ~H"""
-    <h1 class="text-blue-700 text-2xl mb-4">
-      {@title}
-    </h1>
-    <div :if={@subtitle} class="text-gray-400 text-sm py-2">
-      {@subtitle}
-    </div>
     <div class="my-2 flex flex-row space-x-2">
       <span class="text-blue-800 font-bold">
         {@current_user.email}
@@ -197,6 +192,28 @@ defmodule SanbaseWeb.AdminSharedComponents do
     role_names
     |> Enum.map(&String.trim_leading(&1, prefix))
     |> Enum.join(", ")
+  end
+
+  # ---------------------------------------------------------------------------
+  # Page Header — title + user details pattern used across metric registry pages
+  # ---------------------------------------------------------------------------
+
+  attr :title, :string, required: true
+  attr :current_user, :map, required: true
+  attr :current_user_role_names, :list, required: true
+  attr :trim_role_prefix, :string, default: nil
+
+  def page_header(assigns) do
+    ~H"""
+    <h1 class="text-blue-700 text-2xl mb-4">
+      {@title}
+    </h1>
+    <.user_details
+      current_user={@current_user}
+      current_user_role_names={@current_user_role_names}
+      trim_role_prefix={@trim_role_prefix}
+    />
+    """
   end
 
   # ---------------------------------------------------------------------------

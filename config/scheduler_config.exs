@@ -6,6 +6,10 @@ config :sanbase, Sanbase.Alerts.Scheduler,
   scheduler_enabled: {:system, "QUANTUM_SCHEDULER_ENABLED", false},
   timeout: 30_000,
   overlap: false,
+  # Run every job on the local node only. Without this, Quantum's default
+  # strategy distributes jobs randomly across all connected cluster nodes
+  # (web/admin pods), which do not have the scheduler modules available.
+  run_strategy: {Quantum.RunStrategy.Local, []},
   jobs: [
     monitor_excessive_sanbase_usage: [
       schedule: "0 * * * *",
@@ -65,6 +69,7 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
   scheduler_enabled: {:system, "QUANTUM_SCHEDULER_ENABLED", false},
   timeout: 30_000,
   overlap: false,
+  run_strategy: {Quantum.RunStrategy.Local, []},
   jobs: [
     update_api_call_limit_plans: [
       schedule: "@daily",

@@ -49,7 +49,10 @@ defmodule SanbaseWeb.Graphql.Schema.MetricQueries do
       """
       arg(:name_regex_filter, :string, default_value: nil)
 
-      cache_resolve(&MetricResolver.get_available_metrics_for_selector/3, ttl: 300)
+      cache_resolve(&MetricResolver.get_available_metrics_for_selector/3,
+        ttl: 300,
+        include_user_details_in_key: true
+      )
     end
   end
 end

@@ -62,6 +62,21 @@ defmodule SanbaseWeb.AdminLiveHelpers do
   end
 
   @doc """
+  Formats an Ecto.Changeset's errors as a comma-separated string.
+
+  ## Example
+
+      "Name can't be blank, Display order must be an integer"
+  """
+  def format_errors(%Ecto.Changeset{} = changeset) do
+    changeset.errors
+    |> Enum.map(fn {field, {message, _}} ->
+      "#{Phoenix.Naming.humanize(field)} #{message}"
+    end)
+    |> Enum.join(", ")
+  end
+
+  @doc """
   Parses a string to integer with a default fallback.
   """
   def parse_int(nil, default), do: default

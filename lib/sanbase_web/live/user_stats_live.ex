@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.UserStatsLive do
   use SanbaseWeb, :live_view
 
+  import SanbaseWeb.AdminLiveHelpers, only: [parse_int: 2]
+
   alias Sanbase.Accounts.UserStats
 
   def mount(_params, _session, socket) do
@@ -18,8 +20,8 @@ defmodule SanbaseWeb.UserStatsLive do
   end
 
   def handle_event("search", params, socket) do
-    inactive_days = parse_integer(params["inactive_days"], 14)
-    prior_activity_days = parse_integer(params["prior_activity_days"], 30)
+    inactive_days = parse_int(params["inactive_days"], 14)
+    prior_activity_days = parse_int(params["prior_activity_days"], 30)
     require_prior_activity = params["require_prior_activity"] == "true"
 
     socket =
@@ -298,13 +300,4 @@ defmodule SanbaseWeb.UserStatsLive do
     </div>
     """
   end
-
-  defp parse_integer(value, default) when is_binary(value) do
-    case Integer.parse(value) do
-      {num, _} -> num
-      :error -> default
-    end
-  end
-
-  defp parse_integer(nil, default), do: default
 end

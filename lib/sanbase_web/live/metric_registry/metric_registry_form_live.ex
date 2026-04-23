@@ -110,15 +110,11 @@ defmodule SanbaseWeb.MetricRegistryFormLive do
         </div>
       </div>
 
-      <div class="my-2 flex flex-row space-x-2">
-        <span class="text-blue-800 font-bold">{@current_user.email}</span>
-        <span>|</span>
-        <span class="text-gray-700">
-          {@current_user_role_names
-          |> Enum.map(&String.trim_leading(&1, "Metric Registry "))
-          |> Enum.join(", ")}
-        </span>
-      </div>
+      <AdminSharedComponents.user_details
+        current_user={@current_user}
+        current_user_role_names={@current_user_role_names}
+        trim_role_prefix="Metric Registry "
+      />
       <div class="my-4">
         <AdminSharedComponents.nav_button
           text="Back to Metric Registry"

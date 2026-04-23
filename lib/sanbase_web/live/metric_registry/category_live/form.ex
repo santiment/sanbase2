@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.CategoryLive.Form do
   use SanbaseWeb, :live_view
 
+  import SanbaseWeb.AdminLiveHelpers, only: [format_errors: 1]
+
   alias Sanbase.Metric.UIMetadata.Category
   alias SanbaseWeb.AdminSharedComponents
 
@@ -115,13 +117,5 @@ defmodule SanbaseWeb.CategoryLive.Form do
            category: %{socket.assigns.category | name: name, display_order: display_order}
          )}
     end
-  end
-
-  defp format_errors(changeset) do
-    changeset.errors
-    |> Enum.map(fn {field, {message, _}} ->
-      "#{Phoenix.Naming.humanize(field)} #{message}"
-    end)
-    |> Enum.join(", ")
   end
 end

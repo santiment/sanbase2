@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.GroupLive.Form do
   use SanbaseWeb, :live_view
 
+  import SanbaseWeb.AdminLiveHelpers, only: [format_errors: 1]
+
   alias Sanbase.Metric.UIMetadata.Category
   alias Sanbase.Metric.UIMetadata.Group
   alias SanbaseWeb.AdminSharedComponents
@@ -117,13 +119,5 @@ defmodule SanbaseWeb.GroupLive.Form do
          |> put_flash(:error, format_errors(changeset))
          |> assign(group: %{socket.assigns.group | name: name, category_id: category_id})}
     end
-  end
-
-  defp format_errors(changeset) do
-    changeset.errors
-    |> Enum.map(fn {field, {message, _}} ->
-      "#{Phoenix.Naming.humanize(field)} #{message}"
-    end)
-    |> Enum.join(", ")
   end
 end

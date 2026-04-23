@@ -144,7 +144,6 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
   attr :status, :string, required: true
   attr :inserted_at, :any, required: true
 
-
   defp formatted_completed_status(assigns) do
     ~H"""
     <div class="flex flex-col">

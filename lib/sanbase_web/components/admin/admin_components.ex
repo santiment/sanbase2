@@ -1027,7 +1027,6 @@ defmodule SanbaseWeb.AdminComponents do
     end
   end
 
-
   defp normalize_filters(search) do
     (Map.get(search || %{}, "filters") || [])
     |> case do

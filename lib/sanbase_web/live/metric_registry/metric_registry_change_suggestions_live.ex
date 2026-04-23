@@ -2,7 +2,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
   use SanbaseWeb, :live_view
 
   import SanbaseWeb.AdminLiveHelpers,
-    only: [order_records_by_status: 1, put_changeset_error_flash: 3]
+    only: [order_records_by_status: 1, put_changeset_error_flash: 3, update_row_by_id: 3]
 
   alias SanbaseWeb.AdminSharedComponents
   alias Sanbase.Metric.Registry.Permissions
@@ -145,7 +145,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
     case ChangeSuggestion.undo(record_id) do
       {:ok, record} ->
         rows =
-          update_assigns_row(socket.assigns.rows, record_id, record.status)
+          update_row_by_id(socket.assigns.rows, record_id, %{status: record.status})
 
         socket =
           socket
@@ -177,7 +177,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
 
     case Sanbase.Metric.Registry.ChangeSuggestion.update_status(record_id, status) do
       {:ok, _} ->
-        rows = update_assigns_row(socket.assigns.rows, record_id, status)
+        rows = update_row_by_id(socket.assigns.rows, record_id, %{status: status})
 
         socket =
           socket
@@ -325,7 +325,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
       <AdminSharedComponents.approval_button
         name="action"
         value="undo"
-        text={undo_text(@row.status)}
+        text={AdminSharedComponents.undo_text(@row.status)}
         disabled={
           # Undo is disabled if it's still in pending state or
           # if the change request is for adding a new metric and it is approved
@@ -353,19 +353,6 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
       />
     </.form>
     """
-  end
-
-  defp undo_text("approved"), do: "Undo Approval"
-  defp undo_text("declined"), do: "Undo Refusal"
-  defp undo_text("pending_approval"), do: "Undo"
-
-  defp update_assigns_row(rows, record_id, status) do
-    rows
-    |> Enum.map(fn
-      %{id: ^record_id} = record -> Map.put(record, :status, status)
-      record -> record
-    end)
-    |> order_records_by_status()
   end
 
   defp list_all_submissions() do

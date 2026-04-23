@@ -644,7 +644,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
 
   defp apply_filters(metrics, filters) do
     metrics
-    |> maybe_apply_filter(:maybe_hide_hard_deprecated, filters)
+    |> maybe_apply_filter(:not_deprecated_only, filters)
     |> maybe_apply_filter(:match_metric, filters)
     |> maybe_apply_filter(:unverified_only, filters)
     |> maybe_apply_filter(:not_synced_only, filters)
@@ -668,7 +668,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     |> Enum.sort_by(&String.jaro_distance(query, &1.metric), :desc)
   end
 
-  defp maybe_apply_filter(metrics, :unverified_only, %{"not_deprecated_only" => "on"}) do
+  defp maybe_apply_filter(metrics, :not_deprecated_only, %{"not_deprecated_only" => "on"}) do
     metrics
     |> Enum.reject(fn m ->
       m.hard_deprecate_after && DateTime.before?(m.hard_deprecate_after, DateTime.utc_now())

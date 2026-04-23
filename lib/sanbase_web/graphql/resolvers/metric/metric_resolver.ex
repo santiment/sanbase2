@@ -86,9 +86,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   def get_available_metrics_for_selector(_root, args, resolution) do
     user_metric_access_level = resolution_to_metric_access_level(resolution)
+    lookback_days = resolution_to_available_metrics_lookback_days(resolution)
 
     case Metric.available_metrics_for_selector(args.selector,
-           user_metric_access_level: user_metric_access_level
+           user_metric_access_level: user_metric_access_level,
+           lookback_days: lookback_days
          ) do
       {:ok, metrics} ->
         metrics = maybe_apply_regex_filter(metrics, args[:name_regex_filter])
@@ -665,6 +667,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   defp resolution_to_metric_access_level(resolution) do
     get_in(resolution.context, [:auth, :current_user, Access.key(:metric_access_level)]) ||
       "released"
+  end
+
+  defp resolution_to_available_metrics_lookback_days(resolution) do
+    get_in(resolution.context, [
+      :auth,
+      :current_user,
+      Access.key(:available_metrics_lookback_days)
+    ])
   end
 
   defp user_can_access_version?(version, resolution) do

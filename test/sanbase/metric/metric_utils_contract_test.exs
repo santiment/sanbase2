@@ -32,9 +32,9 @@ defmodule Sanbase.Metric.UtilsContractTest do
     assert_received {:fake_adapter_called, _selector, []}
   end
 
-  test "available_metrics_for_contract/3 returns [] when no project matches contract" do
+  test "available_metrics_for_contract/3 returns {:ok, []} when no project matches contract" do
     assert Utils.available_metrics_for_contract(FakeAdapter, "0xdoesnotexist", lookback_days: 365) ==
-             []
+             {:ok, []}
 
     refute_received {:fake_adapter_called, _, _}
   end

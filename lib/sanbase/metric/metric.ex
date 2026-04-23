@@ -1173,10 +1173,13 @@ defmodule Sanbase.Metric do
   end
 
   defp log_failed_modules(failed_modules, selector) do
-    Logger.warning("available_metrics_for_selector: modules failed",
-      failed_count: length(failed_modules),
-      selector: inspect(selector),
-      failures: Enum.map(failed_modules, fn {m, r} -> {inspect(m), inspect(r)} end)
+    failures =
+      failed_modules
+      |> Enum.map_join("; ", fn {module, result} -> "#{inspect(module)} -> #{inspect(result)}" end)
+
+    Logger.warning(
+      "available_metrics_for_selector: #{length(failed_modules)} module(s) failed " <>
+        "for selector=#{inspect(selector)} failures=[#{failures}]"
     )
   end
 

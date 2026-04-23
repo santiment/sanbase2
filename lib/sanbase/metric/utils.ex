@@ -38,7 +38,7 @@ defmodule Sanbase.Metric.Utils do
     Sanbase.Project.List.by_contracts(List.wrap(contract_address))
     |> Enum.map(& &1.slug)
     |> case do
-      [] -> []
+      [] -> {:ok, []}
       [slug | _rest] -> module.available_metrics(%{slug: slug}, opts)
     end
   end

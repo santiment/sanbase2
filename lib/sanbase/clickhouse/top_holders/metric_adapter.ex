@@ -163,7 +163,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   def available_metrics(), do: @metrics
 
   @impl Sanbase.Metric.Behaviour
-  def available_metrics(%{address: _address}, _opts), do: []
+  def available_metrics(%{address: _address}, _opts), do: {:ok, []}
 
   def available_metrics(%{contract_address: contract_address}, opts) do
     Sanbase.Metric.Utils.available_metrics_for_contract(__MODULE__, contract_address, opts)

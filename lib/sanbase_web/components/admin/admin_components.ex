@@ -171,6 +171,193 @@ defmodule SanbaseWeb.AdminComponents do
   end
 
   @doc """
+  Renders a single row in a compact (horizontal) form layout.
+
+  Label on the left, input slot on the right, aligned in a 2-column grid.
+
+  ## Attributes
+
+  - `:label` - The label text.
+  - `:for` - The `for` attribute linking label to input id.
+  - `:label_width` - CSS width for the label column (default `"16rem"`).
+  - `:input_max_width` - CSS max-width for the input column (default `"40rem"`, nil for none).
+  """
+
+  attr(:label, :string, required: true)
+  attr(:for, :string, default: nil)
+  attr(:label_width, :string, default: "16rem")
+  attr(:input_max_width, :string, default: "40rem")
+  slot(:inner_block, required: true)
+
+  def form_row_compact(assigns) do
+    ~H"""
+    <div class="gen-admin-row" style={"--label-w: #{@label_width};"}>
+      <label for={@for} class="gen-admin-row-label">
+        {@label}
+      </label>
+      <div class="min-w-0" style={if @input_max_width, do: "max-width: #{@input_max_width}"}>
+        {render_slot(@inner_block)}
+      </div>
+    </div>
+    """
+  end
+
+  @doc """
+  Renders a bare input (no label, no outer label wrapper) for use inside
+  `form_row_compact/1`. Mirrors `form_input/1` value/type logic.
+  """
+
+  attr(:resource, :string, required: true)
+  attr(:field, :atom, required: true)
+  attr(:field_type_map, :map, required: true)
+  attr(:type, :string, required: true)
+  attr(:changeset, :map, required: true)
+  attr(:data, :map, required: false, default: %{})
+
+  def form_input_compact(assigns) do
+    value =
+      if assigns.type == "new" do
+        ""
+      else
+        case Map.get(assigns.field_type_map, assigns.field) do
+          map_or_list when map_or_list in [:map, :list, {:array, :string}] ->
+            Map.get(assigns.changeset.data, assigns.field) |> Jason.encode!()
+
+          _ ->
+            Map.get(assigns.changeset.changes, assigns.field) ||
+              Map.get(assigns.changeset.data, assigns.field) ||
+              Map.get(assigns.data, assigns.field)
+        end
+      end
+
+    input_type =
+      case Map.get(assigns.field_type_map, assigns.field) do
+        :string -> "text"
+        :text -> "textarea"
+        :integer -> "number"
+        :float -> "number"
+        :boolean -> "checkbox"
+        :date -> "date"
+        :naive_datetime -> "datetime-local"
+        :utc_datetime -> "datetime-local"
+        :time -> "time"
+        :map -> "text"
+        :list -> "text"
+        :assoc -> "text"
+        :binary -> "text"
+        :any -> "text"
+        {:array, :string} -> "text"
+        _ -> "text"
+      end
+
+    name = assigns.resource <> "[" <> to_string(assigns.field) <> "]"
+    id = assigns.resource <> "_" <> to_string(assigns.field)
+
+    assigns = assign(assigns, value: value, input_type: input_type, name: name, id: id)
+
+    ~H"""
+    <%= cond do %>
+      <% @input_type == "textarea" -> %>
+        <textarea
+          id={@id}
+          name={@name}
+          class="block w-full rounded-md border border-zinc-300 px-2 py-1 text-zinc-900 focus:border-zinc-400 focus:ring-0 text-sm leading-5 min-h-[4rem]"
+        ><%= Phoenix.HTML.Form.normalize_value("textarea", @value) %></textarea>
+      <% @input_type == "checkbox" -> %>
+        <input
+          type="hidden"
+          name={@name}
+          value="false"
+        />
+        <input
+          type="checkbox"
+          id={@id}
+          name={@name}
+          value="true"
+          checked={Phoenix.HTML.Form.normalize_value("checkbox", @value)}
+          class="rounded border-zinc-300 text-zinc-900 focus:ring-0"
+        />
+      <% true -> %>
+        <input
+          type={@input_type}
+          name={@name}
+          id={@id}
+          value={Phoenix.HTML.Form.normalize_value(@input_type, @value)}
+          onwheel="this.blur()"
+          class="block w-full rounded-md border border-zinc-300 px-2 py-1 text-zinc-900 focus:border-zinc-400 focus:ring-0 text-sm leading-5"
+        />
+    <% end %>
+    """
+  end
+
+  @doc """
+  Renders a bare select (no label) for use inside `form_row_compact/1`.
+  Mirrors `form_select/1` value/name logic.
+  """
+
+  attr(:resource, :string, required: true)
+  attr(:field, :atom, required: true)
+  attr(:options, :list, required: true)
+  attr(:select_type, :atom, required: false, default: :select)
+  attr(:belongs_to, :boolean, required: false, default: false)
+  attr(:type, :string, required: true)
+  attr(:changeset, :map, required: true)
+
+  def form_select_compact(assigns) do
+    name =
+      if assigns.belongs_to do
+        assigns.resource <> "[" <> to_string(assigns.field) <> "_id" <> "]"
+      else
+        assigns.resource <> "[" <> to_string(assigns.field) <> "]"
+      end
+
+    name = if assigns.select_type == :multiselect, do: name <> "[]", else: name
+    id = assigns.resource <> "_" <> to_string(assigns.field)
+
+    value_field =
+      if assigns.belongs_to,
+        do: String.to_existing_atom(to_string(assigns.field) <> "_id"),
+        else: assigns.field
+
+    value =
+      if assigns.type == "new" do
+        assigns.changeset.changes[value_field]
+      else
+        Map.get(assigns.changeset.changes, value_field) ||
+          Map.get(assigns.changeset.data, value_field)
+      end
+
+    prompt =
+      if length(assigns.options) == 1,
+        do: nil,
+        else: "Select #{humanize(assigns.field)}"
+
+    multiple = assigns.select_type == :multiselect
+
+    assigns =
+      assign(assigns,
+        name: name,
+        id: id,
+        value: value,
+        prompt: prompt,
+        multiple: multiple
+      )
+
+    ~H"""
+    <select
+      id={@id}
+      name={@name}
+      class="block w-full rounded-md border border-gray-300 bg-white shadow-sm px-2 py-1 text-sm leading-5 focus:border-zinc-400 focus:ring-0"
+      multiple={@multiple}
+      size={if @multiple, do: 12}
+    >
+      <option :if={@prompt} value="">{@prompt}</option>
+      {Phoenix.HTML.Form.options_for_select(@options, @value)}
+    </select>
+    """
+  end
+
+  @doc """
   Renders a select field for a form.
 
   ## Attributes

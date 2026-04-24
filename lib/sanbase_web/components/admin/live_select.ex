@@ -8,16 +8,30 @@ defmodule SanbaseWeb.LiveSelect do
   def render(assigns) do
     ~H"""
     <div class="w-full">
-      <.input
-        type="text"
-        label={humanize(@session["field"])}
-        name={@session["parent_resource"] <> "[" <> to_string(@session["field"]) <> "_id" <> "]"}
-        value={@query || @session["initial_value"]}
-        list={"matches_" <> to_string(@session["field"])}
-        phx-keyup="suggest"
-        phx-debounce="200"
-        placeholder="Search..."
-      />
+      <%= if @session["no_label"] do %>
+        <input
+          type="text"
+          name={@session["parent_resource"] <> "[" <> to_string(@session["field"]) <> "_id" <> "]"}
+          id={@session["parent_resource"] <> "_" <> to_string(@session["field"])}
+          value={@query || @session["initial_value"]}
+          list={"matches_" <> to_string(@session["field"])}
+          phx-keyup="suggest"
+          phx-debounce="200"
+          placeholder="Search..."
+          class="block w-full rounded-md border border-zinc-300 px-2 py-1 text-zinc-900 focus:border-zinc-400 focus:ring-0 text-sm leading-5"
+        />
+      <% else %>
+        <.input
+          type="text"
+          label={humanize(@session["field"])}
+          name={@session["parent_resource"] <> "[" <> to_string(@session["field"]) <> "_id" <> "]"}
+          value={@query || @session["initial_value"]}
+          list={"matches_" <> to_string(@session["field"])}
+          phx-keyup="suggest"
+          phx-debounce="200"
+          placeholder="Search..."
+        />
+      <% end %>
       <datalist id={"matches_" <> to_string(@session["field"])}>
         <%= for {id, match} <- @matches do %>
           <option value={id}>{match}</option>
@@ -40,7 +54,8 @@ defmodule SanbaseWeb.LiveSelect do
            "search_fields",
            "field",
            "parent_resource",
-           "initial_value"
+           "initial_value",
+           "no_label"
          ])
      ), layout: false}
   end

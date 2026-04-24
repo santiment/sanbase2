@@ -453,6 +453,15 @@ defmodule SanbaseWeb.GenericAdminController do
 
     fields = determine_fields(action, resource_config, module, extra_fields)
 
+    form_config = resource_config[:form] || %{}
+
+    form_layout =
+      case params["layout"] do
+        "vertical" -> :vertical
+        "compact" -> :compact
+        _ -> Map.get(form_config, :layout, :compact)
+      end
+
     %{
       resource: resource,
       resource_name: resource_name,
@@ -464,7 +473,11 @@ defmodule SanbaseWeb.GenericAdminController do
       search_fields: fields(module, extra_fields),
       collections: collections,
       belongs_to_fields: belongs_to_fields,
-      custom_index_actions: resource_config[:custom_index_actions]
+      custom_index_actions: resource_config[:custom_index_actions],
+      form_layout: form_layout,
+      form_label_width: Map.get(form_config, :label_width, "16rem"),
+      form_input_max_width: Map.get(form_config, :input_max_width),
+      fields_override: fields_override
     }
   end
 

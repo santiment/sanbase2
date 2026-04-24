@@ -83,7 +83,8 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
           owner IN ({{organizations}}) AND
           dt >= toDateTime({{from}}) AND
           dt < toDateTime({{to}}) AND
-          event NOT IN ({{non_dev_events}})
+          event NOT IN ({{non_dev_events}}) AND
+          actor NOT LIKE '%[bot]'
         GROUP BY time
       )
       GROUP BY time
@@ -116,7 +117,8 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
         WHERE
           owner IN ({{organizations}}) AND
           dt >= toDateTime({{from}}) AND
-          dt < toDateTime({{to}})
+          dt < toDateTime({{to}}) AND
+          actor NOT LIKE '%[bot]'
         GROUP BY time
       )
       GROUP BY time
@@ -152,7 +154,8 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
             owner IN ({{organizations}}) AND
             dt >= toDateTime({{from}}) AND
             dt < toDateTime({{to}}) AND
-            event NOT IN ({{non_dev_events}})
+            event NOT IN ({{non_dev_events}}) AND
+            actor NOT LIKE '%[bot]'
           GROUP BY owner, repo, dt, event
         )
         GROUP BY time
@@ -189,7 +192,8 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
           WHERE
             owner IN ({{organizations}}) AND
             dt >= toDateTime({{from}}) AND
-            dt < toDateTime({{to}})
+            dt < toDateTime({{to}}) AND
+            actor NOT LIKE '%[bot]'
           GROUP BY owner, repo, dt, event
         )
         GROUP BY time
@@ -211,7 +215,8 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
         WHERE
           owner IN ({{organizations}}) AND
           dt >= toDateTime({{from}}) AND
-          dt < toDateTime({{to}})
+          dt < toDateTime({{to}}) AND
+          actor NOT LIKE '%[bot]'
         GROUP BY owner, repo, dt, event
       )
       GROUP BY owner
@@ -238,7 +243,8 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
           owner IN ({{organizations}}) AND
           dt >= toDateTime({{from}}) AND
           dt <= toDateTime({{to}}) AND
-          event NOT IN ({{non_dev_events}})
+          event NOT IN ({{non_dev_events}}) AND
+          actor NOT LIKE '%[bot]'
         GROUP BY owner, repo, dt, event
       )
       GROUP BY owner
@@ -264,7 +270,8 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
         owner IN ({{organizations}}) AND
         dt >= toDateTime({{from}}) AND
         dt <= toDateTime({{to}}) AND
-        event NOT IN ({{non_dev_events}})
+        event NOT IN ({{non_dev_events}}) AND
+        actor NOT LIKE '%[bot]'
       GROUP BY owner
       """
       |> wrap_aggregated_in_zero_filling_query()
@@ -287,7 +294,8 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
       WHERE
         owner IN ({{organizations}}) AND
         dt >= toDateTime({{from}}) AND
-        dt <= toDateTime({{to}})
+        dt <= toDateTime({{to}}) AND
+        actor NOT LIKE '%[bot]'
       GROUP BY owner
       """
       |> wrap_aggregated_in_zero_filling_query()

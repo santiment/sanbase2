@@ -355,12 +355,20 @@ defmodule SanbaseWeb.GenericAdminController do
         type when type in [:map, {:array, :string}] ->
           {field, decode_json(value)}
 
+        :boolean_nullable ->
+          {field, decode_tristate_boolean(value)}
+
         _ ->
           {field, value}
       end
     end)
     |> Enum.into(%{})
   end
+
+  defp decode_tristate_boolean(""), do: nil
+  defp decode_tristate_boolean("true"), do: true
+  defp decode_tristate_boolean("false"), do: false
+  defp decode_tristate_boolean(value), do: value
 
   defp decode_json(value) when is_binary(value) do
     case Jason.decode(value) do
@@ -524,7 +532,7 @@ defmodule SanbaseWeb.GenericAdminController do
   end
 
   defp field_type_map(module, fields_override) do
-    field_type_map = field_type_map(module)
+    field_type_map = field_type_map(module) |> tag_nullable_booleans(module)
 
     fields_override =
       fields_override
@@ -539,6 +547,48 @@ defmodule SanbaseWeb.GenericAdminController do
     fields(module)
     |> Enum.map(&{&1, module.__schema__(:type, &1)})
     |> Enum.into(%{})
+  end
+
+  defp tag_nullable_booleans(field_type_map, module) do
+    nullable = nullable_columns(module)
+
+    Map.new(field_type_map, fn
+      {field, :boolean} = pair ->
+        column = to_string(module.__schema__(:field_source, field) || field)
+        if Map.get(nullable, column, false), do: {field, :boolean_nullable}, else: pair
+
+      pair ->
+        pair
+    end)
+  end
+
+  defp nullable_columns(module) do
+    key = {__MODULE__, :nullable_columns, module}
+
+    case :persistent_term.get(key, :undefined) do
+      :undefined ->
+        result = fetch_nullable_columns(module)
+        :persistent_term.put(key, result)
+        result
+
+      value ->
+        value
+    end
+  end
+
+  defp fetch_nullable_columns(module) do
+    table = module.__schema__(:source)
+
+    query =
+      "SELECT column_name, is_nullable FROM information_schema.columns WHERE table_name = $1"
+
+    case Sanbase.Repo.query(query, [table]) do
+      {:ok, %{rows: rows}} ->
+        Map.new(rows, fn [col, nullable] -> {col, nullable == "YES"} end)
+
+      {:error, _} ->
+        %{}
+    end
   end
 
   defp transform_belongs_to(belongs_to_fields, params) do

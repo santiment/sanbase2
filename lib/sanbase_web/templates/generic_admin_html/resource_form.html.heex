@@ -4,207 +4,48 @@
       {"#{String.capitalize(@type)} #{@resource}"}
     </h3>
     <% toggle_target = if @form_layout == :compact, do: "vertical", else: "compact" %>
+    <% toggle_query =
+      @conn.query_params
+      |> Map.put("resource", @resource)
+      |> Map.put("layout", toggle_target) %>
     <% toggle_url =
       if @type == "new",
-        do: ~p"/admin/generic/new?#{%{resource: @resource, layout: toggle_target}}",
-        else: ~p"/admin/generic/#{@data}/edit?#{%{resource: @resource, layout: toggle_target}}" %>
+        do: ~p"/admin/generic/new?#{toggle_query}",
+        else: ~p"/admin/generic/#{@data}/edit?#{toggle_query}" %>
     <.link
       href={toggle_url}
       class="text-sm px-3 py-1.5 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100"
     >
-      Layout: {if @form_layout == :compact, do: "compact", else: "vertical"} (switch)
+      Layout: {@form_layout} (switch)
     </.link>
   </div>
-  <.form
-    method={if @type == "new", do: "post", else: "patch"}
-    for={@changeset}
-    as={@resource}
-    action={
-      if @type == "new",
-        do: ~p"/admin/generic?resource=#{@resource}",
-        else: ~p"/admin/generic/#{@data}?resource=#{@resource}"
-    }
-  >
-    <%= if @changeset.action do %>
-      <SanbaseWeb.AdminComponents.form_error changeset={@changeset} />
-    <% end %>
 
-    <%= if @form_layout == :compact do %>
-      <style>
-        .gen-admin-row {
-          display: grid;
-          align-items: center;
-          column-gap: 1.5rem;
-          padding: 0.25rem 0;
-          grid-template-columns: var(--label-w, 16rem) 1fr;
-        }
-        .gen-admin-row-label {
-          font-weight: 600;
-          font-size: 0.875rem;
-          line-height: 1.25rem;
-          color: rgb(39 39 42);
-          text-align: right;
-          padding-right: 0.25rem;
-        }
-        @media (max-width: 768px) {
-          .gen-admin-row {
-            grid-template-columns: 1fr;
-            row-gap: 0.25rem;
-            padding: 0.5rem 0;
-          }
-          .gen-admin-row-label {
-            text-align: left;
-            padding-right: 0;
-          }
-        }
-      </style>
-      <div class="mt-4">
-        <%= for field <- @fields do %>
-          <% field_override = Map.get(@fields_override, field, %{}) %>
-          <% label_width = Map.get(field_override, :label_width, @form_label_width) %>
-          <% input_max_width = Map.get(field_override, :input_max_width, @form_input_max_width) %>
-          <% input_id = @resource <> "_" <> to_string(field) %>
-          <SanbaseWeb.AdminComponents.form_row_compact
-            label={humanize(field)}
-            for={input_id}
-            label_width={label_width}
-            input_max_width={input_max_width}
-          >
-            <%= if @belongs_to_fields[field] do %>
-              <%= if @belongs_to_fields[field][:type] == :live_select do %>
-                <% initial_value =
-                  if @type == "edit" do
-                    field_id = :"#{to_string(field)}_id"
+  <SanbaseWeb.AdminComponents.resource_form_compact
+    :if={@form_layout == :compact}
+    conn={@conn}
+    changeset={@changeset}
+    data={@data}
+    type={@type}
+    resource={@resource}
+    fields={@fields}
+    field_type_map={@field_type_map}
+    belongs_to_fields={@belongs_to_fields}
+    collections={@collections}
+    fields_override={@fields_override}
+    form_label_width={@form_label_width}
+    form_input_max_width={@form_input_max_width}
+  />
 
-                    Map.get(@changeset.changes, field_id) || Map.get(@changeset.data, field_id) ||
-                      Map.get(@data, field_id)
-                  end %>
-                {live_render(@conn, SanbaseWeb.LiveSelect,
-                  session:
-                    %{
-                      "parent_resource" => @resource,
-                      "field" => field,
-                      "resource" => @belongs_to_fields[field][:resource],
-                      "search_fields" => @belongs_to_fields[field][:search_fields],
-                      "no_label" => true
-                    }
-                    |> then(fn session ->
-                      if initial_value,
-                        do: Map.put(session, "initial_value", initial_value),
-                        else: session
-                    end)
-                )}
-              <% else %>
-                <SanbaseWeb.AdminComponents.form_select_compact
-                  type={@type}
-                  resource={@resource}
-                  field={field}
-                  changeset={@changeset}
-                  options={@belongs_to_fields[field][:data]}
-                  belongs_to={true}
-                  select_type={@field_type_map[field] || :select}
-                />
-              <% end %>
-            <% else %>
-              <%= if @collections[field] do %>
-                <SanbaseWeb.AdminComponents.form_select_compact
-                  type={@type}
-                  resource={@resource}
-                  field={field}
-                  changeset={@changeset}
-                  options={@collections[field]}
-                  belongs_to={false}
-                  select_type={@field_type_map[field] || :select}
-                />
-              <% else %>
-                <SanbaseWeb.AdminComponents.form_input_compact
-                  type={@type}
-                  resource={@resource}
-                  field={field}
-                  changeset={@changeset}
-                  field_type_map={@field_type_map}
-                  data={@data}
-                />
-              <% end %>
-            <% end %>
-          </SanbaseWeb.AdminComponents.form_row_compact>
-        <% end %>
-      </div>
-    <% else %>
-      <%= for field <- @fields do %>
-        <div class="m-4">
-          <%= if @belongs_to_fields[field] do %>
-            <%= if @belongs_to_fields[field][:type] == :live_select do %>
-              <% initial_value =
-                if @type == "edit" do
-                  field_id = :"#{to_string(field)}_id"
-
-                  Map.get(@changeset.changes, field_id) || Map.get(@changeset.data, field_id) ||
-                    Map.get(@data, field_id)
-                end %>
-              {live_render(@conn, SanbaseWeb.LiveSelect,
-                session:
-                  %{
-                    "parent_resource" => @resource,
-                    "field" => field,
-                    "resource" => @belongs_to_fields[field][:resource],
-                    "search_fields" => @belongs_to_fields[field][:search_fields]
-                  }
-                  |> then(fn session ->
-                    if initial_value,
-                      do: Map.put(session, "initial_value", initial_value),
-                      else: session
-                  end)
-              )}
-            <% else %>
-              <SanbaseWeb.AdminComponents.form_select
-                type={@type}
-                resource={@resource}
-                field={field}
-                changeset={@changeset}
-                options={@belongs_to_fields[field][:data]}
-                belongs_to={true}
-                select_type={@field_type_map[field] || :select}
-              />
-            <% end %>
-          <% else %>
-            <%= if @collections[field] do %>
-              <SanbaseWeb.AdminComponents.form_select
-                type={@type}
-                resource={@resource}
-                field={field}
-                changeset={@changeset}
-                options={@collections[field]}
-                belongs_to={false}
-                select_type={@field_type_map[field] || :select}
-              />
-            <% else %>
-              <SanbaseWeb.AdminComponents.form_input
-                type={@type}
-                resource={@resource}
-                field={field}
-                changeset={@changeset}
-                field_type_map={@field_type_map}
-                data={@data}
-              />
-            <% end %>
-          <% end %>
-        </div>
-      <% end %>
-    <% end %>
-
-    <%= if @form_layout == :compact do %>
-      <div class="gen-admin-row mt-4" style={"--label-w: #{@form_label_width};"}>
-        <div></div>
-        <div
-          class="min-w-0"
-          style={if @form_input_max_width, do: "max-width: #{@form_input_max_width}"}
-        >
-          <SanbaseWeb.AdminComponents.form_bottom_nav type={@type} resource={@resource} />
-        </div>
-      </div>
-    <% else %>
-      <SanbaseWeb.AdminComponents.form_bottom_nav type={@type} resource={@resource} />
-    <% end %>
-  </.form>
+  <SanbaseWeb.AdminComponents.resource_form_vertical
+    :if={@form_layout == :vertical}
+    conn={@conn}
+    changeset={@changeset}
+    data={@data}
+    type={@type}
+    resource={@resource}
+    fields={@fields}
+    field_type_map={@field_type_map}
+    belongs_to_fields={@belongs_to_fields}
+    collections={@collections}
+  />
 </div>

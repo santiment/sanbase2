@@ -6,33 +6,44 @@ defmodule SanbaseWeb.LiveSelect do
   import Ecto.Query
 
   def render(assigns) do
+    field = assigns.session["field"]
+    parent = assigns.session["parent_resource"]
+
+    assigns =
+      assign(assigns,
+        input_name: parent <> "[" <> to_string(field) <> "_id]",
+        input_id: parent <> "_" <> to_string(field),
+        input_value: assigns.query || assigns.session["initial_value"],
+        datalist_id: "matches_" <> to_string(field),
+        field_label: humanize(field)
+      )
+
     ~H"""
     <div class="w-full">
-      <%= if @session["no_label"] do %>
-        <input
-          type="text"
-          name={@session["parent_resource"] <> "[" <> to_string(@session["field"]) <> "_id" <> "]"}
-          id={@session["parent_resource"] <> "_" <> to_string(@session["field"])}
-          value={@query || @session["initial_value"]}
-          list={"matches_" <> to_string(@session["field"])}
-          phx-keyup="suggest"
-          phx-debounce="200"
-          placeholder="Search..."
-          class="block w-full rounded-md border border-zinc-300 px-2 py-1 text-zinc-900 focus:border-zinc-400 focus:ring-0 text-sm leading-5"
-        />
-      <% else %>
-        <.input
-          type="text"
-          label={humanize(@session["field"])}
-          name={@session["parent_resource"] <> "[" <> to_string(@session["field"]) <> "_id" <> "]"}
-          value={@query || @session["initial_value"]}
-          list={"matches_" <> to_string(@session["field"])}
-          phx-keyup="suggest"
-          phx-debounce="200"
-          placeholder="Search..."
-        />
-      <% end %>
-      <datalist id={"matches_" <> to_string(@session["field"])}>
+      <input
+        :if={@session["no_label"]}
+        type="text"
+        name={@input_name}
+        id={@input_id}
+        value={@input_value}
+        list={@datalist_id}
+        phx-keyup="suggest"
+        phx-debounce="200"
+        placeholder="Search..."
+        class="block w-full rounded-md border border-zinc-300 px-2 py-1 text-zinc-900 focus:border-zinc-400 focus:ring-0 text-sm leading-5"
+      />
+      <.input
+        :if={!@session["no_label"]}
+        type="text"
+        label={@field_label}
+        name={@input_name}
+        value={@input_value}
+        list={@datalist_id}
+        phx-keyup="suggest"
+        phx-debounce="200"
+        placeholder="Search..."
+      />
+      <datalist id={@datalist_id}>
         <%= for {id, match} <- @matches do %>
           <option value={id}>{match}</option>
         <% end %>

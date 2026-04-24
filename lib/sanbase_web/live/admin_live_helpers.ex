@@ -69,11 +69,15 @@ defmodule SanbaseWeb.AdminLiveHelpers do
       "Name can't be blank, Display order must be an integer"
   """
   def format_errors(%Ecto.Changeset{} = changeset) do
-    changeset.errors
-    |> Enum.map(fn {field, {message, _}} ->
-      "#{Phoenix.Naming.humanize(field)} #{message}"
+    changeset
+    |> Ecto.Changeset.traverse_errors(fn {msg, opts} ->
+      Enum.reduce(opts, msg, fn {key, value}, acc ->
+        String.replace(acc, "%{#{key}}", to_string(value))
+      end)
     end)
-    |> Enum.join(", ")
+    |> Enum.map_join(", ", fn {field, messages} ->
+      "#{Phoenix.Naming.humanize(field)} #{Enum.join(messages, ", ")}"
+    end)
   end
 
   @doc """

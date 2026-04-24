@@ -35,7 +35,7 @@ defmodule SanbaseWeb.GenericAdminController.LinkBuilder do
 
     cond do
       is_nil(field_value) ->
-        {to_string(assoc_name), nil}
+        {field_name, nil}
 
       resource = module_to_resource_name(related_module) ->
         link = href(resource, field_value, "#{field_name}: #{field_value}")

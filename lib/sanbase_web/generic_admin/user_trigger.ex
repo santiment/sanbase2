@@ -11,7 +11,7 @@ defmodule SanbaseWeb.GenericAdmin.UserTrigger do
       actions: [:edit],
       preloads: [:user],
       index_fields: [:id, :user_id, :trigger],
-      edit_fields: [:user, :is_public, :is_featured],
+      edit_fields: [:is_public, :is_featured],
       belongs_to_fields: %{
         user: SanbaseWeb.GenericAdmin.belongs_to_user()
       },
@@ -53,13 +53,17 @@ defmodule SanbaseWeb.GenericAdmin.UserTrigger do
 
   # TODO propagate errors from before/after filters to users
   def after_filter(trigger, _changeset, params) do
+    is_public = parse_bool(params["is_public"])
+    is_featured = parse_bool(params["is_featured"])
+
     trigger =
-      Sanbase.Alert.UserTrigger.update_changeset(trigger, %{
-        trigger: %{is_public: params["is_public"] |> String.to_existing_atom()}
-      })
+      trigger
+      |> Sanbase.Alert.UserTrigger.update_changeset(%{trigger: %{is_public: is_public}})
       |> Sanbase.Repo.update!()
 
-    is_featured = params["is_featured"] |> String.to_existing_atom()
     Sanbase.FeaturedItem.update_item(trigger, is_featured)
   end
+
+  defp parse_bool("true"), do: true
+  defp parse_bool(_), do: false
 end

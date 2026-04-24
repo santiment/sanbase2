@@ -11,12 +11,17 @@ defmodule SanbaseWeb.GenericAdmin.UserSettings do
       fields_override: %{
         settings: %{
           value_modifier: fn us ->
-            Map.from_struct(us.settings)
-            |> Map.delete(:alerts_fired)
+            us.settings
+            |> normalize_settings()
+            |> Map.drop([:alerts_fired, "alerts_fired"])
             |> Jason.encode!(pretty: true)
           end
         }
       }
     }
   end
+
+  defp normalize_settings(nil), do: %{}
+  defp normalize_settings(settings) when is_struct(settings), do: Map.from_struct(settings)
+  defp normalize_settings(settings) when is_map(settings), do: settings
 end

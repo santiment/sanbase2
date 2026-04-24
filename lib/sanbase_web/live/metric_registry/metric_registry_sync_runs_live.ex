@@ -99,7 +99,6 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
             />
           </span>
         </:col>
-        end
       </.table>
     </div>
     """

@@ -1009,9 +1009,34 @@ defmodule SanbaseWeb.AdminComponents do
   defp generic_admin_action_path(:edit, row, resource),
     do: ~p"/admin/generic/#{row}/edit?resource=#{resource}"
 
-  defp resolve_field_value(record, field, assocs, funcs, field_type_map) do
-    result = if assocs[field], do: assocs[field], else: Map.get(record, field)
-    result = if funcs[field], do: funcs[field].(record), else: result
+  # Resolves the value to render for a single field of an admin record.
+  #
+  # Lookup order: belongs_to_links (precomputed link) -> raw record field -> value_modifier override.
+  # The final value is then formatted based on its Ecto type.
+  #
+  # Parameters:
+  #   record               - the Ecto struct / map being rendered (e.g. a User, a Project)
+  #   field                - atom field name to display (e.g. :email, :user_id)
+  #   belongs_to_links     - map %{field_atom => rendered_link} built by
+  #                          GenericAdminController.LinkBuilder for this record's
+  #                          belongs_to associations. When present for `field`, the
+  #                          link replaces the raw FK value (e.g. :user_id -> <a>..</a>).
+  #   value_modifier_funcs - map %{field_atom => (record -> any)} of `value_modifier`
+  #                          functions taken from the resource's `:fields_override`
+  #                          config. When present for `field`, called with the full
+  #                          record to produce the display value.
+  #   field_type_map       - map %{field_atom => ecto_type} used for formatting:
+  #                            :map / :list -> Jason-encoded string
+  #                            :boolean     -> green check / red x icon
+  #                            anything else -> value as-is
+  defp resolve_field_value(record, field, belongs_to_links, value_modifier_funcs, field_type_map) do
+    result =
+      if belongs_to_links[field], do: belongs_to_links[field], else: Map.get(record, field)
+
+    result =
+      if value_modifier_funcs[field],
+        do: value_modifier_funcs[field].(record),
+        else: result
 
     case Map.get(field_type_map, field) do
       type when type in [:map, :list] ->

@@ -11,11 +11,11 @@ defmodule SanbaseWeb.GenericAdmin.Comment do
       preloads: [:user],
       index_fields: [:id, :user_id, :content],
       new_fields: [:user, :content],
-      edit_fields: [:content, :edited_at, :parent_id, :root_parent_id, :subcomments_count, :user],
+      edit_fields: [:content, :edited_at, :parent_id, :root_parent_id, :subcomments_count],
       belongs_to_fields: %{
         user: SanbaseWeb.GenericAdmin.belongs_to_user(),
         parent_id: %{
-          query: from(c in Sanbase.Comment, where: is_nil(c.parent_id), order_by: [desc: c.id]),
+          query: from(c in Sanbase.Comment, order_by: [desc: c.id]),
           transform: fn rows -> Enum.map(rows, &{&1.content, &1.id}) end,
           resource: "comments",
           search_fields: [:content]
@@ -43,10 +43,18 @@ defmodule SanbaseWeb.GenericAdmin.Comment do
       SanbaseWeb.GenericAdmin.resource_link(
         "comments",
         comment.comment_id,
-        comment.comment.content
+        truncate(comment.comment.content, 60)
       )
     else
       ""
     end
   end
+
+  defp truncate(content, max) when is_binary(content) do
+    if String.length(content) > max,
+      do: String.slice(content, 0, max) <> "…",
+      else: content
+  end
+
+  defp truncate(_, _), do: ""
 end

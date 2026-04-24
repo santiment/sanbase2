@@ -53,6 +53,7 @@ defmodule SanbaseWeb.AdminSharedComponents do
   attr :id, :string, required: true
   attr :name, :string, required: true
   attr :label, :string, required: true
+  attr :checked, :boolean, default: false
 
   def filter_checkbox(assigns) do
     ~H"""
@@ -62,6 +63,7 @@ defmodule SanbaseWeb.AdminSharedComponents do
           id={@id}
           name={@name}
           type="checkbox"
+          checked={@checked}
           class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded"
         /> {@label}
       </label>
@@ -71,8 +73,8 @@ defmodule SanbaseWeb.AdminSharedComponents do
 
   # ---------------------------------------------------------------------------
   # Approval Buttons — shared approve/decline/undo pattern
-  # Used in: MonitoredTwitterHandleLive, SuggestEcosystemLabelsChangeAdminLive,
-  #          SuggestGithubOrganizationsAdminLive
+  # Used in: SuggestEcosystemLabelsChangeAdminLive, SuggestGithubOrganizationsAdminLive.
+  # Handlers of `phx_submit` must accept "approved" / "declined" / "undo" values.
   # ---------------------------------------------------------------------------
 
   attr :form, :any, required: true
@@ -232,6 +234,7 @@ defmodule SanbaseWeb.AdminSharedComponents do
     <.link
       href={@href}
       target={@target}
+      rel={if @target == "_blank", do: "noopener noreferrer"}
       class={[
         if(@disabled,
           do: "pointer-events-none bg-gray-100 text-gray-400",
@@ -257,21 +260,31 @@ defmodule SanbaseWeb.AdminSharedComponents do
 
   def dates_display(assigns) do
     inserted_duration =
-      Sanbase.Utils.DateTime.rough_duration_since(assigns.inserted_at, abbreviate: true)
+      assigns.inserted_at &&
+        Sanbase.Utils.DateTime.rough_duration_since(assigns.inserted_at, abbreviate: true)
 
     updated_duration =
-      Sanbase.Utils.DateTime.rough_duration_since(assigns.updated_at, abbreviate: true)
+      assigns.updated_at &&
+        Sanbase.Utils.DateTime.rough_duration_since(assigns.updated_at, abbreviate: true)
+
+    show_updated? =
+      assigns.inserted_at && assigns.updated_at &&
+        assigns.inserted_at != assigns.updated_at
 
     assigns =
-      assign(assigns, inserted_duration: inserted_duration, updated_duration: updated_duration)
+      assign(assigns,
+        inserted_duration: inserted_duration,
+        updated_duration: updated_duration,
+        show_updated?: show_updated?
+      )
 
     ~H"""
     <div class="flex flex-col gap-1">
-      <div class="flex items-center gap-1.5 text-nowrap">
+      <div :if={@inserted_duration} class="flex items-center gap-1.5 text-nowrap">
         <CoreComponents.icon name="hero-plus-circle" class="w-4 h-4 text-green-600" />
         <span class="text-gray-700 text-sm">{@inserted_duration} ago</span>
       </div>
-      <div :if={@inserted_at != @updated_at} class="flex items-center gap-1.5 text-nowrap">
+      <div :if={@show_updated?} class="flex items-center gap-1.5 text-nowrap">
         <CoreComponents.icon name="hero-pencil-square" class="w-4 h-4 text-amber-600" />
         <span class="text-gray-700 text-sm">{@updated_duration} ago</span>
       </div>

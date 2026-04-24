@@ -38,14 +38,14 @@ graph TB
         RM1[Ecosystem]
         RM2[Subscription]
         RM3[User]
-        RM_N["... 16 more"]
+        RM_N["... 40 more"]
     end
 
     subgraph Templates["HEEx Templates"]
         T_HOME[home.html.heex]
         T_INDEX[index.html.heex]
         T_SHOW[show.html.heex]
-        T_FORM[form.html.heex]
+        T_FORM[resource_form.html.heex]
     end
 
     subgraph Components["AdminComponents"]
@@ -158,42 +158,42 @@ sequenceDiagram
 ```mermaid
 classDiagram
     class ResourceModule {
-        +schema_module() :: module
-        +resource_name() :: String.t [optional]
-        +resource() :: map [optional]
-        +before_filter(record) :: record [optional]
+        +schema_module() module
+        +resource_name() String [required]
+        +singular_resource_name() String [required]
+        +resource() map [optional]
+        +before_filter(record) record [optional]
         +after_filter(record, changeset, changes) [optional]
-        +has_many(record) :: list [optional]
-        +belongs_to(record) :: list [optional]
+        +has_many(record) list [optional]
+        +belongs_to(record) list [optional]
     }
 
     class ResourceConfig {
         module : Ecto schema module
         admin_module : GenericAdmin.* module
-        singular : String.t
-        actions : [:show, :new, :edit, :delete]
-        index_fields : :all | [atom]
-        new_fields : [atom]
-        edit_fields : [atom]
-        preloads : [atom]
+        singular : String
+        actions : list of show new edit delete
+        index_fields : :all or list of atom
+        new_fields : list of atom
+        edit_fields : list of atom
+        preloads : list of atom
         fields_override : map
         belongs_to_fields : map
         custom_index_actions : list
-        funcs : map
     }
 
     class FieldOverride {
-        value_modifier : (record -> any)
-        collection : [{label, value}]
+        value_modifier : fn record to any
+        collection : list of label_value_tuples
         type : atom
         search_query : Ecto.Query
     }
 
     class BelongsToField {
         query : Ecto.Query
-        transform : (rows -> [{label, value}])
-        resource : String.t
-        search_fields : [atom]
+        transform : fn rows to list of label_value_tuples
+        resource : String
+        search_fields : list of atom
     }
 
     ResourceModule --> ResourceConfig : produces via resource/0
@@ -203,25 +203,30 @@ classDiagram
 
 ## File Structure
 
-```
+```text
 lib/sanbase_web/
 ├── generic_admin.ex                          # Registry + shared helpers
 ├── generic_admin/
 │   ├── ARCHITECTURE.md                       # This file
 │   ├── ecosystem.ex                          # Resource: Ecosystem
-│   ├── subscription.ex                       # Resource: Subscription, Plan, Product, PromoTrial
+│   ├── subscription.ex                       # Resource: Subscription
+│   ├── plan.ex                               # Resource: Plan
+│   ├── product.ex                            # Resource: Product
+│   ├── promo_trial.ex                        # Resource: PromoTrial
 │   ├── user.ex                               # Resource: User
-│   ├── project.ex                            # Resource: Project + related
+│   ├── project.ex                            # Resource: Project
 │   ├── post.ex                               # Resource: Post
-│   ├── ... (43 resource modules, one per file)
+│   ├── ... (43 resource modules total, one per file)
 │   └── version.ex                            # Resource: Version
 ├── controllers/
-│   └── generic_admin_controller.ex           # CRUD controller + LinkBuilder
+│   ├── generic_admin_controller.ex           # CRUD controller
+│   └── generic_admin/
+│       └── link_builder.ex                   # Builds HTML links for belongs_to FKs
 ├── components/admin/
 │   └── admin_components.ex                   # Phoenix function components
 └── templates/generic_admin_html/
     ├── home.html.heex                        # Admin home / navigation
     ├── index.html.heex                       # Resource listing (search + table)
     ├── show.html.heex                        # Resource detail (show_table + has_many)
-    └── form.html.heex                        # Unified new/edit form
+    └── resource_form.html.heex               # Unified new/edit form (branches on @type)
 ```

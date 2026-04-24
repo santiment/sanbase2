@@ -43,6 +43,8 @@ defmodule SanbaseWeb.GenericAdmin do
   - `:search_query` — custom search query builder for this field
   """
 
+  import Ecto.Query, only: [from: 2]
+
   @doc "The Ecto schema module backing this admin resource."
   @callback schema_module() :: module()
 
@@ -192,8 +194,6 @@ defmodule SanbaseWeb.GenericAdmin do
   Used by many resource modules that have a project_id foreign key.
   """
   def belongs_to_project do
-    import Ecto.Query, only: [from: 2], warn: false
-
     %{
       query: from(p in Sanbase.Project, order_by: p.id),
       transform: fn rows -> Enum.map(rows, &{&1.name, &1.id}) end,
@@ -207,8 +207,6 @@ defmodule SanbaseWeb.GenericAdmin do
   Used by resource modules that have a user_id foreign key.
   """
   def belongs_to_user do
-    import Ecto.Query, only: [from: 2], warn: false
-
     %{
       query: from(u in Sanbase.Accounts.User, order_by: [desc: u.id]),
       transform: fn rows -> Enum.map(rows, &{&1.email, &1.id}) end,

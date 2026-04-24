@@ -546,21 +546,25 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
               id="not-deprecated-only"
               name="not_deprecated_only"
               label="Not Deprecated"
+              checked={@filter["not_deprecated_only"] == "on"}
             />
             <AdminSharedComponents.filter_checkbox
               id="unverified-only"
               name="unverified_only"
               label="Unverified"
+              checked={@filter["unverified_only"] == "on"}
             />
             <AdminSharedComponents.filter_checkbox
               id="not-synced-only"
               name="not_synced_only"
               label="Not Synced"
+              checked={@filter["not_synced_only"] == "on"}
             />
             <AdminSharedComponents.filter_checkbox
               id="no-docs-only"
               name="no_docs_only"
               label="Without Docs"
+              checked={@filter["no_docs_only"] == "on"}
             />
           </div>
         </div>
@@ -646,6 +650,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     metrics
     |> maybe_apply_filter(:not_deprecated_only, filters)
     |> maybe_apply_filter(:match_metric, filters)
+    |> maybe_apply_filter(:status, filters)
     |> maybe_apply_filter(:unverified_only, filters)
     |> maybe_apply_filter(:not_synced_only, filters)
     |> maybe_apply_filter(:no_docs_only, filters)
@@ -696,7 +701,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     end)
   end
 
-  defp maybe_apply_filter(metrics, :match_metric, %{"status" => status}) when status != "" do
+  defp maybe_apply_filter(metrics, :status, %{"status" => status}) when status != "" do
     metrics
     |> Enum.filter(fn m ->
       m.status == status

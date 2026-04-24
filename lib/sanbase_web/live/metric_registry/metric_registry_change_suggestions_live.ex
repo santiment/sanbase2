@@ -156,7 +156,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
 
       {:error, changeset} ->
         {:noreply,
-         put_changeset_error_flash(socket, changeset, "Error accepting the suggested changes")}
+         put_changeset_error_flash(socket, changeset, "Error reverting the suggested changes")}
     end
   end
 
@@ -188,7 +188,11 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
 
       {:error, changeset} ->
         {:noreply,
-         put_changeset_error_flash(socket, changeset, "Error accepting the suggested changes")}
+         put_changeset_error_flash(
+           socket,
+           changeset,
+           "Error #{action}ing the suggested changes"
+         )}
     end
   end
 

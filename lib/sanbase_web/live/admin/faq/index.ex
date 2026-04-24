@@ -36,7 +36,7 @@ defmodule SanbaseWeb.Admin.FaqLive.Index do
 
   defp assign_pagination(socket, params) do
     page = parse_int(Map.get(params, "page"), 1)
-    page_size = parse_int(Map.get(params, "page_size"), @default_page_size)
+    page_size = parse_int(Map.get(params, "page_size"), @default_page_size) |> max(1)
 
     total_count = Faq.count_entries()
     total_pages = max(1, div(total_count + page_size - 1, page_size))

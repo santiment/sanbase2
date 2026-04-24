@@ -9,8 +9,12 @@ defmodule SanbaseWeb.GenericAdmin.ChartConfiguration do
       actions: [:new, :edit],
       preloads: [:user, :project],
       index_fields: [:id, :title, :is_public, :user_id],
-      new_fields: [:title, :is_public],
+      new_fields: [:user, :project, :title, :is_public],
       edit_fields: [:title, :is_public],
+      belongs_to_fields: %{
+        user: SanbaseWeb.GenericAdmin.belongs_to_user(),
+        project: SanbaseWeb.GenericAdmin.belongs_to_project()
+      },
       fields_override: %{
         user_id: %{
           value_modifier: &SanbaseWeb.GenericAdmin.User.user_link/1

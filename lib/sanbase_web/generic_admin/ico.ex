@@ -7,6 +7,7 @@ defmodule SanbaseWeb.GenericAdmin.Ico do
 
   def resource() do
     %{
+      actions: [:new, :edit],
       preloads: [:cap_currency, :project],
       new_fields: [
         :project,

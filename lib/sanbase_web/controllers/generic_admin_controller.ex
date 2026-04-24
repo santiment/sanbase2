@@ -321,7 +321,10 @@ defmodule SanbaseWeb.GenericAdminController do
         |> case do
           {:error, error} ->
             conn
-            |> put_flash(:error, "#{resource} #{action_label}, but after_filter error: #{error}")
+            |> put_flash(
+              :error,
+              "#{resource} #{action_label}, but after_filter error: #{inspect(error)}"
+            )
             |> redirect(to: ~p"/admin/generic/#{response_resource}?resource=#{resource}")
 
           _ ->

@@ -123,11 +123,21 @@ defmodule SanbaseWeb.AdminComponents do
 
     ~H"""
     <.input
+      :if={@type != "tristate"}
       name={@resource <> "[" <> to_string(@field) <> "]"}
       id={@resource <> "_" <> to_string(@field)}
       label={humanize(@field)}
       type={@type}
       value={@value}
+    />
+    <.input
+      :if={@type == "tristate"}
+      name={@resource <> "[" <> to_string(@field) <> "]"}
+      id={@resource <> "_" <> to_string(@field)}
+      label={humanize(@field)}
+      type="select"
+      options={tristate_options()}
+      value={tristate_value(@value)}
     />
     """
   end
@@ -159,11 +169,17 @@ defmodule SanbaseWeb.AdminComponents do
   defp input_html_type(:integer), do: "number"
   defp input_html_type(:float), do: "number"
   defp input_html_type(:boolean), do: "checkbox"
+  defp input_html_type(:boolean_nullable), do: "tristate"
   defp input_html_type(:date), do: "date"
   defp input_html_type(:naive_datetime), do: "datetime-local"
   defp input_html_type(:utc_datetime), do: "datetime-local"
   defp input_html_type(:time), do: "time"
   defp input_html_type(_), do: "text"
+
+  defp tristate_options, do: [{"(unset)", ""}, {"Yes", "true"}, {"No", "false"}]
+
+  defp tristate_value(nil), do: ""
+  defp tristate_value(value), do: to_string(value)
 
   @doc """
   Renders the full resource form in the compact (horizontal) layout.
@@ -522,6 +538,14 @@ defmodule SanbaseWeb.AdminComponents do
           checked={Phoenix.HTML.Form.normalize_value("checkbox", @value)}
           class="rounded border-zinc-300 text-zinc-900 focus:ring-0"
         />
+      <% @input_type == "tristate" -> %>
+        <select
+          id={@id}
+          name={@name}
+          class="block w-full rounded-md border border-gray-300 bg-white shadow-sm px-2 py-1 text-sm leading-5 focus:border-zinc-400 focus:ring-0"
+        >
+          {Phoenix.HTML.Form.options_for_select(tristate_options(), tristate_value(@value))}
+        </select>
       <% true -> %>
         <input
           type={@input_type}
@@ -880,7 +904,9 @@ defmodule SanbaseWeb.AdminComponents do
               [
                 "px-2 py-1 whitespace-nowrap",
                 # Make ID and boolean columns narrower
-                if(field == :id or Map.get(@field_type_map, field) == :boolean, do: "w-[80px]")
+                if(field == :id or Map.get(@field_type_map, field) in [:boolean, :boolean_nullable],
+                  do: "w-[80px]"
+                )
               ]
             }
           >
@@ -1446,6 +1472,18 @@ defmodule SanbaseWeb.AdminComponents do
         if result == true,
           do: Phoenix.HTML.raw(~s(<span class="hero-check-circle text-green-500"></span>)),
           else: Phoenix.HTML.raw(~s(<span class="hero-x-circle text-red-500"></span>))
+
+      :boolean_nullable ->
+        cond do
+          result == true ->
+            Phoenix.HTML.raw(~s(<span class="hero-check-circle text-green-500"></span>))
+
+          result == false ->
+            Phoenix.HTML.raw(~s(<span class="hero-x-circle text-red-500"></span>))
+
+          true ->
+            Phoenix.HTML.raw(~s(<span class="text-gray-400">—</span>))
+        end
 
       _ ->
         result

@@ -115,48 +115,10 @@ defmodule SanbaseWeb.AdminComponents do
   attr(:data, :map, required: false, default: %{})
 
   def form_input(assigns) do
-    # If this is a form for creating a new entity, value is empty
-    # Otherwise it is taken from the changeset or data fields
-    value =
-      if assigns.type == "new" do
-        ""
-      else
-        case Map.get(assigns.field_type_map, assigns.field) do
-          map_or_list when map_or_list in [:map, :list, {:array, :string}] ->
-            Map.get(assigns.changeset.data, assigns.field) |> Jason.encode!()
-
-          _ ->
-            Map.get(assigns.changeset.changes, assigns.field) ||
-              Map.get(assigns.changeset.data, assigns.field) ||
-              Map.get(assigns.data, assigns.field)
-        end
-      end
-
-    # type of the <input> html tag
-    type =
-      case Map.get(assigns.field_type_map, assigns.field) do
-        :string -> "text"
-        :text -> "textarea"
-        :integer -> "number"
-        :float -> "number"
-        :boolean -> "checkbox"
-        :date -> "date"
-        :naive_datetime -> "datetime-local"
-        :utc_datetime -> "datetime-local"
-        :time -> "time"
-        :map -> "text"
-        :list -> "text"
-        :assoc -> "text"
-        :binary -> "text"
-        :any -> "text"
-        {:array, :string} -> "text"
-        _ -> "text"
-      end
-
     assigns =
       assign(assigns,
-        value: value,
-        type: type
+        value: resolve_input_value(assigns),
+        type: input_html_type(Map.get(assigns.field_type_map, assigns.field))
       )
 
     ~H"""
@@ -170,42 +132,357 @@ defmodule SanbaseWeb.AdminComponents do
     """
   end
 
+  defp resolve_input_value(%{type: "new"}), do: ""
+
+  defp resolve_input_value(%{field: field, field_type_map: ftm, changeset: cs, data: data}) do
+    case Map.get(ftm, field) do
+      type when type in [:map, :list, {:array, :string}] ->
+        case Map.get(cs.data, field) do
+          nil -> ""
+          value -> Jason.encode!(value)
+        end
+
+      _ ->
+        lookup_field(field, cs.changes, cs.data, data)
+    end
+  end
+
+  defp lookup_field(field, changes, data, extra_data) do
+    cond do
+      Map.has_key?(changes, field) -> Map.get(changes, field)
+      Map.has_key?(data, field) -> Map.get(data, field)
+      true -> Map.get(extra_data, field)
+    end
+  end
+
+  defp input_html_type(:text), do: "textarea"
+  defp input_html_type(:integer), do: "number"
+  defp input_html_type(:float), do: "number"
+  defp input_html_type(:boolean), do: "checkbox"
+  defp input_html_type(:date), do: "date"
+  defp input_html_type(:naive_datetime), do: "datetime-local"
+  defp input_html_type(:utc_datetime), do: "datetime-local"
+  defp input_html_type(:time), do: "time"
+  defp input_html_type(_), do: "text"
+
   @doc """
-  Renders a single row in a compact (horizontal) form layout.
+  Renders the full resource form in the compact (horizontal) layout.
 
-  Label on the left, input slot on the right, aligned in a 2-column grid.
-
-  ## Attributes
-
-  - `:label` - The label text.
-  - `:for` - The `for` attribute linking label to input id.
-  - `:label_width` - CSS width for the label column (default `"16rem"`).
-  - `:input_max_width` - CSS max-width for the input column (default `"40rem"`, nil for none).
+  Labels sit on the left, inputs on the right. On small screens (<= 768px)
+  the layout collapses to vertical via CSS media query.
   """
 
-  attr(:label, :string, required: true)
+  attr(:conn, :any, required: true)
+  attr(:changeset, :map, required: true)
+  attr(:data, :any, required: true)
+  attr(:type, :string, required: true)
+  attr(:resource, :string, required: true)
+  attr(:fields, :list, required: true)
+  attr(:field_type_map, :map, required: true)
+  attr(:belongs_to_fields, :map, required: true)
+  attr(:collections, :map, required: true)
+  attr(:fields_override, :map, required: true)
+  attr(:form_label_width, :string, required: true)
+  attr(:form_input_max_width, :any, required: true)
+
+  def resource_form_compact(assigns) do
+    ~H"""
+    <.resource_form_shell type={@type} resource={@resource} data={@data} changeset={@changeset}>
+      <.compact_field
+        :for={field <- @fields}
+        conn={@conn}
+        field={field}
+        resource={@resource}
+        type={@type}
+        changeset={@changeset}
+        data={@data}
+        field_type_map={@field_type_map}
+        belongs_to_fields={@belongs_to_fields}
+        collections={@collections}
+        fields_override={@fields_override}
+        form_label_width={@form_label_width}
+        form_input_max_width={@form_input_max_width}
+      />
+      <.form_row_compact label_width={@form_label_width} input_max_width={@form_input_max_width}>
+        <.form_bottom_nav type={@type} resource={@resource} />
+      </.form_row_compact>
+    </.resource_form_shell>
+    """
+  end
+
+  @doc """
+  Renders the full resource form in the vertical (stacked) layout: labels
+  above inputs, each field wrapped in its own block.
+  """
+
+  attr(:conn, :any, required: true)
+  attr(:changeset, :map, required: true)
+  attr(:data, :any, required: true)
+  attr(:type, :string, required: true)
+  attr(:resource, :string, required: true)
+  attr(:fields, :list, required: true)
+  attr(:field_type_map, :map, required: true)
+  attr(:belongs_to_fields, :map, required: true)
+  attr(:collections, :map, required: true)
+
+  def resource_form_vertical(assigns) do
+    ~H"""
+    <.resource_form_shell type={@type} resource={@resource} data={@data} changeset={@changeset}>
+      <.vertical_field
+        :for={field <- @fields}
+        conn={@conn}
+        field={field}
+        resource={@resource}
+        type={@type}
+        changeset={@changeset}
+        data={@data}
+        field_type_map={@field_type_map}
+        belongs_to_fields={@belongs_to_fields}
+        collections={@collections}
+      />
+      <.form_bottom_nav type={@type} resource={@resource} />
+    </.resource_form_shell>
+    """
+  end
+
+  attr(:type, :string, required: true)
+  attr(:resource, :string, required: true)
+  attr(:data, :any, required: true)
+  attr(:changeset, :map, required: true)
+  slot(:inner_block, required: true)
+
+  defp resource_form_shell(assigns) do
+    ~H"""
+    <.form
+      method={if @type == "new", do: "post", else: "patch"}
+      for={@changeset}
+      as={@resource}
+      action={form_action(@type, @resource, @data)}
+    >
+      <.form_error :if={@changeset.action} changeset={@changeset} />
+      {render_slot(@inner_block)}
+    </.form>
+    """
+  end
+
+  attr(:conn, :any, required: true)
+  attr(:field, :atom, required: true)
+  attr(:resource, :string, required: true)
+  attr(:type, :string, required: true)
+  attr(:changeset, :map, required: true)
+  attr(:data, :any, required: true)
+  attr(:field_type_map, :map, required: true)
+  attr(:belongs_to_fields, :map, required: true)
+  attr(:collections, :map, required: true)
+  attr(:fields_override, :map, required: true)
+  attr(:form_label_width, :string, required: true)
+  attr(:form_input_max_width, :any, required: true)
+
+  defp compact_field(assigns) do
+    field_override = Map.get(assigns.fields_override, assigns.field, %{})
+    label_width = Map.get(field_override, :label_width, assigns.form_label_width)
+    input_max_width = Map.get(field_override, :input_max_width, assigns.form_input_max_width)
+    input_id = assigns.resource <> "_" <> to_string(assigns.field)
+
+    assigns =
+      assign(assigns,
+        kind: field_kind(assigns),
+        label_width: label_width,
+        input_max_width: input_max_width,
+        input_id: input_id
+      )
+
+    ~H"""
+    <.form_row_compact
+      label={humanize(@field)}
+      for={@input_id}
+      label_width={@label_width}
+      input_max_width={@input_max_width}
+    >
+      <.live_select_embed
+        :if={@kind == :live_select}
+        conn={@conn}
+        field={@field}
+        resource={@resource}
+        type={@type}
+        changeset={@changeset}
+        data={@data}
+        belongs_to_fields={@belongs_to_fields}
+        no_label={true}
+      />
+      <.form_select_compact
+        :if={@kind == :belongs_to}
+        type={@type}
+        resource={@resource}
+        field={@field}
+        changeset={@changeset}
+        data={@data}
+        options={@belongs_to_fields[@field][:data]}
+        belongs_to={true}
+        select_type={@field_type_map[@field] || :select}
+      />
+      <.form_select_compact
+        :if={@kind == :collection}
+        type={@type}
+        resource={@resource}
+        field={@field}
+        changeset={@changeset}
+        data={@data}
+        options={@collections[@field]}
+        belongs_to={false}
+        select_type={@field_type_map[@field] || :select}
+      />
+      <.form_input_compact
+        :if={@kind == :input}
+        type={@type}
+        resource={@resource}
+        field={@field}
+        changeset={@changeset}
+        field_type_map={@field_type_map}
+        data={@data}
+      />
+    </.form_row_compact>
+    """
+  end
+
+  attr(:conn, :any, required: true)
+  attr(:field, :atom, required: true)
+  attr(:resource, :string, required: true)
+  attr(:type, :string, required: true)
+  attr(:changeset, :map, required: true)
+  attr(:data, :any, required: true)
+  attr(:field_type_map, :map, required: true)
+  attr(:belongs_to_fields, :map, required: true)
+  attr(:collections, :map, required: true)
+
+  defp vertical_field(assigns) do
+    assigns = assign(assigns, :kind, field_kind(assigns))
+
+    ~H"""
+    <div class="m-4">
+      <.live_select_embed
+        :if={@kind == :live_select}
+        conn={@conn}
+        field={@field}
+        resource={@resource}
+        type={@type}
+        changeset={@changeset}
+        data={@data}
+        belongs_to_fields={@belongs_to_fields}
+        no_label={false}
+      />
+      <.form_select
+        :if={@kind == :belongs_to}
+        type={@type}
+        resource={@resource}
+        field={@field}
+        changeset={@changeset}
+        data={@data}
+        options={@belongs_to_fields[@field][:data]}
+        belongs_to={true}
+        select_type={@field_type_map[@field] || :select}
+      />
+      <.form_select
+        :if={@kind == :collection}
+        type={@type}
+        resource={@resource}
+        field={@field}
+        changeset={@changeset}
+        data={@data}
+        options={@collections[@field]}
+        belongs_to={false}
+        select_type={@field_type_map[@field] || :select}
+      />
+      <.form_input
+        :if={@kind == :input}
+        type={@type}
+        resource={@resource}
+        field={@field}
+        changeset={@changeset}
+        field_type_map={@field_type_map}
+        data={@data}
+      />
+    </div>
+    """
+  end
+
+  attr(:conn, :any, required: true)
+  attr(:field, :atom, required: true)
+  attr(:resource, :string, required: true)
+  attr(:type, :string, required: true)
+  attr(:changeset, :map, required: true)
+  attr(:data, :any, required: true)
+  attr(:belongs_to_fields, :map, required: true)
+  attr(:no_label, :boolean, required: true)
+
+  defp live_select_embed(assigns) do
+    field_id = :"#{to_string(assigns.field)}_id"
+
+    initial_value =
+      if assigns.type == "edit" do
+        Map.get(assigns.changeset.changes, field_id) ||
+          Map.get(assigns.changeset.data, field_id) ||
+          Map.get(assigns.data, field_id)
+      end
+
+    session = %{
+      "parent_resource" => assigns.resource,
+      "field" => assigns.field,
+      "resource" => assigns.belongs_to_fields[assigns.field][:resource],
+      "search_fields" => assigns.belongs_to_fields[assigns.field][:search_fields],
+      "no_label" => assigns.no_label
+    }
+
+    session =
+      if initial_value, do: Map.put(session, "initial_value", initial_value), else: session
+
+    assigns = assign(assigns, :session, session)
+
+    ~H"""
+    {live_render(@conn, SanbaseWeb.LiveSelect, session: @session)}
+    """
+  end
+
+  defp field_kind(%{field: field, belongs_to_fields: btf, collections: cols}) do
+    cond do
+      get_in(btf, [field, :type]) == :live_select -> :live_select
+      Map.has_key?(btf, field) -> :belongs_to
+      Map.has_key?(cols, field) -> :collection
+      true -> :input
+    end
+  end
+
+  defp form_action("new", resource, _data), do: ~p"/admin/generic?resource=#{resource}"
+
+  defp form_action(_edit, resource, data),
+    do: ~p"/admin/generic/#{data}?resource=#{resource}"
+
+  attr(:label, :string, default: nil)
   attr(:for, :string, default: nil)
   attr(:label_width, :string, default: "16rem")
   attr(:input_max_width, :string, default: "40rem")
   slot(:inner_block, required: true)
 
-  def form_row_compact(assigns) do
+  defp form_row_compact(assigns) do
     ~H"""
-    <div class="gen-admin-row" style={"--label-w: #{@label_width};"}>
-      <label for={@for} class="gen-admin-row-label">
+    <div
+      class="grid items-center gap-x-6 py-1 grid-cols-[var(--label-w)_1fr] max-md:grid-cols-1 max-md:gap-y-1 max-md:py-2"
+      style={"--label-w: #{@label_width};"}
+    >
+      <label
+        :if={@label}
+        for={@for}
+        class="text-sm font-semibold text-zinc-800 text-right pr-1 max-md:text-left max-md:pr-0"
+      >
         {@label}
       </label>
+      <div :if={!@label} aria-hidden="true"></div>
       <div class="min-w-0" style={if @input_max_width, do: "max-width: #{@input_max_width}"}>
         {render_slot(@inner_block)}
       </div>
     </div>
     """
   end
-
-  @doc """
-  Renders a bare input (no label, no outer label wrapper) for use inside
-  `form_row_compact/1`. Mirrors `form_input/1` value/type logic.
-  """
 
   attr(:resource, :string, required: true)
   attr(:field, :atom, required: true)
@@ -214,46 +491,14 @@ defmodule SanbaseWeb.AdminComponents do
   attr(:changeset, :map, required: true)
   attr(:data, :map, required: false, default: %{})
 
-  def form_input_compact(assigns) do
-    value =
-      if assigns.type == "new" do
-        ""
-      else
-        case Map.get(assigns.field_type_map, assigns.field) do
-          map_or_list when map_or_list in [:map, :list, {:array, :string}] ->
-            Map.get(assigns.changeset.data, assigns.field) |> Jason.encode!()
-
-          _ ->
-            Map.get(assigns.changeset.changes, assigns.field) ||
-              Map.get(assigns.changeset.data, assigns.field) ||
-              Map.get(assigns.data, assigns.field)
-        end
-      end
-
-    input_type =
-      case Map.get(assigns.field_type_map, assigns.field) do
-        :string -> "text"
-        :text -> "textarea"
-        :integer -> "number"
-        :float -> "number"
-        :boolean -> "checkbox"
-        :date -> "date"
-        :naive_datetime -> "datetime-local"
-        :utc_datetime -> "datetime-local"
-        :time -> "time"
-        :map -> "text"
-        :list -> "text"
-        :assoc -> "text"
-        :binary -> "text"
-        :any -> "text"
-        {:array, :string} -> "text"
-        _ -> "text"
-      end
-
-    name = assigns.resource <> "[" <> to_string(assigns.field) <> "]"
-    id = assigns.resource <> "_" <> to_string(assigns.field)
-
-    assigns = assign(assigns, value: value, input_type: input_type, name: name, id: id)
+  defp form_input_compact(assigns) do
+    assigns =
+      assign(assigns,
+        value: resolve_input_value(assigns),
+        input_type: input_html_type(Map.get(assigns.field_type_map, assigns.field)),
+        name: assigns.resource <> "[" <> to_string(assigns.field) <> "]",
+        id: assigns.resource <> "_" <> to_string(assigns.field)
+      )
 
     ~H"""
     <%= cond do %>
@@ -290,11 +535,6 @@ defmodule SanbaseWeb.AdminComponents do
     """
   end
 
-  @doc """
-  Renders a bare select (no label) for use inside `form_row_compact/1`.
-  Mirrors `form_select/1` value/name logic.
-  """
-
   attr(:resource, :string, required: true)
   attr(:field, :atom, required: true)
   attr(:options, :list, required: true)
@@ -302,45 +542,17 @@ defmodule SanbaseWeb.AdminComponents do
   attr(:belongs_to, :boolean, required: false, default: false)
   attr(:type, :string, required: true)
   attr(:changeset, :map, required: true)
+  attr(:data, :map, required: false, default: %{})
 
-  def form_select_compact(assigns) do
-    name =
-      if assigns.belongs_to do
-        assigns.resource <> "[" <> to_string(assigns.field) <> "_id" <> "]"
-      else
-        assigns.resource <> "[" <> to_string(assigns.field) <> "]"
-      end
-
-    name = if assigns.select_type == :multiselect, do: name <> "[]", else: name
-    id = assigns.resource <> "_" <> to_string(assigns.field)
-
-    value_field =
-      if assigns.belongs_to,
-        do: String.to_existing_atom(to_string(assigns.field) <> "_id"),
-        else: assigns.field
-
-    value =
-      if assigns.type == "new" do
-        assigns.changeset.changes[value_field]
-      else
-        Map.get(assigns.changeset.changes, value_field) ||
-          Map.get(assigns.changeset.data, value_field)
-      end
-
-    prompt =
-      if length(assigns.options) == 1,
-        do: nil,
-        else: "Select #{humanize(assigns.field)}"
-
-    multiple = assigns.select_type == :multiselect
-
+  defp form_select_compact(assigns) do
     assigns =
       assign(assigns,
-        name: name,
-        id: id,
-        value: value,
-        prompt: prompt,
-        multiple: multiple
+        name:
+          select_name(assigns.resource, assigns.field, assigns.belongs_to, assigns.select_type),
+        id: assigns.resource <> "_" <> to_string(assigns.field),
+        value: select_value(assigns),
+        prompt: select_prompt(assigns.options, assigns.field),
+        multiple: assigns.select_type == :multiselect
       )
 
     ~H"""
@@ -390,45 +602,46 @@ defmodule SanbaseWeb.AdminComponents do
   attr(:belongs_to, :boolean, required: false, default: false)
   attr(:type, :string, required: true)
   attr(:changeset, :map, required: true)
+  attr(:data, :map, required: false, default: %{})
 
   def form_select(assigns) do
+    assigns =
+      assign(assigns,
+        name:
+          select_name(assigns.resource, assigns.field, assigns.belongs_to, assigns.select_type),
+        value: select_value(assigns),
+        prompt: select_prompt(assigns.options, assigns.field)
+      )
+
     ~H"""
     <.input
-      name={
-        name =
-          if @belongs_to do
-            @resource <> "[" <> to_string(@field) <> "_id" <> "]"
-          else
-            @resource <> "[" <> to_string(@field) <> "]"
-          end
-
-        if @select_type == :multiselect, do: name <> "[]", else: name
-      }
+      name={@name}
       id={@resource <> "_" <> to_string(@field)}
       label={humanize(@field)}
       type="select"
-      multiple={if @select_type == :multiselect, do: true, else: false}
+      multiple={@select_type == :multiselect}
       options={@options}
-      value={
-        field = if @belongs_to, do: String.to_existing_atom(to_string(@field) <> "_id"), else: @field
-
-        if @type == "new" do
-          if @changeset.changes[field] do
-            @changeset.changes[field]
-          else
-            nil
-          end
-        else
-          Map.get(@changeset.changes, field) || Map.get(@changeset.data, field)
-        end
-      }
-      prompt={
-        if length(@options) == 1,
-          do: nil,
-          else: "Select #{humanize(@field)}"
-      }
+      value={@value}
+      prompt={@prompt}
     />
     """
+  end
+
+  defp select_name(resource, field, belongs_to?, select_type) do
+    suffix = if belongs_to?, do: "_id", else: ""
+    multi = if select_type == :multiselect, do: "[]", else: ""
+    resource <> "[" <> to_string(field) <> suffix <> "]" <> multi
+  end
+
+  defp select_value(%{field: field, belongs_to: belongs_to?, changeset: cs} = assigns) do
+    value_field =
+      if belongs_to?, do: String.to_existing_atom(to_string(field) <> "_id"), else: field
+
+    lookup_field(value_field, cs.changes, cs.data, Map.get(assigns, :data, %{}))
+  end
+
+  defp select_prompt(options, field) do
+    if length(options) == 1, do: nil, else: "Select #{humanize(field)}"
   end
 
   @doc """

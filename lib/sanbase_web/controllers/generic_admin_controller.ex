@@ -567,9 +567,14 @@ defmodule SanbaseWeb.GenericAdminController do
 
     case :persistent_term.get(key, :undefined) do
       :undefined ->
-        result = fetch_nullable_columns(module)
-        :persistent_term.put(key, result)
-        result
+        case fetch_nullable_columns(module) do
+          {:ok, result} ->
+            :persistent_term.put(key, result)
+            result
+
+          :error ->
+            %{}
+        end
 
       value ->
         value
@@ -578,16 +583,18 @@ defmodule SanbaseWeb.GenericAdminController do
 
   defp fetch_nullable_columns(module) do
     table = module.__schema__(:source)
+    schema = module.__schema__(:prefix) || "public"
 
     query =
-      "SELECT column_name, is_nullable FROM information_schema.columns WHERE table_name = $1"
+      "SELECT column_name, is_nullable FROM information_schema.columns " <>
+        "WHERE table_schema = $1 AND table_name = $2"
 
-    case Sanbase.Repo.query(query, [table]) do
+    case Sanbase.Repo.query(query, [schema, table]) do
       {:ok, %{rows: rows}} ->
-        Map.new(rows, fn [col, nullable] -> {col, nullable == "YES"} end)
+        {:ok, Map.new(rows, fn [col, nullable] -> {col, nullable == "YES"} end)}
 
       {:error, _} ->
-        %{}
+        :error
     end
   end
 

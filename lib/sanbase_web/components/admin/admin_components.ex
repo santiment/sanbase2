@@ -435,11 +435,12 @@ defmodule SanbaseWeb.AdminComponents do
     field_id = :"#{to_string(assigns.field)}_id"
 
     initial_value =
-      if assigns.type == "edit" do
-        Map.get(assigns.changeset.changes, field_id) ||
-          Map.get(assigns.changeset.data, field_id) ||
-          Map.get(assigns.data, field_id)
-      end
+      lookup_field(
+        field_id,
+        assigns.changeset.changes,
+        assigns.changeset.data,
+        assigns.data || %{}
+      )
 
     session = %{
       "parent_resource" => assigns.resource,

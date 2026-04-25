@@ -33,10 +33,10 @@ defmodule SanbaseWeb.LiveSearch do
       <ul
         :if={@routes != []}
         id="search-result-suggestions"
-        class="menu menu-sm fixed top-14 left-3 w-60 max-h-[70vh] overflow-y-auto z-50 bg-base-100 border border-base-300 rounded-box shadow-xl flex-nowrap"
+        class="menu fixed top-14 left-3 w-72 max-h-[70vh] overflow-y-auto overflow-x-hidden z-50 bg-base-100 border border-base-300 rounded-box shadow-xl flex-nowrap"
       >
-        <li :for={{name, path} <- @routes}>
-          <a href={path} title={name} class="truncate">
+        <li :for={{name, path} <- @routes} class="w-full">
+          <a href={path} title={name} class="!block truncate w-full">
             {name}
           </a>
         </li>

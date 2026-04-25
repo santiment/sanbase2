@@ -38,6 +38,25 @@ let liveSocket = new LiveSocket("/live", Socket, {
   }
 })
 
+// Theme persistence: applies stored theme on load and saves changes from the toggle.
+const applyStoredTheme = () => {
+  const stored = localStorage.getItem("theme")
+  if (stored === "dark" || stored === "light") {
+    document.documentElement.setAttribute("data-theme", stored)
+    const ctrl = document.getElementById("theme-controller")
+    if (ctrl) ctrl.checked = stored === "dark"
+  }
+}
+applyStoredTheme()
+document.addEventListener("change", e => {
+  if (e.target && e.target.id === "theme-controller") {
+    const theme = e.target.checked ? "dark" : "light"
+    document.documentElement.setAttribute("data-theme", theme)
+    localStorage.setItem("theme", theme)
+  }
+})
+window.addEventListener("phx:page-loading-stop", applyStoredTheme)
+
 // Show progress bar on live navigation and form submits
 topbar.config({ barColors: { 0: "#29d" }, shadowColor: "rgba(0, 0, 0, .3)" })
 window.addEventListener("phx:page-loading-start", _info => topbar.show(300))

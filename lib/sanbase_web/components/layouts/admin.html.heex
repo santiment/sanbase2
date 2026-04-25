@@ -1,4 +1,14 @@
-<div class="drawer lg:drawer-open min-h-screen">
+<div
+  class="drawer min-h-screen"
+  x-data="{
+    collapsed: localStorage.getItem('admin-sidebar-collapsed') === 'true',
+    toggle() {
+      this.collapsed = !this.collapsed;
+      localStorage.setItem('admin-sidebar-collapsed', this.collapsed);
+    }
+  }"
+  x-effect="collapsed ? $el.classList.remove('lg:drawer-open') : $el.classList.add('lg:drawer-open')"
+>
   <input id="admin-sidebar-toggle" type="checkbox" class="drawer-toggle" />
 
   <div class="drawer-content flex flex-col min-h-screen">
@@ -7,10 +17,18 @@
         <label
           for="admin-sidebar-toggle"
           class="btn btn-ghost btn-square lg:hidden"
-          aria-label="Toggle sidebar"
+          aria-label="Open sidebar"
         >
           <.icon name="hero-bars-3" class="size-6" />
         </label>
+        <button
+          type="button"
+          x-on:click="toggle()"
+          class="btn btn-ghost btn-square hidden lg:inline-flex"
+          aria-label="Toggle sidebar"
+        >
+          <.icon name="hero-bars-3" class="size-6" />
+        </button>
         <.link href={~p"/admin"} class="btn btn-ghost normal-case">
           <.icon name="hero-home" class="size-5" /> Admin Home
         </.link>

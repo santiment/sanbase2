@@ -20,83 +20,66 @@ defmodule SanbaseWeb.NotificationsLive.BroadcastOverviewLive do
     ~H"""
     <div class="flex flex-col justify-center w-full px-4">
       <div class="flex justify-between items-center mb-6">
-        <h1 class="text-gray-800 text-2xl">{@page_title}</h1>
+        <h1 class="text-2xl">{@page_title}</h1>
         <div class="flex gap-3">
-          <.link
-            href={~p"/admin/notifications/broadcast"}
-            class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
-          >
-            <.icon name="hero-megaphone" class="w-4 h-4 mr-2" /> New Broadcast
+          <.link href={~p"/admin/notifications/broadcast"} class="btn btn-sm btn-primary">
+            <.icon name="hero-megaphone" class="size-4" /> New Broadcast
           </.link>
-          <.link
-            href={~p"/admin/generic?resource=sanbase_notifications"}
-            class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-          >
+          <.link href={~p"/admin/generic?resource=sanbase_notifications"} class="btn btn-sm btn-soft">
             All Notifications
           </.link>
         </div>
       </div>
 
-      <div class="overflow-x-auto shadow-md sm:rounded-lg">
-        <table class="min-w-full text-sm text-left text-gray-500">
-          <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+      <div class="rounded-box border border-base-300 overflow-x-auto">
+        <table class="table table-zebra table-sm">
+          <thead>
             <tr>
-              <th scope="col" class="px-4 py-3">ID</th>
-              <th scope="col" class="px-4 py-3">Title</th>
-              <th scope="col" class="px-4 py-3">Content</th>
-              <th scope="col" class="px-4 py-3">Type</th>
-              <th scope="col" class="px-4 py-3">Recipients</th>
-              <th scope="col" class="px-4 py-3">Unread</th>
-              <th scope="col" class="px-4 py-3">Created</th>
-              <th scope="col" class="px-4 py-3">Actions</th>
+              <th>ID</th>
+              <th>Title</th>
+              <th>Content</th>
+              <th>Type</th>
+              <th>Recipients</th>
+              <th>Unread</th>
+              <th>Created</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody id="broadcasts" phx-update="stream">
             <tr class="hidden only:block">
-              <td colspan="8" class="px-4 py-8 text-center text-gray-400">
+              <td colspan="8" class="px-4 py-8 text-center text-base-content/40">
                 No broadcast notifications found. Use the "New Broadcast" button to create one.
               </td>
             </tr>
-            <tr
-              :for={{id, b} <- @streams.broadcasts}
-              id={id}
-              class="bg-white border-b hover:bg-gray-50"
-            >
-              <td class="px-4 py-3 font-medium text-gray-900">
+            <tr :for={{id, b} <- @streams.broadcasts} id={id}>
+              <td class="font-medium">
                 <.link
                   href={~p"/admin/generic/#{b.id}?resource=sanbase_notifications"}
-                  class="text-blue-600 hover:text-blue-800 underline"
+                  class="link link-primary"
                 >
                   {b.id}
                 </.link>
               </td>
-              <td class="px-4 py-3 max-w-[200px] truncate">{b.title}</td>
-              <td class="px-4 py-3 max-w-[300px] truncate">{truncate_content(b.content)}</td>
-              <td class="px-4 py-3">
-                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                  {b.type}
-                </span>
+              <td class="max-w-[200px] truncate">{b.title}</td>
+              <td class="max-w-[300px] truncate">{truncate_content(b.content)}</td>
+              <td>
+                <span class="badge badge-sm badge-info badge-soft">{b.type}</span>
               </td>
-              <td class="px-4 py-3 text-center">
-                <span class="font-semibold text-gray-900">{b.recipients_count}</span>
+              <td class="text-center">
+                <span class="font-semibold">{b.recipients_count}</span>
               </td>
-              <td class="px-4 py-3 text-center">
+              <td class="text-center">
                 <span class={[
                   "font-semibold",
-                  if(b.unread_count > 0, do: "text-amber-600", else: "text-green-600")
+                  if(b.unread_count > 0, do: "text-warning", else: "text-success")
                 ]}>
                   {b.unread_count}
                 </span>
               </td>
-              <td class="px-4 py-3 whitespace-nowrap text-xs">
-                {format_datetime(b.inserted_at)}
-              </td>
-              <td class="px-4 py-3">
-                <.link
-                  href={recipients_url(b.id)}
-                  class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100"
-                >
-                  <.icon name="hero-users" class="w-3.5 h-3.5 mr-1.5" /> View Recipients
+              <td class="whitespace-nowrap text-xs">{format_datetime(b.inserted_at)}</td>
+              <td>
+                <.link href={recipients_url(b.id)} class="btn btn-xs btn-soft btn-info">
+                  <.icon name="hero-users" class="size-3.5" /> View Recipients
                 </.link>
               </td>
             </tr>

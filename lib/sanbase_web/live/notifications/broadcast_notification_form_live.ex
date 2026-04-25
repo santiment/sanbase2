@@ -24,24 +24,24 @@ defmodule SanbaseWeb.NotificationsLive.BroadcastNotificationFormLive do
     <div class="max-w-2xl mx-auto">
       <div class="flex items-center justify-between mb-4">
         <div class="flex gap-4">
-          <.link navigate={~p"/admin/admin_forms"} class="text-sm text-gray-600 hover:text-gray-900">
+          <.link navigate={~p"/admin/admin_forms"} class="link link-hover text-sm">
             ← Admin Forms
           </.link>
           <.link
             navigate={~p"/admin/notifications/broadcast/overview"}
-            class="text-sm text-gray-600 hover:text-gray-900"
+            class="link link-hover text-sm"
           >
             ← Broadcast Overview
           </.link>
           <.link
             navigate={~p"/admin/generic?resource=sanbase_notifications"}
-            class="text-sm text-gray-600 hover:text-gray-900"
+            class="link link-hover text-sm"
           >
             ← Notifications
           </.link>
           <.link
             navigate={~p"/admin/generic?resource=sanbase_notification_read_statuses"}
-            class="text-sm text-gray-600 hover:text-gray-900"
+            class="link link-hover text-sm"
           >
             ← Read Statuses
           </.link>
@@ -49,7 +49,7 @@ defmodule SanbaseWeb.NotificationsLive.BroadcastNotificationFormLive do
         <h2 class="text-xl font-bold">Broadcast App Notification</h2>
       </div>
 
-      <p class="text-sm text-gray-600 mb-4">
+      <p class="text-sm text-base-content/60 mb-4">
         This will create an in-app notification visible to all registered users.
         The notification will appear in their notification feed.
       </p>

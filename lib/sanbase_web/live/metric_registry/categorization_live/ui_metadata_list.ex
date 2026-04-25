@@ -67,25 +67,25 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataList do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col justify-center w-full">
-      <div class="text-gray-800 text-2xl mb-4">
+      <div class="text-2xl mb-4">
         UI Metadata for {@metric_info && @metric_info.metric}
       </div>
 
       <.navigation mapping_id={@mapping_id} />
 
-      <div :if={@metric_info} class="mb-6 p-4 bg-gray-50 rounded-lg">
-        <div class="text-sm font-medium text-gray-700 mb-1">Metric Information</div>
-        <div class="text-lg font-bold text-gray-900">{@metric_info.metric}</div>
-        <div :if={@metric_info.human_readable_name} class="text-sm text-gray-600">
+      <div :if={@metric_info} class="mb-6 p-4 bg-base-200 rounded-box">
+        <div class="text-sm font-medium mb-1">Metric Information</div>
+        <div class="text-lg font-bold">{@metric_info.metric}</div>
+        <div :if={@metric_info.human_readable_name} class="text-sm text-base-content/60">
           {@metric_info.human_readable_name}
         </div>
-        <div class="text-xs text-gray-500 mt-1">
+        <div class="text-xs text-base-content/50 mt-1">
           Source: {@metric_info.source_display}
         </div>
-        <div :if={@metric_info.category_name} class="text-xs text-gray-500">
+        <div :if={@metric_info.category_name} class="text-xs text-base-content/50">
           Category: {@metric_info.category_name}
         </div>
-        <div :if={@metric_info.group_name} class="text-xs text-gray-500">
+        <div :if={@metric_info.group_name} class="text-xs text-base-content/50">
           Group: {@metric_info.group_name}
         </div>
       </div>
@@ -99,20 +99,20 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataList do
 
       <div
         :if={@ui_metadata_list == []}
-        class="bg-white p-6 text-center border border-gray-200 rounded"
+        class="card bg-base-100 border border-base-300 p-6 text-center"
       >
-        <p class="text-gray-500 italic mb-2">No UI metadata records yet.</p>
+        <p class="text-base-content/50 italic mb-2">No UI metadata records yet.</p>
       </div>
 
       <div :if={@is_parametrized and @available_metric_variants != []}>
-        <div class="mt-8 mb-4 text-lg font-semibold text-gray-800">Available Metric Variants</div>
+        <div class="mt-8 mb-4 text-lg font-semibold">Available Metric Variants</div>
         <.available_variants_table mapping_id={@mapping_id} variants={@available_metric_variants} />
       </div>
 
       <.modal :if={@reordering} id="reordering-modal" show>
         <.header>Reordering UI Metadata</.header>
         <div class="text-center py-4">
-          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+          <span class="loading loading-spinner loading-lg text-primary"></span>
           <p class="mt-4">Saving new order...</p>
         </div>
       </.modal>
@@ -126,62 +126,21 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataList do
 
   def ui_metadata_table(assigns) do
     ~H"""
-    <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
+    <div class="rounded-box border border-base-300 overflow-x-auto">
+      <table class="table table-zebra table-sm">
+        <thead>
           <tr>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Order
-            </th>
-
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Metric
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              UI Name
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              UI Key
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Has Args
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Chart Style
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              On Sanbase?
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Actions
-            </th>
+            <th>Order</th>
+            <th>Metric</th>
+            <th>UI Name</th>
+            <th>UI Key</th>
+            <th>Has Args</th>
+            <th>Chart Style</th>
+            <th class="text-center">On Sanbase?</th>
+            <th>Actions</th>
           </tr>
         </thead>
-        <tbody id="ui-metadata-list" phx-hook="Sortable" class="bg-white divide-y divide-gray-200">
+        <tbody id="ui-metadata-list" phx-hook="Sortable">
           <.ui_metadata_row
             :for={{ui_metadata, index} <- Enum.with_index(@ui_metadata_list)}
             mapping_id={@mapping_id}
@@ -202,8 +161,8 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataList do
 
   def ui_metadata_row(assigns) do
     ~H"""
-    <tr id={"ui-metadata-#{@ui_metadata.id}"} data-id={@ui_metadata.id} class="hover:bg-gray-50">
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+    <tr id={"ui-metadata-#{@ui_metadata.id}"} data-id={@ui_metadata.id}>
+      <td>
         <.reorder_controls
           index={@index}
           total_count={@total_count}
@@ -212,65 +171,61 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataList do
         />
       </td>
 
-      <td class="px-6 py-4 text-sm text-gray-500">
-        {@ui_metadata.metric}
-      </td>
-      <td class="px-6 py-4 text-sm text-gray-500">
+      <td>{@ui_metadata.metric}</td>
+      <td>
         <div :if={@ui_metadata.ui_human_readable_name}>
           {@ui_metadata.ui_human_readable_name}
         </div>
-        <div :if={!@ui_metadata.ui_human_readable_name} class="text-gray-400 italic">
+        <div :if={!@ui_metadata.ui_human_readable_name} class="text-base-content/40 italic">
           (not set)
         </div>
       </td>
-      <td class="px-6 py-4 text-sm text-gray-500">
+      <td>
         <div :if={@ui_metadata.ui_key}>
           {@ui_metadata.ui_key}
         </div>
-        <div :if={!@ui_metadata.ui_key} class="text-gray-400 italic">
+        <div :if={!@ui_metadata.ui_key} class="text-base-content/40 italic">
           (not set)
         </div>
       </td>
 
-      <td class="px-6 py-4 text-sm text-gray-500">
-        <div
+      <td>
+        <span
           :if={is_map(@ui_metadata.args) and map_size(@ui_metadata.args) > 0}
-          class="text-green-600"
+          class="badge badge-sm badge-success badge-soft"
         >
           YES
-        </div>
-        <div
+        </span>
+        <span
           :if={not is_map(@ui_metadata.args) or map_size(@ui_metadata.args) == 0}
-          class="text-red-600"
+          class="badge badge-sm badge-error badge-soft"
         >
           NO
-        </div>
+        </span>
       </td>
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        {@ui_metadata.chart_style}
-      </td>
-      <td class="px-2 py-4 whitespace-nowrap text-center">
-        <div :if={@ui_metadata.show_on_sanbase} class="text-green-600">
+      <td>{@ui_metadata.chart_style}</td>
+      <td class="text-center">
+        <span :if={@ui_metadata.show_on_sanbase} class="badge badge-sm badge-success badge-soft">
           YES
-        </div>
-        <div :if={!@ui_metadata.show_on_sanbase} class="text-red-600">
+        </span>
+        <span :if={!@ui_metadata.show_on_sanbase} class="badge badge-sm badge-error badge-soft">
           NO
-        </div>
+        </span>
       </td>
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+      <td>
         <div class="flex space-x-2">
           <.link
             navigate={
               ~p"/admin/metric_registry/categorization/ui_metadata/edit/#{@ui_metadata.id}?mapping_id=#{@mapping_id}"
             }
-            class="text-blue-600 hover:text-blue-900"
+            class="link link-primary"
           >
             Edit
           </.link>
           <button
             phx-click="delete"
             phx-value-id={@ui_metadata.id}
-            class="text-red-600 hover:text-red-900"
+            class="link link-error"
             data-confirm="Are you sure you want to delete this UI metadata?"
           >
             Delete
@@ -305,44 +260,25 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataList do
 
   def available_variants_table(assigns) do
     ~H"""
-    <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
+    <div class="rounded-box border border-base-300 overflow-x-auto">
+      <table class="table table-zebra table-sm">
+        <thead>
           <tr>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Metric Name
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Human Readable Name
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Actions
-            </th>
+            <th>Metric Name</th>
+            <th>Human Readable Name</th>
+            <th>Actions</th>
           </tr>
         </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-          <tr :for={variant <- @variants} class="hover:bg-gray-50">
-            <td class="px-6 py-4 text-sm font-medium text-gray-900">
-              {variant.metric}
-            </td>
-            <td class="px-6 py-4 text-sm text-gray-500">
-              {variant.human_readable_name}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm">
+        <tbody>
+          <tr :for={variant <- @variants}>
+            <td class="font-medium">{variant.metric}</td>
+            <td class="text-base-content/60">{variant.human_readable_name}</td>
+            <td>
               <.link
                 navigate={
                   ~p"/admin/metric_registry/categorization/ui_metadata/new?mapping_id=#{@mapping_id}&metric=#{variant.metric}"
                 }
-                class="text-blue-600 hover:text-blue-900 font-medium"
+                class="link link-primary font-medium"
               >
                 Add UI Metadata
               </.link>

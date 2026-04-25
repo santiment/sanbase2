@@ -33,7 +33,7 @@ defmodule SanbaseWeb.Categorization.GroupLive.Index do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col justify-center w-full">
-      <div class="text-gray-800 text-2xl mb-4">
+      <div class="text-2xl mb-4">
         Metric Groups
       </div>
 
@@ -79,54 +79,31 @@ defmodule SanbaseWeb.Categorization.GroupLive.Index do
       <div :for={category <- @categories} class="mb-8">
         <div
           :if={!Enum.empty?(category.groups)}
-          class="bg-gray-100 px-4 py-2 font-semibold text-gray-700"
+          class="bg-base-200 px-4 py-2 font-semibold rounded-t-box border border-base-300"
         >
           {category.name}
         </div>
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th
-                scope="col"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Order
-              </th>
-              <th
-                scope="col"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Group Name
-              </th>
-              <th
-                scope="col"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Metrics Count
-              </th>
-              <th
-                scope="col"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody
-            :if={!Enum.empty?(category.groups)}
-            id={"groups-category-#{category.id}"}
-            phx-hook="Sortable"
-            class="bg-white divide-y divide-gray-200"
-          >
-            <.group_row
-              :for={{group, index} <- Enum.with_index(category.groups)}
-              group={group}
-              category={category}
-              index={index}
-              category_groups_count={length(category.groups)}
-            />
-          </tbody>
-        </table>
+        <div :if={!Enum.empty?(category.groups)} class="border-x border-b border-base-300">
+          <table class="table table-zebra table-sm">
+            <thead>
+              <tr>
+                <th>Order</th>
+                <th>Group Name</th>
+                <th>Metrics Count</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id={"groups-category-#{category.id}"} phx-hook="Sortable">
+              <.group_row
+                :for={{group, index} <- Enum.with_index(category.groups)}
+                group={group}
+                category={category}
+                index={index}
+                category_groups_count={length(category.groups)}
+              />
+            </tbody>
+          </table>
+        </div>
         <.empty_category_row :if={Enum.empty?(category.groups)} category={category} />
 
         <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4 mt-4">
@@ -145,8 +122,8 @@ defmodule SanbaseWeb.Categorization.GroupLive.Index do
 
   def group_row(assigns) do
     ~H"""
-    <tr id={"group-#{@group.id}"} data-id={@group.id} class="hover:bg-gray-50">
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+    <tr id={"group-#{@group.id}"} data-id={@group.id}>
+      <td>
         <.reorder_controls
           index={@index}
           total_count={@category_groups_count}
@@ -155,14 +132,9 @@ defmodule SanbaseWeb.Categorization.GroupLive.Index do
           event_prefix="group-"
         />
       </td>
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        {@group.name}
-      </td>
-
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        {length(@group.mappings)}
-      </td>
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+      <td>{@group.name}</td>
+      <td>{length(@group.mappings)}</td>
+      <td>
         <.group_actions group={@group} />
       </td>
     </tr>
@@ -173,8 +145,8 @@ defmodule SanbaseWeb.Categorization.GroupLive.Index do
 
   def empty_category_row(assigns) do
     ~H"""
-    <div class="bg-white p-6 text-center border border-gray-200 rounded">
-      <p class="text-gray-500 italic mb-2">No groups in {@category.name}</p>
+    <div class="card bg-base-100 border border-base-300 p-6 text-center">
+      <p class="text-base-content/50 italic mb-2">No groups in {@category.name}</p>
     </div>
     """
   end
@@ -221,20 +193,20 @@ defmodule SanbaseWeb.Categorization.GroupLive.Index do
         navigate={
           ~p"/admin/metric_registry/categorization/metrics_order?category_id=#{@group.category_id}&group_id=#{@group.id}"
         }
-        class="text-green-600 hover:text-green-900"
+        class="link link-success"
       >
         Reorder Metrics in Group
       </.link>
       <.link
         navigate={~p"/admin/metric_registry/categorization/groups/edit/#{@group.id}"}
-        class="text-blue-600 hover:text-blue-900"
+        class="link link-primary"
       >
         Edit
       </.link>
       <button
         phx-click="delete"
         phx-value-id={@group.id}
-        class="text-red-600 hover:text-red-900"
+        class="link link-error"
         data-confirm="Are you sure you want to delete this group?"
       >
         Delete

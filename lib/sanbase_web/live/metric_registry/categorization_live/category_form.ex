@@ -61,7 +61,7 @@ defmodule SanbaseWeb.Categorization.CategoryLive.Form do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col justify-center w-full">
-      <div class="text-gray-800 text-2xl mb-4">
+      <div class="text-2xl mb-4">
         {if @action == :new, do: "Create New Category", else: "Edit Category"}
       </div>
 

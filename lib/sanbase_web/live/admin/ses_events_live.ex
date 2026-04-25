@@ -93,18 +93,18 @@ defmodule SanbaseWeb.Admin.SesEventsLive do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col w-full px-4 py-6">
-      <h1 class="text-2xl font-bold text-gray-800 mb-6">{@page_title}</h1>
+      <h1 class="text-2xl font-bold mb-6">{@page_title}</h1>
 
       <.stats_bar stats={@stats} />
 
       <div class="flex flex-col sm:flex-row gap-4 mb-6">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Event Type</label>
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">Event Type</legend>
           <select
             id="event-type-filter"
             phx-change="filter_event_type"
             name="event_type"
-            class="rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-zinc-400 focus:ring-0"
+            class="select select-sm"
           >
             <option value="">All Events</option>
             <option
@@ -115,10 +115,10 @@ defmodule SanbaseWeb.Admin.SesEventsLive do
               {et}
             </option>
           </select>
-        </div>
+        </fieldset>
 
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Search Email</label>
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">Search Email</legend>
           <form phx-change="search_email" phx-submit="search_email" id="email-search-form">
             <input
               type="text"
@@ -127,70 +127,50 @@ defmodule SanbaseWeb.Admin.SesEventsLive do
               value={@email_search}
               placeholder="Search by email..."
               phx-debounce="300"
-              class="rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-zinc-400 focus:ring-0 w-72"
+              class="input input-sm w-72"
             />
           </form>
-        </div>
+        </fieldset>
 
         <div class="flex items-end">
-          <span class="text-sm text-gray-500">
+          <span class="text-sm text-base-content/60">
             {if @total_count > 0, do: "#{@total_count} events found", else: "No events found"}
           </span>
         </div>
       </div>
 
-      <div class="bg-white shadow rounded-lg overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
+      <div class="rounded-box border border-base-300 overflow-hidden">
+        <table class="table table-zebra table-sm">
+          <thead>
             <tr>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Timestamp
-              </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Email
-              </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Event
-              </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Details
-              </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Message ID
-              </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Raw
-              </th>
+              <th>Timestamp</th>
+              <th>Email</th>
+              <th>Event</th>
+              <th>Details</th>
+              <th>Message ID</th>
+              <th>Raw</th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
+          <tbody>
             <tr :if={@events == []}>
-              <td colspan="6" class="px-4 py-8 text-sm text-gray-500 text-center">
+              <td colspan="6" class="text-center text-base-content/60 py-6">
                 No events found matching your filters.
               </td>
             </tr>
-            <tr :for={event <- @events} id={"event-#{event.id}"} class="hover:bg-gray-50">
-              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                {format_datetime(event.timestamp)}
-              </td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-mono">
-                {event.email}
-              </td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm">
+            <tr :for={event <- @events} id={"event-#{event.id}"}>
+              <td class="text-base-content/70">{format_datetime(event.timestamp)}</td>
+              <td class="font-mono">{event.email}</td>
+              <td>
                 <.event_badge event_type={event.event_type} />
               </td>
-              <td class="px-4 py-3 text-sm text-gray-500">
+              <td class="text-base-content/70">
                 <.event_details event={event} />
               </td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-400 font-mono text-xs">
+              <td class="font-mono text-xs text-base-content/50">
                 {String.slice(event.message_id || "", 0, 20)}...
               </td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm">
-                <button
-                  phx-click="toggle_raw"
-                  phx-value-id={event.id}
-                  class="text-blue-600 hover:text-blue-800 text-xs"
-                >
+              <td>
+                <button phx-click="toggle_raw" phx-value-id={event.id} class="btn btn-xs btn-ghost link-primary">
                   {if @expanded_id == event.id, do: "Hide", else: "Show"}
                 </button>
               </td>
@@ -220,34 +200,23 @@ defmodule SanbaseWeb.Admin.SesEventsLive do
   end
 
   defp stat_card(assigns) do
-    bg_class =
-      case assigns.color do
-        "blue" -> "bg-blue-50 border-blue-200"
-        "green" -> "bg-green-50 border-green-200"
-        "red" -> "bg-red-50 border-red-200"
-        "orange" -> "bg-orange-50 border-orange-200"
-        "purple" -> "bg-purple-50 border-purple-200"
-        "yellow" -> "bg-yellow-50 border-yellow-200"
-        _ -> "bg-gray-50 border-gray-200"
-      end
-
     text_class =
       case assigns.color do
-        "blue" -> "text-blue-700"
-        "green" -> "text-green-700"
-        "red" -> "text-red-700"
-        "orange" -> "text-orange-700"
-        "purple" -> "text-purple-700"
-        "yellow" -> "text-yellow-700"
-        _ -> "text-gray-700"
+        "blue" -> "text-info"
+        "green" -> "text-success"
+        "red" -> "text-error"
+        "orange" -> "text-warning"
+        "purple" -> "text-secondary"
+        "yellow" -> "text-warning"
+        _ -> "text-base-content"
       end
 
-    assigns = assign(assigns, bg_class: bg_class, text_class: text_class)
+    assigns = assign(assigns, text_class: text_class)
 
     ~H"""
-    <div class={["rounded-lg border p-3", @bg_class]}>
+    <div class="card bg-base-200 border border-base-300 p-3">
       <div class={["text-2xl font-bold", @text_class]}>{@count}</div>
-      <div class="text-xs text-gray-500">{@label} (24h)</div>
+      <div class="text-xs text-base-content/60">{@label} (24h)</div>
     </div>
     """
   end
@@ -255,21 +224,19 @@ defmodule SanbaseWeb.Admin.SesEventsLive do
   defp event_badge(assigns) do
     badge_class =
       case assigns.event_type do
-        "Send" -> "bg-blue-100 text-blue-800"
-        "Delivery" -> "bg-green-100 text-green-800"
-        "Bounce" -> "bg-red-100 text-red-800"
-        "Complaint" -> "bg-orange-100 text-orange-800"
-        "Reject" -> "bg-purple-100 text-purple-800"
-        "DeliveryDelay" -> "bg-yellow-100 text-yellow-800"
-        _ -> "bg-gray-100 text-gray-800"
+        "Send" -> "badge-info"
+        "Delivery" -> "badge-success"
+        "Bounce" -> "badge-error"
+        "Complaint" -> "badge-warning"
+        "Reject" -> "badge-secondary"
+        "DeliveryDelay" -> "badge-warning"
+        _ -> "badge-ghost"
       end
 
     assigns = assign(assigns, :badge_class, badge_class)
 
     ~H"""
-    <span class={["px-2 py-1 text-xs font-semibold rounded-full", @badge_class]}>
-      {@event_type}
-    </span>
+    <span class={["badge badge-sm", @badge_class]}>{@event_type}</span>
     """
   end
 
@@ -299,9 +266,9 @@ defmodule SanbaseWeb.Admin.SesEventsLive do
     ~H"""
     <div
       :if={@event}
-      class="mt-4 bg-gray-900 text-green-300 rounded-lg p-4 text-xs font-mono overflow-x-auto"
+      class="mt-4 mockup-code bg-neutral text-neutral-content rounded-box p-4 text-xs overflow-x-auto"
     >
-      <div class="mb-2 text-gray-400">
+      <div class="mb-2 text-neutral-content/60">
         Raw data for event #{@event.id} ({@event.event_type} - {@event.email})
       </div>
       <pre>{Jason.encode!(@event.raw_data || %{}, pretty: true)}</pre>
@@ -312,35 +279,15 @@ defmodule SanbaseWeb.Admin.SesEventsLive do
   defp pagination(assigns) do
     ~H"""
     <div :if={@total_pages > 1} class="flex items-center justify-between mt-4 px-2">
-      <button
-        phx-click="prev_page"
-        disabled={@page <= 1}
-        class={[
-          "px-3 py-1 text-sm rounded border",
-          if(@page <= 1,
-            do: "text-gray-300 border-gray-200 cursor-not-allowed",
-            else: "text-gray-700 border-gray-300 hover:bg-gray-50"
-          )
-        ]}
-      >
+      <button phx-click="prev_page" disabled={@page <= 1} class="btn btn-sm btn-soft">
         Previous
       </button>
 
-      <span class="text-sm text-gray-600">
+      <span class="text-sm text-base-content/70">
         Page {@page} of {@total_pages}
       </span>
 
-      <button
-        phx-click="next_page"
-        disabled={@page >= @total_pages}
-        class={[
-          "px-3 py-1 text-sm rounded border",
-          if(@page >= @total_pages,
-            do: "text-gray-300 border-gray-200 cursor-not-allowed",
-            else: "text-gray-700 border-gray-300 hover:bg-gray-50"
-          )
-        ]}
-      >
+      <button phx-click="next_page" disabled={@page >= @total_pages} class="btn btn-sm btn-soft">
         Next
       </button>
     </div>

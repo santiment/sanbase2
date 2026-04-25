@@ -70,7 +70,7 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
         {:ok, html} -> HtmlSanitizeEx.html5(html)
         {:ok, html, _} -> HtmlSanitizeEx.html5(html)
         {:error, html, _} -> HtmlSanitizeEx.html5(html)
-        {:error, _} -> "<p class=\"text-gray-500\">Invalid markdown</p>"
+        {:error, _} -> "<p class=\"text-base-content/60\">Invalid markdown</p>"
       end
 
     {:reply, %{html: html}, socket}
@@ -120,13 +120,10 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
     ~H"""
     <div class="p-6 max-w-7xl mx-auto">
       <div class="mb-6">
-        <.link
-          navigate={~p"/admin/faq"}
-          class="text-blue-600 hover:text-blue-800 font-medium text-sm mb-2 inline-block"
-        >
+        <.link navigate={~p"/admin/faq"} class="link link-primary text-sm mb-2 inline-block">
           ← Back to FAQ List
         </.link>
-        <h1 class="text-3xl font-bold text-gray-900">{@page_title}</h1>
+        <h1 class="text-3xl font-bold">{@page_title}</h1>
       </div>
 
       <.form for={@form} id="faq-form" phx-change="validate" phx-submit="save" class="space-y-6">
@@ -146,20 +143,17 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
           phx-click="check_similar"
           phx-disable-with="Checking for similarity..."
           phx-value-question={@form[:question].value}
-          class="bg-white hover:bg-gray-100 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded text-base"
+          class="btn btn-soft"
         >
           Check for similar questions
         </button>
         <div :if={@similar_entries != []}>
-          <h3 class="font-medium text-gray-700 mb-2">Most Similar FAQ Entries</h3>
+          <h3 class="font-medium mb-2">Most Similar FAQ Entries</h3>
           <div :for={entry <- @similar_entries}>
-            <span class="text-gray-800 mb-2">
+            <span class="mb-2">
               {entry.similarity |> Float.round(2)} | {entry.question}
             </span>
-            <.link
-              navigate={~p"/admin/faq/#{entry.id}"}
-              class="text-blue-600 hover:text-blue-800 font-medium text-sm"
-            >
+            <.link navigate={~p"/admin/faq/#{entry.id}"} class="link link-primary text-sm">
               Link
             </.link>
           </div>
@@ -176,7 +170,7 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
+          <label class="block text-sm font-medium mb-2">
             Answer (Markdown)
           </label>
           <div
@@ -191,12 +185,11 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
           <input
             type="hidden"
             id="faq_entry_answer_markdown"
-            class=" text-grey-900"
             name={@form[:answer_markdown].name}
             value={@form[:answer_markdown].value || ""}
           />
           <%= if @changeset.errors[:answer_markdown] do %>
-            <div class="mt-1 text-sm text-red-600">
+            <div class="mt-1 text-sm text-error">
               {elem(@changeset.errors[:answer_markdown], 0)}
             </div>
           <% end %>
@@ -206,14 +199,11 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
         <div class="flex items-center justify-end space-x-3">
           <.link
             navigate={if @action == :edit, do: ~p"/admin/faq/#{@entry.id}", else: ~p"/admin/faq"}
-            class="px-4 py-2 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-lg font-medium transition-colors"
+            class="btn btn-soft"
           >
             Cancel
           </.link>
-          <button
-            type="submit"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-          >
+          <button type="submit" class="btn btn-primary">
             {if @action == :edit, do: "Update", else: "Create"} FAQ Entry
           </button>
         </div>
@@ -225,7 +215,7 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
   defp tags(assigns) do
     ~H"""
     <div>
-      <label class="block text-sm font-medium text-gray-700 mb-1">Tags</label>
+      <label class="block text-sm font-medium mb-1">Tags</label>
       <div class="flex gap-6 flex-wrap">
         <label
           :for={tag <- ["code", "subscription", "api", "metrics", "payment", "sanbase"]}

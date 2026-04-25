@@ -92,7 +92,7 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
           <span :if={execution_too_long?(row.status, row.inserted_at)}>
             <AdminSharedComponents.action_button
               phx_click="cancel_run"
-              class="bg-amber-600 hover:bg-amber-800"
+              class="btn-warning"
               text="Cancel Run"
               phx-value-sync-uuid={row.uuid}
               phx-value-sync-type={row.sync_type}

@@ -410,13 +410,13 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
         <div class="mt-4">
           <AdminSharedComponents.action_button
             phx_click="confirm_verified_changes_update"
-            class="bg-green-500 hover:bg-green-900 text-white"
+            class="btn-success"
             text="Confirm Changes"
             count={length(@changed_metrics_ids)}
           />
           <AdminSharedComponents.action_button
             phx_click="hide_show_verified_changes_modal"
-            class="bg-white hover:bg-gray-100 text-gray-800"
+            class="btn-soft"
             text="Close"
           />
         </div>
@@ -591,12 +591,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
       <AdminSharedComponents.action_button
         :if={Permissions.can?(:access_verified_status, roles: @current_user_role_names)}
         phx_click="show_verified_changes_modal"
-        class={
-          if(@changed_metrics_ids == [],
-            do: "text-gray-900 bg-white hover:bg-gray-100",
-            else: "border border-green-700 text-white bg-green-500 hover:bg-green-600"
-          )
-        }
+        class={if(@changed_metrics_ids == [], do: "btn-soft", else: "btn-success")}
         text="Apply Verified Status Changes"
         count={length(@changed_metrics_ids)}
       />

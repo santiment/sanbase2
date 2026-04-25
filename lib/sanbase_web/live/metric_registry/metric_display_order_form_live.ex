@@ -99,7 +99,7 @@ defmodule SanbaseWeb.MetricDisplayOrderFormLive do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col justify-center w-full">
-      <h1 class="text-blue-700 text-2xl mb-4">
+      <h1 class="text-primary text-2xl mb-4">
         Edit Metric Display Order | {@display_order.metric}
       </h1>
 

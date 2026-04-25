@@ -76,7 +76,7 @@ defmodule SanbaseWeb.AcademyQAComponents do
                       {Map.get(suggestion, "description", "")}
                     </div>
                   </div>
-                  <div class="flex items-center gap-1 text-xs text-gray-500 flex-shrink-0">
+                  <div class="flex items-center gap-1 text-xs text-gray-500 shrink-0">
                     <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
                       {Float.round(Map.get(suggestion, "relevance_score", 0), 2)}
                     </span>
@@ -106,7 +106,7 @@ defmodule SanbaseWeb.AcademyQAComponents do
     <!-- Backdrop for blur effect -->
       <div
         :if={@show_autocomplete}
-        class="fixed inset-0 bg-black bg-opacity-10 z-40"
+        class="fixed inset-0 bg-black/10 z-40"
         phx-click="hide_autocomplete"
       >
       </div>
@@ -362,7 +362,7 @@ defmodule SanbaseWeb.AcademyQAComponents do
         >
           <div class="flex items-start gap-3">
             <svg
-              class="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0"
+              class="w-4 h-4 text-blue-600 mt-0.5 shrink-0"
               fill="currentColor"
               viewBox="0 0 20 20"
             >

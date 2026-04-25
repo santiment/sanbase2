@@ -467,7 +467,7 @@ defmodule SanbaseWeb.Admin.InsightCategorizationLive do
 
     <div :if={@selected_post}>
       <div
-        class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
+        class="fixed inset-0 bg-gray-600/50 overflow-y-auto h-full w-full z-50"
         id="modal-backdrop"
         phx-click="close_modal"
       >

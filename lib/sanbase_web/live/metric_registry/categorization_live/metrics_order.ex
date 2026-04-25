@@ -68,7 +68,7 @@ defmodule SanbaseWeb.CategorizationLive.MetricsOrder do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col justify-center w-full">
-      <div class="text-gray-800 text-2xl mb-4">
+      <div class="text-2xl mb-4">
         <%= if @group do %>
           Reorder Metrics in Group: {@group.name}
         <% else %>
@@ -87,7 +87,7 @@ defmodule SanbaseWeb.CategorizationLive.MetricsOrder do
       <.modal :if={@reordering} id="reordering-modal" show>
         <.header>Reordering Metrics</.header>
         <div class="text-center py-4">
-          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+          <span class="loading loading-spinner loading-lg text-primary"></span>
           <p class="mt-4">Saving new order...</p>
         </div>
       </.modal>
@@ -117,7 +117,7 @@ defmodule SanbaseWeb.CategorizationLive.MetricsOrder do
         icon="hero-user-group"
       />
     </div>
-    <div class="mb-4 text-sm text-gray-600">
+    <div class="mb-4 text-sm text-base-content/70">
       <span class="font-semibold">Category:</span>
       {@category.name}
       <%= if @group do %>
@@ -133,12 +133,12 @@ defmodule SanbaseWeb.CategorizationLive.MetricsOrder do
 
   defp empty_state(assigns) do
     ~H"""
-    <div class="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
-      <.icon name="hero-queue-list" class="w-16 h-16 mx-auto text-gray-400 mb-4" />
-      <h3 class="text-lg font-medium text-gray-900 mb-2">
+    <div class="card bg-base-200 border border-base-300 p-8 text-center">
+      <.icon name="hero-queue-list" class="size-16 mx-auto text-base-content/40 mb-4" />
+      <h3 class="text-lg font-medium mb-2">
         No Metrics Found
       </h3>
-      <p class="text-gray-500">
+      <p class="text-base-content/50">
         <%= if @group do %>
           This group doesn't have any metrics assigned yet.
         <% else %>
@@ -153,31 +153,16 @@ defmodule SanbaseWeb.CategorizationLive.MetricsOrder do
 
   defp metrics_table(assigns) do
     ~H"""
-    <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
+    <div class="rounded-box border border-base-300 overflow-x-auto">
+      <table class="table table-zebra table-sm">
+        <thead>
           <tr>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Order
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Metric Name
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Source
-            </th>
+            <th>Order</th>
+            <th>Metric Name</th>
+            <th>Source</th>
           </tr>
         </thead>
-        <tbody id="mappings" phx-hook="Sortable" class="bg-white divide-y divide-gray-200">
+        <tbody id="mappings" phx-hook="Sortable">
           <.mapping_row
             :for={{mapping, index} <- Enum.with_index(@mappings)}
             mapping={mapping}
@@ -196,8 +181,8 @@ defmodule SanbaseWeb.CategorizationLive.MetricsOrder do
 
   defp mapping_row(assigns) do
     ~H"""
-    <tr id={"mapping-#{@mapping.id}"} data-id={@mapping.id} class="hover:bg-gray-50">
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+    <tr id={"mapping-#{@mapping.id}"} data-id={@mapping.id}>
+      <td>
         <.reorder_controls
           index={@index}
           total_count={@total_count}
@@ -205,10 +190,10 @@ defmodule SanbaseWeb.CategorizationLive.MetricsOrder do
           display_order={@mapping.display_order || @index + 1}
         />
       </td>
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+      <td>
         <.metric_name mapping={@mapping} />
       </td>
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+      <td>
         <.metric_source mapping={@mapping} />
       </td>
     </tr>
@@ -232,11 +217,11 @@ defmodule SanbaseWeb.CategorizationLive.MetricsOrder do
   defp metric_source(assigns) do
     ~H"""
     <%= if @mapping.metric_registry_id do %>
-      <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+      <span class="badge badge-sm badge-info badge-soft">
         Registry ID: {@mapping.metric_registry_id}
       </span>
     <% else %>
-      <span class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">
+      <span class="badge badge-sm badge-secondary badge-soft">
         {@mapping.module}.{@mapping.metric}
       </span>
     <% end %>

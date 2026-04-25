@@ -24,21 +24,21 @@ defmodule SanbaseWeb.CategorizationLive.MappingForm do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col justify-center w-full max-w-2xl mx-auto">
-      <div class="text-gray-800 text-2xl mb-4">
+      <div class="text-2xl mb-4">
         {@page_title}
       </div>
 
       <.navigation />
 
-      <div class="bg-white p-6 rounded-lg shadow">
+      <div class="card bg-base-100 border border-base-300 shadow p-6">
         <.simple_form for={@form} id="mapping-form" phx-submit="save" phx-change="validate">
-          <div :if={@metric_info} class="mb-6 p-4 bg-gray-50 rounded-lg">
-            <div class="text-sm font-medium text-gray-700 mb-1">Metric</div>
-            <div class="text-lg font-bold text-gray-900">{@metric_info.metric}</div>
-            <div :if={@metric_info.human_readable_name} class="text-sm text-gray-600">
+          <div :if={@metric_info} class="mb-6 p-4 bg-base-200 rounded-box">
+            <div class="text-sm font-medium mb-1">Metric</div>
+            <div class="text-lg font-bold">{@metric_info.metric}</div>
+            <div :if={@metric_info.human_readable_name} class="text-sm text-base-content/60">
               {@metric_info.human_readable_name}
             </div>
-            <div class="text-xs text-gray-500 mt-1">
+            <div class="text-xs text-base-content/50 mt-1">
               Source: {@metric_info.source_display}
             </div>
           </div>
@@ -77,10 +77,7 @@ defmodule SanbaseWeb.CategorizationLive.MappingForm do
           />
 
           <div class="flex justify-between items-center mt-6">
-            <.link
-              navigate={~p"/admin/metric_registry/categorization"}
-              class="text-gray-600 hover:text-gray-900"
-            >
+            <.link navigate={~p"/admin/metric_registry/categorization"} class="link link-hover">
               Cancel
             </.link>
 

@@ -55,13 +55,13 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
           <:col :let={row} label="Metric" col_class="max-w-[320px] break-words">
             <.link
               :if={row.metric_registry_id}
-              class="underline text-blue-600"
+              class="link link-primary"
               href={~p"/admin/metric_registry/show/#{row.metric_registry_id}"}
               target="_blank"
             >
               {row.metric_registry.metric}
             </.link>
-            <span :if={!row.metric_registry_id} class="text-sm font-bold text-green-800">
+            <span :if={!row.metric_registry_id} class="badge badge-sm badge-success badge-soft">
               NEW METRIC
             </span>
           </:col>
@@ -213,7 +213,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
   defp formatted_changes(assigns) do
     ~H"""
     <div>
-      <div :if={@is_new_metric and no_docs?(@changes)} class="text-2xl font-bold text-red-700 mb-2">
+      <div :if={@is_new_metric and no_docs?(@changes)} class="text-2xl font-bold text-error mb-2">
         MISSING DOCUMENTATION
       </div>
       <div>
@@ -231,12 +231,12 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
     ~H"""
     <div class="flex flex-col">
       <div class="text-nowrap">
-        <span class="text-green-600 font-bold">Created</span> {Sanbase.Utils.DateTime.rough_duration_since(
+        <span class="text-success font-bold">Created</span> {Sanbase.Utils.DateTime.rough_duration_since(
           @inserted_at
         )} ago
       </div>
       <div :if={@inserted_at != @updated_at}>
-        <span class="text-amber-600 font-bold">Updated</span> {Sanbase.Utils.DateTime.rough_duration_since(
+        <span class="text-warning font-bold">Updated</span> {Sanbase.Utils.DateTime.rough_duration_since(
           @updated_at
         )} ago
       </div>
@@ -262,7 +262,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
 
   defp tabs(assigns) do
     ~H"""
-    <div class="flex flex-wrap space-x-2 mt-6 border-b border-gray-200">
+    <div role="tablist" class="tabs tabs-border mt-6">
       <.tab
         text="Pending Approval"
         tab="pending_approval"
@@ -287,14 +287,12 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
 
   defp tab(assigns) do
     ~H"""
-    <span phx-click={JS.push("select_tab", value: %{tab: @tab})}>
-      <span class={[
-        "inline-block text-sm font-bold p-2 rounded-t-lg cursor-pointer hover:border-b-2 hover:border-blue-600 hover:text-blue-600",
-        if(@is_selected,
-          do: "border-blue-800 border-b-2 text-blue-800",
-          else: "text-gray-800"
-        )
-      ]}>
+    <span
+      role="tab"
+      phx-click={JS.push("select_tab", value: %{tab: @tab})}
+      class={["tab font-bold", if(@is_selected, do: "tab-active text-primary")]}
+    >
+      <span>
         {@text} ({@count})
       </span>
     </span>

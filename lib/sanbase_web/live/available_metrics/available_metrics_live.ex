@@ -50,7 +50,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
     ~H"""
     <div class="flex flex-col items-start justify-evenly">
       <.filters filter={@filter} />
-      <div class="text-gray-400 text-sm py-2">
+      <div class="text-base-content/50 text-sm py-2">
         <div>
           Showing {length(@visible_metrics)} metrics
         </div>
@@ -198,7 +198,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
         />
         <label
           for={@input_id}
-          class="ms-2 text-sm font-medium text-gray-900 border-b border-dotted hover:cursor-pointer"
+          class="ms-2 text-sm font-medium border-b border-dotted hover:cursor-pointer"
         >
           {@input_label}
         </label>
@@ -206,7 +206,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
       <div
         id={@popover_target}
         tabindex="0"
-        class="dropdown-content card card-compact bg-base-100 border border-base-300 shadow-2xl z-10 w-80 text-justify px-8 py-6 text-sm font-medium text-gray-600"
+        class="dropdown-content card card-compact bg-base-100 border border-base-300 shadow-2xl z-10 w-80 text-justify px-8 py-6 text-sm font-medium text-base-content/70"
       >
         <span>{@popover_text}</span>
       </div>
@@ -245,7 +245,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
             id="metric-name-search"
             value={@filter["match_metric_name"] || ""}
             name="match_metric_name"
-            class="block w-64 ps-4 text-sm text-gray-900 border border-gray-300 rounded-lg bg-white"
+            class="input input-sm w-64"
             placeholder="Filter by metric"
             phx-debounce="200"
           />
@@ -257,7 +257,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
             id="metric-supports_asset"
             value={@filter["metric_supports_asset"] || ""}
             name="metric_supports_asset"
-            class="block w-64 ps-4 text-sm text-gray-900 border border-gray-300 rounded-lg bg-white"
+            class="input input-sm w-64"
             placeholder="Filter by supported asset"
             phx-debounce="200"
           />
@@ -285,7 +285,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
     ~H"""
     <span>
       {@first_2_str}
-      <span class="text-gray-400">{@rest_str}</span>
+      <span class="text-base-content/50">{@rest_str}</span>
     </span>
     """
   end

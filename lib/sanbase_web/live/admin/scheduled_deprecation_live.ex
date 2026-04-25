@@ -39,12 +39,12 @@ defmodule SanbaseWeb.ScheduledDeprecationLive do
       <div class="mb-4">
         <.link
           href="/admin/scheduled_deprecations"
-          class="text-blue-600 hover:underline flex items-center"
+          class="link link-primary flex items-center"
         >
           <.icon name="hero-arrow-left" class="h-4 w-4 mr-1" /> Back to Scheduled Deprecations
         </.link>
       </div>
-      <h1 class="text-gray-800 text-2xl">{@page_title}</h1>
+      <h1 class="text-2xl">{@page_title}</h1>
 
       <.simple_form for={@form} id="deprecation-form" phx-change="validate" phx-submit="save">
         <.inputs_for :let={f} field={@form[:data]}>
@@ -287,7 +287,7 @@ defmodule SanbaseWeb.ScheduledDeprecationLive do
     ~H"""
     <div class="mt-6 border-t pt-4">
       <h3 class="text-md font-semibold mb-2">Preview Details</h3>
-      <p class="text-sm text-gray-600 mb-3">
+      <p class="text-sm text-base-content/70 mb-3">
         Will be sent on
         <span class="font-semibold">
           {render_send_date(@step, @scheduled_at)}
@@ -299,7 +299,7 @@ defmodule SanbaseWeb.ScheduledDeprecationLive do
       </p>
       <p><strong>Subject:</strong> {@preview.subject}</p>
       <p class="mt-2"><strong>Body:</strong></p>
-      <iframe class="w-full h-64 border border-gray-300 rounded" srcdoc={@preview.body_html} />
+      <iframe class="w-full h-64 border border-base-300 rounded-box" srcdoc={@preview.body_html} />
     </div>
     """
   end
@@ -315,13 +315,13 @@ defmodule SanbaseWeb.ScheduledDeprecationLive do
     assigns = assign(assigns, :config, config)
 
     ~H"""
-    <div class="mt-8 border border-gray-200 rounded-lg p-4 mb-6">
-      <h2 class="text-xl font-semibold capitalize mb-4 border-b pb-2">
+    <div class="card bg-base-100 border border-base-300 shadow mt-8 p-4 mb-6">
+      <h2 class="text-xl font-semibold capitalize mb-4 border-b border-base-300 pb-2">
         Step: {@step} Notification
-        <span :if={@step == :reminder} class="text-sm text-gray-500 font-normal">
+        <span :if={@step == :reminder} class="text-sm text-base-content/60 font-normal">
           (Sent 3 days before)
         </span>
-        <span :if={@step == :executed} class="text-sm text-gray-500 font-normal">
+        <span :if={@step == :executed} class="text-sm text-base-content/60 font-normal">
           (Sent on deprecation date)
         </span>
       </h2>

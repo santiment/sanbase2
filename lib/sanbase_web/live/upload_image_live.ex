@@ -23,39 +23,33 @@ defmodule SanbaseWeb.UploadImageLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="border border-gray-100 mx-auto max-w-2xl p-6 rounded-xl shadow-sm min-h-96">
-      <.form
-        for={@form}
-        phx-change="validate"
-        phx-submit="save"
-        class="bg-white rounded-lg mx-auto w-full"
-      >
+    <div class="card bg-base-100 border border-base-300 shadow mx-auto max-w-2xl p-6 min-h-96">
+      <.form for={@form} phx-change="validate" phx-submit="save" class="mx-auto w-full">
         <.input
           field={@form[:name]}
           placeholder="Name. Leave empty to use the name of the uploaded file"
-          class="mb-4 appearance-none block w-full px-3 py-2 border border-slate-300 rounded-md transition duration-150 ease-in-out;"
         />
 
-        <div class="my-4 text-slate-600 text-sm">
+        <div class="my-4 text-base-content/70 text-sm">
           Add one file max {trunc(@uploads.images.max_file_size / 1_000_000)} MB in size
         </div>
         <div
-          class="flex items-baseline justify-center space-x-1 my-2 p-4 border-2 border-dashed border-slate-300 rounded-md text-center text-slate-600"
+          class="flex items-baseline justify-center space-x-1 my-2 p-4 border-2 border-dashed border-base-300 rounded-box text-center text-base-content/70"
           phx-drop-target={@uploads.images.ref}
         >
           <div>
-            <.icon name="hero-document-plus" class="size-12 text-gray-400" />
+            <.icon name="hero-document-plus" class="size-12 text-base-content/40" />
             <div>
               <label
                 for={@uploads.images.ref}
-                class="cursor-pointer font-medium text-indigo-600 hover:text-indigo-500"
+                class="link link-primary cursor-pointer font-medium"
               >
                 <span>Upload a file</span>
                 <.live_file_input upload={@uploads.images} class="sr-only" />
               </label>
               <span>or drag and drop here</span>
             </div>
-            <p class="text-sm text-slate-500">
+            <p class="text-sm text-base-content/60">
               {@uploads.images.max_entries} images max,
               up to {trunc(@uploads.images.max_file_size / 1_000_000)} MB each
             </p>
@@ -69,23 +63,21 @@ defmodule SanbaseWeb.UploadImageLive do
         <div
           :for={entry <- @uploads.images.entries}
           class="my-6 flex items-center justify-start space-x-6"
-          }
         >
           <.live_img_preview entry={entry} class="w-32" />
           <div class="w-full">
-            <div class="text-left mb-2 text-xs font-semibold inline-block text-indigo-600">
+            <div class="text-left mb-2 text-xs font-semibold inline-block text-primary">
               {entry.progress}
             </div>
-            <div class="flex h-2 overflow-hidden text-base bg-indigo-200 rounded-lg mb-4">
-              <span class={"width: #{entry.progress}%"}></span>
-            </div>
+            <progress class="progress progress-primary w-full mb-4" value={entry.progress} max="100">
+            </progress>
 
             <.error :for={error <- upload_errors(@uploads.images, entry)}>
               {error_to_string(error)}
             </.error>
           </div>
 
-          <a phx-click="cancel" phx-value-ref={entry.ref}>&times </a>
+          <a phx-click="cancel" phx-value-ref={entry.ref} class="link link-hover">&times </a>
         </div>
         <.input
           type="checkbox"
@@ -93,21 +85,18 @@ defmodule SanbaseWeb.UploadImageLive do
           value="transform_to_logo"
           label="Transform to project logo format"
         />
-        <p class="text-xs text-gray-500 ml-8">
+        <p class="text-xs text-base-content/60 ml-8">
           Logo images are resized to 64x64 and they are placed in the logo64 S3 scope, so the URL will start with logo64_ automatically.
           If you give a custom name to the logo image, there is no need to start with 'logo_'.
         </p>
-        <.button
-          phx-disable-with="Uploading..."
-          class="mt-6 w-full !bg-violet-700 hover:!bg-violet-500"
-        >
+        <.button phx-disable-with="Uploading..." class="btn btn-primary mt-6 w-full">
           Upload
         </.button>
       </.form>
 
-      <div :if={@uploaded_file_url} class="break-words mt-6 text-sm text-gray-600">
+      <div :if={@uploaded_file_url} class="break-words mt-6 text-sm text-base-content/70">
         S3 URL of the uploaded file:
-        <p class="underline text-blue-700">{@uploaded_file_url}</p>
+        <p class="link link-primary">{@uploaded_file_url}</p>
       </div>
     </div>
     """

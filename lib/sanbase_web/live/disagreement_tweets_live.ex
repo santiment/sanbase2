@@ -224,13 +224,13 @@ defmodule SanbaseWeb.DisagreementTweetsLive do
   def render(assigns) do
     ~H"""
     <div class="max-w-6xl mx-auto">
-      <div class="bg-white p-4 rounded-lg shadow">
+      <div class="card bg-base-100 border border-base-300 shadow p-4">
         <.disagreement_header title="Tweet Classification" loading={@loading} />
 
         <.tab_navigation active_tab={@active_tab} tabs={tabs()} tab_counts={@tab_counts} />
 
         <div :if={@loading} class="flex justify-center items-center h-16">
-          <p class="text-sm text-gray-500">Loading tweets...</p>
+          <p class="text-sm text-base-content/60">Loading tweets...</p>
         </div>
 
         <div :if={!@loading and not Enum.empty?(@tweets)} class="space-y-4 mt-4">
@@ -253,26 +253,19 @@ defmodule SanbaseWeb.DisagreementTweetsLive do
 
   defp tab_navigation(assigns) do
     ~H"""
-    <div class="border-b border-gray-200 mb-4">
-      <nav class="-mb-px flex space-x-8">
-        <button
-          :for={{tab_key, tab_label} <- @tabs}
-          phx-click="change_tab"
-          phx-value-tab={tab_key}
-          class={[
-            "py-2 px-1 border-b-2 font-medium text-sm",
-            if(@active_tab == tab_key,
-              do: "border-blue-500 text-blue-600",
-              else: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-            )
-          ]}
-        >
-          {tab_label}
-          <span class="ml-2 bg-gray-100 text-gray-600 py-0.5 px-2 rounded-full text-xs">
-            {get_tab_count(@tab_counts, tab_key)}
-          </span>
-        </button>
-      </nav>
+    <div role="tablist" class="tabs tabs-border mb-4">
+      <button
+        :for={{tab_key, tab_label} <- @tabs}
+        role="tab"
+        phx-click="change_tab"
+        phx-value-tab={tab_key}
+        class={["tab", if(@active_tab == tab_key, do: "tab-active text-primary")]}
+      >
+        {tab_label}
+        <span class="badge badge-sm badge-ghost ml-2">
+          {get_tab_count(@tab_counts, tab_key)}
+        </span>
+      </button>
     </div>
     """
   end

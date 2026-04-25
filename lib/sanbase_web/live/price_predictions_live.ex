@@ -113,7 +113,7 @@ defmodule SanbaseWeb.PricePredictionsLive do
   def render(assigns) do
     ~H"""
     <div class="max-w-4xl mx-auto">
-      <div class="bg-white p-4 rounded-lg shadow">
+      <div class="card bg-base-100 border border-base-300 shadow p-4">
         <.price_prediction_header
           title="Price Predictions"
           loading={@loading}
@@ -124,29 +124,26 @@ defmodule SanbaseWeb.PricePredictionsLive do
           <.asset_filter_section asset_counts={@asset_counts} selected_asset={@selected_asset} />
         </div>
 
-        <div class="text-sm text-gray-700 mb-4 px-2">
+        <div class="text-sm text-base-content/70 mb-4 px-2">
           <span>Total Predictions: <span class="font-semibold">{length(@predictions)}</span></span>
           <span :if={@selected_asset} class="ml-4">
             Filtered: <span class="font-semibold">{length(@filtered_predictions)}</span>
           </span>
-          <span :if={@maksim_filter} class="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
+          <span :if={@maksim_filter} class="badge badge-sm badge-info badge-soft ml-2">
             Maksim's Tweets
           </span>
         </div>
 
         <div :if={@loading} class="flex justify-center items-center h-16">
-          <p class="text-sm text-gray-500">Loading predictions...</p>
+          <p class="text-sm text-base-content/60">Loading predictions...</p>
         </div>
 
         <div
           :if={!@loading and Enum.empty?(@predictions)}
           class="flex flex-col items-center justify-center h-32 text-center"
         >
-          <p class="text-sm text-gray-500 mb-2">No predictions available</p>
-          <button
-            class="bg-blue-500 hover:bg-blue-700 text-white text-xs font-bold py-1 px-2 rounded"
-            phx-click="refresh"
-          >
+          <p class="text-sm text-base-content/60 mb-2">No predictions available</p>
+          <button class="btn btn-xs btn-primary" phx-click="refresh">
             Refresh
           </button>
         </div>
@@ -159,11 +156,8 @@ defmodule SanbaseWeb.PricePredictionsLive do
           :if={!@loading and Enum.empty?(@filtered_predictions) and @selected_asset}
           class="flex flex-col items-center justify-center h-32 text-center"
         >
-          <p class="text-sm text-gray-500 mb-2">No predictions for {@selected_asset}</p>
-          <button
-            class="bg-gray-500 hover:bg-gray-700 text-white text-xs font-bold py-1 px-2 rounded"
-            phx-click="clear_filter"
-          >
+          <p class="text-sm text-base-content/60 mb-2">No predictions for {@selected_asset}</p>
+          <button class="btn btn-xs btn-soft" phx-click="clear_filter">
             Show All
           </button>
         </div>

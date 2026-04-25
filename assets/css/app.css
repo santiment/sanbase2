@@ -2,6 +2,28 @@
 
 @config "../tailwind.config.js";
 
+@plugin "daisyui" {
+  themes: light --default, dark;
+}
+
+@plugin "daisyui/theme" {
+  name: "light";
+  default: true;
+  prefersdark: false;
+  color-scheme: light;
+  --color-primary: oklch(63% 0.21 36);
+  --color-primary-content: oklch(98% 0.01 0);
+}
+
+@plugin "daisyui/theme" {
+  name: "dark";
+  default: false;
+  prefersdark: true;
+  color-scheme: dark;
+  --color-primary: oklch(63% 0.21 36);
+  --color-primary-content: oklch(98% 0.01 0);
+}
+
 @custom-variant phx-submit-loading (.phx-submit-loading &);
 
 .table-responsive {

@@ -159,11 +159,10 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
       </span>
       <span
         :if={execution_too_long?(@status, @inserted_at)}
-        class="text-red-500"
-        data-popover-target={"popover-executing-too-long-#{@id}"}
+        class="tooltip tooltip-error text-red-500"
+        data-tip={"Executing for #{Sanbase.Utils.DateTime.rough_duration_since(@inserted_at)}"}
       >
         <.icon name="hero-exclamation-circle" /> Executing for too long!
-        ({Sanbase.Utils.DateTime.rough_duration_since(@inserted_at)})
       </span>
     </div>
     """

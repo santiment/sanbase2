@@ -68,16 +68,16 @@ defmodule SanbaseWeb.AdminComponents do
 
   def form_error(assigns) do
     ~H"""
-    <div class="alert alert-danger">
-      <p>Oops, something went wrong! Please check the errors below:</p>
-      <ul>
-        <%= for {attr, message} <- Ecto.Changeset.traverse_errors(@changeset, &translate_error/1) do %>
-          <li class="text-red-500">
-            <.icon name="hero-exclamation-circle-mini" class="mr-2" />
-            {humanize(attr)}: {Enum.join(message, ", ")}
-          </li>
-        <% end %>
-      </ul>
+    <div class="alert alert-error my-4">
+      <.icon name="hero-exclamation-circle-mini" class="size-5" />
+      <div>
+        <p class="font-semibold">Oops, something went wrong! Please check the errors below:</p>
+        <ul class="text-sm">
+          <%= for {attr, message} <- Ecto.Changeset.traverse_errors(@changeset, &translate_error/1) do %>
+            <li>{humanize(attr)}: {Enum.join(message, ", ")}</li>
+          <% end %>
+        </ul>
+      </div>
     </div>
     """
   end
@@ -489,7 +489,7 @@ defmodule SanbaseWeb.AdminComponents do
       <label
         :if={@label}
         for={@for}
-        class="text-sm font-semibold text-zinc-800 text-right pr-1 max-md:text-left max-md:pr-0"
+        class="text-sm font-semibold text-right pr-1 max-md:text-left max-md:pr-0"
       >
         {@label}
       </label>
@@ -523,7 +523,7 @@ defmodule SanbaseWeb.AdminComponents do
         <textarea
           id={@id}
           name={@name}
-          class="block w-full rounded-md border border-zinc-300 px-2 py-1 text-zinc-900 focus:border-zinc-400 focus:ring-0 text-sm leading-5 min-h-[4rem]"
+          class="textarea textarea-sm w-full min-h-[4rem]"
         ><%= Phoenix.HTML.Form.normalize_value("textarea", @value) %></textarea>
       <% @input_type == "checkbox" -> %>
         <input
@@ -537,13 +537,13 @@ defmodule SanbaseWeb.AdminComponents do
           name={@name}
           value="true"
           checked={Phoenix.HTML.Form.normalize_value("checkbox", @value)}
-          class="rounded border-zinc-300 text-zinc-900 focus:ring-0"
+          class="checkbox checkbox-sm"
         />
       <% @input_type == "tristate" -> %>
         <select
           id={@id}
           name={@name}
-          class="block w-full rounded-md border border-gray-300 bg-white shadow-sm px-2 py-1 text-sm leading-5 focus:border-zinc-400 focus:ring-0"
+          class="select select-sm w-full"
         >
           {Phoenix.HTML.Form.options_for_select(tristate_options(), tristate_value(@value))}
         </select>
@@ -554,7 +554,7 @@ defmodule SanbaseWeb.AdminComponents do
           id={@id}
           value={Phoenix.HTML.Form.normalize_value(@input_type, @value)}
           onwheel="this.blur()"
-          class="block w-full rounded-md border border-zinc-300 px-2 py-1 text-zinc-900 focus:border-zinc-400 focus:ring-0 text-sm leading-5"
+          class="input input-sm w-full"
         />
     <% end %>
     """
@@ -584,7 +584,7 @@ defmodule SanbaseWeb.AdminComponents do
     <select
       id={@id}
       name={@name}
-      class="block w-full rounded-md border border-gray-300 bg-white shadow-sm px-2 py-1 text-sm leading-5 focus:border-zinc-400 focus:ring-0"
+      class="select select-sm w-full"
       multiple={@multiple}
       size={if @multiple, do: 12}
     >
@@ -704,29 +704,23 @@ defmodule SanbaseWeb.AdminComponents do
   def show_table(assigns) do
     ~H"""
     <div class="mt-4">
-      <h3 class="text-2xl font-medium text-gray-700 mb-2">
-        Show {@singular}
-      </h3>
-      <div class="relative shadow-md sm:rounded-lg">
-        <div class="overflow-x-auto">
-          <table class="w-full text-xs text-left rtl:text-right text-gray-500 dark:text-gray-400 min-w-full table-fixed">
-            <tbody>
-              <%= for field <- @fields do %>
-                <tr class="hover:bg-gray-50 dark:hover:bg-gray-600">
-                  <th class="text-xs px-2 py-1 text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 border-b border-gray-200 whitespace-nowrap w-1/4">
-                    {to_string(field)}
-                  </th>
-                  <.td_show
-                    class="px-3 py-2 border-b border-gray-200 whitespace-pre-wrap break-words"
-                    value={
-                      resolve_field_value(@data, field, @assocs[@data.id], @funcs, @field_type_map)
-                    }
-                  />
-                </tr>
-              <% end %>
-            </tbody>
-          </table>
-        </div>
+      <h3 class="text-2xl font-medium mb-2">Show {@singular}</h3>
+      <div class="overflow-x-auto rounded-box border border-base-300">
+        <table class="table table-zebra table-sm table-fixed">
+          <tbody>
+            <%= for field <- @fields do %>
+              <tr>
+                <th class="uppercase whitespace-nowrap w-1/4 bg-base-200">{to_string(field)}</th>
+                <.td_show
+                  class="whitespace-pre-wrap break-words"
+                  value={
+                    resolve_field_value(@data, field, @assocs[@data.id], @funcs, @field_type_map)
+                  }
+                />
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
       </div>
     </div>
     """
@@ -770,7 +764,7 @@ defmodule SanbaseWeb.AdminComponents do
     ~H"""
     <div class="table-responsive">
       <div class="m-4 flex flex-col gap-x-10">
-        <h3 class="text-3xl font-medium text-gray-700 mb-2">{@resource_name}</h3>
+        <h3 class="text-3xl font-medium mb-2">{@resource_name}</h3>
         <%= if @create_link_kv != [] do %>
           <.new_resource_button
             resource={@resource}
@@ -779,8 +773,8 @@ defmodule SanbaseWeb.AdminComponents do
           />
         <% end %>
       </div>
-      <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
-        <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+      <div class="overflow-x-auto rounded-box border border-base-300">
+        <table class="table table-zebra table-sm">
           <.thead fields={@fields} field_type_map={%{}} actions={[]} />
           <.tbody
             resource={@resource}
@@ -865,9 +859,9 @@ defmodule SanbaseWeb.AdminComponents do
           <.custom_index_actions actions={@custom_index_actions} />
         <% end %>
       </div>
-      <div class="relative shadow-md sm:rounded-lg flex-1 flex flex-col min-h-0">
+      <div class="rounded-box border border-base-300 flex-1 flex flex-col min-h-0">
         <div class="overflow-y-auto flex-1">
-          <table class="w-full text-xs text-left rtl:text-right text-gray-500 dark:text-gray-400">
+          <table class="table table-zebra table-sm">
             <.thead fields={@fields} field_type_map={@field_type_map} actions={@actions} />
             <.tbody
               resource={@resource}
@@ -896,15 +890,14 @@ defmodule SanbaseWeb.AdminComponents do
 
   def thead(assigns) do
     ~H"""
-    <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 sticky top-0">
+    <thead class="bg-base-200 sticky top-0 uppercase">
       <tr>
         <%= for field <- @fields do %>
           <th
             scope="col"
             class={
               [
-                "px-2 py-1 whitespace-nowrap",
-                # Make ID and boolean columns narrower
+                "whitespace-nowrap",
                 if(field == :id or Map.get(@field_type_map, field) in [:boolean, :boolean_nullable],
                   do: "w-[80px]"
                 )
@@ -915,7 +908,7 @@ defmodule SanbaseWeb.AdminComponents do
           </th>
         <% end %>
         <%= if @actions do %>
-          <th scope="col" class="px-2 py-1 whitespace-nowrap w-[160px]">Actions</th>
+          <th scope="col" class="whitespace-nowrap w-[160px]">Actions</th>
         <% end %>
       </tr>
     </thead>
@@ -926,10 +919,10 @@ defmodule SanbaseWeb.AdminComponents do
     ~H"""
     <tbody>
       <%= for row <- @rows do %>
-        <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+        <tr class="hover:bg-base-200">
           <%= for field <- @fields do %>
             <%= if field == :id do %>
-              <td class="px-3 py-2 min-w-[120px]">
+              <td class="min-w-[120px]">
                 <.a resource={@resource} action={:show} row={row} label={Map.get(row, field)} />
               </td>
             <% else %>
@@ -939,7 +932,7 @@ defmodule SanbaseWeb.AdminComponents do
             <% end %>
           <% end %>
           <%= if @actions do %>
-            <td class="px-3 py-2 w-[140px] min-w-[140px]">
+            <td class="w-[140px] min-w-[140px]">
               <div class="flex flex-row flex-nowrap gap-1 items-center">
                 <% index_actions = @actions -- [:new] %>
                 <%= for action <- index_actions do %>
@@ -962,34 +955,24 @@ defmodule SanbaseWeb.AdminComponents do
 
   def btn(assigns) do
     ~H"""
-    <.link href={@href}>
-      <button type={@type} class={btn_classes(@color, @size)}>
-        {@label}
-      </button>
+    <.link href={@href} class={btn_classes(@color, @size)}>
+      {@label}
     </.link>
     """
   end
 
   defp btn_classes(color, size) do
-    base = "font-medium rounded-lg me-2 mb-2 focus:ring-4"
-    size_classes = if size == :small, do: "text-xs px-4 py-2", else: "text-sm px-5 py-2.5"
+    size_class = if size == :small, do: "btn-sm", else: nil
 
-    color_classes =
+    color_class =
       case color do
-        :blue ->
-          "text-white bg-blue-700 hover:bg-blue-800 focus:ring-blue-300"
-
-        :yellow ->
-          "focus:outline-none text-white bg-yellow-400 hover:bg-yellow-500 focus:ring-yellow-300"
-
-        :red ->
-          "focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-red-300"
-
-        :white ->
-          "text-gray-900 focus:outline-none bg-white border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:ring-gray-100"
+        :blue -> "btn-primary"
+        :yellow -> "btn-warning"
+        :red -> "btn-error"
+        :white -> "btn-soft"
       end
 
-    "#{base} #{size_classes} #{color_classes}"
+    Enum.join(["btn", size_class, color_class] |> Enum.reject(&is_nil/1), " ")
   end
 
   @doc """
@@ -1018,14 +1001,12 @@ defmodule SanbaseWeb.AdminComponents do
       end
 
     ~H"""
-    <button
-      type="button"
-      class="text-white w-fit p-2 bg-blue-500 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
+    <.link
+      href={~p"/admin/generic/new?#{Keyword.merge([resource: @resource], @create_link_kv)}"}
+      class="btn btn-primary btn-sm w-fit"
     >
-      <.link href={~p"/admin/generic/new?#{Keyword.merge([resource: @resource], @create_link_kv)}"}>
-        <.icon name="hero-plus-circle" /> Add new {@singular}
-      </.link>
-    </button>
+      <.icon name="hero-plus-circle" class="size-4" /> Add new {@singular}
+    </.link>
     """
   end
 
@@ -1059,8 +1040,8 @@ defmodule SanbaseWeb.AdminComponents do
       data-confirm="Are you sure you want to delete this?"
     >
       <input type="hidden" name="_method" value="delete" />
-      <button type="submit" class="text-red-600 hover:text-red-800 px-2 py-1 rounded">
-        <.icon name="hero-trash" class="w-4 h-4" />
+      <button type="submit" class="btn btn-ghost btn-xs text-error">
+        <.icon name="hero-trash" class="size-4" />
       </button>
     </.form>
     """
@@ -1068,25 +1049,24 @@ defmodule SanbaseWeb.AdminComponents do
 
   def index_action_btn(assigns) do
     ~H"""
-    <button class={[
-      "px-2 py-1 rounded inline-flex items-center",
-      case @action do
-        :edit -> "text-yellow-600 hover:text-yellow-800"
-        :show -> "text-blue-600 hover:text-blue-800"
-      end
-    ]}>
-      <.link href={generic_admin_action_path(@action, @row, @resource)}>
-        <.icon
-          name={
-            case @action do
-              :edit -> "hero-pencil"
-              :show -> "hero-eye"
-            end
-          }
-          class="w-4 h-4"
-        />
-      </.link>
-    </button>
+    <.link
+      href={generic_admin_action_path(@action, @row, @resource)}
+      class={[
+        "btn btn-ghost btn-xs",
+        @action == :edit && "text-warning",
+        @action == :show && "text-info"
+      ]}
+    >
+      <.icon
+        name={
+          case @action do
+            :edit -> "hero-pencil"
+            :show -> "hero-eye"
+          end
+        }
+        class="size-4"
+      />
+    </.link>
     """
   end
 
@@ -1115,7 +1095,7 @@ defmodule SanbaseWeb.AdminComponents do
 
   def td_index(assigns) do
     ~H"""
-    <td class="px-3 py-2 whitespace-nowrap overflow-hidden text-ellipsis" style="max-width: 200px;">
+    <td class="whitespace-nowrap overflow-hidden text-ellipsis" style="max-width: 200px;">
       {@value}
     </td>
     """
@@ -1141,7 +1121,7 @@ defmodule SanbaseWeb.AdminComponents do
     ~H"""
     <.link
       href={~p"/admin/generic/#{@row}?resource=#{@resource}"}
-      class="underline"
+      class="link link-primary"
     >
       {@label}
     </.link>
@@ -1181,7 +1161,7 @@ defmodule SanbaseWeb.AdminComponents do
 
   def pagination(assigns) do
     ~H"""
-    <div class="flex justify-between items-center p-2 text-xs border-t">
+    <div class="flex justify-between items-center p-2 text-xs border-t border-base-300">
       <.pagination_buttons
         resource={@resource}
         rows_count={@rows_count}
@@ -1190,7 +1170,7 @@ defmodule SanbaseWeb.AdminComponents do
         action={@action}
         search={@search}
       />
-      <span class="text-xs text-gray-700">
+      <span class="text-xs text-base-content/70">
         Showing {@current_page * @page_size + 1} to {Enum.min([
           (@current_page + 1) * @page_size,
           @rows_count
@@ -1209,11 +1189,11 @@ defmodule SanbaseWeb.AdminComponents do
 
   def pagination_buttons(assigns) do
     ~H"""
-    <div class="inline-flex">
+    <div class="join">
       <%= unless @current_page == 0 do %>
         <.link
           href={pagination_path(@resource, @action, @search, @current_page - 1)}
-          class="px-4 py-2 mx-1 bg-gray-200 rounded hover:bg-gray-300"
+          class="btn btn-sm join-item"
         >
           Previous
         </.link>
@@ -1221,7 +1201,7 @@ defmodule SanbaseWeb.AdminComponents do
       <%= unless @current_page >= div(@rows_count - 1, @page_size) do %>
         <.link
           href={pagination_path(@resource, @action, @search, @current_page + 1)}
-          class="px-4 py-2 mx-1 bg-gray-200 rounded hover:bg-gray-300"
+          class="btn btn-sm join-item"
         >
           Next
         </.link>
@@ -1283,64 +1263,57 @@ defmodule SanbaseWeb.AdminComponents do
           <div x-bind:id="'filters-container'">
             <template x-for="(filter, index) in filters">
               <div class="flex flex-col gap-2 mb-4">
-                <div class="flex">
+                <div class="join">
                   <div class="relative">
                     <button
                       @click="open = index; showError = false"
                       type="button"
-                      class="shrink-0 z-10 inline-flex items-center py-2.5 px-4 text-sm font-medium text-center text-gray-900 bg-gray-100 border border-gray-300 rounded-s-lg hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 dark:focus:ring-gray-700 dark:text-white dark:border-gray-600"
-                      x-bind:class="{'border-red-500': showError && filter.field === 'Fields'}"
+                      class="btn btn-sm btn-soft join-item"
+                      x-bind:class="{'border-error': showError && filter.field === 'Fields'}"
                     >
-                      <div class="flex items-center">
-                        <span x-text="filter.field"></span>
-                        <.icon name="hero-chevron-down" class="w-2.5 h-2.5 ms-2.5" />
-                      </div>
+                      <span x-text="filter.field"></span>
+                      <.icon name="hero-chevron-down" class="size-3" />
                     </button>
 
-                    <div
+                    <ul
                       x-show="open === index"
                       @click.away="open = false"
-                      class="mt-12 absolute z-20 bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700"
+                      class="menu menu-sm bg-base-100 rounded-box shadow absolute z-20 mt-2 w-44 p-2"
                     >
-                      <ul class="py-2 text-sm text-gray-700 dark:text-gray-200">
-                        <%= for field <- @fields do %>
-                          <li>
-                            <button
-                              @click="filter.field = $event.target.innerText; open = false; showError = false"
-                              type="button"
-                              class="inline-flex w-full px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-                            >
-                              {field}
-                            </button>
-                          </li>
-                        <% end %>
-                      </ul>
-                    </div>
+                      <%= for field <- @fields do %>
+                        <li>
+                          <button
+                            @click="filter.field = $event.target.innerText; open = false; showError = false"
+                            type="button"
+                          >
+                            {field}
+                          </button>
+                        </li>
+                      <% end %>
+                    </ul>
                   </div>
 
-                  <div class="relative w-full">
-                    <input
-                      x-bind:name="`search[filters][${index}][field]`"
-                      type="hidden"
-                      x-bind:value="filter.field"
-                    />
-                    <input
-                      x-bind:name="`search[filters][${index}][value]`"
-                      type="search"
-                      class="block p-2.5 w-full z-20 text-sm text-gray-900 bg-gray-50 rounded-e-lg border-s-gray-50 border-s-2 border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-s-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:border-blue-500"
-                      placeholder="Search..."
-                      required
-                      x-model="filter.value"
-                    />
-                  </div>
+                  <input
+                    x-bind:name="`search[filters][${index}][field]`"
+                    type="hidden"
+                    x-bind:value="filter.field"
+                  />
+                  <input
+                    x-bind:name="`search[filters][${index}][value]`"
+                    type="search"
+                    class="input input-sm join-item w-full"
+                    placeholder="Search..."
+                    required
+                    x-model="filter.value"
+                  />
 
                   <button
                     type="button"
-                    class="ml-2 text-red-600 hover:text-red-800"
+                    class="btn btn-sm btn-ghost text-error join-item"
                     @click="filters = filters.filter((_, i) => i !== index)"
                     x-show="filters.length > 1"
                   >
-                    <.icon name="hero-x-mark" class="w-5 h-5" />
+                    <.icon name="hero-x-mark" class="size-4" />
                   </button>
                 </div>
               </div>
@@ -1351,24 +1324,17 @@ defmodule SanbaseWeb.AdminComponents do
             <button
               type="button"
               @click="filters.push({field: 'Fields', value: ''})"
-              class="text-sm text-blue-600 hover:text-blue-800"
+              class="btn btn-sm btn-ghost btn-link"
             >
-              <div class="flex items-center">
-                <.icon name="hero-plus" class="w-4 h-4 mr-1" /> Add filter
-              </div>
+              <.icon name="hero-plus" class="size-4" /> Add filter
             </button>
 
-            <button
-              type="submit"
-              class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-            >
-              <div class="flex items-center">
-                <.icon name="hero-magnifying-glass" class="w-4 h-4 mr-2" /> Search
-              </div>
+            <button type="submit" class="btn btn-sm btn-primary">
+              <.icon name="hero-magnifying-glass" class="size-4" /> Search
             </button>
           </div>
 
-          <div x-show="showError" x-cloak class="text-red-500 text-sm mt-1">
+          <div x-show="showError" x-cloak class="text-error text-sm mt-1">
             Please select a field for all filters
           </div>
         </.form>
@@ -1376,9 +1342,9 @@ defmodule SanbaseWeb.AdminComponents do
         <%= if @search["filters"] do %>
           <.link
             href={~p"/admin/generic?resource=#{@resource}"}
-            class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:outline-none focus:ring-gray-100 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-gray-700"
+            class="btn btn-sm btn-soft"
           >
-            <.icon name="hero-x-mark" class="w-4 h-4 mr-2" /> Reset Filters
+            <.icon name="hero-x-mark" class="size-4" /> Reset Filters
           </.link>
         <% end %>
       </div>

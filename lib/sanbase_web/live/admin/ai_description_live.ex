@@ -1272,7 +1272,7 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
 
     <%!-- ── Detail Modal ────────────────────────────────────────── --%>
     <div :if={@selected_entity} class="fixed inset-0 z-50 overflow-y-auto">
-      <div class="fixed inset-0 bg-gray-800 bg-opacity-60" phx-click="close_modal" />
+      <div class="fixed inset-0 bg-gray-800/60" phx-click="close_modal" />
       <div class="relative min-h-screen flex items-start justify-center pt-16 pb-8 px-4">
         <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-3xl" phx-click="noop">
           <div class="flex items-center justify-between p-5 border-b border-gray-200">
@@ -1368,7 +1368,7 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
 
     <%!-- ── Override Confirmation Modal ──────────────────────────── --%>
     <div :if={@show_override_confirm} class="fixed inset-0 z-50 overflow-y-auto">
-      <div class="fixed inset-0 bg-gray-800 bg-opacity-60" phx-click="hide_override_confirm" />
+      <div class="fixed inset-0 bg-gray-800/60" phx-click="hide_override_confirm" />
       <div class="relative min-h-screen flex items-center justify-center px-4">
         <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-md p-6" phx-click="noop">
           <div class="flex items-start gap-3 mb-4">

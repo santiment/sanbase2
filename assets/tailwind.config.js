@@ -22,17 +22,10 @@ module.exports = {
   safelist: [],
   plugins: [
     require('flowbite/plugin'),
-    require("@tailwindcss/forms"),
     require('@tailwindcss/typography'),
-    // Allows prefixing tailwind classes with LiveView classes to add rules
-    // only when LiveView classes are applied, for example:
-    //
-    //     <div class="phx-click-loading:animate-ping">
-    //
-    plugin(({ addVariant }) => addVariant("phx-no-feedback", [".phx-no-feedback&", ".phx-no-feedback &"])),
-    plugin(({ addVariant }) => addVariant("phx-click-loading", [".phx-click-loading&", ".phx-click-loading &"])),
-    plugin(({ addVariant }) => addVariant("phx-submit-loading", [".phx-submit-loading&", ".phx-submit-loading &"])),
-    plugin(({ addVariant }) => addVariant("phx-change-loading", [".phx-change-loading&", ".phx-change-loading &"])),
+    // phx-submit-loading variant is registered CSS-side via @custom-variant in app.css.
+    // Other phx-* variants (phx-no-feedback, phx-click-loading, phx-change-loading)
+    // were dead config — dropped.
 
     // Embeds Hero Icons (https://heroicons.com) into your app.css bundle
     // See your `CoreComponents.icon/1` for more information.

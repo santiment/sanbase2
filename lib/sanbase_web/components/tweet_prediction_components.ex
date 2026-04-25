@@ -10,52 +10,50 @@ defmodule SanbaseWeb.TweetPredictionComponents do
 
   def tweet_card(assigns) do
     ~H"""
-    <div class="border rounded-lg p-3" id={"tweet-#{@tweet["id"]}"} {@rest}>
-      <div class="flex justify-between text-xs text-gray-500 mb-1">
-        <span class="font-bold">@{@tweet["screen_name"]}</span>
+    <div class="card bg-base-100 border border-base-300 p-3" id={"tweet-#{@tweet["id"]}"} {@rest}>
+      <div class="flex justify-between text-xs text-base-content/60 mb-1">
+        <span class="font-bold text-primary">@{@tweet["screen_name"]}</span>
         <span>{format_date(@tweet["timestamp"])}</span>
       </div>
       <p class="mb-2 text-sm whitespace-pre-line">{@tweet["text"]}</p>
-      <div class="flex items-center gap-2 mt-2">
-        <div class="flex items-center gap-2">
-          <label class="inline-flex items-center text-xs">
-            <input
-              type="checkbox"
-              class="form-checkbox h-3 w-3 text-blue-600"
-              checked={@interesting_case}
-              phx-click="toggle_interesting"
-              phx-value-id={@tweet["id"]}
-            />
-            <span class="ml-1 text-gray-700">Interesting Case</span>
-          </label>
-
-          <button
-            class="text-xs py-1 px-2 rounded bg-blue-500 text-white hover:bg-blue-600"
-            phx-click="submit_classification"
+      <div class="flex items-center gap-2 mt-2 flex-wrap">
+        <label class="label cursor-pointer gap-2 py-0">
+          <input
+            type="checkbox"
+            class="checkbox checkbox-xs checkbox-primary"
+            checked={@interesting_case}
+            phx-click="toggle_interesting"
             phx-value-id={@tweet["id"]}
-            phx-value-prediction="prediction"
-          >
-            Submit as Prediction
-          </button>
+          />
+          <span class="text-xs">Interesting Case</span>
+        </label>
 
-          <button
-            class="text-xs py-1 px-2 rounded bg-blue-500 text-white hover:bg-blue-600"
-            phx-click="submit_classification"
-            phx-value-id={@tweet["id"]}
-            phx-value-prediction="not_prediction"
-          >
-            Submit as Not
-          </button>
+        <button
+          class="btn btn-xs btn-success"
+          phx-click="submit_classification"
+          phx-value-id={@tweet["id"]}
+          phx-value-prediction="prediction"
+        >
+          Submit as Prediction
+        </button>
 
-          <a
-            href={@tweet["url"]}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="text-xs text-blue-500 hover:underline"
-          >
-            View on X
-          </a>
-        </div>
+        <button
+          class="btn btn-xs btn-error"
+          phx-click="submit_classification"
+          phx-value-id={@tweet["id"]}
+          phx-value-prediction="not_prediction"
+        >
+          Submit as Not
+        </button>
+
+        <a
+          href={@tweet["url"]}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="link link-primary text-xs"
+        >
+          View on X
+        </a>
       </div>
     </div>
     """
@@ -71,11 +69,7 @@ defmodule SanbaseWeb.TweetPredictionComponents do
     ~H"""
     <div class="flex justify-between items-center mb-3">
       <h2 class="text-xl font-bold">{@title}</h2>
-      <button
-        class="bg-blue-500 hover:bg-blue-700 text-white text-sm font-bold py-1 px-3 rounded"
-        phx-click="refresh"
-        disabled={@loading}
-      >
+      <button class="btn btn-sm btn-primary" phx-click="refresh" disabled={@loading}>
         Refresh
       </button>
     </div>
@@ -87,8 +81,9 @@ defmodule SanbaseWeb.TweetPredictionComponents do
   """
   def loading_indicator(assigns) do
     ~H"""
-    <div class="flex justify-center items-center h-16">
-      <p class="text-sm text-gray-500">Loading tweets...</p>
+    <div class="flex justify-center items-center h-16 gap-2">
+      <span class="loading loading-spinner loading-sm"></span>
+      <p class="text-sm text-base-content/60">Loading tweets...</p>
     </div>
     """
   end
@@ -98,12 +93,9 @@ defmodule SanbaseWeb.TweetPredictionComponents do
   """
   def empty_state(assigns) do
     ~H"""
-    <div class="flex flex-col items-center justify-center h-32 text-center">
-      <p class="text-sm text-gray-500 mb-2">No unclassified tweets available</p>
-      <button
-        class="bg-blue-500 hover:bg-blue-700 text-white text-xs font-bold py-1 px-2 rounded"
-        phx-click="refresh"
-      >
+    <div class="flex flex-col items-center justify-center h-32 text-center gap-2">
+      <p class="text-sm text-base-content/60">No unclassified tweets available</p>
+      <button class="btn btn-xs btn-primary" phx-click="refresh">
         Check for new tweets
       </button>
     </div>

@@ -84,14 +84,14 @@ defmodule SanbaseWeb.MetricDisplayOrderNewLive do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col justify-center w-full">
-      <h1 class="text-blue-700 text-2xl mb-4">New Metric Display Order</h1>
+      <h1 class="text-primary text-2xl mb-4">New Metric Display Order</h1>
 
       <.action_buttons />
 
-      <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+      <div class="card bg-base-200 border border-base-300 p-4 mb-6">
         <h2 class="text-lg font-medium mb-4">Step 1: Select Metric Source</h2>
-        <div class="flex space-x-4">
-          <label class="inline-flex items-center">
+        <div class="flex flex-wrap gap-4">
+          <label class="label cursor-pointer gap-2 py-0">
             <input
               type="radio"
               name="source_type"
@@ -99,11 +99,11 @@ defmodule SanbaseWeb.MetricDisplayOrderNewLive do
               checked={@source_type == "registry"}
               phx-click="select_source_type"
               phx-value-type="registry"
-              class="form-radio"
+              class="radio radio-sm radio-primary"
             />
-            <span class="ml-2">Metric Registry</span>
+            <span>Metric Registry</span>
           </label>
-          <label class="inline-flex items-center">
+          <label class="label cursor-pointer gap-2 py-0">
             <input
               type="radio"
               name="source_type"
@@ -111,9 +111,9 @@ defmodule SanbaseWeb.MetricDisplayOrderNewLive do
               checked={@source_type == "code"}
               phx-click="select_source_type"
               phx-value-type="code"
-              class="form-radio"
+              class="radio radio-sm radio-primary"
             />
-            <span class="ml-2">Code Module</span>
+            <span>Code Module</span>
           </label>
         </div>
 
@@ -121,53 +121,38 @@ defmodule SanbaseWeb.MetricDisplayOrderNewLive do
           <div class="mt-4">
             <h3 class="text-md font-medium mb-2">Search for a metric in the registry:</h3>
             <form phx-change="search" phx-submit="search" class="mb-4">
-              <div class="flex">
+              <div class="join w-full">
                 <input
                   type="text"
                   name="search_query"
                   value={@search_query}
                   placeholder="Search for a metric..."
-                  class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                  class="input join-item flex-1"
                 />
-                <button
-                  type="submit"
-                  class="ml-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                >
-                  Search
-                </button>
+                <button type="submit" class="btn btn-primary join-item">Search</button>
               </div>
             </form>
 
             <%= if length(@search_results) > 0 do %>
-              <div class="overflow-x-auto max-h-60 overflow-y-auto mb-4">
-                <table class="min-w-full divide-y divide-gray-200">
-                  <thead class="bg-gray-50 sticky top-0">
+              <div class="rounded-box border border-base-300 max-h-60 overflow-auto mb-4">
+                <table class="table table-zebra table-sm">
+                  <thead>
                     <tr>
-                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Metric
-                      </th>
-                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Human Readable Name
-                      </th>
-                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Action
-                      </th>
+                      <th>Metric</th>
+                      <th>Human Readable Name</th>
+                      <th>Action</th>
                     </tr>
                   </thead>
-                  <tbody class="bg-white divide-y divide-gray-200">
+                  <tbody>
                     <%= for result <- @search_results do %>
                       <tr>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {result.metric}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {result.human_readable_name}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td class="text-sm">{result.metric}</td>
+                        <td class="text-sm">{result.human_readable_name}</td>
+                        <td>
                           <button
                             phx-click="select_metric"
                             phx-value-id={result.id}
-                            class="text-blue-600 hover:text-blue-900"
+                            class="link link-primary text-sm"
                           >
                             Select
                           </button>
@@ -180,10 +165,14 @@ defmodule SanbaseWeb.MetricDisplayOrderNewLive do
             <% end %>
 
             <%= if @selected_metric do %>
-              <div class="bg-green-50 border border-green-200 rounded-md p-4 mb-4">
-                <h3 class="text-md font-medium text-green-800 mb-2">Selected Metric:</h3>
-                <p><strong>Name:</strong> {@selected_metric.metric}</p>
-                <p><strong>Human Readable Name:</strong> {@selected_metric.human_readable_name}</p>
+              <div class="alert alert-success alert-soft mb-4">
+                <div>
+                  <h3 class="font-medium mb-1">Selected Metric:</h3>
+                  <p><strong>Name:</strong> {@selected_metric.metric}</p>
+                  <p>
+                    <strong>Human Readable Name:</strong> {@selected_metric.human_readable_name}
+                  </p>
+                </div>
               </div>
             <% end %>
           </div>
@@ -191,23 +180,19 @@ defmodule SanbaseWeb.MetricDisplayOrderNewLive do
           <div class="mt-4">
             <h3 class="text-md font-medium mb-2">Enter metric details:</h3>
             <div class="grid grid-cols-1 gap-4 mb-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Metric Name</label>
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend">Metric Name</legend>
                 <input
                   type="text"
                   name="metric_name"
                   value={@form[:metric_name].value}
                   phx-change="update_form"
-                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                  class="input w-full"
                 />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Code Module</label>
-                <select
-                  name="code_module"
-                  phx-change="update_form"
-                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                >
+              </fieldset>
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend">Code Module</legend>
+                <select name="code_module" phx-change="update_form" class="select w-full">
                   <option value="">Select a module</option>
                   <%= for module <- @code_modules do %>
                     <option value={module} selected={@form[:code_module].value == module}>
@@ -215,13 +200,13 @@ defmodule SanbaseWeb.MetricDisplayOrderNewLive do
                     </option>
                   <% end %>
                 </select>
-              </div>
+              </fieldset>
             </div>
           </div>
         <% end %>
       </div>
 
-      <div class="p-4 bg-gray-50 rounded-lg">
+      <div class="card bg-base-200 border border-base-300 p-4">
         <h2 class="text-lg font-medium mb-4">Step 2: Add Display Information</h2>
         <.metric_form
           form={@form}

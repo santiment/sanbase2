@@ -30,7 +30,7 @@ defmodule SanbaseWeb.Admin.UserRolesLive do
     ~H"""
     <div class="container mx-auto p-6">
       <div class="max-w-7xl mx-auto">
-        <h1 class="text-3xl font-bold text-gray-900 mb-6">User Roles Management</h1>
+        <h1 class="text-3xl font-bold mb-6">User Roles Management</h1>
 
         <.assign_role_form
           form={@form}
@@ -51,60 +51,49 @@ defmodule SanbaseWeb.Admin.UserRolesLive do
               phx-change="search_users"
               phx-debounce="300"
               placeholder="Search users by email, username, or name..."
-              class="w-full max-w-md rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-zinc-400 focus:ring-0 sm:text-sm sm:leading-6"
+              class="input input-sm w-full max-w-md"
             />
           </div>
 
-          <div class="bg-white shadow rounded-lg overflow-hidden">
-            <table class="min-w-full divide-y divide-gray-200">
-              <thead class="bg-gray-50">
+          <div class="rounded-box border border-base-300 overflow-hidden">
+            <table class="table table-zebra table-sm">
+              <thead>
                 <tr>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    User
-                  </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Roles
-                  </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
+                  <th>User</th>
+                  <th>Roles</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
-              <tbody id="users" phx-update="stream" class="bg-white divide-y divide-gray-200">
+              <tbody id="users" phx-update="stream">
                 <tr class="hidden only:block">
-                  <td colspan="3" class="px-6 py-4 text-sm text-gray-500 text-center">
+                  <td colspan="3" class="text-center text-base-content/60 py-6">
                     No users with roles found
                   </td>
                 </tr>
-                <tr :for={{id, user} <- @streams.users} id={id} class="hover:bg-gray-50">
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm font-medium text-gray-900">
+                <tr :for={{id, user} <- @streams.users} id={id}>
+                  <td>
+                    <div class="text-sm font-medium">
                       {user.name || user.username || user.email || "User ##{user.id}"}
                     </div>
-                    <div class="text-sm text-gray-500">
-                      {user.email}
-                    </div>
-                    <div :if={user.username} class="text-xs text-gray-400">
+                    <div class="text-sm text-base-content/60">{user.email}</div>
+                    <div :if={user.username} class="text-xs text-base-content/50">
                       @{user.username}
                     </div>
                   </td>
-                  <td class="px-6 py-4">
+                  <td>
                     <div class="flex flex-wrap gap-2">
-                      <span
-                        :for={user_role <- user.roles}
-                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                      >
+                      <span :for={user_role <- user.roles} class="badge badge-sm badge-info">
                         {user_role.role.name}
                       </span>
                     </div>
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <td>
                     <button
                       :for={user_role <- user.roles}
                       phx-click="remove_role"
                       phx-value-user_id={user.id}
                       phx-value-role_id={user_role.role_id}
-                      class="text-red-600 hover:text-red-900 mr-2"
+                      class="btn btn-xs btn-ghost text-error mr-2"
                       data-confirm="Are you sure you want to remove this role?"
                     >
                       Remove {user_role.role.name}
@@ -129,14 +118,12 @@ defmodule SanbaseWeb.Admin.UserRolesLive do
 
   def assign_role_form(assigns) do
     ~H"""
-    <div class="bg-white shadow rounded-lg p-6 mb-6">
-      <h2 class="text-xl font-semibold text-gray-900 mb-4">Assign Role to User</h2>
+    <div class="card bg-base-100 border border-base-300 p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4">Assign Role to User</h2>
       <.form for={@form} phx-submit="assign_role" id="assign-role-form">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="relative">
-            <label for="user-email-input" class="block text-sm font-medium text-gray-700 mb-1">
-              User Email (@santiment.net only)
-            </label>
+          <fieldset class="fieldset relative">
+            <legend class="fieldset-legend">User Email (@santiment.net only)</legend>
             <div phx-click-away="hide_email_suggestions">
               <input
                 type="text"
@@ -149,41 +136,42 @@ defmodule SanbaseWeb.Admin.UserRolesLive do
                 placeholder="Start typing email..."
                 autocomplete="off"
                 required
-                class="w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-zinc-400 focus:ring-0 sm:text-sm sm:leading-6"
+                class="input input-sm w-full"
               />
               <input type="hidden" name="role_assignment[user_id]" value={@selected_user_id} />
-              <div
+              <ul
                 id="email-suggestions"
                 class={[
-                  "absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto",
+                  "menu menu-sm bg-base-100 rounded-box shadow absolute z-10 mt-1 w-full max-h-60 overflow-auto",
                   if(@show_email_suggestions && @email_suggestions != [], do: "", else: "hidden")
                 ]}
               >
-                <ul class="py-1">
-                  <li
-                    :for={suggestion <- @email_suggestions}
-                    phx-click="select_email"
-                    phx-value-user_id={suggestion.id}
-                    phx-value-email={suggestion.email}
-                    class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
-                  >
-                    <div class="font-medium text-gray-900">{suggestion.email}</div>
-                    <div :if={suggestion.name || suggestion.username} class="text-xs text-gray-500">
-                      {suggestion.name || suggestion.username}
+                <li
+                  :for={suggestion <- @email_suggestions}
+                  phx-click="select_email"
+                  phx-value-user_id={suggestion.id}
+                  phx-value-email={suggestion.email}
+                >
+                  <a>
+                    <div>
+                      <div class="font-medium">{suggestion.email}</div>
+                      <div :if={suggestion.name || suggestion.username} class="text-xs text-base-content/60">
+                        {suggestion.name || suggestion.username}
+                      </div>
                     </div>
-                  </li>
-                  <li
-                    :if={
-                      @email_suggestions == [] && @email_query != "" && byte_size(@email_query) >= 2
-                    }
-                    class="px-4 py-2 text-sm text-gray-500"
-                  >
-                    No users found
-                  </li>
-                </ul>
-              </div>
+                  </a>
+                </li>
+                <li
+                  :if={
+                    @email_suggestions == [] && @email_query != "" && byte_size(@email_query) >= 2
+                  }
+                  class="menu-disabled"
+                >
+                  <a>No users found</a>
+                </li>
+              </ul>
             </div>
-          </div>
+          </fieldset>
           <div>
             <.input
               type="select"

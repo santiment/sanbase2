@@ -59,7 +59,7 @@ defmodule SanbaseWeb.SuggestEcosystemLabelsChangeLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="border border-gray-100 mx-auto max-w-3xl p-6 rounded-xl shadow-sm min-h-96">
+    <div class="card bg-base-100 border border-base-300 mx-auto max-w-3xl p-6 shadow-sm min-h-96">
       <h1 class="text-2xl mb-6">Update the ecosystem labels of an asset</h1>
 
       <.select_project search_result={@search_result} />
@@ -72,7 +72,7 @@ defmodule SanbaseWeb.SuggestEcosystemLabelsChangeLive do
         />
 
         <h2 class="text-lg mt-10">Edit the ecosystems of the asset</h2>
-        <p class="text-sm text-gray-600">
+        <p class="text-sm text-base-content/60">
           The currently stored ecosystems are preselected. Deselect ecosystems to suggest removing them and select new ecosystems to suggest adding them.
         </p>
         <.checkbox_select_ecosystems
@@ -188,33 +188,32 @@ defmodule SanbaseWeb.SuggestEcosystemLabelsChangeLive do
   def select_project(assigns) do
     ~H"""
     <form class="max-w-3xl">
-      <label for="default-search" class="text-sm font-medium text-gray-900 sr-only">
+      <label for="default-search" class="sr-only">
         Select an asset
       </label>
       <div class="relative">
-        <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-          <.icon name="hero-magnifying-glass" class="text-gray-600" />
-        </div>
-        <input
-          type="search"
-          id="default-search"
-          class="w-full p-4 ps-10 outline-none text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50"
-          placeholder="Select an asset"
-          phx-keyup="search_project"
-          phx-debounce="50"
-          phx-click={JS.remove_class("hidden", to: "#search-result-suggestions")}
-          autocomplete="off"
-          required
-        />
+        <label class="input w-full">
+          <.icon name="hero-magnifying-glass" class="text-base-content/60" />
+          <input
+            type="search"
+            id="default-search"
+            placeholder="Select an asset"
+            phx-keyup="search_project"
+            phx-debounce="50"
+            phx-click={JS.remove_class("hidden", to: "#search-result-suggestions")}
+            autocomplete="off"
+            required
+          />
+        </label>
         <div
           id="search-result-suggestions"
           phx-click-away={JS.add_class("hidden", to: "#search-result-suggestions")}
           phx-key={JS.add_class("hidden", to: "#search-result-suggestions")}
           phx-click={JS.remove_class("hidden", to: "#search-result-suggestions")}
-          class="hidden absolute bg-white mt-1 w-full"
+          class="hidden absolute mt-1 w-full z-20"
         >
-          <ul class="relative z-20 justify-between min-w-96 text-sm max-h-96 overflow-y-scroll scroll-bar-custom bg-white border border-gray-200 rounded-md">
-            <li class="flex flex-row justify-between text-gray-600 sticky top-0 bg-white px-3 py-2 rounded-md">
+          <ul class="relative bg-base-100 border border-base-300 rounded-box shadow-xl text-sm max-h-96 overflow-y-auto">
+            <li class="flex flex-row justify-between text-base-content/60 sticky top-0 bg-base-100 border-b border-base-300 px-3 py-2">
               <span>Asset</span>
               <span>Ecosystems</span>
             </li>
@@ -222,7 +221,7 @@ defmodule SanbaseWeb.SuggestEcosystemLabelsChangeLive do
               <.link
                 phx-click={JS.add_class("hidden", to: "#search-result-suggestions")}
                 patch={~p"/forms/suggest_ecosystems?selected_project=#{project.slug}"}
-                class="block p-3 hover:bg-gray-200 rounded-xl"
+                class="block p-3 hover:bg-base-200 rounded-box"
               >
                 <.project_info project={project} />
               </.link>
@@ -236,13 +235,13 @@ defmodule SanbaseWeb.SuggestEcosystemLabelsChangeLive do
 
   def selected_project_details(assigns) do
     ~H"""
-    <div class="mt-10 min-h-48 ">
-      <div class="border border-gray-100 rounded-sm px-8 py-4">
-        <span class="flex flex-col  md:flex-row text-xl items-center">
+    <div class="mt-10 min-h-48 space-y-3">
+      <div class="card bg-base-100 border border-base-300 px-8 py-4">
+        <span class="flex flex-col md:flex-row text-xl items-center gap-2">
           Selected Asset: <img src={@selected_project.logo_url} class="m-2 size-7" />
           <.link
             href={SanbaseWeb.Endpoint.project_url(@selected_project.slug)}
-            class="text-blue-800 underline"
+            class="link link-primary"
             target="_blank"
           >
             {@selected_project.name} (#{@selected_project.ticker})
@@ -253,23 +252,29 @@ defmodule SanbaseWeb.SuggestEcosystemLabelsChangeLive do
             <span class="text-lg leading-4">Current Ecosystems:</span>
             <UserFormsComponents.ecosystems_group
               ecosystems={@selected_project.ecosystems |> Enum.map(& &1.ecosystem)}
-              ecosystem_colors_class="bg-blue-100 text-blue-800"
+              ecosystem_colors_class="badge-info"
             />
           </div>
         </div>
       </div>
-      <div :if={@new_project_ecosystems != []} class="px-8 py-4 border border-gray-100 rounded-sm">
+      <div
+        :if={@new_project_ecosystems != []}
+        class="card bg-base-100 border border-base-300 px-8 py-4"
+      >
         <span class="text-lg">Added Ecosystems:</span>
         <UserFormsComponents.ecosystems_group
           ecosystems={@new_project_ecosystems}
-          ecosystem_colors_class="bg-green-100 text-green-800"
+          ecosystem_colors_class="badge-success"
         />
       </div>
-      <div :if={@removed_project_ecosystems != []} class="px-8 py-4 border border-gray-100 rounded-sm">
+      <div
+        :if={@removed_project_ecosystems != []}
+        class="card bg-base-100 border border-base-300 px-8 py-4"
+      >
         <span class="text-lg">Removed Ecosystems:</span>
         <UserFormsComponents.ecosystems_group
           ecosystems={@removed_project_ecosystems}
-          ecosystem_colors_class="bg-red-100 text-red-800"
+          ecosystem_colors_class="badge-error"
         />
       </div>
     </div>
@@ -285,46 +290,36 @@ defmodule SanbaseWeb.SuggestEcosystemLabelsChangeLive do
         return this.search === '' || el.textContent.includes(this.search)
       }
     }">
-      <!-- Dropdown menu -->
-      <div id="dropdownSearch" class="z-10 border border-gray-100 rounded-sm">
+      <div id="dropdownSearch" class="card bg-base-100 border border-base-300">
         <div class="p-3">
           <label for="input-group-search" class="sr-only">Search</label>
-          <div>
-            <div class="relative">
-              <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none text-gray-600">
-                <.icon name="hero-magnifying-glass" />
-              </div>
-              <input
-                type="text"
-                id="input-group-search"
-                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full ps-10 p-2.5"
-                placeholder="Search ecosystem"
-                x-model="search"
-              />
-            </div>
-          </div>
+          <label class="input w-full">
+            <.icon name="hero-magnifying-glass" class="text-base-content/60" />
+            <input
+              type="text"
+              id="input-group-search"
+              placeholder="Search ecosystem"
+              x-model="search"
+            />
+          </label>
         </div>
         <ul
-          class="h-48 px-3 pb-3 overflow-y-auto text-sm text-gray-700"
+          class="h-48 px-3 pb-3 overflow-y-auto text-sm"
           aria-labelledby="dropdownSearchButton"
         >
-          <!-- li element that is shown if the search text is matching it -->
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
             <li :for={ecosystem <- @ecosystems} x-show="show_item($el)">
-              <input
-                id={"checkbox-item-#{ecosystem.id}"}
-                type="checkbox"
-                checked={project_ecosystem?(@selected_project, ecosystem)}
-                name={ecosystem.ecosystem}
-                phx-value-ecosystem={ecosystem.ecosystem}
-                phx-click="update_selected_ecosystems"
-                class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded"
-              />
-              <label
-                for={"checkbox-item-#{ecosystem.id}"}
-                class="w-full ms-2 text-sm font-medium text-gray-900 rounded"
-              >
-                {ecosystem.ecosystem}
+              <label class="label cursor-pointer justify-start gap-2">
+                <input
+                  id={"checkbox-item-#{ecosystem.id}"}
+                  type="checkbox"
+                  checked={project_ecosystem?(@selected_project, ecosystem)}
+                  name={ecosystem.ecosystem}
+                  phx-value-ecosystem={ecosystem.ecosystem}
+                  phx-click="update_selected_ecosystems"
+                  class="checkbox checkbox-sm checkbox-primary"
+                />
+                <span class="text-sm font-medium">{ecosystem.ecosystem}</span>
               </label>
             </li>
           </div>
@@ -339,10 +334,7 @@ defmodule SanbaseWeb.SuggestEcosystemLabelsChangeLive do
 
   def ecosystem_span(assigns) do
     ~H"""
-    <span class={[
-      "text-md font-medium me-2 px-2.5 py-1 rounded",
-      @class
-    ]}>
+    <span class={["badge badge-soft", @class]}>
       {@ecosystem}
     </span>
     """
@@ -371,9 +363,9 @@ defmodule SanbaseWeb.SuggestEcosystemLabelsChangeLive do
     <div class="flex flex-row items-start justify-between">
       <div>
         <span>{@project.name}</span>
-        <span class="ml-4 text-gray-500">{@project.ticker}</span>
+        <span class="ml-4 text-base-content/60">{@project.ticker}</span>
       </div>
-      <span class="text-gray-500">{@ecosystems_string}</span>
+      <span class="text-base-content/60">{@ecosystems_string}</span>
     </div>
     """
   end
@@ -395,7 +387,7 @@ defmodule SanbaseWeb.SuggestEcosystemLabelsChangeLive do
     <button
       phx-click="submit_suggestions"
       type="submit"
-      class="text-white bg-blue-700 hover:bg-blue-800 font-medium rounded-lg text-sm px-4 py-2 mt-4 disabled:bg-slate-500 disabled:cursor-not-allowed"
+      class="btn btn-primary mt-4"
       disabled={@is_disabled}
       title={
         if @is_disabled,
@@ -415,7 +407,7 @@ defmodule SanbaseWeb.SuggestEcosystemLabelsChangeLive do
       <textarea
         name="notes"
         rows="4"
-        class="block my-3 p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300"
+        class="textarea w-full my-3"
         placeholder="Tell us why these changes are proposed. You can share links, or just leave some comments."
         phx-debounce="1000"
       ></textarea>

@@ -115,16 +115,16 @@ defmodule SanbaseWeb.MetricChangelogLive do
         <h1 class="text-2xl font-bold">{@page_title}</h1>
       </div>
 
-      <div class="bg-white shadow rounded-lg p-6">
+      <div class="card bg-base-100 border border-base-300 shadow p-6">
         <div class="mb-6">
           <div class="flex justify-between items-center mb-4">
             <h3 class="text-lg font-semibold">Metrics Changelog</h3>
             <div class="text-sm">
               <span class="inline-flex items-center mr-3">
-                <span class="h-3 w-3 bg-green-500 rounded-full mr-1"></span> Newly added metrics
+                <span class="h-3 w-3 bg-success rounded-full mr-1"></span> Newly added metrics
               </span>
               <span class="inline-flex items-center">
-                <span class="h-3 w-3 bg-yellow-500 rounded-full mr-1"></span> Deprecated metrics
+                <span class="h-3 w-3 bg-warning rounded-full mr-1"></span> Deprecated metrics
               </span>
             </div>
           </div>
@@ -154,7 +154,7 @@ defmodule SanbaseWeb.MetricChangelogLive do
           :if={!@has_more && !@loading && Enum.empty?(@changelog_entries)}
           class="text-center py-10"
         >
-          <p class="text-gray-500">No changelog entries found.</p>
+          <p class="text-base-content/50">No changelog entries found.</p>
         </div>
       </div>
     </div>
@@ -169,7 +169,7 @@ defmodule SanbaseWeb.MetricChangelogLive do
   def search_form(assigns) do
     ~H"""
     <form phx-submit="search" phx-change="suggest" class="mb-4">
-      <div class="flex">
+      <div class="join w-full">
         <div class="relative flex-grow">
           <input
             type="text"
@@ -177,38 +177,19 @@ defmodule SanbaseWeb.MetricChangelogLive do
             value={@search_term}
             placeholder="Search by metric name..."
             phx-debounce="300"
-            class="w-full px-4 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="input join-item w-full"
           />
           <%= if String.length(@search_term) > 0 do %>
             <button
               type="button"
               phx-click="clear_search"
-              class="absolute inset-y-0 right-0 pr-8 flex items-center text-gray-400 hover:text-gray-600"
+              class="absolute inset-y-0 right-0 pr-3 flex items-center text-base-content/50 hover:text-base-content"
             >
-              <svg
-                class="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M6 18L18 6M6 6l12 12"
-                >
-                </path>
-              </svg>
+              <.icon name="hero-x-mark" class="size-5" />
             </button>
           <% end %>
         </div>
-        <button
-          type="submit"
-          class="px-4 py-2 bg-blue-500 text-white rounded-r-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          Search
-        </button>
+        <button type="submit" class="btn btn-primary join-item">Search</button>
       </div>
     </form>
     """
@@ -220,7 +201,7 @@ defmodule SanbaseWeb.MetricChangelogLive do
   def loading_spinner(assigns) do
     ~H"""
     <div class="flex justify-center items-center py-10">
-      <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+      <span class="loading loading-spinner loading-lg text-primary"></span>
     </div>
     """
   end
@@ -236,17 +217,15 @@ defmodule SanbaseWeb.MetricChangelogLive do
 
   def changelog_entry(assigns) do
     ~H"""
-    <div id={@id} class="border-b pb-6 last:border-b-0">
-      <h3 class="text-xl font-semibold mb-4 text-gray-800">
+    <div id={@id} class="border-b border-base-300 pb-6 last:border-b-0">
+      <h3 class="text-xl font-semibold mb-4">
         {format_date(@entry.date)}
       </h3>
 
       <div class="space-y-6">
         <div :if={length(@entry.created_metrics) > 0} class="space-y-2">
           <div class="flex items-center mb-2">
-            <span class="text-sm px-2 py-0.5 rounded-full font-medium bg-green-100 text-green-800">
-              Newly added metrics
-            </span>
+            <span class="badge badge-sm badge-success badge-soft">Newly added metrics</span>
           </div>
           <div class="space-y-2">
             <.metric_event
@@ -260,9 +239,7 @@ defmodule SanbaseWeb.MetricChangelogLive do
 
         <div :if={length(@entry.deprecated_metrics) > 0} class="space-y-2">
           <div class="flex items-center mb-2">
-            <span class="text-sm px-2 py-0.5 rounded-full font-medium bg-yellow-100 text-yellow-800">
-              Deprecated metrics
-            </span>
+            <span class="badge badge-sm badge-warning badge-soft">Deprecated metrics</span>
           </div>
           <div class="space-y-2">
             <.metric_event
@@ -289,32 +266,14 @@ defmodule SanbaseWeb.MetricChangelogLive do
 
   def metric_event(assigns) do
     ~H"""
-    <div class={"flex items-center py-2 pl-3 border-l-4 hover:bg-gray-50 #{if @type == :created, do: "border-green-500", else: "border-yellow-500"}"}>
+    <div class={"flex items-center py-2 pl-3 border-l-4 hover:bg-base-200 #{if @type == :created, do: "border-success", else: "border-warning"}"}>
       <div class="flex-grow">
         <div class="flex items-center">
-          <span class="font-medium text-blue-700 mr-2">{@metric.human_readable_name}</span>
-          <code class="text-xs bg-gray-100 px-1 py-0.5 rounded text-gray-700">{@metric.metric}</code>
+          <span class="font-medium text-primary mr-2">{@metric.human_readable_name}</span>
+          <code class="kbd kbd-xs">{@metric.metric}</code>
           <span :if={has_docs?(@metric)} class="ml-2">
-            <a
-              href={get_first_doc_link(@metric)}
-              target="_blank"
-              class="text-blue-600 hover:text-blue-800"
-            >
-              <svg
-                class="w-4 h-4 inline"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                >
-                </path>
-              </svg>
+            <a href={get_first_doc_link(@metric)} target="_blank" class="link link-primary">
+              <.icon name="hero-arrow-top-right-on-square" class="size-4 inline" />
             </a>
           </span>
         </div>

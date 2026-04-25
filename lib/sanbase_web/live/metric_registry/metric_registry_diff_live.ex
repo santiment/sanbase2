@@ -81,26 +81,23 @@ defmodule SanbaseWeb.MetricRegistryDiffLive do
   defp formatted_differences(assigns) do
     ~H"""
     <div>
-      <span class="text-amber-800 font-bold text-xl">Diff Since Last Sync</span>
-      <hr class="h-px my-2 bg-gray-200 border-0 dark:bg-gray-700" />
-      <!-- In synced status. -->
+      <span class="text-warning font-bold text-xl">Diff Since Last Sync</span>
+      <div class="divider my-2"></div>
       <div :if={@metric_registry.sync_status == "synced"}>
-        <span class="text-blue-900 font-bold text-xl">
+        <span class="text-primary font-bold text-xl">
           The metric is in Synced state!
         </span>
       </div>
-      
-    <!-- Not synced with changes -->
+
       <div :if={@metric_registry.sync_status == "not_synced" and @has_changes}>
         {@html_safe_changes}
       </div>
-      
-    <!-- Not synced, but without changes-->
+
       <div :if={@metric_registry.sync_status == "not_synced" and !@has_changes}>
-        <span class="text-blue-900 font-bold text-xl">
+        <span class="text-primary font-bold text-xl">
           No changes!
         </span>
-        <div class="max-w-2xl text-gray-800">
+        <div class="max-w-2xl">
           The metric is in not synced state, but there are no changes.
           Maybe the chain of change requests approved and undone have put the metric
           in a state that is the same as the last sync.
@@ -108,7 +105,7 @@ defmodule SanbaseWeb.MetricRegistryDiffLive do
       </div>
 
       <div :if={@metric_registry.sync_status == "synced" and @has_changes}>
-        <span class="text-blue-900 font-bold text-xl">
+        <span class="text-primary font-bold text-xl">
           You should never see this! If seen, report to backend team!
         </span>
       </div>

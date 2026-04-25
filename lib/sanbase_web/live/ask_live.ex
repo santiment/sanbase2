@@ -81,7 +81,7 @@ defmodule SanbaseWeb.AskLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="min-h-screen flex flex-col items-center justify-center bg-white">
+    <div class="min-h-screen flex flex-col items-center justify-center">
       <div class="w-full max-w-3xl flex flex-col items-center mt-10">
         <form class="w-full">
           <input
@@ -91,11 +91,11 @@ defmodule SanbaseWeb.AskLive do
             value={@question}
             placeholder="Ask a question..."
             phx-change="update_question"
-            class="border border-gray-300 rounded-lg shadow w-full text-base px-8 py-6 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white max-w-3xl"
+            class="input input-lg w-full mb-4"
           />
 
           <div class="mb-6 flex flex-wrap gap-6 justify-center">
-            <label class="flex items-center space-x-2 cursor-pointer">
+            <label class="label cursor-pointer gap-2">
               <input
                 type="checkbox"
                 phx-click="toggle_source"
@@ -103,12 +103,12 @@ defmodule SanbaseWeb.AskLive do
                 name="faq"
                 value="true"
                 checked={@sources.faq}
-                class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                class="checkbox checkbox-sm checkbox-primary"
               />
-              <span class="text-sm font-medium text-gray-700">FAQ</span>
+              <span class="text-sm font-medium">FAQ</span>
             </label>
 
-            <label class="flex items-center space-x-2 cursor-pointer">
+            <label class="label cursor-pointer gap-2">
               <input
                 type="checkbox"
                 phx-click="toggle_source"
@@ -116,12 +116,12 @@ defmodule SanbaseWeb.AskLive do
                 name="academy"
                 value="true"
                 checked={@sources.academy}
-                class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                class="checkbox checkbox-sm checkbox-primary"
               />
-              <span class="text-sm font-medium text-gray-700">Academy</span>
+              <span class="text-sm font-medium">Academy</span>
             </label>
 
-            <label class="flex items-center space-x-2 cursor-pointer">
+            <label class="label cursor-pointer gap-2">
               <input
                 type="checkbox"
                 phx-click="toggle_source"
@@ -129,9 +129,9 @@ defmodule SanbaseWeb.AskLive do
                 name="insights"
                 value="true"
                 checked={@sources.insights}
-                class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                class="checkbox checkbox-sm checkbox-primary"
               />
-              <span class="text-sm font-medium text-gray-700">Insights</span>
+              <span class="text-sm font-medium">Insights</span>
             </label>
           </div>
 
@@ -139,7 +139,7 @@ defmodule SanbaseWeb.AskLive do
             <button
               type="submit"
               phx-click="smart_search"
-              class="flex-1 bg-green-600 hover:bg-green-700 transition text-white text-xl px-6 py-4 rounded-lg font-semibold shadow"
+              class="btn btn-success btn-lg flex-1"
               phx-disable-with="Searching..."
             >
               Smart Search
@@ -147,7 +147,7 @@ defmodule SanbaseWeb.AskLive do
             <button
               type="submit"
               phx-click="ask_ai"
-              class="flex-1 bg-blue-600 hover:bg-blue-700 transition text-white text-xl px-6 py-4 rounded-lg font-semibold shadow"
+              class="btn btn-primary btn-lg flex-1"
               phx-disable-with="Answering..."
             >
               Ask Santiment AI
@@ -156,12 +156,16 @@ defmodule SanbaseWeb.AskLive do
         </form>
         <%= if @answer != "" do %>
           <div class="mt-10 w-full flex flex-col items-center">
-            <div class="bg-gray-100 rounded-lg shadow p-10 w-full max-w-3xl flex flex-col">
+            <div class="card bg-base-200 shadow p-10 w-full max-w-3xl flex flex-col">
               <h3 class="text-2xl font-bold mb-6">Answer</h3>
-              <.link :if={@answer_log_link} href={@answer_log_link} class="text-blue-600 font-bold">
+              <.link
+                :if={@answer_log_link}
+                href={@answer_log_link}
+                class="link link-primary font-bold"
+              >
                 {@answer_log_link}
               </.link>
-              <hr class="h-px my-8 bg-gray-400 border-0 " />
+              <div class="divider"></div>
 
               <div class="prose prose-lg max-w-none">
                 {Phoenix.HTML.raw(Earmark.as_html!(@answer))}

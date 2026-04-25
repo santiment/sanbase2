@@ -30,8 +30,8 @@ defmodule SanbaseWeb.CategorizationLive.PreviewSidebar do
   def render(assigns) do
     ~H"""
     <div class="flex flex-row h-screen">
-      <div class="p-3 border-b bg-white">
-        <h1 class="text-lg font-bold text-gray-800">UI Metadata Sidebar Preview</h1>
+      <div class="p-3 border-b border-base-300 bg-base-100">
+        <h1 class="text-lg font-bold">UI Metadata Sidebar Preview</h1>
         <AdminSharedComponents.nav_button
           text="Back"
           href={~p"/admin/metric_registry/categorization"}
@@ -56,15 +56,15 @@ defmodule SanbaseWeb.CategorizationLive.PreviewSidebar do
         />
 
         <div :if={@loading} class="flex-1 flex justify-center items-center">
-          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-          <p class="ml-4 text-gray-600">Loading metrics...</p>
+          <span class="loading loading-spinner loading-lg text-primary"></span>
+          <p class="ml-4 text-base-content/70">Loading metrics...</p>
         </div>
 
         <div
           :if={!@loading && @filtered_hierarchy == []}
           class="flex-1 flex justify-center items-center"
         >
-          <p class="text-gray-500">No metrics with UI metadata found matching your filters.</p>
+          <p class="text-base-content/50">No metrics with UI metadata found matching your filters.</p>
         </div>
       </div>
     </div>
@@ -114,19 +114,11 @@ defmodule SanbaseWeb.CategorizationLive.PreviewSidebar do
         class="min-w-[150px]"
       />
 
-      <button
-        type="button"
-        phx-click="expand_all"
-        class="px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 whitespace-nowrap"
-      >
-        <.icon name="hero-chevron-down" class="w-3 h-3 inline" /> Expand
+      <button type="button" phx-click="expand_all" class="btn btn-xs btn-soft whitespace-nowrap">
+        <.icon name="hero-chevron-down" class="size-3" /> Expand
       </button>
-      <button
-        type="button"
-        phx-click="collapse_all"
-        class="px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 whitespace-nowrap"
-      >
-        <.icon name="hero-chevron-up" class="w-3 h-3 inline" /> Collapse
+      <button type="button" phx-click="collapse_all" class="btn btn-xs btn-soft whitespace-nowrap">
+        <.icon name="hero-chevron-up" class="size-3" /> Collapse
       </button>
     </.simple_form>
     """
@@ -138,7 +130,7 @@ defmodule SanbaseWeb.CategorizationLive.PreviewSidebar do
 
   def sidebar(assigns) do
     ~H"""
-    <aside class="w-80 bg-gray-50 border-r overflow-y-auto">
+    <aside class="w-80 bg-base-200 border-r border-base-300 overflow-y-auto">
       <nav class="p-2">
         <div :for={category <- @filtered_hierarchy} class="mb-1">
           <.category_item
@@ -165,12 +157,12 @@ defmodule SanbaseWeb.CategorizationLive.PreviewSidebar do
       <button
         phx-click="toggle_category"
         phx-value-id={@category.id}
-        class="w-full flex items-center justify-between px-3 py-2 text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100"
+        class="w-full flex items-center justify-between px-3 py-2 text-sm font-semibold bg-base-100 border border-base-300 rounded-box hover:bg-base-200"
       >
         <span>{@category.name}</span>
         <.icon
           name={if @is_expanded, do: "hero-chevron-down", else: "hero-chevron-right"}
-          class="w-4 h-4"
+          class="size-4"
         />
       </button>
 
@@ -205,12 +197,12 @@ defmodule SanbaseWeb.CategorizationLive.PreviewSidebar do
       <button
         phx-click="toggle_group"
         phx-value-id={@group.id}
-        class="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-gray-800 bg-gray-100 border border-gray-200 rounded hover:bg-gray-200"
+        class="w-full flex items-center justify-between px-3 py-2 text-sm font-medium bg-base-200 border border-base-300 rounded-box hover:bg-base-300"
       >
         <span>{@group.name}</span>
         <.icon
           name={if @is_expanded, do: "hero-chevron-down", else: "hero-chevron-right"}
-          class="w-4 h-4"
+          class="size-4"
         />
       </button>
 
@@ -235,7 +227,7 @@ defmodule SanbaseWeb.CategorizationLive.PreviewSidebar do
     assigns = assign(assigns, :display_name, display_name)
 
     ~H"""
-    <div class="px-3 py-2 text-sm text-gray-700 bg-white border border-gray-200 rounded hover:bg-blue-50">
+    <div class="px-3 py-2 text-sm bg-base-100 border border-base-300 rounded-box hover:bg-info/10">
       {@display_name}
     </div>
     """

@@ -7,21 +7,15 @@ const path = require("path")
 
 module.exports = {
   content: [
-    "./node_modules/flowbite/**/*.js",
     "./js/**/*.js",
     "../lib/*_web.ex",
     "../lib/*_web/**/*.*ex",
   ],
   theme: {
-    extend: {
-      colors: {
-        brand: "#FD4F00",
-      }
-    },
+    extend: {}
   },
   safelist: [],
   plugins: [
-    require('flowbite/plugin'),
     require('@tailwindcss/typography'),
     // phx-submit-loading variant is registered CSS-side via @custom-variant in app.css.
     // Other phx-* variants (phx-no-feedback, phx-click-loading, phx-change-loading)

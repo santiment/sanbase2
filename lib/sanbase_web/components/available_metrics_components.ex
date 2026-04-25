@@ -31,7 +31,8 @@ defmodule SanbaseWeb.AvailableMetricsComponents do
   end
 
   @doc ~s"""
-
+  Hover/click popover backed by DaisyUI `dropdown`. Renders a hint trigger
+  and a card-styled body. Replaces the Flowbite `data-popover-*` component.
   """
   attr :display_text, :string, required: true
   attr :popover_target, :string, required: true
@@ -40,23 +41,29 @@ defmodule SanbaseWeb.AvailableMetricsComponents do
   attr :popover_class, :string, default: nil
 
   def popover(assigns) do
+    placement_class =
+      case assigns.popover_placement do
+        "top" -> "dropdown-top"
+        "bottom" -> "dropdown-bottom"
+        "left" -> "dropdown-left"
+        _ -> "dropdown-right"
+      end
+
+    assigns = assign(assigns, :placement_class, placement_class)
+
     ~H"""
-    <div class="relative">
-      <div
-        data-popover-target={@popover_target}
-        data-popover-style="light"
-        data-popover-placement={@popover_placement}
-      >
-        <span class="border-b border-dotted border-gray-500 hover:cursor-help hover:text-blue-500 hover:border-blue-500">
+    <div class={["dropdown dropdown-hover", @placement_class]}>
+      <div tabindex="0" role="button" class="cursor-help">
+        <span class="border-b border-dotted border-gray-500 hover:text-blue-500 hover:border-blue-500">
           {@display_text}
         </span>
       </div>
 
       <div
         id={@popover_target}
-        role="tooltip"
+        tabindex="0"
         class={[
-          "absolute max-h-[580px] min-w-[860px] overflow-y-auto z-10 invisible inline-block px-8 py-6 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg shadow-2xl sans",
+          "dropdown-content card card-compact bg-base-100 border border-base-300 shadow-2xl z-10 max-h-[580px] min-w-[860px] overflow-y-auto px-8 py-6 text-sm font-medium text-gray-600",
           @popover_class
         ]}
       >

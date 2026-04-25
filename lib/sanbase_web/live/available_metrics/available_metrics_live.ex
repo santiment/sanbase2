@@ -187,31 +187,28 @@ defmodule SanbaseWeb.AvailableMetricsLive do
 
   def checkbox_with_popover(assigns) do
     ~H"""
-    <div class="relative flex items-center">
-      <input
-        id={@input_id}
-        type="checkbox"
-        name={@input_name}
-        checked={@input_checked}
-        class="w-4 h-4 border-gray-300 rounded hover:cursor-pointer"
-        data-popover-target={@popover_target}
-        data-popover-style="light"
-      />
-      <label
-        for={@input_id}
-        class="ms-2 text-sm font-medium text-gray-900 border-b border-dotted hover:cursor-pointer"
-        data-popover-target={@popover_target}
-        data-popover-style="light"
-      >
-        {@input_label}
-      </label>
+    <div class="dropdown dropdown-hover dropdown-bottom flex items-center">
+      <div tabindex="0" class="flex items-center">
+        <input
+          id={@input_id}
+          type="checkbox"
+          name={@input_name}
+          checked={@input_checked}
+          class="checkbox checkbox-sm hover:cursor-pointer"
+        />
+        <label
+          for={@input_id}
+          class="ms-2 text-sm font-medium text-gray-900 border-b border-dotted hover:cursor-pointer"
+        >
+          {@input_label}
+        </label>
+      </div>
       <div
         id={@popover_target}
-        role="tooltip"
-        class="absolute top-4 right-10 z-10 w-80 text-justify invisible inline-block px-8 py-6 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg shadow-sm opacity-0 popover sans"
+        tabindex="0"
+        class="dropdown-content card card-compact bg-base-100 border border-base-300 shadow-2xl z-10 w-80 text-justify px-8 py-6 text-sm font-medium text-gray-600"
       >
         <span>{@popover_text}</span>
-        <div class="popover-arrow" data-popper-arrow></div>
       </div>
     </div>
     """

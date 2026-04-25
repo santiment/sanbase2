@@ -1,5 +1,4 @@
 <div
-  class="drawer min-h-screen"
   x-data="{
     collapsed: localStorage.getItem('admin-sidebar-collapsed') === 'true',
     toggle() {
@@ -7,57 +6,66 @@
       localStorage.setItem('admin-sidebar-collapsed', this.collapsed);
     }
   }"
-  x-effect="collapsed ? $el.classList.remove('lg:drawer-open') : $el.classList.add('lg:drawer-open')"
 >
-  <input id="admin-sidebar-toggle" type="checkbox" class="drawer-toggle" />
+  <div
+    class="drawer min-h-screen"
+    x-effect="collapsed ? $el.classList.remove('lg:drawer-open') : $el.classList.add('lg:drawer-open')"
+  >
+    <input id="admin-sidebar-toggle" type="checkbox" class="drawer-toggle" />
 
-  <div class="drawer-content flex flex-col min-h-screen">
-    <div class="navbar bg-primary text-primary-content shadow-sm">
-      <div class="flex-1">
-        <label
-          for="admin-sidebar-toggle"
-          class="btn btn-ghost btn-square lg:hidden"
-          aria-label="Open sidebar"
-        >
-          <.icon name="hero-bars-3" class="size-6" />
-        </label>
-        <button
-          type="button"
-          x-on:click="toggle()"
-          class="btn btn-ghost btn-square hidden lg:inline-flex"
-          aria-label="Toggle sidebar"
-        >
-          <.icon name="hero-bars-3" class="size-6" />
-        </button>
-        <.link href={~p"/admin"} class="btn btn-ghost normal-case">
-          <.icon name="hero-home" class="size-5" /> Admin Home
-        </.link>
+    <div class="drawer-content flex flex-col min-h-screen">
+      <div class="navbar bg-primary text-primary-content shadow-sm">
+        <div class="flex-1">
+          <label
+            for="admin-sidebar-toggle"
+            class="btn btn-ghost btn-square lg:hidden"
+            aria-label="Open sidebar"
+          >
+            <.icon name="hero-bars-3" class="size-6" />
+          </label>
+          <button
+            type="button"
+            x-on:click="toggle()"
+            class="btn btn-ghost btn-square hidden lg:inline-flex"
+            aria-label="Toggle sidebar"
+          >
+            <.icon name="hero-bars-3" class="size-6" />
+          </button>
+          <.link href={~p"/admin"} class="btn btn-ghost normal-case">
+            <.icon name="hero-home" class="size-5" /> Admin Home
+          </.link>
+        </div>
+        <div class="flex-none">
+          <.theme_toggle />
+        </div>
       </div>
-      <div class="flex-none">
-        <.theme_toggle />
+
+      <div class="flex-1 flex flex-col min-h-0 overflow-hidden">
+        <.flash_group flash={@flash} />
+        {@inner_content}
       </div>
     </div>
 
-    <div class="flex-1 flex flex-col min-h-0 overflow-hidden">
-      <.flash_group flash={@flash} />
-      {@inner_content}
-    </div>
+    <aside class="drawer-side z-40" aria-label="Sidebar">
+      <label for="admin-sidebar-toggle" aria-label="close sidebar" class="drawer-overlay"></label>
+
+      <div class="bg-base-300 min-h-full w-64 border-r border-base-content/10 pt-14">
+        <ul class="menu menu-sm w-full px-2 py-3 gap-0.5 font-medium">
+          <li :for={{name, path} <- @routes}>
+            <a href={path} title={name} class="truncate">
+              {name}
+            </a>
+          </li>
+        </ul>
+      </div>
+    </aside>
   </div>
 
-  <aside class="drawer-side z-40" aria-label="Sidebar">
-    <label for="admin-sidebar-toggle" aria-label="close sidebar" class="drawer-overlay"></label>
-
-    <div class="bg-base-300 min-h-full w-64 border-r border-base-content/10">
-      <div class="p-3 border-b border-base-content/10">
-        {live_render(@conn, SanbaseWeb.LiveSearch)}
-      </div>
-      <ul class="menu menu-sm w-full px-2 py-3 gap-0.5 font-medium">
-        <li :for={{name, path} <- @routes}>
-          <a href={path} title={name} class="truncate">
-            {name}
-          </a>
-        </li>
-      </ul>
-    </div>
-  </aside>
+  <div
+    class="hidden lg:block fixed top-3 left-3 w-[232px] z-50"
+    x-show="!collapsed"
+    x-cloak
+  >
+    {live_render(@conn, SanbaseWeb.LiveSearch)}
+  </div>
 </div>

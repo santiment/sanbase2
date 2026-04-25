@@ -14,7 +14,7 @@ defmodule SanbaseWeb.LiveSearch do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="relative">
+    <div class="relative w-full">
       <label class="input input-sm w-full">
         <.icon name="hero-magnifying-glass" class="size-4 opacity-60" />
         <input
@@ -33,7 +33,7 @@ defmodule SanbaseWeb.LiveSearch do
       <ul
         :if={@routes != []}
         id="search-result-suggestions"
-        class="menu fixed top-14 left-3 w-72 max-h-[70vh] overflow-y-auto overflow-x-hidden z-50 bg-base-100 border border-base-300 rounded-box shadow-xl flex-nowrap"
+        class="menu absolute top-full left-0 mt-1 w-96 max-w-[90vw] max-h-[70vh] overflow-y-auto overflow-x-hidden z-50 bg-base-100 text-base-content border border-base-300 rounded-box shadow-xl flex-nowrap"
       >
         <li :for={{name, path} <- @routes} class="w-full">
           <a href={path} title={name} class="!block truncate w-full">

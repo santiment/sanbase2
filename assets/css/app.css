@@ -26,6 +26,8 @@
 
 @custom-variant phx-submit-loading (.phx-submit-loading &);
 
+[x-cloak] { display: none !important; }
+
 .table-responsive {
   display: block;
   width: 100%;

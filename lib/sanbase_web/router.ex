@@ -255,6 +255,9 @@ defmodule SanbaseWeb.Router do
     get("/", GenericAdminController, :home)
     get("/generic/search", GenericAdminController, :search)
     get("/generic/show_action", GenericAdminController, :show_action)
+
+    live "/promo_trials/new", Admin.PromoTrialLive.Form, :new
+
     resources("/generic", GenericAdminController)
 
     live("/ses_events", Admin.SesEventsLive)

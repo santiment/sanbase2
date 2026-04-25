@@ -102,6 +102,10 @@ defmodule SanbaseWeb.GenericAdminController do
     render(conn, "error.html")
   end
 
+  def new(%Plug.Conn{} = conn, %{"resource" => "promo_trials"}) do
+    Phoenix.Controller.redirect(conn, to: "/admin/promo_trials/new")
+  end
+
   def new(%Plug.Conn{} = conn, %{"resource" => resource} = params) do
     module = module_from_resource(conn, resource)
     changeset = module.changeset(struct(module), %{})

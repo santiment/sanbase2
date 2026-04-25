@@ -32,8 +32,8 @@ defmodule SanbaseWeb.MetricDetailsLive do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col justify-center w-7/8">
-      <h1 class="text-gray-800 text-2xl">
-        Showing details for <span class="text-blue-700">{@metric}</span>
+      <h1 class="text-2xl">
+        Showing details for <span class="text-primary">{@metric}</span>
       </h1>
       <div class="my-4">
         <AvailableMetricsComponents.available_metrics_button
@@ -43,7 +43,7 @@ defmodule SanbaseWeb.MetricDetailsLive do
         />
       </div>
       <%= if @error do %>
-        <div class="text-red-600">
+        <div class="text-error">
           Error: {@error}
         </div>
       <% else %>

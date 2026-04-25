@@ -105,8 +105,8 @@ defmodule SanbaseWeb.UserStatsLive do
   defp page_header(assigns) do
     ~H"""
     <div class="mb-8">
-      <h1 class="text-3xl font-bold text-gray-900">Inactive Users</h1>
-      <p class="text-gray-600 mt-2">Find and export users based on activity patterns</p>
+      <h1 class="text-3xl font-bold">Inactive Users</h1>
+      <p class="text-base-content/60 mt-2">Find and export users based on activity patterns</p>
     </div>
     """
   end

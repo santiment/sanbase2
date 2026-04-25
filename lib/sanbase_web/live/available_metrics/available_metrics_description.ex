@@ -45,7 +45,7 @@ defmodule SanbaseWeb.AvailableMetricsDescription do
     The database tables are accessed through Santiment Queries when the
     user interacts with the data via SQL.
 
-    How to use Santiment Queries, check <.link href={"https://academy.santiment.net/santiment-queries"} class="underline text-blue-600">this link</.link>
+    How to use Santiment Queries, check <.link href={"https://academy.santiment.net/santiment-queries"} class="link link-primary">this link</.link>
     </pre>
     """
   end
@@ -74,7 +74,7 @@ defmodule SanbaseWeb.AvailableMetricsDescription do
     <pre>
     The minimum interval at which the metric is updated.
 
-    For more details check <.link href="https://academy.santiment.net/metrics/details/frequency" class="underline text-blue-600">this link</.link>
+    For more details check <.link href="https://academy.santiment.net/metrics/details/frequency" class="link link-primary">this link</.link>
     </pre>
     """
   end
@@ -384,8 +384,8 @@ defmodule SanbaseWeb.AvailableMetricsDescription do
     restricted based on the subscription plan of the user.
 
     To see how much of the historical and realtime data is restricted, check the restrictions
-    at the <.link class="underline text-blue-600" href="https://app.santiment.net/pricing?plans=business">pricing page</.link>.
-    The documentation about the restriction is avaialble at <.link class="underline text-blue-600" href="https://academy.santiment.net/sanapi/historical-and-realtime-data-restrictions">this Academy page</.link>.
+    at the <.link class="link link-primary" href="https://app.santiment.net/pricing?plans=business">pricing page</.link>.
+    The documentation about the restriction is avaialble at <.link class="link link-primary" href="https://academy.santiment.net/sanapi/historical-and-realtime-data-restrictions">this Academy page</.link>.
     </pre>
     """
   end

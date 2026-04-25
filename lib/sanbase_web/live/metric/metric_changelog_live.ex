@@ -277,7 +277,7 @@ defmodule SanbaseWeb.MetricChangelogLive do
             </a>
           </span>
         </div>
-        <div :if={@note && @type == :deprecated} class="mt-1 text-sm text-yellow-700">
+        <div :if={@note && @type == :deprecated} class="mt-1 text-sm text-warning">
           <span class="font-medium">Note:</span> {@note}
         </div>
       </div>

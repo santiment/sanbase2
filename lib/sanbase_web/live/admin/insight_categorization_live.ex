@@ -256,33 +256,23 @@ defmodule SanbaseWeb.Admin.InsightCategorizationLive do
   def render(assigns) do
     ~H"""
     <div class="p-6 max-w-7xl mx-auto">
-      <h1 class="text-3xl font-bold text-gray-900 mb-6">Insight Categorization</h1>
+      <h1 class="text-3xl font-bold mb-6">Insight Categorization</h1>
 
       <div class="mb-6 flex items-center gap-4">
-        <div class="flex gap-2 mr-2">
+        <div role="tablist" class="tabs tabs-boxed mr-2">
           <button
+            role="tab"
             phx-click="toggle_search_mode"
             phx-value-mode="keyword"
-            class={[
-              "px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-              if(@search_mode == "keyword",
-                do: "bg-blue-600 text-white",
-                else: "bg-gray-200 text-gray-700 hover:bg-gray-300"
-              )
-            ]}
+            class={["tab", @search_mode == "keyword" && "tab-active"]}
           >
             Keyword
           </button>
           <button
+            role="tab"
             phx-click="toggle_search_mode"
             phx-value-mode="semantic"
-            class={[
-              "px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-              if(@search_mode == "semantic",
-                do: "bg-blue-600 text-white",
-                else: "bg-gray-200 text-gray-700 hover:bg-gray-300"
-              )
-            ]}
+            class={["tab", @search_mode == "semantic" && "tab-active"]}
           >
             Semantic
           </button>
@@ -299,118 +289,100 @@ defmodule SanbaseWeb.Admin.InsightCategorizationLive do
                 else: "Search insights by title or content..."
               )
             }
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="input input-md w-full"
           />
         </form>
 
         <form :if={@search_mode == "keyword"} phx-change="sort" id="sort-by-form">
-          <select name="sort_by" class="px-4 py-2 border border-gray-300 rounded-lg">
+          <select name="sort_by" class="select select-md">
             <option value="published_at" selected={@sort_by == "published_at"}>Published Date</option>
             <option value="title" selected={@sort_by == "title"}>Title</option>
           </select>
         </form>
 
         <form :if={@search_mode == "keyword"} phx-change="sort" id="sort-order-form">
-          <select name="sort_order" class="px-4 py-2 border border-gray-300 rounded-lg">
+          <select name="sort_order" class="select select-md">
             <option value="desc" selected={@sort_order == "desc"}>Descending</option>
             <option value="asc" selected={@sort_order == "asc"}>Ascending</option>
           </select>
         </form>
       </div>
 
-      <div class="mb-4 flex items-center justify-between text-sm text-gray-600">
+      <div class="mb-4 flex items-center justify-between text-sm text-base-content/70">
         <div>
           <span class="font-medium">Total:</span> {@total_count}
           <span :if={@search_mode == "keyword"} class="mx-2">•</span>
           <span :if={@search_mode == "keyword"}>Page {@page} of {@total_pages}</span>
           <span :if={@search_mode == "semantic"} class="mx-2">•</span>
-          <span :if={@search_mode == "semantic"} class="text-blue-600 font-medium">
+          <span :if={@search_mode == "semantic"} class="text-primary font-medium">
             Semantic Search
           </span>
         </div>
-        <button
-          phx-click="load_stats"
-          phx-disable-with="Loading..."
-          class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm"
-        >
+        <button phx-click="load_stats" phx-disable-with="Loading..." class="btn btn-sm btn-secondary">
           Load Stats
         </button>
       </div>
 
-      <div :if={@show_stats && @stats} class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-        <h3 class="text-lg font-semibold text-gray-900 mb-3">Categorization Stats</h3>
+      <div
+        :if={@show_stats && @stats}
+        class="mb-6 p-4 bg-base-200 rounded-box border border-base-300"
+      >
+        <h3 class="text-lg font-semibold mb-3">Categorization Stats</h3>
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          <div class="bg-white p-3 rounded-lg shadow-sm border border-gray-100">
-            <div class="text-2xl font-bold text-purple-600">{@stats.total_categorized}</div>
-            <div class="text-sm text-gray-600">Total Categorized</div>
+          <div class="card bg-base-100 border border-base-300 p-3">
+            <div class="text-2xl font-bold text-secondary">{@stats.total_categorized}</div>
+            <div class="text-sm text-base-content/70">Total Categorized</div>
           </div>
           <div
             :for={cat <- @stats.by_category}
-            class="bg-white p-3 rounded-lg shadow-sm border border-gray-100"
+            class="card bg-base-100 border border-base-300 p-3"
           >
-            <div class="text-2xl font-bold text-blue-600">{cat.count}</div>
-            <div class="text-sm text-gray-600">{cat.category_name}</div>
+            <div class="text-2xl font-bold text-primary">{cat.count}</div>
+            <div class="text-sm text-base-content/70">{cat.category_name}</div>
           </div>
         </div>
       </div>
 
-      <div class="bg-white shadow rounded-lg overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
+      <div class="rounded-box border border-base-300 overflow-hidden">
+        <table class="table table-zebra table-sm">
+          <thead>
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Title
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Author
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Published
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Categories
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
+              <th>Title</th>
+              <th>Author</th>
+              <th>Published</th>
+              <th>Categories</th>
+              <th>Actions</th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
+          <tbody>
             <tr
               :for={post <- @posts}
               id={"post-#{post.id}"}
-              class="hover:bg-gray-50 cursor-pointer"
+              class="cursor-pointer"
               phx-click="select_post"
               phx-value-post_id={post.id}
             >
-              <td class="px-6 py-4 whitespace-nowrap">
+              <td>
                 <.link
                   navigate={~p"/admin/generic/#{post.id}?resource=posts"}
-                  class="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                  class="text-sm font-medium link link-primary"
                   phx-click="noop"
                 >
-                  {String.slice(post.title || "", 0..50)}
-                  {if String.length(post.title || "") > 50, do: "..."}
+                  {String.slice(post.title || "", 0..50)}{if String.length(post.title || "") > 50,
+                    do: "..."}
                 </.link>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm text-gray-900">{post.user.email}</div>
+              <td class="text-sm">{post.user.email}</td>
+              <td class="text-sm text-base-content/60">
+                {if post.published_at, do: Calendar.strftime(post.published_at, "%Y-%m-%d")}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm text-gray-500">
-                  {if post.published_at, do: Calendar.strftime(post.published_at, "%Y-%m-%d")}
-                </div>
-              </td>
-              <td class="px-6 py-4">
+              <td>
                 <div class="flex flex-wrap gap-1">
                   <span
                     :for={mapping <- post.category_mappings}
                     class={[
-                      "px-2 py-1 text-xs rounded",
-                      if(mapping.source == "human",
-                        do: "bg-green-100 text-green-800",
-                        else: "bg-blue-100 text-blue-800"
-                      )
+                      "badge badge-sm",
+                      if(mapping.source == "human", do: "badge-success", else: "badge-info")
                     ]}
                   >
                     {mapping.category_name}
@@ -418,11 +390,11 @@ defmodule SanbaseWeb.Admin.InsightCategorizationLive do
                   </span>
                 </div>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm">
+              <td>
                 <button
                   phx-click="auto_categorize"
                   phx-value-post_id={post.id}
-                  class="text-blue-600 hover:text-blue-900"
+                  class="link link-primary text-sm"
                 >
                   Auto-categorize
                 </button>
@@ -433,116 +405,80 @@ defmodule SanbaseWeb.Admin.InsightCategorizationLive do
       </div>
 
       <div :if={@search_mode == "keyword"} class="mt-4 flex items-center justify-between">
-        <button
-          phx-click="prev_page"
-          disabled={@page == 1}
-          class={[
-            "px-4 py-2 rounded border",
-            if(@page == 1,
-              do: "text-gray-400 border-gray-200 cursor-not-allowed",
-              else: "text-gray-700 border-gray-300 hover:bg-gray-50"
-            )
-          ]}
-        >
+        <button phx-click="prev_page" disabled={@page == 1} class="btn btn-sm btn-soft">
           Previous
         </button>
-        <span class="text-sm text-gray-600">
+        <span class="text-sm text-base-content/70">
           Page {@page} of {@total_pages}
         </span>
         <button
           phx-click="next_page"
           disabled={@page == @total_pages}
-          class={[
-            "px-4 py-2 rounded border",
-            if(@page == @total_pages,
-              do: "text-gray-400 border-gray-200 cursor-not-allowed",
-              else: "text-gray-700 border-gray-300 hover:bg-gray-50"
-            )
-          ]}
+          class="btn btn-sm btn-soft"
         >
           Next
         </button>
       </div>
     </div>
 
-    <div :if={@selected_post}>
-      <div
-        class="fixed inset-0 bg-gray-600/50 overflow-y-auto h-full w-full z-50"
-        id="modal-backdrop"
-        phx-click="close_modal"
-      >
-        <div
-          class="relative top-20 mx-auto p-5 border w-11/12 max-w-3xl shadow-lg rounded-md bg-white"
-          phx-click="noop"
-        >
-          <div class="mt-3">
-            <div class="flex justify-between items-center mb-4">
-              <h3 class="text-lg font-medium text-gray-900">{@selected_post.title}</h3>
-              <button
-                type="button"
-                phx-click="close_modal"
-                class="text-gray-400 hover:text-gray-600"
-                aria-label="Close modal"
-              >
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
+    <div :if={@selected_post} class="modal modal-open">
+      <div class="modal-box max-w-3xl" phx-click="noop">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-medium">{@selected_post.title}</h3>
+          <button
+            type="button"
+            phx-click="close_modal"
+            class="btn btn-sm btn-ghost btn-circle"
+            aria-label="Close modal"
+          >
+            <.icon name="hero-x-mark" class="size-5" />
+          </button>
+        </div>
 
-            <div class="mb-4">
-              <p class="text-sm text-gray-600 mb-2">
-                <strong>Author:</strong> {@selected_post.user.email}
-              </p>
-              <p class="text-sm text-gray-600 mb-4">
-                <strong>Published:</strong>{" "}
-                {if @selected_post.published_at,
-                  do: Calendar.strftime(@selected_post.published_at, "%Y-%m-%d %H:%M"),
-                  else: "N/A"}
-              </p>
-            </div>
+        <div class="mb-4">
+          <p class="text-sm text-base-content/70 mb-2">
+            <strong>Author:</strong> {@selected_post.user.email}
+          </p>
+          <p class="text-sm text-base-content/70 mb-4">
+            <strong>Published:</strong>{" "}
+            {if @selected_post.published_at,
+              do: Calendar.strftime(@selected_post.published_at, "%Y-%m-%d %H:%M"),
+              else: "N/A"}
+          </p>
+        </div>
 
-            <div class="mb-6">
-              <h4 class="text-sm font-medium text-gray-700 mb-2">Content:</h4>
-              <div class="prose max-w-none text-sm text-gray-700 whitespace-pre-wrap">
-                {@selected_post.text}
-              </div>
-            </div>
-
-            <form phx-submit="save_categories" class="mb-4" phx-click="noop">
-              <input type="hidden" name="post_id" value={@selected_post.id} />
-              <h4 class="text-sm font-medium text-gray-700 mb-3">Categories:</h4>
-              <div class="space-y-2">
-                <label
-                  :for={category <- @all_categories}
-                  class="flex items-center space-x-2 cursor-pointer"
-                  phx-click="noop"
-                >
-                  <input
-                    type="checkbox"
-                    name="category_ids[]"
-                    value={category.id}
-                    checked={Enum.any?(@post_categories, fn m -> m.category_id == category.id end)}
-                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span class="text-sm text-gray-700">{category.name}</span>
-                </label>
-              </div>
-              <button
-                type="submit"
-                class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                Save Categories
-              </button>
-            </form>
+        <div class="mb-6">
+          <h4 class="text-sm font-medium mb-2">Content:</h4>
+          <div class="prose max-w-none text-sm whitespace-pre-wrap">
+            {@selected_post.text}
           </div>
         </div>
+
+        <form phx-submit="save_categories" class="mb-4" phx-click="noop">
+          <input type="hidden" name="post_id" value={@selected_post.id} />
+          <h4 class="text-sm font-medium mb-3">Categories:</h4>
+          <div class="space-y-2">
+            <label
+              :for={category <- @all_categories}
+              class="label cursor-pointer justify-start gap-2"
+              phx-click="noop"
+            >
+              <input
+                type="checkbox"
+                name="category_ids[]"
+                value={category.id}
+                checked={Enum.any?(@post_categories, fn m -> m.category_id == category.id end)}
+                class="checkbox checkbox-sm checkbox-primary"
+              />
+              <span class="label-text">{category.name}</span>
+            </label>
+          </div>
+          <button type="submit" class="btn btn-sm btn-primary mt-4">
+            Save Categories
+          </button>
+        </form>
       </div>
+      <div class="modal-backdrop" phx-click="close_modal"></div>
     </div>
     """
   end

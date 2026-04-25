@@ -43,6 +43,17 @@ topbar.config({ barColors: { 0: "#29d" }, shadowColor: "rgba(0, 0, 0, .3)" })
 window.addEventListener("phx:page-loading-start", _info => topbar.show(300))
 window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
 
+// Native <dialog class="modal"> open/close. CoreComponents.show_modal/2 and
+// hide_modal/2 dispatch these events on the dialog element.
+window.addEventListener("phx:show-modal", e => {
+  const el = e.target
+  if (el && typeof el.showModal === "function" && !el.open) el.showModal()
+})
+window.addEventListener("phx:hide-modal", e => {
+  const el = e.target
+  if (el && typeof el.close === "function" && el.open) el.close()
+})
+
 // connect if there are any LiveViews on the page
 liveSocket.connect()
 

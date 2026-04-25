@@ -1,18 +1,11 @@
 defmodule SanbaseWeb.CoreComponents do
   @moduledoc """
-  Provides core UI components.
+  Provides core UI components built on DaisyUI.
 
-  At first glance, this module may seem daunting, but its goal is to provide
-  core building blocks for your application, such as modals, tables, and
-  forms. The components consist mostly of markup and are well-documented
-  with doc strings and declarative assigns. You may customize and style
-  them in any way you want, based on your application growth and needs.
-
-  The default components use Tailwind CSS, a utility-first CSS framework.
-  See the [Tailwind CSS documentation](https://tailwindcss.com) to learn
-  how to customize them or feel free to swap in another framework altogether.
-
-  Icons are provided by [heroicons](https://heroicons.com). See `icon/1` for usage.
+  Modals render as native `<dialog class="modal">`, buttons as `btn`,
+  inputs/selects/textareas/checkboxes use the DaisyUI primitives, tables
+  use `table`, flashes use `alert` inside `toast`. Heroicons are still
+  rendered via the `<.icon name="hero-..." />` mask-image plugin.
   """
   use Phoenix.Component
 
@@ -20,21 +13,11 @@ defmodule SanbaseWeb.CoreComponents do
   use Gettext, backend: SanbaseWeb.Gettext
 
   @doc """
-  Renders a modal.
+  Renders a native `<dialog class="modal">`.
 
-  ## Examples
-
-      <.modal id="confirm-modal">
-        This is a modal.
-      </.modal>
-
-  JS commands may be passed to the `:on_cancel` to configure
-  the closing/cancel event, for example:
-
-      <.modal id="confirm" on_cancel={JS.navigate(~p"/posts")}>
-        This is another modal.
-      </.modal>
-
+  Use `show_modal/2` and `hide_modal/2` to control visibility from JS commands.
+  Both helpers dispatch DOM events that are handled by the listeners in
+  `assets/js/app.js`.
   """
   attr(:id, :string, required: true)
   attr(:show, :boolean, default: false)
@@ -44,59 +27,36 @@ defmodule SanbaseWeb.CoreComponents do
 
   def modal(assigns) do
     ~H"""
-    <div
+    <dialog
       id={@id}
+      class="modal"
       phx-mounted={@show && show_modal(@id)}
       phx-remove={hide_modal(@id)}
       data-cancel={JS.exec(@on_cancel, "phx-remove")}
-      class="relative z-50 hidden"
     >
-      <div id={"#{@id}-bg"} class="bg-zinc-50/90 fixed inset-0 transition-opacity" aria-hidden="true" />
-      <div
-        class="fixed inset-0 overflow-y-auto"
-        aria-labelledby={"#{@id}-title"}
-        aria-describedby={"#{@id}-description"}
-        role="dialog"
-        aria-modal="true"
-        tabindex="0"
-      >
-        <div class="flex min-h-full items-center justify-center">
-          <div class={["w-full p-4 sm:p-6 lg:py-8", @max_modal_width]}>
-            <.focus_wrap
-              id={"#{@id}-container"}
-              phx-window-keydown={JS.exec("data-cancel", to: "##{@id}")}
-              phx-key="escape"
-              phx-click-away={JS.exec("data-cancel", to: "##{@id}")}
-              class="shadow-zinc-700/10 ring-zinc-700/10 relative hidden rounded-2xl bg-white p-14 shadow-lg ring-1 transition"
-            >
-              <div class="absolute top-6 right-5">
-                <button
-                  phx-click={JS.exec("data-cancel", to: "##{@id}")}
-                  type="button"
-                  class="-m-3 flex-none p-3 opacity-20 hover:opacity-40"
-                  aria-label={gettext("close")}
-                >
-                  <.icon name="hero-x-mark-solid" class="h-5 w-5" />
-                </button>
-              </div>
-              <div id={"#{@id}-content"}>
-                {render_slot(@inner_block)}
-              </div>
-            </.focus_wrap>
-          </div>
+      <div class={["modal-box w-full", @max_modal_width]}>
+        <form method="dialog" class="absolute right-2 top-2">
+          <button
+            type="submit"
+            class="btn btn-sm btn-circle btn-ghost"
+            aria-label={gettext("close")}
+          >
+            <.icon name="hero-x-mark-solid" class="size-4" />
+          </button>
+        </form>
+        <div id={"#{@id}-content"}>
+          {render_slot(@inner_block)}
         </div>
       </div>
-    </div>
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
     """
   end
 
   @doc """
   Renders flash notices.
-
-  ## Examples
-
-      <.flash kind={:info} flash={@flash} />
-      <.flash kind={:info} phx-mounted={show("#flash")}>Welcome Back!</.flash>
   """
   attr(:id, :string, doc: "the optional id of flash container")
   attr(:flash, :map, default: %{}, doc: "the map of flash messages to display")
@@ -116,20 +76,20 @@ defmodule SanbaseWeb.CoreComponents do
       phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
       role="alert"
       class={[
-        "fixed top-2 right-2 mr-2 w-80 sm:w-96 z-50 rounded-lg p-3 ring-1",
-        @kind == :info && "bg-emerald-50 text-emerald-800 ring-emerald-500 fill-cyan-900",
-        @kind == :error && "bg-rose-50 text-rose-900 shadow-md ring-rose-500 fill-rose-900"
+        "alert w-80 sm:w-96 shadow-lg",
+        @kind == :info && "alert-success",
+        @kind == :error && "alert-error"
       ]}
       {@rest}
     >
-      <p :if={@title} class="flex items-center gap-1.5 text-sm font-semibold leading-6">
-        <.icon :if={@kind == :info} name="hero-information-circle-mini" class="h-4 w-4" />
-        <.icon :if={@kind == :error} name="hero-exclamation-circle-mini" class="h-4 w-4" />
-        {@title}
-      </p>
-      <p class="mt-2 text-sm leading-5">{msg}</p>
-      <button type="button" class="group absolute top-1 right-1 p-2" aria-label={gettext("close")}>
-        <.icon name="hero-x-mark-solid" class="h-5 w-5 opacity-40 group-hover:opacity-70" />
+      <.icon :if={@kind == :info} name="hero-information-circle-mini" class="size-5" />
+      <.icon :if={@kind == :error} name="hero-exclamation-circle-mini" class="size-5" />
+      <div>
+        <p :if={@title} class="font-semibold">{@title}</p>
+        <p class="text-sm">{msg}</p>
+      </div>
+      <button type="button" class="btn btn-ghost btn-sm btn-circle" aria-label={gettext("close")}>
+        <.icon name="hero-x-mark-solid" class="size-4" />
       </button>
     </div>
     """
@@ -137,17 +97,13 @@ defmodule SanbaseWeb.CoreComponents do
 
   @doc """
   Shows the flash group with standard titles and content.
-
-  ## Examples
-
-      <.flash_group flash={@flash} />
   """
   attr(:flash, :map, required: true, doc: "the map of flash messages")
   attr(:id, :string, default: "flash-group", doc: "the optional id of flash container")
 
   def flash_group(assigns) do
     ~H"""
-    <div id={@id}>
+    <div id={@id} class="toast toast-top toast-end z-50">
       <.flash kind={:info} title={gettext("Success!")} flash={@flash} />
       <.flash kind={:error} title={gettext("Error!")} flash={@flash} />
       <.flash
@@ -159,7 +115,7 @@ defmodule SanbaseWeb.CoreComponents do
         hidden
       >
         {gettext("Attempting to reconnect")}
-        <.icon name="hero-arrow-path" class="ml-1 h-3 w-3 animate-spin" />
+        <.icon name="hero-arrow-path" class="ml-1 size-3 animate-spin" />
       </.flash>
 
       <.flash
@@ -171,7 +127,7 @@ defmodule SanbaseWeb.CoreComponents do
         hidden
       >
         {gettext("Hang in there while we get back on track")}
-        <.icon name="hero-arrow-path" class="ml-1 h-3 w-3 animate-spin" />
+        <.icon name="hero-arrow-path" class="ml-1 size-3 animate-spin" />
       </.flash>
     </div>
     """
@@ -179,16 +135,6 @@ defmodule SanbaseWeb.CoreComponents do
 
   @doc """
   Renders a simple form.
-
-  ## Examples
-
-      <.simple_form for={@form} phx-change="validate" phx-submit="save">
-        <.input field={@form[:email]} label="Email"/>
-        <.input field={@form[:username]} label="Username" />
-        <:actions>
-          <.button>Save</.button>
-        </:actions>
-      </.simple_form>
   """
   attr(:for, :any, required: true, doc: "the data structure for the form")
   attr(:as, :any, default: nil, doc: "the server side parameter to collect all input under")
@@ -204,9 +150,9 @@ defmodule SanbaseWeb.CoreComponents do
   def simple_form(assigns) do
     ~H"""
     <.form :let={f} for={@for} as={@as} {@rest}>
-      <div class="space-y-8 bg-white">
+      <div class="space-y-6">
         {render_slot(@inner_block, f)}
-        <div :for={action <- @actions} class="mt-2 flex items-center justify-between gap-6">
+        <div :for={action <- @actions} class="flex items-center justify-between gap-4">
           {render_slot(action, f)}
         </div>
       </div>
@@ -215,12 +161,10 @@ defmodule SanbaseWeb.CoreComponents do
   end
 
   @doc """
-  Renders a button.
+  Renders a button styled with DaisyUI `btn`.
 
-  ## Examples
-
-      <.button>Send!</.button>
-      <.button phx-click="go" class="ml-2">Send!</.button>
+  Pass `class="btn-primary"`, `class="btn-error"`, etc. to pick a variant.
+  Default styling is `btn-primary` if no `btn-*` modifier is supplied.
   """
   attr(:type, :string, default: nil)
   attr(:class, :string, default: nil)
@@ -233,8 +177,11 @@ defmodule SanbaseWeb.CoreComponents do
     <button
       type={@type}
       class={[
-        "phx-submit-loading:opacity-75 rounded-lg bg-zinc-900 hover:bg-zinc-700 py-2 px-3",
-        "text-sm font-semibold leading-6 text-white active:text-white/80",
+        "btn phx-submit-loading:opacity-75",
+        if(@class && @class =~ ~r/btn-(primary|secondary|accent|info|success|warning|error|neutral|ghost|soft|link|outline|dash)/,
+          do: nil,
+          else: "btn-primary"
+        ),
         @class
       ]}
       {@rest}
@@ -250,25 +197,6 @@ defmodule SanbaseWeb.CoreComponents do
   A `Phoenix.HTML.FormField` may be passed as argument,
   which is used to retrieve the input name, id, and values.
   Otherwise all attributes may be passed explicitly.
-
-  ## Types
-
-  This function accepts all HTML input types, considering that:
-
-    * You may also set `type="select"` to render a `<select>` tag
-
-    * `type="checkbox"` is used exclusively to render boolean values
-
-    * For live file uploads, see `Phoenix.Component.live_file_input/1`
-
-  See https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input
-  for more information. Unsupported types, such as hidden and radio,
-  are best written directly in your templates.
-
-  ## Examples
-
-      <.input field={@form[:email]} type="email" />
-      <.input name="my-input" errors={["oh no!"]} />
   """
   attr(:id, :any, default: nil)
   attr(:name, :any)
@@ -315,8 +243,8 @@ defmodule SanbaseWeb.CoreComponents do
       end)
 
     ~H"""
-    <div>
-      <label class="flex items-center gap-4 text-sm leading-6 text-zinc-600">
+    <fieldset class={["fieldset", @outer_div_class]}>
+      <label class="label cursor-pointer gap-2 text-sm">
         <input type="hidden" name={@name} value="false" disabled={@rest[:disabled]} />
         <input
           type="checkbox"
@@ -324,24 +252,24 @@ defmodule SanbaseWeb.CoreComponents do
           name={@name}
           value="true"
           checked={@checked}
-          class="rounded border-zinc-300 text-zinc-900 focus:ring-0"
+          class={["checkbox checkbox-sm", @errors != [] && "checkbox-error"]}
           {@rest}
         />
-        {@label}
+        <span>{@label}</span>
       </label>
       <.error :for={msg <- @errors}>{msg}</.error>
-    </div>
+    </fieldset>
     """
   end
 
   def input(%{type: "select"} = assigns) do
     ~H"""
-    <div>
-      <.label for={@id}>{@label}</.label>
+    <fieldset class={["fieldset mb-2", @outer_div_class]}>
+      <.label :if={@label} for={@id}>{@label}</.label>
       <select
         id={@id}
         name={@name}
-        class="mt-2 block w-full rounded-md border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 sm:text-sm"
+        class={["select w-full", @errors != [] && "select-error"]}
         multiple={@multiple}
         size={if @multiple, do: 12}
         {@rest}
@@ -350,49 +278,41 @@ defmodule SanbaseWeb.CoreComponents do
         {Phoenix.HTML.Form.options_for_select(@options, @value)}
       </select>
       <.error :for={msg <- @errors}>{msg}</.error>
-    </div>
+    </fieldset>
     """
   end
 
   def input(%{type: "textarea"} = assigns) do
     ~H"""
-    <div>
-      <.label for={@id}>{@label}</.label>
+    <fieldset class={["fieldset mb-2", @outer_div_class]}>
+      <.label :if={@label} for={@id}>{@label}</.label>
       <textarea
         id={@id}
         name={@name}
-        class={[
-          "mt-2 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6 min-h-[6rem]",
-          @errors == [] && "border-zinc-300 focus:border-zinc-400",
-          @errors != [] && "border-rose-400 focus:border-rose-400"
-        ]}
+        class={["textarea w-full min-h-[6rem]", @errors != [] && "textarea-error"]}
         {@rest}
       ><%= Phoenix.HTML.Form.normalize_value("textarea", @value) %></textarea>
       <.error :for={msg <- @errors}>{msg}</.error>
-    </div>
+    </fieldset>
     """
   end
 
   # All other inputs text, datetime-local, url, password, etc. are handled here...
   def input(assigns) do
     ~H"""
-    <div class={@outer_div_class}>
-      <.label for={@id}>{@label}</.label>
+    <fieldset class={["fieldset mb-2", @outer_div_class]}>
+      <.label :if={@label} for={@id}>{@label}</.label>
       <input
         type={@type}
         name={@name}
         id={@id}
         value={Phoenix.HTML.Form.normalize_value(@type, @value)}
         onwheel="this.blur()"
-        class={[
-          "mt-2 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6",
-          @errors == [] && "border-zinc-300 focus:border-zinc-400",
-          @errors != [] && "border-rose-400 focus:border-rose-400"
-        ]}
+        class={["input w-full", @errors != [] && "input-error"]}
         {@rest}
       />
       <.error :for={msg <- @errors}>{msg}</.error>
-    </div>
+    </fieldset>
     """
   end
 
@@ -404,7 +324,7 @@ defmodule SanbaseWeb.CoreComponents do
 
   def label(assigns) do
     ~H"""
-    <label for={@for} class="block text-sm font-semibold leading-6 text-zinc-800">
+    <label for={@for} class="label text-sm font-semibold">
       {render_slot(@inner_block)}
     </label>
     """
@@ -417,8 +337,8 @@ defmodule SanbaseWeb.CoreComponents do
 
   def error(assigns) do
     ~H"""
-    <p class="mt-3 flex gap-3 text-sm leading-6 text-rose-600">
-      <.icon name="hero-exclamation-circle-mini" class="mt-0.5 h-5 w-5 flex-none" />
+    <p class="mt-1 flex items-center gap-2 text-sm text-error">
+      <.icon name="hero-exclamation-circle-mini" class="size-4 flex-none" />
       {render_slot(@inner_block)}
     </p>
     """
@@ -437,10 +357,10 @@ defmodule SanbaseWeb.CoreComponents do
     ~H"""
     <header class={[@actions != [] && "flex items-center justify-between gap-6", @class]}>
       <div>
-        <h1 class="text-lg font-semibold leading-8 text-zinc-800">
+        <h1 class="text-lg font-semibold leading-8">
           {render_slot(@inner_block)}
         </h1>
-        <p :if={@subtitle != []} class="mt-2 text-sm leading-6 text-zinc-600">
+        <p :if={@subtitle != []} class="mt-2 text-sm leading-6 text-base-content/70">
           {render_slot(@subtitle)}
         </p>
       </div>
@@ -450,7 +370,7 @@ defmodule SanbaseWeb.CoreComponents do
   end
 
   @doc ~S"""
-  Renders a table with generic styling.
+  Renders a table with DaisyUI styling.
 
   ## Examples
 
@@ -483,12 +403,12 @@ defmodule SanbaseWeb.CoreComponents do
       end
 
     ~H"""
-    <div class="overflow-y-auto px-4 sm:overflow-visible sm:px-0">
-      <table class="w-[40rem] mt-11 sm:w-full">
-        <thead class="text-sm text-left leading-6 text-zinc-500">
+    <div class="overflow-x-auto">
+      <table class="table table-zebra table-sm">
+        <thead>
           <tr>
-            <th :for={col <- @col} class="p-0 pb-4 pr-6 font-normal">{col[:label]}</th>
-            <th :if={@action != []} class="relative p-0 pb-4">
+            <th :for={col <- @col} class="font-normal text-base-content/70">{col[:label]}</th>
+            <th :if={@action != []}>
               <span class="sr-only">{gettext("Actions")}</span>
             </th>
           </tr>
@@ -496,31 +416,19 @@ defmodule SanbaseWeb.CoreComponents do
         <tbody
           id={@id}
           phx-update={match?(%Phoenix.LiveView.LiveStream{}, @rows) && "stream"}
-          class="relative divide-y divide-zinc-100 border-t border-zinc-200 text-sm leading-6 text-zinc-700"
         >
-          <tr :for={row <- @rows} id={@row_id && @row_id.(row)} class="group hover:bg-zinc-50">
+          <tr :for={row <- @rows} id={@row_id && @row_id.(row)} class="hover:bg-base-200">
             <td
               :for={{col, i} <- Enum.with_index(@col)}
               phx-click={@row_click && @row_click.(row)}
-              class={["relative p-0", col[:col_class], @row_click && "hover:cursor-pointer"]}
+              class={[col[:col_class], @row_click && "cursor-pointer", i == 0 && "font-semibold"]}
             >
-              <div class="block py-4 pr-6">
-                <span class="absolute -inset-y-px right-0 -left-4 group-hover:bg-zinc-50 sm:rounded-l-xl" />
-                <span class={["relative", i == 0 && "font-semibold text-zinc-900"]}>
-                  {render_slot(col, @row_item.(row))}
-                </span>
-              </div>
+              {render_slot(col, @row_item.(row))}
             </td>
-            <td :if={@action != []} class="relative w-14 p-0">
-              <div class="relative whitespace-nowrap py-4 text-right text-sm font-medium">
-                <span class="absolute -inset-y-px -right-4 left-0 group-hover:bg-zinc-50 sm:rounded-r-xl" />
-                <span
-                  :for={action <- @action}
-                  class="relative ml-4 font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
-                >
-                  {render_slot(action, @row_item.(row))}
-                </span>
-              </div>
+            <td :if={@action != []} class="whitespace-nowrap text-right text-sm">
+              <span :for={action <- @action} class="ml-4 font-semibold">
+                {render_slot(action, @row_item.(row))}
+              </span>
             </td>
           </tr>
         </tbody>
@@ -531,13 +439,6 @@ defmodule SanbaseWeb.CoreComponents do
 
   @doc """
   Renders a data list.
-
-  ## Examples
-
-      <.list>
-        <:item title="Title"><%= @post.title %></:item>
-        <:item title="Views"><%= @post.views %></:item>
-      </.list>
   """
   slot :item, required: true do
     attr(:title, :string, required: true)
@@ -545,35 +446,26 @@ defmodule SanbaseWeb.CoreComponents do
 
   def list(assigns) do
     ~H"""
-    <div class="mt-14">
-      <dl class="-my-4 divide-y divide-zinc-100">
-        <div :for={item <- @item} class="flex gap-4 py-4 text-sm leading-6 sm:gap-8">
-          <dt class="w-1/4 flex-none text-zinc-500">{item.title}</dt>
-          <dd class="text-zinc-700">{render_slot(item)}</dd>
-        </div>
-      </dl>
-    </div>
+    <ul class="list bg-base-100 rounded-box">
+      <li :for={item <- @item} class="list-row">
+        <div class="text-base-content/60 text-sm">{item.title}</div>
+        <div class="list-col-grow">{render_slot(item)}</div>
+      </li>
+    </ul>
     """
   end
 
   @doc """
   Renders a back navigation link.
-
-  ## Examples
-
-      <.back navigate={~p"/posts"}>Back to posts</.back>
   """
   attr(:navigate, :any, required: true)
   slot(:inner_block, required: true)
 
   def back(assigns) do
     ~H"""
-    <div class="mt-16">
-      <.link
-        navigate={@navigate}
-        class="text-sm font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
-      >
-        <.icon name="hero-arrow-left-solid" class="h-3 w-3" />
+    <div class="mt-8">
+      <.link navigate={@navigate} class="btn btn-ghost btn-sm">
+        <.icon name="hero-arrow-left-solid" class="size-4" />
         {render_slot(@inner_block)}
       </.link>
     </div>
@@ -582,21 +474,6 @@ defmodule SanbaseWeb.CoreComponents do
 
   @doc """
   Renders a [Heroicon](https://heroicons.com).
-
-  Heroicons come in three styles – outline, solid, and mini.
-  By default, the outline style is used, but solid and mini may
-  be applied by using the `-solid` and `-mini` suffix.
-
-  You can customize the size and colors of the icons by setting
-  width, height, and background color classes.
-
-  Icons are extracted from the `deps/heroicons` directory and bundled within
-  your compiled app.css by the plugin in your `assets/tailwind.config.js`.
-
-  ## Examples
-
-      <.icon name="hero-x-mark-solid" />
-      <.icon name="hero-arrow-path" class="ml-1 w-3 h-3 animate-spin" />
   """
   attr(:name, :string, required: true)
   attr(:class, :string, default: nil)
@@ -612,64 +489,39 @@ defmodule SanbaseWeb.CoreComponents do
   def show(js \\ %JS{}, selector) do
     JS.show(js,
       to: selector,
-      time: 300,
-      transition:
-        {"transition-all transform ease-out duration-300",
-         "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95",
-         "opacity-100 translate-y-0 sm:scale-100"}
+      time: 200,
+      transition: {"transition-all ease-out duration-200", "opacity-0", "opacity-100"}
     )
   end
 
   def hide(js \\ %JS{}, selector) do
     JS.hide(js,
       to: selector,
-      time: 200,
-      transition:
-        {"transition-all transform ease-in duration-200",
-         "opacity-100 translate-y-0 sm:scale-100",
-         "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"}
+      time: 150,
+      transition: {"transition-all ease-in duration-150", "opacity-100", "opacity-0"}
     )
   end
 
+  @doc """
+  Dispatches a `phx:show-modal` event on the dialog. The listener in
+  `assets/js/app.js` calls `element.showModal()`.
+  """
   def show_modal(js \\ %JS{}, id) when is_binary(id) do
-    js
-    |> JS.show(to: "##{id}")
-    |> JS.show(
-      to: "##{id}-bg",
-      time: 300,
-      transition: {"transition-all transform ease-out duration-300", "opacity-0", "opacity-100"}
-    )
-    |> show("##{id}-container")
-    |> JS.add_class("overflow-hidden", to: "body")
-    |> JS.focus_first(to: "##{id}-content")
+    JS.dispatch(js, "phx:show-modal", to: "##{id}")
   end
 
-  def hide_modal(js \\ %JS{}, id) do
-    js
-    |> JS.hide(
-      to: "##{id}-bg",
-      transition: {"transition-all transform ease-in duration-200", "opacity-100", "opacity-0"}
-    )
-    |> hide("##{id}-container")
-    |> JS.hide(to: "##{id}", transition: {"block", "block", "hidden"})
-    |> JS.remove_class("overflow-hidden", to: "body")
-    |> JS.pop_focus()
+  @doc """
+  Dispatches a `phx:hide-modal` event on the dialog. The listener in
+  `assets/js/app.js` calls `element.close()`.
+  """
+  def hide_modal(js \\ %JS{}, id) when is_binary(id) do
+    JS.dispatch(js, "phx:hide-modal", to: "##{id}")
   end
 
   @doc """
   Translates an error message using gettext.
   """
   def translate_error({msg, opts}) do
-    # When using gettext, we typically pass the strings we want
-    # to translate as a static argument:
-    #
-    #     # Translate the number of files with plural rules
-    #     dngettext("errors", "1 file", "%{count} files", count)
-    #
-    # However the error messages in our forms and APIs are generated
-    # dynamically, so we need to translate them by calling Gettext
-    # with our gettext backend as first argument. Translations are
-    # available in the errors.po file (as we use the "errors" domain).
     if count = opts[:count] do
       Gettext.dngettext(SanbaseWeb.Gettext, "errors", msg, msg, count, opts)
     else

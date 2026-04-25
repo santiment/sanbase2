@@ -118,62 +118,52 @@ defmodule SanbaseWeb.UserStatsLive do
 
   defp search_form(assigns) do
     ~H"""
-    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+    <div class="card bg-base-100 border border-base-300 shadow p-6 mb-6">
       <.form for={%{}} id="search-form" phx-submit="search" class="space-y-4">
         <div class="grid md:grid-cols-3 gap-4">
-          <div>
-            <label for="inactive_days" class="block text-sm font-medium text-gray-700 mb-1">
-              Inactive for (days)
-            </label>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">Inactive for (days)</legend>
             <input
               type="number"
               id="inactive_days"
               name="inactive_days"
               value={@inactive_days}
               min="1"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="input w-full"
             />
-          </div>
+          </fieldset>
 
-          <div>
-            <label for="prior_activity_days" class="block text-sm font-medium text-gray-700 mb-1">
-              Prior activity window (days)
-            </label>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">Prior activity window (days)</legend>
             <input
               type="number"
               id="prior_activity_days"
               name="prior_activity_days"
               value={@prior_activity_days}
               min="1"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="input w-full"
             />
-          </div>
+          </fieldset>
 
           <div class="flex items-end">
-            <label class="flex items-center cursor-pointer">
+            <label class="label cursor-pointer gap-2">
               <input
                 type="checkbox"
                 id="require_prior_activity"
                 name="require_prior_activity"
                 value="true"
                 checked={@require_prior_activity}
-                class="w-4 h-4 text-blue-500 rounded"
+                class="checkbox checkbox-sm checkbox-primary"
               />
-              <span class="ml-2 text-sm text-gray-700">Require prior activity</span>
+              <span class="text-sm">Require prior activity</span>
             </label>
           </div>
         </div>
 
         <div>
-          <button
-            type="submit"
-            disabled={@loading}
-            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+          <button type="submit" disabled={@loading} class="btn btn-primary">
             <%= if @loading do %>
-              <span class="inline-flex items-center">
-                <.loading_spinner /> Searching...
-              </span>
+              <span class="loading loading-spinner loading-xs"></span> Searching...
             <% else %>
               Search Inactive Users
             <% end %>
@@ -186,21 +176,7 @@ defmodule SanbaseWeb.UserStatsLive do
 
   defp loading_spinner(assigns) do
     ~H"""
-    <svg
-      class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-    >
-      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
-      </circle>
-      <path
-        class="opacity-75"
-        fill="currentColor"
-        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-      >
-      </path>
-    </svg>
+    <span class="loading loading-spinner loading-xs mr-2"></span>
     """
   end
 
@@ -208,7 +184,7 @@ defmodule SanbaseWeb.UserStatsLive do
 
   defp error_message(assigns) do
     ~H"""
-    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+    <div class="alert alert-error mb-4" role="alert">
       <strong>Error:</strong> {@error}
     </div>
     """
@@ -223,49 +199,43 @@ defmodule SanbaseWeb.UserStatsLive do
 
   defp results_section(assigns) do
     ~H"""
-    <div class="bg-white rounded-lg shadow-lg p-6">
+    <div class="card bg-base-100 border border-base-300 shadow p-6">
       <div class="flex justify-between items-center mb-6">
         <div>
-          <h2 class="text-2xl font-bold text-gray-900">
-            {@total_count}
-          </h2>
-          <p class="text-gray-600">inactive users found</p>
+          <h2 class="text-2xl font-bold">{@total_count}</h2>
+          <p class="text-base-content/60">inactive users found</p>
         </div>
 
         <.link
           :if={@inactive_users != []}
           href={"/admin/download_inactive_users_csv?inactive_days=#{@inactive_days}&prior_activity_days=#{@prior_activity_days}&require_prior_activity=#{@require_prior_activity}"}
           download={@filename}
-          class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+          class="btn btn-success"
         >
           Download CSV
         </.link>
       </div>
 
       <div class="mb-4">
-        <h3 class="text-lg font-semibold text-gray-900 mb-3">Preview (first 10)</h3>
+        <h3 class="text-lg font-semibold mb-3">Preview (first 10)</h3>
 
-        <div :if={@inactive_users == []} class="text-center py-8 text-gray-500">
+        <div :if={@inactive_users == []} class="text-center py-8 text-base-content/50">
           No inactive users found matching the criteria.
         </div>
 
-        <div :if={@inactive_users != []} class="overflow-x-auto">
-          <table class="w-full">
+        <div :if={@inactive_users != []} class="rounded-box border border-base-300 overflow-x-auto">
+          <table class="table table-zebra table-sm">
             <thead>
-              <tr class="bg-gray-100 border-b border-gray-200">
-                <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700">Email</th>
-                <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700">Name</th>
+              <tr>
+                <th>Email</th>
+                <th>Name</th>
               </tr>
             </thead>
             <tbody>
               <%= for user <- Enum.take(@inactive_users, 10) do %>
-                <tr class="border-b border-gray-200 hover:bg-gray-50">
-                  <td class="px-4 py-2 text-sm text-gray-900">
-                    {user.email}
-                  </td>
-                  <td class="px-4 py-2 text-sm text-gray-600">
-                    {user.name || "friend"}
-                  </td>
+                <tr>
+                  <td>{user.email}</td>
+                  <td class="text-base-content/60">{user.name || "friend"}</td>
                 </tr>
               <% end %>
             </tbody>
@@ -280,22 +250,8 @@ defmodule SanbaseWeb.UserStatsLive do
     ~H"""
     <div class="flex justify-center items-center py-12">
       <div class="text-center">
-        <svg
-          class="animate-spin h-12 w-12 text-blue-500 mx-auto mb-4"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
-          </circle>
-          <path
-            class="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-          >
-          </path>
-        </svg>
-        <p class="text-gray-600">Loading inactive users...</p>
+        <span class="loading loading-spinner loading-lg text-primary mb-4"></span>
+        <p class="text-base-content/60">Loading inactive users...</p>
       </div>
     </div>
     """

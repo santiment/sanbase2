@@ -74,12 +74,12 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
         <AdminSharedComponents.action_button
           text="Select All"
           phx_click="select_all"
-          class="bg-white hover:bg-gray-100 text-zinc-900"
+          class="btn-soft"
         />
         <AdminSharedComponents.action_button
           text="Deselect All"
           phx_click="deselect_all"
-          class="bg-white hover:bg-gray-100 text-zinc-900"
+          class="btn-soft"
         />
       </div>
       <.table id="metrics_registry" rows={@syncable_metrics}>
@@ -101,7 +101,7 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
         :if={Permissions.can?(:start_sync, roles: @current_user_role_names)}
         text="Sync Metrics"
         phx_click="sync"
-        class="min-w-42 bg-blue-700 hover:bg-blue-800 text-white"
+        class="min-w-42 btn-primary"
         count={MapSet.size(@metric_ids_to_sync)}
         phx_disable_with="Syncing..."
       />

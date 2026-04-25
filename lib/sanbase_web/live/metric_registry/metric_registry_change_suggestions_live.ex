@@ -317,14 +317,14 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
         value="approve"
         text="Approve"
         disabled={@row.status != "pending_approval"}
-        colors="bg-green-600 hover:bg-green-800"
+        variant="btn-success"
       />
       <AdminSharedComponents.approval_button
         name="action"
         value="decline"
         text="Decline"
         disabled={@row.status != "pending_approval"}
-        colors="bg-red-600 hover:bg-red-800"
+        variant="btn-error"
       />
       <AdminSharedComponents.approval_button
         name="action"
@@ -337,7 +337,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
           @row.status == "pending_approval" or
             (@row.status == "approved" and @row.metric_registry_id == nil)
         }
-        colors="bg-amber-600 hover:bg-amber-800"
+        variant="btn-warning"
       />
 
       <AdminSharedComponents.approval_button
@@ -353,7 +353,7 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
         disabled={false}
         value="edit"
         text="Edit"
-        colors="bg-fuchsia-600 hover:bg-fuchsia-800"
+        variant="btn-secondary"
       />
     </.form>
     """

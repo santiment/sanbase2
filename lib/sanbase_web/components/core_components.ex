@@ -178,7 +178,10 @@ defmodule SanbaseWeb.CoreComponents do
       type={@type}
       class={[
         "btn phx-submit-loading:opacity-75",
-        if(@class && @class =~ ~r/btn-(primary|secondary|accent|info|success|warning|error|neutral|ghost|soft|link|outline|dash)/,
+        if(
+          @class &&
+            @class =~
+              ~r/btn-(primary|secondary|accent|info|success|warning|error|neutral|ghost|soft|link|outline|dash)/,
           do: nil,
           else: "btn-primary"
         ),

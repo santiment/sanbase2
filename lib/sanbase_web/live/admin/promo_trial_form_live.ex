@@ -179,7 +179,10 @@ defmodule SanbaseWeb.Admin.PromoTrialLive.Form do
     assigns =
       assigns
       |> assign(:plan_map, all_plan_id_name_map(assigns.plans))
-      |> assign(:can_submit?, not is_nil(assigns.selected_user) and MapSet.size(assigns.selected_plans) > 0)
+      |> assign(
+        :can_submit?,
+        not is_nil(assigns.selected_user) and MapSet.size(assigns.selected_plans) > 0
+      )
 
     ~H"""
     <div class="bg-base-200/40 min-h-full">
@@ -229,7 +232,10 @@ defmodule SanbaseWeb.Admin.PromoTrialLive.Form do
                   </div>
                 </div>
 
-                <div :if={@selected_user} class="flex items-center gap-3 p-3 bg-base-200/60 rounded-box border border-base-300">
+                <div
+                  :if={@selected_user}
+                  class="flex items-center gap-3 p-3 bg-base-200/60 rounded-box border border-base-300"
+                >
                   <div class="avatar avatar-placeholder">
                     <div class="bg-primary text-primary-content rounded-full w-10 h-10">
                       <span class="text-sm font-semibold">{user_initial(@selected_user)}</span>
@@ -288,7 +294,9 @@ defmodule SanbaseWeb.Admin.PromoTrialLive.Form do
                         </span>
                         <span class="min-w-0">
                           <span class="block font-medium truncate">{u.email || "(no email)"}</span>
-                          <span :if={u.username} class="block text-xs opacity-60 truncate">@{u.username}</span>
+                          <span :if={u.username} class="block text-xs opacity-60 truncate">
+                            @{u.username}
+                          </span>
                         </span>
                         <span class="text-xs opacity-50 font-mono">#{u.id}</span>
                       </button>
@@ -352,7 +360,10 @@ defmodule SanbaseWeb.Admin.PromoTrialLive.Form do
                   <div class="flex-1 min-w-0">
                     <h2 class="font-semibold flex items-center gap-2 flex-wrap">
                       Plans
-                      <span :if={MapSet.size(@selected_plans) > 0} class="badge badge-primary badge-sm">
+                      <span
+                        :if={MapSet.size(@selected_plans) > 0}
+                        class="badge badge-primary badge-sm"
+                      >
                         {MapSet.size(@selected_plans)} selected
                       </span>
                     </h2>
@@ -407,7 +418,9 @@ defmodule SanbaseWeb.Admin.PromoTrialLive.Form do
                     <dt class="text-base-content/60">User</dt>
                     <dd class="col-span-2 truncate">
                       <span :if={@selected_user} class="font-medium">{@selected_user.email}</span>
-                      <span :if={!@selected_user} class="italic text-base-content/50">Not selected</span>
+                      <span :if={!@selected_user} class="italic text-base-content/50">
+                        Not selected
+                      </span>
                     </dd>
                   </div>
                   <div class="grid grid-cols-3 gap-2 py-2">
@@ -417,11 +430,21 @@ defmodule SanbaseWeb.Admin.PromoTrialLive.Form do
                   <div class="grid grid-cols-3 gap-2 py-2">
                     <dt class="text-base-content/60">Plans</dt>
                     <dd class="col-span-2">
-                      <span :if={MapSet.size(@selected_plans) == 0} class="italic text-base-content/50">None</span>
+                      <span
+                        :if={MapSet.size(@selected_plans) == 0}
+                        class="italic text-base-content/50"
+                      >
+                        None
+                      </span>
                       <ul :if={MapSet.size(@selected_plans) > 0} class="space-y-0.5">
-                        <li :for={id <- MapSet.to_list(@selected_plans)} class="flex items-center justify-between gap-2 text-xs">
+                        <li
+                          :for={id <- MapSet.to_list(@selected_plans)}
+                          class="flex items-center justify-between gap-2 text-xs"
+                        >
                           <span class="truncate">{Map.get(@plan_map, id, %{name: id})[:name]}</span>
-                          <span class="badge badge-ghost badge-xs">{Map.get(@plan_map, id, %{interval: "?"})[:interval]}</span>
+                          <span class="badge badge-ghost badge-xs">
+                            {Map.get(@plan_map, id, %{interval: "?"})[:interval]}
+                          </span>
                         </li>
                       </ul>
                     </dd>
@@ -469,7 +492,9 @@ defmodule SanbaseWeb.Admin.PromoTrialLive.Form do
           <li :for={p <- @plans}>
             <% has_stripe = is_binary(p.stripe_id) and p.stripe_id != "" %>
             <label
-              title={if(has_stripe, do: nil, else: "No stripe_id — cannot be granted in this environment")}
+              title={
+                if(has_stripe, do: nil, else: "No stripe_id — cannot be granted in this environment")
+              }
               class={[
                 "flex items-center gap-3 px-2 py-1.5 rounded transition-colors",
                 if(has_stripe,

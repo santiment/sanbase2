@@ -48,7 +48,12 @@ defmodule SanbaseWeb.Admin.FaqLive.History do
     ~H"""
     <h1 class="text-3xl font-bold">FAQ Question/Answer History</h1>
     <div class="p-6 max-w-7xl">
-      <.history_pager page={@page} page_size={@page_size} total_count={@total_count} total_pages={@total_pages} />
+      <.history_pager
+        page={@page}
+        page_size={@page_size}
+        total_count={@total_count}
+        total_pages={@total_pages}
+      />
       <%= if @entries == [] do %>
         <div class="text-center py-12 bg-base-200 rounded-box">
           <.icon name="hero-document-text" class="mx-auto size-12 text-base-content/40" />
@@ -88,7 +93,10 @@ defmodule SanbaseWeb.Admin.FaqLive.History do
                   </div>
                 </div>
                 <div class="flex items-center gap-2 ml-4">
-                  <.link navigate={~p"/admin/faq/history/#{entry.id}"} class="link link-primary text-sm font-medium">
+                  <.link
+                    navigate={~p"/admin/faq/history/#{entry.id}"}
+                    class="link link-primary text-sm font-medium"
+                  >
                     View
                   </.link>
                 </div>
@@ -97,7 +105,12 @@ defmodule SanbaseWeb.Admin.FaqLive.History do
           </ul>
         </div>
         <div class="mt-4">
-          <.history_pager page={@page} page_size={@page_size} total_count={@total_count} total_pages={@total_pages} />
+          <.history_pager
+            page={@page}
+            page_size={@page_size}
+            total_count={@total_count}
+            total_pages={@total_pages}
+          />
         </div>
       <% end %>
     </div>
@@ -126,7 +139,9 @@ defmodule SanbaseWeb.Admin.FaqLive.History do
           Prev
         </.link>
         <.link
-          patch={~p"/admin/faq/history?#{[page: min(@page + 1, @total_pages), page_size: @page_size]}"}
+          patch={
+            ~p"/admin/faq/history?#{[page: min(@page + 1, @total_pages), page_size: @page_size]}"
+          }
           class={["btn btn-sm join-item", @page == @total_pages && "btn-disabled"]}
           aria-disabled={@page == @total_pages}
         >

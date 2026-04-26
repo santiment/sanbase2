@@ -34,7 +34,7 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
               if(@tweet.experts_is_prediction, do: "badge-success", else: "badge-error")
             ]}
           >
-            {if @tweet.experts_is_prediction, do: "PREDICTION", else: "NOT PREDICTION"}
+            {if @tweet.experts_is_prediction, do: "✅ PREDICTION", else: "❌ NOT PREDICTION"}
           </span>
         </div>
 
@@ -185,7 +185,7 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
             "badge",
             if(@tweet.experts_is_prediction, do: "badge-success", else: "badge-error")
           ]}>
-            {if @tweet.experts_is_prediction, do: "PREDICTION", else: "NOT PREDICTION"}
+            {if @tweet.experts_is_prediction, do: "✅ PREDICTION", else: "❌ NOT PREDICTION"}
           </span>
         </div>
       </div>
@@ -269,10 +269,10 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
             <legend class="fieldset-legend">Prediction Direction</legend>
             <select name="prediction_direction" class="select select-sm w-full">
               <option value="">Select direction...</option>
-              <option value="up">Up</option>
-              <option value="down">Down</option>
-              <option value="side">Sideways</option>
-              <option value="other">Other</option>
+              <option value="up">📈 Up</option>
+              <option value="down">📉 Down</option>
+              <option value="side">➡️ Sideways</option>
+              <option value="other">❓ Other</option>
             </select>
           </fieldset>
 
@@ -454,10 +454,10 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
     tweet.prediction_direction != nil and tweet.prediction_direction != ""
   end
 
-  defp direction_display("up"), do: "Up"
-  defp direction_display("down"), do: "Down"
-  defp direction_display("side"), do: "Sideways"
-  defp direction_display("other"), do: "Other"
+  defp direction_display("up"), do: "📈 Up"
+  defp direction_display("down"), do: "📉 Down"
+  defp direction_display("side"), do: "➡️ Sideways"
+  defp direction_display("other"), do: "❓ Other"
   defp direction_display(_), do: "N/A"
 
   defp direction_color("up"), do: "badge-success"

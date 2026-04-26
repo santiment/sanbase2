@@ -111,10 +111,16 @@ defmodule SanbaseWeb.Admin.FaqLive.Index do
                   </div>
                 </div>
                 <div class="flex items-center gap-2 ml-4">
-                  <.link navigate={~p"/admin/faq/#{entry.id}"} class="link link-primary text-sm font-medium">
+                  <.link
+                    navigate={~p"/admin/faq/#{entry.id}"}
+                    class="link link-primary text-sm font-medium"
+                  >
                     View
                   </.link>
-                  <.link navigate={~p"/admin/faq/#{entry.id}/edit"} class="link text-warning text-sm font-medium">
+                  <.link
+                    navigate={~p"/admin/faq/#{entry.id}/edit"}
+                    class="link text-warning text-sm font-medium"
+                  >
                     Edit
                   </.link>
                   <button

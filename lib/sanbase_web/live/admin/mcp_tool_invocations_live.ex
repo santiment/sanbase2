@@ -193,7 +193,11 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
               <td class="text-base-content/70">{format_bytes(inv.response_size_bytes)}</td>
               <td><.status_badge is_successful={inv.is_successful} /></td>
               <td>
-                <button phx-click="toggle_raw" phx-value-id={inv.id} class="btn btn-xs btn-ghost link-primary">
+                <button
+                  phx-click="toggle_raw"
+                  phx-value-id={inv.id}
+                  class="btn btn-xs btn-ghost link-primary"
+                >
                   {if @expanded_id == inv.id, do: "Hide", else: "Show"}
                 </button>
               </td>

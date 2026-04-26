@@ -170,7 +170,11 @@ defmodule SanbaseWeb.Admin.SesEventsLive do
                 {String.slice(event.message_id || "", 0, 20)}...
               </td>
               <td>
-                <button phx-click="toggle_raw" phx-value-id={event.id} class="btn btn-xs btn-ghost link-primary">
+                <button
+                  phx-click="toggle_raw"
+                  phx-value-id={event.id}
+                  class="btn btn-xs btn-ghost link-primary"
+                >
                   {if @expanded_id == event.id, do: "Hide", else: "Show"}
                 </button>
               </td>

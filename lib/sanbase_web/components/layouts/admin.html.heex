@@ -1,12 +1,10 @@
-<div
-  x-data="{
+<div x-data="{
     collapsed: localStorage.getItem('admin-sidebar-collapsed') === 'true',
     toggle() {
       this.collapsed = !this.collapsed;
       localStorage.setItem('admin-sidebar-collapsed', this.collapsed);
     }
-  }"
->
+  }">
   <div
     class="drawer min-h-screen"
     x-effect="collapsed ? $el.classList.remove('lg:drawer-open') : $el.classList.add('lg:drawer-open')"

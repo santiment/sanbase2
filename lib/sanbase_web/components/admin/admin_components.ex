@@ -895,14 +895,12 @@ defmodule SanbaseWeb.AdminComponents do
         <%= for field <- @fields do %>
           <th
             scope="col"
-            class={
-              [
-                "whitespace-nowrap",
-                if(field == :id or Map.get(@field_type_map, field) in [:boolean, :boolean_nullable],
-                  do: "w-[80px]"
-                )
-              ]
-            }
+            class={[
+              "whitespace-nowrap",
+              if(field == :id or Map.get(@field_type_map, field) in [:boolean, :boolean_nullable],
+                do: "w-[80px]"
+              )
+            ]}
           >
             {field}
           </th>

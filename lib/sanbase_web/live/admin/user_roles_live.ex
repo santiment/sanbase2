@@ -155,16 +155,17 @@ defmodule SanbaseWeb.Admin.UserRolesLive do
                   <a>
                     <div>
                       <div class="font-medium">{suggestion.email}</div>
-                      <div :if={suggestion.name || suggestion.username} class="text-xs text-base-content/60">
+                      <div
+                        :if={suggestion.name || suggestion.username}
+                        class="text-xs text-base-content/60"
+                      >
                         {suggestion.name || suggestion.username}
                       </div>
                     </div>
                   </a>
                 </li>
                 <li
-                  :if={
-                    @email_suggestions == [] && @email_query != "" && byte_size(@email_query) >= 2
-                  }
+                  :if={@email_suggestions == [] && @email_query != "" && byte_size(@email_query) >= 2}
                   class="menu-disabled"
                 >
                   <a>No users found</a>

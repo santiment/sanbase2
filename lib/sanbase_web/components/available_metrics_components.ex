@@ -2,6 +2,7 @@ defmodule SanbaseWeb.AvailableMetricsComponents do
   use Phoenix.Component
 
   alias SanbaseWeb.CoreComponents
+  alias SanbaseWeb.PopoverComponent
 
   @doc ~s"""
   The styled button is used to link to documentation and
@@ -31,47 +32,40 @@ defmodule SanbaseWeb.AvailableMetricsComponents do
   end
 
   @doc ~s"""
-  Hover/click popover backed by DaisyUI `dropdown`. Renders a hint trigger
-  and a card-styled body. Replaces the Flowbite `data-popover-*` component.
+  Thin wrapper over `SanbaseWeb.PopoverComponent.popover/1` for the
+  AvailableMetrics tables. When `popover_target_text` is blank the trigger
+  is rendered as plain text — no popover.
   """
   attr :display_text, :string, required: true
   attr :popover_target, :string, required: true
-  attr :popover_target_text, :string, required: true
+  attr :popover_target_text, :any, default: nil
   attr :popover_placement, :string, default: "right"
   attr :popover_class, :string, default: nil
 
   def popover(assigns) do
-    placement_class =
-      case assigns.popover_placement do
-        "top" -> "dropdown-top"
-        "bottom" -> "dropdown-bottom"
-        "left" -> "dropdown-left"
-        _ -> "dropdown-right"
-      end
-
-    assigns = assign(assigns, :placement_class, placement_class)
-
-    ~H"""
-    <div class={["dropdown dropdown-hover", @placement_class]}>
-      <div tabindex="0" role="button" class="cursor-help">
-        <span class="border-b border-dotted border-gray-500 hover:text-blue-500 hover:border-blue-500">
-          {@display_text}
-        </span>
-      </div>
-
-      <div
+    if popover_text?(assigns.popover_target_text) do
+      ~H"""
+      <PopoverComponent.popover
         id={@popover_target}
-        tabindex="0"
-        class={[
-          "dropdown-content card card-sm bg-base-100 border border-base-300 shadow-2xl z-10 max-h-[580px] min-w-[860px] overflow-y-auto px-8 py-6 text-sm font-medium text-base-content/70",
-          @popover_class
-        ]}
+        placement={@popover_placement}
+        class={@popover_class}
       >
+        <:trigger>
+          <span class="border-b border-dotted border-gray-500 hover:text-blue-500 hover:border-blue-500">
+            {@display_text}
+          </span>
+        </:trigger>
         <span class="[&>pre]:font-sans">{@popover_target_text}</span>
-      </div>
-    </div>
-    """
+      </PopoverComponent.popover>
+      """
+    else
+      ~H"<span>{@display_text}</span>"
+    end
   end
+
+  defp popover_text?(nil), do: false
+  defp popover_text?(text) when is_binary(text), do: String.trim(text) != ""
+  defp popover_text?(_), do: true
 
   @doc ~S"""
   Renders a table with generic styling.
@@ -120,7 +114,6 @@ defmodule SanbaseWeb.AvailableMetricsComponents do
                 popover_target={col[:popover_target]}
                 popover_target_text={col[:popover_target_text]}
                 popover_placement={col[:popover_placement] || "bottom"}
-                popover_class="min-w-[600px]"
               />
             </th>
           </tr>

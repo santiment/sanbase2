@@ -123,6 +123,8 @@ defmodule SanbaseWeb.Router do
 
     import Phoenix.LiveDashboard.Router
 
+    get("/", GenericAdminController, :home)
+
     # Project Changelog routes
     live("/project_changelog", ProjectChangelogLive)
 
@@ -252,7 +254,6 @@ defmodule SanbaseWeb.Router do
     resources("/reports", ReportController)
     resources("/custom_plans", CustomPlanController)
 
-    get("/", GenericAdminController, :home)
     get("/generic/search", GenericAdminController, :search)
     get("/generic/show_action", GenericAdminController, :show_action)
 

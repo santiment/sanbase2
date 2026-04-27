@@ -24,9 +24,13 @@ defmodule SanbaseWeb.PopoverComponent do
   """
   use Phoenix.Component
 
+  alias SanbaseWeb.StyleUtils
+
+  @default_max_width "860px"
+
   attr :id, :string, required: true
   attr :placement, :string, default: "right", values: ~w(top bottom left right)
-  attr :max_width, :string, default: "860px", doc: "max popover width (any CSS length)"
+  attr :max_width, :string, default: @default_max_width, doc: "max popover width (any CSS length)"
   attr :class, :string, default: nil, doc: "extra classes for the popover body"
   attr :trigger_class, :string, default: nil, doc: "extra classes for the trigger element"
   slot :trigger, required: true
@@ -45,12 +49,14 @@ defmodule SanbaseWeb.PopoverComponent do
       "const r = $el.getBoundingClientRect();" <>
         " align = (r.left + r.width / 2 > window.innerWidth / 2) ? 'end' : 'start';"
 
+    safe_max_width = StyleUtils.safe_css_length(assigns.max_width, @default_max_width)
+
     assigns =
       assigns
       |> assign(:placement_class, placement_class)
       |> assign(:smart_align?, smart_align?)
       |> assign(:smart_mouseenter, smart_mouseenter)
-      |> assign(:width_style, "width: min(calc(100vw - 1rem), #{assigns.max_width});")
+      |> assign(:width_style, "width: min(calc(100vw - 1rem), #{safe_max_width});")
 
     ~H"""
     <div
@@ -68,7 +74,7 @@ defmodule SanbaseWeb.PopoverComponent do
         tabindex="0"
         style={@width_style}
         class={[
-          "dropdown-content card card-sm bg-base-100 border border-base-300 shadow-2xl z-10 max-h-[min(80vh,580px)] overflow-y-auto px-8 py-6 text-sm font-medium text-base-content/70",
+          "dropdown-content card card-sm bg-base-100 border border-base-300 shadow-2xl z-50 max-h-[min(80vh,580px)] overflow-y-auto px-8 py-6 text-sm font-medium text-base-content/70",
           @class
         ]}
       >

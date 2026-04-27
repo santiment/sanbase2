@@ -39,13 +39,16 @@ let liveSocket = new LiveSocket("/live", Socket, {
 })
 
 // Theme persistence: applies stored theme on load and saves changes from the toggle.
+// Always sync the toggle to the live data-theme so first-load (no localStorage
+// → prefers-color-scheme fallback) doesn't leave the checkbox out of step.
 const applyStoredTheme = () => {
   const stored = localStorage.getItem("theme")
   if (stored === "dark" || stored === "light") {
     document.documentElement.setAttribute("data-theme", stored)
-    const ctrl = document.getElementById("theme-controller")
-    if (ctrl) ctrl.checked = stored === "dark"
   }
+  const current = document.documentElement.getAttribute("data-theme")
+  const ctrl = document.getElementById("theme-controller")
+  if (ctrl) ctrl.checked = current === "dark"
 }
 applyStoredTheme()
 document.addEventListener("change", e => {

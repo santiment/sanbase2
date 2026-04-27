@@ -42,13 +42,34 @@ defmodule SanbaseWeb.GenericAdminHTML do
   defp format_value(other), do: to_string(other)
 
   attr :label, :string, required: true
+  attr :series, :map, required: true, doc: "the full @stats.series map"
+  attr :key, :atom, required: true, doc: "which list inside the series map to plot"
+
+  @doc """
+  Wrapper over `sparkline/1` that pulls the daily counts and the date range
+  from a single `@stats.series` map, so callers don't repeat the dates.
+  """
+  def daily_sparkline(assigns) do
+    ~H"""
+    <.sparkline
+      label={@label}
+      series={Map.fetch!(@series, @key)}
+      start_date={@series.start_date}
+      end_date={@series.end_date}
+    />
+    """
+  end
+
+  attr :label, :string, required: true
   attr :series, :list, required: true
+  attr :start_date, Date, required: true
+  attr :end_date, Date, required: true
 
   def sparkline(assigns) do
     series = assigns.series
     n = length(series)
-    today = Date.utc_today()
-    start_date = Date.add(today, -(n - 1))
+    start_date = assigns.start_date
+    end_date = assigns.end_date
     dates = for i <- 0..(n - 1), do: Date.add(start_date, i)
     pairs = Enum.zip(dates, series)
 
@@ -57,7 +78,7 @@ defmodule SanbaseWeb.GenericAdminHTML do
     total = Enum.sum(series)
     last = List.last(series) || 0
 
-    {points, area, coords} = sparkline_paths(series, 200, 56, 28, 8)
+    {points, area, coords} = sparkline_paths(series, 200, 56, 0, 8)
 
     hovers =
       pairs
@@ -73,7 +94,7 @@ defmodule SanbaseWeb.GenericAdminHTML do
         max: max,
         min: min,
         start_date: start_date,
-        end_date: today,
+        end_date: end_date,
         points: points,
         area: area,
         coords: coords,
@@ -88,60 +109,60 @@ defmodule SanbaseWeb.GenericAdminHTML do
           {format_value(@total)}
         </span>
       </div>
-      <svg
-        viewBox="0 0 200 64"
-        class="w-full h-16"
-        preserveAspectRatio="none"
-      >
-        <line
-          x1="28"
-          y1="8"
-          x2="200"
-          y2="8"
-          stroke="currentColor"
-          stroke-width="0.5"
-          stroke-dasharray="2 2"
-          class="text-base-content/15"
-        />
-        <line
-          x1="28"
-          y1="56"
-          x2="200"
-          y2="56"
-          stroke="currentColor"
-          stroke-width="0.5"
-          class="text-base-content/20"
-        />
-        <text x="24" y="11" text-anchor="end" font-size="8" class="fill-base-content/60">
-          {@max}
-        </text>
-        <text x="24" y="59" text-anchor="end" font-size="8" class="fill-base-content/60">
-          {@min}
-        </text>
-        <path d={@area} fill="var(--color-primary)" fill-opacity="0.15" />
-        <polyline
-          points={@points}
-          fill="none"
-          stroke="var(--color-primary)"
-          stroke-width="1.5"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        />
-        <g>
-          <rect
-            :for={h <- @hovers}
-            x={h.x - 5}
-            y="8"
-            width="10"
-            height="48"
-            fill="transparent"
-            class="hover:fill-base-content/10"
-          >
-            <title>{h.date}: {h.value}</title>
-          </rect>
-        </g>
-      </svg>
-      <div class="flex justify-between text-[10px] text-base-content/50 tabular-nums">
+      <div class="flex h-16">
+        <div class="flex flex-col justify-between items-end text-[9px] leading-none text-base-content/60 tabular-nums w-7 pr-1 py-2">
+          <span>{@max}</span>
+          <span>{@min}</span>
+        </div>
+        <svg
+          viewBox="0 0 200 64"
+          class="flex-1 h-full"
+          preserveAspectRatio="none"
+        >
+          <line
+            x1="0"
+            y1="8"
+            x2="200"
+            y2="8"
+            stroke="currentColor"
+            stroke-width="0.5"
+            stroke-dasharray="2 2"
+            class="text-base-content/15"
+          />
+          <line
+            x1="0"
+            y1="56"
+            x2="200"
+            y2="56"
+            stroke="currentColor"
+            stroke-width="0.5"
+            class="text-base-content/20"
+          />
+          <path d={@area} fill="var(--color-primary)" fill-opacity="0.15" />
+          <polyline
+            points={@points}
+            fill="none"
+            stroke="var(--color-primary)"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <g>
+            <rect
+              :for={h <- @hovers}
+              x={h.x - 5}
+              y="8"
+              width="10"
+              height="48"
+              fill="transparent"
+              class="hover:fill-base-content/10"
+            >
+              <title>{h.date}: {h.value}</title>
+            </rect>
+          </g>
+        </svg>
+      </div>
+      <div class="flex justify-between text-[11px] text-base-content/50 tabular-nums">
         <span>{Calendar.strftime(@start_date, "%b %d")}</span>
         <span>last: {@last}</span>
         <span>{Calendar.strftime(@end_date, "%b %d")}</span>

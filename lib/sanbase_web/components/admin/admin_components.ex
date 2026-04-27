@@ -22,6 +22,8 @@ defmodule SanbaseWeb.AdminComponents do
 
   import SanbaseWeb.CoreComponents
 
+  alias SanbaseWeb.StyleUtils
+
   @doc """
   Renders a bottom navigation for a form.
 
@@ -494,7 +496,13 @@ defmodule SanbaseWeb.AdminComponents do
         {@label}
       </label>
       <div :if={!@label} aria-hidden="true"></div>
-      <div class="min-w-0" style={if @input_max_width, do: "max-width: #{@input_max_width}"}>
+      <div
+        class="min-w-0"
+        style={
+          if @input_max_width,
+            do: "max-width: #{StyleUtils.safe_css_length(@input_max_width, "40rem")}"
+        }
+      >
         {render_slot(@inner_block)}
       </div>
     </div>

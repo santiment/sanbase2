@@ -6,9 +6,24 @@
     }
   }">
   <div
-    class="drawer min-h-screen lg:drawer-open"
+    id="admin-drawer"
+    class="drawer min-h-screen"
     x-effect="collapsed ? $el.classList.remove('lg:drawer-open') : $el.classList.add('lg:drawer-open')"
   >
+    <%!--
+      Apply lg:drawer-open before paint based on persisted state. Synchronous
+      inline scripts block parsing/rendering until they execute, so the class
+      lands on #admin-drawer before its first paint and avoids flicker.
+    --%>
+    <script>
+      (function () {
+        try {
+          if (localStorage.getItem('admin-sidebar-collapsed') !== 'true') {
+            document.getElementById('admin-drawer').classList.add('lg:drawer-open');
+          }
+        } catch (e) {}
+      })();
+    </script>
     <input id="admin-sidebar-toggle" type="checkbox" class="drawer-toggle" />
 
     <div class="drawer-content flex flex-col min-h-screen">

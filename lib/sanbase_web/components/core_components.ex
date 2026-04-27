@@ -35,22 +35,26 @@ defmodule SanbaseWeb.CoreComponents do
       data-cancel={JS.exec(@on_cancel, "phx-remove")}
     >
       <div class={["modal-box w-full", @max_modal_width]}>
-        <form method="dialog" class="absolute right-2 top-2">
-          <button
-            type="submit"
-            class="btn btn-sm btn-circle btn-ghost"
-            aria-label={gettext("close")}
-          >
-            <.icon name="hero-x-mark-solid" class="size-4" />
-          </button>
-        </form>
+        <button
+          type="button"
+          class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+          phx-click={JS.exec("data-cancel", to: "##{@id}")}
+          aria-label={gettext("close")}
+        >
+          <.icon name="hero-x-mark-solid" class="size-4" />
+        </button>
         <div id={"#{@id}-content"}>
           {render_slot(@inner_block)}
         </div>
       </div>
-      <form method="dialog" class="modal-backdrop">
-        <button>close</button>
-      </form>
+      <button
+        type="button"
+        class="modal-backdrop"
+        phx-click={JS.exec("data-cancel", to: "##{@id}")}
+        aria-label={gettext("close")}
+      >
+        close
+      </button>
     </dialog>
     """
   end

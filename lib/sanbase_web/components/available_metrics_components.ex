@@ -65,7 +65,7 @@ defmodule SanbaseWeb.AvailableMetricsComponents do
 
   defp popover_text?(nil), do: false
   defp popover_text?(text) when is_binary(text), do: String.trim(text) != ""
-  defp popover_text?(_), do: true
+  defp popover_text?(_), do: false
 
   @doc ~S"""
   Renders a table with generic styling.

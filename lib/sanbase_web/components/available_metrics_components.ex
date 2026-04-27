@@ -51,7 +51,7 @@ defmodule SanbaseWeb.AvailableMetricsComponents do
         class={@popover_class}
       >
         <:trigger>
-          <span class="border-b border-dotted border-gray-500 hover:text-blue-500 hover:border-blue-500">
+          <span class="border-b border-dotted border-base-content/40 hover:text-primary hover:border-primary">
             {@display_text}
           </span>
         </:trigger>

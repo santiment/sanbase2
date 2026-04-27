@@ -174,12 +174,6 @@ defmodule SanbaseWeb.UserStatsLive do
     """
   end
 
-  defp loading_spinner(assigns) do
-    ~H"""
-    <span class="loading loading-spinner loading-xs mr-2"></span>
-    """
-  end
-
   attr :error, :string, required: true
 
   defp error_message(assigns) do

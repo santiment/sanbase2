@@ -2,6 +2,7 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
   use SanbaseWeb, :live_view
 
   alias Sanbase.MCP.ToolInvocation
+  alias SanbaseWeb.AdminSharedComponents
 
   @page_size 50
 
@@ -176,11 +177,11 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
             </tr>
           </thead>
           <tbody>
-            <tr :if={@invocations == []}>
-              <td colspan="9" class="text-center text-base-content/60 py-6">
-                No invocations found matching your filters.
-              </td>
-            </tr>
+            <AdminSharedComponents.empty_table_row
+              :if={@invocations == []}
+              colspan={9}
+              message="No invocations found matching your filters."
+            />
             <tr :for={inv <- @invocations} id={"inv-#{inv.id}"}>
               <td class="text-base-content/70">{format_datetime(inv.inserted_at)}</td>
               <td class="font-mono">
@@ -216,20 +217,13 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
   defp stats_bar(assigns) do
     ~H"""
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-      <.stat_card
+      <AdminSharedComponents.mini_stat_card
         :for={{tool_name, count} <- Enum.sort_by(@stats, fn {_, c} -> -c end)}
         label={tool_name}
         count={count}
+        suffix="(24h)"
+        truncate
       />
-    </div>
-    """
-  end
-
-  defp stat_card(assigns) do
-    ~H"""
-    <div class="card bg-base-200 border border-base-300 p-3">
-      <div class="text-2xl font-bold text-info">{@count}</div>
-      <div class="text-xs text-base-content/60 truncate" title={@label}>{@label} (24h)</div>
     </div>
     """
   end

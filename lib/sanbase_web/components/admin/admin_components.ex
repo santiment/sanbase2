@@ -44,7 +44,7 @@ defmodule SanbaseWeb.AdminComponents do
   def form_bottom_nav(assigns) do
     ~H"""
     <div class="flex justify-end">
-      <.action_btn resource={@resource} action={:index} label="Back" color={:white} />
+      <.action_btn resource={@resource} label="Back" color={:white} />
       <.btn label={if @type == "new", do: "Create", else: "Update"} href="#" type="submit" />
     </div>
     """
@@ -1075,7 +1075,6 @@ defmodule SanbaseWeb.AdminComponents do
   end
 
   attr(:resource, :string, required: true)
-  attr(:action, :atom, required: true)
   attr(:label, :string, required: true)
   attr(:color, :atom, required: true)
 

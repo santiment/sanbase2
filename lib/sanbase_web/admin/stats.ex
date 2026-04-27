@@ -92,57 +92,47 @@ defmodule SanbaseWeb.Admin.Stats do
     scheduled_states = ["available", "scheduled", "retryable"]
     failed_states = ["discarded", "cancelled"]
 
-    scheduled =
-      from(j in Oban.Job,
-        where: j.state in ^scheduled_states,
-        group_by: j.queue,
-        select: {j.queue, count()}
-      )
-      |> Repo.all()
-      |> Map.new()
-
-    completed_1d =
-      from(j in Oban.Job,
-        where: j.state == "completed" and j.completed_at >= ^day_ago,
-        group_by: j.queue,
-        select: {j.queue, count()}
-      )
-      |> Repo.all()
-      |> Map.new()
-
-    completed_7d =
-      from(j in Oban.Job,
-        where: j.state == "completed" and j.completed_at >= ^week_ago,
-        group_by: j.queue,
-        select: {j.queue, count()}
-      )
-      |> Repo.all()
-      |> Map.new()
-
-    failed_7d =
-      from(j in Oban.Job,
-        where: j.state in ^failed_states and j.attempted_at >= ^week_ago,
-        group_by: j.queue,
-        select: {j.queue, count()}
-      )
-      |> Repo.all()
-      |> Map.new()
-
-    queues =
-      [scheduled, completed_1d, completed_7d, failed_7d]
-      |> Enum.flat_map(&Map.keys/1)
-      |> Enum.uniq()
-      |> Enum.sort()
-
-    Enum.map(queues, fn q ->
-      %{
-        queue: q,
-        scheduled: Map.get(scheduled, q, 0),
-        completed_1d: Map.get(completed_1d, q, 0),
-        completed_7d: Map.get(completed_7d, q, 0),
-        failed_7d: Map.get(failed_7d, q, 0)
-      }
-    end)
+    from(j in Oban.Job,
+      where:
+        j.state in ^scheduled_states or
+          (j.state == "completed" and j.completed_at >= ^week_ago) or
+          (j.state in ^failed_states and j.attempted_at >= ^week_ago),
+      group_by: j.queue,
+      select: %{
+        queue: j.queue,
+        scheduled: count(fragment("CASE WHEN ? = ANY(?) THEN 1 END", j.state, ^scheduled_states)),
+        completed_1d:
+          count(
+            fragment(
+              "CASE WHEN ? = 'completed' AND ? >= ? THEN 1 END",
+              j.state,
+              j.completed_at,
+              ^day_ago
+            )
+          ),
+        completed_7d:
+          count(
+            fragment(
+              "CASE WHEN ? = 'completed' AND ? >= ? THEN 1 END",
+              j.state,
+              j.completed_at,
+              ^week_ago
+            )
+          ),
+        failed_7d:
+          count(
+            fragment(
+              "CASE WHEN ? = ANY(?) AND ? >= ? THEN 1 END",
+              j.state,
+              ^failed_states,
+              j.attempted_at,
+              ^week_ago
+            )
+          )
+      },
+      order_by: j.queue
+    )
+    |> Repo.all()
   end
 
   defp active_subscriptions_by_product do

@@ -19,13 +19,13 @@ defmodule SanbaseWeb.AvailableMetricsComponents do
       href={@href}
       class={[
         if(@disabled,
-          do: "pointer-events-none bg-gray-100 text-gray-400",
-          else: "bg-white hover:bg-gray-100 text-gray-900"
+          do: "pointer-events-none bg-base-200 text-base-content/40",
+          else: "bg-base-100 hover:bg-base-200 text-base-content"
         ),
-        "border border-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center gap-x-2"
+        "border border-base-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center gap-x-2"
       ]}
     >
-      <CoreComponents.icon :if={@icon} name={@icon} class="text-gray-500" />
+      <CoreComponents.icon :if={@icon} name={@icon} class="text-base-content/60" />
       {@text}
     </.link>
     """

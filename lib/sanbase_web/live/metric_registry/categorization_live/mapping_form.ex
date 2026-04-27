@@ -333,5 +333,11 @@ defmodule SanbaseWeb.CategorizationLive.MappingForm do
   defp parse_integer(nil), do: nil
   defp parse_integer(""), do: nil
   defp parse_integer(value) when is_integer(value), do: value
-  defp parse_integer(value) when is_binary(value), do: String.to_integer(value)
+
+  defp parse_integer(value) when is_binary(value) do
+    case Integer.parse(value) do
+      {n, ""} -> n
+      _ -> nil
+    end
+  end
 end

@@ -10,10 +10,13 @@ defmodule SanbaseWeb.Admin.PromoTrialLive.Form do
 
   @impl true
   def mount(_params, _session, socket) do
+    plans = PromoTrial.plans_grouped()
+
     {:ok,
      socket
      |> assign(:page_title, "New Promo Trial")
-     |> assign(:plans, PromoTrial.plans_grouped())
+     |> assign(:plans, plans)
+     |> assign(:plan_map, plan_id_name_map(plans))
      |> assign(:interval, "month")
      |> assign(:selected_plans, MapSet.new())
      |> assign(:trial_days, 14)
@@ -140,7 +143,7 @@ defmodule SanbaseWeb.Admin.PromoTrialLive.Form do
     |> Enum.sort_by(& &1.id)
   end
 
-  defp all_plan_id_name_map(plans) do
+  defp plan_id_name_map(plans) do
     plans
     |> Enum.flat_map(fn {_product, by_interval} ->
       Enum.flat_map(by_interval, fn {interval, plan_list} ->
@@ -183,9 +186,8 @@ defmodule SanbaseWeb.Admin.PromoTrialLive.Form do
   @impl true
   def render(assigns) do
     assigns =
-      assigns
-      |> assign(:plan_map, all_plan_id_name_map(assigns.plans))
-      |> assign(
+      assign(
+        assigns,
         :can_submit?,
         not is_nil(assigns.selected_user) and MapSet.size(assigns.selected_plans) > 0
       )

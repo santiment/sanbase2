@@ -73,7 +73,7 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
 
   def handle_event("search_user", params, socket) do
     query = String.trim(Map.get(params, "query", Map.get(params, "value", "")))
-    results = if String.length(query) >= 1, do: search_users(query), else: []
+    results = if String.length(query) >= 2, do: search_users(query), else: []
 
     socket =
       socket
@@ -326,9 +326,14 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
   # ---------------------------------------------------------------------------
 
   def handle_event("select_entity", %{"id" => id}, socket) do
-    id = String.to_integer(id)
-    entity = Enum.find(socket.assigns.entities, fn e -> e.id == id end)
-    {:noreply, assign(socket, :selected_entity, entity)}
+    case Integer.parse(id) do
+      {id_int, ""} ->
+        entity = Enum.find(socket.assigns.entities, fn e -> e.id == id_int end)
+        {:noreply, assign(socket, :selected_entity, entity)}
+
+      _ ->
+        {:noreply, socket}
+    end
   end
 
   def handle_event("close_modal", _, socket) do
@@ -485,12 +490,13 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
     {entities, total_count} = fetch_entities(entity_type, user.id, page_size, offset)
     total_pages = max(1, ceil(total_count / page_size))
 
-    tab_counts = %{
-      charts: count_entities(:charts, user.id),
-      screeners: count_entities(:screeners, user.id),
-      watchlists: count_entities(:watchlists, user.id),
-      insights: count_entities(:insights, user.id)
-    }
+    tab_counts =
+      [:charts, :screeners, :watchlists, :insights]
+      |> Map.new(fn type ->
+        if type == entity_type,
+          do: {type, total_count},
+          else: {type, count_entities(type, user.id)}
+      end)
 
     socket
     |> assign(:entities, entities)

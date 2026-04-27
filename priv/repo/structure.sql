@@ -2,15 +2,14 @@
 -- PostgreSQL database dump
 --
 
-\restrict 9Qy0lM88uNdXlTwK5g0ZQzzw2249FUKMj2ywxxKoG4ofs4BODJXXTwwTEUTsWiy
+\restrict PP2b5QCcDaGcyKYxx5dKLmzCiXrAI5ifShCyMCc6llMYFwQEKo8JbCeGcGux6vf
 
--- Dumped from database version 17.9 (Homebrew)
--- Dumped by pg_dump version 17.9 (Homebrew)
+-- Dumped from database version 15.15 (Homebrew)
+-- Dumped by pg_dump version 15.15 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
-SET transaction_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
@@ -5225,6 +5224,41 @@ ALTER SEQUENCE public.user_lists_id_seq OWNED BY public.user_lists.id;
 
 
 --
+-- Name: user_onboardings; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_onboardings (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    title character varying(255),
+    goal character varying(255),
+    used_tools character varying(255)[] DEFAULT ARRAY[]::character varying[],
+    uses_behaviour_analysis character varying(255),
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: user_onboardings_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.user_onboardings_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: user_onboardings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.user_onboardings_id_seq OWNED BY public.user_onboardings.id;
+
+
+--
 -- Name: user_promo_codes; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -6756,6 +6790,13 @@ ALTER TABLE ONLY public.user_lists ALTER COLUMN id SET DEFAULT nextval('public.u
 
 
 --
+-- Name: user_onboardings id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_onboardings ALTER COLUMN id SET DEFAULT nextval('public.user_onboardings_id_seq'::regclass);
+
+
+--
 -- Name: user_promo_codes id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -8041,6 +8082,14 @@ ALTER TABLE ONLY public.user_followers
 
 ALTER TABLE ONLY public.user_lists
     ADD CONSTRAINT user_lists_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: user_onboardings user_onboardings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_onboardings
+    ADD CONSTRAINT user_onboardings_pkey PRIMARY KEY (id);
 
 
 --
@@ -9602,6 +9651,13 @@ CREATE UNIQUE INDEX user_lists_slug_index ON public.user_lists USING btree (slug
 
 
 --
+-- Name: user_onboardings_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX user_onboardings_user_id_index ON public.user_onboardings USING btree (user_id);
+
+
+--
 -- Name: user_promo_codes_coupon_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11096,6 +11152,14 @@ ALTER TABLE ONLY public.user_lists
 
 
 --
+-- Name: user_onboardings user_onboardings_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_onboardings
+    ADD CONSTRAINT user_onboardings_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: user_promo_codes user_promo_codes_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -11339,7 +11403,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 9Qy0lM88uNdXlTwK5g0ZQzzw2249FUKMj2ywxxKoG4ofs4BODJXXTwwTEUTsWiy
+\unrestrict PP2b5QCcDaGcyKYxx5dKLmzCiXrAI5ifShCyMCc6llMYFwQEKo8JbCeGcGux6vf
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -11904,3 +11968,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260407120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260409120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260409120001);
 INSERT INTO public."schema_migrations" (version) VALUES (20260422120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260427125517);

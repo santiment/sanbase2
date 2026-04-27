@@ -591,7 +591,12 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
       <AdminSharedComponents.action_button
         :if={Permissions.can?(:access_verified_status, roles: @current_user_role_names)}
         phx_click="show_verified_changes_modal"
-        class={if(@changed_metrics_ids == [], do: "btn-soft", else: "btn-success")}
+        class={
+          if(@changed_metrics_ids == [],
+            do: "bg-base-100 border-base-300 hover:bg-base-200",
+            else: "btn-success"
+          )
+        }
         text="Apply Verified Status Changes"
         count={length(@changed_metrics_ids)}
       />

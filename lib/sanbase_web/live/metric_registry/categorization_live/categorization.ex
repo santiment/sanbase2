@@ -282,7 +282,7 @@ defmodule SanbaseWeb.CategorizationLive.Index do
         <div class="text-xs text-base-content/50">({@has_ui_metadata_variants_count} variants)</div>
       </div>
       <div class="card bg-base-100 border border-base-300 shadow p-4">
-        <div class="text-sm text-base-content/60">show on Sanbase</div>
+        <div class="text-sm text-base-content/60">Show on Sanbase</div>
         <div class="text-2xl font-bold text-secondary">{@show_on_sanbase_count}</div>
         <div class="text-xs text-base-content/50">({@show_on_sanbase_variants_count} variants)</div>
       </div>
@@ -345,7 +345,7 @@ defmodule SanbaseWeb.CategorizationLive.Index do
           </div>
 
           <div :if={@metric.variants_count >= 2} class="text-xs text-secondary">
-            (#{@metric.variants_count} variants)
+            ({@metric.variants_count} variants)
           </div>
         </div>
       </td>

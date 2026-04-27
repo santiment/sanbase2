@@ -4,13 +4,21 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content={get_csrf_token()} />
+    <%!--
+      Anti-FOUC theme bootstrap. Must run synchronously before paint, so it
+      cannot live in the deferred app.js bundle. Falls back to the OS
+      `prefers-color-scheme` when no explicit choice is stored.
+    --%>
     <script>
       (function () {
         try {
           var t = localStorage.getItem('theme');
-          if (t === 'dark' || t === 'light') {
-            document.documentElement.setAttribute('data-theme', t);
+          if (t !== 'dark' && t !== 'light') {
+            t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : 'light';
           }
+          document.documentElement.setAttribute('data-theme', t);
         } catch (e) {}
       })();
     </script>

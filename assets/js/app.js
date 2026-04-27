@@ -64,9 +64,20 @@ window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
 
 // Native <dialog class="modal"> open/close. CoreComponents.show_modal/2 and
 // hide_modal/2 dispatch these events on the dialog element.
+const handleDialogClose = e => {
+  const el = e.target
+  const cancel = el.dataset && el.dataset.cancel
+  if (cancel) liveSocket.execJS(el, cancel)
+}
 window.addEventListener("phx:show-modal", e => {
   const el = e.target
-  if (el && typeof el.showModal === "function" && !el.open) el.showModal()
+  if (!el || typeof el.showModal !== "function") return
+  if (!el.dataset.dialogListenersBound) {
+    el.addEventListener("cancel", handleDialogClose)
+    el.addEventListener("close", handleDialogClose)
+    el.dataset.dialogListenersBound = "1"
+  }
+  if (!el.open) el.showModal()
 })
 window.addEventListener("phx:hide-modal", e => {
   const el = e.target

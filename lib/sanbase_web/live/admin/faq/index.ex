@@ -191,6 +191,7 @@ defmodule SanbaseWeb.Admin.FaqLive.Index do
         "api" -> "badge-info"
         "sanbase" -> "badge-error"
         "metrics" -> "badge-accent"
+        _ -> "badge-neutral"
       end
 
     assigns = assign(assigns, :colors_class, colors_class)

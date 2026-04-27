@@ -16,7 +16,6 @@ module.exports = {
   },
   safelist: [],
   plugins: [
-    require('@tailwindcss/typography'),
     // phx-submit-loading variant is registered CSS-side via @custom-variant in app.css.
     // Other phx-* variants (phx-no-feedback, phx-click-loading, phx-change-loading)
     // were dead config — dropped.

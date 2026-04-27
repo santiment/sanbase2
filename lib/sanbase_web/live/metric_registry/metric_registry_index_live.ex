@@ -151,14 +151,14 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           <div class="flex flex-col gap-1.5">
             <.link
               navigate={~p"/admin/metric_registry/show/#{row.id}"}
-              class="inline-flex items-center justify-center px-2.5 py-1 text-sm font-medium text-blue-700 bg-blue-50 rounded hover:bg-blue-100 border border-blue-200"
+              class="btn btn-sm btn-outline btn-primary"
             >
               Show
             </.link>
             <.link
               :if={Permissions.can?(:edit, roles: @current_user_role_names)}
               navigate={~p"/admin/metric_registry/edit/#{row.id}"}
-              class="inline-flex items-center justify-center px-2.5 py-1 text-sm font-medium text-green-700 bg-green-50 rounded hover:bg-green-100 border border-green-200"
+              class="btn btn-sm btn-outline btn-success"
             >
               Edit
             </.link>
@@ -447,17 +447,17 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
   defp sync_status(assigns) do
     ~H"""
     <div>
-      <span :if={@row.sync_status == "synced"} class="text-green-900 ms-3 text-sm font-bold">
+      <span :if={@row.sync_status == "synced"} class="text-success ms-3 text-sm font-bold">
         SYNCED
       </span>
 
-      <span :if={@row.sync_status == "not_synced"} class="text-red-700 ms-3 text-sm font-bold">
+      <span :if={@row.sync_status == "not_synced"} class="text-error ms-3 text-sm font-bold">
         <div>NOT SYNCED</div>
       </span>
 
       <div
         :if={@row.sync_status == "not_synced" and @row.id in @metric_ids_with_changes}
-        class="text-gray-400 text-sm font-semibold cursor-pointer"
+        class="text-base-content/60 text-sm font-semibold cursor-pointer"
         phx-click={JS.push("show_not_synced_diff", value: %{metric_registry_id: @row.id})}
       >
         (click to see diff)
@@ -465,7 +465,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
 
       <div
         :if={@row.sync_status == "not_synced" and @row.id not in @metric_ids_with_changes}
-        class="text-gray-400 text-xs font-semibold "
+        class="text-base-content/60 text-xs font-semibold "
       >
         (New metric, no changes)
       </div>
@@ -530,7 +530,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     <div>
       <form phx-change="apply_filters" class="flex flex-col mb-4">
         <div>
-          <span class="text-sm font-semibold leading-6 text-zinc-800">Filters</span>
+          <span class="text-sm font-semibold leading-6 text-base-content">Filters</span>
           <div class="flex flex-col flex-wrap space-y-2 items-start md:flex-row md:items-center md:gap-x-2 md:space-y-0">
             <.filter_input
               id="metric-name-search"
@@ -569,7 +569,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
           </div>
         </div>
         <div>
-          <span class="text-sm font-semibold leading-6 text-zinc-800">Sort By</span>
+          <span class="text-sm font-semibold leading-6 text-base-content">Sort By</span>
           <.input
             id="sort-by"
             type="select"
@@ -593,7 +593,8 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
         phx_click="show_verified_changes_modal"
         class={
           if(@changed_metrics_ids == [],
-            do: "bg-base-100 border-base-300 hover:bg-base-200",
+            do:
+              "bg-base-100 border border-base-content/40 hover:bg-base-200 hover:border-base-content/70",
             else: "btn-success"
           )
         }
@@ -611,7 +612,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
       id={@id}
       value={@value || ""}
       name={@name}
-      class="block w-64 ps-4 text-sm text-gray-900 border border-gray-300 rounded-lg bg-white"
+      class="input input-bordered input-sm w-64"
       placeholder={@placeholder}
       phx-debounce="200"
     />
@@ -622,7 +623,7 @@ defmodule SanbaseWeb.MetricRegistryIndexLive do
     ~H"""
     <select
       name="status"
-      class="block w-48 ps-4 text-sm text-gray-900 border border-gray-300 rounded-lg bg-white"
+      class="select select-bordered select-sm w-48"
     >
       <option value="">All Statuses</option>
       <option

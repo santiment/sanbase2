@@ -1,1 +1,138 @@
-<div></div>
+<div class="p-6 space-y-4">
+  <div>
+    <h1 class="text-2xl font-bold text-base-content">Admin Dashboard</h1>
+    <p class="text-sm text-base-content/60">
+      Updated {Calendar.strftime(@stats.computed_at, "%Y-%m-%d %H:%M UTC")} · cached for 15 min
+    </p>
+  </div>
+
+  <section>
+    <h2 class="text-sm font-semibold uppercase tracking-wide text-base-content/60 mb-2">Users</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+      <.stat_card label="Total Users" value={@stats.users.total} />
+      <.stat_card label="Signups · 24h" value={@stats.users.last_24h} />
+      <.stat_card label="Signups · 7d" value={@stats.users.last_7d} />
+    </div>
+  </section>
+
+  <section>
+    <h2 class="text-sm font-semibold uppercase tracking-wide text-base-content/60 mb-2">
+      Metric Registry
+    </h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+      <.stat_card
+        label="Total"
+        value={@stats.metric_registry.total}
+        href="/admin/metric_registry"
+      />
+      <.stat_card
+        label="Not Synced"
+        value={@stats.metric_registry.not_synced}
+        accent={(@stats.metric_registry.not_synced > 0 && "text-warning") || nil}
+      />
+      <.stat_card label="Unverified" value={@stats.metric_registry.unverified} />
+      <.stat_card label="Deprecated" value={@stats.metric_registry.deprecated} />
+      <.stat_card
+        label="Pending Approval"
+        value={@stats.metric_registry.pending_approval}
+        accent={(@stats.metric_registry.pending_approval > 0 && "text-info") || nil}
+      />
+    </div>
+  </section>
+
+  <section>
+    <h2 class="text-sm font-semibold uppercase tracking-wide text-base-content/60 mb-2">
+      Active Subscriptions · Sanbase
+    </h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+      <.stat_card label="Total" value={@stats.subscriptions.sanbase.total} />
+      <.stat_card
+        :for={{plan, count} <- @stats.subscriptions.sanbase.by_plan}
+        label={plan}
+        value={count}
+      />
+    </div>
+  </section>
+
+  <section>
+    <h2 class="text-sm font-semibold uppercase tracking-wide text-base-content/60 mb-2">
+      Active Subscriptions · SanAPI
+    </h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+      <.stat_card label="Total" value={@stats.subscriptions.sanapi.total} />
+      <.stat_card
+        :for={{plan, count} <- @stats.subscriptions.sanapi.by_plan}
+        label={plan}
+        value={count}
+      />
+    </div>
+  </section>
+
+  <section>
+    <h2 class="text-sm font-semibold uppercase tracking-wide text-base-content/60 mb-2">
+      Oban Queues
+    </h2>
+    <div class="overflow-x-auto bg-base-100 border border-base-300 rounded">
+      <table class="table table-sm">
+        <thead>
+          <tr class="text-base-content/60">
+            <th>Queue</th>
+            <th class="text-right">Scheduled</th>
+            <th class="text-right">Completed · 1d</th>
+            <th class="text-right">Completed · 7d</th>
+            <th class="text-right">Failed · 7d</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr :for={q <- @stats.oban} class="hover:bg-base-200">
+            <td class="font-medium">{q.queue}</td>
+            <td class="text-right tabular-nums">{q.scheduled}</td>
+            <td class="text-right tabular-nums">{q.completed_1d}</td>
+            <td class="text-right tabular-nums">{q.completed_7d}</td>
+            <td class={[
+              "text-right tabular-nums",
+              q.failed_7d > 0 && "text-error font-semibold"
+            ]}>
+              {q.failed_7d}
+            </td>
+          </tr>
+          <tr :if={@stats.oban == []}>
+            <td colspan="5" class="text-center text-base-content/50">No jobs</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="text-sm font-semibold uppercase tracking-wide text-base-content/60 mb-2">
+      Last {@stats.series.days} Days
+    </h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+      <.sparkline label="Signups" series={@stats.series.users} />
+      <.sparkline label="Watchlists" series={@stats.series.watchlists} />
+      <.sparkline label="Chart Configurations" series={@stats.series.chart_configurations} />
+      <.sparkline label="Alerts" series={@stats.series.alerts} />
+      <.sparkline label="Insights" series={@stats.series.insights} />
+      <.sparkline label="Comments" series={@stats.series.comments} />
+      <.sparkline label="Promo Trials" series={@stats.series.promo_trials} />
+    </div>
+  </section>
+
+  <section>
+    <h2 class="text-sm font-semibold uppercase tracking-wide text-base-content/60 mb-2">
+      Content
+    </h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+      <.stat_card label="Insights" value={@stats.insights.total} />
+      <.stat_card label="Comments" value={@stats.comments.total} />
+      <.stat_card label="Disagreement Tweets" value={@stats.disagreement_tweets.total} />
+      <.stat_card
+        label="Tweets to Review"
+        value={@stats.disagreement_tweets.review_required}
+        accent={(@stats.disagreement_tweets.review_required > 0 && "text-warning") || nil}
+      />
+      <.stat_card label="FAQ Active" value={@stats.faq_entries.active} />
+    </div>
+  </section>
+</div>

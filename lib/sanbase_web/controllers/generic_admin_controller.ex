@@ -86,7 +86,7 @@ defmodule SanbaseWeb.GenericAdminController do
   end
 
   def home(%Plug.Conn{} = conn, _params) do
-    render(conn, "home.html", search_value: "")
+    render(conn, "home.html", search_value: "", stats: SanbaseWeb.Admin.Stats.get())
   end
 
   def index(%Plug.Conn{} = conn, %{"resource" => resource} = params) do

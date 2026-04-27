@@ -18,7 +18,7 @@ defmodule SanbaseWeb.AdminSharedComponents do
   attr :phx_click, :string, required: true
   attr :text, :string, required: true
   attr :count, :integer, default: nil
-  attr :class, :string, default: "btn-soft"
+  attr :class, :string, default: "bg-base-100 border-base-300 hover:bg-base-200"
   attr :phx_disable_with, :string, default: nil
   attr :rest, :global
 
@@ -194,7 +194,13 @@ defmodule SanbaseWeb.AdminSharedComponents do
       href={@href}
       target={@target}
       rel={if @target == "_blank", do: "noopener noreferrer"}
-      class={["btn btn-sm", if(@disabled, do: "btn-disabled", else: "btn-soft")]}
+      class={[
+        "btn btn-sm",
+        if(@disabled,
+          do: "btn-disabled",
+          else: "bg-base-100 border-base-300 hover:bg-base-200"
+        )
+      ]}
     >
       <CoreComponents.icon :if={@icon} name={@icon} />
       {@text}

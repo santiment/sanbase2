@@ -9,6 +9,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
     ApikeyResolver,
     TelegramResolver,
     UserFollowerResolver,
+    UserOnboardingResolver,
     UserResolver,
     UserSettingsResolver
   }
@@ -225,6 +226,18 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
 
       middleware(JWTAuth)
       resolve(&UserResolver.update_profile/3)
+    end
+
+    @desc """
+    Submit (or update) the answers to the 4-step onboarding questionnaire shown
+    to users right after they confirm their email. The mutation is idempotent
+    and upserts a single record per user.
+    """
+    field :submit_user_onboarding, :user_onboarding do
+      arg(:onboarding, non_null(:user_onboarding_input_object))
+
+      middleware(JWTAuth, allow_access_without_terms_accepted: true)
+      resolve(&UserOnboardingResolver.submit_user_onboarding/3)
     end
   end
 end

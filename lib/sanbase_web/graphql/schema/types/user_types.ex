@@ -14,6 +14,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     LinkedUserResolver,
     UserChartConfigurationResolver,
     UserListResolver,
+    UserOnboardingResolver,
     UserResolver,
     UserSettingsResolver,
     UserTriggerResolver,
@@ -262,6 +263,10 @@ defmodule SanbaseWeb.Graphql.UserTypes do
 
     field :settings, :user_settings do
       resolve(&UserSettingsResolver.settings/3)
+    end
+
+    field :user_onboarding, :user_onboarding do
+      resolve(&UserOnboardingResolver.user_onboarding/3)
     end
 
     field :triggers, list_of(:trigger) do

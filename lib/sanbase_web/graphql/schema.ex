@@ -76,6 +76,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.TransferTypes)
   import_types(Graphql.TwitterTypes)
   import_types(Graphql.UserListTypes)
+  import_types(Graphql.UserOnboardingTypes)
   import_types(Graphql.UserSettingsTypes)
   import_types(Graphql.UserTriggerTypes)
   import_types(Graphql.UserTypes)

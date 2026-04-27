@@ -34,14 +34,14 @@ defmodule SanbaseWeb.MonitoredTwitterHandleLive do
                 value="approved"
                 text="Approve"
                 disabled={false}
-                colors="bg-green-600 hover:bg-green-800"
+                variant="btn-success"
               />
               <AdminSharedComponents.approval_button
                 name="status"
                 value="declined"
                 text="Decline"
                 disabled={false}
-                colors="bg-red-600 hover:bg-red-800"
+                variant="btn-error"
               />
             </.form>
           </:action>

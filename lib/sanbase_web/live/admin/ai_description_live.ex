@@ -73,7 +73,7 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
 
   def handle_event("search_user", params, socket) do
     query = String.trim(Map.get(params, "query", Map.get(params, "value", "")))
-    results = if String.length(query) >= 1, do: search_users(query), else: []
+    results = if String.length(query) >= 2, do: search_users(query), else: []
 
     socket =
       socket
@@ -94,6 +94,10 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
       _ ->
         {:noreply, socket}
     end
+  end
+
+  def handle_event("clear_search_results", _, socket) do
+    {:noreply, assign(socket, :search_results, [])}
   end
 
   def handle_event("clear_user", _, socket) do
@@ -322,9 +326,14 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
   # ---------------------------------------------------------------------------
 
   def handle_event("select_entity", %{"id" => id}, socket) do
-    id = String.to_integer(id)
-    entity = Enum.find(socket.assigns.entities, fn e -> e.id == id end)
-    {:noreply, assign(socket, :selected_entity, entity)}
+    case Integer.parse(id) do
+      {id_int, ""} ->
+        entity = Enum.find(socket.assigns.entities, fn e -> e.id == id_int end)
+        {:noreply, assign(socket, :selected_entity, entity)}
+
+      _ ->
+        {:noreply, socket}
+    end
   end
 
   def handle_event("close_modal", _, socket) do
@@ -481,12 +490,13 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
     {entities, total_count} = fetch_entities(entity_type, user.id, page_size, offset)
     total_pages = max(1, ceil(total_count / page_size))
 
-    tab_counts = %{
-      charts: count_entities(:charts, user.id),
-      screeners: count_entities(:screeners, user.id),
-      watchlists: count_entities(:watchlists, user.id),
-      insights: count_entities(:insights, user.id)
-    }
+    tab_counts =
+      [:charts, :screeners, :watchlists, :insights]
+      |> Map.new(fn type ->
+        if type == entity_type,
+          do: {type, total_count},
+          else: {type, count_entities(type, user.id)}
+      end)
 
     socket
     |> assign(:entities, entities)
@@ -840,26 +850,17 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
   def render(assigns) do
     ~H"""
     <div class="p-6 max-w-full mx-auto">
-      <h1 class="text-3xl font-bold text-gray-900 mb-2">AI Description Generator</h1>
-      <p class="text-sm text-gray-500 mb-6">
+      <h1 class="text-3xl font-bold mb-2">AI Description Generator</h1>
+      <p class="text-sm text-base-content/60 mb-6">
         Search for a user to view and generate AI descriptions for their charts, screeners, watchlists, and insights.
       </p>
 
       <%!-- ── User search ─────────────────────────────────────────── --%>
       <div class="mb-6 relative">
         <div class="flex items-center gap-3">
-          <div class="relative flex-1 max-w-md">
-            <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </div>
-            <form phx-change="search_user" phx-submit="noop" class="contents">
+          <form phx-change="search_user" phx-submit="noop" class="flex-1 max-w-md">
+            <label class="input input-sm w-full">
+              <.icon name="hero-magnifying-glass" class="size-4 opacity-60" />
               <input
                 type="text"
                 name="query"
@@ -867,57 +868,42 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
                 phx-debounce="200"
                 placeholder="Search by username, email or user ID…"
                 autocomplete="off"
-                class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
-            </form>
-          </div>
-          <button
-            :if={@selected_user}
-            phx-click="clear_user"
-            class="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50"
-          >
-            ✕ Clear
+            </label>
+          </form>
+          <button :if={@selected_user} phx-click="clear_user" class="btn btn-sm btn-soft">
+            Clear
           </button>
         </div>
 
         <%!-- Search dropdown --%>
-        <div
+        <ul
           :if={@search_results != []}
-          class="absolute z-20 mt-1 w-full max-w-md bg-white rounded-lg shadow-lg border border-gray-200"
+          phx-click-away="clear_search_results"
+          class="menu menu-sm bg-base-100 rounded-box shadow border border-base-300 absolute z-20 mt-1 w-full max-w-md"
         >
-          <ul class="py-1">
-            <li :for={user <- @search_results}>
-              <button
-                phx-click="select_user"
-                phx-value-user_id={user.id}
-                class="w-full px-4 py-2 text-left hover:bg-blue-50 flex items-center justify-between gap-4"
-              >
-                <span class="text-sm font-medium text-gray-800">
-                  {user_display_name(user)}
-                </span>
-                <span class="text-xs text-gray-400 shrink-0">
-                  id: {user.id}
-                  {if user.username && user.email, do: " · #{user.email}"}
-                </span>
-              </button>
-            </li>
-          </ul>
-        </div>
+          <li :for={user <- @search_results}>
+            <button
+              phx-click="select_user"
+              phx-value-user_id={user.id}
+              class="flex items-center justify-between gap-4"
+            >
+              <span class="text-sm font-medium">{user_display_name(user)}</span>
+              <span class="text-xs text-base-content/50 shrink-0">
+                id: {user.id}{if user.username && user.email, do: " · #{user.email}"}
+              </span>
+            </button>
+          </li>
+        </ul>
 
         <%!-- Selected user chip --%>
         <div :if={@selected_user} class="mt-2 flex items-center gap-2">
-          <span class="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-200 rounded-full text-sm text-blue-800">
-            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fill-rule="evenodd"
-                d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-                clip-rule="evenodd"
-              />
-            </svg>
+          <span class="badge badge-info badge-soft gap-2">
+            <.icon name="hero-user" class="size-3" />
             {user_display_name(@selected_user)}
             <.link
               navigate={~p"/admin/generic/#{@selected_user.id}?resource=users"}
-              class="text-blue-500 hover:underline text-xs"
+              class="link text-xs"
             >
               #{@selected_user.id}
             </.link>
@@ -926,22 +912,10 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
       </div>
 
       <%!-- ── Empty state (no user selected) ────────────────────── --%>
-      <div :if={is_nil(@selected_user)} class="mt-20 text-center text-gray-400">
-        <svg
-          class="w-16 h-16 mx-auto mb-4 text-gray-200"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="1.5"
-            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"
-          />
-        </svg>
-        <p class="text-lg font-medium text-gray-300">No user selected</p>
-        <p class="text-sm text-gray-400 mt-1">
+      <div :if={is_nil(@selected_user)} class="mt-20 text-center text-base-content/40">
+        <.icon name="hero-users" class="size-16 mx-auto mb-4 text-base-content/20" />
+        <p class="text-lg font-medium">No user selected</p>
+        <p class="text-sm mt-1">
           Search for a user by username, email, or ID to get started
         </p>
       </div>
@@ -949,23 +923,19 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
       <%!-- ── Main UI (user selected) ────────────────────────────── --%>
       <div :if={@selected_user} class="space-y-5">
         <%!-- Global prompt (read-only) --%>
-        <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
-          <label class="block text-sm font-medium text-slate-900 mb-2">
+        <div class="card bg-base-200 border border-base-300 p-4">
+          <label class="block text-sm font-medium mb-2">
             Global refinement prompt
-            <span class="font-normal text-slate-600">(read-only default prompt)</span>
+            <span class="font-normal text-base-content/60">(read-only default prompt)</span>
           </label>
-          <textarea
-            readonly
-            rows="4"
-            class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-slate-100 text-slate-700 resize-none cursor-not-allowed"
-          >{@global_refinement_prompt}</textarea>
+          <textarea readonly rows="4" class="textarea textarea-sm w-full resize-none">{@global_refinement_prompt}</textarea>
         </div>
 
         <%!-- Custom prompt --%>
-        <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+        <div class="card bg-warning/10 border border-warning/30 p-4">
           <div class="mb-2">
-            <span class="block text-sm font-medium text-amber-900">Refinement pass</span>
-            <ul class="list-disc list-inside mt-1 space-y-0.5 text-sm font-normal text-amber-700">
+            <span class="block text-sm font-medium">Refinement pass</span>
+            <ul class="list-disc list-inside mt-1 space-y-0.5 text-sm font-normal text-base-content/70">
               <li>saved per user</li>
               <li>overrides Global refinement prompt</li>
               <li>leave empty if Global refinement prompt works ok</li>
@@ -983,25 +953,22 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
               phx-debounce="300"
               rows="2"
               placeholder="e.g. Focus on DeFi context. Use simpler language for beginners."
-              class="w-full px-3 py-2 border border-amber-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 focus:border-transparent bg-white resize-none"
+              class="textarea textarea-sm w-full resize-none"
             />
             <div class="mt-2 flex justify-end">
-              <button
-                type="submit"
-                class="px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-600 text-white hover:bg-amber-700 transition-colors"
-              >
+              <button type="submit" class="btn btn-sm btn-warning">
                 Save refinement pass
               </button>
             </div>
           </.form>
-          <p :if={@custom_prompt_error} class="mt-2 text-sm text-red-700">
+          <p :if={@custom_prompt_error} class="mt-2 text-sm text-error">
             {@custom_prompt_error}
           </p>
         </div>
 
         <%!-- Tabs + Bulk actions --%>
-        <div class="flex items-end justify-between border-b border-gray-200">
-          <nav class="-mb-px flex gap-6">
+        <div class="flex items-end justify-between border-b border-base-300">
+          <div role="tablist" class="tabs tabs-border -mb-px">
             <button
               :for={
                 {label, type} <- [
@@ -1011,150 +978,120 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
                   {"Insights", :insights}
                 ]
               }
+              role="tab"
               phx-click="select_tab"
               phx-value-type={type}
-              class={[
-                "pb-3 px-1 text-sm font-medium border-b-2 transition-colors",
-                if(@entity_type == type,
-                  do: "border-blue-600 text-blue-600",
-                  else: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                )
-              ]}
+              class={["tab", @entity_type == type && "tab-active"]}
             >
               {label}
               <span class={[
-                "ml-1 px-1.5 py-0.5 text-xs rounded-full",
-                if(@entity_type == type,
-                  do: "bg-blue-100 text-blue-700",
-                  else: "bg-gray-100 text-gray-500"
-                )
+                "ml-1 badge badge-xs",
+                if(@entity_type == type, do: "badge-primary", else: "badge-ghost")
               ]}>
                 {Map.get(@tab_counts, type, 0)}
               </span>
             </button>
-          </nav>
+          </div>
 
           <%!-- Action buttons --%>
           <div class="flex gap-2 pb-3">
             <button
               phx-click="bulk_generate"
               disabled={not is_nil(@bulk_job) && @bulk_job.status == :running}
-              class={[
-                "px-4 py-1.5 text-sm rounded-lg font-medium transition-colors",
-                if(not is_nil(@bulk_job) && @bulk_job.status == :running,
-                  do: "bg-gray-200 text-gray-400 cursor-not-allowed",
-                  else: "bg-blue-600 text-white hover:bg-blue-700"
-                )
-              ]}
+              class="btn btn-sm btn-primary"
             >
-              ⚡ Bulk Generate
+              <.icon name="hero-bolt" class="size-4" /> Bulk Generate
             </button>
-            <button
-              phx-click="show_override_confirm"
-              class="px-4 py-1.5 text-sm rounded-lg font-medium bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors border border-orange-200"
-            >
+            <button phx-click="show_override_confirm" class="btn btn-sm btn-soft btn-warning">
               Override Descriptions
             </button>
           </div>
         </div>
 
         <%!-- Bulk progress bar --%>
-        <div :if={@bulk_job} class="bg-white border border-gray-200 rounded-lg p-4">
+        <div :if={@bulk_job} class="card bg-base-100 border border-base-300 p-4">
           <div class="flex items-center justify-between mb-2">
             <div class="flex items-center gap-2">
               <span class={[
                 "inline-block w-2 h-2 rounded-full",
                 if(@bulk_job.status == :running,
-                  do: "bg-blue-500 animate-pulse",
-                  else: "bg-green-500"
+                  do: "bg-primary animate-pulse",
+                  else: "bg-success"
                 )
               ]} />
-              <span class="text-sm font-medium text-gray-700">
+              <span class="text-sm font-medium">
                 {if @bulk_job.status == :running, do: "Generating…", else: "Complete"}
               </span>
-              <span class="text-xs text-gray-500">
+              <span class="text-xs text-base-content/60">
                 {@bulk_job.done} done · {@bulk_job.failed} failed · {@bulk_job.total - @bulk_job.done -
                   @bulk_job.failed} remaining
               </span>
             </div>
             <div class="flex items-center gap-3">
-              <span class="text-sm font-semibold text-gray-800">
-                {bulk_progress_pct(@bulk_job)}%
-              </span>
+              <span class="text-sm font-semibold">{bulk_progress_pct(@bulk_job)}%</span>
               <button
                 :if={@bulk_job.status == :running}
                 phx-click="bulk_cancel"
-                class="text-xs text-gray-400 hover:text-red-500"
+                class="btn btn-xs btn-ghost text-error"
               >
                 Cancel
               </button>
             </div>
           </div>
-          <div class="w-full bg-gray-100 rounded-full h-2">
-            <div
-              class={[
-                "h-2 rounded-full transition-all duration-300",
-                if(@bulk_job.failed > 0,
-                  do: "bg-orange-400",
-                  else: if(@bulk_job.status == :cancelled, do: "bg-gray-400", else: "bg-blue-500")
-                )
-              ]}
-              style={"width: #{bulk_progress_pct(@bulk_job)}%"}
-            />
-          </div>
+          <progress
+            class={[
+              "progress w-full",
+              cond do
+                @bulk_job.failed > 0 -> "progress-warning"
+                @bulk_job.status == :cancelled -> "progress-neutral"
+                true -> "progress-primary"
+              end
+            ]}
+            value={bulk_progress_pct(@bulk_job)}
+            max="100"
+          >
+          </progress>
           <div :if={@bulk_job.errors != []} class="mt-2 space-y-1">
-            <p class="text-xs font-medium text-red-600">Failures:</p>
-            <p :for={{id, reason} <- Enum.take(@bulk_job.errors, 5)} class="text-xs text-red-500">
+            <p class="text-xs font-medium text-error">Failures:</p>
+            <p :for={{id, reason} <- Enum.take(@bulk_job.errors, 5)} class="text-xs text-error">
               id #{id}: {reason}
             </p>
           </div>
         </div>
 
         <%!-- Stats row --%>
-        <div class="text-xs text-gray-500">
-          Showing <span class="font-medium text-gray-700">{length(@entities)}</span>
-          of <span class="font-medium text-gray-700">{@total_count}</span>
-          ·
-          Page <span class="font-medium">{@page}</span>
+        <div class="text-xs text-base-content/60">
+          Showing <span class="font-medium text-base-content">{length(@entities)}</span>
+          of <span class="font-medium text-base-content">{@total_count}</span>
+          · Page <span class="font-medium">{@page}</span>
           of <span class="font-medium">{@total_pages}</span>
         </div>
 
         <%!-- Table --%>
-        <div class="bg-white shadow rounded-lg overflow-hidden">
-          <table class="min-w-full divide-y divide-gray-200 table-fixed">
-            <thead class="bg-gray-50">
+        <div class="rounded-box border border-base-300 overflow-hidden">
+          <table class="table table-zebra table-sm table-fixed">
+            <thead>
               <tr>
-                <th class="w-40 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Entity
-                </th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Current Description
-                </th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  AI Description
-                </th>
-                <th class="w-24 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
+                <th class="w-40">Entity</th>
+                <th>Current Description</th>
+                <th>AI Description</th>
+                <th class="w-24">Actions</th>
               </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
+            <tbody>
               <tr :if={@entities == []}>
-                <td colspan="4" class="px-4 py-8 text-center text-sm text-gray-400">
+                <td colspan="4" class="text-center text-base-content/60 py-6">
                   No {to_string(@entity_type)} found for this user
                 </td>
               </tr>
-              <tr :for={entity <- @entities} id={"entity-#{entity.id}"} class="hover:bg-gray-50">
+              <tr :for={entity <- @entities} id={"entity-#{entity.id}"}>
                 <%!-- Entity --%>
-                <td class="px-4 py-3 align-top">
+                <td class="align-top">
                   <div class="flex flex-col gap-1">
                     <button
                       phx-click="select_entity"
                       phx-value-id={entity.id}
-                      class={[
-                        "text-sm font-medium text-left hover:text-blue-600",
-                        if(entity.ai_description, do: "text-gray-800", else: "text-gray-600")
-                      ]}
+                      class="text-sm font-medium text-left link link-hover"
                     >
                       {truncate(entity_title(@entity_type, entity), 55)}
                     </button>
@@ -1163,7 +1100,7 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
                         href={entity_url(@entity_type, entity)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="text-xs text-indigo-500 hover:underline"
+                        class="link link-primary text-xs"
                         phx-click="noop"
                       >
                         ↗ app
@@ -1172,31 +1109,31 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
                         navigate={
                           ~p"/admin/generic/#{entity.id}?resource=#{admin_resource(@entity_type)}"
                         }
-                        class="text-xs text-gray-400 hover:underline"
+                        class="link text-xs text-base-content/60"
                       >
                         admin
                       </.link>
                     </div>
                     <div
                       :if={entity.ai_description}
-                      class="w-2 h-2 rounded-full bg-emerald-400 mt-0.5"
+                      class="w-2 h-2 rounded-full bg-success mt-0.5"
                       title="Has AI description"
                     />
                   </div>
                 </td>
 
                 <%!-- Current description --%>
-                <td class="px-4 py-3 align-top">
-                  <p class="text-xs text-gray-600 whitespace-pre-wrap leading-relaxed">
+                <td class="align-top">
+                  <p class="text-xs text-base-content/70 whitespace-pre-wrap leading-relaxed">
                     {truncate(entity_description(@entity_type, entity), 100)}
                   </p>
                 </td>
 
                 <%!-- AI description --%>
-                <td class="px-4 py-3 align-top">
+                <td class="align-top">
                   <p class={[
                     "text-xs whitespace-pre-wrap leading-relaxed",
-                    if(entity.ai_description, do: "text-emerald-700", else: "text-gray-300 italic")
+                    if(entity.ai_description, do: "text-success", else: "text-base-content/40 italic")
                   ]}>
                     {if entity.ai_description,
                       do: truncate(entity.ai_description, 100),
@@ -1205,19 +1142,13 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
                 </td>
 
                 <%!-- Actions --%>
-                <td class="px-4 py-3 align-top">
+                <td class="align-top">
                   <div class="flex flex-col gap-1.5">
                     <button
                       phx-click="generate"
                       phx-value-id={entity.id}
                       disabled={MapSet.member?(@loading_ids, entity.id)}
-                      class={[
-                        "px-3 py-1 text-xs rounded font-medium transition-colors",
-                        if(MapSet.member?(@loading_ids, entity.id),
-                          do: "bg-gray-100 text-gray-400 cursor-not-allowed",
-                          else: "bg-blue-600 text-white hover:bg-blue-700"
-                        )
-                      ]}
+                      class="btn btn-xs btn-primary"
                     >
                       {if MapSet.member?(@loading_ids, entity.id),
                         do: "…",
@@ -1226,7 +1157,7 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
                     <button
                       phx-click="select_entity"
                       phx-value-id={entity.id}
-                      class="px-3 py-1 text-xs rounded font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                      class="btn btn-xs btn-soft"
                     >
                       View
                     </button>
@@ -1239,30 +1170,14 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
 
         <%!-- Pagination --%>
         <div :if={@total_pages > 1} class="flex items-center justify-between">
-          <button
-            phx-click="prev_page"
-            disabled={@page == 1}
-            class={[
-              "px-4 py-2 rounded border text-sm",
-              if(@page == 1,
-                do: "text-gray-300 border-gray-200 cursor-not-allowed",
-                else: "text-gray-700 border-gray-300 hover:bg-gray-50"
-              )
-            ]}
-          >
+          <button phx-click="prev_page" disabled={@page == 1} class="btn btn-sm btn-soft">
             ← Previous
           </button>
-          <span class="text-sm text-gray-500">Page {@page} of {@total_pages}</span>
+          <span class="text-sm text-base-content/60">Page {@page} of {@total_pages}</span>
           <button
             phx-click="next_page"
             disabled={@page == @total_pages}
-            class={[
-              "px-4 py-2 rounded border text-sm",
-              if(@page == @total_pages,
-                do: "text-gray-300 border-gray-200 cursor-not-allowed",
-                else: "text-gray-700 border-gray-300 hover:bg-gray-50"
-              )
-            ]}
+            class="btn btn-sm btn-soft"
           >
             Next →
           </button>
@@ -1271,158 +1186,119 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
     </div>
 
     <%!-- ── Detail Modal ────────────────────────────────────────── --%>
-    <div :if={@selected_entity} class="fixed inset-0 z-50 overflow-y-auto">
-      <div class="fixed inset-0 bg-gray-800 bg-opacity-60" phx-click="close_modal" />
-      <div class="relative min-h-screen flex items-start justify-center pt-16 pb-8 px-4">
-        <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-3xl" phx-click="noop">
-          <div class="flex items-center justify-between p-5 border-b border-gray-200">
-            <div>
-              <h2 class="text-lg font-semibold text-gray-900">
-                {entity_title(@entity_type, @selected_entity)}
-              </h2>
-              <div class="flex gap-3 mt-1">
-                <a
-                  href={entity_url(@entity_type, @selected_entity)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="text-xs text-indigo-500 hover:underline"
-                >
-                  ↗ View in app
-                </a>
-                <.link
-                  navigate={
-                    ~p"/admin/generic/#{@selected_entity.id}?resource=#{admin_resource(@entity_type)}"
-                  }
-                  class="text-xs text-gray-400 hover:underline"
-                >
-                  Admin record
-                </.link>
-              </div>
+    <div :if={@selected_entity} class="modal modal-open">
+      <div class="modal-box max-w-3xl" phx-click="noop">
+        <div class="flex items-center justify-between pb-4 border-b border-base-300">
+          <div>
+            <h2 class="text-lg font-semibold">
+              {entity_title(@entity_type, @selected_entity)}
+            </h2>
+            <div class="flex gap-3 mt-1">
+              <a
+                href={entity_url(@entity_type, @selected_entity)}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="link link-primary text-xs"
+              >
+                ↗ View in app
+              </a>
+              <.link
+                navigate={
+                  ~p"/admin/generic/#{@selected_entity.id}?resource=#{admin_resource(@entity_type)}"
+                }
+                class="link text-xs text-base-content/60"
+              >
+                Admin record
+              </.link>
             </div>
-            <button phx-click="close_modal" class="text-gray-400 hover:text-gray-600">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
+          </div>
+          <button phx-click="close_modal" class="btn btn-sm btn-ghost btn-circle">
+            <.icon name="hero-x-mark" class="size-5" />
+          </button>
+        </div>
+
+        <div class="pt-5 space-y-5">
+          <div>
+            <h3 class="text-xs font-semibold text-base-content/60 uppercase tracking-wider mb-2">
+              Current Description
+            </h3>
+            <div class="bg-base-200 rounded-box p-3 text-sm whitespace-pre-wrap min-h-10">
+              {entity_description(@entity_type, @selected_entity) || "(no description)"}
+            </div>
           </div>
 
-          <div class="p-5 space-y-5">
-            <div>
-              <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Current Description
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <h3 class="text-xs font-semibold text-base-content/60 uppercase tracking-wider">
+                AI Description
               </h3>
-              <div class="bg-gray-50 rounded-lg p-3 text-sm text-gray-700 whitespace-pre-wrap min-h-10">
-                {entity_description(@entity_type, @selected_entity) || "(no description)"}
-              </div>
-            </div>
-
-            <div>
-              <div class="flex items-center justify-between mb-2">
-                <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  AI Description
-                </h3>
-                <button
-                  phx-click="generate_selected"
-                  disabled={MapSet.member?(@loading_ids, @selected_entity.id)}
-                  class={[
-                    "px-4 py-1.5 text-xs rounded-lg font-medium transition-colors",
-                    if(MapSet.member?(@loading_ids, @selected_entity.id),
-                      do: "bg-gray-200 text-gray-400 cursor-not-allowed",
-                      else: "bg-blue-600 text-white hover:bg-blue-700"
-                    )
-                  ]}
-                >
-                  {if MapSet.member?(@loading_ids, @selected_entity.id),
-                    do: "Generating…",
-                    else: if(@selected_entity.ai_description, do: "↺ Regenerate", else: "Generate")}
-                </button>
-              </div>
-              <div class={[
-                "rounded-lg p-3 text-sm whitespace-pre-wrap min-h-12 font-mono leading-relaxed",
-                if(@selected_entity.ai_description,
-                  do: "bg-emerald-50 text-emerald-800 border border-emerald-200",
-                  else: "bg-gray-50 text-gray-400 border border-dashed border-gray-200"
-                )
-              ]}>
+              <button
+                phx-click="generate_selected"
+                disabled={MapSet.member?(@loading_ids, @selected_entity.id)}
+                class="btn btn-sm btn-primary"
+              >
                 {if MapSet.member?(@loading_ids, @selected_entity.id),
                   do: "Generating…",
-                  else: @selected_entity.ai_description || "(not yet generated)"}
-              </div>
+                  else: if(@selected_entity.ai_description, do: "↺ Regenerate", else: "Generate")}
+              </button>
             </div>
-
-            <details class="text-xs text-gray-400">
-              <summary class="cursor-pointer hover:text-gray-600 font-medium select-none">
-                Show input sent to LLM
-              </summary>
-              <pre class="mt-2 bg-gray-50 rounded p-3 text-xs overflow-auto whitespace-pre-wrap border border-gray-100"><%= DescriptionJob.build_user_message(@selected_entity, @entity_type) %></pre>
-            </details>
+            <div class={[
+              "rounded-box p-3 text-sm whitespace-pre-wrap min-h-12 font-mono leading-relaxed border",
+              if(@selected_entity.ai_description,
+                do: "bg-success/10 text-success-content border-success/30",
+                else: "bg-base-200 text-base-content/50 border-dashed border-base-300"
+              )
+            ]}>
+              {if MapSet.member?(@loading_ids, @selected_entity.id),
+                do: "Generating…",
+                else: @selected_entity.ai_description || "(not yet generated)"}
+            </div>
           </div>
+
+          <details class="text-xs text-base-content/60">
+            <summary class="cursor-pointer hover:text-base-content font-medium select-none">
+              Show input sent to LLM
+            </summary>
+            <pre class="mt-2 mockup-code bg-neutral text-neutral-content rounded-box p-3 text-xs overflow-auto whitespace-pre-wrap"><%= DescriptionJob.build_user_message(@selected_entity, @entity_type) %></pre>
+          </details>
         </div>
       </div>
+      <div class="modal-backdrop" phx-click="close_modal"></div>
     </div>
 
     <%!-- ── Override Confirmation Modal ──────────────────────────── --%>
-    <div :if={@show_override_confirm} class="fixed inset-0 z-50 overflow-y-auto">
-      <div class="fixed inset-0 bg-gray-800 bg-opacity-60" phx-click="hide_override_confirm" />
-      <div class="relative min-h-screen flex items-center justify-center px-4">
-        <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-md p-6" phx-click="noop">
-          <div class="flex items-start gap-3 mb-4">
-            <div class="shrink-0 w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-              <svg
-                class="w-5 h-5 text-orange-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                />
-              </svg>
-            </div>
-            <div>
-              <h3 class="text-base font-semibold text-gray-900">Override descriptions?</h3>
-              <p class="text-sm text-gray-600 mt-1">
-                This will <strong>permanently replace</strong>
-                the existing <code class="bg-gray-100 px-1 rounded text-xs">description</code>
-                field
-                with the
-                <code class="bg-emerald-50 px-1 rounded text-xs text-emerald-700">
-                  ai_description
-                </code>
-                for all <span class="font-medium">{to_string(@entity_type)}</span>
-                owned by
-                <span class="font-medium">{@selected_user && user_display_name(@selected_user)}</span>
-                that have an AI description set.
-              </p>
-              <p class="text-xs text-red-600 mt-2 font-medium">
-                ⚠ This cannot be undone.
-              </p>
-            </div>
+    <div :if={@show_override_confirm} class="modal modal-open">
+      <div class="modal-box max-w-md" phx-click="noop">
+        <div class="flex items-start gap-3 mb-4">
+          <div class="shrink-0 size-10 bg-warning/20 rounded-full flex items-center justify-center">
+            <.icon name="hero-exclamation-triangle" class="size-5 text-warning" />
           </div>
-          <div class="flex gap-3 justify-end mt-4">
-            <button
-              phx-click="hide_override_confirm"
-              class="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              phx-click="confirm_override"
-              class="px-4 py-2 text-sm rounded-lg bg-orange-600 text-white hover:bg-orange-700 font-medium"
-            >
-              Yes, override descriptions
-            </button>
+          <div>
+            <h3 class="text-base font-semibold">Override descriptions?</h3>
+            <p class="text-sm text-base-content/70 mt-1">
+              This will <strong>permanently replace</strong>
+              the existing <code class="kbd kbd-xs">description</code>
+              field with the <code class="kbd kbd-xs">ai_description</code>
+              for all <span class="font-medium">{to_string(@entity_type)}</span>
+              owned by
+              <span class="font-medium">{@selected_user && user_display_name(@selected_user)}</span>
+              that have an AI description set.
+            </p>
+            <p class="text-xs text-error mt-2 font-medium">
+              ⚠ This cannot be undone.
+            </p>
           </div>
         </div>
+        <div class="modal-action">
+          <button phx-click="hide_override_confirm" class="btn btn-sm btn-soft">
+            Cancel
+          </button>
+          <button phx-click="confirm_override" class="btn btn-sm btn-warning">
+            Yes, override descriptions
+          </button>
+        </div>
       </div>
+      <div class="modal-backdrop" phx-click="hide_override_confirm"></div>
     </div>
     """
   end

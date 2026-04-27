@@ -107,27 +107,19 @@ defmodule SanbaseWeb.MetricRegistryShowLive do
       </.table>
 
       <div :if={@mappings != []} class="mt-8">
-        <h2 class="text-xl font-semibold text-gray-800 mb-4">Categorization</h2>
-        <div class="bg-white rounded-lg shadow overflow-hidden">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+        <h2 class="text-xl font-semibold mb-4">Categorization</h2>
+        <div class="rounded-box border border-base-300 overflow-x-auto">
+          <table class="table table-zebra table-sm">
+            <thead>
               <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Category
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Group
-                </th>
+                <th>Category</th>
+                <th>Group</th>
               </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
+            <tbody>
               <tr :for={mapping <- @mappings}>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {mapping.category.name}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {if mapping.group, do: mapping.group.name, else: "-"}
-                </td>
+                <td>{mapping.category.name}</td>
+                <td>{if mapping.group, do: mapping.group.name, else: "-"}</td>
               </tr>
             </tbody>
           </table>

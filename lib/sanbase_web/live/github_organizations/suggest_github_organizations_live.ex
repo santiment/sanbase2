@@ -58,7 +58,7 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="border border-gray-100 mx-auto max-w-3xl p-6 rounded-xl shadow-sm min-h-96">
+    <div class="card bg-base-100 border border-base-300 mx-auto max-w-3xl p-6 shadow-sm min-h-96">
       <h1 class="text-2xl mb-6">Update the Github Organizations of an asset</h1>
 
       <.select_project search_result={@search_result} />
@@ -71,7 +71,7 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
         />
 
         <h2 class="text-lg mt-10">Edit the Github Organizations of the asset</h2>
-        <p class="text-sm text-gray-600 mt-1 mb-2">
+        <p class="text-sm text-base-content/60 mt-1 mb-2">
           The selected organizations are going to be preserved or added, if they are not part of the current ones.
           The deselected organizations are going to be removed, if they are part of the current ones.
         </p>
@@ -234,29 +234,27 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
     ~H"""
     <form phx-submit="add_github_organization" phx-change="validate_github_organization">
       <h2 class="text-lg mt-10">Suggest a new Github Organization</h2>
-      <p class="text-sm text-gray-600 mt-1 mb-2">
+      <p class="text-sm text-base-content/60 mt-1 mb-2">
         Provide only the name of the Github Organization, not the full URL. <br />
         The Github URLs have the following structure: https://github.com/organization/repository
       </p>
-      <div class="relative">
-        <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-          <.icon name="hero-plus" class="text-gray-600" />
-        </div>
-        <input
-          type="search"
-          name="github_organization"
-          class="w-full p-4 ps-10 outline-none text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50"
-          placeholder="Suggest a new Github Organization"
-          autocomplete="off"
-          phx-debounce="200"
-          required
-        />
-
+      <div class="join w-full">
+        <label class="input join-item flex-1">
+          <.icon name="hero-plus" class="text-base-content/60" />
+          <input
+            type="search"
+            name="github_organization"
+            placeholder="Suggest a new Github Organization"
+            autocomplete="off"
+            phx-debounce="200"
+            required
+          />
+        </label>
         <button
           type="submit"
           disabled={@error}
           title={@error}
-          class="text-white absolute end-2.5 bottom-2.5 bg-blue-700 hover:bg-blue-800 font-medium rounded-lg text-sm px-4 py-2 disabled:bg-slate-500 disabled:cursor-not-allowed"
+          class="btn btn-primary join-item"
         >
           Add Github Organization
         </button>
@@ -268,33 +266,32 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
   def select_project(assigns) do
     ~H"""
     <form class="max-w-3xl">
-      <label for="default-search" class="text-sm font-medium text-gray-900 sr-only">
+      <label for="default-search" class="sr-only">
         Select an asset
       </label>
       <div class="relative">
-        <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-          <.icon name="hero-magnifying-glass" class="text-gray-600" />
-        </div>
-        <input
-          type="search"
-          id="default-search"
-          class="w-full p-4 ps-10 outline-none text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50"
-          placeholder="Select an asset"
-          phx-keyup="search_project"
-          phx-debounce="50"
-          phx-click={JS.remove_class("hidden", to: "#search-result-suggestions")}
-          autocomplete="off"
-          required
-        />
+        <label class="input w-full">
+          <.icon name="hero-magnifying-glass" class="text-base-content/60" />
+          <input
+            type="search"
+            id="default-search"
+            placeholder="Select an asset"
+            phx-keyup="search_project"
+            phx-debounce="50"
+            phx-click={JS.remove_class("hidden", to: "#search-result-suggestions")}
+            autocomplete="off"
+            required
+          />
+        </label>
         <div
           id="search-result-suggestions"
           phx-click-away={JS.add_class("hidden", to: "#search-result-suggestions")}
           phx-key={JS.add_class("hidden", to: "#search-result-suggestions")}
           phx-click={JS.remove_class("hidden", to: "#search-result-suggestions")}
-          class="hidden absolute bg-white mt-1 w-full"
+          class="hidden absolute mt-1 w-full z-20"
         >
-          <ul class="relative z-20 justify-between min-w-96 text-sm max-h-96 overflow-y-scroll scroll-bar-custom bg-white border border-gray-200 rounded-md">
-            <li class="flex flex-row justify-between text-gray-600 sticky top-0 bg-white px-3 py-2 rounded-md">
+          <ul class="relative bg-base-100 border border-base-300 rounded-box shadow-xl text-sm max-h-96 overflow-y-auto">
+            <li class="flex flex-row justify-between text-base-content/60 sticky top-0 bg-base-100 border-b border-base-300 px-3 py-2">
               <span>Asset</span>
               <span>Github Organizations</span>
             </li>
@@ -302,7 +299,7 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
               <.link
                 phx-click={JS.add_class("hidden", to: "#search-result-suggestions")}
                 patch={~p"/forms/suggest_github_organizations?selected_project=#{project.slug}"}
-                class="block p-3 hover:bg-gray-200 rounded-xl"
+                class="block p-3 hover:bg-base-200 rounded-box"
               >
                 <.project_info project={project} />
               </.link>
@@ -316,13 +313,13 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
 
   def selected_project_details(assigns) do
     ~H"""
-    <div class="mt-10 min-h-48 ">
-      <div class="border border-gray-100 rounded-sm px-8 py-4">
-        <span class="flex flex-col  md:flex-row text-xl items-center">
+    <div class="mt-10 min-h-48 space-y-3">
+      <div class="card bg-base-100 border border-base-300 px-8 py-4">
+        <span class="flex flex-col md:flex-row text-xl items-center gap-2">
           Selected Asset: <img src={@selected_project.logo_url} class="m-2 size-7" />
           <.link
             href={SanbaseWeb.Endpoint.project_url(@selected_project.slug)}
-            class="text-blue-800 underline"
+            class="link link-primary"
             target="_blank"
           >
             {@selected_project.name} (#{@selected_project.ticker})
@@ -335,23 +332,26 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
               github_organizations={
                 @selected_project.github_organizations |> Enum.map(& &1.organization)
               }
-              github_organization_colors_class="bg-blue-100 text-blue-800"
+              github_organization_colors_class="badge-info"
             />
           </div>
         </div>
       </div>
-      <div :if={@new_organizations != []} class="px-8 py-4 border border-gray-100 rounded-sm">
+      <div :if={@new_organizations != []} class="card bg-base-100 border border-base-300 px-8 py-4">
         <span class="text-lg">Added Github Organizations:</span>
         <UserFormsComponents.github_organizations_group
           github_organizations={@new_organizations}
-          github_organization_colors_class="bg-green-100 text-green-800"
+          github_organization_colors_class="badge-success"
         />
       </div>
-      <div :if={@removed_organizations != []} class="px-8 py-4 border border-gray-100 rounded-sm">
+      <div
+        :if={@removed_organizations != []}
+        class="card bg-base-100 border border-base-300 px-8 py-4"
+      >
         <span class="text-lg">Removed Organizations:</span>
         <UserFormsComponents.github_organizations_group
           github_organizations={@removed_organizations}
-          github_organization_colors_class="bg-red-100 text-red-800"
+          github_organization_colors_class="badge-error"
         />
       </div>
     </div>
@@ -362,32 +362,29 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
     ~H"""
     <div>
       <ul
-        class="h-48 px-3 pb-3 overflow-y-auto text-sm text-gray-700"
+        class="h-48 px-3 pb-3 overflow-y-auto text-sm"
         aria-labelledby="dropdownSearchButton"
       >
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
           <li :for={organization <- @seen_organizations}>
-            <input
-              id={"checkbox-item-#{organization}"}
-              type="checkbox"
-              checked={
-                checked_organization?(
-                  @stored_organizations,
-                  @new_organizations,
-                  @removed_organizations,
-                  organization
-                )
-              }
-              name={organization}
-              phx-value-organization={organization}
-              phx-click="update_selected_organizations"
-              class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded"
-            />
-            <label
-              for={"checkbox-item-#{organization}"}
-              class="w-full ms-2 text-sm font-medium text-gray-900 rounded"
-            >
-              {organization}
+            <label class="label cursor-pointer justify-start gap-2">
+              <input
+                id={"checkbox-item-#{organization}"}
+                type="checkbox"
+                checked={
+                  checked_organization?(
+                    @stored_organizations,
+                    @new_organizations,
+                    @removed_organizations,
+                    organization
+                  )
+                }
+                name={organization}
+                phx-value-organization={organization}
+                phx-click="update_selected_organizations"
+                class="checkbox checkbox-sm checkbox-primary"
+              />
+              <span class="text-sm font-medium">{organization}</span>
             </label>
           </li>
         </div>
@@ -419,9 +416,9 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
     <div class="flex flex-row items-start justify-between">
       <div>
         <span>{@project.name}</span>
-        <span class="ml-4 text-gray-500">{@project.ticker}</span>
+        <span class="ml-4 text-base-content/60">{@project.ticker}</span>
       </div>
-      <span class="text-gray-500">{@organizations_string}</span>
+      <span class="text-base-content/60">{@organizations_string}</span>
     </div>
     """
   end
@@ -443,7 +440,7 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
     <button
       phx-click="submit_suggestions"
       type="submit"
-      class="text-white bg-blue-700 hover:bg-blue-800 font-medium rounded-lg text-sm px-4 py-2 mt-4 disabled:bg-slate-500 disabled:cursor-not-allowed"
+      class="btn btn-primary mt-4"
       disabled={@is_disabled}
       title={
         if @is_disabled,
@@ -463,7 +460,7 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
       <textarea
         name="notes"
         rows="4"
-        class="block my-3 p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300"
+        class="textarea w-full my-3"
         placeholder="Tell us why these changes are proposed. You can share links, or just leave some comments."
         phx-debounce="500"
       ></textarea>

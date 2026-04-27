@@ -17,19 +17,19 @@ defmodule SanbaseWeb.Categorization.ReorderComponents do
       <button
         phx-click={"#{@event_prefix}move-up"}
         phx-value-id={@item_id}
-        class="mr-2"
+        class="btn btn-xs btn-ghost btn-circle mr-2"
         disabled={@index == 0}
       >
-        <.icon name="hero-arrow-up" class="w-4 h-4" />
+        <.icon name="hero-arrow-up" class="size-4" />
       </button>
       <span>{@display_order}</span>
       <button
         phx-click={"#{@event_prefix}move-down"}
         phx-value-id={@item_id}
-        class="ml-2"
+        class="btn btn-xs btn-ghost btn-circle ml-2"
         disabled={@index == @total_count - 1}
       >
-        <.icon name="hero-arrow-down" class="w-4 h-4" />
+        <.icon name="hero-arrow-down" class="size-4" />
       </button>
     </div>
     """

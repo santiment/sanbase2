@@ -86,7 +86,7 @@ defmodule SanbaseWeb.GenericAdminController do
   end
 
   def home(%Plug.Conn{} = conn, _params) do
-    render(conn, "home.html", search_value: "")
+    render(conn, "home.html")
   end
 
   def index(%Plug.Conn{} = conn, %{"resource" => resource} = params) do
@@ -100,6 +100,10 @@ defmodule SanbaseWeb.GenericAdminController do
 
   def index(%Plug.Conn{} = conn, _) do
     render(conn, "error.html")
+  end
+
+  def new(%Plug.Conn{} = conn, %{"resource" => "promo_trials"}) do
+    Phoenix.Controller.redirect(conn, to: "/admin/promo_trials/new")
   end
 
   def new(%Plug.Conn{} = conn, %{"resource" => resource} = params) do

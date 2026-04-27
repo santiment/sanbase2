@@ -15,15 +15,14 @@ defmodule SanbaseWeb.AdminSharedComponents do
 
   alias SanbaseWeb.CoreComponents
 
-  # ---------------------------------------------------------------------------
-  # Action Button — replaces 3 duplicated `phx_click_button` components
-  # Used in: MetricRegistryIndexLive, MetricRegistrySyncLive, MetricRegistrySyncRunsLive
-  # ---------------------------------------------------------------------------
-
   attr :phx_click, :string, required: true
   attr :text, :string, required: true
   attr :count, :integer, default: nil
-  attr :class, :string, default: "bg-white hover:bg-gray-100 text-gray-900"
+
+  attr :class, :string,
+    default:
+      "bg-base-100 border border-base-content/40 hover:bg-base-200 hover:border-base-content/70"
+
   attr :phx_disable_with, :string, default: nil
   attr :rest, :global
 
@@ -32,23 +31,15 @@ defmodule SanbaseWeb.AdminSharedComponents do
     <button
       type="button"
       phx-click={@phx_click}
-      class={[
-        "border border-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center gap-x-2",
-        @class
-      ]}
+      class={["btn btn-sm", @class]}
       phx-disable-with={@phx_disable_with}
       {@rest}
     >
       {@text}
-      <span :if={@count && @count > 0} class="text-gray-400">({@count})</span>
+      <span :if={@count && @count > 0} class="badge badge-sm badge-ghost">{@count}</span>
     </button>
     """
   end
-
-  # ---------------------------------------------------------------------------
-  # Filter Checkbox — replaces 4 near-identical filter checkboxes
-  # Used in: MetricRegistryIndexLive (not_deprecated, unverified, not_synced, without_docs)
-  # ---------------------------------------------------------------------------
 
   attr :id, :string, required: true
   attr :name, :string, required: true
@@ -57,25 +48,18 @@ defmodule SanbaseWeb.AdminSharedComponents do
 
   def filter_checkbox(assigns) do
     ~H"""
-    <div class="flex items-center mb-4">
-      <label for={@id} class="cursor-pointer ms-2 text-sm font-medium text-gray-900">
-        <input
-          id={@id}
-          name={@name}
-          type="checkbox"
-          checked={@checked}
-          class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded"
-        /> {@label}
-      </label>
-    </div>
+    <label for={@id} class="label cursor-pointer gap-2 mb-2">
+      <input
+        id={@id}
+        name={@name}
+        type="checkbox"
+        checked={@checked}
+        class="checkbox checkbox-sm checkbox-primary"
+      />
+      <span class="label-text">{@label}</span>
+    </label>
     """
   end
-
-  # ---------------------------------------------------------------------------
-  # Approval Buttons — shared approve/decline/undo pattern
-  # Used in: SuggestEcosystemLabelsChangeAdminLive, SuggestGithubOrganizationsAdminLive.
-  # Handlers of `phx_submit` must accept "approved" / "declined" / "undo" values.
-  # ---------------------------------------------------------------------------
 
   attr :form, :any, required: true
   attr :row_id, :any, required: true
@@ -88,7 +72,7 @@ defmodule SanbaseWeb.AdminSharedComponents do
     <.form
       for={@form}
       phx-submit={@phx_submit}
-      class="flex flex-col lg:flex-row space-y-2 lg:space-y-0 md:space-x-2"
+      class="flex flex-col lg:flex-row gap-2"
     >
       <input type="hidden" name="record_id" value={@row_id} />
       {render_slot(@extra_fields)}
@@ -97,21 +81,21 @@ defmodule SanbaseWeb.AdminSharedComponents do
         value="approved"
         text="Approve"
         disabled={@status != "pending_approval"}
-        colors="bg-green-600 hover:bg-green-800"
+        variant="btn-success"
       />
       <.approval_button
         name="status"
         value="declined"
         text="Decline"
         disabled={@status != "pending_approval"}
-        colors="bg-red-600 hover:bg-red-800"
+        variant="btn-error"
       />
       <.approval_button
         name="status"
         value="undo"
         text={undo_text(@status)}
         disabled={@status == "pending_approval"}
-        colors="bg-yellow-400 hover:bg-yellow-800"
+        variant="btn-warning"
       />
     </.form>
     """
@@ -121,17 +105,14 @@ defmodule SanbaseWeb.AdminSharedComponents do
   attr :value, :string, required: true
   attr :text, :string, required: true
   attr :disabled, :boolean, required: true
-  attr :colors, :string, required: true
+  attr :variant, :string, required: true
 
   def approval_button(assigns) do
     ~H"""
     <button
       name={@name}
       value={@value}
-      class={[
-        "phx-submit-loading:opacity-75 rounded-lg my-1 py-2 px-3 text-sm font-semibold leading-6 text-white",
-        if(@disabled, do: "bg-gray-300", else: @colors)
-      ]}
+      class={["btn btn-sm phx-submit-loading:opacity-75", @variant]}
       disabled={@disabled}
     >
       {@text}
@@ -146,29 +127,20 @@ defmodule SanbaseWeb.AdminSharedComponents do
   def undo_text("declined"), do: "Undo Refusal"
   def undo_text(_), do: "Undo"
 
-  # ---------------------------------------------------------------------------
-  # Status Badge — formatted status display
-  # Consolidates AdminFormsComponents.status
-  # ---------------------------------------------------------------------------
-
   attr :status, :string, required: true
 
   def status_badge(assigns) do
     ~H"""
-    <p class={status_color(@status)}>
+    <span class={["badge", status_variant(@status)]}>
       {@status |> String.replace("_", " ") |> String.upcase()}
-    </p>
+    </span>
     """
   end
 
-  defp status_color("approved"), do: "text-green-600"
-  defp status_color("declined"), do: "text-red-600"
-  defp status_color("pending_approval"), do: "text-yellow-600"
-  defp status_color(_), do: "text-gray-600"
-
-  # ---------------------------------------------------------------------------
-  # User Details — email + role names block
-  # ---------------------------------------------------------------------------
+  defp status_variant("approved"), do: "badge-success"
+  defp status_variant("declined"), do: "badge-error"
+  defp status_variant("pending_approval"), do: "badge-warning"
+  defp status_variant(_), do: "badge-ghost"
 
   attr :current_user, :map, required: true
   attr :current_user_role_names, :list, required: true
@@ -176,15 +148,53 @@ defmodule SanbaseWeb.AdminSharedComponents do
 
   def user_details(assigns) do
     ~H"""
-    <div class="my-2 flex flex-row space-x-2">
-      <span class="text-blue-800 font-bold">
+    <div class="my-2 flex flex-row gap-2">
+      <span class="text-primary font-bold">
         {@current_user.email}
       </span>
-      <span>|</span>
-      <span class="text-gray-700">
+      <span class="text-base-content/40">|</span>
+      <span class="text-base-content/70">
         {format_roles(@current_user_role_names, @trim_role_prefix)}
       </span>
     </div>
+    """
+  end
+
+  attr :label, :string, required: true
+  attr :count, :integer, required: true
+  attr :color, :string, default: "info", values: ~w(info success warning error secondary base)
+  attr :suffix, :string, default: nil
+  attr :truncate, :boolean, default: false
+
+  def mini_stat_card(assigns) do
+    ~H"""
+    <div class="card bg-base-200 border border-base-300 p-3">
+      <div class={["text-2xl font-bold", mini_stat_text_class(@color)]}>{@count}</div>
+      <div
+        class={["text-xs text-base-content/60", @truncate && "truncate"]}
+        title={@truncate && @label}
+      >
+        {@label}{if @suffix, do: " #{@suffix}"}
+      </div>
+    </div>
+    """
+  end
+
+  defp mini_stat_text_class("success"), do: "text-success"
+  defp mini_stat_text_class("warning"), do: "text-warning"
+  defp mini_stat_text_class("error"), do: "text-error"
+  defp mini_stat_text_class("secondary"), do: "text-secondary"
+  defp mini_stat_text_class("base"), do: "text-base-content"
+  defp mini_stat_text_class(_), do: "text-info"
+
+  attr :colspan, :integer, required: true
+  attr :message, :string, required: true
+
+  def empty_table_row(assigns) do
+    ~H"""
+    <tr>
+      <td colspan={@colspan} class="text-center text-base-content/60 py-6">{@message}</td>
+    </tr>
     """
   end
 
@@ -196,10 +206,6 @@ defmodule SanbaseWeb.AdminSharedComponents do
     |> Enum.join(", ")
   end
 
-  # ---------------------------------------------------------------------------
-  # Page Header — title + user details pattern used across metric registry pages
-  # ---------------------------------------------------------------------------
-
   attr :title, :string, required: true
   attr :current_user, :map, required: true
   attr :current_user_role_names, :list, required: true
@@ -207,7 +213,7 @@ defmodule SanbaseWeb.AdminSharedComponents do
 
   def page_header(assigns) do
     ~H"""
-    <h1 class="text-blue-700 text-2xl mb-4">
+    <h1 class="text-primary text-2xl mb-4">
       {@title}
     </h1>
     <.user_details
@@ -217,11 +223,6 @@ defmodule SanbaseWeb.AdminSharedComponents do
     />
     """
   end
-
-  # ---------------------------------------------------------------------------
-  # Navigation Button — unified link button for admin navigation
-  # Consolidates available_metrics_button and link_button
-  # ---------------------------------------------------------------------------
 
   attr :text, :string, required: true
   attr :href, :string, required: true
@@ -236,23 +237,19 @@ defmodule SanbaseWeb.AdminSharedComponents do
       target={@target}
       rel={if @target == "_blank", do: "noopener noreferrer"}
       class={[
+        "btn btn-sm",
         if(@disabled,
-          do: "pointer-events-none bg-gray-100 text-gray-400",
-          else: "bg-white hover:bg-gray-100 text-gray-900"
-        ),
-        "border border-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center gap-x-2"
+          do: "btn-disabled",
+          else:
+            "bg-base-100 border border-base-content/40 hover:bg-base-200 hover:border-base-content/70"
+        )
       ]}
     >
-      <CoreComponents.icon :if={@icon} name={@icon} class="text-gray-500" />
+      <CoreComponents.icon :if={@icon} name={@icon} />
       {@text}
     </.link>
     """
   end
-
-  # ---------------------------------------------------------------------------
-  # Dates Display — created/updated timestamps
-  # Used in: MetricRegistryIndexLive, MetricRegistryChangeSuggestionsLive
-  # ---------------------------------------------------------------------------
 
   attr :inserted_at, :any, required: true
   attr :updated_at, :any, required: true
@@ -281,12 +278,12 @@ defmodule SanbaseWeb.AdminSharedComponents do
     ~H"""
     <div class="flex flex-col gap-1">
       <div :if={@inserted_duration} class="flex items-center gap-1.5 text-nowrap">
-        <CoreComponents.icon name="hero-plus-circle" class="w-4 h-4 text-green-600" />
-        <span class="text-gray-700 text-sm">{@inserted_duration} ago</span>
+        <CoreComponents.icon name="hero-plus-circle" class="w-4 h-4 text-success" />
+        <span class="text-base-content/70 text-sm">{@inserted_duration} ago</span>
       </div>
       <div :if={@show_updated?} class="flex items-center gap-1.5 text-nowrap">
-        <CoreComponents.icon name="hero-pencil-square" class="w-4 h-4 text-amber-600" />
-        <span class="text-gray-700 text-sm">{@updated_duration} ago</span>
+        <CoreComponents.icon name="hero-pencil-square" class="w-4 h-4 text-warning" />
+        <span class="text-base-content/70 text-sm">{@updated_duration} ago</span>
       </div>
     </div>
     """

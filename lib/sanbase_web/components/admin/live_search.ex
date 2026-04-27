@@ -14,34 +14,29 @@ defmodule SanbaseWeb.LiveSearch do
   @impl true
   def render(assigns) do
     ~H"""
-    <div>
-      <div class="relative m-3">
-        <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-          <.icon name="hero-magnifying-glass" />
-        </div>
+    <div class="relative w-full">
+      <label class="input input-sm w-full">
+        <.icon name="hero-magnifying-glass" class="size-4 opacity-60" />
         <input
+          type="text"
+          id="search-input"
           value={@query}
           phx-keyup="do-search"
           phx-debounce="200"
-          type="text"
-          id="search-input"
-          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full ps-10 p-2.5 "
-          placeholder="Type / to search"
           phx-hook="FocusInput"
           phx-click={JS.remove_class("hidden", to: "#search-result-suggestions")}
           phx-click-away={JS.add_class("hidden", to: "#search-result-suggestions")}
+          placeholder="Type / to search"
           required
         />
-      </div>
+      </label>
       <ul
         :if={@routes != []}
         id="search-result-suggestions"
-        x-transition
-        class="absolute z-20 ml-2 py-2 min-w-96 text-gray-700 border shadow-xl bg-gray-50 rounded-lg"
-        aria-labelledby="dropdownDefaultButton"
+        class="menu absolute top-full left-0 mt-1 w-96 max-w-[90vw] max-h-[70vh] overflow-y-auto overflow-x-hidden z-50 bg-base-100 text-base-content border border-base-300 rounded-box shadow-xl flex-nowrap"
       >
-        <li :for={{name, path} <- @routes}>
-          <a href={path} class="block p-4 hover:bg-gray-100 text-sm font-semibold">
+        <li :for={{name, path} <- @routes} class="w-full">
+          <a href={path} title={name} class="!block truncate w-full">
             {name}
           </a>
         </li>

@@ -16,7 +16,7 @@ defmodule SanbaseWeb.UploadedImagesLive do
         <.table id="uploaded_images" rows={@rows}>
           <:col :let={row} label="Name">{row.name}</:col>
           <:col :let={row} label="URL">
-            <.link class="underline text-blue-600" href={row.url} target="_blank">
+            <.link class="link link-primary" href={row.url} target="_blank">
               {row.url}
             </.link>
           </:col>

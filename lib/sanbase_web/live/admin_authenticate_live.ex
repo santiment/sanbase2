@@ -20,41 +20,35 @@ defmodule SanbaseWeb.AdminAuthenticateLive do
     ~H"""
     <div class="min-h-screen flex flex-col items-center py-6 px-4">
       <div class="items-center gap-6 w-full">
-        <div class="border border-gray-300 rounded-lg p-6 max-w-md mx-auto">
+        <div class="card bg-base-100 border border-base-300 shadow p-6 max-w-md mx-auto">
           <form class="space-y-4" phx-change="validate_email" phx-submit="login">
             <div class="mb-8">
-              <h3 class="text-gray-800 text-3xl font-bold">Sign in</h3>
-              <p class="text-gray-500 text-sm mt-4 leading-relaxed">
+              <h3 class="text-3xl font-bold">Sign in</h3>
+              <p class="text-base-content/60 text-sm mt-4 leading-relaxed">
                 Sign in to your Santiment account and gain access to the Metric Registry
               </p>
             </div>
 
-            <div>
-              <label class="text-gray-800 text-sm mb-2 block">Email</label>
-              <div class="relative flex items-center">
-                <input
-                  name="email"
-                  type="email"
-                  required
-                  class="w-full text-sm text-gray-800 border border-gray-300 pl-4 pr-10 py-3 rounded-lg outline-blue-600"
-                  placeholder="Enter email"
-                  phx-debounce="200"
-                  value={@email}
-                />
-              </div>
-
-              <span :if={@error} class="text-red-600 text-sm">
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend">Email</legend>
+              <input
+                name="email"
+                type="email"
+                required
+                class="input w-full"
+                placeholder="Enter email"
+                phx-debounce="200"
+                value={@email}
+              />
+              <span :if={@error} class="text-error text-sm">
                 Email must be a valid @santiment.net email address
               </span>
-            </div>
+            </fieldset>
 
             <div class="!mt-8">
               <button
                 type="submit"
-                class={[
-                  if(@valid_email, do: "bg-blue-600 hover:bg-blue-700", else: "bg-gray-400"),
-                  "w-full shadow-xl py-2.5 px-4 text-sm tracking-wide rounded-lg text-white"
-                ]}
+                class={["btn w-full", if(@valid_email, do: "btn-primary", else: "btn-disabled")]}
                 disabled={not @valid_email}
                 phx-disable-with="Sending..."
               >

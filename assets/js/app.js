@@ -4,7 +4,6 @@ import { Socket } from "phoenix"
 import { LiveSocket } from "phoenix_live_view"
 import topbar from "../vendor/topbar"
 import Alpine from 'alpinejs'
-import "flowbite/dist/flowbite.phoenix.js";
 import { FocusInput } from "./focus_input"
 import Sortable from 'sortablejs'
 import { Sortable as SortableHook } from "./metric_hooks"
@@ -39,10 +38,55 @@ let liveSocket = new LiveSocket("/live", Socket, {
   }
 })
 
+// Theme persistence: applies stored theme on load and saves changes from the toggle.
+// Always sync the toggle to the live data-theme so first-load (no localStorage
+// → prefers-color-scheme fallback) doesn't leave the checkbox out of step.
+const applyStoredTheme = () => {
+  const stored = localStorage.getItem("theme")
+  if (stored === "dark" || stored === "light") {
+    document.documentElement.setAttribute("data-theme", stored)
+  }
+  const current = document.documentElement.getAttribute("data-theme")
+  const ctrl = document.getElementById("theme-controller")
+  if (ctrl) ctrl.checked = current === "dark"
+}
+applyStoredTheme()
+document.addEventListener("change", e => {
+  if (e.target && e.target.id === "theme-controller") {
+    const theme = e.target.checked ? "dark" : "light"
+    document.documentElement.setAttribute("data-theme", theme)
+    localStorage.setItem("theme", theme)
+  }
+})
+window.addEventListener("phx:page-loading-stop", applyStoredTheme)
+
 // Show progress bar on live navigation and form submits
 topbar.config({ barColors: { 0: "#29d" }, shadowColor: "rgba(0, 0, 0, .3)" })
 window.addEventListener("phx:page-loading-start", _info => topbar.show(300))
 window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
+
+// Native <dialog class="modal"> open/close. CoreComponents.show_modal/2 and
+// hide_modal/2 dispatch these events on the dialog element. Only the user-
+// initiated `cancel` event (ESC) runs `data-cancel`; programmatic el.close()
+// from phx:hide-modal must not trigger on_cancel callbacks.
+const handleDialogCancel = e => {
+  const el = e.currentTarget
+  const cancel = el.dataset && el.dataset.cancel
+  if (cancel) liveSocket.execJS(el, cancel)
+}
+window.addEventListener("phx:show-modal", e => {
+  const el = e.target
+  if (!el || typeof el.showModal !== "function") return
+  if (!el.dataset.dialogListenersBound) {
+    el.addEventListener("cancel", handleDialogCancel)
+    el.dataset.dialogListenersBound = "1"
+  }
+  if (!el.open) el.showModal()
+})
+window.addEventListener("phx:hide-modal", e => {
+  const el = e.target
+  if (el && typeof el.close === "function" && el.open) el.close()
+})
 
 // connect if there are any LiveViews on the page
 liveSocket.connect()

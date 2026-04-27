@@ -9,7 +9,7 @@ defmodule SanbaseWeb.AdminFormsComponents do
 
   def forms_list_container(assigns) do
     ~H"""
-    <div class="flex flex-col border border-gray-100 mx-auto max-w-3xl p-6 rounded-xl shadow-sm divide-y divide-solid">
+    <div class="flex flex-col border border-base-300 bg-base-100 mx-auto max-w-3xl p-6 rounded-xl shadow-sm divide-y divide-base-300">
       {render_slot(@inner_block)}
     </div>
     """
@@ -19,7 +19,7 @@ defmodule SanbaseWeb.AdminFormsComponents do
 
   def forms_list_title(assigns) do
     ~H"""
-    <h1 class="py-6 text-3xl font-extrabold leading-none tracking-tight text-gray-900">
+    <h1 class="py-6 text-3xl font-extrabold leading-none tracking-tight text-base-content">
       {@title}
     </h1>
     """
@@ -34,13 +34,13 @@ defmodule SanbaseWeb.AdminFormsComponents do
     <div class="flex flex-col md:flex-row py-8 items-center justify-between">
       <!-- Title and description -->
       <div class="w-3/4">
-        <span class="text-2xl mb-6">{@title}</span>
-        <p class="text-sm text-gray-500">{@description}</p>
+        <span class="text-2xl mb-6 text-base-content">{@title}</span>
+        <p class="text-sm text-base-content/60">{@description}</p>
       </div>
       <!-- Link to form -->
       <div class="flex flex-col space-y-2 ">
         <.link :for={button <- @buttons} href={button.url} target="_blank">
-          <button class="bg-blue-600 w-full px-6 hover:bg-blue-900 rounded-xl text-white py-2">
+          <button class="btn btn-primary w-full px-6">
             {button.text}
           </button>
         </.link>

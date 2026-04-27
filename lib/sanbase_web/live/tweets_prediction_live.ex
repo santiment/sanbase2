@@ -173,16 +173,16 @@ defmodule SanbaseWeb.TweetsPredictionLive do
   def render(assigns) do
     ~H"""
     <div class="max-w-3xl mx-auto">
-      <div class="bg-white p-4 rounded-lg shadow">
+      <div class="card bg-base-100 border border-base-300 shadow p-4">
         <.tweet_header title="Tweet Predictions Classifier" loading={@loading} />
 
-        <div class="flex justify-between text-sm text-gray-700 mb-4 px-2">
+        <div class="flex justify-between text-sm text-base-content/70 mb-4 px-2">
           <div>Total Classified: <span class="font-semibold">{@counts.total}</span></div>
           <div>
-            Predictions: <span class="font-semibold text-green-600">{@counts.predictions}</span>
+            Predictions: <span class="font-semibold text-success">{@counts.predictions}</span>
           </div>
           <div>
-            Not Predictions: <span class="font-semibold text-red-600">{@counts.not_predictions}</span>
+            Not Predictions: <span class="font-semibold text-error">{@counts.not_predictions}</span>
           </div>
         </div>
 

@@ -25,7 +25,7 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
         current_user_role_names={@current_user_role_names}
         trim_role_prefix="Metric Registry "
       />
-      <div class="text-gray-400 text-sm py-2">
+      <div class="text-base-content/50 text-sm py-2">
         Showing the last {length(@syncs)} syncs
       </div>
       <div class="my-4">
@@ -48,7 +48,7 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
         <:col :let={row} label="Datetime">
           <div>
             <div>{Timex.format!(row.inserted_at, "%F %T%:z", :strftime)}</div>
-            <div class="text-gray-500">
+            <div class="text-base-content/60">
               ({Sanbase.Utils.DateTime.rough_duration_since(row.inserted_at)} ago)
             </div>
           </div>
@@ -59,12 +59,12 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
         </:col>
 
         <:col :let={row} label="Type">
-          <span :if={row.sync_type == "outgoing"} class="font-bold text-blue-500">
+          <span :if={row.sync_type == "outgoing"} class="font-bold text-info">
             <.icon name="hero-phone-arrow-up-right" />
             {String.upcase(row.sync_type)}
           </span>
 
-          <span :if={row.sync_type == "incoming"} class="font-bold text-amber-500">
+          <span :if={row.sync_type == "incoming"} class="font-bold text-warning">
             <.icon name="hero-phone-arrow-down-left" />
             {String.upcase(row.sync_type)}
           </span>
@@ -92,7 +92,7 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
           <span :if={execution_too_long?(row.status, row.inserted_at)}>
             <AdminSharedComponents.action_button
               phx_click="cancel_run"
-              class="bg-amber-600 hover:bg-amber-800"
+              class="btn-warning"
               text="Cancel Run"
               phx-value-sync-uuid={row.uuid}
               phx-value-sync-type={row.sync_type}
@@ -146,24 +146,23 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
   defp formatted_completed_status(assigns) do
     ~H"""
     <div class="flex flex-col">
-      <span :if={@status == "completed"} class="text-green-500">
+      <span :if={@status == "completed"} class="text-success">
         <.icon name="hero-check-circle" /> Completed
       </span>
 
-      <span :if={@status in ["failed", "cancelled"]} class="text-red-500">
+      <span :if={@status in ["failed", "cancelled"]} class="text-error">
         <.icon name="hero-x-circle" /> {String.capitalize(@status)}
       </span>
 
-      <span :if={@status in ["executing", "scheduled"]} class="text-amber-500" }>
+      <span :if={@status in ["executing", "scheduled"]} class="text-warning">
         <.icon name="hero-ellipsis-horizontal" /> {String.capitalize(@status)}
       </span>
       <span
         :if={execution_too_long?(@status, @inserted_at)}
-        class="text-red-500"
-        data-popover-target={"popover-executing-too-long-#{@id}"}
+        class="tooltip tooltip-error text-error"
+        data-tip={"Executing for #{Sanbase.Utils.DateTime.rough_duration_since(@inserted_at)}"}
       >
         <.icon name="hero-exclamation-circle" /> Executing for too long!
-        ({Sanbase.Utils.DateTime.rough_duration_since(@inserted_at)})
       </span>
     </div>
     """
@@ -171,10 +170,10 @@ defmodule SanbaseWeb.MetricRegistrySyncRunsLive do
 
   defp formatted_dry_run(assigns) do
     ~H"""
-    <span :if={@is_dry_run} class="text-fuchsia-300 font-bold">
+    <span :if={@is_dry_run} class="text-secondary font-bold">
       DRY RUN
     </span>
-    <span :if={!@is_dry_run} class="text-green-500 font-bold">
+    <span :if={!@is_dry_run} class="text-success font-bold">
       REAL RUN
     </span>
     """

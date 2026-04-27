@@ -1,1 +1,7 @@
-<div></div>
+<div class="p-6 space-y-4">
+  <div>
+    <h1 class="text-2xl font-bold text-base-content">Admin Dashboard</h1>
+  </div>
+
+  {live_render(@conn, SanbaseWeb.Admin.HomeStatsLive, id: "admin-home-stats")}
+</div>

@@ -21,24 +21,22 @@
 
   <%= for bt <- @belongs_to do %>
     <div class="mt-4">
-      <h3 class="text-2xl font-medium text-gray-700 mb-2">{bt.name}</h3>
-      <div class="relative shadow-md sm:rounded-lg">
-        <div class="overflow-x-auto">
-          <table class="w-full text-xs text-left rtl:text-right text-gray-500 dark:text-gray-400 min-w-full table-fixed">
-            <tbody>
-              <%= for field <- bt.fields do %>
-                <tr class="hover:bg-gray-50 dark:hover:bg-gray-600">
-                  <th class="text-xs px-2 py-1 text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 border-b border-gray-200 whitespace-nowrap w-1/4">
-                    {field.field_name}
-                  </th>
-                  <td class="px-3 py-2 border-b border-gray-200 whitespace-pre-wrap break-words">
-                    <pre class="text-xs"><%= field.data %></pre>
-                  </td>
-                </tr>
-              <% end %>
-            </tbody>
-          </table>
-        </div>
+      <h3 class="text-2xl font-medium mb-2">{bt.name}</h3>
+      <div class="rounded-box border border-base-300 overflow-x-auto">
+        <table class="table table-zebra table-xs table-fixed">
+          <tbody>
+            <%= for field <- bt.fields do %>
+              <tr>
+                <th class="bg-base-200 whitespace-nowrap w-1/4 uppercase">
+                  {field.field_name}
+                </th>
+                <td class="whitespace-pre-wrap break-words">
+                  <pre class="text-xs"><%= field.data %></pre>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
       </div>
 
       <div class="mt-2">
@@ -47,7 +45,7 @@
             {link(to_string(action),
               to:
                 ~p"/admin/generic/show_action?#{[action: action, resource: @resource, id: @data.id]}",
-              class: "text-xs text-blue-500 hover:text-blue-700 mr-2"
+              class: "link link-primary text-xs mr-2"
             )}
           </span>
         <% end %>

@@ -14,15 +14,15 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
   def disagreement_tweet_card(assigns) do
     ~H"""
     <div
-      class="border rounded-lg p-4 bg-white shadow-sm"
+      class="card bg-base-100 border border-base-300 p-4"
       id={"disagreement-tweet-#{@tweet.tweet_id}"}
       {@rest}
     >
       <div class="flex justify-between items-start mb-3">
-        <div class="flex items-center gap-3">
-          <span class="font-bold text-blue-600 text-sm">@{@tweet.screen_name}</span>
-          <span class="text-xs text-gray-500">{format_date(@tweet.timestamp)}</span>
-          <span class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full font-medium">
+        <div class="flex items-center gap-3 flex-wrap">
+          <span class="font-bold text-primary text-sm">@{@tweet.screen_name}</span>
+          <span class="text-xs text-base-content/60">{format_date(@tweet.timestamp)}</span>
+          <span class="badge badge-sm badge-secondary">
             {@tweet.classification_count} {if @tweet.classification_count == 1,
               do: "person",
               else: "people"} classified
@@ -30,11 +30,8 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
           <span
             :if={@tweet.classification_count >= 5}
             class={[
-              "text-xs px-2 py-1 rounded-full font-medium",
-              if(@tweet.experts_is_prediction,
-                do: "bg-green-100 text-green-800",
-                else: "bg-red-100 text-red-800"
-              )
+              "badge badge-sm",
+              if(@tweet.experts_is_prediction, do: "badge-success", else: "badge-error")
             ]}
           >
             {if @tweet.experts_is_prediction, do: "✅ PREDICTION", else: "❌ NOT PREDICTION"}
@@ -45,10 +42,10 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
           href={@tweet.url}
           target="_blank"
           rel="noopener noreferrer"
-          class="text-xs text-blue-500 hover:underline flex items-center gap-1"
+          class="link link-primary text-xs flex items-center gap-1"
         >
           <span>View on X</span>
-          <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+          <svg class="size-3" fill="currentColor" viewBox="0 0 20 20">
             <path
               fill-rule="evenodd"
               d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
@@ -59,7 +56,7 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
         </a>
       </div>
 
-      <p class="text-sm text-gray-800 mb-4 leading-relaxed whitespace-pre-line">{@tweet.text}</p>
+      <p class="text-sm mb-4 leading-relaxed whitespace-pre-line">{@tweet.text}</p>
 
       <div :if={@show_results or @tweet.classification_count >= 5} class="mb-4">
         <.ai_classification_comparison tweet={@tweet} />
@@ -73,7 +70,7 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
         <.asset_direction_display_or_form tweet={@tweet} />
       </div>
 
-      <div :if={@show_classification_buttons} class="pt-3 border-t border-gray-100">
+      <div :if={@show_classification_buttons} class="pt-3 border-t border-base-300">
         <.classification_buttons tweet_id={@tweet.tweet_id} />
       </div>
     </div>
@@ -87,15 +84,12 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
 
   def ai_classification_comparison(assigns) do
     ~H"""
-    <div class="bg-gray-50 rounded-lg p-3 space-y-3">
+    <div class="bg-base-200 rounded-box p-3 space-y-3">
       <div class="flex items-center justify-between">
-        <h4 class="text-sm font-medium text-gray-700">AI Model Comparison</h4>
+        <h4 class="text-sm font-medium">AI Model Comparison</h4>
         <span class={[
-          "text-xs px-2 py-1 rounded-full font-medium",
-          if(@tweet.agreement,
-            do: "bg-green-100 text-green-800",
-            else: "bg-red-100 text-red-800"
-          )
+          "badge badge-sm",
+          if(@tweet.agreement, do: "badge-success", else: "badge-error")
         ]}>
           {if @tweet.agreement, do: "Agreement", else: "Disagreement"}
         </span>
@@ -106,14 +100,14 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
           name="Inhouse model"
           is_prediction={@tweet.llama_is_prediction}
           prob_true={@tweet.llama_prob_true}
-          color="green"
+          variant="success"
         />
 
         <.model_prediction
           name="OpenAI"
           is_prediction={@tweet.openai_is_prediction}
           prob_true={@tweet.openai_prob_true}
-          color="blue"
+          variant="info"
         />
       </div>
     </div>
@@ -126,29 +120,26 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
   attr :name, :string, required: true
   attr :is_prediction, :boolean
   attr :prob_true, :float
-  attr :color, :string, default: "blue"
+  attr :variant, :string, default: "info", values: ~w(info success warning error)
 
   def model_prediction(assigns) do
     ~H"""
-    <div class="bg-white rounded border p-3">
+    <div class="bg-base-100 rounded-box border border-base-300 p-3">
       <div class="flex items-center justify-between mb-2">
-        <span class={["text-sm font-medium", "text-#{@color}-700"]}>{@name}</span>
+        <span class={["text-sm font-medium", text_variant(@variant)]}>{@name}</span>
         <span class={[
-          "text-xs px-2 py-1 rounded font-medium",
-          if(@is_prediction,
-            do: "bg-#{@color}-100 text-#{@color}-800",
-            else: "bg-gray-100 text-gray-600"
-          )
+          "badge badge-sm",
+          if(@is_prediction, do: badge_variant(@variant), else: "badge-ghost")
         ]}>
           {if @is_prediction, do: "Prediction", else: "Not Prediction"}
         </span>
       </div>
 
       <div class="text-center">
-        <div class="text-2xl font-bold text-gray-900">
+        <div class="text-2xl font-bold">
           {format_probability(@prob_true)}
         </div>
-        <div class="text-xs text-gray-500">
+        <div class="text-xs text-base-content/60">
           Prediction Confidence
         </div>
       </div>
@@ -163,12 +154,10 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
 
   def voting_details(assigns) do
     ~H"""
-    <div class="bg-blue-50 rounded-lg p-3">
+    <div class="bg-info/10 rounded-box p-3">
       <div class="flex items-center justify-between mb-3">
-        <h4 class="text-sm font-medium text-gray-700">Expert Classifications</h4>
-        <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
-          {@tweet.classification_count}/5 votes
-        </span>
+        <h4 class="text-sm font-medium">Expert Classifications</h4>
+        <span class="badge badge-sm badge-info">{@tweet.classification_count}/5 votes</span>
       </div>
 
       <div :if={length(Map.get(@tweet, :classifications, [])) > 0} class="space-y-2">
@@ -176,35 +165,26 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
           :for={classification <- Map.get(@tweet, :classifications, [])}
           class="flex items-center justify-between text-xs"
         >
-          <span class="text-gray-600">{get_user_display(classification.user_email)}</span>
+          <span class="text-base-content/70">{get_user_display(classification.user_email)}</span>
           <span class={[
-            "px-2 py-1 rounded-full font-medium",
-            if(classification.is_prediction,
-              do: "bg-green-100 text-green-800",
-              else: "bg-red-100 text-red-800"
-            )
+            "badge badge-sm",
+            if(classification.is_prediction, do: "badge-success", else: "badge-error")
           ]}>
-            {if classification.is_prediction, do: "👍 Prediction", else: "👎 Not Prediction"}
+            {if classification.is_prediction, do: "Prediction", else: "Not Prediction"}
           </span>
         </div>
       </div>
 
       <div
         :if={@tweet.classification_count >= 5 and @tweet.experts_is_prediction != nil}
-        class="mt-3 pt-3 border-t border-blue-200"
+        class="mt-3 pt-3 border-t border-info/30"
       >
         <div class="flex items-center justify-between">
-          <span class="text-sm font-medium text-gray-700">Expert Consensus:</span>
-          <span
-            :if={@tweet.classification_count >= 5 and @tweet.experts_is_prediction != nil}
-            class={[
-              "text-sm px-3 py-1 rounded-full font-bold",
-              if(@tweet.experts_is_prediction,
-                do: "bg-green-200 text-green-900",
-                else: "bg-red-200 text-red-900"
-              )
-            ]}
-          >
+          <span class="text-sm font-medium">Expert Consensus:</span>
+          <span class={[
+            "badge",
+            if(@tweet.experts_is_prediction, do: "badge-success", else: "badge-error")
+          ]}>
             {if @tweet.experts_is_prediction, do: "✅ PREDICTION", else: "❌ NOT PREDICTION"}
           </span>
         </div>
@@ -221,24 +201,24 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
   def classification_buttons(assigns) do
     ~H"""
     <div class="flex items-center gap-3">
-      <span class="text-sm font-medium text-gray-700">Your Classification:</span>
+      <span class="text-sm font-medium">Your Classification:</span>
 
       <button
         phx-click="classify_tweet"
         phx-value-tweet_id={@tweet_id}
         phx-value-is_prediction="true"
-        class="bg-green-500 hover:bg-green-600 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors"
+        class="btn btn-sm btn-success"
       >
-        👍 Prediction
+        Prediction
       </button>
 
       <button
         phx-click="classify_tweet"
         phx-value-tweet_id={@tweet_id}
         phx-value-is_prediction="false"
-        class="bg-red-500 hover:bg-red-600 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors"
+        class="btn btn-sm btn-error"
       >
-        👎 Not Prediction
+        Not Prediction
       </button>
     </div>
     """
@@ -251,33 +231,26 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
 
   def asset_direction_display_or_form(assigns) do
     ~H"""
-    <div class="bg-yellow-50 rounded-lg p-4">
-      <h4 class="text-sm font-medium text-gray-700 mb-3">Asset Direction Information</h4>
+    <div class="bg-warning/10 rounded-box p-4">
+      <h4 class="text-sm font-medium mb-3">Asset Direction Information</h4>
 
       <div :if={has_asset_direction_info?(@tweet)} class="space-y-2">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div :if={@tweet.prediction_direction} class="text-center">
-            <span class="text-xs text-gray-500 block">Direction</span>
-            <span class={[
-              "inline-block px-3 py-1 rounded-full text-sm font-medium mt-1",
-              direction_color(@tweet.prediction_direction)
-            ]}>
+            <span class="text-xs text-base-content/60 block">Direction</span>
+            <span class={["badge mt-1", direction_color(@tweet.prediction_direction)]}>
               {direction_display(@tweet.prediction_direction)}
             </span>
           </div>
 
           <div :if={@tweet.base_asset} class="text-center">
-            <span class="text-xs text-gray-500 block">Base Asset</span>
-            <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium mt-1 inline-block">
-              {@tweet.base_asset}
-            </span>
+            <span class="text-xs text-base-content/60 block">Base Asset</span>
+            <span class="badge badge-info mt-1">{@tweet.base_asset}</span>
           </div>
 
           <div :if={@tweet.quote_asset} class="text-center">
-            <span class="text-xs text-gray-500 block">Quote Asset</span>
-            <span class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm font-medium mt-1 inline-block">
-              {@tweet.quote_asset}
-            </span>
+            <span class="text-xs text-base-content/60 block">Quote Asset</span>
+            <span class="badge badge-ghost mt-1">{@tweet.quote_asset}</span>
           </div>
         </div>
       </div>
@@ -292,31 +265,24 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
         <input type="hidden" name="tweet_id" value={@tweet.tweet_id} />
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Prediction Direction
-            </label>
-            <select
-              name="prediction_direction"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">Prediction Direction</legend>
+            <select name="prediction_direction" class="select select-sm w-full">
               <option value="">Select direction...</option>
               <option value="up">📈 Up</option>
               <option value="down">📉 Down</option>
               <option value="side">➡️ Sideways</option>
               <option value="other">❓ Other</option>
             </select>
-          </div>
+          </fieldset>
 
-          <div class="relative">
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Base Asset (optional)
-            </label>
+          <fieldset class="fieldset relative">
+            <legend class="fieldset-legend">Base Asset (optional)</legend>
             <input
               type="text"
               name="base_asset"
               placeholder="e.g., BTC, ETH..."
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="input input-sm w-full"
               phx-change="search_tickers"
               phx-debounce="300"
               autocomplete="off"
@@ -324,20 +290,18 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
             />
             <div
               id={"base_asset_suggestions_#{@tweet.tweet_id}"}
-              class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-48 overflow-y-auto hidden"
+              class="absolute z-50 w-full mt-1 bg-base-100 border border-base-300 rounded-box shadow-xl max-h-48 overflow-y-auto hidden"
             >
             </div>
-          </div>
+          </fieldset>
 
-          <div class="relative">
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Quote Asset (optional)
-            </label>
+          <fieldset class="fieldset relative">
+            <legend class="fieldset-legend">Quote Asset (optional)</legend>
             <input
               type="text"
               name="quote_asset"
               placeholder="USD (default), EUR..."
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="input input-sm w-full"
               phx-change="search_tickers"
               phx-debounce="300"
               autocomplete="off"
@@ -345,17 +309,14 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
             />
             <div
               id={"quote_asset_suggestions_#{@tweet.tweet_id}"}
-              class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-48 overflow-y-auto hidden"
+              class="absolute z-50 w-full mt-1 bg-base-100 border border-base-300 rounded-box shadow-xl max-h-48 overflow-y-auto hidden"
             >
             </div>
-          </div>
+          </fieldset>
         </div>
 
         <div class="flex justify-end">
-          <button
-            type="submit"
-            class="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors"
-          >
+          <button type="submit" class="btn btn-sm btn-primary">
             Add Asset Direction
           </button>
         </div>
@@ -374,8 +335,8 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
     ~H"""
     <div class="flex justify-between items-center mb-6">
       <div>
-        <h2 class="text-2xl font-bold text-gray-900">{@title}</h2>
-        <p class="text-sm text-gray-600 mt-1">
+        <h2 class="text-2xl font-bold">{@title}</h2>
+        <p class="text-sm text-base-content/70 mt-1">
           Help improve AI models by classifying tweets where models disagree
         </p>
       </div>
@@ -391,14 +352,17 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
   def stats_summary(assigns) do
     ~H"""
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-      <div class="bg-blue-50 rounded-lg p-4">
-        <div class="text-2xl font-bold text-blue-600">{@stats.total_tweets}</div>
-        <div class="text-sm text-blue-700">Total Tweets</div>
+      <div class="card bg-info/10 border border-info/30 p-4">
+        <div class="text-2xl font-bold text-info">{@stats.total_tweets}</div>
+        <div class="text-sm text-info">Total Tweets</div>
       </div>
 
-      <div :for={{count, total} <- @stats.classification_counts} class="bg-green-50 rounded-lg p-4">
-        <div class="text-2xl font-bold text-green-600">{total}</div>
-        <div class="text-sm text-green-700">Classified by {count}</div>
+      <div
+        :for={{count, total} <- @stats.classification_counts}
+        class="card bg-success/10 border border-success/30 p-4"
+      >
+        <div class="text-2xl font-bold text-success">{total}</div>
+        <div class="text-sm text-success">Classified by {count}</div>
       </div>
     </div>
     """
@@ -411,12 +375,12 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
 
   def filter_controls(assigns) do
     ~H"""
-    <div class="bg-gray-50 rounded-lg p-4 mb-4">
-      <h3 class="text-sm font-medium text-gray-700 mb-3">Filters</h3>
+    <div class="bg-base-200 rounded-box p-4 mb-4">
+      <h3 class="text-sm font-medium mb-3">Filters</h3>
 
       <div class="flex items-center gap-4">
         <div class="flex items-center gap-2">
-          <label class="text-sm text-gray-600">Probability Range:</label>
+          <label class="text-sm text-base-content/70">Probability Range:</label>
           <input
             type="range"
             min="0"
@@ -425,10 +389,10 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
             value={elem(@filter_options.prob_range, 0)}
             phx-change="filter_prob_range"
             name="min"
-            class="w-20"
+            class="range range-xs w-20"
           />
-          <span class="text-xs text-gray-500">{elem(@filter_options.prob_range, 0)}</span>
-          <span class="text-gray-400">-</span>
+          <span class="text-xs text-base-content/60">{elem(@filter_options.prob_range, 0)}</span>
+          <span class="text-base-content/40">-</span>
           <input
             type="range"
             min="0"
@@ -437,9 +401,9 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
             value={elem(@filter_options.prob_range, 1)}
             phx-change="filter_prob_range"
             name="max"
-            class="w-20"
+            class="range range-xs w-20"
           />
-          <span class="text-xs text-gray-500">{elem(@filter_options.prob_range, 1)}</span>
+          <span class="text-xs text-base-content/60">{elem(@filter_options.prob_range, 1)}</span>
         </div>
       </div>
     </div>
@@ -496,9 +460,19 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
   defp direction_display("other"), do: "❓ Other"
   defp direction_display(_), do: "N/A"
 
-  defp direction_color("up"), do: "bg-green-100 text-green-800"
-  defp direction_color("down"), do: "bg-red-100 text-red-800"
-  defp direction_color("side"), do: "bg-yellow-100 text-yellow-800"
-  defp direction_color("other"), do: "bg-purple-100 text-purple-800"
-  defp direction_color(_), do: "bg-gray-100 text-gray-600"
+  defp direction_color("up"), do: "badge-success"
+  defp direction_color("down"), do: "badge-error"
+  defp direction_color("side"), do: "badge-warning"
+  defp direction_color("other"), do: "badge-secondary"
+  defp direction_color(_), do: "badge-ghost"
+
+  defp text_variant("success"), do: "text-success"
+  defp text_variant("warning"), do: "text-warning"
+  defp text_variant("error"), do: "text-error"
+  defp text_variant(_), do: "text-info"
+
+  defp badge_variant("success"), do: "badge-success"
+  defp badge_variant("warning"), do: "badge-warning"
+  defp badge_variant("error"), do: "badge-error"
+  defp badge_variant(_), do: "badge-info"
 end

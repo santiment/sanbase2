@@ -105,12 +105,12 @@ defmodule SanbaseWeb.ProjectChangelogLive do
   def project_details(assigns) do
     ~H"""
     <div class="mb-6">
-      <.link navigate={~p"/admin/project_changelog"} class="text-blue-500 hover:underline">
+      <.link navigate={~p"/admin/project_changelog"} class="link link-primary">
         &larr; Back to changelog
       </.link>
     </div>
 
-    <div class="bg-white shadow rounded-lg p-6 mb-6">
+    <div class="card bg-base-100 border border-base-300 shadow p-6 mb-6">
       <div class="flex items-center mb-4">
         <img
           :if={@project.logo_url}
@@ -120,23 +120,19 @@ defmodule SanbaseWeb.ProjectChangelogLive do
         />
         <div>
           <h2 class="text-xl font-bold">{@project.name}</h2>
-          <p class="text-gray-600">{@project.ticker}</p>
-          <p class="text-gray-500 text-sm">{@project.slug}</p>
+          <p class="text-base-content/60">{@project.ticker}</p>
+          <p class="text-base-content/50 text-sm">{@project.slug}</p>
         </div>
       </div>
 
       <p :if={@project.description} class="mb-4">{@project.description}</p>
 
-      <.link
-        href={Project.sanbase_link(@project)}
-        target="_blank"
-        class="text-blue-500 hover:underline"
-      >
+      <.link href={Project.sanbase_link(@project)} target="_blank" class="link link-primary">
         View project page
       </.link>
     </div>
 
-    <div class="bg-white shadow rounded-lg p-6">
+    <div class="card bg-base-100 border border-base-300 shadow p-6">
       <h3 class="text-lg font-semibold mb-4">Changelog</h3>
 
       <div class="space-y-6">
@@ -146,7 +142,7 @@ defmodule SanbaseWeb.ProjectChangelogLive do
 
         <p
           :if={@events.creation_event == nil and @events.hiding_events == []}
-          class="text-gray-500 italic"
+          class="text-base-content/50 italic"
         >
           No changelog events found for this project.
         </p>
@@ -162,10 +158,10 @@ defmodule SanbaseWeb.ProjectChangelogLive do
 
   def creation_event(assigns) do
     ~H"""
-    <div class="border-l-4 border-green-500 pl-4 py-2">
+    <div class="border-l-4 border-success pl-4 py-2">
       <div class="flex justify-between">
-        <h4 class="font-medium text-green-700">Project Created</h4>
-        <span class="text-gray-500 text-sm">
+        <h4 class="font-medium text-success">Project Created</h4>
+        <span class="text-base-content/50 text-sm">
           {format_datetime(@event.recorded_at)}
         </span>
       </div>
@@ -187,10 +183,10 @@ defmodule SanbaseWeb.ProjectChangelogLive do
 
   def hiding_event(assigns) do
     ~H"""
-    <div class="border-l-4 border-yellow-500 pl-4 py-2">
+    <div class="border-l-4 border-warning pl-4 py-2">
       <div class="flex justify-between">
-        <h4 class="font-medium text-yellow-700">Project Hidden</h4>
-        <span class="text-gray-500 text-sm">
+        <h4 class="font-medium text-warning">Project Hidden</h4>
+        <span class="text-base-content/50 text-sm">
           {format_datetime(@event.recorded_at)}
         </span>
       </div>
@@ -218,7 +214,7 @@ defmodule SanbaseWeb.ProjectChangelogLive do
 
   def changelog_list(assigns) do
     ~H"""
-    <div class="bg-white shadow rounded-lg p-6">
+    <div class="card bg-base-100 border border-base-300 shadow p-6">
       <div class="mb-6">
         <h3 class="text-lg font-semibold mb-4">Project Changelog</h3>
 
@@ -250,22 +246,15 @@ defmodule SanbaseWeb.ProjectChangelogLive do
   def search_form(assigns) do
     ~H"""
     <form phx-submit="search" class="mb-4">
-      <div class="flex">
-        <div class="relative flex-grow">
-          <input
-            type="text"
-            name="search[term]"
-            value={@search_term}
-            placeholder="Search by project name or ticker..."
-            class="w-full px-4 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <button
-          type="submit"
-          class="px-4 py-2 bg-blue-500 text-white rounded-r-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          Search
-        </button>
+      <div class="join w-full">
+        <input
+          type="text"
+          name="search[term]"
+          value={@search_term}
+          placeholder="Search by project name or ticker..."
+          class="input join-item flex-1"
+        />
+        <button type="submit" class="btn btn-primary join-item">Search</button>
       </div>
     </form>
     """
@@ -277,7 +266,7 @@ defmodule SanbaseWeb.ProjectChangelogLive do
   def loading_spinner(assigns) do
     ~H"""
     <div class="flex justify-center items-center py-10">
-      <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+      <span class="loading loading-spinner loading-lg text-primary"></span>
     </div>
     """
   end
@@ -288,7 +277,7 @@ defmodule SanbaseWeb.ProjectChangelogLive do
   def empty_state(assigns) do
     ~H"""
     <div class="text-center py-10">
-      <p class="text-gray-500">No changelog entries found.</p>
+      <p class="text-base-content/50">No changelog entries found.</p>
     </div>
     """
   end
@@ -302,8 +291,8 @@ defmodule SanbaseWeb.ProjectChangelogLive do
 
   def changelog_entry(assigns) do
     ~H"""
-    <div class="border-b pb-6 last:border-b-0">
-      <h3 class="text-xl font-semibold mb-4 text-gray-800">
+    <div class="border-b border-base-300 pb-6 last:border-b-0">
+      <h3 class="text-xl font-semibold mb-4">
         {format_date(@entry.date)}
       </h3>
 
@@ -330,9 +319,11 @@ defmodule SanbaseWeb.ProjectChangelogLive do
   def created_projects_section(assigns) do
     ~H"""
     <div class="mb-6">
-      <h4 class="text-md font-medium text-green-700 mb-3">
-        Projects Created ({length(@created_projects)})
-      </h4>
+      <div class="flex items-center mb-3">
+        <span class="badge badge-sm badge-success badge-soft">
+          Projects Created ({length(@created_projects)})
+        </span>
+      </div>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <.project_card
           :for={%{project: project, event: event} <- @created_projects}
@@ -353,9 +344,11 @@ defmodule SanbaseWeb.ProjectChangelogLive do
   def hidden_projects_section(assigns) do
     ~H"""
     <div>
-      <h4 class="text-md font-medium text-yellow-700 mb-3">
-        Projects Hidden ({length(@hidden_projects)})
-      </h4>
+      <div class="flex items-center mb-3">
+        <span class="badge badge-sm badge-warning badge-soft">
+          Projects Hidden ({length(@hidden_projects)})
+        </span>
+      </div>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <.project_card
           :for={%{project: project, event: event, reason: reason} <- @hidden_projects}
@@ -379,7 +372,7 @@ defmodule SanbaseWeb.ProjectChangelogLive do
 
   def project_card(assigns) do
     ~H"""
-    <div class="border rounded-lg p-4 hover:shadow-md transition-shadow">
+    <div class="card bg-base-100 border border-base-300 p-4 hover:shadow-md transition-shadow">
       <div class="flex items-center mb-2">
         <img
           :if={@project.logo_url}
@@ -389,8 +382,8 @@ defmodule SanbaseWeb.ProjectChangelogLive do
         />
         <div>
           <h5 class="font-medium">{@project.name}</h5>
-          <p class="text-sm text-gray-500">{@project.ticker}</p>
-          <p class="text-xs text-gray-400">{@project.slug}</p>
+          <p class="text-sm text-base-content/60">{@project.ticker}</p>
+          <p class="text-xs text-base-content/40">{@project.slug}</p>
         </div>
       </div>
 
@@ -398,7 +391,7 @@ defmodule SanbaseWeb.ProjectChangelogLive do
         <span class="font-medium">Reason:</span> {@reason}
       </div>
 
-      <div class="text-xs text-gray-500 mt-2">
+      <div class="text-xs text-base-content/50 mt-2">
         <span :if={@event.user}>
           {if @type == :created, do: "Created", else: "Hidden"} by {@event.user.email}
         </span>
@@ -412,7 +405,7 @@ defmodule SanbaseWeb.ProjectChangelogLive do
         <.link
           href={"https://app.santiment.net/charts?slug=#{@project.slug}&metrics=price_usd"}
           target="_blank"
-          class="text-blue-600 hover:text-blue-900 text-sm"
+          class="link link-primary text-sm"
         >
           Visit Page
         </.link>
@@ -434,15 +427,15 @@ defmodule SanbaseWeb.ProjectChangelogLive do
 
     ~H"""
     <div class="mt-8 flex justify-between items-center">
-      <div class="text-sm text-gray-700">
+      <div class="text-sm text-base-content/70">
         Showing page {@page} of {@total_pages} (Total: {@total_dates} days with changes)
       </div>
-      <div class="flex space-x-2">
+      <div class="join">
         <button
           :if={@page > 1}
           phx-click="change_page"
           phx-value-page={@page - 1}
-          class="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+          class="btn btn-sm btn-soft join-item"
         >
           Previous
         </button>
@@ -451,7 +444,10 @@ defmodule SanbaseWeb.ProjectChangelogLive do
           :for={page_num <- @page_range}
           phx-click="change_page"
           phx-value-page={page_num}
-          class={"px-3 py-1 rounded #{if page_num == @page, do: "bg-blue-500 text-white", else: "bg-gray-200 text-gray-700 hover:bg-gray-300"}"}
+          class={[
+            "btn btn-sm join-item",
+            if(page_num == @page, do: "btn-primary", else: "btn-soft")
+          ]}
         >
           {page_num}
         </button>
@@ -460,7 +456,7 @@ defmodule SanbaseWeb.ProjectChangelogLive do
           :if={@page < @total_pages}
           phx-click="change_page"
           phx-value-page={@page + 1}
-          class="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+          class="btn btn-sm btn-soft join-item"
         >
           Next
         </button>

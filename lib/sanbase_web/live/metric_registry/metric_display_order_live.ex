@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.MetricDisplayOrderLive do
   use SanbaseWeb, :live_view
 
+  import SanbaseWeb.AdminLiveHelpers, only: [parse_int: 2]
+
   alias Sanbase.Metric.UIMetadata.DisplayOrder
   alias SanbaseWeb.AdminSharedComponents
 
@@ -10,7 +12,6 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
     metrics = ordered_data.metrics
     categories = ordered_data.categories
 
-    # Get the name of the first category if available
     first_category_name = if categories != [], do: List.first(categories).name, else: nil
 
     {:ok,
@@ -36,7 +37,7 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
     group = params["group"]
 
     highlighted_metric_id =
-      params["highlight_metric"] && String.to_integer(params["highlight_metric"])
+      params["highlight_metric"] && parse_int(params["highlight_metric"], nil)
 
     {:noreply,
      socket
@@ -52,7 +53,7 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col justify-center w-full">
-      <div class="text-gray-800 text-2xl mb-4">
+      <div class="text-2xl mb-4">
         Metric Display Order
       </div>
 
@@ -78,7 +79,7 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
       <.modal :if={@reordering} id="reordering-modal" show>
         <.header>Reordering Metrics</.header>
         <div class="text-center py-4">
-          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+          <span class="loading loading-spinner loading-lg text-primary"></span>
           <p class="mt-4">Saving new order...</p>
         </div>
       </.modal>
@@ -147,10 +148,7 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
       </div>
 
       <div :if={has_active_filters?(assigns)} class="flex items-end">
-        <button
-          phx-click="reset_filters"
-          class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
-        >
+        <button phx-click="reset_filters" class="btn btn-soft">
           Reset Filters
         </button>
       </div>
@@ -158,7 +156,6 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
     """
   end
 
-  # Add this helper function to determine if there are active filters
   defp has_active_filters?(assigns) do
     default_category =
       if assigns.categories != [], do: List.first(assigns.categories).name, else: nil
@@ -173,18 +170,16 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
   def search_box(assigns) do
     ~H"""
     <div class="mb-4">
-      <form phx-change="global_search" class="flex">
+      <form phx-change="global_search" class="join w-full">
         <input
           type="text"
           name="search_query"
           value={@search_query}
           placeholder="Search for metrics across all categories..."
           phx-debounce="300"
-          class="flex-1 rounded-l-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+          class="input join-item flex-1"
         />
-        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700">
-          Search
-        </button>
+        <button type="submit" class="btn btn-primary join-item">Search</button>
       </form>
     </div>
     """
@@ -194,57 +189,35 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
 
   def search_results(assigns) do
     ~H"""
-    <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+    <div class="card bg-base-200 border border-base-300 p-4 mb-4">
       <h3 class="font-medium text-lg mb-2">Search Results</h3>
-      <div class="overflow-x-auto max-h-60 overflow-y-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-100 sticky top-0">
+      <div class="rounded-box border border-base-300 max-h-60 overflow-auto">
+        <table class="table table-zebra table-sm">
+          <thead class="sticky top-0">
             <tr>
-              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Metric
-              </th>
-              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Label
-              </th>
-              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                UI Key
-              </th>
-              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Category
-              </th>
-              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Group
-              </th>
-              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Action
-              </th>
+              <th>Metric</th>
+              <th>Label</th>
+              <th>UI Key</th>
+              <th>Category</th>
+              <th>Group</th>
+              <th>Action</th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
+          <tbody>
             <%= for result <- @search_results do %>
               <tr>
-                <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
-                  {result.metric}
-                </td>
-                <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
-                  {result.ui_human_readable_name}
-                </td>
-                <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
-                  {result.ui_key}
-                </td>
-                <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
-                  {result.category_name}
-                </td>
-                <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
-                  {result.group_name}
-                </td>
-                <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                <td>{result.metric}</td>
+                <td>{result.ui_human_readable_name}</td>
+                <td>{result.ui_key}</td>
+                <td>{result.category_name}</td>
+                <td>{result.group_name}</td>
+                <td>
                   <button
                     phx-click="focus_metric"
                     phx-value-id={result.id}
                     phx-value-category={result.category_name}
                     phx-value-group={if result.group_name, do: result.group_name, else: ""}
-                    class="text-blue-600 hover:text-blue-900"
+                    class="link link-primary"
                   >
                     Focus
                   </button>
@@ -263,67 +236,22 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
 
   def metrics_table(assigns) do
     ~H"""
-    <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
+    <div class="rounded-box border border-base-300 overflow-x-auto">
+      <table class="table table-zebra table-sm">
+        <thead>
           <tr>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Order
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Metric
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Label
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              UI Key
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Category
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Group
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Style
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Format
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Actions
-            </th>
+            <th>Order</th>
+            <th>Metric</th>
+            <th>Label</th>
+            <th>UI Key</th>
+            <th>Category</th>
+            <th>Group</th>
+            <th>Style</th>
+            <th>Format</th>
+            <th>Actions</th>
           </tr>
         </thead>
-        <tbody id="metrics" phx-hook="Sortable" class="bg-white divide-y divide-gray-200">
+        <tbody id="metrics" phx-hook="Sortable">
           <.metric_row
             :for={{metric, index} <- Enum.with_index(@filtered_metrics)}
             metric={metric}
@@ -344,60 +272,39 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
 
   def metric_row(assigns) do
     ~H"""
-    <tr
-      id={"metric-#{@metric.id}"}
-      data-id={@metric.id}
-      class={["hover:bg-gray-50", @highlighted && "bg-yellow-100"]}
-    >
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        <div class="flex items-center">
+    <tr id={"metric-#{@metric.id}"} data-id={@metric.id} class={[@highlighted && "bg-warning/20"]}>
+      <td>
+        <div class="flex items-center gap-1">
           <button
             phx-click="move-up"
             phx-value-metric_id={@metric.id}
-            class="mr-2"
+            class="btn btn-xs btn-ghost btn-circle"
             disabled={@index == 0}
           >
-            <.icon name="hero-arrow-up" class="w-4 h-4" />
+            <.icon name="hero-arrow-up" class="size-4" />
           </button>
           <span>{@metric.display_order}</span>
           <button
             phx-click="move-down"
             phx-value-metric_id={@metric.id}
-            class="ml-2"
+            class="btn btn-xs btn-ghost btn-circle"
             disabled={@index == @total_count - 1}
           >
-            <.icon name="hero-arrow-down" class="w-4 h-4" />
+            <.icon name="hero-arrow-down" class="size-4" />
           </button>
         </div>
       </td>
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+      <td>
         {@metric.metric}
-        <span
-          :if={@metric.is_new}
-          class="ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800"
-        >
-          NEW
-        </span>
+        <span :if={@metric.is_new} class="badge badge-xs badge-success ml-2">NEW</span>
       </td>
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        {@metric.ui_human_readable_name}
-      </td>
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        {@metric.ui_key}
-      </td>
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        {@metric.category_name}
-      </td>
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        {@metric.group_name}
-      </td>
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        {@metric.chart_style}
-      </td>
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        {@metric.unit}
-      </td>
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+      <td>{@metric.ui_human_readable_name}</td>
+      <td>{@metric.ui_key}</td>
+      <td>{@metric.category_name}</td>
+      <td>{@metric.group_name}</td>
+      <td>{@metric.chart_style}</td>
+      <td>{@metric.unit}</td>
+      <td>
         <.metric_actions metric={@metric} />
       </td>
     </tr>
@@ -621,16 +528,16 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
 
   def metric_actions(assigns) do
     ~H"""
-    <div class="flex space-x-2">
+    <div class="flex space-x-3">
       <.link
         navigate={~p"/admin/metric_registry/display_order/show/#{@metric.id}"}
-        class="text-blue-600 hover:text-blue-900"
+        class="link link-primary text-sm"
       >
         Show
       </.link>
       <.link
         navigate={~p"/admin/metric_registry/display_order/edit/#{@metric.id}"}
-        class="text-green-600 hover:text-green-900"
+        class="link link-success text-sm"
       >
         Edit
       </.link>
@@ -638,7 +545,7 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
         phx-click="delete_metric"
         phx-value-id={@metric.id}
         data-confirm="Are you sure you want to delete this metric display order? This action cannot be undone."
-        class="text-red-600 hover:text-red-900 cursor-pointer"
+        class="link link-error text-sm cursor-pointer"
       >
         Delete
       </.link>

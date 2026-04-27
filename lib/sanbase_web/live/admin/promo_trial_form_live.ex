@@ -32,17 +32,20 @@ defmodule SanbaseWeb.Admin.PromoTrialLive.Form do
   end
 
   def handle_event("select_user", %{"id" => id}, socket) do
-    case User.by_id(String.to_integer(id)) do
-      {:ok, user} ->
-        {:noreply,
-         socket
-         |> assign(:selected_user, user)
-         |> assign(:user_query, user.email || "user##{user.id}")
-         |> assign(:user_matches, [])}
-
-      _ ->
-        {:noreply, socket}
+    with {user_id, ""} <- Integer.parse(id),
+         {:ok, user} <- User.by_id(user_id) do
+      {:noreply,
+       socket
+       |> assign(:selected_user, user)
+       |> assign(:user_query, user.email || "user##{user.id}")
+       |> assign(:user_matches, [])}
+    else
+      _ -> {:noreply, socket}
     end
+  end
+
+  def handle_event("clear_matches", _params, socket) do
+    {:noreply, assign(socket, :user_matches, [])}
   end
 
   def handle_event("clear_user", _params, socket) do
@@ -75,7 +78,10 @@ defmodule SanbaseWeb.Admin.PromoTrialLive.Form do
   end
 
   def handle_event("preset_days", %{"days" => days}, socket) do
-    {:noreply, assign(socket, :trial_days, String.to_integer(days))}
+    case Integer.parse(to_string(days)) do
+      {n, ""} when n > 0 -> {:noreply, assign(socket, :trial_days, n)}
+      _ -> {:noreply, socket}
+    end
   end
 
   def handle_event("submit", _params, socket) do
@@ -278,6 +284,7 @@ defmodule SanbaseWeb.Admin.PromoTrialLive.Form do
                   </p>
                   <ul
                     :if={@user_matches != []}
+                    phx-click-away="clear_matches"
                     class="menu absolute top-full left-0 right-0 mt-1 z-20 bg-base-100 border border-base-300 rounded-box shadow-xl max-h-72 overflow-y-auto p-1"
                   >
                     <li :for={u <- @user_matches}>

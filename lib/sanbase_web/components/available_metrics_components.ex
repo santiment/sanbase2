@@ -63,7 +63,7 @@ defmodule SanbaseWeb.AvailableMetricsComponents do
         id={@popover_target}
         tabindex="0"
         class={[
-          "dropdown-content card card-compact bg-base-100 border border-base-300 shadow-2xl z-10 max-h-[580px] min-w-[860px] overflow-y-auto px-8 py-6 text-sm font-medium text-gray-600",
+          "dropdown-content card card-sm bg-base-100 border border-base-300 shadow-2xl z-10 max-h-[580px] min-w-[860px] overflow-y-auto px-8 py-6 text-sm font-medium text-base-content/70",
           @popover_class
         ]}
       >

@@ -385,7 +385,7 @@ defmodule SanbaseWeb.AvailableMetricsDescription do
 
     To see how much of the historical and realtime data is restricted, check the restrictions
     at the <.link class="link link-primary" href="https://app.santiment.net/pricing?plans=business">pricing page</.link>.
-    The documentation about the restriction is avaialble at <.link class="link link-primary" href="https://academy.santiment.net/sanapi/historical-and-realtime-data-restrictions">this Academy page</.link>.
+    The documentation about the restriction is available at <.link class="link link-primary" href="https://academy.santiment.net/sanapi/historical-and-realtime-data-restrictions">this Academy page</.link>.
     </pre>
     """
   end

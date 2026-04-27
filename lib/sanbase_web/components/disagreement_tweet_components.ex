@@ -120,16 +120,16 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
   attr :name, :string, required: true
   attr :is_prediction, :boolean
   attr :prob_true, :float
-  attr :variant, :string, default: "info"
+  attr :variant, :string, default: "info", values: ~w(info success warning error)
 
   def model_prediction(assigns) do
     ~H"""
     <div class="bg-base-100 rounded-box border border-base-300 p-3">
       <div class="flex items-center justify-between mb-2">
-        <span class={["text-sm font-medium", "text-#{@variant}"]}>{@name}</span>
+        <span class={["text-sm font-medium", text_variant(@variant)]}>{@name}</span>
         <span class={[
           "badge badge-sm",
-          if(@is_prediction, do: "badge-#{@variant}", else: "badge-ghost")
+          if(@is_prediction, do: badge_variant(@variant), else: "badge-ghost")
         ]}>
           {if @is_prediction, do: "Prediction", else: "Not Prediction"}
         </span>
@@ -465,4 +465,14 @@ defmodule SanbaseWeb.DisagreementTweetComponents do
   defp direction_color("side"), do: "badge-warning"
   defp direction_color("other"), do: "badge-secondary"
   defp direction_color(_), do: "badge-ghost"
+
+  defp text_variant("success"), do: "text-success"
+  defp text_variant("warning"), do: "text-warning"
+  defp text_variant("error"), do: "text-error"
+  defp text_variant(_), do: "text-info"
+
+  defp badge_variant("success"), do: "badge-success"
+  defp badge_variant("warning"), do: "badge-warning"
+  defp badge_variant("error"), do: "badge-error"
+  defp badge_variant(_), do: "badge-info"
 end

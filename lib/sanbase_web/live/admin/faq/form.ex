@@ -23,7 +23,6 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
     socket =
       socket
       |> assign(:entry, entry)
-      |> assign(:changeset, changeset)
       |> assign(:form, to_form(changeset))
       |> assign(:action, action)
       |> assign(:page_title, "New FAQ Entry")
@@ -53,7 +52,6 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
 
     socket =
       socket
-      |> assign(:changeset, changeset)
       |> assign(:form, to_form(changeset))
       |> assign(:similar_entries, [])
 
@@ -89,7 +87,6 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
       {:error, %Ecto.Changeset{} = changeset} ->
         socket =
           socket
-          |> assign(:changeset, changeset)
           |> assign(:form, to_form(changeset))
 
         {:noreply, socket}
@@ -109,7 +106,6 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
       {:error, %Ecto.Changeset{} = changeset} ->
         socket =
           socket
-          |> assign(:changeset, changeset)
           |> assign(:form, to_form(changeset))
 
         {:noreply, socket}
@@ -188,11 +184,9 @@ defmodule SanbaseWeb.Admin.FaqLive.Form do
             name={@form[:answer_markdown].name}
             value={@form[:answer_markdown].value || ""}
           />
-          <%= if @changeset.errors[:answer_markdown] do %>
-            <div class="mt-1 text-sm text-error">
-              {elem(@changeset.errors[:answer_markdown], 0)}
-            </div>
-          <% end %>
+          <.error :for={msg <- Enum.map(@form[:answer_markdown].errors, &translate_error(&1))}>
+            {msg}
+          </.error>
         </div>
 
         <.tags form={@form} tags={@tags} />

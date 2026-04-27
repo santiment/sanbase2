@@ -96,6 +96,10 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
     end
   end
 
+  def handle_event("clear_search_results", _, socket) do
+    {:noreply, assign(socket, :search_results, [])}
+  end
+
   def handle_event("clear_user", _, socket) do
     socket =
       socket
@@ -869,6 +873,7 @@ defmodule SanbaseWeb.Admin.AiDescriptionLive do
         <%!-- Search dropdown --%>
         <ul
           :if={@search_results != []}
+          phx-click-away="clear_search_results"
           class="menu menu-sm bg-base-100 rounded-box shadow border border-base-300 absolute z-20 mt-1 w-full max-w-md"
         >
           <li :for={user <- @search_results}>

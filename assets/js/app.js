@@ -63,9 +63,11 @@ window.addEventListener("phx:page-loading-start", _info => topbar.show(300))
 window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
 
 // Native <dialog class="modal"> open/close. CoreComponents.show_modal/2 and
-// hide_modal/2 dispatch these events on the dialog element.
-const handleDialogClose = e => {
-  const el = e.target
+// hide_modal/2 dispatch these events on the dialog element. Only the user-
+// initiated `cancel` event (ESC) runs `data-cancel`; programmatic el.close()
+// from phx:hide-modal must not trigger on_cancel callbacks.
+const handleDialogCancel = e => {
+  const el = e.currentTarget
   const cancel = el.dataset && el.dataset.cancel
   if (cancel) liveSocket.execJS(el, cancel)
 }
@@ -73,8 +75,7 @@ window.addEventListener("phx:show-modal", e => {
   const el = e.target
   if (!el || typeof el.showModal !== "function") return
   if (!el.dataset.dialogListenersBound) {
-    el.addEventListener("cancel", handleDialogClose)
-    el.addEventListener("close", handleDialogClose)
+    el.addEventListener("cancel", handleDialogCancel)
     el.dataset.dialogListenersBound = "1"
   }
   if (!el.open) el.showModal()

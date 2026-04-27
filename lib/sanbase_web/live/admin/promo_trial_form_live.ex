@@ -72,7 +72,7 @@ defmodule SanbaseWeb.Admin.PromoTrialLive.Form do
 
   def handle_event("set_trial_days", %{"value" => value}, socket) do
     case Integer.parse(to_string(value)) do
-      {n, _} when n > 0 and n <= 3650 -> {:noreply, assign(socket, :trial_days, n)}
+      {n, ""} when n > 0 and n <= 3650 -> {:noreply, assign(socket, :trial_days, n)}
       _ -> {:noreply, socket}
     end
   end

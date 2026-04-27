@@ -1,6 +1,7 @@
 defmodule SanbaseWeb.CategorizationLive.UIMetadataList do
   use SanbaseWeb, :live_view
 
+  import SanbaseWeb.AdminLiveHelpers, only: [parse_int: 2]
   import SanbaseWeb.Categorization.ReorderComponents
 
   alias Sanbase.Metric.Category
@@ -26,7 +27,7 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataList do
 
   @impl true
   def handle_params(%{"mapping_id" => mapping_id_str} = _params, _url, socket) do
-    mapping_id = String.to_integer(mapping_id_str)
+    mapping_id = parse_int(mapping_id_str, 0)
 
     if mapping = MetricCategoryMapping.get(mapping_id) do
       ui_metadata_list =
@@ -292,7 +293,7 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataList do
 
   @impl true
   def handle_event("move-up", %{"id" => id}, socket) do
-    id = String.to_integer(id)
+    id = parse_int(id, nil)
     ui_metadata_list = socket.assigns.ui_metadata_list
 
     index = Enum.find_index(ui_metadata_list, &(&1.id == id))
@@ -320,7 +321,7 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataList do
   end
 
   def handle_event("move-down", %{"id" => id}, socket) do
-    id = String.to_integer(id)
+    id = parse_int(id, nil)
     ui_metadata_list = socket.assigns.ui_metadata_list
 
     index = Enum.find_index(ui_metadata_list, &(&1.id == id))
@@ -383,7 +384,7 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataList do
   end
 
   def handle_event("delete", %{"id" => id}, socket) do
-    id = String.to_integer(id)
+    id = parse_int(id, nil)
 
     case Category.get_ui_metadata(id) do
       nil ->

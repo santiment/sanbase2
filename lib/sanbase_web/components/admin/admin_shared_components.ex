@@ -160,6 +160,44 @@ defmodule SanbaseWeb.AdminSharedComponents do
     """
   end
 
+  attr :label, :string, required: true
+  attr :count, :integer, required: true
+  attr :color, :string, default: "info", values: ~w(info success warning error secondary base)
+  attr :suffix, :string, default: nil
+  attr :truncate, :boolean, default: false
+
+  def mini_stat_card(assigns) do
+    ~H"""
+    <div class="card bg-base-200 border border-base-300 p-3">
+      <div class={["text-2xl font-bold", mini_stat_text_class(@color)]}>{@count}</div>
+      <div
+        class={["text-xs text-base-content/60", @truncate && "truncate"]}
+        title={@truncate && @label}
+      >
+        {@label}{if @suffix, do: " #{@suffix}"}
+      </div>
+    </div>
+    """
+  end
+
+  defp mini_stat_text_class("success"), do: "text-success"
+  defp mini_stat_text_class("warning"), do: "text-warning"
+  defp mini_stat_text_class("error"), do: "text-error"
+  defp mini_stat_text_class("secondary"), do: "text-secondary"
+  defp mini_stat_text_class("base"), do: "text-base-content"
+  defp mini_stat_text_class(_), do: "text-info"
+
+  attr :colspan, :integer, required: true
+  attr :message, :string, required: true
+
+  def empty_table_row(assigns) do
+    ~H"""
+    <tr>
+      <td colspan={@colspan} class="text-center text-base-content/60 py-6">{@message}</td>
+    </tr>
+    """
+  end
+
   defp format_roles(role_names, nil), do: Enum.join(role_names, ", ")
 
   defp format_roles(role_names, prefix) do

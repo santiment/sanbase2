@@ -1,14 +1,11 @@
 defmodule SanbaseWeb.Admin.InvoicesLive do
   use SanbaseWeb, :live_view
 
+  import SanbaseWeb.AdminLiveHelpers, only: [parse_int: 2]
+
   alias Sanbase.Billing.Invoices.{InvoiceArchive, GenerationJob, S3Storage}
-  # S3Storage used in delete/regenerate events
 
   @start_year 2020
-
-  # ---------------------------------------------------------------------------
-  # Mount
-  # ---------------------------------------------------------------------------
 
   def mount(_params, _session, socket) do
     if connected?(socket), do: GenerationJob.subscribe()
@@ -26,33 +23,32 @@ defmodule SanbaseWeb.Admin.InvoicesLive do
       |> assign(:job, if(job_state.status == :idle, do: nil, else: job_state))
       |> assign(:confirm_action, nil)
       |> assign(:confirm_archive_id, nil)
-      |> assign(:flash_error, nil)
 
     {:ok, socket}
   end
 
-  # ---------------------------------------------------------------------------
-  # Events
-  # ---------------------------------------------------------------------------
-
   def handle_event("select_period", %{"year" => year, "month" => month}, socket) do
     {:noreply,
      socket
-     |> assign(:selected_year, String.to_integer(year))
-     |> assign(:selected_month, String.to_integer(month))}
+     |> assign(:selected_year, parse_int(year, socket.assigns.selected_year))
+     |> assign(:selected_month, parse_int(month, socket.assigns.selected_month))}
   end
 
   def handle_event("generate", %{"year" => year, "month" => month}, socket) do
-    year = String.to_integer(year)
-    month = String.to_integer(month)
+    year = parse_int(year, nil)
+    month = parse_int(month, nil)
     user_id = socket.assigns.current_user.id
 
-    case GenerationJob.start_job(year, month, user_id) do
-      :ok ->
-        {:noreply, socket |> assign(:selected_year, year) |> assign(:selected_month, month)}
+    if is_nil(year) or is_nil(month) do
+      {:noreply, socket}
+    else
+      case GenerationJob.start_job(year, month, user_id) do
+        :ok ->
+          {:noreply, socket |> assign(:selected_year, year) |> assign(:selected_month, month)}
 
-      {:error, :already_running} ->
-        {:noreply, put_flash(socket, :error, "A generation job is already running")}
+        {:error, :already_running} ->
+          {:noreply, put_flash(socket, :error, "A generation job is already running")}
+      end
     end
   end
 
@@ -66,12 +62,12 @@ defmodule SanbaseWeb.Admin.InvoicesLive do
   end
 
   def handle_event("confirm_delete", %{"id" => id}, socket) do
-    {:noreply, assign(socket, confirm_action: :delete, confirm_archive_id: String.to_integer(id))}
+    {:noreply, assign(socket, confirm_action: :delete, confirm_archive_id: parse_int(id, nil))}
   end
 
   def handle_event("confirm_regenerate", %{"id" => id}, socket) do
     {:noreply,
-     assign(socket, confirm_action: :regenerate, confirm_archive_id: String.to_integer(id))}
+     assign(socket, confirm_action: :regenerate, confirm_archive_id: parse_int(id, nil))}
   end
 
   def handle_event("cancel_confirm", _params, socket) do
@@ -114,7 +110,7 @@ defmodule SanbaseWeb.Admin.InvoicesLive do
   end
 
   def handle_event("reset_stale", %{"id" => id}, socket) do
-    archive = Enum.find(socket.assigns.archives, &(&1.id == String.to_integer(id)))
+    archive = Enum.find(socket.assigns.archives, &(&1.id == parse_int(id, nil)))
 
     if archive do
       InvoiceArchive.create_or_update(%{
@@ -128,10 +124,6 @@ defmodule SanbaseWeb.Admin.InvoicesLive do
     {:noreply, assign(socket, :archives, InvoiceArchive.list_all())}
   end
 
-  # ---------------------------------------------------------------------------
-  # PubSub
-  # ---------------------------------------------------------------------------
-
   def handle_info({:job_update, job_state}, socket) do
     socket = assign(socket, :job, if(job_state.status == :idle, do: nil, else: job_state))
 
@@ -144,10 +136,6 @@ defmodule SanbaseWeb.Admin.InvoicesLive do
 
     {:noreply, socket}
   end
-
-  # ---------------------------------------------------------------------------
-  # Helpers
-  # ---------------------------------------------------------------------------
 
   defp progress_percent(nil), do: 0
 
@@ -231,10 +219,6 @@ defmodule SanbaseWeb.Admin.InvoicesLive do
   defp stale_generating?(archive, job) do
     archive.status == "generating" and not job_running?(job)
   end
-
-  # ---------------------------------------------------------------------------
-  # Render
-  # ---------------------------------------------------------------------------
 
   def render(assigns) do
     ~H"""

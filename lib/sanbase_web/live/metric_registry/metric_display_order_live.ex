@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.MetricDisplayOrderLive do
   use SanbaseWeb, :live_view
 
+  import SanbaseWeb.AdminLiveHelpers, only: [parse_int: 2]
+
   alias Sanbase.Metric.UIMetadata.DisplayOrder
   alias SanbaseWeb.AdminSharedComponents
 
@@ -10,7 +12,6 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
     metrics = ordered_data.metrics
     categories = ordered_data.categories
 
-    # Get the name of the first category if available
     first_category_name = if categories != [], do: List.first(categories).name, else: nil
 
     {:ok,
@@ -36,7 +37,7 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
     group = params["group"]
 
     highlighted_metric_id =
-      params["highlight_metric"] && String.to_integer(params["highlight_metric"])
+      params["highlight_metric"] && parse_int(params["highlight_metric"], nil)
 
     {:noreply,
      socket
@@ -155,7 +156,6 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
     """
   end
 
-  # Add this helper function to determine if there are active filters
   defp has_active_filters?(assigns) do
     default_category =
       if assigns.categories != [], do: List.first(assigns.categories).name, else: nil

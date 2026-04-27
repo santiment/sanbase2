@@ -3,6 +3,7 @@ defmodule SanbaseWeb.Admin.SesEventsLive do
 
   alias Sanbase.Email
   alias Sanbase.Email.SesEmailEvent
+  alias SanbaseWeb.AdminSharedComponents
 
   @page_size 50
 
@@ -152,11 +153,11 @@ defmodule SanbaseWeb.Admin.SesEventsLive do
             </tr>
           </thead>
           <tbody>
-            <tr :if={@events == []}>
-              <td colspan="6" class="text-center text-base-content/60 py-6">
-                No events found matching your filters.
-              </td>
-            </tr>
+            <AdminSharedComponents.empty_table_row
+              :if={@events == []}
+              colspan={6}
+              message="No events found matching your filters."
+            />
             <tr :for={event <- @events} id={"event-#{event.id}"}>
               <td class="text-base-content/70">{format_datetime(event.timestamp)}</td>
               <td class="font-mono">{event.email}</td>
@@ -193,34 +194,42 @@ defmodule SanbaseWeb.Admin.SesEventsLive do
   defp stats_bar(assigns) do
     ~H"""
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-      <.stat_card label="Send" count={Map.get(@stats, "Send", 0)} color="blue" />
-      <.stat_card label="Delivery" count={Map.get(@stats, "Delivery", 0)} color="green" />
-      <.stat_card label="Bounce" count={Map.get(@stats, "Bounce", 0)} color="red" />
-      <.stat_card label="Complaint" count={Map.get(@stats, "Complaint", 0)} color="orange" />
-      <.stat_card label="Reject" count={Map.get(@stats, "Reject", 0)} color="purple" />
-      <.stat_card label="Delay" count={Map.get(@stats, "DeliveryDelay", 0)} color="yellow" />
-    </div>
-    """
-  end
-
-  defp stat_card(assigns) do
-    text_class =
-      case assigns.color do
-        "blue" -> "text-info"
-        "green" -> "text-success"
-        "red" -> "text-error"
-        "orange" -> "text-warning"
-        "purple" -> "text-secondary"
-        "yellow" -> "text-warning"
-        _ -> "text-base-content"
-      end
-
-    assigns = assign(assigns, text_class: text_class)
-
-    ~H"""
-    <div class="card bg-base-200 border border-base-300 p-3">
-      <div class={["text-2xl font-bold", @text_class]}>{@count}</div>
-      <div class="text-xs text-base-content/60">{@label} (24h)</div>
+      <AdminSharedComponents.mini_stat_card
+        label="Send"
+        count={Map.get(@stats, "Send", 0)}
+        color="info"
+        suffix="(24h)"
+      />
+      <AdminSharedComponents.mini_stat_card
+        label="Delivery"
+        count={Map.get(@stats, "Delivery", 0)}
+        color="success"
+        suffix="(24h)"
+      />
+      <AdminSharedComponents.mini_stat_card
+        label="Bounce"
+        count={Map.get(@stats, "Bounce", 0)}
+        color="error"
+        suffix="(24h)"
+      />
+      <AdminSharedComponents.mini_stat_card
+        label="Complaint"
+        count={Map.get(@stats, "Complaint", 0)}
+        color="warning"
+        suffix="(24h)"
+      />
+      <AdminSharedComponents.mini_stat_card
+        label="Reject"
+        count={Map.get(@stats, "Reject", 0)}
+        color="secondary"
+        suffix="(24h)"
+      />
+      <AdminSharedComponents.mini_stat_card
+        label="Delay"
+        count={Map.get(@stats, "DeliveryDelay", 0)}
+        color="warning"
+        suffix="(24h)"
+      />
     </div>
     """
   end
@@ -248,7 +257,7 @@ defmodule SanbaseWeb.Admin.SesEventsLive do
     ~H"""
     <span :if={@event.bounce_type}>
       {Phoenix.Naming.humanize(@event.bounce_type)}
-      <span :if={@event.bounce_sub_type} class="text-gray-400">
+      <span :if={@event.bounce_sub_type} class="text-base-content/40">
         / {Phoenix.Naming.humanize(@event.bounce_sub_type)}
       </span>
     </span>

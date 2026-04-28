@@ -65,16 +65,14 @@ defmodule SanbaseWeb.Admin.FaqLive.Show do
 
       <div class="mt-6 bg-base-200 rounded-box p-4">
         <dl class="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
-          <%= if @entry.source_url do %>
-            <div>
-              <dt class="text-sm font-medium text-base-content/60">Source URL</dt>
-              <dd class="mt-1 text-sm">
-                <a href={@entry.source_url} target="_blank" class="link link-primary break-all">
-                  {@entry.source_url}
-                </a>
-              </dd>
-            </div>
-          <% end %>
+          <div :if={@entry.source_url}>
+            <dt class="text-sm font-medium text-base-content/60">Source URL</dt>
+            <dd class="mt-1 text-sm">
+              <a href={@entry.source_url} target="_blank" class="link link-primary break-all">
+                {@entry.source_url}
+              </a>
+            </dd>
+          </div>
           <div>
             <dt class="text-sm font-medium text-base-content/60">Created</dt>
             <dd class="mt-1 text-sm">

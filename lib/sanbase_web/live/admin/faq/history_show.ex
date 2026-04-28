@@ -50,35 +50,29 @@ defmodule SanbaseWeb.Admin.FaqLive.HistoryShow do
           </dd>
         </div>
 
-        <%= if @entry.user do %>
-          <div>
-            <dt class="text-sm font-medium text-base-content/60">User</dt>
-            <dd class="mt-1 text-sm">
-              {@entry.user.email || "Anon"}
-            </dd>
-          </div>
-        <% end %>
-      </div>
-
-      <%= if @entry.source do %>
-        <div class="mt-4">
-          <dt class="text-sm font-medium text-base-content/60">Source</dt>
-          <dd class="mt-1 text-sm break-words">
-            {@entry.source}
+        <div :if={@entry.user}>
+          <dt class="text-sm font-medium text-base-content/60">User</dt>
+          <dd class="mt-1 text-sm">
+            {@entry.user.email || "Anon"}
           </dd>
         </div>
-      <% end %>
+      </div>
 
-      <%= if not @entry.is_successful do %>
-        <div class="alert alert-error mt-4">
-          <div>
-            <dt class="text-sm font-medium">Errors</dt>
-            <dd class="mt-1 text-sm">
-              {@entry.errors}
-            </dd>
-          </div>
+      <div :if={@entry.source} class="mt-4">
+        <dt class="text-sm font-medium text-base-content/60">Source</dt>
+        <dd class="mt-1 text-sm break-words">
+          {@entry.source}
+        </dd>
+      </div>
+
+      <div :if={not @entry.is_successful} class="alert alert-error mt-4">
+        <div>
+          <dt class="text-sm font-medium">Errors</dt>
+          <dd class="mt-1 text-sm">
+            {@entry.errors}
+          </dd>
         </div>
-      <% end %>
+      </div>
     </div>
     """
   end

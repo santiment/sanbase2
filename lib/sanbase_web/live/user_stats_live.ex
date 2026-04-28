@@ -162,11 +162,10 @@ defmodule SanbaseWeb.UserStatsLive do
 
         <div>
           <button type="submit" disabled={@loading} class="btn btn-primary">
-            <%= if @loading do %>
+            <span :if={@loading}>
               <span class="loading loading-spinner loading-xs"></span> Searching...
-            <% else %>
-              Search Inactive Users
-            <% end %>
+            </span>
+            <span :if={!@loading}>Search Inactive Users</span>
           </button>
         </div>
       </.form>

@@ -186,21 +186,15 @@ defmodule SanbaseWeb.TweetsPredictionLive do
           </div>
         </div>
 
-        <%= if @loading do %>
-          <.loading_indicator />
-        <% else %>
-          <%= if Enum.empty?(@filtered_tweets) do %>
-            <.empty_state />
-          <% else %>
-            <div class="space-y-4">
-              <.tweet_card
-                :for={tweet <- @filtered_tweets}
-                tweet={tweet}
-                interesting_case={MapSet.member?(@interesting_cases, tweet["id"])}
-              />
-            </div>
-          <% end %>
-        <% end %>
+        <.loading_indicator :if={@loading} />
+        <.empty_state :if={!@loading and Enum.empty?(@filtered_tweets)} />
+        <div :if={!@loading and not Enum.empty?(@filtered_tweets)} class="space-y-4">
+          <.tweet_card
+            :for={tweet <- @filtered_tweets}
+            tweet={tweet}
+            interesting_case={MapSet.member?(@interesting_cases, tweet["id"])}
+          />
+        </div>
       </div>
     </div>
     """

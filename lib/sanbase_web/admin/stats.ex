@@ -12,14 +12,10 @@ defmodule SanbaseWeb.Admin.Stats do
   @ttl_seconds 900
   @series_days 14
 
-  @spec get() :: map()
+  @spec get() :: {:ok, map()} | {:error, term()}
   def get do
     cache_key = {__MODULE__, :get, :v7} |> Sanbase.Cache.hash()
-
-    case Sanbase.Cache.get_or_store({cache_key, @ttl_seconds}, fn -> {:ok, compute()} end) do
-      {:ok, stats} -> stats
-      _ -> compute()
-    end
+    Sanbase.Cache.get_or_store({cache_key, @ttl_seconds}, fn -> {:ok, compute()} end)
   end
 
   defp compute do

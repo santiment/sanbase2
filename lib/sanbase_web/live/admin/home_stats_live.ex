@@ -14,8 +14,12 @@ defmodule SanbaseWeb.Admin.HomeStatsLive do
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign_async(:stats, fn -> {:ok, %{stats: SanbaseWeb.Admin.Stats.get()}} end),
-     layout: false}
+     |> assign_async(:stats, fn ->
+       case SanbaseWeb.Admin.Stats.get() do
+         {:ok, stats} -> {:ok, %{stats: stats}}
+         {:error, reason} -> {:error, reason}
+       end
+     end), layout: false}
   end
 
   @impl true

@@ -131,7 +131,7 @@ defmodule SanbaseWeb.AdminSharedComponents do
 
   def status_badge(assigns) do
     ~H"""
-    <span class={["badge", status_variant(@status)]}>
+    <span class={["badge whitespace-nowrap", status_variant(@status)]}>
       {@status |> String.replace("_", " ") |> String.upcase()}
     </span>
     """

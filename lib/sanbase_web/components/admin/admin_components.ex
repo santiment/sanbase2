@@ -75,9 +75,9 @@ defmodule SanbaseWeb.AdminComponents do
       <div>
         <p class="font-semibold">Oops, something went wrong! Please check the errors below:</p>
         <ul class="text-sm">
-          <%= for {attr, message} <- Ecto.Changeset.traverse_errors(@changeset, &translate_error/1) do %>
-            <li>{humanize(attr)}: {Enum.join(message, ", ")}</li>
-          <% end %>
+          <li :for={{attr, message} <- Ecto.Changeset.traverse_errors(@changeset, &translate_error/1)}>
+            {humanize(attr)}: {Enum.join(message, ", ")}
+          </li>
         </ul>
       </div>
     </div>
@@ -716,17 +716,15 @@ defmodule SanbaseWeb.AdminComponents do
       <div class="overflow-x-auto rounded-box border border-base-300">
         <table class="table table-zebra table-sm table-fixed">
           <tbody>
-            <%= for field <- @fields do %>
-              <tr>
-                <th class="uppercase whitespace-nowrap w-1/4 bg-base-200">{to_string(field)}</th>
-                <.td_show
-                  class="whitespace-pre-wrap break-words"
-                  value={
-                    resolve_field_value(@data, field, @assocs[@data.id], @funcs, @field_type_map)
-                  }
-                />
-              </tr>
-            <% end %>
+            <tr :for={field <- @fields}>
+              <th class="uppercase whitespace-nowrap w-1/4 bg-base-200">{to_string(field)}</th>
+              <.td_show
+                class="whitespace-pre-wrap break-words"
+                value={
+                  resolve_field_value(@data, field, @assocs[@data.id], @funcs, @field_type_map)
+                }
+              />
+            </tr>
           </tbody>
         </table>
       </div>
@@ -900,19 +898,18 @@ defmodule SanbaseWeb.AdminComponents do
     ~H"""
     <thead class="bg-base-200 sticky top-0 uppercase">
       <tr>
-        <%= for field <- @fields do %>
-          <th
-            scope="col"
-            class={[
-              "whitespace-nowrap",
-              if(field == :id or Map.get(@field_type_map, field) in [:boolean, :boolean_nullable],
-                do: "w-[80px]"
-              )
-            ]}
-          >
-            {field}
-          </th>
-        <% end %>
+        <th
+          :for={field <- @fields}
+          scope="col"
+          class={[
+            "whitespace-nowrap",
+            if(field == :id or Map.get(@field_type_map, field) in [:boolean, :boolean_nullable],
+              do: "w-[80px]"
+            )
+          ]}
+        >
+          {field}
+        </th>
         <%= if @actions do %>
           <th scope="col" class="whitespace-nowrap w-[160px]">Actions</th>
         <% end %>
@@ -924,31 +921,36 @@ defmodule SanbaseWeb.AdminComponents do
   def tbody(assigns) do
     ~H"""
     <tbody>
-      <%= for row <- @rows do %>
-        <tr class="hover:bg-base-200">
-          <%= for field <- @fields do %>
-            <%= if field == :id do %>
-              <td class="min-w-[120px]">
-                <.a resource={@resource} action={:show} row={row} label={Map.get(row, field)} />
-              </td>
-            <% else %>
-              <.td_index value={
-                resolve_field_value(row, field, @assocs[row.id], @funcs, @field_type_map)
-              } />
-            <% end %>
-          <% end %>
-          <%= if @actions do %>
-            <td class="w-[140px] min-w-[140px]">
-              <div class="flex flex-row flex-nowrap gap-1 items-center">
-                <% index_actions = @actions -- [:new] %>
-                <%= for action <- index_actions do %>
-                  <.index_action_btn resource={@resource} action={action} label={action} row={row} />
-                <% end %>
-              </div>
+      <tr :for={row <- @rows} class="hover:bg-base-200">
+        <%!-- inner field loop kept as <%= for %> because the body branches between
+              different tags (<td> vs <.td_index/>); :for can only be attached to
+              a single element, and splitting into two :for statements would reorder
+              columns relative to @fields. --%>
+        <%= for field <- @fields do %>
+          <%= if field == :id do %>
+            <td class="min-w-[120px]">
+              <.a resource={@resource} action={:show} row={row} label={Map.get(row, field)} />
             </td>
+          <% else %>
+            <.td_index value={
+              resolve_field_value(row, field, @assocs[row.id], @funcs, @field_type_map)
+            } />
           <% end %>
-        </tr>
-      <% end %>
+        <% end %>
+        <%= if @actions do %>
+          <td class="w-[140px] min-w-[140px]">
+            <div class="flex flex-row flex-nowrap gap-1 items-center">
+              <.index_action_btn
+                :for={action <- @actions -- [:new]}
+                resource={@resource}
+                action={action}
+                label={action}
+                row={row}
+              />
+            </div>
+          </td>
+        <% end %>
+      </tr>
     </tbody>
     """
   end
@@ -1285,16 +1287,14 @@ defmodule SanbaseWeb.AdminComponents do
                       @click.away="open = false"
                       class="menu menu-sm bg-base-100 rounded-box shadow absolute z-20 mt-2 w-44 p-2"
                     >
-                      <%= for field <- @fields do %>
-                        <li>
-                          <button
-                            @click="filter.field = $event.target.innerText; open = false; showError = false"
-                            type="button"
-                          >
-                            {field}
-                          </button>
-                        </li>
-                      <% end %>
+                      <li :for={field <- @fields}>
+                        <button
+                          @click="filter.field = $event.target.innerText; open = false; showError = false"
+                          type="button"
+                        >
+                          {field}
+                        </button>
+                      </li>
                     </ul>
                   </div>
 
@@ -1393,9 +1393,7 @@ defmodule SanbaseWeb.AdminComponents do
 
   def custom_index_actions(assigns) do
     ~H"""
-    <%= for action <- @actions do %>
-      <.btn href={action.path} label={action.name} color={:blue} />
-    <% end %>
+    <.btn :for={action <- @actions} href={action.path} label={action.name} color={:blue} />
     """
   end
 

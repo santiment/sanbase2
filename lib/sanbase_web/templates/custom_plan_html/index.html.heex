@@ -42,40 +42,38 @@
           </tr>
         </thead>
         <tbody>
-          <%= for custom_plan <- @custom_plans do %>
-            <tr class="hover:bg-gray-50 border-b border-gray-100">
-              <td class="px-4 py-3 text-sm text-gray-900">{custom_plan.id}</td>
-              <td class="px-4 py-3 text-sm font-medium text-gray-900 font-mono">
-                {custom_plan.name}
-              </td>
-              <td class="px-4 py-3 text-sm text-gray-600">
-                {custom_plan.restrictions.restricted_access_as_plan}
-              </td>
-              <td class="px-4 py-3 text-sm text-gray-600 font-mono text-xs">
-                {Jason.encode!(custom_plan.restrictions.api_call_limits)}
-              </td>
-              <td class="px-4 py-3 text-sm text-gray-600">
-                {custom_plan.restrictions.historical_data_in_days || "-"}
-              </td>
-              <td class="px-4 py-3 text-sm text-gray-600">
-                {custom_plan.restrictions.realtime_data_cut_off_in_days || "-"}
-              </td>
-              <td class="px-4 py-3 text-sm">
-                <.link
-                  href={~p"/admin/custom_plans/#{custom_plan}"}
-                  class="text-indigo-600 hover:text-indigo-800 font-medium mr-3"
-                >
-                  Show
-                </.link>
-                <.link
-                  href={~p"/admin/custom_plans/#{custom_plan}/edit"}
-                  class="text-indigo-600 hover:text-indigo-800 font-medium"
-                >
-                  Edit
-                </.link>
-              </td>
-            </tr>
-          <% end %>
+          <tr :for={custom_plan <- @custom_plans} class="hover:bg-gray-50 border-b border-gray-100">
+            <td class="px-4 py-3 text-sm text-gray-900">{custom_plan.id}</td>
+            <td class="px-4 py-3 text-sm font-medium text-gray-900 font-mono">
+              {custom_plan.name}
+            </td>
+            <td class="px-4 py-3 text-sm text-gray-600">
+              {custom_plan.restrictions.restricted_access_as_plan}
+            </td>
+            <td class="px-4 py-3 text-sm text-gray-600 font-mono text-xs">
+              {Jason.encode!(custom_plan.restrictions.api_call_limits)}
+            </td>
+            <td class="px-4 py-3 text-sm text-gray-600">
+              {custom_plan.restrictions.historical_data_in_days || "-"}
+            </td>
+            <td class="px-4 py-3 text-sm text-gray-600">
+              {custom_plan.restrictions.realtime_data_cut_off_in_days || "-"}
+            </td>
+            <td class="px-4 py-3 text-sm">
+              <.link
+                href={~p"/admin/custom_plans/#{custom_plan}"}
+                class="text-indigo-600 hover:text-indigo-800 font-medium mr-3"
+              >
+                Show
+              </.link>
+              <.link
+                href={~p"/admin/custom_plans/#{custom_plan}/edit"}
+                class="text-indigo-600 hover:text-indigo-800 font-medium"
+              >
+                Edit
+              </.link>
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>

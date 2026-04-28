@@ -144,21 +144,19 @@ defmodule SanbaseWeb.MetricDisplayOrderNewLive do
                     </tr>
                   </thead>
                   <tbody>
-                    <%= for result <- @search_results do %>
-                      <tr>
-                        <td class="text-sm">{result.metric}</td>
-                        <td class="text-sm">{result.human_readable_name}</td>
-                        <td>
-                          <button
-                            phx-click="select_metric"
-                            phx-value-id={result.id}
-                            class="link link-primary text-sm"
-                          >
-                            Select
-                          </button>
-                        </td>
-                      </tr>
-                    <% end %>
+                    <tr :for={result <- @search_results}>
+                      <td class="text-sm">{result.metric}</td>
+                      <td class="text-sm">{result.human_readable_name}</td>
+                      <td>
+                        <button
+                          phx-click="select_metric"
+                          phx-value-id={result.id}
+                          class="link link-primary text-sm"
+                        >
+                          Select
+                        </button>
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -194,11 +192,13 @@ defmodule SanbaseWeb.MetricDisplayOrderNewLive do
                 <legend class="fieldset-legend">Code Module</legend>
                 <select name="code_module" phx-change="update_form" class="select w-full">
                   <option value="">Select a module</option>
-                  <%= for module <- @code_modules do %>
-                    <option value={module} selected={@form[:code_module].value == module}>
-                      {module}
-                    </option>
-                  <% end %>
+                  <option
+                    :for={module <- @code_modules}
+                    value={module}
+                    selected={@form[:code_module].value == module}
+                  >
+                    {module}
+                  </option>
                 </select>
               </fieldset>
             </div>

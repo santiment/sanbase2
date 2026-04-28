@@ -226,12 +226,10 @@ defmodule SanbaseWeb.UserStatsLive do
               </tr>
             </thead>
             <tbody>
-              <%= for user <- Enum.take(@inactive_users, 10) do %>
-                <tr>
-                  <td>{user.email}</td>
-                  <td class="text-base-content/60">{user.name || "friend"}</td>
-                </tr>
-              <% end %>
+              <tr :for={user <- Enum.take(@inactive_users, 10)}>
+                <td>{user.email}</td>
+                <td class="text-base-content/60">{user.name || "friend"}</td>
+              </tr>
             </tbody>
           </table>
         </div>

@@ -204,26 +204,24 @@ defmodule SanbaseWeb.MetricDisplayOrderLive do
             </tr>
           </thead>
           <tbody>
-            <%= for result <- @search_results do %>
-              <tr>
-                <td>{result.metric}</td>
-                <td>{result.ui_human_readable_name}</td>
-                <td>{result.ui_key}</td>
-                <td>{result.category_name}</td>
-                <td>{result.group_name}</td>
-                <td>
-                  <button
-                    phx-click="focus_metric"
-                    phx-value-id={result.id}
-                    phx-value-category={result.category_name}
-                    phx-value-group={if result.group_name, do: result.group_name, else: ""}
-                    class="link link-primary"
-                  >
-                    Focus
-                  </button>
-                </td>
-              </tr>
-            <% end %>
+            <tr :for={result <- @search_results}>
+              <td>{result.metric}</td>
+              <td>{result.ui_human_readable_name}</td>
+              <td>{result.ui_key}</td>
+              <td>{result.category_name}</td>
+              <td>{result.group_name}</td>
+              <td>
+                <button
+                  phx-click="focus_metric"
+                  phx-value-id={result.id}
+                  phx-value-category={result.category_name}
+                  phx-value-group={if result.group_name, do: result.group_name, else: ""}
+                  class="link link-primary"
+                >
+                  Focus
+                </button>
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>

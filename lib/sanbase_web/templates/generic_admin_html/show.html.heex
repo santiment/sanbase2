@@ -19,50 +19,43 @@
     <SanbaseWeb.AdminComponents.back_btn />
   </div>
 
-  <%= for bt <- @belongs_to do %>
-    <div class="mt-4">
-      <h3 class="text-2xl font-medium mb-2">{bt.name}</h3>
-      <div class="rounded-box border border-base-300 overflow-x-auto">
-        <table class="table table-zebra table-xs table-fixed">
-          <tbody>
-            <%= for field <- bt.fields do %>
-              <tr>
-                <th class="bg-base-200 whitespace-nowrap w-1/4 uppercase">
-                  {field.field_name}
-                </th>
-                <td class="whitespace-pre-wrap break-words">
-                  <pre class="text-xs"><%= field.data %></pre>
-                </td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="mt-2">
-        <%= for action <- bt.actions do %>
-          <span>
-            {link(to_string(action),
-              to:
-                ~p"/admin/generic/show_action?#{[action: action, resource: @resource, id: @data.id]}",
-              class: "link link-primary text-xs mr-2"
-            )}
-          </span>
-        <% end %>
-      </div>
+  <div :for={bt <- @belongs_to} class="mt-4">
+    <h3 class="text-2xl font-medium mb-2">{bt.name}</h3>
+    <div class="rounded-box border border-base-300 overflow-x-auto">
+      <table class="table table-zebra table-xs table-fixed">
+        <tbody>
+          <tr :for={field <- bt.fields}>
+            <th class="bg-base-200 whitespace-nowrap w-1/4 uppercase">
+              {field.field_name}
+            </th>
+            <td class="whitespace-pre-wrap break-words">
+              <pre class="text-xs">{field.data}</pre>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
-  <% end %>
 
-  <%= for table <- @has_many do %>
-    <SanbaseWeb.AdminComponents.has_many_table
-      resource={table.resource}
-      singular={table.singular}
-      actions={Map.get(table, :actions, [])}
-      resource_name={table.resource_name}
-      rows={table.rows}
-      fields={table.fields}
-      funcs={table.funcs}
-      create_link_kv={table.create_link_kv}
-    />
-  <% end %>
+    <div class="mt-2">
+      <span :for={action <- bt.actions}>
+        {link(to_string(action),
+          to:
+            ~p"/admin/generic/show_action?#{[action: action, resource: @resource, id: @data.id]}",
+          class: "link link-primary text-xs mr-2"
+        )}
+      </span>
+    </div>
+  </div>
+
+  <SanbaseWeb.AdminComponents.has_many_table
+    :for={table <- @has_many}
+    resource={table.resource}
+    singular={table.singular}
+    actions={Map.get(table, :actions, [])}
+    resource_name={table.resource_name}
+    rows={table.rows}
+    fields={table.fields}
+    funcs={table.funcs}
+    create_link_kv={table.create_link_kv}
+  />
 </div>

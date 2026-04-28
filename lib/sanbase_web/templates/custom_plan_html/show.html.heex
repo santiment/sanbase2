@@ -102,20 +102,18 @@
           </tr>
         </thead>
         <tbody>
-          <%= for user <- @custom_plan_users do %>
-            <tr class="hover:bg-gray-50 border-b border-gray-100">
-              <td class="px-6 py-3 text-sm">
-                <.link
-                  href={~p"/admin/generic/#{user}?resource=users"}
-                  class="text-indigo-600 hover:text-indigo-800 font-medium"
-                >
-                  {user.id}
-                </.link>
-              </td>
-              <td class="px-6 py-3 text-sm text-gray-900">{user.email}</td>
-              <td class="px-6 py-3 text-sm text-gray-900">{user.username}</td>
-            </tr>
-          <% end %>
+          <tr :for={user <- @custom_plan_users} class="hover:bg-gray-50 border-b border-gray-100">
+            <td class="px-6 py-3 text-sm">
+              <.link
+                href={~p"/admin/generic/#{user}?resource=users"}
+                class="text-indigo-600 hover:text-indigo-800 font-medium"
+              >
+                {user.id}
+              </.link>
+            </td>
+            <td class="px-6 py-3 text-sm text-gray-900">{user.email}</td>
+            <td class="px-6 py-3 text-sm text-gray-900">{user.username}</td>
+          </tr>
         </tbody>
       </table>
     <% end %>

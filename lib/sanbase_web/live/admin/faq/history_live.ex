@@ -54,65 +54,58 @@ defmodule SanbaseWeb.Admin.FaqLive.History do
         total_count={@total_count}
         total_pages={@total_pages}
       />
-      <%= if @entries == [] do %>
-        <div class="text-center py-12 bg-base-200 rounded-box">
-          <.icon name="hero-document-text" class="mx-auto size-12 text-base-content/40" />
-          <h3 class="mt-2 text-sm font-medium">No question/answer history</h3>
-          <p class="mt-1 text-sm text-base-content/60">There are no question/answer logs yet.</p>
-        </div>
-      <% else %>
-        <div class="rounded-box border border-base-300 overflow-hidden">
-          <ul role="list" class="divide-y divide-base-300">
-            <li
-              :for={entry <- @entries}
-              class={["hover:bg-base-200", !entry.is_successful && "bg-error/10"]}
-            >
-              <div class="px-4 py-4 flex items-center justify-between">
-                <div class="flex-1 min-w-0">
-                  <h3 class="text-lg font-medium truncate">{entry.question}</h3>
-                  <div class="mt-1 flex items-center flex-wrap gap-2 text-sm text-base-content/60">
-                    <time datetime={Calendar.strftime(entry.inserted_at, "%Y-%m-%dT%H:%M:%SZ")}>
-                      Asked {Calendar.strftime(entry.inserted_at, "%B %d, %Y at %I:%M %p")}
-                    </time>
-                    <%= if entry.user do %>
-                      <span>•</span>
-                      <span>By {entry.user.name || entry.user.email || "Anon"}</span>
-                    <% end %>
-                    <span>•</span>
-                    <span class={[
-                      "badge badge-sm",
-                      entry.question_type == "ask_ai" && "badge-info",
-                      entry.question_type == "smart_search" && "badge-success"
-                    ]}>
-                      {String.replace(entry.question_type, "_", " ")}
-                    </span>
-                    <%= if !entry.is_successful do %>
-                      <span>•</span>
-                      <span class="badge badge-sm badge-error">Failed</span>
-                    <% end %>
-                  </div>
-                </div>
-                <div class="flex items-center gap-2 ml-4">
-                  <.link
-                    navigate={~p"/admin/faq/history/#{entry.id}"}
-                    class="link link-primary text-sm font-medium"
-                  >
-                    View
-                  </.link>
+      <div :if={@entries == []} class="text-center py-12 bg-base-200 rounded-box">
+        <.icon name="hero-document-text" class="mx-auto size-12 text-base-content/40" />
+        <h3 class="mt-2 text-sm font-medium">No question/answer history</h3>
+        <p class="mt-1 text-sm text-base-content/60">There are no question/answer logs yet.</p>
+      </div>
+      <div :if={@entries != []} class="rounded-box border border-base-300 overflow-hidden">
+        <ul role="list" class="divide-y divide-base-300">
+          <li
+            :for={entry <- @entries}
+            class={["hover:bg-base-200", !entry.is_successful && "bg-error/10"]}
+          >
+            <div class="px-4 py-4 flex items-center justify-between">
+              <div class="flex-1 min-w-0">
+                <h3 class="text-lg font-medium truncate">{entry.question}</h3>
+                <div class="mt-1 flex items-center flex-wrap gap-2 text-sm text-base-content/60">
+                  <time datetime={Calendar.strftime(entry.inserted_at, "%Y-%m-%dT%H:%M:%SZ")}>
+                    Asked {Calendar.strftime(entry.inserted_at, "%B %d, %Y at %I:%M %p")}
+                  </time>
+                  <span :if={entry.user}>•</span>
+                  <span :if={entry.user}>By {entry.user.name || entry.user.email || "Anon"}</span>
+                  <span>•</span>
+                  <span class={[
+                    "badge badge-sm",
+                    entry.question_type == "ask_ai" && "badge-info",
+                    entry.question_type == "smart_search" && "badge-success"
+                  ]}>
+                    {String.replace(entry.question_type, "_", " ")}
+                  </span>
+                  <span :if={!entry.is_successful}>•</span>
+                  <span :if={!entry.is_successful} class="badge badge-sm badge-error">Failed</span>
                 </div>
               </div>
-            </li>
-          </ul>
-        </div>
-        <div class="mt-4">
-          <.history_pager
-            page={@page}
-            page_size={@page_size}
-            total_count={@total_count}
-            total_pages={@total_pages}
-          />
-        </div>
-      <% end %>
+              <div class="flex items-center gap-2 ml-4">
+                <.link
+                  navigate={~p"/admin/faq/history/#{entry.id}"}
+                  class="link link-primary text-sm font-medium"
+                >
+                  View
+                </.link>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div :if={@entries != []} class="mt-4">
+        <.history_pager
+          page={@page}
+          page_size={@page_size}
+          total_count={@total_count}
+          total_pages={@total_pages}
+        />
+      </div>
     </div>
     """
   end

@@ -155,12 +155,6 @@ defmodule SanbaseWeb.Admin.PromoTrialLive.Form do
     |> Map.new()
   end
 
-  defp user_initial(%{email: email}) when is_binary(email) and email != "" do
-    String.first(email) |> String.upcase()
-  end
-
-  defp user_initial(_), do: "?"
-
   defp step_done?(:user, assigns), do: not is_nil(assigns.selected_user)
   defp step_done?(:days, assigns), do: assigns.trial_days > 0
   defp step_done?(:plans, assigns), do: MapSet.size(assigns.selected_plans) > 0
@@ -244,11 +238,6 @@ defmodule SanbaseWeb.Admin.PromoTrialLive.Form do
                   :if={@selected_user}
                   class="flex items-center gap-3 p-3 bg-base-200/60 rounded-box border border-base-300"
                 >
-                  <div class="avatar avatar-placeholder">
-                    <div class="bg-primary text-primary-content rounded-full w-10 h-10">
-                      <span class="text-sm font-semibold">{user_initial(@selected_user)}</span>
-                    </div>
-                  </div>
                   <div class="flex-1 min-w-0">
                     <div class="font-medium truncate">{@selected_user.email}</div>
                     <div class="text-xs text-base-content/60">
@@ -294,13 +283,8 @@ defmodule SanbaseWeb.Admin.PromoTrialLive.Form do
                         type="button"
                         phx-click="select_user"
                         phx-value-id={u.id}
-                        class="!grid grid-cols-[auto_1fr_auto] gap-3 items-center !py-2"
+                        class="!grid grid-cols-[1fr_auto] gap-3 items-center !py-2"
                       >
-                        <span class="avatar avatar-placeholder">
-                          <span class="bg-base-300 rounded-full w-7 h-7">
-                            <span class="text-xs font-semibold">{user_initial(u)}</span>
-                          </span>
-                        </span>
                         <span class="min-w-0">
                           <span class="block font-medium truncate">{u.email || "(no email)"}</span>
                           <span :if={u.username} class="block text-xs opacity-60 truncate">

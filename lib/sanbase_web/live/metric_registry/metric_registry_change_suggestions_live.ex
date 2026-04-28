@@ -61,7 +61,10 @@ defmodule SanbaseWeb.MetricRegistryChangeSuggestionsLive do
             >
               {row.metric_registry.metric}
             </.link>
-            <span :if={!row.metric_registry_id} class="badge badge-sm badge-success badge-soft">
+            <span
+              :if={!row.metric_registry_id}
+              class="badge badge-sm badge-success badge-soft whitespace-nowrap"
+            >
               NEW METRIC
             </span>
           </:col>

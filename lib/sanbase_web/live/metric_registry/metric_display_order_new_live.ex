@@ -117,93 +117,89 @@ defmodule SanbaseWeb.MetricDisplayOrderNewLive do
           </label>
         </div>
 
-        <%= if @source_type == "registry" do %>
-          <div class="mt-4">
-            <h3 class="text-md font-medium mb-2">Search for a metric in the registry:</h3>
-            <form phx-change="search" phx-submit="search" class="mb-4">
-              <div class="join w-full">
-                <input
-                  type="text"
-                  name="search_query"
-                  value={@search_query}
-                  placeholder="Search for a metric..."
-                  class="input join-item flex-1"
-                />
-                <button type="submit" class="btn btn-primary join-item">Search</button>
-              </div>
-            </form>
+        <div :if={@source_type == "registry"} class="mt-4">
+          <h3 class="text-md font-medium mb-2">Search for a metric in the registry:</h3>
+          <form phx-change="search" phx-submit="search" class="mb-4">
+            <div class="join w-full">
+              <input
+                type="text"
+                name="search_query"
+                value={@search_query}
+                placeholder="Search for a metric..."
+                class="input join-item flex-1"
+              />
+              <button type="submit" class="btn btn-primary join-item">Search</button>
+            </div>
+          </form>
 
-            <%= if length(@search_results) > 0 do %>
-              <div class="rounded-box border border-base-300 max-h-60 overflow-auto mb-4">
-                <table class="table table-zebra table-sm">
-                  <thead>
-                    <tr>
-                      <th>Metric</th>
-                      <th>Human Readable Name</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr :for={result <- @search_results}>
-                      <td class="text-sm">{result.metric}</td>
-                      <td class="text-sm">{result.human_readable_name}</td>
-                      <td>
-                        <button
-                          phx-click="select_metric"
-                          phx-value-id={result.id}
-                          class="link link-primary text-sm"
-                        >
-                          Select
-                        </button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            <% end %>
-
-            <%= if @selected_metric do %>
-              <div class="alert alert-success alert-soft mb-4">
-                <div>
-                  <h3 class="font-medium mb-1">Selected Metric:</h3>
-                  <p><strong>Name:</strong> {@selected_metric.metric}</p>
-                  <p>
-                    <strong>Human Readable Name:</strong> {@selected_metric.human_readable_name}
-                  </p>
-                </div>
-              </div>
-            <% end %>
+          <div
+            :if={length(@search_results) > 0}
+            class="rounded-box border border-base-300 max-h-60 overflow-auto mb-4"
+          >
+            <table class="table table-zebra table-sm">
+              <thead>
+                <tr>
+                  <th>Metric</th>
+                  <th>Human Readable Name</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr :for={result <- @search_results}>
+                  <td class="text-sm">{result.metric}</td>
+                  <td class="text-sm">{result.human_readable_name}</td>
+                  <td>
+                    <button
+                      phx-click="select_metric"
+                      phx-value-id={result.id}
+                      class="link link-primary text-sm"
+                    >
+                      Select
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-        <% else %>
-          <div class="mt-4">
-            <h3 class="text-md font-medium mb-2">Enter metric details:</h3>
-            <div class="grid grid-cols-1 gap-4 mb-4">
-              <fieldset class="fieldset">
-                <legend class="fieldset-legend">Metric Name</legend>
-                <input
-                  type="text"
-                  name="metric_name"
-                  value={@form[:metric_name].value}
-                  phx-change="update_form"
-                  class="input w-full"
-                />
-              </fieldset>
-              <fieldset class="fieldset">
-                <legend class="fieldset-legend">Code Module</legend>
-                <select name="code_module" phx-change="update_form" class="select w-full">
-                  <option value="">Select a module</option>
-                  <option
-                    :for={module <- @code_modules}
-                    value={module}
-                    selected={@form[:code_module].value == module}
-                  >
-                    {module}
-                  </option>
-                </select>
-              </fieldset>
+
+          <div :if={@selected_metric} class="alert alert-success alert-soft mb-4">
+            <div>
+              <h3 class="font-medium mb-1">Selected Metric:</h3>
+              <p><strong>Name:</strong> {@selected_metric.metric}</p>
+              <p>
+                <strong>Human Readable Name:</strong> {@selected_metric.human_readable_name}
+              </p>
             </div>
           </div>
-        <% end %>
+        </div>
+        <div :if={@source_type != "registry"} class="mt-4">
+          <h3 class="text-md font-medium mb-2">Enter metric details:</h3>
+          <div class="grid grid-cols-1 gap-4 mb-4">
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend">Metric Name</legend>
+              <input
+                type="text"
+                name="metric_name"
+                value={@form[:metric_name].value}
+                phx-change="update_form"
+                class="input w-full"
+              />
+            </fieldset>
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend">Code Module</legend>
+              <select name="code_module" phx-change="update_form" class="select w-full">
+                <option value="">Select a module</option>
+                <option
+                  :for={module <- @code_modules}
+                  value={module}
+                  selected={@form[:code_module].value == module}
+                >
+                  {module}
+                </option>
+              </select>
+            </fieldset>
+          </div>
+        </div>
       </div>
 
       <div class="card bg-base-200 border border-base-300 p-4">

@@ -154,25 +154,23 @@ defmodule SanbaseWeb.AskLive do
             </button>
           </div>
         </form>
-        <%= if @answer != "" do %>
-          <div class="mt-10 w-full flex flex-col items-center">
-            <div class="card bg-base-200 shadow p-10 w-full max-w-3xl flex flex-col">
-              <h3 class="text-2xl font-bold mb-6">Answer</h3>
-              <.link
-                :if={@answer_log_link}
-                href={@answer_log_link}
-                class="link link-primary font-bold"
-              >
-                {@answer_log_link}
-              </.link>
-              <div class="divider"></div>
+        <div :if={@answer != ""} class="mt-10 w-full flex flex-col items-center">
+          <div class="card bg-base-200 shadow p-10 w-full max-w-3xl flex flex-col">
+            <h3 class="text-2xl font-bold mb-6">Answer</h3>
+            <.link
+              :if={@answer_log_link}
+              href={@answer_log_link}
+              class="link link-primary font-bold"
+            >
+              {@answer_log_link}
+            </.link>
+            <div class="divider"></div>
 
-              <div class="prose prose-lg max-w-none">
-                {Phoenix.HTML.raw(Earmark.as_html!(@answer))}
-              </div>
+            <div class="prose prose-lg max-w-none">
+              {Phoenix.HTML.raw(Earmark.as_html!(@answer))}
             </div>
           </div>
-        <% end %>
+        </div>
       </div>
     </div>
     """

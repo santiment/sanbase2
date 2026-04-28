@@ -73,77 +73,79 @@ defmodule SanbaseWeb.Admin.FaqLive.Index do
         total_count={@total_count}
         total_pages={@total_pages}
       />
-      <%= if @entries == [] do %>
-        <div class="text-center py-12 bg-base-200 rounded-box">
-          <.icon name="hero-document-text" class="mx-auto size-12 text-base-content/40" />
-          <h3 class="mt-2 text-sm font-medium">No FAQ entries</h3>
-          <p class="mt-1 text-sm text-base-content/60">Get started by creating a new FAQ entry.</p>
-          <div class="mt-6">
-            <.link navigate={~p"/admin/faq/new"} class="btn btn-sm btn-primary">
-              New FAQ Entry
-            </.link>
-          </div>
+      <div :if={@entries == []} class="text-center py-12 bg-base-200 rounded-box">
+        <.icon name="hero-document-text" class="mx-auto size-12 text-base-content/40" />
+        <h3 class="mt-2 text-sm font-medium">No FAQ entries</h3>
+        <p class="mt-1 text-sm text-base-content/60">Get started by creating a new FAQ entry.</p>
+        <div class="mt-6">
+          <.link navigate={~p"/admin/faq/new"} class="btn btn-sm btn-primary">
+            New FAQ Entry
+          </.link>
         </div>
-      <% else %>
-        <div class="rounded-box border border-base-300 overflow-hidden">
-          <ul role="list" class="divide-y divide-base-300">
-            <li :for={entry <- @entries} class="hover:bg-base-200">
-              <div class="px-4 py-4 flex items-center justify-between">
-                <div class="flex-1 min-w-0">
-                  <h3 class="text-lg font-medium truncate">{entry.question}</h3>
-                  <%= if entry.tags && length(entry.tags) > 0 do %>
-                    <div class="mt-2 flex flex-wrap gap-1">
-                      <span :for={tag <- entry.tags}>
-                        <.tag_badge tag={tag.name} />
-                      </span>
-                    </div>
-                  <% end %>
-                  <div class="mt-1 flex items-center text-sm text-base-content/60">
-                    <time datetime={entry.updated_at}>
-                      Updated {Calendar.strftime(entry.updated_at, "%B %d, %Y at %I:%M %p")}
-                    </time>
-                    <%= if entry.source_url do %>
-                      <span class="mx-1">•</span>
-                      <a href={entry.source_url} target="_blank" class="link link-primary">
-                        Source
-                      </a>
-                    <% end %>
-                  </div>
+      </div>
+      <div :if={@entries != []} class="rounded-box border border-base-300 overflow-hidden">
+        <ul role="list" class="divide-y divide-base-300">
+          <li :for={entry <- @entries} class="hover:bg-base-200">
+            <div class="px-4 py-4 flex items-center justify-between">
+              <div class="flex-1 min-w-0">
+                <h3 class="text-lg font-medium truncate">{entry.question}</h3>
+                <div
+                  :if={entry.tags && length(entry.tags) > 0}
+                  class="mt-2 flex flex-wrap gap-1"
+                >
+                  <span :for={tag <- entry.tags}>
+                    <.tag_badge tag={tag.name} />
+                  </span>
                 </div>
-                <div class="flex items-center gap-2 ml-4">
-                  <.link
-                    navigate={~p"/admin/faq/#{entry.id}"}
-                    class="link link-primary text-sm font-medium"
+                <div class="mt-1 flex items-center text-sm text-base-content/60">
+                  <time datetime={entry.updated_at}>
+                    Updated {Calendar.strftime(entry.updated_at, "%B %d, %Y at %I:%M %p")}
+                  </time>
+                  <span :if={entry.source_url} class="mx-1">•</span>
+                  <a
+                    :if={entry.source_url}
+                    href={entry.source_url}
+                    target="_blank"
+                    class="link link-primary"
                   >
-                    View
-                  </.link>
-                  <.link
-                    navigate={~p"/admin/faq/#{entry.id}/edit"}
-                    class="link text-warning text-sm font-medium"
-                  >
-                    Edit
-                  </.link>
-                  <button
-                    phx-click="delete"
-                    phx-value-id={entry.id}
-                    data-confirm="Are you sure you want to delete this FAQ entry?"
-                    class="link text-error text-sm font-medium"
-                  >
-                    Delete
-                  </button>
+                    Source
+                  </a>
                 </div>
               </div>
-            </li>
-          </ul>
-        </div>
-        <.pagination
-          page={@page}
-          page_size={@page_size}
-          total_count={@total_count}
-          total_pages={@total_pages}
-          class="mt-4"
-        />
-      <% end %>
+              <div class="flex items-center gap-2 ml-4">
+                <.link
+                  navigate={~p"/admin/faq/#{entry.id}"}
+                  class="link link-primary text-sm font-medium"
+                >
+                  View
+                </.link>
+                <.link
+                  navigate={~p"/admin/faq/#{entry.id}/edit"}
+                  class="link text-warning text-sm font-medium"
+                >
+                  Edit
+                </.link>
+                <button
+                  phx-click="delete"
+                  phx-value-id={entry.id}
+                  data-confirm="Are you sure you want to delete this FAQ entry?"
+                  class="link text-error text-sm font-medium"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <.pagination
+        :if={@entries != []}
+        page={@page}
+        page_size={@page_size}
+        total_count={@total_count}
+        total_pages={@total_pages}
+        class="mt-4"
+      />
     </div>
     """
   end

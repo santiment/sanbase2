@@ -1,7 +1,9 @@
-@import "tailwindcss";
+@import "tailwindcss" source(none);
+@source "../js";
+@source "../../lib/sanbase_web.ex";
+@source "../../lib/sanbase_web";
 
-@config "../tailwind.config.js";
-
+@plugin "../vendor/heroicons";
 @plugin "@tailwindcss/typography";
 
 @plugin "daisyui" {

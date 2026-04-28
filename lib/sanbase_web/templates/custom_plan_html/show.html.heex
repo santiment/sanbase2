@@ -84,38 +84,37 @@
     <div class="px-6 py-4 border-b border-gray-200">
       <h2 class="text-xl font-bold text-gray-800">Users on this plan</h2>
     </div>
-    <%= if @custom_plan_users == [] do %>
-      <div class="px-6 py-8 text-center text-gray-400">No users subscribed to this plan</div>
-    <% else %>
-      <table class="w-full">
-        <thead>
-          <tr class="border-b border-gray-200 bg-gray-50">
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              ID
-            </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Email
-            </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Username
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr :for={user <- @custom_plan_users} class="hover:bg-gray-50 border-b border-gray-100">
-            <td class="px-6 py-3 text-sm">
-              <.link
-                href={~p"/admin/generic/#{user}?resource=users"}
-                class="text-indigo-600 hover:text-indigo-800 font-medium"
-              >
-                {user.id}
-              </.link>
-            </td>
-            <td class="px-6 py-3 text-sm text-gray-900">{user.email}</td>
-            <td class="px-6 py-3 text-sm text-gray-900">{user.username}</td>
-          </tr>
-        </tbody>
-      </table>
-    <% end %>
+    <div :if={@custom_plan_users == []} class="px-6 py-8 text-center text-gray-400">
+      No users subscribed to this plan
+    </div>
+    <table :if={@custom_plan_users != []} class="w-full">
+      <thead>
+        <tr class="border-b border-gray-200 bg-gray-50">
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            ID
+          </th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Email
+          </th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Username
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr :for={user <- @custom_plan_users} class="hover:bg-gray-50 border-b border-gray-100">
+          <td class="px-6 py-3 text-sm">
+            <.link
+              href={~p"/admin/generic/#{user}?resource=users"}
+              class="text-indigo-600 hover:text-indigo-800 font-medium"
+            >
+              {user.id}
+            </.link>
+          </td>
+          <td class="px-6 py-3 text-sm text-gray-900">{user.email}</td>
+          <td class="px-6 py-3 text-sm text-gray-900">{user.username}</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </div>

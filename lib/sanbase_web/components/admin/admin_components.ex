@@ -720,9 +720,7 @@ defmodule SanbaseWeb.AdminComponents do
               <th class="uppercase whitespace-nowrap w-1/4 bg-base-200">{to_string(field)}</th>
               <.td_show
                 class="whitespace-pre-wrap break-words"
-                value={
-                  resolve_field_value(@data, field, @assocs[@data.id], @funcs, @field_type_map)
-                }
+                value={resolve_field_value(@data, field, @assocs[@data.id], @funcs, @field_type_map)}
               />
             </tr>
           </tbody>
@@ -771,13 +769,12 @@ defmodule SanbaseWeb.AdminComponents do
     <div class="table-responsive">
       <div class="m-4 flex flex-col gap-x-10">
         <h3 class="text-3xl font-medium mb-2">{@resource_name}</h3>
-        <%= if @create_link_kv != [] do %>
-          <.new_resource_button
-            resource={@resource}
-            singular={@singular}
-            create_link_kv={@create_link_kv}
-          />
-        <% end %>
+        <.new_resource_button
+          :if={@create_link_kv != []}
+          resource={@resource}
+          singular={@singular}
+          create_link_kv={@create_link_kv}
+        />
       </div>
       <div class="overflow-x-auto rounded-box border border-base-300">
         <table class="table table-zebra table-sm">
@@ -855,15 +852,11 @@ defmodule SanbaseWeb.AdminComponents do
     ~H"""
     <div class="table-responsive flex-1 flex flex-col min-h-0">
       <div class="m-4 flex flex-row items-center">
-        <%= if :new in @actions do %>
-          <.new_resource_button resource={@resource} singular={@singular} />
-        <% end %>
+        <.new_resource_button :if={:new in @actions} resource={@resource} singular={@singular} />
 
         <div class="flex-1"></div>
 
-        <%= if @custom_index_actions do %>
-          <.custom_index_actions actions={@custom_index_actions} />
-        <% end %>
+        <.custom_index_actions :if={@custom_index_actions} actions={@custom_index_actions} />
       </div>
       <div class="rounded-box border border-base-300 flex-1 flex flex-col min-h-0">
         <div class="overflow-y-auto flex-1">
@@ -910,9 +903,7 @@ defmodule SanbaseWeb.AdminComponents do
         >
           {field}
         </th>
-        <%= if @actions do %>
-          <th scope="col" class="whitespace-nowrap w-[160px]">Actions</th>
-        <% end %>
+        <th :if={@actions} scope="col" class="whitespace-nowrap w-[160px]">Actions</th>
       </tr>
     </thead>
     """
@@ -922,36 +913,59 @@ defmodule SanbaseWeb.AdminComponents do
     ~H"""
     <tbody>
       <tr :for={row <- @rows} class="hover:bg-base-200">
-        <%!-- inner field loop kept as <%= for %> because the body branches between
-              different tags (<td> vs <.td_index/>); :for can only be attached to
-              a single element, and splitting into two :for statements would reorder
-              columns relative to @fields. --%>
-        <%= for field <- @fields do %>
-          <%= if field == :id do %>
-            <td class="min-w-[120px]">
-              <.a resource={@resource} action={:show} row={row} label={Map.get(row, field)} />
-            </td>
-          <% else %>
-            <.td_index value={
-              resolve_field_value(row, field, @assocs[row.id], @funcs, @field_type_map)
-            } />
-          <% end %>
-        <% end %>
-        <%= if @actions do %>
-          <td class="w-[140px] min-w-[140px]">
-            <div class="flex flex-row flex-nowrap gap-1 items-center">
-              <.index_action_btn
-                :for={action <- @actions -- [:new]}
-                resource={@resource}
-                action={action}
-                label={action}
-                row={row}
-              />
-            </div>
-          </td>
-        <% end %>
+        <.field_cell
+          :for={field <- @fields}
+          field={field}
+          row={row}
+          resource={@resource}
+          assocs={@assocs}
+          funcs={@funcs}
+          field_type_map={@field_type_map}
+        />
+        <.row_actions_cell :if={@actions} resource={@resource} actions={@actions} row={row} />
       </tr>
     </tbody>
+    """
+  end
+
+  attr(:field, :atom, required: true)
+  attr(:row, :map, required: true)
+  attr(:resource, :string, required: true)
+  attr(:assocs, :map, required: true)
+  attr(:funcs, :map, required: true)
+  attr(:field_type_map, :map, required: true)
+
+  defp field_cell(%{field: :id} = assigns) do
+    ~H"""
+    <td class="min-w-[120px]">
+      <.a resource={@resource} action={:show} row={@row} label={Map.get(@row, :id)} />
+    </td>
+    """
+  end
+
+  defp field_cell(assigns) do
+    ~H"""
+    <.td_index value={resolve_field_value(@row, @field, @assocs[@row.id], @funcs, @field_type_map)} />
+    """
+  end
+
+  attr(:resource, :string, required: true)
+  attr(:actions, :list, required: true)
+  attr(:row, :map, required: true)
+
+  defp row_actions_cell(assigns) do
+    ~H"""
+    <td class="w-[140px] min-w-[140px]">
+      <div class="flex flex-row flex-nowrap gap-1 items-center">
+        <.index_action_btn
+          :for={action <- @actions -- [:new]}
+          resource={@resource}
+          action={action}
+          label={action}
+          row={@row}
+        />
+      </div>
+    </td>
     """
   end
 
@@ -1197,22 +1211,20 @@ defmodule SanbaseWeb.AdminComponents do
   def pagination_buttons(assigns) do
     ~H"""
     <div class="join">
-      <%= unless @current_page == 0 do %>
-        <.link
-          href={pagination_path(@resource, @action, @search, @current_page - 1)}
-          class="btn btn-sm join-item"
-        >
-          Previous
-        </.link>
-      <% end %>
-      <%= unless @current_page >= div(@rows_count - 1, @page_size) do %>
-        <.link
-          href={pagination_path(@resource, @action, @search, @current_page + 1)}
-          class="btn btn-sm join-item"
-        >
-          Next
-        </.link>
-      <% end %>
+      <.link
+        :if={@current_page > 0}
+        href={pagination_path(@resource, @action, @search, @current_page - 1)}
+        class="btn btn-sm join-item"
+      >
+        Previous
+      </.link>
+      <.link
+        :if={@current_page < div(@rows_count - 1, @page_size)}
+        href={pagination_path(@resource, @action, @search, @current_page + 1)}
+        class="btn btn-sm join-item"
+      >
+        Next
+      </.link>
     </div>
     """
   end
@@ -1344,14 +1356,13 @@ defmodule SanbaseWeb.AdminComponents do
           </div>
         </.form>
 
-        <%= if @search["filters"] do %>
-          <.link
-            href={~p"/admin/generic?resource=#{@resource}"}
-            class="btn btn-sm btn-soft"
-          >
-            <.icon name="hero-x-mark" class="size-4" /> Reset Filters
-          </.link>
-        <% end %>
+        <.link
+          :if={@search["filters"]}
+          href={~p"/admin/generic?resource=#{@resource}"}
+          class="btn btn-sm btn-soft"
+        >
+          <.icon name="hero-x-mark" class="size-4" /> Reset Filters
+        </.link>
       </div>
     </div>
     """

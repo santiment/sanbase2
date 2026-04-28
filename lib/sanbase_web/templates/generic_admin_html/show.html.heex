@@ -10,12 +10,11 @@
   />
 
   <div class="m-2">
-    <%= if :edit in @actions do %>
-      <SanbaseWeb.AdminComponents.btn
-        label="Edit"
-        href={~p"/admin/generic/#{@data}/edit?resource=#{@resource}"}
-      />
-    <% end %>
+    <SanbaseWeb.AdminComponents.btn
+      :if={:edit in @actions}
+      label="Edit"
+      href={~p"/admin/generic/#{@data}/edit?resource=#{@resource}"}
+    />
     <SanbaseWeb.AdminComponents.back_btn />
   </div>
 

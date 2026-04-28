@@ -69,20 +69,15 @@ defmodule SanbaseWeb.CategorizationLive.MetricsOrder do
     ~H"""
     <div class="flex flex-col justify-center w-full">
       <div class="text-2xl mb-4">
-        <%= if @group do %>
-          Reorder Metrics in Group: {@group.name}
-        <% else %>
-          Reorder Ungrouped Metrics
-        <% end %>
+        {if @group,
+          do: "Reorder Metrics in Group: #{@group.name}",
+          else: "Reorder Ungrouped Metrics"}
       </div>
 
       <.breadcrumb_navigation category={@category} group={@group} />
 
-      <%= if @mappings == [] do %>
-        <.empty_state group={@group} />
-      <% else %>
-        <.metrics_table mappings={@mappings} />
-      <% end %>
+      <.empty_state :if={@mappings == []} group={@group} />
+      <.metrics_table :if={@mappings != []} mappings={@mappings} />
 
       <.modal :if={@reordering} id="reordering-modal" show>
         <.header>Reordering Metrics</.header>
@@ -120,11 +115,11 @@ defmodule SanbaseWeb.CategorizationLive.MetricsOrder do
     <div class="mb-4 text-sm text-base-content/70">
       <span class="font-semibold">Category:</span>
       {@category.name}
-      <%= if @group do %>
+      <span :if={@group}>
         <span class="mx-2">→</span>
         <span class="font-semibold">Group:</span>
         {@group.name}
-      <% end %>
+      </span>
     </div>
     """
   end
@@ -139,11 +134,9 @@ defmodule SanbaseWeb.CategorizationLive.MetricsOrder do
         No Metrics Found
       </h3>
       <p class="text-base-content/50">
-        <%= if @group do %>
-          This group doesn't have any metrics assigned yet.
-        <% else %>
-          This category doesn't have any ungrouped metrics.
-        <% end %>
+        {if @group,
+          do: "This group doesn't have any metrics assigned yet.",
+          else: "This category doesn't have any ungrouped metrics."}
       </p>
     </div>
     """
@@ -204,11 +197,7 @@ defmodule SanbaseWeb.CategorizationLive.MetricsOrder do
 
   defp metric_name(assigns) do
     ~H"""
-    <%= if @mapping.metric_registry do %>
-      {@mapping.metric_registry.metric}
-    <% else %>
-      {@mapping.metric}
-    <% end %>
+    {(@mapping.metric_registry && @mapping.metric_registry.metric) || @mapping.metric}
     """
   end
 
@@ -216,15 +205,12 @@ defmodule SanbaseWeb.CategorizationLive.MetricsOrder do
 
   defp metric_source(assigns) do
     ~H"""
-    <%= if @mapping.metric_registry_id do %>
-      <span class="badge badge-sm badge-info badge-soft">
-        Registry ID: {@mapping.metric_registry_id}
-      </span>
-    <% else %>
-      <span class="badge badge-sm badge-secondary badge-soft">
-        {@mapping.module}.{@mapping.metric}
-      </span>
-    <% end %>
+    <span :if={@mapping.metric_registry_id} class="badge badge-sm badge-info badge-soft">
+      Registry ID: {@mapping.metric_registry_id}
+    </span>
+    <span :if={!@mapping.metric_registry_id} class="badge badge-sm badge-secondary badge-soft">
+      {@mapping.module}.{@mapping.metric}
+    </span>
     """
   end
 

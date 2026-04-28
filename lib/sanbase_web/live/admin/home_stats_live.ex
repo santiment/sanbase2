@@ -40,74 +40,58 @@ defmodule SanbaseWeb.Admin.HomeStatsLive do
           Updated {Calendar.strftime(stats.computed_at, "%Y-%m-%d %H:%M UTC")} · cached for 15 min
         </p>
 
-        <section>
-          <h2 class="text-sm font-semibold uppercase tracking-wide text-base-content/60 mb-2">
-            Users
-          </h2>
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-            <.stat_card label="Total Users" value={stats.users.total} />
-            <.stat_card label="Signups · 24h" value={stats.users.last_24h} />
-            <.stat_card label="Signups · 7d" value={stats.users.last_7d} />
-          </div>
-        </section>
+        <.stats_section title="Users" cols="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          <.stat_card label="Total Users" value={stats.users.total} />
+          <.stat_card label="Signups · 24h" value={stats.users.last_24h} />
+          <.stat_card label="Signups · 7d" value={stats.users.last_7d} />
+        </.stats_section>
+
+        <.stats_section title="Metric Registry" cols="grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+          <.stat_card
+            label="Total"
+            value={stats.metric_registry.total}
+            href="/admin/metric_registry"
+          />
+          <.stat_card
+            label="Not Synced"
+            value={stats.metric_registry.not_synced}
+            accent={(stats.metric_registry.not_synced > 0 && "text-warning") || nil}
+          />
+          <.stat_card label="Unverified" value={stats.metric_registry.unverified} />
+          <.stat_card label="Deprecated" value={stats.metric_registry.deprecated} />
+          <.stat_card
+            label="Pending Approval"
+            value={stats.metric_registry.pending_approval}
+            accent={(stats.metric_registry.pending_approval > 0 && "text-info") || nil}
+          />
+        </.stats_section>
+
+        <.stats_section
+          title="Active Subscriptions · Sanbase"
+          cols="grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
+        >
+          <.stat_card label="Total" value={stats.subscriptions.sanbase.total} />
+          <.stat_card
+            :for={{plan, count} <- stats.subscriptions.sanbase.by_plan}
+            label={plan}
+            value={count}
+          />
+        </.stats_section>
+
+        <.stats_section
+          title="Active Subscriptions · SanAPI"
+          cols="grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
+        >
+          <.stat_card label="Total" value={stats.subscriptions.sanapi.total} />
+          <.stat_card
+            :for={{plan, count} <- stats.subscriptions.sanapi.by_plan}
+            label={plan}
+            value={count}
+          />
+        </.stats_section>
 
         <section>
-          <h2 class="text-sm font-semibold uppercase tracking-wide text-base-content/60 mb-2">
-            Metric Registry
-          </h2>
-          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-            <.stat_card
-              label="Total"
-              value={stats.metric_registry.total}
-              href="/admin/metric_registry"
-            />
-            <.stat_card
-              label="Not Synced"
-              value={stats.metric_registry.not_synced}
-              accent={(stats.metric_registry.not_synced > 0 && "text-warning") || nil}
-            />
-            <.stat_card label="Unverified" value={stats.metric_registry.unverified} />
-            <.stat_card label="Deprecated" value={stats.metric_registry.deprecated} />
-            <.stat_card
-              label="Pending Approval"
-              value={stats.metric_registry.pending_approval}
-              accent={(stats.metric_registry.pending_approval > 0 && "text-info") || nil}
-            />
-          </div>
-        </section>
-
-        <section>
-          <h2 class="text-sm font-semibold uppercase tracking-wide text-base-content/60 mb-2">
-            Active Subscriptions · Sanbase
-          </h2>
-          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-            <.stat_card label="Total" value={stats.subscriptions.sanbase.total} />
-            <.stat_card
-              :for={{plan, count} <- stats.subscriptions.sanbase.by_plan}
-              label={plan}
-              value={count}
-            />
-          </div>
-        </section>
-
-        <section>
-          <h2 class="text-sm font-semibold uppercase tracking-wide text-base-content/60 mb-2">
-            Active Subscriptions · SanAPI
-          </h2>
-          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-            <.stat_card label="Total" value={stats.subscriptions.sanapi.total} />
-            <.stat_card
-              :for={{plan, count} <- stats.subscriptions.sanapi.by_plan}
-              label={plan}
-              value={count}
-            />
-          </div>
-        </section>
-
-        <section>
-          <h2 class="text-sm font-semibold uppercase tracking-wide text-base-content/60 mb-2">
-            Oban Queues
-          </h2>
+          <.section_heading>Oban Queues</.section_heading>
           <div class="overflow-x-auto bg-base-100 border border-base-300 rounded">
             <table class="table table-sm">
               <thead>
@@ -149,42 +133,35 @@ defmodule SanbaseWeb.Admin.HomeStatsLive do
           </div>
         </section>
 
-        <section>
-          <h2 class="text-sm font-semibold uppercase tracking-wide text-base-content/60 mb-2">
-            Last {stats.series.days} Days
-          </h2>
-          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-            <.daily_sparkline label="Signups" series={stats.series} key={:users} />
-            <.daily_sparkline label="Watchlists" series={stats.series} key={:watchlists} />
-            <.daily_sparkline
-              label="Chart Configurations"
-              series={stats.series}
-              key={:chart_configurations}
-            />
-            <.daily_sparkline label="Alerts Created" series={stats.series} key={:alerts} />
-            <.daily_sparkline label="Alerts Fired" series={stats.series} key={:alerts_fired} />
-            <.daily_sparkline label="Insights" series={stats.series} key={:insights} />
-            <.daily_sparkline label="Comments" series={stats.series} key={:comments} />
-            <.daily_sparkline label="Promo Trials" series={stats.series} key={:promo_trials} />
-          </div>
-        </section>
+        <.stats_section
+          title={"Last #{stats.series.days} Days"}
+          cols="grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
+        >
+          <.daily_sparkline label="Signups" series={stats.series} key={:users} />
+          <.daily_sparkline label="Watchlists" series={stats.series} key={:watchlists} />
+          <.daily_sparkline
+            label="Chart Configurations"
+            series={stats.series}
+            key={:chart_configurations}
+          />
+          <.daily_sparkline label="Alerts Created" series={stats.series} key={:alerts} />
+          <.daily_sparkline label="Alerts Fired" series={stats.series} key={:alerts_fired} />
+          <.daily_sparkline label="Insights" series={stats.series} key={:insights} />
+          <.daily_sparkline label="Comments" series={stats.series} key={:comments} />
+          <.daily_sparkline label="Promo Trials" series={stats.series} key={:promo_trials} />
+        </.stats_section>
 
-        <section>
-          <h2 class="text-sm font-semibold uppercase tracking-wide text-base-content/60 mb-2">
-            Content
-          </h2>
-          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-            <.stat_card label="Insights" value={stats.insights.total} />
-            <.stat_card label="Comments" value={stats.comments.total} />
-            <.stat_card label="Disagreement Tweets" value={stats.disagreement_tweets.total} />
-            <.stat_card
-              label="Tweets to Review"
-              value={stats.disagreement_tweets.review_required}
-              accent={(stats.disagreement_tweets.review_required > 0 && "text-warning") || nil}
-            />
-            <.stat_card label="FAQ Active" value={stats.faq_entries.active} />
-          </div>
-        </section>
+        <.stats_section title="Content" cols="grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
+          <.stat_card label="Insights" value={stats.insights.total} />
+          <.stat_card label="Comments" value={stats.comments.total} />
+          <.stat_card label="Disagreement Tweets" value={stats.disagreement_tweets.total} />
+          <.stat_card
+            label="Tweets to Review"
+            value={stats.disagreement_tweets.review_required}
+            accent={(stats.disagreement_tweets.review_required > 0 && "text-warning") || nil}
+          />
+          <.stat_card label="FAQ Active" value={stats.faq_entries.active} />
+        </.stats_section>
       </.async_result>
     </div>
     """
@@ -201,6 +178,31 @@ defmodule SanbaseWeb.Admin.HomeStatsLive do
         </div>
       </div>
     </div>
+    """
+  end
+
+  attr(:title, :string, required: true)
+  attr(:cols, :string, required: true)
+  slot(:inner_block, required: true)
+
+  defp stats_section(assigns) do
+    ~H"""
+    <section>
+      <.section_heading>{@title}</.section_heading>
+      <div class={["grid gap-2", @cols]}>
+        {render_slot(@inner_block)}
+      </div>
+    </section>
+    """
+  end
+
+  slot(:inner_block, required: true)
+
+  defp section_heading(assigns) do
+    ~H"""
+    <h2 class="text-sm font-semibold uppercase tracking-wide text-base-content/60 mb-2">
+      {render_slot(@inner_block)}
+    </h2>
     """
   end
 end

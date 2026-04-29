@@ -20,7 +20,7 @@ defmodule SanbaseWeb.NotificationsLive.ManualEmailFormLive do
       <div class="flex items-center justify-between mb-4">
         <.link
           navigate={~p"/admin/generic?resource=notifications"}
-          class="text-sm text-gray-600 hover:text-gray-900"
+          class="link link-hover text-sm text-base-content/70"
         >
           ← Back to Notifications
         </.link>

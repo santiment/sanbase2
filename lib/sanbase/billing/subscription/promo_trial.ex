@@ -61,6 +61,36 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
     |> Sanbase.Repo.all()
   end
 
+  @doc """
+  Return promo-trial-eligible plans grouped by product and interval.
+
+  Shape: %{api: %{"month" => [%{id, name, stripe_id}, ...], "year" => [...]},
+           sanbase: %{"month" => [...], "year" => [...]}}
+  """
+  def plans_grouped do
+    promo_trial_plans_query()
+    |> select([p, prod], %{
+      id: p.id,
+      name: p.name,
+      interval: p.interval,
+      product_id: prod.id,
+      stripe_id: p.stripe_id
+    })
+    |> Sanbase.Repo.all()
+    |> Enum.group_by(
+      fn p ->
+        cond do
+          p.product_id == Product.product_api() -> :api
+          p.product_id == Product.product_sanbase() -> :sanbase
+        end
+      end,
+      fn p -> %{id: p.id, name: p.name, interval: p.interval, stripe_id: p.stripe_id} end
+    )
+    |> Map.new(fn {product_key, plans} ->
+      {product_key, Enum.group_by(plans, & &1.interval)}
+    end)
+  end
+
   defp promo_trial_plans_query do
     from(p in Plan,
       join: prod in assoc(p, :product),

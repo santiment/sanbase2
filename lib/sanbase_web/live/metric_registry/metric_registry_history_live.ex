@@ -41,8 +41,8 @@ defmodule SanbaseWeb.MetricRegistryHistoryLive do
         />
       </div>
 
-      <hr class="h-px my-8 bg-gray-200 border-0 dark:bg-gray-700" />
-      <div class="font-bold text-xl text-blue-800">{@metric_registry.metric}</div>
+      <div class="divider my-8"></div>
+      <div class="font-bold text-xl text-primary">{@metric_registry.metric}</div>
       <.table id="metrics_registry_sync_runs" rows={@history_list}>
         <:col :let={row} label="ID">
           {row.id}
@@ -82,24 +82,18 @@ defmodule SanbaseWeb.MetricRegistryHistoryLive do
 
   defp change_trigger_formatted(assigns) do
     ~H"""
-    <span
-      :if={@change_trigger}
-      class={[
-        "px-3 py-2 text-xs font-semibold text-white rounded-full text-nowrap",
-        get_bg_color(@change_trigger)
-      ]}
-    >
+    <span :if={@change_trigger} class={["badge badge-sm text-nowrap", badge_variant(@change_trigger)]}>
       {@change_trigger |> String.replace("_", " ") |> String.upcase()}
     </span>
     """
   end
 
-  defp get_bg_color(change_trigger) do
+  defp badge_variant(change_trigger) do
     case change_trigger do
-      "sync_apply" -> "bg-blue-800"
-      "change_request_approve" -> "bg-green-800"
-      "change_request_undo" -> "bg-red-800"
-      _ -> "bg-gray-800"
+      "sync_apply" -> "badge-info"
+      "change_request_approve" -> "badge-success"
+      "change_request_undo" -> "badge-error"
+      _ -> "badge-neutral"
     end
   end
 end

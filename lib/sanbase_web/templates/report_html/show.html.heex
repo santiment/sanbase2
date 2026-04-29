@@ -36,11 +36,12 @@
       <td class="border px-4 py-2">Tags</td>
 
       <td class="border px-4 py-2">
-        <%= for tag <- @report.tags do %>
-          <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-indigo-600 bg-indigo-200 uppercase last:mr-0 mr-1">
-            {tag}
-          </span>
-        <% end %>
+        <span
+          :for={tag <- @report.tags}
+          class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-indigo-600 bg-indigo-200 uppercase last:mr-0 mr-1"
+        >
+          {tag}
+        </span>
       </td>
     </tr>
   </tbody>
@@ -49,7 +50,7 @@
 <span>
   <.link
     href={~p"/admin/reports/#{@report}/edit"}
-    class="flex-shrink-0 border-4 text-teal-500 hover:text-teal-800 py-1 px-2 rounded"
+    class="shrink-0 border-4 text-teal-500 hover:text-teal-800 py-1 px-2 rounded"
   >
     Edit
   </.link>
@@ -57,7 +58,7 @@
 <span>
   <.link
     href={~p"/admin/reports"}
-    class="flex-shrink-0 border-4 text-teal-500 hover:text-teal-800 py-1 px-2 rounded"
+    class="shrink-0 border-4 text-teal-500 hover:text-teal-800 py-1 px-2 rounded"
   >
     Back
   </.link>

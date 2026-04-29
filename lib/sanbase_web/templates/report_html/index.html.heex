@@ -16,43 +16,42 @@
     </tr>
   </thead>
   <tbody class="text-sm font-normal text-gray-700">
-    <%= for report <- @reports do %>
-      <tr class="hover:bg-gray-100 border-b border-gray-200 py-4">
-        <td class="border px-4 py-2">{report.id}</td>
-        <td class="border px-4 py-2">{report.name}</td>
-        <td class="border px-4 py-2">{report.is_published}</td>
-        <td class="border px-4 py-2">{report.is_pro}</td>
-        <td class="border px-4 py-2">
-          <%= for tag <- report.tags do %>
-            <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-indigo-600 bg-indigo-200 uppercase last:mr-0 mr-1">
-              {tag}
-            </span>
-          <% end %>
-        </td>
-        <td class="border px-4 py-2">{report.inserted_at}</td>
-        <td class="border px-4 py-2">
-          <span><.link href={~p"/admin/reports/#{report}"}>Show</.link></span>
-          | <span><.link href={~p"/admin/reports/#{report}/edit"}>Edit</.link></span>
-          |
-          <span>
-            <.link
-              href={~p"/admin/reports/#{report}"}
-              method="delete"
-              data-confirm="Are you sure?"
-            >
-              Delete
-            </.link>
-          </span>
-        </td>
-      </tr>
-    <% end %>
+    <tr :for={report <- @reports} class="hover:bg-gray-100 border-b border-gray-200 py-4">
+      <td class="border px-4 py-2">{report.id}</td>
+      <td class="border px-4 py-2">{report.name}</td>
+      <td class="border px-4 py-2">{report.is_published}</td>
+      <td class="border px-4 py-2">{report.is_pro}</td>
+      <td class="border px-4 py-2">
+        <span
+          :for={tag <- report.tags}
+          class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-indigo-600 bg-indigo-200 uppercase last:mr-0 mr-1"
+        >
+          {tag}
+        </span>
+      </td>
+      <td class="border px-4 py-2">{report.inserted_at}</td>
+      <td class="border px-4 py-2">
+        <span><.link href={~p"/admin/reports/#{report}"}>Show</.link></span>
+        | <span><.link href={~p"/admin/reports/#{report}/edit"}>Edit</.link></span>
+        |
+        <span>
+          <.link
+            href={~p"/admin/reports/#{report}"}
+            method="delete"
+            data-confirm="Are you sure?"
+          >
+            Delete
+          </.link>
+        </span>
+      </td>
+    </tr>
   </tbody>
 </table>
 
 <span>
   <.link
     href={~p"/admin/reports/new"}
-    class="flex-shrink-0 border-4 text-teal-500 hover:text-teal-800 py-1 px-2 rounded"
+    class="shrink-0 border-4 text-teal-500 hover:text-teal-800 py-1 px-2 rounded"
   >
     New Report
   </.link>

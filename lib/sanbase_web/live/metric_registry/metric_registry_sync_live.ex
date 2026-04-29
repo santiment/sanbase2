@@ -35,7 +35,7 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
         current_user_role_names={@current_user_role_names}
         trim_role_prefix="Metric Registry "
       />
-      <div class="text-gray-400 text-sm py-2">
+      <div class="text-base-content/50 text-sm py-2">
         <div>
           {length(@syncable_metrics)} metric(s) available to be synced from stage to prod}
         </div>
@@ -57,14 +57,14 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
         />
       </div>
 
-      <div class="flex items-center mb-4 ">
-        <label for="unverified-only" class="cursor-pointer ms-2 text-sm font-medium text-gray-900">
+      <div class="flex items-center mb-4">
+        <label for="is-dry-run" class="label cursor-pointer gap-2 text-sm font-medium">
           <input
             id="is-dry-run"
             name="is_dry_run"
             checked={@is_dry_run}
             type="checkbox"
-            class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded "
+            class="checkbox checkbox-sm checkbox-primary"
             phx-click="update_is_dry_sync"
           /> Dry Run
         </label>
@@ -74,12 +74,12 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
         <AdminSharedComponents.action_button
           text="Select All"
           phx_click="select_all"
-          class="bg-white hover:bg-gray-100 text-zinc-900"
+          class="btn-soft"
         />
         <AdminSharedComponents.action_button
           text="Deselect All"
           phx_click="deselect_all"
-          class="bg-white hover:bg-gray-100 text-zinc-900"
+          class="btn-soft"
         />
       </div>
       <.table id="metrics_registry" rows={@syncable_metrics}>
@@ -101,7 +101,7 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
         :if={Permissions.can?(:start_sync, roles: @current_user_role_names)}
         text="Sync Metrics"
         phx_click="sync"
-        class="min-w-42 bg-blue-700 hover:bg-blue-800 text-white"
+        class="min-w-42 btn-primary"
         count={MapSet.size(@metric_ids_to_sync)}
         phx_disable_with="Syncing..."
       />
@@ -201,15 +201,14 @@ defmodule SanbaseWeb.MetricRegistrySyncLive do
 
   defp checkbox(assigns) do
     ~H"""
-    <div class="flex items-center mb-4 ">
+    <div class="flex items-center mb-4">
       <input
         id="not-verified-only"
         name={"sync-status-#{@row.id}"}
         type="checkbox"
         checked={@row.id in @metric_ids_to_sync}
-        class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded"
+        class="checkbox checkbox-sm checkbox-primary"
         phx-click={JS.push("update_should_sync", value: %{metric_registry_id: @row.id})}
-        }
       />
     </div>
     """

@@ -9,15 +9,19 @@ defmodule SanbaseWeb.PricePredictionComponents do
 
   def price_prediction_card(assigns) do
     ~H"""
-    <div class="border rounded-lg p-3" id={"prediction-#{@prediction["id"]}"} {@rest}>
-      <div class="flex justify-between text-xs text-gray-500 mb-1">
+    <div
+      class="card bg-base-100 border border-base-300 p-3"
+      id={"prediction-#{@prediction["id"]}"}
+      {@rest}
+    >
+      <div class="flex justify-between text-xs text-base-content/60 mb-1">
         <span class="flex items-center gap-2">
-          <span class="font-bold text-blue-600">
+          <span class="font-bold text-primary">
             {extract_account_name(@prediction["tweet_url"])}
           </span>
           <span
             :if={@prediction["prediction"]["asset"] != "N/A"}
-            class="px-2 py-0.5 bg-green-100 text-green-800 rounded text-xs"
+            class="badge badge-sm badge-success badge-soft"
           >
             {@prediction["prediction"]["asset"]}
           </span>
@@ -29,7 +33,7 @@ defmodule SanbaseWeb.PricePredictionComponents do
 
       <div class="flex items-center justify-between gap-2 mt-2">
         <div class="flex items-center gap-2">
-          <span class="text-xs text-gray-600">
+          <span class="text-xs text-base-content/60">
             Confidence:
             <span class="font-semibold">
               {format_probability(@prediction["is_prediction_probability"])}
@@ -38,10 +42,7 @@ defmodule SanbaseWeb.PricePredictionComponents do
 
           <span
             :if={@prediction["prediction"]["prediction"]}
-            class={[
-              "px-2 py-0.5 text-xs rounded font-medium",
-              prediction_class(@prediction["prediction"]["prediction"])
-            ]}
+            class={["badge badge-sm", prediction_class(@prediction["prediction"]["prediction"])]}
           >
             {String.upcase(@prediction["prediction"]["prediction"])}
           </span>
@@ -51,7 +52,7 @@ defmodule SanbaseWeb.PricePredictionComponents do
           href={@prediction["tweet_url"]}
           target="_blank"
           rel="noopener noreferrer"
-          class="text-xs text-blue-500 hover:underline"
+          class="link link-primary text-xs"
         >
           View on X
         </a>
@@ -72,25 +73,13 @@ defmodule SanbaseWeb.PricePredictionComponents do
     <div class="flex justify-between items-center mb-3">
       <h2 class="text-xl font-bold">{@title}</h2>
       <div class="flex items-center gap-2">
-        <a
-          :if={!@maksim_filter}
-          href="?maksim=true"
-          class="bg-gray-500 hover:bg-gray-700 text-white text-sm font-bold py-1 px-3 rounded"
-        >
+        <a :if={!@maksim_filter} href="?maksim=true" class="btn btn-sm btn-soft">
           Show Maksim's
         </a>
-        <a
-          :if={@maksim_filter}
-          href="?"
-          class="bg-gray-500 hover:bg-gray-700 text-white text-sm font-bold py-1 px-3 rounded"
-        >
+        <a :if={@maksim_filter} href="?" class="btn btn-sm btn-soft">
           Show All
         </a>
-        <button
-          class="bg-blue-500 hover:bg-blue-700 text-white text-sm font-bold py-1 px-3 rounded"
-          phx-click="refresh"
-          disabled={@loading}
-        >
+        <button class="btn btn-sm btn-primary" phx-click="refresh" disabled={@loading}>
           Refresh
         </button>
       </div>
@@ -106,14 +95,10 @@ defmodule SanbaseWeb.PricePredictionComponents do
 
   def asset_filter_section(assigns) do
     ~H"""
-    <div class="border-b pb-3 mb-3">
+    <div class="border-b border-base-300 pb-3 mb-3">
       <div class="flex items-center gap-2 mb-2">
-        <span class="text-sm font-medium text-gray-700">Filter by Asset:</span>
-        <button
-          :if={@selected_asset}
-          class="text-xs px-2 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
-          phx-click="clear_filter"
-        >
+        <span class="text-sm font-medium">Filter by Asset:</span>
+        <button :if={@selected_asset} class="btn btn-xs btn-soft" phx-click="clear_filter">
           Clear Filter ×
         </button>
       </div>
@@ -122,15 +107,12 @@ defmodule SanbaseWeb.PricePredictionComponents do
         <button
           :for={{asset, count} <- @asset_counts}
           :if={count > 0}
-          class={[
-            "text-xs px-3 py-1 rounded-full border transition-colors",
-            asset_filter_button_class(asset, @selected_asset)
-          ]}
+          class={["btn btn-xs rounded-full", asset_filter_button_class(asset, @selected_asset)]}
           phx-click="filter_by_asset"
           phx-value-asset={asset}
         >
           <span class="font-medium">{format_asset_name(asset)}</span>
-          <span class="ml-1 opacity-75">({count})</span>
+          <span class="opacity-75">({count})</span>
         </button>
       </div>
     </div>
@@ -157,16 +139,12 @@ defmodule SanbaseWeb.PricePredictionComponents do
 
   defp format_probability(_), do: "N/A"
 
-  defp prediction_class("up"), do: "bg-green-100 text-green-800"
-  defp prediction_class("down"), do: "bg-red-100 text-red-800"
-  defp prediction_class(_), do: "bg-gray-100 text-gray-800"
+  defp prediction_class("up"), do: "badge-success"
+  defp prediction_class("down"), do: "badge-error"
+  defp prediction_class(_), do: "badge-ghost"
 
   defp asset_filter_button_class(asset, selected_asset) do
-    if asset == selected_asset do
-      "bg-blue-500 text-white border-blue-500"
-    else
-      "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-    end
+    if asset == selected_asset, do: "btn-primary", else: "btn-soft"
   end
 
   defp format_asset_name("N/A"), do: "No Asset"

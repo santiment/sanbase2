@@ -42,16 +42,13 @@ defmodule SanbaseWeb.GenericAdminController do
     sorted_routes = (resources_to_routes() ++ custom_routes()) |> Enum.sort()
 
     case conn do
-      %{assigns: %{current_user: user}} ->
-        [{"Logout (#{user.email})", ~p"/admin_auth/logout"}] ++ sorted_routes
+      %{assigns: %{current_user: _user}} ->
+        sorted_routes
 
       %{assigns: _} ->
         [{"Authenticate", ~p"/admin_auth/login"}] ++ sorted_routes
 
       _ ->
-        # If the conn is not provided then we're in the cond do
-        # where we filter the routes in a search operation. Do not return
-        # neither Authenticate, nor Logout
         sorted_routes
     end
   end
@@ -86,7 +83,7 @@ defmodule SanbaseWeb.GenericAdminController do
   end
 
   def home(%Plug.Conn{} = conn, _params) do
-    render(conn, "home.html", search_value: "")
+    render(conn, "home.html")
   end
 
   def index(%Plug.Conn{} = conn, %{"resource" => resource} = params) do
@@ -100,6 +97,10 @@ defmodule SanbaseWeb.GenericAdminController do
 
   def index(%Plug.Conn{} = conn, _) do
     render(conn, "error.html")
+  end
+
+  def new(%Plug.Conn{} = conn, %{"resource" => "promo_trials"}) do
+    Phoenix.Controller.redirect(conn, to: "/admin/promo_trials/new")
   end
 
   def new(%Plug.Conn{} = conn, %{"resource" => resource} = params) do

@@ -21,38 +21,33 @@ defmodule SanbaseWeb.NotificationsLive.BroadcastNotificationFormLive do
 
   def render(assigns) do
     ~H"""
-    <div class="max-w-2xl mx-auto">
-      <div class="flex items-center justify-between mb-4">
-        <div class="flex gap-4">
-          <.link navigate={~p"/admin/admin_forms"} class="text-sm text-gray-600 hover:text-gray-900">
-            ← Admin Forms
-          </.link>
-          <.link
-            navigate={~p"/admin/notifications/broadcast/overview"}
-            class="text-sm text-gray-600 hover:text-gray-900"
-          >
-            ← Broadcast Overview
-          </.link>
-          <.link
-            navigate={~p"/admin/generic?resource=sanbase_notifications"}
-            class="text-sm text-gray-600 hover:text-gray-900"
-          >
-            ← Notifications
-          </.link>
-          <.link
-            navigate={~p"/admin/generic?resource=sanbase_notification_read_statuses"}
-            class="text-sm text-gray-600 hover:text-gray-900"
-          >
-            ← Read Statuses
-          </.link>
-        </div>
-        <h2 class="text-xl font-bold">Broadcast App Notification</h2>
-      </div>
-
-      <p class="text-sm text-gray-600 mb-4">
+    <div class="max-w-2xl mx-auto p-6">
+      <.link navigate={~p"/admin/admin_forms"} class="link link-hover text-sm mb-2 inline-block">
+        ← Admin Forms
+      </.link>
+      <h1 class="text-3xl font-bold mb-2">Broadcast App Notification</h1>
+      <p class="text-sm text-base-content/60 mb-4">
         This will create an in-app notification visible to all registered users.
         The notification will appear in their notification feed.
       </p>
+
+      <div class="flex flex-wrap gap-2 mb-6">
+        <.link navigate={~p"/admin/notifications/broadcast/overview"} class="btn btn-soft btn-sm">
+          Broadcast Overview
+        </.link>
+        <.link
+          navigate={~p"/admin/generic?resource=sanbase_notifications"}
+          class="btn btn-soft btn-sm"
+        >
+          Notifications
+        </.link>
+        <.link
+          navigate={~p"/admin/generic?resource=sanbase_notification_read_statuses"}
+          class="btn btn-soft btn-sm"
+        >
+          Read Statuses
+        </.link>
+      </div>
 
       <.form for={@form} phx-change="validate" phx-submit="send_broadcast">
         <div class="space-y-4">

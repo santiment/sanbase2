@@ -26,7 +26,7 @@ defmodule SanbaseWeb.SuggestEcosystemLabelsChangeAdminLive do
           </:col>
           <:col :let={row} label="Asset">
             <.link
-              class="underline text-blue-600"
+              class="link link-primary"
               href={~p"/admin/generic/#{row.project_id}?resource=projects"}
               target="_blank"
             >
@@ -36,13 +36,13 @@ defmodule SanbaseWeb.SuggestEcosystemLabelsChangeAdminLive do
           <:col :let={row} label="Added Ecosystems">
             <UserFormsComponents.ecosystems_group
               ecosystems={row.added_ecosystems}
-              ecosystem_colors_class="bg-green-100 text-green-800"
+              ecosystem_colors_class="badge-success"
             />
           </:col>
           <:col :let={row} label="Removed Ecosystems">
             <UserFormsComponents.ecosystems_group
               ecosystems={row.removed_ecosystems}
-              ecosystem_colors_class="bg-red-100 text-red-800"
+              ecosystem_colors_class="badge-error"
             />
           </:col>
           <:col :let={row} label="Notes">{row.notes}</:col>

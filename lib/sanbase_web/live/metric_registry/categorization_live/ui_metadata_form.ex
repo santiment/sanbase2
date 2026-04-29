@@ -28,30 +28,30 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataForm do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col justify-center w-full max-w-2xl mx-auto">
-      <div class="text-gray-800 text-2xl mb-4">
+      <div class="text-2xl mb-4">
         {@page_title}
       </div>
 
       <.navigation mapping_id={@mapping_id} metric_info={@metric_info} ui_metadata={@ui_metadata} />
 
-      <div :if={@metric_info} class="mb-6 p-4 bg-gray-50 rounded-lg">
-        <div class="text-sm font-medium text-gray-700 mb-1">Metric</div>
-        <div class="text-lg font-bold text-gray-900">{@metric_info.metric}</div>
-        <div :if={@metric_info.human_readable_name} class="text-sm text-gray-600">
+      <div :if={@metric_info} class="mb-6 p-4 bg-base-200 rounded-box">
+        <div class="text-sm font-medium mb-1">Metric</div>
+        <div class="text-lg font-bold">{@metric_info.metric}</div>
+        <div :if={@metric_info.human_readable_name} class="text-sm text-base-content/60">
           {@metric_info.human_readable_name}
         </div>
-        <div class="text-xs text-gray-500 mt-1">
+        <div class="text-xs text-base-content/50 mt-1">
           Source: {@metric_info.source_display}
         </div>
-        <div :if={@metric_info.category_name} class="text-xs text-gray-500">
+        <div :if={@metric_info.category_name} class="text-xs text-base-content/50">
           Category: {@metric_info.category_name}
         </div>
-        <div :if={@metric_info.group_name} class="text-xs text-gray-500">
+        <div :if={@metric_info.group_name} class="text-xs text-base-content/50">
           Group: {@metric_info.group_name}
         </div>
       </div>
 
-      <div class="bg-white p-6 rounded-lg shadow">
+      <div class="card bg-base-100 border border-base-300 shadow p-6">
         <.simple_form for={@form} id="ui-metadata-form" phx-submit="save" phx-change="validate">
           <.input
             :if={@metric_select_field == :hidden}
@@ -77,7 +77,7 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataForm do
             field={@form[:ui_human_readable_name]}
             placeholder={@metric_info.human_readable_name}
           />
-          <div class="text-xs -mt-4 text-gray-500">
+          <div class="text-xs -mt-4 text-base-content/50">
             If empty, the metric's human readable name will be used, if it exists.
           </div>
 
@@ -119,7 +119,7 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataForm do
             <div class="flex space-x-2">
               <.link
                 navigate={~p"/admin/metric_registry/categorization/ui_metadata/list/#{@mapping_id}"}
-                class="text-gray-600 hover:text-gray-900"
+                class="link link-hover"
               >
                 Cancel
               </.link>
@@ -128,7 +128,7 @@ defmodule SanbaseWeb.CategorizationLive.UIMetadataForm do
                 :if={@ui_metadata && @ui_metadata.id}
                 type="button"
                 phx-click="delete"
-                class="text-red-600 hover:text-red-900"
+                class="link link-error"
                 data-confirm="Are you sure you want to delete this UI metadata?"
               >
                 Delete

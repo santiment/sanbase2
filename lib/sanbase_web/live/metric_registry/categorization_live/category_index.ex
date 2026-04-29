@@ -22,7 +22,7 @@ defmodule SanbaseWeb.Categorization.CategoryLive.Index do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col justify-center w-full">
-      <div class="text-gray-800 text-2xl mb-4">
+      <div class="text-2xl mb-4">
         Metric Categories
       </div>
 
@@ -33,7 +33,7 @@ defmodule SanbaseWeb.Categorization.CategoryLive.Index do
       <.modal :if={@reordering} id="reordering-modal" show>
         <.header>Reordering Categories</.header>
         <div class="text-center py-4">
-          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+          <span class="loading loading-spinner loading-lg text-primary"></span>
           <p class="mt-4">Saving new order...</p>
         </div>
       </.modal>
@@ -45,37 +45,17 @@ defmodule SanbaseWeb.Categorization.CategoryLive.Index do
 
   def categories_table(assigns) do
     ~H"""
-    <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
+    <div class="rounded-box border border-base-300 overflow-x-auto">
+      <table class="table table-zebra table-sm">
+        <thead>
           <tr>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Order
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Category Name
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Groups Count
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Actions
-            </th>
+            <th>Order</th>
+            <th>Category Name</th>
+            <th>Groups Count</th>
+            <th>Actions</th>
           </tr>
         </thead>
-        <tbody id="categories" phx-hook="Sortable" class="bg-white divide-y divide-gray-200">
+        <tbody id="categories" phx-hook="Sortable">
           <.category_row
             :for={{category, index} <- Enum.with_index(@categories)}
             category={category}
@@ -94,8 +74,8 @@ defmodule SanbaseWeb.Categorization.CategoryLive.Index do
 
   def category_row(assigns) do
     ~H"""
-    <tr id={"category-#{@category.id}"} data-id={@category.id} class="hover:bg-gray-50">
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+    <tr id={"category-#{@category.id}"} data-id={@category.id}>
+      <td>
         <.reorder_controls
           index={@index}
           total_count={@total_count}
@@ -103,13 +83,9 @@ defmodule SanbaseWeb.Categorization.CategoryLive.Index do
           display_order={@category.display_order}
         />
       </td>
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        {@category.name}
-      </td>
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        {length(@category.groups)}
-      </td>
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+      <td>{@category.name}</td>
+      <td>{length(@category.groups)}</td>
+      <td>
         <.category_actions category={@category} />
       </td>
     </tr>
@@ -123,14 +99,14 @@ defmodule SanbaseWeb.Categorization.CategoryLive.Index do
     <div class="flex space-x-2">
       <.link
         navigate={~p"/admin/metric_registry/categorization/categories/edit/#{@category.id}"}
-        class="text-blue-600 hover:text-blue-900"
+        class="link link-primary"
       >
         Edit
       </.link>
       <button
         phx-click="delete"
         phx-value-id={@category.id}
-        class="text-red-600 hover:text-red-900"
+        class="link link-error"
         data-confirm="Are you sure you want to delete this category? This will also delete all associated groups."
       >
         Delete

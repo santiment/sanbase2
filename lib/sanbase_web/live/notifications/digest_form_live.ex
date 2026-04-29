@@ -22,10 +22,7 @@ defmodule SanbaseWeb.NotificationsLive.DigestFormLive do
     ~H"""
     <div class="max-w-2xl mx-auto">
       <div class="flex items-center justify-between mb-4">
-        <.link
-          navigate={~p"/admin/generic?resource=notifications"}
-          class="text-sm text-gray-600 hover:text-gray-900"
-        >
+        <.link navigate={~p"/admin/generic?resource=notifications"} class="link link-hover text-sm">
           ← Back to Notifications
         </.link>
         <h2 class="text-xl font-bold">
@@ -33,7 +30,7 @@ defmodule SanbaseWeb.NotificationsLive.DigestFormLive do
         </h2>
       </div>
 
-      <div class="bg-white shadow rounded-lg p-6">
+      <div class="card bg-base-100 border border-base-300 shadow p-6">
         <.email_preview
           :if={@preview_mode}
           action={@action}
@@ -58,20 +55,16 @@ defmodule SanbaseWeb.NotificationsLive.DigestFormLive do
 
         <div class="mt-4 max-h-[60vh] overflow-y-auto">
           <ul class="list-disc pl-5 space-y-1">
-            <li :for={recipient <- @email_recipients} class="text-sm text-gray-700">
+            <li :for={recipient <- @email_recipients} class="text-sm">
               {recipient}
             </li>
           </ul>
         </div>
 
         <div class="flex justify-end mt-6">
-          <.button
-            type="button"
-            phx-click="hide_recipients_modal"
-            class="bg-gray-500 hover:bg-gray-600"
-          >
+          <button type="button" phx-click="hide_recipients_modal" class="btn btn-sm btn-soft">
             Close
-          </.button>
+          </button>
         </div>
       </.modal>
     </div>
@@ -111,12 +104,12 @@ defmodule SanbaseWeb.NotificationsLive.DigestFormLive do
       <.email_content_preview email_content={@email_content} />
 
       <div class="flex space-x-3 mt-4">
-        <.button type="button" phx-click="send_digest" class="bg-green-600 hover:bg-green-700">
+        <button type="button" phx-click="send_digest" class="btn btn-success">
           Confirm & Send
-        </.button>
-        <.button type="button" phx-click="cancel_preview" class="bg-gray-500 hover:bg-gray-600">
+        </button>
+        <button type="button" phx-click="cancel_preview" class="btn btn-soft">
           Cancel
-        </.button>
+        </button>
       </div>
     </div>
     """
@@ -130,27 +123,27 @@ defmodule SanbaseWeb.NotificationsLive.DigestFormLive do
   def group_navigation(assigns) do
     ~H"""
     <div class="mb-4 flex items-center justify-between">
-      <div class="text-sm text-gray-600">
+      <div class="text-sm text-base-content/60">
         Showing group {@current_group_index + 1} of {length(@preview_groups)}
         <.group_badges :if={@current_group} current_group={@current_group} action={@action} />
       </div>
-      <div class="flex space-x-2">
-        <.button
+      <div class="join">
+        <button
           type="button"
           phx-click="prev_group"
           disabled={@current_group_index == 0}
-          class="text-sm px-2 py-1"
+          class="btn btn-sm btn-soft join-item"
         >
           Previous
-        </.button>
-        <.button
+        </button>
+        <button
           type="button"
           phx-click="next_group"
           disabled={@current_group_index == length(@preview_groups) - 1}
-          class="text-sm px-2 py-1"
+          class="btn btn-sm btn-soft join-item"
         >
           Next
-        </.button>
+        </button>
       </div>
     </div>
     """
@@ -172,20 +165,17 @@ defmodule SanbaseWeb.NotificationsLive.DigestFormLive do
 
   def group_badges(assigns) do
     ~H"""
-    <div class="mt-1">
-      <span
-        :if={@action == "metric_deleted"}
-        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-      >
+    <div class="mt-1 flex flex-wrap gap-2">
+      <span :if={@action == "metric_deleted"} class="badge badge-sm badge-info badge-soft">
         Step: {format_step(@current_group.step)}
       </span>
       <span
         :if={@action == "metric_deleted" && @current_group.scheduled_at}
-        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 ml-2"
+        class="badge badge-sm badge-secondary badge-soft"
       >
         Deprecation Scheduled At: {format_date(@current_group.scheduled_at)}
       </span>
-      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 ml-2">
+      <span class="badge badge-sm badge-success badge-soft">
         {@current_group.notification_count} notification{if @current_group.notification_count != 1,
           do: "s"}
       </span>
@@ -209,28 +199,24 @@ defmodule SanbaseWeb.NotificationsLive.DigestFormLive do
     <div class="mb-4">
       <h4 class="text-md font-medium mb-1">
         Recipients:
-        <span class="text-sm font-normal text-gray-600">
+        <span class="text-sm font-normal text-base-content/60">
           ({@recipient_count} total)
         </span>
       </h4>
-      <div class="bg-gray-50 p-3 rounded border max-h-40 overflow-y-auto">
-        <p :if={Enum.empty?(@email_recipients)} class="text-gray-500 italic">
+      <div class="bg-base-200 rounded-box border border-base-300 p-3 max-h-40 overflow-y-auto">
+        <p :if={Enum.empty?(@email_recipients)} class="text-base-content/50 italic">
           No recipients found
         </p>
 
         <div :if={!Enum.empty?(@email_recipients)}>
           <ul class="list-disc pl-5">
-            <li :for={recipient <- @display_recipients} class="text-sm text-gray-700">
+            <li :for={recipient <- @display_recipients} class="text-sm">
               {recipient}
             </li>
           </ul>
 
           <div :if={@recipient_count > 0} class="mt-2 text-center">
-            <button
-              type="button"
-              phx-click="show_recipients_modal"
-              class="text-sm text-blue-600 hover:text-blue-800 hover:underline"
-            >
+            <button type="button" phx-click="show_recipients_modal" class="link link-primary text-sm">
               Show all {@recipient_count} recipients
             </button>
           </div>
@@ -246,13 +232,13 @@ defmodule SanbaseWeb.NotificationsLive.DigestFormLive do
     ~H"""
     <div class="mb-4">
       <h4 class="text-md font-medium mb-1">Email Content:</h4>
-      <div class="bg-gray-50 p-3 rounded border">
-        <p :if={!@email_content} class="text-gray-500 italic">
+      <div class="bg-base-200 rounded-box border border-base-300 p-3">
+        <p :if={!@email_content} class="text-base-content/50 italic">
           No content to preview
         </p>
         <div
           :if={@email_content}
-          class="email-content-preview border rounded p-4 bg-white overflow-auto"
+          class="email-content-preview rounded-box border border-base-300 p-4 bg-base-100 overflow-auto"
         >
           <iframe srcdoc={@email_content} class="w-full min-h-[400px] border-0"></iframe>
         </div>
@@ -267,16 +253,14 @@ defmodule SanbaseWeb.NotificationsLive.DigestFormLive do
   def digest_form(assigns) do
     ~H"""
     <div>
-      <p class="mb-4 text-gray-600">
+      <p class="mb-4 text-base-content/60">
         This will send an email digest for all unprocessed {format_title(@action)} notifications from the last 24 hours.
       </p>
 
       <.form for={@form} phx-submit="preview_digest">
-        <div>
-          <.button type="submit" phx-disable-with="Generating Preview...">
-            Preview Digest
-          </.button>
-        </div>
+        <button type="submit" class="btn btn-primary" phx-disable-with="Generating Preview...">
+          Preview Digest
+        </button>
       </.form>
     </div>
     """

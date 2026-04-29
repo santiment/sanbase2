@@ -32,8 +32,8 @@ defmodule SanbaseWeb.MetricDetailsLive do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col justify-center w-7/8">
-      <h1 class="text-gray-800 text-2xl">
-        Showing details for <span class="text-blue-700">{@metric}</span>
+      <h1 class="text-2xl">
+        Showing details for <span class="text-primary">{@metric}</span>
       </h1>
       <div class="my-4">
         <AvailableMetricsComponents.available_metrics_button
@@ -42,25 +42,22 @@ defmodule SanbaseWeb.MetricDetailsLive do
           icon="hero-arrow-uturn-left"
         />
       </div>
-      <%= if @error do %>
-        <div class="text-red-600">
-          Error: {@error}
-        </div>
-      <% else %>
-        <.table id="available_metrics" rows={@rows}>
-          <:col :let={row} col_class="w-40">
-            <AvailableMetricsComponents.popover
-              display_text={row.key}
-              popover_target={Map.get(row, :popover_target)}
-              popover_target_text={Map.get(row, :popover_target_text)}
-            />
-          </:col>
+      <div :if={@error} class="text-error">
+        Error: {@error}
+      </div>
+      <.table :if={!@error} id="available_metrics" rows={@rows}>
+        <:col :let={row} col_class="w-40">
+          <AvailableMetricsComponents.popover
+            display_text={row.key}
+            popover_target={Map.get(row, :popover_target)}
+            popover_target_text={Map.get(row, :popover_target_text)}
+          />
+        </:col>
 
-          <:col :let={row}>
-            <.formatted_value key={row.key} value={row.value} />
-          </:col>
-        </.table>
-      <% end %>
+        <:col :let={row}>
+          <.formatted_value key={row.key} value={row.value} />
+        </:col>
+      </.table>
     </div>
     """
   end

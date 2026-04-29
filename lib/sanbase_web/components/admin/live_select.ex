@@ -44,9 +44,7 @@ defmodule SanbaseWeb.LiveSelect do
         placeholder="Search..."
       />
       <datalist id={@datalist_id}>
-        <%= for {id, match} <- @matches do %>
-          <option value={id}>{match}</option>
-        <% end %>
+        <option :for={{id, match} <- @matches} value={id}>{match}</option>
       </datalist>
     </div>
     """

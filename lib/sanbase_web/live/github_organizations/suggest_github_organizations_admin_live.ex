@@ -26,7 +26,7 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsAdminLive do
           </:col>
           <:col :let={row} label="Asset">
             <.link
-              class="underline text-blue-600"
+              class="link link-primary"
               href={~p"/admin/generic/#{row.project_id}?resource=projects"}
               target="_blank"
             >
@@ -36,13 +36,13 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsAdminLive do
           <:col :let={row} label="Added Github Organizations">
             <UserFormsComponents.github_organizations_group
               github_organizations={row.added_organizations}
-              github_organization_colors_class="bg-green-100 text-green-800"
+              github_organization_colors_class="badge-success"
             />
           </:col>
           <:col :let={row} label="Removed Github Organizations">
             <UserFormsComponents.github_organizations_group
               github_organizations={row.removed_organizations}
-              github_organization_colors_class="bg-red-100 text-red-800"
+              github_organization_colors_class="badge-error"
             />
           </:col>
           <:col :let={row} label="Notes">{row.notes}</:col>

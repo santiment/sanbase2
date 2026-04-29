@@ -2,6 +2,7 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
   use SanbaseWeb, :live_view
 
   alias Sanbase.MCP.ToolInvocation
+  alias SanbaseWeb.AdminSharedComponents
 
   @page_size 50
 
@@ -101,28 +102,28 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col w-full px-4 py-6">
-      <h1 class="text-2xl font-bold text-gray-800 mb-6">{@page_title}</h1>
+      <h1 class="text-2xl font-bold mb-6">{@page_title}</h1>
 
       <.stats_bar stats={@stats} />
 
       <div class="flex flex-col sm:flex-row gap-4 mb-6">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Tool Name</label>
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">Tool Name</legend>
           <select
             id="tool-name-filter"
             phx-change="filter_tool_name"
             name="tool_name"
-            class="rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-zinc-400 focus:ring-0"
+            class="select select-sm"
           >
             <option value="">All Tools</option>
             <option :for={tn <- @tool_names} value={tn} selected={tn == @tool_name_filter}>
               {tn}
             </option>
           </select>
-        </div>
+        </fieldset>
 
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Search User Email</label>
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">Search User Email</legend>
           <form phx-change="search_email" phx-submit="search_email" id="email-search-form">
             <input
               type="text"
@@ -131,13 +132,13 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
               value={@email_search}
               placeholder="Search by email..."
               phx-debounce="300"
-              class="rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-zinc-400 focus:ring-0 w-72"
+              class="input input-sm w-72"
             />
           </form>
-        </div>
+        </fieldset>
 
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Search Metric</label>
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">Search Metric</legend>
           <form phx-change="filter_metric" phx-submit="filter_metric" id="metric-search-form">
             <input
               type="text"
@@ -146,13 +147,13 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
               value={@metric_search}
               placeholder="Filter by metric..."
               phx-debounce="300"
-              class="rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-zinc-400 focus:ring-0 w-72"
+              class="input input-sm w-72"
             />
           </form>
-        </div>
+        </fieldset>
 
         <div class="flex items-end">
-          <span class="text-sm text-gray-500">
+          <span class="text-sm text-base-content/60">
             {if @total_count > 0,
               do: "#{@total_count} invocations found",
               else: "No invocations found"}
@@ -160,75 +161,43 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
         </div>
       </div>
 
-      <div class="bg-white shadow rounded-lg overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
+      <div class="rounded-box border border-base-300 overflow-hidden">
+        <table class="table table-zebra table-sm">
+          <thead>
             <tr>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Timestamp
-              </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                User
-              </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Tool Name
-              </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Metrics
-              </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Slugs
-              </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Duration (ms)
-              </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Response Size
-              </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Expand
-              </th>
+              <th>Timestamp</th>
+              <th>User</th>
+              <th>Tool Name</th>
+              <th>Metrics</th>
+              <th>Slugs</th>
+              <th>Duration (ms)</th>
+              <th>Response Size</th>
+              <th>Status</th>
+              <th>Expand</th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr :if={@invocations == []}>
-              <td colspan="9" class="px-4 py-8 text-sm text-gray-500 text-center">
-                No invocations found matching your filters.
-              </td>
-            </tr>
-            <tr :for={inv <- @invocations} id={"inv-#{inv.id}"} class="hover:bg-gray-50">
-              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                {format_datetime(inv.inserted_at)}
-              </td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-mono">
+          <tbody>
+            <AdminSharedComponents.empty_table_row
+              :if={@invocations == []}
+              colspan={9}
+              message="No invocations found matching your filters."
+            />
+            <tr :for={inv <- @invocations} id={"inv-#{inv.id}"}>
+              <td class="text-base-content/70">{format_datetime(inv.inserted_at)}</td>
+              <td class="font-mono">
                 {if inv.user, do: inv.user.email, else: "Anonymous"}
               </td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm">
-                <.tool_badge tool_name={inv.tool_name} />
-              </td>
-              <td class="px-4 py-3 text-sm text-gray-500">
-                {Enum.join(inv.metrics, ", ")}
-              </td>
-              <td class="px-4 py-3 text-sm text-gray-500">
-                {Enum.join(inv.slugs, ", ")}
-              </td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                {inv.duration_ms}
-              </td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                {format_bytes(inv.response_size_bytes)}
-              </td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm">
-                <.status_badge is_successful={inv.is_successful} />
-              </td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm">
+              <td><.tool_badge tool_name={inv.tool_name} /></td>
+              <td class="text-base-content/70">{Enum.join(inv.metrics, ", ")}</td>
+              <td class="text-base-content/70">{Enum.join(inv.slugs, ", ")}</td>
+              <td class="text-base-content/70">{inv.duration_ms}</td>
+              <td class="text-base-content/70">{format_bytes(inv.response_size_bytes)}</td>
+              <td><.status_badge is_successful={inv.is_successful} /></td>
+              <td>
                 <button
                   phx-click="toggle_raw"
                   phx-value-id={inv.id}
-                  class="text-blue-600 hover:text-blue-800 text-xs"
+                  class="btn btn-xs btn-ghost link-primary"
                 >
                   {if @expanded_id == inv.id, do: "Hide", else: "Show"}
                 </button>
@@ -248,44 +217,33 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
   defp stats_bar(assigns) do
     ~H"""
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-      <.stat_card
+      <AdminSharedComponents.mini_stat_card
         :for={{tool_name, count} <- Enum.sort_by(@stats, fn {_, c} -> -c end)}
         label={tool_name}
         count={count}
+        suffix="(24h)"
+        truncate
       />
-    </div>
-    """
-  end
-
-  defp stat_card(assigns) do
-    ~H"""
-    <div class="rounded-lg border p-3 bg-blue-50 border-blue-200">
-      <div class="text-2xl font-bold text-blue-700">{@count}</div>
-      <div class="text-xs text-gray-500 truncate" title={@label}>{@label} (24h)</div>
     </div>
     """
   end
 
   defp tool_badge(assigns) do
     ~H"""
-    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">
-      {@tool_name}
-    </span>
+    <span class="badge badge-sm badge-secondary">{@tool_name}</span>
     """
   end
 
   defp status_badge(assigns) do
     {text, class} =
       if assigns.is_successful,
-        do: {"OK", "bg-green-100 text-green-800"},
-        else: {"Error", "bg-red-100 text-red-800"}
+        do: {"OK", "badge-success"},
+        else: {"Error", "badge-error"}
 
     assigns = assign(assigns, text: text, badge_class: class)
 
     ~H"""
-    <span class={["px-2 py-1 text-xs font-semibold rounded-full", @badge_class]}>
-      {@text}
-    </span>
+    <span class={["badge badge-sm", @badge_class]}>{@text}</span>
     """
   end
 
@@ -296,14 +254,14 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
     ~H"""
     <div
       :if={@inv}
-      class="mt-4 bg-gray-900 text-green-300 rounded-lg p-4 text-xs font-mono overflow-x-auto"
+      class="mt-4 mockup-code bg-neutral text-neutral-content rounded-box p-4 text-xs overflow-x-auto"
     >
-      <div class="mb-2 text-gray-400">
+      <div class="mb-2 text-neutral-content/60">
         Params for invocation #{@inv.id} ({@inv.tool_name})
       </div>
       <pre>{Jason.encode!(@inv.params || %{}, pretty: true)}</pre>
-      <div :if={@inv.error_message} class="mt-3 text-red-400">
-        <div class="mb-1 text-gray-400">Error message:</div>
+      <div :if={@inv.error_message} class="mt-3 text-error">
+        <div class="mb-1 text-neutral-content/60">Error message:</div>
         <pre>{@inv.error_message}</pre>
       </div>
     </div>
@@ -313,35 +271,13 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
   defp pagination(assigns) do
     ~H"""
     <div :if={@total_pages > 1} class="flex items-center justify-between mt-4 px-2">
-      <button
-        phx-click="prev_page"
-        disabled={@page <= 1}
-        class={[
-          "px-3 py-1 text-sm rounded border",
-          if(@page <= 1,
-            do: "text-gray-300 border-gray-200 cursor-not-allowed",
-            else: "text-gray-700 border-gray-300 hover:bg-gray-50"
-          )
-        ]}
-      >
+      <button phx-click="prev_page" disabled={@page <= 1} class="btn btn-sm btn-soft">
         Previous
       </button>
 
-      <span class="text-sm text-gray-600">
-        Page {@page} of {@total_pages}
-      </span>
+      <span class="text-sm text-base-content/70">Page {@page} of {@total_pages}</span>
 
-      <button
-        phx-click="next_page"
-        disabled={@page >= @total_pages}
-        class={[
-          "px-3 py-1 text-sm rounded border",
-          if(@page >= @total_pages,
-            do: "text-gray-300 border-gray-200 cursor-not-allowed",
-            else: "text-gray-700 border-gray-300 hover:bg-gray-50"
-          )
-        ]}
-      >
+      <button phx-click="next_page" disabled={@page >= @total_pages} class="btn btn-sm btn-soft">
         Next
       </button>
     </div>

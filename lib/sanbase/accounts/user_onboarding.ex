@@ -43,7 +43,7 @@ defmodule Sanbase.Accounts.UserOnboarding do
 
   def changeset(%__MODULE__{} = struct, attrs) do
     struct
-    |> cast(attrs, [:user_id, :title, :goal, :used_tools, :uses_behaviour_analysis])
+    |> cast(attrs, [:title, :goal, :used_tools, :uses_behaviour_analysis])
     |> validate_required([:user_id])
     |> validate_inclusion(:title, @titles)
     |> validate_inclusion(:goal, @goals)
@@ -59,12 +59,12 @@ defmodule Sanbase.Accounts.UserOnboarding do
   def upsert(user_id, attrs) do
     struct =
       case for_user(user_id) do
-        nil -> %__MODULE__{}
+        nil -> %__MODULE__{user_id: user_id}
         existing -> existing
       end
 
     struct
-    |> changeset(Map.put(attrs, :user_id, user_id))
+    |> changeset(attrs)
     |> Repo.insert_or_update()
   end
 end

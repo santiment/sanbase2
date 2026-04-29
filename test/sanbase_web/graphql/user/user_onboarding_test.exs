@@ -27,10 +27,10 @@ defmodule SanbaseWeb.Graphql.UserOnboardingTest do
         )
 
       assert result == %{
-               "title" => "crypto_trader",
-               "goal" => "catch_trends",
-               "usedTools" => ["price_charts", "screeners"],
-               "usesBehaviourAnalysis" => "yes"
+               "title" => "CRYPTO_TRADER",
+               "goal" => "CATCH_TRENDS",
+               "usedTools" => ["PRICE_CHARTS", "SCREENERS"],
+               "usesBehaviourAnalysis" => "YES"
              }
 
       stored = UserOnboarding.for_user(user.id)
@@ -62,10 +62,10 @@ defmodule SanbaseWeb.Graphql.UserOnboardingTest do
           )
         )
 
-      assert result["title"] == "researcher"
-      assert result["goal"] == "build_analysis"
-      assert result["usedTools"] == ["on_chain_analytics", "social_signals"]
-      assert result["usesBehaviourAnalysis"] == "no"
+      assert result["title"] == "RESEARCHER"
+      assert result["goal"] == "BUILD_ANALYSIS"
+      assert result["usedTools"] == ["ON_CHAIN_ANALYTICS", "SOCIAL_SIGNALS"]
+      assert result["usesBehaviourAnalysis"] == "NO"
 
       assert Sanbase.Repo.aggregate(UserOnboarding, :count, :id) == 1
       stored = UserOnboarding.for_user(user.id)
@@ -99,7 +99,7 @@ defmodule SanbaseWeb.Graphql.UserOnboardingTest do
           submit_mutation(uses_behaviour_analysis: "maybe")
         )
 
-      assert error =~ "uses_behaviour_analysis"
+      assert error =~ "usesBehaviourAnalysis"
     end
 
     test "rejects an invalid element in used_tools", %{conn: conn} do
@@ -109,7 +109,7 @@ defmodule SanbaseWeb.Graphql.UserOnboardingTest do
           submit_mutation(used_tools: ["price_charts", "definitely_not_a_tool"])
         )
 
-      assert error =~ "used_tools"
+      assert error =~ "usedTools"
     end
 
     test "is rejected when the user is not authenticated" do
@@ -144,10 +144,10 @@ defmodule SanbaseWeb.Graphql.UserOnboardingTest do
       result = execute_query(conn, current_user_query(), "currentUser")
 
       assert result["userOnboarding"] == %{
-               "title" => "content_maker",
-               "goal" => "make_better_trade_entries",
-               "usedTools" => ["news_feeds"],
-               "usesBehaviourAnalysis" => "not_sure"
+               "title" => "CONTENT_MAKER",
+               "goal" => "MAKE_BETTER_TRADE_ENTRIES",
+               "usedTools" => ["NEWS_FEEDS"],
+               "usesBehaviourAnalysis" => "NOT_SURE"
              }
     end
   end
@@ -156,10 +156,10 @@ defmodule SanbaseWeb.Graphql.UserOnboardingTest do
     input =
       fields
       |> Enum.map(fn
-        {:title, v} -> ~s|title: "#{v}"|
-        {:goal, v} -> ~s|goal: "#{v}"|
-        {:uses_behaviour_analysis, v} -> ~s|usesBehaviourAnalysis: "#{v}"|
-        {:used_tools, list} -> "usedTools: #{string_list_to_string(list)}"
+        {:title, v} -> "title: #{enum_literal(v)}"
+        {:goal, v} -> "goal: #{enum_literal(v)}"
+        {:uses_behaviour_analysis, v} -> "usesBehaviourAnalysis: #{enum_literal(v)}"
+        {:used_tools, list} -> "usedTools: #{enum_literal_list(list)}"
       end)
       |> Enum.join(", ")
 
@@ -190,4 +190,9 @@ defmodule SanbaseWeb.Graphql.UserOnboardingTest do
     }
     """
   end
+
+  defp enum_literal(v), do: v |> to_string() |> String.upcase()
+
+  defp enum_literal_list(list),
+    do: "[" <> (list |> Enum.map(&enum_literal/1) |> Enum.join(", ")) <> "]"
 end

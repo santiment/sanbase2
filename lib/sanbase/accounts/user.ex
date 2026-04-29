@@ -10,6 +10,7 @@ defmodule Sanbase.Accounts.User do
     User,
     EthAccount,
     UserApikeyToken,
+    UserOnboarding,
     UserSettings,
     UserFollower,
     UserRole
@@ -100,6 +101,7 @@ defmodule Sanbase.Accounts.User do
     field(:available_metrics_lookback_days, :integer)
 
     has_one(:user_settings, UserSettings, on_delete: :delete_all)
+    has_one(:user_onboarding, UserOnboarding, on_delete: :delete_all)
 
     has_one(:telegram_user_tokens, Telegram.UserToken, on_delete: :delete_all)
     has_one(:uniswap_staking, User.UniswapStaking, on_delete: :delete_all)

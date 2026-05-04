@@ -108,30 +108,32 @@ defmodule Sanbase.Signal.SignalAdapter do
 
   @impl Sanbase.Signal.Behaviour
   def raw_data(signals, selector, from, to) do
-    query_struct = raw_data_query(signals, from, to)
+    with {:ok, internal_signals} <- public_names_to_internal_signals(signals) do
+      query_struct = raw_data_query(internal_signals, from, to)
 
-    ClickhouseRepo.query_transform(
-      query_struct,
-      fn [unix, signal, slug, value, metadata] ->
-        metadata =
-          case Jason.decode(metadata) do
-            {:ok, value} -> value
-            _ -> %{}
-          end
+      ClickhouseRepo.query_transform(
+        query_struct,
+        fn [unix, signal, slug, value, metadata] ->
+          metadata =
+            case Jason.decode(metadata) do
+              {:ok, decoded} -> decoded
+              _ -> %{}
+            end
 
-        %{
-          datetime: DateTime.from_unix!(unix),
-          signal: Map.get(@signal_to_name_map, signal),
-          slug: slug,
-          value: value,
-          metadata: metadata
-        }
-      end
-    )
-    |> maybe_apply_function(fn list -> Enum.filter(list, & &1.signal) end)
-    |> maybe_apply_function(fn list ->
-      filter_slugs_by_selector(list, selector)
-    end)
+          %{
+            datetime: DateTime.from_unix!(unix),
+            signal: Map.get(@signal_to_name_map, signal),
+            slug: slug,
+            value: value,
+            metadata: metadata
+          }
+        end
+      )
+      |> maybe_apply_function(fn list -> Enum.filter(list, & &1.signal) end)
+      |> maybe_apply_function(fn list ->
+        filter_slugs_by_selector(list, selector)
+      end)
+    end
   end
 
   @impl Sanbase.Signal.Behaviour
@@ -184,6 +186,21 @@ defmodule Sanbase.Signal.SignalAdapter do
   end
 
   # Private functions
+  defp public_names_to_internal_signals(:all), do: {:ok, :all}
+
+  defp public_names_to_internal_signals(signals) when is_list(signals) do
+    Enum.reduce_while(signals, {:ok, []}, fn signal, {:ok, acc} ->
+      case Map.get(@name_to_signal_map, signal) do
+        nil -> {:halt, signal_not_available_error(signal)}
+        internal -> {:cont, {:ok, [internal | acc]}}
+      end
+    end)
+    |> case do
+      {:ok, list} -> {:ok, Enum.reverse(list)}
+      {:error, _} = error -> error
+    end
+  end
+
   defp signal_not_available_error(signal) do
     %{close: close, error_msg: error_msg} = signal_not_available_error_details(signal)
 

@@ -235,7 +235,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
   defp emit(slugs, data) do
     tuples =
       Enum.map(slugs, fn slug ->
-        struct(BboPoint, Map.merge(data, %{source: @source, slug: slug}))
+        struct(BboPoint, Map.put(data, :slug, slug))
         |> BboPoint.json_kv_tuple()
       end)
 

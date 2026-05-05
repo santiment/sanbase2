@@ -1,7 +1,6 @@
 defmodule Sanbase.Hyperliquid.Bbo.BboPoint do
   @derive Jason.Encoder
   defstruct [
-    :source,
     :slug,
     :coin,
     :timestamp_ms,
@@ -14,7 +13,6 @@ defmodule Sanbase.Hyperliquid.Bbo.BboPoint do
   # bid_price/bid_volume are both set or both nil (one-sided book — no resting bid).
   # Same for ask_price/ask_volume. At least one side is always present.
   @type t :: %__MODULE__{
-          source: String.t(),
           slug: String.t(),
           coin: String.t(),
           timestamp_ms: non_neg_integer(),

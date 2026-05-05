@@ -77,7 +77,6 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
       assert key == "hyperliquid_bbo_bitcoin_1700000000000"
 
       assert %{
-               "source" => "hyperliquid",
                "slug" => "bitcoin",
                "coin" => "BTC",
                "timestamp_ms" => 1_700_000_000_000,

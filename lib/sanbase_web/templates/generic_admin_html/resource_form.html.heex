@@ -1,6 +1,6 @@
 <div class="mt-6 p-4">
   <div class="flex items-center justify-between">
-    <h3 class="text-3xl font-medium text-gray-700">
+    <h3 class="text-3xl font-medium text-base-content">
       {"#{String.capitalize(@type)} #{@resource}"}
     </h3>
     <% toggle_target = if @form_layout == :compact, do: "vertical", else: "compact" %>
@@ -12,10 +12,7 @@
       if @type == "new",
         do: ~p"/admin/generic/new?#{toggle_query}",
         else: ~p"/admin/generic/#{@data}/edit?#{toggle_query}" %>
-    <.link
-      href={toggle_url}
-      class="text-sm px-3 py-1.5 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100"
-    >
+    <.link href={toggle_url} class="btn btn-sm btn-soft">
       Layout: {@form_layout} (switch)
     </.link>
   </div>

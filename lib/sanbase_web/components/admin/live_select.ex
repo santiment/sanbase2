@@ -8,14 +8,16 @@ defmodule SanbaseWeb.LiveSelect do
   def render(assigns) do
     field = assigns.session["field"]
     parent = assigns.session["parent_resource"]
+    input_value = assigns.query || assigns.session["initial_value"]
 
     assigns =
       assign(assigns,
         input_name: parent <> "[" <> to_string(field) <> "_id]",
         input_id: parent <> "_" <> to_string(field),
-        input_value: assigns.query || assigns.session["initial_value"],
+        input_value: input_value,
         datalist_id: "matches_" <> to_string(field),
-        field_label: humanize(field)
+        field_label: humanize(field),
+        selected_label: selected_match_label(input_value, assigns.matches)
       )
 
     ~H"""
@@ -30,7 +32,7 @@ defmodule SanbaseWeb.LiveSelect do
         phx-keyup="suggest"
         phx-debounce="200"
         placeholder="Search..."
-        class="block w-full rounded-md border border-zinc-300 px-2 py-1 text-zinc-900 focus:border-zinc-400 focus:ring-0 text-sm leading-5"
+        class="input input-sm w-full"
       />
       <.input
         :if={!@session["no_label"]}
@@ -43,6 +45,9 @@ defmodule SanbaseWeb.LiveSelect do
         phx-debounce="200"
         placeholder="Search..."
       />
+      <div :if={@selected_label} class="mt-1 text-xs text-base-content/70 break-all">
+        {@selected_label}
+      </div>
       <datalist id={@datalist_id}>
         <option :for={{id, match} <- @matches} value={id}>{match}</option>
       </datalist>
@@ -50,44 +55,72 @@ defmodule SanbaseWeb.LiveSelect do
     """
   end
 
+  defp selected_match_label(nil, _matches), do: nil
+  defp selected_match_label("", _matches), do: nil
+
+  defp selected_match_label(value, matches) do
+    case Integer.parse(to_string(value)) do
+      {id, ""} ->
+        case Enum.find(matches, fn {match_id, _} -> match_id == id end) do
+          {_, formatted} -> formatted
+          _ -> nil
+        end
+
+      _ ->
+        nil
+    end
+  end
+
   def mount(_params, session, socket) do
+    session =
+      Map.take(session, [
+        "resource",
+        "search_fields",
+        "field",
+        "parent_resource",
+        "initial_value",
+        "no_label"
+      ])
+
+    initial_matches =
+      case Integer.parse(to_string(session["initial_value"] || "")) do
+        {id, ""} -> search_matches_by_id(id, session)
+        _ -> []
+      end
+
     {:ok,
      assign(socket,
        query: nil,
        result: nil,
        loading: false,
-       matches: [],
-       session:
-         Map.take(session, [
-           "resource",
-           "search_fields",
-           "field",
-           "parent_resource",
-           "initial_value",
-           "no_label"
-         ])
+       matches: initial_matches,
+       session: session
      ), layout: false}
   end
 
   def handle_event("suggest", %{"value" => query}, socket) when byte_size(query) < 2 do
     session = socket.assigns[:session]
 
-    Integer.parse(query)
-    |> case do
-      {id, ""} -> {:noreply, assign(socket, matches: search_matches_by_id(id, session))}
-      _ -> {:noreply, assign(socket, matches: [])}
-    end
+    matches =
+      case Integer.parse(query) do
+        {id, ""} -> search_matches_by_id(id, session)
+        _ -> []
+      end
+
+    {:noreply, assign(socket, query: query, matches: matches)}
   end
 
   def handle_event("suggest", %{"value" => query}, socket)
       when byte_size(query) >= 2 and byte_size(query) <= 100 do
     session = socket.assigns[:session]
 
-    Integer.parse(query)
-    |> case do
-      {id, ""} -> {:noreply, assign(socket, matches: search_matches_by_id(id, session))}
-      _ -> {:noreply, assign(socket, matches: search_matches(query, session))}
-    end
+    matches =
+      case Integer.parse(query) do
+        {id, ""} -> search_matches_by_id(id, session)
+        _ -> search_matches(query, session)
+      end
+
+    {:noreply, assign(socket, query: query, matches: matches)}
   end
 
   def search_matches_by_id(id, session) do

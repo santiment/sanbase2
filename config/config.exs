@@ -100,7 +100,8 @@ config :sanbase, Sanbase.KafkaExporter,
     {:system, "KAFKA_OPEN_INTEREST_TOPIC_V2", "open_interest_cryptocompare_v2"},
   funding_rate_topic: {:system, "KAFKA_FUNDING_RATE_TOPIC", "funding_rate_cryptocompare"},
   api_call_data_topic: {:system, "KAFKA_API_CALL_DATA_TOPIC", "sanbase_api_call_data"},
-  twitter_followers_topic: {:system, "KAFKA_TWITTER_FOLLOWERS_TOPIC", "twitter_followers"}
+  twitter_followers_topic: {:system, "KAFKA_TWITTER_FOLLOWERS_TOPIC", "twitter_followers"},
+  hyperliquid_bbo_topic: {:system, "KAFKA_HYPERLIQUID_BBO_TOPIC", "hyperliquid_bbo_prices"}
 
 config :sanbase, Sanbase.EventBus.KafkaExporterSubscriber,
   event_bus_topic: {:system, "KAFKA_EVENT_BUS_TOPIC", "sanbase_event_bus"},

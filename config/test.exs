@@ -166,6 +166,10 @@ config :sanbase, Oban.Admin,
 config :sanbase, Sanbase.Cryptocompare.Price.HistoricalScheduler,
   enabled?: {:system, "CRYPTOCOMPARE_HISTORICAL_OHLCV_PRICES_SCHEDULER_ENABLED", "true"}
 
+config :sanbase, Sanbase.Hyperliquid.Bbo.WebsocketScraper,
+  enabled?: "false",
+  coalesce_window_ms: "1000"
+
 # So the router can read it compile time
 System.put_env("TELEGRAM_ENDPOINT_RANDOM_STRING", "random_string")
 

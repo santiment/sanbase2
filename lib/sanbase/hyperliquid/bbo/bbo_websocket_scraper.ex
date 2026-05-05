@@ -100,8 +100,10 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
   end
 
   def handle_disconnect(status, state) do
+    sleep_ms = state.reconnect_backoff_ms
+
     Logger.warning(
-      "[HyperliquidBboWS] disconnect reason=#{inspect(Map.get(status, :reason))} backoff=#{state.reconnect_backoff_ms}ms"
+      "[HyperliquidBboWS] disconnect reason=#{inspect(Map.get(status, :reason))} backoff=#{sleep_ms}ms"
     )
 
     state =
@@ -111,11 +113,12 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
         active_subs: MapSet.new(),
         pending_sub_queue: :queue.new(),
         pending: %{},
-        last_emitted: %{}
+        last_emitted: %{},
+        healthcheck_failures: 0
       })
       |> Map.update!(:reconnect_backoff_ms, fn ms -> min(ms * 2, @reconnect_max_ms) end)
 
-    Process.sleep(state.reconnect_backoff_ms)
+    Process.sleep(sleep_ms)
     {:reconnect, state}
   end
 

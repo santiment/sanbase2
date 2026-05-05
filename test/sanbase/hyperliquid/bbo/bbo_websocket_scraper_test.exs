@@ -454,6 +454,8 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
   end
 
   describe "healthcheck" do
+    @describetag capture_log: true
+
     test "fresh last_message_time resets failure count and re-schedules" do
       state =
         build_state(
@@ -488,13 +490,16 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
   end
 
   describe "handle_disconnect" do
-    test "clears in-flight state and doubles backoff" do
+    @describetag capture_log: true
+
+    test "clears in-flight state, resets healthcheck failures, doubles backoff" do
       state =
         build_state(
           active_subs: MapSet.new(["BTC", "ETH"]),
           pending_sub_queue: :queue.in({:text, "x"}, :queue.new()),
           pending: %{"BTC" => %{coin: "BTC"}},
           last_emitted: %{"BTC" => 1},
+          healthcheck_failures: 4,
           reconnect_backoff_ms: 1
         )
 
@@ -505,6 +510,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraperTest do
       assert :queue.is_empty(new_state.pending_sub_queue)
       assert new_state.pending == %{}
       assert new_state.last_emitted == %{}
+      assert new_state.healthcheck_failures == 0
       assert new_state.reconnect_backoff_ms == 2
     end
   end

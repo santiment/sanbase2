@@ -34,6 +34,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.MarketSegmentResolver do
   defp market_segments(filter) do
     MarketSegment.all()
     |> Repo.preload(projects: :infrastructure)
+    |> Enum.map(fn %{projects: projects} = segment ->
+      %{segment | projects: Enum.filter(projects, &visible_project?/1)}
+    end)
     |> Enum.filter(filter)
     |> Enum.map(fn %{name: name, projects: projects} ->
       %{
@@ -42,4 +45,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.MarketSegmentResolver do
       }
     end)
   end
+
+  defp visible_project?(%Project{is_hidden: true}), do: false
+  defp visible_project?(%Project{slug: nil}), do: false
+  defp visible_project?(%Project{ticker: nil}), do: false
+  defp visible_project?(_), do: true
 end

@@ -61,3 +61,7 @@ config :sanbase, Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler,
 
 config :sanbase, Sanbase.Cryptocompare.FundingRate.HistoricalScheduler,
   enabled?: {:system, "CRYPTOCOMPARE_HISTORICAL_FUNDING_RATE_SCHEDULER_ENABLED", "false"}
+
+config :sanbase, Sanbase.Hyperliquid.Bbo.WebsocketScraper,
+  enabled?: {:system, "HYPERLIQUID_WS_ENABLED", "false"},
+  coalesce_window_ms: {:system, "HYPERLIQUID_BBO_COALESCE_MS", "1000"}

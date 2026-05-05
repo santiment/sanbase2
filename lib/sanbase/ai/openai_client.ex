@@ -19,7 +19,7 @@ defmodule Sanbase.AI.OpenAIClient do
   require Logger
 
   @base_url "https://api.openai.com/v1"
-  @model "gpt-4.1-mini"
+  @model "gpt-5-nano"
 
   @doc """
   Creates a chat completion using the OpenAI API.
@@ -29,18 +29,20 @@ defmodule Sanbase.AI.OpenAIClient do
   def chat_completion(system_prompt, user_message, opts \\ []) do
     model = Keyword.get(opts, :model, @model)
     max_tokens = Keyword.get(opts, :max_tokens, 1000)
-    temperature = Keyword.get(opts, :temperature, 0.7)
 
     messages = [
       %{"role" => "system", "content" => system_prompt},
       %{"role" => "user", "content" => user_message}
     ]
 
+    # gpt-5 family: uses `max_completion_tokens` (not `max_tokens`) and only the
+    # default temperature (1.0). `reasoning_effort: "minimal"` keeps latency/cost
+    # low and prevents reasoning tokens from eating the output budget.
     payload = %{
       model: model,
       messages: messages,
-      max_tokens: max_tokens,
-      temperature: temperature
+      max_completion_tokens: max_tokens,
+      reasoning_effort: "minimal"
     }
 
     headers = [
@@ -78,7 +80,7 @@ defmodule Sanbase.AI.OpenAIClient do
     "#{first_message}"
     """
 
-    case chat_completion(system_prompt, user_prompt, max_tokens: 20, temperature: 0.3) do
+    case chat_completion(system_prompt, user_prompt, max_tokens: 100) do
       {:ok, title} ->
         title = title |> String.trim() |> String.slice(0, 50)
         {:ok, title}

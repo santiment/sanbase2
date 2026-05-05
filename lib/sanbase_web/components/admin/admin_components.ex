@@ -971,13 +971,21 @@ defmodule SanbaseWeb.AdminComponents do
 
   attr(:color, :atom, required: false, default: :blue)
   attr(:size, :atom, required: false, default: :normal)
-  attr(:href, :string, required: true)
+  attr(:href, :string, required: false, default: nil)
   attr(:label, :string, required: true)
   attr(:type, :string, required: false, default: "button")
 
   def btn(assigns) do
+    if assigns.type != "submit" and is_nil(assigns.href) do
+      raise ArgumentError,
+            "btn/1 requires `href` when `type` != \"submit\" (label=#{inspect(assigns[:label])})"
+    end
+
     ~H"""
-    <.link href={@href} class={btn_classes(@color, @size)}>
+    <button :if={@type == "submit"} type="submit" class={btn_classes(@color, @size)}>
+      {@label}
+    </button>
+    <.link :if={@type != "submit"} href={@href} class={btn_classes(@color, @size)}>
       {@label}
     </.link>
     """

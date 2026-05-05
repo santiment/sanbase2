@@ -130,6 +130,21 @@ defmodule Sanbase.Utils.Validation do
     uri.scheme != nil and uri.host != nil
   end
 
+  @doc ~s"""
+  Like `valid_url?/2` but also rejects URLs that point to private, loopback,
+  link-local or cloud-metadata destinations to prevent SSRF (e.g. user-supplied
+  webhook URLs reaching `http://169.254.169.254/` AWS instance metadata).
+  """
+  def valid_public_url?(url, opts \\ []) do
+    with :ok <- valid_url?(url, opts) do
+      host = URI.parse(url).host
+
+      if Sanbase.Utils.IP.blocked_host?(host),
+        do: {:error, "URL host '#{host}' is a private, reserved or otherwise blocked address"},
+        else: :ok
+    end
+  end
+
   # Private functions
 
   defp time_window_format_check(time_window) do

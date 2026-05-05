@@ -142,4 +142,59 @@ defmodule Sanbase.Utils.ValidationTest do
       assert Validation.valid_url_simple?("example.com") == false
     end
   end
+
+  describe "valid_public_url?/1" do
+    test "accepts public URLs" do
+      assert Validation.valid_public_url?("https://example.com/hook") == :ok
+      assert Validation.valid_public_url?("https://hooks.slack.com/services/x") == :ok
+    end
+
+    test "rejects AWS EC2 metadata IP (link-local 169.254.169.254)" do
+      assert {:error, _} =
+               Validation.valid_public_url?("http://169.254.169.254/latest/meta-data/")
+    end
+
+    test "rejects loopback IPv4" do
+      assert {:error, _} = Validation.valid_public_url?("http://127.0.0.1/admin")
+      assert {:error, _} = Validation.valid_public_url?("http://127.1.2.3/x")
+    end
+
+    test "rejects RFC1918 private IPv4 ranges" do
+      assert {:error, _} = Validation.valid_public_url?("http://10.0.0.1/x")
+      assert {:error, _} = Validation.valid_public_url?("http://172.16.0.1/x")
+      assert {:error, _} = Validation.valid_public_url?("http://172.31.255.255/x")
+      assert {:error, _} = Validation.valid_public_url?("http://192.168.1.1/x")
+    end
+
+    test "rejects 0.0.0.0 / x range" do
+      assert {:error, _} = Validation.valid_public_url?("http://0.0.0.0/x")
+    end
+
+    test "rejects multicast / reserved upper ranges" do
+      assert {:error, _} = Validation.valid_public_url?("http://224.0.0.1/x")
+      assert {:error, _} = Validation.valid_public_url?("http://255.255.255.255/x")
+    end
+
+    test "rejects localhost hostname" do
+      assert {:error, _} = Validation.valid_public_url?("http://localhost/x")
+      assert {:error, _} = Validation.valid_public_url?("http://LOCALHOST/x")
+      assert {:error, _} = Validation.valid_public_url?("http://service.localhost/x")
+    end
+
+    test "rejects IPv6 loopback and link-local" do
+      assert {:error, _} = Validation.valid_public_url?("http://[::1]/x")
+      assert {:error, _} = Validation.valid_public_url?("http://[fe80::1]/x")
+      assert {:error, _} = Validation.valid_public_url?("http://[fc00::1]/x")
+    end
+
+    test "rejects IPv4-mapped IPv6 to private ranges" do
+      assert {:error, _} = Validation.valid_public_url?("http://[::ffff:127.0.0.1]/x")
+      assert {:error, _} = Validation.valid_public_url?("http://[::ffff:169.254.169.254]/x")
+    end
+
+    test "still rejects empty / scheme-less URLs" do
+      assert {:error, _} = Validation.valid_public_url?("")
+      assert {:error, _} = Validation.valid_public_url?("not-a-url")
+    end
+  end
 end

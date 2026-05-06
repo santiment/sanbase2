@@ -9,13 +9,13 @@ defmodule Sanbase.Billing.Subscription.SanrNFT do
   months after they are minted
   """
   def maybe_create() do
-    {:ok, nft_owners} = SmartContracts.SanrNFT.get_all_nft_owners()
-    {:ok, nft_metadata} = SmartContracts.SanrNFT.get_all_nft_expiration_dates()
+    with {:ok, nft_owners} <- SmartContracts.SanrNFT.get_all_nft_owners(),
+         {:ok, nft_metadata} <- SmartContracts.SanrNFT.get_all_nft_expiration_dates() do
+      addresses = Map.keys(nft_owners)
+      address_to_user_id_map = EthAccount.address_to_user_id_map(addresses)
 
-    addresses = Map.keys(nft_owners)
-    address_to_user_id_map = EthAccount.address_to_user_id_map(addresses)
-
-    maybe_create_nft_subscriptions(nft_owners, nft_metadata, address_to_user_id_map)
+      maybe_create_nft_subscriptions(nft_owners, nft_metadata, address_to_user_id_map)
+    end
   end
 
   @doc ~s"""
@@ -23,12 +23,12 @@ defmodule Sanbase.Billing.Subscription.SanrNFT do
   longer do.
   """
   def maybe_remove() do
-    {:ok, nft_owners} = SmartContracts.SanrNFT.get_all_nft_owners()
+    with {:ok, nft_owners} <- SmartContracts.SanrNFT.get_all_nft_owners() do
+      addresses = Map.keys(nft_owners)
+      address_to_user_id_map = EthAccount.address_to_user_id_map(addresses)
 
-    addresses = Map.keys(nft_owners)
-    address_to_user_id_map = EthAccount.address_to_user_id_map(addresses)
-
-    maybe_remove_nft_subscriptions(address_to_user_id_map)
+      maybe_remove_nft_subscriptions(address_to_user_id_map)
+    end
   end
 
   # Private functions

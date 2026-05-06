@@ -8,37 +8,38 @@ defmodule Sanbase.SmartContracts.SanrNFT do
           {:ok, map()} | {:error, atom()}
   def get_latest_valid_nft_token(addresses) do
     addresses = Enum.map(addresses, &Sanbase.BlockchainAddress.to_internal_format/1)
-    {:ok, nft_owners} = get_all_nft_owners()
-    {:ok, nft_metadata} = get_all_nft_expiration_dates()
 
-    addresses_with_token =
-      MapSet.intersection(
-        MapSet.new(Map.keys(nft_owners)),
-        MapSet.new(addresses)
-      )
-      |> Enum.to_list()
+    with {:ok, nft_owners} <- get_all_nft_owners(),
+         {:ok, nft_metadata} <- get_all_nft_expiration_dates() do
+      addresses_with_token =
+        MapSet.intersection(
+          MapSet.new(Map.keys(nft_owners)),
+          MapSet.new(addresses)
+        )
+        |> Enum.to_list()
 
-    case addresses_with_token do
-      [] ->
-        {:error, :no_token}
+      case addresses_with_token do
+        [] ->
+          {:error, :no_token}
 
-      [_ | _] ->
-        map =
-          Enum.map(addresses_with_token, fn address ->
-            token_id = nft_owners[address].token_id
-            end_date = nft_metadata[token_id].end_date
+        [_ | _] ->
+          map =
+            Enum.map(addresses_with_token, fn address ->
+              token_id = nft_owners[address].token_id
+              end_date = nft_metadata[token_id].end_date
 
-            %{
-              address: address,
-              token_id: token_id,
-              end_date: end_date
-            }
-          end)
+              %{
+                address: address,
+                token_id: token_id,
+                end_date: end_date
+              }
+            end)
 
-        case map do
-          _ when map_size(map) == 0 -> {:error, :all_tokens_expired}
-          _ -> {:ok, Enum.max_by(map, & &1.end_date)}
-        end
+          case map do
+            _ when map_size(map) == 0 -> {:error, :all_tokens_expired}
+            _ -> {:ok, Enum.max_by(map, & &1.end_date)}
+          end
+      end
     end
   end
 
@@ -87,6 +88,9 @@ defmodule Sanbase.SmartContracts.SanrNFT do
 
         {:ok, map}
 
+      {:ok, %{status: status, body: body}} ->
+        {:error, {:http_error, status, body}}
+
       {:error, error} ->
         {:error, error}
     end
@@ -100,35 +104,31 @@ defmodule Sanbase.SmartContracts.SanrNFT do
       {"withTokenBalances", "true"}
     ]
 
-    {:ok, nft_metadata} = get_all_nft_expiration_dates()
+    with {:ok, nft_metadata} <- get_all_nft_expiration_dates(),
+         {:ok, %{status: 200, body: body}} <-
+           Req.get(req, url: "/nft/v3/#{alchemy_api_key()}/getOwnersForContract", params: params) do
+      %{"owners" => owners, "pageKey" => nil} = body
 
-    result =
-      Req.get(req, url: "/nft/v3/#{alchemy_api_key()}/getOwnersForContract", params: params)
+      # In case the address holds multiple NFTs, the one with the latest `end_date` is
+      # returned.
+      map =
+        Map.new(owners, fn
+          %{
+            "ownerAddress" => address,
+            "tokenBalances" => token_balances
+          } ->
+            token_id = extract_latest_token_id(token_balances, nft_metadata)
+            address = Sanbase.BlockchainAddress.to_internal_format(address)
+            {address, %{token_id: token_id}}
 
-    case result do
-      {:ok, %{status: 200, body: body}} ->
-        %{"owners" => owners, "pageKey" => nil} = body
+          _ ->
+            {nil, nil}
+        end)
 
-        # In case the address holds multiple NFTs, the one with the latest `end_date` is
-        # returned.
-        map =
-          Map.new(owners, fn
-            %{
-              "ownerAddress" => address,
-              "tokenBalances" => token_balances
-            } ->
-              token_id = extract_latest_token_id(token_balances, nft_metadata)
-              address = Sanbase.BlockchainAddress.to_internal_format(address)
-              {address, %{token_id: token_id}}
-
-            _ ->
-              {nil, nil}
-          end)
-
-        {:ok, map}
-
-      {:error, error} ->
-        {:error, error}
+      {:ok, map}
+    else
+      {:ok, %{status: status, body: body}} -> {:error, {:http_error, status, body}}
+      {:error, error} -> {:error, error}
     end
   end
 

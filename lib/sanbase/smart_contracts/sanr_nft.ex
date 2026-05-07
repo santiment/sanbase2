@@ -23,8 +23,11 @@ defmodule Sanbase.SmartContracts.SanrNFT do
           {:error, :no_token}
 
         [_ | _] ->
-          map =
-            Enum.map(addresses_with_token, fn address ->
+          now = DateTime.utc_now()
+
+          valid_tokens =
+            addresses_with_token
+            |> Enum.map(fn address ->
               token_id = nft_owners[address].token_id
               end_date = nft_metadata[token_id].end_date
 
@@ -34,10 +37,11 @@ defmodule Sanbase.SmartContracts.SanrNFT do
                 end_date: end_date
               }
             end)
+            |> Enum.filter(&(DateTime.compare(&1.end_date, now) == :gt))
 
-          case map do
-            _ when map_size(map) == 0 -> {:error, :all_tokens_expired}
-            _ -> {:ok, Enum.max_by(map, & &1.end_date)}
+          case valid_tokens do
+            [] -> {:error, :all_tokens_expired}
+            _ -> {:ok, Enum.max_by(valid_tokens, & &1.end_date)}
           end
       end
     end
@@ -112,17 +116,14 @@ defmodule Sanbase.SmartContracts.SanrNFT do
       # In case the address holds multiple NFTs, the one with the latest `end_date` is
       # returned.
       map =
-        Map.new(owners, fn
-          %{
-            "ownerAddress" => address,
-            "tokenBalances" => token_balances
-          } ->
+        Enum.reduce(owners, %{}, fn
+          %{"ownerAddress" => address, "tokenBalances" => token_balances}, acc ->
             token_id = extract_latest_token_id(token_balances, nft_metadata)
             address = Sanbase.BlockchainAddress.to_internal_format(address)
-            {address, %{token_id: token_id}}
+            Map.put(acc, address, %{token_id: token_id})
 
-          _ ->
-            {nil, nil}
+          _, acc ->
+            acc
         end)
 
       {:ok, map}

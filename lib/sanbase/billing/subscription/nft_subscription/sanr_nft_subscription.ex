@@ -8,6 +8,7 @@ defmodule Sanbase.Billing.Subscription.SanrNFT do
   Sanbase subscription. The token must still be valid. Tokens expire 12
   months after they are minted
   """
+  @spec maybe_create() :: list() | {:error, term()}
   def maybe_create() do
     with {:ok, nft_owners} <- SmartContracts.SanrNFT.get_all_nft_owners(),
          {:ok, nft_metadata} <- SmartContracts.SanrNFT.get_all_nft_expiration_dates() do
@@ -22,6 +23,7 @@ defmodule Sanbase.Billing.Subscription.SanrNFT do
   Remove the subscription from the users who previously held valid SanR NFT tokens but no
   longer do.
   """
+  @spec maybe_remove() :: list() | {:error, term()}
   def maybe_remove() do
     with {:ok, nft_owners} <- SmartContracts.SanrNFT.get_all_nft_owners() do
       addresses = Map.keys(nft_owners)

@@ -211,12 +211,28 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
         latest_invoice_amount_due: latest_invoice_amount(subscription, :amount_due),
         latest_invoice_amount_paid: latest_invoice_amount(subscription, :amount_paid),
         metadata: subscription.metadata,
+        discount: extract_discount(Map.get(subscription, :discount)),
         start_date: subscription.start_date |> format_dt(:start),
         end_date: subscription.ended_at |> format_dt(:end),
         trial_start: subscription.trial_start |> format_dt(:start),
         trial_end: subscription.trial_end |> format_dt(:end)
       }
     end)
+  end
+
+  defp extract_discount(nil), do: nil
+
+  defp extract_discount(discount) do
+    coupon = Map.get(discount, :coupon)
+
+    %{
+      coupon_id: coupon && Map.get(coupon, :id),
+      coupon_name: coupon && Map.get(coupon, :name),
+      percent_off: coupon && Map.get(coupon, :percent_off),
+      amount_off: coupon && Map.get(coupon, :amount_off),
+      duration: coupon && Map.get(coupon, :duration),
+      end: discount |> Map.get(:end) |> format_dt(:end)
+    }
   end
 
   defp plan(subscription) do

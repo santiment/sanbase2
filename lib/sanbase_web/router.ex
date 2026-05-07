@@ -264,6 +264,7 @@ defmodule SanbaseWeb.Router do
     live("/ses_events", Admin.SesEventsLive)
     live("/mcp_tool_invocations", Admin.McpToolInvocationsLive)
     live("/user_stats", UserStatsLive)
+    live("/subscriptions_dashboard", Admin.SubscriptionsDashboardLive)
     live("/user_roles", Admin.UserRolesLive, :index)
     get("/download_inactive_users_csv", InactiveUsersController, :download_csv)
   end

@@ -71,6 +71,9 @@ defmodule Sanbase.Application.Scrapers do
       # Historical prices work is scheduled by Oban
       Sanbase.Cryptocompare.Supervisor,
 
+      # Scrape and export Hyperliquid perp BBO via websocket.
+      Sanbase.Hyperliquid.Supervisor,
+
       # Quantum Scheduler
       start_if(
         fn -> {Sanbase.Scrapers.Scheduler, []} end,

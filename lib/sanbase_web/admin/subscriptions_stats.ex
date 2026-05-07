@@ -8,6 +8,8 @@ defmodule SanbaseWeb.Admin.SubscriptionsStats do
 
   import Ecto.Query
 
+  require Logger
+
   alias Sanbase.Repo
   alias Sanbase.Billing.Subscription
   alias Sanbase.Billing.Subscription.Timeseries
@@ -23,28 +25,89 @@ defmodule SanbaseWeb.Admin.SubscriptionsStats do
   defp compute do
     now = DateTime.utc_now()
 
+    builders = [
+      overview: &overview_block/0,
+      by_status: &by_status_block/0,
+      by_product_plan: &by_product_plan_block/0,
+      by_type: &by_type_block/0,
+      internal_external: &internal_external_block/0,
+      trialing: fn -> trialing_block(now) end,
+      scheduled_cancellations: &scheduled_cancellations_block/0,
+      recent_activity: fn -> recent_activity_block(now) end,
+      discounts: &discounts_block/0
+    ]
+
     parts =
-      [
-        overview: &overview_block/0,
-        by_status: &by_status_block/0,
-        by_product_plan: &by_product_plan_block/0,
-        by_type: &by_type_block/0,
-        internal_external: &internal_external_block/0,
-        trialing: fn -> trialing_block(now) end,
-        scheduled_cancellations: &scheduled_cancellations_block/0,
-        recent_activity: fn -> recent_activity_block(now) end,
-        discounts: &discounts_block/0
-      ]
+      builders
       |> Task.async_stream(
-        fn {key, fun} -> {key, fun.()} end,
+        fn {key, fun} -> {key, safe_run(key, fun)} end,
         max_concurrency: 8,
-        timeout: 60_000,
+        timeout: :infinity,
         ordered: false
       )
-      |> Enum.map(fn {:ok, kv} -> kv end)
-      |> Map.new()
+      |> Enum.reduce(%{}, fn
+        {:ok, {key, {:ok, value}}}, acc ->
+          Map.put(acc, key, value)
 
-    Map.put(parts, :computed_at, now)
+        {:ok, {key, :failed}}, acc ->
+          acc |> Map.put_new(key, default_sections()[key])
+
+        {:exit, reason}, acc ->
+          Logger.error("[SubscriptionsStats] Section task exited: #{inspect(reason)}")
+          acc
+      end)
+
+    default_sections()
+    |> Map.merge(parts)
+    |> Map.put(:computed_at, now)
+  end
+
+  defp safe_run(key, fun) do
+    {:ok, fun.()}
+  rescue
+    e ->
+      Logger.error(
+        "[SubscriptionsStats] #{key} raised: #{Exception.format(:error, e, __STACKTRACE__)}"
+      )
+
+      :failed
+  catch
+    kind, value ->
+      Logger.error("[SubscriptionsStats] #{key} threw: #{kind} #{inspect(value)}")
+      :failed
+  end
+
+  defp default_sections do
+    %{
+      overview: %{
+        total: 0,
+        active: 0,
+        trialing: 0,
+        past_due: 0,
+        canceled: 0,
+        incomplete: 0,
+        unpaid: 0,
+        internal: 0,
+        scheduled_cancellation: 0
+      },
+      by_status: [],
+      by_product_plan: [],
+      by_type: [],
+      internal_external: %{
+        internal: %{total: 0, by_status: []},
+        external: %{total: 0, by_status: []}
+      },
+      trialing: %{total: 0, by_plan: [], ending_3d: 0, ending_7d: 0},
+      scheduled_cancellations: %{total: 0, by_plan: []},
+      recent_activity: %{
+        created_7d: 0,
+        created_30d: 0,
+        canceled_7d: 0,
+        canceled_30d: 0,
+        created_by_plan_30d: []
+      },
+      discounts: {:error, :section_failed}
+    }
   end
 
   defp overview_block do
@@ -264,8 +327,15 @@ defmodule SanbaseWeb.Admin.SubscriptionsStats do
         )
         |> Repo.all()
 
-      local_set = MapSet.new(local_rows, & &1.stripe_id)
-      stripe_set = Map.keys(stripe_map) |> MapSet.new()
+      # Drift compares like-for-like populations. Stripe's list endpoint
+      # returns non-canceled subs by default, so restrict the local side to
+      # the matching statuses.
+      local_active_set =
+        local_rows
+        |> Enum.reject(&(&1.status in [:canceled, :incomplete_expired]))
+        |> MapSet.new(& &1.stripe_id)
+
+      stripe_all_set = MapSet.new(stripe_subs, & &1.id)
 
       merged =
         Enum.flat_map(local_rows, fn row ->
@@ -324,8 +394,8 @@ defmodule SanbaseWeb.Admin.SubscriptionsStats do
       internal_count = Enum.count(merged, &internal_email?/1)
       external_count = total - internal_count
 
-      drift_local_only = MapSet.difference(local_set, stripe_set) |> MapSet.size()
-      drift_stripe_only = MapSet.difference(stripe_set, local_set) |> MapSet.size()
+      drift_local_only = MapSet.difference(local_active_set, stripe_all_set) |> MapSet.size()
+      drift_stripe_only = MapSet.difference(stripe_all_set, local_active_set) |> MapSet.size()
 
       {:ok,
        %{

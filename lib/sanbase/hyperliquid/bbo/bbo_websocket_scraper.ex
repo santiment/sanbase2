@@ -11,6 +11,43 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
   `source = "hyperliquid"`. Each `bbo` frame is coalesced to at most one Kafka
   emit per coin per `coalesce_window_ms` (trailing-edge debounce) and pushed to
   the `:hyperliquid_bbo_exporter` Kafka exporter.
+
+  ## Lifecycle
+
+  1. **Boot.** `start_link/0` opens the WebSocket. On `handle_connect/2` the
+     reconnect backoff is reset, all periodic timers are armed, and an
+     immediate `:reconcile_subscriptions` is sent to populate subs.
+
+  2. **Reconcile (every 60s).** Loads `SourceSlugMapping` rows for
+     `hyperliquid`, builds a `coin -> [slug, ...]` map, and diffs against
+     `active_subs`. New coins get a `subscribe` frame queued; removed coins
+     get `unsubscribe` plus their `pending`/`last_emitted` entries pruned.
+
+  3. **Outbound pacing.** Sub/unsub frames are drained from the queue one per
+     `@flush_subs_interval` (50ms) — Hyperliquid caps outbound at 2000/min.
+     The drain timer self-disarms when the queue empties and re-arms when
+     reconcile queues more frames.
+
+  4. **Inbound BBO.** A `bbo` frame is parsed into a `BboPoint`, fanned out
+     to every slug mapped to that coin, and pushed via
+     `KafkaExporter.persist_async/2`. Per coin: the first frame in a
+     `coalesce_window_ms` window emits immediately; later frames in the same
+     window overwrite a `pending` slot (latest wins).
+
+  5. **Coalesce flush (every 250ms).** Walks `pending` and emits any entry
+     whose window has elapsed. Bounds the worst-case extra latency at the
+     window boundary to one tick (~250ms).
+
+  6. **Liveness.** Outbound `ping` every 50s. A `:healthcheck` tick every 60s
+     checks `now - last_message_time`; if it exceeds
+     `@healthcheck_tolerance`, a miss is counted. After
+     `@healthcheck_max_failures` consecutive misses the process raises
+     `HealthcheckError` and the supervisor restarts it.
+
+  7. **Disconnect.** `handle_disconnect/2` cancels timers, clears
+     `active_subs`/`pending_sub_queue`/`pending`/`last_emitted`/
+     `healthcheck_failures`, sleeps the current backoff, then doubles it
+     (capped at `@reconnect_max_ms`). Reconnect re-enters step 1.
   """
 
   use WebSockex
@@ -26,10 +63,15 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
   @url "wss://api.hyperliquid.xyz/ws"
   @source "hyperliquid"
 
-  @ping_interval 50_000
+  # Outbound app-level ping; HL closes idle sockets ~60s.
+  @ping_interval 30_000
+  # Periodic check that we've received a frame recently.
   @healthcheck_interval 60_000
+  # Max gap between inbound frames before counting a miss.
   @healthcheck_tolerance 60_000
+  # Consecutive misses tolerated before raising and forcing reconnect.
   @healthcheck_max_failures 5
+  # Resync subscriptions against SourceSlugMapping on this cadence.
   @reconcile_interval 60_000
 
   # Hyperliquid limits outbound client messages to 2000/min (~33/sec). We pace
@@ -37,8 +79,13 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
   # headroom. Cold-start burst of ~200 coins drains in ~10s, well under.
   @flush_subs_interval 50
 
+  # Tick rate for draining the per-coin coalesce buffer.
   @flush_coalesced_interval 250
+  # Default debounce window per coin; overridable via app config.
+  @coalesce_window_default_ms 1_000
+  # First reconnect delay; doubles per consecutive disconnect, capped below.
   @reconnect_initial_ms 1_000
+  # Upper bound on the exponential reconnect backoff.
   @reconnect_max_ms 30_000
 
   def child_spec(_opts \\ []) do
@@ -78,7 +125,7 @@ defmodule Sanbase.Hyperliquid.Bbo.WebsocketScraper do
     case Config.module_get(__MODULE__, :coalesce_window_ms) do
       ms when is_integer(ms) -> ms
       ms when is_binary(ms) -> ms |> String.trim() |> String.to_integer()
-      _ -> 1000
+      _ -> @coalesce_window_default_ms
     end
   end
 

@@ -33,8 +33,8 @@ defmodule Sanbase.Hyperliquid.Supervisor do
               name: :hyperliquid_bbo_exporter,
               topic: Config.module_get!(Sanbase.KafkaExporter, :hyperliquid_bbo_topic),
               buffering_max_messages: 10_000,
-              can_send_after_interval: 250,
-              kafka_flush_timeout: 1000
+              can_send_after_interval: 100,
+              kafka_flush_timeout: 250
             )
           end,
           fn -> WebsocketScraper.enabled?() end

@@ -17,6 +17,28 @@ defmodule Sanbase.Hyperliquid.Bbo.BboPrices do
 
   alias Sanbase.ClickhouseRepo
 
+  @type point :: %{
+          datetime: DateTime.t(),
+          bid_price: float() | nil,
+          bid_volume: float() | nil,
+          ask_price: float() | nil,
+          ask_volume: float() | nil,
+          mid_price: float() | nil,
+          weighted_mid_price: float() | nil
+        }
+
+  @doc ~s"""
+  Return BBO timeseries for `slug` between `from` and `to`, bucketed by
+  `interval`. Each bucket carries the bid/ask snapshot from the row with the
+  largest `dt` in the bucket, plus computed `mid_price` and
+  `weighted_mid_price` (nil when either side is missing; weighted is also nil
+  when bid_volume + ask_volume = 0).
+
+  `interval` accepts `"1m"`, `"5m"`, `"1h"`, etc. — anything
+  `Sanbase.Utils.DateTime.maybe_str_to_sec/1` understands.
+  """
+  @spec timeseries_data(String.t(), DateTime.t(), DateTime.t(), String.t()) ::
+          {:ok, [point]} | {:error, String.t()}
   def timeseries_data(slug, from, to, interval) do
     query_struct = timeseries_data_query(slug, from, to, interval)
 

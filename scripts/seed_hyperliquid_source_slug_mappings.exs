@@ -96,7 +96,29 @@ defmodule SeedHyperliquidSourceSlugMappings do
         end
       end)
 
+    raise_on_conflicts(deduped)
+
     {deduped, Enum.reverse(dups)}
+  end
+
+  defp raise_on_conflicts(mappings) do
+    conflicting_coins = conflicts_by(mappings, fn {coin, _} -> coin end)
+    conflicting_slugs = conflicts_by(mappings, fn {_, slug} -> slug end)
+
+    if conflicting_coins != [] or conflicting_slugs != [] do
+      raise """
+      Conflicting mappings detected:
+        coins mapped to multiple slugs: #{inspect(conflicting_coins)}
+        slugs mapped to multiple coins: #{inspect(conflicting_slugs)}
+      """
+    end
+  end
+
+  defp conflicts_by(mappings, key_fn) do
+    mappings
+    |> Enum.group_by(key_fn)
+    |> Enum.filter(fn {_key, rows} -> length(rows) > 1 end)
+    |> Enum.map(fn {key, rows} -> {key, rows} end)
   end
 
   defp process_entry({coin, slug}, projects_by_slug) do

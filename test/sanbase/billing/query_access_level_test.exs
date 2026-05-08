@@ -122,6 +122,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :historical_balance,
           :historical_trigger_points,
           :history_price,
+          :hyperliquid_bbo_prices,
           :incoming_transfers_summary,
           :insight_comments,
           :insight,

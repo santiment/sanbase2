@@ -6,6 +6,17 @@ defmodule Sanbase.Hyperliquid.Bbo.BboSqlQuery do
   import Sanbase.Metric.SqlQuery.Helper,
     only: [to_unix_timestamp: 3, dt_to_unix: 2]
 
+  @doc ~s"""
+  Build a `Sanbase.Clickhouse.Query` that returns one row per `interval`
+  bucket between `from` and `to`. Within each bucket, bid/ask price and
+  volume are taken from the row with the largest `dt` (atomic per-row
+  snapshot via tuple `argMax`).
+
+  Output columns: `time` (unix bucket start), `bid_price`, `bid_volume`,
+  `ask_price`, `ask_volume`.
+  """
+  @spec timeseries_data_query(String.t(), DateTime.t(), DateTime.t(), String.t()) ::
+          Sanbase.Clickhouse.Query.t()
   def timeseries_data_query(slug, from, to, interval) do
     sql = """
     SELECT

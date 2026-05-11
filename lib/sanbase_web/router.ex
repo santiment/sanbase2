@@ -194,6 +194,14 @@ defmodule SanbaseWeb.Router do
       end
     end
 
+    scope "/major_topics" do
+      live_session :major_topics_authenticated_user,
+        on_mount: [{SanbaseWeb.AdminUserAuth, :ensure_authenticated}] do
+        live "/", Admin.MajorTopicsLive.Index, :index
+        live "/:id", Admin.MajorTopicsLive.Show, :show
+      end
+    end
+
     scope "/ai_descriptions" do
       live_session :ai_descriptions_authenticated_user,
         on_mount: [{SanbaseWeb.AdminUserAuth, :ensure_authenticated}] do

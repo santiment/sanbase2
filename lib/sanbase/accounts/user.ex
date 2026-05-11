@@ -100,6 +100,10 @@ defmodule Sanbase.Accounts.User do
     field(:feature_access_level, :string, default: "released")
     field(:available_metrics_lookback_days, :integer)
 
+    field(:is_mcp_banned, :boolean, default: false)
+    field(:mcp_banned_at, :utc_datetime)
+    field(:mcp_banned_reason, :string)
+
     has_one(:user_settings, UserSettings, on_delete: :delete_all)
     has_one(:user_onboarding, UserOnboarding, on_delete: :delete_all)
 
@@ -179,7 +183,10 @@ defmodule Sanbase.Accounts.User do
       :registration_state,
       :description,
       :website_url,
-      :twitter_handle
+      :twitter_handle,
+      :is_mcp_banned,
+      :mcp_banned_at,
+      :mcp_banned_reason
     ])
     |> normalize_user_identificator(:username, attrs[:username])
     |> normalize_user_identificator(:email, attrs[:email])
@@ -226,6 +233,37 @@ defmodule Sanbase.Accounts.User do
     |> Repo.update()
     |> maybe_preload_struct()
     |> emit_event(:update_user, %{})
+  end
+
+  def mcp_ban!(%__MODULE__{} = user, reason) do
+    user
+    |> cast(
+      %{
+        is_mcp_banned: true,
+        mcp_banned_at: DateTime.utc_now() |> DateTime.truncate(:second),
+        mcp_banned_reason: reason
+      },
+      [:is_mcp_banned, :mcp_banned_at, :mcp_banned_reason]
+    )
+    |> Repo.update!()
+  end
+
+  def mcp_unban!(%__MODULE__{} = user) do
+    user
+    |> cast(
+      %{is_mcp_banned: false, mcp_banned_at: nil, mcp_banned_reason: nil},
+      [:is_mcp_banned, :mcp_banned_at, :mcp_banned_reason]
+    )
+    |> Repo.update!()
+  end
+
+  def mcp_banned?(user_id) when is_integer(user_id) do
+    from(u in __MODULE__, where: u.id == ^user_id, select: u.is_mcp_banned)
+    |> Repo.one()
+    |> case do
+      true -> true
+      _ -> false
+    end
   end
 
   def atomic_update_registration_state(user_id, old_state, new_state, _opts \\ []) do

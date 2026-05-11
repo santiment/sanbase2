@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict PP2b5QCcDaGcyKYxx5dKLmzCiXrAI5ifShCyMCc6llMYFwQEKo8JbCeGcGux6vf
+\restrict zY3C0tIwdrSWdEaeAKfsTlsLXp4p8Da0rjeuJtMbPE3u6XbtDGi2fLpziv0eZK6
 
 -- Dumped from database version 15.15 (Homebrew)
 -- Dumped by pg_dump version 15.15 (Homebrew)
@@ -2234,7 +2234,11 @@ CREATE TABLE public.mcp_tool_invocations (
     duration_ms integer NOT NULL,
     auth_method character varying(255),
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    user_agent character varying(512),
+    client character varying(32),
+    session_id character varying(128),
+    kind character varying(255) DEFAULT 'tool'::character varying NOT NULL
 );
 
 
@@ -5475,7 +5479,10 @@ CREATE TABLE public.users (
     website_url character varying(255),
     twitter_handle character varying(255),
     feature_access_level character varying(255) DEFAULT 'released'::character varying NOT NULL,
-    available_metrics_lookback_days integer
+    available_metrics_lookback_days integer,
+    is_mcp_banned boolean DEFAULT false NOT NULL,
+    mcp_banned_at timestamp(0) without time zone,
+    mcp_banned_reason text
 );
 
 
@@ -8874,6 +8881,20 @@ CREATE UNIQUE INDEX market_segments_name_index ON public.market_segments USING b
 
 
 --
+-- Name: mcp_tool_invocations_client_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX mcp_tool_invocations_client_index ON public.mcp_tool_invocations USING btree (client);
+
+
+--
+-- Name: mcp_tool_invocations_client_inserted_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX mcp_tool_invocations_client_inserted_at_index ON public.mcp_tool_invocations USING btree (client, inserted_at);
+
+
+--
 -- Name: mcp_tool_invocations_inserted_at_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8881,10 +8902,24 @@ CREATE INDEX mcp_tool_invocations_inserted_at_index ON public.mcp_tool_invocatio
 
 
 --
+-- Name: mcp_tool_invocations_kind_inserted_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX mcp_tool_invocations_kind_inserted_at_index ON public.mcp_tool_invocations USING btree (kind, inserted_at);
+
+
+--
 -- Name: mcp_tool_invocations_metrics_gin; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX mcp_tool_invocations_metrics_gin ON public.mcp_tool_invocations USING gin (metrics);
+
+
+--
+-- Name: mcp_tool_invocations_session_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX mcp_tool_invocations_session_id_index ON public.mcp_tool_invocations USING btree (session_id);
 
 
 --
@@ -8899,6 +8934,20 @@ CREATE INDEX mcp_tool_invocations_tool_name_index ON public.mcp_tool_invocations
 --
 
 CREATE INDEX mcp_tool_invocations_user_id_index ON public.mcp_tool_invocations USING btree (user_id);
+
+
+--
+-- Name: mcp_tool_invocations_user_id_inserted_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX mcp_tool_invocations_user_id_inserted_at_index ON public.mcp_tool_invocations USING btree (user_id, inserted_at);
+
+
+--
+-- Name: mcp_tool_invocations_user_id_tool_name_inserted_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX mcp_tool_invocations_user_id_tool_name_inserted_at_index ON public.mcp_tool_invocations USING btree (user_id, tool_name, inserted_at);
 
 
 --
@@ -9711,6 +9760,13 @@ CREATE UNIQUE INDEX users_email_index ON public.users USING btree (email);
 --
 
 CREATE UNIQUE INDEX users_email_token_index ON public.users USING btree (email_token);
+
+
+--
+-- Name: users_is_mcp_banned_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX users_is_mcp_banned_index ON public.users USING btree (is_mcp_banned) WHERE (is_mcp_banned = true);
 
 
 --
@@ -11403,7 +11459,7 @@ ALTER TABLE ONLY public.webinar_registrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict PP2b5QCcDaGcyKYxx5dKLmzCiXrAI5ifShCyMCc6llMYFwQEKo8JbCeGcGux6vf
+\unrestrict zY3C0tIwdrSWdEaeAKfsTlsLXp4p8Da0rjeuJtMbPE3u6XbtDGi2fLpziv0eZK6
 
 INSERT INTO public."schema_migrations" (version) VALUES (20171008200815);
 INSERT INTO public."schema_migrations" (version) VALUES (20171008203355);
@@ -11961,6 +12017,7 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260309140153);
 INSERT INTO public."schema_migrations" (version) VALUES (20260309140154);
 INSERT INTO public."schema_migrations" (version) VALUES (20260317111739);
 INSERT INTO public."schema_migrations" (version) VALUES (20260319144952);
+INSERT INTO public."schema_migrations" (version) VALUES (20260326120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260327120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260331120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260407090744);
@@ -11969,3 +12026,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260409120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260409120001);
 INSERT INTO public."schema_migrations" (version) VALUES (20260422120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260427125517);
+INSERT INTO public."schema_migrations" (version) VALUES (20260511112644);
+INSERT INTO public."schema_migrations" (version) VALUES (20260511112645);

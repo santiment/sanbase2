@@ -296,10 +296,11 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
       </div>
     </div>
 
-    <div class="rounded-box border border-base-300 overflow-hidden">
+    <div class="rounded-box border border-base-300 overflow-x-auto">
       <table class="table table-zebra table-sm">
         <thead>
           <tr>
+            <th></th>
             <th>Timestamp</th>
             <th>User</th>
             <th>Tool Name</th>
@@ -310,7 +311,6 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
             <th>Duration (ms)</th>
             <th>Response Size</th>
             <th>Status</th>
-            <th>Params</th>
           </tr>
         </thead>
         <tbody>
@@ -320,6 +320,16 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
             message="No invocations found matching your filters."
           />
           <tr :for={inv <- @invocations} id={"inv-#{inv.id}"}>
+            <td>
+              <button
+                type="button"
+                phx-click="show_params"
+                phx-value-id={inv.id}
+                class="btn btn-xs btn-primary"
+              >
+                Show
+              </button>
+            </td>
             <td class="text-base-content/70">{format_datetime(inv.inserted_at)}</td>
             <td class="font-mono">
               {if inv.user, do: inv.user.email, else: "Anonymous"}
@@ -332,15 +342,6 @@ defmodule SanbaseWeb.Admin.McpToolInvocationsLive do
             <td class="text-base-content/70">{inv.duration_ms}</td>
             <td class="text-base-content/70">{format_bytes(inv.response_size_bytes)}</td>
             <td><.status_badge is_successful={inv.is_successful} /></td>
-            <td>
-              <button
-                phx-click="show_params"
-                phx-value-id={inv.id}
-                class="btn btn-xs btn-ghost link-primary"
-              >
-                Show
-              </button>
-            </td>
           </tr>
         </tbody>
       </table>

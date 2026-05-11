@@ -70,5 +70,35 @@
       "SANAPI": "free",
       "SANBASE": "free"
     }
+  },
+  {
+    "human_readable_name": "Anomaly: ETH Whale Dump",
+    "name": "anomaly_eth_whale_dump",
+    "signal": "eth_whale_dump",
+    "access": "free",
+    "selectors": ["slug"],
+    "aggregation": "count",
+    "min_interval": "5m",
+    "table": "signals",
+    "data_type": "timeseries",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
+  },
+  {
+    "human_readable_name": "Anomaly: Hyperliquid AVG Funding Rate",
+    "name": "anomaly_hyperliquid_avg_funding_rate",
+    "signal": "hyperliquid_avg_funding_rate",
+    "access": "free",
+    "selectors": ["slug"],
+    "aggregation": "count",
+    "min_interval": "5m",
+    "table": "signals",
+    "data_type": "timeseries",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
   }
 ]
